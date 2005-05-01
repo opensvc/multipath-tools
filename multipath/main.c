@@ -856,6 +856,11 @@ main (int argc, char *argv[])
 	extern int optind;
 	char * refwwid = NULL;
 
+	if (getuid() != 0) {
+		fprintf(stderr, "need to be root\n");
+		exit(1);
+	}
+
 	if (dm_prereq(DEFAULT_TARGET, 1, 0, 3)) {
 		condlog(0, "device mapper prerequisites not met");
 		exit(1);

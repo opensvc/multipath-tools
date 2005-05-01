@@ -998,7 +998,7 @@ main (int argc, char *argv[])
 	void * child_stack;
 	
 	if (getuid() != 0) {
-		fprintf(stderr, "need to be root, exit");
+		fprintf(stderr, "need to be root\n");
 		exit(1);
 	}
 
