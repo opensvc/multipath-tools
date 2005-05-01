@@ -22,7 +22,7 @@ export KRNLOBJ
 
 BUILDDIRS = libmultipath libcheckers path_priority \
 	    devmap_name multipath multipathd kpartx
-ALLDIRS	= $(shell find . -type d -maxdepth 1 -mindepth 1)
+ALLDIRS	= $(shell find . -type d -maxdepth 1 -mindepth 1 ! -name \.git)
 
 VERSION = $(shell basename ${PWD} | cut -d'-' -f3)
 INSTALLDIRS = devmap_name multipath multipathd kpartx path_priority
