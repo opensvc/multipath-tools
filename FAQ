@@ -1,0 +1,63 @@
+1. How to set up System-on-multipath ?
+======================================
+
+prerequisite : udev and multipath-tools installed
+
+here are the steps on a Debian SID system :
+
+* add dm-mpath and dm-multipath to /etc/mkinitrd/modules
+* copy $tools_dir/multipath/0[12]_* to /etc/mkinitrd/scripts
+* define a friendly alias for your multipathed root disk
+  (in /etc/multipath.conf). Example : "system"
+* enable busybox in /etc/mkinitrd/mkinitrd.conf and set ROOT
+  to any valid block-device (but not a /dev/dm-* one, due to
+  an mkintrd misbelief that all dm-* are managed by LVM2)
+* run mkinitrd
+* in /boot/grub/menu.lst, define the root= kernel parameter
+  Example : root=/dev/system1
+* modify /etc/fstab to reference /dev/system* partitions
+
+At reboot, you should see some info like :
+
+path /dev/sda : multipath system
+...
+gpt: 0 slices
+dos: 5 slices
+reduced size of partition #2 to 63
+Added system1 : 0 70685937 linear /dev/system 63
+Added system2 : 0 63 linear /dev/system 7068600
+Added system5 : 0 995967 linear /dev/system 70686063
+...
+
+2. How does it compare to commercial product XXX ?
+==================================================
+
+Here are a few distinctive features :
+
+* you can mix HBA models, even different vendors, different speed ...
+* you can mix storage controllers on your SAN, and access them all, applying
+  different path grouping policy
+* completely event-driven model : no administration burden if you accept the
+  default behaviours
+* extensible : you can plug your own policies if the available ones don't fill
+  your needs
+* supports root FS on multipathed SAN
+* free, open-source software
+
+3. LVM2 doesn't see my multipathed devices as PV, what's up ?
+=============================================================
+
+By default, lvm2 does not consider device-mapper block devices (such as a
+dm-crypt device) for use as physical volumes.
+
+In order to use a dm-crypt device as an lvm2 pv, add this line to the
+devices block in /etc/lvm/lvm.conf:
+
+types = [ "device-mapper", 16 ]
+
+If /etc/lvm/lvm.conf does not exist, you can create one based on your 
+current/default config like so:
+
+lvm dumpconfig > /etc/lvm/lvm.conf
+
+(tip from Christophe Saout)

@@ -1,0 +1,39 @@
+.TH KPARTX 8 "February 2004" "" "Linux Administrator's Manual"
+.SH NAME
+kpartx \- Create device maps from partition tables
+.SH SYNOPSIS
+.B kpartx
+.RB [\| \-a\ \c
+.BR |\ -d\ |\ -l \|]
+.RB [\| \-v \|]
+.RB wholedisk
+.SH DESCRIPTION
+This tool, derived from util-linux' partx, reads partition
+tables on specified device and create device maps over partitions 
+segments detected. It is called from hotplug upon device maps 
+creation and deletion.
+.SH OPTIONS
+.TP
+.B \-a
+Add partition mappings
+.TP
+.B \-d
+Delete partition mappings
+.TP
+.B \-l
+List partition mappings that would be added -a
+.TP
+.B \-p
+set device name-partition number delimiter
+.TP
+.B \-v
+Operate verbosely
+.SH "SEE ALSO"
+.BR multipath (8)
+.BR multipathd (8)
+.BR hotplug (8)
+.SH "AUTHORS"
+This man page was assembled By Patrick Caulfield
+for the Debian project. From documentation provided
+by the multipath author Christophe Varoqui, <christophe.varoqui@free.fr> and others.
+

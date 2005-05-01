@@ -1,0 +1,9 @@
+This version of partx is intented to be build 
+static against klibc.
+
+It creates partitions as device maps.
+
+With due respect to the original authors,
+
+have fun,
+cvaroqui

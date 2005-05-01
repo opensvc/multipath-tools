@@ -1,0 +1,22 @@
+.TH MULTIPATHD 8 "October 2004" "Linux Administrator's Manual"
+.SH NAME
+multipathd \- multipath daemon
+.SH SYNOPSYS
+.B multipathd
+
+This daemon is in charge of checking for failed paths. When this happens,
+it will reconfigure the multipath map the path belongs to, so that this map 
+regain its maximum performance and redundancy.
+
+This daemon executes the external multipath config tool when events occur. 
+In turn, the multipath tool signals the multipathd daemon it is done with 
+devmap reconfiguration, so that it can refresh its failed path list.
+
+.SH "SEE ALSO"
+.BR multipath (8)
+.BR kpartx (8)
+.BR hotplug (8)
+.SH "AUTHORS"
+This man page was assembled by Patrick Caulfield 
+for the Debian project. From documentation provided
+by the multipath author Christophe Varoqui, <christophe.varoqui@free.fr> and others.

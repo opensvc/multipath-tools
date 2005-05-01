@@ -1,0 +1,13 @@
+#!/bin/sh -e
+
+if [ ! "${ACTION}" = add ] ; then
+	exit
+fi
+
+if [ "${DEVPATH:7:3}" = "dm-" ] ; then
+	dev=$(</sys${DEVPATH}/dev)
+	map=$(/sbin/devmap_name $dev)
+	/sbin/kpartx -v -a /dev/$map
+else
+	/sbin/multipath -v0 ${DEVNAME}
+fi

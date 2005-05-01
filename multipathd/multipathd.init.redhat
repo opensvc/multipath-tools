@@ -1,0 +1,91 @@
+#!/bin/bash
+
+#
+#	/etc/rc.d/init.d/multipathd
+#
+# Starts the multipath daemon
+#
+# chkconfig: 2345 13 87
+# description: Manage device-mapper multipath devices
+# processname: multipathd
+
+DAEMON=/sbin/multipathd
+prog=`basename $DAEMON`
+initdir=/etc/rc.d/init.d
+lockdir=/var/lock/subsys
+sysconfig=/etc/sysconfig
+
+ 
+system=redhat
+ 
+if [ $system = redhat ]; then
+	# Source function library.
+	. $initdir/functions
+fi
+ 
+test -x $DAEMON || exit 0
+test -r $sysconfig/$prog && . $sysconfig/$prog
+
+RETVAL=0
+
+#
+# See how we were called.
+#
+
+start() {
+	echo -n $"Starting $prog daemon: "
+	daemon $DAEMON
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && touch $lockdir/$prog
+	echo
+}
+
+stop() {
+	echo -n $"Stopping $prog daemon: "
+	killproc $DAEMON
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && rm -f $lockdir/$prog
+	echo
+}
+
+restart() {
+	stop
+	start
+}	
+
+reload() {
+	echo -n "Reloading $prog: "
+	trap "" SIGHUP
+	killproc $DAEMON -HUP
+	RETVAL=$?
+	echo
+}	
+
+case "$1" in
+start)
+	start
+	;;
+stop)
+	stop
+	;;
+reload)
+	reload
+	;;
+restart)
+	restart
+	;;
+condrestart)
+	if [ -f $lockdir/$prog ]; then
+	    restart
+	fi
+	;;
+status)
+	status $prog
+	RETVAL=$?
+	;;
+*)
+	echo $"Usage: $0 {start|stop|status|restart|condrestart|reload}"
+	RETVAL=1
+esac
+
+exit $RETVAL

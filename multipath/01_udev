@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+cp /sbin/udev $INITRDDIR/sbin/hotplug
+cp /sbin/udevstart $INITRDDIR/sbin/
+cp /bin/mountpoint $INITRDDIR/bin/
+cp /bin/readlink $INITRDDIR/bin/
+
+PROGS="/sbin/udev /sbin/udevstart /bin/mountpoint /bin/readlink"
+LIBS=`ldd $PROGS | grep -v linux-gate.so | sort -u | \
+awk '{print $3}'` 
+for i in $LIBS
+do
+	mkdir -p `dirname $INITRDDIR/$i`
+	cp $i $INITRDDIR/$i
+done
+
+#
+# config files
+#
+if [ -d /etc/dev.d ]
+then
+	cp -a /etc/dev.d $INITRDDIR/etc/
+fi
+
+if [ -d /etc/udev ]
+then
+	cp -a /etc/udev $INITRDDIR/etc/
+fi
+
+#
+# run udev from initrd
+#
+cat <<EOF >| $INITRDDIR/scripts/10_udev.sh
+
+cd /
+mount -nt proc proc proc
+mount -nt sysfs sysfs sys
+mount -nt tmpfs tmpfs dev || mount -nt ramfs ramfs dev
+mount -nt tmpfs tmpfs tmp || mount -nt ramfs ramfs tmp
+
+#modprobe dm-mod
+#modprobe dm-multipath
+/sbin/udevstart
+
+umount -n tmp
+umount -n sys
+umount -n proc
+
+sleep 2
+EOF

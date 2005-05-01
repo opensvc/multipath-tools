@@ -1,0 +1,90 @@
+.TH MULTIPATH 8 "February 2004" "" "Linux Administrator's Manual"
+.SH NAME
+multipath \- Device mapper target autoconfig
+.SH SYNOPSIS
+.B multipath
+.RB [\| \-v\ \c
+.IR verbosity \|]
+.RB [\| \-d \|]
+.RB [\| \-l \|]
+.RB [\| \-i\ \c
+.IR int \|]
+.RB [\| \-p\ \c
+.BR failover | multibus | group_by_serial | group_by_prio | group_by_node_name \|]
+.RB [\| -S \|]
+.RB [\| device \|]
+.SH DESCRIPTION
+.B multipath
+is used to detect multiple paths to devices for fail-over or performance reasons and coalesces them
+.SH OPTIONS
+.TP
+.B \-v " level"
+verbosity, print all paths and multipaths
+.RS 1.2i
+.TP 1.2i
+.B 0
+no output
+.TP
+.B 1
+print the created or updated multipath names only, for use to feed other tools like kpartx
+.TP
+.B 2 +
+print all info : detected paths, coalesced paths (ie multipaths) and device maps
+.RE
+.TP
+.B \-d
+dry run, do not create or update devmaps
+.TP
+.B \-l
+list the current multipath configuration
+.TP
+.TP
+.BI \-i " interval"
+multipath target param: polling interval
+.TP
+.BI \-D " major:minor"
+update only the devmap the path pointed by
+.I major:minor
+is in
+.TP
+.B \-F
+flush all the multipath device maps
+.TP
+.BI \-p " policy"
+force maps to specified policy:
+.RS 1.2i
+.TP 1.2i
+.B failover
+1 path per priority group
+.TP
+.B multibus
+all paths in 1 priority group
+.TP
+.B group_by_serial
+1 priority group per serial
+.TP
+.B group_by_prio
+1 priority group per priority value. Priorities are determined by callout programs specified as a global, per-controler or per-multipath option in the configuration file
+.TP
+.B group_by_node_name
+1 priority group per target node name. Target node names are fetched in /sys/class/fc_transport/target*/node_name.
+.RE
+.TP
+.B \-S
+do not send signal to multipathd. -d activate this silently.
+.TP
+.BI device
+update only the devmap the path pointed by
+.I device
+is in. 
+.I device
+is in the /dev/sdb (as shown by udev in the $DEVNAME variable) or major:minor format.
+.I device
+may alternatively be a multipath mapname
+.SH "SEE ALSO"
+.BR udev (8),
+.BR dmsetup (8)
+.BR hotplug (8)
+.SH AUTHORS
+.B multipath
+was developed by Christophe Varoqui, <christophe.varoqui@free.fr> and others.

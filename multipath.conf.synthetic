@@ -1,0 +1,162 @@
+defaults {
+	multipath_tool	"/sbin/multipath -v 0 -S"
+	udev_dir	/dev
+	polling_interval 10
+	default_selector	"round-robin 0"
+	default_path_grouping_policy	multibus
+	default_getuid_callout	"/sbin/scsi_id -g -u -s /block/%n"
+	default_prio_callout	"/bin/true"
+	default_features	"0"
+	rr_wmin_io		100
+}
+devnode_blacklist {
+        wwid 26353900f02796769
+	devnode "(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"
+	devnode "hd[a-z][[0-9]*]"
+	devnode "cciss!c[0-9]d[0-9]*[p[0-9]*]"
+}
+multipaths {
+	multipath {
+		wwid			3600508b4000156d700012000000b0000
+		alias			yellow
+		path_grouping_policy	multibus
+		path_checker		readsector0
+		path_selector		"round-robin 0"
+	}
+	multipath {
+		wwid	1DEC_____321816758474
+		alias	red
+	}
+}
+devices {
+	device {
+		vendor			"COMPAQ  "
+		product			"HSV110 (C)COMPAQ"
+		path_grouping_policy	multibus
+		getuid_callout          "/sbin/scsi_id -g -u -s /block/%n"
+		path_checker		readsector0
+		path_selector		"round-robin 0"
+		features		"1 queue_if_no_path"
+		hardware_handler	"0"
+	}
+	device {
+		vendor			"COMPAQ  "
+		product			"MSA1000         "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"COMPAQ  "
+		product			"MSA1000 VOLUME  "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"DEC     "
+		product			"HSG80           "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"HP      "
+		product			"HSV100          "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"3PARdata"
+		product			"VV              "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"IBM     "
+		product			"3542            "
+		path_grouping_policy	group_by_serial
+		path_checker		tur
+	}
+	device {
+		vendor			"DDN     "
+		product			"SAN DataDirector"
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"FSC     "
+		product			"CentricStor     "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"HITACHI "
+		product			"DF400           "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"HITACHI "
+		product			"DF500           "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"HITACHI "
+		product			"DF600           "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"IBM     "
+		product			"ProFibre 4000R  "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"SGI     "
+		product			"TP9100          "
+		vendor			"COMPAQ  "
+		product			"MSA1000         "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"SGI     "
+		product			"TP9300          "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"SGI     "
+		product			"TP9400          "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		vendor			"SGI     "
+		product			"TP9500          "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		# all paths active but with a switchover latency
+		# LSI controlers
+		vendor			"STK     "
+		product			"OPENstorage D280"
+		path_grouping_policy	group_by_serial
+		path_checker		tur
+	}
+	device {
+		# assymmetric array
+		vendor			"SUN     "
+		product			"StorEdge 3510   "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+	device {
+		# symmetric array
+		vendor			"SUN     "
+		product			"T4              "
+		path_grouping_policy	multibus
+		path_checker		tur
+	}
+}

@@ -1,0 +1,9 @@
+002:
+* convert to kpartx name everywhere
+* remove all HDGEO ioctl code
+* now work with files by mapping loops on the fly
+* merged and massage lopart.[ch] from lomount.[ch]
+  (due credit to original author here : hpa ?)
+* added a fn find_loop_by_file in lopart.[ch]
+001:
+* Initial release
