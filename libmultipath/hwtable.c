@@ -34,7 +34,8 @@ setup_default_hwtable (vector hw)
 	r += store_hwe(hw, "SUN", "T4", MULTIBUS, DEFAULT_GETUID);
 
 	r += store_hwe_ext(hw, "DGC", "*", GROUP_BY_PRIO, DEFAULT_GETUID,
-		   "/sbin/pp_emc /dev/%n", "1 emc", "0", "emc_clariion");
+		   "/sbin/pp_emc /dev/%n", "1 emc", "1 queue_if_no_path",
+		   "emc_clariion");
 	r += store_hwe_ext(hw, "IBM", "3542", GROUP_BY_SERIAL, DEFAULT_GETUID,
 		   NULL, "0", "0", "tur");
 	r += store_hwe_ext(hw, "SGI", "TP9400", MULTIBUS, DEFAULT_GETUID,
