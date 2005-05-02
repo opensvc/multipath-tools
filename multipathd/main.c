@@ -432,7 +432,6 @@ waiterloop (void *ap)
 	struct event_thread *wp;
 	pthread_attr_t attr;
 	int r;
-	char buff[1];
 	int i, j;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -466,9 +465,6 @@ waiterloop (void *ap)
 		log_safe(LOG_ERR, "can't update path list ... retry");
 		sleep(5);
 	}
-
-	log_safe(LOG_NOTICE, "initial reconfigure multipath maps");
-//	execute_program(conf->multipath, buff, 1);
 
 	while (1) {
 		/*
