@@ -431,7 +431,7 @@ waiterloop (void *ap)
 	vector waiters;
 	struct event_thread *wp;
 	pthread_attr_t attr;
-	int r;
+	int r = 1;
 	int i, j;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -459,12 +459,16 @@ waiterloop (void *ap)
 	/*
 	 * update paths list
 	 */
-	log_safe(LOG_INFO, "fetch paths list");
-
 	while(path_discovery_locked(allpaths, sysfs_path)) {
-		log_safe(LOG_ERR, "can't update path list ... retry");
+		if (r) {
+			/* log only once */
+			log_safe(LOG_ERR, "can't update path list ... retry");
+			r = 0;
+		}
 		sleep(5);
 	}
+	log_safe(LOG_INFO, "path list updated");
+
 
 	while (1) {
 		/*
@@ -476,8 +480,6 @@ waiterloop (void *ap)
 		/*
 		 * update multipaths list
 		 */
-		log_safe(LOG_INFO, "refresh multipaths list");
-
 		if (mpvec)
 			free_multipathvec(mpvec, KEEP_PATHS);
 
@@ -490,9 +492,14 @@ waiterloop (void *ap)
 			if (mpvec && !get_dm_mpvec(mpvec, allpaths))
 				break;
 
-			log_safe(LOG_ERR, "can't get mpvec ... retry");
+			if (!r) {
+				/* log only once */
+				log_safe(LOG_ERR, "can't get mpvec ... retry");
+				r = 1;
+			}
 			sleep(5);
 		}
+		log_safe(LOG_INFO, "multipath list updated");
 
 		/*
 		 * start waiters on all mpvec
