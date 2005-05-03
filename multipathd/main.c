@@ -115,6 +115,10 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 		goto out;
 
 	basename(uev->devpath, devname);
+
+	if (blacklist(conf->blist, devname))
+		goto out;
+
 	lock(allpaths->lock);
 	pp = find_path_by_dev(allpaths->pathvec, devname);
 
