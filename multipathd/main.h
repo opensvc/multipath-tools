@@ -3,6 +3,6 @@
 
 #define DAEMON 1
 #define CHECKINT 5
-#define MULTIPATH "/sbin/multipath -v0 -S"
+#define MULTIPATH "/sbin/multipath -v0"
 
 #endif

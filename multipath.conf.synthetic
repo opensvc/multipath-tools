@@ -1,5 +1,5 @@
 defaults {
-	multipath_tool	"/sbin/multipath -v 0 -S"
+	multipath_tool	"/sbin/multipath -v0"
 	udev_dir	/dev
 	polling_interval 10
 	default_selector	"round-robin 0"
