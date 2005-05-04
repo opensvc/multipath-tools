@@ -132,7 +132,8 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	}
 	if (!pp && !strncmp(uev->action, "add", 3)) {
 		condlog(2, "add %s path checker", devname);
-		store_pathinfo(allpaths->pathvec, conf->hwtable, devname);
+		store_pathinfo(allpaths->pathvec, conf->hwtable,
+			       devname, DI_SYSFS);
 	}
 	unlock(allpaths->lock);
 

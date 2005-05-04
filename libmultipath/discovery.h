@@ -34,7 +34,7 @@ int get_serial (char * buff, int fd);
 int do_tur (char *);
 int devt2devname (char *, char *);
 int pathinfo (struct path *, vector hwtable, int mask);
-int store_pathinfo (vector pathvec, vector hwtable, char * devname);
+int store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag);
 	
 
 #if 0

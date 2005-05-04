@@ -22,7 +22,7 @@
 	sysfs_read_attribute_value(a, b, sizeof(b))
 
 int
-store_pathinfo (vector pathvec, vector hwtable, char * devname)
+store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag)
 {
 	struct path * pp;
 
@@ -38,7 +38,7 @@ store_pathinfo (vector pathvec, vector hwtable, char * devname)
 	if (store_path(pathvec, pp))
 		goto out;
 
-	pathinfo(pp, hwtable, DI_ALL);
+	pathinfo(pp, hwtable, flag);
 
 	return 0;
 out:
@@ -79,8 +79,10 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 		if (!pp) {
 			/*
 			 * new path : alloc, store and fetch info
+			 * the caller wants
 			 */
-			if (store_pathinfo(pathvec, conf->hwtable, devp->name))
+			if (store_pathinfo(pathvec, conf->hwtable,
+					   devp->name, flag))
 				goto out;
 		} else {
 			/*

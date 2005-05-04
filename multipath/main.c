@@ -177,7 +177,6 @@ print_path (struct path * pp, int style)
 		printf("[shaky ]");
 		break;
 	default:
-		printf("[undef ]");
 		break;
 	}
 	switch (pp->dmstate) {
@@ -761,7 +760,7 @@ static void
 usage (char * progname)
 {
 	fprintf (stderr, VERSION_STRING);
-	fprintf (stderr, "Usage: %s\t[-v level] [-d] [-l]\n",
+	fprintf (stderr, "Usage: %s\t[-v level] [-d] [-l|-ll]\n",
 		progname);
 	fprintf (stderr,
 		"\t\t\t[-p failover|multibus|group_by_serial|group_by_prio]\n" \
@@ -773,7 +772,8 @@ usage (char * progname)
 		"\t   2\t\t\tdefault verbosity\n" \
 		"\t   3\t\t\tprint debug information\n" \
 		"\t-d\t\tdry run, do not create or update devmaps\n" \
-		"\t-l\t\tlist the current multipath topology\n" \
+		"\t-l\t\tshow multipath topology (sysfs and DM info)\n" \
+		"\t-ll\t\tshow multipath topology (maximum info)\n" \
 		"\t-F\t\tflush all multipath device maps\n" \
 		"\t-p policy\tforce all maps to specified policy :\n" \
 		"\t   failover\t\t1 path per priority group\n" \
@@ -833,7 +833,15 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 		condlog(3, "params = %s", mpp->params);
 		condlog(3, "status = %s", mpp->status);
 		disassemble_map(pathvec, mpp->params, mpp);
-		update_pathvec(pathvec);
+
+		/*
+		 * disassemble_map may have added new paths to pathvec.
+		 * If not in "fast list mode", we need to fetch information
+		 * about them
+		 */
+		if (conf->list != 1)
+			update_pathvec(pathvec);
+
 		disassemble_status(mpp->status, mpp);
 
 		if (conf->list)
@@ -851,6 +859,7 @@ main (int argc, char *argv[])
 	vector curmp = NULL;
 	vector pathvec = NULL;
 	int i;
+	int di_flag;
 	int arg;
 	extern char *optarg;
 	extern int optind;
@@ -872,7 +881,7 @@ main (int argc, char *argv[])
 	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
 
-	while ((arg = getopt(argc, argv, ":qdlFi:M:v:p:")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":qdl::Fi:M:v:p:")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
 			break;
@@ -893,6 +902,10 @@ main (int argc, char *argv[])
 		case 'l':
 			conf->list = 1;
 			conf->dry_run = 1;
+
+			if (optarg && !strncmp(optarg, "l", 1))
+				conf->list++;
+
 			break;
 		case 'M':
 #if _DEBUG_
@@ -958,7 +971,17 @@ main (int argc, char *argv[])
 	/*
 	 * get a path list
 	 */
-	if (path_discovery(pathvec, conf, DI_CHECKER) || VECTOR_SIZE(pathvec) == 0)
+	if (conf->list > 1)
+		/* extended path info '-ll' */
+		di_flag = DI_SYSFS | DI_CHECKER;
+	else if (conf->list)
+		/* minimum path info '-l' */
+		di_flag = DI_SYSFS;
+	else
+		/* maximum info */
+		di_flag = DI_ALL;
+
+	if (path_discovery(pathvec, conf, di_flag) || VECTOR_SIZE(pathvec) == 0)
 		goto out;
 
 	if (conf->verbosity > 2) {

@@ -6,12 +6,11 @@ multipath \- Device mapper target autoconfig
 .RB [\| \-v\ \c
 .IR verbosity \|]
 .RB [\| \-d \|]
-.RB [\| \-l \|]
+.RB [\| \-l | \-ll \|]
 .RB [\| \-i\ \c
 .IR int \|]
 .RB [\| \-p\ \c
 .BR failover | multibus | group_by_serial | group_by_prio | group_by_node_name \|]
-.RB [\| -S \|]
 .RB [\| device \|]
 .SH DESCRIPTION
 .B multipath
@@ -36,7 +35,10 @@ print all info : detected paths, coalesced paths (ie multipaths) and device maps
 dry run, do not create or update devmaps
 .TP
 .B \-l
-list the current multipath configuration
+show the current multipath topology from information fetched in sysfs and the device mapper
+.TP
+.B \-ll
+show the current multipath topology from all available information (sysfs, the device mapper, path checkers ...)
 .TP
 .TP
 .BI \-i " interval"
@@ -48,7 +50,7 @@ update only the devmap the path pointed by
 is in
 .TP
 .B \-F
-flush all the multipath device maps
+flush all unused multipath device maps
 .TP
 .BI \-p " policy"
 force maps to specified policy:
@@ -69,9 +71,6 @@ all paths in 1 priority group
 .B group_by_node_name
 1 priority group per target node name. Target node names are fetched in /sys/class/fc_transport/target*/node_name.
 .RE
-.TP
-.B \-S
-do not send signal to multipathd. -d activate this silently.
 .TP
 .BI device
 update only the devmap the path pointed by
