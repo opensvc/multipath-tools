@@ -154,12 +154,15 @@ print_path (struct path * pp, int style)
 	else
 		printf ("  \\_ ");
 
-	printf("%i:%i:%i:%i ",
-	       pp->sg_id.host_no,
-	       pp->sg_id.channel,
-	       pp->sg_id.scsi_id,
-	       pp->sg_id.lun);
-
+	if (pp->sg_id.host_no < 0)
+		printf("#:#:#:# ");
+	else {
+		printf("%i:%i:%i:%i ",
+		       pp->sg_id.host_no,
+		       pp->sg_id.channel,
+		       pp->sg_id.scsi_id,
+		       pp->sg_id.lun);
+	}
 	if (pp->dev)
 		printf("%-4s ", pp->dev);
 

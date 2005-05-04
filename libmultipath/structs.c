@@ -11,7 +11,17 @@
 struct path *
 alloc_path (void)
 {
-	return (struct path *)MALLOC(sizeof(struct path));
+	struct path * pp;
+	
+	pp = (struct path *)MALLOC(sizeof(struct path));
+
+	if (pp) {
+		pp->sg_id.host_no = -1;
+		pp->sg_id.channel = -1;
+		pp->sg_id.scsi_id = -1;
+		pp->sg_id.lun = -1;
+	}
+	return pp;
 }
 
 void
