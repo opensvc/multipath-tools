@@ -221,10 +221,10 @@ get_dm_mpvec (vector mpvec, struct paths * allpaths)
 }
 
 static int
-path_discovery_locked (struct paths *allpaths, char *sysfs_path)
+path_discovery_locked (struct paths *allpaths)
 {
 	lock(allpaths->lock);
-	path_discovery(allpaths->pathvec, conf, 0);
+	path_discovery(allpaths->pathvec, conf, DI_SYSFS);
 	unlock(allpaths->lock);
 
 	return 0;
@@ -464,7 +464,7 @@ waiterloop (void *ap)
 	/*
 	 * update paths list
 	 */
-	while(path_discovery_locked(allpaths, sysfs_path)) {
+	while(path_discovery_locked(allpaths)) {
 		if (r) {
 			/* log only once */
 			log_safe(LOG_ERR, "can't update path list ... retry");
