@@ -133,7 +133,7 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	if (!pp && !strncmp(uev->action, "add", 3)) {
 		condlog(2, "add %s path checker", devname);
 		store_pathinfo(allpaths->pathvec, conf->hwtable,
-			       devname, DI_SYSFS);
+			       devname, DI_SYSFS | DI_WWID);
 	}
 	unlock(allpaths->lock);
 
@@ -224,7 +224,7 @@ static int
 path_discovery_locked (struct paths *allpaths)
 {
 	lock(allpaths->lock);
-	path_discovery(allpaths->pathvec, conf, DI_SYSFS);
+	path_discovery(allpaths->pathvec, conf, DI_SYSFS | DI_WWID);
 	unlock(allpaths->lock);
 
 	return 0;
