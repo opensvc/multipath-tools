@@ -6,6 +6,8 @@
 
 #include "log.h"
 
+#define ALIGN(len, s) (((len)+(s)-1)/(s)*(s))
+
 #if LOGDBG
 static void dump_logarea (void)
 {
@@ -101,10 +103,10 @@ int log_enqueue (int prio, const char * fmt, va_list ap)
 	if (!la->empty) {
 		fwd = sizeof(struct logmsg) + 
 		      strlen((char *)&lastmsg->str) * sizeof(char) + 1;
-		la->tail += fwd;
+		la->tail += ALIGN(fwd, sizeof(void *));
 	}
 	vsnprintf(buff, MAX_MSG_SIZE, fmt, ap);
-	len = strlen(buff) * sizeof(char) + 1;
+	len = ALIGN(strlen(buff) * sizeof(char) + 1, sizeof(void *));
 
 	/* not enough space on tail : rewind */
 	if (la->head <= la->tail &&
@@ -128,7 +130,7 @@ int log_enqueue (int prio, const char * fmt, va_list ap)
 	la->empty = 0;
 	msg = (struct logmsg *)la->tail;
 	msg->prio = prio;
-	memcpy((void *)&msg->str, buff, len);
+	memcpy((void *)&msg->str, buff, strlen(buff));
 	lastmsg->next = la->tail;
 	msg->next = la->head;
 
