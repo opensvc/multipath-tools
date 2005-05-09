@@ -395,7 +395,6 @@ load_config (char * file)
 	 * internal defaults
 	 */
 	conf->verbosity = 2;
-	conf->signal = 1;		/* 1 == Send a signal to multipathd */
 	conf->dev_type = DEV_NONE;
 	conf->minio = 1000;
 

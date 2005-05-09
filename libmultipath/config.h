@@ -40,7 +40,6 @@ struct config {
 	int verbosity;
 	int dry_run;
 	int list;
-	int signal;
 	int pgpolicy_flag;
 	int with_sysfs;
 	int default_selector_args;
