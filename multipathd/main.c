@@ -1002,7 +1002,7 @@ main (int argc, char *argv[])
 	if (!conf)
 		exit(1);
 
-	while ((arg = getopt(argc, argv, ":qdlFSi:v:p:")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":v:")) != EOF ) {
 	switch(arg) {
 		case 'v':
 			if (sizeof(optarg) > sizeof(char *) ||
