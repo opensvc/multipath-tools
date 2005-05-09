@@ -386,7 +386,8 @@ free_config (struct config * conf)
 int
 load_config (char * file)
 {
-	conf = alloc_config();
+	if (!conf)
+		conf = alloc_config();
 
 	if (!conf)
 		return 1;
@@ -394,7 +395,9 @@ load_config (char * file)
 	/*
 	 * internal defaults
 	 */
-	conf->verbosity = 2;
+	if (!conf->verbosity)
+		conf->verbosity = 2;
+
 	conf->dev_type = DEV_NONE;
 	conf->minio = 1000;
 
