@@ -918,6 +918,24 @@ child (void * param)
 
 	log_thread_start();
 	log_safe(LOG_NOTICE, "--------start up--------");
+	log_safe(LOG_NOTICE, "read " DEFAULT_CONFIGFILE);
+
+	if (load_config(DEFAULT_CONFIGFILE))
+		exit(1);
+
+	setlogmask(LOG_UPTO(conf->verbosity + 3));
+
+	/*
+	 * fill the voids left in the config file
+	 */
+	if (conf->binvec == NULL) {
+		conf->binvec = vector_alloc();
+		push_callout("/sbin/scsi_id");
+	}
+	if (conf->multipath == NULL) {
+		conf->multipath = MULTIPATH;
+		push_callout(conf->multipath);
+	}
 
 	if (pidfile_create(DEFAULT_PIDFILE, getpid())) {
 		log_thread_stop();
@@ -932,46 +950,6 @@ child (void * param)
 		exit(1);
 
 	conf->checkint = CHECKINT;
-
-	setlogmask(LOG_UPTO(conf->verbosity + 3));
-
-	condlog(2, "read " DEFAULT_CONFIGFILE);
-	init_data(DEFAULT_CONFIGFILE, init_keywords);
-
-	/*
-	 * fill the voids left in the config file
-	 */
-	if (conf->binvec == NULL) {
-		conf->binvec = vector_alloc();
-		push_callout("/sbin/scsi_id");
-	}
-	if (conf->multipath == NULL) {
-		conf->multipath = MULTIPATH;
-		push_callout(conf->multipath);
-	}
-	if (conf->hwtable == NULL) {
-		conf->hwtable = vector_alloc();
-		setup_default_hwtable(conf->hwtable);
-	}
-	if (conf->blist == NULL) {
-		conf->blist = vector_alloc();
-		setup_default_blist(conf->blist);
-	}
-	if (conf->default_selector == NULL)
-		conf->default_selector = set_default(DEFAULT_SELECTOR);
-
-	if (conf->udev_dir == NULL)
-		conf->udev_dir = set_default(DEFAULT_UDEVDIR);
-
-	if (conf->default_getuid == NULL)
-		conf->default_getuid = set_default(DEFAULT_GETUID);
-
-	if (conf->default_features == NULL)
-		conf->default_features = set_default(DEFAULT_FEATURES);
-
-	if (conf->default_hwhandler == NULL)
-		conf->default_hwhandler = set_default(DEFAULT_HWHANDLER);
-
 
 #ifdef CLONE_NEWNS
 	if (prepare_namespace() < 0) {
@@ -1023,8 +1001,6 @@ main (int argc, char *argv[])
 
 	if (!conf)
 		exit(1);
-
-	conf->verbosity = 2;
 
 	while ((arg = getopt(argc, argv, ":qdlFSi:v:p:")) != EOF ) {
 	switch(arg) {
