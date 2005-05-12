@@ -47,6 +47,7 @@ struct config {
 	int dev_type;
 	int minio;
 	int checkint;
+	int max_checkint;
 
 	char * dev;
 	char * multipath;

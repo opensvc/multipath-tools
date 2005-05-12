@@ -31,6 +31,7 @@ polling_interval_handler(vector strvec)
 
 	buff = VECTOR_SLOT(strvec, 1);
 	conf->checkint = atoi(buff);
+	conf->max_checkint = conf->checkint << 2;
 
 	return 0;
 }

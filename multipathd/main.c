@@ -301,6 +301,13 @@ mark_failed_path (struct paths *allpaths, char *mapname)
 				log_safe(LOG_NOTICE, "mark %s as failed",
 					pp->dev_t);
 				app->state = PATH_DOWN;
+
+				/*
+				 * if opportune,
+				 * schedule the next check earlier
+				 */
+				if (app->tick > conf->checkint)
+					app->tick = conf->checkint;
 			}
 		}
 	}
@@ -643,6 +650,20 @@ checkerloop (void *ap)
 		log_safe(LOG_DEBUG, "checking paths");
 
 		vector_foreach_slot (allpaths->pathvec, pp, i) {
+			if (pp->tick) {
+				/*
+				 * don't check this path yet
+				 */
+				pp->tick--;
+				continue;
+			}
+
+			/*
+			 * provision a next check soonest,
+			 * in case we exit abnormaly from here
+			 */
+			pp->tick = conf->checkint;
+			
 			if (!pp->checkfn) {
 				pathinfo(pp, conf->hwtable, DI_SYSFS);
 				select_checkfn(pp);
@@ -659,6 +680,12 @@ checkerloop (void *ap)
 			if (newstate != pp->state) {
 				pp->state = newstate;
 				LOG_MSG(checker_msg, pp->dev_t);
+
+				/*
+				 * upon state change, reset the checkint
+				 * to the shortest delay
+				 */
+				pp->checkint = conf->checkint;
 
 				/*
 				 * proactively fail path in the DM
@@ -689,10 +716,25 @@ checkerloop (void *ap)
 				 */
 				event_signal();
 			}
+			else if (newstate == PATH_UP) {
+				/*
+				 * PATH_UP for last two checks
+				 * double the next check delay.
+				 * max at conf->max_checkint
+				 */
+				if (pp->checkint < (conf->max_checkint / 2))
+					pp->checkint = 2 * pp->checkint;
+				else
+					pp->checkint = conf->max_checkint;
+
+				pp->tick = pp->checkint;
+				log_safe(LOG_DEBUG, "delay %s next check (%i)",
+						pp->dev_t, pp->tick);
+			}
 			pp->state = newstate;
 		}
 		unlock(allpaths->lock);
-		sleep(conf->checkint);
+		sleep(1);
 	}
 	return NULL;
 }
@@ -965,6 +1007,7 @@ child (void * param)
 		exit(1);
 
 	conf->checkint = CHECKINT;
+	conf->max_checkint = MAX_CHECKINT;
 
 #ifdef CLONE_NEWNS
 	if (prepare_namespace() < 0) {

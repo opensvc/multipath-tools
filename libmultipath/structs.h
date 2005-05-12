@@ -65,6 +65,8 @@ struct path {
 	char serial[SERIAL_SIZE];
 	char tgt_node_name[NODE_NAME_SIZE];
 	unsigned long size;
+	unsigned int checkint;
+	unsigned int tick;
 	int state;
 	int dmstate;
 	int failcount;
