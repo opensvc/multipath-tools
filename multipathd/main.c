@@ -647,7 +647,7 @@ checkerloop (void *ap)
 
 	while (1) {
 		lock(allpaths->lock);
-		log_safe(LOG_DEBUG, "checking paths");
+		log_safe(LOG_DEBUG, "tick");
 
 		vector_foreach_slot (allpaths->pathvec, pp, i) {
 			if (pp->tick) {
