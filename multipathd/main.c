@@ -985,13 +985,17 @@ child (void * param)
 	/*
 	 * fill the voids left in the config file
 	 */
-	if (conf->binvec == NULL) {
+	if (!conf->binvec) {
 		conf->binvec = vector_alloc();
 		push_callout("/sbin/scsi_id");
 	}
-	if (conf->multipath == NULL) {
+	if (!conf->multipath) {
 		conf->multipath = MULTIPATH;
 		push_callout(conf->multipath);
+	}
+	if (!conf->checkint) {
+		conf->checkint = CHECKINT;
+		conf->max_checkint = MAX_CHECKINT;
 	}
 
 	if (pidfile_create(DEFAULT_PIDFILE, getpid())) {
@@ -1005,9 +1009,6 @@ child (void * param)
 
 	if (!allpaths || init_event())
 		exit(1);
-
-	conf->checkint = CHECKINT;
-	conf->max_checkint = MAX_CHECKINT;
 
 #ifdef CLONE_NEWNS
 	if (prepare_namespace() < 0) {
