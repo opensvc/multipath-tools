@@ -100,6 +100,15 @@ struct event_thread {
 	struct paths *allpaths;
 };
 
+static void
+event_signal(void)
+{
+	lock(event_lock);
+	pending_event++;
+	pthread_cond_signal(event);
+	unlock(event_lock);
+}
+
 int 
 uev_trigger (struct uevent * uev, void * trigger_data)
 {
@@ -116,9 +125,21 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 
 	basename(uev->devpath, devname);
 
+	if (!strncmp(devname, "dm-", 3)) {
+		/*
+		 * devmap add/remove
+		 */
+		condlog(2, "%s %s devmap", uev->action, devname);
+		event_signal();
+		goto out;
+	}
+	
 	if (blacklist(conf->blist, devname))
 		goto out;
 
+	/*
+	 * path add/remove
+	 */
 	lock(allpaths->lock);
 	pp = find_path_by_dev(allpaths->pathvec, devname);
 
@@ -338,10 +359,7 @@ out:
 	/*
 	 * tell waiterloop we have an event
 	 */
-	lock(event_lock);
-	pending_event++;
-	pthread_cond_signal(event);
-	unlock(event_lock);
+	event_signal();
 	
 	return NULL;
 }
@@ -669,10 +687,7 @@ checkerloop (void *ap)
 				/*
 				 * tell waiterloop we have an event
 				 */
-				lock (event_lock);
-				pending_event++;
-				pthread_cond_signal(event);
-				unlock (event_lock);
+				event_signal();
 			}
 			pp->state = newstate;
 		}
