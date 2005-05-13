@@ -208,15 +208,15 @@ set_paths_owner (struct paths * allpaths, struct multipath * mpp)
 	int i;
 	struct path * pp;
 
-	lock(allpaths->lock);
-
 	vector_foreach_slot (allpaths->pathvec, pp, i)
 		if (!strncmp(mpp->wwid, pp->wwid, WWID_SIZE))
 			pp->mpp = mpp;
 
-	unlock(allpaths->lock);
 }
 
+/*
+ * caller must have locked the path list before calling that function
+ */
 static int
 get_dm_mpvec (vector mpvec, struct paths * allpaths)
 {
@@ -298,7 +298,7 @@ mark_failed_path (struct paths *allpaths, char *mapname)
 			app = find_path_by_devt(allpaths->pathvec, pp->dev_t);
 
 			if (app && app->state != PATH_DOWN) {
-				log_safe(LOG_NOTICE, "mark %s as failed",
+				log_safe(LOG_NOTICE, "%s: mark as failed",
 					pp->dev_t);
 				app->state = PATH_DOWN;
 
@@ -508,12 +508,20 @@ waiterloop (void *ap)
 			wp->lease = 0;
 
 		/*
+		 * abuse the path list lock to protect against
+		 * pp->mpp use while pointing nowhere
+		 */
+		lock(allpaths->lock);
+
+		/*
 		 * update multipaths list
 		 */
-		if (mpvec)
-			free_multipathvec(mpvec, KEEP_PATHS);
-
 		while (1) {
+			if (mpvec) {
+				free_multipathvec(mpvec, KEEP_PATHS);
+				mpvec = NULL;
+			}
+
 			/*
 			 * we're not allowed to fail here
 			 */
@@ -530,6 +538,7 @@ waiterloop (void *ap)
 			sleep(5);
 		}
 		log_safe(LOG_INFO, "multipath list updated");
+		unlock(allpaths->lock);
 
 		/*
 		 * start waiters on all mpvec
@@ -627,6 +636,20 @@ waiterloop (void *ap)
 	return NULL;
 }
 
+/*
+ * caller must have locked the path list before calling that function
+ */
+static void
+reinstate_path (struct path * pp)
+{
+	if (pp->mpp) {
+		if (dm_reinstate(pp->mpp->alias, pp->dev_t))
+			log_safe(LOG_ERR, "%s: reinstate failed", pp->dev_t);
+		else
+			log_safe(LOG_NOTICE, "%s: reinstated", pp->dev_t);
+	}
+}
+
 static void *
 checkerloop (void *ap)
 {
@@ -697,7 +720,12 @@ checkerloop (void *ap)
 				}
 
 				/*
-				 * reconfigure map now
+				 * reinstate this path
+				 */
+				reinstate_path(pp);
+
+				/*
+				 * only for switchgroup now
 				 */
 				if (safe_snprintf(cmd, CMDSIZE, "%s %s",
 						  conf->multipath, pp->dev_t)) {
@@ -706,7 +734,7 @@ checkerloop (void *ap)
 				} else {
 					log_safe(LOG_DEBUG, "%s", cmd);
 					log_safe(LOG_INFO,
-						"reconfigure %s multipath",
+						"%s: reconfigure multipath",
 						pp->dev_t);
 					execute_program(cmd, buff, 1);
 				}
@@ -728,7 +756,7 @@ checkerloop (void *ap)
 					pp->checkint = conf->max_checkint;
 
 				pp->tick = pp->checkint;
-				log_safe(LOG_DEBUG, "delay %s next check (%i)",
+				log_safe(LOG_DEBUG, "%s: delay next check %is",
 						pp->dev_t, pp->tick);
 			}
 			pp->state = newstate;
