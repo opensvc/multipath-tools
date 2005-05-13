@@ -1,343 +1,348 @@
+##
+## This is a template multipath-tools configuration file
+## Uncomment the lines relevent to your environment
+##
 #
-# name  : defaults
-# desc  : multipath-tools default settings
+##
+## name  : defaults
+## desc  : multipath-tools default settings
+##
+#defaults {
+#	#
+#	# name    : multipath_tool
+#	# scope   : multipathd
+#	# desc    : the tool in charge of configuring the multipath device maps
+#	# default : "/sbin/multipath -v0"
+#	#
+#	multipath_tool	"/sbin/multipath -v0"
 #
-defaults {
-	#
-	# name    : multipath_tool
-	# scope   : multipathd
-	# desc    : the tool in charge of configuring the multipath device maps
-	# default : "/sbin/multipath -v0"
-	#
-	multipath_tool	"/sbin/multipath -v0"
-
-	#
-	# name    : udev_dir
-	# desc    : directory where udev creates its device nodes
-	# default : /udev
-	#
-	udev_dir	/dev
-
-	#
-	# name    : polling_interval
-	# scope   : multipathd
-	# desc    : interval between two path checks in seconds
-	# default : 5
-	#
-	polling_interval 10
-
-	#
-	# name    : default_selector
-	# scope   : multipath
-	# desc    : the default path selector algorithm to use
-	#           these algorithms are offered by the kernel multipath target
-	# values  : "round-robin 0"
-	# default : "round-robin 0"
-	#
-	default_selector	"round-robin 0"
-
-	#
-	# name    : default_path_grouping_policy
-	# scope   : multipath
-	# desc    : the default path grouping policy to apply to unspecified
-	#           multipaths
-	# default : multibus
-	#
-	default_path_grouping_policy	multibus
-
-	#
-	# name    : default_getuid_callout
-	# scope   : multipath
-	# desc    : the default program and args to callout to obtain a unique 
-	#           path identifier. Absolute path required
-	# default : /sbin/scsi_id -g -u -s
-	#
-	default_getuid_callout	"/sbin/scsi_id -g -u -s /block/%n"
-
-	#
-	# name    : default_prio_callout
-	# scope   : multipath
-	# desc    : the default program and args to callout to obtain a path 
-	#           priority value. The ALUA bits in SPC-3 provide an
-	#           exploitable prio value for example. "none" is a valid value
-	# default : (null)
-	#
-	#default_prio_callout	"/bin/true"
-
-	#
-	# name    : rr_min_io
-	# scope   : multipath
-	# desc    : the number of IO to route to a path before switching
-	#           to the next in the same path group
-	# default : 1000
-	#
-	r_min_io	100
-}
-	
+#	#
+#	# name    : udev_dir
+#	# desc    : directory where udev creates its device nodes
+#	# default : /udev
+#	#
+#	udev_dir	/dev
 #
-# name    : blacklist
-# scope   : multipath & multipathd
-# desc    : list of device names to discard as not multipath candidates
-# default : cciss, fd, hd, md, dm, sr, scd, st, ram, raw, loop
+#	#
+#	# name    : polling_interval
+#	# scope   : multipathd
+#	# desc    : interval between two path checks in seconds
+#	# default : 5
+#	#
+#	polling_interval 10
 #
-blacklist {
-        wwid 26353900f02796769
-	devnode "(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"
-	devnode "hd[a-z][[0-9]*]"
-	devnode "cciss!c[0-9]d[0-9]*[p[0-9]*]"
-}
-
+#	#
+#	# name    : default_selector
+#	# scope   : multipath
+#	# desc    : the default path selector algorithm to use
+#	#           these algorithms are offered by the kernel multipath target
+#	# values  : "round-robin 0"
+#	# default : "round-robin 0"
+#	#
+#	default_selector	"round-robin 0"
 #
-# name    : multipaths
-# scope   : multipath & multipathd
-# desc    : list of multipaths finest-grained settings
+#	#
+#	# name    : default_path_grouping_policy
+#	# scope   : multipath
+#	# desc    : the default path grouping policy to apply to unspecified
+#	#           multipaths
+#	# default : multibus
+#	#
+#	default_path_grouping_policy	multibus
 #
-multipaths {
-	#
-	# name  : multipath
-	# scope : multipath & multipathd
-	# desc  : container for settings that apply to one specific multipath
-	#
-	multipath {
-		#
-		# name  : wwid
-		# scope : multipath & multipathd
-		# desc  : index of the container
-		#
-		wwid			3600508b4000156d700012000000b0000
-
-		#
-		# name    : alias
-		# scope   : multipath
-		# desc    : symbolic name for the multipath
-		#
-		alias			yellow
-
-		#
-		# name    : path_grouping_policy
-		# scope   : multipath
-		# desc    : path grouping policy to apply to this multipath
-		# values  : failover, multibus, group_by_serial
-		# default : failover
-		#
-		path_grouping_policy	multibus
-
-		#
-		# name    : path_checker
-		# scope   : multipathd
-		# desc    : path checking alorithm to use to check path state
-		# values  : readsector0, tur
-		# default : readsector0
-		#
-		# path_checker		readsector0
-		
-		#
-		# name    : path_selector
-		# desc    : the path selector algorithm to use for this mpath
-		#           these algo are offered by the kernel mpath target
-		# values  : "round-robin 0"
-		# default : "round-robin 0"
-		#
-		path_selector		"round-robin 0"
-	}
-	multipath {
-		wwid	1DEC_____321816758474
-		alias	red
-	}
-}
-
+#	#
+#	# name    : default_getuid_callout
+#	# scope   : multipath
+#	# desc    : the default program and args to callout to obtain a unique 
+#	#           path identifier. Absolute path required
+#	# default : /sbin/scsi_id -g -u -s
+#	#
+#	default_getuid_callout	"/sbin/scsi_id -g -u -s /block/%n"
 #
-# name  : devices
-# scope : multipath & multipathd
-# desc  : list of per storage controler settings
-#	  overrides default settings (device_maps block)
-#         overriden by per multipath settings (multipaths block)
+#	#
+#	# name    : default_prio_callout
+#	# scope   : multipath
+#	# desc    : the default program and args to callout to obtain a path 
+#	#           priority value. The ALUA bits in SPC-3 provide an
+#	#           exploitable prio value for example. "none" is a valid value
+#	# default : (null)
+#	#
+#	#default_prio_callout	"/bin/true"
 #
-devices {
-	#
-	# name  : device
-	# scope : multipath & multipathd
-	# desc  : settings for this specific storage controler
-	#
-	device {
-		#
-		# name  : vendor, product
-		# scope : multipath & multipathd
-		# desc  : index for the block
-		#
-		vendor			"COMPAQ  "
-		product			"HSV110 (C)COMPAQ"
-
-		#
-		# name    : path_grouping_policy
-		# scope   : multipath
-		# desc    : path grouping policy to apply to multipath hosted
-		#           by this storage controler
-		# values  : failover        = 1 path per priority group
-		#           multibus        = all valid paths in 1 priority
-		#                             group
-		#           group_by_serial = 1 priority group per detected
-		#                             serial number
-		# default : failover
-		#
-		path_grouping_policy	multibus
-
-		#
-		# name    : getuid_callout
-		# scope   : multipath
-		# desc    : the program and args to callout to obtain a unique 
-		#           path identifier. Absolute path required
-		# default : /sbin/scsi_id -g -u -s
-		#
-		getuid_callout          "/sbin/scsi_id -g -u -s /block/%n"
-
-		#
-		# name    : prio_callout
-		# scope   : multipath
-		# desc    : the program and args to callout to obtain a path 
-		#           weight. Weights are summed for each path group to
-		#	    determine the next PG to use case of failure.
-		#	    "none" is a valid value.
-		# default : no callout, all paths equals
-		#
-		prio_callout          "/sbin/pp_balance_units %d"
-
-		#
-		# name    : path_checker
-		# scope   : multipathd
-		# desc    : path checking alorithm to use to check path state
-		# values  : readsector0, tur
-		# default : readsector0
-		#
-		path_checker		readsector0
-
-		#
-		# name    : path_selector
-		# desc    : the path selector algorithm to use for this mpath
-		#           these algo are offered by the kernel mpath target
-		# values  : "round-robin 0"
-		# default : "round-robin 0"
-		#
-		path_selector		"round-robin 0"
-	}
-	device {
-		vendor			"COMPAQ  "
-		product			"MSA1000         "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"COMPAQ  "
-		product			"MSA1000 VOLUME  "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"DEC     "
-		product			"HSG80           "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"HP      "
-		product			"HSV100          "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"3PARdata"
-		product			"VV              "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"DDN     "
-		product			"SAN DataDirector"
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"FSC     "
-		product			"CentricStor     "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"HITACHI "
-		product			"DF400           "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"HITACHI "
-		product			"DF500           "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"HITACHI "
-		product			"DF600           "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"IBM     "
-		product			"ProFibre 4000R  "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"IBM     "
-		product			"3542            "
-		path_grouping_policy	group_by_serial
-		path_checker		tur
-	}
-	device {
-		vendor			"SGI     "
-		product			"TP9100          "
-		vendor			"COMPAQ  "
-		product			"MSA1000         "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"SGI     "
-		product			"TP9300          "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"SGI     "
-		product			"TP9400          "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		vendor			"SGI     "
-		product			"TP9500          "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		# all paths active but with a switchover latency
-		# LSI controlers
-		vendor			"STK     "
-		product			"OPENstorage D280"
-		path_grouping_policy	group_by_serial
-		path_checker		tur
-	}
-	device {
-		# assymmetric array
-		vendor			"SUN     "
-		product			"StorEdge 3510   "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-	device {
-		# symmetric array
-		vendor			"SUN     "
-		product			"T4              "
-		path_grouping_policy	multibus
-		path_checker		tur
-	}
-}
+#	#
+#	# name    : rr_min_io
+#	# scope   : multipath
+#	# desc    : the number of IO to route to a path before switching
+#	#           to the next in the same path group
+#	# default : 1000
+#	#
+#	r_min_io	100
+#}
+#	
+##
+## name    : blacklist
+## scope   : multipath & multipathd
+## desc    : list of device names to discard as not multipath candidates
+## default : cciss, fd, hd, md, dm, sr, scd, st, ram, raw, loop
+##
+#blacklist {
+#        wwid 26353900f02796769
+#	devnode "(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"
+#	devnode "hd[a-z][[0-9]*]"
+#	devnode "cciss!c[0-9]d[0-9]*[p[0-9]*]"
+#}
+#
+##
+## name    : multipaths
+## scope   : multipath & multipathd
+## desc    : list of multipaths finest-grained settings
+##
+#multipaths {
+#	#
+#	# name  : multipath
+#	# scope : multipath & multipathd
+#	# desc  : container for settings that apply to one specific multipath
+#	#
+#	multipath {
+#		#
+#		# name  : wwid
+#		# scope : multipath & multipathd
+#		# desc  : index of the container
+#		#
+#		wwid			3600508b4000156d700012000000b0000
+#
+#		#
+#		# name    : alias
+#		# scope   : multipath
+#		# desc    : symbolic name for the multipath
+#		#
+#		alias			yellow
+#
+#		#
+#		# name    : path_grouping_policy
+#		# scope   : multipath
+#		# desc    : path grouping policy to apply to this multipath
+#		# values  : failover, multibus, group_by_serial
+#		# default : failover
+#		#
+#		path_grouping_policy	multibus
+#
+#		#
+#		# name    : path_checker
+#		# scope   : multipathd
+#		# desc    : path checking alorithm to use to check path state
+#		# values  : readsector0, tur
+#		# default : readsector0
+#		#
+#		# path_checker		readsector0
+#		
+#		#
+#		# name    : path_selector
+#		# desc    : the path selector algorithm to use for this mpath
+#		#           these algo are offered by the kernel mpath target
+#		# values  : "round-robin 0"
+#		# default : "round-robin 0"
+#		#
+#		path_selector		"round-robin 0"
+#	}
+#	multipath {
+#		wwid	1DEC_____321816758474
+#		alias	red
+#	}
+#}
+#
+##
+## name  : devices
+## scope : multipath & multipathd
+## desc  : list of per storage controler settings
+##	  overrides default settings (device_maps block)
+##         overriden by per multipath settings (multipaths block)
+##
+#devices {
+#	#
+#	# name  : device
+#	# scope : multipath & multipathd
+#	# desc  : settings for this specific storage controler
+#	#
+#	device {
+#		#
+#		# name  : vendor, product
+#		# scope : multipath & multipathd
+#		# desc  : index for the block
+#		#
+#		vendor			"COMPAQ  "
+#		product			"HSV110 (C)COMPAQ"
+#
+#		#
+#		# name    : path_grouping_policy
+#		# scope   : multipath
+#		# desc    : path grouping policy to apply to multipath hosted
+#		#           by this storage controler
+#		# values  : failover        = 1 path per priority group
+#		#           multibus        = all valid paths in 1 priority
+#		#                             group
+#		#           group_by_serial = 1 priority group per detected
+#		#                             serial number
+#		# default : failover
+#		#
+#		path_grouping_policy	multibus
+#
+#		#
+#		# name    : getuid_callout
+#		# scope   : multipath
+#		# desc    : the program and args to callout to obtain a unique 
+#		#           path identifier. Absolute path required
+#		# default : /sbin/scsi_id -g -u -s
+#		#
+#		getuid_callout          "/sbin/scsi_id -g -u -s /block/%n"
+#
+#		#
+#		# name    : prio_callout
+#		# scope   : multipath
+#		# desc    : the program and args to callout to obtain a path 
+#		#           weight. Weights are summed for each path group to
+#		#	    determine the next PG to use case of failure.
+#		#	    "none" is a valid value.
+#		# default : no callout, all paths equals
+#		#
+#		prio_callout          "/sbin/pp_balance_units %d"
+#
+#		#
+#		# name    : path_checker
+#		# scope   : multipathd
+#		# desc    : path checking alorithm to use to check path state
+#		# values  : readsector0, tur
+#		# default : readsector0
+#		#
+#		path_checker		readsector0
+#
+#		#
+#		# name    : path_selector
+#		# desc    : the path selector algorithm to use for this mpath
+#		#           these algo are offered by the kernel mpath target
+#		# values  : "round-robin 0"
+#		# default : "round-robin 0"
+#		#
+#		path_selector		"round-robin 0"
+#	}
+#	device {
+#		vendor			"COMPAQ  "
+#		product			"MSA1000         "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"COMPAQ  "
+#		product			"MSA1000 VOLUME  "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"DEC     "
+#		product			"HSG80           "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"HP      "
+#		product			"HSV100          "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"3PARdata"
+#		product			"VV              "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"DDN     "
+#		product			"SAN DataDirector"
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"FSC     "
+#		product			"CentricStor     "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"HITACHI "
+#		product			"DF400           "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"HITACHI "
+#		product			"DF500           "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"HITACHI "
+#		product			"DF600           "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"IBM     "
+#		product			"ProFibre 4000R  "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"IBM     "
+#		product			"3542            "
+#		path_grouping_policy	group_by_serial
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"SGI     "
+#		product			"TP9100          "
+#		vendor			"COMPAQ  "
+#		product			"MSA1000         "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"SGI     "
+#		product			"TP9300          "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"SGI     "
+#		product			"TP9400          "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		vendor			"SGI     "
+#		product			"TP9500          "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		# all paths active but with a switchover latency
+#		# LSI controlers
+#		vendor			"STK     "
+#		product			"OPENstorage D280"
+#		path_grouping_policy	group_by_serial
+#		path_checker		tur
+#	}
+#	device {
+#		# assymmetric array
+#		vendor			"SUN     "
+#		product			"StorEdge 3510   "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#	device {
+#		# symmetric array
+#		vendor			"SUN     "
+#		product			"T4              "
+#		path_grouping_policy	multibus
+#		path_checker		tur
+#	}
+#}
