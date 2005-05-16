@@ -39,6 +39,7 @@
 #include <propsel.h>
 #include <discovery.h>
 #include <debug.h>
+#include <switchgroup.h>
 #include <sysfs/libsysfs.h>
 
 #include "main.h"
@@ -395,9 +396,7 @@ static int
 setup_map (struct multipath * mpp)
 {
 	struct path * pp;
-	struct pathgroup * pgp;
-	int i, j;
-	int highest = 0;
+	int i;
 
 	/*
 	 * don't bother if devmap size is unknown
@@ -456,19 +455,9 @@ setup_map (struct multipath * mpp)
 
 	/*
 	 * ponders each path group and determine highest prio pg
+	 * to switch over (default to first)
 	 */
-	mpp->nextpg = 1;
-	vector_foreach_slot (mpp->pg, pgp, i) {
-		vector_foreach_slot (pgp->paths, pp, j) {
-			pgp->id ^= (long)pp;
-			if (pp->state != PATH_DOWN)
-				pgp->priority += pp->priority;
-		}
-		if (pgp->priority > highest) {
-			highest = pgp->priority;
-			mpp->nextpg = i + 1;
-		}
-	}
+	select_path_group(mpp);
 
 	/*
 	 * transform the mp->pg vector of vectors of paths

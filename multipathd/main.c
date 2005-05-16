@@ -47,6 +47,7 @@
 #include <debug.h>
 #include <propsel.h>
 #include <uevent.h>
+#include <switchgroup.h>
 
 #include "main.h"
 #include "copy.h"
@@ -89,6 +90,7 @@ pthread_cond_t *event;
 struct paths {
 	pthread_mutex_t *lock;
 	vector pathvec;
+	vector mpvec;
 };
 
 struct event_thread {
@@ -208,118 +210,113 @@ set_paths_owner (struct paths * allpaths, struct multipath * mpp)
 	int i;
 	struct path * pp;
 
-	vector_foreach_slot (allpaths->pathvec, pp, i)
-		if (!strncmp(mpp->wwid, pp->wwid, WWID_SIZE))
+	vector_foreach_slot (allpaths->pathvec, pp, i) {
+		if (!strncmp(mpp->wwid, pp->wwid, WWID_SIZE)) {
+			log_safe(LOG_DEBUG, "%s ownership set",
+				 pp->dev_t);
 			pp->mpp = mpp;
+		}
+	}
+}
 
+static int
+setup_multipath (struct paths * allpaths, struct multipath * mpp)
+{
+	char * wwid;
+
+	wwid = get_mpe_wwid(mpp->alias);
+
+	if (wwid) {
+		strncpy(mpp->wwid, wwid, WWID_SIZE);
+		wwid = NULL;
+	} else
+		strncpy(mpp->wwid, mpp->alias, WWID_SIZE);
+
+	log_safe(LOG_DEBUG, "discovered map %s", mpp->alias);
+
+	if(disassemble_map(allpaths->pathvec, mpp->params, mpp))
+		goto out;
+
+	if(disassemble_status(mpp->status, mpp))
+		goto out;
+
+	set_paths_owner(allpaths, mpp);
+	return 0;
+out:
+	free_multipath(mpp, KEEP_PATHS);
+	return 1;
 }
 
 /*
  * caller must have locked the path list before calling that function
  */
 static int
-get_dm_mpvec (vector mpvec, struct paths * allpaths)
+get_dm_mpvec (struct paths * allpaths)
 {
 	int i;
 	struct multipath * mpp;
-	char * wwid;
 
-	if (dm_get_maps(mpvec, "multipath"))
+	if (dm_get_maps(allpaths->mpvec, "multipath"))
 		return 1;
 
-	vector_foreach_slot (mpvec, mpp, i) {
-		wwid = get_mpe_wwid(mpp->alias);
-
-		if (wwid) {
-			strncpy(mpp->wwid, wwid, WWID_SIZE);
-			wwid = NULL;
-		} else
-			strncpy(mpp->wwid, mpp->alias, WWID_SIZE);
-
-		set_paths_owner(allpaths, mpp);
-        }
-        return 0;
-}
-
-static int
-path_discovery_locked (struct paths *allpaths)
-{
-	lock(allpaths->lock);
-	path_discovery(allpaths->pathvec, conf, DI_SYSFS | DI_WWID);
-	unlock(allpaths->lock);
+	vector_foreach_slot (allpaths->mpvec, mpp, i)
+		setup_multipath(allpaths, mpp);
 
 	return 0;
 }
 
 static int
-mark_failed_path (struct paths *allpaths, char *mapname)
+update_multipath (struct paths *allpaths, char *mapname)
 {
 	struct multipath *mpp;
 	struct pathgroup  *pgp;
 	struct path *pp;
-	struct path *app;
 	int i, j;
 	int r = 1;
 
-	if (!dm_map_present(mapname))
-		return 0;
-
-	mpp = alloc_multipath();
+	lock(allpaths->lock);
+	mpp = find_mp(allpaths->mpvec, mapname);
 
 	if (!mpp)
-		return 1;
-
-	if (dm_get_map(mapname, &mpp->size, (char *)mpp->params))
 		goto out;
 
-	if (dm_get_status(mapname, mpp->status))
-		goto out;
-	
-	lock(allpaths->lock);
-	r = disassemble_map(allpaths->pathvec, mpp->params, mpp);
-	unlock(allpaths->lock);
-	
-	if (r)
-		goto out;
+	free_pgvec(mpp->pg, KEEP_PATHS);
+	mpp->pg = NULL;
 
-	r = disassemble_status(mpp->status, mpp);
+	dm_get_map(mapname, &mpp->size, mpp->params);
+	dm_get_status(mapname, mpp->status);
+	setup_multipath(allpaths, mpp);
 
-	if (r)
-		goto out;
-
-	r = 0; /* can't fail from here on */
-	lock(allpaths->lock);
-
+	/*
+	 * compare checkers states with DM states
+	 */
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		vector_foreach_slot (pgp->paths, pp, j) {
 			if (pp->dmstate != PSTATE_FAILED)
 				continue;
 
-			app = find_path_by_devt(allpaths->pathvec, pp->dev_t);
-
-			if (app && app->state != PATH_DOWN) {
+			if (pp->state != PATH_DOWN) {
 				log_safe(LOG_NOTICE, "%s: mark as failed",
 					pp->dev_t);
-				app->state = PATH_DOWN;
+				pp->state = PATH_DOWN;
 
 				/*
 				 * if opportune,
 				 * schedule the next check earlier
 				 */
-				if (app->tick > conf->checkint)
-					app->tick = conf->checkint;
+				if (pp->tick > conf->checkint)
+					pp->tick = conf->checkint;
 			}
 		}
 	}
-	unlock(allpaths->lock);
+	r = 0;
 out:
-	free_multipath(mpp, KEEP_PATHS);
-
+	unlock(allpaths->lock);
 	return r;
 }
 
 static void *
-waiteventloop (struct event_thread * waiter, char * cmd)
+waiteventloop (struct event_thread * waiter)
 {
 	struct dm_task *dmt;
 	int event_nr;
@@ -346,11 +343,14 @@ waiteventloop (struct event_thread * waiter, char * cmd)
 	 * upon event ...
 	 */
 	while (1) {
-		log_safe(LOG_DEBUG, "%s", cmd);
 		log_safe(LOG_NOTICE, "devmap event (%i) on %s",
 				waiter->event_nr, waiter->mapname);
 
-		mark_failed_path(waiter->allpaths, waiter->mapname);
+		/*
+		 * event might be a table reload, which means our mpp
+		 * structure is obsolete. Refresh it.
+		 */
+		update_multipath(waiter->allpaths, waiter->mapname);
 
 		event_nr = dm_geteventnr(waiter->mapname);
 
@@ -375,7 +375,6 @@ static void *
 waitevent (void * et)
 {
 	struct event_thread *waiter;
-	char cmd[CMDSIZE];
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -383,15 +382,9 @@ waitevent (void * et)
 	lock(waiter->waiter_lock);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
 
-	if (safe_snprintf(cmd, CMDSIZE, "%s %s",
-			  conf->multipath, waiter->mapname)) {
-		log_safe(LOG_ERR, "command too long, abord reconfigure");
-		goto out;
-	}
 	while (1)
-		waiteventloop(waiter, cmd);
+		waiteventloop(waiter);
 
-out:
 	/*
 	 * release waiter_lock so that waiterloop knows we are gone
 	 */
@@ -457,7 +450,6 @@ waiterloop (void *ap)
 {
 	struct paths *allpaths;
 	struct multipath *mpp;
-	vector mpvec = NULL;
 	vector waiters;
 	struct event_thread *wp;
 	pthread_attr_t attr;
@@ -466,11 +458,6 @@ waiterloop (void *ap)
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	log_safe(LOG_NOTICE, "start DM events thread");
-
-	if (sysfs_get_mnt_path(sysfs_path, FILE_NAME_SIZE)) {
-		log_safe(LOG_ERR, "can not find sysfs mount point");
-		return NULL;
-	}
 
 	/*
 	 * inits
@@ -486,20 +473,6 @@ waiterloop (void *ap)
 
 	pthread_attr_setstacksize(&attr, 32 * 1024);
 
-	/*
-	 * update paths list
-	 */
-	while(path_discovery_locked(allpaths)) {
-		if (r) {
-			/* log only once */
-			log_safe(LOG_ERR, "can't update path list ... retry");
-			r = 0;
-		}
-		sleep(5);
-	}
-	log_safe(LOG_INFO, "path list updated");
-
-
 	while (1) {
 		/*
 		 * revoke the leases
@@ -507,45 +480,14 @@ waiterloop (void *ap)
 		vector_foreach_slot(waiters, wp, i)
 			wp->lease = 0;
 
-		/*
-		 * abuse the path list lock to protect against
-		 * pp->mpp use while pointing nowhere
-		 */
 		lock(allpaths->lock);
-
-		/*
-		 * update multipaths list
-		 */
-		while (1) {
-			if (mpvec) {
-				free_multipathvec(mpvec, KEEP_PATHS);
-				mpvec = NULL;
-			}
-
-			/*
-			 * we're not allowed to fail here
-			 */
-			mpvec = vector_alloc();
-
-			if (mpvec && !get_dm_mpvec(mpvec, allpaths))
-				break;
-
-			if (!r) {
-				/* log only once */
-				log_safe(LOG_ERR, "can't get mpvec ... retry");
-				r = 1;
-			}
-			sleep(5);
-		}
-		log_safe(LOG_INFO, "multipath list updated");
-		unlock(allpaths->lock);
 
 		/*
 		 * start waiters on all mpvec
 		 */
 		log_safe(LOG_INFO, "start up event loops");
 
-		vector_foreach_slot (mpvec, mpp, i) {
+		vector_foreach_slot (allpaths->mpvec, mpp, i) {
 			/*
 			 * find out if devmap already has
 			 * a running waiter thread
@@ -608,6 +550,8 @@ waiterloop (void *ap)
 			log_safe(LOG_NOTICE, "event checker started : %s",
 					wp->mapname);
 		}
+		unlock(allpaths->lock);
+
 		vector_foreach_slot (waiters, wp, i) {
 			if (wp->lease == 0) {
 				log_safe(LOG_NOTICE, "reap event checker : %s",
@@ -640,6 +584,32 @@ waiterloop (void *ap)
  * caller must have locked the path list before calling that function
  */
 static void
+switch_pathgroup (struct multipath * mpp)
+{
+	struct pathgroup * pgp;
+	struct path * pp;
+	int i, j;
+	
+	if (!mpp || mpp->pgfailback == FAILBACK_MANUAL)
+		return;
+
+	/*
+	 * Refresh path priority values
+	 */
+	vector_foreach_slot (mpp->pg, pgp, i)
+		vector_foreach_slot (pgp->paths, pp, j)
+			pathinfo(pp, conf->hwtable, DI_PRIO);
+
+	select_path_group(mpp);
+	dm_switchgroup(mpp->alias, mpp->nextpg);
+	log_safe(LOG_NOTICE, "%s: switch to path group #%i",
+		 mpp->alias, mpp->nextpg);
+}
+
+/*
+ * caller must have locked the path list before calling that function
+ */
+static void
 reinstate_path (struct path * pp)
 {
 	if (pp->mpp) {
@@ -657,8 +627,6 @@ checkerloop (void *ap)
 	struct path *pp;
 	int i;
 	int newstate;
-	char buff[1];
-	char cmd[CMDSIZE];
 	char checker_msg[MAX_CHECKER_MSG_SIZE];
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -725,19 +693,9 @@ checkerloop (void *ap)
 				reinstate_path(pp);
 
 				/*
-				 * only for switchgroup now
+				 * need to switch group ?
 				 */
-				if (safe_snprintf(cmd, CMDSIZE, "%s %s",
-						  conf->multipath, pp->dev_t)) {
-					log_safe(LOG_ERR, "command too long,"
-							" abord reconfigure");
-				} else {
-					log_safe(LOG_DEBUG, "%s", cmd);
-					log_safe(LOG_INFO,
-						"%s: reconfigure multipath",
-						pp->dev_t);
-					execute_program(cmd, buff, 1);
-				}
+				switch_pathgroup(pp->mpp);
 
 				/*
 				 * tell waiterloop we have an event
@@ -788,9 +746,17 @@ init_paths (void)
 	if (!allpaths->pathvec)
 		goto out1;
 		
-	pthread_mutex_init (allpaths->lock, NULL);
+	allpaths->mpvec = vector_alloc();
 
-	return (allpaths);
+	if (!allpaths->mpvec)
+		goto out2;
+	
+	pthread_mutex_init(allpaths->lock, NULL);
+
+	return allpaths;
+
+out2:
+	vector_free(allpaths->pathvec);
 out1:
 	FREE(allpaths->lock);
 out:
@@ -1038,12 +1004,25 @@ child (void * param)
 	if (!allpaths || init_event())
 		exit(1);
 
+	if (sysfs_get_mnt_path(sysfs_path, FILE_NAME_SIZE)) {
+		log_safe(LOG_ERR, "can not find sysfs mount point");
+		exit(1);
+	}
+
 #ifdef CLONE_NEWNS
 	if (prepare_namespace() < 0) {
 		log_safe(LOG_ERR, "cannot prepare namespace");
 		exit_daemon(1);
 	}
 #endif
+
+	/*
+	 * fetch paths and multipaths lists
+	 * no paths and/or no multipaths are valid scenarii
+	 * vectors maintenance will be driven by events
+	 */
+	path_discovery(allpaths->pathvec, conf, DI_SYSFS | DI_WWID);
+	get_dm_mpvec(allpaths);
 
 	/*
 	 * start threads

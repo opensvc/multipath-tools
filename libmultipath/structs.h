@@ -17,6 +17,9 @@
 #define KEEP_PATHS		0
 #define FREE_PATHS		1
 
+#define FAILBACK_MANUAL		-1
+#define FAILBACK_IMMEDIATE	0
+
 enum pathstates {
 	PSTATE_RESERVED,
 	PSTATE_FAILED,
@@ -89,6 +92,7 @@ struct multipath {
 	int nextpg;
 	int queuedio;
 	int action;
+	int pgfailback;
 	unsigned long size;
 	vector paths;
 	vector pg;
@@ -105,7 +109,6 @@ struct multipath {
 };
 
 struct pathgroup {
-	long id;
 	int status;
 	int priority;
 	vector paths;

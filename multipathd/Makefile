@@ -18,6 +18,13 @@ CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes \
 LDFLAGS = -lpthread -ldevmapper -lsysfs
 
 #
+# debuging stuff
+#
+#CFLAGS += -DLOG_THREAD_DISABLE
+#CFLAGS += -DLCKDBG
+#CFLAGS += -D_DEBUG_
+
+#
 # object files
 #
 OBJS = main.o copy.o log.o log_pthread.o pidfile.o \

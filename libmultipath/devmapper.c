@@ -413,8 +413,7 @@ dm_get_maps (vector mp, char * type)
 
 	do {
 		if (dm_type(names->name, type)) {
-			mpp = (struct multipath *)
-				MALLOC(sizeof(struct multipath));
+			mpp = alloc_multipath();
 
 			if (!mpp)
 				goto out;

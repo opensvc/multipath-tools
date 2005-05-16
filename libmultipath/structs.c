@@ -101,7 +101,15 @@ free_pgvec (vector pgvec, int free_paths)
 struct multipath *
 alloc_multipath (void)
 {
-	return (struct multipath *)MALLOC(sizeof(struct multipath));
+	struct multipath * mpp;
+
+	mpp = (struct multipath *)MALLOC(sizeof(struct multipath));
+
+	if (mpp) {
+		mpp->pgfailback = FAILBACK_IMMEDIATE;
+		mpp->nextpg = 1;
+	}
+	return mpp;
 }
 
 void

@@ -255,8 +255,6 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 			if (store_path(pgp->paths, pp))
 				goto out;
 
-			pgp->id ^= (long)pp;
-
 			if (!strlen(mpp->wwid))
 				strncpy(mpp->wwid, pp->wwid, WWID_SIZE);
 
