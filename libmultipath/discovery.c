@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 
 #include <sysfs/dlist.h>
 #include <sysfs/libsysfs.h>
@@ -98,6 +99,26 @@ out:
 	return r;
 }
 
+#define WAIT_MAX_SECONDS 5
+#define WAIT_LOOP_PER_SECOND 5
+
+static int
+wait_sysfs_attr (char * filename)
+{
+	int loop;
+	struct stat stats;
+	
+	loop = WAIT_MAX_SECONDS * WAIT_LOOP_PER_SECOND;
+	
+	while (--loop) {
+		if (stat(filename, &stats) == 0)
+			return 0;
+
+		usleep(1000 * 1000 / WAIT_LOOP_PER_SECOND);
+	}
+	return 1;
+}	
+			
 #define declare_sysfs_get_str(fname, fmt) \
 extern int \
 sysfs_get_##fname (char * sysfs_path, char * dev, char * buff, int len) \
@@ -106,8 +127,12 @@ sysfs_get_##fname (char * sysfs_path, char * dev, char * buff, int len) \
 	char attr_buff[SYSFS_PATH_SIZE]; \
 	int attr_len; \
 \
-	if(safe_sprintf(attr_path, fmt, sysfs_path, dev)) \
+	if (safe_sprintf(attr_path, fmt, sysfs_path, dev)) \
 		return 1; \
+\
+	if (wait_sysfs_attr(attr_path)) \
+		return 1; \
+\
 	if (0 > sysfs_read_attribute_value(attr_path, attr_buff, sizeof(attr_buff))) \
 		return 1; \
 \
@@ -132,8 +157,12 @@ sysfs_get_##fname (char * sysfs_path, char * dev) \
 	char attr_path[SYSFS_PATH_SIZE]; \
 	char attr_buff[SYSFS_PATH_SIZE]; \
 \
-	if(safe_sprintf(attr_path, fmt, sysfs_path, dev)) \
+	if (safe_sprintf(attr_path, fmt, sysfs_path, dev)) \
 		return 0; \
+\
+	if (wait_sysfs_attr(attr_path)) \
+		return 0; \
+\
 	if (0 > sysfs_read_attribute_value(attr_path, attr_buff, sizeof(attr_buff))) \
 		return 0; \
 \
