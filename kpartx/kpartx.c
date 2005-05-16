@@ -429,6 +429,9 @@ main(int argc, char **argv){
 		if (n > 0)
 			break;
 	}
+	dm_lib_release();
+	dm_lib_exit();
+
 	return 0;
 }
 

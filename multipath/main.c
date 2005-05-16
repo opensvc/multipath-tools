@@ -1004,6 +1004,8 @@ out:
 	free_multipathvec(curmp, KEEP_PATHS);
 	free_pathvec(pathvec, FREE_PATHS);
 	free_config(conf);
+	dm_lib_release();
+	dm_lib_exit();
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
 #endif
