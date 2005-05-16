@@ -21,7 +21,7 @@
 #define readattr(a,b) \
 	sysfs_read_attribute_value(a, b, sizeof(b))
 
-int
+struct path *
 store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag)
 {
 	struct path * pp;
@@ -29,7 +29,7 @@ store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag)
 	pp = alloc_path();
 
 	if (!pp)
-		return 1;
+		return NULL;
 
 	if(safe_sprintf(pp->dev, "%s", devname)) {
 		fprintf(stderr, "pp->dev too small\n");
@@ -40,10 +40,10 @@ store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag)
 
 	pathinfo(pp, hwtable, flag);
 
-	return 0;
+	return pp;
 out:
 	free_path(pp);
-	return 1;
+	return NULL;
 }
 int
 path_discovery (vector pathvec, struct config * conf, int flag)
@@ -81,7 +81,7 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 			 * new path : alloc, store and fetch info
 			 * the caller wants
 			 */
-			if (store_pathinfo(pathvec, conf->hwtable,
+			if (!store_pathinfo(pathvec, conf->hwtable,
 					   devp->name, flag))
 				goto out;
 		} else {

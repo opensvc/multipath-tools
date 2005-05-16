@@ -148,15 +148,22 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	r = 1;
 
 	if (pp && !strncmp(uev->action, "remove", 6)) {
-		condlog(2, "remove %s path checker", devname);
+		log_safe(LOG_NOTICE, "remove %s path checker", devname);
 		i = find_slot(allpaths->pathvec, (void *)pp);
 		vector_del_slot(allpaths->pathvec, i);
 		free_path(pp);
 	}
 	if (!pp && !strncmp(uev->action, "add", 3)) {
-		condlog(2, "add %s path checker", devname);
-		store_pathinfo(allpaths->pathvec, conf->hwtable,
+		log_safe(LOG_NOTICE, "add %s path checker", devname);
+		pp = store_pathinfo(allpaths->pathvec, conf->hwtable,
 			       devname, DI_SYSFS | DI_WWID);
+
+		if (!pp)
+			goto out;
+
+		pp->mpp = find_mp_by_wwid(allpaths->mpvec, pp->wwid);
+		log_safe(LOG_DEBUG, "%s: ownership set to %s",
+			 pp->dev_t, pp->mpp->alias);
 	}
 	unlock(allpaths->lock);
 

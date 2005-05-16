@@ -182,6 +182,19 @@ store_pathgroup (vector pgvec, struct pathgroup * pgp)
 }
 
 struct multipath *
+find_mp_by_wwid (vector mp, char * wwid)
+{
+	int i;
+	struct multipath * mpp;
+	
+	vector_foreach_slot (mp, mpp, i)
+		if (!strncmp(mpp->wwid, wwid, WWID_SIZE))
+			return mpp;
+
+	return NULL;
+}
+
+struct multipath *
 find_mp (vector mp, char * alias)
 {
 	int i;
