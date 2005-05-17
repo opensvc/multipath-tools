@@ -182,6 +182,19 @@ store_pathgroup (vector pgvec, struct pathgroup * pgp)
 }
 
 struct multipath *
+find_mp_by_minor (vector mp, int minor)
+{
+	int i;
+	struct multipath * mpp;
+	
+	vector_foreach_slot (mp, mpp, i)
+		if (mpp->minor == minor)
+			return mpp;
+
+	return NULL;
+}
+
+struct multipath *
 find_mp_by_wwid (vector mp, char * wwid)
 {
 	int i;

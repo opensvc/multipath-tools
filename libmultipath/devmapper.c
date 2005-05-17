@@ -4,11 +4,15 @@
 #include <libdevmapper.h>
 #include <ctype.h>
 #include <linux/kdev_t.h>
+#include <unistd.h>
 
 #include "vector.h"
 #include "structs.h"
 #include "debug.h"
 #include "memory.h"
+
+#define MAX_WAIT 5
+#define LOOPS_PER_SEC 5
 
 extern int
 dm_prereq (char * str, int x, int y, int z)
@@ -240,6 +244,31 @@ dm_get_opencount (char * mapname)
 		goto out;
 
 	r = info.open_count;
+out:
+	dm_task_destroy(dmt);
+	return r;
+}
+	
+int
+dm_get_minor (char * mapname)
+{
+	int r = -1;
+	struct dm_task *dmt;
+	struct dm_info info;
+
+	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
+		return 0;
+
+	if (!dm_task_set_name(dmt, mapname))
+		goto out;
+
+	if (!dm_task_run(dmt))
+		goto out;
+
+	if (!dm_task_get_info(dmt, &info))
+		goto out;
+
+	r = info.minor;
 out:
 	dm_task_destroy(dmt);
 	return r;
@@ -482,3 +511,58 @@ out:
 
 	return info.event_nr;
 }
+
+char *
+dm_mapname(int major, int minor, char *type)
+{
+	struct dm_task *dmt;
+	void *next = NULL;
+	uint64_t start, length;
+	char *target_type = NULL;
+	char *params;
+	int r;
+	int loop = MAX_WAIT * LOOPS_PER_SEC;
+
+	if (!(dmt = dm_task_create(DM_DEVICE_STATUS)))
+		return NULL;
+
+	if (!dm_task_set_major(dmt, major) ||
+	    !dm_task_set_minor(dmt, minor))
+		goto bad;
+
+	dm_task_no_open_count(dmt);
+
+	/*
+	 * device map might not be ready when we get here from
+	 * uevent trigger
+	 */
+	while (--loop) {
+		r = dm_task_run(dmt);
+
+		if (r)
+			break;
+
+		usleep(1000 * 1000 / LOOPS_PER_SEC);
+	}
+
+	if (!r)
+		goto bad;
+
+	if (!type)
+		goto good;
+
+	do {
+		next = dm_get_next_target(dmt, next, &start, &length,
+					  &target_type, &params);
+		if (target_type && strcmp(target_type, type))
+			goto bad;
+	} while (next);
+
+good:
+	dm_task_destroy(dmt);
+	return strdup(dm_task_get_name(dmt));
+bad:
+	dm_task_destroy(dmt);
+	return NULL;
+}
+

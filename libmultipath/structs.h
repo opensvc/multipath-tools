@@ -88,6 +88,7 @@ struct path {
 
 struct multipath {
 	char wwid[WWID_SIZE];
+	int minor;
 	int pgpolicy;
 	int nextpg;
 	int queuedio;
@@ -106,6 +107,9 @@ struct multipath {
 	char * hwhandler;
 	struct mpentry * mpe;
 	struct hwentry * hwe;
+
+	/* daemon store a data blob for DM event waiter threads */
+	void * waiter;
 };
 
 struct pathgroup {
@@ -129,6 +133,7 @@ int store_pathgroup (vector pgvec, struct pathgroup * pgp);
 
 struct multipath * find_mp (vector mp, char * alias);
 struct multipath * find_mp_by_wwid (vector mp, char * wwid);
+struct multipath * find_mp_by_minor (vector mp, int minor);
 	
 struct path * find_path_by_devt (vector pathvec, char * devt);
 struct path * find_path_by_dev (vector pathvec, char * dev);
