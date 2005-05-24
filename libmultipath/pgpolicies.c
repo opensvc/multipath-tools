@@ -243,7 +243,7 @@ one_group (struct multipath * mp)	/* aka multibus */
 {
 	struct pathgroup * pgp;
 
-	if (VECTOR_SIZE(pgp->paths) < 0)
+	if (VECTOR_SIZE(mp->paths) < 0)
 		return 0;
 
 	if (!mp->pg)
