@@ -129,6 +129,25 @@ def_minio_handler(vector strvec)
 	return 0;
 }
 
+static int
+default_failback_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!strncmp(buff, "manual", 6))
+		conf->pgfailback = FAILBACK_MANUAL;
+	else if (!strncmp(buff, "immediate", 9))
+		conf->pgfailback = FAILBACK_IMMEDIATE;
+	else
+		conf->pgfailback = atoi(buff);
+
+	FREE(buff);
+
+	return 0;
+}
+
 /*
  * blacklist block handlers
  */
@@ -345,6 +364,29 @@ prio_callout_handler(vector strvec)
 	return push_callout(hwe->getprio);
 }
 
+static int
+hw_failback_handler(vector strvec)
+{
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+	char * buff;
+
+	if (!hwe)
+		return 1;
+
+	buff = set_value(strvec);
+
+	if (!strncmp(buff, "manual", 6))
+		hwe->pgfailback = FAILBACK_MANUAL;
+	else if (!strncmp(buff, "immediate", 9))
+		hwe->pgfailback = FAILBACK_IMMEDIATE;
+	else
+		hwe->pgfailback = atoi(buff);
+
+	FREE(buff);
+
+	return 0;
+}
+
 /*
  * multipaths block handlers
  */
@@ -446,6 +488,29 @@ mp_selector_handler(vector strvec)
 	return 0;
 }
 
+static int
+mp_failback_handler(vector strvec)
+{
+	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);
+	char * buff;
+
+	if (!mpe)
+		return 1;
+
+	buff = set_value(strvec);
+
+	if (!strncmp(buff, "manual", 6))
+		mpe->pgfailback = FAILBACK_MANUAL;
+	else if (!strncmp(buff, "immediate", 9))
+		mpe->pgfailback = FAILBACK_IMMEDIATE;
+	else
+		mpe->pgfailback = atoi(buff);
+
+	FREE(buff);
+
+	return 0;
+}
+
 vector
 init_keywords(void)
 {
@@ -460,6 +525,7 @@ init_keywords(void)
 	install_keyword("default_getuid_callout", &def_getuid_callout_handler);
 	install_keyword("default_prio_callout", &def_prio_callout_handler);
 	install_keyword("default_features", &def_features_handler);
+	install_keyword("failback", &default_failback_handler);
 	install_keyword("rr_min_io", &def_minio_handler);
 	
 	install_keyword_root("devnode_blacklist", &blacklist_handler);
@@ -478,6 +544,7 @@ init_keywords(void)
 	install_keyword("features", &hw_features_handler);
 	install_keyword("hardware_handler", &hw_handler_handler);
 	install_keyword("prio_callout", &prio_callout_handler);
+	install_keyword("failback", &hw_failback_handler);
 	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);
@@ -487,6 +554,7 @@ init_keywords(void)
 	install_keyword("alias", &alias_handler);
 	install_keyword("path_grouping_policy", &mp_pgpolicy_handler);
 	install_keyword("path_selector", &mp_selector_handler);
+	install_keyword("failback", &mp_failback_handler);
 	install_sublevel_end();
 
 	return keywords;

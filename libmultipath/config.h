@@ -16,6 +16,7 @@ struct hwentry {
 	int selector_args;
 	int pgpolicy;
 	int checker_index;
+	int pgfailback;
 
 	char * vendor;
 	char * product;
@@ -29,6 +30,7 @@ struct hwentry {
 struct mpentry {
 	int selector_args;
 	int pgpolicy;
+	int pgfailback;
 
 	char * wwid;
 	char * selector;
@@ -48,6 +50,7 @@ struct config {
 	int minio;
 	int checkint;
 	int max_checkint;
+	int pgfailback;
 
 	char * dev;
 	char * multipath;
@@ -71,6 +74,8 @@ extern int push_callout(char * callout);
 struct hwentry * find_hwe (vector hwtable, char * vendor, char * product);
 struct mpentry * find_mpe (char * wwid);
 char * get_mpe_wwid (char * alias);
+
+struct mpentry * alloc_mpe (void);
 
 void free_hwe (struct hwentry * hwe);
 void free_hwtable (vector hwtable);

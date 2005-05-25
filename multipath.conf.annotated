@@ -77,6 +77,17 @@
 #	# default : 1000
 #	#
 #	r_min_io	100
+#
+#	#
+#	# name    : failback
+#	# scope   : multipathd
+#	# desc    : tell the daemon to manage path group failback, or not to.
+#	#	    0 means immediate failback, values >0 means deffered failback
+#	#	    expressed in seconds.
+#	# values  : manual|immediate|n > 0
+#	# default : immediate
+#	#
+#	failback	manual
 #}
 #	
 ##
@@ -144,6 +155,17 @@
 #		# default : "round-robin 0"
 #		#
 #		path_selector		"round-robin 0"
+#
+#		#
+#		# name    : failback
+#		# scope   : multipathd
+#		# desc    : tell the daemon to manage path group failback, or not to.
+#		#	    0 means immediate failback, values >0 means deffered failback
+#		#	    expressed in seconds.
+#		# values  : manual|immediate|n > 0
+#		# default : immediate
+#		#
+#		failback		manual
 #	}
 #	multipath {
 #		wwid	1DEC_____321816758474
@@ -224,6 +246,17 @@
 #		# default : "round-robin 0"
 #		#
 #		path_selector		"round-robin 0"
+#
+#		#
+#		# name    : failback
+#		# scope   : multipathd
+#		# desc    : tell the daemon to manage path group failback, or not to.
+#		#	    0 means immediate failback, values >0 means deffered failback
+#		#	    expressed in seconds.
+#		# values  : manual|immediate|n > 0
+#		# default : immediate
+#		#
+#		failback		15
 #	}
 #	device {
 #		vendor			"COMPAQ  "

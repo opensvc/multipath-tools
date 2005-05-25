@@ -17,8 +17,9 @@
 #define KEEP_PATHS		0
 #define FREE_PATHS		1
 
+#define FAILBACK_UNDEF		0
 #define FAILBACK_MANUAL		-1
-#define FAILBACK_IMMEDIATE	0
+#define FAILBACK_IMMEDIATE	-2
 
 enum pathstates {
 	PSTATE_RESERVED,

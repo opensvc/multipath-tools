@@ -106,7 +106,6 @@ alloc_multipath (void)
 	mpp = (struct multipath *)MALLOC(sizeof(struct multipath));
 
 	if (mpp) {
-		mpp->pgfailback = FAILBACK_IMMEDIATE;
 		mpp->nextpg = 1;
 	}
 	return mpp;

@@ -1,3 +1,4 @@
+int select_pgfailback (struct multipath * mp);
 int select_pgpolicy (struct multipath * mp);
 int select_selector (struct multipath * mp);
 int select_alias (struct multipath * mp);

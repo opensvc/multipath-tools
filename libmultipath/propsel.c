@@ -14,6 +14,30 @@
  * stop at first explicit setting found
  */
 extern int
+select_pgfailback (struct multipath * mp)
+{
+condlog(3, "mpe = %i", mp->mpe->pgfailback);
+	if (mp->mpe && mp->mpe->pgfailback != FAILBACK_UNDEF) {
+		mp->pgfailback = mp->mpe->pgfailback;
+		condlog(3, "pgfailback = %i (LUN setting)", mp->pgfailback);
+		return 0;
+	}
+	if (mp->hwe && mp->hwe->pgfailback != FAILBACK_UNDEF) {
+		mp->pgfailback = mp->hwe->pgfailback;
+		condlog(3, "pgfailback = %i (controler setting)", mp->pgfailback);
+		return 0;
+	}
+	if (conf->pgfailback != FAILBACK_UNDEF) {
+		mp->pgfailback = conf->pgfailback;
+		condlog(3, "pgfailback = %i (config file default)", mp->pgfailback);
+		return 0;
+	}
+	mp->pgpolicy = FAILBACK_MANUAL;
+	condlog(3, "pgfailover = %s (internal default)", mp->pgfailback);
+	return 0;
+}
+
+extern int
 select_pgpolicy (struct multipath * mp)
 {
 	struct path * pp;

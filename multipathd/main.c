@@ -153,6 +153,9 @@ setup_multipath (struct paths * allpaths, struct multipath * mpp)
 		goto out;
 
 	set_paths_owner(allpaths, mpp);
+	mpp->mpe = find_mpe(mpp->wwid);
+	select_pgfailback(mpp);
+
 	return 0;
 out:
 	free_multipath(mpp, KEEP_PATHS);
