@@ -171,22 +171,33 @@ sysfs_get_##fname (char * sysfs_path, char * dev) \
 
 declare_sysfs_get_val(size, "%s/block/%s/size");
 
+/*
+ * udev might be slow creating node files : wait
+ */
 static int
 opennode (char * dev, int mode)
 {
 	char devpath[FILE_NAME_SIZE];
 	int fd;
+	int loop;
 
 	if (safe_sprintf(devpath, "%s/%s", conf->udev_dir, dev)) {
 		fprintf(stderr, "devpath too small\n");
 		return -1;
 	}
-	fd = open(devpath, mode);
 
-	if (fd <= 0)
-		condlog(0, "open(%s) failed", devpath);
+	loop = WAIT_MAX_SECONDS * WAIT_LOOP_PER_SECOND;
 	
-	return fd;
+	while (--loop) {
+		fd = open(devpath, mode);
+
+		if (fd > 0)
+			return fd;
+
+		usleep(1000 * 1000 / WAIT_LOOP_PER_SECOND);
+	}
+	condlog(0, "failed to open %s", devpath);
+	return -1;
 }
 
 #if 0
