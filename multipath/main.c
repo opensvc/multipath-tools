@@ -302,7 +302,7 @@ print_mp (struct multipath * mpp)
 			break;
 		}
 		if (mpp->nextpg && mpp->nextpg == j + 1)
-			printf("[first]");
+			printf("[best]");
 
 		printf("\n");
 

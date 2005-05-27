@@ -132,6 +132,42 @@ set_paths_owner (struct paths * allpaths, struct multipath * mpp)
 }
 
 static int
+update_multipath_table (struct multipath *mpp, vector pathvec)
+{
+	if (dm_get_map(mpp->alias, &mpp->size, mpp->params))
+		return 1;
+
+	if(disassemble_map(pathvec, mpp->params, mpp))
+		return 1;
+
+	return 0;
+}
+
+static int
+update_multipath_status (struct multipath *mpp)
+{
+	if(dm_get_status(mpp->alias, mpp->status))
+		return 1;
+
+	if (disassemble_status(mpp->status, mpp))
+		return 1;
+
+	return 0;
+}
+
+static int
+update_multipath_strings (struct multipath *mpp, vector pathvec)
+{
+	if (update_multipath_table(mpp, pathvec))
+		return 1;
+
+	if (update_multipath_status(mpp))
+		return 1;
+
+	return 0;
+}
+
+static int
 setup_multipath (struct paths * allpaths, struct multipath * mpp)
 {
 	char * wwid;
@@ -146,10 +182,7 @@ setup_multipath (struct paths * allpaths, struct multipath * mpp)
 
 	log_safe(LOG_DEBUG, "discovered map %s", mpp->alias);
 
-	if(disassemble_map(allpaths->pathvec, mpp->params, mpp))
-		goto out;
-
-	if(disassemble_status(mpp->status, mpp))
+	if (update_multipath_strings(mpp, allpaths->pathvec))
 		goto out;
 
 	set_paths_owner(allpaths, mpp);
@@ -160,6 +193,32 @@ setup_multipath (struct paths * allpaths, struct multipath * mpp)
 out:
 	free_multipath(mpp, KEEP_PATHS);
 	return 1;
+}
+
+static void
+switch_pathgroup (struct multipath * mpp)
+{
+	struct pathgroup * pgp;
+	struct path * pp;
+	int i, j;
+	
+	if (!mpp || mpp->pgfailback == FAILBACK_MANUAL)
+		return;
+	/*
+	 * Refresh path priority values
+	 */
+	vector_foreach_slot (mpp->pg, pgp, i)
+		vector_foreach_slot (pgp->paths, pp, j)
+			pathinfo(pp, conf->hwtable, DI_PRIO);
+
+	select_path_group(mpp); /* sets mpp->nextpg */
+	pgp = VECTOR_SLOT(mpp->pg, mpp->nextpg - 1);
+	
+	if (pgp && pgp->status != PGSTATE_ACTIVE) {
+		dm_switchgroup(mpp->alias, mpp->nextpg);
+		log_safe(LOG_NOTICE, "%s: switch to path group #%i",
+			 mpp->alias, mpp->nextpg);
+	}
 }
 
 static int
@@ -180,8 +239,6 @@ update_multipath (struct paths *allpaths, char *mapname)
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
 
-	dm_get_map(mapname, &mpp->size, mpp->params);
-	dm_get_status(mapname, mpp->status);
 	setup_multipath(allpaths, mpp);
 
 	/*
@@ -256,6 +313,8 @@ waiteventloop (struct event_thread * waiter)
 		 * 2) a path failed by DM : mark as such through
 		 *    update_multipath()
 		 * 3) map has gone away : stop the thread.
+		 * 4) a path reinstate : nothing to do
+		 * 5) a switch group : nothing to do
 		 */
 		if (update_multipath(waiter->allpaths, waiter->mapname)) {
 			r = -1; /* stop the thread */
@@ -628,36 +687,6 @@ fail_path (struct path * pp)
  * caller must have locked the path list before calling that function
  */
 static void
-switch_pathgroup (struct multipath * mpp)
-{
-	struct pathgroup * pgp;
-	struct path * pp;
-	int i, j;
-	
-	if (!mpp || mpp->pgfailback == FAILBACK_MANUAL)
-		return;
-
-	/*
-	 * Refresh path priority values
-	 */
-	vector_foreach_slot (mpp->pg, pgp, i)
-		vector_foreach_slot (pgp->paths, pp, j)
-			pathinfo(pp, conf->hwtable, DI_PRIO);
-
-	select_path_group(mpp); /* sets mpp->nextpg */
-	pgp = VECTOR_SLOT(mpp->pg, mpp->nextpg - 1);
-	
-	if (pgp && pgp->status != PGSTATE_ACTIVE) {
-		dm_switchgroup(mpp->alias, mpp->nextpg);
-		log_safe(LOG_NOTICE, "%s: switch to path group #%i",
-			 mpp->alias, mpp->nextpg);
-	}
-}
-
-/*
- * caller must have locked the path list before calling that function
- */
-static void
 reinstate_path (struct path * pp)
 {
 	if (pp->mpp) {
@@ -743,6 +772,8 @@ checkerloop (void *ap)
 				/*
 				 * need to switch group ?
 				 */
+				update_multipath_strings(pp->mpp,
+							 allpaths->pathvec);
 				switch_pathgroup(pp->mpp);
 			}
 			else if (newstate == PATH_UP) {
