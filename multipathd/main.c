@@ -570,17 +570,17 @@ uev_remove_path (char * devname, struct paths * allpaths)
 int 
 uev_trigger (struct uevent * uev, void * trigger_data)
 {
-	int r = 1;
+	int r = 0;
 	char devname[32];
 	struct paths * allpaths;
 
 	allpaths = (struct paths *)trigger_data;
+	lock(allpaths->lock);
 
 	if (strncmp(uev->devpath, "/block", 6))
 		goto out;
 
 	basename(uev->devpath, devname);
-	lock(allpaths->lock);
 
 	/*
 	 * device map add/remove event
@@ -596,6 +596,7 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 			r = uev_remove_map(devname, allpaths);
 			goto out;
 		}
+		goto out;
 	}
 	
 	/*
