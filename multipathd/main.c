@@ -113,6 +113,7 @@ alloc_waiter (void)
 
 out:
 	free(wp);
+	log_safe(LOG_ERR, "failed to alloc waiter");
 	return NULL;
 }
 
@@ -192,6 +193,7 @@ setup_multipath (struct paths * allpaths, struct multipath * mpp)
 	return 0;
 out:
 	free_multipath(mpp, KEEP_PATHS);
+	log_safe(LOG_ERR, "failed to setup multipath");
 	return 1;
 }
 
@@ -266,6 +268,10 @@ update_multipath (struct paths *allpaths, char *mapname)
 	r = 0;
 out:
 	unlock(allpaths->lock);
+
+	if (r)
+		log_safe(LOG_ERR, "failed to update multipath");
+
 	return r;
 }
 
@@ -420,6 +426,7 @@ start_waiter_thread (struct multipath * mpp, struct paths * allpaths)
 out:
 	free_waiter(wp);
 	mpp->waiter = NULL;
+	log_safe(LOG_ERR, "failed to start waiter thread");
 	return 1;
 }
 
@@ -835,6 +842,7 @@ out1:
 	FREE(allpaths->lock);
 out:
 	FREE(allpaths);
+	log_safe(LOG_ERR, "failed to init paths");
 	return NULL;
 }
 

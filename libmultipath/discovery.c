@@ -39,13 +39,15 @@ store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag)
 	if (store_path(pathvec, pp))
 		goto out;
 
-	pathinfo(pp, hwtable, flag);
+	if (pathinfo(pp, hwtable, flag))
+		goto out;
 
 	return pp;
 out:
 	free_path(pp);
 	return NULL;
 }
+
 int
 path_discovery (vector pathvec, struct config * conf, int flag)
 {
@@ -90,7 +92,8 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 			 * path already known :
 			 * refresh only what the caller wants
 			 */
-			pathinfo(pp, conf->hwtable, flag);
+			if (pathinfo(pp, conf->hwtable, flag))
+				goto out;
 		}
 	}
 	r = 0;
