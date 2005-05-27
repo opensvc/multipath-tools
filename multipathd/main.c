@@ -647,11 +647,11 @@ switch_pathgroup (struct multipath * mpp)
 	select_path_group(mpp); /* sets mpp->nextpg */
 	pgp = VECTOR_SLOT(mpp->pg, mpp->nextpg - 1);
 	
-	if (pgp && pgp->status != PGSTATE_ACTIVE)
+	if (pgp && pgp->status != PGSTATE_ACTIVE) {
 		dm_switchgroup(mpp->alias, mpp->nextpg);
-
-	log_safe(LOG_NOTICE, "%s: switch to path group #%i",
-		 mpp->alias, mpp->nextpg);
+		log_safe(LOG_NOTICE, "%s: switch to path group #%i",
+			 mpp->alias, mpp->nextpg);
+	}
 }
 
 /*
