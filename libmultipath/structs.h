@@ -95,6 +95,7 @@ struct multipath {
 	int queuedio;
 	int action;
 	int pgfailback;
+	int failback_tick;
 	unsigned long size;
 	vector paths;
 	vector pg;

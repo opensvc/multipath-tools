@@ -763,12 +763,17 @@ checkerloop (void *ap)
 				 */
 				pp->checkint = conf->checkint;
 
-				/*
-				 * proactively fail path in the DM
-				 */
 				if (newstate == PATH_DOWN ||
 				    newstate == PATH_SHAKY) {
+					/*
+					 * proactively fail path in the DM
+					 */
 					fail_path(pp);
+
+					/*
+					 * cancel scheduled failback
+					 */
+					pp->mpp->failback_tick = 0;
 					continue;
 				}
 
@@ -782,12 +787,33 @@ checkerloop (void *ap)
 				 */
 				update_multipath_strings(pp->mpp,
 							 allpaths->pathvec);
-				switch_pathgroup(pp->mpp);
+
+				/*
+				 * schedule defered failback
+				 */
+				if (pp->mpp->pgfailback > 0)
+					pp->mpp->failback_tick =
+						pp->mpp->pgfailback;
+
+				if (pp->mpp->pgfailback == FAILBACK_IMMEDIATE)
+					switch_pathgroup(pp->mpp);
 			}
 			else if (newstate == PATH_UP) {
 				/*
 				 * PATH_UP for last two checks
-				 * double the next check delay.
+				 * defered failback getting sooner
+				 */
+				if (pp->mpp->pgfailback > 0) {
+					if (pp->mpp->failback_tick > 0) {
+						pp->mpp->failback_tick--;
+
+						if (!pp->mpp->failback_tick)
+							switch_pathgroup(pp->mpp);
+					}
+				}
+				
+				/*
+				 * and double the next check delay.
 				 * max at conf->max_checkint
 				 */
 				if (pp->checkint < (conf->max_checkint / 2))
