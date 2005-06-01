@@ -21,6 +21,10 @@
 #define FAILBACK_MANUAL		-1
 #define FAILBACK_IMMEDIATE	-2
 
+#define SYSFS_BUS_NONE		0
+#define SYSFS_BUS_SCSI		1
+#define SYSFS_BUS_IDE		2
+
 enum pathstates {
 	PSTATE_RESERVED,
 	PSTATE_FAILED,
@@ -72,6 +76,7 @@ struct path {
 	unsigned int checkint;
 	unsigned int tick;
 	int state;
+	int bus;
 	int dmstate;
 	int failcount;
 	int priority;

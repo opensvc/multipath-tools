@@ -33,7 +33,7 @@ store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag)
 		return NULL;
 
 	if(safe_sprintf(pp->dev, "%s", devname)) {
-		fprintf(stderr, "pp->dev too small\n");
+		condlog(0, "pp->dev too small");
 		goto out;
 	}
 	if (pathinfo(pp, hwtable, flag))
@@ -58,7 +58,7 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 	int r = 1;
 
 	if(safe_sprintf(path, "%s/block", sysfs_path)) {
-		fprintf(stderr, "path too small\n");
+		condlog(0, "path too small");
 		exit(1);
 	}
 	sdir = sysfs_open_directory(path);
@@ -70,7 +70,7 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 
 		if(safe_sprintf(path, "%s/block/%s/device", sysfs_path,
 				devp->name)) {
-			fprintf(stderr, "path too small\n");
+			condlog(0, "path too small");
 			exit(1);
 		}
 				
@@ -185,7 +185,7 @@ opennode (char * dev, int mode)
 	int loop;
 
 	if (safe_sprintf(devpath, "%s/%s", conf->udev_dir, dev)) {
-		fprintf(stderr, "devpath too small\n");
+		condlog(0, "devpath too small");
 		return -1;
 	}
 
@@ -225,7 +225,7 @@ devt2devname (char *devname, char *devt)
 	int len;
 
 	if(safe_sprintf(block_path, "%s/block", sysfs_path)) {
-		fprintf(stderr, "block_path too small\n");
+		condlog(0, "block_path too small");
 		exit(1);
 	}
 	sdir = sysfs_open_directory(block_path);
@@ -234,7 +234,7 @@ devt2devname (char *devname, char *devt)
 	dlist_for_each_data (sdir->subdirs, devp, struct sysfs_directory) {
 		if(safe_sprintf(attr_path, "%s/%s/dev",
 				block_path, devp->name)) {
-			fprintf(stderr, "attr_path too small\n");
+			condlog(0, "attr_path too small");
 			exit(1);
 		}
 		sysfs_read_attribute_value(attr_path, attr_value,
@@ -249,7 +249,7 @@ devt2devname (char *devname, char *devt)
 		    strncmp(attr_value, devt, len) == 0) {
 			if(safe_sprintf(attr_path, "%s/%s",
 					block_path, devp->name)) {
-				fprintf(stderr, "attr_path too small\n");
+				condlog(0, "attr_path too small");
 				exit(1);
 			}
 			sysfs_get_name_from_path(attr_path, devname,
@@ -334,8 +334,48 @@ get_serial (char * str, int fd)
         return 0;
 }
 
-extern int
-sysfs_pathinfo(struct path * curpath)
+static void
+sysfs_get_bus (char * sysfs_path, struct path * curpath)
+{
+	char attr_path[FILE_NAME_SIZE];
+	char attr_buff[FILE_NAME_SIZE];
+
+	curpath->bus = SYSFS_BUS_NONE;
+
+	/*
+	 * This is ugly : we should be able to do a simple
+	 * get_link("%s/block/%s/device/bus", ...) but it just
+	 * won't work
+	 */
+	if(safe_sprintf(attr_path, "%s/block/%s/device",
+			sysfs_path, curpath->dev)) {
+		condlog(0, "attr_path too small");
+		return;
+	}
+	if (0 > sysfs_get_link(attr_path, attr_buff, sizeof(attr_buff)))
+		return;
+
+	if (strlen(attr_buff) + 4 > FILE_NAME_SIZE) {
+		condlog(0, "attr_path too small");
+		return;
+	}
+	snprintf(attr_path, FILE_NAME_SIZE, "%s/bus", attr_buff);
+
+	if (0 > sysfs_get_link(attr_path, attr_buff, sizeof(attr_buff)))
+		return;
+
+	basename(attr_buff, attr_path);
+	
+	if (!strncmp(attr_path, "scsi", 4))
+		curpath->bus = SYSFS_BUS_SCSI;
+	else if (!strncmp(attr_path, "ide", 3))
+		curpath->bus = SYSFS_BUS_IDE;
+
+	return;
+}
+
+static int
+scsi_sysfs_pathinfo (struct path * curpath)
 {
 	char attr_path[FILE_NAME_SIZE];
 	char attr_buff[FILE_NAME_SIZE];
@@ -343,40 +383,34 @@ sysfs_pathinfo(struct path * curpath)
 	if (sysfs_get_vendor(sysfs_path, curpath->dev,
 			     curpath->vendor_id, SCSI_VENDOR_SIZE))
 		return 1;
+
 	condlog(3, "vendor = %s", curpath->vendor_id);
 
 	if (sysfs_get_model(sysfs_path, curpath->dev,
 			    curpath->product_id, SCSI_PRODUCT_SIZE))
 		return 1;
+
 	condlog(3, "product = %s", curpath->product_id);
 
 	if (sysfs_get_rev(sysfs_path, curpath->dev,
 			  curpath->rev, SCSI_REV_SIZE))
 		return 1;
+
 	condlog(3, "rev = %s", curpath->rev);
-
-	if (sysfs_get_dev(sysfs_path, curpath->dev,
-			  curpath->dev_t, BLK_DEV_SIZE))
-		return 1;
-	condlog(3, "dev_t = %s", curpath->dev_t);
-
-	curpath->size = sysfs_get_size(sysfs_path, curpath->dev);
-
-	if (curpath->size == 0)
-		return 1;
-	condlog(3, "size = %lu", curpath->size);
 
 	/*
 	 * host / bus / target / lun
 	 */
 	if(safe_sprintf(attr_path, "%s/block/%s/device",
 			sysfs_path, curpath->dev)) {
-		fprintf(stderr, "attr_path too small\n");
+		condlog(0, "attr_path too small");
 		return 1;
 	}
 	if (0 > sysfs_get_link(attr_path, attr_buff, sizeof(attr_buff)))
 		return 1;
+	
 	basename(attr_buff, attr_path);
+
 	sscanf(attr_path, "%i:%i:%i:%i",
 			&curpath->sg_id.host_no,
 			&curpath->sg_id.channel,
@@ -397,13 +431,51 @@ sysfs_pathinfo(struct path * curpath)
 			curpath->sg_id.host_no,
 			curpath->sg_id.channel,
 			curpath->sg_id.scsi_id)) {
-		fprintf(stderr, "attr_path too small\n");
+		condlog(0, "attr_path too small");
 		return 1;
 	}
 	if (0 <= readattr(attr_path, attr_buff) && strlen(attr_buff) > 0)
 		strncpy(curpath->tgt_node_name, attr_buff,
 			strlen(attr_buff) - 1);
 	condlog(3, "tgt_node_name = %s", curpath->tgt_node_name);
+
+	return 0;
+}
+
+static int
+common_sysfs_pathinfo (struct path * curpath)
+{
+
+	sysfs_get_bus(sysfs_path, curpath);
+	condlog(3, "bus = %i", curpath->bus);
+
+	if (sysfs_get_dev(sysfs_path, curpath->dev,
+			  curpath->dev_t, BLK_DEV_SIZE))
+		return 1;
+
+	condlog(3, "dev_t = %s", curpath->dev_t);
+
+	curpath->size = sysfs_get_size(sysfs_path, curpath->dev);
+
+	if (curpath->size == 0)
+		return 1;
+
+	condlog(3, "size = %lu", curpath->size);
+
+	return 0;
+}
+
+extern int
+sysfs_pathinfo(struct path * curpath)
+{
+	if (common_sysfs_pathinfo(curpath))
+		return 1;
+
+	if (curpath->bus == SYSFS_BUS_NONE)
+		return 0;
+	else if (curpath->bus == SYSFS_BUS_SCSI)
+		if (scsi_sysfs_pathinfo(curpath))
+			return 1;
 
 	return 0;
 }
@@ -487,6 +559,17 @@ apply_format (char * string, char * cmd, struct path * pp)
 	return 0;
 }
 
+static int
+scsi_ioctl_pathinfo (struct path * pp, int mask)
+{
+	if (mask & DI_SERIAL) {
+		get_serial(pp->serial, pp->fd);
+		condlog(3, "serial = %s", pp->serial);
+	}
+
+	return 0;
+}
+
 extern int
 pathinfo (struct path *pp, vector hwtable, int mask)
 {
@@ -510,10 +593,9 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	if (pp->fd <= 0)
 		return 1;
 
-	if (mask & DI_SERIAL) {
-		get_serial(pp->serial, pp->fd);
-		condlog(3, "serial = %s", pp->serial);
-	}
+	if (pp->bus == SYSFS_BUS_SCSI)
+		if (scsi_ioctl_pathinfo(pp, mask))
+			return 1;
 #if 0
 	if (mask & DI_CLAIMED) {
 		pp->claimed = get_claimed(pp->fd);
