@@ -36,10 +36,10 @@ store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag)
 		fprintf(stderr, "pp->dev too small\n");
 		goto out;
 	}
-	if (store_path(pathvec, pp))
+	if (pathinfo(pp, hwtable, flag))
 		goto out;
 
-	if (pathinfo(pp, hwtable, flag))
+	if (store_path(pathvec, pp))
 		goto out;
 
 	return pp;

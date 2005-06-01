@@ -67,13 +67,15 @@ get_refwwid (vector pathvec)
 			if (!pp)
 				return NULL;
 
+			strncpy(pp->dev, buff, FILE_NAME_SIZE);
+
+			if (pathinfo(pp, conf->hwtable, DI_SYSFS | DI_WWID))
+				return NULL;
+
 			if (store_path(pathvec, pp)) {
 				free_path(pp);
 				return NULL;
 			}
-			strncpy(pp->dev, buff, FILE_NAME_SIZE);
-			if (pathinfo(pp, conf->hwtable, DI_SYSFS | DI_WWID))
-				return NULL;
 		}
 
 		refwwid = MALLOC(WWID_SIZE);
@@ -95,10 +97,6 @@ get_refwwid (vector pathvec)
 			if (!pp)
 				return NULL;
 
-			if (store_path(pathvec, pp)) {
-				free_path(pp);
-				return NULL;
-			}
 			devt2devname(conf->dev, buff);
 
 			if(safe_sprintf(pp->dev, "%s", buff)) {
@@ -107,6 +105,11 @@ get_refwwid (vector pathvec)
 			}
 			if (pathinfo(pp, conf->hwtable, DI_SYSFS | DI_WWID))
 				return NULL;
+			
+			if (store_path(pathvec, pp)) {
+				free_path(pp);
+				return NULL;
+			}
 		}
 
 		refwwid = MALLOC(WWID_SIZE);
