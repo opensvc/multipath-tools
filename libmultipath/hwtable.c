@@ -12,17 +12,17 @@ setup_default_hwtable (vector hw)
 	int r = 0;
 
 	r += store_hwe(hw, "3PARdata", "VV", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "COMPAQ", "HSV110 (C)COMPAQ", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "COMPAQ", "MSA1000", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "COMPAQ", "MSA1000 VOLUME", MULTIBUS, DEFAULT_GETUID);
+	r += store_hwe(hw, "COMPAQ", "HSV110 (C)COMPAQ", GROUP_BY_SERIAL, DEFAULT_GETUID);
+	r += store_hwe(hw, "COMPAQ", "MSA1000", GROUP_BY_SERIAL, DEFAULT_GETUID);
+	r += store_hwe(hw, "COMPAQ", "MSA1000 VOLUME", GROUP_BY_SERIAL, DEFAULT_GETUID);
 	r += store_hwe(hw, "DDN", "SAN DataDirector", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "DEC", "HSG80", MULTIBUS, DEFAULT_GETUID);
+	r += store_hwe(hw, "DEC", "HSG80", GROUP_BY_SERIAL, DEFAULT_GETUID);
 	r += store_hwe(hw, "EMC", "SYMMETRIX", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "FSC", "CentricStor", MULTIBUS, DEFAULT_GETUID);
+	r += store_hwe(hw, "FSC", "CentricStor", GROUP_BY_SERIAL, DEFAULT_GETUID);
 	r += store_hwe(hw, "HITACHI", "DF400", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "HITACHI", "DF500", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "HITACHI", "DF600", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "HP", "HSV110", MULTIBUS, DEFAULT_GETUID);
+	r += store_hwe(hw, "HP", "HSV110", GROUP_BY_SERIAL, DEFAULT_GETUID);
 	r += store_hwe(hw, "HP", "A6189A", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "HP", "OPEN-", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "IBM", "ProFibre 4000R", MULTIBUS, DEFAULT_GETUID);
