@@ -20,7 +20,6 @@ LDFLAGS = -lpthread -ldevmapper -lsysfs
 #
 # debuging stuff
 #
-#CFLAGS += -DLOG_THREAD_DISABLE
 #CFLAGS += -DLCKDBG
 #CFLAGS += -D_DEBUG_
 

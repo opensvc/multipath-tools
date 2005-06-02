@@ -7,18 +7,10 @@
 #include "log_pthread.h"
 #include "log.h"
 
-void log_safe (int prio, char * fmt, ...)
+void log_safe (int prio, char * fmt, va_list ap)
 {
-	va_list ap;
-
-#ifdef LOG_THREAD_DISABLE
-	va_start(ap, fmt);
-	vfprintf(stdout, fmt, ap);
-	fprintf(stdout, "\n");
-	va_end(ap);
-#else
 	pthread_mutex_lock(logq_lock);
-	va_start(ap, fmt);
+	//va_start(ap, fmt);
 	log_enqueue(prio, fmt, ap);
 	va_end(ap);
 	pthread_mutex_unlock(logq_lock);
@@ -26,7 +18,6 @@ void log_safe (int prio, char * fmt, ...)
 	pthread_mutex_lock(logev_lock);
 	pthread_cond_signal(logev_cond);
 	pthread_mutex_unlock(logev_lock);
-#endif
 }
 
 static void flush_logqueue (void)

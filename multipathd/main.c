@@ -61,7 +61,7 @@
 
 #define LOG_MSG(a,b) \
 	if (strlen(a)) { \
-		log_safe(LOG_WARNING, "%s: %s", b, a); \
+		condlog(1, "%s: %s", b, a); \
 		memset(a, 0, MAX_CHECKER_MSG_SIZE); \
 	}
 
@@ -113,7 +113,7 @@ alloc_waiter (void)
 
 out:
 	free(wp);
-	log_safe(LOG_ERR, "failed to alloc waiter");
+	condlog(0, "failed to alloc waiter");
 	return NULL;
 }
 
@@ -125,8 +125,7 @@ set_paths_owner (struct paths * allpaths, struct multipath * mpp)
 
 	vector_foreach_slot (allpaths->pathvec, pp, i) {
 		if (!strncmp(mpp->wwid, pp->wwid, WWID_SIZE)) {
-			log_safe(LOG_DEBUG, "%s ownership set",
-				 pp->dev_t);
+			condlog(4, "%s ownership set", pp->dev_t);
 			pp->mpp = mpp;
 		}
 	}
@@ -181,7 +180,7 @@ setup_multipath (struct paths * allpaths, struct multipath * mpp)
 	} else
 		strncpy(mpp->wwid, mpp->alias, WWID_SIZE);
 
-	log_safe(LOG_DEBUG, "discovered map %s", mpp->alias);
+	condlog(4, "discovered map %s", mpp->alias);
 
 	if (update_multipath_strings(mpp, allpaths->pathvec))
 		goto out;
@@ -193,7 +192,7 @@ setup_multipath (struct paths * allpaths, struct multipath * mpp)
 	return 0;
 out:
 	free_multipath(mpp, KEEP_PATHS);
-	log_safe(LOG_ERR, "failed to setup multipath");
+	condlog(0, "failed to setup multipath");
 	return 1;
 }
 
@@ -218,7 +217,7 @@ switch_pathgroup (struct multipath * mpp)
 	
 	if (pgp && pgp->status != PGSTATE_ACTIVE) {
 		dm_switchgroup(mpp->alias, mpp->nextpg);
-		log_safe(LOG_NOTICE, "%s: switch to path group #%i",
+		condlog(2, "%s: switch to path group #%i",
 			 mpp->alias, mpp->nextpg);
 	}
 }
@@ -252,8 +251,7 @@ update_multipath (struct paths *allpaths, char *mapname)
 				continue;
 
 			if (pp->state != PATH_DOWN) {
-				log_safe(LOG_NOTICE, "%s: mark as failed",
-					pp->dev_t);
+				condlog(2, "%s: mark as failed", pp->dev_t);
 				pp->state = PATH_DOWN;
 
 				/*
@@ -270,7 +268,7 @@ out:
 	unlock(allpaths->lock);
 
 	if (r)
-		log_safe(LOG_ERR, "failed to update multipath");
+		condlog(0, "failed to update multipath");
 
 	return r;
 }
@@ -308,7 +306,7 @@ waiteventloop (struct event_thread * waiter)
 	 * upon event ...
 	 */
 	while (1) {
-		log_safe(LOG_NOTICE, "devmap event (%i) on %s",
+		condlog(2, "devmap event (%i) on %s",
 				waiter->event_nr, waiter->mapname);
 
 		/*
@@ -384,9 +382,7 @@ stop_waiter_thread (struct multipath * mpp, struct paths * allpaths)
 	if (!wp)
 		return 1;
 
-	log_safe(LOG_NOTICE, "reap event checker : %s",
-		wp->mapname);
-
+	condlog(2, "reap event checker : %s", wp->mapname);
 	pthread_cancel(*wp->thread);
 	free_waiter(wp);
 
@@ -416,17 +412,16 @@ start_waiter_thread (struct multipath * mpp, struct paths * allpaths)
 	wp->allpaths = allpaths;
 
 	if (pthread_create(wp->thread, &attr, waitevent, wp)) {
-		log_safe(LOG_ERR, "%s: cannot create event checker",
-			 wp->mapname);
+		condlog(0, "%s: cannot create event checker", wp->mapname);
 		goto out;
 	}
-	log_safe(LOG_NOTICE, "%s: event checker started", wp->mapname);
+	condlog(2, "%s: event checker started", wp->mapname);
 
 	return 0;
 out:
 	free_waiter(wp);
 	mpp->waiter = NULL;
-	log_safe(LOG_ERR, "failed to start waiter thread");
+	condlog(0, "failed to start waiter thread");
 	return 1;
 }
 
@@ -468,7 +463,7 @@ uev_add_map (char * devname, struct paths * allpaths)
 		 * but remove DM uevent are somewhet unreliable
 		 * so for now consider safer to remove and re-add the map
 		 */
-		log_safe(LOG_NOTICE, "%s: remove dead config", mpp->alias);
+		condlog(2, "%s: remove dead config", mpp->alias);
 		remove_map(mpp, allpaths);
 		mpp = NULL;
 	}
@@ -530,10 +525,10 @@ uev_add_path (char * devname, struct paths * allpaths)
 	pp = find_path_by_dev(allpaths->pathvec, devname);
 
 	if (pp) {
-		log_safe(LOG_INFO, "%s: already in pathvec");
+		condlog(3, "%s: already in pathvec");
 		return 0;
 	}
-	log_safe(LOG_NOTICE, "add %s path checker", devname);
+	condlog(2, "add %s path checker", devname);
 	pp = store_pathinfo(allpaths->pathvec, conf->hwtable,
 		       devname, DI_SYSFS | DI_WWID);
 
@@ -541,8 +536,7 @@ uev_add_path (char * devname, struct paths * allpaths)
 		return 1;
 
 	pp->mpp = find_mp_by_wwid(allpaths->mpvec, pp->wwid);
-	log_safe(LOG_DEBUG, "%s: ownership set to %s",
-		 pp->dev_t, pp->mpp->alias);
+	condlog(4, "%s: ownership set to %s", pp->dev_t, pp->mpp->alias);
 
 	return 0;
 }
@@ -556,10 +550,10 @@ uev_remove_path (char * devname, struct paths * allpaths)
 	pp = find_path_by_dev(allpaths->pathvec, devname);
 
 	if (!pp) {
-		log_safe(LOG_INFO, "%s: not in pathvec");
+		condlog(3, "%s: not in pathvec");
 		return 0;
 	}
-	log_safe(LOG_NOTICE, "remove %s path checker", devname);
+	condlog(2, "remove %s path checker", devname);
 	i = find_slot(allpaths->pathvec, (void *)pp);
 	vector_del_slot(allpaths->pathvec, i);
 	free_path(pp);
@@ -647,14 +641,17 @@ exit_daemon (int status)
 	if (status != 0)
 		fprintf(stderr, "bad exit status. see daemon.log\n");
 
-	log_safe(LOG_INFO, "umount ramfs");
+	condlog(3, "umount ramfs");
 	umount(CALLOUT_DIR);
 
-	log_safe(LOG_INFO, "unlink pidfile");
+	condlog(3, "unlink pidfile");
 	unlink(DEFAULT_PIDFILE);
 
-	log_safe(LOG_NOTICE, "--------shut down-------");
-	log_thread_stop();
+	condlog(2, "--------shut down-------");
+	
+	if (logsink)
+		log_thread_stop();
+
 	exit(status);
 }
 
@@ -685,7 +682,7 @@ fail_path (struct path * pp)
 	if (!pp->mpp)
 		return;
 
-	log_safe(LOG_NOTICE, "checker failed path %s in map %s",
+	condlog(2, "checker failed path %s in map %s",
 		 pp->dev_t, pp->mpp->alias);
 
 	dm_fail_path(pp->mpp->alias, pp->dev_t);
@@ -699,9 +696,9 @@ reinstate_path (struct path * pp)
 {
 	if (pp->mpp) {
 		if (dm_reinstate(pp->mpp->alias, pp->dev_t))
-			log_safe(LOG_ERR, "%s: reinstate failed", pp->dev_t);
+			condlog(0, "%s: reinstate failed", pp->dev_t);
 		else
-			log_safe(LOG_NOTICE, "%s: reinstated", pp->dev_t);
+			condlog(2, "%s: reinstated", pp->dev_t);
 	}
 }
 
@@ -719,11 +716,11 @@ checkerloop (void *ap)
 	memset(checker_msg, 0, MAX_CHECKER_MSG_SIZE);
 	allpaths = (struct paths *)ap;
 
-	log_safe(LOG_NOTICE, "path checkers start up");
+	condlog(2, "path checkers start up");
 
 	while (1) {
 		lock(allpaths->lock);
-		log_safe(LOG_DEBUG, "tick");
+		condlog(4, "tick");
 
 		vector_foreach_slot (allpaths->pathvec, pp, i) {
 			if (pp->tick) {
@@ -746,8 +743,7 @@ checkerloop (void *ap)
 			}
 
 			if (!pp->checkfn) {
-				log_safe(LOG_ERR, "%s: checkfn is void",
-					 pp->dev);
+				condlog(0, "%s: checkfn is void", pp->dev);
 				continue;
 			}
 			newstate = pp->checkfn(pp->fd, checker_msg,
@@ -822,7 +818,7 @@ checkerloop (void *ap)
 					pp->checkint = conf->max_checkint;
 
 				pp->tick = pp->checkint;
-				log_safe(LOG_DEBUG, "%s: delay next check %is",
+				condlog(4, "%s: delay next check %is",
 						pp->dev_t, pp->tick);
 			}
 			pp->state = newstate;
@@ -869,7 +865,7 @@ out1:
 	FREE(allpaths->lock);
 out:
 	FREE(allpaths);
-	log_safe(LOG_ERR, "failed to init paths");
+	condlog(0, "failed to init paths");
 	return NULL;
 }
 
@@ -899,10 +895,10 @@ prepare_namespace(void)
 	 */
 	if (stat(CALLOUT_DIR, buf) < 0) {
 		if (mkdir(CALLOUT_DIR, mode) < 0) {
-			log_safe(LOG_ERR, "cannot create " CALLOUT_DIR);
+			condlog(0, "cannot create " CALLOUT_DIR);
 			return -1;
 		}
-		log_safe(LOG_DEBUG, "created " CALLOUT_DIR);
+		condlog(4, "created " CALLOUT_DIR);
 	}
 
 	/*
@@ -910,17 +906,17 @@ prepare_namespace(void)
 	 */
 	vector_foreach_slot (conf->binvec, bin,i) {
 		if ((fd = open(bin, O_RDONLY)) < 0) {
-			log_safe(LOG_ERR, "cannot open %s", bin);
+			condlog(0, "cannot open %s", bin);
 			return -1;
 		}
 		if (fstat(fd, &statbuf) < 0) {
-			log_safe(LOG_ERR, "cannot stat %s", bin);
+			condlog(0, "cannot stat %s", bin);
 			return -1;
 		}
 		size += statbuf.st_size;
 		close(fd);
 	}
-	log_safe(LOG_INFO, "ramfs maxsize is %u", (unsigned int) size);
+	condlog(3, "ramfs maxsize is %u", (unsigned int) size);
 	
 	/*
 	 * mount the ramfs
@@ -930,20 +926,20 @@ prepare_namespace(void)
 		return -1;
 	}
 	if (mount(NULL, CALLOUT_DIR, "ramfs", MS_SYNCHRONOUS, ramfs_args) < 0) {
-		log_safe(LOG_ERR, "cannot mount ramfs on " CALLOUT_DIR);
+		condlog(0, "cannot mount ramfs on " CALLOUT_DIR);
 		return -1;
 	}
-	log_safe(LOG_DEBUG, "mount ramfs on " CALLOUT_DIR);
+	condlog(4, "mount ramfs on " CALLOUT_DIR);
 
 	/*
 	 * populate the ramfs with callout binaries
 	 */
 	vector_foreach_slot (conf->binvec, bin,i) {
 		if (copytodir(bin, CALLOUT_DIR) < 0) {
-			log_safe(LOG_ERR, "cannot copy %s in ramfs", bin);
+			condlog(0, "cannot copy %s in ramfs", bin);
 			exit_daemon(1);
 		}
-		log_safe(LOG_DEBUG, "cp %s in ramfs", bin);
+		condlog(4, "cp %s in ramfs", bin);
 	}
 	strvec_free(conf->binvec);
 
@@ -954,20 +950,20 @@ prepare_namespace(void)
 	 * /tmp  : home of scsi_id temp files
 	 */
 	if (mount(CALLOUT_DIR, "/sbin", NULL, MS_BIND, NULL) < 0) {
-		log_safe(LOG_ERR, "cannot bind ramfs on /sbin");
+		condlog(0, "cannot bind ramfs on /sbin");
 		return -1;
 	}
-	log_safe(LOG_DEBUG, "bind ramfs on /sbin");
+	condlog(4, "bind ramfs on /sbin");
 	if (mount(CALLOUT_DIR, "/bin", NULL, MS_BIND, NULL) < 0) {
-		log_safe(LOG_ERR, "cannot bind ramfs on /bin");
+		condlog(0, "cannot bind ramfs on /bin");
 		return -1;
 	}
-	log_safe(LOG_DEBUG, "bind ramfs on /bin");
+	condlog(4, "bind ramfs on /bin");
 	if (mount(CALLOUT_DIR, "/tmp", NULL, MS_BIND, NULL) < 0) {
-		log_safe(LOG_ERR, "cannot bind ramfs on /tmp");
+		condlog(0, "cannot bind ramfs on /tmp");
 		return -1;
 	}
-	log_safe(LOG_DEBUG, "bind ramfs on /tmp");
+	condlog(4, "bind ramfs on /tmp");
 
 	return 0;
 }
@@ -995,7 +991,7 @@ signal_set(int signo, void (*func) (int))
 static void
 sighup (int sig)
 {
-	log_safe(LOG_NOTICE, "SIGHUP received");
+	condlog(2, "SIGHUP received");
 
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
@@ -1028,7 +1024,7 @@ setscheduler (void)
         res = sched_setscheduler (0, SCHED_RR, &sched_param);
 
         if (res == -1)
-                log_safe(LOG_WARNING, "Could not set SCHED_RR at priority 99");
+                condlog(LOG_WARNING, "Could not set SCHED_RR at priority 99");
 	return;
 }
 
@@ -1055,9 +1051,11 @@ child (void * param)
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
-	log_thread_start();
-	log_safe(LOG_NOTICE, "--------start up--------");
-	log_safe(LOG_NOTICE, "read " DEFAULT_CONFIGFILE);
+	if (logsink)
+		log_thread_start();
+
+	condlog(2, "--------start up--------");
+	condlog(2, "read " DEFAULT_CONFIGFILE);
 
 	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
@@ -1081,7 +1079,9 @@ child (void * param)
 	}
 
 	if (pidfile_create(DEFAULT_PIDFILE, getpid())) {
-		log_thread_stop();
+		if (logsink)
+			log_thread_stop();
+
 		exit(1);
 	}
 	signal_init();
@@ -1093,13 +1093,13 @@ child (void * param)
 		exit(1);
 
 	if (sysfs_get_mnt_path(sysfs_path, FILE_NAME_SIZE)) {
-		log_safe(LOG_ERR, "can not find sysfs mount point");
+		condlog(0, "can not find sysfs mount point");
 		exit(1);
 	}
 
 #ifdef CLONE_NEWNS
 	if (prepare_namespace() < 0) {
-		log_safe(LOG_ERR, "cannot prepare namespace");
+		condlog(0, "cannot prepare namespace");
 		exit_daemon(1);
 	}
 #endif
@@ -1135,6 +1135,8 @@ main (int argc, char *argv[])
 	int err;
 	void * child_stack;
 	
+	logsink = 1;
+
 	if (getuid() != 0) {
 		fprintf(stderr, "need to be root\n");
 		exit(1);
@@ -1154,8 +1156,11 @@ main (int argc, char *argv[])
 	if (!conf)
 		exit(1);
 
-	while ((arg = getopt(argc, argv, ":v:")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":dv:")) != EOF ) {
 	switch(arg) {
+		case 'd':
+			logsink = 0;
+			break;
 		case 'v':
 			if (sizeof(optarg) > sizeof(char *) ||
 			    !isdigit(optarg[0]))
