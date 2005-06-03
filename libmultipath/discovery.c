@@ -337,6 +337,7 @@ get_serial (char * str, int fd)
 static void
 sysfs_get_bus (char * sysfs_path, struct path * curpath)
 {
+	struct sysfs_device *sdev;
 	char attr_path[FILE_NAME_SIZE];
 	char attr_buff[FILE_NAME_SIZE];
 
@@ -352,23 +353,15 @@ sysfs_get_bus (char * sysfs_path, struct path * curpath)
 		condlog(0, "attr_path too small");
 		return;
 	}
-	if (0 > sysfs_get_link(attr_path, attr_buff, sizeof(attr_buff)))
-		return;
-
-	if (strlen(attr_buff) + 4 > FILE_NAME_SIZE) {
-		condlog(0, "attr_path too small");
-		return;
-	}
-	snprintf(attr_path, FILE_NAME_SIZE, "%s/bus", attr_buff);
 
 	if (0 > sysfs_get_link(attr_path, attr_buff, sizeof(attr_buff)))
 		return;
 
-	basename(attr_buff, attr_path);
-	
-	if (!strncmp(attr_path, "scsi", 4))
+	sdev = sysfs_open_device_path(attr_buff);
+
+	if (!strncmp(sdev->bus, "scsi", 4))
 		curpath->bus = SYSFS_BUS_SCSI;
-	else if (!strncmp(attr_path, "ide", 3))
+	else if (!strncmp(sdev->bus, "ide", 3))
 		curpath->bus = SYSFS_BUS_IDE;
 
 	return;
