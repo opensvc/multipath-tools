@@ -5,7 +5,7 @@
 #
 # Starts the multipath daemon
 #
-# chkconfig: 2345 13 87
+# chkconfig: - 13 87
 # description: Manage device-mapper multipath devices
 # processname: multipathd
 
