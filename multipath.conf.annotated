@@ -227,7 +227,7 @@
 #		#	    "none" is a valid value.
 #		# default : no callout, all paths equals
 #		#
-#		prio_callout          "/sbin/pp_balance_units %d"
+#		prio_callout          "/sbin/mpath_prio_balance_units %d"
 #
 #		#
 #		# name    : path_checker

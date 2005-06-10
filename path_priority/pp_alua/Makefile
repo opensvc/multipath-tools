@@ -12,7 +12,7 @@
 #
 # This file is released under the GPL.
 #==============================================================================
-EXEC		= pp_alua
+EXEC		= mpath_prio_alua
 BUILD		= glibc
 DEBUG		= 0
 DEBUG_DUMPHEX	= 0

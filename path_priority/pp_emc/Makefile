@@ -1,4 +1,4 @@
-EXEC		= pp_emc
+EXEC		= mpath_prio_emc
 BUILD		= glibc
 OBJS		= pp_emc.o
 
