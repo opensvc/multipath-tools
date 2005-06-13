@@ -304,9 +304,6 @@ print_mp (struct multipath * mpp)
 		default:
 			break;
 		}
-		if (mpp->nextpg && mpp->nextpg == j + 1)
-			printf("[best]");
-
 		printf("\n");
 
 		vector_foreach_slot (pgp->paths, pp, i)
