@@ -966,12 +966,15 @@ main (int argc, char *argv[])
 	/*
 	 * get a path list
 	 */
+	if (conf->dev)
+		di_flag = DI_WWID;
+
 	if (conf->list > 1)
 		/* extended path info '-ll' */
-		di_flag = DI_SYSFS | DI_CHECKER;
+		di_flag |= DI_SYSFS | DI_CHECKER;
 	else if (conf->list)
 		/* minimum path info '-l' */
-		di_flag = DI_SYSFS;
+		di_flag |= DI_SYSFS;
 	else
 		/* maximum info */
 		di_flag = DI_ALL;
