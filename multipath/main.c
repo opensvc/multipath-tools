@@ -180,6 +180,9 @@ print_path (struct path * pp, int style)
 	case PATH_DOWN:
 		printf("[faulty]");
 		break;
+	case PATH_GHOST:
+		printf("[ghost ]");
+		break;
 	case PATH_SHAKY:
 		printf("[shaky ]");
 		break;

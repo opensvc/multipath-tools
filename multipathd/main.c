@@ -794,7 +794,7 @@ checkerloop (void *ap)
 				if (pp->mpp->pgfailback == FAILBACK_IMMEDIATE)
 					switch_pathgroup(pp->mpp);
 			}
-			else if (newstate == PATH_UP) {
+			else if (newstate == PATH_UP || newstate == PATH_GHOST) {
 				/*
 				 * PATH_UP for last two checks
 				 * defered failback getting sooner

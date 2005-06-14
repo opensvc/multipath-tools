@@ -12,6 +12,8 @@ get_checker_id (char * str)
 		return READSECTOR0;
  	if (0 == strncmp(str, "emc_clariion", 12))
 		return EMC_CLARIION;
+ 	if (0 == strncmp(str, "hp_sw", 5))
+		return HP_SW;
 	return -1;
 }
 
@@ -29,6 +31,9 @@ get_checker_addr (int id)
 		break;
 	case EMC_CLARIION:
 		checker = &emc_clariion;
+		break;
+	case HP_SW:
+		checker = &hp_sw;
 		break;
 	default:
 		checker = NULL;
@@ -51,6 +56,9 @@ get_checker_name (char * str, int id)
 		break;
 	case EMC_CLARIION:
 		s = "emc_clariion";
+		break;
+	case HP_SW:
+		s = "hp_sw";
 		break;
 	default:
 		s = "undefined";

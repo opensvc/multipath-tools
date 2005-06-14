@@ -9,7 +9,8 @@ enum checkers {
 	CHECKER_RESERVED,
 	TUR,
 	READSECTOR0,
-	EMC_CLARIION
+	EMC_CLARIION,
+	HP_SW
 };
 
 #define MSG(a) if (msg != NULL) \
@@ -22,5 +23,6 @@ int get_checker_name (char *, int);
 int emc_clariion (int fd, char * msg, void ** ctxt);
 int readsector0 (int fd, char * msg, void ** ctxt);
 int tur (int fd, char * msg, void ** ctxt);
+int hp_sw (int fd, char * msg, void ** ctxt);
 
 #endif /* _CHECKERS_H */
