@@ -611,6 +611,12 @@ show_paths (struct paths * allpaths)
 
 	vector_foreach_slot(allpaths->pathvec, pp, i) {
 		c += sprintf(c, "%10s: ", pp->dev);
+
+		if (!pp->mpp) {
+			c += sprintf(c, "[orphan]\n");
+			continue;
+		}
+
 		c += sprintf(c, "state %i, ", pp->state);
 
 		j = pp->tick;
@@ -877,6 +883,9 @@ checkerloop (void *ap)
 		condlog(4, "tick");
 
 		vector_foreach_slot (allpaths->pathvec, pp, i) {
+			if (!pp->mpp)
+				continue;
+
 			if (pp->tick) {
 				/*
 				 * don't check this path yet
@@ -923,8 +932,7 @@ checkerloop (void *ap)
 					/*
 					 * cancel scheduled failback
 					 */
-					if (pp->mpp)
-						pp->mpp->failback_tick = 0;
+					pp->mpp->failback_tick = 0;
 
 					continue;
 				}
@@ -943,12 +951,11 @@ checkerloop (void *ap)
 				/*
 				 * schedule defered failback
 				 */
-				if (pp->mpp && pp->mpp->pgfailback > 0)
+				if (pp->mpp->pgfailback > 0)
 					pp->mpp->failback_tick =
 						pp->mpp->pgfailback;
 
-				if (pp->mpp &&
-				    pp->mpp->pgfailback == FAILBACK_IMMEDIATE)
+				if (pp->mpp->pgfailback == FAILBACK_IMMEDIATE)
 					switch_pathgroup(pp->mpp);
 			}
 			else if (newstate == PATH_UP || newstate == PATH_GHOST) {
@@ -956,7 +963,7 @@ checkerloop (void *ap)
 				 * PATH_UP for last two checks
 				 * defered failback getting sooner
 				 */
-				if (pp->mpp && pp->mpp->pgfailback > 0) {
+				if (pp->mpp->pgfailback > 0) {
 					if (pp->mpp->failback_tick > 0) {
 						pp->mpp->failback_tick--;
 
