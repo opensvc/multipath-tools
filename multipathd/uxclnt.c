@@ -8,6 +8,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/poll.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include <uxsock.h>
 
@@ -16,21 +18,18 @@
  */
 static void process(int fd)
 {
-	char line[1000];
+	char *line;
 	char *reply;
 
-	while (fgets(line, sizeof(line), stdin)) {
+	while (line = readline("multipathd> ")) {
 		size_t len = strlen(line);
 
-		if (line[len-1] == '\n') {
-			line[len-1] = 0;
-			len--;
-		}
-		
 		if (send_packet(fd, line, strlen(line)) != 0) break;
 		if (recv_packet(fd, &reply, &len) != 0) break;
 
 		printf("%*.*s\n", (int)len, (int)len, reply);
+		add_history(line);
+		free(line);
 		free(reply);
 	}
 }
