@@ -53,9 +53,12 @@
 #include "copy.h"
 #include "clone_platform.h"
 #include "pidfile.h"
+#include "uxlsnr.h"
+#include "uxclnt.h"
 
 #define FILE_NAME_SIZE 256
 #define CMDSIZE 160
+#define MAX_REPLY_LEN 1000
 
 #define CALLOUT_DIR "/var/cache/multipathd"
 
@@ -561,6 +564,115 @@ uev_remove_path (char * devname, struct paths * allpaths)
 	return 0;
 }
 
+static char *
+show_paths (struct paths * allpaths)
+{
+	int i, j, k;
+	struct path * pp;
+	char * c;
+	char * reply;
+
+	reply = MALLOC(MAX_REPLY_LEN);
+
+	if (!reply)
+		return NULL;
+
+	c = reply;
+	c += sprintf(c, "\n");
+
+	vector_foreach_slot(allpaths->pathvec, pp, i) {
+		c += sprintf(c, "%10s: ", pp->dev);
+		c += sprintf(c, "state %i, ", pp->state);
+
+		j = pp->tick;
+		k = pp->checkint - pp->tick;
+		c += sprintf(c, "%3i/%3i ", j, pp->checkint);
+
+		while (j-- > 0)
+			c += sprintf(c, "X");
+
+
+		while (k-- > 0)
+			c += sprintf(c, ".");
+
+		c += sprintf(c, "\n");
+	}
+
+	return reply;
+}
+
+static char *
+show_maps (struct paths * allpaths)
+{
+	int i, j, k;
+	struct multipath * mpp;
+	char * c;
+	char * reply;
+
+	reply = MALLOC(MAX_REPLY_LEN);
+
+	if (!reply)
+		return NULL;
+
+	c = reply;
+	c += sprintf(c, "\n");
+
+	vector_foreach_slot(allpaths->mpvec, mpp, i) {
+		c += sprintf(c, "%20s: ", mpp->alias);
+
+		j = mpp->failback_tick;
+		k = mpp->pgfailback - mpp->failback_tick;
+		c += sprintf(c, "%3i/%3i ", j, mpp->pgfailback);
+
+		while (j-- > 0)
+			c += sprintf(c, "X");
+
+
+		while (k-- > 0)
+			c += sprintf(c, ".");
+
+		c += sprintf(c, "\n");
+	}
+
+	return reply;
+}
+
+char *
+uxsock_trigger (char * str, void * trigger_data)
+{
+	struct paths * allpaths;
+	char * reply = NULL;
+
+	allpaths = (struct paths *)trigger_data;
+
+	lock(allpaths->lock);
+
+	if (*str == 'l' && *(str + 1) == 'p')
+		reply = show_paths(allpaths);
+
+	else if (*str == 'l' && *(str + 1) == 'm')
+		reply = show_maps(allpaths);
+
+	else if (*str == 'r' && *(str + 1) == 'p')
+		uev_remove_path(str + 3, allpaths);
+
+	else if (*str == 'a' && *(str + 1) == 'p')
+		uev_add_path(str + 3, allpaths);
+
+	else if (*str == 'r' && *(str + 1) == 'm')
+		uev_remove_map(str + 3, allpaths);
+
+	else if (*str == 'a' && *(str + 1) == 'm')
+		uev_add_map(str + 3, allpaths);
+
+	if (!reply)
+		asprintf(&reply, "ok\n");
+
+	unlock(allpaths->lock);
+
+	return reply;
+}
+
 int 
 uev_trigger (struct uevent * uev, void * trigger_data)
 {
@@ -618,6 +730,14 @@ static void *
 ueventloop (void * ap)
 {
 	uevent_listen(&uev_trigger, ap);
+
+	return NULL;
+}
+
+static void *
+uxlsnrloop (void * ap)
+{
+	uxsock_listen(&uxsock_trigger, ap);
 
 	return NULL;
 }
@@ -1045,7 +1165,7 @@ set_oom_adj (int val)
 static int
 child (void * param)
 {
-	pthread_t check_thr, uevent_thr;
+	pthread_t check_thr, uevent_thr, uxlsnr_thr;
 	pthread_attr_t attr;
 	struct paths * allpaths;
 
@@ -1120,8 +1240,10 @@ child (void * param)
 	
 	pthread_create(&check_thr, &attr, checkerloop, allpaths);
 	pthread_create(&uevent_thr, &attr, ueventloop, allpaths);
+	pthread_create(&uxlsnr_thr, &attr, uxlsnrloop, allpaths);
 	pthread_join(check_thr, NULL);
 	pthread_join(uevent_thr, NULL);
+	pthread_join(uxlsnr_thr, NULL);
 
 	return 0;
 }
@@ -1156,7 +1278,7 @@ main (int argc, char *argv[])
 	if (!conf)
 		exit(1);
 
-	while ((arg = getopt(argc, argv, ":dv:")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":dv:k::")) != EOF ) {
 	switch(arg) {
 		case 'd':
 			logsink = 0;
@@ -1168,6 +1290,9 @@ main (int argc, char *argv[])
 
 			conf->verbosity = atoi(optarg);
 			break;
+		case 'k':
+			uxclnt(optarg);
+			exit(0);
 		default:
 			;
 		}

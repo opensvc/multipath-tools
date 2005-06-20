@@ -4,6 +4,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "debug.h"
+#include "memory.h"
+
 #define PARAMS_SIZE 255
 
 int
@@ -47,5 +50,44 @@ filepresent (char * run) {
 	if(!stat(run, &buf))
 		return 1;
 	return 0;
+}
+
+int
+get_word (char * sentence, char ** word)
+{
+	char * p;
+	int len;
+	int skip = 0;
+	
+	while (*sentence ==  ' ') {
+		sentence++;
+		skip++;
+	}
+	if (*sentence == '\0')
+		return 0;
+
+	p = sentence;
+
+	while (*p !=  ' ' && *p != '\0')
+		p++;
+
+	len = (int) (p - sentence);
+
+	if (!word)
+		return skip + len;
+
+	*word = MALLOC(len + 1);
+
+	if (!*word) {
+		condlog(0, "get_word : oom\n");
+		return 0;
+	}
+	strncpy(*word, sentence, len);
+	condlog(4, "*word = %s, len = %i", *word, len);
+
+	if (*p == '\0')
+		return 0;
+
+	return skip + len;
 }
 
