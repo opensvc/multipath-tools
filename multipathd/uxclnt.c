@@ -28,7 +28,10 @@ static void process(int fd)
 		if (recv_packet(fd, &reply, &len) != 0) break;
 
 		printf("%*.*s\n", (int)len, (int)len, reply);
-		add_history(line);
+
+		if (line && *line)
+			add_history(line);
+
 		free(line);
 		free(reply);
 	}
