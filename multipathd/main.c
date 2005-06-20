@@ -649,6 +649,11 @@ show_maps (struct paths * allpaths)
 	vector_foreach_slot(allpaths->mpvec, mpp, i) {
 		c += sprintf(c, "%20s: ", mpp->alias);
 
+		if (!mpp->failback_tick) {
+			c += sprintf(c, "[no scheduled failback]\n");
+			continue;
+		}
+
 		j = mpp->failback_tick;
 		k = mpp->pgfailback - mpp->failback_tick;
 		c += sprintf(c, "%3i/%3i ", j, mpp->pgfailback);
