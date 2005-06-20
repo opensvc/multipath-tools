@@ -126,6 +126,9 @@ set_paths_owner (struct paths * allpaths, struct multipath * mpp)
 	int i;
 	struct path * pp;
 
+	if (!mpp)
+		return;
+
 	vector_foreach_slot (allpaths->pathvec, pp, i) {
 		if (!strncmp(mpp->wwid, pp->wwid, WWID_SIZE)) {
 			condlog(4, "%s ownership set", pp->dev_t);
@@ -134,9 +137,26 @@ set_paths_owner (struct paths * allpaths, struct multipath * mpp)
 	}
 }
 
+static void
+unset_paths_owner (struct paths * allpaths, struct multipath * mpp)
+{
+	int i;
+	struct path * pp;
+
+	vector_foreach_slot (allpaths->pathvec, pp, i) {
+		if (pp->mpp == mpp) {
+			condlog(4, "%s is orphaned", pp->dev_t);
+			pp->mpp = NULL;
+		}
+	}
+}
+
 static int
 update_multipath_table (struct multipath *mpp, vector pathvec)
 {
+	if (!mpp)
+		return 1;
+
 	if (dm_get_map(mpp->alias, &mpp->size, mpp->params))
 		return 1;
 
@@ -149,6 +169,9 @@ update_multipath_table (struct multipath *mpp, vector pathvec)
 static int
 update_multipath_status (struct multipath *mpp)
 {
+	if (!mpp)
+		return 1;
+
 	if(dm_get_status(mpp->alias, mpp->status))
 		return 1;
 
@@ -437,6 +460,7 @@ remove_map (struct multipath * mpp, struct paths * allpaths)
 	i = find_slot(allpaths->mpvec, (void *)mpp);
 	vector_del_slot(allpaths->mpvec, i);
 	free_multipath(mpp, KEEP_PATHS);
+	unset_paths_owner(allpaths, mpp);
 }
 
 static int
@@ -511,7 +535,7 @@ uev_remove_map (char * devname, struct paths * allpaths)
 	int minor;
 	struct multipath * mpp;
 
-	mpp->minor = atoi(devname + 3);
+	minor = atoi(devname + 3);
 	mpp = find_mp_by_minor(allpaths->mpvec, minor);
 
 	if (mpp)
@@ -889,7 +913,9 @@ checkerloop (void *ap)
 					/*
 					 * cancel scheduled failback
 					 */
-					pp->mpp->failback_tick = 0;
+					if (pp->mpp)
+						pp->mpp->failback_tick = 0;
+
 					continue;
 				}
 
@@ -907,11 +933,12 @@ checkerloop (void *ap)
 				/*
 				 * schedule defered failback
 				 */
-				if (pp->mpp->pgfailback > 0)
+				if (pp->mpp && pp->mpp->pgfailback > 0)
 					pp->mpp->failback_tick =
 						pp->mpp->pgfailback;
 
-				if (pp->mpp->pgfailback == FAILBACK_IMMEDIATE)
+				if (pp->mpp &&
+				    pp->mpp->pgfailback == FAILBACK_IMMEDIATE)
 					switch_pathgroup(pp->mpp);
 			}
 			else if (newstate == PATH_UP || newstate == PATH_GHOST) {
@@ -919,7 +946,7 @@ checkerloop (void *ap)
 				 * PATH_UP for last two checks
 				 * defered failback getting sooner
 				 */
-				if (pp->mpp->pgfailback > 0) {
+				if (pp->mpp && pp->mpp->pgfailback > 0) {
 					if (pp->mpp->failback_tick > 0) {
 						pp->mpp->failback_tick--;
 
