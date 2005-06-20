@@ -563,7 +563,12 @@ uev_add_path (char * devname, struct paths * allpaths)
 		return 1;
 
 	pp->mpp = find_mp_by_wwid(allpaths->mpvec, pp->wwid);
-	condlog(4, "%s: ownership set to %s", pp->dev_t, pp->mpp->alias);
+
+	if (pp->mpp)
+		condlog(4, "%s: ownership set to %s",
+				pp->dev_t, pp->mpp->alias);
+	else
+		condlog(4, "%s: orphaned", pp->dev_t);
 
 	return 0;
 }
