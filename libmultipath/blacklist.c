@@ -55,9 +55,9 @@ setup_default_blist (vector blist)
 {
 	int r = 0;
 
-	r += store_ble(blist, "(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*");
-	r += store_ble(blist, "hd[a-z]");
-	r += store_ble(blist, "cciss!c[0-9]d[0-9]*");
+	r += store_ble(blist, "^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*");
+	r += store_ble(blist, "^hd[a-z]");
+	r += store_ble(blist, "^cciss!c[0-9]d[0-9]*");
 
 	return r;
 }
