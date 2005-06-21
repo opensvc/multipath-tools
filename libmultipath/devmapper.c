@@ -377,8 +377,8 @@ out:
 	return r;
 }
 
-int
-dm_switchgroup(char * mapname, int index)
+static int
+dm_groupmsg (char * msg, char * mapname, int index)
 {
 	int r = 0;
 	struct dm_task *dmt;
@@ -393,7 +393,7 @@ dm_switchgroup(char * mapname, int index)
 	if (!dm_task_set_sector(dmt, 0))
 		goto out;
 
-	snprintf(str, 24, "switch_group %i\n", index);
+	snprintf(str, 24, "%s_group %i\n", msg, index);
 	condlog(3, "message %s 0 %s", mapname, str);
 
 	if (!dm_task_set_message(dmt, str))
@@ -410,6 +410,24 @@ dm_switchgroup(char * mapname, int index)
 	dm_task_destroy(dmt);
 
 	return r;
+}
+
+int
+dm_switchgroup(char * mapname, int index)
+{
+	return dm_groupmsg("switch", mapname,index);
+}
+
+int
+dm_enablegroup(char * mapname, int index)
+{
+	return dm_groupmsg("enable", mapname,index);
+}
+
+int
+dm_disablegroup(char * mapname, int index)
+{
+	return dm_groupmsg("disable", mapname,index);
 }
 
 int

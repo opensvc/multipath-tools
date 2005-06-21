@@ -81,6 +81,7 @@ struct path {
 	int failcount;
 	int priority;
 	int claimed;
+	int pgindex;
 	char * getuid;
 	char * getprio;
 	int (*checkfn) (int, char *, void **);

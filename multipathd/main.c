@@ -862,6 +862,19 @@ reinstate_path (struct path * pp)
 	}
 }
 
+static void
+enable_group(struct path * pp)
+{
+	struct pathgroup * pgp;
+
+	pgp = VECTOR_SLOT(pp->mpp->pg, pp->pgindex - 1);
+	
+	if (pgp->status == PGSTATE_DISABLED) {
+		condlog(2, "%s: enable group #%i", pp->mpp->alias, pp->pgindex);
+		dm_enablegroup(pp->mpp->alias, pp->pgindex);
+	}
+}
+
 static void *
 checkerloop (void *ap)
 {
@@ -957,6 +970,13 @@ checkerloop (void *ap)
 
 				if (pp->mpp->pgfailback == FAILBACK_IMMEDIATE)
 					switch_pathgroup(pp->mpp);
+
+				/*
+				 * if at least one path is up in a group, and
+				 * the group is disabled, re-enable it
+				 */
+				if (newstate == PATH_UP)
+					enable_group(pp);
 			}
 			else if (newstate == PATH_UP || newstate == PATH_GHOST) {
 				/*
@@ -984,6 +1004,7 @@ checkerloop (void *ap)
 				pp->tick = pp->checkint;
 				condlog(4, "%s: delay next check %is",
 						pp->dev_t, pp->tick);
+
 			}
 			pp->state = newstate;
 		}

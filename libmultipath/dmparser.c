@@ -219,6 +219,8 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 			if (!strlen(mpp->wwid))
 				strncpy(mpp->wwid, pp->wwid, WWID_SIZE);
 
+			pp->pgindex = i + 1;
+
 			for (k = 0; k < num_paths_args; k++)
 				p += get_word(p, NULL);
 		}
