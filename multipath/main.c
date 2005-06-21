@@ -488,41 +488,38 @@ pathcount (struct multipath * mpp, int state)
 	return count;
 }
 
-/*
- * detect if a path is in the map we are about to create but not in the
- * current one (triggers a valid reload)
- * if a path is in the current map but not in the one we are about to create,
- * don't reload : it may come back latter so save the reload burden
- */
-static int
-pgcmp2 (struct multipath * mpp, struct multipath * cmpp)
+static void
+compute_pgid(struct pathgroup * pgp)
 {
-	int i, j, k, l;
+	struct path * pp;
+	int i;
+
+	vector_foreach_slot (pgp->paths, pp, i)
+		pgp->id ^= (long)pp;
+}
+
+static int
+pgcmp (struct multipath * mpp, struct multipath * cmpp)
+{
+	int i, j;
 	struct pathgroup * pgp;
 	struct pathgroup * cpgp;
-	struct path * pp;
-	struct path * cpp;
-	int found = 0;
+	int r = 0;
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
-		vector_foreach_slot (pgp->paths, pp, j) {
-			vector_foreach_slot (cmpp->pg, cpgp, k) {
-				vector_foreach_slot (cpgp->paths, cpp, l) {
-					if (pp == cpp) {
-						found = 1;
-						break;
-					}
-				}
-				if (found)
-					break;
+		compute_pgid(pgp);
+
+		vector_foreach_slot (cmpp->pg, cpgp, j) {
+			if (pgp->id == cpgp->id) {
+				r = 0;
+				break;
 			}
-			if (found)
-				found = 0;
-			else
-				return 1;
+			r++;
 		}
+		if (r)
+			return r;
 	}
-	return 0;
+	return r;
 }
 
 static void
@@ -569,7 +566,7 @@ select_action (struct multipath * mpp, vector curmp)
 		mpp->action = ACT_RELOAD;
 		return;
 	}
-	if (pgcmp2(mpp, cmpp)) {
+	if (pgcmp(mpp, cmpp)) {
 		condlog(3, "different path group topology");
 		mpp->action = ACT_RELOAD;
 		return;
