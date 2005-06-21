@@ -275,6 +275,15 @@ out:
 }
 	
 extern int
+dm_flush_map (char * mapname, char * type)
+{
+	if (!dm_type(mapname, type) || dm_get_opencount(mapname))
+		return 1;
+
+	return dm_simplecmd(DM_DEVICE_REMOVE, mapname);
+}
+
+extern int
 dm_flush_maps (char * type)
 {
 	int r = 0;
@@ -297,11 +306,7 @@ dm_flush_maps (char * type)
 		goto out;
 
 	do {
-		if (dm_type(names->name, type) &&
-		    dm_get_opencount(names->name) == 0 &&
-		    !dm_simplecmd(DM_DEVICE_REMOVE, names->name))
-			r++;
-
+		r += dm_flush_map(names->name, type);
 		next = names->next;
 		names = (void *) names + next;
 	} while (next);

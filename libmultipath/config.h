@@ -51,6 +51,7 @@ struct config {
 	int checkint;
 	int max_checkint;
 	int pgfailback;
+	int remove;
 
 	char * dev;
 	char * multipath;

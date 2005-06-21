@@ -755,7 +755,7 @@ static void
 usage (char * progname)
 {
 	fprintf (stderr, VERSION_STRING);
-	fprintf (stderr, "Usage: %s\t[-v level] [-d] [-l|-ll]\n",
+	fprintf (stderr, "Usage: %s\t[-v level] [-d] [-l|-ll|-f|-F]\n",
 		progname);
 	fprintf (stderr,
 		"\t\t\t[-p failover|multibus|group_by_serial|group_by_prio]\n" \
@@ -769,6 +769,7 @@ usage (char * progname)
 		"\t-d\t\tdry run, do not create or update devmaps\n" \
 		"\t-l\t\tshow multipath topology (sysfs and DM info)\n" \
 		"\t-ll\t\tshow multipath topology (maximum info)\n" \
+		"\t-F\t\tflush a multipath device map\n" \
 		"\t-F\t\tflush all multipath device maps\n" \
 		"\t-p policy\tforce all maps to specified policy :\n" \
 		"\t   failover\t\t1 path per priority group\n" \
@@ -876,7 +877,7 @@ main (int argc, char *argv[])
 	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
 
-	while ((arg = getopt(argc, argv, ":qdl::Fi:M:v:p:")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":qdl::Ffi:M:v:p:")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
 			break;
@@ -889,6 +890,9 @@ main (int argc, char *argv[])
 			break;
 		case 'd':
 			conf->dry_run = 1;
+			break;
+		case 'f':
+			conf->remove = 1;
 			break;
 		case 'F':
 			dm_flush_maps(DEFAULT_TARGET);
@@ -939,6 +943,17 @@ main (int argc, char *argv[])
 		else
 			conf->dev_type = DEV_DEVMAP;
 
+	}
+
+	if (conf->remove) {
+		if (conf->dev_type == DEV_DEVMAP) {
+			condlog(4, "remove %s map", conf->dev);
+			dm_flush_map(conf->dev, DEFAULT_TARGET);
+		}
+		else
+			condlog(0, "must provide a map name to remove");
+
+		goto out;
 	}
 
 	/*

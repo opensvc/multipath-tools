@@ -6,9 +6,7 @@ multipath \- Device mapper target autoconfig
 .RB [\| \-v\ \c
 .IR verbosity \|]
 .RB [\| \-d \|]
-.RB [\| \-l | \-ll \|]
-.RB [\| \-i\ \c
-.IR int \|]
+.RB [\| \-l | \-ll | \-f | \-F \|]
 .RB [\| \-p\ \c
 .BR failover | multibus | group_by_serial | group_by_prio | group_by_node_name \|]
 .RB [\| device \|]
@@ -41,13 +39,13 @@ show the current multipath topology from information fetched in sysfs and the de
 show the current multipath topology from all available information (sysfs, the device mapper, path checkers ...)
 .TP
 .TP
-.BI \-i " interval"
-multipath target param: polling interval
-.TP
 .BI \-D " major:minor"
 update only the devmap the path pointed by
 .I major:minor
 is in
+.TP
+.B \-f
+flush a multipath device map specified as parameter, if unused
 .TP
 .B \-F
 flush all unused multipath device maps
