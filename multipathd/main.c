@@ -903,6 +903,25 @@ enable_group(struct path * pp)
 	}
 }
 
+static void
+defered_failback_tick (vector mpvec)
+{
+	struct multipath * mpp;
+	int i;
+
+	vector_foreach_slot (mpvec, mpp, i) {
+		/*
+		 * defered failback getting sooner
+		 */
+		if (mpp->pgfailback > 0 && mpp->failback_tick > 0) {
+			mpp->failback_tick--;
+
+			if (!mpp->failback_tick)
+				switch_pathgroup(mpp);
+		}
+	}
+}
+
 static void *
 checkerloop (void *ap)
 {
@@ -1008,19 +1027,6 @@ checkerloop (void *ap)
 			}
 			else if (newstate == PATH_UP || newstate == PATH_GHOST) {
 				/*
-				 * PATH_UP for last two checks
-				 * defered failback getting sooner
-				 */
-				if (pp->mpp->pgfailback > 0) {
-					if (pp->mpp->failback_tick > 0) {
-						pp->mpp->failback_tick--;
-
-						if (!pp->mpp->failback_tick)
-							switch_pathgroup(pp->mpp);
-					}
-				}
-				
-				/*
 				 * and double the next check delay.
 				 * max at conf->max_checkint
 				 */
@@ -1036,6 +1042,7 @@ checkerloop (void *ap)
 			}
 			pp->state = newstate;
 		}
+		defered_failback_tick(allpaths->mpvec);
 		unlock(allpaths->lock);
 		sleep(1);
 	}

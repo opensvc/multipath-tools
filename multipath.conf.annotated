@@ -83,7 +83,7 @@
 #	# scope   : multipathd
 #	# desc    : tell the daemon to manage path group failback, or not to.
 #	#	    0 means immediate failback, values >0 means deffered failback
-#	#	    expressed in number of consecutive sucessful checks.
+#	#	    expressed in seconds.
 #	# values  : manual|immediate|n > 0
 #	# default : immediate
 #	#
@@ -161,7 +161,7 @@
 #		# scope   : multipathd
 #		# desc    : tell the daemon to manage path group failback, or not to.
 #		#	    0 means immediate failback, values >0 means deffered failback
-#		#	    expressed in number of consecutive sucessful checks.
+#		#	    expressed in seconds.
 #		# values  : manual|immediate|n > 0
 #		# default : immediate
 #		#
@@ -252,11 +252,11 @@
 #		# scope   : multipathd
 #		# desc    : tell the daemon to manage path group failback, or not to.
 #		#	    0 means immediate failback, values >0 means deffered failback
-#		#	    expressed in number of consecutive sucessful checks.
+#		#	    expressed in seconds.
 #		# values  : manual|immediate|n > 0
 #		# default : immediate
 #		#
-#		failback		15
+#		failback		30
 #	}
 #	device {
 #		vendor			"COMPAQ  "
