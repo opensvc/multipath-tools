@@ -223,6 +223,31 @@ out:
 }
 
 static void
+switch_to_pathgroup (char * str)
+{
+	char * mapname;
+	char * buff;
+	char * p;
+
+	p = str;
+	p += get_word(p, &mapname);
+
+	if (!mapname)
+		return;
+
+	p += get_word(p, &buff);
+
+	if (!buff)
+		goto out;
+
+	dm_switchgroup(mapname, atoi(buff));
+	FREE(buff);
+out:
+	FREE(mapname);
+	return;
+}
+	
+static void
 switch_pathgroup (struct multipath * mpp)
 {
 	struct pathgroup * pgp;
@@ -704,6 +729,9 @@ uxsock_trigger (char * str, void * trigger_data)
 
 	else if (*str == 'a' && *(str + 1) == 'm')
 		uev_add_map(str + 3, allpaths);
+
+	else if (*str == 's' && *(str + 1) == 'g')
+		switch_to_pathgroup(str + 3);
 
 	if (!reply)
 		asprintf(&reply, "ok\n");
