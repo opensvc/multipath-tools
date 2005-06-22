@@ -35,6 +35,9 @@ enum actions {
 	ACT_CREATE
 };
 
+#define FLUSH_ONE 1
+#define FLUSH_ALL 2
+
 /*
  * Build version
  */

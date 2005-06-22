@@ -892,8 +892,7 @@ main (int argc, char *argv[])
 			conf->remove = 1;
 			break;
 		case 'F':
-			dm_flush_maps(DEFAULT_TARGET);
-			goto out;
+			conf->remove = 2;
 			break;
 		case 'l':
 			conf->list = 1;
@@ -942,14 +941,16 @@ main (int argc, char *argv[])
 
 	}
 
-	if (conf->remove) {
-		if (conf->dev_type == DEV_DEVMAP) {
-			condlog(4, "remove %s map", conf->dev);
+	if (conf->remove == FLUSH_ONE) {
+		if (conf->dev_type == DEV_DEVMAP)
 			dm_flush_map(conf->dev, DEFAULT_TARGET);
-		}
 		else
 			condlog(0, "must provide a map name to remove");
 
+		goto out;
+	}
+	else if (conf->remove == FLUSH_ALL) {
+		dm_flush_maps(DEFAULT_TARGET);
 		goto out;
 	}
 
