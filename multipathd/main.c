@@ -90,13 +90,14 @@ struct paths {
 };
 
 struct event_thread {
-	pthread_t *thread;
+	struct dm_task *dmt;
+	pthread_t thread;
 	int event_nr;
 	char mapname[WWID_SIZE];
 	struct paths *allpaths;
 };
 
-static void *
+static struct event_thread *
 alloc_waiter (void)
 {
 
@@ -104,20 +105,7 @@ alloc_waiter (void)
 
 	wp = MALLOC(sizeof(struct event_thread));
 
-	if (!wp)
-		return NULL;
-
-	wp->thread = MALLOC(sizeof(pthread_t));
-
-	if (!wp->thread)
-		goto out;
-		
 	return wp;
-
-out:
-	free(wp);
-	condlog(0, "failed to alloc waiter");
-	return NULL;
 }
 
 static void
@@ -324,6 +312,15 @@ out:
 	return r;
 }
 
+static void
+free_waiter (void * data)
+{
+	struct event_thread * wp = (struct event_thread *)data;
+
+	dm_task_destroy(wp->dmt);
+	FREE(wp);
+}
+
 /*
  * returns the reschedule delay
  * negative means *stop*
@@ -331,25 +328,26 @@ out:
 static int
 waiteventloop (struct event_thread * waiter)
 {
-	struct dm_task *dmt;
 	int event_nr;
-	int r = 1; /* upon problem reschedule 1s later */
 
 	if (!waiter->event_nr)
 		waiter->event_nr = dm_geteventnr(waiter->mapname);
 
-	if (!(dmt = dm_task_create(DM_DEVICE_WAITEVENT)))
-		goto out;
+	if (!(waiter->dmt = dm_task_create(DM_DEVICE_WAITEVENT)))
+		return 1;
 
-	if (!dm_task_set_name(dmt, waiter->mapname))
-		goto out;
+	if (!dm_task_set_name(waiter->dmt, waiter->mapname))
+		return 1;
 
-	if (waiter->event_nr && !dm_task_set_event_nr(dmt, waiter->event_nr))
-		goto out;
+	if (waiter->event_nr && !dm_task_set_event_nr(waiter->dmt,
+						      waiter->event_nr))
+		return 1;
 
-	dm_task_no_open_count(dmt);
+	dm_task_no_open_count(waiter->dmt);
 
-	dm_task_run(dmt);
+	pthread_testcancel();
+	dm_task_run(waiter->dmt);
+	pthread_testcancel();
 
 	waiter->event_nr++;
 
@@ -371,21 +369,17 @@ waiteventloop (struct event_thread * waiter)
 		 * 4) a path reinstate : nothing to do
 		 * 5) a switch group : nothing to do
 		 */
-		if (update_multipath(waiter->allpaths, waiter->mapname)) {
-			r = -1; /* stop the thread */
-			goto out;
-		}
+		if (update_multipath(waiter->allpaths, waiter->mapname))
+			return -1; /* stop the thread */
+
 		event_nr = dm_geteventnr(waiter->mapname);
 
 		if (waiter->event_nr == event_nr)
-			break;
+			return 1; /* upon problem reschedule 1s later */
 
 		waiter->event_nr = event_nr;
 	}
-
-out:
-	dm_task_destroy(dmt);
-	return r;
+	return -1; /* never reach there */
 }
 
 static void *
@@ -398,6 +392,7 @@ waitevent (void * et)
 
 	waiter = (struct event_thread *)et;
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+	pthread_cleanup_push(free_waiter, et);
 
 	while (1) {
 		r = waiteventloop(waiter);
@@ -408,36 +403,21 @@ waitevent (void * et)
 		sleep(r);
 	}
 
-	pthread_exit(waiter->thread);
-
+	pthread_cleanup_pop(1);
 	return NULL;
-}
-
-static void
-free_waiter (struct event_thread * wp)
-{
-	free(wp->thread);
-	free(wp);
 }
 
 static int
 stop_waiter_thread (struct multipath * mpp, struct paths * allpaths)
 {
-	struct event_thread * wp;
-
-	if (!mpp)
-		return 0;
-
-	wp = (struct event_thread *)mpp->waiter;
+	struct event_thread * wp = (struct event_thread *)mpp->waiter;
 
 	if (!wp)
 		return 1;
 
-	condlog(2, "reap event checker : %s", wp->mapname);
-	pthread_cancel(*wp->thread);
-	free_waiter(wp);
+	condlog(2, "%s: reap event checker", wp->mapname);
 
-	return 0;
+	return pthread_cancel(wp->thread);
 }
 
 static int
@@ -450,28 +430,29 @@ start_waiter_thread (struct multipath * mpp, struct paths * allpaths)
 		return 0;
 
 	if (pthread_attr_init(&attr))
-		return 1;
+		goto out;
 
 	pthread_attr_setstacksize(&attr, 32 * 1024);
 	wp = alloc_waiter();
 
 	if (!wp)
-		return 1;
+		goto out;
 
 	mpp->waiter = (void *)wp;
 	strncpy(wp->mapname, mpp->alias, WWID_SIZE);
 	wp->allpaths = allpaths;
 
-	if (pthread_create(wp->thread, &attr, waitevent, wp)) {
+	if (pthread_create(&wp->thread, &attr, waitevent, wp)) {
 		condlog(0, "%s: cannot create event checker", wp->mapname);
-		goto out;
+		goto out1;
 	}
 	condlog(2, "%s: event checker started", wp->mapname);
 
 	return 0;
-out:
+out1:
 	free_waiter(wp);
 	mpp->waiter = NULL;
+out:
 	condlog(0, "failed to start waiter thread");
 	return 1;
 }
@@ -481,11 +462,28 @@ remove_map (struct multipath * mpp, struct paths * allpaths)
 {
 	int i;
 
-	stop_waiter_thread(mpp, allpaths);
+	/*
+	 * stop the DM event waiter thread
+	 */
+	if (stop_waiter_thread(mpp, allpaths))
+		condlog(0, "%s: error canceling waiter thread", mpp->alias);
+
+	/*
+	 * clear references to this map
+	 */
+	unset_paths_owner(allpaths, mpp);
+
+	/*
+	 * purge the multipath vector
+	 */
 	i = find_slot(allpaths->mpvec, (void *)mpp);
 	vector_del_slot(allpaths->mpvec, i);
+
+	/*
+	 * final free
+	 */
 	free_multipath(mpp, KEEP_PATHS);
-	unset_paths_owner(allpaths, mpp);
+	mpp = NULL;
 }
 
 static int
@@ -493,7 +491,7 @@ uev_add_map (char * devname, struct paths * allpaths)
 {
 	int major, minor;
 	char dev_t[BLK_DEV_SIZE];
-	char * buff;
+	char * alias;
 	struct multipath * mpp;
 
 	if (sysfs_get_dev(sysfs_path, devname, dev_t, BLK_DEV_SIZE))
@@ -502,54 +500,56 @@ uev_add_map (char * devname, struct paths * allpaths)
 	if (sscanf(dev_t, "%d:%d", &major, &minor) != 2)
 		return 1;
 
-	buff = dm_mapname(major, minor, "multipath");
+	alias = dm_mapname(major, minor);
 		
-	if (!buff)
+	if (!alias)
 		return 1;
 	
-	mpp = find_mp(allpaths->mpvec, buff);
+	if (!dm_type(alias, DEFAULT_TARGET)) {
+		condlog(4, "%s: not a multipath map", alias);
+		FREE(alias);
+		return 0;
+	}
+
+	mpp = find_mp(allpaths->mpvec, alias);
 
 	if (mpp) {
 		/*
-		 * devmap already in mpvec
-		 * but remove DM uevent are somewhet unreliable
-		 * so for now consider safer to remove and re-add the map
+		 * this should not happen,
+		 * we missed a remove map event (not sent ?)
 		 */
-		condlog(2, "%s: remove dead config", mpp->alias);
+		condlog(2, "%s: already registered", alias);
 		remove_map(mpp, allpaths);
-		mpp = NULL;
 	}
-	if (!mpp) {
-		mpp = alloc_multipath();
 
-		if (!mpp)
-			return 1;
+	/*
+	 * now we can allocate
+	 */
+	mpp = alloc_multipath();
 
-		mpp->minor = minor;
-		mpp->alias = MALLOC(strlen(buff) + 1);
+	if (!mpp)
+		return 1;
 
-		if (!mpp->alias)
-			goto out;
+	mpp->minor = minor;
+	mpp->alias = alias;
 
-		strncat(mpp->alias, buff, strlen(buff));
+	if (setup_multipath(allpaths, mpp))
+		return 1; /* mpp freed in setup_multipath */
 
-		dm_get_map(mpp->alias, &mpp->size, mpp->params);
-		dm_get_status(mpp->alias, mpp->status);
+	if (!vector_alloc_slot(allpaths->mpvec))
+		goto out;
 
-		if (setup_multipath(allpaths, mpp))
-			return 1; /* mpp freed in setup_multipath */
+	vector_set_slot(allpaths->mpvec, mpp);
+	set_paths_owner(allpaths, mpp);
 
-		if (!vector_alloc_slot(allpaths->mpvec))
-			goto out;
+	if (start_waiter_thread(mpp, allpaths))
+		goto out;
 
-		vector_set_slot(allpaths->mpvec, mpp);
-		set_paths_owner(allpaths, mpp);
+	condlog(2, "add %s devmap", mpp->alias);
 
-		if (start_waiter_thread(mpp, allpaths))
-			goto out;
-	}
 	return 0;
 out:
+	condlog(2, "add %s devmap failed", mpp->alias);
 	free_multipath(mpp, KEEP_PATHS);
 	return 1;
 }
@@ -563,8 +563,14 @@ uev_remove_map (char * devname, struct paths * allpaths)
 	minor = atoi(devname + 3);
 	mpp = find_mp_by_minor(allpaths->mpvec, minor);
 
-	if (mpp)
-		remove_map(mpp, allpaths);
+	if (!mpp) {
+		condlog(4, "%s: devmap not registered, can't remove",
+			devname);
+		return 0;
+	}
+
+	condlog(2, "remove %s devmap", mpp->alias);
+	remove_map(mpp, allpaths);
 
 	return 0;
 }
@@ -725,16 +731,18 @@ uxsock_trigger (char * str, void * trigger_data)
 		uev_add_path(str + 3, allpaths);
 
 	else if (*str == 'r' && *(str + 1) == 'm')
-		uev_remove_map(str + 3, allpaths);
+		if (!strncmp(str +3, "dm-", 3))
+			uev_remove_map(str + 3, allpaths);
 
 	else if (*str == 'a' && *(str + 1) == 'm')
-		uev_add_map(str + 3, allpaths);
+		if (!strncmp(str +3, "dm-", 3))
+			uev_add_map(str + 3, allpaths);
 
 	else if (*str == 's' && *(str + 1) == 'g')
 		switch_to_pathgroup(str + 3);
 
 	if (!reply)
-		asprintf(&reply, "ok\n");
+		reply = strdup("ok\n");
 
 	unlock(allpaths->lock);
 
@@ -760,8 +768,6 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	 * device map add/remove event
 	 */
 	if (!strncmp(devname, "dm-", 3)) {
-		condlog(2, "%s %s devmap", uev->action, devname);
-
 		if (!strncmp(uev->action, "add", 3)) {
 			r = uev_add_map(devname, allpaths);
 			goto out;
@@ -904,6 +910,20 @@ enable_group(struct path * pp)
 }
 
 static void
+mpvec_garbage_collector (struct paths * allpaths)
+{
+	struct multipath * mpp;
+	int i;
+
+	vector_foreach_slot (allpaths->mpvec, mpp, i) {
+		if (!dm_map_present(mpp->alias)) {
+			condlog(2, "%s: remove dead map", mpp->alias);
+			remove_map(mpp, allpaths);
+		}
+	}
+}
+
+static void
 defered_failback_tick (vector mpvec)
 {
 	struct multipath * mpp;
@@ -927,7 +947,7 @@ checkerloop (void *ap)
 {
 	struct paths *allpaths;
 	struct path *pp;
-	int i;
+	int i, count = 0;
 	int newstate;
 	char checker_msg[MAX_CHECKER_MSG_SIZE];
 
@@ -1043,6 +1063,15 @@ checkerloop (void *ap)
 			pp->state = newstate;
 		}
 		defered_failback_tick(allpaths->mpvec);
+
+		if (count)
+			count--;
+		else {
+			condlog(4, "map garbage collection");
+			mpvec_garbage_collector(allpaths);
+			count = MAPGCINT;
+		}
+		
 		unlock(allpaths->lock);
 		sleep(1);
 	}

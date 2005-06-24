@@ -188,6 +188,9 @@ dm_get_status(char * name, char * outstatus)
 	if (snprintf(outstatus, PARAMS_SIZE, "%s", status) <= PARAMS_SIZE)
 		r = 0;
 out:
+	if (r)
+		condlog(0, "%s: error getting map status string", name);
+
 	dm_task_destroy(dmt);
 	return r;
 }
@@ -446,7 +449,6 @@ dm_groupmsg (char * msg, char * mapname, int index)
 		goto out;
 
 	snprintf(str, 24, "%s_group %i\n", msg, index);
-	condlog(3, "message %s 0 %s", mapname, str);
 
 	if (!dm_task_set_message(dmt, str))
 		goto out;
@@ -456,9 +458,13 @@ dm_groupmsg (char * msg, char * mapname, int index)
 	if (!dm_task_run(dmt))
 		goto out;
 
+	condlog(3, "message %s 0 %s", mapname, str);
 	r = 1;
 
 	out:
+	if (!r)
+		condlog(3, "message %s 0 %s failed", mapname, str);
+
 	dm_task_destroy(dmt);
 
 	return r;
@@ -583,13 +589,10 @@ out:
 }
 
 char *
-dm_mapname(int major, int minor, char *type)
+dm_mapname(int major, int minor)
 {
+	char * response;
 	struct dm_task *dmt;
-	void *next = NULL;
-	uint64_t start, length;
-	char *target_type = NULL;
-	char *params;
 	int r;
 	int loop = MAX_WAIT * LOOPS_PER_SEC;
 
@@ -615,24 +618,17 @@ dm_mapname(int major, int minor, char *type)
 		usleep(1000 * 1000 / LOOPS_PER_SEC);
 	}
 
-	if (!r)
+	if (!r) {
+		condlog(0, "%i:%i: timeout fetching map name", major, minor);
 		goto bad;
+	}
 
-	if (!type)
-		goto good;
-
-	do {
-		next = dm_get_next_target(dmt, next, &start, &length,
-					  &target_type, &params);
-		if (target_type && strcmp(target_type, type))
-			goto bad;
-	} while (next);
-
-good:
+	response = strdup(dm_task_get_name(dmt));
 	dm_task_destroy(dmt);
-	return strdup(dm_task_get_name(dmt));
+	return response;
 bad:
 	dm_task_destroy(dmt);
+	condlog(0, "%i:%i: error fetching map name", major, minor);
 	return NULL;
 }
 
