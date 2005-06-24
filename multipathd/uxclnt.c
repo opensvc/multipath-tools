@@ -21,7 +21,7 @@ static void process(int fd)
 	char *line;
 	char *reply;
 
-	while (line = readline("multipathd> ")) {
+	while ((line = readline("multipathd> "))) {
 		size_t len = strlen(line);
 
 		if (send_packet(fd, line, strlen(line)) != 0) break;
