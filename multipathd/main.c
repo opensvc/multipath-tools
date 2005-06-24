@@ -210,29 +210,35 @@ out:
 	return 1;
 }
 
-static void
+static int
 switch_to_pathgroup (char * str)
 {
 	char * mapname;
-	char * buff;
-	char * p;
+	char * buff = NULL;
+	char * p = NULL;
+	int r = 0;
+	int pg;
 
 	p = str;
 	p += get_word(p, &mapname);
 
 	if (!mapname)
-		return;
+		return 1;
 
 	p += get_word(p, &buff);
 
 	if (!buff)
 		goto out;
 
-	dm_switchgroup(mapname, atoi(buff));
+	if (sscanf(buff, "%d", &pg) != 1)
+		goto out1;
+
+	r = !dm_switchgroup(mapname, pg);
+out1:
 	FREE(buff);
 out:
 	FREE(mapname);
-	return;
+	return r;
 }
 	
 static void
@@ -560,13 +566,15 @@ uev_remove_map (char * devname, struct paths * allpaths)
 	int minor;
 	struct multipath * mpp;
 
-	minor = atoi(devname + 3);
+	if (sscanf(devname, "dm-%d", &minor) != 1)
+		return 1;
+
 	mpp = find_mp_by_minor(allpaths->mpvec, minor);
 
 	if (!mpp) {
-		condlog(4, "%s: devmap not registered, can't remove",
+		condlog(3, "%s: devmap not registered, can't remove",
 			devname);
-		return 0;
+		return 1;
 	}
 
 	condlog(2, "remove %s devmap", mpp->alias);
@@ -584,15 +592,17 @@ uev_add_path (char * devname, struct paths * allpaths)
 
 	if (pp) {
 		condlog(3, "%s: already in pathvec");
-		return 0;
+		return 1;
 	}
-	condlog(2, "add %s path checker", devname);
 	pp = store_pathinfo(allpaths->pathvec, conf->hwtable,
 		       devname, DI_SYSFS | DI_WWID);
 
-	if (!pp)
+	if (!pp) {
+		condlog(0, "%s: failed to store path info", devname);
 		return 1;
+	}
 
+	condlog(2, "%s: path checker registered", devname);
 	pp->mpp = find_mp_by_wwid(allpaths->mpvec, pp->wwid);
 
 	if (pp->mpp)
@@ -614,7 +624,7 @@ uev_remove_path (char * devname, struct paths * allpaths)
 
 	if (!pp) {
 		condlog(3, "%s: not in pathvec");
-		return 0;
+		return 1;
 	}
 	condlog(2, "remove %s path checker", devname);
 	i = find_slot(allpaths->pathvec, (void *)pp);
@@ -664,6 +674,7 @@ show_paths (struct paths * allpaths)
 		c += sprintf(c, "\n");
 	}
 
+	reply[MAX_REPLY_LEN - 1] = 0;
 	return reply;
 }
 
@@ -705,12 +716,14 @@ show_maps (struct paths * allpaths)
 		c += sprintf(c, "\n");
 	}
 
+	reply[MAX_REPLY_LEN - 1] = 0;
 	return reply;
 }
 
 char *
 uxsock_trigger (char * str, void * trigger_data)
 {
+	int r;
 	struct paths * allpaths;
 	char * reply = NULL;
 
@@ -718,31 +731,47 @@ uxsock_trigger (char * str, void * trigger_data)
 
 	lock(allpaths->lock);
 
-	if (*str == 'l' && *(str + 1) == 'p')
+	if (strlen(str) < 2)
+		r = 1;
+	else if (*str == 'l' && *(str + 1) == 'p')
 		reply = show_paths(allpaths);
 
 	else if (*str == 'l' && *(str + 1) == 'm')
 		reply = show_maps(allpaths);
 
+	else if (strlen(str) < 4)
+		r = 1;
+
 	else if (*str == 'r' && *(str + 1) == 'p')
-		uev_remove_path(str + 3, allpaths);
+		r = uev_remove_path(str + 3, allpaths);
 
 	else if (*str == 'a' && *(str + 1) == 'p')
-		uev_add_path(str + 3, allpaths);
+		r = uev_add_path(str + 3, allpaths);
 
-	else if (*str == 'r' && *(str + 1) == 'm')
-		if (!strncmp(str +3, "dm-", 3))
-			uev_remove_map(str + 3, allpaths);
+	else if (*str == 'r' && *(str + 1) == 'm') {
+		if (!strncmp(str +3, "dm-", 3)) {
+			r = uev_remove_map(str + 3, allpaths);
+		}
+	}
 
-	else if (*str == 'a' && *(str + 1) == 'm')
-		if (!strncmp(str +3, "dm-", 3))
-			uev_add_map(str + 3, allpaths);
+	else if (*str == 'a' && *(str + 1) == 'm') {
+		if (!strncmp(str +3, "dm-", 3)) {
+			r = uev_add_map(str + 3, allpaths);
+		}
+	}
 
 	else if (*str == 's' && *(str + 1) == 'g')
-		switch_to_pathgroup(str + 3);
+		r = switch_to_pathgroup(str + 3);
 
-	if (!reply)
-		reply = strdup("ok\n");
+	else
+		r = 1;
+
+	if (!reply) {
+		if (r)
+			reply = strdup("fail\n");
+		else
+			reply = strdup("ok\n");
+	}
 
 	unlock(allpaths->lock);
 

@@ -22,12 +22,12 @@ static void process(int fd)
 	char *reply;
 
 	while ((line = readline("multipathd> "))) {
-		size_t len = strlen(line);
+		size_t len;
 
-		if (send_packet(fd, line, strlen(line)) != 0) break;
+		if (send_packet(fd, line, strlen(line) + 1) != 0) break;
 		if (recv_packet(fd, &reply, &len) != 0) break;
 
-		printf("%*.*s\n", (int)len, (int)len, reply);
+		printf("%s\n", reply);
 
 		if (line && *line)
 			add_history(line);
@@ -42,10 +42,10 @@ static void process_req(int fd, char * inbuf)
 	char *reply;
 	size_t len;
 
-	send_packet(fd, inbuf, strlen(inbuf));
+	send_packet(fd, inbuf, strlen(inbuf) + 1);
 	recv_packet(fd, &reply, &len);
 
-	printf("%*.*s\n", (int)len, (int)len, reply);
+	printf("%s\n", reply);
 	free(reply);
 }
 	

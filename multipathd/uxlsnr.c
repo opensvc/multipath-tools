@@ -120,14 +120,14 @@ void * uxsock_listen(char * (*uxsock_trigger)(char *, void * trigger_data),
 				if (recv_packet(c->fd, &inbuf, &len) != 0) {
 					dead_client(c);
 				} else {
-					condlog(4, "Got request [%*.*s]",
-						(int)len, (int)len, inbuf);
+					inbuf[len - 1] = 0;
+					condlog(4, "Got request [s]", inbuf);
 					reply = uxsock_trigger(inbuf,
 							trigger_data);
 
 					if (reply) {
 						if (send_packet(c->fd, reply,
-							strlen(reply)) != 0) {
+						     strlen(reply) + 1) != 0) {
 							dead_client(c);
 						}
 						FREE(reply);
