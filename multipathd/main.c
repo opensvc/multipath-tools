@@ -55,10 +55,11 @@
 #include "pidfile.h"
 #include "uxlsnr.h"
 #include "uxclnt.h"
+#include "cli.h"
+#include "cli_handlers.h"
 
 #define FILE_NAME_SIZE 256
 #define CMDSIZE 160
-#define MAX_REPLY_LEN 1000
 
 #define CALLOUT_DIR "/var/cache/multipathd"
 
@@ -83,12 +84,6 @@
 /*
  * structs
  */
-struct paths {
-	pthread_mutex_t *lock;
-	vector pathvec;
-	vector mpvec;
-};
-
 struct event_thread {
 	struct dm_task *dmt;
 	pthread_t thread;
@@ -210,37 +205,6 @@ out:
 	return 1;
 }
 
-static int
-switch_to_pathgroup (char * str)
-{
-	char * mapname;
-	char * buff = NULL;
-	char * p = NULL;
-	int r = 0;
-	int pg;
-
-	p = str;
-	p += get_word(p, &mapname);
-
-	if (!mapname)
-		return 1;
-
-	p += get_word(p, &buff);
-
-	if (!buff)
-		goto out;
-
-	if (sscanf(buff, "%d", &pg) != 1)
-		goto out1;
-
-	r = !dm_switchgroup(mapname, pg);
-out1:
-	FREE(buff);
-out:
-	FREE(mapname);
-	return r;
-}
-	
 static void
 switch_pathgroup (struct multipath * mpp)
 {
@@ -354,6 +318,7 @@ waiteventloop (struct event_thread * waiter)
 	pthread_testcancel();
 	dm_task_run(waiter->dmt);
 	pthread_testcancel();
+	dm_task_destroy(waiter->dmt);
 
 	waiter->event_nr++;
 
@@ -471,8 +436,13 @@ remove_map (struct multipath * mpp, struct paths * allpaths)
 	/*
 	 * stop the DM event waiter thread
 	 */
-	if (stop_waiter_thread(mpp, allpaths))
+	if (stop_waiter_thread(mpp, allpaths)) {
 		condlog(0, "%s: error canceling waiter thread", mpp->alias);
+		/*
+		 * warrior mode
+		 */
+		free_waiter(mpp->waiter);
+	}
 
 	/*
 	 * clear references to this map
@@ -492,7 +462,7 @@ remove_map (struct multipath * mpp, struct paths * allpaths)
 	mpp = NULL;
 }
 
-static int
+int
 uev_add_map (char * devname, struct paths * allpaths)
 {
 	int major, minor;
@@ -560,7 +530,7 @@ out:
 	return 1;
 }
 
-static int
+int
 uev_remove_map (char * devname, struct paths * allpaths)
 {
 	int minor;
@@ -583,7 +553,7 @@ uev_remove_map (char * devname, struct paths * allpaths)
 	return 0;
 }
 
-static int
+int
 uev_add_path (char * devname, struct paths * allpaths)
 {
 	struct path * pp;
@@ -614,7 +584,7 @@ uev_add_path (char * devname, struct paths * allpaths)
 	return 0;
 }
 
-static int
+int
 uev_remove_path (char * devname, struct paths * allpaths)
 {
 	int i;
@@ -634,7 +604,7 @@ uev_remove_path (char * devname, struct paths * allpaths)
 	return 0;
 }
 
-static char *
+char *
 show_paths (struct paths * allpaths)
 {
 	int i, j, k;
@@ -678,7 +648,7 @@ show_paths (struct paths * allpaths)
 	return reply;
 }
 
-static char *
+char *
 show_maps (struct paths * allpaths)
 {
 	int i, j, k;
@@ -723,7 +693,6 @@ show_maps (struct paths * allpaths)
 char *
 uxsock_trigger (char * str, void * trigger_data)
 {
-	int r;
 	struct paths * allpaths;
 	char * reply = NULL;
 
@@ -731,47 +700,13 @@ uxsock_trigger (char * str, void * trigger_data)
 
 	lock(allpaths->lock);
 
-	if (strlen(str) < 2)
-		r = 1;
-	else if (*str == 'l' && *(str + 1) == 'p')
-		reply = show_paths(allpaths);
+	reply = parse_cmd(str, allpaths);
 
-	else if (*str == 'l' && *(str + 1) == 'm')
-		reply = show_maps(allpaths);
+	if (!reply)
+		reply = strdup("fail\n");
 
-	else if (strlen(str) < 4)
-		r = 1;
-
-	else if (*str == 'r' && *(str + 1) == 'p')
-		r = uev_remove_path(str + 3, allpaths);
-
-	else if (*str == 'a' && *(str + 1) == 'p')
-		r = uev_add_path(str + 3, allpaths);
-
-	else if (*str == 'r' && *(str + 1) == 'm') {
-		if (!strncmp(str +3, "dm-", 3)) {
-			r = uev_remove_map(str + 3, allpaths);
-		}
-	}
-
-	else if (*str == 'a' && *(str + 1) == 'm') {
-		if (!strncmp(str +3, "dm-", 3)) {
-			r = uev_add_map(str + 3, allpaths);
-		}
-	}
-
-	else if (*str == 's' && *(str + 1) == 'g')
-		r = switch_to_pathgroup(str + 3);
-
-	else
-		r = 1;
-
-	if (!reply) {
-		if (r)
-			reply = strdup("fail\n");
-		else
-			reply = strdup("ok\n");
-	}
+	else if (strlen(reply) == 0)
+		reply = strdup("ok\n");
 
 	unlock(allpaths->lock);
 
@@ -840,6 +775,20 @@ ueventloop (void * ap)
 static void *
 uxlsnrloop (void * ap)
 {
+	if (load_keys())
+		return NULL;
+	
+	if (alloc_handlers())
+		return NULL;
+
+	add_handler(LIST+PATHS, list_paths);
+	add_handler(LIST+MAPS, list_maps);
+	add_handler(ADD+PATH, add_path);
+	add_handler(DEL+PATH, del_path);
+	add_handler(ADD+MAP, add_map);
+	add_handler(DEL+MAP, del_map);
+	add_handler(SWITCH+MAP+GROUP, switch_group);
+
 	uxsock_listen(&uxsock_trigger, ap);
 
 	return NULL;
@@ -1347,10 +1296,7 @@ child (void * param)
 		conf->binvec = vector_alloc();
 		push_callout("/sbin/scsi_id");
 	}
-	if (!conf->multipath) {
-		conf->multipath = MULTIPATH;
-		push_callout(conf->multipath);
-	}
+
 	if (!conf->checkint) {
 		conf->checkint = CHECKINT;
 		conf->max_checkint = MAX_CHECKINT;
