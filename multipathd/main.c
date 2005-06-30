@@ -98,7 +98,7 @@ alloc_waiter (void)
 
 	struct event_thread * wp;
 
-	wp = MALLOC(sizeof(struct event_thread));
+	wp = (struct event_thread *)MALLOC(sizeof(struct event_thread));
 
 	return wp;
 }
@@ -1059,9 +1059,9 @@ checkerloop (void *ap)
 static struct paths *
 init_paths (void)
 {
-	struct paths *allpaths;
+	struct paths * allpaths;
 
-	allpaths = MALLOC(sizeof(struct paths));
+	allpaths = (struct paths *)MALLOC(sizeof(struct paths));
 
 	if (!allpaths)
 		return NULL;
@@ -1107,7 +1107,7 @@ static int
 prepare_namespace(void)
 {
 	mode_t mode = S_IRWXU;
-	struct stat *buf;
+	struct stat * buf;
 	char ramfs_args[64];
 	int i;
 	int fd;
@@ -1115,7 +1115,7 @@ prepare_namespace(void)
 	size_t size = 10;
 	struct stat statbuf;
 	
-	buf = MALLOC(sizeof(struct stat));
+	buf = (struct stat *)MALLOC(sizeof(struct stat));
 
 	/*
 	 * create a temp mount point for ramfs

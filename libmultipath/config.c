@@ -195,7 +195,8 @@ free_mptable (vector mptable)
 struct mpentry *
 alloc_mpe (void)
 {
-	struct mpentry * mpe = MALLOC(sizeof(struct mpentry));
+	struct mpentry * mpe = (struct mpentry *)
+				MALLOC(sizeof(struct mpentry));
 
 	return mpe;
 }
@@ -203,7 +204,8 @@ alloc_mpe (void)
 static struct hwentry *
 alloc_hwe (void)
 {
-	struct hwentry * hwe = MALLOC(sizeof(struct hwentry));
+	struct hwentry * hwe = (struct hwentry *)
+				MALLOC(sizeof(struct hwentry));
 
 	return hwe;
 }

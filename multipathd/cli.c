@@ -7,13 +7,13 @@
 static struct key *
 alloc_key (void)
 {
-	return MALLOC(sizeof(struct key));
+	return (struct key *)MALLOC(sizeof(struct key));
 }
 
 static struct handler *
 alloc_handler (void)
 {
-	return MALLOC(sizeof(struct handler));
+	return (struct handler *)MALLOC(sizeof(struct handler));
 }
 
 static int
