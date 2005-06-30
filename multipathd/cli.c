@@ -72,12 +72,13 @@ add_handler (int fp, char * (*fn)(void *, void *))
 static void
 free_key (struct key * kw)
 {
+	if (kw->str)
 		FREE(kw->str);
 
-		if (kw->param)
-			FREE(kw->param);
+	if (kw->param)
+		FREE(kw->param);
 
-		FREE(kw);
+	FREE(kw);
 }
 
 static void
