@@ -267,8 +267,6 @@ update_multipath (struct paths *allpaths, char *mapname)
 	int i, j;
 	int r = 1;
 
-	pthread_cleanup_push(cleanup_lock, allpaths->lock);
-	lock(allpaths->lock);
 	mpp = find_mp(allpaths->mpvec, mapname);
 
 	if (!mpp)
@@ -302,8 +300,6 @@ update_multipath (struct paths *allpaths, char *mapname)
 	}
 	r = 0;
 out:
-	pthread_cleanup_pop(1);
-
 	if (r)
 		condlog(0, "failed to update multipath");
 
@@ -327,6 +323,7 @@ static int
 waiteventloop (struct event_thread * waiter)
 {
 	int event_nr;
+	int r;
 
 	if (!waiter->event_nr)
 		waiter->event_nr = dm_geteventnr(waiter->mapname);
@@ -368,7 +365,13 @@ waiteventloop (struct event_thread * waiter)
 		 * 4) a path reinstate : nothing to do
 		 * 5) a switch group : nothing to do
 		 */
-		if (update_multipath(waiter->allpaths, waiter->mapname))
+		pthread_cleanup_push(cleanup_lock, waiter->allpaths->lock);
+		lock(waiter->allpaths->lock);
+
+		r = update_multipath(waiter->allpaths, waiter->mapname);
+		pthread_cleanup_pop(1);
+
+		if (r)
 			return -1; /* stop the thread */
 
 		event_nr = dm_geteventnr(waiter->mapname);
