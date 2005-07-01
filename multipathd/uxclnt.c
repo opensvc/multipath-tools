@@ -12,6 +12,7 @@
 #include <readline/history.h>
 
 #include <uxsock.h>
+#include <memory.h>
 
 /*
  * process the client 
@@ -33,7 +34,7 @@ static void process(int fd)
 			add_history(line);
 
 		free(line);
-		free(reply);
+		FREE(reply);
 	}
 }
 
@@ -46,7 +47,7 @@ static void process_req(int fd, char * inbuf)
 	recv_packet(fd, &reply, &len);
 
 	printf("%s\n", reply);
-	free(reply);
+	FREE(reply);
 }
 	
 /*

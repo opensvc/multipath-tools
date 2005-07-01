@@ -51,11 +51,14 @@ int debug;
                       (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
 #define REALLOC(b,n) ( dbg_realloc((b), (n), \
                       (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
+#define STRDUP(n)    ( dbg_strdup((n), \
+                      (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
 
 /* Memory debug prototypes defs */
 extern char *dbg_malloc(unsigned long, char *, char *, int);
 extern int dbg_free(void *, char *, char *, int);
 extern void *dbg_realloc(void *, unsigned long, char *, char *, int);
+extern char *dbg_strdup(char *, char *, char *, int);
 extern void dbg_free_final(char *);
 
 #else
@@ -63,6 +66,7 @@ extern void dbg_free_final(char *);
 #define MALLOC(n)    (zalloc(n))
 #define FREE(p)      (xfree(p))
 #define REALLOC(p,n) (realloc((p),(n)))
+#define STRDUP(n)    (strdup(n))
 
 #endif
 

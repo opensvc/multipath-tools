@@ -31,7 +31,7 @@ add_path (void * v, void * data)
 	if (uev_add_path(param, allpaths))
 		return NULL;
 
-	return strdup("ok");
+	return STRDUP("ok");
 }
 
 char *
@@ -43,7 +43,7 @@ del_path (void * v, void * data)
 	if (uev_remove_path(param, allpaths))
 		return NULL;
 
-	return strdup("ok");
+	return STRDUP("ok");
 }
 
 char *
@@ -55,7 +55,7 @@ add_map (void * v, void * data)
 	if (uev_add_map(param, allpaths))
 		return NULL;
 
-	return strdup("ok");
+	return STRDUP("ok");
 }
 
 char *
@@ -67,7 +67,7 @@ del_map (void * v, void * data)
 	if (uev_remove_map(param, allpaths))
 		return NULL;
 
-	return strdup("ok");
+	return STRDUP("ok");
 }
 
 char *
@@ -78,5 +78,5 @@ switch_group(void * v, void * data)
 	
 	dm_switchgroup(mapname, groupnum);
 
-	return strdup("ok");
+	return STRDUP("ok");
 }

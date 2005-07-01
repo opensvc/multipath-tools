@@ -623,7 +623,7 @@ dm_mapname(int major, int minor)
 		goto bad;
 	}
 
-	response = strdup(dm_task_get_name(dmt));
+	response = STRDUP((char *)dm_task_get_name(dmt));
 	dm_task_destroy(dmt);
 	return response;
 bad:

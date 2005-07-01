@@ -31,7 +31,7 @@ free_path (struct path * pp)
 		return;
 
 	if (pp->checker_context)
-		FREE(pp->checker_context);
+		free(pp->checker_context);
 
 	if (pp->fd > 0)
 		close(pp->fd);

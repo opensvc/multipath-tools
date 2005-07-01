@@ -88,8 +88,10 @@ vector_del_slot(vector v, int slot)
 
 	v->allocated -= VECTOR_DEFAULT_SIZE;
 
-	if (!v->allocated)
+	if (!v->allocated) {
+		FREE(v->slot);
 		v->slot = NULL;
+	}
 	else
 		v = REALLOC(v->slot, sizeof (void *) * v->allocated);
 }
@@ -129,8 +131,8 @@ free_strvec(vector strvec)
 	if (!strvec)
 		return;
 
-	for (i = 0; i < VECTOR_SIZE(strvec); i++)
-		if ((str = VECTOR_SLOT(strvec, i)) != NULL)
+	vector_foreach_slot (strvec, str, i)
+		if (str)
 			FREE(str);
 
 	vector_free(strvec);

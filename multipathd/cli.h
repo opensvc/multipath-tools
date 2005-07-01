@@ -30,3 +30,5 @@ int add_handler (int fp, char * (*fn)(void *, void *));
 char * parse_cmd (char * cmd, void *);
 int load_keys (void);
 char * get_keyparam (vector v, int code);
+void free_keys (vector vec);
+void free_handlers (vector vec);

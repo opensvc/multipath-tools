@@ -28,7 +28,7 @@ add_key (vector vec, char * str, int code, int has_param)
 
 	kw->code = code;
 	kw->has_param = has_param;
-	kw->str = strdup(str);
+	kw->str = STRDUP(str);
 
 	if (!kw->str)
 		goto out;
@@ -81,16 +81,28 @@ free_key (struct key * kw)
 	FREE(kw);
 }
 
-static void
+void
 free_keys (vector vec)
 {
 	int i;
 	struct key * kw;
 
-	vector_foreach_slot(vec, kw, i)
+	vector_foreach_slot (vec, kw, i)
 		free_key(kw);
 
-	FREE(vec);
+	vector_free(vec);
+}
+
+void
+free_handlers (vector vec)
+{
+	int i;
+	struct handler * h;
+
+	vector_foreach_slot (vec, h, i)
+		FREE(h);
+
+	vector_free(vec);
 }
 
 int
@@ -117,6 +129,7 @@ load_keys (void)
 
 	if (r) {
 		free_keys(keys);
+		keys = NULL;
 		return 1;
 	}
 

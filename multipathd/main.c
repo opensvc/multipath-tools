@@ -81,6 +81,9 @@
 #define unlock(a) pthread_mutex_unlock(a)
 #endif
 
+pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 /*
  * structs
  */
@@ -101,6 +104,12 @@ alloc_waiter (void)
 	wp = (struct event_thread *)MALLOC(sizeof(struct event_thread));
 
 	return wp;
+}
+
+static void
+cleanup_lock (void * data)
+{
+	unlock((pthread_mutex_t *)data);
 }
 
 static void
@@ -167,6 +176,24 @@ update_multipath_status (struct multipath *mpp)
 static int
 update_multipath_strings (struct multipath *mpp, vector pathvec)
 {
+	if (mpp->selector) {
+		FREE(mpp->selector);
+		mpp->selector = NULL;
+	}
+
+	if (mpp->features) {
+		FREE(mpp->features);
+		mpp->features = NULL;
+	}
+
+	if (mpp->hwhandler) {
+		FREE(mpp->hwhandler);
+		mpp->hwhandler = NULL;
+	}
+
+	free_pgvec(mpp->pg, KEEP_PATHS);
+	mpp->pg = NULL;
+
 	if (update_multipath_table(mpp, pathvec))
 		return 1;
 
@@ -240,6 +267,7 @@ update_multipath (struct paths *allpaths, char *mapname)
 	int i, j;
 	int r = 1;
 
+	pthread_cleanup_push(cleanup_lock, allpaths->lock);
 	lock(allpaths->lock);
 	mpp = find_mp(allpaths->mpvec, mapname);
 
@@ -274,7 +302,7 @@ update_multipath (struct paths *allpaths, char *mapname)
 	}
 	r = 0;
 out:
-	unlock(allpaths->lock);
+	pthread_cleanup_pop(1);
 
 	if (r)
 		condlog(0, "failed to update multipath");
@@ -460,6 +488,19 @@ remove_map (struct multipath * mpp, struct paths * allpaths)
 	 */
 	free_multipath(mpp, KEEP_PATHS);
 	mpp = NULL;
+}
+
+static void
+remove_maps (struct paths * allpaths)
+{
+	int i;
+	struct multipath * mpp;
+
+	vector_foreach_slot (allpaths->mpvec, mpp, i)
+		remove_map(mpp, allpaths);
+
+	vector_free(allpaths->mpvec);
+	allpaths->mpvec = NULL;
 }
 
 int
@@ -698,17 +739,18 @@ uxsock_trigger (char * str, void * trigger_data)
 
 	allpaths = (struct paths *)trigger_data;
 
+	pthread_cleanup_push(cleanup_lock, allpaths->lock);
 	lock(allpaths->lock);
 
 	reply = parse_cmd(str, allpaths);
 
 	if (!reply)
-		reply = strdup("fail\n");
+		reply = STRDUP("fail\n");
 
 	else if (strlen(reply) == 0)
-		reply = strdup("ok\n");
+		reply = STRDUP("ok\n");
 
-	unlock(allpaths->lock);
+	pthread_cleanup_pop(1);
 
 	return reply;
 }
@@ -721,6 +763,7 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	struct paths * allpaths;
 
 	allpaths = (struct paths *)trigger_data;
+	pthread_cleanup_push(cleanup_lock, allpaths->lock);
 	lock(allpaths->lock);
 
 	if (strncmp(uev->devpath, "/block", 6))
@@ -760,7 +803,7 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 
 out:
 	FREE(uev);
-	unlock(allpaths->lock);
+	pthread_cleanup_pop(1);
 	return r;
 }
 
@@ -794,19 +837,6 @@ uxlsnrloop (void * ap)
 	return NULL;
 }
 
-static void
-strvec_free (vector vec)
-{
-	int i;
-	char * str;
-
-	vector_foreach_slot (vec, str, i)
-		if (str)
-			FREE(str);
-
-	vector_free(vec);
-}
-
 static int
 exit_daemon (int status)
 {
@@ -821,10 +851,11 @@ exit_daemon (int status)
 
 	condlog(2, "--------shut down-------");
 	
-	if (logsink)
-		log_thread_stop();
+	lock(&exit_mutex);
+	pthread_cond_signal(&exit_cond);
+	unlock(&exit_mutex);
 
-	exit(status);
+	return status;
 }
 
 /*
@@ -937,6 +968,7 @@ checkerloop (void *ap)
 	condlog(2, "path checkers start up");
 
 	while (1) {
+		pthread_cleanup_push(cleanup_lock, allpaths->lock);
 		lock(allpaths->lock);
 		condlog(4, "tick");
 
@@ -1050,7 +1082,7 @@ checkerloop (void *ap)
 			count = MAPGCINT;
 		}
 		
-		unlock(allpaths->lock);
+		pthread_cleanup_pop(1);
 		sleep(1);
 	}
 	return NULL;
@@ -1123,10 +1155,12 @@ prepare_namespace(void)
 	if (stat(CALLOUT_DIR, buf) < 0) {
 		if (mkdir(CALLOUT_DIR, mode) < 0) {
 			condlog(0, "cannot create " CALLOUT_DIR);
+			FREE(buf);
 			return -1;
 		}
 		condlog(4, "created " CALLOUT_DIR);
 	}
+	FREE(buf);
 
 	/*
 	 * compute the optimal ramdisk size
@@ -1168,7 +1202,8 @@ prepare_namespace(void)
 		}
 		condlog(4, "cp %s in ramfs", bin);
 	}
-	strvec_free(conf->binvec);
+	free_strvec(conf->binvec);
+	conf->binvec = NULL;
 
 	/*
 	 * bind the ramfs to :
@@ -1345,11 +1380,38 @@ child (void * param)
 	pthread_create(&check_thr, &attr, checkerloop, allpaths);
 	pthread_create(&uevent_thr, &attr, ueventloop, allpaths);
 	pthread_create(&uxlsnr_thr, &attr, uxlsnrloop, allpaths);
-	pthread_join(check_thr, NULL);
-	pthread_join(uevent_thr, NULL);
-	pthread_join(uxlsnr_thr, NULL);
 
-	return 0;
+	pthread_cond_wait(&exit_cond, &exit_mutex);
+
+	/*
+	 * exit path
+	 */
+	lock(allpaths->lock);
+	remove_maps(allpaths);
+	free_pathvec(allpaths->pathvec, FREE_PATHS);
+
+	pthread_cancel(check_thr);
+	pthread_cancel(uevent_thr);
+	pthread_cancel(uxlsnr_thr);
+
+	free_keys(keys);
+	free_handlers(handlers);
+	free_polls();
+
+	unlock(allpaths->lock);
+	pthread_mutex_destroy(allpaths->lock);
+	FREE(allpaths->lock);
+	FREE(allpaths);
+	free_config(conf);
+
+	if (logsink)
+		log_thread_stop();
+
+#ifdef _DEBUG_
+	dbg_free_final(NULL);
+#endif
+
+	exit(0);
 }
 
 int
@@ -1386,6 +1448,7 @@ main (int argc, char *argv[])
 	switch(arg) {
 		case 'd':
 			logsink = 0;
+			//debug=1; /* ### comment me out ### */
 			break;
 		case 'v':
 			if (sizeof(optarg) > sizeof(char *) ||

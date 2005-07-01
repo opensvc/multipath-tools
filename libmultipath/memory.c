@@ -133,6 +133,49 @@ dbg_malloc(unsigned long size, char *file, char *function, int line)
 	return buf;
 }
 
+char *
+dbg_strdup(char *str, char *file, char *function, int line)
+{
+	void *buf;
+	int i = 0;
+	long check;
+	long size;
+
+	size = strlen(str) + 1;
+	buf = zalloc(size + sizeof (long));
+	strcat(buf, str);
+
+	check = 0xa5a5 + size;
+	*(long *) ((char *) buf + size) = check;
+
+	while (i < number_alloc_list) {
+		if (alloc_list[i].type == 0)
+			break;
+		i++;
+	}
+
+	if (i == number_alloc_list)
+		number_alloc_list++;
+
+	assert(number_alloc_list < MAX_ALLOC_LIST);
+
+	alloc_list[i].ptr = buf;
+	alloc_list[i].size = size;
+	alloc_list[i].file = file;
+	alloc_list[i].func = function;
+	alloc_list[i].line = line;
+	alloc_list[i].csum = check;
+	alloc_list[i].type = 9;
+
+	if (debug & 1)
+		printf("strdup[%3d:%3d], %p, %4ld at %s, %3d, %s\n",
+		       i, number_alloc_list, buf, size, file, line,
+		       function);
+
+	n++;
+	return buf;
+}
+
 
 
 /* Display a buffer into a HEXA formated output */
