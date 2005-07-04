@@ -216,8 +216,19 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 			if (store_path(pgp->paths, pp))
 				goto out;
 
+			/*
+			 * Update wwid for multipaths which are not set
+			 * in the get_dm_mpvec() code path
+			 */
 			if (!strlen(mpp->wwid))
 				strncpy(mpp->wwid, pp->wwid, WWID_SIZE);
+
+			/*
+			 * Update wwid for paths which may not have been
+			 * active at the time the getuid callout was run
+			 */
+			else if (!strlen(pp->wwid))
+				strncpy(pp->wwid, mpp->wwid, WWID_SIZE);
 
 			pgp->id ^= (long)pp;
 			pp->pgindex = i + 1;
