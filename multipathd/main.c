@@ -64,9 +64,9 @@
 #define CALLOUT_DIR "/var/cache/multipathd"
 
 #define LOG_MSG(a,b) \
-	if (strlen(a)) { \
-		condlog(1, "%s: %s", b, a); \
-		memset(a, 0, MAX_CHECKER_MSG_SIZE); \
+	if (strlen(b)) { \
+		condlog(a, "%s: %s", pp->dev_t, b); \
+		memset(b, 0, MAX_CHECKER_MSG_SIZE); \
 	}
 
 #ifdef LCKDBG
@@ -1007,7 +1007,7 @@ checkerloop (void *ap)
 			
 			if (newstate != pp->state) {
 				pp->state = newstate;
-				LOG_MSG(checker_msg, pp->dev_t);
+				LOG_MSG(1, checker_msg);
 
 				/*
 				 * upon state change, reset the checkint
@@ -1059,8 +1059,9 @@ checkerloop (void *ap)
 					enable_group(pp);
 			}
 			else if (newstate == PATH_UP || newstate == PATH_GHOST) {
+				LOG_MSG(4, checker_msg);
 				/*
-				 * and double the next check delay.
+				 * double the next check delay.
 				 * max at conf->max_checkint
 				 */
 				if (pp->checkint < (conf->max_checkint / 2))
