@@ -855,7 +855,7 @@ main (int argc, char *argv[])
 	vector curmp = NULL;
 	vector pathvec = NULL;
 	int i;
-	int di_flag;
+	int di_flag = 0;
 	int arg;
 	extern char *optarg;
 	extern int optind;
