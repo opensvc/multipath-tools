@@ -278,6 +278,7 @@ genhelp_handler (void)
 		return NULL;
 
 	p = reply;
+	p += sprintf(p, "\n");
 
 	vector_foreach_slot (handlers, h, i) {
 		fp = h->fingerprint;
