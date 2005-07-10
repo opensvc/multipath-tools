@@ -3,3 +3,7 @@
 #define PATH_UP		2
 #define PATH_SHAKY	3
 #define PATH_GHOST	4
+
+#define MAX_PSTATE_LEN	6
+
+int pstate_snprintf (char * str, int len, int state);

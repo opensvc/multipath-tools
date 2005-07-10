@@ -153,6 +153,9 @@ get_refwwid (vector pathvec)
 static void
 print_path (struct path * pp, int style)
 {
+	int len;
+	char buff[MAX_PSTATE_LEN];
+
 	if (style != PRINT_PATH_SHORT && pp->wwid)
 		printf ("%s ", pp->wwid);
 	else
@@ -174,21 +177,16 @@ print_path (struct path * pp, int style)
 		printf("%-7s ", pp->dev_t);
 
 	if (conf->list > 1) {
-		switch (pp->state) {
-		case PATH_UP:
-			printf("[ready ]");
-			break;
-		case PATH_DOWN:
-			printf("[faulty]");
-			break;
-		case PATH_GHOST:
-			printf("[ghost ]");
-			break;
-		case PATH_SHAKY:
-			printf("[shaky ]");
-			break;
-		default:
-			break;
+		len = pstate_snprintf(&buff, MAX_PSTATE_LEN, pp->state);
+
+		if (len) {
+			printf("[%s", buff);
+			len = MAX_PSTATE_LEN - len;
+
+			while (len--)
+				printf(" ");
+
+			printf("]");
 		}
 	}
 

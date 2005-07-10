@@ -48,6 +48,7 @@
 #include <propsel.h>
 #include <uevent.h>
 #include <switchgroup.h>
+#include <path_state.h>
 
 #include "main.h"
 #include "copy.h"
@@ -672,7 +673,17 @@ show_paths (struct paths * allpaths)
 			continue;
 		}
 
-		c += sprintf(c, "state %i, ", pp->state);
+		if (MAX_REPLY_LEN - MAX_PSTATE_LEN < 0) {
+			FREE(reply);
+			return NULL;
+		}
+
+		j = pstate_snprintf(c, MAX_PSTATE_LEN, pp->state);
+		c += j;
+		j = MAX_PSTATE_LEN - j;
+		
+		while (j--)
+			sprintf(c, " ");
 
 		j = pp->tick;
 		k = pp->checkint - pp->tick;
