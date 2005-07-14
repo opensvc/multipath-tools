@@ -39,16 +39,22 @@ klibc:	$(OBJS)
 	$(CC) -static -o $(EXEC) $(OBJS)
 	$(STRIP) $(EXEC)
 
-install: $(EXEC)
+install: $(BUILD) $(EXEC).8.gz
 	install -m 755 $(EXEC) $(DESTDIR)$(bindir)/$(EXEC)
+	install -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
 
 uninstall:
 	rm $(DESTDIR)$(bindir)/$(EXEC)
+	rm $(DESTDIR)$(mandir)/$(EXEC).8.gz
+
 clean:	
-	rm -f *.o $(EXEC)
+	rm -f *.o *.gz $(EXEC)
 
 %.o:	%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(EXEC).8.gz:	$(EXEC).8
+	$(GZIP) $< >$@
 
 main.o:	main.c rtpg.h spc3.h
 

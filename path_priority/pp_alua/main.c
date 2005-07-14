@@ -12,13 +12,18 @@
  * 
  * This file is released under the GPL.
  */
+#include <linux/kdev_t.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <strings.h>
 
 #include "rtpg.h"
 
@@ -30,7 +35,7 @@
 #define ALUA_PRIO_GETAAS_FAILED			5
 
 #define ALUA_PRIO_MAJOR				0
-#define ALUA_PRIO_MINOR				4
+#define ALUA_PRIO_MINOR				5
 
 #define PRINT_ERROR(f, a...) \
 		if (verbose) \
@@ -59,11 +64,23 @@ print_help(char *command)
 		basename(command));
 	printf("Options are:\n");
 
+	printf("\t-d <device directory>\n");
+	printf("\t\tSets the directory prefix for relative path names and");
+	printf(" created\n\t\tpath names. (default = \"/dev\")\n");
+
+	printf("\t-h\n");
+	printf("\t\tPrint this help.\n");
+
 	printf("\t-v\n");
 	printf("\t\tTurn on verbose output.\n");
 
 	printf("\t-V\n");
 	printf("\t\tPrints the version number and exits.\n");
+
+	printf("\nDevice may be an absolute or relative path to a device ");
+	printf("node or a major and\nminor number seperated by a colon (:).");
+	printf(" In this case a temporary device node\nwill be created in ");
+	printf("the device directory.\n");
 }
 
 void
@@ -168,13 +185,20 @@ get_alua_info(int fd)
 int
 main (int argc, char **argv)
 {
-	char *		s_opts = "hvV";
+	char		devicepath[PATH_MAX];
+	char *		devicedir;
+	char *		s_opts = "d:hvV";
+	char *		pos;
 	int		fd;
 	int		rc;
 	int		c;
 
+	devicedir = "/dev";
 	while ((c = getopt(argc, argv, s_opts)) >= 0) {
 		switch(c) {
+			case 'd':
+				devicedir = optarg;
+				break;
 			case 'h':
 				print_help(argv[0]);
 				return ALUA_PRIO_SUCCESS;
@@ -200,8 +224,32 @@ main (int argc, char **argv)
 
 	rc = ALUA_PRIO_SUCCESS;
 	for(c = optind; c < argc && !rc; c++) {
-		fd = open_block_device(argv[c]);
+		if (argv[c][0] == '/') {
+			pos = NULL;
+			sprintf(devicepath, "%s", argv[c]);
+		} else if ((pos = index(argv[c], ':')) == NULL) {
+			sprintf(devicepath, "%s/%s", devicedir, argv[c]);
+		} else {
+			int major;
+			int minor;
+
+			major = atoi(argv[c]);
+			minor = atoi(++pos);
+			sprintf(devicepath, "%s/tmpdev-%u:%u-%u",
+				devicedir, major, minor, getpid()
+			);
+			mknod(
+				devicepath,
+				S_IFBLK|S_IRUSR|S_IWUSR,
+				MKDEV(major, minor)
+			);
+			
+		}
+
+		fd = open_block_device(devicepath);
 		if (fd < 0) {
+			if (pos != NULL)
+				unlink(devicepath);
 			return -fd;
 		}
 		rc = get_alua_info(fd);
@@ -223,6 +271,10 @@ main (int argc, char **argv)
 			rc = ALUA_PRIO_SUCCESS;
 		}
 		close_block_device(fd);
+
+		/* The path was created before. */
+		if (pos != NULL)
+			unlink(devicepath);
 	}
 
 	return -rc;
