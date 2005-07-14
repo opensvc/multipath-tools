@@ -864,10 +864,9 @@ main (int argc, char *argv[])
 		exit(1);
 	}
 
-	if (dm_prereq(DEFAULT_TARGET, 1, 0, 3)) {
-		condlog(0, "device mapper prerequisites not met");
+	if (dm_prereq(DEFAULT_TARGET, 1, 0, 3))
 		exit(1);
-	}
+
 	if (sysfs_get_mnt_path(sysfs_path, FILE_NAME_SIZE)) {
 		condlog(0, "multipath tools need sysfs mounted");
 		exit(1);
