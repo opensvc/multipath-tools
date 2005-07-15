@@ -208,6 +208,7 @@ static int
 setup_multipath (struct paths * allpaths, struct multipath * mpp)
 {
 	char * wwid;
+	int i;
 
 	wwid = get_mpe_wwid(mpp->alias);
 
@@ -228,6 +229,12 @@ setup_multipath (struct paths * allpaths, struct multipath * mpp)
 
 	return 0;
 out:
+	/*
+	 * purge the multipath vector
+	 */
+	if ((i = find_slot(allpaths->mpvec, (void *)mpp)) != -1)
+		vector_del_slot(allpaths->mpvec, i);
+
 	free_multipath(mpp, KEEP_PATHS);
 	condlog(0, "failed to setup multipath");
 	return 1;
@@ -276,7 +283,8 @@ update_multipath (struct paths *allpaths, char *mapname)
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
 
-	setup_multipath(allpaths, mpp);
+	if (setup_multipath(allpaths, mpp))
+		goto out; /* mpp freed in setup_multipath */
 
 	/*
 	 * compare checkers states with DM states
@@ -312,7 +320,8 @@ free_waiter (void * data)
 {
 	struct event_thread * wp = (struct event_thread *)data;
 
-	dm_task_destroy(wp->dmt);
+	if (wp->dmt)
+		dm_task_destroy(wp->dmt);
 	FREE(wp);
 }
 
@@ -345,6 +354,7 @@ waiteventloop (struct event_thread * waiter)
 	dm_task_run(waiter->dmt);
 	pthread_testcancel();
 	dm_task_destroy(waiter->dmt);
+	waiter->dmt = NULL;
 
 	waiter->event_nr++;
 
@@ -510,7 +520,7 @@ remove_maps (struct paths * allpaths)
 int
 uev_add_map (char * devname, struct paths * allpaths)
 {
-	int major, minor;
+	int major, minor, i;
 	char dev_t[BLK_DEV_SIZE];
 	char * alias;
 	struct multipath * mpp;
@@ -571,6 +581,12 @@ uev_add_map (char * devname, struct paths * allpaths)
 	return 0;
 out:
 	condlog(2, "add %s devmap failed", mpp->alias);
+	/*
+	 * purge the multipath vector
+	 */
+	if ((i = find_slot(allpaths->mpvec, (void *)mpp)) != -1)
+		vector_del_slot(allpaths->mpvec, i);
+
 	free_multipath(mpp, KEEP_PATHS);
 	return 1;
 }
@@ -885,7 +901,8 @@ get_dm_mpvec (struct paths * allpaths)
 		return 1;
 
 	vector_foreach_slot (allpaths->mpvec, mpp, i) {
-		setup_multipath(allpaths, mpp);
+		if (setup_multipath(allpaths, mpp))
+			return 1;
 		mpp->minor = dm_get_minor(mpp->alias);
 		start_waiter_thread(mpp, allpaths);
 	}
