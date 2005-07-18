@@ -59,6 +59,9 @@ get_word (char * sentence, char ** word)
 	int len;
 	int skip = 0;
 	
+	if (word)
+		*word = NULL;
+
 	while (*sentence ==  ' ') {
 		sentence++;
 		skip++;
