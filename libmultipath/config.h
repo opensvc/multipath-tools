@@ -65,12 +65,9 @@ struct config {
 	vector mptable;
 	vector hwtable;
 	vector blist;
-	vector binvec;
 };
 
 struct config * conf;
-
-extern int push_callout(char * callout);
 
 struct hwentry * find_hwe (vector hwtable, char * vendor, char * product);
 struct mpentry * find_mpe (char * wwid);

@@ -21,7 +21,7 @@ multipath_tool_handler(vector strvec)
 	if (!conf->multipath)
 		return 1;
 
-	return push_callout(conf->multipath);
+	return 0;
 }
 
 static int
@@ -82,7 +82,7 @@ def_getuid_callout_handler(vector strvec)
 	if (!conf->default_getuid)
 		return 1;
 	
-	return push_callout(conf->default_getuid);
+	return 0;
 }
 
 static int
@@ -96,10 +96,9 @@ def_prio_callout_handler(vector strvec)
 	if (!strncmp(conf->default_getprio, "none", 4)) {
 		FREE(conf->default_getprio);
 		conf->default_getprio = NULL;
-		return 0;
 	}
 		
-	return push_callout(conf->default_getprio);
+	return 0;
 }
 
 static int
@@ -271,7 +270,7 @@ hw_getuid_callout_handler(vector strvec)
 	if (!hwe->getuid)
 		return 1;
 
-	return push_callout(hwe->getuid);
+	return 0;
 }
 
 static int
@@ -358,10 +357,9 @@ prio_callout_handler(vector strvec)
 	if (!strncmp(hwe->getprio, "none", 4)) {
 		FREE(hwe->getprio);
 		hwe->getprio = NULL;
-		return 0;
 	}
 
-	return push_callout(hwe->getprio);
+	return 0;
 }
 
 static int

@@ -52,7 +52,6 @@
 
 #include "main.h"
 #include "copy.h"
-#include "clone_platform.h"
 #include "pidfile.h"
 #include "uxlsnr.h"
 #include "uxclnt.h"
@@ -61,8 +60,6 @@
 
 #define FILE_NAME_SIZE 256
 #define CMDSIZE 160
-
-#define CALLOUT_DIR "/var/cache/multipathd"
 
 #define LOG_MSG(a,b) \
 	if (strlen(b)) { \
@@ -153,7 +150,7 @@ update_multipath_table (struct multipath *mpp, vector pathvec)
 	if (dm_get_map(mpp->alias, &mpp->size, mpp->params))
 		return 1;
 
-	if(disassemble_map(pathvec, mpp->params, mpp))
+	if (disassemble_map(pathvec, mpp->params, mpp))
 		return 1;
 
 	return 0;
@@ -873,9 +870,6 @@ exit_daemon (int status)
 	if (status != 0)
 		fprintf(stderr, "bad exit status. see daemon.log\n");
 
-	condlog(3, "umount ramfs");
-	umount(CALLOUT_DIR);
-
 	condlog(3, "unlink pidfile");
 	unlink(DEFAULT_PIDFILE);
 
@@ -1160,109 +1154,6 @@ out:
 	return NULL;
 }
 
-/*
- * this logic is all about keeping callouts working in case of
- * system disk outage (think system over SAN)
- * this needs the clone syscall, so don't bother if not present
- * (Debian Woody)
- */
-#ifdef CLONE_NEWNS
-static int
-prepare_namespace(void)
-{
-	mode_t mode = S_IRWXU;
-	struct stat * buf;
-	char ramfs_args[64];
-	int i;
-	int fd;
-	char * bin;
-	size_t size = 10;
-	struct stat statbuf;
-	
-	buf = (struct stat *)MALLOC(sizeof(struct stat));
-
-	/*
-	 * create a temp mount point for ramfs
-	 */
-	if (stat(CALLOUT_DIR, buf) < 0) {
-		if (mkdir(CALLOUT_DIR, mode) < 0) {
-			condlog(0, "cannot create " CALLOUT_DIR);
-			FREE(buf);
-			return -1;
-		}
-		condlog(4, "created " CALLOUT_DIR);
-	}
-	FREE(buf);
-
-	/*
-	 * compute the optimal ramdisk size
-	 */
-	vector_foreach_slot (conf->binvec, bin,i) {
-		if ((fd = open(bin, O_RDONLY)) < 0) {
-			condlog(0, "cannot open %s", bin);
-			return -1;
-		}
-		if (fstat(fd, &statbuf) < 0) {
-			condlog(0, "cannot stat %s", bin);
-			return -1;
-		}
-		size += statbuf.st_size;
-		close(fd);
-	}
-	condlog(3, "ramfs maxsize is %u", (unsigned int) size);
-	
-	/*
-	 * mount the ramfs
-	 */
-	if (safe_sprintf(ramfs_args, "maxsize=%u", (unsigned int) size)) {
-		fprintf(stderr, "ramfs_args too small\n");
-		return -1;
-	}
-	if (mount(NULL, CALLOUT_DIR, "ramfs", MS_SYNCHRONOUS, ramfs_args) < 0) {
-		condlog(0, "cannot mount ramfs on " CALLOUT_DIR);
-		return -1;
-	}
-	condlog(4, "mount ramfs on " CALLOUT_DIR);
-
-	/*
-	 * populate the ramfs with callout binaries
-	 */
-	vector_foreach_slot (conf->binvec, bin,i) {
-		if (copytodir(bin, CALLOUT_DIR) < 0) {
-			condlog(0, "cannot copy %s in ramfs", bin);
-			exit_daemon(1);
-		}
-		condlog(4, "cp %s in ramfs", bin);
-	}
-	free_strvec(conf->binvec);
-	conf->binvec = NULL;
-
-	/*
-	 * bind the ramfs to :
-	 * /sbin : default home of multipath ...
-	 * /bin  : default home of scsi_id ...
-	 * /tmp  : home of scsi_id temp files
-	 */
-	if (mount(CALLOUT_DIR, "/sbin", NULL, MS_BIND, NULL) < 0) {
-		condlog(0, "cannot bind ramfs on /sbin");
-		return -1;
-	}
-	condlog(4, "bind ramfs on /sbin");
-	if (mount(CALLOUT_DIR, "/bin", NULL, MS_BIND, NULL) < 0) {
-		condlog(0, "cannot bind ramfs on /bin");
-		return -1;
-	}
-	condlog(4, "bind ramfs on /bin");
-	if (mount(CALLOUT_DIR, "/tmp", NULL, MS_BIND, NULL) < 0) {
-		condlog(0, "cannot bind ramfs on /tmp");
-		return -1;
-	}
-	condlog(4, "bind ramfs on /tmp");
-
-	return 0;
-}
-#endif
-
 static void *
 signal_set(int signo, void (*func) (int))
 {
@@ -1359,11 +1250,6 @@ child (void * param)
 	/*
 	 * fill the voids left in the config file
 	 */
-	if (!conf->binvec) {
-		conf->binvec = vector_alloc();
-		push_callout("/sbin/scsi_id");
-	}
-
 	if (!conf->checkint) {
 		conf->checkint = CHECKINT;
 		conf->max_checkint = MAX_CHECKINT;
@@ -1387,13 +1273,6 @@ child (void * param)
 		condlog(0, "can not find sysfs mount point");
 		exit(1);
 	}
-
-#ifdef CLONE_NEWNS
-	if (prepare_namespace() < 0) {
-		condlog(0, "cannot prepare namespace");
-		exit_daemon(1);
-	}
-#endif
 
 	/*
 	 * fetch paths and multipaths lists
@@ -1453,7 +1332,6 @@ main (int argc, char *argv[])
 	extern int optind;
 	int arg;
 	int err;
-	void * child_stack;
 	
 	logsink = 1;
 
@@ -1465,11 +1343,6 @@ main (int argc, char *argv[])
 	/* make sure we don't lock any path */
 	chdir("/");
 	umask(umask(077) | 022);
-
-	child_stack = (void *)malloc(CHILD_STACK_SIZE);
-
-	if (!child_stack)
-		exit(1);
 
 	conf = alloc_config();
 
@@ -1497,28 +1370,15 @@ main (int argc, char *argv[])
 		}
 	}
 
-#ifdef CLONE_NEWNS	/* recent systems have clone() */
-
-#    if defined(__hppa__) || defined(__powerpc64__)
-	err = clone(child, child_stack, CLONE_NEWNS, NULL);
-#    elif defined(__ia64__)
-	err = clone2(child, child_stack,
-		     CHILD_STACK_SIZE, CLONE_NEWNS, NULL,
-		     NULL, NULL, NULL);
-#    else
-	err = clone(child, child_stack + CHILD_STACK_SIZE, CLONE_NEWNS, NULL);
-#    endif
-	if (err < 0)
-		exit (1);
-
-	exit(0);
-#else			/* older system fallback to fork() */
 	err = fork();
 	
 	if (err < 0)
-		exit (1);
-
-	return (child(child_stack));
-#endif
-
+		/* error */
+		exit(1);
+	else if (err > 0)
+		/* parent dies */
+		exit(0);
+	else
+		/* child lives */
+		return (child(NULL));
 }

@@ -14,56 +14,6 @@
 
 #include "../libcheckers/checkers.h"
 
-/*
- * helper function to draw a list of callout binaries found in the config file
- */
-extern int
-push_callout(char * callout)
-{
-	int i;
-	char * bin;
-	char * p;
-
-	/*
-	 * purge command line arguments
-	 */
-	p = callout;
-
-	while (*p != ' ' && *p != '\0')
-		p++;
-
-	if (!conf->binvec)
-		conf->binvec = vector_alloc();
-
-
-	if (!conf->binvec)
-		return 1;
-
-	/*
-	 * if this callout is already stored in binvec, don't store it twice
-	 */
-	vector_foreach_slot (conf->binvec, bin, i)
-		if (memcmp(bin, callout, p - callout) == 0)
-			return 0;
-
-	/*
-	 * else, store it
-	 */
-	bin = MALLOC((p - callout) + 1);
-
-	if (!bin)
-		return 1;
-
-	strncpy(bin, callout, p - callout);
-
-	if (!vector_alloc_slot(conf->binvec))
-		return 1;
-
-	vector_set_slot(conf->binvec, bin);
-
-	return 0;
-}
-
 struct hwentry *
 find_hwe (vector hwtable, char * vendor, char * product)
 {
@@ -257,13 +207,10 @@ store_hwe (vector hwtable, char * vendor, char * product, int pgp,
 	if (pgp)
 		hwe->pgpolicy = pgp;
 
-	if (getuid) {
+	if (getuid)
 		hwe->getuid = set_param_str(getuid);
-		push_callout(getuid);
-	} else {
+	else
 		hwe->getuid = set_default(DEFAULT_GETUID);
-		push_callout(DEFAULT_GETUID);
-	}
 
 	if (!hwe->getuid)
 		goto out;
@@ -303,21 +250,17 @@ store_hwe_ext (vector hwtable, char * vendor, char * product, int pgp,
 	if (pgp)
 		hwe->pgpolicy = pgp;
 
-	if (getuid) {
+	if (getuid)
 		hwe->getuid = set_param_str(getuid);
-		push_callout(getuid);
-	} else {
+	else
 		hwe->getuid = set_default(DEFAULT_GETUID);
-		push_callout(DEFAULT_GETUID);
-	}
 
 	if (!hwe->getuid)
 		goto out;
 	
-	if (getprio) {
+	if (getprio)
 		hwe->getprio = set_param_str(getprio);
-		push_callout(getprio);
-	} else
+	else
 		hwe->getprio = NULL;
 
 	if (hwhandler)	
@@ -390,7 +333,6 @@ free_config (struct config * conf)
 	free_blacklist(conf->blist);
 	free_mptable(conf->mptable);
 	free_hwtable(conf->hwtable);
-	free_strvec(conf->binvec);
 
 	FREE(conf);
 }
