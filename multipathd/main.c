@@ -827,10 +827,12 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 			r = uev_add_map(devname, allpaths);
 			goto out;
 		}
+#if 0
 		if (!strncmp(uev->action, "remove", 6)) {
 			r = uev_remove_map(devname, allpaths);
 			goto out;
 		}
+#endif
 		goto out;
 	}
 	
