@@ -358,7 +358,6 @@ waiteventloop (struct event_thread * waiter)
 
 	dm_task_no_open_count(waiter->dmt);
 
-	pthread_testcancel();
 	set = unblock_sigusr1();
 	dm_task_run(waiter->dmt);
 	pthread_sigmask(SIG_SETMASK, &set, NULL);
@@ -414,7 +413,6 @@ waitevent (void * et)
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
 	waiter = (struct event_thread *)et;
-	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
 	pthread_cleanup_push(free_waiter, et);
 
 	while (1) {
@@ -423,7 +421,9 @@ waitevent (void * et)
 		if (r < 0)
 			break;
 
+		pthread_testcancel();
 		sleep(r);
+		pthread_testcancel();
 	}
 
 	pthread_cleanup_pop(1);
