@@ -462,6 +462,8 @@ start_waiter_thread (struct multipath * mpp, struct paths * allpaths)
 		goto out;
 
 	pthread_attr_setstacksize(&attr, 32 * 1024);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
 	wp = alloc_waiter();
 
 	if (!wp)
@@ -1306,6 +1308,7 @@ child (void * param)
 	 */
 	pthread_attr_init(&attr);
 	pthread_attr_setstacksize(&attr, 64 * 1024);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 	
 	pthread_create(&check_thr, &attr, checkerloop, allpaths);
 	pthread_create(&uevent_thr, &attr, ueventloop, allpaths);
