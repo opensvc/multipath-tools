@@ -322,12 +322,12 @@ free_waiter (void * data)
 	FREE(wp);
 }
 
-static sigset_t unblock_sigusr1(void)
+static sigset_t unblock_sighup(void)
 {
 	sigset_t set, old;
 
 	sigemptyset(&set);
-	sigaddset(&set, SIGUSR1);
+	sigaddset(&set, SIGHUP);
 	pthread_sigmask(SIG_UNBLOCK, &set, &old);
 	return old;
 }
@@ -358,7 +358,7 @@ waiteventloop (struct event_thread * waiter)
 
 	dm_task_no_open_count(waiter->dmt);
 
-	set = unblock_sigusr1();
+	set = unblock_sighup();
 	dm_task_run(waiter->dmt);
 	pthread_sigmask(SIG_SETMASK, &set, NULL);
 	pthread_testcancel();
@@ -445,7 +445,7 @@ stop_waiter_thread (struct multipath * mpp, struct paths * allpaths)
 	if ((r = pthread_cancel(thread)))
 		return r;
 
-	pthread_kill(thread, SIGUSR1);
+	pthread_kill(thread, SIGHUP);
 	return 0;
 }
 
