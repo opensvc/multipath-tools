@@ -322,6 +322,16 @@ free_waiter (void * data)
 	FREE(wp);
 }
 
+static sigset_t unblock_sigusr1(void)
+{
+	sigset_t set, old;
+
+	sigemptyset(&set);
+	sigaddset(&set, SIGUSR1);
+	pthread_sigmask(SIG_UNBLOCK, &set, &old);
+	return old;
+}
+
 /*
  * returns the reschedule delay
  * negative means *stop*
@@ -329,6 +339,7 @@ free_waiter (void * data)
 static int
 waiteventloop (struct event_thread * waiter)
 {
+	sigset_t set;
 	int event_nr;
 	int r;
 
@@ -348,7 +359,9 @@ waiteventloop (struct event_thread * waiter)
 	dm_task_no_open_count(waiter->dmt);
 
 	pthread_testcancel();
+	set = unblock_sigusr1();
 	dm_task_run(waiter->dmt);
+	pthread_sigmask(SIG_SETMASK, &set, NULL);
 	pthread_testcancel();
 	dm_task_destroy(waiter->dmt);
 	waiter->dmt = NULL;
@@ -421,13 +434,19 @@ static int
 stop_waiter_thread (struct multipath * mpp, struct paths * allpaths)
 {
 	struct event_thread * wp = (struct event_thread *)mpp->waiter;
+	pthread_t thread = wp->thread;
+	int r;
 
 	if (!wp)
 		return 1;
 
 	condlog(2, "%s: reap event checker", wp->mapname);
 
-	return pthread_cancel(wp->thread);
+	if ((r = pthread_cancel(thread)))
+		return r;
+
+	pthread_kill(thread, SIGUSR1);
+	return 0;
 }
 
 static int
