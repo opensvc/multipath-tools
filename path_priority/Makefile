@@ -4,7 +4,7 @@
 #
 DEBUG = 0
 
-SUBDIRS	= $(shell find . -type d -mindepth 1 -maxdepth 1|cut -c3-)
+SUBDIRS	= $(shell find . -mindepth 1 -maxdepth 1 -type d|cut -c3-)
 
 all:
 	@for DIR in $(SUBDIRS); do \
