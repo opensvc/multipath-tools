@@ -23,6 +23,7 @@ setup_default_hwtable (vector hw)
 	r += store_hwe(hw, "HITACHI", "DF500", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "HITACHI", "DF600", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "HP", "HSV110", GROUP_BY_SERIAL, DEFAULT_GETUID);
+	r += store_hwe(hw, "HP", "HSV210", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "HP", "A6189A", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "HP", "OPEN-", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "IBM", "ProFibre 4000R", MULTIBUS, DEFAULT_GETUID);
