@@ -51,7 +51,6 @@
 #include <path_state.h>
 
 #include "main.h"
-#include "copy.h"
 #include "pidfile.h"
 #include "uxlsnr.h"
 #include "uxclnt.h"

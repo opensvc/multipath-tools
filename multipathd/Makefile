@@ -26,7 +26,7 @@ LDFLAGS = -lpthread -ldevmapper -lsysfs -lreadline -lcurses
 #
 # object files
 #
-OBJS = main.o copy.o log.o log_pthread.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o \
+OBJS = main.o log.o log_pthread.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o \
        $(MULTIPATHLIB)-glibc.a $(CHECKERSLIB)-glibc.a \
 
 
