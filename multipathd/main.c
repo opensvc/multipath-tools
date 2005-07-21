@@ -1,18 +1,7 @@
-#include <string.h>
-#include <pthread.h>
-#include <stdio.h>
 #include <unistd.h>
-#include <linux/unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <libdevmapper.h>
-#include <signal.h>
 #include <wait.h>
-#include <sched.h>
-#include <errno.h>
-#include <sys/mount.h>
 #include <sys/mman.h>
 
 /*
