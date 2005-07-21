@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -51,6 +52,7 @@ static void new_client(int ux_sock)
 	memset(c, 0, sizeof(*c));
 	c->fd = fd;
 	c->next = clients;
+	if (c->next) c->next->prev = c;
 	clients = c;
 	num_clients++;
 }
@@ -113,6 +115,9 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 		poll_count = poll(polls, i, SLEEP_TIME);
 		
 		if (poll_count == -1) {
+			if (errno == EINTR)
+				continue;
+
 			/* something went badly wrong! */
 			condlog(0, "poll");
 			exit(1);
