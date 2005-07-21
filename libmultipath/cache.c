@@ -27,7 +27,7 @@ cache_load (vector pathvec)
         fd = ux_socket_connect(SOCKET_NAME);
 
 	if (fd == -1) {
-		condlog(0, "ux_socket_connect error");
+		condlog(3, "ux_socket_connect error");
 		return 1;
 	}
 
