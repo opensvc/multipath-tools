@@ -6,77 +6,71 @@
 #include "main.h"
 #include "cli.h"
 
-char *
-list_paths (void * v, void * data)
+int
+cli_list_paths (void * v, char ** reply, int * len, void * data)
 {
 	struct paths * allpaths = (struct paths *)data;
 
-	return show_paths(allpaths);
+	return show_paths(reply, len, allpaths);
 }
 
-char *
-list_maps (void * v, void * data)
+int
+cli_list_maps (void * v, char ** reply, int * len, void * data)
 {
 	struct paths * allpaths = (struct paths *)data;
 
-	return show_maps(allpaths);
+	return show_maps(reply, len, allpaths);
 }
 
-char *
-add_path (void * v, void * data)
-{
-	struct paths * allpaths = (struct paths *)data;
-	char * param = get_keyparam(v, PATH);
-
-	if (uev_add_path(param, allpaths))
-		return NULL;
-
-	return STRDUP("ok");
-}
-
-char *
-del_path (void * v, void * data)
+int
+cli_add_path (void * v, char ** reply, int * len, void * data)
 {
 	struct paths * allpaths = (struct paths *)data;
 	char * param = get_keyparam(v, PATH);
 
-	if (uev_remove_path(param, allpaths))
-		return NULL;
-
-	return STRDUP("ok");
+	return uev_add_path(param, allpaths);
 }
 
-char *
-add_map (void * v, void * data)
+int
+cli_del_path (void * v, char ** reply, int * len, void * data)
+{
+	struct paths * allpaths = (struct paths *)data;
+	char * param = get_keyparam(v, PATH);
+
+	return uev_remove_path(param, allpaths);
+}
+
+int
+cli_add_map (void * v, char ** reply, int * len, void * data)
 {
 	struct paths * allpaths = (struct paths *)data;
 	char * param = get_keyparam(v, MAP);
 
-	if (uev_add_map(param, allpaths))
-		return NULL;
-
-	return STRDUP("ok");
+	return uev_add_map(param, allpaths);
 }
 
-char *
-del_map (void * v, void * data)
+int
+cli_del_map (void * v, char ** reply, int * len, void * data)
 {
 	struct paths * allpaths = (struct paths *)data;
 	char * param = get_keyparam(v, MAP);
 
-	if (uev_remove_map(param, allpaths))
-		return NULL;
-
-	return STRDUP("ok");
+	return uev_remove_map(param, allpaths);
 }
 
-char *
-switch_group(void * v, void * data)
+int
+cli_switch_group(void * v, char ** reply, int * len, void * data)
 {
 	char * mapname = get_keyparam(v, MAP);
 	int groupnum = atoi(get_keyparam(v, GROUP));
 	
-	dm_switchgroup(mapname, groupnum);
+	return dm_switchgroup(mapname, groupnum);
+}
 
-	return STRDUP("ok");
+int
+cli_dump_pathvec(void * v, char ** reply, int * len, void * data)
+{
+	struct paths * allpaths = (struct paths *)data;
+			
+	return dump_pathvec(reply, len, allpaths);
 }

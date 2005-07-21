@@ -177,7 +177,7 @@ print_path (struct path * pp, int style)
 		printf("%-7s ", pp->dev_t);
 
 	if (conf->list > 1) {
-		len = pstate_snprintf(&buff, MAX_PSTATE_LEN, pp->state);
+		len = pstate_snprintf(&buff[0], MAX_PSTATE_LEN, pp->state);
 
 		if (len) {
 			printf("[%s", buff);
@@ -971,9 +971,12 @@ main (int argc, char *argv[])
 	if (conf->dev && blacklist(conf->blist, conf->dev))
 		goto out;
 	
-	if (!cache_cold(CACHE_EXPIRE)) {
-		condlog(3, "load path identifiers cache");
-		cache_load(pathvec);
+	condlog(3, "load path identifiers cache");
+	cache_load(pathvec);
+
+	if (conf->verbosity > 2) {
+		fprintf(stdout, "#\n# all paths in cache :\n#\n");
+		print_all_paths(pathvec);
 	}
 
 	/*
@@ -1005,7 +1008,6 @@ main (int argc, char *argv[])
 	if (get_dm_mpvec(curmp, pathvec, refwwid))
 		goto out;
 
-	cache_dump(pathvec);
 	filter_pathvec(pathvec, refwwid);
 
 	if (conf->list)

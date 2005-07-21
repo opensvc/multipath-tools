@@ -7,6 +7,8 @@
 #define PATH	(1 << 6)
 #define MAP	(1 << 7)
 #define GROUP	(1 << 8)
+#define DUMP	(1 << 9)
+#define PATHVEC	(1 << 10)
 
 #define MAX_REPLY_LEN 1000
 
@@ -19,15 +21,15 @@ struct key {
 
 struct handler {
 	int fingerprint;
-	char * (*fn)(void *, void *);
+	int (*fn)(void *, char **, int *, void *);
 };
 
 vector keys;
 vector handlers;
 
 int alloc_handlers (void);
-int add_handler (int fp, char * (*fn)(void *, void *));
-char * parse_cmd (char * cmd, void *);
+int add_handler (int fp, int (*fn)(void *, char **, int *, void *));
+int parse_cmd (char * cmd, char ** reply, int * len, void *);
 int load_keys (void);
 char * get_keyparam (vector v, int code);
 void free_keys (vector vec);

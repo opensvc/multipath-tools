@@ -48,7 +48,7 @@ out:
 }
 
 int
-add_handler (int fp, char * (*fn)(void *, void *))
+add_handler (int fp, int (*fn)(void *, char **, int *, void *))
 {
 	struct handler * h;
 
@@ -126,6 +126,8 @@ load_keys (void)
 	r += add_key(keys, "path", PATH, 1);
 	r += add_key(keys, "map", MAP, 1);
 	r += add_key(keys, "group", GROUP, 1);
+	r += add_key(keys, "dump", DUMP, 0);
+	r += add_key(keys, "pathvec", PATHVEC, 0);
 
 	if (r) {
 		free_keys(keys);
@@ -143,7 +145,8 @@ find_key (char * str)
 	struct key * kw = NULL;
 
 	vector_foreach_slot (keys, kw, i)
-		if (!strncmp(kw->str, str, strlen(kw->str)))
+		if (strlen(str) == strlen(kw->str) &&
+		    !strcmp(kw->str, str))
 				return kw;
 
 	return NULL;
@@ -298,28 +301,34 @@ genhelp_handler (void)
 	return reply;
 }
 
-char *
-parse_cmd (char * cmd, void * data)
+int
+parse_cmd (char * cmd, char ** reply, int * len, void * data)
 {
-	char * reply;
+	int r;
 	struct handler * h;
 	vector cmdvec = get_cmdvec(cmd);
 
-	if (!cmdvec)
-		return genhelp_handler();
+	if (!cmdvec) {
+		*reply = genhelp_handler();
+		*len = strlen(*reply);
+		return 0;
+	}
 
 	h = find_handler(fingerprint(cmdvec));
 
-	if (!h)
-		return genhelp_handler();
+	if (!h) {
+		*reply = genhelp_handler();
+		*len = strlen(*reply);
+		return 0;
+	}
 
 	/*
 	 * execute handler
 	 */
-	reply = h->fn(cmdvec, data);
+	r = h->fn(cmdvec, reply, len, data);
 	free_keys(cmdvec);
 
-	return reply;
+	return r;
 }
 
 char *

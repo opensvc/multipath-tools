@@ -76,11 +76,12 @@ void free_polls (void)
 /*
  * entry point
  */
-void * uxsock_listen(char * (*uxsock_trigger)(char *, void * trigger_data),
+void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 			void * trigger_data)
 {
 	int ux_sock;
 	size_t len;
+	int rlen;
 	char *inbuf;
 	char *reply;
 
@@ -129,16 +130,17 @@ void * uxsock_listen(char * (*uxsock_trigger)(char *, void * trigger_data),
 					dead_client(c);
 				} else {
 					inbuf[len - 1] = 0;
-					condlog(4, "Got request [s]", inbuf);
-					reply = uxsock_trigger(inbuf,
+					condlog(4, "Got request [%s]", inbuf);
+					uxsock_trigger(inbuf, &reply, &rlen,
 							trigger_data);
 
 					if (reply) {
 						if (send_packet(c->fd, reply,
-						     strlen(reply) + 1) != 0) {
+						     rlen) != 0) {
 							dead_client(c);
 						}
 						FREE(reply);
+						reply = NULL;
 					}
 					FREE(inbuf);
 				}

@@ -671,8 +671,8 @@ uev_remove_path (char * devname, struct paths * allpaths)
 	return 0;
 }
 
-char *
-show_paths (struct paths * allpaths)
+int
+show_paths (char ** r, int * len, struct paths * allpaths)
 {
 	int i, j, k;
 	struct path * pp;
@@ -682,7 +682,7 @@ show_paths (struct paths * allpaths)
 	reply = MALLOC(MAX_REPLY_LEN);
 
 	if (!reply)
-		return NULL;
+		return 1;
 
 	c = reply;
 	c += sprintf(c, "\n");
@@ -697,7 +697,7 @@ show_paths (struct paths * allpaths)
 
 		if (MAX_REPLY_LEN - MAX_PSTATE_LEN < 0) {
 			FREE(reply);
-			return NULL;
+			return 1;
 		}
 
 		j = pstate_snprintf(c, MAX_PSTATE_LEN, pp->state);
@@ -721,12 +721,13 @@ show_paths (struct paths * allpaths)
 		c += sprintf(c, "\n");
 	}
 
-	reply[MAX_REPLY_LEN - 1] = 0;
-	return reply;
+	*r = reply;
+	*len = (int)(c - reply);
+	return 0;
 }
 
-char *
-show_maps (struct paths * allpaths)
+int
+show_maps (char ** r, int *len, struct paths * allpaths)
 {
 	int i, j, k;
 	struct multipath * mpp;
@@ -736,7 +737,7 @@ show_maps (struct paths * allpaths)
 	reply = MALLOC(MAX_REPLY_LEN);
 
 	if (!reply)
-		return NULL;
+		return 1;
 
 	c = reply;
 	c += sprintf(c, "\n");
@@ -763,32 +764,65 @@ show_maps (struct paths * allpaths)
 		c += sprintf(c, "\n");
 	}
 
-	reply[MAX_REPLY_LEN - 1] = 0;
-	return reply;
+	*r = reply;
+	*len = (int)(c - reply);
+	return 0;
 }
 
-char *
-uxsock_trigger (char * str, void * trigger_data)
+int
+dump_pathvec (char ** r, int * len, struct paths * allpaths)
+{
+	int i;
+	struct path * pp;
+	char * reply;
+	char * p;
+
+	*len = VECTOR_SIZE(allpaths->pathvec) * sizeof(struct path);
+	reply = (char *)MALLOC(*len);
+	*r = reply;
+
+	if (!reply)
+		return 1;
+
+	p = reply;
+
+	vector_foreach_slot (allpaths->pathvec, pp, i) {
+		memcpy((void *)p, pp, sizeof(struct path));
+		p += sizeof(struct path);
+	}
+
+	return 0;
+}
+
+int
+uxsock_trigger (char * str, char ** reply, int * len, void * trigger_data)
 {
 	struct paths * allpaths;
-	char * reply = NULL;
-
+	int r;
+	
+	*reply = NULL;
+	*len = 0;
 	allpaths = (struct paths *)trigger_data;
 
 	pthread_cleanup_push(cleanup_lock, allpaths->lock);
 	lock(allpaths->lock);
 
-	reply = parse_cmd(str, allpaths);
+	r = parse_cmd(str, reply, len, allpaths);
 
-	if (!reply)
-		reply = STRDUP("fail\n");
-
-	else if (strlen(reply) == 0)
-		reply = STRDUP("ok\n");
+	if (r) {
+		*reply = STRDUP("fail\n");
+		*len = strlen(*reply) + 1;
+		r = 1;
+	}
+	else if (*len == 0) {
+		*reply = STRDUP("ok\n");
+		*len = strlen(*reply) + 1;
+		r = 0;
+	}
 
 	pthread_cleanup_pop(1);
 
-	return reply;
+	return r;
 }
 
 int 
@@ -862,13 +896,14 @@ uxlsnrloop (void * ap)
 	if (alloc_handlers())
 		return NULL;
 
-	add_handler(LIST+PATHS, list_paths);
-	add_handler(LIST+MAPS, list_maps);
-	add_handler(ADD+PATH, add_path);
-	add_handler(DEL+PATH, del_path);
-	add_handler(ADD+MAP, add_map);
-	add_handler(DEL+MAP, del_map);
-	add_handler(SWITCH+MAP+GROUP, switch_group);
+	add_handler(LIST+PATHS, cli_list_paths);
+	add_handler(LIST+MAPS, cli_list_maps);
+	add_handler(ADD+PATH, cli_add_path);
+	add_handler(DEL+PATH, cli_del_path);
+	add_handler(ADD+MAP, cli_add_map);
+	add_handler(DEL+MAP, cli_del_map);
+	add_handler(SWITCH+MAP+GROUP, cli_switch_group);
+	add_handler(DUMP+PATHVEC, cli_dump_pathvec);
 
 	uxsock_listen(&uxsock_trigger, ap);
 

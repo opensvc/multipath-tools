@@ -12,8 +12,9 @@ struct paths {
 	vector mpvec;
 };
 
-char * show_paths (struct paths *);
-char * show_maps (struct paths *);
+int show_paths (char **, int *, struct paths *);
+int show_maps (char **, int *, struct paths *);
+int dump_pathvec (char **, int *, struct paths * allpaths);
 int uev_add_path (char *, struct paths *);
 int uev_remove_path (char *, struct paths *);
 int uev_add_map (char *, struct paths *);
