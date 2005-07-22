@@ -919,8 +919,6 @@ exit_daemon (int status)
 	condlog(3, "unlink pidfile");
 	unlink(DEFAULT_PIDFILE);
 
-	condlog(2, "--------shut down-------");
-	
 	lock(&exit_mutex);
 	pthread_cond_signal(&exit_cond);
 	unlock(&exit_mutex);
@@ -1362,6 +1360,8 @@ child (void * param)
 	FREE(allpaths);
 	free_config(conf);
 
+	condlog(2, "--------shut down-------");
+	
 	if (logsink)
 		log_thread_stop();
 
