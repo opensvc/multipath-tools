@@ -14,7 +14,7 @@ enum checkers {
 };
 
 #define MSG(a) if (msg != NULL) \
-			snprintf(msg, MAX_CHECKER_MSG_SIZE, "%s\n", a);
+		snprintf(msg, MAX_CHECKER_MSG_SIZE, "%s", a);
 
 int get_checker_id (char *);
 void *get_checker_addr (int);
