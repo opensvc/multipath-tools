@@ -22,6 +22,7 @@ LDFLAGS = -lpthread -ldevmapper -lsysfs -lreadline -lcurses
 #
 #CFLAGS += -DLCKDBG
 #CFLAGS += -D_DEBUG_
+#CFLAGS += -DLOGDBG
 
 #
 # object files

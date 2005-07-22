@@ -14,22 +14,17 @@ void dlog (int sink, int prio, char * fmt, ...)
 	int thres;
 
 	va_start(ap, fmt);
+	thres = (conf) ? conf->verbosity : 0;
 
-	if (!sink) {
-		if (!conf)
-			thres = 0;
-		else
-			thres = conf->verbosity;
-
-		if (prio <= thres) {
+	if (prio <= thres) {
+		if (!sink) {
 			vfprintf(stdout, fmt, ap);
 			fprintf(stdout, "\n");
 		}
-	}
 #if DAEMON
-	else {
-		log_safe(prio + 3, fmt, ap);
-	}
+		else
+			log_safe(prio + 3, fmt, ap);
 #endif
+	}
 	va_end(ap);
 }
