@@ -38,6 +38,7 @@
 #include <uevent.h>
 #include <switchgroup.h>
 #include <path_state.h>
+#include <print.h>
 
 #include "main.h"
 #include "pidfile.h"
@@ -678,7 +679,9 @@ show_paths (char ** r, int * len, struct paths * allpaths)
 	struct path * pp;
 	char * c;
 	char * reply;
+	struct path_layout pl;
 
+	get_path_layout(&pl, allpaths->pathvec);
 	reply = MALLOC(MAX_REPLY_LEN);
 
 	if (!reply)
@@ -688,14 +691,14 @@ show_paths (char ** r, int * len, struct paths * allpaths)
 	c += sprintf(c, "\n");
 
 	vector_foreach_slot(allpaths->pathvec, pp, i) {
-		c += sprintf(c, "%10s: ", pp->dev);
+		c += print_path_id(c, reply + MAX_REPLY_LEN - c, pp, &pl);
 
 		if (!pp->mpp) {
 			c += sprintf(c, "[orphan]\n");
 			continue;
 		}
 
-		if (MAX_REPLY_LEN - MAX_PSTATE_LEN < 0) {
+		if (reply + MAX_REPLY_LEN - c - MAX_PSTATE_LEN < 0) {
 			FREE(reply);
 			return 1;
 		}
@@ -705,11 +708,11 @@ show_paths (char ** r, int * len, struct paths * allpaths)
 		j = MAX_PSTATE_LEN - j;
 		
 		while (j--)
-			sprintf(c, " ");
+			c += sprintf(c, " ");
 
+		c += sprintf(c, " ");
 		j = pp->tick;
 		k = pp->checkint - pp->tick;
-		c += sprintf(c, "%3i/%3i ", j, pp->checkint);
 
 		while (j-- > 0)
 			c += sprintf(c, "X");
@@ -718,7 +721,7 @@ show_paths (char ** r, int * len, struct paths * allpaths)
 		while (k-- > 0)
 			c += sprintf(c, ".");
 
-		c += sprintf(c, "\n");
+		c += sprintf(c, " %i/%i\n", pp->tick, pp->checkint);
 	}
 
 	*r = reply;
@@ -743,7 +746,7 @@ show_maps (char ** r, int *len, struct paths * allpaths)
 	c += sprintf(c, "\n");
 
 	vector_foreach_slot(allpaths->mpvec, mpp, i) {
-		c += sprintf(c, "%20s: ", mpp->alias);
+		c += sprintf(c, "%20s dm-%i ", mpp->alias, mpp->minor);
 
 		if (!mpp->failback_tick) {
 			c += sprintf(c, "[no scheduled failback]\n");

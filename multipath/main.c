@@ -41,10 +41,14 @@
 #include <debug.h>
 #include <switchgroup.h>
 #include <sysfs/libsysfs.h>
+#include <print.h>
 
 #include "main.h"
 #include "pgpolicies.h"
 #include "dict.h"
+
+/* for column aligned output */
+struct path_layout pl;
 
 static char *
 get_refwwid (vector pathvec)
@@ -154,27 +158,15 @@ static void
 print_path (struct path * pp, int style)
 {
 	int len;
-	char buff[MAX_PSTATE_LEN];
+	char buff[MAX_LINE_LEN];
 
 	if (style != PRINT_PATH_SHORT && pp->wwid)
 		printf ("%s ", pp->wwid);
 	else
 		printf ("  \\_ ");
 
-	if (pp->sg_id.host_no < 0)
-		printf("#:#:#:# ");
-	else {
-		printf("%i:%i:%i:%i ",
-		       pp->sg_id.host_no,
-		       pp->sg_id.channel,
-		       pp->sg_id.scsi_id,
-		       pp->sg_id.lun);
-	}
-	if (pp->dev)
-		printf("%-4s ", pp->dev);
-
-	if (pp->dev_t)
-		printf("%-7s ", pp->dev_t);
+	print_path_id(&buff[0], MAX_LINE_LEN, pp, &pl);
+	printf("%s", buff);
 
 	if (conf->list > 1) {
 		len = pstate_snprintf(&buff[0], MAX_PSTATE_LEN, pp->state);
@@ -1004,6 +996,7 @@ main (int argc, char *argv[])
 	}
 
 	refwwid = get_refwwid(pathvec);
+	get_path_layout(&pl, pathvec);
 
 	if (get_dm_mpvec(curmp, pathvec, refwwid))
 		goto out;
