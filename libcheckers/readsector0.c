@@ -85,7 +85,7 @@ sg_read (int sg_fd, unsigned char * buff)
 extern int
 readsector0 (int fd, char *msg, void **context)
 {
-	char buf[512];
+	unsigned char buf[512];
 	struct readsector0_checker_context * ctxt = NULL;
 	int ret;
 
