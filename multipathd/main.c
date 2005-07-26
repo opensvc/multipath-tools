@@ -736,7 +736,9 @@ show_maps (char ** r, int *len, struct paths * allpaths)
 	struct multipath * mpp;
 	char * c;
 	char * reply;
+	struct map_layout ml;
 
+	get_map_layout(&ml, allpaths->mpvec);
 	reply = MALLOC(MAX_REPLY_LEN);
 
 	if (!reply)
@@ -746,7 +748,7 @@ show_maps (char ** r, int *len, struct paths * allpaths)
 	c += sprintf(c, "\n");
 
 	vector_foreach_slot(allpaths->mpvec, mpp, i) {
-		c += sprintf(c, "%20s dm-%i ", mpp->alias, mpp->minor);
+		c += print_map_id(c, reply + MAX_REPLY_LEN - c, mpp, &ml);
 
 		if (!mpp->failback_tick) {
 			c += sprintf(c, "[no scheduled failback]\n");
@@ -755,7 +757,6 @@ show_maps (char ** r, int *len, struct paths * allpaths)
 
 		j = mpp->failback_tick;
 		k = mpp->pgfailback - mpp->failback_tick;
-		c += sprintf(c, "%3i/%3i ", j, mpp->pgfailback);
 
 		while (j-- > 0)
 			c += sprintf(c, "X");
@@ -764,7 +765,7 @@ show_maps (char ** r, int *len, struct paths * allpaths)
 		while (k-- > 0)
 			c += sprintf(c, ".");
 
-		c += sprintf(c, "\n");
+		c += sprintf(c, " %i/%i\n", mpp->failback_tick, mpp->pgfailback);
 	}
 
 	*r = reply;
