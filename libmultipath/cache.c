@@ -6,6 +6,7 @@
 #include "debug.h"
 #include "cache.h"
 #include "uxsock.h"
+#include "defaults.h"
 
 static void
 revoke_cache_info(struct path * pp)
@@ -25,7 +26,7 @@ cache_load (vector pathvec)
 	int r = 1;
 	char * p;
 
-        fd = ux_socket_connect(SOCKET_NAME);
+        fd = ux_socket_connect(DEFAULT_SOCKET);
 
 	if (fd == -1) {
 		condlog(3, "ux_socket_connect error");

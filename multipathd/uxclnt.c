@@ -13,6 +13,7 @@
 
 #include <uxsock.h>
 #include <memory.h>
+#include <defaults.h>
 
 /*
  * process the client 
@@ -57,7 +58,7 @@ int uxclnt(char * inbuf)
 {
 	int fd;
 
-	fd = ux_socket_connect(SOCKET_NAME);
+	fd = ux_socket_connect(DEFAULT_SOCKET);
 	if (fd == -1) {
 		perror("ux_socket_connect");
 		exit(1);

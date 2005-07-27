@@ -19,6 +19,7 @@
 #include <vector.h>
 #include <structs.h>
 #include <uxsock.h>
+#include <defaults.h>
 
 #include "uxlsnr.h"
 
@@ -87,7 +88,7 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 	char *inbuf;
 	char *reply;
 
-	ux_sock = ux_socket_listen(SOCKET_NAME);
+	ux_sock = ux_socket_listen(DEFAULT_SOCKET);
 
 	if (ux_sock == -1) {
 		condlog(0, "ux_socket_listen error");

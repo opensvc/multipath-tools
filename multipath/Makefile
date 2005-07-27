@@ -43,7 +43,6 @@ $(MULTIPATHLIB)-$(BUILD).a:
 install:
 	install -d $(DESTDIR)$(bindir)
 	install -m 755 $(EXEC) $(DESTDIR)$(bindir)/
-	install -d $(DESTDIR)/var/cache/multipath/
 	install -d $(DESTDIR)/etc/dev.d/block/
 	install -m 755 multipath.dev $(DESTDIR)/etc/dev.d/block/
 	install -d $(DESTDIR)/etc/udev/rules.d

@@ -7,7 +7,7 @@
 
 #define DEFAULT_TARGET		"multipath"
 #define DEFAULT_PIDFILE		"/var/run/multipathd.pid"
-#define DEFAULT_RUNFILE		"/var/run/multipath.run"
+#define DEFAULT_SOCKET		"/var/run/multipathd.sock"
 #define DEFAULT_CONFIGFILE	"/etc/multipath.conf"
 
 char * set_default (char * str);
