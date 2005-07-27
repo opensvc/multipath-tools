@@ -108,18 +108,20 @@ int log_enqueue (int prio, const char * fmt, va_list ap)
 		la->tail += ALIGN(fwd, sizeof(void *));
 	}
 	vsnprintf(buff, MAX_MSG_SIZE, fmt, ap);
-	len = ALIGN(strlen(buff) * sizeof(char) + 1, sizeof(void *));
+	len = ALIGN(sizeof(struct logmsg) + strlen(buff) * sizeof(char) + 1,
+		    sizeof(void *));
 
 	/* not enough space on tail : rewind */
-	if (la->head <= la->tail &&
-	    (len + sizeof(struct logmsg)) > (la->end - la->tail)) {
+	if (la->head <= la->tail && len > (la->end - la->tail)) {
 		logdbg(stderr, "enqueue: rewind tail to %p\n", la->tail);
 		la->tail = la->start;
+
+		if (la->empty)
+			la->head = la->start;
 	}
 
 	/* not enough space on head : drop msg */
-	if (la->head > la->tail &&
-	    (len + sizeof(struct logmsg)) > (la->head - la->tail)) {
+	if (la->head > la->tail && len >= (la->head - la->tail)) {
 		logdbg(stderr, "enqueue: log area overrun, drop msg\n");
 
 		if (!la->empty)
@@ -153,7 +155,7 @@ int log_dequeue (void * buff)
 
 	if (la->empty)
 		return 1;
-	
+
 	int len = strlen((char *)&src->str) * sizeof(char) +
 		  sizeof(struct logmsg) + 1;
 
