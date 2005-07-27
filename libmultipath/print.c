@@ -4,6 +4,9 @@
 #include "vector.h"
 #include "structs.h"
 #include "print.h"
+#include "dmparser.h"
+
+#include "../libcheckers/path_state.h"
 
 #define MAX_LEN 64
 
@@ -67,12 +70,12 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 }
 
 int
-print_path_id (char * line, int len, struct path * pp, struct path_layout * pl)
+snprint_path (char * line, int len, struct path * pp, struct path_layout * pl)
 {
 	char * c = line;
 	char * s = line;
 
-	if ((pl->hbtl_len + pl->dev_len + pl->dev_t_len + 3) > len)
+	if ((pl->hbtl_len + pl->dev_len + pl->dev_t_len + 7) > len)
 		return 0;
 
 	if (pp->sg_id.host_no < 0)
@@ -104,11 +107,42 @@ print_path_id (char * line, int len, struct path * pp, struct path_layout * pl)
 	while ((int)(c - s) < (pl->dev_t_len + 1))
 		*c++ = ' ';
 
+	switch (pp->dmstate) {
+	case PSTATE_ACTIVE:
+		c += sprintf(c, "[active]");
+		break;
+	case PSTATE_FAILED:
+		c += sprintf(c, "[failed]");
+		break;
+	default:
+		break;
+	}
+		
+	switch (pp->state) {
+	case PATH_UP:
+		c += sprintf(c, "[ready]");
+		break;
+	case PATH_DOWN:
+		c += sprintf(c, "[faulty]");
+		break;
+	case PATH_SHAKY:
+		c += sprintf(c, "[shaky]");
+		break;
+	case PATH_GHOST:
+		c += sprintf(c, "[ghost]");
+		break;
+	default:
+		break;
+	}
+		
+	if (pp->claimed)
+		c += sprintf(c, "[claimed]");
+
 	return (c - line);
 }
 
 int
-print_map_id (char * line, int len, struct multipath * mpp, struct map_layout * ml)
+snprint_map (char * line, int len, struct multipath * mpp, struct map_layout * ml)
 {
 	char * c = line;
 	char * s = line;

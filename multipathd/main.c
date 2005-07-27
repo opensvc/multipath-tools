@@ -691,24 +691,12 @@ show_paths (char ** r, int * len, struct paths * allpaths)
 	c += sprintf(c, "\n");
 
 	vector_foreach_slot(allpaths->pathvec, pp, i) {
-		c += print_path_id(c, reply + MAX_REPLY_LEN - c, pp, &pl);
+		c += snprint_path(c, reply + MAX_REPLY_LEN - c, pp, &pl);
 
 		if (!pp->mpp) {
-			c += sprintf(c, "[orphan]\n");
+			c += sprintf(c, " [orphan]\n");
 			continue;
 		}
-
-		if (reply + MAX_REPLY_LEN - c - MAX_PSTATE_LEN < 0) {
-			FREE(reply);
-			return 1;
-		}
-
-		j = pstate_snprintf(c, MAX_PSTATE_LEN, pp->state);
-		c += j;
-		j = MAX_PSTATE_LEN - j;
-		
-		while (j--)
-			c += sprintf(c, " ");
 
 		c += sprintf(c, " ");
 		j = pp->tick;
@@ -748,7 +736,7 @@ show_maps (char ** r, int *len, struct paths * allpaths)
 	c += sprintf(c, "\n");
 
 	vector_foreach_slot(allpaths->mpvec, mpp, i) {
-		c += print_map_id(c, reply + MAX_REPLY_LEN - c, mpp, &ml);
+		c += snprint_map(c, reply + MAX_REPLY_LEN - c, mpp, &ml);
 
 		if (!mpp->failback_tick) {
 			c += sprintf(c, "[no scheduled failback]\n");

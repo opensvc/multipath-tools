@@ -13,5 +13,5 @@ struct map_layout {
 
 void get_path_layout (struct path_layout * pl, vector pathvec);
 void get_map_layout (struct map_layout * pl, vector mpvec);
-int print_path_id (char *, int, struct path *, struct path_layout *);
-int print_map_id (char *, int, struct multipath *, struct map_layout *);
+int snprint_path (char *, int, struct path *, struct path_layout *);
+int snprint_map (char *, int, struct multipath *, struct map_layout *);

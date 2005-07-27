@@ -157,7 +157,6 @@ get_refwwid (vector pathvec)
 static void
 print_path (struct path * pp, int style)
 {
-	int len;
 	char buff[MAX_LINE_LEN];
 
 	if (style != PRINT_PATH_SHORT && pp->wwid)
@@ -165,40 +164,8 @@ print_path (struct path * pp, int style)
 	else
 		printf ("  \\_ ");
 
-	print_path_id(&buff[0], MAX_LINE_LEN, pp, &pl);
-	printf("%s", buff);
-
-	if (conf->list > 1) {
-		len = pstate_snprintf(&buff[0], MAX_PSTATE_LEN, pp->state);
-
-		if (len) {
-			printf("[%s", buff);
-			len = MAX_PSTATE_LEN - len;
-
-			while (len--)
-				printf(" ");
-
-			printf("]");
-		}
-	}
-
-	switch (pp->dmstate) {
-	case PSTATE_ACTIVE:
-		printf("[active]");
-		break;
-	case PSTATE_FAILED:
-		printf("[failed]");
-		break;
-	default:
-		break;
-	}
-	if (pp->claimed)
-		printf("[claimed]");
-
-	if (style != PRINT_PATH_SHORT && pp->product_id)
-		printf("[%.16s]", pp->product_id);
-
-	fprintf(stdout, "\n");
+	snprint_path(&buff[0], MAX_LINE_LEN, pp, &pl);
+	printf("%s\n", buff);
 }
 
 static void
@@ -261,14 +228,14 @@ print_mp (struct multipath * mpp)
 
 	printf("\n");
 
-	if (mpp->size < 2000)
+	if (mpp->size < 2048)
 		printf("[size=%lu kB]", mpp->size / 2);
-	else if (mpp->size < (2000 * 1024))
-		printf("[size=%lu MB]", mpp->size / 2 / 1024);
-	else if (mpp->size < (2000 * 1024 * 1024))
-		printf("[size=%lu GB]", mpp->size / 2 / 1024 / 1024);
+	else if (mpp->size < 2097152)
+		printf("[size=%lu MB]", mpp->size / 2048);
+	else if (mpp->size < 2147483648)
+		printf("[size=%lu GB]", mpp->size / 2097152 );
 	else
-		printf("[size=%lu TB]", mpp->size / 2 / 1024 / 1024 / 1024);
+		printf("[size=%lu TB]", mpp->size / 2147483648);
 
 	if (mpp->features)
 		printf("[features=\"%s\"]", mpp->features);
@@ -284,8 +251,15 @@ print_mp (struct multipath * mpp)
 	vector_foreach_slot (mpp->pg, pgp, j) {
 		printf("\\_ ");
 
-		if (mpp->selector)
+		if (mpp->selector) {
 			printf("%s ", mpp->selector);
+#if 0
+			/* align to path status info */
+			for (i = pl.hbtl_len + pl.dev_len + pl.dev_t_len + 4;
+			     i > strlen(mpp->selector); i--)
+				printf(" ");
+#endif
+		}
 
 		switch (pgp->status) {
 		case PGSTATE_ENABLED:

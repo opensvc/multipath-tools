@@ -6,8 +6,7 @@ BUILD = glibc
 
 include ../Makefile.inc
 
-OBJS = readsector0.o tur.o selector.o emc_clariion.o hp_sw.o \
-       path_state.o
+OBJS = readsector0.o tur.o selector.o emc_clariion.o hp_sw.o
 
 all: $(BUILD)
 
