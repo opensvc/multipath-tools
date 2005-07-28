@@ -217,7 +217,7 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 				goto out;
 
 			/*
-			 * Update wwid for multipaths which are not set
+			 * Update wwid for multipaths which are not setup
 			 * in the get_dm_mpvec() code path
 			 */
 			if (!strlen(mpp->wwid))

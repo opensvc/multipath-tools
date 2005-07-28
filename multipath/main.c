@@ -497,6 +497,13 @@ select_action (struct multipath * mpp, vector curmp)
 	cmpp = find_mp(curmp, mpp->alias);
 
 	if (!cmpp) {
+		cmpp = find_mp_by_wwid(curmp, mpp->wwid);
+
+		if (cmpp && !conf->dry_run) {
+			condlog(2, "remove: %s (dup of %s)",
+				cmpp->alias, mpp->alias);
+			dm_flush_map(cmpp->alias, DEFAULT_TARGET);
+		}
 		mpp->action = ACT_CREATE;
 		return;
 	}
@@ -582,10 +589,14 @@ domap (struct multipath * mpp)
 	/*
 	 * last chance to quit before touching the devmaps
 	 */
-	if (conf->dry_run || mpp->action == ACT_NOTHING)
+	if (conf->dry_run)
 		return 0;
 
-	if (mpp->action == ACT_SWITCHPG) {
+	switch (mpp->action) {
+	case ACT_NOTHING:
+		return 0;
+
+	case ACT_SWITCHPG:
 		dm_switchgroup(mpp->alias, mpp->nextpg);
 		/*
 		 * we may have avoided reinstating paths because there where in
@@ -594,12 +605,18 @@ domap (struct multipath * mpp)
 		 */
 		reinstate_paths(mpp);
 		return 0;
-	}
-	if (mpp->action == ACT_CREATE)
-		op = DM_DEVICE_CREATE;
 
-	if (mpp->action == ACT_RELOAD)
+	case ACT_CREATE:
+		op = DM_DEVICE_CREATE;
+		break;
+
+	case ACT_RELOAD:
 		op = DM_DEVICE_RELOAD;
+		break;
+
+	default:
+		break;
+	}
 
 		
 	/*
@@ -782,16 +799,16 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 		wwid = get_mpe_wwid(mpp->alias);
 
 		if (wwid) {
-			strncpy(mpp->wwid, wwid, WWID_SIZE);
+			/* out of specified scope */
+			if (refwwid && strncmp(wwid, refwwid, WWID_SIZE))
+				continue;
 			wwid = NULL;
-		} else
-			strncpy(mpp->wwid, mpp->alias, WWID_SIZE);
-
-		if (refwwid && strncmp(mpp->wwid, refwwid, WWID_SIZE))
-			continue;
+		}
 
 		condlog(3, "params = %s", mpp->params);
 		condlog(3, "status = %s", mpp->status);
+
+		/* will set mpp->wwid */
 		disassemble_map(pathvec, mpp->params, mpp);
 
 		/*
