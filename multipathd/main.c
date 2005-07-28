@@ -1445,7 +1445,10 @@ main (int argc, char *argv[])
 		}
 	}
 
-	err = fork();
+	if (!logsink)
+		err = 0;
+	else
+		err = fork();
 	
 	if (err < 0)
 		/* error */
