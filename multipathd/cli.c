@@ -128,6 +128,7 @@ load_keys (void)
 	r += add_key(keys, "group", GROUP, 1);
 	r += add_key(keys, "dump", DUMP, 0);
 	r += add_key(keys, "pathvec", PATHVEC, 0);
+	r += add_key(keys, "reconfigure", RECONFIGURE, 0);
 
 	if (r) {
 		free_keys(keys);

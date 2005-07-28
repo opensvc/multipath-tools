@@ -190,11 +190,10 @@ update_multipath_strings (struct multipath *mpp, vector pathvec)
 	return 0;
 }
 
-static int
-setup_multipath (struct paths * allpaths, struct multipath * mpp)
+static void
+set_multipath_wwid (struct multipath * mpp)
 {
 	char * wwid;
-	int i;
 
 	wwid = get_mpe_wwid(mpp->alias);
 
@@ -203,14 +202,21 @@ setup_multipath (struct paths * allpaths, struct multipath * mpp)
 		wwid = NULL;
 	} else
 		strncpy(mpp->wwid, mpp->alias, WWID_SIZE);
+}
 
+static int
+setup_multipath (struct paths * allpaths, struct multipath * mpp)
+{
+	int i;
+
+	set_multipath_wwid(mpp);
+	mpp->mpe = find_mpe(mpp->wwid);
 	condlog(4, "discovered map %s", mpp->alias);
 
 	if (update_multipath_strings(mpp, allpaths->pathvec))
 		goto out;
 
 	set_paths_owner(allpaths, mpp);
-	mpp->mpe = find_mpe(mpp->wwid);
 	select_pgfailback(mpp);
 
 	return 0;
@@ -360,8 +366,8 @@ waiteventloop (struct event_thread * waiter)
 	 * upon event ...
 	 */
 	while (1) {
-		condlog(2, "devmap event (%i) on %s",
-				waiter->event_nr, waiter->mapname);
+		condlog(2, "%s: devmap event #%i",
+				waiter->mapname, waiter->event_nr);
 
 		/*
 		 * event might be :
@@ -583,11 +589,9 @@ uev_add_map (char * devname, struct paths * allpaths)
 	if (start_waiter_thread(mpp, allpaths))
 		goto out;
 
-	condlog(2, "add %s devmap", mpp->alias);
-
 	return 0;
 out:
-	condlog(2, "add %s devmap failed", mpp->alias);
+	condlog(2, "%s: add devmap failed", mpp->alias);
 	/*
 	 * purge the multipath vector
 	 */
@@ -694,7 +698,7 @@ show_paths (char ** r, int * len, struct paths * allpaths)
 		c += snprint_path(c, reply + MAX_REPLY_LEN - c, pp, &pl);
 
 		if (!pp->mpp) {
-			c += sprintf(c, " [orphan]\n");
+			c += sprintf(c, "[orphan]\n");
 			continue;
 		}
 
@@ -786,6 +790,50 @@ dump_pathvec (char ** r, int * len, struct paths * allpaths)
 	return 0;
 }
 
+static int
+get_dm_mpvec (struct paths * allpaths)
+{
+	int i;
+	struct multipath * mpp;
+
+	if (dm_get_maps(allpaths->mpvec, "multipath"))
+		return 1;
+
+	vector_foreach_slot (allpaths->mpvec, mpp, i) {
+		if (setup_multipath(allpaths, mpp))
+			return 1;
+		mpp->minor = dm_get_minor(mpp->alias);
+		start_waiter_thread(mpp, allpaths);
+	}
+
+	return 0;
+}
+
+int
+reconfigure (struct paths * allpaths)
+{
+	struct config * old = conf;
+	struct multipath * mpp;
+	int i;
+
+	conf = NULL;
+
+	if (load_config(DEFAULT_CONFIGFILE)) {
+		conf = old;
+		condlog(2, "reconfigure failed, continue with old config");
+		return 1;
+	}
+	conf->verbosity = old->verbosity;
+	free_config(old);
+
+	vector_foreach_slot (allpaths->mpvec, mpp, i) {
+		mpp->mpe = find_mpe(mpp->wwid);
+		set_paths_owner(allpaths, mpp);
+	}
+	condlog(2, "reconfigured");
+	return 0;
+}
+
 int
 uxsock_trigger (char * str, char ** reply, int * len, void * trigger_data)
 {
@@ -813,7 +861,6 @@ uxsock_trigger (char * str, char ** reply, int * len, void * trigger_data)
 	}
 
 	pthread_cleanup_pop(1);
-
 	return r;
 }
 
@@ -896,6 +943,7 @@ uxlsnrloop (void * ap)
 	add_handler(DEL+MAP, cli_del_map);
 	add_handler(SWITCH+MAP+GROUP, cli_switch_group);
 	add_handler(DUMP+PATHVEC, cli_dump_pathvec);
+	add_handler(RECONFIGURE, cli_reconfigure);
 
 	uxsock_listen(&uxsock_trigger, ap);
 
@@ -916,28 +964,6 @@ exit_daemon (int status)
 	unlock(&exit_mutex);
 
 	return status;
-}
-
-/*
- * caller must have locked the path list before calling that function
- */
-static int
-get_dm_mpvec (struct paths * allpaths)
-{
-	int i;
-	struct multipath * mpp;
-
-	if (dm_get_maps(allpaths->mpvec, "multipath"))
-		return 1;
-
-	vector_foreach_slot (allpaths->mpvec, mpp, i) {
-		if (setup_multipath(allpaths, mpp))
-			return 1;
-		mpp->minor = dm_get_minor(mpp->alias);
-		start_waiter_thread(mpp, allpaths);
-	}
-
-	return 0;
 }
 
 static void
@@ -1222,7 +1248,7 @@ signal_set(int signo, void (*func) (int))
 static void
 sighup (int sig)
 {
-	condlog(2, "SIGHUP received");
+	condlog(3, "SIGHUP received");
 
 #ifdef _DEBUG_
 	dbg_free_final(NULL);

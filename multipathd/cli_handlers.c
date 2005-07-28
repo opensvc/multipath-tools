@@ -74,3 +74,11 @@ cli_dump_pathvec(void * v, char ** reply, int * len, void * data)
 			
 	return dump_pathvec(reply, len, allpaths);
 }
+
+int
+cli_reconfigure(void * v, char ** reply, int * len, void * data)
+{
+	struct paths * allpaths = (struct paths *)data;
+			
+	return reconfigure(allpaths);
+}

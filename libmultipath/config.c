@@ -39,7 +39,7 @@ find_mpe (char * wwid)
 		return NULL;
 
 	vector_foreach_slot (conf->mptable, mpe, i)
-		if (mpe->wwid && strcmp(mpe->wwid, wwid) == 0)
+		if (mpe->wwid && !strcmp(mpe->wwid, wwid))
 			return mpe;
 
 	return NULL;

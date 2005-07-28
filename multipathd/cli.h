@@ -1,14 +1,15 @@
-#define LIST	1
-#define ADD	(1 << 1)
-#define DEL	(1 << 2)
-#define SWITCH	(1 << 3)
-#define PATHS	(1 << 4)
-#define MAPS	(1 << 5)
-#define PATH	(1 << 6)
-#define MAP	(1 << 7)
-#define GROUP	(1 << 8)
-#define DUMP	(1 << 9)
-#define PATHVEC	(1 << 10)
+#define LIST		1
+#define ADD		(1 << 1)
+#define DEL		(1 << 2)
+#define SWITCH		(1 << 3)
+#define PATHS		(1 << 4)
+#define MAPS		(1 << 5)
+#define PATH		(1 << 6)
+#define MAP		(1 << 7)
+#define GROUP		(1 << 8)
+#define DUMP		(1 << 9)
+#define PATHVEC		(1 << 10)
+#define RECONFIGURE	(1 << 11)
 
 #define MAX_REPLY_LEN 1000
 

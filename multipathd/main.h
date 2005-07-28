@@ -12,6 +12,7 @@ struct paths {
 	vector mpvec;
 };
 
+int reconfigure (struct paths *);
 int show_paths (char **, int *, struct paths *);
 int show_maps (char **, int *, struct paths *);
 int dump_pathvec (char **, int *, struct paths * allpaths);
