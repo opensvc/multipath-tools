@@ -229,13 +229,13 @@ print_mp (struct multipath * mpp)
 	printf("\n");
 
 	if (mpp->size < (1 << 11))
-		printf("[size=%llu kB]", mpp->size);
+		printf("[size=%llu kB]", mpp->size >> 1);
 	else if (mpp->size < (1 << 21))
-		printf("[size=%llu MB]", mpp->size >> 10);
+		printf("[size=%llu MB]", mpp->size >> 11);
 	else if (mpp->size < (1 << 31))
-		printf("[size=%llu GB]", mpp->size >> 20);
+		printf("[size=%llu GB]", mpp->size >> 21);
 	else
-		printf("[size=%llu TB]", mpp->size >> 30);
+		printf("[size=%llu TB]", mpp->size >> 31);
 
 	if (mpp->features)
 		printf("[features=\"%s\"]", mpp->features);

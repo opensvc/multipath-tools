@@ -334,7 +334,7 @@ get_serial (char * str, int fd)
 		len = buff[3];
 		if (len > 0) {
 			memcpy(str, buff + 4, len);
-			buff[len] = '\0';
+			str[len] = '\0';
 		}
 		return 1;
 	}
