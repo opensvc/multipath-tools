@@ -10,40 +10,24 @@
 static int
 store_ble (vector blist, char * str)
 {
-	struct blentry * ble;
+	regex_t * ble;
 	
 	if (!str)
 		return 0;
 
-	ble = (struct blentry *)MALLOC(sizeof(struct blentry));
+	ble = MALLOC(sizeof(regex_t));
 
 	if (!ble)
 		goto out;
 
-	ble->preg = MALLOC(sizeof(regex_t));
-
-	if (!ble->preg)
+	if (regcomp(ble, str, REG_EXTENDED|REG_NOSUB))
 		goto out1;
 
-	ble->str = (char *)MALLOC(strlen(str) + 1);
-
-	if (!ble->str)
-		goto out2;
-
-	strcpy(ble->str, str);
-
-	if (regcomp((regex_t *)ble->preg, ble->str, REG_EXTENDED|REG_NOSUB))
-		goto out3;
-
 	if (!vector_alloc_slot(blist))
-		goto out3;
+		goto out1;
 
 	vector_set_slot(blist, ble);
 	return 0;
-out3:
-	FREE(ble->str);
-out2:
-	FREE(ble->preg);
 out1:
 	FREE(ble);
 out:
@@ -66,10 +50,10 @@ int
 blacklist (vector blist, char * dev)
 {
 	int i;
-	struct blentry *ble;
+	regex_t * ble;
 
 	vector_foreach_slot (blist, ble, i) {
-		if (!regexec(ble->preg, dev, 0, NULL, 0)) {
+		if (!regexec(ble, dev, 0, NULL, 0)) {
 			condlog(3, "%s blacklisted", dev);
 			return 1;
 		}
@@ -92,20 +76,15 @@ store_regex (vector blist, char * regex)
 void
 free_blacklist (vector blist)
 {
-	struct blentry * ble;
+	regex_t * ble;
 	int i;
 
 	if (!blist)
 		return;
 
-	vector_foreach_slot (blist, ble, i) {
-		if (ble->str)
-			FREE(ble->str);
+	vector_foreach_slot (blist, ble, i)
+		if (ble)
+			FREE(ble);
 
-		if (ble->preg)
-			FREE(ble->preg);
-
-		FREE(ble);
-	}
 	vector_free(blist);
 }
