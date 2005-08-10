@@ -1,0 +1,6 @@
+#!/bin/sh
+#
+# copy in /bin and add this line to a device block in multipath.conf :
+# getuid_callout          "/bin/usb_id %n"
+#
+cd /sys/block/$1 && cd $(ls -l device|cut -d">" -f2) && cd ../../../.. && cat serial
