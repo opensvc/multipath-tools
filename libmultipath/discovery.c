@@ -154,11 +154,13 @@ declare_sysfs_get_str(rev, "%s/block/%s/device/rev");
 declare_sysfs_get_str(dev, "%s/block/%s/dev");
 
 #define declare_sysfs_get_val(fname, fmt) \
-extern unsigned long  \
+extern unsigned long long  \
 sysfs_get_##fname (char * sysfs_path, char * dev) \
 { \
 	char attr_path[SYSFS_PATH_SIZE]; \
 	char attr_buff[SYSFS_PATH_SIZE]; \
+	int r; \
+	unsigned long long val; \
 \
 	if (safe_sprintf(attr_path, fmt, sysfs_path, dev)) \
 		return 0; \
@@ -169,7 +171,12 @@ sysfs_get_##fname (char * sysfs_path, char * dev) \
 	if (0 > sysfs_read_attribute_value(attr_path, attr_buff, sizeof(attr_buff))) \
 		return 0; \
 \
-	return strtoul(attr_buff, NULL, 0); \
+	r = sscanf(attr_buff, "%llu\n", &val); \
+\
+	if (r != 1) \
+		return 0; \
+	else \
+		return (val); \
 }
 
 declare_sysfs_get_val(size, "%s/block/%s/size");
@@ -453,7 +460,7 @@ common_sysfs_pathinfo (struct path * curpath)
 	if (curpath->size == 0)
 		return 1;
 
-	condlog(3, "size = %lu", curpath->size);
+	condlog(3, "size = %llu", curpath->size);
 
 	return 0;
 }

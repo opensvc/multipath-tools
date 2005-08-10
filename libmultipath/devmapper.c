@@ -84,7 +84,7 @@ dm_simplecmd (int task, const char *name) {
 
 extern int
 dm_addmap (int task, const char *name, const char *target,
-	   const char *params, unsigned long size) {
+	   const char *params, unsigned long long size) {
 	int r = 0;
 	struct dm_task *dmt;
 
@@ -135,7 +135,7 @@ out:
 }
 
 extern int
-dm_get_map(char * name, unsigned long * size, char * outparams)
+dm_get_map(char * name, unsigned long long * size, char * outparams)
 {
 	int r = 1;
 	struct dm_task *dmt;
@@ -648,7 +648,7 @@ dm_remove_partmaps (char * mapname)
 	struct dm_names *names;
 	unsigned next = 0;
 	char params[PARAMS_SIZE];
-	unsigned long size;
+	unsigned long long size;
 	char dev_t[32];
 	int r = 1;
 

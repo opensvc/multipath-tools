@@ -172,7 +172,7 @@ static void
 print_map (struct multipath * mpp)
 {
 	if (mpp->size && mpp->params)
-		printf("0 %lu %s %s\n",
+		printf("0 %llu %s %s\n",
 			 mpp->size, DEFAULT_TARGET, mpp->params);
 	return;
 }
@@ -228,14 +228,14 @@ print_mp (struct multipath * mpp)
 
 	printf("\n");
 
-	if (mpp->size < 2048)
-		printf("[size=%lu kB]", mpp->size / 2);
-	else if (mpp->size < 2097152)
-		printf("[size=%lu MB]", mpp->size / 2048);
-	else if (mpp->size < 2147483648)
-		printf("[size=%lu GB]", mpp->size / 2097152 );
+	if (mpp->size < (1 << 11))
+		printf("[size=%llu kB]", mpp->size);
+	else if (mpp->size < (1 << 21))
+		printf("[size=%llu MB]", mpp->size >> 10);
+	else if (mpp->size < (1 << 31))
+		printf("[size=%llu GB]", mpp->size >> 20);
 	else
-		printf("[size=%lu TB]", mpp->size / 2147483648);
+		printf("[size=%llu TB]", mpp->size >> 30);
 
 	if (mpp->features)
 		printf("[features=\"%s\"]", mpp->features);

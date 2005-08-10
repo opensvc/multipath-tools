@@ -72,7 +72,7 @@ struct path {
 	char rev[SCSI_REV_SIZE];
 	char serial[SERIAL_SIZE];
 	char tgt_node_name[NODE_NAME_SIZE];
-	unsigned long size;
+	unsigned long long size;
 	unsigned int checkint;
 	unsigned int tick;
 	int state;
@@ -102,7 +102,7 @@ struct multipath {
 	int action;
 	int pgfailback;
 	int failback_tick;
-	unsigned long size;
+	unsigned long long size;
 	vector paths;
 	vector pg;
 	char params[PARAMS_SIZE];
