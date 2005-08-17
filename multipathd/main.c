@@ -717,7 +717,7 @@ show_paths (char ** r, int * len, struct paths * allpaths)
 	}
 
 	*r = reply;
-	*len = (int)(c - reply);
+	*len = (int)(c - reply + 1);
 	return 0;
 }
 
@@ -761,7 +761,7 @@ show_maps (char ** r, int *len, struct paths * allpaths)
 	}
 
 	*r = reply;
-	*len = (int)(c - reply);
+	*len = (int)(c - reply + 1);
 	return 0;
 }
 
