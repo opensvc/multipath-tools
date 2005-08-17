@@ -36,11 +36,6 @@ int devt2devname (char *, char *);
 int pathinfo (struct path *, vector hwtable, int mask);
 struct path * store_pathinfo (vector pathvec, vector hwtable,
 			      char * devname, int flag);
-	
-
-#if 0
-int get_claimed(int fd);
-#endif
 
 /*
  * discovery bitmask

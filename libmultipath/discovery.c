@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 #include <sysfs/dlist.h>
 #include <sysfs/libsysfs.h>
@@ -201,7 +202,7 @@ opennode (char * dev, int mode)
 	while (--loop) {
 		fd = open(devpath, mode);
 
-		if (fd > 0)
+		if (fd > 0 || errno != ENOENT)
 			return fd;
 
 		usleep(1000 * 1000 / WAIT_LOOP_PER_SECOND);
@@ -210,16 +211,17 @@ opennode (char * dev, int mode)
 	return -1;
 }
 
-#if 0
 int
-get_claimed(int fd)
+get_claimed(char * devname)
 {
-	/*
-	 * FIXME : O_EXCL always fails ?
-	 */
+	int fd = opennode(devname, O_EXCL);
+
+	if (fd < 0)
+		return 1;
+
+	close(fd);
 	return 0;
 }	
-#endif
 
 extern int
 devt2devname (char *devname, char *devt)
@@ -587,6 +589,10 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	/*
 	 * then those not available through sysfs
 	 */
+	if (mask & DI_CLAIMED) {
+		pp->claimed = get_claimed(pp->dev);
+		condlog(3, "claimed = %i", pp->claimed);
+	}
 	if (pp->fd <= 0)
 		pp->fd = opennode(pp->dev, O_RDONLY);
 
@@ -596,12 +602,6 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	if (pp->bus == SYSFS_BUS_SCSI)
 		if (scsi_ioctl_pathinfo(pp, mask))
 			return 1;
-#if 0
-	if (mask & DI_CLAIMED) {
-		pp->claimed = get_claimed(pp->fd);
-		condlog(3, "claimed = %i", pp->claimed);
-	}
-#endif
 
 	/* get and store hwe pointer */
 	pp->hwe = find_hwe(hwtable, pp->vendor_id, pp->product_id);
