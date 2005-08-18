@@ -21,7 +21,7 @@ endif
 all: $(BUILD)
 
 prepare:
-	rm -f core *.o *.gz
+	@file *-$(BUILD).a >/dev/null 2>&1 || rm -f core *.o *.gz
 
 klibc: prepare $(OBJS)
 	ar rs libmultipath-klibc.a *.o

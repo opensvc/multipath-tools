@@ -65,6 +65,6 @@ uninstall:
 	rm -f $(DESTDIR)$(mandir)/$(EXEC).8.gz
 
 clean:
-	$(MAKE) -C $(multipathdir) clean
+	$(MAKE) -C $(multipathdir) prepare
 	rm -f core *.o $(EXEC) *.gz
 

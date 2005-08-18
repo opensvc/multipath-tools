@@ -21,7 +21,7 @@ EXEC = multipath
 all: $(BUILD)
 
 prepare:
-	make -C $(multipathdir) clean
+	make -C $(multipathdir) prepare
 	rm -f core *.o *.gz
 
 glibc: prepare $(OBJS)

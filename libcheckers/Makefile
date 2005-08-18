@@ -11,7 +11,7 @@ OBJS = readsector0.o tur.o selector.o emc_clariion.o hp_sw.o
 all: $(BUILD)
 
 prepare:
-	rm -f core *.o *.gz
+	@file *-$(BUILD).a >/dev/null 2>&1 || rm -f core *.o *.gz
 
 klibc: prepare $(OBJS)
 	ar rs libcheckers-klibc.a *.o
