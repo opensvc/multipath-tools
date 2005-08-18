@@ -20,12 +20,9 @@ endif
 export KRNLSRC
 export KRNLOBJ
 
-BUILDDIRS = libmultipath libcheckers path_priority \
-	    devmap_name multipath multipathd kpartx
-ALLDIRS	= $(shell find . -maxdepth 1 -mindepth 1 -type d ! -name \.git)
+BUILDDIRS = $(shell find . -name Makefile -mindepth 2 -exec dirname {} \;)
 
 VERSION = $(shell basename ${PWD} | cut -d'-' -f3)
-INSTALLDIRS = devmap_name multipath multipathd kpartx path_priority
 
 all: recurse
 
@@ -36,17 +33,17 @@ recurse:
 	done
 
 recurse_clean:
-	@for dir in $(ALLDIRS); do\
+	@for dir in $(BUILDDIRS); do\
 	$(MAKE) -C $$dir clean || exit $?; \
 	done
 
 recurse_install:
-	@for dir in $(INSTALLDIRS); do\
+	@for dir in $(BUILDDIRS); do\
 	$(MAKE) -C $$dir install || exit $?; \
 	done
 
 recurse_uninstall:
-	@for dir in $(INSTALLDIRS); do\
+	@for dir in $(BUILDDIRS); do\
 	$(MAKE) -C $$dir uninstall || exit $?; \
 	done
 
