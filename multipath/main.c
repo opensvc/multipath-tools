@@ -378,9 +378,10 @@ setup_map (struct multipath * mpp)
 
 	/*
 	 * don't bother if a constituant path is claimed
+	 * (not by the device mapper driver)
 	 */
 	vector_foreach_slot (mpp->paths, pp, i) {
-		if (pp->claimed) {
+		if (pp->claimed && pp->dmstate == PSTATE_UNDEF) {
 			condlog(3, "%s claimed", pp->dev);
 			return 1;
 		}

@@ -135,7 +135,7 @@ snprint_path (char * line, int len, struct path * pp, struct path_layout * pl)
 		break;
 	}
 		
-	if (pp->claimed)
+	if (pp->claimed && pp->dmstate == PSTATE_UNDEF)
 		c += sprintf(c, "[claimed]");
 
 	return (c - line);
