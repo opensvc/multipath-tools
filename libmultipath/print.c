@@ -8,14 +8,16 @@
 
 #include "../libcheckers/path_state.h"
 
-#define MAX_LEN 64
+#define MAX_FIELD_LEN 64
+
+#define MAX(x,y) (x > y) ? x : y;
 
 void
 get_path_layout (struct path_layout * pl, vector pathvec)
 {
 	int i;
 	int hbtl_len, dev_len, dev_t_len;
-	char buff[MAX_LEN];
+	char buff[MAX_FIELD_LEN];
 	struct path * pp;
 
 	/* reset max col lengths */
@@ -24,7 +26,7 @@ get_path_layout (struct path_layout * pl, vector pathvec)
 	pl->dev_t_len = 0;
 
 	vector_foreach_slot (pathvec, pp, i) {
-		hbtl_len = snprintf(buff, MAX_LEN, "%i:%i:%i:%i",
+		hbtl_len = snprintf(buff, MAX_FIELD_LEN, "%i:%i:%i:%i",
 					pp->sg_id.host_no,
 					pp->sg_id.channel,
 					pp->sg_id.scsi_id,
@@ -32,12 +34,9 @@ get_path_layout (struct path_layout * pl, vector pathvec)
 		dev_len = strlen(pp->dev);
 		dev_t_len = strlen(pp->dev_t);
 
-		pl->hbtl_len = (hbtl_len > pl->hbtl_len) ?
-				hbtl_len : pl->hbtl_len;
-		pl->dev_len = (dev_len > pl->dev_len) ?
-				dev_len : pl->dev_len;
-		pl->dev_t_len = (dev_t_len > pl->dev_t_len) ?
-				dev_t_len : pl->dev_t_len;
+		pl->hbtl_len = MAX(hbtl_len, pl->hbtl_len);
+		pl->dev_len = MAX(dev_len, pl->dev_len);
+		pl->dev_t_len = MAX(dev_t_len, pl->dev_t_len);
 	}
 	return;
 }
@@ -46,7 +45,7 @@ void
 get_map_layout (struct map_layout * ml, vector mpvec)
 {
 	int i;
-	char buff[MAX_LEN];
+	char buff[MAX_FIELD_LEN];
 	int mapname_len, mapdev_len;
 	struct multipath * mpp;
 
@@ -57,113 +56,178 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 	vector_foreach_slot (mpvec, mpp, i) {
 		mapname_len = (mpp->alias) ?
 				strlen(mpp->alias) : strlen(mpp->wwid);
+		ml->mapname_len = MAX(mapname_len, ml->mapname_len);
 
-		ml->mapname_len = (mapname_len > ml->mapname_len) ?
-				mapname_len : ml->mapname_len;
-
-		mapdev_len = snprintf(buff, MAX_LEN, "dm-%i", mpp->minor);
-
-		ml->mapdev_len = (mapdev_len > ml->mapdev_len) ?
-				mapdev_len : ml->mapdev_len;
+		mapdev_len = snprintf(buff, MAX_FIELD_LEN,
+			       	      "dm-%i", mpp->minor);
+		ml->mapdev_len = MAX(mapdev_len, ml->mapdev_len);
 	}
 	return;
 }
 
+#define TAIL   (line + len - c)
+#define PAD(x) while ((int)(c - s) < (x)) *c++ = ' '; s = c
+#define NOPAD  s = c
+
 int
-snprint_path (char * line, int len, struct path * pp, struct path_layout * pl)
+snprint_map (char * line, int len, char * format,
+	     struct multipath * mpp, struct map_layout * ml)
 {
-	char * c = line;
-	char * s = line;
+	char * c = line;   /* line cursor */
+	char * s = line;   /* for padding */
+	char * f = format; /* format string cursor */
+	int i, j;
 
-	if ((pl->hbtl_len + pl->dev_len + pl->dev_t_len + 7) > len)
-		return 0;
+	do {
+		if (*f != '%') {
+			*c++ = *f;
+			NOPAD;
+			continue;
+		}
+		f++;
+		switch (*f) {
+		case 'w':	
+			if (mpp->alias)
+				c += snprintf(c, TAIL, "%s", mpp->alias);
+			else
+				c += snprintf(c, TAIL, "%s", mpp->wwid);
+			PAD(ml->mapname_len);
+			break;
+		case 'd':
+			c += snprintf(c, TAIL, "dm-%i", mpp->minor);
+			PAD(ml->mapdev_len);
+			break;
+		case 'F':
+			if (!mpp->failback_tick) {
+				c += snprintf(c, TAIL,
+					      "[no scheduled failback]");
+				NOPAD;
+				break;
+			}
+			i = mpp->failback_tick;
+			j = mpp->pgfailback - mpp->failback_tick;
 
-	if (pp->sg_id.host_no < 0)
-		c += sprintf(c, "#:#:#:# ");
-	else {
-		c += sprintf(c, "%i:%i:%i:%i ",
-			pp->sg_id.host_no,
-			pp->sg_id.channel,
-			pp->sg_id.scsi_id,
-			pp->sg_id.lun);
-	}
+			while (i-- > 0)
+				c += snprintf(c, TAIL, "X");
+											                while (j-- > 0)
+				c += snprintf(c, TAIL, ".");
 
-	while ((int)(c - s) < (pl->hbtl_len + 1))
-		*c++ = ' ';
-
-	s = c;
-
-	if (pp->dev)
-		c += sprintf(c, "%s ", pp->dev);
-
-	while ((int)(c - s) < (pl->dev_len + 1))
-		*c++ = ' ';
-
-	s = c;
-
-	if (pp->dev_t)
-		c += sprintf(c, "%s ", pp->dev_t);
-
-	while ((int)(c - s) < (pl->dev_t_len + 1))
-		*c++ = ' ';
-
-	switch (pp->dmstate) {
-	case PSTATE_ACTIVE:
-		c += sprintf(c, "[active]");
-		break;
-	case PSTATE_FAILED:
-		c += sprintf(c, "[failed]");
-		break;
-	default:
-		break;
-	}
-		
-	switch (pp->state) {
-	case PATH_UP:
-		c += sprintf(c, "[ready]");
-		break;
-	case PATH_DOWN:
-		c += sprintf(c, "[faulty]");
-		break;
-	case PATH_SHAKY:
-		c += sprintf(c, "[shaky]");
-		break;
-	case PATH_GHOST:
-		c += sprintf(c, "[ghost]");
-		break;
-	default:
-		break;
-	}
-		
-	if (pp->claimed && pp->dmstate == PSTATE_UNDEF)
-		c += sprintf(c, "[claimed]");
-
-	return (c - line);
+			c += sprintf(c, " %i/%i",
+				     mpp->failback_tick, mpp->pgfailback);
+			NOPAD;
+			break;
+		default:
+			break;
+		}
+	} while (*f++);
+	return (c - line - 1);
 }
 
 int
-snprint_map (char * line, int len, struct multipath * mpp, struct map_layout * ml)
+snprint_path (char * line, int len, char * format, struct path * pp,
+	    struct path_layout * pl)
 {
-	char * c = line;
-	char * s = line;
+	char * c = line;   /* line cursor */
+	char * s = line;   /* for padding */
+	char * f = format; /* format string cursor */
+	int i, j;
 
-	if ((ml->mapname_len + ml->mapdev_len + 2) > len)
-		return 0;
+	do {
+		if (*f != '%') {
+			*c++ = *f;
+			NOPAD;
+			continue;
+		}
+		f++;
+		switch (*f) {
+		case 'w':	
+			c += snprintf(c, TAIL, "%s ", pp->wwid);
+			NOPAD;
+			break;
+		case 'i':
+			if (pp->sg_id.host_no < 0)
+				c += snprintf(c, TAIL, "#:#:#:# ");
+			else
+				c += snprintf(c, TAIL, "%i:%i:%i:%i",
+					pp->sg_id.host_no,
+					pp->sg_id.channel,
+					pp->sg_id.scsi_id,
+					pp->sg_id.lun);
+			PAD(pl->hbtl_len);
+			break;
+		case 'd':
+			c += snprintf(c, TAIL, "%s", pp->dev);
+			PAD(pl->dev_len);
+			break;
+		case 'D':
+			c += snprintf(c, TAIL, "%s", pp->dev_t);
+			PAD(pl->dev_t_len);
+			break;
+		case 'T':
+			switch (pp->state) {
+			case PATH_UP:
+				c += snprintf(c, TAIL, "[ready]");
+				break;
+			case PATH_DOWN:
+				c += snprintf(c, TAIL, "[faulty]");
+				break;
+			case PATH_SHAKY:
+				c += snprintf(c, TAIL, "[shaky]");
+				break;
+			case PATH_GHOST:
+				c += snprintf(c, TAIL, "[ghost]");
+				break;
+			default:
+				break;
+			}
+			NOPAD;
+			break;
+		case 't':
+			switch (pp->dmstate) {
+			case PSTATE_ACTIVE:
+				c += snprintf(c, TAIL, "[active]");
+				break;
+			case PSTATE_FAILED:
+				c += snprintf(c, TAIL, "[failed]");
+				break;
+			default:
+				break;
+			}
+			NOPAD;
+			break;
+		case 'c':
+			if (pp->claimed && pp->dmstate == PSTATE_UNDEF)
+				c += snprintf(c, TAIL, "[claimed]");
+			NOPAD;
+			break;
+		case 's':
+			c += snprintf(c, TAIL, "%s/%s/%s",
+				      pp->vendor_id, pp->product_id, pp->rev);
+			NOPAD;
+			break;
+		case 'C':
+			if (!pp->mpp) {
+				c += snprintf(c, TAIL, "[orphan]\n");
+				NOPAD;
+				break;
+			}
+			i = pp->tick;
+			j = pp->checkint - pp->tick;
 
-	if (mpp->alias)
-		c += sprintf(c, "%s ", mpp->alias);
-	else
-		c += sprintf(c, "%s ", mpp->wwid);
+			while (i-- > 0)
+				c += snprintf(c, TAIL, "X");
 
-	while ((int)(c - s) < (ml->mapname_len + 1))
-		*c++ = ' ';
+			while (j-- > 0)
+				c += snprintf(c, TAIL, ".");
 
-	s = c;
-
-	c += sprintf(c, "dm-%i ", mpp->minor);
-
-	while ((int)(c - s) < (ml->mapdev_len + 1))
-		*c++ = ' ';
-
-	return (c - line);
+			c += snprintf(c, TAIL, " %i/%i\n",
+				      pp->tick, pp->checkint);
+			NOPAD;
+			break;
+		default:
+			break;
+		}
+	} while (*f++);
+	return (c - line - 1);
 }
+

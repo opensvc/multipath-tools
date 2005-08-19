@@ -679,7 +679,7 @@ uev_remove_path (char * devname, struct paths * allpaths)
 int
 show_paths (char ** r, int * len, struct paths * allpaths)
 {
-	int i, j, k;
+	int i;
 	struct path * pp;
 	char * c;
 	char * reply;
@@ -694,27 +694,9 @@ show_paths (char ** r, int * len, struct paths * allpaths)
 	c = reply;
 	c += sprintf(c, "\n");
 
-	vector_foreach_slot(allpaths->pathvec, pp, i) {
-		c += snprint_path(c, reply + MAX_REPLY_LEN - c, pp, &pl);
-
-		if (!pp->mpp) {
-			c += sprintf(c, "[orphan]\n");
-			continue;
-		}
-
-		c += sprintf(c, " ");
-		j = pp->tick;
-		k = pp->checkint - pp->tick;
-
-		while (j-- > 0)
-			c += sprintf(c, "X");
-
-
-		while (k-- > 0)
-			c += sprintf(c, ".");
-
-		c += sprintf(c, " %i/%i\n", pp->tick, pp->checkint);
-	}
+	vector_foreach_slot(allpaths->pathvec, pp, i)
+		c += snprint_path(c, reply + MAX_REPLY_LEN - c,
+			       	  PRINT_PATH_CHECKER, pp, &pl);
 
 	*r = reply;
 	*len = (int)(c - reply + 1);
@@ -724,7 +706,7 @@ show_paths (char ** r, int * len, struct paths * allpaths)
 int
 show_maps (char ** r, int *len, struct paths * allpaths)
 {
-	int i, j, k;
+	int i;
 	struct multipath * mpp;
 	char * c;
 	char * reply;
@@ -739,26 +721,9 @@ show_maps (char ** r, int *len, struct paths * allpaths)
 	c = reply;
 	c += sprintf(c, "\n");
 
-	vector_foreach_slot(allpaths->mpvec, mpp, i) {
-		c += snprint_map(c, reply + MAX_REPLY_LEN - c, mpp, &ml);
-
-		if (!mpp->failback_tick) {
-			c += sprintf(c, "[no scheduled failback]\n");
-			continue;
-		}
-
-		j = mpp->failback_tick;
-		k = mpp->pgfailback - mpp->failback_tick;
-
-		while (j-- > 0)
-			c += sprintf(c, "X");
-
-
-		while (k-- > 0)
-			c += sprintf(c, ".");
-
-		c += sprintf(c, " %i/%i\n", mpp->failback_tick, mpp->pgfailback);
-	}
+	vector_foreach_slot(allpaths->mpvec, mpp, i)
+		c += snprint_map(c, reply + MAX_REPLY_LEN - c,
+			       	 PRINT_MAP_FAILBACK, mpp, &ml);
 
 	*r = reply;
 	*len = (int)(c - reply + 1);

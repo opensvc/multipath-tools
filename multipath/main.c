@@ -148,24 +148,13 @@ get_refwwid (vector pathvec)
 	return NULL;
 }
 
-/*
- * print_path styles
- */
-#define PRINT_PATH_ALL		0
-#define PRINT_PATH_SHORT	1
-
 static void
-print_path (struct path * pp, int style)
+print_path (struct path * pp, char * style)
 {
 	char buff[MAX_LINE_LEN];
 
-	if (style != PRINT_PATH_SHORT && pp->wwid)
-		printf ("%s ", pp->wwid);
-	else
-		printf ("  \\_ ");
-
-	snprint_path(&buff[0], MAX_LINE_LEN, pp, &pl);
-	printf("%s\n", buff);
+	snprint_path(&buff[0], MAX_LINE_LEN, style, pp, &pl);
+	printf("%s", buff);
 }
 
 static void
@@ -184,7 +173,7 @@ print_all_paths (vector pathvec)
 	struct path * pp;
 
 	vector_foreach_slot (pathvec, pp, i)
-		print_path(pp, PRINT_PATH_ALL);
+		print_path(pp, PRINT_PATH_LONG);
 }
 
 static void
@@ -277,7 +266,7 @@ print_mp (struct multipath * mpp)
 		printf("\n");
 
 		vector_foreach_slot (pgp->paths, pp, i)
-			print_path(pp, PRINT_PATH_SHORT);
+			print_path(pp, PRINT_PATH_INDENT);
 	}
 	printf("\n");
 }
