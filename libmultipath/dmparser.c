@@ -340,7 +340,7 @@ disassemble_status (char * params, struct multipath * mpp)
 			pgp->status = PGSTATE_ENABLED;
 			break;
 		default:
-			pgp->status = PGSTATE_RESERVED;
+			pgp->status = PGSTATE_UNDEF;
 			break;
 		}
 		FREE(word);

@@ -33,7 +33,7 @@ select_pgfailback (struct multipath * mp)
 			mp->pgfailback);
 		return 0;
 	}
-	mp->pgfailback = FAILBACK_MANUAL;
+	mp->pgfailback = -FAILBACK_MANUAL;
 	condlog(3, "pgfailover = %i (internal default)", mp->pgfailback);
 	return 0;
 }

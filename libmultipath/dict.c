@@ -136,9 +136,9 @@ default_failback_handler(vector strvec)
 	buff = set_value(strvec);
 
 	if (!strncmp(buff, "manual", 6))
-		conf->pgfailback = FAILBACK_MANUAL;
+		conf->pgfailback = -FAILBACK_MANUAL;
 	else if (!strncmp(buff, "immediate", 9))
-		conf->pgfailback = FAILBACK_IMMEDIATE;
+		conf->pgfailback = -FAILBACK_IMMEDIATE;
 	else
 		conf->pgfailback = atoi(buff);
 
@@ -374,9 +374,9 @@ hw_failback_handler(vector strvec)
 	buff = set_value(strvec);
 
 	if (!strncmp(buff, "manual", 6))
-		hwe->pgfailback = FAILBACK_MANUAL;
+		hwe->pgfailback = -FAILBACK_MANUAL;
 	else if (!strncmp(buff, "immediate", 9))
-		hwe->pgfailback = FAILBACK_IMMEDIATE;
+		hwe->pgfailback = -FAILBACK_IMMEDIATE;
 	else
 		hwe->pgfailback = atoi(buff);
 
@@ -498,9 +498,9 @@ mp_failback_handler(vector strvec)
 	buff = set_value(strvec);
 
 	if (!strncmp(buff, "manual", 6))
-		mpe->pgfailback = FAILBACK_MANUAL;
+		mpe->pgfailback = -FAILBACK_MANUAL;
 	else if (!strncmp(buff, "immediate", 9))
-		mpe->pgfailback = FAILBACK_IMMEDIATE;
+		mpe->pgfailback = -FAILBACK_IMMEDIATE;
 	else
 		mpe->pgfailback = atoi(buff);
 

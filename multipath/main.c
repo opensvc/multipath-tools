@@ -378,7 +378,6 @@ setup_map (struct multipath * mpp)
 
 	/*
 	 * don't bother if a constituant path is claimed
-	 * FIXME : claimed detection broken, always unclaimed for now
 	 */
 	vector_foreach_slot (mpp->paths, pp, i) {
 		if (pp->claimed) {

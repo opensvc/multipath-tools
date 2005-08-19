@@ -239,7 +239,7 @@ switch_pathgroup (struct multipath * mpp)
 	struct path * pp;
 	int i, j;
 	
-	if (!mpp || mpp->pgfailback == FAILBACK_MANUAL)
+	if (!mpp || mpp->pgfailback == -FAILBACK_MANUAL)
 		return;
 	/*
 	 * Refresh path priority values
@@ -1142,7 +1142,7 @@ checkerloop (void *ap)
 					pp->mpp->failback_tick =
 						pp->mpp->pgfailback;
 
-				if (pp->mpp->pgfailback == FAILBACK_IMMEDIATE)
+				if (pp->mpp->pgfailback == -FAILBACK_IMMEDIATE)
 					switch_pathgroup(pp->mpp);
 
 				/*

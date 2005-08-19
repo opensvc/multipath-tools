@@ -14,25 +14,31 @@
 #define SCSI_PRODUCT_SIZE	17
 #define SCSI_REV_SIZE		5
 
-#define KEEP_PATHS		0
-#define FREE_PATHS		1
+enum free_path_switch {
+	KEEP_PATHS,
+	FREE_PATHS
+};
 
-#define FAILBACK_UNDEF		0
-#define FAILBACK_MANUAL		-1
-#define FAILBACK_IMMEDIATE	-2
+enum failback_mode {
+	FAILBACK_UNDEF,
+	FAILBACK_MANUAL,
+	FAILBACK_IMMEDIATE
+};
 
-#define SYSFS_BUS_NONE		0
-#define SYSFS_BUS_SCSI		1
-#define SYSFS_BUS_IDE		2
+enum sysfs_buses {
+	SYSFS_BUS_UNDEF,
+	SYSFS_BUS_SCSI,
+	SYSFS_BUS_IDE
+};
 
 enum pathstates {
-	PSTATE_RESERVED,
+	PSTATE_UNDEF,
 	PSTATE_FAILED,
 	PSTATE_ACTIVE
 };
 
 enum pgstates {
-	PGSTATE_RESERVED,
+	PGSTATE_UNDEF,
 	PGSTATE_ENABLED,
 	PGSTATE_DISABLED,
 	PGSTATE_ACTIVE

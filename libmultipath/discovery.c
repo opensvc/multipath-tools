@@ -350,7 +350,7 @@ sysfs_get_bus (char * sysfs_path, struct path * curpath)
 	char attr_path[FILE_NAME_SIZE];
 	char attr_buff[FILE_NAME_SIZE];
 
-	curpath->bus = SYSFS_BUS_NONE;
+	curpath->bus = SYSFS_BUS_UNDEF;
 
 	/*
 	 * This is ugly : we should be able to do a simple
@@ -473,7 +473,7 @@ sysfs_pathinfo(struct path * curpath)
 	if (common_sysfs_pathinfo(curpath))
 		return 1;
 
-	if (curpath->bus == SYSFS_BUS_NONE)
+	if (curpath->bus == SYSFS_BUS_UNDEF)
 		return 0;
 	else if (curpath->bus == SYSFS_BUS_SCSI)
 		if (scsi_sysfs_pathinfo(curpath))
