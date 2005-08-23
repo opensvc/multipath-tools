@@ -65,9 +65,12 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 	return;
 }
 
-#define TAIL   (line + len - c)
+#define TAIL   (line + len - 1 - c)
 #define PAD(x) while ((int)(c - s) < (x)) *c++ = ' '; s = c
 #define NOPAD  s = c
+#define PRINT(var, size, format, args...)      \
+	        fwd = snprintf(var, size, format, ##args); \
+		c += (fwd >= size) ? size : fwd;
 
 int
 snprint_map (char * line, int len, char * format,
@@ -77,8 +80,12 @@ snprint_map (char * line, int len, char * format,
 	char * s = line;   /* for padding */
 	char * f = format; /* format string cursor */
 	int i, j;
+	int fwd;
 
 	do {
+		if (!TAIL)
+			break;
+
 		if (*f != '%') {
 			*c++ = *f;
 			NOPAD;
@@ -87,32 +94,33 @@ snprint_map (char * line, int len, char * format,
 		f++;
 		switch (*f) {
 		case 'w':	
-			if (mpp->alias)
-				c += snprintf(c, TAIL, "%s", mpp->alias);
-			else
-				c += snprintf(c, TAIL, "%s", mpp->wwid);
+			if (mpp->alias) {
+				PRINT(c, TAIL, "%s", mpp->alias);
+			} else {
+				PRINT(c, TAIL, "%s", mpp->wwid);
+			}
 			PAD(ml->mapname_len);
 			break;
 		case 'd':
-			c += snprintf(c, TAIL, "dm-%i", mpp->minor);
+			PRINT(c, TAIL, "dm-%i", mpp->minor);
 			PAD(ml->mapdev_len);
 			break;
 		case 'F':
 			if (!mpp->failback_tick) {
-				c += snprintf(c, TAIL,
-					      "[no scheduled failback]");
+				PRINT(c, TAIL, "[no scheduled failback]");
 				NOPAD;
 				break;
 			}
 			i = mpp->failback_tick;
 			j = mpp->pgfailback - mpp->failback_tick;
 
-			while (i-- > 0)
-				c += snprintf(c, TAIL, "X");
-											                while (j-- > 0)
-				c += snprintf(c, TAIL, ".");
-
-			c += sprintf(c, " %i/%i",
+			while (i-- > 0) {
+				PRINT(c, TAIL, "X");
+			}
+			while (j-- > 0) {
+				PRINT(c, TAIL, ".");
+			}
+			PRINT(c, TAIL, " %i/%i",
 				     mpp->failback_tick, mpp->pgfailback);
 			NOPAD;
 			break;
@@ -120,7 +128,10 @@ snprint_map (char * line, int len, char * format,
 			break;
 		}
 	} while (*f++);
-	return (c - line - 1);
+
+	line[c - line - 1] = '\n';
+
+	return (c - line);
 }
 
 int
@@ -131,8 +142,12 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 	char * s = line;   /* for padding */
 	char * f = format; /* format string cursor */
 	int i, j;
+	int fwd;
 
 	do {
+		if (!TAIL)
+			break;
+
 		if (*f != '%') {
 			*c++ = *f;
 			NOPAD;
@@ -141,41 +156,42 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 		f++;
 		switch (*f) {
 		case 'w':	
-			c += snprintf(c, TAIL, "%s ", pp->wwid);
+			PRINT(c, TAIL, "%s ", pp->wwid);
 			NOPAD;
 			break;
 		case 'i':
-			if (pp->sg_id.host_no < 0)
-				c += snprintf(c, TAIL, "#:#:#:# ");
-			else
-				c += snprintf(c, TAIL, "%i:%i:%i:%i",
+			if (pp->sg_id.host_no < 0) {
+				PRINT(c, TAIL, "#:#:#:# ");
+			} else {
+				PRINT(c, TAIL, "%i:%i:%i:%i",
 					pp->sg_id.host_no,
 					pp->sg_id.channel,
 					pp->sg_id.scsi_id,
 					pp->sg_id.lun);
+			}
 			PAD(pl->hbtl_len);
 			break;
 		case 'd':
-			c += snprintf(c, TAIL, "%s", pp->dev);
+			PRINT(c, TAIL, "%s", pp->dev);
 			PAD(pl->dev_len);
 			break;
 		case 'D':
-			c += snprintf(c, TAIL, "%s", pp->dev_t);
+			PRINT(c, TAIL, "%s", pp->dev_t);
 			PAD(pl->dev_t_len);
 			break;
 		case 'T':
 			switch (pp->state) {
 			case PATH_UP:
-				c += snprintf(c, TAIL, "[ready]");
+				PRINT(c, TAIL, "[ready]");
 				break;
 			case PATH_DOWN:
-				c += snprintf(c, TAIL, "[faulty]");
+				PRINT(c, TAIL, "[faulty]");
 				break;
 			case PATH_SHAKY:
-				c += snprintf(c, TAIL, "[shaky]");
+				PRINT(c, TAIL, "[shaky]");
 				break;
 			case PATH_GHOST:
-				c += snprintf(c, TAIL, "[ghost]");
+				PRINT(c, TAIL, "[ghost]");
 				break;
 			default:
 				break;
@@ -185,10 +201,10 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 		case 't':
 			switch (pp->dmstate) {
 			case PSTATE_ACTIVE:
-				c += snprintf(c, TAIL, "[active]");
+				PRINT(c, TAIL, "[active]");
 				break;
 			case PSTATE_FAILED:
-				c += snprintf(c, TAIL, "[failed]");
+				PRINT(c, TAIL, "[failed]");
 				break;
 			default:
 				break;
@@ -196,31 +212,32 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 			NOPAD;
 			break;
 		case 'c':
-			if (pp->claimed && pp->dmstate == PSTATE_UNDEF)
-				c += snprintf(c, TAIL, "[claimed]");
+			if (pp->claimed && pp->dmstate == PSTATE_UNDEF) {
+				PRINT(c, TAIL, "[claimed]");
+			}
 			NOPAD;
 			break;
 		case 's':
-			c += snprintf(c, TAIL, "%s/%s/%s",
+			PRINT(c, TAIL, "%s/%s/%s",
 				      pp->vendor_id, pp->product_id, pp->rev);
 			NOPAD;
 			break;
 		case 'C':
 			if (!pp->mpp) {
-				c += snprintf(c, TAIL, "[orphan]");
+				PRINT(c, TAIL, "[orphan]");
 				NOPAD;
 				break;
 			}
 			i = pp->tick;
 			j = pp->checkint - pp->tick;
 
-			while (i-- > 0)
-				c += snprintf(c, TAIL, "X");
-
-			while (j-- > 0)
-				c += snprintf(c, TAIL, ".");
-
-			c += snprintf(c, TAIL, " %i/%i",
+			while (i-- > 0) {
+				PRINT(c, TAIL, "X");
+			}
+			while (j-- > 0) {
+				PRINT(c, TAIL, ".");
+			}
+			PRINT(c, TAIL, " %i/%i",
 				      pp->tick, pp->checkint);
 			NOPAD;
 			break;
@@ -228,6 +245,9 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 			break;
 		}
 	} while (*f++);
-	return (c - line - 1);
+
+	line[c - line - 1] = '\n';
+
+	return (c - line);
 }
 
