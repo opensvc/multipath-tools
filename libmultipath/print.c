@@ -130,6 +130,7 @@ snprint_map (char * line, int len, char * format,
 	} while (*f++);
 
 	line[c - line - 1] = '\n';
+	line[c - line] = '\0';
 
 	return (c - line);
 }
@@ -247,6 +248,7 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 	} while (*f++);
 
 	line[c - line - 1] = '\n';
+	line[c - line] = '\0';
 
 	return (c - line);
 }
