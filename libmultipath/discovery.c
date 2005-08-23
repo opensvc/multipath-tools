@@ -202,7 +202,11 @@ opennode (char * dev, int mode)
 	while (--loop) {
 		fd = open(devpath, mode);
 
-		if (fd > 0 || errno != ENOENT)
+		if (fd <= 0 && errno != ENOENT) {
+			condlog(3, "open error (%s)\n", strerror(errno));
+			return fd;
+		}
+		if (fd > 0)
 			return fd;
 
 		usleep(1000 * 1000 / WAIT_LOOP_PER_SECOND);
@@ -609,9 +613,10 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	/*
 	 * get path state, no message collection, no context
 	 */
-	select_checkfn(pp);
-
 	if (mask & DI_CHECKER) {
+		if (!pp->checkfn)
+			select_checkfn(pp);
+
 		pp->state = pp->checkfn(pp->fd, NULL, NULL);
 		condlog(3, "state = %i", pp->state);
 	}
@@ -620,7 +625,8 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	 * get path prio
 	 */
 	if (mask & DI_PRIO) {
-		select_getprio(pp);
+		if (!pp->getprio)
+			select_getprio(pp);
 
 		if (!pp->getprio) {
 			pp->priority = 1;
@@ -640,7 +646,8 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	 * get path uid
 	 */
 	if (mask & DI_WWID && !strlen(pp->wwid)) {
-		select_getuid(pp);
+		if (!pp->getuid)
+			select_getuid(pp);
 
 		if (apply_format(pp->getuid, &buff[0], pp)) {
 			condlog(0, "error formatting uid callout command");

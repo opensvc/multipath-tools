@@ -794,6 +794,7 @@ reconfigure (struct paths * allpaths)
 {
 	struct config * old = conf;
 	struct multipath * mpp;
+	struct path * pp;
 	int i;
 
 	conf = NULL;
@@ -809,6 +810,11 @@ reconfigure (struct paths * allpaths)
 	vector_foreach_slot (allpaths->mpvec, mpp, i) {
 		mpp->mpe = find_mpe(mpp->wwid);
 		set_paths_owner(allpaths, mpp);
+	}
+	vector_foreach_slot (allpaths->pathvec, pp, i) {
+		select_checkfn(pp);
+		select_getuid(pp);
+		select_getprio(pp);
 	}
 	condlog(2, "reconfigured");
 	return 0;
