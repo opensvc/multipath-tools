@@ -207,7 +207,7 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 			break;
 		case 'C':
 			if (!pp->mpp) {
-				c += snprintf(c, TAIL, "[orphan]\n");
+				c += snprintf(c, TAIL, "[orphan]");
 				NOPAD;
 				break;
 			}
@@ -220,7 +220,7 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 			while (j-- > 0)
 				c += snprintf(c, TAIL, ".");
 
-			c += snprintf(c, TAIL, " %i/%i\n",
+			c += snprintf(c, TAIL, " %i/%i",
 				      pp->tick, pp->checkint);
 			NOPAD;
 			break;
