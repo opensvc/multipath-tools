@@ -249,6 +249,8 @@ print_mp (struct multipath * mpp)
 				printf(" ");
 #endif
 		}
+		if (pgp->priority)
+			printf("[prio=%i]", pgp->priority);
 
 		switch (pgp->status) {
 		case PGSTATE_ENABLED:
@@ -805,9 +807,10 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 		 * If not in "fast list mode", we need to fetch information
 		 * about them
 		 */
-		if (conf->list != 1)
+		if (conf->list != 1) {
 			update_pathvec(pathvec);
-
+			select_path_group(mpp);
+		}
 		disassemble_status(mpp->status, mpp);
 
 		if (conf->list)
