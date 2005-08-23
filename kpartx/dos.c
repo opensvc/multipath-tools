@@ -26,7 +26,7 @@ read_extended_partition(int fd, struct partition *ep,
 		if (++loopct > 100)
 			return n;
 
-		bp = getblock(fd, here);
+		bp = (unsigned char *)getblock(fd, here);
 		if (bp == NULL)
 			return n;
 
@@ -74,7 +74,7 @@ read_dos_pt(int fd, struct slice all, struct slice *sp, int ns) {
 	int i, n=0;
 	unsigned char *bp;
 
-	bp = getblock(fd, offset);
+	bp = (unsigned char *)getblock(fd, offset);
 	if (bp == NULL)
 		return -1;
 
