@@ -20,7 +20,7 @@ endif
 export KRNLSRC
 export KRNLOBJ
 
-BUILDDIRS = $(shell find . -name Makefile -mindepth 2 -exec dirname {} \;)
+BUILDDIRS = $(shell find . -mindepth 2 -name Makefile -exec dirname {} \;)
 
 VERSION = $(shell basename ${PWD} | cut -d'-' -f3)
 
