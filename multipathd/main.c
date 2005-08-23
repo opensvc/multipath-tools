@@ -232,23 +232,38 @@ out:
 	return 1;
 }
 
-static void
-switch_pathgroup (struct multipath * mpp)
+static int
+need_switch_pathgroup (struct multipath * mpp, int refresh)
 {
 	struct pathgroup * pgp;
 	struct path * pp;
 	int i, j;
-	
+
 	if (!mpp || mpp->pgfailback == -FAILBACK_MANUAL)
-		return;
+		return 0;
+
 	/*
 	 * Refresh path priority values
 	 */
-	vector_foreach_slot (mpp->pg, pgp, i)
-		vector_foreach_slot (pgp->paths, pp, j)
-			pathinfo(pp, conf->hwtable, DI_PRIO);
+	if (refresh)
+		vector_foreach_slot (mpp->pg, pgp, i)
+			vector_foreach_slot (pgp->paths, pp, j)
+				pathinfo(pp, conf->hwtable, DI_PRIO);
 
 	select_path_group(mpp); /* sets mpp->nextpg */
+	pgp = VECTOR_SLOT(mpp->pg, mpp->nextpg - 1);
+
+	if (pgp && pgp->status != PGSTATE_ACTIVE)
+		return 1;
+
+	return 0;
+}
+
+static void
+switch_pathgroup (struct multipath * mpp)
+{
+	struct pathgroup * pgp;
+	
 	pgp = VECTOR_SLOT(mpp->pg, mpp->nextpg - 1);
 	
 	if (pgp && pgp->status != PGSTATE_ACTIVE) {
@@ -366,7 +381,7 @@ waiteventloop (struct event_thread * waiter)
 	 * upon event ...
 	 */
 	while (1) {
-		condlog(2, "%s: devmap event #%i",
+		condlog(3, "%s: devmap event #%i",
 				waiter->mapname, waiter->event_nr);
 
 		/*
@@ -1007,7 +1022,7 @@ defered_failback_tick (vector mpvec)
 		if (mpp->pgfailback > 0 && mpp->failback_tick > 0) {
 			mpp->failback_tick--;
 
-			if (!mpp->failback_tick)
+			if (!mpp->failback_tick && need_switch_pathgroup(mpp, 1))
 				switch_pathgroup(mpp);
 		}
 	}
@@ -1106,8 +1121,8 @@ checkerloop (void *ap)
 				if (pp->mpp->pgfailback > 0)
 					pp->mpp->failback_tick =
 						pp->mpp->pgfailback;
-
-				if (pp->mpp->pgfailback == -FAILBACK_IMMEDIATE)
+				else if (pp->mpp->pgfailback == -FAILBACK_IMMEDIATE &&
+				    need_switch_pathgroup(pp->mpp, 1))
 					switch_pathgroup(pp->mpp);
 
 				/*
@@ -1134,6 +1149,21 @@ checkerloop (void *ap)
 
 			}
 			pp->state = newstate;
+
+			/*
+			 * path prio refreshing
+			 */
+			condlog(4, "path prio refresh");
+			pathinfo(pp, conf->hwtable, DI_PRIO);
+
+			if (need_switch_pathgroup(pp->mpp, 0)) {
+				if (pp->mpp->pgfailback > 0)
+					pp->mpp->failback_tick =
+						pp->mpp->pgfailback;
+				else if (pp->mpp->pgfailback ==
+						-FAILBACK_IMMEDIATE)
+					switch_pathgroup(pp->mpp);
+			}
 		}
 		defered_failback_tick(allpaths->mpvec);
 
