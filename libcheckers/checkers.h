@@ -9,6 +9,7 @@ enum checkers {
 	CHECKER_UNDEF,
 	TUR,
 	READSECTOR0,
+	DIRECTIO,
 	EMC_CLARIION,
 	HP_SW
 };
@@ -21,6 +22,7 @@ void *get_checker_addr (int);
 int get_checker_name (char *, int);
 
 int emc_clariion (int fd, char * msg, void ** ctxt);
+int directio (int fd, char * msg, void ** ctxt);
 int readsector0 (int fd, char * msg, void ** ctxt);
 int tur (int fd, char * msg, void ** ctxt);
 int hp_sw (int fd, char * msg, void ** ctxt);

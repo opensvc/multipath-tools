@@ -10,6 +10,8 @@ get_checker_id (char * str)
 		return TUR;
 	if (0 == strncmp(str, "readsector0", 11))
 		return READSECTOR0;
+ 	if (0 == strncmp(str, "directio", 8))
+		return DIRECTIO;
  	if (0 == strncmp(str, "emc_clariion", 12))
 		return EMC_CLARIION;
  	if (0 == strncmp(str, "hp_sw", 5))
@@ -28,6 +30,9 @@ get_checker_addr (int id)
 		break;
 	case READSECTOR0:
 		checker = &readsector0;
+		break;
+	case DIRECTIO:
+		checker = &directio;
 		break;
 	case EMC_CLARIION:
 		checker = &emc_clariion;
@@ -53,6 +58,9 @@ get_checker_name (char * str, int id)
 		break;
 	case READSECTOR0:
 		s = "readsector0";
+		break;
+	case DIRECTIO:
+		s = "directio";
 		break;
 	case EMC_CLARIION:
 		s = "emc_clariion";
