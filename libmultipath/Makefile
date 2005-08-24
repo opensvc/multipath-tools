@@ -21,12 +21,14 @@ endif
 all: $(BUILD)
 
 prepare:
+	@rm -f debug.o
 	@file *-$(BUILD).a >/dev/null 2>&1 || rm -f core *.o *.gz
+	@rm -f *-$(BUILD).a
 
-klibc: prepare $(OBJS)
+klibc: $(OBJS)
 	ar rs libmultipath-klibc.a *.o
 
-glibc: prepare $(OBJS)
+glibc: $(OBJS)
 	ar rs libmultipath-glibc.a *.o
 
 install:
