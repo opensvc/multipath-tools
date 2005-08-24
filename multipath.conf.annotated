@@ -79,6 +79,16 @@
 #	r_min_io	100
 #
 #	#
+#	# name    : rr_weight
+#	# scope   : multipath
+#	# desc    : if set to priorities the multipath configurator will assign
+#	#	    path weights as "path prio * rr_min_io"
+#	# values  : priorities|uniform
+#	# default : uniform
+#	#
+#	rr_weight		priorities
+#
+#	#
 #	# name    : failback
 #	# scope   : multipathd
 #	# desc    : tell the daemon to manage path group failback, or not to.
@@ -170,6 +180,7 @@
 #	multipath {
 #		wwid	1DEC_____321816758474
 #		alias	red
+#		rr_weight		priorities
 #	}
 #}
 #
@@ -263,119 +274,6 @@
 #		product			"MSA1000         "
 #		path_grouping_policy	multibus
 #		path_checker		tur
-#	}
-#	device {
-#		vendor			"COMPAQ  "
-#		product			"MSA1000 VOLUME  "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"DEC     "
-#		product			"HSG80           "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"HP      "
-#		product			"HSV100          "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"3PARdata"
-#		product			"VV              "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"DDN     "
-#		product			"SAN DataDirector"
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"FSC     "
-#		product			"CentricStor     "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"HITACHI "
-#		product			"DF400           "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"HITACHI "
-#		product			"DF500           "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"HITACHI "
-#		product			"DF600           "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"IBM     "
-#		product			"ProFibre 4000R  "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"IBM     "
-#		product			"3542            "
-#		path_grouping_policy	group_by_serial
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"SGI     "
-#		product			"TP9100          "
-#		vendor			"COMPAQ  "
-#		product			"MSA1000         "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"SGI     "
-#		product			"TP9300          "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"SGI     "
-#		product			"TP9400          "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		vendor			"SGI     "
-#		product			"TP9500          "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		# all paths active but with a switchover latency
-#		# LSI controlers
-#		vendor			"STK     "
-#		product			"OPENstorage D280"
-#		path_grouping_policy	group_by_serial
-#		path_checker		tur
-#	}
-#	device {
-#		# assymmetric array
-#		vendor			"SUN     "
-#		product			"StorEdge 3510   "
-#		path_grouping_policy	multibus
-#		path_checker		tur
-#	}
-#	device {
-#		# symmetric array
-#		vendor			"SUN     "
-#		product			"T4              "
-#		path_grouping_policy	multibus
-#		path_checker		tur
+#		rr_weight		priorities
 #	}
 #}
