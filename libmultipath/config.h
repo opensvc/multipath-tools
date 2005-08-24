@@ -17,6 +17,7 @@ struct hwentry {
 	int pgpolicy;
 	int checker_index;
 	int pgfailback;
+	int rr_weight;
 
 	char * vendor;
 	char * product;
@@ -31,6 +32,7 @@ struct mpentry {
 	int selector_args;
 	int pgpolicy;
 	int pgfailback;
+	int rr_weight;
 
 	char * wwid;
 	char * selector;
@@ -52,6 +54,7 @@ struct config {
 	int max_checkint;
 	int pgfailback;
 	int remove;
+	int rr_weight;
 
 	char * dev;
 	char * multipath;

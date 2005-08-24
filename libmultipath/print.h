@@ -9,6 +9,7 @@
  * %T : checker path status
  * %s : scsi strings
  * %c : claimed
+ * %p : priority
  * 
  * map format magics :
  * 
@@ -17,9 +18,9 @@
  * %F : failback countdown
  * %C : checker countdown
  */
-#define PRINT_PATH_LONG      "%w %i %d %D %t%T%c %s"
+#define PRINT_PATH_LONG      "%w %i %d %D %p %t%T%c %s"
 #define PRINT_PATH_INDENT    " \\_ %i %d %D %t%T%c"
-#define PRINT_PATH_CHECKER   "%i %d %D %t%T %C"
+#define PRINT_PATH_CHECKER   "%i %d %D %p %t%T %C"
 #define PRINT_MAP_FAILBACK   "%w %d %F"
 
 #define MAX_LINE_LEN 80

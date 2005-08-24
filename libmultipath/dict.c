@@ -129,6 +129,25 @@ def_minio_handler(vector strvec)
 }
 
 static int
+def_weight_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	if (strlen(buff) == 10 &&
+	    !strcmp(buff, "priorities"))
+		conf->rr_weight = RR_WEIGHT_PRIO;
+
+	FREE(buff);
+
+	return 0;
+}
+
+static int
 default_failback_handler(vector strvec)
 {
 	char * buff;
@@ -385,6 +404,29 @@ hw_failback_handler(vector strvec)
 	return 0;
 }
 
+static int
+hw_weight_handler(vector strvec)
+{
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+	char * buff;
+
+	if (!hwe)
+		return 1;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	if (strlen(buff) == 10 &&
+	    !strcmp(buff, "priorities"))
+		hwe->rr_weight = RR_WEIGHT_PRIO;
+
+	FREE(buff);
+
+	return 0;
+}
+
 /*
  * multipaths block handlers
  */
@@ -509,6 +551,29 @@ mp_failback_handler(vector strvec)
 	return 0;
 }
 
+static int
+mp_weight_handler(vector strvec)
+{
+	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);
+	char * buff;
+
+	if (!mpe)
+		return 1;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	if (strlen(buff) == 10 &&
+	    !strcmp(buff, "priorities"))
+		mpe->rr_weight = RR_WEIGHT_PRIO;
+
+	FREE(buff);
+
+	return 0;
+}
+
 vector
 init_keywords(void)
 {
@@ -525,6 +590,7 @@ init_keywords(void)
 	install_keyword("default_features", &def_features_handler);
 	install_keyword("failback", &default_failback_handler);
 	install_keyword("rr_min_io", &def_minio_handler);
+	install_keyword("rr_weight", &def_weight_handler);
 	
 	install_keyword_root("devnode_blacklist", &blacklist_handler);
 	install_keyword("devnode", &ble_handler);
@@ -543,6 +609,7 @@ init_keywords(void)
 	install_keyword("hardware_handler", &hw_handler_handler);
 	install_keyword("prio_callout", &prio_callout_handler);
 	install_keyword("failback", &hw_failback_handler);
+	install_keyword("rr_weight", &hw_weight_handler);
 	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);
@@ -553,6 +620,7 @@ init_keywords(void)
 	install_keyword("path_grouping_policy", &mp_pgpolicy_handler);
 	install_keyword("path_selector", &mp_selector_handler);
 	install_keyword("failback", &mp_failback_handler);
+	install_keyword("rr_weight", &mp_weight_handler);
 	install_sublevel_end();
 
 	return keywords;

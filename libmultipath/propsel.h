@@ -1,3 +1,4 @@
+int select_rr_weight (struct multipath * mp);
 int select_pgfailback (struct multipath * mp);
 int select_pgpolicy (struct multipath * mp);
 int select_selector (struct multipath * mp);

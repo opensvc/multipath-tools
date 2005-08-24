@@ -301,6 +301,7 @@ assemble_map (struct multipath * mp)
 {
 	int i, j;
 	int shift, freechar;
+	int minio;
 	char * p;
 	struct pathgroup * pgp;
 	struct path * pp;
@@ -331,8 +332,13 @@ assemble_map (struct multipath * mp)
 		freechar -= shift;
 
 		vector_foreach_slot (pgp->paths, pp, j) {
+			minio = conf->minio;
+			
+			if (mp->rr_weight == RR_WEIGHT_PRIO && pp->priority)
+				minio *= pp->priority;
+
 			shift = snprintf(p, freechar, " %s %d",
-					 pp->dev_t, conf->minio);
+					 pp->dev_t, minio);
 			if (shift >= freechar) {
 				fprintf(stderr, "mp->params too small\n");
 				return 1;
@@ -385,6 +391,7 @@ setup_map (struct multipath * mpp)
 	select_selector(mpp);
 	select_features(mpp);
 	select_hwhandler(mpp);
+	select_rr_weight(mpp);
 
 	/*
 	 * apply selected grouping policy to valid paths
@@ -759,19 +766,27 @@ usage (char * progname)
 }
 
 static int
-update_pathvec (vector pathvec)
+update_paths (struct multipath * mpp)
 {
-	int i;
+	int i, j;
+	struct pathgroup * pgp;
 	struct path * pp;
 
-	vector_foreach_slot (pathvec, pp, i) {
-		if (pp->dev && pp->dev_t && strlen(pp->dev) == 0) {
-			devt2devname(pp->dev, pp->dev_t);
-			pathinfo(pp, conf->hwtable,
-				DI_SYSFS | DI_CHECKER | DI_SERIAL | DI_PRIO);
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp, j) {
+			if (!strlen(pp->dev)) {
+				devt2devname(pp->dev, pp->dev_t);
+				pathinfo(pp, conf->hwtable,
+					 DI_SYSFS | DI_CHECKER | \
+					 DI_SERIAL | DI_PRIO);
+				continue;
+			}
+			if (pp->state == PATH_UNCHECKED)
+				pathinfo(pp, conf->hwtable, DI_CHECKER);
+
+			if (!pp->priority)
+				pathinfo(pp, conf->hwtable, DI_PRIO);
 		}
-		if (pp->checkfn && pp->state == PATH_UNCHECKED)
-			pp->state = pp->checkfn(pp->fd, NULL, NULL);
 	}
 	return 0;
 }
@@ -807,10 +822,12 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 		 * If not in "fast list mode", we need to fetch information
 		 * about them
 		 */
-		if (conf->list != 1) {
-			update_pathvec(pathvec);
+		if (conf->list != 1)
+			update_paths(mpp);
+
+		if (conf->list > 1)
 			select_path_group(mpp);
-		}
+
 		disassemble_status(mpp->status, mpp);
 
 		if (conf->list)

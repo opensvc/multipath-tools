@@ -242,6 +242,12 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 				      pp->tick, pp->checkint);
 			NOPAD;
 			break;
+		case 'p':
+			if (pp->priority) {
+				PRINT(c, TAIL, "%i", pp->priority);
+			}
+			NOPAD;
+			break;
 		default:
 			break;
 		}

@@ -19,6 +19,12 @@ enum free_path_switch {
 	FREE_PATHS
 };
 
+enum rr_weight_mode {
+	RR_WEIGHT_UNDEF,
+	RR_WEIGHT_NONE,
+	RR_WEIGHT_PRIO
+};
+
 enum failback_mode {
 	FAILBACK_UNDEF,
 	FAILBACK_MANUAL,
@@ -108,6 +114,7 @@ struct multipath {
 	int action;
 	int pgfailback;
 	int failback_tick;
+	int rr_weight;
 	unsigned long long size;
 	vector paths;
 	vector pg;
