@@ -2,6 +2,8 @@
 #include <vector.h>
 #include <structs.h>
 #include <devmapper.h>
+#include <config.h>
+#include <blacklist.h>
 
 #include "main.h"
 #include "cli.h"
@@ -28,6 +30,11 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 	struct paths * allpaths = (struct paths *)data;
 	char * param = get_keyparam(v, PATH);
 
+	if (blacklist(conf->blist, param)) {
+		*reply = strdup("blacklisted");
+		*len = strlen(*reply) + 1;
+		return 0;
+	}
 	return uev_add_path(param, allpaths);
 }
 
