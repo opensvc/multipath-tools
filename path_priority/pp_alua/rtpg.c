@@ -123,7 +123,7 @@ do_inquiry(int fd, int evpd, unsigned int codepage, void *resp, int resplen)
 	memset(&cmd, 0, sizeof(cmd));
 	cmd.op = OPERATION_CODE_INQUIRY;
 	if (evpd) {
-		cmd.evpd = 1;
+		inquiry_command_set_evpd(&cmd);
 		cmd.page = codepage;
 	}
 	set_uint16(cmd.length, resplen);
@@ -166,7 +166,7 @@ get_target_port_group_support(int fd)
 
 	rc = do_inquiry(fd, 0, 0x00, &inq, sizeof(inq));
 	if (!rc) {
-		rc = inq.tpgs;
+		rc = inquiry_data_get_tpgs(&inq);
 	}
 
 	return rc;
@@ -189,7 +189,7 @@ get_target_port_group(int fd)
 			if ((((char *) dscr) - ((char *) vpd83)) > sizeof(buf))
 				break;
 
-			if (dscr->id_type == IDTYPE_TARGET_PORT_GROUP) {
+			if (vpd83_dscr_istype(dscr, IDTYPE_TARGET_PORT_GROUP)) {
 				struct vpd83_tpg_dscr *	p;
 
 				if (rc != -RTPG_NO_TPG_IDENTIFIER) {
@@ -221,7 +221,7 @@ do_rtpg(int fd, void* resp, long resplen)
 
 	memset(&cmd, 0, sizeof(cmd));
 	cmd.op			= OPERATION_CODE_RTPG;
-	cmd.service_action	= SERVICE_ACTION_RTPG;
+	rtpg_command_set_service_action(&cmd);
 	set_uint32(cmd.length, resplen);
 	PRINT_HEX((unsigned char *) &cmd, sizeof(cmd));
 
@@ -270,7 +270,7 @@ get_asymmetric_access_state(int fd, unsigned int tpg)
 					"group.\n");
 			} else {
 				PRINT_DEBUG("pref=%i\n", dscr->pref);
-				rc = dscr->aas;
+				rc = rtpg_tpg_dscr_get_aas(dscr);
 			}
 		}
 	}

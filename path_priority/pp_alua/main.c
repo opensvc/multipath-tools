@@ -35,7 +35,7 @@
 #define ALUA_PRIO_GETAAS_FAILED			5
 
 #define ALUA_PRIO_MAJOR				0
-#define ALUA_PRIO_MINOR				5
+#define ALUA_PRIO_MINOR				6
 
 #define PRINT_ERROR(f, a...) \
 		if (verbose) \
