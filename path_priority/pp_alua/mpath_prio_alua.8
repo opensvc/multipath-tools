@@ -1,8 +1,9 @@
-.TH PP_ALUA 8 "7. June 2005" "multipath-tools" "Linux Administrator's Manual"
+.TH MPATH_PRIO_ALUA 8 "7. June 2005" "multipath-tools" \
+"Linux Administrator's Manual"
 .SH NAME
-pp_alua \- Path priority tool based on Asymmetric LUn Access
+mpath_prio_alua \- Path priority tool based on Asymmetric LUn Access
 .SH SYNOPSIS
-.B pp_alua
+.B mpath_prio_alua
 .RB [\| \-d\ \c
 .IR directory \|]
 .RB [\| \-h \|]
@@ -10,7 +11,7 @@ pp_alua \- Path priority tool based on Asymmetric LUn Access
 .RB [\| \-V \|]
 .IR device " \|[ " device " \|[ " ... " \|]\|]"
 .SH DESCRIPTION
-.B pp_alua
+.B mpath_prio_alua
 is used as a priority callout for the multipath command. It returns a number
 that is used by multipath to group devices with the same priority together.
 .SH OPTIONS
@@ -49,7 +50,7 @@ create a temporary device node in the device directory (e.g. 8:0). The
 temporary name will be
 .RB \*[lq] tmpdev-<major>:<minor>-<pid> \*[rq].
 .SH "RETURN VALUE"
-The pp_alua command returns the following values:
+The mpath_prio_alua command returns the following values:
 .IP \fB0
 on success. In this case the priority for the device is printed to
 stdout. The priority value is:
@@ -84,7 +85,7 @@ port group that was obtained from the inquiry command.
 This example queries a device directly and returns the priority string:
 .P
 .RS
-.B #> pp_alua /dev/sda
+.B #> mpath_prio_alua /dev/sda
 .br
 50
 .RE
@@ -93,7 +94,7 @@ Now the major and minor number is used to specify the device and verbose
 output is selected:
 .P
 .RS
-.B #> pp_alua -v 8:0
+.B #> mpath_prio_alua -v 8:0
 .br
 Target port groups are implicitly supported.
 .br
@@ -121,7 +122,7 @@ device {
 group_by_prio
 .TP
 .B  prio_callout
-"/sbin/pp_alua -d/tmp %d"
+"/sbin/mpath_prio_alua -d/tmp %d"
 .TP
 .B  features
 "1 queue_if_no_path"
@@ -157,5 +158,5 @@ available again, instead of reporting failures in that case.
 .SH "SEE ALSO"
 .BR multipath (8),
 .SH AUTHORS
-.B pp_alua
+.B mpath_prio_alua
 was developed by Jan Kunigk and adapted by Stefan Bader <shbader@de.ibm.com>
