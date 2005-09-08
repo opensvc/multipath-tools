@@ -79,7 +79,7 @@ struct event_thread {
 	pthread_t thread;
 	int event_nr;
 	char mapname[WWID_SIZE];
-	struct paths *allpaths;
+	struct vectors *vecs;
 };
 
 static struct event_thread *
@@ -100,7 +100,7 @@ cleanup_lock (void * data)
 }
 
 static void
-set_paths_owner (struct paths * allpaths, struct multipath * mpp)
+set_paths_owner (struct vectors * vecs, struct multipath * mpp)
 {
 	int i;
 	struct path * pp;
@@ -108,7 +108,7 @@ set_paths_owner (struct paths * allpaths, struct multipath * mpp)
 	if (!mpp)
 		return;
 
-	vector_foreach_slot (allpaths->pathvec, pp, i) {
+	vector_foreach_slot (vecs->pathvec, pp, i) {
 		if (!strncmp(mpp->wwid, pp->wwid, WWID_SIZE)) {
 			condlog(4, "%s ownership set", pp->dev_t);
 			pp->mpp = mpp;
@@ -117,12 +117,12 @@ set_paths_owner (struct paths * allpaths, struct multipath * mpp)
 }
 
 static void
-unset_paths_owner (struct paths * allpaths, struct multipath * mpp)
+unset_paths_owner (struct vectors * vecs, struct multipath * mpp)
 {
 	int i;
 	struct path * pp;
 
-	vector_foreach_slot (allpaths->pathvec, pp, i) {
+	vector_foreach_slot (vecs->pathvec, pp, i) {
 		if (pp->mpp == mpp) {
 			condlog(4, "%s is orphaned", pp->dev_t);
 			pp->mpp = NULL;
@@ -205,7 +205,7 @@ set_multipath_wwid (struct multipath * mpp)
 }
 
 static int
-setup_multipath (struct paths * allpaths, struct multipath * mpp)
+setup_multipath (struct vectors * vecs, struct multipath * mpp)
 {
 	int i;
 
@@ -213,10 +213,10 @@ setup_multipath (struct paths * allpaths, struct multipath * mpp)
 	mpp->mpe = find_mpe(mpp->wwid);
 	condlog(4, "discovered map %s", mpp->alias);
 
-	if (update_multipath_strings(mpp, allpaths->pathvec))
+	if (update_multipath_strings(mpp, vecs->pathvec))
 		goto out;
 
-	set_paths_owner(allpaths, mpp);
+	set_paths_owner(vecs, mpp);
 	select_pgfailback(mpp);
 
 	return 0;
@@ -224,8 +224,8 @@ out:
 	/*
 	 * purge the multipath vector
 	 */
-	if ((i = find_slot(allpaths->mpvec, (void *)mpp)) != -1)
-		vector_del_slot(allpaths->mpvec, i);
+	if ((i = find_slot(vecs->mpvec, (void *)mpp)) != -1)
+		vector_del_slot(vecs->mpvec, i);
 
 	free_multipath(mpp, KEEP_PATHS);
 	condlog(0, "failed to setup multipath");
@@ -274,7 +274,7 @@ switch_pathgroup (struct multipath * mpp)
 }
 
 static int
-update_multipath (struct paths *allpaths, char *mapname)
+update_multipath (struct vectors *vecs, char *mapname)
 {
 	struct multipath *mpp;
 	struct pathgroup  *pgp;
@@ -282,7 +282,7 @@ update_multipath (struct paths *allpaths, char *mapname)
 	int i, j;
 	int r = 1;
 
-	mpp = find_mp(allpaths->mpvec, mapname);
+	mpp = find_mp(vecs->mpvec, mapname);
 
 	if (!mpp)
 		goto out;
@@ -290,7 +290,7 @@ update_multipath (struct paths *allpaths, char *mapname)
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
 
-	if (setup_multipath(allpaths, mpp))
+	if (setup_multipath(vecs, mpp))
 		goto out; /* mpp freed in setup_multipath */
 
 	/*
@@ -395,10 +395,10 @@ waiteventloop (struct event_thread * waiter)
 		 * 4) a path reinstate : nothing to do
 		 * 5) a switch group : nothing to do
 		 */
-		pthread_cleanup_push(cleanup_lock, waiter->allpaths->lock);
-		lock(waiter->allpaths->lock);
+		pthread_cleanup_push(cleanup_lock, waiter->vecs->lock);
+		lock(waiter->vecs->lock);
 
-		r = update_multipath(waiter->allpaths, waiter->mapname);
+		r = update_multipath(waiter->vecs, waiter->mapname);
 		pthread_cleanup_pop(1);
 
 		if (r)
@@ -441,7 +441,7 @@ waitevent (void * et)
 }
 
 static int
-stop_waiter_thread (struct multipath * mpp, struct paths * allpaths)
+stop_waiter_thread (struct multipath * mpp, struct vectors * vecs)
 {
 	struct event_thread * wp = (struct event_thread *)mpp->waiter;
 	pthread_t thread = wp->thread;
@@ -460,7 +460,7 @@ stop_waiter_thread (struct multipath * mpp, struct paths * allpaths)
 }
 
 static int
-start_waiter_thread (struct multipath * mpp, struct paths * allpaths)
+start_waiter_thread (struct multipath * mpp, struct vectors * vecs)
 {
 	pthread_attr_t attr;
 	struct event_thread * wp;
@@ -481,7 +481,7 @@ start_waiter_thread (struct multipath * mpp, struct paths * allpaths)
 
 	mpp->waiter = (void *)wp;
 	strncpy(wp->mapname, mpp->alias, WWID_SIZE);
-	wp->allpaths = allpaths;
+	wp->vecs = vecs;
 
 	if (pthread_create(&wp->thread, &attr, waitevent, wp)) {
 		condlog(0, "%s: cannot create event checker", wp->mapname);
@@ -499,14 +499,14 @@ out:
 }
 
 static void
-remove_map (struct multipath * mpp, struct paths * allpaths)
+remove_map (struct multipath * mpp, struct vectors * vecs)
 {
 	int i;
 
 	/*
 	 * stop the DM event waiter thread
 	 */
-	if (stop_waiter_thread(mpp, allpaths)) {
+	if (stop_waiter_thread(mpp, vecs)) {
 		condlog(0, "%s: error canceling waiter thread", mpp->alias);
 		/*
 		 * warrior mode
@@ -517,13 +517,13 @@ remove_map (struct multipath * mpp, struct paths * allpaths)
 	/*
 	 * clear references to this map
 	 */
-	unset_paths_owner(allpaths, mpp);
+	unset_paths_owner(vecs, mpp);
 
 	/*
 	 * purge the multipath vector
 	 */
-	i = find_slot(allpaths->mpvec, (void *)mpp);
-	vector_del_slot(allpaths->mpvec, i);
+	i = find_slot(vecs->mpvec, (void *)mpp);
+	vector_del_slot(vecs->mpvec, i);
 
 	/*
 	 * final free
@@ -533,20 +533,20 @@ remove_map (struct multipath * mpp, struct paths * allpaths)
 }
 
 static void
-remove_maps (struct paths * allpaths)
+remove_maps (struct vectors * vecs)
 {
 	int i;
 	struct multipath * mpp;
 
-	vector_foreach_slot (allpaths->mpvec, mpp, i)
-		remove_map(mpp, allpaths);
+	vector_foreach_slot (vecs->mpvec, mpp, i)
+		remove_map(mpp, vecs);
 
-	vector_free(allpaths->mpvec);
-	allpaths->mpvec = NULL;
+	vector_free(vecs->mpvec);
+	vecs->mpvec = NULL;
 }
 
 int
-uev_add_map (char * devname, struct paths * allpaths)
+uev_add_map (char * devname, struct vectors * vecs)
 {
 	int major, minor, i;
 	char dev_t[BLK_DEV_SIZE];
@@ -570,7 +570,7 @@ uev_add_map (char * devname, struct paths * allpaths)
 		return 0;
 	}
 
-	mpp = find_mp(allpaths->mpvec, alias);
+	mpp = find_mp(vecs->mpvec, alias);
 
 	if (mpp) {
 		/*
@@ -578,7 +578,7 @@ uev_add_map (char * devname, struct paths * allpaths)
 		 * we missed a remove map event (not sent ?)
 		 */
 		condlog(2, "%s: already registered", alias);
-		remove_map(mpp, allpaths);
+		remove_map(mpp, vecs);
 	}
 
 	/*
@@ -592,16 +592,16 @@ uev_add_map (char * devname, struct paths * allpaths)
 	mpp->minor = minor;
 	mpp->alias = alias;
 
-	if (setup_multipath(allpaths, mpp))
+	if (setup_multipath(vecs, mpp))
 		return 1; /* mpp freed in setup_multipath */
 
-	if (!vector_alloc_slot(allpaths->mpvec))
+	if (!vector_alloc_slot(vecs->mpvec))
 		goto out;
 
-	vector_set_slot(allpaths->mpvec, mpp);
-	set_paths_owner(allpaths, mpp);
+	vector_set_slot(vecs->mpvec, mpp);
+	set_paths_owner(vecs, mpp);
 
-	if (start_waiter_thread(mpp, allpaths))
+	if (start_waiter_thread(mpp, vecs))
 		goto out;
 
 	return 0;
@@ -610,15 +610,15 @@ out:
 	/*
 	 * purge the multipath vector
 	 */
-	if ((i = find_slot(allpaths->mpvec, (void *)mpp)) != -1)
-		vector_del_slot(allpaths->mpvec, i);
+	if ((i = find_slot(vecs->mpvec, (void *)mpp)) != -1)
+		vector_del_slot(vecs->mpvec, i);
 
 	free_multipath(mpp, KEEP_PATHS);
 	return 1;
 }
 
 int
-uev_remove_map (char * devname, struct paths * allpaths)
+uev_remove_map (char * devname, struct vectors * vecs)
 {
 	int minor;
 	struct multipath * mpp;
@@ -626,7 +626,7 @@ uev_remove_map (char * devname, struct paths * allpaths)
 	if (sscanf(devname, "dm-%d", &minor) != 1)
 		return 1;
 
-	mpp = find_mp_by_minor(allpaths->mpvec, minor);
+	mpp = find_mp_by_minor(vecs->mpvec, minor);
 
 	if (!mpp) {
 		condlog(3, "%s: devmap not registered, can't remove",
@@ -635,23 +635,23 @@ uev_remove_map (char * devname, struct paths * allpaths)
 	}
 
 	condlog(2, "remove %s devmap", mpp->alias);
-	remove_map(mpp, allpaths);
+	remove_map(mpp, vecs);
 
 	return 0;
 }
 
 int
-uev_add_path (char * devname, struct paths * allpaths)
+uev_add_path (char * devname, struct vectors * vecs)
 {
 	struct path * pp;
 
-	pp = find_path_by_dev(allpaths->pathvec, devname);
+	pp = find_path_by_dev(vecs->pathvec, devname);
 
 	if (pp) {
 		condlog(3, "%s: already in pathvec");
 		return 1;
 	}
-	pp = store_pathinfo(allpaths->pathvec, conf->hwtable,
+	pp = store_pathinfo(vecs->pathvec, conf->hwtable,
 		       devname, DI_SYSFS | DI_WWID);
 
 	if (!pp) {
@@ -660,7 +660,7 @@ uev_add_path (char * devname, struct paths * allpaths)
 	}
 
 	condlog(2, "%s: path checker registered", devname);
-	pp->mpp = find_mp_by_wwid(allpaths->mpvec, pp->wwid);
+	pp->mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
 
 	if (pp->mpp)
 		condlog(4, "%s: ownership set to %s",
@@ -672,27 +672,27 @@ uev_add_path (char * devname, struct paths * allpaths)
 }
 
 int
-uev_remove_path (char * devname, struct paths * allpaths)
+uev_remove_path (char * devname, struct vectors * vecs)
 {
 	int i;
 	struct path * pp;
 
-	pp = find_path_by_dev(allpaths->pathvec, devname);
+	pp = find_path_by_dev(vecs->pathvec, devname);
 
 	if (!pp) {
 		condlog(3, "%s: not in pathvec");
 		return 1;
 	}
 	condlog(2, "remove %s path checker", devname);
-	i = find_slot(allpaths->pathvec, (void *)pp);
-	vector_del_slot(allpaths->pathvec, i);
+	i = find_slot(vecs->pathvec, (void *)pp);
+	vector_del_slot(vecs->pathvec, i);
 	free_path(pp);
 
 	return 0;
 }
 
 int
-show_paths (char ** r, int * len, struct paths * allpaths)
+show_paths (char ** r, int * len, struct vectors * vecs)
 {
 	int i;
 	struct path * pp;
@@ -700,7 +700,7 @@ show_paths (char ** r, int * len, struct paths * allpaths)
 	char * reply;
 	struct path_layout pl;
 
-	get_path_layout(&pl, allpaths->pathvec);
+	get_path_layout(&pl, vecs->pathvec);
 	reply = MALLOC(MAX_REPLY_LEN);
 
 	if (!reply)
@@ -709,7 +709,7 @@ show_paths (char ** r, int * len, struct paths * allpaths)
 	c = reply;
 	c += sprintf(c, "\n");
 
-	vector_foreach_slot(allpaths->pathvec, pp, i)
+	vector_foreach_slot(vecs->pathvec, pp, i)
 		c += snprint_path(c, reply + MAX_REPLY_LEN - c,
 			       	  PRINT_PATH_CHECKER, pp, &pl);
 
@@ -719,7 +719,7 @@ show_paths (char ** r, int * len, struct paths * allpaths)
 }
 
 int
-show_maps (char ** r, int *len, struct paths * allpaths)
+show_maps (char ** r, int *len, struct vectors * vecs)
 {
 	int i;
 	struct multipath * mpp;
@@ -727,7 +727,7 @@ show_maps (char ** r, int *len, struct paths * allpaths)
 	char * reply;
 	struct map_layout ml;
 
-	get_map_layout(&ml, allpaths->mpvec);
+	get_map_layout(&ml, vecs->mpvec);
 	reply = MALLOC(MAX_REPLY_LEN);
 
 	if (!reply)
@@ -736,7 +736,7 @@ show_maps (char ** r, int *len, struct paths * allpaths)
 	c = reply;
 	c += sprintf(c, "\n");
 
-	vector_foreach_slot(allpaths->mpvec, mpp, i)
+	vector_foreach_slot(vecs->mpvec, mpp, i)
 		c += snprint_map(c, reply + MAX_REPLY_LEN - c,
 			       	 PRINT_MAP_FAILBACK, mpp, &ml);
 
@@ -746,14 +746,14 @@ show_maps (char ** r, int *len, struct paths * allpaths)
 }
 
 int
-dump_pathvec (char ** r, int * len, struct paths * allpaths)
+dump_pathvec (char ** r, int * len, struct vectors * vecs)
 {
 	int i;
 	struct path * pp;
 	char * reply;
 	char * p;
 
-	*len = VECTOR_SIZE(allpaths->pathvec) * sizeof(struct path);
+	*len = VECTOR_SIZE(vecs->pathvec) * sizeof(struct path);
 	reply = (char *)MALLOC(*len);
 	*r = reply;
 
@@ -762,7 +762,7 @@ dump_pathvec (char ** r, int * len, struct paths * allpaths)
 
 	p = reply;
 
-	vector_foreach_slot (allpaths->pathvec, pp, i) {
+	vector_foreach_slot (vecs->pathvec, pp, i) {
 		memcpy((void *)p, pp, sizeof(struct path));
 		p += sizeof(struct path);
 	}
@@ -771,26 +771,26 @@ dump_pathvec (char ** r, int * len, struct paths * allpaths)
 }
 
 static int
-get_dm_mpvec (struct paths * allpaths)
+get_dm_mpvec (struct vectors * vecs)
 {
 	int i;
 	struct multipath * mpp;
 
-	if (dm_get_maps(allpaths->mpvec, "multipath"))
+	if (dm_get_maps(vecs->mpvec, "multipath"))
 		return 1;
 
-	vector_foreach_slot (allpaths->mpvec, mpp, i) {
-		if (setup_multipath(allpaths, mpp))
+	vector_foreach_slot (vecs->mpvec, mpp, i) {
+		if (setup_multipath(vecs, mpp))
 			return 1;
 		mpp->minor = dm_get_minor(mpp->alias);
-		start_waiter_thread(mpp, allpaths);
+		start_waiter_thread(mpp, vecs);
 	}
 
 	return 0;
 }
 
 int
-reconfigure (struct paths * allpaths)
+reconfigure (struct vectors * vecs)
 {
 	struct config * old = conf;
 	struct multipath * mpp;
@@ -807,11 +807,11 @@ reconfigure (struct paths * allpaths)
 	conf->verbosity = old->verbosity;
 	free_config(old);
 
-	vector_foreach_slot (allpaths->mpvec, mpp, i) {
+	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		mpp->mpe = find_mpe(mpp->wwid);
-		set_paths_owner(allpaths, mpp);
+		set_paths_owner(vecs, mpp);
 	}
-	vector_foreach_slot (allpaths->pathvec, pp, i) {
+	vector_foreach_slot (vecs->pathvec, pp, i) {
 		select_checkfn(pp);
 		select_getuid(pp);
 		select_getprio(pp);
@@ -823,17 +823,17 @@ reconfigure (struct paths * allpaths)
 int
 uxsock_trigger (char * str, char ** reply, int * len, void * trigger_data)
 {
-	struct paths * allpaths;
+	struct vectors * vecs;
 	int r;
 	
 	*reply = NULL;
 	*len = 0;
-	allpaths = (struct paths *)trigger_data;
+	vecs = (struct vectors *)trigger_data;
 
-	pthread_cleanup_push(cleanup_lock, allpaths->lock);
-	lock(allpaths->lock);
+	pthread_cleanup_push(cleanup_lock, vecs->lock);
+	lock(vecs->lock);
 
-	r = parse_cmd(str, reply, len, allpaths);
+	r = parse_cmd(str, reply, len, vecs);
 
 	if (r) {
 		*reply = STRDUP("fail\n");
@@ -855,11 +855,11 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 {
 	int r = 0;
 	char devname[32];
-	struct paths * allpaths;
+	struct vectors * vecs;
 
-	allpaths = (struct paths *)trigger_data;
-	pthread_cleanup_push(cleanup_lock, allpaths->lock);
-	lock(allpaths->lock);
+	vecs = (struct vectors *)trigger_data;
+	pthread_cleanup_push(cleanup_lock, vecs->lock);
+	lock(vecs->lock);
 
 	if (strncmp(uev->devpath, "/block", 6))
 		goto out;
@@ -871,12 +871,12 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	 */
 	if (!strncmp(devname, "dm-", 3)) {
 		if (!strncmp(uev->action, "add", 3)) {
-			r = uev_add_map(devname, allpaths);
+			r = uev_add_map(devname, vecs);
 			goto out;
 		}
 #if 0
 		if (!strncmp(uev->action, "remove", 6)) {
-			r = uev_remove_map(devname, allpaths);
+			r = uev_remove_map(devname, vecs);
 			goto out;
 		}
 #endif
@@ -890,11 +890,11 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 		goto out;
 
 	if (!strncmp(uev->action, "add", 3)) {
-		r = uev_add_path(devname, allpaths);
+		r = uev_add_path(devname, vecs);
 		goto out;
 	}
 	if (!strncmp(uev->action, "remove", 6)) {
-		r = uev_remove_path(devname, allpaths);
+		r = uev_remove_path(devname, vecs);
 		goto out;
 	}
 
@@ -1002,15 +1002,15 @@ enable_group(struct path * pp)
 }
 
 static void
-mpvec_garbage_collector (struct paths * allpaths)
+mpvec_garbage_collector (struct vectors * vecs)
 {
 	struct multipath * mpp;
 	int i;
 
-	vector_foreach_slot (allpaths->mpvec, mpp, i) {
+	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		if (!dm_map_present(mpp->alias)) {
 			condlog(2, "%s: remove dead map", mpp->alias);
-			remove_map(mpp, allpaths);
+			remove_map(mpp, vecs);
 		}
 	}
 }
@@ -1037,7 +1037,7 @@ defered_failback_tick (vector mpvec)
 static void *
 checkerloop (void *ap)
 {
-	struct paths *allpaths;
+	struct vectors *vecs;
 	struct path *pp;
 	int i, count = 0;
 	int newstate;
@@ -1046,16 +1046,16 @@ checkerloop (void *ap)
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
 	memset(checker_msg, 0, MAX_CHECKER_MSG_SIZE);
-	allpaths = (struct paths *)ap;
+	vecs = (struct vectors *)ap;
 
 	condlog(2, "path checkers start up");
 
 	while (1) {
-		pthread_cleanup_push(cleanup_lock, allpaths->lock);
-		lock(allpaths->lock);
+		pthread_cleanup_push(cleanup_lock, vecs->lock);
+		lock(vecs->lock);
 		condlog(4, "tick");
 
-		vector_foreach_slot (allpaths->pathvec, pp, i) {
+		vector_foreach_slot (vecs->pathvec, pp, i) {
 			if (!pp->mpp)
 				continue;
 
@@ -1119,7 +1119,7 @@ checkerloop (void *ap)
 				 * need to switch group ?
 				 */
 				update_multipath_strings(pp->mpp,
-							 allpaths->pathvec);
+							 vecs->pathvec);
 
 				/*
 				 * schedule defered failback
@@ -1171,13 +1171,13 @@ checkerloop (void *ap)
 					switch_pathgroup(pp->mpp);
 			}
 		}
-		defered_failback_tick(allpaths->mpvec);
+		defered_failback_tick(vecs->mpvec);
 
 		if (count)
 			count--;
 		else {
 			condlog(4, "map garbage collection");
-			mpvec_garbage_collector(allpaths);
+			mpvec_garbage_collector(vecs);
 			count = MAPGCINT;
 		}
 		
@@ -1187,42 +1187,42 @@ checkerloop (void *ap)
 	return NULL;
 }
 
-static struct paths *
+static struct vectors *
 init_paths (void)
 {
-	struct paths * allpaths;
+	struct vectors * vecs;
 
-	allpaths = (struct paths *)MALLOC(sizeof(struct paths));
+	vecs = (struct vectors *)MALLOC(sizeof(struct vectors));
 
-	if (!allpaths)
+	if (!vecs)
 		return NULL;
 
-	allpaths->lock = 
+	vecs->lock = 
 		(pthread_mutex_t *)MALLOC(sizeof(pthread_mutex_t));
 
-	if (!allpaths->lock)
+	if (!vecs->lock)
 		goto out;
 
-	allpaths->pathvec = vector_alloc();
+	vecs->pathvec = vector_alloc();
 
-	if (!allpaths->pathvec)
+	if (!vecs->pathvec)
 		goto out1;
 		
-	allpaths->mpvec = vector_alloc();
+	vecs->mpvec = vector_alloc();
 
-	if (!allpaths->mpvec)
+	if (!vecs->mpvec)
 		goto out2;
 	
-	pthread_mutex_init(allpaths->lock, NULL);
+	pthread_mutex_init(vecs->lock, NULL);
 
-	return allpaths;
+	return vecs;
 
 out2:
-	vector_free(allpaths->pathvec);
+	vector_free(vecs->pathvec);
 out1:
-	FREE(allpaths->lock);
+	FREE(vecs->lock);
 out:
-	FREE(allpaths);
+	FREE(vecs);
 	condlog(0, "failed to init paths");
 	return NULL;
 }
@@ -1305,7 +1305,7 @@ child (void * param)
 {
 	pthread_t check_thr, uevent_thr, uxlsnr_thr;
 	pthread_attr_t attr;
-	struct paths * allpaths;
+	struct vectors * vecs;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -1337,9 +1337,9 @@ child (void * param)
 	signal_init();
 	setscheduler();
 	set_oom_adj(-17);
-	allpaths = init_paths();
+	vecs = init_paths();
 
-	if (!allpaths)
+	if (!vecs)
 		exit(1);
 
 	if (sysfs_get_mnt_path(sysfs_path, FILE_NAME_SIZE)) {
@@ -1352,8 +1352,8 @@ child (void * param)
 	 * no paths and/or no multipaths are valid scenarii
 	 * vectors maintenance will be driven by events
 	 */
-	path_discovery(allpaths->pathvec, conf, DI_SYSFS | DI_WWID);
-	get_dm_mpvec(allpaths);
+	path_discovery(vecs->pathvec, conf, DI_SYSFS | DI_WWID);
+	get_dm_mpvec(vecs);
 
 	/*
 	 * start threads
@@ -1362,18 +1362,18 @@ child (void * param)
 	pthread_attr_setstacksize(&attr, 64 * 1024);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 	
-	pthread_create(&check_thr, &attr, checkerloop, allpaths);
-	pthread_create(&uevent_thr, &attr, ueventloop, allpaths);
-	pthread_create(&uxlsnr_thr, &attr, uxlsnrloop, allpaths);
+	pthread_create(&check_thr, &attr, checkerloop, vecs);
+	pthread_create(&uevent_thr, &attr, ueventloop, vecs);
+	pthread_create(&uxlsnr_thr, &attr, uxlsnrloop, vecs);
 
 	pthread_cond_wait(&exit_cond, &exit_mutex);
 
 	/*
 	 * exit path
 	 */
-	lock(allpaths->lock);
-	remove_maps(allpaths);
-	free_pathvec(allpaths->pathvec, FREE_PATHS);
+	lock(vecs->lock);
+	remove_maps(vecs);
+	free_pathvec(vecs->pathvec, FREE_PATHS);
 
 	pthread_cancel(check_thr);
 	pthread_cancel(uevent_thr);
@@ -1383,10 +1383,10 @@ child (void * param)
 	free_handlers(handlers);
 	free_polls();
 
-	unlock(allpaths->lock);
-	pthread_mutex_destroy(allpaths->lock);
-	FREE(allpaths->lock);
-	FREE(allpaths);
+	unlock(vecs->lock);
+	pthread_mutex_destroy(vecs->lock);
+	FREE(vecs->lock);
+	FREE(vecs);
 	free_config(conf);
 
 	condlog(2, "--------shut down-------");

@@ -11,23 +11,23 @@
 int
 cli_list_paths (void * v, char ** reply, int * len, void * data)
 {
-	struct paths * allpaths = (struct paths *)data;
+	struct vectors * vecs = (struct vectors *)data;
 
-	return show_paths(reply, len, allpaths);
+	return show_paths(reply, len, vecs);
 }
 
 int
 cli_list_maps (void * v, char ** reply, int * len, void * data)
 {
-	struct paths * allpaths = (struct paths *)data;
+	struct vectors * vecs = (struct vectors *)data;
 
-	return show_maps(reply, len, allpaths);
+	return show_maps(reply, len, vecs);
 }
 
 int
 cli_add_path (void * v, char ** reply, int * len, void * data)
 {
-	struct paths * allpaths = (struct paths *)data;
+	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, PATH);
 
 	if (blacklist(conf->blist, param)) {
@@ -35,34 +35,34 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 		*len = strlen(*reply) + 1;
 		return 0;
 	}
-	return uev_add_path(param, allpaths);
+	return uev_add_path(param, vecs);
 }
 
 int
 cli_del_path (void * v, char ** reply, int * len, void * data)
 {
-	struct paths * allpaths = (struct paths *)data;
+	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, PATH);
 
-	return uev_remove_path(param, allpaths);
+	return uev_remove_path(param, vecs);
 }
 
 int
 cli_add_map (void * v, char ** reply, int * len, void * data)
 {
-	struct paths * allpaths = (struct paths *)data;
+	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
 
-	return uev_add_map(param, allpaths);
+	return uev_add_map(param, vecs);
 }
 
 int
 cli_del_map (void * v, char ** reply, int * len, void * data)
 {
-	struct paths * allpaths = (struct paths *)data;
+	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
 
-	return uev_remove_map(param, allpaths);
+	return uev_remove_map(param, vecs);
 }
 
 int
@@ -77,15 +77,15 @@ cli_switch_group(void * v, char ** reply, int * len, void * data)
 int
 cli_dump_pathvec(void * v, char ** reply, int * len, void * data)
 {
-	struct paths * allpaths = (struct paths *)data;
+	struct vectors * vecs = (struct vectors *)data;
 			
-	return dump_pathvec(reply, len, allpaths);
+	return dump_pathvec(reply, len, vecs);
 }
 
 int
 cli_reconfigure(void * v, char ** reply, int * len, void * data)
 {
-	struct paths * allpaths = (struct paths *)data;
+	struct vectors * vecs = (struct vectors *)data;
 			
-	return reconfigure(allpaths);
+	return reconfigure(vecs);
 }
