@@ -771,7 +771,7 @@ dump_pathvec (char ** r, int * len, struct vectors * vecs)
 }
 
 static int
-get_dm_mpvec (struct vectors * vecs)
+map_discovery (struct vectors * vecs)
 {
 	int i;
 	struct multipath * mpp;
@@ -850,6 +850,22 @@ uxsock_trigger (char * str, char ** reply, int * len, void * trigger_data)
 	return r;
 }
 
+static int
+uev_discard(char * devpath)
+{
+	char a[10], b[10];
+
+	/*
+	 * keep only block devices, discard partitions
+	 */
+	if (sscanf(devpath, "/block/%10s", a) != 1 ||
+	    sscanf(devpath, "/block/%10[^/]/%10s", a, b) == 2) {
+		condlog(4, "discard event on %s", devpath);
+		return 1;
+	}
+	return 0;
+}
+
 int 
 uev_trigger (struct uevent * uev, void * trigger_data)
 {
@@ -861,7 +877,7 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	pthread_cleanup_push(cleanup_lock, vecs->lock);
 	lock(vecs->lock);
 
-	if (strncmp(uev->devpath, "/block", 6))
+	if (uev_discard(uev->devpath))
 		goto out;
 
 	basename(uev->devpath, devname);
@@ -1353,7 +1369,7 @@ child (void * param)
 	 * vectors maintenance will be driven by events
 	 */
 	path_discovery(vecs->pathvec, conf, DI_SYSFS | DI_WWID);
-	get_dm_mpvec(vecs);
+	map_discovery(vecs);
 
 	/*
 	 * start threads
