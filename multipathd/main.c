@@ -63,9 +63,13 @@
 #define unlock(a) \
 	fprintf(stderr, "%s:%s(%i) unlock %p\n", __FILE__, __FUNCTION__, __LINE__, a); \
 	pthread_mutex_unlock(a)
+#define lock_cleanup_pop(a) \
+	fprintf(stderr, "%s:%s(%i) unlock %p\n", __FILE__, __FUNCTION__, __LINE__, a); \
+	pthread_cleanup_pop(1);
 #else
 #define lock(a) pthread_mutex_lock(a)
 #define unlock(a) pthread_mutex_unlock(a)
+#define lock_cleanup_pop(a) pthread_cleanup_pop(1);
 #endif
 
 pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
@@ -96,7 +100,7 @@ alloc_waiter (void)
 static void
 cleanup_lock (void * data)
 {
-	unlock((pthread_mutex_t *)data);
+	pthread_mutex_unlock((pthread_mutex_t *)data);
 }
 
 static void
@@ -397,9 +401,8 @@ waiteventloop (struct event_thread * waiter)
 		 */
 		pthread_cleanup_push(cleanup_lock, waiter->vecs->lock);
 		lock(waiter->vecs->lock);
-
 		r = update_multipath(waiter->vecs, waiter->mapname);
-		pthread_cleanup_pop(1);
+		lock_cleanup_pop(waiter->vecs->lock);
 
 		if (r)
 			return -1; /* stop the thread */
@@ -450,11 +453,13 @@ stop_waiter_thread (struct multipath * mpp, struct vectors * vecs)
 	if (!wp)
 		return 1;
 
-	condlog(2, "%s: reap event checker", wp->mapname);
+	condlog(2, "%s: stop event checker thread", wp->mapname);
 
 	if ((r = pthread_cancel(thread)))
 		return r;
 
+	condlog(2, "%s: couldn't stop event checker thread gracefully, kill",
+		wp->mapname);
 	pthread_kill(thread, SIGHUP);
 	return 0;
 }
@@ -538,8 +543,10 @@ remove_maps (struct vectors * vecs)
 	int i;
 	struct multipath * mpp;
 
-	vector_foreach_slot (vecs->mpvec, mpp, i)
+	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		remove_map(mpp, vecs);
+		i--;
+	}
 
 	vector_free(vecs->mpvec);
 	vecs->mpvec = NULL;
@@ -846,7 +853,7 @@ uxsock_trigger (char * str, char ** reply, int * len, void * trigger_data)
 		r = 0;
 	}
 
-	pthread_cleanup_pop(1);
+	lock_cleanup_pop(vecs->lock);
 	return r;
 }
 
@@ -874,13 +881,12 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	struct vectors * vecs;
 
 	vecs = (struct vectors *)trigger_data;
-	pthread_cleanup_push(cleanup_lock, vecs->lock);
-	lock(vecs->lock);
 
 	if (uev_discard(uev->devpath))
 		goto out;
 
 	basename(uev->devpath, devname);
+	lock(vecs->lock);
 
 	/*
 	 * device map add/remove event
@@ -915,8 +921,7 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	}
 
 out:
-	FREE(uev);
-	pthread_cleanup_pop(1);
+	unlock(vecs->lock);
 	return r;
 }
 
@@ -1197,7 +1202,7 @@ checkerloop (void *ap)
 			count = MAPGCINT;
 		}
 		
-		pthread_cleanup_pop(1);
+		lock_cleanup_pop(vecs->lock);
 		sleep(1);
 	}
 	return NULL;

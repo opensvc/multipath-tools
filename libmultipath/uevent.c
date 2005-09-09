@@ -126,6 +126,8 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 
 		if (uev_trigger && uev_trigger(uev, trigger_data))
 			condlog(0, "uevent trigger error");
+
+		FREE(uev);
 	}
 
 exit:
