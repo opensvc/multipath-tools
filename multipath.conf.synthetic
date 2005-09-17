@@ -3,7 +3,6 @@
 ## Uncomment the lines relevent to your environment
 ##
 #defaults {
-#	multipath_tool	"/sbin/multipath -v0"
 #	udev_dir	/dev
 #	polling_interval 10
 #	default_selector	"round-robin 0"

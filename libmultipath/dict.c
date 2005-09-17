@@ -14,17 +14,6 @@
  * default block handlers
  */
 static int
-multipath_tool_handler(vector strvec)
-{
-	conf->multipath = set_value(strvec);
-
-	if (!conf->multipath)
-		return 1;
-
-	return 0;
-}
-
-static int
 polling_interval_handler(vector strvec)
 {
 	char * buff;
@@ -581,7 +570,6 @@ init_keywords(void)
 
 	install_keyword_root("defaults", NULL);
 	install_keyword("polling_interval", &polling_interval_handler);
-	install_keyword("multipath_tool", &multipath_tool_handler);
 	install_keyword("udev_dir", &udev_dir_handler);
 	install_keyword("default_selector", &def_selector_handler);
 	install_keyword("default_path_grouping_policy", &def_pgpolicy_handler);

@@ -309,9 +309,6 @@ free_config (struct config * conf)
 	if (conf->dev)
 		FREE(conf->dev);
 
-	if (conf->multipath)
-		FREE(conf->multipath);
-
 	if (conf->udev_dir)
 		FREE(conf->udev_dir);
 

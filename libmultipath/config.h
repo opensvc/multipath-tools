@@ -57,7 +57,6 @@ struct config {
 	int rr_weight;
 
 	char * dev;
-	char * multipath;
 	char * udev_dir;
 	char * default_selector;
 	char * default_getuid;
