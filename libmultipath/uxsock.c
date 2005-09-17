@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/poll.h>
+#include <errno.h>
 
 #include "memory.h"
 #include "uxsock.h"
@@ -70,14 +71,21 @@ int ux_socket_listen(const char *name)
 }
 
 /*
- * keep writing until its all sent
+ * keep writing until it's all sent
  */
-int write_all(int fd, const void *buf, size_t len)
+size_t write_all(int fd, const void *buf, size_t len)
 {
 	size_t total = 0;
+
 	while (len) {
-		int n = write(fd, buf, len);
-		if (n <= 0) return total;
+		ssize_t n = write(fd, buf, len);
+		if (n < 0) {
+			if ((errno == EINTR) || (errno == EAGAIN))
+				continue;
+			return total;
+		}
+		if (!n)
+			return total;
 		buf = n + (char *)buf;
 		len -= n;
 		total += n;
@@ -88,12 +96,19 @@ int write_all(int fd, const void *buf, size_t len)
 /*
  * keep reading until its all read
  */
-int read_all(int fd, void *buf, size_t len)
+size_t read_all(int fd, void *buf, size_t len)
 {
 	size_t total = 0;
+
 	while (len) {
-		int n = read(fd, buf, len);
-		if (n <= 0) return total;
+		ssize_t n = read(fd, buf, len);
+		if (n < 0) {
+			if ((errno == EINTR) || (errno == EAGAIN))
+				continue;
+			return total;
+		}
+		if (!n)
+			return total;
 		buf = n + (char *)buf;
 		len -= n;
 		total += n;
