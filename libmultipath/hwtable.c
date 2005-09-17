@@ -17,7 +17,8 @@ setup_default_hwtable (vector hw)
 	r += store_hwe(hw, "COMPAQ", "MSA1000 VOLUME", GROUP_BY_SERIAL, DEFAULT_GETUID);
 	r += store_hwe(hw, "DDN", "SAN DataDirector", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "DEC", "HSG80", GROUP_BY_SERIAL, DEFAULT_GETUID);
-	r += store_hwe(hw, "EMC", "SYMMETRIX", MULTIBUS, DEFAULT_GETUID);
+	r += store_hwe(hw, "EMC", "SYMMETRIX", MULTIBUS,
+		       "/sbin/scsi_id -g -u -ppre-spc3-83 -s /block/%n");
 	r += store_hwe(hw, "FSC", "CentricStor", GROUP_BY_SERIAL, DEFAULT_GETUID);
 	r += store_hwe(hw, "HITACHI", "DF400", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "HITACHI", "DF500", MULTIBUS, DEFAULT_GETUID);
