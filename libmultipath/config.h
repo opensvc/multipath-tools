@@ -48,6 +48,7 @@ struct config {
 	int with_sysfs;
 	int default_selector_args;
 	int default_pgpolicy;
+	int default_checker_index;
 	int dev_type;
 	int minio;
 	int checkint;

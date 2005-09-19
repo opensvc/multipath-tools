@@ -169,8 +169,8 @@ select_checkfn(struct path *pp)
 		pp->checkfn = get_checker_addr(pp->hwe->checker_index);
 		return 0;
 	}
-	pp->checkfn = &readsector0;
-	get_checker_name(checker_name, READSECTOR0);
+	pp->checkfn = get_checker_addr(conf->default_checker_index);
+	get_checker_name(checker_name, conf->default_checker_index);
 	condlog(3, "path checker = %s (internal default)", checker_name);
 	return 0;
 }

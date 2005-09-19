@@ -62,6 +62,15 @@
 #	#default_prio_callout	"/bin/true"
 #
 #	#
+#	# name    : default_path_checker
+#	# scope   : multipath & multipathd
+#	# desc    : the default method used to determine the paths' state
+#	# values  : readsector0|tur|emc_clariion|hp_sw|directio
+#	# default : readsector0
+#	#
+#	#default_path_checker	readsector0
+#
+#	#
 #	# name    : rr_min_io
 #	# scope   : multipath
 #	# desc    : the number of IO to route to a path before switching

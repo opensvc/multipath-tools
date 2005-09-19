@@ -102,6 +102,22 @@ def_features_handler(vector strvec)
 }
 
 static int
+def_path_checker_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+	
+	conf->default_checker_index = get_checker_id(buff);
+	FREE(buff);
+
+	return 0;
+}
+
+static int
 def_minio_handler(vector strvec)
 {
 	char * buff;
@@ -576,6 +592,7 @@ init_keywords(void)
 	install_keyword("default_getuid_callout", &def_getuid_callout_handler);
 	install_keyword("default_prio_callout", &def_prio_callout_handler);
 	install_keyword("default_features", &def_features_handler);
+	install_keyword("default_path_checker", &def_path_checker_handler);
 	install_keyword("failback", &default_failback_handler);
 	install_keyword("rr_min_io", &def_minio_handler);
 	install_keyword("rr_weight", &def_weight_handler);
