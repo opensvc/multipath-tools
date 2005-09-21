@@ -183,11 +183,25 @@ set_param_str(char * str)
 	return dst;
 }
 
+static int
+dup_hwe (vector hwtable, char * vendor, char * product)
+{
+	struct hwentry * hwe = find_hwe(hwtable, vendor, product);
+
+	if (hwe)
+		return 1;
+
+	return 0;
+}
+
 int
 store_hwe (vector hwtable, char * vendor, char * product, int pgp,
 	   char * getuid)
 {
 	struct hwentry * hwe;
+
+	if (dup_hwe(hwtable, vendor, product))
+		return 0;
 
 	hwe = alloc_hwe();
 
@@ -232,6 +246,9 @@ store_hwe_ext (vector hwtable, char * vendor, char * product, int pgp,
 {
 	struct hwentry * hwe;
 
+	if (dup_hwe(hwtable, vendor, product))
+		return 0;
+	
 	hwe = alloc_hwe();
 
 	if (!hwe)
@@ -373,9 +390,10 @@ load_config (char * file)
 		if (!conf->hwtable)
 			goto out;
 		
-		if (setup_default_hwtable(conf->hwtable))
-			goto out;
 	}
+	if (setup_default_hwtable(conf->hwtable))
+		goto out;
+
 	if (conf->blist == NULL) {
 		conf->blist = vector_alloc();
 		
