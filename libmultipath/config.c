@@ -228,7 +228,7 @@ out:
 int
 store_hwe_ext (vector hwtable, char * vendor, char * product, int pgp,
 	   char * getuid, char * getprio, char * hwhandler,
-	   char * features, char * checker)
+	   char * features, char * checker, int pgfailback)
 {
 	struct hwentry * hwe;
 
@@ -283,6 +283,8 @@ store_hwe_ext (vector hwtable, char * vendor, char * product, int pgp,
 		hwe->checker_index = get_checker_id(checker);
 	else
 		hwe->checker_index = get_checker_id(DEFAULT_CHECKER);
+
+	hwe->pgfailback = pgfailback;
 
 	if (!vector_alloc_slot(hwtable))
 		goto out;
