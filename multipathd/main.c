@@ -1071,6 +1071,13 @@ checkerloop (void *ap)
 
 	condlog(2, "path checkers start up");
 
+	/*
+	 * init the path check interval
+	 */
+	vector_foreach_slot (vecs->pathvec, pp, i) {
+		pp->checkint = conf->checkint;
+	}
+
 	while (1) {
 		pthread_cleanup_push(cleanup_lock, vecs->lock);
 		lock(vecs->lock);
@@ -1373,7 +1380,7 @@ child (void * param)
 	 * no paths and/or no multipaths are valid scenarii
 	 * vectors maintenance will be driven by events
 	 */
-	path_discovery(vecs->pathvec, conf, DI_SYSFS | DI_WWID);
+	path_discovery(vecs->pathvec, conf, DI_SYSFS | DI_WWID | DI_CHECKER);
 	map_discovery(vecs);
 
 	/*

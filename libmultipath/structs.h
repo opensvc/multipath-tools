@@ -87,8 +87,8 @@ struct path {
 	unsigned long long size;
 	unsigned int checkint;
 	unsigned int tick;
-	int state;
 	int bus;
+	int state;
 	int dmstate;
 	int failcount;
 	int priority;

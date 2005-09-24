@@ -20,6 +20,8 @@
 #include "sg_include.h"
 #include "discovery.h"
 
+#include "../libcheckers/path_state.h"
+
 #define readattr(a,b) \
 	sysfs_read_attribute_value(a, b, sizeof(b))
 
@@ -56,11 +58,11 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 	struct sysfs_directory * devp;
 	char path[FILE_NAME_SIZE];
 	struct path * pp;
-	int r = 1;
+	int r = 0;
 
 	if(safe_sprintf(path, "%s/block", sysfs_path)) {
 		condlog(0, "path too small");
-		exit(1);
+		return 1;
 	}
 	sdir = sysfs_open_directory(path);
 	sysfs_read_directory(sdir);
@@ -72,7 +74,8 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 		if(safe_sprintf(path, "%s/block/%s/device", sysfs_path,
 				devp->name)) {
 			condlog(0, "path too small");
-			exit(1);
+			sysfs_close_directory(sdir);
+			return 1;
 		}
 				
 		if (!filepresent(path))
@@ -86,19 +89,21 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 			 * the caller wants
 			 */
 			if (!store_pathinfo(pathvec, conf->hwtable,
-					   devp->name, flag))
-				goto out;
+					   devp->name, flag)) {
+				r++;
+				continue;
+			}
 		} else {
 			/*
 			 * path already known :
 			 * refresh only what the caller wants
 			 */
-			if (pathinfo(pp, conf->hwtable, flag))
-				goto out;
+			if (pathinfo(pp, conf->hwtable, flag)) {
+				r++;
+				continue;
+			}
 		}
 	}
-	r = 0;
-out:
 	sysfs_close_directory(sdir);
 	return r;
 }
@@ -451,7 +456,6 @@ scsi_sysfs_pathinfo (struct path * curpath)
 static int
 common_sysfs_pathinfo (struct path * curpath)
 {
-
 	sysfs_get_bus(sysfs_path, curpath);
 	condlog(3, "bus = %i", curpath->bus);
 
@@ -582,7 +586,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	char buff[CALLOUT_MAX_SIZE];
 	char prio[16];
 
-	condlog(3, "===== path %s =====", pp->dev);
+	condlog(3, "===== path info %s (mask 0x%x) =====", pp->dev, mask);
 
 	/*
 	 * fetch info available in sysfs
@@ -591,7 +595,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 		return 1;
 
 	/*
-	 * then those not available through sysfs
+	 * fetch info not available through sysfs
 	 */
 	if (mask & DI_CLAIMED) {
 		pp->claimed = get_claimed(pp->dev);
@@ -601,11 +605,11 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 		pp->fd = opennode(pp->dev, O_RDONLY);
 
 	if (pp->fd <= 0)
-		return 1;
+		goto out;
 
-	if (pp->bus == SYSFS_BUS_SCSI)
-		if (scsi_ioctl_pathinfo(pp, mask))
-			return 1;
+	if (pp->bus == SYSFS_BUS_SCSI &&
+	    scsi_ioctl_pathinfo(pp, mask))
+		goto out;
 
 	/* get and store hwe pointer */
 	pp->hwe = find_hwe(hwtable, pp->vendor_id, pp->product_id);
@@ -661,5 +665,13 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	else if (strlen(pp->wwid))
 		condlog(3, "uid = %s (cache)", pp->wwid);
 
+	return 0;
+
+out:
+	/*
+	 * Recoverable error, for example faulty or offline path
+	 * Force path state to "failed"
+	 */
+	pp->state = PATH_DOWN;
 	return 0;
 }
