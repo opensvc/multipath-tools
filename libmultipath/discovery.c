@@ -225,7 +225,7 @@ get_claimed(char * devname)
 {
 	int fd = opennode(devname, O_EXCL);
 
-	if (fd < 0)
+	if (fd <= 0 && errno == EBUSY)
 		return 1;
 
 	close(fd);
@@ -670,8 +670,9 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 out:
 	/*
 	 * Recoverable error, for example faulty or offline path
-	 * Force path state to "failed"
+	 * Set up safe defaults, don't trust the cache
 	 */
+	memset(pp->wwid, 0, WWID_SIZE);
 	pp->state = PATH_DOWN;
 	return 0;
 }
