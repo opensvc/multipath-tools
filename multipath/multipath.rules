@@ -1,3 +1,22 @@
-# multipath wants the devmaps presented as meaninglful device names
-# so name them after their devmap name
-KERNEL="dm-[0-9]*", PROGRAM="/sbin/devmap_name %M %m", NAME="%k", SYMLINK="%c"
+#
+# multipath and multipath partitions nodes are created in /dev/mapper/
+# this file should be installed in /etc/udev/rules.d
+#
+# !! udev must not discard DM events !!
+# !! check the other installed rules !!
+#
+
+# lookup the devmap name
+#ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*",
+#	PROGRAM="/sbin/devmap_name %M %m"
+ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*",
+	PROGRAM="dmsetup -j %M -m %m --noopencount -n -c -o name info"
+
+# take care of devmap partitioning
+ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*",
+	RUN+="/sbin/kpartx -a /dev/mapper/%c"
+
+# insert new paths in multipath topology
+ACTION=="add", SUBSYSTEM=="block", KERNEL!="dm-*",
+	RUN+="/sbin/multipath -v0 %M:%m"
+
