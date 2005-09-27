@@ -1032,6 +1032,7 @@ mpvec_garbage_collector (struct vectors * vecs)
 		if (!dm_map_present(mpp->alias)) {
 			condlog(2, "%s: remove dead map", mpp->alias);
 			remove_map(mpp, vecs);
+			i--;
 		}
 	}
 }
