@@ -44,7 +44,7 @@ install:
 	install -d $(DESTDIR)$(bindir)
 	install -m 755 $(EXEC) $(DESTDIR)$(bindir)/
 	install -d $(DESTDIR)/etc/udev/rules.d
-	install -m 755 multipath.rules $(DESTDIR)/etc/udev/rules.d/
+	install -m 644 multipath.rules $(DESTDIR)/etc/udev/rules.d/
 	install -d $(DESTDIR)$(mandir)
 	install -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
 
