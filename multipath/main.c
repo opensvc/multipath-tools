@@ -96,12 +96,13 @@ get_refwwid (vector pathvec)
 		pp = find_path_by_devt(pathvec, conf->dev);
 		
 		if (!pp) {
+			if (devt2devname(conf->dev, buff))
+				return NULL;
+
 			pp = alloc_path();
 
 			if (!pp)
 				return NULL;
-
-			devt2devname(conf->dev, buff);
 
 			if(safe_sprintf(pp->dev, "%s", buff)) {
 				fprintf(stderr, "pp->dev too small\n");
@@ -995,7 +996,19 @@ main (int argc, char *argv[])
 		print_all_paths(pathvec);
 	}
 
-	refwwid = get_refwwid(pathvec);
+	/*
+	 * scope limiting must be translated into a wwid
+	 * failing the translation is fatal (by policy)
+	 */
+	if (conf->dev) {
+		refwwid = get_refwwid(pathvec);
+
+		if (!refwwid) {
+			condlog(3, "scope is nul");
+			goto out;
+		}
+	}
+
 	get_path_layout(&pl, pathvec);
 
 	if (get_dm_mpvec(curmp, pathvec, refwwid))
