@@ -7,16 +7,16 @@
 #
 
 # lookup the devmap name
-#ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*",
+#ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*", \
 #	PROGRAM="/sbin/devmap_name %M %m"
-ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*",
+ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*", \
 	PROGRAM="dmsetup -j %M -m %m --noopencount -n -c -o name info"
 
 # take care of devmap partitioning
-ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*",
+ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*", \
 	RUN+="/sbin/kpartx -a /dev/mapper/%c"
 
 # insert new paths in multipath topology
-ACTION=="add", SUBSYSTEM=="block", KERNEL!="dm-*",
+ACTION=="add", SUBSYSTEM=="block", KERNEL!="dm-*", \
 	RUN+="/sbin/multipath -v0 %M:%m"
 
