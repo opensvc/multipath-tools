@@ -14,14 +14,18 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
 
 CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes
 
+PREVBUILD = $(shell nm debug.o|grep log_safe)
+
 ifeq ($(strip $(DAEMON)),1)
 	CFLAGS += -DDAEMON
+	CLEAN = $(shell if [ "x$(PREVBUILD)" = "x" ]; then echo clean; fi)
+else
+	CLEAN = $(shell if [ ! "x$(PREVBUILD)" = "x" ]; then echo clean; fi)
 endif
 
 all: $(BUILD)
 
-prepare:
-	@rm -f debug.o
+prepare: $(CLEAN)
 	@file *-$(BUILD).a >/dev/null 2>&1 || rm -f core *.o *.gz
 	@rm -f *-$(BUILD).a
 
