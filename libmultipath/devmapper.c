@@ -15,6 +15,24 @@
 #define MAX_WAIT 5
 #define LOOPS_PER_SEC 5
 
+static void
+dm_dummy_log (int level, const char *file, int line, const char *f, ...)
+{
+	return;
+}
+
+static void
+dm_restore_log (void)
+{
+	dm_log_init(NULL);
+}
+
+static void
+dm_shut_log (void)
+{
+	dm_log_init(&dm_dummy_log);
+}
+
 extern int
 dm_prereq (char * str, int x, int y, int z)
 {
@@ -616,10 +634,12 @@ dm_mapname(int major, int minor)
 
 	/*
 	 * device map might not be ready when we get here from
-	 * uevent trigger
+	 * daemon uev_trigger -> uev_add_map
 	 */
 	while (--loop) {
+		dm_shut_log();
 		r = dm_task_run(dmt);
+		dm_restore_log();
 
 		if (r)
 			break;

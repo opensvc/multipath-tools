@@ -1029,7 +1029,7 @@ mpvec_garbage_collector (struct vectors * vecs)
 	int i;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
-		if (!dm_map_present(mpp->alias)) {
+		if (mpp && mpp->alias && !dm_map_present(mpp->alias)) {
 			condlog(2, "%s: remove dead map", mpp->alias);
 			remove_map(mpp, vecs);
 			i--;
