@@ -108,11 +108,16 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 	return r;
 }
 
+/*
+ * the daemon can race udev upon path add,
+ * not multipath(8), ran by udev
+ */
+#if DAEMON
 #define WAIT_MAX_SECONDS 5
 #define WAIT_LOOP_PER_SECOND 5
 
 static int
-wait_sysfs_attr (char * filename)
+wait_for_file (char * filename)
 {
 	int loop;
 	struct stat stats;
@@ -123,10 +128,20 @@ wait_sysfs_attr (char * filename)
 		if (stat(filename, &stats) == 0)
 			return 0;
 
+		if (errno != ENOENT)
+			return 1;
+
 		usleep(1000 * 1000 / WAIT_LOOP_PER_SECOND);
 	}
 	return 1;
-}	
+}
+#else
+static int
+wait_for_file (char * filename)
+{
+	return 0;
+}
+#endif
 			
 #define declare_sysfs_get_str(fname, fmt) \
 extern int \
@@ -139,7 +154,7 @@ sysfs_get_##fname (char * sysfs_path, char * dev, char * buff, int len) \
 	if (safe_sprintf(attr_path, fmt, sysfs_path, dev)) \
 		return 1; \
 \
-	if (wait_sysfs_attr(attr_path)) \
+	if (wait_for_file(attr_path)) \
 		return 1; \
 \
 	if (0 > sysfs_read_attribute_value(attr_path, attr_buff, sizeof(attr_buff))) \
@@ -171,7 +186,7 @@ sysfs_get_##fname (char * sysfs_path, char * dev) \
 	if (safe_sprintf(attr_path, fmt, sysfs_path, dev)) \
 		return 0; \
 \
-	if (wait_sysfs_attr(attr_path)) \
+	if (wait_for_file(attr_path)) \
 		return 0; \
 \
 	if (0 > sysfs_read_attribute_value(attr_path, attr_buff, sizeof(attr_buff))) \
@@ -194,30 +209,18 @@ static int
 opennode (char * dev, int mode)
 {
 	char devpath[FILE_NAME_SIZE];
-	int fd;
-	int loop;
 
 	if (safe_sprintf(devpath, "%s/%s", conf->udev_dir, dev)) {
 		condlog(0, "devpath too small");
 		return -1;
 	}
 
-	loop = WAIT_MAX_SECONDS * WAIT_LOOP_PER_SECOND;
-	
-	while (--loop) {
-		fd = open(devpath, mode);
-
-		if (fd <= 0 && errno != ENOENT) {
-			condlog(3, "open error (%s)\n", strerror(errno));
-			return fd;
-		}
-		if (fd > 0)
-			return fd;
-
-		usleep(1000 * 1000 / WAIT_LOOP_PER_SECOND);
+	if (wait_for_file(devpath)) {
+		condlog(3, "failed to open %s", devpath);
+		return -1;
 	}
-	condlog(0, "failed to open %s", devpath);
-	return -1;
+
+	return open(devpath, mode);
 }
 
 int
