@@ -776,7 +776,13 @@ update_paths (struct multipath * mpp)
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		vector_foreach_slot (pgp->paths, pp, j) {
 			if (!strlen(pp->dev)) {
-				devt2devname(pp->dev, pp->dev_t);
+				if (devt2devname(pp->dev_t, pp->dev)) {
+					/*
+					 * path is not in sysfs anymore
+					 */
+					pp->state = PATH_DOWN;
+					continue;
+				}
 				pathinfo(pp, conf->hwtable,
 					 DI_SYSFS | DI_CHECKER | \
 					 DI_SERIAL | DI_PRIO);
