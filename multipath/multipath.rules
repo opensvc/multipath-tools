@@ -18,5 +18,5 @@ ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*", \
 
 # insert new paths in multipath topology
 ACTION=="add", SUBSYSTEM=="block", KERNEL!="dm-*", \
-	RUN+="/sbin/multipath -v0 %M:%m"
+	RUN+="/sbin/multipath -v0 %r/%k"
 
