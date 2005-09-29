@@ -1,6 +1,7 @@
 #include "kpartx.h"
 #include "byteorder.h"
 #include <stdio.h>
+#include <string.h>
 #include "dos.h"
 
 static int
@@ -12,7 +13,7 @@ static int
 read_extended_partition(int fd, struct partition *ep,
 			struct slice *sp, int ns)
 {
-	struct partition *p;
+	struct partition p;
 	unsigned long start, here;
 	unsigned char *bp;
 	int loopct = 0;
@@ -33,14 +34,13 @@ read_extended_partition(int fd, struct partition *ep,
 		if (bp[510] != 0x55 || bp[511] != 0xaa)
 			return n;
 
-		p = (struct partition *) (bp + 0x1be);
-
-		for (i=0; i<2; i++, p++) {
-			if (p->nr_sects == 0 || is_extended(p->sys_type))
+		for (i=0; i<2; i++) {
+			memcpy(&p, bp + 0x1be + i * sizeof (p), sizeof (p));
+			if (p.nr_sects == 0 || is_extended(p.sys_type))
 				continue;
 			if (n < ns) {
-				sp[n].start = here + le32_to_cpu(p->start_sect);
-				sp[n].size = le32_to_cpu(p->nr_sects);
+				sp[n].start = here + le32_to_cpu(p.start_sect);
+				sp[n].size = le32_to_cpu(p.nr_sects);
 				n++;
 			} else {
 				fprintf(stderr,
@@ -50,10 +50,10 @@ read_extended_partition(int fd, struct partition *ep,
 			loopct = 0;
 		}
 
-		p -= 2;
-		for (i=0; i<2; i++, p++) {
-			if(p->nr_sects != 0 && is_extended(p->sys_type)) {
-				here = start + le32_to_cpu(p->start_sect);
+		for (i=0; i<2; i++) {
+			memcpy(&p, bp + 0x1be + i * sizeof (p), sizeof (p));
+			if(p.nr_sects != 0 && is_extended(p.sys_type)) {
+				here = start + le32_to_cpu(p.start_sect);
 				moretodo = 1;
 				break;
 			}
@@ -69,7 +69,7 @@ is_gpt(int type) {
 
 int
 read_dos_pt(int fd, struct slice all, struct slice *sp, int ns) {
-	struct partition *p;
+	struct partition p;
 	unsigned long offset = all.start;
 	int i, n=0;
 	unsigned char *bp;
@@ -81,32 +81,29 @@ read_dos_pt(int fd, struct slice all, struct slice *sp, int ns) {
 	if (bp[510] != 0x55 || bp[511] != 0xaa)
 		return -1;
 
-	p = (struct partition *) (bp + 0x1be);
 	for (i=0; i<4; i++) {
-		if (is_gpt(p->sys_type)) {
+		memcpy(&p, bp + 0x1be + i * sizeof (p), sizeof (p));
+		if (is_gpt(p.sys_type)) {
 			return 0;
 		}
-		p++;
 	}
-	p = (struct partition *) (bp + 0x1be);
 	for (i=0; i<4; i++) {
+		memcpy(&p, bp + 0x1be + i * sizeof (p), sizeof (p));
 		/* always add, even if zero length */
 		if (n < ns) {
-			sp[n].start =  le32_to_cpu(p->start_sect);
-			sp[n].size = le32_to_cpu(p->nr_sects);
+			sp[n].start =  le32_to_cpu(p.start_sect);
+			sp[n].size = le32_to_cpu(p.nr_sects);
 			n++;
 		} else {
 			fprintf(stderr,
 				"dos_partition: too many slices\n");
 			break;
 		}
-		p++;
 	}
-	p = (struct partition *) (bp + 0x1be);
 	for (i=0; i<4; i++) {
-		if (is_extended(p->sys_type))
-			n += read_extended_partition(fd, p, sp+n, ns-n);
-		p++;
+		memcpy(&p, bp + 0x1be + i * sizeof (p), sizeof (p));
+		if (is_extended(p.sys_type))
+			n += read_extended_partition(fd, &p, sp+n, ns-n);
 	}
 	return n;
 }
