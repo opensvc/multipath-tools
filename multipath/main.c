@@ -625,7 +625,7 @@ domap (struct multipath * mpp)
 	 */
 	dm_log_init_verbose(0);
 
-	r = dm_addmap(op, mpp->alias, DEFAULT_TARGET, mpp->params, mpp->size);
+	r = dm_addmap(op, mpp->alias, DEFAULT_TARGET, mpp->params, mpp->size, mpp->wwid);
 
 	if (r == 0)
 		dm_simplecmd(DM_DEVICE_REMOVE, mpp->alias);

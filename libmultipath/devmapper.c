@@ -102,7 +102,7 @@ dm_simplecmd (int task, const char *name) {
 
 extern int
 dm_addmap (int task, const char *name, const char *target,
-	   const char *params, unsigned long long size) {
+	   const char *params, unsigned long long size, const char *uuid) {
 	int r = 0;
 	struct dm_task *dmt;
 
@@ -113,6 +113,9 @@ dm_addmap (int task, const char *name, const char *target,
 		goto addout;
 
 	if (!dm_task_add_target (dmt, 0, size, target, params))
+		goto addout;
+
+	if (uuid && !dm_task_set_uuid(dmt, uuid))
 		goto addout;
 
 	dm_task_no_open_count(dmt);
@@ -185,6 +188,34 @@ dm_get_map(char * name, unsigned long long * size, char * outparams)
 out:
 	dm_task_destroy(dmt);
 	return r;
+}
+
+extern int
+dm_get_uuid(char *name, char *uuid)
+{
+	struct dm_task *dmt;
+	const char *uuidtmp;
+
+	dmt = dm_task_create(DM_DEVICE_INFO);
+	if (!dmt)
+		return 1;
+
+        if (!dm_task_set_name (dmt, name))
+                goto uuidout;
+
+	if (!dm_task_run(dmt))
+                goto uuidout;
+
+	uuidtmp = dm_task_get_uuid(dmt);
+	if (uuidtmp)
+		strcpy(uuid, uuidtmp);
+	else
+		uuid[0] = '\0';
+
+uuidout:
+	dm_task_destroy(dmt);
+
+	return 0;
 }
 
 extern int
@@ -555,6 +586,8 @@ dm_get_maps (vector mp, char * type)
 
 			if (dm_get_status(names->name, mpp->status))
 				goto out1;
+
+			dm_get_uuid(names->name, mpp->wwid);
 
 			mpp->alias = MALLOC(strlen(names->name) + 1);
 
