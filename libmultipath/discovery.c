@@ -231,7 +231,9 @@ get_claimed(char * devname)
 	if (fd < 0 && errno == EBUSY)
 		return 1;
 
-	close(fd);
+	if (fd >= 0)
+		close(fd);
+
 	return 0;
 }	
 
