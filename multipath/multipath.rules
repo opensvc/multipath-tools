@@ -10,7 +10,7 @@
 #ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*", \
 #	PROGRAM="/sbin/devmap_name %M %m"
 ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*", \
-	PROGRAM="dmsetup -j %M -m %m --noopencount -n -c -o name info"
+	PROGRAM="dmsetup -j %M -m %m --noopencount --noheadings -c -o name info"
 
 # take care of devmap partitioning
 ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*", \
