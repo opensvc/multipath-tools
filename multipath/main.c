@@ -994,7 +994,7 @@ main (int argc, char *argv[])
 		/* maximum info */
 		di_flag = DI_ALL;
 
-	if (path_discovery(pathvec, conf, di_flag) || VECTOR_SIZE(pathvec) == 0)
+	if (path_discovery(pathvec, conf, di_flag))
 		goto out;
 
 	if (conf->verbosity > 2) {
