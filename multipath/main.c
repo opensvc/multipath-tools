@@ -580,7 +580,6 @@ reinstate_paths (struct multipath * mpp)
 static int
 domap (struct multipath * mpp)
 {
-	int op = ACT_NOTHING;
 	int r = 0;
 
 	print_mp(mpp);
@@ -606,39 +605,26 @@ domap (struct multipath * mpp)
 		return 0;
 
 	case ACT_CREATE:
-		op = DM_DEVICE_CREATE;
+		r = dm_addmap(DM_DEVICE_CREATE, mpp->alias, DEFAULT_TARGET,
+			      mpp->params, mpp->size, mpp->wwid);
 		break;
 
 	case ACT_RELOAD:
-		op = DM_DEVICE_RELOAD;
+		r = dm_addmap(DM_DEVICE_RELOAD, mpp->alias, DEFAULT_TARGET,
+			      mpp->params, mpp->size, NULL);
 		break;
 
 	default:
 		break;
 	}
 
-		
-	/*
-	 * device mapper creation or updating
-	 * here we know we'll have garbage on stderr from
-	 * libdevmapper. so shut it down temporarily.
-	 */
-	dm_log_init_verbose(0);
-
-	r = dm_addmap(op, mpp->alias, DEFAULT_TARGET, mpp->params, mpp->size, mpp->wwid);
-
-	if (r == 0)
-		dm_simplecmd(DM_DEVICE_REMOVE, mpp->alias);
-	else if (op == DM_DEVICE_RELOAD)
+	if (r) {
+		/*
+		 * DM_DEVICE_CREATE or DM_DEVICE_RELOAD succeeded
+		 */
 		dm_simplecmd(DM_DEVICE_RESUME, mpp->alias);
-
-	/*
-	 * PG order is random, so we need to set the primary one
-	 * upon create or reload
-	 */
-	dm_switchgroup(mpp->alias, mpp->nextpg);
-
-	dm_log_init_verbose(1);
+		dm_switchgroup(mpp->alias, mpp->nextpg);
+	}
 
 	return r;
 }
