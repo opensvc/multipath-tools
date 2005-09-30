@@ -20,6 +20,7 @@ alloc_path (void)
 		pp->sg_id.channel = -1;
 		pp->sg_id.scsi_id = -1;
 		pp->sg_id.lun = -1;
+		pp->fd = -1;
 	}
 	return pp;
 }
