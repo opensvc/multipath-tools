@@ -12,7 +12,7 @@ static void
 revoke_cache_info(struct path * pp)
 {
 	pp->checker_context = NULL;
-	pp->fd = 0;
+	pp->fd = -1;
 	pp->mpp = NULL;
 	pp->getuid = NULL;
 	pp->getprio = NULL;

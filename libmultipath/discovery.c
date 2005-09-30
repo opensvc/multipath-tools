@@ -228,7 +228,7 @@ get_claimed(char * devname)
 {
 	int fd = opennode(devname, O_EXCL);
 
-	if (fd <= 0 && errno == EBUSY)
+	if (fd < 0 && errno == EBUSY)
 		return 1;
 
 	close(fd);
@@ -604,10 +604,10 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 		pp->claimed = get_claimed(pp->dev);
 		condlog(3, "claimed = %i", pp->claimed);
 	}
-	if (pp->fd <= 0)
+	if (pp->fd < 0)
 		pp->fd = opennode(pp->dev, O_RDONLY);
 
-	if (pp->fd <= 0)
+	if (pp->fd < 0)
 		goto out;
 
 	if (pp->bus == SYSFS_BUS_SCSI &&
