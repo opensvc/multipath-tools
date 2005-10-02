@@ -250,7 +250,7 @@ disassemble_status (char * params, struct multipath * mpp)
 {
 	char * word;
 	char * p;
-	int i, j;
+	int i, j, k;
 	int num_feature_args;
 	int num_hwhandler_args;
 	int num_pg;
@@ -405,12 +405,13 @@ disassemble_status (char * params, struct multipath * mpp)
 
 			pp->failcount = atoi(word);
 			FREE(word);
+
+			/*
+			 * selector args
+			 */
+			for (k = 0; k < num_pg_args; k++)
+				p += get_word(p, NULL);
 		}
-		/*
-		 * selector args
-		 */
-		for (j = 0; j < num_pg_args; j++)
-			p += get_word(p, NULL);
 	}
 	return 0;
 }
