@@ -789,29 +789,25 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 {
 	int i;
 	struct multipath * mpp;
-	char * wwid;
 
 	if (dm_get_maps(curmp, DEFAULT_TARGET))
 		return 1;
 
 	vector_foreach_slot (curmp, mpp, i) {
-		wwid = get_mpe_wwid(mpp->alias);
-
-		if (wwid) {
-			/* out of specified scope */
-			if (refwwid && strncmp(wwid, refwwid, WWID_SIZE))
+		/*
+		 * discard out of scope maps
+		 */
+		if (mpp->wwid && refwwid &&
+		    strncmp(mpp->wwid, refwwid, WWID_SIZE))
 				continue;
-			wwid = NULL;
-		}
 
 		condlog(3, "params = %s", mpp->params);
 		condlog(3, "status = %s", mpp->status);
 
-		/* will set mpp->wwid */
 		disassemble_map(pathvec, mpp->params, mpp);
 
 		/*
-		 * disassemble_map may have added new paths to pathvec.
+		 * disassemble_map() can add new paths to pathvec.
 		 * If not in "fast list mode", we need to fetch information
 		 * about them
 		 */
