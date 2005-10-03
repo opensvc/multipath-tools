@@ -173,7 +173,11 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 			PAD(pl->hbtl_len);
 			break;
 		case 'd':
-			PRINT(c, TAIL, "%s", pp->dev);
+			if (!strlen(pp->dev)) {
+				PRINT(c, TAIL, "-");
+			} else {
+				PRINT(c, TAIL, "%s", pp->dev);
+			}
 			PAD(pl->dev_len);
 			break;
 		case 'D':
