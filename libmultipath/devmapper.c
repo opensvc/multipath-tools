@@ -278,7 +278,7 @@ dm_type(char * name, char * type)
 	next = dm_get_next_target(dmt, next, &start, &length,
 				  &target_type, &params);
 
-	if (0 == strcmp(target_type, type))
+	if (target_type && !strcmp(target_type, type))
 		r = 1;
 
 out:
