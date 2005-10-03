@@ -630,6 +630,21 @@ domap (struct multipath * mpp)
 }
 
 static int
+deadmap (struct multipath * mpp)
+{
+	int i, j;
+	struct pathgroup * pgp;
+	struct path * pp;
+
+	vector_foreach_slot (mpp->pg, pgp, i)
+		vector_foreach_slot (pgp->paths, pp, j)
+			if (strlen(pp->dev))
+				return 0; /* alive */
+	
+	return 1; /* dead */
+}
+
+static int
 coalesce_paths (vector curmp, vector pathvec)
 {
 	int k, i;
@@ -712,7 +727,22 @@ coalesce_paths (vector curmp, vector pathvec)
 		condlog(3, "action set to %i", mpp->action);
 
 		domap(mpp);
+		drop_multipath(curmp, mpp->wwid, KEEP_PATHS);
 		free_multipath(mpp, KEEP_PATHS);
+	}
+	/*
+	 * Flush maps with only dead paths (ie not in sysfs)
+	 * Keep maps with only failed paths
+	 */
+	vector_foreach_slot (curmp, mpp, i) {
+		if (!deadmap(mpp))
+			continue;
+
+		if (dm_flush_map(mpp->alias, DEFAULT_TARGET))
+			condlog(2, "remove: %s (dead) failed!",
+				mpp->alias);
+		else
+			condlog(2, "remove: %s (dead)", mpp->alias);
 	}
 	return 0;
 }
