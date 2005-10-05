@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "regex.h"
 #include "memory.h"
 #include "util.h"
 #include "debug.h"
@@ -19,11 +20,15 @@ find_hwe (vector hwtable, char * vendor, char * product)
 {
 	int i;
 	struct hwentry * hwe;
+	regex_t vre, pre;
 
 	vector_foreach_slot (hwtable, hwe, i) {
-		if (strcmp_chomp(hwe->vendor, vendor) == 0 &&
-		    (hwe->product[0] == '*' ||
-		    strcmp_chomp(hwe->product, product) == 0))
+		if (regcomp(&vre, hwe->vendor, REG_EXTENDED|REG_NOSUB))
+			return NULL;
+		if (regcomp(&pre, hwe->product, REG_EXTENDED|REG_NOSUB))
+			return NULL;
+		if (!regexec(&vre, vendor, 0, NULL, 0) &&
+		    !regexec(&pre, product, 0, NULL, 0))
 			return hwe;
 	}
 	return NULL;
