@@ -33,6 +33,7 @@ struct mpentry {
 	int pgpolicy;
 	int pgfailback;
 	int rr_weight;
+	int no_path_retry;
 
 	char * wwid;
 	char * selector;
@@ -56,6 +57,7 @@ struct config {
 	int pgfailback;
 	int remove;
 	int rr_weight;
+	int no_path_retry;
 
 	char * dev;
 	char * udev_dir;

@@ -171,6 +171,26 @@ default_failback_handler(vector strvec)
 	return 0;
 }
 
+static int
+def_no_path_retry_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if (!strncmp(buff, "fail", 4) || !strncmp(buff, "0", 1))
+		conf->no_path_retry = NO_PATH_RETRY_FAIL;
+	else if (!strncmp(buff, "queue", 5))
+		conf->no_path_retry = NO_PATH_RETRY_QUEUE;
+	else if ((conf->no_path_retry = atoi(buff)) < 1)
+		conf->no_path_retry = NO_PATH_RETRY_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
 /*
  * blacklist block handlers
  */
@@ -579,6 +599,30 @@ mp_weight_handler(vector strvec)
 	return 0;
 }
 
+static int
+mp_no_path_retry_handler(vector strvec)
+{
+	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
+	char *buff;
+
+	if (!mpe)
+		return 1;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if (!strncmp(buff, "fail", 4) || !strncmp(buff, "0", 1))
+		mpe->no_path_retry = NO_PATH_RETRY_FAIL;
+	else if (!strncmp(buff, "queue", 5))
+		mpe->no_path_retry = NO_PATH_RETRY_QUEUE;
+	else if ((mpe->no_path_retry = atoi(buff)) < 1)
+		mpe->no_path_retry = NO_PATH_RETRY_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
 vector
 init_keywords(void)
 {
@@ -596,6 +640,7 @@ init_keywords(void)
 	install_keyword("failback", &default_failback_handler);
 	install_keyword("rr_min_io", &def_minio_handler);
 	install_keyword("rr_weight", &def_weight_handler);
+	install_keyword("no_path_retry", &def_no_path_retry_handler);
 	
 	install_keyword_root("devnode_blacklist", &blacklist_handler);
 	install_keyword("devnode", &ble_handler);
@@ -626,6 +671,7 @@ init_keywords(void)
 	install_keyword("path_selector", &mp_selector_handler);
 	install_keyword("failback", &mp_failback_handler);
 	install_keyword("rr_weight", &mp_weight_handler);
+	install_keyword("no_path_retry", &mp_no_path_retry_handler);
 	install_sublevel_end();
 
 	return keywords;

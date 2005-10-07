@@ -209,6 +209,21 @@ set_multipath_wwid (struct multipath * mpp)
 }
 
 static int
+pathcount (struct multipath *mpp, int state)
+{
+	struct pathgroup *pgp;
+	struct path *pp;
+	int i, j;
+	int count = 0;
+
+	vector_foreach_slot (mpp->pg, pgp, i)
+		vector_foreach_slot (pgp->paths, pp, j)
+			if (pp->state == state)
+				count++;
+	return count;
+}
+
+static int
 setup_multipath (struct vectors * vecs, struct multipath * mpp)
 {
 	int i;
@@ -222,6 +237,14 @@ setup_multipath (struct vectors * vecs, struct multipath * mpp)
 
 	set_paths_owner(vecs, mpp);
 	select_pgfailback(mpp);
+	mpp->nr_active = pathcount(mpp, PATH_UP);
+	select_no_path_retry(mpp);
+	if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
+		if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
+			dm_queue_if_no_path(mpp->alias, 0);
+		else
+			dm_queue_if_no_path(mpp->alias, 1);
+	}
 
 	return 0;
 out:
@@ -344,6 +367,38 @@ static sigset_t unblock_sighup(void)
 	sigaddset(&set, SIGHUP);
 	pthread_sigmask(SIG_UNBLOCK, &set, &old);
 	return old;
+}
+
+/*
+ * mpp->no_path_retry:
+ *   -2 : queue_if_no_path enabled, never turned off
+ *   -1 : fail_if_no_path
+ *    0 : nothing
+ *   >0 : queue_if_no_path enabled, turned off after polling n times
+ */
+static void
+update_queue_mode_del_path(struct multipath *mpp)
+{
+	if (--mpp->nr_active == 0 && mpp->no_path_retry > 0) {
+		/* Enter retry mode */
+		mpp->retry_tick = mpp->no_path_retry * conf->checkint;
+		condlog(1, "%s: Entering recovery mode: max_retries=%d",
+			mpp->alias, mpp->no_path_retry);
+	}
+	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
+}
+
+static void
+update_queue_mode_add_path(struct multipath *mpp)
+{
+	if (mpp->nr_active++ == 0 && mpp->no_path_retry > 0) {
+		/* come back to normal mode from retry mode */
+		mpp->retry_tick = 0;
+		dm_queue_if_no_path(mpp->alias, 1);
+		condlog(2, "%s: queue_if_no_path enabled", mpp->alias);
+		condlog(1, "%s: Recovered to normal mode", mpp->alias);
+	}
+	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
 }
 
 /*
@@ -690,6 +745,10 @@ uev_remove_path (char * devname, struct vectors * vecs)
 		condlog(3, "%s: not in pathvec");
 		return 1;
 	}
+
+	if (pp->mpp && pp->state == PATH_UP)
+		update_queue_mode_del_path(pp->mpp);
+
 	condlog(2, "remove %s path checker", devname);
 	i = find_slot(vecs->pathvec, (void *)pp);
 	vector_del_slot(vecs->pathvec, i);
@@ -817,6 +876,13 @@ reconfigure (struct vectors * vecs)
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		mpp->mpe = find_mpe(mpp->wwid);
 		set_paths_owner(vecs, mpp);
+		select_no_path_retry(mpp);
+		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
+			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
+				dm_queue_if_no_path(mpp->alias, 0);
+			else
+				dm_queue_if_no_path(mpp->alias, 1);
+		}
 	}
 	vector_foreach_slot (vecs->pathvec, pp, i) {
 		select_checkfn(pp);
@@ -983,6 +1049,7 @@ fail_path (struct path * pp)
 		 pp->dev_t, pp->mpp->alias);
 
 	dm_fail_path(pp->mpp->alias, pp->dev_t);
+	update_queue_mode_del_path(pp->mpp);
 }
 
 /*
@@ -991,11 +1058,14 @@ fail_path (struct path * pp)
 static void
 reinstate_path (struct path * pp)
 {
-	if (pp->mpp) {
-		if (dm_reinstate(pp->mpp->alias, pp->dev_t))
-			condlog(0, "%s: reinstate failed", pp->dev_t);
-		else
-			condlog(2, "%s: reinstated", pp->dev_t);
+	if (!pp->mpp)
+		return;
+
+	if (dm_reinstate(pp->mpp->alias, pp->dev_t))
+		condlog(0, "%s: reinstate failed", pp->dev_t);
+	else {
+		condlog(2, "%s: reinstated", pp->dev_t);
+		update_queue_mode_add_path(pp->mpp);
 	}
 }
 
@@ -1052,6 +1122,23 @@ defered_failback_tick (vector mpvec)
 
 			if (!mpp->failback_tick && need_switch_pathgroup(mpp, 1))
 				switch_pathgroup(mpp);
+		}
+	}
+}
+
+static void
+retry_count_tick(vector mpvec)
+{
+	struct multipath *mpp;
+	int i;
+
+	vector_foreach_slot (mpvec, mpp, i) {
+		if (mpp->retry_tick) {
+			condlog(4, "%s: Retrying.. No active path", mpp->alias);
+			if(--mpp->retry_tick == 0) {
+				dm_queue_if_no_path(mpp->alias, 0);
+				condlog(2, "%s: Disable queueing", mpp->alias);
+			}
 		}
 	}
 }
@@ -1201,6 +1288,7 @@ checkerloop (void *ap)
 			}
 		}
 		defered_failback_tick(vecs->mpvec);
+		retry_count_tick(vecs->mpvec);
 
 		if (count)
 			count--;

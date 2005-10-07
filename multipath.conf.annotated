@@ -99,6 +99,17 @@
 #	# default : immediate
 #	#
 #	failback	manual
+#
+#	#
+#	# name    : no_path_retry
+#	# scope   : multipathd
+#	# desc    : tell the number of retries until disable queueing, or
+#	#           "fail" means immediate failure (no queueing),
+#	#           "queue" means never stop queueing
+#	# values  : queue|fail|n (>0)
+#	# default : (null)
+#	#
+#	#no_path_retry  queue
 #}
 #	
 ##
@@ -177,6 +188,17 @@
 #		# default : immediate
 #		#
 #		failback		manual
+#
+#		#
+#		# name    : no_path_retry
+#		# scope   : multipathd
+#		# desc    : tell the number of retries until disable queueing, or
+#		#           "fail" means immediate failure (no queueing),
+#		#           "queue" means never stop queueing
+#		# values  : queue|fail|n (>0)
+#		# default : (null)
+#		#
+#		#no_path_retry  queue
 #	}
 #	multipath {
 #		wwid	1DEC_____321816758474

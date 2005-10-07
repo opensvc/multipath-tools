@@ -201,3 +201,22 @@ select_getprio (struct path * pp)
 	return 0;
 }
 
+extern int
+select_no_path_retry(struct multipath *mp)
+{
+	if (mp->mpe && mp->mpe->no_path_retry != NO_PATH_RETRY_UNDEF) {
+		mp->no_path_retry = mp->mpe->no_path_retry;
+		condlog(3, "no_path_retry = %i (controler setting)",
+			mp->no_path_retry);
+		return 0;
+	}
+	if (conf->no_path_retry != NO_PATH_RETRY_UNDEF) {
+		mp->no_path_retry = conf->no_path_retry;
+		condlog(3, "no_path_retry = %i (config file default)",
+			mp->no_path_retry);
+		return 0;
+	}
+	mp->no_path_retry = NO_PATH_RETRY_UNDEF;
+	condlog(3, "no_path_retry = NONE (internal default)");
+	return 0;
+}

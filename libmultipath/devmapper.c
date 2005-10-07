@@ -490,6 +490,41 @@ out:
 	return r;
 }
 
+int
+dm_queue_if_no_path(char *mapname, int enable)
+{
+	int r = 1;
+	struct dm_task *dmt;
+	char *str;
+
+	if (enable)
+		str = "queue_if_no_path\n";
+	else
+		str = "fail_if_no_path\n";
+
+	if (!(dmt = dm_task_create(DM_DEVICE_TARGET_MSG)))
+		return 1;
+
+	if (!dm_task_set_name(dmt, mapname))
+		goto out;
+
+	if (!dm_task_set_sector(dmt, 0))
+		goto out;
+
+	if (!dm_task_set_message(dmt, str))
+		goto out;
+
+	dm_task_no_open_count(dmt);
+
+	if (!dm_task_run(dmt))
+		goto out;
+
+	r = 0;
+out:
+	dm_task_destroy(dmt);
+	return r;
+}
+
 static int
 dm_groupmsg (char * msg, char * mapname, int index)
 {

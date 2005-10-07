@@ -14,6 +14,10 @@
 #define SCSI_PRODUCT_SIZE	17
 #define SCSI_REV_SIZE		5
 
+#define NO_PATH_RETRY_UNDEF	0
+#define NO_PATH_RETRY_FAIL	-1
+#define NO_PATH_RETRY_QUEUE	-2
+
 enum free_path_switch {
 	KEEP_PATHS,
 	FREE_PATHS
@@ -115,6 +119,9 @@ struct multipath {
 	int pgfailback;
 	int failback_tick;
 	int rr_weight;
+	int nr_active;     /* current available(= not known as failed) paths */
+	int no_path_retry; /* number of retries after all paths are down */
+	int retry_tick;    /* remaining times for retries */
 	unsigned long long size;
 	vector paths;
 	vector pg;
