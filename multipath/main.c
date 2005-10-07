@@ -610,21 +610,20 @@ domap (struct multipath * mpp)
 		break;
 
 	case ACT_RELOAD:
-		r = dm_addmap(DM_DEVICE_RELOAD, mpp->alias, DEFAULT_TARGET,
-			      mpp->params, mpp->size, NULL);
+		r = (dm_addmap(DM_DEVICE_RELOAD, mpp->alias, DEFAULT_TARGET,
+			      mpp->params, mpp->size, NULL) &&
+		     dm_simplecmd(DM_DEVICE_RESUME, mpp->alias));
 		break;
 
 	default:
 		break;
 	}
 
-	if (r) {
+	if (r)
 		/*
 		 * DM_DEVICE_CREATE or DM_DEVICE_RELOAD succeeded
 		 */
-		dm_simplecmd(DM_DEVICE_RESUME, mpp->alias);
 		dm_switchgroup(mpp->alias, mpp->nextpg);
-	}
 
 	return r;
 }
