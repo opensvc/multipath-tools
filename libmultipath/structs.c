@@ -119,7 +119,7 @@ free_multipath (struct multipath * mpp, int free_paths)
 		return;
 
 	if (mpp->selector &&
-	    mpp->selector != conf->default_selector &&
+	    mpp->selector != conf->selector &&
 	    (!mpp->mpe || (mpp->mpe && mpp->selector != mpp->mpe->selector)) &&
 	    (!mpp->hwe || (mpp->hwe && mpp->selector != mpp->hwe->selector)))
 		FREE(mpp->selector);
@@ -130,7 +130,7 @@ free_multipath (struct multipath * mpp, int free_paths)
 		FREE(mpp->alias);
 
 	if (mpp->features &&
-	    mpp->features != conf->default_features &&
+	    mpp->features != conf->features &&
 	    (!mpp->hwe || (mpp->hwe && mpp->features != mpp->hwe->features)))
 		FREE(mpp->features);
 

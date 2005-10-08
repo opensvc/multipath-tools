@@ -24,51 +24,51 @@
 #	polling_interval 10
 #
 #	#
-#	# name    : default_selector
+#	# name    : selector
 #	# scope   : multipath
 #	# desc    : the default path selector algorithm to use
 #	#           these algorithms are offered by the kernel multipath target
 #	# values  : "round-robin 0"
 #	# default : "round-robin 0"
 #	#
-#	default_selector	"round-robin 0"
+#	selector	"round-robin 0"
 #
 #	#
-#	# name    : default_path_grouping_policy
+#	# name    : path_grouping_policy
 #	# scope   : multipath
 #	# desc    : the default path grouping policy to apply to unspecified
 #	#           multipaths
 #	# default : multibus
 #	#
-#	default_path_grouping_policy	multibus
+#	path_grouping_policy	multibus
 #
 #	#
-#	# name    : default_getuid_callout
+#	# name    : getuid_callout
 #	# scope   : multipath
 #	# desc    : the default program and args to callout to obtain a unique 
 #	#           path identifier. Absolute path required
 #	# default : /sbin/scsi_id -g -u -s
 #	#
-#	default_getuid_callout	"/sbin/scsi_id -g -u -s /block/%n"
+#	getuid_callout	"/sbin/scsi_id -g -u -s /block/%n"
 #
 #	#
-#	# name    : default_prio_callout
+#	# name    : prio_callout
 #	# scope   : multipath
 #	# desc    : the default program and args to callout to obtain a path 
 #	#           priority value. The ALUA bits in SPC-3 provide an
 #	#           exploitable prio value for example. "none" is a valid value
 #	# default : (null)
 #	#
-#	#default_prio_callout	"/bin/true"
+#	#prio_callout	"/bin/true"
 #
 #	#
-#	# name    : default_path_checker
+#	# name    : path_checker
 #	# scope   : multipath & multipathd
 #	# desc    : the default method used to determine the paths' state
 #	# values  : readsector0|tur|emc_clariion|hp_sw|directio
 #	# default : readsector0
 #	#
-#	#default_path_checker	readsector0
+#	#path_checker	readsector0
 #
 #	#
 #	# name    : rr_min_io
@@ -87,7 +87,7 @@
 #	# values  : priorities|uniform
 #	# default : uniform
 #	#
-#	rr_weight		priorities
+#	rr_weight	priorities
 #
 #	#
 #	# name    : failback
@@ -119,7 +119,7 @@
 ## default : cciss, fd, hd, md, dm, sr, scd, st, ram, raw, loop
 ##
 #blacklist {
-#        wwid 26353900f02796769
+#       wwid 26353900f02796769
 #	devnode "^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"
 #	devnode "^hd[a-z][[0-9]*]"
 #	devnode "^cciss!c[0-9]d[0-9]*[p[0-9]*]"

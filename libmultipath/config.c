@@ -336,8 +336,8 @@ free_config (struct config * conf)
 	if (conf->udev_dir)
 		FREE(conf->udev_dir);
 
-	if (conf->default_selector)
-		FREE(conf->default_selector);
+	if (conf->selector)
+		FREE(conf->selector);
 
 	if (conf->default_getuid)
 		FREE(conf->default_getuid);
@@ -345,8 +345,8 @@ free_config (struct config * conf)
 	if (conf->default_getprio)
 		FREE(conf->default_getprio);
 
-	if (conf->default_features)
-		FREE(conf->default_features);
+	if (conf->features)
+		FREE(conf->features);
 
 	if (conf->default_hwhandler)
 		FREE(conf->default_hwhandler);
@@ -414,8 +414,8 @@ load_config (char * file)
 		if (!conf->mptable)
 			goto out;
 	}
-	if (conf->default_selector == NULL)
-		conf->default_selector = set_default(DEFAULT_SELECTOR);
+	if (conf->selector == NULL)
+		conf->selector = set_default(DEFAULT_SELECTOR);
 
 	if (conf->udev_dir == NULL)
 		conf->udev_dir = set_default(DEFAULT_UDEVDIR);
@@ -423,14 +423,14 @@ load_config (char * file)
 	if (conf->default_getuid == NULL)
 		conf->default_getuid = set_default(DEFAULT_GETUID);
 
-	if (conf->default_features == NULL)
-		conf->default_features = set_default(DEFAULT_FEATURES);
+	if (conf->features == NULL)
+		conf->features = set_default(DEFAULT_FEATURES);
 
 	if (conf->default_hwhandler == NULL)
 		conf->default_hwhandler = set_default(DEFAULT_HWHANDLER);
 
-	if (!conf->default_selector  || !conf->udev_dir         ||
-	    !conf->default_getuid    || !conf->default_features ||
+	if (!conf->selector  || !conf->udev_dir         ||
+	    !conf->default_getuid    || !conf->features ||
 	    !conf->default_hwhandler)
 		goto out;
 

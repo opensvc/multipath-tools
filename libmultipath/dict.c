@@ -39,9 +39,9 @@ udev_dir_handler(vector strvec)
 static int
 def_selector_handler(vector strvec)
 {
-	conf->default_selector = set_value(strvec);
+	conf->selector = set_value(strvec);
 
-	if (!conf->default_selector)
+	if (!conf->selector)
 		return 1;
 
 	return 0;
@@ -93,9 +93,9 @@ def_prio_callout_handler(vector strvec)
 static int
 def_features_handler(vector strvec)
 {
-	conf->default_features = set_value(strvec);
+	conf->features = set_value(strvec);
 
-	if (!conf->default_features)
+	if (!conf->features)
 		return 1;
 
 	return 0;
@@ -631,17 +631,27 @@ init_keywords(void)
 	install_keyword_root("defaults", NULL);
 	install_keyword("polling_interval", &polling_interval_handler);
 	install_keyword("udev_dir", &udev_dir_handler);
+	install_keyword("selector", &def_selector_handler);
+	install_keyword("path_grouping_policy", &def_pgpolicy_handler);
+	install_keyword("getuid_callout", &def_getuid_callout_handler);
+	install_keyword("prio_callout", &def_prio_callout_handler);
+	install_keyword("features", &def_features_handler);
+	install_keyword("path_checker", &def_path_checker_handler);
+	install_keyword("failback", &default_failback_handler);
+	install_keyword("rr_min_io", &def_minio_handler);
+	install_keyword("rr_weight", &def_weight_handler);
+	install_keyword("no_path_retry", &def_no_path_retry_handler);
+
+	/*
+	 * deprecated synonyms
+	 */
 	install_keyword("default_selector", &def_selector_handler);
 	install_keyword("default_path_grouping_policy", &def_pgpolicy_handler);
 	install_keyword("default_getuid_callout", &def_getuid_callout_handler);
 	install_keyword("default_prio_callout", &def_prio_callout_handler);
 	install_keyword("default_features", &def_features_handler);
 	install_keyword("default_path_checker", &def_path_checker_handler);
-	install_keyword("failback", &default_failback_handler);
-	install_keyword("rr_min_io", &def_minio_handler);
-	install_keyword("rr_weight", &def_weight_handler);
-	install_keyword("no_path_retry", &def_no_path_retry_handler);
-	
+
 	install_keyword_root("devnode_blacklist", &blacklist_handler);
 	install_keyword("devnode", &ble_handler);
 	install_keyword("wwid", &ble_handler);

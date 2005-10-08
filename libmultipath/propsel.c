@@ -116,7 +116,7 @@ select_selector (struct multipath * mp)
 		condlog(3, "selector = %s (controler setting)", mp->selector);
 		return 0;
 	}
-	mp->selector = conf->default_selector;
+	mp->selector = conf->selector;
 	condlog(3, "selector = %s (internal default)", mp->selector);
 	return 0;
 }
@@ -140,7 +140,7 @@ select_features (struct multipath * mp)
 		condlog(3, "features = %s (controler setting)", mp->features);
 		return 0;
 	}
-	mp->features = conf->default_features;
+	mp->features = conf->features;
 	condlog(3, "features = %s (internal default)", mp->features);
 	return 0;
 }

@@ -47,7 +47,7 @@ struct config {
 	int list;
 	int pgpolicy_flag;
 	int with_sysfs;
-	int default_selector_args;
+	int selector_args;
 	int default_pgpolicy;
 	int default_checker_index;
 	int dev_type;
@@ -61,10 +61,10 @@ struct config {
 
 	char * dev;
 	char * udev_dir;
-	char * default_selector;
+	char * selector;
 	char * default_getuid;
 	char * default_getprio;
-	char * default_features;
+	char * features;
 	char * default_hwhandler;
 
 	vector mptable;

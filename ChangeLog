@@ -662,7 +662,7 @@
 
 	* [multipathd] setsched prio to RT
 	* [multipath] massive include cleanup
-	* [multipath] add a "default_prio_callout" keyword
+	* [multipath] add a "prio_callout" keyword
 	  first user will be SPC-3 ALUA priority field fetcher
 	  from IBM
 	* [multipath] reenable stdout on some error paths
@@ -700,9 +700,9 @@
 	  pathvecs
 	* [multipath] push WWID_SIZE to 64 char (scsi_id w/ JBODs)
 	* [multipath] add a exit_tool() wrapper fn for runfile unlink
-	* [multipath] add a "default_path_grouping_policy" keyword in the
+	* [multipath] add a "path_grouping_policy" keyword in the
 	  "defaults" block.
-	* [multipath] add a "default_getuid_callout" keyword in the
+	* [multipath] add a "getuid_callout" keyword in the
 	  "defaults" block. Now multipath is going to work with JBODs
 	* [multipath] fix segfault when pathvec is empty after
 	  get_pathvec()
