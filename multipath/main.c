@@ -506,6 +506,15 @@ select_action (struct multipath * mpp, vector curmp)
 		mpp->action = ACT_CREATE;
 		return;
 	}
+
+	if (!find_mp_by_wwid(curmp, mpp->wwid)) {
+		dm_flush_map(mpp->alias, NULL);
+		strncat(cmpp->wwid, mpp->wwid, WWID_SIZE);
+		drop_multipath(curmp, cmpp->wwid, KEEP_PATHS);
+		mpp->action = ACT_CREATE;
+		return;
+	}
+		
 	if (pathcount(mpp, PATH_UP) == 0) {
 		condlog(3, "no good path");
 		mpp->action = ACT_NOTHING;
@@ -560,7 +569,13 @@ reinstate_paths (struct multipath * mpp)
 	struct pathgroup * pgp;
 	struct path * pp;
 
+	if (!mpp->pg)
+		return 0;
+
 	vector_foreach_slot (mpp->pg, pgp, i) {
+		if (!pgp->paths)
+			continue;
+
 		vector_foreach_slot (pgp->paths, pp, j) {
 			if (pp->state != PATH_UP &&
 			    (pgp->status == PGSTATE_DISABLED ||
@@ -635,10 +650,17 @@ deadmap (struct multipath * mpp)
 	struct pathgroup * pgp;
 	struct path * pp;
 
-	vector_foreach_slot (mpp->pg, pgp, i)
+	if (!mpp->pg)
+		return 1;
+
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		if (!pgp->paths)
+			continue;
+
 		vector_foreach_slot (pgp->paths, pp, j)
 			if (strlen(pp->dev))
 				return 0; /* alive */
+	}
 	
 	return 1; /* dead */
 }
@@ -788,7 +810,13 @@ update_paths (struct multipath * mpp)
 	struct pathgroup * pgp;
 	struct path * pp;
 
+	if (!mpp->pg)
+		return 0;
+
 	vector_foreach_slot (mpp->pg, pgp, i) {
+		if (!pgp->paths)
+			continue;
+
 		vector_foreach_slot (pgp->paths, pp, j) {
 			if (!strlen(pp->dev)) {
 				if (devt2devname(pp->dev_t, pp->dev)) {

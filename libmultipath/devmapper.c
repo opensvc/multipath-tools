@@ -278,7 +278,9 @@ dm_type(char * name, char * type)
 	next = dm_get_next_target(dmt, next, &start, &length,
 				  &target_type, &params);
 
-	if (target_type && !strcmp(target_type, type))
+	if (!target_type)
+		r = -1;
+	else if (!strcmp(target_type, type))
 		r = 1;
 
 out:
@@ -373,7 +375,7 @@ dm_flush_map (char * mapname, char * type)
 	if (!dm_map_present(mapname))
 		return 0;
 
-	if (!dm_type(mapname, type))
+	if (type && dm_type(mapname, type) <= 0)
 		return 1;
 
 	if (dm_remove_partmaps(mapname))
@@ -586,6 +588,7 @@ dm_get_maps (vector mp, char * type)
 {
 	struct multipath * mpp;
 	int r = 1;
+	int info;
 	struct dm_task *dmt;
 	struct dm_names *names;
 	unsigned next = 0;
@@ -610,12 +613,22 @@ dm_get_maps (vector mp, char * type)
 	}
 
 	do {
-		if (dm_type(names->name, type)) {
-			mpp = alloc_multipath();
+		info = dm_type(names->name, type);
 
-			if (!mpp)
-				goto out;
+		if (!info)
+			goto next;
 
+		mpp = alloc_multipath();
+
+		if (!mpp)
+			goto out;
+
+		mpp->alias = STRDUP(names->name);
+
+		if (!mpp->alias)
+			goto out1;
+
+		if (info > 0) {
 			if (dm_get_map(names->name, &mpp->size, mpp->params))
 				goto out1;
 
@@ -623,20 +636,14 @@ dm_get_maps (vector mp, char * type)
 				goto out1;
 
 			dm_get_uuid(names->name, mpp->wwid);
-
-			mpp->alias = MALLOC(strlen(names->name) + 1);
-
-			if (!mpp->alias)
-				goto out1;
-
-			strncat(mpp->alias, names->name, strlen(names->name));
-
-			if (!vector_alloc_slot(mp))
-				goto out1;
-			
-			vector_set_slot(mp, mpp);
-			mpp = NULL;
 		}
+
+		if (!vector_alloc_slot(mp))
+			goto out1;
+
+		vector_set_slot(mp, mpp);
+		mpp = NULL;
+next:
                 next = names->next;
                 names = (void *) names + next;
 	} while (next);
