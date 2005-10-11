@@ -736,10 +736,9 @@ coalesce_paths (vector curmp, vector pathvec)
 			if (store_path(mpp->paths, pp2))
 				return 1;
 		}
-		if (setup_map(mpp)) {
-			free_multipath(mpp, KEEP_PATHS);
-			continue;
-		}
+		if (setup_map(mpp))
+			goto next;
+
 		condlog(3, "action preset to %i", mpp->action);
 
 		if (mpp->action == ACT_UNDEF)
@@ -748,6 +747,7 @@ coalesce_paths (vector curmp, vector pathvec)
 		condlog(3, "action set to %i", mpp->action);
 
 		domap(mpp);
+next:
 		drop_multipath(curmp, mpp->wwid, KEEP_PATHS);
 		free_multipath(mpp, KEEP_PATHS);
 	}
@@ -855,7 +855,7 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 		 * discard out of scope maps
 		 */
 		if (mpp->wwid && refwwid &&
-		    strncmp(mpp->wwid, refwwid, WWID_SIZE))
+		    !strncmp(mpp->wwid, refwwid, WWID_SIZE))
 				continue;
 
 		condlog(3, "params = %s", mpp->params);
