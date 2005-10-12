@@ -855,8 +855,13 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 		 * discard out of scope maps
 		 */
 		if (mpp->wwid && refwwid &&
-		    !strncmp(mpp->wwid, refwwid, WWID_SIZE))
-				continue;
+		    strncmp(mpp->wwid, refwwid, WWID_SIZE)) {
+			condlog(3, "skip map %s: out of scope", mpp->alias);
+			free_multipath(mpp, KEEP_PATHS);
+			vector_del_slot(curmp, i);
+			i--;
+			continue;
+		}
 
 		condlog(3, "params = %s", mpp->params);
 		condlog(3, "status = %s", mpp->status);
