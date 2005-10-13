@@ -223,6 +223,70 @@ pathcount (struct multipath *mpp, int state)
 	return count;
 }
 
+/*
+ * mpp->no_path_retry:
+ *   -2 (QUEUE) : queue_if_no_path enabled, never turned off
+ *   -1 (FAIL)  : fail_if_no_path
+ *    0 (UNDEF) : nothing
+ *   >0         : queue_if_no_path enabled, turned off after polling n times
+ */
+static void
+update_queue_mode_del_path(struct multipath *mpp)
+{
+	if (--mpp->nr_active == 0 && mpp->no_path_retry > 0) {
+		/*
+		 * Enter retry mode.
+		 * meaning of +1: retry_tick may be decremented in
+		 *                checkerloop before starting retry.
+		 */
+		mpp->retry_tick = mpp->no_path_retry * conf->checkint + 1;
+		condlog(1, "%s: Entering recovery mode: max_retries=%d",
+			mpp->alias, mpp->no_path_retry);
+	}
+	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
+}
+
+static void
+update_queue_mode_add_path(struct multipath *mpp)
+{
+	if (mpp->nr_active++ == 0 && mpp->no_path_retry > 0) {
+		/* come back to normal mode from retry mode */
+		mpp->retry_tick = 0;
+		dm_queue_if_no_path(mpp->alias, 1);
+		condlog(2, "%s: queue_if_no_path enabled", mpp->alias);
+		condlog(1, "%s: Recovered to normal mode", mpp->alias);
+	}
+	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
+}
+
+static void
+set_no_path_retry(struct multipath *mpp)
+{
+	mpp->retry_tick = 0;
+	mpp->nr_active = pathcount(mpp, PATH_UP);
+	select_no_path_retry(mpp);
+
+	switch (mpp->no_path_retry) {
+	case NO_PATH_RETRY_UNDEF:
+		break;
+	case NO_PATH_RETRY_FAIL:
+		dm_queue_if_no_path(mpp->alias, 0);
+		break;
+	case NO_PATH_RETRY_QUEUE:
+		dm_queue_if_no_path(mpp->alias, 1);
+		break;
+	default:
+		dm_queue_if_no_path(mpp->alias, 1);
+		if (mpp->nr_active == 0) {
+			/* Enter retry mode */
+			mpp->retry_tick = mpp->no_path_retry * conf->checkint;
+			condlog(1, "%s: Entering recovery mode: max_retries=%d",
+				mpp->alias, mpp->no_path_retry);
+		}
+		break;
+	}
+}
+
 static int
 setup_multipath (struct vectors * vecs, struct multipath * mpp)
 {
@@ -237,14 +301,7 @@ setup_multipath (struct vectors * vecs, struct multipath * mpp)
 
 	set_paths_owner(vecs, mpp);
 	select_pgfailback(mpp);
-	mpp->nr_active = pathcount(mpp, PATH_UP);
-	select_no_path_retry(mpp);
-	if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
-		if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
-			dm_queue_if_no_path(mpp->alias, 0);
-		else
-			dm_queue_if_no_path(mpp->alias, 1);
-	}
+	set_no_path_retry(mpp);
 
 	return 0;
 out:
@@ -331,6 +388,7 @@ update_multipath (struct vectors *vecs, char *mapname)
 			if (pp->state != PATH_DOWN) {
 				condlog(2, "%s: mark as failed", pp->dev_t);
 				pp->state = PATH_DOWN;
+				update_queue_mode_del_path(pp->mpp);
 
 				/*
 				 * if opportune,
@@ -367,38 +425,6 @@ static sigset_t unblock_sighup(void)
 	sigaddset(&set, SIGHUP);
 	pthread_sigmask(SIG_UNBLOCK, &set, &old);
 	return old;
-}
-
-/*
- * mpp->no_path_retry:
- *   -2 : queue_if_no_path enabled, never turned off
- *   -1 : fail_if_no_path
- *    0 : nothing
- *   >0 : queue_if_no_path enabled, turned off after polling n times
- */
-static void
-update_queue_mode_del_path(struct multipath *mpp)
-{
-	if (--mpp->nr_active == 0 && mpp->no_path_retry > 0) {
-		/* Enter retry mode */
-		mpp->retry_tick = mpp->no_path_retry * conf->checkint;
-		condlog(1, "%s: Entering recovery mode: max_retries=%d",
-			mpp->alias, mpp->no_path_retry);
-	}
-	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
-}
-
-static void
-update_queue_mode_add_path(struct multipath *mpp)
-{
-	if (mpp->nr_active++ == 0 && mpp->no_path_retry > 0) {
-		/* come back to normal mode from retry mode */
-		mpp->retry_tick = 0;
-		dm_queue_if_no_path(mpp->alias, 1);
-		condlog(2, "%s: queue_if_no_path enabled", mpp->alias);
-		condlog(1, "%s: Recovered to normal mode", mpp->alias);
-	}
-	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
 }
 
 /*
@@ -876,13 +902,7 @@ reconfigure (struct vectors * vecs)
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		mpp->mpe = find_mpe(mpp->wwid);
 		set_paths_owner(vecs, mpp);
-		select_no_path_retry(mpp);
-		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
-			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
-				dm_queue_if_no_path(mpp->alias, 0);
-			else
-				dm_queue_if_no_path(mpp->alias, 1);
-		}
+		set_no_path_retry(mpp);
 	}
 	vector_foreach_slot (vecs->pathvec, pp, i) {
 		select_checkfn(pp);
