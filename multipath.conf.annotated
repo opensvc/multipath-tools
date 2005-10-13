@@ -102,7 +102,7 @@
 #
 #	#
 #	# name    : no_path_retry
-#	# scope   : multipathd
+#	# scope   : multipath & multipathd
 #	# desc    : tell the number of retries until disable queueing, or
 #	#           "fail" means immediate failure (no queueing),
 #	#           "queue" means never stop queueing
@@ -191,7 +191,7 @@
 #
 #		#
 #		# name    : no_path_retry
-#		# scope   : multipathd
+#		# scope   : multipath & multipathd
 #		# desc    : tell the number of retries until disable queueing, or
 #		#           "fail" means immediate failure (no queueing),
 #		#           "queue" means never stop queueing

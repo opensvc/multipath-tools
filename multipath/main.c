@@ -393,6 +393,7 @@ setup_map (struct multipath * mpp)
 	select_features(mpp);
 	select_hwhandler(mpp);
 	select_rr_weight(mpp);
+	select_no_path_retry(mpp);
 
 	/*
 	 * apply selected grouping policy to valid paths
@@ -592,6 +593,12 @@ reinstate_paths (struct multipath * mpp)
 	return 0;
 }
 
+/*
+ * Return value:
+ *   0: DM_DEVICE_CREATE or DM_DEVICE_RELOAD failed, or dry_run mode.
+ *   1: DM_DEVICE_CREATE or DM_DEVICE_RELOAD succeeded.
+ *   2: Map is already existing.
+ */
 static int
 domap (struct multipath * mpp)
 {
@@ -607,7 +614,7 @@ domap (struct multipath * mpp)
 
 	switch (mpp->action) {
 	case ACT_NOTHING:
-		return 0;
+		return 2;
 
 	case ACT_SWITCHPG:
 		dm_switchgroup(mpp->alias, mpp->nextpg);
@@ -617,7 +624,7 @@ domap (struct multipath * mpp)
 		 * retry.
 		 */
 		reinstate_paths(mpp);
-		return 0;
+		return 2;
 
 	case ACT_CREATE:
 		r = dm_addmap(DM_DEVICE_CREATE, mpp->alias, DEFAULT_TARGET,
@@ -746,7 +753,13 @@ coalesce_paths (vector curmp, vector pathvec)
 
 		condlog(3, "action set to %i", mpp->action);
 
-		domap(mpp);
+		if (domap(mpp) && mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
+			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
+				dm_queue_if_no_path(mpp->alias, 0);
+			else
+				dm_queue_if_no_path(mpp->alias, 1);
+		}
+
 next:
 		drop_multipath(curmp, mpp->wwid, KEEP_PATHS);
 		free_multipath(mpp, KEEP_PATHS);
