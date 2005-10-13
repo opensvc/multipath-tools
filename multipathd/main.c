@@ -1175,13 +1175,8 @@ checkerloop (void *ap)
 			if (!pp->mpp)
 				continue;
 
-			if (pp->tick) {
-				/*
-				 * don't check this path yet
-				 */
-				pp->tick--;
-				continue;
-			}
+			if (pp->tick && --pp->tick)
+				continue; /* don't check this path yet */
 
 			/*
 			 * provision a next check soonest,
