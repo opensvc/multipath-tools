@@ -1242,7 +1242,7 @@ checkerloop (void *ap)
 				 */
 				if (pp->mpp->pgfailback > 0)
 					pp->mpp->failback_tick =
-						pp->mpp->pgfailback;
+						pp->mpp->pgfailback + 1;
 				else if (pp->mpp->pgfailback == -FAILBACK_IMMEDIATE &&
 				    need_switch_pathgroup(pp->mpp, 1))
 					switch_pathgroup(pp->mpp);
@@ -1281,7 +1281,7 @@ checkerloop (void *ap)
 			if (need_switch_pathgroup(pp->mpp, 0)) {
 				if (pp->mpp->pgfailback > 0)
 					pp->mpp->failback_tick =
-						pp->mpp->pgfailback;
+						pp->mpp->pgfailback + 1;
 				else if (pp->mpp->pgfailback ==
 						-FAILBACK_IMMEDIATE)
 					switch_pathgroup(pp->mpp);
