@@ -184,7 +184,7 @@ print_mp (struct multipath * mpp)
 	struct path * pp = NULL;
 	struct pathgroup * pgp = NULL;
 
-	if (mpp->action == ACT_NOTHING || conf->verbosity == 0)
+	if (mpp->action == ACT_NOTHING || !conf->verbosity || !mpp->size)
 		return;
 
 	if (conf->verbosity > 1) {
