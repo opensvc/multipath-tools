@@ -253,6 +253,12 @@ out:
 	return r;
 }
 
+/*
+ * returns:
+ *    1 : match
+ *    0 : no match
+ *   -1 : empty map
+ */
 extern int
 dm_type(char * name, char * type)
 {
@@ -375,7 +381,7 @@ dm_flush_map (char * mapname, char * type)
 	if (!dm_map_present(mapname))
 		return 0;
 
-	if (type && dm_type(mapname, type) <= 0)
+	if (!dm_type(mapname, type))
 		return 1;
 
 	if (dm_remove_partmaps(mapname))
