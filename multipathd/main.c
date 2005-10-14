@@ -104,7 +104,7 @@ cleanup_lock (void * data)
 }
 
 static void
-set_paths_owner (struct vectors * vecs, struct multipath * mpp)
+adopt_paths (struct vectors * vecs, struct multipath * mpp)
 {
 	int i;
 	struct path * pp;
@@ -121,7 +121,19 @@ set_paths_owner (struct vectors * vecs, struct multipath * mpp)
 }
 
 static void
-unset_paths_owner (struct vectors * vecs, struct multipath * mpp)
+orphan_path (struct path * pp)
+{
+	pp->mpp = NULL;
+	pp->checkfn = NULL;
+
+	if (pp->fd >= 0) {
+		close(pp->fd);
+		pp->fd = -1;
+	}
+}
+
+static void
+orphan_paths (struct vectors * vecs, struct multipath * mpp)
 {
 	int i;
 	struct path * pp;
@@ -129,7 +141,7 @@ unset_paths_owner (struct vectors * vecs, struct multipath * mpp)
 	vector_foreach_slot (vecs->pathvec, pp, i) {
 		if (pp->mpp == mpp) {
 			condlog(4, "%s is orphaned", pp->dev_t);
-			pp->mpp = NULL;
+			orphan_path(pp);
 		}
 	}
 }
@@ -299,7 +311,7 @@ setup_multipath (struct vectors * vecs, struct multipath * mpp)
 	if (update_multipath_strings(mpp, vecs->pathvec))
 		goto out;
 
-	set_paths_owner(vecs, mpp);
+	adopt_paths(vecs, mpp);
 	select_pgfailback(mpp);
 	set_no_path_retry(mpp);
 
@@ -603,7 +615,7 @@ remove_map (struct multipath * mpp, struct vectors * vecs)
 	/*
 	 * clear references to this map
 	 */
-	unset_paths_owner(vecs, mpp);
+	orphan_paths(vecs, mpp);
 
 	/*
 	 * purge the multipath vector
@@ -687,7 +699,7 @@ uev_add_map (char * devname, struct vectors * vecs)
 		goto out;
 
 	vector_set_slot(vecs->mpvec, mpp);
-	set_paths_owner(vecs, mpp);
+	adopt_paths(vecs, mpp);
 
 	if (start_waiter_thread(mpp, vecs))
 		goto out;
@@ -750,11 +762,13 @@ uev_add_path (char * devname, struct vectors * vecs)
 	condlog(2, "%s: path checker registered", devname);
 	pp->mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
 
-	if (pp->mpp)
+	if (pp->mpp) {
 		condlog(4, "%s: ownership set to %s",
 				pp->dev_t, pp->mpp->alias);
-	else
+	} else {
 		condlog(4, "%s: orphaned", pp->dev_t);
+		orphan_path(pp);
+	}
 
 	return 0;
 }
@@ -901,7 +915,7 @@ reconfigure (struct vectors * vecs)
 
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		mpp->mpe = find_mpe(mpp->wwid);
-		set_paths_owner(vecs, mpp);
+		adopt_paths(vecs, mpp);
 		set_no_path_retry(mpp);
 	}
 	vector_foreach_slot (vecs->pathvec, pp, i) {
