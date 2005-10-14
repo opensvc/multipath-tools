@@ -125,6 +125,7 @@ orphan_path (struct path * pp)
 {
 	pp->mpp = NULL;
 	pp->checkfn = NULL;
+	pp->dmstate = PSTATE_UNDEF;
 
 	if (pp->fd >= 0) {
 		close(pp->fd);
