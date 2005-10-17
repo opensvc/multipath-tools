@@ -404,7 +404,7 @@ update_multipath (struct vectors *vecs, char *mapname)
 			if (pp->state != PATH_DOWN) {
 				condlog(2, "%s: mark as failed", pp->dev_t);
 				pp->state = PATH_DOWN;
-				update_queue_mode_del_path(pp->mpp);
+				update_queue_mode_del_path(mpp);
 
 				/*
 				 * if opportune,
