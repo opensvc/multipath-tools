@@ -126,11 +126,14 @@ orphan_path (struct path * pp)
 	pp->mpp = NULL;
 	pp->checkfn = NULL;
 	pp->dmstate = PSTATE_UNDEF;
+	pp->checker_context = NULL;
+	pp->getuid = NULL;
+	pp->getprio = NULL;
 
-	if (pp->fd >= 0) {
+	if (pp->fd >= 0)
 		close(pp->fd);
-		pp->fd = -1;
-	}
+
+	pp->fd = -1;
 }
 
 static void
@@ -874,7 +877,8 @@ dump_pathvec (char ** r, int * len, struct vectors * vecs)
 		p += sizeof(struct path);
 	}
 
-	return 0;
+	/* return negative to hint caller not to add "ok" to the dump */
+	return -1;
 }
 
 static int
@@ -943,16 +947,17 @@ uxsock_trigger (char * str, char ** reply, int * len, void * trigger_data)
 
 	r = parse_cmd(str, reply, len, vecs);
 
-	if (r) {
+	if (r > 0) {
 		*reply = STRDUP("fail\n");
 		*len = strlen(*reply) + 1;
 		r = 1;
 	}
-	else if (*len == 0) {
+	else if (!r && *len == 0) {
 		*reply = STRDUP("ok\n");
 		*len = strlen(*reply) + 1;
 		r = 0;
 	}
+	/* else if (r < 0) leave *reply alone */
 
 	lock_cleanup_pop(vecs->lock);
 	return r;
