@@ -65,9 +65,16 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 		return 1;
 	}
 	sdir = sysfs_open_directory(path);
+
+	if (!sdir)
+		return 1;
+
 	sysfs_read_directory(sdir);
 
 	dlist_for_each_data(sdir->subdirs, devp, struct sysfs_directory) {
+		if (!devp)
+			continue;
+
 		if (blacklist(conf->blist, devp->name))
 			continue;
 
@@ -511,10 +518,6 @@ apply_format (char * string, char * cmd, struct path * pp)
 		return 1;
 
 	dst = cmd;
-
-	if (!dst)
-		return 1;
-
 	p = dst;
 	pos = strchr(string, '%');
 	myfree = CALLOUT_MAX_SIZE;
