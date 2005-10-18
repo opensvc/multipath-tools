@@ -133,7 +133,7 @@ get_refwwid (vector pathvec)
 		refwwid = get_mpe_wwid(conf->dev);
 
 		if (refwwid)
-			return refwwid;
+			return STRDUP(refwwid);
 		
 		/*
 		 * or directly a wwid
