@@ -1,15 +1,30 @@
-#define LIST		1
-#define ADD		(1 << 1)
-#define DEL		(1 << 2)
-#define SWITCH		(1 << 3)
-#define PATHS		(1 << 4)
-#define MAPS		(1 << 5)
-#define PATH		(1 << 6)
-#define MAP		(1 << 7)
-#define GROUP		(1 << 8)
-#define DUMP		(1 << 9)
-#define PATHVEC		(1 << 10)
-#define RECONFIGURE	(1 << 11)
+enum {
+	__LIST,
+	__ADD,
+	__DEL,
+	__SWITCH,
+	__PATHS,
+	__MAPS,
+	__PATH,
+	__MAP,
+	__GROUP,
+	__DUMP,
+	__PATHVEC,
+	__RECONFIGURE
+};
+
+#define LIST		(1 << __LIST)
+#define ADD		(1 << __ADD)
+#define DEL		(1 << __DEL)
+#define SWITCH		(1 << __SWITCH)
+#define PATHS		(1 << __PATHS)
+#define MAPS		(1 << __MAPS)
+#define PATH		(1 << __PATH)
+#define MAP		(1 << __MAP)
+#define GROUP		(1 << __GROUP)
+#define DUMP		(1 << __DUMP)
+#define PATHVEC		(1 << __PATHVEC)
+#define RECONFIGURE	(1 << __RECONFIGURE)
 
 #define MAX_REPLY_LEN 1000
 
