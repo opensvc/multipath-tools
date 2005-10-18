@@ -28,7 +28,6 @@ multipathdir = $(TOPDIR)/libmultipath
 mandir      = /usr/share/man/man8
 
 GZIP        = /bin/gzip -9 -c
-STRIP       = strip --strip-all -R .comment -R .note
 
 CHECKERSLIB = $(checkersdir)/libcheckers
 MULTIPATHLIB = $(multipathdir)/libmultipath

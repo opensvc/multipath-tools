@@ -26,12 +26,10 @@ prepare:
 
 glibc: prepare $(OBJS)
 	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)
-	$(STRIP) $(EXEC)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 	
 klibc: prepare $(OBJS)
 	$(CC) -static -o $(EXEC) $(CRT0) $(OBJS) $(KLIBC) $(LIBGCC)
-	$(STRIP) $(EXEC)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 
 $(CHECKERSLIB)-$(BUILD).a:
@@ -42,7 +40,7 @@ $(MULTIPATHLIB)-$(BUILD).a:
 
 install:
 	install -d $(DESTDIR)$(bindir)
-	install -m 755 $(EXEC) $(DESTDIR)$(bindir)/
+	install -s -m 755 $(EXEC) $(DESTDIR)$(bindir)/
 	install -d $(DESTDIR)/etc/udev/rules.d
 	install -m 644 multipath.rules $(DESTDIR)/etc/udev/rules.d/
 	install -d $(DESTDIR)$(mandir)

@@ -43,7 +43,6 @@ klibc:
 
 $(EXEC): clean $(OBJS)
 	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)
-	$(STRIP) $(EXEC)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 
 $(CHECKERSLIB)-glibc.a:
@@ -54,7 +53,7 @@ $(MULTIPATHLIB)-glibc.a:
 
 install:
 	install -d $(DESTDIR)$(bindir)
-	install -m 755 $(EXEC) $(DESTDIR)$(bindir)
+	install -s -m 755 $(EXEC) $(DESTDIR)$(bindir)
 	install -d $(DESTDIR)$(rcdir)
 	install -d $(DESTDIR)$(mandir)
 	install -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)

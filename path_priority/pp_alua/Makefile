@@ -22,9 +22,6 @@ TOPDIR	= ../..
 
 ifneq ($(shell ls $(TOPDIR)/Makefile.inc 2>/dev/null),)
 include $(TOPDIR)/Makefile.inc
-else
-# "out of tree building"
-STRIP		= strip --strip-all -R .comment -R .note
 endif
 
 CFLAGS = -pipe -g -O2 -Wall -Wunused -Wstrict-prototypes -DDEBUG=$(DEBUG)
@@ -33,14 +30,12 @@ all: $(BUILD)
 
 glibc:	$(OBJS)
 	$(CC) -o $(EXEC) $(OBJS) $(LDFLAGS)
-	$(STRIP) $(EXEC)
 
 klibc:	$(OBJS)
 	$(CC) -static -o $(EXEC) $(OBJS)
-	$(STRIP) $(EXEC)
 
 install: $(BUILD) $(EXEC).8.gz
-	install -m 755 $(EXEC) $(DESTDIR)$(bindir)/$(EXEC)
+	install -s -m 755 $(EXEC) $(DESTDIR)$(bindir)/$(EXEC)
 	install -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
 
 uninstall:

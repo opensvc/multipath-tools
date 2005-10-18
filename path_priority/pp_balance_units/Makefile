@@ -27,18 +27,16 @@ prepare:
 
 glibc: prepare $(OBJS)
 	$(CC) -o $(EXEC) $(OBJS) $(LDFLAGS)
-	$(STRIP) $(EXEC)
 	
 klibc: prepare $(OBJS)
 	$(CC) -static -o $(EXEC) $(CRT0) $(OBJS) $(KLIBC) $(LIBGCC)
-	$(STRIP) $(EXEC)
 
 $(MULTIPATHLIB)-$(BUILD).a:
 	make -C $(multipathdir) BUILD=$(BUILD) $(BUILD)
 
 install:
 	install -d $(DESTDIR)$(bindir)
-	install -m 755 $(EXEC) $(DESTDIR)$(bindir)/
+	install -s -m 755 $(EXEC) $(DESTDIR)$(bindir)/
 
 uninstall:
 	rm $(DESTDIR)$(bindir)/$(EXEC)

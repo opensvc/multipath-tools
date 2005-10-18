@@ -11,14 +11,12 @@ all: $(BUILD)
 
 glibc:	$(OBJS)
 	$(CC) -o $(EXEC) $(OBJS) $(LDFLAGS)
-	$(STRIP) $(EXEC)
 
 klibc:	$(OBJS)
 	$(CC) -static -o $(EXEC) $(OBJS)
-	$(STRIP) $(EXEC)
 
 install: $(EXEC)
-	install -m 755 $(EXEC) $(DESTDIR)$(bindir)/$(EXEC)
+	install -s -m 755 $(EXEC) $(DESTDIR)$(bindir)/$(EXEC)
 
 uninstall:
 	rm $(DESTDIR)$(bindir)/$(EXEC)
