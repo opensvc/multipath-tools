@@ -509,6 +509,7 @@ select_action (struct multipath * mpp, vector curmp)
 	}
 
 	if (!find_mp_by_wwid(curmp, mpp->wwid)) {
+		condlog(2, "remove: %s (wwid changed)", cmpp->alias);
 		dm_flush_map(mpp->alias, NULL);
 		strncat(cmpp->wwid, mpp->wwid, WWID_SIZE);
 		drop_multipath(curmp, cmpp->wwid, KEEP_PATHS);
