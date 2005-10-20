@@ -29,6 +29,7 @@ struct path_layout {
 	int hbtl_len;
 	int dev_len;
 	int dev_t_len;
+	int prio_len;
 };
 
 struct map_layout {

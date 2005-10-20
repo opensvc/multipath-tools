@@ -13,7 +13,7 @@ CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes \
 ifeq ($(strip $(BUILD)),klibc)
 	OBJS += $(libdm) $(libsysfs)
 else
-	LDFLAGS += -ldevmapper -lsysfs
+	LDFLAGS += -ldevmapper -lsysfs -lm
 endif
 
 EXEC = multipath

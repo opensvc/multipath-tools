@@ -15,7 +15,7 @@ rcdir = /etc/init.d
 #
 CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes \
 	 -DDAEMON -I$(multipathdir) -I$(checkersdir)
-LDFLAGS = -lpthread -ldevmapper -lsysfs -lreadline -lcurses
+LDFLAGS = -lpthread -ldevmapper -lsysfs -lreadline -lcurses -lm
 
 #
 # debuging stuff

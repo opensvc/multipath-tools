@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "vector.h"
 #include "structs.h"
@@ -16,7 +17,7 @@ void
 get_path_layout (struct path_layout * pl, vector pathvec)
 {
 	int i;
-	int hbtl_len, dev_len, dev_t_len;
+	int hbtl_len, dev_len, dev_t_len, prio_len;
 	char buff[MAX_FIELD_LEN];
 	struct path * pp;
 
@@ -24,6 +25,7 @@ get_path_layout (struct path_layout * pl, vector pathvec)
 	pl->hbtl_len = 0;
 	pl->dev_len = 0;
 	pl->dev_t_len = 0;
+	pl->prio_len = 0;
 
 	vector_foreach_slot (pathvec, pp, i) {
 		hbtl_len = snprintf(buff, MAX_FIELD_LEN, "%i:%i:%i:%i",
@@ -33,10 +35,12 @@ get_path_layout (struct path_layout * pl, vector pathvec)
 					pp->sg_id.lun);
 		dev_len = strlen(pp->dev);
 		dev_t_len = strlen(pp->dev_t);
+		prio_len = 1 + (int)log10(pp->priority);
 
 		pl->hbtl_len = MAX(hbtl_len, pl->hbtl_len);
 		pl->dev_len = MAX(dev_len, pl->dev_len);
 		pl->dev_t_len = MAX(dev_t_len, pl->dev_t_len);
+		pl->prio_len = MAX(prio_len, pl->prio_len);
 	}
 	return;
 }
@@ -158,11 +162,11 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 		switch (*f) {
 		case 'w':	
 			PRINT(c, TAIL, "%s ", pp->wwid);
-			NOPAD;
+			PAD(WWID_SIZE);
 			break;
 		case 'i':
 			if (pp->sg_id.host_no < 0) {
-				PRINT(c, TAIL, "#:#:#:# ");
+				PRINT(c, TAIL, "#:#:#:#");
 			} else {
 				PRINT(c, TAIL, "%i:%i:%i:%i",
 					pp->sg_id.host_no,
@@ -201,7 +205,7 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 			default:
 				break;
 			}
-			NOPAD;
+			PAD(8);
 			break;
 		case 't':
 			switch (pp->dmstate) {
@@ -214,13 +218,13 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 			default:
 				break;
 			}
-			NOPAD;
+			PAD(8);
 			break;
 		case 'c':
 			if (pp->claimed && pp->dmstate == PSTATE_UNDEF) {
 				PRINT(c, TAIL, "[claimed]");
 			}
-			NOPAD;
+			PAD(9);
 			break;
 		case 's':
 			PRINT(c, TAIL, "%s/%s/%s",
@@ -233,8 +237,8 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 				NOPAD;
 				break;
 			}
-			i = pp->tick;
-			j = pp->checkint - pp->tick;
+			i = 10 * pp->tick / pp->checkint;
+			j = 10 - i;
 
 			while (i-- > 0) {
 				PRINT(c, TAIL, "X");
@@ -244,13 +248,13 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 			}
 			PRINT(c, TAIL, " %i/%i",
 				      pp->tick, pp->checkint);
-			NOPAD;
+			PAD(8);
 			break;
 		case 'p':
 			if (pp->priority) {
 				PRINT(c, TAIL, "%i", pp->priority);
 			}
-			NOPAD;
+			PAD(pl->prio_len);
 			break;
 		default:
 			break;
