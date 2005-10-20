@@ -315,7 +315,7 @@ main(int argc, char **argv){
 	for (i = 0; i < ptct; i++) {
 		ptp = &pts[i];
 
-		if (type && strcmp(type, ptp->type) > 0)
+		if (type && strcmp(type, ptp->type))
 			continue;
 		
 		/* here we get partitions */
