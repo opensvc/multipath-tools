@@ -839,7 +839,7 @@ usage (char * progname)
 		"\t-d\t\tdry run, do not create or update devmaps\n" \
 		"\t-l\t\tshow multipath topology (sysfs and DM info)\n" \
 		"\t-ll\t\tshow multipath topology (maximum info)\n" \
-		"\t-F\t\tflush a multipath device map\n" \
+		"\t-f\t\tflush a multipath device map\n" \
 		"\t-F\t\tflush all multipath device maps\n" \
 		"\t-p policy\tforce all maps to specified policy :\n" \
 		"\t   failover\t\t1 path per priority group\n" \
@@ -1084,10 +1084,10 @@ main (int argc, char *argv[])
 			conf->dry_run = 1;
 			break;
 		case 'f':
-			conf->remove = 1;
+			conf->remove = FLUSH_ONE;
 			break;
 		case 'F':
-			conf->remove = 2;
+			conf->remove = FLUSH_ALL;
 			break;
 		case 'l':
 			conf->list = 1;
