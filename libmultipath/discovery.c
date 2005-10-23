@@ -230,20 +230,6 @@ opennode (char * dev, int mode)
 	return open(devpath, mode);
 }
 
-int
-get_claimed(char * devname)
-{
-	int fd = opennode(devname, O_EXCL);
-
-	if (fd < 0 && errno == EBUSY)
-		return 1;
-
-	if (fd >= 0)
-		close(fd);
-
-	return 0;
-}	
-
 extern int
 devt2devname (char *devname, char *devt)
 {
@@ -605,10 +591,6 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	/*
 	 * fetch info not available through sysfs
 	 */
-	if (mask & DI_CLAIMED) {
-		pp->claimed = get_claimed(pp->dev);
-		condlog(3, "claimed = %i", pp->claimed);
-	}
 	if (pp->fd < 0)
 		pp->fd = opennode(pp->dev, O_RDONLY);
 

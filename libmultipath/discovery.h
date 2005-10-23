@@ -40,14 +40,21 @@ struct path * store_pathinfo (vector pathvec, vector hwtable,
 /*
  * discovery bitmask
  */
-#define DI_SYSFS	1
-#define DI_SERIAL	2
-#define DI_CLAIMED	4
-#define DI_CHECKER	8
-#define DI_PRIO		16
-#define DI_WWID		32
+enum discovery_mode {
+	__DI_SYSFS,
+	__DI_SERIAL,
+	__DI_CHECKER,
+	__DI_PRIO,
+	__DI_WWID
+};
 
-#define DI_ALL		(DI_SYSFS  | DI_SERIAL | DI_CLAIMED | DI_CHECKER | \
-			 DI_PRIO   | DI_WWID)
+#define DI_SYSFS	(1 << __DI_SYSFS)
+#define DI_SERIAL	(1 << __DI_SERIAL)
+#define DI_CHECKER	(1 << __DI_CHECKER)
+#define DI_PRIO		(1 << __DI_PRIO)
+#define DI_WWID 	(1 << __DI_WWID)
+
+#define DI_ALL		(DI_SYSFS  | DI_SERIAL | DI_CHECKER | DI_PRIO | \
+			 DI_WWID)
 
 #endif /* DISCOVERY_H */

@@ -220,12 +220,6 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 			}
 			PAD(8);
 			break;
-		case 'c':
-			if (pp->claimed && pp->dmstate == PSTATE_UNDEF) {
-				PRINT(c, TAIL, "[claimed]");
-			}
-			PAD(9);
-			break;
 		case 's':
 			PRINT(c, TAIL, "%s/%s/%s",
 				      pp->vendor_id, pp->product_id, pp->rev);

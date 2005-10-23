@@ -21,13 +21,13 @@ dm_dummy_log (int level, const char *file, int line, const char *f, ...)
 	return;
 }
 
-static void
+void
 dm_restore_log (void)
 {
 	dm_log_init(NULL);
 }
 
-static void
+void
 dm_shut_log (void)
 {
 	dm_log_init(&dm_dummy_log);

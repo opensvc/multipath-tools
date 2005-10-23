@@ -96,7 +96,6 @@ struct path {
 	int dmstate;
 	int failcount;
 	int priority;
-	int claimed;
 	int pgindex;
 	char * getuid;
 	char * getprio;

@@ -365,26 +365,12 @@ assemble_map (struct multipath * mp)
 static int
 setup_map (struct multipath * mpp)
 {
-	struct path * pp;
-	int i;
-
 	/*
 	 * don't bother if devmap size is unknown
 	 */
 	if (mpp->size <= 0) {
 		condlog(3, "%s devmap size is unknown", mpp->alias);
 		return 1;
-	}
-
-	/*
-	 * don't bother if a constituant path is claimed
-	 * (not by the device mapper driver)
-	 */
-	vector_foreach_slot (mpp->paths, pp, i) {
-		if (pp->claimed && pp->dmstate == PSTATE_UNDEF) {
-			condlog(3, "%s claimed", pp->dev);
-			return 1;
-		}
 	}
 
 	/*
@@ -659,12 +645,28 @@ domap (struct multipath * mpp)
 			condlog(3, "%s: in use", mpp->alias);
 			return -1;
 		}
+		dm_shut_log();
 
 		if (dm_map_present(mpp->alias))
 			break;
 
 		r = dm_addmap(DM_DEVICE_CREATE, mpp->alias, DEFAULT_TARGET,
 			      mpp->params, mpp->size, mpp->wwid);
+
+		/*
+		 * DM_DEVICE_CREATE is actually DM_DEV_CREATE plus
+		 * DM_TABLE_LOAD. Failing the second part leaves an
+		 * empty map. Clean it up.
+		 */
+		if (!r && dm_map_present(mpp->alias)) {
+			condlog(3, "%s: failed to load map "
+				   "(a path might be in use)",
+				   mpp->alias);
+			dm_flush_map(mpp->alias, NULL);
+		}
+
+		lock_multipath(mpp, 0);
+		dm_restore_log();
 		break;
 
 	case ACT_RELOAD:
