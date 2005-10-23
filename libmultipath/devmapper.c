@@ -387,8 +387,10 @@ dm_flush_map (char * mapname, char * type)
 	if (dm_remove_partmaps(mapname))
 		return 1;
 
-	if (dm_get_opencount(mapname))
+	if (dm_get_opencount(mapname)) {
+		condlog(2, "%s: map in use", mapname);
 		return 1;
+	}	
 
 	r = dm_simplecmd(DM_DEVICE_REMOVE, mapname);
 
