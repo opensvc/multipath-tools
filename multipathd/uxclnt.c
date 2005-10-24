@@ -29,7 +29,7 @@ static void process(int fd)
 		if (send_packet(fd, line, strlen(line) + 1) != 0) break;
 		if (recv_packet(fd, &reply, &len) != 0) break;
 
-		printf("%s\n", reply);
+		printf("%s", reply);
 
 		if (line && *line)
 			add_history(line);
@@ -47,7 +47,7 @@ static void process_req(int fd, char * inbuf)
 	send_packet(fd, inbuf, strlen(inbuf) + 1);
 	recv_packet(fd, &reply, &len);
 
-	printf("%s\n", reply);
+	printf("%s", reply);
 	FREE(reply);
 }
 	

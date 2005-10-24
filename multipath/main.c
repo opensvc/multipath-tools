@@ -154,10 +154,10 @@ get_refwwid (vector pathvec)
 static void
 print_path (struct path * pp, char * style)
 {
-	char buff[MAX_LINE_LEN];
+	char line[MAX_LINE_LEN];
 
-	snprint_path(&buff[0], MAX_LINE_LEN, style, pp, &pl);
-	printf("%s", buff);
+	snprint_path(&line[0], MAX_LINE_LEN, style, pp, &pl);
+	printf("%s", line);
 }
 
 static void
@@ -174,6 +174,11 @@ print_all_paths (vector pathvec)
 {
 	int i;
 	struct path * pp;
+	char line[MAX_LINE_LEN];
+
+	get_path_layout(&pl, pathvec);
+	snprint_path_header(line, MAX_LINE_LEN, PRINT_PATH_LONG, &pl);
+	fprintf(stdout, "%s", line);
 
 	vector_foreach_slot (pathvec, pp, i)
 		print_path(pp, PRINT_PATH_LONG);
@@ -982,7 +987,7 @@ configure (void)
 	cache_load(pathvec);
 
 	if (conf->verbosity > 2) {
-		fprintf(stdout, "#\n# all paths in cache :\n#\n");
+		fprintf(stdout, "===== all paths in cache =====\n");
 		print_all_paths(pathvec);
 	}
 
@@ -1006,7 +1011,7 @@ configure (void)
 		goto out;
 
 	if (conf->verbosity > 2) {
-		fprintf(stdout, "#\n# all paths :\n#\n");
+		fprintf(stdout, "===== all paths discovered =====\n");
 		print_all_paths(pathvec);
 	}
 

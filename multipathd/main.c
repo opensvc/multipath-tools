@@ -817,7 +817,8 @@ show_paths (char ** r, int * len, struct vectors * vecs)
 		return 1;
 
 	c = reply;
-	c += sprintf(c, "\n");
+	c += snprint_path_header(c, reply + MAX_REPLY_LEN - c,
+				 PRINT_PATH_CHECKER, &pl);
 
 	vector_foreach_slot(vecs->pathvec, pp, i)
 		c += snprint_path(c, reply + MAX_REPLY_LEN - c,
@@ -844,7 +845,6 @@ show_maps (char ** r, int *len, struct vectors * vecs)
 		return 1;
 
 	c = reply;
-	c += sprintf(c, "\n");
 
 	vector_foreach_slot(vecs->mpvec, mpp, i)
 		c += snprint_map(c, reply + MAX_REPLY_LEN - c,

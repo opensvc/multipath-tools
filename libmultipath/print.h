@@ -25,6 +25,7 @@
 #define MAX_LINE_LEN 80
 
 struct path_layout {
+	int uuid_len;
 	int hbtl_len;
 	int dev_len;
 	int dev_t_len;
@@ -39,5 +40,6 @@ struct map_layout {
 
 void get_path_layout (struct path_layout * pl, vector pathvec);
 void get_map_layout (struct map_layout * pl, vector mpvec);
+int snprint_path_header (char *, int, char *, struct path_layout *);
 int snprint_path (char *, int, char *, struct path *, struct path_layout *);
 int snprint_map (char *, int, char *,struct multipath *, struct map_layout *);

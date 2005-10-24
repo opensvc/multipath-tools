@@ -11,23 +11,25 @@
 
 #define MAX_FIELD_LEN 64
 
-#define MAX(x,y) (x > y) ? x : y;
+#define MAX(x,y) (x > y) ? x : y
 
 void
 get_path_layout (struct path_layout * pl, vector pathvec)
 {
 	int i;
-	int hbtl_len, dev_len, dev_t_len, prio_len;
+	int uuid_len, hbtl_len, dev_len, dev_t_len, prio_len;
 	char buff[MAX_FIELD_LEN];
 	struct path * pp;
 
 	/* reset max col lengths */
+	pl->uuid_len = 0;
 	pl->hbtl_len = 0;
 	pl->dev_len = 0;
 	pl->dev_t_len = 0;
 	pl->prio_len = 0;
 
 	vector_foreach_slot (pathvec, pp, i) {
+		uuid_len = strlen(pp->wwid);
 		hbtl_len = snprintf(buff, MAX_FIELD_LEN, "%i:%i:%i:%i",
 					pp->sg_id.host_no,
 					pp->sg_id.channel,
@@ -37,6 +39,7 @@ get_path_layout (struct path_layout * pl, vector pathvec)
 		dev_t_len = strlen(pp->dev_t);
 		prio_len = 1 + (int)log10(pp->priority);
 
+		pl->uuid_len = MAX(uuid_len, pl->uuid_len);
 		pl->hbtl_len = MAX(hbtl_len, pl->hbtl_len);
 		pl->dev_len = MAX(dev_len, pl->dev_len);
 		pl->dev_t_len = MAX(dev_t_len, pl->dev_t_len);
@@ -70,7 +73,8 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 }
 
 #define TAIL   (line + len - 1 - c)
-#define PAD(x) while ((int)(c - s) < (x)) *c++ = ' '; s = c
+#define PAD(x) while ((int)(c - s) < (x) && (c < (line + len - 1))) \
+			*c++ = ' '; s = c
 #define NOPAD  s = c
 #define PRINT(var, size, format, args...)      \
 	        fwd = snprintf(var, size, format, ##args); \
@@ -140,6 +144,76 @@ snprint_map (char * line, int len, char * format,
 }
 
 int
+snprint_path_header (char * line, int len, char * format,
+		     struct path_layout * pl)
+{
+	char * c = line;   /* line cursor */
+	char * s = line;   /* for padding */
+	char * f = format; /* format string cursor */
+	int fwd;
+
+	do {
+		if (!TAIL)
+			break;
+
+		if (*f != '%') {
+			*c++ = *f;
+			NOPAD;
+			continue;
+		}
+		f++;
+		switch (*f) {
+		case 'w':
+			PRINT(c, TAIL, "uuid");
+			PAD(pl->uuid_len);
+			break;
+		case 'i':
+			PRINT(c, TAIL, "hcil");
+			PAD(pl->hbtl_len);
+			break;
+		case 'd':
+			PRINT(c, TAIL, "dev");
+			pl->dev_len = MAX(pl->dev_len, 3);
+			PAD(pl->dev_len);
+			break;
+		case 'D':
+			PRINT(c, TAIL, "dev_t");
+			pl->dev_t_len = MAX(pl->dev_t_len, 5);
+			PAD(pl->dev_t_len);
+			break;
+		case 'T':
+			PRINT(c, TAIL, "chk-st");
+			PAD(8);
+			break;
+		case 't':
+			PRINT(c, TAIL, "dm-st");
+			PAD(8);
+			break;
+		case 's':
+			PRINT(c, TAIL, "vendor/product/rev");
+			NOPAD;
+			break;
+		case 'C':
+			PRINT(c, TAIL, "next-check");
+			NOPAD;
+			break;
+		case 'p':
+			PRINT(c, TAIL, "prio");
+			pl->prio_len = MAX(pl->prio_len, 4);
+			PAD(pl->prio_len);
+			break;
+		default:
+			break;
+		}
+	} while (*f++);
+
+	line[c - line - 1] = '\n';
+	line[c - line] = '\0';
+
+	return (c - line);
+}
+
+int
 snprint_path (char * line, int len, char * format, struct path * pp,
 	    struct path_layout * pl)
 {
@@ -161,8 +235,8 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 		f++;
 		switch (*f) {
 		case 'w':	
-			PRINT(c, TAIL, "%s ", pp->wwid);
-			PAD(WWID_SIZE);
+			PRINT(c, TAIL, "%s", pp->wwid);
+			PAD(pl->uuid_len);
 			break;
 		case 'i':
 			if (pp->sg_id.host_no < 0) {
