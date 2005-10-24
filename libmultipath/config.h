@@ -18,6 +18,7 @@ struct hwentry {
 	int checker_index;
 	int pgfailback;
 	int rr_weight;
+	int no_path_retry;
 
 	char * vendor;
 	char * product;

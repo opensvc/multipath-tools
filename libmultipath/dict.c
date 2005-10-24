@@ -452,6 +452,30 @@ hw_weight_handler(vector strvec)
 	return 0;
 }
 
+static int
+hw_no_path_retry_handler(vector strvec)
+{
+	struct hwentry *hwe = VECTOR_LAST_SLOT(conf->hwtable);
+	char *buff;
+
+	if (!hwe)
+		return 1;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if (!strncmp(buff, "fail", 4) || !strncmp(buff, "0", 1))
+		hwe->no_path_retry = NO_PATH_RETRY_FAIL;
+	else if (!strncmp(buff, "queue", 5))
+		hwe->no_path_retry = NO_PATH_RETRY_QUEUE;
+	else if ((hwe->no_path_retry = atoi(buff)) < 1)
+		hwe->no_path_retry = NO_PATH_RETRY_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
 /*
  * multipaths block handlers
  */
@@ -670,6 +694,7 @@ init_keywords(void)
 	install_keyword("prio_callout", &prio_callout_handler);
 	install_keyword("failback", &hw_failback_handler);
 	install_keyword("rr_weight", &hw_weight_handler);
+	install_keyword("no_path_retry", &hw_no_path_retry_handler);
 	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);

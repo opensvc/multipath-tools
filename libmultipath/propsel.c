@@ -206,6 +206,12 @@ select_no_path_retry(struct multipath *mp)
 {
 	if (mp->mpe && mp->mpe->no_path_retry != NO_PATH_RETRY_UNDEF) {
 		mp->no_path_retry = mp->mpe->no_path_retry;
+		condlog(3, "no_path_retry = %i (multipath setting)",
+			mp->no_path_retry);
+		return 0;
+	}
+	if (mp->hwe && mp->hwe->no_path_retry != NO_PATH_RETRY_UNDEF) {
+		mp->no_path_retry = mp->hwe->no_path_retry;
 		condlog(3, "no_path_retry = %i (controler setting)",
 			mp->no_path_retry);
 		return 0;
