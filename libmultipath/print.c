@@ -94,6 +94,51 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 		PRINT(c, TAIL, " %i/%i", cur, total)
 
 int
+snprint_map_header (char * line, int len, char * format,
+	            struct map_layout * ml)
+{
+	char * c = line;   /* line cursor */
+	char * s = line;   /* for padding */
+	char * f = format; /* format string cursor */
+	int fwd;
+
+	do {
+		if (!TAIL)
+			break;
+
+		if (*f != '%') {
+			*c++ = *f;
+			NOPAD;
+			continue;
+		}
+		f++;
+		switch (*f) {
+		case 'w':	
+			PRINT(c, TAIL, "name");
+			ml->mapname_len = MAX(ml->mapname_len, 4);
+			PAD(ml->mapname_len);
+			break;
+		case 'd':
+			PRINT(c, TAIL, "sysfs");
+			ml->mapdev_len = MAX(ml->mapdev_len, 5);
+			PAD(ml->mapdev_len);
+			break;
+		case 'F':
+			PRINT(c, TAIL, "failback");
+			NOPAD;
+			break;
+		default:
+			break;
+		}
+	} while (*f++);
+
+	line[c - line - 1] = '\n';
+	line[c - line] = '\0';
+
+	return (c - line);
+}
+
+int
 snprint_map (char * line, int len, char * format,
 	     struct multipath * mpp, struct map_layout * ml)
 {

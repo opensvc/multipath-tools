@@ -840,6 +840,8 @@ show_maps (char ** r, int *len, struct vectors * vecs)
 		return 1;
 
 	c = reply;
+	c += snprint_map_header(c, reply + MAX_REPLY_LEN - c,
+				PRINT_MAP_FAILBACK, &ml);
 
 	vector_foreach_slot(vecs->mpvec, mpp, i)
 		c += snprint_map(c, reply + MAX_REPLY_LEN - c,
