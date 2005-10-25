@@ -522,8 +522,8 @@ select_action (struct multipath * mpp, vector curmp)
 		condlog(3, "set ACT_RELOAD: size change");
 		return;
 	}
-	if (strncmp(cmpp->features, mpp->features,
-		    strlen(mpp->features))) {
+	if (!mpp->no_path_retry && /* let features be handled by the daemon */
+	    strncmp(cmpp->features, mpp->features, strlen(mpp->features))) {
 		mpp->action =  ACT_RELOAD;
 		condlog(3, "set ACT_RELOAD: features change");
 		return;
