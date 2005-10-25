@@ -76,9 +76,22 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 #define PAD(x) while ((int)(c - s) < (x) && (c < (line + len - 1))) \
 			*c++ = ' '; s = c
 #define NOPAD  s = c
+
 #define PRINT(var, size, format, args...)      \
 	        fwd = snprintf(var, size, format, ##args); \
 		c += (fwd >= size) ? size : fwd;
+
+#define PRINT_PROGRESS(cur, total)		\
+		int i = 10 * cur / total;	\
+		int j = 10 - i;			\
+						\
+		while (i-- > 0) {		\
+			PRINT(c, TAIL, "X");	\
+		}				\
+		while (j-- > 0) {		\
+			PRINT(c, TAIL, ".");	\
+		}				\
+		PRINT(c, TAIL, " %i/%i", cur, total)
 
 int
 snprint_map (char * line, int len, char * format,
@@ -87,7 +100,6 @@ snprint_map (char * line, int len, char * format,
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
 	char * f = format; /* format string cursor */
-	int i, j;
 	int fwd;
 
 	do {
@@ -116,20 +128,10 @@ snprint_map (char * line, int len, char * format,
 		case 'F':
 			if (!mpp->failback_tick) {
 				PRINT(c, TAIL, "[no scheduled failback]");
-				NOPAD;
-				break;
+			} else {
+				PRINT_PROGRESS(mpp->failback_tick,
+					       mpp->pgfailback);
 			}
-			i = mpp->failback_tick;
-			j = mpp->pgfailback - mpp->failback_tick;
-
-			while (i-- > 0) {
-				PRINT(c, TAIL, "X");
-			}
-			while (j-- > 0) {
-				PRINT(c, TAIL, ".");
-			}
-			PRINT(c, TAIL, " %i/%i",
-				     mpp->failback_tick, mpp->pgfailback);
 			NOPAD;
 			break;
 		default:
@@ -220,7 +222,6 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
 	char * f = format; /* format string cursor */
-	int i, j;
 	int fwd;
 
 	do {
@@ -304,21 +305,10 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 		case 'C':
 			if (!pp->mpp) {
 				PRINT(c, TAIL, "[orphan]");
-				NOPAD;
-				break;
+			} else {
+				PRINT_PROGRESS(pp->tick, pp->checkint);
 			}
-			i = 10 * pp->tick / pp->checkint;
-			j = 10 - i;
-
-			while (i-- > 0) {
-				PRINT(c, TAIL, "X");
-			}
-			while (j-- > 0) {
-				PRINT(c, TAIL, ".");
-			}
-			PRINT(c, TAIL, " %i/%i",
-				      pp->tick, pp->checkint);
-			PAD(8);
+			NOPAD;
 			break;
 		case 'p':
 			if (pp->priority) {
