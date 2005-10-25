@@ -198,8 +198,8 @@ snprint_path_header (char * line, int len, char * format,
 			NOPAD;
 			break;
 		case 'p':
-			PRINT(c, TAIL, "prio");
-			pl->prio_len = MAX(pl->prio_len, 4);
+			PRINT(c, TAIL, "pri");
+			pl->prio_len = MAX(pl->prio_len, 3);
 			PAD(pl->prio_len);
 			break;
 		default:
@@ -277,6 +277,7 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 				PRINT(c, TAIL, "[ghost]");
 				break;
 			default:
+				PRINT(c, TAIL, "[undef]");
 				break;
 			}
 			PAD(8);
@@ -290,6 +291,7 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 				PRINT(c, TAIL, "[failed]");
 				break;
 			default:
+				PRINT(c, TAIL, "[undef]");
 				break;
 			}
 			PAD(8);
@@ -321,6 +323,8 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 		case 'p':
 			if (pp->priority) {
 				PRINT(c, TAIL, "%i", pp->priority);
+			} else {
+				PRINT(c, TAIL, "#");
 			}
 			PAD(pl->prio_len);
 			break;
