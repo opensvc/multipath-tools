@@ -59,6 +59,7 @@ struct config {
 	int remove;
 	int rr_weight;
 	int no_path_retry;
+	int user_friendly_names;
 
 	char * dev;
 	char * udev_dir;

@@ -213,15 +213,10 @@ update_multipath_strings (struct multipath *mpp, vector pathvec)
 static void
 set_multipath_wwid (struct multipath * mpp)
 {
-	char * wwid;
+	if (mpp->wwid)
+		return;
 
-	wwid = get_mpe_wwid(mpp->alias);
-
-	if (wwid) {
-		strncpy(mpp->wwid, wwid, WWID_SIZE);
-		wwid = NULL;
-	} else
-		strncpy(mpp->wwid, mpp->alias, WWID_SIZE);
+	dm_get_uuid(mpp->alias, mpp->wwid);
 }
 
 static int

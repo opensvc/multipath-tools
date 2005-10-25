@@ -110,6 +110,20 @@
 #	# default : (null)
 #	#
 #	#no_path_retry  queue
+#
+#	#
+#	# name    : user_friendly_names
+#	# scope   : multipath
+#	# desc    : If set to "yes", using the bindings file
+#	#           /var/lib/multipath/bindings to assign a persistent and
+#	#           unique alias to the multipath, in the form of mpath<n>.
+#	#           If set to "no" use the WWID as the alias. In either case
+#	#           this be will be overriden by any specific aliases in this
+#	#           file.
+#	# values  : yes|no
+#	# default : no
+#	user_friendly_names no
+#
 #}
 #	
 ##

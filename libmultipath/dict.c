@@ -191,6 +191,25 @@ def_no_path_retry_handler(vector strvec)
 	return 0;
 }
 
+static int
+names_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	if (!strncmp(buff, "no", 2) || !strncmp(buff, "0", 1))
+		conf->user_friendly_names = 0;
+	else if (!strncmp(buff, "yes", 2) || !strncmp(buff, "1", 1))
+		conf->user_friendly_names = 1;
+
+	FREE(buff);
+	return 0;
+}
+
 /*
  * blacklist block handlers
  */
@@ -665,6 +684,7 @@ init_keywords(void)
 	install_keyword("rr_min_io", &def_minio_handler);
 	install_keyword("rr_weight", &def_weight_handler);
 	install_keyword("no_path_retry", &def_no_path_retry_handler);
+	install_keyword("user_friendly_names", &names_handler);
 
 	/*
 	 * deprecated synonyms

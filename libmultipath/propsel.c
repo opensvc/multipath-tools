@@ -5,6 +5,7 @@
 #include "config.h"
 #include "debug.h"
 #include "pgpolicies.h"
+#include "alias.h"
 
 #include "../libcheckers/checkers.h"
 
@@ -126,8 +127,13 @@ select_alias (struct multipath * mp)
 {
 	if (mp->mpe && mp->mpe->alias)
 		mp->alias = mp->mpe->alias;
-	else
-		mp->alias = mp->wwid;
+	else {
+		mp->alias = NULL;
+		if (conf->user_friendly_names)
+			mp->alias = get_user_friendly_alias(mp->wwid);
+		if (mp->alias == NULL)
+			mp->alias = mp->wwid;
+	}
 
 	return 0;
 }

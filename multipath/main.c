@@ -751,10 +751,10 @@ coalesce_paths (vector curmp, vector pathvec)
 
 		mpp->mpe = find_mpe(pp1->wwid);
 		mpp->hwe = pp1->hwe;
+		strcpy(mpp->wwid, pp1->wwid);
 		select_alias(mpp);
 
 		pp1->mpp = mpp;
-		strcpy(mpp->wwid, pp1->wwid);
 		mpp->size = pp1->size;
 		mpp->paths = vector_alloc();
 
