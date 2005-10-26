@@ -92,7 +92,7 @@ get_refwwid (vector pathvec)
 		pp = find_path_by_devt(pathvec, conf->dev);
 		
 		if (!pp) {
-			if (devt2devname(conf->dev, buff))
+			if (devt2devname(buff, conf->dev))
 				return NULL;
 
 			pp = alloc_path();
@@ -866,7 +866,7 @@ update_paths (struct multipath * mpp)
 
 		vector_foreach_slot (pgp->paths, pp, j) {
 			if (!strlen(pp->dev)) {
-				if (devt2devname(pp->dev_t, pp->dev)) {
+				if (devt2devname(pp->dev, pp->dev_t)) {
 					/*
 					 * path is not in sysfs anymore
 					 */
