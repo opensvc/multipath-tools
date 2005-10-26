@@ -44,6 +44,7 @@
 #include <switchgroup.h>
 #include <sysfs/libsysfs.h>
 #include <print.h>
+#include <alias.h>
 
 #include "main.h"
 #include "pgpolicies.h"
@@ -106,10 +107,8 @@ get_refwwid (vector pathvec)
 			if (!pp)
 				return NULL;
 
-			if(safe_sprintf(pp->dev, "%s", buff)) {
-				fprintf(stderr, "pp->dev too small\n");
-				exit(1);
-			}
+			strncpy(pp->dev, buff, FILE_NAME_SIZE);
+
 			if (pathinfo(pp, conf->hwtable, DI_SYSFS | DI_WWID))
 				return NULL;
 			
@@ -134,19 +133,19 @@ get_refwwid (vector pathvec)
 		 */
 		refwwid = get_mpe_wwid(conf->dev);
 
-		if (refwwid)
-			return STRDUP(refwwid);
-		
+		/*
+		 * or a binding
+		 */
+		if (!refwwid)
+			refwwid = get_user_friendly_wwid(conf->dev);
+
 		/*
 		 * or directly a wwid
 		 */
-		refwwid = MALLOC(WWID_SIZE);
-
 		if (!refwwid)
-			return NULL;
+			refwwid = conf->dev;
 
-		strncpy(refwwid, conf->dev, WWID_SIZE);
-		return refwwid;
+		return STRDUP(refwwid);
 	}
 	return NULL;
 }
@@ -983,6 +982,19 @@ configure (void)
 	if (conf->dev && blacklist(conf->blist, conf->dev))
 		goto out;
 	
+	/*
+	 * scope limiting must be translated into a wwid
+	 * failing the translation is fatal (by policy)
+	 */
+	if (conf->dev) {
+		refwwid = get_refwwid(pathvec);
+
+		if (!refwwid) {
+			condlog(3, "scope is nul");
+			goto out;
+		}
+	}
+
 	condlog(3, "load path identifiers cache");
 	cache_load(pathvec);
 
@@ -1013,19 +1025,6 @@ configure (void)
 	if (conf->verbosity > 2) {
 		fprintf(stdout, "===== all paths discovered =====\n");
 		print_all_paths(pathvec);
-	}
-
-	/*
-	 * scope limiting must be translated into a wwid
-	 * failing the translation is fatal (by policy)
-	 */
-	if (conf->dev) {
-		refwwid = get_refwwid(pathvec);
-
-		if (!refwwid) {
-			condlog(3, "scope is nul");
-			goto out;
-		}
 	}
 
 	get_path_layout(&pl, pathvec);
