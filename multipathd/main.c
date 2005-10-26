@@ -298,6 +298,18 @@ set_no_path_retry(struct multipath *mpp)
 	}
 }
 
+static struct hwentry *
+extract_hwe_from_path(struct multipath * mpp)
+{
+	struct path * pp;
+	struct pathgroup * pgp;
+
+	pgp = VECTOR_SLOT(mpp->pg, 0);
+	pp = VECTOR_SLOT(pgp->paths, 0);
+
+	return pp->hwe;
+}
+
 static int
 setup_multipath (struct vectors * vecs, struct multipath * mpp)
 {
@@ -312,6 +324,7 @@ setup_multipath (struct vectors * vecs, struct multipath * mpp)
 
 	adopt_paths(vecs, mpp);
 	select_pgfailback(mpp);
+	mpp->hwe = extract_hwe_from_path(mpp);
 	set_no_path_retry(mpp);
 
 	return 0;
@@ -917,6 +930,7 @@ reconfigure (struct vectors * vecs)
 
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		mpp->mpe = find_mpe(mpp->wwid);
+		mpp->hwe = extract_hwe_from_path(mpp);
 		adopt_paths(vecs, mpp);
 		set_no_path_retry(mpp);
 	}
