@@ -84,14 +84,7 @@ get_refwwid (vector pathvec)
 				return NULL;
 			}
 		}
-
-		refwwid = MALLOC(WWID_SIZE);
-
-		if (!refwwid)
-			return NULL;
-
-		memcpy(refwwid, pp->wwid, WWID_SIZE);
-		return refwwid;
+		return STRDUP(pp->wwid);
 	}
 
 	if (conf->dev_type == DEV_DEVT) {
@@ -117,27 +110,22 @@ get_refwwid (vector pathvec)
 				return NULL;
 			}
 		}
-
-		refwwid = MALLOC(WWID_SIZE);
-
-		if (!refwwid)
-			return NULL;
-		
-		memcpy(refwwid, pp->wwid, WWID_SIZE);
-		return refwwid;
+		return STRDUP(pp->wwid);
 	}
 	if (conf->dev_type == DEV_DEVMAP) {
 		condlog(3, "limited scope = %s", conf->dev);
 		/*
-		 * may be an alias
+		 * may be a binding
 		 */
-		refwwid = get_mpe_wwid(conf->dev);
+		refwwid = get_user_friendly_wwid(conf->dev);
+
+		if (refwwid)
+			return refwwid;
 
 		/*
-		 * or a binding
+		 * or may be an alias
 		 */
-		if (!refwwid)
-			refwwid = get_user_friendly_wwid(conf->dev);
+		refwwid = get_mpe_wwid(conf->dev);
 
 		/*
 		 * or directly a wwid
