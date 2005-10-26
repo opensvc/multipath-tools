@@ -204,6 +204,65 @@ lookup_binding(int fd, char *map_wwid, char **map_alias)
 	return id;
 }	
 
+static int
+rlookup_binding(int fd, char **map_wwid, char *map_alias)
+{
+	char buf[LINE_MAX];
+	FILE *f;
+	unsigned int line_nr = 0;
+	int scan_fd;
+	int id = 0;
+
+	*map_wwid = NULL;
+	scan_fd = dup(fd);
+	if (scan_fd < 0) {
+		condlog(0, "Cannot dup bindings file descriptor : %s",
+			strerror(errno));
+		return -1;
+	}
+	f = fdopen(scan_fd, "r");
+	if (!f) {
+		condlog(0, "cannot fdopen on bindings file descriptor : %s",
+			strerror(errno));
+		close(scan_fd);
+		return -1;
+	}
+	while (fgets(buf, LINE_MAX, f)) {
+		char *c, *alias, *wwid;
+		int curr_id;
+
+		line_nr++;
+		c = strpbrk(buf, "#\n\r");
+		if (c)
+			*c = '\0';
+		alias = strtok(buf, " \t");
+		if (!alias) /* blank line */
+			continue;
+		if (sscanf(alias, "mpath%d", &curr_id) == 1 && curr_id >= id)
+			id = curr_id + 1;
+		wwid = strtok(NULL, " \t");
+		if (!wwid){
+			condlog(3,
+				"Ignoring malformed line %u in bindings file",
+				line_nr);
+			continue;
+		}
+		if (strcmp(alias, map_alias) == 0){
+			condlog(3, "Found matching alias [%s] in bindings file."
+				"\nSetting wwid to %s", alias, wwid);
+			*map_wwid = strdup(wwid);
+			if (*map_wwid == NULL)
+				condlog(0, "Cannot copy alias from bindings "
+					"file : %s", strerror(errno));
+			fclose(f);
+			return id;
+		}
+	}
+	condlog(3, "No matching alias [%s] in bindings file.", map_alias);
+	fclose(f);
+	return id;
+}	
+
 static char *
 allocate_binding(int fd, char *wwid, int id)
 {
@@ -268,4 +327,28 @@ get_user_friendly_alias(char *wwid)
 
 	close(fd);
 	return alias;
+}
+
+char *
+get_user_friendly_wwid(char *alias)
+{
+	char *wwid;
+	int fd, id;
+
+	if (!alias || *alias == '\0') {
+		condlog(3, "Cannot find binding for empty alias");
+		return NULL;
+	}
+
+	fd = open_bindings_file(BINDINGS_FILE_NAME);
+	if (fd < 0)
+		return NULL;
+	id = rlookup_binding(fd, &wwid, alias);
+	if (id < 0) {
+		close(fd);
+		return NULL;
+	}
+
+	close(fd);
+	return wwid;
 }
