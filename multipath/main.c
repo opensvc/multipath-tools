@@ -64,7 +64,6 @@ get_refwwid (vector pathvec)
 		return NULL;
 
 	if (conf->dev_type == DEV_DEVNODE) {
-		condlog(3, "limited scope = %s", conf->dev);
 		basename(conf->dev, buff);
 		pp = find_path_by_dev(pathvec, buff);
 		
@@ -88,7 +87,6 @@ get_refwwid (vector pathvec)
 	}
 
 	if (conf->dev_type == DEV_DEVT) {
-		condlog(3, "limited scope = %s", conf->dev);
 		pp = find_path_by_devt(pathvec, conf->dev);
 		
 		if (!pp) {
@@ -113,7 +111,6 @@ get_refwwid (vector pathvec)
 		return STRDUP(pp->wwid);
 	}
 	if (conf->dev_type == DEV_DEVMAP) {
-		condlog(3, "limited scope = %s", conf->dev);
 		/*
 		 * may be a binding
 		 */
@@ -278,7 +275,7 @@ filter_pathvec (vector pathvec, char * refwwid)
 		return 0;
 
 	vector_foreach_slot (pathvec, pp, i) {
-		if (memcmp(pp->wwid, refwwid, WWID_SIZE) != 0) {
+		if (strncmp(pp->wwid, refwwid, WWID_SIZE) != 0) {
 			condlog(3, "skip path %s : out of scope", pp->dev);
 			free_path(pp);
 			vector_del_slot(pathvec, i);
@@ -970,6 +967,14 @@ configure (void)
 	if (conf->dev && blacklist(conf->blist, conf->dev))
 		goto out;
 	
+	condlog(3, "load path identifiers cache");
+	cache_load(pathvec);
+
+	if (conf->verbosity > 2) {
+		fprintf(stdout, "===== all paths in cache =====\n");
+		print_all_paths(pathvec);
+	}
+
 	/*
 	 * scope limiting must be translated into a wwid
 	 * failing the translation is fatal (by policy)
@@ -981,14 +986,7 @@ configure (void)
 			condlog(3, "scope is nul");
 			goto out;
 		}
-	}
-
-	condlog(3, "load path identifiers cache");
-	cache_load(pathvec);
-
-	if (conf->verbosity > 2) {
-		fprintf(stdout, "===== all paths in cache =====\n");
-		print_all_paths(pathvec);
+		condlog(3, "scope limited to %s", refwwid);
 	}
 
 	/*
