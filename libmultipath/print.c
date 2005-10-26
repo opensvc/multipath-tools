@@ -17,9 +17,14 @@ void
 get_path_layout (struct path_layout * pl, vector pathvec)
 {
 	int i;
-	int uuid_len, hbtl_len, dev_len, dev_t_len, prio_len;
 	char buff[MAX_FIELD_LEN];
 	struct path * pp;
+
+	int uuid_len;
+	int hbtl_len;
+	int dev_len;
+	int dev_t_len;
+	int prio_len;
 
 	/* reset max col lengths */
 	pl->uuid_len = 0;
@@ -53,21 +58,39 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 {
 	int i;
 	char buff[MAX_FIELD_LEN];
-	int mapname_len, mapdev_len;
 	struct multipath * mpp;
+
+	int mapname_len;
+	int mapdev_len;
+	int failback_progress_len;
+	int queueing_progress_len;
+	int nr_active_len;
 
 	/* reset max col lengths */
 	ml->mapname_len = 0;
 	ml->mapdev_len = 0;
+	ml->failback_progress_len = 0;
+	ml->queueing_progress_len = 0;
+	ml->nr_active_len = 0;
 
 	vector_foreach_slot (mpvec, mpp, i) {
 		mapname_len = (mpp->alias) ?
 				strlen(mpp->alias) : strlen(mpp->wwid);
-		ml->mapname_len = MAX(mapname_len, ml->mapname_len);
-
 		mapdev_len = snprintf(buff, MAX_FIELD_LEN,
 			       	      "dm-%i", mpp->minor);
+		failback_progress_len = 4 + PROGRESS_LEN +
+					(int)log10(mpp->failback_tick) +
+					(int)log10(mpp->pgfailback);
+		queueing_progress_len = 5 + (int)log10(mpp->retry_tick);
+		nr_active_len = (int)log10(mpp->nr_active);
+
+		ml->mapname_len = MAX(mapname_len, ml->mapname_len);
 		ml->mapdev_len = MAX(mapdev_len, ml->mapdev_len);
+		ml->failback_progress_len = MAX(failback_progress_len,
+						ml->failback_progress_len);
+		ml->queueing_progress_len = MAX(queueing_progress_len,
+						ml->queueing_progress_len);
+		ml->nr_active_len = MAX(nr_active_len, ml->nr_active_len);
 	}
 	return;
 }
@@ -81,16 +104,16 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 	        fwd = snprintf(var, size, format, ##args); \
 		c += (fwd >= size) ? size : fwd;
 
-#define PRINT_PROGRESS(cur, total)		\
-		int i = 10 * cur / total;	\
-		int j = 10 - i;			\
-						\
-		while (i-- > 0) {		\
-			PRINT(c, TAIL, "X");	\
-		}				\
-		while (j-- > 0) {		\
-			PRINT(c, TAIL, ".");	\
-		}				\
+#define PRINT_PROGRESS(cur, total)			\
+		int i = PROGRESS_LEN * cur / total;	\
+		int j = PROGRESS_LEN - i;		\
+							\
+		while (i-- > 0) {			\
+			PRINT(c, TAIL, "X");		\
+		}					\
+		while (j-- > 0) {			\
+			PRINT(c, TAIL, ".");		\
+		}					\
 		PRINT(c, TAIL, " %i/%i", cur, total)
 
 int
@@ -125,7 +148,20 @@ snprint_map_header (char * line, int len, char * format,
 			break;
 		case 'F':
 			PRINT(c, TAIL, "failback");
-			NOPAD;
+			ml->failback_progress_len =
+				MAX(ml->failback_progress_len, 8);
+			PAD(ml->failback_progress_len);
+			break;
+		case 'Q':
+			PRINT(c, TAIL, "queueing");
+			ml->queueing_progress_len =
+				MAX(ml->queueing_progress_len, 8);
+			PAD(ml->queueing_progress_len);
+			break;
+		case 'n':
+			PRINT(c, TAIL, "paths");
+			ml->nr_active_len = MAX(ml->nr_active_len, 5);
+			PAD(ml->nr_active_len);
 			break;
 		default:
 			break;
@@ -172,12 +208,32 @@ snprint_map (char * line, int len, char * format,
 			break;
 		case 'F':
 			if (!mpp->failback_tick) {
-				PRINT(c, TAIL, "[no scheduled failback]");
+				PRINT(c, TAIL, "-");
 			} else {
 				PRINT_PROGRESS(mpp->failback_tick,
 					       mpp->pgfailback);
 			}
-			NOPAD;
+			PAD(ml->failback_progress_len);
+			break;
+		case 'Q':
+			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL) {
+				PRINT(c, TAIL, "off");
+			} else if (mpp->no_path_retry == NO_PATH_RETRY_QUEUE) {
+				PRINT(c, TAIL, "on");
+			} else if (mpp->no_path_retry == NO_PATH_RETRY_UNDEF) {
+				PRINT(c, TAIL, "-");
+			} else if (mpp->no_path_retry > 0) {
+				if (mpp->retry_tick) {
+					PRINT(c, TAIL, "%i sec", mpp->retry_tick);
+				} else {
+					PRINT(c, TAIL, "%i chk", mpp->no_path_retry);
+				}
+			}
+			PAD(ml->queueing_progress_len);
+			break;
+		case 'n':
+			PRINT(c, TAIL, "%i", mpp->nr_active);
+			PAD(ml->nr_active_len);
 			break;
 		default:
 			break;
