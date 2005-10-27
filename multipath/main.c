@@ -114,7 +114,8 @@ get_refwwid (vector pathvec)
 		/*
 		 * may be a binding
 		 */
-		refwwid = get_user_friendly_wwid(conf->dev);
+		refwwid = get_user_friendly_wwid(conf->dev,
+						 conf->bindings_file);
 
 		if (refwwid)
 			return refwwid;
@@ -822,11 +823,12 @@ usage (char * progname)
 		"\t\t\t[-p failover|multibus|group_by_serial|group_by_prio]\n" \
 		"\t\t\t[device]\n" \
 		"\n" \
-		"\t-v level\tverbosty level\n" \
+		"\t-v level\tverbosity level\n" \
 		"\t   0\t\t\tno output\n" \
 		"\t   1\t\t\tprint created devmap names only\n" \
 		"\t   2\t\t\tdefault verbosity\n" \
 		"\t   3\t\t\tprint debug information\n" \
+		"\t-b file\t\tbindings file location\n" \
 		"\t-d\t\tdry run, do not create or update devmaps\n" \
 		"\t-l\t\tshow multipath topology (sysfs and DM info)\n" \
 		"\t-ll\t\tshow multipath topology (maximum info)\n" \
@@ -1061,7 +1063,7 @@ main (int argc, char *argv[])
 	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
 
-	while ((arg = getopt(argc, argv, ":qdl::Ffi:M:v:p:")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":qdl::Ffi:M:v:p:b:")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
 			break;
@@ -1071,6 +1073,9 @@ main (int argc, char *argv[])
 				usage (argv[0]);
 
 			conf->verbosity = atoi(optarg);
+			break;
+		case 'b':
+			conf->bindings_file = optarg;
 			break;
 		case 'd':
 			conf->dry_run = 1;

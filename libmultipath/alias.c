@@ -7,6 +7,8 @@
 #include <string.h>
 #include <limits.h>
 #include <stdio.h>
+#include <signal.h>
+
 #include "debug.h"
 #include "uxsock.h"
 #include "alias.h"
@@ -67,35 +69,48 @@ ensure_directories_exist(char *str, mode_t dir_mode)
 	return 0;
 }
 
+static void
+sigalrm(int sig)
+{
+	/* do nothing */
+}
+
 static int
 lock_bindings_file(int fd)
 {
+	struct sigaction act, oldact;
+	sigset_t set, oldset;
 	struct flock lock;
-	int retrys = BINDINGS_FILE_RETRYS;
+	int err;
 	
 	memset(&lock, 0, sizeof(lock));
 	lock.l_type = F_WRLCK;
 	lock.l_whence = SEEK_SET;
 
-	while (fcntl(fd, F_SETLK, &lock) < 0) {
-		if (errno != EACCES && errno != EAGAIN) {
-			condlog(0, "Cannot lock bindings file : %s",
-				strerror(errno));
-			return -1;
-		} else {
-			condlog(0, "Bindings file is currently locked");
-			if ((retrys--) == 0)
-				return -1;
-		}
-		/* because I'm paranoid */
-		memset(&lock, 0, sizeof(lock));
-		lock.l_type = F_WRLCK;
-		lock.l_whence = SEEK_SET;
-		
-		condlog(0, "retrying");
-		sleep(1);
+	act.sa_handler = sigalrm;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+	sigemptyset(&set);
+	sigaddset(&set, SIGALRM);
+
+	sigaction(SIGALRM, &act, &oldact);
+	sigprocmask(SIG_UNBLOCK, &set, &oldset);
+
+	alarm(BINDINGS_FILE_TIMEOUT);
+	err = fcntl(fd, F_SETLKW, &lock);
+	alarm(0);
+
+	if (err) {
+		if (errno != EINTR)
+			condlog(0, "Cannot lock bindings file : %s");
+		else
+			condlog(0, "Bindings file is locked. Giving up.");
 	}
-	return 0;
+
+	sigprocmask(SIG_SETMASK, &oldset, NULL);
+	sigaction(SIGALRM, &oldact, NULL);
+	return err;
+
 }
 
 
@@ -304,7 +319,7 @@ allocate_binding(int fd, char *wwid, int id)
 }		
 
 char *
-get_user_friendly_alias(char *wwid)
+get_user_friendly_alias(char *wwid, char *file)
 {
 	char *alias;
 	int fd, id;
@@ -314,7 +329,7 @@ get_user_friendly_alias(char *wwid)
 		return NULL;
 	}
 
-	fd = open_bindings_file(BINDINGS_FILE_NAME);
+	fd = open_bindings_file(file);
 	if (fd < 0)
 		return NULL;
 	id = lookup_binding(fd, wwid, &alias);
@@ -330,7 +345,7 @@ get_user_friendly_alias(char *wwid)
 }
 
 char *
-get_user_friendly_wwid(char *alias)
+get_user_friendly_wwid(char *alias, char *file)
 {
 	char *wwid;
 	int fd, id;
@@ -340,7 +355,7 @@ get_user_friendly_wwid(char *alias)
 		return NULL;
 	}
 
-	fd = open_bindings_file(BINDINGS_FILE_NAME);
+	fd = open_bindings_file(file);
 	if (fd < 0)
 		return NULL;
 	id = rlookup_binding(fd, &wwid, alias);

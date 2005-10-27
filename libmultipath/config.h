@@ -68,6 +68,7 @@ struct config {
 	char * default_getprio;
 	char * features;
 	char * default_hwhandler;
+	char * bindings_file;
 
 	vector mptable;
 	vector hwtable;

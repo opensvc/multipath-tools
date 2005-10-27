@@ -130,7 +130,8 @@ select_alias (struct multipath * mp)
 	else {
 		mp->alias = NULL;
 		if (conf->user_friendly_names)
-			mp->alias = get_user_friendly_alias(mp->wwid);
+			mp->alias = get_user_friendly_alias(mp->wwid,
+					conf->bindings_file);
 		if (mp->alias == NULL)
 			mp->alias = mp->wwid;
 	}
