@@ -1045,8 +1045,10 @@ out:
 static void *
 ueventloop (void * ap)
 {
-	uevent_listen(&uev_trigger, ap);
-
+	if (uevent_listen(&uev_trigger, ap)) {
+		fprintf(stderr, "error starting uevent listener");
+		exit;
+	}
 	return NULL;
 }
 

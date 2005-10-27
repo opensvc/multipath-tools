@@ -58,7 +58,7 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 	sock = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_KOBJECT_UEVENT);
 	if (sock == -1) {
 		condlog(0, "error getting socket, exit\n");
-		exit(1);
+		return 1;
 	}
 
 	retval = bind(sock, (struct sockaddr *) &snl,
