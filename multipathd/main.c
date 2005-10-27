@@ -468,12 +468,16 @@ waiteventloop (struct event_thread * waiter)
 	if (!(waiter->dmt = dm_task_create(DM_DEVICE_WAITEVENT)))
 		return 1;
 
-	if (!dm_task_set_name(waiter->dmt, waiter->mapname))
+	if (!dm_task_set_name(waiter->dmt, waiter->mapname)) {
+		dm_task_destroy(waiter->dmt);
 		return 1;
+	}
 
 	if (waiter->event_nr && !dm_task_set_event_nr(waiter->dmt,
-						      waiter->event_nr))
+						      waiter->event_nr)) {
+		dm_task_destroy(waiter->dmt);
 		return 1;
+	}
 
 	dm_task_no_open_count(waiter->dmt);
 
@@ -622,6 +626,7 @@ remove_map (struct multipath * mpp, struct vectors * vecs)
 		 * warrior mode
 		 */
 		free_waiter(mpp->waiter);
+		mpp->waiter = NULL;
 	}
 
 	/*
@@ -1545,14 +1550,19 @@ child (void * param)
 	pthread_cancel(uxlsnr_thr);
 
 	free_keys(keys);
+	keys = NULL;
 	free_handlers(handlers);
+	handlers = NULL;
 	free_polls();
 
 	unlock(vecs->lock);
 	pthread_mutex_destroy(vecs->lock);
 	FREE(vecs->lock);
+	vecs->lock = NULL;
 	FREE(vecs);
+	vecs = NULL;
 	free_config(conf);
+	conf = NULL;
 
 	condlog(2, "--------shut down-------");
 	
