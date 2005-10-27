@@ -20,25 +20,25 @@ find_hwe (vector hwtable, char * vendor, char * product)
 {
 	int i;
 	struct hwentry *hwe, *ret = NULL;
-	regex_t *vre, *pre;
+	regex_t vre, pre;
 
 	vector_foreach_slot (hwtable, hwe, i) {
-		if (regcomp(vre, hwe->vendor, REG_EXTENDED|REG_NOSUB))
-			goto out1;
-		if (regcomp(pre, hwe->product, REG_EXTENDED|REG_NOSUB))
-			goto out2;
-		if (!regexec(vre, vendor, 0, NULL, 0) &&
-		    !regexec(pre, product, 0, NULL, 0)) {
-			ret = hwe;
+		if (regcomp(&vre, hwe->vendor, REG_EXTENDED|REG_NOSUB))
+			break;
+		if (regcomp(&pre, hwe->product, REG_EXTENDED|REG_NOSUB)) {
+			regfree(&vre);
 			break;
 		}
+		if (!regexec(&vre, vendor, 0, NULL, 0) &&
+		    !regexec(&pre, product, 0, NULL, 0))
+			ret = hwe;
+		
+		regfree(&pre);
+		regfree(&vre);
+
+		if (ret)
+			break;
 	}
-	regfree(pre);
-	FREE(pre);
-out2:
-	regfree(vre);
-	FREE(vre);
-out1:
 	return ret;
 }
 
