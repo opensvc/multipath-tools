@@ -251,7 +251,7 @@ devt2devname (char *devname, char *devt)
 		if(safe_sprintf(attr_path, "%s/%s/dev",
 				block_path, devp->name)) {
 			condlog(0, "attr_path too small");
-			return 1;
+			goto err;
 		}
 		sysfs_read_attribute_value(attr_path, attr_value,
 					   sizeof(attr_value));
@@ -266,7 +266,7 @@ devt2devname (char *devname, char *devt)
 			if(safe_sprintf(attr_path, "%s/%s",
 					block_path, devp->name)) {
 				condlog(0, "attr_path too small");
-				return 1;
+				goto err;
 			}
 			sysfs_get_name_from_path(attr_path, devname,
 						 FILE_NAME_SIZE);
@@ -274,6 +274,7 @@ devt2devname (char *devname, char *devt)
 			return 0;
 		}
 	}
+err:
 	sysfs_close_directory(sdir);
 	return 1;
 }
@@ -379,6 +380,8 @@ sysfs_get_bus (char * sysfs_path, struct path * curpath)
 		curpath->bus = SYSFS_BUS_SCSI;
 	else if (!strncmp(sdev->bus, "ide", 3))
 		curpath->bus = SYSFS_BUS_IDE;
+
+	sysfs_close_device(sdev);
 
 	return;
 }
