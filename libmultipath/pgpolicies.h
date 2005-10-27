@@ -20,7 +20,7 @@ enum iopolicies {
 };
 
 int get_pgpolicy_id(char *);
-void get_pgpolicy_name (char *, int);
+int get_pgpolicy_name (char *, int);
 
 /*
  * policies

@@ -30,7 +30,7 @@ get_pgpolicy_id (char * str)
 	return -1;
 }
 
-extern void
+extern int
 get_pgpolicy_name (char * buff, int id)
 {
 	char * s;
@@ -57,8 +57,9 @@ get_pgpolicy_name (char * buff, int id)
 	}
 	if(safe_snprintf(buff, POLICY_NAME_SIZE, "%s", s)) {
 		fprintf(stderr, "get_pgpolicy_name: buff too small\n");
-		exit(1);
+		return 1;
 	}
+	return 0;
 }
 
 /*

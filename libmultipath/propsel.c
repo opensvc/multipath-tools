@@ -76,30 +76,35 @@ select_pgpolicy (struct multipath * mp)
 
 	if (conf->pgpolicy_flag > 0) {
 		mp->pgpolicy = conf->pgpolicy_flag;
-		get_pgpolicy_name(pgpolicy_name, mp->pgpolicy);
+		if (get_pgpolicy_name(pgpolicy_name, mp->pgpolicy))
+			return 1;
 		condlog(3, "pgpolicy = %s (cmd line flag)", pgpolicy_name);
 		return 0;
 	}
 	if (mp->mpe && mp->mpe->pgpolicy > 0) {
 		mp->pgpolicy = mp->mpe->pgpolicy;
-		get_pgpolicy_name(pgpolicy_name, mp->pgpolicy);
+		if (get_pgpolicy_name(pgpolicy_name, mp->pgpolicy))
+			return 1;
 		condlog(3, "pgpolicy = %s (LUN setting)", pgpolicy_name);
 		return 0;
 	}
 	if (mp->hwe && mp->hwe->pgpolicy > 0) {
 		mp->pgpolicy = mp->hwe->pgpolicy;
-		get_pgpolicy_name(pgpolicy_name, mp->pgpolicy);
+		if (get_pgpolicy_name(pgpolicy_name, mp->pgpolicy))
+			return 1;
 		condlog(3, "pgpolicy = %s (controler setting)", pgpolicy_name);
 		return 0;
 	}
 	if (conf->default_pgpolicy > 0) {
 		mp->pgpolicy = conf->default_pgpolicy;
-		get_pgpolicy_name(pgpolicy_name, mp->pgpolicy);
+		if (get_pgpolicy_name(pgpolicy_name, mp->pgpolicy))
+			return 1;
 		condlog(3, "pgpolicy = %s (config file default)", pgpolicy_name);
 		return 0;
 	}
 	mp->pgpolicy = FAILOVER;
-	get_pgpolicy_name(pgpolicy_name, FAILOVER);
+	if (get_pgpolicy_name(pgpolicy_name, mp->pgpolicy))
+		return 1;
 	condlog(3, "pgpolicy = %s (internal default)", pgpolicy_name);
 	return 0;
 }
