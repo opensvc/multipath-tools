@@ -242,7 +242,7 @@ devt2devname (char *devname, char *devt)
 
 	if(safe_sprintf(block_path, "%s/block", sysfs_path)) {
 		condlog(0, "block_path too small");
-		exit(1);
+		return 1;
 	}
 	sdir = sysfs_open_directory(block_path);
 	sysfs_read_directory(sdir);
@@ -251,7 +251,7 @@ devt2devname (char *devname, char *devt)
 		if(safe_sprintf(attr_path, "%s/%s/dev",
 				block_path, devp->name)) {
 			condlog(0, "attr_path too small");
-			exit(1);
+			return 1;
 		}
 		sysfs_read_attribute_value(attr_path, attr_value,
 					   sizeof(attr_value));
@@ -266,7 +266,7 @@ devt2devname (char *devname, char *devt)
 			if(safe_sprintf(attr_path, "%s/%s",
 					block_path, devp->name)) {
 				condlog(0, "attr_path too small");
-				exit(1);
+				return 1;
 			}
 			sysfs_get_name_from_path(attr_path, devname,
 						 FILE_NAME_SIZE);
