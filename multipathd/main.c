@@ -117,7 +117,7 @@ stop_waiter_thread (struct multipath * mpp, struct vectors * vecs)
 		condlog(3, "%s: no waiter thread", mpp->alias);
 		return;
 	}
-	wp = wp->thread;
+	thread = wp->thread;
 
 	if (!wp) {
 		condlog(3, "%s: thread not started", mpp->alias);
