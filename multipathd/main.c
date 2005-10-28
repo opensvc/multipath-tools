@@ -814,8 +814,10 @@ show_paths (char ** r, int * len, struct vectors * vecs)
 		return 1;
 
 	c = reply;
-	c += snprint_path_header(c, reply + MAX_REPLY_LEN - c,
-				 PRINT_PATH_CHECKER, &pl);
+
+	if (VECTOR_SIZE(vecs->pathvec) > 0)
+		c += snprint_path_header(c, reply + MAX_REPLY_LEN - c,
+					 PRINT_PATH_CHECKER, &pl);
 
 	vector_foreach_slot(vecs->pathvec, pp, i)
 		c += snprint_path(c, reply + MAX_REPLY_LEN - c,
@@ -842,8 +844,9 @@ show_maps (char ** r, int *len, struct vectors * vecs)
 		return 1;
 
 	c = reply;
-	c += snprint_map_header(c, reply + MAX_REPLY_LEN - c,
-				PRINT_MAP_FAILBACK, &ml);
+	if (VECTOR_SIZE(vecs->mpvec) > 0)
+		c += snprint_map_header(c, reply + MAX_REPLY_LEN - c,
+					PRINT_MAP_FAILBACK, &ml);
 
 	vector_foreach_slot(vecs->mpvec, mpp, i)
 		c += snprint_map(c, reply + MAX_REPLY_LEN - c,
