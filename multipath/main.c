@@ -155,11 +155,20 @@ print_map (struct multipath * mpp)
 }
 
 static void
-print_all_paths (vector pathvec)
+print_all_paths (vector pathvec, int banner)
 {
 	int i;
 	struct path * pp;
 	char line[MAX_LINE_LEN];
+
+	if (!VECTOR_SIZE(pathvec)) {
+		if (banner)
+			fprintf(stdout, "===== no paths =====\n");
+		return;
+	}
+	
+	if (banner)
+		fprintf(stdout, "===== paths list =====\n");
 
 	get_path_layout(&pl, pathvec);
 	snprint_path_header(line, MAX_LINE_LEN, PRINT_PATH_LONG, &pl);
@@ -972,10 +981,8 @@ configure (void)
 	condlog(3, "load path identifiers cache");
 	cache_load(pathvec);
 
-	if (conf->verbosity > 2) {
-		fprintf(stdout, "===== all paths in cache =====\n");
-		print_all_paths(pathvec);
-	}
+	if (conf->verbosity > 2)
+		print_all_paths(pathvec, 1);
 
 	/*
 	 * scope limiting must be translated into a wwid
@@ -1010,10 +1017,8 @@ configure (void)
 	if (path_discovery(pathvec, conf, di_flag))
 		goto out;
 
-	if (conf->verbosity > 2) {
-		fprintf(stdout, "===== all paths discovered =====\n");
-		print_all_paths(pathvec);
-	}
+	if (conf->verbosity > 2)
+		print_all_paths(pathvec, 1);
 
 	get_path_layout(&pl, pathvec);
 
