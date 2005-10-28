@@ -1,6 +1,7 @@
 #include <memory.h>
 #include <vector.h>
 #include <structs.h>
+#include <libdevmapper.h>
 #include <devmapper.h>
 #include <config.h>
 #include <blacklist.h>
@@ -89,3 +90,20 @@ cli_reconfigure(void * v, char ** reply, int * len, void * data)
 			
 	return reconfigure(vecs);
 }
+
+int
+cli_suspend(void * v, char ** reply, int * len, void * data)
+{
+	char * param = get_keyparam(v, MAP);
+			
+	return !dm_simplecmd(DM_DEVICE_SUSPEND, param);
+}
+
+int
+cli_resume(void * v, char ** reply, int * len, void * data)
+{
+	char * param = get_keyparam(v, MAP);
+			
+	return !dm_simplecmd(DM_DEVICE_RESUME, param);
+}
+

@@ -121,6 +121,8 @@ load_keys (void)
 	r += add_key(keys, "del", DEL, 0);
 	r += add_key(keys, "switch", SWITCH, 0);
 	r += add_key(keys, "switchgroup", SWITCH, 0);
+	r += add_key(keys, "suspend", SUSPEND, 0);
+	r += add_key(keys, "resume", RESUME, 0);
 	r += add_key(keys, "paths", PATHS, 0);
 	r += add_key(keys, "maps", MAPS, 0);
 	r += add_key(keys, "path", PATH, 1);

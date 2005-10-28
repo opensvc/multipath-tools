@@ -3,6 +3,8 @@ enum {
 	__ADD,
 	__DEL,
 	__SWITCH,
+	__SUSPEND,
+	__RESUME,
 	__PATHS,
 	__MAPS,
 	__PATH,
@@ -17,6 +19,8 @@ enum {
 #define ADD		(1 << __ADD)
 #define DEL		(1 << __DEL)
 #define SWITCH		(1 << __SWITCH)
+#define SUSPEND		(1 << __SUSPEND)
+#define RESUME		(1 << __RESUME)
 #define PATHS		(1 << __PATHS)
 #define MAPS		(1 << __MAPS)
 #define PATH		(1 << __PATH)
