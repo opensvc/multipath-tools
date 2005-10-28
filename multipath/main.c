@@ -964,6 +964,7 @@ configure (void)
 	int r = 1;
 	int di_flag = 0;
 	char * refwwid = NULL;
+	char * dev = NULL;
 
 	/*
 	 * allocate core vectors to store paths and multipaths
@@ -979,7 +980,15 @@ configure (void)
 	/*
 	 * if we have a blacklisted device parameter, exit early
 	 */
-	if (conf->dev && blacklist(conf->blist, conf->dev))
+	if (conf->dev) {
+		if (!strncmp(conf->dev, "/dev/", 5) &&
+		    strlen(conf->dev) > 5)
+			dev = conf->dev + 5;
+		else
+			dev = conf->dev;
+	}
+	
+	if (dev && blacklist(conf->blist, dev))
 		goto out;
 	
 	condlog(3, "load path identifiers cache");
