@@ -94,16 +94,37 @@ cli_reconfigure(void * v, char ** reply, int * len, void * data)
 int
 cli_suspend(void * v, char ** reply, int * len, void * data)
 {
+	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
-			
-	return !dm_simplecmd(DM_DEVICE_SUSPEND, param);
+	int r = dm_simplecmd(DM_DEVICE_SUSPEND, param);
+
+	if (!r) /* error */
+		return 1;
+	
+	struct multipath * mpp = find_mp(vecs->mpvec, param);
+
+	if (!mpp)
+		return 1;
+	
+	mpp->dmstate = MAPSTATE_SUSPENDED;
+	return 0;
 }
 
 int
 cli_resume(void * v, char ** reply, int * len, void * data)
 {
+	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
-			
-	return !dm_simplecmd(DM_DEVICE_RESUME, param);
-}
+	int r = dm_simplecmd(DM_DEVICE_RESUME, param);
 
+	if (!r) /* error */
+		return 1;
+	
+	struct multipath * mpp = find_mp(vecs->mpvec, param);
+
+	if (!mpp)
+		return 1;
+	
+	mpp->dmstate = MAPSTATE_ACTIVE;
+	return 0;
+}

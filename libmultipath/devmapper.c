@@ -219,6 +219,36 @@ uuidout:
 }
 
 extern int
+dm_get_state(char *name, int *state)
+{
+	struct dm_task *dmt;
+	struct dm_info info;
+
+	dmt = dm_task_create(DM_DEVICE_INFO);
+	if (!dmt)
+		return 1;
+
+        if (!dm_task_set_name (dmt, name))
+                goto out;
+
+	if (!dm_task_run(dmt))
+                goto out;
+
+	if (!dm_task_get_info(dmt, &info))
+		goto out;
+
+	*state = info.suspended;
+	if (info.suspended)
+		*state = MAPSTATE_SUSPENDED;
+	else
+		*state = MAPSTATE_ACTIVE;
+
+out:
+	dm_task_destroy(dmt);
+	return 0;
+}
+
+extern int
 dm_get_status(char * name, char * outstatus)
 {
 	int r = 1;
@@ -644,6 +674,7 @@ dm_get_maps (vector mp, char * type)
 				goto out1;
 
 			dm_get_uuid(names->name, mpp->wwid);
+			dm_get_state(names->name, &mpp->dmstate);
 		}
 
 		if (!vector_alloc_slot(mp))

@@ -18,11 +18,12 @@
  * %C : checker countdown
  * %Q : queueing policy changer countdown (no_path_retry)
  * %n : number of active paths
+ * %t : device mapper map status
  */
 #define PRINT_PATH_LONG      "%w %i %d %D %p %t%T %s"
 #define PRINT_PATH_INDENT    " \\_ %i %d %D %t%T"
 #define PRINT_PATH_CHECKER   "%i %d %D %p %t%T %C"
-#define PRINT_MAP_FAILBACK   "%w %d %F %Q %n"
+#define PRINT_MAP_FAILBACK   "%w %d %F %Q %n %t"
 
 #define MAX_LINE_LEN 80
 #define PROGRESS_LEN 10

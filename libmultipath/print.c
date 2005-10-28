@@ -163,6 +163,10 @@ snprint_map_header (char * line, int len, char * format,
 			ml->nr_active_len = MAX(ml->nr_active_len, 5);
 			PAD(ml->nr_active_len);
 			break;
+		case 't':
+			PRINT(c, TAIL, "dm-st");
+			PAD(7);
+			break;
 		default:
 			break;
 		}
@@ -234,6 +238,16 @@ snprint_map (char * line, int len, char * format,
 		case 'n':
 			PRINT(c, TAIL, "%i", mpp->nr_active);
 			PAD(ml->nr_active_len);
+			break;
+		case 't':
+			if (mpp->dmstate == MAPSTATE_ACTIVE) {
+				PRINT(c, TAIL, "active");
+			} else if (mpp->dmstate == MAPSTATE_SUSPENDED) {
+				PRINT(c, TAIL, "suspend");
+			} else {
+				PRINT(c, TAIL, "-");
+			}
+			PAD(7);
 			break;
 		default:
 			break;
