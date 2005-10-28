@@ -397,8 +397,8 @@ setup_multipath (struct vectors * vecs, struct multipath * mpp)
 
 	return 0;
 out:
+	condlog(0, "%s: failed to setup multipath", mpp->alias);
 	remove_map(mpp, vecs);
-	condlog(0, "failed to setup multipath");
 	return 1;
 }
 
