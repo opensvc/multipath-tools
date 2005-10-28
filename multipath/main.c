@@ -83,7 +83,8 @@ get_refwwid (vector pathvec)
 				return NULL;
 			}
 		}
-		return STRDUP(pp->wwid);
+		refwwid = pp->wwid;
+		goto out;
 	}
 
 	if (conf->dev_type == DEV_DEVT) {
@@ -108,7 +109,8 @@ get_refwwid (vector pathvec)
 				return NULL;
 			}
 		}
-		return STRDUP(pp->wwid);
+		refwwid = pp->wwid;
+		goto out;
 	}
 	if (conf->dev_type == DEV_DEVMAP) {
 		/*
@@ -130,9 +132,11 @@ get_refwwid (vector pathvec)
 		 */
 		if (!refwwid)
 			refwwid = conf->dev;
-
-		return STRDUP(refwwid);
 	}
+out:
+	if (refwwid && strlen(refwwid))
+		return STRDUP(refwwid);
+
 	return NULL;
 }
 
