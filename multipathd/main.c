@@ -98,6 +98,29 @@ alloc_waiter (void)
 }
 
 static void
+free_waiter (void * data)
+{
+	struct event_thread * wp = (struct event_thread *)data;
+
+	if (wp->dmt)
+		dm_task_destroy(wp->dmt);
+	FREE(wp);
+}
+
+static void
+stop_waiter_thread (struct multipath * mpp, struct vectors * vecs)
+{
+	struct event_thread * wp = (struct event_thread *)mpp->waiter;
+	pthread_t thread = wp->thread;
+
+	if (!wp)
+		return;
+
+	condlog(2, "%s: stop event checker thread", wp->mapname);
+	pthread_kill(thread, SIGHUP);
+}
+
+static void
 cleanup_lock (void * data)
 {
 	pthread_mutex_unlock((pthread_mutex_t *)data);
@@ -310,11 +333,49 @@ extract_hwe_from_path(struct multipath * mpp)
 	return pp->hwe;
 }
 
-static int
-setup_multipath (struct vectors * vecs, struct multipath * mpp)
+static void
+remove_map (struct multipath * mpp, struct vectors * vecs)
 {
 	int i;
 
+	stop_waiter_thread(mpp, vecs);
+
+	/*
+	 * clear references to this map
+	 */
+	orphan_paths(vecs, mpp);
+
+	/*
+	 * purge the multipath vector
+	 */
+	i = find_slot(vecs->mpvec, (void *)mpp);
+	vector_del_slot(vecs->mpvec, i);
+
+	/*
+	 * final free
+	 */
+	free_multipath(mpp, KEEP_PATHS);
+	mpp = NULL;
+}
+
+static void
+remove_maps (struct vectors * vecs)
+{
+	int i;
+	struct multipath * mpp;
+
+	vector_foreach_slot (vecs->mpvec, mpp, i) {
+		remove_map(mpp, vecs);
+		i--;
+	}
+
+	vector_free(vecs->mpvec);
+	vecs->mpvec = NULL;
+}
+
+static int
+setup_multipath (struct vectors * vecs, struct multipath * mpp)
+{
 	set_multipath_wwid(mpp);
 	mpp->mpe = find_mpe(mpp->wwid);
 	condlog(4, "discovered map %s", mpp->alias);
@@ -329,13 +390,7 @@ setup_multipath (struct vectors * vecs, struct multipath * mpp)
 
 	return 0;
 out:
-	/*
-	 * purge the multipath vector
-	 */
-	if ((i = find_slot(vecs->mpvec, (void *)mpp)) != -1)
-		vector_del_slot(vecs->mpvec, i);
-
-	free_multipath(mpp, KEEP_PATHS);
+	remove_map(mpp, vecs);
 	condlog(0, "failed to setup multipath");
 	return 1;
 }
@@ -431,16 +486,6 @@ out:
 	return r;
 }
 
-static void
-free_waiter (void * data)
-{
-	struct event_thread * wp = (struct event_thread *)data;
-
-	if (wp->dmt)
-		dm_task_destroy(wp->dmt);
-	FREE(wp);
-}
-
 static sigset_t unblock_sighup(void)
 {
 	sigset_t set, old;
@@ -480,14 +525,25 @@ waiteventloop (struct event_thread * waiter)
 	}
 
 	dm_task_no_open_count(waiter->dmt);
-
+	
+	/* accept wait interruption */
 	set = unblock_sighup();
-	dm_task_run(waiter->dmt);
+
+	/* interruption spits messages */
+	dm_shut_log();
+
+	/* wait */
+	r = dm_task_run(waiter->dmt);
+
+	/* wait is over : event or interrupt */
 	pthread_sigmask(SIG_SETMASK, &set, NULL);
-	pthread_testcancel();
+	//dm_restore_log();
+
+	if (!r) /* wait interrupted by signal */
+		return -1;
+
 	dm_task_destroy(waiter->dmt);
 	waiter->dmt = NULL;
-
 	waiter->event_nr++;
 
 	/*
@@ -543,34 +599,11 @@ waitevent (void * et)
 		if (r < 0)
 			break;
 
-		pthread_testcancel();
 		sleep(r);
-		pthread_testcancel();
 	}
 
 	pthread_cleanup_pop(1);
 	return NULL;
-}
-
-static int
-stop_waiter_thread (struct multipath * mpp, struct vectors * vecs)
-{
-	struct event_thread * wp = (struct event_thread *)mpp->waiter;
-	pthread_t thread = wp->thread;
-	int r;
-
-	if (!wp)
-		return 1;
-
-	condlog(2, "%s: stop event checker thread", wp->mapname);
-
-	if ((r = pthread_cancel(thread)))
-		return r;
-
-	condlog(2, "%s: couldn't stop event checker thread gracefully, kill",
-		wp->mapname);
-	pthread_kill(thread, SIGHUP);
-	return 0;
 }
 
 static int
@@ -612,60 +645,10 @@ out:
 	return 1;
 }
 
-static void
-remove_map (struct multipath * mpp, struct vectors * vecs)
-{
-	int i;
-
-	/*
-	 * stop the DM event waiter thread
-	 */
-	if (stop_waiter_thread(mpp, vecs)) {
-		condlog(0, "%s: error canceling waiter thread", mpp->alias);
-		/*
-		 * warrior mode
-		 */
-		free_waiter(mpp->waiter);
-		mpp->waiter = NULL;
-	}
-
-	/*
-	 * clear references to this map
-	 */
-	orphan_paths(vecs, mpp);
-
-	/*
-	 * purge the multipath vector
-	 */
-	i = find_slot(vecs->mpvec, (void *)mpp);
-	vector_del_slot(vecs->mpvec, i);
-
-	/*
-	 * final free
-	 */
-	free_multipath(mpp, KEEP_PATHS);
-	mpp = NULL;
-}
-
-static void
-remove_maps (struct vectors * vecs)
-{
-	int i;
-	struct multipath * mpp;
-
-	vector_foreach_slot (vecs->mpvec, mpp, i) {
-		remove_map(mpp, vecs);
-		i--;
-	}
-
-	vector_free(vecs->mpvec);
-	vecs->mpvec = NULL;
-}
-
 int
 uev_add_map (char * devname, struct vectors * vecs)
 {
-	int major, minor, i;
+	int major, minor;
 	char dev_t[BLK_DEV_SIZE];
 	char * alias;
 	struct multipath * mpp;
@@ -724,13 +707,7 @@ uev_add_map (char * devname, struct vectors * vecs)
 	return 0;
 out:
 	condlog(2, "%s: add devmap failed", mpp->alias);
-	/*
-	 * purge the multipath vector
-	 */
-	if ((i = find_slot(vecs->mpvec, (void *)mpp)) != -1)
-		vector_del_slot(vecs->mpvec, i);
-
-	free_multipath(mpp, KEEP_PATHS);
+	remove_map(mpp, vecs);
 	return 1;
 }
 
@@ -1050,10 +1027,9 @@ out:
 static void *
 ueventloop (void * ap)
 {
-	if (uevent_listen(&uev_trigger, ap)) {
+	if (uevent_listen(&uev_trigger, ap))
 		fprintf(stderr, "error starting uevent listener");
-		exit;
-	}
+		
 	return NULL;
 }
 
