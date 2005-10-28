@@ -111,11 +111,18 @@ static void
 stop_waiter_thread (struct multipath * mpp, struct vectors * vecs)
 {
 	struct event_thread * wp = (struct event_thread *)mpp->waiter;
-	pthread_t thread = wp->thread;
-
-	if (!wp)
+	pthread_t thread;
+	
+	if (!wp) {
+		condlog(3, "%s: no waiter thread", mpp->alias);
 		return;
+	}
+	wp = wp->thread;
 
+	if (!wp) {
+		condlog(3, "%s: thread not started", mpp->alias);
+		return;
+	}
 	condlog(2, "%s: stop event checker thread", wp->mapname);
 	pthread_kill(thread, SIGHUP);
 }
@@ -725,7 +732,7 @@ uev_remove_map (char * devname, struct vectors * vecs)
 	if (!mpp) {
 		condlog(3, "%s: devmap not registered, can't remove",
 			devname);
-		return 1;
+		return 0;
 	}
 
 	condlog(2, "remove %s devmap", mpp->alias);
