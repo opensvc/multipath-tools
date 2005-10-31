@@ -11,7 +11,7 @@ int dm_type(char *, char *);
 int dm_flush_map (char *, char *);
 int dm_flush_maps (char *);
 int dm_fail_path(char * mapname, char * path);
-int dm_reinstate(char * mapname, char * path);
+int dm_reinstate_path(char * mapname, char * path);
 int dm_queue_if_no_path(char *mapname, int enable);
 int dm_switchgroup(char * mapname, int index);
 int dm_enablegroup(char * mapname, int index);

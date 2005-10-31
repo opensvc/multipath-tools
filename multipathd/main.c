@@ -1109,7 +1109,7 @@ reinstate_path (struct path * pp)
 	if (!pp->mpp)
 		return;
 
-	if (dm_reinstate(pp->mpp->alias, pp->dev_t))
+	if (dm_reinstate_path(pp->mpp->alias, pp->dev_t))
 		condlog(0, "%s: reinstate failed", pp->dev_t);
 	else {
 		condlog(2, "%s: reinstated", pp->dev_t);

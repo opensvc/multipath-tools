@@ -579,7 +579,7 @@ reinstate_paths (struct multipath * mpp)
 				continue;
 
 			if (pp->dmstate == PSTATE_FAILED) {
-				if (dm_reinstate(mpp->alias, pp->dev_t))
+				if (dm_reinstate_path(mpp->alias, pp->dev_t))
 					condlog(0, "error reinstating %s",
 						pp->dev);
 			}

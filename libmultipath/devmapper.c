@@ -508,7 +508,7 @@ dm_fail_path(char * mapname, char * path)
 }
 
 int
-dm_reinstate(char * mapname, char * path)
+dm_reinstate_path(char * mapname, char * path)
 {
 	char message[32];
 

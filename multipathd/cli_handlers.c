@@ -144,7 +144,7 @@ cli_reinstate(void * v, char ** reply, int * len, void * data)
 	if (!pp || !pp->mpp || !pp->mpp->alias)
 		return 1;
 
-	return dm_reinstate(pp->mpp->alias, pp->dev_t);
+	return dm_reinstate_path(pp->mpp->alias, pp->dev_t);
 }
 
 int
