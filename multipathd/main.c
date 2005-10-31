@@ -1063,6 +1063,8 @@ uxlsnrloop (void * ap)
 	add_handler(RECONFIGURE, cli_reconfigure);
 	add_handler(SUSPEND+MAP, cli_suspend);
 	add_handler(RESUME+MAP, cli_resume);
+	add_handler(REINSTATE+PATH, cli_reinstate);
+	add_handler(FAIL+PATH, cli_fail);
 
 	uxsock_listen(&uxsock_trigger, ap);
 

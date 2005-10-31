@@ -128,3 +128,39 @@ cli_resume(void * v, char ** reply, int * len, void * data)
 	mpp->dmstate = MAPSTATE_ACTIVE;
 	return 0;
 }
+
+int
+cli_reinstate(void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	char * param = get_keyparam(v, PATH);
+	struct path * pp;
+	
+	pp = find_path_by_dev(vecs->pathvec, param);
+
+	if (!pp)
+		 pp = find_path_by_devt(vecs->pathvec, param);
+
+	if (!pp || !pp->mpp || !pp->mpp->alias)
+		return 1;
+
+	return dm_reinstate(pp->mpp->alias, pp->dev_t);
+}
+
+int
+cli_fail(void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	char * param = get_keyparam(v, PATH);
+	struct path * pp;
+	
+	pp = find_path_by_dev(vecs->pathvec, param);
+
+	if (!pp)
+		 pp = find_path_by_devt(vecs->pathvec, param);
+
+	if (!pp || !pp->mpp || !pp->mpp->alias)
+		return 1;
+
+	return dm_fail_path(pp->mpp->alias, pp->dev_t);
+}

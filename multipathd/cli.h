@@ -5,6 +5,8 @@ enum {
 	__SWITCH,
 	__SUSPEND,
 	__RESUME,
+	__REINSTATE,
+	__FAIL,
 	__PATHS,
 	__MAPS,
 	__PATH,
@@ -21,6 +23,8 @@ enum {
 #define SWITCH		(1 << __SWITCH)
 #define SUSPEND		(1 << __SUSPEND)
 #define RESUME		(1 << __RESUME)
+#define REINSTATE	(1 << __REINSTATE)
+#define FAIL		(1 << __FAIL)
 #define PATHS		(1 << __PATHS)
 #define MAPS		(1 << __MAPS)
 #define PATH		(1 << __PATH)
