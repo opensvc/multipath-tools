@@ -663,13 +663,12 @@ uev_add_map (char * devname, struct vectors * vecs)
 	char * alias;
 	struct multipath * mpp;
 
-	if (sysfs_get_dev(sysfs_path, devname, dev_t, BLK_DEV_SIZE))
-		return 1;
-
-	if (sscanf(dev_t, "%d:%d", &major, &minor) != 2)
-		return 1;
-
-	alias = dm_mapname(major, minor);
+	if (sscanf(devname, "dm-%d", &minor) == 1 &&
+	    !sysfs_get_dev(sysfs_path, devname, dev_t, BLK_DEV_SIZE) &&
+	    sscanf(dev_t, "%d:%d", &major, &minor) == 2)
+		alias = dm_mapname(major, minor);
+	else
+		alias = STRDUP(devname);
 		
 	if (!alias)
 		return 1;
