@@ -219,36 +219,6 @@ uuidout:
 }
 
 extern int
-dm_get_state(char *name, int *state)
-{
-	struct dm_task *dmt;
-	struct dm_info info;
-
-	dmt = dm_task_create(DM_DEVICE_INFO);
-	if (!dmt)
-		return 1;
-
-        if (!dm_task_set_name (dmt, name))
-                goto out;
-
-	if (!dm_task_run(dmt))
-                goto out;
-
-	if (!dm_task_get_info(dmt, &info))
-		goto out;
-
-	*state = info.suspended;
-	if (info.suspended)
-		*state = MAPSTATE_SUSPENDED;
-	else
-		*state = MAPSTATE_ACTIVE;
-
-out:
-	dm_task_destroy(dmt);
-	return 0;
-}
-
-extern int
 dm_get_status(char * name, char * outstatus)
 {
 	int r = 1;
@@ -613,7 +583,6 @@ dm_get_maps (vector mp, char * type)
 				goto out1;
 
 			dm_get_uuid(names->name, mpp->wwid);
-			dm_get_state(names->name, &mpp->dmstate);
 		}
 
 		if (!vector_alloc_slot(mp))
@@ -788,6 +757,52 @@ dm_remove_partmaps (char * mapname)
 	r = 0;
 out:
 	dm_task_destroy (dmt);
+	return r;
+}
+
+static struct dm_info *
+alloc_dminfo (void)
+{
+	return MALLOC(sizeof(struct dm_info));
+}
+
+int
+dm_get_info (char * mapname, struct dm_info ** dmi)
+{
+	int r = 1;
+	struct dm_task *dmt = NULL;
+	
+	if (!mapname)
+		return 1;
+
+	if (!*dmi)
+		*dmi = alloc_dminfo();
+
+	if (!*dmi)
+		return 1;
+
+	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
+		goto out;
+
+	if (!dm_task_set_name(dmt, mapname))
+		goto out;
+
+	dm_task_no_open_count(dmt);
+
+	if (!dm_task_run(dmt))
+		goto out;
+
+	if (!dm_task_get_info(dmt, *dmi))
+		goto out;
+
+	r = 0;
+out:
+	if (r)
+		memset(*dmi, 0, sizeof(struct dm_info));
+
+	if (dmt)
+		dm_task_destroy(dmt);
+
 	return r;
 }
 

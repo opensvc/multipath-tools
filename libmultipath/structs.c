@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <libdevmapper.h>
 
 #include "memory.h"
 #include "vector.h"
@@ -139,6 +140,9 @@ free_multipath (struct multipath * mpp, int free_paths)
 	    (!mpp->hwe || (mpp->hwe && mpp->hwhandler != mpp->hwe->hwhandler)))
 		FREE(mpp->hwhandler);
 
+	if (mpp->dmi)
+		FREE(mpp->dmi);
+	
 	free_pathvec(mpp->paths, free_paths);
 	free_pgvec(mpp->pg, free_paths);
 	FREE(mpp);
@@ -205,8 +209,11 @@ find_mp_by_minor (vector mp, int minor)
 	int i;
 	struct multipath * mpp;
 	
+	if (!mpp->dmi)
+		return NULL;
+
 	vector_foreach_slot (mp, mpp, i)
-		if (mpp->minor == minor)
+		if (mpp->dmi->minor == minor)
 			return mpp;
 
 	return NULL;

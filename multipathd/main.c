@@ -383,6 +383,9 @@ remove_maps (struct vectors * vecs)
 static int
 setup_multipath (struct vectors * vecs, struct multipath * mpp)
 {
+	if (dm_get_info(mpp->alias, &mpp->dmi))
+		goto out;
+
 	set_multipath_wwid(mpp);
 	mpp->mpe = find_mpe(mpp->wwid);
 	condlog(4, "discovered map %s", mpp->alias);
@@ -696,7 +699,6 @@ uev_add_map (char * devname, struct vectors * vecs)
 	if (!mpp)
 		return 1;
 
-	mpp->minor = minor;
 	mpp->alias = alias;
 
 	if (setup_multipath(vecs, mpp))
@@ -895,7 +897,6 @@ map_discovery (struct vectors * vecs)
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		if (setup_multipath(vecs, mpp))
 			return 1;
-		mpp->minor = dm_get_minor(mpp->alias);
 		start_waiter_thread(mpp, vecs);
 	}
 

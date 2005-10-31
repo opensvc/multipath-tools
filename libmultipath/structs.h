@@ -54,12 +54,6 @@ enum pgstates {
 	PGSTATE_ACTIVE
 };
 
-enum mapstates {
-	MAPSTATE_UNDEF,
-	MAPSTATE_ACTIVE,
-	MAPSTATE_SUSPENDED
-};
-
 struct scsi_idlun {
 	int dev_id;
 	int host_unique_id;
@@ -116,7 +110,6 @@ struct path {
 
 struct multipath {
 	char wwid[WWID_SIZE];
-	int minor;
 	int pgpolicy;
 	int nextpg;
 	int queuedio;
@@ -127,12 +120,12 @@ struct multipath {
 	int nr_active;     /* current available(= not known as failed) paths */
 	int no_path_retry; /* number of retries after all paths are down */
 	int retry_tick;    /* remaining times for retries */
-	int dmstate;
 	unsigned long long size;
 	vector paths;
 	vector pg;
 	char params[PARAMS_SIZE];
 	char status[PARAMS_SIZE];
+	struct dm_info * dmi;
 
 	/* configlet pointers */
 	char * alias;

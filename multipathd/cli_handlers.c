@@ -106,7 +106,7 @@ cli_suspend(void * v, char ** reply, int * len, void * data)
 	if (!mpp)
 		return 1;
 	
-	mpp->dmstate = MAPSTATE_SUSPENDED;
+	dm_get_info(param, &mpp->dmi);
 	return 0;
 }
 
@@ -125,7 +125,7 @@ cli_resume(void * v, char ** reply, int * len, void * data)
 	if (!mpp)
 		return 1;
 	
-	mpp->dmstate = MAPSTATE_ACTIVE;
+	dm_get_info(param, &mpp->dmi);
 	return 0;
 }
 

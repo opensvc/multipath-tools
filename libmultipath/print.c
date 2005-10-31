@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <libdevmapper.h>
 
 #include "vector.h"
 #include "structs.h"
@@ -76,8 +77,8 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 	vector_foreach_slot (mpvec, mpp, i) {
 		mapname_len = (mpp->alias) ?
 				strlen(mpp->alias) : strlen(mpp->wwid);
-		mapdev_len = snprintf(buff, MAX_FIELD_LEN,
-			       	      "dm-%i", mpp->minor);
+		if (mpp->dmi) mapdev_len = snprintf(buff, MAX_FIELD_LEN,
+			       	      "dm-%i", mpp->dmi->minor);
 		failback_progress_len = 4 + PROGRESS_LEN +
 					(int)log10(mpp->failback_tick) +
 					(int)log10(mpp->pgfailback);
@@ -207,7 +208,9 @@ snprint_map (char * line, int len, char * format,
 			PAD(ml->mapname_len);
 			break;
 		case 'd':
-			PRINT(c, TAIL, "dm-%i", mpp->minor);
+			if (mpp->dmi) {
+				PRINT(c, TAIL, "dm-%i", mpp->dmi->minor);
+			}
 			PAD(ml->mapdev_len);
 			break;
 		case 'F':
@@ -228,9 +231,11 @@ snprint_map (char * line, int len, char * format,
 				PRINT(c, TAIL, "-");
 			} else if (mpp->no_path_retry > 0) {
 				if (mpp->retry_tick) {
-					PRINT(c, TAIL, "%i sec", mpp->retry_tick);
+					PRINT(c, TAIL, "%i sec",
+					      mpp->retry_tick);
 				} else {
-					PRINT(c, TAIL, "%i chk", mpp->no_path_retry);
+					PRINT(c, TAIL, "%i chk",
+					      mpp->no_path_retry);
 				}
 			}
 			PAD(ml->queueing_progress_len);
@@ -240,12 +245,10 @@ snprint_map (char * line, int len, char * format,
 			PAD(ml->nr_active_len);
 			break;
 		case 't':
-			if (mpp->dmstate == MAPSTATE_ACTIVE) {
-				PRINT(c, TAIL, "active");
-			} else if (mpp->dmstate == MAPSTATE_SUSPENDED) {
+			if (mpp->dmi && mpp->dmi->suspended) {
 				PRINT(c, TAIL, "suspend");
 			} else {
-				PRINT(c, TAIL, "-");
+				PRINT(c, TAIL, "active");
 			}
 			PAD(7);
 			break;
