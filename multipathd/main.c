@@ -725,10 +725,10 @@ uev_remove_map (char * devname, struct vectors * vecs)
 	int minor;
 	struct multipath * mpp;
 
-	if (sscanf(devname, "dm-%d", &minor) != 1)
-		return 1;
-
-	mpp = find_mp_by_minor(vecs->mpvec, minor);
+	if (sscanf(devname, "dm-%d", &minor) == 1)
+		mpp = find_mp_by_minor(vecs->mpvec, minor);
+	else
+		mpp = find_mp_by_alias(vecs->mpvec, devname);
 
 	if (!mpp) {
 		condlog(3, "%s: devmap not registered, can't remove",
