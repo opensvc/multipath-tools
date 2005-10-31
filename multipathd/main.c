@@ -452,7 +452,7 @@ update_multipath (struct vectors *vecs, char *mapname)
 	int i, j;
 	int r = 1;
 
-	mpp = find_mp(vecs->mpvec, mapname);
+	mpp = find_mp_by_alias(vecs->mpvec, mapname);
 
 	if (!mpp)
 		goto out;
@@ -677,7 +677,7 @@ uev_add_map (char * devname, struct vectors * vecs)
 		return 0;
 	}
 
-	mpp = find_mp(vecs->mpvec, alias);
+	mpp = find_mp_by_alias(vecs->mpvec, alias);
 
 	if (mpp) {
 		/*

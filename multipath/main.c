@@ -485,7 +485,7 @@ select_action (struct multipath * mpp, vector curmp)
 {
 	struct multipath * cmpp;
 
-	cmpp = find_mp(curmp, mpp->alias);
+	cmpp = find_mp_by_alias(curmp, mpp->alias);
 
 	if (!cmpp) {
 		cmpp = find_mp_by_wwid(curmp, mpp->wwid);

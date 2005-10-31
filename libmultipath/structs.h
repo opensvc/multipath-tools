@@ -167,7 +167,7 @@ void free_multipathvec (vector mpvec, int free_paths);
 int store_path (vector pathvec, struct path * pp);
 int store_pathgroup (vector pgvec, struct pathgroup * pgp);
 
-struct multipath * find_mp (vector mp, char * alias);
+struct multipath * find_mp_by_alias (vector mp, char * alias);
 struct multipath * find_mp_by_wwid (vector mp, char * wwid);
 struct multipath * find_mp_by_minor (vector mp, int minor);
 	

@@ -101,7 +101,7 @@ cli_suspend(void * v, char ** reply, int * len, void * data)
 	if (!r) /* error */
 		return 1;
 	
-	struct multipath * mpp = find_mp(vecs->mpvec, param);
+	struct multipath * mpp = find_mp_by_alias(vecs->mpvec, param);
 
 	if (!mpp)
 		return 1;
@@ -120,7 +120,7 @@ cli_resume(void * v, char ** reply, int * len, void * data)
 	if (!r) /* error */
 		return 1;
 	
-	struct multipath * mpp = find_mp(vecs->mpvec, param);
+	struct multipath * mpp = find_mp_by_alias(vecs->mpvec, param);
 
 	if (!mpp)
 		return 1;

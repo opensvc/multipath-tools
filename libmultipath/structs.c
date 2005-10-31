@@ -226,7 +226,7 @@ find_mp_by_wwid (vector mp, char * wwid)
 }
 
 struct multipath *
-find_mp (vector mp, char * alias)
+find_mp_by_alias (vector mp, char * alias)
 {
 	int i;
 	int len;
