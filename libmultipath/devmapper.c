@@ -465,11 +465,10 @@ dm_flush_maps (char * type)
 }
 
 int
-dm_fail_path(char * mapname, char * path)
+dm_message(char * mapname, char * message)
 {
 	int r = 1;
 	struct dm_task *dmt;
-	char str[32];
 
 	if (!(dmt = dm_task_create(DM_DEVICE_TARGET_MSG)))
 		return 1;
@@ -480,10 +479,7 @@ dm_fail_path(char * mapname, char * path)
 	if (!dm_task_set_sector(dmt, 0))
 		goto out;
 
-	if (snprintf(str, 32, "fail_path %s\n", path) > 32)
-		goto out;
-
-	if (!dm_task_set_message(dmt, str))
+	if (!dm_task_set_message(dmt, message))
 		goto out;
 
 	dm_task_no_open_count(dmt);
@@ -493,132 +489,75 @@ dm_fail_path(char * mapname, char * path)
 
 	r = 0;
 out:
+	if (r)
+		condlog(0, "DM message failed [%s]", message);
+
 	dm_task_destroy(dmt);
 	return r;
+}
+
+int
+dm_fail_path(char * mapname, char * path)
+{
+	char message[32];
+
+	if (snprintf(message, 32, "fail_path %s\n", path) > 32)
+		return 1;
+
+	return dm_message(mapname, message);
 }
 
 int
 dm_reinstate(char * mapname, char * path)
 {
-	int r = 1;
-	struct dm_task *dmt;
-	char str[32];
+	char message[32];
 
-	if (!(dmt = dm_task_create(DM_DEVICE_TARGET_MSG)))
+	if (snprintf(message, 32, "reinstate_path %s\n", path) > 32)
 		return 1;
 
-	if (!dm_task_set_name(dmt, mapname))
-		goto out;
-
-	if (!dm_task_set_sector(dmt, 0))
-		goto out;
-
-	if (snprintf(str, 32, "reinstate_path %s\n", path) > 32)
-		goto out;
-
-	if (!dm_task_set_message(dmt, str))
-		goto out;
-
-	dm_task_no_open_count(dmt);
-
-	if (!dm_task_run(dmt))
-		goto out;
-
-	r = 0;
-out:
-	dm_task_destroy(dmt);
-	return r;
+	return dm_message(mapname, message);
 }
 
 int
 dm_queue_if_no_path(char *mapname, int enable)
 {
-	int r = 1;
-	struct dm_task *dmt;
-	char *str;
+	char *message;
 
 	if (enable)
-		str = "queue_if_no_path\n";
+		message = "queue_if_no_path\n";
 	else
-		str = "fail_if_no_path\n";
+		message = "fail_if_no_path\n";
 
-	if (!(dmt = dm_task_create(DM_DEVICE_TARGET_MSG)))
-		return 1;
-
-	if (!dm_task_set_name(dmt, mapname))
-		goto out;
-
-	if (!dm_task_set_sector(dmt, 0))
-		goto out;
-
-	if (!dm_task_set_message(dmt, str))
-		goto out;
-
-	dm_task_no_open_count(dmt);
-
-	if (!dm_task_run(dmt))
-		goto out;
-
-	r = 0;
-out:
-	dm_task_destroy(dmt);
-	return r;
+	return dm_message(mapname, message);
 }
 
 static int
 dm_groupmsg (char * msg, char * mapname, int index)
 {
-	int r = 0;
-	struct dm_task *dmt;
-	char str[24];
+	char message[32];
 
-	if (!(dmt = dm_task_create(DM_DEVICE_TARGET_MSG)))
-		return 0;
+	if (snprintf(message, 32, "%s_group %i\n", msg, index) > 32)
+		return 1;
 
-	if (!dm_task_set_name(dmt, mapname))
-		goto out;
-
-	if (!dm_task_set_sector(dmt, 0))
-		goto out;
-
-	snprintf(str, 24, "%s_group %i\n", msg, index);
-
-	if (!dm_task_set_message(dmt, str))
-		goto out;
-
-	dm_task_no_open_count(dmt);
-
-	if (!dm_task_run(dmt))
-		goto out;
-
-	condlog(3, "message %s 0 %s", mapname, str);
-	r = 1;
-
-	out:
-	if (!r)
-		condlog(3, "message %s 0 %s failed", mapname, str);
-
-	dm_task_destroy(dmt);
-
-	return r;
+	return dm_message(mapname, message);
 }
 
 int
 dm_switchgroup(char * mapname, int index)
 {
-	return dm_groupmsg("switch", mapname,index);
+	return dm_groupmsg("switch", mapname, index);
 }
 
 int
 dm_enablegroup(char * mapname, int index)
 {
-	return dm_groupmsg("enable", mapname,index);
+	return dm_groupmsg("enable", mapname, index);
 }
 
 int
 dm_disablegroup(char * mapname, int index)
 {
-	return dm_groupmsg("disable", mapname,index);
+	return dm_groupmsg("disable", mapname, index);
 }
 
 int
