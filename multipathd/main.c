@@ -394,8 +394,8 @@ setup_multipath (struct vectors * vecs, struct multipath * mpp)
 		goto out;
 
 	adopt_paths(vecs, mpp);
-	select_pgfailback(mpp);
 	mpp->hwe = extract_hwe_from_path(mpp);
+	select_pgfailback(mpp);
 	set_no_path_retry(mpp);
 
 	return 0;
