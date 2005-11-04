@@ -108,7 +108,7 @@ alloc_multipath (void)
 	mpp = (struct multipath *)MALLOC(sizeof(struct multipath));
 
 	if (mpp)
-		mpp->nextpg = 1;
+		mpp->bestpg = 1;
 
 	return mpp;
 }

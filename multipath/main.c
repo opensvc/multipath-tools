@@ -317,7 +317,7 @@ assemble_map (struct multipath * mp)
 	
 	shift = snprintf(p, freechar, "%s %s %i %i",
 			 mp->features, mp->hwhandler,
-			 VECTOR_SIZE(mp->pg), mp->nextpg);
+			 VECTOR_SIZE(mp->pg), mp->bestpg);
 
 	if (shift >= freechar) {
 		fprintf(stderr, "mp->params too small\n");
@@ -418,7 +418,7 @@ setup_map (struct multipath * mpp)
 	 * ponders each path group and determine highest prio pg
 	 * to switch over (default to first)
 	 */
-	select_path_group(mpp);
+	mpp->bestpg = select_path_group(mpp);
 
 	/*
 	 * transform the mp->pg vector of vectors of paths
@@ -548,7 +548,7 @@ select_action (struct multipath * mpp, vector curmp)
 		condlog(3, "set ACT_RELOAD: path group topology change");
 		return;
 	}
-	if (cmpp->nextpg != mpp->nextpg) {
+	if (cmpp->nextpg != mpp->bestpg) {
 		mpp->action = ACT_SWITCHPG;
 		condlog(3, "set ACT_SWITCHPG: next path group change");
 		return;
@@ -634,7 +634,7 @@ domap (struct multipath * mpp)
 		return 2;
 
 	case ACT_SWITCHPG:
-		dm_switchgroup(mpp->alias, mpp->nextpg);
+		dm_switchgroup(mpp->alias, mpp->bestpg);
 		/*
 		 * we may have avoided reinstating paths because there where in
 		 * active or disabled PG. Now that the topology has changed,
@@ -686,7 +686,7 @@ domap (struct multipath * mpp)
 		/*
 		 * DM_DEVICE_CREATE or DM_DEVICE_RELOAD succeeded
 		 */
-		dm_switchgroup(mpp->alias, mpp->nextpg);
+		dm_switchgroup(mpp->alias, mpp->bestpg);
 		print_mp(mpp);
 	}
 
@@ -936,7 +936,7 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 			update_paths(mpp);
 
 		if (conf->list > 1)
-			select_path_group(mpp);
+			mpp->bestpg = select_path_group(mpp);
 
 		disassemble_status(mpp->status, mpp);
 

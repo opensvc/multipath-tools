@@ -112,6 +112,7 @@ struct multipath {
 	char wwid[WWID_SIZE];
 	int pgpolicy;
 	int nextpg;
+	int bestpg;
 	int queuedio;
 	int action;
 	int pgfailback;

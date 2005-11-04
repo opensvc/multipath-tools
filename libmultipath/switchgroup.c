@@ -3,16 +3,17 @@
 #include "switchgroup.h"
 #include "../libcheckers/path_state.h"
 
-extern void
+extern int
 select_path_group (struct multipath * mpp)
 {
 	int i, j;
 	int highest = 0;
+	int bestpg = 1;
 	struct pathgroup * pgp;
 	struct path * pp;
 
 	if (!mpp->pg)
-		return;
+		return 1;
 	
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		if (!pgp->paths)
@@ -25,7 +26,8 @@ select_path_group (struct multipath * mpp)
 
 		if (pgp->priority > highest) {
 			highest = pgp->priority;
-			mpp->nextpg = i + 1;
+			bestpg = i + 1;
 		}
 	}
+	return bestpg;
 }

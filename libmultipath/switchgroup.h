@@ -1,1 +1,1 @@
-void select_path_group (struct multipath * mpp);
+int select_path_group (struct multipath * mpp);

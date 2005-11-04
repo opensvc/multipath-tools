@@ -423,10 +423,9 @@ need_switch_pathgroup (struct multipath * mpp, int refresh)
 			vector_foreach_slot (pgp->paths, pp, j)
 				pathinfo(pp, conf->hwtable, DI_PRIO);
 
-	select_path_group(mpp); /* sets mpp->nextpg */
-	pgp = VECTOR_SLOT(mpp->pg, mpp->nextpg - 1);
+	mpp->bestpg = select_path_group(mpp);
 
-	if (pgp && pgp->status != PGSTATE_ACTIVE)
+	if (mpp->bestpg != mpp->nextpg)
 		return 1;
 
 	return 0;
@@ -435,15 +434,9 @@ need_switch_pathgroup (struct multipath * mpp, int refresh)
 static void
 switch_pathgroup (struct multipath * mpp)
 {
-	struct pathgroup * pgp;
-	
-	pgp = VECTOR_SLOT(mpp->pg, mpp->nextpg - 1);
-	
-	if (pgp && pgp->status != PGSTATE_ACTIVE) {
-		dm_switchgroup(mpp->alias, mpp->nextpg);
-		condlog(2, "%s: switch to path group #%i",
-			 mpp->alias, mpp->nextpg);
-	}
+	dm_switchgroup(mpp->alias, mpp->bestpg);
+	condlog(2, "%s: switch to path group #%i",
+		 mpp->alias, mpp->bestpg);
 }
 
 static int
