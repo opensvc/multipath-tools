@@ -4,7 +4,8 @@ void dlog (int sink, int prio, char * fmt, ...);
 
 #include <pthread.h>
 #include <stdarg.h>
-#include "../multipathd/log_pthread.h"
+
+#include "log_pthread.h"
 
 int logsink;
 

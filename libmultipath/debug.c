@@ -3,7 +3,7 @@
 #include <stdarg.h>
 
 #if DAEMON
-#include "../multipathd/log_pthread.h"
+#include "log_pthread.h"
 #endif
 
 #include "config.h"
