@@ -3,6 +3,9 @@
 #include <libdevmapper.h>
 #include <wait.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <errno.h>
 
 /*
  * libsysfs
@@ -1559,6 +1562,53 @@ child (void * param)
 	exit(0);
 }
 
+static int
+daemonize(void)
+{
+	int pid, i;
+	int in_fd, out_fd;
+
+	if( (pid = fork()) < 0){
+		fprintf(stderr, "Failed first fork : %s\n", strerror(errno));
+		return -1;
+	}
+	else if (pid != 0)
+		return pid;
+
+	setsid();
+
+	if ( (pid = fork()) < 0)
+		fprintf(stderr, "Failed second fork : %s\n", strerror(errno));
+	else if (pid != 0)
+		_exit(0);
+
+	in_fd = open("/dev/null", O_RDONLY);
+	if (in_fd < 0){
+		fprintf(stderr, "cannot open /dev/null for input : %s\n",
+			strerror(errno));
+		_exit(0);
+	}
+	out_fd = open("/dev/console", O_WRONLY);
+	if (out_fd < 0){
+		fprintf(stderr, "cannot open /dev/console for output : %s\n",
+			strerror(errno));
+		_exit(0);
+	}
+
+	close(STDIN_FILENO);
+	dup(in_fd);
+	close(STDOUT_FILENO);
+	dup(out_fd);
+	close(STDERR_FILENO);
+	dup(out_fd);
+
+	close(in_fd);
+	close(out_fd);
+	chdir("/");
+	umask(0);
+	return 0;
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -1607,7 +1657,7 @@ main (int argc, char *argv[])
 	if (!logsink)
 		err = 0;
 	else
-		err = fork();
+		err = daemonize();
 	
 	if (err < 0)
 		/* error */
