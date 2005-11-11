@@ -25,8 +25,14 @@ static void process(int fd)
 
 	while ((line = readline("multipathd> "))) {
 		size_t len;
+		size_t llen = strlen(line);
 
-		if (send_packet(fd, line, strlen(line) + 1) != 0) break;
+		if (!llen) {
+			free(line);
+			continue;
+		}
+
+		if (send_packet(fd, line, llen + 1) != 0) break;
 		if (recv_packet(fd, &reply, &len) != 0) break;
 
 		printf("%s", reply);
