@@ -1565,7 +1565,7 @@ child (void * param)
 static int
 daemonize(void)
 {
-	int pid, i;
+	int pid;
 	int in_fd, out_fd;
 
 	if( (pid = fork()) < 0){
