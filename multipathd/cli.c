@@ -314,7 +314,7 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data)
 
 	if (!cmdvec) {
 		*reply = genhelp_handler();
-		*len = strlen(*reply);
+		*len = strlen(*reply) + 1;
 		return 0;
 	}
 

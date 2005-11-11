@@ -626,8 +626,10 @@ domap (struct multipath * mpp)
 	/*
 	 * last chance to quit before touching the devmaps
 	 */
-	if (conf->dry_run)
+	if (conf->dry_run) {
+		print_mp(mpp);
 		return 0;
+	}
 
 	switch (mpp->action) {
 	case ACT_NOTHING:
