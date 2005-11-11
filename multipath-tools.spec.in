@@ -44,11 +44,17 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/sbin/devmap_name
 %{prefix}/sbin/multipath
 %{prefix}/sbin/kpartx
+%{prefix}/sbin/mpath_prio_alua
+%{prefix}/sbin/mpath_prio_emc
+%{prefix}/sbin/mpath_prio_random
+%{prefix}/sbin/mpath_prio_balance_units
 %{prefix}/usr/share/man/man8/devmap_name.8.gz
 %{prefix}/usr/share/man/man8/multipath.8.gz
+%{prefix}/usr/share/man/man8/kpartx.8.gz
+%{prefix}/usr/share/man/man8/mpath_prio_alua.8.gz
+%{prefix}/usr/share/man/man8/multipathd.8.gz
 %{prefix}/usr/bin/multipathd
-%{prefix}/etc/hotplug.d/scsi/multipath.hotplug
-%{prefix}/etc/init.d/multipathd
+%{prefix}/etc/udev/rules.d/multipath.rules
 
 
 %changelog

@@ -18,7 +18,7 @@ else
 	OBJS = pp_balance_units.o $(MULTIPATHLIB)-$(BUILD).a
 endif
 
-EXEC = pp_balance_units
+EXEC = mpath_prio_balance_units
 
 all: $(BUILD)
 
