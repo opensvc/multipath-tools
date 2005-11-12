@@ -1240,6 +1240,12 @@ checkerloop (void *ap)
 			newstate = pp->checkfn(pp->fd, checker_msg,
 					       &pp->checker_context);
 			
+			if (newstate < 0) {
+				condlog(2, "%s: unusable path", pp->dev);
+				pathinfo(pp, conf->hwtable, 0);
+				continue;
+			}
+
 			if (newstate != pp->state) {
 				pp->state = newstate;
 				LOG_MSG(1, checker_msg);
