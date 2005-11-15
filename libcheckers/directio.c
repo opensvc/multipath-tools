@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2005 Hannes Reinecke, Suse
+ */
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,3 +1,8 @@
+/*
+ * Some code borrowed from sg-utils.
+ *
+ * Copyright (c) 2004 Christophe Varoqui
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

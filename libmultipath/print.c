@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2005 Christophe Varoqui
+ */
 #include <stdio.h>
 #include <string.h>
 #include <math.h>

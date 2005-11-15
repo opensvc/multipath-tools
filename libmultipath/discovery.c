@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2004, 2005 Christophe Varoqui
+ * Copyright (c) 2005 Stefan Bader, IBM
+ * Copyright (c) 2005 Mike Anderson
+ */
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>

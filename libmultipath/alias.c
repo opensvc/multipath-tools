@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2005 Christophe Varoqui
+ * Copyright (c) 2005 Benjamin Marzinski, Redhat
+ */
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>

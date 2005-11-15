@@ -1,4 +1,13 @@
 /*
+ * Source: copy of util-linux' partx partx.c
+ *
+ * Copyrights of the original file applies
+ * Copyright (c) 2004, 2005 Christophe Varoqui
+ * Copyright (c) 2005 Kiyoshi Ueda
+ * Copyright (c) 2005 Lars Soltau
+ */
+
+/*
  * Given a block device and a partition table type,
  * try to parse the partition table, and list the
  * contents. Optionally add or remove partitions.

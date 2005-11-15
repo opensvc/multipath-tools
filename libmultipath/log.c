@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2005 Christophe Varoqui
+ * Copyright (c) 2005 Benjamin Marzinski, Redhat
+ * Copyright (c) 2005 Jun'ichi Nomura, NEC
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>

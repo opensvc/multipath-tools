@@ -14,6 +14,9 @@
  *              modify it under the terms of the GNU General Public License
  *              as published by the Free Software Foundation; either version
  *              2 of the License, or (at your option) any later version.
+ *
+ * Copyright (c) 2002, 2003, 2004 Alexandre Cassen
+ * Copyright (c) 2005 Christophe Varoqui
  */
 
 #include "memory.h"

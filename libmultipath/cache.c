@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2005 Christophe Varoqui
+ * Copyright (c) 2005 Stephan Bader, IBM
+ */
 #include <unistd.h>
 
 #include "memory.h"

@@ -1,7 +1,7 @@
 /*
- * Christophe Varoqui (2004)
- * This code is GPLv2, see license file
- *
+ * Copyright (c) 2004, 2005 Christophe Varoqui
+ * Copyright (c) 2005 Stefan Bader, IBM
+ * Copyright (c) 2005 Edward Goggin, EMC
  */
 #include <stdio.h>
 #include <stdlib.h>

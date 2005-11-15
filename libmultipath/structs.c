@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2004, 2005 Christophe Varoqui
+ * Copyright (c) 2004 Stefan Bader, IBM
+ */
 #include <stdio.h>
 #include <unistd.h>
 #include <libdevmapper.h>

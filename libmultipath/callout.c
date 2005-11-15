@@ -1,3 +1,9 @@
+/*
+ * Source: copy of the udev package source file
+ *
+ * Copyrights of the source file apply
+ * Copyright (c) 2004 Christophe Varoqui
+ */
 #include <stdio.h>
 #include <sys/stat.h>
 #include <string.h>

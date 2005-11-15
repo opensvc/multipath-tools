@@ -1,6 +1,12 @@
 /*
- * A simple domain socket listener
  * Original author : tridge@samba.org, January 2002
+ * 
+ * Copyright (c) 2005 Christophe Varoqui
+ * Copyright (c) 2005 Benjamin Marzinski, Redhat
+ */
+
+/*
+ * A simple domain socket listener
  */
 #include <stdio.h>
 #include <stdlib.h>

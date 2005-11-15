@@ -1,3 +1,9 @@
+/*
+ * Original author : tridge@samba.org, January 2002
+ * 
+ * Copyright (c) 2005 Christophe Varoqui
+ * Copyright (c) 2005 Benjamin Marzinski, Redhat
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2004, 2005 Lars Marowsky-Bree
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

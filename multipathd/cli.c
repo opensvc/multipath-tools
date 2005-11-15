@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2005 Christophe Varoqui
+ */
 #include <memory.h>
 #include <vector.h>
 #include <util.h>

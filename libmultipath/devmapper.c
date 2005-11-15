@@ -1,3 +1,9 @@
+/*
+ * snippets copied from device-mapper dmsetup.c
+ * Copyright (c) 2004, 2005 Christophe Varoqui
+ * Copyright (c) 2005 Kiyoshi Ueda, NEC
+ * Copyright (c) 2005 Patrick Caulfield, Redhat
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

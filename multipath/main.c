@@ -3,7 +3,7 @@
  *
  * Version:     $Id: main.h,v 0.0.1 2003/09/18 15:13:38 cvaroqui Exp $
  *
- * Author:      Copyright (C) 2003 Christophe Varoqui
+ * Author:      Christophe Varoqui
  *
  *              This program is distributed in the hope that it will be useful,
  *              but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -14,6 +14,12 @@
  *              modify it under the terms of the GNU General Public License
  *              as published by the Free Software Foundation; either version
  *              2 of the License, or (at your option) any later version.
+ *
+ * Copyright (c) 2003, 2004, 2005 Christophe Varoqui
+ * Copyright (c) 2005 Benjamin Marzinski, Redhat
+ * Copyright (c) 2005 Kiyoshi Ueda, NEC
+ * Copyright (c) 2005 Patrick Caulfield, Redhat
+ * Copyright (c) 2005 Edward Goggin, EMC
  */
 
 #include <stdio.h>

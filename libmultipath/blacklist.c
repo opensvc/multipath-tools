@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2004, 2005 Christophe Varoqui
+ */
 #include <stdio.h>
 
 #include "memory.h"

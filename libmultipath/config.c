@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2004, 2005 Christophe Varoqui
+ * Copyright (c) 2005 Benjamin Marzinski, Redhat
+ * Copyright (c) 2005 Edward Goggin, EMC
+ */
 #include <stdio.h>
 #include <string.h>
 

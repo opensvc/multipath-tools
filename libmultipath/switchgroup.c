@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2005 Christophe Varoqui
+ */
 #include "vector.h"
 #include "structs.h"
 #include "switchgroup.h"
