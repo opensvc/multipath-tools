@@ -28,7 +28,6 @@ setup_default_hwtable (vector hw)
 	r += store_hwe(hw, "HP", "A6189A", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "HP", "OPEN-", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "IBM", "ProFibre 4000R", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "NETAPP", "LUN", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "SGI", "TP9100", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "SGI", "TP9300", MULTIBUS, DEFAULT_GETUID);
 	r += store_hwe(hw, "STK", "OPENstorage D280", GROUP_BY_SERIAL, DEFAULT_GETUID);
@@ -40,6 +39,9 @@ setup_default_hwtable (vector hw)
 		   "1 queue_if_no_path", "emc_clariion", FAILBACK_IMMEDIATE);
 	r += store_hwe_ext(hw, "IBM", "3542", GROUP_BY_SERIAL, DEFAULT_GETUID,
 		   NULL, "0", "0", "tur", FAILBACK_UNDEF);
+	r += store_hwe_ext(hw, "NETAPP", "LUN", GROUP_BY_PRIO, DEFAULT_GETUID,
+		  "/sbin/mpath_prio_netapp /dev/%n", NULL,
+		  "1 queue_if_no_path", "readsector0");
 	r += store_hwe_ext(hw, "Pillar", "Axiom 500", GROUP_BY_PRIO,
 		   DEFAULT_GETUID, "/sbin/mpath_prio_alua %d", "0", "0",
 		   "tur", FAILBACK_UNDEF);
