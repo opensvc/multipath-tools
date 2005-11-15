@@ -893,9 +893,7 @@ update_paths (struct multipath * mpp)
 					pp->state = PATH_DOWN;
 					continue;
 				}
-				pathinfo(pp, conf->hwtable,
-					 DI_SYSFS | DI_CHECKER | \
-					 DI_SERIAL | DI_PRIO);
+				pathinfo(pp, conf->hwtable, DI_ALL);
 				continue;
 			}
 			if (pp->state == PATH_UNCHECKED)
