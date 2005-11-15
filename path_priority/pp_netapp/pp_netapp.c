@@ -220,12 +220,12 @@ static int netapp_prio(const char *dev)
 				"results[8] = 0x%x\n", results[8]);
 			goto try_fcp_proxy;
 		}
-		if ((strncmp(&results[12], "ism_sw", 6) == 0) ||
-		    (strncmp(&results[12], "iswt", 4) == 0)) {
+		if ((strncmp((char *)&results[12], "ism_sw", 6) == 0) ||
+		    (strncmp((char *)&results[12], "iswt", 4) == 0)) {
 			is_iscsi_software = 1;
 			goto prio_select;
 		}
-		else if (strncmp(&results[12], "ism_sn", 6) == 0) {
+		else if (strncmp((char *)&results[12], "ism_sn", 6) == 0) {
 			is_iscsi_hardware = 1;
 			goto prio_select;
 		}

@@ -41,7 +41,7 @@ setup_default_hwtable (vector hw)
 		   NULL, "0", "0", "tur", FAILBACK_UNDEF);
 	r += store_hwe_ext(hw, "NETAPP", "LUN", GROUP_BY_PRIO, DEFAULT_GETUID,
 		  "/sbin/mpath_prio_netapp /dev/%n", NULL,
-		  "1 queue_if_no_path", "readsector0");
+		  "1 queue_if_no_path", "readsector0", FAILBACK_UNDEF);
 	r += store_hwe_ext(hw, "Pillar", "Axiom 500", GROUP_BY_PRIO,
 		   DEFAULT_GETUID, "/sbin/mpath_prio_alua %d", "0", "0",
 		   "tur", FAILBACK_UNDEF);
