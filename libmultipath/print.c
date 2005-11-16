@@ -82,7 +82,10 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 				strlen(mpp->alias) : strlen(mpp->wwid);
 		if (mpp->dmi) mapdev_len = snprintf(buff, MAX_FIELD_LEN,
 			       	      "dm-%i", mpp->dmi->minor);
-		failback_progress_len = 4 + PROGRESS_LEN +
+		if (mpp->pgfailback == -FAILBACK_IMMEDIATE)
+			failback_progress_len = 9;
+		else
+			failback_progress_len = 4 + PROGRESS_LEN +
 					(int)log10(mpp->failback_tick) +
 					(int)log10(mpp->pgfailback);
 		queueing_progress_len = 5 + (int)log10(mpp->retry_tick);
@@ -217,6 +220,11 @@ snprint_map (char * line, int len, char * format,
 			PAD(ml->mapdev_len);
 			break;
 		case 'F':
+			if (mpp->pgfailback == -FAILBACK_IMMEDIATE) {
+				PRINT(c, TAIL, "immediate");
+				PAD(ml->failback_progress_len);
+				break;
+			}
 			if (!mpp->failback_tick) {
 				PRINT(c, TAIL, "-");
 			} else {
