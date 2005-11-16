@@ -1131,7 +1131,7 @@ enable_group(struct path * pp)
 	 * we can safely return here, because upon map reload, all
 	 * PG will be enabled.
  	 */
-	if (!pp->pgindex)
+	if (!pp->mpp->pg || !pp->pgindex)
 		return;
 
 	pgp = VECTOR_SLOT(pp->mpp->pg, pp->pgindex - 1);
@@ -1263,7 +1263,9 @@ checkerloop (void *ap)
 				pp->checkint = conf->checkint;
 
 				if (newstate == PATH_DOWN ||
-				    newstate == PATH_SHAKY) {
+				    newstate == PATH_SHAKY ||
+				    update_multipath_strings(pp->mpp,
+					    		     vecs->pathvec)) {
 					/*
 					 * proactively fail path in the DM
 					 */
@@ -1283,13 +1285,7 @@ checkerloop (void *ap)
 				reinstate_path(pp);
 
 				/*
-				 * need to switch group ?
-				 */
-				update_multipath_strings(pp->mpp,
-							 vecs->pathvec);
-
-				/*
-				 * schedule defered failback
+				 * schedule [defered] failback
 				 */
 				if (pp->mpp->pgfailback > 0)
 					pp->mpp->failback_tick =
