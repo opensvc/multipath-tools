@@ -32,6 +32,7 @@
 #		failback		manual
 #		rr_weight		priorities
 #		no_path_retry		5
+#		rr_min_io		100
 #	}
 #	multipath {
 #		wwid			1DEC_____321816758474
@@ -50,6 +51,7 @@
 #		failback		15
 #		rr_weight		priorities
 #		no_path_retry		queue
+#		rr_min_io		100
 #	}
 #	device {
 #		vendor			"COMPAQ  "

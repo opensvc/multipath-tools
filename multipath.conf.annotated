@@ -213,6 +213,15 @@
 #		# default : (null)
 #		#
 #		#no_path_retry  queue
+#
+#		#
+#		# name    : rr_min_io
+#		# scope   : multipath
+#		# desc    : the number of IO to route to a path before switching
+#		#           to the next in the same path group
+#		# default : 1000
+#		#
+#		rr_min_io	100
 #	}
 #	multipath {
 #		wwid	1DEC_____321816758474
@@ -305,6 +314,15 @@
 #		# default : immediate
 #		#
 #		failback		30
+#
+#		#
+#		# name    : rr_min_io
+#		# scope   : multipath
+#		# desc    : the number of IO to route to a path before switching
+#		#           to the next in the same path group
+#		# default : 1000
+#		#
+#		rr_min_io	100
 #	}
 #	device {
 #		vendor			"COMPAQ  "

@@ -243,3 +243,31 @@ select_no_path_retry(struct multipath *mp)
 	condlog(3, "no_path_retry = NONE (internal default)");
 	return 0;
 }
+
+extern int
+select_minio (struct multipath * mp)
+{
+	if (mp->mpe && mp->mpe->minio) {
+		mp->minio = mp->mpe->minio;
+		condlog(3, "minio = %i (LUN setting)",
+			mp->minio);
+		return 0;
+	}
+	if (mp->hwe && mp->hwe->minio) {
+		mp->minio = mp->hwe->minio;
+		condlog(3, "minio = %i (controler setting)",
+			mp->minio);
+		return 0;
+	}
+	if (conf->minio) {
+		mp->minio = conf->minio;
+		condlog(3, "minio = %i (config file default)",
+			mp->minio);
+		return 0;
+	}
+	mp->minio = 1000;
+	condlog(3, "minio = %i (internal default)",
+		mp->minio);
+	return 0;
+}
+

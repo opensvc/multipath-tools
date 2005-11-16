@@ -318,6 +318,7 @@ assemble_map (struct multipath * mp)
 	struct pathgroup * pgp;
 	struct path * pp;
 
+	minio = mp->minio;
 	p = mp->params;
 	freechar = sizeof(mp->params);
 	
@@ -344,8 +345,6 @@ assemble_map (struct multipath * mp)
 		freechar -= shift;
 
 		vector_foreach_slot (pgp->paths, pp, j) {
-			minio = conf->minio;
-			
 			if (mp->rr_weight == RR_WEIGHT_PRIO && pp->priority)
 				minio *= pp->priority;
 
@@ -391,6 +390,7 @@ setup_map (struct multipath * mpp)
 	select_hwhandler(mpp);
 	select_rr_weight(mpp);
 	select_no_path_retry(mpp);
+	select_minio(mpp);
 
 	/*
 	 * apply selected grouping policy to valid paths
@@ -542,6 +542,12 @@ select_action (struct multipath * mpp, vector curmp)
 		    strlen(mpp->selector))) {
 		mpp->action = ACT_RELOAD;
 		condlog(3, "set ACT_RELOAD: selector change");
+		return;
+	}
+	if (cmpp->minio != mpp->minio) {
+		mpp->action = ACT_RELOAD;
+		condlog(3, "set ACT_RELOAD: minio change (%u->%u)",
+			cmpp->minio, mpp->minio);
 		return;
 	}
 	if (VECTOR_SIZE(cmpp->pg) != VECTOR_SIZE(mpp->pg)) {

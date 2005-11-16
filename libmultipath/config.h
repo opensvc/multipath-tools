@@ -19,6 +19,7 @@ struct hwentry {
 	int pgfailback;
 	int rr_weight;
 	int no_path_retry;
+	int minio;
 
 	char * vendor;
 	char * product;
@@ -35,6 +36,7 @@ struct mpentry {
 	int pgfailback;
 	int rr_weight;
 	int no_path_retry;
+	int minio;
 
 	char * wwid;
 	char * selector;

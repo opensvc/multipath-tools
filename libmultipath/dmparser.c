@@ -234,7 +234,19 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 			pp->pgindex = i + 1;
 
 			for (k = 0; k < num_paths_args; k++)
-				p += get_word(p, NULL);
+				if (k == 0 && !strncmp(mpp->selector,
+						       "round-robin", 11)) {
+					p += get_word(p, &word);
+					mpp->minio = atoi(word);
+
+					if (mpp->rr_weight)
+						mpp->minio /= mpp->rr_weight;
+
+					FREE(word);
+				}
+				else
+					p += get_word(p, NULL);
+
 		}
 	}
 	return 0;

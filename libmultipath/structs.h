@@ -122,6 +122,7 @@ struct multipath {
 	int nr_active;     /* current available(= not known as failed) paths */
 	int no_path_retry; /* number of retries after all paths are down */
 	int retry_tick;    /* remaining times for retries */
+	int minio;
 	unsigned long long size;
 	vector paths;
 	vector pg;

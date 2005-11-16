@@ -501,6 +501,26 @@ hw_no_path_retry_handler(vector strvec)
 	return 0;
 }
 
+static int
+hw_minio_handler(vector strvec)
+{
+	struct hwentry *hwe = VECTOR_LAST_SLOT(conf->hwtable);
+	char * buff;
+
+	if (!hwe)
+		return 1;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	hwe->minio = atoi(buff);
+	FREE(buff);
+
+	return 0;
+}
+
 /*
  * multipaths block handlers
  */
@@ -672,6 +692,26 @@ mp_no_path_retry_handler(vector strvec)
 	return 0;
 }
 
+static int
+mp_minio_handler(vector strvec)
+{
+	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
+	char * buff;
+
+	if (!mpe)
+		return 1;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	mpe->minio = atoi(buff);
+	FREE(buff);
+
+	return 0;
+}
+
 vector
 init_keywords(void)
 {
@@ -721,6 +761,7 @@ init_keywords(void)
 	install_keyword("failback", &hw_failback_handler);
 	install_keyword("rr_weight", &hw_weight_handler);
 	install_keyword("no_path_retry", &hw_no_path_retry_handler);
+	install_keyword("rr_min_io", &hw_minio_handler);
 	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);
@@ -733,6 +774,7 @@ init_keywords(void)
 	install_keyword("failback", &mp_failback_handler);
 	install_keyword("rr_weight", &mp_weight_handler);
 	install_keyword("no_path_retry", &mp_no_path_retry_handler);
+	install_keyword("rr_min_io", &mp_minio_handler);
 	install_sublevel_end();
 
 	return keywords;

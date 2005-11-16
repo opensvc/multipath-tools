@@ -9,3 +9,4 @@ int select_checkfn(struct path *pp);
 int select_getuid (struct path * pp);
 int select_getprio (struct path * pp);
 int select_no_path_retry(struct multipath *mp);
+int select_minio(struct multipath *mp);
