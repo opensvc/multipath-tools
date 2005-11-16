@@ -154,7 +154,7 @@ wait_for_file (char * filename)
 	return 0;
 }
 #endif
-			
+
 #define declare_sysfs_get_str(fname, fmt) \
 extern int \
 sysfs_get_##fname (char * sysfs_path, char * dev, char * buff, int len) \
@@ -356,7 +356,7 @@ get_serial (char * str, int fd)
         return 0;
 }
 
-static void
+static int
 sysfs_get_bus (char * sysfs_path, struct path * curpath)
 {
 	struct sysfs_device *sdev;
@@ -373,11 +373,11 @@ sysfs_get_bus (char * sysfs_path, struct path * curpath)
 	if(safe_sprintf(attr_path, "%s/block/%s/device",
 			sysfs_path, curpath->dev)) {
 		condlog(0, "attr_path too small");
-		return;
+		return 1;
 	}
 
 	if (0 > sysfs_get_link(attr_path, attr_buff, sizeof(attr_buff)))
-		return;
+		return 1;
 
 	sdev = sysfs_open_device_path(attr_buff);
 
@@ -388,7 +388,7 @@ sysfs_get_bus (char * sysfs_path, struct path * curpath)
 
 	sysfs_close_device(sdev);
 
-	return;
+	return 0;
 }
 
 static int
@@ -462,7 +462,9 @@ scsi_sysfs_pathinfo (struct path * curpath)
 static int
 common_sysfs_pathinfo (struct path * curpath)
 {
-	sysfs_get_bus(sysfs_path, curpath);
+	if (sysfs_get_bus(sysfs_path, curpath))
+		return 1;
+
 	condlog(3, "bus = %i", curpath->bus);
 
 	if (sysfs_get_dev(sysfs_path, curpath->dev,
