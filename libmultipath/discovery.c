@@ -629,9 +629,10 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	 * get path prio
 	 */
 	if (mask & DI_PRIO) {
-		if (!pp->getprio)
+		if (!pp->getprio_selected) {
 			select_getprio(pp);
-
+			pp->getprio_selected = 1;
+		}
 		if (!pp->getprio) {
 			pp->priority = 1;
 		} else if (apply_format(pp->getprio, &buff[0], pp)) {

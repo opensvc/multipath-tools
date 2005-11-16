@@ -168,6 +168,7 @@ orphan_path (struct path * pp)
 	pp->checker_context = NULL;
 	pp->getuid = NULL;
 	pp->getprio = NULL;
+	pp->getprio_selected = 0;
 
 	if (pp->fd >= 0)
 		close(pp->fd);

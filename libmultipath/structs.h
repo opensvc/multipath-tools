@@ -99,6 +99,7 @@ struct path {
 	int pgindex;
 	char * getuid;
 	char * getprio;
+	int getprio_selected;
 	int (*checkfn) (int, char *, void **);
 	void * checker_context;
 	struct multipath * mpp;

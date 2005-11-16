@@ -21,6 +21,7 @@ revoke_cache_info(struct path * pp)
 	pp->getuid = NULL;
 	pp->getprio = NULL;
 	pp->checkfn = NULL;
+	pp->getprio_selected = 0;
 }
 
 int
