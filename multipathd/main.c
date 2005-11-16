@@ -809,23 +809,32 @@ show_paths (char ** r, int * len, struct vectors * vecs)
 	char * c;
 	char * reply;
 	struct path_layout pl;
+	int maxlen = INITIAL_REPLY_LEN;
+	int again = 1;
 
 	get_path_layout(&pl, vecs->pathvec);
-	reply = MALLOC(MAX_REPLY_LEN);
+	reply = MALLOC(maxlen);
 
-	if (!reply)
-		return 1;
+	while (again) {
+		if (!reply)
+			return 1;
 
-	c = reply;
+		c = reply;
 
-	if (VECTOR_SIZE(vecs->pathvec) > 0)
-		c += snprint_path_header(c, reply + MAX_REPLY_LEN - c,
-					 PRINT_PATH_CHECKER, &pl);
+		if (VECTOR_SIZE(vecs->pathvec) > 0)
+			c += snprint_path_header(c, reply + maxlen - c,
+						 PRINT_PATH_CHECKER, &pl);
 
-	vector_foreach_slot(vecs->pathvec, pp, i)
-		c += snprint_path(c, reply + MAX_REPLY_LEN - c,
-			       	  PRINT_PATH_CHECKER, pp, &pl);
+		vector_foreach_slot(vecs->pathvec, pp, i)
+			c += snprint_path(c, reply + maxlen - c,
+					  PRINT_PATH_CHECKER, pp, &pl);
 
+		again = ((c - reply) == (maxlen - 1));
+
+		if (again)
+			reply = REALLOC(reply, maxlen *= 2);
+
+	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
 	return 0;
@@ -839,22 +848,30 @@ show_maps (char ** r, int *len, struct vectors * vecs)
 	char * c;
 	char * reply;
 	struct map_layout ml;
+	int maxlen = INITIAL_REPLY_LEN;
+	int again = 1;
 
 	get_map_layout(&ml, vecs->mpvec);
-	reply = MALLOC(MAX_REPLY_LEN);
+	reply = MALLOC(maxlen);
 
-	if (!reply)
-		return 1;
+	while (again) {
+		if (!reply)
+			return 1;
 
-	c = reply;
-	if (VECTOR_SIZE(vecs->mpvec) > 0)
-		c += snprint_map_header(c, reply + MAX_REPLY_LEN - c,
-					PRINT_MAP_FAILBACK, &ml);
+		c = reply;
+		if (VECTOR_SIZE(vecs->mpvec) > 0)
+			c += snprint_map_header(c, reply + maxlen - c,
+						PRINT_MAP_FAILBACK, &ml);
 
-	vector_foreach_slot(vecs->mpvec, mpp, i)
-		c += snprint_map(c, reply + MAX_REPLY_LEN - c,
-			       	 PRINT_MAP_FAILBACK, mpp, &ml);
+		vector_foreach_slot(vecs->mpvec, mpp, i)
+			c += snprint_map(c, reply + maxlen - c,
+					 PRINT_MAP_FAILBACK, mpp, &ml);
 
+		again = ((c - reply) == (maxlen - 1));
+
+		if (again)
+			reply = REALLOC(reply, maxlen *= 2);
+	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
 	return 0;

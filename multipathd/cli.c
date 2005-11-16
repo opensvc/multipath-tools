@@ -283,7 +283,7 @@ genhelp_handler (void)
 	char * reply;
 	char * p;
 
-	reply = MALLOC(MAX_REPLY_LEN);
+	reply = MALLOC(INITIAL_REPLY_LEN);
 
 	if (!reply)
 		return NULL;

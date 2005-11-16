@@ -34,7 +34,7 @@ enum {
 #define PATHVEC		(1 << __PATHVEC)
 #define RECONFIGURE	(1 << __RECONFIGURE)
 
-#define MAX_REPLY_LEN 1000
+#define INITIAL_REPLY_LEN 1000
 
 struct key {
 	char * str;
