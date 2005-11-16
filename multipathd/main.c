@@ -994,7 +994,7 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	vecs = (struct vectors *)trigger_data;
 
 	if (uev_discard(uev->devpath))
-		goto out;
+		return 1;
 
 	basename(uev->devpath, devname);
 	lock(vecs->lock);
