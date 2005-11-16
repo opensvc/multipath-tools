@@ -49,6 +49,10 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 	int sock;
 	struct sockaddr_nl snl;
 	int retval;
+	int rcvbufsz = 128*1024;
+	int rcvsz = 0;
+	int rcvszsz = sizeof(rcvsz);
+	unsigned int *prcvszsz = (unsigned int *)&rcvszsz;
 
 	memset(&snl, 0x00, sizeof(struct sockaddr_nl));
 	snl.nl_family = AF_NETLINK;
@@ -60,6 +64,27 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		condlog(0, "error getting socket, exit\n");
 		return 1;
 	}
+
+	/*
+	 * try to avoid dropping uevents, even so, this is not a guarantee,
+	 * but it does help to change the netlink uevent socket's
+	 * receive buffer threshold from the default value of 106,496 to
+	 * the maximum value of 262,142.
+	 */
+	retval = setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &rcvbufsz,
+			    sizeof(rcvbufsz));
+
+	if (retval < 0) {
+		condlog(0, "error setting receive buffer size for socket, exit\n");
+		exit(1);
+	}
+	retval = getsockopt(sock, SOL_SOCKET, SO_RCVBUF, &rcvsz, prcvszsz);
+
+	if (retval < 0) {
+		condlog(0, "error setting receive buffer size for socket, exit\n");
+		exit(1);
+	}
+	condlog(3, "receive buffer size for socket is %u.\n", rcvsz);
 
 	retval = bind(sock, (struct sockaddr *) &snl,
 		      sizeof(struct sockaddr_nl));
