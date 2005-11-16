@@ -213,13 +213,13 @@ find_mp_by_minor (vector mp, int minor)
 	int i;
 	struct multipath * mpp;
 	
-	if (!mpp->dmi)
-		return NULL;
+	vector_foreach_slot (mp, mpp, i) {
+		if (!mpp->dmi)
+			continue;
 
-	vector_foreach_slot (mp, mpp, i)
 		if (mpp->dmi->minor == minor)
 			return mpp;
-
+	}
 	return NULL;
 }
 
