@@ -311,7 +311,7 @@ pathcount (struct multipath * mpp, int state)
 
 	vector_foreach_slot (mpp->pg, pgp, i)
 		vector_foreach_slot (pgp->paths, pp, j)
-			if (pp->state == state)
+			if ((pp->state == state) || (state == PATH_WILD))
 				count++;
 
 	return count;

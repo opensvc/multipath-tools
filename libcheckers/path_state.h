@@ -1,3 +1,4 @@
+#define PATH_WILD	-1
 #define PATH_UNCHECKED	0
 #define PATH_DOWN	1
 #define PATH_UP		2
