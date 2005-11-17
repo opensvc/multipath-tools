@@ -45,9 +45,14 @@ struct map_layout {
 };
 
 
-void get_path_layout (struct path_layout * pl, vector pathvec);
-void get_map_layout (struct map_layout * pl, vector mpvec);
-int snprint_path_header (char *, int, char *, struct path_layout *);
-int snprint_map_header (char *, int, char *, struct map_layout *);
-int snprint_path (char *, int, char *, struct path *, struct path_layout *);
-int snprint_map (char *, int, char *,struct multipath *, struct map_layout *);
+void get_path_layout (vector pathvec);
+void get_map_layout (vector mpvec);
+int snprint_path_header (char *, int, char *);
+int snprint_map_header (char *, int, char *);
+int snprint_path (char *, int, char *, struct path *);
+int snprint_map (char *, int, char *,struct multipath *);
+
+void print_mp (struct multipath * mpp, int verbosity);
+void print_path (struct path * pp, char * style);
+void print_map (struct multipath * mpp);
+void print_all_paths (vector pathvec, int banner);

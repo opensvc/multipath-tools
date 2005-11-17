@@ -10,6 +10,8 @@
 #include "structs.h"
 #include "print.h"
 #include "dmparser.h"
+#include "configure.h"
+#include "defaults.h"
 
 #include "../libcheckers/path_state.h"
 
@@ -17,8 +19,12 @@
 
 #define MAX(x,y) (x > y) ? x : y
 
+/* for column aligned output */
+struct path_layout pl;
+struct map_layout ml;
+
 void
-get_path_layout (struct path_layout * pl, vector pathvec)
+get_path_layout (vector pathvec)
 {
 	int i;
 	char buff[MAX_FIELD_LEN];
@@ -31,11 +37,11 @@ get_path_layout (struct path_layout * pl, vector pathvec)
 	int prio_len;
 
 	/* reset max col lengths */
-	pl->uuid_len = 0;
-	pl->hbtl_len = 0;
-	pl->dev_len = 0;
-	pl->dev_t_len = 0;
-	pl->prio_len = 0;
+	pl.uuid_len = 0;
+	pl.hbtl_len = 0;
+	pl.dev_len = 0;
+	pl.dev_t_len = 0;
+	pl.prio_len = 0;
 
 	vector_foreach_slot (pathvec, pp, i) {
 		uuid_len = strlen(pp->wwid);
@@ -48,17 +54,17 @@ get_path_layout (struct path_layout * pl, vector pathvec)
 		dev_t_len = strlen(pp->dev_t);
 		prio_len = 1 + (int)log10(pp->priority);
 
-		pl->uuid_len = MAX(uuid_len, pl->uuid_len);
-		pl->hbtl_len = MAX(hbtl_len, pl->hbtl_len);
-		pl->dev_len = MAX(dev_len, pl->dev_len);
-		pl->dev_t_len = MAX(dev_t_len, pl->dev_t_len);
-		pl->prio_len = MAX(prio_len, pl->prio_len);
+		pl.uuid_len = MAX(uuid_len, pl.uuid_len);
+		pl.hbtl_len = MAX(hbtl_len, pl.hbtl_len);
+		pl.dev_len = MAX(dev_len, pl.dev_len);
+		pl.dev_t_len = MAX(dev_t_len, pl.dev_t_len);
+		pl.prio_len = MAX(prio_len, pl.prio_len);
 	}
 	return;
 }
 
 void
-get_map_layout (struct map_layout * ml, vector mpvec)
+get_map_layout (vector mpvec)
 {
 	int i;
 	char buff[MAX_FIELD_LEN];
@@ -71,11 +77,11 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 	int nr_active_len;
 
 	/* reset max col lengths */
-	ml->mapname_len = 0;
-	ml->mapdev_len = 0;
-	ml->failback_progress_len = 0;
-	ml->queueing_progress_len = 0;
-	ml->nr_active_len = 0;
+	ml.mapname_len = 0;
+	ml.mapdev_len = 0;
+	ml.failback_progress_len = 0;
+	ml.queueing_progress_len = 0;
+	ml.nr_active_len = 0;
 
 	vector_foreach_slot (mpvec, mpp, i) {
 		mapname_len = (mpp->alias) ?
@@ -91,13 +97,13 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 		queueing_progress_len = 5 + (int)log10(mpp->retry_tick);
 		nr_active_len = (int)log10(mpp->nr_active);
 
-		ml->mapname_len = MAX(mapname_len, ml->mapname_len);
-		ml->mapdev_len = MAX(mapdev_len, ml->mapdev_len);
-		ml->failback_progress_len = MAX(failback_progress_len,
-						ml->failback_progress_len);
-		ml->queueing_progress_len = MAX(queueing_progress_len,
-						ml->queueing_progress_len);
-		ml->nr_active_len = MAX(nr_active_len, ml->nr_active_len);
+		ml.mapname_len = MAX(mapname_len, ml.mapname_len);
+		ml.mapdev_len = MAX(mapdev_len, ml.mapdev_len);
+		ml.failback_progress_len = MAX(failback_progress_len,
+						ml.failback_progress_len);
+		ml.queueing_progress_len = MAX(queueing_progress_len,
+						ml.queueing_progress_len);
+		ml.nr_active_len = MAX(nr_active_len, ml.nr_active_len);
 	}
 	return;
 }
@@ -124,8 +130,7 @@ get_map_layout (struct map_layout * ml, vector mpvec)
 		PRINT(c, TAIL, " %i/%i", cur, total)
 
 int
-snprint_map_header (char * line, int len, char * format,
-	            struct map_layout * ml)
+snprint_map_header (char * line, int len, char * format)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
@@ -145,30 +150,30 @@ snprint_map_header (char * line, int len, char * format,
 		switch (*f) {
 		case 'w':	
 			PRINT(c, TAIL, "name");
-			ml->mapname_len = MAX(ml->mapname_len, 4);
-			PAD(ml->mapname_len);
+			ml.mapname_len = MAX(ml.mapname_len, 4);
+			PAD(ml.mapname_len);
 			break;
 		case 'd':
 			PRINT(c, TAIL, "sysfs");
-			ml->mapdev_len = MAX(ml->mapdev_len, 5);
-			PAD(ml->mapdev_len);
+			ml.mapdev_len = MAX(ml.mapdev_len, 5);
+			PAD(ml.mapdev_len);
 			break;
 		case 'F':
 			PRINT(c, TAIL, "failback");
-			ml->failback_progress_len =
-				MAX(ml->failback_progress_len, 8);
-			PAD(ml->failback_progress_len);
+			ml.failback_progress_len =
+				MAX(ml.failback_progress_len, 8);
+			PAD(ml.failback_progress_len);
 			break;
 		case 'Q':
 			PRINT(c, TAIL, "queueing");
-			ml->queueing_progress_len =
-				MAX(ml->queueing_progress_len, 8);
-			PAD(ml->queueing_progress_len);
+			ml.queueing_progress_len =
+				MAX(ml.queueing_progress_len, 8);
+			PAD(ml.queueing_progress_len);
 			break;
 		case 'n':
 			PRINT(c, TAIL, "paths");
-			ml->nr_active_len = MAX(ml->nr_active_len, 5);
-			PAD(ml->nr_active_len);
+			ml.nr_active_len = MAX(ml.nr_active_len, 5);
+			PAD(ml.nr_active_len);
 			break;
 		case 't':
 			PRINT(c, TAIL, "dm-st");
@@ -187,7 +192,7 @@ snprint_map_header (char * line, int len, char * format,
 
 int
 snprint_map (char * line, int len, char * format,
-	     struct multipath * mpp, struct map_layout * ml)
+	     struct multipath * mpp)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
@@ -211,18 +216,18 @@ snprint_map (char * line, int len, char * format,
 			} else {
 				PRINT(c, TAIL, "%s", mpp->wwid);
 			}
-			PAD(ml->mapname_len);
+			PAD(ml.mapname_len);
 			break;
 		case 'd':
 			if (mpp->dmi) {
 				PRINT(c, TAIL, "dm-%i", mpp->dmi->minor);
 			}
-			PAD(ml->mapdev_len);
+			PAD(ml.mapdev_len);
 			break;
 		case 'F':
 			if (mpp->pgfailback == -FAILBACK_IMMEDIATE) {
 				PRINT(c, TAIL, "immediate");
-				PAD(ml->failback_progress_len);
+				PAD(ml.failback_progress_len);
 				break;
 			}
 			if (!mpp->failback_tick) {
@@ -231,7 +236,7 @@ snprint_map (char * line, int len, char * format,
 				PRINT_PROGRESS(mpp->failback_tick,
 					       mpp->pgfailback);
 			}
-			PAD(ml->failback_progress_len);
+			PAD(ml.failback_progress_len);
 			break;
 		case 'Q':
 			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL) {
@@ -249,11 +254,11 @@ snprint_map (char * line, int len, char * format,
 					      mpp->no_path_retry);
 				}
 			}
-			PAD(ml->queueing_progress_len);
+			PAD(ml.queueing_progress_len);
 			break;
 		case 'n':
 			PRINT(c, TAIL, "%i", mpp->nr_active);
-			PAD(ml->nr_active_len);
+			PAD(ml.nr_active_len);
 			break;
 		case 't':
 			if (mpp->dmi && mpp->dmi->suspended) {
@@ -275,8 +280,7 @@ snprint_map (char * line, int len, char * format,
 }
 
 int
-snprint_path_header (char * line, int len, char * format,
-		     struct path_layout * pl)
+snprint_path_header (char * line, int len, char * format)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
@@ -296,21 +300,21 @@ snprint_path_header (char * line, int len, char * format,
 		switch (*f) {
 		case 'w':
 			PRINT(c, TAIL, "uuid");
-			PAD(pl->uuid_len);
+			PAD(pl.uuid_len);
 			break;
 		case 'i':
 			PRINT(c, TAIL, "hcil");
-			PAD(pl->hbtl_len);
+			PAD(pl.hbtl_len);
 			break;
 		case 'd':
 			PRINT(c, TAIL, "dev");
-			pl->dev_len = MAX(pl->dev_len, 3);
-			PAD(pl->dev_len);
+			pl.dev_len = MAX(pl.dev_len, 3);
+			PAD(pl.dev_len);
 			break;
 		case 'D':
 			PRINT(c, TAIL, "dev_t");
-			pl->dev_t_len = MAX(pl->dev_t_len, 5);
-			PAD(pl->dev_t_len);
+			pl.dev_t_len = MAX(pl.dev_t_len, 5);
+			PAD(pl.dev_t_len);
 			break;
 		case 'T':
 			PRINT(c, TAIL, "chk-st");
@@ -330,8 +334,8 @@ snprint_path_header (char * line, int len, char * format,
 			break;
 		case 'p':
 			PRINT(c, TAIL, "pri");
-			pl->prio_len = MAX(pl->prio_len, 3);
-			PAD(pl->prio_len);
+			pl.prio_len = MAX(pl.prio_len, 3);
+			PAD(pl.prio_len);
 			break;
 		default:
 			break;
@@ -345,8 +349,7 @@ snprint_path_header (char * line, int len, char * format,
 }
 
 int
-snprint_path (char * line, int len, char * format, struct path * pp,
-	    struct path_layout * pl)
+snprint_path (char * line, int len, char * format, struct path * pp)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
@@ -366,7 +369,7 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 		switch (*f) {
 		case 'w':	
 			PRINT(c, TAIL, "%s", pp->wwid);
-			PAD(pl->uuid_len);
+			PAD(pl.uuid_len);
 			break;
 		case 'i':
 			if (pp->sg_id.host_no < 0) {
@@ -378,7 +381,7 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 					pp->sg_id.scsi_id,
 					pp->sg_id.lun);
 			}
-			PAD(pl->hbtl_len);
+			PAD(pl.hbtl_len);
 			break;
 		case 'd':
 			if (!strlen(pp->dev)) {
@@ -386,11 +389,11 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 			} else {
 				PRINT(c, TAIL, "%s", pp->dev);
 			}
-			PAD(pl->dev_len);
+			PAD(pl.dev_len);
 			break;
 		case 'D':
 			PRINT(c, TAIL, "%s", pp->dev_t);
-			PAD(pl->dev_t_len);
+			PAD(pl.dev_t_len);
 			break;
 		case 'T':
 			switch (pp->state) {
@@ -445,7 +448,7 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 			} else {
 				PRINT(c, TAIL, "#");
 			}
-			PAD(pl->prio_len);
+			PAD(pl.prio_len);
 			break;
 		default:
 			break;
@@ -456,5 +459,144 @@ snprint_path (char * line, int len, char * format, struct path * pp,
 	line[c - line] = '\0';
 
 	return (c - line);
+}
+
+extern void
+print_mp (struct multipath * mpp, int verbosity)
+{
+	int j, i;
+	struct path * pp = NULL;
+	struct pathgroup * pgp = NULL;
+
+	if (mpp->action == ACT_NOTHING || !verbosity || !mpp->size)
+		return;
+
+	if (verbosity > 1) {
+		switch (mpp->action) {
+		case ACT_RELOAD:
+			printf("%s: ", ACT_RELOAD_STR);
+			break;
+
+		case ACT_CREATE:
+			printf("%s: ", ACT_CREATE_STR);
+			break;
+
+		case ACT_SWITCHPG:
+			printf("%s: ", ACT_SWITCHPG_STR);
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	if (mpp->alias)
+		printf("%s", mpp->alias);
+
+	if (verbosity == 1) {
+		printf("\n");
+		return;
+	}
+	if (strncmp(mpp->alias, mpp->wwid, WWID_SIZE))
+		printf(" (%s)", mpp->wwid);
+
+	printf("\n");
+
+	if (mpp->size < (1 << 11))
+		printf("[size=%llu kB]", mpp->size >> 1);
+	else if (mpp->size < (1 << 21))
+		printf("[size=%llu MB]", mpp->size >> 11);
+	else if (mpp->size < (1 << 31))
+		printf("[size=%llu GB]", mpp->size >> 21);
+	else
+		printf("[size=%llu TB]", mpp->size >> 31);
+
+	if (mpp->features)
+		printf("[features=\"%s\"]", mpp->features);
+
+	if (mpp->hwhandler)
+		printf("[hwhandler=\"%s\"]", mpp->hwhandler);
+
+	fprintf(stdout, "\n");
+
+	if (!mpp->pg)
+		return;
+
+	vector_foreach_slot (mpp->pg, pgp, j) {
+		printf("\\_ ");
+
+		if (mpp->selector) {
+			printf("%s ", mpp->selector);
+#if 0
+			/* align to path status info */
+			for (i = pl.hbtl_len + pl.dev_len + pl.dev_t_len + 4;
+			     i > strlen(mpp->selector); i--)
+				printf(" ");
+#endif
+		}
+		if (pgp->priority)
+			printf("[prio=%i]", pgp->priority);
+
+		switch (pgp->status) {
+		case PGSTATE_ENABLED:
+			printf("[enabled]");
+			break;
+		case PGSTATE_DISABLED:
+			printf("[disabled]");
+			break;
+		case PGSTATE_ACTIVE:
+			printf("[active]");
+			break;
+		default:
+			break;
+		}
+		printf("\n");
+
+		vector_foreach_slot (pgp->paths, pp, i)
+			print_path(pp, PRINT_PATH_INDENT);
+	}
+	printf("\n");
+}
+
+extern void
+print_path (struct path * pp, char * style)
+{
+	char line[MAX_LINE_LEN];
+
+	snprint_path(&line[0], MAX_LINE_LEN, style, pp);
+	printf("%s", line);
+}
+
+extern void
+print_map (struct multipath * mpp)
+{
+	if (mpp->size && mpp->params)
+		printf("0 %llu %s %s\n",
+			 mpp->size, DEFAULT_TARGET, mpp->params);
+	return;
+}
+
+extern void
+print_all_paths (vector pathvec, int banner)
+{
+	int i;
+	struct path * pp;
+	char line[MAX_LINE_LEN];
+
+	if (!VECTOR_SIZE(pathvec)) {
+		if (banner)
+			fprintf(stdout, "===== no paths =====\n");
+		return;
+	}
+	
+	if (banner)
+		fprintf(stdout, "===== paths list =====\n");
+
+	get_path_layout(pathvec);
+	snprint_path_header(line, MAX_LINE_LEN, PRINT_PATH_LONG);
+	fprintf(stdout, "%s", line);
+
+	vector_foreach_slot (pathvec, pp, i)
+		print_path(pp, PRINT_PATH_LONG);
 }
 

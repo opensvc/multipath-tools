@@ -780,11 +780,10 @@ show_paths (char ** r, int * len, struct vectors * vecs)
 	struct path * pp;
 	char * c;
 	char * reply;
-	struct path_layout pl;
 	int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
-	get_path_layout(&pl, vecs->pathvec);
+	get_path_layout(vecs->pathvec);
 	reply = MALLOC(maxlen);
 
 	while (again) {
@@ -795,11 +794,11 @@ show_paths (char ** r, int * len, struct vectors * vecs)
 
 		if (VECTOR_SIZE(vecs->pathvec) > 0)
 			c += snprint_path_header(c, reply + maxlen - c,
-						 PRINT_PATH_CHECKER, &pl);
+						 PRINT_PATH_CHECKER);
 
 		vector_foreach_slot(vecs->pathvec, pp, i)
 			c += snprint_path(c, reply + maxlen - c,
-					  PRINT_PATH_CHECKER, pp, &pl);
+					  PRINT_PATH_CHECKER, pp);
 
 		again = ((c - reply) == (maxlen - 1));
 
@@ -819,11 +818,10 @@ show_maps (char ** r, int *len, struct vectors * vecs)
 	struct multipath * mpp;
 	char * c;
 	char * reply;
-	struct map_layout ml;
 	int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
-	get_map_layout(&ml, vecs->mpvec);
+	get_map_layout(vecs->mpvec);
 	reply = MALLOC(maxlen);
 
 	while (again) {
@@ -833,11 +831,11 @@ show_maps (char ** r, int *len, struct vectors * vecs)
 		c = reply;
 		if (VECTOR_SIZE(vecs->mpvec) > 0)
 			c += snprint_map_header(c, reply + maxlen - c,
-						PRINT_MAP_FAILBACK, &ml);
+						PRINT_MAP_FAILBACK);
 
 		vector_foreach_slot(vecs->mpvec, mpp, i)
 			c += snprint_map(c, reply + maxlen - c,
-					 PRINT_MAP_FAILBACK, mpp, &ml);
+					 PRINT_MAP_FAILBACK, mpp);
 
 		again = ((c - reply) == (maxlen - 1));
 
