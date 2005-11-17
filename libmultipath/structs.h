@@ -109,9 +109,12 @@ struct path {
 	struct hwentry * hwe;
 };
 
+typedef int (pgpolicyfn) (struct multipath *);
+
 struct multipath {
 	char wwid[WWID_SIZE];
 	int pgpolicy;
+	pgpolicyfn *pgpolicyfn;
 	int nextpg;
 	int bestpg;
 	int queuedio;

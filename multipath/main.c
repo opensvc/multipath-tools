@@ -308,52 +308,42 @@ filter_pathvec (vector pathvec, char * refwwid)
 static int
 setup_map (struct multipath * mpp)
 {
+	struct pathgroup * pgp;
+	int i;
+	
 	/*
 	 * don't bother if devmap size is unknown
 	 */
 	if (mpp->size <= 0) {
-		condlog(3, "%s devmap size is unknown", mpp->alias);
+		condlog(3, "%s: devmap size is unknown", mpp->alias);
 		return 1;
 	}
 
 	/*
 	 * properties selectors
 	 */
+	select_pgfailback(mpp);
 	select_pgpolicy(mpp);
 	select_selector(mpp);
 	select_features(mpp);
 	select_hwhandler(mpp);
 	select_rr_weight(mpp);
-	select_no_path_retry(mpp);
 	select_minio(mpp);
+	select_no_path_retry(mpp);
 
 	/*
-	 * apply selected grouping policy to valid paths
+	 * assign paths to path groups -- start with no groups and all paths
+	 * in mpp->paths
 	 */
-	switch (mpp->pgpolicy) {
-	case MULTIBUS:
-		one_group(mpp);
-		break;
-	case FAILOVER:
-		one_path_per_group(mpp);
-		break;
-	case GROUP_BY_SERIAL:
-		group_by_serial(mpp);
-		break;
-	case GROUP_BY_PRIO:
-		group_by_prio(mpp);
-		break;
-	case GROUP_BY_NODE_NAME:
-		group_by_node_name(mpp);
-		break;
-	default:
-		break;
-	}
+	if (mpp->pg) {
+		vector_foreach_slot (mpp->pg, pgp, i)
+			free_pathgroup(pgp, KEEP_PATHS);
 
-	if (mpp->pg == NULL) {
-		condlog(3, "pgpolicy failed to produce a pg vector");
-		return 1;
+		vector_free(mpp->pg);
+		mpp->pg = NULL;
 	}
+	if (mpp->pgpolicyfn && mpp->pgpolicyfn(mpp))
+		return 1;
 
 	/*
 	 * ponders each path group and determine highest prio pg
@@ -366,7 +356,7 @@ setup_map (struct multipath * mpp)
 	 * into a mp->params strings to feed the device-mapper
 	 */
 	if (assemble_map(mpp)) {
-		condlog(3, "problem assembing map");
+		condlog(0, "%s: problem assembing map", mpp->alias);
 		return 1;
 	}
 	return 0;
