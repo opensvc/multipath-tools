@@ -1341,7 +1341,7 @@ checkerloop (void *ap)
 }
 
 static struct vectors *
-init_paths (void)
+init_vecs (void)
 {
 	struct vectors * vecs;
 
@@ -1490,7 +1490,7 @@ child (void * param)
 	signal_init();
 	setscheduler();
 	set_oom_adj(-17);
-	vecs = init_paths();
+	vecs = init_vecs();
 
 	if (!vecs)
 		exit(1);
