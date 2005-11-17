@@ -393,6 +393,10 @@ coalesce_paths (vector curmp, vector pathvec)
 		if (pp1->mpp)
 			continue;
 
+		/* 3. if path has disappeared */
+		if (!pp1->size)
+			continue;
+
 		/*
 		 * at this point, we know we really got a new mp
 		 */
@@ -425,14 +429,16 @@ coalesce_paths (vector curmp, vector pathvec)
 			if (strcmp(pp1->wwid, pp2->wwid))
 				continue;
 			
-			pp2->mpp = mpp;
+			if (!pp2->size)
+				continue;
 
 			if (pp2->size != mpp->size) {
 				/*
 				 * ouch, avoid feeding that to the DM
 				 */
-				condlog(3, "path size mismatch : discard %s",
-				     mpp->wwid);
+				condlog(3, "%s: size %llu, expected %llu. "
+					"Discard", pp2->dev_t, pp2->size,
+					mpp->size);
 				mpp->action = ACT_NOTHING;
 			}
 			if (pp2->priority < 0)
@@ -440,6 +446,8 @@ coalesce_paths (vector curmp, vector pathvec)
 
 			if (store_path(mpp->paths, pp2))
 				return 1;
+
+			pp2->mpp = mpp;
 		}
 		if (setup_map(mpp))
 			goto next;
