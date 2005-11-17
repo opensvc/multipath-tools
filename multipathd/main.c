@@ -1552,6 +1552,9 @@ child (void * param)
 	if (logsink)
 		log_thread_stop();
 
+	dm_lib_release();
+	dm_lib_exit();
+
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
 #endif
