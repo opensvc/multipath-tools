@@ -42,6 +42,67 @@ merge_words (char ** dst, char * word, int space)
 	return 0;
 }
 
+/*
+ * Transforms the path group vector into a proper device map string
+ */
+int
+assemble_map (struct multipath * mp)
+{
+	int i, j;
+	int shift, freechar;
+	int minio;
+	char * p;
+	struct pathgroup * pgp;
+	struct path * pp;
+
+	minio = mp->minio;
+	p = mp->params;
+	freechar = sizeof(mp->params);
+	
+	shift = snprintf(p, freechar, "%s %s %i %i",
+			 mp->features, mp->hwhandler,
+			 VECTOR_SIZE(mp->pg), mp->bestpg);
+
+	if (shift >= freechar) {
+		fprintf(stderr, "mp->params too small\n");
+		return 1;
+	}
+	p += shift;
+	freechar -= shift;
+	
+	vector_foreach_slot (mp->pg, pgp, i) {
+		pgp = VECTOR_SLOT(mp->pg, i);
+		shift = snprintf(p, freechar, " %s %i 1", mp->selector,
+				 VECTOR_SIZE(pgp->paths));
+		if (shift >= freechar) {
+			fprintf(stderr, "mp->params too small\n");
+			return 1;
+		}
+		p += shift;
+		freechar -= shift;
+
+		vector_foreach_slot (pgp->paths, pp, j) {
+			if (mp->rr_weight == RR_WEIGHT_PRIO && pp->priority)
+				minio *= pp->priority;
+
+			shift = snprintf(p, freechar, " %s %d",
+					 pp->dev_t, minio);
+			if (shift >= freechar) {
+				fprintf(stderr, "mp->params too small\n");
+				return 1;
+			}
+			p += shift;
+			freechar -= shift;
+		}
+	}
+	if (freechar < 1) {
+		fprintf(stderr, "mp->params too small\n");
+		return 1;
+	}
+	snprintf(p, 1, "\n");
+	return 0;
+}
+
 extern int
 disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 {
