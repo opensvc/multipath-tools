@@ -284,3 +284,19 @@ find_path_by_devt (vector pathvec, char * dev_t)
 	return NULL;
 }
 
+extern int
+pathcount (struct multipath * mpp, int state)
+{
+	struct pathgroup *pgp;
+	struct path *pp;
+	int i, j;
+	int count = 0;
+
+	vector_foreach_slot (mpp->pg, pgp, i)
+		vector_foreach_slot (pgp->paths, pp, j)
+			if (pp->state == state)
+				count++;
+
+	return count;
+}
+

@@ -345,6 +345,8 @@ setup_map (struct multipath * mpp)
 	if (mpp->pgpolicyfn && mpp->pgpolicyfn(mpp))
 		return 1;
 
+	mpp->nr_active = pathcount(mpp, PATH_UP);
+
 	/*
 	 * ponders each path group and determine highest prio pg
 	 * to switch over (default to first)
@@ -360,21 +362,6 @@ setup_map (struct multipath * mpp)
 		return 1;
 	}
 	return 0;
-}
-
-static int
-pathcount (struct multipath * mpp, int state)
-{
-	struct pathgroup *pgp;
-	struct path *pp;
-	int i, j;
-	int count = 0;
-
-	vector_foreach_slot (mpp->pg, pgp, i)
-		vector_foreach_slot (pgp->paths, pp, j)
-			if (pp->state == state)
-				count++;
-	return count;
 }
 
 static void

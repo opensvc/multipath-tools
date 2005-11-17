@@ -259,21 +259,6 @@ set_multipath_wwid (struct multipath * mpp)
 	dm_get_uuid(mpp->alias, mpp->wwid);
 }
 
-static int
-pathcount (struct multipath *mpp, int state)
-{
-	struct pathgroup *pgp;
-	struct path *pp;
-	int i, j;
-	int count = 0;
-
-	vector_foreach_slot (mpp->pg, pgp, i)
-		vector_foreach_slot (pgp->paths, pp, j)
-			if (pp->state == state)
-				count++;
-	return count;
-}
-
 /*
  * mpp->no_path_retry:
  *   -2 (QUEUE) : queue_if_no_path enabled, never turned off
