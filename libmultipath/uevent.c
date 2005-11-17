@@ -33,14 +33,71 @@
 #include <sys/user.h>
 #include <asm/types.h>
 #include <linux/netlink.h>
+#include <pthread.h>
+#include <sys/mman.h>
 
 #include "memory.h"
 #include "debug.h"
 #include "uevent.h"
 
+typedef int (uev_trigger)(struct uevent *, void * trigger_data);
+
+pthread_t uevq_thr;
+struct uevent *uevqhp, *uevqtp;
+pthread_mutex_t uevq_lock, *uevq_lockp = &uevq_lock;
+pthread_mutex_t uevc_lock, *uevc_lockp = &uevc_lock;
+pthread_cond_t  uev_cond,  *uev_condp  = &uev_cond;
+uev_trigger *my_uev_trigger;
+void * my_trigger_data;
+
 struct uevent * alloc_uevent (void)
 {
 	return (struct uevent *)MALLOC(sizeof(struct uevent));
+}
+
+void
+service_uevq(void)
+{
+	int empty;
+	struct uevent *uev;
+
+	do {
+		pthread_mutex_lock(uevq_lockp);
+		empty = (uevqhp == NULL);
+		if (!empty) {
+			uev = uevqhp;
+			uevqhp = uev->next;
+			if (uevqtp == uev)
+				uevqtp = uev->next;
+			pthread_mutex_unlock(uevq_lockp);
+
+			if (my_uev_trigger && my_uev_trigger(uev,
+							my_trigger_data))
+				condlog(0, "uevent trigger error");
+
+			FREE(uev);
+		}
+		else {
+			pthread_mutex_unlock(uevq_lockp);
+		}
+	} while (empty == 0);
+}
+
+/*
+ * Service the uevent queue.
+ */
+static void *
+uevq_thread(void * et)
+{
+	mlockall(MCL_CURRENT | MCL_FUTURE);
+
+	while (1) {
+		pthread_mutex_lock(uevc_lockp);
+		pthread_cond_wait(uev_condp, uevc_lockp);
+		pthread_mutex_unlock(uevc_lockp);
+
+		service_uevq();
+	}
 }
 
 int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
@@ -53,6 +110,26 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 	int rcvsz = 0;
 	int rcvszsz = sizeof(rcvsz);
 	unsigned int *prcvszsz = (unsigned int *)&rcvszsz;
+	pthread_attr_t attr;
+
+	my_uev_trigger = uev_trigger;
+	my_trigger_data = trigger_data;
+
+	/*
+	 * Queue uevents for service by dedicated thread so that the uevent
+	 * listening thread does not block on multipathd locks (vecs->lock)
+	 * thereby not getting to empty the socket's receive buffer queue
+	 * often enough.
+	 */
+	uevqhp = uevqtp = NULL;
+
+	pthread_mutex_init(uevq_lockp, NULL);
+	pthread_mutex_init(uevc_lockp, NULL);
+	pthread_cond_init(uev_condp, NULL);
+
+	pthread_attr_init(&attr);
+	pthread_attr_setstacksize(&attr, 64 * 1024);
+	pthread_create(&uevq_thr, &attr, uevq_thread, NULL);
 
 	memset(&snl, 0x00, sizeof(struct sockaddr_nl));
 	snl.nl_family = AF_NETLINK;
@@ -94,29 +171,37 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 	}
 
 	while (1) {
-		static char buffer[HOTPLUG_BUFFER_SIZE + OBJECT_SIZE];
+		static char buff[HOTPLUG_BUFFER_SIZE + OBJECT_SIZE];
 		int i;
 		char *pos;
 		size_t bufpos;
 		ssize_t buflen;
 		struct uevent *uev;
+		char *buffer;
 
-		buflen = recv(sock, &buffer, sizeof(buffer), 0);
+		buflen = recv(sock, &buff, sizeof(buff), 0);
 		if (buflen <  0) {
 			condlog(0, "error receiving message\n");
 			continue;
 		}
 
-		if ((size_t)buflen > sizeof(buffer)-1)
-			buflen = sizeof(buffer)-1;
+		if ((size_t)buflen > sizeof(buff)-1)
+			buflen = sizeof(buff)-1;
 
-		buffer[buflen] = '\0';
 		uev = alloc_uevent();
 
 		if (!uev) {
 			condlog(1, "lost uevent, oom");
 			continue;
 		}
+
+		/*
+		 * Copy the shared receive buffer contents to buffer private
+		 * to this uevent so we can immediately reuse the shared buffer.
+		 */
+		memcpy(uev->buffer, buff, HOTPLUG_BUFFER_SIZE + OBJECT_SIZE);
+		buffer = uev->buffer;
+		buffer[buflen] = '\0';
 
 		/* save start of payload */
 		bufpos = strlen(buffer) + 1;
@@ -149,13 +234,33 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		for (i = 0; uev->envp[i] != NULL; i++)
 			condlog(3, "%s\n", uev->envp[i]);
 
-		if (uev_trigger && uev_trigger(uev, trigger_data))
-			condlog(0, "uevent trigger error");
+		/*
+		 * Queue uevent and poke service pthread.
+		 */
+		pthread_mutex_lock(uevq_lockp);
+		if (uevqtp)
+			uevqtp->next = uev;
+		else
+			uevqhp = uev;
+		uevqtp = uev;
+		uev->next = NULL;
+		pthread_mutex_unlock(uevq_lockp);
 
-		FREE(uev);
+		pthread_mutex_lock(uevc_lockp);
+		pthread_cond_signal(uev_condp);
+		pthread_mutex_unlock(uevc_lockp);
 	}
 
 exit:
 	close(sock);
+
+	pthread_mutex_lock(uevq_lockp);
+	pthread_cancel(uevq_thr);
+	pthread_mutex_unlock(uevq_lockp);
+
+	pthread_mutex_destroy(uevq_lockp);
+	pthread_mutex_destroy(uevc_lockp);
+	pthread_cond_destroy(uev_condp);
+
 	return 1;
 }

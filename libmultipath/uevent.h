@@ -8,6 +8,8 @@
 #endif
 
 struct uevent {
+	void *next;
+	char buffer[HOTPLUG_BUFFER_SIZE + OBJECT_SIZE];
 	char *devpath;
 	char *action;
 	char *envp[HOTPLUG_NUM_ENVP];
