@@ -117,8 +117,8 @@ alloc_multipath (void)
 	return mpp;
 }
 
-void
-free_multipath (struct multipath * mpp, int free_paths)
+extern void
+free_multipath_attributes (struct multipath * mpp)
 {
 	if (!mpp)
 		return;
@@ -126,23 +126,40 @@ free_multipath (struct multipath * mpp, int free_paths)
 	if (mpp->selector &&
 	    mpp->selector != conf->selector &&
 	    (!mpp->mpe || (mpp->mpe && mpp->selector != mpp->mpe->selector)) &&
-	    (!mpp->hwe || (mpp->hwe && mpp->selector != mpp->hwe->selector)))
+	    (!mpp->hwe || (mpp->hwe && mpp->selector != mpp->hwe->selector))) {
 		FREE(mpp->selector);
-
-	if (mpp->alias &&
-	    (!mpp->mpe || (mpp->mpe && mpp->alias != mpp->mpe->alias)) &&
-	    (mpp->wwid && mpp->alias != mpp->wwid))
-		FREE(mpp->alias);
+		mpp->selector = NULL;
+	}
 
 	if (mpp->features &&
 	    mpp->features != conf->features &&
-	    (!mpp->hwe || (mpp->hwe && mpp->features != mpp->hwe->features)))
+	    (!mpp->hwe || (mpp->hwe && mpp->features != mpp->hwe->features))) {
 		FREE(mpp->features);
+		mpp->features = NULL;
+	}
 
 	if (mpp->hwhandler &&
 	    mpp->hwhandler != conf->default_hwhandler &&
-	    (!mpp->hwe || (mpp->hwe && mpp->hwhandler != mpp->hwe->hwhandler)))
+	    (!mpp->hwe || (mpp->hwe && mpp->hwhandler != mpp->hwe->hwhandler))) {
 		FREE(mpp->hwhandler);
+		mpp->hwhandler = NULL;
+	}
+}
+
+void
+free_multipath (struct multipath * mpp, int free_paths)
+{
+	if (!mpp)
+		return;
+
+	free_multipath_attributes(mpp);
+
+	if (mpp->alias &&
+	    (!mpp->mpe || (mpp->mpe && mpp->alias != mpp->mpe->alias)) &&
+	    (mpp->wwid && mpp->alias != mpp->wwid)) {
+		FREE(mpp->alias);
+		mpp->alias = NULL;
+	}
 
 	if (mpp->dmi)
 		FREE(mpp->dmi);

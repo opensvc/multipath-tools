@@ -223,21 +223,7 @@ update_multipath_status (struct multipath *mpp)
 static int
 update_multipath_strings (struct multipath *mpp, vector pathvec)
 {
-	if (mpp->selector) {
-		FREE(mpp->selector);
-		mpp->selector = NULL;
-	}
-
-	if (mpp->features) {
-		FREE(mpp->features);
-		mpp->features = NULL;
-	}
-
-	if (mpp->hwhandler) {
-		FREE(mpp->hwhandler);
-		mpp->hwhandler = NULL;
-	}
-
+	free_multipath_attributes(mpp);
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
 
