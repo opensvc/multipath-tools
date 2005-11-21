@@ -6,12 +6,6 @@
 #define MAPGCINT 5
 #define MAX_CHECKINT CHECKINT << 2
 
-struct vectors {
-	pthread_mutex_t *lock;
-	vector pathvec;
-	vector mpvec;
-};
-
 int reconfigure (struct vectors *);
 int show_paths (char **, int *, struct vectors *);
 int show_maps (char **, int *, struct vectors *);

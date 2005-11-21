@@ -11,7 +11,7 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
        structs.o cache.o discovery.o propsel.o dict.o \
        pgpolicies.o debug.o regex.o defaults.o uevent.o \
        switchgroup.o uxsock.o print.o alias.o log_pthread.o \
-       log.o configure.o
+       log.o configure.o structs_vec.o
 
 CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes
 

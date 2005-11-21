@@ -225,12 +225,15 @@ store_pathgroup (vector pgvec, struct pathgroup * pgp)
 }
 
 struct multipath *
-find_mp_by_minor (vector mp, int minor)
+find_mp_by_minor (vector mpvec, int minor)
 {
 	int i;
 	struct multipath * mpp;
 	
-	vector_foreach_slot (mp, mpp, i) {
+	if (!mpvec)
+		return NULL;
+
+	vector_foreach_slot (mpvec, mpp, i) {
 		if (!mpp->dmi)
 			continue;
 
@@ -241,12 +244,15 @@ find_mp_by_minor (vector mp, int minor)
 }
 
 struct multipath *
-find_mp_by_wwid (vector mp, char * wwid)
+find_mp_by_wwid (vector mpvec, char * wwid)
 {
 	int i;
 	struct multipath * mpp;
 	
-	vector_foreach_slot (mp, mpp, i)
+	if (!mpvec)
+		return NULL;
+
+	vector_foreach_slot (mpvec, mpp, i)
 		if (!strncmp(mpp->wwid, wwid, WWID_SIZE))
 			return mpp;
 
@@ -254,18 +260,21 @@ find_mp_by_wwid (vector mp, char * wwid)
 }
 
 struct multipath *
-find_mp_by_alias (vector mp, char * alias)
+find_mp_by_alias (vector mpvec, char * alias)
 {
 	int i;
 	int len;
 	struct multipath * mpp;
 	
+	if (!mpvec)
+		return NULL;
+
 	len = strlen(alias);
 
 	if (!len)
 		return NULL;
 	
-	vector_foreach_slot (mp, mpp, i) {
+	vector_foreach_slot (mpvec, mpp, i) {
 		if (strlen(mpp->alias) == len &&
 		    !strncmp(mpp->alias, alias, len))
 			return mpp;
@@ -278,6 +287,9 @@ find_path_by_dev (vector pathvec, char * dev)
 {
 	int i;
 	struct path * pp;
+
+	if (!pathvec)
+		return NULL;
 	
 	vector_foreach_slot (pathvec, pp, i)
 		if (!strcmp_chomp(pp->dev, dev))
@@ -292,6 +304,9 @@ find_path_by_devt (vector pathvec, char * dev_t)
 {
 	int i;
 	struct path * pp;
+
+	if (!pathvec)
+		return NULL;
 
 	vector_foreach_slot (pathvec, pp, i)
 		if (!strcmp_chomp(pp->dev_t, dev_t))

@@ -36,6 +36,7 @@
 #include <util.h>
 #include <defaults.h>
 #include <structs.h>
+#include <structs_vec.h>
 #include <dmparser.h>
 #include <cache.h>
 #include <config.h>
@@ -289,6 +290,7 @@ configure (void)
 {
 	vector curmp = NULL;
 	vector pathvec = NULL;
+	struct vectors vecs;
 	int r = 1;
 	int di_flag = 0;
 	char * refwwid = NULL;
@@ -304,6 +306,8 @@ configure (void)
 		condlog(0, "can not allocate memory");
 		goto out;
 	}
+	vecs.pathvec = pathvec;
+	vecs.mpvec = curmp;
 
 	/*
 	 * if we have a blacklisted device parameter, exit early
@@ -374,7 +378,7 @@ configure (void)
 	/*
 	 * core logic entry point
 	 */
-	r = coalesce_paths(curmp, pathvec);
+	r = coalesce_paths(&vecs, NULL);
 
 out:
 	if (refwwid)

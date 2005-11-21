@@ -9,6 +9,7 @@
 enum actions {
 	ACT_UNDEF,
 	ACT_NOTHING,
+	ACT_REJECT,
 	ACT_RELOAD,
 	ACT_SWITCHPG,
 	ACT_CREATE
@@ -17,5 +18,5 @@ enum actions {
 #define FLUSH_ONE 1
 #define FLUSH_ALL 2
 
-int reinstate_paths (struct multipath * mpp);
-int coalesce_paths (vector curmp, vector pathvec);
+int reinstate_paths (struct multipath *mpp);
+int coalesce_paths (struct vectors *vecs, vector curmp);

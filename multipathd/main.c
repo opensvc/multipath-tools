@@ -38,6 +38,7 @@
 #include <hwtable.h>
 #include <defaults.h>
 #include <structs.h>
+#include <structs_vec.h>
 #include <dmparser.h>
 #include <devmapper.h>
 #include <dict.h>
@@ -48,6 +49,7 @@
 #include <switchgroup.h>
 #include <path_state.h>
 #include <print.h>
+#include <configure.h>
 
 #include "main.h"
 #include "pidfile.h"
@@ -83,9 +85,6 @@
 
 pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-typedef void (stop_waiter_thread_func) (struct multipath *, struct vectors *);
-typedef int (start_waiter_thread_func) (struct multipath *, struct vectors *);
 
 /*
  * structs
@@ -141,144 +140,6 @@ cleanup_lock (void * data)
 }
 
 /*
- * creates or updates mpp->paths reading mpp->pg
- */
-extern int
-update_mpp_paths(struct multipath * mpp)
-{
-	struct pathgroup * pgp;
-	struct path * pp;
-	int i,j;
-
-	if (!mpp->pg)
-		return 0;
-
-	if (!mpp->paths &&
-	    !(mpp->paths = vector_alloc()))
-		return 1;
-
-	vector_foreach_slot (mpp->pg, pgp, i) {
-		vector_foreach_slot (pgp->paths, pp, j) {
-			if (!find_path_by_devt(mpp->paths, pp->dev_t) &&
-			    store_path(mpp->paths, pp))
-				return 1;
-		}
-	}
-	return 0;
-}
-
-static int
-adopt_paths (vector pathvec, struct multipath * mpp)
-{
-	int i;
-	struct path * pp;
-
-	if (!mpp)
-		return 0;
-
-	if (update_mpp_paths(mpp))
-		return 1;
-
-	vector_foreach_slot (pathvec, pp, i) {
-		if (!strncmp(mpp->wwid, pp->wwid, WWID_SIZE)) {
-			condlog(3, "%s ownership set for %s", pp->dev_t, mpp->alias);
-			pp->mpp = mpp;
-
-			if (!find_path_by_dev(mpp->paths, pp->dev) &&
-			    store_path(mpp->paths, pp))
-					return 1;
-		}
-	}
-	return 0;
-}
-
-static void
-orphan_path (struct path * pp)
-{
-	pp->mpp = NULL;
-	pp->checkfn = NULL;
-	pp->dmstate = PSTATE_UNDEF;
-	pp->checker_context = NULL;
-	pp->getuid = NULL;
-	pp->getprio = NULL;
-	pp->getprio_selected = 0;
-
-	if (pp->fd >= 0)
-		close(pp->fd);
-
-	pp->fd = -1;
-}
-
-static void
-orphan_paths (struct vectors * vecs, struct multipath * mpp)
-{
-	int i;
-	struct path * pp;
-
-	vector_foreach_slot (vecs->pathvec, pp, i) {
-		if (pp->mpp == mpp) {
-			condlog(4, "%s is orphaned", pp->dev_t);
-			orphan_path(pp);
-		}
-	}
-}
-
-static int
-update_multipath_table (struct multipath *mpp, vector pathvec)
-{
-	if (!mpp)
-		return 1;
-
-	if (dm_get_map(mpp->alias, &mpp->size, mpp->params))
-		return 1;
-
-	if (disassemble_map(pathvec, mpp->params, mpp))
-		return 1;
-
-	return 0;
-}
-
-static int
-update_multipath_status (struct multipath *mpp)
-{
-	if (!mpp)
-		return 1;
-
-	if(dm_get_status(mpp->alias, mpp->status))
-		return 1;
-
-	if (disassemble_status(mpp->status, mpp))
-		return 1;
-
-	return 0;
-}
-
-static int
-update_multipath_strings (struct multipath *mpp, vector pathvec)
-{
-	free_multipath_attributes(mpp);
-	free_pgvec(mpp->pg, KEEP_PATHS);
-	mpp->pg = NULL;
-
-	if (update_multipath_table(mpp, pathvec))
-		return 1;
-
-	if (update_multipath_status(mpp))
-		return 1;
-
-	return 0;
-}
-
-static void
-set_multipath_wwid (struct multipath * mpp)
-{
-	if (mpp->wwid)
-		return;
-
-	dm_get_uuid(mpp->alias, mpp->wwid);
-}
-
-/*
  * mpp->no_path_retry:
  *   -2 (QUEUE) : queue_if_no_path enabled, never turned off
  *   -1 (FAIL)  : fail_if_no_path
@@ -314,115 +175,6 @@ update_queue_mode_add_path(struct multipath *mpp)
 	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
 }
 
-static void
-set_no_path_retry(struct multipath *mpp)
-{
-	mpp->retry_tick = 0;
-	mpp->nr_active = pathcount(mpp, PATH_UP);
-	select_no_path_retry(mpp);
-
-	switch (mpp->no_path_retry) {
-	case NO_PATH_RETRY_UNDEF:
-		break;
-	case NO_PATH_RETRY_FAIL:
-		dm_queue_if_no_path(mpp->alias, 0);
-		break;
-	case NO_PATH_RETRY_QUEUE:
-		dm_queue_if_no_path(mpp->alias, 1);
-		break;
-	default:
-		dm_queue_if_no_path(mpp->alias, 1);
-		if (mpp->nr_active == 0) {
-			/* Enter retry mode */
-			mpp->retry_tick = mpp->no_path_retry * conf->checkint;
-			condlog(1, "%s: Entering recovery mode: max_retries=%d",
-				mpp->alias, mpp->no_path_retry);
-		}
-		break;
-	}
-}
-
-static struct hwentry *
-extract_hwe_from_path(struct multipath * mpp)
-{
-	struct path * pp;
-	struct pathgroup * pgp;
-
-	pgp = VECTOR_SLOT(mpp->pg, 0);
-	pp = VECTOR_SLOT(pgp->paths, 0);
-
-	return pp->hwe;
-}
-
-static void
-remove_map (struct multipath * mpp, struct vectors * vecs,
-	    stop_waiter_thread_func *stop_waiter, int purge_vec)
-{
-	int i;
-
-	/*
-	 * stop the DM event waiter thread
-	 */
-	if (stop_waiter)
-		stop_waiter(mpp, vecs);
-
-	/*
-	 * clear references to this map
-	 */
-	orphan_paths(vecs, mpp);
-
-	if (purge_vec &&
-	    (i = find_slot(vecs->mpvec, (void *)mpp)) != -1)
-		vector_del_slot(vecs->mpvec, i);
-
-	/*
-	 * final free
-	 */
-	free_multipath(mpp, KEEP_PATHS);
-}
-
-static void
-remove_maps (struct vectors * vecs,
-	     stop_waiter_thread_func *stop_waiter)
-{
-	int i;
-	struct multipath * mpp;
-
-	vector_foreach_slot (vecs->mpvec, mpp, i) {
-		remove_map(mpp, vecs, stop_waiter, 1);
-		i--;
-	}
-
-	vector_free(vecs->mpvec);
-	vecs->mpvec = NULL;
-}
-
-static int
-setup_multipath (struct vectors * vecs, struct multipath * mpp)
-{
-	if (dm_get_info(mpp->alias, &mpp->dmi))
-		goto out;
-
-	set_multipath_wwid(mpp);
-	mpp->mpe = find_mpe(mpp->wwid);
-	condlog(4, "discovered map %s", mpp->alias);
-
-	if (update_multipath_strings(mpp, vecs->pathvec))
-		goto out;
-
-	adopt_paths(vecs->pathvec, mpp);
-	mpp->hwe = extract_hwe_from_path(mpp);
-	select_rr_weight(mpp);
-	select_pgfailback(mpp);
-	set_no_path_retry(mpp);
-
-	return 0;
-out:
-	condlog(0, "%s: failed to setup multipath", mpp->alias);
-	remove_map(mpp, vecs, NULL, 1);
-	return 1;
-}
-
 static int
 need_switch_pathgroup (struct multipath * mpp, int refresh)
 {
@@ -455,6 +207,46 @@ switch_pathgroup (struct multipath * mpp)
 	dm_switchgroup(mpp->alias, mpp->bestpg);
 	condlog(2, "%s: switch to path group #%i",
 		 mpp->alias, mpp->bestpg);
+}
+
+static int
+coalesce_maps(struct vectors *vecs, vector nmpv)
+{
+	struct multipath * ompp;
+	vector ompv = vecs->mpvec;
+	int i, j;
+
+	condlog(3, "coalesce_maps vs = %u", VECTOR_SIZE(ompv));
+	condlog(3, "coalesce_maps vs = %u", VECTOR_SIZE(nmpv));
+
+	vector_foreach_slot (ompv, ompp, i) {
+		if (!find_mp_by_wwid(nmpv, ompp->wwid)) {
+			/*
+			 * remove all current maps not allowed by the
+			 * current configuration
+			 */
+			if (dm_flush_map(ompp->alias, DEFAULT_TARGET)) {
+				condlog(0, "%s: unable to flush devmap",
+					ompp->alias);
+				/*
+				 * may be just because the device is open
+				 */
+				if (!vector_alloc_slot(nmpv))
+					return 1;
+
+				vector_set_slot(nmpv, ompp);
+				setup_multipath(vecs, ompp);
+
+				if ((j = find_slot(ompv, (void *)ompp)) != -1)
+					vector_del_slot(ompv, j);
+
+				continue;
+			}
+			else
+				condlog(3, "%s devmap removed", ompp->alias);
+		}
+	}
+	return 0;
 }
 
 static int
@@ -674,38 +466,6 @@ out:
 	return 1;
 }
 
-extern struct multipath *
-add_map_without_path (struct vectors * vecs,
-		      int minor, char * alias,
-		      start_waiter_thread_func *start_waiter)
-{
-	struct multipath * mpp = alloc_multipath();
-
-	if (!mpp)
-		return NULL;
-
-	mpp->alias = alias;
-
-	if (setup_multipath(vecs, mpp))
-		return NULL; /* mpp freed in setup_multipath */
-
-	if (adopt_paths(vecs->pathvec, mpp))
-		goto out;
-	
-	if (!vector_alloc_slot(vecs->mpvec))
-		goto out;
-
-	vector_set_slot(vecs->mpvec, mpp);
-
-	if (start_waiter(mpp, vecs))
-		goto out;
-
-	return mpp;
-out:
-	remove_map(mpp, vecs, NULL, 1);
-	return NULL;
-}
-
 int
 uev_add_map (char * devname, struct vectors * vecs)
 {
@@ -738,7 +498,7 @@ uev_add_map (char * devname, struct vectors * vecs)
 		 * if we create a multipath mapped device as a result
 		 * of uev_add_path
 		 */
-		condlog(0, "%s: supurious uevent, devmap already registered",
+		condlog(0, "%s: spurious uevent, devmap already registered",
 			devname);
 		FREE(alias);
 		return 0;
@@ -953,39 +713,6 @@ map_discovery (struct vectors * vecs)
 			return 1;
 	}
 
-	return 0;
-}
-
-int
-reconfigure (struct vectors * vecs)
-{
-	struct config * old = conf;
-	struct multipath * mpp;
-	struct path * pp;
-	int i;
-
-	conf = NULL;
-
-	if (load_config(DEFAULT_CONFIGFILE)) {
-		conf = old;
-		condlog(2, "reconfigure failed, continue with old config");
-		return 1;
-	}
-	conf->verbosity = old->verbosity;
-	free_config(old);
-
-	vector_foreach_slot (vecs->mpvec, mpp, i) {
-		mpp->mpe = find_mpe(mpp->wwid);
-		mpp->hwe = extract_hwe_from_path(mpp);
-		adopt_paths(vecs->pathvec, mpp);
-		set_no_path_retry(mpp);
-	}
-	vector_foreach_slot (vecs->pathvec, pp, i) {
-		select_checkfn(pp);
-		select_getuid(pp);
-		select_getprio(pp);
-	}
-	condlog(2, "reconfigured");
 	return 0;
 }
 
@@ -1403,6 +1130,106 @@ checkerloop (void *ap)
 	return NULL;
 }
 
+int
+configure (struct vectors * vecs, int start_waiters)
+{
+	struct multipath * mpp;
+	struct path * pp;
+	vector mpvec;
+	int i;
+
+	if (!(vecs->pathvec = vector_alloc()))
+		return 1;
+	
+	if (!(vecs->mpvec = vector_alloc()))
+		return 1;
+	
+	if (!(mpvec = vector_alloc()))
+		return 1;
+
+	/*
+	 * probe for current path (from sysfs) and map (from dm) sets
+	 */
+	path_discovery(vecs->pathvec, conf, DI_ALL);
+
+	vector_foreach_slot (vecs->pathvec, pp, i)
+		pp->checkint = conf->checkint;
+
+	if (map_discovery(vecs))
+		return 1;
+
+	/*
+	 * create new set of maps & push changed ones into dm
+	 */
+	if (coalesce_paths(vecs, mpvec))
+		return 1;
+
+	/*
+	 * may need to remove some maps which are no longer relevant
+	 * e.g., due to blacklist changes in conf file
+	 */
+	if (coalesce_maps(vecs, mpvec))
+		return 1;
+
+	if (conf->verbosity > 2)
+		vector_foreach_slot(mpvec, mpp, i)
+			print_map(mpp);
+
+	/*
+	 * purge dm of old maps
+	 */
+	remove_maps(vecs, NULL);
+
+	/*
+	 * save new set of maps formed by considering current path state
+	 */
+	vecs->mpvec = mpvec;
+
+	/*
+	 * start dm event waiter threads for these new maps
+	 */
+	vector_foreach_slot(vecs->mpvec, mpp, i) {
+		if (setup_multipath(vecs, mpp))
+			return 1;
+		if (start_waiters)
+			if (start_waiter_thread(mpp, vecs))
+				return 1;
+	}
+	return 0;
+}
+
+int
+reconfigure (struct vectors * vecs)
+{
+	struct config * old = conf;
+
+	condlog(0, "reconfigure");
+
+	/*
+	 * free old map and path vectors ... they use old conf state
+	 */
+	if (VECTOR_SIZE(vecs->mpvec))
+		remove_maps(vecs, stop_waiter_thread);
+
+	if (VECTOR_SIZE(vecs->pathvec))
+		free_pathvec(vecs->pathvec, FREE_PATHS);
+
+	conf = NULL;
+
+	if (load_config(DEFAULT_CONFIGFILE))
+		return 1;
+
+	conf->verbosity = old->verbosity;
+
+	if (!conf->checkint) {
+		conf->checkint = CHECKINT;
+		conf->max_checkint = MAX_CHECKINT;
+	}
+	configure(vecs, 1);
+	free_config(old);
+	return 0;
+}
+
 static struct vectors *
 init_vecs (void)
 {
@@ -1575,12 +1402,12 @@ child (void * param)
 	}
 
 	/*
-	 * fetch paths and multipaths lists
-	 * no paths and/or no multipaths are valid scenarii
-	 * vectors maintenance will be driven by events
+	 * fetch and configure both paths and multipaths
 	 */
-	path_discovery(vecs->pathvec, conf, DI_SYSFS | DI_WWID | DI_CHECKER);
-	map_discovery(vecs);
+	if (configure(vecs, 1)) {
+		condlog(0, "failure during configuration");
+		exit(1);
+	}
 
 	/*
 	 * start threads

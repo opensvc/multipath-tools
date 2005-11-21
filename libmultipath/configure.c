@@ -21,6 +21,7 @@
 #include "blacklist.h"
 #include "defaults.h"
 #include "structs.h"
+#include "structs_vec.h"
 #include "dmparser.h"
 #include "config.h"
 #include "propsel.h"
@@ -284,6 +285,7 @@ domap (struct multipath * mpp)
 	}
 
 	switch (mpp->action) {
+	case ACT_REJECT:
 	case ACT_NOTHING:
 		return 2;
 
@@ -370,7 +372,7 @@ deadmap (struct multipath * mpp)
 }
 
 extern int
-coalesce_paths (vector curmp, vector pathvec)
+coalesce_paths (struct vectors * vecs, vector newmp)
 {
 	int r = 1;
 	int k, i;
@@ -378,6 +380,8 @@ coalesce_paths (vector curmp, vector pathvec)
 	struct multipath * mpp;
 	struct path * pp1;
 	struct path * pp2;
+	vector curmp = vecs->mpvec;
+	vector pathvec = vecs->pathvec;
 
 	memset(empty_buff, 0, WWID_SIZE);
 
@@ -400,29 +404,15 @@ coalesce_paths (vector curmp, vector pathvec)
 		/*
 		 * at this point, we know we really got a new mp
 		 */
-		mpp = alloc_multipath();
-
-		if (!mpp)
+		if ((mpp = add_map_with_path(vecs, pp1, 0)) == NULL)
 			return 1;
 
-		mpp->mpe = find_mpe(pp1->wwid);
-		mpp->hwe = pp1->hwe;
-		strcpy(mpp->wwid, pp1->wwid);
-		select_alias(mpp);
-
-		pp1->mpp = mpp;
-		mpp->size = pp1->size;
-		mpp->paths = vector_alloc();
-
 		if (pp1->priority < 0)
-			mpp->action = ACT_NOTHING;
+			mpp->action = ACT_REJECT;
 
 		if (!mpp->paths)
 			return 1;
 		
-		if (store_path(mpp->paths, pp1))
-			return 1;
-
 		for (i = k + 1; i < VECTOR_SIZE(pathvec); i++) {
 			pp2 = VECTOR_SLOT(pathvec, i);
 
@@ -436,54 +426,77 @@ coalesce_paths (vector curmp, vector pathvec)
 				/*
 				 * ouch, avoid feeding that to the DM
 				 */
-				condlog(3, "%s: size %llu, expected %llu. "
+				condlog(0, "%s: size %llu, expected %llu. "
 					"Discard", pp2->dev_t, pp2->size,
 					mpp->size);
-				mpp->action = ACT_NOTHING;
+				mpp->action = ACT_REJECT;
 			}
 			if (pp2->priority < 0)
-				mpp->action = ACT_NOTHING;
-
-			if (store_path(mpp->paths, pp2))
-				return 1;
-
-			pp2->mpp = mpp;
+				mpp->action = ACT_REJECT;
 		}
-		if (setup_map(mpp))
-			goto next;
+		verify_paths(mpp, vecs, NULL);
+		
+		if (setup_map(mpp)) {
+			remove_map(mpp, vecs, NULL, 0);
+			continue;
+		}
 
 		if (mpp->action == ACT_UNDEF)
 			select_action(mpp, curmp);
 
 		r = domap(mpp);
 
-		if (r < 0)
+		if (!r) {
+			condlog(0, "%s: domap failure for create/reload map",
+				mpp->alias);
+			remove_map(mpp, vecs, NULL, 0);
+			continue;
+		}
+		else if (r < 0)
 			return r;
 
-		if (r && mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
+		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
 			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
 				dm_queue_if_no_path(mpp->alias, 0);
 			else
 				dm_queue_if_no_path(mpp->alias, 1);
 		}
 
-next:
-		drop_multipath(curmp, mpp->wwid, KEEP_PATHS);
-		free_multipath(mpp, KEEP_PATHS);
+		if (newmp) {
+			if (mpp->action != ACT_REJECT) {
+				if (!vector_alloc_slot(newmp))
+					return 1;
+				vector_set_slot(newmp, mpp);
+			}
+			else
+				remove_map(mpp, vecs, NULL, 0);
+		}
 	}
 	/*
 	 * Flush maps with only dead paths (ie not in sysfs)
 	 * Keep maps with only failed paths
 	 */
-	vector_foreach_slot (curmp, mpp, i) {
-		if (!deadmap(mpp))
-			continue;
+	if (newmp) {
+		vector_foreach_slot (newmp, mpp, i) {
+			char alias[WWID_SIZE];
+			int j;
 
-		if (dm_flush_map(mpp->alias, DEFAULT_TARGET))
-			condlog(2, "remove: %s (dead) failed!",
-				mpp->alias);
-		else
-			condlog(2, "remove: %s (dead)", mpp->alias);
+			if (!deadmap(mpp))
+				continue;
+
+			strncpy(alias, mpp->alias, WWID_SIZE);
+
+			if ((j = find_slot(newmp, (void *)mpp)) != -1)
+				vector_del_slot(newmp, j);
+
+			remove_map(mpp, vecs, NULL, 0);
+
+			if (dm_flush_map(mpp->alias, DEFAULT_TARGET))
+				condlog(2, "remove: %s (dead) failed!",
+					mpp->alias);
+			else
+				condlog(2, "remove: %s (dead)", mpp->alias);
+		}
 	}
 	return 0;
 }

@@ -8,6 +8,7 @@
 
 #include "vector.h"
 #include "structs.h"
+#include "structs_vec.h"
 #include "print.h"
 #include "dmparser.h"
 #include "configure.h"

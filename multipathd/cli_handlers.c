@@ -4,9 +4,11 @@
 #include <memory.h>
 #include <vector.h>
 #include <structs.h>
+#include <structs_vec.h>
 #include <libdevmapper.h>
 #include <devmapper.h>
 #include <config.h>
+#include <configure.h>
 #include <blacklist.h>
 
 #include "main.h"
