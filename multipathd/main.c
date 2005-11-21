@@ -85,6 +85,7 @@ pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef void (stop_waiter_thread_func) (struct multipath *, struct vectors *);
+typedef int (start_waiter_thread_func) (struct multipath *, struct vectors *);
 
 /*
  * structs
@@ -139,21 +140,56 @@ cleanup_lock (void * data)
 	pthread_mutex_unlock((pthread_mutex_t *)data);
 }
 
-static void
-adopt_paths (struct vectors * vecs, struct multipath * mpp)
+/*
+ * creates or updates mpp->paths reading mpp->pg
+ */
+extern int
+update_mpp_paths(struct multipath * mpp)
+{
+	struct pathgroup * pgp;
+	struct path * pp;
+	int i,j;
+
+	if (!mpp->pg)
+		return 0;
+
+	if (!mpp->paths &&
+	    !(mpp->paths = vector_alloc()))
+		return 1;
+
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp, j) {
+			if (!find_path_by_devt(mpp->paths, pp->dev_t) &&
+			    store_path(mpp->paths, pp))
+				return 1;
+		}
+	}
+	return 0;
+}
+
+static int
+adopt_paths (vector pathvec, struct multipath * mpp)
 {
 	int i;
 	struct path * pp;
 
 	if (!mpp)
-		return;
+		return 0;
 
-	vector_foreach_slot (vecs->pathvec, pp, i) {
+	if (update_mpp_paths(mpp))
+		return 1;
+
+	vector_foreach_slot (pathvec, pp, i) {
 		if (!strncmp(mpp->wwid, pp->wwid, WWID_SIZE)) {
-			condlog(4, "%s ownership set", pp->dev_t);
+			condlog(3, "%s ownership set for %s", pp->dev_t, mpp->alias);
 			pp->mpp = mpp;
+
+			if (!find_path_by_dev(mpp->paths, pp->dev) &&
+			    store_path(mpp->paths, pp))
+					return 1;
 		}
 	}
+	return 0;
 }
 
 static void
@@ -374,15 +410,16 @@ setup_multipath (struct vectors * vecs, struct multipath * mpp)
 	if (update_multipath_strings(mpp, vecs->pathvec))
 		goto out;
 
-	adopt_paths(vecs, mpp);
+	adopt_paths(vecs->pathvec, mpp);
 	mpp->hwe = extract_hwe_from_path(mpp);
+	select_rr_weight(mpp);
 	select_pgfailback(mpp);
 	set_no_path_retry(mpp);
 
 	return 0;
 out:
 	condlog(0, "%s: failed to setup multipath", mpp->alias);
-	remove_map(mpp, vecs, stop_waiter_thread, 1);
+	remove_map(mpp, vecs, NULL, 1);
 	return 1;
 }
 
@@ -637,6 +674,38 @@ out:
 	return 1;
 }
 
+extern struct multipath *
+add_map_without_path (struct vectors * vecs,
+		      int minor, char * alias,
+		      start_waiter_thread_func *start_waiter)
+{
+	struct multipath * mpp = alloc_multipath();
+
+	if (!mpp)
+		return NULL;
+
+	mpp->alias = alias;
+
+	if (setup_multipath(vecs, mpp))
+		return NULL; /* mpp freed in setup_multipath */
+
+	if (adopt_paths(vecs->pathvec, mpp))
+		goto out;
+	
+	if (!vector_alloc_slot(vecs->mpvec))
+		goto out;
+
+	vector_set_slot(vecs->mpvec, mpp);
+
+	if (start_waiter(mpp, vecs))
+		goto out;
+
+	return mpp;
+out:
+	remove_map(mpp, vecs, NULL, 1);
+	return NULL;
+}
+
 int
 uev_add_map (char * devname, struct vectors * vecs)
 {
@@ -664,40 +733,27 @@ uev_add_map (char * devname, struct vectors * vecs)
 	mpp = find_mp_by_alias(vecs->mpvec, alias);
 
 	if (mpp) {
-		/*
-		 * this should not happen,
-		 * we missed a remove map event (not sent ?)
+                /*
+		 * Not really an error -- we generate our own uevent
+		 * if we create a multipath mapped device as a result
+		 * of uev_add_path
 		 */
-		condlog(2, "%s: already registered", alias);
-		remove_map(mpp, vecs, stop_waiter_thread, 1);
+		condlog(0, "%s: supurious uevent, devmap already registered",
+			devname);
+		FREE(alias);
+		return 0;
 	}
 
 	/*
-	 * now we can allocate
+	 * now we can register the map
 	 */
-	mpp = alloc_multipath();
+	if ((mpp = add_map_without_path(vecs, minor, alias,
+					start_waiter_thread))) {
+		condlog(3, "%s devmap %s added", devname, alias);
+		return 0;
+	}
 
-	if (!mpp)
-		return 1;
-
-	mpp->alias = alias;
-
-	if (setup_multipath(vecs, mpp))
-		return 1; /* mpp freed in setup_multipath */
-
-	if (!vector_alloc_slot(vecs->mpvec))
-		goto out;
-
-	vector_set_slot(vecs->mpvec, mpp);
-	adopt_paths(vecs, mpp);
-
-	if (start_waiter_thread(mpp, vecs))
-		goto out;
-
-	return 0;
-out:
-	condlog(2, "%s: add devmap failed", mpp->alias);
-	remove_map(mpp, vecs, stop_waiter_thread, 1);
+	condlog(0, "%s: uev_add_map failed", alias);
 	return 1;
 }
 
@@ -732,7 +788,7 @@ uev_add_path (char * devname, struct vectors * vecs)
 	pp = find_path_by_dev(vecs->pathvec, devname);
 
 	if (pp) {
-		condlog(3, "%s: already in pathvec");
+		condlog(3, "%s: already in pathvec", devname);
 		return 1;
 	}
 	pp = store_pathinfo(vecs->pathvec, conf->hwtable,
@@ -766,7 +822,7 @@ uev_remove_path (char * devname, struct vectors * vecs)
 	pp = find_path_by_dev(vecs->pathvec, devname);
 
 	if (!pp) {
-		condlog(3, "%s: not in pathvec");
+		condlog(3, "%s: not in pathvec", devname);
 		return 1;
 	}
 
@@ -893,7 +949,8 @@ map_discovery (struct vectors * vecs)
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		if (setup_multipath(vecs, mpp))
 			return 1;
-		start_waiter_thread(mpp, vecs);
+		if (start_waiter_thread(mpp, vecs))
+			return 1;
 	}
 
 	return 0;
@@ -920,7 +977,7 @@ reconfigure (struct vectors * vecs)
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		mpp->mpe = find_mpe(mpp->wwid);
 		mpp->hwe = extract_hwe_from_path(mpp);
-		adopt_paths(vecs, mpp);
+		adopt_paths(vecs->pathvec, mpp);
 		set_no_path_retry(mpp);
 	}
 	vector_foreach_slot (vecs->pathvec, pp, i) {
