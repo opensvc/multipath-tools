@@ -33,7 +33,7 @@
 #include "pgpolicies.h"
 #include "dict.h"
 
-static int
+extern int
 setup_map (struct multipath * mpp)
 {
 	struct pathgroup * pgp;
@@ -271,7 +271,7 @@ lock_multipath (struct multipath * mpp, int lock)
  *   1: DM_DEVICE_CREATE or DM_DEVICE_RELOAD succeeded.
  *   2: Map is already existing.
  */
-static int
+extern int
 domap (struct multipath * mpp)
 {
 	int r = 0;

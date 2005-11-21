@@ -18,5 +18,7 @@ enum actions {
 #define FLUSH_ONE 1
 #define FLUSH_ALL 2
 
+int setup_map (struct multipath * mpp);
+int domap (struct multipath * mpp);
 int reinstate_paths (struct multipath *mpp);
 int coalesce_paths (struct vectors *vecs, vector curmp);

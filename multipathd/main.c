@@ -466,6 +466,30 @@ out:
 	return 1;
 }
 
+static int
+flush_map(struct multipath * mpp, char * devname, struct vectors * vecs)
+{
+	/*
+	 * clear references to this map before flushing so we can ignore
+	 * the spurious uevent we may generate with the dm_flush_map call below
+	 */
+	if (dm_flush_map(mpp->alias, DEFAULT_TARGET)) {
+		/*
+		 * May not really be an error -- if the map was already flushed
+		 * from the device mapper by dmsetup(8) for instance.
+		 */
+		condlog(0, "%s: can't flush", devname);
+		return 1;
+	}
+	else
+		condlog(3, "%s: devmap %s removed", devname, mpp->alias);
+
+	orphan_paths(vecs->pathvec, mpp);
+	remove_map(mpp, vecs, stop_waiter_thread, 1);
+
+	return 0;
+}
+
 int
 uev_add_map (char * devname, struct vectors * vecs)
 {
@@ -543,58 +567,242 @@ uev_remove_map (char * devname, struct vectors * vecs)
 int
 uev_add_path (char * devname, struct vectors * vecs)
 {
+	struct multipath * mpp;
 	struct path * pp;
+	char empty_buff[WWID_SIZE] = {0};
+
+	condlog(3, "%s: uev_add_path", devname);
 
 	pp = find_path_by_dev(vecs->pathvec, devname);
-
 	if (pp) {
-		condlog(3, "%s: already in pathvec", devname);
-		return 1;
+		condlog(0, "%s: spurious uevent, path already in pathvec, %p",
+			devname, pp->mpp);
+		/*
+		 * allow reconfig of orphaned path here
+		 */
+		if (pp->mpp) return 1;
 	}
-	pp = store_pathinfo(vecs->pathvec, conf->hwtable,
-		       devname, DI_SYSFS | DI_WWID);
-
-	if (!pp) {
-		condlog(0, "%s: failed to store path info", devname);
-		return 1;
-	}
-
-	condlog(2, "%s: path checker registered", devname);
-	pp->mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
-
-	if (pp->mpp) {
-		condlog(4, "%s: ownership set to %s",
-				pp->dev_t, pp->mpp->alias);
-	} else {
-		condlog(4, "%s: orphaned", pp->dev_t);
-		orphan_path(pp);
+	else {
+		/*
+		 * get path vital state
+		 */
+		if (!(pp = store_pathinfo(vecs->pathvec, conf->hwtable,
+		      devname, DI_ALL))) {
+			condlog(0, "%s: failed to store path info", devname);
+			return 1;
+		}
+		pp->checkint = conf->checkint;
 	}
 
+	/*
+	 * need path UID to go any further
+	 */
+	if (memcmp(empty_buff, pp->wwid, WWID_SIZE) == 0) {
+		condlog(0, "%s: failed to get path uid", devname);
+		return 1; /* leave path added to pathvec */
+	}
+
+	mpp = pp->mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
+rescan:
+	if (mpp) {
+		if (adopt_paths(vecs->pathvec, mpp))
+			return 1; /* leave path added to pathvec */
+
+		verify_paths(mpp, vecs, NULL);
+		condlog(0, "%s: ownership set to %s", pp->dev_t, mpp->alias);
+		mpp->action = ACT_RELOAD;
+	}
+	else {
+		if ((mpp = add_map_with_path(vecs, pp, 1)))
+			mpp->action = ACT_CREATE;
+		else
+			return 1; /* leave path added to pathvec */
+	}
+
+	/*
+	 * push the map to the device-mapper
+	 */
+	if (setup_map(mpp)) {
+		condlog(0, "%s: failed to setup map for addition of new "
+			"path %s", mpp->alias, devname);
+		goto out;
+	}
+	/*
+	 * reload the map for the multipath mapped device
+	 */
+	if (domap(mpp) <= 0) {
+		condlog(0, "%s: failed in domap for addition of new "
+			"path %s", mpp->alias, devname);
+		/*
+ 		 * deal with asynchronous uevents :((
+ 		 */
+		if (mpp->action == ACT_RELOAD) {
+			condlog(0, "%s: uev_add_path sleep", mpp->alias);
+			sleep(1);
+			update_mpp_paths(mpp);
+			goto rescan;
+		}
+		else
+			goto out;
+	}
+
+	/*
+	 * update our state from kernel regardless of create or reload
+	 */
+	if (setup_multipath(vecs, mpp))
+		goto out;
+
+	if (mpp->action == ACT_CREATE &&
+	    start_waiter_thread(mpp, vecs))
+			goto out;
+
+	condlog(3, "%s path added to devmap %s", devname, mpp->alias);
 	return 0;
+
+out:
+	remove_map(mpp, vecs, NULL, 1);
+	return 1;
 }
 
 int
 uev_remove_path (char * devname, struct vectors * vecs)
 {
-	int i;
+	struct multipath * mpp;
 	struct path * pp;
+	int redo, i;
+	int rm_path = 1;
+
+	condlog(3, "%s: uev_remove_path", devname);
 
 	pp = find_path_by_dev(vecs->pathvec, devname);
-
 	if (!pp) {
-		condlog(3, "%s: not in pathvec", devname);
+		condlog(0, "%s: spurious uevent, path not in pathvec", devname);
 		return 1;
 	}
 
-	if (pp->mpp && pp->state == PATH_UP)
-		update_queue_mode_del_path(pp->mpp);
+	/*
+	 * avoid referring to the map of an orphanned path
+	 */
+	if ((mpp = pp->mpp)) {
 
-	condlog(2, "remove %s path checker", devname);
-	i = find_slot(vecs->pathvec, (void *)pp);
-	vector_del_slot(vecs->pathvec, i);
-	free_path(pp);
+		/*
+		 * remove the map IFF removing the last path
+		 */
+		if (pathcount(mpp, PATH_WILD) > 1) {
+			vector rpvec = vector_alloc();
+			struct path * mypp;
+			int j;
+
+			/*
+	 	 	 * transform the mp->pg vector of vectors of paths
+	 	 	 * into a mp->params string to feed the device-mapper
+	 	 	 */
+			update_mpp_paths(mpp);
+			if ((i = find_slot(mpp->paths, (void *)pp)) != -1)
+				vector_del_slot(mpp->paths, i);
+
+rescan:
+			redo = verify_paths(mpp, vecs, rpvec);
+			if (VECTOR_SIZE(mpp->paths) == 0) {
+				char alias[WWID_SIZE];
+
+				/*
+				 * flush_map will fail if the device is open
+				 */
+				strncpy(alias, mpp->alias, WWID_SIZE);
+				if (flush_map(mpp, devname, vecs)) {
+					rm_path = 0;
+					vector_foreach_slot(rpvec, mypp, i)
+						if (store_path(mpp->paths, mypp))
+							goto out;	
+				}
+				else {
+					vector_foreach_slot(rpvec, mypp, i) {
+						if ((j = find_slot(vecs->pathvec,
+						   	   	   (void *)mypp)) != -1) {
+							vector_del_slot(vecs->pathvec, j);
+							free_path(mypp);
+						}
+					}
+					condlog(3, "%s: removed map after removing"
+						" multiple paths", alias);
+				}
+			}
+			else {
+				vector_foreach_slot(rpvec, mypp, i) {
+					if ((j = find_slot(vecs->pathvec,
+						   	   	   (void *)mypp)) != -1) {
+						vector_del_slot(vecs->pathvec, j);
+						free_path(mypp);
+					}
+				}
+					
+				if (setup_map(mpp)) {
+					condlog(0, "%s: failed to setup map for"
+						" removal of path %s", mpp->alias, devname);
+					free_pathvec(rpvec, KEEP_PATHS);
+					goto out;
+				}
+				/*
+	 	 	 	 * reload the map
+	 	 	 	 */
+				mpp->action = ACT_RELOAD;
+				if (domap(mpp) <= 0) {
+					condlog(0, "%s: failed in domap for "
+						"removal of path %s",
+						mpp->alias, devname);
+					/*
+			 		 * deal with asynchronous uevents :((
+			 		 */
+					if (!redo) {
+						condlog(3, "%s: uev_remove_path sleep",
+							mpp->alias);
+						sleep(1);
+					}
+					update_mpp_paths(mpp);
+					free_pathvec(rpvec, KEEP_PATHS);
+					rpvec = vector_alloc();
+					goto rescan;
+				}
+				/*
+				 * update our state from kernel
+				 */
+				if (setup_multipath(vecs, mpp)) {
+					free_pathvec(rpvec, KEEP_PATHS);
+					goto out;
+				}
+
+				condlog(3, "%s path removed from devmap %s",
+					devname, mpp->alias);
+			}
+			free_pathvec(rpvec, KEEP_PATHS);
+		}
+		else {
+			char alias[WWID_SIZE];
+
+			/*
+			 * flush_map will fail if the device is open
+			 */
+			strncpy(alias, mpp->alias, WWID_SIZE);
+			if (flush_map(mpp, devname, vecs)) {
+				rm_path = 0;
+			}
+			else
+				condlog(3, "%s: removed map", alias);
+		}
+	}
+
+	if (rm_path) {
+		if ((i = find_slot(vecs->pathvec, (void *)pp)) != -1)
+			vector_del_slot(vecs->pathvec, i);
+		free_path(pp);
+	}
 
 	return 0;
+
+out:
+	remove_map(mpp, vecs, stop_waiter_thread, 1);
+	return 1;
 }
 
 int
@@ -1570,3 +1778,4 @@ main (int argc, char *argv[])
 		/* child lives */
 		return (child(NULL));
 }
+
