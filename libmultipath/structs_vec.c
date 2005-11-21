@@ -251,7 +251,7 @@ setup_multipath (struct vectors * vecs, struct multipath * mpp)
 	if (update_multipath_strings(mpp, vecs->pathvec))
 		goto out;
 
-	adopt_paths(vecs->pathvec, mpp);
+	//adopt_paths(vecs->pathvec, mpp);
 	mpp->hwe = extract_hwe_from_path(mpp);
 	select_rr_weight(mpp);
 	select_pgfailback(mpp);
