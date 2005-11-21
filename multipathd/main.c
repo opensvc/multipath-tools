@@ -470,7 +470,7 @@ out:
 	return r;
 }
 
-static sigset_t unblock_sighup(void)
+static sigset_t unblock_signals(void)
 {
 	sigset_t set, old;
 
@@ -495,16 +495,23 @@ waiteventloop (struct event_thread * waiter)
 	if (!waiter->event_nr)
 		waiter->event_nr = dm_geteventnr(waiter->mapname);
 
-	if (!(waiter->dmt = dm_task_create(DM_DEVICE_WAITEVENT)))
+	if (!(waiter->dmt = dm_task_create(DM_DEVICE_WAITEVENT))) {
+		condlog(0, "%s: devmap event #%i dm_task_create error",
+				waiter->mapname, waiter->event_nr);
 		return 1;
+	}
 
 	if (!dm_task_set_name(waiter->dmt, waiter->mapname)) {
+		condlog(0, "%s: devmap event #%i dm_task_set_name error",
+				waiter->mapname, waiter->event_nr);
 		dm_task_destroy(waiter->dmt);
 		return 1;
 	}
 
 	if (waiter->event_nr && !dm_task_set_event_nr(waiter->dmt,
 						      waiter->event_nr)) {
+		condlog(0, "%s: devmap event #%i dm_task_set_event_nr error",
+				waiter->mapname, waiter->event_nr);
 		dm_task_destroy(waiter->dmt);
 		return 1;
 	}
@@ -512,7 +519,7 @@ waiteventloop (struct event_thread * waiter)
 	dm_task_no_open_count(waiter->dmt);
 	
 	/* accept wait interruption */
-	set = unblock_sighup();
+	set = unblock_signals();
 
 	/* interruption spits messages */
 	dm_shut_log();
