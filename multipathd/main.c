@@ -89,6 +89,8 @@ typedef void (stop_waiter_thread_func) (struct multipath *, struct vectors *);
 /*
  * structs
  */
+struct vectors * gvecs; /* global copy of vecs for use in sig handlers */
+
 struct event_thread {
 	struct dm_task *dmt;
 	pthread_t thread;
@@ -128,7 +130,7 @@ stop_waiter_thread (struct multipath * mpp, struct vectors * vecs)
 		return;
 	}
 	condlog(2, "%s: stop event checker thread", wp->mapname);
-	pthread_kill((pthread_t)wp->thread, SIGHUP);
+	pthread_kill((pthread_t)wp->thread, SIGUSR1);
 }
 
 static void
@@ -474,6 +476,7 @@ static sigset_t unblock_sighup(void)
 
 	sigemptyset(&set);
 	sigaddset(&set, SIGHUP);
+	sigaddset(&set, SIGUSR1);
 	pthread_sigmask(SIG_UNBLOCK, &set, &old);
 	return old;
 }
@@ -1400,6 +1403,10 @@ sighup (int sig)
 {
 	condlog(3, "SIGHUP received");
 
+	lock(gvecs->lock);
+	reconfigure(gvecs);
+	unlock(gvecs->lock);
+
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
 #endif
@@ -1412,9 +1419,16 @@ sigend (int sig)
 }
 
 static void
+sigusr1 (int sig)
+{
+	condlog(3, "SIGUSR1 received");
+}
+
+static void
 signal_init(void)
 {
 	signal_set(SIGHUP, sighup);
+	signal_set(SIGUSR1, sigusr1);
 	signal_set(SIGINT, sigend);
 	signal_set(SIGTERM, sigend);
 	signal_set(SIGKILL, sigend);
@@ -1486,7 +1500,7 @@ child (void * param)
 	signal_init();
 	setscheduler();
 	set_oom_adj(-17);
-	vecs = init_vecs();
+	vecs = gvecs = init_vecs();
 
 	if (!vecs)
 		exit(1);
