@@ -23,7 +23,5 @@ char * dm_mapname(int major, int minor);
 int dm_remove_partmaps (char * mapname);
 int dm_get_uuid(char *name, char *uuid);
 int dm_get_info (char * mapname, struct dm_info ** dmi);
-
-#if 0
 int dm_rename (char * old, char * new);
-#endif
+int dm_get_name(char * uuid, char * type, char * name);

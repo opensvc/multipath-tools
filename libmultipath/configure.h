@@ -2,8 +2,10 @@
  * configurator actions
  */
 #define ACT_NOTHING_STR         "unchanged"
+#define ACT_REJECT_STR          "reject"
 #define ACT_RELOAD_STR          "reload"
 #define ACT_SWITCHPG_STR        "switchpg"
+#define ACT_RENAME_STR          "rename"
 #define ACT_CREATE_STR          "create"
 
 enum actions {
@@ -12,6 +14,7 @@ enum actions {
 	ACT_REJECT,
 	ACT_RELOAD,
 	ACT_SWITCHPG,
+	ACT_RENAME,
 	ACT_CREATE
 };
 

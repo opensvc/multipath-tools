@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include "vector.h"
+#include "defaults.h"
 #include "debug.h"
 #include "structs.h"
 #include "structs_vec.h"
@@ -241,15 +242,34 @@ set_no_path_retry(struct multipath *mpp)
 extern int
 setup_multipath (struct vectors * vecs, struct multipath * mpp)
 {
+retry:
 	if (dm_get_info(mpp->alias, &mpp->dmi))
 		goto out;
 
 	set_multipath_wwid(mpp);
 	mpp->mpe = find_mpe(mpp->wwid);
-	condlog(4, "discovered map %s", mpp->alias);
+	condlog(3, "discovered map %s", mpp->alias);
 
-	if (update_multipath_strings(mpp, vecs->pathvec))
+	if (update_multipath_strings(mpp, vecs->pathvec)) {
+		char new_alias[WWID_SIZE];
+
+		/*
+	 	 * detect an external rename of the multipath device
+		 */
+		if (dm_get_name(mpp->wwid, DEFAULT_TARGET, new_alias)) {
+			condlog(3, "%s multipath mapped device name has "
+				"changed from %s to %s", mpp->wwid,
+				mpp->alias, new_alias);
+			strcpy(mpp->alias, new_alias);
+#if DAEMON
+			if (mpp->waiter) 
+				strncpy(((struct event_thread *)mpp->waiter)->mapname,
+					new_alias, WWID_SIZE);
+#endif
+			goto retry;
+		}
 		goto out;
+	}
 
 	//adopt_paths(vecs->pathvec, mpp);
 	mpp->hwe = extract_hwe_from_path(mpp);

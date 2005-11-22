@@ -113,6 +113,7 @@ typedef int (pgpolicyfn) (struct multipath *);
 
 struct multipath {
 	char wwid[WWID_SIZE];
+	char alias_old[WWID_SIZE];
 	int pgpolicy;
 	pgpolicyfn *pgpolicyfn;
 	int nextpg;

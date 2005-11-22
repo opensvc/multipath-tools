@@ -137,9 +137,15 @@ select_action (struct multipath * mpp, vector curmp)
 		cmpp = find_mp_by_wwid(curmp, mpp->wwid);
 
 		if (cmpp && !conf->dry_run) {
-			condlog(2, "remove: %s (dup of %s)",
+			condlog(2, "%s: rename: %s to %s", mpp->wwid,
 				cmpp->alias, mpp->alias);
 			dm_flush_map(cmpp->alias, DEFAULT_TARGET);
+			strncpy(mpp->alias_old, cmpp->alias, WWID_SIZE);
+			mpp->action = ACT_RENAME;
+		}
+		else {
+			condlog(3, "set ACT_CREATE: map does not exist");
+			mpp->action = ACT_CREATE;
 		}
 		mpp->action = ACT_CREATE;
 		condlog(3, "set ACT_CREATE: map does not exists");
@@ -148,7 +154,7 @@ select_action (struct multipath * mpp, vector curmp)
 
 	if (!find_mp_by_wwid(curmp, mpp->wwid)) {
 		condlog(2, "remove: %s (wwid changed)", cmpp->alias);
-		dm_flush_map(mpp->alias, NULL);
+		dm_flush_map(mpp->alias, DEFAULT_TARGET);
 		strncat(cmpp->wwid, mpp->wwid, WWID_SIZE);
 		drop_multipath(curmp, cmpp->wwid, KEEP_PATHS);
 		mpp->action = ACT_CREATE;
@@ -321,7 +327,7 @@ domap (struct multipath * mpp)
 			condlog(3, "%s: failed to load map "
 				   "(a path might be in use)",
 				   mpp->alias);
-			dm_flush_map(mpp->alias, NULL);
+			dm_flush_map(mpp->alias, DEFAULT_TARGET);
 		}
 
 		lock_multipath(mpp, 0);
@@ -334,13 +340,18 @@ domap (struct multipath * mpp)
 		     dm_simplecmd(DM_DEVICE_RESUME, mpp->alias));
 		break;
 
+	case ACT_RENAME:
+		r = dm_rename(mpp->alias_old, mpp->alias);
+		break;
+
 	default:
 		break;
 	}
 
 	if (r) {
 		/*
-		 * DM_DEVICE_CREATE or DM_DEVICE_RELOAD succeeded
+		 * DM_DEVICE_CREATE, DM_DEIVCE_RENAME, or DM_DEVICE_RELOAD
+		 * succeeded
 		 */
 #ifndef DAEMON
 		dm_switchgroup(mpp->alias, mpp->bestpg);
@@ -412,8 +423,11 @@ coalesce_paths (struct vectors * vecs, vector newmp)
 		if (pp1->priority < 0)
 			mpp->action = ACT_REJECT;
 
-		if (!mpp->paths)
-			return 1;
+		if (!mpp->paths) {
+			condlog(0, "%s coalesce_paths: no paths", mpp->alias);
+			remove_map(mpp, vecs, NULL, 0);
+			continue;
+		}
 		
 		for (i = k + 1; i < VECTOR_SIZE(pathvec); i++) {
 			pp2 = VECTOR_SLOT(pathvec, i);
@@ -449,13 +463,18 @@ coalesce_paths (struct vectors * vecs, vector newmp)
 		r = domap(mpp);
 
 		if (!r) {
-			condlog(0, "%s: domap failure for create/reload map",
-				mpp->alias);
+			condlog(0, "%s: domap (%u) failure "
+				   "for create/reload map",
+				mpp->alias, r);
 			remove_map(mpp, vecs, NULL, 0);
 			continue;
 		}
-		else if (r < 0)
+		else if (r < 0) {
+			condlog(0, "%s: domap (%u) failure "
+				   "for create/reload map",
+				mpp->alias, r);
 			return r;
+		}
 
 		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
 			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)

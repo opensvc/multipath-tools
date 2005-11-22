@@ -91,14 +91,6 @@ pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
  */
 struct vectors * gvecs; /* global copy of vecs for use in sig handlers */
 
-struct event_thread {
-	struct dm_task *dmt;
-	pthread_t thread;
-	int event_nr;
-	char mapname[WWID_SIZE];
-	struct vectors *vecs;
-};
-
 static struct event_thread *
 alloc_waiter (void)
 {
@@ -115,8 +107,24 @@ free_waiter (void * data)
 {
 	struct event_thread * wp = (struct event_thread *)data;
 
+	/*
+	 * indicate in mpp that the wp is already freed storage
+	 */
+	lock(wp->vecs->lock);
+
+	if (wp->mpp)
+		/*
+		 * be careful, mpp may already be freed -- null if so
+		 */
+		wp->mpp->waiter = NULL;
+	else
+		condlog(3, "free_waiter, mpp freed before wp=%p,", wp);
+
+	unlock(wp->vecs->lock);
+
 	if (wp->dmt)
 		dm_task_destroy(wp->dmt);
+
 	FREE(wp);
 }
 
@@ -450,6 +458,7 @@ start_waiter_thread (struct multipath * mpp, struct vectors * vecs)
 	mpp->waiter = (void *)wp;
 	strncpy(wp->mapname, mpp->alias, WWID_SIZE);
 	wp->vecs = vecs;
+	wp->mpp = mpp;
 
 	if (pthread_create(&wp->thread, &attr, waitevent, wp)) {
 		condlog(0, "%s: cannot create event checker", wp->mapname);
@@ -508,7 +517,7 @@ uev_add_map (char * devname, struct vectors * vecs)
 	if (!alias)
 		return 1;
 	
-	if (!dm_type(alias, DEFAULT_TARGET)) {
+	if (dm_type(alias, DEFAULT_TARGET) <= 0) {
 		condlog(4, "%s: not a multipath map", alias);
 		FREE(alias);
 		return 0;
@@ -914,12 +923,9 @@ map_discovery (struct vectors * vecs)
 	if (dm_get_maps(vecs->mpvec, "multipath"))
 		return 1;
 
-	vector_foreach_slot (vecs->mpvec, mpp, i) {
+	vector_foreach_slot (vecs->mpvec, mpp, i)
 		if (setup_multipath(vecs, mpp))
 			return 1;
-		if (start_waiter_thread(mpp, vecs))
-			return 1;
-	}
 
 	return 0;
 }
@@ -994,12 +1000,10 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 			r = uev_add_map(devname, vecs);
 			goto out;
 		}
-#if 0
 		if (!strncmp(uev->action, "remove", 6)) {
 			r = uev_remove_map(devname, vecs);
 			goto out;
 		}
-#endif
 		goto out;
 	}
 	

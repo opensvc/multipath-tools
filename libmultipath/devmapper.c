@@ -387,7 +387,7 @@ dm_flush_map (char * mapname, char * type)
 	if (!dm_map_present(mapname))
 		return 0;
 
-	if (!dm_type(mapname, type))
+	if (dm_type(mapname, type) <= 0)
 		return 1;
 
 	if (dm_remove_partmaps(mapname))
@@ -568,7 +568,7 @@ dm_get_maps (vector mp, char * type)
 	do {
 		info = dm_type(names->name, type);
 
-		if (!info)
+		if (info <= 0)
 			goto next;
 
 		mpp = alloc_multipath();
@@ -608,6 +608,35 @@ out1:
 out:
 	dm_task_destroy (dmt);
 	return r;
+}
+
+extern int
+dm_get_name(char *uuid, char *type, char *name)
+{
+	vector vec;
+	struct multipath *mpp;
+	int i;
+
+	vec = vector_alloc();
+
+	if (!vec)
+		return 0;
+
+	if (dm_get_maps(vec, type)) {
+		vector_free(vec);
+		return 0;
+	}
+
+	vector_foreach_slot(vec, mpp, i) {
+		if (!strcmp(uuid, mpp->wwid)) {
+			vector_free(vec);
+			strcpy(name, mpp->alias);
+			return 1;
+		}
+	}
+
+	vector_free(vec);
+	return 0;
 }
 
 int
@@ -724,7 +753,7 @@ dm_remove_partmaps (char * mapname)
 		    /*
 		     * if devmap target is "linear"
 		     */
-		    dm_type(names->name, "linear") &&
+		    (dm_type(names->name, "linear") > 0) &&
 
 		    /*
 		     * and the multipath mapname and the part mapname start
@@ -812,7 +841,6 @@ out:
 	return r;
 }
 
-#if 0
 int
 dm_rename (char * old, char * new)
 {
@@ -838,4 +866,3 @@ out:
 	dm_task_destroy(dmt);
 	return r;
 }
-#endif
