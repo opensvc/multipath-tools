@@ -41,10 +41,13 @@ $(MULTIPATHLIB)-$(BUILD).a:
 install:
 	install -d $(DESTDIR)$(bindir)
 	install -s -m 755 $(EXEC) $(DESTDIR)$(bindir)/
+	install -d $(DESTDIR)/etc/udev/rules.d
+	install -m 644 multipath.rules $(DESTDIR)/etc/udev/rules.d/
 	install -d $(DESTDIR)$(mandir)
 	install -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
 
 uninstall:
+	rm $(DESTDIR)/etc/udev/rules.d/multipath.rules
 	rm $(DESTDIR)$(bindir)/$(EXEC)
 	rm $(DESTDIR)$(mandir)/$(EXEC).8.gz
 

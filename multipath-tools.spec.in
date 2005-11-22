@@ -55,6 +55,7 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/usr/share/man/man8/mpath_prio_alua.8.gz
 %{prefix}/usr/share/man/man8/multipathd.8.gz
 %{prefix}/usr/bin/multipathd
+%{prefix}/etc/udev/rules.d/multipath.rules
 
 
 %changelog
