@@ -342,7 +342,9 @@ domap (struct multipath * mpp)
 		/*
 		 * DM_DEVICE_CREATE or DM_DEVICE_RELOAD succeeded
 		 */
+#ifndef DAEMON
 		dm_switchgroup(mpp->alias, mpp->bestpg);
+#endif
 		print_mp(mpp, conf->verbosity);
 	}
 
