@@ -144,7 +144,7 @@ stop_waiter_thread (struct multipath * mpp, struct vectors * vecs)
 static void
 cleanup_lock (void * data)
 {
-	pthread_mutex_unlock((pthread_mutex_t *)data);
+	unlock((pthread_mutex_t *)data);
 }
 
 /*
