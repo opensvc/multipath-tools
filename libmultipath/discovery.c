@@ -379,6 +379,7 @@ sysfs_get_bus (char * sysfs_path, struct path * curpath)
 	if (0 > sysfs_get_link(attr_path, attr_buff, sizeof(attr_buff)))
 		return 1;
 
+#if DAEMON
 	int loop = WAIT_MAX_SECONDS * WAIT_LOOP_PER_SECOND;
 
 	while (loop--) {
@@ -390,6 +391,9 @@ sysfs_get_bus (char * sysfs_path, struct path * curpath)
 		sysfs_close_device(sdev);
 		usleep(1000 * 1000 / WAIT_LOOP_PER_SECOND);
 	}
+#else
+	sdev = sysfs_open_device_path(attr_buff);
+#endif
 
 	if (!strncmp(sdev->bus, "scsi", 4))
 		curpath->bus = SYSFS_BUS_SCSI;
