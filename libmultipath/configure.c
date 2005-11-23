@@ -463,14 +463,14 @@ coalesce_paths (struct vectors * vecs, vector newmp)
 		r = domap(mpp);
 
 		if (!r) {
-			condlog(0, "%s: domap (%u) failure "
+			condlog(3, "%s: domap (%u) failure "
 				   "for create/reload map",
 				mpp->alias, r);
 			remove_map(mpp, vecs, NULL, 0);
 			continue;
 		}
 		else if (r < 0) {
-			condlog(0, "%s: domap (%u) failure "
+			condlog(3, "%s: domap (%u) failure "
 				   "for create/reload map",
 				mpp->alias, r);
 			return r;
