@@ -291,7 +291,7 @@ configure (void)
 	/*
 	 * core logic entry point
 	 */
-	r = coalesce_paths(&vecs, NULL);
+	r = coalesce_paths(&vecs, NULL, NULL);
 
 out:
 	if (refwwid)

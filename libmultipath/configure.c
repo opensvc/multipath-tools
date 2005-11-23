@@ -386,7 +386,7 @@ deadmap (struct multipath * mpp)
 }
 
 extern int
-coalesce_paths (struct vectors * vecs, vector newmp)
+coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 {
 	int r = 1;
 	int k, i;
@@ -413,6 +413,10 @@ coalesce_paths (struct vectors * vecs, vector newmp)
 
 		/* 3. if path has disappeared */
 		if (!pp1->size)
+			continue;
+
+		/* 4. path is out of scope */
+		if (refwwid && strncmp(pp1->wwid, refwwid, WWID_SIZE))
 			continue;
 
 		/*

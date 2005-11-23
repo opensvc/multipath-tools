@@ -250,8 +250,10 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 
 				continue;
 			}
-			else
+			else {
+				dm_lib_release();
 				condlog(3, "%s devmap removed", ompp->alias);
+			}
 		}
 	}
 	return 0;
@@ -476,7 +478,7 @@ out:
 }
 
 static int
-flush_map(struct multipath * mpp, char * devname, struct vectors * vecs)
+flush_map(struct multipath * mpp, struct vectors * vecs)
 {
 	/*
 	 * clear references to this map before flushing so we can ignore
@@ -487,11 +489,13 @@ flush_map(struct multipath * mpp, char * devname, struct vectors * vecs)
 		 * May not really be an error -- if the map was already flushed
 		 * from the device mapper by dmsetup(8) for instance.
 		 */
-		condlog(0, "%s: can't flush", devname);
+		condlog(0, "%s: can't flush", mpp->alias);
 		return 1;
 	}
-	else
-		condlog(3, "%s: devmap %s removed", devname, mpp->alias);
+	else {
+		dm_lib_release();
+		condlog(3, "%s: devmap removed", mpp->alias);
+	}
 
 	orphan_paths(vecs->pathvec, mpp);
 	remove_map(mpp, vecs, stop_waiter_thread, 1);
@@ -505,7 +509,12 @@ uev_add_map (char * devname, struct vectors * vecs)
 	int major, minor;
 	char dev_t[BLK_DEV_SIZE];
 	char * alias;
+	char * refwwid;
 	struct multipath * mpp;
+	int map_present;
+	int r = 1;
+
+	condlog(3, "%s: uev_add_map", devname);
 
 	if (sscanf(devname, "dm-%d", &minor) == 1 &&
 	    !sysfs_get_dev(sysfs_path, devname, dev_t, BLK_DEV_SIZE) &&
@@ -517,7 +526,9 @@ uev_add_map (char * devname, struct vectors * vecs)
 	if (!alias)
 		return 1;
 	
-	if (dm_type(alias, DEFAULT_TARGET) <= 0) {
+	map_present = dm_map_present(alias);
+
+	if (map_present && dm_type(alias, DEFAULT_TARGET) <= 0) {
 		condlog(4, "%s: not a multipath map", alias);
 		FREE(alias);
 		return 0;
@@ -540,14 +551,26 @@ uev_add_map (char * devname, struct vectors * vecs)
 	/*
 	 * now we can register the map
 	 */
-	if ((mpp = add_map_without_path(vecs, minor, alias,
+	if (map_present && (mpp = add_map_without_path(vecs, minor, alias,
 					start_waiter_thread))) {
-		condlog(3, "%s devmap %s added", devname, alias);
+		condlog(3, "%s: devmap %s added", alias, devname);
 		return 0;
 	}
+	refwwid = get_refwwid(devname, DEV_DEVMAP, vecs->pathvec);
 
-	condlog(0, "%s: uev_add_map failed", alias);
-	return 1;
+	if (refwwid) {
+		r = coalesce_paths(vecs, NULL, refwwid);
+		dm_lib_release();
+	}
+	
+	if (!r)
+		condlog(3, "%s devmap %s added", devname, alias);
+	else
+		condlog(0, "%s: uev_add_map failed", alias);
+
+	FREE(refwwid);
+	FREE(alias);
+	return r;
 }
 
 int
@@ -555,6 +578,8 @@ uev_remove_map (char * devname, struct vectors * vecs)
 {
 	int minor;
 	struct multipath * mpp;
+
+	condlog(3, "%s: uev_remove_map", devname);
 
 	if (sscanf(devname, "dm-%d", &minor) == 1)
 		mpp = find_mp_by_minor(vecs->mpvec, minor);
@@ -567,12 +592,37 @@ uev_remove_map (char * devname, struct vectors * vecs)
 		return 0;
 	}
 
-	condlog(2, "remove %s devmap", mpp->alias);
-	remove_map(mpp, vecs, stop_waiter_thread, 1);
+	condlog(2, "%s: remove devmap", mpp->alias);
+	flush_map(mpp, vecs);
 
 	return 0;
 }
 
+int
+uev_umount_map (char * devname, struct vectors * vecs)
+{
+	int minor;
+	struct multipath * mpp;
+
+	condlog(3, "%s: uev_umount_map", devname);
+
+	if (sscanf(devname, "dm-%d", &minor) == 1)
+		mpp = find_mp_by_minor(vecs->mpvec, minor);
+	else
+		mpp = find_mp_by_alias(vecs->mpvec, devname);
+
+	if (!mpp)
+		return 0;
+
+	update_mpp_paths(mpp);
+	verify_paths(mpp, vecs, NULL);
+
+	if (!VECTOR_SIZE(mpp->paths))
+		flush_map(mpp, vecs);
+
+	return 0;
+}
+	
 int
 uev_add_path (char * devname, struct vectors * vecs)
 {
@@ -654,6 +704,7 @@ rescan:
 		else
 			goto out;
 	}
+	dm_lib_release();
 
 	/*
 	 * update our state from kernel regardless of create or reload
@@ -719,7 +770,7 @@ rescan:
 				 * flush_map will fail if the device is open
 				 */
 				strncpy(alias, mpp->alias, WWID_SIZE);
-				if (flush_map(mpp, devname, vecs)) {
+				if (flush_map(mpp, vecs)) {
 					rm_path = 0;
 					vector_foreach_slot(rpvec, mypp, i)
 						if (store_path(mpp->paths, mypp))
@@ -793,7 +844,7 @@ rescan:
 			 * flush_map will fail if the device is open
 			 */
 			strncpy(alias, mpp->alias, WWID_SIZE);
-			if (flush_map(mpp, devname, vecs)) {
+			if (flush_map(mpp, vecs)) {
 				rm_path = 0;
 			}
 			else
@@ -1002,6 +1053,10 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 		}
 		if (!strncmp(uev->action, "remove", 6)) {
 			r = uev_remove_map(devname, vecs);
+			goto out;
+		}
+		if (!strncmp(uev->action, "umount", 6)) {
+			r = uev_umount_map(devname, vecs);
 			goto out;
 		}
 		goto out;
@@ -1373,7 +1428,7 @@ configure (struct vectors * vecs, int start_waiters)
 	/*
 	 * create new set of maps & push changed ones into dm
 	 */
-	if (coalesce_paths(vecs, mpvec))
+	if (coalesce_paths(vecs, mpvec, NULL))
 		return 1;
 
 	/*
@@ -1382,6 +1437,8 @@ configure (struct vectors * vecs, int start_waiters)
 	 */
 	if (coalesce_maps(vecs, mpvec))
 		return 1;
+
+	dm_lib_release();
 
 	if (conf->verbosity > 2)
 		vector_foreach_slot(mpvec, mpp, i)
