@@ -25,3 +25,5 @@ int setup_map (struct multipath * mpp);
 int domap (struct multipath * mpp);
 int reinstate_paths (struct multipath *mpp);
 int coalesce_paths (struct vectors *vecs, vector curmp);
+char * get_refwwid (char * dev, int dev_type, vector pathvec);
+

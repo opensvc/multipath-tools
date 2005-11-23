@@ -32,6 +32,7 @@
 #include "configure.h"
 #include "pgpolicies.h"
 #include "dict.h"
+#include "alias.h"
 
 extern int
 setup_map (struct multipath * mpp)
@@ -521,3 +522,91 @@ coalesce_paths (struct vectors * vecs, vector newmp)
 	}
 	return 0;
 }
+
+extern char *
+get_refwwid (char * dev, int dev_type, vector pathvec)
+{
+	struct path * pp;
+	char buff[FILE_NAME_SIZE];
+	char * refwwid;
+
+	if (dev_type == DEV_NONE)
+		return NULL;
+
+	if (dev_type == DEV_DEVNODE) {
+		basename(dev, buff);
+		pp = find_path_by_dev(pathvec, buff);
+		
+		if (!pp) {
+			pp = alloc_path();
+
+			if (!pp)
+				return NULL;
+
+			strncpy(pp->dev, buff, FILE_NAME_SIZE);
+
+			if (pathinfo(pp, conf->hwtable, DI_SYSFS | DI_WWID))
+				return NULL;
+
+			if (store_path(pathvec, pp)) {
+				free_path(pp);
+				return NULL;
+			}
+		}
+		refwwid = pp->wwid;
+		goto out;
+	}
+
+	if (dev_type == DEV_DEVT) {
+		pp = find_path_by_devt(pathvec, dev);
+		
+		if (!pp) {
+			if (devt2devname(buff, dev))
+				return NULL;
+
+			pp = alloc_path();
+
+			if (!pp)
+				return NULL;
+
+			strncpy(pp->dev, buff, FILE_NAME_SIZE);
+
+			if (pathinfo(pp, conf->hwtable, DI_SYSFS | DI_WWID))
+				return NULL;
+			
+			if (store_path(pathvec, pp)) {
+				free_path(pp);
+				return NULL;
+			}
+		}
+		refwwid = pp->wwid;
+		goto out;
+	}
+	if (dev_type == DEV_DEVMAP) {
+		/*
+		 * may be a binding
+		 */
+		refwwid = get_user_friendly_wwid(dev,
+						 conf->bindings_file);
+
+		if (refwwid)
+			return refwwid;
+
+		/*
+		 * or may be an alias
+		 */
+		refwwid = get_mpe_wwid(dev);
+
+		/*
+		 * or directly a wwid
+		 */
+		if (!refwwid)
+			refwwid = dev;
+	}
+out:
+	if (refwwid && strlen(refwwid))
+		return STRDUP(refwwid);
+
+	return NULL;
+}
+

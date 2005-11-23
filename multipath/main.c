@@ -50,93 +50,6 @@
 
 #include "main.h"
 
-static char *
-get_refwwid (vector pathvec)
-{
-	struct path * pp;
-	char buff[FILE_NAME_SIZE];
-	char * refwwid;
-
-	if (conf->dev_type == DEV_NONE)
-		return NULL;
-
-	if (conf->dev_type == DEV_DEVNODE) {
-		basename(conf->dev, buff);
-		pp = find_path_by_dev(pathvec, buff);
-		
-		if (!pp) {
-			pp = alloc_path();
-
-			if (!pp)
-				return NULL;
-
-			strncpy(pp->dev, buff, FILE_NAME_SIZE);
-
-			if (pathinfo(pp, conf->hwtable, DI_SYSFS | DI_WWID))
-				return NULL;
-
-			if (store_path(pathvec, pp)) {
-				free_path(pp);
-				return NULL;
-			}
-		}
-		refwwid = pp->wwid;
-		goto out;
-	}
-
-	if (conf->dev_type == DEV_DEVT) {
-		pp = find_path_by_devt(pathvec, conf->dev);
-		
-		if (!pp) {
-			if (devt2devname(buff, conf->dev))
-				return NULL;
-
-			pp = alloc_path();
-
-			if (!pp)
-				return NULL;
-
-			strncpy(pp->dev, buff, FILE_NAME_SIZE);
-
-			if (pathinfo(pp, conf->hwtable, DI_SYSFS | DI_WWID))
-				return NULL;
-			
-			if (store_path(pathvec, pp)) {
-				free_path(pp);
-				return NULL;
-			}
-		}
-		refwwid = pp->wwid;
-		goto out;
-	}
-	if (conf->dev_type == DEV_DEVMAP) {
-		/*
-		 * may be a binding
-		 */
-		refwwid = get_user_friendly_wwid(conf->dev,
-						 conf->bindings_file);
-
-		if (refwwid)
-			return refwwid;
-
-		/*
-		 * or may be an alias
-		 */
-		refwwid = get_mpe_wwid(conf->dev);
-
-		/*
-		 * or directly a wwid
-		 */
-		if (!refwwid)
-			refwwid = conf->dev;
-	}
-out:
-	if (refwwid && strlen(refwwid))
-		return STRDUP(refwwid);
-
-	return NULL;
-}
-
 static int
 filter_pathvec (vector pathvec, char * refwwid)
 {
@@ -334,7 +247,7 @@ configure (void)
 	 * failing the translation is fatal (by policy)
 	 */
 	if (conf->dev) {
-		refwwid = get_refwwid(pathvec);
+		refwwid = get_refwwid(conf->dev, conf->dev_type, pathvec);
 
 		if (!refwwid) {
 			condlog(3, "scope is nul");
