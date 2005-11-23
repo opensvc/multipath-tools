@@ -379,12 +379,24 @@ sysfs_get_bus (char * sysfs_path, struct path * curpath)
 	if (0 > sysfs_get_link(attr_path, attr_buff, sizeof(attr_buff)))
 		return 1;
 
-	sdev = sysfs_open_device_path(attr_buff);
+	int loop = WAIT_MAX_SECONDS * WAIT_LOOP_PER_SECOND;
+
+	while (loop--) {
+		sdev = sysfs_open_device_path(attr_buff);
+
+		if (strlen(sdev->bus))
+			break;
+
+		sysfs_close_device(sdev);
+		usleep(1000 * 1000 / WAIT_LOOP_PER_SECOND);
+	}
 
 	if (!strncmp(sdev->bus, "scsi", 4))
 		curpath->bus = SYSFS_BUS_SCSI;
 	else if (!strncmp(sdev->bus, "ide", 3))
 		curpath->bus = SYSFS_BUS_IDE;
+	else
+		return 1;
 
 	sysfs_close_device(sdev);
 
@@ -599,6 +611,11 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 		return 1;
 
 	/*
+	 * get and store hwe configlet pointer
+	 */
+	pp->hwe = find_hwe(hwtable, pp->vendor_id, pp->product_id);
+
+	/*
 	 * fetch info not available through sysfs
 	 */
 	if (pp->fd < 0)
@@ -610,9 +627,6 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	if (pp->bus == SYSFS_BUS_SCSI &&
 	    scsi_ioctl_pathinfo(pp, mask))
 		goto out;
-
-	/* get and store hwe pointer */
-	pp->hwe = find_hwe(hwtable, pp->vendor_id, pp->product_id);
 
 	/*
 	 * get path state, no message collection, no context
