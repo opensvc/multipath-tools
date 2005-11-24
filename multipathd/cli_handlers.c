@@ -10,6 +10,7 @@
 #include <config.h>
 #include <configure.h>
 #include <blacklist.h>
+#include <debug.h>
 
 #include "main.h"
 #include "cli.h"
@@ -19,6 +20,8 @@ cli_list_paths (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 
+	condlog(3, "list paths (operator)");
+
 	return show_paths(reply, len, vecs);
 }
 
@@ -26,6 +29,8 @@ int
 cli_list_maps (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
+
+	condlog(3, "list maps (operator)");
 
 	return show_maps(reply, len, vecs);
 }
@@ -36,12 +41,15 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, PATH);
 
+	condlog(2, "%s: add path (operator)", param);
+
 	if (blacklist(conf->blist, param)) {
 		*reply = strdup("blacklisted");
 		*len = strlen(*reply) + 1;
+		condlog(2, "%s: path blacklisted", param);
 		return 0;
 	}
-	return uev_add_path(param, vecs);
+	return ev_add_path(param, vecs);
 }
 
 int
@@ -50,7 +58,9 @@ cli_del_path (void * v, char ** reply, int * len, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, PATH);
 
-	return uev_remove_path(param, vecs);
+	condlog(2, "%s: remove path (operator)", param);
+
+	return ev_remove_path(param, vecs);
 }
 
 int
@@ -59,7 +69,9 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
 
-	return uev_add_map(param, vecs);
+	condlog(2, "%s: add map (operator)", param);
+
+	return ev_add_map(param, vecs);
 }
 
 int
@@ -68,7 +80,9 @@ cli_del_map (void * v, char ** reply, int * len, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
 
-	return uev_remove_map(param, vecs);
+	condlog(2, "%s: remove map (operator)", param);
+
+	return ev_remove_map(param, vecs);
 }
 
 int
@@ -77,6 +91,8 @@ cli_switch_group(void * v, char ** reply, int * len, void * data)
 	char * mapname = get_keyparam(v, MAP);
 	int groupnum = atoi(get_keyparam(v, GROUP));
 	
+	condlog(2, "%s: switch to path group #%i (operator)", mapname, groupnum);
+
 	return dm_switchgroup(mapname, groupnum);
 }
 
@@ -85,6 +101,8 @@ cli_dump_pathvec(void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 			
+	condlog(2, "dump pathvec (operator)");
+
 	return dump_pathvec(reply, len, vecs);
 }
 
@@ -93,6 +111,8 @@ cli_reconfigure(void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 			
+	condlog(2, "reconfigure (operator)");
+
 	return reconfigure(vecs);
 }
 
@@ -102,6 +122,8 @@ cli_suspend(void * v, char ** reply, int * len, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
 	int r = dm_simplecmd(DM_DEVICE_SUSPEND, param);
+
+	condlog(2, "%s: suspend (operator)", param);
 
 	if (!r) /* error */
 		return 1;
@@ -121,6 +143,8 @@ cli_resume(void * v, char ** reply, int * len, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
 	int r = dm_simplecmd(DM_DEVICE_RESUME, param);
+
+	condlog(2, "%s: resume (operator)", param);
 
 	if (!r) /* error */
 		return 1;
@@ -149,6 +173,9 @@ cli_reinstate(void * v, char ** reply, int * len, void * data)
 	if (!pp || !pp->mpp || !pp->mpp->alias)
 		return 1;
 
+	condlog(2, "%s: reinstate path %s (operator)",
+		pp->mpp->alias, pp->dev_t);
+
 	return dm_reinstate_path(pp->mpp->alias, pp->dev_t);
 }
 
@@ -166,6 +193,9 @@ cli_fail(void * v, char ** reply, int * len, void * data)
 
 	if (!pp || !pp->mpp || !pp->mpp->alias)
 		return 1;
+
+	condlog(2, "%s: fail path %s (operator)",
+		pp->mpp->alias, pp->dev_t);
 
 	return dm_fail_path(pp->mpp->alias, pp->dev_t);
 }

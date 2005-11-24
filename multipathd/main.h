@@ -10,9 +10,9 @@ int reconfigure (struct vectors *);
 int show_paths (char **, int *, struct vectors *);
 int show_maps (char **, int *, struct vectors *);
 int dump_pathvec (char **, int *, struct vectors *);
-int uev_add_path (char *, struct vectors *);
-int uev_remove_path (char *, struct vectors *);
-int uev_add_map (char *, struct vectors *);
-int uev_remove_map (char *, struct vectors *);
+int ev_add_path (char *, struct vectors *);
+int ev_remove_path (char *, struct vectors *);
+int ev_add_map (char *, struct vectors *);
+int ev_remove_map (char *, struct vectors *);
 
 #endif /* MAIN_H */

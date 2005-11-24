@@ -503,8 +503,15 @@ flush_map(struct multipath * mpp, struct vectors * vecs)
 	return 0;
 }
 
-int
+static int
 uev_add_map (char * devname, struct vectors * vecs)
+{
+	condlog(2, "%s: add map (uevent)", devname);
+	return ev_add_map(devname, vecs);
+}
+
+int
+ev_add_map (char * devname, struct vectors * vecs)
 {
 	int major, minor;
 	char dev_t[BLK_DEV_SIZE];
@@ -513,8 +520,6 @@ uev_add_map (char * devname, struct vectors * vecs)
 	struct multipath * mpp;
 	int map_present;
 	int r = 1;
-
-	condlog(3, "%s: uev_add_map", devname);
 
 	if (sscanf(devname, "dm-%d", &minor) == 1 &&
 	    !sysfs_get_dev(sysfs_path, devname, dev_t, BLK_DEV_SIZE) &&
@@ -542,7 +547,7 @@ uev_add_map (char * devname, struct vectors * vecs)
 		 * if we create a multipath mapped device as a result
 		 * of uev_add_path
 		 */
-		condlog(0, "%s: spurious uevent, devmap already registered",
+		condlog(0, "%s: devmap already registered",
 			devname);
 		FREE(alias);
 		return 0;
@@ -564,22 +569,27 @@ uev_add_map (char * devname, struct vectors * vecs)
 	}
 	
 	if (!r)
-		condlog(3, "%s devmap %s added", devname, alias);
+		condlog(3, "%s: devmap %s added", alias, devname);
 	else
-		condlog(0, "%s: uev_add_map failed", alias);
+		condlog(0, "%s: uev_add_map %s failed", alias, devname);
 
 	FREE(refwwid);
 	FREE(alias);
 	return r;
 }
 
-int
+static int
 uev_remove_map (char * devname, struct vectors * vecs)
+{
+	condlog(2, "%s: remove map (uevent)", devname);
+	return ev_remove_map(devname, vecs);
+}
+
+int
+ev_remove_map (char * devname, struct vectors * vecs)
 {
 	int minor;
 	struct multipath * mpp;
-
-	condlog(3, "%s: uev_remove_map", devname);
 
 	if (sscanf(devname, "dm-%d", &minor) == 1)
 		mpp = find_mp_by_minor(vecs->mpvec, minor);
@@ -591,20 +601,18 @@ uev_remove_map (char * devname, struct vectors * vecs)
 			devname);
 		return 0;
 	}
-
-	condlog(2, "%s: remove devmap", mpp->alias);
 	flush_map(mpp, vecs);
 
 	return 0;
 }
 
-int
+static int
 uev_umount_map (char * devname, struct vectors * vecs)
 {
 	int minor;
 	struct multipath * mpp;
 
-	condlog(3, "%s: uev_umount_map", devname);
+	condlog(2, "%s: umount map (uevent)", devname);
 
 	if (sscanf(devname, "dm-%d", &minor) == 1)
 		mpp = find_mp_by_minor(vecs->mpvec, minor);
@@ -623,16 +631,22 @@ uev_umount_map (char * devname, struct vectors * vecs)
 	return 0;
 }
 	
-int
+static int
 uev_add_path (char * devname, struct vectors * vecs)
+{
+	condlog(2, "%s: add path (uevent)", devname);
+	return ev_add_path(devname, vecs);
+}
+
+int
+ev_add_path (char * devname, struct vectors * vecs)
 {
 	struct multipath * mpp;
 	struct path * pp;
 	char empty_buff[WWID_SIZE] = {0};
 
-	condlog(3, "%s: uev_add_path", devname);
-
 	pp = find_path_by_dev(vecs->pathvec, devname);
+
 	if (pp) {
 		condlog(0, "%s: spurious uevent, path already in pathvec, %p",
 			devname, pp->mpp);
@@ -724,17 +738,23 @@ out:
 	return 1;
 }
 
-int
+static int
 uev_remove_path (char * devname, struct vectors * vecs)
+{
+	condlog(2, "%s: remove path (uevent)", devname);
+	return ev_remove_path(devname, vecs);
+}
+
+int
+ev_remove_path (char * devname, struct vectors * vecs)
 {
 	struct multipath * mpp;
 	struct path * pp;
 	int i;
 	int rm_path = 1;
 
-	condlog(3, "%s: uev_remove_path", devname);
-
 	pp = find_path_by_dev(vecs->pathvec, devname);
+
 	if (!pp) {
 		condlog(0, "%s: spurious uevent, path not in pathvec", devname);
 		return 1;
@@ -1444,8 +1464,6 @@ reconfigure (struct vectors * vecs)
 {
 	struct config * old = conf;
 
-	condlog(0, "reconfigure");
-
 	/*
 	 * free old map and path vectors ... they use old conf state
 	 */
@@ -1533,7 +1551,7 @@ signal_set(int signo, void (*func) (int))
 static void
 sighup (int sig)
 {
-	condlog(3, "SIGHUP received");
+	condlog(2, "reconfigure (SIGHUP)");
 
 	lock(gvecs->lock);
 	reconfigure(gvecs);
