@@ -356,8 +356,11 @@ domap (struct multipath * mpp)
 		 */
 #ifndef DAEMON
 		dm_switchgroup(mpp->alias, mpp->bestpg);
-#endif
 		print_mp(mpp, conf->verbosity);
+#else
+		condlog(2, "%s: load table [0 %llu %s %s]", mpp->alias,
+                        mpp->size, DEFAULT_TARGET, mpp->params);
+#endif
 	}
 
 	return r;
