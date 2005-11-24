@@ -7,6 +7,8 @@
 
 #if DAEMON
 #include "log_pthread.h"
+#include <sys/types.h>
+#include <time.h>
 #endif
 
 #include "config.h"
@@ -20,13 +22,23 @@ void dlog (int sink, int prio, char * fmt, ...)
 	thres = (conf) ? conf->verbosity : 0;
 
 	if (prio <= thres) {
+#if DAEMON
 		if (!sink) {
+			time_t t = time(NULL);
+			struct tm *tb = localtime(&t);
+			char buff[16];
+			
+			strftime(buff, 16, "%b %d %H:%M:%S", tb); 
+
+			fprintf(stdout, "%s | ", buff);
 			vfprintf(stdout, fmt, ap);
 			fprintf(stdout, "\n");
 		}
-#if DAEMON
 		else
 			log_safe(prio + 3, fmt, ap);
+#else
+		vfprintf(stdout, fmt, ap);
+		fprintf(stdout, "\n");
 #endif
 	}
 	va_end(ap);
