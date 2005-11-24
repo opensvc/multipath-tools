@@ -272,8 +272,10 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 
 				strncpy(pp->dev_t, word, BLK_DEV_SIZE);
 
+#ifndef DAEMON
 				if (store_path(pathvec, pp))
 					goto out;
+#endif
 			}
 			FREE(word);
 

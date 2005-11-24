@@ -614,7 +614,7 @@ uev_umount_map (char * devname, struct vectors * vecs)
 	if (!mpp)
 		return 0;
 
-	update_mpp_paths(mpp);
+	update_mpp_paths(mpp, vecs->pathvec);
 	verify_paths(mpp, vecs, NULL);
 
 	if (!VECTOR_SIZE(mpp->paths))
@@ -698,7 +698,7 @@ rescan:
 		if (mpp->action == ACT_RELOAD) {
 			condlog(0, "%s: uev_add_path sleep", mpp->alias);
 			sleep(1);
-			update_mpp_paths(mpp);
+			update_mpp_paths(mpp, vecs->pathvec);
 			goto rescan;
 		}
 		else
@@ -729,7 +729,7 @@ uev_remove_path (char * devname, struct vectors * vecs)
 {
 	struct multipath * mpp;
 	struct path * pp;
-	int redo, i;
+	int i;
 	int rm_path = 1;
 
 	condlog(3, "%s: uev_remove_path", devname);
@@ -750,19 +750,15 @@ uev_remove_path (char * devname, struct vectors * vecs)
 		 */
 		if (pathcount(mpp, PATH_WILD) > 1) {
 			vector rpvec = vector_alloc();
-			struct path * mypp;
-			int j;
 
 			/*
 	 	 	 * transform the mp->pg vector of vectors of paths
 	 	 	 * into a mp->params string to feed the device-mapper
 	 	 	 */
-			update_mpp_paths(mpp);
+			update_mpp_paths(mpp, vecs->pathvec);
 			if ((i = find_slot(mpp->paths, (void *)pp)) != -1)
 				vector_del_slot(mpp->paths, i);
 
-rescan:
-			redo = verify_paths(mpp, vecs, rpvec);
 			if (VECTOR_SIZE(mpp->paths) == 0) {
 				char alias[WWID_SIZE];
 
@@ -770,33 +766,13 @@ rescan:
 				 * flush_map will fail if the device is open
 				 */
 				strncpy(alias, mpp->alias, WWID_SIZE);
-				if (flush_map(mpp, vecs)) {
+				if (flush_map(mpp, vecs))
 					rm_path = 0;
-					vector_foreach_slot(rpvec, mypp, i)
-						if (store_path(mpp->paths, mypp))
-							goto out;	
-				}
-				else {
-					vector_foreach_slot(rpvec, mypp, i) {
-						if ((j = find_slot(vecs->pathvec,
-						   	   	   (void *)mypp)) != -1) {
-							vector_del_slot(vecs->pathvec, j);
-							free_path(mypp);
-						}
-					}
+				else
 					condlog(3, "%s: removed map after removing"
 						" multiple paths", alias);
-				}
 			}
 			else {
-				vector_foreach_slot(rpvec, mypp, i) {
-					if ((j = find_slot(vecs->pathvec,
-						   	   	   (void *)mypp)) != -1) {
-						vector_del_slot(vecs->pathvec, j);
-						free_path(mypp);
-					}
-				}
-					
 				if (setup_map(mpp)) {
 					condlog(0, "%s: failed to setup map for"
 						" removal of path %s", mpp->alias, devname);
@@ -812,17 +788,14 @@ rescan:
 						"removal of path %s",
 						mpp->alias, devname);
 					/*
-			 		 * deal with asynchronous uevents :((
-			 		 */
-					if (!redo) {
-						condlog(3, "%s: uev_remove_path sleep",
-							mpp->alias);
-						sleep(1);
-					}
-					update_mpp_paths(mpp);
-					free_pathvec(rpvec, KEEP_PATHS);
-					rpvec = vector_alloc();
-					goto rescan;
+					 * Delete path from pathvec so that
+					 * update_mpp_paths wont find it later
+					 * when/if another path is removed.
+					 */
+					if ((i = find_slot(vecs->pathvec, (void *)pp)) != -1)
+						vector_del_slot(vecs->pathvec, i);
+					free_path(pp);
+					return 1;
 				}
 				/*
 				 * update our state from kernel
@@ -844,9 +817,8 @@ rescan:
 			 * flush_map will fail if the device is open
 			 */
 			strncpy(alias, mpp->alias, WWID_SIZE);
-			if (flush_map(mpp, vecs)) {
+			if (flush_map(mpp, vecs))
 				rm_path = 0;
-			}
 			else
 				condlog(3, "%s: removed map", alias);
 		}

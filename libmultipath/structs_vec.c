@@ -19,7 +19,7 @@
  * creates or updates mpp->paths reading mpp->pg
  */
 extern int
-update_mpp_paths(struct multipath * mpp)
+update_mpp_paths(struct multipath * mpp, vector pathvec)
 {
 	struct pathgroup * pgp;
 	struct path * pp;
@@ -35,6 +35,7 @@ update_mpp_paths(struct multipath * mpp)
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		vector_foreach_slot (pgp->paths, pp, j) {
 			if (!find_path_by_devt(mpp->paths, pp->dev_t) &&
+			    (find_path_by_devt(pathvec, pp->dev_t)) &&
 			    store_path(mpp->paths, pp))
 				return 1;
 		}
@@ -51,7 +52,7 @@ adopt_paths (vector pathvec, struct multipath * mpp)
 	if (!mpp)
 		return 0;
 
-	if (update_mpp_paths(mpp))
+	if (update_mpp_paths(mpp, pathvec))
 		return 1;
 
 	vector_foreach_slot (pathvec, pp, i) {

@@ -30,7 +30,7 @@ void orphan_paths (vector pathvec, struct multipath * mpp);
 void orphan_path (struct path * pp);
 
 int verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec);
-int update_mpp_paths(struct multipath * mpp);
+int update_mpp_paths(struct multipath * mpp, vector pathvec);
 int setup_multipath (struct vectors * vecs, struct multipath * mpp);
 int update_multipath_strings (struct multipath *mpp, vector pathvec);
 	
