@@ -844,11 +844,11 @@ out:
 int
 dm_rename (char * old, char * new)
 {
-	int r = 1;
+	int r = 0;
 	struct dm_task *dmt;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_RENAME)))
-		return 0;
+		return r;
 
 	if (!dm_task_set_name(dmt, old))
 		goto out;
@@ -861,7 +861,7 @@ dm_rename (char * old, char * new)
 	if (!dm_task_run(dmt))
 		goto out;
 
-	r = 0;
+	r = 1;
 out:
 	dm_task_destroy(dmt);
 	return r;

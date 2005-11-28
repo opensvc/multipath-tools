@@ -140,16 +140,16 @@ select_action (struct multipath * mpp, vector curmp)
 		if (cmpp && !conf->dry_run) {
 			condlog(2, "%s: rename: %s to %s", mpp->wwid,
 				cmpp->alias, mpp->alias);
-			dm_flush_map(cmpp->alias, DEFAULT_TARGET);
 			strncpy(mpp->alias_old, cmpp->alias, WWID_SIZE);
 			mpp->action = ACT_RENAME;
+			return;
 		}
 		else {
 			condlog(3, "set ACT_CREATE: map does not exist");
 			mpp->action = ACT_CREATE;
 		}
 		mpp->action = ACT_CREATE;
-		condlog(3, "set ACT_CREATE: map does not exists");
+		condlog(3, "set ACT_CREATE: map does not exist");
 		return;
 	}
 
