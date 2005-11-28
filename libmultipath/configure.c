@@ -358,6 +358,7 @@ domap (struct multipath * mpp)
 		dm_switchgroup(mpp->alias, mpp->bestpg);
 		print_mp(mpp, conf->verbosity);
 #else
+		mpp->stat_map_loads++;
 		condlog(2, "%s: load table [0 %llu %s %s]", mpp->alias,
                         mpp->size, DEFAULT_TARGET, mpp->params);
 #endif

@@ -19,11 +19,17 @@
  * %Q : queueing policy changer countdown (no_path_retry)
  * %n : number of active paths
  * %t : device mapper map status
+ * %0 : stat_path_failures
+ * %1 : stat_switchgroup
+ * %2 : stat_map_loads
+ * %3 : stat_total_queueing_time
+ * %4 : stat_queueing_timeouts
  */
 #define PRINT_PATH_LONG      "%w %i %d %D %p %t%T %s"
 #define PRINT_PATH_INDENT    " \\_ %i %d %D %t%T"
 #define PRINT_PATH_CHECKER   "%i %d %D %p %t%T %C"
 #define PRINT_MAP_FAILBACK   "%w %d %F %Q %n %t"
+#define PRINT_MAP_STATS      "%w %d %0 %1 %2 %3 %4"
 
 #define MAX_LINE_LEN 80
 #define PROGRESS_LEN 10
@@ -54,5 +60,6 @@ int snprint_map (char *, int, char *,struct multipath *);
 
 void print_mp (struct multipath * mpp, int verbosity);
 void print_path (struct path * pp, char * style);
+void print_multipath (struct multipath * mpp, char * style);
 void print_map (struct multipath * mpp);
 void print_all_paths (vector pathvec, int banner);

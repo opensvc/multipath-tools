@@ -14,7 +14,8 @@ enum {
 	__GROUP,
 	__DUMP,
 	__PATHVEC,
-	__RECONFIGURE
+	__RECONFIGURE,
+	__STATS,
 };
 
 #define LIST		(1 << __LIST)
@@ -33,6 +34,7 @@ enum {
 #define DUMP		(1 << __DUMP)
 #define PATHVEC		(1 << __PATHVEC)
 #define RECONFIGURE	(1 << __RECONFIGURE)
+#define STATS		(1 << __STATS)
 
 #define INITIAL_REPLY_LEN 1000
 

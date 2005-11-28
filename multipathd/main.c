@@ -163,6 +163,7 @@ update_queue_mode_del_path(struct multipath *mpp)
 		 * meaning of +1: retry_tick may be decremented in
 		 *                checkerloop before starting retry.
 		 */
+		mpp->stat_queueing_timeouts++;
 		mpp->retry_tick = mpp->no_path_retry * conf->checkint + 1;
 		condlog(1, "%s: Entering recovery mode: max_retries=%d",
 			mpp->alias, mpp->no_path_retry);
@@ -212,6 +213,7 @@ need_switch_pathgroup (struct multipath * mpp, int refresh)
 static void
 switch_pathgroup (struct multipath * mpp)
 {
+	mpp->stat_switchgroup++;
 	dm_switchgroup(mpp->alias, mpp->bestpg);
 	condlog(2, "%s: switch to path group #%i",
 		 mpp->alias, mpp->bestpg);
@@ -289,6 +291,7 @@ update_multipath (struct vectors *vecs, char *mapname)
 
 			if (pp->state != PATH_DOWN) {
 				condlog(2, "%s: mark as failed", pp->dev_t);
+				mpp->stat_path_failures++;
 				pp->state = PATH_DOWN;
 				update_queue_mode_del_path(mpp);
 
@@ -858,7 +861,7 @@ out:
 }
 
 int
-show_paths (char ** r, int * len, struct vectors * vecs)
+show_paths (char ** r, int * len, struct vectors * vecs, char * style)
 {
 	int i;
 	struct path * pp;
@@ -878,11 +881,11 @@ show_paths (char ** r, int * len, struct vectors * vecs)
 
 		if (VECTOR_SIZE(vecs->pathvec) > 0)
 			c += snprint_path_header(c, reply + maxlen - c,
-						 PRINT_PATH_CHECKER);
+						 style);
 
 		vector_foreach_slot(vecs->pathvec, pp, i)
 			c += snprint_path(c, reply + maxlen - c,
-					  PRINT_PATH_CHECKER, pp);
+					  style, pp);
 
 		again = ((c - reply) == (maxlen - 1));
 
@@ -896,7 +899,7 @@ show_paths (char ** r, int * len, struct vectors * vecs)
 }
 
 int
-show_maps (char ** r, int *len, struct vectors * vecs)
+show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 {
 	int i;
 	struct multipath * mpp;
@@ -915,11 +918,11 @@ show_maps (char ** r, int *len, struct vectors * vecs)
 		c = reply;
 		if (VECTOR_SIZE(vecs->mpvec) > 0)
 			c += snprint_map_header(c, reply + maxlen - c,
-						PRINT_MAP_FAILBACK);
+						style);
 
 		vector_foreach_slot(vecs->mpvec, mpp, i)
 			c += snprint_map(c, reply + maxlen - c,
-					 PRINT_MAP_FAILBACK, mpp);
+					 style, mpp);
 
 		again = ((c - reply) == (maxlen - 1));
 
@@ -1094,6 +1097,7 @@ uxlsnrloop (void * ap)
 
 	add_handler(LIST+PATHS, cli_list_paths);
 	add_handler(LIST+MAPS, cli_list_maps);
+	add_handler(LIST+MAPS+STATS, cli_list_maps_stats);
 	add_handler(ADD+PATH, cli_add_path);
 	add_handler(DEL+PATH, cli_del_path);
 	add_handler(ADD+MAP, cli_add_map);
@@ -1222,6 +1226,7 @@ retry_count_tick(vector mpvec)
 
 	vector_foreach_slot (mpvec, mpp, i) {
 		if (mpp->retry_tick) {
+			mpp->stat_total_queueing_time++;
 			condlog(4, "%s: Retrying.. No active path", mpp->alias);
 			if(--mpp->retry_tick == 0) {
 				dm_queue_if_no_path(mpp->alias, 0);
@@ -1314,6 +1319,7 @@ checkerloop (void *ap)
 					 */
 					pp->mpp->failback_tick = 0;
 
+					pp->mpp->stat_path_failures++;
 					continue;
 				}
 

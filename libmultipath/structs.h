@@ -144,6 +144,13 @@ struct multipath {
 
 	/* daemon store a data blob for DM event waiter threads */
 	void * waiter;
+
+	/* stats */
+	unsigned int stat_switchgroup;
+	unsigned int stat_path_failures;
+	unsigned int stat_map_loads;
+	unsigned int stat_total_queueing_time;
+	unsigned int stat_queueing_timeouts;
 };
 
 struct pathgroup {
