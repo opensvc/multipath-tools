@@ -908,7 +908,7 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 	int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
-	get_map_layout(vecs->mpvec);
+	get_multipath_layout(vecs->mpvec);
 	reply = MALLOC(maxlen);
 
 	while (again) {
@@ -917,12 +917,12 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 
 		c = reply;
 		if (VECTOR_SIZE(vecs->mpvec) > 0)
-			c += snprint_map_header(c, reply + maxlen - c,
-						style);
+			c += snprint_multipath_header(c, reply + maxlen - c,
+						      style);
 
 		vector_foreach_slot(vecs->mpvec, mpp, i)
-			c += snprint_map(c, reply + maxlen - c,
-					 style, mpp);
+			c += snprint_multipath(c, reply + maxlen - c,
+					       style, mpp);
 
 		again = ((c - reply) == (maxlen - 1));
 

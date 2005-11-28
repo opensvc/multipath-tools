@@ -31,8 +31,9 @@
 #define PRINT_MAP_FAILBACK   "%w %d %F %Q %n %t"
 #define PRINT_MAP_STATS      "%w %d %0 %1 %2 %3 %4"
 
-#define MAX_LINE_LEN 80
-#define PROGRESS_LEN 10
+#define MAX_LINE_LEN  80
+#define MAX_FIELD_LEN 32
+#define PROGRESS_LEN  10
 
 struct path_layout {
 	int uuid_len;
@@ -50,13 +51,26 @@ struct map_layout {
 	int nr_active_len;
 };
 
+struct path_data {
+	char wildcard;
+	char * header;
+	int width;
+	int (*snprint)(char * buff, size_t len, struct path * pp);
+};
+
+struct multipath_data {
+	char wildcard;
+	char * header;
+	int width;
+	int (*snprint)(char * buff, size_t len, struct multipath * mpp);
+};
 
 void get_path_layout (vector pathvec);
-void get_map_layout (vector mpvec);
+void get_multipath_layout (vector mpvec);
 int snprint_path_header (char *, int, char *);
-int snprint_map_header (char *, int, char *);
+int snprint_multipath_header (char *, int, char *);
 int snprint_path (char *, int, char *, struct path *);
-int snprint_map (char *, int, char *,struct multipath *);
+int snprint_multipath (char *, int, char *,struct multipath *);
 
 void print_mp (struct multipath * mpp, int verbosity);
 void print_path (struct path * pp, char * style);

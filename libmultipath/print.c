@@ -13,130 +13,348 @@
 #include "dmparser.h"
 #include "configure.h"
 #include "defaults.h"
+#include "debug.h"
 
 #include "../libcheckers/path_state.h"
 
-#define MAX_FIELD_LEN 64
-
 #define MAX(x,y) (x > y) ? x : y
+#define TAIL     (line + len - 1 - c)
+#define NOPAD    s = c
+#define PAD(x)   while ((int)(c - s) < (x) && (c < (line + len - 1))) \
+			*c++ = ' '; s = c
+#define PRINT(var, size, format, args...)      \
+	         fwd = snprintf(var, size, format, ##args); \
+		 c += (fwd >= size) ? size : fwd;
 
 /* for column aligned output */
 struct path_layout pl;
 struct map_layout ml;
 
+/*
+ * information printing helpers
+ */
+static int
+snprint_str (char * buff, size_t len, char * str)
+{
+	return snprintf(buff, len, "%s", str);
+}
+
+static int
+snprint_int (char * buff, size_t len, int val)
+{
+	return snprintf(buff, len, "%i", val);
+}
+
+static int
+snprint_uint (char * buff, size_t len, unsigned int val)
+{
+	return snprintf(buff, len, "%u", val);
+}
+
+static int
+snprint_name (char * buff, size_t len, struct multipath * mpp)
+{
+	if (mpp->alias)
+		return snprintf(buff, len, "%s", mpp->alias);
+	else
+		return snprintf(buff, len, "%s", mpp->wwid);
+}
+
+static int
+snprint_sysfs (char * buff, size_t len, struct multipath * mpp)
+{
+	if (mpp->dmi)
+		return snprintf(buff, len, "dm-%i", mpp->dmi->minor);
+
+	return 0;
+}
+
+static int
+snprint_progress (char * buff, size_t len, int cur, int total)
+{
+	int i = PROGRESS_LEN * cur / total;
+	int j = PROGRESS_LEN - i;
+	char * c = buff;
+	char * end = buff + len;
+	
+	while (i-- > 0) {
+		c += snprintf(c, len, "X");
+		if ((len = (end - c)) <= 1) goto out;
+	}
+
+	while (j-- > 0) {
+		c += snprintf(c, len,  ".");
+		if ((len = (end - c)) <= 1) goto out;
+	}
+
+	c += snprintf(c, len, " %i/%i", cur, total);
+
+out:
+	buff[c - buff + 1] = '\0';
+	return (c - buff + 1);
+}
+	
+static int
+snprint_failback (char * buff, size_t len, struct multipath * mpp)
+{
+	if (mpp->pgfailback == -FAILBACK_IMMEDIATE)
+		return snprintf(buff, len, "immediate");
+
+	if (!mpp->failback_tick)
+		return snprintf(buff, len, "-");
+	else
+		return snprint_progress(buff, len, mpp->failback_tick,
+					mpp->pgfailback);
+}
+
+static int
+snprint_queueing (char * buff, size_t len, struct multipath * mpp)
+{
+	if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
+		return snprintf(buff, len, "off");
+	else if (mpp->no_path_retry == NO_PATH_RETRY_QUEUE)
+		return snprintf(buff, len, "on");
+	else if (mpp->no_path_retry == NO_PATH_RETRY_UNDEF)
+		return snprintf(buff, len, "-");
+	else if (mpp->no_path_retry > 0) {
+		if (mpp->retry_tick)
+			return snprintf(buff, len, "%i sec",
+					mpp->retry_tick);
+		else
+			return snprintf(buff, len, "%i chk",
+					mpp->no_path_retry);
+	}
+	return 0;
+}
+
+static int
+snprint_nb_paths (char * buff, size_t len, struct multipath * mpp)
+{
+	return snprint_int(buff, len, mpp->nr_active);
+}
+
+static int
+snprint_dm_map_state (char * buff, size_t len, struct multipath * mpp)
+{
+	if (mpp->dmi && mpp->dmi->suspended)
+		return snprintf(buff, len, "suspend");
+	else
+		return snprintf(buff, len, "active");
+}
+
+static int
+snprint_path_faults (char * buff, size_t len, struct multipath * mpp)
+{
+	return snprint_uint(buff, len, mpp->stat_path_failures);
+}
+
+static int
+snprint_switch_grp (char * buff, size_t len, struct multipath * mpp)
+{
+	return snprint_uint(buff, len, mpp->stat_switchgroup);
+}
+
+static int
+snprint_map_loads (char * buff, size_t len, struct multipath * mpp)
+{
+	return snprint_uint(buff, len, mpp->stat_map_loads);
+}
+
+static int
+snprint_total_q_time (char * buff, size_t len, struct multipath * mpp)
+{
+	return snprint_uint(buff, len, mpp->stat_total_queueing_time);
+}
+
+static int
+snprint_q_timeouts (char * buff, size_t len, struct multipath * mpp)
+{
+	return snprint_uint(buff, len, mpp->stat_queueing_timeouts);
+}
+
+static int
+snprint_uuid (char * buff, size_t len, struct path * pp)
+{
+	return snprint_str(buff, len, pp->wwid);
+}
+
+static int
+snprint_hcil (char * buff, size_t len, struct path * pp)
+{
+	if (pp->sg_id.host_no < 0)
+		return snprintf(buff, len, "#:#:#:#");
+
+	return snprintf(buff, len, "%i:%i:%i:%i",
+			pp->sg_id.host_no,
+			pp->sg_id.channel,
+			pp->sg_id.scsi_id,
+			pp->sg_id.lun);
+}
+
+static int
+snprint_dev (char * buff, size_t len, struct path * pp)
+{
+	if (!strlen(pp->dev))
+		return snprintf(buff, len, "-");
+	else
+		return snprint_str(buff, len, pp->dev);
+}
+
+static int
+snprint_dev_t (char * buff, size_t len, struct path * pp)
+{
+	if (!strlen(pp->dev))
+		return snprintf(buff, len, "#:#");
+	else
+		return snprint_str(buff, len, pp->dev_t);
+}
+
+static int
+snprint_chk_state (char * buff, size_t len, struct path * pp)
+{
+	switch (pp->state) {
+	case PATH_UP:
+		return snprintf(buff, len, "[ready]");
+	case PATH_DOWN:
+		return snprintf(buff, len, "[faulty]");
+	case PATH_SHAKY:
+		return snprintf(buff, len, "[shaky]");
+	case PATH_GHOST:
+		return snprintf(buff, len, "[ghost]");
+	default:
+		return snprintf(buff, len, "[undef]");
+	}
+}
+
+static int
+snprint_dm_path_state (char * buff, size_t len, struct path * pp)
+{
+	switch (pp->dmstate) {
+	case PSTATE_ACTIVE:
+		return snprintf(buff, len, "[active]");
+	case PSTATE_FAILED:
+		return snprintf(buff, len, "[failed]");
+	default:
+		return snprintf(buff, len, "[undef]");
+	}
+}
+
+static int
+snprint_vpr (char * buff, size_t len, struct path * pp)
+{
+	return snprintf(buff, len, "%s/%s/%s",
+		        pp->vendor_id, pp->product_id, pp->rev);
+}
+
+static int
+snprint_next_check (char * buff, size_t len, struct path * pp)
+{
+	if (!pp->mpp)
+		return snprintf(buff, len, "[orphan]");
+
+	return snprint_progress(buff, len, pp->tick, pp->checkint);
+}
+
+static int
+snprint_pri (char * buff, size_t len, struct path * pp)
+{
+	return snprint_int(buff, len, pp->priority);
+}
+
+struct multipath_data mpd[] = {
+	{'w', "name",          0, snprint_name},
+	{'d', "sysfs",         0, snprint_sysfs},
+	{'F', "failback",      0, snprint_failback},
+	{'Q', "queueing",      0, snprint_queueing},
+	{'n', "paths",         0, snprint_nb_paths},
+	{'t', "dm-st",         0, snprint_dm_map_state},
+	{'0', "path_faults",   0, snprint_path_faults},
+	{'1', "switch_grp",    0, snprint_switch_grp},
+	{'2', "map_loads",     0, snprint_map_loads},
+	{'3', "total_q_time",  0, snprint_total_q_time},
+	{'4', "q_timeouts",    0, snprint_q_timeouts},
+	{0, NULL, 0 , NULL}
+};
+
+struct path_data pd[] = {
+	{'w', "uuid",          0, snprint_uuid},
+	{'i', "hcil",          0, snprint_hcil},
+	{'d', "dev",           0, snprint_dev},
+	{'D', "dev_t",         0, snprint_dev_t},
+	{'t', "dm-st",         0, snprint_dm_path_state},
+	{'T', "chk_st",        0, snprint_chk_state},
+	{'s', "vend/prod/rev", 0, snprint_vpr},
+	{'C', "next_check",    0, snprint_next_check},
+	{'p', "pri",           0, snprint_pri},
+	{0, NULL, 0 , NULL}
+};
+
 void
 get_path_layout (vector pathvec)
 {
-	int i;
+	int i, j;
 	char buff[MAX_FIELD_LEN];
 	struct path * pp;
 
-	int uuid_len;
-	int hbtl_len;
-	int dev_len;
-	int dev_t_len;
-	int prio_len;
+	for (j = 0; pd[j].header; j++) {
+		pd[j].width = strlen(pd[j].header);
 
-	/* reset max col lengths */
-	pl.uuid_len = 0;
-	pl.hbtl_len = 0;
-	pl.dev_len = 0;
-	pl.dev_t_len = 0;
-	pl.prio_len = 0;
-
-	vector_foreach_slot (pathvec, pp, i) {
-		uuid_len = strlen(pp->wwid);
-		hbtl_len = snprintf(buff, MAX_FIELD_LEN, "%i:%i:%i:%i",
-					pp->sg_id.host_no,
-					pp->sg_id.channel,
-					pp->sg_id.scsi_id,
-					pp->sg_id.lun);
-		dev_len = strlen(pp->dev);
-		dev_t_len = strlen(pp->dev_t);
-		prio_len = 1 + (int)log10(pp->priority);
-
-		pl.uuid_len = MAX(uuid_len, pl.uuid_len);
-		pl.hbtl_len = MAX(hbtl_len, pl.hbtl_len);
-		pl.dev_len = MAX(dev_len, pl.dev_len);
-		pl.dev_t_len = MAX(dev_t_len, pl.dev_t_len);
-		pl.prio_len = MAX(prio_len, pl.prio_len);
+		vector_foreach_slot (pathvec, pp, i) {
+			pd[j].snprint(buff, MAX_FIELD_LEN, pp);
+			pd[j].width = MAX(pd[j].width, strlen(buff));
+		}
 	}
-	return;
 }
 
 void
-get_map_layout (vector mpvec)
+get_multipath_layout (vector mpvec)
 {
-	int i;
+	int i, j;
 	char buff[MAX_FIELD_LEN];
 	struct multipath * mpp;
 
-	int mapname_len;
-	int mapdev_len;
-	int failback_progress_len;
-	int queueing_progress_len;
-	int nr_active_len;
+	for (j = 0; mpd[j].header; j++) {
+		mpd[j].width = strlen(mpd[j].header);
 
-	/* reset max col lengths */
-	ml.mapname_len = 0;
-	ml.mapdev_len = 0;
-	ml.failback_progress_len = 0;
-	ml.queueing_progress_len = 0;
-	ml.nr_active_len = 0;
-
-	vector_foreach_slot (mpvec, mpp, i) {
-		mapname_len = (mpp->alias) ?
-				strlen(mpp->alias) : strlen(mpp->wwid);
-		if (mpp->dmi) mapdev_len = snprintf(buff, MAX_FIELD_LEN,
-			       	      "dm-%i", mpp->dmi->minor);
-		if (mpp->pgfailback == -FAILBACK_IMMEDIATE)
-			failback_progress_len = 9;
-		else
-			failback_progress_len = 4 + PROGRESS_LEN +
-					(int)log10(mpp->failback_tick) +
-					(int)log10(mpp->pgfailback);
-		queueing_progress_len = 5 + (int)log10(mpp->retry_tick);
-		nr_active_len = (int)log10(mpp->nr_active);
-
-		ml.mapname_len = MAX(mapname_len, ml.mapname_len);
-		ml.mapdev_len = MAX(mapdev_len, ml.mapdev_len);
-		ml.failback_progress_len = MAX(failback_progress_len,
-						ml.failback_progress_len);
-		ml.queueing_progress_len = MAX(queueing_progress_len,
-						ml.queueing_progress_len);
-		ml.nr_active_len = MAX(nr_active_len, ml.nr_active_len);
+		vector_foreach_slot (mpvec, mpp, i) {
+			mpd[j].snprint(buff, MAX_FIELD_LEN, mpp);
+			mpd[j].width = MAX(mpd[j].width, strlen(buff));
+		}
 	}
-	return;
 }
 
-#define TAIL   (line + len - 1 - c)
-#define PAD(x) while ((int)(c - s) < (x) && (c < (line + len - 1))) \
-			*c++ = ' '; s = c
-#define NOPAD  s = c
+static struct multipath_data *
+mpd_lookup(char wildcard)
+{
+	int i;
 
-#define PRINT(var, size, format, args...)      \
-	        fwd = snprintf(var, size, format, ##args); \
-		c += (fwd >= size) ? size : fwd;
+	for (i = 0; mpd[i].header; i++)
+		if (mpd[i].wildcard == wildcard)
+			return &mpd[i];
 
-#define PRINT_PROGRESS(cur, total)			\
-		int i = PROGRESS_LEN * cur / total;	\
-		int j = PROGRESS_LEN - i;		\
-							\
-		while (i-- > 0) {			\
-			PRINT(c, TAIL, "X");		\
-		}					\
-		while (j-- > 0) {			\
-			PRINT(c, TAIL, ".");		\
-		}					\
-		PRINT(c, TAIL, " %i/%i", cur, total)
+	return NULL;
+}
+
+static struct path_data *
+pd_lookup(char wildcard)
+{
+	int i;
+
+	for (i = 0; pd[i].header; i++)
+		if (pd[i].wildcard == wildcard)
+			return &pd[i];
+
+	return NULL;
+}
 
 int
-snprint_map_header (char * line, int len, char * format)
+snprint_multipath_header (char * line, int len, char * format)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
 	char * f = format; /* format string cursor */
 	int fwd;
+	struct multipath_data * data;
 
 	do {
 		if (!TAIL)
@@ -148,61 +366,12 @@ snprint_map_header (char * line, int len, char * format)
 			continue;
 		}
 		f++;
-		switch (*f) {
-		case 'w':	
-			PRINT(c, TAIL, "name");
-			ml.mapname_len = MAX(ml.mapname_len, 4);
-			PAD(ml.mapname_len);
-			break;
-		case 'd':
-			PRINT(c, TAIL, "sysfs");
-			ml.mapdev_len = MAX(ml.mapdev_len, 5);
-			PAD(ml.mapdev_len);
-			break;
-		case 'F':
-			PRINT(c, TAIL, "failback");
-			ml.failback_progress_len =
-				MAX(ml.failback_progress_len, 8);
-			PAD(ml.failback_progress_len);
-			break;
-		case 'Q':
-			PRINT(c, TAIL, "queueing");
-			ml.queueing_progress_len =
-				MAX(ml.queueing_progress_len, 8);
-			PAD(ml.queueing_progress_len);
-			break;
-		case 'n':
-			PRINT(c, TAIL, "paths");
-			ml.nr_active_len = MAX(ml.nr_active_len, 5);
-			PAD(ml.nr_active_len);
-			break;
-		case 't':
-			PRINT(c, TAIL, "dm-st");
-			PAD(7);
-			break;
-		case '0':
-			PRINT(c, TAIL, "path_fails");
-			PAD(10);
-			break;
-		case '1':
-			PRINT(c, TAIL, "switch_group");
-			PAD(12);
-			break;
-		case '2':
-			PRINT(c, TAIL, "map_loads");
-			PAD(9);
-			break;
-		case '3':
-			PRINT(c, TAIL, "total_queue_time");
-			PAD(16);
-			break;
-		case '4':
-			PRINT(c, TAIL, "queueing_tmo");
-			PAD(12);
-			break;
-		default:
-			break;
-		}
+		
+		if (!(data = mpd_lookup(*f)))
+			break; /* unknown wildcard */
+		
+		PRINT(c, TAIL, data->header);
+		PAD(data->width);
 	} while (*f++);
 
 	line[c - line - 1] = '\n';
@@ -212,13 +381,15 @@ snprint_map_header (char * line, int len, char * format)
 }
 
 int
-snprint_map (char * line, int len, char * format,
+snprint_multipath (char * line, int len, char * format,
 	     struct multipath * mpp)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
 	char * f = format; /* format string cursor */
 	int fwd;
+	struct multipath_data * data;
+	char buff[MAX_FIELD_LEN];
 
 	do {
 		if (!TAIL)
@@ -230,88 +401,13 @@ snprint_map (char * line, int len, char * format,
 			continue;
 		}
 		f++;
-		switch (*f) {
-		case 'w':	
-			if (mpp->alias) {
-				PRINT(c, TAIL, "%s", mpp->alias);
-			} else {
-				PRINT(c, TAIL, "%s", mpp->wwid);
-			}
-			PAD(ml.mapname_len);
+		
+		if (!(data = mpd_lookup(*f)))
 			break;
-		case 'd':
-			if (mpp->dmi) {
-				PRINT(c, TAIL, "dm-%i", mpp->dmi->minor);
-			}
-			PAD(ml.mapdev_len);
-			break;
-		case 'F':
-			if (mpp->pgfailback == -FAILBACK_IMMEDIATE) {
-				PRINT(c, TAIL, "immediate");
-				PAD(ml.failback_progress_len);
-				break;
-			}
-			if (!mpp->failback_tick) {
-				PRINT(c, TAIL, "-");
-			} else {
-				PRINT_PROGRESS(mpp->failback_tick,
-					       mpp->pgfailback);
-			}
-			PAD(ml.failback_progress_len);
-			break;
-		case 'Q':
-			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL) {
-				PRINT(c, TAIL, "off");
-			} else if (mpp->no_path_retry == NO_PATH_RETRY_QUEUE) {
-				PRINT(c, TAIL, "on");
-			} else if (mpp->no_path_retry == NO_PATH_RETRY_UNDEF) {
-				PRINT(c, TAIL, "-");
-			} else if (mpp->no_path_retry > 0) {
-				if (mpp->retry_tick) {
-					PRINT(c, TAIL, "%i sec",
-					      mpp->retry_tick);
-				} else {
-					PRINT(c, TAIL, "%i chk",
-					      mpp->no_path_retry);
-				}
-			}
-			PAD(ml.queueing_progress_len);
-			break;
-		case 'n':
-			PRINT(c, TAIL, "%i", mpp->nr_active);
-			PAD(ml.nr_active_len);
-			break;
-		case 't':
-			if (mpp->dmi && mpp->dmi->suspended) {
-				PRINT(c, TAIL, "suspend");
-			} else {
-				PRINT(c, TAIL, "active");
-			}
-			PAD(7);
-			break;
-		case '0':
-			PRINT(c, TAIL, "%i", mpp->stat_path_failures);
-			PAD(10);
-			break;
-		case '1':
-			PRINT(c, TAIL, "%i", mpp->stat_switchgroup);
-			PAD(12);
-			break;
-		case '2':
-			PRINT(c, TAIL, "%i", mpp->stat_map_loads);
-			PAD(9);
-			break;
-		case '3':
-			PRINT(c, TAIL, "%i", mpp->stat_total_queueing_time);
-			PAD(16);
-			break;
-		case '4':
-			PRINT(c, TAIL, "%i", mpp->stat_queueing_timeouts);
-			PAD(12);
-			break;
-		default:
-			break;
-		}
+		
+		data->snprint(buff, MAX_FIELD_LEN, mpp);
+		PRINT(c, TAIL, buff);
+		PAD(data->width);
 	} while (*f++);
 
 	line[c - line - 1] = '\n';
@@ -327,6 +423,7 @@ snprint_path_header (char * line, int len, char * format)
 	char * s = line;   /* for padding */
 	char * f = format; /* format string cursor */
 	int fwd;
+	struct path_data * data;
 
 	do {
 		if (!TAIL)
@@ -338,49 +435,12 @@ snprint_path_header (char * line, int len, char * format)
 			continue;
 		}
 		f++;
-		switch (*f) {
-		case 'w':
-			PRINT(c, TAIL, "uuid");
-			PAD(pl.uuid_len);
-			break;
-		case 'i':
-			PRINT(c, TAIL, "hcil");
-			PAD(pl.hbtl_len);
-			break;
-		case 'd':
-			PRINT(c, TAIL, "dev");
-			pl.dev_len = MAX(pl.dev_len, 3);
-			PAD(pl.dev_len);
-			break;
-		case 'D':
-			PRINT(c, TAIL, "dev_t");
-			pl.dev_t_len = MAX(pl.dev_t_len, 5);
-			PAD(pl.dev_t_len);
-			break;
-		case 'T':
-			PRINT(c, TAIL, "chk-st");
-			PAD(8);
-			break;
-		case 't':
-			PRINT(c, TAIL, "dm-st");
-			PAD(8);
-			break;
-		case 's':
-			PRINT(c, TAIL, "vendor/product/rev");
-			NOPAD;
-			break;
-		case 'C':
-			PRINT(c, TAIL, "next-check");
-			NOPAD;
-			break;
-		case 'p':
-			PRINT(c, TAIL, "pri");
-			pl.prio_len = MAX(pl.prio_len, 3);
-			PAD(pl.prio_len);
-			break;
-		default:
-			break;
-		}
+		
+		if (!(data = pd_lookup(*f)))
+			break; /* unknown wildcard */
+		
+		PRINT(c, TAIL, data->header);
+		PAD(data->width);
 	} while (*f++);
 
 	line[c - line - 1] = '\n';
@@ -390,12 +450,15 @@ snprint_path_header (char * line, int len, char * format)
 }
 
 int
-snprint_path (char * line, int len, char * format, struct path * pp)
+snprint_path (char * line, int len, char * format,
+	     struct path * pp)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
 	char * f = format; /* format string cursor */
 	int fwd;
+	struct path_data * data;
+	char buff[MAX_FIELD_LEN];
 
 	do {
 		if (!TAIL)
@@ -407,93 +470,13 @@ snprint_path (char * line, int len, char * format, struct path * pp)
 			continue;
 		}
 		f++;
-		switch (*f) {
-		case 'w':	
-			PRINT(c, TAIL, "%s", pp->wwid);
-			PAD(pl.uuid_len);
+		
+		if (!(data = pd_lookup(*f)))
 			break;
-		case 'i':
-			if (pp->sg_id.host_no < 0) {
-				PRINT(c, TAIL, "#:#:#:#");
-			} else {
-				PRINT(c, TAIL, "%i:%i:%i:%i",
-					pp->sg_id.host_no,
-					pp->sg_id.channel,
-					pp->sg_id.scsi_id,
-					pp->sg_id.lun);
-			}
-			PAD(pl.hbtl_len);
-			break;
-		case 'd':
-			if (!strlen(pp->dev)) {
-				PRINT(c, TAIL, "-");
-			} else {
-				PRINT(c, TAIL, "%s", pp->dev);
-			}
-			PAD(pl.dev_len);
-			break;
-		case 'D':
-			PRINT(c, TAIL, "%s", pp->dev_t);
-			PAD(pl.dev_t_len);
-			break;
-		case 'T':
-			switch (pp->state) {
-			case PATH_UP:
-				PRINT(c, TAIL, "[ready]");
-				break;
-			case PATH_DOWN:
-				PRINT(c, TAIL, "[faulty]");
-				break;
-			case PATH_SHAKY:
-				PRINT(c, TAIL, "[shaky]");
-				break;
-			case PATH_GHOST:
-				PRINT(c, TAIL, "[ghost]");
-				break;
-			default:
-				PRINT(c, TAIL, "[undef]");
-				break;
-			}
-			PAD(8);
-			break;
-		case 't':
-			switch (pp->dmstate) {
-			case PSTATE_ACTIVE:
-				PRINT(c, TAIL, "[active]");
-				break;
-			case PSTATE_FAILED:
-				PRINT(c, TAIL, "[failed]");
-				break;
-			default:
-				PRINT(c, TAIL, "[undef]");
-				break;
-			}
-			PAD(8);
-			break;
-		case 's':
-			PRINT(c, TAIL, "%s/%s/%s",
-				      pp->vendor_id, pp->product_id, pp->rev);
-			NOPAD;
-			break;
-		case 'C':
-			if (!pp->mpp) {
-				PRINT(c, TAIL, "[orphan]");
-			} else {
-				PRINT_PROGRESS(pp->tick, pp->checkint);
-			}
-			NOPAD;
-			break;
-		case 'p':
-			if (pp->priority) {
-				PRINT(c, TAIL, "%i", pp->priority);
-			} else {
-				PRINT(c, TAIL, "#");
-			}
-			PAD(pl.prio_len);
-			break;
-		default:
-			break;
-		}
+		
+		data->snprint(buff, MAX_FIELD_LEN, pp);
+		PRINT(c, TAIL, buff);
+		PAD(data->width);
 	} while (*f++);
 
 	line[c - line - 1] = '\n';
@@ -613,7 +596,7 @@ print_multipath (struct multipath * mpp, char * style)
 {
 	char line[MAX_LINE_LEN];
 
-	snprint_map(&line[0], MAX_LINE_LEN, style, mpp);
+	snprint_multipath(&line[0], MAX_LINE_LEN, style, mpp);
 	printf("%s", line);
 }
 
