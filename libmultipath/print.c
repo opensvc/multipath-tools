@@ -24,10 +24,6 @@
 	         fwd = snprintf(var, size, format, ##args); \
 		 c += (fwd >= size) ? size : fwd;
 
-/* for column aligned output */
-struct path_layout pl;
-struct map_layout ml;
-
 /*
  * information printing helpers
  */

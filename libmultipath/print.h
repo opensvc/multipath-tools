@@ -9,22 +9,6 @@
 #define MAX_FIELD_LEN 64
 #define PROGRESS_LEN  10
 
-struct path_layout {
-	int uuid_len;
-	int hbtl_len;
-	int dev_len;
-	int dev_t_len;
-	int prio_len;
-};
-
-struct map_layout {
-	int mapname_len;
-	int mapdev_len;
-	int failback_progress_len;
-	int queueing_progress_len;
-	int nr_active_len;
-};
-
 struct path_data {
 	char wildcard;
 	char * header;
