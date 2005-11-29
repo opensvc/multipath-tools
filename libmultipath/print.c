@@ -3,7 +3,6 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include <libdevmapper.h>
 
 #include "vector.h"
@@ -13,7 +12,6 @@
 #include "dmparser.h"
 #include "configure.h"
 #include "defaults.h"
-#include "debug.h"
 
 #include "../libcheckers/path_state.h"
 
