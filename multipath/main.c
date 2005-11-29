@@ -38,7 +38,6 @@
 #include <structs.h>
 #include <structs_vec.h>
 #include <dmparser.h>
-#include <cache.h>
 #include <config.h>
 #include <discovery.h>
 #include <debug.h>
@@ -236,12 +235,6 @@ configure (void)
 	if (dev && blacklist(conf->blist, dev))
 		goto out;
 	
-	condlog(3, "load path identifiers cache");
-	cache_load(pathvec);
-
-	if (conf->verbosity > 2)
-		print_all_paths(pathvec, 1);
-
 	/*
 	 * scope limiting must be translated into a wwid
 	 * failing the translation is fatal (by policy)

@@ -12,8 +12,6 @@ enum {
 	__PATH,
 	__MAP,
 	__GROUP,
-	__DUMP,
-	__PATHVEC,
 	__RECONFIGURE,
 	__STATS,
 };
@@ -31,8 +29,6 @@ enum {
 #define PATH		(1 << __PATH)
 #define MAP		(1 << __MAP)
 #define GROUP		(1 << __GROUP)
-#define DUMP		(1 << __DUMP)
-#define PATHVEC		(1 << __PATHVEC)
 #define RECONFIGURE	(1 << __RECONFIGURE)
 #define STATS		(1 << __STATS)
 

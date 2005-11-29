@@ -934,32 +934,6 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 	return 0;
 }
 
-int
-dump_pathvec (char ** r, int * len, struct vectors * vecs)
-{
-	int i;
-	struct path * pp;
-	char * reply;
-	char * p;
-
-	*len = VECTOR_SIZE(vecs->pathvec) * sizeof(struct path);
-	reply = (char *)MALLOC(*len);
-	*r = reply;
-
-	if (!reply)
-		return 1;
-
-	p = reply;
-
-	vector_foreach_slot (vecs->pathvec, pp, i) {
-		memcpy((void *)p, pp, sizeof(struct path));
-		p += sizeof(struct path);
-	}
-
-	/* return negative to hint caller not to add "ok" to the dump */
-	return -1;
-}
-
 static int
 map_discovery (struct vectors * vecs)
 {
@@ -1103,7 +1077,6 @@ uxlsnrloop (void * ap)
 	add_handler(ADD+MAP, cli_add_map);
 	add_handler(DEL+MAP, cli_del_map);
 	add_handler(SWITCH+MAP+GROUP, cli_switch_group);
-	add_handler(DUMP+PATHVEC, cli_dump_pathvec);
 	add_handler(RECONFIGURE, cli_reconfigure);
 	add_handler(SUSPEND+MAP, cli_suspend);
 	add_handler(RESUME+MAP, cli_resume);

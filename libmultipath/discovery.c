@@ -681,15 +681,11 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 		}
 		condlog(3, "uid = %s (callout)", pp->wwid);
 	}
-	else if (strlen(pp->wwid))
-		condlog(3, "uid = %s (cache)", pp->wwid);
-
 	return 0;
 
 out:
 	/*
 	 * Recoverable error, for example faulty or offline path
-	 * Set up safe defaults, don't trust the cache
 	 */
 	memset(pp->wwid, 0, WWID_SIZE);
 	pp->state = PATH_DOWN;

@@ -108,16 +108,6 @@ cli_switch_group(void * v, char ** reply, int * len, void * data)
 }
 
 int
-cli_dump_pathvec(void * v, char ** reply, int * len, void * data)
-{
-	struct vectors * vecs = (struct vectors *)data;
-			
-	condlog(2, "dump pathvec (operator)");
-
-	return dump_pathvec(reply, len, vecs);
-}
-
-int
 cli_reconfigure(void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
