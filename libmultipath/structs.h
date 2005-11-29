@@ -158,6 +158,7 @@ struct pathgroup {
 	int status;
 	int priority;
 	vector paths;
+	char * selector;
 };
 
 struct path * alloc_path (void);

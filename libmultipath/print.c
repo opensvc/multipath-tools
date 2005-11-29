@@ -50,6 +50,19 @@ snprint_uint (char * buff, size_t len, unsigned int val)
 }
 
 static int
+snprint_size (char * buff, size_t len, unsigned long long size)
+{
+	if (size < (1 << 11))
+		return snprintf(buff, len, "%llu kB", size >> 1);
+	else if (size < (1 << 21))
+		return snprintf(buff, len, "%llu MB", size >> 11);
+	else if (size < (1 << 31))
+		return snprintf(buff, len, "%llu GB", size >> 21);
+	else
+		return snprintf(buff, len, "%llu TB", size >> 31);
+}
+
+static int
 snprint_name (char * buff, size_t len, struct multipath * mpp)
 {
 	if (mpp->alias)
@@ -141,6 +154,24 @@ snprint_dm_map_state (char * buff, size_t len, struct multipath * mpp)
 }
 
 static int
+snprint_multipath_size (char * buff, size_t len, struct multipath * mpp)
+{
+	return snprint_size(buff, len, mpp->size);
+}
+
+static int
+snprint_features (char * buff, size_t len, struct multipath * mpp)
+{
+	return snprint_str(buff, len, mpp->features);
+}
+
+static int
+snprint_hwhandler (char * buff, size_t len, struct multipath * mpp)
+{
+	return snprint_str(buff, len, mpp->hwhandler);
+}
+
+static int
 snprint_path_faults (char * buff, size_t len, struct multipath * mpp)
 {
 	return snprint_uint(buff, len, mpp->stat_path_failures);
@@ -171,7 +202,28 @@ snprint_q_timeouts (char * buff, size_t len, struct multipath * mpp)
 }
 
 static int
-snprint_uuid (char * buff, size_t len, struct path * pp)
+snprint_multipath_uuid (char * buff, size_t len, struct multipath * mpp)
+{
+	return snprint_str(buff, len, mpp->wwid);
+}
+
+static int
+snprint_action (char * buff, size_t len, struct multipath * mpp)
+{
+	switch (mpp->action) {
+	case ACT_RELOAD:
+		return snprint_str(buff, len, ACT_RELOAD_STR);
+	case ACT_CREATE:
+		return snprint_str(buff, len, ACT_CREATE_STR);
+	case ACT_SWITCHPG:
+		return snprint_str(buff, len, ACT_SWITCHPG_STR);
+	default:
+		return 0;
+	}
+}
+
+static int
+snprint_path_uuid (char * buff, size_t len, struct path * pp)
 {
 	return snprint_str(buff, len, pp->wwid);
 }
@@ -259,13 +311,51 @@ snprint_pri (char * buff, size_t len, struct path * pp)
 	return snprint_int(buff, len, pp->priority);
 }
 
+static int
+snprint_pg_selector (char * buff, size_t len, struct pathgroup * pgp)
+{
+	return snprint_str(buff, len, pgp->selector);
+}
+
+static int
+snprint_pg_pri (char * buff, size_t len, struct pathgroup * pgp)
+{
+	return snprint_int(buff, len, pgp->priority);
+}
+
+static int
+snprint_pg_state (char * buff, size_t len, struct pathgroup * pgp)
+{
+	switch (pgp->status) {
+	case PGSTATE_ENABLED:
+		return snprintf(buff, len, "[enabled]");
+	case PGSTATE_DISABLED:
+		return snprintf(buff, len, "[disabled]");
+	case PGSTATE_ACTIVE:
+		return snprintf(buff, len, "[active]");
+	default:
+		return snprintf(buff, len, "[undef]");
+	}
+}
+
+static int
+snprint_path_size (char * buff, size_t len, struct path * pp)
+{
+	return snprint_size(buff, len, pp->size);
+}
+
 struct multipath_data mpd[] = {
-	{'w', "name",          0, snprint_name},
+	{'n', "name",          0, snprint_name},
+	{'w', "uuid",          0, snprint_multipath_uuid},
 	{'d', "sysfs",         0, snprint_sysfs},
 	{'F', "failback",      0, snprint_failback},
 	{'Q', "queueing",      0, snprint_queueing},
-	{'n', "paths",         0, snprint_nb_paths},
+	{'N', "paths",         0, snprint_nb_paths},
 	{'t', "dm-st",         0, snprint_dm_map_state},
+	{'S', "size",          0, snprint_multipath_size},
+	{'f', "features",      0, snprint_features},
+	{'h', "hwhandler",     0, snprint_hwhandler},
+	{'A', "action",        0, snprint_action},
 	{'0', "path_faults",   0, snprint_path_faults},
 	{'1', "switch_grp",    0, snprint_switch_grp},
 	{'2', "map_loads",     0, snprint_map_loads},
@@ -275,16 +365,23 @@ struct multipath_data mpd[] = {
 };
 
 struct path_data pd[] = {
-	{'w', "uuid",          0, snprint_uuid},
+	{'w', "uuid",          0, snprint_path_uuid},
 	{'i', "hcil",          0, snprint_hcil},
 	{'d', "dev",           0, snprint_dev},
 	{'D', "dev_t",         0, snprint_dev_t},
-	{'t', "dm-st",         0, snprint_dm_path_state},
+	{'t', "dm_st",         0, snprint_dm_path_state},
 	{'T', "chk_st",        0, snprint_chk_state},
 	{'s', "vend/prod/rev", 0, snprint_vpr},
 	{'C', "next_check",    0, snprint_next_check},
 	{'p', "pri",           0, snprint_pri},
+	{'S', "size",          0, snprint_path_size},
 	{0, NULL, 0 , NULL}
+};
+
+struct pathgroup_data pgd[] = {
+	{'s', "selector",      0, snprint_pg_selector},
+	{'p', "pri",           0, snprint_pg_pri},
+	{'t', "dm_st",         0, snprint_pg_state},
 };
 
 void
@@ -341,6 +438,18 @@ pd_lookup(char wildcard)
 	for (i = 0; pd[i].header; i++)
 		if (pd[i].wildcard == wildcard)
 			return &pd[i];
+
+	return NULL;
+}
+
+static struct pathgroup_data *
+pgd_lookup(char wildcard)
+{
+	int i;
+
+	for (i = 0; pgd[i].header; i++)
+		if (pgd[i].wildcard == wildcard)
+			return &pgd[i];
 
 	return NULL;
 }
@@ -483,96 +592,78 @@ snprint_path (char * line, int len, char * format,
 	return (c - line);
 }
 
+int
+snprint_pathgroup (char * line, int len, char * format,
+		   struct pathgroup * pgp)
+{
+	char * c = line;   /* line cursor */
+	char * s = line;   /* for padding */
+	char * f = format; /* format string cursor */
+	int fwd;
+	struct pathgroup_data * data;
+	char buff[MAX_FIELD_LEN];
+
+	do {
+		if (!TAIL)
+			break;
+
+		if (*f != '%') {
+			*c++ = *f;
+			NOPAD;
+			continue;
+		}
+		f++;
+		
+		if (!(data = pgd_lookup(*f)))
+			break;
+		
+		data->snprint(buff, MAX_FIELD_LEN, pgp);
+		PRINT(c, TAIL, buff);
+		PAD(data->width);
+	} while (*f++);
+
+	line[c - line - 1] = '\n';
+	line[c - line] = '\0';
+
+	return (c - line);
+}
+
 extern void
 print_mp (struct multipath * mpp, int verbosity)
 {
 	int j, i;
 	struct path * pp = NULL;
 	struct pathgroup * pgp = NULL;
+	char style[64];
+	char * c = style;
 
-	if (mpp->action == ACT_NOTHING || !verbosity || !mpp->size)
+	if (verbosity <= 0)
 		return;
-
-	if (verbosity > 1) {
-		switch (mpp->action) {
-		case ACT_RELOAD:
-			printf("%s: ", ACT_RELOAD_STR);
-			break;
-
-		case ACT_CREATE:
-			printf("%s: ", ACT_CREATE_STR);
-			break;
-
-		case ACT_SWITCHPG:
-			printf("%s: ", ACT_SWITCHPG_STR);
-			break;
-
-		default:
-			break;
-		}
-	}
-
-	if (mpp->alias)
-		printf("%s", mpp->alias);
 
 	if (verbosity == 1) {
-		printf("\n");
+		print_multipath(mpp, "%n");
 		return;
 	}
+
+	if (verbosity > 1 &&
+	    mpp->action != ACT_NOTHING &&
+	    mpp->action != ACT_UNDEF)
+			c += sprintf(c, "%%A: ");
+
+	c += sprintf(c, "%%n");
+	
 	if (strncmp(mpp->alias, mpp->wwid, WWID_SIZE))
-		printf(" (%s)", mpp->wwid);
+		c += sprintf(c, " (%%w)");
 
-	printf("\n");
-
-	if (mpp->size < (1 << 11))
-		printf("[size=%llu kB]", mpp->size >> 1);
-	else if (mpp->size < (1 << 21))
-		printf("[size=%llu MB]", mpp->size >> 11);
-	else if (mpp->size < (1 << 31))
-		printf("[size=%llu GB]", mpp->size >> 21);
-	else
-		printf("[size=%llu TB]", mpp->size >> 31);
-
-	if (mpp->features)
-		printf("[features=\"%s\"]", mpp->features);
-
-	if (mpp->hwhandler)
-		printf("[hwhandler=\"%s\"]", mpp->hwhandler);
-
-	fprintf(stdout, "\n");
+	print_multipath(mpp, style);
+	print_multipath(mpp, "[size=%S][features=%f][hwhandler=%h]");
 
 	if (!mpp->pg)
 		return;
 
 	vector_foreach_slot (mpp->pg, pgp, j) {
-		printf("\\_ ");
-
-		if (mpp->selector) {
-			printf("%s ", mpp->selector);
-#if 0
-			/* align to path status info */
-			for (i = pl.hbtl_len + pl.dev_len + pl.dev_t_len + 4;
-			     i > strlen(mpp->selector); i--)
-				printf(" ");
-#endif
-		}
-		if (pgp->priority)
-			printf("[prio=%i]", pgp->priority);
-
-		switch (pgp->status) {
-		case PGSTATE_ENABLED:
-			printf("[enabled]");
-			break;
-		case PGSTATE_DISABLED:
-			printf("[disabled]");
-			break;
-		case PGSTATE_ACTIVE:
-			printf("[active]");
-			break;
-		default:
-			break;
-		}
-		printf("\n");
+		pgp->selector = mpp->selector; /* hack */
+		print_pathgroup(pgp, PRINT_PG_INDENT);
 
 		vector_foreach_slot (pgp->paths, pp, i)
 			print_path(pp, PRINT_PATH_INDENT);
@@ -580,6 +671,9 @@ print_mp (struct multipath * mpp, int verbosity)
 	printf("\n");
 }
 
+/*
+ * stdout printing helpers
+ */
 extern void
 print_path (struct path * pp, char * style)
 {
@@ -595,6 +689,15 @@ print_multipath (struct multipath * mpp, char * style)
 	char line[MAX_LINE_LEN];
 
 	snprint_multipath(&line[0], MAX_LINE_LEN, style, mpp);
+	printf("%s", line);
+}
+
+extern void
+print_pathgroup (struct pathgroup * pgp, char * style)
+{
+	char line[MAX_LINE_LEN];
+
+	snprint_pathgroup(&line[0], MAX_LINE_LEN, style, pgp);
 	printf("%s", line);
 }
 
