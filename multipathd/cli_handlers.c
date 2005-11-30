@@ -17,6 +17,44 @@
 #include "cli.h"
 
 int
+show_paths (char ** r, int * len, struct vectors * vecs, char * style)
+{
+	int i;
+	struct path * pp;
+	char * c;
+	char * reply;
+	int maxlen = INITIAL_REPLY_LEN;
+	int again = 1;
+
+	get_path_layout(vecs->pathvec);
+	reply = MALLOC(maxlen);
+
+	while (again) {
+		if (!reply)
+			return 1;
+
+		c = reply;
+
+		if (VECTOR_SIZE(vecs->pathvec) > 0)
+			c += snprint_path_header(c, reply + maxlen - c,
+						 style);
+
+		vector_foreach_slot(vecs->pathvec, pp, i)
+			c += snprint_path(c, reply + maxlen - c,
+					  style, pp);
+
+		again = ((c - reply) == (maxlen - 1));
+
+		if (again)
+			reply = REALLOC(reply, maxlen *= 2);
+
+	}
+	*r = reply;
+	*len = (int)(c - reply + 1);
+	return 0;
+}
+
+int
 cli_list_paths (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
@@ -24,6 +62,42 @@ cli_list_paths (void * v, char ** reply, int * len, void * data)
 	condlog(3, "list paths (operator)");
 
 	return show_paths(reply, len, vecs, PRINT_PATH_CHECKER);
+}
+
+int
+show_maps (char ** r, int *len, struct vectors * vecs, char * style)
+{
+	int i;
+	struct multipath * mpp;
+	char * c;
+	char * reply;
+	int maxlen = INITIAL_REPLY_LEN;
+	int again = 1;
+
+	get_multipath_layout(vecs->mpvec);
+	reply = MALLOC(maxlen);
+
+	while (again) {
+		if (!reply)
+			return 1;
+
+		c = reply;
+		if (VECTOR_SIZE(vecs->mpvec) > 0)
+			c += snprint_multipath_header(c, reply + maxlen - c,
+						      style);
+
+		vector_foreach_slot(vecs->mpvec, mpp, i)
+			c += snprint_multipath(c, reply + maxlen - c,
+					       style, mpp);
+
+		again = ((c - reply) == (maxlen - 1));
+
+		if (again)
+			reply = REALLOC(reply, maxlen *= 2);
+	}
+	*r = reply;
+	*len = (int)(c - reply + 1);
+	return 0;
 }
 
 int
