@@ -47,8 +47,7 @@ read_extended_partition(int fd, struct partition *ep,
 					here = start + le32_to_cpu(p.start_sect);
 					moretodo = 1;
 				}
-				else
-					continue;
+				continue;
 			}
 			if (n < ns) {
 				sp[n].start = here + le32_to_cpu(p.start_sect);
