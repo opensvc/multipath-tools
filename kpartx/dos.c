@@ -86,9 +86,6 @@ read_dos_pt(int fd, struct slice all, struct slice *sp, int ns) {
 
 	for (i=0; i<4; i++) {
 		memcpy(&p, bp + 0x1be + i * sizeof (p), sizeof (p));
-	}
-	for (i=0; i<4; i++) {
-		memcpy(&p, bp + 0x1be + i * sizeof (p), sizeof (p));
 		if (is_gpt(p.sys_type))
 			return 0;
 		if (i < ns) {
