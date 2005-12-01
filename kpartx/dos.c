@@ -20,15 +20,16 @@ read_extended_partition(int fd, struct partition *ep,
 			struct slice *sp, int ns)
 {
 	struct partition p;
-	unsigned long start, here;
+	unsigned long start, here, next;
 	unsigned char *bp;
 	int loopct = 0;
 	int moretodo = 1;
 	int i, n=0;
 
-	here = start = le32_to_cpu(ep->start_sect);
+	next = start = le32_to_cpu(ep->start_sect);
 
 	while (moretodo) {
+		here = next;
 		moretodo = 0;
 		if (++loopct > 100)
 			return n;
@@ -43,8 +44,8 @@ read_extended_partition(int fd, struct partition *ep,
 		for (i=0; i<2; i++) {
 			memcpy(&p, bp + 0x1be + i * sizeof (p), sizeof (p));
 			if (is_extended(p.sys_type)) {
-				if (p.nr_sects) {
-					here = start + le32_to_cpu(p.start_sect);
+				if (p.nr_sects && !moretodo) {
+					next = start + le32_to_cpu(p.start_sect);
 					moretodo = 1;
 				}
 				continue;
