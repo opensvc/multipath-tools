@@ -98,8 +98,11 @@ read_dos_pt(int fd, struct slice all, struct slice *sp, int ns) {
 				"dos_partition: too many slices\n");
 			break;
 		}
-		if (is_extended(p.sys_type))
+		if (is_extended(p.sys_type)) {
 			n += read_extended_partition(fd, &p, sp+n, ns-n);
+			/* hide the extended partition itself */
+			sp[i].size = 0;
+		}
 	}
 	return n;
 }
