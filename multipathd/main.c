@@ -1554,7 +1554,7 @@ child (void * param)
 	}
 	signal_init();
 	setscheduler();
-	set_oom_adj(-17);
+	set_oom_adj(-16);
 	vecs = gvecs = init_vecs();
 
 	if (!vecs)
