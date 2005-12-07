@@ -46,9 +46,9 @@ setup_default_hwtable (vector hw)
 		   DEFAULT_GETUID, "/sbin/mpath_prio_alua %d", "0", "0",
 		   "tur", FAILBACK_UNDEF);
 	r += store_hwe_ext(hw, "SGI", "TP9400", MULTIBUS, DEFAULT_GETUID,
-		   NULL, "0", "0", "tur", FAILBACK_UNDEF);
+		   "/sbin/mpath_prio_tpc /dev/%n", "0", "0", "tur", FAILBACK_UNDEF);
 	r += store_hwe_ext(hw, "SGI", "TP9500", FAILOVER, DEFAULT_GETUID,
-		   NULL, "0", "0", "tur", FAILBACK_UNDEF);
+		   "/sbin/mpath_prio_tpc /dev/%n", "0", "0", "tur", FAILBACK_UNDEF);
 
 	return r;
 }
