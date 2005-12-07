@@ -6,7 +6,7 @@ BUILD=glibc
 
 include ../Makefile.inc
 
-CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes -I.
+CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes -I. -D_LARGEFILE64_SOURCE
 
 ifeq ($(strip $(BUILD)),klibc)
 	OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o gpt.o crc32.o \
