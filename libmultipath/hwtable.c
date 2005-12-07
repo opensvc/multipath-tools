@@ -53,6 +53,10 @@ setup_default_hwtable (vector hw)
 	/* IBM SAN Volume Controller */
 	r += store_hwe_ext(hw, "IBM", "2145", MULTIBUS, DEFAULT_GETUID,
 		   NULL, "0", "1 queue_if_no_path", "tur", FAILBACK_UNDEF);
+	/* IBM S/390 ECKD DASD */
+	r += store_hwe_ext(hw, "IBM", "S/390 DASD ECKD", MULTIBUS,
+		   "/sbin/dasdview -j /dev/%n", NULL, "0", "0",
+		   "directio", FAILBACK_UNDEF);
 	r += store_hwe_ext(hw, "NETAPP", "LUN", GROUP_BY_PRIO, DEFAULT_GETUID,
 		  "/sbin/mpath_prio_netapp /dev/%n", NULL,
 		  "1 queue_if_no_path", "readsector0", FAILBACK_UNDEF);
