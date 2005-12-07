@@ -39,6 +39,20 @@ setup_default_hwtable (vector hw)
 		   "1 queue_if_no_path", "emc_clariion", -FAILBACK_IMMEDIATE);
 	r += store_hwe_ext(hw, "IBM", "3542", GROUP_BY_SERIAL, DEFAULT_GETUID,
 		   NULL, "0", "0", "tur", FAILBACK_UNDEF);
+	/* IBM ESS F20 aka Shark */
+	r += store_hwe_ext(hw, "IBM", "2105F20", GROUP_BY_SERIAL,
+		   DEFAULT_GETUID, NULL, "0", "1 queue_if_no_path",
+		   "tur", FAILBACK_UNDEF);
+       /* IBM DS6000 */
+	r += store_hwe_ext(hw, "IBM", "1750500", GROUP_BY_PRIO, DEFAULT_GETUID,
+		   "/sbin/mpath_prio_alua /dev/%n", "0", "1 queue_if_no_path",
+		   "tur", FAILBACK_UNDEF);
+	/* IBM DS8000 */
+	r += store_hwe_ext(hw, "IBM", "2107900", GROUP_BY_SERIAL, DEFAULT_GETUID,
+		   NULL, "0", "1 queue_if_no_path", "tur", FAILBACK_UNDEF);
+	/* IBM SAN Volume Controller */
+	r += store_hwe_ext(hw, "IBM", "2145", MULTIBUS, DEFAULT_GETUID,
+		   NULL, "0", "1 queue_if_no_path", "tur", FAILBACK_UNDEF);
 	r += store_hwe_ext(hw, "NETAPP", "LUN", GROUP_BY_PRIO, DEFAULT_GETUID,
 		  "/sbin/mpath_prio_netapp /dev/%n", NULL,
 		  "1 queue_if_no_path", "readsector0", FAILBACK_UNDEF);
