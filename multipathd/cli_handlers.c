@@ -55,6 +55,39 @@ show_paths (char ** r, int * len, struct vectors * vecs, char * style)
 }
 
 int
+show_multipaths (char ** r, int * len, struct vectors * vecs)
+{
+	int i;
+	struct multipath * mpp;
+	char * c;
+	char * reply;
+	int maxlen = INITIAL_REPLY_LEN;
+	int again = 1;
+
+	reply = MALLOC(maxlen);
+
+	while (again) {
+		if (!reply)
+			return 1;
+
+		c = reply;
+
+		vector_foreach_slot(vecs->mpvec, mpp, i)
+			c += snprint_mp(c, reply + maxlen - c,
+					  mpp, 2);
+
+		again = ((c - reply) == (maxlen - 1));
+
+		if (again)
+			reply = REALLOC(reply, maxlen *= 2);
+
+	}
+	*r = reply;
+	*len = (int)(c - reply + 1);
+	return 0;
+}
+
+int
 cli_list_paths (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
@@ -62,6 +95,16 @@ cli_list_paths (void * v, char ** reply, int * len, void * data)
 	condlog(3, "list paths (operator)");
 
 	return show_paths(reply, len, vecs, PRINT_PATH_CHECKER);
+}
+
+int
+cli_list_multipaths (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+
+	condlog(3, "list multipaths (operator)");
+
+	return show_multipaths(reply, len, vecs);
 }
 
 int
