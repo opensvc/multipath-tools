@@ -6,6 +6,7 @@
 #define PRINT_PG_INDENT      "\\_ %s [prio=%p]%t"
 
 #define MAX_LINE_LEN  80
+#define MAX_LINES     64
 #define MAX_FIELD_LEN 64
 #define PROGRESS_LEN  10
 
@@ -35,7 +36,8 @@ void get_multipath_layout (vector mpvec);
 int snprint_path_header (char *, int, char *);
 int snprint_multipath_header (char *, int, char *);
 int snprint_path (char *, int, char *, struct path *);
-int snprint_multipath (char *, int, char *,struct multipath *);
+int snprint_multipath (char *, int, char *, struct multipath *);
+int snprint_mp (char *, int, struct multipath * mpp, int verbosity);
 
 void print_mp (struct multipath * mpp, int verbosity);
 void print_path (struct path * pp, char * style);

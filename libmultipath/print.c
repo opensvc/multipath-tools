@@ -627,18 +627,27 @@ snprint_pathgroup (char * line, int len, char * format,
 extern void
 print_mp (struct multipath * mpp, int verbosity)
 {
-	int j, i;
+	char buff[MAX_LINE_LEN * MAX_LINES];
+
+	snprint_mp(&buff[0], MAX_LINE_LEN * MAX_LINES, mpp, verbosity);
+	printf("%s", buff);
+}
+
+extern int
+snprint_mp (char * buff, int len, struct multipath * mpp, int verbosity)
+{
+	int j, i, fwd = 0;
 	struct path * pp = NULL;
 	struct pathgroup * pgp = NULL;
 	char style[64];
 	char * c = style;
 
 	if (verbosity <= 0)
-		return;
+		return fwd;
 
 	if (verbosity == 1) {
-		print_multipath(mpp, "%n");
-		return;
+		fwd += snprint_multipath(buff + fwd, len - fwd, "%n", mpp);
+		return fwd;
 	}
 
 	if (verbosity > 1 &&
@@ -651,20 +660,23 @@ print_mp (struct multipath * mpp, int verbosity)
 	if (strncmp(mpp->alias, mpp->wwid, WWID_SIZE))
 		c += sprintf(c, " (%%w)");
 
-	print_multipath(mpp, style);
-	print_multipath(mpp, "[size=%S][features=%f][hwhandler=%h]");
+	fwd += snprint_multipath(buff + fwd, len - fwd, style, mpp);
+	fwd += snprint_multipath(buff + fwd, len - fwd,
+				 "[size=%S][features=%f][hwhandler=%h]", mpp);
 
 	if (!mpp->pg)
-		return;
+		return fwd;
 
 	vector_foreach_slot (mpp->pg, pgp, j) {
 		pgp->selector = mpp->selector; /* hack */
-		print_pathgroup(pgp, PRINT_PG_INDENT);
+		fwd += snprint_pathgroup(buff + fwd, len - fwd,
+					 PRINT_PG_INDENT, pgp);
 
 		vector_foreach_slot (pgp->paths, pp, i)
-			print_path(pp, PRINT_PATH_INDENT);
+			fwd += snprint_path(buff + fwd, len - fwd,
+					    PRINT_PATH_INDENT, pp);
 	}
-	printf("\n");
+	return fwd;
 }
 
 /*
