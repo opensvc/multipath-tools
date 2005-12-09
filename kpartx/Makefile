@@ -10,11 +10,11 @@ CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes -I. -D_LARGEFILE64_SOURCE
 
 ifeq ($(strip $(BUILD)),klibc)
 	OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o gpt.o crc32.o \
-	       lopart.o xstrncpy.o devmapper.o \
+	       lopart.o xstrncpy.o devmapper.o dasd.o \
 	       $(MULTIPATHLIB)-$(BUILD).a $(libdm)
 else
 	LDFLAGS = -ldevmapper
-	OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o \
+	OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o dasd.o \
 	       gpt.o crc32.o lopart.o xstrncpy.o devmapper.o
 endif
 
