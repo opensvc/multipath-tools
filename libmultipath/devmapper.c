@@ -675,7 +675,7 @@ out:
 char *
 dm_mapname(int major, int minor)
 {
-	char * response;
+	char * response = NULL, *map;
 	struct dm_task *dmt;
 	int r;
 	int loop = MAX_WAIT * LOOPS_PER_SEC;
@@ -709,7 +709,10 @@ dm_mapname(int major, int minor)
 		goto bad;
 	}
 
-	response = STRDUP((char *)dm_task_get_name(dmt));
+	map = dm_task_get_name(dmt);
+	if (map && strlen(map))
+		response = STRDUP((char *)dm_task_get_name(dmt));
+
 	dm_task_destroy(dmt);
 	return response;
 bad:

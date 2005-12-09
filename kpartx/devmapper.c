@@ -123,7 +123,7 @@ const char *
 dm_mapname(int major, int minor)
 {
 	struct dm_task *dmt;
-	const char *mapname;
+	const char *mapname = NULL, *map;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
 		return NULL;
@@ -135,7 +135,10 @@ dm_mapname(int major, int minor)
 	if (!dm_task_run(dmt))
 		goto out;
 
-	mapname = strdup(dm_task_get_name(dmt));
+	map = dm_task_get_name(dmt);
+	if (map && strlen(map))
+		mapname = strdup(map);
+
 out:
 	dm_task_destroy(dmt);
 	return mapname;
