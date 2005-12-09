@@ -675,7 +675,8 @@ out:
 char *
 dm_mapname(int major, int minor)
 {
-	char * response = NULL, *map;
+	char * response = NULL;
+	const char *map;
 	struct dm_task *dmt;
 	int r;
 	int loop = MAX_WAIT * LOOPS_PER_SEC;

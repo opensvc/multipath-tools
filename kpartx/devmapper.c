@@ -119,11 +119,12 @@ out:
 }
 
 
-const char *
+char *
 dm_mapname(int major, int minor)
 {
 	struct dm_task *dmt;
-	const char *mapname = NULL, *map;
+	char *mapname = NULL;
+	const char *map;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
 		return NULL;
