@@ -9,11 +9,10 @@ TOPDIR	= ../..
 include $(TOPDIR)/Makefile.inc
 
 ifeq ($(strip $(BUILD)),klibc)
-	CFLAGS = -I/usr/include -DDEBUG=$(DEBUG)
+	CFLAGS += -I/usr/include -DDEBUG=$(DEBUG)
 	OBJS = pp_balance_units.o $(MULTIPATHLIB)-$(BUILD).a
 else
-	CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes \
-		 -I$(multipathdir) -DDEBUG=$(DEBUG)
+	CFLAGS += -I$(multipathdir) -DDEBUG=$(DEBUG)
 	LDFLAGS = -ldevmapper
 	OBJS = pp_balance_units.o $(MULTIPATHLIB)-$(BUILD).a
 endif
@@ -27,7 +26,7 @@ prepare:
 
 glibc: prepare $(OBJS)
 	$(CC) -o $(EXEC) $(OBJS) $(LDFLAGS)
-	
+
 klibc: prepare $(OBJS)
 	$(CC) -static -o $(EXEC) $(CRT0) $(OBJS) $(KLIBC) $(LIBGCC)
 

@@ -13,9 +13,7 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
        switchgroup.o uxsock.o print.o alias.o log_pthread.o \
        log.o configure.o structs_vec.o
 
-CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes
-
-PREVBUILD = $(shell nm debug.o|grep log_safe)
+PREVBUILD = $(shell nm debug.o 2> /dev/null|grep log_safe)
 
 ifeq ($(strip $(DAEMON)),1)
 	CFLAGS += -DDAEMON

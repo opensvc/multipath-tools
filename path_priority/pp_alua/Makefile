@@ -24,7 +24,7 @@ ifneq ($(shell ls $(TOPDIR)/Makefile.inc 2>/dev/null),)
 include $(TOPDIR)/Makefile.inc
 endif
 
-CFLAGS = -pipe -g -O2 -Wall -Wunused -Wstrict-prototypes -DDEBUG=$(DEBUG)
+CFLAGS += -DDEBUG=$(DEBUG)
 
 all: $(BUILD)
 
@@ -44,9 +44,6 @@ uninstall:
 
 clean:	
 	rm -f *.o *.gz $(EXEC)
-
-%.o:	%.c
-	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(EXEC).8.gz:	$(EXEC).8
 	$(GZIP) $< >$@

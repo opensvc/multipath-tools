@@ -5,8 +5,6 @@ OBJS		= pp_tpc.o
 TOPDIR		= ../..
 include $(TOPDIR)/Makefile.inc
 
-CFLAGS = -pipe -g -O2 -Wall -Wunused -Wstrict-prototypes
-
 all: $(BUILD)
 
 glibc:	$(OBJS)
@@ -22,6 +20,3 @@ uninstall:
 	rm $(DESTDIR)$(bindir)/$(EXEC)
 clean:	
 	rm -f *.o $(EXEC)
-
-%.o:	%.c
-	$(CC) $(CFLAGS) -c -o $@ $<

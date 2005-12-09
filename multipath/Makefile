@@ -7,8 +7,7 @@ include ../Makefile.inc
 
 OBJS = main.o $(MULTIPATHLIB)-$(BUILD).a $(CHECKERSLIB)-$(BUILD).a
 
-CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes \
-	 -I$(multipathdir) -I$(checkersdir)
+CFLAGS += -I$(multipathdir) -I$(checkersdir)
 
 ifeq ($(strip $(BUILD)),klibc)
 	OBJS += $(libdm) $(libsysfs)
@@ -27,7 +26,7 @@ prepare:
 glibc: prepare $(OBJS)
 	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
-	
+
 klibc: prepare $(OBJS)
 	$(CC) -static -o $(EXEC) $(CRT0) $(OBJS) $(KLIBC) $(LIBGCC)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz

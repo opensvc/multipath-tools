@@ -4,17 +4,9 @@ EXEC = multipathd
 include ../Makefile.inc
 
 #
-# directories where to put stuff
-#
-bindir = /usr/bin
-mandir = /usr/share/man/man8
-rcdir = /etc/init.d
-
-#
 # basic flags setting
 #
-CFLAGS = -pipe -g -Wall -Wunused -Wstrict-prototypes \
-	 -DDAEMON -I$(multipathdir) -I$(checkersdir)
+CFLAGS += -DDAEMON -I$(multipathdir) -I$(checkersdir)
 LDFLAGS = -lpthread -ldevmapper -lsysfs -lreadline -lncurses
 
 #

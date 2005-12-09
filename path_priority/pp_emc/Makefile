@@ -5,8 +5,6 @@ OBJS		= pp_emc.o
 TOPDIR		= ../..
 include $(TOPDIR)/Makefile.inc
 
-CFLAGS = -pipe -g -O2 -Wall -Wunused -Wstrict-prototypes
-
 all: $(BUILD)
 
 glibc:	$(OBJS)
