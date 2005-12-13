@@ -37,6 +37,11 @@ setup_default_hwtable (vector hw)
 	r += store_hwe_ext(hw, "DGC", "^[^LUN_Z]", GROUP_BY_PRIO,
 		   DEFAULT_GETUID, "/sbin/mpath_prio_emc /dev/%n", "1 emc",
 		   "1 queue_if_no_path", "emc_clariion", -FAILBACK_IMMEDIATE);
+	/* IBM DS4100 / FAStT100 */
+	r += store_hwe_ext(hw, "IBM", "1742", GROUP_BY_PRIO, DEFAULT_GETUID,
+		   "/sbin/mpath_prio_tpc /dev/%n", "0", "0", "tur",
+		   -FAILBACK_IMMEDIATE);
+	/* IBM DS4200 / FAStT200 */
 	r += store_hwe_ext(hw, "IBM", "3542", GROUP_BY_SERIAL, DEFAULT_GETUID,
 		   NULL, "0", "0", "tur", FAILBACK_UNDEF);
 	/* IBM ESS F20 aka Shark */
@@ -46,13 +51,14 @@ setup_default_hwtable (vector hw)
        /* IBM DS6000 */
 	r += store_hwe_ext(hw, "IBM", "1750500", GROUP_BY_PRIO, DEFAULT_GETUID,
 		   "/sbin/mpath_prio_alua /dev/%n", "0", "1 queue_if_no_path",
-		   "tur", FAILBACK_UNDEF);
+		   "tur", -FAILBACK_IMMEDIATE);
 	/* IBM DS8000 */
 	r += store_hwe_ext(hw, "IBM", "2107900", GROUP_BY_SERIAL, DEFAULT_GETUID,
 		   NULL, "0", "1 queue_if_no_path", "tur", FAILBACK_UNDEF);
 	/* IBM SAN Volume Controller */
-	r += store_hwe_ext(hw, "IBM", "2145", MULTIBUS, DEFAULT_GETUID,
-		   NULL, "0", "1 queue_if_no_path", "tur", FAILBACK_UNDEF);
+	r += store_hwe_ext(hw, "IBM", "2145", GROUP_BY_PRIO, DEFAULT_GETUID,
+		   "/sbin/mpath_prio_alua /dev/%n", "0", "1 queue_if_no_path",
+		   "tur", -FAILBACK_IMMEDIATE);
 	/* IBM S/390 ECKD DASD */
 	r += store_hwe_ext(hw, "IBM", "S/390 DASD ECKD", MULTIBUS,
 		   "/sbin/dasdview -j /dev/%n", NULL, "0", "0",
@@ -64,9 +70,11 @@ setup_default_hwtable (vector hw)
 		   DEFAULT_GETUID, "/sbin/mpath_prio_alua %d", "0", "0",
 		   "tur", FAILBACK_UNDEF);
 	r += store_hwe_ext(hw, "SGI", "TP9400", GROUP_BY_PRIO, DEFAULT_GETUID,
-		   "/sbin/mpath_prio_tpc /dev/%n", "0", "0", "tur", FAILBACK_UNDEF);
+		   "/sbin/mpath_prio_tpc /dev/%n", "0", "0", "tur",
+		   -FAILBACK_IMMEDIATE);
 	r += store_hwe_ext(hw, "SGI", "TP9500", GROUP_BY_PRIO, DEFAULT_GETUID,
-		   "/sbin/mpath_prio_tpc /dev/%n", "0", "0", "tur", FAILBACK_UNDEF);
+		   "/sbin/mpath_prio_tpc /dev/%n", "0", "0", "tur",
+		   -FAILBACK_IMMEDIATE);
 
 	return r;
 }

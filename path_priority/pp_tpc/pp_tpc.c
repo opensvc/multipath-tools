@@ -54,10 +54,10 @@ int sgi_tpc_prio(const char *dev)
 	
 	if (/* Verify the code page - right page & page identifier */
 	    sense_buffer[1] != 0xc9 || 
+	    sense_buffer[3] != 0x2c ||
 	    sense_buffer[4] != 'v' ||
 	    sense_buffer[5] != 'a' ||
-	    sense_buffer[6] != 'c' ||
-	    sense_buffer[7] != '1' ) {
+	    sense_buffer[6] != 'c' ) {
 		fprintf(stderr, "Volume access control page in unknown format");
 		goto out;
 	}
