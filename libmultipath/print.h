@@ -37,9 +37,10 @@ int snprint_path_header (char *, int, char *);
 int snprint_multipath_header (char *, int, char *);
 int snprint_path (char *, int, char *, struct path *);
 int snprint_multipath (char *, int, char *, struct multipath *);
-int snprint_mp (char *, int, struct multipath * mpp, int verbosity);
+int snprint_multipath_topology (char *, int, struct multipath * mpp,
+				int verbosity);
 
-void print_mp (struct multipath * mpp, int verbosity);
+void print_multipath_topology (struct multipath * mpp, int verbosity);
 void print_path (struct path * pp, char * style);
 void print_multipath (struct multipath * mpp, char * style);
 void print_pathgroup (struct pathgroup * pgp, char * style);

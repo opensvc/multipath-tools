@@ -130,12 +130,13 @@ load_keys (void)
 	r += add_key(keys, "fail", FAIL, 0);
 	r += add_key(keys, "paths", PATHS, 0);
 	r += add_key(keys, "maps", MAPS, 0);
+	r += add_key(keys, "multipaths", MAPS, 0);
 	r += add_key(keys, "path", PATH, 1);
 	r += add_key(keys, "map", MAP, 1);
 	r += add_key(keys, "group", GROUP, 1);
 	r += add_key(keys, "reconfigure", RECONFIGURE, 0);
 	r += add_key(keys, "stats", STATS, 0);
-	r += add_key(keys, "multipaths", MULTIPATHS, 0);
+	r += add_key(keys, "topology", TOPOLOGY, 0);
 
 	if (r) {
 		free_keys(keys);

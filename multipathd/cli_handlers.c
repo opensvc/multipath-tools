@@ -55,7 +55,7 @@ show_paths (char ** r, int * len, struct vectors * vecs, char * style)
 }
 
 int
-show_multipaths (char ** r, int * len, struct vectors * vecs)
+show_maps_topology (char ** r, int * len, struct vectors * vecs)
 {
 	int i;
 	struct multipath * mpp;
@@ -73,8 +73,8 @@ show_multipaths (char ** r, int * len, struct vectors * vecs)
 		c = reply;
 
 		vector_foreach_slot(vecs->mpvec, mpp, i)
-			c += snprint_mp(c, reply + maxlen - c,
-					  mpp, 2);
+			c += snprint_multipath_topology(c, reply + maxlen - c,
+							mpp, 2);
 
 		again = ((c - reply) == (maxlen - 1));
 
@@ -98,13 +98,13 @@ cli_list_paths (void * v, char ** reply, int * len, void * data)
 }
 
 int
-cli_list_multipaths (void * v, char ** reply, int * len, void * data)
+cli_list_maps_topology (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 
 	condlog(3, "list multipaths (operator)");
 
-	return show_multipaths(reply, len, vecs);
+	return show_maps_topology(reply, len, vecs);
 }
 
 int

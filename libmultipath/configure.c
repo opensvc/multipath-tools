@@ -287,7 +287,7 @@ domap (struct multipath * mpp)
 	 * last chance to quit before touching the devmaps
 	 */
 	if (conf->dry_run) {
-		print_mp(mpp, conf->verbosity);
+		print_multipath_topology(mpp, conf->verbosity);
 		return 0;
 	}
 
@@ -357,7 +357,7 @@ domap (struct multipath * mpp)
 #ifndef DAEMON
 		dm_switchgroup(mpp->alias, mpp->bestpg);
 		if (mpp->action != ACT_NOTHING)
-			print_mp(mpp, conf->verbosity);
+			print_multipath_topology(mpp, conf->verbosity);
 #else
 		mpp->stat_map_loads++;
 		condlog(2, "%s: load table [0 %llu %s %s]", mpp->alias,

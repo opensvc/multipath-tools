@@ -14,7 +14,7 @@ enum {
 	__GROUP,
 	__RECONFIGURE,
 	__STATS,
-	__MULTIPATHS,
+	__TOPOLOGY,
 };
 
 #define LIST		(1 << __LIST)
@@ -32,7 +32,7 @@ enum {
 #define GROUP		(1 << __GROUP)
 #define RECONFIGURE	(1 << __RECONFIGURE)
 #define STATS		(1 << __STATS)
-#define MULTIPATHS	(1 << __MULTIPATHS)
+#define TOPOLOGY	(1 << __TOPOLOGY)
 
 #define INITIAL_REPLY_LEN 1000
 

@@ -182,7 +182,7 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 		disassemble_status(mpp->status, mpp);
 
 		if (conf->list)
-			print_mp(mpp, conf->verbosity);
+			print_multipath_topology(mpp, conf->verbosity);
 
 		if (!conf->dry_run)
 			reinstate_paths(mpp);

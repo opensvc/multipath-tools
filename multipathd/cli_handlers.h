@@ -1,8 +1,8 @@
 int cli_list_paths (void * v, char ** reply, int * len, void * data);
 int cli_list_maps (void * v, char ** reply, int * len, void * data);
 int cli_list_maps_stats (void * v, char ** reply, int * len, void * data);
-int cli_list_multipath (void * v, char ** reply, int * len, void * data);
-int cli_list_multipaths (void * v, char ** reply, int * len, void * data);
+int cli_list_map_topology (void * v, char ** reply, int * len, void * data);
+int cli_list_maps_topology (void * v, char ** reply, int * len, void * data);
 int cli_add_path (void * v, char ** reply, int * len, void * data);
 int cli_del_path (void * v, char ** reply, int * len, void * data);
 int cli_add_map (void * v, char ** reply, int * len, void * data);
