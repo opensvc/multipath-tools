@@ -151,14 +151,26 @@ static struct key *
 find_key (char * str)
 {
 	int i;
+	int len, klen;
 	struct key * kw = NULL;
+	struct key * foundkw = NULL;
 
-	vector_foreach_slot (keys, kw, i)
-		if (strlen(str) == strlen(kw->str) &&
-		    !strcmp(kw->str, str))
-				return kw;
+	vector_foreach_slot (keys, kw, i) {
+		len = strlen(str);
+		klen = strlen(kw->str);
 
-	return NULL;
+		if (strncmp(kw->str, str, len))
+			continue;
+		else if (len == klen)
+			return kw; /* exact match */
+		else if (len < klen) {
+			if (!foundkw)
+				foundkw = kw; /* shortcut match */
+			else
+				return NULL; /* ambiguous word */
+		}
+	}
+	return foundkw;
 }
 		
 static struct handler *
