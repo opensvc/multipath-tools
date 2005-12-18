@@ -591,13 +591,9 @@ uev_remove_map (char * devname, struct vectors * vecs)
 int
 ev_remove_map (char * devname, struct vectors * vecs)
 {
-	int minor;
 	struct multipath * mpp;
 
-	if (sscanf(devname, "dm-%d", &minor) == 1)
-		mpp = find_mp_by_minor(vecs->mpvec, minor);
-	else
-		mpp = find_mp_by_alias(vecs->mpvec, devname);
+	mpp = find_mp_by_str(vecs->mpvec, devname);
 
 	if (!mpp) {
 		condlog(3, "%s: devmap not registered, can't remove",
@@ -999,6 +995,7 @@ uxlsnrloop (void * ap)
 	add_handler(LIST+MAPS, cli_list_maps);
 	add_handler(LIST+MAPS+STATS, cli_list_maps_stats);
 	add_handler(LIST+MAPS+TOPOLOGY, cli_list_maps_topology);
+	add_handler(LIST+MAP+TOPOLOGY, cli_list_map_topology);
 	add_handler(ADD+PATH, cli_add_path);
 	add_handler(DEL+PATH, cli_del_path);
 	add_handler(ADD+MAP, cli_add_map);

@@ -291,6 +291,17 @@ find_mp_by_alias (vector mpvec, char * alias)
 	return NULL;
 }
 
+struct multipath *
+find_mp_by_str (vector mpvec, char * str)
+{
+	int minor;
+
+	if (sscanf(str, "dm-%d", &minor) == 1)
+		return find_mp_by_minor(mpvec, minor);
+	else
+		return find_mp_by_alias(mpvec, str);
+}
+
 struct path *
 find_path_by_dev (vector pathvec, char * dev)
 {

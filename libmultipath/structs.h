@@ -179,6 +179,7 @@ int store_pathgroup (vector pgvec, struct pathgroup * pgp);
 
 struct multipath * find_mp_by_alias (vector mp, char * alias);
 struct multipath * find_mp_by_wwid (vector mp, char * wwid);
+struct multipath * find_mp_by_str (vector mp, char * wwid);
 struct multipath * find_mp_by_minor (vector mp, int minor);
 	
 struct path * find_path_by_devt (vector pathvec, char * devt);
