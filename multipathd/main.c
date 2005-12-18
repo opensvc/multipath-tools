@@ -613,10 +613,7 @@ uev_umount_map (char * devname, struct vectors * vecs)
 
 	condlog(2, "%s: umount map (uevent)", devname);
 
-	if (sscanf(devname, "dm-%d", &minor) == 1)
-		mpp = find_mp_by_minor(vecs->mpvec, minor);
-	else
-		mpp = find_mp_by_alias(vecs->mpvec, devname);
+	mpp = find_mp_by_str(vecs->mpvec, devname);
 
 	if (!mpp)
 		return 0;
