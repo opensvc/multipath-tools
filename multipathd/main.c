@@ -608,7 +608,6 @@ ev_remove_map (char * devname, struct vectors * vecs)
 static int
 uev_umount_map (char * devname, struct vectors * vecs)
 {
-	int minor;
 	struct multipath * mpp;
 
 	condlog(2, "%s: umount map (uevent)", devname);
