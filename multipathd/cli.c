@@ -133,6 +133,7 @@ load_keys (void)
 	r += add_key(keys, "multipaths", MAPS, 0);
 	r += add_key(keys, "path", PATH, 1);
 	r += add_key(keys, "map", MAP, 1);
+	r += add_key(keys, "multipath", MAP, 1);
 	r += add_key(keys, "group", GROUP, 1);
 	r += add_key(keys, "reconfigure", RECONFIGURE, 0);
 	r += add_key(keys, "stats", STATS, 0);
