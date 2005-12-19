@@ -11,6 +11,7 @@
 #include "debug.h"
 #include "pgpolicies.h"
 #include "alias.h"
+#include "defaults.h"
 
 #include "../libcheckers/checkers.h"
 
@@ -276,7 +277,7 @@ select_minio (struct multipath * mp)
 			mp->minio);
 		return 0;
 	}
-	mp->minio = 1000;
+	mp->minio = DEFAULT_MINIO;
 	condlog(3, "minio = %i (internal default)",
 		mp->minio);
 	return 0;

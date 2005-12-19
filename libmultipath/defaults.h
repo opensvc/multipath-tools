@@ -3,7 +3,7 @@
 #define DEFAULT_SELECTOR	"round-robin 0"
 #define DEFAULT_FEATURES	"0"
 #define DEFAULT_HWHANDLER	"0"
-#define DEFAULT_CHECKER		"readsector0"
+#define DEFAULT_MINIO		1000
 
 #define DEFAULT_TARGET		"multipath"
 #define DEFAULT_PIDFILE		"/var/run/multipathd.pid"

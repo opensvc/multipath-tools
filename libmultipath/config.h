@@ -13,35 +13,33 @@ enum devtypes {
 };
 
 struct hwentry {
-	int selector_args;
-	int pgpolicy;
-	int checker_index;
-	int pgfailback;
-	int rr_weight;
-	int no_path_retry;
-	int minio;
-
 	char * vendor;
 	char * product;
-	char * selector;
 	char * getuid;
 	char * getprio;
 	char * features;
 	char * hwhandler;
-};
+	char * selector;
 
-struct mpentry {
-	int selector_args;
 	int pgpolicy;
 	int pgfailback;
 	int rr_weight;
 	int no_path_retry;
 	int minio;
+	int checker_index;
+};
 
+struct mpentry {
 	char * wwid;
-	char * selector;
-	char * getuid;
 	char * alias;
+	char * getuid;
+	char * selector;
+
+	int pgpolicy;
+	int pgfailback;
+	int rr_weight;
+	int no_path_retry;
+	int minio;
 };
 
 struct config {
@@ -50,7 +48,6 @@ struct config {
 	int list;
 	int pgpolicy_flag;
 	int with_sysfs;
-	int selector_args;
 	int default_pgpolicy;
 	int default_checker_index;
 	int dev_type;
@@ -90,11 +87,7 @@ void free_hwtable (vector hwtable);
 void free_mpe (struct mpentry * mpe);
 void free_mptable (vector mptable);
 
-int store_hwe (vector hwtable, char * vendor, char * product, int pgp,
-		char * getuid);
-int store_hwe_ext (vector hwtable, char * vendor, char * product, int pgp,
-		char * getuid, char * getprio, char * hwhandler,
-		char * features, char * checker, int pgfailback);
+int store_hwe (vector hwtable, struct hwentry *);
 
 int load_config (char * file);
 struct config * alloc_config (void);

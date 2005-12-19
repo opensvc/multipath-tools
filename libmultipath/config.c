@@ -213,113 +213,44 @@ dup_hwe (vector hwtable, char * vendor, char * product)
 }
 
 int
-store_hwe (vector hwtable, char * vendor, char * product, int pgp,
-	   char * getuid)
+store_hwe (vector hwtable, struct hwentry * dhwe)
 {
 	struct hwentry * hwe;
 
-	if (dup_hwe(hwtable, vendor, product))
-		return 0;
-
-	hwe = alloc_hwe();
-
-	if (!hwe)
-		return 1;
-
-	hwe->vendor = set_param_str(vendor);
-
-	if (!hwe->vendor)
-		goto out;
-	
-	hwe->product = set_param_str(product);
-
-	if (!hwe->product)
-		goto out;
-	
-	if (pgp)
-		hwe->pgpolicy = pgp;
-
-	if (getuid)
-		hwe->getuid = set_param_str(getuid);
-	else
-		hwe->getuid = set_default(DEFAULT_GETUID);
-
-	if (!hwe->getuid)
-		goto out;
-	
-	if (!vector_alloc_slot(hwtable))
-		goto out;
-
-	vector_set_slot(hwtable, hwe);
-	return 0;
-out:
-	free_hwe(hwe);
-	return 1;
-}
-
-int
-store_hwe_ext (vector hwtable, char * vendor, char * product, int pgp,
-	   char * getuid, char * getprio, char * hwhandler,
-	   char * features, char * checker, int pgfailback)
-{
-	struct hwentry * hwe;
-
-	if (dup_hwe(hwtable, vendor, product))
+	if (dup_hwe(hwtable, dhwe->vendor, dhwe->product))
 		return 0;
 	
-	hwe = alloc_hwe();
-
-	if (!hwe)
+	if (!(hwe = alloc_hwe()))
 		return 1;
 
-	hwe->vendor = set_param_str(vendor);
-
-	if (!hwe->vendor)
+	if (!dhwe->vendor || !(hwe->vendor = set_param_str(dhwe->vendor)))
 		goto out;
 	
-	hwe->product = set_param_str(product);
-
-	if (!hwe->product)
+	if (!dhwe->product || !(hwe->product = set_param_str(dhwe->product)))
 		goto out;
 	
-	if (pgp)
-		hwe->pgpolicy = pgp;
+	if (dhwe->getuid && !(hwe->getuid = set_param_str(dhwe->getuid)))
+		goto out;
 
-	if (getuid)
-		hwe->getuid = set_param_str(getuid);
-	else
-		hwe->getuid = set_default(DEFAULT_GETUID);
-
-	if (!hwe->getuid)
+	if (dhwe->getprio && !(hwe->getprio = set_param_str(dhwe->getprio)))
+		goto out;
+				
+	if (dhwe->features && !(hwe->features = set_param_str(dhwe->features)))
 		goto out;
 	
-	if (getprio)
-		hwe->getprio = set_param_str(getprio);
-	else
-		hwe->getprio = NULL;
-
-	if (hwhandler)	
-		hwe->hwhandler = set_param_str(hwhandler);
-	else
-		hwe->hwhandler = set_default(DEFAULT_HWHANDLER);
-
-	if (!hwe->hwhandler)
+	if (dhwe->hwhandler && !(hwe->hwhandler = set_param_str(dhwe->hwhandler)))
 		goto out;
 
-	if (features)
-		hwe->features = set_param_str(features);
-	else
-		hwe->features = set_default(DEFAULT_FEATURES);
-
-	if (!hwe->features)
+	if (dhwe->selector && !(hwe->selector = set_param_str(dhwe->selector)))
 		goto out;
+				
+	hwe->pgpolicy = dhwe->pgpolicy;
+	hwe->pgfailback = dhwe->pgfailback;
+	hwe->rr_weight = dhwe->rr_weight;
+	hwe->no_path_retry = dhwe->no_path_retry;
+	hwe->minio = dhwe->minio;
+	hwe->checker_index = dhwe->checker_index;
 
-	if (checker)
-		hwe->checker_index = get_checker_id(checker);
-	else
-		hwe->checker_index = get_checker_id(DEFAULT_CHECKER);
-
-	hwe->pgfailback = pgfailback;
 
 	if (!vector_alloc_slot(hwtable))
 		goto out;

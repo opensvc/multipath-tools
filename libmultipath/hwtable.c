@@ -6,76 +6,463 @@
 #include "config.h"
 #include "pgpolicies.h"
 
+#include "../libcheckers/checkers.h"
+
+/*
+ * Tuning suggestions on these parameters should go to
+ * dm-devel@redhat.com
+ * 
+ * You are welcome to claim maintainership over a controler
+ * family. Please mail the currently enlisted maintainer and
+ * the upstream package maintainer.
+ */
+static struct hwentry default_hw[] = {
+	/*
+	 * StorageWorks controler family
+	 *
+	 * Maintainer : Christophe Varoqui
+	 * Mail : christophe.varoqui@free.fr
+	 */
+	{
+		.vendor        = "3PARdata",
+		.product       = "VV",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = DEFAULT_CHECKER_ID,
+	},
+	{
+		.vendor        = "DEC",
+		.product       = "HSG80",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = "1 hp_sw",
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_SERIAL,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = HP_SW,
+	},
+	{
+		.vendor        = "{COMPAQ,HP}",
+		.product       = "{MSA,HSV}1*",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = "1 hp_sw",
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_SERIAL,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = HP_SW,
+	},
+	{
+		.vendor        = "HP",
+		.product       = "HSV2*",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = READSECTOR0,
+	},
+	{
+		.vendor        = "HP",
+		.product       = "DF[456]00",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = READSECTOR0,
+	},
+	/*
+	 * DDN controler family
+	 *
+	 * Maintainer : Christophe Varoqui
+	 * Mail : christophe.varoqui@free.fr
+	 */
+	{
+		.vendor        = "DDN",
+		.product       = "SAN DataDirector",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = READSECTOR0,
+	},
+	/*
+	 * EMC / Clariion controler family
+	 *
+	 * Maintainer : Edward Goggin, EMC
+	 * Mail : egoggin@emc.com
+	 */
+	{
+		.vendor        = "EMC",
+		.product       = "SYMMETRIX",
+		.getuid        = "/sbin/scsi_id -g -u -ppre-spc3-83 -s /block/%n",
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = READSECTOR0,
+	},
+	{
+		.vendor        = "DGC",
+		.product       = "^[^LUN_Z]",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = "/sbin/mpath_prio_emc /dev/%n",
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = "1 emc",
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = EMC_CLARIION,
+	},
+	/*
+	 * Fujitsu controler family
+	 *
+	 * Maintainer : Christophe Varoqui
+	 * Mail : christophe.varoqui@free.fr
+	 */
+	{
+		.vendor        = "FSC",
+		.product       = "CentricStor",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_SERIAL,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = READSECTOR0,
+	},
+	/*
+	 * Hitachi controler family
+	 *
+	 * Maintainer : Christophe Varoqui
+	 * Mail : christophe.varoqui@free.fr
+	 */
+	{
+		.vendor        = "HITACHI",
+		.product       = "{A6189A,OPEN-}",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = READSECTOR0,
+	},
+	/*
+	 * IBM controler family
+	 *
+	 * Maintainer : Hannes Reinecke, Suse
+	 * Mail : hare@suse.de
+	 */
+	{
+		.vendor        = "IBM",
+		.product       = "ProFibre 4000R",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = READSECTOR0,
+	},
+	{
+		/* IBM DS4100 / FAStT100 */
+		.vendor        = "IBM",
+		.product       = "1742",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = "/sbin/mpath_prio_tpc /dev/%n",
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = TUR,
+	},
+	{
+		/* IBM DS4200 / FAStT200 */
+		.vendor        = "IBM",
+		.product       = "3542",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_SERIAL,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = TUR,
+	},
+	{
+		/* IBM ESS F20 aka Shark */
+		.vendor        = "IBM",
+		.product       = "2105F20",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_SERIAL,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = TUR,
+	},
+	{
+		/* IBM DS6000 / SAN Volume Controller */
+		.vendor        = "IBM",
+		.product       = "{1750500,2145}",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = "/sbin/mpath_prio_alua /dev/%n",
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = TUR,
+	},
+	{
+		/* IBM DS8000 */
+		.vendor        = "IBM",
+		.product       = "2107900",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_SERIAL,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = TUR,
+	},
+	{
+		/* IBM S/390 ECKD DASD */
+		.vendor        = "IBM",
+		.product       = "S/390 DASD ECKD",
+		.getuid        = "/sbin/dasdview -j /dev/%n",
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = DIRECTIO,
+	},
+	/*
+	 * NETAPP controler family
+	 *
+	 * Maintainer : Igor Feoktistov
+	 * Mail : igorf@netapp.com
+	 */
+	{
+		.vendor        = "NETAPP",
+		.product       = "LUN",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = "/sbin/mpath_prio_netapp /dev/%n",
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = READSECTOR0,
+	},
+	/*
+	 * Pillar Data controler family
+	 *
+	 * Maintainer : Christophe Varoqui
+	 * Mail : christophe.varoqui@free.fr
+	 */
+	{
+		.vendor        = "Pillar",
+		.product       = "Axiom 500",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = "/sbin/mpath_prio_alua %d",
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = TUR,
+	},
+	/*
+	 * SGI arrays
+	 *
+	 * Maintainer : Christophe Varoqui
+	 * Mail : christophe.varoqui@free.fr
+	 */
+	{
+		.vendor        = "SGI",
+		.product       = "TP9[13]00",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = READSECTOR0,
+	},
+	{
+		.vendor        = "SGI",
+		.product       = "TP9[45]00",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = "/sbin/mpath_prio_tpc /dev/%n",
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = TUR,
+	},
+	/*
+	 * STK arrays
+	 *
+	 * Maintainer : Christophe Varoqui
+	 * Mail : christophe.varoqui@free.fr
+	 */
+	{
+		.vendor        = "STK",
+		.product       = "OPENstorage D280",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_SERIAL,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = READSECTOR0,
+	},
+	/*
+	 * SUN arrays
+	 *
+	 * Maintainer : Christophe Varoqui
+	 * Mail : christophe.varoqui@free.fr
+	 */
+	{
+		.vendor        = "SUN",
+		.product       = "{StorEdge 3510,T4}",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_index = READSECTOR0,
+	},
+	/*
+	 * EOL
+	 */
+	{
+		.vendor        = NULL,
+		.product       = NULL,
+		.getuid        = NULL,
+		.getprio       = NULL,
+		.features      = NULL,
+		.hwhandler     = NULL,
+		.selector      = NULL,
+		.pgpolicy      = 0,
+		.pgfailback    = 0,
+		.rr_weight     = 0,
+		.no_path_retry = 0,
+		.minio         = 0,
+		.checker_index = 0,
+	},
+};
+
 extern int
 setup_default_hwtable (vector hw)
 {
 	int r = 0;
+	struct hwentry * hwe = default_hw;
 
-	r += store_hwe(hw, "3PARdata", "VV", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "COMPAQ", "HSV110 (C)COMPAQ", GROUP_BY_SERIAL, DEFAULT_GETUID);
-	r += store_hwe(hw, "COMPAQ", "MSA1000", GROUP_BY_SERIAL, DEFAULT_GETUID);
-	r += store_hwe(hw, "COMPAQ", "MSA1000 VOLUME", GROUP_BY_SERIAL, DEFAULT_GETUID);
-	r += store_hwe(hw, "DDN", "SAN DataDirector", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "DEC", "HSG80", GROUP_BY_SERIAL, DEFAULT_GETUID);
-	r += store_hwe(hw, "EMC", "SYMMETRIX", MULTIBUS,
-		       "/sbin/scsi_id -g -u -ppre-spc3-83 -s /block/%n");
-	r += store_hwe(hw, "FSC", "CentricStor", GROUP_BY_SERIAL, DEFAULT_GETUID);
-	r += store_hwe(hw, "HITACHI", "DF400", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "HITACHI", "DF500", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "HITACHI", "DF600", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "HP", "HSV110", GROUP_BY_SERIAL, DEFAULT_GETUID);
-	r += store_hwe(hw, "HP", "HSV210", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "HP", "A6189A", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "HP", "OPEN-", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "IBM", "ProFibre 4000R", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "SGI", "TP9100", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "SGI", "TP9300", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "STK", "OPENstorage D280", GROUP_BY_SERIAL, DEFAULT_GETUID);
-	r += store_hwe(hw, "SUN", "StorEdge 3510", MULTIBUS, DEFAULT_GETUID);
-	r += store_hwe(hw, "SUN", "T4", MULTIBUS, DEFAULT_GETUID);
-
-	r += store_hwe_ext(hw, "DGC", "^[^LUN_Z]", GROUP_BY_PRIO,
-		   DEFAULT_GETUID, "/sbin/mpath_prio_emc /dev/%n", "1 emc",
-		   "1 queue_if_no_path", "emc_clariion", -FAILBACK_IMMEDIATE);
-	/* IBM DS4100 / FAStT100 */
-	r += store_hwe_ext(hw, "IBM", "1742", GROUP_BY_PRIO, DEFAULT_GETUID,
-		   "/sbin/mpath_prio_tpc /dev/%n", "0", "0", "tur",
-		   -FAILBACK_IMMEDIATE);
-	/* IBM DS4200 / FAStT200 */
-	r += store_hwe_ext(hw, "IBM", "3542", GROUP_BY_SERIAL, DEFAULT_GETUID,
-		   NULL, "0", "0", "tur", FAILBACK_UNDEF);
-	/* IBM ESS F20 aka Shark */
-	r += store_hwe_ext(hw, "IBM", "2105F20", GROUP_BY_SERIAL,
-		   DEFAULT_GETUID, NULL, "0", "1 queue_if_no_path",
-		   "tur", FAILBACK_UNDEF);
-       /* IBM DS6000 */
-	r += store_hwe_ext(hw, "IBM", "1750500", GROUP_BY_PRIO, DEFAULT_GETUID,
-		   "/sbin/mpath_prio_alua /dev/%n", "0", "1 queue_if_no_path",
-		   "tur", -FAILBACK_IMMEDIATE);
-	/* IBM DS8000 */
-	r += store_hwe_ext(hw, "IBM", "2107900", GROUP_BY_SERIAL, DEFAULT_GETUID,
-		   NULL, "0", "1 queue_if_no_path", "tur", FAILBACK_UNDEF);
-	/* IBM SAN Volume Controller */
-	r += store_hwe_ext(hw, "IBM", "2145", GROUP_BY_PRIO, DEFAULT_GETUID,
-		   "/sbin/mpath_prio_alua /dev/%n", "0", "1 queue_if_no_path",
-		   "tur", -FAILBACK_IMMEDIATE);
-	/* IBM S/390 ECKD DASD */
-	r += store_hwe_ext(hw, "IBM", "S/390 DASD ECKD", MULTIBUS,
-		   "/sbin/dasdview -j /dev/%n", NULL, "0", "0",
-		   "directio", FAILBACK_UNDEF);
-	r += store_hwe_ext(hw, "NETAPP", "LUN", GROUP_BY_PRIO, DEFAULT_GETUID,
-		  "/sbin/mpath_prio_netapp /dev/%n", NULL,
-		  "1 queue_if_no_path", "readsector0", FAILBACK_UNDEF);
-	r += store_hwe_ext(hw, "Pillar", "Axiom 500", GROUP_BY_PRIO,
-		   DEFAULT_GETUID, "/sbin/mpath_prio_alua %d", "0", "0",
-		   "tur", FAILBACK_UNDEF);
-	r += store_hwe_ext(hw, "SGI", "TP9400", GROUP_BY_PRIO, DEFAULT_GETUID,
-		   "/sbin/mpath_prio_tpc /dev/%n", "0", "0", "tur",
-		   -FAILBACK_IMMEDIATE);
-	r += store_hwe_ext(hw, "SGI", "TP9500", GROUP_BY_PRIO, DEFAULT_GETUID,
-		   "/sbin/mpath_prio_tpc /dev/%n", "0", "0", "tur",
-		   -FAILBACK_IMMEDIATE);
-
+	while (hwe->vendor) {
+		r += store_hwe(hw, hwe);
+		hwe += sizeof(struct hwentry);
+	}
 	return r;
 }
-

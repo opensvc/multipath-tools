@@ -14,6 +14,8 @@ enum checkers {
 	HP_SW
 };
 
+#define DEFAULT_CHECKER_ID READSECTOR0
+
 #define MSG(a) if (msg != NULL) \
 		snprintf(msg, MAX_CHECKER_MSG_SIZE, "%s", a);
 
