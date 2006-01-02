@@ -1,8 +1,9 @@
 #define PRINT_PATH_LONG      "%w %i %d %D %p %t%T %s"
 #define PRINT_PATH_INDENT    " \\_ %i %d %D %t%T"
 #define PRINT_PATH_CHECKER   "%i %d %D %p %t%T %C"
-#define PRINT_MAP_FAILBACK   "%n %d %F %Q %N %t"
-#define PRINT_MAP_STATS      "%w %d %0 %1 %2 %3 %4"
+#define PRINT_MAP_STATUS     "%n %F %Q %N %t"
+#define PRINT_MAP_STATS      "%n %0 %1 %2 %3 %4"
+#define PRINT_MAP_NAMES      "%n %d %w"
 #define PRINT_PG_INDENT      "\\_ %s [prio=%p]%t"
 
 #define MAX_LINE_LEN  80

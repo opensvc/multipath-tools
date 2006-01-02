@@ -195,7 +195,17 @@ cli_list_maps (void * v, char ** reply, int * len, void * data)
 
 	condlog(3, "list maps (operator)");
 
-	return show_maps(reply, len, vecs, PRINT_MAP_FAILBACK);
+	return show_maps(reply, len, vecs, PRINT_MAP_NAMES);
+}
+
+int
+cli_list_maps_status (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+
+	condlog(3, "list maps status (operator)");
+
+	return show_maps(reply, len, vecs, PRINT_MAP_STATUS);
 }
 
 int
@@ -203,7 +213,7 @@ cli_list_maps_stats (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 
-	condlog(3, "list maps (operator)");
+	condlog(3, "list maps stats (operator)");
 
 	return show_maps(reply, len, vecs, PRINT_MAP_STATS);
 }

@@ -13,6 +13,7 @@ enum {
 	__MAP,
 	__GROUP,
 	__RECONFIGURE,
+	__STATUS,
 	__STATS,
 	__TOPOLOGY,
 };
@@ -31,6 +32,7 @@ enum {
 #define MAP		(1 << __MAP)
 #define GROUP		(1 << __GROUP)
 #define RECONFIGURE	(1 << __RECONFIGURE)
+#define STATUS		(1 << __STATUS)
 #define STATS		(1 << __STATS)
 #define TOPOLOGY	(1 << __TOPOLOGY)
 

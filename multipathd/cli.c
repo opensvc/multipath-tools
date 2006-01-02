@@ -136,6 +136,7 @@ load_keys (void)
 	r += add_key(keys, "multipath", MAP, 1);
 	r += add_key(keys, "group", GROUP, 1);
 	r += add_key(keys, "reconfigure", RECONFIGURE, 0);
+	r += add_key(keys, "status", STATUS, 0);
 	r += add_key(keys, "stats", STATS, 0);
 	r += add_key(keys, "topology", TOPOLOGY, 0);
 
