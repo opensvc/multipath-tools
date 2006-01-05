@@ -107,7 +107,7 @@ lock_bindings_file(int fd)
 	if (err) {
 		if (errno != EINTR)
 			condlog(0, "Cannot lock bindings file : %s",
-					strerror(err));
+					strerror(errno));
 		else
 			condlog(0, "Bindings file is locked. Giving up.");
 	}
