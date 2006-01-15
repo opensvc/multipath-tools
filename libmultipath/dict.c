@@ -89,7 +89,8 @@ def_prio_callout_handler(vector strvec)
 	if (!conf->default_getprio)
 		return 1;
 	
-	if (!strncmp(conf->default_getprio, "none", 4)) {
+	if (strlen(conf->default_getprio) == 4 &&
+	    !strcmp(conf->default_getprio, "none")) {
 		FREE(conf->default_getprio);
 		conf->default_getprio = NULL;
 	}
@@ -166,9 +167,9 @@ default_failback_handler(vector strvec)
 
 	buff = set_value(strvec);
 
-	if (!strncmp(buff, "manual", 6))
+	if (strlen(buff) == 6 && !strcmp(buff, "manual"))
 		conf->pgfailback = -FAILBACK_MANUAL;
-	else if (!strncmp(buff, "immediate", 9))
+	else if (strlen(buff) == 9 && !strcmp(buff, "immediate"))
 		conf->pgfailback = -FAILBACK_IMMEDIATE;
 	else
 		conf->pgfailback = atoi(buff);
@@ -187,9 +188,10 @@ def_no_path_retry_handler(vector strvec)
 	if (!buff)
 		return 1;
 
-	if (!strncmp(buff, "fail", 4) || !strncmp(buff, "0", 1))
+	if ((strlen(buff) == 4 && !strcmp(buff, "fail")) ||
+	    (strlen(buff) == 1 && !strcmp(buff, "0")))
 		conf->no_path_retry = NO_PATH_RETRY_FAIL;
-	else if (!strncmp(buff, "queue", 5))
+	else if (strlen(buff) == 5 && !strcmp(buff, "queue"))
 		conf->no_path_retry = NO_PATH_RETRY_QUEUE;
 	else if ((conf->no_path_retry = atoi(buff)) < 1)
 		conf->no_path_retry = NO_PATH_RETRY_UNDEF;
@@ -208,9 +210,11 @@ names_handler(vector strvec)
 	if (!buff)
 		return 1;
 
-	if (!strncmp(buff, "no", 2) || !strncmp(buff, "0", 1))
+	if ((strlen(buff) == 2 && !strcmp(buff, "no")) ||
+	    (strlen(buff) == 1 && !strcmp(buff, "0")))
 		conf->user_friendly_names = 0;
-	else if (!strncmp(buff, "yes", 2) || !strncmp(buff, "1", 1))
+	else if ((strlen(buff) == 3 && !strcmp(buff, "yes")) ||
+		 (strlen(buff) == 1 && !strcmp(buff, "1")))
 		conf->user_friendly_names = 1;
 
 	FREE(buff);
@@ -424,7 +428,7 @@ prio_callout_handler(vector strvec)
 	if (!hwe->getprio)
 		return 1;
 
-	if (!strncmp(hwe->getprio, "none", 4)) {
+	if (strlen(hwe->getprio) == 4 && !strcmp(hwe->getprio, "none")) {
 		FREE(hwe->getprio);
 		hwe->getprio = NULL;
 	}
@@ -443,9 +447,9 @@ hw_failback_handler(vector strvec)
 
 	buff = set_value(strvec);
 
-	if (!strncmp(buff, "manual", 6))
+	if (strlen(buff) == 6 && !strcmp(buff, "manual"))
 		hwe->pgfailback = -FAILBACK_MANUAL;
-	else if (!strncmp(buff, "immediate", 9))
+	else if (strlen(buff) == 9 && !strcmp(buff, "immediate"))
 		hwe->pgfailback = -FAILBACK_IMMEDIATE;
 	else
 		hwe->pgfailback = atoi(buff);
@@ -491,9 +495,10 @@ hw_no_path_retry_handler(vector strvec)
 	if (!buff)
 		return 1;
 
-	if (!strncmp(buff, "fail", 4) || !strncmp(buff, "0", 1))
+	if ((strlen(buff) == 4 && !strcmp(buff, "fail")) ||
+	    (strlen(buff) == 1 && !strcmp(buff, "0")))
 		hwe->no_path_retry = NO_PATH_RETRY_FAIL;
-	else if (!strncmp(buff, "queue", 5))
+	else if (strlen(buff) == 5 && !strcmp(buff, "queue"))
 		hwe->no_path_retry = NO_PATH_RETRY_QUEUE;
 	else if ((hwe->no_path_retry = atoi(buff)) < 1)
 		hwe->no_path_retry = NO_PATH_RETRY_UNDEF;
@@ -634,9 +639,9 @@ mp_failback_handler(vector strvec)
 
 	buff = set_value(strvec);
 
-	if (!strncmp(buff, "manual", 6))
+	if (strlen(buff) == 6 && !strcmp(buff, "manual"))
 		mpe->pgfailback = -FAILBACK_MANUAL;
-	else if (!strncmp(buff, "immediate", 9))
+	else if (strlen(buff) == 9 && !strcmp(buff, "immediate"))
 		mpe->pgfailback = -FAILBACK_IMMEDIATE;
 	else
 		mpe->pgfailback = atoi(buff);
@@ -682,9 +687,10 @@ mp_no_path_retry_handler(vector strvec)
 	if (!buff)
 		return 1;
 
-	if (!strncmp(buff, "fail", 4) || !strncmp(buff, "0", 1))
+	if ((strlen(buff) == 4 && !strcmp(buff, "fail")) ||
+	    (strlen(buff) == 1 && !strcmp(buff, "0")))
 		mpe->no_path_retry = NO_PATH_RETRY_FAIL;
-	else if (!strncmp(buff, "queue", 5))
+	else if (strlen(buff) == 5 && !strcmp(buff, "queue"))
 		mpe->no_path_retry = NO_PATH_RETRY_QUEUE;
 	else if ((mpe->no_path_retry = atoi(buff)) < 1)
 		mpe->no_path_retry = NO_PATH_RETRY_UNDEF;
