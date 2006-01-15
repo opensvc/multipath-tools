@@ -21,7 +21,7 @@ enum checkers {
 
 int get_checker_id (char *);
 void *get_checker_addr (int);
-int get_checker_name (char *, int);
+int get_checker_name (char *, int, int);
 
 int emc_clariion (int fd, char * msg, void ** ctxt);
 int directio (int fd, char * msg, void ** ctxt);

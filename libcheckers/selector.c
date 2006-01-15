@@ -51,7 +51,7 @@ get_checker_addr (int id)
 }
 
 extern int
-get_checker_name (char * str, int id)
+get_checker_name (char * str, int len, int id)
 {
 	char * s;
 
@@ -75,9 +75,5 @@ get_checker_name (char * str, int id)
 		s = "undefined";
 		break;
 	}
-	if (snprintf(str, CHECKER_NAME_SIZE, "%s", s) >= CHECKER_NAME_SIZE) {
-		fprintf(stderr, "checker_name too small\n");
-		return 1;
-	}
-	return 0;
+	return snprintf(str, len, "%s", s);
 }
