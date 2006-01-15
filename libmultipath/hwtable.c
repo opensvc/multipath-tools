@@ -462,7 +462,7 @@ setup_default_hwtable (vector hw)
 
 	while (hwe->vendor) {
 		r += store_hwe(hw, hwe);
-		hwe += sizeof(struct hwentry);
+		hwe++;
 	}
 	return r;
 }
