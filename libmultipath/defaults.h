@@ -11,6 +11,9 @@
 #define DEFAULT_NO_PATH_RETRY  NO_PATH_RETRY_UNDEF
 #define DEFAULT_USER_FRIENDLY_NAMES    0
 
+#define DEFAULT_CHECKINT	5
+#define MAX_CHECKINT(a)		(a << 2)
+
 #define DEFAULT_TARGET		"multipath"
 #define DEFAULT_PIDFILE		"/var/run/multipathd.pid"
 #define DEFAULT_SOCKET		"/var/run/multipathd.sock"

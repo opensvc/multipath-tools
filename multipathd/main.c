@@ -1381,8 +1381,8 @@ reconfigure (struct vectors * vecs)
 	conf->verbosity = old->verbosity;
 
 	if (!conf->checkint) {
-		conf->checkint = CHECKINT;
-		conf->max_checkint = MAX_CHECKINT;
+		conf->checkint = DEFAULT_CHECKINT;
+		conf->max_checkint = MAX_CHECKINT(conf->checkint);
 	}
 	configure(vecs, 1);
 	free_config(old);
@@ -1537,8 +1537,8 @@ child (void * param)
 	 * fill the voids left in the config file
 	 */
 	if (!conf->checkint) {
-		conf->checkint = CHECKINT;
-		conf->max_checkint = MAX_CHECKINT;
+		conf->checkint = DEFAULT_CHECKINT;
+		conf->max_checkint = MAX_CHECKINT(conf->checkint);
 	}
 
 	if (pidfile_create(DEFAULT_PIDFILE, getpid())) {

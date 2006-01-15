@@ -2,9 +2,7 @@
 #define MAIN_H
 
 #define DAEMON 1
-#define CHECKINT 5
 #define MAPGCINT 5
-#define MAX_CHECKINT CHECKINT << 2
 
 int reconfigure (struct vectors *);
 int ev_add_path (char *, struct vectors *);

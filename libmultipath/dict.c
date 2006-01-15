@@ -13,6 +13,7 @@
 #include "memory.h"
 #include "pgpolicies.h"
 #include "blacklist.h"
+#include "defaults.h"
 
 #include "../libcheckers/checkers.h"
 
@@ -26,7 +27,7 @@ polling_interval_handler(vector strvec)
 
 	buff = VECTOR_SLOT(strvec, 1);
 	conf->checkint = atoi(buff);
-	conf->max_checkint = conf->checkint << 2;
+	conf->max_checkint = MAX_CHECKINT(conf->checkint);
 
 	return 0;
 }
