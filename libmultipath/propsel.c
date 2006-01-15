@@ -76,7 +76,7 @@ select_pgfailback (struct multipath * mp)
 			mp->pgfailback);
 		return 0;
 	}
-	mp->pgfailback = -FAILBACK_MANUAL;
+	mp->pgfailback = DEFAULT_FAILBACK;
 	condlog(3, "pgfailover = %i (internal default)", mp->pgfailback);
 	return 0;
 }
@@ -118,7 +118,7 @@ select_pgpolicy (struct multipath * mp)
 		condlog(3, "pgpolicy = %s (config file default)", pgpolicy_name);
 		return 0;
 	}
-	mp->pgpolicy = FAILOVER;
+	mp->pgpolicy = DEFAULT_PGPOLICY;
 	mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
 	if (get_pgpolicy_name(pgpolicy_name, mp->pgpolicy))
 		return 1;
