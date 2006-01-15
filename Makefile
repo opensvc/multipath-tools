@@ -33,17 +33,17 @@ recurse:
 	done
 
 recurse_clean:
-	@for dir in $(BUILDDIRS); do\
+	@for dir in $(BUILDDIRS); do \
 	$(MAKE) -C $$dir clean || exit $?; \
 	done
 
 recurse_install:
-	@for dir in $(BUILDDIRS); do\
+	@for dir in $(BUILDDIRS); do \
 	$(MAKE) -C $$dir install || exit $?; \
 	done
 
 recurse_uninstall:
-	@for dir in $(BUILDDIRS); do\
+	@for dir in $(BUILDDIRS); do \
 	$(MAKE) -C $$dir uninstall || exit $?; \
 	done
 
