@@ -31,7 +31,7 @@ get_pgpolicy_id (char * str)
 }
 
 extern int
-get_pgpolicy_name (char * buff, int id)
+get_pgpolicy_name (char * buff, int len, int id)
 {
 	char * s;
 
@@ -55,11 +55,7 @@ get_pgpolicy_name (char * buff, int id)
 		s = "undefined";
 		break;
 	}
-	if(safe_snprintf(buff, POLICY_NAME_SIZE, "%s", s)) {
-		fprintf(stderr, "get_pgpolicy_name: buff too small\n");
-		return 1;
-	}
-	return 0;
+	return snprintf(buff, POLICY_NAME_SIZE, "%s", s);
 }
 
 /*
