@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 
+#include "memory.h"
 #include "vector.h"
 #include "structs.h"
 #include "config.h"
@@ -90,7 +91,7 @@ select_pgpolicy (struct multipath * mp)
 		mp->pgpolicy = conf->pgpolicy_flag;
 		mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
 		get_pgpolicy_name(pgpolicy_name, POLICY_NAME_SIZE,
-				      mp->pgpolicy);
+				  mp->pgpolicy);
 		condlog(3, "pgpolicy = %s (cmd line flag)", pgpolicy_name);
 		return 0;
 	}
@@ -98,7 +99,7 @@ select_pgpolicy (struct multipath * mp)
 		mp->pgpolicy = mp->mpe->pgpolicy;
 		mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
 		get_pgpolicy_name(pgpolicy_name, POLICY_NAME_SIZE,
-				      mp->pgpolicy);
+				  mp->pgpolicy);
 		condlog(3, "pgpolicy = %s (LUN setting)", pgpolicy_name);
 		return 0;
 	}
@@ -106,7 +107,7 @@ select_pgpolicy (struct multipath * mp)
 		mp->pgpolicy = mp->hwe->pgpolicy;
 		mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
 		get_pgpolicy_name(pgpolicy_name, POLICY_NAME_SIZE,
-				      mp->pgpolicy);
+				  mp->pgpolicy);
 		condlog(3, "pgpolicy = %s (controler setting)", pgpolicy_name);
 		return 0;
 	}
@@ -114,7 +115,7 @@ select_pgpolicy (struct multipath * mp)
 		mp->pgpolicy = conf->default_pgpolicy;
 		mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
 		get_pgpolicy_name(pgpolicy_name, POLICY_NAME_SIZE,
-				      mp->pgpolicy);
+				  mp->pgpolicy);
 		condlog(3, "pgpolicy = %s (config file default)", pgpolicy_name);
 		return 0;
 	}
@@ -194,13 +195,21 @@ select_checkfn(struct path *pp)
 	if (pp->hwe && pp->hwe->checker_index > 0) {
 		get_checker_name(checker_name, CHECKER_NAME_SIZE,
 				 pp->hwe->checker_index);
-		condlog(3, "path checker = %s (controler setting)", checker_name);
+		condlog(3, "path checker = %s (controler setting)",
+			checker_name);
 		pp->checkfn = get_checker_addr(pp->hwe->checker_index);
 		return 0;
 	}
-	pp->checkfn = get_checker_addr(conf->default_checker_index);
-	get_checker_name(checker_name, CHECKER_NAME_SIZE,
-			 conf->default_checker_index);
+	if (conf->default_checker_index > 0) {
+		pp->checkfn = get_checker_addr(conf->default_checker_index);
+		get_checker_name(checker_name, CHECKER_NAME_SIZE,
+				 conf->default_checker_index);
+		condlog(3, "path checker = %s (config file default)",
+			checker_name);
+		return 0;
+	}
+	pp->checkfn = get_checker_addr(DEFAULT_CHECKER_ID);
+	get_checker_name(checker_name, CHECKER_NAME_SIZE, DEFAULT_CHECKER_ID);
 	condlog(3, "path checker = %s (internal default)", checker_name);
 	return 0;
 }
@@ -213,7 +222,12 @@ select_getuid (struct path * pp)
 		condlog(3, "getuid = %s (controler setting)", pp->getuid);
 		return 0;
 	}
-	pp->getuid = conf->default_getuid;
+	if (conf->default_getuid) {
+		pp->getuid = conf->default_getuid;
+		condlog(3, "getuid = %s (config file default)", pp->getuid);
+		return 0;
+	}
+	pp->getuid = STRDUP(DEFAULT_GETUID);
 	condlog(3, "getuid = %s (internal default)", pp->getuid);
 	return 0;
 }
@@ -226,8 +240,13 @@ select_getprio (struct path * pp)
 		condlog(3, "getprio = %s (controler setting)", pp->getprio);
 		return 0;
 	}
-	pp->getprio = conf->default_getprio;
-	condlog(3, "getprio = %s (internal default)", pp->getprio);
+	if (conf->default_getprio) {
+		pp->getprio = conf->default_getprio;
+		condlog(3, "getprio = %s (config file default)", pp->getprio);
+		return 0;
+	}
+	pp->getprio = DEFAULT_GETPRIO;
+	condlog(3, "getprio = NULL (internal default)");
 	return 0;
 }
 
