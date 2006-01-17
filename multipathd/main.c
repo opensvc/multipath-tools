@@ -992,6 +992,7 @@ uxlsnrloop (void * ap)
 	add_handler(LIST+MAPS+STATUS, cli_list_maps_status);
 	add_handler(LIST+MAPS+STATS, cli_list_maps_stats);
 	add_handler(LIST+MAPS+TOPOLOGY, cli_list_maps_topology);
+	add_handler(LIST+TOPOLOGY, cli_list_maps_topology);
 	add_handler(LIST+MAP+TOPOLOGY, cli_list_map_topology);
 	add_handler(LIST+CONFIG, cli_list_config);
 	add_handler(ADD+PATH, cli_add_path);
