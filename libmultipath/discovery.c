@@ -689,6 +689,8 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	if (mask & DI_CHECKER) {
 		if (!pp->checkfn)
 			select_checkfn(pp);
+		if (!pp->checkfn)
+			goto out;
 
 		pp->state = pp->checkfn(pp->fd, NULL, NULL);
 		condlog(3, "state = %i", pp->state);

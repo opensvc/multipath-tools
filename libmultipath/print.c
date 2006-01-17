@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <libdevmapper.h>
+#include <stdarg.h>
 
 #include "vector.h"
 #include "structs.h"
@@ -11,9 +12,13 @@
 #include "print.h"
 #include "dmparser.h"
 #include "configure.h"
+#include "config.h"
+#include "pgpolicies.h"
 #include "defaults.h"
+#include "parser.h"
 
 #include "../libcheckers/path_state.h"
+#include "../libcheckers/checkers.h"
 
 #define MAX(x,y) (x > y) ? x : y
 #define TAIL     (line + len - 1 - c)
@@ -647,10 +652,8 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 	if (verbosity <= 0)
 		return fwd;
 
-	if (verbosity == 1) {
-		fwd += snprint_multipath(buff + fwd, len - fwd, "%n", mpp);
-		return fwd;
-	}
+	if (verbosity == 1)
+		return snprint_multipath(buff, len, "%n", mpp);
 
 	if (verbosity > 1 &&
 	    mpp->action != ACT_NOTHING &&
@@ -663,8 +666,12 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 		c += sprintf(c, " (%%w)");
 
 	fwd += snprint_multipath(buff + fwd, len - fwd, style, mpp);
+	if (fwd > len)
+		return len;
 	fwd += snprint_multipath(buff + fwd, len - fwd,
 				 "[size=%S][features=%f][hwhandler=%h]", mpp);
+	if (fwd > len)
+		return len;
 
 	if (!mpp->pg)
 		return fwd;
@@ -673,12 +680,180 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 		pgp->selector = mpp->selector; /* hack */
 		fwd += snprint_pathgroup(buff + fwd, len - fwd,
 					 PRINT_PG_INDENT, pgp);
+		if (fwd > len)
+			return len;
 
-		vector_foreach_slot (pgp->paths, pp, i)
+		vector_foreach_slot (pgp->paths, pp, i) {
 			fwd += snprint_path(buff + fwd, len - fwd,
 					    PRINT_PATH_INDENT, pp);
+			if (fwd > len)
+				return len;
+		}
 	}
 	return fwd;
+}
+
+static int
+snprint_hwentry (char * buff, int len, struct hwentry * hwe)
+{
+	int i;
+	int fwd = 0;
+	struct keyword * kw;
+	struct keyword * rootkw;
+
+	rootkw = find_keyword(NULL, "device");
+
+	if (!rootkw)
+		return 0;
+
+	fwd += snprintf(buff + fwd, len - fwd, "\tdevice {\n");
+	if (fwd > len)
+		return len;
+	iterate_sub_keywords(rootkw, kw, i) {
+		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
+				kw, hwe);
+		if (fwd > len)
+			return len;
+	}
+	fwd += snprintf(buff + fwd, len - fwd, "\t}\n");
+	if (fwd > len)
+		return len;
+	return fwd;
+}
+
+extern int
+snprint_hwtable (char * buff, int len, vector hwtable)
+{
+	int fwd = 0;
+	int i;
+	struct hwentry * hwe;
+	struct keyword * rootkw;
+
+	rootkw = find_keyword(NULL, "devices");
+	if (!rootkw)
+		return 0;
+
+	fwd += snprintf(buff + fwd, len - fwd, "devices {\n");
+	if (fwd > len)
+		return len;
+	vector_foreach_slot (hwtable, hwe, i) {
+		fwd += snprint_hwentry(buff + fwd, len - fwd, hwe);
+		if (fwd > len)
+			return len;
+	}
+	fwd += snprintf(buff + fwd, len - fwd, "}\n");
+	if (fwd > len)
+		return len;
+	return fwd;
+}
+
+static int
+snprint_mpentry (char * buff, int len, struct mpentry * mpe)
+{
+	int i;
+	int fwd = 0;
+	struct keyword * kw;
+	struct keyword * rootkw;
+
+	rootkw = find_keyword(NULL, "multipath");
+	if (!rootkw)
+		return 0;
+
+	fwd += snprintf(buff + fwd, len - fwd, "\tmultipath {\n");
+	if (fwd > len)
+		return len;
+	iterate_sub_keywords(rootkw, kw, i) {
+		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
+				kw, mpe);
+		if (fwd > len)
+			return len;
+	}
+	fwd += snprintf(buff + fwd, len - fwd, "\t}\n");
+	if (fwd > len)
+		return len;
+	return fwd;
+}
+
+extern int
+snprint_mptable (char * buff, int len, vector mptable)
+{
+	int fwd = 0;
+	int i;
+	struct mpentry * mpe;
+	struct keyword * rootkw;
+
+	rootkw = find_keyword(NULL, "multipaths");
+	if (!rootkw)
+		return 0;
+
+	fwd += snprintf(buff + fwd, len - fwd, "multipaths {\n");
+	if (fwd > len)
+		return len;
+	vector_foreach_slot (mptable, mpe, i) {
+		fwd += snprint_mpentry(buff + fwd, len - fwd, mpe);
+		if (fwd > len)
+			return len;
+	}
+	fwd += snprintf(buff + fwd, len - fwd, "}\n");
+	if (fwd > len)
+		return len;
+	return fwd;
+}
+
+extern int
+snprint_defaults (char * buff, int len)
+{
+	int fwd = 0;
+	int i;
+	struct keyword *rootkw;
+	struct keyword *kw;
+
+	rootkw = find_keyword(NULL, "defaults");
+	if (!rootkw)
+		return 0;
+
+	fwd += snprintf(buff + fwd, len - fwd, "defaults {\n");
+	if (fwd > len)
+		return len;
+
+	iterate_sub_keywords(rootkw, kw, i) {
+		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
+				kw, NULL);
+		if (fwd > len)
+			return len;
+	}
+	fwd += snprintf(buff + fwd, len - fwd, "}\n");
+	if (fwd > len)
+		return len;
+	return fwd;
+	
+}
+
+extern int
+snprint_blacklist (char * buff, int len)
+{
+	int fwd = 0;
+	struct keyword *rootkw;
+
+	rootkw = find_keyword(NULL, "devnode_blacklist");
+	if (!rootkw)
+		return 0;
+
+	fwd += snprintf(buff + fwd, len - fwd, "devnode_blacklist {\n");
+	if (fwd > len)
+		return len;
+
+	fwd += snprintf(buff + fwd, len - fwd, "}\n");
+	if (fwd > len)
+		return len;
+	return fwd;
+	
+}
+
+extern int
+snprint_config (char * buff, int len)
+{
+	return 0;
 }
 
 /*

@@ -42,24 +42,30 @@
 struct keyword {
 	char *string;
 	int (*handler) (vector);
+	int (*print) (char *, int, void *);
 	vector sub;
 };
+
+/* global var exported */
+FILE *stream;
 
 /* Reloading helpers */
 #define SET_RELOAD      (reload = 1)
 #define UNSET_RELOAD    (reload = 0)
 #define RELOAD_DELAY    5
 
-/* global var exported */
-vector keywords;
-FILE *stream;
+/* iterator helper */
+#define iterate_sub_keywords(k,p,i) \
+	for (i = 0; i < (k)->sub->allocated && ((p) = (k)->sub->slot[i]); i++)
 
 /* Prototypes */
-extern int keyword_alloc(vector keywords, char *string, int (*handler) (vector));
+extern int keyword_alloc(vector keywords, char *string, int (*handler) (vector),
+			 int (*print) (char *, int, void *));
 extern int install_keyword_root(char *string, int (*handler) (vector));
 extern void install_sublevel(void);
 extern void install_sublevel_end(void);
-extern int install_keyword(char *string, int (*handler) (vector));
+extern int install_keyword(char *string, int (*handler) (vector),
+			   int (*print) (char *, int, void *));
 extern void dump_keywords(vector keydump, int level);
 extern void free_keywords(vector keywords);
 extern vector alloc_strvec(char *string);
@@ -68,6 +74,9 @@ extern vector read_value_block(void);
 extern int alloc_value_block(vector strvec, void (*alloc_func) (vector));
 extern void *set_value(vector strvec);
 extern int process_stream(vector keywords);
-extern int init_data(char *conf_file, vector (*init_keywords) (void));
+extern int init_data(char *conf_file, void (*init_keywords) (void));
+extern struct keyword * find_keyword(vector v, char * name);
+int snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw,
+		    void *data);
 
 #endif

@@ -5,6 +5,6 @@
 #include "vector.h"
 #endif
 
-vector init_keywords(void);
+void init_keywords(void);
 
 #endif /* _DICT_H */

@@ -139,6 +139,7 @@ load_keys (void)
 	r += add_key(keys, "status", STATUS, 0);
 	r += add_key(keys, "stats", STATS, 0);
 	r += add_key(keys, "topology", TOPOLOGY, 0);
+	r += add_key(keys, "config", CONFIG, 0);
 
 	if (r) {
 		free_keys(keys);

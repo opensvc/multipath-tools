@@ -23,7 +23,7 @@ show_paths (char ** r, int * len, struct vectors * vecs, char * style)
 	struct path * pp;
 	char * c;
 	char * reply;
-	int maxlen = INITIAL_REPLY_LEN;
+	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
 	get_path_layout(vecs->pathvec);
@@ -59,7 +59,7 @@ show_map_topology (char ** r, int * len, struct multipath * mpp)
 {
 	char * c;
 	char * reply;
-	int maxlen = INITIAL_REPLY_LEN;
+	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
 	reply = MALLOC(maxlen);
@@ -89,7 +89,7 @@ show_maps_topology (char ** r, int * len, struct vectors * vecs)
 	struct multipath * mpp;
 	char * c;
 	char * reply;
-	int maxlen = INITIAL_REPLY_LEN;
+	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
 	reply = MALLOC(maxlen);
@@ -113,6 +113,50 @@ show_maps_topology (char ** r, int * len, struct vectors * vecs)
 	*r = reply;
 	*len = (int)(c - reply + 1);
 	return 0;
+}
+
+int
+show_config (char ** r, int * len)
+{
+	char * c;
+	char * reply;
+	unsigned int maxlen = INITIAL_REPLY_LEN;
+	int again = 1;
+
+	reply = MALLOC(maxlen);
+
+	while (again) {
+		if (!reply)
+			return 1;
+		c = reply;
+		c += snprint_defaults(c, reply + maxlen - c);
+		again = ((c - reply) == maxlen);
+		if (again) {
+			reply = REALLOC(reply, maxlen *= 2);
+			continue;
+		}
+		c += snprint_hwtable(c, reply + maxlen - c, conf->hwtable);
+		again = ((c - reply) == maxlen);
+		if (again) {
+			reply = REALLOC(reply, maxlen *= 2);
+			continue;
+		}
+		c += snprint_mptable(c, reply + maxlen - c, conf->mptable);
+		again = ((c - reply) == maxlen);
+		if (again)
+			reply = REALLOC(reply, maxlen *= 2);
+	}
+	*r = reply;
+	*len = (int)(c - reply + 1);
+	return 0;
+}
+
+int
+cli_list_config (void * v, char ** reply, int * len, void * data)
+{
+	condlog(3, "list config (operator)");
+
+	return show_config(reply, len);
 }
 
 int
@@ -159,7 +203,7 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 	struct multipath * mpp;
 	char * c;
 	char * reply;
-	int maxlen = INITIAL_REPLY_LEN;
+	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
 	get_multipath_layout(vecs->mpvec);

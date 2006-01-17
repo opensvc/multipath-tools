@@ -1,6 +1,6 @@
 /*
  * Based on Alexandre Cassen template for keepalived
- * Copyright (c) 2004, 2005 Christophe Varoqui
+ * Copyright (c) 2004, 2005, 2006  Christophe Varoqui
  * Copyright (c) 2005 Benjamin Marzinski, Redhat
  * Copyright (c) 2005 Kiyoshi Ueda, NEC
  */
@@ -719,70 +719,558 @@ mp_minio_handler(vector strvec)
 	return 0;
 }
 
-vector
+/*
+ * config file keywords printing
+ */
+static int
+snprint_mp_wwid (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	return snprintf(buff, len, "%s", mpe->wwid);
+}
+
+static int
+snprint_mp_alias (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->alias)
+		return 0;
+
+	if (conf->user_friendly_names &&
+	    (strlen(mpe->alias) == strlen("mpath")) &&
+	    !strcmp(mpe->alias, "mpath"))
+		return 0;
+
+	return snprintf(buff, len, "%s", mpe->alias);
+}
+
+static int
+snprint_mp_path_grouping_policy (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+	char str[POLICY_NAME_SIZE];
+
+	if (!mpe->pgpolicy)
+		return 0;
+	get_pgpolicy_name(str, POLICY_NAME_SIZE, mpe->pgpolicy);
+	
+	return snprintf(buff, len, "%s", str);
+}
+
+static int
+snprint_mp_selector (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->selector)
+		return 0;
+
+	return snprintf(buff, len, "%s", mpe->selector);
+}
+
+static int
+snprint_mp_failback (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->pgfailback)
+		return 0;
+
+	switch(mpe->pgfailback) {
+	case  FAILBACK_UNDEF:
+		break;
+	case -FAILBACK_MANUAL:
+		return snprintf(buff, len, "manual");
+	case -FAILBACK_IMMEDIATE:
+		return snprintf(buff, len, "immediate");
+	default:
+		return snprintf(buff, len, "%i", mpe->pgfailback);
+	}
+	return 0;
+}
+
+static int
+snprint_mp_rr_weight (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->rr_weight)
+		return 0;
+	if (mpe->rr_weight == RR_WEIGHT_PRIO)
+		return snprintf(buff, len, "priorities");
+
+	return 0;
+}
+
+static int
+snprint_mp_no_path_retry (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->no_path_retry)
+		return 0;
+
+	switch(mpe->no_path_retry) {
+	case NO_PATH_RETRY_UNDEF:
+		break;
+	case NO_PATH_RETRY_FAIL:
+		return snprintf(buff, len, "fail");
+	case NO_PATH_RETRY_QUEUE:
+		return snprintf(buff, len, "queue");
+	default:
+		return snprintf(buff, len, "%i",
+				mpe->no_path_retry);
+	}
+	return 0;
+}
+
+static int
+snprint_mp_rr_min_io (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->minio)
+		return 0;
+
+	return snprintf(buff, len, "%u", mpe->minio);
+}
+
+static int
+snprint_hw_vendor (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->vendor)
+		return 0;
+
+	return snprintf(buff, len, "%s", hwe->vendor);
+}
+
+static int
+snprint_hw_product (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->product)
+		return 0;
+
+	return snprintf(buff, len, "%s", hwe->product);
+}
+
+static int
+snprint_hw_getuid_callout (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->getuid)
+		return 0;
+	if (strlen(hwe->getuid) == strlen(conf->default_getuid) &&
+	    !strcmp(hwe->getuid, conf->default_getuid))
+		return 0;
+
+	return snprintf(buff, len, "%s", hwe->getuid);
+}
+
+static int
+snprint_hw_prio_callout (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->getprio)
+		return 0;
+	if (strlen(hwe->getprio) == strlen(conf->default_getprio) &&
+	    !strcmp(hwe->getprio, conf->default_getprio))
+		return 0;
+
+	return snprintf(buff, len, "%s", hwe->getprio);
+}
+
+static int
+snprint_hw_features (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->features)
+		return 0;
+	if (strlen(hwe->features) == strlen(conf->features) &&
+	    !strcmp(hwe->features, conf->features))
+		return 0;
+
+	return snprintf(buff, len, "%s", hwe->features);
+}
+
+static int
+snprint_hw_hardware_handler (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->hwhandler)
+		return 0;
+	if (strlen(hwe->hwhandler) == strlen(conf->default_hwhandler) &&
+	    !strcmp(hwe->hwhandler, conf->default_hwhandler))
+		return 0;
+
+	return snprintf(buff, len, "%s", hwe->hwhandler);
+}
+
+static int
+snprint_hw_selector (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->selector)
+		return 0;
+	if (strlen(hwe->selector) == strlen(conf->selector) &&
+	    !strcmp(hwe->selector, conf->selector))
+		return 0;
+
+	return snprintf(buff, len, "%s", hwe->selector);
+}
+
+static int
+snprint_hw_path_grouping_policy (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	char str[POLICY_NAME_SIZE];
+
+	if (!hwe->pgpolicy)
+		return 0;
+	if (hwe->pgpolicy == conf->default_pgpolicy)
+		return 0;
+
+	get_pgpolicy_name(str, POLICY_NAME_SIZE, hwe->pgpolicy);
+	
+	return snprintf(buff, len, "%s", str);
+}
+
+static int
+snprint_hw_failback (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->pgfailback)
+		return 0;
+	if (hwe->pgfailback == conf->pgfailback)
+		return 0;
+
+	switch(hwe->pgfailback) {
+	case  FAILBACK_UNDEF:
+		break;
+	case -FAILBACK_MANUAL:
+		return snprintf(buff, len, "manual");
+	case -FAILBACK_IMMEDIATE:
+		return snprintf(buff, len, "immediate");
+	default:
+		return snprintf(buff, len, "%i", hwe->pgfailback);
+	}
+	return 0;
+}
+
+static int
+snprint_hw_rr_weight (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->rr_weight)
+		return 0;
+	if (hwe->rr_weight == conf->rr_weight)
+		return 0;
+	if (hwe->rr_weight == RR_WEIGHT_PRIO)
+		return snprintf(buff, len, "priorities");
+
+	return 0;
+}
+
+static int
+snprint_hw_no_path_retry (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->no_path_retry)
+		return 0;
+	if (hwe->no_path_retry == conf->no_path_retry)
+		return 0;
+
+	switch(hwe->no_path_retry) {
+	case NO_PATH_RETRY_UNDEF:
+		break;
+	case NO_PATH_RETRY_FAIL:
+		return snprintf(buff, len, "fail");
+	case NO_PATH_RETRY_QUEUE:
+		return snprintf(buff, len, "queue");
+	default:
+		return snprintf(buff, len, "%i",
+				hwe->no_path_retry);
+	}
+	return 0;
+}
+
+static int
+snprint_hw_rr_min_io (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->minio)
+		return 0;
+	if (hwe->minio == conf->minio)
+		return 0;
+
+	return snprintf(buff, len, "%u", hwe->minio);
+}
+
+static int
+snprint_hw_path_checker (char * buff, int len, void * data)
+{
+	char str[CHECKER_NAME_SIZE];
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->checker_index)
+		return 0;
+	if (hwe->checker_index == conf->default_checker_index)
+		return 0;
+	get_checker_name(str, CHECKER_NAME_SIZE, hwe->checker_index);
+	
+	return snprintf(buff, len, "%s", str);
+}
+
+static int
+snprint_def_polling_interval (char * buff, int len, void * data)
+{
+	if (conf->checkint == DEFAULT_CHECKINT)
+		return 0;
+	return snprintf(buff, len, "%i", conf->checkint);
+}
+
+static int
+snprint_def_udev_dir (char * buff, int len, void * data)
+{
+	if (!conf->udev_dir)
+		return 0;
+	if (strlen(DEFAULT_UDEVDIR) == strlen(conf->udev_dir) &&
+	    !strcmp(conf->udev_dir, DEFAULT_UDEVDIR))
+		return 0;
+
+	return snprintf(buff, len, "%s", conf->udev_dir);
+}
+
+static int
+snprint_def_selector (char * buff, int len, void * data)
+{
+	if (!conf->selector)
+		return 0;
+	if (strlen(conf->selector) == strlen(DEFAULT_SELECTOR) &&
+	    !strcmp(conf->selector, DEFAULT_SELECTOR))
+		return 0;
+
+	return snprintf(buff, len, "%s", conf->selector);
+}
+
+static int
+snprint_def_path_grouping_policy (char * buff, int len, void * data)
+{
+	char str[POLICY_NAME_SIZE];
+
+	if (!conf->default_pgpolicy)
+		return 0;
+	if (conf->default_pgpolicy == DEFAULT_PGPOLICY)
+		return 0;
+
+	get_pgpolicy_name(str, POLICY_NAME_SIZE, conf->default_pgpolicy);
+	
+	return snprintf(buff, len, "%s", str);
+}
+
+static int
+snprint_def_getuid_callout (char * buff, int len, void * data)
+{
+	if (!conf->default_getuid)
+		return 0;
+	if (strlen(conf->default_getuid) == strlen(DEFAULT_GETUID) &&
+	    !strcmp(conf->default_getuid, DEFAULT_GETUID))
+		return 0;
+
+	return snprintf(buff, len, "%s", conf->default_getuid);
+}
+
+static int
+snprint_def_getprio_callout (char * buff, int len, void * data)
+{
+	if (!conf->default_getprio)
+		return 0;
+#if 0 /* default is NULL */
+	if (strlen(conf->default_getprio) == strlen(DEFAULT_GETPRIO) &&
+	    !strcmp(conf->default_getprio, DEFAULT_GETPRIO))
+		return 0;
+#endif
+
+	return snprintf(buff, len, "%s", conf->default_getprio);
+}
+
+static int
+snprint_def_features (char * buff, int len, void * data)
+{
+	if (!conf->features)
+		return 0;
+	if (strlen(conf->features) == strlen(DEFAULT_FEATURES) &&
+	    !strcmp(conf->features, DEFAULT_FEATURES))
+		return 0;
+
+	return snprintf(buff, len, "%s", conf->features);
+}
+
+static int
+snprint_def_path_checker (char * buff, int len, void * data)
+{
+	char str[CHECKER_NAME_SIZE];
+
+	if (!conf->default_checker_index)
+		return 0;
+	if (conf->default_checker_index == DEFAULT_CHECKER_ID)
+		return 0;
+	get_checker_name(str, CHECKER_NAME_SIZE, conf->default_checker_index);
+	
+	return snprintf(buff, len, "%s", str);
+}
+
+static int
+snprint_def_failback (char * buff, int len, void * data)
+{
+	if (!conf->pgfailback)
+		return 0;
+	if (conf->pgfailback == DEFAULT_FAILBACK)
+		return 0;
+
+	switch(conf->pgfailback) {
+	case  FAILBACK_UNDEF:
+		break;
+	case -FAILBACK_MANUAL:
+		return snprintf(buff, len, "manual");
+	case -FAILBACK_IMMEDIATE:
+		return snprintf(buff, len, "immediate");
+	default:
+		return snprintf(buff, len, "%i", conf->pgfailback);
+	}
+	return 0;
+}
+
+static int
+snprint_def_rr_min_io (char * buff, int len, void * data)
+{
+	if (!conf->minio)
+		return 0;
+	if (conf->minio == DEFAULT_MINIO)
+		return 0;
+
+	return snprintf(buff, len, "%u", conf->minio);
+}
+
+static int
+snprint_def_rr_weight (char * buff, int len, void * data)
+{
+	if (!conf->rr_weight)
+		return 0;
+	if (conf->rr_weight == DEFAULT_RR_WEIGHT)
+		return 0;
+	if (conf->rr_weight == RR_WEIGHT_PRIO)
+		return snprintf(buff, len, "priorities");
+
+	return 0;
+}
+
+static int
+snprint_def_no_path_retry (char * buff, int len, void * data)
+{
+	if (conf->no_path_retry == DEFAULT_NO_PATH_RETRY)
+		return 0;
+
+	switch(conf->no_path_retry) {
+	case NO_PATH_RETRY_UNDEF:
+		break;
+	case NO_PATH_RETRY_FAIL:
+		return snprintf(buff, len, "fail");
+	case NO_PATH_RETRY_QUEUE:
+		return snprintf(buff, len, "queue");
+	default:
+		return snprintf(buff, len, "%i",
+				conf->no_path_retry);
+	}
+	return 0;
+}
+
+static int
+snprint_def_user_friendly_names (char * buff, int len, void * data)
+{
+	if (conf->user_friendly_names == DEFAULT_USER_FRIENDLY_NAMES)
+		return 0;
+	if (!conf->user_friendly_names)
+		return snprintf(buff, len, "no");
+
+	return snprintf(buff, len, "yes");
+}
+
+void
 init_keywords(void)
 {
-	keywords = vector_alloc();
-
 	install_keyword_root("defaults", NULL);
-	install_keyword("polling_interval", &polling_interval_handler);
-	install_keyword("udev_dir", &udev_dir_handler);
-	install_keyword("selector", &def_selector_handler);
-	install_keyword("path_grouping_policy", &def_pgpolicy_handler);
-	install_keyword("getuid_callout", &def_getuid_callout_handler);
-	install_keyword("prio_callout", &def_prio_callout_handler);
-	install_keyword("features", &def_features_handler);
-	install_keyword("path_checker", &def_path_checker_handler);
-	install_keyword("failback", &default_failback_handler);
-	install_keyword("rr_min_io", &def_minio_handler);
-	install_keyword("rr_weight", &def_weight_handler);
-	install_keyword("no_path_retry", &def_no_path_retry_handler);
-	install_keyword("user_friendly_names", &names_handler);
+	install_keyword("polling_interval", &polling_interval_handler, &snprint_def_polling_interval);
+	install_keyword("udev_dir", &udev_dir_handler, &snprint_def_udev_dir);
+	install_keyword("selector", &def_selector_handler, &snprint_def_selector);
+	install_keyword("path_grouping_policy", &def_pgpolicy_handler, &snprint_def_path_grouping_policy);
+	install_keyword("getuid_callout", &def_getuid_callout_handler, &snprint_def_getuid_callout);
+	install_keyword("prio_callout", &def_prio_callout_handler, &snprint_def_getprio_callout);
+	install_keyword("features", &def_features_handler, &snprint_def_features);
+	install_keyword("path_checker", &def_path_checker_handler, &snprint_def_path_checker);
+	install_keyword("failback", &default_failback_handler, &snprint_def_failback);
+	install_keyword("rr_min_io", &def_minio_handler, &snprint_def_rr_min_io);
+	install_keyword("rr_weight", &def_weight_handler, &snprint_def_rr_weight);
+	install_keyword("no_path_retry", &def_no_path_retry_handler, &snprint_def_no_path_retry);
+	install_keyword("user_friendly_names", &names_handler, &snprint_def_user_friendly_names);
 
 	/*
 	 * deprecated synonyms
 	 */
-	install_keyword("default_selector", &def_selector_handler);
-	install_keyword("default_path_grouping_policy", &def_pgpolicy_handler);
-	install_keyword("default_getuid_callout", &def_getuid_callout_handler);
-	install_keyword("default_prio_callout", &def_prio_callout_handler);
-	install_keyword("default_features", &def_features_handler);
-	install_keyword("default_path_checker", &def_path_checker_handler);
+	install_keyword("default_selector", &def_selector_handler, NULL);
+	install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
+	install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
+	install_keyword("default_prio_callout", &def_prio_callout_handler, NULL);
+	install_keyword("default_features", &def_features_handler, NULL);
+	install_keyword("default_path_checker", &def_path_checker_handler, NULL);
 
 	install_keyword_root("devnode_blacklist", &blacklist_handler);
-	install_keyword("devnode", &ble_handler);
-	install_keyword("wwid", &ble_handler);
+	install_keyword("devnode", &ble_handler, NULL);
+	install_keyword("wwid", &ble_handler, NULL);
 
 	install_keyword_root("devices", &devices_handler);
-	install_keyword("device", &device_handler);
+	install_keyword("device", &device_handler, NULL);
 	install_sublevel();
-	install_keyword("vendor", &vendor_handler);
-	install_keyword("product", &product_handler);
-	install_keyword("path_grouping_policy", &hw_pgpolicy_handler);
-	install_keyword("getuid_callout", &hw_getuid_callout_handler);
-	install_keyword("path_selector", &hw_selector_handler);
-	install_keyword("path_checker", &hw_path_checker_handler);
-	install_keyword("features", &hw_features_handler);
-	install_keyword("hardware_handler", &hw_handler_handler);
-	install_keyword("prio_callout", &prio_callout_handler);
-	install_keyword("failback", &hw_failback_handler);
-	install_keyword("rr_weight", &hw_weight_handler);
-	install_keyword("no_path_retry", &hw_no_path_retry_handler);
-	install_keyword("rr_min_io", &hw_minio_handler);
+	install_keyword("vendor", &vendor_handler, &snprint_hw_vendor);
+	install_keyword("product", &product_handler, &snprint_hw_product);
+	install_keyword("path_grouping_policy", &hw_pgpolicy_handler, &snprint_hw_path_grouping_policy);
+	install_keyword("getuid_callout", &hw_getuid_callout_handler, &snprint_hw_getuid_callout);
+	install_keyword("path_selector", &hw_selector_handler, &snprint_hw_selector);
+	install_keyword("path_checker", &hw_path_checker_handler, &snprint_hw_path_checker);
+	install_keyword("features", &hw_features_handler, &snprint_hw_features);
+	install_keyword("hardware_handler", &hw_handler_handler, &snprint_hw_hardware_handler);
+	install_keyword("prio_callout", &prio_callout_handler, &snprint_hw_prio_callout);
+	install_keyword("failback", &hw_failback_handler, &snprint_hw_failback);
+	install_keyword("rr_weight", &hw_weight_handler, &snprint_hw_rr_weight);
+	install_keyword("no_path_retry", &hw_no_path_retry_handler, &snprint_hw_no_path_retry);
+	install_keyword("rr_min_io", &hw_minio_handler, &snprint_hw_rr_min_io);
 	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);
-	install_keyword("multipath", &multipath_handler);
+	install_keyword("multipath", &multipath_handler, NULL);
 	install_sublevel();
-	install_keyword("wwid", &wwid_handler);
-	install_keyword("alias", &alias_handler);
-	install_keyword("path_grouping_policy", &mp_pgpolicy_handler);
-	install_keyword("path_selector", &mp_selector_handler);
-	install_keyword("failback", &mp_failback_handler);
-	install_keyword("rr_weight", &mp_weight_handler);
-	install_keyword("no_path_retry", &mp_no_path_retry_handler);
-	install_keyword("rr_min_io", &mp_minio_handler);
+	install_keyword("wwid", &wwid_handler, &snprint_mp_wwid);
+	install_keyword("alias", &alias_handler, &snprint_mp_alias);
+	install_keyword("path_grouping_policy", &mp_pgpolicy_handler, &snprint_mp_path_grouping_policy);
+	install_keyword("path_selector", &mp_selector_handler, &snprint_mp_selector);
+	install_keyword("failback", &mp_failback_handler, &snprint_mp_failback);
+	install_keyword("rr_weight", &mp_weight_handler, &snprint_mp_rr_weight);
+	install_keyword("no_path_retry", &mp_no_path_retry_handler, &snprint_mp_no_path_retry);
+	install_keyword("rr_min_io", &mp_minio_handler, &snprint_mp_rr_min_io);
 	install_sublevel_end();
-
-	return keywords;
 }

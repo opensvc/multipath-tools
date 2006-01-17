@@ -24,9 +24,11 @@
 
 /* local vars */
 static int sublevel = 0;
+vector keywords = NULL;
 
 int
-keyword_alloc(vector keywords, char *string, int (*handler) (vector))
+keyword_alloc(vector keywords, char *string, int (*handler) (vector),
+		int (*print) (char *, int, void *))
 {
 	struct keyword *keyword;
 
@@ -41,6 +43,7 @@ keyword_alloc(vector keywords, char *string, int (*handler) (vector))
 	}
 	keyword->string = string;
 	keyword->handler = handler;
+	keyword->print = print;
 
 	vector_set_slot(keywords, keyword);
 
@@ -50,7 +53,7 @@ keyword_alloc(vector keywords, char *string, int (*handler) (vector))
 int
 install_keyword_root(char *string, int (*handler) (vector))
 {
-	return keyword_alloc(keywords, string, handler);
+	return keyword_alloc(keywords, string, handler, NULL);
 }
 
 void
@@ -66,7 +69,8 @@ install_sublevel_end(void)
 }
 
 int
-install_keyword(char *string, int (*handler) (vector))
+install_keyword(char *string, int (*handler) (vector),
+		int (*print) (char *, int, void *))
 {
 	int i = 0;
 	struct keyword *keyword;
@@ -87,7 +91,7 @@ install_keyword(char *string, int (*handler) (vector))
 		return 1;
 
 	/* add new sub keyword */
-	return keyword_alloc(keyword->sub, string, handler);
+	return keyword_alloc(keyword->sub, string, handler, print);
 }
 
 void
@@ -103,6 +107,73 @@ free_keywords(vector keywords)
 		FREE(keyword);
 	}
 	vector_free(keywords);
+}
+
+struct keyword *
+find_keyword(vector v, char * name)
+{
+	struct keyword *keyword;
+	int i;
+	int len;
+
+	if (!name || !keywords)
+		return NULL;
+
+	if (!v)
+		v = keywords;
+
+	len = strlen(name);
+
+	for (i = 0; i < VECTOR_SIZE(v); i++) {
+		keyword = VECTOR_SLOT(v, i);
+		if ((strlen(keyword->string) == len) &&
+		    !strcmp(keyword->string, name))
+			return keyword;
+		if (keyword->sub) {
+			keyword = find_keyword(keyword->sub, name);
+			if (keyword)
+				return keyword;
+		}
+	}
+	return NULL;
+}
+
+int
+snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw, void *data)
+{
+	int r;
+	int fwd = 0;
+	char *f = fmt;
+
+	if (!kw || !kw->print)
+		return 0;
+
+	do {
+		if (fwd == len || *f == '\0')
+			break;
+		if (*f != '%') {
+			*(buff + fwd) = *f;
+			fwd++;
+			continue;
+		}
+		f++;
+		switch(*f) {
+		case 'k':
+			fwd += snprintf(buff + fwd, len - fwd, kw->string);
+			break;
+		case 'v':
+			r = kw->print(buff + fwd, len - fwd, data);
+			if (!r) { /* no output if no value */
+				buff = '\0';
+				return 0;
+			}
+			fwd += r;
+			break;
+		}
+		if (fwd > len)
+			fwd = len;
+	} while (*f++);
+	return fwd;
 }
 
 vector
@@ -373,10 +444,14 @@ process_stream(vector keywords)
 
 /* Data initialization */
 int
-init_data(char *conf_file, vector (*init_keywords) (void))
+init_data(char *conf_file, void (*init_keywords) (void))
 {
 	int r;
 
+	if (!keywords)
+		keywords = vector_alloc();
+	if (!keywords)
+		return 1;
 	stream = fopen(conf_file, "r");
 	if (!stream) {
 		syslog(LOG_WARNING, "Configuration file open problem");
@@ -394,7 +469,7 @@ init_data(char *conf_file, vector (*init_keywords) (void))
 	/* Stream handling */
 	r = process_stream(keywords);
 	fclose(stream);
-	free_keywords(keywords);
+	//free_keywords(keywords);
 
 	return r;
 }

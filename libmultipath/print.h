@@ -40,6 +40,9 @@ int snprint_path (char *, int, char *, struct path *);
 int snprint_multipath (char *, int, char *, struct multipath *);
 int snprint_multipath_topology (char *, int, struct multipath * mpp,
 				int verbosity);
+int snprint_defaults (char *, int);
+int snprint_hwtable (char *, int, vector);
+int snprint_mptable (char *, int, vector);
 
 void print_multipath_topology (struct multipath * mpp, int verbosity);
 void print_path (struct path * pp, char * style);
@@ -47,3 +50,5 @@ void print_multipath (struct multipath * mpp, char * style);
 void print_pathgroup (struct pathgroup * pgp, char * style);
 void print_map (struct multipath * mpp);
 void print_all_paths (vector pathvec, int banner);
+void print_hwtable (vector hwtable);
+

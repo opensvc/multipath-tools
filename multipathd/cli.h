@@ -16,6 +16,7 @@ enum {
 	__STATUS,
 	__STATS,
 	__TOPOLOGY,
+	__CONFIG,
 };
 
 #define LIST		(1 << __LIST)
@@ -35,6 +36,7 @@ enum {
 #define STATUS		(1 << __STATUS)
 #define STATS		(1 << __STATS)
 #define TOPOLOGY	(1 << __TOPOLOGY)
+#define CONFIG		(1 << __CONFIG)
 
 #define INITIAL_REPLY_LEN 1000
 
