@@ -62,7 +62,7 @@ struct config {
 	char * getuid;
 	char * getprio;
 	char * features;
-	char * default_hwhandler;
+	char * hwhandler;
 	char * bindings_file;
 
 	vector mptable;

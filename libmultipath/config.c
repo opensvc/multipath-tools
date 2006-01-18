@@ -293,8 +293,8 @@ free_config (struct config * conf)
 	if (conf->features)
 		FREE(conf->features);
 
-	if (conf->default_hwhandler)
-		FREE(conf->default_hwhandler);
+	if (conf->hwhandler)
+		FREE(conf->hwhandler);
 
 	free_blacklist(conf->blist_devnode);
 	free_blacklist(conf->blist_wwid);
@@ -386,12 +386,12 @@ load_config (char * file)
 	if (conf->features == NULL)
 		conf->features = set_default(DEFAULT_FEATURES);
 
-	if (conf->default_hwhandler == NULL)
-		conf->default_hwhandler = set_default(DEFAULT_HWHANDLER);
+	if (conf->hwhandler == NULL)
+		conf->hwhandler = set_default(DEFAULT_HWHANDLER);
 
 	if (!conf->selector  || !conf->udev_dir         ||
 	    !conf->getuid    || !conf->features ||
-	    !conf->default_hwhandler)
+	    !conf->hwhandler)
 		goto out;
 
 	if (!conf->checker_index)

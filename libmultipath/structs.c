@@ -141,7 +141,7 @@ free_multipath_attributes (struct multipath * mpp)
 	}
 
 	if (mpp->hwhandler &&
-	    mpp->hwhandler != conf->default_hwhandler &&
+	    mpp->hwhandler != conf->hwhandler &&
 	    (!mpp->hwe || (mpp->hwe && mpp->hwhandler != mpp->hwe->hwhandler))) {
 		FREE(mpp->hwhandler);
 		mpp->hwhandler = NULL;

@@ -182,7 +182,7 @@ select_hwhandler (struct multipath * mp)
 		condlog(3, "hwhandler = %s (controler setting)", mp->hwhandler);
 		return 0;
 	}
-	mp->hwhandler = conf->default_hwhandler;
+	mp->hwhandler = conf->hwhandler;
 	condlog(3, "hwhandler = %s (internal default)", mp->hwhandler);
 	return 0;
 }

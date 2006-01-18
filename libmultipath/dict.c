@@ -951,8 +951,8 @@ snprint_hw_hardware_handler (char * buff, int len, void * data)
 
 	if (!hwe->hwhandler)
 		return 0;
-	if (strlen(hwe->hwhandler) == strlen(conf->default_hwhandler) &&
-	    !strcmp(hwe->hwhandler, conf->default_hwhandler))
+	if (strlen(hwe->hwhandler) == strlen(conf->hwhandler) &&
+	    !strcmp(hwe->hwhandler, conf->hwhandler))
 		return 0;
 
 	return snprintf(buff, len, "%s", hwe->hwhandler);
