@@ -200,10 +200,10 @@ select_checkfn(struct path *pp)
 		pp->checkfn = get_checker_addr(pp->hwe->checker_index);
 		return 0;
 	}
-	if (conf->default_checker_index > 0) {
-		pp->checkfn = get_checker_addr(conf->default_checker_index);
+	if (conf->checker_index > 0) {
+		pp->checkfn = get_checker_addr(conf->checker_index);
 		get_checker_name(checker_name, CHECKER_NAME_SIZE,
-				 conf->default_checker_index);
+				 conf->checker_index);
 		condlog(3, "path checker = %s (config file default)",
 			checker_name);
 		return 0;

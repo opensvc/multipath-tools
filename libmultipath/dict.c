@@ -119,7 +119,7 @@ def_path_checker_handler(vector strvec)
 	if (!buff)
 		return 1;
 	
-	conf->default_checker_index = get_checker_id(buff);
+	conf->checker_index = get_checker_id(buff);
 	FREE(buff);
 
 	return 0;
@@ -1072,7 +1072,7 @@ snprint_hw_path_checker (char * buff, int len, void * data)
 
 	if (!hwe->checker_index)
 		return 0;
-	if (hwe->checker_index == conf->default_checker_index)
+	if (hwe->checker_index == conf->checker_index)
 		return 0;
 	get_checker_name(str, CHECKER_NAME_SIZE, hwe->checker_index);
 	
@@ -1169,11 +1169,11 @@ snprint_def_path_checker (char * buff, int len, void * data)
 {
 	char str[CHECKER_NAME_SIZE];
 
-	if (!conf->default_checker_index)
+	if (!conf->checker_index)
 		return 0;
-	if (conf->default_checker_index == DEFAULT_CHECKER_ID)
+	if (conf->checker_index == DEFAULT_CHECKER_ID)
 		return 0;
-	get_checker_name(str, CHECKER_NAME_SIZE, conf->default_checker_index);
+	get_checker_name(str, CHECKER_NAME_SIZE, conf->checker_index);
 	
 	return snprintf(buff, len, "%s", str);
 }

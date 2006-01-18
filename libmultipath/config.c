@@ -394,8 +394,8 @@ load_config (char * file)
 	    !conf->default_hwhandler)
 		goto out;
 
-	if (!conf->default_checker_index)
-		conf->default_checker_index = READSECTOR0;
+	if (!conf->checker_index)
+		conf->checker_index = READSECTOR0;
 
 	return 0;
 out:
