@@ -270,7 +270,7 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 
 	condlog(2, "%s: add path (operator)", param);
 
-	if (blacklist(conf->blist, param)) {
+	if (blacklist(conf->blist_devnode, param)) {
 		*reply = strdup("blacklisted");
 		*len = strlen(*reply) + 1;
 		condlog(2, "%s: path blacklisted", param);
@@ -298,6 +298,12 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 
 	condlog(2, "%s: add map (operator)", param);
 
+	if (blacklist(conf->blist_wwid, param)) {
+		*reply = strdup("blacklisted");
+		*len = strlen(*reply) + 1;
+		condlog(2, "%s: map blacklisted", param);
+		return 0;
+	}
 	return ev_add_map(param, vecs);
 }
 

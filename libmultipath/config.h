@@ -71,7 +71,10 @@ struct config {
 
 	vector mptable;
 	vector hwtable;
-	vector blist;
+
+	vector blist_devnode;
+	vector blist_wwid;
+	vector blist_device;
 };
 
 struct config * conf;

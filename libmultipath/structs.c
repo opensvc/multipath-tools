@@ -13,6 +13,7 @@
 #include "config.h"
 #include "debug.h"
 #include "structs_vec.h"
+#include "blacklist.h"
 
 struct path *
 alloc_path (void)
@@ -351,4 +352,3 @@ pathcount (struct multipath * mpp, int state)
 
 	return count;
 }
-

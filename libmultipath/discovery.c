@@ -15,11 +15,11 @@
 
 #include "vector.h"
 #include "memory.h"
-#include "blacklist.h"
 #include "util.h"
 #include "structs.h"
-#include "callout.h"
 #include "config.h"
+#include "blacklist.h"
+#include "callout.h"
 #include "debug.h"
 #include "propsel.h"
 #include "sg_include.h"
@@ -80,7 +80,7 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 		if (!devp)
 			continue;
 
-		if (blacklist(conf->blist, devp->name))
+		if (blacklist(conf->blist_devnode, devp->name))
 			continue;
 
 		if(safe_sprintf(path, "%s/block/%s/device", sysfs_path,

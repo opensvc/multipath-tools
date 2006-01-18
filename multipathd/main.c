@@ -34,10 +34,10 @@
 #include <config.h>
 #include <callout.h>
 #include <util.h>
-#include <blacklist.h>
 #include <hwtable.h>
 #include <defaults.h>
 #include <structs.h>
+#include <blacklist.h>
 #include <structs_vec.h>
 #include <dmparser.h>
 #include <devmapper.h>
@@ -952,7 +952,7 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	/*
 	 * path add/remove event
 	 */
-	if (blacklist(conf->blist, devname))
+	if (blacklist(conf->blist_devnode, devname))
 		goto out;
 
 	if (!strncmp(uev->action, "add", 3)) {

@@ -18,12 +18,12 @@
 #include "vector.h"
 #include "memory.h"
 #include "devmapper.h"
-#include "blacklist.h"
 #include "defaults.h"
 #include "structs.h"
 #include "structs_vec.h"
 #include "dmparser.h"
 #include "config.h"
+#include "blacklist.h"
 #include "propsel.h"
 #include "discovery.h"
 #include "debug.h"
@@ -409,7 +409,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 
 		/* 1. if path has no unique id or wwid blacklisted */
 		if (memcmp(empty_buff, pp1->wwid, WWID_SIZE) == 0 ||
-		    blacklist(conf->blist, pp1->wwid))
+		    blacklist_path(conf, pp1))
 			continue;
 
 		/* 2. if path already coalesced */

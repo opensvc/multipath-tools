@@ -227,29 +227,72 @@ names_handler(vector strvec)
 static int
 blacklist_handler(vector strvec)
 {
-	conf->blist = vector_alloc();
+	conf->blist_devnode = vector_alloc();
+	conf->blist_wwid = vector_alloc();
+	conf->blist_device = vector_alloc();
 
-	if (!conf->blist)
+	if (!conf->blist_devnode || !conf->blist_wwid || !conf->blist_device)
 		return 1;
 
 	return 0;
 }
 
 static int
-ble_handler(vector strvec)
+ble_devnode_handler(vector strvec)
 {
 	char * buff;
-	int ret;
 
 	buff = set_value(strvec);
 
 	if (!buff)
 		return 1;
 
-	ret = store_regex(conf->blist, buff);
-	FREE(buff);
+	return store_ble(conf->blist_devnode, buff);
+}
 
-	return ret;
+static int
+ble_wwid_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	return store_ble(conf->blist_wwid, buff);
+}
+
+static int
+ble_device_handler(vector strvec)
+{
+	return alloc_ble_device(conf->blist_device);
+}
+
+static int
+ble_vendor_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	return set_ble_device(conf->blist_device, buff, NULL);
+}
+
+static int
+ble_product_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	return set_ble_device(conf->blist_device, NULL, buff);
 }
 
 /*
@@ -1240,8 +1283,13 @@ init_keywords(void)
 	install_keyword("default_path_checker", &def_path_checker_handler, NULL);
 
 	install_keyword_root("devnode_blacklist", &blacklist_handler);
-	install_keyword("devnode", &ble_handler, NULL);
-	install_keyword("wwid", &ble_handler, NULL);
+	install_keyword("devnode", &ble_devnode_handler, NULL);
+	install_keyword("wwid", &ble_wwid_handler, NULL);
+	install_keyword("device", &ble_device_handler, NULL);
+	install_sublevel();
+	install_keyword("vendor", &ble_vendor_handler, NULL);
+	install_keyword("product", &ble_product_handler, NULL);
+	install_sublevel_end();
 
 	install_keyword_root("devices", &devices_handler);
 	install_keyword("device", &device_handler, NULL);

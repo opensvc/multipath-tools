@@ -14,9 +14,10 @@
 #include "dict.h"
 #include "hwtable.h"
 #include "vector.h"
+#include "structs.h"
+#include "config.h"
 #include "blacklist.h"
 #include "defaults.h"
-#include "config.h"
 
 #include "../libcheckers/checkers.h"
 
@@ -295,7 +296,9 @@ free_config (struct config * conf)
 	if (conf->default_hwhandler)
 		FREE(conf->default_hwhandler);
 
-	free_blacklist(conf->blist);
+	free_blacklist(conf->blist_devnode);
+	free_blacklist(conf->blist_wwid);
+	free_blacklist_device(conf->blist_device);
 	free_mptable(conf->mptable);
 	free_hwtable(conf->hwtable);
 
@@ -344,13 +347,25 @@ load_config (char * file)
 	if (setup_default_hwtable(conf->hwtable))
 		goto out;
 
-	if (conf->blist == NULL) {
-		conf->blist = vector_alloc();
+	if (conf->blist_devnode == NULL) {
+		conf->blist_devnode = vector_alloc();
 		
-		if (!conf->blist)
+		if (!conf->blist_devnode)
 			goto out;
 		
-		if (setup_default_blist(conf->blist))
+		if (setup_default_blist(conf->blist_devnode))
+			goto out;
+	}
+	if (conf->blist_wwid == NULL) {
+		conf->blist_wwid = vector_alloc();
+		
+		if (!conf->blist_wwid)
+			goto out;
+	}
+	if (conf->blist_device == NULL) {
+		conf->blist_device = vector_alloc();
+		
+		if (!conf->blist_device)
 			goto out;
 	}
 	if (conf->mptable == NULL) {
