@@ -73,9 +73,9 @@ def_pgpolicy_handler(vector strvec)
 static int
 def_getuid_callout_handler(vector strvec)
 {
-	conf->default_getuid = set_value(strvec);
+	conf->getuid = set_value(strvec);
 
-	if (!conf->default_getuid)
+	if (!conf->getuid)
 		return 1;
 	
 	return 0;
@@ -909,8 +909,8 @@ snprint_hw_getuid_callout (char * buff, int len, void * data)
 
 	if (!hwe->getuid)
 		return 0;
-	if (strlen(hwe->getuid) == strlen(conf->default_getuid) &&
-	    !strcmp(hwe->getuid, conf->default_getuid))
+	if (strlen(hwe->getuid) == strlen(conf->getuid) &&
+	    !strcmp(hwe->getuid, conf->getuid))
 		return 0;
 
 	return snprintf(buff, len, "%s", hwe->getuid);
@@ -1129,13 +1129,13 @@ snprint_def_path_grouping_policy (char * buff, int len, void * data)
 static int
 snprint_def_getuid_callout (char * buff, int len, void * data)
 {
-	if (!conf->default_getuid)
+	if (!conf->getuid)
 		return 0;
-	if (strlen(conf->default_getuid) == strlen(DEFAULT_GETUID) &&
-	    !strcmp(conf->default_getuid, DEFAULT_GETUID))
+	if (strlen(conf->getuid) == strlen(DEFAULT_GETUID) &&
+	    !strcmp(conf->getuid, DEFAULT_GETUID))
 		return 0;
 
-	return snprintf(buff, len, "%s", conf->default_getuid);
+	return snprintf(buff, len, "%s", conf->getuid);
 }
 
 static int

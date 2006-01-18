@@ -59,7 +59,7 @@ struct config {
 	char * dev;
 	char * udev_dir;
 	char * selector;
-	char * default_getuid;
+	char * getuid;
 	char * default_getprio;
 	char * features;
 	char * default_hwhandler;

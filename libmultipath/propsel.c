@@ -222,8 +222,8 @@ select_getuid (struct path * pp)
 		condlog(3, "getuid = %s (controler setting)", pp->getuid);
 		return 0;
 	}
-	if (conf->default_getuid) {
-		pp->getuid = conf->default_getuid;
+	if (conf->getuid) {
+		pp->getuid = conf->getuid;
 		condlog(3, "getuid = %s (config file default)", pp->getuid);
 		return 0;
 	}
