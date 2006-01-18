@@ -11,6 +11,7 @@
 #include <time.h>
 #endif
 
+#include "vector.h"
 #include "config.h"
 
 void dlog (int sink, int prio, char * fmt, ...)

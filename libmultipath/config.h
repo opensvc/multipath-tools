@@ -1,10 +1,6 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
-#ifndef _VECTOR_H
-#include "vector.h"
-#endif
-
 enum devtypes {
 	DEV_NONE,
 	DEV_DEVT,

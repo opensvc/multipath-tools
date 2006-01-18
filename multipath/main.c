@@ -32,13 +32,13 @@
 #include <libdevmapper.h>
 #include <devmapper.h>
 #include <path_state.h>
-#include <blacklist.h>
 #include <util.h>
 #include <defaults.h>
 #include <structs.h>
 #include <structs_vec.h>
 #include <dmparser.h>
 #include <config.h>
+#include <blacklist.h>
 #include <discovery.h>
 #include <debug.h>
 #include <switchgroup.h>
