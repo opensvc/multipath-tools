@@ -1254,6 +1254,8 @@ snprint_def_user_friendly_names (char * buff, int len, void * data)
 	return snprintf(buff, len, "yes");
 }
 
+#define __deprecated
+
 void
 init_keywords(void)
 {
@@ -1271,18 +1273,14 @@ init_keywords(void)
 	install_keyword("rr_weight", &def_weight_handler, &snprint_def_rr_weight);
 	install_keyword("no_path_retry", &def_no_path_retry_handler, &snprint_def_no_path_retry);
 	install_keyword("user_friendly_names", &names_handler, &snprint_def_user_friendly_names);
+	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
+	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
+	__deprecated install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
+	__deprecated install_keyword("default_prio_callout", &def_prio_callout_handler, NULL);
+	__deprecated install_keyword("default_features", &def_features_handler, NULL);
+	__deprecated install_keyword("default_path_checker", &def_path_checker_handler, NULL);
 
-	/*
-	 * deprecated synonyms
-	 */
-	install_keyword("default_selector", &def_selector_handler, NULL);
-	install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
-	install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
-	install_keyword("default_prio_callout", &def_prio_callout_handler, NULL);
-	install_keyword("default_features", &def_features_handler, NULL);
-	install_keyword("default_path_checker", &def_path_checker_handler, NULL);
-
-	install_keyword_root("devnode_blacklist", &blacklist_handler);
+	install_keyword_root("devnode", &blacklist_handler);
 	install_keyword("devnode", &ble_devnode_handler, NULL);
 	install_keyword("wwid", &ble_wwid_handler, NULL);
 	install_keyword("device", &ble_device_handler, NULL);
@@ -1290,6 +1288,15 @@ init_keywords(void)
 	install_keyword("vendor", &ble_vendor_handler, NULL);
 	install_keyword("product", &ble_product_handler, NULL);
 	install_sublevel_end();
+
+	__deprecated install_keyword_root("devnode_blacklist", &blacklist_handler);
+	__deprecated install_keyword("devnode", &ble_devnode_handler, NULL);
+	__deprecated install_keyword("wwid", &ble_wwid_handler, NULL);
+	__deprecated install_keyword("device", &ble_device_handler, NULL);
+	__deprecated install_sublevel();
+	__deprecated install_keyword("vendor", &ble_vendor_handler, NULL);
+	__deprecated install_keyword("product", &ble_product_handler, NULL);
+	__deprecated install_sublevel_end();
 
 	install_keyword_root("devices", &devices_handler);
 	install_keyword("device", &device_handler, NULL);
