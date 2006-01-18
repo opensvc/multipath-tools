@@ -60,7 +60,7 @@ struct config {
 	char * udev_dir;
 	char * selector;
 	char * getuid;
-	char * default_getprio;
+	char * getprio;
 	char * features;
 	char * default_hwhandler;
 	char * bindings_file;

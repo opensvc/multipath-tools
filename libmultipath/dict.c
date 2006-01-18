@@ -84,15 +84,15 @@ def_getuid_callout_handler(vector strvec)
 static int
 def_prio_callout_handler(vector strvec)
 {
-	conf->default_getprio = set_value(strvec);
+	conf->getprio = set_value(strvec);
 
-	if (!conf->default_getprio)
+	if (!conf->getprio)
 		return 1;
 	
-	if (strlen(conf->default_getprio) == 4 &&
-	    !strcmp(conf->default_getprio, "none")) {
-		FREE(conf->default_getprio);
-		conf->default_getprio = NULL;
+	if (strlen(conf->getprio) == 4 &&
+	    !strcmp(conf->getprio, "none")) {
+		FREE(conf->getprio);
+		conf->getprio = NULL;
 	}
 		
 	return 0;
@@ -923,8 +923,8 @@ snprint_hw_prio_callout (char * buff, int len, void * data)
 
 	if (!hwe->getprio)
 		return 0;
-	if (strlen(hwe->getprio) == strlen(conf->default_getprio) &&
-	    !strcmp(hwe->getprio, conf->default_getprio))
+	if (strlen(hwe->getprio) == strlen(conf->getprio) &&
+	    !strcmp(hwe->getprio, conf->getprio))
 		return 0;
 
 	return snprintf(buff, len, "%s", hwe->getprio);
@@ -1141,15 +1141,15 @@ snprint_def_getuid_callout (char * buff, int len, void * data)
 static int
 snprint_def_getprio_callout (char * buff, int len, void * data)
 {
-	if (!conf->default_getprio)
+	if (!conf->getprio)
 		return 0;
 #if 0 /* default is NULL */
-	if (strlen(conf->default_getprio) == strlen(DEFAULT_GETPRIO) &&
-	    !strcmp(conf->default_getprio, DEFAULT_GETPRIO))
+	if (strlen(conf->getprio) == strlen(DEFAULT_GETPRIO) &&
+	    !strcmp(conf->getprio, DEFAULT_GETPRIO))
 		return 0;
 #endif
 
-	return snprintf(buff, len, "%s", conf->default_getprio);
+	return snprintf(buff, len, "%s", conf->getprio);
 }
 
 static int

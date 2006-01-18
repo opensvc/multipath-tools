@@ -240,8 +240,8 @@ select_getprio (struct path * pp)
 		condlog(3, "getprio = %s (controler setting)", pp->getprio);
 		return 0;
 	}
-	if (conf->default_getprio) {
-		pp->getprio = conf->default_getprio;
+	if (conf->getprio) {
+		pp->getprio = conf->getprio;
 		condlog(3, "getprio = %s (config file default)", pp->getprio);
 		return 0;
 	}

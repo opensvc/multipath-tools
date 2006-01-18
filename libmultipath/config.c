@@ -287,8 +287,8 @@ free_config (struct config * conf)
 	if (conf->getuid)
 		FREE(conf->getuid);
 
-	if (conf->default_getprio)
-		FREE(conf->default_getprio);
+	if (conf->getprio)
+		FREE(conf->getprio);
 
 	if (conf->features)
 		FREE(conf->features);
