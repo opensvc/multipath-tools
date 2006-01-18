@@ -111,8 +111,8 @@ select_pgpolicy (struct multipath * mp)
 		condlog(3, "pgpolicy = %s (controler setting)", pgpolicy_name);
 		return 0;
 	}
-	if (conf->default_pgpolicy > 0) {
-		mp->pgpolicy = conf->default_pgpolicy;
+	if (conf->pgpolicy > 0) {
+		mp->pgpolicy = conf->pgpolicy;
 		mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
 		get_pgpolicy_name(pgpolicy_name, POLICY_NAME_SIZE,
 				  mp->pgpolicy);

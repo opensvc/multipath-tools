@@ -44,7 +44,7 @@ struct config {
 	int list;
 	int pgpolicy_flag;
 	int with_sysfs;
-	int default_pgpolicy;
+	int pgpolicy;
 	int default_checker_index;
 	int dev_type;
 	int minio;

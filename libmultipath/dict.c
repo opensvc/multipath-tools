@@ -64,7 +64,7 @@ def_pgpolicy_handler(vector strvec)
 	if (!buff)
 		return 1;
 
-	conf->default_pgpolicy = get_pgpolicy_id(buff);
+	conf->pgpolicy = get_pgpolicy_id(buff);
 	FREE(buff);
 
 	return 0;
@@ -981,7 +981,7 @@ snprint_hw_path_grouping_policy (char * buff, int len, void * data)
 
 	if (!hwe->pgpolicy)
 		return 0;
-	if (hwe->pgpolicy == conf->default_pgpolicy)
+	if (hwe->pgpolicy == conf->pgpolicy)
 		return 0;
 
 	get_pgpolicy_name(str, POLICY_NAME_SIZE, hwe->pgpolicy);
@@ -1116,12 +1116,12 @@ snprint_def_path_grouping_policy (char * buff, int len, void * data)
 {
 	char str[POLICY_NAME_SIZE];
 
-	if (!conf->default_pgpolicy)
+	if (!conf->pgpolicy)
 		return 0;
-	if (conf->default_pgpolicy == DEFAULT_PGPOLICY)
+	if (conf->pgpolicy == DEFAULT_PGPOLICY)
 		return 0;
 
-	get_pgpolicy_name(str, POLICY_NAME_SIZE, conf->default_pgpolicy);
+	get_pgpolicy_name(str, POLICY_NAME_SIZE, conf->pgpolicy);
 	
 	return snprintf(buff, len, "%s", str);
 }
