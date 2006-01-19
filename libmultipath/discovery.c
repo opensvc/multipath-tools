@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005 Christophe Varoqui
+ * Copyright (c) 2004, 2005, 2006 Christophe Varoqui
  * Copyright (c) 2005 Stefan Bader, IBM
  * Copyright (c) 2005 Mike Anderson
  */
@@ -27,9 +27,6 @@
 
 #include "../libcheckers/path_state.h"
 
-#define readattr(a,b) \
-	sysfs_read_attribute_value(a, b, sizeof(b))
-
 struct path *
 store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag)
 {
@@ -56,67 +53,58 @@ out:
 	return NULL;
 }
 
-int
-path_discovery (vector pathvec, struct config * conf, int flag)
+static int
+path_discover (vector pathvec, struct config * conf, char * devname, int flag)
 {
-	struct sysfs_directory * sdir;
-	struct sysfs_directory * devp;
 	char path[FILE_NAME_SIZE];
 	struct path * pp;
-	int r = 0;
 
-	if(safe_sprintf(path, "%s/block", sysfs_path)) {
+	if (!devname)
+		return 0;
+
+	if (blacklist(conf->blist_devnode, devname))
+		return 0;
+
+	if(safe_sprintf(path, "%s/block/%s/device", sysfs_path,
+			devname)) {
 		condlog(0, "path too small");
 		return 1;
 	}
-	sdir = sysfs_open_directory(path);
+			
+	if (!filepresent(path))
+		return 0;
 
-	if (!sdir)
+	pp = find_path_by_dev(pathvec, devname);
+
+	if (!pp) {
+		pp = store_pathinfo(pathvec, conf->hwtable,
+				    devname, flag);
+		return (pp ? 0 : 1);
+	}
+	return pathinfo(pp, conf->hwtable, flag);
+}
+
+int
+path_discovery (vector pathvec, struct config * conf, int flag)
+{
+	struct dlist * ls;
+	struct sysfs_class * class;
+	struct sysfs_class_device * dev;
+	int r = 1;
+
+	if (!(class = sysfs_open_class("block")))
 		return 1;
 
-	sysfs_read_directory(sdir);
+	if (!(ls = sysfs_get_class_devices(class)))
+		goto out;
 
-	dlist_for_each_data(sdir->subdirs, devp, struct sysfs_directory) {
-		if (!devp)
-			continue;
+	r = 0;
 
-		if (blacklist(conf->blist_devnode, devp->name))
-			continue;
+	dlist_for_each_data(ls, dev, struct sysfs_class_device)
+		r += path_discover(pathvec, conf, dev->name, flag);
 
-		if(safe_sprintf(path, "%s/block/%s/device", sysfs_path,
-				devp->name)) {
-			condlog(0, "path too small");
-			sysfs_close_directory(sdir);
-			return 1;
-		}
-				
-		if (!filepresent(path))
-			continue;
-
-		pp = find_path_by_dev(pathvec, devp->name);
-
-		if (!pp) {
-			/*
-			 * new path : alloc, store and fetch info
-			 * the caller wants
-			 */
-			if (!store_pathinfo(pathvec, conf->hwtable,
-					   devp->name, flag)) {
-				r++;
-				continue;
-			}
-		} else {
-			/*
-			 * path already known :
-			 * refresh only what the caller wants
-			 */
-			if (pathinfo(pp, conf->hwtable, flag)) {
-				r++;
-				continue;
-			}
-		}
-	}
-	sysfs_close_directory(sdir);
+out:
+	sysfs_close_class(class);
 	return r;
 }
 
@@ -159,9 +147,8 @@ wait_for_file (char * filename)
 extern int \
 sysfs_get_##fname (char * sysfs_path, char * dev, char * buff, int len) \
 { \
+	struct sysfs_attribute * attr; \
 	char attr_path[SYSFS_PATH_SIZE]; \
-	char attr_buff[SYSFS_PATH_SIZE]; \
-	int attr_len; \
 \
 	if (safe_sprintf(attr_path, fmt, sysfs_path, dev)) \
 		return 1; \
@@ -169,16 +156,21 @@ sysfs_get_##fname (char * sysfs_path, char * dev, char * buff, int len) \
 	if (wait_for_file(attr_path)) \
 		return 1; \
 \
-	if (0 > sysfs_read_attribute_value(attr_path, attr_buff, sizeof(attr_buff))) \
+	if (!(attr = sysfs_open_attribute(attr_path))) \
 		return 1; \
 \
-	attr_len = strlen(attr_buff); \
-	if (attr_len < 2 || attr_len - 1 > len) \
-		return 1; \
+	if (0 > sysfs_read_attribute(attr)) \
+		goto out; \
 \
-	strncpy(buff, attr_buff, attr_len - 1); \
-	buff[attr_len - 1] = '\0'; \
+	if (attr->len < 2 || attr->len - 1 > len) \
+		goto out; \
+\
+	strncpy(buff, attr->value, attr->len - 1); \
+	buff[attr->len - 1] = '\0'; \
 	return 0; \
+out: \
+	sysfs_close_attribute(attr); \
+	return 1; \
 }
 
 declare_sysfs_get_str(devtype, "%s/block/%s/device/devtype");
@@ -191,22 +183,31 @@ declare_sysfs_get_str(dev, "%s/block/%s/dev");
 int
 sysfs_get_size (char * sysfs_path, char * dev, unsigned long long * size)
 {
+	struct sysfs_attribute * attr;
 	char attr_path[SYSFS_PATH_SIZE];
-	char attr_buff[SYSFS_PATH_SIZE];
 	int r;
 
 	if (safe_sprintf(attr_path, "%s/block/%s/size", sysfs_path, dev))
 		return 1;
 
-	if (0 > sysfs_read_attribute_value(attr_path, attr_buff, sizeof(attr_buff)))
+	attr = sysfs_open_attribute(attr_path);
+
+	if (!attr)
 		return 1;
 
-	r = sscanf(attr_buff, "%llu\n", size);
+	if (0 > sysfs_read_attribute(attr))
+		goto out;
+
+	r = sscanf(attr->value, "%llu\n", size);
+	sysfs_close_attribute(attr);
 
 	if (r != 1)
 		return 1;
 
 	return 0;
+out:
+	sysfs_close_attribute(attr);
+	return 1;
 }
 	
 /*
@@ -233,49 +234,56 @@ opennode (char * dev, int mode)
 extern int
 devt2devname (char *devname, char *devt)
 {
-	struct sysfs_directory * sdir;
-	struct sysfs_directory * devp;
-	char block_path[FILE_NAME_SIZE];
+	struct dlist * ls;
 	char attr_path[FILE_NAME_SIZE];
-	char attr_value[16];
-	int len;
+	char block_path[FILE_NAME_SIZE];
+	struct sysfs_attribute * attr;
+	struct sysfs_class * class;
+	struct sysfs_class_device * dev;
 
 	if(safe_sprintf(block_path, "%s/block", sysfs_path)) {
 		condlog(0, "block_path too small");
 		return 1;
 	}
-	sdir = sysfs_open_directory(block_path);
-	sysfs_read_directory(sdir);
+	if (!(class = sysfs_open_class("block")))
+		return 1;
 
-	dlist_for_each_data (sdir->subdirs, devp, struct sysfs_directory) {
+	if (!(ls = sysfs_get_class_devices(class)))
+		goto err;
+
+	dlist_for_each_data(ls, dev, struct sysfs_class_device) {
 		if(safe_sprintf(attr_path, "%s/%s/dev",
-				block_path, devp->name)) {
+				block_path, dev->name)) {
 			condlog(0, "attr_path too small");
 			goto err;
 		}
-		sysfs_read_attribute_value(attr_path, attr_value,
-					   sizeof(attr_value));
+		if (!(attr = sysfs_open_attribute(attr_path)))
+			goto err;
 
-		len = strlen(attr_value);
+		if (sysfs_read_attribute(attr))
+			goto err1;
 
 		/* discard newline */
-		if (len > 1) len--;
+		if (attr->len > 1) attr->len--;
 
-		if (strlen(devt) == len &&
-		    strncmp(attr_value, devt, len) == 0) {
+		if (strlen(devt) == attr->len &&
+		    strncmp(attr->value, devt, attr->len) == 0) {
 			if(safe_sprintf(attr_path, "%s/%s",
-					block_path, devp->name)) {
+					block_path, dev->name)) {
 				condlog(0, "attr_path too small");
-				goto err;
+				goto err1;
 			}
 			sysfs_get_name_from_path(attr_path, devname,
 						 FILE_NAME_SIZE);
-			sysfs_close_directory(sdir);
+			sysfs_close_attribute(attr);
+			sysfs_close_class(class);
 			return 0;
 		}
 	}
+err1:
+	sysfs_close_attribute(attr);
 err:
-	sysfs_close_directory(sdir);
+	sysfs_close_class(class);
 	return 1;
 }
 
@@ -409,6 +417,7 @@ scsi_sysfs_pathinfo (struct path * curpath)
 {
 	char attr_path[FILE_NAME_SIZE];
 	char attr_buff[FILE_NAME_SIZE];
+	struct sysfs_attribute * attr;
 
 	if (sysfs_get_vendor(sysfs_path, curpath->dev,
 			     curpath->vendor_id, SCSI_VENDOR_SIZE))
@@ -464,12 +473,21 @@ scsi_sysfs_pathinfo (struct path * curpath)
 		condlog(0, "attr_path too small");
 		return 1;
 	}
-	if (0 <= readattr(attr_path, attr_buff) && strlen(attr_buff) > 0)
-		strncpy(curpath->tgt_node_name, attr_buff,
-			strlen(attr_buff) - 1);
+	if (!(attr = sysfs_open_attribute(attr_path)))
+		return 0;
+
+	if (sysfs_read_attribute(attr))
+		goto err;
+
+	if (attr->len > 0)
+		strncpy(curpath->tgt_node_name, attr->value, attr->len - 1);
+
 	condlog(3, "tgt_node_name = %s", curpath->tgt_node_name);
 
 	return 0;
+err:
+	sysfs_close_attribute(attr);
+	return 1;
 }
 
 static int
