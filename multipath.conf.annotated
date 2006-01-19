@@ -137,6 +137,10 @@
 #	devnode "^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"
 #	devnode "^hd[a-z][[0-9]*]"
 #	devnode "^cciss!c[0-9]d[0-9]*[p[0-9]*]"
+#       device {
+#               vendor DEC.*
+#               product MSA[15]00
+#       }
 #}
 #
 ##
