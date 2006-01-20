@@ -360,13 +360,13 @@ get_serial (char * str, int fd)
 }
 
 static int
-sysfs_get_bus (char * sysfs_path, struct path * curpath)
+sysfs_get_bus (char * sysfs_path, struct path * pp)
 {
 	struct sysfs_device *sdev;
 	char attr_path[FILE_NAME_SIZE];
 	char attr_buff[FILE_NAME_SIZE];
 
-	curpath->bus = SYSFS_BUS_UNDEF;
+	pp->bus = SYSFS_BUS_UNDEF;
 
 	/*
 	 * This is ugly : we should be able to do a simple
@@ -374,7 +374,7 @@ sysfs_get_bus (char * sysfs_path, struct path * curpath)
 	 * won't work
 	 */
 	if(safe_sprintf(attr_path, "%s/block/%s/device",
-			sysfs_path, curpath->dev)) {
+			sysfs_path, pp->dev)) {
 		condlog(0, "attr_path too small");
 		return 1;
 	}
@@ -399,11 +399,11 @@ sysfs_get_bus (char * sysfs_path, struct path * curpath)
 #endif
 
 	if (!strncmp(sdev->bus, "scsi", 4))
-		curpath->bus = SYSFS_BUS_SCSI;
+		pp->bus = SYSFS_BUS_SCSI;
 	else if (!strncmp(sdev->bus, "ide", 3))
-		curpath->bus = SYSFS_BUS_IDE;
+		pp->bus = SYSFS_BUS_IDE;
 	else if (!strncmp(sdev->bus, "ccw", 3))
-		curpath->bus = SYSFS_BUS_CCW;
+		pp->bus = SYSFS_BUS_CCW;
 	else
 		return 1;
 
@@ -413,35 +413,35 @@ sysfs_get_bus (char * sysfs_path, struct path * curpath)
 }
 
 static int
-scsi_sysfs_pathinfo (struct path * curpath)
+scsi_sysfs_pathinfo (struct path * pp)
 {
 	char attr_path[FILE_NAME_SIZE];
 	char attr_buff[FILE_NAME_SIZE];
 	struct sysfs_attribute * attr;
 
-	if (sysfs_get_vendor(sysfs_path, curpath->dev,
-			     curpath->vendor_id, SCSI_VENDOR_SIZE))
+	if (sysfs_get_vendor(sysfs_path, pp->dev,
+			     pp->vendor_id, SCSI_VENDOR_SIZE))
 		return 1;
 
-	condlog(3, "vendor = %s", curpath->vendor_id);
+	condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
 
-	if (sysfs_get_model(sysfs_path, curpath->dev,
-			    curpath->product_id, SCSI_PRODUCT_SIZE))
+	if (sysfs_get_model(sysfs_path, pp->dev,
+			    pp->product_id, SCSI_PRODUCT_SIZE))
 		return 1;
 
-	condlog(3, "product = %s", curpath->product_id);
+	condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 
-	if (sysfs_get_rev(sysfs_path, curpath->dev,
-			  curpath->rev, SCSI_REV_SIZE))
+	if (sysfs_get_rev(sysfs_path, pp->dev,
+			  pp->rev, SCSI_REV_SIZE))
 		return 1;
 
-	condlog(3, "rev = %s", curpath->rev);
+	condlog(3, "%s: rev = %s", pp->dev, pp->rev);
 
 	/*
 	 * host / bus / target / lun
 	 */
 	if(safe_sprintf(attr_path, "%s/block/%s/device",
-			sysfs_path, curpath->dev)) {
+			sysfs_path, pp->dev)) {
 		condlog(0, "attr_path too small");
 		return 1;
 	}
@@ -451,15 +451,16 @@ scsi_sysfs_pathinfo (struct path * curpath)
 	basename(attr_buff, attr_path);
 
 	sscanf(attr_path, "%i:%i:%i:%i",
-			&curpath->sg_id.host_no,
-			&curpath->sg_id.channel,
-			&curpath->sg_id.scsi_id,
-			&curpath->sg_id.lun);
-	condlog(3, "h:b:t:l = %i:%i:%i:%i",
-			curpath->sg_id.host_no,
-			curpath->sg_id.channel,
-			curpath->sg_id.scsi_id,
-			curpath->sg_id.lun);
+			&pp->sg_id.host_no,
+			&pp->sg_id.channel,
+			&pp->sg_id.scsi_id,
+			&pp->sg_id.lun);
+	condlog(3, "%s: h:b:t:l = %i:%i:%i:%i",
+			pp->dev,
+			pp->sg_id.host_no,
+			pp->sg_id.channel,
+			pp->sg_id.scsi_id,
+			pp->sg_id.lun);
 
 	/*
 	 * target node name
@@ -467,9 +468,9 @@ scsi_sysfs_pathinfo (struct path * curpath)
 	if(safe_sprintf(attr_path,
 			"%s/class/fc_transport/target%i:%i:%i/node_name",
 			sysfs_path,
-			curpath->sg_id.host_no,
-			curpath->sg_id.channel,
-			curpath->sg_id.scsi_id)) {
+			pp->sg_id.host_no,
+			pp->sg_id.channel,
+			pp->sg_id.scsi_id)) {
 		condlog(0, "attr_path too small");
 		return 1;
 	}
@@ -480,9 +481,10 @@ scsi_sysfs_pathinfo (struct path * curpath)
 		goto err;
 
 	if (attr->len > 0)
-		strncpy(curpath->tgt_node_name, attr->value, attr->len - 1);
+		strncpy(pp->tgt_node_name, attr->value, attr->len - 1);
 
-	condlog(3, "tgt_node_name = %s", curpath->tgt_node_name);
+	condlog(3, "%s: tgt_node_name = %s",
+		pp->dev, pp->tgt_node_name);
 
 	return 0;
 err:
@@ -491,34 +493,34 @@ err:
 }
 
 static int
-ccw_sysfs_pathinfo (struct path * curpath)
+ccw_sysfs_pathinfo (struct path * pp)
 {
 	char attr_path[FILE_NAME_SIZE];
 	char attr_buff[FILE_NAME_SIZE];
 
-	sprintf(curpath->vendor_id, "IBM");
+	sprintf(pp->vendor_id, "IBM");
 
-	condlog(3, "vendor = %s", curpath->vendor_id);
+	condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
 
-	if (sysfs_get_devtype(sysfs_path, curpath->dev,
+	if (sysfs_get_devtype(sysfs_path, pp->dev,
 			      attr_buff, FILE_NAME_SIZE))
 		return 1;
 
 	if (!strncmp(attr_buff, "3370", 4)) {
-		sprintf(curpath->product_id,"S/390 DASD FBA");
+		sprintf(pp->product_id,"S/390 DASD FBA");
 	} else if (!strncmp(attr_buff, "9336", 4)) {
-		sprintf(curpath->product_id,"S/390 DASD FBA");
+		sprintf(pp->product_id,"S/390 DASD FBA");
 	} else {
-		sprintf(curpath->product_id,"S/390 DASD ECKD");
+		sprintf(pp->product_id,"S/390 DASD ECKD");
 	}
 
-	condlog(3, "product = %s", curpath->product_id);
+	condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 
 	/*
 	 * host / bus / target / lun
 	 */
 	if(safe_sprintf(attr_path, "%s/block/%s/device",
-			sysfs_path, curpath->dev)) {
+			sysfs_path, pp->dev)) {
 		condlog(0, "attr_path too small");
 		return 1;
 	}
@@ -526,58 +528,56 @@ ccw_sysfs_pathinfo (struct path * curpath)
 		return 1;
 	
 	basename(attr_buff, attr_path);
-
-	condlog(3, "device path %s", attr_path);
-
-	curpath->sg_id.lun = 0;
+	pp->sg_id.lun = 0;
 	sscanf(attr_path, "%i.%i.%x",
-			&curpath->sg_id.host_no,
-			&curpath->sg_id.channel,
-			&curpath->sg_id.scsi_id);
-	condlog(3, "h:b:t:l = %i:%i:%i:%i",
-			curpath->sg_id.host_no,
-			curpath->sg_id.channel,
-			curpath->sg_id.scsi_id,
-			curpath->sg_id.lun);
+			&pp->sg_id.host_no,
+			&pp->sg_id.channel,
+			&pp->sg_id.scsi_id);
+	condlog(3, "%s: h:b:t:l = %i:%i:%i:%i",
+			pp->dev,
+			pp->sg_id.host_no,
+			pp->sg_id.channel,
+			pp->sg_id.scsi_id,
+			pp->sg_id.lun);
 
 	return 0;
 }
 
 static int
-common_sysfs_pathinfo (struct path * curpath)
+common_sysfs_pathinfo (struct path * pp)
 {
-	if (sysfs_get_bus(sysfs_path, curpath))
+	if (sysfs_get_bus(sysfs_path, pp))
 		return 1;
 
-	condlog(3, "bus = %i", curpath->bus);
+	condlog(3, "%s: bus = %i", pp->dev, pp->bus);
 
-	if (sysfs_get_dev(sysfs_path, curpath->dev,
-			  curpath->dev_t, BLK_DEV_SIZE))
+	if (sysfs_get_dev(sysfs_path, pp->dev,
+			  pp->dev_t, BLK_DEV_SIZE))
 		return 1;
 
-	condlog(3, "dev_t = %s", curpath->dev_t);
+	condlog(3, "%s: dev_t = %s", pp->dev, pp->dev_t);
 
-	if (sysfs_get_size(sysfs_path, curpath->dev, &curpath->size))
+	if (sysfs_get_size(sysfs_path, pp->dev, &pp->size))
 		return 1;
 
-	condlog(3, "size = %llu", curpath->size);
+	condlog(3, "%s: size = %llu", pp->dev, pp->size);
 
 	return 0;
 }
 
 extern int
-sysfs_pathinfo(struct path * curpath)
+sysfs_pathinfo(struct path * pp)
 {
-	if (common_sysfs_pathinfo(curpath))
+	if (common_sysfs_pathinfo(pp))
 		return 1;
 
-	if (curpath->bus == SYSFS_BUS_UNDEF)
+	if (pp->bus == SYSFS_BUS_UNDEF)
 		return 0;
-	else if (curpath->bus == SYSFS_BUS_SCSI) {
-		if (scsi_sysfs_pathinfo(curpath))
+	else if (pp->bus == SYSFS_BUS_SCSI) {
+		if (scsi_sysfs_pathinfo(pp))
 			return 1;
-	} else if (curpath->bus == SYSFS_BUS_CCW) {
-		if (ccw_sysfs_pathinfo(curpath))
+	} else if (pp->bus == SYSFS_BUS_CCW) {
+		if (ccw_sysfs_pathinfo(pp))
 			return 1;
 	}
 	return 0;
@@ -663,19 +663,75 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 {
 	if (mask & DI_SERIAL) {
 		get_serial(pp->serial, pp->fd);
-		condlog(3, "serial = %s", pp->serial);
+		condlog(3, "%s: serial = %s", pp->dev, pp->serial);
 	}
 
+	return 0;
+}
+
+static int
+get_state (struct path * pp)
+{
+	if (!pp->checkfn)
+		select_checkfn(pp);
+	if (!pp->checkfn)
+		return 1;
+	pp->state = pp->checkfn(pp->fd, NULL, NULL);
+	condlog(3, "%s: state = %i", pp->dev, pp->state);
+	return 0;
+}
+
+static int
+get_prio (struct path * pp)
+{
+	char buff[CALLOUT_MAX_SIZE];
+	char prio[16];
+
+	if (!pp->getprio_selected) {
+		select_getprio(pp);
+		pp->getprio_selected = 1;
+	}
+	if (!pp->getprio) {
+		pp->priority = 1;
+	} else if (apply_format(pp->getprio, &buff[0], pp)) {
+		condlog(0, "error formatting prio callout command");
+		pp->priority = -1;
+		return 1;
+	} else if (execute_program(buff, prio, 16)) {
+		condlog(0, "error calling out %s", buff);
+		pp->priority = -1;
+		return 1;
+	} else
+		pp->priority = atoi(prio);
+
+	condlog(3, "%s: prio = %u", pp->dev, pp->priority);
+	return 0;
+}
+
+static int
+get_uid (struct path * pp)
+{
+	char buff[CALLOUT_MAX_SIZE];
+
+	if (!pp->getuid)
+		select_getuid(pp);
+
+	if (apply_format(pp->getuid, &buff[0], pp)) {
+		condlog(0, "error formatting uid callout command");
+		memset(pp->wwid, 0, WWID_SIZE);
+	} else if (execute_program(buff, pp->wwid, WWID_SIZE)) {
+		condlog(0, "error calling out %s", buff);
+		memset(pp->wwid, 0, WWID_SIZE);
+		return 1;
+	}
+	condlog(3, "%s: uid = %s (callout)", pp->dev ,pp->wwid);
 	return 0;
 }
 
 extern int
 pathinfo (struct path *pp, vector hwtable, int mask)
 {
-	char buff[CALLOUT_MAX_SIZE];
-	char prio[16];
-
-	condlog(3, "===== path info %s (mask 0x%x) =====", pp->dev, mask);
+	condlog(3, "%s: mask = 0x%x", pp->dev, mask);
 
 	/*
 	 * fetch info available in sysfs
@@ -684,7 +740,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 		return 1;
 
 	/*
-	 * get and store hwe configlet pointer
+	 * set the hwe configlet pointer
 	 */
 	pp->hwe = find_hwe(hwtable, pp->vendor_id, pp->product_id);
 
@@ -695,66 +751,24 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 		pp->fd = opennode(pp->dev, O_RDONLY);
 
 	if (pp->fd < 0)
-		goto out;
+		goto blank;
 
 	if (pp->bus == SYSFS_BUS_SCSI &&
 	    scsi_ioctl_pathinfo(pp, mask))
-		goto out;
+		goto blank;
 
-	/*
-	 * get path state, no message collection, no context
-	 */
-	if (mask & DI_CHECKER) {
-		if (!pp->checkfn)
-			select_checkfn(pp);
-		if (!pp->checkfn)
-			goto out;
-
-		pp->state = pp->checkfn(pp->fd, NULL, NULL);
-		condlog(3, "state = %i", pp->state);
-	}
+	if (mask & DI_CHECKER && get_state(pp))
+		goto blank;
 	
-	/*
-	 * get path prio
-	 */
-	if (mask & DI_PRIO) {
-		if (!pp->getprio_selected) {
-			select_getprio(pp);
-			pp->getprio_selected = 1;
-		}
-		if (!pp->getprio) {
-			pp->priority = 1;
-		} else if (apply_format(pp->getprio, &buff[0], pp)) {
-			condlog(0, "error formatting prio callout command");
-			pp->priority = -1;
-		} else if (execute_program(buff, prio, 16)) {
-			condlog(0, "error calling out %s", buff);
-			pp->priority = -1;
-		} else
-			pp->priority = atoi(prio);
+	if (mask & DI_PRIO)
+		get_prio(pp);
 
-		condlog(3, "prio = %u", pp->priority);
-	}
+	if (mask & DI_WWID && !strlen(pp->wwid))
+		get_uid(pp);
 
-	/*
-	 * get path uid
-	 */
-	if (mask & DI_WWID && !strlen(pp->wwid)) {
-		if (!pp->getuid)
-			select_getuid(pp);
-
-		if (apply_format(pp->getuid, &buff[0], pp)) {
-			condlog(0, "error formatting uid callout command");
-			memset(pp->wwid, 0, WWID_SIZE);
-		} else if (execute_program(buff, pp->wwid, WWID_SIZE)) {
-			condlog(0, "error calling out %s", buff);
-			memset(pp->wwid, 0, WWID_SIZE);
-		}
-		condlog(3, "uid = %s (callout)", pp->wwid);
-	}
 	return 0;
 
-out:
+blank:
 	/*
 	 * Recoverable error, for example faulty or offline path
 	 */

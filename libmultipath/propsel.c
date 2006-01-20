@@ -195,8 +195,8 @@ select_checkfn(struct path *pp)
 	if (pp->hwe && pp->hwe->checker_index > 0) {
 		get_checker_name(checker_name, CHECKER_NAME_SIZE,
 				 pp->hwe->checker_index);
-		condlog(3, "path checker = %s (controler setting)",
-			checker_name);
+		condlog(3, "%s: path checker = %s (controler setting)",
+			pp->dev, checker_name);
 		pp->checkfn = get_checker_addr(pp->hwe->checker_index);
 		return 0;
 	}
@@ -204,13 +204,14 @@ select_checkfn(struct path *pp)
 		pp->checkfn = get_checker_addr(conf->checker_index);
 		get_checker_name(checker_name, CHECKER_NAME_SIZE,
 				 conf->checker_index);
-		condlog(3, "path checker = %s (config file default)",
-			checker_name);
+		condlog(3, "%s: path checker = %s (config file default)",
+			pp->dev, checker_name);
 		return 0;
 	}
 	pp->checkfn = get_checker_addr(DEFAULT_CHECKER_ID);
 	get_checker_name(checker_name, CHECKER_NAME_SIZE, DEFAULT_CHECKER_ID);
-	condlog(3, "path checker = %s (internal default)", checker_name);
+	condlog(3, "%s: path checker = %s (internal default)",
+		pp->dev, checker_name);
 	return 0;
 }
 
@@ -219,16 +220,19 @@ select_getuid (struct path * pp)
 {
 	if (pp->hwe && pp->hwe->getuid) {
 		pp->getuid = pp->hwe->getuid;
-		condlog(3, "getuid = %s (controler setting)", pp->getuid);
+		condlog(3, "%s: getuid = %s (controler setting)",
+			pp->dev, pp->getuid);
 		return 0;
 	}
 	if (conf->getuid) {
 		pp->getuid = conf->getuid;
-		condlog(3, "getuid = %s (config file default)", pp->getuid);
+		condlog(3, "%s: getuid = %s (config file default)",
+			pp->dev, pp->getuid);
 		return 0;
 	}
 	pp->getuid = STRDUP(DEFAULT_GETUID);
-	condlog(3, "getuid = %s (internal default)", pp->getuid);
+	condlog(3, "%s: getuid = %s (internal default)",
+		pp->dev, pp->getuid);
 	return 0;
 }
 
@@ -237,16 +241,18 @@ select_getprio (struct path * pp)
 {
 	if (pp->hwe && pp->hwe->getprio) {
 		pp->getprio = pp->hwe->getprio;
-		condlog(3, "getprio = %s (controler setting)", pp->getprio);
+		condlog(3, "%s: getprio = %s (controler setting)",
+			pp->dev, pp->getprio);
 		return 0;
 	}
 	if (conf->getprio) {
 		pp->getprio = conf->getprio;
-		condlog(3, "getprio = %s (config file default)", pp->getprio);
+		condlog(3, "%s: getprio = %s (config file default)",
+			pp->dev, pp->getprio);
 		return 0;
 	}
 	pp->getprio = DEFAULT_GETPRIO;
-	condlog(3, "getprio = NULL (internal default)");
+	condlog(3, "%s: getprio = NULL (internal default)", pp->dev);
 	return 0;
 }
 
