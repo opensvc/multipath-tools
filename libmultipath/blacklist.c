@@ -125,7 +125,7 @@ blacklist (vector blist, char * str)
 
 	vector_foreach_slot (blist, ble, i) {
 		if (!regexec(&ble->regex, str, 0, NULL, 0)) {
-			condlog(3, "%s blacklisted", str);
+			condlog(3, "%s: blacklisted", str);
 			return 1;
 		}
 	}
@@ -141,7 +141,7 @@ blacklist_device (vector blist, char * vendor, char * product)
 	vector_foreach_slot (blist, ble, i) {
 		if (!regexec(&ble->vendor_reg, vendor, 0, NULL, 0) &&
 		    !regexec(&ble->product_reg, product, 0, NULL, 0)) {
-			condlog(3, "%s:%s blacklisted", vendor, product);
+			condlog(3, "%s:%s: blacklisted", vendor, product);
 			return 1;
 		}
 	}
