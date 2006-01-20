@@ -1280,7 +1280,7 @@ init_keywords(void)
 	__deprecated install_keyword("default_features", &def_features_handler, NULL);
 	__deprecated install_keyword("default_path_checker", &def_path_checker_handler, NULL);
 
-	install_keyword_root("devnode", &blacklist_handler);
+	install_keyword_root("blacklist", &blacklist_handler);
 	install_keyword("devnode", &ble_devnode_handler, NULL);
 	install_keyword("wwid", &ble_wwid_handler, NULL);
 	install_keyword("device", &ble_device_handler, NULL);
