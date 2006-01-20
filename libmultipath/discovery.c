@@ -438,6 +438,11 @@ scsi_sysfs_pathinfo (struct path * pp)
 	condlog(3, "%s: rev = %s", pp->dev, pp->rev);
 
 	/*
+	 * set the hwe configlet pointer
+	 */
+	pp->hwe = find_hwe(conf->hwtable, pp->vendor_id, pp->product_id);
+
+	/*
 	 * host / bus / target / lun
 	 */
 	if(safe_sprintf(attr_path, "%s/block/%s/device",
@@ -738,11 +743,6 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	 */
 	if (mask & DI_SYSFS && sysfs_pathinfo(pp))
 		return 1;
-
-	/*
-	 * set the hwe configlet pointer
-	 */
-	pp->hwe = find_hwe(hwtable, pp->vendor_id, pp->product_id);
 
 	/*
 	 * fetch info not available through sysfs
