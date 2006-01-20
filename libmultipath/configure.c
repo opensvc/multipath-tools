@@ -138,82 +138,94 @@ select_action (struct multipath * mpp, vector curmp)
 		cmpp = find_mp_by_wwid(curmp, mpp->wwid);
 
 		if (cmpp && !conf->dry_run) {
-			condlog(2, "%s: rename: %s to %s", mpp->wwid,
+			condlog(2, "%s: rename %s to %s", mpp->wwid,
 				cmpp->alias, mpp->alias);
 			strncpy(mpp->alias_old, cmpp->alias, WWID_SIZE);
 			mpp->action = ACT_RENAME;
 			return;
 		}
 		else {
-			condlog(3, "set ACT_CREATE: map does not exist");
+			condlog(3, "%s: set ACT_CREATE (map does not exist)",
+				mpp->alias);
 			mpp->action = ACT_CREATE;
 		}
 		mpp->action = ACT_CREATE;
-		condlog(3, "set ACT_CREATE: map does not exist");
+		condlog(3, "%s: set ACT_CREATE (map does not exist)",
+			mpp->alias);
 		return;
 	}
 
 	if (!find_mp_by_wwid(curmp, mpp->wwid)) {
-		condlog(2, "remove: %s (wwid changed)", cmpp->alias);
+		condlog(2, "%s: remove (wwid changed)", cmpp->alias);
 		dm_flush_map(mpp->alias, DEFAULT_TARGET);
 		strncat(cmpp->wwid, mpp->wwid, WWID_SIZE);
 		drop_multipath(curmp, cmpp->wwid, KEEP_PATHS);
 		mpp->action = ACT_CREATE;
-		condlog(3, "set ACT_CREATE: map wwid change");
+		condlog(3, "%s: set ACT_CREATE (map wwid change)",
+			mpp->alias);
 		return;
 	}
 		
 	if (pathcount(mpp, PATH_UP) == 0) {
 		mpp->action = ACT_NOTHING;
-		condlog(3, "set ACT_NOTHING: no usable path");
+		condlog(3, "%s: set ACT_NOTHING (no usable path)",
+			mpp->alias);
 		return;
 	}
 	if (cmpp->size != mpp->size) {
 		mpp->action = ACT_RELOAD;
-		condlog(3, "set ACT_RELOAD: size change");
+		condlog(3, "%s: set ACT_RELOAD (size change)",
+			mpp->alias);
 		return;
 	}
 	if (!mpp->no_path_retry && /* let features be handled by the daemon */
 	    strncmp(cmpp->features, mpp->features, strlen(mpp->features))) {
 		mpp->action =  ACT_RELOAD;
-		condlog(3, "set ACT_RELOAD: features change");
+		condlog(3, "%s: set ACT_RELOAD (features change)",
+			mpp->alias);
 		return;
 	}
 	if (strncmp(cmpp->hwhandler, mpp->hwhandler,
 		    strlen(mpp->hwhandler))) {
 		mpp->action = ACT_RELOAD;
-		condlog(3, "set ACT_RELOAD: hwhandler change");
+		condlog(3, "%s: set ACT_RELOAD (hwhandler change)",
+			mpp->alias);
 		return;
 	}
 	if (strncmp(cmpp->selector, mpp->selector,
 		    strlen(mpp->selector))) {
 		mpp->action = ACT_RELOAD;
-		condlog(3, "set ACT_RELOAD: selector change");
+		condlog(3, "%s: set ACT_RELOAD (selector change)",
+			mpp->alias);
 		return;
 	}
 	if (cmpp->minio != mpp->minio) {
 		mpp->action = ACT_RELOAD;
-		condlog(3, "set ACT_RELOAD: minio change (%u->%u)",
-			cmpp->minio, mpp->minio);
+		condlog(3, "%s: set ACT_RELOAD (minio change, %u->%u)",
+			mpp->alias, cmpp->minio, mpp->minio);
 		return;
 	}
 	if (VECTOR_SIZE(cmpp->pg) != VECTOR_SIZE(mpp->pg)) {
 		mpp->action = ACT_RELOAD;
-		condlog(3, "set ACT_RELOAD: number of path group change");
+		condlog(3, "%s: set ACT_RELOAD (path group number change)",
+			mpp->alias);
 		return;
 	}
 	if (pgcmp(mpp, cmpp)) {
 		mpp->action = ACT_RELOAD;
-		condlog(3, "set ACT_RELOAD: path group topology change");
+		condlog(3, "%s: set ACT_RELOAD (path group topology change)",
+			mpp->alias);
 		return;
 	}
 	if (cmpp->nextpg != mpp->bestpg) {
 		mpp->action = ACT_SWITCHPG;
-		condlog(3, "set ACT_SWITCHPG: next path group change");
+		condlog(3, "%s: set ACT_SWITCHPG (next path group change)",
+			mpp->alias);
 		return;
 	}
 	mpp->action = ACT_NOTHING;
-	condlog(3, "set ACT_NOTHING: map unchanged");
+	condlog(3, "%s: set ACT_NOTHING (map unchanged)",
+		mpp->alias);
 	return;
 }
 
@@ -239,7 +251,7 @@ reinstate_paths (struct multipath * mpp)
 
 			if (pp->dmstate == PSTATE_FAILED) {
 				if (dm_reinstate_path(mpp->alias, pp->dev_t))
-					condlog(0, "error reinstating %s",
+					condlog(0, "%s: error reinstating",
 						pp->dev);
 			}
 		}
@@ -308,7 +320,8 @@ domap (struct multipath * mpp)
 
 	case ACT_CREATE:
 		if (lock_multipath(mpp, 1)) {
-			condlog(3, "%s: in use", mpp->alias);
+			condlog(3, "%s: failed to create map (in use)",
+				mpp->alias);
 			return -1;
 		}
 		dm_shut_log();
@@ -434,7 +447,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 			mpp->action = ACT_REJECT;
 
 		if (!mpp->paths) {
-			condlog(0, "%s coalesce_paths: no paths", mpp->alias);
+			condlog(0, "%s: skip coalesce (no paths)", mpp->alias);
 			remove_map(mpp, vecs, NULL, 0);
 			continue;
 		}
@@ -523,10 +536,10 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 			remove_map(mpp, vecs, NULL, 0);
 
 			if (dm_flush_map(mpp->alias, DEFAULT_TARGET))
-				condlog(2, "remove: %s (dead) failed!",
+				condlog(2, "%s: remove failed (dead)",
 					mpp->alias);
 			else
-				condlog(2, "remove: %s (dead)", mpp->alias);
+				condlog(2, "%s: remove (dead)", mpp->alias);
 		}
 	}
 	return 0;

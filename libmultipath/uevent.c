@@ -138,7 +138,7 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 
 	sock = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_KOBJECT_UEVENT);
 	if (sock == -1) {
-		condlog(0, "error getting socket, exit\n");
+		condlog(0, "error getting socket, exit");
 		return 1;
 	}
 
@@ -152,21 +152,21 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 			    sizeof(rcvbufsz));
 
 	if (retval < 0) {
-		condlog(0, "error setting receive buffer size for socket, exit\n");
+		condlog(0, "error setting receive buffer size for socket, exit");
 		exit(1);
 	}
 	retval = getsockopt(sock, SOL_SOCKET, SO_RCVBUF, &rcvsz, prcvszsz);
 
 	if (retval < 0) {
-		condlog(0, "error setting receive buffer size for socket, exit\n");
+		condlog(0, "error setting receive buffer size for socket, exit");
 		exit(1);
 	}
-	condlog(3, "receive buffer size for socket is %u.\n", rcvsz);
+	condlog(3, "receive buffer size for socket is %u.", rcvsz);
 
 	retval = bind(sock, (struct sockaddr *) &snl,
 		      sizeof(struct sockaddr_nl));
 	if (retval < 0) {
-		condlog(0, "bind failed, exit\n");
+		condlog(0, "bind failed, exit");
 		goto exit;
 	}
 
@@ -181,7 +181,7 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 
 		buflen = recv(sock, &buff, sizeof(buff), 0);
 		if (buflen <  0) {
-			condlog(0, "error receiving message\n");
+			condlog(0, "error receiving message");
 			continue;
 		}
 
@@ -228,11 +228,11 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		}
 		uev->envp[i] = NULL;
 
-		condlog(3, "uevent '%s' from '%s'\n", uev->action, uev->devpath);
+		condlog(3, "uevent '%s' from '%s'", uev->action, uev->devpath);
 
 		/* print payload environment */
 		for (i = 0; uev->envp[i] != NULL; i++)
-			condlog(3, "%s\n", uev->envp[i]);
+			condlog(3, "%s", uev->envp[i]);
 
 		/*
 		 * Queue uevent and poke service pthread.

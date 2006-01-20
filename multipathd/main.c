@@ -226,9 +226,6 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 	vector ompv = vecs->mpvec;
 	int i, j;
 
-	condlog(3, "coalesce_maps vs = %u", VECTOR_SIZE(ompv));
-	condlog(3, "coalesce_maps vs = %u", VECTOR_SIZE(nmpv));
-
 	vector_foreach_slot (ompv, ompp, i) {
 		if (!find_mp_by_wwid(nmpv, ompp->wwid)) {
 			/*
