@@ -677,7 +677,6 @@ rescan:
 			return 1; /* leave path added to pathvec */
 
 		verify_paths(mpp, vecs, NULL);
-		condlog(0, "%s: ownership set to %s", pp->dev_t, mpp->alias);
 		mpp->action = ACT_RELOAD;
 	}
 	else {

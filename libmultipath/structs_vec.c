@@ -57,7 +57,7 @@ adopt_paths (vector pathvec, struct multipath * mpp)
 
 	vector_foreach_slot (pathvec, pp, i) {
 		if (!strncmp(mpp->wwid, pp->wwid, WWID_SIZE)) {
-			condlog(3, "%s ownership set for %s", pp->dev_t, mpp->alias);
+			condlog(3, "%s ownership set to %s", pp->dev_t, mpp->alias);
 			pp->mpp = mpp;
 			
 			if (!mpp->paths && !(mpp->paths = vector_alloc()))
@@ -249,7 +249,7 @@ retry:
 
 	set_multipath_wwid(mpp);
 	mpp->mpe = find_mpe(mpp->wwid);
-	condlog(3, "discovered map %s", mpp->alias);
+	condlog(3, "%s: discover", mpp->alias);
 
 	if (update_multipath_strings(mpp, vecs->pathvec)) {
 		char new_alias[WWID_SIZE];

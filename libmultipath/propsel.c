@@ -35,25 +35,25 @@ select_rr_weight (struct multipath * mp)
 {
 	if (mp->mpe && mp->mpe->rr_weight) {
 		mp->rr_weight = mp->mpe->rr_weight;
-		condlog(3, "rr_weight = %i (LUN setting)",
-			mp->rr_weight);
+		condlog(3, "%s: rr_weight = %i (LUN setting)",
+			mp->alias, mp->rr_weight);
 		return 0;
 	}
 	if (mp->hwe && mp->hwe->rr_weight) {
 		mp->rr_weight = mp->hwe->rr_weight;
-		condlog(3, "rr_weight = %i (controler setting)",
-			mp->rr_weight);
+		condlog(3, "%s: rr_weight = %i (controler setting)",
+			mp->alias, mp->rr_weight);
 		return 0;
 	}
 	if (conf->rr_weight) {
 		mp->rr_weight = conf->rr_weight;
-		condlog(3, "rr_weight = %i (config file default)",
-			mp->rr_weight);
+		condlog(3, "%s: rr_weight = %i (config file default)",
+			mp->alias, mp->rr_weight);
 		return 0;
 	}
 	mp->rr_weight = RR_WEIGHT_NONE;
-	condlog(3, "rr_weight = %i (internal default)",
-		mp->rr_weight);
+	condlog(3, "%s: rr_weight = %i (internal default)",
+		mp->alias, mp->rr_weight);
 	return 0;
 }
 
@@ -62,23 +62,25 @@ select_pgfailback (struct multipath * mp)
 {
 	if (mp->mpe && mp->mpe->pgfailback != FAILBACK_UNDEF) {
 		mp->pgfailback = mp->mpe->pgfailback;
-		condlog(3, "pgfailback = %i (LUN setting)", mp->pgfailback);
+		condlog(3, "%s: pgfailback = %i (LUN setting)",
+			mp->alias, mp->pgfailback);
 		return 0;
 	}
 	if (mp->hwe && mp->hwe->pgfailback != FAILBACK_UNDEF) {
 		mp->pgfailback = mp->hwe->pgfailback;
-		condlog(3, "pgfailback = %i (controler setting)",
-			mp->pgfailback);
+		condlog(3, "%s: pgfailback = %i (controler setting)",
+			mp->alias, mp->pgfailback);
 		return 0;
 	}
 	if (conf->pgfailback != FAILBACK_UNDEF) {
 		mp->pgfailback = conf->pgfailback;
-		condlog(3, "pgfailback = %i (config file default)",
-			mp->pgfailback);
+		condlog(3, "%s: pgfailback = %i (config file default)",
+			mp->alias, mp->pgfailback);
 		return 0;
 	}
 	mp->pgfailback = DEFAULT_FAILBACK;
-	condlog(3, "pgfailover = %i (internal default)", mp->pgfailback);
+	condlog(3, "%s: pgfailover = %i (internal default)",
+		mp->alias, mp->pgfailback);
 	return 0;
 }
 
@@ -92,7 +94,8 @@ select_pgpolicy (struct multipath * mp)
 		mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
 		get_pgpolicy_name(pgpolicy_name, POLICY_NAME_SIZE,
 				  mp->pgpolicy);
-		condlog(3, "pgpolicy = %s (cmd line flag)", pgpolicy_name);
+		condlog(3, "%s: pgpolicy = %s (cmd line flag)",
+			mp->alias, pgpolicy_name);
 		return 0;
 	}
 	if (mp->mpe && mp->mpe->pgpolicy > 0) {
@@ -100,7 +103,8 @@ select_pgpolicy (struct multipath * mp)
 		mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
 		get_pgpolicy_name(pgpolicy_name, POLICY_NAME_SIZE,
 				  mp->pgpolicy);
-		condlog(3, "pgpolicy = %s (LUN setting)", pgpolicy_name);
+		condlog(3, "%s: pgpolicy = %s (LUN setting)",
+			mp->alias, pgpolicy_name);
 		return 0;
 	}
 	if (mp->hwe && mp->hwe->pgpolicy > 0) {
@@ -108,7 +112,8 @@ select_pgpolicy (struct multipath * mp)
 		mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
 		get_pgpolicy_name(pgpolicy_name, POLICY_NAME_SIZE,
 				  mp->pgpolicy);
-		condlog(3, "pgpolicy = %s (controler setting)", pgpolicy_name);
+		condlog(3, "%s: pgpolicy = %s (controler setting)",
+			mp->alias, pgpolicy_name);
 		return 0;
 	}
 	if (conf->pgpolicy > 0) {
@@ -116,13 +121,15 @@ select_pgpolicy (struct multipath * mp)
 		mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
 		get_pgpolicy_name(pgpolicy_name, POLICY_NAME_SIZE,
 				  mp->pgpolicy);
-		condlog(3, "pgpolicy = %s (config file default)", pgpolicy_name);
+		condlog(3, "%s: pgpolicy = %s (config file default)",
+			mp->alias, pgpolicy_name);
 		return 0;
 	}
 	mp->pgpolicy = DEFAULT_PGPOLICY;
 	mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
 	get_pgpolicy_name(pgpolicy_name, POLICY_NAME_SIZE, mp->pgpolicy);
-	condlog(3, "pgpolicy = %s (internal default)", pgpolicy_name);
+	condlog(3, "%s: pgpolicy = %s (internal default)",
+		mp->alias, pgpolicy_name);
 	return 0;
 }
 
@@ -131,16 +138,19 @@ select_selector (struct multipath * mp)
 {
 	if (mp->mpe && mp->mpe->selector) {
 		mp->selector = mp->mpe->selector;
-		condlog(3, "selector = %s (LUN setting)", mp->selector);
+		condlog(3, "%s: selector = %s (LUN setting)",
+			mp->alias, mp->selector);
 		return 0;
 	}
 	if (mp->hwe && mp->hwe->selector) {
 		mp->selector = mp->hwe->selector;
-		condlog(3, "selector = %s (controler setting)", mp->selector);
+		condlog(3, "%s: selector = %s (controler setting)",
+			mp->alias, mp->selector);
 		return 0;
 	}
 	mp->selector = conf->selector;
-	condlog(3, "selector = %s (internal default)", mp->selector);
+	condlog(3, "%s: selector = %s (internal default)",
+		mp->alias, mp->selector);
 	return 0;
 }
 
@@ -166,11 +176,13 @@ select_features (struct multipath * mp)
 {
 	if (mp->hwe && mp->hwe->features) {
 		mp->features = mp->hwe->features;
-		condlog(3, "features = %s (controler setting)", mp->features);
+		condlog(3, "%s: features = %s (controler setting)",
+			mp->alias, mp->features);
 		return 0;
 	}
 	mp->features = conf->features;
-	condlog(3, "features = %s (internal default)", mp->features);
+	condlog(3, "%s: features = %s (internal default)",
+		mp->alias, mp->features);
 	return 0;
 }
 
@@ -179,11 +191,13 @@ select_hwhandler (struct multipath * mp)
 {
 	if (mp->hwe && mp->hwe->hwhandler) {
 		mp->hwhandler = mp->hwe->hwhandler;
-		condlog(3, "hwhandler = %s (controler setting)", mp->hwhandler);
+		condlog(3, "%s: hwhandler = %s (controler setting)",
+			mp->alias, mp->hwhandler);
 		return 0;
 	}
 	mp->hwhandler = conf->hwhandler;
-	condlog(3, "hwhandler = %s (internal default)", mp->hwhandler);
+	condlog(3, "%s: hwhandler = %s (internal default)",
+		mp->alias, mp->hwhandler);
 	return 0;
 }
 
@@ -261,24 +275,25 @@ select_no_path_retry(struct multipath *mp)
 {
 	if (mp->mpe && mp->mpe->no_path_retry != NO_PATH_RETRY_UNDEF) {
 		mp->no_path_retry = mp->mpe->no_path_retry;
-		condlog(3, "no_path_retry = %i (multipath setting)",
-			mp->no_path_retry);
+		condlog(3, "%s: no_path_retry = %i (multipath setting)",
+			mp->alias, mp->no_path_retry);
 		return 0;
 	}
 	if (mp->hwe && mp->hwe->no_path_retry != NO_PATH_RETRY_UNDEF) {
 		mp->no_path_retry = mp->hwe->no_path_retry;
-		condlog(3, "no_path_retry = %i (controler setting)",
-			mp->no_path_retry);
+		condlog(3, "%s: no_path_retry = %i (controler setting)",
+			mp->alias, mp->no_path_retry);
 		return 0;
 	}
 	if (conf->no_path_retry != NO_PATH_RETRY_UNDEF) {
 		mp->no_path_retry = conf->no_path_retry;
-		condlog(3, "no_path_retry = %i (config file default)",
-			mp->no_path_retry);
+		condlog(3, "%s: no_path_retry = %i (config file default)",
+			mp->alias, mp->no_path_retry);
 		return 0;
 	}
 	mp->no_path_retry = NO_PATH_RETRY_UNDEF;
-	condlog(3, "no_path_retry = NONE (internal default)");
+	condlog(3, "%s: no_path_retry = NONE (internal default)",
+		mp->alias);
 	return 0;
 }
 
@@ -287,25 +302,25 @@ select_minio (struct multipath * mp)
 {
 	if (mp->mpe && mp->mpe->minio) {
 		mp->minio = mp->mpe->minio;
-		condlog(3, "minio = %i (LUN setting)",
-			mp->minio);
+		condlog(3, "%s: minio = %i (LUN setting)",
+			mp->alias, mp->minio);
 		return 0;
 	}
 	if (mp->hwe && mp->hwe->minio) {
 		mp->minio = mp->hwe->minio;
-		condlog(3, "minio = %i (controler setting)",
-			mp->minio);
+		condlog(3, "%s: minio = %i (controler setting)",
+			mp->alias, mp->minio);
 		return 0;
 	}
 	if (conf->minio) {
 		mp->minio = conf->minio;
-		condlog(3, "minio = %i (config file default)",
-			mp->minio);
+		condlog(3, "%s: minio = %i (config file default)",
+			mp->alias, mp->minio);
 		return 0;
 	}
 	mp->minio = DEFAULT_MINIO;
-	condlog(3, "minio = %i (internal default)",
-		mp->minio);
+	condlog(3, "%s: minio = %i (internal default)",
+		mp->alias, mp->minio);
 	return 0;
 }
 
