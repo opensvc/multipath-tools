@@ -1254,6 +1254,30 @@ snprint_def_user_friendly_names (char * buff, int len, void * data)
 	return snprintf(buff, len, "yes");
 }
 
+static int
+snprint_ble_simple (char * buff, int len, void * data)
+{
+	struct blentry * ble = (struct blentry *)data;
+
+	return snprintf(buff, len, "%s", ble->str);
+}
+
+static int
+snprint_bled_vendor (char * buff, int len, void * data)
+{
+	struct blentry_device * bled = (struct blentry_device *)data;
+
+	return snprintf(buff, len, "%s", bled->vendor);
+}
+	
+static int
+snprint_bled_product (char * buff, int len, void * data)
+{
+	struct blentry_device * bled = (struct blentry_device *)data;
+
+	return snprintf(buff, len, "%s", bled->product);
+}
+	
 #define __deprecated
 
 void
@@ -1281,21 +1305,21 @@ init_keywords(void)
 	__deprecated install_keyword("default_path_checker", &def_path_checker_handler, NULL);
 
 	install_keyword_root("blacklist", &blacklist_handler);
-	install_keyword("devnode", &ble_devnode_handler, NULL);
-	install_keyword("wwid", &ble_wwid_handler, NULL);
+	install_keyword("devnode", &ble_devnode_handler, &snprint_ble_simple);
+	install_keyword("wwid", &ble_wwid_handler, &snprint_ble_simple);
 	install_keyword("device", &ble_device_handler, NULL);
 	install_sublevel();
-	install_keyword("vendor", &ble_vendor_handler, NULL);
-	install_keyword("product", &ble_product_handler, NULL);
+	install_keyword("vendor", &ble_vendor_handler, &snprint_bled_vendor);
+	install_keyword("product", &ble_product_handler, &snprint_bled_product);
 	install_sublevel_end();
 
 	__deprecated install_keyword_root("devnode_blacklist", &blacklist_handler);
-	__deprecated install_keyword("devnode", &ble_devnode_handler, NULL);
-	__deprecated install_keyword("wwid", &ble_wwid_handler, NULL);
+	__deprecated install_keyword("devnode", &ble_devnode_handler, &snprint_ble_simple);
+	__deprecated install_keyword("wwid", &ble_wwid_handler, &snprint_ble_simple);
 	__deprecated install_keyword("device", &ble_device_handler, NULL);
 	__deprecated install_sublevel();
-	__deprecated install_keyword("vendor", &ble_vendor_handler, NULL);
-	__deprecated install_keyword("product", &ble_product_handler, NULL);
+	__deprecated install_keyword("vendor", &ble_vendor_handler, &snprint_bled_vendor);
+	__deprecated install_keyword("product", &ble_product_handler, &snprint_bled_product);
 	__deprecated install_sublevel_end();
 
 	install_keyword_root("devices", &devices_handler);

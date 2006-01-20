@@ -7,22 +7,9 @@
 #include "vector.h"
 #include "util.h"
 #include "debug.h"
-#include "regex.h"
 #include "structs.h"
 #include "config.h"
 #include "blacklist.h"
-
-struct blentry {
-	char * str;
-	regex_t regex;
-};
-
-struct blentry_device {
-	char * vendor;
-	char * product;
-	regex_t vendor_reg;
-	regex_t product_reg;
-};
 
 extern int
 store_ble (vector blist, char * str)

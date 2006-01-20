@@ -135,6 +135,12 @@ show_config (char ** r, int * len)
 			reply = REALLOC(reply, maxlen *= 2);
 			continue;
 		}
+		c += snprint_blacklist(c, reply + maxlen - c);
+		again = ((c - reply) == maxlen);
+		if (again) {
+			reply = REALLOC(reply, maxlen *= 2);
+			continue;
+		}
 		c += snprint_hwtable(c, reply + maxlen - c, conf->hwtable);
 		again = ((c - reply) == maxlen);
 		if (again) {

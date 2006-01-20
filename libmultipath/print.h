@@ -41,6 +41,7 @@ int snprint_multipath (char *, int, char *, struct multipath *);
 int snprint_multipath_topology (char *, int, struct multipath * mpp,
 				int verbosity);
 int snprint_defaults (char *, int);
+int snprint_blacklist (char *, int);
 int snprint_hwtable (char *, int, vector);
 int snprint_mptable (char *, int, vector);
 

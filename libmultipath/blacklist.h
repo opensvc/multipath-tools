@@ -1,6 +1,20 @@
 #ifndef _BLACKLIST_H
 #define _BLACKLIST_H
 
+#include "regex.h"
+
+struct blentry {
+	char * str;
+	regex_t regex;
+};
+
+struct blentry_device {
+	char * vendor;
+	char * product;
+	regex_t vendor_reg;
+	regex_t product_reg;
+};
+
 int setup_default_blist (vector);
 int alloc_ble_device (vector);
 int blacklist (vector, char *);

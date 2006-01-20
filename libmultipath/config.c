@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "regex.h"
 #include "memory.h"
 #include "util.h"
 #include "debug.h"
