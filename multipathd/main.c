@@ -32,11 +32,11 @@
 #include <vector.h>
 #include <memory.h>
 #include <config.h>
-#include <callout.h>
 #include <util.h>
 #include <hwtable.h>
 #include <defaults.h>
 #include <structs.h>
+#include <callout.h>
 #include <blacklist.h>
 #include <structs_vec.h>
 #include <dmparser.h>
