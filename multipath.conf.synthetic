@@ -14,7 +14,7 @@
 #	rr_weight		priorities
 #	failback		immediate
 #	no_path_retry		fail
-#	user_friendly_name	no
+#	user_friendly_names	no
 #}
 #devnode_blacklist {
 #       wwid 26353900f02796769
