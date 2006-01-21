@@ -343,8 +343,8 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
 int
 get_serial (char * str, int fd)
 {
-        int len;
-        char buff[MX_ALLOC_LEN + 1];
+        int len = 0;
+        char buff[MX_ALLOC_LEN + 1] = {0};
 
 	if (fd < 0)
                 return 0;
