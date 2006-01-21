@@ -848,7 +848,7 @@ snprint_blacklist (char * buff, int len)
 		return len;
 
 	vector_foreach_slot (conf->blist_devnode, ble, i) {
-		kw = find_keyword(kw->sub, "devnode");
+		kw = find_keyword(rootkw->sub, "devnode");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
@@ -857,7 +857,7 @@ snprint_blacklist (char * buff, int len)
 			return len;
 	}
 	vector_foreach_slot (conf->blist_wwid, ble, i) {
-		kw = find_keyword(kw->sub, "wwid");
+		kw = find_keyword(rootkw->sub, "wwid");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
@@ -865,18 +865,22 @@ snprint_blacklist (char * buff, int len)
 		if (fwd > len)
 			return len;
 	}
+	rootkw = find_keyword(rootkw->sub, "device");
+	if (!rootkw)
+		return 0;
+
 	vector_foreach_slot (conf->blist_device, bled, i) {
 		fwd += snprintf(buff + fwd, len - fwd, "\tdevice {\n");
 		if (fwd > len)
 			return len;
-		kw = find_keyword(kw->sub, "vendor");
+		kw = find_keyword(rootkw->sub, "vendor");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
 				       kw, bled);
 		if (fwd > len)
 			return len;
-		kw = find_keyword(kw->sub, "product");
+		kw = find_keyword(rootkw->sub, "product");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",

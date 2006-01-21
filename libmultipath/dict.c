@@ -1313,6 +1313,7 @@ init_keywords(void)
 	install_keyword("product", &ble_product_handler, &snprint_bled_product);
 	install_sublevel_end();
 
+#if 0
 	__deprecated install_keyword_root("devnode_blacklist", &blacklist_handler);
 	__deprecated install_keyword("devnode", &ble_devnode_handler, &snprint_ble_simple);
 	__deprecated install_keyword("wwid", &ble_wwid_handler, &snprint_ble_simple);
@@ -1321,6 +1322,7 @@ init_keywords(void)
 	__deprecated install_keyword("vendor", &ble_vendor_handler, &snprint_bled_vendor);
 	__deprecated install_keyword("product", &ble_product_handler, &snprint_bled_product);
 	__deprecated install_sublevel_end();
+#endif
 
 	install_keyword_root("devices", &devices_handler);
 	install_keyword("device", &device_handler, NULL);
