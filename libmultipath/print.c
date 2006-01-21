@@ -701,7 +701,12 @@ snprint_hwentry (char * buff, int len, struct hwentry * hwe)
 	struct keyword * kw;
 	struct keyword * rootkw;
 
-	rootkw = find_keyword(NULL, "device");
+	rootkw = find_keyword(NULL, "devices");
+
+	if (!rootkw || !rootkw->sub)
+		return 0;
+
+	rootkw = find_keyword(rootkw->sub, "device");
 
 	if (!rootkw)
 		return 0;
