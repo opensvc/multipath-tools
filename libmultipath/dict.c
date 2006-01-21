@@ -921,8 +921,14 @@ snprint_hw_prio_callout (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->getprio)
+	if (!conf->getprio && !hwe->getprio)
 		return 0;
+	if (!conf->getprio && hwe->getprio)
+		return snprintf(buff, len, "%s", hwe->getprio);
+	if (conf->getprio && !hwe->getprio)
+		return snprintf(buff, len, "none");
+
+	/* conf->getprio && hwe->getprio */
 	if (strlen(hwe->getprio) == strlen(conf->getprio) &&
 	    !strcmp(hwe->getprio, conf->getprio))
 		return 0;
@@ -1143,11 +1149,6 @@ snprint_def_getprio_callout (char * buff, int len, void * data)
 {
 	if (!conf->getprio)
 		return 0;
-#if 0 /* default is NULL */
-	if (strlen(conf->getprio) == strlen(DEFAULT_GETPRIO) &&
-	    !strcmp(conf->getprio, DEFAULT_GETPRIO))
-		return 0;
-#endif
 
 	return snprintf(buff, len, "%s", conf->getprio);
 }
