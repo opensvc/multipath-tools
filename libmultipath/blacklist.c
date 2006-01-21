@@ -162,7 +162,7 @@ free_blacklist (vector blist)
 
 	vector_foreach_slot (blist, ble, i) {
 		if (ble) {
-			//regfree(ble->regex);
+			regfree(&ble->regex);
 			FREE(ble->str);
 			FREE(ble);
 		}
@@ -181,6 +181,8 @@ free_blacklist_device (vector blist)
 
 	vector_foreach_slot (blist, ble, i) {
 		if (ble) {
+			regfree(&ble->vendor_reg);
+			regfree(&ble->product_reg);
 			FREE(ble->vendor);
 			FREE(ble->product);
 			FREE(ble);
