@@ -100,19 +100,19 @@ setup_default_blist (vector blist)
 	str = STRDUP("^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*");
 	if (!str)
 		return 1;
-	if (store_ble(blist, "str"))
+	if (store_ble(blist, str))
 		return 1;
 
 	str = STRDUP("^hd[a-z]");
 	if (!str)
 		return 1;
-	if (store_ble(blist, "str"))
+	if (store_ble(blist, str))
 		return 1;
 	
 	str = STRDUP("^cciss!c[0-9]d[0-9]*");
 	if (!str)
 		return 1;
-	if (store_ble(blist, "str"))
+	if (store_ble(blist, str))
 		return 1;
 
 	return 0;
