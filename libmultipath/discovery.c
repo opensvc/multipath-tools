@@ -523,6 +523,11 @@ ccw_sysfs_pathinfo (struct path * pp)
 	condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 
 	/*
+	 * set the hwe configlet pointer
+	 */
+	pp->hwe = find_hwe(conf->hwtable, pp->vendor_id, pp->product_id);
+
+	/*
 	 * host / bus / target / lun
 	 */
 	if(safe_sprintf(attr_path, "%s/block/%s/device",
