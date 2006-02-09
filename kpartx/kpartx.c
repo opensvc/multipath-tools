@@ -78,6 +78,7 @@ initpts(void)
 	addpts("solaris", read_solaris_pt);
 	addpts("unixware", read_unixware_pt);
 	addpts("dasd", read_dasd_pt);
+	addpts("mac", read_mac_pt);
 }
 
 static char short_opts[] = "ladgvnp:t:";
