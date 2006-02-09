@@ -10,12 +10,12 @@ CFLAGS += -I. -D_LARGEFILE64_SOURCE
 
 ifeq ($(strip $(BUILD)),klibc)
 	OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o gpt.o crc32.o \
-	       lopart.o xstrncpy.o devmapper.o dasd.o \
+	       lopart.o xstrncpy.o devmapper.o dasd.o mac.o \
 	       $(MULTIPATHLIB)-$(BUILD).a $(libdm)
 else
 	LDFLAGS = -ldevmapper
 	OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o dasd.o \
-	       gpt.o crc32.o lopart.o xstrncpy.o devmapper.o
+	       gpt.o mac.o crc32.o lopart.o xstrncpy.o devmapper.o
 endif
 
 EXEC = kpartx
