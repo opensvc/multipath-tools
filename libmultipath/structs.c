@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <libdevmapper.h>
 
+#include <checkers.h>
+
 #include "memory.h"
 #include "vector.h"
 #include "util.h"
@@ -38,8 +40,8 @@ free_path (struct path * pp)
 	if (!pp)
 		return;
 
-	if (pp->checker_context)
-		free(pp->checker_context);
+	if (checker_selected(&pp->checker))
+		checker_put(&pp->checker);
 
 	if (pp->fd >= 0)
 		close(pp->fd);

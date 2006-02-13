@@ -2,6 +2,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <checkers.h>
+
 #include "vector.h"
 #include "defaults.h"
 #include "debug.h"
@@ -12,7 +14,6 @@
 #include "config.h"
 #include "propsel.h"
 #include "discovery.h"
-#include "../libcheckers/path_state.h"
 
 
 /*
@@ -75,16 +76,13 @@ extern void
 orphan_path (struct path * pp)
 {
 	pp->mpp = NULL;
-	pp->checkfn = NULL;
 	pp->dmstate = PSTATE_UNDEF;
-	pp->checker_context = NULL;
 	pp->getuid = NULL;
 	pp->getprio = NULL;
 	pp->getprio_selected = 0;
-
+	checker_put(&pp->checker);
 	if (pp->fd >= 0)
 		close(pp->fd);
-
 	pp->fd = -1;
 }
 

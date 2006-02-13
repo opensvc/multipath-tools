@@ -13,6 +13,8 @@
 #include <sys/wait.h>
 #include <errno.h>
 
+#include <checkers.h>
+
 #include "vector.h"
 #include "structs.h"
 #include "debug.h"

@@ -9,9 +9,10 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <errno.h>
-
 #include <sysfs/dlist.h>
 #include <sysfs/libsysfs.h>
+
+#include <checkers.h>
 
 #include "vector.h"
 #include "memory.h"
@@ -24,8 +25,6 @@
 #include "propsel.h"
 #include "sg_include.h"
 #include "discovery.h"
-
-#include "../libcheckers/path_state.h"
 
 struct path *
 store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag)
@@ -608,11 +607,17 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 static int
 get_state (struct path * pp)
 {
-	if (!pp->checkfn)
-		select_checkfn(pp);
-	if (!pp->checkfn)
-		return 1;
-	pp->state = pp->checkfn(pp->fd, NULL, NULL);
+	struct checker * c = &pp->checker;
+
+	if (!checker_selected(c)) {
+		select_checker(pp);
+		if (!checker_selected(c))
+			return 1;
+		checker_set_fd(c, pp->fd);
+		if (checker_init(c))
+			return 1;
+	}
+	pp->state = checker_check(c);
 	condlog(3, "%s: state = %i", pp->dev, pp->state);
 	return 0;
 }

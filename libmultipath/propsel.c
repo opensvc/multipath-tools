@@ -5,6 +5,8 @@
  */
 #include <stdio.h>
 
+#include <checkers.h>
+
 #include "memory.h"
 #include "vector.h"
 #include "structs.h"
@@ -13,8 +15,6 @@
 #include "pgpolicies.h"
 #include "alias.h"
 #include "defaults.h"
-
-#include "../libcheckers/checkers.h"
 
 pgpolicyfn *pgpolicies[] = {
 	NULL,
@@ -202,30 +202,25 @@ select_hwhandler (struct multipath * mp)
 }
 
 extern int
-select_checkfn(struct path *pp)
+select_checker(struct path *pp)
 {
-	char checker_name[CHECKER_NAME_SIZE];
+	struct checker * c = &pp->checker;
 
-	if (pp->hwe && pp->hwe->checker_index > 0) {
-		get_checker_name(checker_name, CHECKER_NAME_SIZE,
-				 pp->hwe->checker_index);
+	if (pp->hwe && pp->hwe->checker) {
+		checker_get(c, pp->hwe->checker);
 		condlog(3, "%s: path checker = %s (controler setting)",
-			pp->dev, checker_name);
-		pp->checkfn = get_checker_addr(pp->hwe->checker_index);
+			pp->dev, checker_name(c));
 		return 0;
 	}
-	if (conf->checker_index > 0) {
-		pp->checkfn = get_checker_addr(conf->checker_index);
-		get_checker_name(checker_name, CHECKER_NAME_SIZE,
-				 conf->checker_index);
+	if (conf->checker) {
+		checker_get(c, conf->checker);
 		condlog(3, "%s: path checker = %s (config file default)",
-			pp->dev, checker_name);
+			pp->dev, checker_name(c));
 		return 0;
 	}
-	pp->checkfn = get_checker_addr(DEFAULT_CHECKER_ID);
-	get_checker_name(checker_name, CHECKER_NAME_SIZE, DEFAULT_CHECKER_ID);
+	checker_get(c, checker_default());
 	condlog(3, "%s: path checker = %s (internal default)",
-		pp->dev, checker_name);
+		pp->dev, checker_name(c));
 	return 0;
 }
 

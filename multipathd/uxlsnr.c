@@ -20,6 +20,8 @@
 #include <sys/un.h>
 #include <sys/poll.h>
 
+#include <checkers.h>
+
 #include <memory.h>
 #include <debug.h>
 #include <vector.h>

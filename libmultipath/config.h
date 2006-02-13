@@ -16,13 +16,14 @@ struct hwentry {
 	char * features;
 	char * hwhandler;
 	char * selector;
+	char * checker_name;
 
 	int pgpolicy;
 	int pgfailback;
 	int rr_weight;
 	int no_path_retry;
 	int minio;
-	int checker_index;
+	struct checker * checker;
 };
 
 struct mpentry {
@@ -45,7 +46,7 @@ struct config {
 	int pgpolicy_flag;
 	int with_sysfs;
 	int pgpolicy;
-	int checker_index;
+	struct checker * checker;
 	int dev_type;
 	int minio;
 	int checkint;

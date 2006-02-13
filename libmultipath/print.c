@@ -6,6 +6,8 @@
 #include <libdevmapper.h>
 #include <stdarg.h>
 
+#include <checkers.h>
+
 #include "vector.h"
 #include "structs.h"
 #include "structs_vec.h"
@@ -16,9 +18,6 @@
 #include "pgpolicies.h"
 #include "defaults.h"
 #include "parser.h"
-
-#include "../libcheckers/path_state.h"
-#include "../libcheckers/checkers.h"
 
 #define MAX(x,y) (x > y) ? x : y
 #define TAIL     (line + len - 1 - c)

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2005 Christophe Varoqui
  */
+#include <checkers.h>
 #include <memory.h>
 #include <vector.h>
 #include <structs.h>

@@ -101,8 +101,7 @@ struct path {
 	char * getuid;
 	char * getprio;
 	int getprio_selected;
-	int (*checkfn) (int, char *, void **);
-	void * checker_context;
+	struct checker checker;
 	struct multipath * mpp;
 	int fd;
 	

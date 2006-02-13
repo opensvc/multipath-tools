@@ -27,11 +27,11 @@
 #include <ctype.h>
 #include <sysfs/libsysfs.h>
 
+#include <checkers.h>
 #include <vector.h>
 #include <memory.h>
 #include <libdevmapper.h>
 #include <devmapper.h>
-#include <path_state.h>
 #include <util.h>
 #include <defaults.h>
 #include <structs.h>

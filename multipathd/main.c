@@ -23,7 +23,6 @@
  * libcheckers
  */
 #include <checkers.h>
-#include <path_state.h>
 
 /*
  * libmultipath
@@ -47,7 +46,6 @@
 #include <propsel.h>
 #include <uevent.h>
 #include <switchgroup.h>
-#include <path_state.h>
 #include <print.h>
 #include <configure.h>
 
@@ -62,10 +60,7 @@
 #define CMDSIZE 160
 
 #define LOG_MSG(a,b) \
-	if (strlen(b)) { \
-		condlog(a, "%s: %s", pp->dev_t, b); \
-		memset(b, 0, MAX_CHECKER_MSG_SIZE); \
-	}
+	if (strlen(b)) condlog(a, "%s: %s", pp->dev_t, b);
 
 #ifdef LCKDBG
 #define lock(a) \
@@ -1135,13 +1130,9 @@ checkerloop (void *ap)
 	struct path *pp;
 	int i, count = 0;
 	int newstate;
-	char checker_msg[MAX_CHECKER_MSG_SIZE];
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
-
-	memset(checker_msg, 0, MAX_CHECKER_MSG_SIZE);
 	vecs = (struct vectors *)ap;
-
 	condlog(2, "path checkers start up");
 
 	/*
@@ -1169,17 +1160,16 @@ checkerloop (void *ap)
 			 */
 			pp->tick = conf->checkint;
 			
-			if (!pp->checkfn) {
+			if (!checker_selected(&pp->checker)) {
 				pathinfo(pp, conf->hwtable, DI_SYSFS);
-				select_checkfn(pp);
+				select_checker(pp);
 			}
 
-			if (!pp->checkfn) {
-				condlog(0, "%s: checkfn is void", pp->dev);
+			if (!checker_selected(&pp->checker)) {
+				condlog(0, "%s: checker is not set", pp->dev);
 				continue;
 			}
-			newstate = pp->checkfn(pp->fd, checker_msg,
-					       &pp->checker_context);
+			newstate = checker_check(&pp->checker);
 			
 			if (newstate < 0) {
 				condlog(2, "%s: unusable path", pp->dev);
@@ -1189,7 +1179,7 @@ checkerloop (void *ap)
 
 			if (newstate != pp->state) {
 				pp->state = newstate;
-				LOG_MSG(1, checker_msg);
+				LOG_MSG(1, checker_message(&pp->checker));
 
 				/*
 				 * upon state change, reset the checkint
@@ -1238,7 +1228,7 @@ checkerloop (void *ap)
 					enable_group(pp);
 			}
 			else if (newstate == PATH_UP || newstate == PATH_GHOST) {
-				LOG_MSG(4, checker_msg);
+				LOG_MSG(4, checker_message(&pp->checker));
 				/*
 				 * double the next check delay.
 				 * max at conf->max_checkint

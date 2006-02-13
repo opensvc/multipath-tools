@@ -14,7 +14,8 @@
 #include <errno.h>
 #include <libdevmapper.h>
 
-#include "../libcheckers/path_state.h"
+#include <checkers.h>
+
 #include "vector.h"
 #include "memory.h"
 #include "devmapper.h"

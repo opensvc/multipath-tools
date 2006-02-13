@@ -11,7 +11,6 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
-#include "path_state.h"
 #include "checkers.h"
 
 #include "../libmultipath/sg_include.h"
@@ -33,8 +32,18 @@
 #define MSG_HP_SW_GHOST	"hp_sw checker reports path is ghost"
 
 struct sw_checker_context {
-	int run_count;
+	void * dummy;
 };
+
+int hp_sw_init (struct checker * c)
+{
+	return 0;
+}
+
+void hp_sw_free (struct checker * c)
+{
+	return;
+}
 
 static int
 do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
@@ -115,66 +124,19 @@ do_tur (int fd)
 }
 
 extern int
-hp_sw (int fd, char *msg, void **context)
+hp_sw (struct checker * c)
 {
 	char buff[MX_ALLOC_LEN];
-	struct sw_checker_context * ctxt = NULL;
-	int ret;
 
-	/*
-	 * caller passed in a context : use its address
-	 */
-	if (context)
-		ctxt = (struct sw_checker_context *) (*context);
-
-	/*
-	 * passed in context is uninitialized or volatile context :
-	 * initialize it
-	 */
-	if (!ctxt) {
-		ctxt = malloc(sizeof(struct sw_checker_context));
-		memset(ctxt, 0, sizeof(struct sw_checker_context));
-
-		if (!ctxt) {
-			MSG("cannot allocate context");
-			return -1;
-		}
-		if (context)
-			*context = ctxt;
-	}
-	ctxt->run_count++;
-
-	if ((ctxt->run_count % HEAVY_CHECK_COUNT) == 0) {
-		ctxt->run_count = 0;
-		/* do stuff */
-	}
-	if (fd <= 0) {
-		MSG("no usable fd");
-		ret = -1;
-		goto out;
-	}
-	
-	if (0 != do_inq(fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0)) {
-		MSG(MSG_HP_SW_DOWN);
-		ret = PATH_DOWN;
-		goto out;
+	if (0 != do_inq(c->fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0)) {
+		MSG(c, MSG_HP_SW_DOWN);
+		return PATH_DOWN;
 	}
 
-	if (do_tur(fd)) {
-		MSG(MSG_HP_SW_GHOST);
-                ret = PATH_GHOST;
-        } else {
-		MSG(MSG_HP_SW_UP);
-		ret = PATH_UP;
-	}
-
-out:
-	/*
-	 * caller told us he doesn't want to keep the context :
-	 * free it
-	 */
-	if (!context)
-		free(ctxt);
-
-	return(ret);
+	if (do_tur(c->fd)) {
+		MSG(c, MSG_HP_SW_GHOST);
+                return PATH_GHOST;
+        }
+	MSG(c, MSG_HP_SW_UP);
+	return PATH_UP;
 }

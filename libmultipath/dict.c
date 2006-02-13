@@ -4,6 +4,8 @@
  * Copyright (c) 2005 Benjamin Marzinski, Redhat
  * Copyright (c) 2005 Kiyoshi Ueda, NEC
  */
+#include <checkers.h>
+
 #include "vector.h"
 #include "hwtable.h"
 #include "structs.h"
@@ -14,8 +16,6 @@
 #include "pgpolicies.h"
 #include "blacklist.h"
 #include "defaults.h"
-
-#include "../libcheckers/checkers.h"
 
 /*
  * default block handlers
@@ -119,7 +119,7 @@ def_path_checker_handler(vector strvec)
 	if (!buff)
 		return 1;
 	
-	conf->checker_index = get_checker_id(buff);
+	conf->checker = checker_lookup(buff);
 	FREE(buff);
 
 	return 0;
@@ -420,7 +420,7 @@ hw_path_checker_handler(vector strvec)
 	if (!buff)
 		return 1;
 	
-	hwe->checker_index = get_checker_id(buff);
+	hwe->checker = checker_lookup(buff);
 	FREE(buff);
 
 	return 0;
@@ -1073,16 +1073,14 @@ snprint_hw_rr_min_io (char * buff, int len, void * data)
 static int
 snprint_hw_path_checker (char * buff, int len, void * data)
 {
-	char str[CHECKER_NAME_SIZE];
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->checker_index)
+	if (!checker_selected(hwe->checker))
 		return 0;
-	if (hwe->checker_index == conf->checker_index)
+	if (hwe->checker == conf->checker)
 		return 0;
-	get_checker_name(str, CHECKER_NAME_SIZE, hwe->checker_index);
 	
-	return snprintf(buff, len, "%s", str);
+	return snprintf(buff, len, "%s", checker_name(hwe->checker));
 }
 
 static int
@@ -1168,15 +1166,12 @@ snprint_def_features (char * buff, int len, void * data)
 static int
 snprint_def_path_checker (char * buff, int len, void * data)
 {
-	char str[CHECKER_NAME_SIZE];
-
-	if (!conf->checker_index)
+	if (!conf->checker)
 		return 0;
-	if (conf->checker_index == DEFAULT_CHECKER_ID)
+	if (conf->checker == checker_default())
 		return 0;
-	get_checker_name(str, CHECKER_NAME_SIZE, conf->checker_index);
 	
-	return snprintf(buff, len, "%s", str);
+	return snprintf(buff, len, "%s", checker_name(conf->checker));
 }
 
 static int

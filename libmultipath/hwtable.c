@@ -1,12 +1,12 @@
 #include <stdio.h>
 
+#include <checkers.h>
+
 #include "vector.h"
 #include "defaults.h"
 #include "structs.h"
 #include "config.h"
 #include "pgpolicies.h"
-
-#include "../libcheckers/checkers.h"
 
 /*
  * Tuning suggestions on these parameters should go to
@@ -36,7 +36,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = DEFAULT_CHECKER_ID,
+		.checker_name  = DEFAULT_CHECKER,
 	},
 	{
 		.vendor        = "DEC",
@@ -51,7 +51,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = HP_SW,
+		.checker_name  = HP_SW,
 	},
 	{
 		.vendor        = "{COMPAQ,HP}",
@@ -66,7 +66,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = HP_SW,
+		.checker_name  = HP_SW,
 	},
 	{
 		.vendor        = "HP",
@@ -81,7 +81,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = READSECTOR0,
+		.checker_name  = READSECTOR0,
 	},
 	{
 		.vendor        = "HP",
@@ -96,7 +96,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = READSECTOR0,
+		.checker_name  = READSECTOR0,
 	},
 	/*
 	 * DDN controler family
@@ -117,7 +117,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = READSECTOR0,
+		.checker_name  = READSECTOR0,
 	},
 	/*
 	 * EMC / Clariion controler family
@@ -138,7 +138,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = READSECTOR0,
+		.checker_name  = READSECTOR0,
 	},
 	{
 		.vendor        = "DGC",
@@ -153,7 +153,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = EMC_CLARIION,
+		.checker_name  = EMC_CLARIION,
 	},
 	/*
 	 * Fujitsu controler family
@@ -174,7 +174,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = READSECTOR0,
+		.checker_name  = READSECTOR0,
 	},
 	/*
 	 * Hitachi controler family
@@ -195,7 +195,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = READSECTOR0,
+		.checker_name  = READSECTOR0,
 	},
 	/*
 	 * IBM controler family
@@ -216,7 +216,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = READSECTOR0,
+		.checker_name  = READSECTOR0,
 	},
 	{
 		/* IBM DS4100 / FAStT100 */
@@ -232,7 +232,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = TUR,
+		.checker_name  = TUR,
 	},
 	{
 		/* IBM DS4200 / FAStT200 */
@@ -248,7 +248,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = TUR,
+		.checker_name  = TUR,
 	},
 	{
 		/* IBM ESS F20 aka Shark */
@@ -264,7 +264,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = TUR,
+		.checker_name  = TUR,
 	},
 	{
 		/* IBM DS6000 / SAN Volume Controller */
@@ -280,7 +280,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = TUR,
+		.checker_name  = TUR,
 	},
 	{
 		/* IBM DS8000 */
@@ -296,7 +296,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = TUR,
+		.checker_name  = TUR,
 	},
 	{
 		/* IBM S/390 ECKD DASD */
@@ -312,7 +312,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = DIRECTIO,
+		.checker_name  = DIRECTIO,
 	},
 	/*
 	 * NETAPP controler family
@@ -333,7 +333,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = READSECTOR0,
+		.checker_name  = READSECTOR0,
 	},
 	/*
 	 * Pillar Data controler family
@@ -354,7 +354,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = TUR,
+		.checker_name  = TUR,
 	},
 	/*
 	 * SGI arrays
@@ -375,7 +375,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = READSECTOR0,
+		.checker_name  = READSECTOR0,
 	},
 	{
 		.vendor        = "SGI",
@@ -390,7 +390,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = TUR,
+		.checker_name  = TUR,
 	},
 	/*
 	 * STK arrays
@@ -411,7 +411,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = TUR,
+		.checker_name  = TUR,
 	},
 	/*
 	 * SUN arrays
@@ -432,7 +432,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_index = READSECTOR0,
+		.checker_name  = READSECTOR0,
 	},
 	/*
 	 * EOL
@@ -450,7 +450,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = 0,
 		.no_path_retry = 0,
 		.minio         = 0,
-		.checker_index = 0,
+		.checker_name  = NULL,
 	},
 };
 
@@ -461,6 +461,7 @@ setup_default_hwtable (vector hw)
 	struct hwentry * hwe = default_hw;
 
 	while (hwe->vendor) {
+		hwe->checker = checker_lookup(hwe->checker_name);
 		r += store_hwe(hw, hwe);
 		hwe++;
 	}

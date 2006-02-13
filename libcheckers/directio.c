@@ -13,16 +13,62 @@
 #include <linux/fs.h>
 #include <errno.h>
 
-#include "path_state.h"
 #include "checkers.h"
 
 #define MSG_DIRECTIO_UNKNOWN	"directio checker is not available"
 #define MSG_DIRECTIO_UP		"directio checker reports path is up"
 #define MSG_DIRECTIO_DOWN	"directio checker reports path is down"
 
-struct readsector0_checker_context {
-	void * dummy;
+struct directio_context {
+	int blksize; 
+	unsigned char *buf;
+	unsigned char *ptr;
 };
+
+int directio_init (struct checker * c)
+{
+	unsigned long pgsize = getpagesize();
+	struct directio_context * ct;
+
+	ct = malloc(sizeof(struct directio_context));
+	if (!ct)
+		return 1;
+	c->context = (void *)ct;
+
+	if (ioctl(c->fd, BLKBSZGET, &ct->blksize) < 0) {
+		MSG(c, "cannot get blocksize, set default");
+		ct->blksize = 512;
+	}
+	if (ct->blksize > 4096) {
+		/*
+		 * Sanity check for DASD; BSZGET is broken
+		 */
+		ct->blksize = 4096;
+	}
+	if (!ct->blksize)
+		goto out;
+	ct->buf = (unsigned char *)malloc(ct->blksize + pgsize);
+	if (!ct->buf)
+		goto out;
+	ct->ptr = (unsigned char *)(((unsigned long)ct->buf + pgsize - 1) &
+		  (~(pgsize - 1))); 
+
+	return 0;
+out:
+	free(ct);
+	return 1;
+}
+
+void directio_free (struct checker * c)
+{
+	struct directio_context * ct = (struct directio_context *)c->context;
+
+	if (!ct)
+		return;
+	if (ct->buf)
+		free(ct->buf);
+	free(ct);
+}
 
 static int
 direct_read (int fd, unsigned char * buff, int size)
@@ -68,101 +114,26 @@ direct_read (int fd, unsigned char * buff, int size)
 	return retval;
 }
 
-extern int
-directio (int fd, char *msg, void **context)
+int directio (struct checker * c)
 {
-	unsigned char *buf, *ptr;
-	struct readsector0_checker_context * ctxt = NULL;
-	unsigned long pgsize, numsect;
-	int ret, blksize;
+	int ret;
+	struct directio_context * ct = (struct directio_context *)c->context;
 
-	pgsize = getpagesize();
-	
-	/*
-	 * caller passed in a context : use its address
-	 */
-	if (context)
-		ctxt = (struct readsector0_checker_context *) (*context);
-
-	/*
-	 * passed in context is uninitialized or volatile context :
-	 * initialize it
-	 */
-	if (!ctxt) {
-		ctxt = malloc(sizeof(struct readsector0_checker_context));
-		memset(ctxt, 0, sizeof(struct readsector0_checker_context));
-
-		if (!ctxt) {
-			MSG("cannot allocate context");
-			return -1;
-		}
-		if (context)
-			*context = ctxt;
-	}
-	if (fd <= 0) {
-		MSG("no usable fd");
-		ret = -1;
-		goto out;
-	}
-	
-	if (ioctl(fd, BLKGETSIZE, &numsect) < 0) {
-		MSG("cannot get number of sectors, set default");
-		numsect = 0;
-	}
-
-	if (ioctl(fd, BLKBSZGET, &blksize) < 0) {
-		MSG("cannot get blocksize, set default");
-		blksize = 512;
-	}
-
-	if (blksize > 4096) {
-		/*
-		 * Sanity check for DASD; BSZGET is broken
-		 */
-		blksize = 4096;
-	}
-
-	if (!blksize) {
-		/*
-		 * Blocksize is 0, assume we can't write
-		 * to this device.
-		 */
-		MSG(MSG_DIRECTIO_DOWN);
-		ret = PATH_DOWN;
-		goto out;
-	}
-
-	buf = (unsigned char *)malloc(blksize + pgsize);
-	if (!buf){
-		goto out;
-	}
-	ptr = (unsigned char *)(((unsigned long)buf + pgsize - 1) &
-				(~(pgsize - 1))); 
-	ret = direct_read(fd, ptr, blksize);
+	ret = direct_read(c->fd, ct->ptr, ct->blksize);
 
 	switch (ret)
 	{
 	case PATH_UNCHECKED:
-		MSG(MSG_DIRECTIO_UNKNOWN);
+		MSG(c, MSG_DIRECTIO_UNKNOWN);
 		break;
 	case PATH_DOWN:
-		MSG(MSG_DIRECTIO_DOWN);
+		MSG(c, MSG_DIRECTIO_DOWN);
 		break;
 	case PATH_UP:
-		MSG(MSG_DIRECTIO_UP);
+		MSG(c, MSG_DIRECTIO_UP);
 		break;
 	default:
 		break;
 	}
-	free(buf);
-
-out:
-	/*
-	 * caller told us he doesn't want to keep the context :
-	 * free it
-	 */
-	if (!context)
-		free(ctxt);
-
 	return ret;
 }

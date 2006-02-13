@@ -11,7 +11,6 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
-#include "path_state.h"
 #include "checkers.h"
 
 #include "../libmultipath/sg_include.h"
@@ -25,6 +24,16 @@
 struct readsector0_checker_context {
 	void * dummy;
 };
+
+int readsector0_init (struct checker * c)
+{
+	return 0;
+}
+
+void readsector0_free (struct checker * c)
+{
+	return;
+}
 
 static int
 sg_read (int sg_fd, unsigned char * buff)
@@ -86,58 +95,23 @@ sg_read (int sg_fd, unsigned char * buff)
 }
 
 extern int
-readsector0 (int fd, char *msg, void **context)
+readsector0 (struct checker * c)
 {
 	unsigned char buf[512];
-	struct readsector0_checker_context * ctxt = NULL;
 	int ret;
 
-	/*
-	 * caller passed in a context : use its address
-	 */
-	if (context)
-		ctxt = (struct readsector0_checker_context *) (*context);
-
-	/*
-	 * passed in context is uninitialized or volatile context :
-	 * initialize it
-	 */
-	if (!ctxt) {
-		ctxt = malloc(sizeof(struct readsector0_checker_context));
-		memset(ctxt, 0, sizeof(struct readsector0_checker_context));
-
-		if (!ctxt) {
-			MSG("cannot allocate context");
-			return -1;
-		}
-		if (context)
-			*context = ctxt;
-	}
-	if (fd <= 0) {
-		MSG("no usable fd");
-		ret = -1;
-		goto out;
-	}
-	ret = sg_read(fd, &buf[0]);
+	ret = sg_read(c->fd, &buf[0]);
 
 	switch (ret)
 	{
 	case PATH_DOWN:
-		MSG(MSG_READSECTOR0_DOWN);
+		MSG(c, MSG_READSECTOR0_DOWN);
 		break;
 	case PATH_UP:
-		MSG(MSG_READSECTOR0_UP);
+		MSG(c, MSG_READSECTOR0_UP);
 		break;
 	default:
 		break;
 	}
-out:
-	/*
-	 * caller told us he doesn't want to keep the context :
-	 * free it
-	 */
-	if (!context)
-		free(ctxt);
-
 	return ret;
 }

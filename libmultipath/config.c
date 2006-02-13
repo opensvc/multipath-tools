@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <checkers.h>
+
 #include "memory.h"
 #include "util.h"
 #include "debug.h"
@@ -17,8 +19,6 @@
 #include "config.h"
 #include "blacklist.h"
 #include "defaults.h"
-
-#include "../libcheckers/checkers.h"
 
 struct hwentry *
 find_hwe (vector hwtable, char * vendor, char * product)
@@ -249,7 +249,7 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->rr_weight = dhwe->rr_weight;
 	hwe->no_path_retry = dhwe->no_path_retry;
 	hwe->minio = dhwe->minio;
-	hwe->checker_index = dhwe->checker_index;
+	hwe->checker = dhwe->checker;
 
 
 	if (!vector_alloc_slot(hwtable))
@@ -393,8 +393,8 @@ load_config (char * file)
 	    !conf->hwhandler)
 		goto out;
 
-	if (!conf->checker_index)
-		conf->checker_index = READSECTOR0;
+	if (!conf->checker)
+		conf->checker = checker_lookup(DEFAULT_CHECKER);
 
 	return 0;
 out:

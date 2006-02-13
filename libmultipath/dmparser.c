@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <checkers.h>
+
 #include "vector.h"
 #include "memory.h"
 #include "structs.h"

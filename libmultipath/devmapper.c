@@ -12,6 +12,8 @@
 #include <linux/kdev_t.h>
 #include <unistd.h>
 
+#include <checkers.h>
+
 #include "vector.h"
 #include "structs.h"
 #include "debug.h"
