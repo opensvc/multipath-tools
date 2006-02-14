@@ -70,7 +70,7 @@ struct checker * checker_lookup (char * name)
 	while (c->check) {
 		if (!strncmp(name, c->name, CHECKER_NAME_LEN))
 			return c;
-		c += sizeof(struct checker);
+		c++;
 	}
 	return NULL;
 }
