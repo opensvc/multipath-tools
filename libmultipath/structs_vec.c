@@ -214,7 +214,7 @@ extern void
 set_no_path_retry(struct multipath *mpp)
 {
 	mpp->retry_tick = 0;
-	mpp->nr_active = pathcount(mpp, PATH_UP);
+	mpp->nr_active = pathcount(mpp, PATH_UP) + pathcount(mpp, PATH_GHOST);
 	select_no_path_retry(mpp);
 
 	switch (mpp->no_path_retry) {

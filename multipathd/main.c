@@ -282,10 +282,13 @@ update_multipath (struct vectors *vecs, char *mapname)
 				continue;
 
 			if (pp->state != PATH_DOWN) {
+				int oldstate = pp->state;
 				condlog(2, "%s: mark as failed", pp->dev_t);
 				mpp->stat_path_failures++;
 				pp->state = PATH_DOWN;
-				update_queue_mode_del_path(mpp);
+				if (oldstate == PATH_UP ||
+				    oldstate == PATH_GHOST)
+					update_queue_mode_del_path(mpp);
 
 				/*
 				 * if opportune,
@@ -1032,7 +1035,7 @@ exit_daemon (int status)
 }
 
 static void
-fail_path (struct path * pp)
+fail_path (struct path * pp, int del_active)
 {
 	if (!pp->mpp)
 		return;
@@ -1041,14 +1044,15 @@ fail_path (struct path * pp)
 		 pp->dev_t, pp->mpp->alias);
 
 	dm_fail_path(pp->mpp->alias, pp->dev_t);
-	update_queue_mode_del_path(pp->mpp);
+	if (del_active)
+		update_queue_mode_del_path(pp->mpp);
 }
 
 /*
  * caller must have locked the path list before calling that function
  */
 static void
-reinstate_path (struct path * pp)
+reinstate_path (struct path * pp, int add_active)
 {
 	if (!pp->mpp)
 		return;
@@ -1057,7 +1061,8 @@ reinstate_path (struct path * pp)
 		condlog(0, "%s: reinstate failed", pp->dev_t);
 	else {
 		condlog(2, "%s: reinstated", pp->dev_t);
-		update_queue_mode_add_path(pp->mpp);
+		if (add_active)
+			update_queue_mode_add_path(pp->mpp);
 	}
 }
 
@@ -1191,6 +1196,7 @@ checkerloop (void *ap)
 			}
 
 			if (newstate != pp->state) {
+				int oldstate = pp->state;
 				pp->state = newstate;
 				LOG_MSG(1, checker_message(&pp->checker));
 
@@ -1207,7 +1213,11 @@ checkerloop (void *ap)
 					/*
 					 * proactively fail path in the DM
 					 */
-					fail_path(pp);
+					if (oldstate == PATH_UP ||
+					    oldstate == PATH_GHOST)
+						fail_path(pp, 1);
+					else
+						fail_path(pp, 0);
 
 					/*
 					 * cancel scheduled failback
@@ -1221,7 +1231,11 @@ checkerloop (void *ap)
 				/*
 				 * reinstate this path
 				 */
-				reinstate_path(pp);
+				if (oldstate != PATH_UP &&
+				    oldstate != PATH_GHOST)
+					reinstate_path(pp, 1);
+				else
+					reinstate_path(pp, 0);
 
 				/*
 				 * schedule [defered] failback
