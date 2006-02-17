@@ -17,6 +17,7 @@ BUILD		= glibc
 DEBUG		= 0
 DEBUG_DUMPHEX	= 0
 OBJS		= main.o rtpg.o
+INSTALL		= install -D
 
 TOPDIR	= ../..
 
@@ -35,8 +36,8 @@ klibc:	$(OBJS)
 	$(CC) -static -o $(EXEC) $(OBJS)
 
 install: $(BUILD) $(EXEC).8.gz
-	install -s -m 755 $(EXEC) $(DESTDIR)$(bindir)/$(EXEC)
-	install -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
+	$(INSTALL) -s -m 755 $(EXEC) $(DESTDIR)$(bindir)/$(EXEC)
+	$(INSTALL) -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)/$(EXEC).8.gz
 
 uninstall:
 	rm $(DESTDIR)$(bindir)/$(EXEC)
