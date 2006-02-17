@@ -274,16 +274,18 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, PATH);
+	int r;
 
 	condlog(2, "%s: add path (operator)", param);
 
-	if (blacklist(conf->blist_devnode, param)) {
+	if (blacklist(conf->blist_devnode, param) ||
+	    (r = ev_add_path(param, vecs)) == 2) {
 		*reply = strdup("blacklisted");
 		*len = strlen(*reply) + 1;
 		condlog(2, "%s: path blacklisted", param);
 		return 0;
 	}
-	return ev_add_path(param, vecs);
+	return r;
 }
 
 int

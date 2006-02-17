@@ -622,9 +622,16 @@ static int
 uev_add_path (char * devname, struct vectors * vecs)
 {
 	condlog(2, "%s: add path (uevent)", devname);
-	return ev_add_path(devname, vecs);
+	return (ev_add_path(devname, vecs) != 1)? 0 : 1;
 }
 
+
+/*
+ * returns:
+ * 0: added
+ * 1: error
+ * 2: blacklisted
+ */
 int
 ev_add_path (char * devname, struct vectors * vecs)
 {
@@ -661,7 +668,13 @@ ev_add_path (char * devname, struct vectors * vecs)
 		condlog(0, "%s: failed to get path uid", devname);
 		return 1; /* leave path added to pathvec */
 	}
-
+	if (blacklist_path(conf, pp)){
+		int i = find_slot(vecs->pathvec, (void *)pp);
+		if (i != -1)
+			vector_del_slot(vecs->pathvec, i);
+		free_path(pp);
+		return 2;
+	}	
 	mpp = pp->mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
 rescan:
 	if (mpp) {
@@ -1299,9 +1312,15 @@ configure (struct vectors * vecs, int start_waiters)
 	 */
 	path_discovery(vecs->pathvec, conf, DI_ALL);
 
-	vector_foreach_slot (vecs->pathvec, pp, i)
-		pp->checkint = conf->checkint;
-
+	vector_foreach_slot (vecs->pathvec, pp, i){
+		if (blacklist_path(conf, pp)){
+			vector_del_slot(vecs->pathvec, i);
+			free_path(pp);
+			i--;
+		}	
+		else
+			pp->checkint = conf->checkint;
+	}
 	if (map_discovery(vecs))
 		return 1;
 
