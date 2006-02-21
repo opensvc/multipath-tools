@@ -475,6 +475,40 @@ out:
 	return 1;
 }
 
+static void
+sync_map_state(struct multipath *mpp)
+{
+	int i, j;
+	struct pathgroup *pgp;
+        struct path *pp;
+
+	vector_foreach_slot (mpp->pg, pgp, i){
+		vector_foreach_slot (pgp->paths, pp, j){
+			if (pp->state <= PATH_UNCHECKED)
+				continue;
+			if ((pp->dmstate == PSTATE_FAILED ||
+			     pp->dmstate == PSTATE_UNDEF) &&
+			    (pp->state == PATH_UP || pp->state == PATH_GHOST))
+				dm_reinstate_path(mpp->alias, pp->dev_t);
+			else if ((pp->dmstate == PSTATE_ACTIVE ||
+				  pp->dmstate == PSTATE_UNDEF) &&
+				 (pp->state == PATH_DOWN ||
+				  pp->state == PATH_SHAKY))
+				dm_fail_path(mpp->alias, pp->dev_t);
+		}
+	}
+}
+
+static void
+sync_maps_state(vector mpvec)
+{
+	int i;
+	struct multipath *mpp;
+
+	vector_foreach_slot (mpvec, mpp, i) 
+		sync_map_state(mpp);
+}
+
 static int
 flush_map(struct multipath * mpp, struct vectors * vecs)
 {
@@ -556,6 +590,7 @@ ev_add_map (char * devname, struct vectors * vecs)
 	 */
 	if (map_present && (mpp = add_map_without_path(vecs, minor, alias,
 					start_waiter_thread))) {
+		sync_map_state(mpp);
 		condlog(3, "%s: devmap %s added", alias, devname);
 		return 0;
 	}
@@ -728,6 +763,8 @@ rescan:
 	if (setup_multipath(vecs, mpp))
 		goto out;
 
+	sync_map_state(mpp);
+
 	if (mpp->action == ACT_CREATE &&
 	    start_waiter_thread(mpp, vecs))
 			goto out;
@@ -826,6 +863,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 					free_pathvec(rpvec, KEEP_PATHS);
 					goto out;
 				}
+				sync_map_state(mpp);
 
 				condlog(3, "%s path removed from devmap %s",
 					devname, mpp->alias);
@@ -1353,6 +1391,8 @@ configure (struct vectors * vecs, int start_waiters)
 		return 1;
 
 	dm_lib_release();
+
+	sync_maps_state(mpvec);
 
 	if (conf->verbosity > 2)
 		vector_foreach_slot(mpvec, mpp, i)
