@@ -58,7 +58,8 @@ adopt_paths (vector pathvec, struct multipath * mpp)
 
 	vector_foreach_slot (pathvec, pp, i) {
 		if (!strncmp(mpp->wwid, pp->wwid, WWID_SIZE)) {
-			condlog(3, "%s ownership set to %s", pp->dev_t, mpp->alias);
+			condlog(3, "%s ownership set to %s",
+				pp->dev_t, mpp->alias);
 			pp->mpp = mpp;
 			
 			if (!mpp->paths && !(mpp->paths = vector_alloc()))
@@ -67,6 +68,7 @@ adopt_paths (vector pathvec, struct multipath * mpp)
 			if (!find_path_by_dev(mpp->paths, pp->dev) &&
 			    store_path(mpp->paths, pp))
 					return 1;
+			pathinfo(pp, conf->hwtable, DI_PRIO | DI_CHECKER);
 		}
 	}
 	return 0;
