@@ -56,6 +56,7 @@
 #		rr_weight		priorities
 #		no_path_retry		queue
 #		rr_min_io		100
+#		product_blacklist	LUN_Z
 #	}
 #	device {
 #		vendor			"COMPAQ  "

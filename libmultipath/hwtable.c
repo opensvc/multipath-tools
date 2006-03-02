@@ -142,7 +142,8 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		.vendor        = "DGC",
-		.product       = "^[^LUN_Z]",
+		.product       = "*",
+		.bl_product    = "LUNZ",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = "/sbin/mpath_prio_emc /dev/%n",
 		.features      = "1 queue_if_no_path",
@@ -151,7 +152,7 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.rr_weight     = RR_WEIGHT_NONE,
-		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.no_path_retry = (300 / DEFAULT_CHECKINT),
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = EMC_CLARIION,
 	},

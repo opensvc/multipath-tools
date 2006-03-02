@@ -361,6 +361,21 @@ product_handler(vector strvec)
 }
 
 static int
+bl_product_handler(vector strvec)
+{
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+
+	if (!hwe)
+		return 1;
+
+	hwe->bl_product = set_value(strvec);
+	if (!hwe->bl_product)
+		return 1;
+
+	return 0;
+}
+
+static int
 hw_pgpolicy_handler(vector strvec)
 {
 	char * buff;
@@ -903,6 +918,17 @@ snprint_hw_product (char * buff, int len, void * data)
 }
 
 static int
+snprint_hw_bl_product (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->bl_product)
+		return 0;
+
+	return snprintf(buff, len, "%s", hwe->bl_product);
+}
+
+static int
 snprint_hw_getuid_callout (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
@@ -1325,6 +1351,7 @@ init_keywords(void)
 	install_sublevel();
 	install_keyword("vendor", &vendor_handler, &snprint_hw_vendor);
 	install_keyword("product", &product_handler, &snprint_hw_product);
+	install_keyword("product_blacklist", &bl_product_handler, &snprint_hw_bl_product);
 	install_keyword("path_grouping_policy", &hw_pgpolicy_handler, &snprint_hw_path_grouping_policy);
 	install_keyword("getuid_callout", &hw_getuid_callout_handler, &snprint_hw_getuid_callout);
 	install_keyword("path_selector", &hw_selector_handler, &snprint_hw_selector);

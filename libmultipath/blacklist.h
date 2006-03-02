@@ -15,7 +15,7 @@ struct blentry_device {
 	regex_t product_reg;
 };
 
-int setup_default_blist (vector);
+int setup_default_blist (struct config *);
 int alloc_ble_device (vector);
 int blacklist (vector, char *);
 int blacklist_device (vector, char *, char *);

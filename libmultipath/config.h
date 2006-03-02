@@ -24,6 +24,7 @@ struct hwentry {
 	int no_path_retry;
 	int minio;
 	struct checker * checker;
+	char * bl_product;
 };
 
 struct mpentry {

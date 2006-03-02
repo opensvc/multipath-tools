@@ -106,6 +106,9 @@ free_hwe (struct hwentry * hwe)
 	if (hwe->hwhandler)
 		FREE(hwe->hwhandler);
 
+	if (hwe->bl_product)
+		FREE(hwe->bl_product);
+
 	FREE(hwe);
 }
 
@@ -251,6 +254,8 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->minio = dhwe->minio;
 	hwe->checker = dhwe->checker;
 
+	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
+		goto out;
 
 	if (!vector_alloc_slot(hwtable))
 		goto out;
@@ -351,9 +356,6 @@ load_config (char * file)
 		
 		if (!conf->blist_devnode)
 			goto out;
-		
-		if (setup_default_blist(conf->blist_devnode))
-			goto out;
 	}
 	if (conf->blist_wwid == NULL) {
 		conf->blist_wwid = vector_alloc();
@@ -367,6 +369,9 @@ load_config (char * file)
 		if (!conf->blist_device)
 			goto out;
 	}
+	if (setup_default_blist(conf))
+		goto out;
+
 	if (conf->mptable == NULL) {
 		conf->mptable = vector_alloc();
 

@@ -327,6 +327,14 @@
 #		# default : 1000
 #		#
 #		rr_min_io	100
+#
+#		#
+#		# name    : product_blacklist
+#		# scope   : multipath & multipathd
+#		# desc    : product strings to blacklist for this vendor
+#		# default : none
+#		#
+#		product_blacklist	LUN_Z
 #	}
 #	device {
 #		vendor			"COMPAQ  "
