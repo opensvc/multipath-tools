@@ -1101,6 +1101,8 @@ snprint_hw_path_checker (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
+	if (!hwe->checker)
+		return 0;
 	if (!checker_selected(hwe->checker))
 		return 0;
 	if (hwe->checker == conf->checker)
