@@ -680,12 +680,10 @@ ev_add_path (char * devname, struct vectors * vecs)
 	pp = find_path_by_dev(vecs->pathvec, devname);
 
 	if (pp) {
-		condlog(0, "%s: spurious uevent, path already in pathvec, %p",
-			devname, pp->mpp);
-		/*
-		 * allow reconfig of orphaned path here
-		 */
-		if (pp->mpp) return 1;
+		condlog(0, "%s: spurious uevent, path already in pathvec",
+			devname);
+		if (pp->mpp)
+			return 0;
 	}
 	else {
 		/*
