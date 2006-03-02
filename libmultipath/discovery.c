@@ -696,7 +696,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	if (mask & DI_CHECKER && get_state(pp))
 		goto blank;
 	
-	if (mask & DI_PRIO)
+	if (mask & DI_PRIO && pp->state != PATH_DOWN)
 		get_prio(pp);
 
 	if (mask & DI_WWID && !strlen(pp->wwid))
