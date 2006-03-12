@@ -82,7 +82,8 @@ int checker_init (struct checker * c)
 
 void checker_put (struct checker * c)
 {
-	c->free(c);
+	if (c->free)
+		c->free(c);
 	memset(c, 0x0, sizeof(struct checker));
 }
 
