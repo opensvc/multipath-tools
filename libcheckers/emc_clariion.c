@@ -29,6 +29,7 @@ int emc_clariion_init (struct checker * c)
 	c->context = malloc(sizeof(struct emc_clariion_checker_context));
 	if (!c->context)
 		return 1;
+	((struct emc_clariion_checker_context *)c->context)->wwn_set = 0;
 	return 0;
 }
 
