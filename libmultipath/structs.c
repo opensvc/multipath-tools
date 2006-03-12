@@ -340,17 +340,28 @@ find_path_by_devt (vector pathvec, char * dev_t)
 }
 
 extern int
+pathcountgr (struct pathgroup * pgp, int state)
+{
+	struct path *pp;
+	int count = 0;
+	int i;
+
+	vector_foreach_slot (pgp->paths, pp, i)
+		if ((pp->state == state) || (state < 0))
+			count++;
+
+	return count;
+}
+
+extern int
 pathcount (struct multipath * mpp, int state)
 {
 	struct pathgroup *pgp;
-	struct path *pp;
-	int i, j;
 	int count = 0;
+	int i;
 
 	vector_foreach_slot (mpp->pg, pgp, i)
-		vector_foreach_slot (pgp->paths, pp, j)
-			if ((pp->state == state) || (state < 0))
-				count++;
+		count += pathcountgr(pgp, state);
 
 	return count;
 }

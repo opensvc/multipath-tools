@@ -184,6 +184,7 @@ struct multipath * find_mp_by_minor (vector mp, int minor);
 struct path * find_path_by_devt (vector pathvec, char * devt);
 struct path * find_path_by_dev (vector pathvec, char * dev);
 
+int pathcountgr (struct pathgroup *, int);
 int pathcount (struct multipath *, int);
 
 char sysfs_path[FILE_NAME_SIZE];
