@@ -1304,8 +1304,10 @@ checkerloop (void *ap)
 				pp->tick = pp->checkint;
 				condlog(4, "%s: delay next check %is",
 						pp->dev_t, pp->tick);
-
 			}
+			else if (newstate == PATH_DOWN)
+				LOG_MSG(2, checker_message(&pp->checker));
+
 			pp->state = newstate;
 
 			/*

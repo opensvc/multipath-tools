@@ -619,6 +619,9 @@ get_state (struct path * pp)
 	}
 	pp->state = checker_check(c);
 	condlog(3, "%s: state = %i", pp->dev, pp->state);
+	if (pp->state == PATH_DOWN)
+		condlog(2, "%s: checker msg is \"%s\"",
+			pp->dev, checker_message(c));
 	return 0;
 }
 
