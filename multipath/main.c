@@ -305,7 +305,7 @@ main (int argc, char *argv[])
 	int arg;
 	extern char *optarg;
 	extern int optind;
-	int i, r;
+	int i, r = 1;
 
 	if (getuid() != 0) {
 		fprintf(stderr, "need to be root\n");

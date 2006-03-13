@@ -48,7 +48,7 @@ struct config {
 	int with_sysfs;
 	int pgpolicy;
 	struct checker * checker;
-	int dev_type;
+	enum devtypes dev_type;
 	int minio;
 	int checkint;
 	int max_checkint;

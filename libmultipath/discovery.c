@@ -237,7 +237,7 @@ devt2devname (char *devname, char *devt)
 	struct dlist * ls;
 	char attr_path[FILE_NAME_SIZE];
 	char block_path[FILE_NAME_SIZE];
-	struct sysfs_attribute * attr;
+	struct sysfs_attribute * attr = NULL;
 	struct sysfs_class * class;
 	struct sysfs_class_device * dev;
 

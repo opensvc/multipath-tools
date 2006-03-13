@@ -547,11 +547,11 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 }
 
 extern char *
-get_refwwid (char * dev, int dev_type, vector pathvec)
+get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 {
 	struct path * pp;
 	char buff[FILE_NAME_SIZE];
-	char * refwwid;
+	char * refwwid = NULL;
 
 	if (dev_type == DEV_NONE)
 		return NULL;
