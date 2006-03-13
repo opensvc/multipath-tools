@@ -201,7 +201,7 @@ static struct hwentry default_hw[] = {
 	/*
 	 * IBM controler family
 	 *
-	 * Maintainer : Hannes Reinecke, Suse
+	 * Maintainer : Hannes Reinecke, SuSE
 	 * Mail : hare@suse.de
 	 */
 	{
@@ -254,7 +254,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM ESS F20 aka Shark */
 		.vendor        = "IBM",
-		.product       = "2105F20",
+		.product       = "2105{800,F20}",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = NULL,
 		.features      = "1 queue_if_no_path",
@@ -303,7 +303,7 @@ static struct hwentry default_hw[] = {
 		/* IBM S/390 ECKD DASD */
 		.vendor        = "IBM",
 		.product       = "S/390 DASD ECKD",
-		.getuid        = "/sbin/dasdview -j /dev/%n",
+		.getuid        = "/sbin/dasd_id /dev/%n",
 		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
