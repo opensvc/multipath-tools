@@ -24,8 +24,8 @@
  */
 #define PROG    "multipath"
 
-#define VERSION_CODE 0x000406
-#define DATE_CODE    0x0b0a05
+#define VERSION_CODE 0x000407
+#define DATE_CODE    0x030c06
 
 #define MULTIPATH_VERSION(version)	\
 	(version >> 16) & 0xFF,		\
