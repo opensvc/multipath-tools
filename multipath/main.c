@@ -46,8 +46,7 @@
 #include <alias.h>
 #include <configure.h>
 #include <pgpolicies.h>
-
-#include "main.h"
+#include <version.h>
 
 static int
 filter_pathvec (vector pathvec, char * refwwid)

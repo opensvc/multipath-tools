@@ -4,6 +4,7 @@
 #include <memory.h>
 #include <vector.h>
 #include <util.h>
+#include <version.h>
 
 #include "cli.h"
 
@@ -305,6 +306,8 @@ genhelp_handler (void)
 		return NULL;
 
 	p = reply;
+	p += sprintf(p, VERSION_STRING);
+	p += sprintf(p, "CLI commands reference:\n");
 
 	vector_foreach_slot (handlers, h, i) {
 		fp = h->fingerprint;

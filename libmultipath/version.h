@@ -1,9 +1,9 @@
 /*
- * Soft:        Description here...
+ * Soft:        multipath device mapper target autoconfig
  *
  * Version:     $Id: main.h,v 0.0.1 2003/09/18 15:13:38 cvaroqui Exp $
  *
- * Author:      Copyright (C) 2003 Christophe Varoqui
+ * Author:      Christophe Varoqui
  *
  *              This program is distributed in the hope that it will be useful,
  *              but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -14,26 +14,24 @@
  *              modify it under the terms of the GNU General Public License
  *              as published by the Free Software Foundation; either version
  *              2 of the License, or (at your option) any later version.
+ *
+ * Copyright (c) 2006 Christophe Varoqui
  */
-
-#ifndef _MAIN_H
-#define _MAIN_H
-
-/*
- * Build version
- */
-#define PROG    "multipath"
+#ifndef _VERSION_H
+#define _VERSION_H
 
 #define VERSION_CODE 0x000407
 #define DATE_CODE    0x030c06
 
-#define MULTIPATH_VERSION(version)	\
-	(version >> 16) & 0xFF,		\
-	(version >> 8) & 0xFF,		\
+#define PROG    "multipath-tools"
+
+#define MULTIPATH_VERSION(version)      \
+	(version >> 16) & 0xFF,         \
+	(version >> 8) & 0xFF,          \
 	version & 0xFF
 
-#define VERSION_STRING PROG" v%d.%d.%d (%.2d/%.2d, 20%.2d)\n",	\
-                MULTIPATH_VERSION(VERSION_CODE),		\
-                MULTIPATH_VERSION(DATE_CODE)
+#define VERSION_STRING PROG" v%d.%d.%d (%.2d/%.2d, 20%.2d)\n",  \
+		MULTIPATH_VERSION(VERSION_CODE),                \
+		MULTIPATH_VERSION(DATE_CODE)
 
-#endif
+#endif /* _VERSION_H */
