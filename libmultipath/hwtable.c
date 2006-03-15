@@ -318,8 +318,8 @@ static struct hwentry default_hw[] = {
 	/*
 	 * NETAPP controler family
 	 *
-	 * Maintainer : Igor Feoktistov
-	 * Mail : igorf@netapp.com
+	 * Maintainer : Dave Wysochanski
+	 * Mail : davidw netapp com
 	 */
 	{
 		.vendor        = "NETAPP",
