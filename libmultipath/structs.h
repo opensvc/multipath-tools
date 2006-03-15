@@ -142,7 +142,7 @@ struct multipath {
 	struct mpentry * mpe;
 	struct hwentry * hwe;
 
-	/* daemon store a data blob for DM event waiter threads */
+	/* threads */
 	void * waiter;
 
 	/* stats */
@@ -189,4 +189,4 @@ int pathcount (struct multipath *, int);
 
 char sysfs_path[FILE_NAME_SIZE];
 
-#endif
+#endif /* _STRUCTS_H */

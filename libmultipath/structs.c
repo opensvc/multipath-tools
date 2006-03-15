@@ -16,6 +16,7 @@
 #include "debug.h"
 #include "structs_vec.h"
 #include "blacklist.h"
+#include "waiter.h"
 
 struct path *
 alloc_path (void)

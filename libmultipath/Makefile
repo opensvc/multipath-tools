@@ -18,6 +18,7 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
 PREVBUILD = $(shell nm debug.o 2> /dev/null|grep log_safe)
 
 ifeq ($(strip $(DAEMON)),1)
+	OBJS += lock.o waiter.o
 	CFLAGS += -DDAEMON
 	CLEAN = $(shell if [ "x$(PREVBUILD)" = "x" ]; then echo clean; fi)
 else

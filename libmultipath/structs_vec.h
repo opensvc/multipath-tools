@@ -9,17 +9,6 @@ struct vectors {
 	vector mpvec;
 };
 
-#if DAEMON
-struct event_thread {
-	struct dm_task *dmt;
-	pthread_t thread;
-	int event_nr;
-	char mapname[WWID_SIZE];
-	struct vectors *vecs;
-	struct multipath *mpp;
-};
-#endif
-
 typedef void (stop_waiter_thread_func) (struct multipath *, struct vectors *);
 typedef int (start_waiter_thread_func) (struct multipath *, struct vectors *);
 
@@ -44,5 +33,8 @@ struct multipath * add_map_without_path (struct vectors * vecs,
 				start_waiter_thread_func *start_waiter);
 struct multipath * add_map_with_path (struct vectors * vecs,
 				struct path * pp, int add_vec);
+int update_multipath (struct vectors *vecs, char *mapname);
+void update_queue_mode_del_path(struct multipath *mpp);
+void update_queue_mode_add_path(struct multipath *mpp);
 
 #endif /* _STRUCTS_VEC_H */

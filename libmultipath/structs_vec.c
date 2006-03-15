@@ -14,6 +14,7 @@
 #include "config.h"
 #include "propsel.h"
 #include "discovery.h"
+#include "waiter.h"
 
 
 /*
@@ -380,5 +381,92 @@ verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
 		}
 	}
 	return count;
+}
+
+int update_multipath (struct vectors *vecs, char *mapname)
+{
+	struct multipath *mpp;
+	struct pathgroup  *pgp;
+	struct path *pp;
+	int i, j;
+	int r = 1;
+
+	mpp = find_mp_by_alias(vecs->mpvec, mapname);
+
+	if (!mpp)
+		goto out;
+
+	free_pgvec(mpp->pg, KEEP_PATHS);
+	mpp->pg = NULL;
+
+	if (setup_multipath(vecs, mpp))
+		goto out; /* mpp freed in setup_multipath */
+
+	/*
+	 * compare checkers states with DM states
+	 */
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp, j) {
+			if (pp->dmstate != PSTATE_FAILED)
+				continue;
+
+			if (pp->state != PATH_DOWN) {
+				int oldstate = pp->state;
+				condlog(2, "%s: mark as failed", pp->dev_t);
+				mpp->stat_path_failures++;
+				pp->state = PATH_DOWN;
+				if (oldstate == PATH_UP ||
+				    oldstate == PATH_GHOST)
+					update_queue_mode_del_path(mpp);
+
+				/*
+				 * if opportune,
+				 * schedule the next check earlier
+				 */
+				if (pp->tick > conf->checkint)
+					pp->tick = conf->checkint;
+			}
+		}
+	}
+	r = 0;
+out:
+	if (r)
+		condlog(0, "failed to update multipath");
+	return r;
+}
+
+/*
+ * mpp->no_path_retry:
+ *   -2 (QUEUE) : queue_if_no_path enabled, never turned off
+ *   -1 (FAIL)  : fail_if_no_path
+ *    0 (UNDEF) : nothing
+ *   >0         : queue_if_no_path enabled, turned off after polling n times
+ */
+void update_queue_mode_del_path(struct multipath *mpp)
+{
+	if (--mpp->nr_active == 0 && mpp->no_path_retry > 0) {
+		/*
+		 * Enter retry mode.
+		 * meaning of +1: retry_tick may be decremented in
+		 *                checkerloop before starting retry.
+		 */
+		mpp->stat_queueing_timeouts++;
+		mpp->retry_tick = mpp->no_path_retry * conf->checkint + 1;
+		condlog(1, "%s: Entering recovery mode: max_retries=%d",
+			mpp->alias, mpp->no_path_retry);
+	}
+	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
+}
+
+void update_queue_mode_add_path(struct multipath *mpp)
+{
+	if (mpp->nr_active++ == 0 && mpp->no_path_retry > 0) {
+		/* come back to normal mode from retry mode */
+		mpp->retry_tick = 0;
+		dm_queue_if_no_path(mpp->alias, 1);
+		condlog(2, "%s: queue_if_no_path enabled", mpp->alias);
+		condlog(1, "%s: Recovered to normal mode", mpp->alias);
+	}
+	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
 }
 
