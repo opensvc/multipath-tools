@@ -1215,6 +1215,7 @@ signal_init(void)
 	signal_set(SIGINT, sigend);
 	signal_set(SIGTERM, sigend);
 	signal_set(SIGKILL, sigend);
+	signal(SIGPIPE, SIG_IGN);
 }
 
 static void
