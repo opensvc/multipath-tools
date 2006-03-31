@@ -1022,10 +1022,10 @@ configure (struct vectors * vecs, int start_waiters)
 	vector mpvec;
 	int i;
 
-	if (!(vecs->pathvec = vector_alloc()))
+	if (!vecs->pathvec && !(vecs->pathvec = vector_alloc()))
 		return 1;
 	
-	if (!(vecs->mpvec = vector_alloc()))
+	if (!vecs->mpvec && !(vecs->mpvec = vector_alloc()))
 		return 1;
 	
 	if (!(mpvec = vector_alloc()))
@@ -1077,6 +1077,7 @@ configure (struct vectors * vecs, int start_waiters)
 	/*
 	 * save new set of maps formed by considering current path state
 	 */
+	vector_free(vecs->mpvec);
 	vecs->mpvec = mpvec;
 
 	/*
@@ -1106,6 +1107,7 @@ reconfigure (struct vectors * vecs)
 	if (VECTOR_SIZE(vecs->pathvec))
 		free_pathvec(vecs->pathvec, FREE_PATHS);
 
+	vecs->pathvec = NULL;
 	conf = NULL;
 
 	if (load_config(DEFAULT_CONFIGFILE))
@@ -1138,24 +1140,10 @@ init_vecs (void)
 	if (!vecs->lock)
 		goto out;
 
-	vecs->pathvec = vector_alloc();
-
-	if (!vecs->pathvec)
-		goto out1;
-		
-	vecs->mpvec = vector_alloc();
-
-	if (!vecs->mpvec)
-		goto out2;
-	
 	pthread_mutex_init(vecs->lock, NULL);
 
 	return vecs;
 
-out2:
-	vector_free(vecs->pathvec);
-out1:
-	FREE(vecs->lock);
 out:
 	FREE(vecs);
 	condlog(0, "failed to init paths");
