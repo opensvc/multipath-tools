@@ -62,7 +62,7 @@
 #define CMDSIZE 160
 
 #define LOG_MSG(a,b) \
-	if (strlen(b)) condlog(a, "%s: %s", pp->dev_t, b);
+	if (strlen(b)) condlog(a, "%s: %s", pp->dev, b);
 
 pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -534,7 +534,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 				}
 				sync_map_state(mpp);
 
-				condlog(3, "%s path removed from devmap %s",
+				condlog(3, "%s: path removed from map %s",
 					devname, mpp->alias);
 			}
 			free_pathvec(rpvec, KEEP_PATHS);

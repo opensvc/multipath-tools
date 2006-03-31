@@ -59,8 +59,8 @@ adopt_paths (vector pathvec, struct multipath * mpp)
 
 	vector_foreach_slot (pathvec, pp, i) {
 		if (!strncmp(mpp->wwid, pp->wwid, WWID_SIZE)) {
-			condlog(3, "%s ownership set to %s",
-				pp->dev_t, mpp->alias);
+			condlog(3, "%s: ownership set to %s",
+				pp->dev, mpp->alias);
 			pp->mpp = mpp;
 			
 			if (!mpp->paths && !(mpp->paths = vector_alloc()))
@@ -97,7 +97,7 @@ orphan_paths (vector pathvec, struct multipath * mpp)
 
 	vector_foreach_slot (pathvec, pp, i) {
 		if (pp->mpp == mpp) {
-			condlog(4, "%s is orphaned", pp->dev_t);
+			condlog(4, "%s: orphaned", pp->dev);
 			orphan_path(pp);
 		}
 	}
