@@ -76,6 +76,7 @@ extern void *set_value(vector strvec);
 extern int process_stream(vector keywords);
 extern int init_data(char *conf_file, void (*init_keywords) (void));
 extern struct keyword * find_keyword(vector v, char * name);
+void set_current_keywords (vector *k);
 int snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw,
 		    void *data);
 

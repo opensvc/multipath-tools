@@ -305,7 +305,7 @@ free_config (struct config * conf)
 	free_blacklist_device(conf->blist_device);
 	free_mptable(conf->mptable);
 	free_hwtable(conf->hwtable);
-
+	free_keywords(conf->keywords);
 	FREE(conf);
 }
 
@@ -332,6 +332,7 @@ load_config (char * file)
 	 * read the config file
 	 */
 	if (filepresent(file)) {
+		set_current_keywords(&conf->keywords);
 		if (init_data(file, init_keywords)) {
 			condlog(0, "error parsing config file");
 			goto out;

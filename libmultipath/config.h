@@ -67,6 +67,7 @@ struct config {
 	char * hwhandler;
 	char * bindings_file;
 
+	vector keywords;
 	vector mptable;
 	vector hwtable;
 

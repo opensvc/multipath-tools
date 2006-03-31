@@ -25,6 +25,13 @@
 /* local vars */
 static int sublevel = 0;
 vector keywords = NULL;
+vector *keywords_addr = NULL;
+
+void set_current_keywords (vector *k)
+{
+	keywords_addr = k;
+	keywords = NULL;
+}
 
 int
 keyword_alloc(vector keywords, char *string, int (*handler) (vector),
@@ -53,7 +60,10 @@ keyword_alloc(vector keywords, char *string, int (*handler) (vector),
 int
 install_keyword_root(char *string, int (*handler) (vector))
 {
-	return keyword_alloc(keywords, string, handler, NULL);
+	int r = keyword_alloc(keywords, string, handler, NULL);
+	if (!r)
+		*keywords_addr = keywords;
+	return r;
 }
 
 void
