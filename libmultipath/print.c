@@ -631,7 +631,7 @@ snprint_pathgroup (char * line, int len, char * format,
 extern void
 print_multipath_topology (struct multipath * mpp, int verbosity)
 {
-	char buff[MAX_LINE_LEN * MAX_LINES];
+	char buff[MAX_LINE_LEN * MAX_LINES] = {};
 
 	snprint_multipath_topology(&buff[0], MAX_LINE_LEN * MAX_LINES,
 				   mpp, verbosity);
