@@ -315,25 +315,46 @@ static struct hwentry default_hw[] = {
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = DIRECTIO,
 	},
-	/*
+ 	/*
 	 * NETAPP controler family
 	 *
 	 * Maintainer : Dave Wysochanski
-	 * Mail : davidw netapp com
+	 * Mail : davidw@netapp.com
 	 */
 	{
 		.vendor        = "NETAPP",
-		.product       = "LUN",
+		.product       = "LUN.*",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = "/sbin/mpath_prio_netapp /dev/%n",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
 		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = FAILBACK_UNDEF,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
-		.minio         = DEFAULT_MINIO,
+		.minio         = 128,
+		.checker_name  = READSECTOR0,
+	},
+ 	/*
+	 * IBM NSeries (NETAPP) controler family
+	 *
+	 * Maintainer : Dave Wysochanski
+	 * Mail : davidw@netapp.com
+	 */
+	{
+		.vendor        = "IBM",
+		.product       = "Nseries.*",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = "/sbin/mpath_prio_netapp /dev/%n",
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = 128,
 		.checker_name  = READSECTOR0,
 	},
 	/*
