@@ -145,11 +145,6 @@ select_action (struct multipath * mpp, vector curmp)
 			mpp->action = ACT_RENAME;
 			return;
 		}
-		else {
-			condlog(3, "%s: set ACT_CREATE (map does not exist)",
-				mpp->alias);
-			mpp->action = ACT_CREATE;
-		}
 		mpp->action = ACT_CREATE;
 		condlog(3, "%s: set ACT_CREATE (map does not exist)",
 			mpp->alias);
