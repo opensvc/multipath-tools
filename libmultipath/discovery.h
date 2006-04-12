@@ -30,7 +30,6 @@ int sysfs_get_size (char * sysfs_path, char * dev, unsigned long long *);
 int path_discovery (vector pathvec, struct config * conf, int flag);
 
 void basename (char *, char *);
-int get_serial (char * buff, int fd);
 int do_tur (char *);
 int devt2devname (char *, char *);
 int pathinfo (struct path *, vector hwtable, int mask);

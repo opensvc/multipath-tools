@@ -172,7 +172,7 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
 }
 
 static int
-get_serial (char * str, char * devt)
+get_serial (char * str, int maxlen, char * devt)
 {
 	int fd;
         int len;
@@ -181,20 +181,22 @@ get_serial (char * str, char * devt)
 	fd = opennode(devt, O_RDONLY);
 
 	if (fd < 0)
-                return 0;
+                return 1;
 
 	if (0 == do_inq(fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0)) {
 		len = buff[3];
+		if (len >= maxlen)
+			return 1;
 		if (len > 0) {
 			memcpy(str, buff + 4, len);
 			buff[len] = '\0';
 		}
 		close(fd);
-		return 1;
+		return 0;
 	}
 
 	closenode(devt, fd);
-        return 0;
+        return 1;
 }
 
 static void *
@@ -358,7 +360,7 @@ get_paths (vector pathvec)
 			if (pos == BEFOREPG)
 				pos = INPG;
 
-			get_serial(pp->serial, pp->dev_t);
+			get_serial(pp->serial, SERIAL_SIZE, pp->dev_t);
 			vector_alloc_slot(pathvec);
 			vector_set_slot(pathvec, pp);
 			debug("store %s [%s]",
@@ -449,7 +451,7 @@ main (int argc, char **argv)
 	if (optind<argc)
 		strncpy(ref_path->dev_t, argv[optind], WORD_SIZE);
 
-	get_serial(ref_path->serial, ref_path->dev_t);
+	get_serial(ref_path->serial, SERIAL_SIZE, ref_path->dev_t);
 
 	if (!ref_path->serial || !strlen(ref_path->serial))
 		exit_tool(0);

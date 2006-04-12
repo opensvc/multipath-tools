@@ -339,24 +339,26 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
         return -1;
 }
 
-int
-get_serial (char * str, int fd)
+static int
+get_serial (char * str, int maxlen, int fd)
 {
         int len = 0;
         char buff[MX_ALLOC_LEN + 1] = {0};
 
 	if (fd < 0)
-                return 0;
+                return 1;
 
 	if (0 == do_inq(fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0)) {
 		len = buff[3];
+		if (len >= maxlen)
+			return 1;
 		if (len > 0) {
 			memcpy(str, buff + 4, len);
 			str[len] = '\0';
 		}
-		return 1;
+		return 0;
 	}
-        return 0;
+        return 1;
 }
 
 static int
@@ -597,7 +599,7 @@ static int
 scsi_ioctl_pathinfo (struct path * pp, int mask)
 {
 	if (mask & DI_SERIAL) {
-		get_serial(pp->serial, pp->fd);
+		get_serial(pp->serial, SERIAL_SIZE, pp->fd);
 		condlog(3, "%s: serial = %s", pp->dev, pp->serial);
 	}
 
