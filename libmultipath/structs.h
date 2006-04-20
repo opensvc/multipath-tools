@@ -1,7 +1,7 @@
 #ifndef _STRUCTS_H
 #define _STRUCTS_H
 
-#define WWID_SIZE		64
+#define WWID_SIZE		128
 #define SERIAL_SIZE		64
 #define NODE_NAME_SIZE		19
 #define PATH_STR_SIZE  		16
