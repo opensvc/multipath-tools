@@ -148,10 +148,10 @@ struct inquiry_data {
 					/* ......x. = command queue support  */
 					/* .......x = vs2                    */
 	unsigned char	vendor_identification[8];
-	unsigned char	product_identification[8];
+	unsigned char	product_identification[16];
 	unsigned char	product_revision[4];
 	unsigned char	vendor_specific[20];
-	unsigned char	b48;		/* xxxx.... = reserved               */
+	unsigned char	b56;		/* xxxx.... = reserved               */
 					/* ....xx.. = clocking               */
 					/* ......x. = qas                    */
 					/* .......x = ius                    */
