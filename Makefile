@@ -22,7 +22,11 @@ export KRNLOBJ
 
 BUILDDIRS = $(shell find . -mindepth 2 -name Makefile -exec dirname {} \; | grep -v ^lib)
 
+ifeq   ($(MULTIPATH_VERSION),)
 VERSION = $(shell basename ${PWD} | cut -d'-' -f3)
+else
+VERSION = $(MULTIPATH_VERSION)
+endif
 
 all: recurse
 
