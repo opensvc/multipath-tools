@@ -15,6 +15,7 @@
 #include "pgpolicies.h"
 #include "alias.h"
 #include "defaults.h"
+#include "devmapper.h"
 
 pgpolicyfn *pgpolicies[] = {
 	NULL,
@@ -164,6 +165,10 @@ select_alias (struct multipath * mp)
 		if (conf->user_friendly_names)
 			mp->alias = get_user_friendly_alias(mp->wwid,
 					conf->bindings_file);
+		if (mp->alias == NULL)
+			if ((mp->alias = MALLOC(WWID_SIZE)) != NULL)
+				dm_get_name(mp->wwid, DEFAULT_TARGET,
+					    mp->alias);
 		if (mp->alias == NULL)
 			mp->alias = mp->wwid;
 	}
