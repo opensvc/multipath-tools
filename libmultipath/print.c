@@ -53,13 +53,13 @@ static int
 snprint_size (char * buff, size_t len, unsigned long long size)
 {
 	if (size < (1 << 11))
-		return snprintf(buff, len, "%llu kB", size >> 1);
+		return snprintf(buff, len, "%lluK", size >> 1);
 	else if (size < (1 << 21))
-		return snprintf(buff, len, "%llu MB", size >> 11);
+		return snprintf(buff, len, "%lluM", size >> 11);
 	else if (size < (1 << 31))
-		return snprintf(buff, len, "%llu GB", size >> 21);
+		return snprintf(buff, len, "%lluG", size >> 21);
 	else
-		return snprintf(buff, len, "%llu TB", size >> 31);
+		return snprintf(buff, len, "%lluT", size >> 31);
 }
 
 static int
