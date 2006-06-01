@@ -91,22 +91,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		.vendor        = "HP",
-		.product       = "HSV2*",
-		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
-		.features      = DEFAULT_FEATURES,
-		.hwhandler     = DEFAULT_HWHANDLER,
-		.selector      = DEFAULT_SELECTOR,
-		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
-		.rr_weight     = RR_WEIGHT_NONE,
-		.no_path_retry = NO_PATH_RETRY_UNDEF,
-		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
-	},
-	{
-		.vendor        = "HP",
-		.product       = "DF[456]00",
+		.product       = "{HSV2*,A6189A}",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
@@ -201,12 +186,12 @@ static struct hwentry default_hw[] = {
 	/*
 	 * Hitachi controler family
 	 *
-	 * Maintainer : Christophe Varoqui
-	 * Mail : christophe.varoqui@free.fr
+	 * Maintainer : Matthias Rudolph
+	 * Mail : matthias.rudolph@hds.com
 	 */
 	{
-		.vendor        = "HITACHI",
-		.product       = "{A6189A,OPEN-}",
+		.vendor        = "{HITACHI,HP}",
+		.product       = "OPEN-",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
@@ -214,6 +199,21 @@ static struct hwentry default_hw[] = {
 		.selector      = DEFAULT_SELECTOR,
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = READSECTOR0,
+	},
+	{
+		.vendor        = "HITACHI",
+		.product       = "DF*",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = "/sbin/pp_hds_modular %d",
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
