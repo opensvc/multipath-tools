@@ -366,3 +366,10 @@ pathcount (struct multipath * mpp, int state)
 
 	return count;
 }
+
+struct path *
+first_path (struct multipath * mpp)
+{
+	struct pathgroup * pgp = VECTOR_SLOT(mpp->pg, 0);
+	return VECTOR_SLOT(pgp->paths, 0);
+}

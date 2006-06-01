@@ -292,8 +292,8 @@ snprint_dm_path_state (char * buff, size_t len, struct path * pp)
 static int
 snprint_vpr (char * buff, size_t len, struct path * pp)
 {
-	return snprintf(buff, len, "%s/%s/%s",
-		        pp->vendor_id, pp->product_id, pp->rev);
+	return snprintf(buff, len, "%s,%s",
+		        pp->vendor_id, pp->product_id);
 }
 
 static int
@@ -662,7 +662,9 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 	c += sprintf(c, "%%n");
 	
 	if (strncmp(mpp->alias, mpp->wwid, WWID_SIZE))
-		c += sprintf(c, " (%%w)");
+		c += sprintf(c, " (%%w) ");
+
+	c += snprint_vpr(c, 24, first_path(mpp));
 
 	fwd += snprint_multipath(buff + fwd, len - fwd, style, mpp);
 	if (fwd > len)
