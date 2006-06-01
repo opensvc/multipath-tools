@@ -30,6 +30,15 @@ strcmp_chomp(char *str1, char *str2)
 }
 
 void
+strchop(char *str)
+{
+	int i;
+
+	for (i=strlen(str)-1; i >=0 && isspace(str[i]); --i) ;
+	str[++i] = '\0';
+}
+
+void
 basename (char * str1, char * str2)
 {
 	char *p = str1 + (strlen(str1) - 1);

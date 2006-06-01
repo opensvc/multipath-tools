@@ -165,7 +165,7 @@ sysfs_get_##fname (char * sysfs_path, char * dev, char * buff, int len) \
 		goto out; \
 \
 	strncpy(buff, attr->value, attr->len - 1); \
-	buff[attr->len - 1] = '\0'; \
+	strchop(buff); \
 	sysfs_close_attribute(attr); \
 	return 0; \
 out: \
