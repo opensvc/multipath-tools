@@ -24,7 +24,7 @@ static struct hwentry default_hw[] = {
 	 * Mail : g.shyamsundar@yahoo.co.in
 	 */
 	{
-		.vendor        = "APPLE ",
+		.vendor        = "APPLE*",
 		.product       = "Xserve RAID ",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = NULL,
@@ -191,7 +191,7 @@ static struct hwentry default_hw[] = {
 	 */
 	{
 		.vendor        = "{HITACHI,HP}",
-		.product       = "OPEN-",
+		.product       = "OPEN-*",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
