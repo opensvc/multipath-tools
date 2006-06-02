@@ -28,14 +28,16 @@ find_hwe (vector hwtable, char * vendor, char * product)
 	regex_t vre, pre;
 
 	vector_foreach_slot (hwtable, hwe, i) {
-		if (regcomp(&vre, hwe->vendor, REG_EXTENDED|REG_NOSUB))
+		if (hwe->vendor &&
+		    regcomp(&vre, hwe->vendor, REG_EXTENDED|REG_NOSUB))
 			break;
-		if (regcomp(&pre, hwe->product, REG_EXTENDED|REG_NOSUB)) {
+		if (hwe->product &&
+		    regcomp(&pre, hwe->product, REG_EXTENDED|REG_NOSUB)) {
 			regfree(&vre);
 			break;
 		}
-		if (!regexec(&vre, vendor, 0, NULL, 0) &&
-		    !regexec(&pre, product, 0, NULL, 0))
+		if ((!hwe->vendor || !regexec(&vre, vendor, 0, NULL, 0)) &&
+		    (!hwe->product || !regexec(&pre, product, 0, NULL, 0)))
 			ret = hwe;
 		
 		regfree(&pre);
