@@ -321,7 +321,7 @@ main (int argc, char *argv[])
 	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
 
-	while ((arg = getopt(argc, argv, ":qdl::Ffi:M:v:p:b:")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":dl::FfM:v:p:b:")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
 			break;
