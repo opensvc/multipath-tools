@@ -496,7 +496,7 @@ snprint_multipath (char * line, int len, char * format,
 	char * f = format; /* format string cursor */
 	int fwd;
 	struct multipath_data * data;
-	char buff[MAX_FIELD_LEN];
+	char buff[MAX_FIELD_LEN] = {};
 
 	do {
 		if (!TAIL)
@@ -515,6 +515,7 @@ snprint_multipath (char * line, int len, char * format,
 		data->snprint(buff, MAX_FIELD_LEN, mpp);
 		PRINT(c, TAIL, buff);
 		PAD(data->width);
+		buff[0] = '\0';
 	} while (*f++);
 
 	line[c - line - 1] = '\n';
@@ -664,6 +665,7 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 	if (strncmp(mpp->alias, mpp->wwid, WWID_SIZE))
 		c += sprintf(c, " (%%w) ");
 
+	c += sprintf(c, "%%d ");
 	c += snprint_vpr(c, 24, first_path(mpp));
 
 	fwd += snprint_multipath(buff + fwd, len - fwd, style, mpp);

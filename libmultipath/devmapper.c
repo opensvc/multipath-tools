@@ -591,6 +591,7 @@ dm_get_maps (vector mp, char * type)
 				goto out1;
 
 			dm_get_uuid(names->name, mpp->wwid);
+			dm_get_info(names->name, &mpp->dmi);
 		}
 
 		if (!vector_alloc_slot(mp))
