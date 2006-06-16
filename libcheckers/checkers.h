@@ -20,6 +20,21 @@
 #define DEFAULT_CHECKER READSECTOR0
 
 /*
+ * Overloaded storage response time can be very long.
+ * SG_IO timouts after DEF_TIMEOUT milliseconds, and checkers interprets this
+ * as a path failure. multipathd then proactively evicts the path from the DM
+ * multipath table in this case.
+ *
+ * This generaly snow balls and ends up in full eviction and IO errors for end
+ * users. Bad. This may also cause SCSI bus resets, causing disruption for all
+ * local and external storage hardware users.
+ * 
+ * Provision a long timeout. Longer than any real-world application would cope
+ * with.
+ */
+#define DEF_TIMEOUT	300000
+
+/*
  * strings lengths
  */
 #define CHECKER_NAME_LEN 16

@@ -51,7 +51,7 @@ tur (struct checker * c)
         io_hdr.dxfer_direction = SG_DXFER_NONE;
         io_hdr.cmdp = turCmdBlk;
         io_hdr.sbp = sense_buffer;
-        io_hdr.timeout = 20000;
+        io_hdr.timeout = DEF_TIMEOUT;
         io_hdr.pack_id = 0;
         if (ioctl(c->fd, SG_IO, &io_hdr) < 0) {
 		MSG(c, MSG_TUR_DOWN);
