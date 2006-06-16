@@ -16,7 +16,6 @@
 #include "../libmultipath/sg_include.h"
 
 #define SENSE_BUFF_LEN 32
-#define DEF_TIMEOUT 60000
 
 #define MSG_READSECTOR0_UP	"readsector0 checker reports path is up"
 #define MSG_READSECTOR0_DOWN	"readsector0 checker reports path is down"

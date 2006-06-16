@@ -38,7 +38,7 @@
 #define INQUIRY_CMDLEN  6
 #define INQUIRY_CMD     0x12
 #define SENSE_BUFF_LEN  32
-#define DEF_TIMEOUT     60000
+#define DEF_TIMEOUT     300000
 #define RECOVERED_ERROR 0x01
 #define MX_ALLOC_LEN    255
 #define SCSI_CHECK_CONDITION    0x2

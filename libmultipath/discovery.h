@@ -5,13 +5,16 @@
 #define INQUIRY_CMDLEN  6
 #define INQUIRY_CMD     0x12
 #define SENSE_BUFF_LEN  32
-#define DEF_TIMEOUT     60000
 #define RECOVERED_ERROR 0x01
 #define MX_ALLOC_LEN    255
 #define TUR_CMD_LEN     6
 
 #ifndef BLKGETSIZE
 #define BLKGETSIZE      _IO(0x12,96)
+#endif
+
+#ifndef DEF_TIMEOUT
+#define DEF_TIMEOUT	300000
 #endif
 
 /*
