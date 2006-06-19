@@ -7,6 +7,10 @@
 #include <libdevmapper.h>
 #include <ctype.h>
 #include <linux/kdev_t.h>
+#include <errno.h>
+
+#define UUID_PREFIX "part%d-"
+#define MAX_PREFIX_LEN 8
 
 extern int
 dm_prereq (char * str, int x, int y, int z)
@@ -68,9 +72,10 @@ dm_simplecmd (int task, const char *name) {
 
 extern int
 dm_addmap (int task, const char *name, const char *target,
-	   const char *params, unsigned long size) {
+	   const char *params, unsigned long size, const char *uuid, int part) {
 	int r = 0;
 	struct dm_task *dmt;
+	char *prefixed_uuid;
 
 	if (!(dmt = dm_task_create (task)))
 		return 0;
@@ -81,9 +86,25 @@ dm_addmap (int task, const char *name, const char *target,
 	if (!dm_task_add_target (dmt, 0, size, target, params))
 		goto addout;
 
+	if (task == DM_DEVICE_CREATE && uuid) {
+		prefixed_uuid = malloc(MAX_PREFIX_LEN + strlen(uuid) + 1);
+		if (!prefixed_uuid) {
+			fprintf(stderr, "cannot create prefixed uuid : %s\n",
+				strerror(errno));
+			goto addout;
+		}
+		sprintf(prefixed_uuid, UUID_PREFIX "%s", part, uuid);
+		if (!dm_task_set_uuid(dmt, prefixed_uuid))
+			goto freeout;
+	}
+
 	dm_task_no_open_count(dmt);
 
 	r = dm_task_run (dmt);
+
+	freeout:
+	if (prefixed_uuid)
+		free(prefixed_uuid);
 
 	addout:
 	dm_task_destroy (dmt);
@@ -178,3 +199,26 @@ out:
 	return ret;
 }
 
+char *
+dm_mapuuid(int major, int minor)
+{
+	struct dm_task *dmt;
+	char *tmp, *uuid = NULL;
+
+	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
+		return NULL;
+
+	dm_task_no_open_count(dmt);
+	dm_task_set_major(dmt, major);
+	dm_task_set_minor(dmt, minor);
+
+	if (!dm_task_run(dmt))
+		goto out;
+
+	tmp = dm_task_get_uuid(dmt);
+	if (tmp[0] != '\0')
+		uuid = strdup(tmp);
+out:
+	dm_task_destroy(dmt);
+	return uuid;
+}

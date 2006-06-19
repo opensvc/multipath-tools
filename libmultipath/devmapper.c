@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <linux/kdev_t.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <checkers.h>
 
@@ -22,6 +23,10 @@
 
 #define MAX_WAIT 5
 #define LOOPS_PER_SEC 5
+
+#define UUID_PREFIX "mpath-"
+#define UUID_PREFIX_LEN 6
+
 
 static void
 dm_dummy_log (int level, const char *file, int line, const char *f, ...)
@@ -113,6 +118,7 @@ dm_addmap (int task, const char *name, const char *target,
 	   const char *params, unsigned long long size, const char *uuid) {
 	int r = 0;
 	struct dm_task *dmt;
+	char *prefixed_uuid = NULL;
 
 	if (!(dmt = dm_task_create (task)))
 		return 0;
@@ -123,12 +129,25 @@ dm_addmap (int task, const char *name, const char *target,
 	if (!dm_task_add_target (dmt, 0, size, target, params))
 		goto addout;
 
-	if (uuid && !dm_task_set_uuid(dmt, uuid))
-		goto addout;
+	if (uuid){
+		prefixed_uuid = MALLOC(UUID_PREFIX_LEN + strlen(uuid) + 1);
+		if (!prefixed_uuid) {
+			condlog(0, "cannot create prefixed uuid : %s\n",
+				strerror(errno));
+			goto addout;
+		}
+		sprintf(prefixed_uuid, UUID_PREFIX "%s", uuid);
+		if (!dm_task_set_uuid(dmt, prefixed_uuid))
+			goto freeout;
+	}
 
 	dm_task_no_open_count(dmt);
 
 	r = dm_task_run (dmt);
+
+	freeout:
+	if (prefixed_uuid)
+		free(prefixed_uuid);
 
 	addout:
 	dm_task_destroy (dmt);
@@ -215,8 +234,12 @@ dm_get_uuid(char *name, char *uuid)
                 goto uuidout;
 
 	uuidtmp = dm_task_get_uuid(dmt);
-	if (uuidtmp)
-		strcpy(uuid, uuidtmp);
+	if (uuidtmp) {
+		if (!strncmp(uuidtmp, UUID_PREFIX, UUID_PREFIX_LEN))
+			strcpy(uuid, uuidtmp + UUID_PREFIX_LEN);
+		else
+			strcpy(uuid, uuidtmp);
+	}
 	else
 		uuid[0] = '\0';
 

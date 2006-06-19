@@ -192,6 +192,7 @@ main(int argc, char **argv){
 	char partname[PARTNAME_SIZE], params[PARTNAME_SIZE + 16];
 	char * loopdev = NULL;
 	char * delim = NULL;
+	char *uuid = NULL;
 	int loopro = 0;
 	int hotplug = 0;
 	struct stat buf;
@@ -284,11 +285,6 @@ main(int argc, char **argv){
 	}
 
 	if (S_ISREG (buf.st_mode)) {
-		loopdev = malloc(LO_NAME_SIZE * sizeof(char));
-		
-		if (!loopdev)
-			exit(1);
-
 		/* already looped file ? */
 		loopdev = find_loop_by_file(device);
 
@@ -313,6 +309,13 @@ main(int argc, char **argv){
 	}
 	
 	off = find_devname_offset(device);
+
+	if (!loopdev)
+		uuid = dm_mapuuid((unsigned int)MAJOR(buf.st_rdev),
+				  (unsigned int)MINOR(buf.st_rdev));
+	if (!uuid)
+		uuid = device + off;
+		
 	fd = open(device, O_RDONLY);
 
 	if (fd == -1) {
@@ -420,7 +423,7 @@ main(int argc, char **argv){
 					DM_DEVICE_RELOAD : DM_DEVICE_CREATE);
 
 				dm_addmap(op, partname, DM_TARGET, params,
-					  slices[j].size);
+					  slices[j].size, uuid, j+1);
 
 				if (op == DM_DEVICE_RELOAD)
 					dm_simplecmd(DM_DEVICE_RESUME,
