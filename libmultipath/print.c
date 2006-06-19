@@ -52,16 +52,26 @@ snprint_uint (char * buff, size_t len, unsigned int val)
 static int
 snprint_size (char * buff, size_t len, unsigned long long size)
 {
-	if (size < (1 << 11))
-		return snprintf(buff, len, "%lluK", size >> 1);
-	else if (size < (1 << 21))
-		return snprintf(buff, len, "%lluM", size >> 11);
-	else if (size < (1 << 31))
-		return snprintf(buff, len, "%lluG", size >> 21);
+	float s = (float)(size >> 1); /* start with KB */
+	char fmt[6] = {};
+	char units[] = {'K','M','G','T','P'};
+	char *u = units;
+	
+	while (s >= 1024 && *u != 'P') {
+		s = s / 1024;
+		u++;
+	}
+	if (s < 10)
+		snprintf(fmt, 6, "%%.1f%c", *u);
 	else
-		return snprintf(buff, len, "%lluT", size >> 31);
+		snprintf(fmt, 6, "%%.0f%c", *u);
+
+	return snprintf(buff, len, fmt, s);
 }
 
+/*
+ * multipath info printing functions
+ */
 static int
 snprint_name (char * buff, size_t len, struct multipath * mpp)
 {
@@ -222,6 +232,9 @@ snprint_action (char * buff, size_t len, struct multipath * mpp)
 	}
 }
 
+/*
+ * path info printing functions
+ */
 static int
 snprint_path_uuid (char * buff, size_t len, struct path * pp)
 {
