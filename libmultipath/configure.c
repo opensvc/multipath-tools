@@ -281,11 +281,13 @@ lock_multipath (struct multipath * mpp, int lock)
 
 /*
  * Return value:
- *  -1: Retry
- *   0: DM_DEVICE_CREATE or DM_DEVICE_RELOAD failed, or dry_run mode.
- *   1: DM_DEVICE_CREATE or DM_DEVICE_RELOAD succeeded.
- *   2: Map is already existing.
  */
+#define DOMAP_RETRY	-1
+#define DOMAP_FAIL	0
+#define DOMAP_OK	1
+#define DOMAP_EXIST	2
+#define DOMAP_DRY	3
+
 extern int
 domap (struct multipath * mpp)
 {
@@ -294,15 +296,15 @@ domap (struct multipath * mpp)
 	/*
 	 * last chance to quit before touching the devmaps
 	 */
-	if (conf->dry_run) {
+	if (conf->dry_run && mpp->action != ACT_NOTHING) {
 		print_multipath_topology(mpp, conf->verbosity);
-		return 0;
+		return DOMAP_DRY;
 	}
 
 	switch (mpp->action) {
 	case ACT_REJECT:
 	case ACT_NOTHING:
-		return 2;
+		return DOMAP_EXIST;
 
 	case ACT_SWITCHPG:
 		dm_switchgroup(mpp->alias, mpp->bestpg);
@@ -312,13 +314,13 @@ domap (struct multipath * mpp)
 		 * retry.
 		 */
 		reinstate_paths(mpp);
-		return 2;
+		return DOMAP_EXIST;
 
 	case ACT_CREATE:
 		if (lock_multipath(mpp, 1)) {
 			condlog(3, "%s: failed to create map (in use)",
 				mpp->alias);
-			return -1;
+			return DOMAP_RETRY;
 		}
 		dm_shut_log();
 
@@ -372,9 +374,9 @@ domap (struct multipath * mpp)
 		condlog(2, "%s: load table [0 %llu %s %s]", mpp->alias,
                         mpp->size, DEFAULT_TARGET, mpp->params);
 #endif
+		return DOMAP_OK;
 	}
-
-	return r;
+	return DOMAP_FAIL;
 }
 
 static int
@@ -481,19 +483,18 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 
 		r = domap(mpp);
 
-		if (!r) {
+		if (r == DOMAP_FAIL || r == DOMAP_RETRY) {
 			condlog(3, "%s: domap (%u) failure "
 				   "for create/reload map",
 				mpp->alias, r);
-			remove_map(mpp, vecs, NULL, 0);
+			if (r == DOMAP_FAIL) {
+				remove_map(mpp, vecs, NULL, 0);
+				continue;
+			} else /* if (r == DOMAP_RETRY) */
+				return r;
+		}
+		if (r == DOMAP_DRY)
 			continue;
-		}
-		else if (r < 0) {
-			condlog(3, "%s: domap (%u) failure "
-				   "for create/reload map",
-				mpp->alias, r);
-			return r;
-		}
 
 		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
 			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
