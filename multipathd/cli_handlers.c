@@ -71,7 +71,7 @@ show_map_topology (char ** r, int * len, struct multipath * mpp)
 
 		c = reply;
 
-		c += snprint_multipath_topology( c, reply + maxlen - c, mpp, 2);
+		c += snprint_multipath_topology(c, reply + maxlen - c, mpp, 2);
 		again = ((c - reply) == (maxlen - 1));
 
 		if (again)
@@ -92,7 +92,8 @@ show_maps_topology (char ** r, int * len, struct vectors * vecs)
 	char * reply;
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
-
+ 
+	get_path_layout(vecs->pathvec);
 	reply = MALLOC(maxlen);
 
 	while (again) {
@@ -183,6 +184,7 @@ cli_list_map_topology (void * v, char ** reply, int * len, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
 	
+	get_path_layout(vecs->pathvec);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
