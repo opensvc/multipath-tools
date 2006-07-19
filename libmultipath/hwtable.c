@@ -12,13 +12,13 @@
  * Tuning suggestions on these parameters should go to
  * dm-devel@redhat.com
  * 
- * You are welcome to claim maintainership over a controler
+ * You are welcome to claim maintainership over a controller
  * family. Please mail the currently enlisted maintainer and
  * the upstream package maintainer.
  */
 static struct hwentry default_hw[] = {
 	/*
-	 * Apple controler family
+	 * Apple controller family
 	 *
 	 * Maintainer : Shyam Sundar
 	 * Mail : g.shyamsundar@yahoo.co.in
@@ -39,7 +39,7 @@ static struct hwentry default_hw[] = {
 		.checker_name  = DEFAULT_CHECKER,
 	},
 	/*
-	 * StorageWorks controler family
+	 * StorageWorks controller family
 	 *
 	 * Maintainer : Christophe Varoqui
 	 * Mail : christophe.varoqui@free.fr
@@ -105,7 +105,7 @@ static struct hwentry default_hw[] = {
 		.checker_name  = READSECTOR0,
 	},
 	/*
-	 * DDN controler family
+	 * DDN controller family
 	 *
 	 * Maintainer : Christophe Varoqui
 	 * Mail : christophe.varoqui@free.fr
@@ -126,7 +126,7 @@ static struct hwentry default_hw[] = {
 		.checker_name  = READSECTOR0,
 	},
 	/*
-	 * EMC / Clariion controler family
+	 * EMC / Clariion controller family
 	 *
 	 * Maintainer : Edward Goggin, EMC
 	 * Mail : egoggin@emc.com
@@ -163,7 +163,7 @@ static struct hwentry default_hw[] = {
 		.checker_name  = EMC_CLARIION,
 	},
 	/*
-	 * Fujitsu controler family
+	 * Fujitsu controller family
 	 *
 	 * Maintainer : Christophe Varoqui
 	 * Mail : christophe.varoqui@free.fr
@@ -184,7 +184,7 @@ static struct hwentry default_hw[] = {
 		.checker_name  = READSECTOR0,
 	},
 	/*
-	 * Hitachi controler family
+	 * Hitachi controller family
 	 *
 	 * Maintainer : Matthias Rudolph
 	 * Mail : matthias.rudolph@hds.com
@@ -220,7 +220,7 @@ static struct hwentry default_hw[] = {
 		.checker_name  = READSECTOR0,
 	},
 	/*
-	 * IBM controler family
+	 * IBM controller family
 	 *
 	 * Maintainer : Hannes Reinecke, SuSE
 	 * Mail : hare@suse.de
@@ -337,7 +337,7 @@ static struct hwentry default_hw[] = {
 		.checker_name  = DIRECTIO,
 	},
  	/*
-	 * NETAPP controler family
+	 * NETAPP controller family
 	 *
 	 * Maintainer : Dave Wysochanski
 	 * Mail : davidw@netapp.com
@@ -358,7 +358,7 @@ static struct hwentry default_hw[] = {
 		.checker_name  = READSECTOR0,
 	},
  	/*
-	 * IBM NSeries (NETAPP) controler family
+	 * IBM NSeries (NETAPP) controller family
 	 *
 	 * Maintainer : Dave Wysochanski
 	 * Mail : davidw@netapp.com
@@ -379,7 +379,7 @@ static struct hwentry default_hw[] = {
 		.checker_name  = READSECTOR0,
 	},
 	/*
-	 * Pillar Data controler family
+	 * Pillar Data controller family
 	 *
 	 * Maintainer : Christophe Varoqui
 	 * Mail : christophe.varoqui@free.fr

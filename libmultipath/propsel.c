@@ -42,7 +42,7 @@ select_rr_weight (struct multipath * mp)
 	}
 	if (mp->hwe && mp->hwe->rr_weight) {
 		mp->rr_weight = mp->hwe->rr_weight;
-		condlog(3, "%s: rr_weight = %i (controler setting)",
+		condlog(3, "%s: rr_weight = %i (controller setting)",
 			mp->alias, mp->rr_weight);
 		return 0;
 	}
@@ -69,7 +69,7 @@ select_pgfailback (struct multipath * mp)
 	}
 	if (mp->hwe && mp->hwe->pgfailback != FAILBACK_UNDEF) {
 		mp->pgfailback = mp->hwe->pgfailback;
-		condlog(3, "%s: pgfailback = %i (controler setting)",
+		condlog(3, "%s: pgfailback = %i (controller setting)",
 			mp->alias, mp->pgfailback);
 		return 0;
 	}
@@ -113,7 +113,7 @@ select_pgpolicy (struct multipath * mp)
 		mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
 		get_pgpolicy_name(pgpolicy_name, POLICY_NAME_SIZE,
 				  mp->pgpolicy);
-		condlog(3, "%s: pgpolicy = %s (controler setting)",
+		condlog(3, "%s: pgpolicy = %s (controller setting)",
 			mp->alias, pgpolicy_name);
 		return 0;
 	}
@@ -145,7 +145,7 @@ select_selector (struct multipath * mp)
 	}
 	if (mp->hwe && mp->hwe->selector) {
 		mp->selector = mp->hwe->selector;
-		condlog(3, "%s: selector = %s (controler setting)",
+		condlog(3, "%s: selector = %s (controller setting)",
 			mp->alias, mp->selector);
 		return 0;
 	}
@@ -187,7 +187,7 @@ select_features (struct multipath * mp)
 {
 	if (mp->hwe && mp->hwe->features) {
 		mp->features = mp->hwe->features;
-		condlog(3, "%s: features = %s (controler setting)",
+		condlog(3, "%s: features = %s (controller setting)",
 			mp->alias, mp->features);
 		return 0;
 	}
@@ -202,7 +202,7 @@ select_hwhandler (struct multipath * mp)
 {
 	if (mp->hwe && mp->hwe->hwhandler) {
 		mp->hwhandler = mp->hwe->hwhandler;
-		condlog(3, "%s: hwhandler = %s (controler setting)",
+		condlog(3, "%s: hwhandler = %s (controller setting)",
 			mp->alias, mp->hwhandler);
 		return 0;
 	}
@@ -219,7 +219,7 @@ select_checker(struct path *pp)
 
 	if (pp->hwe && pp->hwe->checker) {
 		checker_get(c, pp->hwe->checker);
-		condlog(3, "%s: path checker = %s (controler setting)",
+		condlog(3, "%s: path checker = %s (controller setting)",
 			pp->dev, checker_name(c));
 		return 0;
 	}
@@ -240,7 +240,7 @@ select_getuid (struct path * pp)
 {
 	if (pp->hwe && pp->hwe->getuid) {
 		pp->getuid = pp->hwe->getuid;
-		condlog(3, "%s: getuid = %s (controler setting)",
+		condlog(3, "%s: getuid = %s (controller setting)",
 			pp->dev, pp->getuid);
 		return 0;
 	}
@@ -261,7 +261,7 @@ select_getprio (struct path * pp)
 {
 	if (pp->hwe && pp->hwe->getprio) {
 		pp->getprio = pp->hwe->getprio;
-		condlog(3, "%s: getprio = %s (controler setting)",
+		condlog(3, "%s: getprio = %s (controller setting)",
 			pp->dev, pp->getprio);
 		return 0;
 	}
@@ -287,7 +287,7 @@ select_no_path_retry(struct multipath *mp)
 	}
 	if (mp->hwe && mp->hwe->no_path_retry != NO_PATH_RETRY_UNDEF) {
 		mp->no_path_retry = mp->hwe->no_path_retry;
-		condlog(3, "%s: no_path_retry = %i (controler setting)",
+		condlog(3, "%s: no_path_retry = %i (controller setting)",
 			mp->alias, mp->no_path_retry);
 		return 0;
 	}
@@ -314,7 +314,7 @@ select_minio (struct multipath * mp)
 	}
 	if (mp->hwe && mp->hwe->minio) {
 		mp->minio = mp->hwe->minio;
-		condlog(3, "%s: minio = %i (controler setting)",
+		condlog(3, "%s: minio = %i (controller setting)",
 			mp->alias, mp->minio);
 		return 0;
 	}

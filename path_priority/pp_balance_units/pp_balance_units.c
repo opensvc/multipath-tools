@@ -3,15 +3,15 @@
  * This code is GPLv2, see license file
  *
  * This path prioritizer aims to balance logical units over all
- * controlers available. The logic is :
+ * controllers available. The logic is :
  *
  * - list all paths in all primary path groups
- * - for each path, get the controler's serial
- * - compute the number of active paths attached to each controler
- * - compute the max number of paths attached to the same controler
+ * - for each path, get the controller's serial
+ * - compute the number of active paths attached to each controller
+ * - compute the max number of paths attached to the same controller
  * - if sums are already balanced or if the path passed as parameter is
- *   attached to controler with less active paths, then return 
- *   (max_path_attached_to_one_controler - number_of_paths_on_this_controler)
+ *   attached to controller with less active paths, then return 
+ *   (max_path_attached_to_one_controller - number_of_paths_on_this_controller)
  * - else, or if anything goes wrong, return 1 as a default prio
  *
  */
@@ -61,7 +61,7 @@ struct path {
 	char serial[SERIAL_SIZE];
 };
 
-struct controler {
+struct controller {
 	char serial[SERIAL_SIZE];
 	int path_count;
 };
@@ -372,40 +372,40 @@ get_paths (vector pathvec)
 }
 
 static void *
-find_controler (vector controlers, char * serial)
+find_controller (vector controllers, char * serial)
 {
 	int i;
-	struct controler * cp;
+	struct controller * cp;
 
-	if (!controlers)
+	if (!controllers)
 		return NULL;
 
-	vector_foreach_slot (controlers, cp, i)
+	vector_foreach_slot (controllers, cp, i)
 		if (!strncmp(cp->serial, serial, SERIAL_SIZE))
 				return cp;
 	return NULL;
 }
 
 static void
-get_controlers (vector controlers, vector pathvec)
+get_controllers (vector controllers, vector pathvec)
 {
 	int i;
 	struct path * pp;
-	struct controler * cp;
+	struct controller * cp;
 	
-	if (!controlers)
+	if (!controllers)
 		return;
 
 	vector_foreach_slot (pathvec, pp, i) {
 		if (!pp || !strlen(pp->serial))
 			continue;
 		
-		cp = find_controler(controlers, pp->serial);
+		cp = find_controller(controllers, pp->serial);
 
 		if (!cp) {
-			cp = zalloc(sizeof(struct controler));
-			vector_alloc_slot(controlers);
-			vector_set_slot(controlers, cp);
+			cp = zalloc(sizeof(struct controller));
+			vector_alloc_slot(controllers);
+			vector_set_slot(controllers, cp);
 			strncpy(cp->serial, pp->serial, SERIAL_SIZE);
 		}
 		cp->path_count++;	
@@ -413,17 +413,17 @@ get_controlers (vector controlers, vector pathvec)
 }
 
 static int
-get_max_path_count (vector controlers)
+get_max_path_count (vector controllers)
 {
 	int i;
 	int max = 0;
-	struct controler * cp;
+	struct controller * cp;
 
-	if (!controlers)
+	if (!controllers)
 		return 0;
 
-	vector_foreach_slot (controlers, cp, i) {
-		debug("controler %s : %i paths", cp->serial, cp->path_count);
+	vector_foreach_slot (controllers, cp, i) {
+		debug("controller %s : %i paths", cp->serial, cp->path_count);
 		if(cp->path_count > max)
 			max = cp->path_count;
 	}
@@ -435,9 +435,9 @@ int
 main (int argc, char **argv)
 {
 	vector pathvec = NULL;
-	vector controlers = NULL;
+	vector controllers = NULL;
 	struct path * ref_path = NULL;
-	struct controler * cp = NULL;
+	struct controller * cp = NULL;
 	int max_path_count = 0;
 
 	ref_path = zalloc(sizeof(struct path));
@@ -457,12 +457,12 @@ main (int argc, char **argv)
 		exit_tool(0);
 
 	pathvec = vector_alloc();
-	controlers = vector_alloc();
+	controllers = vector_alloc();
 
 	get_paths(pathvec);
-	get_controlers(controlers, pathvec);
-	max_path_count = get_max_path_count(controlers);
-	cp = find_controler(controlers, ref_path->serial);
+	get_controllers(controllers, pathvec);
+	max_path_count = get_max_path_count(controllers);
+	cp = find_controller(controllers, ref_path->serial);
 
 	if (!cp) {
 		debug("no other active path on serial %s\n",

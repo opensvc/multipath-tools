@@ -9,7 +9,7 @@
 
 #define POLICY_NAME_SIZE 32
 
-/* Storage controlers capabilities */
+/* Storage controllers capabilities */
 enum iopolicies { 
 	IOPOLICY_UNDEF,
 	FAILOVER,

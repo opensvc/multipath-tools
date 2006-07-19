@@ -237,7 +237,7 @@
 ##
 ## name  : devices
 ## scope : multipath & multipathd
-## desc  : list of per storage controler settings
+## desc  : list of per storage controller settings
 ##	  overrides default settings (device_maps block)
 ##         overriden by per multipath settings (multipaths block)
 ##
@@ -245,7 +245,7 @@
 #	#
 #	# name  : device
 #	# scope : multipath & multipathd
-#	# desc  : settings for this specific storage controler
+#	# desc  : settings for this specific storage controller
 #	#
 #	device {
 #		#
@@ -260,7 +260,7 @@
 #		# name    : path_grouping_policy
 #		# scope   : multipath
 #		# desc    : path grouping policy to apply to multipath hosted
-#		#           by this storage controler
+#		#           by this storage controller
 #		# values  : failover        = 1 path per priority group
 #		#           multibus        = all valid paths in 1 priority
 #		#                             group
