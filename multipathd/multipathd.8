@@ -1,4 +1,4 @@
-.TH MULTIPATHD 8 "October 2004" "Linux Administrator's Manual"
+.TH MULTIPATHD 8 "July 2006" "Linux Administrator's Manual"
 .SH NAME
 multipathd \- multipath daemon
 .SH SYNOPSYS
@@ -6,10 +6,10 @@ multipathd \- multipath daemon
 
 This daemon is in charge of checking for failed paths. When this happens,
 it will reconfigure the multipath map the path belongs to, so that this map 
-regain its maximum performance and redundancy.
+regains its maximum performance and redundancy.
 
 This daemon executes the external multipath config tool when events occur. 
-In turn, the multipath tool signals the multipathd daemon it is done with 
+In turn, the multipath tool signals the multipathd daemon when it is done with 
 devmap reconfiguration, so that it can refresh its failed path list.
 
 .SH "SEE ALSO"
