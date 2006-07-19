@@ -33,13 +33,11 @@ void dlog (int sink, int prio, char * fmt, ...)
 
 			fprintf(stdout, "%s | ", buff);
 			vfprintf(stdout, fmt, ap);
-			fprintf(stdout, "\n");
 		}
 		else
 			log_safe(prio + 3, fmt, ap);
 #else
 		vfprintf(stdout, fmt, ap);
-		fprintf(stdout, "\n");
 #endif
 	}
 	va_end(ap);

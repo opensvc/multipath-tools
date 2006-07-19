@@ -11,11 +11,11 @@ void dlog (int sink, int prio, char * fmt, ...)
 int logsink;
 
 #define condlog(prio, fmt, args...) \
-	dlog(logsink, prio, fmt, ##args)
+	dlog(logsink, prio, fmt "\n", ##args)
 
 #else /* DAEMON */
 
 #define condlog(prio, fmt, args...) \
-	dlog(0, prio, fmt, ##args)
+	dlog(0, prio, fmt "\n", ##args)
 
 #endif /* DAEMON */
