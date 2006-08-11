@@ -89,14 +89,12 @@ int emc_clariion(struct checker * c)
 		return PATH_SHAKY;
 	}
 
-#if 0
-	/* This is not actually an error as the failover to this group
-	 * _would_ bind the path */
-	if ( /* LUN should at least be bound somewhere */
-		sense_buffer[4] != 0x00) {
-		return PATH_UP;
+	if ( /* LUN should at least be bound somewhere and not be LUNZ */
+		sense_buffer[4] == 0x00) {
+		MSG(c, "emc_clariion_checker: Logical Unit is unbound or
+			LUNZ");
+		return PATH_DOWN;
 	}
-#endif	
 	
 	/*
 	 * store the LUN WWN there and compare that it indeed did not
