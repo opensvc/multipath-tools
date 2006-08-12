@@ -91,8 +91,7 @@ int emc_clariion(struct checker * c)
 
 	if ( /* LUN should at least be bound somewhere and not be LUNZ */
 		sense_buffer[4] == 0x00) {
-		MSG(c, "emc_clariion_checker: Logical Unit is unbound or
-			LUNZ");
+		MSG(c, "emc_clariion_checker: Logical Unit is unbound or LUNZ");
 		return PATH_DOWN;
 	}
 	
