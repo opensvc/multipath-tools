@@ -280,8 +280,10 @@ configure (void)
 
 	filter_pathvec(pathvec, refwwid);
 
-	if (conf->list)
+	if (conf->list) {
+		r = 0;
 		goto out;
+	}
 
 	/*
 	 * core logic entry point
