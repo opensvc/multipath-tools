@@ -62,18 +62,13 @@ int sgi_tpc_prio(const char *dev)
 		goto out;
 	}
 	
-	if ( /* Auto-volume Transfer Enabled */
-	    	(sense_buffer[8] & 0x80) != 0x80 ) {
-		fprintf(stderr, "Auto-volume Transfer not enabled");
-	}
-
 	if ( /* Current Volume Path Bit */
 		( sense_buffer[8] & 0x01) == 0x01 ) {
 		/* 
 		 * This volume was owned by the controller receiving
 		 * the inquiry command.
 		 */
-		ret |= 0x02;
+		ret |= 0x01;
 	}
 
 	/* Volume Preferred Path Priority */
@@ -83,7 +78,7 @@ int sgi_tpc_prio(const char *dev)
 		 * Access to this volume is most preferred through
 		 * this path and other paths with this value.
 		 */
-		ret |= 0x04;
+		ret |= 0x02;
 		break;
 	case 0x02:
 		/*
@@ -91,8 +86,7 @@ int sgi_tpc_prio(const char *dev)
 		 * as a secondary path. Typically this path would be used
 		 * for fail-over situations.
 		 */
-		ret |= 0x01;
-		break;
+		/* Fallthrough */
 	default:
 		/* Reserved values */
 		break;
