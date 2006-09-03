@@ -257,6 +257,22 @@ static struct hwentry default_hw[] = {
 		.checker_name  = TUR,
 	},
 	{
+		/* IBM Netfinity Fibre Channel RAID Controller Unit */
+		.vendor        = "IBM",
+		.product       = "3526",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = "/sbin/mpath_prio_tpc /dev/%n",
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = TUR,
+	},
+	{
 		/* IBM DS4200 / FAStT200 */
 		.vendor        = "IBM",
 		.product       = "3542",
