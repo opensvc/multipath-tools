@@ -105,6 +105,7 @@ dm_simplecmd (int task, const char *name) {
 		goto out;
 
 	dm_task_no_open_count(dmt);
+	dm_task_skip_lockfs(dmt);       /* for DM_DEVICE_RESUME */
 
 	r = dm_task_run (dmt);
 
