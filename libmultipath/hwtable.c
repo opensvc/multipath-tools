@@ -75,14 +75,14 @@ static struct hwentry default_hw[] = {
 		.checker_name  = HP_SW,
 	},
 	{
-		.vendor        = "{COMPAQ,HP}",
-		.product       = "{MSA,HSV}1*",
+		.vendor        = "(COMPAQ|HP)",
+		.product       = "(MSA|HSV)1.*",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 hp_sw",
 		.selector      = DEFAULT_SELECTOR,
-		.pgpolicy      = GROUP_BY_SERIAL,
+		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
@@ -91,7 +91,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		.vendor        = "HP",
-		.product       = "{HSV2*,A6189A}",
+		.product       = "(HSV2.*|A6189A)",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
@@ -148,7 +148,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		.vendor        = "DGC",
-		.product       = "*",
+		.product       = ".*",
 		.bl_product    = "LUNZ",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = "mpath_prio_emc /dev/%n",
@@ -190,8 +190,8 @@ static struct hwentry default_hw[] = {
 	 * Mail : matthias.rudolph@hds.com
 	 */
 	{
-		.vendor        = "{HITACHI,HP}",
-		.product       = "OPEN-*",
+		.vendor        = "(HITACHI|HP)",
+		.product       = "OPEN-.*",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
@@ -206,9 +206,9 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		.vendor        = "HITACHI",
-		.product       = "DF*",
+		.product       = "DF.*",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_hds_modular %d",
+		.getprio       = "mpath_prio_hds_modular %d",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -291,7 +291,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM ESS F20 aka Shark */
 		.vendor        = "IBM",
-		.product       = "2105{800,F20}",
+		.product       = "2105(800|F20)",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = NULL,
 		.features      = "1 queue_if_no_path",
@@ -305,9 +305,9 @@ static struct hwentry default_hw[] = {
 		.checker_name  = TUR,
 	},
 	{
-		/* IBM DS6000 / SAN Volume Controller */
+		/* IBM DS6000 */
 		.vendor        = "IBM",
-		.product       = "{1750500,2145}",
+		.product       = "1750500",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = "mpath_prio_alua /dev/%n",
 		.features      = "1 queue_if_no_path",
@@ -337,9 +337,26 @@ static struct hwentry default_hw[] = {
 		.checker_name  = TUR,
 	},
 	{
+		/* IBM SAN Volume Controller */
+		.vendor        = "IBM",
+		.product       = "2145",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = "mpath_prio_alua /dev/%n",
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = TUR,
+	},
+	{
 		/* IBM S/390 ECKD DASD */
 		.vendor        = "IBM",
 		.product       = "S/390 DASD ECKD",
+		.bl_product       = "S/390.*",
 		.getuid        = "/sbin/dasd_id /dev/%n",
 		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
@@ -480,7 +497,7 @@ static struct hwentry default_hw[] = {
 	 */
 	{
 		.vendor        = "SUN",
-		.product       = "{StorEdge 3510,T4}",
+		.product       = "(StorEdge 3510|T4)",
 		.getuid        = DEFAULT_GETUID,
 		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
