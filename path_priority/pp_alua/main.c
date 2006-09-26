@@ -12,8 +12,6 @@
  * 
  * This file is released under the GPL.
  */
-#include <linux/kdev_t.h>
-
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -241,7 +239,7 @@ main (int argc, char **argv)
 			mknod(
 				devicepath,
 				S_IFBLK|S_IRUSR|S_IWUSR,
-				MKDEV(major, minor)
+				makedev(major, minor)
 			);
 			
 		}
