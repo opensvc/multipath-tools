@@ -6,7 +6,7 @@ multipath \- Device mapper target autoconfig
 .RB [\| \-v\ \c
 .IR verbosity \|]
 .RB [\| \-d \|]
-.RB [\| \-l | \-ll | \-f | \-F \|]
+.RB [\| \-h | \-l | \-ll | \-f | \-F \|]
 .RB [\| \-p\ \c
 .BR failover | multibus | group_by_serial | group_by_prio | group_by_node_name \|]
 .RB [\| device \|]
@@ -28,6 +28,9 @@ print the created or updated multipath names only, for use to feed other tools l
 .B 2 +
 print all info : detected paths, coalesced paths (ie multipaths) and device maps
 .RE
+.TP
+.B \-h
+print usage text
 .TP
 .B \-d
 dry run, do not create or update devmaps
