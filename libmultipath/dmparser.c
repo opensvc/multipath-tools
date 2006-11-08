@@ -84,11 +84,14 @@ assemble_map (struct multipath * mp)
 		freechar -= shift;
 
 		vector_foreach_slot (pgp->paths, pp, j) {
-			if (mp->rr_weight == RR_WEIGHT_PRIO && pp->priority)
-				minio *= pp->priority;
+			int tmp_minio = minio;
+
+			if (mp->rr_weight == RR_WEIGHT_PRIO
+			    && pp->priority > 0)
+				tmp_minio = minio * pp->priority;
 
 			shift = snprintf(p, freechar, " %s %d",
-					 pp->dev_t, minio);
+					 pp->dev_t, tmp_minio);
 			if (shift >= freechar) {
 				fprintf(stderr, "mp->params too small\n");
 				return 1;
@@ -117,6 +120,7 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 	int num_pg_args = 0;
 	int num_paths = 0;
 	int num_paths_args = 0;
+	int def_minio = 0;
 	struct path * pp;
 	struct pathgroup * pgp;
 
@@ -305,12 +309,15 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 				if (k == 0 && !strncmp(mpp->selector,
 						       "round-robin", 11)) {
 					p += get_word(p, &word);
-					mpp->minio = atoi(word);
+					def_minio = atoi(word);
 
-					if (mpp->rr_weight)
-						mpp->minio /= mpp->rr_weight;
+					if (mpp->rr_weight == RR_WEIGHT_PRIO
+					    && pp->priority > 0)
+						def_minio /= pp->priority;
 
 					FREE(word);
+					if (def_minio != mpp->minio)
+						mpp->minio = def_minio;
 				}
 				else
 					p += get_word(p, NULL);
