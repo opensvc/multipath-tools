@@ -11,6 +11,7 @@ enum devtypes {
 struct hwentry {
 	char * vendor;
 	char * product;
+	char * revision;
 	char * getuid;
 	char * getprio;
 	char * features;
@@ -78,7 +79,7 @@ struct config {
 
 struct config * conf;
 
-struct hwentry * find_hwe (vector hwtable, char * vendor, char * product);
+struct hwentry * find_hwe (vector hwtable, char * vendor, char * product, char *revision);
 struct mpentry * find_mpe (char * wwid);
 char * get_mpe_wwid (char * alias);
 
