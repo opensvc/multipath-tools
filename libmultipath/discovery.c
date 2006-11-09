@@ -442,7 +442,7 @@ scsi_sysfs_pathinfo (struct path * pp)
 	/*
 	 * set the hwe configlet pointer
 	 */
-	pp->hwe = find_hwe(conf->hwtable, pp->vendor_id, pp->product_id);
+	pp->hwe = find_hwe(conf->hwtable, pp->vendor_id, pp->product_id, pp->rev);
 
 	/*
 	 * host / bus / target / lun
@@ -526,7 +526,7 @@ ccw_sysfs_pathinfo (struct path * pp)
 	/*
 	 * set the hwe configlet pointer
 	 */
-	pp->hwe = find_hwe(conf->hwtable, pp->vendor_id, pp->product_id);
+	pp->hwe = find_hwe(conf->hwtable, pp->vendor_id, pp->product_id, NULL);
 
 	/*
 	 * host / bus / target / lun

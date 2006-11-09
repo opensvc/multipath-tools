@@ -21,7 +21,7 @@
 #include "defaults.h"
 
 static struct hwentry *
-find_hwe_strmatch (vector hwtable, char * vendor, char * product)
+find_hwe_strmatch (vector hwtable, char * vendor, char * product, char * revision)
 {
 	int i;
 	struct hwentry *hwe, *ret = NULL;
@@ -33,6 +33,9 @@ find_hwe_strmatch (vector hwtable, char * vendor, char * product)
 		if (hwe->product && product && strcmp(hwe->product, product))
 			continue;
 
+		if (hwe->revision && revision && strcmp(hwe->revision, revision))
+			continue;
+
 		ret = hwe;
 		break;
 	}
@@ -40,11 +43,11 @@ find_hwe_strmatch (vector hwtable, char * vendor, char * product)
 }
 
 struct hwentry *
-find_hwe (vector hwtable, char * vendor, char * product)
+find_hwe (vector hwtable, char * vendor, char * product, char * revision)
 {
 	int i;
 	struct hwentry *hwe, *ret = NULL;
-	regex_t vre, pre;
+	regex_t vre, pre, rre;
 
 	vector_foreach_slot (hwtable, hwe, i) {
 		if (hwe->vendor &&
@@ -55,12 +58,23 @@ find_hwe (vector hwtable, char * vendor, char * product)
 			regfree(&vre);
 			break;
 		}
+		if (hwe->revision &&
+		    regcomp(&rre, hwe->revision, REG_EXTENDED|REG_NOSUB)) {
+			regfree(&vre);
+			regfree(&pre);
+			break;
+		}
 		if ((!hwe->vendor || !regexec(&vre, vendor, 0, NULL, 0)) &&
-		    (!hwe->product || !regexec(&pre, product, 0, NULL, 0)))
+		    (!hwe->product || !regexec(&pre, product, 0, NULL, 0)) &&
+		    (!hwe->revision || !regexec(&rre, revision, 0, NULL, 0)))
 			ret = hwe;
-		
-		regfree(&pre);
-		regfree(&vre);
+
+		if (hwe->revision)
+			regfree(&rre);
+		if (hwe->product)
+			regfree(&pre);
+		if (hwe->vendor)
+			regfree(&vre);
 
 		if (ret)
 			break;
@@ -111,6 +125,9 @@ free_hwe (struct hwentry * hwe)
 
 	if (hwe->product)
 		FREE(hwe->product);
+
+	if (hwe->revision)
+		FREE(hwe->revision);
 
 	if (hwe->selector)
 		FREE(hwe->selector);
@@ -226,9 +243,9 @@ set_param_str(char * str)
 }
 
 static int
-dup_hwe (vector hwtable, char * vendor, char * product)
+dup_hwe (vector hwtable, char * vendor, char * product, char * revision)
 {
-	struct hwentry * hwe = find_hwe(hwtable, vendor, product);
+	struct hwentry * hwe = find_hwe(hwtable, vendor, product, revision);
 
 	if (hwe)
 		return 1;
@@ -241,7 +258,7 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 {
 	struct hwentry * hwe;
 
-	if (find_hwe_strmatch(hwtable, dhwe->vendor, dhwe->product))
+	if (find_hwe_strmatch(hwtable, dhwe->vendor, dhwe->product, dhwe->revision))
 		return 0;
 	
 	if (!(hwe = alloc_hwe()))
@@ -251,6 +268,9 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 		goto out;
 	
 	if (!dhwe->product || !(hwe->product = set_param_str(dhwe->product)))
+		goto out;
+	
+	if (dhwe->revision && !(hwe->revision = set_param_str(dhwe->revision)))
 		goto out;
 	
 	if (dhwe->getuid && !(hwe->getuid = set_param_str(dhwe->getuid)))
