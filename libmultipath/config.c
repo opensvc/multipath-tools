@@ -20,6 +20,28 @@
 #include "blacklist.h"
 #include "defaults.h"
 
+static struct hwentry *
+find_hwe_strmatch (vector hwtable, char * vendor, char * product, char * revision)
+{
+	int i;
+	struct hwentry *hwe, *ret = NULL;
+
+	vector_foreach_slot (hwtable, hwe, i) {
+		if (hwe->vendor && vendor && strcmp(hwe->vendor, vendor))
+			continue;
+
+		if (hwe->product && product && strcmp(hwe->product, product))
+			continue;
+
+		if (hwe->revision && revision && strcmp(hwe->revision, revision))
+			continue;
+
+		ret = hwe;
+		break;
+	}
+	return ret;
+}
+
 struct hwentry *
 find_hwe (vector hwtable, char * vendor, char * product)
 {
@@ -222,7 +244,7 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 {
 	struct hwentry * hwe;
 
-	if (dup_hwe(hwtable, dhwe->vendor, dhwe->product))
+	if (find_hwe_strmatch(hwtable, dhwe->vendor, dhwe->product))
 		return 0;
 	
 	if (!(hwe = alloc_hwe()))
