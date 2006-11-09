@@ -21,7 +21,7 @@
 #include "defaults.h"
 
 static struct hwentry *
-find_hwe_strmatch (vector hwtable, char * vendor, char * product, char * revision)
+find_hwe_strmatch (vector hwtable, char * vendor, char * product)
 {
 	int i;
 	struct hwentry *hwe, *ret = NULL;
@@ -31,9 +31,6 @@ find_hwe_strmatch (vector hwtable, char * vendor, char * product, char * revisio
 			continue;
 
 		if (hwe->product && product && strcmp(hwe->product, product))
-			continue;
-
-		if (hwe->revision && revision && strcmp(hwe->revision, revision))
 			continue;
 
 		ret = hwe;
