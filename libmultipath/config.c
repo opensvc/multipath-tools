@@ -242,17 +242,6 @@ set_param_str(char * str)
 	return dst;
 }
 
-static int
-dup_hwe (vector hwtable, char * vendor, char * product, char * revision)
-{
-	struct hwentry * hwe = find_hwe(hwtable, vendor, product, revision);
-
-	if (hwe)
-		return 1;
-
-	return 0;
-}
-
 int
 store_hwe (vector hwtable, struct hwentry * dhwe)
 {
