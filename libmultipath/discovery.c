@@ -295,7 +295,7 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
             { INQUIRY_CMD, 0, 0, 0, 0, 0 };
         unsigned char sense_b[SENSE_BUFF_LEN];
         struct sg_io_hdr io_hdr;
-                                                                                                                 
+
         if (cmddt)
                 inqCmdBlk[1] |= 2;
         if (evpd)
@@ -313,10 +313,10 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
         io_hdr.cmdp = inqCmdBlk;
         io_hdr.sbp = sense_b;
         io_hdr.timeout = DEF_TIMEOUT;
- 
+
         if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
                 return -1;
- 
+
         /* treat SG_ERR here to get rid of sg_err.[ch] */
         io_hdr.status &= 0x7e;
         if ((0 == io_hdr.status) && (0 == io_hdr.host_status) &&
