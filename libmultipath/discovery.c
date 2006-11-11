@@ -701,7 +701,13 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	if (mask & DI_CHECKER && get_state(pp))
 		goto blank;
 	
-	if (mask & DI_PRIO && pp->state != PATH_DOWN)
+	/*
+	 * Path state of PATH_DOWN does not necessarily prevent
+	 * path priority callout (or getuid callouot) from
+	 * succeeding since the path may be being considered
+	 * failed for reasons other than transport connectivity.
+	 */
+	if (mask & DI_PRIO)
 		get_prio(pp);
 
 	if (mask & DI_WWID && !strlen(pp->wwid))
