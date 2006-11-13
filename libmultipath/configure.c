@@ -547,7 +547,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 {
 	struct path * pp;
 	char buff[FILE_NAME_SIZE];
-	char * refwwid = NULL;
+	char * refwwid = NULL, tmpwwid[WWID_SIZE];
 
 	if (dev_type == DEV_NONE)
 		return NULL;
@@ -602,6 +602,12 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 		goto out;
 	}
 	if (dev_type == DEV_DEVMAP) {
+
+		if ((dm_get_uuid(dev, tmpwwid)) == 0) {
+			refwwid = tmpwwid;
+			goto out;
+		}
+
 		/*
 		 * may be a binding
 		 */
