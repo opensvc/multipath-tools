@@ -2,7 +2,44 @@
 #define _CHECKERS_H
 
 /*
- * path states
+ *
+ * Userspace (multipath/multipathd) path states
+ *
+ * PATH_WILD:
+ * - Use: None of the checkers (returned if we don't have an fd)
+ * - Description: Corner case where "fd <= 0" for path fd (see checker_check())
+ *
+ * PATH_UNCHECKED:
+ * - Use: Only in directio checker
+ * - Description: set when fcntl(F_GETFL) fails to return flags or O_DIRECT
+ *   not include in flags, or O_DIRECT read fails
+ * - Notes:
+ *   - multipathd: uses it to skip over paths in sync_map_state()
+ *   - multipath: used in update_paths(); if state==PATH_UNCHECKED, call
+ *     pathinfo()
+ *
+ * PATH_DOWN:
+ * - Use: All checkers (directio, emc_clariion, hp_sw, readsector0, tur)
+ * - Description: Either a) SG_IO ioctl failed, or b) check condition on some
+ *   SG_IO ioctls that succeed (tur, readsector0 checkers); path is down and
+ *   you shouldn't try to send commands to it
+ *
+ * PATH_UP:
+ * - Use: All checkers (directio, emc_clariion, hp_sw, readsector0, tur)
+ * - Description: Path is up and I/O can be sent to it
+ *
+ * PATH_SHAKY:
+ * - Use: Only emc_clariion
+ * - Description: Indicates path not available for "normal" operations
+ *
+ * PATH_GHOST:
+ * - Use: Only hp_sw
+ * - Description: Indicates a "passive/standby" path on active/passive HP
+ *   arrays.  These paths will return valid answers to certain SCSI commands
+ *   (tur, read_capacity, inquiry, start_stop), but will fail I/O commands.
+ *   The path needs an initialization command to be sent to it in order for
+ *   I/Os to succeed.
+ *
  */
 #define PATH_WILD	-1
 #define PATH_UNCHECKED	0
