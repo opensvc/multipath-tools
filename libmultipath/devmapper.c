@@ -223,6 +223,7 @@ dm_get_uuid(char *name, char *uuid)
 {
 	struct dm_task *dmt;
 	const char *uuidtmp;
+	int r = 1;
 
 	dmt = dm_task_create(DM_DEVICE_INFO);
 	if (!dmt)
@@ -244,10 +245,10 @@ dm_get_uuid(char *name, char *uuid)
 	else
 		uuid[0] = '\0';
 
+	r = 0;
 uuidout:
 	dm_task_destroy(dmt);
-
-	return 0;
+	return r;
 }
 
 extern int

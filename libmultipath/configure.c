@@ -603,7 +603,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 	}
 	if (dev_type == DEV_DEVMAP) {
 
-		if ((dm_get_uuid(dev, tmpwwid)) == 0) {
+		if (((dm_get_uuid(dev, tmpwwid)) == 0) && (strlen(tmpwwid))) {
 			refwwid = tmpwwid;
 			goto out;
 		}
