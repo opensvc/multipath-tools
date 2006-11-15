@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
+#include <inttypes.h>
 
 #define __user
 #include <scsi/sg.h>
@@ -251,14 +252,38 @@ do_rtpg(int fd, void* resp, long resplen)
 int
 get_asymmetric_access_state(int fd, unsigned int tpg)
 {
-	unsigned char		buf[128];
+	unsigned char		*buf;
 	struct rtpg_data *	tpgd;
 	struct rtpg_tpg_dscr *	dscr;
 	int			rc;
+	int			buflen;
+	uint32_t		scsi_buflen;
 
-	rc = do_rtpg(fd, buf, sizeof(buf));
+	buflen = 128; /* Initial value from old code */
+	buf = (unsigned char *)malloc(buflen);
+	if (!buf) {
+		PRINT_DEBUG ("malloc failed: could not allocate"
+			"%u bytes\n", buflen);
+		return -RTPG_RTPG_FAILED;
+	}
+	rc = do_rtpg(fd, buf, buflen);
 	if (rc < 0)
 		return rc;
+	scsi_buflen = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
+	if (buflen < (scsi_buflen + 4)) {
+		free(buf);
+		buf = (unsigned char *)malloc(scsi_buflen);
+		if (!buf) {
+			PRINT_DEBUG ("malloc failed: could not allocate"
+				"%u bytes\n", scsi_buflen);
+			return -RTPG_RTPG_FAILED;
+		}
+		buflen = scsi_buflen;
+		rc = do_rtpg(fd, buf, buflen);
+		if (rc < 0)
+			goto out;
+	}
+		
 
 	tpgd = (struct rtpg_data *) buf;
 	rc   = -RTPG_TPG_NOT_FOUND;
@@ -274,7 +299,8 @@ get_asymmetric_access_state(int fd, unsigned int tpg)
 			}
 		}
 	}
-
+out:
+	free(buf);
 	return rc;
 }
 
