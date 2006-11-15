@@ -441,7 +441,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 		if ((mpp = add_map_with_path(vecs, pp1, 0)) == NULL)
 			return 1;
 
-		if (pp1->priority < 0)
+		if (pp1->priority == PRIO_UNDEF)
 			mpp->action = ACT_REJECT;
 
 		if (!mpp->paths) {
@@ -468,7 +468,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 					mpp->size);
 				mpp->action = ACT_REJECT;
 			}
-			if (pp2->priority < 0)
+			if (pp2->priority == PRIO_UNDEF)
 				mpp->action = ACT_REJECT;
 		}
 		verify_paths(mpp, vecs, NULL);
