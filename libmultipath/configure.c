@@ -441,7 +441,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 		if ((mpp = add_map_with_path(vecs, pp1, 0)) == NULL)
 			return 1;
 
-		if (pp1->priority < 0)
+		if (pp1->priority == PRIO_UNDEF)
 			mpp->action = ACT_REJECT;
 
 		if (!mpp->paths) {
@@ -468,7 +468,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 					mpp->size);
 				mpp->action = ACT_REJECT;
 			}
-			if (pp2->priority < 0)
+			if (pp2->priority == PRIO_UNDEF)
 				mpp->action = ACT_REJECT;
 		}
 		verify_paths(mpp, vecs, NULL);
@@ -547,7 +547,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 {
 	struct path * pp;
 	char buff[FILE_NAME_SIZE];
-	char * refwwid = NULL;
+	char * refwwid = NULL, tmpwwid[WWID_SIZE];
 
 	if (dev_type == DEV_NONE)
 		return NULL;
@@ -602,6 +602,12 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 		goto out;
 	}
 	if (dev_type == DEV_DEVMAP) {
+
+		if (((dm_get_uuid(dev, tmpwwid)) == 0) && (strlen(tmpwwid))) {
+			refwwid = tmpwwid;
+			goto out;
+		}
+
 		/*
 		 * may be a binding
 		 */

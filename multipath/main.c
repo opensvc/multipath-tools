@@ -134,7 +134,7 @@ update_paths (struct multipath * mpp)
 			if (pp->state == PATH_UNCHECKED)
 				pathinfo(pp, conf->hwtable, DI_CHECKER);
 
-			if (!pp->priority)
+			if (pp->priority == PRIO_UNDEF)
 				pathinfo(pp, conf->hwtable, DI_PRIO);
 		}
 	}

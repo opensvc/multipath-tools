@@ -34,8 +34,8 @@ void readsector0_free (struct checker * c)
 	return;
 }
 
-static int
-sg_read (int sg_fd, unsigned char * buff)
+int
+sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff)
 {
 	/* defaults */
 	int blocks = 1;
@@ -45,7 +45,6 @@ sg_read (int sg_fd, unsigned char * buff)
 	int * diop = NULL;
 
 	unsigned char rdCmd[cdbsz];
-	unsigned char senseBuff[SENSE_BUFF_LEN];
 	struct sg_io_hdr io_hdr;
 	int res;
 	int rd_opcode[] = {0x8, 0x28, 0xa8, 0x88};
@@ -97,9 +96,10 @@ extern int
 readsector0 (struct checker * c)
 {
 	unsigned char buf[512];
+	unsigned char sbuf[SENSE_BUFF_LEN];
 	int ret;
 
-	ret = sg_read(c->fd, &buf[0]);
+	ret = sg_read(c->fd, &buf[0], &sbuf[0]);
 
 	switch (ret)
 	{
