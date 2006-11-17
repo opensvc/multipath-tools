@@ -706,7 +706,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	  * been successfully obtained before.
 	  */
 	if (mask & DI_PRIO &&
-	    (pp->state != PATH_DOWN || pp->priority != PRIO_UNDEF))
+	    (pp->state != PATH_DOWN || pp->priority == PRIO_UNDEF))
 		get_prio(pp);
 
 	if (mask & DI_WWID && !strlen(pp->wwid))
