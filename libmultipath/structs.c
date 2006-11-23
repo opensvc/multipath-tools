@@ -117,9 +117,10 @@ alloc_multipath (void)
 
 	mpp = (struct multipath *)MALLOC(sizeof(struct multipath));
 
-	if (mpp)
+	if (mpp) {
 		mpp->bestpg = 1;
-
+		mpp->mpcontext = NULL;
+	}
 	return mpp;
 }
 
@@ -180,6 +181,7 @@ free_multipath (struct multipath * mpp, int free_paths)
 
 	free_pathvec(mpp->paths, free_paths);
 	free_pgvec(mpp->pg, free_paths);
+	FREE_PTR(mpp->mpcontext);
 	FREE(mpp);
 }
 

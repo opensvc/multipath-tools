@@ -611,12 +611,15 @@ get_state (struct path * pp)
 {
 	struct checker * c = &pp->checker;
 
+	if (!pp->mpp)
+		return 0;
+
 	if (!checker_selected(c)) {
 		select_checker(pp);
 		if (!checker_selected(c))
 			return 1;
 		checker_set_fd(c, pp->fd);
-		if (checker_init(c))
+		if (checker_init(c, &pp->mpp->mpcontext))
 			return 1;
 	}
 	pp->state = checker_check(c);

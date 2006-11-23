@@ -83,6 +83,8 @@ struct checker {
 	char name[CHECKER_NAME_LEN];
 	char message[CHECKER_MSG_LEN];       /* comm with callers */
 	void * context;                      /* store for persistent data */
+	void ** mpcontext;                   /* store for persistent data
+						shared multipath-wide */
 	int (*check)(struct checker *);
 	int (*init)(struct checker *);       /* to allocate the context */
 	void (*free)(struct checker *);      /* to free the context */
@@ -90,7 +92,7 @@ struct checker {
 
 #define MSG(c, a) snprintf((c)->message, CHECKER_MSG_LEN, a);
 
-int checker_init (struct checker *);
+int checker_init (struct checker *, void **);
 void checker_put (struct checker *);
 void checker_reset (struct checker * c);
 void checker_set_fd (struct checker *, int);

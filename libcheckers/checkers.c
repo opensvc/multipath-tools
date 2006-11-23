@@ -75,8 +75,9 @@ struct checker * checker_lookup (char * name)
 	return NULL;
 }
 
-int checker_init (struct checker * c)
+int checker_init (struct checker * c, void ** mpctxt_addr)
 {
+	c->mpcontext = mpctxt_addr;
 	return c->init(c);
 }
 

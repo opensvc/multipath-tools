@@ -154,6 +154,9 @@ struct multipath {
 	unsigned int stat_map_loads;
 	unsigned int stat_total_queueing_time;
 	unsigned int stat_queueing_timeouts;
+
+	/* checkers shared data */
+	void * mpcontext;
 };
 
 struct pathgroup {
