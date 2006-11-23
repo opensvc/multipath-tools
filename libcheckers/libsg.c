@@ -20,10 +20,12 @@ sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff)
 	int * diop = NULL;
 
 	unsigned char rdCmd[cdbsz];
+	unsigned char *sbb = senseBuff;
 	struct sg_io_hdr io_hdr;
 	int res;
 	int rd_opcode[] = {0x8, 0x28, 0xa8, 0x88};
 	int sz_ind;
+	int retry_count = 3;
 	
 	memset(rdCmd, 0, cdbsz);
 	sz_ind = 1;
@@ -49,6 +51,8 @@ sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff)
 	if (diop && *diop)
 	io_hdr.flags |= SG_FLAG_DIRECT_IO;
 
+retry: 
+	memset(senseBuff, 0, SENSE_BUFF_LEN);
 	while (((res = ioctl(sg_fd, SG_IO, &io_hdr)) < 0) && (EINTR == errno));
 
 	if (res < 0) {
@@ -63,6 +67,13 @@ sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff)
 	    (0 == io_hdr.driver_status)) {
 		return PATH_UP;
 	} else {
+		/*
+		 * Retry if UNIT_ATTENTION check condition.
+		 */
+		if ((sbb[2]&0xf) == 6) {
+			if (--retry_count)
+				goto retry;
+		}
 		return PATH_DOWN;
 	}
 }
