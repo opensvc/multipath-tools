@@ -90,7 +90,7 @@ struct checker {
 	void (*free)(struct checker *);      /* to free the context */
 };
 
-#define MSG(c, a) snprintf((c)->message, CHECKER_MSG_LEN, a);
+#define MSG(c, fmt, args...) snprintf((c)->message, CHECKER_MSG_LEN, fmt, ##args);
 
 int checker_init (struct checker *, void **);
 void checker_put (struct checker *);
