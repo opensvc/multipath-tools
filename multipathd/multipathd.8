@@ -1,10 +1,15 @@
-.TH MULTIPATHD 8 "July 2006" "Linux Administrator's Manual"
+.TH MULTIPATHD 8 "November 2006" "Linux Administrator's Manual"
 .SH NAME
 multipathd \- multipath daemon
-.SH SYNOPSYS
-.B multipathd
 
-This daemon is in charge of checking for failed paths. When this happens,
+.SH SYNOPSIS
+.B multipathd
+.RB [\| options \|]
+
+.SH DESCRIPTION
+The 
+.B multipathd 
+daemon is in charge of checking for failed paths. When this happens,
 it will reconfigure the multipath map the path belongs to, so that this map 
 regains its maximum performance and redundancy.
 
@@ -12,11 +17,80 @@ This daemon executes the external multipath config tool when events occur.
 In turn, the multipath tool signals the multipathd daemon when it is done with 
 devmap reconfiguration, so that it can refresh its failed path list.
 
+.SH OPTIONS
+.TP
+.B \-d
+Forground Mode. Don't daemonize, and print all messages to stdout and stderr.
+.TP 
+.B -v "level"
+Verbosity level. Print additional information while running multipathd. A  level of 0 means only print errors. A level of 3 or greater prints debugging information as well. 
+.TP
+.B -k 
+multipathd will enter interactive mode. From this mode, the available commands can be viewed by entering "help". When you are finished entering commands, press CTRL-D to quit.
+
+.SH COMMANDS
+.TP
+The following commands can be used in interactive mode:
+.TP
+.B list|show paths
+Show the paths that multipathd is monitoring, and their state. 
+.TP
+.B list|show maps|multipaths
+Show the multipath devices that the multipathd is monitoring. 
+.TP
+.B list|show maps|multipaths status
+Show the status of all multipath devices that the multipathd is monitoring.
+.TP
+.B list|show maps|multipaths stats
+Show some statistics of all multipath devices that the multipathd is monitoring.
+.TP
+.B list|show maps|multipaths topology
+Show the current multipath topology. Same as "multipath -ll".
+.TP
+.B list|show topology
+Show the current multipath topology. Same as "multipath -ll".
+.TP
+.B list|show map|multipath $map topology
+Show topology of a single multipath device specified by $map, e.g. 36005076303ffc56200000000000010aa.
+This map could be obtained from "list maps".
+.TP
+.B list|show config
+Show the currently used configuration, derived from default values and values specified within the configuration file /etc/multipath.conf.
+.TP
+.B add path $path
+Add a path to the list of monitored paths. $path is as listed in /sys/block (e.g. sda).
+.TP 
+.B remove|del path $path
+Stop monitoring a path. $path is as listed in /sys/block (e.g. sda).
+.TP
+.B add map $map
+Add a multipath device to the list of monitored devices. $map can either be a device-mapper device as listed in /sys/block (e.g. dm-0) or it can be the alias for the multipath device (e.g. mpath1) or the uid of the multipath device (e.g. 36005076303ffc56200000000000010aa). 
+.TP
+.B remove|del map $map
+Stop monitoring a multipath device.
+.TP 
+.B switch|switchgroup map $map group $group
+Force a multipath device to switch to a specific path group. $group is the path group index, starting with 1.
+.TP
+.B reconfigure
+Reconfigures the multipaths. This should be triggered automatically after any hotplug event.
+.TP
+.B suspend map|multipath $map
+Sets map $map into suspend state.
+.TP
+.B resume map|multipath $map
+Resumes map $map from suspend state.
+.TP
+.B fail path $path
+Sets path $path into failed state.
+.TP
+.B reinstate path $path
+Resumes path $path from failed state.
+
 .SH "SEE ALSO"
 .BR multipath (8)
 .BR kpartx (8)
 .BR hotplug (8)
 .SH "AUTHORS"
-This man page was assembled by Patrick Caulfield 
-for the Debian project. From documentation provided
-by the multipath author Christophe Varoqui, <christophe.varoqui@free.fr> and others.
+.B multipathd
+was developed by Christophe Varoqui, <christophe.varoqui@free.fr> and others.
