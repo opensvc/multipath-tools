@@ -128,6 +128,7 @@ update_paths (struct multipath * mpp)
 					pp->state = PATH_DOWN;
 					continue;
 				}
+				pp->mpp = mpp;
 				pathinfo(pp, conf->hwtable, DI_ALL);
 				continue;
 			}

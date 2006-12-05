@@ -6,7 +6,7 @@ BUILD = glibc
 
 include ../Makefile.inc
 
-OBJS = checkers.o readsector0.o tur.o directio.o emc_clariion.o hp_sw.o
+OBJS = libsg.o checkers.o readsector0.o tur.o directio.o emc_clariion.o hp_sw.o
 
 all: $(BUILD)
 

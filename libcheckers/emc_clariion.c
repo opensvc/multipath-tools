@@ -11,25 +11,76 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
-#include "checkers.h"
-
 #include "../libmultipath/sg_include.h"
+#include "libsg.h"
+#include "checkers.h"
 
 #define INQUIRY_CMD     0x12
 #define INQUIRY_CMDLEN  6
 #define HEAVY_CHECK_COUNT       10
 
-struct emc_clariion_checker_context {
+/*
+ * Mechanism to track CLARiiON inactive snapshot LUs.
+ * This is done so that we can fail passive paths
+ * to an inactive snapshot LU even though since a
+ * simple read test would return 02/04/03 instead
+ * of 05/25/01 sensekey/ASC/ASCQ data.
+ */
+#define	IS_INACTIVE_SNAP(c)   (c->mpcontext ?				   \
+			       ((struct emc_clariion_checker_LU_context *) \
+					(*c->mpcontext))->inactive_snap	   \
+					    : 0)
+
+#define	SET_INACTIVE_SNAP(c)  if (c->mpcontext)				   \
+				((struct emc_clariion_checker_LU_context *)\
+					(*c->mpcontext))->inactive_snap = 1
+
+#define	CLR_INACTIVE_SNAP(c)  if (c->mpcontext)				   \
+				((struct emc_clariion_checker_LU_context *)\
+					(*c->mpcontext))->inactive_snap = 0
+
+struct emc_clariion_checker_path_context {
 	char wwn[16];
 	unsigned wwn_set;
 };
 
+struct emc_clariion_checker_LU_context {
+	int inactive_snap;
+};
+
+extern void
+hexadecimal_to_ascii(char * wwn, char *wwnstr)
+{
+	int i,j, nbl;
+
+	for (i=0,j=0;i<16;i++) {
+		wwnstr[j++] = ((nbl = ((wwn[i]&0xf0) >> 4)) <= 9) ?
+					'0' + nbl : 'a' + (nbl - 10);
+		wwnstr[j++] = ((nbl = (wwn[i]&0x0f)) <= 9) ?
+					'0' + nbl : 'a' + (nbl - 10);
+	}
+	wwnstr[32]=0;
+}
+
 int emc_clariion_init (struct checker * c)
 {
-	c->context = malloc(sizeof(struct emc_clariion_checker_context));
+	/*
+	 * Allocate and initialize the path specific context.
+	 */
+	c->context = malloc(sizeof(struct emc_clariion_checker_path_context));
 	if (!c->context)
 		return 1;
-	((struct emc_clariion_checker_context *)c->context)->wwn_set = 0;
+	((struct emc_clariion_checker_path_context *)c->context)->wwn_set = 0;
+
+	/*
+	 * Allocate and initialize the multi-path global context.
+	 */
+	if (c->mpcontext) {
+		void * mpctxt = malloc(sizeof(int));
+		*c->mpcontext = mpctxt;
+		CLR_INACTIVE_SNAP(c);
+	}
+
 	return 0;
 }
 
@@ -40,13 +91,15 @@ void emc_clariion_free (struct checker * c)
 
 int emc_clariion(struct checker * c)
 {
-	unsigned char sense_buffer[256] = { 0, };
-	unsigned char sb[128] = { 0, };
+	unsigned char sense_buffer[128] = { 0, };
+	unsigned char sb[SENSE_BUFF_LEN] = { 0, }, *sbb;
 	unsigned char inqCmdBlk[INQUIRY_CMDLEN] = {INQUIRY_CMD, 1, 0xC0, 0,
-						sizeof(sb), 0};
+						sizeof(sense_buffer), 0};
 	struct sg_io_hdr io_hdr;
-	struct emc_clariion_checker_context * ct =
-		(struct emc_clariion_checker_context *)c->context;
+	struct emc_clariion_checker_path_context * ct =
+		(struct emc_clariion_checker_path_context *)c->context;
+	char wwnstr[33];
+	int ret;
 
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
 	io_hdr.interface_id = 'S';
@@ -69,7 +122,8 @@ int emc_clariion(struct checker * c)
 	}
 	if (/* Verify the code page - right page & revision */
 	    sense_buffer[1] != 0xc0 || sense_buffer[9] != 0x00) {
-		MSG(c, "emc_clariion_checker: Path unit report page in unknown format");
+		MSG(c, "emc_clariion_checker: Path unit report page in "
+		    "unknown format");
 		return PATH_DOWN;
 	}
 
@@ -79,19 +133,22 @@ int emc_clariion(struct checker * c)
 		|| (sense_buffer[28] & 0x07) != 0x04
 		/* Arraycommpath should be set to 1 */
 		|| (sense_buffer[30] & 0x04) != 0x04) {
-		MSG(c, "emc_clariion_checker: Path not correctly configured for failover");
+		MSG(c, "emc_clariion_checker: Path not correctly configured "
+		    "for failover");
 		return PATH_DOWN;
 	}
 
 	if ( /* LUN operations should indicate normal operations */
 		sense_buffer[48] != 0x00) {
-		MSG(c, "emc_clariion_checker: Path not available for normal operations");
+		MSG(c, "emc_clariion_checker: Path not available for normal "
+		    "operations");
 		return PATH_SHAKY;
 	}
 
 	if ( /* LUN should at least be bound somewhere and not be LUNZ */
 		sense_buffer[4] == 0x00) {
-		MSG(c, "emc_clariion_checker: Logical Unit is unbound or LUNZ");
+		MSG(c, "emc_clariion_checker: Logical Unit is unbound "
+		    "or LUNZ");
 		return PATH_DOWN;
 	}
 	
@@ -102,7 +159,8 @@ int emc_clariion(struct checker * c)
 	 */
 	if (ct->wwn_set) {
 		if (memcmp(ct->wwn, &sense_buffer[10], 16) != 0) {
-			MSG(c, "emc_clariion_checker: Logical Unit WWN has changed!");
+			MSG(c, "emc_clariion_checker: Logical Unit WWN "
+			    "has changed!");
 			return PATH_DOWN;
 		}
 	} else {
@@ -110,7 +168,59 @@ int emc_clariion(struct checker * c)
 		ct->wwn_set = 1;
 	}
 	
-	
-	MSG(c, "emc_clariion_checker: Path healthy");
-        return PATH_UP;
+	/*
+	 * Issue read on active path to determine if inactive snapshot.
+	 */
+	if (sense_buffer[4] == 2) {/* if active path */
+		unsigned char buf[512];
+
+		ret = sg_read(c->fd, &buf[0], sbb = &sb[0]);
+		if (ret == PATH_DOWN) {
+			hexadecimal_to_ascii(ct->wwn, wwnstr);
+
+			/*
+		 	 * Check for inactive snapshot LU this way.  Must
+			 * fail these.
+	 	 	 */
+			if (((sbb[2]&0xf) == 5) && (sbb[12] == 0x25) &&
+			    (sbb[13]==1)) {
+				/*
+			 	 * Do this so that we can fail even the
+			 	 * passive paths which will return
+				 * 02/04/03 not 05/25/01 on read.
+			 	 */
+				SET_INACTIVE_SNAP(c);
+				MSG(c, "emc_clariion_checker: Active "
+					"path to inactive snapshot WWN %s.",
+					wwnstr);
+			} else
+				MSG(c, "emc_clariion_checker: Read "
+					"error for WWN %s.  Sense data are "
+					"0x%x/0x%x/0x%x.", wwnstr,
+					sbb[2]&0xf, sbb[12], sbb[13]);
+		} else {
+			MSG(c, "emc_clariion_checker: Active path is "
+			    "healthy.");
+			/*
+		 	 * Remove the path from the set of paths to inactive
+		 	 * snapshot LUs if it was in this list since the
+		 	 * snapshot is no longer inactive.
+		 	 */
+			CLR_INACTIVE_SNAP(c);
+		}
+	} else {
+		if (IS_INACTIVE_SNAP(c)) {
+			hexadecimal_to_ascii(ct->wwn, wwnstr);
+			MSG(c, "emc_clariion_checker: Passive "
+				"path to inactive snapshot WWN %s.",
+				wwnstr);
+			ret = PATH_DOWN;
+		} else {
+			MSG(c,
+		    	    "emc_clariion_checker: Passive path is healthy.");
+			ret = PATH_UP;	/* not ghost */
+		}
+	}
+
+	return ret;
 }
