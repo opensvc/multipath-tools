@@ -132,6 +132,7 @@ update_paths (struct multipath * mpp)
 				pathinfo(pp, conf->hwtable, DI_ALL);
 				continue;
 			}
+			pp->mpp = mpp;
 			if (pp->state == PATH_UNCHECKED)
 				pathinfo(pp, conf->hwtable, DI_CHECKER);
 
