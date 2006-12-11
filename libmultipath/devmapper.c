@@ -134,6 +134,7 @@ dm_simplecmd (int task, const char *name) {
 
 	dm_task_no_open_count(dmt);
 	dm_task_skip_lockfs(dmt);       /* for DM_DEVICE_RESUME */
+	dm_task_no_flush(dmt);          /* for DM_DEVICE_SUSPEND/RESUME */
 
 	r = dm_task_run (dmt);
 
