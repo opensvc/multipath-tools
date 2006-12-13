@@ -40,14 +40,20 @@
 #include "byteorder.h"
 #include "dasd.h"
 
+unsigned long sectors512(unsigned long sectors, int blocksize)
+{
+	return sectors * (blocksize >> 9);
+}
+
 /*
  */
 int 
 read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 {
 	int retval = -1;
-	int blocksize, offset, size;
+	int blocksize;
 	long disksize;
+	unsigned long offset, size;
 	dasd_information_t info;
 	struct hd_geometry geo;
 	char type[5] = {0,};
@@ -172,13 +178,13 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 			/* disk is reserved minidisk */
 			blocksize = label[3];
 			offset = label[13];
-			size = (label[7] - 1)*(blocksize >> 9);
+			size   = sectors512(label[7] - 1, blocksize);
 		} else {
-			offset = (info.label_block + 1) * (blocksize >> 9);
-			size = disksize - offset;
+			offset = info.label_block + 1;
+			size   = disksize;
 		}
-		sp[0].start = offset * (blocksize >> 9);
-		sp[0].size = size - offset * (blocksize >> 9);
+		sp[0].start = sectors512(offset, blocksize);
+		sp[0].size  = size - sp[0].start;
 		retval = 1;
 	} else if ((strncmp(type, "VOL1", 4) == 0) &&
 		(!info.FBA_layout) && (!strcmp(info.type, "ECKD"))) {
@@ -214,8 +220,8 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 		        offset = cchh2blk(&f1.DS1EXT1.llimit, &geo);
 			size  = cchh2blk(&f1.DS1EXT1.ulimit, &geo) - 
 				offset + geo.sectors;
-			sp[counter].start = offset * (blocksize >> 9);
-			sp[counter].size = size * (blocksize >> 9);
+			sp[counter].start = sectors512(offset, blocksize);
+			sp[counter].size  = sectors512(size, blocksize);
 			counter++;
 			blk++;
 		}
@@ -224,10 +230,8 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 		/*
 		 * Old style LNX1 or unlabeled disk
 		 */
-		offset = (info.label_block + 1) * (blocksize >> 9);
-		size = disksize - offset;
-		sp[0].start = offset * (blocksize >> 9);
-		sp[0].size = size - offset * (blocksize >> 9);
+		sp[0].start = sectors512(info.label_block + 1, blocksize);
+		sp[0].size  = disksize - sp[0].start;
 		retval = 1;
 	}
 

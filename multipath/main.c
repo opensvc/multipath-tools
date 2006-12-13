@@ -132,6 +132,7 @@ update_paths (struct multipath * mpp)
 				pathinfo(pp, conf->hwtable, DI_ALL);
 				continue;
 			}
+			pp->mpp = mpp;
 			if (pp->state == PATH_UNCHECKED)
 				pathinfo(pp, conf->hwtable, DI_CHECKER);
 
@@ -315,7 +316,7 @@ main (int argc, char *argv[])
 		exit(1);
 	}
 
-	if (dm_prereq(DEFAULT_TARGET, 1, 0, 3))
+	if (dm_prereq(DEFAULT_TARGET))
 		exit(1);
 
 	if (sysfs_get_mnt_path(sysfs_path, FILE_NAME_SIZE)) {
