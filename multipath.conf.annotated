@@ -142,6 +142,22 @@
 #               product MSA[15]00
 #       }
 #}
+##
+## name    : blacklist_exceptions
+## scope   : multipath & multipathd
+## desc    : list of device names to be treated as multipath candidates
+##           even if they are on the blacklist.
+##           Note: blacklist exceptions are only valid in the same class.
+##           It is not possible to blacklist devices using the devnode keyword
+##           and to exclude some devices of them using the wwid keyword.
+## default : -
+##
+#blacklist_exceptions {
+#       devnode "^dasd[c-d]+[0-9]*"
+#       wwid    "IBM.75000000092461.4d00.34"
+#       wwid    "IBM.75000000092461.4d00.35"
+#       wwid    "IBM.75000000092461.4d00.36"
+#}
 #
 ##
 ## name    : multipaths

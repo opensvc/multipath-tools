@@ -143,6 +143,12 @@ show_config (char ** r, int * len)
 			reply = REALLOC(reply, maxlen *= 2);
 			continue;
 		}
+		c += snprint_blacklist_except(c, reply + maxlen - c);
+		again = ((c - reply) == maxlen);
+		if (again) {
+			reply = REALLOC(reply, maxlen *= 2);
+			continue;
+		}
 		c += snprint_hwtable(c, reply + maxlen - c, conf->hwtable);
 		again = ((c - reply) == maxlen);
 		if (again) {
@@ -280,7 +286,7 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 
 	condlog(2, "%s: add path (operator)", param);
 
-	if (blacklist(conf->blist_devnode, param) ||
+	if (blacklist(conf->blist_devnode, conf->elist_devnode, param) ||
 	    (r = ev_add_path(param, vecs)) == 2) {
 		*reply = strdup("blacklisted");
 		*len = strlen(*reply) + 1;
@@ -309,7 +315,7 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 
 	condlog(2, "%s: add map (operator)", param);
 
-	if (blacklist(conf->blist_wwid, param)) {
+	if (blacklist(conf->blist_wwid, conf->elist_wwid, param)) {
 		*reply = strdup("blacklisted");
 		*len = strlen(*reply) + 1;
 		condlog(2, "%s: map blacklisted", param);
@@ -432,4 +438,80 @@ cli_fail(void * v, char ** reply, int * len, void * data)
 		pp->mpp->alias, pp->dev_t);
 
 	return dm_fail_path(pp->mpp->alias, pp->dev_t);
+}
+
+int
+show_blacklist (char ** r, int * len)
+{
+        char *c = NULL;
+        char *reply = NULL;
+        unsigned int maxlen = INITIAL_REPLY_LEN;
+        int again = 1;
+
+        while (again) {
+		reply = MALLOC(maxlen);
+		if (!reply)
+			return 1;
+
+                c = reply;
+                c += snprint_blacklist_report(c, maxlen);
+                again = ((c - reply) == maxlen);
+                if (again) {
+			maxlen  *= 2;
+			FREE(reply);
+                        continue;
+                }
+        }
+
+        *r = reply;
+        *len = (int)(c - reply + 1);
+
+        return 0;
+}
+
+int
+cli_list_blacklist (void * v, char ** reply, int * len, void * data)
+{
+        condlog(3, "list blacklist (operator)");
+
+        return show_blacklist(reply, len);
+}
+
+int
+show_devices (char ** r, int * len, struct vectors *vecs)
+{
+        char *c = NULL;
+        char *reply = NULL;
+        unsigned int maxlen = INITIAL_REPLY_LEN;
+        int again = 1;
+
+        while (again) {
+                reply = MALLOC(maxlen);
+                if (!reply)
+                        return 1;
+
+                c = reply;
+                c += snprint_devices(c, maxlen, vecs);
+                again = ((c - reply) == maxlen);
+                if (again) {
+                        maxlen  *= 2;
+                        FREE(reply);
+                        continue;
+                }
+        }
+
+        *r = reply;
+        *len = (int)(c - reply + 1);
+
+        return 0;
+}
+
+int
+cli_list_devices (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+
+        condlog(3, "list devices (operator)");
+
+        return show_devices(reply, len, vecs);
 }

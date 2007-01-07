@@ -333,6 +333,12 @@ free_config (struct config * conf)
 	free_blacklist(conf->blist_devnode);
 	free_blacklist(conf->blist_wwid);
 	free_blacklist_device(conf->blist_device);
+
+	if (conf->elist_devnode)
+		FREE(conf->elist_devnode);
+	if (conf->elist_wwid)
+		FREE(conf->elist_wwid);
+
 	free_mptable(conf->mptable);
 	free_hwtable(conf->hwtable);
 	free_keywords(conf->keywords);
@@ -402,6 +408,19 @@ load_config (char * file)
 	}
 	if (setup_default_blist(conf))
 		goto out;
+
+	if (conf->elist_devnode == NULL) {
+                conf->elist_devnode = vector_alloc();
+
+                if (!conf->elist_devnode)
+			goto out;
+	}
+	if (conf->elist_wwid == NULL) {
+		conf->elist_wwid = vector_alloc();
+
+                if (!conf->elist_wwid)
+			goto out;
+	}
 
 	if (conf->mptable == NULL) {
 		conf->mptable = vector_alloc();

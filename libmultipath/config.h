@@ -1,6 +1,9 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
+#define ORIGIN_DEFAULT 0
+#define ORIGIN_CONFIG  1
+
 enum devtypes {
 	DEV_NONE,
 	DEV_DEVT,
@@ -75,6 +78,8 @@ struct config {
 	vector blist_devnode;
 	vector blist_wwid;
 	vector blist_device;
+	vector elist_devnode;
+	vector elist_wwid;
 };
 
 struct config * conf;

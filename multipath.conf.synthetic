@@ -16,7 +16,7 @@
 #	no_path_retry		fail
 #	user_friendly_names	no
 #}
-#devnode_blacklist {
+#blacklist {
 #       wwid 26353900f02796769
 #	devnode "^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"
 #	devnode "^hd[a-z][[0-9]*]"
@@ -25,6 +25,10 @@
 #		vendor DEC.*
 #		product MSA[15]00
 #	}
+#}
+#blacklist_exceptions {
+#       devnode "^dasd[c-d]+[0-9]*"
+#       wwid    "IBM.75000000092461.4d00.34"
 #}
 #multipaths {
 #	multipath {
