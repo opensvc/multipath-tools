@@ -2,7 +2,6 @@
  * Copyright (c) 2004, 2005 Christophe Varoqui
  */
 #include <stdio.h>
-
 #include <checkers.h>
 
 #include "memory.h"
@@ -14,7 +13,7 @@
 #include "blacklist.h"
 
 extern int
-store_ble (vector blist, char * str)
+store_ble (vector blist, char * str, int origin)
 {
 	struct blentry * ble;
 	
@@ -36,6 +35,7 @@ store_ble (vector blist, char * str)
 		goto out1;
 
 	ble->str = str;
+	ble->origin = origin;
 	vector_set_slot(blist, ble);
 	return 0;
 out1:
@@ -63,7 +63,7 @@ alloc_ble_device (vector blist)
 }
 	
 extern int
-set_ble_device (vector blist, char * vendor, char * product)
+set_ble_device (vector blist, char * vendor, char * product, int origin)
 {
 	struct blentry_device * ble;
 	
@@ -91,6 +91,7 @@ set_ble_device (vector blist, char * vendor, char * product)
 		}
 		ble->product = product;
 	}
+	ble->origin = origin;
 	return 0;
 }
 
@@ -105,19 +106,19 @@ setup_default_blist (struct config * conf)
 	str = STRDUP("^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*");
 	if (!str)
 		return 1;
-	if (store_ble(conf->blist_devnode, str))
+	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
 		return 1;
 
 	str = STRDUP("^hd[a-z]");
 	if (!str)
 		return 1;
-	if (store_ble(conf->blist_devnode, str))
+	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
 		return 1;
 	
 	str = STRDUP("^cciss!c[0-9]d[0-9]*");
 	if (!str)
 		return 1;
-	if (store_ble(conf->blist_devnode, str))
+	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
 		return 1;
 
 	vector_foreach_slot (conf->hwtable, hwe, i) {
@@ -128,7 +129,8 @@ setup_default_blist (struct config * conf)
 					  VECTOR_SIZE(conf->blist_device) -1);
 			if (set_ble_device(conf->blist_device,
 					   STRDUP(hwe->vendor),
-					   STRDUP(hwe->bl_product))) {
+					   STRDUP(hwe->bl_product),
+					   ORIGIN_DEFAULT)) {
 				FREE(ble);
 				return 1;
 			}
@@ -139,10 +141,28 @@ setup_default_blist (struct config * conf)
 }
 
 int
-blacklist (vector blist, char * str)
+blacklist_exceptions (vector elist, char * str)
+{
+        int i;
+        struct blentry * ele;
+
+        vector_foreach_slot (elist, ele, i) {
+                if (!regexec(&ele->regex, str, 0, NULL, 0)) {
+			condlog(3, "%s: exception-listed", str);
+			return 1;
+		}
+	}
+        return 0;
+}
+
+int
+blacklist (vector blist, vector elist, char * str)
 {
 	int i;
 	struct blentry * ble;
+
+	if (blacklist_exceptions(elist, str))
+		return 0;
 
 	vector_foreach_slot (blist, ble, i) {
 		if (!regexec(&ble->regex, str, 0, NULL, 0)) {
@@ -172,10 +192,10 @@ blacklist_device (vector blist, char * vendor, char * product)
 int
 blacklist_path (struct config * conf, struct path * pp)
 {
-	if (blacklist(conf->blist_devnode, pp->dev))
+	if (blacklist(conf->blist_devnode, conf->elist_devnode, pp->dev))
 		return 1;
 
-	if (blacklist(conf->blist_wwid, pp->wwid))
+	if (blacklist(conf->blist_wwid, conf->elist_wwid, pp->wwid))
 		return 1;
 
 	if (pp->vendor_id && pp->product_id &&

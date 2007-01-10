@@ -57,6 +57,12 @@ This map could be obtained from "list maps".
 .B list|show config
 Show the currently used configuration, derived from default values and values specified within the configuration file /etc/multipath.conf.
 .TP
+.B list|show blacklist
+Show the currently used blacklist rules, derived from default values and values specified within the configuration file /etc/multipath.conf.
+.TP
+.B list|show devices
+Show all available block devices by name including the information if they are blacklisted or not.
+.TP
 .B add path $path
 Add a path to the list of monitored paths. $path is as listed in /sys/block (e.g. sda).
 .TP 

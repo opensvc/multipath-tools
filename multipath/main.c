@@ -234,7 +234,7 @@ configure (void)
 			dev = conf->dev;
 	}
 	
-	if (dev && blacklist(conf->blist_devnode, dev))
+	if (dev && blacklist(conf->blist_devnode, conf->elist_devnode, dev))
 		goto out;
 	
 	/*
@@ -250,7 +250,7 @@ configure (void)
 		}
 		condlog(3, "scope limited to %s", refwwid);
 
-		if (blacklist(conf->blist_wwid, refwwid))
+		if (blacklist(conf->blist_wwid, conf->elist_wwid, refwwid))
 			goto out;
 	}
 

@@ -17,6 +17,8 @@ enum {
 	__STATS,
 	__TOPOLOGY,
 	__CONFIG,
+	__BLACKLIST,
+	__DEVICES,
 };
 
 #define LIST		(1 << __LIST)
@@ -37,6 +39,8 @@ enum {
 #define STATS		(1 << __STATS)
 #define TOPOLOGY	(1 << __TOPOLOGY)
 #define CONFIG		(1 << __CONFIG)
+#define BLACKLIST	(1 << __BLACKLIST)
+#define DEVICES  	(1 << __DEVICES)
 
 #define INITIAL_REPLY_LEN 1000
 

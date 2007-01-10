@@ -667,7 +667,7 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	/*
 	 * path add/remove event
 	 */
-	if (blacklist(conf->blist_devnode, devname))
+	if (blacklist(conf->blist_devnode, conf->elist_devnode, devname))
 		goto out;
 
 	if (!strncmp(uev->action, "add", 3)) {
@@ -710,6 +710,8 @@ uxlsnrloop (void * ap)
 	add_handler(LIST+TOPOLOGY, cli_list_maps_topology);
 	add_handler(LIST+MAP+TOPOLOGY, cli_list_map_topology);
 	add_handler(LIST+CONFIG, cli_list_config);
+	add_handler(LIST+BLACKLIST, cli_list_blacklist);
+	add_handler(LIST+DEVICES, cli_list_devices);
 	add_handler(ADD+PATH, cli_add_path);
 	add_handler(DEL+PATH, cli_del_path);
 	add_handler(ADD+MAP, cli_add_map);

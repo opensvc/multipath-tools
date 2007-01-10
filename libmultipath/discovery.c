@@ -61,7 +61,7 @@ path_discover (vector pathvec, struct config * conf, char * devname, int flag)
 	if (!devname)
 		return 0;
 
-	if (blacklist(conf->blist_devnode, devname))
+	if (blacklist(conf->blist_devnode, conf->elist_devnode, devname))
 		return 0;
 
 	if(safe_sprintf(path, "%s/block/%s/device", sysfs_path,
