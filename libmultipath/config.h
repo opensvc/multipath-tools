@@ -80,6 +80,7 @@ struct config {
 	vector blist_device;
 	vector elist_devnode;
 	vector elist_wwid;
+	vector elist_device;
 };
 
 struct config * conf;

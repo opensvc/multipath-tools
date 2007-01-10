@@ -20,7 +20,7 @@ struct blentry_device {
 int setup_default_blist (struct config *);
 int alloc_ble_device (vector);
 int blacklist (vector, vector, char *);
-int blacklist_device (vector, char *, char *);
+int blacklist_device (vector, vector, char *, char *);
 int blacklist_path (struct config *, struct path *);
 int store_ble (vector, char *, int);
 int set_ble_device (vector, char *, char *, int);
