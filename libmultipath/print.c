@@ -946,6 +946,12 @@ snprint_blacklist_report (char * buff, int len)
 	if (snprint_blacklist_devgroup(buff, len, &fwd, &conf->blist_device) == 0)
 		return len;
 
+	if ((len - fwd - threshold) <= 0)
+		return len;
+	fwd += snprintf(buff + fwd, len - fwd, "- exceptions:\n");
+	if (snprint_blacklist_devgroup(buff, len, &fwd, &conf->elist_device) == 0)
+		return len;
+
 	if (fwd > len)
 		return len;
 	return fwd;
@@ -1024,6 +1030,7 @@ snprint_blacklist_except (char * buff, int len)
 {
 	int i;
 	struct blentry * ele;
+	struct blentry_device * eled;
 	int fwd = 0;
 	struct keyword *rootkw;
 	struct keyword *kw;
@@ -1051,6 +1058,32 @@ snprint_blacklist_except (char * buff, int len)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
 				       kw, ele);
+		if (fwd > len)
+			return len;
+	}
+	rootkw = find_keyword(rootkw->sub, "device");
+	if (!rootkw)
+		return 0;
+
+	vector_foreach_slot (conf->elist_device, eled, i) {
+		fwd += snprintf(buff + fwd, len - fwd, "\tdevice {\n");
+		if (fwd > len)
+			return len;
+		kw = find_keyword(rootkw->sub, "vendor");
+		if (!kw)
+			return 0;
+		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
+				       kw, eled);
+		if (fwd > len)
+			return len;
+		kw = find_keyword(rootkw->sub, "product");
+		if (!kw)
+			return 0;
+		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
+				       kw, eled);
+		if (fwd > len)
+			return len;
+		fwd += snprintf(buff + fwd, len - fwd, "\t}\n");
 		if (fwd > len)
 			return len;
 	}

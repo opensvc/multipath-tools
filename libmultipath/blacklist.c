@@ -174,10 +174,29 @@ blacklist (vector blist, vector elist, char * str)
 }
 
 int
-blacklist_device (vector blist, char * vendor, char * product)
+blacklist_exceptions_device(vector elist, char * vendor, char * product)
 {
 	int i;
 	struct blentry_device * ble;
+
+	vector_foreach_slot (elist, ble, i) {
+		if (!regexec(&ble->vendor_reg, vendor, 0, NULL, 0) &&
+		    !regexec(&ble->product_reg, product, 0, NULL, 0)) {
+			condlog(3, "%s:%s: exception-listed", vendor, product);
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int
+blacklist_device (vector blist, vector elist, char * vendor, char * product)
+{
+	int i;
+	struct blentry_device * ble;
+
+	if (blacklist_exceptions_device(elist, vendor, product))
+		return 0;
 
 	vector_foreach_slot (blist, ble, i) {
 		if (!regexec(&ble->vendor_reg, vendor, 0, NULL, 0) &&
@@ -199,7 +218,7 @@ blacklist_path (struct config * conf, struct path * pp)
 		return 1;
 
 	if (pp->vendor_id && pp->product_id &&
-	    blacklist_device(conf->blist_device, pp->vendor_id, pp->product_id))
+	    blacklist_device(conf->blist_device, conf->elist_device, pp->vendor_id, pp->product_id))
 		return 1;
 
 	return 0;
