@@ -461,14 +461,14 @@ static struct hwentry default_hw[] = {
 	/*
 	 * Pillar Data controller family
 	 *
-	 * Maintainer : Christophe Varoqui
-	 * Mail : christophe.varoqui@free.fr
+	 * Maintainer : Srinivasan Ramani
+	 * Mail : sramani@pillardata.com
 	 */
 	{
 		.vendor        = "Pillar",
-		.product       = "Axiom 500",
+		.product       = "Axiom.*",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "mpath_prio_alua %d",
+		.getprio       = "mpath_prio_alua %n",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
