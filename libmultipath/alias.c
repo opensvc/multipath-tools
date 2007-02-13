@@ -196,7 +196,7 @@ lookup_binding(FILE *f, char *map_wwid, char **map_alias)
 		}
 		if (strcmp(wwid, map_wwid) == 0){
 			condlog(3, "Found matching wwid [%s] in bindings file."
-				"\nSetting alias to %s", wwid, alias);
+				" Setting alias to %s", wwid, alias);
 			*map_alias = strdup(alias);
 			if (*map_alias == NULL)
 				condlog(0, "Cannot copy alias from bindings "
