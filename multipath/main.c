@@ -224,7 +224,7 @@ configure (void)
 	vecs.mpvec = curmp;
 
 	/*
-	 * if we have a blacklisted device parameter, exit early
+	 * dev is "/dev/" . "sysfs block dev"
 	 */
 	if (conf->dev) {
 		if (!strncmp(conf->dev, "/dev/", 5) &&
@@ -234,8 +234,12 @@ configure (void)
 			dev = conf->dev;
 	}
 	
-	if (dev && blacklist(conf->blist_devnode, conf->elist_devnode, dev))
-		goto out;
+	/*
+	 * if we have a blacklisted device parameter, exit early
+	 */
+	if (dev && 
+	    (filter_devnode(conf->blist_devnode, conf->elist_devnode, dev) > 0))
+			goto out;
 	
 	/*
 	 * scope limiting must be translated into a wwid
@@ -249,8 +253,8 @@ configure (void)
 			goto out;
 		}
 		condlog(3, "scope limited to %s", refwwid);
-
-		if (blacklist(conf->blist_wwid, conf->elist_wwid, refwwid))
+		if (filter_wwid(conf->blist_wwid, conf->elist_wwid,
+				refwwid) > 0)
 			goto out;
 	}
 

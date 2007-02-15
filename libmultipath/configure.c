@@ -420,7 +420,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 
 		/* 1. if path has no unique id or wwid blacklisted */
 		if (memcmp(empty_buff, pp1->wwid, WWID_SIZE) == 0 ||
-		    blacklist_path(conf, pp1))
+		    filter_path(conf, pp1) > 0)
 			continue;
 
 		/* 2. if path already coalesced */

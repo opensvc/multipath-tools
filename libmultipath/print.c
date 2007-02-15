@@ -1101,11 +1101,9 @@ snprint_devices (char * buff, int len, struct vectors *vecs)
         struct sysfs_class_device * dev;
 	int threshold = MAX_LINE_LEN;
 	int fwd = 0;
-
+	int r;
 
 	struct path * pp;
-
-
 
         if (!(class = sysfs_open_class("block")))
                 return 0;
@@ -1122,14 +1120,19 @@ snprint_devices (char * buff, int len, struct vectors *vecs)
         dlist_for_each_data(ls, dev, struct sysfs_class_device) {
 		if ((len - fwd - threshold)  <= 0)
 			return len;
-		fwd += snprintf(buff + fwd, len - fwd, "    %s ", dev->name);
+		fwd += snprintf(buff + fwd, len - fwd, "    %s", dev->name);
 		pp = find_path_by_dev(vecs->pathvec, dev->name);
-		if (blacklist(conf->blist_devnode, conf->elist_devnode,
-			      dev->name) || pp == NULL)
-			fwd += snprintf(buff + fwd, len - fwd,
-					"(blacklisted)\n");
-                else
-			fwd += snprintf(buff + fwd, len - fwd, "\n");
+		if (!pp) {
+			r = filter_devnode(conf->blist_devnode,
+					   conf->elist_devnode, dev->name);
+			if (r > 0)
+				fwd += snprintf(buff + fwd, len - fwd,
+						" (blacklisted)");
+			else if (r < 0)
+				fwd += snprintf(buff + fwd, len - fwd,
+						" (whitelisted)");
+		}
+		fwd += snprintf(buff + fwd, len - fwd, "\n");
         }
         sysfs_close_class(class);
 

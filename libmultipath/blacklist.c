@@ -141,87 +141,181 @@ setup_default_blist (struct config * conf)
 }
 
 int
-blacklist_exceptions (vector elist, char * str)
+_blacklist_exceptions (vector elist, char * str)
 {
         int i;
         struct blentry * ele;
 
         vector_foreach_slot (elist, ele, i) {
-                if (!regexec(&ele->regex, str, 0, NULL, 0)) {
-			condlog(3, "%s: exception-listed", str);
+                if (!regexec(&ele->regex, str, 0, NULL, 0))
 			return 1;
-		}
 	}
         return 0;
 }
 
 int
-blacklist (vector blist, vector elist, char * str)
+_blacklist (vector blist, char * str)
 {
 	int i;
 	struct blentry * ble;
 
-	if (blacklist_exceptions(elist, str))
-		return 0;
-
 	vector_foreach_slot (blist, ble, i) {
-		if (!regexec(&ble->regex, str, 0, NULL, 0)) {
-			condlog(3, "%s: blacklisted", str);
+		if (!regexec(&ble->regex, str, 0, NULL, 0))
 			return 1;
-		}
 	}
 	return 0;
 }
 
 int
-blacklist_exceptions_device(vector elist, char * vendor, char * product)
+_blacklist_exceptions_device(vector elist, char * vendor, char * product)
 {
 	int i;
 	struct blentry_device * ble;
 
 	vector_foreach_slot (elist, ble, i) {
 		if (!regexec(&ble->vendor_reg, vendor, 0, NULL, 0) &&
-		    !regexec(&ble->product_reg, product, 0, NULL, 0)) {
-			condlog(3, "%s:%s: exception-listed", vendor, product);
+		    !regexec(&ble->product_reg, product, 0, NULL, 0))
 			return 1;
-		}
 	}
 	return 0;
 }
 
 int
-blacklist_device (vector blist, vector elist, char * vendor, char * product)
+_blacklist_device (vector blist, char * vendor, char * product)
 {
 	int i;
 	struct blentry_device * ble;
 
-	if (blacklist_exceptions_device(elist, vendor, product))
-		return 0;
-
 	vector_foreach_slot (blist, ble, i) {
 		if (!regexec(&ble->vendor_reg, vendor, 0, NULL, 0) &&
-		    !regexec(&ble->product_reg, product, 0, NULL, 0)) {
-			condlog(3, "%s:%s: blacklisted", vendor, product);
+		    !regexec(&ble->product_reg, product, 0, NULL, 0))
 			return 1;
-		}
 	}
 	return 0;
 }
 
-int
-blacklist_path (struct config * conf, struct path * pp)
+#define LOG_BLIST(M) \
+	if (vendor && product)                                           \
+		condlog(3, "%s: (%s:%s) %s", dev, vendor, product, (M)); \
+	else if (wwid)                                                   \
+		condlog(3, "%s: (%s) %s", dev, wwid, (M));               \
+	else                                                             \
+		condlog(3, "%s: %s", dev, (M))
+
+void
+log_filter (char *dev, char *vendor, char *product, char *wwid, int r)
 {
-	if (blacklist(conf->blist_devnode, conf->elist_devnode, pp->dev))
-		return 1;
+	/*
+	 * Try to sort from most likely to least.
+	 */
+	switch (r) {
+	case MATCH_NOTHING:
+		break;
+	case MATCH_DEVICE_BLIST:
+		LOG_BLIST("vendor/product blacklisted");
+		break;
+	case MATCH_WWID_BLIST:
+		LOG_BLIST("wwid blacklisted");
+		break;
+	case MATCH_DEVNODE_BLIST:
+		LOG_BLIST("device node name blacklisted");
+		break;
+	case MATCH_DEVICE_BLIST_EXCEPT:
+		LOG_BLIST("vendor/product whitelisted");
+		break;
+	case MATCH_WWID_BLIST_EXCEPT:
+		LOG_BLIST("wwid whitelisted");
+		break;
+	case MATCH_DEVNODE_BLIST_EXCEPT:
+		LOG_BLIST("device node name whitelisted");
+		break;
+	}
+}
 
-	if (blacklist(conf->blist_wwid, conf->elist_wwid, pp->wwid))
-		return 1;
-
-	if (pp->vendor_id && pp->product_id &&
-	    blacklist_device(conf->blist_device, conf->elist_device, pp->vendor_id, pp->product_id))
-		return 1;
-
+int
+_filter_device (vector blist, vector elist, char * vendor, char * product)
+{
+	if (!vendor || !product)
+		return 0;
+	if (_blacklist_exceptions_device(elist, vendor, product))
+		return MATCH_DEVICE_BLIST_EXCEPT;
+	if (_blacklist_device(blist, vendor, product))
+		return MATCH_DEVICE_BLIST;
 	return 0;
+}
+
+int
+filter_device (vector blist, vector elist, char * vendor, char * product)
+{
+	int r = _filter_device(blist, elist, vendor, product);
+	log_filter(NULL, vendor, product, NULL, r);
+	return r;
+}
+
+int
+_filter_devnode (vector blist, vector elist, char * dev)
+{
+	if (!dev)
+		return 0;
+	if (_blacklist_exceptions(elist, dev))
+		return MATCH_DEVNODE_BLIST_EXCEPT;
+	if (_blacklist(blist, dev))
+		return MATCH_DEVNODE_BLIST;
+	return 0;
+}
+
+int
+filter_devnode (vector blist, vector elist, char * dev)
+{
+	int r = _filter_devnode(blist, elist, dev);
+	log_filter(dev, NULL, NULL, NULL, r);
+	return r;
+}
+
+int
+_filter_wwid (vector blist, vector elist, char * wwid)
+{
+	if (!wwid)
+		return 0;
+	if (_blacklist_exceptions(elist, wwid))
+		return MATCH_WWID_BLIST_EXCEPT;
+	if (_blacklist(blist, wwid))
+		return MATCH_WWID_BLIST;
+	return 0;
+}
+
+int
+filter_wwid (vector blist, vector elist, char * wwid)
+{
+	int r = _filter_wwid(blist, elist, wwid);
+	log_filter(NULL, NULL, NULL, wwid, r);
+	return r;
+}
+
+int
+_filter_path (struct config * conf, struct path * pp)
+{
+	int r;
+
+	r = _filter_devnode(conf->blist_devnode, conf->elist_devnode,pp->dev);
+	if (r)
+		return r;
+	r = _filter_wwid(conf->blist_devnode, conf->elist_devnode, pp->wwid);
+	if (r)
+		return r;
+	r = _filter_device(conf->blist_device, conf->elist_device,
+		 	   pp->vendor_id, pp->product_id);
+	if (r)
+		return r;
+	return 0;
+}
+
+int
+filter_path (struct config * conf, struct path * pp)
+{
+	int r=_filter_path(conf, pp);
+	log_filter(pp->dev, pp->vendor_id, pp->product_id, pp->wwid, r);
+	return r;
 }
 
 void
