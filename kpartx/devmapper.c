@@ -95,19 +95,16 @@ dm_addmap (int task, const char *name, const char *target,
 		}
 		sprintf(prefixed_uuid, UUID_PREFIX "%s", part, uuid);
 		if (!dm_task_set_uuid(dmt, prefixed_uuid))
-			goto freeout;
+			goto addout;
 	}
 
 	dm_task_no_open_count(dmt);
 
 	r = dm_task_run (dmt);
 
-	freeout:
-	if (prefixed_uuid)
-		free(prefixed_uuid);
-
 	addout:
 	dm_task_destroy (dmt);
+
 	return r;
 }
 
