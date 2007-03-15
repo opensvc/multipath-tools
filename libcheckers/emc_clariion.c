@@ -129,8 +129,12 @@ int emc_clariion(struct checker * c)
 
 	if ( /* Effective initiator type */
 	    	sense_buffer[27] != 0x03
-		/* Failover mode should be set to 1 */        
-		|| (sense_buffer[28] & 0x07) != 0x04
+		/*
+		 * Failover mode should be set to 1 (PNR failover mode)
+		 * or 4 (ALUA failover mode).
+		 */
+		|| (((sense_buffer[28] & 0x07) != 0x04) &&
+		    ((sense_buffer[28] & 0x07) != 0x06))
 		/* Arraycommpath should be set to 1 */
 		|| (sense_buffer[30] & 0x04) != 0x04) {
 		MSG(c, "emc_clariion_checker: Path not correctly configured "
