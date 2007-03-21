@@ -113,7 +113,7 @@ out:
  * not multipath(8), ran by udev
  */
 #if DAEMON
-#define WAIT_MAX_SECONDS 5
+#define WAIT_MAX_SECONDS 60
 #define WAIT_LOOP_PER_SECOND 5
 
 static int
