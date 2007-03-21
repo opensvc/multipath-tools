@@ -706,11 +706,11 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 		goto blank;
 	
 	 /*
-	  * Retrieve path priority for even PATH_DOWN paths if it has never
+	  * Retrieve path priority even for not PATH_UP paths if it has never
 	  * been successfully obtained before.
 	  */
 	if (mask & DI_PRIO &&
-	    (pp->state != PATH_DOWN || pp->priority == PRIO_UNDEF))
+	    (pp->state == PATH_UP || pp->priority == PRIO_UNDEF))
 		get_prio(pp);
 
 	if (mask & DI_WWID && !strlen(pp->wwid))

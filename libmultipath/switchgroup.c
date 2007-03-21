@@ -28,7 +28,7 @@ select_path_group (struct multipath * mpp)
 		priority = 0;
 
 		vector_foreach_slot (pgp->paths, pp, j) {
-			if (pp->state != PATH_DOWN)
+			if (pp->state == PATH_UP)
 				priority += pp->priority;
 		}
 		pgp->priority = priority;
