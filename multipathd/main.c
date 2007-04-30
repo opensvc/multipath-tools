@@ -376,7 +376,7 @@ ev_add_path (char * devname, struct vectors * vecs)
 		condlog(0, "%s: failed to get path uid", devname);
 		return 1; /* leave path added to pathvec */
 	}
-	if (blacklist_path(conf, pp)){
+	if (filter_path(conf, pp)){
 		int i = find_slot(vecs->pathvec, (void *)pp);
 		if (i != -1)
 			vector_del_slot(vecs->pathvec, i);
@@ -667,7 +667,8 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	/*
 	 * path add/remove event
 	 */
-	if (blacklist(conf->blist_devnode, conf->elist_devnode, devname))
+	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
+		 	   devname) > 0)
 		goto out;
 
 	if (!strncmp(uev->action, "add", 3)) {
@@ -1041,7 +1042,7 @@ configure (struct vectors * vecs, int start_waiters)
 	path_discovery(vecs->pathvec, conf, DI_ALL);
 
 	vector_foreach_slot (vecs->pathvec, pp, i){
-		if (blacklist_path(conf, pp)){
+		if (filter_path(conf, pp)){
 			vector_del_slot(vecs->pathvec, i);
 			free_path(pp);
 			i--;
@@ -1068,10 +1069,6 @@ configure (struct vectors * vecs, int start_waiters)
 	dm_lib_release();
 
 	sync_maps_state(mpvec);
-
-	if (conf->verbosity > 2)
-		vector_foreach_slot(mpvec, mpp, i)
-			print_map(mpp);
 
 	/*
 	 * purge dm of old maps

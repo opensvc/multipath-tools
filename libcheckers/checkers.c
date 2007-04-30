@@ -7,6 +7,7 @@
 #include "tur.h"
 #include "hp_sw.h"
 #include "emc_clariion.h"
+#include "rdac.h"
 #include "readsector0.h"
 
 static struct checker checkers[] = {
@@ -45,6 +46,15 @@ static struct checker checkers[] = {
 		.check      = emc_clariion,
 		.init       = emc_clariion_init,
 		.free       = emc_clariion_free
+	},
+	{
+		.fd         = 0,
+		.name       = RDAC,
+		.message    = "",
+		.context    = NULL,
+		.check      = rdac,
+		.init       = rdac_init,
+		.free       = rdac_free
 	},
 	{
 		.fd         = 0,

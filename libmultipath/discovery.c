@@ -61,7 +61,8 @@ path_discover (vector pathvec, struct config * conf, char * devname, int flag)
 	if (!devname)
 		return 0;
 
-	if (blacklist(conf->blist_devnode, conf->elist_devnode, devname))
+	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
+			   devname) > 0)
 		return 0;
 
 	if(safe_sprintf(path, "%s/block/%s/device", sysfs_path,
@@ -112,7 +113,7 @@ out:
  * not multipath(8), ran by udev
  */
 #if DAEMON
-#define WAIT_MAX_SECONDS 5
+#define WAIT_MAX_SECONDS 60
 #define WAIT_LOOP_PER_SECOND 5
 
 static int
@@ -705,11 +706,11 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 		goto blank;
 	
 	 /*
-	  * Retrieve path priority for even PATH_DOWN paths if it has never
+	  * Retrieve path priority even for not PATH_UP paths if it has never
 	  * been successfully obtained before.
 	  */
 	if (mask & DI_PRIO &&
-	    (pp->state != PATH_DOWN || pp->priority == PRIO_UNDEF))
+	    (pp->state == PATH_UP || pp->priority == PRIO_UNDEF))
 		get_prio(pp);
 
 	if (mask & DI_WWID && !strlen(pp->wwid))

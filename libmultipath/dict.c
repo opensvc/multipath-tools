@@ -331,7 +331,6 @@ static int
 ble_except_vendor_handler(vector strvec)
 {
 	char * buff;
-	int r;
 
 	buff = set_value(strvec);
 

@@ -51,6 +51,7 @@
 #define DIRECTIO     "directio"
 #define TUR          "tur"
 #define HP_SW        "hp_sw"
+#define RDAC         "rdac"
 #define EMC_CLARIION "emc_clariion"
 #define READSECTOR0  "readsector0"
 
