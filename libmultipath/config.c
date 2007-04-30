@@ -513,6 +513,7 @@ load_config (char * file)
 	 * read the config file
 	 */
 	set_current_keywords(&conf->keywords);
+	alloc_keywords();
 	if (filepresent(file)) {
 		int builtin_hwtable_size;
 
