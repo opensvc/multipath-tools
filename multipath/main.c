@@ -401,6 +401,7 @@ main (int argc, char *argv[])
 			conf->dev_type = DEV_DEVMAP;
 
 	}
+	dm_init();
 
 	if (conf->remove == FLUSH_ONE) {
 		if (conf->dev_type == DEV_DEVMAP)

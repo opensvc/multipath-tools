@@ -16,7 +16,6 @@
 #include "discovery.h"
 #include "waiter.h"
 
-
 /*
  * creates or updates mpp->paths reading mpp->pg
  */
@@ -117,6 +116,8 @@ remove_map (struct multipath * mpp, struct vectors * vecs,
 	    stop_waiter_thread_func *stop_waiter, int purge_vec)
 {
 	int i;
+
+	condlog(4, "%s: remove multipath map", mpp->alias);
 
 	/*
 	 * stop the DM event waiter thread
@@ -245,8 +246,17 @@ extern int
 setup_multipath (struct vectors * vecs, struct multipath * mpp)
 {
 retry:
-	if (dm_get_info(mpp->alias, &mpp->dmi))
+	if (dm_get_info(mpp->alias, &mpp->dmi)) {
+		/* Error accessing table */
+		condlog(3, "%s: cannot access table", mpp->alias); 
 		goto out;
+	}
+
+	if (!dm_map_present(mpp->alias)) {
+		/* Table has been removed */
+		condlog(3, "%s: table does not exist", mpp->alias); 
+		goto out;
+	}
 
 	set_multipath_wwid(mpp);
 	mpp->mpe = find_mpe(mpp->wwid);
@@ -270,6 +280,7 @@ retry:
 #endif
 			goto retry;
 		}
+		condlog(0, "%s: failed to setup multipath", mpp->alias);
 		goto out;
 	}
 
@@ -282,7 +293,6 @@ retry:
 
 	return 0;
 out:
-	condlog(0, "%s: failed to setup multipath", mpp->alias);
 	remove_map(mpp, vecs, NULL, 1);
 	return 1;
 }
@@ -390,18 +400,19 @@ int update_multipath (struct vectors *vecs, char *mapname)
 	struct pathgroup  *pgp;
 	struct path *pp;
 	int i, j;
-	int r = 1;
 
 	mpp = find_mp_by_alias(vecs->mpvec, mapname);
 
-	if (!mpp)
-		goto out;
+	if (!mpp) {
+		condlog(3, "%s: multipath map not found\n", mapname);
+		return 2;
+	}
 
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
 
 	if (setup_multipath(vecs, mpp))
-		goto out; /* mpp freed in setup_multipath */
+		return 1; /* mpp freed in setup_multipath */
 
 	/*
 	 * compare checkers states with DM states
@@ -429,11 +440,8 @@ int update_multipath (struct vectors *vecs, char *mapname)
 			}
 		}
 	}
-	r = 0;
-out:
-	if (r)
-		condlog(0, "failed to update multipath");
-	return r;
+
+	return 0;
 }
 
 /*

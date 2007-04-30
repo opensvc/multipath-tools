@@ -225,6 +225,8 @@ ev_add_map (char * devname, struct vectors * vecs)
 	int map_present;
 	int r = 1;
 
+	/* libsysfs seems to forget to terminate the string... */
+	memset(dev_t, 0, BLK_DEV_SIZE);
 	if (sscanf(devname, "dm-%d", &minor) == 1 &&
 	    !sysfs_get_dev(sysfs_path, devname, dev_t, BLK_DEV_SIZE) &&
 	    sscanf(dev_t, "%d:%d", &major, &minor) == 2)
@@ -1397,6 +1399,7 @@ main (int argc, char *argv[])
 	int err;
 	
 	logsink = 1;
+	dm_init();
 
 	if (getuid() != 0) {
 		fprintf(stderr, "need to be root\n");

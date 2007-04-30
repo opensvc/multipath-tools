@@ -12,7 +12,7 @@
 #include "log_pthread.h"
 #include "log.h"
 
-void log_safe (int prio, char * fmt, va_list ap)
+void log_safe (int prio, const char * fmt, va_list ap)
 {
 	pthread_mutex_lock(logq_lock);
 	//va_start(ap, fmt);

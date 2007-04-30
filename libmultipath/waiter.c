@@ -117,15 +117,11 @@ int waiteventloop (struct event_thread *waiter)
 	/* accept wait interruption */
 	set = unblock_signals();
 
-	/* interruption spits messages */
-	dm_shut_log();
-
 	/* wait */
 	r = dm_task_run(waiter->dmt);
 
 	/* wait is over : event or interrupt */
 	pthread_sigmask(SIG_SETMASK, &set, NULL);
-	//dm_restore_log();
 
 	if (!r) /* wait interrupted by signal */
 		return -1;
@@ -157,8 +153,11 @@ int waiteventloop (struct event_thread *waiter)
 		r = update_multipath(waiter->vecs, waiter->mapname);
 		lock_cleanup_pop(waiter->vecs->lock);
 
-		if (r)
+		if (r) {
+			condlog(2, "%s: event checker exit", 
+				waiter->mapname);
 			return -1; /* stop the thread */
+		}
 
 		event_nr = dm_geteventnr(waiter->mapname);
 

@@ -1,4 +1,4 @@
-void dlog (int sink, int prio, char * fmt, ...)
+void dlog (int sink, int prio, const char * fmt, ...)
 	__attribute__((format(printf, 3, 4)));
 
 #if DAEMON

@@ -1,5 +1,4 @@
-void dm_shut_log(void);
-void dm_restore_log(void);
+void dm_init(void);
 int dm_prereq (char *);
 int dm_simplecmd (int, const char *);
 int dm_addmap (int, const char *, const char *, const char *,
