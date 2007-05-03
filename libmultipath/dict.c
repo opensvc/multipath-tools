@@ -201,6 +201,32 @@ def_no_path_retry_handler(vector strvec)
 }
 
 static int
+def_pg_timeout_handler(vector strvec)
+{
+	int pg_timeout;
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	if (strlen(buff) == 4 && !strcmp(buff, "none"))
+		conf->pg_timeout = -PGTIMEOUT_NONE;
+	else if (sscanf(buff, "%d", &pg_timeout) == 1 && pg_timeout >= 0) {
+		if (pg_timeout == 0)
+			conf->pg_timeout = -PGTIMEOUT_NONE;
+		else
+			conf->pg_timeout = pg_timeout;
+	}
+	else
+		conf->pg_timeout = PGTIMEOUT_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
+static int
 names_handler(vector strvec)
 {
 	char * buff;
@@ -240,14 +266,14 @@ blacklist_handler(vector strvec)
 static int
 blacklist_exceptions_handler(vector strvec)
 {
-        conf->elist_devnode = vector_alloc();
-        conf->elist_wwid = vector_alloc();
+	conf->elist_devnode = vector_alloc();
+	conf->elist_wwid = vector_alloc();
 	conf->elist_device = vector_alloc();
 
-        if (!conf->elist_devnode || !conf->elist_wwid || !conf->blist_device)
-                return 1;
+	if (!conf->elist_devnode || !conf->elist_wwid || !conf->blist_device)
+		return 1;
 
-        return 0;
+	return 0;
 }
 
 static int
@@ -266,12 +292,12 @@ ble_devnode_handler(vector strvec)
 static int
 ble_except_devnode_handler(vector strvec)
 {
-        char * buff;
+	char * buff;
 
-        buff = set_value(strvec);
+	buff = set_value(strvec);
 
-        if (!buff)
-                return 1;
+	if (!buff)
+		return 1;
 
 	return store_ble(conf->elist_devnode, buff, ORIGIN_CONFIG);
 }
@@ -656,6 +682,36 @@ hw_minio_handler(vector strvec)
 	return 0;
 }
 
+static int
+hw_pg_timeout_handler(vector strvec)
+{
+	int pg_timeout;
+	struct hwentry *hwe = VECTOR_LAST_SLOT(conf->hwtable);
+	char *buff;
+
+	if (!hwe)
+		return 1;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	if (strlen(buff) == 4 && !strcmp(buff, "none"))
+		hwe->pg_timeout = -PGTIMEOUT_NONE;
+	else if (sscanf(buff, "%d", &pg_timeout) == 1 && pg_timeout >= 0) {
+		if (pg_timeout == 0)
+			hwe->pg_timeout = -PGTIMEOUT_NONE;
+		else
+			hwe->pg_timeout = pg_timeout;
+	}
+	else
+		hwe->pg_timeout = PGTIMEOUT_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
 /*
  * multipaths block handlers
  */
@@ -848,6 +904,35 @@ mp_minio_handler(vector strvec)
 	return 0;
 }
 
+static int
+mp_pg_timeout_handler(vector strvec)
+{
+	int pg_timeout;
+	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
+	char *buff;
+
+	if (!mpe)
+		return 1;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+	if (strlen(buff) == 4 && !strcmp(buff, "none"))
+		mpe->pg_timeout = -PGTIMEOUT_NONE;
+	else if (sscanf(buff, "%d", &pg_timeout) == 1 && pg_timeout >= 0) {
+		if (pg_timeout == 0)
+			mpe->pg_timeout = -PGTIMEOUT_NONE;
+		else
+			mpe->pg_timeout = pg_timeout;
+	}
+	else
+		mpe->pg_timeout = PGTIMEOUT_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
 /*
  * config file keywords printing
  */
@@ -964,6 +1049,22 @@ snprint_mp_rr_min_io (char * buff, int len, void * data)
 		return 0;
 
 	return snprintf(buff, len, "%u", mpe->minio);
+}
+
+static int
+snprint_mp_pg_timeout (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	switch (mpe->pg_timeout) {
+	case PGTIMEOUT_UNDEF:
+		break;
+	case -PGTIMEOUT_NONE:
+		return snprintf(buff, len, "none");
+	default:
+		return snprintf(buff, len, "%i", mpe->pg_timeout);
+	}
+	return 0;
 }
 
 static int
@@ -1168,6 +1269,27 @@ snprint_hw_rr_min_io (char * buff, int len, void * data)
 }
 
 static int
+snprint_hw_pg_timeout (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->pg_timeout)
+		return 0;
+	if (hwe->pg_timeout == conf->pg_timeout)
+		return 0;
+
+	switch (hwe->pg_timeout) {
+	case PGTIMEOUT_UNDEF:
+		break;
+	case -PGTIMEOUT_NONE:
+		return snprintf(buff, len, "none");
+	default:
+		return snprintf(buff, len, "%i", hwe->pg_timeout);
+	}
+	return 0;
+}
+
+static int
 snprint_hw_path_checker (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
@@ -1339,6 +1461,23 @@ snprint_def_no_path_retry (char * buff, int len, void * data)
 }
 
 static int
+snprint_def_pg_timeout (char * buff, int len, void * data)
+{
+	if (conf->pg_timeout == DEFAULT_PGTIMEOUT)
+		return 0;
+
+	switch (conf->pg_timeout) {
+	case PGTIMEOUT_UNDEF:
+		break;
+	case -PGTIMEOUT_NONE:
+		return snprintf(buff, len, "none");
+	default:
+		return snprintf(buff, len, "%i", conf->pg_timeout);
+	}
+	return 0;
+}
+
+static int
 snprint_def_user_friendly_names (char * buff, int len, void * data)
 {
 	if (conf->user_friendly_names == DEFAULT_USER_FRIENDLY_NAMES)
@@ -1391,6 +1530,7 @@ init_keywords(void)
 	install_keyword("rr_min_io", &def_minio_handler, &snprint_def_rr_min_io);
 	install_keyword("rr_weight", &def_weight_handler, &snprint_def_rr_weight);
 	install_keyword("no_path_retry", &def_no_path_retry_handler, &snprint_def_no_path_retry);
+	install_keyword("pg_timeout", &def_pg_timeout_handler, &snprint_def_pg_timeout);
 	install_keyword("user_friendly_names", &names_handler, &snprint_def_user_friendly_names);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
@@ -1444,6 +1584,7 @@ init_keywords(void)
 	install_keyword("rr_weight", &hw_weight_handler, &snprint_hw_rr_weight);
 	install_keyword("no_path_retry", &hw_no_path_retry_handler, &snprint_hw_no_path_retry);
 	install_keyword("rr_min_io", &hw_minio_handler, &snprint_hw_rr_min_io);
+	install_keyword("pg_timeout", &hw_pg_timeout_handler, &snprint_hw_pg_timeout);
 	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);
@@ -1457,5 +1598,6 @@ init_keywords(void)
 	install_keyword("rr_weight", &mp_weight_handler, &snprint_mp_rr_weight);
 	install_keyword("no_path_retry", &mp_no_path_retry_handler, &snprint_mp_no_path_retry);
 	install_keyword("rr_min_io", &mp_minio_handler, &snprint_mp_rr_min_io);
+	install_keyword("pg_timeout", &mp_pg_timeout_handler, &snprint_mp_pg_timeout);
 	install_sublevel_end();
 }

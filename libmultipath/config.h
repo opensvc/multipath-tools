@@ -27,6 +27,7 @@ struct hwentry {
 	int rr_weight;
 	int no_path_retry;
 	int minio;
+	int pg_timeout;
 	struct checker * checker;
 	char * bl_product;
 };
@@ -42,6 +43,7 @@ struct mpentry {
 	int rr_weight;
 	int no_path_retry;
 	int minio;
+	int pg_timeout;
 };
 
 struct config {
@@ -61,6 +63,7 @@ struct config {
 	int rr_weight;
 	int no_path_retry;
 	int user_friendly_names;
+	int pg_timeout;
 
 	char * dev;
 	char * udev_dir;
