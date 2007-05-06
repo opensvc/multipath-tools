@@ -697,32 +697,29 @@ ueventloop (void * ap)
 static void *
 uxlsnrloop (void * ap)
 {
-	if (load_keys())
-		return NULL;
-	
-	if (alloc_handlers())
+	if (cli_init())
 		return NULL;
 
-	add_handler(LIST+PATHS, cli_list_paths);
-	add_handler(LIST+MAPS, cli_list_maps);
-	add_handler(LIST+MAPS+STATUS, cli_list_maps_status);
-	add_handler(LIST+MAPS+STATS, cli_list_maps_stats);
-	add_handler(LIST+MAPS+TOPOLOGY, cli_list_maps_topology);
-	add_handler(LIST+TOPOLOGY, cli_list_maps_topology);
-	add_handler(LIST+MAP+TOPOLOGY, cli_list_map_topology);
-	add_handler(LIST+CONFIG, cli_list_config);
-	add_handler(LIST+BLACKLIST, cli_list_blacklist);
-	add_handler(LIST+DEVICES, cli_list_devices);
-	add_handler(ADD+PATH, cli_add_path);
-	add_handler(DEL+PATH, cli_del_path);
-	add_handler(ADD+MAP, cli_add_map);
-	add_handler(DEL+MAP, cli_del_map);
-	add_handler(SWITCH+MAP+GROUP, cli_switch_group);
-	add_handler(RECONFIGURE, cli_reconfigure);
-	add_handler(SUSPEND+MAP, cli_suspend);
-	add_handler(RESUME+MAP, cli_resume);
-	add_handler(REINSTATE+PATH, cli_reinstate);
-	add_handler(FAIL+PATH, cli_fail);
+	set_handler_callback(LIST+PATHS, cli_list_paths);
+	set_handler_callback(LIST+MAPS, cli_list_maps);
+	set_handler_callback(LIST+MAPS+STATUS, cli_list_maps_status);
+	set_handler_callback(LIST+MAPS+STATS, cli_list_maps_stats);
+	set_handler_callback(LIST+MAPS+TOPOLOGY, cli_list_maps_topology);
+	set_handler_callback(LIST+TOPOLOGY, cli_list_maps_topology);
+	set_handler_callback(LIST+MAP+TOPOLOGY, cli_list_map_topology);
+	set_handler_callback(LIST+CONFIG, cli_list_config);
+	set_handler_callback(LIST+BLACKLIST, cli_list_blacklist);
+	set_handler_callback(LIST+DEVICES, cli_list_devices);
+	set_handler_callback(ADD+PATH, cli_add_path);
+	set_handler_callback(DEL+PATH, cli_del_path);
+	set_handler_callback(ADD+MAP, cli_add_map);
+	set_handler_callback(DEL+MAP, cli_del_map);
+	set_handler_callback(SWITCH+MAP+GROUP, cli_switch_group);
+	set_handler_callback(RECONFIGURE, cli_reconfigure);
+	set_handler_callback(SUSPEND+MAP, cli_suspend);
+	set_handler_callback(RESUME+MAP, cli_resume);
+	set_handler_callback(REINSTATE+PATH, cli_reinstate);
+	set_handler_callback(FAIL+PATH, cli_fail);
 
 	uxsock_listen(&uxsock_trigger, ap);
 

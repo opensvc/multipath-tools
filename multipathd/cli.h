@@ -61,8 +61,11 @@ vector handlers;
 
 int alloc_handlers (void);
 int add_handler (int fp, int (*fn)(void *, char **, int *, void *));
+int set_handler_callback (int fp, int (*fn)(void *, char **, int *, void *));
 int parse_cmd (char * cmd, char ** reply, int * len, void *);
 int load_keys (void);
 char * get_keyparam (vector v, int code);
 void free_keys (vector vec);
 void free_handlers (vector vec);
+int cli_init (void);
+char * key_generator (const char * str, int state);

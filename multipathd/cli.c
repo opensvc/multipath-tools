@@ -5,6 +5,7 @@
 #include <vector.h>
 #include <util.h>
 #include <version.h>
+#include <readline/readline.h>
 
 #include "cli.h"
 
@@ -70,6 +71,30 @@ add_handler (int fp, int (*fn)(void *, char **, int *, void *))
 	h->fingerprint = fp;
 	h->fn = fn;
 
+	return 0;
+}
+
+static struct handler *
+find_handler (int fp)
+{
+	int i;
+	struct handler *h;
+
+	vector_foreach_slot (handlers, h, i)
+		if (h->fingerprint == fp)
+			return h;
+
+	return NULL;
+}
+
+int
+set_handler_callback (int fp, int (*fn)(void *, char **, int *, void *))
+{
+	struct handler * h = find_handler(fp);
+
+	if (!h)
+		return 1;
+	h->fn = fn;
 	return 0;
 }
 
@@ -149,27 +174,26 @@ load_keys (void)
 		keys = NULL;
 		return 1;
 	}
-
 	return 0;
 }
 
 static struct key *
-find_key (char * str)
+find_key (const char * str)
 {
 	int i;
 	int len, klen;
 	struct key * kw = NULL;
 	struct key * foundkw = NULL;
 
-	vector_foreach_slot (keys, kw, i) {
-		len = strlen(str);
-		klen = strlen(kw->str);
+	len = strlen(str);
 
+	vector_foreach_slot (keys, kw, i) {
 		if (strncmp(kw->str, str, len))
 			continue;
-		else if (len == klen)
+		klen = strlen(kw->str);
+		if (len == klen)
 			return kw; /* exact match */
-		else if (len < klen) {
+		if (len < klen) {
 			if (!foundkw)
 				foundkw = kw; /* shortcut match */
 			else
@@ -178,24 +202,16 @@ find_key (char * str)
 	}
 	return foundkw;
 }
-		
-static struct handler *
-find_handler (int fp)
-{
-	int i;
-	struct handler *h;
 
-	vector_foreach_slot (handlers, h, i)
-		if (h->fingerprint == fp)
-			return h;
+#define E_SYNTAX	1
+#define E_NOPARM	2
+#define E_NOMEM		3
 
-	return NULL;
-}
-
-static vector
-get_cmdvec (char * cmd)
+static int
+get_cmdvec (char * cmd, vector *v)
 {
 	int fwd = 1;
+	int r = 0;
 	char * p = cmd;
 	char * buff;
 	struct key * kw = NULL;
@@ -203,9 +219,10 @@ get_cmdvec (char * cmd)
 	vector cmdvec;
 
 	cmdvec = vector_alloc();
+	*v = cmdvec;
 
 	if (!cmdvec)
-		return NULL;
+		return E_NOMEM;
 
 	while (fwd) {
 		fwd = get_word(p, &buff);
@@ -218,18 +235,19 @@ get_cmdvec (char * cmd)
 		FREE(buff);
 
 		if (!kw)
-			goto out; /* synthax error */
+			return E_SYNTAX;
 
 		cmdkw = alloc_key();
 
-		if (!cmdkw)
-			goto out;
-
-		if (!vector_alloc_slot(cmdvec)) {
-			FREE(cmdkw);
+		if (!cmdkw) {
+			r = E_NOMEM;
 			goto out;
 		}
-
+		if (!vector_alloc_slot(cmdvec)) {
+			FREE(cmdkw);
+			r = E_NOMEM;
+			goto out;
+		}
 		vector_set_slot(cmdvec, cmdkw);
 		cmdkw->code = kw->code;
 		cmdkw->has_param = kw->has_param;
@@ -241,18 +259,18 @@ get_cmdvec (char * cmd)
 			fwd = get_word(p, &buff);
 
 			if (!buff)
-				goto out;
+				return E_NOPARM;
 
 			p += fwd;
 			cmdkw->param = buff;
 		}
 	}
-
-	return cmdvec;
+	return 0;
 
 out:
 	free_keys(cmdvec);
-	return NULL;
+	*v = NULL;
+	return r;
 }
 
 static int 
@@ -261,6 +279,9 @@ fingerprint(vector vec)
 	int i;
 	int fp = 0;
 	struct key * kw;
+
+	if (!vec)
+		return 0;
 
 	vector_foreach_slot(vec, kw, i)
 		fp += kw->code;
@@ -334,9 +355,13 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data)
 {
 	int r;
 	struct handler * h;
-	vector cmdvec = get_cmdvec(cmd);
+	vector cmdvec;
 
-	if (!cmdvec) {
+	r = get_cmdvec(cmd, &cmdvec);
+
+	if (r) {
+		if (cmdvec)
+			free_keys(cmdvec);
 		*reply = genhelp_handler();
 		*len = strlen(*reply) + 1;
 		return 0;
@@ -371,3 +396,141 @@ get_keyparam (vector v, int code)
 
 	return NULL;
 }
+
+int
+cli_init (void) {
+	if (load_keys())
+		return 1;
+
+	if (alloc_handlers())
+		return 1;
+
+	add_handler(LIST+PATHS, NULL);
+	add_handler(LIST+MAPS, NULL);
+	add_handler(LIST+MAPS+STATUS, NULL);
+	add_handler(LIST+MAPS+STATS, NULL);
+	add_handler(LIST+MAPS+TOPOLOGY, NULL);
+	add_handler(LIST+TOPOLOGY, NULL);
+	add_handler(LIST+MAP+TOPOLOGY, NULL);
+	add_handler(LIST+CONFIG, NULL);
+	add_handler(LIST+BLACKLIST, NULL);
+	add_handler(LIST+DEVICES, NULL);
+	add_handler(ADD+PATH, NULL);
+	add_handler(DEL+PATH, NULL);
+	add_handler(ADD+MAP, NULL);
+	add_handler(DEL+MAP, NULL);
+	add_handler(SWITCH+MAP+GROUP, NULL);
+	add_handler(RECONFIGURE, NULL);
+	add_handler(SUSPEND+MAP, NULL);
+	add_handler(RESUME+MAP, NULL);
+	add_handler(REINSTATE+PATH, NULL);
+	add_handler(FAIL+PATH, NULL);
+
+	return 0;
+}
+
+static int
+key_match_fingerprint (struct key * kw, int fp)
+{
+	if (!fp)
+		return 0;
+
+	return ((fp & kw->code) == kw->code);
+}
+
+/*
+ * This is the readline completion handler
+ */
+char *
+key_generator (const char * str, int state)
+{
+	static int index, len, rlfp, has_param;
+	struct key * kw;
+	int i;
+	struct handler *h;
+	vector v;
+
+	if (!state) {
+		index = 0;
+		has_param = 0;
+		rlfp = 0;
+		len = strlen(str);
+		int r = get_cmdvec(rl_line_buffer, &v);
+		/*
+		 * If a word completion is in progess, we don't want
+		 * to take an exact keyword match in the fingerprint.
+		 * For ex "show map[tab]" would validate "map" and discard
+		 * "maps" as a valid candidate.
+		 */
+		if (v && len)
+			vector_del_slot(v, VECTOR_SIZE(v) - 1);
+		/*
+		 * Clean up the mess if we dropped the last slot of a 1-slot
+		 * vector
+		 */
+		if (v && !VECTOR_SIZE(v)) {
+			vector_free(v);
+			v = NULL;
+		}
+		/*
+		 * If last keyword takes a param, don't even try to guess
+		 */
+		if (r == E_NOPARM) {
+			has_param = 1;
+			return (strdup("(value)"));
+		}
+		/*
+		 * Compute a command fingerprint to find out possible completions.
+		 * Once done, the vector is useless. Free it.
+		 */
+		if (v) {
+			rlfp = fingerprint(v);
+			free_keys(v);
+		}
+	}
+	/*
+	 * No more completions for parameter placeholder.
+	 * Brave souls might try to add parameter completion by walking paths and
+	 * multipaths vectors.
+	 */
+	if (has_param)
+		return ((char *)NULL);
+	/*
+	 * Loop through keywords for completion candidates
+	 */
+	vector_foreach_slot_after (keys, kw, index) {
+		if (!strncmp(kw->str, str, len)) {
+			/*
+			 * Discard keywords already in the command line
+			 */
+			if (key_match_fingerprint(kw, rlfp)) {
+				struct key * curkw = find_key(str);
+				if (!curkw || (curkw != kw))
+					continue;
+			}
+			/*
+			 * Discard keywords making syntax errors.
+			 *
+			 * nfp is the candidate fingerprint we try to
+			 * validate against all known command fingerprints.
+			 */
+			int nfp = rlfp | kw->code;
+			vector_foreach_slot(handlers, h, i) {
+				if (!rlfp || ((h->fingerprint & nfp) == nfp)) {
+					/*
+					 * At least one full command is
+					 * possible with this keyword :
+					 * Consider it validated
+					 */
+					index++;
+					return (strdup(kw->str));
+				}
+			}
+		}
+	}
+	/*
+	 * No more candidates
+	 */
+	return ((char *)NULL);
+}
+
