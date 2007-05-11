@@ -58,6 +58,11 @@ enum pgstates {
 	PGSTATE_ACTIVE
 };
 
+enum pgtimeouts {
+	PGTIMEOUT_UNDEF,
+	PGTIMEOUT_NONE
+};
+
 struct scsi_idlun {
 	int dev_id;
 	int host_unique_id;
@@ -130,6 +135,7 @@ struct multipath {
 	int no_path_retry; /* number of retries after all paths are down */
 	int retry_tick;    /* remaining times for retries */
 	int minio;
+	int pg_timeout;
 	unsigned long long size;
 	vector paths;
 	vector pg;

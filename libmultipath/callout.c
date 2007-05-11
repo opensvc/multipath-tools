@@ -78,7 +78,7 @@ int execute_program(char *path, char *value, int len)
 		/* dup write side of pipe to STDOUT */
 		dup(fds[1]);
 
-		retval = execvp(argv[0], argv);
+		retval = execv(argv[0], argv);
 
 		exit(-1);
 	case -1:

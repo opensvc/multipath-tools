@@ -21,6 +21,9 @@
 #include <memory.h>
 #include <defaults.h>
 
+#include <vector.h>
+#include "cli.h"
+
 /*
  * process the client 
  */
@@ -29,6 +32,9 @@ static void process(int fd)
 	char *line;
 	char *reply;
 
+	cli_init();
+	rl_readline_name = "multipathd";
+	rl_completion_entry_function = key_generator;
 	while ((line = readline("multipathd> "))) {
 		size_t len;
 		size_t llen = strlen(line);

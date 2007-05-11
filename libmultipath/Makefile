@@ -25,6 +25,12 @@ else
 	CLEAN = $(shell if [ ! "x$(PREVBUILD)" = "x" ]; then echo clean; fi)
 endif
 
+LIBDM_API_FLUSH = $(shell objdump -T /lib/libdevmapper.so.* | grep -c dm_task_no_flush)
+
+ifeq ($(strip $(LIBDM_API_FLUSH)),1)
+	CFLAGS += -DLIBDM_API_FLUSH
+endif
+
 all: $(BUILD)
 
 prepare: $(CLEAN)

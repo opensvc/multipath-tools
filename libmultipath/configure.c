@@ -60,6 +60,7 @@ setup_map (struct multipath * mpp)
 	select_rr_weight(mpp);
 	select_minio(mpp);
 	select_no_path_retry(mpp);
+	select_pg_timeout(mpp);
 
 	/*
 	 * assign paths to path groups -- start with no groups and all paths
@@ -174,8 +175,9 @@ select_action (struct multipath * mpp, vector curmp)
 			mpp->alias);
 		return;
 	}
-	if (!mpp->no_path_retry && /* let features be handled by the daemon */
-	    strncmp(cmpp->features, mpp->features, strlen(mpp->features))) {
+	if (!mpp->no_path_retry && !mpp->pg_timeout &&
+	    (strlen(cmpp->features) != strlen(mpp->features) ||
+	     strcmp(cmpp->features, mpp->features))) {
 		mpp->action =  ACT_RELOAD;
 		condlog(3, "%s: set ACT_RELOAD (features change)",
 			mpp->alias);
@@ -501,6 +503,12 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 				dm_queue_if_no_path(mpp->alias, 0);
 			else
 				dm_queue_if_no_path(mpp->alias, 1);
+		}
+		if (mpp->pg_timeout != PGTIMEOUT_UNDEF) {
+			if (mpp->pg_timeout == -PGTIMEOUT_NONE)
+				dm_set_pg_timeout(mpp->alias,  0);
+			else
+				dm_set_pg_timeout(mpp->alias, mpp->pg_timeout);
 		}
 
 		if (newmp) {
