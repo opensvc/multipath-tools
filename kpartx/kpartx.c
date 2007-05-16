@@ -193,6 +193,7 @@ main(int argc, char **argv){
 	char * loopdev = NULL;
 	char * delim = NULL;
 	char *uuid = NULL;
+	char *mapname = NULL;
 	int loopro = 0;
 	int hotplug = 0;
 	struct stat buf;
@@ -310,12 +311,19 @@ main(int argc, char **argv){
 	
 	off = find_devname_offset(device);
 
-	if (!loopdev)
+	if (!loopdev) {
 		uuid = dm_mapuuid((unsigned int)MAJOR(buf.st_rdev),
 				  (unsigned int)MINOR(buf.st_rdev));
+		mapname = dm_mapname((unsigned int)MAJOR(buf.st_rdev),
+				     (unsigned int)MINOR(buf.st_rdev));
+	}
+
 	if (!uuid)
 		uuid = device + off;
 		
+	if (!mapname)
+		mapname = device + off;
+
 	fd = open(device, O_RDONLY);
 
 	if (fd == -1) {
@@ -365,7 +373,7 @@ main(int argc, char **argv){
 					continue;
 
 				printf("%s%s%d : 0 %lu %s %lu\n",
-					device + off, delim, j+1,
+					mapname, delim, j+1,
 					(unsigned long) slices[j].size, device,
 				        (unsigned long) slices[j].start);
 			}
@@ -374,7 +382,7 @@ main(int argc, char **argv){
 		case DELETE:
 			for (j = 0; j < n; j++) {
 				if (safe_sprintf(partname, "%s%s%d",
-					     device + off , delim, j+1)) {
+					     mapname, delim, j+1)) {
 					fprintf(stderr, "partname too small\n");
 					exit(1);
 				}
@@ -407,7 +415,7 @@ main(int argc, char **argv){
 					continue;
 
 				if (safe_sprintf(partname, "%s%s%d",
-					     device + off , delim, j+1)) {
+					     mapname, delim, j+1)) {
 					fprintf(stderr, "partname too small\n");
 					exit(1);
 				}
