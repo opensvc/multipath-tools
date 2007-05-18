@@ -37,6 +37,8 @@ typedef struct _vector *vector;
 
 #define vector_foreach_slot(v,p,i) \
 	for (i = 0; i < (v)->allocated && ((p) = (v)->slot[i]); i++)
+#define vector_foreach_slot_after(v,p,i) \
+	for (; i < (v)->allocated && ((p) = (v)->slot[i]); i++)
 
 /* Prototypes */
 extern vector vector_alloc(void);
