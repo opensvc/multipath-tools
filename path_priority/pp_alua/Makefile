@@ -35,7 +35,7 @@ glibc:	$(OBJS)
 klibc:	$(OBJS)
 	$(CC) -static -o $(EXEC) $(OBJS)
 
-install: $(BUILD) $(EXEC).8.gz
+install: $(EXEC) $(EXEC).8.gz
 	$(INSTALL) -s -m 755 $(EXEC) $(DESTDIR)$(bindir)/$(EXEC)
 	$(INSTALL) -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)/$(EXEC).8.gz
 
