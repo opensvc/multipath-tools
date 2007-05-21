@@ -79,6 +79,7 @@ initpts(void)
 	addpts("unixware", read_unixware_pt);
 	addpts("dasd", read_dasd_pt);
 	addpts("mac", read_mac_pt);
+	addpts("sun", read_sun_pt);
 }
 
 static char short_opts[] = "ladgvnp:t:";
@@ -374,6 +375,9 @@ main(int argc, char **argv){
 			d = c;
 			while (c) {
 				for (j = 0; j < n; j++) {
+					unsigned long start;
+					int k = slices[j].container - 1;
+
 					if (slices[j].size == 0)
 						continue;
 					if (slices[j].minor > 0)
@@ -382,11 +386,11 @@ main(int argc, char **argv){
 						continue;
 					slices[j].minor = m++;
 
+					start = slices[j].start - slices[k].start;
 					printf("%s%s%d : 0 %lu /dev/dm-%d %lu\n",
 					       mapname, delim, j+1,
 					       (unsigned long) slices[j].size,
-					       slices[j].minor,
-					       (unsigned long) slices[j].start);
+					       slices[k].minor, start);
 					c--;
 				}
 				/* Terminate loop if nothing more to resolve */
