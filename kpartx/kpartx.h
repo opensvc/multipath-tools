@@ -22,6 +22,9 @@
 struct slice {
 	unsigned long start;
 	unsigned long size;
+	int container;
+	int major;
+	int minor;
 };
 
 typedef int (ptreader)(int fd, struct slice all, struct slice *sp, int ns);
