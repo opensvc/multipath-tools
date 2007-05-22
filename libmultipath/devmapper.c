@@ -6,6 +6,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <libdevmapper.h>
 #include <ctype.h>
@@ -20,6 +21,13 @@
 #include "debug.h"
 #include "memory.h"
 #include "devmapper.h"
+#include "config.h"
+
+#if DAEMON
+#include "log_pthread.h"
+#include <sys/types.h>
+#include <time.h>
+#endif
 
 #define MAX_WAIT 5
 #define LOOPS_PER_SEC 5
@@ -28,21 +36,50 @@
 #define UUID_PREFIX_LEN 6
 
 static void
-dm_dummy_log (int level, const char *file, int line, const char *f, ...)
+dm_write_log (int level, const char *file, int line, const char *f, ...)
 {
+	va_list ap;
+	int thres;
+
+	if (level > 6)
+		level = 6;
+
+	thres = (conf) ? conf->verbosity : 0;
+	if (thres <= 3 || level > thres)
+		return;
+
+        va_start(ap, f);
+#if DAEMON
+	if (!logsink) {
+		time_t t = time(NULL);
+		struct tm *tb = localtime(&t);
+		char buff[16];
+
+		strftime(buff, sizeof(buff), "%b %d %H:%M:%S", tb);
+		buff[sizeof(buff)-1] = '\0';
+
+		fprintf(stdout, "%s | ", buff);
+		fprintf(stdout, "libdevmapper: %s(%i): ", file, line);
+		vfprintf(stdout, f, ap);
+		fprintf(stdout, "\n");
+	} else {
+		condlog(level, "libdevmapper: %s(%i): ", file, line);
+		log_safe(level + 3, f, ap);
+	}
+#else
+	fprintf(stdout, "libdevmapper: %s(%i): ", file, line);
+	vfprintf(stdout, f, ap);
+	fprintf(stdout, "\n");
+#endif
+        va_end(ap);
+
 	return;
 }
 
-void
-dm_restore_log (void)
-{
-	dm_log_init(NULL);
-}
-
-void
-dm_shut_log (void)
-{
-	dm_log_init(&dm_dummy_log);
+extern void
+dm_init(void) {
+	dm_log_init(&dm_write_log);
+	dm_log_init_verbose(conf ? conf->verbosity + 3 : 0);
 }
 
 static int
@@ -764,9 +801,7 @@ dm_mapname(int major, int minor)
 	 * daemon uev_trigger -> uev_add_map
 	 */
 	while (--loop) {
-		dm_shut_log();
 		r = dm_task_run(dmt);
-		dm_restore_log();
 
 		if (r)
 			break;

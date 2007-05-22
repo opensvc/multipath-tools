@@ -225,6 +225,8 @@ ev_add_map (char * devname, struct vectors * vecs)
 	int map_present;
 	int r = 1;
 
+	/* libsysfs seems to forget to terminate the string... */
+	memset(dev_t, 0, BLK_DEV_SIZE);
 	if (sscanf(devname, "dm-%d", &minor) == 1 &&
 	    !sysfs_get_dev(sysfs_path, devname, dev_t, BLK_DEV_SIZE) &&
 	    sscanf(dev_t, "%d:%d", &major, &minor) == 2)
@@ -646,10 +648,12 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	lock(vecs->lock);
 
 	/*
-	 * device map add/remove event
+	 * device map event
+	 * Add events are ignored here as the tables
+	 * are not fully initialised then.
 	 */
 	if (!strncmp(devname, "dm-", 3)) {
-		if (!strncmp(uev->action, "add", 3)) {
+		if (!strncmp(uev->action, "change", 6)) {
 			r = uev_add_map(devname, vecs);
 			goto out;
 		}
@@ -1397,6 +1401,7 @@ main (int argc, char *argv[])
 	int err;
 	
 	logsink = 1;
+	dm_init();
 
 	if (getuid() != 0) {
 		fprintf(stderr, "need to be root\n");

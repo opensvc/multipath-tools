@@ -36,7 +36,7 @@ klibc: prepare $(OBJS)
 $(MULTIPATHLIB)-$(BUILD).a:
 	make -C $(multipathdir) BUILD=$(BUILD)
 
-install:
+install: $(EXEC) $(EXEC).8
 	install -d $(DESTDIR)$(bindir)
 	install -s -m 755 $(EXEC) $(DESTDIR)$(bindir)
 	install -d $(DESTDIR)$(mandir)
