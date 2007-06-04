@@ -22,14 +22,14 @@ all: $(BUILD)
 prepare:
 	make -C $(multipathdir) prepare
 	rm -f core *.o *.gz
+	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
+	$(GZIP) $(EXEC).conf.5 > $(EXEC).conf.5.gz
 
 glibc: prepare $(OBJS)
 	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)
-	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 
 klibc: prepare $(OBJS)
 	$(CC) -static -o $(EXEC) $(CRT0) $(OBJS) $(KLIBC) $(LIBGCC)
-	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 
 $(CHECKERSLIB)-$(BUILD).a:
 	make -C $(checkersdir) BUILD=$(BUILD) $(BUILD)
