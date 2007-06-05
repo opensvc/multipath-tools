@@ -235,60 +235,54 @@ opennode (char * dev, int mode)
 extern int
 devt2devname (char *devname, char *devt)
 {
-	struct dlist * ls;
-	char attr_path[FILE_NAME_SIZE];
+	FILE *fd;
+	unsigned int tmpmaj, tmpmin, major, minor;
+	char dev[FILE_NAME_SIZE];
 	char block_path[FILE_NAME_SIZE];
-	struct sysfs_attribute * attr = NULL;
-	struct sysfs_class * class;
-	struct sysfs_class_device * dev;
+	struct stat statbuf;
 
-	if(safe_sprintf(block_path, "%s/block", sysfs_path)) {
-		condlog(0, "block_path too small");
+	if (sscanf(devt, "%u:%u", &major, &minor) != 2) {
+		condlog(0, "Invalid device number %s", devt);
 		return 1;
 	}
-	if (!(class = sysfs_open_class("block")))
+
+	if ((fd = fopen("/proc/partitions", "r")) < 0) {
+		condlog(0, "Cannot open /proc/partitions");
 		return 1;
-
-	if (!(ls = sysfs_get_class_devices(class)))
-		goto err;
-
-	dlist_for_each_data(ls, dev, struct sysfs_class_device) {
-		if(safe_sprintf(attr_path, "%s/%s/dev",
-				block_path, dev->name)) {
-			condlog(0, "attr_path too small");
-			goto err;
+	}
+	
+	while (!feof(fd)) {
+		int r = fscanf(fd,"%u %u %*d %s",&tmpmaj, &tmpmin, dev);
+		if (!r) {
+			fscanf(fd,"%*s\n");
+			continue;
 		}
-		if (!(attr = sysfs_open_attribute(attr_path)))
-			goto err;
-
-		if (sysfs_read_attribute(attr))
-			goto err1;
-
-		/* discard newline */
-		if (attr->len > 1) attr->len--;
-
-		if (strlen(devt) == attr->len &&
-		    strncmp(attr->value, devt, attr->len) == 0) {
-			if(safe_sprintf(attr_path, "%s/%s",
-					block_path, dev->name)) {
-				condlog(0, "attr_path too small");
-				goto err1;
-			}
-			sysfs_get_name_from_path(attr_path, devname,
-						 FILE_NAME_SIZE);
-			sysfs_close_attribute(attr);
-			sysfs_close_class(class);
-			return 0;
+		if (r != 3)
+			continue;
+		if ((major == tmpmaj) && (minor == tmpmin)) {
+			sprintf(block_path, "/sys/block/%s", dev);
+			break;
 		}
 	}
-err1:
-	sysfs_close_attribute(attr);
-err:
-	sysfs_close_class(class);
-	return 1;
+	fclose(fd);
+
+	if (strncmp(block_path,"/sys/block", 10))
+		return 1;
+
+	if (stat(block_path, &statbuf) < 0) {
+		condlog(0, "No sysfs entry for %s\n", block_path);
+		return 1;
+	}
+
+	if (S_ISDIR(statbuf.st_mode) == 0) {
+		condlog(0, "sysfs entry %s is not a directory\n", block_path);
+		return 1;
+	}
+	strncpy(devname, dev, FILE_NAME_SIZE);
+	return 0;
 }
 
-static int
+int
 do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
        void *resp, int mx_resp_len, int noisy)
 {
