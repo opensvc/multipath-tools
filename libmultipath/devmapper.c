@@ -87,7 +87,7 @@ dm_libprereq (void)
 {
 	char version[64];
 	int v[3];
-	int minv[3] = {1, 2, 11};
+	int minv[3] = {1, 2, 8};
 
 	dm_get_library_version(version, sizeof(version));
 	condlog(3, "libdevmapper version %s", version);
