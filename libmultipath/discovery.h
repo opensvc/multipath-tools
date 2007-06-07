@@ -24,12 +24,7 @@
 #define SCSI_COMMAND_TERMINATED 0x22
 #define SG_ERR_DRIVER_SENSE     0x08
 
-int sysfs_get_vendor (char * sysfs_path, char * dev, char * buff, int len);
-int sysfs_get_model (char * sysfs_path, char * dev, char * buff, int len);
-int sysfs_get_rev (char * sysfs_path, char * dev, char * buff, int len);
-int sysfs_get_dev (char * sysfs_path, char * dev, char * buff, int len);
-
-int sysfs_get_size (char * sysfs_path, char * dev, unsigned long long *);
+int sysfs_get_dev (struct sysfs_device * dev, char * buff, size_t len);
 int path_discovery (vector pathvec, struct config * conf, int flag);
 
 void basename (char *, char *);

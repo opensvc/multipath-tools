@@ -12,7 +12,7 @@ CFLAGS += -I$(multipathdir) -I$(checkersdir)
 ifeq ($(strip $(BUILD)),klibc)
 	OBJS += $(libdm) $(libsysfs)
 else
-	LDFLAGS += -ldevmapper -lsysfs
+	LDFLAGS += -ldevmapper
 endif
 
 EXEC = multipath

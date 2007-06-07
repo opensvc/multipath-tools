@@ -13,6 +13,7 @@
 #include "dmparser.h"
 #include "config.h"
 #include "propsel.h"
+#include "sysfs.h"
 #include "discovery.h"
 #include "waiter.h"
 
@@ -373,10 +374,10 @@ verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
 		/*
 		 * see if path is in sysfs
 		 */
-		if (!pp->dev || sysfs_get_dev(sysfs_path,
-				  pp->dev, pp->dev_t, BLK_DEV_SIZE)) {
+		if (!pp->sysdev || sysfs_get_dev(pp->sysdev,
+						 pp->dev_t, BLK_DEV_SIZE)) {
 			condlog(0, "%s: failed to access path %s", mpp->alias,
-				pp->dev ? pp->dev : pp->dev_t);
+				pp->sysdev ? pp->sysdev->devpath : pp->dev_t);
 			count++;
 			vector_del_slot(mpp->paths, i);
 			i--;

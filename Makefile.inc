@@ -17,7 +17,6 @@ ifeq ($(strip $(BUILD)),klibc)
 	CC = klcc
 	klibcdir = /usr/lib/klibc
 	libdm    = $(klibcdir)/lib/libdevmapper.a
-	libsysfs = $(klibcdir)/lib/libsysfs.a
 endif
 
 prefix      = 

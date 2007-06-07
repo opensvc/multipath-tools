@@ -14,12 +14,6 @@
 #include <errno.h>
 
 /*
- * libsysfs
- */
-#include <sysfs/libsysfs.h>
-#include <sysfs/dlist.h>
-
-/*
  * libcheckers
  */
 #include <checkers.h>
@@ -40,6 +34,7 @@
 #include <structs_vec.h>
 #include <dmparser.h>
 #include <devmapper.h>
+#include <sysfs.h>
 #include <dict.h>
 #include <discovery.h>
 #include <debug.h>
@@ -208,31 +203,29 @@ flush_map(struct multipath * mpp, struct vectors * vecs)
 }
 
 static int
-uev_add_map (char * devname, struct vectors * vecs)
+uev_add_map (struct sysfs_device * dev, struct vectors * vecs)
 {
-	condlog(2, "%s: add map (uevent)", devname);
-	return ev_add_map(devname, vecs);
+	condlog(2, "%s: add map (uevent)", dev->kernel);
+	return ev_add_map(dev, vecs);
 }
 
 int
-ev_add_map (char * devname, struct vectors * vecs)
+ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
 {
-	int major, minor;
-	char dev_t[BLK_DEV_SIZE];
 	char * alias;
+	char *dev_t;
+	int major, minor;
 	char * refwwid;
 	struct multipath * mpp;
 	int map_present;
 	int r = 1;
 
-	/* libsysfs seems to forget to terminate the string... */
-	memset(dev_t, 0, BLK_DEV_SIZE);
-	if (sscanf(devname, "dm-%d", &minor) == 1 &&
-	    !sysfs_get_dev(sysfs_path, devname, dev_t, BLK_DEV_SIZE) &&
-	    sscanf(dev_t, "%d:%d", &major, &minor) == 2)
-		alias = dm_mapname(major, minor);
-	else
-		alias = STRDUP(devname);
+	dev_t = sysfs_attr_get_value(dev->devpath, "dev");
+
+	if (!dev_t || sscanf(dev_t, "%d:%d", &major, &minor) != 2)
+		return 1;
+
+	alias = dm_mapname(major, minor);
 		
 	if (!alias)
 		return 1;
@@ -241,7 +234,6 @@ ev_add_map (char * devname, struct vectors * vecs)
 
 	if (map_present && dm_type(alias, DEFAULT_TARGET) <= 0) {
 		condlog(4, "%s: not a multipath map", alias);
-		FREE(alias);
 		return 0;
 	}
 
@@ -254,8 +246,7 @@ ev_add_map (char * devname, struct vectors * vecs)
 		 * of uev_add_path
 		 */
 		condlog(0, "%s: devmap already registered",
-			devname);
-		FREE(alias);
+			dev->kernel);
 		return 0;
 	}
 
@@ -265,10 +256,10 @@ ev_add_map (char * devname, struct vectors * vecs)
 	if (map_present && (mpp = add_map_without_path(vecs, minor, alias,
 					start_waiter_thread))) {
 		sync_map_state(mpp);
-		condlog(3, "%s: devmap %s added", alias, devname);
+		condlog(3, "%s: devmap %s added", alias, dev->kernel);
 		return 0;
 	}
-	refwwid = get_refwwid(devname, DEV_DEVMAP, vecs->pathvec);
+	refwwid = get_refwwid(dev->kernel, DEV_DEVMAP, vecs->pathvec);
 
 	if (refwwid) {
 		r = coalesce_paths(vecs, NULL, refwwid);
@@ -276,20 +267,19 @@ ev_add_map (char * devname, struct vectors * vecs)
 	}
 	
 	if (!r)
-		condlog(3, "%s: devmap %s added", alias, devname);
+		condlog(3, "%s: devmap %s added", alias, dev->kernel);
 	else
-		condlog(0, "%s: uev_add_map %s failed", alias, devname);
+		condlog(0, "%s: uev_add_map %s failed", alias, dev->kernel);
 
 	FREE(refwwid);
-	FREE(alias);
 	return r;
 }
 
 static int
-uev_remove_map (char * devname, struct vectors * vecs)
+uev_remove_map (struct sysfs_device * dev, struct vectors * vecs)
 {
-	condlog(2, "%s: remove map (uevent)", devname);
-	return ev_remove_map(devname, vecs);
+	condlog(2, "%s: remove map (uevent)", dev->kernel);
+	return ev_remove_map(dev->kernel, vecs);
 }
 
 int
@@ -310,13 +300,13 @@ ev_remove_map (char * devname, struct vectors * vecs)
 }
 
 static int
-uev_umount_map (char * devname, struct vectors * vecs)
+uev_umount_map (struct sysfs_device * dev, struct vectors * vecs)
 {
 	struct multipath * mpp;
 
-	condlog(2, "%s: umount map (uevent)", devname);
+	condlog(2, "%s: umount map (uevent)", dev->kernel);
 
-	mpp = find_mp_by_str(vecs->mpvec, devname);
+	mpp = find_mp_by_str(vecs->mpvec, dev->kernel);
 
 	if (!mpp)
 		return 0;
@@ -331,10 +321,10 @@ uev_umount_map (char * devname, struct vectors * vecs)
 }
 	
 static int
-uev_add_path (char * devname, struct vectors * vecs)
+uev_add_path (struct sysfs_device * dev, struct vectors * vecs)
 {
-	condlog(2, "%s: add path (uevent)", devname);
-	return (ev_add_path(devname, vecs) != 1)? 0 : 1;
+	condlog(2, "%s: add path (uevent)", dev->kernel);
+	return (ev_add_path(dev->kernel, vecs) != 1)? 0 : 1;
 }
 
 
@@ -450,10 +440,10 @@ out:
 }
 
 static int
-uev_remove_path (char * devname, struct vectors * vecs)
+uev_remove_path (struct sysfs_device * dev, struct vectors * vecs)
 {
-	condlog(2, "%s: remove path (uevent)", devname);
-	return ev_remove_path(devname, vecs);
+	condlog(2, "%s: remove path (uevent)", dev->kernel);
+	return ev_remove_path(dev->kernel, vecs);
 }
 
 int
@@ -636,7 +626,7 @@ int
 uev_trigger (struct uevent * uev, void * trigger_data)
 {
 	int r = 0;
-	char devname[32];
+	struct sysfs_device *sysdev;
 	struct vectors * vecs;
 
 	vecs = (struct vectors *)trigger_data;
@@ -644,7 +634,7 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	if (uev_discard(uev->devpath))
 		return 0;
 
-	basename(uev->devpath, devname);
+	sysdev = sysfs_device_get(uev->devpath);
 	lock(vecs->lock);
 
 	/*
@@ -652,17 +642,17 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	 * Add events are ignored here as the tables
 	 * are not fully initialised then.
 	 */
-	if (!strncmp(devname, "dm-", 3)) {
+	if (!strncmp(sysdev->kernel, "dm-", 3)) {
 		if (!strncmp(uev->action, "change", 6)) {
-			r = uev_add_map(devname, vecs);
+			r = uev_add_map(sysdev, vecs);
 			goto out;
 		}
 		if (!strncmp(uev->action, "remove", 6)) {
-			r = uev_remove_map(devname, vecs);
+			r = uev_remove_map(sysdev, vecs);
 			goto out;
 		}
 		if (!strncmp(uev->action, "umount", 6)) {
-			r = uev_umount_map(devname, vecs);
+			r = uev_umount_map(sysdev, vecs);
 			goto out;
 		}
 		goto out;
@@ -672,15 +662,15 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	 * path add/remove event
 	 */
 	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
-		 	   devname) > 0)
+		 	   sysdev->kernel) > 0)
 		goto out;
 
 	if (!strncmp(uev->action, "add", 3)) {
-		r = uev_add_path(devname, vecs);
+		r = uev_add_path(sysdev, vecs);
 		goto out;
 	}
 	if (!strncmp(uev->action, "remove", 6)) {
-		r = uev_remove_path(devname, vecs);
+		r = uev_remove_path(sysdev, vecs);
 		goto out;
 	}
 
@@ -1278,7 +1268,7 @@ child (void * param)
 	if (!vecs)
 		exit(1);
 
-	if (sysfs_get_mnt_path(sysfs_path, FILE_NAME_SIZE)) {
+	if (sysfs_init(conf->sysfs_dir, FILE_NAME_SIZE)) {
 		condlog(0, "can not find sysfs mount point");
 		exit(1);
 	}
@@ -1314,6 +1304,8 @@ child (void * param)
 	pthread_cancel(check_thr);
 	pthread_cancel(uevent_thr);
 	pthread_cancel(uxlsnr_thr);
+
+	sysfs_cleanup();
 
 	free_keys(keys);
 	keys = NULL;

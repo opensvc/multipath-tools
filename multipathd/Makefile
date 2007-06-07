@@ -7,7 +7,7 @@ include ../Makefile.inc
 # basic flags setting
 #
 CFLAGS += -DDAEMON -I$(multipathdir) -I$(checkersdir)
-LDFLAGS = -lpthread -ldevmapper -lsysfs -lreadline -lncurses
+LDFLAGS = -lpthread -ldevmapper -lreadline -lncurses
 
 #
 # debuging stuff

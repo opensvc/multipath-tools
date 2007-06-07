@@ -325,8 +325,10 @@ domap (struct multipath * mpp)
 			return DOMAP_RETRY;
 		}
 
-		if (dm_map_present(mpp->alias))
+		if (dm_map_present(mpp->alias)) {
+			condlog(3, "%s: map already present", mpp->alias);
 			break;
+		}
 
 		r = dm_addmap(DM_DEVICE_CREATE, mpp->alias, DEFAULT_TARGET,
 			      mpp->params, mpp->size, mpp->wwid);

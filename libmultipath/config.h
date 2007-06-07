@@ -66,6 +66,7 @@ struct config {
 	int pg_timeout;
 
 	char * dev;
+	char * sysfs_dir;
 	char * udev_dir;
 	char * selector;
 	char * getuid;
