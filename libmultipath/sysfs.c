@@ -317,7 +317,7 @@ char *sysfs_attr_get_value(const char *devpath, const char *attr_name)
 	const char *path;
 	char value[NAME_SIZE];
 	struct sysfs_attr *attr_loop;
-	struct sysfs_attr *attr;
+	struct sysfs_attr *attr = NULL;
 	struct stat statbuf;
 	int fd;
 	ssize_t size;
@@ -349,7 +349,8 @@ char *sysfs_attr_get_value(const char *devpath, const char *attr_name)
 		list_add(&attr->node, &attr_list);
 	} else {
 		/* clear old value */
-		memset(attr->value, 0x00, sizeof(attr->value));
+		if(attr->value)
+			memset(attr->value, 0x00, sizeof(attr->value));
 	}
 
 	if (lstat(path_full, &statbuf) != 0) {
