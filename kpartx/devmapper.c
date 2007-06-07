@@ -200,7 +200,8 @@ char *
 dm_mapuuid(int major, int minor)
 {
 	struct dm_task *dmt;
-	char *tmp, *uuid = NULL;
+	const char *tmp;
+	char *uuid = NULL;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
 		return NULL;
