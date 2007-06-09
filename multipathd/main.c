@@ -635,6 +635,9 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 		return 0;
 
 	sysdev = sysfs_device_get(uev->devpath);
+	if(!sysdev)
+		return 0;	
+
 	lock(vecs->lock);
 
 	/*
