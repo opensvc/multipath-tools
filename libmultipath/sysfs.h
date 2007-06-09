@@ -6,9 +6,9 @@
 #define _LIBMULTIPATH_SYSFS_H
 
 #ifdef DEBUG
-# define dbg printf
+# define dbg(format, args...) printf(format "\n", ##args)
 #else
-# define dbg(format, arg...) do {} while (0)
+# define dbg(format, args...) do {} while (0)
 #endif
 
 int sysfs_init(char *path, size_t len);
