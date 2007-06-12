@@ -8,9 +8,10 @@ include ../Makefile.inc
 OBJS = main.o $(MULTIPATHLIB)-$(BUILD).a $(CHECKERSLIB)-$(BUILD).a
 
 CFLAGS += -I$(multipathdir) -I$(checkersdir)
+LDFLAGS += -laio
 
 ifeq ($(strip $(BUILD)),klibc)
-	OBJS += $(libdm) $(libsysfs)
+	OBJS += $(libdm)
 else
 	LDFLAGS += -ldevmapper
 endif
