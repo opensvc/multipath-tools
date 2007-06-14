@@ -40,6 +40,9 @@
  *   The path needs an initialization command to be sent to it in order for
  *   I/Os to succeed.
  *
+ * PATH_PENDING:
+ * - Use: All async checkers
+ * - Description: Indicates a check IO is in flight.
  */
 #define PATH_WILD	-1
 #define PATH_UNCHECKED	0
@@ -47,6 +50,7 @@
 #define PATH_UP		2
 #define PATH_SHAKY	3
 #define PATH_GHOST	4
+#define PATH_PENDING	5
 
 #define DIRECTIO     "directio"
 #define TUR          "tur"
@@ -70,7 +74,8 @@
  * Provision a long timeout. Longer than any real-world application would cope
  * with.
  */
-#define DEF_TIMEOUT	300000
+#define DEF_TIMEOUT		300000
+#define ASYNC_TIMEOUT_SEC	30
 
 /*
  * strings lengths

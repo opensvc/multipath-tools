@@ -900,7 +900,14 @@ checkerloop (void *ap)
 				pathinfo(pp, conf->hwtable, 0);
 				continue;
 			}
-
+			/*
+			 * Async IO in flight. Keep the previous path state
+			 * and reschedule as soon as possible
+			 */
+			if (newstate == PATH_PENDING) {
+				pp->tick = 1;
+				continue;
+			}
 			if (newstate != pp->state) {
 				int oldstate = pp->state;
 				pp->state = newstate;
