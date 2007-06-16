@@ -9,7 +9,7 @@ ACTION=="remove", GOTO="kpartx_end"
 
 ENV{DM_TABLE_STATE}!="LIVE", GOTO="kpartx_end"
 
-ENV{DM_UUID}=="?*", IMPORT{program}=="/sbin/kpartx_id %M %m $env{DM_UUID}"
+ENV{DM_UUID}=="?*", IMPORT{program}=="/lib/udev/kpartx_id %M %m $env{DM_UUID}"
 
 OPTIONS="link_priority=50"
 
