@@ -183,7 +183,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "EMC",
 		.product       = "SYMMETRIX",
-		.getuid        = "/sbin/scsi_id -g -u -ppre-spc3-83 -s /block/%n",
+		.getuid        = "/lib/udev/scsi_id -g -u -ppre-spc3-83 -s /block/%n",
 		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,

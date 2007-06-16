@@ -1,4 +1,4 @@
-#define DEFAULT_GETUID		"/sbin/scsi_id -g -u -s /block/%n"
+#define DEFAULT_GETUID		"/lib/udev/scsi_id -g -u -s /block/%n"
 #define DEFAULT_UDEVDIR		"/dev"
 #define DEFAULT_SELECTOR	"round-robin 0"
 #define DEFAULT_FEATURES	"0"

@@ -12,10 +12,10 @@ cp /sbin/kpartx $INITRDDIR/sbin
 # feed the dependencies too
 # scsi_id is dynamicaly linked, so store the libs too
 #
-cp /sbin/scsi_id $INITRDDIR/sbin
+cp /lib/udev/scsi_id $INITRDDIR/lib/udev/
 cp /bin/mountpoint $INITRDDIR/bin
 
-PROGS="/sbin/scsi_id /bin/mountpoint"
+PROGS="/lib/udev/scsi_id /bin/mountpoint"
 LIBS=`ldd $PROGS | grep -v linux-gate.so | sort -u | \
 awk '{print $3}'` 
 for i in $LIBS

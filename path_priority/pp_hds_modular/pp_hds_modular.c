@@ -56,7 +56,7 @@
  *                path_grouping_policy    group_by_prio
  *                prio_callout            "/sbin/pp_hds_modular %d"
  *                path_checker            readsector0
- *                getuid_callout          "/sbin/scsi_id -g -u -s /block/%n"
+ *                getuid_callout          "/lib/udev/scsi_id -g -u -s /block/%n"
  *                failback                immediate
  *        }
  *        device {
