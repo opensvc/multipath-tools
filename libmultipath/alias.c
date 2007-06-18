@@ -120,21 +120,34 @@ lock_bindings_file(int fd)
 
 
 static int
-open_bindings_file(char *file)
+open_bindings_file(char *file, int *can_write)
 {
 	int fd;
 	struct stat s;
 
 	if (ensure_directories_exist(file, 0700))
 		return -1;
+	*can_write = 1;
 	fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
-		condlog(0, "Cannot open bindings file [%s] : %s", file,
-			strerror(errno));
-		return -1;
+		if (errno == EROFS) {
+			*can_write = 0;
+			condlog(3, "Cannot open bindings file [%s] read/write. "
+				" trying readonly", file);
+			fd = open(file, O_RDONLY);
+			if (fd < 0) {
+				condlog(0, "Cannot open bindings file [%s] "
+					"readonly : %s", file, strerror(errno));
+				return -1;
+			}
+		}
+		else {
+			condlog(0, "Cannot open bindings file [%s] : %s", file,
+				strerror(errno));
+			return -1;
+		}
 	}
-
-	if (lock_bindings_file(fd) < 0)
+	if (*can_write && lock_bindings_file(fd) < 0)
 		goto fail;
 	
 	memset(&s, 0, sizeof(s));
@@ -143,6 +156,8 @@ open_bindings_file(char *file)
 		goto fail;
 	}
 	if (s.st_size == 0) {
+		if (*can_write == 0)
+			goto fail;
 		/* If bindings file is empty, write the header */
 		size_t len = strlen(BINDINGS_FILE_HEADER);
 		if (write_all(fd, BINDINGS_FILE_HEADER, len) != len) {
@@ -297,13 +312,14 @@ get_user_friendly_alias(char *wwid, char *file)
 	char *alias;
 	int fd, scan_fd, id;
 	FILE *f;
+	int can_write;
 
 	if (!wwid || *wwid == '\0') {
 		condlog(3, "Cannot find binding for empty WWID");
 		return NULL;
 	}
 
-	fd = open_bindings_file(file);
+	fd = open_bindings_file(file, &can_write);
 	if (fd < 0)
 		return NULL;
 
@@ -332,7 +348,7 @@ get_user_friendly_alias(char *wwid, char *file)
 		return NULL;
 	}
 
-	if (!alias)
+	if (!alias && can_write)
 		alias = allocate_binding(fd, wwid, id);
 
 	fclose(f);
@@ -345,7 +361,7 @@ char *
 get_user_friendly_wwid(char *alias, char *file)
 {
 	char *wwid;
-	int fd, scan_fd, id;
+	int fd, scan_fd, id, unused;
 	FILE *f;
 
 	if (!alias || *alias == '\0') {
@@ -353,7 +369,7 @@ get_user_friendly_wwid(char *alias, char *file)
 		return NULL;
 	}
 
-	fd = open_bindings_file(file);
+	fd = open_bindings_file(file, &unused);
 	if (fd < 0)
 		return NULL;
 
