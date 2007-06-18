@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # kpartx_id
 #
@@ -43,7 +43,7 @@ dmuuid=${UUID#*-}
 dmtbl=${UUID%%-*}
 dmpart=${dmtbl#part}
 # kpartx types are 'part<num>'
-if [ "$dmpart" == "$dmtbl" ] ; then
+if [ "$dmpart" = "$dmtbl" ] ; then
     dmpart=
 else
     dmtbl=part
@@ -51,7 +51,7 @@ fi
 
 # Set the name of the table. We're only interested in dmraid,
 # multipath, and kpartx tables; everything else is ignored.
-if [ "$dmtbl" == "part" ] ; then
+if [ "$dmtbl" = "part" ] ; then
     # The name of the kpartx table is the name of the parent table
     dmname=$($DMSETUP info  -c --noheadings -o name -u $dmuuid)
     echo "DM_NAME=$dmname"
@@ -62,11 +62,11 @@ if [ "$dmtbl" == "part" ] ; then
 	    dmdeps=$($DMSETUP deps -u $dmuuid)
 	    ;;
     esac
-elif [ "$dmtbl" == "mpath" ] ; then
+elif [ "$dmtbl" = "mpath" ] ; then
     dmname=$tblname
     # We need the dependencies of the table to figure out the type
     dmdeps=$($DMSETUP deps -u $UUID)
-elif [ "$dmtbl" == "dmraid" ] ; then
+elif [ "$dmtbl" = "dmraid" ] ; then
     dmname=$tblname
 fi
 
