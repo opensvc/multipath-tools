@@ -86,6 +86,7 @@
 
 struct checker {
 	int fd;
+	int sync;
 	char name[CHECKER_NAME_LEN];
 	char message[CHECKER_MSG_LEN];       /* comm with callers */
 	void * context;                      /* store for persistent data */
@@ -101,6 +102,8 @@ struct checker {
 int checker_init (struct checker *, void **);
 void checker_put (struct checker *);
 void checker_reset (struct checker * c);
+void checker_set_sync (struct checker * c);
+void checker_set_async (struct checker * c);
 void checker_set_fd (struct checker *, int);
 struct checker * checker_lookup (char *);
 int checker_check (struct checker *);

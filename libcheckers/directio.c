@@ -118,7 +118,7 @@ void directio_free (struct checker * c)
 }
 
 static int
-check_state(int fd, struct directio_context *ct)
+check_state(int fd, struct directio_context *ct, int sync)
 {
 	struct timespec	timeout = { .tv_nsec = 5 };
 	struct io_event event;
@@ -128,6 +128,11 @@ check_state(int fd, struct directio_context *ct)
 
 	if (fstat(fd, &sb) == 0) {
 		LOG(4, "called for %x", (unsigned) sb.st_rdev);
+	}
+	if (sync) {
+		LOG(4, "called in synchronous mode");
+		timeout.tv_sec  = ASYNC_TIMEOUT_SEC;
+		timeout.tv_nsec = 0;
 	}
 
 	if (!ct->running) {
@@ -147,7 +152,7 @@ check_state(int fd, struct directio_context *ct)
 	LOG(3, "async io getevents returns %li (errno=%s)", r, strerror(errno));
 
 	if (r < 1L) {
-		if (ct->running > ASYNC_TIMEOUT_SEC) {
+		if (ct->running > ASYNC_TIMEOUT_SEC || sync) {
 			LOG(3, "abort check on timeout");
 			rc = PATH_DOWN;
 		} else
@@ -169,7 +174,7 @@ int directio (struct checker * c)
 	if (!ct)
 		return PATH_UNCHECKED;
 
-	ret = check_state(c->fd, ct);
+	ret = check_state(c->fd, ct, c->sync);
 
 	switch (ret)
 	{
