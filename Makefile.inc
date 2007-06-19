@@ -34,6 +34,8 @@ GZIP        = /bin/gzip -9 -c
 CHECKERSLIB = $(checkersdir)/libcheckers
 MULTIPATHLIB = $(multipathdir)/libmultipath
 
+INSTALL_PROGRAM = install -s
+
 OPTFLAGS     = -pipe -g -Wall -Wunused -Wstrict-prototypes
 CFLAGS	     = $(OPTFLAGS)
 
