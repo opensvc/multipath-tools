@@ -6,7 +6,7 @@ BUILD=glibc
 
 include ../Makefile.inc
 
-CFLAGS += -I. -D_LARGEFILE64_SOURCE
+CFLAGS += -I. -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 
 ifeq ($(strip $(BUILD)),klibc)
 	OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o gpt.o crc32.o \
