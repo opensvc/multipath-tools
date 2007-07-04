@@ -26,7 +26,7 @@ void readsector0_free (struct checker * c)
 extern int
 readsector0 (struct checker * c)
 {
-	unsigned char buf[512];
+	unsigned char buf[4096];
 	unsigned char sbuf[SENSE_BUFF_LEN];
 	int ret;
 
