@@ -20,7 +20,7 @@ endif
 export KRNLSRC
 export KRNLOBJ
 
-BUILDDIRS = $(shell find . -mindepth 2 -name Makefile -exec dirname {} \; | grep -v ^lib)
+BUILDDIRS = $(shell find . -mindepth 2 -name Makefile -exec dirname {} \; | grep -vE '^lib|/\.')
 
 ifeq   ($(MULTIPATH_VERSION),)
 VERSION = $(shell basename ${PWD} | cut -d'-' -f3)

@@ -35,7 +35,7 @@ $(MULTIPATHLIB)-$(BUILD).a:
 
 install:
 	install -d $(DESTDIR)$(bindir)
-	install -s -m 755 $(EXEC) $(DESTDIR)$(bindir)/
+	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)/
 
 uninstall:
 	rm $(DESTDIR)$(bindir)/$(EXEC)

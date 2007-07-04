@@ -6,3 +6,4 @@ int dm_map_present (char *);
 char * dm_mapname(int major, int minor);
 dev_t dm_get_first_dep(char *devname);
 char * dm_mapuuid(int major, int minor);
+int dm_devn (char * mapname, int *major, int *minor);

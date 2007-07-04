@@ -7,7 +7,7 @@
 #	polling_interval 	10
 #	selector		"round-robin 0"
 #	path_grouping_policy	multibus
-#	getuid_callout		"/sbin/scsi_id -g -u -s /block/%n"
+#	getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
 #	prio_callout		/bin/true
 #	path_checker		readsector0
 #	rr_min_io		100
@@ -52,7 +52,7 @@
 #		vendor			"COMPAQ  "
 #		product			"HSV110 (C)COMPAQ"
 #		path_grouping_policy	multibus
-#		getuid_callout          "/sbin/scsi_id -g -u -s /block/%n"
+#		getuid_callout          "/lib/udev/scsi_id -g -u -s /block/%n"
 #		path_checker		readsector0
 #		path_selector		"round-robin 0"
 #		hardware_handler	"0"

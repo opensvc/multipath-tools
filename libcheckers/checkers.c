@@ -13,6 +13,7 @@
 static struct checker checkers[] = {
 	{
 		.fd         = 0,
+		.sync       = 1,
 		.name       = DIRECTIO,
 		.message    = "",
 		.context    = NULL,
@@ -22,6 +23,7 @@ static struct checker checkers[] = {
 	},
 	{
 		.fd         = 0,
+		.sync       = 1,
 		.name       = TUR,
 		.message    = "",
 		.context    = NULL,
@@ -31,6 +33,7 @@ static struct checker checkers[] = {
 	},
 	{
 		.fd         = 0,
+		.sync       = 1,
 		.name       = HP_SW,
 		.message    = "",
 		.context    = NULL,
@@ -40,6 +43,7 @@ static struct checker checkers[] = {
 	},
 	{
 		.fd         = 0,
+		.sync       = 1,
 		.name       = EMC_CLARIION,
 		.message    = "",
 		.context    = NULL,
@@ -49,6 +53,7 @@ static struct checker checkers[] = {
 	},
 	{
 		.fd         = 0,
+		.sync       = 1,
 		.name       = RDAC,
 		.message    = "",
 		.context    = NULL,
@@ -58,6 +63,7 @@ static struct checker checkers[] = {
 	},
 	{
 		.fd         = 0,
+		.sync       = 1,
 		.name       = READSECTOR0,
 		.message    = "",
 		.context    = NULL,
@@ -65,12 +71,22 @@ static struct checker checkers[] = {
 		.init       = readsector0_init,
 		.free       = readsector0_free
 	},
-	{0, "", "", NULL, NULL, NULL, NULL},
+	{0, 1, "", "", NULL, NULL, NULL, NULL},
 };
 
 void checker_set_fd (struct checker * c, int fd)
 {
 	c->fd = fd;
+}
+
+void checker_set_sync (struct checker * c)
+{
+	c->sync = 1;
+}
+
+void checker_set_async (struct checker * c)
+{
+	c->sync = 0;
 }
 
 struct checker * checker_lookup (char * name)
@@ -134,6 +150,7 @@ struct checker * checker_default (void)
 void checker_get (struct checker * dst, struct checker * src)
 {
 	dst->fd = src->fd;
+	dst->sync = src->sync;
 	strncpy(dst->name, src->name, CHECKER_NAME_LEN);
 	strncpy(dst->message, src->message, CHECKER_MSG_LEN);
 	dst->check = src->check;

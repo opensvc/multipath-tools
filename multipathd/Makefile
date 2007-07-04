@@ -7,7 +7,7 @@ include ../Makefile.inc
 # basic flags setting
 #
 CFLAGS += -DDAEMON -I$(multipathdir) -I$(checkersdir)
-LDFLAGS = -lpthread -ldevmapper -lsysfs -lreadline -lncurses
+LDFLAGS = -lpthread -ldevmapper -lreadline -lncurses -laio
 
 #
 # debuging stuff
@@ -45,7 +45,7 @@ $(MULTIPATHLIB)-glibc.a:
 
 install:
 	install -d $(DESTDIR)$(bindir)
-	install -s -m 755 $(EXEC) $(DESTDIR)$(bindir)
+	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)
 	install -d $(DESTDIR)$(rcdir)
 	install -d $(DESTDIR)$(mandir)
 	install -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)

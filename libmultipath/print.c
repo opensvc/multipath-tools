@@ -5,8 +5,8 @@
 #include <string.h>
 #include <libdevmapper.h>
 #include <stdarg.h>
-#include <sysfs/dlist.h>
-#include <sysfs/libsysfs.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
 #include <checkers.h>
 
@@ -1096,35 +1096,46 @@ snprint_blacklist_except (char * buff, int len)
 extern int
 snprint_devices (char * buff, int len, struct vectors *vecs)
 {
-        struct dlist * ls;
-        struct sysfs_class * class;
-        struct sysfs_class_device * dev;
+	DIR *blkdir;
+	struct dirent *blkdev;
+	struct stat statbuf;
+	char devpath[PATH_MAX];
+	char *devptr;
 	int threshold = MAX_LINE_LEN;
 	int fwd = 0;
 	int r;
 
 	struct path * pp;
 
-        if (!(class = sysfs_open_class("block")))
-                return 0;
-
-        if (!(ls = sysfs_get_class_devices(class))) {
-                sysfs_close_class(class);
-                return 0;
-        }
+	if (!(blkdir = opendir("/sys/block")))
+		return 1;
 
 	if ((len - fwd - threshold) <= 0)
 		return len;
 	fwd += snprintf(buff + fwd, len - fwd, "available block devices:\n");
 
-        dlist_for_each_data(ls, dev, struct sysfs_class_device) {
+	strcpy(devpath,"/sys/block");
+	devptr = devpath + 10;
+	while ((blkdev = readdir(blkdir)) != NULL) {
+		if ((strcmp(blkdev->d_name,".") == 0) ||
+		    (strcmp(blkdev->d_name,"..") == 0))
+			continue;
+
+		strcat(devptr,blkdev->d_name);
+		if (stat(devptr, &statbuf) < 0)
+			continue;
+
+		if (S_ISDIR(statbuf.st_mode) == 0)
+			continue;
+
 		if ((len - fwd - threshold)  <= 0)
 			return len;
-		fwd += snprintf(buff + fwd, len - fwd, "    %s", dev->name);
-		pp = find_path_by_dev(vecs->pathvec, dev->name);
+
+		fwd += snprintf(buff + fwd, len - fwd, "    %s", devpath);
+		pp = find_path_by_dev(vecs->pathvec, devpath);
 		if (!pp) {
 			r = filter_devnode(conf->blist_devnode,
-					   conf->elist_devnode, dev->name);
+					   conf->elist_devnode, devpath);
 			if (r > 0)
 				fwd += snprintf(buff + fwd, len - fwd,
 						" (blacklisted)");
@@ -1133,8 +1144,8 @@ snprint_devices (char * buff, int len, struct vectors *vecs)
 						" (whitelisted)");
 		}
 		fwd += snprintf(buff + fwd, len - fwd, "\n");
-        }
-        sysfs_close_class(class);
+	}
+	closedir(blkdir);
 
 	if (fwd > len)
 		return len;

@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <sysfs/libsysfs.h>
 
 #include <checkers.h>
 #include <vector.h>
@@ -37,6 +36,7 @@
 #include <structs.h>
 #include <structs_vec.h>
 #include <dmparser.h>
+#include <sysfs.h>
 #include <config.h>
 #include <blacklist.h>
 #include <discovery.h>
@@ -323,13 +323,13 @@ main (int argc, char *argv[])
 	if (dm_prereq(DEFAULT_TARGET))
 		exit(1);
 
-	if (sysfs_get_mnt_path(sysfs_path, FILE_NAME_SIZE)) {
-		condlog(0, "multipath tools need sysfs mounted");
-		exit(1);
-	}
 	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
 
+	if (sysfs_init(conf->sysfs_dir, FILE_NAME_SIZE)) {
+		condlog(0, "multipath tools need sysfs mounted");
+		exit(1);
+	}
 	while ((arg = getopt(argc, argv, ":dhl::FfM:v:p:b:")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
@@ -419,6 +419,7 @@ main (int argc, char *argv[])
 		condlog(3, "restart multipath configuration process");
 	
 out:
+	sysfs_cleanup();
 	free_config(conf);
 	dm_lib_release();
 	dm_lib_exit();

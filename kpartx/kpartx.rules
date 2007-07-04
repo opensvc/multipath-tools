@@ -1,0 +1,36 @@
+#
+# persistent links for device-mapper devices
+# only hardware-backed device-mapper devices (ie multipath, dmraid,
+# and kpartx) have meaningful persistent device names
+#
+
+KERNEL!="dm-*", GOTO="kpartx_end"
+ACTION=="remove", GOTO="kpartx_end"
+
+ENV{DM_TABLE_STATE}!="LIVE", GOTO="kpartx_end"
+
+ENV{DM_UUID}=="?*", IMPORT{program}=="/lib/udev/kpartx_id %M %m $env{DM_UUID}"
+
+OPTIONS="link_priority=50"
+
+# Create persistent links for multipath tables
+ENV{DM_UUID}=="mpath-*", \
+	SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}"
+
+# Create persistent links for dmraid tables
+ENV{DM_UUID}=="mpath-*", \
+        SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}"
+
+# Create persistent links for partitions
+ENV{DM_PART}=="?*", \
+        SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}-part$env{DM_PART}"
+
+# Create dm tables for partitions
+ENV{DM_STATE}=="ACTIVE", ENV{DM_UUID}=="mpath-*", \
+        RUN+="/sbin/kpartx -a -p -part /dev/$kernel"
+ENV{DM_STATE}=="ACTIVE", ENV{DM_UUID}=="dmraid-*", \
+        RUN+="/sbin/kpartx -a -p -part /dev/$kernel"
+
+LABEL="kpartx_end"
+
+

@@ -1,18 +1,7 @@
 #
-# multipath and multipath partitions nodes are created in /dev/mapper/
-# this file should be installed in /etc/udev/rules.d
-#
-# !! udev must not discard DM events !!
-# !! check the other installed rules !!
+# udev rules for multipathing.
+# The persistent symlinks are created with the kpartx rules
 #
 
-# lookup the devmap name
-#ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*", \
-#	PROGRAM="/sbin/devmap_name %M %m"
-ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*", \
-	PROGRAM="/sbin/dmsetup -j %M -m %m --noopencount --noheadings -c -o name info"
-
-# take care of devmap partitioning
-ACTION=="add", SUBSYSTEM=="block", KERNEL=="dm-*", \
-	RUN+="/sbin/kpartx -a /dev/mapper/%c"
-
+# socket for uevents
+RUN+="socket:/org/kernel/dm/multipath_event"

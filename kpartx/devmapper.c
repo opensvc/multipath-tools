@@ -200,7 +200,8 @@ char *
 dm_mapuuid(int major, int minor)
 {
 	struct dm_task *dmt;
-	char *tmp, *uuid = NULL;
+	const char *tmp;
+	char *uuid = NULL;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
 		return NULL;
@@ -219,3 +220,32 @@ out:
 	dm_task_destroy(dmt);
 	return uuid;
 }
+
+int
+dm_devn (char * mapname, int *major, int *minor)
+{
+	int r = 1;
+	struct dm_task *dmt;
+	struct dm_info info;
+
+	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
+		return 0;
+
+	if (!dm_task_set_name(dmt, mapname))
+		goto out;
+
+	if (!dm_task_run(dmt))
+		goto out;
+
+	if (!dm_task_get_info(dmt, &info))
+		goto out;
+
+	*major = info.major;
+	*minor = info.minor;
+
+	r = 0;
+out:
+	dm_task_destroy(dmt);
+	return r;
+}
+

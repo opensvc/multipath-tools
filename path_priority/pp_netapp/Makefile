@@ -14,7 +14,7 @@ klibc:	$(OBJS)
 	$(CC) -static -o $(EXEC) $(OBJS)
 
 install: $(EXEC)
-	install -s -m 755 $(EXEC) $(DESTDIR)$(bindir)/$(EXEC)
+	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)/$(EXEC)
 
 uninstall:
 	rm $(DESTDIR)$(bindir)/$(EXEC)

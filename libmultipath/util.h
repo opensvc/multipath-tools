@@ -6,7 +6,9 @@ void strchop(char *);
 void basename (char * src, char * dst);
 int filepresent (char * run);
 int get_word (char * sentence, char ** word);
-
+size_t strlcpy(char *dst, const char *src, size_t size);
+size_t strlcat(char *dst, const char *src, size_t size);
+void remove_trailing_chars(char *path, char c);
 
 #define safe_sprintf(var, format, args...)	\
 	snprintf(var, sizeof(var), format, ##args) >= sizeof(var)
