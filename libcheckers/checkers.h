@@ -59,7 +59,7 @@
 #define EMC_CLARIION "emc_clariion"
 #define READSECTOR0  "readsector0"
 
-#define DEFAULT_CHECKER READSECTOR0
+#define DEFAULT_CHECKER DIRECTIO
 
 /*
  * Overloaded storage response time can be very long.
