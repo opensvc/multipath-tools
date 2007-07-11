@@ -300,7 +300,7 @@ _filter_path (struct config * conf, struct path * pp)
 	r = _filter_devnode(conf->blist_devnode, conf->elist_devnode,pp->dev);
 	if (r)
 		return r;
-	r = _filter_wwid(conf->blist_devnode, conf->elist_devnode, pp->wwid);
+	r = _filter_wwid(conf->blist_wwid, conf->elist_devnode, pp->wwid);
 	if (r)
 		return r;
 	r = _filter_device(conf->blist_device, conf->elist_device,
