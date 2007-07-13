@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include "checkers.h"
 #include "libsg.h"
@@ -25,8 +26,12 @@ sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff)
 	int res;
 	int rd_opcode[] = {0x8, 0x28, 0xa8, 0x88};
 	int sz_ind;
+	struct stat filestatus;
 	int retry_count = 3;
-	
+
+	if (fstat(sg_fd, &filestatus) != 0)
+		return PATH_DOWN;
+	bs = (filestatus.st_blksize > 4096)? 4096: filestatus.st_blksize;
 	memset(rdCmd, 0, cdbsz);
 	sz_ind = 1;
 	rdCmd[0] = rd_opcode[sz_ind];
