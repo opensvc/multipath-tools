@@ -121,6 +121,12 @@ setup_default_blist (struct config * conf)
 	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
 		return 1;
 
+	str = STRDUP("^dcssblk[0-9]*");
+	if (!str)
+		return 1;
+	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
+		return 1;
+
 	vector_foreach_slot (conf->hwtable, hwe, i) {
 		if (hwe->bl_product) {
 			if (alloc_ble_device(conf->blist_device))
