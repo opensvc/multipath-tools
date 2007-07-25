@@ -442,8 +442,14 @@ out:
 static int
 uev_remove_path (struct sysfs_device * dev, struct vectors * vecs)
 {
+	int retval;
+
 	condlog(2, "%s: remove path (uevent)", dev->kernel);
-	return ev_remove_path(dev->kernel, vecs);
+	retval = ev_remove_path(dev->kernel, vecs);
+	if (!retval)
+		sysfs_device_put(dev);
+
+	return retval;
 }
 
 int

@@ -342,6 +342,25 @@ struct sysfs_device *sysfs_device_get_parent_with_subsystem(struct sysfs_device 
 	return NULL;
 }
 
+void sysfs_device_put(struct sysfs_device *dev)
+{
+	struct sysfs_dev *sysdev_loop;
+
+	list_for_each_entry(sysdev_loop, &sysfs_dev_list, node) {
+		if (&sysdev_loop->dev == dev) {
+			dbg("removed dev '%s' from cache",
+			    sysdev_loop->dev.devpath);
+			list_del(&sysdev_loop->node);
+			free(sysdev_loop);
+			return;
+		}
+	}
+	dbg("dev '%s' not found in cache",
+	    sysdev_loop->dev.devpath);
+
+	return;
+}
+
 char *sysfs_attr_get_value(const char *devpath, const char *attr_name)
 {
 	char path_full[PATH_SIZE];
