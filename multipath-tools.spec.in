@@ -49,7 +49,7 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/sbin/mpath_prio_random
 %{prefix}/sbin/mpath_prio_balance_units
 %{prefix}/sbin/mpath_prio_netapp
-%{prefix}/sbin/mpath_prio_tpc
+%{prefix}/sbin/mpath_prio_rdac
 %{prefix}/sbin/mpath_prio_hds_modular
 %{prefix}/usr/share/man/man8/devmap_name.8.gz
 %{prefix}/usr/share/man/man8/multipath.8.gz
