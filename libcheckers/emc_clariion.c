@@ -176,7 +176,7 @@ int emc_clariion(struct checker * c)
 	 * Issue read on active path to determine if inactive snapshot.
 	 */
 	if (sense_buffer[4] == 2) {/* if active path */
-		unsigned char buf[512];
+		unsigned char buf[4096];
 
 		ret = sg_read(c->fd, &buf[0], sbb = &sb[0]);
 		if (ret == PATH_DOWN) {
