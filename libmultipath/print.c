@@ -224,6 +224,10 @@ static int
 snprint_action (char * buff, size_t len, struct multipath * mpp)
 {
 	switch (mpp->action) {
+	case ACT_REJECT:
+		return snprint_str(buff, len, ACT_REJECT_STR);
+	case ACT_RENAME:
+		return snprint_str(buff, len, ACT_RENAME_STR);
 	case ACT_RELOAD:
 		return snprint_str(buff, len, ACT_RELOAD_STR);
 	case ACT_CREATE:
