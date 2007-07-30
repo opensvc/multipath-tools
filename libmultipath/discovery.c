@@ -71,8 +71,10 @@ path_discover (vector pathvec, struct config * conf, char * devname, int flag)
 		return 1;
 	}
 			
-	if (!filepresent(path))
+	if (strncmp(devname,"cciss",5) && !filepresent(path)) {
+		condlog(4, "path %s not present", path);
 		return 0;
+	}
 
 	pp = find_path_by_dev(pathvec, devname);
 
@@ -207,13 +209,20 @@ sysfs_get_fc_nodename (struct sysfs_device * dev, char * node,
 static int
 opennode (char * dev, int mode)
 {
-	char devpath[FILE_NAME_SIZE];
+	char devpath[FILE_NAME_SIZE], *ptr;
 
 	if (safe_sprintf(devpath, "%s/%s", conf->udev_dir, dev)) {
 		condlog(0, "devpath too small");
 		return -1;
 	}
-
+	/*
+	 * Translate '!' into '/'
+	 */
+	ptr = devpath;
+	while ((ptr = strchr(ptr, '!'))) {
+		*ptr = '/';
+		ptr++;
+	}
 	return open(devpath, mode);
 }
 
@@ -342,6 +351,26 @@ get_serial (char * str, int maxlen, int fd)
 }
 
 static int
+get_inq (char * vendor, char * product, char * rev, int fd)
+{
+	char buff[MX_ALLOC_LEN + 1] = {0};
+
+	if (fd < 0)
+		return 1;
+
+	if (0 == do_inq(fd, 0, 0, 0, buff, MX_ALLOC_LEN, 0)) {
+		memcpy(vendor, buff + 8, 8);
+		vendor[8] = '\0';
+		memcpy(product, buff + 16, 16);
+		product[16] = '\0';
+		memcpy(rev, buff + 32, 4);
+		rev[4] = '\0';
+		return 0;
+	}
+	return 1;
+}
+
+static int
 scsi_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 {
 	char attr_path[FILE_NAME_SIZE];
@@ -445,6 +474,29 @@ ccw_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 }
 
 static int
+cciss_sysfs_pathinfo (struct path * pp, struct sysfs_device * dev)
+{
+	char attr_path[FILE_NAME_SIZE];
+
+	/*
+	 * host / bus / target / lun
+	 */
+	basename(dev->devpath, attr_path);
+	pp->sg_id.lun = 0;
+	pp->sg_id.channel = 0;
+	sscanf(attr_path, "cciss!c%id%i",
+			&pp->sg_id.host_no,
+			&pp->sg_id.scsi_id);
+	condlog(3, "%s: h:b:t:l = %i:%i:%i:%i",
+			pp->dev,
+			pp->sg_id.host_no,
+			pp->sg_id.channel,
+			pp->sg_id.scsi_id,
+			pp->sg_id.lun);
+	return 0;
+}
+
+static int
 common_sysfs_pathinfo (struct path * pp, struct sysfs_device *dev)
 {
 	char *attr;
@@ -486,11 +538,13 @@ sysfs_pathinfo(struct path * pp)
 		condlog(1, "%s: failed to get sysfs information", pp->dev);
 		return 1;
 	}
-	
-	parent = sysfs_device_get_parent(pp->sysdev);
 
 	if (common_sysfs_pathinfo(pp, pp->sysdev))
 		return 1;
+
+	parent = sysfs_device_get_parent(pp->sysdev);
+	if (!parent)
+		parent = pp->sysdev;
 
 	condlog(3, "%s: subsystem = %s", pp->dev, parent->subsystem);
 
@@ -498,6 +552,8 @@ sysfs_pathinfo(struct path * pp)
 		pp->bus = SYSFS_BUS_SCSI;
 	if (!strncmp(parent->subsystem, "ccw",3))
 		pp->bus = SYSFS_BUS_CCW;
+	if (!strncmp(pp->dev,"cciss",5))
+		pp->bus = SYSFS_BUS_CCISS;
 
 	if (pp->bus == SYSFS_BUS_UNDEF)
 		return 0;
@@ -506,6 +562,9 @@ sysfs_pathinfo(struct path * pp)
 			return 1;
 	} else if (pp->bus == SYSFS_BUS_CCW) {
 		if (ccw_sysfs_pathinfo(pp, parent))
+			return 1;
+	} else if (pp->bus == SYSFS_BUS_CCISS) {
+		if (cciss_sysfs_pathinfo(pp, pp->sysdev))
 			return 1;
 	}
 	return 0;
@@ -519,6 +578,24 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 		condlog(3, "%s: serial = %s", pp->dev, pp->serial);
 	}
 
+	return 0;
+}
+
+static int
+cciss_ioctl_pathinfo (struct path * pp, int mask)
+{
+	if (mask & DI_SYSFS) {
+		get_inq(pp->vendor_id, pp->product_id, pp->rev, pp->fd);
+		condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
+		condlog(3, "%s: product = %s", pp->dev, pp->product_id);
+		condlog(3, "%s: revision = %s", pp->dev, pp->rev);
+		/*
+		 * set the hwe configlet pointer
+		 */
+		pp->hwe = find_hwe(conf->hwtable, pp->vendor_id,
+				   pp->product_id, pp->rev);
+
+	}
 	return 0;
 }
 
@@ -610,16 +687,23 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	if (pp->fd < 0)
 		pp->fd = opennode(pp->dev, O_RDONLY);
 
-	if (pp->fd < 0)
+	if (pp->fd < 0) {
+		condlog(4, "Couldn't open node for %s: %s",
+			pp->dev, strerror(errno));
 		goto blank;
+	}
 
 	if (pp->bus == SYSFS_BUS_SCSI &&
 	    scsi_ioctl_pathinfo(pp, mask))
 		goto blank;
 
+	if (pp->bus == SYSFS_BUS_CCISS &&
+	    cciss_ioctl_pathinfo(pp, mask))
+		goto blank;
+
 	if (mask & DI_CHECKER && get_state(pp))
 		goto blank;
-	
+
 	 /*
 	  * Retrieve path priority, even for PATH_DOWN paths if it has never
 	  * been successfully obtained before.

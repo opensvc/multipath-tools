@@ -114,12 +114,6 @@ setup_default_blist (struct config * conf)
 		return 1;
 	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
 		return 1;
-	
-	str = STRDUP("^cciss!c[0-9]d[0-9]*");
-	if (!str)
-		return 1;
-	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
-		return 1;
 
 	str = STRDUP("^dcssblk[0-9]*");
 	if (!str)
@@ -142,7 +136,6 @@ setup_default_blist (struct config * conf)
 			}
 		}
 	}
-	
 	return 0;
 }
 
