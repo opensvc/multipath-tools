@@ -13,7 +13,7 @@
 #define INQUIRY_CMD     0x12
 #define INQUIRY_CMDLEN  6
 
-int sgi_tpc_prio(const char *dev)
+int rdac_prio(const char *dev)
 {
 	unsigned char sense_buffer[256];
 	unsigned char sb[128];
@@ -105,7 +105,7 @@ main (int argc, char **argv)
 		fprintf(stderr, "Usage: %s device\n", argv[0]);
 		prio = 0;
 	} else
-		prio = sgi_tpc_prio(argv[1]);
+		prio = rdac_prio(argv[1]);
 
 	printf("%d\n", prio);
 	exit(0);
