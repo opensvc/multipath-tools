@@ -1,0 +1,132 @@
+#! /bin/sh
+# Copyright (c) 1995-2001 SuSE GmbH Nuernberg, Germany.
+#
+# Author: Hannes Reinecke <feedback@suse.de>
+#
+# init.d/routed
+#
+#   and symbolic its link
+#
+# /usr/sbin/rcrouted
+#
+### BEGIN INIT INFO
+# Provides:          multipathd
+# Required-Start:    $syslog
+# Required-Stop:
+# Default-Start:     3 5
+# Default-Stop:	     0 1 2 4 6
+# Description:       Starts multipath daemon
+### END INIT INFO
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+DAEMON=/sbin/multipathd
+PIDFILE=/var/run/multipathd.pid
+
+# Set the maximum number of open files
+MAX_OPEN_FDS=4096
+
+test -x $DAEMON || exit 5
+
+. /etc/rc.status
+
+# First reset status of this service
+rc_reset
+
+case "$1" in
+    start)
+	echo -n "Starting multipathd"
+
+	modprobe dm-multipath
+
+	# Set the maximum number of open files
+	if [ -n "$MAX_OPEN_FDS" ] ; then
+	    ulimit -n $MAX_OPEN_FDS
+	fi
+
+	if [ -f $PIDFILE ]; then
+		PID="$(cat $PIDFILE)"
+		PROCNAME="$(ps -o cmd --no-headers $PID)"
+	fi
+
+	if [ "$PROCNAME" != "$DAEMON" ]; then
+		$DAEMON
+	fi
+	
+	# Remember status and be verbose
+	rc_status -v
+	sleep 1
+	;;
+    stop)
+	echo -n "Shutting down multipathd"
+	# Because of the way how multipathd sets up its own namespace
+	# and chroots to it, killproc cannot be used with this process.
+	# So implement a cruder version:
+	if [ -f $PIDFILE ]; then
+		PID="$(cat $PIDFILE)"
+		PROCNAME="$(ps -o cmd --no-headers $PID)"
+	fi
+
+	if [ "$PROCNAME" == "$DAEMON" ]; then
+		kill -TERM $PID
+	fi
+
+	# Remember status and be verbose
+	rc_status -v
+	;;
+    try-restart)
+	## Stop the service and if this succeeds (i.e. the 
+	## service was running before), start it again.
+        $0 status >/dev/null &&  $0 restart
+
+	# Remember status and be quiet
+	rc_status
+	;;
+    restart|force-reload)
+	## Stop the service and regardless of whether it was
+	## running or not, start it again.
+	$0 stop
+	$0 start
+
+	# Remember status and be quiet
+	rc_status
+	;;
+    reload)
+	## Like force-reload, but if daemon does not support
+	## signalling, do nothing (!)
+
+	# If it does not support reload:
+	exit 3
+	;;
+    status)
+	echo -n "Checking for multipathd: "
+
+	# Status has a slightly different for the status command:
+	# 0 - service running
+	# 1 - service dead, but /var/run/  pid  file exists
+	# 2 - service dead, but /var/lock/ lock file exists
+	# 3 - service not running
+
+	if [ -f $PIDFILE ]; then
+		PID="$(cat $PIDFILE)"
+		PROCNAME="$(ps -o cmd --no-headers $PID)"
+		if [ "$PROCNAME" == "$DAEMON" ]; then
+			(exit 0)
+		else
+			(exit 1)
+		fi
+	else
+		(exit 3)
+	fi
+
+	rc_status -v
+	;;
+    probe)
+	## Optional: Probe for the necessity of a reload,
+	## give out the argument which is required for a reload.
+	;;
+    *)
+	echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload|reload|probe}"
+	exit 1
+	;;
+esac
+rc_exit
