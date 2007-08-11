@@ -852,13 +852,155 @@ retry_count_tick(vector mpvec)
 	}
 }
 
+void
+check_path (struct vectors * vecs, struct path * pp)
+{
+	int newstate;
+
+	if (!pp->mpp)
+		return;
+
+	if (pp->tick && --pp->tick)
+		return; /* don't check this path yet */
+
+	/*
+	 * provision a next check soonest,
+	 * in case we exit abnormaly from here
+	 */
+	pp->tick = conf->checkint;
+
+	if (!checker_selected(&pp->checker)) {
+		pathinfo(pp, conf->hwtable, DI_SYSFS);
+		select_checker(pp);
+	}
+	if (!checker_selected(&pp->checker)) {
+		condlog(0, "%s: checker is not set", pp->dev);
+		return;
+	}
+	/*
+	 * Set checker in async mode.
+	 * Honored only by checker implementing the said mode.
+	 */
+	checker_set_async(&pp->checker);
+
+	newstate = checker_check(&pp->checker);
+
+	if (newstate < 0) {
+		condlog(2, "%s: unusable path", pp->dev);
+		pathinfo(pp, conf->hwtable, 0);
+		return;
+	}
+	/*
+	 * Async IO in flight. Keep the previous path state
+	 * and reschedule as soon as possible
+	 */
+	if (newstate == PATH_PENDING) {
+		pp->tick = 1;
+		return;
+	}
+	if (newstate != pp->state) {
+		int oldstate = pp->state;
+		pp->state = newstate;
+		LOG_MSG(1, checker_message(&pp->checker));
+
+		/*
+		 * upon state change, reset the checkint
+		 * to the shortest delay
+		 */
+		pp->checkint = conf->checkint;
+
+		if (newstate == PATH_DOWN || newstate == PATH_SHAKY ||
+		    update_multipath_strings(pp->mpp, vecs->pathvec)) {
+			/*
+			 * proactively fail path in the DM
+			 */
+			if (oldstate == PATH_UP ||
+			    oldstate == PATH_GHOST)
+				fail_path(pp, 1);
+			else
+				fail_path(pp, 0);
+
+			/*
+			 * cancel scheduled failback
+			 */
+			pp->mpp->failback_tick = 0;
+
+			pp->mpp->stat_path_failures++;
+			return;
+		}
+
+		/*
+		 * reinstate this path
+		 */
+		if (oldstate != PATH_UP &&
+		    oldstate != PATH_GHOST)
+			reinstate_path(pp, 1);
+		else
+			reinstate_path(pp, 0);
+
+		/*
+		 * schedule [defered] failback
+		 */
+		if (pp->mpp->pgfailback > 0)
+			pp->mpp->failback_tick =
+				pp->mpp->pgfailback + 1;
+		else if (pp->mpp->pgfailback == -FAILBACK_IMMEDIATE &&
+		    need_switch_pathgroup(pp->mpp, 1))
+			switch_pathgroup(pp->mpp);
+
+		/*
+		 * if at least one path is up in a group, and
+		 * the group is disabled, re-enable it
+		 */
+		if (newstate == PATH_UP)
+			enable_group(pp);
+	}
+	else if (newstate == PATH_UP || newstate == PATH_GHOST) {
+		LOG_MSG(4, checker_message(&pp->checker));
+		/*
+		 * double the next check delay.
+		 * max at conf->max_checkint
+		 */
+		if (pp->checkint < (conf->max_checkint / 2))
+			pp->checkint = 2 * pp->checkint;
+		else
+			pp->checkint = conf->max_checkint;
+
+		pp->tick = pp->checkint;
+		condlog(4, "%s: delay next check %is",
+				pp->dev_t, pp->tick);
+	}
+	else if (newstate == PATH_DOWN)
+		LOG_MSG(2, checker_message(&pp->checker));
+
+	pp->state = newstate;
+
+	/*
+	 * path prio refreshing
+	 */
+	condlog(4, "path prio refresh");
+	pathinfo(pp, conf->hwtable, DI_PRIO);
+
+	/*
+	 * pathgroup failback policy
+	 */
+	if (need_switch_pathgroup(pp->mpp, 0)) {
+		if (pp->mpp->pgfailback > 0 &&
+		    pp->mpp->failback_tick <= 0)
+			pp->mpp->failback_tick =
+				pp->mpp->pgfailback + 1;
+		else if (pp->mpp->pgfailback ==
+				-FAILBACK_IMMEDIATE)
+			switch_pathgroup(pp->mpp);
+	}
+}
+
 static void *
 checkerloop (void *ap)
 {
 	struct vectors *vecs;
 	struct path *pp;
 	int count = 0;
-	int newstate;
 	unsigned int i;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -878,141 +1020,7 @@ checkerloop (void *ap)
 		condlog(4, "tick");
 
 		vector_foreach_slot (vecs->pathvec, pp, i) {
-			if (!pp->mpp)
-				continue;
-
-			if (pp->tick && --pp->tick)
-				continue; /* don't check this path yet */
-
-			/*
-			 * provision a next check soonest,
-			 * in case we exit abnormaly from here
-			 */
-			pp->tick = conf->checkint;
-
-			if (!checker_selected(&pp->checker)) {
-				pathinfo(pp, conf->hwtable, DI_SYSFS);
-				select_checker(pp);
-			}
-			if (!checker_selected(&pp->checker)) {
-				condlog(0, "%s: checker is not set", pp->dev);
-				continue;
-			}
-			/*
-			 * Set checker in async mode.
-			 * Honored only by checker implementing the said mode.
-			 */
-			checker_set_async(&pp->checker);
-
-			newstate = checker_check(&pp->checker);
-
-			if (newstate < 0) {
-				condlog(2, "%s: unusable path", pp->dev);
-				pathinfo(pp, conf->hwtable, 0);
-				continue;
-			}
-			/*
-			 * Async IO in flight. Keep the previous path state
-			 * and reschedule as soon as possible
-			 */
-			if (newstate == PATH_PENDING) {
-				pp->tick = 1;
-				continue;
-			}
-			if (newstate != pp->state) {
-				int oldstate = pp->state;
-				pp->state = newstate;
-				LOG_MSG(1, checker_message(&pp->checker));
-
-				/*
-				 * upon state change, reset the checkint
-				 * to the shortest delay
-				 */
-				pp->checkint = conf->checkint;
-
-				if (newstate == PATH_DOWN ||
-				    newstate == PATH_SHAKY ||
-				    update_multipath_strings(pp->mpp,
-							     vecs->pathvec)) {
-					/*
-					 * proactively fail path in the DM
-					 */
-					if (oldstate == PATH_UP ||
-					    oldstate == PATH_GHOST)
-						fail_path(pp, 1);
-					else
-						fail_path(pp, 0);
-
-					/*
-					 * cancel scheduled failback
-					 */
-					pp->mpp->failback_tick = 0;
-
-					pp->mpp->stat_path_failures++;
-					continue;
-				}
-
-				/*
-				 * reinstate this path
-				 */
-				if (oldstate != PATH_UP &&
-				    oldstate != PATH_GHOST)
-					reinstate_path(pp, 1);
-				else
-					reinstate_path(pp, 0);
-
-				/*
-				 * schedule [defered] failback
-				 */
-				if (pp->mpp->pgfailback > 0)
-					pp->mpp->failback_tick =
-						pp->mpp->pgfailback + 1;
-				else if (pp->mpp->pgfailback == -FAILBACK_IMMEDIATE &&
-				    need_switch_pathgroup(pp->mpp, 1))
-					switch_pathgroup(pp->mpp);
-
-				/*
-				 * if at least one path is up in a group, and
-				 * the group is disabled, re-enable it
-				 */
-				if (newstate == PATH_UP)
-					enable_group(pp);
-			}
-			else if (newstate == PATH_UP || newstate == PATH_GHOST) {
-				LOG_MSG(4, checker_message(&pp->checker));
-				/*
-				 * double the next check delay.
-				 * max at conf->max_checkint
-				 */
-				if (pp->checkint < (conf->max_checkint / 2))
-					pp->checkint = 2 * pp->checkint;
-				else
-					pp->checkint = conf->max_checkint;
-
-				pp->tick = pp->checkint;
-				condlog(4, "%s: delay next check %is",
-						pp->dev_t, pp->tick);
-			}
-			else if (newstate == PATH_DOWN)
-				LOG_MSG(2, checker_message(&pp->checker));
-
-			pp->state = newstate;
-
-			/*
-			 * path prio refreshing
-			 */
-			condlog(4, "path prio refresh");
-			pathinfo(pp, conf->hwtable, DI_PRIO);
-
-			if (need_switch_pathgroup(pp->mpp, 0)) {
-				if (pp->mpp->pgfailback > 0 &&
-				    pp->mpp->failback_tick <= 0)
-					pp->mpp->failback_tick =
-						pp->mpp->pgfailback + 1;
-				else if (pp->mpp->pgfailback ==
-						-FAILBACK_IMMEDIATE)
-					switch_pathgroup(pp->mpp);
-			}
+			check_path(vecs, pp);
 		}
 		defered_failback_tick(vecs->mpvec);
 		retry_count_tick(vecs->mpvec);
