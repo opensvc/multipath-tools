@@ -71,7 +71,7 @@ static struct checker checkers[] = {
 		.init       = readsector0_init,
 		.free       = readsector0_free
 	},
-	{0, 1, "", "", NULL, NULL, NULL, NULL},
+	{0, 1, 0, "", "", NULL, NULL, NULL, NULL},
 };
 
 void checker_set_fd (struct checker * c, int fd)
@@ -87,6 +87,16 @@ void checker_set_sync (struct checker * c)
 void checker_set_async (struct checker * c)
 {
 	c->sync = 0;
+}
+
+void checker_enable (struct checker * c)
+{
+	c->disable = 0;
+}
+
+void checker_disable (struct checker * c)
+{
+	c->disable = 1;
 }
 
 struct checker * checker_lookup (char * name)
@@ -118,6 +128,8 @@ int checker_check (struct checker * c)
 {
 	int r;
 
+	if (c->disable)
+		return PATH_UNCHECKED;
 	if (c->fd <= 0) {
 		MSG(c, "no usable fd");
 		return PATH_WILD;
