@@ -75,7 +75,7 @@ dm_addmap (int task, const char *name, const char *target,
 	   const char *params, unsigned long size, const char *uuid, int part) {
 	int r = 0;
 	struct dm_task *dmt;
-	char *prefixed_uuid;
+	char *prefixed_uuid = NULL;
 
 	if (!(dmt = dm_task_create (task)))
 		return 0;
