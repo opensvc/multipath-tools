@@ -4,10 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <libdevmapper.h>
 #include <ctype.h>
 #include <linux/kdev_t.h>
 #include <errno.h>
+#include "devmapper.h"
 
 #define UUID_PREFIX "part%d-"
 #define MAX_PREFIX_LEN 8
@@ -72,7 +74,7 @@ dm_simplecmd (int task, const char *name) {
 
 extern int
 dm_addmap (int task, const char *name, const char *target,
-	   const char *params, unsigned long size, const char *uuid, int part) {
+	   const char *params, uint64_t size, const char *uuid, int part) {
 	int r = 0;
 	struct dm_task *dmt;
 	char *prefixed_uuid = NULL;

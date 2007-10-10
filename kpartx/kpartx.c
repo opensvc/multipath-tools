@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <ctype.h>
@@ -366,16 +367,16 @@ main(int argc, char **argv){
 
 				slices[j].minor = m++;
 
-				printf("%s%s%d : 0 %lu %s %lu\n",
+				printf("%s%s%d : 0 %" PRIu64 " %s %" PRIu64"\n",
 				       mapname, delim, j+1,
-				       (unsigned long) slices[j].size, device,
-				       (unsigned long) slices[j].start);
+				       slices[j].size, device,
+				       slices[j].start);
 			}
 			/* Loop to resolve contained slices */
 			d = c;
 			while (c) {
 				for (j = 0; j < n; j++) {
-					unsigned long start;
+					uint64_t start;
 					int k = slices[j].container - 1;
 
 					if (slices[j].size == 0)
@@ -387,9 +388,9 @@ main(int argc, char **argv){
 					slices[j].minor = m++;
 
 					start = slices[j].start - slices[k].start;
-					printf("%s%s%d : 0 %lu /dev/dm-%d %lu\n",
+					printf("%s%s%d : 0 %" PRIu64 " /dev/dm-%d %" PRIu64 "\n",
 					       mapname, delim, j+1,
-					       (unsigned long) slices[j].size,
+					       slices[j].size,
 					       slices[k].minor, start);
 					c--;
 				}
@@ -448,8 +449,8 @@ main(int argc, char **argv){
 				}
 				strip_slash(partname);
 
-				if (safe_sprintf(params, "%s %lu", device,
-					     (unsigned long)slices[j].start)) {
+				if (safe_sprintf(params, "%s %" PRIu64 ,
+						 device, slices[j].start)) {
 					fprintf(stderr, "params too small\n");
 					exit(1);
 				}
@@ -468,7 +469,7 @@ main(int argc, char **argv){
 					&slices[j].minor);
 
 				if (verbose)
-					printf("add map %s (%d:%d): 0 %lu %s %s\n",
+					printf("add map %s (%d:%d): 0 %" PRIu64 " %s %s\n",
 					       partname, slices[j].major,
 					       slices[j].minor, slices[j].size,
 					       DM_TARGET, params);
@@ -502,10 +503,10 @@ main(int argc, char **argv){
 					}
 					strip_slash(partname);
 
-					if (safe_sprintf(params, "%d:%d %lu",
+					if (safe_sprintf(params, "%d:%d %" PRIu64,
 							 slices[k].major,
 							 slices[k].minor,
-							 (unsigned long)slices[j].start)) {
+							 slices[j].start)) {
 						fprintf(stderr, "params too small\n");
 						exit(1);
 					}
@@ -524,7 +525,7 @@ main(int argc, char **argv){
 						&slices[j].minor);
 
 					if (verbose)
-						printf("add map %s : 0 %lu %s %s\n",
+						printf("add map %s : 0 %" PRIu64 " %s %s\n",
 						       partname, slices[j].size,
 						       DM_TARGET, params);
 					c--;

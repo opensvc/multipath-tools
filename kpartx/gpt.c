@@ -36,6 +36,7 @@
 #include <errno.h>
 #include <endian.h>
 #include <byteswap.h>
+#include <linux/fs.h>
 #include "crc32.h"
 
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -50,10 +51,18 @@
 #  define __cpu_to_le32(x) bswap_32(x)
 #endif
 
+#ifndef BLKGETLASTSECT
 #define BLKGETLASTSECT  _IO(0x12,108)   /* get last sector of block device */
+#endif
+#ifndef BLKGETSIZE
 #define BLKGETSIZE _IO(0x12,96)	        /* return device size */
+#endif
+#ifndef BLKSSZGET
 #define BLKSSZGET  _IO(0x12,104)	/* get block device sector size */
+#endif
+#ifndef BLKGETSIZE64
 #define BLKGETSIZE64 _IOR(0x12,114,sizeof(uint64_t))	/* return device size in bytes (u64 *arg) */
+#endif
 
 struct blkdev_ioctl_param {
         unsigned int block;
@@ -143,20 +152,14 @@ get_sector_size(int filedes)
 static uint64_t
 _get_num_sectors(int filedes)
 {
-	unsigned long sectors=0;
 	int rc;
-#if 0
-        uint64_t bytes=0;
+	uint64_t bytes=0;
 
- 	rc = ioctl(filedes, BLKGETSIZE64, &bytes);
+	rc = ioctl(filedes, BLKGETSIZE64, &bytes);
 	if (!rc)
 		return bytes / get_sector_size(filedes);
-#endif
-        rc = ioctl(filedes, BLKGETSIZE, &sectors);
-        if (rc)
-                return 0;
-        
-	return sectors;
+
+	return 0;
 }
 
 /************************************************************
@@ -193,7 +196,7 @@ last_lba(int filedes)
 		sectors = 1;
 	}
 
-	return sectors - 1;
+	return sectors ? sectors - 1 : 0;
 }
 
 
@@ -220,17 +223,22 @@ read_lba(int fd, uint64_t lba, void *buffer, size_t bytes)
 {
 	int sector_size = get_sector_size(fd);
 	off_t offset = lba * sector_size;
+	uint64_t lastlba;
         ssize_t bytesread;
 
 	lseek(fd, offset, SEEK_SET);
 	bytesread = read(fd, buffer, bytes);
+
+	lastlba = last_lba(fd);
+	if (!lastlba)
+		return bytesread;
 
         /* Kludge.  This is necessary to read/write the last
            block of an odd-sized disk, until Linux 2.5.x kernel fixes.
            This is only used by gpt.c, and only to read
            one sector, so we don't have to be fancy.
         */
-        if (!bytesread && !(last_lba(fd) & 1) && lba == last_lba(fd)) {
+        if (!bytesread && !(lastlba & 1) && lba == lastlba) {
                 bytesread = read_lastoddsector(fd, lba, buffer, bytes);
         }
         return bytesread;
@@ -505,7 +513,8 @@ find_valid_gpt(int fd, gpt_header ** gpt, gpt_entry ** ptes)
 	if (!gpt || !ptes)
 		return 0;
 
-	lastlba = last_lba(fd);
+	if (!(lastlba = last_lba(fd)))
+		return 0;
 	good_pgpt = is_gpt_valid(fd, GPT_PRIMARY_PARTITION_TABLE_LBA,
 				 &pgpt, &pptes);
         if (good_pgpt) {
