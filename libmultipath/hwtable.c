@@ -122,6 +122,21 @@ static struct hwentry default_hw[] = {
 		.checker_name  = TUR,
 	},
 	{
+		.vendor        = "HP",
+		.product       = "MSA2000s*",
+		.getuid        = "/sbin/cciss_id %n",
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = 12,
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = TUR,
+	},
+	{
 		/* EVA 3000/5000 with new firmware */
 		.vendor        = "(COMPAQ|HP)",
 		.product       = "(MSA|HSV)1.1.*",
