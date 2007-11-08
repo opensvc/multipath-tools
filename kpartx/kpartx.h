@@ -1,6 +1,8 @@
 #ifndef _KPARTX_H
 #define _KPARTX_H
 
+#include <stdint.h>
+
 /*
  * For each partition type there is a routine that takes
  * a block device and a range, and returns the list of
@@ -20,8 +22,8 @@
  * units: 512 byte sectors
  */
 struct slice {
-	unsigned long start;
-	unsigned long size;
+	uint64_t start;
+	uint64_t size;
 	int container;
 	int major;
 	int minor;
