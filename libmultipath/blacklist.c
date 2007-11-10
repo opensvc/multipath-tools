@@ -297,16 +297,14 @@ _filter_path (struct config * conf, struct path * pp)
 	int r;
 
 	r = _filter_devnode(conf->blist_devnode, conf->elist_devnode,pp->dev);
-	if (r)
-		return r;
-	r = _filter_wwid(conf->blist_wwid, conf->elist_wwid, pp->wwid);
-	if (r)
+	if (r > 0)
 		return r;
 	r = _filter_device(conf->blist_device, conf->elist_device,
 		 	   pp->vendor_id, pp->product_id);
-	if (r)
+	if (r > 0)
 		return r;
-	return 0;
+	r = _filter_wwid(conf->blist_wwid, conf->elist_wwid, pp->wwid);
+	return r;
 }
 
 int
