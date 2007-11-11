@@ -605,6 +605,27 @@ static struct hwentry default_hw[] = {
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = READSECTOR0,
 	},
+ 	/*
+	 * Pivot3 RAIGE
+	 *
+	 * Maintainer : Bart Brooks, Pivot3
+	 * Mail : bartb@pivot3.com
+	 */
+	{
+		.vendor        = "PIVOT3",
+		.product       = "RAIGE VOLUME",
+		.getuid        = "/sbin/scsi_id -p 0x80 -g -u -s /block/%n",
+		.getprio       = NULL,
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = 100,
+		.checker_name  = TUR,
+	},
 	/*
 	 * EOL
 	 */
