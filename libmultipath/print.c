@@ -21,6 +21,7 @@
 #include "defaults.h"
 #include "parser.h"
 #include "blacklist.h"
+#include "switchgroup.h"
 
 #define MAX(x,y) (x > y) ? x : y
 #define TAIL     (line + len - 1 - c)
@@ -340,6 +341,13 @@ snprint_pg_selector (char * buff, size_t len, struct pathgroup * pgp)
 static int
 snprint_pg_pri (char * buff, size_t len, struct pathgroup * pgp)
 {
+	/*
+	 * path group priority is not updated for every path prio change,
+	 * but only on switch group code path.
+	 *
+	 * Printing is another reason to update.
+	 */
+	path_group_prio_update(pgp);
 	return snprint_int(buff, len, pgp->priority);
 }
 
