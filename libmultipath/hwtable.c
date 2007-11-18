@@ -87,7 +87,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
 	},
 	{
 		/* MSA 1000/MSA1500 EVA 3000/5000 with old firmware */
@@ -224,7 +224,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
 	},
 	{
 		.vendor        = "DGC",
@@ -261,7 +261,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
 	},
 	/*
 	 * Hitachi controller family
@@ -318,7 +318,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
 	},
 	{
 		/* IBM DS4100 / FAStT100 */
@@ -468,7 +468,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = 128,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
 	},
  	/*
 	 * IBM NSeries (NETAPP) controller family
@@ -489,7 +489,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = 128,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
 	},
 	/*
 	 * Pillar Data controller family
@@ -531,7 +531,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
 	},
 	{
 		.vendor        = "SGI",
@@ -603,7 +603,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
 	},
  	/*
 	 * Pivot3 RAIGE
