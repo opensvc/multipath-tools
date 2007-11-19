@@ -52,14 +52,14 @@
 #	getuid_callout	"/lib/udev/scsi_id -g -u -s /block/%n"
 #
 #	#
-#	# name    : prio_callout
+#	# name    : prio
 #	# scope   : multipath
-#	# desc    : the default program and args to callout to obtain a path 
+#	# desc    : the default function to call to obtain a path 
 #	#           priority value. The ALUA bits in SPC-3 provide an
-#	#           exploitable prio value for example. "none" is a valid value
+#	#           exploitable prio value for example.
 #	# default : (null)
 #	#
-#	#prio_callout	"/bin/true"
+#	#prio	"alua"
 #
 #	#
 #	# name    : path_checker
@@ -296,15 +296,14 @@
 #		getuid_callout          "/lib/udev/scsi_id -g -u -s /block/%n"
 #
 #		#
-#		# name    : prio_callout
+#		# name    : prio
 #		# scope   : multipath
-#		# desc    : the program and args to callout to obtain a path 
+#		# desc    : the function to call to obtain a path 
 #		#           weight. Weights are summed for each path group to
 #		#	    determine the next PG to use case of failure.
-#		#	    "none" is a valid value.
 #		# default : no callout, all paths equals
 #		#
-#		prio_callout          "/sbin/mpath_prio_balance_units %d"
+#		prio          "hp_sw"
 #
 #		#
 #		# name    : path_checker

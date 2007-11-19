@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include <checkers.h>
+#include <libprio.h>
 
 #include "vector.h"
 #include "defaults.h"
@@ -81,8 +82,7 @@ orphan_path (struct path * pp)
 	pp->mpp = NULL;
 	pp->dmstate = PSTATE_UNDEF;
 	pp->getuid = NULL;
-	pp->getprio = NULL;
-	pp->getprio_selected = 0;
+	pp->prio = NULL;
 	checker_put(&pp->checker);
 	if (pp->fd >= 0)
 		close(pp->fd);

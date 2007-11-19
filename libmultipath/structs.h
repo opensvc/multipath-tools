@@ -21,9 +21,6 @@
 #define NO_PATH_RETRY_FAIL	-1
 #define NO_PATH_RETRY_QUEUE	-2
 
-#define PRIO_UNDEF		-1
-#define PRIO_DEFAULT		1
-
 enum free_path_switch {
 	KEEP_PATHS,
 	FREE_PATHS
@@ -121,8 +118,7 @@ struct path {
 	int priority;
 	int pgindex;
 	char * getuid;
-	char * getprio;
-	int getprio_selected;
+	struct prio * prio;
 	struct checker checker;
 	struct multipath * mpp;
 	int fd;

@@ -5,6 +5,7 @@
  * Copyright (c) 2005 Kiyoshi Ueda, NEC
  */
 #include <checkers.h>
+#include <libprio.h>
 
 #include "vector.h"
 #include "hwtable.h"
@@ -82,19 +83,16 @@ def_getuid_callout_handler(vector strvec)
 }
 
 static int
-def_prio_callout_handler(vector strvec)
+def_prio_handler(vector strvec)
 {
-	conf->getprio = set_value(strvec);
+	char * buff;
 
-	if (!conf->getprio)
+	buff = set_value(strvec);
+	if (!buff)
 		return 1;
-	
-	if (strlen(conf->getprio) == 4 &&
-	    !strcmp(conf->getprio, "none")) {
-		FREE(conf->getprio);
-		conf->getprio = NULL;
-	}
-		
+
+	conf->prio = prio_lookup(buff);
+	FREE(buff);
 	return 0;
 }
 
@@ -571,23 +569,20 @@ hw_handler_handler(vector strvec)
 }
 
 static int
-prio_callout_handler(vector strvec)
+hw_prio_handler(vector strvec)
 {
 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+	char * buff;
 	
 	if (!hwe)
 		return 1;
 
-	hwe->getprio = set_value(strvec);
-
-	if (!hwe->getprio)
+	buff = set_value(strvec);
+	if (!buff)
 		return 1;
-
-	if (strlen(hwe->getprio) == 4 && !strcmp(hwe->getprio, "none")) {
-		FREE(hwe->getprio);
-		hwe->getprio = NULL;
-	}
-
+	
+	hwe->prio = prio_lookup(buff);
+	FREE(buff);
 	return 0;
 }
 
@@ -1115,23 +1110,16 @@ snprint_hw_getuid_callout (char * buff, int len, void * data)
 }
 
 static int
-snprint_hw_prio_callout (char * buff, int len, void * data)
+snprint_hw_prio (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!conf->getprio && !hwe->getprio)
+	if (!hwe->prio)
 		return 0;
-	if (!conf->getprio && hwe->getprio)
-		return snprintf(buff, len, "%s", hwe->getprio);
-	if (conf->getprio && !hwe->getprio)
-		return snprintf(buff, len, "none");
-
-	/* conf->getprio && hwe->getprio */
-	if (strlen(hwe->getprio) == strlen(conf->getprio) &&
-	    !strcmp(hwe->getprio, conf->getprio))
+	if (hwe->prio == conf->prio)
 		return 0;
-
-	return snprintf(buff, len, "%s", hwe->getprio);
+	
+	return snprintf(buff, len, "%s", prio_name(hwe->prio));
 }
 
 static int
@@ -1364,12 +1352,12 @@ snprint_def_getuid_callout (char * buff, int len, void * data)
 }
 
 static int
-snprint_def_getprio_callout (char * buff, int len, void * data)
+snprint_def_prio (char * buff, int len, void * data)
 {
-	if (!conf->getprio)
+	if (!conf->prio)
 		return 0;
 
-	return snprintf(buff, len, "%s", conf->getprio);
+	return snprintf(buff, len, "%s", prio_name(conf->prio));
 }
 
 static int
@@ -1523,7 +1511,7 @@ init_keywords(void)
 	install_keyword("selector", &def_selector_handler, &snprint_def_selector);
 	install_keyword("path_grouping_policy", &def_pgpolicy_handler, &snprint_def_path_grouping_policy);
 	install_keyword("getuid_callout", &def_getuid_callout_handler, &snprint_def_getuid_callout);
-	install_keyword("prio_callout", &def_prio_callout_handler, &snprint_def_getprio_callout);
+	install_keyword("prio", &def_prio_handler, &snprint_def_prio);
 	install_keyword("features", &def_features_handler, &snprint_def_features);
 	install_keyword("path_checker", &def_path_checker_handler, &snprint_def_path_checker);
 	install_keyword("failback", &default_failback_handler, &snprint_def_failback);
@@ -1535,7 +1523,6 @@ init_keywords(void)
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
-	__deprecated install_keyword("default_prio_callout", &def_prio_callout_handler, NULL);
 	__deprecated install_keyword("default_features", &def_features_handler, NULL);
 	__deprecated install_keyword("default_path_checker", &def_path_checker_handler, NULL);
 
@@ -1579,7 +1566,7 @@ init_keywords(void)
 	install_keyword("path_checker", &hw_path_checker_handler, &snprint_hw_path_checker);
 	install_keyword("features", &hw_features_handler, &snprint_hw_features);
 	install_keyword("hardware_handler", &hw_handler_handler, &snprint_hw_hardware_handler);
-	install_keyword("prio_callout", &prio_callout_handler, &snprint_hw_prio_callout);
+	install_keyword("prio", &hw_prio_handler, &snprint_hw_prio);
 	install_keyword("failback", &hw_failback_handler, &snprint_hw_failback);
 	install_keyword("rr_weight", &hw_weight_handler, &snprint_hw_rr_weight);
 	install_keyword("no_path_retry", &hw_no_path_retry_handler, &snprint_hw_no_path_retry);

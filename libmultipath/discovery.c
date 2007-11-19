@@ -12,6 +12,7 @@
 #include <errno.h>
 
 #include <checkers.h>
+#include <libprio.h>
 
 #include "vector.h"
 #include "memory.h"
@@ -626,27 +627,22 @@ get_state (struct path * pp)
 static int
 get_prio (struct path * pp)
 {
-	char buff[CALLOUT_MAX_SIZE];
-	char prio[16];
+	if (!pp)
+		return 0;
 
-	if (!pp->getprio_selected) {
-		select_getprio(pp);
-		pp->getprio_selected = 1;
+	if (!pp->prio) {
+		select_prio(pp);
+		if (!pp->prio)
+			return 1;
 	}
-	if (!pp->getprio) {
-		pp->priority = PRIO_DEFAULT;
-	} else if (apply_format(pp->getprio, &buff[0], pp)) {
-		condlog(0, "error formatting prio callout command");
+	pp->priority = prio_getprio(pp->prio, pp);
+	if (pp->priority < 0) {
+		condlog(0, "%s: %s prio error", pp->dev, prio_name(pp->prio));
 		pp->priority = PRIO_UNDEF;
 		return 1;
-	} else if (execute_program(buff, prio, 16)) {
-		condlog(0, "error calling out %s", buff);
-		pp->priority = PRIO_UNDEF;
-		return 1;
-	} else
-		pp->priority = atoi(prio);
-
-	condlog(3, "%s: prio = %u", pp->dev, pp->priority);
+	}
+	condlog(3, "%s: %s prio = %u",
+		pp->dev, prio_name(pp->prio), pp->priority);
 	return 0;
 }
 
