@@ -27,6 +27,7 @@
 #include <ctype.h>
 
 #include <checkers.h>
+#include <libprio.h>
 #include <vector.h>
 #include <memory.h>
 #include <libdevmapper.h>

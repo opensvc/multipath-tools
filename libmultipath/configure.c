@@ -15,6 +15,7 @@
 #include <libdevmapper.h>
 
 #include <checkers.h>
+#include <libprio.h>
 
 #include "vector.h"
 #include "memory.h"

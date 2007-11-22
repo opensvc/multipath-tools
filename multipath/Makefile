@@ -5,9 +5,9 @@ BUILD = glibc
 
 include ../Makefile.inc
 
-OBJS = main.o $(MULTIPATHLIB)-$(BUILD).a $(CHECKERSLIB)-$(BUILD).a
+OBJS = main.o $(MULTIPATHLIB)-$(BUILD).a $(CHECKERSLIB)-$(BUILD).a $(LIBPRIO)-$(BUILD).a
 
-CFLAGS += -I$(multipathdir) -I$(checkersdir)
+CFLAGS += -I$(multipathdir) -I$(checkersdir) -I$(libpriodir)
 LDFLAGS += -laio
 
 ifeq ($(strip $(BUILD)),klibc)
@@ -31,6 +31,9 @@ glibc: prepare $(OBJS)
 
 klibc: prepare $(OBJS)
 	$(CC) -static -o $(EXEC) $(CRT0) $(OBJS) $(KLIBC) $(LIBGCC)
+
+$(LIBPRIO)-$(BUILD).a:
+	make -C $(libpriodir) BUILD=$(BUILD) $(BUILD)
 
 $(CHECKERSLIB)-$(BUILD).a:
 	make -C $(checkersdir) BUILD=$(BUILD) $(BUILD)

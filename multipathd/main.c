@@ -368,7 +368,7 @@ ev_add_path (char * devname, struct vectors * vecs)
 		condlog(0, "%s: failed to get path uid", devname);
 		return 1; /* leave path added to pathvec */
 	}
-	if (filter_path(conf, pp)){
+	if (filter_path(conf, pp) > 0){
 		int i = find_slot(vecs->pathvec, (void *)pp);
 		if (i != -1)
 			vector_del_slot(vecs->pathvec, i);
@@ -1062,7 +1062,7 @@ configure (struct vectors * vecs, int start_waiters)
 	path_discovery(vecs->pathvec, conf, DI_ALL);
 
 	vector_foreach_slot (vecs->pathvec, pp, i){
-		if (filter_path(conf, pp)){
+		if (filter_path(conf, pp) > 0){
 			vector_del_slot(vecs->pathvec, i);
 			free_path(pp);
 			i--;

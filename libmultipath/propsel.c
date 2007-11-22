@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include <checkers.h>
+#include <libprio.h>
 
 #include "memory.h"
 #include "vector.h"
@@ -257,22 +258,23 @@ select_getuid (struct path * pp)
 }
 
 extern int
-select_getprio (struct path * pp)
+select_prio (struct path * pp)
 {
-	if (pp->hwe && pp->hwe->getprio) {
-		pp->getprio = pp->hwe->getprio;
-		condlog(3, "%s: getprio = %s (controller setting)",
-			pp->dev, pp->getprio);
+	if (pp->hwe && pp->hwe->prio) {
+		pp->prio = pp->hwe->prio;
+		condlog(3, "%s: prio = %s (controller setting)",
+			pp->dev, prio_name(pp->prio));
 		return 0;
 	}
-	if (conf->getprio) {
-		pp->getprio = conf->getprio;
-		condlog(3, "%s: getprio = %s (config file default)",
-			pp->dev, pp->getprio);
+	if (conf->prio) {
+		pp->prio = conf->prio;
+		condlog(3, "%s: prio = %s (config file default)",
+			pp->dev, prio_name(pp->prio));
 		return 0;
 	}
-	pp->getprio = DEFAULT_GETPRIO;
-	condlog(3, "%s: getprio = NULL (internal default)", pp->dev);
+	pp->prio = prio_default();
+	condlog(3, "%s: prio = %s (internal default)",
+		pp->dev, prio_name(pp->prio));
 	return 0;
 }
 

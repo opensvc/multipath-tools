@@ -7,6 +7,7 @@
 #include <libdevmapper.h>
 
 #include <checkers.h>
+#include <libprio.h>
 
 #include "memory.h"
 #include "vector.h"

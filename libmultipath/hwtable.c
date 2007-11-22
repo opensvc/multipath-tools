@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include <checkers.h>
+#include <libprio.h>
 
 #include "vector.h"
 #include "defaults.h"
@@ -27,7 +28,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "APPLE*",
 		.product       = "Xserve RAID ",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -37,6 +37,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = DEFAULT_CHECKER,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	/*
 	 * StorageWorks controller family
@@ -48,7 +49,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "3PARdata",
 		.product       = "VV",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -58,14 +58,14 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = DEFAULT_CHECKER,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	{
 		.vendor        = "DEC",
 		.product       = "HSG80",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_hp_sw /dev/%n",
 		.features      = "1 queue_if_no_path",
-		.hwhandler     = "1 hp_sw",
+		.hwhandler     = "1 hp-sw",
 		.selector      = DEFAULT_SELECTOR,
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = FAILBACK_UNDEF,
@@ -73,12 +73,12 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = HP_SW,
+		.prio_name     = PRIO_HP_SW,
 	},
 	{
 		.vendor        = "HP",
 		.product       = "A6189A",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -87,16 +87,16 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	{
 		/* MSA 1000/MSA1500 EVA 3000/5000 with old firmware */
 		.vendor        = "(COMPAQ|HP)",
 		.product       = "(MSA|HSV)1.0.*",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_hp_sw /dev/%n",
 		.features      = "1 queue_if_no_path",
-		.hwhandler     = "1 hp_sw",
+		.hwhandler     = "1 hp-sw",
 		.selector      = DEFAULT_SELECTOR,
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = FAILBACK_UNDEF,
@@ -104,13 +104,13 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = HP_SW,
+		.prio_name     = PRIO_HP_SW,
 	},
 	{
 		/* MSA 1000/1500 with new firmware */
 		.vendor        = "HP",
 		.product       = "MSA VOLUME",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_alua /dev/%n",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -120,13 +120,28 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = PRIO_ALUA,
+	},
+	{
+		.vendor        = "HP",
+		.product       = "MSA2000s*",
+		.getuid        = "/sbin/cciss_id %n",
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = 12,
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = TUR,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	{
 		/* EVA 3000/5000 with new firmware */
 		.vendor        = "(COMPAQ|HP)",
 		.product       = "(MSA|HSV)1.1.*",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_alua /dev/%n",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -136,13 +151,13 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = PRIO_ALUA,
 	},
 	{
 		/* EVA 4000/6000/8000 */
 		.vendor        = "HP",
 		.product       = "HSV2.*",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_alua /dev/%n",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -152,13 +167,13 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = PRIO_ALUA,
 	},
 	{
 		/* HP Smart Array */
 		.vendor        = "HP",
 		.product       = "LOGICAL VOLUME.*",
 		.getuid        = "/lib/udev/scsi_id -n -g -u -s /block/%n",
-		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -168,6 +183,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	/*
 	 * DDN controller family
@@ -179,7 +195,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "DDN",
 		.product       = "SAN DataDirector",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -189,6 +204,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = DIRECTIO,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	/*
 	 * EMC / Clariion controller family
@@ -200,7 +216,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "EMC",
 		.product       = "SYMMETRIX",
 		.getuid        = "/lib/udev/scsi_id -g -u -ppre-spc3-83 -s /block/%n",
-		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -209,14 +224,14 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	{
 		.vendor        = "DGC",
 		.product       = ".*",
 		.bl_product    = "LUNZ",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_emc /dev/%n",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 emc",
 		.selector      = DEFAULT_SELECTOR,
@@ -226,6 +241,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = (300 / DEFAULT_CHECKINT),
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = EMC_CLARIION,
+		.prio_name     = PRIO_EMC,
 	},
 	/*
 	 * Fujitsu controller family
@@ -237,7 +253,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "FSC",
 		.product       = "CentricStor",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -246,7 +261,8 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	/*
 	 * Hitachi controller family
@@ -258,7 +274,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "(HITACHI|HP)",
 		.product       = "OPEN-.*",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -268,12 +283,12 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	{
 		.vendor        = "HITACHI",
 		.product       = "DF.*",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_hds_modular /dev/%n",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -283,6 +298,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = PRIO_HDS,
 	},
 	/*
 	 * IBM controller family
@@ -294,7 +310,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "IBM",
 		.product       = "ProFibre 4000R",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -303,14 +318,14 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	{
 		/* IBM DS4100 / FAStT100 */
 		.vendor        = "IBM",
 		.product       = "1742",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_rdac /dev/%n",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -320,13 +335,13 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = PRIO_RDAC,
 	},
 	{
 		/* IBM Netfinity Fibre Channel RAID Controller Unit */
 		.vendor        = "IBM",
 		.product       = "3526",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_rdac /dev/%n",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -336,13 +351,13 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = PRIO_RDAC,
 	},
 	{
 		/* IBM DS4200 / FAStT200 */
 		.vendor        = "IBM",
 		.product       = "3542",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -352,13 +367,13 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	{
 		/* IBM ESS F20 aka Shark */
 		.vendor        = "IBM",
 		.product       = "2105(800|F20)",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -368,13 +383,13 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	{
 		/* IBM DS6000 */
 		.vendor        = "IBM",
 		.product       = "1750500",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_alua /dev/%n",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -384,13 +399,13 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = PRIO_ALUA,
 	},
 	{
 		/* IBM DS8000 */
 		.vendor        = "IBM",
 		.product       = "2107900",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -400,13 +415,13 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	{
 		/* IBM SAN Volume Controller */
 		.vendor        = "IBM",
 		.product       = "2145",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_alua /dev/%n",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -416,6 +431,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = PRIO_ALUA,
 	},
 	{
 		/* IBM S/390 ECKD DASD */
@@ -423,7 +439,6 @@ static struct hwentry default_hw[] = {
 		.product       = "S/390 DASD ECKD",
 		.bl_product       = "S/390.*",
 		.getuid        = "/sbin/dasdinfo -u -b %n",
-		.getprio       = NULL,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -433,6 +448,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = DIRECTIO,
+		.prio_name     = DEFAULT_PRIO,
 	},
  	/*
 	 * NETAPP controller family
@@ -444,7 +460,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "NETAPP",
 		.product       = "LUN.*",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_netapp /dev/%n",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -453,7 +468,8 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = 128,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
+		.prio_name     = PRIO_NETAPP,
 	},
  	/*
 	 * IBM NSeries (NETAPP) controller family
@@ -465,7 +481,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "IBM",
 		.product       = "Nseries.*",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_netapp /dev/%n",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -474,7 +489,8 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = 128,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
+		.prio_name     = PRIO_NETAPP,
 	},
 	/*
 	 * Pillar Data controller family
@@ -486,7 +502,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "Pillar",
 		.product       = "Axiom.*",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_alua %n",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -496,6 +511,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = PRIO_ALUA,
 	},
 	/*
 	 * SGI arrays
@@ -507,7 +523,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "SGI",
 		.product       = "TP9[13]00",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -516,13 +531,13 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	{
 		.vendor        = "SGI",
 		.product       = "TP9[45]00",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_rdac /dev/%n",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -532,12 +547,12 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = RDAC,
+		.prio_name     = PRIO_RDAC,
 	},
 	{
 		.vendor        = "SGI",
 		.product       = "IS.*",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_rdac /dev/%n",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -547,6 +562,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = RDAC,
+		.prio_name     = PRIO_RDAC,
 	},
 	/*
 	 * STK arrays
@@ -558,7 +574,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "STK",
 		.product       = "OPENstorage D280",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_rdac /dev/%n",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -568,6 +583,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = PRIO_RDAC,
 	},
 	/*
 	 * SUN arrays
@@ -579,7 +595,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "SUN",
 		.product       = "(StorEdge 3510|T4)",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -588,7 +603,29 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = DEFAULT_MINIO,
-		.checker_name  = READSECTOR0,
+		.checker_name  = DIRECTIO,
+		.prio_name     = DEFAULT_PRIO,
+	},
+ 	/*
+	 * Pivot3 RAIGE
+	 *
+	 * Maintainer : Bart Brooks, Pivot3
+	 * Mail : bartb@pivot3.com
+	 */
+	{
+		.vendor        = "PIVOT3",
+		.product       = "RAIGE VOLUME",
+		.getuid        = "/sbin/scsi_id -p 0x80 -g -u -s /block/%n",
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = 100,
+		.checker_name  = TUR,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	/*
 	 * EOL
@@ -597,7 +634,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = NULL,
 		.product       = NULL,
 		.getuid        = NULL,
-		.getprio       = NULL,
 		.features      = NULL,
 		.hwhandler     = NULL,
 		.selector      = NULL,
@@ -607,6 +643,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 0,
 		.minio         = 0,
 		.checker_name  = NULL,
+		.prio_name     = NULL,
 	},
 };
 

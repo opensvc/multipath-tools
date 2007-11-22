@@ -8,15 +8,31 @@
 #include "structs.h"
 #include "switchgroup.h"
 
+extern void
+path_group_prio_update (struct pathgroup * pgp)
+{
+	int i;
+	int priority = 0;
+	struct path * pp;
+
+	if (!pgp->paths) {
+		pgp->priority = 0;
+		return;
+	}
+	vector_foreach_slot (pgp->paths, pp, i) {
+		if (pp->state != PATH_DOWN)
+			priority += pp->priority;
+	}
+	pgp->priority = priority;
+}
+
 extern int
 select_path_group (struct multipath * mpp)
 {
-	int i, j;
+	int i;
 	int highest = 0;
 	int bestpg = 1;
 	struct pathgroup * pgp;
-	struct path * pp;
-	int priority;
 
 	if (!mpp->pg)
 		return 1;
@@ -25,14 +41,7 @@ select_path_group (struct multipath * mpp)
 		if (!pgp->paths)
 			continue;
 
-		priority = 0;
-
-		vector_foreach_slot (pgp->paths, pp, j) {
-			if (pp->state != PATH_DOWN)
-				priority += pp->priority;
-		}
-		pgp->priority = priority;
-
+		path_group_prio_update(pgp);
 		if (pgp->priority > highest) {
 			highest = pgp->priority;
 			bestpg = i + 1;

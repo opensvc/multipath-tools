@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <checkers.h>
+#include <libprio.h>
 
 #include "memory.h"
 #include "util.h"
@@ -135,9 +136,6 @@ free_hwe (struct hwentry * hwe)
 	if (hwe->getuid)
 		FREE(hwe->getuid);
 
-	if (hwe->getprio)
-		FREE(hwe->getprio);
-
 	if (hwe->features)
 		FREE(hwe->features);
 
@@ -265,9 +263,6 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	if (dhwe->getuid && !(hwe->getuid = set_param_str(dhwe->getuid)))
 		goto out;
 
-	if (dhwe->getprio && !(hwe->getprio = set_param_str(dhwe->getprio)))
-		goto out;
-				
 	if (dhwe->features && !(hwe->features = set_param_str(dhwe->features)))
 		goto out;
 	
@@ -283,6 +278,7 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->no_path_retry = dhwe->no_path_retry;
 	hwe->minio = dhwe->minio;
 	hwe->checker = dhwe->checker;
+	hwe->prio = dhwe->prio;
 
 	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
 		goto out;
@@ -320,9 +316,6 @@ free_config (struct config * conf)
 
 	if (conf->getuid)
 		FREE(conf->getuid);
-
-	if (conf->getprio)
-		FREE(conf->getprio);
 
 	if (conf->features)
 		FREE(conf->features);
@@ -453,6 +446,9 @@ load_config (char * file)
 	    !conf->getuid    || !conf->features ||
 	    !conf->hwhandler)
 		goto out;
+
+	if (!conf->prio)
+		conf->prio = prio_default();
 
 	if (!conf->checker)
 		conf->checker = checker_lookup(DEFAULT_CHECKER);
