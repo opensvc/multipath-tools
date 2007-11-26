@@ -95,6 +95,7 @@ usage(void) {
 	printf("\t-d del partition devmappings\n");
 	printf("\t-l list partitions devmappings that would be added by -a\n");
 	printf("\t-p set device name-partition number delimiter\n");
+	printf("\t-g force GUID partition table (GPT)\n");
 	printf("\t-v verbose\n");
 	return 1;
 }
