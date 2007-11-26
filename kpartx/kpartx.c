@@ -83,7 +83,7 @@ initpts(void)
 	addpts("sun", read_sun_pt);
 }
 
-static char short_opts[] = "ladgvnp:t:";
+static char short_opts[] = "ladgvp:t:";
 
 /* Used in gpt.c */
 int force_gpt=0;
@@ -189,8 +189,7 @@ main(int argc, char **argv){
 	struct slice all;
 	struct pt *ptp;
 	enum action what = LIST;
-	char *p, *type, *diskdevice, *device, *progname;
-	int lower, upper;
+	char *type, *diskdevice, *device, *progname;
 	int verbose = 0;
 	char partname[PARTNAME_SIZE], params[PARTNAME_SIZE + 16];
 	char * loopdev = NULL;
@@ -204,7 +203,6 @@ main(int argc, char **argv){
 	initpts();
 	init_crc32();
 
-	lower = upper = 0;
 	type = device = diskdevice = NULL;
 	memset(&all, 0, sizeof(all));
 	memset(&partname, 0, sizeof(partname));
@@ -240,14 +238,6 @@ main(int argc, char **argv){
 			break;
 		case 'v':
 			verbose = 1;
-			break;
-		case 'n':
-			p = optarg;
-			lower = atoi(p);
-			if ((p[1] == '-') && p[2])
-				upper = atoi(p+2);
-			else
-				upper = lower;
 			break;
 		case 'p':
 			delim = optarg;
@@ -333,8 +323,6 @@ main(int argc, char **argv){
 		perror(device);
 		exit(1);
 	}
-	if (!lower)
-		lower = 1;
 
 	/* add/remove partitions to the kernel devmapper tables */
 	for (i = 0; i < ptct; i++) {
