@@ -403,7 +403,7 @@ main(int argc, char **argv){
 			break;
 
 		case DELETE:
-			for (j = 0; j < n; j++) {
+			for (j = n-1; j >= 0; j--) {
 				if (safe_sprintf(partname, "%s%s%d",
 					     mapname, delim, j+1)) {
 					fprintf(stderr, "partname too small\n");
