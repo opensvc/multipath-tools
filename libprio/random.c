@@ -11,6 +11,5 @@ int prio_random(struct path * pp)
 	
 	gettimeofday(&tv, NULL);
 	srand((unsigned int)tv.tv_usec);
-	printf("%i\n", 1+(int) (10.0*rand()/(RAND_MAX+1.0)));
-	return 0;
+	return 1+(int) (10.0*rand()/(RAND_MAX+1.0));
 }
