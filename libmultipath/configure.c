@@ -365,7 +365,7 @@ domap (struct multipath * mpp)
 
 	if (r) {
 		/*
-		 * DM_DEVICE_CREATE, DM_DEIVCE_RENAME, or DM_DEVICE_RELOAD
+		 * DM_DEVICE_CREATE, DM_DEVICE_RENAME, or DM_DEVICE_RELOAD
 		 * succeeded
 		 */
 #ifndef DAEMON
@@ -376,6 +376,10 @@ domap (struct multipath * mpp)
 		mpp->stat_map_loads++;
 		condlog(2, "%s: load table [0 %llu %s %s]", mpp->alias,
                         mpp->size, DEFAULT_TARGET, mpp->params);
+		/*
+		 * Required action is over, reset for the stateful daemon
+		 */
+		mpp->action = ACT_NOTHING;
 #endif
 		return DOMAP_OK;
 	}
