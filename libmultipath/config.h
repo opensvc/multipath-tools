@@ -66,6 +66,7 @@ struct config {
 	int no_path_retry;
 	int user_friendly_names;
 	int pg_timeout;
+	int max_fds;
 
 	char * dev;
 	char * sysfs_dir;

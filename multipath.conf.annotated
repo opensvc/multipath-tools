@@ -80,6 +80,16 @@
 #	rr_min_io	100
 #
 #	#
+#	# name    : max_fds
+#	# scope   : multipathd
+#	# desc    : Sets the maximum number of open file descriptors for the
+#	#           multipathd process.
+#	# values  : unlimited|n > 0
+#	# default : None
+#	#
+#	max_fds		8192
+#
+#	#
 #	# name    : rr_weight
 #	# scope   : multipath
 #	# desc    : if set to priorities the multipath configurator will assign
