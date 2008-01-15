@@ -38,7 +38,7 @@
 #	# scope   : multipath
 #	# desc    : the default path grouping policy to apply to unspecified
 #	#           multipaths
-#	# default : multibus
+#	# default : failover
 #	#
 #	path_grouping_policy	multibus
 #
@@ -106,9 +106,9 @@
 #	#	    0 means immediate failback, values >0 means deffered failback
 #	#	    expressed in seconds.
 #	# values  : manual|immediate|n > 0
-#	# default : immediate
+#	# default : manual
 #	#
-#	failback	manual
+#	failback	immediate
 #
 #	#
 #	# name    : no_path_retry
@@ -229,9 +229,9 @@
 #		#	    0 means immediate failback, values >0 means deffered failback
 #		#	    expressed in seconds.
 #		# values  : manual|immediate|n > 0
-#		# default : immediate
+#		# default : manual
 #		#
-#		failback		manual
+#		failback		immediate
 #
 #		#
 #		# name    : no_path_retry
@@ -340,7 +340,7 @@
 #		#	    0 means immediate failback, values >0 means deffered failback
 #		#	    expressed in seconds.
 #		# values  : manual|immediate|n > 0
-#		# default : immediate
+#		# default : manual
 #		#
 #		failback		30
 #
