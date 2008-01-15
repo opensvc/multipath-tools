@@ -203,7 +203,7 @@ alloc_strvec(char *string)
 	cp = string;
 
 	/* Skip white spaces */
-	while (isspace((int) *cp) && *cp != '\0')
+	while ((isspace((int) *cp) || !isascii((int) *cp)) && *cp != '\0')
 		cp++;
 
 	/* Return if there is only white spaces */
@@ -241,8 +241,10 @@ alloc_strvec(char *string)
 				in_string = 1;
 
 		} else {
-			while ((in_string || !isspace((int) *cp)) && *cp
-				!= '\0' && *cp != '"')
+			while ((in_string ||
+				(!isspace((int) *cp) && isascii((int) *cp) &&
+				 *cp != '!' && *cp != '#')) &&
+			       *cp != '\0' && *cp != '"')
 				cp++;
 			strlen = cp - start;
 			token = MALLOC(strlen + 1);
@@ -255,7 +257,8 @@ alloc_strvec(char *string)
 		}
 		vector_set_slot(strvec, token);
 
-		while (isspace((int) *cp) && *cp != '\0')
+		while ((isspace((int) *cp) || !isascii((int) *cp))
+		       && *cp != '\0')
 			cp++;
 		if (*cp == '\0' || *cp == '!' || *cp == '#')
 			return strvec;
