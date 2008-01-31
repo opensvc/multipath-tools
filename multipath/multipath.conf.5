@@ -374,6 +374,15 @@ section:
 .RE
 .PD
 .LP
+.SH "KNOWN ISSUES"
+The usage of
+.B queue_if_no_path
+option can lead to
+.B D state
+processes being hung and not killable in situations where all the paths to the LUN go offline.
+It is advisable to use the
+.B no_path_retry
+option instead.
 .SH "SEE ALSO"
 .BR udev (8),
 .BR dmsetup (8)

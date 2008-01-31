@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 /*
  * libcheckers
@@ -1281,6 +1283,21 @@ child (void * param)
 	if (!conf->checkint) {
 		conf->checkint = DEFAULT_CHECKINT;
 		conf->max_checkint = MAX_CHECKINT(conf->checkint);
+	}
+
+	if (conf->max_fds) {
+		struct rlimit fd_limit;
+		if (conf->max_fds > 0) {
+			fd_limit.rlim_cur = conf->max_fds;
+			fd_limit.rlim_max = conf->max_fds;
+		}
+		else {
+			fd_limit.rlim_cur = RLIM_INFINITY;
+			fd_limit.rlim_max = RLIM_INFINITY;
+		}
+		if (setrlimit(RLIMIT_NOFILE, &fd_limit) < 0)
+			condlog(0, "can't set open fds limit to %d : %s\n",
+				conf->max_fds, strerror(errno));
 	}
 
 	if (pidfile_create(DEFAULT_PIDFILE, getpid())) {

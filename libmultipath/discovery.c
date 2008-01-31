@@ -134,9 +134,9 @@ sysfs_get_##fname (struct sysfs_device * dev, char * buff, size_t len) \
 	attr = sysfs_attr_get_value(dev->devpath, #fname); \
 	if (!attr) \
 		return 1; \
-\
 	if (strlcpy(buff, attr, len) != strlen(attr)) \
 		return 2; \
+	strchop(buff); \
 	return 0; \
 }
 
@@ -362,10 +362,13 @@ get_inq (char * vendor, char * product, char * rev, int fd)
 	if (0 == do_inq(fd, 0, 0, 0, buff, MX_ALLOC_LEN, 0)) {
 		memcpy(vendor, buff + 8, 8);
 		vendor[8] = '\0';
+		strchop(vendor);
 		memcpy(product, buff + 16, 16);
 		product[16] = '\0';
+		strchop(product);
 		memcpy(rev, buff + 32, 4);
 		rev[4] = '\0';
+		strchop(rev);
 		return 0;
 	}
 	return 1;
@@ -711,6 +714,10 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	if (mask & DI_WWID && !strlen(pp->wwid))
 		get_uid(pp);
 
+#ifndef DAEMON
+	close(pp->fd);
+	pp->fd = -1;
+#endif
 	return 0;
 
 blank:
@@ -719,5 +726,11 @@ blank:
 	 */
 	memset(pp->wwid, 0, WWID_SIZE);
 	pp->state = PATH_DOWN;
+#ifndef DAEMON
+	if (pp->fd > 0){
+		close(pp->fd);
+		pp->fd = -1;
+	}
+#endif
 	return 0;
 }

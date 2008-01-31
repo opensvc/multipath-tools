@@ -140,6 +140,26 @@ def_minio_handler(vector strvec)
 }
 
 static int
+max_fds_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	if (strlen(buff) == 9 &&
+	    !strcmp(buff, "unlimited"))
+		conf->max_fds = MAX_FDS_UNLIMITED;
+	else
+		conf->max_fds = atoi(buff);
+	FREE(buff);
+
+	return 0;
+}
+
+static int
 def_weight_handler(vector strvec)
 {
 	char * buff;
@@ -1416,6 +1436,17 @@ snprint_def_rr_min_io (char * buff, int len, void * data)
 }
 
 static int
+snprint_max_fds (char * buff, int len, void * data)
+{
+	if (!conf->max_fds)
+		return 0;
+
+	if (conf->max_fds < 0)
+		return snprintf(buff, len, "unlimited");	
+	return snprintf(buff, len, "%d", conf->max_fds);
+}
+
+static int
 snprint_def_rr_weight (char * buff, int len, void * data)
 {
 	if (!conf->rr_weight)
@@ -1516,6 +1547,7 @@ init_keywords(void)
 	install_keyword("path_checker", &def_path_checker_handler, &snprint_def_path_checker);
 	install_keyword("failback", &default_failback_handler, &snprint_def_failback);
 	install_keyword("rr_min_io", &def_minio_handler, &snprint_def_rr_min_io);
+	install_keyword("max_fds", &max_fds_handler, &snprint_max_fds);
 	install_keyword("rr_weight", &def_weight_handler, &snprint_def_rr_weight);
 	install_keyword("no_path_retry", &def_no_path_retry_handler, &snprint_def_no_path_retry);
 	install_keyword("pg_timeout", &def_pg_timeout_handler, &snprint_def_pg_timeout);

@@ -90,8 +90,8 @@ snprint_sysfs (char * buff, size_t len, struct multipath * mpp)
 {
 	if (mpp->dmi)
 		return snprintf(buff, len, "dm-%i", mpp->dmi->minor);
-
-	return 0;
+	else
+		return snprintf(buff, len, "n/a");
 }
 
 static int
@@ -219,6 +219,16 @@ static int
 snprint_multipath_uuid (char * buff, size_t len, struct multipath * mpp)
 {
 	return snprint_str(buff, len, mpp->wwid);
+}
+
+static int
+snprint_multipath_vpr (char * buff, size_t len, struct multipath * mpp)
+{
+	struct path * pp = first_path(mpp);
+	if (!pp)
+		return 0;
+	return snprintf(buff, len, "%s,%s",
+		        pp->vendor_id, pp->product_id);
 }
 
 static int
@@ -389,6 +399,7 @@ struct multipath_data mpd[] = {
 	{'2', "map_loads",     0, snprint_map_loads},
 	{'3', "total_q_time",  0, snprint_total_q_time},
 	{'4', "q_timeouts",    0, snprint_q_timeouts},
+	{'s', "vend/prod/rev", 0, snprint_multipath_vpr},
 	{0, NULL, 0 , NULL}
 };
 
@@ -691,10 +702,9 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 	c += sprintf(c, "%%n");
 	
 	if (strncmp(mpp->alias, mpp->wwid, WWID_SIZE))
-		c += sprintf(c, " (%%w) ");
+		c += sprintf(c, " (%%w)");
 
-	c += sprintf(c, "%%d ");
-	c += snprint_vpr(c, 24, first_path(mpp));
+	c += sprintf(c, " %%d %%s");
 
 	fwd += snprint_multipath(buff + fwd, len - fwd, style, mpp);
 	if (fwd > len)

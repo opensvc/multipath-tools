@@ -38,7 +38,7 @@
 #	# scope   : multipath
 #	# desc    : the default path grouping policy to apply to unspecified
 #	#           multipaths
-#	# default : multibus
+#	# default : failover
 #	#
 #	path_grouping_policy	multibus
 #
@@ -80,6 +80,16 @@
 #	rr_min_io	100
 #
 #	#
+#	# name    : max_fds
+#	# scope   : multipathd
+#	# desc    : Sets the maximum number of open file descriptors for the
+#	#           multipathd process.
+#	# values  : unlimited|n > 0
+#	# default : None
+#	#
+#	max_fds		8192
+#
+#	#
 #	# name    : rr_weight
 #	# scope   : multipath
 #	# desc    : if set to priorities the multipath configurator will assign
@@ -96,9 +106,9 @@
 #	#	    0 means immediate failback, values >0 means deffered failback
 #	#	    expressed in seconds.
 #	# values  : manual|immediate|n > 0
-#	# default : immediate
+#	# default : manual
 #	#
-#	failback	manual
+#	failback	immediate
 #
 #	#
 #	# name    : no_path_retry
@@ -219,9 +229,9 @@
 #		#	    0 means immediate failback, values >0 means deffered failback
 #		#	    expressed in seconds.
 #		# values  : manual|immediate|n > 0
-#		# default : immediate
+#		# default : manual
 #		#
-#		failback		manual
+#		failback		immediate
 #
 #		#
 #		# name    : no_path_retry
@@ -330,7 +340,7 @@
 #		#	    0 means immediate failback, values >0 means deffered failback
 #		#	    expressed in seconds.
 #		# values  : manual|immediate|n > 0
-#		# default : immediate
+#		# default : manual
 #		#
 #		failback		30
 #
