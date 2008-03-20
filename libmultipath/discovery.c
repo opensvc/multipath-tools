@@ -550,6 +550,9 @@ sysfs_pathinfo(struct path * pp)
 	if (!parent)
 		parent = pp->sysdev;
 
+	if (!strncmp(parent->kernel, "block",5))
+		parent = sysfs_device_get_parent(parent);
+
 	condlog(3, "%s: subsystem = %s", pp->dev, parent->subsystem);
 
 	if (!strncmp(parent->subsystem, "scsi",4))
