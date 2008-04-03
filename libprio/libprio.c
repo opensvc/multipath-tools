@@ -62,7 +62,7 @@ struct prio * add_prio (char * name)
 	if (!p)
 		return NULL;
 	snprintf(libname, LIB_PRIO_NAMELEN, "libprio%s.so", name);
-	condlog(0, "loading %s prioritizer", libname);
+	condlog(3, "loading %s prioritizer", libname);
 	handle = dlopen(libname, RTLD_NOW);
 	errstr = dlerror();
 	if (errstr != NULL)
