@@ -238,7 +238,7 @@ static int netapp_prio(const char *dev, int fd)
 	}
 }
 
-int prio_netapp(struct path * pp)
+int getprio (struct path * pp)
 {
 	return netapp_prio(pp->dev, pp->fd);
 }

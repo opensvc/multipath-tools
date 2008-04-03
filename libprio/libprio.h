@@ -7,17 +7,22 @@
 #include "../libcheckers/checkers.h"
 #include "../libmultipath/vector.h"
 #include "../libmultipath/structs.h"
+#include "../libmultipath/list.h"
+#include "../libmultipath/memory.h"
 
-#include "const.h"
-#include "random.h"
-#include "hp_sw.h"
-#include "alua.h"
-#include "emc.h"
-#include "netapp.h"
-#include "hds.h"
-#include "rdac.h"
+#define DEFAULT_PRIO "const"
 
-#define DEFAULT_PRIO PRIO_CONST
+/*
+ * Known prioritizers for use in hwtable.c
+ */
+#define PRIO_ALUA "alua"
+#define PRIO_CONST "const"
+#define PRIO_EMC "emc"
+#define PRIO_HDS "hds"
+#define PRIO_HP_SW "hp_sw"
+#define PRIO_NETAPP "netapp"
+#define PRIO_RANDOM "random"
+#define PRIO_RDAC "rdac"
 
 /*
  * Value used to mark the fact prio was not defined
@@ -27,14 +32,17 @@
 /*
  * strings lengths
  */
+#define LIB_PRIO_NAMELEN 255
 #define PRIO_NAME_LEN 16
-#define PRIO_DEV_LEN 256
 
 struct prio {
+	struct list_head node;
 	char name[PRIO_NAME_LEN];
 	int (*getprio)(struct path *);
 };
 
+int init_prio (void);
+struct prio * add_prio (char *);
 struct prio * prio_lookup (char *);
 int prio_getprio (struct prio *, struct path *);
 char * prio_name (struct prio *);

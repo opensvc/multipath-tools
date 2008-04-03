@@ -2,7 +2,7 @@
 
 #include "libprio.h"
 
-int prio_const(struct path * pp)
+int getprio (struct path * pp)
 {
 	return 1;
 }

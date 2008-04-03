@@ -655,6 +655,7 @@ setup_default_hwtable (vector hw)
 
 	while (hwe->vendor) {
 		hwe->checker = checker_lookup(hwe->checker_name);
+		hwe->prio = prio_lookup(hwe->prio_name);
 		r += store_hwe(hw, hwe);
 		hwe++;
 	}

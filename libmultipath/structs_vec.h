@@ -9,9 +9,6 @@ struct vectors {
 	vector mpvec;
 };
 
-typedef void (stop_waiter_thread_func) (struct multipath *, struct vectors *);
-typedef int (start_waiter_thread_func) (struct multipath *, struct vectors *);
-
 void set_no_path_retry(struct multipath *mpp);
 
 int adopt_paths (vector pathvec, struct multipath * mpp);
@@ -23,14 +20,13 @@ int update_mpp_paths(struct multipath * mpp, vector pathvec);
 int setup_multipath (struct vectors * vecs, struct multipath * mpp);
 int update_multipath_strings (struct multipath *mpp, vector pathvec);
 	
-void remove_map (struct multipath * mpp, struct vectors * vecs,
-		 stop_waiter_thread_func *stop_waiter, int purge_vec);
-void remove_maps (struct vectors * vecs,
-		  stop_waiter_thread_func *stop_waiter);
+void remove_map (struct multipath * mpp, struct vectors * vecs, int purge_vec);
+void remove_map_and_stop_waiter (struct multipath * mpp, struct vectors * vecs, int purge_vec);
+void remove_maps (struct vectors * vecs);
+void remove_maps_and_stop_waiters (struct vectors * vecs);
 
 struct multipath * add_map_without_path (struct vectors * vecs,
-				int minor, char * alias,
-				start_waiter_thread_func *start_waiter);
+				int minor, char * alias);
 struct multipath * add_map_with_path (struct vectors * vecs,
 				struct path * pp, int add_vec);
 int update_multipath (struct vectors *vecs, char *mapname);

@@ -165,7 +165,7 @@ int hds_modular_prio (const char *dev, int fd)
 	return -1;
 }
 
-int prio_hds(struct path * pp)
+int getprio (struct path * pp)
 {
 	return hds_modular_prio(pp->dev, pp->fd);
 }

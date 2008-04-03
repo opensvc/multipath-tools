@@ -95,7 +95,7 @@ out:
 	return(ret);
 }
 
-int prio_hp_sw(struct path * pp)
+int getprio (struct path * pp)
 {
 	return hp_sw_prio(pp->dev, pp->fd);
 }

@@ -2,28 +2,38 @@
 #
 # Copyright (C) 2007 Christophe Varoqui, <christophe.varoqui@free.fr>
 #
-BUILD = glibc
-
 include ../Makefile.inc
 
-OBJS = libprio.o random.o const.o hp_sw.o emc.o rdac.o alua.o alua_rtpg.o netapp.o hds.o
+LIBS = \
+	libprio.so \
+	libpriorandom.so \
+	libprioconst.so \
+	libpriohp_sw.so \
+	libprioemc.so \
+	libpriordac.so \
+	libprioalua.so \
+	libprionetapp.so \
+	libpriohds.so
 
 CFLAGS += -I$(multipathdir)
+SHARED_FLAGS += -shared -fPIC
 
-all: $(BUILD)
+all: $(LIBS)
 
-prepare:
-	@file *-$(BUILD).a >/dev/null 2>&1 || rm -f core *.o *.gz
+libprioalua.so: alua.o alua_rtpg.o
+	$(CC) $(SHARED_FLAGS) -o $@ $^
 
-klibc: prepare $(OBJS)
-	ar rs libprio-klibc.a *.o
+%.so: %.o
+	$(CC) $(SHARED_FLAGS) -o $@ $^
 
-glibc: prepare $(OBJS)
-	ar rs libprio-glibc.a *.o
+libprio%.so: %.o
+	$(CC) $(SHARED_FLAGS) -o $@ $^
 
-install:
+install: $(LIBS)
+	install -m 755 libprio*.so $(libdir)
 
 uninstall:
+	rm -f $(libdir)/libprio*.so
 
 clean:
-	rm -f core *.a *.o *.gz
+	rm -f core *.a *.o *.gz *.so

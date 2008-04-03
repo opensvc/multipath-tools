@@ -2,26 +2,23 @@
 #
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@free.fr>
 #
-BUILD = glibc
-
 include ../Makefile.inc
 
+LIBS = libcheckers.so
 OBJS = libsg.o checkers.o readsector0.o tur.o directio.o emc_clariion.o hp_sw.o rdac.o
 
-all: $(BUILD)
+SHARED_FLAGS = -shared
 
-prepare:
-	@file *-$(BUILD).a >/dev/null 2>&1 || rm -f core *.o *.gz
+all: $(LIBS)
 
-klibc: prepare $(OBJS)
-	ar rs libcheckers-klibc.a *.o
-
-glibc: prepare $(OBJS)
-	ar rs libcheckers-glibc.a *.o
+$(LIBS): $(OBJS)
+	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 install:
+	$(INSTALL_PROGRAM) -o root -g root -m 755 $(LIBS) $(libdir)
 
 uninstall:
+	rm -f $(libdir)/$(LIBS)
 
 clean:
-	rm -f core *.a *.o *.gz
+	rm -f core *.a *.o *.gz *.so

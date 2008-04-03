@@ -17,6 +17,7 @@
 #include <debug.h>
 
 #include "libprio.h"
+#include "alua.h"
 
 #define ALUA_PRIO_NOT_SUPPORTED			1
 #define ALUA_PRIO_RTPG_FAILED			2
@@ -56,7 +57,7 @@ get_alua_info(int fd)
 	return rc;
 }
 
-int prio_alua(struct path * pp)
+int getprio (struct path * pp)
 {
 	int rc = get_alua_info(pp->fd);
 	if (rc >= 0) {

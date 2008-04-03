@@ -13,12 +13,6 @@ ifeq ($(TOPDIR),)
 	TOPDIR	= ..
 endif
 
-ifeq ($(strip $(BUILD)),klibc)
-	CC = klcc
-	klibcdir = /usr/lib/klibc
-	libdm    = $(klibcdir)/lib/libdevmapper.a
-endif
-
 prefix      = 
 exec_prefix = $(prefix)
 bindir      = $(exec_prefix)/sbin
@@ -29,16 +23,12 @@ multipathdir = $(TOPDIR)/libmultipath
 mandir      = $(prefix)/usr/share/man/man8
 man5dir     = $(prefix)/usr/share/man/man5
 rcdir	    = $(prefix)/etc/init.d
+libdir	    = $(prefix)/lib/multipath
 
 GZIP        = /bin/gzip -9 -c
+INSTALL_PROGRAM = install
 
-CHECKERSLIB = $(checkersdir)/libcheckers
-MULTIPATHLIB = $(multipathdir)/libmultipath
-LIBPRIO = $(libpriodir)/libprio
-
-INSTALL_PROGRAM = install -s
-
-OPTFLAGS     = -pipe -g -Wall -Wunused -Wstrict-prototypes
+OPTFLAGS     = -pipe -g -Wall -Wunused -Wstrict-prototypes -fPIC
 CFLAGS	     = $(OPTFLAGS)
 
 %.o:	%.c

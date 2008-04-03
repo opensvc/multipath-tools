@@ -85,7 +85,7 @@ out:
 	return(ret);
 }
 
-int prio_rdac(struct path * pp)
+int getprio (struct path * pp)
 {
 	return rdac_prio(pp->dev, pp->fd);
 }

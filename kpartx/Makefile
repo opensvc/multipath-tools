@@ -2,49 +2,30 @@
 #
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@free.fr>
 #
-BUILD=glibc
-
 include ../Makefile.inc
 
 CFLAGS += -I. -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 
-ifeq ($(strip $(BUILD)),klibc)
-	OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o gpt.o crc32.o \
-	       lopart.o xstrncpy.o devmapper.o dasd.o mac.o sun.o \
-	       $(MULTIPATHLIB)-$(BUILD).a $(libdm)
-else
-	LDFLAGS = -ldevmapper
-	OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o dasd.o sun.o \
-	       gpt.o mac.o crc32.o lopart.o xstrncpy.o devmapper.o
-endif
-
+LDFLAGS = -ldevmapper
+OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o dasd.o sun.o \
+       gpt.o mac.o crc32.o lopart.o xstrncpy.o devmapper.o
 EXEC = kpartx
 
-all: $(BUILD)
+all: $(EXEC)
 
-prepare:
-	rm -f core *.o *.gz
-
-glibc: prepare $(OBJS)
+$(EXEC): $(OBJS)
 	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 	
-klibc: prepare $(OBJS)
-	$(CC) -static -o $(EXEC) $(CRT0) $(OBJS) $(KLIBC) $(LIBGCC)
-	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
-
-$(MULTIPATHLIB)-$(BUILD).a:
-	make -C $(multipathdir) BUILD=$(BUILD)
-
 install: $(EXEC) $(EXEC).8
-	install -d $(DESTDIR)$(bindir)
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)
-	install -d $(DESTDIR)$(libudevdir)
-	install -m 755 kpartx_id $(DESTDIR)$(libudevdir)
-	install -d $(DESTDIR)/etc/udev/rules.d
-	install -m 644 kpartx.rules $(DESTDIR)/etc/udev/rules.d/
-	install -d $(DESTDIR)$(mandir)
-	install -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(libudevdir)
+	$(INSTALL_PROGRAM) -m 755 kpartx_id $(DESTDIR)$(libudevdir)
+	$(INSTALL_PROGRAM) -d $(DESTDIR)/etc/udev/rules.d
+	$(INSTALL_PROGRAM) -m 644 kpartx.rules $(DESTDIR)/etc/udev/rules.d/
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)
+	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
 
 uninstall:
 	rm -f $(DESTDIR)$(bindir)/$(EXEC)

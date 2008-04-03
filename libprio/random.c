@@ -5,7 +5,7 @@
 
 #include "libprio.h"
 
-int prio_random(struct path * pp)
+int getprio (struct path * pp)
 {
 	struct timeval tv;
 	
