@@ -5,7 +5,6 @@
  * Copyright (c) 2005 Kiyoshi Ueda, NEC
  */
 #include <checkers.h>
-#include <libprio.h>
 
 #include "vector.h"
 #include "hwtable.h"
@@ -17,6 +16,7 @@
 #include "pgpolicies.h"
 #include "blacklist.h"
 #include "defaults.h"
+#include "prio.h"
 
 /*
  * default block handlers

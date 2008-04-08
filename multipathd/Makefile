@@ -5,11 +5,10 @@ include ../Makefile.inc
 #
 # basic flags setting
 #
-CFLAGS += -DDAEMON -I$(multipathdir) -I$(checkersdir) -I$(libpriodir)
+CFLAGS += -DDAEMON -I$(multipathdir) -I$(checkersdir)
 LDFLAGS += -lpthread -ldevmapper -lreadline -lncurses -laio \
 	   -lmultipath -L$(multipathdir) \
-	   -lcheckers -L$(checkersdir) \
-	   -lprio -L$(libpriodir)
+	   -lcheckers -L$(checkersdir)
 
 #
 # debuging stuff

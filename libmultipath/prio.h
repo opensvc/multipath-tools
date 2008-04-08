@@ -1,14 +1,14 @@
-#ifndef _LIBPRIO_H
-#define _LIBPRIO_H
+#ifndef _PRIO_H
+#define _PRIO_H
 
 /*
  * knowing about path struct gives flexibility to prioritizers
  */
 #include "../libcheckers/checkers.h"
-#include "../libmultipath/vector.h"
-#include "../libmultipath/structs.h"
-#include "../libmultipath/list.h"
-#include "../libmultipath/memory.h"
+#include "vector.h"
+#include "structs.h"
+#include "list.h"
+#include "memory.h"
 
 #define DEFAULT_PRIO "const"
 
@@ -48,4 +48,4 @@ int prio_getprio (struct prio *, struct path *);
 char * prio_name (struct prio *);
 struct prio * prio_default (void);
 
-#endif /* _LIBPRIO_H */
+#endif /* _PRIO_H */

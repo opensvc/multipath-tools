@@ -74,8 +74,7 @@
 
 #include <sg_include.h>
 #include <debug.h>
-
-#include "libprio.h"
+#include <prio.h>
 
 #define INQ_REPLY_LEN 255
 #define INQ_CMD_CODE 0x12

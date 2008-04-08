@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "libprio.h"
+#include <prio.h>
 
 int getprio (struct path * pp)
 {

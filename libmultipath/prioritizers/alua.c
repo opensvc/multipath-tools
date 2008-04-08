@@ -15,8 +15,8 @@
 #include <stdio.h>
 
 #include <debug.h>
+#include <prio.h>
 
-#include "libprio.h"
 #include "alua.h"
 
 #define ALUA_PRIO_NOT_SUPPORTED			1

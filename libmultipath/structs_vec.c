@@ -3,20 +3,20 @@
 #include <unistd.h>
 
 #include <checkers.h>
-#include <libprio.h>
 
 #include "vector.h"
 #include "defaults.h"
 #include "debug.h"
-#include "waiter.h"
 #include "structs.h"
 #include "structs_vec.h"
+#include "waiter.h"
 #include "devmapper.h"
 #include "dmparser.h"
 #include "config.h"
 #include "propsel.h"
 #include "sysfs.h"
 #include "discovery.h"
+#include "prio.h"
 
 /*
  * creates or updates mpp->paths reading mpp->pg

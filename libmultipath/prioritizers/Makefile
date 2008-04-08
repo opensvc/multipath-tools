@@ -2,10 +2,9 @@
 #
 # Copyright (C) 2007 Christophe Varoqui, <christophe.varoqui@free.fr>
 #
-include ../Makefile.inc
+include ../../Makefile.inc
 
 LIBS = \
-	libprio.so \
 	libpriorandom.so \
 	libprioconst.so \
 	libpriohp_sw.so \
@@ -15,14 +14,11 @@ LIBS = \
 	libprionetapp.so \
 	libpriohds.so
 
-CFLAGS += -I$(multipathdir)
+CFLAGS += -I..
 
 all: $(LIBS)
 
 libprioalua.so: alua.o alua_rtpg.o
-	$(CC) $(SHARED_FLAGS) -o $@ $^
-
-%.so: %.o
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 libprio%.so: %.o

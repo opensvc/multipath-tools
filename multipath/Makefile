@@ -6,11 +6,10 @@ include ../Makefile.inc
 
 OBJS = main.o
 
-CFLAGS += -I$(multipathdir) -I$(checkersdir) -I$(libpriodir)
+CFLAGS += -I$(multipathdir) -I$(checkersdir)
 LDFLAGS += -laio -ldevmapper -lpthread \
 	   -lmultipath -L$(multipathdir) \
 	   -lcheckers -L$(checkersdir) \
-	   -lprio -L$(libpriodir) \
 
 EXEC = multipath
 

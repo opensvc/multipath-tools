@@ -19,7 +19,6 @@
  * libcheckers
  */
 #include <checkers.h>
-#include <libprio.h>
 
 /*
  * libmultipath
@@ -46,6 +45,7 @@
 #include <switchgroup.h>
 #include <print.h>
 #include <configure.h>
+#include <prio.h>
 
 #include "main.h"
 #include "pidfile.h"

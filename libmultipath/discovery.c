@@ -12,7 +12,6 @@
 #include <errno.h>
 
 #include <checkers.h>
-#include <libprio.h>
 
 #include "vector.h"
 #include "memory.h"
@@ -26,6 +25,7 @@
 #include "sg_include.h"
 #include "sysfs.h"
 #include "discovery.h"
+#include "prio.h"
 
 struct path *
 store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag)

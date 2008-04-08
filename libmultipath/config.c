@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include <checkers.h>
-#include <libprio.h>
 
 #include "memory.h"
 #include "util.h"
@@ -20,6 +19,7 @@
 #include "config.h"
 #include "blacklist.h"
 #include "defaults.h"
+#include "prio.h"
 
 static struct hwentry *
 find_hwe_strmatch (vector hwtable, char * vendor, char * product, char * revision)

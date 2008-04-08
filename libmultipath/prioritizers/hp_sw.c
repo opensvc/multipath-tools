@@ -14,8 +14,7 @@
 
 #include <sg_include.h>
 #include <debug.h>
-
-#include "libprio.h"
+#include <prio.h>
 
 #define TUR_CMD_LEN		6
 #define SCSI_CHECK_CONDITION	0x2

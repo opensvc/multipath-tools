@@ -15,7 +15,6 @@
 #include <libdevmapper.h>
 
 #include <checkers.h>
-#include <libprio.h>
 
 #include "vector.h"
 #include "memory.h"
@@ -35,6 +34,7 @@
 #include "pgpolicies.h"
 #include "dict.h"
 #include "alias.h"
+#include "prio.h"
 
 extern int
 setup_map (struct multipath * mpp)

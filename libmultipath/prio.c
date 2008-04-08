@@ -3,8 +3,8 @@
 #include <stddef.h>
 #include <dlfcn.h>
 
-#include <debug.h>
-#include "libprio.h"
+#include "debug.h"
+#include "prio.h"
 
 static LIST_HEAD(prioritizers);
 

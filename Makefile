@@ -21,8 +21,8 @@ export KRNLOBJ
 
 BUILDDIRS = \
 	libmultipath \
+	libmultipath/prioritizers \
 	libcheckers \
-	libprio \
 	multipath \
 	multipathd \
 	devmap_name \
