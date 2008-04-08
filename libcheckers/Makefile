@@ -7,8 +7,6 @@ include ../Makefile.inc
 LIBS = libcheckers.so
 OBJS = libsg.o checkers.o readsector0.o tur.o directio.o emc_clariion.o hp_sw.o rdac.o
 
-SHARED_FLAGS = -shared
-
 all: $(LIBS)
 
 $(LIBS): $(OBJS)

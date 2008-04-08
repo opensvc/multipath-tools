@@ -30,6 +30,7 @@ INSTALL_PROGRAM = install
 
 OPTFLAGS     = -pipe -g -Wall -Wunused -Wstrict-prototypes -fPIC
 CFLAGS	     = $(OPTFLAGS)
+SHARED_FLAGS = -shared
 
 %.o:	%.c
 	$(CC) $(CFLAGS) -c -o $@ $<

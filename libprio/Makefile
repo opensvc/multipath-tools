@@ -16,7 +16,6 @@ LIBS = \
 	libpriohds.so
 
 CFLAGS += -I$(multipathdir)
-SHARED_FLAGS += -shared -fPIC
 
 all: $(LIBS)
 

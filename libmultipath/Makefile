@@ -6,7 +6,6 @@ include ../Makefile.inc
 
 LIBS = libmultipath.so
 CFLAGS += -I$(checkersdir) -I$(libpriodir)
-SHARED_FLAGS += -shared
 
 OBJS = memory.o parser.o vector.o devmapper.o callout.o \
        hwtable.o blacklist.o util.o dmparser.o config.o \
