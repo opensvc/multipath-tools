@@ -114,7 +114,6 @@ set_multipath_wwid (struct multipath * mpp)
 
 #define KEEP_WAITER 0
 #define STOP_WAITER 1
-#define KEEP_VEC 1
 #define PURGE_VEC 1
 
 static void
