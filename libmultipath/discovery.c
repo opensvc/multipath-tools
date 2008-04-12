@@ -11,8 +11,7 @@
 #include <dirent.h>
 #include <errno.h>
 
-#include <checkers.h>
-
+#include "checkers.h"
 #include "vector.h"
 #include "memory.h"
 #include "util.h"

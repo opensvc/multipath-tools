@@ -34,12 +34,12 @@ struct sw_checker_context {
 	void * dummy;
 };
 
-int hp_sw_init (struct checker * c)
+int libcheck_init (struct checker * c)
 {
 	return 0;
 }
 
-void hp_sw_free (struct checker * c)
+void libcheck_free (struct checker * c)
 {
 	return;
 }
@@ -123,7 +123,7 @@ do_tur (int fd)
 }
 
 extern int
-hp_sw (struct checker * c)
+libcheck_check (struct checker * c)
 {
 	char buff[MX_ALLOC_LEN];
 

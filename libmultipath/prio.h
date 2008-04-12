@@ -4,7 +4,7 @@
 /*
  * knowing about path struct gives flexibility to prioritizers
  */
-#include "../libcheckers/checkers.h"
+#include "checkers.h"
 #include "vector.h"
 #include "structs.h"
 #include "list.h"

@@ -4,8 +4,7 @@
  * Copyright (c) 2005 Benjamin Marzinski, Redhat
  * Copyright (c) 2005 Kiyoshi Ueda, NEC
  */
-#include <checkers.h>
-
+#include "checkers.h"
 #include "vector.h"
 #include "hwtable.h"
 #include "structs.h"

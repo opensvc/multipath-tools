@@ -13,18 +13,17 @@ struct readsector0_checker_context {
 	void * dummy;
 };
 
-int readsector0_init (struct checker * c)
+int libcheck_init (struct checker * c)
 {
 	return 0;
 }
 
-void readsector0_free (struct checker * c)
+void libcheck_free (struct checker * c)
 {
 	return;
 }
 
-extern int
-readsector0 (struct checker * c)
+int libcheck_check (struct checker * c)
 {
 	unsigned char buf[4096];
 	unsigned char sbuf[SENSE_BUFF_LEN];

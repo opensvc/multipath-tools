@@ -2,8 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <checkers.h>
-
+#include "checkers.h"
 #include "vector.h"
 #include "defaults.h"
 #include "debug.h"

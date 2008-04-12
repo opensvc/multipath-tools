@@ -37,7 +37,7 @@ struct directio_context {
 };
 
 
-int directio_init (struct checker * c)
+int libcheck_init (struct checker * c)
 {
 	unsigned long pgsize = getpagesize();
 	struct directio_context * ct;
@@ -95,7 +95,7 @@ out:
 	return 1;
 }
 
-void directio_free (struct checker * c)
+void libcheck_free (struct checker * c)
 {
 	struct directio_context * ct = (struct directio_context *)c->context;
 	long flags;
@@ -166,7 +166,7 @@ check_state(int fd, struct directio_context *ct, int sync)
 	return rc;
 }
 
-int directio (struct checker * c)
+int libcheck_check (struct checker * c)
 {
 	int ret;
 	struct directio_context * ct = (struct directio_context *)c->context;

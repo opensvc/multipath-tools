@@ -27,18 +27,18 @@ struct tur_checker_context {
 	void * dummy;
 };
 
-int tur_init (struct checker * c)
+int libcheck_init (struct checker * c)
 {
 	return 0;
 }
 
-void tur_free (struct checker * c)
+void libcheck_free (struct checker * c)
 {
 	return;
 }
 
 extern int
-tur (struct checker * c)
+libcheck_check (struct checker * c)
 {
 	struct sg_io_hdr io_hdr;
         unsigned char turCmdBlk[TUR_CMD_LEN] = { 0x00, 0, 0, 0, 0, 0 };

@@ -6,17 +6,16 @@ include ../Makefile.inc
 
 OBJS = main.o
 
-CFLAGS += -I$(multipathdir) -I$(checkersdir)
+CFLAGS += -I$(multipathdir) -Wl,-rpath,$(libdir)
 LDFLAGS += -laio -ldevmapper -lpthread \
-	   -lmultipath -L$(multipathdir) \
-	   -lcheckers -L$(checkersdir) \
+	   -lmultipath -L$(multipathdir)
 
 EXEC = multipath
 
 all: $(EXEC)
 
 $(EXEC): $(OBJS)
-	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(OBJS) -o $(EXEC) $(LDFLAGS)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 	$(GZIP) $(EXEC).conf.5 > $(EXEC).conf.5.gz
 

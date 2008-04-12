@@ -62,7 +62,7 @@ hexadecimal_to_ascii(char * wwn, char *wwnstr)
 	wwnstr[32]=0;
 }
 
-int emc_clariion_init (struct checker * c)
+int libcheck_init (struct checker * c)
 {
 	/*
 	 * Allocate and initialize the path specific context.
@@ -84,12 +84,12 @@ int emc_clariion_init (struct checker * c)
 	return 0;
 }
 
-void emc_clariion_free (struct checker * c)
+void libcheck_free (struct checker * c)
 {
 	free(c->context);
 }
 
-int emc_clariion(struct checker * c)
+int libcheck_check (struct checker * c)
 {
 	unsigned char sense_buffer[128] = { 0, };
 	unsigned char sb[SENSE_BUFF_LEN] = { 0, }, *sbb;

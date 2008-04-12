@@ -2,8 +2,8 @@
  * Copyright (c) 2004, 2005 Christophe Varoqui
  */
 #include <stdio.h>
-#include <checkers.h>
 
+#include "checkers.h"
 #include "memory.h"
 #include "vector.h"
 #include "util.h"

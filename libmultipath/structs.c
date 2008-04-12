@@ -6,8 +6,7 @@
 #include <unistd.h>
 #include <libdevmapper.h>
 
-#include <checkers.h>
-
+#include "checkers.h"
 #include "memory.h"
 #include "vector.h"
 #include "util.h"

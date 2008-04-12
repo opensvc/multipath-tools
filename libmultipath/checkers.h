@@ -1,6 +1,9 @@
 #ifndef _CHECKERS_H
 #define _CHECKERS_H
 
+#include "list.h"
+#include "memory.h"
+
 /*
  *
  * Userspace (multipath/multipathd) path states
@@ -83,8 +86,10 @@
 #define CHECKER_NAME_LEN 16
 #define CHECKER_MSG_LEN 256
 #define CHECKER_DEV_LEN 256
+#define LIB_CHECKER_NAMELEN 256
 
 struct checker {
+	struct list_head node;
 	int fd;
 	int sync;
 	int disable;
@@ -100,6 +105,9 @@ struct checker {
 
 #define MSG(c, fmt, args...) snprintf((c)->message, CHECKER_MSG_LEN, fmt, ##args);
 
+int init_checkers (void);
+struct checker * add_checker (char *);
+struct checker * checker_lookup (char *);
 int checker_init (struct checker *, void **);
 void checker_put (struct checker *);
 void checker_reset (struct checker *);

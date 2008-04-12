@@ -6,8 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <checkers.h>
-
+#include "checkers.h"
 #include "memory.h"
 #include "util.h"
 #include "debug.h"

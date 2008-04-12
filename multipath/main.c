@@ -324,6 +324,10 @@ main (int argc, char *argv[])
 	if (dm_prereq(DEFAULT_TARGET))
 		exit(1);
 
+	if (init_checkers()) {
+		condlog(0, "failed to initialize checkers");
+		exit(1);
+	}
 	if (init_prio()) {
 		condlog(0, "failed to initialize prioritizers");
 		exit(1);

@@ -1272,6 +1272,10 @@ child (void * param)
 	condlog(2, "--------start up--------");
 	condlog(2, "read " DEFAULT_CONFIGFILE);
 
+	if (init_checkers()) {
+		condlog(0, "failed to initialize checkers");
+		exit(1);
+	}
 	if (init_prio()) {
 		condlog(0, "failed to initialize prioritizers");
 		exit(1);

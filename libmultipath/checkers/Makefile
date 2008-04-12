@@ -2,14 +2,21 @@
 #
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@free.fr>
 #
-include ../Makefile.inc
+include ../../Makefile.inc
 
-LIBS = libcheckers.so
-OBJS = libsg.o checkers.o readsector0.o tur.o directio.o emc_clariion.o hp_sw.o rdac.o
+LIBS= \
+	libcheckreadsector0.so \
+	libchecktur.so \
+	libcheckdirectio.so \
+	libcheckemc_clariion.so \
+	libcheckhp_sw.so \
+	libcheckrdac.so
+
+CFLAGS += -I..
 
 all: $(LIBS)
 
-$(LIBS): $(OBJS)
+libcheck%.so: libsg.o %.o
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 install:

@@ -32,12 +32,12 @@ struct rdac_checker_context {
 	void * dummy;
 };
 
-int rdac_init (struct checker * c)
+int libcheck_init (struct checker * c)
 {
 	return 0;
 }
 
-void rdac_free (struct checker * c)
+void libcheck_free (struct checker * c)
 {
 	return;
 }
@@ -96,7 +96,7 @@ struct volume_access_inq
 };
 
 extern int
-rdac(struct checker * c)
+libcheck_check (struct checker * c)
 {
 	struct volume_access_inq inq;
 
