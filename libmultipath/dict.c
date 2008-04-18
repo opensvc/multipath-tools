@@ -4,9 +4,7 @@
  * Copyright (c) 2005 Benjamin Marzinski, Redhat
  * Copyright (c) 2005 Kiyoshi Ueda, NEC
  */
-#include <checkers.h>
-#include <libprio.h>
-
+#include "checkers.h"
 #include "vector.h"
 #include "hwtable.h"
 #include "structs.h"
@@ -17,6 +15,7 @@
 #include "pgpolicies.h"
 #include "blacklist.h"
 #include "defaults.h"
+#include "prio.h"
 
 /*
  * default block handlers
@@ -1545,6 +1544,7 @@ init_keywords(void)
 	install_keyword("prio", &def_prio_handler, &snprint_def_prio);
 	install_keyword("features", &def_features_handler, &snprint_def_features);
 	install_keyword("path_checker", &def_path_checker_handler, &snprint_def_path_checker);
+	install_keyword("checker", &def_path_checker_handler, &snprint_def_path_checker);
 	install_keyword("failback", &default_failback_handler, &snprint_def_failback);
 	install_keyword("rr_min_io", &def_minio_handler, &snprint_def_rr_min_io);
 	install_keyword("max_fds", &max_fds_handler, &snprint_max_fds);
@@ -1596,6 +1596,7 @@ init_keywords(void)
 	install_keyword("getuid_callout", &hw_getuid_callout_handler, &snprint_hw_getuid_callout);
 	install_keyword("path_selector", &hw_selector_handler, &snprint_hw_selector);
 	install_keyword("path_checker", &hw_path_checker_handler, &snprint_hw_path_checker);
+	install_keyword("checker", &hw_path_checker_handler, &snprint_hw_path_checker);
 	install_keyword("features", &hw_features_handler, &snprint_hw_features);
 	install_keyword("hardware_handler", &hw_handler_handler, &snprint_hw_hardware_handler);
 	install_keyword("prio", &hw_prio_handler, &snprint_hw_prio);

@@ -45,6 +45,7 @@
 #include <switchgroup.h>
 #include <print.h>
 #include <configure.h>
+#include <prio.h>
 
 #include "main.h"
 #include "pidfile.h"
@@ -199,7 +200,7 @@ flush_map(struct multipath * mpp, struct vectors * vecs)
 	}
 
 	orphan_paths(vecs->pathvec, mpp);
-	remove_map(mpp, vecs, stop_waiter_thread, 1);
+	remove_map_and_stop_waiter(mpp, vecs, 1);
 
 	return 0;
 }
@@ -255,8 +256,7 @@ ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
 	/*
 	 * now we can register the map
 	 */
-	if (map_present && (mpp = add_map_without_path(vecs, minor, alias,
-					start_waiter_thread))) {
+	if (map_present && (mpp = add_map_without_path(vecs, minor, alias))) {
 		sync_map_state(mpp);
 		condlog(3, "%s: devmap %s added", alias, dev->kernel);
 		return 0;
@@ -437,7 +437,7 @@ rescan:
 	return 0;
 
 out:
-	remove_map(mpp, vecs, NULL, 1);
+	remove_map(mpp, vecs, 1);
 	return 1;
 }
 
@@ -563,7 +563,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 	return 0;
 
 out:
-	remove_map(mpp, vecs, stop_waiter_thread, 1);
+	remove_map_and_stop_waiter(mpp, vecs, 1);
 	return 1;
 }
 
@@ -811,7 +811,7 @@ mpvec_garbage_collector (struct vectors * vecs)
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		if (mpp && mpp->alias && !dm_map_present(mpp->alias)) {
 			condlog(2, "%s: remove dead map", mpp->alias);
-			remove_map(mpp, vecs, stop_waiter_thread, 1);
+			remove_map_and_stop_waiter(mpp, vecs, 1);
 			i--;
 		}
 	}
@@ -1095,7 +1095,7 @@ configure (struct vectors * vecs, int start_waiters)
 	/*
 	 * purge dm of old maps
 	 */
-	remove_maps(vecs, NULL);
+	remove_maps(vecs);
 
 	/*
 	 * save new set of maps formed by considering current path state
@@ -1125,7 +1125,7 @@ reconfigure (struct vectors * vecs)
 	 * free old map and path vectors ... they use old conf state
 	 */
 	if (VECTOR_SIZE(vecs->mpvec))
-		remove_maps(vecs, stop_waiter_thread);
+		remove_maps_and_stop_waiters(vecs);
 
 	if (VECTOR_SIZE(vecs->pathvec))
 		free_pathvec(vecs->pathvec, FREE_PATHS);
@@ -1272,6 +1272,14 @@ child (void * param)
 	condlog(2, "--------start up--------");
 	condlog(2, "read " DEFAULT_CONFIGFILE);
 
+	if (init_checkers()) {
+		condlog(0, "failed to initialize checkers");
+		exit(1);
+	}
+	if (init_prio()) {
+		condlog(0, "failed to initialize prioritizers");
+		exit(1);
+	}
 	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
 
@@ -1344,7 +1352,7 @@ child (void * param)
 	 * exit path
 	 */
 	lock(vecs->lock);
-	remove_maps(vecs, stop_waiter_thread);
+	remove_maps_and_stop_waiters(vecs);
 	free_pathvec(vecs->pathvec, FREE_PATHS);
 
 	pthread_cancel(check_thr);

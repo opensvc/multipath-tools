@@ -2,21 +2,20 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <checkers.h>
-#include <libprio.h>
-
+#include "checkers.h"
 #include "vector.h"
 #include "defaults.h"
 #include "debug.h"
 #include "structs.h"
 #include "structs_vec.h"
+#include "waiter.h"
 #include "devmapper.h"
 #include "dmparser.h"
 #include "config.h"
 #include "propsel.h"
 #include "sysfs.h"
 #include "discovery.h"
-#include "waiter.h"
+#include "prio.h"
 
 /*
  * creates or updates mpp->paths reading mpp->pg
@@ -112,9 +111,13 @@ set_multipath_wwid (struct multipath * mpp)
 	dm_get_uuid(mpp->alias, mpp->wwid);
 }
 
-extern void
-remove_map (struct multipath * mpp, struct vectors * vecs,
-	    stop_waiter_thread_func *stop_waiter, int purge_vec)
+#define KEEP_WAITER 0
+#define STOP_WAITER 1
+#define PURGE_VEC 1
+
+static void
+_remove_map (struct multipath * mpp, struct vectors * vecs,
+	    int stop_waiter, int purge_vec)
 {
 	int i;
 
@@ -124,7 +127,7 @@ remove_map (struct multipath * mpp, struct vectors * vecs,
 	 * stop the DM event waiter thread
 	 */
 	if (stop_waiter)
-		stop_waiter(mpp, vecs);
+		stop_waiter_thread(mpp, vecs);
 
 	/*
 	 * clear references to this map
@@ -142,19 +145,43 @@ remove_map (struct multipath * mpp, struct vectors * vecs,
 }
 
 extern void
-remove_maps (struct vectors * vecs,
-	     stop_waiter_thread_func *stop_waiter)
+remove_map (struct multipath * mpp, struct vectors * vecs, int purge_vec)
+{
+	_remove_map(mpp, vecs, KEEP_WAITER, purge_vec);
+}
+
+extern void
+remove_map_and_stop_waiter (struct multipath * mpp, struct vectors * vecs,
+			    int purge_vec)
+{
+	_remove_map(mpp, vecs, STOP_WAITER, purge_vec);
+}
+
+static void
+_remove_maps (struct vectors * vecs, int stop_waiter)
 {
 	int i;
 	struct multipath * mpp;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
-		remove_map(mpp, vecs, stop_waiter, 1);
+		_remove_map(mpp, vecs, stop_waiter, 1);
 		i--;
 	}
 
 	vector_free(vecs->mpvec);
 	vecs->mpvec = NULL;
+}
+
+extern void
+remove_maps (struct vectors * vecs)
+{
+	_remove_maps(vecs, KEEP_WAITER);
+}
+
+extern void
+remove_maps_and_stop_waiters (struct vectors * vecs)
+{
+	_remove_maps(vecs, STOP_WAITER);
 }
 
 static struct hwentry *
@@ -294,14 +321,13 @@ retry:
 
 	return 0;
 out:
-	remove_map(mpp, vecs, NULL, 1);
+	remove_map(mpp, vecs, PURGE_VEC);
 	return 1;
 }
 
 extern struct multipath *
 add_map_without_path (struct vectors * vecs,
-		      int minor, char * alias,
-		      start_waiter_thread_func *start_waiter)
+		      int minor, char * alias)
 {
 	struct multipath * mpp = alloc_multipath();
 
@@ -321,12 +347,12 @@ add_map_without_path (struct vectors * vecs,
 
 	vector_set_slot(vecs->mpvec, mpp);
 
-	if (start_waiter(mpp, vecs))
+	if (start_waiter_thread(mpp, vecs))
 		goto out;
 
 	return mpp;
 out:
-	remove_map(mpp, vecs, NULL, 1);
+	remove_map(mpp, vecs, PURGE_VEC);
 	return NULL;
 }
 
@@ -359,7 +385,7 @@ add_map_with_path (struct vectors * vecs,
 	return mpp;
 
 out:
-	remove_map(mpp, vecs, NULL, add_vec);
+	remove_map(mpp, vecs, PURGE_VEC);
 	return NULL;
 }
 

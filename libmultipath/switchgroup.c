@@ -2,8 +2,7 @@
  * Copyright (c) 2005 Christophe Varoqui
  * Copyright (c) 2005 Edward Goggin, EMC
  */
-#include <checkers.h>
-
+#include "checkers.h"
 #include "vector.h"
 #include "structs.h"
 #include "switchgroup.h"

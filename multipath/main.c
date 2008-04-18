@@ -27,7 +27,7 @@
 #include <ctype.h>
 
 #include <checkers.h>
-#include <libprio.h>
+#include <prio.h>
 #include <vector.h>
 #include <memory.h>
 #include <libdevmapper.h>
@@ -324,6 +324,14 @@ main (int argc, char *argv[])
 	if (dm_prereq(DEFAULT_TARGET))
 		exit(1);
 
+	if (init_checkers()) {
+		condlog(0, "failed to initialize checkers");
+		exit(1);
+	}
+	if (init_prio()) {
+		condlog(0, "failed to initialize prioritizers");
+		exit(1);
+	}
 	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
 

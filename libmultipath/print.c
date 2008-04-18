@@ -8,8 +8,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#include <checkers.h>
-
+#include "checkers.h"
 #include "vector.h"
 #include "structs.h"
 #include "structs_vec.h"

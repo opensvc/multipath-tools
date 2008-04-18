@@ -5,9 +5,7 @@
  */
 #include <stdio.h>
 
-#include <checkers.h>
-#include <libprio.h>
-
+#include "checkers.h"
 #include "memory.h"
 #include "vector.h"
 #include "structs.h"
@@ -17,6 +15,7 @@
 #include "alias.h"
 #include "defaults.h"
 #include "devmapper.h"
+#include "prio.h"
 
 pgpolicyfn *pgpolicies[] = {
 	NULL,

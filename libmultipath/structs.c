@@ -6,9 +6,7 @@
 #include <unistd.h>
 #include <libdevmapper.h>
 
-#include <checkers.h>
-#include <libprio.h>
-
+#include "checkers.h"
 #include "memory.h"
 #include "vector.h"
 #include "util.h"
@@ -18,6 +16,7 @@
 #include "structs_vec.h"
 #include "blacklist.h"
 #include "waiter.h"
+#include "prio.h"
 
 struct path *
 alloc_path (void)

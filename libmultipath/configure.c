@@ -14,9 +14,7 @@
 #include <errno.h>
 #include <libdevmapper.h>
 
-#include <checkers.h>
-#include <libprio.h>
-
+#include "checkers.h"
 #include "vector.h"
 #include "memory.h"
 #include "devmapper.h"
@@ -35,6 +33,7 @@
 #include "pgpolicies.h"
 #include "dict.h"
 #include "alias.h"
+#include "prio.h"
 
 extern int
 setup_map (struct multipath * mpp)
@@ -453,7 +452,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 
 		if (!mpp->paths) {
 			condlog(0, "%s: skip coalesce (no paths)", mpp->alias);
-			remove_map(mpp, vecs, NULL, 0);
+			remove_map(mpp, vecs, 0);
 			continue;
 		}
 		
@@ -481,7 +480,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 		verify_paths(mpp, vecs, NULL);
 		
 		if (setup_map(mpp)) {
-			remove_map(mpp, vecs, NULL, 0);
+			remove_map(mpp, vecs, 0);
 			continue;
 		}
 
@@ -495,7 +494,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 				   "for create/reload map",
 				mpp->alias, r);
 			if (r == DOMAP_FAIL) {
-				remove_map(mpp, vecs, NULL, 0);
+				remove_map(mpp, vecs, 0);
 				continue;
 			} else /* if (r == DOMAP_RETRY) */
 				return r;
@@ -523,7 +522,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 				vector_set_slot(newmp, mpp);
 			}
 			else
-				remove_map(mpp, vecs, NULL, 0);
+				remove_map(mpp, vecs, 0);
 		}
 	}
 	/*
@@ -543,7 +542,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 			if ((j = find_slot(newmp, (void *)mpp)) != -1)
 				vector_del_slot(newmp, j);
 
-			remove_map(mpp, vecs, NULL, 0);
+			remove_map(mpp, vecs, 0);
 
 			if (dm_flush_map(mpp->alias, DEFAULT_TARGET))
 				condlog(2, "%s: remove failed (dead)",

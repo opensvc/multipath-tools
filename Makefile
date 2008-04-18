@@ -1,8 +1,7 @@
 # Makefile
 #
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@free.fr>
-
-BUILD = glibc
+#
 
 #
 # Try to supply the linux kernel headers.
@@ -20,7 +19,14 @@ endif
 export KRNLSRC
 export KRNLOBJ
 
-BUILDDIRS = $(shell find . -mindepth 2 -name Makefile -exec dirname {} \; | grep -vE '^lib|/\.')
+BUILDDIRS = \
+	libmultipath \
+	libmultipath/prioritizers \
+	libmultipath/checkers \
+	multipath \
+	multipathd \
+	devmap_name \
+	kpartx
 
 ifeq   ($(MULTIPATH_VERSION),)
 VERSION = $(shell basename ${PWD} | cut -d'-' -f3)

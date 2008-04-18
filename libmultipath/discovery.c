@@ -11,9 +11,7 @@
 #include <dirent.h>
 #include <errno.h>
 
-#include <checkers.h>
-#include <libprio.h>
-
+#include "checkers.h"
 #include "vector.h"
 #include "memory.h"
 #include "util.h"
@@ -26,6 +24,7 @@
 #include "sg_include.h"
 #include "sysfs.h"
 #include "discovery.h"
+#include "prio.h"
 
 struct path *
 store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag)
@@ -549,6 +548,9 @@ sysfs_pathinfo(struct path * pp)
 	parent = sysfs_device_get_parent(pp->sysdev);
 	if (!parent)
 		parent = pp->sysdev;
+
+	if (!strncmp(parent->kernel, "block",5))
+		parent = sysfs_device_get_parent(parent);
 
 	condlog(3, "%s: subsystem = %s", pp->dev, parent->subsystem);
 

@@ -1,13 +1,12 @@
 #include <stdio.h>
 
-#include <checkers.h>
-#include <libprio.h>
-
+#include "checkers.h"
 #include "vector.h"
 #include "defaults.h"
 #include "structs.h"
 #include "config.h"
 #include "pgpolicies.h"
+#include "prio.h"
 
 /*
  * Tuning suggestions on these parameters should go to
@@ -655,6 +654,7 @@ setup_default_hwtable (vector hw)
 
 	while (hwe->vendor) {
 		hwe->checker = checker_lookup(hwe->checker_name);
+		hwe->prio = prio_lookup(hwe->prio_name);
 		r += store_hwe(hw, hwe);
 		hwe++;
 	}
