@@ -72,10 +72,21 @@ retry:
 	    (0 == io_hdr.driver_status)) {
 		return PATH_UP;
 	} else {
+		int key = 0;
+
+		if (io_hdr.sb_len_wr > 3) {
+			if (sbb[0] == 0x72 || sbb[0] == 0x73)
+				key = sbb[1] & 0x0f;
+			else if (io_hdr.sb_len_wr > 13 &&
+				 ((sbb[0] & 0x7f) == 0x70 ||
+				  (sbb[0] & 0x7f) == 0x71))
+				key = sbb[2] & 0x0f;
+		}
+
 		/*
 		 * Retry if UNIT_ATTENTION check condition.
 		 */
-		if ((sbb[2]&0xf) == 6) {
+		if (key == 0x6) {
 			if (--retry_count)
 				goto retry;
 		}
