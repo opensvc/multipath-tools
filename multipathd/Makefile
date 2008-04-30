@@ -5,7 +5,7 @@ include ../Makefile.inc
 #
 # basic flags setting
 #
-CFLAGS += -DDAEMON -I$(multipathdir) -Wl,-rpath,$(libdir)
+CFLAGS += -I$(multipathdir) -Wl,-rpath,$(libdir)
 LDFLAGS += -lpthread -ldevmapper -lreadline -lncurses -laio \
 	   -lmultipath -L$(multipathdir)
 

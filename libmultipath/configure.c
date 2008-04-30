@@ -367,19 +367,21 @@ domap (struct multipath * mpp)
 		 * DM_DEVICE_CREATE, DM_DEVICE_RENAME, or DM_DEVICE_RELOAD
 		 * succeeded
 		 */
-#ifndef DAEMON
-		dm_switchgroup(mpp->alias, mpp->bestpg);
-		if (mpp->action != ACT_NOTHING)
-			print_multipath_topology(mpp, conf->verbosity);
-#else
-		mpp->stat_map_loads++;
-		condlog(2, "%s: load table [0 %llu %s %s]", mpp->alias,
-                        mpp->size, DEFAULT_TARGET, mpp->params);
-		/*
-		 * Required action is over, reset for the stateful daemon
-		 */
-		mpp->action = ACT_NOTHING;
-#endif
+		if (!mpp->waiter) {
+			/* multipath client mode */
+			dm_switchgroup(mpp->alias, mpp->bestpg);
+			if (mpp->action != ACT_NOTHING)
+				print_multipath_topology(mpp, conf->verbosity);
+		} else  {
+			/* multipath daemon mode */
+			mpp->stat_map_loads++;
+			condlog(2, "%s: load table [0 %llu %s %s]", mpp->alias,
+				mpp->size, DEFAULT_TARGET, mpp->params);
+			/*
+			 * Required action is over, reset for the stateful daemon
+			 */
+			mpp->action = ACT_NOTHING;
+		}
 		return DOMAP_OK;
 	}
 	return DOMAP_FAIL;

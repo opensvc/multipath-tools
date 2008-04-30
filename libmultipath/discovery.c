@@ -716,10 +716,6 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	if (mask & DI_WWID && !strlen(pp->wwid))
 		get_uid(pp);
 
-#ifndef DAEMON
-	close(pp->fd);
-	pp->fd = -1;
-#endif
 	return 0;
 
 blank:
@@ -728,11 +724,6 @@ blank:
 	 */
 	memset(pp->wwid, 0, WWID_SIZE);
 	pp->state = PATH_DOWN;
-#ifndef DAEMON
-	if (pp->fd > 0){
-		close(pp->fd);
-		pp->fd = -1;
-	}
-#endif
+
 	return 0;
 }

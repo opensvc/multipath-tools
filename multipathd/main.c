@@ -65,6 +65,8 @@
 pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+int logsink;
+
 /*
  * global copy of vecs for use in sig handlers
  */

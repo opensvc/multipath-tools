@@ -49,6 +49,8 @@
 #include <pgpolicies.h>
 #include <version.h>
 
+int logsink;
+
 static int
 filter_pathvec (vector pathvec, char * refwwid)
 {

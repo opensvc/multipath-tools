@@ -170,14 +170,12 @@ free_multipath (struct multipath * mpp, int free_paths)
 
 	if (mpp->dmi)
 		FREE(mpp->dmi);
-	
-#if DAEMON
+
 	/*
 	 * better own vecs->lock here
 	 */
 	if (mpp->waiter)
 		((struct event_thread *)mpp->waiter)->mpp = NULL;
-#endif
 
 	free_pathvec(mpp->paths, free_paths);
 	free_pgvec(mpp->pg, free_paths);
