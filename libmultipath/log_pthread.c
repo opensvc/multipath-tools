@@ -15,9 +15,7 @@
 void log_safe (int prio, const char * fmt, va_list ap)
 {
 	pthread_mutex_lock(logq_lock);
-	//va_start(ap, fmt);
 	log_enqueue(prio, fmt, ap);
-	va_end(ap);
 	pthread_mutex_unlock(logq_lock);
 
 	pthread_mutex_lock(logev_lock);
