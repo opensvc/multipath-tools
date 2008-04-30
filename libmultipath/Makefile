@@ -11,14 +11,10 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
        structs.o discovery.o propsel.o dict.o \
        pgpolicies.o debug.o regex.o defaults.o uevent.o \
        switchgroup.o uxsock.o print.o alias.o log_pthread.o \
-       log.o configure.o structs_vec.o sysfs.o prio.o checkers.o
+       log.o configure.o structs_vec.o sysfs.o prio.o checkers.o \
+       lock.o waiter.o
 
-#ifeq ($(strip $(DAEMON)),1)
-	OBJS += lock.o waiter.o
-	CFLAGS += -DDAEMON
-#endif
-
-LIBDM_API_FLUSH = $(shell objdump -T /lib/libdevmapper.so.* | grep -c dm_task_no_flush)
+LIBDM_API_FLUSH = $(shell if test -d /lib64 ; then objdump -T /lib64/libdevmapper.so* ; else objdump -T /lib/libdevmapper.so.* ; fi | grep -c dm_task_no_flush)
 
 ifeq ($(strip $(LIBDM_API_FLUSH)),1)
 	CFLAGS += -DLIBDM_API_FLUSH

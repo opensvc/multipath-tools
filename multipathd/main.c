@@ -65,6 +65,8 @@
 pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+int logsink;
+
 /*
  * global copy of vecs for use in sig handlers
  */
@@ -1272,6 +1274,9 @@ child (void * param)
 	condlog(2, "--------start up--------");
 	condlog(2, "read " DEFAULT_CONFIGFILE);
 
+	if (load_config(DEFAULT_CONFIGFILE))
+		exit(1);
+
 	if (init_checkers()) {
 		condlog(0, "failed to initialize checkers");
 		exit(1);
@@ -1280,8 +1285,6 @@ child (void * param)
 		condlog(0, "failed to initialize prioritizers");
 		exit(1);
 	}
-	if (load_config(DEFAULT_CONFIGFILE))
-		exit(1);
 
 	setlogmask(LOG_UPTO(conf->verbosity + 3));
 
@@ -1373,8 +1376,6 @@ child (void * param)
 	vecs->lock = NULL;
 	FREE(vecs);
 	vecs = NULL;
-	free_config(conf);
-	conf = NULL;
 
 	condlog(2, "--------shut down-------");
 
@@ -1383,6 +1384,14 @@ child (void * param)
 
 	dm_lib_release();
 	dm_lib_exit();
+
+	/*
+	 * Freeing config must be done after condlog() and dm_lib_exit(),
+	 * because logging functions like dlog() and dm_write_log()
+	 * reference the config.
+	 */
+	free_config(conf);
+	conf = NULL;
 
 #ifdef _DEBUG_
 	dbg_free_final(NULL);

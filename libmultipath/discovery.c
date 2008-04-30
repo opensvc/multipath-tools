@@ -623,8 +623,8 @@ get_state (struct path * pp)
 	}
 	pp->state = checker_check(c);
 	condlog(3, "%s: state = %i", pp->dev, pp->state);
-	if (pp->state == PATH_DOWN)
-		condlog(2, "%s: checker msg is \"%s\"",
+	if (pp->state == PATH_DOWN && strlen(checker_message(c)))
+		condlog(3, "%s: checker msg is \"%s\"",
 			pp->dev, checker_message(c));
 	return 0;
 }
@@ -642,7 +642,7 @@ get_prio (struct path * pp)
 	}
 	pp->priority = prio_getprio(pp->prio, pp);
 	if (pp->priority < 0) {
-		condlog(0, "%s: %s prio error", pp->dev, prio_name(pp->prio));
+		condlog(3, "%s: %s prio error", pp->dev, prio_name(pp->prio));
 		pp->priority = PRIO_UNDEF;
 		return 1;
 	}
@@ -663,7 +663,7 @@ get_uid (struct path * pp)
 		condlog(0, "error formatting uid callout command");
 		memset(pp->wwid, 0, WWID_SIZE);
 	} else if (execute_program(buff, pp->wwid, WWID_SIZE)) {
-		condlog(0, "error calling out %s", buff);
+		condlog(3, "error calling out %s", buff);
 		memset(pp->wwid, 0, WWID_SIZE);
 		return 1;
 	}
@@ -716,10 +716,6 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	if (mask & DI_WWID && !strlen(pp->wwid))
 		get_uid(pp);
 
-#ifndef DAEMON
-	close(pp->fd);
-	pp->fd = -1;
-#endif
 	return 0;
 
 blank:
@@ -728,11 +724,6 @@ blank:
 	 */
 	memset(pp->wwid, 0, WWID_SIZE);
 	pp->state = PATH_DOWN;
-#ifndef DAEMON
-	if (pp->fd > 0){
-		close(pp->fd);
-		pp->fd = -1;
-	}
-#endif
+
 	return 0;
 }

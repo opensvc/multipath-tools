@@ -5,6 +5,8 @@
 
 #include "debug.h"
 #include "checkers.h"
+#include "vector.h"
+#include "config.h"
 
 static LIST_HEAD(checkers);
 
@@ -61,7 +63,8 @@ struct checker * add_checker (char * name)
 	c = alloc_checker();
 	if (!c)
 		return NULL;
-	snprintf(libname, LIB_CHECKER_NAMELEN, "libcheck%s.so", name);
+	snprintf(libname, LIB_CHECKER_NAMELEN, "%s/libcheck%s.so",
+		 conf->multipath_dir, name);
 	condlog(3, "loading %s checker", libname);
 	handle = dlopen(libname, RTLD_NOW);
 	errstr = dlerror();

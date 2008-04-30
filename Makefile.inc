@@ -26,8 +26,8 @@ libdir	    = $(prefix)/lib/multipath
 GZIP        = /bin/gzip -9 -c
 INSTALL_PROGRAM = install
 
-OPTFLAGS     = -pipe -g -Wall -Wunused -Wstrict-prototypes -fPIC
-CFLAGS	     = $(OPTFLAGS)
+OPTFLAGS     = -pipe -g -Wall -Wunused -Wstrict-prototypes
+CFLAGS	     = $(OPTFLAGS) -fPIC
 SHARED_FLAGS = -shared
 
 %.o:	%.c

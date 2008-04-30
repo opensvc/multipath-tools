@@ -22,7 +22,6 @@ are :
 * multipath :   scan the system for multipathed devices, assembles them
                 and update the device-mapper's maps
 * multipathd :  wait for maps events, then execs multipath
-* devmap-name : provides a meaningful device name to udev for devmaps
 * kpartx :      maps linear devmaps upon device partitions, which makes
                 multipath maps partionable
 
@@ -41,20 +40,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%{prefix}/sbin/devmap_name
 %{prefix}/sbin/multipath
 %{prefix}/sbin/kpartx
-%{prefix}/sbin/mpath_prio_alua
-%{prefix}/sbin/mpath_prio_emc
-%{prefix}/sbin/mpath_prio_random
-%{prefix}/sbin/mpath_prio_balance_units
-%{prefix}/sbin/mpath_prio_netapp
-%{prefix}/sbin/mpath_prio_rdac
-%{prefix}/sbin/mpath_prio_hds_modular
-%{prefix}/usr/share/man/man8/devmap_name.8.gz
 %{prefix}/usr/share/man/man8/multipath.8.gz
 %{prefix}/usr/share/man/man8/kpartx.8.gz
-%{prefix}/usr/share/man/man8/mpath_prio_alua.8.gz
 %{prefix}/usr/share/man/man8/multipathd.8.gz
 %{prefix}/sbin/multipathd
 %{prefix}/etc/udev/rules.d/multipath.rules

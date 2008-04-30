@@ -5,7 +5,6 @@
 # this tool is statically linked against klibc : no additional libs
 #
 cp /sbin/multipath $INITRDDIR/sbin
-cp /sbin/devmap_name $INITRDDIR/sbin
 cp /sbin/kpartx $INITRDDIR/sbin
 
 #

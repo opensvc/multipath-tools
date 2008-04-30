@@ -62,7 +62,7 @@ adopt_paths (vector pathvec, struct multipath * mpp)
 			condlog(3, "%s: ownership set to %s",
 				pp->dev, mpp->alias);
 			pp->mpp = mpp;
-			
+
 			if (!mpp->paths && !(mpp->paths = vector_alloc()))
 				return 1;
 
@@ -294,18 +294,17 @@ retry:
 		char new_alias[WWID_SIZE];
 
 		/*
-	 	 * detect an external rename of the multipath device
+		 * detect an external rename of the multipath device
 		 */
 		if (dm_get_name(mpp->wwid, DEFAULT_TARGET, new_alias)) {
 			condlog(3, "%s multipath mapped device name has "
 				"changed from %s to %s", mpp->wwid,
 				mpp->alias, new_alias);
 			strcpy(mpp->alias, new_alias);
-#if DAEMON
-			if (mpp->waiter) 
+
+			if (mpp->waiter)
 				strncpy(((struct event_thread *)mpp->waiter)->mapname,
 					new_alias, WWID_SIZE);
-#endif
 			goto retry;
 		}
 		condlog(0, "%s: failed to setup multipath", mpp->alias);
@@ -341,7 +340,7 @@ add_map_without_path (struct vectors * vecs,
 
 	if (adopt_paths(vecs->pathvec, mpp))
 		goto out;
-	
+
 	if (!vector_alloc_slot(vecs->mpvec))
 		goto out;
 

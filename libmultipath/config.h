@@ -71,6 +71,7 @@ struct config {
 	char * dev;
 	char * sysfs_dir;
 	char * udev_dir;
+	char * multipath_dir;
 	char * selector;
 	char * getuid;
 	char * features;

@@ -25,7 +25,6 @@ BUILDDIRS = \
 	libmultipath/checkers \
 	multipath \
 	multipathd \
-	devmap_name \
 	kpartx
 
 ifeq   ($(MULTIPATH_VERSION),)

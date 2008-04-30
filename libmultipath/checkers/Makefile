@@ -5,6 +5,7 @@
 include ../../Makefile.inc
 
 LIBS= \
+	libcheckcciss_tur.so \
 	libcheckreadsector0.so \
 	libchecktur.so \
 	libcheckdirectio.so \

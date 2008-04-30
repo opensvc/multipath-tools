@@ -310,6 +310,9 @@ free_config (struct config * conf)
 	if (conf->udev_dir)
 		FREE(conf->udev_dir);
 
+	if (conf->multipath_dir)
+		FREE(conf->multipath_dir);
+
 	if (conf->selector)
 		FREE(conf->selector);
 
@@ -366,35 +369,37 @@ load_config (char * file)
 			goto out;
 		}
 	}
-	
+
 	/*
 	 * fill the voids left in the config file
 	 */
+	if (conf->multipath_dir == NULL)
+		conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
+
 	if (conf->hwtable == NULL) {
 		conf->hwtable = vector_alloc();
-		
+
 		if (!conf->hwtable)
 			goto out;
-		
 	}
 	if (setup_default_hwtable(conf->hwtable))
 		goto out;
 
 	if (conf->blist_devnode == NULL) {
 		conf->blist_devnode = vector_alloc();
-		
+
 		if (!conf->blist_devnode)
 			goto out;
 	}
 	if (conf->blist_wwid == NULL) {
 		conf->blist_wwid = vector_alloc();
-		
+
 		if (!conf->blist_wwid)
 			goto out;
 	}
 	if (conf->blist_device == NULL) {
 		conf->blist_device = vector_alloc();
-		
+
 		if (!conf->blist_device)
 			goto out;
 	}
@@ -402,21 +407,21 @@ load_config (char * file)
 		goto out;
 
 	if (conf->elist_devnode == NULL) {
-                conf->elist_devnode = vector_alloc();
+		conf->elist_devnode = vector_alloc();
 
-                if (!conf->elist_devnode)
+		if (!conf->elist_devnode)
 			goto out;
 	}
 	if (conf->elist_wwid == NULL) {
 		conf->elist_wwid = vector_alloc();
 
-                if (!conf->elist_wwid)
+		if (!conf->elist_wwid)
 			goto out;
 	}
 
 	if (conf->elist_device == NULL) {
 		conf->elist_device = vector_alloc();
-		
+
 		if (!conf->elist_device)
 			goto out;
 	}
@@ -442,7 +447,7 @@ load_config (char * file)
 	if (conf->hwhandler == NULL)
 		conf->hwhandler = set_default(DEFAULT_HWHANDLER);
 
-	if (!conf->selector  || !conf->udev_dir         ||
+	if (!conf->selector  || !conf->udev_dir || !conf->multipath_dir ||
 	    !conf->getuid    || !conf->features ||
 	    !conf->hwhandler)
 		goto out;

@@ -2,9 +2,7 @@
 #define _STRUCTS_VEC_H
 
 struct vectors {
-#if DAEMON
 	pthread_mutex_t *lock;
-#endif
 	vector pathvec;
 	vector mpvec;
 };
