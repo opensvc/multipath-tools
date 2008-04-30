@@ -22,6 +22,7 @@
 #define ALUA_PRIO_NOT_SUPPORTED			1
 #define ALUA_PRIO_RTPG_FAILED			2
 #define ALUA_PRIO_GETAAS_FAILED			3
+#define ALUA_PRIO_TPGS_FAILED			4
 
 int
 get_alua_info(int fd)
@@ -38,7 +39,7 @@ get_alua_info(int fd)
 
 	rc = get_target_port_group_support(fd);
 	if (rc < 0)
-		return rc;
+		return -ALUA_PRIO_TPGS_FAILED;
 
 	if (rc == TPGS_NONE)
 		return -ALUA_PRIO_NOT_SUPPORTED;
@@ -84,6 +85,9 @@ int getprio (struct path * pp)
 				break;
 			case ALUA_PRIO_GETAAS_FAILED:
 				condlog(0, "%s: couln't get asymmetric access state", pp->dev);
+				break;
+			case ALUA_PRIO_TPGS_FAILED:
+				condlog(3, "%s: couln't get supported alua states", pp->dev);
 				break;
 		}
 	}
