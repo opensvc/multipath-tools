@@ -324,6 +324,9 @@ main (int argc, char *argv[])
 	if (dm_prereq(DEFAULT_TARGET))
 		exit(1);
 
+	if (load_config(DEFAULT_CONFIGFILE))
+		exit(1);
+
 	if (init_checkers()) {
 		condlog(0, "failed to initialize checkers");
 		exit(1);
@@ -332,9 +335,6 @@ main (int argc, char *argv[])
 		condlog(0, "failed to initialize prioritizers");
 		exit(1);
 	}
-	if (load_config(DEFAULT_CONFIGFILE))
-		exit(1);
-
 	if (sysfs_init(conf->sysfs_dir, FILE_NAME_SIZE)) {
 		condlog(0, "multipath tools need sysfs mounted");
 		exit(1);

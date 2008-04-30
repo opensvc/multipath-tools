@@ -1272,6 +1272,9 @@ child (void * param)
 	condlog(2, "--------start up--------");
 	condlog(2, "read " DEFAULT_CONFIGFILE);
 
+	if (load_config(DEFAULT_CONFIGFILE))
+		exit(1);
+
 	if (init_checkers()) {
 		condlog(0, "failed to initialize checkers");
 		exit(1);
@@ -1280,8 +1283,6 @@ child (void * param)
 		condlog(0, "failed to initialize prioritizers");
 		exit(1);
 	}
-	if (load_config(DEFAULT_CONFIGFILE))
-		exit(1);
 
 	setlogmask(LOG_UPTO(conf->verbosity + 3));
 

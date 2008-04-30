@@ -44,6 +44,17 @@ udev_dir_handler(vector strvec)
 }
 
 static int
+multipath_dir_handler(vector strvec)
+{
+	conf->multipath_dir = set_value(strvec);
+
+	if (!conf->multipath_dir)
+		return 1;
+
+	return 0;
+}
+
+static int
 def_selector_handler(vector strvec)
 {
 	conf->selector = set_value(strvec);
@@ -1332,6 +1343,18 @@ snprint_def_udev_dir (char * buff, int len, void * data)
 }
 
 static int
+snprint_def_multipath_dir (char * buff, int len, void * data)
+{
+	if (!conf->udev_dir)
+		return 0;
+	if (strlen(DEFAULT_MULTIPATHDIR) == strlen(conf->multipath_dir) &&
+	    !strcmp(conf->multipath_dir, DEFAULT_MULTIPATHDIR))
+		return 0;
+
+	return snprintf(buff, len, "%s", conf->multipath_dir);
+}
+
+static int
 snprint_def_selector (char * buff, int len, void * data)
 {
 	if (!conf->selector)
@@ -1538,6 +1561,7 @@ init_keywords(void)
 	install_keyword_root("defaults", NULL);
 	install_keyword("polling_interval", &polling_interval_handler, &snprint_def_polling_interval);
 	install_keyword("udev_dir", &udev_dir_handler, &snprint_def_udev_dir);
+	install_keyword("multipath_dir", &multipath_dir_handler, &snprint_def_multipath_dir);
 	install_keyword("selector", &def_selector_handler, &snprint_def_selector);
 	install_keyword("path_grouping_policy", &def_pgpolicy_handler, &snprint_def_path_grouping_policy);
 	install_keyword("getuid_callout", &def_getuid_callout_handler, &snprint_def_getuid_callout);

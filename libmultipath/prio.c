@@ -5,6 +5,7 @@
 
 #include "debug.h"
 #include "prio.h"
+#include "config.h"
 
 static LIST_HEAD(prioritizers);
 
@@ -28,18 +29,18 @@ void free_prio (struct prio * p)
 
 void cleanup_prio(void)
 {
-        struct prio * prio_loop;
-        struct prio * prio_temp;
+	struct prio * prio_loop;
+	struct prio * prio_temp;
 
-        list_for_each_entry_safe(prio_loop, prio_temp, &prioritizers, node) {
-                list_del(&prio_loop->node);
-                free(prio_loop);
-        }
+	list_for_each_entry_safe(prio_loop, prio_temp, &prioritizers, node) {
+		list_del(&prio_loop->node);
+		free(prio_loop);
+	}
 }
 
 struct prio * prio_lookup (char * name)
 {
-        struct prio * p;
+	struct prio * p;
 
 	list_for_each_entry(p, &prioritizers, node) {
 		if (!strncmp(name, p->name, PRIO_NAME_LEN))
@@ -61,7 +62,8 @@ struct prio * add_prio (char * name)
 	p = alloc_prio();
 	if (!p)
 		return NULL;
-	snprintf(libname, LIB_PRIO_NAMELEN, "libprio%s.so", name);
+	snprintf(libname, LIB_PRIO_NAMELEN, "%s/libprio%s.so",
+		 conf->multipath_dir, name);
 	condlog(3, "loading %s prioritizer", libname);
 	handle = dlopen(libname, RTLD_NOW);
 	errstr = dlerror();
