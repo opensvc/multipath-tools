@@ -54,5 +54,6 @@ void print_multipath (struct multipath * mpp, char * style);
 void print_pathgroup (struct pathgroup * pgp, char * style);
 void print_map (struct multipath * mpp);
 void print_all_paths (vector pathvec, int banner);
+void print_all_paths_custo (vector pathvec, int banner, char *fmt);
 void print_hwtable (vector hwtable);
 

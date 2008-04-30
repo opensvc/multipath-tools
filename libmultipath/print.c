@@ -1224,6 +1224,12 @@ print_map (struct multipath * mpp)
 extern void
 print_all_paths (vector pathvec, int banner)
 {
+	print_all_paths_custo(pathvec, banner, PRINT_PATH_LONG);
+}
+
+extern void
+print_all_paths_custo (vector pathvec, int banner, char *fmt)
+{
 	int i;
 	struct path * pp;
 	char line[MAX_LINE_LEN];
@@ -1238,10 +1244,10 @@ print_all_paths (vector pathvec, int banner)
 		fprintf(stdout, "===== paths list =====\n");
 
 	get_path_layout(pathvec);
-	snprint_path_header(line, MAX_LINE_LEN, PRINT_PATH_LONG);
+	snprint_path_header(line, MAX_LINE_LEN, fmt);
 	fprintf(stdout, "%s", line);
 
 	vector_foreach_slot (pathvec, pp, i)
-		print_path(pp, PRINT_PATH_LONG);
+		print_path(pp, fmt);
 }
 
