@@ -429,9 +429,17 @@ main (int argc, char *argv[])
 	
 out:
 	sysfs_cleanup();
-	free_config(conf);
 	dm_lib_release();
 	dm_lib_exit();
+
+	/*
+	 * Freeing config must be done after dm_lib_exit(), because
+	 * the logging function (dm_write_log()), which is called there,
+	 * references the config.
+	 */
+	free_config(conf);
+	conf = NULL;
+
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
 #endif
