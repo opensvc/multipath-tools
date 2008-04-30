@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/poll.h>
+#include <signal.h>
 #include <errno.h>
 
 #include "memory.h"
@@ -127,9 +128,25 @@ size_t read_all(int fd, void *buf, size_t len)
  */
 int send_packet(int fd, const char *buf, size_t len)
 {
-	if (write_all(fd, &len, sizeof(len)) != sizeof(len)) return -1;
-	if (write_all(fd, buf, len) != len) return -1;	
-	return 0;
+	int ret = 0;
+#ifdef DAEMON
+	sigset_t set, old;
+
+	/* Block SIGPIPE */
+	sigemptyset(&set);
+	sigaddset(&set, SIGPIPE);
+	pthread_sigmask(SIG_BLOCK, &set, &old);
+#endif
+	if (write_all(fd, &len, sizeof(len)) != sizeof(len))
+		ret = -1;
+	if (!ret && write_all(fd, buf, len) != len)
+		ret = -1;
+
+#ifdef DAEMON
+	/* And unblock it again */
+	pthread_sigmask(SIG_SETMASK, &old, NULL);
+#endif
+	return ret;
 }
 
 /*
