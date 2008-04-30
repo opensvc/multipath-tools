@@ -31,7 +31,8 @@ static void flush_logqueue (void)
 		pthread_mutex_lock(logq_lock);
 		empty = log_dequeue(la->buff);
 		pthread_mutex_unlock(logq_lock);
-		log_syslog(la->buff);
+		if (!empty)
+			log_syslog(la->buff);
 	} while (empty == 0);
 }
 
