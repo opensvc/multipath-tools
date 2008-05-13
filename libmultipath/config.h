@@ -29,7 +29,6 @@ struct hwentry {
 	int minio;
 	int pg_timeout;
 	struct prio * prio;
-	struct checker * checker;
 	char * bl_product;
 };
 
@@ -55,7 +54,6 @@ struct config {
 	int with_sysfs;
 	int pgpolicy;
 	struct prio * prio;
-	struct checker * checker;
 	enum devtypes dev_type;
 	int minio;
 	int checkint;
@@ -77,6 +75,7 @@ struct config {
 	char * features;
 	char * hwhandler;
 	char * bindings_file;
+	char * checker_name;
 
 	vector keywords;
 	vector mptable;

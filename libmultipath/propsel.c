@@ -217,19 +217,19 @@ select_checker(struct path *pp)
 {
 	struct checker * c = &pp->checker;
 
-	if (pp->hwe && pp->hwe->checker) {
-		checker_get(c, pp->hwe->checker);
+	if (pp->hwe && pp->hwe->checker_name) {
+		checker_get(c, pp->hwe->checker_name);
 		condlog(3, "%s: path checker = %s (controller setting)",
 			pp->dev, checker_name(c));
 		return 0;
 	}
-	if (conf->checker) {
-		checker_get(c, conf->checker);
+	if (conf->checker_name) {
+		checker_get(c, conf->checker_name);
 		condlog(3, "%s: path checker = %s (config file default)",
 			pp->dev, checker_name(c));
 		return 0;
 	}
-	checker_get(c, checker_default());
+	checker_get(c, DEFAULT_CHECKER);
 	condlog(3, "%s: path checker = %s (internal default)",
 		pp->dev, checker_name(c));
 	return 0;

@@ -120,16 +120,11 @@ def_features_handler(vector strvec)
 static int
 def_path_checker_handler(vector strvec)
 {
-	char * buff;
+	conf->checker_name = set_value(strvec);
 
-	buff = set_value(strvec);
-
-	if (!buff)
+	if (!conf->checker_name)
 		return 1;
 	
-	conf->checker = checker_lookup(buff);
-	FREE(buff);
-
 	return 0;
 }
 
@@ -549,20 +544,16 @@ hw_selector_handler(vector strvec)
 static int
 hw_path_checker_handler(vector strvec)
 {
-	char * buff;
 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
 
 	if (!hwe)
 		return 1;
 
-	buff = set_value(strvec);
+	hwe->checker_name = set_value(strvec);
 
-	if (!buff)
+	if (!hwe->checker_name)
 		return 1;
 	
-	hwe->checker = checker_lookup(buff);
-	FREE(buff);
-
 	return 0;
 }
 
@@ -1312,14 +1303,12 @@ snprint_hw_path_checker (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->checker)
+	if (!hwe->checker_name)
 		return 0;
-	if (!checker_selected(hwe->checker))
-		return 0;
-	if (hwe->checker == conf->checker)
+	if (!strcmp(hwe->checker_name, conf->checker_name))
 		return 0;
 	
-	return snprintf(buff, len, "%s", checker_name(hwe->checker));
+	return snprintf(buff, len, "%s", hwe->checker_name);
 }
 
 static int
@@ -1417,12 +1406,12 @@ snprint_def_features (char * buff, int len, void * data)
 static int
 snprint_def_path_checker (char * buff, int len, void * data)
 {
-	if (!conf->checker)
+	if (!conf->checker_name)
 		return 0;
-	if (conf->checker == checker_default())
+	if (conf->checker_name == DEFAULT_CHECKER)
 		return 0;
 	
-	return snprintf(buff, len, "%s", checker_name(conf->checker));
+	return snprintf(buff, len, "%s", conf->checker_name);
 }
 
 static int

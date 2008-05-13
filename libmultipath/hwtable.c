@@ -732,7 +732,6 @@ setup_default_hwtable (vector hw)
 	struct hwentry * hwe = default_hw;
 
 	while (hwe->vendor) {
-		hwe->checker = checker_lookup(hwe->checker_name);
 		hwe->prio = prio_lookup(hwe->prio_name);
 		r += store_hwe(hw, hwe);
 		hwe++;

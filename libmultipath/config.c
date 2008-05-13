@@ -270,13 +270,15 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 
 	if (dhwe->selector && !(hwe->selector = set_param_str(dhwe->selector)))
 		goto out;
+
+	if (dhwe->checker_name && !(hwe->checker_name = set_param_str(dhwe->checker_name)))
+		goto out;
 				
 	hwe->pgpolicy = dhwe->pgpolicy;
 	hwe->pgfailback = dhwe->pgfailback;
 	hwe->rr_weight = dhwe->rr_weight;
 	hwe->no_path_retry = dhwe->no_path_retry;
 	hwe->minio = dhwe->minio;
-	hwe->checker = dhwe->checker;
 	hwe->prio = dhwe->prio;
 
 	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
@@ -455,8 +457,8 @@ load_config (char * file)
 	if (!conf->prio)
 		conf->prio = prio_default();
 
-	if (!conf->checker)
-		conf->checker = checker_lookup(DEFAULT_CHECKER);
+	if (!conf->checker_name)
+		conf->checker_name = set_default(DEFAULT_CHECKER);
 
 	return 0;
 out:
