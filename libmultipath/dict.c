@@ -1408,7 +1408,8 @@ snprint_def_path_checker (char * buff, int len, void * data)
 {
 	if (!conf->checker_name)
 		return 0;
-	if (conf->checker_name == DEFAULT_CHECKER)
+	if (strlen(conf->checker_name) == strlen(DEFAULT_CHECKER) &&
+	    !strcmp(conf->checker_name, DEFAULT_CHECKER))
 		return 0;
 	
 	return snprintf(buff, len, "%s", conf->checker_name);
