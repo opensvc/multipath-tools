@@ -423,14 +423,17 @@ struct pathgroup_data pgd[] = {
 };
 
 void
-get_path_layout (vector pathvec)
+get_path_layout (vector pathvec, int header)
 {
 	int i, j;
 	char buff[MAX_FIELD_LEN];
 	struct path * pp;
 
 	for (j = 0; pd[j].header; j++) {
-		pd[j].width = strlen(pd[j].header);
+		if (header)
+			pd[j].width = strlen(pd[j].header);
+		else
+			pd[j].width = 0;
 
 		vector_foreach_slot (pathvec, pp, i) {
 			pd[j].snprint(buff, MAX_FIELD_LEN, pp);
@@ -440,14 +443,17 @@ get_path_layout (vector pathvec)
 }
 
 void
-get_multipath_layout (vector mpvec)
+get_multipath_layout (vector mpvec, int header)
 {
 	int i, j;
 	char buff[MAX_FIELD_LEN];
 	struct multipath * mpp;
 
 	for (j = 0; mpd[j].header; j++) {
-		mpd[j].width = strlen(mpd[j].header);
+		if (header)
+			mpd[j].width = strlen(mpd[j].header);
+		else
+			mpd[j].width = 0;
 
 		vector_foreach_slot (mpvec, mpp, i) {
 			mpd[j].snprint(buff, MAX_FIELD_LEN, mpp);
@@ -1243,7 +1249,7 @@ print_all_paths_custo (vector pathvec, int banner, char *fmt)
 	if (banner)
 		fprintf(stdout, "===== paths list =====\n");
 
-	get_path_layout(pathvec);
+	get_path_layout(pathvec, 1);
 	snprint_path_header(line, MAX_LINE_LEN, fmt);
 	fprintf(stdout, "%s", line);
 

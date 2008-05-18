@@ -32,8 +32,8 @@ struct pathgroup_data {
 	int (*snprint)(char * buff, size_t len, struct pathgroup * pgp);
 };
 
-void get_path_layout (vector pathvec);
-void get_multipath_layout (vector mpvec);
+void get_path_layout (vector pathvec, int header);
+void get_multipath_layout (vector mpvec, int header);
 int snprint_path_header (char *, int, char *);
 int snprint_multipath_header (char *, int, char *);
 int snprint_path (char *, int, char *, struct path *);

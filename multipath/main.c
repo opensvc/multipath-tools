@@ -288,7 +288,7 @@ configure (void)
 	if (conf->verbosity > 2)
 		print_all_paths(pathvec, 1);
 
-	get_path_layout(pathvec);
+	get_path_layout(pathvec, 1);
 
 	if (get_dm_mpvec(curmp, pathvec, refwwid))
 		goto out;
