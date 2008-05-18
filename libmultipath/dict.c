@@ -95,14 +95,11 @@ def_getuid_callout_handler(vector strvec)
 static int
 def_prio_handler(vector strvec)
 {
-	char * buff;
+	conf->prio_name = set_value(strvec);
 
-	buff = set_value(strvec);
-	if (!buff)
+	if (!conf->prio_name)
 		return 1;
 
-	conf->prio = prio_lookup(buff);
-	FREE(buff);
 	return 0;
 }
 
@@ -593,17 +590,15 @@ static int
 hw_prio_handler(vector strvec)
 {
 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
-	char * buff;
-	
+
 	if (!hwe)
 		return 1;
 
-	buff = set_value(strvec);
-	if (!buff)
+	hwe->prio_name = set_value(strvec);
+
+	if (!hwe->prio_name)
 		return 1;
-	
-	hwe->prio = prio_lookup(buff);
-	FREE(buff);
+
 	return 0;
 }
 
@@ -1135,12 +1130,12 @@ snprint_hw_prio (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->prio)
+	if (!hwe->prio_name)
 		return 0;
-	if (hwe->prio == conf->prio)
+	if (!strcmp(hwe->prio_name, conf->prio_name))
 		return 0;
 	
-	return snprintf(buff, len, "%s", prio_name(hwe->prio));
+	return snprintf(buff, len, "%s", hwe->prio_name);
 }
 
 static int
@@ -1385,10 +1380,14 @@ snprint_def_getuid_callout (char * buff, int len, void * data)
 static int
 snprint_def_prio (char * buff, int len, void * data)
 {
-	if (!conf->prio)
+	if (!conf->prio_name)
 		return 0;
 
-	return snprintf(buff, len, "%s", prio_name(conf->prio));
+	if (strlen(conf->prio_name) == strlen(DEFAULT_PRIO) &&
+	    !strcmp(conf->prio_name, DEFAULT_PRIO))
+		return 0;
+	
+	return snprintf(buff, len, "%s", conf->prio_name);
 }
 
 static int

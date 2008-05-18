@@ -274,12 +274,14 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	if (dhwe->checker_name && !(hwe->checker_name = set_param_str(dhwe->checker_name)))
 		goto out;
 				
+	if (dhwe->prio_name && !(hwe->prio_name = set_param_str(dhwe->prio_name)))
+		goto out;
+				
 	hwe->pgpolicy = dhwe->pgpolicy;
 	hwe->pgfailback = dhwe->pgfailback;
 	hwe->rr_weight = dhwe->rr_weight;
 	hwe->no_path_retry = dhwe->no_path_retry;
 	hwe->minio = dhwe->minio;
-	hwe->prio = dhwe->prio;
 
 	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
 		goto out;
@@ -360,6 +362,7 @@ load_config (char * file)
 	conf->minio = 1000;
 	conf->max_fds = 0;
 	conf->bindings_file = DEFAULT_BINDINGS_FILE;
+	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
 
 	/*
 	 * read the config file
@@ -375,9 +378,6 @@ load_config (char * file)
 	/*
 	 * fill the voids left in the config file
 	 */
-	if (conf->multipath_dir == NULL)
-		conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
-
 	if (conf->hwtable == NULL) {
 		conf->hwtable = vector_alloc();
 
@@ -454,8 +454,8 @@ load_config (char * file)
 	    !conf->hwhandler)
 		goto out;
 
-	if (!conf->prio)
-		conf->prio = prio_default();
+	if (!conf->prio_name)
+		conf->prio_name = set_default(DEFAULT_PRIO);
 
 	if (!conf->checker_name)
 		conf->checker_name = set_default(DEFAULT_CHECKER);

@@ -46,10 +46,7 @@ struct prio * prio_lookup (char * name)
 		if (!strncmp(name, p->name, PRIO_NAME_LEN))
 			return p;
 	}
-	p = add_prio(name);
-	if (p)
-		return p;
-	return prio_default();
+	return add_prio(name);
 }
 
 struct prio * add_prio (char * name)
@@ -93,9 +90,4 @@ int prio_getprio (struct prio * p, struct path * pp)
 char * prio_name (struct prio * p)
 {
 	return p->name;
-}
-
-struct prio * prio_default (void)
-{
-	return prio_lookup(DEFAULT_PRIO);
 }

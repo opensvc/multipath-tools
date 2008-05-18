@@ -259,21 +259,21 @@ select_getuid (struct path * pp)
 extern int
 select_prio (struct path * pp)
 {
-	if (pp->hwe && pp->hwe->prio) {
-		pp->prio = pp->hwe->prio;
+	if (pp->hwe && pp->hwe->prio_name) {
+		pp->prio = prio_lookup(pp->hwe->prio_name);
 		condlog(3, "%s: prio = %s (controller setting)",
-			pp->dev, prio_name(pp->prio));
+			pp->dev, pp->hwe->prio_name);
 		return 0;
 	}
-	if (conf->prio) {
-		pp->prio = conf->prio;
+	if (conf->prio_name) {
+		pp->prio = prio_lookup(conf->prio_name);
 		condlog(3, "%s: prio = %s (config file default)",
-			pp->dev, prio_name(pp->prio));
+			pp->dev, conf->prio_name);
 		return 0;
 	}
-	pp->prio = prio_default();
+	pp->prio = prio_lookup(DEFAULT_PRIO);
 	condlog(3, "%s: prio = %s (internal default)",
-		pp->dev, prio_name(pp->prio));
+		pp->dev, DEFAULT_PRIO);
 	return 0;
 }
 

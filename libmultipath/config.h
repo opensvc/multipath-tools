@@ -28,7 +28,6 @@ struct hwentry {
 	int no_path_retry;
 	int minio;
 	int pg_timeout;
-	struct prio * prio;
 	char * bl_product;
 };
 
@@ -53,7 +52,6 @@ struct config {
 	int pgpolicy_flag;
 	int with_sysfs;
 	int pgpolicy;
-	struct prio * prio;
 	enum devtypes dev_type;
 	int minio;
 	int checkint;
@@ -76,6 +74,7 @@ struct config {
 	char * features;
 	char * hwhandler;
 	char * bindings_file;
+	char * prio_name;
 	char * checker_name;
 
 	vector keywords;
