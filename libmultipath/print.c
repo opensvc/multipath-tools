@@ -94,6 +94,17 @@ snprint_sysfs (char * buff, size_t len, struct multipath * mpp)
 }
 
 static int
+snprint_ro (char * buff, size_t len, struct multipath * mpp)
+{
+	if (!mpp->dmi)
+		return snprintf(buff, len, "n/a");
+	if (mpp->dmi->read_only)
+		return snprintf(buff, len, "ro");
+	else
+		return snprintf(buff, len, "rw");
+}
+
+static int
 snprint_progress (char * buff, size_t len, int cur, int total)
 {
 	int i = PROGRESS_LEN * cur / total;
@@ -388,6 +399,7 @@ struct multipath_data mpd[] = {
 	{'F', "failback",      0, snprint_failback},
 	{'Q', "queueing",      0, snprint_queueing},
 	{'N', "paths",         0, snprint_nb_paths},
+	{'r', "write_prot",    0, snprint_ro},
 	{'t', "dm-st",         0, snprint_dm_map_state},
 	{'S', "size",          0, snprint_multipath_size},
 	{'f', "features",      0, snprint_features},
@@ -715,7 +727,7 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 	if (fwd > len)
 		return len;
 	fwd += snprint_multipath(buff + fwd, len - fwd,
-				 "[size=%S][features=%f][hwhandler=%h]", mpp);
+				 "[size=%S][features=%f][hwhandler=%h][%r]", mpp);
 	if (fwd > len)
 		return len;
 
