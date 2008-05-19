@@ -130,7 +130,7 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 }
 
 static void
-select_action (struct multipath * mpp, vector curmp)
+select_action (struct multipath * mpp, vector curmp, int force_reload)
 {
 	struct multipath * cmpp;
 
@@ -166,6 +166,12 @@ select_action (struct multipath * mpp, vector curmp)
 	if (pathcount(mpp, PATH_UP) == 0) {
 		mpp->action = ACT_NOTHING;
 		condlog(3, "%s: set ACT_NOTHING (no usable path)",
+			mpp->alias);
+		return;
+	}
+	if (force_reload) {
+		mpp->action = ACT_RELOAD;
+		condlog(3, "%s: set ACT_RELOAD (forced by user)",
 			mpp->alias);
 		return;
 	}
@@ -410,7 +416,7 @@ deadmap (struct multipath * mpp)
 }
 
 extern int
-coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
+coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_reload)
 {
 	int r = 1;
 	int k, i;
@@ -423,6 +429,11 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 
 	memset(empty_buff, 0, WWID_SIZE);
 
+	if (force_reload) {
+		vector_foreach_slot (pathvec, pp1, k) {
+			pp1->mpp = NULL;
+		}
+	}
 	vector_foreach_slot (pathvec, pp1, k) {
 		/* skip this path for some reason */
 
@@ -446,7 +457,8 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 		/*
 		 * at this point, we know we really got a new mp
 		 */
-		if ((mpp = add_map_with_path(vecs, pp1, 0)) == NULL)
+		mpp = add_map_with_path(vecs, pp1, 0);
+		if (!mpp)
 			return 1;
 
 		if (pp1->priority == PRIO_UNDEF)
@@ -487,7 +499,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid)
 		}
 
 		if (mpp->action == ACT_UNDEF)
-			select_action(mpp, curmp);
+			select_action(mpp, curmp, force_reload);
 
 		r = domap(mpp);
 

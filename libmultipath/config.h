@@ -65,6 +65,7 @@ struct config {
 	int user_friendly_names;
 	int pg_timeout;
 	int max_fds;
+	int force_reload;
 
 	char * dev;
 	char * sysfs_dir;
