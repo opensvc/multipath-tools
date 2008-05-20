@@ -1091,7 +1091,7 @@ snprint_hw_vendor (char * buff, int len, void * data)
 	if (!hwe->vendor)
 		return 0;
 
-	return snprintf(buff, len, "%s", hwe->vendor);
+	return snprintf(buff, len, "\"%s\"", hwe->vendor);
 }
 
 static int
@@ -1102,7 +1102,7 @@ snprint_hw_product (char * buff, int len, void * data)
 	if (!hwe->product)
 		return 0;
 
-	return snprintf(buff, len, "%s", hwe->product);
+	return snprintf(buff, len, "\"%s\"", hwe->product);
 }
 
 static int
@@ -1113,7 +1113,7 @@ snprint_hw_bl_product (char * buff, int len, void * data)
 	if (!hwe->bl_product)
 		return 0;
 
-	return snprintf(buff, len, "%s", hwe->bl_product);
+	return snprintf(buff, len, "\"%s\"", hwe->bl_product);
 }
 
 static int
@@ -1127,7 +1127,7 @@ snprint_hw_getuid_callout (char * buff, int len, void * data)
 	    !strcmp(hwe->getuid, conf->getuid))
 		return 0;
 
-	return snprintf(buff, len, "%s", hwe->getuid);
+	return snprintf(buff, len, "\"%s\"", hwe->getuid);
 }
 
 static int
@@ -1154,7 +1154,7 @@ snprint_hw_features (char * buff, int len, void * data)
 	    !strcmp(hwe->features, conf->features))
 		return 0;
 
-	return snprintf(buff, len, "%s", hwe->features);
+	return snprintf(buff, len, "\"%s\"", hwe->features);
 }
 
 static int
@@ -1168,7 +1168,7 @@ snprint_hw_hardware_handler (char * buff, int len, void * data)
 	    !strcmp(hwe->hwhandler, conf->hwhandler))
 		return 0;
 
-	return snprintf(buff, len, "%s", hwe->hwhandler);
+	return snprintf(buff, len, "\"%s\"", hwe->hwhandler);
 }
 
 static int
@@ -1328,7 +1328,7 @@ snprint_def_udev_dir (char * buff, int len, void * data)
 	    !strcmp(conf->udev_dir, DEFAULT_UDEVDIR))
 		return 0;
 
-	return snprintf(buff, len, "%s", conf->udev_dir);
+	return snprintf(buff, len, "\"%s\"", conf->udev_dir);
 }
 
 static int
@@ -1340,7 +1340,7 @@ snprint_def_multipath_dir (char * buff, int len, void * data)
 	    !strcmp(conf->multipath_dir, DEFAULT_MULTIPATHDIR))
 		return 0;
 
-	return snprintf(buff, len, "%s", conf->multipath_dir);
+	return snprintf(buff, len, "\"%s\"", conf->multipath_dir);
 }
 
 static int
@@ -1379,7 +1379,7 @@ snprint_def_getuid_callout (char * buff, int len, void * data)
 	    !strcmp(conf->getuid, DEFAULT_GETUID))
 		return 0;
 
-	return snprintf(buff, len, "%s", conf->getuid);
+	return snprintf(buff, len, "\"%s\"", conf->getuid);
 }
 
 static int
@@ -1400,7 +1400,7 @@ snprint_def_features (char * buff, int len, void * data)
 	    !strcmp(conf->features, DEFAULT_FEATURES))
 		return 0;
 
-	return snprintf(buff, len, "%s", conf->features);
+	return snprintf(buff, len, "\"%s\"", conf->features);
 }
 
 static int
@@ -1524,7 +1524,7 @@ snprint_ble_simple (char * buff, int len, void * data)
 {
 	struct blentry * ble = (struct blentry *)data;
 
-	return snprintf(buff, len, "%s", ble->str);
+	return snprintf(buff, len, "\"%s\"", ble->str);
 }
 
 static int
@@ -1532,7 +1532,7 @@ snprint_bled_vendor (char * buff, int len, void * data)
 {
 	struct blentry_device * bled = (struct blentry_device *)data;
 
-	return snprintf(buff, len, "%s", bled->vendor);
+	return snprintf(buff, len, "\"%s\"", bled->vendor);
 }
 	
 static int
@@ -1540,7 +1540,7 @@ snprint_bled_product (char * buff, int len, void * data)
 {
 	struct blentry_device * bled = (struct blentry_device *)data;
 
-	return snprintf(buff, len, "%s", bled->product);
+	return snprintf(buff, len, "\"%s\"", bled->product);
 }
 	
 #define __deprecated
