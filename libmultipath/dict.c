@@ -418,7 +418,8 @@ ble_except_product_handler(vector strvec)
 static int
 devices_handler(vector strvec)
 {
-	conf->hwtable = vector_alloc();
+	if (!conf->hwtable)
+		conf->hwtable = vector_alloc();
 
 	if (!conf->hwtable)
 		return 1;
