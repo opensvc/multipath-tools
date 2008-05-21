@@ -1,0 +1,9 @@
+*.o
+.dotest
+*~
+*.so
+*.a
+*.gz
+kpartx
+multipath
+multipathd
