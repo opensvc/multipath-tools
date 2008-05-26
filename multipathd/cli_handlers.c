@@ -28,7 +28,7 @@ show_paths (char ** r, int * len, struct vectors * vecs, char * style)
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
-	get_path_layout(vecs->pathvec);
+	get_path_layout(vecs->pathvec, 1);
 	reply = MALLOC(maxlen);
 
 	while (again) {
@@ -94,7 +94,7 @@ show_maps_topology (char ** r, int * len, struct vectors * vecs)
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
  
-	get_path_layout(vecs->pathvec);
+	get_path_layout(vecs->pathvec, 0);
 	reply = MALLOC(maxlen);
 
 	while (again) {
@@ -191,7 +191,7 @@ cli_list_map_topology (void * v, char ** reply, int * len, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
 	
-	get_path_layout(vecs->pathvec);
+	get_path_layout(vecs->pathvec, 0);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
@@ -222,7 +222,7 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
-	get_multipath_layout(vecs->mpvec);
+	get_multipath_layout(vecs->mpvec, 1);
 	reply = MALLOC(maxlen);
 
 	while (again) {

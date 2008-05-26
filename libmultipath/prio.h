@@ -46,6 +46,5 @@ struct prio * add_prio (char *);
 struct prio * prio_lookup (char *);
 int prio_getprio (struct prio *, struct path *);
 char * prio_name (struct prio *);
-struct prio * prio_default (void);
 
 #endif /* _PRIO_H */

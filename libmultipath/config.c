@@ -20,23 +20,31 @@
 #include "defaults.h"
 #include "prio.h"
 
+static int
+hwe_strmatch (struct hwentry *hwe1, struct hwentry *hwe2)
+{
+	if (hwe1->vendor && hwe2->vendor && strcmp(hwe1->vendor, hwe2->vendor))
+		return 1;
+
+	if (hwe1->product && hwe2->product && strcmp(hwe1->product, hwe2->product))
+		return 1;
+
+	if (hwe1->revision && hwe2->revision && strcmp(hwe1->revision, hwe2->revision))
+		return 1;
+
+	return 0;
+}
+
 static struct hwentry *
-find_hwe_strmatch (vector hwtable, char * vendor, char * product, char * revision)
+find_hwe_strmatch (vector hwtable, struct hwentry *hwe)
 {
 	int i;
-	struct hwentry *hwe, *ret = NULL;
+	struct hwentry *tmp, *ret = NULL;
 
-	vector_foreach_slot (hwtable, hwe, i) {
-		if (hwe->vendor && vendor && strcmp(hwe->vendor, vendor))
+	vector_foreach_slot (hwtable, tmp, i) {
+		if (hwe_strmatch(tmp, hwe))
 			continue;
-
-		if (hwe->product && product && strcmp(hwe->product, product))
-			continue;
-
-		if (hwe->revision && revision && strcmp(hwe->revision, revision))
-			continue;
-
-		ret = hwe;
+		ret = tmp;
 		break;
 	}
 	return ret;
@@ -239,12 +247,47 @@ set_param_str(char * str)
 	return dst;
 }
 
+#define merge_str(s) \
+	if (hwe2->s) { \
+		if (hwe1->s) \
+			free(hwe1->s); \
+		if (!(hwe1->s = set_param_str(hwe2->s))) \
+			return 1; \
+	}
+
+#define merge_num(s) \
+	if (hwe2->s) \
+		hwe1->s = hwe2->s
+
+
+static int
+merge_hwe (struct hwentry * hwe1, struct hwentry * hwe2)
+{
+	merge_str(vendor);
+	merge_str(product);
+	merge_str(revision);
+	merge_str(getuid);
+	merge_str(features);
+	merge_str(hwhandler);
+	merge_str(selector);
+	merge_str(checker_name);
+	merge_str(prio_name);
+	merge_str(bl_product);
+	merge_num(pgpolicy);
+	merge_num(pgfailback);
+	merge_num(rr_weight);
+	merge_num(no_path_retry);
+	merge_num(minio);
+
+	return 0;
+}
+
 int
 store_hwe (vector hwtable, struct hwentry * dhwe)
 {
 	struct hwentry * hwe;
 
-	if (find_hwe_strmatch(hwtable, dhwe->vendor, dhwe->product, dhwe->revision))
+	if (find_hwe_strmatch(hwtable, dhwe))
 		return 0;
 	
 	if (!(hwe = alloc_hwe()))
@@ -270,14 +313,18 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 
 	if (dhwe->selector && !(hwe->selector = set_param_str(dhwe->selector)))
 		goto out;
+
+	if (dhwe->checker_name && !(hwe->checker_name = set_param_str(dhwe->checker_name)))
+		goto out;
+				
+	if (dhwe->prio_name && !(hwe->prio_name = set_param_str(dhwe->prio_name)))
+		goto out;
 				
 	hwe->pgpolicy = dhwe->pgpolicy;
 	hwe->pgfailback = dhwe->pgfailback;
 	hwe->rr_weight = dhwe->rr_weight;
 	hwe->no_path_retry = dhwe->no_path_retry;
 	hwe->minio = dhwe->minio;
-	hwe->checker = dhwe->checker;
-	hwe->prio = dhwe->prio;
 
 	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
 		goto out;
@@ -290,6 +337,27 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 out:
 	free_hwe(hwe);
 	return 1;
+}
+
+static int
+factorize_hwtable (vector hw)
+{
+	struct hwentry *hwe1, *hwe2;
+	int i, j;
+
+	vector_foreach_slot(hw, hwe1, i) {
+		j = i+1;
+		vector_foreach_slot_after(hw, hwe2, j) {
+			if (hwe_strmatch(hwe1, hwe2))
+				continue;
+			/* dup */
+			merge_hwe(hwe1, hwe2);
+			free_hwe(hwe2);
+			vector_del_slot(hw, j);
+			j--;
+		}
+	}
+	return 0;
 }
 
 struct config *
@@ -358,6 +426,19 @@ load_config (char * file)
 	conf->minio = 1000;
 	conf->max_fds = 0;
 	conf->bindings_file = DEFAULT_BINDINGS_FILE;
+	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
+
+	/*
+	 * preload default hwtable
+	 */
+	if (conf->hwtable == NULL) {
+		conf->hwtable = vector_alloc();
+
+		if (!conf->hwtable)
+			goto out;
+	}
+	if (setup_default_hwtable(conf->hwtable))
+		goto out;
 
 	/*
 	 * read the config file
@@ -371,20 +452,14 @@ load_config (char * file)
 	}
 
 	/*
+	 * remove duplica in hwtable. config file takes precedence
+	 * over build-in hwtable
+	 */
+	factorize_hwtable(conf->hwtable);
+
+	/*
 	 * fill the voids left in the config file
 	 */
-	if (conf->multipath_dir == NULL)
-		conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
-
-	if (conf->hwtable == NULL) {
-		conf->hwtable = vector_alloc();
-
-		if (!conf->hwtable)
-			goto out;
-	}
-	if (setup_default_hwtable(conf->hwtable))
-		goto out;
-
 	if (conf->blist_devnode == NULL) {
 		conf->blist_devnode = vector_alloc();
 
@@ -452,11 +527,11 @@ load_config (char * file)
 	    !conf->hwhandler)
 		goto out;
 
-	if (!conf->prio)
-		conf->prio = prio_default();
+	if (!conf->prio_name)
+		conf->prio_name = set_default(DEFAULT_PRIO);
 
-	if (!conf->checker)
-		conf->checker = checker_lookup(DEFAULT_CHECKER);
+	if (!conf->checker_name)
+		conf->checker_name = set_default(DEFAULT_CHECKER);
 
 	return 0;
 out:

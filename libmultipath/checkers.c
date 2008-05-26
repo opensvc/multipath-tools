@@ -47,10 +47,7 @@ struct checker * checker_lookup (char * name)
 		if (!strncmp(name, c->name, CHECKER_NAME_LEN))
 			return c;
 	}
-	c = add_checker(name);
-	if (c)
-		return c;
-	return checker_default();
+	return add_checker(name);
 }
 
 struct checker * add_checker (char * name)
@@ -172,13 +169,14 @@ char * checker_message (struct checker * c)
 	return c->message;
 }
 
-struct checker * checker_default (void)
+void checker_get (struct checker * dst, char * name)
 {
-	return checker_lookup(DEFAULT_CHECKER);
-}
+	struct checker * src = checker_lookup(name);
 
-void checker_get (struct checker * dst, struct checker * src)
-{
+	if (!src) {
+		dst->check = NULL;
+		return;
+	}
 	dst->fd = src->fd;
 	dst->sync = src->sync;
 	strncpy(dst->name, src->name, CHECKER_NAME_LEN);

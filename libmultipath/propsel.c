@@ -217,19 +217,19 @@ select_checker(struct path *pp)
 {
 	struct checker * c = &pp->checker;
 
-	if (pp->hwe && pp->hwe->checker) {
-		checker_get(c, pp->hwe->checker);
+	if (pp->hwe && pp->hwe->checker_name) {
+		checker_get(c, pp->hwe->checker_name);
 		condlog(3, "%s: path checker = %s (controller setting)",
 			pp->dev, checker_name(c));
 		return 0;
 	}
-	if (conf->checker) {
-		checker_get(c, conf->checker);
+	if (conf->checker_name) {
+		checker_get(c, conf->checker_name);
 		condlog(3, "%s: path checker = %s (config file default)",
 			pp->dev, checker_name(c));
 		return 0;
 	}
-	checker_get(c, checker_default());
+	checker_get(c, DEFAULT_CHECKER);
 	condlog(3, "%s: path checker = %s (internal default)",
 		pp->dev, checker_name(c));
 	return 0;
@@ -259,21 +259,21 @@ select_getuid (struct path * pp)
 extern int
 select_prio (struct path * pp)
 {
-	if (pp->hwe && pp->hwe->prio) {
-		pp->prio = pp->hwe->prio;
+	if (pp->hwe && pp->hwe->prio_name) {
+		pp->prio = prio_lookup(pp->hwe->prio_name);
 		condlog(3, "%s: prio = %s (controller setting)",
-			pp->dev, prio_name(pp->prio));
+			pp->dev, pp->hwe->prio_name);
 		return 0;
 	}
-	if (conf->prio) {
-		pp->prio = conf->prio;
+	if (conf->prio_name) {
+		pp->prio = prio_lookup(conf->prio_name);
 		condlog(3, "%s: prio = %s (config file default)",
-			pp->dev, prio_name(pp->prio));
+			pp->dev, conf->prio_name);
 		return 0;
 	}
-	pp->prio = prio_default();
+	pp->prio = prio_lookup(DEFAULT_PRIO);
 	condlog(3, "%s: prio = %s (internal default)",
-		pp->dev, prio_name(pp->prio));
+		pp->dev, DEFAULT_PRIO);
 	return 0;
 }
 

@@ -266,7 +266,7 @@ ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
 	refwwid = get_refwwid(dev->kernel, DEV_DEVMAP, vecs->pathvec);
 
 	if (refwwid) {
-		r = coalesce_paths(vecs, NULL, refwwid);
+		r = coalesce_paths(vecs, NULL, refwwid, 0);
 		dm_lib_release();
 	}
 
@@ -1080,7 +1080,7 @@ configure (struct vectors * vecs, int start_waiters)
 	/*
 	 * create new set of maps & push changed ones into dm
 	 */
-	if (coalesce_paths(vecs, mpvec, NULL))
+	if (coalesce_paths(vecs, mpvec, NULL, 0))
 		return 1;
 
 	/*

@@ -117,12 +117,10 @@ void checker_set_async (struct checker *);
 void checker_set_fd (struct checker *, int);
 void checker_enable (struct checker *);
 void checker_disable (struct checker *);
-struct checker * checker_lookup (char *);
 int checker_check (struct checker *);
 int checker_selected (struct checker *);
 char * checker_name (struct checker *);
 char * checker_message (struct checker *);
-struct checker * checker_default (void);
-void checker_get (struct checker *, struct checker *);
+void checker_get (struct checker *, char *);
 
 #endif /* _CHECKERS_H */
