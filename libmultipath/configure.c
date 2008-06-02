@@ -189,14 +189,14 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 			mpp->alias);
 		return;
 	}
-	if (strncmp(cmpp->hwhandler, mpp->hwhandler,
+	if (!cmpp->selector || strncmp(cmpp->hwhandler, mpp->hwhandler,
 		    strlen(mpp->hwhandler))) {
 		mpp->action = ACT_RELOAD;
 		condlog(3, "%s: set ACT_RELOAD (hwhandler change)",
 			mpp->alias);
 		return;
 	}
-	if (strncmp(cmpp->selector, mpp->selector,
+	if (!cmpp->selector || strncmp(cmpp->selector, mpp->selector,
 		    strlen(mpp->selector))) {
 		mpp->action = ACT_RELOAD;
 		condlog(3, "%s: set ACT_RELOAD (selector change)",
@@ -209,7 +209,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 			mpp->alias, cmpp->minio, mpp->minio);
 		return;
 	}
-	if (VECTOR_SIZE(cmpp->pg) != VECTOR_SIZE(mpp->pg)) {
+	if (!cmpp->pg || VECTOR_SIZE(cmpp->pg) != VECTOR_SIZE(mpp->pg)) {
 		mpp->action = ACT_RELOAD;
 		condlog(3, "%s: set ACT_RELOAD (path group number change)",
 			mpp->alias);
