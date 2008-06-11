@@ -497,6 +497,23 @@ static struct hwentry default_hw[] = {
 		.checker_name  = DIRECTIO,
 		.prio_name     = DEFAULT_PRIO,
 	},
+	{
+		/* IBM S/390 FBA DASD */
+		.vendor        = "IBM",
+		.product       = "S/390 DASD FBA",
+		.bl_product       = "S/390.*",
+		.getuid        = "/sbin/dasdinfo -u -b %n",
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = DIRECTIO,
+		.prio_name     = DEFAULT_PRIO,
+	},
 	/*
 	 * NETAPP controller family
 	 *
