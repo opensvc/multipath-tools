@@ -19,6 +19,7 @@ enum {
 	__CONFIG,
 	__BLACKLIST,
 	__DEVICES,
+	__FMT,
 };
 
 #define LIST		(1 << __LIST)
@@ -41,6 +42,7 @@ enum {
 #define CONFIG		(1 << __CONFIG)
 #define BLACKLIST	(1 << __BLACKLIST)
 #define DEVICES  	(1 << __DEVICES)
+#define FMT 	 	(1 << __FMT)
 
 #define INITIAL_REPLY_LEN 1000
 

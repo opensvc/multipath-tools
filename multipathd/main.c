@@ -691,6 +691,7 @@ uxlsnrloop (void * ap)
 		return NULL;
 
 	set_handler_callback(LIST+PATHS, cli_list_paths);
+	set_handler_callback(LIST+PATHS+FMT, cli_list_paths_fmt);
 	set_handler_callback(LIST+MAPS, cli_list_maps);
 	set_handler_callback(LIST+MAPS+STATUS, cli_list_maps_status);
 	set_handler_callback(LIST+MAPS+STATS, cli_list_maps_stats);
