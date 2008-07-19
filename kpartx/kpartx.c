@@ -325,6 +325,7 @@ main(int argc, char **argv){
 	}
 
 	/* add/remove partitions to the kernel devmapper tables */
+	int r = 0;
 	for (i = 0; i < ptct; i++) {
 		ptp = &pts[i];
 
@@ -402,9 +403,10 @@ main(int argc, char **argv){
 				if (!slices[j].size || !dm_map_present(partname))
 					continue;
 
-				if (!dm_simplecmd(DM_DEVICE_REMOVE, partname))
+				if (!dm_simplecmd(DM_DEVICE_REMOVE, partname)) {
+					r++;
 					continue;
-
+				}
 				if (verbose)
 					printf("del devmap : %s\n", partname);
 			}
@@ -447,13 +449,18 @@ main(int argc, char **argv){
 				op = (dm_map_present(partname) ?
 					DM_DEVICE_RELOAD : DM_DEVICE_CREATE);
 
-				dm_addmap(op, partname, DM_TARGET, params,
-					  slices[j].size, uuid, j+1);
-
-				if (op == DM_DEVICE_RELOAD)
-					dm_simplecmd(DM_DEVICE_RESUME,
-							partname);
-
+				if (!dm_addmap(op, partname, DM_TARGET, params,
+					  slices[j].size, uuid, j+1)) {
+					fprintf(stderr, "create/reload failed on %s\n",
+						partname);
+					r++;
+				}
+				if (op == DM_DEVICE_RELOAD &&
+				    !dm_simplecmd(DM_DEVICE_RESUME, partname)) {
+					fprintf(stderr, "resume failed on %s\n",
+						partname);
+					r++;
+				}
 				dm_devn(partname, &slices[j].major,
 					&slices[j].minor);
 
@@ -535,7 +542,7 @@ main(int argc, char **argv){
 	dm_lib_release();
 	dm_lib_exit();
 
-	return 0;
+	return r;
 }
 
 void *
