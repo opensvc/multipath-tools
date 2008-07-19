@@ -157,7 +157,7 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 	int i;
 	struct multipath * mpp;
 
-	if (dm_get_maps(curmp, DEFAULT_TARGET))
+	if (dm_get_maps(curmp))
 		return 1;
 
 	vector_foreach_slot (curmp, mpp, i) {
@@ -328,7 +328,7 @@ main (int argc, char *argv[])
 		exit(1);
 	}
 
-	if (dm_prereq(DEFAULT_TARGET))
+	if (dm_prereq())
 		exit(1);
 
 	if (load_config(DEFAULT_CONFIGFILE))
@@ -424,14 +424,14 @@ main (int argc, char *argv[])
 
 	if (conf->remove == FLUSH_ONE) {
 		if (conf->dev_type == DEV_DEVMAP)
-			dm_flush_map(conf->dev, DEFAULT_TARGET);
+			dm_flush_map(conf->dev);
 		else
 			condlog(0, "must provide a map name to remove");
 
 		goto out;
 	}
 	else if (conf->remove == FLUSH_ALL) {
-		dm_flush_maps(DEFAULT_TARGET);
+		dm_flush_maps();
 		goto out;
 	}
 	while ((r = configure()) < 0)

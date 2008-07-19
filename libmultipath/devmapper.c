@@ -142,11 +142,11 @@ out:
 }
 
 extern int
-dm_prereq (char * str)
+dm_prereq (void)
 {
 	if (dm_libprereq())
 		return 1;
-	return dm_drvprereq(str);
+	return dm_drvprereq(TGT_MPATH);
 }
 
 extern int
@@ -211,11 +211,37 @@ dm_addmap (int task, const char *name, const char *target,
 
 	addout:
 	dm_task_destroy (dmt);
+
 	return r;
 }
 
 extern int
-dm_map_present (char * str)
+dm_addmap_create (const char *name, const char *params,
+		  unsigned long long size, const char *uuid) {
+	int r;
+	r = dm_addmap(DM_DEVICE_CREATE, name, TGT_MPATH, params, size, uuid);
+	/*
+	 * DM_DEVICE_CREATE is actually DM_DEV_CREATE + DM_TABLE_LOAD.
+	 * Failing the second part leaves an empty map. Clean it up.
+	 */
+	if (!r && dm_map_present(name)) {
+		condlog(3, "%s: failed to load map (a path might be in use)",
+			name);
+		dm_flush_map(name);
+	}
+	return r;
+}
+
+extern int
+dm_addmap_reload (const char *name, const char *params,
+		  unsigned long long size, const char *uuid) {
+	int r;
+	r = dm_addmap(DM_DEVICE_RELOAD, name, TGT_MPATH, params, size, uuid);
+	return r;
+}
+
+extern int
+dm_map_present (const char * str)
 {
 	int r = 0;
 	struct dm_task *dmt;
@@ -352,7 +378,7 @@ out:
  *   -1 : empty map
  */
 extern int
-dm_type(char * name, char * type)
+dm_type(const char * name, char * type)
 {
 	int r = 0;
 	struct dm_task *dmt;
@@ -387,7 +413,7 @@ out:
 }
 
 static int
-dm_dev_t (char * mapname, char * dev_t, int len)
+dm_dev_t (const char * mapname, char * dev_t, int len)
 {
 	int r = 1;
 	struct dm_task *dmt;
@@ -416,7 +442,7 @@ out:
 }
 	
 int
-dm_get_opencount (char * mapname)
+dm_get_opencount (const char * mapname)
 {
 	int r = -1;
 	struct dm_task *dmt;
@@ -466,14 +492,14 @@ out:
 }
 	
 extern int
-dm_flush_map (char * mapname, char * type)
+dm_flush_map (const char * mapname)
 {
 	int r;
 
 	if (!dm_map_present(mapname))
 		return 0;
 
-	if (dm_type(mapname, type) <= 0)
+	if (dm_type(mapname, TGT_MPATH) <= 0)
 		return 1;
 
 	if (dm_remove_partmaps(mapname))
@@ -494,7 +520,7 @@ dm_flush_map (char * mapname, char * type)
 }
 
 extern int
-dm_flush_maps (char * type)
+dm_flush_maps (void)
 {
 	int r = 0;
 	struct dm_task *dmt;
@@ -516,7 +542,7 @@ dm_flush_maps (char * type)
 		goto out;
 
 	do {
-		r += dm_flush_map(names->name, type);
+		r += dm_flush_map(names->name);
 		next = names->next;
 		names = (void *) names + next;
 	} while (next);
@@ -633,7 +659,7 @@ dm_disablegroup(char * mapname, int index)
 }
 
 int
-dm_get_maps (vector mp, char * type)
+dm_get_maps (vector mp)
 {
 	struct multipath * mpp;
 	int r = 1;
@@ -642,7 +668,7 @@ dm_get_maps (vector mp, char * type)
 	struct dm_names *names;
 	unsigned next = 0;
 
-	if (!type || !mp)
+	if (!mp)
 		return 1;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_LIST)))
@@ -662,7 +688,7 @@ dm_get_maps (vector mp, char * type)
 	}
 
 	do {
-		info = dm_type(names->name, type);
+		info = dm_type(names->name, TGT_MPATH);
 
 		if (info <= 0)
 			goto next;
@@ -708,7 +734,7 @@ out:
 }
 
 extern int
-dm_get_name(char *uuid, char *type, char *name)
+dm_get_name(char *uuid, char *name)
 {
 	vector vec;
 	struct multipath *mpp;
@@ -719,7 +745,7 @@ dm_get_name(char *uuid, char *type, char *name)
 	if (!vec)
 		return 0;
 
-	if (dm_get_maps(vec, type)) {
+	if (dm_get_maps(vec)) {
 		vector_free(vec);
 		return 0;
 	}
@@ -818,7 +844,7 @@ bad:
 }
 
 int
-dm_remove_partmaps (char * mapname)
+dm_remove_partmaps (const char * mapname)
 {
 	struct dm_task *dmt;
 	struct dm_names *names;
@@ -852,7 +878,7 @@ dm_remove_partmaps (char * mapname)
 		    /*
 		     * if devmap target is "linear"
 		     */
-		    (dm_type(names->name, "linear") > 0) &&
+		    (dm_type(names->name, TGT_PART) > 0) &&
 
 		    /*
 		     * and the multipath mapname and the part mapname start
@@ -975,7 +1001,7 @@ dm_rename_partmaps (char * old, char * new)
 		    /*
 		     * if devmap target is "linear"
 		     */
-		    (dm_type(names->name, "linear") > 0) &&
+		    (dm_type(names->name, TGT_PART) > 0) &&
 
 		    /*
 		     * and the multipath mapname and the part mapname start

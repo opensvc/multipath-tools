@@ -21,6 +21,7 @@
 #include "parser.h"
 #include "blacklist.h"
 #include "switchgroup.h"
+#include "devmapper.h"
 
 #define MAX(x,y) (x > y) ? x : y
 #define TAIL     (line + len - 1 - c)
@@ -1235,7 +1236,7 @@ print_map (struct multipath * mpp)
 {
 	if (mpp->size && mpp->params)
 		printf("0 %llu %s %s\n",
-			 mpp->size, DEFAULT_TARGET, mpp->params);
+			 mpp->size, TGT_MPATH, mpp->params);
 	return;
 }
 

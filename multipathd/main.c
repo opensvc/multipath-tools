@@ -121,7 +121,7 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 			 * remove all current maps not allowed by the
 			 * current configuration
 			 */
-			if (dm_flush_map(ompp->alias, DEFAULT_TARGET)) {
+			if (dm_flush_map(ompp->alias)) {
 				condlog(0, "%s: unable to flush devmap",
 					ompp->alias);
 				/*
@@ -191,7 +191,7 @@ flush_map(struct multipath * mpp, struct vectors * vecs)
 	 * clear references to this map before flushing so we can ignore
 	 * the spurious uevent we may generate with the dm_flush_map call below
 	 */
-	if (dm_flush_map(mpp->alias, DEFAULT_TARGET)) {
+	if (dm_flush_map(mpp->alias)) {
 		/*
 		 * May not really be an error -- if the map was already flushed
 		 * from the device mapper by dmsetup(8) for instance.
@@ -240,7 +240,7 @@ ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
 
 	map_present = dm_map_present(alias);
 
-	if (map_present && dm_type(alias, DEFAULT_TARGET) <= 0) {
+	if (map_present && dm_type(alias, TGT_MPATH) <= 0) {
 		condlog(4, "%s: not a multipath map", alias);
 		return 0;
 	}
@@ -558,7 +558,7 @@ map_discovery (struct vectors * vecs)
 	struct multipath * mpp;
 	unsigned int i;
 
-	if (dm_get_maps(vecs->mpvec, "multipath"))
+	if (dm_get_maps(vecs->mpvec))
 		return 1;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i)
