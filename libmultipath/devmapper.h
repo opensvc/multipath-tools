@@ -6,8 +6,12 @@ int dm_prereq (void);
 int dm_simplecmd (int, const char *);
 int dm_addmap_create (const char *, const char *,
                       unsigned long long size, const char *uuid);
+int dm_addmap_create_ro (const char *, const char *,
+			 unsigned long long size, const char *uuid);
 int dm_addmap_reload (const char *, const char *,
                       unsigned long long size, const char *uuid);
+int dm_addmap_reload_ro (const char *, const char *,
+			 unsigned long long size, const char *uuid);
 int dm_map_present (const char *);
 int dm_get_map(char *, unsigned long long *, char *);
 int dm_get_status(char *, char *);

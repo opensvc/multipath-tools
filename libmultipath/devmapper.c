@@ -175,7 +175,8 @@ dm_simplecmd (int task, const char *name) {
 
 extern int
 dm_addmap (int task, const char *name, const char *target,
-	   const char *params, unsigned long long size, const char *uuid) {
+	   const char *params, unsigned long long size, const char *uuid,
+	   int ro) {
 	int r = 0;
 	struct dm_task *dmt;
 	char *prefixed_uuid = NULL;
@@ -188,6 +189,9 @@ dm_addmap (int task, const char *name, const char *target,
 
 	if (!dm_task_add_target (dmt, 0, size, target, params))
 		goto addout;
+
+	if (ro)
+		dm_task_set_ro(dmt);
 
 	if (uuid){
 		prefixed_uuid = MALLOC(UUID_PREFIX_LEN + strlen(uuid) + 1);
@@ -215,11 +219,12 @@ dm_addmap (int task, const char *name, const char *target,
 	return r;
 }
 
-extern int
-dm_addmap_create (const char *name, const char *params,
-		  unsigned long long size, const char *uuid) {
+static int
+_dm_addmap_create (const char *name, const char *params,
+		  unsigned long long size, const char *uuid, int ro) {
 	int r;
-	r = dm_addmap(DM_DEVICE_CREATE, name, TGT_MPATH, params, size, uuid);
+	r = dm_addmap(DM_DEVICE_CREATE, name, TGT_MPATH, params, size, uuid,
+		      ro);
 	/*
 	 * DM_DEVICE_CREATE is actually DM_DEV_CREATE + DM_TABLE_LOAD.
 	 * Failing the second part leaves an empty map. Clean it up.
@@ -232,12 +237,33 @@ dm_addmap_create (const char *name, const char *params,
 	return r;
 }
 
+#define ADDMAP_RW 0
+#define ADDMAP_RO 1
+
+extern int
+dm_addmap_create (const char *name, const char *params,
+		  unsigned long long size, const char *uuid) {
+	return _dm_addmap_create(name, params, size, uuid, ADDMAP_RW);
+}
+
+extern int
+dm_addmap_create_ro (const char *name, const char *params,
+		  unsigned long long size, const char *uuid) {
+	return _dm_addmap_create(name, params, size, uuid, ADDMAP_RO);
+}
+
 extern int
 dm_addmap_reload (const char *name, const char *params,
 		  unsigned long long size, const char *uuid) {
-	int r;
-	r = dm_addmap(DM_DEVICE_RELOAD, name, TGT_MPATH, params, size, uuid);
-	return r;
+	return dm_addmap(DM_DEVICE_RELOAD, name, TGT_MPATH, params, size, uuid,
+			 ADDMAP_RW);
+}
+
+extern int
+dm_addmap_reload_ro (const char *name, const char *params,
+		     unsigned long long size, const char *uuid) {
+	return dm_addmap(DM_DEVICE_RELOAD, name, TGT_MPATH, params, size, uuid,
+			 ADDMAP_RO);
 }
 
 extern int

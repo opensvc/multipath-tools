@@ -339,6 +339,10 @@ domap (struct multipath * mpp)
 		r = dm_addmap_create(mpp->alias, mpp->params, mpp->size,
 				     mpp->wwid);
 
+		if (!r)
+			 r = dm_addmap_create_ro(mpp->alias, mpp->params,
+						 mpp->size, mpp->wwid);
+
 		lock_multipath(mpp, 0);
 		break;
 
