@@ -441,6 +441,9 @@ free_config (struct config * conf)
 	if (conf->hwhandler)
 		FREE(conf->hwhandler);
 
+	if (conf->bindings_file)
+		FREE(conf->bindings_file);
+
 	if (conf->prio_name)
 		FREE(conf->prio_name);
 
@@ -487,7 +490,7 @@ load_config (char * file)
 	conf->minio = DEFAULT_MINIO;
 	conf->minio_rq = DEFAULT_MINIO_RQ;
 	conf->max_fds = 0;
-	conf->bindings_file = DEFAULT_BINDINGS_FILE;
+	conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 	conf->bindings_read_only = 0;
 	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
 	conf->flush_on_last_del = 0;
@@ -581,7 +584,11 @@ load_config (char * file)
 	if (conf->udev_dir == NULL)
 		conf->udev_dir = set_default(DEFAULT_UDEVDIR);
 
-	if (!conf->udev_dir || !conf->multipath_dir)
+	if (conf->bindings_file == NULL)
+		conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
+
+	if (!conf->udev_dir || !conf->multipath_dir ||
+	    !conf->bindings_file)
 		goto out;
 
 	return 0;

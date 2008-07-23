@@ -524,6 +524,17 @@ names_handler(vector strvec)
 	return 0;
 }
 
+static int
+bindings_file_handler(vector strvec)
+{
+	conf->bindings_file = set_value(strvec);
+
+	if (!conf->bindings_file)
+		return 1;
+
+	return 0;
+}
+
 /*
  * blacklist block handlers
  */
@@ -2300,6 +2311,18 @@ snprint_def_alias_prefix (char * buff, int len, void * data)
 }
 
 static int
+snprint_def_bindings_file (char * buff, int len, void * data)
+{
+	if (conf->bindings_file == NULL)
+		return 0;
+	if (strlen(conf->bindings_file) == strlen(DEFAULT_BINDINGS_FILE) &&
+	    !strcmp(conf->bindings_file, DEFAULT_BINDINGS_FILE))
+		return 0;
+
+	return snprintf(buff, len, "%s", conf->bindings_file);
+}
+
+static int
 snprint_ble_simple (char * buff, int len, void * data)
 {
 	struct blentry * ble = (struct blentry *)data;
@@ -2359,6 +2382,7 @@ init_keywords(void)
 	install_keyword("gid", &def_gid_handler, &snprint_def_gid);
 	install_keyword("fast_io_fail_tmo", &def_fast_io_fail_handler, &snprint_def_fast_io_fail);
 	install_keyword("dev_loss_tmo", &def_dev_loss_handler, &snprint_def_dev_loss);
+	install_keyword("bindings_file", &bindings_file_handler, &snprint_def_bindings_file);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
