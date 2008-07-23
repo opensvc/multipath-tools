@@ -22,7 +22,7 @@ struct path *
 alloc_path (void)
 {
 	struct path * pp;
-	
+
 	pp = (struct path *)MALLOC(sizeof(struct path));
 
 	if (pp) {
@@ -243,7 +243,7 @@ find_mp_by_minor (vector mpvec, int minor)
 {
 	int i;
 	struct multipath * mpp;
-	
+
 	if (!mpvec)
 		return NULL;
 
@@ -262,7 +262,7 @@ find_mp_by_wwid (vector mpvec, char * wwid)
 {
 	int i;
 	struct multipath * mpp;
-	
+
 	if (!mpvec)
 		return NULL;
 
@@ -279,7 +279,7 @@ find_mp_by_alias (vector mpvec, char * alias)
 	int i;
 	int len;
 	struct multipath * mpp;
-	
+
 	if (!mpvec)
 		return NULL;
 
@@ -287,7 +287,7 @@ find_mp_by_alias (vector mpvec, char * alias)
 
 	if (!len)
 		return NULL;
-	
+
 	vector_foreach_slot (mpvec, mpp, i) {
 		if (strlen(mpp->alias) == len &&
 		    !strncmp(mpp->alias, alias, len))
@@ -315,7 +315,7 @@ find_path_by_dev (vector pathvec, char * dev)
 
 	if (!pathvec)
 		return NULL;
-	
+
 	vector_foreach_slot (pathvec, pp, i)
 		if (!strcmp_chomp(pp->dev, dev))
 			return pp;

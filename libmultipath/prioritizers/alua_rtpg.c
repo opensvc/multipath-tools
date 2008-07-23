@@ -289,7 +289,7 @@ get_asymmetric_access_state(int fd, unsigned int tpg)
 					"more than one entry with same port "
 					"group.\n");
 			} else {
-				PRINT_DEBUG("pref=%i\n", dscr->pref);
+				PRINT_DEBUG("pref=%i\n", dscr->b0);
 				rc = rtpg_tpg_dscr_get_aas(dscr);
 			}
 		}

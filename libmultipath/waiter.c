@@ -58,7 +58,7 @@ void free_waiter (void *data)
 void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 {
 	struct event_thread *wp = (struct event_thread *)mpp->waiter;
-	
+
 	if (!wp) {
 		condlog(3, "%s: no waiter thread", mpp->alias);
 		return;
@@ -113,7 +113,7 @@ int waiteventloop (struct event_thread *waiter)
 	}
 
 	dm_task_no_open_count(waiter->dmt);
-	
+
 	/* accept wait interruption */
 	set = unblock_signals();
 
@@ -154,7 +154,7 @@ int waiteventloop (struct event_thread *waiter)
 		lock_cleanup_pop(waiter->vecs->lock);
 
 		if (r) {
-			condlog(2, "%s: event checker exit", 
+			condlog(2, "%s: event checker exit",
 				waiter->mapname);
 			return -1; /* stop the thread */
 		}

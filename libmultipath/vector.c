@@ -1,10 +1,10 @@
-/* 
+/*
  * Part:        Vector structure manipulation.
- *  
+ *
  * Version:     $Id: vector.c,v 1.0.3 2003/05/11 02:28:03 acassen Exp $
- * 
+ *
  * Author:      Alexandre Cassen, <acassen@linux-vs.org>
- *              
+ *
  *              This program is distributed in the hope that it will be useful,
  *              but WITHOUT ANY WARRANTY; without even the implied warranty of
  *              MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include "vector.h"
 
-/* 
+/*
  * Initialize vector struct.
  * allocated 'size' slot elements then return vector.
  */
@@ -54,7 +54,7 @@ void *
 vector_insert_slot(vector v, int slot, void *value)
 {
 	int i;
-	
+
 	if (!vector_alloc_slot(v))
 		return NULL;
 

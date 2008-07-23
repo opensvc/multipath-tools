@@ -14,7 +14,7 @@ strcmp_chomp(char *str1, char *str2)
 {
 	int i;
 	char s1[PARAMS_SIZE],s2[PARAMS_SIZE];
- 
+
 	if(!str1 || !str2)
 		return 1;
 
@@ -67,7 +67,7 @@ get_word (char * sentence, char ** word)
 	char * p;
 	int len;
 	int skip = 0;
-	
+
 	if (word)
 		*word = NULL;
 

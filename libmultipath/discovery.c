@@ -70,7 +70,7 @@ path_discover (vector pathvec, struct config * conf, char * devname, int flag)
 		condlog(0, "path too small");
 		return 1;
 	}
-			
+
 	if (strncmp(devname,"cciss",5) && !filepresent(path)) {
 		condlog(4, "path %s not present", path);
 		return 0;
@@ -179,7 +179,7 @@ sysfs_get_size (struct sysfs_device * dev, unsigned long long * size)
 
 	return 0;
 }
-	
+
 int
 sysfs_get_fc_nodename (struct sysfs_device * dev, char * node,
 		       unsigned int host, unsigned int channel,
@@ -187,7 +187,7 @@ sysfs_get_fc_nodename (struct sysfs_device * dev, char * node,
 {
 	char attr_path[SYSFS_PATH_SIZE], *attr;
 
-	if (safe_sprintf(attr_path, 
+	if (safe_sprintf(attr_path,
 			 "/class/fc_transport/target%i:%i:%i",
 			 host, channel, target)) {
 		condlog(0, "attr_path too small");
@@ -202,10 +202,7 @@ sysfs_get_fc_nodename (struct sysfs_device * dev, char * node,
 
 	return 1;
 }
-	
-/*
- * udev might be slow creating node files : wait
- */
+
 static int
 opennode (char * dev, int mode)
 {
@@ -244,11 +241,11 @@ devt2devname (char *devname, char *devt)
 		condlog(0, "Cannot open /proc/partitions");
 		return 1;
 	}
-	
+
 	while (!feof(fd)) {
 		int r = fscanf(fd,"%u %u %*d %s",&tmpmaj, &tmpmin, dev);
 		if (!r) {
-			fscanf(fd,"%*s\n");
+			r = fscanf(fd,"%*s\n");
 			continue;
 		}
 		if (r != 3)
@@ -280,62 +277,62 @@ int
 do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
        void *resp, int mx_resp_len, int noisy)
 {
-        unsigned char inqCmdBlk[INQUIRY_CMDLEN] =
-            { INQUIRY_CMD, 0, 0, 0, 0, 0 };
-        unsigned char sense_b[SENSE_BUFF_LEN];
-        struct sg_io_hdr io_hdr;
+	unsigned char inqCmdBlk[INQUIRY_CMDLEN] =
+		{ INQUIRY_CMD, 0, 0, 0, 0, 0 };
+	unsigned char sense_b[SENSE_BUFF_LEN];
+	struct sg_io_hdr io_hdr;
 
-        if (cmddt)
-                inqCmdBlk[1] |= 2;
-        if (evpd)
-                inqCmdBlk[1] |= 1;
-        inqCmdBlk[2] = (unsigned char) pg_op;
+	if (cmddt)
+		inqCmdBlk[1] |= 2;
+	if (evpd)
+		inqCmdBlk[1] |= 1;
+	inqCmdBlk[2] = (unsigned char) pg_op;
 	inqCmdBlk[3] = (unsigned char)((mx_resp_len >> 8) & 0xff);
 	inqCmdBlk[4] = (unsigned char) (mx_resp_len & 0xff);
-        memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
-        io_hdr.interface_id = 'S';
-        io_hdr.cmd_len = sizeof (inqCmdBlk);
-        io_hdr.mx_sb_len = sizeof (sense_b);
-        io_hdr.dxfer_direction = SG_DXFER_FROM_DEV;
-        io_hdr.dxfer_len = mx_resp_len;
-        io_hdr.dxferp = resp;
-        io_hdr.cmdp = inqCmdBlk;
-        io_hdr.sbp = sense_b;
-        io_hdr.timeout = DEF_TIMEOUT;
+	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
+	io_hdr.interface_id = 'S';
+	io_hdr.cmd_len = sizeof (inqCmdBlk);
+	io_hdr.mx_sb_len = sizeof (sense_b);
+	io_hdr.dxfer_direction = SG_DXFER_FROM_DEV;
+	io_hdr.dxfer_len = mx_resp_len;
+	io_hdr.dxferp = resp;
+	io_hdr.cmdp = inqCmdBlk;
+	io_hdr.sbp = sense_b;
+	io_hdr.timeout = DEF_TIMEOUT;
 
-        if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
-                return -1;
+	if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
+		return -1;
 
-        /* treat SG_ERR here to get rid of sg_err.[ch] */
-        io_hdr.status &= 0x7e;
-        if ((0 == io_hdr.status) && (0 == io_hdr.host_status) &&
-            (0 == io_hdr.driver_status))
-                return 0;
-        if ((SCSI_CHECK_CONDITION == io_hdr.status) ||
-            (SCSI_COMMAND_TERMINATED == io_hdr.status) ||
-            (SG_ERR_DRIVER_SENSE == (0xf & io_hdr.driver_status))) {
-                if (io_hdr.sbp && (io_hdr.sb_len_wr > 2)) {
-                        int sense_key;
-                        unsigned char * sense_buffer = io_hdr.sbp;
-                        if (sense_buffer[0] & 0x2)
-                                sense_key = sense_buffer[1] & 0xf;
-                        else
-                                sense_key = sense_buffer[2] & 0xf;
-                        if(RECOVERED_ERROR == sense_key)
-                                return 0;
-                }
-        }
-        return -1;
+	/* treat SG_ERR here to get rid of sg_err.[ch] */
+	io_hdr.status &= 0x7e;
+	if ((0 == io_hdr.status) && (0 == io_hdr.host_status) &&
+	    (0 == io_hdr.driver_status))
+		return 0;
+	if ((SCSI_CHECK_CONDITION == io_hdr.status) ||
+	    (SCSI_COMMAND_TERMINATED == io_hdr.status) ||
+	    (SG_ERR_DRIVER_SENSE == (0xf & io_hdr.driver_status))) {
+		if (io_hdr.sbp && (io_hdr.sb_len_wr > 2)) {
+			int sense_key;
+			unsigned char * sense_buffer = io_hdr.sbp;
+			if (sense_buffer[0] & 0x2)
+				sense_key = sense_buffer[1] & 0xf;
+			else
+				sense_key = sense_buffer[2] & 0xf;
+			if(RECOVERED_ERROR == sense_key)
+				return 0;
+		}
+	}
+	return -1;
 }
 
 static int
 get_serial (char * str, int maxlen, int fd)
 {
-        int len = 0;
-        char buff[MX_ALLOC_LEN + 1] = {0};
+	int len = 0;
+	char buff[MX_ALLOC_LEN + 1] = {0};
 
 	if (fd < 0)
-                return 1;
+		return 1;
 
 	if (0 == do_inq(fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0)) {
 		len = buff[3];
@@ -347,7 +344,7 @@ get_serial (char * str, int maxlen, int fd)
 		}
 		return 0;
 	}
-        return 1;
+	return 1;
 }
 
 static int
@@ -459,7 +456,7 @@ ccw_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 
 	/*
 	 * host / bus / target / lun
-	 */	
+	 */
 	basename(parent->devpath, attr_path);
 	pp->sg_id.lun = 0;
 	sscanf(attr_path, "%i.%i.%x",

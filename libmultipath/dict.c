@@ -88,7 +88,7 @@ def_getuid_callout_handler(vector strvec)
 
 	if (!conf->getuid)
 		return 1;
-	
+
 	return 0;
 }
 
@@ -338,12 +338,12 @@ ble_wwid_handler(vector strvec)
 static int
 ble_except_wwid_handler(vector strvec)
 {
-        char * buff;
+	char * buff;
 
-        buff = set_value(strvec);
+	buff = set_value(strvec);
 
-        if (!buff)
-                return 1;
+	if (!buff)
+		return 1;
 
 	return store_ble(conf->elist_wwid, buff, ORIGIN_CONFIG);
 }
@@ -453,7 +453,7 @@ vendor_handler(vector strvec)
 
 	if (!hwe)
 		return 1;
-	
+
 	hwe->vendor = set_value(strvec);
 
 	if (!hwe->vendor)
@@ -469,7 +469,7 @@ product_handler(vector strvec)
 
 	if (!hwe)
 		return 1;
-	
+
 	hwe->product = set_value(strvec);
 
 	if (!hwe->product)
@@ -527,7 +527,7 @@ static int
 hw_selector_handler(vector strvec)
 {
 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
-	
+
 	if (!hwe)
 		return 1;
 
@@ -559,7 +559,7 @@ static int
 hw_features_handler(vector strvec)
 {
 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
-	
+
 	if (!hwe)
 		return 1;
 
@@ -575,7 +575,7 @@ static int
 hw_handler_handler(vector strvec)
 {
 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
-	
+
 	if (!hwe)
 		return 1;
 
@@ -781,7 +781,7 @@ alias_handler(vector strvec)
 	if (!mpe)
 		return 1;
 
-        mpe->alias = set_value(strvec);
+	mpe->alias = set_value(strvec);
 
 	if (!mpe->alias)
 		return 1;
@@ -813,7 +813,7 @@ static int
 mp_selector_handler(vector strvec)
 {
 	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);
-	
+
 	if (!mpe)
 		return 1;
 
@@ -981,7 +981,7 @@ snprint_mp_path_grouping_policy (char * buff, int len, void * data)
 	if (!mpe->pgpolicy)
 		return 0;
 	get_pgpolicy_name(str, POLICY_NAME_SIZE, mpe->pgpolicy);
-	
+
 	return snprintf(buff, len, "%s", str);
 }
 
@@ -1194,7 +1194,7 @@ snprint_hw_path_grouping_policy (char * buff, int len, void * data)
 		return 0;
 
 	get_pgpolicy_name(str, POLICY_NAME_SIZE, hwe->pgpolicy);
-	
+
 	return snprintf(buff, len, "%s", str);
 }
 
@@ -1362,7 +1362,7 @@ snprint_def_path_grouping_policy (char * buff, int len, void * data)
 		return 0;
 
 	get_pgpolicy_name(str, POLICY_NAME_SIZE, conf->pgpolicy);
-	
+
 	return snprintf(buff, len, "%s", str);
 }
 
@@ -1454,7 +1454,7 @@ snprint_max_fds (char * buff, int len, void * data)
 		return 0;
 
 	if (conf->max_fds < 0)
-		return snprintf(buff, len, "unlimited");	
+		return snprintf(buff, len, "unlimited");
 	return snprintf(buff, len, "%d", conf->max_fds);
 }
 
@@ -1534,7 +1534,7 @@ snprint_bled_vendor (char * buff, int len, void * data)
 
 	return snprintf(buff, len, "\"%s\"", bled->vendor);
 }
-	
+
 static int
 snprint_bled_product (char * buff, int len, void * data)
 {
@@ -1542,7 +1542,7 @@ snprint_bled_product (char * buff, int len, void * data)
 
 	return snprintf(buff, len, "\"%s\"", bled->product);
 }
-	
+
 #define __deprecated
 
 void
