@@ -11,3 +11,4 @@ char * dm_mapname(int major, int minor);
 dev_t dm_get_first_dep(char *devname);
 char * dm_mapuuid(int major, int minor);
 int dm_devn (char * mapname, int *major, int *minor);
+int dm_no_partitions(int major, int minor);

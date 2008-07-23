@@ -167,12 +167,23 @@ Default value is \fBnone\fR.
 .RE
 .TP
 .B features
-Specify any device-mapper features to be used. The most common of
-these features is
-.I "1 queue_if_no_path" 
-Note that this can also be set via the
+Specify any device-mapper features to be used. Syntax is
+.I num list
+where
+.I num
+is the number of features in
+.I list.
+Possible values for the feature list are
+.RS
+.TP 12
+.B queue_if_no_path
+Queue IO if no path is active; identical to the
 .I no_path_retry
 keyword.
+.TP
+.B no_partitions
+Disable automatic partitions generation via kpartx.
+.RE
 .TP
 .B path_checker
 The default method used to determine the paths' state. Possible values

@@ -12,6 +12,7 @@
 
 #define UUID_PREFIX "part%d-"
 #define MAX_PREFIX_LEN 8
+#define PARAMS_SIZE 1024
 
 #ifndef LIBDM_API_COOKIE
 static inline int dm_task_set_cookie(struct dm_task *dmt, uint32_t *c, int a)
@@ -278,3 +279,62 @@ out:
 	return r;
 }
 
+int
+dm_get_map(int major, int minor, char * outparams)
+{
+	int r = 1;
+	struct dm_task *dmt;
+	void *next = NULL;
+	uint64_t start, length;
+	char *target_type = NULL;
+	char *params = NULL;
+
+	if (!(dmt = dm_task_create(DM_DEVICE_TABLE)))
+		return 1;
+
+	dm_task_set_major(dmt, major);
+	dm_task_set_minor(dmt, minor);
+	dm_task_no_open_count(dmt);
+
+	if (!dm_task_run(dmt))
+		goto out;
+
+	/* Fetch 1st target */
+	next = dm_get_next_target(dmt, next, &start, &length,
+				  &target_type, &params);
+
+	if (snprintf(outparams, PARAMS_SIZE, "%s", params) <= PARAMS_SIZE)
+		r = 0;
+out:
+	dm_task_destroy(dmt);
+	return r;
+}
+
+#define FEATURE_NO_PART "no_partitions"
+
+int
+dm_no_partitions(int major, int minor)
+{
+	char params[PARAMS_SIZE], *ptr;
+	int i, num_features;
+
+	if (dm_get_map(major, minor, params))
+		return 0;
+
+	ptr = params;
+	num_features = strtoul(params, &ptr, 10);
+	if ((ptr == params) || num_features == 0) {
+		/* No features found, return success */
+		return 0;
+	}
+	for (i = 0; (i < num_features); i++) {
+		if (!ptr || ptr > params + strlen(params))
+			break;
+		/* Skip whitespaces */
+		while(ptr && *ptr == ' ') ptr++;
+		if (!strncmp(ptr, FEATURE_NO_PART, strlen(FEATURE_NO_PART)))
+			return 1;
+		ptr = strchr(ptr, ' ');
+	}
+	return 0;
+}
