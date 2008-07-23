@@ -211,6 +211,7 @@ struct path * first_path (struct multipath * mpp);
 
 int pathcountgr (struct pathgroup *, int);
 int pathcount (struct multipath *, int);
+void setup_feature(struct multipath *, char *);
 
 extern char sysfs_path[PATH_SIZE];
 

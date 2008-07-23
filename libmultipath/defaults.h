@@ -15,7 +15,6 @@
 #define DEFAULT_CHECKINT	5
 #define MAX_CHECKINT(a)		(a << 2)
 
-#define DEFAULT_TARGET		"multipath"
 #define DEFAULT_PIDFILE		"/var/run/multipathd.pid"
 #define DEFAULT_SOCKET		"/var/run/multipathd.sock"
 #define DEFAULT_CONFIGFILE	"/etc/multipath.conf"

@@ -154,7 +154,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 
 	if (!find_mp_by_wwid(curmp, mpp->wwid)) {
 		condlog(2, "%s: remove (wwid changed)", cmpp->alias);
-		dm_flush_map(mpp->alias, DEFAULT_TARGET);
+		dm_flush_map(mpp->alias);
 		strncat(cmpp->wwid, mpp->wwid, WWID_SIZE);
 		drop_multipath(curmp, cmpp->wwid, KEEP_PATHS);
 		mpp->action = ACT_CREATE;
@@ -189,14 +189,14 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 			mpp->alias);
 		return;
 	}
-	if (strncmp(cmpp->hwhandler, mpp->hwhandler,
+	if (!cmpp->selector || strncmp(cmpp->hwhandler, mpp->hwhandler,
 		    strlen(mpp->hwhandler))) {
 		mpp->action = ACT_RELOAD;
 		condlog(3, "%s: set ACT_RELOAD (hwhandler change)",
 			mpp->alias);
 		return;
 	}
-	if (strncmp(cmpp->selector, mpp->selector,
+	if (!cmpp->selector || strncmp(cmpp->selector, mpp->selector,
 		    strlen(mpp->selector))) {
 		mpp->action = ACT_RELOAD;
 		condlog(3, "%s: set ACT_RELOAD (selector change)",
@@ -209,7 +209,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 			mpp->alias, cmpp->minio, mpp->minio);
 		return;
 	}
-	if (VECTOR_SIZE(cmpp->pg) != VECTOR_SIZE(mpp->pg)) {
+	if (!cmpp->pg || VECTOR_SIZE(cmpp->pg) != VECTOR_SIZE(mpp->pg)) {
 		mpp->action = ACT_RELOAD;
 		condlog(3, "%s: set ACT_RELOAD (path group number change)",
 			mpp->alias);
@@ -336,28 +336,19 @@ domap (struct multipath * mpp)
 			break;
 		}
 
-		r = dm_addmap(DM_DEVICE_CREATE, mpp->alias, DEFAULT_TARGET,
-			      mpp->params, mpp->size, mpp->wwid);
+		r = dm_addmap_create(mpp->alias, mpp->params, mpp->size,
+				     mpp->wwid);
 
-		/*
-		 * DM_DEVICE_CREATE is actually DM_DEV_CREATE plus
-		 * DM_TABLE_LOAD. Failing the second part leaves an
-		 * empty map. Clean it up.
-		 */
-		if (!r && dm_map_present(mpp->alias)) {
-			condlog(3, "%s: failed to load map "
-				   "(a path might be in use)",
-				   mpp->alias);
-			dm_flush_map(mpp->alias, DEFAULT_TARGET);
-		}
+		if (!r)
+			 r = dm_addmap_create_ro(mpp->alias, mpp->params,
+						 mpp->size, mpp->wwid);
 
 		lock_multipath(mpp, 0);
 		break;
 
 	case ACT_RELOAD:
-		r = (dm_addmap(DM_DEVICE_RELOAD, mpp->alias, DEFAULT_TARGET,
-			      mpp->params, mpp->size, NULL) &&
-		     dm_simplecmd(DM_DEVICE_RESUME, mpp->alias));
+		r = (dm_addmap_reload(mpp->alias, mpp->params, mpp->size, NULL)
+		     && dm_simplecmd(DM_DEVICE_RESUME, mpp->alias));
 		break;
 
 	case ACT_RENAME:
@@ -382,7 +373,7 @@ domap (struct multipath * mpp)
 			/* multipath daemon mode */
 			mpp->stat_map_loads++;
 			condlog(2, "%s: load table [0 %llu %s %s]", mpp->alias,
-				mpp->size, DEFAULT_TARGET, mpp->params);
+				mpp->size, TGT_MPATH, mpp->params);
 			/*
 			 * Required action is over, reset for the stateful daemon
 			 */
@@ -558,7 +549,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 
 			remove_map(mpp, vecs, 0);
 
-			if (dm_flush_map(mpp->alias, DEFAULT_TARGET))
+			if (dm_flush_map(mpp->alias))
 				condlog(2, "%s: remove failed (dead)",
 					mpp->alias);
 			else

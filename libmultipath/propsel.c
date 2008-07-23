@@ -168,8 +168,7 @@ select_alias (struct multipath * mp)
 		if (mp->alias == NULL){
 			char *alias;
 			if ((alias = MALLOC(WWID_SIZE)) != NULL){
-				if (dm_get_name(mp->wwid, DEFAULT_TARGET,
-						alias) == 1)
+				if (dm_get_name(mp->wwid, alias) == 1)
 					mp->alias = alias;
 				else
 					FREE(alias);

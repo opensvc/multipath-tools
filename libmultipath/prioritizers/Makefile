@@ -25,10 +25,10 @@ libprio%.so: %.o
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 install: $(LIBS)
-	install -m 755 libprio*.so $(libdir)
+	$(INSTALL_PROGRAM) -m 755 libprio*.so $(DESTDIR)$(libdir)
 
 uninstall:
-	rm -f $(libdir)/libprio*.so
+	rm -f $(DESTDIR)$(libdir)/libprio*.so
 
 clean:
 	rm -f core *.a *.o *.gz *.so

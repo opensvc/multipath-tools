@@ -185,6 +185,17 @@ cli_list_paths (void * v, char ** reply, int * len, void * data)
 }
 
 int
+cli_list_paths_fmt (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	char * fmt = get_keyparam(v, FMT);
+
+	condlog(3, "list paths (operator)");
+
+	return show_paths(reply, len, vecs, fmt);
+}
+
+int
 cli_list_map_topology (void * v, char ** reply, int * len, void * data)
 {
 	struct multipath * mpp;

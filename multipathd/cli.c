@@ -3,6 +3,7 @@
  */
 #include <memory.h>
 #include <vector.h>
+#include <parser.h>
 #include <util.h>
 #include <version.h>
 #include <readline/readline.h>
@@ -168,6 +169,7 @@ load_keys (void)
 	r += add_key(keys, "config", CONFIG, 0);
 	r += add_key(keys, "blacklist", BLACKLIST, 0);
 	r += add_key(keys, "devices", DEVICES, 0);
+	r += add_key(keys, "format", FMT, 1);
 
 	if (r) {
 		free_keys(keys);
@@ -210,13 +212,17 @@ find_key (const char * str)
 static int
 get_cmdvec (char * cmd, vector *v)
 {
-	int fwd = 1;
+	int i;
 	int r = 0;
-	char * p = cmd;
+	int get_param = 0;
 	char * buff;
 	struct key * kw = NULL;
 	struct key * cmdkw = NULL;
-	vector cmdvec;
+	vector cmdvec, strvec;
+
+	strvec = alloc_strvec(cmd);
+	if (!strvec)
+		return 0;
 
 	cmdvec = vector_alloc();
 	*v = cmdvec;
@@ -224,21 +230,20 @@ get_cmdvec (char * cmd, vector *v)
 	if (!cmdvec)
 		return E_NOMEM;
 
-	while (fwd) {
-		fwd = get_word(p, &buff);
-
-		if (!buff)
-			break;
-
-		p += fwd;
+	vector_foreach_slot(strvec, buff, i) {
+		if (*buff == '"')
+			continue;
+		if (get_param) {
+			get_param = 0;
+			cmdkw->param = strdup(buff);
+			continue;
+		}
 		kw = find_key(buff);
-		FREE(buff);
-
-		if (!kw)
-			return E_SYNTAX;
-
+		if (!kw) {
+			r = E_SYNTAX;
+			goto out;
+		}
 		cmdkw = alloc_key();
-
 		if (!cmdkw) {
 			r = E_NOMEM;
 			goto out;
@@ -251,23 +256,17 @@ get_cmdvec (char * cmd, vector *v)
 		vector_set_slot(cmdvec, cmdkw);
 		cmdkw->code = kw->code;
 		cmdkw->has_param = kw->has_param;
-		
-		if (kw->has_param) {
-			if (*p == '\0')
-				goto out;
-
-			fwd = get_word(p, &buff);
-
-			if (!buff)
-				return E_NOPARM;
-
-			p += fwd;
-			cmdkw->param = buff;
-		}
+		if (kw->has_param)
+			get_param = 1;
+	}
+	if (get_param) {
+		r = E_NOPARM;
+		goto out;
 	}
 	return 0;
 
 out:
+	free_strvec(strvec);
 	free_keys(cmdvec);
 	*v = NULL;
 	return r;
@@ -406,6 +405,7 @@ cli_init (void) {
 		return 1;
 
 	add_handler(LIST+PATHS, NULL);
+	add_handler(LIST+PATHS+FMT, NULL);
 	add_handler(LIST+MAPS, NULL);
 	add_handler(LIST+MAPS+STATUS, NULL);
 	add_handler(LIST+MAPS+STATS, NULL);

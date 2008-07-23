@@ -187,13 +187,16 @@ remove_maps_and_stop_waiters (struct vectors * vecs)
 static struct hwentry *
 extract_hwe_from_path(struct multipath * mpp)
 {
-	struct path * pp;
-	struct pathgroup * pgp;
+	struct path * pp = NULL;
+	struct pathgroup * pgp = NULL;
 
-	pgp = VECTOR_SLOT(mpp->pg, 0);
-	pp = VECTOR_SLOT(pgp->paths, 0);
+	if (mpp && mpp->pg)
+		pgp = VECTOR_SLOT(mpp->pg, 0);
 
-	return pp->hwe;
+	if (pgp && pgp->paths)
+		pp = VECTOR_SLOT(pgp->paths, 0);
+
+	return pp?pp->hwe:NULL;
 }
 
 static int
@@ -247,7 +250,8 @@ set_no_path_retry(struct multipath *mpp)
 {
 	mpp->retry_tick = 0;
 	mpp->nr_active = pathcount(mpp, PATH_UP) + pathcount(mpp, PATH_GHOST);
-	select_no_path_retry(mpp);
+	if (mpp->nr_active > 0)
+		select_no_path_retry(mpp);
 
 	switch (mpp->no_path_retry) {
 	case NO_PATH_RETRY_UNDEF:
@@ -296,7 +300,7 @@ retry:
 		/*
 		 * detect an external rename of the multipath device
 		 */
-		if (dm_get_name(mpp->wwid, DEFAULT_TARGET, new_alias)) {
+		if (dm_get_name(mpp->wwid, new_alias)) {
 			condlog(3, "%s multipath mapped device name has "
 				"changed from %s to %s", mpp->wwid,
 				mpp->alias, new_alias);

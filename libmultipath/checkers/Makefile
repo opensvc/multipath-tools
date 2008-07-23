@@ -21,10 +21,10 @@ libcheck%.so: libsg.o %.o
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 install:
-	$(INSTALL_PROGRAM) -o root -g root -m 755 $(LIBS) $(libdir)
+	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(libdir)
 
 uninstall:
-	rm -f $(libdir)/$(LIBS)
+	rm -f $(DESTDIR)$(libdir)/$(LIBS)
 
 clean:
 	rm -f core *.a *.o *.gz *.so
