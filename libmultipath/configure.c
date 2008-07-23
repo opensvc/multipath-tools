@@ -168,7 +168,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 			mpp->alias);
 		return;
 	}
-		
+
 	if (pathcount(mpp, PATH_UP) == 0) {
 		mpp->action = ACT_NOTHING;
 		condlog(3, "%s: set ACT_NOTHING (no usable path)",
@@ -278,7 +278,7 @@ lock_multipath (struct multipath * mpp, int lock)
 
 	if (!mpp || !mpp->pg)
 		return 0;
-	
+
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		if (!pgp->paths)
 			continue;
@@ -422,7 +422,7 @@ deadmap (struct multipath * mpp)
 			if (strlen(pp->dev))
 				return 0; /* alive */
 	}
-	
+
 	return 1; /* dead */
 }
 
@@ -480,13 +480,13 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			remove_map(mpp, vecs, 0);
 			continue;
 		}
-		
+
 		for (i = k + 1; i < VECTOR_SIZE(pathvec); i++) {
 			pp2 = VECTOR_SLOT(pathvec, i);
 
 			if (strcmp(pp1->wwid, pp2->wwid))
 				continue;
-			
+
 			if (!pp2->size)
 				continue;
 

@@ -59,7 +59,7 @@ assemble_map (struct multipath * mp)
 	minio = mp->minio;
 	p = mp->params;
 	freechar = sizeof(mp->params);
-	
+
 	shift = snprintf(p, freechar, "%s %s %i %i",
 			 mp->features, mp->hwhandler,
 			 VECTOR_SIZE(mp->pg), mp->bestpg);
@@ -70,7 +70,7 @@ assemble_map (struct multipath * mp)
 	}
 	p += shift;
 	freechar -= shift;
-	
+
 	vector_foreach_slot (mp->pg, pgp, i) {
 		pgp = VECTOR_SLOT(mp->pg, i);
 		shift = snprintf(p, freechar, " %s %i 1", mp->selector,
@@ -221,7 +221,7 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 				goto out;
 
 			num_pg_args = atoi(word);
-			
+
 			if (merge_words(&mpp->selector, word, 1)) {
 				FREE(word);
 				goto out1;
@@ -239,7 +239,7 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 		 * paths
 		 */
 		pgp = alloc_pathgroup();
-		
+
 		if (!pgp)
 			goto out;
 
