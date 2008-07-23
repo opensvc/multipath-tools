@@ -93,5 +93,11 @@ void log_thread_stop (void)
 	pthread_mutex_destroy(logev_lock);
 	pthread_cond_destroy(logev_cond);
 
+	free(logq_lock);
+	logq_lock = NULL;
+	free(logev_lock);
+	logev_lock = NULL;
+	free(logev_cond);
+	logev_cond = NULL;
 	free_logarea();
 }
