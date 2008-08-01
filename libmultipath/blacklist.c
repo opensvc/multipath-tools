@@ -16,7 +16,7 @@ extern int
 store_ble (vector blist, char * str, int origin)
 {
 	struct blentry * ble;
-	
+
 	if (!str)
 		return 0;
 
@@ -61,12 +61,12 @@ alloc_ble_device (vector blist)
 	vector_set_slot(blist, ble);
 	return 0;
 }
-	
+
 extern int
 set_ble_device (vector blist, char * vendor, char * product, int origin)
 {
 	struct blentry_device * ble;
-	
+
 	if (!blist)
 		return 1;
 
@@ -142,14 +142,14 @@ setup_default_blist (struct config * conf)
 int
 _blacklist_exceptions (vector elist, char * str)
 {
-        int i;
-        struct blentry * ele;
+	int i;
+	struct blentry * ele;
 
-        vector_foreach_slot (elist, ele, i) {
-                if (!regexec(&ele->regex, str, 0, NULL, 0))
+	vector_foreach_slot (elist, ele, i) {
+		if (!regexec(&ele->regex, str, 0, NULL, 0))
 			return 1;
 	}
-        return 0;
+	return 0;
 }
 
 int
@@ -194,11 +194,11 @@ _blacklist_device (vector blist, char * vendor, char * product)
 }
 
 #define LOG_BLIST(M) \
-	if (vendor && product)                                           \
+	if (vendor && product)						 \
 		condlog(3, "%s: (%s:%s) %s", dev, vendor, product, (M)); \
-	else if (wwid)                                                   \
-		condlog(3, "%s: (%s) %s", dev, wwid, (M));               \
-	else                                                             \
+	else if (wwid)							 \
+		condlog(3, "%s: (%s) %s", dev, wwid, (M));		 \
+	else								 \
 		condlog(3, "%s: %s", dev, (M))
 
 void
@@ -300,7 +300,7 @@ _filter_path (struct config * conf, struct path * pp)
 	if (r > 0)
 		return r;
 	r = _filter_device(conf->blist_device, conf->elist_device,
-		 	   pp->vendor_id, pp->product_id);
+			   pp->vendor_id, pp->product_id);
 	if (r > 0)
 		return r;
 	r = _filter_wwid(conf->blist_wwid, conf->elist_wwid, pp->wwid);

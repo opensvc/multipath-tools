@@ -280,13 +280,13 @@ setup_multipath (struct vectors * vecs, struct multipath * mpp)
 retry:
 	if (dm_get_info(mpp->alias, &mpp->dmi)) {
 		/* Error accessing table */
-		condlog(3, "%s: cannot access table", mpp->alias); 
+		condlog(3, "%s: cannot access table", mpp->alias);
 		goto out;
 	}
 
 	if (!dm_map_present(mpp->alias)) {
 		/* Table has been removed */
-		condlog(3, "%s: table does not exist", mpp->alias); 
+		condlog(3, "%s: table does not exist", mpp->alias);
 		goto out;
 	}
 

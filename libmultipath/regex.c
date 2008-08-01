@@ -116,7 +116,7 @@ static void init_syntax_once(void)
 /* True if `size1' is non-NULL and PTR is pointing anywhere inside
    `string1' or just past its end.  This works if PTR is NULL, which is
    a good thing.  */
-#define FIRST_STRING_P(ptr) 						\
+#define FIRST_STRING_P(ptr)						\
 	(size1 && string1 <= (ptr) && (ptr) <= string1 + size1)
 
 /* (Re)Allocate N items of type T using malloc, or fail.  */
@@ -188,7 +188,7 @@ typedef enum {
 #define EXTRACT_NUMBER_AND_INCR(destination, source)			\
   do {									\
     EXTRACT_NUMBER (destination, source);				\
-    (source) += 2; 							\
+    (source) += 2;							\
   } while (0)
 
 #undef assert
@@ -267,14 +267,14 @@ static reg_errcode_t compile_range (const char **p_ptr, const char *pend,
 #define PATFETCH(c)							\
   do {if (p == pend) return REG_EEND;					\
     c = (unsigned char) *p++;						\
-    if (translate) c = translate[c]; 					\
+    if (translate) c = translate[c];					\
   } while (0)
 
 /* Fetch the next character in the uncompiled pattern, with no
    translation.  */
 #define PATFETCH_RAW(c)							\
   do {if (p == pend) return REG_EEND;					\
-    c = (unsigned char) *p++; 						\
+    c = (unsigned char) *p++;						\
   } while (0)
 
 /* Go backwards one character in the pattern.  */
@@ -354,27 +354,27 @@ static reg_errcode_t compile_range (const char **p_ptr, const char *pend,
    correct places in the new one.  If extending the buffer results in it
    being larger than MAX_BUF_SIZE, then flag memory exhausted.  */
 #define EXTEND_BUFFER()							\
-  do { 									\
+  do {									\
     unsigned char *old_buffer = bufp->buffer;				\
-    if (bufp->allocated == MAX_BUF_SIZE) 				\
+    if (bufp->allocated == MAX_BUF_SIZE)				\
       return REG_ESIZE;							\
     bufp->allocated <<= 1;						\
     if (bufp->allocated > MAX_BUF_SIZE)					\
-      bufp->allocated = MAX_BUF_SIZE; 					\
+      bufp->allocated = MAX_BUF_SIZE;					\
     bufp->buffer = (unsigned char *) REALLOC(bufp->buffer, bufp->allocated);\
     if (bufp->buffer == NULL)						\
       return REG_ESPACE;						\
     /* If the buffer moved, move all the pointers into it.  */		\
     if (old_buffer != bufp->buffer)					\
       {									\
-        b = (b - old_buffer) + bufp->buffer;				\
-        begalt = (begalt - old_buffer) + bufp->buffer;			\
-        if (fixup_alt_jump)						\
-          fixup_alt_jump = (fixup_alt_jump - old_buffer) + bufp->buffer;\
-        if (laststart)							\
-          laststart = (laststart - old_buffer) + bufp->buffer;		\
-        if (pending_exact)						\
-          pending_exact = (pending_exact - old_buffer) + bufp->buffer;	\
+	b = (b - old_buffer) + bufp->buffer;				\
+	begalt = (begalt - old_buffer) + bufp->buffer;			\
+	if (fixup_alt_jump)						\
+	  fixup_alt_jump = (fixup_alt_jump - old_buffer) + bufp->buffer;\
+	if (laststart)							\
+	  laststart = (laststart - old_buffer) + bufp->buffer;		\
+	if (pending_exact)						\
+	  pending_exact = (pending_exact - old_buffer) + bufp->buffer;	\
       }									\
   } while (0)
 
@@ -428,20 +428,20 @@ typedef struct {
 
 
 /* Get the next unsigned number in the uncompiled pattern.  */
-#define GET_UNSIGNED_NUMBER(num) 					\
+#define GET_UNSIGNED_NUMBER(num)					\
   { if (p != pend)							\
      {									\
-       PATFETCH (c); 							\
-       while (ISDIGIT (c)) 						\
-         { 								\
-           if (num < 0)							\
-              num = 0;							\
-           num = num * 10 + c - '0'; 					\
-           if (p == pend) 						\
-              break; 							\
-           PATFETCH (c);						\
-         } 								\
-       } 								\
+       PATFETCH (c);							\
+       while (ISDIGIT (c))						\
+	 {								\
+	   if (num < 0)							\
+	      num = 0;							\
+	   num = num * 10 + c - '0';					\
+	   if (p == pend)						\
+	      break;							\
+	   PATFETCH (c);						\
+	 }								\
+       }								\
     }
 
 #define CHAR_CLASS_MAX_LENGTH  6	/* Namely, `xdigit'.  */
@@ -1524,14 +1524,14 @@ typedef struct {
   ((fail_stack).size > re_max_failures * MAX_FAILURE_ITEMS		\
    ? 0									\
    : ((fail_stack).stack = (fail_stack_elt_t *)				\
-        REGEX_REALLOCATE ((fail_stack).stack, 				\
-          (fail_stack).size * sizeof (fail_stack_elt_t),		\
-          ((fail_stack).size << 1) * sizeof (fail_stack_elt_t)),	\
+	REGEX_REALLOCATE ((fail_stack).stack,				\
+	  (fail_stack).size * sizeof (fail_stack_elt_t),		\
+	  ((fail_stack).size << 1) * sizeof (fail_stack_elt_t)),	\
 									\
       (fail_stack).stack == NULL					\
       ? 0								\
-      : ((fail_stack).size <<= 1, 					\
-         1)))
+      : ((fail_stack).size <<= 1,					\
+	 1)))
 
 
 /* Push PATTERN_OP on FAIL_STACK.
@@ -1577,7 +1577,7 @@ typedef struct {
        is wide enough to hold a value of something to which pointer can \
        be assigned */							\
     s_reg_t this_reg;							\
-    									\
+									\
     DEBUG_STATEMENT (failure_id++);					\
     DEBUG_STATEMENT (nfailure_points_pushed++);				\
     DEBUG_PRINT2 ("\nPUSH_FAILURE_POINT #%u:\n", failure_id);		\
@@ -1663,7 +1663,7 @@ typedef struct {
 
 /* We actually push this many items.  */
 #define NUM_FAILURE_ITEMS						\
-  ((highest_active_reg - lowest_active_reg + 1) * NUM_REG_ITEMS 	\
+  ((highest_active_reg - lowest_active_reg + 1) * NUM_REG_ITEMS		\
     + NUM_NONREG_ITEMS)
 
 /* How many items can still be added to the stack without overflowing it.  */
@@ -2255,13 +2255,13 @@ static int bcmp_translate (const char *s1, const char *s2,
 /* Call before fetching a character with *d.  This switches over to
    string2 if necessary.  */
 #define PREFETCH()							\
-  while (d == dend)						    	\
+  while (d == dend)							\
     {									\
       /* End of string2 => fail.  */					\
-      if (dend == end_match_2) 						\
-        goto fail;							\
-      /* End of string1 => advance to string2.  */ 			\
-      d = string2;						        \
+      if (dend == end_match_2)						\
+	goto fail;							\
+      /* End of string1 => advance to string2.  */			\
+      d = string2;							\
       dend = end_match_2;						\
     }
 
@@ -2278,7 +2278,7 @@ static int bcmp_translate (const char *s1, const char *s2,
    string2, look at the last character in string1.  */
 #define WORDCHAR_P(d)							\
   (SYNTAX ((d) == end1 ? *string2					\
-           : (d) == string2 - 1 ? *(end1 - 1) : *(d))			\
+	   : (d) == string2 - 1 ? *(end1 - 1) : *(d))			\
    == Sword)
 
 /* Test if the character before D and the one at D differ with respect

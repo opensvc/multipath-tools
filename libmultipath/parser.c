@@ -1,11 +1,11 @@
-/* 
+/*
  * Part:        Configuration file parser/reader. Place into the dynamic
  *              data structure representation the conf file
- *  
+ *
  * Version:     $Id: parser.c,v 1.0.3 2003/05/11 02:28:03 acassen Exp $
- * 
+ *
  * Author:      Alexandre Cassen, <acassen@linux-vs.org>
- *              
+ *
  *              This program is distributed in the hope that it will be useful,
  *              but WITHOUT ANY WARRANTY; without even the implied warranty of
  *              MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -43,7 +43,7 @@ keyword_alloc(vector keywords, char *string, int (*handler) (vector),
 
 	if (!keyword)
 		return 1;
-	
+
 	if (!vector_alloc_slot(keywords)) {
 		FREE(keyword);
 		return 1;
@@ -450,7 +450,7 @@ process_stream(vector keywords)
 				break;
 			}
 		}
-		
+
 		free_strvec(strvec);
 	}
 

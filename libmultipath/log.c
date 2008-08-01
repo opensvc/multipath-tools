@@ -18,7 +18,7 @@
 static void dump_logarea (void)
 {
 	struct logmsg * msg;
-	
+
 	logdbg(stderr, "\n==== area: start addr = %p, end addr = %p ====\n",
 		la->start, la->end);
 	logdbg(stderr, "|addr     |next     |prio|msg\n");
@@ -34,12 +34,12 @@ static void dump_logarea (void)
 	logdbg(stderr, "\n\n");
 }
 #endif
-		
+
 static int logarea_init (int size)
 {
 	logdbg(stderr,"enter logarea_init\n");
 	la = (struct logarea *)MALLOC(sizeof(struct logarea));
-	
+
 	if (!la)
 		return 1;
 
@@ -107,7 +107,7 @@ int log_enqueue (int prio, const char * fmt, va_list ap)
 	lastmsg = (struct logmsg *)la->tail;
 
 	if (!la->empty) {
-		fwd = sizeof(struct logmsg) + 
+		fwd = sizeof(struct logmsg) +
 		      strlen((char *)&lastmsg->str) * sizeof(char) + 1;
 		la->tail += ALIGN(fwd, sizeof(void *));
 	}
@@ -118,11 +118,11 @@ int log_enqueue (int prio, const char * fmt, va_list ap)
 	/* not enough space on tail : rewind */
 	if (la->head <= la->tail && len > (la->end - la->tail)) {
 		logdbg(stderr, "enqueue: rewind tail to %p\n", la->tail);
-                if (la->head == la->start ) {
-                        logdbg(stderr, "enqueue: can not rewind tail, drop msg\n");
-                        la->tail = lastmsg;
-                        return 1;  /* can't reuse */
-                }
+		if (la->head == la->start ) {
+			logdbg(stderr, "enqueue: can not rewind tail, drop msg\n");
+			la->tail = lastmsg;
+			return 1;  /* can't reuse */
+		}
 		la->tail = la->start;
 
 		if (la->empty)

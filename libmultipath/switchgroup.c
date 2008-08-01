@@ -35,7 +35,7 @@ select_path_group (struct multipath * mpp)
 
 	if (!mpp->pg)
 		return 1;
-	
+
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		if (!pgp->paths)
 			continue;

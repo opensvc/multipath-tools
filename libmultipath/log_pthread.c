@@ -53,17 +53,17 @@ static void * log_thread (void * et)
 void log_thread_start (void)
 {
 	pthread_attr_t attr;
-	
+
 	logdbg(stderr,"enter log_thread_start\n");
 
 	logq_lock = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
 	logev_lock = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
 	logev_cond = (pthread_cond_t *) malloc(sizeof(pthread_cond_t));
-	
+
 	pthread_mutex_init(logq_lock, NULL);
 	pthread_mutex_init(logev_lock, NULL);
 	pthread_cond_init(logev_cond, NULL);
-	
+
 	pthread_attr_init(&attr);
 	pthread_attr_setstacksize(&attr, 64 * 1024);
 
@@ -91,4 +91,4 @@ void log_thread_stop (void)
 	pthread_cond_destroy(logev_cond);
 
 	free_logarea();
-}	
+}

@@ -26,17 +26,17 @@
 int ux_socket_connect(const char *name)
 {
 	int fd;
-        struct sockaddr_un addr;
+	struct sockaddr_un addr;
 
-        memset(&addr, 0, sizeof(addr));
-        addr.sun_family = AF_UNIX;
-        strncpy(addr.sun_path, name, sizeof(addr.sun_path));
+	memset(&addr, 0, sizeof(addr));
+	addr.sun_family = AF_UNIX;
+	strncpy(addr.sun_path, name, sizeof(addr.sun_path));
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (fd == -1) {
 		return -1;
 	}
-	
+
 	if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
 		close(fd);
 		return -1;
@@ -47,12 +47,12 @@ int ux_socket_connect(const char *name)
 
 /*
  * create a unix domain socket and start listening on it
- * return a file descriptor open on the socket 
+ * return a file descriptor open on the socket
  */
 int ux_socket_listen(const char *name)
 {
 	int fd;
-        struct sockaddr_un addr;
+	struct sockaddr_un addr;
 
 	/* get rid of any old socket */
 	unlink(name);
@@ -60,16 +60,16 @@ int ux_socket_listen(const char *name)
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (fd == -1) return -1;
 
-        memset(&addr, 0, sizeof(addr));
-        addr.sun_family = AF_UNIX;
-        strncpy(addr.sun_path, name, sizeof(addr.sun_path));
+	memset(&addr, 0, sizeof(addr));
+	addr.sun_family = AF_UNIX;
+	strncpy(addr.sun_path, name, sizeof(addr.sun_path));
 
-        if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+	if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
 		close(fd);
 		return -1;
-	}	
+	}
 
-        if (listen(fd, 10) == -1) {
+	if (listen(fd, 10) == -1) {
 		close(fd);
 		return -1;
 	}

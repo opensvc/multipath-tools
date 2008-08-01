@@ -67,7 +67,7 @@ group_by_node_name (struct multipath * mp) {
 	struct path * pp;
 	struct pathgroup * pgp;
 	struct path * pp2;
-	
+
 	if (!mp->pg)
 		mp->pg = vector_alloc();
 
@@ -103,12 +103,12 @@ group_by_node_name (struct multipath * mp) {
 		bitmap[i] = 1;
 
 		for (j = i + 1; j < VECTOR_SIZE(mp->paths); j++) {
-			
+
 			if (bitmap[j])
 				continue;
 
 			pp2 = VECTOR_SLOT(mp->paths, j);
-			
+
 			if (!strncmp(pp->tgt_node_name, pp2->tgt_node_name,
 					NODE_NAME_SIZE)) {
 				if (store_path(pgp->paths, pp2))
@@ -140,7 +140,7 @@ group_by_serial (struct multipath * mp) {
 	struct path * pp;
 	struct pathgroup * pgp;
 	struct path * pp2;
-	
+
 	if (!mp->pg)
 		mp->pg = vector_alloc();
 
@@ -172,16 +172,16 @@ group_by_serial (struct multipath * mp) {
 		/* feed the first path */
 		if (store_path(pgp->paths, pp))
 			goto out1;
-				
+
 		bitmap[i] = 1;
 
 		for (j = i + 1; j < VECTOR_SIZE(mp->paths); j++) {
-			
+
 			if (bitmap[j])
 				continue;
 
 			pp2 = VECTOR_SLOT(mp->paths, j);
-			
+
 			if (0 == strcmp(pp->serial, pp2->serial)) {
 				if (store_path(pgp->paths, pp2))
 					goto out1;
@@ -211,7 +211,7 @@ one_path_per_group (struct multipath * mp)
 
 	if (!mp->pg)
 		mp->pg = vector_alloc();
-	
+
 	if (!mp->pg)
 		return 1;
 
@@ -224,7 +224,7 @@ one_path_per_group (struct multipath * mp)
 
 		if (store_pathgroup(mp->pg, pgp))
 			goto out;
-		
+
 		if (store_path(pgp->paths, pp))
 			goto out;
 	}
@@ -252,10 +252,10 @@ one_group (struct multipath * mp)	/* aka multibus */
 		return 1;
 
 	pgp = alloc_pathgroup();
-	
+
 	if (!pgp)
 		goto out;
-	
+
 	vector_free(pgp->paths);
 	pgp->paths = mp->paths;
 	mp->paths = NULL;
@@ -306,7 +306,7 @@ group_by_prio (struct multipath * mp)
 
 		if (!pgp)
 			goto out;
-		
+
 		if (store_path(pgp->paths, VECTOR_SLOT(mp->paths, 0)))
 				goto out;
 

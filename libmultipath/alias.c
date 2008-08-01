@@ -86,7 +86,7 @@ lock_bindings_file(int fd)
 	sigset_t set, oldset;
 	struct flock lock;
 	int err;
-	
+
 	memset(&lock, 0, sizeof(lock));
 	lock.l_type = F_WRLCK;
 	lock.l_whence = SEEK_SET;
@@ -149,7 +149,7 @@ open_bindings_file(char *file, int *can_write)
 	}
 	if (*can_write && lock_bindings_file(fd) < 0)
 		goto fail;
-	
+
 	memset(&s, 0, sizeof(s));
 	if (fstat(fd, &s) < 0){
 		condlog(0, "Cannot stat bindings file : %s", strerror(errno));
@@ -171,7 +171,7 @@ open_bindings_file(char *file, int *can_write)
 		fsync(fd);
 		condlog(3, "Initialized new bindings file [%s]", file);
 	}
-	
+
 	return fd;
 
 fail:

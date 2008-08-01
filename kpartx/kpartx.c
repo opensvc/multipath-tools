@@ -257,7 +257,7 @@ main(int argc, char **argv){
 	}
 
 	if (dm_prereq(DM_TARGET, 0, 0, 0) && (what == ADD || what == DELETE)) {
-		fprintf(stderr, "device mapper prerequisites not met\n"); 
+		fprintf(stderr, "device mapper prerequisites not met\n");
 		exit(1);
 	}
 
@@ -423,7 +423,7 @@ main(int argc, char **argv){
 			break;
 
 		case ADD:
-			for (j=0, c = 0; j<n; j++) {
+			for (j = 0, c = 0; j < n; j++) {
 				if (slices[j].size == 0)
 					continue;
 

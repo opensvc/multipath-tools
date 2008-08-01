@@ -289,25 +289,25 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 
 	if (find_hwe_strmatch(hwtable, dhwe))
 		return 0;
-	
+
 	if (!(hwe = alloc_hwe()))
 		return 1;
 
 	if (!dhwe->vendor || !(hwe->vendor = set_param_str(dhwe->vendor)))
 		goto out;
-	
+
 	if (!dhwe->product || !(hwe->product = set_param_str(dhwe->product)))
 		goto out;
-	
+
 	if (dhwe->revision && !(hwe->revision = set_param_str(dhwe->revision)))
 		goto out;
-	
+
 	if (dhwe->getuid && !(hwe->getuid = set_param_str(dhwe->getuid)))
 		goto out;
 
 	if (dhwe->features && !(hwe->features = set_param_str(dhwe->features)))
 		goto out;
-	
+
 	if (dhwe->hwhandler && !(hwe->hwhandler = set_param_str(dhwe->hwhandler)))
 		goto out;
 
@@ -503,7 +503,6 @@ load_config (char * file)
 
 	if (conf->mptable == NULL) {
 		conf->mptable = vector_alloc();
-
 		if (!conf->mptable)
 			goto out;
 	}

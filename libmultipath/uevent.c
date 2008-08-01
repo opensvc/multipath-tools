@@ -157,7 +157,7 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		}
 
 		/* enable receiving of the sender credentials */
-		setsockopt(sock, SOL_SOCKET, SO_PASSCRED, 
+		setsockopt(sock, SOL_SOCKET, SO_PASSCRED,
 			   &feature_on, sizeof(feature_on));
 
 	} else {
