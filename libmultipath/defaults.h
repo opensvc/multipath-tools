@@ -1,4 +1,4 @@
-#define DEFAULT_GETUID		"/lib/udev/scsi_id -g -u -s /block/%n"
+#define DEFAULT_GETUID		"/lib/udev/scsi_id -g -u -d /dev/%n"
 #define DEFAULT_UDEVDIR		"/dev"
 #define DEFAULT_MULTIPATHDIR	"/lib/multipath"
 #define DEFAULT_SELECTOR	"round-robin 0"

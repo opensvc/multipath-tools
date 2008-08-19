@@ -49,7 +49,7 @@
 #	#           path identifier. Absolute path required
 #	# default : /lib/udev/scsi_id -g -u -s
 #	#
-#	getuid_callout	"/lib/udev/scsi_id -g -u -s /block/%n"
+#	getuid_callout	"/lib/udev/scsi_id -g -u -d /dev/%n"
 #
 #	#
 #	# name    : prio
@@ -303,7 +303,7 @@
 #		#           path identifier. Absolute path required
 #		# default : /lib/udev/scsi_id -g -u -s
 #		#
-#		getuid_callout          "/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout          "/lib/udev/scsi_id -g -u -d /dev/%n"
 #
 #		#
 #		# name    : prio
