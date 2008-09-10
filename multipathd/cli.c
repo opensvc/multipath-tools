@@ -406,6 +406,7 @@ cli_init (void) {
 
 	add_handler(LIST+PATHS, NULL);
 	add_handler(LIST+PATHS+FMT, NULL);
+	add_handler(LIST+STATUS, NULL);
 	add_handler(LIST+MAPS, NULL);
 	add_handler(LIST+MAPS+STATUS, NULL);
 	add_handler(LIST+MAPS+STATS, NULL);

@@ -47,13 +47,16 @@
  * - Use: All async checkers
  * - Description: Indicates a check IO is in flight.
  */
-#define PATH_WILD	-1
-#define PATH_UNCHECKED	0
-#define PATH_DOWN	1
-#define PATH_UP		2
-#define PATH_SHAKY	3
-#define PATH_GHOST	4
-#define PATH_PENDING	5
+enum path_check_state {
+	PATH_WILD,
+	PATH_UNCHECKED,
+	PATH_DOWN,
+	PATH_UP,
+	PATH_SHAKY,
+	PATH_GHOST,
+	PATH_PENDING,
+	PATH_MAX_STATE
+};
 
 #define DIRECTIO     "directio"
 #define TUR          "tur"
@@ -106,6 +109,7 @@ struct checker {
 
 #define MSG(c, fmt, args...) snprintf((c)->message, CHECKER_MSG_LEN, fmt, ##args);
 
+char * checker_state_name (int);
 int init_checkers (void);
 struct checker * add_checker (char *);
 struct checker * checker_lookup (char *);

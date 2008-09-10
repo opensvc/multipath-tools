@@ -1133,6 +1133,30 @@ snprint_blacklist_except (char * buff, int len)
 }
 
 extern int
+snprint_status (char * buff, int len, struct vectors *vecs)
+{
+	int fwd = 0;
+	int i;
+	unsigned int count[PATH_MAX_STATE] = {0};
+	struct path * pp;
+
+	vector_foreach_slot (vecs->pathvec, pp, i) {
+		count[pp->state]++;
+	}
+	fwd += snprintf(buff + fwd, len - fwd, "path checker states:\n");
+	for (i=0; i<PATH_MAX_STATE; i++) {
+		if (!count[i])
+			continue;
+		fwd += snprintf(buff + fwd, len - fwd, "%-20s%u\n",
+				checker_state_name(i), count[i]);
+	}
+
+	if (fwd > len)
+		return len;
+	return fwd;
+}
+
+extern int
 snprint_devices (char * buff, int len, struct vectors *vecs)
 {
 	DIR *blkdir;

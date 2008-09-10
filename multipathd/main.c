@@ -159,7 +159,8 @@ sync_map_state(struct multipath *mpp)
 
 	vector_foreach_slot (mpp->pg, pgp, i){
 		vector_foreach_slot (pgp->paths, pp, j){
-			if (pp->state <= PATH_UNCHECKED)
+			if (pp->state == PATH_UNCHECKED || 
+			    pp->state == PATH_WILD)
 				continue;
 			if ((pp->dmstate == PSTATE_FAILED ||
 			     pp->dmstate == PSTATE_UNDEF) &&
@@ -693,6 +694,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(LIST+PATHS, cli_list_paths);
 	set_handler_callback(LIST+PATHS+FMT, cli_list_paths_fmt);
 	set_handler_callback(LIST+MAPS, cli_list_maps);
+	set_handler_callback(LIST+STATUS, cli_list_status);
 	set_handler_callback(LIST+MAPS+STATUS, cli_list_maps_status);
 	set_handler_callback(LIST+MAPS+STATS, cli_list_maps_stats);
 	set_handler_callback(LIST+MAPS+TOPOLOGY, cli_list_maps_topology);

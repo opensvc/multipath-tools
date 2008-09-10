@@ -349,7 +349,7 @@ pathcountgr (struct pathgroup * pgp, int state)
 	int i;
 
 	vector_foreach_slot (pgp->paths, pp, i)
-		if ((pp->state == state) || (state < 0))
+		if ((pp->state == state) || (state == PATH_WILD))
 			count++;
 
 	return count;
