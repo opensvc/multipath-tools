@@ -18,6 +18,27 @@
  */
 static struct hwentry default_hw[] = {
 	/*
+	 * Compellent Technologies, Inc.
+	 *
+	 * Maintainer : Jim Lester, Compellent
+	 * Mail : jim.lester@compellent.com
+	 */
+	{
+		.vendor        = "COMPELNT",
+		.product       = "Compellent Vol",
+		.getuid        = DEFAULT_GETUID,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = TUR,
+		.prio_name     = DEFAULT_PRIO,
+	},
+	/*
 	 * Apple controller family
 	 *
 	 * Maintainer : Shyam Sundar
