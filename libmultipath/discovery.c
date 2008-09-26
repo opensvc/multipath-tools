@@ -281,7 +281,7 @@ devt2devname (char *devname, char *devt)
 
 int
 do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
-       void *resp, int mx_resp_len, int noisy)
+       void *resp, int mx_resp_len)
 {
 	unsigned char inqCmdBlk[INQUIRY_CMDLEN] =
 		{ INQUIRY_CMD, 0, 0, 0, 0, 0 };
@@ -340,7 +340,7 @@ get_serial (char * str, int maxlen, int fd)
 	if (fd < 0)
 		return 1;
 
-	if (0 == do_inq(fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0)) {
+	if (0 == do_inq(fd, 0, 1, 0x80, buff, MX_ALLOC_LEN)) {
 		len = buff[3];
 		if (len >= maxlen)
 			return 1;
@@ -354,26 +354,69 @@ get_serial (char * str, int maxlen, int fd)
 }
 
 static int
-get_inq (char * vendor, char * product, char * rev, int fd)
+get_inq (char * dev, char * vendor, char * product, char * rev, int fd)
 {
-	char buff[MX_ALLOC_LEN + 1] = {0};
+	unsigned char buff[MX_ALLOC_LEN + 1] = {0};
+	int len;
 
 	if (fd < 0)
 		return 1;
 
-	if (0 == do_inq(fd, 0, 0, 0, buff, MX_ALLOC_LEN, 0)) {
-		memcpy(vendor, buff + 8, 8);
-		vendor[8] = '\0';
-		strchop(vendor);
-		memcpy(product, buff + 16, 16);
-		product[16] = '\0';
-		strchop(product);
-		memcpy(rev, buff + 32, 4);
-		rev[4] = '\0';
-		strchop(rev);
-		return 0;
+	if (0 != do_inq(fd, 0, 0, 0, buff, MX_ALLOC_LEN))
+		return 1;
+
+	/* Check peripheral qualifier */
+	if ((buff[0] >> 5) != 0) {
+		int pqual = (buff[0] >> 5);
+		switch (pqual) {
+		case 1:
+			condlog(3, "%s: INQUIRY failed, LU not connected", dev);
+			break;
+		case 3:
+			condlog(3, "%s: INQUIRY failed, LU not supported", dev);
+			break;
+		default:
+			condlog(3, "%s: INQUIRY failed, Invalid PQ %x",
+				dev, pqual);
+			break;
+		}
+
+		return 1;
 	}
-	return 1;
+
+	len = buff[4] + 4;
+
+	if (len < 8) {
+		condlog(3, "%s: INQUIRY response too short (len %d)",
+			dev, len);
+		return 1;
+	}
+
+	len -= 8;
+	memset(vendor, 0x0, 8);
+	memcpy(vendor, buff + 8, len > 8 ? 8 : len);
+	vendor[8] = '\0';
+	strchop(vendor);
+	if (len <= 8)
+		return 0;
+
+	len -= 8;
+
+	memset(product, 0x0, 16);
+	memcpy(product, buff + 16, len > 16 ? 16 : len);
+	product[16] = '\0';
+	strchop(product);
+	if (len <= 16)
+		return 0;
+
+	len -= 16;
+
+	memset(rev, 0x0, 4);
+	memcpy(rev, buff + 32, 4);
+	rev[4] = '\0';
+	strchop(rev);
+
+	return 0;
 }
 
 static int
@@ -584,13 +627,16 @@ sysfs_pathinfo(struct path * pp)
 	if (!strncmp(parent->kernel, "block",5))
 		parent = sysfs_device_get_parent(parent);
 
+	if (!strncmp(pp->dev,"cciss",5))
+		strcpy(parent->subsystem,"cciss");
+
 	condlog(3, "%s: subsystem = %s", pp->dev, parent->subsystem);
 
 	if (!strncmp(parent->subsystem, "scsi",4))
 		pp->bus = SYSFS_BUS_SCSI;
 	if (!strncmp(parent->subsystem, "ccw",3))
 		pp->bus = SYSFS_BUS_CCW;
-	if (!strncmp(pp->dev,"cciss",5))
+	if (!strncmp(parent->subsystem,"cciss",5))
 		pp->bus = SYSFS_BUS_CCISS;
 
 	if (pp->bus == SYSFS_BUS_UNDEF)
@@ -622,8 +668,14 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 static int
 cciss_ioctl_pathinfo (struct path * pp, int mask)
 {
+	int ret;
+
 	if (mask & DI_SYSFS) {
-		get_inq(pp->vendor_id, pp->product_id, pp->rev, pp->fd);
+		ret = get_inq(pp->dev, pp->vendor_id, pp->product_id,
+			      pp->rev, pp->fd);
+		if (ret)
+			return ret;
+
 		condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
 		condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 		condlog(3, "%s: revision = %s", pp->dev, pp->rev);
