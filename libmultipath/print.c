@@ -28,6 +28,9 @@
 #define NOPAD    s = c
 #define PAD(x)   while ((int)(c - s) < (x) && (c < (line + len - 1))) \
 			*c++ = ' '; s = c
+#define ENDLINE \
+		if (c > line) \
+			line[c - line - 1] = '\n'
 #define PRINT(var, size, format, args...)      \
 		fwd = snprintf(var, size, format, ##args); \
 		 c += (fwd >= size) ? size : fwd;
@@ -532,15 +535,13 @@ snprint_multipath_header (char * line, int len, char * format)
 		f++;
 
 		if (!(data = mpd_lookup(*f)))
-			break; /* unknown wildcard */
+			continue; /* unknown wildcard */
 
 		PRINT(c, TAIL, data->header);
 		PAD(data->width);
 	} while (*f++);
 
-	line[c - line - 1] = '\n';
-	line[c - line] = '\0';
-
+	ENDLINE;
 	return (c - line);
 }
 
@@ -567,7 +568,7 @@ snprint_multipath (char * line, int len, char * format,
 		f++;
 
 		if (!(data = mpd_lookup(*f)))
-			break;
+			continue;
 
 		data->snprint(buff, MAX_FIELD_LEN, mpp);
 		PRINT(c, TAIL, buff);
@@ -575,9 +576,7 @@ snprint_multipath (char * line, int len, char * format,
 		buff[0] = '\0';
 	} while (*f++);
 
-	line[c - line - 1] = '\n';
-	line[c - line] = '\0';
-
+	ENDLINE;
 	return (c - line);
 }
 
@@ -602,15 +601,13 @@ snprint_path_header (char * line, int len, char * format)
 		f++;
 
 		if (!(data = pd_lookup(*f)))
-			break; /* unknown wildcard */
+			continue; /* unknown wildcard */
 
 		PRINT(c, TAIL, data->header);
 		PAD(data->width);
 	} while (*f++);
 
-	line[c - line - 1] = '\n';
-	line[c - line] = '\0';
-
+	ENDLINE;
 	return (c - line);
 }
 
@@ -637,16 +634,14 @@ snprint_path (char * line, int len, char * format,
 		f++;
 
 		if (!(data = pd_lookup(*f)))
-			break;
+			continue;
 
 		data->snprint(buff, MAX_FIELD_LEN, pp);
 		PRINT(c, TAIL, buff);
 		PAD(data->width);
 	} while (*f++);
 
-	line[c - line - 1] = '\n';
-	line[c - line] = '\0';
-
+	ENDLINE;
 	return (c - line);
 }
 
@@ -673,16 +668,14 @@ snprint_pathgroup (char * line, int len, char * format,
 		f++;
 
 		if (!(data = pgd_lookup(*f)))
-			break;
+			continue;
 
 		data->snprint(buff, MAX_FIELD_LEN, pgp);
 		PRINT(c, TAIL, buff);
 		PAD(data->width);
 	} while (*f++);
 
-	line[c - line - 1] = '\n';
-	line[c - line] = '\0';
-
+	ENDLINE;
 	return (c - line);
 }
 
