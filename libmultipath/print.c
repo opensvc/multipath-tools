@@ -436,7 +436,28 @@ struct pathgroup_data pgd[] = {
 	{'s', "selector",      0, snprint_pg_selector},
 	{'p', "pri",           0, snprint_pg_pri},
 	{'t', "dm_st",         0, snprint_pg_state},
+	{0, NULL, 0 , NULL}
 };
+
+int
+snprint_wildcards (char * buff, int len)
+{
+	int i, fwd = 0;
+
+	fwd += snprintf(buff + fwd, len - fwd, "multipath format wildcards:\n");
+	for (i = 0; mpd[i].header; i++)
+		fwd += snprintf(buff + fwd, len - fwd, "%%%c  %s\n",
+				mpd[i].wildcard, mpd[i].header);
+	fwd += snprintf(buff + fwd, len - fwd, "\npath format wildcards:\n");
+	for (i = 0; pd[i].header; i++)
+		fwd += snprintf(buff + fwd, len - fwd, "%%%c  %s\n",
+				pd[i].wildcard, pd[i].header);
+	fwd += snprintf(buff + fwd, len - fwd, "\npathgroup format wildcards:\n");
+	for (i = 0; pgd[i].header; i++)
+		fwd += snprintf(buff + fwd, len - fwd, "%%%c  %s\n",
+				pgd[i].wildcard, pgd[i].header);
+	return fwd;
+}
 
 void
 get_path_layout (vector pathvec, int header)

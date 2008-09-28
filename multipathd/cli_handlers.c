@@ -224,6 +224,23 @@ cli_list_maps_topology (void * v, char ** reply, int * len, void * data)
 }
 
 int
+cli_list_wildcards (void * v, char ** reply, int * len, void * data)
+{
+	char * c;
+
+	*reply = MALLOC(INITIAL_REPLY_LEN);
+
+	if (!reply)
+		return 1;
+
+	c = *reply;
+	c += snprint_wildcards(c, INITIAL_REPLY_LEN);
+
+	*len = INITIAL_REPLY_LEN;
+	return 0;
+}
+
+int
 show_status (char ** r, int *len, struct vectors * vecs)
 {
 	char * c;

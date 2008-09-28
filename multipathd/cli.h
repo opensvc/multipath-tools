@@ -20,6 +20,7 @@ enum {
 	__BLACKLIST,
 	__DEVICES,
 	__FMT,
+	__WILDCARDS,
 };
 
 #define LIST		(1 << __LIST)
@@ -43,6 +44,7 @@ enum {
 #define BLACKLIST	(1 << __BLACKLIST)
 #define DEVICES  	(1 << __DEVICES)
 #define FMT 	 	(1 << __FMT)
+#define WILDCARDS	(1 << __WILDCARDS)
 
 #define INITIAL_REPLY_LEN 1000
 
