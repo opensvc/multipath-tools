@@ -596,3 +596,9 @@ cli_list_devices (void * v, char ** reply, int * len, void * data)
 
         return show_devices(reply, len, vecs);
 }
+
+int
+cli_quit (void * v, char ** reply, int * len, void * data)
+{
+	return 0;
+}

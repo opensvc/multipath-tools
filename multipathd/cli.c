@@ -171,6 +171,8 @@ load_keys (void)
 	r += add_key(keys, "devices", DEVICES, 0);
 	r += add_key(keys, "format", FMT, 1);
 	r += add_key(keys, "wildcards", WILDCARDS, 0);
+	r += add_key(keys, "quit", QUIT, 0);
+	r += add_key(keys, "exit", QUIT, 0);
 
 	if (r) {
 		free_keys(keys);
@@ -428,6 +430,7 @@ cli_init (void) {
 	add_handler(RESUME+MAP, NULL);
 	add_handler(REINSTATE+PATH, NULL);
 	add_handler(FAIL+PATH, NULL);
+	add_handler(QUIT, NULL);
 
 	return 0;
 }

@@ -43,6 +43,10 @@ static void process(int fd)
 			free(line);
 			continue;
 		}
+		if (!strncmp(line, "exit", 4) && llen == 4)
+			break;
+		if (!strncmp(line, "quit", 4) && llen == 4)
+			break;
 
 		if (send_packet(fd, line, llen + 1) != 0) break;
 		if (recv_packet(fd, &reply, &len) != 0) break;
