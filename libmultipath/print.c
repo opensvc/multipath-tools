@@ -28,6 +28,9 @@
 #define NOPAD    s = c
 #define PAD(x)   while ((int)(c - s) < (x) && (c < (line + len - 1))) \
 			*c++ = ' '; s = c
+#define ENDLINE \
+		if (c > line) \
+			line[c - line - 1] = '\n'
 #define PRINT(var, size, format, args...)      \
 		fwd = snprintf(var, size, format, ##args); \
 		 c += (fwd >= size) ? size : fwd;
@@ -433,7 +436,28 @@ struct pathgroup_data pgd[] = {
 	{'s', "selector",      0, snprint_pg_selector},
 	{'p', "pri",           0, snprint_pg_pri},
 	{'t', "dm_st",         0, snprint_pg_state},
+	{0, NULL, 0 , NULL}
 };
+
+int
+snprint_wildcards (char * buff, int len)
+{
+	int i, fwd = 0;
+
+	fwd += snprintf(buff + fwd, len - fwd, "multipath format wildcards:\n");
+	for (i = 0; mpd[i].header; i++)
+		fwd += snprintf(buff + fwd, len - fwd, "%%%c  %s\n",
+				mpd[i].wildcard, mpd[i].header);
+	fwd += snprintf(buff + fwd, len - fwd, "\npath format wildcards:\n");
+	for (i = 0; pd[i].header; i++)
+		fwd += snprintf(buff + fwd, len - fwd, "%%%c  %s\n",
+				pd[i].wildcard, pd[i].header);
+	fwd += snprintf(buff + fwd, len - fwd, "\npathgroup format wildcards:\n");
+	for (i = 0; pgd[i].header; i++)
+		fwd += snprintf(buff + fwd, len - fwd, "%%%c  %s\n",
+				pgd[i].wildcard, pgd[i].header);
+	return fwd;
+}
 
 void
 get_path_layout (vector pathvec, int header)
@@ -532,15 +556,13 @@ snprint_multipath_header (char * line, int len, char * format)
 		f++;
 
 		if (!(data = mpd_lookup(*f)))
-			break; /* unknown wildcard */
+			continue; /* unknown wildcard */
 
 		PRINT(c, TAIL, data->header);
 		PAD(data->width);
 	} while (*f++);
 
-	line[c - line - 1] = '\n';
-	line[c - line] = '\0';
-
+	ENDLINE;
 	return (c - line);
 }
 
@@ -567,7 +589,7 @@ snprint_multipath (char * line, int len, char * format,
 		f++;
 
 		if (!(data = mpd_lookup(*f)))
-			break;
+			continue;
 
 		data->snprint(buff, MAX_FIELD_LEN, mpp);
 		PRINT(c, TAIL, buff);
@@ -575,9 +597,7 @@ snprint_multipath (char * line, int len, char * format,
 		buff[0] = '\0';
 	} while (*f++);
 
-	line[c - line - 1] = '\n';
-	line[c - line] = '\0';
-
+	ENDLINE;
 	return (c - line);
 }
 
@@ -602,15 +622,13 @@ snprint_path_header (char * line, int len, char * format)
 		f++;
 
 		if (!(data = pd_lookup(*f)))
-			break; /* unknown wildcard */
+			continue; /* unknown wildcard */
 
 		PRINT(c, TAIL, data->header);
 		PAD(data->width);
 	} while (*f++);
 
-	line[c - line - 1] = '\n';
-	line[c - line] = '\0';
-
+	ENDLINE;
 	return (c - line);
 }
 
@@ -637,16 +655,14 @@ snprint_path (char * line, int len, char * format,
 		f++;
 
 		if (!(data = pd_lookup(*f)))
-			break;
+			continue;
 
 		data->snprint(buff, MAX_FIELD_LEN, pp);
 		PRINT(c, TAIL, buff);
 		PAD(data->width);
 	} while (*f++);
 
-	line[c - line - 1] = '\n';
-	line[c - line] = '\0';
-
+	ENDLINE;
 	return (c - line);
 }
 
@@ -673,16 +689,14 @@ snprint_pathgroup (char * line, int len, char * format,
 		f++;
 
 		if (!(data = pgd_lookup(*f)))
-			break;
+			continue;
 
 		data->snprint(buff, MAX_FIELD_LEN, pgp);
 		PRINT(c, TAIL, buff);
 		PAD(data->width);
 	} while (*f++);
 
-	line[c - line - 1] = '\n';
-	line[c - line] = '\0';
-
+	ENDLINE;
 	return (c - line);
 }
 
@@ -1127,6 +1141,30 @@ snprint_blacklist_except (char * buff, int len)
 			return len;
 	}
 	fwd += snprintf(buff + fwd, len - fwd, "}\n");
+	if (fwd > len)
+		return len;
+	return fwd;
+}
+
+extern int
+snprint_status (char * buff, int len, struct vectors *vecs)
+{
+	int fwd = 0;
+	int i;
+	unsigned int count[PATH_MAX_STATE] = {0};
+	struct path * pp;
+
+	vector_foreach_slot (vecs->pathvec, pp, i) {
+		count[pp->state]++;
+	}
+	fwd += snprintf(buff + fwd, len - fwd, "path checker states:\n");
+	for (i=0; i<PATH_MAX_STATE; i++) {
+		if (!count[i])
+			continue;
+		fwd += snprintf(buff + fwd, len - fwd, "%-20s%u\n",
+				checker_state_name(i), count[i]);
+	}
+
 	if (fwd > len)
 		return len;
 	return fwd;

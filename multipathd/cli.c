@@ -170,6 +170,7 @@ load_keys (void)
 	r += add_key(keys, "blacklist", BLACKLIST, 0);
 	r += add_key(keys, "devices", DEVICES, 0);
 	r += add_key(keys, "format", FMT, 1);
+	r += add_key(keys, "wildcards", WILDCARDS, 0);
 
 	if (r) {
 		free_keys(keys);
@@ -406,6 +407,7 @@ cli_init (void) {
 
 	add_handler(LIST+PATHS, NULL);
 	add_handler(LIST+PATHS+FMT, NULL);
+	add_handler(LIST+STATUS, NULL);
 	add_handler(LIST+MAPS, NULL);
 	add_handler(LIST+MAPS+STATUS, NULL);
 	add_handler(LIST+MAPS+STATS, NULL);
@@ -415,6 +417,7 @@ cli_init (void) {
 	add_handler(LIST+CONFIG, NULL);
 	add_handler(LIST+BLACKLIST, NULL);
 	add_handler(LIST+DEVICES, NULL);
+	add_handler(LIST+WILDCARDS, NULL);
 	add_handler(ADD+PATH, NULL);
 	add_handler(DEL+PATH, NULL);
 	add_handler(ADD+MAP, NULL);

@@ -8,7 +8,22 @@
 #include "vector.h"
 #include "config.h"
 
+char *checker_state_names[] = {
+      "wild",
+      "unchecked",
+      "down",
+      "up",
+      "shaky",
+      "ghost",
+      "pending"
+};
+
 static LIST_HEAD(checkers);
+
+char * checker_state_name (int i)
+{
+	return checker_state_names[i];
+}
 
 int init_checkers (void)
 {

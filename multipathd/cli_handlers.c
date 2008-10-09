@@ -224,6 +224,43 @@ cli_list_maps_topology (void * v, char ** reply, int * len, void * data)
 }
 
 int
+cli_list_wildcards (void * v, char ** reply, int * len, void * data)
+{
+	char * c;
+
+	*reply = MALLOC(INITIAL_REPLY_LEN);
+
+	if (!reply)
+		return 1;
+
+	c = *reply;
+	c += snprint_wildcards(c, INITIAL_REPLY_LEN);
+
+	*len = INITIAL_REPLY_LEN;
+	return 0;
+}
+
+int
+show_status (char ** r, int *len, struct vectors * vecs)
+{
+	char * c;
+	char * reply;
+
+	unsigned int maxlen = INITIAL_REPLY_LEN;
+	reply = MALLOC(maxlen);
+
+	if (!reply)
+		return 1;
+
+	c = reply;
+	c += snprint_status(c, reply + maxlen - c, vecs);
+
+	*r = reply;
+	*len = (int)(c - reply + 1);
+	return 0;
+}
+
+int
 show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 {
 	int i;
@@ -267,6 +304,16 @@ cli_list_maps (void * v, char ** reply, int * len, void * data)
 	condlog(3, "list maps (operator)");
 
 	return show_maps(reply, len, vecs, PRINT_MAP_NAMES);
+}
+
+int
+cli_list_status (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+
+	condlog(3, "list status (operator)");
+
+	return show_status(reply, len, vecs);
 }
 
 int
