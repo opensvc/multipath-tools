@@ -875,7 +875,8 @@ check_path (struct vectors * vecs, struct path * pp)
 	 */
 	checker_set_async(&pp->checker);
 
-	newstate = checker_check(&pp->checker);
+	if (!path_offline(pp))
+		newstate = checker_check(&pp->checker);
 
 	if (newstate < 0) {
 		condlog(2, "%s: unusable path", pp->dev);

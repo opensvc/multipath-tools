@@ -30,6 +30,7 @@ int path_discovery (vector pathvec, struct config * conf, int flag);
 void basename (char *, char *);
 int do_tur (char *);
 int devt2devname (char *, char *);
+int path_offline (struct path *);
 int pathinfo (struct path *, vector hwtable, int mask);
 struct path * store_pathinfo (vector pathvec, vector hwtable,
 			      char * devname, int flag);

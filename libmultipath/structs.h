@@ -16,6 +16,7 @@
 #define SCSI_VENDOR_SIZE	9
 #define SCSI_PRODUCT_SIZE	17
 #define SCSI_REV_SIZE		5
+#define SCSI_STATE_SIZE		9
 
 #define NO_PATH_RETRY_UNDEF	0
 #define NO_PATH_RETRY_FAIL	-1
@@ -114,6 +115,7 @@ struct path {
 	unsigned int checkint;
 	unsigned int tick;
 	int bus;
+	int offline;
 	int state;
 	int dmstate;
 	int failcount;

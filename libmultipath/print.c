@@ -305,6 +305,15 @@ snprint_dev_t (char * buff, size_t len, struct path * pp)
 }
 
 static int
+snprint_offline (char * buff, size_t len, struct path * pp)
+{
+	if (pp->offline)
+		return snprintf(buff, len, "offline");
+	else
+		return snprintf(buff, len, "running");
+}
+
+static int
 snprint_chk_state (char * buff, size_t len, struct path * pp)
 {
 	switch (pp->state) {
@@ -424,6 +433,7 @@ struct path_data pd[] = {
 	{'d', "dev",           0, snprint_dev},
 	{'D', "dev_t",         0, snprint_dev_t},
 	{'t', "dm_st",         0, snprint_dm_path_state},
+	{'o', "dev_st",        0, snprint_offline},
 	{'T', "chk_st",        0, snprint_chk_state},
 	{'s', "vend/prod/rev", 0, snprint_vpr},
 	{'C', "next_check",    0, snprint_next_check},
