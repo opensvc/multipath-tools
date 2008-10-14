@@ -74,6 +74,11 @@ interval between two path checks in seconds; default is
 directory where udev creates its device nodes; default is
 .I /dev
 .TP
+.B verbosity
+default verbosity. Higher values increase the verbosity level. Valid
+levels are between 0 and 6; default is 2.
+.I /dev
+.TP
 .B selector
 The default path selector algorithm to use; they are offered by the
 kernel multipath target. The only currently implemented is

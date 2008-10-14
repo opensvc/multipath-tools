@@ -431,7 +431,7 @@ load_config (char * file)
 	 * internal defaults
 	 */
 	if (!conf->verbosity)
-		conf->verbosity = 2;
+		conf->verbosity = DEFAULT_VERBOSITY;
 
 	conf->dev_type = DEV_NONE;
 	conf->minio = 1000;
