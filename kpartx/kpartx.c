@@ -198,6 +198,7 @@ main(int argc, char **argv){
 	char *mapname = NULL;
 	int loopro = 0;
 	int hotplug = 0;
+	int loopcreated = 0;
 	struct stat buf;
 
 	initpts();
@@ -292,6 +293,7 @@ main(int argc, char **argv){
 				fprintf(stderr, "can't set up loop\n");
 				exit (1);
 			}
+			loopcreated = 1;
 		}
 		device = loopdev;
 	}
@@ -389,6 +391,15 @@ main(int argc, char **argv){
 					break;
 			}
 
+			if (loopcreated && S_ISREG (buf.st_mode)) {
+				if (del_loop(device)) {
+					if (verbose)
+						printf("can't del loop : %s\n",
+							device);
+					exit(1);
+				}
+				printf("loop deleted : %s\n", device);
+			}
 			break;
 
 		case DELETE:
