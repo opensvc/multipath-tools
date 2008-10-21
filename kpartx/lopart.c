@@ -105,7 +105,7 @@ is_loop_device (const char *device)
 extern char *
 find_loop_by_file (const char * filename)
 {
-	char dev[20];
+	char dev[64];
 	char *loop_formats[] = { "/dev/loop%d", "/dev/loop/%d" };
 	int i, j, fd;
 	struct stat statbuf;
