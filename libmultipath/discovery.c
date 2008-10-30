@@ -694,15 +694,14 @@ get_state (struct path * pp)
 {
 	struct checker * c = &pp->checker;
 
-	if (!pp->mpp)
-		return 0;
+	condlog(3, "%s: get_state", pp->dev);
 
 	if (!checker_selected(c)) {
 		select_checker(pp);
 		if (!checker_selected(c))
 			return 1;
 		checker_set_fd(c, pp->fd);
-		if (checker_init(c, &pp->mpp->mpcontext))
+		if (checker_init(c, pp->mpp?&pp->mpp->mpcontext:NULL))
 			return 1;
 	}
 	if (path_offline(pp)) {
