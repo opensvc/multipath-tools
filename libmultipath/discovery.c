@@ -650,6 +650,7 @@ get_state (struct path * pp)
 	}
 	if (path_offline(pp)) {
 		condlog(3, "%s: path offline", pp->dev);
+		pp->state = PATH_DOWN;
 		return 0;
 	}
 	pp->state = checker_check(c);
