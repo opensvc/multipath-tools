@@ -543,6 +543,8 @@ path_offline (struct path * pp)
 	parent = sysfs_device_get_parent(pp->sysdev);
 	if (!parent)
 		parent = pp->sysdev;
+	if (!strncmp(parent->kernel, "block",5))
+		parent = sysfs_device_get_parent(parent);
 	if (sysfs_get_state(parent, buff, SCSI_STATE_SIZE))
 		return 1;
 
