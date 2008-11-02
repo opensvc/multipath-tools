@@ -604,7 +604,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "DELL",
 		.product       = "MD3000",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_rdac /dev/%n",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 rdac",
 		.selector      = DEFAULT_SELECTOR,
@@ -613,13 +612,13 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = RDAC,
+		.prio_name     = PRIO_RDAC,
 	},
 	{
 		/* DELL MD3000i */
 		.vendor        = "DELL",
 		.product       = "MD3000i",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = "/sbin/mpath_prio_rdac /dev/%n",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 rdac",
 		.selector      = DEFAULT_SELECTOR,
@@ -628,6 +627,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = RDAC,
+		.prio_name     = PRIO_RDAC,
 	},
 	/*
 	 * NETAPP controller family
