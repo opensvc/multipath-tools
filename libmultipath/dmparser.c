@@ -289,8 +289,6 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 			if (store_path(pgp->paths, pp))
 				goto out;
 
-			pp->mpp = mpp;
-
 			/*
 			 * Update wwid for multipaths which are not setup
 			 * in the get_dm_mpvec() code path
