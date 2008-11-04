@@ -829,6 +829,9 @@ mpvec_garbage_collector (struct vectors * vecs)
 	struct multipath * mpp;
 	unsigned int i;
 
+	if (!vecs->mpvec)
+		return;
+
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		if (mpp && mpp->alias && !dm_map_present(mpp->alias)) {
 			condlog(2, "%s: remove dead map", mpp->alias);
