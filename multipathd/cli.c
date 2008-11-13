@@ -413,6 +413,7 @@ cli_init (void) {
 	add_handler(LIST+MAPS, NULL);
 	add_handler(LIST+MAPS+STATUS, NULL);
 	add_handler(LIST+MAPS+STATS, NULL);
+	add_handler(LIST+MAPS+FMT, NULL);
 	add_handler(LIST+MAPS+TOPOLOGY, NULL);
 	add_handler(LIST+TOPOLOGY, NULL);
 	add_handler(LIST+MAP+TOPOLOGY, NULL);
