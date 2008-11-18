@@ -94,14 +94,14 @@ snprint_sysfs (char * buff, size_t len, struct multipath * mpp)
 	if (mpp->dmi)
 		return snprintf(buff, len, "dm-%i", mpp->dmi->minor);
 	else
-		return snprintf(buff, len, "n/a");
+		return snprintf(buff, len, "undef");
 }
 
 static int
 snprint_ro (char * buff, size_t len, struct multipath * mpp)
 {
 	if (!mpp->dmi)
-		return snprintf(buff, len, "n/a");
+		return snprintf(buff, len, "undef");
 	if (mpp->dmi->read_only)
 		return snprintf(buff, len, "ro");
 	else
@@ -318,15 +318,15 @@ snprint_chk_state (char * buff, size_t len, struct path * pp)
 {
 	switch (pp->state) {
 	case PATH_UP:
-		return snprintf(buff, len, "[ready]");
+		return snprintf(buff, len, "ready");
 	case PATH_DOWN:
-		return snprintf(buff, len, "[faulty]");
+		return snprintf(buff, len, "faulty");
 	case PATH_SHAKY:
-		return snprintf(buff, len, "[shaky]");
+		return snprintf(buff, len, "shaky");
 	case PATH_GHOST:
-		return snprintf(buff, len, "[ghost]");
+		return snprintf(buff, len, "ghost");
 	default:
-		return snprintf(buff, len, "[undef]");
+		return snprintf(buff, len, "undef");
 	}
 }
 
@@ -335,11 +335,11 @@ snprint_dm_path_state (char * buff, size_t len, struct path * pp)
 {
 	switch (pp->dmstate) {
 	case PSTATE_ACTIVE:
-		return snprintf(buff, len, "[active]");
+		return snprintf(buff, len, "active");
 	case PSTATE_FAILED:
-		return snprintf(buff, len, "[failed]");
+		return snprintf(buff, len, "failed");
 	default:
-		return snprintf(buff, len, "[undef]");
+		return snprintf(buff, len, "undef");
 	}
 }
 
@@ -354,7 +354,7 @@ static int
 snprint_next_check (char * buff, size_t len, struct path * pp)
 {
 	if (!pp->mpp)
-		return snprintf(buff, len, "[orphan]");
+		return snprintf(buff, len, "orphan");
 
 	return snprint_progress(buff, len, pp->tick, pp->checkint);
 }
@@ -389,13 +389,13 @@ snprint_pg_state (char * buff, size_t len, struct pathgroup * pgp)
 {
 	switch (pgp->status) {
 	case PGSTATE_ENABLED:
-		return snprintf(buff, len, "[enabled]");
+		return snprintf(buff, len, "enabled");
 	case PGSTATE_DISABLED:
-		return snprintf(buff, len, "[disabled]");
+		return snprintf(buff, len, "disabled");
 	case PGSTATE_ACTIVE:
-		return snprintf(buff, len, "[active]");
+		return snprintf(buff, len, "active");
 	default:
-		return snprintf(buff, len, "[undef]");
+		return snprintf(buff, len, "undef");
 	}
 }
 
@@ -554,6 +554,8 @@ snprint_multipath_header (char * line, int len, char * format)
 	int fwd;
 	struct multipath_data * data;
 
+	memset(line, 0, len);
+
 	do {
 		if (!TAIL)
 			break;
@@ -586,6 +588,8 @@ snprint_multipath (char * line, int len, char * format,
 	int fwd;
 	struct multipath_data * data;
 	char buff[MAX_FIELD_LEN] = {};
+
+	memset(line, 0, len);
 
 	do {
 		if (!TAIL)
@@ -620,6 +624,8 @@ snprint_path_header (char * line, int len, char * format)
 	int fwd;
 	struct path_data * data;
 
+	memset(line, 0, len);
+
 	do {
 		if (!TAIL)
 			break;
@@ -652,6 +658,8 @@ snprint_path (char * line, int len, char * format,
 	int fwd;
 	struct path_data * data;
 	char buff[MAX_FIELD_LEN];
+
+	memset(line, 0, len);
 
 	do {
 		if (!TAIL)
@@ -686,6 +694,8 @@ snprint_pathgroup (char * line, int len, char * format,
 	int fwd;
 	struct pathgroup_data * data;
 	char buff[MAX_FIELD_LEN];
+
+	memset(line, 0, len);
 
 	do {
 		if (!TAIL)
@@ -729,6 +739,8 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 	struct pathgroup * pgp = NULL;
 	char style[64];
 	char * c = style;
+	char fmt[64];
+	char * f;
 
 	if (verbosity <= 0)
 		return fwd;
@@ -751,8 +763,7 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 	fwd += snprint_multipath(buff + fwd, len - fwd, style, mpp);
 	if (fwd > len)
 		return len;
-	fwd += snprint_multipath(buff + fwd, len - fwd,
-				 "[size=%S][features=%f][hwhandler=%h][%r]", mpp);
+	fwd += snprint_multipath(buff + fwd, len - fwd, PRINT_MAP_PROPS, mpp);
 	if (fwd > len)
 		return len;
 
@@ -760,15 +771,26 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 		return fwd;
 
 	vector_foreach_slot (mpp->pg, pgp, j) {
+		f=fmt;
 		pgp->selector = mpp->selector; /* hack */
-		fwd += snprint_pathgroup(buff + fwd, len - fwd,
-					 PRINT_PG_INDENT, pgp);
+		if (j + 1 < VECTOR_SIZE(mpp->pg)) {
+			strcpy(f, "|-+- " PRINT_PG_INDENT);
+		} else
+			strcpy(f, "`-+- " PRINT_PG_INDENT);
+		fwd += snprint_pathgroup(buff + fwd, len - fwd, fmt, pgp);
 		if (fwd > len)
 			return len;
 
 		vector_foreach_slot (pgp->paths, pp, i) {
-			fwd += snprint_path(buff + fwd, len - fwd,
-					    PRINT_PATH_INDENT, pp);
+			f=fmt;
+			if (*f != '|')
+				*f=' ';
+			f++;
+			if (i + 1 < VECTOR_SIZE(pgp->paths))
+				strcpy(f, " |- " PRINT_PATH_INDENT);
+			else
+				strcpy(f, " `- " PRINT_PATH_INDENT);
+			fwd += snprint_path(buff + fwd, len - fwd, fmt, pp);
 			if (fwd > len)
 				return len;
 		}
