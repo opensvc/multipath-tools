@@ -40,6 +40,7 @@
 #define PRIO_ARGS_LEN 255
 
 struct prio {
+	void *handle;
 	struct list_head node;
 	char name[PRIO_NAME_LEN];
 	char args[PRIO_ARGS_LEN];

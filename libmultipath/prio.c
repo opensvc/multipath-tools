@@ -23,6 +23,9 @@ static struct prio * alloc_prio (void)
 
 void free_prio (struct prio * p)
 {
+	list_del(&p->node);
+	if (p->handle)
+		dlclose(p->handle);
 	FREE(p);
 }
 
@@ -32,7 +35,6 @@ void cleanup_prio(void)
 	struct prio * prio_temp;
 
 	list_for_each_entry_safe(prio_loop, prio_temp, &prioritizers, node) {
-		list_del(&prio_loop->node);
 		free_prio(prio_loop);
 	}
 }
@@ -56,7 +58,6 @@ int prio_set_args (struct prio * p, char * args)
 struct prio * add_prio (char * name)
 {
 	char libname[LIB_PRIO_NAMELEN];
-	void * handle;
 	struct prio * p;
 	char *errstr;
 
@@ -66,16 +67,16 @@ struct prio * add_prio (char * name)
 	snprintf(libname, LIB_PRIO_NAMELEN, "%s/libprio%s.so",
 		 conf->multipath_dir, name);
 	condlog(3, "loading %s prioritizer", libname);
-	handle = dlopen(libname, RTLD_NOW);
+	p->handle = dlopen(libname, RTLD_NOW);
 	errstr = dlerror();
 	if (errstr != NULL)
-	condlog(0, "A dynamic linking error occurred: (%s)", errstr);
-	if (!handle)
+		condlog(0, "A dynamic linking error occurred: (%s)", errstr);
+	if (!p->handle)
 		goto out;
-	p->getprio = (int (*)(struct path *, char *)) dlsym(handle, "getprio");
+	p->getprio = (int (*)(struct path *, char *)) dlsym(p->handle, "getprio");
 	errstr = dlerror();
 	if (errstr != NULL)
-	condlog(0, "A dynamic linking error occurred: (%s)", errstr);
+		condlog(0, "A dynamic linking error occurred: (%s)", errstr);
 	if (!p->getprio)
 		goto out;
 	snprintf(p->name, PRIO_NAME_LEN, "%s", name);
