@@ -137,9 +137,6 @@ free_hwe (struct hwentry * hwe)
 	if (hwe->revision)
 		FREE(hwe->revision);
 
-	if (hwe->selector)
-		FREE(hwe->selector);
-
 	if (hwe->getuid)
 		FREE(hwe->getuid);
 
@@ -148,6 +145,15 @@ free_hwe (struct hwentry * hwe)
 
 	if (hwe->hwhandler)
 		FREE(hwe->hwhandler);
+
+	if (hwe->selector)
+		FREE(hwe->selector);
+
+	if (hwe->checker_name)
+		FREE(hwe->checker_name);
+
+	if (hwe->prio_name)
+		FREE(hwe->prio_name);
 
 	if (hwe->bl_product)
 		FREE(hwe->bl_product);
@@ -397,6 +403,12 @@ free_config (struct config * conf)
 
 	if (conf->hwhandler)
 		FREE(conf->hwhandler);
+
+	if (conf->prio_name)
+		FREE(conf->prio_name);
+
+	if (conf->checker_name)
+		FREE(conf->checker_name);
 
 	if (conf->prio_name)
 		FREE(conf->prio_name);

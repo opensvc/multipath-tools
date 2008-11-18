@@ -233,6 +233,7 @@ devt2devname (char *devname, char *devt)
 	char block_path[FILE_NAME_SIZE];
 	struct stat statbuf;
 
+	memset(block_path, 0, FILE_NAME_SIZE);
 	if (sscanf(devt, "%u:%u", &major, &minor) != 2) {
 		condlog(0, "Invalid device number %s", devt);
 		return 1;

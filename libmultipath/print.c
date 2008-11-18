@@ -112,19 +112,22 @@ snprint_ro (char * buff, size_t len, struct multipath * mpp)
 static int
 snprint_progress (char * buff, size_t len, int cur, int total)
 {
-	int i = PROGRESS_LEN * cur / total;
-	int j = PROGRESS_LEN - i;
 	char * c = buff;
 	char * end = buff + len;
 
-	while (i-- > 0) {
-		c += snprintf(c, len, "X");
-		if ((len = (end - c)) <= 1) goto out;
-	}
+	if (total > 0) {
+		int i = PROGRESS_LEN * cur / total;
+		int j = PROGRESS_LEN - i;
 
-	while (j-- > 0) {
-		c += snprintf(c, len,  ".");
-		if ((len = (end - c)) <= 1) goto out;
+		while (i-- > 0) {
+			c += snprintf(c, len, "X");
+			if ((len = (end - c)) <= 1) goto out;
+		}
+
+		while (j-- > 0) {
+			c += snprintf(c, len,  ".");
+			if ((len = (end - c)) <= 1) goto out;
+		}
 	}
 
 	c += snprintf(c, len, " %i/%i", cur, total);
@@ -743,6 +746,7 @@ print_multipath_topology (struct multipath * mpp, int verbosity)
 {
 	char buff[MAX_LINE_LEN * MAX_LINES] = {};
 
+	memset(&buff[0], 0, MAX_LINE_LEN * MAX_LINES);
 	snprint_multipath_topology(&buff[0], MAX_LINE_LEN * MAX_LINES,
 				   mpp, verbosity);
 	printf("%s", buff);
