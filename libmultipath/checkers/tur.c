@@ -47,6 +47,7 @@ libcheck_check (struct checker * c)
 
  retry:
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
+	memset(&sense_buffer, 0, 32);
 	io_hdr.interface_id = 'S';
 	io_hdr.cmd_len = sizeof (turCmdBlk);
 	io_hdr.mx_sb_len = sizeof (sense_buffer);
