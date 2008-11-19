@@ -759,6 +759,8 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 	if (verbosity == 1)
 		return snprint_multipath(buff, len, "%n", mpp);
 
+	c += sprintf(c, "%c[%dm", 0x1B, 1); /* bold on */
+
 	if (verbosity > 1 &&
 	    mpp->action != ACT_NOTHING &&
 	    mpp->action != ACT_UNDEF)
@@ -770,6 +772,7 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 		c += sprintf(c, " (%%w)");
 
 	c += sprintf(c, " %%d %%s");
+	c += sprintf(c, "%c[%dm", 0x1B, 0); /* bold off */
 
 	fwd += snprint_multipath(buff + fwd, len - fwd, style, mpp);
 	if (fwd > len)
