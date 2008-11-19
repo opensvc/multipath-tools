@@ -172,7 +172,7 @@ snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw, void *data)
 		f++;
 		switch(*f) {
 		case 'k':
-			fwd += snprintf(buff + fwd, len - fwd, kw->string);
+			fwd += snprintf(buff + fwd, len - fwd, "%s", kw->string);
 			break;
 		case 'v':
 			r = kw->print(buff + fwd, len - fwd, data);

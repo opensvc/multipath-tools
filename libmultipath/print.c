@@ -579,7 +579,7 @@ snprint_multipath_header (char * line, int len, char * format)
 		if (!(data = mpd_lookup(*f)))
 			continue; /* unknown wildcard */
 
-		PRINT(c, TAIL, data->header);
+		PRINT(c, TAIL, "%s", data->header);
 		PAD(data->width);
 	} while (*f++);
 
@@ -615,7 +615,7 @@ snprint_multipath (char * line, int len, char * format,
 			continue;
 
 		data->snprint(buff, MAX_FIELD_LEN, mpp);
-		PRINT(c, TAIL, buff);
+		PRINT(c, TAIL, "%s", buff);
 		PAD(data->width);
 		buff[0] = '\0';
 	} while (*f++);
@@ -649,7 +649,7 @@ snprint_path_header (char * line, int len, char * format)
 		if (!(data = pd_lookup(*f)))
 			continue; /* unknown wildcard */
 
-		PRINT(c, TAIL, data->header);
+		PRINT(c, TAIL, "%s", data->header);
 		PAD(data->width);
 	} while (*f++);
 
@@ -685,7 +685,7 @@ snprint_path (char * line, int len, char * format,
 			continue;
 
 		data->snprint(buff, MAX_FIELD_LEN, pp);
-		PRINT(c, TAIL, buff);
+		PRINT(c, TAIL, "%s", buff);
 		PAD(data->width);
 	} while (*f++);
 
@@ -721,7 +721,7 @@ snprint_pathgroup (char * line, int len, char * format,
 			continue;
 
 		data->snprint(buff, MAX_FIELD_LEN, pgp);
-		PRINT(c, TAIL, buff);
+		PRINT(c, TAIL, "%s", buff);
 		PAD(data->width);
 	} while (*f++);
 
