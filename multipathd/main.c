@@ -1487,6 +1487,22 @@ main (int argc, char *argv[])
 			;
 		}
 	}
+	if (optind < argc) {
+		char cmd[CMDSIZE];
+		char * s = cmd;
+		char * c = s;
+
+		while (optind < argc) {
+			if (strchr(argv[optind], ' '))
+				c += snprintf(c, s + CMDSIZE - c, "\"%s\" ", argv[optind]);
+			else
+				c += snprintf(c, s + CMDSIZE - c, "%s ", argv[optind]);
+			optind++;
+		}
+		c += snprintf(c, s + CMDSIZE - c, "\n");
+		uxclnt(s);
+		exit(0);
+	}
 
 	if (!logsink)
 		err = 0;
