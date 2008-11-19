@@ -489,6 +489,15 @@ get_path_layout (vector pathvec, int header)
 	}
 }
 
+static void
+reset_multipath_layout (void)
+{
+	int i;
+
+	for (i = 0; mpd[i].header; i++)
+		mpd[i].width = 0;
+}
+
 void
 get_multipath_layout (vector mpvec, int header)
 {
@@ -744,6 +753,8 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 
 	if (verbosity <= 0)
 		return fwd;
+
+	reset_multipath_layout();
 
 	if (verbosity == 1)
 		return snprint_multipath(buff, len, "%n", mpp);
