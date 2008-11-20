@@ -24,6 +24,19 @@
 #include <vector.h>
 #include "cli.h"
 
+static void print_reply(char *s)
+{
+	if (isatty(1)) {
+		printf("%s", s);
+		return;
+	}
+	/* strip ANSI color markers */
+	while (*s != '\0') {
+		if ((*s == 0x1b) && (*(s+1) == '['))
+			while ((*s++ != 'm') && (*s != '\0')) {}; 
+		putchar(*s++);
+	}
+}
 /*
  * process the client 
  */
@@ -51,7 +64,7 @@ static void process(int fd)
 		if (send_packet(fd, line, llen + 1) != 0) break;
 		if (recv_packet(fd, &reply, &len) != 0) break;
 
-		printf("%s", reply);
+		print_reply(reply);
 
 		if (line && *line)
 			add_history(line);
@@ -69,7 +82,7 @@ static void process_req(int fd, char * inbuf)
 	send_packet(fd, inbuf, strlen(inbuf) + 1);
 	recv_packet(fd, &reply, &len);
 
-	printf("%s", reply);
+	print_reply(reply);
 	FREE(reply);
 }
 	

@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <unistd.h>
 
 #include "checkers.h"
 #include "vector.h"
@@ -759,7 +760,8 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 	if (verbosity == 1)
 		return snprint_multipath(buff, len, "%n", mpp);
 
-	c += sprintf(c, "%c[%dm", 0x1B, 1); /* bold on */
+	if(isatty(1))
+		c += sprintf(c, "%c[%dm", 0x1B, 1); /* bold on */
 
 	if (verbosity > 1 &&
 	    mpp->action != ACT_NOTHING &&
@@ -772,7 +774,8 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 		c += sprintf(c, " (%%w)");
 
 	c += sprintf(c, " %%d %%s");
-	c += sprintf(c, "%c[%dm", 0x1B, 0); /* bold off */
+	if(isatty(1))
+		c += sprintf(c, "%c[%dm", 0x1B, 0); /* bold off */
 
 	fwd += snprint_multipath(buff + fwd, len - fwd, style, mpp);
 	if (fwd > len)
