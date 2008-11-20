@@ -383,9 +383,10 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
-	int minor;
+	int major, minor;
 	char dev_path[PATH_SIZE];
-	struct sysfs_device *sysdev;
+	char *alias;
+	int rc;
 
 	condlog(2, "%s: add map (operator)", param);
 
@@ -400,13 +401,21 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 		condlog(2, "%s: not a device mapper table", param);
 		return 0;
 	}
-	sprintf(dev_path,"/block/dm-%d", minor);
-	sysdev = sysfs_device_get(dev_path);
-	if (!sysdev) {
-		condlog(2, "%s: not found in sysfs", param);
+	major = dm_get_major(param);
+	if (major < 0) {
+		condlog(2, "%s: not a device mapper table", param);
 		return 0;
 	}
-	return ev_add_map(sysdev, vecs);
+	sprintf(dev_path,"dm-%d", minor);
+	alias = dm_mapname(major, minor);
+	if (!alias) {
+		condlog(2, "%s: mapname not found for %d:%d",
+			param, major, minor);
+		return 0;
+	}
+	rc = ev_add_map(dev_path, alias, vecs);
+	FREE(alias);
+	return rc;
 }
 
 int
@@ -414,10 +423,32 @@ cli_del_map (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
+	int major, minor;
+	char dev_path[PATH_SIZE];
+	char *alias;
+	int rc;
 
 	condlog(2, "%s: remove map (operator)", param);
-
-	return ev_remove_map(param, vecs);
+	minor = dm_get_minor(param);
+	if (minor < 0) {
+		condlog(2, "%s: not a device mapper table", param);
+		return 0;
+	}
+	major = dm_get_major(param);
+	if (major < 0) {
+		condlog(2, "%s: not a device mapper table", param);
+		return 0;
+	}
+	sprintf(dev_path,"dm-%d", minor);
+	alias = dm_mapname(major, minor);
+	if (!alias) {
+		condlog(2, "%s: mapname not found for %d:%d",
+			param, major, minor);
+		return 0;
+	}
+	rc = ev_remove_map(param, alias, minor, vecs);
+	FREE(alias);
+	return rc;
 }
 
 int resize_map(struct multipath *mpp, unsigned long long size,

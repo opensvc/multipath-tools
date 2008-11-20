@@ -363,10 +363,13 @@ int uevent_listen(void)
 		uev->envp[i] = NULL;
 
 		condlog(3, "uevent '%s' from '%s'", uev->action, uev->devpath);
+		uev->kernel = strrchr(uev->devpath, '/');
+		if (uev->kernel)
+			uev->kernel++;
 
 		/* print payload environment */
 		for (i = 0; uev->envp[i] != NULL; i++)
-			condlog(3, "%s", uev->envp[i]);
+			condlog(5, "%s", uev->envp[i]);
 
 		/*
 		 * Queue uevent and poke service pthread.
@@ -386,4 +389,61 @@ exit:
 	pthread_cond_destroy(uev_condp);
 
 	return 1;
+}
+
+extern int
+uevent_get_major(struct uevent *uev)
+{
+	char *p, *q;
+	int i, major = -1;
+
+	for (i = 0; uev->envp[i] != NULL; i++) {
+		if (!strncmp(uev->envp[i], "MAJOR", 5) && strlen(uev->envp[i]) > 6) {
+			p = uev->envp[i] + 6;
+			major = strtoul(p, &q, 10);
+			if (p == q) {
+				condlog(2, "invalid major '%s'", p);
+				major = -1;
+			}
+			break;
+		}
+	}
+	return major;
+}
+
+extern int
+uevent_get_minor(struct uevent *uev)
+{
+	char *p, *q;
+	int i, minor = -1;
+
+	for (i = 0; uev->envp[i] != NULL; i++) {
+		if (!strncmp(uev->envp[i], "MINOR", 5) && strlen(uev->envp[i]) > 6) {
+			p = uev->envp[i] + 6;
+			minor = strtoul(p, &q, 10);
+			if (p == q) {
+				condlog(2, "invalid minor '%s'", p);
+				minor = -1;
+			}
+			break;
+		}
+	}
+	return minor;
+}
+
+extern char *
+uevent_get_dm_name(struct uevent *uev)
+{
+	char *p = NULL;
+	int i;
+
+	for (i = 0; uev->envp[i] != NULL; i++) {
+		if (!strncmp(uev->envp[i], "DM_NAME", 6) &&
+		    strlen(uev->envp[i]) > 7) {
+			p = MALLOC(strlen(uev->envp[i] + 8) + 1);
+			strcpy(p, uev->envp[i] + 8);
+			break;
+		}
+	}
+	return p;
 }

@@ -18,6 +18,7 @@ struct uevent {
 	char buffer[HOTPLUG_BUFFER_SIZE + OBJECT_SIZE];
 	char *devpath;
 	char *action;
+	char *kernel;
 	char *envp[HOTPLUG_NUM_ENVP];
 };
 
@@ -27,5 +28,8 @@ void setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached);
 int uevent_listen(void);
 int uevent_dispatch(int (*store_uev)(struct uevent *, void * trigger_data),
 		    void * trigger_data);
+int uevent_get_major(struct uevent *uev);
+int uevent_get_minor(struct uevent *uev);
+char *uevent_get_dm_name(struct uevent *uev);
 
 #endif /* _UEVENT_H */
