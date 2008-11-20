@@ -186,6 +186,7 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 
 	if (num_pg > 0 && !mpp->pg) {
 		mpp->pg = vector_alloc();
+
 		if (!mpp->pg)
 			return 1;
 	}
