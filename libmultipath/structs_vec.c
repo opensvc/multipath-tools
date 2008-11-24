@@ -163,7 +163,7 @@ _remove_maps (struct vectors * vecs, int stop_waiter)
 	int i;
 	struct multipath * mpp;
 
-	if (!vecs->mpvec)
+	if (!vecs)
 		return;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
@@ -443,7 +443,7 @@ verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
 	int count = 0;
 	int i, j;
 
-	if (!mpp->paths)
+	if (!mpp)
 		return 0;
 
 	vector_foreach_slot (mpp->paths, pp, i) {
@@ -490,9 +490,6 @@ int update_multipath (struct vectors *vecs, char *mapname)
 
 	if (setup_multipath(vecs, mpp))
 		return 1; /* mpp freed in setup_multipath */
-
-	if (!mpp->pg)
-		return 0; /* Can happen when all paths are down */
 
 	/*
 	 * compare checkers states with DM states
