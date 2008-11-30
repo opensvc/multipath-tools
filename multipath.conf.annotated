@@ -205,15 +205,6 @@
 #		path_grouping_policy	multibus
 #
 #		#
-#		# name    : path_checker
-#		# scope   : multipathd
-#		# desc    : path checking alorithm to use to check path state
-#		# values  : readsector0|tur|emc_clariion|hp_sw|directio
-#		# default : directio
-#		#
-#		# path_checker		directio
-#		
-#		#
 #		# name    : path_selector
 #		# desc    : the path selector algorithm to use for this mpath
 #		#           these algo are offered by the kernel mpath target

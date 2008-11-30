@@ -36,7 +36,6 @@
 #		wwid			3600508b4000156d700012000000b0000
 #		alias			yellow
 #		path_grouping_policy	multibus
-#		path_checker		directio
 #		path_selector		"round-robin 0"
 #		failback		manual
 #		rr_weight		priorities
