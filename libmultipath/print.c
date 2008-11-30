@@ -406,6 +406,13 @@ snprint_path_size (char * buff, size_t len, struct path * pp)
 	return snprint_size(buff, len, pp->size);
 }
 
+static int
+snprint_path_checker (char * buff, size_t len, struct path * pp)
+{
+	struct checker * c = &pp->checker;
+	return snprint_str(buff, len, c->name);
+}
+
 struct multipath_data mpd[] = {
 	{'n', "name",          0, snprint_name},
 	{'w', "uuid",          0, snprint_multipath_uuid},
@@ -437,6 +444,7 @@ struct path_data pd[] = {
 	{'o', "dev_st",        0, snprint_offline},
 	{'T', "chk_st",        0, snprint_chk_state},
 	{'s', "vend/prod/rev", 0, snprint_vpr},
+	{'c', "checker",       0, snprint_path_checker},
 	{'C', "next_check",    0, snprint_next_check},
 	{'p', "pri",           0, snprint_pri},
 	{'S', "size",          0, snprint_path_size},
