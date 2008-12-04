@@ -28,4 +28,5 @@ int domap (struct multipath * mpp, char * params);
 int reinstate_paths (struct multipath *mpp);
 int coalesce_paths (struct vectors *vecs, vector curmp, char * refwwid, int force_reload);
 char * get_refwwid (char * dev, enum devtypes dev_type, vector pathvec);
+int reload_map(struct vectors *vecs, struct multipath *mpp);
 

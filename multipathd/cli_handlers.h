@@ -19,6 +19,7 @@ int cli_del_map (void * v, char ** reply, int * len, void * data);
 int cli_switch_group(void * v, char ** reply, int * len, void * data);
 int cli_reconfigure(void * v, char ** reply, int * len, void * data);
 int cli_resize(void * v, char ** reply, int * len, void * data);
+int cli_reload(void * v, char ** reply, int * len, void * data);
 int cli_disable_queueing(void * v, char ** reply, int * len, void * data);
 int cli_disable_all_queueing(void * v, char ** reply, int * len, void * data);
 int cli_restore_queueing(void * v, char ** reply, int * len, void * data);

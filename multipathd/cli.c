@@ -161,6 +161,7 @@ load_keys (void)
 	r += add_key(keys, "fail", FAIL, 0);
 	r += add_key(keys, "resize", RESIZE, 0);
 	r += add_key(keys, "reset", RESET, 0);
+	r += add_key(keys, "reload", RELOAD, 0);
 	r += add_key(keys, "disablequeueing", DISABLEQ, 0);
 	r += add_key(keys, "restorequeueing", RESTOREQ, 0);
 	r += add_key(keys, "paths", PATHS, 0);
@@ -443,6 +444,7 @@ cli_init (void) {
 	add_handler(RESUME+MAP, NULL);
 	add_handler(RESIZE+MAP, NULL);
 	add_handler(RESET+MAP, NULL);
+	add_handler(RELOAD+MAP, NULL);
 	add_handler(DISABLEQ+MAP, NULL);
 	add_handler(RESTOREQ+MAP, NULL);
 	add_handler(DISABLEQ+MAPS, NULL);

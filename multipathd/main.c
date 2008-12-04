@@ -636,6 +636,43 @@ fail:
 }
 
 static int
+uev_update_path (struct uevent *uev, struct vectors * vecs)
+{
+	struct sysfs_device * dev;
+	int retval, ro;
+
+	dev = sysfs_device_get(uev->devpath);
+	if (!dev) {
+		condlog(2, "%s: not found in sysfs", uev->devpath);
+		return 1;
+	}
+	ro = uevent_get_disk_ro(uev);
+
+	if (ro >= 0) {
+		struct path * pp;
+
+		condlog(2, "%s: update path write_protect to '%d' (uevent)",
+			uev->kernel, ro);
+		pp = find_path_by_dev(vecs->pathvec, uev->kernel);
+		if (!pp) {
+			condlog(0, "%s: spurious uevent, path not found",
+				uev->kernel);
+			return 1;
+		}
+		if (pp->mpp)
+			retval = reload_map(vecs, pp->mpp);
+
+		condlog(2, "%s: map %s reloaded (retval %d)",
+			uev->kernel, pp->mpp->alias, retval);
+
+	}
+
+	sysfs_device_put(dev);
+
+	return retval;
+}
+
+static int
 map_discovery (struct vectors * vecs)
 {
 	struct multipath * mpp;
@@ -749,6 +786,10 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 		r = uev_remove_path(uev, vecs);
 		goto out;
 	}
+	if (!strncmp(uev->action, "change", 6)) {
+		r = uev_update_path(uev, vecs);
+		goto out;
+	}
 
 out:
 	unlock(vecs->lock);
@@ -811,6 +852,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(SUSPEND+MAP, cli_suspend);
 	set_handler_callback(RESUME+MAP, cli_resume);
 	set_handler_callback(RESIZE+MAP, cli_resize);
+	set_handler_callback(RELOAD+MAP, cli_reload);
 	set_handler_callback(RESET+MAP, cli_reassign);
 	set_handler_callback(REINSTATE+PATH, cli_reinstate);
 	set_handler_callback(FAIL+PATH, cli_fail);

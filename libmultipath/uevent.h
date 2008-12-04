@@ -30,6 +30,7 @@ int uevent_dispatch(int (*store_uev)(struct uevent *, void * trigger_data),
 		    void * trigger_data);
 int uevent_get_major(struct uevent *uev);
 int uevent_get_minor(struct uevent *uev);
+int uevent_get_disk_ro(struct uevent *uev);
 char *uevent_get_dm_name(struct uevent *uev);
 
 #endif /* _UEVENT_H */
