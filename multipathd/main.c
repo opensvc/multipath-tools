@@ -603,14 +603,20 @@ uxsock_trigger (char * str, char ** reply, int * len, void * trigger_data)
 static int
 uev_discard(char * devpath)
 {
+	char *tmp;
 	char a[10], b[10];
 
 	/*
 	 * keep only block devices, discard partitions
 	 */
-	if (sscanf(devpath, "/block/%10s", a) != 1 ||
-	    sscanf(devpath, "/block/%10[^/]/%10s", a, b) == 2) {
-		condlog(4, "discard event on %s", devpath);
+	tmp = strstr(devpath, "/block/");
+	if (tmp == NULL){
+		condlog(0, "no /block/ in '%s'", devpath);
+		return 1;
+	}
+	if (sscanf(tmp, "/block/%10s", a) != 1 ||
+	    sscanf(tmp, "/block/%10[^/]/%10s", a, b) == 2) {
+		condlog(0, "discard event on %s", devpath);
 		return 1;
 	}
 	return 0;
