@@ -21,7 +21,6 @@
 #       wwid 26353900f02796769
 #	devnode "^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"
 #	devnode "^hd[a-z][[0-9]*]"
-#	devnode "^cciss!c[0-9]d[0-9]*[p[0-9]*]"
 #	device {
 #		vendor DEC.*
 #		product MSA[15]00
@@ -60,7 +59,7 @@
 #		rr_weight		priorities
 #		no_path_retry		queue
 #		rr_min_io		100
-#		product_blacklist	LUN_Z
+#		product_blacklist	LUNZ
 #	}
 #	device {
 #		vendor			"COMPAQ  "
