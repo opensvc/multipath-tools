@@ -211,7 +211,7 @@ dm_addmap (int task, const char *name, const char *target,
 
 	freeout:
 	if (prefixed_uuid)
-		free(prefixed_uuid);
+		FREE(prefixed_uuid);
 
 	addout:
 	dm_task_destroy (dmt);
