@@ -764,7 +764,7 @@ dm_get_name(char *uuid, char *name)
 {
 	vector vec;
 	struct multipath *mpp;
-	int i;
+	int i, rc = 0;
 
 	vec = vector_alloc();
 
@@ -772,20 +772,22 @@ dm_get_name(char *uuid, char *name)
 		return 0;
 
 	if (dm_get_maps(vec)) {
-		vector_free(vec);
-		return 0;
+		goto out;
 	}
 
 	vector_foreach_slot(vec, mpp, i) {
 		if (!strcmp(uuid, mpp->wwid)) {
-			vector_free(vec);
 			strcpy(name, mpp->alias);
-			return 1;
+			rc=1;
+			break;
 		}
 	}
-
+out:
+	vector_foreach_slot(vec, mpp, i) {
+		free_multipath(mpp, KEEP_PATHS);
+	}
 	vector_free(vec);
-	return 0;
+	return rc;
 }
 
 int
