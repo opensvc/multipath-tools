@@ -459,9 +459,8 @@ dbg_realloc(void *buffer, unsigned long size, char *file, char *function,
 	if (debug & 1)
 		printf("realloc [%3d:%3d] %p, %4ld %s %d %s -> %p %4ld %s %d %s\n",
 		       i, number_alloc_list, alloc_list[i].ptr,
-		       alloc_list[i].size, file, line, function, buf, size,
-		       alloc_list[i].file, alloc_list[i].line,
-		       alloc_list[i].func);
+		       alloc_list[i].size, alloc_list[i].file, alloc_list[i].line, alloc_list[i].func,
+		       buf, size, file, line, function);
 
 	alloc_list[i].ptr = buf;
 	alloc_list[i].size = size;
