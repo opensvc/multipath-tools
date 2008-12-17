@@ -243,6 +243,7 @@ ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
 
 	if (map_present && dm_type(alias, TGT_MPATH) <= 0) {
 		condlog(4, "%s: not a multipath map", alias);
+		FREE(alias);
 		return 0;
 	}
 
@@ -256,6 +257,7 @@ ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
 		 */
 		condlog(0, "%s: devmap already registered",
 			dev->kernel);
+		FREE(alias);
 		return 0;
 	}
 
@@ -280,6 +282,7 @@ ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
 		condlog(0, "%s: uev_add_map %s failed", alias, dev->kernel);
 
 	FREE(refwwid);
+	FREE(alias);
 	return r;
 }
 
