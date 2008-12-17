@@ -568,7 +568,7 @@ dm_flush_maps (void)
 		goto out;
 
 	do {
-		r += dm_flush_map(names->name);
+		r |= dm_flush_map(names->name);
 		next = names->next;
 		names = (void *) names + next;
 	} while (next);
