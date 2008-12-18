@@ -10,7 +10,6 @@
 #include <string.h>
 #include <libdevmapper.h>
 #include <ctype.h>
-#include <linux/kdev_t.h>
 #include <unistd.h>
 #include <errno.h>
 
