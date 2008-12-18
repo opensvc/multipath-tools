@@ -342,6 +342,7 @@ domap (struct multipath * mpp)
 
 		if (dm_map_present(mpp->alias)) {
 			condlog(3, "%s: map already present", mpp->alias);
+			lock_multipath(mpp, 0);
 			break;
 		}
 
