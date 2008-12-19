@@ -33,6 +33,7 @@
 #include "sysfs.h"
 #include "list.h"
 #include "util.h"
+#include "debug.h"
 
 char sysfs_path[PATH_SIZE];
 

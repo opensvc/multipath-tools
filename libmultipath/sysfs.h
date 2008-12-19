@@ -6,7 +6,7 @@
 #define _LIBMULTIPATH_SYSFS_H
 
 #ifdef DEBUG
-# define dbg(format, args...) printf(format "\n", ##args)
+# define dbg(format, args...) condlog(4, format, ##args)
 #else
 # define dbg(format, args...) do {} while (0)
 #endif
