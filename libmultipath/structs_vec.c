@@ -270,6 +270,7 @@ update_multipath_status (struct multipath *mpp)
 extern int
 update_multipath_strings (struct multipath *mpp, vector pathvec)
 {
+	condlog(4, "%s: %s", mpp->alias, __FUNCTION__);
 	free_multipath_attributes(mpp);
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
@@ -466,6 +467,9 @@ verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
 					vector_del_slot(vecs->pathvec, j);
 				free_path(pp);
 			}
+		} else {
+			condlog(4, "%s: verified path %s dev_t %s",
+				mpp->alias, pp->dev, pp->dev_t);
 		}
 	}
 	return count;

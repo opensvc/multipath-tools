@@ -699,11 +699,15 @@ get_state (struct path * pp)
 
 	if (!checker_selected(c)) {
 		select_checker(pp);
-		if (!checker_selected(c))
+		if (!checker_selected(c)) {
+			condlog(3, "%s: No checker selected", pp->dev);
 			return 1;
+		}
 		checker_set_fd(c, pp->fd);
-		if (checker_init(c, pp->mpp?&pp->mpp->mpcontext:NULL))
+		if (checker_init(c, pp->mpp?&pp->mpp->mpcontext:NULL)) {
+			condlog(3, "%s: checker init failed", pp->dev);
 			return 1;
+		}
 	}
 	if (path_offline(pp)) {
 		condlog(3, "%s: path offline", pp->dev);
@@ -726,8 +730,10 @@ get_prio (struct path * pp)
 
 	if (!pp->prio) {
 		select_prio(pp);
-		if (!pp->prio)
+		if (!pp->prio) {
+			condlog(3, "%s: no prio selected", pp->dev);
 			return 1;
+		}
 	}
 	pp->priority = prio_getprio(pp->prio, pp);
 	if (pp->priority < 0) {

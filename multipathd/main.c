@@ -390,6 +390,8 @@ ev_add_path (char * devname, struct vectors * vecs)
 	mpp = pp->mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
 rescan:
 	if (mpp) {
+		condlog(4,"%s: adopting all paths for path %s",
+			mpp->alias, pp->dev);
 		if (adopt_paths(vecs->pathvec, mpp))
 			return 1; /* leave path added to pathvec */
 
@@ -398,6 +400,7 @@ rescan:
 		mpp->action = ACT_RELOAD;
 	}
 	else {
+		condlog(4,"%s: creating new map", pp->dev);
 		if ((mpp = add_map_with_path(vecs, pp, 1)))
 			mpp->action = ACT_CREATE;
 		else
