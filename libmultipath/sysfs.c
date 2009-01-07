@@ -445,8 +445,10 @@ char *sysfs_attr_get_value(const char *devpath, const char *attr_name)
 	close(fd);
 	if (size < 0)
 		goto out;
-	if (size == sizeof(value))
-		goto out;
+	if (size == sizeof(value)) {
+		dbg("overflow in attribute '%s', truncating", path_full);
+		size--;
+	}
 
 	/* got a valid value, store and return it */
 	value[size] = '\0';
@@ -456,7 +458,7 @@ char *sysfs_attr_get_value(const char *devpath, const char *attr_name)
 	attr->value = attr->value_local;
 
 out:
-	return attr->value;
+	return attr && attr->value && strlen(attr->value) ? attr->value : NULL;
 }
 
 int sysfs_lookup_devpath_by_subsys_id(char *devpath_full, size_t len,
