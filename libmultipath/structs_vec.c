@@ -471,8 +471,15 @@ verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
 		 */
 		if (!pp->sysdev || sysfs_get_dev(pp->sysdev,
 						 pp->dev_t, BLK_DEV_SIZE)) {
-			condlog(0, "%s: failed to access path %s", mpp->alias,
-				pp->sysdev ? pp->sysdev->devpath : pp->dev_t);
+			if (pp->state != PATH_DOWN) {
+				condlog(1, "%s: removing valid path %s in state %d",
+					mpp->alias,
+					pp->sysdev?pp->sysdev->devpath:pp->dev_t, pp->state);
+			} else {
+				condlog(3, "%s: failed to access path %s",
+					mpp->alias,
+					pp->sysdev ? pp->sysdev->devpath : pp->dev_t);
+			}
 			count++;
 			vector_del_slot(mpp->paths, i);
 			i--;
