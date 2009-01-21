@@ -478,8 +478,9 @@ ev_remove_path (char * devname, struct vectors * vecs)
 	pp = find_path_by_dev(vecs->pathvec, devname);
 
 	if (!pp) {
-		condlog(0, "%s: spurious uevent, path not in pathvec", devname);
-		return 1;
+		/* Not an error; path might have been purged earlier */
+		condlog(0, "%s: path already removed", devname);
+		return 0;
 	}
 
 	/*
