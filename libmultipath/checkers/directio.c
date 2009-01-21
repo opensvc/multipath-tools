@@ -149,14 +149,19 @@ check_state(int fd, struct directio_context *ct, int sync)
 	ct->running++;
 
 	r = io_getevents(ct->ioctx, 1L, 1L, &event, &timeout);
-	LOG(3, "async io getevents returns %li (errno=%s)", r, strerror(errno));
 
-	if (r < 1L) {
+	if (r < 0 ) {
+		LOG(3, "async io getevents returned %li (errno=%s)", r,
+		    strerror(errno));
+		rc = PATH_UNCHECKED;
+	} else if (r < 1L) {
 		if (ct->running > ASYNC_TIMEOUT_SEC || sync) {
 			LOG(3, "abort check on timeout");
 			rc = PATH_DOWN;
-		} else
+		} else {
+			LOG(3, "async io pending");
 			rc = PATH_PENDING;
+		}
 	} else {
 		LOG(3, "io finished %lu/%lu", event.res, event.res2);
 		ct->running = 0;
