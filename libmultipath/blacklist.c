@@ -51,10 +51,10 @@ alloc_ble_device (vector blist)
 {
 	struct blentry_device * ble = MALLOC(sizeof(struct blentry_device));
 
-	if (!ble || !blist)
+	if (!ble)
 		return 1;
 
-	if (!vector_alloc_slot(blist)) {
+	if (!blist || !vector_alloc_slot(blist)) {
 		FREE(ble);
 		return 1;
 	}
@@ -70,7 +70,7 @@ set_ble_device (vector blist, char * vendor, char * product, int origin)
 	if (!blist)
 		return 1;
 
-	ble = VECTOR_SLOT(blist, VECTOR_SIZE(blist) - 1);
+	ble = VECTOR_LAST_SLOT(blist);
 
 	if (!ble)
 		return 1;
@@ -345,10 +345,14 @@ free_blacklist_device (vector blist)
 
 	vector_foreach_slot (blist, ble, i) {
 		if (ble) {
-			regfree(&ble->vendor_reg);
-			regfree(&ble->product_reg);
-			FREE(ble->vendor);
-			FREE(ble->product);
+			if (ble->vendor) {
+				regfree(&ble->vendor_reg);
+				FREE(ble->vendor);
+			}
+			if (ble->product) {
+				regfree(&ble->product_reg);
+				FREE(ble->product);
+			}
 			FREE(ble);
 		}
 	}

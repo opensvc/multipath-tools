@@ -326,8 +326,10 @@ read_value_block(void)
 					dup = (char *) MALLOC(strlen(str) + 1);
 					memcpy(dup, str, strlen(str));
 
-					if (!vector_alloc_slot(elements))
+					if (!vector_alloc_slot(elements)) {
+						free_strvec(vec);
 						goto out1;
+					}
 
 					vector_set_slot(elements, dup);
 				}

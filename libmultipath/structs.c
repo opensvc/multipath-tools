@@ -79,8 +79,10 @@ alloc_pathgroup (void)
 
 	pgp->paths = vector_alloc();
 
-	if (!pgp->paths)
+	if (!pgp->paths) {
 		FREE(pgp);
+		pgp = NULL;
+	}
 
 	return pgp;
 }
@@ -168,8 +170,10 @@ free_multipath (struct multipath * mpp, int free_paths)
 		mpp->alias = NULL;
 	}
 
-	if (mpp->dmi)
+	if (mpp->dmi) {
 		FREE(mpp->dmi);
+		mpp->dmi = NULL;
+	}
 
 	/*
 	 * better own vecs->lock here

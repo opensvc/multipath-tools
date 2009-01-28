@@ -271,6 +271,7 @@ extern int
 update_multipath_strings (struct multipath *mpp, vector pathvec)
 {
 	condlog(4, "%s: %s", mpp->alias, __FUNCTION__);
+
 	free_multipath_attributes(mpp);
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
@@ -384,8 +385,10 @@ add_map_without_path (struct vectors * vecs,
 
 	mpp->alias = alias;
 
-	if (setup_multipath(vecs, mpp))
+	if (setup_multipath(vecs, mpp)) {
+		mpp->alias = NULL;
 		return NULL; /* mpp freed in setup_multipath */
+	}
 
 	if (adopt_paths(vecs->pathvec, mpp))
 		goto out;

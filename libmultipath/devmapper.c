@@ -995,8 +995,11 @@ dm_get_info (char * mapname, struct dm_info ** dmi)
 
 	r = 0;
 out:
-	if (r)
+	if (r) {
 		memset(*dmi, 0, sizeof(struct dm_info));
+		FREE(*dmi);
+		*dmi = NULL;
+	}
 
 	if (dmt)
 		dm_task_destroy(dmt);

@@ -155,6 +155,9 @@ free_hwe (struct hwentry * hwe)
 	if (hwe->prio_name)
 		FREE(hwe->prio_name);
 
+	if (hwe->prio_arg)
+		FREE(hwe->prio_arg);
+
 	if (hwe->bl_product)
 		FREE(hwe->bl_product);
 
