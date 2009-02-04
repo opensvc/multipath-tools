@@ -63,6 +63,20 @@ libcheck_check (struct checker * c)
 	if (io_hdr.info & SG_INFO_OK_MASK) {
 		int key = 0, asc, ascq;
 
+		switch (io_hdr.host_status) {
+		case DID_OK:
+		case DID_NO_CONNECT:
+		case DID_BAD_TARGET:
+		case DID_ABORT:
+		case DID_TRANSPORT_DISRUPTED:
+		case DID_TRANSPORT_FAILFAST:
+			break;
+		default:
+			/* Driver error, retry */
+			if (--retry_tur)
+				goto retry;
+			break;
+		}
 		if (io_hdr.sb_len_wr > 3) {
 			if (io_hdr.sbp[0] == 0x72 || io_hdr.sbp[0] == 0x73) {
 				key = io_hdr.sbp[1] & 0x0f;
