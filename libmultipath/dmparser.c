@@ -309,16 +309,20 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 			pp->pgindex = i + 1;
 
 			for (k = 0; k < num_paths_args; k++)
-				if (k == 0 && !strncmp(mpp->selector,
-						       "round-robin", 11)) {
-					p += get_word(p, &word);
-					def_minio = atoi(word);
+				if (k == 0) {
+					if (!strncmp(mpp->selector,
+						     "round-robin", 11)) {
+						p += get_word(p, &word);
+						def_minio = atoi(word);
 
-					if (mpp->rr_weight == RR_WEIGHT_PRIO
-					    && pp->priority > 0)
-						def_minio /= pp->priority;
+						if (mpp->rr_weight == RR_WEIGHT_PRIO
+						    && pp->priority > 0)
+							def_minio /= pp->priority;
 
-					FREE(word);
+						FREE(word);
+					} else
+						def_minio = 0;
+
 					if (def_minio != mpp->minio)
 						mpp->minio = def_minio;
 				}
@@ -347,6 +351,7 @@ disassemble_status (char * params, struct multipath * mpp)
 	int num_pg;
 	int num_pg_args;
 	int num_paths;
+	int def_minio = 0;
 	struct path * pp;
 	struct pathgroup * pgp;
 
@@ -440,7 +445,7 @@ disassemble_status (char * params, struct multipath * mpp)
 		FREE(word);
 
 		/*
-		 * undef ?
+		 * PG Status (discarded, would be '0' anyway)
 		 */
 		p += get_word(p, NULL);
 
@@ -503,8 +508,17 @@ disassemble_status (char * params, struct multipath * mpp)
 			/*
 			 * selector args
 			 */
-			for (k = 0; k < num_pg_args; k++)
-				p += get_word(p, NULL);
+			for (k = 0; k < num_pg_args; k++) {
+				if (!strncmp(mpp->selector,
+					     "least-pending", 13)) {
+					p += get_word(p, &word);
+					if (sscanf(word,"%d:*d",
+						   &def_minio) == 1 &&
+					    def_minio != mpp->minio)
+							mpp->minio = def_minio;
+				} else
+					p += get_word(p, NULL);
+			}
 		}
 	}
 	return 0;
