@@ -414,7 +414,8 @@ main(int argc, char **argv){
 				if (!slices[j].size || !dm_map_present(partname))
 					continue;
 
-				if (!dm_simplecmd(DM_DEVICE_REMOVE, partname)) {
+				if (!dm_simplecmd(DM_DEVICE_REMOVE,
+							partname, 0)) {
 					r++;
 					continue;
 				}
@@ -467,7 +468,8 @@ main(int argc, char **argv){
 					r++;
 				}
 				if (op == DM_DEVICE_RELOAD &&
-				    !dm_simplecmd(DM_DEVICE_RESUME, partname)) {
+				    !dm_simplecmd(DM_DEVICE_RESUME,
+							partname, 1)) {
 					fprintf(stderr, "resume failed on %s\n",
 						partname);
 					r++;
@@ -526,7 +528,7 @@ main(int argc, char **argv){
 
 					if (op == DM_DEVICE_RELOAD)
 						dm_simplecmd(DM_DEVICE_RESUME,
-							     partname);
+							     partname, 1);
 
 					dm_devn(partname, &slices[j].major,
 						&slices[j].minor);
