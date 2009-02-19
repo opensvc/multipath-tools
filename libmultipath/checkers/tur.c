@@ -22,6 +22,7 @@
 
 #define MSG_TUR_UP	"tur checker reports path is up"
 #define MSG_TUR_DOWN	"tur checker reports path is down"
+#define MSG_TUR_GHOST	"tur checker reports path is in standby state"
 
 struct tur_checker_context {
 	void * dummy;
@@ -94,6 +95,18 @@ libcheck_check (struct checker * c)
 			/* Unit Attention, retry */
 			if (--retry_tur)
 				goto retry;
+		}
+		else if (key == 0x2) {
+			/* Not Ready */
+			/* Note: Other ALUA states are either UP or DOWN */
+			if( asc == 0x04 && ascq == 0x0b){
+				/*
+				 * LOGICAL UNIT NOT ACCESSIBLE,
+				 * TARGET PORT IN STANDBY STATE
+				 */
+				MSG(c, MSG_TUR_GHOST);
+				return PATH_GHOST;
+			}
 		}
 		MSG(c, MSG_TUR_DOWN);
 		return PATH_DOWN;
