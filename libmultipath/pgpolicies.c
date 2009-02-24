@@ -251,17 +251,19 @@ one_group (struct multipath * mp)	/* aka multibus */
 	if (!mp->pg)
 		return 1;
 
-	pgp = alloc_pathgroup();
+	if (VECTOR_SIZE(mp->paths) > 0) {
+		pgp = alloc_pathgroup();
 
-	if (!pgp)
-		goto out;
+		if (!pgp)
+			goto out;
 
-	vector_free(pgp->paths);
-	pgp->paths = mp->paths;
-	mp->paths = NULL;
+		vector_free(pgp->paths);
+		pgp->paths = mp->paths;
+		mp->paths = NULL;
 
-	if (store_pathgroup(mp->pg, pgp))
-		goto out;
+		if (store_pathgroup(mp->pg, pgp))
+			goto out;
+	}
 
 	return 0;
 out:
