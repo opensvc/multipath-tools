@@ -14,7 +14,7 @@
 #endif
 
 struct uevent {
-	void *next;
+	struct list_head node;
 	char buffer[HOTPLUG_BUFFER_SIZE + OBJECT_SIZE];
 	char *devpath;
 	char *action;
