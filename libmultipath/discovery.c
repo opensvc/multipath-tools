@@ -750,6 +750,7 @@ static int
 get_uid (struct path * pp)
 {
 	char buff[CALLOUT_MAX_SIZE];
+	int i;
 
 	if (!pp->getuid)
 		select_getuid(pp);
@@ -761,6 +762,12 @@ get_uid (struct path * pp)
 		condlog(3, "error calling out %s", buff);
 		memset(pp->wwid, 0, WWID_SIZE);
 		return 1;
+	}
+	/* Strip any trailing blanks */
+	i = WWID_SIZE - 1;
+	while (i > 0 && pp->wwid[i] == ' ') {
+		pp->wwid[i] = '\0';
+		i--;
 	}
 	condlog(3, "%s: uid = %s (callout)", pp->dev ,pp->wwid);
 	return 0;
