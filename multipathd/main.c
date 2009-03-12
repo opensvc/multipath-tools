@@ -488,7 +488,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 		if (update_mpp_paths(mpp, vecs->pathvec)) {
 			condlog(0, "%s: failed to update paths",
 				mpp->alias);
-			goto out;
+			goto fail;
 		}
 		if ((i = find_slot(mpp->paths, (void *)pp)) != -1)
 			vector_del_slot(mpp->paths, i);
@@ -507,8 +507,8 @@ ev_remove_path (char * devname, struct vectors * vecs)
 				condlog(2, "%s: removed map after"
 					" removing all paths",
 					alias);
-				free_path(pp);
-				return 0;
+				retval = 0;
+				goto out;
 			}
 			/*
 			 * Not an error, continue
@@ -519,7 +519,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 			condlog(0, "%s: failed to setup map for"
 				" removal of path %s", mpp->alias,
 				devname);
-			goto out;
+			goto fail;
 		}
 		/*
 		 * reload the map
@@ -535,7 +535,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 			 * update our state from kernel
 			 */
 			if (setup_multipath(vecs, mpp)) {
-				goto out;
+				goto fail;
 			}
 			sync_map_state(mpp);
 
@@ -544,6 +544,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 		}
 	}
 
+out:
 	if ((i = find_slot(vecs->pathvec, (void *)pp)) != -1)
 		vector_del_slot(vecs->pathvec, i);
 
@@ -551,7 +552,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 
 	return retval;
 
-out:
+fail:
 	remove_map_and_stop_waiter(mpp, vecs, 1);
 	return 1;
 }
