@@ -20,6 +20,8 @@
 #include "lock.h"
 #include "waiter.h"
 
+pthread_attr_t waiter_attr;
+
 struct event_thread *alloc_waiter (void)
 {
 
@@ -205,17 +207,10 @@ void *waitevent (void *et)
 
 int start_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 {
-	pthread_attr_t attr;
 	struct event_thread *wp;
 
 	if (!mpp)
 		return 0;
-
-	if (pthread_attr_init(&attr))
-		goto out;
-
-	pthread_attr_setstacksize(&attr, 32 * 1024);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
 	wp = alloc_waiter();
 
@@ -227,7 +222,7 @@ int start_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 	wp->vecs = vecs;
 	wp->mpp = mpp;
 
-	if (pthread_create(&wp->thread, &attr, waitevent, wp)) {
+	if (pthread_create(&wp->thread, &waiter_attr, waitevent, wp)) {
 		condlog(0, "%s: cannot create event checker", wp->mapname);
 		goto out1;
 	}

@@ -58,10 +58,8 @@ static void * log_thread (void * et)
 	}
 }
 
-void log_thread_start (void)
+void log_thread_start (pthread_attr_t *attr)
 {
-	pthread_attr_t attr;
-
 	logdbg(stderr,"enter log_thread_start\n");
 
 	logq_lock = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
@@ -72,14 +70,11 @@ void log_thread_start (void)
 	pthread_mutex_init(logev_lock, NULL);
 	pthread_cond_init(logev_cond, NULL);
 
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, 64 * 1024);
-
 	if (log_init("multipathd", 0)) {
 		fprintf(stderr,"can't initialize log buffer\n");
 		exit(1);
 	}
-	pthread_create(&log_thr, &attr, log_thread, NULL);
+	pthread_create(&log_thr, attr, log_thread, NULL);
 
 	return;
 }
