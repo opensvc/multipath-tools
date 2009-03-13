@@ -260,6 +260,16 @@ select_alias (struct multipath * mp)
 extern int
 select_features (struct multipath * mp)
 {
+	struct mpentry * mpe;
+
+	if ((mpe = find_mpe(mp->wwid))) {
+		if (mpe->features) {
+			mp->features = mpe->features;
+			condlog(3, "%s: features = %s (LUN setting)",
+				mp->alias, mp->features);
+			return 0;
+		}
+	}
 	if (mp->hwe && mp->hwe->features) {
 		mp->features = mp->hwe->features;
 		condlog(3, "%s: features = %s (controller setting)",

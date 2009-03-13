@@ -45,6 +45,7 @@ struct mpentry {
 	char * alias;
 	char * getuid;
 	char * selector;
+	char * features;
 
 	int pgpolicy;
 	int pgfailback;

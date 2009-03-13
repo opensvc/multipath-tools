@@ -1425,6 +1425,22 @@ mp_pg_timeout_handler(vector strvec)
 }
 
 static int
+mp_features_handler(vector strvec)
+{
+	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);
+
+	if (!mpe)
+		return 1;
+
+	mpe->features = set_value(strvec);
+
+	if (!mpe->features)
+		return 1;
+
+	return 0;
+}
+
+static int
 mp_flush_on_last_del_handler(vector strvec)
 {
 	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
@@ -1620,6 +1636,20 @@ snprint_mp_pg_timeout (char * buff, int len, void * data)
 		return snprintf(buff, len, "%i", mpe->pg_timeout);
 	}
 	return 0;
+}
+
+static int
+snprint_mp_features (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->features)
+		return 0;
+	if (strlen(mpe->features) == strlen(conf->features) &&
+	    !strcmp(mpe->features, conf->features))
+		return 0;
+
+	return snprintf(buff, len, "%s", mpe->features);
 }
 
 static int
@@ -2332,6 +2362,7 @@ init_keywords(void)
 	install_keyword("rr_min_io_rq", &mp_minio_rq_handler, &snprint_mp_rr_min_io_rq);
 	install_keyword("pg_timeout", &mp_pg_timeout_handler, &snprint_mp_pg_timeout);
 	install_keyword("flush_on_last_del", &mp_flush_on_last_del_handler, &snprint_mp_flush_on_last_del);
+	install_keyword("features", &mp_features_handler, &snprint_mp_features);
 	install_keyword("mode", &mp_mode_handler, &snprint_mp_mode);
 	install_keyword("uid", &mp_uid_handler, &snprint_mp_uid);
 	install_keyword("gid", &mp_gid_handler, &snprint_mp_gid);
