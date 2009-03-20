@@ -18,9 +18,10 @@ int emc_clariion_prio(const char *dev, int fd)
 	unsigned char inqCmdBlk[INQUIRY_CMDLEN] = {INQUIRY_CMD, 1, 0xC0, 0,
 						sizeof(sb), 0};
 	struct sg_io_hdr io_hdr;
-	int ret = 0;
+	int ret = PRIO_UNDEF;
 
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
+	memset(&sense_buffer, 0, 256);
 	io_hdr.interface_id = 'S';
 	io_hdr.cmd_len = sizeof (inqCmdBlk);
 	io_hdr.mx_sb_len = sizeof (sb);
@@ -45,9 +46,9 @@ int emc_clariion_prio(const char *dev, int fd)
 		pp_emc_log(0, "path unit report page in unknown format");
 		goto out;
 	}
-	
+
 	if ( /* Effective initiator type */
-	    	sense_buffer[27] != 0x03
+		sense_buffer[27] != 0x03
 		/*
 		 * Failover mode should be set to 1 (PNR failover mode)
 		 * or 4 (ALUA failover mode).
@@ -57,18 +58,24 @@ int emc_clariion_prio(const char *dev, int fd)
 		/* Arraycommpath should be set to 1 */
 		|| (sense_buffer[30] & 0x04) != 0x04) {
 		pp_emc_log(0, "path not correctly configured for failover");
+		goto out;
 	}
 
 	if ( /* LUN operations should indicate normal operations */
 		sense_buffer[48] != 0x00) {
 		pp_emc_log(0, "path not available for normal operations");
+		goto out;
 	}
+
+	/* LUN state: unbound, bound, or owned */
+	ret = sense_buffer[4];
 
 	/* Is the default owner equal to this path? */
 	/* Note this will switch to the default priority group, even if
 	 * it is not the currently active one. */
-	ret = (sense_buffer[5] == sense_buffer[8]) ? 1 : 0;
-	
+	if (sense_buffer[5] == sense_buffer[8])
+		ret+=2;
+
 out:
 	return(ret);
 }
