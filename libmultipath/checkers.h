@@ -36,7 +36,7 @@
  * - Description: Indicates path not available for "normal" operations
  *
  * PATH_GHOST:
- * - Use: Only hp_sw
+ * - Use: Only hp_sw and rdac
  * - Description: Indicates a "passive/standby" path on active/passive HP
  *   arrays.  These paths will return valid answers to certain SCSI commands
  *   (tur, read_capacity, inquiry, start_stop), but will fail I/O commands.
@@ -100,8 +100,9 @@ struct checker {
 	char name[CHECKER_NAME_LEN];
 	char message[CHECKER_MSG_LEN];       /* comm with callers */
 	void * context;                      /* store for persistent data */
-	void ** mpcontext;                   /* store for persistent data
-						shared multipath-wide */
+	void ** mpcontext;                   /* store for persistent data shared
+						multipath-wide. Use MALLOC if
+						you want to stuff data in. */
 	int (*check)(struct checker *);
 	int (*init)(struct checker *);       /* to allocate the context */
 	void (*free)(struct checker *);      /* to free the context */
