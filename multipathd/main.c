@@ -1395,6 +1395,8 @@ child (void * param)
 	dm_lib_release();
 	dm_lib_exit();
 
+	cleanup_prio();
+	cleanup_checkers();
 	/*
 	 * Freeing config must be done after condlog() and dm_lib_exit(),
 	 * because logging functions like dlog() and dm_write_log()

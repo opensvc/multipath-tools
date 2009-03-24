@@ -444,6 +444,8 @@ out:
 	dm_lib_release();
 	dm_lib_exit();
 
+	cleanup_prio();
+	cleanup_checkers();
 	/*
 	 * Freeing config must be done after dm_lib_exit(), because
 	 * the logging function (dm_write_log()), which is called there,
