@@ -64,6 +64,7 @@ struct config {
 	int pg_timeout;
 	int max_fds;
 	int force_reload;
+	int daemon;
 
 	char * dev;
 	char * sysfs_dir;
