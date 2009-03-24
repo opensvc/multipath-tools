@@ -75,7 +75,7 @@ int libcheck_init (struct checker * c)
 	/*
 	 * Allocate and initialize the multi-path global context.
 	 */
-	if (c->mpcontext) {
+	if (c->mpcontext && *c->mpcontext == NULL) {
 		void * mpctxt = malloc(sizeof(int));
 		*c->mpcontext = mpctxt;
 		CLR_INACTIVE_SNAP(c);
