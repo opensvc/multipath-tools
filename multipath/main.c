@@ -439,6 +439,7 @@ main (int argc, char *argv[])
 		condlog(3, "restart multipath configuration process");
 	
 out:
+
 	sysfs_cleanup();
 	dm_lib_release();
 	dm_lib_exit();

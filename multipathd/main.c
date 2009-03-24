@@ -582,7 +582,7 @@ uxsock_trigger (char * str, char ** reply, int * len, void * trigger_data)
 	*len = 0;
 	vecs = (struct vectors *)trigger_data;
 
-	pthread_cleanup_push(cleanup_lock, vecs->lock);
+	pthread_cleanup_push(cleanup_lock, &vecs->lock);
 	lock(vecs->lock);
 
 	r = parse_cmd(str, reply, len, vecs);
@@ -740,9 +740,9 @@ exit_daemon (int status)
 	condlog(3, "unlink pidfile");
 	unlink(DEFAULT_PIDFILE);
 
-	lock(&exit_mutex);
+	pthread_mutex_lock(&exit_mutex);
 	pthread_cond_signal(&exit_cond);
-	unlock(&exit_mutex);
+	pthread_mutex_unlock(&exit_mutex);
 
 	return status;
 }
@@ -1020,7 +1020,7 @@ checkerloop (void *ap)
 	}
 
 	while (1) {
-		pthread_cleanup_push(cleanup_lock, vecs->lock);
+		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(vecs->lock);
 		condlog(4, "tick");
 
@@ -1163,13 +1163,14 @@ init_vecs (void)
 	if (!vecs)
 		return NULL;
 
-	vecs->lock =
+	vecs->lock.mutex =
 		(pthread_mutex_t *)MALLOC(sizeof(pthread_mutex_t));
 
-	if (!vecs->lock)
+	if (!vecs->lock.mutex)
 		goto out;
 
-	pthread_mutex_init(vecs->lock, NULL);
+	pthread_mutex_init(vecs->lock.mutex, NULL);
+	vecs->lock.depth = 0;
 
 	return vecs;
 
@@ -1341,7 +1342,6 @@ child (void * param)
 		condlog(0, "failure during configuration");
 		exit(1);
 	}
-
 	/*
 	 * start threads
 	 */
@@ -1375,9 +1375,15 @@ child (void * param)
 	free_polls();
 
 	unlock(vecs->lock);
-	pthread_mutex_destroy(vecs->lock);
-	FREE(vecs->lock);
-	vecs->lock = NULL;
+	/* Now all the waitevent threads will start rushing in. */
+	while (vecs->lock.depth > 0) {
+		sleep (1); /* This is weak. */
+		condlog(3,"Have %d wait event checkers threads to de-alloc, waiting..\n", vecs->lock.depth);
+	}
+	pthread_mutex_destroy(vecs->lock.mutex);
+	FREE(vecs->lock.mutex);
+	vecs->lock.depth = 0;
+	vecs->lock.mutex = NULL;
 	FREE(vecs);
 	vecs = NULL;
 
