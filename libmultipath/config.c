@@ -152,6 +152,11 @@ free_hwe (struct hwentry * hwe)
 	if (hwe->bl_product)
 		FREE(hwe->bl_product);
 
+	if (hwe->prio_name)
+		FREE(hwe->prio_name);
+
+	if (hwe->checker_name)
+		FREE(hwe->checker_name);
 	FREE(hwe);
 }
 
@@ -250,7 +255,7 @@ set_param_str(char * str)
 #define merge_str(s) \
 	if (hwe2->s) { \
 		if (hwe1->s) \
-			free(hwe1->s); \
+			FREE(hwe1->s); \
 		if (!(hwe1->s = set_param_str(hwe2->s))) \
 			return 1; \
 	}
@@ -392,6 +397,12 @@ free_config (struct config * conf)
 
 	if (conf->hwhandler)
 		FREE(conf->hwhandler);
+
+	if (conf->prio_name)
+		FREE(conf->prio_name);
+
+	if (conf->checker_name)
+		FREE(conf->checker_name);
 
 	free_blacklist(conf->blist_devnode);
 	free_blacklist(conf->blist_wwid);
