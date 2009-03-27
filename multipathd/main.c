@@ -607,7 +607,7 @@ static int
 uev_discard(char * devpath)
 {
 	char *tmp;
-	char a[10], b[10];
+	char a[11], b[11];
 
 	/*
 	 * keep only block devices, discard partitions
