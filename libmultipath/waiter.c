@@ -45,7 +45,10 @@ void free_waiter (void *data)
 		 */
 		wp->mpp->waiter = NULL;
 	else
-		condlog(3, "free_waiter, mpp freed before wp=%p,", wp);
+		/*
+		* This is OK condition during shutdown.
+		*/
+		condlog(3, "free_waiter, mpp freed before wp=%p (%s).", wp, wp->mapname);
 
 	unlock(wp->vecs->lock);
 
@@ -58,13 +61,16 @@ void free_waiter (void *data)
 void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 {
 	struct event_thread *wp = (struct event_thread *)mpp->waiter;
+	pthread_t thread;
 
 	if (!wp) {
 		condlog(3, "%s: no waiter thread", mpp->alias);
 		return;
 	}
-	condlog(2, "%s: stop event checker thread", wp->mapname);
-	pthread_kill((pthread_t)wp->thread, SIGUSR1);
+	thread = wp->thread;
+	condlog(2, "%s: stop event checker thread (%lu)", wp->mapname, thread);
+
+	pthread_kill(thread, SIGUSR1);
 }
 
 static sigset_t unblock_signals(void)
@@ -148,7 +154,7 @@ int waiteventloop (struct event_thread *waiter)
 		 * 4) a path reinstate : nothing to do
 		 * 5) a switch group : nothing to do
 		 */
-		pthread_cleanup_push(cleanup_lock, waiter->vecs->lock);
+		pthread_cleanup_push(cleanup_lock, &waiter->vecs->lock);
 		lock(waiter->vecs->lock);
 		r = update_multipath(waiter->vecs, waiter->mapname);
 		lock_cleanup_pop(waiter->vecs->lock);

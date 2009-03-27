@@ -30,7 +30,7 @@
 #if defined(__hppa__) || defined(__powerpc64__) || defined (__alpha__) \
  || defined (__x86_64__)
 typedef unsigned long __kernel_old_dev_t;
-#elif defined(__powerpc__) || defined(__ia64__)
+#elif defined(__powerpc__) || defined(__ia64__) || (defined(__sparc__) && defined (__arch64__))
 typedef unsigned int __kernel_old_dev_t;
 #else
 typedef unsigned short __kernel_old_dev_t;

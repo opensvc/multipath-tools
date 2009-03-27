@@ -297,6 +297,17 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 }
 
 int
+cli_list_maps_fmt (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	char * fmt = get_keyparam(v, FMT);
+
+	condlog(3, "list maps (operator)");
+
+	return show_maps(reply, len, vecs, fmt);
+}
+
+int
 cli_list_maps (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
@@ -595,4 +606,10 @@ cli_list_devices (void * v, char ** reply, int * len, void * data)
         condlog(3, "list devices (operator)");
 
         return show_devices(reply, len, vecs);
+}
+
+int
+cli_quit (void * v, char ** reply, int * len, void * data)
+{
+	return 0;
 }

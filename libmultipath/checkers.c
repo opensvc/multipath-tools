@@ -27,7 +27,6 @@ char * checker_state_name (int i)
 
 int init_checkers (void)
 {
-	INIT_LIST_HEAD(&checkers);
 	if (!add_checker(DEFAULT_CHECKER))
 		return 1;
 	return 0;
@@ -35,12 +34,12 @@ int init_checkers (void)
 
 struct checker * alloc_checker (void)
 {
-	return zalloc(sizeof(struct checker));
+	return MALLOC(sizeof(struct checker));
 }
 
 void free_checker (struct checker * c)
 {
-	free(c);
+	FREE(c);
 }
 
 void cleanup_checkers (void)
@@ -50,7 +49,7 @@ void cleanup_checkers (void)
 
 	list_for_each_entry_safe(checker_loop, checker_temp, &checkers, node) {
 		list_del(&checker_loop->node);
-		free(checker_loop);
+		free_checker(checker_loop);
 	}
 }
 

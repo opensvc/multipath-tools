@@ -1,7 +1,6 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#define DAEMON 1
 #define MAPGCINT 5
 
 int reconfigure (struct vectors *);

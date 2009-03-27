@@ -211,7 +211,7 @@ dm_addmap (int task, const char *name, const char *target,
 
 	freeout:
 	if (prefixed_uuid)
-		free(prefixed_uuid);
+		FREE(prefixed_uuid);
 
 	addout:
 	dm_task_destroy (dmt);
@@ -526,7 +526,7 @@ dm_flush_map (const char * mapname)
 		return 0;
 
 	if (dm_type(mapname, TGT_MPATH) <= 0)
-		return 1;
+		return 0; /* nothing to do */
 
 	if (dm_remove_partmaps(mapname))
 		return 1;
@@ -568,7 +568,7 @@ dm_flush_maps (void)
 		goto out;
 
 	do {
-		r += dm_flush_map(names->name);
+		r |= dm_flush_map(names->name);
 		next = names->next;
 		names = (void *) names + next;
 	} while (next);
@@ -764,7 +764,7 @@ dm_get_name(char *uuid, char *name)
 {
 	vector vec;
 	struct multipath *mpp;
-	int i;
+	int i, rc = 0;
 
 	vec = vector_alloc();
 
@@ -772,20 +772,22 @@ dm_get_name(char *uuid, char *name)
 		return 0;
 
 	if (dm_get_maps(vec)) {
-		vector_free(vec);
-		return 0;
+		goto out;
 	}
 
 	vector_foreach_slot(vec, mpp, i) {
 		if (!strcmp(uuid, mpp->wwid)) {
-			vector_free(vec);
 			strcpy(name, mpp->alias);
-			return 1;
+			rc=1;
+			break;
 		}
 	}
-
+out:
+	vector_foreach_slot(vec, mpp, i) {
+		free_multipath(mpp, KEEP_PATHS);
+	}
 	vector_free(vec);
-	return 0;
+	return rc;
 }
 
 int

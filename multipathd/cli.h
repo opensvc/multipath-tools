@@ -21,6 +21,7 @@ enum {
 	__DEVICES,
 	__FMT,
 	__WILDCARDS,
+	__QUIT,
 };
 
 #define LIST		(1 << __LIST)
@@ -45,6 +46,7 @@ enum {
 #define DEVICES  	(1 << __DEVICES)
 #define FMT 	 	(1 << __FMT)
 #define WILDCARDS	(1 << __WILDCARDS)
+#define QUIT		(1 << __QUIT)
 
 #define INITIAL_REPLY_LEN 1000
 
@@ -56,7 +58,7 @@ struct key {
 };
 
 struct handler {
-	int fingerprint;
+	unsigned long fingerprint;
 	int (*fn)(void *, char **, int *, void *);
 };
 

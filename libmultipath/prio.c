@@ -11,7 +11,6 @@ static LIST_HEAD(prioritizers);
 
 int init_prio (void)
 {
-	INIT_LIST_HEAD(&prioritizers);
 	if (!add_prio(DEFAULT_PRIO))
 		return 1;
 	return 0;
@@ -19,12 +18,12 @@ int init_prio (void)
 
 struct prio * alloc_prio (void)
 {
-	return zalloc(sizeof(struct prio));
+	return MALLOC(sizeof(struct prio));
 }
 
 void free_prio (struct prio * p)
 {
-	free(p);
+	FREE(p);
 }
 
 void cleanup_prio(void)
@@ -34,7 +33,7 @@ void cleanup_prio(void)
 
 	list_for_each_entry_safe(prio_loop, prio_temp, &prioritizers, node) {
 		list_del(&prio_loop->node);
-		free(prio_loop);
+		free_prio(prio_loop);
 	}
 }
 

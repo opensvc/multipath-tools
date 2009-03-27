@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <errno.h>
+#include <memory.h>
 
 #include "../libmultipath/sg_include.h"
 #include "libsg.h"
@@ -67,7 +68,7 @@ int libcheck_init (struct checker * c)
 	/*
 	 * Allocate and initialize the path specific context.
 	 */
-	c->context = malloc(sizeof(struct emc_clariion_checker_path_context));
+	c->context = MALLOC(sizeof(struct emc_clariion_checker_path_context));
 	if (!c->context)
 		return 1;
 	((struct emc_clariion_checker_path_context *)c->context)->wwn_set = 0;
@@ -75,7 +76,7 @@ int libcheck_init (struct checker * c)
 	/*
 	 * Allocate and initialize the multi-path global context.
 	 */
-	if (c->mpcontext) {
+	if (c->mpcontext && *c->mpcontext == NULL) {
 		void * mpctxt = malloc(sizeof(int));
 		*c->mpcontext = mpctxt;
 		CLR_INACTIVE_SNAP(c);

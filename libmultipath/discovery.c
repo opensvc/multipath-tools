@@ -144,6 +144,7 @@ declare_sysfs_get_str(cutype);
 declare_sysfs_get_str(vendor);
 declare_sysfs_get_str(model);
 declare_sysfs_get_str(rev);
+declare_sysfs_get_str(state);
 
 int
 sysfs_get_dev (struct sysfs_device * dev, char * buff, size_t len)
@@ -252,7 +253,11 @@ devt2devname (char *devname, char *devt)
 			continue;
 
 		if ((major == tmpmaj) && (minor == tmpmin)) {
-			sprintf(block_path, "/sys/block/%s", dev);
+			if (snprintf(block_path, FILE_NAME_SIZE, "/sys/block/%s", dev) >= FILE_NAME_SIZE) {
+				condlog(0, "device name %s is too long\n", dev);
+				fclose(fd);
+				return 1;
+			}
 			break;
 		}
 	}
@@ -270,6 +275,7 @@ devt2devname (char *devname, char *devt)
 		condlog(0, "sysfs entry %s is not a directory\n", block_path);
 		return 1;
 	}
+	basename(block_path, devname);
 	return 0;
 }
 
@@ -528,6 +534,35 @@ struct sysfs_device *sysfs_device_from_path(struct path *pp)
 	return sysfs_device_get(sysdev);
 }
 
+int
+path_offline (struct path * pp)
+{
+	struct sysfs_device * parent;
+	char buff[SCSI_STATE_SIZE];
+
+	pp->sysdev = sysfs_device_from_path(pp);
+	if (!pp->sysdev) {
+		condlog(1, "%s: failed to get sysfs information", pp->dev);
+		return 1;
+	}
+	parent = sysfs_device_get_parent(pp->sysdev);
+	if (!parent)
+		parent = pp->sysdev;
+	if (!strncmp(parent->kernel, "block",5))
+		parent = sysfs_device_get_parent(parent);
+	if (sysfs_get_state(parent, buff, SCSI_STATE_SIZE))
+		return 1;
+
+	condlog(3, "%s: state = %s", pp->dev, buff);
+
+	if (!strncmp(buff, "offline", 7)) {
+		pp->offline = 1;
+		return 1;
+	}
+	pp->offline = 0;
+	return 0;
+}
+
 extern int
 sysfs_pathinfo(struct path * pp)
 {
@@ -617,6 +652,11 @@ get_state (struct path * pp)
 		checker_set_fd(c, pp->fd);
 		if (checker_init(c, &pp->mpp->mpcontext))
 			return 1;
+	}
+	if (path_offline(pp)) {
+		condlog(3, "%s: path offline", pp->dev);
+		pp->state = PATH_DOWN;
+		return 0;
 	}
 	pp->state = checker_check(c);
 	condlog(3, "%s: state = %i", pp->dev, pp->state);

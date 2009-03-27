@@ -141,7 +141,8 @@ update_paths (struct multipath * mpp)
 				continue;
 			}
 			pp->mpp = mpp;
-			if (pp->state == PATH_UNCHECKED)
+			if (pp->state == PATH_UNCHECKED ||
+			    pp->state == PATH_WILD)
 				pathinfo(pp, conf->hwtable, DI_CHECKER);
 
 			if (pp->priority == PRIO_UNDEF)
@@ -288,7 +289,7 @@ configure (void)
 	if (conf->verbosity > 2)
 		print_all_paths(pathvec, 1);
 
-	get_path_layout(pathvec, 1);
+	get_path_layout(pathvec, 0);
 
 	if (get_dm_mpvec(curmp, pathvec, refwwid))
 		goto out;
@@ -420,28 +421,32 @@ main (int argc, char *argv[])
 			conf->dev_type = DEV_DEVMAP;
 
 	}
+	conf->daemon = 0;
 	dm_init();
 
 	if (conf->remove == FLUSH_ONE) {
 		if (conf->dev_type == DEV_DEVMAP)
-			dm_flush_map(conf->dev);
+			r = dm_flush_map(conf->dev);
 		else
 			condlog(0, "must provide a map name to remove");
 
 		goto out;
 	}
 	else if (conf->remove == FLUSH_ALL) {
-		dm_flush_maps();
+		r = dm_flush_maps();
 		goto out;
 	}
 	while ((r = configure()) < 0)
 		condlog(3, "restart multipath configuration process");
 	
 out:
+
 	sysfs_cleanup();
 	dm_lib_release();
 	dm_lib_exit();
 
+	cleanup_prio();
+	cleanup_checkers();
 	/*
 	 * Freeing config must be done after dm_lib_exit(), because
 	 * the logging function (dm_write_log()), which is called there,

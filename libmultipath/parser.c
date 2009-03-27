@@ -172,7 +172,7 @@ snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw, void *data)
 		f++;
 		switch(*f) {
 		case 'k':
-			fwd += snprintf(buff + fwd, len - fwd, kw->string);
+			fwd += snprintf(buff + fwd, len - fwd, "%s", kw->string);
 			break;
 		case 'v':
 			r = kw->print(buff + fwd, len - fwd, data);
@@ -239,12 +239,20 @@ alloc_strvec(char *string)
 				in_string = 0;
 			else
 				in_string = 1;
+		} else if (!in_string && (*cp == '{' || *cp == '}')) {
+			token = MALLOC(2);
 
+			if (!token)
+				goto out;
+
+			*(token) = *cp;
+			*(token + 1) = '\0';
+			cp++;
 		} else {
 			while ((in_string ||
 				(!isspace((int) *cp) && isascii((int) *cp) &&
-				 *cp != '!' && *cp != '#')) &&
-			       *cp != '\0' && *cp != '"')
+				 *cp != '!' && *cp != '#' && *cp != '{' &&
+				 *cp != '}')) && *cp != '\0' && *cp != '"')
 				cp++;
 			strlen = cp - start;
 			token = MALLOC(strlen + 1);

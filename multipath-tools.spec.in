@@ -45,8 +45,12 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/usr/share/man/man8/multipath.8.gz
 %{prefix}/usr/share/man/man8/kpartx.8.gz
 %{prefix}/usr/share/man/man8/multipathd.8.gz
+%{prefix}/usr/share/man/man5/multipath.conf.5.gz
 %{prefix}/sbin/multipathd
 %{prefix}/etc/udev/rules.d/multipath.rules
+%{prefix}/etc/udev/rules.d/kpartx.rules
+%{prefix}/lib/udev/kpartx_id
+%{prefix}/lib/multipath/*.so
 
 
 %changelog

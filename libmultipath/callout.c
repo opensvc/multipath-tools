@@ -64,9 +64,10 @@ int execute_program(char *path, char *value, int len)
 
 	retval = pipe(fds);
 
-	if (retval != 0)
+	if (retval != 0) {
+		condlog(0, "error creating pipe for callout: %s", strerror(errno));
 		return -1;
-
+	}
 
 	pid = fork();
 
@@ -88,9 +89,12 @@ int execute_program(char *path, char *value, int len)
 		}
 
 		retval = execv(argv[0], argv);
-
+		condlog(0, "error execing %s : %s", argv[0], strerror(errno));
 		exit(-1);
 	case -1:
+		condlog(0, "fork failed: %s", strerror(errno));
+		close(fds[0]);
+		close(fds[1]);
 		return -1;
 	default:
 		/* parent reads from fds[0] */
@@ -104,13 +108,16 @@ int execute_program(char *path, char *value, int len)
 
 			i += count;
 			if (i >= len-1) {
+				condlog(0, "not enough space for response from %s", argv[0]);
 				retval = -1;
 				break;
 			}
 		}
 
-		if (count < 0)
+		if (count < 0) {
+			condlog(0, "no response from %s", argv[0]);
 			retval = -1;
+		}
 
 		if (i > 0 && value[i-1] == '\n')
 			i--;
@@ -119,8 +126,18 @@ int execute_program(char *path, char *value, int len)
 		wait(&status);
 		close(fds[0]);
 
-		if (!WIFEXITED(status) || (WEXITSTATUS(status) != 0))
-			retval = -1;
+		retval = -1;
+		if (WIFEXITED(status)) {
+			status = WEXITSTATUS(status);
+			if (status == 0)
+				retval = 0;
+			else
+				condlog(0, "%s exitted with %d", argv[0], status);
+		}
+		else if (WIFSIGNALED(status))
+			condlog(0, "%s was terminated by signal %d", argv[0], WTERMSIG(status));
+		else
+			condlog(0, "%s terminated abnormally", argv[0]);
 	}
 	return retval;
 }

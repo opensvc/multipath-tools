@@ -42,6 +42,7 @@ struct prio {
 };
 
 int init_prio (void);
+void cleanup_prio (void);
 struct prio * add_prio (char *);
 struct prio * prio_lookup (char *);
 int prio_getprio (struct prio *, struct path *);
