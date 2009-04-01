@@ -1454,8 +1454,9 @@ daemonize(void)
 
 	close(in_fd);
 	close(out_fd);
-	chdir("/");
-	umask(0);
+	if (chdir("/") < 0)
+		fprintf(stderr, "cannot chdir to '/', continuing\n");
+
 	return 0;
 }
 
