@@ -353,7 +353,15 @@ domap (struct multipath * mpp)
 
 	case ACT_RELOAD:
 		r = (dm_addmap_reload(mpp->alias, mpp->params, mpp->size, NULL)
-		     && dm_simplecmd(DM_DEVICE_RESUME, mpp->alias));
+		     && dm_simplecmd(DM_DEVICE_RESUME, mpp->alias, 1));
+		break;
+
+ 	case ACT_RESIZE:
+  		r = dm_addmap_reload_ro(mpp->alias, mpp->params, mpp->size, NULL);
+  		if (!r)
+  			r = dm_addmap_reload(mpp->alias, mpp->params, mpp->size, NULL);
+  		if (r)
+  			r = dm_simplecmd(DM_DEVICE_RESUME, mpp->alias, 0);
 		break;
 
 	case ACT_RENAME:

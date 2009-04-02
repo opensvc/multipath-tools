@@ -21,5 +21,6 @@ struct sysfs_device *sysfs_device_get_parent_with_subsystem(struct sysfs_device 
 void sysfs_device_put(struct sysfs_device *dev);
 char *sysfs_attr_get_value(const char *devpath, const char *attr_name);
 int sysfs_resolve_link(char *path, size_t size);
+int sysfs_get_size (struct sysfs_device * dev, unsigned long long * size);
 
 #endif

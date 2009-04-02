@@ -7,6 +7,7 @@
 #define ACT_SWITCHPG_STR        "switchpg"
 #define ACT_RENAME_STR          "rename"
 #define ACT_CREATE_STR          "create"
+#define ACT_RESIZE_STR          "resize"
 
 enum actions {
 	ACT_UNDEF,
@@ -15,7 +16,8 @@ enum actions {
 	ACT_RELOAD,
 	ACT_SWITCHPG,
 	ACT_RENAME,
-	ACT_CREATE
+	ACT_CREATE,
+	ACT_RESIZE,
 };
 
 #define FLUSH_ONE 1

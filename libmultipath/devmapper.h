@@ -3,7 +3,7 @@
 
 void dm_init(void);
 int dm_prereq (void);
-int dm_simplecmd (int, const char *);
+int dm_simplecmd (int, const char *, int);
 int dm_addmap_create (const char *, const char *,
                       unsigned long long size, const char *uuid);
 int dm_addmap_create_ro (const char *, const char *,

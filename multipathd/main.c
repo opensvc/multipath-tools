@@ -147,7 +147,7 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 	return 0;
 }
 
-static void
+void
 sync_map_state(struct multipath *mpp)
 {
 	struct pathgroup *pgp;
@@ -728,6 +728,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(RECONFIGURE, cli_reconfigure);
 	set_handler_callback(SUSPEND+MAP, cli_suspend);
 	set_handler_callback(RESUME+MAP, cli_resume);
+	set_handler_callback(RESIZE+MAP, cli_resize);
 	set_handler_callback(REINSTATE+PATH, cli_reinstate);
 	set_handler_callback(FAIL+PATH, cli_fail);
 	set_handler_callback(QUIT, cli_quit);

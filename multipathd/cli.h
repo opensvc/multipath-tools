@@ -7,6 +7,7 @@ enum {
 	__RESUME,
 	__REINSTATE,
 	__FAIL,
+	__RESIZE,
 	__PATHS,
 	__MAPS,
 	__PATH,
@@ -32,6 +33,7 @@ enum {
 #define RESUME		(1 << __RESUME)
 #define REINSTATE	(1 << __REINSTATE)
 #define FAIL		(1 << __FAIL)
+#define RESIZE		(1 << __RESIZE)
 #define PATHS		(1 << __PATHS)
 #define MAPS		(1 << __MAPS)
 #define PATH		(1 << __PATH)
