@@ -149,7 +149,7 @@ dm_prereq (void)
 	return dm_drvprereq(TGT_MPATH);
 }
 
-extern int
+static int
 dm_simplecmd (int task, const char *name, int no_flush) {
 	int r = 0;
 	struct dm_task *dmt;
@@ -172,6 +172,16 @@ dm_simplecmd (int task, const char *name, int no_flush) {
 	out:
 	dm_task_destroy (dmt);
 	return r;
+}
+
+extern int
+dm_simplecmd_flush (int task, const char *name) {
+	return dm_simplecmd(task, name, 1);
+}
+
+extern int
+dm_simplecmd_noflush (int task, const char *name) {
+	return dm_simplecmd(task, name, 0);
 }
 
 extern int
@@ -540,7 +550,7 @@ dm_flush_map (const char * mapname)
 		return 1;
 	}
 
-	r = dm_simplecmd(DM_DEVICE_REMOVE, mapname, 0);
+	r = dm_simplecmd_noflush(DM_DEVICE_REMOVE, mapname);
 
 	if (r) {
 		condlog(4, "multipath map %s removed", mapname);
@@ -939,7 +949,7 @@ dm_remove_partmaps (const char * mapname)
 				 */
 				condlog(4, "partition map %s removed",
 					names->name);
-				dm_simplecmd(DM_DEVICE_REMOVE, names->name, 0);
+				dm_simplecmd_noflush(DM_DEVICE_REMOVE, names->name);
 		   }
 
 		next = names->next;
