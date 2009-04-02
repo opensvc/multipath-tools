@@ -473,7 +473,7 @@ cli_resize(void *v, char **reply, int *len, void *data)
 	condlog(3, "%s old size is %llu, new size is %llu", mapname, mpp->size,
 		size);
 
-	condlog(0,"%s: resize_map.");
+	condlog(0, "%s: resize_map.", mapname);
 	if (resize_map(mpp, size, vecs) != 0)
 		return 1;
 
