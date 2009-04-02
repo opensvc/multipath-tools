@@ -688,6 +688,9 @@ out:
 static void *
 ueventloop (void * ap)
 {
+	block_signal(SIGUSR1, NULL);
+	block_signal(SIGHUP, NULL);
+
 	if (uevent_listen(&uev_trigger, ap))
 		fprintf(stderr, "error starting uevent listener");
 
@@ -697,6 +700,9 @@ ueventloop (void * ap)
 static void *
 uxlsnrloop (void * ap)
 {
+	block_signal(SIGUSR1, NULL);
+	block_signal(SIGHUP, NULL);
+
 	if (cli_init())
 		return NULL;
 
@@ -1007,6 +1013,7 @@ checkerloop (void *ap)
 	struct path *pp;
 	int count = 0;
 	unsigned int i;
+	sigset_t old;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	vecs = (struct vectors *)ap;
@@ -1020,6 +1027,7 @@ checkerloop (void *ap)
 	}
 
 	while (1) {
+		block_signal(SIGHUP, &old);
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(vecs->lock);
 		condlog(4, "tick");
@@ -1042,6 +1050,7 @@ checkerloop (void *ap)
 		}
 
 		lock_cleanup_pop(vecs->lock);
+		pthread_sigmask(SIG_SETMASK, &old, NULL);
 		sleep(1);
 	}
 	return NULL;
@@ -1358,6 +1367,7 @@ child (void * param)
 	/*
 	 * exit path
 	 */
+	block_signal(SIGHUP, NULL);
 	lock(vecs->lock);
 	remove_maps_and_stop_waiters(vecs);
 	free_pathvec(vecs->pathvec, FREE_PATHS);

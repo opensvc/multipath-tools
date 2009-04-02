@@ -11,9 +11,15 @@
 
 #include "log_pthread.h"
 #include "log.h"
+#include "lock.h"
 
 void log_safe (int prio, const char * fmt, va_list ap)
 {
+	sigset_t old;
+
+	block_signal(SIGUSR1, &old);
+	block_signal(SIGHUP, NULL);
+
 	pthread_mutex_lock(logq_lock);
 	log_enqueue(prio, fmt, ap);
 	pthread_mutex_unlock(logq_lock);
@@ -21,6 +27,8 @@ void log_safe (int prio, const char * fmt, va_list ap)
 	pthread_mutex_lock(logev_lock);
 	pthread_cond_signal(logev_cond);
 	pthread_mutex_unlock(logev_lock);
+
+	pthread_sigmask(SIG_SETMASK, &old, NULL);
 }
 
 static void flush_logqueue (void)
