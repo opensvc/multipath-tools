@@ -23,14 +23,15 @@ endif
 all: $(LIBS)
 
 $(LIBS): $(OBJS)
-	$(CC) $(SHARED_FLAGS) $(CFLAGS) -o $@ $(OBJS)
+	$(CC) $(SHARED_FLAGS) -Wl,-soname,$@ $(CFLAGS) -o $@ $(OBJS)
 
 install:
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(prefix)/lib
+	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(prefix)/lib/$(LIBS)
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(libdir)
-	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(libdir)/$(LIBS)
 
 uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(LIBS)
+	rm -f $(DESTDIR)$(prefix)/lib/$(LIBS)
 
 clean:
 	rm -f core *.a *.o *.gz *.so

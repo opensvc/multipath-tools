@@ -17,6 +17,9 @@ CFLAGS += -I..
 
 all: $(LIBS)
 
+libcheckdirectio.so: libsg.o directio.o
+	$(CC) $(SHARED_FLAGS) -o $@ $^ -laio
+
 libcheck%.so: libsg.o %.o
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
