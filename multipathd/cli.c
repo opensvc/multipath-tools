@@ -433,6 +433,10 @@ cli_init (void) {
 	add_handler(SUSPEND+MAP, NULL);
 	add_handler(RESUME+MAP, NULL);
 	add_handler(RESIZE+MAP, NULL);
+	add_handler(DISABLEQ+MAP, NULL);
+	add_handler(RESTOREQ+MAP, NULL);
+	add_handler(DISABLEQ+MAPS, NULL);
+	add_handler(RESTOREQ+MAPS, NULL);
 	add_handler(REINSTATE+PATH, NULL);
 	add_handler(FAIL+PATH, NULL);
 	add_handler(QUIT, NULL);
