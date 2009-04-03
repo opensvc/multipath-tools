@@ -176,12 +176,12 @@ dm_simplecmd (int task, const char *name, int no_flush) {
 
 extern int
 dm_simplecmd_flush (int task, const char *name) {
-	return dm_simplecmd(task, name, 1);
+	return dm_simplecmd(task, name, 0);
 }
 
 extern int
 dm_simplecmd_noflush (int task, const char *name) {
-	return dm_simplecmd(task, name, 0);
+	return dm_simplecmd(task, name, 1);
 }
 
 extern int
@@ -200,9 +200,6 @@ dm_addmap (int task, const char *name, const char *target,
 
 	if (!dm_task_add_target (dmt, 0, size, target, params))
 		goto addout;
-
-	if (ro)
-		dm_task_set_ro(dmt);
 
 	if (ro)
 		dm_task_set_ro(dmt);
@@ -550,7 +547,7 @@ dm_flush_map (const char * mapname)
 		return 1;
 	}
 
-	r = dm_simplecmd_noflush(DM_DEVICE_REMOVE, mapname);
+	r = dm_simplecmd_flush(DM_DEVICE_REMOVE, mapname);
 
 	if (r) {
 		condlog(4, "multipath map %s removed", mapname);
@@ -949,7 +946,7 @@ dm_remove_partmaps (const char * mapname)
 				 */
 				condlog(4, "partition map %s removed",
 					names->name);
-				dm_simplecmd_noflush(DM_DEVICE_REMOVE, names->name);
+				dm_simplecmd_flush(DM_DEVICE_REMOVE, names->name);
 		   }
 
 		next = names->next;

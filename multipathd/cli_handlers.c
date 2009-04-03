@@ -459,7 +459,6 @@ cli_resize(void *v, char **reply, int *len, void *data)
 
 	pgp = VECTOR_SLOT(mpp->pg, 0);
 	pp = VECTOR_SLOT(pgp->paths, 0);
-	condlog(0,"%s: reading sysfs.", mapname);
 	if (sysfs_get_size(pp->sysdev, &size)) {
 		condlog(0, "%s: couldn't get size for sysfs. cannot resize",
 			mapname);
@@ -473,15 +472,11 @@ cli_resize(void *v, char **reply, int *len, void *data)
 	condlog(3, "%s old size is %llu, new size is %llu", mapname, mpp->size,
 		size);
 
-	condlog(0, "%s: resize_map.", mapname);
 	if (resize_map(mpp, size, vecs) != 0)
 		return 1;
 
-	condlog(0,"%s: dm_lib_release.", mapname);
 	dm_lib_release();
-	condlog(0,"%s: setup multipath.", mapname);
 	setup_multipath(vecs, mpp);
-	condlog(0,"%s: sync map state.", mapname);
 	sync_map_state(mpp);
 
 	return 0;
@@ -513,7 +508,7 @@ cli_suspend(void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
-	int r = dm_simplecmd_flush(DM_DEVICE_SUSPEND, param);
+	int r = dm_simplecmd_noflush(DM_DEVICE_SUSPEND, param);
 
 	condlog(2, "%s: suspend (operator)", param);
 
@@ -534,7 +529,7 @@ cli_resume(void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
-	int r = dm_simplecmd_flush(DM_DEVICE_RESUME, param);
+	int r = dm_simplecmd_noflush(DM_DEVICE_RESUME, param);
 
 	condlog(2, "%s: resume (operator)", param);
 
