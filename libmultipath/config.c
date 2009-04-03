@@ -438,6 +438,7 @@ load_config (char * file)
 	conf->max_fds = 0;
 	conf->bindings_file = DEFAULT_BINDINGS_FILE;
 	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
+	conf->flush_on_last_del = 0;
 
 	/*
 	 * preload default hwtable

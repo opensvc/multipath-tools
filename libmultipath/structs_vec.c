@@ -321,6 +321,7 @@ retry:
 	select_pgfailback(mpp);
 	set_no_path_retry(mpp);
 	select_pg_timeout(mpp);
+	select_flush_on_last_del(mpp);
 
 	return 0;
 out:

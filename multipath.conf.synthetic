@@ -11,6 +11,7 @@
 #	prio			const
 #	path_checker		directio
 #	rr_min_io		100
+#	flush_on_last_del	no
 #	max_fds			8192
 #	rr_weight		priorities
 #	failback		immediate

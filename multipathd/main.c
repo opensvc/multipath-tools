@@ -394,6 +394,7 @@ rescan:
 			return 1; /* leave path added to pathvec */
 
 		verify_paths(mpp, vecs, NULL);
+		mpp->flush_on_last_del = FLUSH_UNDEF;
 		mpp->action = ACT_RELOAD;
 	}
 	else {
@@ -504,6 +505,13 @@ ev_remove_path (char * devname, struct vectors * vecs)
 			 * flush_map will fail if the device is open
 			 */
 			strncpy(alias, mpp->alias, WWID_SIZE);
+			if (mpp->flush_on_last_del == FLUSH_ENABLED) {
+				condlog(2, "%s Last path deleted, disabling queueing", mpp->alias);
+				mpp->retry_tick = 0;
+				mpp->no_path_retry = NO_PATH_RETRY_FAIL;
+				mpp->flush_on_last_del = FLUSH_IN_PROGRESS;
+				dm_queue_if_no_path(mpp->alias, 0);
+			}
 			if (!flush_map(mpp, vecs)) {
 				condlog(2, "%s: removed map after"
 					" removing all paths",
@@ -733,6 +741,10 @@ uxlsnrloop (void * ap)
 	set_handler_callback(RESIZE+MAP, cli_resize);
 	set_handler_callback(REINSTATE+PATH, cli_reinstate);
 	set_handler_callback(FAIL+PATH, cli_fail);
+	set_handler_callback(DISABLEQ+MAP, cli_disable_queueing);
+	set_handler_callback(RESTOREQ+MAP, cli_restore_queueing);
+	set_handler_callback(DISABLEQ+MAPS, cli_disable_all_queueing);
+	set_handler_callback(RESTOREQ+MAPS, cli_restore_all_queueing);
 	set_handler_callback(QUIT, cli_quit);
 
 	uxsock_listen(&uxsock_trigger, ap);

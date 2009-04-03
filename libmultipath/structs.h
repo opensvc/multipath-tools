@@ -67,6 +67,14 @@ enum pgtimeouts {
 	PGTIMEOUT_NONE
 };
 
+
+enum flush_states {
+	FLUSH_UNDEF,
+	FLUSH_DISABLED,
+	FLUSH_ENABLED,
+	FLUSH_IN_PROGRESS,
+};
+
 struct scsi_idlun {
 	int dev_id;
 	int host_unique_id;
@@ -150,6 +158,7 @@ struct multipath {
 	int retry_tick;    /* remaining times for retries */
 	int minio;
 	int pg_timeout;
+	int flush_on_last_del;
 	unsigned long long size;
 	vector paths;
 	vector pg;

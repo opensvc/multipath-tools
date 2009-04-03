@@ -279,6 +279,10 @@ select_prio (struct path * pp)
 extern int
 select_no_path_retry(struct multipath *mp)
 {
+	if (mp->flush_on_last_del == FLUSH_IN_PROGRESS) {
+		condlog(0, "flush_on_last_del in progress");
+		mp->no_path_retry = NO_PATH_RETRY_FAIL;
+	}
 	if (mp->mpe && mp->mpe->no_path_retry != NO_PATH_RETRY_UNDEF) {
 		mp->no_path_retry = mp->mpe->no_path_retry;
 		condlog(3, "%s: no_path_retry = %i (multipath setting)",
@@ -366,5 +370,33 @@ select_pg_timeout(struct multipath *mp)
 	}
 	mp->pg_timeout = PGTIMEOUT_UNDEF;
 	condlog(3, "pg_timeout = NONE (internal default)");
+	return 0;
+}
+
+extern int
+select_flush_on_last_del(struct multipath *mp)
+{
+	if (mp->flush_on_last_del == FLUSH_IN_PROGRESS)
+		return 0;
+	if (mp->mpe && mp->mpe->flush_on_last_del != FLUSH_UNDEF) {
+		mp->flush_on_last_del = mp->mpe->flush_on_last_del;
+		condlog(3, "flush_on_last_del = %i (multipath setting)",
+				mp->flush_on_last_del);
+		return 0;
+	}
+	if (mp->hwe && mp->hwe->flush_on_last_del != FLUSH_UNDEF) {
+		mp->flush_on_last_del = mp->hwe->flush_on_last_del;
+		condlog(3, "flush_on_last_del = %i (controler setting)",
+				mp->flush_on_last_del);
+		return 0;
+	}
+	if (conf->flush_on_last_del != FLUSH_UNDEF) {
+		mp->flush_on_last_del = conf->flush_on_last_del;
+		condlog(3, "flush_on_last_del = %i (config file default)",
+				mp->flush_on_last_del);
+		return 0;
+	}
+	mp->flush_on_last_del = FLUSH_UNDEF;
+	condlog(3, "flush_on_last_del = DISABLED (internal default)");
 	return 0;
 }
