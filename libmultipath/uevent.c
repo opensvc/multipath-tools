@@ -165,7 +165,7 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		memset(&snl, 0x00, sizeof(struct sockaddr_nl));
 		snl.nl_family = AF_NETLINK;
 		snl.nl_pid = getpid();
-		snl.nl_groups = 0xffffffff;
+		snl.nl_groups = 0x01;
 
 		sock = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_KOBJECT_UEVENT);
 		if (sock == -1) {
