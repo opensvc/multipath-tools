@@ -26,12 +26,12 @@ $(LIBS): $(OBJS)
 	$(CC) $(SHARED_FLAGS) -Wl,-soname,$@ $(CFLAGS) -o $@ $(OBJS)
 
 install:
-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(prefix)/lib
-	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(prefix)/lib/$(LIBS)
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)
+	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(libdir)
 
 uninstall:
-	rm -f $(DESTDIR)$(prefix)/lib/$(LIBS)
+	rm -f $(DESTDIR)$(syslibdir)/$(LIBS)
 
 clean:
 	rm -f core *.a *.o *.gz *.so
