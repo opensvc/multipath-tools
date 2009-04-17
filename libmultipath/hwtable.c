@@ -193,7 +193,7 @@ static struct hwentry default_hw[] = {
 		/* HP Smart Array */
 		.vendor        = "HP",
 		.product       = "LOGICAL VOLUME.*",
-		.getuid        = "/lib/udev/scsi_id -n -g -u -d /dev/%n",
+		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -235,7 +235,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "EMC",
 		.product       = "SYMMETRIX",
-		.getuid        = "/lib/udev/scsi_id -g -u -ppre-spc3-83 -d /dev/%n",
+		.getuid        = "/lib/udev/scsi_id --page=pre-spc3-83 --whitelisted --device=/dev/%n",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -794,7 +794,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "PIVOT3",
 		.product       = "RAIGE VOLUME",
-		.getuid        = "/lib/udev/scsi_id -p 0x80 -g -u -d /dev/%n",
+		.getuid        = "/lib/udev/scsi_id --page=0x80 --whitelisted --device=/dev/%n",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,

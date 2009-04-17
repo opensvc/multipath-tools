@@ -6,7 +6,7 @@
 #	polling_interval	5
 #	selector		"round-robin 0"
 #	path_grouping_policy	failover
-#	getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#	getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #	prio			const
 #	path_checker		directio
 #	rr_min_io		1000
@@ -26,7 +26,7 @@
 #	device {
 #		vendor			"APPLE*"
 #		product			"Xserve RAID"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -39,7 +39,7 @@
 #	device {
 #		vendor			"3PARdata"
 #		product			"VV"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -52,7 +52,7 @@
 #	device {
 #		vendor			"DEC"
 #		product			"HSG80"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"1 hp-sw"
 #		path_selector		"round-robin 0"
@@ -65,7 +65,7 @@
 #	device {
 #		vendor			"HP"
 #		product			"A6189A"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -79,7 +79,7 @@
 #	device {
 #		vendor			"(COMPAQ|HP)"
 #		product			"(MSA|HSV)1.0.*"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"1 hp-sw"
 #		path_selector		"round-robin 0"
@@ -93,7 +93,7 @@
 #	device {
 #		vendor			"HP"
 #		product			"MSA VOLUME"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -123,7 +123,7 @@
 #	device {
 #		vendor			"(COMPAQ|HP)"
 #		product			"HSV1[01]1|HSV2[01]0|HSV300"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -138,7 +138,7 @@
 #	device {
 #		vendor			"HP"
 #		product			"MSA2[02]12*"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -153,7 +153,7 @@
 #	device {
 #		vendor			"HP"
 #		product			"LOGICAL VOLUME.*"
-#		getuid_callout		"/lib/udev/scsi_id -n -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -168,7 +168,7 @@
 #	device {
 #		vendor			"DDN"
 #		product			"SAN DataDirector"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -181,7 +181,7 @@
 #	device {
 #		vendor			"EMC"
 #		product			"SYMMETRIX"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -ppre-spc3-83 -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --page=pre-spc3-83 --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -195,7 +195,7 @@
 #		vendor			"DGC"
 #		product			".*"
 #		product_blacklist	"LUNZ"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		prio_callout		"/sbin/mpath_prio_emc /dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"1 emc"
@@ -211,7 +211,7 @@
 #	device {
 #		vendor			"FSC"
 #		product			"CentricStor"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -224,7 +224,7 @@
 #	device {
 #		vendor			"(HITACHI|HP)"
 #		product			"OPEN-.*"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -237,7 +237,7 @@
 #	device {
 #		vendor			"HITACHI"
 #		product			"DF.*"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -251,7 +251,7 @@
 #	device {
 #		vendor			"IBM"
 #		product			"ProFibre 4000R"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -264,7 +264,7 @@
 #	device {
 #		vendor			"IBM"
 #		product			"1722-600"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"1 rdac"
 #		path_selector		"round-robin 0"
@@ -279,7 +279,7 @@
 #	device {
 #		vendor			"IBM"
 #		product			"1742"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"1 rdac"
 #		path_selector		"round-robin 0"
@@ -294,7 +294,7 @@
 #	device {
 #		vendor			"IBM"
 #		product			"1814"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"1 rdac"
 #		path_selector		"round-robin 0"
@@ -309,7 +309,7 @@
 #	device {
 #		vendor			"IBM"
 #		product			"1815"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"1 rdac"
 #		path_selector		"round-robin 0"
@@ -324,7 +324,7 @@
 #	device {
 #		vendor			"IBM"
 #		product			"3526"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"1 rdac"
 #		path_selector		"round-robin 0"
@@ -339,7 +339,7 @@
 #	device {
 #		vendor			"IBM"
 #		product			"3542"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -352,7 +352,7 @@
 #	device {
 #		vendor			"IBM"
 #		product			"2105(800|F20)"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -365,7 +365,7 @@
 #	device {
 #		vendor			"IBM"
 #		product			"1750500"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -379,7 +379,7 @@
 #	device {
 #		vendor			"IBM"
 #		product			"2107900"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -392,7 +392,7 @@
 #	device {
 #		vendor			"IBM"
 #		product			"2145"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -407,7 +407,7 @@
 #		vendor			"IBM"
 #		product			"S/390 DASD ECKD"
 #		product_blacklist	"S/390.*"
-#		getuid_callout		"/sbin/dasdinfo -u -b %n"
+#		getuid_callout		"/sbin/dasd_id /dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -420,7 +420,7 @@
 #	device {
 #		vendor			"NETAPP"
 #		product			"LUN.*"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -434,7 +434,7 @@
 #	device {
 #		vendor			"IBM"
 #		product			"Nseries.*"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -448,7 +448,7 @@
 #	device {
 #		vendor			"Pillar"
 #		product			"Axiom.*"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -461,7 +461,7 @@
 #	device {
 #		vendor			"SGI"
 #		product			"TP9[13]00"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -474,7 +474,7 @@
 #	device {
 #		vendor			"SGI"
 #		product			"TP9[45]00"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"1 rdac"
 #		path_selector		"round-robin 0"
@@ -489,7 +489,7 @@
 #	device {
 #		vendor			"SGI"
 #		product			"IS.*"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"1 rdac"
 #		path_selector		"round-robin 0"
@@ -504,7 +504,7 @@
 #	device {
 #		vendor			"STK"
 #		product			"OPENstorage D280"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -518,7 +518,7 @@
 #	device {
 #		vendor			"SUN"
 #		product			"(StorEdge 3510|T4)"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -531,7 +531,7 @@
 #	device {
 #		vendor			"PIVOT3"
 #		product			"RAIGE VOLUME"
-#		getuid_callout		"/sbin/scsi_id -p 0x80 -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --page=0x80 --device=/dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"0"
 #		path_selector		"round-robin 0"
@@ -544,7 +544,7 @@
 #	device {
 #		vendor			"SUN"
 #		product			"CSM200_R"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"1 rdac"
 #		path_selector		"round-robin 0"
@@ -559,7 +559,7 @@
 #	device {
 #		vendor			"SUN"
 #		product			"LCSM100_F"
-#		getuid_callout		"/lib/udev/scsi_id -g -u -s /block/%n"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"1 rdac"
 #		path_selector		"round-robin 0"

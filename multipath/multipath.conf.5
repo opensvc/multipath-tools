@@ -109,7 +109,7 @@ Default value is \fImultibus\fR.
 The default program and args to callout to obtain a unique path
 identifier. Should be specified with an absolute path. Default value
 is
-.I /lib/udev/scsi_id -g -u -d /dev/%n
+.I /lib/udev/scsi_id --whitelisted --device=/dev/%n
 .TP
 .B prio_callout
 The default program and args to callout to obtain a path priority
