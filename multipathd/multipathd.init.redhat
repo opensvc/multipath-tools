@@ -1,13 +1,16 @@
 #!/bin/bash
-
 #
-#	/etc/rc.d/init.d/multipathd
-#
-# Starts the multipath daemon
+# multipathd	Starts the multipath daemon
 #
 # chkconfig: - 13 87
-# description: Manage device-mapper multipath devices
-# processname: multipathd
+# description: Manages device-mapper multipath devices
+
+### BEGIN INIT INFO
+# Provides: multipathd
+# Short-Description: Control multipathd
+# Description: This service monitors and manages
+#              device-mapper multipath devices
+### END INIT INFO
 
 DAEMON=/sbin/multipathd
 prog=`basename $DAEMON`
@@ -16,14 +19,8 @@ lockdir=/var/lock/subsys
 sysconfig=/etc/sysconfig
 
  
-system=redhat
+. $initdir/functions
  
-if [ $system = redhat ]; then
-	# Source function library.
-	. $initdir/functions
-fi
- 
-test -x $DAEMON || exit 0
 test -r $sysconfig/$prog && . $sysconfig/$prog
 
 RETVAL=0
@@ -33,6 +30,7 @@ RETVAL=0
 #
 
 start() {
+	test -x $DAEMON || exit 5
 	echo -n $"Starting $prog daemon: "
 	daemon $DAEMON
 	RETVAL=$?
@@ -68,13 +66,13 @@ start)
 stop)
 	stop
 	;;
-reload)
+force-reload|reload)
 	reload
 	;;
 restart)
 	restart
 	;;
-condrestart)
+condrestart|try-restart)
 	if [ -f $lockdir/$prog ]; then
 	    restart
 	fi
@@ -85,7 +83,7 @@ status)
 	;;
 *)
 	echo $"Usage: $0 {start|stop|status|restart|condrestart|reload}"
-	RETVAL=1
+	RETVAL=2
 esac
 
 exit $RETVAL
