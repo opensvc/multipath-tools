@@ -116,6 +116,7 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 	int rcvszsz = sizeof(rcvsz);
 	unsigned int *prcvszsz = (unsigned int *)&rcvszsz;
 	pthread_attr_t attr;
+	const int feature_on = 1;
 
 	my_uev_trigger = uev_trigger;
 	my_trigger_data = trigger_data;
@@ -146,7 +147,6 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 
 	sock = socket(AF_LOCAL, SOCK_DGRAM, 0);
 	if (sock >= 0) {
-		const int feature_on = 1;
 
 		condlog(3, "reading events from udev socket.");
 
@@ -195,6 +195,10 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 			exit(1);
 		}
 		condlog(3, "receive buffer size for socket is %u.", rcvsz);
+
+		/* enable receiving of the sender credentials */
+		setsockopt(sock, SOL_SOCKET, SO_PASSCRED,
+			   &feature_on, sizeof(feature_on));
 
 		retval = bind(sock, (struct sockaddr *) &snl,
 			      sizeof(struct sockaddr_nl));
