@@ -34,6 +34,7 @@
 #include "dict.h"
 #include "alias.h"
 #include "prio.h"
+#include "util.h"
 
 extern int
 setup_map (struct multipath * mpp)
@@ -589,7 +590,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 		return NULL;
 
 	if (dev_type == DEV_DEVNODE) {
-		basename(dev, buff);
+		basenamecpy(dev, buff);
 		pp = find_path_by_dev(pathvec, buff);
 		
 		if (!pp) {

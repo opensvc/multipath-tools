@@ -3,7 +3,7 @@
 
 int strcmp_chomp(char *, char *);
 void strchop(char *);
-void basename (char * src, char * dst);
+void basenamecpy (char * src, char * dst);
 int filepresent (char * run);
 int get_word (char * sentence, char ** word);
 size_t strlcpy(char *dst, const char *src, size_t size);

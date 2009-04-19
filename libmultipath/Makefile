@@ -17,7 +17,7 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
 LIBDM_API_FLUSH = $(shell if test -d /lib64 ; then objdump -T /lib64/libdevmapper.so* ; else objdump -T /lib/libdevmapper.so.* ; fi | grep -c dm_task_no_flush)
 
 ifneq ($(strip $(LIBDM_API_FLUSH)),0)
-	CFLAGS += -DLIBDM_API_FLUSH
+	CFLAGS += -DLIBDM_API_FLUSH -D_GNU_SOURCE
 endif
 
 all: $(LIBS)
