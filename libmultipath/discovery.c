@@ -233,12 +233,13 @@ devt2devname (char *devname, char *devt)
 	char block_path[FILE_NAME_SIZE];
 	struct stat statbuf;
 
+	memset(block_path, 0, FILE_NAME_SIZE);
 	if (sscanf(devt, "%u:%u", &major, &minor) != 2) {
 		condlog(0, "Invalid device number %s", devt);
 		return 1;
 	}
 
-	if ((fd = fopen("/proc/partitions", "r")) < 0) {
+	if (!(fd = fopen("/proc/partitions", "r"))) {
 		condlog(0, "Cannot open /proc/partitions");
 		return 1;
 	}
@@ -275,13 +276,13 @@ devt2devname (char *devname, char *devt)
 		condlog(0, "sysfs entry %s is not a directory\n", block_path);
 		return 1;
 	}
-	basename(block_path, devname);
+	basenamecpy(block_path, devname);
 	return 0;
 }
 
 int
 do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
-       void *resp, int mx_resp_len, int noisy)
+       void *resp, int mx_resp_len)
 {
 	unsigned char inqCmdBlk[INQUIRY_CMDLEN] =
 		{ INQUIRY_CMD, 0, 0, 0, 0, 0 };
@@ -340,7 +341,7 @@ get_serial (char * str, int maxlen, int fd)
 	if (fd < 0)
 		return 1;
 
-	if (0 == do_inq(fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0)) {
+	if (0 == do_inq(fd, 0, 1, 0x80, buff, MX_ALLOC_LEN)) {
 		len = buff[3];
 		if (len >= maxlen)
 			return 1;
@@ -354,26 +355,69 @@ get_serial (char * str, int maxlen, int fd)
 }
 
 static int
-get_inq (char * vendor, char * product, char * rev, int fd)
+get_inq (char * dev, char * vendor, char * product, char * rev, int fd)
 {
-	char buff[MX_ALLOC_LEN + 1] = {0};
+	unsigned char buff[MX_ALLOC_LEN + 1] = {0};
+	int len;
 
 	if (fd < 0)
 		return 1;
 
-	if (0 == do_inq(fd, 0, 0, 0, buff, MX_ALLOC_LEN, 0)) {
-		memcpy(vendor, buff + 8, 8);
-		vendor[8] = '\0';
-		strchop(vendor);
-		memcpy(product, buff + 16, 16);
-		product[16] = '\0';
-		strchop(product);
-		memcpy(rev, buff + 32, 4);
-		rev[4] = '\0';
-		strchop(rev);
-		return 0;
+	if (0 != do_inq(fd, 0, 0, 0, buff, MX_ALLOC_LEN))
+		return 1;
+
+	/* Check peripheral qualifier */
+	if ((buff[0] >> 5) != 0) {
+		int pqual = (buff[0] >> 5);
+		switch (pqual) {
+		case 1:
+			condlog(3, "%s: INQUIRY failed, LU not connected", dev);
+			break;
+		case 3:
+			condlog(3, "%s: INQUIRY failed, LU not supported", dev);
+			break;
+		default:
+			condlog(3, "%s: INQUIRY failed, Invalid PQ %x",
+				dev, pqual);
+			break;
+		}
+
+		return 1;
 	}
-	return 1;
+
+	len = buff[4] + 4;
+
+	if (len < 8) {
+		condlog(3, "%s: INQUIRY response too short (len %d)",
+			dev, len);
+		return 1;
+	}
+
+	len -= 8;
+	memset(vendor, 0x0, 8);
+	memcpy(vendor, buff + 8, len > 8 ? 8 : len);
+	vendor[8] = '\0';
+	strchop(vendor);
+	if (len <= 8)
+		return 0;
+
+	len -= 8;
+
+	memset(product, 0x0, 16);
+	memcpy(product, buff + 16, len > 16 ? 16 : len);
+	product[16] = '\0';
+	strchop(product);
+	if (len <= 16)
+		return 0;
+
+	len -= 16;
+
+	memset(rev, 0x0, 4);
+	memcpy(rev, buff + 32, 4);
+	rev[4] = '\0';
+	strchop(rev);
+
+	return 0;
 }
 
 static int
@@ -404,7 +448,7 @@ scsi_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 	/*
 	 * host / bus / target / lun
 	 */
-	basename(parent->devpath, attr_path);
+	basenamecpy(parent->devpath, attr_path);
 
 	sscanf(attr_path, "%i:%i:%i:%i",
 			&pp->sg_id.host_no,
@@ -463,7 +507,7 @@ ccw_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 	/*
 	 * host / bus / target / lun
 	 */
-	basename(parent->devpath, attr_path);
+	basenamecpy(parent->devpath, attr_path);
 	pp->sg_id.lun = 0;
 	sscanf(attr_path, "%i.%i.%x",
 			&pp->sg_id.host_no,
@@ -487,7 +531,7 @@ cciss_sysfs_pathinfo (struct path * pp, struct sysfs_device * dev)
 	/*
 	 * host / bus / target / lun
 	 */
-	basename(dev->devpath, attr_path);
+	basenamecpy(dev->devpath, attr_path);
 	pp->sg_id.lun = 0;
 	pp->sg_id.channel = 0;
 	sscanf(attr_path, "cciss!c%id%i",
@@ -584,13 +628,16 @@ sysfs_pathinfo(struct path * pp)
 	if (!strncmp(parent->kernel, "block",5))
 		parent = sysfs_device_get_parent(parent);
 
+	if (!strncmp(pp->dev,"cciss",5))
+		strcpy(parent->subsystem,"cciss");
+
 	condlog(3, "%s: subsystem = %s", pp->dev, parent->subsystem);
 
 	if (!strncmp(parent->subsystem, "scsi",4))
 		pp->bus = SYSFS_BUS_SCSI;
 	if (!strncmp(parent->subsystem, "ccw",3))
 		pp->bus = SYSFS_BUS_CCW;
-	if (!strncmp(pp->dev,"cciss",5))
+	if (!strncmp(parent->subsystem,"cciss",5))
 		pp->bus = SYSFS_BUS_CCISS;
 
 	if (pp->bus == SYSFS_BUS_UNDEF)
@@ -622,8 +669,14 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 static int
 cciss_ioctl_pathinfo (struct path * pp, int mask)
 {
+	int ret;
+
 	if (mask & DI_SYSFS) {
-		get_inq(pp->vendor_id, pp->product_id, pp->rev, pp->fd);
+		ret = get_inq(pp->dev, pp->vendor_id, pp->product_id,
+			      pp->rev, pp->fd);
+		if (ret)
+			return ret;
+
 		condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
 		condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 		condlog(3, "%s: revision = %s", pp->dev, pp->rev);
@@ -642,16 +695,19 @@ get_state (struct path * pp)
 {
 	struct checker * c = &pp->checker;
 
-	if (!pp->mpp)
-		return 0;
+	condlog(3, "%s: get_state", pp->dev);
 
 	if (!checker_selected(c)) {
 		select_checker(pp);
-		if (!checker_selected(c))
+		if (!checker_selected(c)) {
+			condlog(3, "%s: No checker selected", pp->dev);
 			return 1;
+		}
 		checker_set_fd(c, pp->fd);
-		if (checker_init(c, &pp->mpp->mpcontext))
+		if (checker_init(c, pp->mpp?&pp->mpp->mpcontext:NULL)) {
+			condlog(3, "%s: checker init failed", pp->dev);
 			return 1;
+		}
 	}
 	if (path_offline(pp)) {
 		condlog(3, "%s: path offline", pp->dev);
@@ -674,8 +730,10 @@ get_prio (struct path * pp)
 
 	if (!pp->prio) {
 		select_prio(pp);
-		if (!pp->prio)
+		if (!pp->prio) {
+			condlog(3, "%s: no prio selected", pp->dev);
 			return 1;
+		}
 	}
 	pp->priority = prio_getprio(pp->prio, pp);
 	if (pp->priority < 0) {
@@ -692,6 +750,7 @@ static int
 get_uid (struct path * pp)
 {
 	char buff[CALLOUT_MAX_SIZE];
+	int i;
 
 	if (!pp->getuid)
 		select_getuid(pp);
@@ -703,6 +762,12 @@ get_uid (struct path * pp)
 		condlog(3, "error calling out %s", buff);
 		memset(pp->wwid, 0, WWID_SIZE);
 		return 1;
+	}
+	/* Strip any trailing blanks */
+	i = WWID_SIZE - 1;
+	while (i > 0 && pp->wwid[i] == ' ') {
+		pp->wwid[i] = '\0';
+		i--;
 	}
 	condlog(3, "%s: uid = %s (callout)", pp->dev ,pp->wwid);
 	return 0;

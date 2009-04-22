@@ -1,4 +1,4 @@
-#define DEFAULT_GETUID		"/lib/udev/scsi_id -g -u -d /dev/%n"
+#define DEFAULT_GETUID		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #define DEFAULT_UDEVDIR		"/dev"
 #define DEFAULT_MULTIPATHDIR	"/lib/multipath"
 #define DEFAULT_SELECTOR	"round-robin 0"
@@ -11,6 +11,7 @@
 #define DEFAULT_NO_PATH_RETRY  NO_PATH_RETRY_UNDEF
 #define DEFAULT_PGTIMEOUT      -PGTIMEOUT_NONE
 #define DEFAULT_USER_FRIENDLY_NAMES    0
+#define DEFAULT_VERBOSITY	2
 
 #define DEFAULT_CHECKINT	5
 #define MAX_CHECKINT(a)		(a << 2)

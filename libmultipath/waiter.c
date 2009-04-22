@@ -20,6 +20,8 @@
 #include "lock.h"
 #include "waiter.h"
 
+pthread_attr_t waiter_attr;
+
 struct event_thread *alloc_waiter (void)
 {
 
@@ -32,11 +34,13 @@ struct event_thread *alloc_waiter (void)
 
 void free_waiter (void *data)
 {
+	sigset_t old;
 	struct event_thread *wp = (struct event_thread *)data;
 
 	/*
 	 * indicate in mpp that the wp is already freed storage
 	 */
+	block_signal(SIGHUP, &old);
 	lock(wp->vecs->lock);
 
 	if (wp->mpp)
@@ -51,6 +55,7 @@ void free_waiter (void *data)
 		condlog(3, "free_waiter, mpp freed before wp=%p (%s).", wp, wp->mapname);
 
 	unlock(wp->vecs->lock);
+	pthread_sigmask(SIG_SETMASK, &old, NULL);
 
 	if (wp->dmt)
 		dm_task_destroy(wp->dmt);
@@ -185,6 +190,8 @@ void *waitevent (void *et)
 	waiter = (struct event_thread *)et;
 	pthread_cleanup_push(free_waiter, et);
 
+	block_signal(SIGUSR1, NULL);
+	block_signal(SIGHUP, NULL);
 	while (1) {
 		r = waiteventloop(waiter);
 
@@ -200,17 +207,10 @@ void *waitevent (void *et)
 
 int start_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 {
-	pthread_attr_t attr;
 	struct event_thread *wp;
 
 	if (!mpp)
 		return 0;
-
-	if (pthread_attr_init(&attr))
-		goto out;
-
-	pthread_attr_setstacksize(&attr, 32 * 1024);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
 	wp = alloc_waiter();
 
@@ -222,7 +222,7 @@ int start_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 	wp->vecs = vecs;
 	wp->mpp = mpp;
 
-	if (pthread_create(&wp->thread, &attr, waitevent, wp)) {
+	if (pthread_create(&wp->thread, &waiter_attr, waitevent, wp)) {
 		condlog(0, "%s: cannot create event checker", wp->mapname);
 		goto out1;
 	}

@@ -155,6 +155,9 @@ load_keys (void)
 	r += add_key(keys, "resume", RESUME, 0);
 	r += add_key(keys, "reinstate", REINSTATE, 0);
 	r += add_key(keys, "fail", FAIL, 0);
+	r += add_key(keys, "resize", RESIZE, 0);
+	r += add_key(keys, "disablequeueing", DISABLEQ, 0);
+	r += add_key(keys, "restorequeueing", RESTOREQ, 0);
 	r += add_key(keys, "paths", PATHS, 0);
 	r += add_key(keys, "maps", MAPS, 0);
 	r += add_key(keys, "multipaths", MAPS, 0);
@@ -230,8 +233,10 @@ get_cmdvec (char * cmd, vector *v)
 	cmdvec = vector_alloc();
 	*v = cmdvec;
 
-	if (!cmdvec)
+	if (!cmdvec) {
+		free_strvec(strvec);
 		return E_NOMEM;
+	}
 
 	vector_foreach_slot(strvec, buff, i) {
 		if (*buff == '"')
@@ -266,6 +271,7 @@ get_cmdvec (char * cmd, vector *v)
 		r = E_NOPARM;
 		goto out;
 	}
+	free_strvec(strvec);
 	return 0;
 
 out:
@@ -374,6 +380,7 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data)
 	if (!h) {
 		*reply = genhelp_handler();
 		*len = strlen(*reply) + 1;
+		free_keys(cmdvec);
 		return 0;
 	}
 
@@ -429,6 +436,11 @@ cli_init (void) {
 	add_handler(RECONFIGURE, NULL);
 	add_handler(SUSPEND+MAP, NULL);
 	add_handler(RESUME+MAP, NULL);
+	add_handler(RESIZE+MAP, NULL);
+	add_handler(DISABLEQ+MAP, NULL);
+	add_handler(RESTOREQ+MAP, NULL);
+	add_handler(DISABLEQ+MAPS, NULL);
+	add_handler(RESTOREQ+MAPS, NULL);
 	add_handler(REINSTATE+PATH, NULL);
 	add_handler(FAIL+PATH, NULL);
 	add_handler(QUIT, NULL);

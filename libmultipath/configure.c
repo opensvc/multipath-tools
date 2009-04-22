@@ -34,6 +34,7 @@
 #include "dict.h"
 #include "alias.h"
 #include "prio.h"
+#include "util.h"
 
 extern int
 setup_map (struct multipath * mpp)
@@ -118,6 +119,9 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 	struct pathgroup * cpgp;
 	int r = 0;
 
+	if (!mpp)
+		return 0;
+
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		compute_pgid(pgp);
 
@@ -167,7 +171,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 			mpp->alias);
 		return;
 	}
-		
+
 	if (pathcount(mpp, PATH_UP) == 0) {
 		mpp->action = ACT_NOTHING;
 		condlog(3, "%s: set ACT_NOTHING (no usable path)",
@@ -277,7 +281,7 @@ lock_multipath (struct multipath * mpp, int lock)
 
 	if (!mpp || !mpp->pg)
 		return 0;
-	
+
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		if (!pgp->paths)
 			continue;
@@ -338,6 +342,7 @@ domap (struct multipath * mpp)
 
 		if (dm_map_present(mpp->alias)) {
 			condlog(3, "%s: map already present", mpp->alias);
+			lock_multipath(mpp, 0);
 			break;
 		}
 
@@ -352,8 +357,19 @@ domap (struct multipath * mpp)
 		break;
 
 	case ACT_RELOAD:
-		r = (dm_addmap_reload(mpp->alias, mpp->params, mpp->size, NULL)
-		     && dm_simplecmd(DM_DEVICE_RESUME, mpp->alias));
+		r = dm_addmap_reload(mpp->alias, mpp->params, mpp->size, NULL);
+		if (!r)
+			r = dm_addmap_reload_ro(mpp->alias, mpp->params, mpp->size, NULL);
+		if (r)
+			r = dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias);
+		break;
+
+ 	case ACT_RESIZE:
+  		r = dm_addmap_reload(mpp->alias, mpp->params, mpp->size, NULL);
+  		if (!r)
+  			r = dm_addmap_reload_ro(mpp->alias, mpp->params, mpp->size, NULL);
+  		if (r)
+  			r = dm_simplecmd_flush(DM_DEVICE_RESUME, mpp->alias);
 		break;
 
 	case ACT_RENAME:
@@ -410,7 +426,7 @@ deadmap (struct multipath * mpp)
 			if (strlen(pp->dev))
 				return 0; /* alive */
 	}
-	
+
 	return 1; /* dead */
 }
 
@@ -468,13 +484,13 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			remove_map(mpp, vecs, 0);
 			continue;
 		}
-		
+
 		for (i = k + 1; i < VECTOR_SIZE(pathvec); i++) {
 			pp2 = VECTOR_SLOT(pathvec, i);
 
 			if (strcmp(pp1->wwid, pp2->wwid))
 				continue;
-			
+
 			if (!pp2->size)
 				continue;
 
@@ -578,7 +594,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 		return NULL;
 
 	if (dev_type == DEV_DEVNODE) {
-		basename(dev, buff);
+		basenamecpy(dev, buff);
 		pp = find_path_by_dev(pathvec, buff);
 		
 		if (!pp) {

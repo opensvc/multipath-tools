@@ -28,6 +28,7 @@ struct hwentry {
 	int no_path_retry;
 	int minio;
 	int pg_timeout;
+	int flush_on_last_del;
 	char * bl_product;
 };
 
@@ -43,6 +44,7 @@ struct mpentry {
 	int no_path_retry;
 	int minio;
 	int pg_timeout;
+	int flush_on_last_del;
 };
 
 struct config {
@@ -65,6 +67,7 @@ struct config {
 	int max_fds;
 	int force_reload;
 	int daemon;
+	int flush_on_last_del;
 
 	char * dev;
 	char * sysfs_dir;

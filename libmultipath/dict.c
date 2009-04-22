@@ -33,6 +33,17 @@ polling_interval_handler(vector strvec)
 }
 
 static int
+verbosity_handler(vector strvec)
+{
+	char * buff;
+
+	buff = VECTOR_SLOT(strvec, 1);
+	conf->verbosity = atoi(buff);
+
+	return 0;
+}
+
+static int
 udev_dir_handler(vector strvec)
 {
 	conf->udev_dir = set_value(strvec);
@@ -241,6 +252,28 @@ def_pg_timeout_handler(vector strvec)
 	}
 	else
 		conf->pg_timeout = PGTIMEOUT_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
+static int
+def_flush_on_last_del_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if ((strlen(buff) == 2 && strcmp(buff, "no") == 0) ||
+	    (strlen(buff) == 1 && strcmp(buff, "0") == 0))
+		conf->flush_on_last_del = FLUSH_DISABLED;
+	if ((strlen(buff) == 3 && strcmp(buff, "yes") == 0) ||
+	    (strlen(buff) == 1 && strcmp(buff, "1") == 0))
+		conf->flush_on_last_del = FLUSH_ENABLED;
+	else
+		conf->flush_on_last_del = FLUSH_UNDEF;
 
 	FREE(buff);
 	return 0;
@@ -724,6 +757,32 @@ hw_pg_timeout_handler(vector strvec)
 	return 0;
 }
 
+static int
+hw_flush_on_last_del_handler(vector strvec)
+{
+	struct hwentry *hwe = VECTOR_LAST_SLOT(conf->hwtable);
+	char * buff;
+
+	if (!hwe)
+		return 1;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if ((strlen(buff) == 2 && strcmp(buff, "no") == 0) ||
+	    (strlen(buff) == 1 && strcmp(buff, "0") == 0))
+		hwe->flush_on_last_del = FLUSH_DISABLED;
+	if ((strlen(buff) == 3 && strcmp(buff, "yes") == 0) ||
+	    (strlen(buff) == 1 && strcmp(buff, "1") == 0))
+		hwe->flush_on_last_del = FLUSH_ENABLED;
+	else
+		hwe->flush_on_last_del = FLUSH_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
 /*
  * multipaths block handlers
  */
@@ -945,6 +1004,32 @@ mp_pg_timeout_handler(vector strvec)
 	return 0;
 }
 
+static int
+mp_flush_on_last_del_handler(vector strvec)
+{
+	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
+	char * buff;
+
+	if (!mpe)
+		return 1;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if ((strlen(buff) == 2 && strcmp(buff, "no") == 0) ||
+	    (strlen(buff) == 1 && strcmp(buff, "0") == 0))
+		mpe->flush_on_last_del = FLUSH_DISABLED;
+	if ((strlen(buff) == 3 && strcmp(buff, "yes") == 0) ||
+	    (strlen(buff) == 1 && strcmp(buff, "1") == 0))
+		mpe->flush_on_last_del = FLUSH_ENABLED;
+	else
+		mpe->flush_on_last_del = FLUSH_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
 /*
  * config file keywords printing
  */
@@ -1075,6 +1160,20 @@ snprint_mp_pg_timeout (char * buff, int len, void * data)
 		return snprintf(buff, len, "none");
 	default:
 		return snprintf(buff, len, "%i", mpe->pg_timeout);
+	}
+	return 0;
+}
+
+static int
+snprint_mp_flush_on_last_del (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	switch (mpe->flush_on_last_del) {
+	case FLUSH_DISABLED:
+		return snprintf(buff, len, "no");
+	case FLUSH_ENABLED:
+		return snprintf(buff, len, "yes");
 	}
 	return 0;
 }
@@ -1295,6 +1394,20 @@ snprint_hw_pg_timeout (char * buff, int len, void * data)
 }
 
 static int
+snprint_hw_flush_on_last_del (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	switch (hwe->flush_on_last_del) {
+	case FLUSH_DISABLED:
+		return snprintf(buff, len, "no");
+	case FLUSH_ENABLED:
+		return snprintf(buff, len, "yes");
+	}
+	return 0;
+}
+
+static int
 snprint_hw_path_checker (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
@@ -1313,6 +1426,14 @@ snprint_def_polling_interval (char * buff, int len, void * data)
 	if (conf->checkint == DEFAULT_CHECKINT)
 		return 0;
 	return snprintf(buff, len, "%i", conf->checkint);
+}
+
+static int
+snprint_def_verbosity (char * buff, int len, void * data)
+{
+	if (conf->checkint == DEFAULT_VERBOSITY)
+		return 0;
+	return snprintf(buff, len, "%i", conf->verbosity);
 }
 
 static int
@@ -1509,6 +1630,18 @@ snprint_def_pg_timeout (char * buff, int len, void * data)
 }
 
 static int
+snprint_def_flush_on_last_del (char * buff, int len, void * data)
+{
+	switch (conf->flush_on_last_del) {
+	case FLUSH_DISABLED:
+		return snprintf(buff, len, "no");
+	case FLUSH_ENABLED:
+		return snprintf(buff, len, "yes");
+	}
+	return 0;
+}
+
+static int
 snprint_def_user_friendly_names (char * buff, int len, void * data)
 {
 	if (conf->user_friendly_names == DEFAULT_USER_FRIENDLY_NAMES)
@@ -1549,6 +1682,7 @@ void
 init_keywords(void)
 {
 	install_keyword_root("defaults", NULL);
+	install_keyword("verbosity", &verbosity_handler, &snprint_def_verbosity);
 	install_keyword("polling_interval", &polling_interval_handler, &snprint_def_polling_interval);
 	install_keyword("udev_dir", &udev_dir_handler, &snprint_def_udev_dir);
 	install_keyword("multipath_dir", &multipath_dir_handler, &snprint_def_multipath_dir);
@@ -1565,6 +1699,7 @@ init_keywords(void)
 	install_keyword("rr_weight", &def_weight_handler, &snprint_def_rr_weight);
 	install_keyword("no_path_retry", &def_no_path_retry_handler, &snprint_def_no_path_retry);
 	install_keyword("pg_timeout", &def_pg_timeout_handler, &snprint_def_pg_timeout);
+	install_keyword("flush_on_last_del", &def_flush_on_last_del_handler, &snprint_def_flush_on_last_del);
 	install_keyword("user_friendly_names", &names_handler, &snprint_def_user_friendly_names);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
@@ -1619,6 +1754,7 @@ init_keywords(void)
 	install_keyword("no_path_retry", &hw_no_path_retry_handler, &snprint_hw_no_path_retry);
 	install_keyword("rr_min_io", &hw_minio_handler, &snprint_hw_rr_min_io);
 	install_keyword("pg_timeout", &hw_pg_timeout_handler, &snprint_hw_pg_timeout);
+	install_keyword("flush_on_last_del", &hw_flush_on_last_del_handler, &snprint_hw_flush_on_last_del);
 	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);
@@ -1633,5 +1769,6 @@ init_keywords(void)
 	install_keyword("no_path_retry", &mp_no_path_retry_handler, &snprint_mp_no_path_retry);
 	install_keyword("rr_min_io", &mp_minio_handler, &snprint_mp_rr_min_io);
 	install_keyword("pg_timeout", &mp_pg_timeout_handler, &snprint_mp_pg_timeout);
+	install_keyword("flush_on_last_del", &mp_flush_on_last_del_handler, &snprint_mp_flush_on_last_del);
 	install_sublevel_end();
 }

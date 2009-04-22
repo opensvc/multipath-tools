@@ -74,7 +74,7 @@ static int
 scsi_error(struct sg_io_hdr *hdr)
 {
 	/* Treat SG_ERR here to get rid of sg_err.[ch] */
-        hdr->status &= 0x7e;
+	hdr->status &= 0x7e;
 
 	if (
 		(hdr->status == 0)        &&
@@ -125,18 +125,18 @@ do_inquiry(int fd, int evpd, unsigned int codepage, void *resp, int resplen)
 	set_uint16(cmd.length, resplen);
 	PRINT_HEX((unsigned char *) &cmd, sizeof(cmd));
 
-        memset(&hdr, 0, sizeof(hdr));
-        hdr.interface_id	= 'S';
-        hdr.cmdp		= (unsigned char *) &cmd;
-        hdr.cmd_len		= sizeof(cmd);
-        hdr.dxfer_direction	= SG_DXFER_FROM_DEV;
-        hdr.dxferp		= resp;
-        hdr.dxfer_len		= resplen;
-        hdr.sbp			= sense;
-        hdr.mx_sb_len		= sizeof(sense);
-        hdr.timeout		= DEF_TIMEOUT;
- 
-        if (ioctl(fd, SG_IO, &hdr) < 0) {
+	memset(&hdr, 0, sizeof(hdr));
+	hdr.interface_id	= 'S';
+	hdr.cmdp		= (unsigned char *) &cmd;
+	hdr.cmd_len		= sizeof(cmd);
+	hdr.dxfer_direction	= SG_DXFER_FROM_DEV;
+	hdr.dxferp		= resp;
+	hdr.dxfer_len		= resplen;
+	hdr.sbp			= sense;
+	hdr.mx_sb_len		= sizeof(sense);
+	hdr.timeout		= DEF_TIMEOUT;
+
+	if (ioctl(fd, SG_IO, &hdr) < 0) {
 		PRINT_DEBUG("do_inquiry: IOCTL failed!\n");
 		return -RTPG_INQUIRY_FAILED;
 	}
@@ -146,8 +146,8 @@ do_inquiry(int fd, int evpd, unsigned int codepage, void *resp, int resplen)
 		return -RTPG_INQUIRY_FAILED;
 	}
 	PRINT_HEX((unsigned char *) resp, resplen);
- 
-        return 0;
+
+	return 0;
 }
 
 /*
@@ -160,6 +160,7 @@ get_target_port_group_support(int fd)
 	struct inquiry_data	inq;
 	int			rc;
 
+	memset((unsigned char *)&inq, 0, sizeof(inq));
 	rc = do_inquiry(fd, 0, 0x00, &inq, sizeof(inq));
 	if (!rc) {
 		rc = inquiry_data_get_tpgs(&inq);
@@ -176,6 +177,7 @@ get_target_port_group(int fd)
 	struct vpd83_dscr *	dscr;
 	int			rc;
 
+	memset(buf, 0, sizeof(buf));
 	rc = do_inquiry(fd, 1, 0x83, buf, sizeof(buf));
 	if (!rc) {
 		vpd83 = (struct vpd83_data *) buf;
@@ -221,19 +223,19 @@ do_rtpg(int fd, void* resp, long resplen)
 	set_uint32(cmd.length, resplen);
 	PRINT_HEX((unsigned char *) &cmd, sizeof(cmd));
 
-        memset(&hdr, 0, sizeof(hdr));
+	memset(&hdr, 0, sizeof(hdr));
 	hdr.interface_id	= 'S';
-        hdr.cmdp		= (unsigned char *) &cmd;
-        hdr.cmd_len		= sizeof(cmd);
-        hdr.dxfer_direction	= SG_DXFER_FROM_DEV;
-        hdr.dxferp		= resp;
-        hdr.dxfer_len		= resplen;
-        hdr.mx_sb_len		= sizeof(sense);
-        hdr.sbp			= sense;
-        hdr.timeout		= DEF_TIMEOUT;
- 
+	hdr.cmdp		= (unsigned char *) &cmd;
+	hdr.cmd_len		= sizeof(cmd);
+	hdr.dxfer_direction	= SG_DXFER_FROM_DEV;
+	hdr.dxferp		= resp;
+	hdr.dxfer_len		= resplen;
+	hdr.mx_sb_len		= sizeof(sense);
+	hdr.sbp			= sense;
+	hdr.timeout		= DEF_TIMEOUT;
+
 	if (ioctl(fd, SG_IO, &hdr) < 0)
-                return -RTPG_RTPG_FAILED;
+		return -RTPG_RTPG_FAILED;
 
 	if (scsi_error(&hdr)) {
 		PRINT_DEBUG("do_rtpg: SCSI error!\n");
@@ -241,8 +243,8 @@ do_rtpg(int fd, void* resp, long resplen)
 	}
 	PRINT_HEX(resp, resplen);
 
-        return 0;
-} 
+	return 0;
+}
 
 int
 get_asymmetric_access_state(int fd, unsigned int tpg)
@@ -261,6 +263,7 @@ get_asymmetric_access_state(int fd, unsigned int tpg)
 			"%u bytes\n", buflen);
 		return -RTPG_RTPG_FAILED;
 	}
+	memset(buf, 0, buflen);
 	rc = do_rtpg(fd, buf, buflen);
 	if (rc < 0)
 		return rc;
@@ -274,11 +277,11 @@ get_asymmetric_access_state(int fd, unsigned int tpg)
 			return -RTPG_RTPG_FAILED;
 		}
 		buflen = scsi_buflen;
+		memset(buf, 0, buflen);
 		rc = do_rtpg(fd, buf, buflen);
 		if (rc < 0)
 			goto out;
 	}
-		
 
 	tpgd = (struct rtpg_data *) buf;
 	rc   = -RTPG_TPG_NOT_FOUND;

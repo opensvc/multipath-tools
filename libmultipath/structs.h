@@ -10,7 +10,7 @@
 #define CALLOUT_MAX_SIZE	128
 #define BLK_DEV_SIZE		33
 #define PATH_SIZE		512
-#define NAME_SIZE		128
+#define NAME_SIZE		512
 
 
 #define SCSI_VENDOR_SIZE	9
@@ -65,6 +65,14 @@ enum pgstates {
 enum pgtimeouts {
 	PGTIMEOUT_UNDEF,
 	PGTIMEOUT_NONE
+};
+
+
+enum flush_states {
+	FLUSH_UNDEF,
+	FLUSH_DISABLED,
+	FLUSH_ENABLED,
+	FLUSH_IN_PROGRESS,
 };
 
 struct scsi_idlun {
@@ -150,6 +158,7 @@ struct multipath {
 	int retry_tick;    /* remaining times for retries */
 	int minio;
 	int pg_timeout;
+	int flush_on_last_del;
 	unsigned long long size;
 	vector paths;
 	vector pg;

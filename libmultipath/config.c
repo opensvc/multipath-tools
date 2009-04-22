@@ -137,9 +137,6 @@ free_hwe (struct hwentry * hwe)
 	if (hwe->revision)
 		FREE(hwe->revision);
 
-	if (hwe->selector)
-		FREE(hwe->selector);
-
 	if (hwe->getuid)
 		FREE(hwe->getuid);
 
@@ -148,6 +145,15 @@ free_hwe (struct hwentry * hwe)
 
 	if (hwe->hwhandler)
 		FREE(hwe->hwhandler);
+
+	if (hwe->selector)
+		FREE(hwe->selector);
+
+	if (hwe->checker_name)
+		FREE(hwe->checker_name);
+
+	if (hwe->prio_name)
+		FREE(hwe->prio_name);
 
 	if (hwe->bl_product)
 		FREE(hwe->bl_product);
@@ -404,6 +410,12 @@ free_config (struct config * conf)
 	if (conf->checker_name)
 		FREE(conf->checker_name);
 
+	if (conf->prio_name)
+		FREE(conf->prio_name);
+
+	if (conf->checker_name)
+		FREE(conf->checker_name);
+
 	free_blacklist(conf->blist_devnode);
 	free_blacklist(conf->blist_wwid);
 	free_blacklist_device(conf->blist_device);
@@ -431,13 +443,14 @@ load_config (char * file)
 	 * internal defaults
 	 */
 	if (!conf->verbosity)
-		conf->verbosity = 2;
+		conf->verbosity = DEFAULT_VERBOSITY;
 
 	conf->dev_type = DEV_NONE;
 	conf->minio = 1000;
 	conf->max_fds = 0;
 	conf->bindings_file = DEFAULT_BINDINGS_FILE;
 	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
+	conf->flush_on_last_del = 0;
 
 	/*
 	 * preload default hwtable

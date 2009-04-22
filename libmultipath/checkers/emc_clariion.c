@@ -103,6 +103,8 @@ int libcheck_check (struct checker * c)
 	int ret;
 
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
+	memset(sense_buffer, 0, 128);
+	memset(sb, 0, SENSE_BUFF_LEN);
 	io_hdr.interface_id = 'S';
 	io_hdr.cmd_len = sizeof (inqCmdBlk);
 	io_hdr.mx_sb_len = sizeof (sb);
@@ -129,7 +131,7 @@ int libcheck_check (struct checker * c)
 	}
 
 	if ( /* Effective initiator type */
-	    	sense_buffer[27] != 0x03
+		sense_buffer[27] != 0x03
 		/*
 		 * Failover mode should be set to 1 (PNR failover mode)
 		 * or 4 (ALUA failover mode).
@@ -156,7 +158,7 @@ int libcheck_check (struct checker * c)
 		    "or LUNZ");
 		return PATH_DOWN;
 	}
-	
+
 	/*
 	 * store the LUN WWN there and compare that it indeed did not
 	 * change in between, to protect against the path suddenly
@@ -172,28 +174,29 @@ int libcheck_check (struct checker * c)
 		memcpy(ct->wwn, &sense_buffer[10], 16);
 		ct->wwn_set = 1;
 	}
-	
+
 	/*
 	 * Issue read on active path to determine if inactive snapshot.
 	 */
 	if (sense_buffer[4] == 2) {/* if active path */
 		unsigned char buf[4096];
 
+		memset(buf, 0, 4096);
 		ret = sg_read(c->fd, &buf[0], sbb = &sb[0]);
 		if (ret == PATH_DOWN) {
 			hexadecimal_to_ascii(ct->wwn, wwnstr);
 
 			/*
-		 	 * Check for inactive snapshot LU this way.  Must
+			 * Check for inactive snapshot LU this way.  Must
 			 * fail these.
-	 	 	 */
+			 */
 			if (((sbb[2]&0xf) == 5) && (sbb[12] == 0x25) &&
 			    (sbb[13]==1)) {
 				/*
-			 	 * Do this so that we can fail even the
-			 	 * passive paths which will return
+				 * Do this so that we can fail even the
+				 * passive paths which will return
 				 * 02/04/03 not 05/25/01 on read.
-			 	 */
+				 */
 				SET_INACTIVE_SNAP(c);
 				MSG(c, "emc_clariion_checker: Active "
 					"path to inactive snapshot WWN %s.",
@@ -207,10 +210,10 @@ int libcheck_check (struct checker * c)
 			MSG(c, "emc_clariion_checker: Active path is "
 			    "healthy.");
 			/*
-		 	 * Remove the path from the set of paths to inactive
-		 	 * snapshot LUs if it was in this list since the
-		 	 * snapshot is no longer inactive.
-		 	 */
+			 * Remove the path from the set of paths to inactive
+			 * snapshot LUs if it was in this list since the
+			 * snapshot is no longer inactive.
+			 */
 			CLR_INACTIVE_SNAP(c);
 		}
 	} else {
@@ -222,7 +225,7 @@ int libcheck_check (struct checker * c)
 			ret = PATH_DOWN;
 		} else {
 			MSG(c,
-		    	    "emc_clariion_checker: Passive path is healthy.");
+			    "emc_clariion_checker: Passive path is healthy.");
 			ret = PATH_UP;	/* not ghost */
 		}
 	}

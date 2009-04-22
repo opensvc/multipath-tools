@@ -17,20 +17,21 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
 LIBDM_API_FLUSH = $(shell if test -d /lib64 ; then objdump -T /lib64/libdevmapper.so* ; else objdump -T /lib/libdevmapper.so.* ; fi | grep -c dm_task_no_flush)
 
 ifneq ($(strip $(LIBDM_API_FLUSH)),0)
-	CFLAGS += -DLIBDM_API_FLUSH
+	CFLAGS += -DLIBDM_API_FLUSH -D_GNU_SOURCE
 endif
 
 all: $(LIBS)
 
 $(LIBS): $(OBJS)
-	$(CC) $(SHARED_FLAGS) $(CFLAGS) -o $@ $(OBJS)
+	$(CC) $(SHARED_FLAGS) -Wl,-soname,$@ $(CFLAGS) -o $@ $(OBJS)
 
 install:
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)
+	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(libdir)
-	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(libdir)/$(LIBS)
 
 uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(LIBS)
+	rm -f $(DESTDIR)$(syslibdir)/$(LIBS)
 
 clean:
 	rm -f core *.a *.o *.gz *.so

@@ -1,6 +1,8 @@
 #ifndef _LOCK_H
 #define _LOCK_H
 
+#include <signal.h>
+
 /*
  * Wrapper for the mutex. Includes a ref-count to keep
  * track of how many there are out-standing threads blocking
@@ -27,5 +29,6 @@ struct mutex_lock {
 #endif
 
 void cleanup_lock (void * data);
+void block_signal(int signum, sigset_t *old);
 
 #endif /* _LOCK_H */

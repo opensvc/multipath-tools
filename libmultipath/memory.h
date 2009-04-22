@@ -55,7 +55,7 @@ int debug;
                       (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
 
 /* Memory debug prototypes defs */
-extern char *dbg_malloc(unsigned long, char *, char *, int);
+extern void *dbg_malloc(unsigned long, char *, char *, int);
 extern int dbg_free(void *, char *, char *, int);
 extern void *dbg_realloc(void *, unsigned long, char *, char *, int);
 extern char *dbg_strdup(char *, char *, char *, int);

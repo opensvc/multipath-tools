@@ -52,6 +52,7 @@ do_inq(int sg_fd, unsigned int pg_op, void *resp, int mx_resp_len)
 	inqCmdBlk[2] = (unsigned char) pg_op;
 	inqCmdBlk[4] = (unsigned char) (mx_resp_len & 0xff);
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
+	memset(sense_b, 0, SENSE_BUFF_LEN);
 
 	io_hdr.interface_id = 'S';
 	io_hdr.cmd_len = sizeof (inqCmdBlk);
@@ -100,6 +101,7 @@ libcheck_check (struct checker * c)
 {
 	struct volume_access_inq inq;
 
+	memset(&inq, 0, sizeof(struct volume_access_inq));
 	if (0 != do_inq(c->fd, 0xC9, &inq, sizeof(struct volume_access_inq))) {
 		MSG(c, MSG_RDAC_DOWN);
 		return PATH_DOWN;

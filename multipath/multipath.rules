@@ -4,4 +4,4 @@
 #
 
 # socket for uevents
-RUN+="socket:/org/kernel/dm/multipath_event"
+SUBSYSTEM=="block", RUN+="socket:/org/kernel/dm/multipath_event"

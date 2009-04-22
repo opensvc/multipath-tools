@@ -22,6 +22,7 @@
 
 #define MSG_TUR_UP	"tur checker reports path is up"
 #define MSG_TUR_DOWN	"tur checker reports path is down"
+#define MSG_TUR_GHOST	"tur checker reports path is in standby state"
 
 struct tur_checker_context {
 	void * dummy;
@@ -47,6 +48,7 @@ libcheck_check (struct checker * c)
 
  retry:
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
+	memset(&sense_buffer, 0, 32);
 	io_hdr.interface_id = 'S';
 	io_hdr.cmd_len = sizeof (turCmdBlk);
 	io_hdr.mx_sb_len = sizeof (sense_buffer);
@@ -62,6 +64,20 @@ libcheck_check (struct checker * c)
 	if (io_hdr.info & SG_INFO_OK_MASK) {
 		int key = 0, asc, ascq;
 
+		switch (io_hdr.host_status) {
+		case DID_OK:
+		case DID_NO_CONNECT:
+		case DID_BAD_TARGET:
+		case DID_ABORT:
+		case DID_TRANSPORT_DISRUPTED:
+		case DID_TRANSPORT_FAILFAST:
+			break;
+		default:
+			/* Driver error, retry */
+			if (--retry_tur)
+				goto retry;
+			break;
+		}
 		if (io_hdr.sb_len_wr > 3) {
 			if (io_hdr.sbp[0] == 0x72 || io_hdr.sbp[0] == 0x73) {
 				key = io_hdr.sbp[1] & 0x0f;
@@ -79,6 +95,18 @@ libcheck_check (struct checker * c)
 			/* Unit Attention, retry */
 			if (--retry_tur)
 				goto retry;
+		}
+		else if (key == 0x2) {
+			/* Not Ready */
+			/* Note: Other ALUA states are either UP or DOWN */
+			if( asc == 0x04 && ascq == 0x0b){
+				/*
+				 * LOGICAL UNIT NOT ACCESSIBLE,
+				 * TARGET PORT IN STANDBY STATE
+				 */
+				MSG(c, MSG_TUR_GHOST);
+				return PATH_GHOST;
+			}
 		}
 		MSG(c, MSG_TUR_DOWN);
 		return PATH_DOWN;

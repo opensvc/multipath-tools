@@ -47,12 +47,11 @@ static int logarea_init (int size)
 		size = DEFAULT_AREA_SIZE;
 
 	la->start = MALLOC(size);
-	memset(la->start, 0, size);
-
 	if (!la->start) {
 		FREE(la);
 		return 1;
 	}
+	memset(la->start, 0, size);
 
 	la->empty = 1;
 	la->end = la->start + size;
@@ -143,7 +142,7 @@ int log_enqueue (int prio, const char * fmt, va_list ap)
 	la->empty = 0;
 	msg = (struct logmsg *)la->tail;
 	msg->prio = prio;
-	memcpy((void *)&msg->str, buff, strlen(buff));
+	strcpy((void *)&msg->str, buff);
 	lastmsg->next = la->tail;
 	msg->next = la->head;
 

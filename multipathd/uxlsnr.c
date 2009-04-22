@@ -168,5 +168,6 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 		}
 	}
 
+	close(ux_sock);
 	return NULL;
 }

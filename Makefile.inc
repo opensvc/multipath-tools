@@ -21,6 +21,7 @@ multipathdir = $(TOPDIR)/libmultipath
 mandir      = $(prefix)/usr/share/man/man8
 man5dir     = $(prefix)/usr/share/man/man5
 rcdir	    = $(prefix)/etc/init.d
+syslibdir   = $(prefix)/lib
 libdir	    = $(prefix)/lib/multipath
 
 GZIP        = /bin/gzip -9 -c

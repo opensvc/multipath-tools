@@ -1,5 +1,5 @@
 int dm_prereq (char *, int, int, int);
-int dm_simplecmd (int, const char *);
+int dm_simplecmd (int, const char *, int);
 int dm_addmap (int, const char *, const char *, const char *, uint64_t,
 	       const char *, int);
 int dm_map_present (char *);

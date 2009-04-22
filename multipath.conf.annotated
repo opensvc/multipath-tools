@@ -55,9 +55,9 @@
 #	# scope   : multipath
 #	# desc    : the default program and args to callout to obtain a unique 
 #	#           path identifier. Absolute path required
-#	# default : /lib/udev/scsi_id -g -u -s
+#	# default : /lib/udev/scsi_id --whitelisted --device=/dev/%n
 #	#
-#	getuid_callout	"/lib/udev/scsi_id -g -u -d /dev/%n"
+#	getuid_callout	"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #
 #	#
 #	# name    : prio
@@ -97,6 +97,16 @@
 #	# default : 1000
 #	#
 #	rr_min_io	100
+#
+#	#
+#	# name    : flush_on_last_del
+#	# scope   : multipathd
+#	# desc    : If set to "yes", multipathd will disable queueing when the
+#	#           last path to a device has been deleted.
+#	# values  : yes|no
+#	# default : no
+#	#
+#	flush_on_last_del       yes
 #
 #	#
 #	# name    : max_fds
@@ -278,6 +288,16 @@
 #		#           to the next in the same path group
 #		#
 #		rr_min_io	100
+#
+#		#
+#		# name    : flush_on_last_del
+#		# scope   : multipathd
+#		# desc    : If set to "yes", multipathd will disable queueing
+#		#           when the last path to a device has been deleted.
+#		# values  : yes|no
+#		# default : no
+#		#
+#		flush_on_last_del       yes
 #	}
 #	multipath {
 #		wwid	1DEC_____321816758474
@@ -331,7 +351,7 @@
 #		# desc    : the program and args to callout to obtain a unique 
 #		#           path identifier. Absolute path required
 #		#
-#		getuid_callout          "/lib/udev/scsi_id -g -u -d /dev/%n"
+#		getuid_callout          "/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #
 #		#
 #		# name    : prio
@@ -417,6 +437,16 @@
 #		#           to the next in the same path group
 #		#
 #		rr_min_io	100
+#
+#		#
+#		# name    : flush_on_last_del
+#		# scope   : multipathd
+#		# desc    : If set to "yes", multipathd will disable queueing
+#		#           when the last path to a device has been deleted.
+#		# values  : yes|no
+#		# default : no
+#		#
+#		flush_on_last_del       yes
 #
 #		#
 #		# name    : product_blacklist

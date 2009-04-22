@@ -1,6 +1,8 @@
 #ifndef _WAITER_H
 #define _WAITER_H
 
+extern pthread_attr_t waiter_attr;
+
 struct event_thread {
 	struct dm_task *dmt;
 	pthread_t thread;

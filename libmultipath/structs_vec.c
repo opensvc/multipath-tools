@@ -27,7 +27,7 @@ update_mpp_paths(struct multipath * mpp, vector pathvec)
 	struct path * pp;
 	int i,j;
 
-	if (!mpp->pg)
+	if (!mpp || !mpp->pg)
 		return 0;
 
 	if (!mpp->paths &&
@@ -163,6 +163,9 @@ _remove_maps (struct vectors * vecs, int stop_waiter)
 	int i;
 	struct multipath * mpp;
 
+	if (!vecs)
+		return;
+
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		_remove_map(mpp, vecs, stop_waiter, 1);
 		i--;
@@ -188,13 +191,48 @@ static struct hwentry *
 extract_hwe_from_path(struct multipath * mpp)
 {
 	struct path * pp = NULL;
+	int pg_num = -1, p_num = -1, i;
 	struct pathgroup * pgp = NULL;
 
-	if (mpp && mpp->pg)
-		pgp = VECTOR_SLOT(mpp->pg, 0);
+	condlog(3, "%s: searching paths for valid hwe", mpp->alias);
 
-	if (pgp && pgp->paths)
-		pp = VECTOR_SLOT(pgp->paths, 0);
+	if (mpp && mpp->pg) {
+		vector_foreach_slot(mpp->pg, pgp, i) {
+			if (pgp->status == PGSTATE_ACTIVE ||
+			    pgp->status == PGSTATE_ENABLED) {
+				pg_num = i;
+				break;
+			}
+		}
+		if (pg_num >= 0)
+			pgp = VECTOR_SLOT(mpp->pg, pg_num);
+	}
+
+	if (pgp && pgp->paths) {
+		vector_foreach_slot(pgp->paths, pp, i) {
+			if (pp->dmstate == PSTATE_FAILED)
+				continue;
+			if (strlen(pp->vendor_id) > 0 &&
+			    strlen(pp->product_id) > 0 &&
+			    strlen(pp->rev) > 0) {
+				p_num = i;
+				break;
+			}
+		}
+		if (p_num >= 0)
+			pp = VECTOR_SLOT(pgp->paths, i);
+	}
+
+	if (pp) {
+		condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
+		condlog(3, "%s: product = %s", pp->dev, pp->product_id);
+		condlog(3, "%s: rev = %s", pp->dev, pp->rev);
+		if (!pp->hwe) {
+			condlog(3, "searching hwtable");
+			pp->hwe = find_hwe(conf->hwtable, pp->vendor_id,
+					   pp->product_id, pp->rev);
+		}
+	}
 
 	return pp?pp->hwe:NULL;
 }
@@ -232,6 +270,8 @@ update_multipath_status (struct multipath *mpp)
 extern int
 update_multipath_strings (struct multipath *mpp, vector pathvec)
 {
+	condlog(4, "%s: %s", mpp->alias, __FUNCTION__);
+
 	free_multipath_attributes(mpp);
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
@@ -316,11 +356,17 @@ retry:
 	}
 
 	//adopt_paths(vecs->pathvec, mpp);
-	mpp->hwe = extract_hwe_from_path(mpp);
+	if (!mpp->hwe)
+		mpp->hwe = extract_hwe_from_path(mpp);
+	if (!mpp->hwe) {
+		condlog(3, "%s: no hardware entry found, using defaults",
+			mpp->alias);
+	}
 	select_rr_weight(mpp);
 	select_pgfailback(mpp);
 	set_no_path_retry(mpp);
 	select_pg_timeout(mpp);
+	select_flush_on_last_del(mpp);
 
 	return 0;
 out:
@@ -339,8 +385,10 @@ add_map_without_path (struct vectors * vecs,
 
 	mpp->alias = alias;
 
-	if (setup_multipath(vecs, mpp))
+	if (setup_multipath(vecs, mpp)) {
+		mpp->alias = NULL;
 		return NULL; /* mpp freed in setup_multipath */
+	}
 
 	if (adopt_paths(vecs->pathvec, mpp))
 		goto out;
@@ -399,6 +447,9 @@ verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
 	int count = 0;
 	int i, j;
 
+	if (!mpp)
+		return 0;
+
 	vector_foreach_slot (mpp->paths, pp, i) {
 		/*
 		 * see if path is in sysfs
@@ -419,6 +470,9 @@ verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
 					vector_del_slot(vecs->pathvec, j);
 				free_path(pp);
 			}
+		} else {
+			condlog(4, "%s: verified path %s dev_t %s",
+				mpp->alias, pp->dev, pp->dev_t);
 		}
 	}
 	return count;

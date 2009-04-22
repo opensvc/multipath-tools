@@ -5,8 +5,8 @@ include ../Makefile.inc
 #
 # basic flags setting
 #
-CFLAGS += -I$(multipathdir) -Wl,-rpath,$(libdir)
-LDFLAGS += -lpthread -ldevmapper -lreadline -lncurses -laio -ldl \
+CFLAGS += -I$(multipathdir)
+LDFLAGS += -lpthread -ldevmapper -lreadline -lncurses -ldl \
 	   -lmultipath -L$(multipathdir)
 
 #

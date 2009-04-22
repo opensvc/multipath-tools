@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <limits.h>
 
 /*
  * libcheckers
@@ -147,7 +148,7 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 	return 0;
 }
 
-static void
+void
 sync_map_state(struct multipath *mpp)
 {
 	struct pathgroup *pgp;
@@ -389,13 +390,17 @@ ev_add_path (char * devname, struct vectors * vecs)
 	mpp = pp->mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
 rescan:
 	if (mpp) {
+		condlog(4,"%s: adopting all paths for path %s",
+			mpp->alias, pp->dev);
 		if (adopt_paths(vecs->pathvec, mpp))
 			return 1; /* leave path added to pathvec */
 
 		verify_paths(mpp, vecs, NULL);
+		mpp->flush_on_last_del = FLUSH_UNDEF;
 		mpp->action = ACT_RELOAD;
 	}
 	else {
+		condlog(4,"%s: creating new map", pp->dev);
 		if ((mpp = add_map_with_path(vecs, pp, 1)))
 			mpp->action = ACT_CREATE;
 		else
@@ -473,8 +478,9 @@ ev_remove_path (char * devname, struct vectors * vecs)
 	pp = find_path_by_dev(vecs->pathvec, devname);
 
 	if (!pp) {
-		condlog(0, "%s: spurious uevent, path not in pathvec", devname);
-		return 1;
+		/* Not an error; path might have been purged earlier */
+		condlog(0, "%s: path already removed", devname);
+		return 0;
 	}
 
 	/*
@@ -488,7 +494,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 		if (update_mpp_paths(mpp, vecs->pathvec)) {
 			condlog(0, "%s: failed to update paths",
 				mpp->alias);
-			goto out;
+			goto fail;
 		}
 		if ((i = find_slot(mpp->paths, (void *)pp)) != -1)
 			vector_del_slot(mpp->paths, i);
@@ -503,12 +509,19 @@ ev_remove_path (char * devname, struct vectors * vecs)
 			 * flush_map will fail if the device is open
 			 */
 			strncpy(alias, mpp->alias, WWID_SIZE);
+			if (mpp->flush_on_last_del == FLUSH_ENABLED) {
+				condlog(2, "%s Last path deleted, disabling queueing", mpp->alias);
+				mpp->retry_tick = 0;
+				mpp->no_path_retry = NO_PATH_RETRY_FAIL;
+				mpp->flush_on_last_del = FLUSH_IN_PROGRESS;
+				dm_queue_if_no_path(mpp->alias, 0);
+			}
 			if (!flush_map(mpp, vecs)) {
 				condlog(2, "%s: removed map after"
 					" removing all paths",
 					alias);
-				free_path(pp);
-				return 0;
+				retval = 0;
+				goto out;
 			}
 			/*
 			 * Not an error, continue
@@ -519,7 +532,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 			condlog(0, "%s: failed to setup map for"
 				" removal of path %s", mpp->alias,
 				devname);
-			goto out;
+			goto fail;
 		}
 		/*
 		 * reload the map
@@ -535,7 +548,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 			 * update our state from kernel
 			 */
 			if (setup_multipath(vecs, mpp)) {
-				goto out;
+				goto fail;
 			}
 			sync_map_state(mpp);
 
@@ -544,6 +557,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 		}
 	}
 
+out:
 	if ((i = find_slot(vecs->pathvec, (void *)pp)) != -1)
 		vector_del_slot(vecs->pathvec, i);
 
@@ -551,7 +565,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 
 	return retval;
 
-out:
+fail:
 	remove_map_and_stop_waiter(mpp, vecs, 1);
 	return 1;
 }
@@ -607,7 +621,7 @@ static int
 uev_discard(char * devpath)
 {
 	char *tmp;
-	char a[10], b[10];
+	char a[11], b[11];
 
 	/*
 	 * keep only block devices, discard partitions
@@ -688,6 +702,9 @@ out:
 static void *
 ueventloop (void * ap)
 {
+	block_signal(SIGUSR1, NULL);
+	block_signal(SIGHUP, NULL);
+
 	if (uevent_listen(&uev_trigger, ap))
 		fprintf(stderr, "error starting uevent listener");
 
@@ -697,6 +714,9 @@ ueventloop (void * ap)
 static void *
 uxlsnrloop (void * ap)
 {
+	block_signal(SIGUSR1, NULL);
+	block_signal(SIGHUP, NULL);
+
 	if (cli_init())
 		return NULL;
 
@@ -722,8 +742,13 @@ uxlsnrloop (void * ap)
 	set_handler_callback(RECONFIGURE, cli_reconfigure);
 	set_handler_callback(SUSPEND+MAP, cli_suspend);
 	set_handler_callback(RESUME+MAP, cli_resume);
+	set_handler_callback(RESIZE+MAP, cli_resize);
 	set_handler_callback(REINSTATE+PATH, cli_reinstate);
 	set_handler_callback(FAIL+PATH, cli_fail);
+	set_handler_callback(DISABLEQ+MAP, cli_disable_queueing);
+	set_handler_callback(RESTOREQ+MAP, cli_restore_queueing);
+	set_handler_callback(DISABLEQ+MAPS, cli_disable_all_queueing);
+	set_handler_callback(RESTOREQ+MAPS, cli_restore_all_queueing);
 	set_handler_callback(QUIT, cli_quit);
 
 	uxsock_listen(&uxsock_trigger, ap);
@@ -807,6 +832,9 @@ mpvec_garbage_collector (struct vectors * vecs)
 {
 	struct multipath * mpp;
 	unsigned int i;
+
+	if (!vecs->mpvec)
+		return;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		if (mpp && mpp->alias && !dm_map_present(mpp->alias)) {
@@ -1007,6 +1035,7 @@ checkerloop (void *ap)
 	struct path *pp;
 	int count = 0;
 	unsigned int i;
+	sigset_t old;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	vecs = (struct vectors *)ap;
@@ -1020,6 +1049,7 @@ checkerloop (void *ap)
 	}
 
 	while (1) {
+		block_signal(SIGHUP, &old);
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(vecs->lock);
 		condlog(4, "tick");
@@ -1042,6 +1072,7 @@ checkerloop (void *ap)
 		}
 
 		lock_cleanup_pop(vecs->lock);
+		pthread_sigmask(SIG_SETMASK, &old, NULL);
 		sleep(1);
 	}
 	return NULL;
@@ -1264,17 +1295,47 @@ set_oom_adj (int val)
 	fclose(fp);
 }
 
+void
+setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
+{
+	if (pthread_attr_init(attr)) {
+		fprintf(stderr, "can't initialize thread attr: %s\n",
+			strerror(errno));
+		exit(1);
+	}
+	if (stacksize < PTHREAD_STACK_MIN)
+		stacksize = PTHREAD_STACK_MIN;
+
+	if (pthread_attr_setstacksize(attr, stacksize)) {
+		fprintf(stderr, "can't set thread stack size to %lu: %s\n",
+			(unsigned long)stacksize, strerror(errno));
+		exit(1);
+	}
+	if (detached && pthread_attr_setdetachstate(attr,
+						    PTHREAD_CREATE_DETACHED)) {
+		fprintf(stderr, "can't set thread to detached: %s\n",
+			strerror(errno));
+		exit(1);
+	}
+}
+
 static int
 child (void * param)
 {
 	pthread_t check_thr, uevent_thr, uxlsnr_thr;
-	pthread_attr_t attr;
+	pthread_attr_t log_attr, misc_attr;
 	struct vectors * vecs;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
-	if (logsink)
-		log_thread_start();
+	setup_thread_attr(&misc_attr, 64 * 1024, 1);
+	setup_thread_attr(&waiter_attr, 32 * 1024, 1);
+
+	if (logsink) {
+		setup_thread_attr(&log_attr, 64 * 1024, 0);
+		log_thread_start(&log_attr);
+		pthread_attr_destroy(&log_attr);
+	}
 
 	condlog(2, "--------start up--------");
 	condlog(2, "read " DEFAULT_CONFIGFILE);
@@ -1345,19 +1406,17 @@ child (void * param)
 	/*
 	 * start threads
 	 */
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, 64 * 1024);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-
-	pthread_create(&check_thr, &attr, checkerloop, vecs);
-	pthread_create(&uevent_thr, &attr, ueventloop, vecs);
-	pthread_create(&uxlsnr_thr, &attr, uxlsnrloop, vecs);
+	pthread_create(&check_thr, &misc_attr, checkerloop, vecs);
+	pthread_create(&uevent_thr, &misc_attr, ueventloop, vecs);
+	pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs);
+	pthread_attr_destroy(&misc_attr);
 
 	pthread_cond_wait(&exit_cond, &exit_mutex);
 
 	/*
 	 * exit path
 	 */
+	block_signal(SIGHUP, NULL);
 	lock(vecs->lock);
 	remove_maps_and_stop_waiters(vecs);
 	free_pathvec(vecs->pathvec, FREE_PATHS);
@@ -1454,8 +1513,9 @@ daemonize(void)
 
 	close(in_fd);
 	close(out_fd);
-	chdir("/");
-	umask(0);
+	if (chdir("/") < 0)
+		fprintf(stderr, "cannot chdir to '/', continuing\n");
+
 	return 0;
 }
 

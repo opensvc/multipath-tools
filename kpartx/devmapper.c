@@ -53,7 +53,7 @@ dm_prereq (char * str, int x, int y, int z)
 }
 
 extern int
-dm_simplecmd (int task, const char *name) {
+dm_simplecmd (int task, const char *name, int no_flush) {
 	int r = 0;
 	struct dm_task *dmt;
 
@@ -64,6 +64,10 @@ dm_simplecmd (int task, const char *name) {
 		goto out;
 
 	dm_task_no_open_count(dmt);
+	dm_task_skip_lockfs(dmt);
+
+	if (no_flush)
+		dm_task_no_flush(dmt);
 
 	r = dm_task_run(dmt);
 

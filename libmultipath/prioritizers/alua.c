@@ -23,6 +23,7 @@
 #define ALUA_PRIO_RTPG_FAILED			2
 #define ALUA_PRIO_GETAAS_FAILED			3
 #define ALUA_PRIO_TPGS_FAILED			4
+#define ALUA_PRIO_NO_INFORMATION		5
 
 int
 get_alua_info(int fd)
@@ -54,13 +55,18 @@ get_alua_info(int fd)
 		return -ALUA_PRIO_GETAAS_FAILED;
 
 	condlog(3, "aas = [%s]",
-		(aas_string[rc]) ? aas_string[rc] : "invalid/reserved");
+		(rc < 4) ? aas_string[rc] : "invalid/reserved");
 	return rc;
 }
 
 int getprio (struct path * pp)
 {
-	int rc = get_alua_info(pp->fd);
+	int rc;
+
+	if (pp->fd < 0)
+		return -ALUA_PRIO_NO_INFORMATION;
+
+	rc = get_alua_info(pp->fd);
 	if (rc >= 0) {
 		switch(rc) {
 			case AAS_OPTIMIZED:
