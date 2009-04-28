@@ -180,6 +180,7 @@ load_keys (void)
 	r += add_key(keys, "wildcards", WILDCARDS, 0);
 	r += add_key(keys, "quit", QUIT, 0);
 	r += add_key(keys, "exit", QUIT, 0);
+	r += add_key(keys, "shutdown", SHUTDOWN, 0);
 
 	if (r) {
 		free_keys(keys);
@@ -445,6 +446,7 @@ cli_init (void) {
 	add_handler(REINSTATE+PATH, NULL);
 	add_handler(FAIL+PATH, NULL);
 	add_handler(QUIT, NULL);
+	add_handler(SHUTDOWN, NULL);
 
 	return 0;
 }

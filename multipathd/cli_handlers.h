@@ -27,3 +27,4 @@ int cli_resume(void * v, char ** reply, int * len, void * data);
 int cli_reinstate(void * v, char ** reply, int * len, void * data);
 int cli_fail(void * v, char ** reply, int * len, void * data);
 int cli_quit(void * v, char ** reply, int * len, void * data);
+int cli_shutdown(void * v, char ** reply, int * len, void * data);

@@ -3,6 +3,7 @@
 
 #define MAPGCINT 5
 
+int exit_daemon(int);
 int reconfigure (struct vectors *);
 int ev_add_path (char *, struct vectors *);
 int ev_remove_path (char *, struct vectors *);

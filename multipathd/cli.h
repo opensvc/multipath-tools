@@ -25,6 +25,7 @@ enum {
 	__FMT,
 	__WILDCARDS,
 	__QUIT,
+	__SHUTDOWN,
 };
 
 #define LIST		(1 << __LIST)
@@ -49,11 +50,12 @@ enum {
 #define TOPOLOGY	(1 << __TOPOLOGY)
 #define CONFIG		(1 << __CONFIG)
 #define BLACKLIST	(1 << __BLACKLIST)
-#define DEVICES  	(1 << __DEVICES)
-#define FMT 	 	(1 << __FMT)
+#define DEVICES		(1 << __DEVICES)
+#define FMT		(1 << __FMT)
 #define COUNT		(1 << __COUNT)
 #define WILDCARDS	(1 << __WILDCARDS)
 #define QUIT		(1 << __QUIT)
+#define SHUTDOWN	(1 << __SHUTDOWN)
 
 #define INITIAL_REPLY_LEN 1000
 
