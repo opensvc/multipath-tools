@@ -146,13 +146,14 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 					inbuf[len - 1] = 0;
 					condlog(4, "Got request [%s]", inbuf);
 					uxsock_trigger(inbuf, &reply, &rlen,
-							trigger_data);
-
+						       trigger_data);
 					if (reply) {
 						if (send_packet(c->fd, reply,
-						     rlen) != 0) {
+								rlen) != 0) {
 							dead_client(c);
 						}
+						condlog(4, "Reply [%d bytes]",
+							rlen);
 						FREE(reply);
 						reply = NULL;
 					}
