@@ -19,6 +19,17 @@
 #include "main.h"
 #include "cli.h"
 
+#define REALLOC_REPLY(r, a, m)					\
+	do {							\
+		if ((a)) {					\
+			(r) = REALLOC((r), (m) * 2);		\
+			if ((r)) {				\
+				memset((r) + (m), 0, (m));	\
+				(m) *= 2;			\
+			}					\
+		}						\
+	} while (0)
+
 int
 show_paths (char ** r, int * len, struct vectors * vecs, char * style)
 {
@@ -48,9 +59,7 @@ show_paths (char ** r, int * len, struct vectors * vecs, char * style)
 
 		again = ((c - reply) == (maxlen - 1));
 
-		if (again)
-			reply = REALLOC(reply, maxlen *= 2);
-
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
@@ -76,9 +85,7 @@ show_map_topology (char ** r, int * len, struct multipath * mpp)
 		c += snprint_multipath_topology(c, reply + maxlen - c, mpp, 2);
 		again = ((c - reply) == (maxlen - 1));
 
-		if (again)
-			reply = REALLOC(reply, maxlen *= 2);
-
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
@@ -110,9 +117,7 @@ show_maps_topology (char ** r, int * len, struct vectors * vecs)
 
 		again = ((c - reply) == (maxlen - 1));
 
-		if (again)
-			reply = REALLOC(reply, maxlen *= 2);
-
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
@@ -136,31 +141,46 @@ show_config (char ** r, int * len)
 		c += snprint_defaults(c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
+			reply = REALLOC(reply, maxlen * 2);
+			if (!reply)
+				return 1;
+			memset(reply + maxlen, 0, maxlen);
+			maxlen *= 2;
 			continue;
 		}
 		c += snprint_blacklist(c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
+			reply = REALLOC(reply, maxlen * 2);
+			if (!reply)
+				return 1;
+			memset(reply + maxlen, 0, maxlen);
+			maxlen *= 2;
 			continue;
 		}
 		c += snprint_blacklist_except(c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
+			reply = REALLOC(reply, maxlen * 2);
+			if (!reply)
+				return 1;
+			memset(reply + maxlen, 0, maxlen);
+			maxlen *= 2;
 			continue;
 		}
 		c += snprint_hwtable(c, reply + maxlen - c, conf->hwtable);
 		again = ((c - reply) == maxlen);
 		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
+			reply = REALLOC(reply, maxlen * 2);
+			if (!reply)
+				return 1;
+			memset(reply + maxlen, 0, maxlen);
+			maxlen *= 2;
 			continue;
 		}
 		c += snprint_mptable(c, reply + maxlen - c, conf->mptable);
 		again = ((c - reply) == maxlen);
-		if (again)
-			reply = REALLOC(reply, maxlen *= 2);
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
@@ -289,8 +309,7 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 
 		again = ((c - reply) == (maxlen - 1));
 
-		if (again)
-			reply = REALLOC(reply, maxlen *= 2);
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
@@ -726,19 +745,16 @@ show_blacklist (char ** r, int * len)
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
+	reply = MALLOC(maxlen);
+
 	while (again) {
-		reply = MALLOC(maxlen);
 		if (!reply)
 			return 1;
 
 		c = reply;
 		c += snprint_blacklist_report(c, maxlen);
 		again = ((c - reply) == maxlen);
-		if (again) {
-			maxlen  *= 2;
-			FREE(reply);
-			continue;
-		}
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 
 	*r = reply;
@@ -763,19 +779,16 @@ show_devices (char ** r, int * len, struct vectors *vecs)
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
+	reply = MALLOC(maxlen);
+
 	while (again) {
-		reply = MALLOC(maxlen);
 		if (!reply)
 			return 1;
 
 		c = reply;
 		c += snprint_devices(c, maxlen, vecs);
 		again = ((c - reply) == maxlen);
-		if (again) {
-			maxlen  *= 2;
-			FREE(reply);
-			continue;
-		}
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 
 	*r = reply;
