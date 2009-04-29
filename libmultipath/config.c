@@ -221,7 +221,7 @@ alloc_mpe (void)
 	return mpe;
 }
 
-static struct hwentry *
+struct hwentry *
 alloc_hwe (void)
 {
 	struct hwentry * hwe = (struct hwentry *)

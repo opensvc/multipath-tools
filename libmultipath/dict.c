@@ -465,13 +465,13 @@ device_handler(vector strvec)
 {
 	struct hwentry * hwe;
 
-	hwe = (struct hwentry *)MALLOC(sizeof(struct hwentry));
+	hwe = alloc_hwe();
 
 	if (!hwe)
 		return 1;
 
 	if (!vector_alloc_slot(conf->hwtable)) {
-		FREE(hwe);
+		free_hwe(hwe);
 		return 1;
 	}
 	vector_set_slot(conf->hwtable, hwe);
@@ -802,13 +802,13 @@ multipath_handler(vector strvec)
 {
 	struct mpentry * mpe;
 
-	mpe = (struct mpentry *)MALLOC(sizeof(struct mpentry));
+	mpe = alloc_mpe();
 
 	if (!mpe)
 		return 1;
 
 	if (!vector_alloc_slot(conf->mptable)) {
-		FREE(mpe);
+		free_mpe(mpe);
 		return 1;
 	}
 	vector_set_slot(conf->mptable, mpe);

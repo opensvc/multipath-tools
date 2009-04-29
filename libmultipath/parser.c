@@ -303,13 +303,13 @@ read_value_block(void)
 	vector vec = NULL;
 	vector elements = vector_alloc();
 
+	if (!elements)
+		return NULL;
+
 	buf = (char *) MALLOC(MAXBUF);
 
 	if (!buf)
 		return NULL;
-
-	if (!elements)
-		goto out;
 
 	while (read_line(buf, MAXBUF)) {
 		vec = alloc_strvec(buf);
@@ -324,6 +324,8 @@ read_value_block(void)
 				for (i = 0; i < VECTOR_SIZE(vec); i++) {
 					str = VECTOR_SLOT(vec, i);
 					dup = (char *) MALLOC(strlen(str) + 1);
+					if (!dup)
+						goto out;
 					memcpy(dup, str, strlen(str));
 
 					if (!vector_alloc_slot(elements)) {
@@ -400,16 +402,17 @@ set_value(vector strvec)
 				alloc =
 				    REALLOC(alloc, sizeof (char *) * (len + 1));
 				tmp = VECTOR_SLOT(strvec, i-1);
-				if (*str != '"' && *tmp != '"')
+				if (alloc && *str != '"' && *tmp != '"')
 					strncat(alloc, " ", 1);
 			}
 
-			if (i != VECTOR_SIZE(strvec)-1)
+			if (alloc && i != VECTOR_SIZE(strvec)-1)
 				strncat(alloc, str, strlen(str));
 		}
 	} else {
 		alloc = MALLOC(sizeof (char *) * (size + 1));
-		memcpy(alloc, str, size);
+		if (alloc)
+			memcpy(alloc, str, size);
 	}
 	return alloc;
 }

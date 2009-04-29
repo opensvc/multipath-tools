@@ -99,6 +99,7 @@ struct hwentry * find_hwe (vector hwtable, char * vendor, char * product, char *
 struct mpentry * find_mpe (char * wwid);
 char * get_mpe_wwid (char * alias);
 
+struct hwentry * alloc_hwe (void);
 struct mpentry * alloc_mpe (void);
 
 void free_hwe (struct hwentry * hwe);
