@@ -79,11 +79,12 @@ static void process_req(int fd, char * inbuf)
 	char *reply;
 	size_t len;
 
-	send_packet(fd, inbuf, strlen(inbuf) + 1);
-	recv_packet(fd, &reply, &len);
-
-	print_reply(reply);
-	FREE(reply);
+	if (send_packet(fd, inbuf, strlen(inbuf) + 1) != 0)
+		return;
+	if (recv_packet(fd, &reply, &len) == 0) {
+		print_reply(reply);
+		FREE(reply);
+	}
 }
 	
 /*
