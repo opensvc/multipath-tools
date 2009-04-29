@@ -759,6 +759,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(RESTOREQ+MAPS, cli_restore_all_queueing);
 	set_handler_callback(QUIT, cli_quit);
 
+	umask(077);
 	uxsock_listen(&uxsock_trigger, ap);
 
 	return NULL;
