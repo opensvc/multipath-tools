@@ -353,6 +353,14 @@ ev_add_path (char * devname, struct vectors * vecs)
 	struct path * pp;
 	char empty_buff[WWID_SIZE] = {0};
 
+	if (strstr(devname, "..") != NULL) {
+		/*
+		 * Don't allow relative device names in the pathvec
+		 */
+		condlog(0, "%s: path name is invalid", devname);
+		return 1;
+	}
+
 	pp = find_path_by_dev(vecs->pathvec, devname);
 
 	if (pp) {
