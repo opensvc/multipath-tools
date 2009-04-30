@@ -1,3 +1,8 @@
+#ifndef _DEVMAPPER_H
+#define _DEVMAPPER_H
+
+#include "structs.h"
+
 #define TGT_MPATH	"multipath"
 #define TGT_PART	"linear"
 
@@ -5,14 +10,10 @@ void dm_init(void);
 int dm_prereq (void);
 int dm_simplecmd_flush (int, const char *);
 int dm_simplecmd_noflush (int, const char *);
-int dm_addmap_create (const char *, const char *,
-                      unsigned long long size, const char *uuid);
-int dm_addmap_create_ro (const char *, const char *,
-			 unsigned long long size, const char *uuid);
-int dm_addmap_reload (const char *, const char *,
-                      unsigned long long size, const char *uuid);
-int dm_addmap_reload_ro (const char *, const char *,
-			 unsigned long long size, const char *uuid);
+int dm_addmap_create (struct multipath *mpp);
+int dm_addmap_create_ro (struct multipath *mpp);
+int dm_addmap_reload (struct multipath *mpp);
+int dm_addmap_reload_ro (struct multipath *mpp);
 int dm_map_present (const char *);
 int dm_get_map(char *, unsigned long long *, char *);
 int dm_get_status(char *, char *);
@@ -35,3 +36,5 @@ int dm_get_uuid(char *name, char *uuid);
 int dm_get_info (char * mapname, struct dm_info ** dmi);
 int dm_rename (char * old, char * new);
 int dm_get_name(char * uuid, char * name);
+
+#endif /* _DEVMAPPER_H */

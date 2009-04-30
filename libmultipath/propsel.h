@@ -12,3 +12,6 @@ int select_no_path_retry(struct multipath *mp);
 int select_pg_timeout(struct multipath *mp);
 int select_flush_on_last_del(struct multipath *mp);
 int select_minio(struct multipath *mp);
+int select_mode(struct multipath *mp);
+int select_uid(struct multipath *mp);
+int select_gid(struct multipath *mp);

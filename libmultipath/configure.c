@@ -67,6 +67,9 @@ setup_map (struct multipath * mpp)
 	select_minio(mpp);
 	select_no_path_retry(mpp);
 	select_pg_timeout(mpp);
+	select_mode(mpp);
+	select_uid(mpp);
+	select_gid(mpp);
 
 	/*
 	 * assign paths to path groups -- start with no groups and all paths
@@ -346,28 +349,26 @@ domap (struct multipath * mpp)
 			break;
 		}
 
-		r = dm_addmap_create(mpp->alias, mpp->params, mpp->size,
-				     mpp->wwid);
+		r = dm_addmap_create(mpp);
 
 		if (!r)
-			 r = dm_addmap_create_ro(mpp->alias, mpp->params,
-						 mpp->size, mpp->wwid);
+			 r = dm_addmap_create_ro(mpp);
 
 		lock_multipath(mpp, 0);
 		break;
 
 	case ACT_RELOAD:
-		r = dm_addmap_reload(mpp->alias, mpp->params, mpp->size, NULL);
+		r = dm_addmap_reload(mpp);
 		if (!r)
-			r = dm_addmap_reload_ro(mpp->alias, mpp->params, mpp->size, NULL);
+			r = dm_addmap_reload_ro(mpp);
 		if (r)
 			r = dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias);
 		break;
 
  	case ACT_RESIZE:
-  		r = dm_addmap_reload(mpp->alias, mpp->params, mpp->size, NULL);
+  		r = dm_addmap_reload(mpp);
   		if (!r)
-  			r = dm_addmap_reload_ro(mpp->alias, mpp->params, mpp->size, NULL);
+  			r = dm_addmap_reload_ro(mpp);
   		if (r)
   			r = dm_simplecmd_flush(DM_DEVICE_RESUME, mpp->alias);
 		break;

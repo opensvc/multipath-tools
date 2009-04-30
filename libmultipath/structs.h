@@ -1,6 +1,8 @@
 #ifndef _STRUCTS_H
 #define _STRUCTS_H
 
+#include <sys/types.h>
+
 #define WWID_SIZE		128
 #define SERIAL_SIZE		64
 #define NODE_NAME_SIZE		19
@@ -67,6 +69,11 @@ enum pgtimeouts {
 	PGTIMEOUT_NONE
 };
 
+enum attribute_bits {
+	ATTR_UID,
+	ATTR_GID,
+	ATTR_MODE,
+};
 
 enum flush_states {
 	FLUSH_UNDEF,
@@ -159,6 +166,10 @@ struct multipath {
 	int minio;
 	int pg_timeout;
 	int flush_on_last_del;
+	int attribute_flags;
+	uid_t uid;
+	gid_t gid;
+	mode_t mode;
 	unsigned long long size;
 	vector paths;
 	vector pg;

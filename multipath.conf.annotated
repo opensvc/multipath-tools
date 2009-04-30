@@ -163,6 +163,32 @@
 #	# default : no
 #	user_friendly_names no
 #
+#	#
+#	# name    : mode
+#	# scope   : multipath
+#	# desc    : The mode to use for the multipath device nodes, in octal.
+#	# values  : 0000 - 0777
+#	# default : determined by the process
+#	mode 0644
+#
+#	#
+#	# name    : uid
+#	# scope   : multipath
+#	# desc    : The user id to use for the multipath device nodes. You
+#	#           may use either the numeric or symbolic uid
+#	# values  : <user_id>
+#	# default : determined by the process
+#	uid 0
+#
+#	#
+#	# name    : gid
+#	# scope   : multipath
+#	# desc    : The group id to user for the multipath device nodes. You
+#	#           may use either the numeric or symbolic gid
+#	# values  : <group_id>
+#	# default : determined by the process
+#	gid disk
+#
 #}
 #	
 ##
@@ -298,6 +324,34 @@
 #		# default : no
 #		#
 #		flush_on_last_del       yes
+#
+#		#
+#		# name    : mode
+#		# scope   : multipath
+#		# desc    : The mode to use for the multipath device nodes, in
+#		#           octal.
+#		# values  : 0000 - 0777
+#		# default : determined by the process
+#		mode 0644
+#
+#		#
+#		# name    : uid
+#		# scope   : multipath
+#		# desc    : The user id to use for the multipath device nodes.
+#		#           You may use either the numeric or symbolic uid
+#		# values  : <user_id>
+#		# default : determined by the process
+#		uid 0
+#
+#		#
+#		# name    : gid
+#		# scope   : multipath
+#		# desc    : The group id to user for the multipath device nodes.
+#		#           You may use either the numeric or symbolic gid
+#		# values  : <group_id>
+#		# default : determined by the process
+#		gid 0
+#
 #	}
 #	multipath {
 #		wwid	1DEC_____321816758474
