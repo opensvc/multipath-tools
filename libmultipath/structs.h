@@ -4,9 +4,9 @@
 #include <sys/types.h>
 
 #define WWID_SIZE		128
-#define SERIAL_SIZE		64
-#define NODE_NAME_SIZE		19
-#define PATH_STR_SIZE  		16
+#define SERIAL_SIZE		65
+#define NODE_NAME_SIZE		65
+#define PATH_STR_SIZE		16
 #define PARAMS_SIZE		1024
 #define FILE_NAME_SIZE		256
 #define CALLOUT_MAX_SIZE	256

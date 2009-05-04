@@ -4,16 +4,15 @@
 extern pthread_attr_t waiter_attr;
 
 struct event_thread {
-	struct dm_task *dmt;
 	pthread_t thread;
+	pthread_mutex_t lock;
 	int event_nr;
 	char mapname[WWID_SIZE];
 	struct vectors *vecs;
-	struct multipath *mpp;
 };
 
 struct event_thread * alloc_waiter (void);
-void free_waiter (void *data);
+void signal_waiter (void *data);
 void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs);
 int start_waiter_thread (struct multipath *mpp, struct vectors *vecs);
 int waiteventloop (struct event_thread *waiter);

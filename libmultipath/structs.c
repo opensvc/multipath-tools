@@ -15,7 +15,6 @@
 #include "debug.h"
 #include "structs_vec.h"
 #include "blacklist.h"
-#include "waiter.h"
 #include "prio.h"
 
 struct path *
@@ -171,12 +170,6 @@ free_multipath (struct multipath * mpp, enum free_path_mode free_paths)
 		FREE(mpp->dmi);
 		mpp->dmi = NULL;
 	}
-
-	/*
-	 * better own vecs->lock here
-	 */
-	if (mpp->waiter)
-		((struct event_thread *)mpp->waiter)->mpp = NULL;
 
 	free_pathvec(mpp->paths, free_paths);
 	free_pgvec(mpp->pg, free_paths);
