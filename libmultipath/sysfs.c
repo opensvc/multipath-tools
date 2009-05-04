@@ -37,15 +37,6 @@
 
 char sysfs_path[PATH_SIZE];
 
-/* attribute value cache */
-static LIST_HEAD(attr_list);
-struct sysfs_attr {
-	struct list_head node;
-	char path[PATH_SIZE];
-	char *value;			/* points to value_local if value is cached */
-	char value_local[NAME_SIZE];
-};
-
 /* list of sysfs devices */
 static LIST_HEAD(sysfs_dev_list);
 struct sysfs_dev {
@@ -62,23 +53,14 @@ int sysfs_init(char *path, size_t len)
 		strlcpy(sysfs_path, "/sys", sizeof(sysfs_path));
 	dbg("sysfs_path='%s'", sysfs_path);
 
-	INIT_LIST_HEAD(&attr_list);
 	INIT_LIST_HEAD(&sysfs_dev_list);
 	return 0;
 }
 
 void sysfs_cleanup(void)
 {
-	struct sysfs_attr *attr_loop;
-	struct sysfs_attr *attr_temp;
-
 	struct sysfs_dev *sysdev_loop;
 	struct sysfs_dev *sysdev_temp;
-
-	list_for_each_entry_safe(attr_loop, attr_temp, &attr_list, node) {
-		list_del(&attr_loop->node);
-		free(attr_loop);
-	}
 
 	list_for_each_entry_safe(sysdev_loop, sysdev_temp, &sysfs_dev_list, node) {
 		list_del(&sysdev_loop->node);
@@ -356,74 +338,21 @@ void sysfs_device_put(struct sysfs_device *dev)
 	return;
 }
 
-int
-sysfs_attr_set_value(const char *devpath, const char *attr_name,
-		     const char *value)
-{
-	char path_full[PATH_SIZE];
-	int sysfs_len;
-	struct stat statbuf;
-	int fd, value_len, ret = -1;
-
-	dbg("open '%s'/'%s'", devpath, attr_name);
-	sysfs_len = snprintf(path_full, PATH_SIZE, "%s%s/%s", sysfs_path,
-			     devpath, attr_name);
-	if (sysfs_len >= PATH_SIZE || sysfs_len < 0) {
-		if (sysfs_len < 0)
-			dbg("cannot copy sysfs path %s%s/%s : %s", sysfs_path,
-			    devpath, attr_name, strerror(errno));
-		else
-			dbg("sysfs_path %s%s/%s too large", sysfs_path,
-			    devpath, attr_name);
-		goto out;
-	}
-
-	if (stat(path_full, &statbuf) != 0) {
-		dbg("stat '%s' failed: %s" path_full, strerror(errno));
-		goto out;
-	}
-
-	/* skip directories */
-        if (S_ISDIR(statbuf.st_mode))
-                goto out;
-
-	if ((statbuf.st_mode & S_IWUSR) == 0)
-		goto out;
-
-	fd = open(path_full, O_WRONLY);
-	if (fd < 0) {
-		dbg("attribute '%s' can not be opened: %s",
-		    path_full, strerror(errno));
-		goto out;
-	}
-	value_len = strlen(value) + 1;
-	ret = write(fd, value, value_len);
-	if (ret == value_len)
-		ret = 0;
-	else if (ret < 0)
-		dbg("write to %s failed: %s", path_full, strerror(errno));
-	else {
-		dbg("tried to write %d to %s. Wrote %d\n", value_len,
-		    path_full, ret);
-		ret = -1;
-	}
-	close(fd);
-out:
-	return ret;
-}
-
-
-char *sysfs_attr_get_value(const char *devpath, const char *attr_name)
+size_t sysfs_attr_get_value(const char *devpath, const char *attr_name,
+			    char *attr_value, int attr_len)
 {
 	char path_full[PATH_SIZE];
 	const char *path;
-	char value[NAME_SIZE];
-	struct sysfs_attr *attr_loop;
-	struct sysfs_attr *attr = NULL;
 	struct stat statbuf;
 	int fd;
 	ssize_t size;
 	size_t sysfs_len;
+
+	if (!attr_value || !attr_len)
+		return 0;
+
+	attr_value[0] = '\0';
+	size = 0;
 
 	dbg("open '%s'/'%s'", devpath, attr_name);
 	sysfs_len = strlcpy(path_full, sysfs_path, sizeof(path_full));
@@ -434,52 +363,8 @@ char *sysfs_attr_get_value(const char *devpath, const char *attr_name)
 	strlcat(path_full, "/", sizeof(path_full));
 	strlcat(path_full, attr_name, sizeof(path_full));
 
-	/* look for attribute in cache */
-	list_for_each_entry(attr_loop, &attr_list, node) {
-		if (strcmp(attr_loop->path, path) == 0) {
-			dbg("found in cache '%s'", attr_loop->path);
-			attr = attr_loop;
-		}
-	}
-	if (!attr) {
-		/* store attribute in cache */
-		dbg("new uncached attribute '%s'", path_full);
-		attr = malloc(sizeof(struct sysfs_attr));
-		if (attr == NULL)
-			return NULL;
-		memset(attr, 0x00, sizeof(struct sysfs_attr));
-		strlcpy(attr->path, path, sizeof(attr->path));
-		dbg("add to cache '%s'", path_full);
-		list_add(&attr->node, &attr_list);
-	} else {
-		/* clear old value */
-		if(attr->value)
-			memset(attr->value, 0x00, sizeof(attr->value));
-	}
-
-	if (lstat(path_full, &statbuf) != 0) {
+	if (stat(path_full, &statbuf) != 0) {
 		dbg("stat '%s' failed: %s", path_full, strerror(errno));
-		goto out;
-	}
-
-	if (S_ISLNK(statbuf.st_mode)) {
-		/* links return the last element of the target path */
-		char link_target[PATH_SIZE];
-		int len;
-		const char *pos;
-
-		len = readlink(path_full, link_target, sizeof(link_target));
-		if (len > 0) {
-			link_target[len] = '\0';
-			pos = strrchr(link_target, '/');
-			if (pos != NULL) {
-				dbg("cache '%s' with link value '%s'",
-				    path_full, value);
-				strlcpy(attr->value_local, &pos[1],
-					sizeof(attr->value_local));
-				attr->value = attr->value_local;
-			}
-		}
 		goto out;
 	}
 
@@ -498,22 +383,78 @@ char *sysfs_attr_get_value(const char *devpath, const char *attr_name)
 		    path_full, strerror(errno));
 		goto out;
 	}
-	size = read(fd, value, sizeof(value));
+	size = read(fd, attr_value, attr_len);
 	close(fd);
 	if (size < 0)
 		goto out;
-	if (size == sizeof(value)) {
+	if (size == attr_len) {
 		dbg("overflow in attribute '%s', truncating", path_full);
 		size--;
 	}
 
 	/* got a valid value, store and return it */
-	value[size] = '\0';
-	remove_trailing_chars(value, '\n');
-	dbg("cache '%s' with attribute value '%s'", path_full, value);
-	strlcpy(attr->value_local, value, sizeof(attr->value_local));
-	attr->value = attr->value_local;
+	attr_value[size] = '\0';
+	remove_trailing_chars(attr_value, '\n');
 
 out:
-	return attr && attr->value && strlen(attr->value) ? attr->value : NULL;
+	return size;
+}
+
+ssize_t sysfs_attr_set_value(const char *devpath, const char *attr_name,
+			     const char *value, int value_len)
+{
+	char path_full[PATH_SIZE];
+	struct stat statbuf;
+	int fd;
+	ssize_t size = 0;
+	size_t sysfs_len;
+
+	if (!attr_name || !value || !value_len)
+		return 0;
+
+	dbg("open '%s'/'%s'", devpath, attr_name);
+	sysfs_len = snprintf(path_full, PATH_SIZE, "%s%s/%s", sysfs_path,
+			     devpath, attr_name);
+	if (sysfs_len >= PATH_SIZE || sysfs_len < 0) {
+		if (sysfs_len < 0)
+			dbg("cannot copy sysfs path %s%s/%s : %s", sysfs_path,
+			    devpath, attr_name, strerror(errno));
+		else
+			dbg("sysfs_path %s%s/%s too large", sysfs_path,
+			    devpath, attr_name);
+		goto out;
+	}
+
+	if (stat(path_full, &statbuf) != 0) {
+		dbg("stat '%s' failed: %s", path_full, strerror(errno));
+		goto out;
+	}
+
+	/* skip directories */
+	if (S_ISDIR(statbuf.st_mode))
+		goto out;
+
+	/* skip non-writeable files */
+	if ((statbuf.st_mode & S_IWUSR) == 0)
+		goto out;
+
+	/* read attribute value */
+	fd = open(path_full, O_WRONLY);
+	if (fd < 0) {
+		dbg("attribute '%s' can not be opened: %s",
+		    path_full, strerror(errno));
+		goto out;
+	}
+	size = write(fd, value, value_len);
+	if (size < 0)
+		dbg("write to %s failed: %s", path_full, strerror(errno));
+	else if (size < value_len) {
+		dbg("tried to write %d to %s. Wrote %d\n", value_len,
+		    path_full, size);
+		size = -1;
+	}
+	close(fd);
+
+out:
+	return size;
 }

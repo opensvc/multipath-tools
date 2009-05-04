@@ -19,9 +19,10 @@ struct sysfs_device *sysfs_device_get(const char *devpath);
 struct sysfs_device *sysfs_device_get_parent(struct sysfs_device *dev);
 struct sysfs_device *sysfs_device_get_parent_with_subsystem(struct sysfs_device *dev, const char *subsystem);
 void sysfs_device_put(struct sysfs_device *dev);
-char *sysfs_attr_get_value(const char *devpath, const char *attr_name);
+size_t sysfs_attr_get_value(const char *devpath, const char *attr_name,
+			    char *attr_value, int attr_len);
+ssize_t sysfs_attr_set_value(const char *devpath, const char *attr_name,
+			     const char *value, int value_len);
 int sysfs_resolve_link(char *path, size_t size);
 int sysfs_get_size (struct sysfs_device * dev, unsigned long long * size);
-int sysfs_attr_set_value(const char *devpath, const char *attr_name,
-			 const char *value);
 #endif

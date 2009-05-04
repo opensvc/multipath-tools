@@ -128,16 +128,22 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 #define declare_sysfs_get_str(fname) \
 extern int \
 sysfs_get_##fname (struct sysfs_device * dev, char * buff, size_t len) \
-{ \
-	char *attr; \
-\
-	attr = sysfs_attr_get_value(dev->devpath, #fname); \
-	if (!attr) \
-		return 1; \
-	if (strlcpy(buff, attr, len) != strlen(attr)) \
-		return 2; \
-	strchop(buff); \
-	return 0; \
+{								       \
+	int size;						       \
+								       \
+	size = sysfs_attr_get_value(dev->devpath, #fname, buff, len);	\
+	if (!size) {							\
+		condlog(3, "%s: attribute %s not found in sysfs",	\
+			dev->kernel, #fname);				\
+		return 1;						\
+	}								\
+	if (size == len) {						\
+		condlog(3, "%s: overflow in attribute %s",		\
+			dev->kernel, #fname);				\
+		return 2;						\
+	}								\
+	strchop(buff);							\
+	return 0;							\
 }
 
 declare_sysfs_get_str(devtype);
@@ -146,43 +152,32 @@ declare_sysfs_get_str(vendor);
 declare_sysfs_get_str(model);
 declare_sysfs_get_str(rev);
 declare_sysfs_get_str(state);
-
-int
-sysfs_get_dev (struct sysfs_device * dev, char * buff, size_t len)
-{
-	char *attr;
-
-	attr = sysfs_attr_get_value(dev->devpath, "dev");
-	if (!attr) {
-		condlog(3, "%s: no 'dev' attribute in sysfs", dev->kernel);
-		return 1;
-	}
-	if (strlcpy(buff, attr, len) != strlen(attr)) {
-		condlog(3, "%s: overflow in 'dev' attribute", dev->kernel);
-		return 2;
-	}
-	return 0;
-}
+declare_sysfs_get_str(dev);
 
 int
 sysfs_get_timeout(struct sysfs_device *dev, unsigned int *timeout)
 {
-	char *attr;
-	char attr_path[SYSFS_PATH_SIZE];
+	char attr_path[SYSFS_PATH_SIZE], attr[NAME_SIZE];
+	size_t len;
 	int r;
 	unsigned int t;
 
 	if (safe_sprintf(attr_path, "%s/device", dev->devpath))
 		return 1;
 
-	attr = sysfs_attr_get_value(dev->devpath, "timeout");
-	if (!attr)
+	len = sysfs_attr_get_value(dev->devpath, "timeout", attr, NAME_SIZE);
+	if (!len) {
+		condlog(3, "%s: No timeout value in sysfs", dev->devpath);
 		return 1;
+	}
 
 	r = sscanf(attr, "%u\n", &t);
 
-	if (r != 1)
+	if (r != 1) {
+		condlog(3, "%s: Cannot parse timeout attribute '%s'",
+			dev->devpath, attr);
 		return 1;
+	}
 
 	*timeout = t * 1000;
 
@@ -192,17 +187,23 @@ sysfs_get_timeout(struct sysfs_device *dev, unsigned int *timeout)
 int
 sysfs_get_size (struct sysfs_device * dev, unsigned long long * size)
 {
-	char *attr;
+	char attr[NAME_SIZE];
+	size_t len;
 	int r;
 
-	attr = sysfs_attr_get_value(dev->devpath, "size");
-	if (!attr)
+	len = sysfs_attr_get_value(dev->devpath, "size", attr, NAME_SIZE);
+	if (!len) {
+		condlog(3, "%s: No size attribute in sysfs", dev->devpath);
 		return 1;
+	}
 
 	r = sscanf(attr, "%llu\n", size);
 
-	if (r != 1)
+	if (r != 1) {
+		condlog(3, "%s: Cannot parse size attribute '%s'",
+			dev->devpath, attr);
 		return 1;
+	}
 
 	return 0;
 }
@@ -212,7 +213,8 @@ sysfs_get_fc_nodename (struct sysfs_device * dev, char * node,
 		       unsigned int host, unsigned int channel,
 		       unsigned int target)
 {
-	char attr_path[SYSFS_PATH_SIZE], *attr;
+	char attr_path[SYSFS_PATH_SIZE];
+	size_t len;
 
 	if (safe_sprintf(attr_path,
 			 "/class/fc_transport/target%i:%i:%i",
@@ -221,13 +223,11 @@ sysfs_get_fc_nodename (struct sysfs_device * dev, char * node,
 		return 1;
 	}
 
-	attr = sysfs_attr_get_value(attr_path, "node_name");
-	if (attr) {
-		strlcpy(node, attr, strlen(attr));
-		return 0;
-	}
+	len = sysfs_attr_get_value(attr_path, "node_name", node, NODE_NAME_SIZE);
+	if (!len)
+		return 1;
 
-	return 1;
+	return 0;
 }
 
 static int
@@ -293,7 +293,7 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 		if (mpp->dev_loss){
 			snprintf(value, 11, "%u", mpp->dev_loss);
 			if (sysfs_attr_set_value(attr_path, "dev_loss_tmo",
-						 value))
+						 value, 11))
 				return 1;
 		}
 		if (mpp->fast_io_fail){
@@ -302,7 +302,7 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 			else
 				snprintf(value, 11, "%u", mpp->fast_io_fail);
 			if (sysfs_attr_set_value(attr_path, "fast_io_fail_tmo",
-						 value))
+						 value, 11))
 				return 1;
 		}
 	}
@@ -615,14 +615,14 @@ cciss_sysfs_pathinfo (struct path * pp, struct sysfs_device * dev)
 static int
 common_sysfs_pathinfo (struct path * pp, struct sysfs_device *dev)
 {
-	char *attr;
+	size_t len;
 
-	attr = sysfs_attr_get_value(dev->devpath, "dev");
-	if (!attr) {
+	len = sysfs_attr_get_value(dev->devpath, "dev",
+				    pp->dev_t, BLK_DEV_SIZE);
+	if (!len) {
 		condlog(3, "%s: no 'dev' attribute in sysfs", pp->dev);
 		return 1;
 	}
-	strlcpy(pp->dev_t, attr, BLK_DEV_SIZE);
 
 	condlog(3, "%s: dev_t = %s", pp->dev, pp->dev_t);
 

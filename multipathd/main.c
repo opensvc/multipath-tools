@@ -224,17 +224,11 @@ int
 ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
 {
 	char * alias;
-	char *dev_t;
 	int major, minor;
 	char * refwwid;
 	struct multipath * mpp;
 	int map_present;
 	int r = 1;
-
-	dev_t = sysfs_attr_get_value(dev->devpath, "dev");
-
-	if (!dev_t || sscanf(dev_t, "%d:%d", &major, &minor) != 2)
-		return 1;
 
 	alias = dm_mapname(major, minor);
 
