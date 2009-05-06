@@ -231,7 +231,7 @@ cli_list_wildcards (void * v, char ** reply, int * len, void * data)
 
 	*reply = MALLOC(INITIAL_REPLY_LEN);
 
-	if (!reply)
+	if (!*reply)
 		return 1;
 
 	c = *reply;
@@ -359,7 +359,7 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 
 	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
 	    param) > 0 || (r = ev_add_path(param, vecs)) == 2) {
-		*reply = strdup("blacklisted");
+		*reply = strdup("blacklisted\n");
 		*len = strlen(*reply) + 1;
 		condlog(2, "%s: path blacklisted", param);
 		return 0;
@@ -390,7 +390,7 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 	condlog(2, "%s: add map (operator)", param);
 
 	if (filter_wwid(conf->blist_wwid, conf->elist_wwid, param) > 0) {
-		*reply = strdup("blacklisted");
+		*reply = strdup("blacklisted\n");
 		*len = strlen(*reply) + 1;
 		condlog(2, "%s: map blacklisted", param);
 		return 0;

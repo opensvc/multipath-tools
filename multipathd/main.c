@@ -353,6 +353,14 @@ ev_add_path (char * devname, struct vectors * vecs)
 	struct path * pp;
 	char empty_buff[WWID_SIZE] = {0};
 
+	if (strstr(devname, "..") != NULL) {
+		/*
+		 * Don't allow relative device names in the pathvec
+		 */
+		condlog(0, "%s: path name is invalid", devname);
+		return 1;
+	}
+
 	pp = find_path_by_dev(vecs->pathvec, devname);
 
 	if (pp) {
@@ -751,6 +759,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(RESTOREQ+MAPS, cli_restore_all_queueing);
 	set_handler_callback(QUIT, cli_quit);
 
+	umask(077);
 	uxsock_listen(&uxsock_trigger, ap);
 
 	return NULL;

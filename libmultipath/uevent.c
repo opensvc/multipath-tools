@@ -53,7 +53,7 @@ pthread_cond_t  uev_cond,  *uev_condp  = &uev_cond;
 uev_trigger *my_uev_trigger;
 void * my_trigger_data;
 
-struct uevent * alloc_uevent (void)
+static struct uevent * alloc_uevent (void)
 {
 	return (struct uevent *)MALLOC(sizeof(struct uevent));
 }

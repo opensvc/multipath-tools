@@ -589,11 +589,17 @@ path_offline (struct path * pp)
 		condlog(1, "%s: failed to get sysfs information", pp->dev);
 		return 1;
 	}
+
 	parent = sysfs_device_get_parent(pp->sysdev);
 	if (!parent)
 		parent = pp->sysdev;
-	if (!strncmp(parent->kernel, "block",5))
+	if (parent && !strncmp(parent->kernel, "block",5))
 		parent = sysfs_device_get_parent(parent);
+	if (!parent) {
+		condlog(1, "%s: failed to get parent", pp->dev);
+		return 1;
+	}
+
 	if (sysfs_get_state(parent, buff, SCSI_STATE_SIZE))
 		return 1;
 
@@ -624,9 +630,12 @@ sysfs_pathinfo(struct path * pp)
 	parent = sysfs_device_get_parent(pp->sysdev);
 	if (!parent)
 		parent = pp->sysdev;
-
-	if (!strncmp(parent->kernel, "block",5))
+	if (parent && !strncmp(parent->kernel, "block",5))
 		parent = sysfs_device_get_parent(parent);
+	if (!parent) {
+		condlog(1, "%s: failed to get parent", pp->dev);
+		return 1;
+	}
 
 	if (!strncmp(pp->dev,"cciss",5))
 		strcpy(parent->subsystem,"cciss");

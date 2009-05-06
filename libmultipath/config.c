@@ -158,11 +158,6 @@ free_hwe (struct hwentry * hwe)
 	if (hwe->bl_product)
 		FREE(hwe->bl_product);
 
-	if (hwe->prio_name)
-		FREE(hwe->prio_name);
-
-	if (hwe->checker_name)
-		FREE(hwe->checker_name);
 	FREE(hwe);
 }
 
@@ -226,7 +221,7 @@ alloc_mpe (void)
 	return mpe;
 }
 
-static struct hwentry *
+struct hwentry *
 alloc_hwe (void)
 {
 	struct hwentry * hwe = (struct hwentry *)
@@ -403,12 +398,6 @@ free_config (struct config * conf)
 
 	if (conf->hwhandler)
 		FREE(conf->hwhandler);
-
-	if (conf->prio_name)
-		FREE(conf->prio_name);
-
-	if (conf->checker_name)
-		FREE(conf->checker_name);
 
 	if (conf->prio_name)
 		FREE(conf->prio_name);
