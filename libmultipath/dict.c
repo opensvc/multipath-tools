@@ -19,6 +19,7 @@
 #include "blacklist.h"
 #include "defaults.h"
 #include "prio.h"
+#include "errno.h"
 
 /*
  * default block handlers
@@ -156,23 +157,52 @@ def_minio_handler(vector strvec)
 }
 
 static int
+get_sys_max_fds(int *max_fds)
+{
+	FILE *file;
+	int nr_open;
+	int ret = 1;
+
+	file = fopen("/proc/sys/fs/nr_open", "r");
+	if (!file) {
+		fprintf(stderr, "Cannot open /proc/sys/fs/nr_open : %s\n",
+			strerror(errno));
+		return 1;
+	}
+	if (fscanf(file, "%d", &nr_open) != 1) {
+		fprintf(stderr, "Cannot read max open fds from /proc/sys/fs/nr_open");
+		if (ferror(file))
+			fprintf(stderr, " : %s\n", strerror(errno));
+		else
+			fprintf(stderr, "\n");
+	} else {
+		*max_fds = nr_open;
+		ret = 0;
+	}
+	fclose(file);
+	return ret;
+}
+
+
+static int
 max_fds_handler(vector strvec)
 {
 	char * buff;
+	int r = 0;
 
 	buff = set_value(strvec);
 
 	if (!buff)
 		return 1;
 
-	if (strlen(buff) == 9 &&
-	    !strcmp(buff, "unlimited"))
-		conf->max_fds = MAX_FDS_UNLIMITED;
+	if (strlen(buff) == 3 &&
+	    !strcmp(buff, "max"))
+		r = get_sys_max_fds(&conf->max_fds);
 	else
 		conf->max_fds = atoi(buff);
 	FREE(buff);
 
-	return 0;
+	return r;
 }
 
 static int
@@ -1755,8 +1785,6 @@ snprint_max_fds (char * buff, int len, void * data)
 	if (!conf->max_fds)
 		return 0;
 
-	if (conf->max_fds < 0)
-		return snprintf(buff, len, "unlimited");
 	return snprintf(buff, len, "%d", conf->max_fds);
 }
 

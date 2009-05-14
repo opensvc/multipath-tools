@@ -24,7 +24,6 @@
 #define NO_PATH_RETRY_FAIL	-1
 #define NO_PATH_RETRY_QUEUE	-2
 
-#define MAX_FDS_UNLIMITED	-1
 
 enum free_path_switch {
 	KEEP_PATHS,

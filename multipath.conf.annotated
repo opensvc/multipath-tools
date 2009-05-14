@@ -113,7 +113,7 @@
 #	# scope   : multipathd
 #	# desc    : Sets the maximum number of open file descriptors for the
 #	#           multipathd process.
-#	# values  : unlimited|n > 0
+#	# values  : max|n > 0
 #	# default : None
 #	#
 #	max_fds		8192
