@@ -1,6 +1,8 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
+#include <sys/types.h>
+
 #define ORIGIN_DEFAULT 0
 #define ORIGIN_CONFIG  1
 
@@ -45,6 +47,10 @@ struct mpentry {
 	int minio;
 	int pg_timeout;
 	int flush_on_last_del;
+	int attribute_flags;
+	uid_t uid;
+	gid_t gid;
+	mode_t mode;
 };
 
 struct config {
@@ -68,6 +74,10 @@ struct config {
 	int force_reload;
 	int daemon;
 	int flush_on_last_del;
+	int attribute_flags;
+	uid_t uid;
+	gid_t gid;
+	mode_t mode;
 
 	char * dev;
 	char * sysfs_dir;

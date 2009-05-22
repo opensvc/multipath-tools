@@ -230,6 +230,14 @@ use the WWID as the alias. In either case this be will
 be overriden by any specific aliases in the \fImultipaths\fR section.
 Default is
 .I no
+.TP
+.B max_fds
+Specify the maximum number of file descriptors that can be opened by multipath
+and multipathd.  This is equivalent to ulimit -n. A value of \fImax\fR will set
+this to the system limit from /proc/sys/fs/nr_open. If this is not set, the
+maximum number of open fds is taken from the calling process. It is usually
+1024. To be safe, this should be set to the maximum number of paths plus 32,
+if that number is greated than 1024.
 .
 .SH "blacklist section"
 The

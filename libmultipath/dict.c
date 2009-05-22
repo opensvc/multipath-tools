@@ -4,6 +4,9 @@
  * Copyright (c) 2005 Benjamin Marzinski, Redhat
  * Copyright (c) 2005 Kiyoshi Ueda, NEC
  */
+#include <sys/types.h>
+#include <pwd.h>
+
 #include "checkers.h"
 #include "vector.h"
 #include "hwtable.h"
@@ -16,6 +19,7 @@
 #include "blacklist.h"
 #include "defaults.h"
 #include "prio.h"
+#include "errno.h"
 
 /*
  * default block handlers
@@ -153,22 +157,119 @@ def_minio_handler(vector strvec)
 }
 
 static int
+get_sys_max_fds(int *max_fds)
+{
+	FILE *file;
+	int nr_open;
+	int ret = 1;
+
+	file = fopen("/proc/sys/fs/nr_open", "r");
+	if (!file) {
+		fprintf(stderr, "Cannot open /proc/sys/fs/nr_open : %s\n",
+			strerror(errno));
+		return 1;
+	}
+	if (fscanf(file, "%d", &nr_open) != 1) {
+		fprintf(stderr, "Cannot read max open fds from /proc/sys/fs/nr_open");
+		if (ferror(file))
+			fprintf(stderr, " : %s\n", strerror(errno));
+		else
+			fprintf(stderr, "\n");
+	} else {
+		*max_fds = nr_open;
+		ret = 0;
+	}
+	fclose(file);
+	return ret;
+}
+
+
+static int
 max_fds_handler(vector strvec)
 {
 	char * buff;
+	int r = 0;
 
 	buff = set_value(strvec);
 
 	if (!buff)
 		return 1;
 
-	if (strlen(buff) == 9 &&
-	    !strcmp(buff, "unlimited"))
-		conf->max_fds = MAX_FDS_UNLIMITED;
+	if (strlen(buff) == 3 &&
+	    !strcmp(buff, "max"))
+		r = get_sys_max_fds(&conf->max_fds);
 	else
 		conf->max_fds = atoi(buff);
 	FREE(buff);
 
+	return r;
+}
+
+static int
+def_mode_handler(vector strvec)
+{
+	mode_t mode;
+	char *buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	if (sscanf(buff, "%o", &mode) == 1 && mode <= 0777) {
+		conf->attribute_flags |= (1 << ATTR_MODE);
+		conf->mode = mode;
+	}
+
+	FREE(buff);
+	return 0;
+}
+
+static int
+def_uid_handler(vector strvec)
+{
+	uid_t uid;
+	char *buff;
+	char passwd_buf[1024];
+	struct passwd info, *found;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+	if (getpwnam_r(buff, &info, passwd_buf, 1024, &found) == 0 && found) {
+		conf->attribute_flags |= (1 << ATTR_UID);
+		conf->uid = info.pw_uid;
+	}
+	else if (sscanf(buff, "%u", &uid) == 1){
+		conf->attribute_flags |= (1 << ATTR_UID);
+		conf->uid = uid;
+	}
+
+	FREE(buff);
+	return 0;
+}
+
+static int
+def_gid_handler(vector strvec)
+{
+	gid_t gid;
+	char *buff;
+	char passwd_buf[1024];
+	struct passwd info, *found;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if (getpwnam_r(buff, &info, passwd_buf, 1024, &found) == 0 && found) {
+		conf->attribute_flags |= (1 << ATTR_GID);
+		conf->gid = info.pw_gid;
+	}
+	else if (sscanf(buff, "%u", &gid) == 1){
+		conf->attribute_flags |= (1 << ATTR_GID);
+		conf->gid = gid;
+	}
+	FREE(buff);
 	return 0;
 }
 
@@ -908,6 +1009,86 @@ mp_failback_handler(vector strvec)
 }
 
 static int
+mp_mode_handler(vector strvec)
+{
+	mode_t mode;
+	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
+	char *buff;
+
+	if (!mpe)
+		return 1;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+	if (sscanf(buff, "%o", &mode) == 1 && mode <= 0777) {
+		mpe->attribute_flags |= (1 << ATTR_MODE);
+		mpe->mode = mode;
+	}
+
+	FREE(buff);
+	return 0;
+}
+
+static int
+mp_uid_handler(vector strvec)
+{
+	uid_t uid;
+	char *buff;
+	char passwd_buf[1024];
+	struct passwd info, *found;
+
+	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
+
+	if (!mpe)
+		return 1;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if (getpwnam_r(buff, &info, passwd_buf, 1024, &found) == 0 && found) {
+		mpe->attribute_flags |= (1 << ATTR_UID);
+		mpe->uid = info.pw_uid;
+	}
+	else if (sscanf(buff, "%u", &uid) == 1){
+		mpe->attribute_flags |= (1 << ATTR_UID);
+		mpe->uid = uid;
+	}
+	FREE(buff);
+	return 0;
+}
+
+static int
+mp_gid_handler(vector strvec)
+{
+	gid_t gid;
+	char *buff;
+	char passwd_buf[1024];
+	struct passwd info, *found;
+
+	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
+
+	if (!mpe)
+		return 1;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if (getpwnam_r(buff, &info, passwd_buf, 1024, &found) == 0 && found) {
+		mpe->attribute_flags |= (1 << ATTR_GID);
+		mpe->gid = info.pw_gid;
+	}
+	else if (sscanf(buff, "%u", &gid) == 1) {
+		mpe->attribute_flags |= (1 << ATTR_GID);
+		mpe->gid = gid;
+	}
+	FREE(buff);
+	return 0;
+}
+
+static int
 mp_weight_handler(vector strvec)
 {
 	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);
@@ -1100,6 +1281,36 @@ snprint_mp_failback (char * buff, int len, void * data)
 		return snprintf(buff, len, "%i", mpe->pgfailback);
 	}
 	return 0;
+}
+
+static int
+snprint_mp_mode(char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if ((mpe->attribute_flags & (1 << ATTR_MODE)) == 0)
+		return 0;
+	return snprintf(buff, len, "0%o", mpe->mode);
+}
+
+static int
+snprint_mp_uid(char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if ((mpe->attribute_flags & (1 << ATTR_UID)) == 0)
+		return 0;
+	return snprintf(buff, len, "0%o", mpe->uid);
+}
+
+static int
+snprint_mp_gid(char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if ((mpe->attribute_flags & (1 << ATTR_GID)) == 0)
+		return 0;
+	return snprintf(buff, len, "0%o", mpe->gid);
 }
 
 static int
@@ -1574,9 +1785,31 @@ snprint_max_fds (char * buff, int len, void * data)
 	if (!conf->max_fds)
 		return 0;
 
-	if (conf->max_fds < 0)
-		return snprintf(buff, len, "unlimited");
 	return snprintf(buff, len, "%d", conf->max_fds);
+}
+
+static int
+snprint_def_mode(char * buff, int len, void * data)
+{
+	if ((conf->attribute_flags & (1 << ATTR_MODE)) == 0)
+		return 0;
+	return snprintf(buff, len, "0%o", conf->mode);
+}
+
+static int
+snprint_def_uid(char * buff, int len, void * data)
+{
+	if ((conf->attribute_flags & (1 << ATTR_UID)) == 0)
+		return 0;
+	return snprintf(buff, len, "0%o", conf->uid);
+}
+
+static int
+snprint_def_gid(char * buff, int len, void * data)
+{
+	if ((conf->attribute_flags & (1 << ATTR_GID)) == 0)
+		return 0;
+	return snprintf(buff, len, "0%o", conf->gid);
 }
 
 static int
@@ -1701,6 +1934,9 @@ init_keywords(void)
 	install_keyword("pg_timeout", &def_pg_timeout_handler, &snprint_def_pg_timeout);
 	install_keyword("flush_on_last_del", &def_flush_on_last_del_handler, &snprint_def_flush_on_last_del);
 	install_keyword("user_friendly_names", &names_handler, &snprint_def_user_friendly_names);
+	install_keyword("mode", &def_mode_handler, &snprint_def_mode);
+	install_keyword("uid", &def_uid_handler, &snprint_def_uid);
+	install_keyword("gid", &def_gid_handler, &snprint_def_gid);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
@@ -1770,5 +2006,8 @@ init_keywords(void)
 	install_keyword("rr_min_io", &mp_minio_handler, &snprint_mp_rr_min_io);
 	install_keyword("pg_timeout", &mp_pg_timeout_handler, &snprint_mp_pg_timeout);
 	install_keyword("flush_on_last_del", &mp_flush_on_last_del_handler, &snprint_mp_flush_on_last_del);
+	install_keyword("mode", &mp_mode_handler, &snprint_mp_mode);
+	install_keyword("uid", &mp_uid_handler, &snprint_mp_uid);
+	install_keyword("gid", &mp_gid_handler, &snprint_mp_gid);
 	install_sublevel_end();
 }

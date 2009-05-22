@@ -26,6 +26,60 @@ pgpolicyfn *pgpolicies[] = {
 	group_by_node_name
 };
 
+extern int
+select_mode (struct multipath *mp)
+{
+	if (mp->mpe && (mp->mpe->attribute_flags & (1 << ATTR_MODE))) {
+		mp->attribute_flags |= (1 << ATTR_MODE);
+		mp->mode = mp->mpe->mode;
+		condlog(3, "mode = 0%o (LUN setting)", mp->mode);
+	}
+	else if (conf->attribute_flags & (1 << ATTR_MODE)) {
+		mp->attribute_flags |= (1 << ATTR_MODE);
+		mp->mode = conf->mode;
+		condlog(3, "mode = 0%o (config file default)", mp->mode);
+	}
+	else
+		mp->attribute_flags &= ~(1 << ATTR_MODE);
+	return 0;
+}
+
+extern int
+select_uid (struct multipath *mp)
+{
+	if (mp->mpe && (mp->mpe->attribute_flags & (1 << ATTR_UID))) {
+		mp->attribute_flags |= (1 << ATTR_UID);
+		mp->uid = mp->mpe->uid;
+		condlog(3, "uid = %u (LUN setting)", mp->uid);
+	}
+	else if (conf->attribute_flags & (1 << ATTR_UID)) {
+		mp->attribute_flags |= (1 << ATTR_UID);
+		mp->uid = conf->uid;
+		condlog(3, "uid = %u (config file default)", mp->uid);
+	}
+	else
+		mp->attribute_flags &= ~(1 << ATTR_UID);
+	return 0;
+}
+
+extern int
+select_gid (struct multipath *mp)
+{
+	if (mp->mpe && (mp->mpe->attribute_flags & (1 << ATTR_GID))) {
+		mp->attribute_flags |= (1 << ATTR_GID);
+		mp->gid = mp->mpe->gid;
+		condlog(3, "gid = %u (LUN setting)", mp->gid);
+	}
+	else if (conf->attribute_flags & (1 << ATTR_GID)) {
+		mp->attribute_flags |= (1 << ATTR_GID);
+		mp->gid = conf->gid;
+		condlog(3, "gid = %u (config file default)", mp->gid);
+	}
+	else
+		mp->attribute_flags &= ~(1 << ATTR_GID);
+	return 0;
+}
+
 /*
  * selectors :
  * traverse the configuration layers from most specific to most generic

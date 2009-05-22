@@ -184,8 +184,7 @@ dm_simplecmd_noflush (int task, const char *name) {
 }
 
 extern int
-dm_addmap (int task, const char *name, const char *target,
-	   const char *params, unsigned long long size, const char *uuid,
+dm_addmap (int task, const char *target, struct multipath *mpp, int use_uuid,
 	   int ro) {
 	int r = 0;
 	struct dm_task *dmt;
@@ -194,26 +193,36 @@ dm_addmap (int task, const char *name, const char *target,
 	if (!(dmt = dm_task_create (task)))
 		return 0;
 
-	if (!dm_task_set_name (dmt, name))
+	if (!dm_task_set_name (dmt, mpp->alias))
 		goto addout;
 
-	if (!dm_task_add_target (dmt, 0, size, target, params))
+	if (!dm_task_add_target (dmt, 0, mpp->size, target, mpp->params))
 		goto addout;
 
 	if (ro)
 		dm_task_set_ro(dmt);
 
-	if (uuid){
-		prefixed_uuid = MALLOC(UUID_PREFIX_LEN + strlen(uuid) + 1);
+	if (use_uuid && mpp->wwid){
+		prefixed_uuid = MALLOC(UUID_PREFIX_LEN + strlen(mpp->wwid) + 1);
 		if (!prefixed_uuid) {
 			condlog(0, "cannot create prefixed uuid : %s\n",
 				strerror(errno));
 			goto addout;
 		}
-		sprintf(prefixed_uuid, UUID_PREFIX "%s", uuid);
+		sprintf(prefixed_uuid, UUID_PREFIX "%s", mpp->wwid);
 		if (!dm_task_set_uuid(dmt, prefixed_uuid))
 			goto freeout;
 	}
+
+	if (mpp->attribute_flags & (1 << ATTR_MODE) &&
+	    !dm_task_set_mode(dmt, mpp->mode))
+		goto freeout;
+	if (mpp->attribute_flags & (1 << ATTR_UID) &&
+	    !dm_task_set_uid(dmt, mpp->uid))
+		goto freeout;
+	if (mpp->attribute_flags & (1 << ATTR_GID) &&
+	    !dm_task_set_gid(dmt, mpp->gid))
+		goto freeout;
 
 	dm_task_no_open_count(dmt);
 
@@ -230,19 +239,17 @@ dm_addmap (int task, const char *name, const char *target,
 }
 
 static int
-_dm_addmap_create (const char *name, const char *params,
-		  unsigned long long size, const char *uuid, int ro) {
+_dm_addmap_create (struct multipath *mpp, int ro) {
 	int r;
-	r = dm_addmap(DM_DEVICE_CREATE, name, TGT_MPATH, params, size, uuid,
-		      ro);
+	r = dm_addmap(DM_DEVICE_CREATE, TGT_MPATH, mpp, 1, ro);
 	/*
 	 * DM_DEVICE_CREATE is actually DM_DEV_CREATE + DM_TABLE_LOAD.
 	 * Failing the second part leaves an empty map. Clean it up.
 	 */
-	if (!r && dm_map_present(name)) {
+	if (!r && dm_map_present(mpp->alias)) {
 		condlog(3, "%s: failed to load map (a path might be in use)",
-			name);
-		dm_flush_map(name);
+			mpp->alias);
+		dm_flush_map(mpp->alias);
 	}
 	return r;
 }
@@ -251,29 +258,23 @@ _dm_addmap_create (const char *name, const char *params,
 #define ADDMAP_RO 1
 
 extern int
-dm_addmap_create (const char *name, const char *params,
-		  unsigned long long size, const char *uuid) {
-	return _dm_addmap_create(name, params, size, uuid, ADDMAP_RW);
+dm_addmap_create (struct multipath *mpp) {
+	return _dm_addmap_create(mpp, ADDMAP_RW);
 }
 
 extern int
-dm_addmap_create_ro (const char *name, const char *params,
-		  unsigned long long size, const char *uuid) {
-	return _dm_addmap_create(name, params, size, uuid, ADDMAP_RO);
+dm_addmap_create_ro (struct multipath *mpp) {
+	return _dm_addmap_create(mpp, ADDMAP_RO);
 }
 
 extern int
-dm_addmap_reload (const char *name, const char *params,
-		  unsigned long long size, const char *uuid) {
-	return dm_addmap(DM_DEVICE_RELOAD, name, TGT_MPATH, params, size, uuid,
-			 ADDMAP_RW);
+dm_addmap_reload (struct multipath *mpp) {
+	return dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, 0, ADDMAP_RW);
 }
 
 extern int
-dm_addmap_reload_ro (const char *name, const char *params,
-		     unsigned long long size, const char *uuid) {
-	return dm_addmap(DM_DEVICE_RELOAD, name, TGT_MPATH, params, size, uuid,
-			 ADDMAP_RO);
+dm_addmap_reload_ro (struct multipath *mpp) {
+	return dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, 0, ADDMAP_RO);
 }
 
 extern int

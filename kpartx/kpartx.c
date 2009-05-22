@@ -462,7 +462,9 @@ main(int argc, char **argv){
 					DM_DEVICE_RELOAD : DM_DEVICE_CREATE);
 
 				if (!dm_addmap(op, partname, DM_TARGET, params,
-					  slices[j].size, uuid, j+1)) {
+					       slices[j].size, uuid, j+1,
+					       buf.st_mode & 0777, buf.st_uid,
+					       buf.st_gid)) {
 					fprintf(stderr, "create/reload failed on %s\n",
 						partname);
 					r++;
@@ -524,7 +526,9 @@ main(int argc, char **argv){
 					      DM_DEVICE_RELOAD : DM_DEVICE_CREATE);
 
 					dm_addmap(op, partname, DM_TARGET, params,
-						  slices[j].size, uuid, j+1);
+						  slices[j].size, uuid, j+1,
+						  buf.st_mode & 0777,
+						  buf.st_uid, buf.st_gid);
 
 					if (op == DM_DEVICE_RELOAD)
 						dm_simplecmd(DM_DEVICE_RESUME,
