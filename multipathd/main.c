@@ -1028,6 +1028,14 @@ check_path (struct vectors * vecs, struct path * pp)
 		pp->tick = 1;
 		return;
 	}
+	/*
+	 * Synchronize with kernel state
+	 */
+	if (update_multipath_strings(pp->mpp, vecs->pathvec)) {
+		condlog(1, "%s: Could not synchronize with kernel state\n",
+			pp->dev);
+		pp->dmstate = PSTATE_UNDEF;
+	}
 	if (newstate != pp->state) {
 		int oldstate = pp->state;
 		pp->state = newstate;
@@ -1039,8 +1047,7 @@ check_path (struct vectors * vecs, struct path * pp)
 		 */
 		pp->checkint = conf->checkint;
 
-		if (newstate == PATH_DOWN || newstate == PATH_SHAKY ||
-		    update_multipath_strings(pp->mpp, vecs->pathvec)) {
+		if (newstate == PATH_DOWN || newstate == PATH_SHAKY) {
 			/*
 			 * proactively fail path in the DM
 			 */
