@@ -14,13 +14,16 @@ path_group_prio_update (struct pathgroup * pgp)
 	int priority = 0;
 	struct path * pp;
 
+ 	pgp->enabled_paths = 0;
 	if (!pgp->paths) {
 		pgp->priority = 0;
 		return;
 	}
 	vector_foreach_slot (pgp->paths, pp, i) {
-		if (pp->state != PATH_DOWN)
+		if (pp->state != PATH_DOWN) {
 			priority += pp->priority;
+ 			pgp->enabled_paths++;
+		}
 	}
 	pgp->priority = priority;
 }
@@ -29,8 +32,9 @@ extern int
 select_path_group (struct multipath * mpp)
 {
 	int i;
-	int highest = 0;
+	int max_priority = 0, avg_priority;
 	int bestpg = 1;
+	int max_enabled_paths = 1;
 	struct pathgroup * pgp;
 
 	if (!mpp->pg)
@@ -41,9 +45,18 @@ select_path_group (struct multipath * mpp)
 			continue;
 
 		path_group_prio_update(pgp);
-		if (pgp->priority > highest) {
-			highest = pgp->priority;
-			bestpg = i + 1;
+		if (pgp->enabled_paths) {
+			avg_priority = pgp->priority / pgp->enabled_paths;
+			if (avg_priority > max_priority) {
+				max_priority = avg_priority;
+				max_enabled_paths = pgp->enabled_paths;
+				bestpg = i + 1;
+			} else if (avg_priority == max_priority) {
+				if (pgp->enabled_paths > max_enabled_paths) {
+					max_enabled_paths = pgp->enabled_paths;
+					bestpg = i + 1;
+				}
+			}
 		}
 	}
 	return bestpg;
