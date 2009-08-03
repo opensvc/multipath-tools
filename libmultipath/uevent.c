@@ -101,6 +101,7 @@ uevq_thread(void * et)
 
 		service_uevq();
 	}
+	return NULL;
 }
 
 int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
