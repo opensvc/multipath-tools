@@ -28,7 +28,7 @@ install: $(LIBS)
 	$(INSTALL_PROGRAM) -m 755 libprio*.so $(DESTDIR)$(libdir)
 
 uninstall:
-	rm -f $(DESTDIR)$(libdir)/libprio*.so
+	for file in $(LIBS); do rm -f $(DESTDIR)$(libdir)/$$file; done
 
 clean:
 	rm -f core *.a *.o *.gz *.so
