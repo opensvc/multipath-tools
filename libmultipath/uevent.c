@@ -231,7 +231,8 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		smsg.msg_control = cred_msg;
 		smsg.msg_controllen = sizeof(cred_msg);
 
-		if (recvmsg(sock, &smsg, 0) < 0) {
+		buflen = recvmsg(sock, &smsg, 0);
+		if (buflen < 0) {
 			if (errno != EINTR)
 				condlog(0, "error receiving message");
 			continue;
@@ -286,8 +287,10 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		/* action string */
 		uev->action = buffer;
 		pos = strchr(buffer, '@');
-		if (!pos)
+		if (!pos) {
+			condlog(3, "bad action string '%s'", buffer);
 			continue;
+		}
 		pos[0] = '\0';
 
 		/* sysfs path */
