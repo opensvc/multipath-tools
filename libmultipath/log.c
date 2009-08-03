@@ -181,7 +181,7 @@ int log_dequeue (void * buff)
 
 	memset((void *)src, 0,  len);
 
-	return la->empty;
+	return 0;
 }
 
 /*
