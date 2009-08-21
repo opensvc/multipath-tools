@@ -48,7 +48,7 @@
 
 struct slice slices[MAXSLICES];
 
-enum action { LIST, ADD, DELETE };
+enum action { LIST, ADD, DELETE, UPDATE };
 
 struct pt {
 	char *type;
@@ -82,7 +82,7 @@ initpts(void)
 	addpts("sun", read_sun_pt);
 }
 
-static char short_opts[] = "rladgvp:t:s";
+static char short_opts[] = "rladgvp:t:su";
 
 /* Used in gpt.c */
 int force_gpt=0;
@@ -93,6 +93,7 @@ usage(void) {
 	printf("\t-a add partition devmappings\n");
 	printf("\t-r devmappings will be readonly\n");
 	printf("\t-d del partition devmappings\n");
+	printf("\t-u update partition devmappings\n");
 	printf("\t-l list partitions devmappings that would be added by -a\n");
 	printf("\t-p set device name-partition number delimiter\n");
 	printf("\t-g force GUID partition table (GPT)\n");
@@ -261,6 +262,8 @@ main(int argc, char **argv){
 			break;
 		case 's':
 			sync = 1;
+		case 'u':
+			what = UPDATE;
 			break;
 		default:
 			usage();
@@ -272,7 +275,7 @@ main(int argc, char **argv){
 		dm_udev_set_sync_support(0);
 #endif
 
-	if (dm_prereq(DM_TARGET, 0, 0, 0) && (what == ADD || what == DELETE)) {
+	if (dm_prereq(DM_TARGET, 0, 0, 0) && (what == ADD || what == DELETE || what == UPDATE)) {
 		fprintf(stderr, "device mapper prerequisites not met\n");
 		exit(1);
 	}
@@ -443,6 +446,8 @@ main(int argc, char **argv){
 			break;
 
 		case ADD:
+		case UPDATE:
+			/* ADD and UPDATE share the same code that adds new partitions. */
 			for (j = 0, c = 0; j < n; j++) {
 				if (slices[j].size == 0)
 					continue;
@@ -559,7 +564,31 @@ main(int argc, char **argv){
 				if (d == c)
 					break;
 			}
-			break;
+
+			if (what == ADD) {
+				/* Skip code that removes devmappings for deleted partitions */
+				break;
+			}
+
+			for (j = MAXSLICES-1; j >= 0; j--) {
+				if (safe_sprintf(partname, "%s%s%d",
+					     mapname, delim, j+1)) {
+					fprintf(stderr, "partname too small\n");
+					exit(1);
+				}
+				strip_slash(partname);
+
+				if (slices[j].size || !dm_map_present(partname))
+					continue;
+
+				if (!dm_simplecmd(DM_DEVICE_REMOVE,
+						  partname, 1, &cookie)) {
+					r++;
+					continue;
+				}
+				if (verbose)
+					printf("del devmap : %s\n", partname);
+			}
 
 		default:
 			break;
