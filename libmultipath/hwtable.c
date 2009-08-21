@@ -634,6 +634,28 @@ static struct hwentry default_hw[] = {
 		.checker_name  = TUR,
 		.prio_name     = PRIO_ALUA,
 	},
+	/*
+	 * IBM Power Virtual SCSI Devices
+	 *
+	 * Maintainer : Brian King, IBM
+	 * Mail : brking@linux.vnet.ibm.com
+	 */
+	{
+		/* AIX VDASD */
+		.vendor        = "AIX",
+		.product       = "VDASD",
+		.getuid        = DEFAULT_GETUID,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = (300 / DEFAULT_CHECKINT),
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = DIRECTIO,
+		.prio_name     = DEFAULT_PRIO,
+	},
 	{
 		/* DELL MD3000 */
 		.vendor        = "DELL",
@@ -856,10 +878,10 @@ static struct hwentry default_hw[] = {
 		.checker_name  = RDAC,
 		.prio_name     = PRIO_RDAC,
 	},
-	/* SUN/LSI 2540 */
+	/* SUN/LSI 2510, 2540 */
 	{
 		.vendor        = "SUN",
-		.product       = "LCSM100_F",
+		.product       = "LCSM100_[IF]",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",

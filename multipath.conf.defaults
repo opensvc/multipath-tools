@@ -558,7 +558,7 @@
 #	}
 #	device {
 #		vendor			"SUN"
-#		product			"LCSM100_F"
+#		product			"LCSM100_[IF]"
 #		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"1 rdac"

@@ -107,5 +107,12 @@ libcheck_check (struct checker * c)
 		return PATH_DOWN;
 	}
 
-	return ((inq.avtcvp & 0x1) ? PATH_UP : PATH_GHOST);
+	if (inq.avtcvp & 0x1) {
+		MSG(c, MSG_RDAC_UP);
+		return PATH_UP;
+	}
+	else {
+		MSG(c, MSG_RDAC_GHOST);
+		return PATH_GHOST;
+	}
 }

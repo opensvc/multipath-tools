@@ -202,6 +202,7 @@ struct pathgroup {
 	long id;
 	int status;
 	int priority;
+	int enabled_paths;
 	vector paths;
 	char * selector;
 };

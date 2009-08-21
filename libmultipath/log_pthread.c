@@ -56,6 +56,7 @@ static void * log_thread (void * et)
 
 		flush_logqueue();
 	}
+	return NULL;
 }
 
 void log_thread_start (pthread_attr_t *attr)

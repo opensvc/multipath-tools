@@ -6,6 +6,7 @@
  * Mostly taken from drivers/s390/block/dasd.c
  *
  * Copyright (c) 2005, Hannes Reinecke, SUSE Linux Products GmbH
+ * Copyright IBM Corporation, 2009
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -40,7 +41,7 @@
 #include "byteorder.h"
 #include "dasd.h"
 
-unsigned long sectors512(unsigned long sectors, int blocksize)
+unsigned long long sectors512(unsigned long long sectors, int blocksize)
 {
 	return sectors * (blocksize >> 9);
 }
@@ -52,16 +53,14 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 {
 	int retval = -1;
 	int blocksize;
-	long disksize;
-	unsigned long offset, size;
+	uint64_t disksize;
+	uint64_t offset, size, fmt_size;
 	dasd_information_t info;
 	struct hd_geometry geo;
 	char type[5] = {0,};
-	char name[7] = {0,};
-	unsigned char *label_raw;
 	volume_label_t vlabel;
 	unsigned char *data = NULL;
-	unsigned int blk;
+	uint64_t blk;
 	int fd_dasd = -1;
 	struct stat sbuf;
 	dev_t dev;
@@ -129,9 +128,10 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 	if (ioctl(fd_dasd, HDIO_GETGEO, (unsigned long)&geo) != 0) {
 		goto out;
 	}
-	
-	if (ioctl(fd_dasd, BLKGETSIZE, &disksize) != 0)
+
+	if (ioctl(fd_dasd, BLKGETSIZE64, &disksize) != 0)
 		goto out;
+	disksize >>= 9;
 
 	if (ioctl(fd_dasd, BLKSSZGET, &blocksize) != 0)
 		goto out;
@@ -153,17 +153,14 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 		perror("read");
 		goto out;
 	}
-	vtoc_ebcdic_dec(data, type, 4);
 
 	if ((!info.FBA_layout) && (!strcmp(info.type, "ECKD")))
-		label_raw = &data[8];
-	else
-		label_raw = &data[4];
-
-	name[6] = '\0';
-	vtoc_ebcdic_dec(label_raw, name, 6);
-
-	memcpy (&vlabel, data, sizeof(volume_label_t));
+		memcpy (&vlabel, data, sizeof(vlabel));
+	else {
+		bzero(&vlabel,4);
+		memcpy (&vlabel.vollbl, data, sizeof(vlabel) - 4);
+	}
+	vtoc_ebcdic_dec(vlabel.vollbl, type, 4);
 
 	/*
 	 * Three different types: CMS1, VOL1 and LNX1/unlabeled
@@ -172,16 +169,16 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 		/*
 		 * VM style CMS1 labeled disk
 		 */
-		int *label = (int *) &vlabel;
+		unsigned int *label = (unsigned int *) &vlabel;
 
-		if (label[13] != 0) {
+		blocksize = label[4];
+		if (label[14] != 0) {
 			/* disk is reserved minidisk */
-			blocksize = label[3];
-			offset = label[13];
-			size   = sectors512(label[7] - 1, blocksize);
+			offset = label[14];
+			size   = sectors512(label[8] - 1, blocksize);
 		} else {
 			offset = info.label_block + 1;
-			size   = disksize;
+			size   = sectors512(label[8], blocksize);
 		}
 		sp[0].start = sectors512(offset, blocksize);
 		sp[0].size  = size - sp[0].start;
@@ -207,18 +204,20 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 			/* skip FMT4 / FMT5 / FMT7 labels */
 			if (EBCtoASC[f1.DS1FMTID] == '4'
 			    || EBCtoASC[f1.DS1FMTID] == '5'
-			    || EBCtoASC[f1.DS1FMTID] == '7') {
+			    || EBCtoASC[f1.DS1FMTID] == '7'
+			    || EBCtoASC[f1.DS1FMTID] == '9') {
 			        blk++;
 				continue;
 			}
 
-			/* only FMT1 valid at this point */
-			if (EBCtoASC[f1.DS1FMTID] != '1')
+			/* only FMT1 and FMT8 valid at this point */
+			if (EBCtoASC[f1.DS1FMTID] != '1' &&
+			    EBCtoASC[f1.DS1FMTID] != '8')
 				break;
 
 			/* OK, we got valid partition data */
 		        offset = cchh2blk(&f1.DS1EXT1.llimit, &geo);
-			size  = cchh2blk(&f1.DS1EXT1.ulimit, &geo) - 
+			size  = cchh2blk(&f1.DS1EXT1.ulimit, &geo) -
 				offset + geo.sectors;
 			sp[counter].start = sectors512(offset, blocksize);
 			sp[counter].size  = sectors512(size, blocksize);
@@ -230,8 +229,27 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 		/*
 		 * Old style LNX1 or unlabeled disk
 		 */
+		if (strncmp(type, "LNX1", 4) == 0) {
+			if (vlabel.ldl_version == 0xf2) {
+				fmt_size = sectors512(vlabel.formatted_blocks,
+						      blocksize);
+			} else if (!strcmp(info.type, "ECKD")) {
+				/* formated w/o large volume support */
+				fmt_size = geo.cylinders * geo.heads
+					* geo.sectors * (blocksize >> 9);
+			} else {
+				/* old label and no usable disk geometry
+				 * (e.g. DIAG) */
+				fmt_size = disksize;
+			}
+			size = disksize;
+			if (fmt_size < size)
+				size = fmt_size;
+		} else
+			size = disksize;
+
 		sp[0].start = sectors512(info.label_block + 1, blocksize);
-		sp[0].size  = disksize - sp[0].start;
+		sp[0].size  = size - sp[0].start;
 		retval = 1;
 	}
 

@@ -6,6 +6,7 @@
  * Mostly taken from drivers/s390/block/dasd.c
  *
  * Copyright (c) 2005, Hannes Reinecke, SUSE Linux Products GmbH
+ * Copyright IBM Corporation, 2009
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -66,7 +67,9 @@ typedef struct volume_label
 	char labperci[4];       /* no of labels per CI (FBA), blanks for CKD */
 	char res2[4];	        /* reserved                                  */
 	char lvtoc[14];	        /* owner code for LVTOC                      */
-	char res3[29];	        /* reserved                                  */
+	char res3[28];	        /* reserved                                  */
+	char ldl_version;       /* version number, valid for ldl format      */
+	uint64_t formatted_blocks; /* valid when ldl_version >= f2           */
 } __attribute__ ((packed)) volume_label_t;
 
 
@@ -160,6 +163,7 @@ typedef struct dasd_information_t {
 #define BIODASDINFO _IOR(DASD_IOCTL_LETTER,1,dasd_information_t)
 #define BLKGETSIZE _IO(0x12,96)
 #define BLKSSZGET _IO(0x12,104)
+#define BLKGETSIZE64 _IOR(0x12,114,size_t) /* device size in bytes (u64 *arg)*/
 
 /*
  * Only compile this on S/390. Doesn't make any sense
@@ -239,7 +243,7 @@ static unsigned char EBCtoASC[256] =
 };
 
 static inline void 
-vtoc_ebcdic_dec (const unsigned char *source, char *target, int l) 
+vtoc_ebcdic_dec (const char *source, char *target, int l)
 {
 	int i;
 
@@ -248,24 +252,41 @@ vtoc_ebcdic_dec (const unsigned char *source, char *target, int l)
 }
 
 /*
- * compute the block number from a 
+ * compute the block number from a
  * cyl-cyl-head-head structure
  */
-static inline int
-cchh2blk (cchh_t *ptr, struct hd_geometry *geo) {
-        return ptr->cc * geo->heads * geo->sectors +
-	       ptr->hh * geo->sectors;
+static inline uint64_t
+cchh2blk (cchh_t *ptr, struct hd_geometry *geo)
+{
+	uint64_t cyl;
+	uint16_t head;
+
+	/*decode cylinder and heads for large volumes */
+	cyl = ptr->hh & 0xFFF0;
+	cyl <<= 12;
+	cyl |= ptr->cc;
+	head = ptr->hh & 0x000F;
+	return cyl * geo->heads * geo->sectors +
+	       head * geo->sectors;
 }
 
-
 /*
- * compute the block number from a 
+ * compute the block number from a
  * cyl-cyl-head-head-block structure
  */
-static inline int
-cchhb2blk (cchhb_t *ptr, struct hd_geometry *geo) {
-        return ptr->cc * geo->heads * geo->sectors +
-		ptr->hh * geo->sectors +
+static inline uint64_t
+cchhb2blk (cchhb_t *ptr, struct hd_geometry *geo)
+{
+	uint64_t cyl;
+	uint16_t head;
+
+	/*decode cylinder and heads for large volumes */
+	cyl = ptr->hh & 0xFFF0;
+	cyl <<= 12;
+	cyl |= ptr->cc;
+	head = ptr->hh & 0x000F;
+	return  cyl * geo->heads * geo->sectors +
+		head * geo->sectors +
 		ptr->b;
 }
 

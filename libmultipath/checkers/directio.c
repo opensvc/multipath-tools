@@ -148,6 +148,7 @@ check_state(int fd, struct directio_context *ct, int sync)
 	}
 	ct->running++;
 
+	errno = 0;
 	r = io_getevents(ct->ioctx, 1L, 1L, &event, &timeout);
 
 	if (r < 0 ) {
