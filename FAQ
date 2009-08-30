@@ -63,3 +63,34 @@ current/default config like so:
 lvm dumpconfig > /etc/lvm/lvm.conf
 
 (tip from Christophe Saout)
+
+4. I see a lot of "io_setup failed" message using the directio checker
+======================================================================
+
+The directio path checker makes use of the asynchronous I/O API (aio) provided
+by modern Linux systems. Asynchronous I/O allows an application to submit I/O
+requests asynchronously and be notified later of their completion status. To
+allow this, we must allocate an asynchronous I/O context (an object of type
+aio_context_t) and this task is handled by the io_setup system call.
+
+A system wide limit on the number of AIO contexts that may be active
+simultaneously is imposed via the aio-max-nr sysctl parameter.
+
+Once this limit has been reached further calls to io_setup will fail with the
+error number EAGAIN leading to the "io_setup failed" messages seen for e.g. when
+running "multipath -ll".
+
+To avoid this problem the number of available aio contexts should be increased
+by setting the aio-max-nr parameter. This can be set on a one-time basis via the
+/proc file system, for e.g.:
+
+        # echo 131072 > /proc/sys/fs/aio-max-nr
+
+Doubles the number of available contexts from the default value of 65536.
+
+To make this setting persistent a line may be added to /etc/sysctl.conf:
+
+        fs.aio-max-nr = 131072
+
+Consult appropriate application and operating system tuning recommendations for
+guidance on appropriate values for this parameter.
