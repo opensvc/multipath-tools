@@ -910,10 +910,10 @@ static struct hwentry default_hw[] = {
 		.checker_name  = RDAC,
 		.prio_name     = PRIO_RDAC,
 	},
-	/* SUN/LSI 2510, 2540 */
+	/* SUN/LSI 2510, 2540, 2530, 2540 */
 	{
 		.vendor        = "SUN",
-		.product       = "LCSM100_[IF]",
+		.product       = "LCSM100_[IEFS]",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
