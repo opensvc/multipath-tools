@@ -1,4 +1,4 @@
-.TH MULTIPATHD 8 "November 2006" "Linux Administrator's Manual"
+.TH MULTIPATHD 8 "November 2009" "Linux Administrator's Manual"
 .SH NAME
 multipathd \- multipath daemon
 
@@ -74,6 +74,9 @@ Add a multipath device to the list of monitored devices. $map can either be a de
 .TP
 .B remove|del map $map
 Stop monitoring a multipath device.
+.TP
+.B resize map|multipath $map
+Resizes map $map to the given size
 .TP 
 .B switch|switchgroup map $map group $group
 Force a multipath device to switch to a specific path group. $group is the path group index, starting with 1.
@@ -92,6 +95,12 @@ Sets path $path into failed state.
 .TP
 .B reinstate path $path
 Resumes path $path from failed state.
+.TP
+.B disablequeueing map|multipath $map
+Disabled queuing on multipathed map $map
+.TP
+.B restorequeueing map|multipath $map
+Restore queuing on multipahted map $map
 
 .SH "SEE ALSO"
 .BR multipath (8)
