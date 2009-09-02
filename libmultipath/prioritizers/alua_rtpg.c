@@ -267,8 +267,8 @@ get_asymmetric_access_state(int fd, unsigned int tpg)
 	rc = do_rtpg(fd, buf, buflen);
 	if (rc < 0)
 		return rc;
-	scsi_buflen = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
-	if (buflen < (scsi_buflen + 4)) {
+	scsi_buflen = (buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3]) + 4;
+	if (buflen < scsi_buflen) {
 		free(buf);
 		buf = (unsigned char *)malloc(scsi_buflen);
 		if (!buf) {
