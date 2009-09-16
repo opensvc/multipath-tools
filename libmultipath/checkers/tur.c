@@ -61,6 +61,14 @@ libcheck_check (struct checker * c)
 		MSG(c, MSG_TUR_DOWN);
 		return PATH_DOWN;
 	}
+	if ((io_hdr.status & 0x7e) == 0x18) {
+		/*
+		 * SCSI-3 arrays might return
+		 * reservation conflict on TUR
+		 */
+		MSG(c, MSG_TUR_UP);
+		return PATH_UP;
+	}
 	if (io_hdr.info & SG_INFO_OK_MASK) {
 		int key = 0, asc, ascq;
 
