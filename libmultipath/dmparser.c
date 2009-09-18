@@ -323,8 +323,10 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 							def_minio /= pp->priority;
 
 						FREE(word);
-					} else
+					} else {
+						p += get_word(p, NULL);
 						def_minio = 0;
+					}
 
 					if (def_minio != mpp->minio)
 						mpp->minio = def_minio;
