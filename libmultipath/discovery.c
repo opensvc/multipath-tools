@@ -837,8 +837,7 @@ get_prio (struct path * pp)
 static int
 get_uid (struct path * pp)
 {
-	char buff[CALLOUT_MAX_SIZE];
-	int i;
+	char buff[CALLOUT_MAX_SIZE], *c;
 
 	if (!pp->getuid)
 		select_getuid(pp);
@@ -852,12 +851,14 @@ get_uid (struct path * pp)
 		return 1;
 	}
 	/* Strip any trailing blanks */
-	i = WWID_SIZE - 1;
-	while (i > 0 && pp->wwid[i] == ' ') {
-		pp->wwid[i] = '\0';
-		i--;
+	c = strchr(pp->wwid, '\0');
+	c--;
+	while (c && c >= pp->wwid && *c == ' ') {
+		*c = '\0';
+		c--;
 	}
-	condlog(3, "%s: uid = %s (callout)", pp->dev ,pp->wwid);
+	condlog(3, "%s: uid = %s (callout)", pp->dev,
+		*pp->wwid == '\0' ? "<empty>" : pp->wwid);
 	return 0;
 }
 
