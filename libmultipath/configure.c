@@ -151,7 +151,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 	if (!cmpp) {
 		cmpp = find_mp_by_wwid(curmp, mpp->wwid);
 
-		if (cmpp && !conf->dry_run) {
+		if (cmpp) {
 			condlog(2, "%s: rename %s to %s", mpp->wwid,
 				cmpp->alias, mpp->alias);
 			strncpy(mpp->alias_old, cmpp->alias, WWID_SIZE);
