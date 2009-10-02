@@ -30,7 +30,6 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <libdevmapper.h>
-#include <linux/kdev_t.h>
 
 #include "devmapper.h"
 #include "crc32.h"
