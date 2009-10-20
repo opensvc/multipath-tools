@@ -67,7 +67,9 @@ The
 section recognizes the following keywords:
 .TP 17
 .B polling_interval
-interval between two path checks in seconds; default is
+interval between two path checks in seconds For properly functioning paths,
+the interval between checks will gradually increase to (4 * polling_interval);
+default is
 .I 5
 .TP
 .B udev_dir
