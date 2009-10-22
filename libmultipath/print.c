@@ -1349,11 +1349,11 @@ print_pathgroup (struct pathgroup * pgp, char * style)
 }
 
 extern void
-print_map (struct multipath * mpp)
+print_map (struct multipath * mpp, char * params)
 {
-	if (mpp->size && mpp->params)
+	if (mpp->size && params)
 		printf("0 %llu %s %s\n",
-			 mpp->size, TGT_MPATH, mpp->params);
+			 mpp->size, TGT_MPATH, params);
 	return;
 }
 

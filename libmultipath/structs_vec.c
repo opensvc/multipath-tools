@@ -242,13 +242,15 @@ extract_hwe_from_path(struct multipath * mpp)
 static int
 update_multipath_table (struct multipath *mpp, vector pathvec)
 {
+	char params[PARAMS_SIZE] = {0};
+
 	if (!mpp)
 		return 1;
 
-	if (dm_get_map(mpp->alias, &mpp->size, mpp->params))
+	if (dm_get_map(mpp->alias, &mpp->size, params))
 		return 1;
 
-	if (disassemble_map(pathvec, mpp->params, mpp))
+	if (disassemble_map(pathvec, params, mpp))
 		return 1;
 
 	return 0;

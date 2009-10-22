@@ -423,11 +423,13 @@ cli_del_map (void * v, char ** reply, int * len, void * data)
 int resize_map(struct multipath *mpp, unsigned long long size,
 	       struct vectors * vecs)
 {
+	char params[PARAMS_SIZE] = {0};
+
 	mpp->size = size;
 	update_mpp_paths(mpp, vecs->pathvec);
-	setup_map(mpp);
+	setup_map(mpp, params, PARAMS_SIZE);
 	mpp->action = ACT_RESIZE;
-	if (domap(mpp) <= 0) {
+	if (domap(mpp, params) <= 0) {
 		condlog(0, "%s: failed to resize map : %s", mpp->alias,
 			strerror(errno));
 		return 1;

@@ -262,8 +262,8 @@ dm_simplecmd_noflush (int task, const char *name) {
 }
 
 extern int
-dm_addmap (int task, const char *target, struct multipath *mpp, int use_uuid,
-	   int ro) {
+dm_addmap (int task, const char *target, struct multipath *mpp, char * params,
+	   int use_uuid, int ro) {
 	int r = 0;
 	struct dm_task *dmt;
 	char *prefixed_uuid = NULL;
@@ -274,7 +274,7 @@ dm_addmap (int task, const char *target, struct multipath *mpp, int use_uuid,
 	if (!dm_task_set_name (dmt, mpp->alias))
 		goto addout;
 
-	if (!dm_task_add_target (dmt, 0, mpp->size, target, mpp->params))
+	if (!dm_task_add_target (dmt, 0, mpp->size, target, params))
 		goto addout;
 
 	if (ro)
@@ -301,6 +301,8 @@ dm_addmap (int task, const char *target, struct multipath *mpp, int use_uuid,
 	if (mpp->attribute_flags & (1 << ATTR_GID) &&
 	    !dm_task_set_gid(dmt, mpp->gid))
 		goto freeout;
+	condlog(4, "%s: addmap [0 %llu %s %s]\n", mpp->alias, mpp->size,
+		target, params);
 
 	dm_task_no_open_count(dmt);
 
@@ -320,9 +322,9 @@ dm_addmap (int task, const char *target, struct multipath *mpp, int use_uuid,
 }
 
 static int
-_dm_addmap_create (struct multipath *mpp, int ro) {
+_dm_addmap_create (struct multipath *mpp, char * params, int ro) {
 	int r;
-	r = dm_addmap(DM_DEVICE_CREATE, TGT_MPATH, mpp, 1, ro);
+	r = dm_addmap(DM_DEVICE_CREATE, TGT_MPATH, mpp, params, 1, ro);
 	/*
 	 * DM_DEVICE_CREATE is actually DM_DEV_CREATE + DM_TABLE_LOAD.
 	 * Failing the second part leaves an empty map. Clean it up.
@@ -339,23 +341,23 @@ _dm_addmap_create (struct multipath *mpp, int ro) {
 #define ADDMAP_RO 1
 
 extern int
-dm_addmap_create (struct multipath *mpp) {
-	return _dm_addmap_create(mpp, ADDMAP_RW);
+dm_addmap_create (struct multipath *mpp, char *params) {
+	return _dm_addmap_create(mpp, params, ADDMAP_RW);
 }
 
 extern int
-dm_addmap_create_ro (struct multipath *mpp) {
-	return _dm_addmap_create(mpp, ADDMAP_RO);
+dm_addmap_create_ro (struct multipath *mpp, char *params) {
+	return _dm_addmap_create(mpp, params, ADDMAP_RO);
 }
 
 extern int
-dm_addmap_reload (struct multipath *mpp) {
-	return dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, 0, ADDMAP_RW);
+dm_addmap_reload (struct multipath *mpp, char *params) {
+	return dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, params, 0, ADDMAP_RW);
 }
 
 extern int
-dm_addmap_reload_ro (struct multipath *mpp) {
-	return dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, 0, ADDMAP_RO);
+dm_addmap_reload_ro (struct multipath *mpp, char *params) {
+	return dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, params, 0, ADDMAP_RO);
 }
 
 extern int
@@ -414,6 +416,10 @@ dm_get_map(char * name, unsigned long long * size, char * outparams)
 	if (size)
 		*size = length;
 
+	if (!outparams) {
+		r = 0;
+		goto out;
+	}
 	if (snprintf(outparams, PARAMS_SIZE, "%s", params) <= PARAMS_SIZE)
 		r = 0;
 out:
@@ -822,7 +828,7 @@ dm_get_maps (vector mp)
 			goto out1;
 
 		if (info > 0) {
-			if (dm_get_map(names->name, &mpp->size, mpp->params))
+			if (dm_get_map(names->name, &mpp->size, NULL))
 				goto out1;
 
 			if (dm_get_status(names->name, mpp->status))

@@ -353,6 +353,7 @@ ev_add_path (char * devname, struct vectors * vecs)
 	struct multipath * mpp;
 	struct path * pp;
 	char empty_buff[WWID_SIZE] = {0};
+	char params[PARAMS_SIZE] = {0};
 
 	if (strstr(devname, "..") != NULL) {
 		/*
@@ -445,7 +446,7 @@ rescan:
 	/*
 	 * push the map to the device-mapper
 	 */
-	if (setup_map(mpp)) {
+	if (setup_map(mpp, params, PARAMS_SIZE)) {
 		condlog(0, "%s: failed to setup map for addition of new "
 			"path %s", mpp->alias, devname);
 		goto fail_map;
@@ -453,7 +454,7 @@ rescan:
 	/*
 	 * reload the map for the multipath mapped device
 	 */
-	if (domap(mpp) <= 0) {
+	if (domap(mpp, params) <= 0) {
 		condlog(0, "%s: failed in domap for addition of new "
 			"path %s", mpp->alias, devname);
 		/*
@@ -511,6 +512,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 	struct multipath * mpp;
 	struct path * pp;
 	int i, retval = 0;
+	char params[PARAMS_SIZE] = {0};
 
 	pp = find_path_by_dev(vecs->pathvec, devname);
 
@@ -565,7 +567,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 			 */
 		}
 
-		if (setup_map(mpp)) {
+		if (setup_map(mpp, params, PARAMS_SIZE)) {
 			condlog(0, "%s: failed to setup map for"
 				" removal of path %s", mpp->alias,
 				devname);
@@ -575,7 +577,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 		 * reload the map
 		 */
 		mpp->action = ACT_RELOAD;
-		if (domap(mpp) <= 0) {
+		if (domap(mpp, params) <= 0) {
 			condlog(0, "%s: failed in domap for "
 				"removal of path %s",
 				mpp->alias, devname);
@@ -950,15 +952,19 @@ int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
 {
 	int i;
 	struct path * pp;
+	char params[PARAMS_SIZE];
 
 	update_mpp_paths(mpp, vecs->pathvec);
 	if (refresh) {
 		vector_foreach_slot (mpp->paths, pp, i)
 			pathinfo(pp, conf->hwtable, DI_PRIO);
 	}
-	setup_map(mpp);
+	params[0] = '\0';
+	if (setup_map(mpp, params, PARAMS_SIZE))
+		return 1;
+
 	mpp->action = ACT_RELOAD;
-	if (domap(mpp) <= 0) {
+	if (domap(mpp, params) <= 0) {
 		condlog(0, "%s: failed to update map : %s", mpp->alias,
 			strerror(errno));
 		return 1;

@@ -47,7 +47,7 @@ merge_words (char ** dst, char * word, int space)
  * Transforms the path group vector into a proper device map string
  */
 int
-assemble_map (struct multipath * mp)
+assemble_map (struct multipath * mp, char * params, int len)
 {
 	int i, j;
 	int shift, freechar;
@@ -58,8 +58,8 @@ assemble_map (struct multipath * mp)
 	struct path * pp;
 
 	minio = mp->minio;
-	p = mp->params;
-	freechar = sizeof(mp->params);
+	p = params;
+	freechar = sizeof(params);
 
 	nr_priority_groups = VECTOR_SIZE(mp->pg);
 	initial_pg_nr = (nr_priority_groups ? mp->bestpg : 0);

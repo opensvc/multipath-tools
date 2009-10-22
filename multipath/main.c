@@ -160,6 +160,7 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 {
 	int i;
 	struct multipath * mpp;
+	char params[PARAMS_SIZE];
 
 	if (dm_get_maps(curmp))
 		return 1;
@@ -177,10 +178,11 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 			continue;
 		}
 
-		condlog(3, "params = %s", mpp->params);
+		dm_get_map(mpp->alias, &mpp->size, params);
+		condlog(3, "params = %s", params);
 		condlog(3, "status = %s", mpp->status);
 
-		disassemble_map(pathvec, mpp->params, mpp);
+		disassemble_map(pathvec, params, mpp);
 
 		/*
 		 * disassemble_map() can add new paths to pathvec.
