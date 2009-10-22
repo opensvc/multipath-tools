@@ -85,7 +85,7 @@ static struct hwentry default_hw[] = {
 		.product       = "HSG80",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
-		.hwhandler     = "1 hp-sw",
+		.hwhandler     = "1 hp_sw",
 		.selector      = DEFAULT_SELECTOR,
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = FAILBACK_UNDEF,
@@ -116,7 +116,7 @@ static struct hwentry default_hw[] = {
 		.product       = "(MSA|HSV)1.0.*",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
-		.hwhandler     = "1 hp-sw",
+		.hwhandler     = "1 hp_sw",
 		.selector      = DEFAULT_SELECTOR,
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = FAILBACK_UNDEF,
@@ -128,7 +128,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* MSA 1000/1500 with new firmware */
-		.vendor        = "HP",
+		.vendor        = "(COMPAQ|HP)",
 		.product       = "MSA VOLUME",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
@@ -686,6 +686,38 @@ static struct hwentry default_hw[] = {
 		.checker_name  = RDAC,
 		.prio_name     = PRIO_RDAC,
 	},
+	{
+		/* DELL MD32xx */
+		.vendor        = "DELL",
+		.product       = "MD32xx",
+		.getuid        = DEFAULT_GETUID,
+		.features      = "2 pg_init_retries 50",
+		.hwhandler     = "1 rdac",
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = 15,
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = RDAC,
+		.prio_name     = PRIO_RDAC,
+	},
+	{
+		/* DELL MD32xxi */
+		.vendor        = "DELL",
+		.product       = "MD32xxi",
+		.getuid        = DEFAULT_GETUID,
+		.features      = "2 pg_init_retries 50",
+		.hwhandler     = "1 rdac",
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = 15,
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = RDAC,
+		.prio_name     = PRIO_RDAC,
+	},
 	/*
 	 * NETAPP controller family
 	 *
@@ -878,10 +910,10 @@ static struct hwentry default_hw[] = {
 		.checker_name  = RDAC,
 		.prio_name     = PRIO_RDAC,
 	},
-	/* SUN/LSI 2510, 2540 */
+	/* SUN/LSI 2510, 2540, 2530, 2540 */
 	{
 		.vendor        = "SUN",
-		.product       = "LCSM100_[IF]",
+		.product       = "LCSM100_[IEFS]",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",

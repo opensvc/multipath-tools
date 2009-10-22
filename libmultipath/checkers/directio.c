@@ -12,7 +12,6 @@
 #include <sys/ioctl.h>
 #include <linux/fs.h>
 #include <errno.h>
-#include <linux/kdev_t.h>
 #include <asm/unistd.h>
 #include <libaio.h>
 

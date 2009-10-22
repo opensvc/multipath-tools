@@ -91,7 +91,8 @@ do_inq(int sg_fd, unsigned int pg_op, void *resp, int mx_resp_len)
 
 struct volume_access_inq
 {
-	char dontcare0[8];
+	char PQ_PDT;
+	char dontcare0[7];
 	char avtcvp;
 	char dontcare1[39];
 };
@@ -105,6 +106,11 @@ libcheck_check (struct checker * c)
 	if (0 != do_inq(c->fd, 0xC9, &inq, sizeof(struct volume_access_inq))) {
 		MSG(c, MSG_RDAC_DOWN);
 		return PATH_DOWN;
+	} else {
+		if ((inq.PQ_PDT & 0x20) || (inq.PQ_PDT & 0x7f)) {
+			/* LUN not connected*/
+			return PATH_DOWN;
+		}
 	}
 
 	if (inq.avtcvp & 0x1) {

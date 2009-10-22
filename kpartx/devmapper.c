@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include <libdevmapper.h>
 #include <ctype.h>
-#include <linux/kdev_t.h>
 #include <errno.h>
 #include "devmapper.h"
 

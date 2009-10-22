@@ -18,7 +18,9 @@
 #	#
 #	# name    : polling_interval
 #	# scope   : multipathd
-#	# desc    : interval between two path checks in seconds
+#	# desc    : interval between two path checks in seconds. For
+#	#           properly functioning paths, the interval between checks
+#	#           will gradually increase to (4 * polling_interval).
 #	# values  : n > 0
 #	# default : 5
 #	#
@@ -249,7 +251,11 @@
 #		#
 #		# name    : alias
 #		# scope   : multipath
-#		# desc    : symbolic name for the multipath
+#		# desc    : symbolic name for the multipath. If you are using
+#		#           user_friendly_names, do not set the alias to
+#		#           mpath<n>. This may conflict with an automatically
+#		#           assigned user friendly name, and give you
+#		#           incorrect device node names.
 #		#
 #		alias			yellow
 #
