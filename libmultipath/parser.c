@@ -387,11 +387,18 @@ void *
 set_value(vector strvec)
 {
 	char *str = VECTOR_SLOT(strvec, 1);
-	int size = strlen(str);
+	size_t size;
 	int i = 0;
 	int len = 0;
 	char *alloc = NULL;
 	char *tmp;
+
+	if (!str)
+		return NULL;
+
+	size = strlen(str);
+	if (size == 0)
+		return NULL;
 
 	if (*str == '"') {
 		for (i = 2; i < VECTOR_SIZE(strvec); i++) {
