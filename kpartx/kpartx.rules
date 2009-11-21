@@ -9,7 +9,7 @@ ACTION=="remove", GOTO="kpartx_end"
 
 ENV{DM_TABLE_STATE}!="LIVE", GOTO="kpartx_end"
 
-ENV{DM_UUID}=="?*", IMPORT{program}=="/lib/udev/kpartx_id %M %m $env{DM_UUID}"
+ENV{DM_UUID}=="?*", IMPORT{program}=="kpartx_id %M %m $env{DM_UUID}"
 
 OPTIONS="link_priority=50"
 
@@ -18,7 +18,7 @@ ENV{DM_UUID}=="mpath-*", \
 	SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}"
 
 # Create persistent links for dmraid tables
-ENV{DM_UUID}=="mpath-*", \
+ENV{DM_UUID}=="dmraid-*", \
         SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}"
 
 # Create persistent links for partitions
