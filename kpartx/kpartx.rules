@@ -27,9 +27,9 @@ ENV{DM_PART}=="?*", \
 
 # Create dm tables for partitions
 ENV{DM_STATE}=="ACTIVE", ENV{DM_UUID}=="mpath-*", \
-        RUN+="/sbin/kpartx -a -p -part /dev/$kernel"
+        RUN+="/sbin/kpartx -a -p -part /dev/$name"
 ENV{DM_STATE}=="ACTIVE", ENV{DM_UUID}=="dmraid-*", \
-        RUN+="/sbin/kpartx -a -p -part /dev/$kernel"
+        RUN+="/sbin/kpartx -a -p -part /dev/$name"
 
 LABEL="kpartx_end"
 
