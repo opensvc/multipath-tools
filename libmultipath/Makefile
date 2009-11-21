@@ -7,6 +7,7 @@ include ../Makefile.inc
 SONAME=0d
 DEVLIB = libmultipath.so
 LIBS = $(DEVLIB).$(SONAME)
+LIBDEPS = -lpthread -ldl -ldevmapper
 
 OBJS = memory.o parser.o vector.o devmapper.o callout.o \
        hwtable.o blacklist.o util.o dmparser.o config.o \
@@ -25,7 +26,7 @@ endif
 all: $(LIBS)
 
 $(LIBS): $(OBJS)
-	$(CC) $(SHARED_FLAGS) -Wl,-soname=$@ $(CFLAGS) -o $@ $(OBJS)
+	$(CC) $(SHARED_FLAGS) $(LIBDEPS) -Wl,-soname=$@ $(CFLAGS) -o $@ $(OBJS)
 	ln -sf $@ $(DEVLIB)
 
 install:
