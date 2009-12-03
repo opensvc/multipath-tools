@@ -4,7 +4,7 @@
 #
 include ../Makefile.inc
 
-SONAME=0d
+SONAME=0
 DEVLIB = libmultipath.so
 LIBS = $(DEVLIB).$(SONAME)
 LIBDEPS = -lpthread -ldl -ldevmapper
