@@ -26,6 +26,7 @@
 #include "sysfs.h"
 #include "discovery.h"
 #include "prio.h"
+#include "defaults.h"
 
 struct path *
 store_pathinfo (vector pathvec, vector hwtable, char * devname, int flag)
@@ -273,9 +274,31 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 	int i;
 	char value[11];
 	int rport_id;
+	int dev_loss_tmo = mpp->dev_loss;
 
+	if (mpp->no_path_retry > 0) {
+		int no_path_retry_tmo = mpp->no_path_retry * conf->checkint;
+
+		if (no_path_retry_tmo > MAX_DEV_LOSS_TMO)
+			no_path_retry_tmo = MAX_DEV_LOSS_TMO;
+		if (no_path_retry_tmo > dev_loss_tmo)
+			dev_loss_tmo = no_path_retry_tmo;
+		condlog(3, "%s: update dev_loss_tmo to %d\n",
+			mpp->alias, dev_loss_tmo);
+	} else if (mpp->no_path_retry == NO_PATH_RETRY_QUEUE) {
+		dev_loss_tmo = MAX_DEV_LOSS_TMO;
+		condlog(4, "%s: update dev_loss_tmo to %d\n",
+			mpp->alias, dev_loss_tmo);
+	}
+	mpp->dev_loss = dev_loss_tmo;
+	if (mpp->fast_io_fail > mpp->dev_loss) {
+		mpp->fast_io_fail = mpp->dev_loss;
+		condlog(3, "%s: update fast_io_fail to %d\n",
+			mpp->alias, mpp->fast_io_fail);
+	}
 	if (!mpp->dev_loss && !mpp->fast_io_fail)
 		return 0;
+
 	vector_foreach_slot(mpp->paths, pp, i) {
 		rport_id = find_rport_id(pp);
 		if (rport_id < 0) {

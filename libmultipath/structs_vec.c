@@ -460,6 +460,11 @@ verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
 	if (!mpp)
 		return 0;
 
+	select_features(mpp);
+	select_no_path_retry(mpp);
+	select_dev_loss(mpp);
+	sysfs_set_scsi_tmo(mpp);
+
 	vector_foreach_slot (mpp->paths, pp, i) {
 		/*
 		 * see if path is in sysfs
