@@ -740,6 +740,27 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_NETAPP,
 	},
 	/*
+	 * NEXENTA/COMSTAR controller family
+	 *
+	 * Maintainer : Yacine Kheddache
+	 * Mail : yacine@alyseo.com
+	 */
+	{
+		.vendor        = "NEXENTA",
+		.product       = "COMSTAR",
+		.getuid        = DEFAULT_GETUID,
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_SERIAL,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = 30,
+		.minio         = 128,
+		.checker_name  = DIRECTIO,
+		.prio_name     = DEFAULT_PRIO,
+	},
+	/*
 	 * IBM NSeries (NETAPP) controller family
 	 *
 	 * Maintainer : Dave Wysochanski
