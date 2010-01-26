@@ -209,6 +209,20 @@
 #		prio			emc
 #	}
 #	device {
+#		vendor                  "EMC"
+#		product                 "Invista"
+#		product_blacklist       "LUNZ"
+#		getuid_callout		"/sbin/scsi_id --whitelisted --device=/dev/%n"
+#		features                "0"
+#		hardware_handler        "0"
+#		path_selector           "round-robin 0"
+#		path_grouping_policy    failover
+#		rr_weight               uniform
+#		no_path_retry           5
+#		rr_min_io               1000
+#		path_checker            tur
+#	}
+#	device {
 #		vendor			"FSC"
 #		product			"CentricStor"
 #		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
