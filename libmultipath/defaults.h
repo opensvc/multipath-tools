@@ -1,4 +1,4 @@
-#define DEFAULT_GETUID		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
+#define DEFAULT_GETUID		"/lib/udev/scsi_id --whitelisted --replace-whitespace --device=/dev/%n"
 #define DEFAULT_UDEVDIR		"/dev"
 #define DEFAULT_MULTIPATHDIR	"/" LIB_STRING "/multipath"
 #define DEFAULT_SELECTOR	"round-robin 0"
