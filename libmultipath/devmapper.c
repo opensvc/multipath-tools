@@ -427,8 +427,8 @@ out:
 	return r;
 }
 
-extern int
-dm_get_uuid(char *name, char *uuid)
+static int
+dm_get_prefixed_uuid(const char *name, char *uuid)
 {
 	struct dm_task *dmt;
 	const char *uuidtmp;
@@ -445,12 +445,8 @@ dm_get_uuid(char *name, char *uuid)
 		goto uuidout;
 
 	uuidtmp = dm_task_get_uuid(dmt);
-	if (uuidtmp) {
-		if (!strncmp(uuidtmp, UUID_PREFIX, UUID_PREFIX_LEN))
-			strcpy(uuid, uuidtmp + UUID_PREFIX_LEN);
-		else
-			strcpy(uuid, uuidtmp);
-	}
+	if (uuidtmp)
+		strcpy(uuid, uuidtmp);
 	else
 		uuid[0] = '\0';
 
@@ -458,6 +454,47 @@ dm_get_uuid(char *name, char *uuid)
 uuidout:
 	dm_task_destroy(dmt);
 	return r;
+}
+
+extern int
+dm_get_uuid(char *name, char *uuid)
+{
+	char uuidtmp[WWID_SIZE];
+
+	if (dm_get_prefixed_uuid(name, uuidtmp))
+		return 1;
+
+	if (!strncmp(uuidtmp, UUID_PREFIX, UUID_PREFIX_LEN))
+		strcpy(uuid, uuidtmp + UUID_PREFIX_LEN);
+	else
+		strcpy(uuid, uuidtmp);
+
+	return 0;
+}
+
+/*
+ * returns:
+ *    0 : if both uuids end with same suffix which starts with UUID_PREFIX
+ *    1 : otherwise
+ */
+int
+dm_compare_uuid(const char* mapname1, const char* mapname2)
+{
+	char *p1, *p2;
+	char uuid1[WWID_SIZE], uuid2[WWID_SIZE];
+
+	if (dm_get_prefixed_uuid(mapname1, uuid1))
+		return 1;
+
+	if (dm_get_prefixed_uuid(mapname2, uuid2))
+		return 1;
+
+	p1 = strstr(uuid1, UUID_PREFIX);
+	p2 = strstr(uuid2, UUID_PREFIX);
+	if (p1 && p2 && !strcmp(p1, p2))
+		return 0;
+
+	return 1;
 }
 
 extern int
@@ -1018,15 +1055,10 @@ dm_remove_partmaps (const char * mapname, int need_sync)
 		    (dm_type(names->name, TGT_PART) > 0) &&
 
 		    /*
-		     * and the multipath mapname and the part mapname start
-		     * the same
+		     * and both uuid end with same suffix starting
+		     * at UUID_PREFIX
 		     */
-		    !strncmp(names->name, mapname, strlen(mapname)) &&
-
-		    /*
-		     * and the opencount is 0 for us to allow removal
-		     */
-		    !dm_get_opencount(names->name) &&
+		    (!dm_compare_uuid(names->name, mapname)) &&
 
 		    /*
 		     * and we can fetch the map table from the kernel
@@ -1038,14 +1070,27 @@ dm_remove_partmaps (const char * mapname, int need_sync)
 		     */
 		    strstr(params, dev_t)
 		   ) {
-				/*
-				 * then it's a kpartx generated partition.
-				 * remove it.
-				 */
-				condlog(4, "partition map %s removed",
-					names->name);
-				dm_simplecmd_flush(DM_DEVICE_REMOVE, names->name, need_sync);
-		   }
+			/*
+			 * then it's a kpartx generated partition.
+			 * remove it.
+			 */
+			/*
+			 * if the opencount is 0 maybe some other
+			 * partitions depend on it.
+			 */
+			if (dm_get_opencount(names->name)) {
+				dm_remove_partmaps(names->name, need_sync);
+				if (dm_get_opencount(names->name)) {
+					condlog(2, "%s: map in use",
+						names->name);
+					goto out;
+				}
+			}
+			condlog(4, "partition map %s removed",
+				names->name);
+			dm_simplecmd_flush(DM_DEVICE_REMOVE, names->name,
+					   need_sync);
+		}
 
 		next = names->next;
 		names = (void *) names + next;
