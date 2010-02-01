@@ -1096,9 +1096,9 @@ check_path (struct vectors * vecs, struct path * pp)
 			 * max at conf->max_checkint
 			 */
 			if (pp->checkint < (conf->max_checkint / 2))
-				pp->checkint = 2 * pp->checkint;
+			    pp->checkint = 2 * pp->checkint;
 			else
-				pp->checkint = conf->max_checkint;
+			    pp->checkint = conf->max_checkint;
 
 			pp->tick = pp->checkint;
 			condlog(4, "%s: delay next check %is",
