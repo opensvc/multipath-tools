@@ -68,10 +68,15 @@ The
 section recognizes the following keywords:
 .TP 17
 .B polling_interval
-interval between two path checks in seconds For properly functioning paths,
-the interval between checks will gradually increase to (4 * polling_interval);
+interval between two path checks in seconds. For properly functioning paths,
+the interval between checks will gradually increase to
+.B max_polling_interval;
 default is
 .I 5
+.TP
+.B max_polling_interval
+maximal interval between two path checks in seconds; default is
+.I 4 * polling_interval
 .TP
 .B udev_dir
 directory where udev creates its device nodes; default is
