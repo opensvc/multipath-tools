@@ -303,6 +303,22 @@ static struct hwentry default_hw[] = {
 		.checker_name  = DIRECTIO,
 		.prio_name     = DEFAULT_PRIO,
 	},
+	{
+		.vendor        = "EMC",
+		.product       = "Invista",
+		.bl_product    = "LUNZ",
+		.getuid        = DEFAULT_GETUID,
+		.getprio       = NULL,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = FAILOVER,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = 5,
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = TUR,
+	},
 	/*
 	 * Hitachi controller family
 	 *
@@ -738,6 +754,27 @@ static struct hwentry default_hw[] = {
 		.minio         = 128,
 		.checker_name  = DIRECTIO,
 		.prio_name     = PRIO_NETAPP,
+	},
+	/*
+	 * NEXENTA/COMSTAR controller family
+	 *
+	 * Maintainer : Yacine Kheddache
+	 * Mail : yacine@alyseo.com
+	 */
+	{
+		.vendor        = "NEXENTA",
+		.product       = "COMSTAR",
+		.getuid        = DEFAULT_GETUID,
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_SERIAL,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = 30,
+		.minio         = 128,
+		.checker_name  = DIRECTIO,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	/*
 	 * IBM NSeries (NETAPP) controller family

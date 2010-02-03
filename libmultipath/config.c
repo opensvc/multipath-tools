@@ -520,31 +520,11 @@ load_config (char * file)
 		if (!conf->mptable)
 			goto out;
 	}
-	if (conf->selector == NULL)
-		conf->selector = set_default(DEFAULT_SELECTOR);
-
 	if (conf->udev_dir == NULL)
 		conf->udev_dir = set_default(DEFAULT_UDEVDIR);
 
-	if (conf->getuid == NULL)
-		conf->getuid = set_default(DEFAULT_GETUID);
-
-	if (conf->features == NULL)
-		conf->features = set_default(DEFAULT_FEATURES);
-
-	if (conf->hwhandler == NULL)
-		conf->hwhandler = set_default(DEFAULT_HWHANDLER);
-
-	if (!conf->selector  || !conf->udev_dir || !conf->multipath_dir ||
-	    !conf->getuid    || !conf->features ||
-	    !conf->hwhandler)
+	if (!conf->udev_dir || !conf->multipath_dir)
 		goto out;
-
-	if (!conf->prio_name)
-		conf->prio_name = set_default(DEFAULT_PRIO);
-
-	if (!conf->checker_name)
-		conf->checker_name = set_default(DEFAULT_CHECKER);
 
 	return 0;
 out:

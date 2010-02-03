@@ -410,6 +410,12 @@ snprint_path_size (char * buff, size_t len, struct path * pp)
 }
 
 static int
+snprint_path_serial (char * buff, size_t len, struct path * pp)
+{
+	return snprint_str(buff, len, pp->serial);
+}
+
+static int
 snprint_path_checker (char * buff, size_t len, struct path * pp)
 {
 	struct checker * c = &pp->checker;
@@ -451,6 +457,7 @@ struct path_data pd[] = {
 	{'C', "next_check",    0, snprint_next_check},
 	{'p', "pri",           0, snprint_pri},
 	{'S', "size",          0, snprint_path_size},
+	{'z', "serial",        0, snprint_path_serial},
 	{0, NULL, 0 , NULL}
 };
 

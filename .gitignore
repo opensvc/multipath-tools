@@ -2,6 +2,7 @@
 .dotest
 *~
 *.so
+*.so.0
 *.a
 *.gz
 kpartx
