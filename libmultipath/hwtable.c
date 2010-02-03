@@ -308,7 +308,6 @@ static struct hwentry default_hw[] = {
 		.product       = "Invista",
 		.bl_product    = "LUNZ",
 		.getuid        = DEFAULT_GETUID,
-		.getprio       = NULL,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
@@ -318,6 +317,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 5,
 		.minio         = DEFAULT_MINIO,
 		.checker_name  = TUR,
+		.prio_name     = DEFAULT_PRIO,
 	},
 	/*
 	 * Hitachi controller family
