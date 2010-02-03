@@ -948,9 +948,8 @@ check_path (struct vectors * vecs, struct path * pp)
 	 */
 	checker_set_async(&pp->checker);
 
-	if (path_offline(pp))
-		newstate = PATH_DOWN;
-	else
+	newstate = path_offline(pp);
+	if (newstate == PATH_UP)
 		newstate = checker_check(&pp->checker);
 
 	if (newstate < 0) {
