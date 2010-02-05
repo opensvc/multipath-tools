@@ -1440,7 +1440,7 @@ child (void * param)
 	pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs);
 	pthread_attr_destroy(&misc_attr);
 
-	lock(&exit_mutex);
+	pthread_mutex_lock(&exit_mutex);
 	pthread_cond_wait(&exit_cond, &exit_mutex);
 
 	/*
