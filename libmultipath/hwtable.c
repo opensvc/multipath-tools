@@ -63,7 +63,7 @@ static struct hwentry default_hw[] = {
 	 * StorageWorks controller family
 	 *
 	 * Maintainer : Christophe Varoqui
-	 * Mail : christophe.varoqui@free.fr
+	 * Mail : christophe.varoqui@opensvc.com
 	 */
 	{
 		.vendor        = "3PARdata",
@@ -228,7 +228,7 @@ static struct hwentry default_hw[] = {
 	 * DDN controller family
 	 *
 	 * Maintainer : Christophe Varoqui
-	 * Mail : christophe.varoqui@free.fr
+	 * Mail : christophe.varoqui@opensvc.com
 	 */
 	{
 		.vendor        = "DDN",
@@ -286,7 +286,7 @@ static struct hwentry default_hw[] = {
 	 * Fujitsu controller family
 	 *
 	 * Maintainer : Christophe Varoqui
-	 * Mail : christophe.varoqui@free.fr
+	 * Mail : christophe.varoqui@opensvc.com
 	 */
 	{
 		.vendor        = "FSC",
@@ -822,7 +822,7 @@ static struct hwentry default_hw[] = {
 	 * SGI arrays
 	 *
 	 * Maintainer : Christophe Varoqui
-	 * Mail : christophe.varoqui@free.fr
+	 * Mail : christophe.varoqui@opensvc.com
 	 */
 	{
 		.vendor        = "SGI",
@@ -873,7 +873,7 @@ static struct hwentry default_hw[] = {
 	 * STK arrays
 	 *
 	 * Maintainer : Christophe Varoqui
-	 * Mail : christophe.varoqui@free.fr
+	 * Mail : christophe.varoqui@opensvc.com
 	 */
 	{
 		.vendor        = "STK",
@@ -894,7 +894,7 @@ static struct hwentry default_hw[] = {
 	 * SUN arrays
 	 *
 	 * Maintainer : Christophe Varoqui
-	 * Mail : christophe.varoqui@free.fr
+	 * Mail : christophe.varoqui@opensvc.com
 	 */
 	{
 		.vendor        = "SUN",

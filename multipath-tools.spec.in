@@ -10,7 +10,7 @@ Group: Utilities/System
 URL: http://christophe.varoqui.free.fr
 Source: /dev/null
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-Packager: Christophe Varoqui <christophe.varoqui@free.fr>
+Packager: Christophe Varoqui <christophe.varoqui@opensvc.com>
 Prefix: /
 Vendor: Starving Linux Artists (tm Brian O'Sullivan)
 ExclusiveOS: linux
