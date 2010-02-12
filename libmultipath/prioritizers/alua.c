@@ -37,6 +37,7 @@ get_alua_info(int fd)
 	};
 	int	rc;
 	int	tpg;
+	int	aas;
 
 	rc = get_target_port_group_support(fd);
 	if (rc < 0)
@@ -53,22 +54,27 @@ get_alua_info(int fd)
 	rc = get_asymmetric_access_state(fd, tpg);
 	if (rc < 0)
 		return -ALUA_PRIO_GETAAS_FAILED;
+	aas = (rc & 0x0f);
 
 	condlog(3, "aas = [%s]",
-		(rc < 4) ? aas_string[rc] : "invalid/reserved");
+		(aas < 4) ? aas_string[aas] : "invalid/reserved");
 	return rc;
 }
 
 int getprio (struct path * pp)
 {
 	int rc;
+	int aas;
+	int priopath;
 
 	if (pp->fd < 0)
 		return -ALUA_PRIO_NO_INFORMATION;
 
 	rc = get_alua_info(pp->fd);
 	if (rc >= 0) {
-		switch(rc) {
+		aas = (rc & 0x0f);
+		priopath = (rc & 0x80);
+		switch(aas) {
 			case AAS_OPTIMIZED:
 				rc = 50;
 				break;
@@ -81,6 +87,8 @@ int getprio (struct path * pp)
 			default:
 				rc = 0;
 		}
+		if (priopath)
+			rc += 80;
 	} else {
 		switch(-rc) {
 			case ALUA_PRIO_NOT_SUPPORTED:

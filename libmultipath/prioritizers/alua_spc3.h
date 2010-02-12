@@ -299,7 +299,7 @@ struct rtpg_tpg_dscr {
 static inline int
 rtpg_tpg_dscr_get_aas(struct rtpg_tpg_dscr *d)
 {
-	return (d->b0 & 0x0f);
+	return (d->b0 & 0x8f);
 }
 
 struct rtpg_data {
