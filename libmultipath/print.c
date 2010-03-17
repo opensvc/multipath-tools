@@ -379,6 +379,7 @@ snprint_pg_selector (char * buff, size_t len, struct pathgroup * pgp)
 static int
 snprint_pg_pri (char * buff, size_t len, struct pathgroup * pgp)
 {
+	int avg_priority = 0;
 	/*
 	 * path group priority is not updated for every path prio change,
 	 * but only on switch group code path.
@@ -386,7 +387,9 @@ snprint_pg_pri (char * buff, size_t len, struct pathgroup * pgp)
 	 * Printing is another reason to update.
 	 */
 	path_group_prio_update(pgp);
-	return snprint_int(buff, len, pgp->priority);
+	if (pgp->enabled_paths)
+		avg_priority = pgp->priority / pgp->enabled_paths;
+	return snprint_int(buff, len, avg_priority);
 }
 
 static int
