@@ -1359,6 +1359,8 @@ child (void * param)
 	pthread_t check_thr, uevent_thr, uxlsnr_thr;
 	pthread_attr_t log_attr, misc_attr;
 	struct vectors * vecs;
+	struct multipath * mpp;
+	int i;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -1448,6 +1450,9 @@ child (void * param)
 	 */
 	block_signal(SIGHUP, NULL);
 	lock(vecs->lock);
+	if (conf->queue_without_daemon == QUE_NO_DAEMON_OFF)
+		vector_foreach_slot(vecs->mpvec, mpp, i)
+			dm_queue_if_no_path(mpp->alias, 0);
 	remove_maps_and_stop_waiters(vecs);
 	free_pathvec(vecs->pathvec, FREE_PATHS);
 

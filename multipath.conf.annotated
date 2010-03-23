@@ -153,6 +153,15 @@
 #	no_path_retry  queue
 #
 #	#
+#	# name    : queue_without_daemon
+#	# scope   : multipathd
+#	# desc    : If set to "no", multipathd will disable queueing for all
+#	#           devices when it is shut down.
+#	# values  : yes|no
+#	# default : yes
+#	queue_without_daemon	no
+#
+#	#
 #	# name    : user_friendly_names
 #	# scope   : multipath
 #	# desc    : If set to "yes", using the bindings file

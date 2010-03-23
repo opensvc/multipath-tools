@@ -251,6 +251,19 @@ will disable the timeout.
 .B dev_loss_tmo
 Specify the number of seconds the scsi layer will wait after a problem has
 been detected on a FC remote port before removing it from the system.
+.TP
+.B queue_without_daemon
+If set to
+.I no
+, when multipathd stops, queueing will be turned off for all devices.
+This is useful for devices that set no_path_retry.  If a machine is
+shut down while all paths to a device are down, it is possible to hang waiting
+for IO to return from the device after multipathd has been stopped. Without
+multipathd running, access to the paths cannot be restored, and the kernel
+cannot be told to stop queueing IO. Setting queue_without_daemon to
+.I no
+, avoids this problem. Default is
+.I yes
 .
 .SH "blacklist section"
 The

@@ -63,6 +63,12 @@ enum pgstates {
 	PGSTATE_ACTIVE
 };
 
+enum queue_without_daemon_states {
+	QUE_NO_DAEMON_UNDEF,
+	QUE_NO_DAEMON_OFF,
+	QUE_NO_DAEMON_ON,
+};
+
 enum pgtimeouts {
 	PGTIMEOUT_UNDEF,
 	PGTIMEOUT_NONE

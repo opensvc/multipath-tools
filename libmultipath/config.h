@@ -74,6 +74,7 @@ struct config {
 	int pg_timeout;
 	int max_fds;
 	int force_reload;
+	int queue_without_daemon;
 	int daemon;
 	int flush_on_last_del;
 	int attribute_flags;
