@@ -37,6 +37,35 @@ polling_interval_handler(vector strvec)
 }
 
 static int
+def_fast_io_fail_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+	if (strlen(buff) == 3 && !strcmp(buff, "off"))
+		conf->fast_io_fail = -1;
+	else if (sscanf(buff, "%d", &conf->fast_io_fail) != 1 ||
+		 conf->fast_io_fail < -1)
+		conf->fast_io_fail = 0;
+
+	FREE(buff);
+	return 0;
+}
+
+static int
+def_dev_loss_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+	if (sscanf(buff, "%u", &conf->dev_loss) != 1)
+		conf->dev_loss = 0;
+
+	FREE(buff);
+	return 0;
+}
+
+static int
 verbosity_handler(vector strvec)
 {
 	char * buff;
@@ -624,6 +653,37 @@ bl_product_handler(vector strvec)
 	if (!hwe->bl_product)
 		return 1;
 
+	return 0;
+}
+
+static int
+hw_fast_io_fail_handler(vector strvec)
+{
+	char * buff;
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+
+	buff = set_value(strvec);
+	if (strlen(buff) == 3 && !strcmp(buff, "off"))
+		hwe->fast_io_fail = -1;
+	else if (sscanf(buff, "%d", &hwe->fast_io_fail) != 1 ||
+		 hwe->fast_io_fail < -1)
+		hwe->fast_io_fail = 0;
+
+	FREE(buff);
+	return 0;
+}
+
+static int
+hw_dev_loss_handler(vector strvec)
+{
+	char * buff;
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+
+	buff = set_value(strvec);
+	if (sscanf(buff, "%u", &hwe->dev_loss) != 1)
+		hwe->dev_loss = 0;
+
+	FREE(buff);
 	return 0;
 }
 
@@ -1390,6 +1450,26 @@ snprint_mp_flush_on_last_del (char * buff, int len, void * data)
 }
 
 static int
+snprint_hw_fast_io_fail(char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+	if (!hwe->fast_io_fail)
+		return 0;
+	if (hwe->fast_io_fail == -1)
+		return snprintf(buff, len, "off");
+	return snprintf(buff, len, "%d", hwe->fast_io_fail);
+}
+
+static int
+snprint_hw_dev_loss(char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+	if (!hwe->dev_loss)
+		return 0;
+	return snprintf(buff, len, "%u", hwe->dev_loss);
+}
+
+static int
 snprint_hw_vendor (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
@@ -1637,6 +1717,24 @@ snprint_def_polling_interval (char * buff, int len, void * data)
 	if (conf->checkint == DEFAULT_CHECKINT)
 		return 0;
 	return snprintf(buff, len, "%i", conf->checkint);
+}
+
+static int
+snprint_def_fast_io_fail(char * buff, int len, void * data)
+{
+	if (!conf->fast_io_fail)
+		return 0;
+	if (conf->fast_io_fail == -1)
+		return snprintf(buff, len, "off");
+	return snprintf(buff, len, "%d", conf->fast_io_fail);
+}
+
+static int
+snprint_def_dev_loss(char * buff, int len, void * data)
+{
+	if (!conf->dev_loss)
+		return 0;
+	return snprintf(buff, len, "%u", conf->dev_loss);
 }
 
 static int
@@ -1937,6 +2035,8 @@ init_keywords(void)
 	install_keyword("mode", &def_mode_handler, &snprint_def_mode);
 	install_keyword("uid", &def_uid_handler, &snprint_def_uid);
 	install_keyword("gid", &def_gid_handler, &snprint_def_gid);
+	install_keyword("fast_io_fail_tmo", &def_fast_io_fail_handler, &snprint_def_fast_io_fail);
+	install_keyword("dev_loss_tmo", &def_dev_loss_handler, &snprint_def_dev_loss);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
@@ -1991,6 +2091,8 @@ init_keywords(void)
 	install_keyword("rr_min_io", &hw_minio_handler, &snprint_hw_rr_min_io);
 	install_keyword("pg_timeout", &hw_pg_timeout_handler, &snprint_hw_pg_timeout);
 	install_keyword("flush_on_last_del", &hw_flush_on_last_del_handler, &snprint_hw_flush_on_last_del);
+	install_keyword("fast_io_fail_tmo", &hw_fast_io_fail_handler, &snprint_hw_fast_io_fail);
+	install_keyword("dev_loss_tmo", &hw_dev_loss_handler, &snprint_hw_dev_loss);
 	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);

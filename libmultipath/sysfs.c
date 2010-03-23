@@ -356,6 +356,62 @@ void sysfs_device_put(struct sysfs_device *dev)
 	return;
 }
 
+int
+sysfs_attr_set_value(const char *devpath, const char *attr_name,
+		     const char *value)
+{
+	char path_full[PATH_SIZE];
+	int sysfs_len;
+	struct stat statbuf;
+	int fd, value_len, ret = -1;
+
+	dbg("open '%s'/'%s'", devpath, attr_name);
+	sysfs_len = snprintf(path_full, PATH_SIZE, "%s%s/%s", sysfs_path,
+			     devpath, attr_name);
+	if (sysfs_len >= PATH_SIZE || sysfs_len < 0) {
+		if (sysfs_len < 0)
+			dbg("cannot copy sysfs path %s%s/%s : %s", sysfs_path,
+			    devpath, attr_name, strerror(errno));
+		else
+			dbg("sysfs_path %s%s/%s too large", sysfs_path,
+			    devpath, attr_name);
+		goto out;
+	}
+
+	if (stat(path_full, &statbuf) != 0) {
+		dbg("stat '%s' failed: %s" path_full, strerror(errno));
+		goto out;
+	}
+
+	/* skip directories */
+        if (S_ISDIR(statbuf.st_mode))
+                goto out;
+
+	if ((statbuf.st_mode & S_IWUSR) == 0)
+		goto out;
+
+	fd = open(path_full, O_WRONLY);
+	if (fd < 0) {
+		dbg("attribute '%s' can not be opened: %s",
+		    path_full, strerror(errno));
+		goto out;
+	}
+	value_len = strlen(value) + 1;
+	ret = write(fd, value, value_len);
+	if (ret == value_len)
+		ret = 0;
+	else if (ret < 0)
+		dbg("write to %s failed: %s", path_full, strerror(errno));
+	else {
+		dbg("tried to write %d to %s. Wrote %d\n", value_len,
+		    path_full, ret);
+		ret = -1;
+	}
+out:
+	return ret;
+}
+
+
 char *sysfs_attr_get_value(const char *devpath, const char *attr_name)
 {
 	char path_full[PATH_SIZE];

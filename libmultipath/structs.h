@@ -166,6 +166,8 @@ struct multipath {
 	int pg_timeout;
 	int flush_on_last_del;
 	int attribute_flags;
+	int fast_io_fail;
+	unsigned int dev_loss;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;

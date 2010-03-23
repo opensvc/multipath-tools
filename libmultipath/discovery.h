@@ -33,6 +33,7 @@ int path_offline (struct path *);
 int pathinfo (struct path *, vector hwtable, int mask);
 struct path * store_pathinfo (vector pathvec, vector hwtable,
 			      char * devname, int flag);
+int sysfs_set_scsi_tmo (struct multipath *mpp);
 
 /*
  * discovery bitmask

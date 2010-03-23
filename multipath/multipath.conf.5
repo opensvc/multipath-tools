@@ -240,6 +240,17 @@ this to the system limit from /proc/sys/fs/nr_open. If this is not set, the
 maximum number of open fds is taken from the calling process. It is usually
 1024. To be safe, this should be set to the maximum number of paths plus 32,
 if that number is greated than 1024.
+.TP
+.B fast_io_fail_tmo
+Specify the number of seconds the scsi layer will wait after a problem has been
+detected on a FC remote port before failing IO to devices on that remote port.
+This should be smaller than dev_loss_tmo. Setting this to
+.I off
+will disable the timeout.
+.TP
+.B dev_loss_tmo
+Specify the number of seconds the scsi layer will wait after a problem has
+been detected on a FC remote port before removing it from the system.
 .
 .SH "blacklist section"
 The
@@ -384,6 +395,10 @@ section:
 .B no_path_retry
 .TP
 .B rr_min_io
+.TP
+.B fast_io_fail_tmo
+.TP
+.B dev_loss_tmo
 .RE
 .PD
 .LP

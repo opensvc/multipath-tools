@@ -31,6 +31,8 @@ struct hwentry {
 	int minio;
 	int pg_timeout;
 	int flush_on_last_del;
+	int fast_io_fail;
+	unsigned int dev_loss;
 	char * bl_product;
 };
 
@@ -75,6 +77,8 @@ struct config {
 	int daemon;
 	int flush_on_last_del;
 	int attribute_flags;
+	int fast_io_fail;
+	unsigned int dev_loss;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;

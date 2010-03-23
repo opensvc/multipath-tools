@@ -446,6 +446,48 @@ select_pg_timeout(struct multipath *mp)
 }
 
 extern int
+select_fast_io_fail(struct multipath *mp)
+{
+	if (mp->hwe && mp->hwe->fast_io_fail) {
+		mp->fast_io_fail = mp->hwe->fast_io_fail;
+		if (mp->fast_io_fail == -1)
+			condlog(3, "%s: fast_io_fail_tmo = off (controller default)", mp->alias);
+		else
+			condlog(3, "%s: fast_io_fail_tmo = %d (controller default)", mp->alias, mp->fast_io_fail);
+		return 0;
+	}
+	if (conf->fast_io_fail) {
+		mp->fast_io_fail = conf->fast_io_fail;
+		if (mp->fast_io_fail == -1)
+			condlog(3, "%s: fast_io_fail_tmo = off (config file default)", mp->alias);
+		else
+			condlog(3, "%s: fast_io_fail_tmo = %d (config file default)", mp->alias, mp->fast_io_fail);
+		return 0;
+	}
+	mp->fast_io_fail = 0;
+	return 0;
+}
+
+extern int
+select_dev_loss(struct multipath *mp)
+{
+	if (mp->hwe && mp->hwe->dev_loss) {
+		mp->dev_loss = mp->hwe->dev_loss;
+		condlog(3, "%s: dev_loss_tmo = %u (controller default)",
+			mp->alias, mp->dev_loss);
+		return 0;
+	}
+	if (conf->dev_loss) {
+		mp->dev_loss = conf->dev_loss;
+		condlog(3, "%s: dev_loss_tmo = %u (config file default)",
+			mp->alias, mp->dev_loss);
+		return 0;
+	}
+	mp->dev_loss = 0;
+	return 0;
+}
+
+extern int
 select_flush_on_last_del(struct multipath *mp)
 {
 	if (mp->flush_on_last_del == FLUSH_IN_PROGRESS)

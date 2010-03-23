@@ -15,3 +15,5 @@ int select_minio(struct multipath *mp);
 int select_mode(struct multipath *mp);
 int select_uid(struct multipath *mp);
 int select_gid(struct multipath *mp);
+int select_fast_io_fail(struct multipath *mp);
+int select_dev_loss(struct multipath *mp);

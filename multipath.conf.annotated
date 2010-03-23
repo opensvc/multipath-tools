@@ -191,6 +191,25 @@
 #	# default : determined by the process
 #	gid disk
 #
+#	#
+#	# name    : fast_io_fail_tmo
+#	# scope   : multipath & multipathd
+#	# desc    : The number of seconds the scsi layer will wait after a
+#	#           problem has been detected on a FC remote port before failing
+#	#           IO to devices on that remote port.
+#	# values  : off | n >= 0 (smaller than dev_loss_tmo)
+#	# default : determined by the OS
+#	fast_io_fail_tmo 5
+#
+#	#
+#	# name    : dev_loss_tmo
+#	# scope   : multipath & multipathd
+#	# desc    : The number of seconds the scsi layer will wait after a
+#	#           problem has been detected on a FC remote port before
+#	#           removing it from the system.
+#	# values  : n > 0
+#	# default : determined by the OS
+#	dev_loss_tmo 600
 #}
 #	
 ##
@@ -504,7 +523,6 @@
 #		# desc    : If set to "yes", multipathd will disable queueing
 #		#           when the last path to a device has been deleted.
 #		# values  : yes|no
-#		# default : no
 #		#
 #		flush_on_last_del       yes
 #
@@ -514,6 +532,24 @@
 #		# desc    : product strings to blacklist for this vendor
 #		#
 #		product_blacklist	LUN_Z
+#
+#		#
+#		# name    : fast_io_fail_tmo
+#		# scope   : multipath & multipathd
+#		# desc    : The number of seconds the scsi layer will wait after
+#		#           a problem has been detected on a FC remote port
+#		#           before failing IO to devices on that remote port.
+#		# values  : off | n >= 0 (smaller than dev_loss_tmo)
+#		fast_io_fail_tmo 5
+#
+#		#
+#		# name    : dev_loss_tmo
+#		# scope   : multipath & multipathd
+#		# desc    : The number of seconds the scsi layer will wait after
+#		#           a problem has been detected on a FC remote port
+#		#           before removing it from the system.
+#		# values  : n > 0
+#		dev_loss_tmo 600
 #	}
 #	device {
 #		vendor			"COMPAQ  "

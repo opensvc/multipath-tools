@@ -204,6 +204,43 @@ sysfs_get_fc_nodename (struct sysfs_device * dev, char * node,
 	return 1;
 }
 
+int
+sysfs_set_scsi_tmo (struct multipath *mpp)
+{
+	char attr_path[SYSFS_PATH_SIZE];
+	struct path *pp;
+	int i;
+	char value[11];
+
+	if (!mpp->dev_loss && !mpp->fast_io_fail)
+		return 0;
+	vector_foreach_slot(mpp->paths, pp, i) {
+		if (safe_snprintf(attr_path, SYSFS_PATH_SIZE,
+	        	          "/class/fc_remote_ports/rport-%d:%d-%d",
+				  pp->sg_id.host_no, pp->sg_id.channel,
+				  pp->sg_id.scsi_id)) {
+			condlog(0, "attr_path '/class/fc_remote_ports/rport-%d:%d-%d' too large", pp->sg_id.host_no, pp->sg_id.channel, pp->sg_id.scsi_id);
+			return 1;
+		}
+		if (mpp->dev_loss){
+			snprintf(value, 11, "%u", mpp->dev_loss);
+ 			if (sysfs_attr_set_value(attr_path, "dev_loss_tmo",
+						 value))
+				return 1;
+		}
+		if (mpp->fast_io_fail){
+			if (mpp->fast_io_fail == -1)
+				sprintf(value, "off");
+			else
+				snprintf(value, 11, "%u", mpp->fast_io_fail);
+			if (sysfs_attr_set_value(attr_path, "fast_io_fail",
+						 value))
+				return 1;
+		}
+	}
+	return 0;
+}
+
 static int
 opennode (char * dev, int mode)
 {
