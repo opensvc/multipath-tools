@@ -223,6 +223,21 @@
 #		path_checker            tur
 #	}
 #	device {
+#		vendor			"EMC"
+#		product			"Invista"
+#		product_blacklist	"LUNZ"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --page=pre-spc3-83 --device=/dev/%n"
+#		features		"0"
+#		hardware_handler	"0"
+#		path_selector		"round-robin 0"
+#		path_grouping_policy	multibus
+#		rr_weight		uniform
+#		no_path_retry		5
+#		rr_min_io		1000
+#		path_checker		tur
+#		prio			const
+#	}
+#	device {
 #		vendor			"FSC"
 #		product			"CentricStor"
 #		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
@@ -295,6 +310,21 @@
 #		product			"1742"
 #		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
+#		hardware_handler	"1 rdac"
+#		path_selector		"round-robin 0"
+#		path_grouping_policy	group_by_prio
+#		failback		immediate
+#		rr_weight		uniform
+#		no_path_retry		queue
+#		rr_min_io		1000
+#		path_checker		rdac
+#		prio			rdac
+#	}
+#	device {
+#		vendor			"IBM"
+#		product			"1745|1746"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
+#		features		"2 pg_init_retries 50"
 #		hardware_handler	"1 rdac"
 #		path_selector		"round-robin 0"
 #		path_grouping_policy	group_by_prio
@@ -588,6 +618,22 @@
 #	device {
 #		vendor			"SUN"
 #		product			"LCSM100_[IF]"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
+#		features		"0"
+#		hardware_handler	"1 rdac"
+#		path_selector		"round-robin 0"
+#		path_grouping_policy	group_by_prio
+#		failback		immediate
+#		rr_weight		uniform
+#		no_path_retry		queue
+#		rr_min_io		1000
+#		path_checker		rdac
+#		prio			rdac
+#	}
+#	device {
+#		vendor			"STK"
+#		product			"FLEXLINE 380"
+#		product_blacklist	"Universal Xport"
 #		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #		features		"0"
 #		hardware_handler	"1 rdac"
