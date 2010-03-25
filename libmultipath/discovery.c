@@ -741,38 +741,41 @@ cciss_ioctl_pathinfo (struct path * pp, int mask)
 	return 0;
 }
 
-static int
-get_state (struct path * pp)
+int
+get_state (struct path * pp, int daemon)
 {
 	struct checker * c = &pp->checker;
-	int sysfs_state;
+	int state;
 
 	condlog(3, "%s: get_state", pp->dev);
 
 	if (!checker_selected(c)) {
+		if (daemon)
+			pathinfo(pp, conf->hwtable, DI_SYSFS);
 		select_checker(pp);
 		if (!checker_selected(c)) {
 			condlog(3, "%s: No checker selected", pp->dev);
-			return 1;
+			return PATH_UNCHECKED;
 		}
 		checker_set_fd(c, pp->fd);
 		if (checker_init(c, pp->mpp?&pp->mpp->mpcontext:NULL)) {
 			condlog(3, "%s: checker init failed", pp->dev);
-			return 1;
+			return PATH_UNCHECKED;
 		}
 	}
-	sysfs_state = path_offline(pp);
-	if (sysfs_state != PATH_UP) {
+	state = path_offline(pp);
+	if (state != PATH_UP) {
 		condlog(3, "%s: path inaccessible", pp->dev);
-		pp->state = sysfs_state;
-		return 0;
+		return state;
 	}
-	pp->state = checker_check(c);
-	condlog(3, "%s: state = %i", pp->dev, pp->state);
-	if (pp->state == PATH_DOWN && strlen(checker_message(c)))
+	if (daemon)
+		checker_set_async(c);
+	state = checker_check(c);
+	condlog(3, "%s: state = %i", pp->dev, state);
+	if (state == PATH_DOWN && strlen(checker_message(c)))
 		condlog(3, "%s: checker msg is \"%s\"",
 			pp->dev, checker_message(c));
-	return 0;
+	return state;
 }
 
 static int
@@ -857,8 +860,11 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	    cciss_ioctl_pathinfo(pp, mask))
 		goto blank;
 
-	if (mask & DI_CHECKER && get_state(pp))
-		goto blank;
+	if (mask & DI_CHECKER) {
+		pp->state = get_state(pp, 0);
+		if (pp->state == PATH_UNCHECKED || pp->state == PATH_WILD)
+			goto blank;
+	}
 
 	 /*
 	  * Retrieve path priority, even for PATH_DOWN paths if it has never

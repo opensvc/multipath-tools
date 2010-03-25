@@ -934,25 +934,9 @@ check_path (struct vectors * vecs, struct path * pp)
 	 */
 	pp->tick = conf->checkint;
 
-	if (!checker_selected(&pp->checker)) {
-		pathinfo(pp, conf->hwtable, DI_SYSFS);
-		select_checker(pp);
-	}
-	if (!checker_selected(&pp->checker)) {
-		condlog(0, "%s: checker is not set", pp->dev);
-		return;
-	}
-	/*
-	 * Set checker in async mode.
-	 * Honored only by checker implementing the said mode.
-	 */
-	checker_set_async(&pp->checker);
+	newstate = get_state(pp, 1);
 
-	newstate = path_offline(pp);
-	if (newstate == PATH_UP)
-		newstate = checker_check(&pp->checker);
-
-	if (newstate < 0) {
+	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
 		condlog(2, "%s: unusable path", pp->dev);
 		pathinfo(pp, conf->hwtable, 0);
 		return;

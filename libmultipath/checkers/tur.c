@@ -69,7 +69,6 @@ libcheck_check (struct checker * c)
 		case DID_NO_CONNECT:
 		case DID_BAD_TARGET:
 		case DID_ABORT:
-		case DID_TRANSPORT_DISRUPTED:
 		case DID_TRANSPORT_FAILFAST:
 			break;
 		default:
