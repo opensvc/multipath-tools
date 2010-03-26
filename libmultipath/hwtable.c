@@ -703,6 +703,23 @@ static struct hwentry default_hw[] = {
 		.prio_name     = DEFAULT_PRIO,
 	},
 	{
+		/* AIX NVDISK */
+		.vendor        = "AIX",
+		.product       = "NVDISK",
+		.getuid        = DEFAULT_GETUID,
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = "1 alua",
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = (300 / DEFAULT_CHECKINT),
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = TUR,
+		.prio_name     = PRIO_ALUA,
+	},
+
+	{
 		/* DELL MD3000 */
 		.vendor        = "DELL",
 		.product       = "MD3000",
