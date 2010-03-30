@@ -738,12 +738,23 @@ ueventloop (void * ap)
 	block_signal(SIGUSR1, NULL);
 	block_signal(SIGHUP, NULL);
 
-	if (uevent_listen(&uev_trigger, ap))
-		fprintf(stderr, "error starting uevent listener");
+	if (uevent_listen())
+		condlog(0, "error starting uevent listener");
 
 	return NULL;
 }
 
+static void *
+uevqloop (void * ap)
+{
+	block_signal(SIGUSR1, NULL);
+	block_signal(SIGHUP, NULL);
+
+	if (uevent_dispatch(&uev_trigger, ap))
+		condlog(0, "error starting uevent dispatcher");
+
+	return NULL;
+}
 static void *
 uxlsnrloop (void * ap)
 {
@@ -1367,11 +1378,12 @@ set_oom_adj (int val)
 static int
 child (void * param)
 {
-	pthread_t check_thr, uevent_thr, uxlsnr_thr;
+	pthread_t check_thr, uevent_thr, uxlsnr_thr, uevq_thr;
 	pthread_attr_t log_attr, misc_attr;
 	struct vectors * vecs;
 	struct multipath * mpp;
 	int i;
+	int rc;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -1440,18 +1452,38 @@ child (void * param)
 	conf->daemon = 1;
 	udev_set_sync_support(0);
 	/*
-	 * fetch and configure both paths and multipaths
+	 * Start uevent listener early to catch events
 	 */
-	if (configure(vecs, 1)) {
-		condlog(0, "failure during configuration");
+	if ((rc = pthread_create(&uevent_thr, &misc_attr, ueventloop, vecs))) {
+		condlog(0, "failed to create uevent thread: %d", rc);
 		exit(1);
 	}
 	/*
+	 * fetch and configure both paths and multipaths
+	 */
+	lock(vecs->lock);
+	if (configure(vecs, 1)) {
+		unlock(vecs->lock);
+		condlog(0, "failure during configuration");
+		exit(1);
+	}
+	unlock(vecs->lock);
+
+	/*
 	 * start threads
 	 */
-	pthread_create(&check_thr, &misc_attr, checkerloop, vecs);
-	pthread_create(&uevent_thr, &misc_attr, ueventloop, vecs);
-	pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs);
+	if ((rc = pthread_create(&check_thr, &misc_attr, checkerloop, vecs))) {
+		condlog(0,"failed to create checker loop thread: %d", rc);
+		exit(1);
+	}
+	if ((rc = pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs))) {
+		condlog(0, "failed to create cli listener: %d", rc);
+		exit(1);
+	}
+	if ((rc = pthread_create(&uevq_thr, &misc_attr, uevqloop, vecs))) {
+		condlog(0, "failed to create uevent dispatcher: %d", rc);
+		exit(1);
+	}
 	pthread_attr_destroy(&misc_attr);
 
 	pthread_mutex_lock(&exit_mutex);
@@ -1471,6 +1503,7 @@ child (void * param)
 	pthread_cancel(check_thr);
 	pthread_cancel(uevent_thr);
 	pthread_cancel(uxlsnr_thr);
+	pthread_cancel(uevq_thr);
 
 	sysfs_cleanup();
 

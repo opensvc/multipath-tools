@@ -21,9 +21,11 @@ struct uevent {
 	char *envp[HOTPLUG_NUM_ENVP];
 };
 
-int uevent_listen(int (*store_uev)(struct uevent *, void * trigger_data),
-		  void * trigger_data);
 int is_uevent_busy(void);
 void setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached);
+
+int uevent_listen(void);
+int uevent_dispatch(int (*store_uev)(struct uevent *, void * trigger_data),
+		    void * trigger_data);
 
 #endif /* _UEVENT_H */

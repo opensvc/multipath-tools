@@ -130,9 +130,12 @@ static void uevq_stop(void *arg)
 /*
  * Service the uevent queue.
  */
-static void *
-uevq_thread(void * et)
+int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
+		    void * trigger_data)
 {
+	my_uev_trigger = uev_trigger;
+	my_trigger_data = trigger_data;
+
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
 	while (1) {
@@ -154,11 +157,11 @@ uevq_thread(void * et)
 			break;
 		service_uevq(&uevq_tmp);
 	}
-	return NULL;
+	condlog(3, "Terminating uev service queue");
+	return 0;
 }
 
-int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
-		  void * trigger_data)
+int uevent_listen(void)
 {
 	int sock;
 	struct sockaddr_nl snl;
@@ -169,11 +172,7 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 	int rcvsz = 0;
 	int rcvszsz = sizeof(rcvsz);
 	unsigned int *prcvszsz = (unsigned int *)&rcvszsz;
-	pthread_attr_t attr;
 	const int feature_on = 1;
-
-	my_uev_trigger = uev_trigger;
-	my_trigger_data = trigger_data;
 
 	/*
 	 * Queue uevents for service by dedicated thread so that the uevent
@@ -187,8 +186,6 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 	pthread_cond_init(uev_condp, NULL);
 
 	pthread_cleanup_push(uevq_stop, NULL);
-	setup_thread_attr(&attr, 64 * 1024, 0);
-	pthread_create(&uevq_thr, &attr, uevq_thread, NULL);
 
 	/*
 	 * First check whether we have a udev socket
