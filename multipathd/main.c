@@ -61,7 +61,7 @@
 #define CMDSIZE 160
 
 #define LOG_MSG(a,b) \
-	if (strlen(b)) condlog(a, "%s: %s", pp->dev, b);
+	if (strlen(b)) condlog(a, "%s: %s - %s", pp->mpp->alias, pp->dev, b);
 
 pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
