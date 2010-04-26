@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <dlfcn.h>
+#include <sys/stat.h>
 
 #include "debug.h"
 #include "checkers.h"
@@ -34,11 +35,34 @@ int init_checkers (void)
 
 struct checker * alloc_checker (void)
 {
-	return MALLOC(sizeof(struct checker));
+	struct checker *c;
+
+	c = MALLOC(sizeof(struct checker));
+	if (c) {
+		INIT_LIST_HEAD(&c->node);
+		c->refcount = 1;
+	}
+	return c;
 }
 
 void free_checker (struct checker * c)
 {
+	if (!c)
+		return;
+	c->refcount--;
+	if (c->refcount) {
+		condlog(3, "%s checker refcount %d",
+			c->name, c->refcount);
+		return;
+	}
+	condlog(3, "unloading %s checker", c->name);
+	list_del(&c->node);
+	if (c->handle) {
+		if (dlclose(c->handle) != 0) {
+			condlog(0, "Cannot unload checker %s: %s",
+				c->name, dlerror());
+		}
+	}
 	FREE(c);
 }
 
@@ -48,7 +72,6 @@ void cleanup_checkers (void)
 	struct checker * checker_temp;
 
 	list_for_each_entry_safe(checker_loop, checker_temp, &checkers, node) {
-		list_del(&checker_loop->node);
 		free_checker(checker_loop);
 	}
 }
@@ -67,45 +90,50 @@ struct checker * checker_lookup (char * name)
 struct checker * add_checker (char * name)
 {
 	char libname[LIB_CHECKER_NAMELEN];
-	void * handle;
+	struct stat stbuf;
 	struct checker * c;
 	char *errstr;
 
 	c = alloc_checker();
 	if (!c)
 		return NULL;
+	snprintf(c->name, CHECKER_NAME_LEN, "%s", name);
 	snprintf(libname, LIB_CHECKER_NAMELEN, "%s/libcheck%s.so",
 		 conf->multipath_dir, name);
-	condlog(3, "loading %s checker", libname);
-	handle = dlopen(libname, RTLD_NOW);
-	errstr = dlerror();
-	if (errstr != NULL)
-	condlog(0, "A dynamic linking error occurred: (%s)", errstr);
-	if (!handle)
+	if (stat(libname,&stbuf) < 0) {
+		condlog(0,"Checker '%s' not found in %s",
+			name, conf->multipath_dir);
 		goto out;
-
-	c->check = (int (*)(struct checker *)) dlsym(handle, "libcheck_check");
+	}
+	condlog(3, "loading %s checker", libname);
+	c->handle = dlopen(libname, RTLD_NOW);
+	if (!c->handle) {
+		if ((errstr = dlerror()) != NULL)
+			condlog(0, "A dynamic linking error occurred: (%s)",
+				errstr);
+		goto out;
+	}
+	c->check = (int (*)(struct checker *)) dlsym(c->handle, "libcheck_check");
 	errstr = dlerror();
 	if (errstr != NULL)
-	condlog(0, "A dynamic linking error occurred: (%s)", errstr);
+		condlog(0, "A dynamic linking error occurred: (%s)", errstr);
 	if (!c->check)
 		goto out;
 
-	c->init = (int (*)(struct checker *)) dlsym(handle, "libcheck_init");
+	c->init = (int (*)(struct checker *)) dlsym(c->handle, "libcheck_init");
 	errstr = dlerror();
 	if (errstr != NULL)
-	condlog(0, "A dynamic linking error occurred: (%s)", errstr);
+		condlog(0, "A dynamic linking error occurred: (%s)", errstr);
 	if (!c->init)
 		goto out;
 
-	c->free = (void (*)(struct checker *)) dlsym(handle, "libcheck_free");
+	c->free = (void (*)(struct checker *)) dlsym(c->handle, "libcheck_free");
 	errstr = dlerror();
 	if (errstr != NULL)
-	condlog(0, "A dynamic linking error occurred: (%s)", errstr);
+		condlog(0, "A dynamic linking error occurred: (%s)", errstr);
 	if (!c->free)
 		goto out;
 
-	snprintf(c->name, CHECKER_NAME_LEN, "%s", name);
 	c->fd = 0;
 	c->sync = 1;
 	list_add(&c->node, &checkers);
@@ -146,11 +174,15 @@ int checker_init (struct checker * c, void ** mpctxt_addr)
 	return c->init(c);
 }
 
-void checker_put (struct checker * c)
+void checker_put (struct checker * dst)
 {
-	if (c->free)
-		c->free(c);
-	memset(c, 0x0, sizeof(struct checker));
+	struct checker * src;
+
+	src = checker_lookup(dst->name);
+	if (dst->free)
+		dst->free(dst);
+	memset(dst, 0x0, sizeof(struct checker));
+	free_checker(src);
 }
 
 int checker_check (struct checker * c)
@@ -203,4 +235,6 @@ void checker_get (struct checker * dst, char * name)
 	dst->check = src->check;
 	dst->init = src->init;
 	dst->free = src->free;
+	dst->handle = NULL;
+	src->refcount++;
 }
