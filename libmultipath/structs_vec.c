@@ -276,6 +276,9 @@ update_multipath_status (struct multipath *mpp)
 extern int
 update_multipath_strings (struct multipath *mpp, vector pathvec)
 {
+	if (!mpp)
+		return 1;
+
 	condlog(4, "%s: %s", mpp->alias, __FUNCTION__);
 
 	free_multipath_attributes(mpp);
