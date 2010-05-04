@@ -25,6 +25,9 @@ PIDFILE=/var/run/multipathd.pid
 # Set the maximum number of open files
 MAX_OPEN_FDS=4096
 
+# Set to enable asynchronous daemon startup
+DAEMON_ASYNC_STARTUP=
+
 test -x $DAEMON || exit 5
 
 . /etc/rc.status
@@ -43,13 +46,29 @@ case "$1" in
 	    ulimit -n $MAX_OPEN_FDS
 	fi
 
-	if [ -f $PIDFILE ]; then
-		PID="$(cat $PIDFILE)"
-		PROCNAME="$(ps -o cmd --no-headers $PID)"
-	fi
+	$DAEMON $ARGS
 
-	if [ "$PROCNAME" != "$DAEMON" ]; then
-		$DAEMON
+	if [ -n "$DAEMON_ASYNC_STARTUP" ] ; then
+	    rc_status -v
+	    rc_exit
+	fi
+	# Wait for the daemon to start up
+	timeout=$MPATH_INIT_TIMEOUT
+	while [ ! -f $PIDFILE ] ; do
+	    sleep 1
+	    status=$(multipathd -k'show daemon' 2> /dev/null)
+	    if [ "$status" == "configure" ] ; then
+		# Daemon is still configuring, do not increase
+		# the timeout
+		continue
+	    fi
+	    timeout=$(( $timeout - 1 ))
+	    [ $timeout -eq 0 ] && break
+	done
+	if [ $timeout -eq 0 ] ; then
+	    echo -n " (no pidfile)"
+	    rc_failed 1
+t.suse
 	fi
 	
 	# Remember status and be verbose
@@ -66,7 +85,18 @@ case "$1" in
 		PROCNAME="$(ps -o cmd --no-headers $PID)"
 	fi
 
-	if [ "$PROCNAME" == "$DAEMON" ]; then
+	timeout=$MPATH_INIT_TIMEOUT
+	while [ $timeout -gt 0 ] ; do
+	    status=$($DAEMON -k'show daemon' 2> /dev/null)
+	    [ "$status" == "configure" ] && continue
+	    [ "$status" == "running" ] && break
+	    sleep 1
+	    timeout=$(( $timeout - 1 ))
+	done
+
+	status=$($DAEMON -k'shutdown' 2> /dev/null)
+	if [ "$status" != "ok" ] ; then
+	    if [ "$PROCNAME" == `basename $DAEMON` ]; then
 		kill -TERM $PID
 	fi
 

@@ -69,6 +69,7 @@ pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int logsink;
+enum daemon_status running_state;
 
 /*
  * global copy of vecs for use in sig handlers
@@ -780,6 +781,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(LIST+PATHS+FMT, cli_list_paths_fmt);
 	set_handler_callback(LIST+MAPS, cli_list_maps);
 	set_handler_callback(LIST+STATUS, cli_list_status);
+	set_handler_callback(LIST+DAEMON, cli_list_daemon);
 	set_handler_callback(LIST+MAPS+STATUS, cli_list_maps_status);
 	set_handler_callback(LIST+MAPS+STATS, cli_list_maps_stats);
 	set_handler_callback(LIST+MAPS+FMT, cli_list_maps_fmt);
@@ -828,6 +830,24 @@ exit_daemon (int status)
 	pthread_mutex_unlock(&exit_mutex);
 
 	return status;
+}
+
+const char *
+daemon_status(void)
+{
+	switch (running_state) {
+	case DAEMON_INIT:
+		return "init";
+	case DAEMON_START:
+		return "startup";
+	case DAEMON_CONFIGURE:
+		return "configure";
+	case DAEMON_RUNNING:
+		return "running";
+	case DAEMON_SHUTDOWN:
+		return "shutdown";
+	}
+	return NULL;
 }
 
 static void
@@ -1336,6 +1356,9 @@ sighup (int sig)
 {
 	condlog(2, "reconfigure (SIGHUP)");
 
+	if (running_state != DAEMON_RUNNING)
+		return;
+
 	reconfigure(gvecs);
 
 #ifdef _DEBUG_
@@ -1415,6 +1438,8 @@ child (void * param)
 		pthread_attr_destroy(&log_attr);
 	}
 
+	running_state = DAEMON_START;
+
 	condlog(2, "--------start up--------");
 	condlog(2, "read " DEFAULT_CONFIGFILE);
 
@@ -1493,10 +1518,16 @@ child (void * param)
 		condlog(0, "failed to create uevent thread: %d", rc);
 		exit(1);
 	}
+	if ((rc = pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs))) {
+		condlog(0, "failed to create cli listener: %d", rc);
+		exit(1);
+	}
 	/*
 	 * fetch and configure both paths and multipaths
 	 */
 	lock(vecs->lock);
+	running_state = DAEMON_CONFIGURE;
+
 	if (configure(vecs, 1)) {
 		unlock(vecs->lock);
 		condlog(0, "failure during configuration");
@@ -1511,10 +1542,6 @@ child (void * param)
 		condlog(0,"failed to create checker loop thread: %d", rc);
 		exit(1);
 	}
-	if ((rc = pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs))) {
-		condlog(0, "failed to create cli listener: %d", rc);
-		exit(1);
-	}
 	if ((rc = pthread_create(&uevq_thr, &misc_attr, uevqloop, vecs))) {
 		condlog(0, "failed to create uevent dispatcher: %d", rc);
 		exit(1);
@@ -1522,11 +1549,20 @@ child (void * param)
 	pthread_attr_destroy(&misc_attr);
 
 	pthread_mutex_lock(&exit_mutex);
+	/* Startup complete, create logfile */
+	if (pidfile_create(DEFAULT_PIDFILE, getpid())) {
+		if (logsink)
+			log_thread_stop();
+
+		exit(1);
+	}
+	running_state = DAEMON_RUNNING;
 	pthread_cond_wait(&exit_cond, &exit_mutex);
 
 	/*
 	 * exit path
 	 */
+	running_state = DAEMON_SHUTDOWN;
 	block_signal(SIGHUP, NULL);
 	lock(vecs->lock);
 	if (conf->queue_without_daemon == QUE_NO_DAEMON_OFF)
@@ -1643,6 +1679,7 @@ main (int argc, char *argv[])
 	int err;
 
 	logsink = 1;
+	running_state = DAEMON_INIT;
 	dm_init();
 
 	if (getuid() != 0) {

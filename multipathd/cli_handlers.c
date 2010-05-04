@@ -282,6 +282,26 @@ show_status (char ** r, int *len, struct vectors * vecs)
 }
 
 int
+show_daemon (char ** r, int *len)
+{
+	char * c;
+	char * reply;
+
+	unsigned int maxlen = INITIAL_REPLY_LEN;
+	reply = MALLOC(maxlen);
+
+	if (!reply)
+		return 1;
+
+	c = reply;
+	c += snprintf(c, INITIAL_REPLY_LEN, "%s\n", daemon_status());
+
+	*r = reply;
+	*len = (int)(c - reply + 1);
+	return 0;
+}
+
+int
 show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 {
 	int i;
@@ -365,6 +385,14 @@ cli_list_maps_stats (void * v, char ** reply, int * len, void * data)
 	condlog(3, "list maps stats (operator)");
 
 	return show_maps(reply, len, vecs, PRINT_MAP_STATS);
+}
+
+int
+cli_list_daemon (void * v, char ** reply, int * len, void * data)
+{
+	condlog(3, "list daemon (operator)");
+
+	return show_daemon(reply, len);
 }
 
 int

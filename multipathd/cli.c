@@ -170,6 +170,7 @@ load_keys (void)
 	r += add_key(keys, "multipath", MAP, 1);
 	r += add_key(keys, "group", GROUP, 1);
 	r += add_key(keys, "reconfigure", RECONFIGURE, 0);
+	r += add_key(keys, "daemon", DAEMON, 0);
 	r += add_key(keys, "status", STATUS, 0);
 	r += add_key(keys, "stats", STATS, 0);
 	r += add_key(keys, "topology", TOPOLOGY, 0);
@@ -419,6 +420,7 @@ cli_init (void) {
 	add_handler(LIST+PATHS, NULL);
 	add_handler(LIST+PATHS+FMT, NULL);
 	add_handler(LIST+STATUS, NULL);
+	add_handler(LIST+DAEMON, NULL);
 	add_handler(LIST+MAPS, NULL);
 	add_handler(LIST+MAPS+STATUS, NULL);
 	add_handler(LIST+MAPS+STATS, NULL);

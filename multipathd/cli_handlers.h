@@ -1,6 +1,7 @@
 int cli_list_paths (void * v, char ** reply, int * len, void * data);
 int cli_list_paths_fmt (void * v, char ** reply, int * len, void * data);
 int cli_list_status (void * v, char ** reply, int * len, void * data);
+int cli_list_daemon (void * v, char ** reply, int * len, void * data);
 int cli_list_maps (void * v, char ** reply, int * len, void * data);
 int cli_list_maps_fmt (void * v, char ** reply, int * len, void * data);
 int cli_list_maps_status (void * v, char ** reply, int * len, void * data);
