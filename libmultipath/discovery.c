@@ -699,7 +699,7 @@ path_offline (struct path * pp)
 	if (sysfs_get_state(parent, buff, SCSI_STATE_SIZE))
 		return PATH_WILD;
 
-	condlog(3, "%s: state = %s", pp->dev, buff);
+	condlog(3, "%s: path state = %s", pp->dev, buff);
 
 	if (!strncmp(buff, "offline", 7)) {
 		pp->offline = 1;
