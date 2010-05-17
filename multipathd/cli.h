@@ -23,6 +23,7 @@ enum {
 	__BLACKLIST,
 	__DEVICES,
 	__FMT,
+	__COUNT,
 	__WILDCARDS,
 	__QUIT,
 };
@@ -51,6 +52,7 @@ enum {
 #define BLACKLIST	(1 << __BLACKLIST)
 #define DEVICES  	(1 << __DEVICES)
 #define FMT 	 	(1 << __FMT)
+#define COUNT		(1 << __COUNT)
 #define WILDCARDS	(1 << __WILDCARDS)
 #define QUIT		(1 << __QUIT)
 

@@ -174,6 +174,7 @@ load_keys (void)
 	r += add_key(keys, "devices", DEVICES, 0);
 	r += add_key(keys, "format", FMT, 1);
 	r += add_key(keys, "wildcards", WILDCARDS, 0);
+	r += add_key(keys, "count", COUNT, 0);
 	r += add_key(keys, "quit", QUIT, 0);
 	r += add_key(keys, "exit", QUIT, 0);
 
@@ -443,6 +444,7 @@ cli_init (void) {
 	add_handler(RESTOREQ+MAPS, NULL);
 	add_handler(REINSTATE+PATH, NULL);
 	add_handler(FAIL+PATH, NULL);
+	add_handler(COUNT+PATHS, NULL);
 	add_handler(QUIT, NULL);
 
 	return 0;

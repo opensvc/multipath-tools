@@ -25,5 +25,6 @@ int cli_restore_all_queueing(void * v, char ** reply, int * len, void * data);
 int cli_suspend(void * v, char ** reply, int * len, void * data);
 int cli_resume(void * v, char ** reply, int * len, void * data);
 int cli_reinstate(void * v, char ** reply, int * len, void * data);
+int cli_count_paths(void * v, char ** reply, int * len, void * data);
 int cli_fail(void * v, char ** reply, int * len, void * data);
 int cli_quit(void * v, char ** reply, int * len, void * data);

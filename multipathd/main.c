@@ -783,6 +783,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(RESTOREQ+MAP, cli_restore_queueing);
 	set_handler_callback(DISABLEQ+MAPS, cli_disable_all_queueing);
 	set_handler_callback(RESTOREQ+MAPS, cli_restore_all_queueing);
+	set_handler_callback(COUNT+PATHS, cli_count_paths);
 	set_handler_callback(QUIT, cli_quit);
 
 	umask(077);
