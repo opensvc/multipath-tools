@@ -1411,6 +1411,7 @@ child (void * param)
 		exit(1);
 	}
 	conf->daemon = 1;
+	dm_udev_set_sync_support(0);
 	/*
 	 * fetch and configure both paths and multipaths
 	 */

@@ -52,8 +52,10 @@ dm_prereq (char * str, int x, int y, int z)
 }
 
 extern int
-dm_simplecmd (int task, const char *name, int no_flush) {
+dm_simplecmd (int task, const char *name, int no_flush, uint32_t *cookie) {
 	int r = 0;
+	int udev_wait_flag = (task == DM_DEVICE_RESUME ||
+			      task == DM_DEVICE_REMOVE);
 	struct dm_task *dmt;
 
 	if (!(dmt = dm_task_create(task)))
@@ -68,6 +70,8 @@ dm_simplecmd (int task, const char *name, int no_flush) {
 	if (no_flush)
 		dm_task_no_flush(dmt);
 
+	if (udev_wait_flag && !dm_task_set_cookie(dmt, cookie, 0))
+		goto out;
 	r = dm_task_run(dmt);
 
 	out:
@@ -78,7 +82,7 @@ dm_simplecmd (int task, const char *name, int no_flush) {
 extern int
 dm_addmap (int task, const char *name, const char *target,
 	   const char *params, uint64_t size, const char *uuid, int part,
-	   mode_t mode, uid_t uid, gid_t gid) {
+	   mode_t mode, uid_t uid, gid_t gid, uint32_t *cookie) {
 	int r = 0;
 	struct dm_task *dmt;
 	char *prefixed_uuid = NULL;
@@ -113,6 +117,8 @@ dm_addmap (int task, const char *name, const char *target,
 
 	dm_task_no_open_count(dmt);
 
+	if (task == DM_DEVICE_CREATE && !dm_task_set_cookie(dmt, cookie, 0))
+		goto addout;
 	r = dm_task_run (dmt);
 
 	addout:

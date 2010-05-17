@@ -82,7 +82,7 @@ initpts(void)
 	addpts("sun", read_sun_pt);
 }
 
-static char short_opts[] = "ladgvp:t:";
+static char short_opts[] = "ladgvp:t:s";
 
 /* Used in gpt.c */
 int force_gpt=0;
@@ -96,6 +96,7 @@ usage(void) {
 	printf("\t-p set device name-partition number delimiter\n");
 	printf("\t-g force GUID partition table (GPT)\n");
 	printf("\t-v verbose\n");
+	printf("\t-s sync mode. Don't return until the partitions are created\n");
 	return 1;
 }
 
@@ -198,7 +199,9 @@ main(int argc, char **argv){
 	int loopro = 0;
 	int hotplug = 0;
 	int loopcreated = 0;
+	int sync = 0;
 	struct stat buf;
+	uint32_t cookie = 0;
 
 	initpts();
 	init_crc32();
@@ -251,10 +254,16 @@ main(int argc, char **argv){
 		case 'd':
 			what = DELETE;
 			break;
+		case 's':
+			sync = 1;
+			break;
 		default:
 			usage();
 			exit(1);
 	}
+
+	if (!sync)
+		dm_udev_set_sync_support(0);
 
 	if (dm_prereq(DM_TARGET, 0, 0, 0) && (what == ADD || what == DELETE)) {
 		fprintf(stderr, "device mapper prerequisites not met\n");
@@ -413,8 +422,8 @@ main(int argc, char **argv){
 				if (!slices[j].size || !dm_map_present(partname))
 					continue;
 
-				if (!dm_simplecmd(DM_DEVICE_REMOVE,
-							partname, 0)) {
+				if (!dm_simplecmd(DM_DEVICE_REMOVE, partname,
+						  0, &cookie)) {
 					r++;
 					continue;
 				}
@@ -463,14 +472,14 @@ main(int argc, char **argv){
 				if (!dm_addmap(op, partname, DM_TARGET, params,
 					       slices[j].size, uuid, j+1,
 					       buf.st_mode & 0777, buf.st_uid,
-					       buf.st_gid)) {
+					       buf.st_gid, &cookie)) {
 					fprintf(stderr, "create/reload failed on %s\n",
 						partname);
 					r++;
 				}
 				if (op == DM_DEVICE_RELOAD &&
-				    !dm_simplecmd(DM_DEVICE_RESUME,
-							partname, 1)) {
+				    !dm_simplecmd(DM_DEVICE_RESUME, partname,
+						  1, &cookie)) {
 					fprintf(stderr, "resume failed on %s\n",
 						partname);
 					r++;
@@ -529,11 +538,13 @@ main(int argc, char **argv){
 					dm_addmap(op, partname, DM_TARGET, params,
 						  slices[j].size, uuid, j+1,
 						  buf.st_mode & 0777,
-						  buf.st_uid, buf.st_gid);
+						  buf.st_uid, buf.st_gid,
+						  &cookie);
 
 					if (op == DM_DEVICE_RELOAD)
 						dm_simplecmd(DM_DEVICE_RESUME,
-							     partname, 1);
+							     partname, 1,
+							     &cookie);
 
 					dm_devn(partname, &slices[j].major,
 						&slices[j].minor);
@@ -557,6 +568,7 @@ main(int argc, char **argv){
 		if (n > 0)
 			break;
 	}
+	dm_udev_wait(cookie);
 	dm_lib_release();
 	dm_lib_exit();
 

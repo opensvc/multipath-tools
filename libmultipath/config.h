@@ -2,6 +2,7 @@
 #define _CONFIG_H
 
 #include <sys/types.h>
+#include <stdint.h>
 
 #define ORIGIN_DEFAULT 0
 #define ORIGIN_CONFIG  1
@@ -83,6 +84,7 @@ struct config {
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;
+	uint32_t cookie;
 
 	char * dev;
 	char * sysfs_dir;

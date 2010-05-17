@@ -373,7 +373,7 @@ domap (struct multipath * mpp)
   		if (!r)
   			r = dm_addmap_reload_ro(mpp);
   		if (r)
-  			r = dm_simplecmd_flush(DM_DEVICE_RESUME, mpp->alias);
+  			r = dm_simplecmd_flush(DM_DEVICE_RESUME, mpp->alias, 1);
 		break;
 
 	case ACT_RENAME:
