@@ -407,6 +407,7 @@ sysfs_attr_set_value(const char *devpath, const char *attr_name,
 		    path_full, ret);
 		ret = -1;
 	}
+	close(fd);
 out:
 	return ret;
 }
