@@ -1198,6 +1198,7 @@ reconfigure (struct vectors * vecs)
 		conf->checkint = DEFAULT_CHECKINT;
 		conf->max_checkint = MAX_CHECKINT(conf->checkint);
 	}
+	conf->daemon = 1;
 	configure(vecs, 1);
 	free_config(old);
 	return 0;
