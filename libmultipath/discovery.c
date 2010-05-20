@@ -233,7 +233,7 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 				sprintf(value, "off");
 			else
 				snprintf(value, 11, "%u", mpp->fast_io_fail);
-			if (sysfs_attr_set_value(attr_path, "fast_io_fail",
+			if (sysfs_attr_set_value(attr_path, "fast_io_fail_tmo",
 						 value))
 				return 1;
 		}
