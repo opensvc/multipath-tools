@@ -12,6 +12,7 @@ LIBS = \
 	libpriordac.so \
 	libprioalua.so \
 	libprionetapp.so \
+	libpriodatacore.so \
 	libpriohds.so
 
 CFLAGS += -I..

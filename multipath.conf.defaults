@@ -8,6 +8,7 @@
 #	path_grouping_policy	failover
 #	getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #	prio			const
+#	prio_args		""
 #	path_checker		directio
 #	rr_min_io		1000
 #	rr_weight		uniform
@@ -35,6 +36,7 @@
 #		rr_min_io		1000
 #		path_checker		directio
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"3PARdata"
@@ -48,6 +50,7 @@
 #		rr_min_io		1000
 #		path_checker		directio
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"DEC"
@@ -61,6 +64,7 @@
 #		rr_min_io		1000
 #		path_checker		hp_sw
 #		prio			hp_sw
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"HP"
@@ -75,6 +79,7 @@
 #		rr_min_io		1000
 #		path_checker		directio
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"(COMPAQ|HP)"
@@ -89,6 +94,7 @@
 #		rr_min_io		1000
 #		path_checker		hp_sw
 #		prio			hp_sw
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"(COMPAQ|HP)"
@@ -104,6 +110,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			alua
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"HP"
@@ -119,6 +126,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"(COMPAQ|HP)"
@@ -134,6 +142,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			alua
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"HP"
@@ -149,6 +158,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"HP"
@@ -164,6 +174,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"DDN"
@@ -177,6 +188,7 @@
 #		rr_min_io		1000
 #		path_checker		directio
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"EMC"
@@ -190,13 +202,13 @@
 #		rr_min_io		1000
 #		path_checker		directio
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"DGC"
 #		product			".*"
 #		product_blacklist	"LUNZ"
 #		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		prio_callout		"/sbin/mpath_prio_emc /dev/%n"
 #		features		"1 queue_if_no_path"
 #		hardware_handler	"1 emc"
 #		path_selector		"round-robin 0"
@@ -207,6 +219,7 @@
 #		rr_min_io		1000
 #		path_checker		emc_clariion
 #		prio			emc
+#		prio_args		""
 #	}
 #	device {
 #		vendor                  "EMC"
@@ -236,6 +249,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"FSC"
@@ -249,6 +263,7 @@
 #		rr_min_io		1000
 #		path_checker		directio
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"(HITACHI|HP)"
@@ -262,6 +277,7 @@
 #		rr_min_io		100
 #		path_checker		tur
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"HITACHI"
@@ -276,6 +292,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			hds
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -289,6 +306,7 @@
 #		rr_min_io		1000
 #		path_checker		readsector0
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -304,6 +322,7 @@
 #		rr_min_io		1000
 #		path_checker		rdac
 #		prio			rdac
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -319,6 +338,7 @@
 #		rr_min_io		1000
 #		path_checker		rdac
 #		prio			rdac
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -334,6 +354,7 @@
 #		rr_min_io		1000
 #		path_checker		rdac
 #		prio			rdac
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -349,6 +370,7 @@
 #		rr_min_io		1000
 #		path_checker		rdac
 #		prio			rdac
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -364,6 +386,7 @@
 #		rr_min_io		1000
 #		path_checker		rdac
 #		prio			rdac
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -379,6 +402,7 @@
 #		rr_min_io		1000
 #		path_checker		rdac
 #		prio			rdac
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -392,6 +416,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -405,6 +430,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -419,6 +445,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			alua
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -432,6 +459,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -446,6 +474,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			alua
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -460,6 +489,7 @@
 #		rr_min_io		1000
 #		path_checker		directio
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"NETAPP"
@@ -474,6 +504,7 @@
 #		rr_min_io		128
 #		path_checker		directio
 #		prio			netapp
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"NEXENTA"
@@ -489,6 +520,7 @@
 #		rr_min_io		128
 #		path_checker		directio
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"IBM"
@@ -503,6 +535,7 @@
 #		rr_min_io		128
 #		path_checker		directio
 #		prio			netapp
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"Pillar"
@@ -516,6 +549,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			alua
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"SGI"
@@ -529,6 +563,7 @@
 #		rr_min_io		1000
 #		path_checker		directio
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"SGI"
@@ -544,6 +579,7 @@
 #		rr_min_io		1000
 #		path_checker		rdac
 #		prio			rdac
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"SGI"
@@ -559,6 +595,7 @@
 #		rr_min_io		1000
 #		path_checker		rdac
 #		prio			rdac
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"STK"
@@ -573,6 +610,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			rdac
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"SUN"
@@ -586,6 +624,7 @@
 #		rr_min_io		1000
 #		path_checker		directio
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"PIVOT3"
@@ -599,6 +638,7 @@
 #		rr_min_io		1000
 #		path_checker		tur
 #		prio			const
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"SUN"
@@ -614,6 +654,7 @@
 #		rr_min_io		1000
 #		path_checker		rdac
 #		prio			rdac
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"SUN"
@@ -629,6 +670,7 @@
 #		rr_min_io		1000
 #		path_checker		rdac
 #		prio			rdac
+#		prio_args		""
 #	}
 #	device {
 #		vendor			"STK"
@@ -645,5 +687,6 @@
 #		rr_min_io		1000
 #		path_checker		rdac
 #		prio			rdac
+#		prio_args		""
 #	}
 #}

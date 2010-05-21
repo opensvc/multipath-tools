@@ -73,7 +73,7 @@ out:
 	return(ret);
 }
 
-int getprio (struct path * pp)
+int getprio (struct path * pp, char * args)
 {
 	return emc_clariion_prio(pp->dev, pp->fd);
 }

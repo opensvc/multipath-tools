@@ -61,7 +61,7 @@ get_alua_info(int fd)
 	return rc;
 }
 
-int getprio (struct path * pp)
+int getprio (struct path * pp, char * args)
 {
 	int rc;
 	int aas;

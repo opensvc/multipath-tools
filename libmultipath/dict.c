@@ -148,6 +148,17 @@ def_prio_handler(vector strvec)
 }
 
 static int
+def_prio_args_handler(vector strvec)
+{
+	conf->prio_args = set_value(strvec);
+
+	if (!conf->prio_args)
+		return 1;
+
+	return 0;
+}
+
+static int
 def_features_handler(vector strvec)
 {
 	conf->features = set_value(strvec);
@@ -165,7 +176,7 @@ def_path_checker_handler(vector strvec)
 
 	if (!conf->checker_name)
 		return 1;
-	
+
 	return 0;
 }
 
@@ -767,7 +778,7 @@ hw_path_checker_handler(vector strvec)
 
 	if (!hwe->checker_name)
 		return 1;
-	
+
 	return 0;
 }
 
@@ -814,6 +825,22 @@ hw_prio_handler(vector strvec)
 	hwe->prio_name = set_value(strvec);
 
 	if (!hwe->prio_name)
+		return 1;
+
+	return 0;
+}
+
+static int
+hw_prio_args_handler(vector strvec)
+{
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+
+	if (!hwe)
+		return 1;
+
+	hwe->prio_args = set_value(strvec);
+
+	if (!hwe->prio_args)
 		return 1;
 
 	return 0;
@@ -1529,9 +1556,10 @@ snprint_hw_getuid_callout (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->getuid || !conf->getuid)
+	if (!hwe->getuid)
 		return 0;
-	if (strlen(hwe->getuid) == strlen(conf->getuid) &&
+	if (conf->getuid &&
+	    strlen(hwe->getuid) == strlen(conf->getuid) &&
 	    !strcmp(hwe->getuid, conf->getuid))
 		return 0;
 
@@ -1543,12 +1571,25 @@ snprint_hw_prio (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->prio_name || !conf->prio_name)
+	if (!hwe->prio_name || (strlen(hwe->prio_name) == 0))
 		return 0;
-	if (!strcmp(hwe->prio_name, conf->prio_name))
+	if (conf->prio_name && !strcmp(hwe->prio_name, conf->prio_name))
 		return 0;
-	
+
 	return snprintf(buff, len, "%s", hwe->prio_name);
+}
+
+static int
+snprint_hw_prio_args (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+        if (!hwe->prio_args || (strlen(hwe->prio_args) == 0))
+                return 0;
+        if (conf->prio_args && !strcmp(hwe->prio_args, conf->prio_args))
+                return 0;
+
+	return snprintf(buff, len, "%s", hwe->prio_args);
 }
 
 static int
@@ -1556,9 +1597,10 @@ snprint_hw_features (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->features || !conf->features)
+	if (!hwe->features)
 		return 0;
-	if (strlen(hwe->features) == strlen(conf->features) &&
+	if (conf->features &&
+	    strlen(hwe->features) == strlen(conf->features) &&
 	    !strcmp(hwe->features, conf->features))
 		return 0;
 
@@ -1570,9 +1612,10 @@ snprint_hw_hardware_handler (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->hwhandler || !conf->hwhandler)
+	if (!hwe->hwhandler)
 		return 0;
-	if (strlen(hwe->hwhandler) == strlen(conf->hwhandler) &&
+	if (conf->hwhandler &&
+	    strlen(hwe->hwhandler) == strlen(conf->hwhandler) &&
 	    !strcmp(hwe->hwhandler, conf->hwhandler))
 		return 0;
 
@@ -1584,9 +1627,10 @@ snprint_hw_selector (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->selector || !conf->selector)
+	if (!hwe->selector)
 		return 0;
-	if (strlen(hwe->selector) == strlen(conf->selector) &&
+	if (conf->selector &&
+	    strlen(hwe->selector) == strlen(conf->selector) &&
 	    !strcmp(hwe->selector, conf->selector))
 		return 0;
 
@@ -1600,9 +1644,9 @@ snprint_hw_path_grouping_policy (char * buff, int len, void * data)
 
 	char str[POLICY_NAME_SIZE];
 
-	if (!hwe->pgpolicy || !conf->pgpolicy)
+	if (!hwe->pgpolicy)
 		return 0;
-	if (hwe->pgpolicy == conf->pgpolicy)
+	if (conf->pgpolicy && hwe->pgpolicy == conf->pgpolicy)
 		return 0;
 
 	get_pgpolicy_name(str, POLICY_NAME_SIZE, hwe->pgpolicy);
@@ -1615,9 +1659,9 @@ snprint_hw_failback (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->pgfailback || !conf->pgfailback)
+	if (!hwe->pgfailback)
 		return 0;
-	if (hwe->pgfailback == conf->pgfailback)
+	if (conf->pgfailback && hwe->pgfailback == conf->pgfailback)
 		return 0;
 
 	switch(hwe->pgfailback) {
@@ -1638,9 +1682,9 @@ snprint_hw_rr_weight (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->rr_weight || !conf->rr_weight)
+	if (!hwe->rr_weight)
 		return 0;
-	if (hwe->rr_weight == conf->rr_weight)
+	if (conf->rr_weight && hwe->rr_weight == conf->rr_weight)
 		return 0;
 	if (hwe->rr_weight == RR_WEIGHT_PRIO)
 		return snprintf(buff, len, "priorities");
@@ -1725,11 +1769,12 @@ snprint_hw_path_checker (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->checker_name || !conf->checker_name)
+	if (!hwe->checker_name)
 		return 0;
-	if (!strcmp(hwe->checker_name, conf->checker_name))
+	if (conf->checker_name &&
+	    !strcmp(hwe->checker_name, conf->checker_name))
 		return 0;
-	
+
 	return snprintf(buff, len, "%s", hwe->checker_name);
 }
 
@@ -1839,8 +1884,21 @@ snprint_def_prio (char * buff, int len, void * data)
 	if (strlen(conf->prio_name) == strlen(DEFAULT_PRIO) &&
 	    !strcmp(conf->prio_name, DEFAULT_PRIO))
 		return 0;
-	
+
 	return snprintf(buff, len, "%s", conf->prio_name);
+}
+
+static int
+snprint_def_prio_args (char * buff, int len, void * data)
+{
+	if (!conf->prio_args)
+		return 0;
+
+	if (strlen(conf->prio_args) == strlen(DEFAULT_PRIO_ARGS) &&
+	    !strcmp(conf->prio_args, DEFAULT_PRIO_ARGS))
+		return 0;
+
+	return snprintf(buff, len, "%s", conf->prio_args);
 }
 
 static int
@@ -1863,7 +1921,7 @@ snprint_def_path_checker (char * buff, int len, void * data)
 	if (strlen(conf->checker_name) == strlen(DEFAULT_CHECKER) &&
 	    !strcmp(conf->checker_name, DEFAULT_CHECKER))
 		return 0;
-	
+
 	return snprintf(buff, len, "%s", conf->checker_name);
 }
 
@@ -2055,6 +2113,7 @@ init_keywords(void)
 	install_keyword("path_grouping_policy", &def_pgpolicy_handler, &snprint_def_path_grouping_policy);
 	install_keyword("getuid_callout", &def_getuid_callout_handler, &snprint_def_getuid_callout);
 	install_keyword("prio", &def_prio_handler, &snprint_def_prio);
+	install_keyword("prio_args", &def_prio_args_handler, &snprint_def_prio_args);
 	install_keyword("features", &def_features_handler, &snprint_def_features);
 	install_keyword("path_checker", &def_path_checker_handler, &snprint_def_path_checker);
 	install_keyword("checker", &def_path_checker_handler, &snprint_def_path_checker);
@@ -2120,6 +2179,7 @@ init_keywords(void)
 	install_keyword("features", &hw_features_handler, &snprint_hw_features);
 	install_keyword("hardware_handler", &hw_handler_handler, &snprint_hw_hardware_handler);
 	install_keyword("prio", &hw_prio_handler, &snprint_hw_prio);
+	install_keyword("prio_args", &hw_prio_args_handler, &snprint_hw_prio_args);
 	install_keyword("failback", &hw_failback_handler, &snprint_hw_failback);
 	install_keyword("rr_weight", &hw_weight_handler, &snprint_hw_rr_weight);
 	install_keyword("no_path_retry", &hw_no_path_retry_handler, &snprint_hw_no_path_retry);

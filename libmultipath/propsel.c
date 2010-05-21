@@ -332,19 +332,28 @@ select_prio (struct path * pp)
 {
 	if (pp->hwe && pp->hwe->prio_name) {
 		pp->prio = prio_lookup(pp->hwe->prio_name);
+		prio_set_args(pp->prio, pp->hwe->prio_args);
 		condlog(3, "%s: prio = %s (controller setting)",
 			pp->dev, pp->hwe->prio_name);
+		condlog(3, "%s: prio args = %s (controller setting)",
+			pp->dev, pp->hwe->prio_args);
 		return 0;
 	}
 	if (conf->prio_name) {
 		pp->prio = prio_lookup(conf->prio_name);
+		prio_set_args(pp->prio, conf->prio_args);
 		condlog(3, "%s: prio = %s (config file default)",
 			pp->dev, conf->prio_name);
+		condlog(3, "%s: prio args = %s (config file default)",
+			pp->dev, conf->prio_args);
 		return 0;
 	}
 	pp->prio = prio_lookup(DEFAULT_PRIO);
+        prio_set_args(pp->prio, DEFAULT_PRIO_ARGS);
 	condlog(3, "%s: prio = %s (internal default)",
 		pp->dev, DEFAULT_PRIO);
+	condlog(3, "%s: prio = %s (internal default)",
+		pp->dev, DEFAULT_PRIO_ARGS);
 	return 0;
 }
 
