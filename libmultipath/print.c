@@ -23,6 +23,7 @@
 #include "blacklist.h"
 #include "switchgroup.h"
 #include "devmapper.h"
+#include "uevent.h"
 
 #define MAX(x,y) (x > y) ? x : y
 #define TAIL     (line + len - 1 - c)
@@ -1235,6 +1236,14 @@ snprint_status (char * buff, int len, struct vectors *vecs)
 		fwd += snprintf(buff + fwd, len - fwd, "%-20s%u\n",
 				checker_state_name(i), count[i]);
 	}
+
+        int monitored_count = 0;
+
+        vector_foreach_slot(vecs->pathvec, pp, i)
+                if (pp->fd != -1)
+                        monitored_count++;
+        fwd += snprintf(buff + fwd, len - fwd, "\npaths: %d\nbusy: %s\n",
+			monitored_count, is_uevent_busy()? "True" : "False");
 
 	if (fwd > len)
 		return len;

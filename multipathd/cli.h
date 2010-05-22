@@ -23,7 +23,6 @@ enum {
 	__BLACKLIST,
 	__DEVICES,
 	__FMT,
-	__COUNT,
 	__WILDCARDS,
 	__QUIT,
 };

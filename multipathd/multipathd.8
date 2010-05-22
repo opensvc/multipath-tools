@@ -63,15 +63,14 @@ Show the currently used blacklist rules, derived from default values and values 
 .B list|show devices
 Show all available block devices by name including the information if they are blacklisted or not.
 .TP
+.B list|show status
+Show the number of path checkers in each possible state, the number of monitored paths, and whether multipathd is currently handling a uevent.
+.TP
 .B add path $path
 Add a path to the list of monitored paths. $path is as listed in /sys/block (e.g. sda).
 .TP 
 .B remove|del path $path
 Stop monitoring a path. $path is as listed in /sys/block (e.g. sda).
-.TP
-.B count paths
-Show the number of monitored paths, and whether multipathd is currently
-handling a uevent.
 .TP
 .B add map $map
 Add a multipath device to the list of monitored devices. $map can either be a device-mapper device as listed in /sys/block (e.g. dm-0) or it can be the alias for the multipath device (e.g. mpath1) or the uid of the multipath device (e.g. 36005076303ffc56200000000000010aa). 

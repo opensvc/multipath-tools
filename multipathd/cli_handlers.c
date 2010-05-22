@@ -18,29 +18,6 @@
 
 #include "main.h"
 #include "cli.h"
-#include "uevent.h"
-
-int
-count_paths(char  **r, int *l, struct vectors *vecs)
-{
-	int i, len;
-	struct path *pp;
-	char * reply;
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	int monitored_count = 0;
-
-	reply = MALLOC(maxlen);
-	if (!reply)
-		return 1;
-	vector_foreach_slot(vecs->pathvec, pp, i)
-		if (pp->fd != -1)
-			monitored_count++;
-	len = sprintf(reply, "Paths: %d\nBusy: %s\n", monitored_count,
-		    is_uevent_busy()? "True" : "False");
-	*r = reply;
-	*l = len + 1;
-	return 0;
-}
 
 int
 show_paths (char ** r, int * len, struct vectors * vecs, char * style)
@@ -196,16 +173,6 @@ cli_list_config (void * v, char ** reply, int * len, void * data)
 	condlog(3, "list config (operator)");
 
 	return show_config(reply, len);
-}
-
-int
-cli_count_paths (void * v, char ** reply, int * len, void * data)
-{
-	struct vectors * vecs = (struct vectors *)data;
-
-	condlog(3, "count paths (operator)");
-
-	return count_paths(reply, len, vecs);
 }
 
 int
