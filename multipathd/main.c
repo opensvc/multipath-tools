@@ -1442,11 +1442,27 @@ child (void * param)
 	if (conf->max_fds) {
 		struct rlimit fd_limit;
 
-		fd_limit.rlim_cur = conf->max_fds;
-		fd_limit.rlim_max = conf->max_fds;
-		if (setrlimit(RLIMIT_NOFILE, &fd_limit) < 0)
-			condlog(0, "can't set open fds limit to %d : %s\n",
-				conf->max_fds, strerror(errno));
+		if (getrlimit(RLIMIT_NOFILE, &fd_limit) < 0) {
+			condlog(0, "can't get open fds limit: %s\n",
+				strerror(errno));
+			fd_limit.rlim_cur = 0;
+			fd_limit.rlim_max = 0;
+		}
+		if (fd_limit.rlim_cur < conf->max_fds) {
+			fd_limit.rlim_cur = conf->max_fds;
+			if (fd_limit.rlim_max < conf->max_fds)
+				fd_limit.rlim_max = conf->max_fds;
+			if (setrlimit(RLIMIT_NOFILE, &fd_limit) < 0) {
+				condlog(0, "can't set open fds limit to "
+					"%lu/%lu : %s\n",
+					fd_limit.rlim_cur, fd_limit.rlim_max,
+					strerror(errno));
+			} else {
+				condlog(3, "set open fds limit to %lu/%lu\n",
+					fd_limit.rlim_cur, fd_limit.rlim_max);
+			}
+		}
+
 	}
 
 	if (pidfile_create(DEFAULT_PIDFILE, getpid())) {
