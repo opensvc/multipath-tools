@@ -1,7 +1,6 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
-int strcmp_chomp(char *, char *);
 void strchop(char *);
 void basenamecpy (char * src, char * dst);
 int filepresent (char * run);

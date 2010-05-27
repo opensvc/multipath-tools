@@ -644,6 +644,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 	}
 
 	if (dev_type == DEV_DEVT) {
+		strchop(dev);
 		pp = find_path_by_devt(pathvec, dev);
 		
 		if (!pp) {

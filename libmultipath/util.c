@@ -9,26 +9,6 @@
 
 #define PARAMS_SIZE 255
 
-int
-strcmp_chomp(char *str1, char *str2)
-{
-	int i;
-	char s1[PARAMS_SIZE],s2[PARAMS_SIZE];
-
-	if(!str1 || !str2)
-		return 1;
-
-	strncpy(s1, str1, PARAMS_SIZE);
-	strncpy(s2, str2, PARAMS_SIZE);
-
-	for (i=strlen(s1)-1; i >=0 && isspace(s1[i]); --i) ;
-	s1[++i] = '\0';
-	for (i=strlen(s2)-1; i >=0 && isspace(s2[i]); --i) ;
-	s2[++i] = '\0';
-
-	return(strcmp(s1,s2));
-}
-
 void
 strchop(char *str)
 {
