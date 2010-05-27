@@ -1003,7 +1003,9 @@ check_path (struct vectors * vecs, struct path * pp)
 	 */
 	pp->tick = conf->checkint;
 
-	newstate = get_state(pp, 1);
+	newstate = path_offline(pp);
+	if (newstate == PATH_UP)
+		newstate = get_state(pp, 1);
 
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
 		condlog(2, "%s: unusable path", pp->dev);
