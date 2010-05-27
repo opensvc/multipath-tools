@@ -638,6 +638,9 @@ struct sysfs_device *sysfs_device_from_path(struct path *pp)
 {
 	char sysdev[FILE_NAME_SIZE];
 
+	if (pp->sysdev && sysfs_device_verify(pp->sysdev))
+		return pp->sysdev;
+
 	strlcpy(sysdev,"/block/", FILE_NAME_SIZE);
 	strlcat(sysdev,pp->dev, FILE_NAME_SIZE);
 
@@ -708,17 +711,13 @@ sysfs_pathinfo(struct path * pp)
 		return 1;
 	}
 
+	pp->bus = SYSFS_BUS_UNDEF;
 	if (!strncmp(pp->dev,"cciss",5))
-		strcpy(parent->subsystem,"cciss");
-
-	condlog(3, "%s: subsystem = %s", pp->dev, parent->subsystem);
-
-	if (!strncmp(parent->subsystem, "scsi",4))
-		pp->bus = SYSFS_BUS_SCSI;
-	if (!strncmp(parent->subsystem, "ccw",3))
-		pp->bus = SYSFS_BUS_CCW;
-	if (!strncmp(parent->subsystem,"cciss",5))
 		pp->bus = SYSFS_BUS_CCISS;
+	if (!strncmp(pp->dev,"dasd", 4))
+		pp->bus = SYSFS_BUS_CCW;
+	if (!strncmp(pp->dev,"sd", 2))
+		pp->bus = SYSFS_BUS_SCSI;
 
 	if (pp->bus == SYSFS_BUS_UNDEF)
 		return 0;

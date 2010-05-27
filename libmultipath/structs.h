@@ -113,10 +113,7 @@ struct scsi_dev {
 struct sysfs_device {
 	struct sysfs_device *parent;		/* parent device */
 	char devpath[PATH_SIZE];
-	char subsystem[NAME_SIZE];		/* $class, $bus, drivers, module */
 	char kernel[NAME_SIZE];			/* device instance name */
-	char kernel_number[NAME_SIZE];
-	char driver[NAME_SIZE];			/* device driver name */
 };
 
 # ifndef HDIO_GETGEO
