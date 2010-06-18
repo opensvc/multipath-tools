@@ -421,6 +421,7 @@ domap (struct multipath * mpp)
 			if (mpp->action != ACT_CREATE)
 				mpp->action = ACT_NOTHING;
 		}
+		dm_setgeometry(mpp);
 		return DOMAP_OK;
 	}
 	return DOMAP_FAIL;

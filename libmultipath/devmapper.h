@@ -38,5 +38,6 @@ int dm_get_uuid(char *name, char *uuid);
 int dm_get_info (char * mapname, struct dm_info ** dmi);
 int dm_rename (char * old, char * new);
 char * dm_get_name(char * uuid);
+int dm_setgeometry(struct multipath *mpp);
 
 #endif /* _DEVMAPPER_H */

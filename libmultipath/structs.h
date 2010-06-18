@@ -119,12 +119,23 @@ struct sysfs_device {
 	char driver[NAME_SIZE];			/* device driver name */
 };
 
+# ifndef HDIO_GETGEO
+#  define HDIO_GETGEO	0x0301	/* get device geometry */
+
+struct hd_geometry {
+      unsigned char heads;
+      unsigned char sectors;
+      unsigned short cylinders;
+      unsigned long start;
+};
+#endif
 struct path {
 	char dev[FILE_NAME_SIZE];
 	char dev_t[BLK_DEV_SIZE];
 	struct sysfs_device *sysdev;
 	struct scsi_idlun scsi_id;
 	struct sg_id sg_id;
+	struct hd_geometry geom;
 	char wwid[WWID_SIZE];
 	char vendor_id[SCSI_VENDOR_SIZE];
 	char product_id[SCSI_PRODUCT_SIZE];
@@ -146,7 +157,7 @@ struct path {
 	struct checker checker;
 	struct multipath * mpp;
 	int fd;
-	
+
 	/* configlet pointers */
 	struct hwentry * hwe;
 };

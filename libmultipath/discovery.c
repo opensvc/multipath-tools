@@ -501,6 +501,23 @@ get_inq (char * dev, char * vendor, char * product, char * rev, int fd)
 }
 
 static int
+get_geometry(struct path *pp)
+{
+	if (pp->fd < 0)
+		return 1;
+
+	if (ioctl(pp->fd, HDIO_GETGEO, &pp->geom)) {
+		condlog(2, "%s: HDIO_GETGEO failed with %d", pp->dev, errno);
+		memset(&pp->geom, 0, sizeof(pp->geom));
+		return 1;
+	}
+	condlog(3, "%s: %u cyl, %u heads, %u sectors/track, start at %lu",
+		pp->dev, pp->geom.cylinders, pp->geom.heads,
+		pp->geom.sectors, pp->geom.start);
+	return 0;
+}
+
+static int
 scsi_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 {
 	char attr_path[FILE_NAME_SIZE];
@@ -894,6 +911,9 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 			pp->dev, strerror(errno));
 		goto blank;
 	}
+
+	if (mask & DI_SERIAL)
+		get_geometry(pp);
 
 	if (pp->bus == SYSFS_BUS_SCSI &&
 	    scsi_ioctl_pathinfo(pp, mask))
