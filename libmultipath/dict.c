@@ -148,6 +148,17 @@ def_prio_handler(vector strvec)
 }
 
 static int
+def_alias_prefix_handler(vector strvec)
+{
+	conf->alias_prefix = set_value(strvec);
+
+	if (!conf->alias_prefix)
+		return 1;
+
+	return 0;
+}
+
+static int
 def_prio_args_handler(vector strvec)
 {
 	conf->prio_args = set_value(strvec);
@@ -825,6 +836,22 @@ hw_prio_handler(vector strvec)
 	hwe->prio_name = set_value(strvec);
 
 	if (!hwe->prio_name)
+		return 1;
+
+	return 0;
+}
+
+static int
+hw_alias_prefix_handler(vector strvec)
+{
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+
+	if (!hwe)
+		return 1;
+
+	hwe->alias_prefix = set_value(strvec);
+
+	if (!hwe->alias_prefix)
 		return 1;
 
 	return 0;
@@ -1580,6 +1607,19 @@ snprint_hw_prio (char * buff, int len, void * data)
 }
 
 static int
+snprint_hw_alias_prefix (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->alias_prefix || (strlen(hwe->alias_prefix) == 0))
+		return 0;
+	if (conf->alias_prefix && !strcmp(hwe->alias_prefix, conf->alias_prefix))
+		return 0;
+
+	return snprintf(buff, len, "%s", hwe->alias_prefix);
+}
+
+static int
 snprint_hw_prio_args (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
@@ -2076,6 +2116,16 @@ snprint_def_user_friendly_names (char * buff, int len, void * data)
 }
 
 static int
+snprint_def_alias_prefix (char * buff, int len, void * data)
+{
+	if (!conf->alias_prefix)
+		return 0;
+	if (!strcmp(conf->alias_prefix, DEFAULT_ALIAS_PREFIX))
+		return 0;
+	return snprintf(buff, len, conf->alias_prefix);
+}
+
+static int
 snprint_ble_simple (char * buff, int len, void * data)
 {
 	struct blentry * ble = (struct blentry *)data;
@@ -2117,6 +2167,7 @@ init_keywords(void)
 	install_keyword("features", &def_features_handler, &snprint_def_features);
 	install_keyword("path_checker", &def_path_checker_handler, &snprint_def_path_checker);
 	install_keyword("checker", &def_path_checker_handler, &snprint_def_path_checker);
+	install_keyword("alias_prefix", &def_alias_prefix_handler, &snprint_def_alias_prefix);
 	install_keyword("failback", &default_failback_handler, &snprint_def_failback);
 	install_keyword("rr_min_io", &def_minio_handler, &snprint_def_rr_min_io);
 	install_keyword("max_fds", &max_fds_handler, &snprint_max_fds);
@@ -2176,6 +2227,7 @@ init_keywords(void)
 	install_keyword("path_selector", &hw_selector_handler, &snprint_hw_selector);
 	install_keyword("path_checker", &hw_path_checker_handler, &snprint_hw_path_checker);
 	install_keyword("checker", &hw_path_checker_handler, &snprint_hw_path_checker);
+	install_keyword("alias_prefix", &hw_alias_prefix_handler, &snprint_hw_alias_prefix);
 	install_keyword("features", &hw_features_handler, &snprint_hw_features);
 	install_keyword("hardware_handler", &hw_handler_handler, &snprint_hw_hardware_handler);
 	install_keyword("prio", &hw_prio_handler, &snprint_hw_prio);

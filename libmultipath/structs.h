@@ -186,6 +186,7 @@ struct multipath {
 
 	/* configlet pointers */
 	char * alias;
+	char * alias_prefix;
 	char * selector;
 	char * features;
 	char * hwhandler;
