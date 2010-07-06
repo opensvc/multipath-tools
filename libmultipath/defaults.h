@@ -19,6 +19,6 @@
 #define DEFAULT_PIDFILE		"/var/run/multipathd.pid"
 #define DEFAULT_SOCKET		"/var/run/multipathd.sock"
 #define DEFAULT_CONFIGFILE	"/etc/multipath.conf"
-#define DEFAULT_BINDINGS_FILE	"/var/lib/multipath/bindings"
+#define DEFAULT_BINDINGS_FILE	"/etc/multipath/bindings"
 
 char * set_default (char * str);

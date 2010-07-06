@@ -52,6 +52,12 @@ pthread_mutex_t uevc_lock, *uevc_lockp = &uevc_lock;
 pthread_cond_t  uev_cond,  *uev_condp  = &uev_cond;
 uev_trigger *my_uev_trigger;
 void * my_trigger_data;
+int servicing_uev;
+
+int is_uevent_busy(void)
+{
+	return (uevqhp != NULL || servicing_uev);
+}
 
 static struct uevent * alloc_uevent (void)
 {
@@ -96,7 +102,9 @@ uevq_thread(void * et)
 
 	while (1) {
 		pthread_mutex_lock(uevc_lockp);
+		servicing_uev = 0;
 		pthread_cond_wait(uev_condp, uevc_lockp);
+		servicing_uev = 1;
 		pthread_mutex_unlock(uevc_lockp);
 
 		service_uevq();

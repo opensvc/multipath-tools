@@ -70,7 +70,10 @@ setup_map (struct multipath * mpp)
 	select_mode(mpp);
 	select_uid(mpp);
 	select_gid(mpp);
+	select_fast_io_fail(mpp);
+	select_dev_loss(mpp);
 
+	sysfs_set_scsi_tmo(mpp);
 	/*
 	 * assign paths to path groups -- start with no groups and all paths
 	 * in mpp->paths
@@ -370,7 +373,7 @@ domap (struct multipath * mpp)
   		if (!r)
   			r = dm_addmap_reload_ro(mpp);
   		if (r)
-  			r = dm_simplecmd_flush(DM_DEVICE_RESUME, mpp->alias);
+  			r = dm_simplecmd_flush(DM_DEVICE_RESUME, mpp->alias, 1);
 		break;
 
 	case ACT_RENAME:

@@ -63,6 +63,12 @@ enum pgstates {
 	PGSTATE_ACTIVE
 };
 
+enum queue_without_daemon_states {
+	QUE_NO_DAEMON_UNDEF,
+	QUE_NO_DAEMON_OFF,
+	QUE_NO_DAEMON_ON,
+};
+
 enum pgtimeouts {
 	PGTIMEOUT_UNDEF,
 	PGTIMEOUT_NONE
@@ -166,6 +172,8 @@ struct multipath {
 	int pg_timeout;
 	int flush_on_last_del;
 	int attribute_flags;
+	int fast_io_fail;
+	unsigned int dev_loss;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;

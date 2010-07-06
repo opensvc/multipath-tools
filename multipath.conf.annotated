@@ -28,7 +28,7 @@
 #
 #	#
 #	# name    : selector
-#	# scope   : multipath
+#	# scope   : multipath & multipathd
 #	# desc    : the default path selector algorithm to use
 #	#           these algorithms are offered by the kernel multipath target
 #	# values  : "round-robin 0"
@@ -38,7 +38,7 @@
 #
 #	#
 #	# name    : path_grouping_policy
-#	# scope   : multipath
+#	# scope   : multipath & multipathd
 #	# desc    : the default path grouping policy to apply to unspecified
 #	#           multipaths
 #	# values  : failover           = 1 path per priority group
@@ -54,7 +54,7 @@
 #
 #	#
 #	# name    : getuid_callout
-#	# scope   : multipath
+#	# scope   : multipath & multipathd
 #	# desc    : the default program and args to callout to obtain a unique 
 #	#           path identifier. Absolute path required
 #	# default : /lib/udev/scsi_id --whitelisted --device=/dev/%n
@@ -63,7 +63,7 @@
 #
 #	#
 #	# name    : prio
-#	# scope   : multipath
+#	# scope   : multipath & multipathd
 #	# desc    : the default function to call to obtain a path 
 #	#           priority value. The ALUA bits in SPC-3 provide an
 #	#           exploitable prio value for example.
@@ -72,8 +72,18 @@
 #	prio	"alua"
 #
 #	#
+#	# name    : prio_args
+#	# scope   : multipath & multipathd
+#	# desc    : The arguments string passed to the prio function
+#	#           Most prio functions do not need arguments. The
+#	#	    datacore prioritizer need one.
+#	# default : (null)
+#	#
+#	prio_args	"timeout=1000 preferredsds=foo"
+#
+#	#
 #	# name    : features
-#	# scope   : multipath
+#	# scope   : multipath & multipathd
 #	# desc    : The default extra features of multipath devices. The
 #	#           only existing feature currently is queue_if_no_path, which
 #	#           is the same as setting no_path_retry to queue.
@@ -93,7 +103,7 @@
 #
 #	#
 #	# name    : rr_min_io
-#	# scope   : multipath
+#	# scope   : multipath & multipathd
 #	# desc    : the number of IO to route to a path before switching
 #	#           to the next in the same path group
 #	# default : 1000
@@ -122,7 +132,7 @@
 #
 #	#
 #	# name    : rr_weight
-#	# scope   : multipath
+#	# scope   : multipath & multipathd
 #	# desc    : if set to priorities the multipath configurator will assign
 #	#	    path weights as "path prio * rr_min_io"
 #	# values  : priorities|uniform
@@ -153,10 +163,19 @@
 #	no_path_retry  queue
 #
 #	#
+#	# name    : queue_without_daemon
+#	# scope   : multipathd
+#	# desc    : If set to "no", multipathd will disable queueing for all
+#	#           devices when it is shut down.
+#	# values  : yes|no
+#	# default : yes
+#	queue_without_daemon	no
+#
+#	#
 #	# name    : user_friendly_names
-#	# scope   : multipath
+#	# scope   : multipath & multipathd
 #	# desc    : If set to "yes", using the bindings file
-#	#           /var/lib/multipath/bindings to assign a persistent and
+#	#           /etc/multipath/bindings to assign a persistent and
 #	#           unique alias to the multipath, in the form of mpath<n>.
 #	#           If set to "no" use the WWID as the alias. In either case
 #	#           this be will be overriden by any specific aliases in this
@@ -167,7 +186,7 @@
 #
 #	#
 #	# name    : mode
-#	# scope   : multipath
+#	# scope   : multipath & multipathd
 #	# desc    : The mode to use for the multipath device nodes, in octal.
 #	# values  : 0000 - 0777
 #	# default : determined by the process
@@ -175,7 +194,7 @@
 #
 #	#
 #	# name    : uid
-#	# scope   : multipath
+#	# scope   : multipath & multipathd
 #	# desc    : The user id to use for the multipath device nodes. You
 #	#           may use either the numeric or symbolic uid
 #	# values  : <user_id>
@@ -184,13 +203,32 @@
 #
 #	#
 #	# name    : gid
-#	# scope   : multipath
+#	# scope   : multipath & multipathd
 #	# desc    : The group id to user for the multipath device nodes. You
 #	#           may use either the numeric or symbolic gid
 #	# values  : <group_id>
 #	# default : determined by the process
 #	gid disk
 #
+#	#
+#	# name    : fast_io_fail_tmo
+#	# scope   : multipath & multipathd
+#	# desc    : The number of seconds the scsi layer will wait after a
+#	#           problem has been detected on a FC remote port before failing
+#	#           IO to devices on that remote port.
+#	# values  : off | n >= 0 (smaller than dev_loss_tmo)
+#	# default : determined by the OS
+#	fast_io_fail_tmo 5
+#
+#	#
+#	# name    : dev_loss_tmo
+#	# scope   : multipath & multipathd
+#	# desc    : The number of seconds the scsi layer will wait after a
+#	#           problem has been detected on a FC remote port before
+#	#           removing it from the system.
+#	# values  : n > 0
+#	# default : determined by the OS
+#	dev_loss_tmo 600
 #}
 #	
 ##
@@ -250,7 +288,7 @@
 #
 #		#
 #		# name    : alias
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : symbolic name for the multipath. If you are using
 #		#           user_friendly_names, do not set the alias to
 #		#           mpath<n>. This may conflict with an automatically
@@ -261,7 +299,7 @@
 #
 #		#
 #		# name    : path_grouping_policy
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : path grouping policy to apply to this multipath
 #		# values  : failover, multibus, group_by_serial
 #		# values  : failover           = 1 path per priority group
@@ -278,6 +316,7 @@
 #
 #		#
 #		# name    : path_selector
+#		# scope   : multipath & multipathd
 #		# desc    : the path selector algorithm to use for this mpath
 #		#           these algo are offered by the kernel mpath target
 #		# values  : "round-robin 0"
@@ -296,7 +335,7 @@
 #
 #		#
 #		# name    : rr_weight
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : if set to priorities the multipath configurator will
 #		#	    assign path weights as "path prio * rr_min_io"
 #		# values  : priorities|uniform
@@ -315,7 +354,7 @@
 #
 #		#
 #		# name    : rr_min_io
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : the number of IO to route to a path before switching
 #		#           to the next in the same path group
 #		#
@@ -333,7 +372,7 @@
 #
 #		#
 #		# name    : mode
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : The mode to use for the multipath device nodes, in
 #		#           octal.
 #		# values  : 0000 - 0777
@@ -342,7 +381,7 @@
 #
 #		#
 #		# name    : uid
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : The user id to use for the multipath device nodes.
 #		#           You may use either the numeric or symbolic uid
 #		# values  : <user_id>
@@ -351,7 +390,7 @@
 #
 #		#
 #		# name    : gid
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : The group id to user for the multipath device nodes.
 #		#           You may use either the numeric or symbolic gid
 #		# values  : <group_id>
@@ -390,7 +429,7 @@
 #
 #		#
 #		# name    : path_grouping_policy
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : path grouping policy to apply to this multipath
 #		# values  : failover, multibus, group_by_serial
 #		# values  : failover           = 1 path per priority group
@@ -407,7 +446,7 @@
 #
 #		#
 #		# name    : getuid_callout
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : the program and args to callout to obtain a unique 
 #		#           path identifier. Absolute path required
 #		#
@@ -415,7 +454,7 @@
 #
 #		#
 #		# name    : prio
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : the function to call to obtain a path 
 #		#           weight. Weights are summed for each path group to
 #		#	    determine the next PG to use case of failure.
@@ -423,9 +462,18 @@
 #		#
 #		prio          "hp_sw"
 #
+#		#	#
+#		# name    : prio_args
+#		# scope   : multipath & multipathd
+#		# desc    : The arguments string passed to the prio function
+#		#           Most prio functions do not need arguments. The
+#		#	    datacore prioritizer need one.
+#		# default : (null)
 #		#
+#		prio_args	"timeout=1000 preferredsds=foo"
+##
 #		# name    : path_checker, checker
-#		# scope   : multipathd
+#		# scope   : multipathd & multipathd
 #		# desc    : path checking alorithm to use to check path state
 #		# values  : readsector0|tur|emc_clariion|hp_sw|directio|rdac|
 #		#           cciss_tur
@@ -434,6 +482,7 @@
 #
 #		#
 #		# name    : path_selector
+#		# scope   : multipathd & multipathd
 #		# desc    : the path selector algorithm to use for this mpath
 #		#           these algo are offered by the kernel mpath target
 #		# values  : "round-robin 0"
@@ -442,7 +491,7 @@
 #
 #		#
 #		# name    : features
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : The extra features of multipath devices. The only
 #		#           existing feature currently is queue_if_no_path,
 #		#           which is the same as setting no_path_retry to queue.
@@ -452,7 +501,7 @@
 #
 #		#
 #		# name    : hardware_handler
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : If set, it specifies a module that will be used to
 #		#           perform hardware specific actions when switching
 #		#	    path groups or handling IO errors
@@ -473,7 +522,7 @@
 #
 #		#
 #		# name    : rr_weight
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : if set to priorities the multipath configurator will
 #		#           assign path weights as "path prio * rr_min_io"
 #		# values  : priorities|uniform
@@ -492,7 +541,7 @@
 #
 #		#
 #		# name    : rr_min_io
-#		# scope   : multipath
+#		# scope   : multipath & multipathd
 #		# desc    : the number of IO to route to a path before switching
 #		#           to the next in the same path group
 #		#
@@ -504,7 +553,6 @@
 #		# desc    : If set to "yes", multipathd will disable queueing
 #		#           when the last path to a device has been deleted.
 #		# values  : yes|no
-#		# default : no
 #		#
 #		flush_on_last_del       yes
 #
@@ -514,6 +562,24 @@
 #		# desc    : product strings to blacklist for this vendor
 #		#
 #		product_blacklist	LUN_Z
+#
+#		#
+#		# name    : fast_io_fail_tmo
+#		# scope   : multipath & multipathd
+#		# desc    : The number of seconds the scsi layer will wait after
+#		#           a problem has been detected on a FC remote port
+#		#           before failing IO to devices on that remote port.
+#		# values  : off | n >= 0 (smaller than dev_loss_tmo)
+#		fast_io_fail_tmo 5
+#
+#		#
+#		# name    : dev_loss_tmo
+#		# scope   : multipath & multipathd
+#		# desc    : The number of seconds the scsi layer will wait after
+#		#           a problem has been detected on a FC remote port
+#		#           before removing it from the system.
+#		# values  : n > 0
+#		dev_loss_tmo 600
 #	}
 #	device {
 #		vendor			"COMPAQ  "

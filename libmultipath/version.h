@@ -21,7 +21,7 @@
 #define _VERSION_H
 
 #define VERSION_CODE 0x000409
-#define DATE_CODE    0x040409
+#define DATE_CODE    0x052110
 
 #define PROG    "multipath-tools"
 

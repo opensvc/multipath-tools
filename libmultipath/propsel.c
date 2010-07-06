@@ -332,19 +332,28 @@ select_prio (struct path * pp)
 {
 	if (pp->hwe && pp->hwe->prio_name) {
 		pp->prio = prio_lookup(pp->hwe->prio_name);
+		prio_set_args(pp->prio, pp->hwe->prio_args);
 		condlog(3, "%s: prio = %s (controller setting)",
 			pp->dev, pp->hwe->prio_name);
+		condlog(3, "%s: prio args = %s (controller setting)",
+			pp->dev, pp->hwe->prio_args);
 		return 0;
 	}
 	if (conf->prio_name) {
 		pp->prio = prio_lookup(conf->prio_name);
+		prio_set_args(pp->prio, conf->prio_args);
 		condlog(3, "%s: prio = %s (config file default)",
 			pp->dev, conf->prio_name);
+		condlog(3, "%s: prio args = %s (config file default)",
+			pp->dev, conf->prio_args);
 		return 0;
 	}
 	pp->prio = prio_lookup(DEFAULT_PRIO);
+        prio_set_args(pp->prio, DEFAULT_PRIO_ARGS);
 	condlog(3, "%s: prio = %s (internal default)",
 		pp->dev, DEFAULT_PRIO);
+	condlog(3, "%s: prio = %s (internal default)",
+		pp->dev, DEFAULT_PRIO_ARGS);
 	return 0;
 }
 
@@ -442,6 +451,48 @@ select_pg_timeout(struct multipath *mp)
 	}
 	mp->pg_timeout = PGTIMEOUT_UNDEF;
 	condlog(3, "pg_timeout = NONE (internal default)");
+	return 0;
+}
+
+extern int
+select_fast_io_fail(struct multipath *mp)
+{
+	if (mp->hwe && mp->hwe->fast_io_fail) {
+		mp->fast_io_fail = mp->hwe->fast_io_fail;
+		if (mp->fast_io_fail == -1)
+			condlog(3, "%s: fast_io_fail_tmo = off (controller default)", mp->alias);
+		else
+			condlog(3, "%s: fast_io_fail_tmo = %d (controller default)", mp->alias, mp->fast_io_fail);
+		return 0;
+	}
+	if (conf->fast_io_fail) {
+		mp->fast_io_fail = conf->fast_io_fail;
+		if (mp->fast_io_fail == -1)
+			condlog(3, "%s: fast_io_fail_tmo = off (config file default)", mp->alias);
+		else
+			condlog(3, "%s: fast_io_fail_tmo = %d (config file default)", mp->alias, mp->fast_io_fail);
+		return 0;
+	}
+	mp->fast_io_fail = 0;
+	return 0;
+}
+
+extern int
+select_dev_loss(struct multipath *mp)
+{
+	if (mp->hwe && mp->hwe->dev_loss) {
+		mp->dev_loss = mp->hwe->dev_loss;
+		condlog(3, "%s: dev_loss_tmo = %u (controller default)",
+			mp->alias, mp->dev_loss);
+		return 0;
+	}
+	if (conf->dev_loss) {
+		mp->dev_loss = conf->dev_loss;
+		condlog(3, "%s: dev_loss_tmo = %u (config file default)",
+			mp->alias, mp->dev_loss);
+		return 0;
+	}
+	mp->dev_loss = 0;
 	return 0;
 }
 

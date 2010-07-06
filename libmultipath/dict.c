@@ -37,6 +37,35 @@ polling_interval_handler(vector strvec)
 }
 
 static int
+def_fast_io_fail_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+	if (strlen(buff) == 3 && !strcmp(buff, "off"))
+		conf->fast_io_fail = -1;
+	else if (sscanf(buff, "%d", &conf->fast_io_fail) != 1 ||
+		 conf->fast_io_fail < -1)
+		conf->fast_io_fail = 0;
+
+	FREE(buff);
+	return 0;
+}
+
+static int
+def_dev_loss_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+	if (sscanf(buff, "%u", &conf->dev_loss) != 1)
+		conf->dev_loss = 0;
+
+	FREE(buff);
+	return 0;
+}
+
+static int
 verbosity_handler(vector strvec)
 {
 	char * buff;
@@ -119,6 +148,17 @@ def_prio_handler(vector strvec)
 }
 
 static int
+def_prio_args_handler(vector strvec)
+{
+	conf->prio_args = set_value(strvec);
+
+	if (!conf->prio_args)
+		return 1;
+
+	return 0;
+}
+
+static int
 def_features_handler(vector strvec)
 {
 	conf->features = set_value(strvec);
@@ -136,7 +176,7 @@ def_path_checker_handler(vector strvec)
 
 	if (!conf->checker_name)
 		return 1;
-	
+
 	return 0;
 }
 
@@ -329,6 +369,28 @@ def_no_path_retry_handler(vector strvec)
 		conf->no_path_retry = NO_PATH_RETRY_UNDEF;
 
 	FREE(buff);
+	return 0;
+}
+
+static int
+def_queue_without_daemon(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if (!strncmp(buff, "off", 3) || !strncmp(buff, "no", 2) ||
+	    !strncmp(buff, "0", 1))
+		conf->queue_without_daemon = QUE_NO_DAEMON_OFF;
+	else if (!strncmp(buff, "on", 2) || !strncmp(buff, "yes", 3) ||
+		 !strncmp(buff, "1", 1))
+		conf->queue_without_daemon = QUE_NO_DAEMON_ON;
+	else
+		conf->queue_without_daemon = QUE_NO_DAEMON_UNDEF;
+
+	free(buff);
 	return 0;
 }
 
@@ -628,6 +690,37 @@ bl_product_handler(vector strvec)
 }
 
 static int
+hw_fast_io_fail_handler(vector strvec)
+{
+	char * buff;
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+
+	buff = set_value(strvec);
+	if (strlen(buff) == 3 && !strcmp(buff, "off"))
+		hwe->fast_io_fail = -1;
+	else if (sscanf(buff, "%d", &hwe->fast_io_fail) != 1 ||
+		 hwe->fast_io_fail < -1)
+		hwe->fast_io_fail = 0;
+
+	FREE(buff);
+	return 0;
+}
+
+static int
+hw_dev_loss_handler(vector strvec)
+{
+	char * buff;
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+
+	buff = set_value(strvec);
+	if (sscanf(buff, "%u", &hwe->dev_loss) != 1)
+		hwe->dev_loss = 0;
+
+	FREE(buff);
+	return 0;
+}
+
+static int
 hw_pgpolicy_handler(vector strvec)
 {
 	char * buff;
@@ -685,7 +778,7 @@ hw_path_checker_handler(vector strvec)
 
 	if (!hwe->checker_name)
 		return 1;
-	
+
 	return 0;
 }
 
@@ -732,6 +825,22 @@ hw_prio_handler(vector strvec)
 	hwe->prio_name = set_value(strvec);
 
 	if (!hwe->prio_name)
+		return 1;
+
+	return 0;
+}
+
+static int
+hw_prio_args_handler(vector strvec)
+{
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+
+	if (!hwe)
+		return 1;
+
+	hwe->prio_args = set_value(strvec);
+
+	if (!hwe->prio_args)
 		return 1;
 
 	return 0;
@@ -1390,6 +1499,26 @@ snprint_mp_flush_on_last_del (char * buff, int len, void * data)
 }
 
 static int
+snprint_hw_fast_io_fail(char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+	if (!hwe->fast_io_fail)
+		return 0;
+	if (hwe->fast_io_fail == -1)
+		return snprintf(buff, len, "off");
+	return snprintf(buff, len, "%d", hwe->fast_io_fail);
+}
+
+static int
+snprint_hw_dev_loss(char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+	if (!hwe->dev_loss)
+		return 0;
+	return snprintf(buff, len, "%u", hwe->dev_loss);
+}
+
+static int
 snprint_hw_vendor (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
@@ -1427,9 +1556,10 @@ snprint_hw_getuid_callout (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->getuid || !conf->getuid)
+	if (!hwe->getuid)
 		return 0;
-	if (strlen(hwe->getuid) == strlen(conf->getuid) &&
+	if (conf->getuid &&
+	    strlen(hwe->getuid) == strlen(conf->getuid) &&
 	    !strcmp(hwe->getuid, conf->getuid))
 		return 0;
 
@@ -1441,12 +1571,25 @@ snprint_hw_prio (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->prio_name || !conf->prio_name)
+	if (!hwe->prio_name || (strlen(hwe->prio_name) == 0))
 		return 0;
-	if (!strcmp(hwe->prio_name, conf->prio_name))
+	if (conf->prio_name && !strcmp(hwe->prio_name, conf->prio_name))
 		return 0;
-	
+
 	return snprintf(buff, len, "%s", hwe->prio_name);
+}
+
+static int
+snprint_hw_prio_args (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+        if (!hwe->prio_args || (strlen(hwe->prio_args) == 0))
+                return 0;
+        if (conf->prio_args && !strcmp(hwe->prio_args, conf->prio_args))
+                return 0;
+
+	return snprintf(buff, len, "%s", hwe->prio_args);
 }
 
 static int
@@ -1454,9 +1597,10 @@ snprint_hw_features (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->features || !conf->features)
+	if (!hwe->features)
 		return 0;
-	if (strlen(hwe->features) == strlen(conf->features) &&
+	if (conf->features &&
+	    strlen(hwe->features) == strlen(conf->features) &&
 	    !strcmp(hwe->features, conf->features))
 		return 0;
 
@@ -1468,9 +1612,10 @@ snprint_hw_hardware_handler (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->hwhandler || !conf->hwhandler)
+	if (!hwe->hwhandler)
 		return 0;
-	if (strlen(hwe->hwhandler) == strlen(conf->hwhandler) &&
+	if (conf->hwhandler &&
+	    strlen(hwe->hwhandler) == strlen(conf->hwhandler) &&
 	    !strcmp(hwe->hwhandler, conf->hwhandler))
 		return 0;
 
@@ -1482,9 +1627,10 @@ snprint_hw_selector (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->selector || !conf->selector)
+	if (!hwe->selector)
 		return 0;
-	if (strlen(hwe->selector) == strlen(conf->selector) &&
+	if (conf->selector &&
+	    strlen(hwe->selector) == strlen(conf->selector) &&
 	    !strcmp(hwe->selector, conf->selector))
 		return 0;
 
@@ -1498,9 +1644,9 @@ snprint_hw_path_grouping_policy (char * buff, int len, void * data)
 
 	char str[POLICY_NAME_SIZE];
 
-	if (!hwe->pgpolicy || !conf->pgpolicy)
+	if (!hwe->pgpolicy)
 		return 0;
-	if (hwe->pgpolicy == conf->pgpolicy)
+	if (conf->pgpolicy && hwe->pgpolicy == conf->pgpolicy)
 		return 0;
 
 	get_pgpolicy_name(str, POLICY_NAME_SIZE, hwe->pgpolicy);
@@ -1513,9 +1659,9 @@ snprint_hw_failback (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->pgfailback || !conf->pgfailback)
+	if (!hwe->pgfailback)
 		return 0;
-	if (hwe->pgfailback == conf->pgfailback)
+	if (conf->pgfailback && hwe->pgfailback == conf->pgfailback)
 		return 0;
 
 	switch(hwe->pgfailback) {
@@ -1536,9 +1682,9 @@ snprint_hw_rr_weight (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->rr_weight || !conf->rr_weight)
+	if (!hwe->rr_weight)
 		return 0;
-	if (hwe->rr_weight == conf->rr_weight)
+	if (conf->rr_weight && hwe->rr_weight == conf->rr_weight)
 		return 0;
 	if (hwe->rr_weight == RR_WEIGHT_PRIO)
 		return snprintf(buff, len, "priorities");
@@ -1623,11 +1769,12 @@ snprint_hw_path_checker (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->checker_name || !conf->checker_name)
+	if (!hwe->checker_name)
 		return 0;
-	if (!strcmp(hwe->checker_name, conf->checker_name))
+	if (conf->checker_name &&
+	    !strcmp(hwe->checker_name, conf->checker_name))
 		return 0;
-	
+
 	return snprintf(buff, len, "%s", hwe->checker_name);
 }
 
@@ -1637,6 +1784,24 @@ snprint_def_polling_interval (char * buff, int len, void * data)
 	if (conf->checkint == DEFAULT_CHECKINT)
 		return 0;
 	return snprintf(buff, len, "%i", conf->checkint);
+}
+
+static int
+snprint_def_fast_io_fail(char * buff, int len, void * data)
+{
+	if (!conf->fast_io_fail)
+		return 0;
+	if (conf->fast_io_fail == -1)
+		return snprintf(buff, len, "off");
+	return snprintf(buff, len, "%d", conf->fast_io_fail);
+}
+
+static int
+snprint_def_dev_loss(char * buff, int len, void * data)
+{
+	if (!conf->dev_loss)
+		return 0;
+	return snprintf(buff, len, "%u", conf->dev_loss);
 }
 
 static int
@@ -1719,8 +1884,21 @@ snprint_def_prio (char * buff, int len, void * data)
 	if (strlen(conf->prio_name) == strlen(DEFAULT_PRIO) &&
 	    !strcmp(conf->prio_name, DEFAULT_PRIO))
 		return 0;
-	
+
 	return snprintf(buff, len, "%s", conf->prio_name);
+}
+
+static int
+snprint_def_prio_args (char * buff, int len, void * data)
+{
+	if (!conf->prio_args)
+		return 0;
+
+	if (strlen(conf->prio_args) == strlen(DEFAULT_PRIO_ARGS) &&
+	    !strcmp(conf->prio_args, DEFAULT_PRIO_ARGS))
+		return 0;
+
+	return snprintf(buff, len, "%s", conf->prio_args);
 }
 
 static int
@@ -1743,7 +1921,7 @@ snprint_def_path_checker (char * buff, int len, void * data)
 	if (strlen(conf->checker_name) == strlen(DEFAULT_CHECKER) &&
 	    !strcmp(conf->checker_name, DEFAULT_CHECKER))
 		return 0;
-	
+
 	return snprintf(buff, len, "%s", conf->checker_name);
 }
 
@@ -1846,6 +2024,18 @@ snprint_def_no_path_retry (char * buff, int len, void * data)
 }
 
 static int
+snprint_def_queue_without_daemon (char * buff, int len, void * data)
+{
+	switch (conf->queue_without_daemon) {
+	case QUE_NO_DAEMON_OFF:
+		return snprintf(buff, len, "no");
+	case QUE_NO_DAEMON_ON:
+		return snprintf(buff, len, "yes");
+	}
+	return 0;
+}
+
+static int
 snprint_def_pg_timeout (char * buff, int len, void * data)
 {
 	if (conf->pg_timeout == DEFAULT_PGTIMEOUT)
@@ -1923,6 +2113,7 @@ init_keywords(void)
 	install_keyword("path_grouping_policy", &def_pgpolicy_handler, &snprint_def_path_grouping_policy);
 	install_keyword("getuid_callout", &def_getuid_callout_handler, &snprint_def_getuid_callout);
 	install_keyword("prio", &def_prio_handler, &snprint_def_prio);
+	install_keyword("prio_args", &def_prio_args_handler, &snprint_def_prio_args);
 	install_keyword("features", &def_features_handler, &snprint_def_features);
 	install_keyword("path_checker", &def_path_checker_handler, &snprint_def_path_checker);
 	install_keyword("checker", &def_path_checker_handler, &snprint_def_path_checker);
@@ -1931,12 +2122,15 @@ init_keywords(void)
 	install_keyword("max_fds", &max_fds_handler, &snprint_max_fds);
 	install_keyword("rr_weight", &def_weight_handler, &snprint_def_rr_weight);
 	install_keyword("no_path_retry", &def_no_path_retry_handler, &snprint_def_no_path_retry);
+	install_keyword("queue_without_daemon", &def_queue_without_daemon, &snprint_def_queue_without_daemon);
 	install_keyword("pg_timeout", &def_pg_timeout_handler, &snprint_def_pg_timeout);
 	install_keyword("flush_on_last_del", &def_flush_on_last_del_handler, &snprint_def_flush_on_last_del);
 	install_keyword("user_friendly_names", &names_handler, &snprint_def_user_friendly_names);
 	install_keyword("mode", &def_mode_handler, &snprint_def_mode);
 	install_keyword("uid", &def_uid_handler, &snprint_def_uid);
 	install_keyword("gid", &def_gid_handler, &snprint_def_gid);
+	install_keyword("fast_io_fail_tmo", &def_fast_io_fail_handler, &snprint_def_fast_io_fail);
+	install_keyword("dev_loss_tmo", &def_dev_loss_handler, &snprint_def_dev_loss);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
@@ -1985,12 +2179,15 @@ init_keywords(void)
 	install_keyword("features", &hw_features_handler, &snprint_hw_features);
 	install_keyword("hardware_handler", &hw_handler_handler, &snprint_hw_hardware_handler);
 	install_keyword("prio", &hw_prio_handler, &snprint_hw_prio);
+	install_keyword("prio_args", &hw_prio_args_handler, &snprint_hw_prio_args);
 	install_keyword("failback", &hw_failback_handler, &snprint_hw_failback);
 	install_keyword("rr_weight", &hw_weight_handler, &snprint_hw_rr_weight);
 	install_keyword("no_path_retry", &hw_no_path_retry_handler, &snprint_hw_no_path_retry);
 	install_keyword("rr_min_io", &hw_minio_handler, &snprint_hw_rr_min_io);
 	install_keyword("pg_timeout", &hw_pg_timeout_handler, &snprint_hw_pg_timeout);
 	install_keyword("flush_on_last_del", &hw_flush_on_last_del_handler, &snprint_hw_flush_on_last_del);
+	install_keyword("fast_io_fail_tmo", &hw_fast_io_fail_handler, &snprint_hw_fast_io_fail);
+	install_keyword("dev_loss_tmo", &hw_dev_loss_handler, &snprint_hw_dev_loss);
 	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);

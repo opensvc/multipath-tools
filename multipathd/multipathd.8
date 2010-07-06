@@ -63,6 +63,9 @@ Show the currently used blacklist rules, derived from default values and values 
 .B list|show devices
 Show all available block devices by name including the information if they are blacklisted or not.
 .TP
+.B list|show status
+Show the number of path checkers in each possible state, the number of monitored paths, and whether multipathd is currently handling a uevent.
+.TP
 .B add path $path
 Add a path to the list of monitored paths. $path is as listed in /sys/block (e.g. sda).
 .TP 
@@ -108,4 +111,4 @@ Restore queuing on multipahted map $map
 .BR hotplug (8)
 .SH "AUTHORS"
 .B multipathd
-was developed by Christophe Varoqui, <christophe.varoqui@free.fr> and others.
+was developed by Christophe Varoqui, <christophe.varoqui@opensvc.com> and others.

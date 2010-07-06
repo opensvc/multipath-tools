@@ -2,6 +2,7 @@
 #define _CONFIG_H
 
 #include <sys/types.h>
+#include <stdint.h>
 
 #define ORIGIN_DEFAULT 0
 #define ORIGIN_CONFIG  1
@@ -23,6 +24,7 @@ struct hwentry {
 	char * selector;
 	char * checker_name;
 	char * prio_name;
+	char * prio_args;
 
 	int pgpolicy;
 	int pgfailback;
@@ -31,6 +33,8 @@ struct hwentry {
 	int minio;
 	int pg_timeout;
 	int flush_on_last_del;
+	int fast_io_fail;
+	unsigned int dev_loss;
 	char * bl_product;
 };
 
@@ -72,12 +76,16 @@ struct config {
 	int pg_timeout;
 	int max_fds;
 	int force_reload;
+	int queue_without_daemon;
 	int daemon;
 	int flush_on_last_del;
 	int attribute_flags;
+	int fast_io_fail;
+	unsigned int dev_loss;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;
+	uint32_t cookie;
 
 	char * dev;
 	char * sysfs_dir;
@@ -89,6 +97,7 @@ struct config {
 	char * hwhandler;
 	char * bindings_file;
 	char * prio_name;
+	char * prio_args;
 	char * checker_name;
 
 	vector keywords;

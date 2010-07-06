@@ -1,6 +1,6 @@
 # Makefile.inc
 #
-# Copyright (C) 2004 Christophe Varoqui, <christophe.varoqui@free.fr>
+# Copyright (C) 2004 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 
 #
 # Allow to force some libraries to be used statically. (Uncomment one of the

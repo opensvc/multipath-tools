@@ -16,6 +16,7 @@
 #	rr_weight		priorities
 #	failback		immediate
 #	no_path_retry		fail
+#	queue_without_daemon    no
 #	user_friendly_names	no
 #	mode			644
 #	uid			0

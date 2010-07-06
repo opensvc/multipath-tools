@@ -61,7 +61,7 @@
 #define CMDSIZE 160
 
 #define LOG_MSG(a,b) \
-	if (strlen(b)) condlog(a, "%s: %s", pp->dev, b);
+	if (strlen(b)) condlog(a, "%s: %s - %s", pp->mpp->alias, pp->dev, b);
 
 pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -934,26 +934,9 @@ check_path (struct vectors * vecs, struct path * pp)
 	 */
 	pp->tick = conf->checkint;
 
-	if (!checker_selected(&pp->checker)) {
-		pathinfo(pp, conf->hwtable, DI_SYSFS);
-		select_checker(pp);
-	}
-	if (!checker_selected(&pp->checker)) {
-		condlog(0, "%s: checker is not set", pp->dev);
-		return;
-	}
-	/*
-	 * Set checker in async mode.
-	 * Honored only by checker implementing the said mode.
-	 */
-	checker_set_async(&pp->checker);
+	newstate = get_state(pp, 1);
 
-	if (path_offline(pp))
-		newstate = PATH_DOWN;
-	else
-		newstate = checker_check(&pp->checker);
-
-	if (newstate < 0) {
+	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
 		condlog(2, "%s: unusable path", pp->dev);
 		pathinfo(pp, conf->hwtable, 0);
 		return;
@@ -1214,6 +1197,7 @@ reconfigure (struct vectors * vecs)
 		conf->checkint = DEFAULT_CHECKINT;
 		conf->max_checkint = MAX_CHECKINT(conf->checkint);
 	}
+	conf->daemon = 1;
 	configure(vecs, 1);
 	free_config(old);
 	return 0;
@@ -1360,6 +1344,8 @@ child (void * param)
 	pthread_t check_thr, uevent_thr, uxlsnr_thr;
 	pthread_attr_t log_attr, misc_attr;
 	struct vectors * vecs;
+	struct multipath * mpp;
+	int i;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -1426,6 +1412,7 @@ child (void * param)
 		exit(1);
 	}
 	conf->daemon = 1;
+	dm_udev_set_sync_support(0);
 	/*
 	 * fetch and configure both paths and multipaths
 	 */
@@ -1441,6 +1428,7 @@ child (void * param)
 	pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs);
 	pthread_attr_destroy(&misc_attr);
 
+	pthread_mutex_lock(&exit_mutex);
 	pthread_cond_wait(&exit_cond, &exit_mutex);
 
 	/*
@@ -1448,6 +1436,9 @@ child (void * param)
 	 */
 	block_signal(SIGHUP, NULL);
 	lock(vecs->lock);
+	if (conf->queue_without_daemon == QUE_NO_DAEMON_OFF)
+		vector_foreach_slot(vecs->mpvec, mpp, i)
+			dm_queue_if_no_path(mpp->alias, 0);
 	remove_maps_and_stop_waiters(vecs);
 	free_pathvec(vecs->pathvec, FREE_PATHS);
 

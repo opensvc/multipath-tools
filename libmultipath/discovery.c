@@ -204,6 +204,43 @@ sysfs_get_fc_nodename (struct sysfs_device * dev, char * node,
 	return 1;
 }
 
+int
+sysfs_set_scsi_tmo (struct multipath *mpp)
+{
+	char attr_path[SYSFS_PATH_SIZE];
+	struct path *pp;
+	int i;
+	char value[11];
+
+	if (!mpp->dev_loss && !mpp->fast_io_fail)
+		return 0;
+	vector_foreach_slot(mpp->paths, pp, i) {
+		if (safe_snprintf(attr_path, SYSFS_PATH_SIZE,
+				  "/class/fc_remote_ports/rport-%d:%d-%d",
+				  pp->sg_id.host_no, pp->sg_id.channel,
+				  pp->sg_id.scsi_id)) {
+			condlog(0, "attr_path '/class/fc_remote_ports/rport-%d:%d-%d' too large", pp->sg_id.host_no, pp->sg_id.channel, pp->sg_id.scsi_id);
+			return 1;
+		}
+		if (mpp->dev_loss){
+			snprintf(value, 11, "%u", mpp->dev_loss);
+			if (sysfs_attr_set_value(attr_path, "dev_loss_tmo",
+						 value))
+				return 1;
+		}
+		if (mpp->fast_io_fail){
+			if (mpp->fast_io_fail == -1)
+				sprintf(value, "off");
+			else
+				snprintf(value, 11, "%u", mpp->fast_io_fail);
+			if (sysfs_attr_set_value(attr_path, "fast_io_fail_tmo",
+						 value))
+				return 1;
+		}
+	}
+	return 0;
+}
+
 static int
 opennode (char * dev, int mode)
 {
@@ -587,7 +624,7 @@ path_offline (struct path * pp)
 	pp->sysdev = sysfs_device_from_path(pp);
 	if (!pp->sysdev) {
 		condlog(1, "%s: failed to get sysfs information", pp->dev);
-		return 1;
+		return PATH_WILD;
 	}
 
 	parent = sysfs_device_get_parent(pp->sysdev);
@@ -597,20 +634,25 @@ path_offline (struct path * pp)
 		parent = sysfs_device_get_parent(parent);
 	if (!parent) {
 		condlog(1, "%s: failed to get parent", pp->dev);
-		return 1;
+		return PATH_WILD;
 	}
 
 	if (sysfs_get_state(parent, buff, SCSI_STATE_SIZE))
-		return 1;
+		return PATH_WILD;
 
 	condlog(3, "%s: state = %s", pp->dev, buff);
 
 	if (!strncmp(buff, "offline", 7)) {
 		pp->offline = 1;
-		return 1;
+		return PATH_DOWN;
 	}
 	pp->offline = 0;
-	return 0;
+	if (!strncmp(buff, "blocked", 7))
+		return PATH_PENDING;
+	else if (!strncmp(buff, "running", 7))
+		return PATH_UP;
+
+	return PATH_DOWN;
 }
 
 extern int
@@ -699,36 +741,41 @@ cciss_ioctl_pathinfo (struct path * pp, int mask)
 	return 0;
 }
 
-static int
-get_state (struct path * pp)
+int
+get_state (struct path * pp, int daemon)
 {
 	struct checker * c = &pp->checker;
+	int state;
 
 	condlog(3, "%s: get_state", pp->dev);
 
 	if (!checker_selected(c)) {
+		if (daemon)
+			pathinfo(pp, conf->hwtable, DI_SYSFS);
 		select_checker(pp);
 		if (!checker_selected(c)) {
 			condlog(3, "%s: No checker selected", pp->dev);
-			return 1;
+			return PATH_UNCHECKED;
 		}
 		checker_set_fd(c, pp->fd);
 		if (checker_init(c, pp->mpp?&pp->mpp->mpcontext:NULL)) {
 			condlog(3, "%s: checker init failed", pp->dev);
-			return 1;
+			return PATH_UNCHECKED;
 		}
 	}
-	if (path_offline(pp)) {
-		condlog(3, "%s: path offline", pp->dev);
-		pp->state = PATH_DOWN;
-		return 0;
+	state = path_offline(pp);
+	if (state != PATH_UP) {
+		condlog(3, "%s: path inaccessible", pp->dev);
+		return state;
 	}
-	pp->state = checker_check(c);
-	condlog(3, "%s: state = %i", pp->dev, pp->state);
-	if (pp->state == PATH_DOWN && strlen(checker_message(c)))
+	if (daemon)
+		checker_set_async(c);
+	state = checker_check(c);
+	condlog(3, "%s: state = %i", pp->dev, state);
+	if (state == PATH_DOWN && strlen(checker_message(c)))
 		condlog(3, "%s: checker msg is \"%s\"",
 			pp->dev, checker_message(c));
-	return 0;
+	return state;
 }
 
 static int
@@ -813,8 +860,11 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	    cciss_ioctl_pathinfo(pp, mask))
 		goto blank;
 
-	if (mask & DI_CHECKER && get_state(pp))
-		goto blank;
+	if (mask & DI_CHECKER) {
+		pp->state = get_state(pp, 0);
+		if (pp->state == PATH_UNCHECKED || pp->state == PATH_WILD)
+			goto blank;
+	}
 
 	 /*
 	  * Retrieve path priority, even for PATH_DOWN paths if it has never

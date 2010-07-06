@@ -23,6 +23,7 @@
 #include "blacklist.h"
 #include "switchgroup.h"
 #include "devmapper.h"
+#include "uevent.h"
 
 #define MAX(x,y) (x > y) ? x : y
 #define TAIL     (line + len - 1 - c)
@@ -378,6 +379,7 @@ snprint_pg_selector (char * buff, size_t len, struct pathgroup * pgp)
 static int
 snprint_pg_pri (char * buff, size_t len, struct pathgroup * pgp)
 {
+	int avg_priority = 0;
 	/*
 	 * path group priority is not updated for every path prio change,
 	 * but only on switch group code path.
@@ -385,7 +387,9 @@ snprint_pg_pri (char * buff, size_t len, struct pathgroup * pgp)
 	 * Printing is another reason to update.
 	 */
 	path_group_prio_update(pgp);
-	return snprint_int(buff, len, pgp->priority);
+	if (pgp->enabled_paths)
+		avg_priority = pgp->priority / pgp->enabled_paths;
+	return snprint_int(buff, len, avg_priority);
 }
 
 static int
@@ -1232,6 +1236,14 @@ snprint_status (char * buff, int len, struct vectors *vecs)
 		fwd += snprintf(buff + fwd, len - fwd, "%-20s%u\n",
 				checker_state_name(i), count[i]);
 	}
+
+        int monitored_count = 0;
+
+        vector_foreach_slot(vecs->pathvec, pp, i)
+                if (pp->fd != -1)
+                        monitored_count++;
+        fwd += snprintf(buff + fwd, len - fwd, "\npaths: %d\nbusy: %s\n",
+			monitored_count, is_uevent_busy()? "True" : "False");
 
 	if (fwd > len)
 		return len;

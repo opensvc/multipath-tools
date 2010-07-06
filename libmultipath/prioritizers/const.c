@@ -2,7 +2,7 @@
 
 #include <prio.h>
 
-int getprio (struct path * pp)
+int getprio (struct path * pp, char * args)
 {
 	return 1;
 }
