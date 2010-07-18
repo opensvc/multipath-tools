@@ -28,7 +28,7 @@ OBJS = main.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o
 all : $(EXEC)
 
 $(EXEC): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(EXEC) $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(EXEC)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 
 install:
