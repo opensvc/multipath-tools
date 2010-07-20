@@ -247,15 +247,8 @@ select_alias (struct multipath * mp)
 			mp->alias = get_user_friendly_alias(mp->wwid,
 					conf->bindings_file, mp->alias_prefix);
 		}
-		if (mp->alias == NULL){
-			char *alias;
-			if ((alias = MALLOC(WWID_SIZE)) != NULL){
-				if (dm_get_name(mp->wwid, alias) == 1)
-					mp->alias = alias;
-				else
-					FREE(alias);
-			}
-		}
+		if (mp->alias == NULL)
+			mp->alias = dm_get_name(mp->wwid);
 		if (mp->alias == NULL)
 			mp->alias = STRDUP(mp->wwid);
 	}
