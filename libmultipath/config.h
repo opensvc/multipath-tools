@@ -25,6 +25,7 @@ struct hwentry {
 	char * checker_name;
 	char * prio_name;
 	char * prio_args;
+	char * alias_prefix;
 
 	int pgpolicy;
 	int pgfailback;
@@ -99,6 +100,7 @@ struct config {
 	char * prio_name;
 	char * prio_args;
 	char * checker_name;
+	char * alias_prefix;
 
 	vector keywords;
 	vector mptable;

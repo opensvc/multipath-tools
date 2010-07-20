@@ -158,6 +158,9 @@ free_hwe (struct hwentry * hwe)
 	if (hwe->prio_args)
 		FREE(hwe->prio_args);
 
+	if (hwe->alias_prefix)
+		FREE(hwe->alias_prefix);
+
 	if (hwe->bl_product)
 		FREE(hwe->bl_product);
 
@@ -282,6 +285,7 @@ merge_hwe (struct hwentry * hwe1, struct hwentry * hwe2)
 	merge_str(checker_name);
 	merge_str(prio_name);
 	merge_str(prio_args);
+	merge_str(alias_prefix);
 	merge_str(bl_product);
 	merge_num(pgpolicy);
 	merge_num(pgfailback);
@@ -331,6 +335,9 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 		goto out;
 
 	if (dhwe->prio_args && !(hwe->prio_args = set_param_str(dhwe->prio_args)))
+		goto out;
+
+	if (dhwe->alias_prefix && !(hwe->alias_prefix = set_param_str(dhwe->alias_prefix)))
 		goto out;
 
 	hwe->pgpolicy = dhwe->pgpolicy;
@@ -408,6 +415,9 @@ free_config (struct config * conf)
 
 	if (conf->prio_name)
 		FREE(conf->prio_name);
+
+	if (conf->alias_prefix)
+		FREE(conf->alias_prefix);
 
 	if (conf->prio_args)
 		FREE(conf->prio_args);

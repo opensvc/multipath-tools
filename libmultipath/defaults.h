@@ -2,6 +2,7 @@
 #define DEFAULT_UDEVDIR		"/dev"
 #define DEFAULT_MULTIPATHDIR	"/" LIB_STRING "/multipath"
 #define DEFAULT_SELECTOR	"round-robin 0"
+#define DEFAULT_ALIAS_PREFIX	"mpath"
 #define DEFAULT_FEATURES	"0"
 #define DEFAULT_HWHANDLER	"0"
 #define DEFAULT_MINIO		1000

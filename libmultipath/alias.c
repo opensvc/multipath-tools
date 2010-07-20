@@ -180,34 +180,35 @@ fail:
 }
 
 static int
-format_devname(char *name, int id, int len)
+format_devname(char *name, int id, int len, char *prefix)
 {
 	int pos;
+	int prefix_len = strlen(prefix);
 
 	memset(name,0, len);
-	strcpy(name,"mpath");
-	for (pos = len - 1; pos >= 5; pos--) {
+	strcpy(name, prefix);
+	for (pos = len - 1; pos >= prefix_len; pos--) {
 		name[pos] = 'a' + id % 26;
 		if (id < 26)
 			break;
 		id /= 26;
 		id--;
 	}
-	memmove(name + 5, name + pos, len - pos);
-	name[5 + len - pos] = '\0';
-	return (5 + len - pos);
+	memmove(name + prefix_len, name + pos, len - pos);
+	name[prefix_len + len - pos] = '\0';
+	return (prefix_len + len - pos);
 }
 
 static int
-scan_devname(char *alias)
+scan_devname(char *alias, char *prefix)
 {
 	char *c;
 	int i, n = 0;
 
-	if (strncmp(alias, "mpath", 5))
+	if (!prefix || strncmp(alias, prefix, strlen(prefix)))
 		return -1;
 
-	c = alias + 5;
+	c = alias + strlen(prefix);
 	while (*c != '\0' && *c != ' ' && *c != '\t') {
 		i = *c - 'a';
 		n = ( n * 26 ) + i;
@@ -221,7 +222,7 @@ scan_devname(char *alias)
 }
 
 static int
-lookup_binding(FILE *f, char *map_wwid, char **map_alias)
+lookup_binding(FILE *f, char *map_wwid, char **map_alias, char *prefix)
 {
 	char buf[LINE_MAX];
 	unsigned int line_nr = 0;
@@ -240,7 +241,7 @@ lookup_binding(FILE *f, char *map_wwid, char **map_alias)
 		alias = strtok(buf, " \t");
 		if (!alias) /* blank line */
 			continue;
-		curr_id = scan_devname(alias);
+		curr_id = scan_devname(alias, prefix);
 		if (curr_id >= id)
 			id = curr_id + 1;
 		wwid = strtok(NULL, "");
@@ -284,7 +285,7 @@ rlookup_binding(FILE *f, char **map_wwid, char *map_alias)
 		alias = strtok(buf, " \t");
 		if (!alias) /* blank line */
 			continue;
-		curr_id = scan_devname(alias);
+		curr_id = scan_devname(alias, NULL); /* TBD: Why this call? */
 		if (curr_id >= id)
 			id = curr_id + 1;
 		wwid = strtok(NULL, " \t");
@@ -309,7 +310,7 @@ rlookup_binding(FILE *f, char **map_wwid, char *map_alias)
 }
 
 static char *
-allocate_binding(int fd, char *wwid, int id)
+allocate_binding(int fd, char *wwid, int id, char *prefix)
 {
 	char buf[LINE_MAX];
 	off_t offset;
@@ -321,7 +322,7 @@ allocate_binding(int fd, char *wwid, int id)
 		return NULL;
 	}
 
-	i = format_devname(buf, id, LINE_MAX);
+	i = format_devname(buf, id, LINE_MAX, prefix);
 	c = buf + i;
 	snprintf(c,LINE_MAX - i, " %s\n", wwid);
 	buf[LINE_MAX - 1] = '\0';
@@ -352,7 +353,7 @@ allocate_binding(int fd, char *wwid, int id)
 }
 
 char *
-get_user_friendly_alias(char *wwid, char *file)
+get_user_friendly_alias(char *wwid, char *file, char *prefix)
 {
 	char *alias;
 	int fd, scan_fd, id;
@@ -385,7 +386,7 @@ get_user_friendly_alias(char *wwid, char *file)
 		return NULL;
 	}
 
-	id = lookup_binding(f, wwid, &alias);
+	id = lookup_binding(f, wwid, &alias, prefix);
 	if (id < 0) {
 		fclose(f);
 		close(scan_fd);
@@ -394,7 +395,7 @@ get_user_friendly_alias(char *wwid, char *file)
 	}
 
 	if (!alias && can_write)
-		alias = allocate_binding(fd, wwid, id);
+		alias = allocate_binding(fd, wwid, id, prefix);
 
 	fclose(f);
 	close(scan_fd);

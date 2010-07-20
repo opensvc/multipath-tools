@@ -215,6 +215,26 @@ select_selector (struct multipath * mp)
 	return 0;
 }
 
+static void
+select_alias_prefix (struct multipath * mp)
+{
+	if (mp->hwe && mp->hwe->alias_prefix) {
+		mp->alias_prefix = mp->hwe->alias_prefix;
+		condlog(3, "%s: alias_prefix = %s (controller setting)",
+			mp->wwid, mp->alias_prefix);
+		return;
+	}
+	if (conf->alias_prefix) {
+		mp->alias_prefix = conf->alias_prefix;
+		condlog(3, "%s: alias_prefix = %s (config file default)",
+			mp->wwid, mp->alias_prefix);
+		return;
+	}
+	mp->alias_prefix = set_default(DEFAULT_ALIAS_PREFIX);
+	condlog(3, "%s: alias_prefix = %s (internal default)",
+		mp->wwid, mp->alias_prefix);
+}
+
 extern int
 select_alias (struct multipath * mp)
 {
@@ -222,9 +242,11 @@ select_alias (struct multipath * mp)
 		mp->alias = mp->mpe->alias;
 	else {
 		mp->alias = NULL;
-		if (conf->user_friendly_names)
+		if (conf->user_friendly_names) {
+			select_alias_prefix(mp);
 			mp->alias = get_user_friendly_alias(mp->wwid,
-					conf->bindings_file);
+					conf->bindings_file, mp->alias_prefix);
+		}
 		if (mp->alias == NULL){
 			char *alias;
 			if ((alias = MALLOC(WWID_SIZE)) != NULL){
