@@ -335,8 +335,13 @@ retry:
 	condlog(3, "%s: discover", mpp->alias);
 
 	if (update_multipath_strings(mpp, vecs->pathvec)) {
-		char new_alias[WWID_SIZE];
+		char *new_alias;
 
+		new_alias = MALLOC(WWID_SIZE);
+		if (!new_alias) {
+			condlog(0, "%s: failed to allocate alias", mpp->alias);
+			goto out;
+		}
 		/*
 		 * detect an external rename of the multipath device
 		 */
@@ -344,7 +349,8 @@ retry:
 			condlog(3, "%s multipath mapped device name has "
 				"changed from %s to %s", mpp->wwid,
 				mpp->alias, new_alias);
-			strcpy(mpp->alias, new_alias);
+			FREE(mpp->alias);
+			mpp->alias = new_alias;
 
 			if (mpp->waiter)
 				strncpy(((struct event_thread *)mpp->waiter)->mapname,
