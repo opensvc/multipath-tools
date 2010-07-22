@@ -96,7 +96,7 @@ vector_del_slot(vector v, int slot)
 		v->slot = NULL;
 	}
 	else
-		v = REALLOC(v->slot, sizeof (void *) * v->allocated);
+		v->slot = REALLOC(v->slot, sizeof (void *) * v->allocated);
 }
 
 void
