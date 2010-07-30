@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include "checkers.h"
 #include "vector.h"
@@ -204,6 +205,41 @@ sysfs_get_fc_nodename (struct sysfs_device * dev, char * node,
 	return 1;
 }
 
+static int
+find_rport_id(struct path *pp)
+{
+	char attr_path[SYSFS_PATH_SIZE];
+	char *dir, *base;
+	int host, channel, rport_id = -1;
+
+	if (safe_sprintf(attr_path,
+			 "/class/fc_transport/target%i:%i:%i",
+			 pp->sg_id.host_no, pp->sg_id.channel,
+			 pp->sg_id.scsi_id)) {
+		condlog(0, "attr_path too small for target");
+		return 1;
+	}
+
+	if (sysfs_resolve_link(attr_path, SYSFS_PATH_SIZE))
+		return -1;
+
+	condlog(4, "target%d:%d:%d -> path %s", pp->sg_id.host_no, pp->sg_id.channel, pp->sg_id.scsi_id, attr_path);
+	dir = attr_path;
+	do {
+		base = basename(dir);
+		dir = dirname(dir);
+
+		if (sscanf((const char *)base, "rport-%d:%d-%d", &host, &channel, &rport_id) == 3)
+			break;
+	} while (strcmp((const char *)dir, "/"));
+
+	if (rport_id < 0)
+		return -1;
+
+	condlog(4, "target%d:%d:%d -> rport_id %d", pp->sg_id.host_no, pp->sg_id.channel, pp->sg_id.scsi_id, rport_id);
+	return rport_id;
+}
+
 int
 sysfs_set_scsi_tmo (struct multipath *mpp)
 {
@@ -211,15 +247,22 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 	struct path *pp;
 	int i;
 	char value[11];
+	int rport_id;
 
 	if (!mpp->dev_loss && !mpp->fast_io_fail)
 		return 0;
 	vector_foreach_slot(mpp->paths, pp, i) {
+		rport_id = find_rport_id(pp);
+		if (rport_id < 0) {
+			condlog(0, "failed to find rport_id for target%d:%d:%d", pp->sg_id.host_no, pp->sg_id.channel, pp->sg_id.scsi_id);
+			return 1;
+		}
+
 		if (safe_snprintf(attr_path, SYSFS_PATH_SIZE,
 				  "/class/fc_remote_ports/rport-%d:%d-%d",
 				  pp->sg_id.host_no, pp->sg_id.channel,
-				  pp->sg_id.scsi_id)) {
-			condlog(0, "attr_path '/class/fc_remote_ports/rport-%d:%d-%d' too large", pp->sg_id.host_no, pp->sg_id.channel, pp->sg_id.scsi_id);
+				  rport_id)) {
+			condlog(0, "attr_path '/class/fc_remote_ports/rport-%d:%d-%d' too large", pp->sg_id.host_no, pp->sg_id.channel, rport_id);
 			return 1;
 		}
 		if (mpp->dev_loss){
