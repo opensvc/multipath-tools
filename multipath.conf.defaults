@@ -552,6 +552,47 @@
 #		prio_args		""
 #	}
 #	device {
+#		vendor			"IBM"
+#		product			"3303      NVDISK"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
+#		features		"0"
+#		hardware_handler	"0"
+#               path_grouping_policy    failover
+#		failback		immediate
+#		no_path_retry		60
+#		rr_weight		uniform
+#		rr_min_io		1000
+#               path_checker            tur
+#	}
+#	device {
+#		vendor			"AIX"
+#		product			"VDASD"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
+#		features		"0"
+#		hardware_handler	"0"
+#               path_grouping_policy    multibus
+#		failback		immediate
+#		no_path_retry		60
+#		rr_weight		uniform
+#		rr_min_io		1000
+#               path_checker            directio
+#	}
+#	device {
+#		vendor			"AIX"
+#		product			"NVDISK"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
+#		features		"0"
+#		hardware_handler	"1 alua"
+#               path_grouping_policy    group_by_prio
+#		failback		immediate
+#		no_path_retry		60
+#		rr_weight		uniform
+#		rr_min_io		1000
+#		path_checker            tur
+#		prio			alua
+#		prio_args		""
+#	}
+#	device {
 #		vendor			"SGI"
 #		product			"TP9[13]00"
 #		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
