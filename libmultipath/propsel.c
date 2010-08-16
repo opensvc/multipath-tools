@@ -245,7 +245,7 @@ select_alias (struct multipath * mp)
 		if (conf->user_friendly_names) {
 			select_alias_prefix(mp);
 			mp->alias = get_user_friendly_alias(mp->wwid,
-					conf->bindings_file, mp->alias_prefix);
+					conf->bindings_file, mp->alias_prefix, conf->bindings_read_only);
 		}
 		if (mp->alias == NULL)
 			mp->alias = dm_get_name(mp->wwid);

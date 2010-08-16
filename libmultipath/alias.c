@@ -353,7 +353,8 @@ allocate_binding(int fd, char *wwid, int id, char *prefix)
 }
 
 char *
-get_user_friendly_alias(char *wwid, char *file, char *prefix)
+get_user_friendly_alias(char *wwid, char *file, char *prefix,
+			int bindings_read_only)
 {
 	char *alias;
 	int fd, scan_fd, id;
@@ -394,7 +395,7 @@ get_user_friendly_alias(char *wwid, char *file, char *prefix)
 		return NULL;
 	}
 
-	if (!alias && can_write)
+	if (!alias && can_write && !bindings_read_only)
 		alias = allocate_binding(fd, wwid, id, prefix);
 
 	fclose(f);

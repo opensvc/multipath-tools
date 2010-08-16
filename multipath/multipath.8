@@ -6,7 +6,7 @@ multipath \- Device mapper target autoconfig
 .RB [\| \-v\ \c
 .IR verbosity \|]
 .RB [\| \-d \|]
-.RB [\| \-h | \-l | \-ll | \-f | \-F \|]
+.RB [\| \-h | \-l | \-ll | \-f | \-F | \-B \|]
 .RB [\| \-p\ \c
 .BR failover | multibus | group_by_serial | group_by_prio | group_by_node_name \|]
 .RB [\| device \|]
@@ -46,6 +46,9 @@ flush a multipath device map specified as parameter, if unused
 .TP
 .B \-F
 flush all unused multipath device maps
+.TP
+.B \-B
+treat the bindings file as read only
 .TP
 .BI \-p " policy"
 force maps to specified policy:
