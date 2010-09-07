@@ -37,6 +37,6 @@ int dm_remove_partmaps (const char * mapname, int need_sync);
 int dm_get_uuid(char *name, char *uuid);
 int dm_get_info (char * mapname, struct dm_info ** dmi);
 int dm_rename (char * old, char * new);
-int dm_get_name(char * uuid, char * name);
+char * dm_get_name(char * uuid);
 
 #endif /* _DEVMAPPER_H */

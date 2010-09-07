@@ -335,16 +335,18 @@ retry:
 	condlog(3, "%s: discover", mpp->alias);
 
 	if (update_multipath_strings(mpp, vecs->pathvec)) {
-		char new_alias[WWID_SIZE];
+		char *new_alias;
 
 		/*
 		 * detect an external rename of the multipath device
 		 */
-		if (dm_get_name(mpp->wwid, new_alias)) {
+		new_alias = dm_get_name(mpp->wwid);
+		if (new_alias) {
 			condlog(3, "%s multipath mapped device name has "
 				"changed from %s to %s", mpp->wwid,
 				mpp->alias, new_alias);
-			strcpy(mpp->alias, new_alias);
+			FREE(mpp->alias);
+			mpp->alias = new_alias;
 
 			if (mpp->waiter)
 				strncpy(((struct event_thread *)mpp->waiter)->mapname,

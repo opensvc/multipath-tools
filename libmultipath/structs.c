@@ -163,9 +163,7 @@ free_multipath (struct multipath * mpp, int free_paths)
 
 	free_multipath_attributes(mpp);
 
-	if (mpp->alias &&
-	    (!mpp->mpe || (mpp->mpe && mpp->alias != mpp->mpe->alias)) &&
-	    (mpp->wwid && mpp->alias != mpp->wwid)) {
+	if (mpp->alias) {
 		FREE(mpp->alias);
 		mpp->alias = NULL;
 	}

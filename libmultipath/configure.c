@@ -577,11 +577,11 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 
 			remove_map(mpp, vecs, 0);
 
-			if (dm_flush_map(mpp->alias))
+			if (dm_flush_map(alias))
 				condlog(2, "%s: remove failed (dead)",
-					mpp->alias);
+					alias);
 			else
-				condlog(2, "%s: remove (dead)", mpp->alias);
+				condlog(2, "%s: remove (dead)", alias);
 		}
 	}
 	return 0;

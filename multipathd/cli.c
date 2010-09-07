@@ -363,7 +363,7 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data)
 {
 	int r;
 	struct handler * h;
-	vector cmdvec;
+	vector cmdvec = NULL;
 
 	r = get_cmdvec(cmd, &cmdvec);
 
@@ -467,7 +467,7 @@ key_generator (const char * str, int state)
 	struct key * kw;
 	int i;
 	struct handler *h;
-	vector v;
+	vector v = NULL;
 
 	if (!state) {
 		index = 0;

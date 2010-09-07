@@ -7,7 +7,7 @@ include ../Makefile.inc
 #
 CFLAGS += -I$(multipathdir)
 LDFLAGS += -lpthread -ldevmapper -lreadline -lncurses -ldl \
-	   -lmultipath -L$(multipathdir)
+	   -L$(multipathdir) -lmultipath
 
 #
 # debuging stuff

@@ -239,25 +239,18 @@ extern int
 select_alias (struct multipath * mp)
 {
 	if (mp->mpe && mp->mpe->alias)
-		mp->alias = mp->mpe->alias;
+		mp->alias = STRDUP(mp->mpe->alias);
 	else {
 		mp->alias = NULL;
 		if (conf->user_friendly_names) {
 			select_alias_prefix(mp);
 			mp->alias = get_user_friendly_alias(mp->wwid,
-					conf->bindings_file, mp->alias_prefix);
-		}
-		if (mp->alias == NULL){
-			char *alias;
-			if ((alias = MALLOC(WWID_SIZE)) != NULL){
-				if (dm_get_name(mp->wwid, alias) == 1)
-					mp->alias = alias;
-				else
-					FREE(alias);
-			}
+					conf->bindings_file, mp->alias_prefix, conf->bindings_read_only);
 		}
 		if (mp->alias == NULL)
-			mp->alias = mp->wwid;
+			mp->alias = dm_get_name(mp->wwid);
+		if (mp->alias == NULL)
+			mp->alias = STRDUP(mp->wwid);
 	}
 
 	return 0;
@@ -472,7 +465,7 @@ select_pg_timeout(struct multipath *mp)
 		return 0;
 	}
 	mp->pg_timeout = PGTIMEOUT_UNDEF;
-	condlog(3, "pg_timeout = NONE (internal default)");
+	condlog(3, "%s: pg_timeout = NONE (internal default)", mp->alias);
 	return 0;
 }
 
