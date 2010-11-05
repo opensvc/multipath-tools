@@ -21,11 +21,13 @@
 
 #include "parser.h"
 #include "memory.h"
+#include "debug.h"
 
 /* local vars */
 static int sublevel = 0;
 vector keywords = NULL;
 vector *keywords_addr = NULL;
+static int line_nr;
 
 void set_current_keywords (vector *k)
 {
@@ -35,7 +37,7 @@ void set_current_keywords (vector *k)
 
 int
 keyword_alloc(vector keywords, char *string, int (*handler) (vector),
-		int (*print) (char *, int, void *))
+		int (*print) (char *, int, void *), int unique)
 {
 	struct keyword *keyword;
 
@@ -51,6 +53,7 @@ keyword_alloc(vector keywords, char *string, int (*handler) (vector),
 	keyword->string = string;
 	keyword->handler = handler;
 	keyword->print = print;
+	keyword->unique = unique;
 
 	vector_set_slot(keywords, keyword);
 
@@ -60,7 +63,7 @@ keyword_alloc(vector keywords, char *string, int (*handler) (vector),
 int
 install_keyword_root(char *string, int (*handler) (vector))
 {
-	int r = keyword_alloc(keywords, string, handler, NULL);
+	int r = keyword_alloc(keywords, string, handler, NULL, 1);
 	if (!r)
 		*keywords_addr = keywords;
 	return r;
@@ -79,8 +82,8 @@ install_sublevel_end(void)
 }
 
 int
-install_keyword(char *string, int (*handler) (vector),
-		int (*print) (char *, int, void *))
+_install_keyword(char *string, int (*handler) (vector),
+		int (*print) (char *, int, void *), int unique)
 {
 	int i = 0;
 	struct keyword *keyword;
@@ -101,7 +104,7 @@ install_keyword(char *string, int (*handler) (vector),
 		return 1;
 
 	/* add new sub keyword */
-	return keyword_alloc(keyword->sub, string, handler, print);
+	return keyword_alloc(keyword->sub, string, handler, print, unique);
 }
 
 void
@@ -419,6 +422,39 @@ set_value(vector strvec)
 
 /* non-recursive configuration stream handler */
 static int kw_level = 0;
+
+int warn_on_duplicates(vector uniques, char *str)
+{
+	char *tmp;
+	int i;
+
+	vector_foreach_slot(uniques, tmp, i) {
+		if (!strcmp(str, tmp)) {
+			condlog(1, "multipath.conf line %d, duplicate keyword: %s", line_nr, str);
+			return 0;
+		}
+	}
+	tmp = strdup(str);
+	if (!tmp)
+		return 1;
+	if (!vector_alloc_slot(uniques)) {
+		free(tmp);
+		return 1;
+	}
+	vector_set_slot(uniques, tmp);
+	return 0;
+}
+
+void free_uniques(vector uniques)
+{
+	char *tmp;
+	int i;
+
+	vector_foreach_slot(uniques, tmp, i)
+		free(tmp);
+	vector_free(uniques);
+}
+
 int
 process_stream(vector keywords)
 {
@@ -428,13 +464,21 @@ process_stream(vector keywords)
 	char *str;
 	char *buf;
 	vector strvec;
+	vector uniques;
+
+	uniques = vector_alloc();
+	if (!uniques)
+		return 1;
 
 	buf = MALLOC(MAXBUF);
 
-	if (!buf)
+	if (!buf) {
+		vector_free(uniques);
 		return 1;
+	}
 
 	while (read_line(buf, MAXBUF)) {
+		line_nr++;
 		strvec = alloc_strvec(buf);
 		memset(buf,0, MAXBUF);
 
@@ -452,6 +496,12 @@ process_stream(vector keywords)
 			keyword = VECTOR_SLOT(keywords, i);
 
 			if (!strcmp(keyword->string, str)) {
+				if (keyword->unique &&
+				    warn_on_duplicates(uniques, str)) {
+						r = 1;
+						free_strvec(strvec);
+						goto out;
+				}
 				if (keyword->handler)
 					r += (*keyword->handler) (strvec);
 
@@ -463,11 +513,16 @@ process_stream(vector keywords)
 				break;
 			}
 		}
+		if (i >= VECTOR_SIZE(keywords))
+			condlog(1, "multipath.conf +%d, invalid keyword: %s",
+				line_nr, str);
 
 		free_strvec(strvec);
 	}
 
+out:
 	FREE(buf);
+	free_uniques(uniques);
 	return r;
 }
 
@@ -496,6 +551,7 @@ init_data(char *conf_file, void (*init_keywords) (void))
 */
 
 	/* Stream handling */
+	line_nr = 0;
 	r = process_stream(keywords);
 	fclose(stream);
 	//free_keywords(keywords);

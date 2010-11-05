@@ -2189,17 +2189,17 @@ init_keywords(void)
 	__deprecated install_keyword("default_path_checker", &def_path_checker_handler, NULL);
 
 	install_keyword_root("blacklist", &blacklist_handler);
-	install_keyword("devnode", &ble_devnode_handler, &snprint_ble_simple);
-	install_keyword("wwid", &ble_wwid_handler, &snprint_ble_simple);
-	install_keyword("device", &ble_device_handler, NULL);
+	install_keyword_multi("devnode", &ble_devnode_handler, &snprint_ble_simple);
+	install_keyword_multi("wwid", &ble_wwid_handler, &snprint_ble_simple);
+	install_keyword_multi("device", &ble_device_handler, NULL);
 	install_sublevel();
 	install_keyword("vendor", &ble_vendor_handler, &snprint_bled_vendor);
 	install_keyword("product", &ble_product_handler, &snprint_bled_product);
 	install_sublevel_end();
 	install_keyword_root("blacklist_exceptions", &blacklist_exceptions_handler);
-	install_keyword("devnode", &ble_except_devnode_handler, &snprint_ble_simple);
-	install_keyword("wwid", &ble_except_wwid_handler, &snprint_ble_simple);
-	install_keyword("device", &ble_except_device_handler, NULL);
+	install_keyword_multi("devnode", &ble_except_devnode_handler, &snprint_ble_simple);
+	install_keyword_multi("wwid", &ble_except_wwid_handler, &snprint_ble_simple);
+	install_keyword_multi("device", &ble_except_device_handler, NULL);
 	install_sublevel();
 	install_keyword("vendor", &ble_except_vendor_handler, &snprint_bled_vendor);
 	install_keyword("product", &ble_except_product_handler, &snprint_bled_product);
@@ -2217,7 +2217,7 @@ init_keywords(void)
 #endif
 
 	install_keyword_root("devices", &devices_handler);
-	install_keyword("device", &device_handler, NULL);
+	install_keyword_multi("device", &device_handler, NULL);
 	install_sublevel();
 	install_keyword("vendor", &vendor_handler, &snprint_hw_vendor);
 	install_keyword("product", &product_handler, &snprint_hw_product);
@@ -2243,7 +2243,7 @@ init_keywords(void)
 	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);
-	install_keyword("multipath", &multipath_handler, NULL);
+	install_keyword_multi("multipath", &multipath_handler, NULL);
 	install_sublevel();
 	install_keyword("wwid", &wwid_handler, &snprint_mp_wwid);
 	install_keyword("alias", &alias_handler, &snprint_mp_alias);

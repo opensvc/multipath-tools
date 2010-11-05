@@ -44,6 +44,7 @@ struct keyword {
 	int (*handler) (vector);
 	int (*print) (char *, int, void *);
 	vector sub;
+	int unique;
 };
 
 /* global var exported */
@@ -60,12 +61,14 @@ FILE *stream;
 
 /* Prototypes */
 extern int keyword_alloc(vector keywords, char *string, int (*handler) (vector),
-			 int (*print) (char *, int, void *));
+			 int (*print) (char *, int, void *), int unique);
 extern int install_keyword_root(char *string, int (*handler) (vector));
 extern void install_sublevel(void);
 extern void install_sublevel_end(void);
-extern int install_keyword(char *string, int (*handler) (vector),
-			   int (*print) (char *, int, void *));
+extern int _install_keyword(char *string, int (*handler) (vector),
+			    int (*print) (char *, int, void *), int unique);
+#define install_keyword(str, vec, pri) _install_keyword(str, vec, pri, 1)
+#define install_keyword_multi(str, vec, pri) _install_keyword(str, vec, pri, 0)
 extern void dump_keywords(vector keydump, int level);
 extern void free_keywords(vector keywords);
 extern vector alloc_strvec(char *string);
