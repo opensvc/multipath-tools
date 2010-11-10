@@ -25,14 +25,17 @@ path_group_prio_update (struct pathgroup * pgp)
 			pgp->enabled_paths++;
 		}
 	}
-	pgp->priority = priority;
+	if (pgp->enabled_paths)
+		pgp->priority = priority / pgp->enabled_paths;
+	else
+		pgp->priority = 0;
 }
 
 extern int
 select_path_group (struct multipath * mpp)
 {
 	int i;
-	int max_priority = 0, avg_priority;
+	int max_priority = 0;
 	int bestpg = 1;
 	int max_enabled_paths = 1;
 	struct pathgroup * pgp;
@@ -46,12 +49,11 @@ select_path_group (struct multipath * mpp)
 
 		path_group_prio_update(pgp);
 		if (pgp->enabled_paths) {
-			avg_priority = pgp->priority / pgp->enabled_paths;
-			if (avg_priority > max_priority) {
-				max_priority = avg_priority;
+			if (pgp->priority > max_priority) {
+				max_priority = pgp->priority;
 				max_enabled_paths = pgp->enabled_paths;
 				bestpg = i + 1;
-			} else if (avg_priority == max_priority) {
+			} else if (pgp->priority == max_priority) {
 				if (pgp->enabled_paths > max_enabled_paths) {
 					max_enabled_paths = pgp->enabled_paths;
 					bestpg = i + 1;
