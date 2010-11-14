@@ -473,16 +473,20 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 
 		/* 1. if path has no unique id or wwid blacklisted */
 		if (memcmp(empty_buff, pp1->wwid, WWID_SIZE) == 0 ||
-		    filter_path(conf, pp1) > 0)
+		    filter_path(conf, pp1) > 0) {
+			orphan_path(pp1);
 			continue;
+		}
 
 		/* 2. if path already coalesced */
 		if (pp1->mpp)
 			continue;
 
 		/* 3. if path has disappeared */
-		if (!pp1->size)
+		if (!pp1->size) {
+			orphan_path(pp1);
 			continue;
+		}
 
 		/* 4. path is out of scope */
 		if (refwwid && strncmp(pp1->wwid, refwwid, WWID_SIZE))
