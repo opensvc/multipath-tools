@@ -242,6 +242,11 @@ maximum number of open fds is taken from the calling process. It is usually
 1024. To be safe, this should be set to the maximum number of paths plus 32,
 if that number is greated than 1024.
 .TP
+.B checker_timeout
+Specify the timeout to user for path checkers that issue scsi commands with an
+explict timeout, in seconds; default taken from
+.I /sys/block/sd<x>/device/timeout
+.TP
 .B fast_io_fail_tmo
 Specify the number of seconds the scsi layer will wait after a problem has been
 detected on a FC remote port before failing IO to devices on that remote port.

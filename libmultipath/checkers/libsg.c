@@ -11,7 +11,8 @@
 #include "../libmultipath/sg_include.h"
 
 int
-sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff)
+sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff,
+	 unsigned int timeout)
 {
 	/* defaults */
 	int blocks = 1;
@@ -51,7 +52,7 @@ sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff)
 	io_hdr.dxferp = buff;
 	io_hdr.mx_sb_len = SENSE_BUFF_LEN;
 	io_hdr.sbp = senseBuff;
-	io_hdr.timeout = DEF_TIMEOUT;
+	io_hdr.timeout = timeout;
 	io_hdr.pack_id = (int)start_block;
 	if (diop && *diop)
 	io_hdr.flags |= SG_FLAG_DIRECT_IO;

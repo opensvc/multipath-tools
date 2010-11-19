@@ -211,6 +211,15 @@
 #	gid disk
 #
 #	#
+#	# name    : checker_timeout
+#	# scope   : multipath & multipathd
+#	# desc    : The timeout to use for path checkers that issue scsi
+#	#           commands with an explicit timeout, in seconds.
+#	# values  : n > 0
+#	# default : taken from /sys/block/sd<x>/device/timeout
+#	checker_timeout 60
+#
+#	#
 #	# name    : fast_io_fail_tmo
 #	# scope   : multipath & multipathd
 #	# desc    : The number of seconds the scsi layer will wait after a

@@ -18,7 +18,6 @@
 #define INQUIRY_CMDLEN		6
 #define INQUIRY_CMD		0x12
 #define SENSE_BUFF_LEN		32
-#define RDAC_DEF_TIMEOUT	60000
 #define SCSI_CHECK_CONDITION	0x2
 #define SCSI_COMMAND_TERMINATED	0x22
 #define SG_ERR_DRIVER_SENSE	0x08
@@ -43,7 +42,8 @@ void libcheck_free (struct checker * c)
 }
 
 static int
-do_inq(int sg_fd, unsigned int pg_op, void *resp, int mx_resp_len)
+do_inq(int sg_fd, unsigned int pg_op, void *resp, int mx_resp_len,
+       unsigned int timeout)
 {
 	unsigned char inqCmdBlk[INQUIRY_CMDLEN] = { INQUIRY_CMD, 1, 0, 0, 0, 0 };
 	unsigned char sense_b[SENSE_BUFF_LEN];
@@ -62,7 +62,7 @@ do_inq(int sg_fd, unsigned int pg_op, void *resp, int mx_resp_len)
 	io_hdr.dxferp = resp;
 	io_hdr.cmdp = inqCmdBlk;
 	io_hdr.sbp = sense_b;
-	io_hdr.timeout = RDAC_DEF_TIMEOUT;
+	io_hdr.timeout = timeout;
 
 	if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
 		return 1;
@@ -104,7 +104,8 @@ libcheck_check (struct checker * c)
 	int ret;
 
 	memset(&inq, 0, sizeof(struct volume_access_inq));
-	if (0 != do_inq(c->fd, 0xC9, &inq, sizeof(struct volume_access_inq))) {
+	if (0 != do_inq(c->fd, 0xC9, &inq, sizeof(struct volume_access_inq),
+			c->timeout)) {
 		ret = PATH_DOWN;
 		goto done;
 	} else if ((inq.PQ_PDT & 0x20) || (inq.PQ_PDT & 0x7f)) {

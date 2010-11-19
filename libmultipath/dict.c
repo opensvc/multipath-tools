@@ -406,6 +406,25 @@ def_queue_without_daemon(vector strvec)
 }
 
 static int
+def_checker_timeout_handler(vector strvec)
+{
+	unsigned int checker_timeout;
+	char *buff;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if (sscanf(buff, "%u", &checker_timeout) == 1)
+		conf->checker_timeout = checker_timeout;
+	else
+		conf->checker_timeout = 0;
+
+	free(buff);
+	return 0;
+}
+
+static int
 def_pg_timeout_handler(vector strvec)
 {
 	int pg_timeout;
@@ -2076,6 +2095,15 @@ snprint_def_queue_without_daemon (char * buff, int len, void * data)
 }
 
 static int
+snprint_def_checker_timeout (char *buff, int len, void *data)
+{
+	if (!conf->checker_timeout)
+		return 0;
+
+	return snprintf(buff, len, "%u", conf->checker_timeout);
+}
+
+static int
 snprint_def_pg_timeout (char * buff, int len, void * data)
 {
 	if (conf->pg_timeout == DEFAULT_PGTIMEOUT)
@@ -2174,6 +2202,7 @@ init_keywords(void)
 	install_keyword("rr_weight", &def_weight_handler, &snprint_def_rr_weight);
 	install_keyword("no_path_retry", &def_no_path_retry_handler, &snprint_def_no_path_retry);
 	install_keyword("queue_without_daemon", &def_queue_without_daemon, &snprint_def_queue_without_daemon);
+	install_keyword("checker_timeout", &def_checker_timeout_handler, &snprint_def_checker_timeout);
 	install_keyword("pg_timeout", &def_pg_timeout_handler, &snprint_def_pg_timeout);
 	install_keyword("flush_on_last_del", &def_flush_on_last_del_handler, &snprint_def_flush_on_last_del);
 	install_keyword("user_friendly_names", &names_handler, &snprint_def_user_friendly_names);

@@ -46,7 +46,7 @@ void libcheck_free (struct checker * c)
 
 static int
 do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
-       void *resp, int mx_resp_len, int noisy)
+       void *resp, int mx_resp_len, int noisy, unsigned int timeout)
 {
 	unsigned char inqCmdBlk[INQUIRY_CMDLEN] =
 		{ INQUIRY_CMD, 0, 0, 0, 0, 0 };
@@ -70,7 +70,7 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
 	io_hdr.dxferp = resp;
 	io_hdr.cmdp = inqCmdBlk;
 	io_hdr.sbp = sense_b;
-	io_hdr.timeout = DEF_TIMEOUT;
+	io_hdr.timeout = timeout;
 
 	if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
 		return 1;
@@ -98,7 +98,7 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
 }
 
 static int
-do_tur (int fd)
+do_tur (int fd, unsigned int timeout)
 {
 	unsigned char turCmdBlk[TUR_CMD_LEN] = { 0x00, 0, 0, 0, 0, 0 };
 	struct sg_io_hdr io_hdr;
@@ -111,7 +111,7 @@ do_tur (int fd)
 	io_hdr.dxfer_direction = SG_DXFER_NONE;
 	io_hdr.cmdp = turCmdBlk;
 	io_hdr.sbp = sense_buffer;
-	io_hdr.timeout = DEF_TIMEOUT;
+	io_hdr.timeout = timeout;
 	io_hdr.pack_id = 0;
 
 	if (ioctl(fd, SG_IO, &io_hdr) < 0)
@@ -128,12 +128,12 @@ libcheck_check (struct checker * c)
 {
 	char buff[MX_ALLOC_LEN];
 
-	if (0 != do_inq(c->fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0)) {
+	if (0 != do_inq(c->fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0, c->timeout)) {
 		MSG(c, MSG_HP_SW_DOWN);
 		return PATH_DOWN;
 	}
 
-	if (do_tur(c->fd)) {
+	if (do_tur(c->fd, c->timeout)) {
 		MSG(c, MSG_HP_SW_GHOST);
 		return PATH_GHOST;
 	}

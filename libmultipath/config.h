@@ -79,6 +79,7 @@ struct config {
 	int max_fds;
 	int force_reload;
 	int queue_without_daemon;
+	int checker_timeout;
 	int daemon;
 	int flush_on_last_del;
 	int attribute_flags;
