@@ -142,7 +142,7 @@ int log_enqueue (int prio, const char * fmt, va_list ap)
 	la->empty = 0;
 	msg = (struct logmsg *)la->tail;
 	msg->prio = prio;
-	strcpy((void *)&msg->str, buff);
+	memcpy((void *)&msg->str, buff, strlen(buff) + 1);
 	lastmsg->next = la->tail;
 	msg->next = la->head;
 
