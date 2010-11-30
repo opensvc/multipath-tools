@@ -94,7 +94,7 @@ int datacore_prio (const char *dev, int sg_fd, char * args)
 	if ((io_hdr.info & SG_INFO_OK_MASK) != SG_INFO_OK)
 		return 0;
 
-	snprintf(vendor, 9, "%.8s\n", inqBuffp + 8);
+	snprintf(vendor, 8, "%.8s\n", inqBuffp + 8);
 	snprintf(product, 17, "%.16s", inqBuffp + 16);
 	snprintf(luname, 21, "%.19s", inqBuffp + 36);
 	snprintf(wwpn, 17, "%.16s", inqBuffp + 96);
