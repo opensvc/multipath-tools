@@ -4,7 +4,7 @@
 #defaults {
 #	udev_dir		/dev
 #	polling_interval	5
-#	selector		"round-robin 0"
+#	path_selector		"round-robin 0"
 #	path_grouping_policy	failover
 #	getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #	prio			const

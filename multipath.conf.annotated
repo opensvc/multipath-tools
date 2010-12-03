@@ -27,14 +27,14 @@
 #	polling_interval 10
 #
 #	#
-#	# name    : selector
+#	# name    : path_selector
 #	# scope   : multipath & multipathd
 #	# desc    : the default path selector algorithm to use
 #	#           these algorithms are offered by the kernel multipath target
 #	# values  : "round-robin 0"
 #	# default : "round-robin 0"
 #	#
-#	selector	"round-robin 0"
+#	path_selector	"round-robin 0"
 #
 #	#
 #	# name    : path_grouping_policy

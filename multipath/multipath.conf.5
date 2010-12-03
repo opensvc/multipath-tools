@@ -82,10 +82,22 @@ default verbosity. Higher values increase the verbosity level. Valid
 levels are between 0 and 6; default is
 .I 2
 .TP
-.B selector
+.B path_selector
 The default path selector algorithm to use; they are offered by the
-kernel multipath target. The only currently implemented is
-.I "round-robin 0"
+kernel multipath target. There are three selector algorithms.
+.RS
+.TP 12
+.B "round-robin 0"
+Loop through every path in the path group, sending the same amount of IO to
+each.
+.TP
+.B "queue-length 0"
+Send the next bunch of IO down the path with the least amount of outstanding IO.
+.TP
+.B "service-time 0"
+Choose the path for the next bunch of IO based on the amount of outstanding IO
+to the path and its relative throughput.
+.RE
 .TP
 .B path_grouping_policy
 The default path grouping policy to apply to unspecified

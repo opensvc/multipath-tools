@@ -5,7 +5,7 @@
 #defaults {
 #	udev_dir		/dev
 #	polling_interval 	10
-#	selector		"round-robin 0"
+#	path_selector		"round-robin 0"
 #	path_grouping_policy	multibus
 #	getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #	prio			const
