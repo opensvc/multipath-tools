@@ -35,8 +35,16 @@ The following commands can be used in interactive mode:
 .B list|show paths
 Show the paths that multipathd is monitoring, and their state. 
 .TP
+.B list|show paths format $format
+Show the paths that multipathd is monitoring, using a format string with path
+format wildcards.
+.TP
 .B list|show maps|multipaths
 Show the multipath devices that the multipathd is monitoring. 
+.TP
+.B list|show maps|multipaths format $format
+Show the status of all multipath devices that the multipathd is monitoring,
+using a format string with multipath format wildcards.
 .TP
 .B list|show maps|multipaths status
 Show the status of all multipath devices that the multipathd is monitoring.
@@ -53,6 +61,9 @@ Show the current multipath topology. Same as "multipath -ll".
 .B list|show map|multipath $map topology
 Show topology of a single multipath device specified by $map, e.g. 36005076303ffc56200000000000010aa.
 This map could be obtained from "list maps".
+.TP
+.B list|show wildcards
+Show the format wildcards used in interactive commands taking $format
 .TP
 .B list|show config
 Show the currently used configuration, derived from default values and values specified within the configuration file /etc/multipath.conf.
@@ -99,11 +110,20 @@ Sets path $path into failed state.
 .B reinstate path $path
 Resumes path $path from failed state.
 .TP
+.B disablequeueing maps|multipaths
+Disable queueing on all multipath devices.
+.TP
+.B restorequeueing maps|multipaths
+Restore queueing on all multipath devices.
+.TP
 .B disablequeueing map|multipath $map
-Disabled queuing on multipathed map $map
+Disable queuing on multipathed map $map
 .TP
 .B restorequeueing map|multipath $map
 Restore queuing on multipahted map $map
+.TP
+.B quit|exit
+End interactive session.
 
 .SH "SEE ALSO"
 .BR multipath (8)
