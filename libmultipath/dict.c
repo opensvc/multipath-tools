@@ -338,6 +338,10 @@ def_weight_handler(vector strvec)
 	    !strcmp(buff, "priorities"))
 		conf->rr_weight = RR_WEIGHT_PRIO;
 
+	if (strlen(buff) == strlen("uniform") &&
+	    !strcmp(buff, "uniform"))
+		conf->rr_weight = RR_WEIGHT_NONE;
+
 	FREE(buff);
 
 	return 0;
@@ -933,6 +937,10 @@ hw_weight_handler(vector strvec)
 	    !strcmp(buff, "priorities"))
 		hwe->rr_weight = RR_WEIGHT_PRIO;
 
+	if (strlen(buff) == strlen("uniform") &&
+	    !strcmp(buff, "uniform"))
+		hwe->rr_weight = RR_WEIGHT_NONE;
+
 	FREE(buff);
 
 	return 0;
@@ -1261,6 +1269,10 @@ mp_weight_handler(vector strvec)
 	    !strcmp(buff, "priorities"))
 		mpe->rr_weight = RR_WEIGHT_PRIO;
 
+	if (strlen(buff) == strlen("uniform") &&
+	    !strcmp(buff, "uniform"))
+		mpe->rr_weight = RR_WEIGHT_NONE;
+
 	FREE(buff);
 
 	return 0;
@@ -1385,11 +1397,6 @@ snprint_mp_alias (char * buff, int len, void * data)
 	if (!mpe->alias)
 		return 0;
 
-	if (conf->user_friendly_names &&
-	    (strlen(mpe->alias) == strlen("mpath")) &&
-	    !strcmp(mpe->alias, "mpath"))
-		return 0;
-
 	return snprintf(buff, len, "%s", mpe->alias);
 }
 
@@ -1414,7 +1421,7 @@ snprint_mp_selector (char * buff, int len, void * data)
 	if (!mpe->selector)
 		return 0;
 
-	return snprintf(buff, len, "%s", mpe->selector);
+	return snprintf(buff, len, "\"%s\"", mpe->selector);
 }
 
 static int
@@ -1477,6 +1484,8 @@ snprint_mp_rr_weight (char * buff, int len, void * data)
 		return 0;
 	if (mpe->rr_weight == RR_WEIGHT_PRIO)
 		return snprintf(buff, len, "priorities");
+	if (mpe->rr_weight == RR_WEIGHT_NONE)
+		return snprintf(buff, len, "uniform");
 
 	return 0;
 }
@@ -1604,10 +1613,6 @@ snprint_hw_getuid_callout (char * buff, int len, void * data)
 
 	if (!hwe->getuid)
 		return 0;
-	if (conf->getuid &&
-	    strlen(hwe->getuid) == strlen(conf->getuid) &&
-	    !strcmp(hwe->getuid, conf->getuid))
-		return 0;
 
 	return snprintf(buff, len, "\"%s\"", hwe->getuid);
 }
@@ -1617,9 +1622,7 @@ snprint_hw_prio (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->prio_name || (strlen(hwe->prio_name) == 0))
-		return 0;
-	if (conf->prio_name && !strcmp(hwe->prio_name, conf->prio_name))
+	if (!hwe->prio_name)
 		return 0;
 
 	return snprintf(buff, len, "%s", hwe->prio_name);
@@ -1630,12 +1633,10 @@ snprint_hw_alias_prefix (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->alias_prefix || (strlen(hwe->alias_prefix) == 0))
-		return 0;
-	if (conf->alias_prefix && !strcmp(hwe->alias_prefix, conf->alias_prefix))
+	if (!hwe->alias_prefix)
 		return 0;
 
-	return snprintf(buff, len, "%s", hwe->alias_prefix);
+	return snprintf(buff, len, "\"%s\"", hwe->alias_prefix);
 }
 
 static int
@@ -1643,12 +1644,10 @@ snprint_hw_prio_args (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-        if (!hwe->prio_args || (strlen(hwe->prio_args) == 0))
-                return 0;
-        if (conf->prio_args && !strcmp(hwe->prio_args, conf->prio_args))
+        if (!hwe->prio_args)
                 return 0;
 
-	return snprintf(buff, len, "%s", hwe->prio_args);
+	return snprintf(buff, len, "\"%s\"", hwe->prio_args);
 }
 
 static int
@@ -1657,10 +1656,6 @@ snprint_hw_features (char * buff, int len, void * data)
 	struct hwentry * hwe = (struct hwentry *)data;
 
 	if (!hwe->features)
-		return 0;
-	if (conf->features &&
-	    strlen(hwe->features) == strlen(conf->features) &&
-	    !strcmp(hwe->features, conf->features))
 		return 0;
 
 	return snprintf(buff, len, "\"%s\"", hwe->features);
@@ -1673,10 +1668,6 @@ snprint_hw_hardware_handler (char * buff, int len, void * data)
 
 	if (!hwe->hwhandler)
 		return 0;
-	if (conf->hwhandler &&
-	    strlen(hwe->hwhandler) == strlen(conf->hwhandler) &&
-	    !strcmp(hwe->hwhandler, conf->hwhandler))
-		return 0;
 
 	return snprintf(buff, len, "\"%s\"", hwe->hwhandler);
 }
@@ -1688,12 +1679,8 @@ snprint_hw_selector (char * buff, int len, void * data)
 
 	if (!hwe->selector)
 		return 0;
-	if (conf->selector &&
-	    strlen(hwe->selector) == strlen(conf->selector) &&
-	    !strcmp(hwe->selector, conf->selector))
-		return 0;
 
-	return snprintf(buff, len, "%s", hwe->selector);
+	return snprintf(buff, len, "\"%s\"", hwe->selector);
 }
 
 static int
@@ -1704,8 +1691,6 @@ snprint_hw_path_grouping_policy (char * buff, int len, void * data)
 	char str[POLICY_NAME_SIZE];
 
 	if (!hwe->pgpolicy)
-		return 0;
-	if (conf->pgpolicy && hwe->pgpolicy == conf->pgpolicy)
 		return 0;
 
 	get_pgpolicy_name(str, POLICY_NAME_SIZE, hwe->pgpolicy);
@@ -1719,8 +1704,6 @@ snprint_hw_failback (char * buff, int len, void * data)
 	struct hwentry * hwe = (struct hwentry *)data;
 
 	if (!hwe->pgfailback)
-		return 0;
-	if (conf->pgfailback && hwe->pgfailback == conf->pgfailback)
 		return 0;
 
 	switch(hwe->pgfailback) {
@@ -1743,10 +1726,10 @@ snprint_hw_rr_weight (char * buff, int len, void * data)
 
 	if (!hwe->rr_weight)
 		return 0;
-	if (conf->rr_weight && hwe->rr_weight == conf->rr_weight)
-		return 0;
 	if (hwe->rr_weight == RR_WEIGHT_PRIO)
 		return snprintf(buff, len, "priorities");
+	if (hwe->rr_weight == RR_WEIGHT_NONE)
+		return snprintf(buff, len, "uniform");
 
 	return 0;
 }
@@ -1757,8 +1740,6 @@ snprint_hw_no_path_retry (char * buff, int len, void * data)
 	struct hwentry * hwe = (struct hwentry *)data;
 
 	if (!hwe->no_path_retry)
-		return 0;
-	if (hwe->no_path_retry == conf->no_path_retry)
 		return 0;
 
 	switch(hwe->no_path_retry) {
@@ -1782,8 +1763,6 @@ snprint_hw_rr_min_io (char * buff, int len, void * data)
 
 	if (!hwe->minio)
 		return 0;
-	if (hwe->minio == conf->minio)
-		return 0;
 
 	return snprintf(buff, len, "%u", hwe->minio);
 }
@@ -1794,8 +1773,6 @@ snprint_hw_pg_timeout (char * buff, int len, void * data)
 	struct hwentry * hwe = (struct hwentry *)data;
 
 	if (!hwe->pg_timeout)
-		return 0;
-	if (hwe->pg_timeout == conf->pg_timeout)
 		return 0;
 
 	switch (hwe->pg_timeout) {
@@ -1830,9 +1807,6 @@ snprint_hw_path_checker (char * buff, int len, void * data)
 
 	if (!hwe->checker_name)
 		return 0;
-	if (conf->checker_name &&
-	    !strcmp(hwe->checker_name, conf->checker_name))
-		return 0;
 
 	return snprintf(buff, len, "%s", hwe->checker_name);
 }
@@ -1840,8 +1814,6 @@ snprint_hw_path_checker (char * buff, int len, void * data)
 static int
 snprint_def_polling_interval (char * buff, int len, void * data)
 {
-	if (conf->checkint == DEFAULT_CHECKINT)
-		return 0;
 	return snprintf(buff, len, "%i", conf->checkint);
 }
 
@@ -1866,8 +1838,6 @@ snprint_def_dev_loss(char * buff, int len, void * data)
 static int
 snprint_def_verbosity (char * buff, int len, void * data)
 {
-	if (conf->checkint == DEFAULT_VERBOSITY)
-		return 0;
 	return snprintf(buff, len, "%i", conf->verbosity);
 }
 
@@ -1875,9 +1845,6 @@ static int
 snprint_def_udev_dir (char * buff, int len, void * data)
 {
 	if (!conf->udev_dir)
-		return 0;
-	if (strlen(DEFAULT_UDEVDIR) == strlen(conf->udev_dir) &&
-	    !strcmp(conf->udev_dir, DEFAULT_UDEVDIR))
 		return 0;
 
 	return snprintf(buff, len, "\"%s\"", conf->udev_dir);
@@ -1888,9 +1855,6 @@ snprint_def_multipath_dir (char * buff, int len, void * data)
 {
 	if (!conf->udev_dir)
 		return 0;
-	if (strlen(DEFAULT_MULTIPATHDIR) == strlen(conf->multipath_dir) &&
-	    !strcmp(conf->multipath_dir, DEFAULT_MULTIPATHDIR))
-		return 0;
 
 	return snprintf(buff, len, "\"%s\"", conf->multipath_dir);
 }
@@ -1899,25 +1863,21 @@ static int
 snprint_def_selector (char * buff, int len, void * data)
 {
 	if (!conf->selector)
-		return 0;
-	if (strlen(conf->selector) == strlen(DEFAULT_SELECTOR) &&
-	    !strcmp(conf->selector, DEFAULT_SELECTOR))
-		return 0;
+		return snprintf(buff, len, "\"%s\"", DEFAULT_SELECTOR);
 
-	return snprintf(buff, len, "%s", conf->selector);
+	return snprintf(buff, len, "\"%s\"", conf->selector);
 }
 
 static int
 snprint_def_path_grouping_policy (char * buff, int len, void * data)
 {
 	char str[POLICY_NAME_SIZE];
+	int pgpolicy = conf->pgpolicy;
 
-	if (!conf->pgpolicy)
-		return 0;
-	if (conf->pgpolicy == DEFAULT_PGPOLICY)
-		return 0;
+	if (!pgpolicy)
+		pgpolicy = DEFAULT_PGPOLICY;
 
-	get_pgpolicy_name(str, POLICY_NAME_SIZE, conf->pgpolicy);
+	get_pgpolicy_name(str, POLICY_NAME_SIZE, pgpolicy);
 
 	return snprintf(buff, len, "%s", str);
 }
@@ -1926,10 +1886,7 @@ static int
 snprint_def_getuid_callout (char * buff, int len, void * data)
 {
 	if (!conf->getuid)
-		return 0;
-	if (strlen(conf->getuid) == strlen(DEFAULT_GETUID) &&
-	    !strcmp(conf->getuid, DEFAULT_GETUID))
-		return 0;
+		return snprintf(buff, len, "\"%s\"", DEFAULT_GETUID);
 
 	return snprintf(buff, len, "\"%s\"", conf->getuid);
 }
@@ -1938,11 +1895,7 @@ static int
 snprint_def_prio (char * buff, int len, void * data)
 {
 	if (!conf->prio_name)
-		return 0;
-
-	if (strlen(conf->prio_name) == strlen(DEFAULT_PRIO) &&
-	    !strcmp(conf->prio_name, DEFAULT_PRIO))
-		return 0;
+		return snprintf(buff, len, "%s", DEFAULT_PRIO);
 
 	return snprintf(buff, len, "%s", conf->prio_name);
 }
@@ -1951,23 +1904,16 @@ static int
 snprint_def_prio_args (char * buff, int len, void * data)
 {
 	if (!conf->prio_args)
-		return 0;
+		return snprintf(buff, len, "\"%s\"", DEFAULT_PRIO_ARGS);
 
-	if (strlen(conf->prio_args) == strlen(DEFAULT_PRIO_ARGS) &&
-	    !strcmp(conf->prio_args, DEFAULT_PRIO_ARGS))
-		return 0;
-
-	return snprintf(buff, len, "%s", conf->prio_args);
+	return snprintf(buff, len, "\"%s\"", conf->prio_args);
 }
 
 static int
 snprint_def_features (char * buff, int len, void * data)
 {
 	if (!conf->features)
-		return 0;
-	if (strlen(conf->features) == strlen(DEFAULT_FEATURES) &&
-	    !strcmp(conf->features, DEFAULT_FEATURES))
-		return 0;
+		return snprintf(buff, len, "\"%s\"", DEFAULT_FEATURES);
 
 	return snprintf(buff, len, "\"%s\"", conf->features);
 }
@@ -1976,10 +1922,7 @@ static int
 snprint_def_path_checker (char * buff, int len, void * data)
 {
 	if (!conf->checker_name)
-		return 0;
-	if (strlen(conf->checker_name) == strlen(DEFAULT_CHECKER) &&
-	    !strcmp(conf->checker_name, DEFAULT_CHECKER))
-		return 0;
+		return snprintf(buff, len, "%s", DEFAULT_CHECKER);
 
 	return snprintf(buff, len, "%s", conf->checker_name);
 }
@@ -1987,10 +1930,9 @@ snprint_def_path_checker (char * buff, int len, void * data)
 static int
 snprint_def_failback (char * buff, int len, void * data)
 {
-	if (!conf->pgfailback)
-		return 0;
-	if (conf->pgfailback == DEFAULT_FAILBACK)
-		return 0;
+	int pgfailback = conf->pgfailback;
+	if (!pgfailback)
+		pgfailback = DEFAULT_FAILBACK;
 
 	switch(conf->pgfailback) {
 	case  FAILBACK_UNDEF:
@@ -2009,8 +1951,6 @@ static int
 snprint_def_rr_min_io (char * buff, int len, void * data)
 {
 	if (!conf->minio)
-		return 0;
-	if (conf->minio == DEFAULT_MINIO)
 		return 0;
 
 	return snprintf(buff, len, "%u", conf->minio);
@@ -2052,10 +1992,8 @@ snprint_def_gid(char * buff, int len, void * data)
 static int
 snprint_def_rr_weight (char * buff, int len, void * data)
 {
-	if (!conf->rr_weight)
-		return 0;
-	if (conf->rr_weight == DEFAULT_RR_WEIGHT)
-		return 0;
+	if (!conf->rr_weight || conf->rr_weight == RR_WEIGHT_NONE)
+		return snprintf(buff, len, "uniform");
 	if (conf->rr_weight == RR_WEIGHT_PRIO)
 		return snprintf(buff, len, "priorities");
 
@@ -2065,9 +2003,6 @@ snprint_def_rr_weight (char * buff, int len, void * data)
 static int
 snprint_def_no_path_retry (char * buff, int len, void * data)
 {
-	if (conf->no_path_retry == DEFAULT_NO_PATH_RETRY)
-		return 0;
-
 	switch(conf->no_path_retry) {
 	case NO_PATH_RETRY_UNDEF:
 		break;
@@ -2089,6 +2024,7 @@ snprint_def_queue_without_daemon (char * buff, int len, void * data)
 	case QUE_NO_DAEMON_OFF:
 		return snprintf(buff, len, "no");
 	case QUE_NO_DAEMON_ON:
+	case QUE_NO_DAEMON_UNDEF:
 		return snprintf(buff, len, "yes");
 	}
 	return 0;
@@ -2106,12 +2042,8 @@ snprint_def_checker_timeout (char *buff, int len, void *data)
 static int
 snprint_def_pg_timeout (char * buff, int len, void * data)
 {
-	if (conf->pg_timeout == DEFAULT_PGTIMEOUT)
-		return 0;
-
 	switch (conf->pg_timeout) {
 	case PGTIMEOUT_UNDEF:
-		break;
 	case -PGTIMEOUT_NONE:
 		return snprintf(buff, len, "none");
 	default:
@@ -2124,9 +2056,11 @@ static int
 snprint_def_flush_on_last_del (char * buff, int len, void * data)
 {
 	switch (conf->flush_on_last_del) {
+	case FLUSH_UNDEF:
 	case FLUSH_DISABLED:
 		return snprintf(buff, len, "no");
 	case FLUSH_ENABLED:
+	case FLUSH_IN_PROGRESS:
 		return snprintf(buff, len, "yes");
 	}
 	return 0;
@@ -2135,8 +2069,6 @@ snprint_def_flush_on_last_del (char * buff, int len, void * data)
 static int
 snprint_def_user_friendly_names (char * buff, int len, void * data)
 {
-	if (conf->user_friendly_names == DEFAULT_USER_FRIENDLY_NAMES)
-		return 0;
 	if (!conf->user_friendly_names)
 		return snprintf(buff, len, "no");
 
@@ -2147,10 +2079,8 @@ static int
 snprint_def_alias_prefix (char * buff, int len, void * data)
 {
 	if (!conf->alias_prefix)
-		return 0;
-	if (!strcmp(conf->alias_prefix, DEFAULT_ALIAS_PREFIX))
-		return 0;
-	return snprintf(buff, len, conf->alias_prefix);
+		return snprintf(buff, len, "\"%s\"", DEFAULT_ALIAS_PREFIX);
+	return snprintf(buff, len, "\"%s\"", conf->alias_prefix);
 }
 
 static int
@@ -2194,7 +2124,7 @@ init_keywords(void)
 	install_keyword("prio_args", &def_prio_args_handler, &snprint_def_prio_args);
 	install_keyword("features", &def_features_handler, &snprint_def_features);
 	install_keyword("path_checker", &def_path_checker_handler, &snprint_def_path_checker);
-	install_keyword("checker", &def_path_checker_handler, &snprint_def_path_checker);
+	install_keyword("checker", &def_path_checker_handler, NULL);
 	install_keyword("alias_prefix", &def_alias_prefix_handler, &snprint_def_alias_prefix);
 	install_keyword("failback", &default_failback_handler, &snprint_def_failback);
 	install_keyword("rr_min_io", &def_minio_handler, &snprint_def_rr_min_io);
@@ -2255,7 +2185,7 @@ init_keywords(void)
 	install_keyword("getuid_callout", &hw_getuid_callout_handler, &snprint_hw_getuid_callout);
 	install_keyword("path_selector", &hw_selector_handler, &snprint_hw_selector);
 	install_keyword("path_checker", &hw_path_checker_handler, &snprint_hw_path_checker);
-	install_keyword("checker", &hw_path_checker_handler, &snprint_hw_path_checker);
+	install_keyword("checker", &hw_path_checker_handler, NULL);
 	install_keyword("alias_prefix", &hw_alias_prefix_handler, &snprint_hw_alias_prefix);
 	install_keyword("features", &hw_features_handler, &snprint_hw_features);
 	install_keyword("hardware_handler", &hw_handler_handler, &snprint_hw_hardware_handler);
