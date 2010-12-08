@@ -108,7 +108,7 @@ libcheck_check (struct checker * c)
 			c->timeout)) {
 		ret = PATH_DOWN;
 		goto done;
-	} else if ((inq.PQ_PDT & 0x20) || (inq.PQ_PDT & 0x7f)) {
+        } else if (((inq.PQ_PDT & 0xE0) == 0x20) || (inq.PQ_PDT & 0x7f)) {
 		/* LUN not connected*/
 		ret = PATH_DOWN;
 		goto done;
