@@ -1528,7 +1528,7 @@ child (void * param)
 		vector_foreach_slot(vecs->mpvec, mpp, i)
 			dm_queue_if_no_path(mpp->alias, 0);
 	remove_maps_and_stop_waiters(vecs);
-	free_pathvec(vecs->pathvec, FREE_PATHS);
+	unlock(vecs->lock);
 
 	pthread_cancel(check_thr);
 	pthread_cancel(uevent_thr);
@@ -1537,12 +1537,9 @@ child (void * param)
 
 	sysfs_cleanup();
 
-	free_keys(keys);
-	keys = NULL;
-	free_handlers(handlers);
-	handlers = NULL;
-	free_polls();
-
+	lock(vecs->lock);
+	free_pathvec(vecs->pathvec, FREE_PATHS);
+	vecs->pathvec = NULL;
 	unlock(vecs->lock);
 	/* Now all the waitevent threads will start rushing in. */
 	while (vecs->lock.depth > 0) {

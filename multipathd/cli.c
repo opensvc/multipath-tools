@@ -10,6 +10,9 @@
 
 #include "cli.h"
 
+static vector keys;
+static vector handlers;
+
 static struct key *
 alloc_key (void)
 {
@@ -124,15 +127,16 @@ free_keys (vector vec)
 }
 
 void
-free_handlers (vector vec)
+free_handlers (void)
 {
 	int i;
 	struct handler * h;
 
-	vector_foreach_slot (vec, h, i)
+	vector_foreach_slot (handlers, h, i)
 		FREE(h);
 
-	vector_free(vec);
+	vector_free(handlers);
+	handlers = NULL;
 }
 
 int
@@ -446,6 +450,13 @@ cli_init (void) {
 	add_handler(QUIT, NULL);
 
 	return 0;
+}
+
+void cli_exit(void)
+{
+	free_handlers();
+	free_keys(keys);
+	keys = NULL;
 }
 
 static int

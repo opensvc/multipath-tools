@@ -29,6 +29,7 @@
 #include <uxsock.h>
 #include <defaults.h>
 
+#include "cli.h"
 #include "uxlsnr.h"
 
 #define SLEEP_TIME 5000
@@ -40,6 +41,7 @@ struct client {
 
 static struct client *clients;
 static unsigned num_clients;
+struct pollfd *polls;
 
 /*
  * handle a new client joining
@@ -81,7 +83,14 @@ static void dead_client(struct client *c)
 
 void free_polls (void)
 {
-	FREE(polls);
+	if (polls)
+		FREE(polls);
+}
+
+void uxsock_cleanup(void *arg)
+{
+	cli_exit();
+	free_polls();
 }
 
 /*
@@ -102,6 +111,8 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 		condlog(0, "ux_socket_listen error");
 		exit(1);
 	}
+
+	pthread_cleanup_push(uxsock_cleanup, NULL);
 
 	polls = (struct pollfd *)MALLOC(0);
 
@@ -129,7 +140,7 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 
 			/* something went badly wrong! */
 			condlog(0, "poll");
-			exit(1);
+			pthread_exit(NULL);
 		}
 
 		if (poll_count == 0)
@@ -169,6 +180,7 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 		}
 	}
 
+	pthread_cleanup_pop(1);
 	close(ux_sock);
 	return NULL;
 }
