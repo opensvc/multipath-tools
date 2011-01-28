@@ -169,22 +169,25 @@ devt2devname (char *devname, int devname_len, char *devt)
 	if (devname_len > FILE_NAME_SIZE)
 		devname_len = FILE_NAME_SIZE;
 
-	sprintf(block_path,"/sys/dev/block/%u:%u", major, minor);
-	if (stat(block_path, &statbuf) == 0) {
+	if (stat("/sys/dev/block", &statbuf) == 0) {
 		/* Newer kernels have /sys/dev/block */
-		if (S_ISLNK(statbuf.st_mode) &&
-		    readlink(block_path, dev, FILE_NAME_SIZE) > 0) {
-			char *p = strrchr(dev, '/');
+		sprintf(block_path,"/sys/dev/block/%u:%u", major, minor);
+		if (stat(block_path, &statbuf) == 0) {
+			if (S_ISLNK(statbuf.st_mode) &&
+			    readlink(block_path, dev, FILE_NAME_SIZE) > 0) {
+				char *p = strrchr(dev, '/');
 
-			if (!p) {
-				condlog(0, "No sysfs entry for %s\n",
-					block_path);
-				return 1;
+				if (!p) {
+					condlog(0, "No sysfs entry for %s\n",
+						block_path);
+					return 1;
+				}
+				p++;
+				strncpy(devname, p, devname_len);
+				return 0;
 			}
-			p++;
-			strncpy(devname, p, devname_len);
-			return 0;
 		}
+		goto skip_proc;
 	}
 	memset(block_path, 0, sizeof(block_path));
 
@@ -213,9 +216,9 @@ devt2devname (char *devname, int devname_len, char *devt)
 		}
 	}
 	fclose(fd);
-
+skip_proc:
 	if (strncmp(block_path,"/sys/block", 10)) {
-		condlog(3, "device %s not found\n", dev);
+		condlog(3, "No device found for %u:%u\n", major, minor);
 		return 1;
 	}
 
