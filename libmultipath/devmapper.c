@@ -184,11 +184,11 @@ dm_drvprereq (char * str)
 		v[0], v[1], v[2]);
 
 	if VERSION_GE(v, minv)
-		return 1;
+		return 0;
 
 	condlog(0, "DM multipath kernel driver must be >= v%u.%u.%u",
 		minv[0], minv[1], minv[2]);
-	return 0;
+	return 1;
 }
 
 extern int
