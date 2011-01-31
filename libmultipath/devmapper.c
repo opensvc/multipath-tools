@@ -72,6 +72,12 @@ dm_init(void) {
 	dm_log_init_verbose(conf ? conf->verbosity + 3 : 0);
 }
 
+#define VERSION_GE(v, minv) ( \
+ (v[0] > minv[0]) || \
+ ((v[0] == minv[0]) && (v[1] > minv[1])) || \
+ ((v[0] == minv[0]) && (v[1] == minv[1]) && (v[2] >= minv[2])) \
+)
+
 static int
 dm_libprereq (void)
 {
@@ -83,9 +89,7 @@ dm_libprereq (void)
 	condlog(3, "libdevmapper version %s", version);
 	sscanf(version, "%d.%d.%d ", &v[0], &v[1], &v[2]);
 
-	if ((v[0] > minv[0]) ||
-	    ((v[0] ==  minv[0]) && (v[1] > minv[1])) ||
-	    ((v[0] == minv[0]) && (v[1] == minv[1]) && (v[2] >= minv[2])))
+	if VERSION_GE(v, minv)
 		return 0;
 	condlog(0, "libdevmapper version must be >= %d.%.2d.%.2d",
 		minv[0], minv[1], minv[2]);
@@ -93,17 +97,16 @@ dm_libprereq (void)
 }
 
 static int
-dm_drvprereq (char * str)
+dm_drv_version (unsigned int * version, char * str)
 {
 	int r = 2;
 	struct dm_task *dmt;
 	struct dm_versions *target;
 	struct dm_versions *last_target;
-	int minv[3] = {1, 0, 3};
 	unsigned int *v;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_LIST_VERSIONS)))
-		return 3;
+		return 1;
 
 	dm_task_no_open_count(dmt);
 
@@ -123,21 +126,69 @@ dm_drvprereq (char * str)
 	} while (last_target != target);
 
 	if (r == 2) {
-		condlog(0, "DM multipath kernel driver not loaded");
+		condlog(0, "DM %s kernel driver not loaded", str);
 		goto out;
 	}
 	v = target->version;
-	if ((v[0] > minv[0]) ||
-	    ((v[0] == minv[0]) && (v[1] > minv[1])) ||
-	    ((v[0] == minv[0]) && (v[1] == minv[1]) && (v[2] >= minv[2]))) {
-		r = 0;
-		goto out;
-	}
-	condlog(0, "DM multipath kernel driver must be >= %u.%.2u.%.2u",
-		minv[0], minv[1], minv[2]);
+        version[0] = v[0];
+        version[1] = v[1];
+        version[2] = v[2];
+	r = 0;
 out:
 	dm_task_destroy(dmt);
 	return r;
+}
+
+int
+dm_drv_get_rq (void)
+{
+	unsigned int minv_dmrq[3] = {1, 1, 0};
+	unsigned int *v;
+
+	v = zalloc(3);
+	if (!v)
+		return 0;
+
+	if (dm_drv_version(v, TGT_MPATH)) {
+		/* in doubt return least capable */
+		return 0;
+	}
+
+	/* test request based multipath capability */
+	if VERSION_GE(v, minv_dmrq) {
+		condlog(3, "activate request-based multipathing mode "
+			   "(driver >= v%u.%u.%u)",
+			minv_dmrq[0], minv_dmrq[1], minv_dmrq[2]);
+		return 1;
+	}
+	return 0;
+}
+
+static int
+dm_drvprereq (char * str)
+{
+	unsigned int minv[3] = {1, 0, 3};
+	unsigned int *v;
+
+	v = zalloc(3);
+	if (!v)
+		return 0;
+
+	if (dm_drv_version(v, str)) {
+		/* in doubt return not capable */
+		return 1;
+	}
+
+	/* test request based multipath capability */
+	condlog(3, "DM multipath kernel driver v%u.%u.%u",
+		v[0], v[1], v[2]);
+
+	if VERSION_GE(v, minv)
+		return 1;
+
+	condlog(0, "DM multipath kernel driver must be >= v%u.%u.%u",
+		minv[0], minv[1], minv[2]);
+	return 0;
 }
 
 extern int

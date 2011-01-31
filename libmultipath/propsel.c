@@ -418,8 +418,35 @@ select_no_path_retry(struct multipath *mp)
 	return 0;
 }
 
-extern int
-select_minio (struct multipath * mp)
+int
+select_minio_rq (struct multipath * mp)
+{
+	if (mp->mpe && mp->mpe->minio_rq) {
+		mp->minio = mp->mpe->minio_rq;
+		condlog(3, "%s: minio = %i rq (LUN setting)",
+			mp->alias, mp->minio);
+		return 0;
+	}
+	if (mp->hwe && mp->hwe->minio_rq) {
+		mp->minio = mp->hwe->minio_rq;
+		condlog(3, "%s: minio = %i rq (controller setting)",
+			mp->alias, mp->minio);
+		return 0;
+	}
+	if (conf->minio) {
+		mp->minio = conf->minio_rq;
+		condlog(3, "%s: minio = %i rq (config file default)",
+			mp->alias, mp->minio);
+		return 0;
+	}
+	mp->minio = DEFAULT_MINIO_RQ;
+	condlog(3, "%s: minio = %i rq (internal default)",
+		mp->alias, mp->minio);
+	return 0;
+}
+
+int
+select_minio_bio (struct multipath * mp)
 {
 	if (mp->mpe && mp->mpe->minio) {
 		mp->minio = mp->mpe->minio;
@@ -443,6 +470,15 @@ select_minio (struct multipath * mp)
 	condlog(3, "%s: minio = %i (internal default)",
 		mp->alias, mp->minio);
 	return 0;
+}
+
+extern int
+select_minio (struct multipath * mp)
+{
+	if (conf->dmrq)
+		return select_minio_rq(mp);
+	else
+		return select_minio_bio(mp);
 }
 
 extern int

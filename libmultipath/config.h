@@ -32,6 +32,7 @@ struct hwentry {
 	int rr_weight;
 	int no_path_retry;
 	int minio;
+	int minio_rq;
 	int pg_timeout;
 	int flush_on_last_del;
 	int fast_io_fail;
@@ -50,6 +51,7 @@ struct mpentry {
 	int rr_weight;
 	int no_path_retry;
 	int minio;
+	int minio_rq;
 	int pg_timeout;
 	int flush_on_last_del;
 	int attribute_flags;
@@ -59,6 +61,7 @@ struct mpentry {
 };
 
 struct config {
+	int dmrq;
 	int verbosity;
 	int dry_run;
 	int list;
@@ -67,6 +70,7 @@ struct config {
 	int pgpolicy;
 	enum devtypes dev_type;
 	int minio;
+	int minio_rq;
 	int checkint;
 	int max_checkint;
 	int pgfailback;

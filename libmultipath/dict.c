@@ -208,6 +208,22 @@ def_minio_handler(vector strvec)
 }
 
 static int
+def_minio_rq_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	conf->minio_rq = atoi(buff);
+	FREE(buff);
+
+	return 0;
+}
+
+static int
 get_sys_max_fds(int *max_fds)
 {
 	FILE *file;
@@ -992,6 +1008,26 @@ hw_minio_handler(vector strvec)
 }
 
 static int
+hw_minio_rq_handler(vector strvec)
+{
+	struct hwentry *hwe = VECTOR_LAST_SLOT(conf->hwtable);
+	char * buff;
+
+	if (!hwe)
+		return 1;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	hwe->minio_rq = atoi(buff);
+	FREE(buff);
+
+	return 0;
+}
+
+static int
 hw_pg_timeout_handler(vector strvec)
 {
 	int pg_timeout;
@@ -1324,6 +1360,26 @@ mp_minio_handler(vector strvec)
 }
 
 static int
+mp_minio_rq_handler(vector strvec)
+{
+	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
+	char * buff;
+
+	if (!mpe)
+		return 1;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	mpe->minio_rq = atoi(buff);
+	FREE(buff);
+
+	return 0;
+}
+
+static int
 mp_pg_timeout_handler(vector strvec)
 {
 	int pg_timeout;
@@ -1521,6 +1577,17 @@ snprint_mp_rr_min_io (char * buff, int len, void * data)
 		return 0;
 
 	return snprintf(buff, len, "%u", mpe->minio);
+}
+
+static int
+snprint_mp_rr_min_io_rq (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->minio_rq)
+		return 0;
+
+	return snprintf(buff, len, "%u", mpe->minio_rq);
 }
 
 static int
@@ -1768,6 +1835,17 @@ snprint_hw_rr_min_io (char * buff, int len, void * data)
 }
 
 static int
+snprint_hw_rr_min_io_rq (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->minio_rq)
+		return 0;
+
+	return snprintf(buff, len, "%u", hwe->minio_rq);
+}
+
+static int
 snprint_hw_pg_timeout (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
@@ -1957,6 +2035,15 @@ snprint_def_rr_min_io (char * buff, int len, void * data)
 }
 
 static int
+snprint_def_rr_min_io_rq (char * buff, int len, void * data)
+{
+	if (!conf->minio_rq)
+		return 0;
+
+	return snprintf(buff, len, "%u", conf->minio_rq);
+}
+
+static int
 snprint_max_fds (char * buff, int len, void * data)
 {
 	if (!conf->max_fds)
@@ -2128,6 +2215,7 @@ init_keywords(void)
 	install_keyword("alias_prefix", &def_alias_prefix_handler, &snprint_def_alias_prefix);
 	install_keyword("failback", &default_failback_handler, &snprint_def_failback);
 	install_keyword("rr_min_io", &def_minio_handler, &snprint_def_rr_min_io);
+	install_keyword("rr_min_io_rq", &def_minio_rq_handler, &snprint_def_rr_min_io_rq);
 	install_keyword("max_fds", &max_fds_handler, &snprint_max_fds);
 	install_keyword("rr_weight", &def_weight_handler, &snprint_def_rr_weight);
 	install_keyword("no_path_retry", &def_no_path_retry_handler, &snprint_def_no_path_retry);
@@ -2195,6 +2283,7 @@ init_keywords(void)
 	install_keyword("rr_weight", &hw_weight_handler, &snprint_hw_rr_weight);
 	install_keyword("no_path_retry", &hw_no_path_retry_handler, &snprint_hw_no_path_retry);
 	install_keyword("rr_min_io", &hw_minio_handler, &snprint_hw_rr_min_io);
+	install_keyword("rr_min_io_rq", &hw_minio_rq_handler, &snprint_hw_rr_min_io_rq);
 	install_keyword("pg_timeout", &hw_pg_timeout_handler, &snprint_hw_pg_timeout);
 	install_keyword("flush_on_last_del", &hw_flush_on_last_del_handler, &snprint_hw_flush_on_last_del);
 	install_keyword("fast_io_fail_tmo", &hw_fast_io_fail_handler, &snprint_hw_fast_io_fail);
@@ -2212,6 +2301,7 @@ init_keywords(void)
 	install_keyword("rr_weight", &mp_weight_handler, &snprint_mp_rr_weight);
 	install_keyword("no_path_retry", &mp_no_path_retry_handler, &snprint_mp_no_path_retry);
 	install_keyword("rr_min_io", &mp_minio_handler, &snprint_mp_rr_min_io);
+	install_keyword("rr_min_io_rq", &mp_minio_rq_handler, &snprint_mp_rr_min_io_rq);
 	install_keyword("pg_timeout", &mp_pg_timeout_handler, &snprint_mp_pg_timeout);
 	install_keyword("flush_on_last_del", &mp_flush_on_last_del_handler, &snprint_mp_flush_on_last_del);
 	install_keyword("mode", &mp_mode_handler, &snprint_mp_mode);

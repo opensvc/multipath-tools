@@ -19,6 +19,7 @@
 #include "blacklist.h"
 #include "defaults.h"
 #include "prio.h"
+#include "devmapper.h"
 
 static int
 hwe_strmatch (struct hwentry *hwe1, struct hwentry *hwe2)
@@ -292,6 +293,7 @@ merge_hwe (struct hwentry * hwe1, struct hwentry * hwe2)
 	merge_num(rr_weight);
 	merge_num(no_path_retry);
 	merge_num(minio);
+	merge_num(minio_rq);
 
 	return 0;
 }
@@ -345,6 +347,7 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->rr_weight = dhwe->rr_weight;
 	hwe->no_path_retry = dhwe->no_path_retry;
 	hwe->minio = dhwe->minio;
+	hwe->minio_rq = dhwe->minio_rq;
 
 	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
 		goto out;
@@ -454,8 +457,10 @@ load_config (char * file)
 	if (!conf->verbosity)
 		conf->verbosity = DEFAULT_VERBOSITY;
 
+	conf->dmrq = dm_drv_get_rq();
 	conf->dev_type = DEV_NONE;
-	conf->minio = 1000;
+	conf->minio = DEFAULT_MINIO;
+	conf->minio_rq = DEFAULT_MINIO_RQ;
 	conf->max_fds = 0;
 	conf->bindings_file = DEFAULT_BINDINGS_FILE;
 	conf->bindings_read_only = 0;
