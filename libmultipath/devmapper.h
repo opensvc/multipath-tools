@@ -8,6 +8,7 @@
 
 void dm_init(void);
 int dm_prereq (void);
+int dm_drv_get_rq (void);
 int dm_simplecmd_flush (int, const char *, int);
 int dm_simplecmd_noflush (int, const char *);
 int dm_addmap_create (struct multipath *mpp);

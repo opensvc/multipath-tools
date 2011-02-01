@@ -50,6 +50,22 @@ vector_alloc_slot(vector v)
 	return v->slot;
 }
 
+int
+vector_move_up(vector v, int src, int dest)
+{
+	void *value;
+	int i;
+	if (dest == src)
+		return 0;
+	if (dest > src || src >= v->allocated)
+		return -1;
+	value = v->slot[src];
+	for (i = src - 1; i >= dest; i--)
+		v->slot[i + 1] = v->slot[i];
+	v->slot[dest] = value;
+	return 0;
+}
+
 void *
 vector_insert_slot(vector v, int slot, void *value)
 {

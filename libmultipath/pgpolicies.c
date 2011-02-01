@@ -11,6 +11,7 @@
 #include "vector.h"
 #include "structs.h"
 #include "pgpolicies.h"
+#include "switchgroup.h"
 
 extern int
 get_pgpolicy_id (char * str)
@@ -56,6 +57,34 @@ get_pgpolicy_name (char * buff, int len, int id)
 	}
 	return snprintf(buff, POLICY_NAME_SIZE, "%s", s);
 }
+
+
+void
+sort_pathgroups (struct multipath *mp) {
+	int i, j;
+	struct pathgroup * pgp1, * pgp2;
+
+	if (!mp->pg)
+		return;
+
+	vector_foreach_slot(mp->pg, pgp1, i) {
+		path_group_prio_update(pgp1);
+		for (j = i - 1; j >= 0; j--) {
+			pgp2 = VECTOR_SLOT(mp->pg, j);
+			if (!pgp2)
+				continue;
+			if (pgp2->priority > pgp1->priority ||
+			    (pgp2->priority == pgp1->priority &&
+			     pgp2->enabled_paths >= pgp1->enabled_paths)) {
+				vector_move_up(mp->pg, i, j + 1);
+				break;
+			}
+		}
+		if (j < 0 && i != 0)
+		vector_move_up(mp->pg, i, 0);
+	}
+}
+
 
 /*
  * One path group per unique tgt_node_name present in the path vector
@@ -119,6 +148,7 @@ group_by_node_name (struct multipath * mp) {
 		}
 	}
 	FREE(bitmap);
+	sort_pathgroups(mp);
 	free_pathvec(mp->paths, KEEP_PATHS);
 	mp->paths = NULL;
 	return 0;
@@ -191,6 +221,7 @@ group_by_serial (struct multipath * mp) {
 		}
 	}
 	FREE(bitmap);
+	sort_pathgroups(mp);
 	free_pathvec(mp->paths, KEEP_PATHS);
 	mp->paths = NULL;
 	return 0;
@@ -228,6 +259,7 @@ one_path_per_group (struct multipath * mp)
 		if (store_path(pgp->paths, pp))
 			goto out;
 	}
+	sort_pathgroups(mp);
 	free_pathvec(mp->paths, KEEP_PATHS);
 	mp->paths = NULL;
 	return 0;

@@ -165,6 +165,31 @@ sysfs_get_dev (struct sysfs_device * dev, char * buff, size_t len)
 }
 
 int
+sysfs_get_timeout(struct sysfs_device *dev, unsigned int *timeout)
+{
+	char *attr;
+	char attr_path[SYSFS_PATH_SIZE];
+	int r;
+	unsigned int t;
+
+	if (safe_sprintf(attr_path, "%s/device", dev->devpath))
+		return 1;
+
+	attr = sysfs_attr_get_value(dev->devpath, "timeout");
+	if (!attr)
+		return 1;
+
+	r = sscanf(attr, "%u\n", &t);
+
+	if (r != 1)
+		return 1;
+
+	*timeout = t * 1000;
+
+	return 0;
+}
+
+int
 sysfs_get_size (struct sysfs_device * dev, unsigned long long * size)
 {
 	char *attr;
@@ -830,6 +855,8 @@ get_state (struct path * pp, int daemon)
 	}
 	if (daemon)
 		checker_set_async(c);
+	if (!conf->checker_timeout)
+		sysfs_get_timeout(pp->sysdev, &(c->timeout));
 	state = checker_check(c);
 	condlog(3, "%s: state = %i", pp->dev, state);
 	if (state == PATH_DOWN && strlen(checker_message(c)))

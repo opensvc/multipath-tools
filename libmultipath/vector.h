@@ -52,5 +52,5 @@ int find_slot(vector v, void * addr);
 extern void vector_repack(vector v);
 extern void vector_dump(vector v);
 extern void dump_strvec(vector strvec);
-
+extern int vector_move_up(vector v, int src, int dest);
 #endif

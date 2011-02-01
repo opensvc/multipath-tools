@@ -170,7 +170,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 	if (!find_mp_by_wwid(curmp, mpp->wwid)) {
 		condlog(2, "%s: remove (wwid changed)", cmpp->alias);
 		dm_flush_map(mpp->alias);
-		strncat(cmpp->wwid, mpp->wwid, WWID_SIZE);
+		strncpy(cmpp->wwid, mpp->wwid, WWID_SIZE);
 		drop_multipath(curmp, cmpp->wwid, KEEP_PATHS);
 		mpp->action = ACT_CREATE;
 		condlog(3, "%s: set ACT_CREATE (map wwid change)",
@@ -473,16 +473,20 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 
 		/* 1. if path has no unique id or wwid blacklisted */
 		if (memcmp(empty_buff, pp1->wwid, WWID_SIZE) == 0 ||
-		    filter_path(conf, pp1) > 0)
+		    filter_path(conf, pp1) > 0) {
+			orphan_path(pp1);
 			continue;
+		}
 
 		/* 2. if path already coalesced */
 		if (pp1->mpp)
 			continue;
 
 		/* 3. if path has disappeared */
-		if (!pp1->size)
+		if (!pp1->size) {
+			orphan_path(pp1);
 			continue;
+		}
 
 		/* 4. path is out of scope */
 		if (refwwid && strncmp(pp1->wwid, refwwid, WWID_SIZE))

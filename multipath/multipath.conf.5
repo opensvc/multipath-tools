@@ -82,10 +82,22 @@ default verbosity. Higher values increase the verbosity level. Valid
 levels are between 0 and 6; default is
 .I 2
 .TP
-.B selector
+.B path_selector
 The default path selector algorithm to use; they are offered by the
-kernel multipath target. The only currently implemented is
-.I "round-robin 0"
+kernel multipath target. There are three selector algorithms.
+.RS
+.TP 12
+.B "round-robin 0"
+Loop through every path in the path group, sending the same amount of IO to
+each.
+.TP
+.B "queue-length 0"
+Send the next bunch of IO down the path with the least amount of outstanding IO.
+.TP
+.B "service-time 0"
+Choose the path for the next bunch of IO based on the amount of outstanding IO
+to the path and its relative throughput.
+.RE
 .TP
 .B path_grouping_policy
 The default path grouping policy to apply to unspecified
@@ -241,6 +253,11 @@ this to the system limit from /proc/sys/fs/nr_open. If this is not set, the
 maximum number of open fds is taken from the calling process. It is usually
 1024. To be safe, this should be set to the maximum number of paths plus 32,
 if that number is greated than 1024.
+.TP
+.B checker_timeout
+Specify the timeout to user for path checkers that issue scsi commands with an
+explict timeout, in seconds; default taken from
+.I /sys/block/sd<x>/device/timeout
 .TP
 .B fast_io_fail_tmo
 Specify the number of seconds the scsi layer will wait after a problem has been

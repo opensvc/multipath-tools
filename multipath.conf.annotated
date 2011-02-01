@@ -27,14 +27,14 @@
 #	polling_interval 10
 #
 #	#
-#	# name    : selector
+#	# name    : path_selector
 #	# scope   : multipath & multipathd
 #	# desc    : the default path selector algorithm to use
 #	#           these algorithms are offered by the kernel multipath target
 #	# values  : "round-robin 0"
 #	# default : "round-robin 0"
 #	#
-#	selector	"round-robin 0"
+#	path_selector	"round-robin 0"
 #
 #	#
 #	# name    : path_grouping_policy
@@ -209,6 +209,15 @@
 #	# values  : <group_id>
 #	# default : determined by the process
 #	gid disk
+#
+#	#
+#	# name    : checker_timeout
+#	# scope   : multipath & multipathd
+#	# desc    : The timeout to use for path checkers that issue scsi
+#	#           commands with an explicit timeout, in seconds.
+#	# values  : n > 0
+#	# default : taken from /sys/block/sd<x>/device/timeout
+#	checker_timeout 60
 #
 #	#
 #	# name    : fast_io_fail_tmo

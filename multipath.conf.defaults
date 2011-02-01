@@ -4,7 +4,7 @@
 #defaults {
 #	udev_dir		/dev
 #	polling_interval	5
-#	selector		"round-robin 0"
+#	path_selector		"round-robin 0"
 #	path_grouping_policy	failover
 #	getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
 #	prio			const
@@ -626,13 +626,13 @@
 #		vendor			"SGI"
 #		product			"IS.*"
 #		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
+#		features		"2 pg_init_retries 50"
 #		hardware_handler	"1 rdac"
 #		path_selector		"round-robin 0"
 #		path_grouping_policy	group_by_prio
 #		failback		immediate
 #		rr_weight		uniform
-#		no_path_retry		queue
+#		no_path_retry		15
 #		rr_min_io		1000
 #		path_checker		rdac
 #		prio			rdac
@@ -729,5 +729,18 @@
 #		path_checker		rdac
 #		prio			rdac
 #		prio_args		""
+#	}
+#	device {
+#		vendor			"EUROLOGC"
+#		product			"FC2502"
+#		getuid_callout		"/lib/udev/scsi_id --page=0x80 --whitelisted --device=/dev/%n"
+#		features                "0"
+#		hardware_handler        "0"
+#		path_selector           "round-robin 0"
+#		path_grouping_policy    group_by_prio
+#		rr_weight               uniform
+#		rr_min_io               1000
+#		path_checker		directio
+#		prio			const
 #	}
 #}
