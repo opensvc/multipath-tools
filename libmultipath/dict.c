@@ -725,6 +725,22 @@ product_handler(vector strvec)
 }
 
 static int
+revision_handler(vector strvec)
+{
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+
+	if (!hwe)
+		return 1;
+
+	hwe->revision = set_value(strvec);
+
+	if (!hwe->revision)
+		return 1;
+
+	return 0;
+}
+
+static int
 bl_product_handler(vector strvec)
 {
 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
@@ -1663,6 +1679,17 @@ snprint_hw_product (char * buff, int len, void * data)
 }
 
 static int
+snprint_hw_revision (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (!hwe->revision)
+		return 0;
+
+	return snprintf(buff, len, "\"%s\"", hwe->revision);
+}
+
+static int
 snprint_hw_bl_product (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
@@ -2268,6 +2295,7 @@ init_keywords(void)
 	install_sublevel();
 	install_keyword("vendor", &vendor_handler, &snprint_hw_vendor);
 	install_keyword("product", &product_handler, &snprint_hw_product);
+	install_keyword("revision", &revision_handler, &snprint_hw_revision);
 	install_keyword("product_blacklist", &bl_product_handler, &snprint_hw_bl_product);
 	install_keyword("path_grouping_policy", &hw_pgpolicy_handler, &snprint_hw_path_grouping_policy);
 	install_keyword("getuid_callout", &hw_getuid_callout_handler, &snprint_hw_getuid_callout);

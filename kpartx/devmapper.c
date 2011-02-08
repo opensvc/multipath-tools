@@ -81,7 +81,7 @@ dm_simplecmd (int task, const char *name, int no_flush, uint32_t *cookie) {
 
 extern int
 dm_addmap (int task, const char *name, const char *target,
-	   const char *params, uint64_t size, const char *uuid, int part,
+	   const char *params, uint64_t size, int ro, const char *uuid, int part,
 	   mode_t mode, uid_t uid, gid_t gid, uint32_t *cookie) {
 	int r = 0;
 	struct dm_task *dmt;
@@ -95,6 +95,9 @@ dm_addmap (int task, const char *name, const char *target,
 
 	if (!dm_task_add_target (dmt, 0, size, target, params))
 		goto addout;
+
+	if (ro && !dm_task_set_ro (dmt))
+			goto addout;
 
 	if (task == DM_DEVICE_CREATE && uuid) {
 		prefixed_uuid = malloc(MAX_PREFIX_LEN + strlen(uuid) + 1);

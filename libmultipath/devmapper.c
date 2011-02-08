@@ -79,7 +79,7 @@ dm_init(void) {
 )
 
 static int
-dm_libprereq (void)
+dm_lib_prereq (void)
 {
 	char version[64];
 	int v[3];
@@ -143,11 +143,8 @@ int
 dm_drv_get_rq (void)
 {
 	unsigned int minv_dmrq[3] = {1, 1, 0};
-	unsigned int *v;
-
-	v = zalloc(3);
-	if (!v)
-		return 0;
+	unsigned int version[3] = {0, 0, 0};
+        unsigned int * v = version;
 
 	if (dm_drv_version(v, TGT_MPATH)) {
 		/* in doubt return least capable */
@@ -165,16 +162,13 @@ dm_drv_get_rq (void)
 }
 
 static int
-dm_drvprereq (char * str)
+dm_drv_prereq (void)
 {
 	unsigned int minv[3] = {1, 0, 3};
-	unsigned int *v;
+	unsigned int version[3] = {0, 0, 0};
+        unsigned int * v = version;
 
-	v = zalloc(3);
-	if (!v)
-		return 0;
-
-	if (dm_drv_version(v, str)) {
+	if (dm_drv_version(v, TGT_MPATH)) {
 		/* in doubt return not capable */
 		return 1;
 	}
@@ -194,9 +188,9 @@ dm_drvprereq (char * str)
 extern int
 dm_prereq (void)
 {
-	if (dm_libprereq())
+	if (dm_lib_prereq())
 		return 1;
-	return dm_drvprereq(TGT_MPATH);
+	return dm_drv_prereq();
 }
 
 static int
