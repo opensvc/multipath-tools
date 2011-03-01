@@ -48,7 +48,9 @@ do_inq(int sg_fd, unsigned int pg_op, void *resp, int mx_resp_len,
 	unsigned char inqCmdBlk[INQUIRY_CMDLEN] = { INQUIRY_CMD, 1, 0, 0, 0, 0 };
 	unsigned char sense_b[SENSE_BUFF_LEN];
 	struct sg_io_hdr io_hdr;
+	int retry_rdac = 5;
 
+retry:
 	inqCmdBlk[2] = (unsigned char) pg_op;
 	inqCmdBlk[4] = (unsigned char) (mx_resp_len & 0xff);
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
@@ -72,6 +74,22 @@ do_inq(int sg_fd, unsigned int pg_op, void *resp, int mx_resp_len,
 	if ((0 == io_hdr.status) && (0 == io_hdr.host_status) &&
 	    (0 == io_hdr.driver_status))
 		return 0;
+
+	/* check if we need to retry this error */
+	if (io_hdr.info & SG_INFO_OK_MASK) {
+		switch (io_hdr.host_status) {
+		case DID_BUS_BUSY:
+		case DID_ERROR:
+		case DID_TRANSPORT_DISRUPTED:
+			/* Transport error, retry */
+			if (--retry_rdac)
+				goto retry;
+			break;
+		default:
+			break;
+		}
+	}
+
 	if ((SCSI_CHECK_CONDITION == io_hdr.status) ||
 	    (SCSI_COMMAND_TERMINATED == io_hdr.status) ||
 	    (SG_ERR_DRIVER_SENSE == (0xf & io_hdr.driver_status))) {
