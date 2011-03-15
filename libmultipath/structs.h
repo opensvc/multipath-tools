@@ -25,7 +25,7 @@
 #define NO_PATH_RETRY_QUEUE	-2
 
 
-enum free_path_switch {
+enum free_path_mode {
 	KEEP_PATHS,
 	FREE_PATHS
 };
@@ -229,13 +229,13 @@ struct path * alloc_path (void);
 struct pathgroup * alloc_pathgroup (void);
 struct multipath * alloc_multipath (void);
 void free_path (struct path *);
-void free_pathvec (vector vec, int free_paths);
-void free_pathgroup (struct pathgroup * pgp, int free_paths);
-void free_pgvec (vector pgvec, int free_paths);
-void free_multipath (struct multipath *, int free_paths);
+void free_pathvec (vector vec, enum free_path_mode free_paths);
+void free_pathgroup (struct pathgroup * pgp, enum free_path_mode free_paths);
+void free_pgvec (vector pgvec, enum free_path_mode free_paths);
+void free_multipath (struct multipath *, enum free_path_mode free_paths);
 void free_multipath_attributes (struct multipath *);
-void drop_multipath (vector mpvec, char * wwid, int free_paths);
-void free_multipathvec (vector mpvec, int free_paths);
+void drop_multipath (vector mpvec, char * wwid, enum free_path_mode free_paths);
+void free_multipathvec (vector mpvec, enum free_path_mode free_paths);
 
 int store_path (vector pathvec, struct path * pp);
 int store_pathgroup (vector pgvec, struct pathgroup * pgp);
