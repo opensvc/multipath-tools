@@ -387,7 +387,7 @@ add_map_without_path (struct vectors * vecs,
 {
 	struct multipath * mpp = alloc_multipath();
 
-	if (!mpp)
+	if (!mpp || !alias)
 		return NULL;
 
 	mpp->alias = alias;
@@ -427,7 +427,8 @@ add_map_with_path (struct vectors * vecs,
 	mpp->hwe = pp->hwe;
 
 	strcpy(mpp->wwid, pp->wwid);
-	select_alias(mpp);
+	if (select_alias(mpp))
+		goto out;
 	mpp->size = pp->size;
 
 	if (adopt_paths(vecs->pathvec, mpp, 1))
