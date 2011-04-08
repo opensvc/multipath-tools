@@ -218,7 +218,11 @@ libcheck_check (struct checker * c)
 		goto done;
 	}
 
-	ret = ((inq.avtcvp & 0x1) ? PATH_UP : PATH_GHOST);
+	/* If owner set or ioship mode is enabled return PATH_UP always */
+	if ((inq.avtcvp & 0x1) || ((inq.avtcvp >> 5) & 0x1))
+		ret = PATH_UP;
+	else
+		ret = PATH_GHOST;
 
 done:
 	switch (ret) {
