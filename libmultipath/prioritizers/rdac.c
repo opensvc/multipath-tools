@@ -81,6 +81,10 @@ int rdac_prio(const char *dev, int fd)
 		break;
 	}
 
+	/* For ioship mode set the bit 3 (00001000) */
+	if ((sense_buffer[8] >> 5) & 0x01)
+		ret |= 0x08;
+
 out:
 	return(ret);
 }
