@@ -186,7 +186,8 @@ get_hotplug_device(void)
 
 int
 main(int argc, char **argv){
-	int fd, i, j, m, n, op, off, arg, c, d, ro=0;
+	int i, j, m, n, op, off, arg, c, d, ro=0;
+        int fd = -1;
 	struct slice all;
 	struct pt *ptp;
 	enum action what = LIST;
@@ -354,8 +355,10 @@ main(int argc, char **argv){
 			printf("%s: %d slices\n", ptp->type, n);
 #endif
 
-		if (n > 0)
+		if (n > 0) {
 			close(fd);
+			fd = -1;
+		}
 		else
 			continue;
 
@@ -403,15 +406,6 @@ main(int argc, char **argv){
 					break;
 			}
 
-			if (loopcreated && S_ISREG (buf.st_mode)) {
-				if (del_loop(device)) {
-					if (verbose)
-						printf("can't del loop : %s\n",
-							device);
-					exit(1);
-				}
-				printf("loop deleted : %s\n", device);
-			}
 			break;
 
 		case DELETE:
@@ -571,6 +565,17 @@ main(int argc, char **argv){
 		}
 		if (n > 0)
 			break;
+	}
+	if (what == LIST && loopcreated && S_ISREG (buf.st_mode)) {
+		if (fd != -1)
+			close(fd);
+		if (del_loop(device)) {
+			if (verbose)
+				printf("can't del loop : %s\n",
+					device);
+			exit(1);
+		}
+		printf("loop deleted : %s\n", device);
 	}
 	dm_udev_wait(cookie);
 	dm_lib_release();
