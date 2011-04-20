@@ -52,6 +52,7 @@ assemble_map (struct multipath * mp)
 	int i, j;
 	int shift, freechar;
 	int minio;
+	int nr_priority_groups, initial_pg_nr;
 	char * p;
 	struct pathgroup * pgp;
 	struct path * pp;
@@ -60,9 +61,12 @@ assemble_map (struct multipath * mp)
 	p = mp->params;
 	freechar = sizeof(mp->params);
 
+	nr_priority_groups = VECTOR_SIZE(mp->pg);
+	initial_pg_nr = (nr_priority_groups ? mp->bestpg : 0);
+
 	shift = snprintf(p, freechar, "%s %s %i %i",
 			 mp->features, mp->hwhandler,
-			 VECTOR_SIZE(mp->pg), mp->bestpg);
+			 nr_priority_groups, initial_pg_nr);
 
 	if (shift >= freechar) {
 		fprintf(stderr, "mp->params too small\n");
