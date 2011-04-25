@@ -503,7 +503,7 @@
 #		rr_weight		uniform
 #		rr_min_io		128
 #		path_checker		directio
-#		prio			netapp
+#		prio			ontap
 #		prio_args		""
 #	}
 #	device {
@@ -534,7 +534,7 @@
 #		rr_weight		uniform
 #		rr_min_io		128
 #		path_checker		directio
-#		prio			netapp
+#		prio			ontap
 #		prio_args		""
 #	}
 #	device {

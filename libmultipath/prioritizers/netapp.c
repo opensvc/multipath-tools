@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2005 Network Appliance, Inc., All Rights Reserved
  * Author:  David Wysochanski available at davidw@netapp.com
  *
@@ -7,7 +7,7 @@
  * published by the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License v2 for more details.
  */
@@ -27,17 +27,17 @@
 #define INQUIRY_CMDLEN	6
 #define DEFAULT_PRIOVAL	10
 #define RESULTS_MAX	256
-#define SG_TIMEOUT	30000
+#define SG_TIMEOUT	60000
 
-#define pp_netapp_log(prio, fmt, args...) \
-        condlog(prio, "%s: netapp prio: " fmt, dev, ##args)
+#define pp_ontap_log(prio, fmt, args...) \
+        condlog(prio, "%s: ontap prio: " fmt, dev, ##args)
 
 static void dump_cdb(unsigned char *cdb, int size)
 {
 	int i;
 	char buf[10*5+1];
 	char * p = &buf[0];
-	
+
 	condlog(0, "- SCSI CDB: ");
 	for (i=0; i<size; i++) {
 		p += snprintf(p, 10*(size-i), "0x%02x ", cdb[i]);
@@ -50,7 +50,7 @@ static void process_sg_error(struct sg_io_hdr *io_hdr)
 	int i;
 	char buf[128*5+1];
 	char * p = &buf[0];
-	
+
 	condlog(0, "- masked_status=0x%02x, host_status=0x%02x, "
 		"driver_status=0x%02x", io_hdr->masked_status,
 		io_hdr->host_status, io_hdr->driver_status);
@@ -90,12 +90,12 @@ static int send_gva(const char *dev, int fd, unsigned char pg,
 	io_hdr.timeout = SG_TIMEOUT;
 	io_hdr.pack_id = 0;
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
-		pp_netapp_log(0, "SG_IO ioctl failed, errno=%d", errno);
+		pp_ontap_log(0, "SG_IO ioctl failed, errno=%d", errno);
 		dump_cdb(cdb, sizeof(cdb));
 		goto out;
 	}
 	if (io_hdr.info & SG_INFO_OK_MASK) {
-		pp_netapp_log(0, "SCSI error");
+		pp_ontap_log(0, "SCSI error");
 		dump_cdb(cdb, sizeof(cdb));
 		process_sg_error(&io_hdr);
 		goto out;
@@ -104,8 +104,8 @@ static int send_gva(const char *dev, int fd, unsigned char pg,
 	if (results[4] != 0x0a || results[5] != 0x98 ||
 	    results[6] != 0x0a ||results[7] != 0x01) {
 		dump_cdb(cdb, sizeof(cdb));
-		pp_netapp_log(0, "GVA return wrong format ");
-		pp_netapp_log(0, "results[4-7] = 0x%02x 0x%02x 0x%02x 0x%02x",
+		pp_ontap_log(0, "GVA return wrong format ");
+		pp_ontap_log(0, "results[4-7] = 0x%02x 0x%02x 0x%02x 0x%02x",
 			results[4], results[5], results[6], results[7]);
 		goto out;
 	}
@@ -142,13 +142,13 @@ static int get_proxy(const char *dev, int fd)
 	io_hdr.timeout = SG_TIMEOUT;
 	io_hdr.pack_id = 0;
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
-		pp_netapp_log(0, "ioctl sending inquiry command failed, "
+		pp_ontap_log(0, "ioctl sending inquiry command failed, "
 			"errno=%d", errno);
 		dump_cdb(cdb, sizeof(cdb));
 		goto out;
 	}
 	if (io_hdr.info & SG_INFO_OK_MASK) {
-		pp_netapp_log(0, "SCSI error");
+		pp_ontap_log(0, "SCSI error");
 		dump_cdb(cdb, sizeof(cdb));
 		process_sg_error(&io_hdr);
 		goto out;
@@ -158,8 +158,8 @@ static int get_proxy(const char *dev, int fd)
 	    results[9] != 0x98 || results[10] != 0x0a ||
 	    results[11] != 0x0 || results[12] != 0xc1 ||
 	    results[13] != 0x0) {
-		pp_netapp_log(0,"proxy info page in unknown format - ");
-		pp_netapp_log(0,"results[8-13]=0x%02x 0x%02x 0x%02x 0x%02x "
+		pp_ontap_log(0,"proxy info page in unknown format - ");
+		pp_ontap_log(0,"results[8-13]=0x%02x 0x%02x 0x%02x 0x%02x "
 			"0x%02x 0x%02x",
 			results[8], results[9], results[10],
 			results[11], results[12], results[13]);
@@ -180,7 +180,7 @@ static int get_proxy(const char *dev, int fd)
  * 2: iSCSI software
  * 1: FCP proxy
  */
-static int netapp_prio(const char *dev, int fd)
+static int ontap_prio(const char *dev, int fd)
 {
 	unsigned char results[RESULTS_MAX];
 	int results_size=RESULTS_MAX;
@@ -194,14 +194,14 @@ static int netapp_prio(const char *dev, int fd)
 
 	memset(&results, 0, sizeof (results));
 	rc = send_gva(dev, fd, 0x41, results, &results_size);
-	if (rc == 0) {
+	if (rc >= 0) {
 		tot_len = results[0] << 24 | results[1] << 16 |
 			  results[2] << 8 | results[3];
 		if (tot_len <= 8) {
 			goto try_fcp_proxy;
 		}
 		if (results[8] != 0x41) {
-			pp_netapp_log(0, "GVA page 0x41 error - "
+			pp_ontap_log(0, "GVA page 0x41 error - "
 				"results[8] = 0x%x", results[8]);
 			goto try_fcp_proxy;
 		}
@@ -214,9 +214,11 @@ static int netapp_prio(const char *dev, int fd)
 			is_iscsi_hardware = 1;
 			goto prio_select;
 		}
+	} else {
+		return 0;
 	}
-	
- try_fcp_proxy:	
+
+ try_fcp_proxy:
 	rc = get_proxy(dev, fd);
 	if (rc >= 0) {
 		is_proxy = rc;
@@ -239,5 +241,5 @@ static int netapp_prio(const char *dev, int fd)
 
 int getprio (struct path * pp, char * args)
 {
-	return netapp_prio(pp->dev, pp->fd);
+	return ontap_prio(pp->dev, pp->fd);
 }

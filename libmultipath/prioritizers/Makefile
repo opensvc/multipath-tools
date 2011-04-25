@@ -11,7 +11,7 @@ LIBS = \
 	libprioemc.so \
 	libpriordac.so \
 	libprioalua.so \
-	libprionetapp.so \
+	libprioontap.so \
 	libpriodatacore.so \
 	libpriohds.so
 
@@ -20,6 +20,9 @@ CFLAGS += -I..
 all: $(LIBS)
 
 libprioalua.so: alua.o alua_rtpg.o
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
+
+libprioontap.so: netapp.o
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
 
 libprio%.so: %.o

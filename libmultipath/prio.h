@@ -21,7 +21,7 @@
 #define PRIO_EMC "emc"
 #define PRIO_HDS "hds"
 #define PRIO_HP_SW "hp_sw"
-#define PRIO_NETAPP "netapp"
+#define PRIO_ONTAP "ontap"
 #define PRIO_RANDOM "random"
 #define PRIO_RDAC "rdac"
 #define PRIO_DATACORE "datacore"
