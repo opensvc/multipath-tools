@@ -22,9 +22,6 @@ all: $(LIBS)
 libprioalua.so: alua.o alua_rtpg.o
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
 
-libprioontap.so: netapp.o
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
-
 libprio%.so: %.o
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
 
