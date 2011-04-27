@@ -114,6 +114,7 @@ int checker_check (struct checker *);
 int checker_selected (struct checker *);
 char * checker_name (struct checker *);
 char * checker_message (struct checker *);
+void checker_clear_message (struct checker *c);
 void checker_get (struct checker *, char *);
 
 #endif /* _CHECKERS_H */

@@ -848,6 +848,7 @@ get_state (struct path * pp, int daemon)
 			return PATH_UNCHECKED;
 		}
 	}
+	checker_clear_message(c);
 	state = path_offline(pp);
 	if (state != PATH_UP) {
 		condlog(3, "%s: path inaccessible", pp->dev);
