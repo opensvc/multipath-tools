@@ -187,7 +187,7 @@ get_hotplug_device(void)
 int
 main(int argc, char **argv){
 	int i, j, m, n, op, off, arg, c, d, ro=0;
-        int fd = -1;
+	int fd = -1;
 	struct slice all;
 	struct pt *ptp;
 	enum action what = LIST;
