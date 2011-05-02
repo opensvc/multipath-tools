@@ -11,7 +11,7 @@ LIBS = \
 	libprioemc.so \
 	libpriordac.so \
 	libprioalua.so \
-	libprionetapp.so \
+	libprioontap.so \
 	libpriodatacore.so \
 	libpriohds.so
 

@@ -503,7 +503,7 @@
 #		rr_weight		uniform
 #		rr_min_io		128
 #		path_checker		directio
-#		prio			netapp
+#		prio			ontap
 #		prio_args		""
 #	}
 #	device {
@@ -534,7 +534,7 @@
 #		rr_weight		uniform
 #		rr_min_io		128
 #		path_checker		directio
-#		prio			netapp
+#		prio			ontap
 #		prio_args		""
 #	}
 #	device {
@@ -742,5 +742,19 @@
 #		rr_min_io               1000
 #		path_checker		directio
 #		prio			const
+#	}
+#	device {
+#		vendor                  "NEC"
+#		product                 "DISK ARRAY"
+#		getuid_callout          "/lib/udev/scsi_id --whitelisted --device=/dev/%n"
+#		features                "0"
+#		hardware_handler        "1 alua"
+#		path_selector           "round-robin 0"
+#		path_grouping_policy    group_by_prio
+#		failback                immediate
+#		rr_weight               uniform
+#		rr_min_io               1000
+#		path_checker            tur
+#		prio                    alua
 #	}
 #}

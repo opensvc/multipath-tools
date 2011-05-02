@@ -183,6 +183,11 @@ char * checker_message (struct checker * c)
 	return c->message;
 }
 
+void checker_clear_message (struct checker *c)
+{
+	c->message[0] = '\0';
+}
+
 void checker_get (struct checker * dst, char * name)
 {
 	struct checker * src = checker_lookup(name);
