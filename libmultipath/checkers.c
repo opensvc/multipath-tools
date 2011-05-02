@@ -80,6 +80,8 @@ struct checker * checker_lookup (char * name)
 {
 	struct checker * c;
 
+	if (!name || !strlen(name))
+		return NULL;
 	list_for_each_entry(c, &checkers, node) {
 		if (!strncmp(name, c->name, CHECKER_NAME_LEN))
 			return c;
@@ -145,31 +147,43 @@ out:
 
 void checker_set_fd (struct checker * c, int fd)
 {
+	if (!c)
+		return;
 	c->fd = fd;
 }
 
 void checker_set_sync (struct checker * c)
 {
+	if (!c)
+		return;
 	c->sync = 1;
 }
 
 void checker_set_async (struct checker * c)
 {
+	if (!c)
+		return;
 	c->sync = 0;
 }
 
 void checker_enable (struct checker * c)
 {
+	if (!c)
+		return;
 	c->disable = 0;
 }
 
 void checker_disable (struct checker * c)
 {
+	if (!c)
+		return;
 	c->disable = 1;
 }
 
 int checker_init (struct checker * c, void ** mpctxt_addr)
 {
+	if (!c)
+		return 1;
 	c->mpcontext = mpctxt_addr;
 	return c->init(c);
 }
@@ -178,6 +192,8 @@ void checker_put (struct checker * dst)
 {
 	struct checker * src;
 
+	if (!dst)
+		return;
 	src = checker_lookup(dst->name);
 	if (dst->free)
 		dst->free(dst);
@@ -189,8 +205,14 @@ int checker_check (struct checker * c)
 {
 	int r;
 
-	if (c->disable)
+	if (!c)
+		return PATH_WILD;
+
+	c->message[0] = '\0';
+	if (c->disable) {
+		MSG(c, "checker disabled");
 		return PATH_UNCHECKED;
+	}
 	if (c->fd <= 0) {
 		MSG(c, "no usable fd");
 		return PATH_WILD;
@@ -202,27 +224,38 @@ int checker_check (struct checker * c)
 
 int checker_selected (struct checker * c)
 {
+	if (!c)
+		return 0;
 	return (c->check) ? 1 : 0;
 }
 
 char * checker_name (struct checker * c)
 {
+	if (!c)
+		return NULL;
 	return c->name;
 }
 
 char * checker_message (struct checker * c)
 {
+	if (!c)
+		return NULL;
 	return c->message;
 }
 
 void checker_clear_message (struct checker *c)
 {
+	if (!c)
+		return;
 	c->message[0] = '\0';
 }
 
 void checker_get (struct checker * dst, char * name)
 {
 	struct checker * src = checker_lookup(name);
+
+	if (!dst)
+		return;
 
 	if (!src) {
 		dst->check = NULL;
