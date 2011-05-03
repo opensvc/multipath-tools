@@ -132,7 +132,8 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 		compute_pgid(pgp);
 
 		vector_foreach_slot (cmpp->pg, cpgp, j) {
-			if (pgp->id == cpgp->id) {
+			if (pgp->id == cpgp->id &&
+			    !pathcmp(pgp, cpgp)) {
 				r = 0;
 				break;
 			}

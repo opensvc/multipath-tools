@@ -371,6 +371,26 @@ pathcount (struct multipath * mpp, int state)
 	return count;
 }
 
+extern int
+pathcmp (struct pathgroup *pgp, struct pathgroup *cpgp)
+{
+	int i, j;
+	struct path *pp, *cpp;
+	int pnum = 0, found = 0;
+
+	vector_foreach_slot(pgp->paths, pp, i) {
+		pnum++;
+		vector_foreach_slot(cpgp->paths, cpp, j) {
+			if ((long)pp == (long)cpp) {
+				found++;
+				break;
+			}
+		}
+	}
+
+	return pnum - found;
+}
+
 struct path *
 first_path (struct multipath * mpp)
 {
