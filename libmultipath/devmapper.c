@@ -831,9 +831,6 @@ dm_get_maps (vector mp)
 			if (dm_get_map(names->name, &mpp->size, NULL))
 				goto out1;
 
-			if (dm_get_status(names->name, mpp->status))
-				goto out1;
-
 			dm_get_uuid(names->name, mpp->wwid);
 			dm_get_info(names->name, &mpp->dmi);
 		}

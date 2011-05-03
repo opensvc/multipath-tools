@@ -191,7 +191,6 @@ struct multipath {
 	unsigned long long size;
 	vector paths;
 	vector pg;
-	char status[PARAMS_SIZE];
 	struct dm_info * dmi;
 
 	/* configlet pointers */

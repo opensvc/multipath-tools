@@ -259,13 +259,15 @@ update_multipath_table (struct multipath *mpp, vector pathvec)
 static int
 update_multipath_status (struct multipath *mpp)
 {
+	char status[PARAMS_SIZE] = {0};
+
 	if (!mpp)
 		return 1;
 
-	if(dm_get_status(mpp->alias, mpp->status))
+	if(dm_get_status(mpp->alias, status))
 		return 1;
 
-	if (disassemble_status(mpp->status, mpp))
+	if (disassemble_status(status, mpp))
 		return 1;
 
 	return 0;
