@@ -557,10 +557,14 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 
 		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
 			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL) {
+				condlog(3, "%s: unset queue_if_no_path feature",
+					mpp->alias);
 				if (!dm_queue_if_no_path(mpp->alias, 0))
 					remove_feature(&mpp->features,
 						       "queue_if_no_path");
 			} else {
+				condlog(3, "%s: set queue_if_no_path feature",
+					mpp->alias);
 				if (!dm_queue_if_no_path(mpp->alias, 1))
 					add_feature(&mpp->features,
 						    "queue_if_no_path");
