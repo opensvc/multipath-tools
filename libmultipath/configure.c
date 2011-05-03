@@ -407,8 +407,6 @@ domap (struct multipath * mpp, char * params)
 		if (!conf->daemon) {
 			/* multipath client mode */
 			dm_switchgroup(mpp->alias, mpp->bestpg);
-			if (mpp->action != ACT_NOTHING)
-				print_multipath_topology(mpp, conf->verbosity);
 		} else  {
 			/* multipath daemon mode */
 			mpp->stat_map_loads++;
@@ -558,10 +556,15 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			continue;
 
 		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
-			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
-				dm_queue_if_no_path(mpp->alias, 0);
-			else
-				dm_queue_if_no_path(mpp->alias, 1);
+			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL) {
+				if (!dm_queue_if_no_path(mpp->alias, 0))
+					remove_feature(&mpp->features,
+						       "queue_if_no_path");
+			} else {
+				if (!dm_queue_if_no_path(mpp->alias, 1))
+					add_feature(&mpp->features,
+						    "queue_if_no_path");
+			}
 		}
 		if (mpp->pg_timeout != PGTIMEOUT_UNDEF) {
 			if (mpp->pg_timeout == -PGTIMEOUT_NONE)
@@ -569,6 +572,9 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			else
 				dm_set_pg_timeout(mpp->alias, mpp->pg_timeout);
 		}
+
+		if (!conf->daemon && mpp->action != ACT_NOTHING)
+			print_multipath_topology(mpp, conf->verbosity);
 
 		if (newmp) {
 			if (mpp->action != ACT_REJECT) {

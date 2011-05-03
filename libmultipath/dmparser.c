@@ -53,20 +53,39 @@ assemble_map (struct multipath * mp, char * params, int len)
 	int shift, freechar;
 	int minio;
 	int nr_priority_groups, initial_pg_nr;
-	char * p;
+	char * p, * f;
+	char no_path_retry[] = "queue_if_no_path";
 	struct pathgroup * pgp;
 	struct path * pp;
 
 	minio = mp->minio;
 	p = params;
-	freechar = sizeof(params);
+	freechar = len;
 
 	nr_priority_groups = VECTOR_SIZE(mp->pg);
 	initial_pg_nr = (nr_priority_groups ? mp->bestpg : 0);
 
+	f = STRDUP(mp->features);
+
+	/*
+	 * We have to set 'queue_if_no_path' here even
+	 * to avoid path failures during map reload.
+	 */
+	if (mp->no_path_retry == NO_PATH_RETRY_UNDEF ||
+	    mp->no_path_retry == NO_PATH_RETRY_FAIL) {
+		/* remove queue_if_no_path settings */
+		condlog(3, "%s: remove queue_if_no_path from '%s'",
+			mp->alias, mp->features);
+		remove_feature(&f, no_path_retry);
+	} else {
+		add_feature(&f, no_path_retry);
+	}
+
 	shift = snprintf(p, freechar, "%s %s %i %i",
-			 mp->features, mp->hwhandler,
+			 f, mp->hwhandler,
 			 nr_priority_groups, initial_pg_nr);
+
+	FREE(f);
 
 	if (shift >= freechar) {
 		fprintf(stderr, "mp->params too small\n");
@@ -124,6 +143,7 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 	int num_paths = 0;
 	int num_paths_args = 0;
 	int def_minio = 0;
+	int no_path_retry = NO_PATH_RETRY_UNDEF;
 	struct path * pp;
 	struct pathgroup * pgp;
 
@@ -138,6 +158,8 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 		return 1;
 
 	num_features = atoi(mpp->features);
+	no_path_retry = mpp->no_path_retry;
+	mpp->no_path_retry = NO_PATH_RETRY_UNDEF;
 
 	for (i = 0; i < num_features; i++) {
 		p += get_word(p, &word);
@@ -156,6 +178,17 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 
 		FREE(word);
 	}
+
+	/*
+	 * Reset no_path_retry.
+	 * - if not set from features
+	 * - if queue_if_no_path is set from features but
+	 *   no_path_retry > 0 is selected.
+	 */
+	if ((mpp->no_path_retry == NO_PATH_RETRY_UNDEF ||
+	     mpp->no_path_retry == NO_PATH_RETRY_QUEUE) &&
+	    mpp->no_path_retry != no_path_retry)
+		mpp->no_path_retry = no_path_retry;
 
 	/*
 	 * hwhandler
