@@ -132,7 +132,8 @@ update_paths (struct multipath * mpp)
 
 		vector_foreach_slot (pgp->paths, pp, j) {
 			if (!strlen(pp->dev)) {
-				if (devt2devname(pp->dev, pp->dev_t)) {
+				if (devt2devname(pp->dev, FILE_NAME_SIZE,
+						 pp->dev_t)) {
 					/*
 					 * path is not in sysfs anymore
 					 */

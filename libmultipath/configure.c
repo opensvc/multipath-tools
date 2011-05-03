@@ -630,9 +630,13 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 		return NULL;
 
 	if (dev_type == DEV_DEVNODE) {
-		basenamecpy(dev, buff);
+		if (basenamecpy(dev, buff, FILE_NAME_SIZE) == 0) {
+			condlog(1, "basename failed for '%s' (%s)",
+				dev, buff);
+			return NULL;
+		}
+
 		pp = find_path_by_dev(pathvec, buff);
-		
 		if (!pp) {
 			pp = alloc_path();
 
@@ -656,9 +660,8 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 	if (dev_type == DEV_DEVT) {
 		strchop(dev);
 		pp = find_path_by_devt(pathvec, dev);
-		
 		if (!pp) {
-			if (devt2devname(buff, dev))
+			if (devt2devname(buff, FILE_NAME_SIZE, dev))
 				return NULL;
 
 			pp = alloc_path();
@@ -670,7 +673,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 
 			if (pathinfo(pp, conf->hwtable, DI_SYSFS | DI_WWID))
 				return NULL;
-			
+
 			if (store_path(pathvec, pp)) {
 				free_path(pp);
 				return NULL;

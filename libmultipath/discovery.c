@@ -329,62 +329,6 @@ opennode (char * dev, int mode)
 	return open(devpath, mode);
 }
 
-extern int
-devt2devname (char *devname, char *devt)
-{
-	FILE *fd;
-	unsigned int tmpmaj, tmpmin, major, minor;
-	char dev[FILE_NAME_SIZE];
-	char block_path[FILE_NAME_SIZE];
-	struct stat statbuf;
-
-	memset(block_path, 0, FILE_NAME_SIZE);
-	if (sscanf(devt, "%u:%u", &major, &minor) != 2) {
-		condlog(0, "Invalid device number %s", devt);
-		return 1;
-	}
-
-	if (!(fd = fopen("/proc/partitions", "r"))) {
-		condlog(0, "Cannot open /proc/partitions");
-		return 1;
-	}
-
-	while (!feof(fd)) {
-		int r = fscanf(fd,"%u %u %*d %s",&tmpmaj, &tmpmin, dev);
-		if (!r) {
-			r = fscanf(fd,"%*s\n");
-			continue;
-		}
-		if (r != 3)
-			continue;
-
-		if ((major == tmpmaj) && (minor == tmpmin)) {
-			if (snprintf(block_path, FILE_NAME_SIZE, "/sys/block/%s", dev) >= FILE_NAME_SIZE) {
-				condlog(0, "device name %s is too long\n", dev);
-				fclose(fd);
-				return 1;
-			}
-			break;
-		}
-	}
-	fclose(fd);
-
-	if (strncmp(block_path,"/sys/block", 10))
-		return 1;
-
-	if (stat(block_path, &statbuf) < 0) {
-		condlog(0, "No sysfs entry for %s\n", block_path);
-		return 1;
-	}
-
-	if (S_ISDIR(statbuf.st_mode) == 0) {
-		condlog(0, "sysfs entry %s is not a directory\n", block_path);
-		return 1;
-	}
-	basenamecpy(block_path, devname);
-	return 0;
-}
-
 int
 do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
        void *resp, int mx_resp_len)
@@ -570,7 +514,7 @@ scsi_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 	/*
 	 * host / bus / target / lun
 	 */
-	basenamecpy(parent->devpath, attr_path);
+	basenamecpy(parent->devpath, attr_path, FILE_NAME_SIZE);
 
 	sscanf(attr_path, "%i:%i:%i:%i",
 			&pp->sg_id.host_no,
@@ -629,7 +573,7 @@ ccw_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 	/*
 	 * host / bus / target / lun
 	 */
-	basenamecpy(parent->devpath, attr_path);
+	basenamecpy(parent->devpath, attr_path, FILE_NAME_SIZE);
 	pp->sg_id.lun = 0;
 	sscanf(attr_path, "%i.%i.%x",
 			&pp->sg_id.host_no,
@@ -653,7 +597,7 @@ cciss_sysfs_pathinfo (struct path * pp, struct sysfs_device * dev)
 	/*
 	 * host / bus / target / lun
 	 */
-	basenamecpy(dev->devpath, attr_path);
+	basenamecpy(dev->devpath, attr_path, FILE_NAME_SIZE);
 	pp->sg_id.lun = 0;
 	pp->sg_id.channel = 0;
 	sscanf(attr_path, "cciss!c%id%i",
