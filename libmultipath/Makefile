@@ -23,6 +23,12 @@ ifneq ($(strip $(LIBDM_API_FLUSH)),0)
 	CFLAGS += -DLIBDM_API_FLUSH -D_GNU_SOURCE
 endif
 
+LIBDM_API_COOKIE = $(shell grep -Ecs '^[a-z]*[[:space:]]+dm_task_set_cookie' /usr/include/libdevmapper.h)
+
+ifneq ($(strip $(LIBDM_API_COOKIE)),0)
+	CFLAGS += -DLIBDM_API_COOKIE
+endif
+
 all: $(LIBS)
 
 $(LIBS): $(OBJS)

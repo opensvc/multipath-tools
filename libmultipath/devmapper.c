@@ -31,6 +31,31 @@
 #define UUID_PREFIX "mpath-"
 #define UUID_PREFIX_LEN 6
 
+#ifndef LIBDM_API_COOKIE
+static inline int dm_task_set_cookie(struct dm_task *dmt, uint32_t *c, int a)
+{
+	return 1;
+}
+
+void udev_wait(unsigned int c)
+{
+}
+
+void udev_set_sync_support(int c)
+{
+}
+#else
+void udev_wait(unsigned int c)
+{
+	dm_udev_wait(c);
+}
+
+void udev_set_sync_support(int c)
+{
+	dm_udev_set_sync_support(c);
+}
+#endif
+
 static void
 dm_write_log (int level, const char *file, int line, const char *f, ...)
 {
@@ -83,7 +108,11 @@ dm_lib_prereq (void)
 {
 	char version[64];
 	int v[3];
+#ifdef LIBDM_API_COOKIE
 	int minv[3] = {1, 2, 38};
+#else
+	int minv[3] = {1, 2, 8};
+#endif
 
 	dm_get_library_version(version, sizeof(version));
 	condlog(3, "libdevmapper version %s", version);

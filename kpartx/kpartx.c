@@ -267,8 +267,10 @@ main(int argc, char **argv){
 			exit(1);
 	}
 
+#ifdef LIBDM_API_COOKIE
 	if (!sync)
 		dm_udev_set_sync_support(0);
+#endif
 
 	if (dm_prereq(DM_TARGET, 0, 0, 0) && (what == ADD || what == DELETE)) {
 		fprintf(stderr, "device mapper prerequisites not met\n");
@@ -577,7 +579,9 @@ main(int argc, char **argv){
 		}
 		printf("loop deleted : %s\n", device);
 	}
+#ifdef LIBDM_API_COOKIE
 	dm_udev_wait(cookie);
+#endif
 	dm_lib_release();
 	dm_lib_exit();
 

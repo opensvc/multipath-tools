@@ -13,6 +13,13 @@
 #define UUID_PREFIX "part%d-"
 #define MAX_PREFIX_LEN 8
 
+#ifndef LIBDM_API_COOKIE
+static inline int dm_task_set_cookie(struct dm_task *dmt, uint32_t *c, int a)
+{
+       return 1;
+}
+#endif
+
 extern int
 dm_prereq (char * str, int x, int y, int z)
 {

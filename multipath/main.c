@@ -455,9 +455,9 @@ main (int argc, char *argv[])
 	}
 	while ((r = configure()) < 0)
 		condlog(3, "restart multipath configuration process");
-	
+
 out:
-	dm_udev_wait(conf->cookie);
+	udev_wait(conf->cookie);
 
 	sysfs_cleanup();
 	dm_lib_release();
