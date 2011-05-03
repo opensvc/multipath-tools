@@ -37,6 +37,7 @@
 #include <linux/types.h>
 #include <linux/netlink.h>
 #include <pthread.h>
+#include <limits.h>
 #include <sys/mman.h>
 
 #include "memory.h"
@@ -57,6 +58,30 @@ int servicing_uev;
 int is_uevent_busy(void)
 {
 	return (uevqhp != NULL || servicing_uev);
+}
+
+void
+setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
+{
+	if (pthread_attr_init(attr)) {
+		fprintf(stderr, "can't initialize thread attr: %s\n",
+			strerror(errno));
+		exit(1);
+	}
+	if (stacksize < PTHREAD_STACK_MIN)
+		stacksize = PTHREAD_STACK_MIN;
+
+	if (pthread_attr_setstacksize(attr, stacksize)) {
+		fprintf(stderr, "can't set thread stack size to %lu: %s\n",
+			(unsigned long)stacksize, strerror(errno));
+		exit(1);
+	}
+	if (detached && pthread_attr_setdetachstate(attr,
+						    PTHREAD_CREATE_DETACHED)) {
+		fprintf(stderr, "can't set thread to detached: %s\n",
+			strerror(errno));
+		exit(1);
+	}
 }
 
 static struct uevent * alloc_uevent (void)
@@ -142,8 +167,7 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 	pthread_mutex_init(uevc_lockp, NULL);
 	pthread_cond_init(uev_condp, NULL);
 
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, 64 * 1024);
+	setup_thread_attr(&attr, 64 * 1024, 0);
 	pthread_create(&uevq_thr, &attr, uevq_thread, NULL);
 
 	/*
