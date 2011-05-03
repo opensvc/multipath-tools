@@ -88,7 +88,7 @@ assemble_map (struct multipath * mp, char * params, int len)
 	FREE(f);
 
 	if (shift >= freechar) {
-		fprintf(stderr, "mp->params too small\n");
+		condlog(0, "%s: params too small", mp->alias);
 		return 1;
 	}
 	p += shift;
@@ -99,7 +99,7 @@ assemble_map (struct multipath * mp, char * params, int len)
 		shift = snprintf(p, freechar, " %s %i 1", mp->selector,
 				 VECTOR_SIZE(pgp->paths));
 		if (shift >= freechar) {
-			fprintf(stderr, "mp->params too small\n");
+			condlog(0, "%s: params too small\n", mp->alias);
 			return 1;
 		}
 		p += shift;
@@ -111,11 +111,14 @@ assemble_map (struct multipath * mp, char * params, int len)
 			if (mp->rr_weight == RR_WEIGHT_PRIO
 			    && pp->priority > 0)
 				tmp_minio = minio * pp->priority;
-
+			if (!strlen(pp->dev_t) ) {
+				condlog(0, "dev_t not set for '%s'\n", pp->dev);
+				return 1;
+			}
 			shift = snprintf(p, freechar, " %s %d",
 					 pp->dev_t, tmp_minio);
 			if (shift >= freechar) {
-				fprintf(stderr, "mp->params too small\n");
+				condlog(0, "%s: params too small", mp->alias);
 				return 1;
 			}
 			p += shift;
@@ -123,10 +126,12 @@ assemble_map (struct multipath * mp, char * params, int len)
 		}
 	}
 	if (freechar < 1) {
-		fprintf(stderr, "mp->params too small\n");
+		condlog(0, "%s: params too small", mp->alias);
 		return 1;
 	}
 	snprintf(p, 1, "\n");
+
+	condlog(3, "%s: assembled map [%s]", mp->alias, params);
 	return 0;
 }
 
@@ -148,6 +153,8 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 	struct pathgroup * pgp;
 
 	p = params;
+
+	condlog(3, "%s: disassemble map [%s]", mpp->alias, params);
 
 	/*
 	 * features
@@ -398,6 +405,8 @@ disassemble_status (char * params, struct multipath * mpp)
 	struct pathgroup * pgp;
 
 	p = params;
+
+	condlog(3, "%s: disassemble status [%s]", mpp->alias, params);
 
 	/*
 	 * features
