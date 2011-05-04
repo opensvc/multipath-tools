@@ -29,7 +29,7 @@
 
 
 #define CURRENT_PAGE_CODE_VALUES	0
-#define CHANGEABLE_PAGE_CODE_VALUES 	1
+#define CHANGEABLE_PAGE_CODE_VALUES	1
 
 #define MSG_RDAC_UP    "rdac checker reports path is up"
 #define MSG_RDAC_DOWN  "rdac checker reports path is down"
@@ -212,7 +212,7 @@ libcheck_check (struct checker * c)
 			c->timeout)) {
 		ret = PATH_DOWN;
 		goto done;
-        } else if (((inq.PQ_PDT & 0xE0) == 0x20) || (inq.PQ_PDT & 0x7f)) {
+	} else if (((inq.PQ_PDT & 0xE0) == 0x20) || (inq.PQ_PDT & 0x7f)) {
 		/* LUN not connected*/
 		ret = PATH_DOWN;
 		goto done;
