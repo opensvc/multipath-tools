@@ -1477,6 +1477,37 @@ mp_flush_on_last_del_handler(vector strvec)
 	return 0;
 }
 
+static int
+mp_prio_handler(vector strvec)
+{
+	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->hwtable);
+
+	if (!mpe)
+		return 1;
+
+	mpe->prio_name = set_value(strvec);
+
+	if (!mpe->prio_name)
+		return 1;
+
+	return 0;
+}
+
+static int
+mp_prio_args_handler (vector strvec)
+{
+	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
+
+	if (!mpe)
+		return 1;
+
+	mpe->prio_args = set_value(strvec);
+	if (!mpe->prio_args)
+		return 1;
+
+	return 0;
+}
+
 /*
  * config file keywords printing
  */
@@ -1678,6 +1709,28 @@ snprint_mp_flush_on_last_del (char * buff, int len, void * data)
 }
 
 static int
+snprint_mp_prio(char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->prio_name)
+		return 0;
+
+	return snprintf(buff, len, "%s", mpe->prio_name);
+}
+
+static int
+snprint_mp_prio_args(char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->prio_args)
+		return 0;
+
+	return snprintf(buff, len, "%s", mpe->prio_args);
+}
+
+static int
 snprint_hw_fast_io_fail(char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
@@ -1779,8 +1832,8 @@ snprint_hw_prio_args (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-        if (!hwe->prio_args)
-                return 0;
+	if (!hwe->prio_args)
+		return 0;
 
 	return snprintf(buff, len, "\"%s\"", hwe->prio_args);
 }
@@ -2375,6 +2428,8 @@ init_keywords(void)
 	install_keyword("alias", &alias_handler, &snprint_mp_alias);
 	install_keyword("path_grouping_policy", &mp_pgpolicy_handler, &snprint_mp_path_grouping_policy);
 	install_keyword("path_selector", &mp_selector_handler, &snprint_mp_selector);
+	install_keyword("prio", &mp_prio_handler, &snprint_mp_prio);
+	install_keyword("prio_args", &mp_prio_args_handler, &snprint_mp_prio_args);
 	install_keyword("failback", &mp_failback_handler, &snprint_mp_failback);
 	install_keyword("rr_weight", &mp_weight_handler, &snprint_mp_rr_weight);
 	install_keyword("no_path_retry", &mp_no_path_retry_handler, &snprint_mp_no_path_retry);

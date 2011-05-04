@@ -47,6 +47,8 @@ struct mpentry {
 	char * selector;
 	char * features;
 
+	char * prio_name;
+	char * prio_args;
 	int pgpolicy;
 	int pgfailback;
 	int rr_weight;

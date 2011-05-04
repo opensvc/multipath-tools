@@ -201,6 +201,12 @@ free_mpe (struct mpentry * mpe)
 	if (mpe->alias)
 		FREE(mpe->alias);
 
+	if (mpe->prio_name)
+		FREE(mpe->prio_name);
+
+	if (mpe->prio_args)
+		FREE(mpe->prio_args);
+
 	FREE(mpe);
 }
 

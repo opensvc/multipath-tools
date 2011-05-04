@@ -369,6 +369,18 @@ select_getuid (struct path * pp)
 extern int
 select_prio (struct path * pp)
 {
+	struct mpentry * mpe;
+
+	if ((mpe = find_mpe(pp->wwid))) {
+		if (mpe->prio_name) {
+			pp->prio = prio_lookup(mpe->prio_name);
+			prio_set_args(pp->prio, mpe->prio_args);
+			condlog(3, "%s: prio = %s (LUN setting)",
+				pp->dev, pp->prio->name);
+			return 0;
+		}
+	}
+
 	if (pp->hwe && pp->hwe->prio_name) {
 		pp->prio = prio_lookup(pp->hwe->prio_name);
 		prio_set_args(pp->prio, pp->hwe->prio_args);
@@ -388,7 +400,7 @@ select_prio (struct path * pp)
 		return 0;
 	}
 	pp->prio = prio_lookup(DEFAULT_PRIO);
-        prio_set_args(pp->prio, DEFAULT_PRIO_ARGS);
+	prio_set_args(pp->prio, DEFAULT_PRIO_ARGS);
 	condlog(3, "%s: prio = %s (internal default)",
 		pp->dev, DEFAULT_PRIO);
 	condlog(3, "%s: prio = %s (internal default)",
