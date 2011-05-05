@@ -399,7 +399,7 @@ factorize_hwtable (vector hw, int n)
 			break;
 		j = n;
 		vector_foreach_slot_after(hw, hwe2, j) {
-			if (hwe_strmatch(hwe1, hwe2))
+			if (hwe_regmatch(hwe1, hwe2))
 				continue;
 			/* dup */
 			merge_hwe(hwe2, hwe1);
