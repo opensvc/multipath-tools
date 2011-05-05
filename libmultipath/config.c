@@ -51,42 +51,64 @@ find_hwe_strmatch (vector hwtable, struct hwentry *hwe)
 	return ret;
 }
 
+static int
+hwe_regmatch (struct hwentry *hwe1, struct hwentry *hwe2)
+{
+	regex_t vre, pre, rre;
+	int retval = 1;
+
+	if (hwe1->vendor &&
+	    regcomp(&vre, hwe1->vendor, REG_EXTENDED|REG_NOSUB))
+		goto out;
+
+	if (hwe1->product &&
+	    regcomp(&pre, hwe1->product, REG_EXTENDED|REG_NOSUB))
+		goto out_vre;
+
+	if (hwe1->revision &&
+	    regcomp(&rre, hwe1->revision, REG_EXTENDED|REG_NOSUB))
+		goto out_pre;
+
+	if ((!hwe1->vendor || !hwe2->vendor ||
+	     !regexec(&vre, hwe2->vendor, 0, NULL, 0)) &&
+	    (!hwe1->product || !hwe2->product ||
+	     !regexec(&pre, hwe2->product, 0, NULL, 0)) &&
+	    (!hwe1->revision || !hwe2->revision ||
+	     !regexec(&rre, hwe2->revision, 0, NULL, 0)))
+		retval = 0;
+
+	if (hwe1->revision)
+		regfree(&rre);
+out_pre:
+	if (hwe1->product)
+		regfree(&pre);
+out_vre:
+	if (hwe1->vendor)
+		regfree(&vre);
+out:
+	return retval;
+}
+
 struct hwentry *
 find_hwe (vector hwtable, char * vendor, char * product, char * revision)
 {
 	int i;
-	struct hwentry *hwe, *ret = NULL;
-	regex_t vre, pre, rre;
+	struct hwentry hwe, *tmp, *ret = NULL;
 
-	vector_foreach_slot (hwtable, hwe, i) {
-		if (hwe->vendor &&
-		    regcomp(&vre, hwe->vendor, REG_EXTENDED|REG_NOSUB))
-			break;
-		if (hwe->product &&
-		    regcomp(&pre, hwe->product, REG_EXTENDED|REG_NOSUB)) {
-			regfree(&vre);
-			break;
-		}
-		if (hwe->revision &&
-		    regcomp(&rre, hwe->revision, REG_EXTENDED|REG_NOSUB)) {
-			regfree(&vre);
-			regfree(&pre);
-			break;
-		}
-		if ((!hwe->vendor || !regexec(&vre, vendor, 0, NULL, 0)) &&
-		    (!hwe->product || !regexec(&pre, product, 0, NULL, 0)) &&
-		    (!hwe->revision || !regexec(&rre, revision, 0, NULL, 0)))
-			ret = hwe;
-
-		if (hwe->revision)
-			regfree(&rre);
-		if (hwe->product)
-			regfree(&pre);
-		if (hwe->vendor)
-			regfree(&vre);
-
-		if (ret)
-			break;
+	hwe.vendor = vendor;
+	hwe.product = product;
+	hwe.revision = revision;
+	/*
+	 * Search backwards here.
+	 * User modified entries are attached at the end of
+	 * the list, so we have to check them first before
+	 * continuing to the generic entries
+	 */
+	vector_foreach_slot_backwards (hwtable, tmp, i) {
+		if (hwe_regmatch(tmp, &hwe))
+			continue;
+		ret = tmp;
+		break;
 	}
 	return ret;
 }
@@ -267,20 +289,18 @@ set_param_str(char * str)
 }
 
 #define merge_str(s) \
-	if (hwe2->s) { \
-		if (hwe1->s) \
-			FREE(hwe1->s); \
-		if (!(hwe1->s = set_param_str(hwe2->s))) \
+	if (!dst->s && src->s) { \
+		if (!(dst->s = set_param_str(src->s))) \
 			return 1; \
 	}
 
 #define merge_num(s) \
-	if (hwe2->s) \
-		hwe1->s = hwe2->s
+	if (!dst->s && src->s) \
+		dst->s = src->s
 
 
 static int
-merge_hwe (struct hwentry * hwe1, struct hwentry * hwe2)
+merge_hwe (struct hwentry * dst, struct hwentry * src)
 {
 	merge_str(vendor);
 	merge_str(product);
@@ -369,21 +389,20 @@ out:
 }
 
 static int
-factorize_hwtable (vector hw)
+factorize_hwtable (vector hw, int n)
 {
 	struct hwentry *hwe1, *hwe2;
 	int i, j;
 
 	vector_foreach_slot(hw, hwe1, i) {
-		j = i+1;
+		if (i == n)
+			break;
+		j = n;
 		vector_foreach_slot_after(hw, hwe2, j) {
 			if (hwe_strmatch(hwe1, hwe2))
 				continue;
 			/* dup */
-			merge_hwe(hwe1, hwe2);
-			free_hwe(hwe2);
-			vector_del_slot(hw, j);
-			j--;
+			merge_hwe(hwe2, hwe1);
 		}
 	}
 	return 0;
@@ -489,19 +508,26 @@ load_config (char * file)
 	/*
 	 * read the config file
 	 */
+	set_current_keywords(&conf->keywords);
 	if (filepresent(file)) {
-		set_current_keywords(&conf->keywords);
+		int builtin_hwtable_size;
+
+		builtin_hwtable_size = VECTOR_SIZE(conf->hwtable);
 		if (init_data(file, init_keywords)) {
 			condlog(0, "error parsing config file");
 			goto out;
 		}
-	}
+		if (VECTOR_SIZE(conf->hwtable) > builtin_hwtable_size) {
+			/*
+			 * remove duplica in hwtable. config file
+			 * takes precedence over build-in hwtable
+			 */
+			factorize_hwtable(conf->hwtable, builtin_hwtable_size);
+		}
 
-	/*
-	 * remove duplica in hwtable. config file takes precedence
-	 * over build-in hwtable
-	 */
-	factorize_hwtable(conf->hwtable);
+	} else {
+		init_keywords();
+	}
 
 	/*
 	 * fill the voids left in the config file
