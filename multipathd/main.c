@@ -1540,7 +1540,7 @@ static int
 daemonize(void)
 {
 	int pid;
-	int in_fd, out_fd;
+	int dev_null_fd;
 
 	if( (pid = fork()) < 0){
 		fprintf(stderr, "Failed first fork : %s\n", strerror(errno));
@@ -1556,31 +1556,24 @@ daemonize(void)
 	else if (pid != 0)
 		_exit(0);
 
-	in_fd = open("/dev/null", O_RDONLY);
-	if (in_fd < 0){
-		fprintf(stderr, "cannot open /dev/null for input : %s\n",
-			strerror(errno));
-		_exit(0);
-	}
-	out_fd = open("/dev/console", O_WRONLY);
-	if (out_fd < 0){
-		fprintf(stderr, "cannot open /dev/console for output : %s\n",
+	if (chdir("/") < 0)
+		fprintf(stderr, "cannot chdir to '/', continuing\n");
+
+	dev_null_fd = open("/dev/null", O_RDWR);
+	if (dev_null_fd < 0){
+		fprintf(stderr, "cannot open /dev/null for input & output : %s\n",
 			strerror(errno));
 		_exit(0);
 	}
 
 	close(STDIN_FILENO);
-	dup(in_fd);
+	dup(dev_null_fd);
 	close(STDOUT_FILENO);
-	dup(out_fd);
+	dup(dev_null_fd);
 	close(STDERR_FILENO);
-	dup(out_fd);
+	dup(dev_null_fd);
 
-	close(in_fd);
-	close(out_fd);
-	if (chdir("/") < 0)
-		fprintf(stderr, "cannot chdir to '/', continuing\n");
-
+	close(dev_null_fd);
 	return 0;
 }
 
