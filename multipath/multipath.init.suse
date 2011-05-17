@@ -1,0 +1,158 @@
+#! /bin/sh
+# Copyright (c) 2005 SuSE GmbH Nuernberg, Germany.
+#
+# Author: Hannes Reinecke <feedback@suse.de>
+#
+# init.d/boot.multipath
+#
+### BEGIN INIT INFO
+# Provides:          boot.multipath
+# Required-Start:    boot.device-mapper boot.udev
+# Required-Stop:     boot.device-mapper boot.udev
+# Should-Start:      boot.xdrsetsite
+# Should-Stop:       boot.xdrsetsite
+# Default-Start:     B
+# Default-Stop:
+# Short-Description:       Create multipath device targets
+# Description:       Setup initial multipath device-mapper targets
+### END INIT INFO
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+PROGRAM=/sbin/multipath
+
+# Set the maximum number of open files
+MAX_OPEN_FDS=4096
+
+# Number of seconds to wait for disks and partitions
+MPATH_DEVICE_TIMEOUT=30
+
+test -x $PROGRAM || exit 5
+
+# Shell functions sourced from /etc/rc.status:
+#      rc_check         check and set local and overall rc status
+#      rc_status        check and set local and overall rc status
+#      rc_status -v     ditto but be verbose in local rc status
+#      rc_status -v -r  ditto and clear the local rc status
+#      rc_failed        set local and overall rc status to failed
+#      rc_reset         clear local rc status (overall remains)
+#      rc_exit          exit appropriate to overall rc status
+. /etc/rc.status
+
+# First reset status of this service
+rc_reset
+
+# Return values acc. to LSB for all commands but status:
+# 0 - success
+# 1 - misc error
+# 2 - invalid or excess args
+# 3 - unimplemented feature (e.g. reload)
+# 4 - insufficient privilege
+# 5 - program not installed
+# 6 - program not configured
+# 7 - program is not running
+# 
+# Note that starting an already running service, stopping
+# or restarting a not-running service as well as the restart
+# with force-reload (in case signalling is not supported) are
+# considered a success.
+
+case "$1" in
+    start)
+	# Check for existing multipath mappings
+	if dmsetup table --target multipath | grep -q multipath ; then
+	    # Multipath active, start daemon
+	    exec /etc/init.d/multipathd $1
+	fi
+
+	echo -n "Creating multipath targets:"
+	# Check whether multipath daemon is already running
+	if /sbin/multipathd -k"list paths" > /dev/null 2>&1 ; then
+	    echo -n " (multipathd running)"
+	    rc_status -v
+	    rc_exit
+	fi
+	# Load prerequisite module
+	modprobe dm-multipath
+	
+	# Set the maximum number of open files
+	if [ -n "$MAX_OPEN_FDS" ] ; then
+	    ulimit -n $MAX_OPEN_FDS
+	fi
+
+	# Start the program directly as checkproc doesn't work here
+	$PROGRAM -v 0
+	echo -n " (waiting for udev)"
+	# Wait for all multipathed devices to appear
+	maplist=$(/sbin/dmsetup ls --target multipath | sed '/No devices/d' | sed -n 's/\(^[^ ()]*\)[\t ]*.*/\1/p')
+	wait=$MPATH_DEVICE_TIMEOUT
+	while [ $wait -gt 0 ] ; do
+	    num=0
+	    for map in $maplist; do
+		[ -e /dev/disk/by-id/dm-name-$map ] && continue
+		num=$((num + 1))
+	    done
+	    [ $num -eq 0 ] && break
+	    wait=$((wait - 1))
+	    sleep 1;
+	done
+	if [ $wait -le 0 ] ; then
+	    echo -n " timeout: $num devices left"
+	    rc_failed 1
+	else
+	    # Reset to wait for partitions
+	    wait=$MPATH_DEVICE_TIMEOUT
+	fi
+        # Wait for all partitions on multipathed devices
+	while [ $wait -gt 0 ] ; do
+	    num=0
+	    for map in $maplist ; do
+		[ -e /dev/disk/by-id/dm-name-$map ] || continue
+		partlist=$(/sbin/kpartx -l -p _part /dev/disk/by-id/dm-name-$map | sed 's/\([^ ]*\) :.*/\1/p')
+		for part in $partlist; do
+		    [ -e /dev/disk/by-id/dm-name-$part ] && continue
+		    num$((num + 1))
+		done
+	    done
+	    [ $num -eq 0 ] && break
+	    wait=$((wait - 1))
+	    sleep 1;
+	done
+	if [ $wait -le 0 ] ; then
+	    echo -n "timeout: $num partitions left"
+	    rc_failed 1
+	fi
+
+	# Remember status and be verbose
+	rc_status -v
+	;;
+    stop)
+	echo -n "Removing multipath targets:"
+
+	# Flush all existing maps
+	$PROGRAM -F
+
+	rc_failed 0
+	rc_status -v
+	;;
+    status)
+	echo -n "Checking multipath targets: "
+	# Display active multipath tables
+	tblnum=$(/sbin/dmsetup ls --target multipath | sed '/No devices/d' | wc --lines)
+	if [ "$tblnum" ] && [ $tblnum -gt 0 ] ; then
+	    echo -n "($tblnum multipath devices) "
+	    rc_failed 0
+	else
+	    rc_failed 3
+	fi
+	rc_status -v
+	;;
+    reload)
+	$0 stop
+	$0 start
+	;;
+    *)
+	echo "Usage: $0 {start|stop|status}"
+	exit 1
+	;;
+esac
+rc_exit
