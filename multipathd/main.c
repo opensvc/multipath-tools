@@ -328,28 +328,6 @@ ev_remove_map (char * devname, char * alias, int minor, struct vectors * vecs)
 }
 
 static int
-uev_umount_map (struct uevent * uev, struct vectors * vecs)
-{
-	struct multipath * mpp;
-
-	condlog(2, "%s: umount map (uevent)", uev->kernel);
-
-	mpp = find_mp_by_str(vecs->mpvec, uev->kernel);
-
-	if (!mpp)
-		return 0;
-
-	update_mpp_paths(mpp, vecs->pathvec);
-	verify_paths(mpp, vecs, NULL);
-
-	if (!VECTOR_SIZE(mpp->paths))
-		flush_map(mpp, vecs);
-
-	return 0;
-}
-
-
-static int
 uev_add_path (struct uevent *uev, struct vectors * vecs)
 {
 	struct sysfs_device * dev;
@@ -732,10 +710,6 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 		}
 		if (!strncmp(uev->action, "remove", 6)) {
 			r = uev_remove_map(uev, vecs);
-			goto out;
-		}
-		if (!strncmp(uev->action, "umount", 6)) {
-			r = uev_umount_map(uev, vecs);
 			goto out;
 		}
 		goto out;
