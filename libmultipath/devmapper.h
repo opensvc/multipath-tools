@@ -40,6 +40,8 @@ int dm_get_uuid(char *name, char *uuid);
 int dm_get_info (char * mapname, struct dm_info ** dmi);
 int dm_rename (char * old, char * new);
 char * dm_get_name(char * uuid);
+int dm_reassign(const char * mapname);
+int dm_reassign_table(const char *name, char *old, char *new);
 int dm_setgeometry(struct multipath *mpp);
 void udev_wait(unsigned int c);
 void udev_set_sync_support(int c);

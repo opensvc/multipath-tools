@@ -18,6 +18,7 @@
 
 #include "main.h"
 #include "cli.h"
+#include "uevent.h"
 
 #define REALLOC_REPLY(r, a, m)					\
 	do {							\
@@ -736,6 +737,17 @@ cli_reinstate(void * v, char ** reply, int * len, void * data)
 
 	checker_enable(&pp->checker);
 	return dm_reinstate_path(pp->mpp->alias, pp->dev_t);
+}
+
+int
+cli_reassign (void * v, char ** reply, int * len, void * data)
+{
+	char * param = get_keyparam(v, MAP);
+
+	condlog(3, "%s: reset devices (operator)", param);
+
+	dm_reassign(param);
+	return 0;
 }
 
 int

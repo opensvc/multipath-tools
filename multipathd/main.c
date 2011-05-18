@@ -147,6 +147,10 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 				dm_lib_release();
 				condlog(2, "%s devmap removed", ompp->alias);
 			}
+		} else if (conf->reassign_maps) {
+			condlog(3, "%s: Reassign existing device-mapper"
+				" devices", ompp->alias);
+			dm_reassign(ompp->alias);
 		}
 	}
 	return 0;
@@ -263,7 +267,12 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 		 * if we create a multipath mapped device as a result
 		 * of uev_add_path
 		 */
-		condlog(0, "%s: devmap already registered", dev);
+		if (conf->reassign_maps) {
+			condlog(3, "%s: Reassign existing device-mapper devices",
+				alias);
+			dm_reassign(alias);
+		}
+		FREE(alias);
 		return 0;
 	}
 
@@ -802,6 +811,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(SUSPEND+MAP, cli_suspend);
 	set_handler_callback(RESUME+MAP, cli_resume);
 	set_handler_callback(RESIZE+MAP, cli_resize);
+	set_handler_callback(RESET+MAP, cli_reassign);
 	set_handler_callback(REINSTATE+PATH, cli_reinstate);
 	set_handler_callback(FAIL+PATH, cli_fail);
 	set_handler_callback(DISABLEQ+MAP, cli_disable_queueing);

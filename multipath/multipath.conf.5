@@ -87,6 +87,13 @@ default verbosity. Higher values increase the verbosity level. Valid
 levels are between 0 and 6; default is
 .I 2
 .TP
+.B reassign_maps
+enable reassigning of device-mapper maps. With this option multipathd
+will remap existing device-mapper maps to always point to multipath
+device, not the underlying block devices. Possible values are
+\fIyes\fR and \fIno\fR. Default is
+.I yes
+.TP
 .B path_selector
 The default path selector algorithm to use; they are offered by the
 kernel multipath target. There are three selector algorithms.

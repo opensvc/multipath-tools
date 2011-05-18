@@ -96,6 +96,7 @@ struct config {
 	gid_t gid;
 	mode_t mode;
 	uint32_t cookie;
+	int reassign_maps;
 
 	char * dev;
 	char * sysfs_dir;

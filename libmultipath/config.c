@@ -495,6 +495,7 @@ load_config (char * file)
 	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
 	conf->flush_on_last_del = 0;
 	conf->attribute_flags = 0;
+	conf->reassign_maps = DEFAULT_REASSIGN_MAPS;
 
 	/*
 	 * preload default hwtable

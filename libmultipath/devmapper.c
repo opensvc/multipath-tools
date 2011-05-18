@@ -20,6 +20,7 @@
 #include "memory.h"
 #include "devmapper.h"
 #include "config.h"
+#include "sysfs.h"
 
 #include "log_pthread.h"
 #include <sys/types.h>
@@ -1275,6 +1276,131 @@ dm_rename (char * old, char * new)
 	r = 1;
 out:
 	dm_task_destroy(dmt);
+	return r;
+}
+
+void dm_reassign_deps(char *table, char *dep, char *newdep)
+{
+	char *p, *n;
+	char newtable[PARAMS_SIZE];
+
+	strcpy(newtable, table);
+	p = strstr(newtable, dep);
+	n = table + (p - newtable);
+	strcpy(n, newdep);
+	n += strlen(newdep);
+	p += strlen(dep);
+	strcat(n, p);
+}
+
+int dm_reassign_table(const char *name, char *old, char *new)
+{
+	int r, modified = 0;
+	uint64_t start, length;
+	struct dm_task *dmt, *reload_dmt;
+	char *target, *params = NULL;
+	char buff[PARAMS_SIZE];
+	void *next = NULL;
+
+	if (!(dmt = dm_task_create(DM_DEVICE_TABLE)))
+		return 0;
+
+	if (!dm_task_set_name(dmt, name))
+		goto out;
+
+	dm_task_no_open_count(dmt);
+
+	if (!dm_task_run(dmt))
+		goto out;
+	if (!(reload_dmt = dm_task_create(DM_DEVICE_RELOAD)))
+		goto out;
+	if (!dm_task_set_name(reload_dmt, name))
+		goto out_reload;
+
+	do {
+		next = dm_get_next_target(dmt, next, &start, &length,
+					  &target, &params);
+		memset(buff, 0, PARAMS_SIZE);
+		strcpy(buff, params);
+		if (strcmp(target, TGT_MPATH) && strstr(params, old)) {
+			condlog(3, "%s: replace target %s %s",
+				name, target, buff);
+			dm_reassign_deps(buff, old, new);
+			condlog(3, "%s: with target %s %s",
+				name, target, buff);
+			modified++;
+		}
+		dm_task_add_target(reload_dmt, start, length, target, buff);
+	} while (next);
+
+	if (modified) {
+		dm_task_no_open_count(reload_dmt);
+
+		if (!dm_task_run(reload_dmt)) {
+			condlog(3, "%s: failed to reassign targets", name);
+			goto out_reload;
+		}
+		dm_simplecmd_noflush(DM_DEVICE_RESUME, name);
+	}
+	r = 1;
+
+out_reload:
+	dm_task_destroy(reload_dmt);
+out:
+	dm_task_destroy(dmt);
+	return r;
+}
+
+
+/*
+ * Reassign existing device-mapper table(s) to not use
+ * the block devices but point to the multipathed
+ * device instead
+ */
+int dm_reassign(const char *mapname)
+{
+	struct dm_deps *deps;
+	struct dm_task *dmt;
+	struct dm_info info;
+	char dev_t[32], dm_dep[32];
+	int r = 0, i;
+
+	if (dm_dev_t(mapname, &dev_t[0], 32)) {
+		condlog(3, "%s: failed to get device number\n", mapname);
+		return 1;
+	}
+
+	if (!(dmt = dm_task_create(DM_DEVICE_DEPS)))
+		return 0;
+
+	if (!dm_task_set_name(dmt, mapname))
+		goto out;
+
+	dm_task_no_open_count(dmt);
+
+	if (!dm_task_run(dmt))
+		goto out;
+
+	if (!dm_task_get_info(dmt, &info))
+		goto out;
+
+	if (!(deps = dm_task_get_deps(dmt)))
+		goto out;
+
+	if (!info.exists)
+		goto out;
+
+	for (i = 0; i < deps->count; i++) {
+		sprintf(dm_dep, "%d:%d",
+			major(deps->device[i]),
+			minor(deps->device[i]));
+		sysfs_check_holders(dm_dep, dev_t);
+	}
+
+	dm_task_destroy (dmt);
+
+	r = 1;
+out:
 	return r;
 }
 
