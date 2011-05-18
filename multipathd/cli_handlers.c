@@ -294,7 +294,8 @@ show_daemon (char ** r, int *len)
 		return 1;
 
 	c = reply;
-	c += snprintf(c, INITIAL_REPLY_LEN, "%s\n", daemon_status());
+	c += snprintf(c, INITIAL_REPLY_LEN, "pid %d %s\n",
+		      daemon_pid, daemon_status());
 
 	*r = reply;
 	*len = (int)(c - reply + 1);

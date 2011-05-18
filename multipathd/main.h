@@ -11,6 +11,8 @@ enum daemon_status {
     DAEMON_SHUTDOWN,
 };
 
+extern pid_t daemon_pid;
+
 int exit_daemon(int);
 const char * daemon_status(void);
 int reconfigure (struct vectors *);

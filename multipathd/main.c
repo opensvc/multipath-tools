@@ -70,6 +70,7 @@ pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int logsink;
 enum daemon_status running_state;
+pid_t daemon_pid;
 
 /*
  * global copy of vecs for use in sig handlers
@@ -1544,7 +1545,7 @@ child (void * param)
 
 	pthread_mutex_lock(&exit_mutex);
 	/* Startup complete, create logfile */
-	if (pidfile_create(DEFAULT_PIDFILE, getpid()))
+	if (pidfile_create(DEFAULT_PIDFILE, daemon_pid))
 		/* Ignore errors, we can live without */
 		condlog(1, "failed to create pidfile");
 
@@ -1636,6 +1637,7 @@ daemonize(void)
 	else if (pid != 0)
 		_exit(0);
 
+	daemon_pid = getpid();
 	in_fd = open("/dev/null", O_RDONLY);
 	if (in_fd < 0){
 		fprintf(stderr, "cannot open /dev/null for input : %s\n",
