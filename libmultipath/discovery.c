@@ -819,6 +819,12 @@ get_prio (struct path * pp)
 	if (!pp)
 		return 0;
 
+	path_state = path_offline(pp);
+	if (path_state != PATH_UP) {
+		pp->priority = PRIO_UNDEF;
+		return 0;
+	}
+
 	if (!pp->prio) {
 		select_prio(pp);
 		if (!pp->prio) {
