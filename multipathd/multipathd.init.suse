@@ -3,24 +3,23 @@
 #
 # Author: Hannes Reinecke <feedback@suse.de>
 #
-# init.d/routed
-#
-#   and symbolic its link
-#
-# /usr/sbin/rcrouted
+# init.d/multipathd
 #
 ### BEGIN INIT INFO
 # Provides:          multipathd
 # Required-Start:    $syslog
-# Required-Stop:
+# Required-Stop:     $syslog
 # Default-Start:     3 5
 # Default-Stop:	     0 1 2 4 6
-# Description:       Starts multipath daemon
+# Short-Description: Starts multipath daemon
+# Description:       Starts the multipath daemon
 ### END INIT INFO
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 DAEMON=/sbin/multipathd
 PIDFILE=/var/run/multipathd.pid
+MPATH_INIT_TIMEOUT=10
+ARGS=""
 
 # Set the maximum number of open files
 MAX_OPEN_FDS=4096
@@ -38,6 +37,12 @@ rc_reset
 case "$1" in
     start)
 	echo -n "Starting multipathd"
+	ulimit -c unlimited
+	if $DAEMON -k"show daemon" > /dev/null 2>&1 ; then
+	    echo -n " (multipathd running)"
+	    rc_status -v
+	    rc_exit
+	fi
 
 	modprobe dm-multipath
 
@@ -53,51 +58,88 @@ case "$1" in
 	    rc_exit
 	fi
 	# Wait for the daemon to start up
+	status=$($DAEMON -k'show daemon' 2> /dev/null)
 	timeout=$MPATH_INIT_TIMEOUT
-	while [ ! -f $PIDFILE ] ; do
-	    sleep 1
-	    status=$(multipathd -k'show daemon' 2> /dev/null)
-	    if [ "$status" == "configure" ] ; then
-		# Daemon is still configuring, do not increase
-		# the timeout
-		continue
+	while [ $timeout -gt 0 ] ; do
+	    if [ -n "$status" ] ; then
+		PID=${status##pid }
+		STATUS=${PID##* }
+		# Configuration might be taking some time,
+		# so don't increase the timeout here
+		[ "$STATUS" != "configure" ] && timeout=$(( $timeout - 1 ))
+
+		[ "$STATUS" == "running" ] && break
+	    else
+		timeout=$(( $timeout - 1 ))
 	    fi
-	    timeout=$(( $timeout - 1 ))
-	    [ $timeout -eq 0 ] && break
+	    sleep 1
+	    status=$($DAEMON -k'show daemon' 2> /dev/null)
 	done
-	if [ $timeout -eq 0 ] ; then
-	    echo -n " (no pidfile)"
-	    rc_failed 1
-t.suse
+	if [ -z "$status" ] ; then
+	    rc_failed 7
 	fi
-	
+	if [ $timeout -le 0 ] ; then
+	    rc_failed 1
+	fi
 	# Remember status and be verbose
 	rc_status -v
-	sleep 1
 	;;
     stop)
 	echo -n "Shutting down multipathd"
-	# Because of the way how multipathd sets up its own namespace
-	# and chroots to it, killproc cannot be used with this process.
-	# So implement a cruder version:
-	if [ -f $PIDFILE ]; then
-		PID="$(cat $PIDFILE)"
-		PROCNAME="$(ps -o cmd --no-headers $PID)"
+	STATUS="unknown"
+	# Try to get PID from daemon
+	status=$($DAEMON -k'show daemon' 2> /dev/null)
+	if [ -n "$status" ] ; then
+	    PID=${status##pid }
+	    STATUS=${PID##* }
+	    PID=${PID%% *}
 	fi
-
-	timeout=$MPATH_INIT_TIMEOUT
-	while [ $timeout -gt 0 ] ; do
-	    status=$($DAEMON -k'show daemon' 2> /dev/null)
-	    [ "$status" == "configure" ] && continue
-	    [ "$status" == "running" ] && break
-	    sleep 1
-	    timeout=$(( $timeout - 1 ))
-	done
-
-	status=$($DAEMON -k'shutdown' 2> /dev/null)
-	if [ "$status" != "ok" ] ; then
-	    if [ "$PROCNAME" == `basename $DAEMON` ]; then
-		kill -TERM $PID
+	# Fallback to PID file for older versions
+	if [ -z "$PID" ] || [ "$PID" == "multipath-tools" ] ; then
+	    if [ -f $PIDFILE ]; then
+		PID="$(cat $PIDFILE)"
+		STATUS="running"
+	    else
+		rc_failed 7
+		rc_status -v
+		rc_exit
+	    fi
+	fi
+	# Shutdown the daemon via CLI
+	if [ "$STATUS" = "running" ] ; then
+	    status=$($DAEMON -k'shutdown' 2> /dev/null)
+	    if [ "$status" = "ok" ] ; then
+		timeout=$MPATH_INIT_TIMEOUT
+		while [ $timeout -gt 0 ] ; do
+		    PROCNAME="$(ps -p $PID -o comm=)"
+		    if [ "$PROCNAME" != "multipathd" ] &&
+			[ "$PROCNAME" != "multipathd <defunct>" ] ; then
+			STATUS="shutdown"
+			break
+		    fi
+		    sleep 1
+		    timeout=$(( $timeout - 1 ))
+		done
+	    fi
+	fi
+	# Kill the daemon if the above failed
+	if [ -n "$PID" -a "$STATUS" != "shutdown" ] ; then
+	    kill -TERM $PID
+	    timeout=$MPATH_INIT_TIMEOUT
+	    while [ $timeout -gt 0 ] ; do
+		PROCNAME="$(ps -p $PID -o comm=)"
+		if [ "$PROCNAME" != "multipathd" ] &&
+		    [ "$PROCNAME" != "multipathd <defunct>" ] ; then
+		    STATUS="shutdown"
+		    break
+		fi
+		sleep 1
+		timeout=$(( $timeout - 1 ))
+	    done
+	fi
+	if [ $STATUS != "shutdown" ] ; then
+	    echo -n " (still running)"
+	    rc_failed 1
 	fi
 
 	# Remember status and be verbose
@@ -124,8 +166,10 @@ t.suse
 	## Like force-reload, but if daemon does not support
 	## signalling, do nothing (!)
 
-	# If it does not support reload:
-	exit 3
+	$DAEMON -k"reconfigure" > /dev/null 2>&1
+
+	# Remember status and be quiet
+	rc_status
 	;;
     status)
 	echo -n "Checking for multipathd: "
@@ -136,18 +180,12 @@ t.suse
 	# 2 - service dead, but /var/lock/ lock file exists
 	# 3 - service not running
 
-	if [ -f $PIDFILE ]; then
-		PID="$(cat $PIDFILE)"
-		PROCNAME="$(ps -o cmd --no-headers $PID)"
-		if [ "$PROCNAME" == "$DAEMON" ]; then
-			(exit 0)
-		else
-			(exit 1)
-		fi
+	status=$($DAEMON -k'show daemon' 2> /dev/null)
+	if [ -n "$status" ]; then
+	        (exit 0)
 	else
 		(exit 3)
 	fi
-
 	rc_status -v
 	;;
     probe)
