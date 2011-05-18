@@ -654,6 +654,9 @@ path_offline (struct path * pp)
 	struct sysfs_device * parent;
 	char buff[SCSI_STATE_SIZE];
 
+	if (pp->bus != SYSFS_BUS_SCSI)
+		return PATH_UP;
+
 	pp->sysdev = sysfs_device_from_path(pp);
 	if (!pp->sysdev) {
 		condlog(1, "%s: failed to get sysfs information", pp->dev);
