@@ -806,7 +806,7 @@ get_state (struct path * pp, int daemon)
 	if (!conf->checker_timeout)
 		sysfs_get_timeout(pp->sysdev, &(c->timeout));
 	state = checker_check(c);
-	condlog(3, "%s: state = %i", pp->dev, state);
+	condlog(3, "%s: state = %s", pp->dev, checker_state_name(state));
 	if (state == PATH_DOWN && strlen(checker_message(c)))
 		condlog(3, "%s: checker msg is \"%s\"",
 			pp->dev, checker_message(c));
