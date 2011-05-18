@@ -1491,12 +1491,6 @@ child (void * param)
 
 	}
 
-	if (pidfile_create(DEFAULT_PIDFILE, getpid())) {
-		if (logsink)
-			log_thread_stop();
-
-		exit(1);
-	}
 	signal_init();
 	setscheduler();
 	set_oom_adj(-16);
@@ -1550,12 +1544,10 @@ child (void * param)
 
 	pthread_mutex_lock(&exit_mutex);
 	/* Startup complete, create logfile */
-	if (pidfile_create(DEFAULT_PIDFILE, getpid())) {
-		if (logsink)
-			log_thread_stop();
+	if (pidfile_create(DEFAULT_PIDFILE, getpid()))
+		/* Ignore errors, we can live without */
+		condlog(1, "failed to create pidfile");
 
-		exit(1);
-	}
 	running_state = DAEMON_RUNNING;
 	pthread_cond_wait(&exit_cond, &exit_mutex);
 
@@ -1597,16 +1589,18 @@ child (void * param)
 	cleanup_checkers();
 	cleanup_prio();
 
+	dm_lib_release();
+	dm_lib_exit();
+
+	/* We're done here */
+	condlog(3, "unlink pidfile");
+	unlink(DEFAULT_PIDFILE);
+
 	condlog(2, "--------shut down-------");
 
 	if (logsink)
 		log_thread_stop();
 
-	dm_lib_release();
-	dm_lib_exit();
-
-	cleanup_prio();
-	cleanup_checkers();
 	/*
 	 * Freeing config must be done after condlog() and dm_lib_exit(),
 	 * because logging functions like dlog() and dm_write_log()
