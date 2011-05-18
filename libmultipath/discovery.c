@@ -346,6 +346,7 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
 	inqCmdBlk[3] = (unsigned char)((mx_resp_len >> 8) & 0xff);
 	inqCmdBlk[4] = (unsigned char) (mx_resp_len & 0xff);
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
+	memset(sense_b, 0, SENSE_BUFF_LEN);
 	io_hdr.interface_id = 'S';
 	io_hdr.cmd_len = sizeof (inqCmdBlk);
 	io_hdr.mx_sb_len = sizeof (sense_b);
