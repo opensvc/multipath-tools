@@ -6,7 +6,7 @@
  */
 #include <sys/types.h>
 #include <pwd.h>
-
+#include <string.h>
 #include "checkers.h"
 #include "vector.h"
 #include "hwtable.h"
@@ -58,7 +58,12 @@ def_dev_loss_handler(vector strvec)
 	char * buff;
 
 	buff = set_value(strvec);
-	if (sscanf(buff, "%u", &conf->dev_loss) != 1)
+	if (!buff)
+		return 1;
+
+	if (strlen(buff) == 8 && !strcmp(buff, "infinity"))
+		conf->dev_loss = MAX_DEV_LOSS_TMO;
+	else if (sscanf(buff, "%u", &conf->dev_loss) != 1)
 		conf->dev_loss = 0;
 
 	FREE(buff);
@@ -817,7 +822,12 @@ hw_dev_loss_handler(vector strvec)
 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
 
 	buff = set_value(strvec);
-	if (sscanf(buff, "%u", &hwe->dev_loss) != 1)
+	if (!buff)
+		return 1;
+
+	if (strlen(buff) == 8 && !strcmp(buff, "infinity"))
+		hwe->dev_loss = MAX_DEV_LOSS_TMO;
+	else if (sscanf(buff, "%u", &hwe->dev_loss) != 1)
 		hwe->dev_loss = 0;
 
 	FREE(buff);
@@ -1763,6 +1773,8 @@ snprint_hw_fast_io_fail(char * buff, int len, void * data)
 	struct hwentry * hwe = (struct hwentry *)data;
 	if (!hwe->fast_io_fail)
 		return 0;
+	if (hwe->fast_io_fail == conf->fast_io_fail)
+		return 0;
 	if (hwe->fast_io_fail == -1)
 		return snprintf(buff, len, "off");
 	return snprintf(buff, len, "%d", hwe->fast_io_fail);
@@ -1774,6 +1786,11 @@ snprint_hw_dev_loss(char * buff, int len, void * data)
 	struct hwentry * hwe = (struct hwentry *)data;
 	if (!hwe->dev_loss)
 		return 0;
+	if (hwe->dev_loss == conf->dev_loss)
+		return 0;
+	if (hwe->dev_loss >= MAX_DEV_LOSS_TMO)
+		return snprintf(buff, len, "infinity");
+
 	return snprintf(buff, len, "%u", hwe->dev_loss);
 }
 
@@ -2058,6 +2075,8 @@ snprint_def_dev_loss(char * buff, int len, void * data)
 {
 	if (!conf->dev_loss)
 		return 0;
+	if (conf->dev_loss >= MAX_DEV_LOSS_TMO)
+		return snprintf(buff, len, "infinity");
 	return snprintf(buff, len, "%u", conf->dev_loss);
 }
 
