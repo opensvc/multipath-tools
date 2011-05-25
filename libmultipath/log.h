@@ -17,7 +17,7 @@
 struct logmsg {
 	short int prio;
 	void * next;
-	char * str;
+	char str[0];
 };
 
 struct logarea {

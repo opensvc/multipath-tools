@@ -45,7 +45,10 @@ struct mpentry {
 	char * alias;
 	char * getuid;
 	char * selector;
+	char * features;
 
+	char * prio_name;
+	char * prio_args;
 	int pgpolicy;
 	int pgfailback;
 	int rr_weight;
@@ -93,6 +96,7 @@ struct config {
 	gid_t gid;
 	mode_t mode;
 	uint32_t cookie;
+	int reassign_maps;
 
 	char * dev;
 	char * sysfs_dir;

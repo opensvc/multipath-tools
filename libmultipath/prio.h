@@ -25,6 +25,7 @@
 #define PRIO_RANDOM "random"
 #define PRIO_RDAC "rdac"
 #define PRIO_DATACORE "datacore"
+#define PRIO_WEIGHTED_PATH "weightedpath"
 
 /*
  * Value used to mark the fact prio was not defined
@@ -39,6 +40,7 @@
 #define PRIO_ARGS_LEN 255
 
 struct prio {
+	void *handle;
 	struct list_head node;
 	char name[PRIO_NAME_LEN];
 	char args[PRIO_ARGS_LEN];

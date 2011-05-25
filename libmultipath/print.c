@@ -379,6 +379,7 @@ snprint_pg_selector (char * buff, size_t len, struct pathgroup * pgp)
 static int
 snprint_pg_pri (char * buff, size_t len, struct pathgroup * pgp)
 {
+	int avg_priority = 0;
 	/*
 	 * path group priority is not updated for every path prio change,
 	 * but only on switch group code path.
@@ -386,7 +387,9 @@ snprint_pg_pri (char * buff, size_t len, struct pathgroup * pgp)
 	 * Printing is another reason to update.
 	 */
 	path_group_prio_update(pgp);
-	return snprint_int(buff, len, pgp->priority);
+	if (pgp->enabled_paths)
+		avg_priority = pgp->priority / pgp->enabled_paths;
+	return snprint_int(buff, len, avg_priority);
 }
 
 static int
@@ -857,7 +860,7 @@ snprint_hwentry (char * buff, int len, struct hwentry * hwe)
 	if (fwd > len)
 		return len;
 	iterate_sub_keywords(rootkw, kw, i) {
-		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
+		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k \"%v\"\n",
 				kw, hwe);
 		if (fwd > len)
 			return len;
@@ -1349,11 +1352,11 @@ print_pathgroup (struct pathgroup * pgp, char * style)
 }
 
 extern void
-print_map (struct multipath * mpp)
+print_map (struct multipath * mpp, char * params)
 {
-	if (mpp->size && mpp->params)
+	if (mpp->size && params)
 		printf("0 %llu %s %s\n",
-			 mpp->size, TGT_MPATH, mpp->params);
+			 mpp->size, TGT_MPATH, params);
 	return;
 }
 

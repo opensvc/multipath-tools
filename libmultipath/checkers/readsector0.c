@@ -29,7 +29,8 @@ int libcheck_check (struct checker * c)
 	unsigned char sbuf[SENSE_BUFF_LEN];
 	int ret;
 
-	ret = sg_read(c->fd, &buf[0], &sbuf[0], c->timeout);
+	ret = sg_read(c->fd, &buf[0], 4069, &sbuf[0],
+		      SENSE_BUFF_LEN, c->timeout);
 
 	switch (ret)
 	{

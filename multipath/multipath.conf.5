@@ -68,10 +68,15 @@ The
 section recognizes the following keywords:
 .TP 17
 .B polling_interval
-interval between two path checks in seconds For properly functioning paths,
-the interval between checks will gradually increase to (4 * polling_interval);
+interval between two path checks in seconds. For properly functioning paths,
+the interval between checks will gradually increase to
+.B max_polling_interval;
 default is
 .I 5
+.TP
+.B max_polling_interval
+maximal interval between two path checks in seconds; default is
+.I 4 * polling_interval
 .TP
 .B udev_dir
 directory where udev creates its device nodes; default is
@@ -81,6 +86,13 @@ directory where udev creates its device nodes; default is
 default verbosity. Higher values increase the verbosity level. Valid
 levels are between 0 and 6; default is
 .I 2
+.TP
+.B reassign_maps
+enable reassigning of device-mapper maps. With this option multipathd
+will remap existing device-mapper maps to always point to multipath
+device, not the underlying block devices. Possible values are
+\fIyes\fR and \fIno\fR. Default is
+.I yes
 .TP
 .B path_selector
 The default path selector algorithm to use; they are offered by the
@@ -131,56 +143,78 @@ identifier. Should be specified with an absolute path. Default value
 is
 .I /lib/udev/scsi_id --whitelisted --device=/dev/%n
 .TP
-.B prio_callout
-The default program and args to callout to obtain a path priority
-value. The specified program will be executed and should return a
-numeric value specifying the relative priority of this path. Higher
-number have a higher priority. A '%n' in the command line will be expanded
-to the device name, a '%b' will be expanded to the device number in
-.I major:minor
-format.
+.B prio
+The name of the path priority routine. The specified routine
+should return a numeric value specifying the relative priority
+of this path. Higher number have a higher priority.
 .I "none"
-is a valid value. Currently the following path priority programs are
-implemented:
+is a valid value. Currently the following path priority routines
+are implemented:
 .RS
 .TP 12
-.B mpath_prio_emc /dev/%n
-Generate the path priority for EMC arrays
+.B const
+Return a constant priority of \fI1\fR.
 .TP
-.B mpath_prio_alua /dev/%n
+.B emc
+Generate the path priority for EMC arrays.
+.TP
+.B alua
 Generate the path priority based on the SCSI-3 ALUA settings.
 .TP
-.B mpath_prio_ontap /dev/%n
+.B ontap
 Generate the path priority for NetApp arrays.
 .TP
-.B mpath_prio_rdac /dev/%n
+.B rdac
 Generate the path priority for LSI/Engenio RDAC controller.
 .TP
-.B mpath_prio_hp_sw /dev/%n
+.B hp_sw
 Generate the path priority for Compaq/HP controller in
 active/standby mode.
 .TP
-.B mpath_prio_hds_modular %b
+.B hds
 Generate the path priority for Hitachi HDS Modular storage arrays.
+.TP
+.B random
+Generate a random priority between 1 and 10.
+.TP 12
+.B weightedpath <hbtl|devname> <regex1> <prio1> <regex2> <prio2> ...
+.I hbtl 
+regex can be of SCSI H:B:T:L format  Ex: 1:0:.:. , *:0:0:.
+.I devname 
+regex can be of device name format  Ex: sda , sd.e
+Generate the path priority based on the regular expression and the 
+priority provided as argument.
 .TP
 Default value is \fBnone\fR.
 .RE
 .TP
 .B features
-Specify any device-mapper features to be used. The most common of
-these features is
-.I "1 queue_if_no_path" 
-Note that this can also be set via the
+Specify any device-mapper features to be used. Syntax is
+.I num list
+where
+.I num
+is the number of features in
+.I list.
+Possible values for the feature list are
+.RS
+.TP 12
+.B queue_if_no_path
+Queue IO if no path is active; identical to the
 .I no_path_retry
 keyword.
 .TP
+.B no_partitions
+Disable automatic partitions generation via kpartx.
+.RE
+.TP
 .B path_checker
-The default method used to determine the paths' state. Possible values
+The default method used to determine the paths state. Possible values
 are
 .RS
 .TP 12
 .B readsector0
-Read the first sector of the device
+(Deprecated) Read the first sector of the device. This checker is being
+deprecated, please use \fIdirectio\fR instead
 .TP
 .B tur
 Issue a
@@ -200,7 +234,7 @@ Check the path state for LSI/Engenio RDAC storage controller.
 .B directio
 Read the first sector with direct I/O.
 .TP
-Default value is \fIreadsector0\fR.
+Default value is \fIdirectio\fR.
 .RE
 .TP
 .B failback
@@ -282,6 +316,9 @@ cannot be told to stop queueing IO. Setting queue_without_daemon to
 .I no
 , avoids this problem. Default is
 .I yes
+.B bindings_file
+The full pathname of the binding file to be used when the user_friendly_names option is set. Defaults to
+.I /var/lib/multipath/bindings
 .
 .SH "blacklist section"
 The
@@ -353,6 +390,8 @@ Index of the container. Mandatory for this subsection.
 The following attributes are optional; if not set the default values
 are taken from the
 .I defaults
+or
+.I devices
 section:
 .sp 1
 .PD .1v
@@ -362,11 +401,15 @@ section:
 .TP
 .B path_selector
 .TP
+.B prio
+.TP
 .B failback
 .TP
 .B no_path_retry
 .TP
 .B rr_min_io
+.TP
+.B features
 .RE
 .PD
 .LP
@@ -400,6 +443,16 @@ The following hardware handler are implemented:
 .TP 12
 .B 1 emc
 Hardware handler for EMC storage arrays.
+.TP
+.B 1 rdac
+Hardware handler for LSI/Engenio RDAC storage controller.
+.TP
+.B 1 hp_sw
+Hardware handler for Compaq/HP storage arrays in active/standby
+mode.
+.TP
+.B 1 alua
+Hardware handler for SCSI-3 ALUA compatible arrays.
 .RE
 .LP
 The following attributes are optional; if not set the default values
@@ -417,6 +470,8 @@ section:
 .B path_selector
 .TP
 .B path_checker
+.TP
+.B prio
 .TP
 .B features
 .TP
@@ -445,6 +500,20 @@ processes being hung and not killable in situations where all the paths to the L
 It is advisable to use the
 .B no_path_retry
 option instead.
+.P
+The use of
+.B queue_if_no_path
+or
+.B no_path_retry
+might lead to a deadlock if the
+.B dev_loss_tmo
+setting results in a device being removed while I/O is still queued.
+The multipath daemon will update the
+.B dev_loss_tmo
+setting accordingly to avoid this deadlock. Hence if both values are
+specified the order of precedence is
+.I no_path_retry, queue_if_no_path, dev_loss_tmo
+
 .SH "SEE ALSO"
 .BR udev (8),
 .BR dmsetup (8)

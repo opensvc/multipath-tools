@@ -48,6 +48,7 @@
 #include <configure.h>
 #include <prio.h>
 #include <pgpolicies.h>
+#include <uevent.h>
 
 #include "main.h"
 #include "pidfile.h"
@@ -68,6 +69,8 @@ pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int logsink;
+enum daemon_status running_state;
+pid_t daemon_pid;
 
 /*
  * global copy of vecs for use in sig handlers
@@ -144,6 +147,10 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 				dm_lib_release();
 				condlog(2, "%s devmap removed", ompp->alias);
 			}
+		} else if (conf->reassign_maps) {
+			condlog(3, "%s: Reassign existing device-mapper"
+				" devices", ompp->alias);
+			dm_reassign(ompp->alias);
 		}
 	}
 	return 0;
@@ -214,38 +221,41 @@ flush_map(struct multipath * mpp, struct vectors * vecs)
 }
 
 static int
-uev_add_map (struct sysfs_device * dev, struct vectors * vecs)
+uev_add_map (struct uevent * uev, struct vectors * vecs)
 {
-	condlog(2, "%s: add map (uevent)", dev->kernel);
-	return ev_add_map(dev, vecs);
+	char *alias;
+	int major = -1, minor = -1, rc;
+
+	condlog(2, "%s: add map (uevent)", uev->kernel);
+	alias = uevent_get_dm_name(uev);
+	if (!alias) {
+		condlog(3, "%s: No DM_NAME in uevent", uev->kernel);
+		major = uevent_get_major(uev);
+		minor = uevent_get_minor(uev);
+		alias = dm_mapname(major, minor);
+		if (!alias) {
+			condlog(2, "%s: mapname not found for %d:%d",
+				uev->kernel, major, minor);
+			return 1;
+		}
+	}
+	rc = ev_add_map(uev->kernel, alias, vecs);
+	FREE(alias);
+	return rc;
 }
 
 int
-ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
+ev_add_map (char * dev, char * alias, struct vectors * vecs)
 {
-	char * alias;
-	char *dev_t;
-	int major, minor;
 	char * refwwid;
 	struct multipath * mpp;
 	int map_present;
 	int r = 1;
 
-	dev_t = sysfs_attr_get_value(dev->devpath, "dev");
-
-	if (!dev_t || sscanf(dev_t, "%d:%d", &major, &minor) != 2)
-		return 1;
-
-	alias = dm_mapname(major, minor);
-
-	if (!alias)
-		return 1;
-
 	map_present = dm_map_present(alias);
 
 	if (map_present && dm_type(alias, TGT_MPATH) <= 0) {
 		condlog(4, "%s: not a multipath map", alias);
-		FREE(alias);
 		return 0;
 	}
 
@@ -257,8 +267,11 @@ ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
 		 * if we create a multipath mapped device as a result
 		 * of uev_add_path
 		 */
-		condlog(0, "%s: devmap already registered",
-			dev->kernel);
+		if (conf->reassign_maps) {
+			condlog(3, "%s: Reassign existing device-mapper devices",
+				alias);
+			dm_reassign(alias);
+		}
 		FREE(alias);
 		return 0;
 	}
@@ -266,12 +279,12 @@ ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
 	/*
 	 * now we can register the map
 	 */
-	if (map_present && (mpp = add_map_without_path(vecs, minor, alias))) {
+	if (map_present && (mpp = add_map_without_path(vecs, alias))) {
 		sync_map_state(mpp);
-		condlog(2, "%s: devmap %s added", alias, dev->kernel);
+		condlog(2, "%s: devmap %s registered", alias, dev);
 		return 0;
 	}
-	refwwid = get_refwwid(dev->kernel, DEV_DEVMAP, vecs->pathvec);
+	refwwid = get_refwwid(dev, DEV_DEVMAP, vecs->pathvec);
 
 	if (refwwid) {
 		r = coalesce_paths(vecs, NULL, refwwid, 0);
@@ -279,67 +292,65 @@ ev_add_map (struct sysfs_device * dev, struct vectors * vecs)
 	}
 
 	if (!r)
-		condlog(2, "%s: devmap %s added", alias, dev->kernel);
+		condlog(2, "%s: devmap %s added", alias, dev);
 	else
-		condlog(0, "%s: uev_add_map %s failed", alias, dev->kernel);
+		condlog(0, "%s: uev_add_map %s failed", alias, dev);
 
 	FREE(refwwid);
-	FREE(alias);
 	return r;
 }
 
 static int
-uev_remove_map (struct sysfs_device * dev, struct vectors * vecs)
+uev_remove_map (struct uevent * uev, struct vectors * vecs)
 {
-	condlog(2, "%s: remove map (uevent)", dev->kernel);
-	return ev_remove_map(dev->kernel, vecs);
+	char *alias;
+	int minor, rc;
+
+	condlog(2, "%s: remove map (uevent)", uev->kernel);
+	alias = uevent_get_dm_name(uev);
+	if (!alias) {
+		condlog(3, "%s: No DM_NAME in uevent, ignoring", uev->kernel);
+		return 0;
+	}
+	minor = uevent_get_minor(uev);
+	rc = ev_remove_map(uev->kernel, alias, minor, vecs);
+	FREE(alias);
+	return rc;
 }
 
 int
-ev_remove_map (char * devname, struct vectors * vecs)
+ev_remove_map (char * devname, char * alias, int minor, struct vectors * vecs)
 {
 	struct multipath * mpp;
 
-	mpp = find_mp_by_str(vecs->mpvec, devname);
+	mpp = find_mp_by_minor(vecs->mpvec, minor);
 
 	if (!mpp) {
 		condlog(2, "%s: devmap not registered, can't remove",
 			devname);
 		return 0;
 	}
-	flush_map(mpp, vecs);
-
-	return 0;
-}
-
-static int
-uev_umount_map (struct sysfs_device * dev, struct vectors * vecs)
-{
-	struct multipath * mpp;
-
-	condlog(2, "%s: umount map (uevent)", dev->kernel);
-
-	mpp = find_mp_by_str(vecs->mpvec, dev->kernel);
-
-	if (!mpp)
+	if (strcmp(mpp->alias, alias)) {
+		condlog(2, "%s: minor number mismatch (map %d, event %d)",
+			mpp->alias, mpp->dmi->minor, minor);
 		return 0;
-
-	update_mpp_paths(mpp, vecs->pathvec);
-	verify_paths(mpp, vecs, NULL);
-
-	if (!VECTOR_SIZE(mpp->paths))
-		flush_map(mpp, vecs);
-
-	return 0;
+	}
+	return flush_map(mpp, vecs);
 }
 
 static int
-uev_add_path (struct sysfs_device * dev, struct vectors * vecs)
+uev_add_path (struct uevent *uev, struct vectors * vecs)
 {
+	struct sysfs_device * dev;
+
+	dev = sysfs_device_get(uev->devpath);
+	if (!dev) {
+		condlog(2, "%s: not found in sysfs", uev->devpath);
+		return 1;
+	}
 	condlog(2, "%s: add path (uevent)", dev->kernel);
 	return (ev_add_path(dev->kernel, vecs) != 1)? 0 : 1;
 }
-
 
 /*
  * returns:
@@ -353,6 +364,8 @@ ev_add_path (char * devname, struct vectors * vecs)
 	struct multipath * mpp;
 	struct path * pp;
 	char empty_buff[WWID_SIZE] = {0};
+	char params[PARAMS_SIZE] = {0};
+	int start_waiter = 0;
 
 	if (strstr(devname, "..") != NULL) {
 		/*
@@ -436,8 +449,14 @@ rescan:
 		}
 
 		condlog(4,"%s: creating new map", pp->dev);
-		if ((mpp = add_map_with_path(vecs, pp, 1)))
+		if ((mpp = add_map_with_path(vecs, pp, 1))) {
 			mpp->action = ACT_CREATE;
+			/*
+			 * We don't depend on ACT_CREATE, as domap will
+			 * set it to ACT_NOTHING when complete.
+			 */
+			start_waiter = 1;
+		}
 		else
 			goto fail; /* leave path added to pathvec */
 	}
@@ -445,7 +464,7 @@ rescan:
 	/*
 	 * push the map to the device-mapper
 	 */
-	if (setup_map(mpp)) {
+	if (setup_map(mpp, params, PARAMS_SIZE)) {
 		condlog(0, "%s: failed to setup map for addition of new "
 			"path %s", mpp->alias, devname);
 		goto fail_map;
@@ -453,7 +472,7 @@ rescan:
 	/*
 	 * reload the map for the multipath mapped device
 	 */
-	if (domap(mpp) <= 0) {
+	if (domap(mpp, params) <= 0) {
 		condlog(0, "%s: failed in domap for addition of new "
 			"path %s", mpp->alias, devname);
 		/*
@@ -478,7 +497,8 @@ rescan:
 
 	sync_map_state(mpp);
 
-	if (mpp->action == ACT_CREATE &&
+	if ((mpp->action == ACT_CREATE ||
+	     (mpp->action == ACT_NOTHING && start_waiter && !mpp->waiter)) &&
 	    start_waiter_thread(mpp, vecs))
 			goto fail_map;
 
@@ -493,12 +513,19 @@ fail:
 }
 
 static int
-uev_remove_path (struct sysfs_device * dev, struct vectors * vecs)
+uev_remove_path (struct uevent *uev, struct vectors * vecs)
 {
+	struct sysfs_device * dev;
 	int retval;
 
-	condlog(2, "%s: remove path (uevent)", dev->kernel);
-	retval = ev_remove_path(dev->kernel, vecs);
+	dev = sysfs_device_get(uev->devpath);
+	if (!dev) {
+		condlog(2, "%s: not found in sysfs", uev->devpath);
+		return 1;
+	}
+	condlog(2, "%s: remove path (uevent)", uev->kernel);
+	retval = ev_remove_path(uev->kernel, vecs);
+
 	if (!retval)
 		sysfs_device_put(dev);
 
@@ -511,6 +538,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 	struct multipath * mpp;
 	struct path * pp;
 	int i, retval = 0;
+	char params[PARAMS_SIZE] = {0};
 
 	pp = find_path_by_dev(vecs->pathvec, devname);
 
@@ -565,7 +593,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 			 */
 		}
 
-		if (setup_map(mpp)) {
+		if (setup_map(mpp, params, PARAMS_SIZE)) {
 			condlog(0, "%s: failed to setup map for"
 				" removal of path %s", mpp->alias,
 				devname);
@@ -575,7 +603,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 		 * reload the map
 		 */
 		mpp->action = ACT_RELOAD;
-		if (domap(mpp) <= 0) {
+		if (domap(mpp, params) <= 0) {
 			condlog(0, "%s: failed in domap for "
 				"removal of path %s",
 				mpp->alias, devname);
@@ -605,6 +633,43 @@ out:
 fail:
 	remove_map_and_stop_waiter(mpp, vecs, 1);
 	return 1;
+}
+
+static int
+uev_update_path (struct uevent *uev, struct vectors * vecs)
+{
+	struct sysfs_device * dev;
+	int retval, ro;
+
+	dev = sysfs_device_get(uev->devpath);
+	if (!dev) {
+		condlog(2, "%s: not found in sysfs", uev->devpath);
+		return 1;
+	}
+	ro = uevent_get_disk_ro(uev);
+
+	if (ro >= 0) {
+		struct path * pp;
+
+		condlog(2, "%s: update path write_protect to '%d' (uevent)",
+			uev->kernel, ro);
+		pp = find_path_by_dev(vecs->pathvec, uev->kernel);
+		if (!pp) {
+			condlog(0, "%s: spurious uevent, path not found",
+				uev->kernel);
+			return 1;
+		}
+		if (pp->mpp)
+			retval = reload_map(vecs, pp->mpp);
+
+		condlog(2, "%s: map %s reloaded (retval %d)",
+			uev->kernel, pp->mpp->alias, retval);
+
+	}
+
+	sysfs_device_put(dev);
+
+	return retval;
 }
 
 static int
@@ -680,16 +745,11 @@ int
 uev_trigger (struct uevent * uev, void * trigger_data)
 {
 	int r = 0;
-	struct sysfs_device *sysdev;
 	struct vectors * vecs;
 
 	vecs = (struct vectors *)trigger_data;
 
 	if (uev_discard(uev->devpath))
-		return 0;
-
-	sysdev = sysfs_device_get(uev->devpath);
-	if(!sysdev)
 		return 0;
 
 	lock(vecs->lock);
@@ -699,17 +759,13 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	 * Add events are ignored here as the tables
 	 * are not fully initialised then.
 	 */
-	if (!strncmp(sysdev->kernel, "dm-", 3)) {
+	if (!strncmp(uev->kernel, "dm-", 3)) {
 		if (!strncmp(uev->action, "change", 6)) {
-			r = uev_add_map(sysdev, vecs);
+			r = uev_add_map(uev, vecs);
 			goto out;
 		}
 		if (!strncmp(uev->action, "remove", 6)) {
-			r = uev_remove_map(sysdev, vecs);
-			goto out;
-		}
-		if (!strncmp(uev->action, "umount", 6)) {
-			r = uev_umount_map(sysdev, vecs);
+			r = uev_remove_map(uev, vecs);
 			goto out;
 		}
 		goto out;
@@ -719,15 +775,19 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	 * path add/remove event
 	 */
 	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
-			   sysdev->kernel) > 0)
+			   uev->kernel) > 0)
 		goto out;
 
 	if (!strncmp(uev->action, "add", 3)) {
-		r = uev_add_path(sysdev, vecs);
+		r = uev_add_path(uev, vecs);
 		goto out;
 	}
 	if (!strncmp(uev->action, "remove", 6)) {
-		r = uev_remove_path(sysdev, vecs);
+		r = uev_remove_path(uev, vecs);
+		goto out;
+	}
+	if (!strncmp(uev->action, "change", 6)) {
+		r = uev_update_path(uev, vecs);
 		goto out;
 	}
 
@@ -742,12 +802,23 @@ ueventloop (void * ap)
 	block_signal(SIGUSR1, NULL);
 	block_signal(SIGHUP, NULL);
 
-	if (uevent_listen(&uev_trigger, ap))
-		fprintf(stderr, "error starting uevent listener");
+	if (uevent_listen())
+		condlog(0, "error starting uevent listener");
 
 	return NULL;
 }
 
+static void *
+uevqloop (void * ap)
+{
+	block_signal(SIGUSR1, NULL);
+	block_signal(SIGHUP, NULL);
+
+	if (uevent_dispatch(&uev_trigger, ap))
+		condlog(0, "error starting uevent dispatcher");
+
+	return NULL;
+}
 static void *
 uxlsnrloop (void * ap)
 {
@@ -761,6 +832,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(LIST+PATHS+FMT, cli_list_paths_fmt);
 	set_handler_callback(LIST+MAPS, cli_list_maps);
 	set_handler_callback(LIST+STATUS, cli_list_status);
+	set_handler_callback(LIST+DAEMON, cli_list_daemon);
 	set_handler_callback(LIST+MAPS+STATUS, cli_list_maps_status);
 	set_handler_callback(LIST+MAPS+STATS, cli_list_maps_stats);
 	set_handler_callback(LIST+MAPS+FMT, cli_list_maps_fmt);
@@ -780,6 +852,8 @@ uxlsnrloop (void * ap)
 	set_handler_callback(SUSPEND+MAP, cli_suspend);
 	set_handler_callback(RESUME+MAP, cli_resume);
 	set_handler_callback(RESIZE+MAP, cli_resize);
+	set_handler_callback(RELOAD+MAP, cli_reload);
+	set_handler_callback(RESET+MAP, cli_reassign);
 	set_handler_callback(REINSTATE+PATH, cli_reinstate);
 	set_handler_callback(FAIL+PATH, cli_fail);
 	set_handler_callback(DISABLEQ+MAP, cli_disable_queueing);
@@ -787,6 +861,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(DISABLEQ+MAPS, cli_disable_all_queueing);
 	set_handler_callback(RESTOREQ+MAPS, cli_restore_all_queueing);
 	set_handler_callback(QUIT, cli_quit);
+	set_handler_callback(SHUTDOWN, cli_shutdown);
 
 	umask(077);
 	uxsock_listen(&uxsock_trigger, ap);
@@ -794,7 +869,7 @@ uxlsnrloop (void * ap)
 	return NULL;
 }
 
-static int
+int
 exit_daemon (int status)
 {
 	if (status != 0)
@@ -808,6 +883,24 @@ exit_daemon (int status)
 	pthread_mutex_unlock(&exit_mutex);
 
 	return status;
+}
+
+const char *
+daemon_status(void)
+{
+	switch (running_state) {
+	case DAEMON_INIT:
+		return "init";
+	case DAEMON_START:
+		return "startup";
+	case DAEMON_CONFIGURE:
+		return "configure";
+	case DAEMON_RUNNING:
+		return "running";
+	case DAEMON_SHUTDOWN:
+		return "shutdown";
+	}
+	return NULL;
 }
 
 static void
@@ -950,15 +1043,19 @@ int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
 {
 	int i;
 	struct path * pp;
+	char params[PARAMS_SIZE];
 
 	update_mpp_paths(mpp, vecs->pathvec);
 	if (refresh) {
 		vector_foreach_slot (mpp->paths, pp, i)
 			pathinfo(pp, conf->hwtable, DI_PRIO);
 	}
-	setup_map(mpp);
+	params[0] = '\0';
+	if (setup_map(mpp, params, PARAMS_SIZE))
+		return 1;
+
 	mpp->action = ACT_RELOAD;
-	if (domap(mpp) <= 0) {
+	if (domap(mpp, params) <= 0) {
 		condlog(0, "%s: failed to update map : %s", mpp->alias,
 			strerror(errno));
 		return 1;
@@ -988,7 +1085,9 @@ check_path (struct vectors * vecs, struct path * pp)
 	 */
 	pp->tick = conf->checkint;
 
-	newstate = get_state(pp, 1);
+	newstate = path_offline(pp);
+	if (newstate == PATH_UP)
+		newstate = get_state(pp, 1);
 
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
 		condlog(2, "%s: unusable path", pp->dev);
@@ -1003,6 +1102,14 @@ check_path (struct vectors * vecs, struct path * pp)
 		pp->tick = 1;
 		return;
 	}
+	/*
+	 * Synchronize with kernel state
+	 */
+	if (update_multipath_strings(pp->mpp, vecs->pathvec)) {
+		condlog(1, "%s: Could not synchronize with kernel state\n",
+			pp->dev);
+		pp->dmstate = PSTATE_UNDEF;
+	}
 	if (newstate != pp->state) {
 		int oldstate = pp->state;
 		pp->state = newstate;
@@ -1014,8 +1121,7 @@ check_path (struct vectors * vecs, struct path * pp)
 		 */
 		pp->checkint = conf->checkint;
 
-		if (newstate == PATH_DOWN || newstate == PATH_SHAKY ||
-		    update_multipath_strings(pp->mpp, vecs->pathvec)) {
+		if (newstate == PATH_DOWN || newstate == PATH_SHAKY) {
 			/*
 			 * proactively fail path in the DM
 			 */
@@ -1053,19 +1159,25 @@ check_path (struct vectors * vecs, struct path * pp)
 			enable_group(pp);
 	}
 	else if (newstate == PATH_UP || newstate == PATH_GHOST) {
-		LOG_MSG(4, checker_message(&pp->checker));
-		/*
-		 * double the next check delay.
-		 * max at conf->max_checkint
-		 */
-		if (pp->checkint < (conf->max_checkint / 2))
-			pp->checkint = 2 * pp->checkint;
-		else
-			pp->checkint = conf->max_checkint;
+		if (pp->dmstate == PSTATE_FAILED ||
+		    pp->dmstate == PSTATE_UNDEF) {
+			/* Clear IO errors */
+			reinstate_path(pp, 0);
+		} else {
+			LOG_MSG(4, checker_message(&pp->checker));
+			/*
+			 * double the next check delay.
+			 * max at conf->max_checkint
+			 */
+			if (pp->checkint < (conf->max_checkint / 2))
+			    pp->checkint = 2 * pp->checkint;
+			else
+			    pp->checkint = conf->max_checkint;
 
-		pp->tick = pp->checkint;
-		condlog(4, "%s: delay next check %is",
+			pp->tick = pp->checkint;
+			condlog(4, "%s: delay next check %is",
 				pp->dev_t, pp->tick);
+		}
 	}
 	else if (newstate == PATH_DOWN)
 		LOG_MSG(2, checker_message(&pp->checker));
@@ -1219,7 +1331,9 @@ int
 reconfigure (struct vectors * vecs)
 {
 	struct config * old = conf;
+	int retval = 1;
 
+	lock(vecs->lock);
 	/*
 	 * free old map and path vectors ... they use old conf state
 	 */
@@ -1232,19 +1346,16 @@ reconfigure (struct vectors * vecs)
 	vecs->pathvec = NULL;
 	conf = NULL;
 
-	if (load_config(DEFAULT_CONFIGFILE))
-		return 1;
-
-	conf->verbosity = old->verbosity;
-
-	if (!conf->checkint) {
-		conf->checkint = DEFAULT_CHECKINT;
-		conf->max_checkint = MAX_CHECKINT(conf->checkint);
+	if (!load_config(DEFAULT_CONFIGFILE)) {
+		conf->verbosity = old->verbosity;
+		conf->daemon = 1;
+		configure(vecs, 1);
+		free_config(old);
+		retval = 0;
 	}
-	conf->daemon = 1;
-	configure(vecs, 1);
-	free_config(old);
-	return 0;
+
+	unlock(vecs->lock);
+	return retval;
 }
 
 static struct vectors *
@@ -1298,9 +1409,10 @@ sighup (int sig)
 {
 	condlog(2, "reconfigure (SIGHUP)");
 
-	lock(gvecs->lock);
+	if (running_state != DAEMON_RUNNING)
+		return;
+
 	reconfigure(gvecs);
-	unlock(gvecs->lock);
 
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
@@ -1358,38 +1470,15 @@ set_oom_adj (int val)
 	fclose(fp);
 }
 
-void
-setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
-{
-	if (pthread_attr_init(attr)) {
-		fprintf(stderr, "can't initialize thread attr: %s\n",
-			strerror(errno));
-		exit(1);
-	}
-	if (stacksize < PTHREAD_STACK_MIN)
-		stacksize = PTHREAD_STACK_MIN;
-
-	if (pthread_attr_setstacksize(attr, stacksize)) {
-		fprintf(stderr, "can't set thread stack size to %lu: %s\n",
-			(unsigned long)stacksize, strerror(errno));
-		exit(1);
-	}
-	if (detached && pthread_attr_setdetachstate(attr,
-						    PTHREAD_CREATE_DETACHED)) {
-		fprintf(stderr, "can't set thread to detached: %s\n",
-			strerror(errno));
-		exit(1);
-	}
-}
-
 static int
 child (void * param)
 {
-	pthread_t check_thr, uevent_thr, uxlsnr_thr;
+	pthread_t check_thr, uevent_thr, uxlsnr_thr, uevq_thr;
 	pthread_attr_t log_attr, misc_attr;
 	struct vectors * vecs;
 	struct multipath * mpp;
 	int i;
+	int rc;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -1401,6 +1490,8 @@ child (void * param)
 		log_thread_start(&log_attr);
 		pthread_attr_destroy(&log_attr);
 	}
+
+	running_state = DAEMON_START;
 
 	condlog(2, "--------start up--------");
 	condlog(2, "read " DEFAULT_CONFIGFILE);
@@ -1430,19 +1521,29 @@ child (void * param)
 	if (conf->max_fds) {
 		struct rlimit fd_limit;
 
-		fd_limit.rlim_cur = conf->max_fds;
-		fd_limit.rlim_max = conf->max_fds;
-		if (setrlimit(RLIMIT_NOFILE, &fd_limit) < 0)
-			condlog(0, "can't set open fds limit to %d : %s\n",
-				conf->max_fds, strerror(errno));
+		if (getrlimit(RLIMIT_NOFILE, &fd_limit) < 0) {
+			condlog(0, "can't get open fds limit: %s\n",
+				strerror(errno));
+			fd_limit.rlim_cur = 0;
+			fd_limit.rlim_max = 0;
+		}
+		if (fd_limit.rlim_cur < conf->max_fds) {
+			fd_limit.rlim_cur = conf->max_fds;
+			if (fd_limit.rlim_max < conf->max_fds)
+				fd_limit.rlim_max = conf->max_fds;
+			if (setrlimit(RLIMIT_NOFILE, &fd_limit) < 0) {
+				condlog(0, "can't set open fds limit to "
+					"%lu/%lu : %s\n",
+					fd_limit.rlim_cur, fd_limit.rlim_max,
+					strerror(errno));
+			} else {
+				condlog(3, "set open fds limit to %lu/%lu\n",
+					fd_limit.rlim_cur, fd_limit.rlim_max);
+			}
+		}
+
 	}
 
-	if (pidfile_create(DEFAULT_PIDFILE, getpid())) {
-		if (logsink)
-			log_thread_stop();
-
-		exit(1);
-	}
 	signal_init();
 	setscheduler();
 	set_oom_adj(-16);
@@ -1456,48 +1557,75 @@ child (void * param)
 		exit(1);
 	}
 	conf->daemon = 1;
-	dm_udev_set_sync_support(0);
+	udev_set_sync_support(0);
 	/*
-	 * fetch and configure both paths and multipaths
+	 * Start uevent listener early to catch events
 	 */
-	if (configure(vecs, 1)) {
-		condlog(0, "failure during configuration");
+	if ((rc = pthread_create(&uevent_thr, &misc_attr, ueventloop, vecs))) {
+		condlog(0, "failed to create uevent thread: %d", rc);
+		exit(1);
+	}
+	if ((rc = pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs))) {
+		condlog(0, "failed to create cli listener: %d", rc);
 		exit(1);
 	}
 	/*
+	 * fetch and configure both paths and multipaths
+	 */
+	lock(vecs->lock);
+	running_state = DAEMON_CONFIGURE;
+
+	if (configure(vecs, 1)) {
+		unlock(vecs->lock);
+		condlog(0, "failure during configuration");
+		exit(1);
+	}
+	unlock(vecs->lock);
+
+	/*
 	 * start threads
 	 */
-	pthread_create(&check_thr, &misc_attr, checkerloop, vecs);
-	pthread_create(&uevent_thr, &misc_attr, ueventloop, vecs);
-	pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs);
+	if ((rc = pthread_create(&check_thr, &misc_attr, checkerloop, vecs))) {
+		condlog(0,"failed to create checker loop thread: %d", rc);
+		exit(1);
+	}
+	if ((rc = pthread_create(&uevq_thr, &misc_attr, uevqloop, vecs))) {
+		condlog(0, "failed to create uevent dispatcher: %d", rc);
+		exit(1);
+	}
 	pthread_attr_destroy(&misc_attr);
 
 	pthread_mutex_lock(&exit_mutex);
+	/* Startup complete, create logfile */
+	if (pidfile_create(DEFAULT_PIDFILE, daemon_pid))
+		/* Ignore errors, we can live without */
+		condlog(1, "failed to create pidfile");
+
+	running_state = DAEMON_RUNNING;
 	pthread_cond_wait(&exit_cond, &exit_mutex);
 
 	/*
 	 * exit path
 	 */
+	running_state = DAEMON_SHUTDOWN;
 	block_signal(SIGHUP, NULL);
 	lock(vecs->lock);
 	if (conf->queue_without_daemon == QUE_NO_DAEMON_OFF)
 		vector_foreach_slot(vecs->mpvec, mpp, i)
 			dm_queue_if_no_path(mpp->alias, 0);
 	remove_maps_and_stop_waiters(vecs);
-	free_pathvec(vecs->pathvec, FREE_PATHS);
+	unlock(vecs->lock);
 
 	pthread_cancel(check_thr);
 	pthread_cancel(uevent_thr);
 	pthread_cancel(uxlsnr_thr);
+	pthread_cancel(uevq_thr);
 
 	sysfs_cleanup();
 
-	free_keys(keys);
-	keys = NULL;
-	free_handlers(handlers);
-	handlers = NULL;
-	free_polls();
-
+	lock(vecs->lock);
+	free_pathvec(vecs->pathvec, FREE_PATHS);
+	vecs->pathvec = NULL;
 	unlock(vecs->lock);
 	/* Now all the waitevent threads will start rushing in. */
 	while (vecs->lock.depth > 0) {
@@ -1511,16 +1639,21 @@ child (void * param)
 	FREE(vecs);
 	vecs = NULL;
 
+	cleanup_checkers();
+	cleanup_prio();
+
+	dm_lib_release();
+	dm_lib_exit();
+
+	/* We're done here */
+	condlog(3, "unlink pidfile");
+	unlink(DEFAULT_PIDFILE);
+
 	condlog(2, "--------shut down-------");
 
 	if (logsink)
 		log_thread_stop();
 
-	dm_lib_release();
-	dm_lib_exit();
-
-	cleanup_prio();
-	cleanup_checkers();
 	/*
 	 * Freeing config must be done after condlog() and dm_lib_exit(),
 	 * because logging functions like dlog() and dm_write_log()
@@ -1572,8 +1705,8 @@ daemonize(void)
 	dup(dev_null_fd);
 	close(STDERR_FILENO);
 	dup(dev_null_fd);
-
 	close(dev_null_fd);
+	daemon_pid = getpid();
 	return 0;
 }
 
@@ -1586,6 +1719,7 @@ main (int argc, char *argv[])
 	int err;
 
 	logsink = 1;
+	running_state = DAEMON_INIT;
 	dm_init();
 
 	if (getuid() != 0) {

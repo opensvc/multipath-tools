@@ -4,12 +4,12 @@
 #include <sys/types.h>
 
 #define WWID_SIZE		128
-#define SERIAL_SIZE		64
-#define NODE_NAME_SIZE		19
-#define PATH_STR_SIZE  		16
+#define SERIAL_SIZE		65
+#define NODE_NAME_SIZE		65
+#define PATH_STR_SIZE		16
 #define PARAMS_SIZE		1024
 #define FILE_NAME_SIZE		256
-#define CALLOUT_MAX_SIZE	128
+#define CALLOUT_MAX_SIZE	256
 #define BLK_DEV_SIZE		33
 #define PATH_SIZE		512
 #define NAME_SIZE		512
@@ -25,7 +25,7 @@
 #define NO_PATH_RETRY_QUEUE	-2
 
 
-enum free_path_switch {
+enum free_path_mode {
 	KEEP_PATHS,
 	FREE_PATHS
 };
@@ -113,10 +113,7 @@ struct scsi_dev {
 struct sysfs_device {
 	struct sysfs_device *parent;		/* parent device */
 	char devpath[PATH_SIZE];
-	char subsystem[NAME_SIZE];		/* $class, $bus, drivers, module */
 	char kernel[NAME_SIZE];			/* device instance name */
-	char kernel_number[NAME_SIZE];
-	char driver[NAME_SIZE];			/* device driver name */
 };
 
 # ifndef HDIO_GETGEO
@@ -191,8 +188,6 @@ struct multipath {
 	unsigned long long size;
 	vector paths;
 	vector pg;
-	char params[PARAMS_SIZE];
-	char status[PARAMS_SIZE];
 	struct dm_info * dmi;
 
 	/* configlet pointers */
@@ -231,13 +226,13 @@ struct path * alloc_path (void);
 struct pathgroup * alloc_pathgroup (void);
 struct multipath * alloc_multipath (void);
 void free_path (struct path *);
-void free_pathvec (vector vec, int free_paths);
-void free_pathgroup (struct pathgroup * pgp, int free_paths);
-void free_pgvec (vector pgvec, int free_paths);
-void free_multipath (struct multipath *, int free_paths);
+void free_pathvec (vector vec, enum free_path_mode free_paths);
+void free_pathgroup (struct pathgroup * pgp, enum free_path_mode free_paths);
+void free_pgvec (vector pgvec, enum free_path_mode free_paths);
+void free_multipath (struct multipath *, enum free_path_mode free_paths);
 void free_multipath_attributes (struct multipath *);
-void drop_multipath (vector mpvec, char * wwid, int free_paths);
-void free_multipathvec (vector mpvec, int free_paths);
+void drop_multipath (vector mpvec, char * wwid, enum free_path_mode free_paths);
+void free_multipathvec (vector mpvec, enum free_path_mode free_paths);
 
 int store_path (vector pathvec, struct path * pp);
 int store_pathgroup (vector pgvec, struct pathgroup * pgp);
@@ -253,7 +248,10 @@ struct path * first_path (struct multipath * mpp);
 
 int pathcountgr (struct pathgroup *, int);
 int pathcount (struct multipath *, int);
+int pathcmp (struct pathgroup *, struct pathgroup *);
 void setup_feature(struct multipath *, char *);
+int add_feature (char **, char *);
+int remove_feature (char **, char *);
 
 extern char sysfs_path[PATH_SIZE];
 

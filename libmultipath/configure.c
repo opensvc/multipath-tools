@@ -37,11 +37,11 @@
 #include "util.h"
 
 extern int
-setup_map (struct multipath * mpp)
+setup_map (struct multipath * mpp, char * params, int params_size)
 {
 	struct pathgroup * pgp;
 	int i;
-	
+
 	/*
 	 * don't bother if devmap size is unknown
 	 */
@@ -88,7 +88,7 @@ setup_map (struct multipath * mpp)
 	if (mpp->pgpolicyfn && mpp->pgpolicyfn(mpp))
 		return 1;
 
-	mpp->nr_active = pathcount(mpp, PATH_UP);
+	mpp->nr_active = pathcount(mpp, PATH_UP) + pathcount(mpp, PATH_GHOST);
 
 	/*
 	 * ponders each path group and determine highest prio pg
@@ -100,7 +100,7 @@ setup_map (struct multipath * mpp)
 	 * transform the mp->pg vector of vectors of paths
 	 * into a mp->params strings to feed the device-mapper
 	 */
-	if (assemble_map(mpp)) {
+	if (assemble_map(mpp, params, params_size)) {
 		condlog(0, "%s: problem assembing map", mpp->alias);
 		return 1;
 	}
@@ -132,7 +132,8 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 		compute_pgid(pgp);
 
 		vector_foreach_slot (cmpp->pg, cpgp, j) {
-			if (pgp->id == cpgp->id) {
+			if (pgp->id == cpgp->id &&
+			    !pathcmp(pgp, cpgp)) {
 				r = 0;
 				break;
 			}
@@ -326,7 +327,7 @@ fail:
 #define DOMAP_DRY	3
 
 extern int
-domap (struct multipath * mpp)
+domap (struct multipath * mpp, char * params)
 {
 	int r = 0;
 
@@ -366,28 +367,28 @@ domap (struct multipath * mpp)
 			break;
 		}
 
-		r = dm_addmap_create(mpp);
+		r = dm_addmap_create(mpp, params);
 
 		if (!r)
-			 r = dm_addmap_create_ro(mpp);
+			r = dm_addmap_create_ro(mpp, params);
 
 		lock_multipath(mpp, 0);
 		break;
 
 	case ACT_RELOAD:
-		r = dm_addmap_reload(mpp);
+		r = dm_addmap_reload(mpp, params);
 		if (!r)
-			r = dm_addmap_reload_ro(mpp);
+			r = dm_addmap_reload_ro(mpp, params);
 		if (r)
 			r = dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias);
 		break;
 
- 	case ACT_RESIZE:
-  		r = dm_addmap_reload(mpp);
-  		if (!r)
-  			r = dm_addmap_reload_ro(mpp);
-  		if (r)
-  			r = dm_simplecmd_flush(DM_DEVICE_RESUME, mpp->alias, 1);
+	case ACT_RESIZE:
+		r = dm_addmap_reload(mpp, params);
+		if (!r)
+			r = dm_addmap_reload_ro(mpp, params);
+		if (r)
+			r = dm_simplecmd_flush(DM_DEVICE_RESUME, mpp->alias, 1);
 		break;
 
 	case ACT_RENAME:
@@ -406,13 +407,11 @@ domap (struct multipath * mpp)
 		if (!conf->daemon) {
 			/* multipath client mode */
 			dm_switchgroup(mpp->alias, mpp->bestpg);
-			if (mpp->action != ACT_NOTHING)
-				print_multipath_topology(mpp, conf->verbosity);
 		} else  {
 			/* multipath daemon mode */
 			mpp->stat_map_loads++;
 			condlog(2, "%s: load table [0 %llu %s %s]", mpp->alias,
-				mpp->size, TGT_MPATH, mpp->params);
+				mpp->size, TGT_MPATH, params);
 			/*
 			 * Required action is over, reset for the stateful daemon.
 			 * But don't do it for creation as we use in the caller the
@@ -455,6 +454,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 	int r = 1;
 	int k, i;
 	char empty_buff[WWID_SIZE];
+	char params[PARAMS_SIZE];
 	struct multipath * mpp;
 	struct path * pp1;
 	struct path * pp2;
@@ -530,8 +530,9 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 				mpp->action = ACT_REJECT;
 		}
 		verify_paths(mpp, vecs, NULL);
-		
-		if (setup_map(mpp)) {
+
+		params[0] = '\0';
+		if (setup_map(mpp, params, PARAMS_SIZE)) {
 			remove_map(mpp, vecs, 0);
 			continue;
 		}
@@ -539,7 +540,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 		if (mpp->action == ACT_UNDEF)
 			select_action(mpp, curmp, force_reload);
 
-		r = domap(mpp);
+		r = domap(mpp, params);
 
 		if (r == DOMAP_FAIL || r == DOMAP_RETRY) {
 			condlog(3, "%s: domap (%u) failure "
@@ -555,10 +556,19 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			continue;
 
 		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
-			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
-				dm_queue_if_no_path(mpp->alias, 0);
-			else
-				dm_queue_if_no_path(mpp->alias, 1);
+			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL) {
+				condlog(3, "%s: unset queue_if_no_path feature",
+					mpp->alias);
+				if (!dm_queue_if_no_path(mpp->alias, 0))
+					remove_feature(&mpp->features,
+						       "queue_if_no_path");
+			} else {
+				condlog(3, "%s: set queue_if_no_path feature",
+					mpp->alias);
+				if (!dm_queue_if_no_path(mpp->alias, 1))
+					add_feature(&mpp->features,
+						    "queue_if_no_path");
+			}
 		}
 		if (mpp->pg_timeout != PGTIMEOUT_UNDEF) {
 			if (mpp->pg_timeout == -PGTIMEOUT_NONE)
@@ -566,6 +576,9 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			else
 				dm_set_pg_timeout(mpp->alias, mpp->pg_timeout);
 		}
+
+		if (!conf->daemon && mpp->action != ACT_NOTHING)
+			print_multipath_topology(mpp, conf->verbosity);
 
 		if (newmp) {
 			if (mpp->action != ACT_REJECT) {
@@ -617,9 +630,13 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 		return NULL;
 
 	if (dev_type == DEV_DEVNODE) {
-		basenamecpy(dev, buff);
+		if (basenamecpy(dev, buff, FILE_NAME_SIZE) == 0) {
+			condlog(1, "basename failed for '%s' (%s)",
+				dev, buff);
+			return NULL;
+		}
+
 		pp = find_path_by_dev(pathvec, buff);
-		
 		if (!pp) {
 			pp = alloc_path();
 
@@ -641,10 +658,10 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 	}
 
 	if (dev_type == DEV_DEVT) {
+		strchop(dev);
 		pp = find_path_by_devt(pathvec, dev);
-		
 		if (!pp) {
-			if (devt2devname(buff, dev))
+			if (devt2devname(buff, FILE_NAME_SIZE, dev))
 				return NULL;
 
 			pp = alloc_path();
@@ -656,7 +673,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 
 			if (pathinfo(pp, conf->hwtable, DI_SYSFS | DI_WWID))
 				return NULL;
-			
+
 			if (store_path(pathvec, pp)) {
 				free_path(pp);
 				return NULL;
@@ -699,3 +716,38 @@ out:
 	return NULL;
 }
 
+extern int reload_map(struct vectors *vecs, struct multipath *mpp)
+{
+	char params[PARAMS_SIZE];
+	int r;
+
+	update_mpp_paths(mpp, vecs->pathvec);
+
+	params[0] = '\0';
+	if (setup_map(mpp, params, PARAMS_SIZE)) {
+		condlog(0, "%s: failed to setup map", mpp->alias);
+		return 1;
+	}
+	select_action(mpp, vecs->mpvec, 1);
+
+	r = domap(mpp, params);
+	if (r == DOMAP_FAIL || r == DOMAP_RETRY) {
+		condlog(3, "%s: domap (%u) failure "
+			"for reload map", mpp->alias, r);
+		return 1;
+	}
+	if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
+		if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
+			dm_queue_if_no_path(mpp->alias, 0);
+		else
+			dm_queue_if_no_path(mpp->alias, 1);
+	}
+	if (mpp->pg_timeout != PGTIMEOUT_UNDEF) {
+		if (mpp->pg_timeout == -PGTIMEOUT_NONE)
+			dm_set_pg_timeout(mpp->alias,  0);
+		else
+			dm_set_pg_timeout(mpp->alias, mpp->pg_timeout);
+	}
+
+	return 0;
+}

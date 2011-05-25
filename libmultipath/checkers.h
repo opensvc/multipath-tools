@@ -80,6 +80,8 @@ enum path_check_state {
 
 struct checker {
 	struct list_head node;
+	void *handle;
+	int refcount;
 	int fd;
 	int sync;
 	unsigned int timeout;

@@ -10,6 +10,9 @@
 
 #include "cli.h"
 
+static vector keys;
+static vector handlers;
+
 static struct key *
 alloc_key (void)
 {
@@ -124,15 +127,16 @@ free_keys (vector vec)
 }
 
 void
-free_handlers (vector vec)
+free_handlers (void)
 {
 	int i;
 	struct handler * h;
 
-	vector_foreach_slot (vec, h, i)
+	vector_foreach_slot (handlers, h, i)
 		FREE(h);
 
-	vector_free(vec);
+	vector_free(handlers);
+	handlers = NULL;
 }
 
 int
@@ -156,6 +160,8 @@ load_keys (void)
 	r += add_key(keys, "reinstate", REINSTATE, 0);
 	r += add_key(keys, "fail", FAIL, 0);
 	r += add_key(keys, "resize", RESIZE, 0);
+	r += add_key(keys, "reset", RESET, 0);
+	r += add_key(keys, "reload", RELOAD, 0);
 	r += add_key(keys, "disablequeueing", DISABLEQ, 0);
 	r += add_key(keys, "restorequeueing", RESTOREQ, 0);
 	r += add_key(keys, "paths", PATHS, 0);
@@ -166,6 +172,7 @@ load_keys (void)
 	r += add_key(keys, "multipath", MAP, 1);
 	r += add_key(keys, "group", GROUP, 1);
 	r += add_key(keys, "reconfigure", RECONFIGURE, 0);
+	r += add_key(keys, "daemon", DAEMON, 0);
 	r += add_key(keys, "status", STATUS, 0);
 	r += add_key(keys, "stats", STATS, 0);
 	r += add_key(keys, "topology", TOPOLOGY, 0);
@@ -176,6 +183,7 @@ load_keys (void)
 	r += add_key(keys, "wildcards", WILDCARDS, 0);
 	r += add_key(keys, "quit", QUIT, 0);
 	r += add_key(keys, "exit", QUIT, 0);
+	r += add_key(keys, "shutdown", SHUTDOWN, 0);
 
 	if (r) {
 		free_keys(keys);
@@ -228,10 +236,9 @@ get_cmdvec (char * cmd, vector *v)
 
 	strvec = alloc_strvec(cmd);
 	if (!strvec)
-		return 0;
+		return E_NOMEM;
 
 	cmdvec = vector_alloc();
-	*v = cmdvec;
 
 	if (!cmdvec) {
 		free_strvec(strvec);
@@ -271,17 +278,17 @@ get_cmdvec (char * cmd, vector *v)
 		r = E_NOPARM;
 		goto out;
 	}
+	*v = cmdvec;
 	free_strvec(strvec);
 	return 0;
 
 out:
 	free_strvec(strvec);
 	free_keys(cmdvec);
-	*v = NULL;
 	return r;
 }
 
-static int 
+static int
 fingerprint(vector vec)
 {
 	int i;
@@ -368,8 +375,6 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data)
 	r = get_cmdvec(cmd, &cmdvec);
 
 	if (r) {
-		if (cmdvec)
-			free_keys(cmdvec);
 		*reply = genhelp_handler();
 		*len = strlen(*reply) + 1;
 		return 0;
@@ -377,7 +382,7 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data)
 
 	h = find_handler(fingerprint(cmdvec));
 
-	if (!h) {
+	if (!h || !h->fn) {
 		*reply = genhelp_handler();
 		*len = strlen(*reply) + 1;
 		free_keys(cmdvec);
@@ -417,6 +422,7 @@ cli_init (void) {
 	add_handler(LIST+PATHS, NULL);
 	add_handler(LIST+PATHS+FMT, NULL);
 	add_handler(LIST+STATUS, NULL);
+	add_handler(LIST+DAEMON, NULL);
 	add_handler(LIST+MAPS, NULL);
 	add_handler(LIST+MAPS+STATUS, NULL);
 	add_handler(LIST+MAPS+STATS, NULL);
@@ -437,6 +443,8 @@ cli_init (void) {
 	add_handler(SUSPEND+MAP, NULL);
 	add_handler(RESUME+MAP, NULL);
 	add_handler(RESIZE+MAP, NULL);
+	add_handler(RESET+MAP, NULL);
+	add_handler(RELOAD+MAP, NULL);
 	add_handler(DISABLEQ+MAP, NULL);
 	add_handler(RESTOREQ+MAP, NULL);
 	add_handler(DISABLEQ+MAPS, NULL);
@@ -444,8 +452,16 @@ cli_init (void) {
 	add_handler(REINSTATE+PATH, NULL);
 	add_handler(FAIL+PATH, NULL);
 	add_handler(QUIT, NULL);
+	add_handler(SHUTDOWN, NULL);
 
 	return 0;
+}
+
+void cli_exit(void)
+{
+	free_handlers();
+	free_keys(keys);
+	keys = NULL;
 }
 
 static int

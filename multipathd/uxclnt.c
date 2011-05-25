@@ -1,6 +1,6 @@
 /*
  * Original author : tridge@samba.org, January 2002
- * 
+ *
  * Copyright (c) 2005 Christophe Varoqui
  * Copyright (c) 2005 Benjamin Marzinski, Redhat
  */
@@ -33,12 +33,12 @@ static void print_reply(char *s)
 	/* strip ANSI color markers */
 	while (*s != '\0') {
 		if ((*s == 0x1b) && (*(s+1) == '['))
-			while ((*s++ != 'm') && (*s != '\0')) {}; 
+			while ((*s++ != 'm') && (*s != '\0')) {};
 		putchar(*s++);
 	}
 }
 /*
- * process the client 
+ * process the client
  */
 static void process(int fd)
 {
@@ -79,14 +79,18 @@ static void process_req(int fd, char * inbuf)
 	char *reply;
 	size_t len;
 
-	if (send_packet(fd, inbuf, strlen(inbuf) + 1) != 0)
+	if (send_packet(fd, inbuf, strlen(inbuf) + 1) != 0) {
+		printf("cannot send packet\n");
 		return;
-	if (recv_packet(fd, &reply, &len) == 0) {
-		print_reply(reply);
+	}
+	if (recv_packet(fd, &reply, &len) != 0)
+		printf("error receiving packet\n");
+	else {
+		printf("%s", reply);
 		FREE(reply);
 	}
 }
-	
+
 /*
  * entry point
  */
@@ -104,6 +108,6 @@ int uxclnt(char * inbuf)
 		process_req(fd, inbuf);
 	else
 		process(fd);
-	
+
 	return 0;
 }

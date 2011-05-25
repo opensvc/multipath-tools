@@ -18,6 +18,18 @@
 
 #include "main.h"
 #include "cli.h"
+#include "uevent.h"
+
+#define REALLOC_REPLY(r, a, m)					\
+	do {							\
+		if ((a)) {					\
+			(r) = REALLOC((r), (m) * 2);		\
+			if ((r)) {				\
+				memset((r) + (m), 0, (m));	\
+				(m) *= 2;			\
+			}					\
+		}						\
+	} while (0)
 
 int
 show_paths (char ** r, int * len, struct vectors * vecs, char * style)
@@ -48,9 +60,7 @@ show_paths (char ** r, int * len, struct vectors * vecs, char * style)
 
 		again = ((c - reply) == (maxlen - 1));
 
-		if (again)
-			reply = REALLOC(reply, maxlen *= 2);
-
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
@@ -76,9 +86,7 @@ show_map_topology (char ** r, int * len, struct multipath * mpp)
 		c += snprint_multipath_topology(c, reply + maxlen - c, mpp, 2);
 		again = ((c - reply) == (maxlen - 1));
 
-		if (again)
-			reply = REALLOC(reply, maxlen *= 2);
-
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
@@ -110,9 +118,7 @@ show_maps_topology (char ** r, int * len, struct vectors * vecs)
 
 		again = ((c - reply) == (maxlen - 1));
 
-		if (again)
-			reply = REALLOC(reply, maxlen *= 2);
-
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
@@ -136,31 +142,46 @@ show_config (char ** r, int * len)
 		c += snprint_defaults(c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
+			reply = REALLOC(reply, maxlen * 2);
+			if (!reply)
+				return 1;
+			memset(reply + maxlen, 0, maxlen);
+			maxlen *= 2;
 			continue;
 		}
 		c += snprint_blacklist(c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
+			reply = REALLOC(reply, maxlen * 2);
+			if (!reply)
+				return 1;
+			memset(reply + maxlen, 0, maxlen);
+			maxlen *= 2;
 			continue;
 		}
 		c += snprint_blacklist_except(c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
+			reply = REALLOC(reply, maxlen * 2);
+			if (!reply)
+				return 1;
+			memset(reply + maxlen, 0, maxlen);
+			maxlen *= 2;
 			continue;
 		}
 		c += snprint_hwtable(c, reply + maxlen - c, conf->hwtable);
 		again = ((c - reply) == maxlen);
 		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
+			reply = REALLOC(reply, maxlen * 2);
+			if (!reply)
+				return 1;
+			memset(reply + maxlen, 0, maxlen);
+			maxlen *= 2;
 			continue;
 		}
 		c += snprint_mptable(c, reply + maxlen - c, conf->mptable);
 		again = ((c - reply) == maxlen);
-		if (again)
-			reply = REALLOC(reply, maxlen *= 2);
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
@@ -262,6 +283,27 @@ show_status (char ** r, int *len, struct vectors * vecs)
 }
 
 int
+show_daemon (char ** r, int *len)
+{
+	char * c;
+	char * reply;
+
+	unsigned int maxlen = INITIAL_REPLY_LEN;
+	reply = MALLOC(maxlen);
+
+	if (!reply)
+		return 1;
+
+	c = reply;
+	c += snprintf(c, INITIAL_REPLY_LEN, "pid %d %s\n",
+		      daemon_pid, daemon_status());
+
+	*r = reply;
+	*len = (int)(c - reply + 1);
+	return 0;
+}
+
+int
 show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 {
 	int i;
@@ -289,8 +331,7 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 
 		again = ((c - reply) == (maxlen - 1));
 
-		if (again)
-			reply = REALLOC(reply, maxlen *= 2);
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
@@ -349,6 +390,14 @@ cli_list_maps_stats (void * v, char ** reply, int * len, void * data)
 }
 
 int
+cli_list_daemon (void * v, char ** reply, int * len, void * data)
+{
+	condlog(3, "list daemon (operator)");
+
+	return show_daemon(reply, len);
+}
+
+int
 cli_add_path (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
@@ -383,9 +432,10 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
-	int minor;
+	int major, minor;
 	char dev_path[PATH_SIZE];
-	struct sysfs_device *sysdev;
+	char *alias;
+	int rc;
 
 	condlog(2, "%s: add map (operator)", param);
 
@@ -400,13 +450,21 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 		condlog(2, "%s: not a device mapper table", param);
 		return 0;
 	}
-	sprintf(dev_path,"/block/dm-%d", minor);
-	sysdev = sysfs_device_get(dev_path);
-	if (!sysdev) {
-		condlog(2, "%s: not found in sysfs", param);
+	major = dm_get_major(param);
+	if (major < 0) {
+		condlog(2, "%s: not a device mapper table", param);
 		return 0;
 	}
-	return ev_add_map(sysdev, vecs);
+	sprintf(dev_path,"dm-%d", minor);
+	alias = dm_mapname(major, minor);
+	if (!alias) {
+		condlog(2, "%s: mapname not found for %d:%d",
+			param, major, minor);
+		return 0;
+	}
+	rc = ev_add_map(dev_path, alias, vecs);
+	FREE(alias);
+	return rc;
 }
 
 int
@@ -414,20 +472,66 @@ cli_del_map (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
+	int major, minor;
+	char dev_path[PATH_SIZE];
+	char *alias;
+	int rc;
 
 	condlog(2, "%s: remove map (operator)", param);
+	minor = dm_get_minor(param);
+	if (minor < 0) {
+		condlog(2, "%s: not a device mapper table", param);
+		return 0;
+	}
+	major = dm_get_major(param);
+	if (major < 0) {
+		condlog(2, "%s: not a device mapper table", param);
+		return 0;
+	}
+	sprintf(dev_path,"dm-%d", minor);
+	alias = dm_mapname(major, minor);
+	if (!alias) {
+		condlog(2, "%s: mapname not found for %d:%d",
+			param, major, minor);
+		return 0;
+	}
+	rc = ev_remove_map(param, alias, minor, vecs);
+	FREE(alias);
+	return rc;
+}
 
-	return ev_remove_map(param, vecs);
+int
+cli_reload(void *v, char **reply, int *len, void *data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	char * mapname = get_keyparam(v, MAP);
+	struct multipath *mpp;
+	int minor;
+
+	condlog(2, "%s: reload map (operator)", mapname);
+	if (sscanf(mapname, "dm-%d", &minor) == 1)
+		mpp = find_mp_by_minor(vecs->mpvec, minor);
+	else
+		mpp = find_mp_by_alias(vecs->mpvec, mapname);
+
+	if (!mpp) {
+		condlog(0, "%s: invalid map name. cannot reload", mapname);
+		return 1;
+	}
+
+	return reload_map(vecs, mpp);
 }
 
 int resize_map(struct multipath *mpp, unsigned long long size,
 	       struct vectors * vecs)
 {
+	char params[PARAMS_SIZE] = {0};
+
 	mpp->size = size;
 	update_mpp_paths(mpp, vecs->pathvec);
-	setup_map(mpp);
+	setup_map(mpp, params, PARAMS_SIZE);
 	mpp->action = ACT_RESIZE;
-	if (domap(mpp) <= 0) {
+	if (domap(mpp, params) <= 0) {
 		condlog(0, "%s: failed to resize map : %s", mpp->alias,
 			strerror(errno));
 		return 1;
@@ -658,6 +762,17 @@ cli_reinstate(void * v, char ** reply, int * len, void * data)
 }
 
 int
+cli_reassign (void * v, char ** reply, int * len, void * data)
+{
+	char * param = get_keyparam(v, MAP);
+
+	condlog(3, "%s: reset devices (operator)", param);
+
+	dm_reassign(param);
+	return 0;
+}
+
+int
 cli_fail(void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
@@ -693,19 +808,16 @@ show_blacklist (char ** r, int * len)
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
+	reply = MALLOC(maxlen);
+
 	while (again) {
-		reply = MALLOC(maxlen);
 		if (!reply)
 			return 1;
 
 		c = reply;
 		c += snprint_blacklist_report(c, maxlen);
 		again = ((c - reply) == maxlen);
-		if (again) {
-			maxlen  *= 2;
-			FREE(reply);
-			continue;
-		}
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 
 	*r = reply;
@@ -730,19 +842,16 @@ show_devices (char ** r, int * len, struct vectors *vecs)
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
+	reply = MALLOC(maxlen);
+
 	while (again) {
-		reply = MALLOC(maxlen);
 		if (!reply)
 			return 1;
 
 		c = reply;
 		c += snprint_devices(c, maxlen, vecs);
 		again = ((c - reply) == maxlen);
-		if (again) {
-			maxlen  *= 2;
-			FREE(reply);
-			continue;
-		}
+		REALLOC_REPLY(reply, again, maxlen);
 	}
 
 	*r = reply;
@@ -765,4 +874,12 @@ int
 cli_quit (void * v, char ** reply, int * len, void * data)
 {
 	return 0;
+}
+
+int
+cli_shutdown (void * v, char ** reply, int * len, void * data)
+{
+	condlog(3, "shutdown (operator)");
+
+	return exit_daemon(0);
 }

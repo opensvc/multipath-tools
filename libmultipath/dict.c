@@ -6,7 +6,7 @@
  */
 #include <sys/types.h>
 #include <pwd.h>
-
+#include <string.h>
 #include "checkers.h"
 #include "vector.h"
 #include "hwtable.h"
@@ -58,7 +58,12 @@ def_dev_loss_handler(vector strvec)
 	char * buff;
 
 	buff = set_value(strvec);
-	if (sscanf(buff, "%u", &conf->dev_loss) != 1)
+	if (!buff)
+		return 1;
+
+	if (strlen(buff) == 8 && !strcmp(buff, "infinity"))
+		conf->dev_loss = MAX_DEV_LOSS_TMO;
+	else if (sscanf(buff, "%u", &conf->dev_loss) != 1)
 		conf->dev_loss = 0;
 
 	FREE(buff);
@@ -72,6 +77,33 @@ verbosity_handler(vector strvec)
 
 	buff = VECTOR_SLOT(strvec, 1);
 	conf->verbosity = atoi(buff);
+
+	return 0;
+}
+
+static int
+max_polling_interval_handler(vector strvec)
+{
+	char *buff;
+
+	buff = VECTOR_SLOT(strvec, 1);
+	conf->max_checkint = atoi(buff);
+
+	return 0;
+}
+
+static int
+reassign_maps_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+	if (!strcmp(buff, "yes"))
+		conf->reassign_maps = 1;
+	else if (!strcmp(buff, "no"))
+		conf->reassign_maps = 0;
+	else
+		return 1;
 
 	return 0;
 }
@@ -513,6 +545,17 @@ names_handler(vector strvec)
 	return 0;
 }
 
+static int
+bindings_file_handler(vector strvec)
+{
+	conf->bindings_file = set_value(strvec);
+
+	if (!conf->bindings_file)
+		return 1;
+
+	return 0;
+}
+
 /*
  * blacklist block handlers
  */
@@ -779,7 +822,12 @@ hw_dev_loss_handler(vector strvec)
 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
 
 	buff = set_value(strvec);
-	if (sscanf(buff, "%u", &hwe->dev_loss) != 1)
+	if (!buff)
+		return 1;
+
+	if (strlen(buff) == 8 && !strcmp(buff, "infinity"))
+		hwe->dev_loss = MAX_DEV_LOSS_TMO;
+	else if (sscanf(buff, "%u", &hwe->dev_loss) != 1)
 		hwe->dev_loss = 0;
 
 	FREE(buff);
@@ -1425,6 +1473,22 @@ mp_pg_timeout_handler(vector strvec)
 }
 
 static int
+mp_features_handler(vector strvec)
+{
+	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);
+
+	if (!mpe)
+		return 1;
+
+	mpe->features = set_value(strvec);
+
+	if (!mpe->features)
+		return 1;
+
+	return 0;
+}
+
+static int
 mp_flush_on_last_del_handler(vector strvec)
 {
 	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
@@ -1447,6 +1511,37 @@ mp_flush_on_last_del_handler(vector strvec)
 		mpe->flush_on_last_del = FLUSH_UNDEF;
 
 	FREE(buff);
+	return 0;
+}
+
+static int
+mp_prio_handler(vector strvec)
+{
+	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->hwtable);
+
+	if (!mpe)
+		return 1;
+
+	mpe->prio_name = set_value(strvec);
+
+	if (!mpe->prio_name)
+		return 1;
+
+	return 0;
+}
+
+static int
+mp_prio_args_handler (vector strvec)
+{
+	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
+
+	if (!mpe)
+		return 1;
+
+	mpe->prio_args = set_value(strvec);
+	if (!mpe->prio_args)
+		return 1;
+
 	return 0;
 }
 
@@ -1623,6 +1718,20 @@ snprint_mp_pg_timeout (char * buff, int len, void * data)
 }
 
 static int
+snprint_mp_features (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->features)
+		return 0;
+	if (strlen(mpe->features) == strlen(conf->features) &&
+	    !strcmp(mpe->features, conf->features))
+		return 0;
+
+	return snprintf(buff, len, "%s", mpe->features);
+}
+
+static int
 snprint_mp_flush_on_last_del (char * buff, int len, void * data)
 {
 	struct mpentry * mpe = (struct mpentry *)data;
@@ -1637,10 +1746,34 @@ snprint_mp_flush_on_last_del (char * buff, int len, void * data)
 }
 
 static int
+snprint_mp_prio(char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->prio_name)
+		return 0;
+
+	return snprintf(buff, len, "%s", mpe->prio_name);
+}
+
+static int
+snprint_mp_prio_args(char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (!mpe->prio_args)
+		return 0;
+
+	return snprintf(buff, len, "%s", mpe->prio_args);
+}
+
+static int
 snprint_hw_fast_io_fail(char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 	if (!hwe->fast_io_fail)
+		return 0;
+	if (hwe->fast_io_fail == conf->fast_io_fail)
 		return 0;
 	if (hwe->fast_io_fail == -1)
 		return snprintf(buff, len, "off");
@@ -1653,6 +1786,11 @@ snprint_hw_dev_loss(char * buff, int len, void * data)
 	struct hwentry * hwe = (struct hwentry *)data;
 	if (!hwe->dev_loss)
 		return 0;
+	if (hwe->dev_loss == conf->dev_loss)
+		return 0;
+	if (hwe->dev_loss >= MAX_DEV_LOSS_TMO)
+		return snprintf(buff, len, "infinity");
+
 	return snprintf(buff, len, "%u", hwe->dev_loss);
 }
 
@@ -1738,8 +1876,8 @@ snprint_hw_prio_args (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-        if (!hwe->prio_args)
-                return 0;
+	if (!hwe->prio_args)
+		return 0;
 
 	return snprintf(buff, len, "\"%s\"", hwe->prio_args);
 }
@@ -1937,6 +2075,8 @@ snprint_def_dev_loss(char * buff, int len, void * data)
 {
 	if (!conf->dev_loss)
 		return 0;
+	if (conf->dev_loss >= MAX_DEV_LOSS_TMO)
+		return snprintf(buff, len, "infinity");
 	return snprintf(buff, len, "%u", conf->dev_loss);
 }
 
@@ -1944,6 +2084,23 @@ static int
 snprint_def_verbosity (char * buff, int len, void * data)
 {
 	return snprintf(buff, len, "%i", conf->verbosity);
+}
+
+static int
+snprint_def_max_polling_interval (char * buff, int len, void * data)
+{
+	if (conf->max_checkint == MAX_CHECKINT(conf->checkint))
+		return 0;
+	return snprintf(buff, len, "%i", conf->max_checkint);
+}
+
+static int
+snprint_reassign_maps (char * buff, int len, void * data)
+{
+	if (conf->reassign_maps == DEFAULT_REASSIGN_MAPS)
+		return 0;
+	return snprintf(buff, len, "%s",
+			conf->reassign_maps?"yes":"no");
 }
 
 static int
@@ -2198,6 +2355,18 @@ snprint_def_alias_prefix (char * buff, int len, void * data)
 }
 
 static int
+snprint_def_bindings_file (char * buff, int len, void * data)
+{
+	if (conf->bindings_file == NULL)
+		return 0;
+	if (strlen(conf->bindings_file) == strlen(DEFAULT_BINDINGS_FILE) &&
+	    !strcmp(conf->bindings_file, DEFAULT_BINDINGS_FILE))
+		return 0;
+
+	return snprintf(buff, len, "%s", conf->bindings_file);
+}
+
+static int
 snprint_ble_simple (char * buff, int len, void * data)
 {
 	struct blentry * ble = (struct blentry *)data;
@@ -2229,6 +2398,8 @@ init_keywords(void)
 	install_keyword_root("defaults", NULL);
 	install_keyword("verbosity", &verbosity_handler, &snprint_def_verbosity);
 	install_keyword("polling_interval", &polling_interval_handler, &snprint_def_polling_interval);
+	install_keyword("max_polling_interval", &max_polling_interval_handler, &snprint_def_max_polling_interval);
+	install_keyword("reassign_maps", &reassign_maps_handler, &snprint_reassign_maps);
 	install_keyword("udev_dir", &udev_dir_handler, &snprint_def_udev_dir);
 	install_keyword("multipath_dir", &multipath_dir_handler, &snprint_def_multipath_dir);
 	install_keyword("path_selector", &def_selector_handler, &snprint_def_selector);
@@ -2256,6 +2427,7 @@ init_keywords(void)
 	install_keyword("gid", &def_gid_handler, &snprint_def_gid);
 	install_keyword("fast_io_fail_tmo", &def_fast_io_fail_handler, &snprint_def_fast_io_fail);
 	install_keyword("dev_loss_tmo", &def_dev_loss_handler, &snprint_def_dev_loss);
+	install_keyword("bindings_file", &bindings_file_handler, &snprint_def_bindings_file);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
@@ -2325,6 +2497,8 @@ init_keywords(void)
 	install_keyword("alias", &alias_handler, &snprint_mp_alias);
 	install_keyword("path_grouping_policy", &mp_pgpolicy_handler, &snprint_mp_path_grouping_policy);
 	install_keyword("path_selector", &mp_selector_handler, &snprint_mp_selector);
+	install_keyword("prio", &mp_prio_handler, &snprint_mp_prio);
+	install_keyword("prio_args", &mp_prio_args_handler, &snprint_mp_prio_args);
 	install_keyword("failback", &mp_failback_handler, &snprint_mp_failback);
 	install_keyword("rr_weight", &mp_weight_handler, &snprint_mp_rr_weight);
 	install_keyword("no_path_retry", &mp_no_path_retry_handler, &snprint_mp_no_path_retry);
@@ -2332,6 +2506,7 @@ init_keywords(void)
 	install_keyword("rr_min_io_rq", &mp_minio_rq_handler, &snprint_mp_rr_min_io_rq);
 	install_keyword("pg_timeout", &mp_pg_timeout_handler, &snprint_mp_pg_timeout);
 	install_keyword("flush_on_last_del", &mp_flush_on_last_del_handler, &snprint_mp_flush_on_last_del);
+	install_keyword("features", &mp_features_handler, &snprint_mp_features);
 	install_keyword("mode", &mp_mode_handler, &snprint_mp_mode);
 	install_keyword("uid", &mp_uid_handler, &snprint_mp_uid);
 	install_keyword("gid", &mp_gid_handler, &snprint_mp_gid);

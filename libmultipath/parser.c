@@ -25,8 +25,8 @@
 
 /* local vars */
 static int sublevel = 0;
-vector keywords = NULL;
-vector *keywords_addr = NULL;
+static vector keywords = NULL;
+static vector *keywords_addr = NULL;
 static int line_nr;
 
 void set_current_keywords (vector *k)
@@ -387,11 +387,18 @@ void *
 set_value(vector strvec)
 {
 	char *str = VECTOR_SLOT(strvec, 1);
-	int size = strlen(str);
+	size_t size;
 	int i = 0;
 	int len = 0;
 	char *alloc = NULL;
 	char *tmp;
+
+	if (!str)
+		return NULL;
+
+	size = strlen(str);
+	if (size == 0)
+		return NULL;
 
 	if (*str == '"') {
 		for (i = 2; i < VECTOR_SIZE(strvec); i++) {
@@ -526,16 +533,23 @@ out:
 	return r;
 }
 
+int alloc_keywords(void)
+{
+	if (!keywords)
+		keywords = vector_alloc();
+
+	if (!keywords)
+		return 1;
+
+	return 0;
+}
+
 /* Data initialization */
 int
 init_data(char *conf_file, void (*init_keywords) (void))
 {
 	int r;
 
-	if (!keywords)
-		keywords = vector_alloc();
-	if (!keywords)
-		return 1;
 	stream = fopen(conf_file, "r");
 	if (!stream) {
 		syslog(LOG_WARNING, "Configuration file open problem");

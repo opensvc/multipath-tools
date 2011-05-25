@@ -254,27 +254,36 @@ select_alias (struct multipath * mp)
 			mp->alias = STRDUP(mp->wwid);
 	}
 
-	return 0;
+	return mp->alias ? 0 : 1;
 }
 
 extern int
 select_features (struct multipath * mp)
 {
-	if (mp->hwe && mp->hwe->features) {
-		mp->features = mp->hwe->features;
-		condlog(3, "%s: features = %s (controller setting)",
-			mp->alias, mp->features);
-		return 0;
+	struct mpentry * mpe;
+	char *origin;
+
+	if ((mpe = find_mpe(mp->wwid)) && mpe->features) {
+		mp->features = STRDUP(mpe->features);
+		origin = "LUN setting";
+	} else if (mp->hwe && mp->hwe->features) {
+		mp->features = STRDUP(mp->hwe->features);
+		origin = "controller setting";
+	} else {
+		mp->features = STRDUP(conf->features);
+		origin = "internal default";
 	}
-	if (conf->features) {
-		mp->features = conf->features;
-		condlog(3, "%s: features = %s (config file default)",
-			mp->alias, mp->features);
-		return 0;
+	condlog(3, "%s: features = %s (%s)",
+		mp->alias, mp->features, origin);
+	if (strstr(mp->features, "queue_if_no_path")) {
+		if (mp->no_path_retry == NO_PATH_RETRY_UNDEF)
+			mp->no_path_retry = NO_PATH_RETRY_QUEUE;
+		else if (mp->no_path_retry == NO_PATH_RETRY_FAIL) {
+			condlog(1, "%s: config error, overriding 'no_path_retry' value",
+				mp->alias);
+			mp->no_path_retry = NO_PATH_RETRY_QUEUE;
+		}
 	}
-	mp->features = set_default(DEFAULT_FEATURES);
-	condlog(3, "%s: features = %s (internal default)",
-		mp->alias, mp->features);
 	return 0;
 }
 
@@ -360,6 +369,18 @@ select_getuid (struct path * pp)
 extern int
 select_prio (struct path * pp)
 {
+	struct mpentry * mpe;
+
+	if ((mpe = find_mpe(pp->wwid))) {
+		if (mpe->prio_name) {
+			pp->prio = prio_lookup(mpe->prio_name);
+			prio_set_args(pp->prio, mpe->prio_args);
+			condlog(3, "%s: prio = %s (LUN setting)",
+				pp->dev, pp->prio->name);
+			return 0;
+		}
+	}
+
 	if (pp->hwe && pp->hwe->prio_name) {
 		pp->prio = prio_lookup(pp->hwe->prio_name);
 		prio_set_args(pp->prio, pp->hwe->prio_args);
@@ -379,7 +400,7 @@ select_prio (struct path * pp)
 		return 0;
 	}
 	pp->prio = prio_lookup(DEFAULT_PRIO);
-        prio_set_args(pp->prio, DEFAULT_PRIO_ARGS);
+	prio_set_args(pp->prio, DEFAULT_PRIO_ARGS);
 	condlog(3, "%s: prio = %s (internal default)",
 		pp->dev, DEFAULT_PRIO);
 	condlog(3, "%s: prio = %s (internal default)",
@@ -412,9 +433,12 @@ select_no_path_retry(struct multipath *mp)
 			mp->alias, mp->no_path_retry);
 		return 0;
 	}
-	mp->no_path_retry = NO_PATH_RETRY_UNDEF;
-	condlog(3, "%s: no_path_retry = NONE (internal default)",
-		mp->alias);
+	if (mp->no_path_retry != NO_PATH_RETRY_UNDEF)
+		condlog(3, "%s: no_path_retry = %i (inherited setting)",
+			mp->alias, mp->no_path_retry);
+	else
+		condlog(3, "%s: no_path_retry = %i (internal default)",
+			mp->alias, mp->no_path_retry);
 	return 0;
 }
 

@@ -29,8 +29,7 @@ void remove_map_and_stop_waiter (struct multipath * mpp, struct vectors * vecs, 
 void remove_maps (struct vectors * vecs);
 void remove_maps_and_stop_waiters (struct vectors * vecs);
 
-struct multipath * add_map_without_path (struct vectors * vecs,
-				int minor, char * alias);
+struct multipath * add_map_without_path (struct vectors * vecs, char * alias);
 struct multipath * add_map_with_path (struct vectors * vecs,
 				struct path * pp, int add_vec);
 int update_multipath (struct vectors *vecs, char *mapname);

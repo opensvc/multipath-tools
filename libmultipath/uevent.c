@@ -37,18 +37,20 @@
 #include <linux/types.h>
 #include <linux/netlink.h>
 #include <pthread.h>
+#include <limits.h>
 #include <sys/mman.h>
+#include <errno.h>
 
 #include "memory.h"
 #include "debug.h"
+#include "list.h"
 #include "uevent.h"
 
 typedef int (uev_trigger)(struct uevent *, void * trigger_data);
 
 pthread_t uevq_thr;
-struct uevent *uevqhp, *uevqtp;
+LIST_HEAD(uevq);
 pthread_mutex_t uevq_lock, *uevq_lockp = &uevq_lock;
-pthread_mutex_t uevc_lock, *uevc_lockp = &uevc_lock;
 pthread_cond_t  uev_cond,  *uev_condp  = &uev_cond;
 uev_trigger *my_uev_trigger;
 void * my_trigger_data;
@@ -56,64 +58,110 @@ int servicing_uev;
 
 int is_uevent_busy(void)
 {
-	return (uevqhp != NULL || servicing_uev);
+	int empty;
+
+	pthread_mutex_lock(uevq_lockp);
+	empty = list_empty(&uevq);
+	pthread_mutex_unlock(uevq_lockp);
+	return (!empty || servicing_uev);
 }
 
-static struct uevent * alloc_uevent (void)
+struct uevent * alloc_uevent (void)
 {
-	return (struct uevent *)MALLOC(sizeof(struct uevent));
+	struct uevent *uev = MALLOC(sizeof(struct uevent));
+
+	if (uev)
+		INIT_LIST_HEAD(&uev->node);
+
+	return uev;
 }
 
 void
-service_uevq(void)
+setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
 {
-	int empty;
-	struct uevent *uev;
+	if (pthread_attr_init(attr)) {
+		fprintf(stderr, "can't initialize thread attr: %s\n",
+			strerror(errno));
+		exit(1);
+	}
+	if (stacksize < PTHREAD_STACK_MIN)
+		stacksize = PTHREAD_STACK_MIN;
 
-	do {
-		pthread_mutex_lock(uevq_lockp);
-		empty = (uevqhp == NULL);
-		if (!empty) {
-			uev = uevqhp;
-			uevqhp = uev->next;
-			if (uevqtp == uev)
-				uevqtp = uev->next;
-			pthread_mutex_unlock(uevq_lockp);
+	if (pthread_attr_setstacksize(attr, stacksize)) {
+		fprintf(stderr, "can't set thread stack size to %lu: %s\n",
+			(unsigned long)stacksize, strerror(errno));
+		exit(1);
+	}
+	if (detached && pthread_attr_setdetachstate(attr,
+						    PTHREAD_CREATE_DETACHED)) {
+		fprintf(stderr, "can't set thread to detached: %s\n",
+			strerror(errno));
+		exit(1);
+	}
+}
 
-			if (my_uev_trigger && my_uev_trigger(uev,
-							my_trigger_data))
-				condlog(0, "uevent trigger error");
+/*
+ * Called with uevq_lockp held
+ */
+void
+service_uevq(struct list_head *tmpq)
+{
+	struct uevent *uev, *tmp;
 
-			FREE(uev);
-		}
-		else {
-			pthread_mutex_unlock(uevq_lockp);
-		}
-	} while (empty == 0);
+	list_for_each_entry_safe(uev, tmp, tmpq, node) {
+		list_del_init(&uev->node);
+
+		if (my_uev_trigger && my_uev_trigger(uev, my_trigger_data))
+			condlog(0, "uevent trigger error");
+
+		FREE(uev);
+	}
+}
+
+static void uevq_stop(void *arg)
+{
+	condlog(3, "Stopping uev queue");
+	pthread_mutex_lock(uevq_lockp);
+	my_uev_trigger = NULL;
+	pthread_cond_signal(uev_condp);
+	pthread_mutex_unlock(uevq_lockp);
 }
 
 /*
  * Service the uevent queue.
  */
-static void *
-uevq_thread(void * et)
+int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
+		    void * trigger_data)
 {
+	my_uev_trigger = uev_trigger;
+	my_trigger_data = trigger_data;
+
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
 	while (1) {
-		pthread_mutex_lock(uevc_lockp);
-		servicing_uev = 0;
-		pthread_cond_wait(uev_condp, uevc_lockp);
-		servicing_uev = 1;
-		pthread_mutex_unlock(uevc_lockp);
+		LIST_HEAD(uevq_tmp);
 
-		service_uevq();
+		pthread_mutex_lock(uevq_lockp);
+		servicing_uev = 0;
+		/*
+		 * Condition signals are unreliable,
+		 * so make sure we only wait if we have to.
+		 */
+		if (list_empty(&uevq)) {
+			pthread_cond_wait(uev_condp, uevq_lockp);
+		}
+		servicing_uev = 1;
+		list_splice_init(&uevq, &uevq_tmp);
+		pthread_mutex_unlock(uevq_lockp);
+		if (!my_uev_trigger)
+			break;
+		service_uevq(&uevq_tmp);
 	}
-	return NULL;
+	condlog(3, "Terminating uev service queue");
+	return 0;
 }
 
-int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
-		  void * trigger_data)
+int uevent_listen(void)
 {
 	int sock;
 	struct sockaddr_nl snl;
@@ -124,11 +172,7 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 	int rcvsz = 0;
 	int rcvszsz = sizeof(rcvsz);
 	unsigned int *prcvszsz = (unsigned int *)&rcvszsz;
-	pthread_attr_t attr;
 	const int feature_on = 1;
-
-	my_uev_trigger = uev_trigger;
-	my_trigger_data = trigger_data;
 
 	/*
 	 * Queue uevents for service by dedicated thread so that the uevent
@@ -136,15 +180,12 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 	 * thereby not getting to empty the socket's receive buffer queue
 	 * often enough.
 	 */
-	uevqhp = uevqtp = NULL;
+	INIT_LIST_HEAD(&uevq);
 
 	pthread_mutex_init(uevq_lockp, NULL);
-	pthread_mutex_init(uevc_lockp, NULL);
 	pthread_cond_init(uev_condp, NULL);
 
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, 64 * 1024);
-	pthread_create(&uevq_thr, &attr, uevq_thread, NULL);
+	pthread_cleanup_push(uevq_stop, NULL);
 
 	/*
 	 * First check whether we have a udev socket
@@ -243,7 +284,7 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		buflen = recvmsg(sock, &smsg, 0);
 		if (buflen < 0) {
 			if (errno != EINTR)
-				condlog(0, "error receiving message");
+				condlog(0, "error receiving message, errno %d", errno);
 			continue;
 		}
 
@@ -270,6 +311,10 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		if (strstr(buf, "@/") == NULL) {
 			condlog(3, "unrecognized message header");
 			continue;
+		}
+		if ((size_t)buflen > sizeof(buf)-1) {
+			condlog(2, "buffer overflow for received uevent");
+			buflen = sizeof(buf)-1;
 		}
 
 		uev = alloc_uevent();
@@ -318,38 +363,107 @@ int uevent_listen(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		uev->envp[i] = NULL;
 
 		condlog(3, "uevent '%s' from '%s'", uev->action, uev->devpath);
+		uev->kernel = strrchr(uev->devpath, '/');
+		if (uev->kernel)
+			uev->kernel++;
 
 		/* print payload environment */
 		for (i = 0; uev->envp[i] != NULL; i++)
-			condlog(3, "%s", uev->envp[i]);
+			condlog(5, "%s", uev->envp[i]);
 
 		/*
 		 * Queue uevent and poke service pthread.
 		 */
 		pthread_mutex_lock(uevq_lockp);
-		if (uevqtp)
-			uevqtp->next = uev;
-		else
-			uevqhp = uev;
-		uevqtp = uev;
-		uev->next = NULL;
-		pthread_mutex_unlock(uevq_lockp);
-
-		pthread_mutex_lock(uevc_lockp);
+		list_add_tail(&uev->node, &uevq);
 		pthread_cond_signal(uev_condp);
-		pthread_mutex_unlock(uevc_lockp);
+		pthread_mutex_unlock(uevq_lockp);
 	}
 
 exit:
 	close(sock);
 
-	pthread_mutex_lock(uevq_lockp);
-	pthread_cancel(uevq_thr);
-	pthread_mutex_unlock(uevq_lockp);
+	pthread_cleanup_pop(1);
 
 	pthread_mutex_destroy(uevq_lockp);
-	pthread_mutex_destroy(uevc_lockp);
 	pthread_cond_destroy(uev_condp);
 
 	return 1;
+}
+
+extern int
+uevent_get_major(struct uevent *uev)
+{
+	char *p, *q;
+	int i, major = -1;
+
+	for (i = 0; uev->envp[i] != NULL; i++) {
+		if (!strncmp(uev->envp[i], "MAJOR", 5) && strlen(uev->envp[i]) > 6) {
+			p = uev->envp[i] + 6;
+			major = strtoul(p, &q, 10);
+			if (p == q) {
+				condlog(2, "invalid major '%s'", p);
+				major = -1;
+			}
+			break;
+		}
+	}
+	return major;
+}
+
+extern int
+uevent_get_minor(struct uevent *uev)
+{
+	char *p, *q;
+	int i, minor = -1;
+
+	for (i = 0; uev->envp[i] != NULL; i++) {
+		if (!strncmp(uev->envp[i], "MINOR", 5) && strlen(uev->envp[i]) > 6) {
+			p = uev->envp[i] + 6;
+			minor = strtoul(p, &q, 10);
+			if (p == q) {
+				condlog(2, "invalid minor '%s'", p);
+				minor = -1;
+			}
+			break;
+		}
+	}
+	return minor;
+}
+
+extern int
+uevent_get_disk_ro(struct uevent *uev)
+{
+	char *p, *q;
+	int i, ro = -1;
+
+	for (i = 0; uev->envp[i] != NULL; i++) {
+		if (!strncmp(uev->envp[i], "DISK_RO", 6) && strlen(uev->envp[i]) > 7) {
+			p = uev->envp[i] + 8;
+			ro = strtoul(p, &q, 10);
+			if (p == q) {
+				condlog(2, "invalid read_only setting '%s'", p);
+				ro = -1;
+			}
+			break;
+		}
+	}
+	return ro;
+}
+
+extern char *
+uevent_get_dm_name(struct uevent *uev)
+{
+	char *p = NULL;
+	int i;
+
+	for (i = 0; uev->envp[i] != NULL; i++) {
+		if (!strncmp(uev->envp[i], "DM_NAME", 6) &&
+		    strlen(uev->envp[i]) > 7) {
+			p = MALLOC(strlen(uev->envp[i] + 8) + 1);
+			strcpy(p, uev->envp[i] + 8);
+			break;
+		}
+	}
+	return p;
 }

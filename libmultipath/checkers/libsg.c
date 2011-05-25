@@ -11,18 +11,18 @@
 #include "../libmultipath/sg_include.h"
 
 int
-sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff,
-	 unsigned int timeout)
+sg_read (int sg_fd, unsigned char * buff, int buff_len,
+	 unsigned char * sense, int sense_len, unsigned int timeout)
 {
 	/* defaults */
-	int blocks = 1;
+	int blocks;
 	long long start_block = 0;
 	int bs = 512;
 	int cdbsz = 10;
 	int * diop = NULL;
 
 	unsigned char rdCmd[cdbsz];
-	unsigned char *sbb = senseBuff;
+	unsigned char *sbb = sense;
 	struct sg_io_hdr io_hdr;
 	int res;
 	int rd_opcode[] = {0x8, 0x28, 0xa8, 0x88};
@@ -33,6 +33,7 @@ sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff,
 	if (fstat(sg_fd, &filestatus) != 0)
 		return PATH_DOWN;
 	bs = (filestatus.st_blksize > 4096)? 4096: filestatus.st_blksize;
+	blocks = buff_len / bs;
 	memset(rdCmd, 0, cdbsz);
 	sz_ind = 1;
 	rdCmd[0] = rd_opcode[sz_ind];
@@ -50,15 +51,15 @@ sg_read (int sg_fd, unsigned char * buff, unsigned char * senseBuff,
 	io_hdr.dxfer_direction = SG_DXFER_FROM_DEV;
 	io_hdr.dxfer_len = bs * blocks;
 	io_hdr.dxferp = buff;
-	io_hdr.mx_sb_len = SENSE_BUFF_LEN;
-	io_hdr.sbp = senseBuff;
+	io_hdr.mx_sb_len = sense_len;
+	io_hdr.sbp = sense;
 	io_hdr.timeout = timeout;
 	io_hdr.pack_id = (int)start_block;
 	if (diop && *diop)
 	io_hdr.flags |= SG_FLAG_DIRECT_IO;
 
-retry: 
-	memset(senseBuff, 0, SENSE_BUFF_LEN);
+retry:
+	memset(sense, 0, sense_len);
 	while (((res = ioctl(sg_fd, SG_IO, &io_hdr)) < 0) && (EINTR == errno));
 
 	if (res < 0) {

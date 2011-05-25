@@ -242,13 +242,15 @@ extract_hwe_from_path(struct multipath * mpp)
 static int
 update_multipath_table (struct multipath *mpp, vector pathvec)
 {
+	char params[PARAMS_SIZE] = {0};
+
 	if (!mpp)
 		return 1;
 
-	if (dm_get_map(mpp->alias, &mpp->size, mpp->params))
+	if (dm_get_map(mpp->alias, &mpp->size, params))
 		return 1;
 
-	if (disassemble_map(pathvec, mpp->params, mpp))
+	if (disassemble_map(pathvec, params, mpp))
 		return 1;
 
 	return 0;
@@ -257,13 +259,15 @@ update_multipath_table (struct multipath *mpp, vector pathvec)
 static int
 update_multipath_status (struct multipath *mpp)
 {
+	char status[PARAMS_SIZE] = {0};
+
 	if (!mpp)
 		return 1;
 
-	if(dm_get_status(mpp->alias, mpp->status))
+	if(dm_get_status(mpp->alias, status))
 		return 1;
 
-	if (disassemble_status(mpp->status, mpp))
+	if (disassemble_status(status, mpp))
 		return 1;
 
 	return 0;
@@ -272,6 +276,9 @@ update_multipath_status (struct multipath *mpp)
 extern int
 update_multipath_strings (struct multipath *mpp, vector pathvec)
 {
+	if (!mpp)
+		return 1;
+
 	condlog(4, "%s: %s", mpp->alias, __FUNCTION__);
 
 	free_multipath_attributes(mpp);
@@ -378,12 +385,11 @@ out:
 }
 
 extern struct multipath *
-add_map_without_path (struct vectors * vecs,
-		      int minor, char * alias)
+add_map_without_path (struct vectors * vecs, char * alias)
 {
 	struct multipath * mpp = alloc_multipath();
 
-	if (!mpp)
+	if (!mpp || !alias)
 		return NULL;
 
 	mpp->alias = alias;
@@ -423,7 +429,8 @@ add_map_with_path (struct vectors * vecs,
 	mpp->hwe = pp->hwe;
 
 	strcpy(mpp->wwid, pp->wwid);
-	select_alias(mpp);
+	if (select_alias(mpp))
+		goto out;
 	mpp->size = pp->size;
 
 	if (adopt_paths(vecs->pathvec, mpp, 1))
@@ -453,14 +460,26 @@ verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
 	if (!mpp)
 		return 0;
 
+	select_features(mpp);
+	select_no_path_retry(mpp);
+	select_dev_loss(mpp);
+	sysfs_set_scsi_tmo(mpp);
+
 	vector_foreach_slot (mpp->paths, pp, i) {
 		/*
 		 * see if path is in sysfs
 		 */
 		if (!pp->sysdev || sysfs_get_dev(pp->sysdev,
 						 pp->dev_t, BLK_DEV_SIZE)) {
-			condlog(0, "%s: failed to access path %s", mpp->alias,
-				pp->sysdev ? pp->sysdev->devpath : pp->dev_t);
+			if (pp->state != PATH_DOWN) {
+				condlog(1, "%s: removing valid path %s in state %d",
+					mpp->alias,
+					pp->sysdev?pp->sysdev->devpath:pp->dev_t, pp->state);
+			} else {
+				condlog(3, "%s: failed to access path %s",
+					mpp->alias,
+					pp->sysdev ? pp->sysdev->devpath : pp->dev_t);
+			}
 			count++;
 			vector_del_slot(mpp->paths, i);
 			i--;

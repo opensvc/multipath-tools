@@ -6,7 +6,7 @@ multipath \- Device mapper target autoconfig
 .RB [\| \-v\ \c
 .IR verbosity \|]
 .RB [\| \-d \|]
-.RB [\| \-h | \-l | \-ll | \-f | \-F | \-B \|]
+.RB [\| \-h | \-l | \-ll | \-f | \-t | \-F \| \-B \|]
 .RB [\| \-p\ \c
 .BR failover | multibus | group_by_serial | group_by_prio | group_by_node_name \|]
 .RB [\| device \|]
@@ -47,11 +47,14 @@ flush a multipath device map specified as parameter, if unused
 .B \-F
 flush all unused multipath device maps
 .TP
+.B \-t
+print internal hardware table to stdout
+.TP
 .B \-B
 treat the bindings file as read only
 .TP
 .BI \-p " policy"
-force maps to specified policy:
+force new maps to use the specified policy:
 .RS 1.2i
 .TP 1.2i
 .B failover
@@ -67,8 +70,11 @@ all paths in 1 priority group
 1 priority group per priority value. Priorities are determined by callout programs specified as a global, per-controller or per-multipath option in the configuration file
 .TP
 .B group_by_node_name
-1 priority group per target node name. Target node names are fetched in /sys/class/fc_transport/target*/node_name.
+1 priority group per target node name. Target node names are fetched
+in /sys/class/fc_transport/target*/node_name.
+.TP
 .RE
+Existing maps are not modified.
 .TP
 .BI device
 update only the devmap the path pointed by
@@ -79,6 +85,9 @@ is in the /dev/sdb (as shown by udev in the $DEVNAME variable) or major:minor fo
 .I device
 may alternatively be a multipath mapname
 .SH "SEE ALSO"
+.BR multipathd (8),
+.BR multipath.conf (5),
+.BR kpartx (8),
 .BR udev (8),
 .BR dmsetup (8)
 .BR hotplug (8)

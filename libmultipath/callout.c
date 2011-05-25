@@ -17,16 +17,8 @@
 #include "checkers.h"
 #include "vector.h"
 #include "structs.h"
+#include "util.h"
 #include "debug.h"
-
-#define PROGRAM_SIZE	100
-#define FIELD_PROGRAM
-
-#define strfieldcpy(to, from) \
-do { \
-	to[sizeof(to)-1] = '\0'; \
-	strncpy(to, from, sizeof(to)-1); \
-} while (0)
 
 int execute_program(char *path, char *value, int len)
 {
@@ -36,16 +28,17 @@ int execute_program(char *path, char *value, int len)
 	int fds[2], null_fd;
 	pid_t pid;
 	char *pos;
-	char arg[PROGRAM_SIZE];
-	char *argv[sizeof(arg) / 2];
+	char arg[CALLOUT_MAX_SIZE];
+	int argc = sizeof(arg) / 2;
+	char *argv[argc + 1];
 	int i;
 
 	i = 0;
 
 	if (strchr(path, ' ')) {
-		strfieldcpy(arg, path);
+		strlcpy(arg, path, sizeof(arg));
 		pos = arg;
-		while (pos != NULL) {
+		while (pos != NULL && i < argc) {
 			if (pos[0] == '\'') {
 				/* don't separate if in apostrophes */
 				pos++;
