@@ -272,7 +272,6 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 				alias);
 			dm_reassign(alias);
 		}
-		FREE(alias);
 		return 0;
 	}
 
