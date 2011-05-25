@@ -51,24 +51,15 @@ void free_waiter (struct event_thread *wp)
 
 void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 {
-	struct event_thread *wp = (struct event_thread *)mpp->waiter;
-	pthread_t thread;
-
-	if (!wp) {
-		condlog(3, "%s: no waiter thread", mpp->alias);
-		return;
-	}
-	if (wp->thread == (pthread_t)0) {
+	if (mpp->waiter == (pthread_t)0) {
 		condlog(3, "%s: event checker thread already stopped",
 			mpp->alias);
 		return;
 	}
-	thread = wp->thread;
-	wp->thread = (pthread_t)0;
-	mpp->waiter = NULL;
-
-	condlog(2, "%s: stop event checker thread (%lu)", wp->mapname, thread);
-	pthread_kill(thread, SIGUSR1);
+	condlog(2, "%s: stop event checker thread (%lu)", mpp->alias,
+		mpp->waiter);
+	pthread_kill(mpp->waiter, SIGUSR1);
+	mpp->waiter = (pthread_t)0;
 }
 
 static sigset_t unblock_signals(void)
@@ -228,7 +219,6 @@ int start_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 		goto out;
 
 	pthread_mutex_lock(&wp->lock);
-	mpp->waiter = (void *)wp;
 	strncpy(wp->mapname, mpp->alias, WWID_SIZE);
 	wp->vecs = vecs;
 	pthread_mutex_unlock(&wp->lock);
@@ -237,12 +227,13 @@ int start_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 		condlog(0, "%s: cannot create event checker", wp->mapname);
 		goto out1;
 	}
+	mpp->waiter = wp->thread;
 	condlog(2, "%s: event checker started", wp->mapname);
 
 	return 0;
 out1:
 	free_waiter(wp);
-	mpp->waiter = NULL;
+	mpp->waiter = (pthread_t)0;
 out:
 	condlog(0, "failed to start waiter thread");
 	return 1;

@@ -200,7 +200,7 @@ struct multipath {
 	struct hwentry * hwe;
 
 	/* threads */
-	void * waiter;
+	pthread_t waiter;
 
 	/* stats */
 	unsigned int stat_switchgroup;
