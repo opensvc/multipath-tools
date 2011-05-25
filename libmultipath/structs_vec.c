@@ -326,7 +326,6 @@ set_no_path_retry(struct multipath *mpp)
 extern int
 setup_multipath (struct vectors * vecs, struct multipath * mpp)
 {
-retry:
 	if (dm_get_info(mpp->alias, &mpp->dmi)) {
 		/* Error accessing table */
 		condlog(3, "%s: cannot access table", mpp->alias);
@@ -344,24 +343,6 @@ retry:
 	condlog(3, "%s: discover", mpp->alias);
 
 	if (update_multipath_strings(mpp, vecs->pathvec)) {
-		char *new_alias;
-
-		/*
-		 * detect an external rename of the multipath device
-		 */
-		new_alias = dm_get_name(mpp->wwid);
-		if (new_alias) {
-			condlog(3, "%s multipath mapped device name has "
-				"changed from %s to %s", mpp->wwid,
-				mpp->alias, new_alias);
-			FREE(mpp->alias);
-			mpp->alias = new_alias;
-
-			if (mpp->waiter)
-				strncpy(((struct event_thread *)mpp->waiter)->mapname,
-					new_alias, WWID_SIZE);
-			goto retry;
-		}
 		condlog(0, "%s: failed to setup multipath", mpp->alias);
 		goto out;
 	}
