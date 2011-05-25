@@ -2,25 +2,19 @@
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 DAEMON=/usr/bin/multipathd
-PIDFILE=/var/run/multipathd.pid
 
 test -x $DAEMON || exit 0
 
 case "$1" in
   start)
 	echo -n "Starting multipath daemon: multipathd"
-        $DAEMON
+	$DAEMON
 	echo "."
 	;;
   stop)
 	echo -n "Stopping multipath daemon: multipathd"
 	echo "."
-	if [ -f $PIDFILE ]
-	then
-		kill `cat $PIDFILE`
-	else
-		echo "multipathd not running: Nothing to stop..."
-	fi
+	$DAEMON shutdown
 	;;
   force-reload|restart)
 	$0 stop
