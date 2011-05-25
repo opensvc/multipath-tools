@@ -1332,7 +1332,6 @@ reconfigure (struct vectors * vecs)
 	struct config * old = conf;
 	int retval = 1;
 
-	lock(vecs->lock);
 	/*
 	 * free old map and path vectors ... they use old conf state
 	 */
@@ -1353,7 +1352,6 @@ reconfigure (struct vectors * vecs)
 		retval = 0;
 	}
 
-	unlock(vecs->lock);
 	return retval;
 }
 
@@ -1411,7 +1409,9 @@ sighup (int sig)
 	if (running_state != DAEMON_RUNNING)
 		return;
 
+	lock(gvecs->lock);
 	reconfigure(gvecs);
+	unlock(gvecs->lock);
 
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
