@@ -493,6 +493,7 @@ load_config (char * file)
 	conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 	conf->bindings_read_only = 0;
 	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
+	conf->features = set_default(DEFAULT_FEATURES);
 	conf->flush_on_last_del = 0;
 	conf->attribute_flags = 0;
 	conf->reassign_maps = DEFAULT_REASSIGN_MAPS;
