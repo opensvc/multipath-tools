@@ -44,6 +44,7 @@ static LIST_HEAD(sysfs_dev_list);
 struct sysfs_dev {
 	struct list_head node;
 	struct sysfs_device dev;
+	int refcount;
 };
 
 int sysfs_init(char *path, size_t len)
@@ -152,6 +153,7 @@ struct sysfs_device *sysfs_device_get(const char *devpath)
 			if (strcmp(sysdev_loop->dev.devpath, devpath_real) == 0) {
 				dbg("found vanished dev in cache '%s'",
 				    sysdev_loop->dev.devpath);
+				sysdev_loop->refcount++;
 				return &sysdev_loop->dev;
 			}
 		}
@@ -167,6 +169,7 @@ struct sysfs_device *sysfs_device_get(const char *devpath)
 		if (strcmp(sysdev_loop->dev.devpath, devpath_real) == 0) {
 			dbg("found dev in cache '%s'", sysdev_loop->dev.devpath);
 			dev = &sysdev_loop->dev;
+			sysdev_loop->refcount++;
 		}
 	}
 
@@ -177,6 +180,7 @@ struct sysfs_device *sysfs_device_get(const char *devpath)
 		if (sysdev == NULL)
 			return NULL;
 		memset(sysdev, 0x00, sizeof(struct sysfs_dev));
+		sysdev->refcount = 1;
 		list_add(&sysdev->node, &sysfs_dev_list);
 		dev = &sysdev->dev;
 	}
@@ -243,6 +247,8 @@ struct sysfs_device *sysfs_device_verify(struct sysfs_device *dev)
 	char path[PATH_SIZE];
 	struct stat statbuf;
 
+	if (!dev->devpath)
+		return NULL;
 	strlcpy(path, sysfs_path, sizeof(path));
 	strlcat(path, dev->devpath, sizeof(path));
 	if (stat(dev->devpath, &statbuf) == 0 &&
@@ -258,15 +264,21 @@ void sysfs_device_put(struct sysfs_device *dev)
 
 	list_for_each_entry(sysdev_loop, &sysfs_dev_list, node) {
 		if (&sysdev_loop->dev == dev) {
-			dbg("removed dev '%s' from cache",
-			    sysdev_loop->dev.devpath);
-			list_del(&sysdev_loop->node);
-			free(sysdev_loop);
+			sysdev_loop->refcount--;
+			if (!sysdev_loop->refcount) {
+				dbg("removed dev '%s' from cache",
+				    sysdev_loop->dev.devpath);
+				list_del(&sysdev_loop->node);
+				free(sysdev_loop);
+			} else {
+				dbg("dev '%s' still in cache, refcount %d",
+				    sysdev_loop->dev.devpath,
+				    sysdev_loop->refcount);
+			}
 			return;
 		}
 	}
-	dbg("dev '%s' not found in cache",
-	    sysdev_loop->dev.devpath);
+	dbg("dev '%s' not found in cache", dev->devpath);
 
 	return;
 }
