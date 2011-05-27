@@ -1189,7 +1189,8 @@ check_path (struct vectors * vecs, struct path * pp)
 	condlog(4, "path prio refresh");
 
 	if (update_prio(pp, new_path_up) &&
-	    pp->mpp->pgpolicyfn == (pgpolicyfn *)group_by_prio)
+	    (pp->mpp->pgpolicyfn == (pgpolicyfn *)group_by_prio) &&
+	     pp->mpp->pgfailback == -FAILBACK_IMMEDIATE)
 		update_path_groups(pp->mpp, vecs, !new_path_up);
 	else if (need_switch_pathgroup(pp->mpp, 0)) {
 		if (pp->mpp->pgfailback > 0 &&
