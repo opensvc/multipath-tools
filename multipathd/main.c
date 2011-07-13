@@ -1060,7 +1060,8 @@ int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
 		return 1;
 	}
 	dm_lib_release();
-	setup_multipath(vecs, mpp);
+	if (setup_multipath(vecs, mpp) != 0)
+		return 1;
 	sync_map_state(mpp);
 
 	return 0;
