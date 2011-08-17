@@ -34,6 +34,26 @@ force GUID partition table (GPT)
 .TP
 .B \-v
 Operate verbosely
+.SH EXAMPLE
+To mount all the partitions in a raw disk image:
+.IP
+kpartx -av disk.img
+.PP
+This will output lines such as:
+.IP
+loop3p1 : 0 20964762 /dev/loop3 63
+.PP
+The 
+.I loop3p1
+is the name of a device file under 
+.I /dev/mapper
+which you can use to access the partition, for example to fsck it:
+.IP
+fsck /dev/mapper/loop3p1
+.PP
+When you're done, you need to remove the devices:
+.IP
+kpartx -d disk.img
 .SH "SEE ALSO"
 .BR multipath (8)
 .BR multipathd (8)
