@@ -198,7 +198,10 @@ struct volume_access_inq
 	char PQ_PDT;
 	char dontcare0[7];
 	char avtcvp;
-	char dontcare1[39];
+	char dontcare1;
+	char asym_access_state_cur;
+	char vendor_specific_cur;
+	char dontcare2[36];
 };
 
 extern int
@@ -214,6 +217,14 @@ libcheck_check (struct checker * c)
 		goto done;
 	} else if (((inq.PQ_PDT & 0xE0) == 0x20) || (inq.PQ_PDT & 0x7f)) {
 		/* LUN not connected*/
+		ret = PATH_DOWN;
+		goto done;
+	}
+
+	/* check if controller is in service mode */
+	if ((inq.avtcvp & 0x10) &&
+	    ((inq.asym_access_state_cur & 0x0F) == 0x3) &&
+	    (inq.vendor_specific_cur == 0x7)) {
 		ret = PATH_DOWN;
 		goto done;
 	}
