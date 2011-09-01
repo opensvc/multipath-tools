@@ -373,7 +373,7 @@ add_map_without_path (struct vectors * vecs, char * alias)
 	if (!mpp || !alias)
 		return NULL;
 
-	mpp->alias = alias;
+	mpp->alias = STRDUP(alias);
 
 	if (setup_multipath(vecs, mpp)) {
 		mpp->alias = NULL;
