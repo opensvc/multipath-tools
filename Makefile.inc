@@ -31,6 +31,7 @@ man5dir     = $(prefix)/usr/share/man/man5
 rcdir	    = $(prefix)/etc/init.d
 syslibdir   = $(prefix)/$(LIB)
 libdir	    = $(prefix)/$(LIB)/multipath
+unitdir     = $(prefix)/lib/systemd/system
 
 GZIP        = /bin/gzip -9 -c
 INSTALL_PROGRAM = install

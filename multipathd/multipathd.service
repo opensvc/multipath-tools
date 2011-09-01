@@ -1,0 +1,14 @@
+[Unit]
+Description=Device-Mapper Multipath Device Controller
+Before=iscsi.service iscsid.service
+After=syslog.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/multipathd.pid
+ExecStart=/sbin/multipathd
+ExecReload=/sbin/multipathd reconfigure
+#ExecStop=/path/to/scrip delete-me if not necessary
+
+[Install]
+WantedBy=multi-user.target
