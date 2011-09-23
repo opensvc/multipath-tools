@@ -15,6 +15,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <limits.h>
+#include <linux/oom.h>
 
 /*
  * libcheckers
@@ -1458,17 +1459,35 @@ setscheduler (void)
 }
 
 static void
-set_oom_adj (int val)
+set_oom_adj (void)
 {
+	int retry = 1;
+	char *file = "/proc/self/oom_score_adj";
+	int score = OOM_SCORE_ADJ_MIN;
 	FILE *fp;
+	struct stat st;
 
-	fp = fopen("/proc/self/oom_adj", "w");
-
-	if (!fp)
-		return;
-
-	fprintf(fp, "%i", val);
-	fclose(fp);
+	do {
+		if (stat(file, &st) == 0){
+			fp = fopen(file, "w");
+			if (!fp) {
+				condlog(0, "couldn't fopen %s : %s", file,
+					strerror(errno));
+				return;
+			}
+			fprintf(fp, "%i", score);
+			fclose(fp);
+			return;
+		}
+		if (errno != ENOENT) {
+			condlog(0, "couldn't stat %s : %s", file,
+				strerror(errno));
+			return;
+		}
+		file = "/proc/self/oom_adj";
+		score = OOM_ADJUST_MIN;
+	} while (retry--);
+	condlog(0, "couldn't adjust oom score");
 }
 
 static int
@@ -1547,7 +1566,7 @@ child (void * param)
 
 	signal_init();
 	setscheduler();
-	set_oom_adj(-16);
+	set_oom_adj();
 	vecs = gvecs = init_vecs();
 
 	if (!vecs)
