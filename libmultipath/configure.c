@@ -35,6 +35,7 @@
 #include "alias.h"
 #include "prio.h"
 #include "util.h"
+#include "uxsock.h"
 
 extern int
 setup_map (struct multipath * mpp, char * params, int params_size)
@@ -448,6 +449,34 @@ deadmap (struct multipath * mpp)
 	return 1; /* dead */
 }
 
+int check_daemon(void)
+{
+	int fd;
+	char *reply;
+	size_t len;
+	int ret = 0;
+
+	fd = ux_socket_connect(DEFAULT_SOCKET);
+	if (fd == -1)
+		return 0;
+
+	if (send_packet(fd, "show daemon", 12) != 0)
+		goto out;
+	if (recv_packet(fd, &reply, &len) != 0)
+		goto out;
+
+	if (strstr(reply, "shutdown"))
+		goto out_free;
+
+	ret = 1;
+
+out_free:
+	FREE(reply);
+out:
+	close(fd);
+	return ret;
+}
+
 extern int
 coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_reload)
 {
@@ -555,7 +584,16 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 		if (r == DOMAP_DRY)
 			continue;
 
-		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
+		if (!conf->daemon && !conf->allow_queueing && !check_daemon()) {
+			if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
+			    mpp->no_path_retry != NO_PATH_RETRY_FAIL)
+				condlog(3, "%s: multipathd not running, unset "
+					"queue_if_no_path feature", mpp->alias);
+			if (!dm_queue_if_no_path(mpp->alias, 0))
+				remove_feature(&mpp->features,
+					       "queue_if_no_path");
+		}
+		else if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
 			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL) {
 				condlog(3, "%s: unset queue_if_no_path feature",
 					mpp->alias);
