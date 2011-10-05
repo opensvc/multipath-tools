@@ -166,7 +166,7 @@ sysfs_get_timeout(struct sysfs_device *dev, unsigned int *timeout)
 	if (safe_sprintf(attr_path, "%s/device", dev->devpath))
 		return 1;
 
-	len = sysfs_attr_get_value(dev->devpath, "timeout", attr, NAME_SIZE);
+	len = sysfs_attr_get_value(attr_path, "timeout", attr, NAME_SIZE);
 	if (!len) {
 		condlog(3, "%s: No timeout value in sysfs", dev->devpath);
 		return 1;
