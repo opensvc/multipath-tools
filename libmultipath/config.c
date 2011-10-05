@@ -320,6 +320,10 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(no_path_retry);
 	merge_num(minio);
 	merge_num(minio_rq);
+	merge_num(pg_timeout);
+	merge_num(flush_on_last_del);
+	merge_num(fast_io_fail);
+	merge_num(dev_loss);
 
 	return 0;
 }

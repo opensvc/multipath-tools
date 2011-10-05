@@ -860,7 +860,7 @@ snprint_hwentry (char * buff, int len, struct hwentry * hwe)
 	if (fwd > len)
 		return len;
 	iterate_sub_keywords(rootkw, kw, i) {
-		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k \"%v\"\n",
+		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
 				kw, hwe);
 		if (fwd > len)
 			return len;
