@@ -116,7 +116,6 @@ usage (char * progname)
 		"          . multipath including the path with maj:min 'dev' (ex: 8:0)\n" \
 		);
 
-	exit(1);
 }
 
 static int
@@ -404,8 +403,10 @@ main (int argc, char *argv[])
 			break;
 		case 'v':
 			if (sizeof(optarg) > sizeof(char *) ||
-			    !isdigit(optarg[0]))
+			    !isdigit(optarg[0])) {
 				usage (argv[0]);
+				exit(1);
+			}
 
 			conf->verbosity = atoi(optarg);
 			break;
@@ -445,24 +446,29 @@ main (int argc, char *argv[])
 			if (conf->pgpolicy_flag == -1) {
 				printf("'%s' is not a valid policy\n", optarg);
 				usage(argv[0]);
+				exit(1);
 			}
 			break;
 		case 'r':
 			conf->force_reload = 1;
 			break;
 		case 't':
-			dump_config();
+			r = dump_config();
 			goto out;
 		case 'h':
 			usage(argv[0]);
+			exit(0);
 		case ':':
 			fprintf(stderr, "Missing option arguement\n");
 			usage(argv[0]);
+			exit(1);
 		case '?':
 			fprintf(stderr, "Unknown switch: %s\n", optarg);
 			usage(argv[0]);
+			exit(1);
 		default:
 			usage(argv[0]);
+			exit(1);
 		}
 	}
 	if (optind < argc) {
