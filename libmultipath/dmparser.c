@@ -13,6 +13,7 @@
 #include "structs.h"
 #include "util.h"
 #include "debug.h"
+#include "config.h"
 
 #define WORD_SIZE 64
 
@@ -330,7 +331,7 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 				strncpy(pp->dev_t, word, BLK_DEV_SIZE);
 
 				/* Only call this in multipath client mode */
-				if (!mpp->waiter && store_path(pathvec, pp))
+				if (!conf->daemon && store_path(pathvec, pp))
 					goto out1;
 			}
 			FREE(word);
