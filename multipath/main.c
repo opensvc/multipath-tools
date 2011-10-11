@@ -22,6 +22,8 @@
  * Copyright (c) 2005 Edward Goggin, EMC
  */
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -51,6 +53,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include "dev_t.h"
 
 int logsink;
 
@@ -374,13 +377,29 @@ dump_config (void)
 	return 0;
 }
 
+static int
+get_dev_type(char *dev) {
+	struct stat buf;
+	int i;
+
+	if (stat(dev, &buf) == 0 && S_ISBLK(buf.st_mode)) {
+		if (dm_is_dm_major(MAJOR(buf.st_rdev)))
+			return DEV_DEVMAP;
+		return DEV_DEVNODE;
+	}
+	else if (sscanf(dev, "%d:%d", &i, &i) == 2)
+		return DEV_DEVT;
+	else
+		return DEV_DEVMAP;
+}
+
 int
 main (int argc, char *argv[])
 {
 	int arg;
 	extern char *optarg;
 	extern int optind;
-	int i, r = 1;
+	int r = 1;
 
 	if (getuid() != 0) {
 		fprintf(stderr, "need to be root\n");
@@ -478,14 +497,7 @@ main (int argc, char *argv[])
 			goto out;
 
 		strncpy(conf->dev, argv[optind], FILE_NAME_SIZE);
-
-		if (filepresent(conf->dev))
-			conf->dev_type = DEV_DEVNODE;
-		else if (sscanf(conf->dev, "%d:%d", &i, &i) == 2)
-			conf->dev_type = DEV_DEVT;
-		else
-			conf->dev_type = DEV_DEVMAP;
-
+		conf->dev_type = get_dev_type(conf->dev);
 	}
 	conf->daemon = 0;
 

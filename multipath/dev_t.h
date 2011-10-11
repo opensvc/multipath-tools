@@ -1,15 +1,3 @@
-#define MINORBITS       20
-#define MINORMASK       ((1U << MINORBITS) - 1)
-
-#define MAJOR(dev)      ((unsigned int) ((dev) >> MINORBITS))
-#define MINOR(dev)      ((unsigned int) ((dev) & MINORMASK))
-#define MKDEV(ma,mi)    (((ma) << MINORBITS) | (mi))
-
-#define print_dev_t(buffer, dev)                                        \
-	sprintf((buffer), "%u:%u\n", MAJOR(dev), MINOR(dev))
-
-#define format_dev_t(buffer, dev)                                       \
-	({                                                              \
-		sprintf(buffer, "%u:%u", MAJOR(dev), MINOR(dev));       \
-		buffer;                                                 \
-	})
+#define MAJOR(dev)      ((dev & 0xfff00) >> 8)
+#define MINOR(dev)      ((dev & 0xff) | ((dev >> 12) & 0xfff00))
+#define MKDEV(ma,mi)    ((mi & 0xff) | (ma << 8) | ((mi & ~0xff) << 12))
