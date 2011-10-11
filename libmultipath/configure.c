@@ -193,8 +193,8 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 		return;
 	}
 	if (cmpp->size != mpp->size) {
-		mpp->action = ACT_RELOAD;
-		condlog(3, "%s: set ACT_RELOAD (size change)",
+		mpp->action = ACT_RESIZE;
+		condlog(3, "%s: set ACT_RESIZE (size change)",
 			mpp->alias);
 		return;
 	}
