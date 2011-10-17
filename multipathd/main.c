@@ -63,8 +63,13 @@
 #define FILE_NAME_SIZE 256
 #define CMDSIZE 160
 
-#define LOG_MSG(a,b) \
-	if (strlen(b)) condlog(a, "%s: %s - %s", pp->mpp->alias, pp->dev, b);
+#define LOG_MSG(a, b) \
+do { \
+	if (pp->offline) \
+		condlog(a, "%s: %s - path offline", pp->mpp->alias, pp->dev); \
+	else if (strlen(b)) \
+		condlog(a, "%s: %s - %s", pp->mpp->alias, pp->dev, b); \
+} while(0)
 
 pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -365,6 +370,7 @@ ev_add_path (char * devname, struct vectors * vecs)
 	struct path * pp;
 	char empty_buff[WWID_SIZE] = {0};
 	char params[PARAMS_SIZE] = {0};
+	int retries = 3;
 	int start_waiter = 0;
 
 	if (strstr(devname, "..") != NULL) {
@@ -478,12 +484,14 @@ rescan:
 		/*
 		 * deal with asynchronous uevents :((
 		 */
-		if (mpp->action == ACT_RELOAD) {
+		if (mpp->action == ACT_RELOAD && retries-- > 0) {
 			condlog(0, "%s: uev_add_path sleep", mpp->alias);
 			sleep(1);
 			update_mpp_paths(mpp, vecs->pathvec);
 			goto rescan;
 		}
+		else if (mpp->action == ACT_RELOAD)
+			condlog(0, "%s: giving up reload", mpp->alias);
 		else
 			goto fail_map;
 	}
@@ -502,8 +510,12 @@ rescan:
 	    start_waiter_thread(mpp, vecs))
 			goto fail_map;
 
-	condlog(2, "%s path added to devmap %s", devname, mpp->alias);
-	return 0;
+	if (retries >= 0) {
+		condlog(2, "%s path added to devmap %s", devname, mpp->alias);
+		return 0;
+	}
+	else
+		return 1;
 
 fail_map:
 	remove_map(mpp, vecs, 1);

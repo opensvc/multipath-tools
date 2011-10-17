@@ -805,8 +805,13 @@ get_state (struct path * pp, int daemon)
 	condlog(3, "%s: get_state", pp->dev);
 
 	if (!checker_selected(c)) {
-		if (daemon)
-			pathinfo(pp, conf->hwtable, DI_SYSFS);
+		if (daemon || pp->sysdev == NULL) {
+			if (pathinfo(pp, conf->hwtable, DI_SYSFS) != 0) {
+				condlog(3, "%s: couldn't get sysfs pathinfo",
+					pp->dev);
+				return PATH_UNCHECKED;
+			}
+		}
 		select_checker(pp);
 		if (!checker_selected(c)) {
 			condlog(3, "%s: No checker selected", pp->dev);
