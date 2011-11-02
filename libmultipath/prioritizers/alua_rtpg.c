@@ -24,7 +24,7 @@
 #include "alua_rtpg.h"
 
 #define SENSE_BUFF_LEN  32
-#define DEF_TIMEOUT     300000
+#define DEF_TIMEOUT     60000
 
 /*
  * Macro used to print debug messaged.
