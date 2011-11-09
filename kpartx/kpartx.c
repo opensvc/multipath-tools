@@ -241,6 +241,7 @@ main(int argc, char **argv){
 	while ((arg = getopt(argc, argv, short_opts)) != EOF) switch(arg) {
 		case 'r':
 			ro=1;
+			break;
 		case 'f':
 			force_devmap=1;
 			break;
@@ -267,6 +268,7 @@ main(int argc, char **argv){
 			break;
 		case 's':
 			sync = 1;
+			break;
 		case 'u':
 			what = UPDATE;
 			break;
