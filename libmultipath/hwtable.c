@@ -431,7 +431,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM FAStT 1722-600 */
 		.vendor        = "IBM",
-		.product       = "1722-600",
+		.product       = "^1722-600",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 rdac",
@@ -449,7 +449,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM DS4100 */
 		.vendor        = "IBM",
-		.product       = "1724",
+		.product       = "^1724",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 rdac",
@@ -467,7 +467,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM DS3200 / DS3300 / DS3400 */
 		.vendor        = "IBM",
-		.product       = "1726",
+		.product       = "^1726",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 rdac",
@@ -485,7 +485,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM DS4400 / DS4500 / FAStT700 */
 		.vendor        = "IBM",
-		.product       = "1742",
+		.product       = "^1742",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -502,7 +502,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		.vendor        = "IBM",
-		.product       = "1745|1746",
+		.product       = "^1745|^1746",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
@@ -520,7 +520,7 @@ static struct hwentry default_hw[] = {
 	{
 	    /* IBM DS4700 */
 		.vendor        = "IBM",
-		.product       = "1814",
+		.product       = "^1814",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -538,7 +538,7 @@ static struct hwentry default_hw[] = {
 	{
 	    /* IBM DS4800 */
 		.vendor        = "IBM",
-		.product       = "1815",
+		.product       = "^1815",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -556,7 +556,7 @@ static struct hwentry default_hw[] = {
 	{
 	    /* IBM DS5000 */
 		.vendor        = "IBM",
-		.product       = "1818",
+		.product       = "^1818",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -574,7 +574,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM Netfinity Fibre Channel RAID Controller Unit */
 		.vendor        = "IBM",
-		.product       = "3526",
+		.product       = "^3526",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -592,7 +592,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM DS4200 / FAStT200 */
 		.vendor        = "IBM",
-		.product       = "3542",
+		.product       = "^3542",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
@@ -610,7 +610,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM ESS F20 aka Shark */
 		.vendor        = "IBM",
-		.product       = "2105800",
+		.product       = "^2105800",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
@@ -628,7 +628,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM ESS F20 aka Shark */
 		.vendor        = "IBM",
-		.product       = "2105F20",
+		.product       = "^2105F20",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
@@ -646,7 +646,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM DS6000 */
 		.vendor        = "IBM",
-		.product       = "1750500",
+		.product       = "^1750500",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
@@ -664,7 +664,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM DS8000 */
 		.vendor        = "IBM",
-		.product       = "2107900",
+		.product       = "^2107900",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
@@ -682,7 +682,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM SAN Volume Controller */
 		.vendor        = "IBM",
-		.product       = "2145",
+		.product       = "^2145",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
@@ -738,7 +738,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* IBM IPR */
 		.vendor        = "IBM",
-		.product       = "IPR.*",
+		.product       = "^IPR.*",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 alua",
