@@ -288,7 +288,7 @@ rlookup_binding(FILE *f, char **map_wwid, char *map_alias)
 		curr_id = scan_devname(alias, NULL); /* TBD: Why this call? */
 		if (curr_id >= id)
 			id = curr_id + 1;
-		wwid = strtok(NULL, " \t");
+		wwid = strtok(NULL, "");
 		if (!wwid){
 			condlog(3,
 				"Ignoring malformed line %u in bindings file",
