@@ -67,7 +67,7 @@
 #	# desc    : the default function to call to obtain a path 
 #	#           priority value. The ALUA bits in SPC-3 provide an
 #	#           exploitable prio value for example.
-#	# default : (null)
+#	# default : const
 #	#
 #	prio	"alua"
 #
