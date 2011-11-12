@@ -501,6 +501,8 @@ load_config (char * file)
 	conf->flush_on_last_del = 0;
 	conf->attribute_flags = 0;
 	conf->reassign_maps = DEFAULT_REASSIGN_MAPS;
+	conf->checkint = DEFAULT_CHECKINT;
+	conf->max_checkint = MAX_CHECKINT(conf->checkint);
 
 	/*
 	 * preload default hwtable

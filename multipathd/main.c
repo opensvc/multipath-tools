@@ -1543,14 +1543,6 @@ child (void * param)
 
 	setlogmask(LOG_UPTO(conf->verbosity + 3));
 
-	/*
-	 * fill the voids left in the config file
-	 */
-	if (!conf->checkint) {
-		conf->checkint = DEFAULT_CHECKINT;
-		conf->max_checkint = MAX_CHECKINT(conf->checkint);
-	}
-
 	if (conf->max_fds) {
 		struct rlimit fd_limit;
 
