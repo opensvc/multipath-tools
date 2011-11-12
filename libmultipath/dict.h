@@ -6,5 +6,6 @@
 #endif
 
 void init_keywords(void);
+int get_sys_max_fds(int *);
 
 #endif /* _DICT_H */

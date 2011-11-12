@@ -255,7 +255,7 @@ def_minio_rq_handler(vector strvec)
 	return 0;
 }
 
-static int
+int
 get_sys_max_fds(int *max_fds)
 {
 	FILE *file;
