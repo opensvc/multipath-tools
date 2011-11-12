@@ -232,7 +232,7 @@ uev_add_map (struct uevent * uev, struct vectors * vecs)
 	char *alias;
 	int major = -1, minor = -1, rc;
 
-	condlog(2, "%s: add map (uevent)", uev->kernel);
+	condlog(3, "%s: add map (uevent)", uev->kernel);
 	alias = uevent_get_dm_name(uev);
 	if (!alias) {
 		condlog(3, "%s: No DM_NAME in uevent", uev->kernel);
@@ -280,6 +280,7 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 		}
 		return 0;
 	}
+	condlog(2, "%s: adding map", alias);
 
 	/*
 	 * now we can register the map
