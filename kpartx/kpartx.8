@@ -17,8 +17,14 @@ creation and deletion.
 .B \-a
 Add partition mappings
 .TP
+.B \-r
+Readonly partition mappings
+.TP
 .B \-d
 Delete partition mappings
+.TP
+.B \-u
+Update partition mappings
 .TP
 .B \-l
 List partition mappings that would be added -a
@@ -34,6 +40,9 @@ force GUID partition table (GPT)
 .TP
 .B \-v
 Operate verbosely
+.TP
+.B \-s
+Sync mode. Don't return until the partitions are created
 .SH EXAMPLE
 To mount all the partitions in a raw disk image:
 .IP
