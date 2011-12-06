@@ -17,18 +17,12 @@ OPTIONS="link_priority=50"
 ENV{DM_UUID}=="mpath-*", \
 	SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}"
 
-# Create persistent links for dmraid tables
-ENV{DM_UUID}=="dmraid-*", \
-        SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}"
-
 # Create persistent links for partitions
 ENV{DM_PART}=="?*", \
         SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}-part$env{DM_PART}"
 
 # Create dm tables for partitions
 ENV{DM_STATE}=="ACTIVE", ENV{DM_UUID}=="mpath-*", \
-        RUN+="/sbin/kpartx -u -p -part /dev/$name"
-ENV{DM_STATE}=="ACTIVE", ENV{DM_UUID}=="dmraid-*", \
         RUN+="/sbin/kpartx -u -p -part /dev/$name"
 
 LABEL="kpartx_end"
