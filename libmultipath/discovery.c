@@ -316,8 +316,11 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 		if (mpp->dev_loss){
 			snprintf(value, 11, "%u", mpp->dev_loss);
 			if (sysfs_attr_set_value(attr_path, "dev_loss_tmo",
-						 value, 11))
+						 value, 11) < 0) {
+				condlog(0, "%s failed to set %s/dev_loss_tmo",
+					mpp->alias, attr_path);
 				return 1;
+			}
 		}
 		if (mpp->fast_io_fail){
 			if (mpp->fast_io_fail == -1)
@@ -325,8 +328,12 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 			else
 				snprintf(value, 11, "%u", mpp->fast_io_fail);
 			if (sysfs_attr_set_value(attr_path, "fast_io_fail_tmo",
-						 value, 11))
+						 value, 11) < 0) {
+				condlog(0,
+					"%s failed to set %s/fast_io_fail_tmo", 
+					mpp->alias, attr_path);
 				return 1;
+			}
 		}
 	}
 	return 0;

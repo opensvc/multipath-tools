@@ -351,7 +351,7 @@ ssize_t sysfs_attr_set_value(const char *devpath, const char *attr_name,
 	char path_full[PATH_SIZE];
 	struct stat statbuf;
 	int fd;
-	ssize_t size = 0;
+	ssize_t size = -1;
 	size_t sysfs_len;
 
 	if (!attr_name || !value || !value_len)
