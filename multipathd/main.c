@@ -1193,8 +1193,12 @@ check_path (struct vectors * vecs, struct path * pp)
 				pp->dev_t, pp->tick);
 		}
 	}
-	else if (newstate == PATH_DOWN)
-		LOG_MSG(2, checker_message(&pp->checker));
+	else if (newstate == PATH_DOWN) {
+		if (conf->log_checker_err == LOG_CHKR_ERR_ONCE)
+			LOG_MSG(3, checker_message(&pp->checker));
+		else
+			LOG_MSG(2, checker_message(&pp->checker));
+	}
 
 	pp->state = newstate;
 

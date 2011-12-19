@@ -92,6 +92,7 @@ struct config {
 	int attribute_flags;
 	int fast_io_fail;
 	unsigned int dev_loss;
+	int log_checker_err;
 	int allow_queueing;
 	uid_t uid;
 	gid_t gid;

@@ -87,6 +87,11 @@ enum flush_states {
 	FLUSH_IN_PROGRESS,
 };
 
+enum log_checker_err_states {
+	LOG_CHKR_ERR_ALWAYS,
+	LOG_CHKR_ERR_ONCE,
+};
+
 struct scsi_idlun {
 	int dev_id;
 	int host_unique_id;

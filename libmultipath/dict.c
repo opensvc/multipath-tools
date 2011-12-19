@@ -525,6 +525,25 @@ def_flush_on_last_del_handler(vector strvec)
 }
 
 static int
+def_log_checker_err_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	if (strlen(buff) == 4 && !strcmp(buff, "once"))
+		conf->log_checker_err = LOG_CHKR_ERR_ONCE;
+	else if (strlen(buff) == 6 && !strcmp(buff, "always"))
+		conf->log_checker_err = LOG_CHKR_ERR_ALWAYS;
+
+	free(buff);
+	return 0;
+}
+
+static int
 names_handler(vector strvec)
 {
 	char * buff;
@@ -2338,6 +2357,14 @@ snprint_def_flush_on_last_del (char * buff, int len, void * data)
 }
 
 static int
+snprint_def_log_checker_err (char * buff, int len, void * data)
+{
+	if (conf->log_checker_err == LOG_CHKR_ERR_ONCE)
+		return snprintf(buff, len, "once");
+	return snprintf(buff, len, "always");
+}
+
+static int
 snprint_def_user_friendly_names (char * buff, int len, void * data)
 {
 	if (!conf->user_friendly_names)
@@ -2428,6 +2455,7 @@ init_keywords(void)
 	install_keyword("fast_io_fail_tmo", &def_fast_io_fail_handler, &snprint_def_fast_io_fail);
 	install_keyword("dev_loss_tmo", &def_dev_loss_handler, &snprint_def_dev_loss);
 	install_keyword("bindings_file", &bindings_file_handler, &snprint_def_bindings_file);
+	install_keyword("log_checker_err", &def_log_checker_err_handler, &snprint_def_log_checker_err);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
