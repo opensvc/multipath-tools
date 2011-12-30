@@ -771,6 +771,24 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.prio_args     = NULL,
 	},
+        {
+                /* IBM XIV Storage System */
+                .vendor        = "IBM",
+                .product       = "2810XIV",
+                .getuid        = DEFAULT_GETUID,
+                .features      = "1 queue_if_no_path",
+                .hwhandler     = DEFAULT_HWHANDLER,
+                .selector      = DEFAULT_SELECTOR,
+                .pgpolicy      = MULTIBUS,
+                .pgfailback    = 15,
+                .rr_weight     = RR_WEIGHT_NONE,
+                .no_path_retry = NO_PATH_RETRY_UNDEF,
+                .minio         = 15,
+                .minio_rq      = DEFAULT_MINIO_RQ,
+                .checker_name  = TUR,
+                .prio_name     = DEFAULT_PRIO,
+                .prio_args     = NULL,
+        },
 	/*
 	 * IBM Power Virtual SCSI Devices
 	 *
