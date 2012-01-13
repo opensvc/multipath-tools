@@ -310,7 +310,8 @@ static int
 uev_remove_map (struct uevent * uev, struct vectors * vecs)
 {
 	char *alias;
-	int minor, rc;
+	int minor;
+	struct multipath *mpp;
 
 	condlog(2, "%s: remove map (uevent)", uev->kernel);
 	alias = uevent_get_dm_name(uev);
@@ -319,9 +320,24 @@ uev_remove_map (struct uevent * uev, struct vectors * vecs)
 		return 0;
 	}
 	minor = uevent_get_minor(uev);
-	rc = ev_remove_map(uev->kernel, alias, minor, vecs);
+	mpp = find_mp_by_minor(vecs->mpvec, minor);
+
+	if (!mpp) {
+		condlog(2, "%s: devmap not registered, can't remove",
+			uev->kernel);
+		goto out;
+	}
+	if (strcmp(mpp->alias, alias)) {
+		condlog(2, "%s: minor number mismatch (map %d, event %d)",
+			mpp->alias, mpp->dmi->minor, minor);
+		goto out;
+	}
+
+	orphan_paths(vecs->pathvec, mpp);
+	remove_map_and_stop_waiter(mpp, vecs, 1);
+out:
 	FREE(alias);
-	return rc;
+	return 0;
 }
 
 int
