@@ -5,7 +5,7 @@
 
 #define WWID_SIZE		128
 #define SERIAL_SIZE		65
-#define NODE_NAME_SIZE		65
+#define NODE_NAME_SIZE		224
 #define PATH_STR_SIZE		16
 #define PARAMS_SIZE		1024
 #define FILE_NAME_SIZE		256

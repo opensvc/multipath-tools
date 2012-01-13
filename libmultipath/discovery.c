@@ -210,10 +210,11 @@ sysfs_get_size (struct sysfs_device * dev, unsigned long long * size)
 }
 
 int
-sysfs_get_fc_nodename (struct sysfs_device * dev, char * node,
+sysfs_get_tgt_nodename (struct sysfs_device * dev, char * node,
 		       unsigned int host, unsigned int channel,
 		       unsigned int target)
 {
+	unsigned int checkhost, session;
 	char attr_path[SYSFS_PATH_SIZE];
 	size_t len;
 
@@ -225,6 +226,21 @@ sysfs_get_fc_nodename (struct sysfs_device * dev, char * node,
 	}
 
 	len = sysfs_attr_get_value(attr_path, "node_name", node, NODE_NAME_SIZE);
+	if (len)
+		return 0;
+
+	if (sscanf(dev->devpath, "/devices/platform/host%u/session%u/",
+	           &checkhost, &session) != 2)
+		return 1;
+	if (checkhost != host)
+		return 1;
+	if (safe_sprintf(attr_path, "/devices/platform/host%u/session%u/iscsi_session/session%u", host, session, session)) {
+		condlog(0, "attr_path too small");
+		return 1;
+	}
+
+	len = sysfs_attr_get_value(attr_path, "targetname", node,
+				   NODE_NAME_SIZE);
 	if (!len)
 		return 1;
 
@@ -562,7 +578,7 @@ scsi_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 	/*
 	 * target node name
 	 */
-	if(!sysfs_get_fc_nodename(parent, pp->tgt_node_name,
+	if(!sysfs_get_tgt_nodename(parent, pp->tgt_node_name,
 				 pp->sg_id.host_no,
 				 pp->sg_id.channel,
 				 pp->sg_id.scsi_id)) {
