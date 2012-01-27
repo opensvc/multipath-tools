@@ -157,7 +157,7 @@ int waiteventloop (struct event_thread *waiter)
 		 */
 		pthread_cleanup_push(cleanup_lock, &waiter->vecs->lock);
 		lock(waiter->vecs->lock);
-		r = update_multipath(waiter->vecs, waiter->mapname);
+		r = update_multipath(waiter->vecs, waiter->mapname, 1);
 		lock_cleanup_pop(waiter->vecs->lock);
 
 		if (r) {

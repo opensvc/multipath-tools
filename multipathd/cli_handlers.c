@@ -68,13 +68,16 @@ show_paths (char ** r, int * len, struct vectors * vecs, char * style)
 }
 
 int
-show_map_topology (char ** r, int * len, struct multipath * mpp)
+show_map_topology (char ** r, int * len, struct multipath * mpp,
+		   struct vectors * vecs)
 {
 	char * c;
 	char * reply;
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
+	if (update_multipath(vecs, mpp->alias, 0))
+		return 1;
 	reply = MALLOC(maxlen);
 
 	while (again) {
@@ -112,9 +115,14 @@ show_maps_topology (char ** r, int * len, struct vectors * vecs)
 
 		c = reply;
 
-		vector_foreach_slot(vecs->mpvec, mpp, i)
+		vector_foreach_slot(vecs->mpvec, mpp, i) {
+			if (update_multipath(vecs, mpp->alias, 0)) {
+				i--;
+				continue;
+			}
 			c += snprint_multipath_topology(c, reply + maxlen - c,
 							mpp, 2);
+		}
 
 		again = ((c - reply) == (maxlen - 1));
 
@@ -232,7 +240,7 @@ cli_list_map_topology (void * v, char ** reply, int * len, void * data)
 
 	condlog(3, "list multipath %s (operator)", param);
 
-	return show_map_topology(reply, len, mpp);
+	return show_map_topology(reply, len, mpp, vecs);
 }
 
 int

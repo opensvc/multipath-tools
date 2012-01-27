@@ -21,7 +21,9 @@ void orphan_path (struct path * pp);
 
 int verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec);
 int update_mpp_paths(struct multipath * mpp, vector pathvec);
-int setup_multipath (struct vectors * vecs, struct multipath * mpp);
+int __setup_multipath (struct vectors * vecs, struct multipath * mpp,
+		       int reset);
+#define setup_multipath(vecs, mpp) __setup_multipath(vecs, mpp, 1)
 int update_multipath_strings (struct multipath *mpp, vector pathvec);
 	
 void remove_map (struct multipath * mpp, struct vectors * vecs, int purge_vec);
@@ -32,7 +34,7 @@ void remove_maps_and_stop_waiters (struct vectors * vecs);
 struct multipath * add_map_without_path (struct vectors * vecs, char * alias);
 struct multipath * add_map_with_path (struct vectors * vecs,
 				struct path * pp, int add_vec);
-int update_multipath (struct vectors *vecs, char *mapname);
+int update_multipath (struct vectors *vecs, char *mapname, int reset);
 void update_queue_mode_del_path(struct multipath *mpp);
 void update_queue_mode_add_path(struct multipath *mpp);
 

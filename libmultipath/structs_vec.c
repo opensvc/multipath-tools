@@ -324,7 +324,7 @@ set_no_path_retry(struct multipath *mpp)
 }
 
 extern int
-setup_multipath (struct vectors * vecs, struct multipath * mpp)
+__setup_multipath (struct vectors * vecs, struct multipath * mpp, int reset)
 {
 	if (dm_get_info(mpp->alias, &mpp->dmi)) {
 		/* Error accessing table */
@@ -353,11 +353,13 @@ setup_multipath (struct vectors * vecs, struct multipath * mpp)
 		condlog(3, "%s: no hardware entry found, using defaults",
 			mpp->alias);
 	}
-	select_rr_weight(mpp);
-	select_pgfailback(mpp);
-	set_no_path_retry(mpp);
-	select_pg_timeout(mpp);
-	select_flush_on_last_del(mpp);
+	if (reset) {
+		select_rr_weight(mpp);
+		select_pgfailback(mpp);
+		set_no_path_retry(mpp);
+		select_pg_timeout(mpp);
+		select_flush_on_last_del(mpp);
+	}
 
 	return 0;
 out:
@@ -479,7 +481,7 @@ verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
 	return count;
 }
 
-int update_multipath (struct vectors *vecs, char *mapname)
+int update_multipath (struct vectors *vecs, char *mapname, int reset)
 {
 	struct multipath *mpp;
 	struct pathgroup  *pgp;
@@ -496,7 +498,7 @@ int update_multipath (struct vectors *vecs, char *mapname)
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
 
-	if (setup_multipath(vecs, mpp))
+	if (__setup_multipath(vecs, mpp, reset))
 		return 1; /* mpp freed in setup_multipath */
 
 	adopt_paths(vecs->pathvec, mpp, 0);
