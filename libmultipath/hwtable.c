@@ -365,6 +365,22 @@ static struct hwentry default_hw[] = {
 		.prio_name     = DEFAULT_PRIO,
 		.prio_args     = NULL,
 	},
+	{
+		.vendor        = "FUJITSU",
+		.product       = "ETERNUS_DX(L|400|8000)",
+		.getuid        = DEFAULT_GETUID,
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = DEFAULT_SELECTOR,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = 10,
+		.minio         = DEFAULT_MINIO,
+		.checker_name  = TUR,
+		.prio_name     = PRIO_ALUA,
+		.prio_args     = NULL,
+	},
 	/*
 	 * Hitachi controller family
 	 *

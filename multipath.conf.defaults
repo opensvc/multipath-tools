@@ -266,6 +266,22 @@
 #		prio_args		""
 #	}
 #	device {
+#		vendor			"FUJITSU"
+#		product			"ETERNUS_DX(L|400|8000)"
+#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
+#		features		"1 queue_if_no_path"
+#		hardware_handler	"0"
+#		path_selector		"round-robin 0"
+#		path_grouping_policy	group_by_prio
+#		failback		immediate
+#		rr_weight		uniform
+#		no_path_retry		10
+#		rr_min_io		1000
+#		path_checker		tur
+#		prio			alua
+#		prio_args		""
+#	}
+#	device {
 #		vendor			"(HITACHI|HP)"
 #		product			"OPEN-.*"
 #		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
