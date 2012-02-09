@@ -216,6 +216,10 @@ struct multipath {
 
 	/* checkers shared data */
 	void * mpcontext;
+	
+	/* persistent management data*/
+	unsigned char * reservation_key;
+	unsigned char prflag;
 };
 
 struct pathgroup {

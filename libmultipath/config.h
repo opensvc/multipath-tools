@@ -49,6 +49,7 @@ struct mpentry {
 
 	char * prio_name;
 	char * prio_args;
+	unsigned char * reservation_key;
 	int pgpolicy;
 	int pgfailback;
 	int rr_weight;
@@ -113,6 +114,7 @@ struct config {
 	char * prio_args;
 	char * checker_name;
 	char * alias_prefix;
+	unsigned char * reservation_key;
 
 	vector keywords;
 	vector mptable;

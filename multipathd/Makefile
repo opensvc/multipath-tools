@@ -5,9 +5,9 @@ include ../Makefile.inc
 #
 # basic flags setting
 #
-CFLAGS += -I$(multipathdir)
+CFLAGS += -I$(multipathdir) -I$(mpathpersistdir)
 LDFLAGS += -lpthread -ldevmapper -lreadline -lncurses -ldl \
-	   -L$(multipathdir) -lmultipath
+	   -L$(multipathdir) -lmultipath -L$(mpathpersistdir) -lmpathpersist
 
 #
 # debuging stuff

@@ -459,6 +459,8 @@ free_config (struct config * conf)
 
 	if (conf->checker_name)
 		FREE(conf->checker_name);
+	if (conf->reservation_key)
+		FREE(conf->reservation_key);
 
 	free_blacklist(conf->blist_devnode);
 	free_blacklist(conf->blist_wwid);

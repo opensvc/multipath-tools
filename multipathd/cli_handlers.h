@@ -31,3 +31,7 @@ int cli_fail(void * v, char ** reply, int * len, void * data);
 int cli_quit(void * v, char ** reply, int * len, void * data);
 int cli_shutdown(void * v, char ** reply, int * len, void * data);
 int cli_reassign (void * v, char ** reply, int * len, void * data);
+int cli_getprstatus(void * v, char ** reply, int * len, void * data);
+int cli_setprstatus(void * v, char ** reply, int * len, void * data);
+int cli_unsetprstatus(void * v, char ** reply, int * len, void * data);
+

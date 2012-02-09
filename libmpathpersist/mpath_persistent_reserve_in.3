@@ -1,0 +1,80 @@
+.\"
+.TH MPATH_PERSISTENT_RESERVE_IN 3  2011-04-08 "Linux Manpage" 
+.SH NAME
+mpath_persistent_reserve_in
+.SH SYNOPSIS
+.B #include <mpath_persist.h>
+.sp
+.BI "int mpath_persistent_reserve_in (int fd, int rq_servact, struct prin_resp *resp, int noisy, int verbose)"
+.sp
+.SH DESCRIPTION
+The function in the
+.BR mpath_persistent_reserve_in ()
+sends PRIN command to the DM device and gets the response.
+.br
+.BI Parameters:
+.br
+.I fd
+.B The file descriptor of a multipath device. Input argument.
+.br
+.I rq_servact
+.B PRIN command service action. Input argument
+.br
+.I resp
+.B The response from PRIN service action. The caller should manage the memory allocation of this structure
+.br
+.I noisy
+.B Turn on debugging trace: Input argument. 0->Disable, 1->Enable
+.br
+.I verbose
+.B Set verbosity level. Input argument. value:[0-3]. 0->Crits and Errors, 1->Warnings, 2->Info, 3->Debug
+.br
+
+.SH "RETURNS"
+.I MPATH_PR_SUCCESS
+.B if PR command successful
+.br
+.I MPATH_PR_SYNTAX_ERROR        
+.B if  syntax error or invalid parameter
+.br
+.I MPATH_PR_SENSE_NOT_READY     
+.B  if command fails with [sk,asc,ascq: 0x2,*,*]
+.br
+.I MPATH_PR_SENSE_MEDIUM_ERROR
+.B  if command fails with [sk,asc,ascq: 0x3,*,*]
+.br
+.I MPATH_PR_SENSE_HARDWARE_ERROR
+.B  if command fails with [sk,asc,ascq: 0x4,*,*]
+.br
+.I MPATH_PR_SENSE_INVALID_OP
+.B  if command fails with [sk,asc,ascq: 0x5,0x20,0x0]
+.br
+.I MPATH_PR_ILLEGAL_REQ
+.B  if command fails with [sk,asc,ascq: 0x5,*,*]
+.br
+.I MPATH_PR_SENSE_UNIT_ATTENTION
+.B  if command fails with [sk,asc,ascq: 0x6,*,*]
+.br
+.I MPATH_PR_SENSE_ABORTED_COMMAND
+.B  if command fails with [sk,asc,ascq: 0xb,*,*]
+.br
+.I MPATH_PR_NO_SENSE
+.B  if command fails with [sk,asc,ascq: 0x0,*,*]
+.br
+.I MPATH_PR_SENSE_MALFORMED  
+.B if command fails with SCSI command malformed
+.br
+.I MPATH_PR_FILE_ERROR
+.B if command fails while accessing file (device node) problems(e.g. not found)
+.br
+.I MPATH_PR_DMMP_ERROR
+.B if Device Mapper related error.(e.g Error in getting dm info) 
+.br
+.I MPATH_PR_OTHER
+.B if other error/warning has occurred(e.g transport or driver error)
+.br
+
+
+.SH "SEE ALSO"
+.I  mpath_persistent_reserve_out      mpathpersist     /usr/share/doc/mpathpersist/README
+.br

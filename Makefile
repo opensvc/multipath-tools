@@ -23,8 +23,10 @@ BUILDDIRS = \
 	libmultipath \
 	libmultipath/prioritizers \
 	libmultipath/checkers \
+	libmpathpersist \
 	multipath \
 	multipathd \
+	mpathpersist \
 	kpartx
 
 ifeq   ($(MULTIPATH_VERSION),)

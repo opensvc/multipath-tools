@@ -73,6 +73,7 @@ setup_map (struct multipath * mpp, char * params, int params_size)
 	select_gid(mpp);
 	select_fast_io_fail(mpp);
 	select_dev_loss(mpp);
+	select_reservation_key(mpp);
 
 	sysfs_set_scsi_tmo(mpp);
 	/*

@@ -20,6 +20,7 @@
 #include "defaults.h"
 #include "prio.h"
 #include "errno.h"
+#include <inttypes.h>
 
 /*
  * default block handlers
@@ -540,6 +541,53 @@ def_log_checker_err_handler(vector strvec)
 		conf->log_checker_err = LOG_CHKR_ERR_ALWAYS;
 
 	free(buff);
+	return 0;
+}
+
+static int
+def_reservation_key_handler(vector strvec)
+{
+	char *buff;
+	char *tbuff;
+	int j, k;
+	int len;
+	uint64_t prkey;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	tbuff = buff;
+
+	if (!memcmp("0x",buff, 2))
+		buff = buff + 2;
+
+	len = strlen(buff);
+
+	k = strspn(buff, "0123456789aAbBcCdDeEfF");
+
+	if (len != k) {
+		FREE(tbuff);
+		return 1;
+	}
+
+	if (1 != sscanf (buff, "%" SCNx64 "", &prkey))
+	{
+		FREE(tbuff);
+		return 1;
+	}
+
+	if (!conf->reservation_key)
+		conf->reservation_key = (unsigned char *) malloc(8);
+
+	memset(conf->reservation_key, 0, 8);
+
+	for (j = 7; j >= 0; --j) {
+		conf->reservation_key[j] = (prkey & 0xff);
+		prkey >>= 8;
+	}
+
+	FREE(tbuff);
 	return 0;
 }
 
@@ -1564,6 +1612,56 @@ mp_prio_args_handler (vector strvec)
 	return 0;
 }
 
+static int
+mp_reservation_key_handler (vector strvec)
+{
+	char *buff;
+	char *tbuff;
+	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
+
+	int j, k, len;
+	uint64_t prkey;
+
+	if (!mpe)
+		return 1;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	tbuff = buff;
+	if (!memcmp(buff, "0x", 2))
+		buff = buff + 2;
+
+	len = strlen(buff);
+
+	k = strspn(buff, "0123456789aAbBcCdDeEfF");
+	if (len != k) {
+		FREE(tbuff);
+		return 1;
+	}
+
+	if (1 != sscanf (buff, "%" SCNx64 "", &prkey))
+	{
+		FREE(tbuff);
+		return 1;
+	}
+
+	if (!mpe->reservation_key)
+		mpe->reservation_key = (unsigned char *) malloc(8);
+
+	memset(mpe->reservation_key, 0, 8);
+
+	for (j = 7; j >= 0; --j) {
+		mpe->reservation_key[j] = (prkey & 0xff);
+		prkey >>= 8;
+	}
+
+	FREE(tbuff);
+	return 0;
+}
+
+
 /*
  * config file keywords printing
  */
@@ -1785,6 +1883,14 @@ snprint_mp_prio_args(char * buff, int len, void * data)
 
 	return snprintf(buff, len, "%s", mpe->prio_args);
 }
+
+static int
+snprint_mp_reservation_key (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+	return snprintf(buff, len, "%s" , mpe->reservation_key);
+}
+
 
 static int
 snprint_hw_fast_io_fail(char * buff, int len, void * data)
@@ -2394,6 +2500,12 @@ snprint_def_bindings_file (char * buff, int len, void * data)
 }
 
 static int
+snprint_def_reservation_key(char * buff, int len, void * data)
+{
+	return snprintf(buff, len, "%s", conf->reservation_key);
+}
+
+static int
 snprint_ble_simple (char * buff, int len, void * data)
 {
 	struct blentry * ble = (struct blentry *)data;
@@ -2456,6 +2568,7 @@ init_keywords(void)
 	install_keyword("dev_loss_tmo", &def_dev_loss_handler, &snprint_def_dev_loss);
 	install_keyword("bindings_file", &bindings_file_handler, &snprint_def_bindings_file);
 	install_keyword("log_checker_err", &def_log_checker_err_handler, &snprint_def_log_checker_err);
+	install_keyword("reservation_key", &def_reservation_key_handler, &snprint_def_reservation_key);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
@@ -2538,5 +2651,6 @@ init_keywords(void)
 	install_keyword("mode", &mp_mode_handler, &snprint_mp_mode);
 	install_keyword("uid", &mp_uid_handler, &snprint_mp_uid);
 	install_keyword("gid", &mp_gid_handler, &snprint_mp_gid);
+	install_keyword("reservation_key", &mp_reservation_key_handler, &snprint_mp_reservation_key);
 	install_sublevel_end();
 }

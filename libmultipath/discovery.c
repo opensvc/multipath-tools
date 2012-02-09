@@ -930,7 +930,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	 * fetch info not available through sysfs
 	 */
 	if (pp->fd < 0)
-		pp->fd = opennode(pp->dev, O_RDONLY);
+		pp->fd = opennode(pp->dev, O_RDWR);
 
 	if (pp->fd < 0) {
 		condlog(4, "Couldn't open node for %s: %s",

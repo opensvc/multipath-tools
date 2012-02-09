@@ -29,6 +29,9 @@ enum {
 	__WILDCARDS,
 	__QUIT,
 	__SHUTDOWN,
+	__GETPRSTATUS,
+	__SETPRSTATUS,
+	__UNSETPRSTATUS,
 };
 
 #define LIST		(1 << __LIST)
@@ -62,13 +65,16 @@ enum {
 #define WILDCARDS	(1 << __WILDCARDS)
 #define QUIT		(1 << __QUIT)
 #define SHUTDOWN	(1 << __SHUTDOWN)
+#define GETPRSTATUS	(1UL << __GETPRSTATUS)
+#define SETPRSTATUS	(1UL << __SETPRSTATUS)
+#define UNSETPRSTATUS	(1UL << __UNSETPRSTATUS)
 
-#define INITIAL_REPLY_LEN 1000
+#define INITIAL_REPLY_LEN	1100
 
 struct key {
 	char * str;
 	char * param;
-	int code;
+	unsigned long code;
 	int has_param;
 };
 
@@ -78,11 +84,11 @@ struct handler {
 };
 
 int alloc_handlers (void);
-int add_handler (int fp, int (*fn)(void *, char **, int *, void *));
-int set_handler_callback (int fp, int (*fn)(void *, char **, int *, void *));
+int add_handler (unsigned long fp, int (*fn)(void *, char **, int *, void *));
+int set_handler_callback (unsigned long fp, int (*fn)(void *, char **, int *, void *));
 int parse_cmd (char * cmd, char ** reply, int * len, void *);
 int load_keys (void);
-char * get_keyparam (vector v, int code);
+char * get_keyparam (vector v, unsigned long code);
 void free_keys (vector vec);
 void free_handlers (void);
 int cli_init (void);
