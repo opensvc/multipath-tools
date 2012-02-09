@@ -323,12 +323,6 @@ main(int argc, char **argv){
 		device = loopdev;
 	}
 
-	if (delim == NULL) {
-		delim = malloc(DELIM_SIZE);
-		memset(delim, 0, DELIM_SIZE);
-		set_delimiter(device, delim);
-	}
-
 	off = find_devname_offset(device);
 
 	if (!loopdev) {
@@ -348,6 +342,12 @@ main(int argc, char **argv){
 				  (unsigned int)MINOR(buf.st_rdev))) {
 		/* Feature 'no_partitions' is set, return */
 		return 0;
+	}
+
+	if (delim == NULL) {
+		delim = malloc(DELIM_SIZE);
+		memset(delim, 0, DELIM_SIZE);
+		set_delimiter(device, delim);
 	}
 
 	fd = open(device, O_RDONLY);
