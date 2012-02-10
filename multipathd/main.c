@@ -530,7 +530,7 @@ rescan:
 	 * update our state from kernel regardless of create or reload
 	 */
 	if (setup_multipath(vecs, mpp))
-		goto fail_map;
+		goto fail; /* if setup_multipath fails, it removes the map */
 
 	sync_map_state(mpp);
 
