@@ -299,17 +299,17 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 			no_path_retry_tmo = MAX_DEV_LOSS_TMO;
 		if (no_path_retry_tmo > dev_loss_tmo)
 			dev_loss_tmo = no_path_retry_tmo;
-		condlog(3, "%s: update dev_loss_tmo to %d\n",
+		condlog(3, "%s: update dev_loss_tmo to %d",
 			mpp->alias, dev_loss_tmo);
 	} else if (mpp->no_path_retry == NO_PATH_RETRY_QUEUE) {
 		dev_loss_tmo = MAX_DEV_LOSS_TMO;
-		condlog(4, "%s: update dev_loss_tmo to %d\n",
+		condlog(3, "%s: update dev_loss_tmo to %d",
 			mpp->alias, dev_loss_tmo);
 	}
 	mpp->dev_loss = dev_loss_tmo;
-	if (mpp->fast_io_fail > mpp->dev_loss) {
+	if (mpp->fast_io_fail > (int)mpp->dev_loss) {
 		mpp->fast_io_fail = mpp->dev_loss;
-		condlog(3, "%s: update fast_io_fail to %d\n",
+		condlog(3, "%s: update fast_io_fail to %d",
 			mpp->alias, mpp->fast_io_fail);
 	}
 	if (!mpp->dev_loss && !mpp->fast_io_fail)
@@ -333,9 +333,17 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 			snprintf(value, 11, "%u", mpp->dev_loss);
 			if (sysfs_attr_set_value(attr_path, "dev_loss_tmo",
 						 value, 11) < 0) {
-				condlog(0, "%s failed to set %s/dev_loss_tmo",
-					mpp->alias, attr_path);
-				return 1;
+				int err = 1;
+				if (mpp->fast_io_fail <= 0 && mpp->dev_loss > 600) {
+					strncpy(value, "600", 4);
+					condlog(3, "%s: limiting dev_loss_tmo to 600, since fast_io_fail is not set", mpp->alias);
+					if (sysfs_attr_set_value(attr_path, "dev_loss_tmo", value, 11) >= 0)
+						err = 0;
+				}
+				if (err) {
+					condlog(0, "%s failed to set %s/dev_loss_tmo", mpp->alias, attr_path);
+					return 1;
+				}
 			}
 		}
 		if (mpp->fast_io_fail){
