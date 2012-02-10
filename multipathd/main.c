@@ -741,6 +741,7 @@ uxsock_trigger (char * str, char ** reply, int * len, void * trigger_data)
 
 	pthread_cleanup_push(cleanup_lock, &vecs->lock);
 	lock(vecs->lock);
+	pthread_testcancel();
 
 	r = parse_cmd(str, reply, len, vecs);
 
@@ -793,7 +794,9 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	if (uev_discard(uev->devpath))
 		return 0;
 
+	pthread_cleanup_push(cleanup_lock, &vecs->lock);
 	lock(vecs->lock);
+	pthread_testcancel();
 
 	/*
 	 * device map event
@@ -833,7 +836,7 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	}
 
 out:
-	unlock(vecs->lock);
+	lock_cleanup_pop(vecs->lock);
 	return r;
 }
 
@@ -1287,6 +1290,7 @@ checkerloop (void *ap)
 		block_signal(SIGHUP, &old);
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(vecs->lock);
+		pthread_testcancel();
 		condlog(4, "tick");
 
 		if (vecs->pathvec) {
