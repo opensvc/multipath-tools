@@ -318,7 +318,7 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 	vector_foreach_slot(mpp->paths, pp, i) {
 		rport_id = find_rport_id(pp);
 		if (rport_id < 0) {
-			condlog(0, "failed to find rport_id for target%d:%d:%d", pp->sg_id.host_no, pp->sg_id.channel, pp->sg_id.scsi_id);
+			condlog(3, "failed to find rport_id for target%d:%d:%d", pp->sg_id.host_no, pp->sg_id.channel, pp->sg_id.scsi_id);
 			return 1;
 		}
 

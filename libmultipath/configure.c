@@ -577,6 +577,9 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 				   "for create/reload map",
 				mpp->alias, r);
 			if (r == DOMAP_FAIL) {
+				condlog(2, "%s: %s map",
+					mpp->alias, (mpp->action == ACT_CREATE)?
+					"ignoring" : "removing");
 				remove_map(mpp, vecs, 0);
 				continue;
 			} else /* if (r == DOMAP_RETRY) */
