@@ -367,6 +367,15 @@ is_gpt_valid(int fd, uint64_t lba,
 	}
 
 
+	/* Check that sizeof_partition_entry has the correct value */
+	if (__le32_to_cpu((*gpt)->sizeof_partition_entry) != sizeof(gpt_entry)) {
+		// printf("GUID partition entry size check failed.\n");
+		free(*gpt);
+		*gpt = NULL;
+		return 0;
+	}
+
+
 	if (!(*ptes = alloc_read_gpt_entries(fd, *gpt))) {
 		free(*gpt);
 		*gpt = NULL;
