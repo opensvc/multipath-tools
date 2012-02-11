@@ -11,7 +11,7 @@ LIBS = $(DEVLIB).$(SONAME)
 
 
 CFLAGS += -I$(multipathdir) -I$(mpathpersistdir) 
-LIBDEPS +=  -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath -lsysfs
+LIBDEPS +=  -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath
 
 OBJS = mpath_persist.o mpath_updatepr.o mpath_pr_ioctl.o 
 

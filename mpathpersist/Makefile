@@ -5,7 +5,7 @@ include ../Makefile.inc
 OBJS = main.o 
 
 CFLAGS += -I$(multipathdir) -I$(mpathpersistdir) 
-LDFLAGS += -lpthread -ldevmapper -lsysfs -L$(mpathpersistdir) -lmpathpersist -L$(multipathdir) -lmultipath 
+LDFLAGS += -lpthread -ldevmapper -L$(mpathpersistdir) -lmpathpersist -L$(multipathdir) -lmultipath 
 
 EXEC = mpathpersist
 
