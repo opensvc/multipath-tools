@@ -172,38 +172,62 @@ get_target_port_group_support(int fd)
 int
 get_target_port_group(int fd)
 {
-	unsigned char		buf[128];
+	unsigned char		*buf;
 	struct vpd83_data *	vpd83;
 	struct vpd83_dscr *	dscr;
 	int			rc;
+	int			buflen, scsi_buflen;
 
-	memset(buf, 0, sizeof(buf));
-	rc = do_inquiry(fd, 1, 0x83, buf, sizeof(buf));
-	if (!rc) {
-		vpd83 = (struct vpd83_data *) buf;
+	buflen = 128; /* Lets start from 128 */
+	buf = (unsigned char *)malloc(buflen);
+	if (!buf) {
+		PRINT_DEBUG("malloc failed: could not allocate"
+			     "%u bytes\n", buflen);
+		return -RTPG_RTPG_FAILED;
+	}
 
-		rc = -RTPG_NO_TPG_IDENTIFIER;
-		FOR_EACH_VPD83_DSCR(vpd83, dscr) {
-			if (vpd83_dscr_istype(dscr, IDTYPE_TARGET_PORT_GROUP)) {
-				struct vpd83_tpg_dscr *	p;
+	memset(buf, 0, buflen);
+	rc = do_inquiry(fd, 1, 0x83, buf, buflen);
+	if (rc < 0)
+		goto out;
 
-				if (rc != -RTPG_NO_TPG_IDENTIFIER) {
-					PRINT_DEBUG("get_target_port_group: "
-						"more than one TPG identifier "
-						"found!\n");
-					continue;
-				}
-
-				p  = (struct vpd83_tpg_dscr *) dscr->data;
-				rc = get_uint16(p->tpg);
-			}
+	scsi_buflen = (buf[2] << 8 | buf[3]) + 4;
+	if (buflen < scsi_buflen) {
+		free(buf);
+		buf = (unsigned char *)malloc(scsi_buflen);
+		if (!buf) {
+			PRINT_DEBUG("malloc failed: could not allocate"
+				     "%u bytes\n", scsi_buflen);
+			return -RTPG_RTPG_FAILED;
 		}
-		if (rc == -RTPG_NO_TPG_IDENTIFIER) {
-			PRINT_DEBUG("get_target_port_group: "
-				"no TPG identifier found!\n");
+		buflen = scsi_buflen;
+		memset(buf, 0, buflen);
+		rc = do_inquiry(fd, 1, 0x83, buf, buflen);
+		if (rc < 0)
+			goto out;
+	}
+
+	vpd83 = (struct vpd83_data *) buf;
+	rc = -RTPG_NO_TPG_IDENTIFIER;
+	FOR_EACH_VPD83_DSCR(vpd83, dscr) {
+		if (vpd83_dscr_istype(dscr, IDTYPE_TARGET_PORT_GROUP)) {
+			struct vpd83_tpg_dscr *p;
+			if (rc != -RTPG_NO_TPG_IDENTIFIER) {
+				PRINT_DEBUG("get_target_port_group: more "
+					    "than one TPG identifier found!\n");
+				continue;
+			}
+			p  = (struct vpd83_tpg_dscr *)dscr->data;
+			rc = get_uint16(p->tpg);
 		}
 	}
 
+	if (rc == -RTPG_NO_TPG_IDENTIFIER) {
+		PRINT_DEBUG("get_target_port_group: "
+			    "no TPG identifier found!\n");
+	}
+out:
+	free(buf);
 	return rc;
 }
 
