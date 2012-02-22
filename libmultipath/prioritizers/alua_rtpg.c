@@ -184,9 +184,6 @@ get_target_port_group(int fd)
 
 		rc = -RTPG_NO_TPG_IDENTIFIER;
 		FOR_EACH_VPD83_DSCR(vpd83, dscr) {
-			if ((((char *) dscr) - ((char *) vpd83)) > sizeof(buf))
-				break;
-
 			if (vpd83_dscr_istype(dscr, IDTYPE_TARGET_PORT_GROUP)) {
 				struct vpd83_tpg_dscr *	p;
 
