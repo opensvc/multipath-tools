@@ -516,7 +516,6 @@ void
 dumpHex(const char* str, int len, int log)
 {
 	const char * p = str;
-	const char * formatstr;
 	unsigned char c;
 	char buff[82];
 	const int bpstart = 5;
@@ -525,7 +524,6 @@ dumpHex(const char* str, int len, int log)
 
 	if (len <= 0)
 		return;
-	formatstr = (0 == log) ? "%.76s\n" : "%.56s\n";
 	memset(buff, ' ', 80);
 	buff[80] = '\0';
 	for (k = 0; k < len; k++) {

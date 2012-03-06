@@ -400,9 +400,7 @@ int main (int argc, char * argv[])
 	else if (prout)
 	{
 		int j; 
-		int t_arr_len=0;
 		struct prout_param_descriptor *paramp;
-		t_arr_len = MPATH_MX_TID_LEN * num_transport;
 
 		paramp= malloc(sizeof(struct prout_param_descriptor) + (sizeof(struct transportid *)*(MPATH_MX_TIDS )));
 		

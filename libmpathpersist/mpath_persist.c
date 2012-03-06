@@ -394,13 +394,7 @@ void * mpath_prin_pthread_fn (void *p)
 int mpath_send_prin_activepath (char * dev, int rq_servact, struct prin_resp * resp, int noisy)
 {
 
-	struct prin_param param;
 	int rc;
-
-	param.rq_servact = rq_servact; 
-	param.resp = resp;
-	param.noisy = noisy;
-	param.status = MPATH_PR_OTHER;
 
 	rc = prin_do_scsi_ioctl(dev, rq_servact, resp,  noisy);
 	
@@ -550,7 +544,6 @@ int mpath_prout_common(struct multipath *mpp,int rq_servact, int rq_scope,
 	int i,j, ret;
 	struct pathgroup *pgp = NULL;
 	struct path *pp = NULL;
-	struct path *pptemp = NULL;
 
 	vector_foreach_slot (mpp->pg, pgp, j){
 		vector_foreach_slot (pgp->paths, pp, i){
@@ -562,7 +555,6 @@ int mpath_prout_common(struct multipath *mpp,int rq_servact, int rq_scope,
 			condlog (3, "%s: sending pr out command to %s", mpp->wwid, pp->dev);
 			ret = send_prout_activepath(pp->dev, rq_servact, rq_scope, rq_type, 
 					paramp, noisy); 
-			pptemp = pp;
 			return ret ;
 		}
 	}
