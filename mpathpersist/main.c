@@ -260,7 +260,7 @@ int main (int argc, char * argv[])
 	}
 
 	/* set verbosity */
-	noisy = (loglevel >= 3) ? 1: 0;
+	noisy = (loglevel >= 3) ? 1 : hex;
 	verbose	= (loglevel >= 3)? 3: loglevel;
 
 	if ((prout_flag + prin_flag) == 0)
