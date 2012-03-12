@@ -307,10 +307,10 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 			mpp->alias, dev_loss_tmo);
 	}
 	mpp->dev_loss = dev_loss_tmo;
-	if (mpp->fast_io_fail > (int)mpp->dev_loss) {
-		mpp->fast_io_fail = mpp->dev_loss;
-		condlog(3, "%s: update fast_io_fail to %d",
+	if (mpp->dev_loss && mpp->fast_io_fail >= (int)mpp->dev_loss) {
+		condlog(3, "%s: turning off fast_io_fail (%d is not smaller than dev_loss_tmo)",
 			mpp->alias, mpp->fast_io_fail);
+		mpp->fast_io_fail = MP_FAST_IO_FAIL_OFF;
 	}
 	if (!mpp->dev_loss && !mpp->fast_io_fail)
 		return 0;
