@@ -334,7 +334,7 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 			if (sysfs_attr_set_value(attr_path, "dev_loss_tmo",
 						 value, 11) < 0) {
 				int err = 1;
-				if (mpp->fast_io_fail <= 0 && mpp->dev_loss > 600) {
+				if ((!mpp->fast_io_fail || mpp->fast_io_fail == MP_FAST_IO_FAIL_OFF) && mpp->dev_loss > 600) {
 					strncpy(value, "600", 4);
 					condlog(3, "%s: limiting dev_loss_tmo to 600, since fast_io_fail is not set", mpp->alias);
 					if (sysfs_attr_set_value(attr_path, "dev_loss_tmo", value, 11) >= 0)
@@ -347,8 +347,10 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 			}
 		}
 		if (mpp->fast_io_fail){
-			if (mpp->fast_io_fail == -1)
+			if (mpp->fast_io_fail == MP_FAST_IO_FAIL_OFF)
 				sprintf(value, "off");
+			else if (mpp->fast_io_fail == MP_FAST_IO_FAIL_ZERO)
+				sprintf(value, "0");
 			else
 				snprintf(value, 11, "%u", mpp->fast_io_fail);
 			if (sysfs_attr_set_value(attr_path, "fast_io_fail_tmo",

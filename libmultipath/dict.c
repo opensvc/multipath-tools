@@ -44,10 +44,12 @@ def_fast_io_fail_handler(vector strvec)
 
 	buff = set_value(strvec);
 	if (strlen(buff) == 3 && !strcmp(buff, "off"))
-		conf->fast_io_fail = -1;
+		conf->fast_io_fail = MP_FAST_IO_FAIL_OFF;
 	else if (sscanf(buff, "%d", &conf->fast_io_fail) != 1 ||
-		 conf->fast_io_fail < -1)
+		 conf->fast_io_fail < MP_FAST_IO_FAIL_ZERO)
 		conf->fast_io_fail = 0;
+	else if (conf->fast_io_fail == 0)
+		conf->fast_io_fail = MP_FAST_IO_FAIL_ZERO;
 
 	FREE(buff);
 	return 0;
@@ -873,10 +875,12 @@ hw_fast_io_fail_handler(vector strvec)
 
 	buff = set_value(strvec);
 	if (strlen(buff) == 3 && !strcmp(buff, "off"))
-		hwe->fast_io_fail = -1;
+		hwe->fast_io_fail = MP_FAST_IO_FAIL_OFF;
 	else if (sscanf(buff, "%d", &hwe->fast_io_fail) != 1 ||
-		 hwe->fast_io_fail < -1)
+		 hwe->fast_io_fail < MP_FAST_IO_FAIL_ZERO)
 		hwe->fast_io_fail = 0;
+	else if (hwe->fast_io_fail == 0)
+		hwe->fast_io_fail = MP_FAST_IO_FAIL_ZERO;
 
 	FREE(buff);
 	return 0;
@@ -1900,8 +1904,10 @@ snprint_hw_fast_io_fail(char * buff, int len, void * data)
 		return 0;
 	if (hwe->fast_io_fail == conf->fast_io_fail)
 		return 0;
-	if (hwe->fast_io_fail == -1)
+	if (hwe->fast_io_fail == MP_FAST_IO_FAIL_OFF)
 		return snprintf(buff, len, "off");
+	if (hwe->fast_io_fail == MP_FAST_IO_FAIL_ZERO)
+		return snprintf(buff, len, "0");
 	return snprintf(buff, len, "%d", hwe->fast_io_fail);
 }
 
@@ -2190,8 +2196,10 @@ snprint_def_fast_io_fail(char * buff, int len, void * data)
 {
 	if (!conf->fast_io_fail)
 		return 0;
-	if (conf->fast_io_fail == -1)
+	if (conf->fast_io_fail == MP_FAST_IO_FAIL_OFF)
 		return snprintf(buff, len, "off");
+	if (conf->fast_io_fail == MP_FAST_IO_FAIL_ZERO)
+		return snprintf(buff, len, "0");
 	return snprintf(buff, len, "%d", conf->fast_io_fail);
 }
 
