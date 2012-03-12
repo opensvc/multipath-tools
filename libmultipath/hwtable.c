@@ -955,7 +955,7 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = 128,
-		.checker_name  = DIRECTIO,
+		.checker_name  = TUR,
 		.prio_name     = PRIO_ONTAP,
 		.prio_args     = NULL,
 	},
