@@ -448,6 +448,7 @@ static struct hwentry default_hw[] = {
 		/* IBM FAStT 1722-600 */
 		.vendor        = "IBM",
 		.product       = "^1722-600",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 rdac",
@@ -466,6 +467,7 @@ static struct hwentry default_hw[] = {
 		/* IBM DS4100 */
 		.vendor        = "IBM",
 		.product       = "^1724",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 rdac",
@@ -484,6 +486,7 @@ static struct hwentry default_hw[] = {
 		/* IBM DS3200 / DS3300 / DS3400 */
 		.vendor        = "IBM",
 		.product       = "^1726",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 rdac",
@@ -502,6 +505,7 @@ static struct hwentry default_hw[] = {
 		/* IBM DS4400 / DS4500 / FAStT700 */
 		.vendor        = "IBM",
 		.product       = "^1742",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -519,6 +523,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "IBM",
 		.product       = "^1745|^1746",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
@@ -537,6 +542,7 @@ static struct hwentry default_hw[] = {
 	    /* IBM DS4700 */
 		.vendor        = "IBM",
 		.product       = "^1814",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -555,6 +561,7 @@ static struct hwentry default_hw[] = {
 	    /* IBM DS4800 */
 		.vendor        = "IBM",
 		.product       = "^1815",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -573,6 +580,7 @@ static struct hwentry default_hw[] = {
 	    /* IBM DS5000 */
 		.vendor        = "IBM",
 		.product       = "^1818",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -591,6 +599,7 @@ static struct hwentry default_hw[] = {
 		/* IBM Netfinity Fibre Channel RAID Controller Unit */
 		.vendor        = "IBM",
 		.product       = "^3526",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -869,6 +878,7 @@ static struct hwentry default_hw[] = {
 		/* DELL MD3000 */
 		.vendor        = "DELL",
 		.product       = "MD3000",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
@@ -887,6 +897,7 @@ static struct hwentry default_hw[] = {
 		/* DELL MD3000i */
 		.vendor        = "DELL",
 		.product       = "MD3000i",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
@@ -905,6 +916,7 @@ static struct hwentry default_hw[] = {
 		/* DELL MD32xx */
 		.vendor        = "DELL",
 		.product       = "MD32xx",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
@@ -923,6 +935,7 @@ static struct hwentry default_hw[] = {
 		/* DELL MD32xxi */
 		.vendor        = "DELL",
 		.product       = "MD32xxi",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
@@ -1053,6 +1066,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "SGI",
 		.product       = "TP9[45]00",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -1070,6 +1084,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "SGI",
 		.product       = "IS.*",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
@@ -1111,6 +1126,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "STK",
 		.product       = "OPENstorage D280",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -1190,6 +1206,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "SUN",
 		.product       = "CSM200_R",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -1208,6 +1225,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "SUN",
 		.product       = "LCSM100_[IEFS]",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
@@ -1226,6 +1244,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "(LSI|ENGENIO)",
 		.product       = "INF-01-00",
+		.bl_product    = "Universal Xport",
 		.getuid        = DEFAULT_GETUID,
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
