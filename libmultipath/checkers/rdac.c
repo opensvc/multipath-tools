@@ -118,7 +118,7 @@ int libcheck_init (struct checker * c)
 	set = 1;
 out:
 	if (set == 0)
-		condlog(0, "rdac checker failed to set TAS bit");
+		condlog(3, "rdac checker failed to set TAS bit");
 	return 0;
 }
 
