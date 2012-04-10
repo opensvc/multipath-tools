@@ -7,7 +7,7 @@ include ../Makefile.inc
 SONAME=0
 DEVLIB = libmultipath.so
 LIBS = $(DEVLIB).$(SONAME)
-LIBDEPS = -lpthread -ldl -ldevmapper
+LIBDEPS = -lpthread -ldl -ldevmapper -ludev
 
 OBJS = memory.o parser.o vector.o devmapper.o callout.o \
        hwtable.o blacklist.o util.o dmparser.o config.o \
