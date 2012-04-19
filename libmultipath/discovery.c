@@ -922,19 +922,33 @@ get_prio (struct path * pp)
 static int
 get_uid (struct path * pp)
 {
-	char buff[CALLOUT_MAX_SIZE], *c;
+	char *c;
+	const char *value;
 
-	if (!pp->getuid)
+	if (!pp->uid_attribute)
 		select_getuid(pp);
 
-	if (apply_format(pp->getuid, &buff[0], pp)) {
-		condlog(0, "error formatting uid callout command");
-		memset(pp->wwid, 0, WWID_SIZE);
-	} else if (execute_program(buff, pp->wwid, WWID_SIZE)) {
-		condlog(3, "error calling out %s", buff);
-		memset(pp->wwid, 0, WWID_SIZE);
+	if (!pp->udev) {
+		condlog(1, "%s: no udev information", pp->dev);
 		return 1;
 	}
+
+	memset(pp->wwid, 0, WWID_SIZE);
+	value = udev_device_get_property_value(pp->udev, pp->uid_attribute);
+	if (value && strlen(value)) {
+		size_t len = WWID_SIZE;
+
+		if (strlen(value) + 1 > WWID_SIZE) {
+			condlog(0, "%s: wwid overflow", pp->dev);
+		} else {
+			len = strlen(value);
+		}
+		strncpy(pp->wwid, value, len);
+	} else {
+		condlog(3, "%s: no %s attribute", pp->dev,
+			pp->uid_attribute);
+	}
+
 	/* Strip any trailing blanks */
 	c = strchr(pp->wwid, '\0');
 	c--;
@@ -942,7 +956,7 @@ get_uid (struct path * pp)
 		*c = '\0';
 		c--;
 	}
-	condlog(3, "%s: uid = %s (callout)", pp->dev,
+	condlog(3, "%s: uid = %s (udev)", pp->dev,
 		*pp->wwid == '\0' ? "<empty>" : pp->wwid);
 	return 0;
 }

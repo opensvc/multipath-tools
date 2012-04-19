@@ -148,7 +148,7 @@ struct path {
 	int failcount;
 	int priority;
 	int pgindex;
-	char * getuid;
+	char * uid_attribute;
 	struct prio * prio;
 	struct checker checker;
 	struct multipath * mpp;

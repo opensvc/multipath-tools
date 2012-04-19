@@ -161,11 +161,11 @@ def_pgpolicy_handler(vector strvec)
 }
 
 static int
-def_getuid_callout_handler(vector strvec)
+def_uid_attribute_handler(vector strvec)
 {
-	conf->getuid = set_value(strvec);
+	conf->uid_attribute = set_value(strvec);
 
-	if (!conf->getuid)
+	if (!conf->uid_attribute)
 		return 1;
 
 	return 0;
@@ -923,13 +923,13 @@ hw_pgpolicy_handler(vector strvec)
 }
 
 static int
-hw_getuid_callout_handler(vector strvec)
+hw_uid_attribute_handler(vector strvec)
 {
 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
 
-	hwe->getuid = set_value(strvec);
+	hwe->uid_attribute = set_value(strvec);
 
-	if (!hwe->getuid)
+	if (!hwe->uid_attribute)
 		return 1;
 
 	return 0;
@@ -1970,14 +1970,14 @@ snprint_hw_bl_product (char * buff, int len, void * data)
 }
 
 static int
-snprint_hw_getuid_callout (char * buff, int len, void * data)
+snprint_hw_uid_attribute (char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
 
-	if (!hwe->getuid)
+	if (!hwe->uid_attribute)
 		return 0;
 
-	return snprintf(buff, len, "\"%s\"", hwe->getuid);
+	return snprintf(buff, len, "\"%s\"", hwe->uid_attribute);
 }
 
 static int
@@ -2278,12 +2278,12 @@ snprint_def_path_grouping_policy (char * buff, int len, void * data)
 }
 
 static int
-snprint_def_getuid_callout (char * buff, int len, void * data)
+snprint_def_uid_attribute (char * buff, int len, void * data)
 {
-	if (!conf->getuid)
-		return snprintf(buff, len, "\"%s\"", DEFAULT_GETUID);
+	if (!conf->uid_attribute)
+		return snprintf(buff, len, "\"%s\"", DEFAULT_UID_ATTRIBUTE);
 
-	return snprintf(buff, len, "\"%s\"", conf->getuid);
+	return snprintf(buff, len, "\"%s\"", conf->uid_attribute);
 }
 
 static int
@@ -2551,7 +2551,7 @@ init_keywords(void)
 	install_keyword("multipath_dir", &multipath_dir_handler, &snprint_def_multipath_dir);
 	install_keyword("path_selector", &def_selector_handler, &snprint_def_selector);
 	install_keyword("path_grouping_policy", &def_pgpolicy_handler, &snprint_def_path_grouping_policy);
-	install_keyword("getuid_callout", &def_getuid_callout_handler, &snprint_def_getuid_callout);
+	install_keyword("uid_attribute", &def_uid_attribute_handler, &snprint_def_uid_attribute);
 	install_keyword("prio", &def_prio_handler, &snprint_def_prio);
 	install_keyword("prio_args", &def_prio_args_handler, &snprint_def_prio_args);
 	install_keyword("features", &def_features_handler, &snprint_def_features);
@@ -2579,7 +2579,7 @@ init_keywords(void)
 	install_keyword("reservation_key", &def_reservation_key_handler, &snprint_def_reservation_key);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
-	__deprecated install_keyword("default_getuid_callout", &def_getuid_callout_handler, NULL);
+	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);
 	__deprecated install_keyword("default_features", &def_features_handler, NULL);
 	__deprecated install_keyword("default_path_checker", &def_path_checker_handler, NULL);
 
@@ -2619,7 +2619,7 @@ init_keywords(void)
 	install_keyword("revision", &revision_handler, &snprint_hw_revision);
 	install_keyword("product_blacklist", &bl_product_handler, &snprint_hw_bl_product);
 	install_keyword("path_grouping_policy", &hw_pgpolicy_handler, &snprint_hw_path_grouping_policy);
-	install_keyword("getuid_callout", &hw_getuid_callout_handler, &snprint_hw_getuid_callout);
+	install_keyword("uid_attribute", &hw_uid_attribute_handler, &snprint_hw_uid_attribute);
 	install_keyword("path_selector", &hw_selector_handler, &snprint_hw_selector);
 	install_keyword("path_checker", &hw_path_checker_handler, &snprint_hw_path_checker);
 	install_keyword("checker", &hw_path_checker_handler, NULL);

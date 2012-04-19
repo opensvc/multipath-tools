@@ -25,7 +25,7 @@ struct hwentry {
 	char * vendor;
 	char * product;
 	char * revision;
-	char * getuid;
+	char * uid_attribute;
 	char * features;
 	char * hwhandler;
 	char * selector;
@@ -50,7 +50,7 @@ struct hwentry {
 struct mpentry {
 	char * wwid;
 	char * alias;
-	char * getuid;
+	char * uid_attribute;
 	char * selector;
 	char * features;
 
@@ -114,7 +114,7 @@ struct config {
 	char * udev_dir;
 	char * multipath_dir;
 	char * selector;
-	char * getuid;
+	char * uid_attribute;
 	char * features;
 	char * hwhandler;
 	char * bindings_file;
