@@ -109,6 +109,7 @@ struct config {
 	int reassign_maps;
 
 	char * dev;
+	struct udev * udev;
 	char * sysfs_dir;
 	char * udev_dir;
 	char * multipath_dir;

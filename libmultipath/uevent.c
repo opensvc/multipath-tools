@@ -46,6 +46,8 @@
 #include "debug.h"
 #include "list.h"
 #include "uevent.h"
+#include "vector.h"
+#include "config.h"
 
 typedef int (uev_trigger)(struct uevent *, void * trigger_data);
 
@@ -375,7 +377,6 @@ exit:
 int uevent_listen(void)
 {
 	int err;
-	struct udev *udev = NULL;
 	struct udev_monitor *monitor = NULL;
 	int fd, socket_flags;
 	int need_failback = 1;
@@ -391,12 +392,7 @@ int uevent_listen(void)
 	pthread_cond_init(uev_condp, NULL);
 	pthread_cleanup_push(uevq_stop, NULL);
 
-	udev = udev_new();
-	if (!udev) {
-		condlog(2, "failed to create udev context");
-		goto out;
-	}
-	monitor = udev_monitor_new_from_netlink(udev, "udev");
+	monitor = udev_monitor_new_from_netlink(conf->udev, "udev");
 	if (!monitor) {
 		condlog(2, "failed to create udev monitor");
 		goto out;
@@ -500,8 +496,6 @@ int uevent_listen(void)
 out:
 	if (monitor)
 		udev_monitor_unref(monitor);
-	if (udev)
-		udev_unref(udev);
 	if (need_failback)
 		err = failback_listen();
 	pthread_cleanup_pop(1);

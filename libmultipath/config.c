@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <libudev.h>
 
 #include "checkers.h"
 #include "memory.h"
@@ -427,6 +428,9 @@ free_config (struct config * conf)
 	if (conf->dev)
 		FREE(conf->dev);
 
+	if (conf->udev)
+		udev_unref(conf->udev);
+
 	if (conf->udev_dir)
 		FREE(conf->udev_dir);
 
@@ -491,6 +495,7 @@ load_config (char * file)
 	if (!conf->verbosity)
 		conf->verbosity = DEFAULT_VERBOSITY;
 
+	conf->udev = udev_new();
 	conf->dmrq = dm_drv_get_rq();
 	conf->dev_type = DEV_NONE;
 	conf->minio = DEFAULT_MINIO;
