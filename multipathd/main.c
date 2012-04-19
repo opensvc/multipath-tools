@@ -1504,9 +1504,15 @@ setscheduler (void)
 static void
 set_oom_adj (void)
 {
+#ifdef OOM_SCORE_ADJ_MIN
 	int retry = 1;
 	char *file = "/proc/self/oom_score_adj";
 	int score = OOM_SCORE_ADJ_MIN;
+#else
+	int retry = 0;
+	char *file = "/proc/self/oom_adj";
+	int score = OOM_ADJUST_MIN;
+#endif
 	FILE *fp;
 	struct stat st;
 
