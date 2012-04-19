@@ -19,7 +19,6 @@
 #include <dmparser.h>
 #include <ctype.h>
 #include <propsel.h>
-#include <sysfs.h>
 
 #include "mpathpr.h"
 #include "mpath_pr_ioctl.h"
@@ -40,10 +39,6 @@ mpath_lib_init (void)
 		return 1;
 	}
 
-	if (sysfs_init(conf->sysfs_dir, FILE_NAME_SIZE)){
-		condlog(0, "Failed. mpathpersist needs sysfs mounted");
-		exit(1);
-	}
 	return 0;
 }
 

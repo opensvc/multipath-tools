@@ -1607,10 +1607,6 @@ child (void * param)
 	if (!vecs)
 		exit(1);
 
-	if (sysfs_init(conf->sysfs_dir, FILE_NAME_SIZE)) {
-		condlog(0, "can not find sysfs mount point");
-		exit(1);
-	}
 	conf->daemon = 1;
 	udev_set_sync_support(0);
 	/*

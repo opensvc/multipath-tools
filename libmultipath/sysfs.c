@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <dirent.h>
+#include <libudev.h>
 
 #include "checkers.h"
 #include "vector.h"
@@ -37,171 +38,77 @@
 #include "debug.h"
 #include "devmapper.h"
 
-char sysfs_path[PATH_SIZE];
-
-int sysfs_init(char *path, size_t len)
+ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
+			     char * value, size_t value_len)
 {
-	if (path) {
-		strlcpy(sysfs_path, path, len);
-		remove_trailing_chars(sysfs_path, '/');
-	} else
-		strlcpy(sysfs_path, "/sys", sizeof(sysfs_path));
-	dbg("sysfs_path='%s'", sysfs_path);
-
-	return 0;
-}
-
-int sysfs_resolve_link(char *devpath, size_t size)
-{
-	char link_path[PATH_SIZE];
-	char link_target[PATH_SIZE];
-	int len;
-	int i;
-	int back;
-
-	strlcpy(link_path, sysfs_path, sizeof(link_path));
-	strlcat(link_path, devpath, sizeof(link_path));
-	len = readlink(link_path, link_target, sizeof(link_target));
-	if (len <= 0)
-		return -1;
-	link_target[len] = '\0';
-	dbg("path link '%s' points to '%s'", devpath, link_target);
-
-	for (back = 0; strncmp(&link_target[back * 3], "../", 3) == 0; back++)
-		;
-	dbg("base '%s', tail '%s', back %i", devpath, &link_target[back * 3], back);
-	for (i = 0; i <= back; i++) {
-		char *pos = strrchr(devpath, '/');
-
-		if (pos == NULL)
-			return -1;
-		pos[0] = '\0';
-	}
-	dbg("after moving back '%s'", devpath);
-	strlcat(devpath, "/", size);
-	strlcat(devpath, &link_target[back * 3], size);
-	return 0;
-}
-
-size_t sysfs_attr_get_value(const char *devpath, const char *attr_name,
-			    char *attr_value, int attr_len)
-{
-	char path_full[PATH_SIZE];
-	struct stat statbuf;
-	int fd;
-	ssize_t size;
-	size_t sysfs_len;
-
-	if (!attr_value || !attr_len)
-		return 0;
-
-	attr_value[0] = '\0';
-	size = 0;
-
-	dbg("open '%s'/'%s'", devpath, attr_name);
-	sysfs_len = strlcpy(path_full, sysfs_path, sizeof(path_full));
-	if(sysfs_len >= sizeof(path_full))
-		sysfs_len = sizeof(path_full) - 1;
-
-	strlcat(path_full, devpath, sizeof(path_full));
-	strlcat(path_full, "/", sizeof(path_full));
-	strlcat(path_full, attr_name, sizeof(path_full));
-
-	if (stat(path_full, &statbuf) != 0) {
-		dbg("stat '%s' failed: %s", path_full, strerror(errno));
-		goto out;
-	}
-
-	/* skip directories */
-	if (S_ISDIR(statbuf.st_mode))
-		goto out;
-
-	/* skip non-readable files */
-	if ((statbuf.st_mode & S_IRUSR) == 0)
-		goto out;
-
-	/* read attribute value */
-	fd = open(path_full, O_RDONLY);
-	if (fd < 0) {
-		dbg("attribute '%s' can not be opened: %s",
-		    path_full, strerror(errno));
-		goto out;
-	}
-	size = read(fd, attr_value, attr_len);
-	close(fd);
-	if (size < 0)
-		goto out;
-	if (size == attr_len) {
-		dbg("overflow in attribute '%s', truncating", path_full);
-		size--;
-	}
-
-	/* got a valid value, store and return it */
-	attr_value[size] = '\0';
-	remove_trailing_chars(attr_value, '\n');
-
-out:
-	return size;
-}
-
-ssize_t sysfs_attr_set_value(const char *devpath, const char *attr_name,
-			     const char *value, int value_len)
-{
-	char path_full[PATH_SIZE];
+	const char *devpath;
 	struct stat statbuf;
 	int fd;
 	ssize_t size = -1;
-	size_t sysfs_len;
 
-	if (!attr_name || !value || !value_len)
+	if (!dev || !attr_name || !value)
 		return 0;
 
-	dbg("open '%s'/'%s'", devpath, attr_name);
-	sysfs_len = snprintf(path_full, PATH_SIZE, "%s%s/%s", sysfs_path,
-			     devpath, attr_name);
-	if (sysfs_len >= PATH_SIZE || sysfs_len < 0) {
-		if (sysfs_len < 0)
-			dbg("cannot copy sysfs path %s%s/%s : %s", sysfs_path,
-			    devpath, attr_name, strerror(errno));
-		else
-			dbg("sysfs_path %s%s/%s too large", sysfs_path,
-			    devpath, attr_name);
-		goto out;
-	}
-
-	if (stat(path_full, &statbuf) != 0) {
-		dbg("stat '%s' failed: %s", path_full, strerror(errno));
-		goto out;
+	devpath = udev_device_get_syspath(dev);
+	condlog(4, "open '%s'/'%s'", devpath, attr_name);
+	if (stat(devpath, &statbuf) != 0) {
+		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
+		return 0;
 	}
 
 	/* skip directories */
 	if (S_ISDIR(statbuf.st_mode))
-		goto out;
+		return 0;
 
 	/* skip non-writeable files */
 	if ((statbuf.st_mode & S_IWUSR) == 0)
-		goto out;
+		return 0;
 
 	/* write attribute value */
-	fd = open(path_full, O_WRONLY);
+	fd = open(devpath, O_WRONLY);
 	if (fd < 0) {
-		dbg("attribute '%s' can not be opened: %s",
-		    path_full, strerror(errno));
-		goto out;
+		condlog(4, "attribute '%s' can not be opened: %s",
+			devpath, strerror(errno));
+		return 0;
 	}
 	size = write(fd, value, value_len);
-	if (size < 0)
-		dbg("write to %s failed: %s", path_full, strerror(errno));
-	else if (size < value_len) {
-		dbg("tried to write %d to %s. Wrote %d\n", value_len,
-		    path_full, size);
-		size = -1;
+	if (size < 0) {
+		condlog(4, "write to %s failed: %s", devpath, strerror(errno));
+		size = 0;
+	} else if (size < value_len) {
+		condlog(4, "tried to write %ld to %s. Wrote %ld\n",
+			(long)value_len, devpath, (long)size);
+		size = 0;
 	}
 
 	close(fd);
-out:
-
 	return size;
+}
+
+int
+sysfs_get_size (struct path *pp, unsigned long long * size)
+{
+	const char * attr;
+	int r;
+
+	if (!pp->udev)
+		return 1;
+
+	attr = udev_device_get_sysattr_value(pp->udev, "size");
+	if (!attr) {
+		condlog(3, "%s: No size attribute in sysfs", pp->dev);
+		return 1;
+	}
+
+	r = sscanf(attr, "%llu\n", size);
+
+	if (r != 1) {
+		condlog(3, "%s: Cannot parse size attribute '%s'",
+			pp->dev, attr);
+		return 1;
+	}
+
+	return 0;
 }
 
 int sysfs_check_holders(char * check_devt, char * new_devt)

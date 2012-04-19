@@ -112,17 +112,6 @@ reassign_maps_handler(vector strvec)
 }
 
 static int
-udev_dir_handler(vector strvec)
-{
-	conf->udev_dir = set_value(strvec);
-
-	if (!conf->udev_dir)
-		return 1;
-
-	return 0;
-}
-
-static int
 multipath_dir_handler(vector strvec)
 {
 	conf->multipath_dir = set_value(strvec);
@@ -2237,18 +2226,9 @@ snprint_reassign_maps (char * buff, int len, void * data)
 }
 
 static int
-snprint_def_udev_dir (char * buff, int len, void * data)
-{
-	if (!conf->udev_dir)
-		return 0;
-
-	return snprintf(buff, len, "\"%s\"", conf->udev_dir);
-}
-
-static int
 snprint_def_multipath_dir (char * buff, int len, void * data)
 {
-	if (!conf->udev_dir)
+	if (!conf->multipath_dir)
 		return 0;
 
 	return snprintf(buff, len, "\"%s\"", conf->multipath_dir);
@@ -2547,7 +2527,6 @@ init_keywords(void)
 	install_keyword("polling_interval", &polling_interval_handler, &snprint_def_polling_interval);
 	install_keyword("max_polling_interval", &max_polling_interval_handler, &snprint_def_max_polling_interval);
 	install_keyword("reassign_maps", &reassign_maps_handler, &snprint_reassign_maps);
-	install_keyword("udev_dir", &udev_dir_handler, &snprint_def_udev_dir);
 	install_keyword("multipath_dir", &multipath_dir_handler, &snprint_def_multipath_dir);
 	install_keyword("path_selector", &def_selector_handler, &snprint_def_selector);
 	install_keyword("path_grouping_policy", &def_pgpolicy_handler, &snprint_def_path_grouping_policy);

@@ -13,7 +13,6 @@
 #include "dmparser.h"
 #include "config.h"
 #include "propsel.h"
-#include "sysfs.h"
 #include "discovery.h"
 #include "prio.h"
 

@@ -431,9 +431,6 @@ free_config (struct config * conf)
 	if (conf->udev)
 		udev_unref(conf->udev);
 
-	if (conf->udev_dir)
-		FREE(conf->udev_dir);
-
 	if (conf->multipath_dir)
 		FREE(conf->multipath_dir);
 
@@ -597,14 +594,10 @@ load_config (char * file)
 		if (!conf->mptable)
 			goto out;
 	}
-	if (conf->udev_dir == NULL)
-		conf->udev_dir = set_default(DEFAULT_UDEVDIR);
-
 	if (conf->bindings_file == NULL)
 		conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 
-	if (!conf->udev_dir || !conf->multipath_dir ||
-	    !conf->bindings_file)
+	if (!conf->multipath_dir || !conf->bindings_file)
 		goto out;
 
 	return 0;

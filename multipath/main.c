@@ -412,10 +412,6 @@ main (int argc, char *argv[])
 	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
 
-	if (sysfs_init(conf->sysfs_dir, FILE_NAME_SIZE)) {
-		condlog(0, "multipath tools need sysfs mounted");
-		exit(1);
-	}
 	while ((arg = getopt(argc, argv, ":dhl::FfM:v:p:b:Brtq")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);

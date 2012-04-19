@@ -77,7 +77,6 @@ struct config {
 	int dry_run;
 	int list;
 	int pgpolicy_flag;
-	int with_sysfs;
 	int pgpolicy;
 	enum devtypes dev_type;
 	int minio;
@@ -110,8 +109,6 @@ struct config {
 
 	char * dev;
 	struct udev * udev;
-	char * sysfs_dir;
-	char * udev_dir;
 	char * multipath_dir;
 	char * selector;
 	char * uid_attribute;
