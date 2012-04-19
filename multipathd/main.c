@@ -372,14 +372,7 @@ ev_remove_map (char * devname, char * alias, int minor, struct vectors * vecs)
 static int
 uev_add_path (struct uevent *uev, struct vectors * vecs)
 {
-	struct sysfs_device * dev;
-
-	dev = sysfs_device_get(uev->devpath);
-	if (!dev) {
-		condlog(2, "%s: not found in sysfs", uev->devpath);
-		return 1;
-	}
-	condlog(2, "%s: add path (uevent)", dev->kernel);
+	condlog(2, "%s: add path (uevent)", uev->kernel);
 	return (ev_add_path(dev->kernel, vecs) != 1)? 0 : 1;
 }
 
@@ -556,21 +549,10 @@ fail:
 static int
 uev_remove_path (struct uevent *uev, struct vectors * vecs)
 {
-	struct sysfs_device * dev;
 	int retval;
 
-	dev = sysfs_device_get(uev->devpath);
-	if (!dev) {
-		condlog(2, "%s: not found in sysfs", uev->devpath);
-		return 1;
-	}
 	condlog(2, "%s: remove path (uevent)", uev->kernel);
-	retval = ev_remove_path(uev->kernel, vecs);
-
-	if (!retval)
-		sysfs_device_put(dev);
-
-	return retval;
+	return ev_remove_path(uev->kernel, vecs);
 }
 
 int
@@ -679,14 +661,8 @@ fail:
 static int
 uev_update_path (struct uevent *uev, struct vectors * vecs)
 {
-	struct sysfs_device * dev;
 	int retval, ro;
 
-	dev = sysfs_device_get(uev->devpath);
-	if (!dev) {
-		condlog(2, "%s: not found in sysfs", uev->devpath);
-		return 1;
-	}
 	ro = uevent_get_disk_ro(uev);
 
 	if (ro >= 0) {
@@ -707,8 +683,6 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			uev->kernel, pp->mpp->alias, retval);
 
 	}
-
-	sysfs_device_put(dev);
 
 	return retval;
 }
