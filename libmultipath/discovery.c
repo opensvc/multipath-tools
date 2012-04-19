@@ -162,7 +162,7 @@ sysfs_get_timeout(struct path *pp, unsigned int *timeout)
 	int r;
 	unsigned int t;
 
-	if (!pp->udev)
+	if (!pp->udev || pp->bus != SYSFS_BUS_SCSI)
 		return 1;
 
 	parent = pp->udev;
@@ -691,26 +691,56 @@ ccw_sysfs_pathinfo (struct path * pp)
 static int
 cciss_sysfs_pathinfo (struct path * pp)
 {
-	const char * attr_path;
+	const char * attr_path = NULL;
+	struct udev_device *parent;
+
+	parent = pp->udev;
+	while (parent) {
+		if (!strncmp(udev_device_get_subsystem(parent), "cciss", 5)) {
+			attr_path = udev_device_get_sysname(parent);
+			if (!attr_path)
+				break;
+			if (sscanf(attr_path, "c%id%i",
+				   &pp->sg_id.host_no,
+				   &pp->sg_id.scsi_id) == 2)
+				break;
+		}
+		parent = udev_device_get_parent(parent);
+	}
+	if (!attr_path || pp->sg_id.host_no == -1)
+		return 1;
+
+	if (sysfs_get_vendor(parent, pp->vendor_id, SCSI_VENDOR_SIZE))
+		return 1;
+
+	condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
+
+	if (sysfs_get_model(parent, pp->product_id, SCSI_PRODUCT_SIZE))
+		return 1;
+
+	condlog(3, "%s: product = %s", pp->dev, pp->product_id);
+
+	if (sysfs_get_rev(parent, pp->rev, SCSI_REV_SIZE))
+		return 1;
+
+	condlog(3, "%s: rev = %s", pp->dev, pp->rev);
+
+	/*
+	 * set the hwe configlet pointer
+	 */
+	pp->hwe = find_hwe(conf->hwtable, pp->vendor_id, pp->product_id, pp->rev);
 
 	/*
 	 * host / bus / target / lun
 	 */
-	attr_path = udev_device_get_devpath(pp->udev);
-	if (!attr_path)
-		return 1;
-
 	pp->sg_id.lun = 0;
 	pp->sg_id.channel = 0;
-	sscanf(attr_path, "cciss!c%id%i",
-			&pp->sg_id.host_no,
-			&pp->sg_id.scsi_id);
 	condlog(3, "%s: h:b:t:l = %i:%i:%i:%i",
-			pp->dev,
-			pp->sg_id.host_no,
-			pp->sg_id.channel,
-			pp->sg_id.scsi_id,
-			pp->sg_id.lun);
+		pp->dev,
+		pp->sg_id.host_no,
+		pp->sg_id.channel,
+		pp->sg_id.scsi_id,
+		pp->sg_id.lun);
 	return 0;
 }
 
@@ -818,23 +848,9 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 static int
 cciss_ioctl_pathinfo (struct path * pp, int mask)
 {
-	int ret;
-
-	if (mask & DI_SYSFS) {
-		ret = get_inq(pp->dev, pp->vendor_id, pp->product_id,
-			      pp->rev, pp->fd);
-		if (ret)
-			return ret;
-
-		condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
-		condlog(3, "%s: product = %s", pp->dev, pp->product_id);
-		condlog(3, "%s: revision = %s", pp->dev, pp->rev);
-		/*
-		 * set the hwe configlet pointer
-		 */
-		pp->hwe = find_hwe(conf->hwtable, pp->vendor_id,
-				   pp->product_id, pp->rev);
-
+	if (mask & DI_SERIAL) {
+		get_serial(pp->serial, SERIAL_SIZE, pp->fd);
+		condlog(3, "%s: serial = %s", pp->dev, pp->serial);
 	}
 	return 0;
 }
