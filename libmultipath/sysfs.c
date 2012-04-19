@@ -287,7 +287,6 @@ size_t sysfs_attr_get_value(const char *devpath, const char *attr_name,
 			    char *attr_value, int attr_len)
 {
 	char path_full[PATH_SIZE];
-	const char *path;
 	struct stat statbuf;
 	int fd;
 	ssize_t size;
@@ -303,7 +302,7 @@ size_t sysfs_attr_get_value(const char *devpath, const char *attr_name,
 	sysfs_len = strlcpy(path_full, sysfs_path, sizeof(path_full));
 	if(sysfs_len >= sizeof(path_full))
 		sysfs_len = sizeof(path_full) - 1;
-	path = &path_full[sysfs_len];
+
 	strlcat(path_full, devpath, sizeof(path_full));
 	strlcat(path_full, "/", sizeof(path_full));
 	strlcat(path_full, attr_name, sizeof(path_full));
