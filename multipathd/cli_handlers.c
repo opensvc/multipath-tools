@@ -571,7 +571,7 @@ cli_resize(void *v, char **reply, int *len, void *data)
 
 	pgp = VECTOR_SLOT(mpp->pg, 0);
 	pp = VECTOR_SLOT(pgp->paths, 0);
-	if (sysfs_get_size(pp->sysdev, &size)) {
+	if (!pp->sysdev || sysfs_get_size(pp->sysdev->devpath, &size)) {
 		condlog(0, "%s: couldn't get size for sysfs. cannot resize",
 			mapname);
 		return 1;

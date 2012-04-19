@@ -335,7 +335,7 @@ out:
 		condlog(3, "%s: checker timeout = %u ms (config file default)",
 				pp->dev, c->timeout);
 	}
-	else if (sysfs_get_timeout(pp->sysdev, &c->timeout) == 0)
+	else if (pp->sysdev && sysfs_get_timeout(pp->sysdev->devpath, &c->timeout) == 0)
 		condlog(3, "%s: checker timeout = %u ms (sysfs setting)",
 				pp->dev, c->timeout);
 	else {

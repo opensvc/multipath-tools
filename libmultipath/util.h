@@ -2,7 +2,7 @@
 #define _UTIL_H
 
 void strchop(char *);
-int basenamecpy (char * src, char * dst, int);
+int basenamecpy (const char * src, char * dst, int);
 int filepresent (char * run);
 int get_word (char * sentence, char ** word);
 size_t strlcpy(char *dst, const char *src, size_t size);

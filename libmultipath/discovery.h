@@ -24,7 +24,7 @@
 #define SCSI_COMMAND_TERMINATED 0x22
 #define SG_ERR_DRIVER_SENSE     0x08
 
-int sysfs_get_dev (struct sysfs_device * dev, char * buff, size_t len);
+int sysfs_get_dev (const char * dev, char * buff, size_t len);
 int path_discovery (vector pathvec, struct config * conf, int flag);
 
 int do_tur (char *);
@@ -34,7 +34,7 @@ int pathinfo (struct path *, vector hwtable, int mask);
 struct path * store_pathinfo (vector pathvec, vector hwtable,
 			      char * devname, int flag);
 int sysfs_set_scsi_tmo (struct multipath *mpp);
-int sysfs_get_timeout(struct sysfs_device *dev, unsigned int *timeout);
+int sysfs_get_timeout(const char * devpath, unsigned int *timeout);
 
 /*
  * discovery bitmask

@@ -20,7 +20,7 @@ strchop(char *str)
 }
 
 int
-basenamecpy (char * str1, char * str2, int str2len)
+basenamecpy (const char * str1, char * str2, int str2len)
 {
 	char *p;
 
@@ -33,7 +33,7 @@ basenamecpy (char * str1, char * str2, int str2len)
 	if (!str2)
 		return 0;
 
-	p = str1 + (strlen(str1) - 1);
+	p = (char *)str1 + (strlen(str1) - 1);
 
 	while (*--p != '/' && p != str1)
 		continue;
@@ -231,6 +231,6 @@ skip_proc:
 		condlog(0, "sysfs entry %s is not a directory\n", block_path);
 		return 1;
 	}
-	basenamecpy(block_path, devname, devname_len);
+	basenamecpy((const char *)block_path, devname, devname_len);
 	return 0;
 }

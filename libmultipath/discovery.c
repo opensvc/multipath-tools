@@ -128,19 +128,19 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 
 #define declare_sysfs_get_str(fname) \
 extern int \
-sysfs_get_##fname (struct sysfs_device * dev, char * buff, size_t len) \
+sysfs_get_##fname (const char  * devpath, char * buff, size_t len) \
 {								       \
 	int size;						       \
 								       \
-	size = sysfs_attr_get_value(dev->devpath, #fname, buff, len);	\
+	size = sysfs_attr_get_value(devpath, #fname, buff, len);	\
 	if (!size) {							\
 		condlog(3, "%s: attribute %s not found in sysfs",	\
-			dev->kernel, #fname);				\
+			devpath, #fname);				\
 		return 1;						\
 	}								\
 	if (size == len) {						\
 		condlog(3, "%s: overflow in attribute %s",		\
-			dev->kernel, #fname);				\
+			devpath, #fname);				\
 		return 2;						\
 	}								\
 	strchop(buff);							\
@@ -156,19 +156,22 @@ declare_sysfs_get_str(state);
 declare_sysfs_get_str(dev);
 
 int
-sysfs_get_timeout(struct sysfs_device *dev, unsigned int *timeout)
+sysfs_get_timeout(const char *devpath, unsigned int *timeout)
 {
 	char attr_path[SYSFS_PATH_SIZE], attr[NAME_SIZE];
 	size_t len;
 	int r;
 	unsigned int t;
 
-	if (safe_sprintf(attr_path, "%s/device", dev->devpath))
+	if (!devpath)
+		return 1;
+
+	if (safe_sprintf(attr_path, "%s/device", devpath))
 		return 1;
 
 	len = sysfs_attr_get_value(attr_path, "timeout", attr, NAME_SIZE);
 	if (!len) {
-		condlog(3, "%s: No timeout value in sysfs", dev->devpath);
+		condlog(3, "%s: No timeout value in sysfs", devpath);
 		return 1;
 	}
 
@@ -176,7 +179,7 @@ sysfs_get_timeout(struct sysfs_device *dev, unsigned int *timeout)
 
 	if (r != 1) {
 		condlog(3, "%s: Cannot parse timeout attribute '%s'",
-			dev->devpath, attr);
+			devpath, attr);
 		return 1;
 	}
 
@@ -186,15 +189,15 @@ sysfs_get_timeout(struct sysfs_device *dev, unsigned int *timeout)
 }
 
 int
-sysfs_get_size (struct sysfs_device * dev, unsigned long long * size)
+sysfs_get_size (const char * devpath, unsigned long long * size)
 {
 	char attr[NAME_SIZE];
 	size_t len;
 	int r;
 
-	len = sysfs_attr_get_value(dev->devpath, "size", attr, NAME_SIZE);
+	len = sysfs_attr_get_value(devpath, "size", attr, NAME_SIZE);
 	if (!len) {
-		condlog(3, "%s: No size attribute in sysfs", dev->devpath);
+		condlog(3, "%s: No size attribute in sysfs", devpath);
 		return 1;
 	}
 
@@ -202,7 +205,7 @@ sysfs_get_size (struct sysfs_device * dev, unsigned long long * size)
 
 	if (r != 1) {
 		condlog(3, "%s: Cannot parse size attribute '%s'",
-			dev->devpath, attr);
+			devpath, attr);
 		return 1;
 	}
 
@@ -210,7 +213,7 @@ sysfs_get_size (struct sysfs_device * dev, unsigned long long * size)
 }
 
 int
-sysfs_get_tgt_nodename (struct sysfs_device * dev, char * node,
+sysfs_get_tgt_nodename (const char * devpath, char * node,
 		       unsigned int host, unsigned int channel,
 		       unsigned int target)
 {
@@ -229,8 +232,8 @@ sysfs_get_tgt_nodename (struct sysfs_device * dev, char * node,
 	if (len)
 		return 0;
 
-	if (sscanf(dev->devpath, "/devices/platform/host%u/session%u/",
-	           &checkhost, &session) != 2)
+	if (sscanf(devpath, "/devices/platform/host%u/session%u/",
+		   &checkhost, &session) != 2)
 		return 1;
 	if (checkhost != host)
 		return 1;
@@ -544,7 +547,7 @@ get_geometry(struct path *pp)
 }
 
 static int
-scsi_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
+scsi_sysfs_pathinfo (struct path * pp, const char * parent)
 {
 	char attr_path[FILE_NAME_SIZE];
 
@@ -571,7 +574,7 @@ scsi_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 	/*
 	 * host / bus / target / lun
 	 */
-	basenamecpy(parent->devpath, attr_path, FILE_NAME_SIZE);
+	basenamecpy(parent, attr_path, FILE_NAME_SIZE);
 
 	sscanf(attr_path, "%i:%i:%i:%i",
 			&pp->sg_id.host_no,
@@ -600,7 +603,7 @@ scsi_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 }
 
 static int
-ccw_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
+ccw_sysfs_pathinfo (struct path * pp, const char * parent)
 {
 	char attr_path[FILE_NAME_SIZE];
 	char attr_buff[FILE_NAME_SIZE];
@@ -630,7 +633,7 @@ ccw_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 	/*
 	 * host / bus / target / lun
 	 */
-	basenamecpy(parent->devpath, attr_path, FILE_NAME_SIZE);
+	basenamecpy(parent, attr_path, FILE_NAME_SIZE);
 	pp->sg_id.lun = 0;
 	sscanf(attr_path, "%i.%i.%x",
 			&pp->sg_id.host_no,
@@ -647,14 +650,14 @@ ccw_sysfs_pathinfo (struct path * pp, struct sysfs_device * parent)
 }
 
 static int
-cciss_sysfs_pathinfo (struct path * pp, struct sysfs_device * dev)
+cciss_sysfs_pathinfo (struct path * pp, const char * devpath)
 {
 	char attr_path[FILE_NAME_SIZE];
 
 	/*
 	 * host / bus / target / lun
 	 */
-	basenamecpy(dev->devpath, attr_path, FILE_NAME_SIZE);
+	basenamecpy(devpath, attr_path, FILE_NAME_SIZE);
 	pp->sg_id.lun = 0;
 	pp->sg_id.channel = 0;
 	sscanf(attr_path, "cciss!c%id%i",
@@ -670,12 +673,12 @@ cciss_sysfs_pathinfo (struct path * pp, struct sysfs_device * dev)
 }
 
 static int
-common_sysfs_pathinfo (struct path * pp, struct sysfs_device *dev)
+common_sysfs_pathinfo (struct path * pp, const char * devpath)
 {
 	size_t len;
 
-	len = sysfs_attr_get_value(dev->devpath, "dev",
-				    pp->dev_t, BLK_DEV_SIZE);
+	len = sysfs_attr_get_value(devpath, "dev",
+				   pp->dev_t, BLK_DEV_SIZE);
 	if (!len) {
 		condlog(3, "%s: no 'dev' attribute in sysfs", pp->dev);
 		return 1;
@@ -683,7 +686,7 @@ common_sysfs_pathinfo (struct path * pp, struct sysfs_device *dev)
 
 	condlog(3, "%s: dev_t = %s", pp->dev, pp->dev_t);
 
-	if (sysfs_get_size(dev, &pp->size))
+	if (sysfs_get_size(devpath, &pp->size))
 		return 1;
 
 	condlog(3, "%s: size = %llu", pp->dev, pp->size);
@@ -729,7 +732,7 @@ path_offline (struct path * pp)
 		return PATH_WILD;
 	}
 
-	if (sysfs_get_state(parent, buff, SCSI_STATE_SIZE))
+	if (sysfs_get_state(parent->devpath, buff, SCSI_STATE_SIZE))
 		return PATH_WILD;
 
 	condlog(3, "%s: path state = %s", pp->dev, buff);
@@ -758,7 +761,7 @@ sysfs_pathinfo(struct path * pp)
 		return 1;
 	}
 
-	if (common_sysfs_pathinfo(pp, pp->sysdev))
+	if (common_sysfs_pathinfo(pp, pp->sysdev->devpath))
 		return 1;
 
 	parent = sysfs_device_get_parent(pp->sysdev);
@@ -782,13 +785,13 @@ sysfs_pathinfo(struct path * pp)
 	if (pp->bus == SYSFS_BUS_UNDEF)
 		return 0;
 	else if (pp->bus == SYSFS_BUS_SCSI) {
-		if (scsi_sysfs_pathinfo(pp, parent))
+		if (scsi_sysfs_pathinfo(pp, parent->devpath))
 			return 1;
 	} else if (pp->bus == SYSFS_BUS_CCW) {
-		if (ccw_sysfs_pathinfo(pp, parent))
+		if (ccw_sysfs_pathinfo(pp, parent->devpath))
 			return 1;
 	} else if (pp->bus == SYSFS_BUS_CCISS) {
-		if (cciss_sysfs_pathinfo(pp, pp->sysdev))
+		if (cciss_sysfs_pathinfo(pp, pp->sysdev->devpath))
 			return 1;
 	}
 	return 0;
@@ -859,8 +862,8 @@ get_state (struct path * pp, int daemon)
 	checker_clear_message(c);
 	if (daemon)
 		checker_set_async(c);
-	if (!conf->checker_timeout)
-		sysfs_get_timeout(pp->sysdev, &(c->timeout));
+	if (!conf->checker_timeout && pp->sysdev)
+		sysfs_get_timeout(pp->sysdev->devpath, &(c->timeout));
 	state = checker_check(c);
 	condlog(3, "%s: state = %s", pp->dev, checker_state_name(state));
 	if (state == PATH_DOWN && strlen(checker_message(c)))
