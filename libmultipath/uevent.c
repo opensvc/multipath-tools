@@ -117,6 +117,8 @@ service_uevq(struct list_head *tmpq)
 		if (my_uev_trigger && my_uev_trigger(uev, my_trigger_data))
 			condlog(0, "uevent trigger error");
 
+		if (uev->udev)
+			udev_device_unref(uev->udev);
 		FREE(uev);
 	}
 }
@@ -472,7 +474,7 @@ int uevent_listen(void)
 			if (i == HOTPLUG_NUM_ENVP - 1)
 				break;
 		}
-		udev_device_unref(dev);
+		uev->udev = dev;
 		uev->envp[i] = NULL;
 
 		condlog(3, "uevent '%s' from '%s'", uev->action, uev->devpath);

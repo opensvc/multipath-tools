@@ -234,3 +234,13 @@ skip_proc:
 	basenamecpy((const char *)block_path, devname, devname_len);
 	return 0;
 }
+
+dev_t parse_devt(const char *dev_t)
+{
+	int maj, min;
+
+	if (sscanf(dev_t,"%d:%d", &maj, &min) != 2)
+		return 0;
+
+	return makedev(maj, min);
+}

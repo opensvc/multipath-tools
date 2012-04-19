@@ -115,12 +115,6 @@ struct scsi_dev {
 	int host_no;
 };
 
-struct sysfs_device {
-	struct sysfs_device *parent;		/* parent device */
-	char devpath[PATH_SIZE];
-	char kernel[NAME_SIZE];			/* device instance name */
-};
-
 # ifndef HDIO_GETGEO
 #  define HDIO_GETGEO	0x0301	/* get device geometry */
 
@@ -134,7 +128,7 @@ struct hd_geometry {
 struct path {
 	char dev[FILE_NAME_SIZE];
 	char dev_t[BLK_DEV_SIZE];
-	struct sysfs_device *sysdev;
+	struct udev_device *udev;
 	struct scsi_idlun scsi_id;
 	struct sg_id sg_id;
 	struct hd_geometry geom;

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <libdevmapper.h>
+#include <libudev.h>
 
 #include "checkers.h"
 #include "memory.h"
@@ -46,6 +47,11 @@ free_path (struct path * pp)
 
 	if (pp->fd >= 0)
 		close(pp->fd);
+
+	if (pp->udev) {
+		udev_device_unref(pp->udev);
+		pp->udev = NULL;
+	}
 
 	FREE(pp);
 }

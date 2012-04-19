@@ -16,6 +16,8 @@
 #include <print.h>
 #include <sysfs.h>
 #include <errno.h>
+#include <libudev.h>
+#include <util.h>
 
 #include "main.h"
 #include "cli.h"
@@ -426,10 +428,15 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 		if (pp->mpp)
 			return 0;
 	} else {
+		struct udev_device *udevice;
+
+		udevice = udev_device_new_from_devnum(conf->udev, 'b',
+						      parse_devt(pp->dev_t));
 		pp = store_pathinfo(vecs->pathvec, conf->hwtable,
-				    param, DI_ALL);
+				    udevice, DI_ALL);
 		if (!pp) {
 			condlog(0, "%s: failed to store path info", param);
+			udev_device_unref(udevice);
 			return 1;
 		}
 	}
@@ -596,7 +603,7 @@ cli_resize(void *v, char **reply, int *len, void *data)
 
 	pgp = VECTOR_SLOT(mpp->pg, 0);
 	pp = VECTOR_SLOT(pgp->paths, 0);
-	if (!pp->sysdev || sysfs_get_size(pp->sysdev->devpath, &size)) {
+	if (!pp->udev || sysfs_get_size(pp, &size)) {
 		condlog(0, "%s: couldn't get size for sysfs. cannot resize",
 			mapname);
 		return 1;

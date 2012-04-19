@@ -15,6 +15,7 @@
 
 struct uevent {
 	struct list_head node;
+	struct udev_device *udev;
 	char buffer[HOTPLUG_BUFFER_SIZE + OBJECT_SIZE];
 	char *devpath;
 	char *action;

@@ -539,7 +539,6 @@ main (int argc, char *argv[])
 out:
 	udev_wait(conf->cookie);
 
-	sysfs_cleanup();
 	dm_lib_release();
 	dm_lib_exit();
 

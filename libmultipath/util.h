@@ -9,6 +9,7 @@ size_t strlcpy(char *dst, const char *src, size_t size);
 size_t strlcat(char *dst, const char *src, size_t size);
 void remove_trailing_chars(char *path, char c);
 int devt2devname (char *, int, char *);
+dev_t parse_devt(const char *dev_t);
 
 #define safe_sprintf(var, format, args...)	\
 	snprintf(var, sizeof(var), format, ##args) >= sizeof(var)

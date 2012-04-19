@@ -16,6 +16,7 @@
 #include <sys/resource.h>
 #include <limits.h>
 #include <linux/oom.h>
+#include <libudev.h>
 #include <mpath_persist.h>
 
 /*
@@ -390,13 +391,17 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 		if (pp->mpp)
 			return 0;
 	} else {
+		struct udev_device *udevice;
+
 		/*
 		 * get path vital state
 		 */
+		udevice = udev_device_ref(uev->udev);
 		if (!(pp = store_pathinfo(vecs->pathvec, conf->hwtable,
-					  uev->kernel, DI_ALL))) {
+					  udevice, DI_ALL))) {
 			condlog(0, "%s: failed to store path info",
 				uev->kernel);
+			udev_device_unref(udevice);
 			return 1;
 		}
 		pp->checkint = conf->checkint;
@@ -1670,8 +1675,6 @@ child (void * param)
 	pthread_cancel(uevent_thr);
 	pthread_cancel(uxlsnr_thr);
 	pthread_cancel(uevq_thr);
-
-	sysfs_cleanup();
 
 	lock(vecs->lock);
 	free_pathvec(vecs->pathvec, FREE_PATHS);
