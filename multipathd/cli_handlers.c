@@ -8,6 +8,7 @@
 #include <structs_vec.h>
 #include <libdevmapper.h>
 #include <devmapper.h>
+#include <discovery.h>
 #include <config.h>
 #include <configure.h>
 #include <blacklist.h>
@@ -410,18 +411,37 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, PATH);
+	struct path *pp;
 	int r;
 
 	condlog(2, "%s: add path (operator)", param);
 
 	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
-	    param) > 0 || (r = ev_add_path(param, vecs)) == 2) {
-		*reply = strdup("blacklisted\n");
-		*len = strlen(*reply) + 1;
-		condlog(2, "%s: path blacklisted", param);
-		return 0;
+			   param) > 0)
+		goto blacklisted;
+
+	pp = find_path_by_dev(vecs->pathvec, param);
+	if (pp) {
+		condlog(2, "%s: path already in pathvec", param);
+		if (pp->mpp)
+			return 0;
+	} else {
+		pp = store_pathinfo(vecs->pathvec, conf->hwtable,
+				    param, DI_ALL);
+		if (!pp) {
+			condlog(0, "%s: failed to store path info", param);
+			return 1;
+		}
 	}
+	r = ev_add_path(pp, vecs);
+	if (r == 2)
+		goto blacklisted;
 	return r;
+blacklisted:
+	*reply = strdup("blacklisted\n");
+	*len = strlen(*reply) + 1;
+	condlog(2, "%s: path blacklisted", param);
+	return 0;
 }
 
 int
@@ -429,10 +449,15 @@ cli_del_path (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, PATH);
+	struct path *pp;
 
 	condlog(2, "%s: remove path (operator)", param);
-
-	return ev_remove_path(param, vecs);
+	pp = find_path_by_dev(vecs->pathvec, param);
+	if (!pp) {
+		condlog(0, "%s: path already removed", param);
+		return 0;
+	}
+	return ev_remove_path(pp, vecs);
 }
 
 int

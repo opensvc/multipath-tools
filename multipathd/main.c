@@ -372,8 +372,37 @@ ev_remove_map (char * devname, char * alias, int minor, struct vectors * vecs)
 static int
 uev_add_path (struct uevent *uev, struct vectors * vecs)
 {
+	struct path *pp;
+
 	condlog(2, "%s: add path (uevent)", uev->kernel);
-	return (ev_add_path(dev->kernel, vecs) != 1)? 0 : 1;
+	if (strstr(uev->kernel, "..") != NULL) {
+		/*
+		 * Don't allow relative device names in the pathvec
+		 */
+		condlog(0, "%s: path name is invalid", uev->kernel);
+		return 1;
+	}
+
+	pp = find_path_by_dev(vecs->pathvec, uev->kernel);
+	if (pp) {
+		condlog(0, "%s: spurious uevent, path already in pathvec",
+			uev->kernel);
+		if (pp->mpp)
+			return 0;
+	} else {
+		/*
+		 * get path vital state
+		 */
+		if (!(pp = store_pathinfo(vecs->pathvec, conf->hwtable,
+					  uev->kernel, DI_ALL))) {
+			condlog(0, "%s: failed to store path info",
+				uev->kernel);
+			return 1;
+		}
+		pp->checkint = conf->checkint;
+	}
+
+	return (ev_add_path(pp, vecs) != 1)? 0 : 1;
 }
 
 /*
@@ -383,48 +412,19 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
  * 2: blacklisted
  */
 int
-ev_add_path (char * devname, struct vectors * vecs)
+ev_add_path (struct path * pp, struct vectors * vecs)
 {
 	struct multipath * mpp;
-	struct path * pp;
 	char empty_buff[WWID_SIZE] = {0};
 	char params[PARAMS_SIZE] = {0};
 	int retries = 3;
 	int start_waiter = 0;
 
-	if (strstr(devname, "..") != NULL) {
-		/*
-		 * Don't allow relative device names in the pathvec
-		 */
-		condlog(0, "%s: path name is invalid", devname);
-		return 1;
-	}
-
-	pp = find_path_by_dev(vecs->pathvec, devname);
-
-	if (pp) {
-		condlog(0, "%s: spurious uevent, path already in pathvec",
-			devname);
-		if (pp->mpp)
-			return 0;
-	}
-	else {
-		/*
-		 * get path vital state
-		 */
-		if (!(pp = store_pathinfo(vecs->pathvec, conf->hwtable,
-		      devname, DI_ALL))) {
-			condlog(0, "%s: failed to store path info", devname);
-			return 1;
-		}
-		pp->checkint = conf->checkint;
-	}
-
 	/*
 	 * need path UID to go any further
 	 */
 	if (memcmp(empty_buff, pp->wwid, WWID_SIZE) == 0) {
-		condlog(0, "%s: failed to get path uid", devname);
+		condlog(0, "%s: failed to get path uid", pp->dev);
 		goto fail; /* leave path added to pathvec */
 	}
 	if (filter_path(conf, pp) > 0){
@@ -441,11 +441,11 @@ rescan:
 			if (!pp->size)
 				condlog(0, "%s: failed to add new path %s, "
 					"device size is 0",
-					devname, pp->dev);
+					mpp->alias, pp->dev);
 			else
 				condlog(0, "%s: failed to add new path %s, "
 					"device size mismatch",
-					devname, pp->dev);
+					mpp->alias, pp->dev);
 			int i = find_slot(vecs->pathvec, (void *)pp);
 			if (i != -1)
 				vector_del_slot(vecs->pathvec, i);
@@ -465,7 +465,7 @@ rescan:
 	else {
 		if (!pp->size) {
 			condlog(0, "%s: failed to create new map,"
-				" %s device size is 0 ", devname, pp->dev);
+				" device size is 0 ", pp->dev);
 			int i = find_slot(vecs->pathvec, (void *)pp);
 			if (i != -1)
 				vector_del_slot(vecs->pathvec, i);
@@ -494,7 +494,7 @@ rescan:
 	 */
 	if (setup_map(mpp, params, PARAMS_SIZE)) {
 		condlog(0, "%s: failed to setup map for addition of new "
-			"path %s", mpp->alias, devname);
+			"path %s", mpp->alias, pp->dev);
 		goto fail_map;
 	}
 	/*
@@ -502,7 +502,7 @@ rescan:
 	 */
 	if (domap(mpp, params) <= 0) {
 		condlog(0, "%s: failed in domap for addition of new "
-			"path %s", mpp->alias, devname);
+			"path %s", mpp->alias, pp->dev);
 		/*
 		 * deal with asynchronous uevents :((
 		 */
@@ -533,7 +533,7 @@ rescan:
 			goto fail_map;
 
 	if (retries >= 0) {
-		condlog(2, "%s path added to devmap %s", devname, mpp->alias);
+		condlog(2, "%s path added to devmap %s", pp->dev, mpp->alias);
 		return 0;
 	}
 	else
@@ -549,27 +549,26 @@ fail:
 static int
 uev_remove_path (struct uevent *uev, struct vectors * vecs)
 {
-	int retval;
+	struct path *pp;
 
 	condlog(2, "%s: remove path (uevent)", uev->kernel);
-	return ev_remove_path(uev->kernel, vecs);
-}
-
-int
-ev_remove_path (char * devname, struct vectors * vecs)
-{
-	struct multipath * mpp;
-	struct path * pp;
-	int i, retval = 0;
-	char params[PARAMS_SIZE] = {0};
-
-	pp = find_path_by_dev(vecs->pathvec, devname);
+	pp = find_path_by_dev(vecs->pathvec, uev->kernel);
 
 	if (!pp) {
 		/* Not an error; path might have been purged earlier */
-		condlog(0, "%s: path already removed", devname);
+		condlog(0, "%s: path already removed", uev->kernel);
 		return 0;
 	}
+
+	return ev_remove_path(pp, vecs);
+}
+
+int
+ev_remove_path (struct path *pp, struct vectors * vecs)
+{
+	struct multipath * mpp;
+	int i, retval = 0;
+	char params[PARAMS_SIZE] = {0};
 
 	/*
 	 * avoid referring to the map of an orphaned path
@@ -618,8 +617,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 
 		if (setup_map(mpp, params, PARAMS_SIZE)) {
 			condlog(0, "%s: failed to setup map for"
-				" removal of path %s", mpp->alias,
-				devname);
+				" removal of path %s", mpp->alias, pp->dev);
 			goto fail;
 		}
 		/*
@@ -629,7 +627,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 		if (domap(mpp, params) <= 0) {
 			condlog(0, "%s: failed in domap for "
 				"removal of path %s",
-				mpp->alias, devname);
+				mpp->alias, pp->dev);
 			retval = 1;
 		} else {
 			/*
@@ -641,7 +639,7 @@ ev_remove_path (char * devname, struct vectors * vecs)
 			sync_map_state(mpp);
 
 			condlog(2, "%s: path removed from map %s",
-				devname, mpp->alias);
+				pp->dev, mpp->alias);
 		}
 	}
 
