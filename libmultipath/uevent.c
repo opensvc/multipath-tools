@@ -399,8 +399,10 @@ int uevent_listen(void)
 		condlog(2, "failed to create udev monitor");
 		goto out;
 	}
+#ifdef LIBUDEV_API_RECVBUF
 	if (udev_monitor_set_receive_buffer_size(monitor, 128 * 1024 * 1024))
 		condlog(2, "failed to increase buffer size");
+#endif
 	fd = udev_monitor_get_fd(monitor);
 	if (fd < 0) {
 		condlog(2, "failed to get monitor fd");
