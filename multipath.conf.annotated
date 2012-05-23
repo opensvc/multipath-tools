@@ -479,7 +479,7 @@
 #		#
 #		prio          "hp_sw"
 #
-#		#	#
+#		#
 #		# name    : prio_args
 #		# scope   : multipath & multipathd
 #		# desc    : The arguments string passed to the prio function
@@ -488,10 +488,10 @@
 #		# default : (null)
 #		#
 #		prio_args	"timeout=1000 preferredsds=foo"
-##
+#
 #		# name    : path_checker, checker
 #		# scope   : multipathd & multipathd
-#		# desc    : path checking alorithm to use to check path state
+#		# desc    : path checking algorithm to use to check path state
 #		# values  : readsector0|tur|emc_clariion|hp_sw|directio|rdac|
 #		#           cciss_tur
 #		#
