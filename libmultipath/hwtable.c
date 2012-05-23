@@ -912,11 +912,12 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "NETAPP",
 		.product       = "LUN.*",
-		.features      = "1 queue_if_no_path",
+		.features      = "3 queue_if_no_path pg_init_retries 50",
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.selector      = DEFAULT_SELECTOR,
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.flush_on_last_del = FLUSH_ENABLED,
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = 128,
