@@ -583,7 +583,7 @@ def_reservation_key_handler(vector strvec)
 }
 
 static int
-names_handler(vector strvec)
+def_names_handler(vector strvec)
 {
 	char * buff;
 
@@ -594,10 +594,12 @@ names_handler(vector strvec)
 
 	if ((strlen(buff) == 2 && !strcmp(buff, "no")) ||
 	    (strlen(buff) == 1 && !strcmp(buff, "0")))
-		conf->user_friendly_names = 0;
+		conf->user_friendly_names = USER_FRIENDLY_NAMES_OFF;
 	else if ((strlen(buff) == 3 && !strcmp(buff, "yes")) ||
 		 (strlen(buff) == 1 && !strcmp(buff, "1")))
-		conf->user_friendly_names = 1;
+		conf->user_friendly_names = USER_FRIENDLY_NAMES_ON;
+	else
+		conf->user_friendly_names = USER_FRIENDLY_NAMES_UNDEF;
 
 	FREE(buff);
 	return 0;
@@ -1207,6 +1209,32 @@ hw_flush_on_last_del_handler(vector strvec)
 	return 0;
 }
 
+static int
+hw_names_handler(vector strvec)
+{
+	struct hwentry *hwe = VECTOR_LAST_SLOT(conf->hwtable);
+	char * buff;
+
+	if (!hwe)
+		return 1;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if ((strlen(buff) == 2 && strcmp(buff, "no") == 0) ||
+	    (strlen(buff) == 1 && strcmp(buff, "0") == 0))
+		hwe->user_friendly_names = USER_FRIENDLY_NAMES_OFF;
+	else if ((strlen(buff) == 3 && strcmp(buff, "yes") == 0) ||
+		 (strlen(buff) == 1 && strcmp(buff, "1") == 0))
+		hwe->user_friendly_names = USER_FRIENDLY_NAMES_ON;
+	else
+		hwe->user_friendly_names = USER_FRIENDLY_NAMES_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
 /*
  * multipaths block handlers
  */
@@ -1654,6 +1682,31 @@ mp_reservation_key_handler (vector strvec)
 	return 0;
 }
 
+static int
+mp_names_handler(vector strvec)
+{
+	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
+	char * buff;
+
+	if (!mpe)
+		return 1;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if ((strlen(buff) == 2 && strcmp(buff, "no") == 0) ||
+	    (strlen(buff) == 1 && strcmp(buff, "0") == 0))
+		mpe->user_friendly_names = USER_FRIENDLY_NAMES_OFF;
+	else if ((strlen(buff) == 3 && strcmp(buff, "yes") == 0) ||
+		 (strlen(buff) == 1 && strcmp(buff, "1") == 0))
+		mpe->user_friendly_names = USER_FRIENDLY_NAMES_ON;
+	else
+		mpe->user_friendly_names = USER_FRIENDLY_NAMES_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
 
 /*
  * config file keywords printing
@@ -1884,6 +1937,18 @@ snprint_mp_reservation_key (char * buff, int len, void * data)
 	return snprintf(buff, len, "%s" , mpe->reservation_key);
 }
 
+	static int
+snprint_mp_user_friendly_names (char * buff, int len, void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+
+	if (mpe->user_friendly_names == USER_FRIENDLY_NAMES_UNDEF)
+		return 0;
+	else if (mpe->user_friendly_names == USER_FRIENDLY_NAMES_OFF)
+		return snprintf(buff, len, "no");
+	else
+		return snprintf(buff, len, "yes");
+}
 
 static int
 snprint_hw_fast_io_fail(char * buff, int len, void * data)
@@ -2174,6 +2239,19 @@ snprint_hw_path_checker (char * buff, int len, void * data)
 	return snprintf(buff, len, "%s", hwe->checker_name);
 }
 
+	static int
+snprint_hw_user_friendly_names (char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (hwe->user_friendly_names == USER_FRIENDLY_NAMES_UNDEF)
+		return 0;
+	else if (hwe->user_friendly_names == USER_FRIENDLY_NAMES_OFF)
+		return snprintf(buff, len, "no");
+	else
+		return snprintf(buff, len, "yes");
+}
+
 static int
 snprint_def_polling_interval (char * buff, int len, void * data)
 {
@@ -2461,10 +2539,10 @@ snprint_def_log_checker_err (char * buff, int len, void * data)
 static int
 snprint_def_user_friendly_names (char * buff, int len, void * data)
 {
-	if (!conf->user_friendly_names)
+	if (conf->user_friendly_names  == USER_FRIENDLY_NAMES_ON)
+		return snprintf(buff, len, "yes");
+	else
 		return snprintf(buff, len, "no");
-
-	return snprintf(buff, len, "yes");
 }
 
 static int
@@ -2547,7 +2625,7 @@ init_keywords(void)
 	install_keyword("checker_timeout", &def_checker_timeout_handler, &snprint_def_checker_timeout);
 	install_keyword("pg_timeout", &def_pg_timeout_handler, &snprint_def_pg_timeout);
 	install_keyword("flush_on_last_del", &def_flush_on_last_del_handler, &snprint_def_flush_on_last_del);
-	install_keyword("user_friendly_names", &names_handler, &snprint_def_user_friendly_names);
+	install_keyword("user_friendly_names", &def_names_handler, &snprint_def_user_friendly_names);
 	install_keyword("mode", &def_mode_handler, &snprint_def_mode);
 	install_keyword("uid", &def_uid_handler, &snprint_def_uid);
 	install_keyword("gid", &def_gid_handler, &snprint_def_gid);
@@ -2616,6 +2694,7 @@ init_keywords(void)
 	install_keyword("flush_on_last_del", &hw_flush_on_last_del_handler, &snprint_hw_flush_on_last_del);
 	install_keyword("fast_io_fail_tmo", &hw_fast_io_fail_handler, &snprint_hw_fast_io_fail);
 	install_keyword("dev_loss_tmo", &hw_dev_loss_handler, &snprint_hw_dev_loss);
+	install_keyword("user_friendly_names", &hw_names_handler, &snprint_hw_user_friendly_names);
 	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);
@@ -2639,5 +2718,6 @@ init_keywords(void)
 	install_keyword("uid", &mp_uid_handler, &snprint_mp_uid);
 	install_keyword("gid", &mp_gid_handler, &snprint_mp_gid);
 	install_keyword("reservation_key", &mp_reservation_key_handler, &snprint_mp_reservation_key);
+	install_keyword("user_friendly_names", &mp_names_handler, &snprint_mp_user_friendly_names);
 	install_sublevel_end();
 }

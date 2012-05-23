@@ -237,6 +237,18 @@ select_alias_prefix (struct multipath * mp)
 		mp->wwid, mp->alias_prefix);
 }
 
+static int
+want_user_friendly_names(struct multipath * mp)
+{
+	if (mp->mpe &&
+	    mp->mpe->user_friendly_names != USER_FRIENDLY_NAMES_UNDEF)
+		return (mp->mpe->user_friendly_names == USER_FRIENDLY_NAMES_ON);
+	if (mp->hwe &&
+	    mp->hwe->user_friendly_names != USER_FRIENDLY_NAMES_UNDEF)
+		return (mp->hwe->user_friendly_names == USER_FRIENDLY_NAMES_ON);
+	return (conf->user_friendly_names  == USER_FRIENDLY_NAMES_ON);
+}
+
 extern int
 select_alias (struct multipath * mp)
 {
@@ -244,7 +256,7 @@ select_alias (struct multipath * mp)
 		mp->alias = STRDUP(mp->mpe->alias);
 	else {
 		mp->alias = NULL;
-		if (conf->user_friendly_names) {
+		if (want_user_friendly_names(mp)) {
 			select_alias_prefix(mp);
 			mp->alias = get_user_friendly_alias(mp->wwid,
 					conf->bindings_file, mp->alias_prefix, conf->bindings_read_only);

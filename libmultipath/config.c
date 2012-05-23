@@ -325,6 +325,7 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(flush_on_last_del);
 	merge_num(fast_io_fail);
 	merge_num(dev_loss);
+	merge_num(user_friendly_names);
 
 	return 0;
 }
@@ -383,6 +384,7 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->flush_on_last_del = dhwe->flush_on_last_del;
 	hwe->fast_io_fail = dhwe->fast_io_fail;
 	hwe->dev_loss = dhwe->dev_loss;
+	hwe->user_friendly_names = dhwe->user_friendly_names;
 
 	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
 		goto out;

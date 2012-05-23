@@ -92,6 +92,12 @@ enum log_checker_err_states {
 	LOG_CHKR_ERR_ONCE,
 };
 
+enum user_friendly_names_states {
+	USER_FRIENDLY_NAMES_UNDEF,
+	USER_FRIENDLY_NAMES_OFF,
+	USER_FRIENDLY_NAMES_ON,
+};
+
 struct scsi_idlun {
 	int dev_id;
 	int host_unique_id;
