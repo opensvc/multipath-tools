@@ -379,6 +379,10 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->no_path_retry = dhwe->no_path_retry;
 	hwe->minio = dhwe->minio;
 	hwe->minio_rq = dhwe->minio_rq;
+	hwe->pg_timeout = dhwe->pg_timeout;
+	hwe->flush_on_last_del = dhwe->flush_on_last_del;
+	hwe->fast_io_fail = dhwe->fast_io_fail;
+	hwe->dev_loss = dhwe->dev_loss;
 
 	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
 		goto out;
