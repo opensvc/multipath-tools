@@ -38,7 +38,11 @@ mpathpersistdir = $(TOPDIR)/libmpathpersist
 GZIP        = /bin/gzip -9 -c
 INSTALL_PROGRAM = install
 
-OPTFLAGS     = -pipe -g -Wall -Wunused -Wstrict-prototypes
+ifndef RPM_OPT_FLAGS
+	RPM_OPT_FLAGS = -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4
+endif
+
+OPTFLAGS     = $(RPM_OPT_FLAGS) -Wunused -Wstrict-prototypes
 CFLAGS	     = $(OPTFLAGS) -fPIC -DLIB_STRING=\"${LIB}\"
 SHARED_FLAGS = -shared
 
