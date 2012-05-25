@@ -165,7 +165,9 @@ open_bindings_file(char *file, int *can_write)
 				"Cannot write header to bindings file : %s",
 				strerror(errno));
 			/* cleanup partially written header */
-			ftruncate(fd, 0);
+			if (ftruncate(fd, 0))
+				condlog(0, "Cannot truncate the header : %s",
+					strerror(errno));
 			goto fail;
 		}
 		fsync(fd);
@@ -337,7 +339,9 @@ allocate_binding(int fd, char *wwid, int id, char *prefix)
 		condlog(0, "Cannot write binding to bindings file : %s",
 			strerror(errno));
 		/* clear partial write */
-		ftruncate(fd, offset);
+		if (ftruncate(fd, offset))
+			condlog(0, "Cannot truncate the header : %s",
+				strerror(errno));
 		return NULL;
 	}
 	c = strchr(buf, ' ');

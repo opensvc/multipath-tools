@@ -177,8 +177,10 @@ int mpath_persistent_reserve_in (int fd, int rq_servact, struct prin_resp *resp,
 		goto out;
 	}
 
-	if (path_discovery(pathvec, conf, DI_SYSFS | DI_CHECKER))
+	if (path_discovery(pathvec, conf, DI_SYSFS | DI_CHECKER)) {
+		ret = MPATH_PR_DMMP_ERROR;
 		goto out1;
+	}
 
 	/* get info of all paths from the dm device	*/
 	if (get_mpvec (curmp, pathvec, alias)){
@@ -265,8 +267,10 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
                 goto out;
         }
 
-	if (path_discovery(pathvec, conf, DI_SYSFS | DI_CHECKER))
+	if (path_discovery(pathvec, conf, DI_SYSFS | DI_CHECKER)) {
+		ret = MPATH_PR_DMMP_ERROR;
 		goto out1;
+	}
 
 	/* get info of all paths from the dm device     */
 	if (get_mpvec(curmp, pathvec, alias)){
@@ -408,7 +412,7 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	int rc;
 	int count=0;
 	int status = MPATH_PR_SUCCESS;
-	uint64_t sa_key;	
+	uint64_t sa_key = 0;
 
 	if (!mpp)
 		return MPATH_PR_DMMP_ERROR; 

@@ -664,7 +664,7 @@ fail:
 static int
 uev_update_path (struct uevent *uev, struct vectors * vecs)
 {
-	int retval, ro;
+	int ro, retval = 0;
 
 	ro = uevent_get_disk_ro(uev);
 
@@ -1755,11 +1755,23 @@ daemonize(void)
 	}
 
 	close(STDIN_FILENO);
-	dup(dev_null_fd);
+	if (dup(dev_null_fd) < 0) {
+		fprintf(stderr, "cannot dup /dev/null to stdin : %s\n",
+			strerror(errno));
+		_exit(0);
+	}
 	close(STDOUT_FILENO);
-	dup(dev_null_fd);
+	if (dup(dev_null_fd) < 0) {
+		fprintf(stderr, "cannot dup /dev/null to stdout : %s\n",
+			strerror(errno));
+		_exit(0);
+	}
 	close(STDERR_FILENO);
-	dup(dev_null_fd);
+	if (dup(dev_null_fd) < 0) {
+		fprintf(stderr, "cannot dup /dev/null to stderr : %s\n",
+			strerror(errno));
+		_exit(0);
+	}
 	close(dev_null_fd);
 	daemon_pid = getpid();
 	return 0;
@@ -1783,7 +1795,9 @@ main (int argc, char *argv[])
 	}
 
 	/* make sure we don't lock any path */
-	chdir("/");
+	if (chdir("/") < 0)
+		fprintf(stderr, "can't chdir to root directory : %s\n",
+			strerror(errno));
 	umask(umask(077) | 022);
 
 	conf = alloc_config();

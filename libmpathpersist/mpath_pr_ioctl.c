@@ -314,6 +314,11 @@ int prin_do_scsi_ioctl(char * dev, int rq_servact, struct prin_resp * resp, int 
 	else
 		mx_resp_len = get_prin_length(rq_servact);
 
+	if (mx_resp_len == 0) {
+		status = MPATH_PR_SYNTAX_ERROR;
+		goto out;
+	}
+
 	cdb[1] = (unsigned char)(rq_servact & 0x1f);
 	cdb[7] = (unsigned char)((mx_resp_len >> 8) & 0xff);
 	cdb[8] = (unsigned char)(mx_resp_len & 0xff);
@@ -569,6 +574,10 @@ int get_prin_length(int rq_servact)
                 case MPATH_PRIN_RFSTAT_SA:
                         mx_resp_len = sizeof(struct print_fulldescr_list) + sizeof(struct prin_fulldescr *)*32;
                         break;
+		default:
+			condlog(0, "invalid service action, %d", rq_servact);
+			mx_resp_len = 0;
+			break;
         }
         return mx_resp_len;
 }

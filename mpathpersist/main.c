@@ -736,7 +736,6 @@ mpath_print_transport_id(struct prin_fulldescr *fdesc)
 int
 construct_transportid(const char * lcp, struct transportid transid[], int num_transportids)
 {
-	unsigned char * tidp;
 	int k = 0;
 	int j, n, b, c, len, alen;
 	const char * ecp;
@@ -792,7 +791,6 @@ construct_transportid(const char * lcp, struct transportid transid[], int num_tr
 		if (ecp && (isip > ecp))
 			isip = NULL;
 		len = ecp ? (ecp - lcp) : (int)strlen(lcp);
-		memset(&tidp, 0, 24);
 		transid[num_transportids].format_code = (isip ? MPATH_WWUI_PORT_IDENTIFIER:MPATH_WWUI_DEVICE_NAME);
 		transid[num_transportids].protocol_id = MPATH_PROTOCOL_ID_ISCSI;
 		alen = len + 1; /* at least one trailing null */
