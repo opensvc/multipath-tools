@@ -391,17 +391,13 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 		if (pp->mpp)
 			return 0;
 	} else {
-		struct udev_device *udevice;
-
 		/*
 		 * get path vital state
 		 */
-		udevice = udev_device_ref(uev->udev);
 		if (!(pp = store_pathinfo(vecs->pathvec, conf->hwtable,
-					  udevice, DI_ALL))) {
+					  uev->udev, DI_ALL))) {
 			condlog(0, "%s: failed to store path info",
 				uev->kernel);
-			udev_device_unref(udevice);
 			return 1;
 		}
 		pp->checkint = conf->checkint;

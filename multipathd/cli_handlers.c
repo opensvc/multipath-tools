@@ -430,15 +430,17 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 	} else {
 		struct udev_device *udevice;
 
-		udevice = udev_device_new_from_devnum(conf->udev, 'b',
-						      parse_devt(pp->dev_t));
+		udevice = udev_device_new_from_subsystem_sysname(conf->udev,
+								 "block",
+								 param);
 		pp = store_pathinfo(vecs->pathvec, conf->hwtable,
 				    udevice, DI_ALL);
+		udev_device_unref(udevice);
 		if (!pp) {
 			condlog(0, "%s: failed to store path info", param);
-			udev_device_unref(udevice);
 			return 1;
 		}
+		pp->checkint = conf->checkint;
 	}
 	r = ev_add_path(pp, vecs);
 	if (r == 2)

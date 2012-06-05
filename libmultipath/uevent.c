@@ -443,6 +443,7 @@ int uevent_listen(void)
 
 		uev = alloc_uevent();
 		if (!uev) {
+			udev_device_unref(dev);
 			condlog(1, "lost uevent, oom");
 			continue;
 		}

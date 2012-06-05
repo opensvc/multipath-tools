@@ -13,6 +13,7 @@
 #include <sys/file.h>
 #include <errno.h>
 #include <libdevmapper.h>
+#include <libudev.h>
 
 #include "checkers.h"
 #include "vector.h"
@@ -680,18 +681,17 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 
 		pp = find_path_by_dev(pathvec, buff);
 		if (!pp) {
-			pp = alloc_path();
+			struct udev_device *udevice = udev_device_new_from_subsystem_sysname(conf->udev, "block", buff);
 
-			if (!pp)
+			if (!udevice) {
+				condlog(2, "%s: can't get udev device", buff);
 				return NULL;
-
-			strncpy(pp->dev, buff, FILE_NAME_SIZE);
-
-			if (pathinfo(pp, conf->hwtable, DI_SYSFS | DI_WWID))
-				return NULL;
-
-			if (store_path(pathvec, pp)) {
-				free_path(pp);
+			}
+			pp = store_pathinfo(pathvec, conf->hwtable, udevice,
+					    DI_SYSFS | DI_WWID);
+			udev_device_unref(udevice);
+			if (!pp) {
+				condlog(0, "%s can't store path info", buff);
 				return NULL;
 			}
 		}
@@ -703,21 +703,17 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 		strchop(dev);
 		pp = find_path_by_devt(pathvec, dev);
 		if (!pp) {
-			if (devt2devname(buff, FILE_NAME_SIZE, dev))
+			struct udev_device *udevice = udev_device_new_from_devnum(conf->udev, 'b', parse_devt(dev));
+
+			if (!udevice) {
+				condlog(2, "%s: can't get udev device", dev);
 				return NULL;
-
-			pp = alloc_path();
-
-			if (!pp)
-				return NULL;
-
-			strncpy(pp->dev, buff, FILE_NAME_SIZE);
-
-			if (pathinfo(pp, conf->hwtable, DI_SYSFS | DI_WWID))
-				return NULL;
-
-			if (store_path(pathvec, pp)) {
-				free_path(pp);
+			}
+			pp = store_pathinfo(pathvec, conf->hwtable, udevice,
+					    DI_SYSFS | DI_WWID);
+			udev_device_unref(udevice);
+			if (!pp) {
+				condlog(0, "%s can't store path info", buff);
 				return NULL;
 			}
 		}

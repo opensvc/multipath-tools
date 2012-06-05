@@ -216,11 +216,11 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 		const char *value;
 
 		value = udev_device_get_sysattr_value(tgtdev, "node_name");
+		udev_device_unref(tgtdev);
 		if (value) {
 			strncpy(node, value, NODE_NAME_SIZE);
 			return 0;
 		}
-		udev_device_unref(tgtdev);
 	}
 
 	/* Check for iSCSI */
@@ -235,15 +235,15 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 	}
 	if (parent) {
 		tgtdev = udev_device_new_from_subsystem_sysname(conf->udev, "iscsi_session", targetid);
-		if (node) {
+		if (tgtdev) {
 			const char *value;
 
 			value = udev_device_get_sysattr_value(tgtdev, "targetname");
+			udev_device_unref(tgtdev);
 			if (value) {
 				strncpy(node, value, NODE_NAME_SIZE);
 				return 0;
 			}
-			udev_device_unref(tgtdev);
 		}
 	}
 	return 1;
@@ -289,7 +289,7 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 						 value, 11) < 0)
 				condlog(0, "%s failed to set dev_loss_tmo",
 					mpp->alias);
-			return;
+			goto out;
 		}
 	}
 	if (mpp->fast_io_fail){
@@ -305,6 +305,8 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 				mpp->alias);
 		}
 	}
+out:
+	udev_device_unref(rport_dev);
 }
 
 int
