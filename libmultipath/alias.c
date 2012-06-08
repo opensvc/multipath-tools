@@ -361,7 +361,7 @@ get_user_friendly_alias(char *wwid, char *file, char *prefix,
 			int bindings_read_only)
 {
 	char *alias;
-	int fd, scan_fd, id;
+	int fd, id;
 	FILE *f;
 	int can_write;
 
@@ -374,19 +374,10 @@ get_user_friendly_alias(char *wwid, char *file, char *prefix,
 	if (fd < 0)
 		return NULL;
 
-	scan_fd = dup(fd);
-	if (scan_fd < 0) {
-		condlog(0, "Cannot dup bindings file descriptor : %s",
-			strerror(errno));
-		close(fd);
-		return NULL;
-	}
-
-	f = fdopen(scan_fd, "r");
+	f = fdopen(fd, "r");
 	if (!f) {
 		condlog(0, "cannot fdopen on bindings file descriptor : %s",
 			strerror(errno));
-		close(scan_fd);
 		close(fd);
 		return NULL;
 	}
@@ -394,8 +385,13 @@ get_user_friendly_alias(char *wwid, char *file, char *prefix,
 	id = lookup_binding(f, wwid, &alias, prefix);
 	if (id < 0) {
 		fclose(f);
-		close(scan_fd);
-		close(fd);
+		return NULL;
+	}
+
+	if (fflush(f) != 0) {
+		condlog(0, "cannot fflush bindings file stream : %s",
+			strerror(errno));
+		fclose(f);
 		return NULL;
 	}
 
@@ -403,8 +399,6 @@ get_user_friendly_alias(char *wwid, char *file, char *prefix,
 		alias = allocate_binding(fd, wwid, id, prefix);
 
 	fclose(f);
-	close(scan_fd);
-	close(fd);
 	return alias;
 }
 
@@ -412,7 +406,7 @@ char *
 get_user_friendly_wwid(char *alias, char *file)
 {
 	char *wwid;
-	int fd, scan_fd, id, unused;
+	int fd, id, unused;
 	FILE *f;
 
 	if (!alias || *alias == '\0') {
@@ -424,19 +418,10 @@ get_user_friendly_wwid(char *alias, char *file)
 	if (fd < 0)
 		return NULL;
 
-	scan_fd = dup(fd);
-	if (scan_fd < 0) {
-		condlog(0, "Cannot dup bindings file descriptor : %s",
-			strerror(errno));
-		close(fd);
-		return NULL;
-	}
-
-	f = fdopen(scan_fd, "r");
+	f = fdopen(fd, "r");
 	if (!f) {
 		condlog(0, "cannot fdopen on bindings file descriptor : %s",
 			strerror(errno));
-		close(scan_fd);
 		close(fd);
 		return NULL;
 	}
@@ -444,13 +429,9 @@ get_user_friendly_wwid(char *alias, char *file)
 	id = rlookup_binding(f, &wwid, alias);
 	if (id < 0) {
 		fclose(f);
-		close(scan_fd);
-		close(fd);
 		return NULL;
 	}
 
 	fclose(f);
-	close(scan_fd);
-	close(fd);
 	return wwid;
 }
