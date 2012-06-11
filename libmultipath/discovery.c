@@ -216,11 +216,13 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 		const char *value;
 
 		value = udev_device_get_sysattr_value(tgtdev, "node_name");
-		udev_device_unref(tgtdev);
 		if (value) {
 			strncpy(node, value, NODE_NAME_SIZE);
+			udev_device_unref(tgtdev);
 			return 0;
 		}
+		else
+			udev_device_unref(tgtdev);
 	}
 
 	/* Check for iSCSI */
@@ -239,11 +241,13 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 			const char *value;
 
 			value = udev_device_get_sysattr_value(tgtdev, "targetname");
-			udev_device_unref(tgtdev);
 			if (value) {
 				strncpy(node, value, NODE_NAME_SIZE);
+				udev_device_unref(tgtdev);
 				return 0;
 			}
+			else
+				udev_device_unref(tgtdev);
 		}
 	}
 	return 1;
