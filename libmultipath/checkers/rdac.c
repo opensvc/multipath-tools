@@ -166,6 +166,7 @@ retry:
 		switch (io_hdr.host_status) {
 		case DID_BUS_BUSY:
 		case DID_ERROR:
+		case DID_SOFT_ERROR:
 		case DID_TRANSPORT_DISRUPTED:
 			/* Transport error, retry */
 			if (--retry_rdac)
