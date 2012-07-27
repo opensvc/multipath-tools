@@ -393,6 +393,16 @@ get_dev_type(char *dev) {
 		return DEV_DEVMAP;
 }
 
+static void
+convert_dev(char *dev)
+{
+	char *ptr = strstr(dev, "cciss/");
+	if (ptr) {
+		ptr += 5;
+		*ptr = '!';
+	}
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -494,6 +504,8 @@ main (int argc, char *argv[])
 
 		strncpy(conf->dev, argv[optind], FILE_NAME_SIZE);
 		conf->dev_type = get_dev_type(conf->dev);
+		if (conf->dev_type == DEV_DEVNODE)
+			convert_dev(conf->dev);
 	}
 	conf->daemon = 0;
 
