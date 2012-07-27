@@ -24,5 +24,6 @@
 #define DEFAULT_SOCKET		"/var/run/multipathd.sock"
 #define DEFAULT_CONFIGFILE	"/etc/multipath.conf"
 #define DEFAULT_BINDINGS_FILE	"/etc/multipath/bindings"
+#define DEFAULT_WWIDS_FILE	"/etc/multipath/wwids"
 
 char * set_default (char * str);

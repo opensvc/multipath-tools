@@ -53,6 +53,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <wwids.h>
 #include "dev_t.h"
 
 int logsink;
@@ -82,7 +83,7 @@ usage (char * progname)
 {
 	fprintf (stderr, VERSION_STRING);
 	fprintf (stderr, "Usage:\n");
-	fprintf (stderr, "  %s [-d] [-r] [-v lvl] [-p pol] [-b fil] [-q] [dev]\n", progname);
+	fprintf (stderr, "  %s [-c] [-d] [-r] [-v lvl] [-p pol] [-b fil] [-q] [dev]\n", progname);
 	fprintf (stderr, "  %s -l|-ll|-f [-v lvl] [-b fil] [dev]\n", progname);
 	fprintf (stderr, "  %s -F [-v lvl]\n", progname);
 	fprintf (stderr, "  %s -t\n", progname);
@@ -95,6 +96,7 @@ usage (char * progname)
 		"  -ll     show multipath topology (maximum info)\n" \
 		"  -f      flush a multipath device map\n" \
 		"  -F      flush all multipath device maps\n" \
+		"  -c      check if a device should be a path in a multipath device\n" \
 		"  -q      allow queue_if_no_path when multipathd is not running\n"\
 		"  -d      dry run, do not create or update devmaps\n" \
 		"  -t      dump internal hardware table\n" \
@@ -209,6 +211,7 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 
 		if (!conf->dry_run)
 			reinstate_paths(mpp);
+		remember_wwid(mpp->wwid);
 	}
 	return 0;
 }
@@ -259,9 +262,13 @@ configure (void)
 	 * if we have a blacklisted device parameter, exit early
 	 */
 	if (dev &&
-	    (filter_devnode(conf->blist_devnode, conf->elist_devnode, dev) > 0))
-			goto out;
-
+	    (filter_devnode(conf->blist_devnode,
+			    conf->elist_devnode, dev) > 0)) {
+		if (conf->dry_run == 2)
+			printf("%s is not a valid multipath device path\n",
+			       conf->dev);
+		goto out;
+	}
 	/*
 	 * scope limiting must be translated into a wwid
 	 * failing the translation is fatal (by policy)
@@ -277,6 +284,15 @@ configure (void)
 		if (filter_wwid(conf->blist_wwid, conf->elist_wwid,
 				refwwid) > 0)
 			goto out;
+		if (conf->dry_run == 2) {
+			if (check_wwids_file(refwwid, 0) == 0){
+				printf("%s is a valid multipath device path\n", conf->dev);
+				r = 0;
+			}
+			else
+				printf("%s is not a valid multipath device path\n", conf->dev);
+			goto out;
+		}
 	}
 
 	/*
@@ -422,7 +438,7 @@ main (int argc, char *argv[])
 	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
 
-	while ((arg = getopt(argc, argv, ":dhl::FfM:v:p:b:Brtq")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":dchl::FfM:v:p:b:Brtq")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
 			break;
@@ -444,8 +460,12 @@ main (int argc, char *argv[])
 		case 'q':
 			conf->allow_queueing = 1;
 			break;
+		case 'c':
+			conf->dry_run = 2;
+			break;
 		case 'd':
-			conf->dry_run = 1;
+			if (!conf->dry_run)
+				conf->dry_run = 1;
 			break;
 		case 'f':
 			conf->remove = FLUSH_ONE;
@@ -529,6 +549,11 @@ main (int argc, char *argv[])
 	}
 	dm_init();
 
+	if (conf->dry_run == 2 &&
+	    (!conf->dev || conf->dev_type == DEV_DEVMAP)) {
+		condlog(0, "the -c option requires a path to check");
+		goto out;
+	}
 	if (conf->remove == FLUSH_ONE) {
 		if (conf->dev_type == DEV_DEVMAP)
 			r = dm_flush_map(conf->dev);

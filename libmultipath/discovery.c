@@ -810,6 +810,8 @@ get_uid (struct path * pp)
 
 	memset(pp->wwid, 0, WWID_SIZE);
 	value = udev_device_get_property_value(pp->udev, pp->uid_attribute);
+	if ((!value || strlen(value) == 0) && conf->dry_run == 2)
+		value = getenv(pp->uid_attribute);
 	if (value && strlen(value)) {
 		size_t len = WWID_SIZE;
 

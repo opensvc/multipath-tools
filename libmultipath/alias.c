@@ -3,19 +3,16 @@
  * Copyright (c) 2005 Benjamin Marzinski, Redhat
  */
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
 #include <stdio.h>
-#include <signal.h>
 
 #include "debug.h"
 #include "uxsock.h"
 #include "alias.h"
+#include "file.h"
 
 
 /*
@@ -36,150 +33,6 @@
  * See the file COPYING included with this distribution for more details.
  */
 
-static int
-ensure_directories_exist(char *str, mode_t dir_mode)
-{
-	char *pathname;
-	char *end;
-	int err;
-
-	pathname = strdup(str);
-	if (!pathname){
-		condlog(0, "Cannot copy bindings file pathname : %s",
-			strerror(errno));
-		return -1;
-	}
-	end = pathname;
-	/* skip leading slashes */
-	while (end && *end && (*end == '/'))
-		end++;
-
-	while ((end = strchr(end, '/'))) {
-		/* if there is another slash, make the dir. */
-		*end = '\0';
-		err = mkdir(pathname, dir_mode);
-		if (err && errno != EEXIST) {
-			condlog(0, "Cannot make directory [%s] : %s",
-				pathname, strerror(errno));
-			free(pathname);
-			return -1;
-		}
-		if (!err)
-			condlog(3, "Created dir [%s]", pathname);
-		*end = '/';
-		end++;
-	}
-	free(pathname);
-	return 0;
-}
-
-static void
-sigalrm(int sig)
-{
-	/* do nothing */
-}
-
-static int
-lock_bindings_file(int fd)
-{
-	struct sigaction act, oldact;
-	sigset_t set, oldset;
-	struct flock lock;
-	int err;
-
-	memset(&lock, 0, sizeof(lock));
-	lock.l_type = F_WRLCK;
-	lock.l_whence = SEEK_SET;
-
-	act.sa_handler = sigalrm;
-	sigemptyset(&act.sa_mask);
-	act.sa_flags = 0;
-	sigemptyset(&set);
-	sigaddset(&set, SIGALRM);
-
-	sigaction(SIGALRM, &act, &oldact);
-	sigprocmask(SIG_UNBLOCK, &set, &oldset);
-
-	alarm(BINDINGS_FILE_TIMEOUT);
-	err = fcntl(fd, F_SETLKW, &lock);
-	alarm(0);
-
-	if (err) {
-		if (errno != EINTR)
-			condlog(0, "Cannot lock bindings file : %s",
-					strerror(errno));
-		else
-			condlog(0, "Bindings file is locked. Giving up.");
-	}
-
-	sigprocmask(SIG_SETMASK, &oldset, NULL);
-	sigaction(SIGALRM, &oldact, NULL);
-	return err;
-
-}
-
-
-static int
-open_bindings_file(char *file, int *can_write)
-{
-	int fd;
-	struct stat s;
-
-	if (ensure_directories_exist(file, 0700))
-		return -1;
-	*can_write = 1;
-	fd = open(file, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-	if (fd < 0) {
-		if (errno == EROFS) {
-			*can_write = 0;
-			condlog(3, "Cannot open bindings file [%s] read/write. "
-				" trying readonly", file);
-			fd = open(file, O_RDONLY);
-			if (fd < 0) {
-				condlog(0, "Cannot open bindings file [%s] "
-					"readonly : %s", file, strerror(errno));
-				return -1;
-			}
-		}
-		else {
-			condlog(0, "Cannot open bindings file [%s] : %s", file,
-				strerror(errno));
-			return -1;
-		}
-	}
-	if (*can_write && lock_bindings_file(fd) < 0)
-		goto fail;
-
-	memset(&s, 0, sizeof(s));
-	if (fstat(fd, &s) < 0){
-		condlog(0, "Cannot stat bindings file : %s", strerror(errno));
-		goto fail;
-	}
-	if (s.st_size == 0) {
-		if (*can_write == 0)
-			goto fail;
-		/* If bindings file is empty, write the header */
-		size_t len = strlen(BINDINGS_FILE_HEADER);
-		if (write_all(fd, BINDINGS_FILE_HEADER, len) != len) {
-			condlog(0,
-				"Cannot write header to bindings file : %s",
-				strerror(errno));
-			/* cleanup partially written header */
-			if (ftruncate(fd, 0))
-				condlog(0, "Cannot truncate the header : %s",
-					strerror(errno));
-			goto fail;
-		}
-		fsync(fd);
-		condlog(3, "Initialized new bindings file [%s]", file);
-	}
-
-	return fd;
-
-fail:
-	close(fd);
-	return -1;
-}
 
 static int
 format_devname(char *name, int id, int len, char *prefix)
@@ -370,7 +223,7 @@ get_user_friendly_alias(char *wwid, char *file, char *prefix,
 		return NULL;
 	}
 
-	fd = open_bindings_file(file, &can_write);
+	fd = open_file(file, &can_write, BINDINGS_FILE_HEADER);
 	if (fd < 0)
 		return NULL;
 
@@ -414,7 +267,7 @@ get_user_friendly_wwid(char *alias, char *file)
 		return NULL;
 	}
 
-	fd = open_bindings_file(file, &unused);
+	fd = open_file(file, &unused, BINDINGS_FILE_HEADER);
 	if (fd < 0)
 		return NULL;
 

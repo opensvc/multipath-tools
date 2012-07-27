@@ -37,6 +37,7 @@
 #include "prio.h"
 #include "util.h"
 #include "uxsock.h"
+#include "wwids.h"
 
 extern int
 setup_map (struct multipath * mpp, char * params, int params_size)
@@ -415,6 +416,8 @@ domap (struct multipath * mpp, char * params)
 		 * DM_DEVICE_CREATE, DM_DEVICE_RENAME, or DM_DEVICE_RELOAD
 		 * succeeded
 		 */
+		if (mpp->action == ACT_CREATE)
+			remember_wwid(mpp->wwid);
 		if (!conf->daemon) {
 			/* multipath client mode */
 			dm_switchgroup(mpp->alias, mpp->bestpg);

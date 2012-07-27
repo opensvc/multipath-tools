@@ -1,4 +1,3 @@
-#define BINDINGS_FILE_TIMEOUT 30
 #define BINDINGS_FILE_HEADER \
 "# Multipath bindings, Version : 1.0\n" \
 "# NOTE: this file is automatically maintained by the multipath program.\n" \
