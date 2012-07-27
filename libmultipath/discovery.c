@@ -20,7 +20,6 @@
 #include "structs.h"
 #include "config.h"
 #include "blacklist.h"
-#include "callout.h"
 #include "debug.h"
 #include "propsel.h"
 #include "sg_include.h"
