@@ -995,6 +995,32 @@ mpvec_garbage_collector (struct vectors * vecs)
 	}
 }
 
+/* This is called after a path has started working again. It the multipath
+ * device for this path uses the followover failback type, and this is the
+ * best pathgroup, and this is the first path in the pathgroup to come back
+ * up, then switch to this pathgroup */
+static int
+followover_should_failback(struct path * pp)
+{
+	struct pathgroup * pgp;
+	struct path *pp1;
+	int i;
+
+	if (pp->mpp->pgfailback != -FAILBACK_FOLLOWOVER ||
+	    !pp->mpp->pg || !pp->pgindex ||
+	    pp->pgindex != pp->mpp->bestpg)
+		return 0;
+
+	pgp = VECTOR_SLOT(pp->mpp->pg, pp->pgindex - 1);
+	vector_foreach_slot(pgp->paths, pp1, i) {
+		if (pp1 == pp)
+			continue;
+		if (pp1->chkrstate != PATH_DOWN && pp1->chkrstate != PATH_SHAKY)
+			return 0;
+	}
+	return 1;
+}
+
 static void
 defered_failback_tick (vector mpvec)
 {
@@ -1092,6 +1118,8 @@ check_path (struct vectors * vecs, struct path * pp)
 {
 	int newstate;
 	int new_path_up = 0;
+	int chkr_new_path_up = 0;
+	int oldchkrstate = pp->chkrstate;
 
 	if (!pp->mpp)
 		return;
@@ -1130,6 +1158,7 @@ check_path (struct vectors * vecs, struct path * pp)
 			pp->dev);
 		pp->dmstate = PSTATE_UNDEF;
 	}
+	pp->chkrstate = newstate;
 	if (newstate != pp->state) {
 		int oldstate = pp->state;
 		pp->state = newstate;
@@ -1182,6 +1211,9 @@ check_path (struct vectors * vecs, struct path * pp)
 
 		new_path_up = 1;
 
+		if (oldchkrstate != PATH_UP && oldchkrstate != PATH_GHOST)
+			chkr_new_path_up = 1;
+
 		/*
 		 * if at least one path is up in a group, and
 		 * the group is disabled, re-enable it
@@ -1233,7 +1265,8 @@ check_path (struct vectors * vecs, struct path * pp)
 		    (new_path_up || pp->mpp->failback_tick <= 0))
 			pp->mpp->failback_tick =
 				pp->mpp->pgfailback + 1;
-		else if (pp->mpp->pgfailback == -FAILBACK_IMMEDIATE)
+		else if (pp->mpp->pgfailback == -FAILBACK_IMMEDIATE ||
+			 (chkr_new_path_up && followover_should_failback(pp)))
 			switch_pathgroup(pp->mpp);
 	}
 }

@@ -254,6 +254,11 @@ active paths.
 .B manual
 Do not perform automatic failback.
 .TP
+.B followover
+Only perform automatic failback when the first path of a pathgroup
+becomes active. This keeps a node from automatically failing back when
+another node requested the failover.
+.TP
 .B values > 0
 deferred failback (time to defer in seconds)
 .TP

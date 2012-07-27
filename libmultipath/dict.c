@@ -398,6 +398,8 @@ default_failback_handler(vector strvec)
 		conf->pgfailback = -FAILBACK_MANUAL;
 	else if (strlen(buff) == 9 && !strcmp(buff, "immediate"))
 		conf->pgfailback = -FAILBACK_IMMEDIATE;
+	else if (strlen(buff) == 10 && !strcmp(buff, "followover"))
+		conf->pgfailback = -FAILBACK_FOLLOWOVER;
 	else
 		conf->pgfailback = atoi(buff);
 
@@ -1053,6 +1055,8 @@ hw_failback_handler(vector strvec)
 		hwe->pgfailback = -FAILBACK_MANUAL;
 	else if (strlen(buff) == 9 && !strcmp(buff, "immediate"))
 		hwe->pgfailback = -FAILBACK_IMMEDIATE;
+	else if (strlen(buff) == 10 && !strcmp(buff, "followover"))
+		hwe->pgfailback = -FAILBACK_FOLLOWOVER;
 	else
 		hwe->pgfailback = atoi(buff);
 
@@ -1351,6 +1355,8 @@ mp_failback_handler(vector strvec)
 		mpe->pgfailback = -FAILBACK_MANUAL;
 	else if (strlen(buff) == 9 && !strcmp(buff, "immediate"))
 		mpe->pgfailback = -FAILBACK_IMMEDIATE;
+	else if (strlen(buff) == 10 && !strcmp(buff, "followover"))
+		mpe->pgfailback = -FAILBACK_FOLLOWOVER;
 	else
 		mpe->pgfailback = atoi(buff);
 
@@ -1769,6 +1775,8 @@ snprint_mp_failback (char * buff, int len, void * data)
 		return snprintf(buff, len, "manual");
 	case -FAILBACK_IMMEDIATE:
 		return snprintf(buff, len, "immediate");
+	case -FAILBACK_FOLLOWOVER:
+		return snprintf(buff, len, "followover");
 	default:
 		return snprintf(buff, len, "%i", mpe->pgfailback);
 	}
@@ -2130,6 +2138,8 @@ snprint_hw_failback (char * buff, int len, void * data)
 		return snprintf(buff, len, "manual");
 	case -FAILBACK_IMMEDIATE:
 		return snprintf(buff, len, "immediate");
+	case -FAILBACK_FOLLOWOVER:
+		return snprintf(buff, len, "followover");
 	default:
 		return snprintf(buff, len, "%i", hwe->pgfailback);
 	}
@@ -2394,6 +2404,8 @@ snprint_def_failback (char * buff, int len, void * data)
 		return snprintf(buff, len, "manual");
 	case -FAILBACK_IMMEDIATE:
 		return snprintf(buff, len, "immediate");
+	case -FAILBACK_FOLLOWOVER:
+		return snprintf(buff, len, "followover");
 	default:
 		return snprintf(buff, len, "%i", conf->pgfailback);
 	}

@@ -143,6 +143,8 @@ snprint_failback (char * buff, size_t len, struct multipath * mpp)
 {
 	if (mpp->pgfailback == -FAILBACK_IMMEDIATE)
 		return snprintf(buff, len, "immediate");
+	if (mpp->pgfailback == -FAILBACK_FOLLOWOVER)
+		return snprintf(buff, len, "followover");
 
 	if (!mpp->failback_tick)
 		return snprintf(buff, len, "-");

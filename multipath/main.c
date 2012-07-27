@@ -142,7 +142,7 @@ update_paths (struct multipath * mpp)
 					/*
 					 * path is not in sysfs anymore
 					 */
-					pp->state = PATH_DOWN;
+					pp->chkrstate = pp->state = PATH_DOWN;
 					continue;
 				}
 				pp->mpp = mpp;

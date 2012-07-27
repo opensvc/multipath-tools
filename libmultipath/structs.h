@@ -39,7 +39,8 @@ enum rr_weight_mode {
 enum failback_mode {
 	FAILBACK_UNDEF,
 	FAILBACK_MANUAL,
-	FAILBACK_IMMEDIATE
+	FAILBACK_IMMEDIATE,
+	FAILBACK_FOLLOWOVER
 };
 
 enum sysfs_buses {
@@ -151,6 +152,7 @@ struct path {
 	int offline;
 	int state;
 	int dmstate;
+	int chkrstate;
 	int failcount;
 	int priority;
 	int pgindex;

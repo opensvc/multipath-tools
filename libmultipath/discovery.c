@@ -876,13 +876,13 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 
 	if (mask & DI_CHECKER) {
 		if (path_state == PATH_UP) {
-			pp->state = get_state(pp, 0);
+			pp->chkrstate = pp->state = get_state(pp, 0);
 			if (pp->state == PATH_UNCHECKED ||
 			    pp->state == PATH_WILD)
 				goto blank;
 		} else {
 			condlog(3, "%s: path inaccessible", pp->dev);
-			pp->state = path_state;
+			pp->chkrstate = pp->state = path_state;
 		}
 	}
 
@@ -910,7 +910,7 @@ blank:
 	 * Recoverable error, for example faulty or offline path
 	 */
 	memset(pp->wwid, 0, WWID_SIZE);
-	pp->state = PATH_DOWN;
+	pp->chkrstate = pp->state = PATH_DOWN;
 
 	return 0;
 }
