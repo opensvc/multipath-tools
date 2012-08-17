@@ -152,12 +152,12 @@ static void
 select_action (struct multipath * mpp, vector curmp, int force_reload)
 {
 	struct multipath * cmpp;
+	struct multipath * cmpp_by_name;
 
-	cmpp = find_mp_by_alias(curmp, mpp->alias);
+	cmpp = find_mp_by_wwid(curmp, mpp->wwid);
+	cmpp_by_name = find_mp_by_alias(curmp, mpp->alias);
 
-	if (!cmpp) {
-		cmpp = find_mp_by_wwid(curmp, mpp->wwid);
-
+	if (!cmpp_by_name) {
 		if (cmpp) {
 			condlog(2, "%s: rename %s to %s", mpp->wwid,
 				cmpp->alias, mpp->alias);
@@ -171,14 +171,22 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 		return;
 	}
 
-	if (!find_mp_by_wwid(curmp, mpp->wwid)) {
-		condlog(2, "%s: remove (wwid changed)", cmpp->alias);
+	if (!cmpp) {
+		condlog(2, "%s: remove (wwid changed)", mpp->alias);
 		dm_flush_map(mpp->alias);
-		strncpy(cmpp->wwid, mpp->wwid, WWID_SIZE);
-		drop_multipath(curmp, cmpp->wwid, KEEP_PATHS);
+		strncpy(cmpp_by_name->wwid, mpp->wwid, WWID_SIZE);
+		drop_multipath(curmp, cmpp_by_name->wwid, KEEP_PATHS);
 		mpp->action = ACT_CREATE;
 		condlog(3, "%s: set ACT_CREATE (map wwid change)",
 			mpp->alias);
+		return;
+	}
+
+	if (cmpp != cmpp_by_name) {
+		condlog(2, "%s: unable to rename %s to %s (%s is used by %s)",
+			mpp->wwid, cmpp->alias, mpp->alias,
+			mpp->alias, cmpp_by_name->wwid);
+		mpp->action = ACT_NOTHING;
 		return;
 	}
 
