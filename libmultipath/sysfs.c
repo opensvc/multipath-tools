@@ -41,7 +41,7 @@
 ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 			     char * value, size_t value_len)
 {
-	const char *devpath;
+	char devpath[PATH_SIZE];
 	struct stat statbuf;
 	int fd;
 	ssize_t size = -1;
@@ -49,8 +49,9 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 	if (!dev || !attr_name || !value)
 		return 0;
 
-	devpath = udev_device_get_syspath(dev);
-	condlog(4, "open '%s'/'%s'", devpath, attr_name);
+	snprintf(devpath, PATH_SIZE, "%s/%s", udev_device_get_syspath(dev),
+		 attr_name);
+	condlog(4, "open '%s'", devpath);
 	if (stat(devpath, &statbuf) != 0) {
 		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
 		return 0;

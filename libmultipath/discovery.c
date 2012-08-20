@@ -281,7 +281,8 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 		pp->sg_id.channel, pp->sg_id.scsi_id, rport_id);
 
 	snprintf(value, 11, "%u", mpp->dev_loss);
-	if (sysfs_attr_set_value(rport_dev, "dev_loss_tmo", value, 11) < 0) {
+	if (mpp->dev_loss &&
+	    sysfs_attr_set_value(rport_dev, "dev_loss_tmo", value, 11) <= 0) {
 		if ((!mpp->fast_io_fail ||
 		     mpp->fast_io_fail == MP_FAST_IO_FAIL_OFF)
 		    && mpp->dev_loss > 600) {
@@ -289,7 +290,7 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 				"fast_io_fail is not set", mpp->alias);
 			snprintf(value, 11, "%u", 600);
 			if (sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
-						 value, 11) < 0)
+						 value, 11) <= 0)
 				condlog(0, "%s failed to set dev_loss_tmo",
 					mpp->alias);
 			goto out;
@@ -303,7 +304,7 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 		else
 			snprintf(value, 11, "%u", mpp->fast_io_fail);
 		if (sysfs_attr_set_value(rport_dev, "fast_io_fail_tmo",
-					 value, 11) < 0) {
+					 value, 11) <= 0) {
 			condlog(0, "%s failed to set fast_io_fail_tmo",
 				mpp->alias);
 		}
