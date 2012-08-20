@@ -353,7 +353,13 @@ cannot be told to stop queueing IO. Setting queue_without_daemon to
 .TP
 .B bindings_file
 The full pathname of the binding file to be used when the user_friendly_names option is set. Defaults to
-.I /var/lib/multipath/bindings
+.I /etc/multipath/bindings
+.TP
+.B wwids_file
+The full pathname of the wwids file, which is used by multipath to keep track
+of the wwids for LUNs it has created multipath devices on in the past.
+Defaults to
+.I /etc/multipath/wwids
 .TP
 .B log_checker_err
 If set to

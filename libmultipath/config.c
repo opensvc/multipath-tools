@@ -455,6 +455,8 @@ free_config (struct config * conf)
 	if (conf->bindings_file)
 		FREE(conf->bindings_file);
 
+	if (conf->wwids_file)
+		FREE(conf->wwids_file);
 	if (conf->prio_name)
 		FREE(conf->prio_name);
 
@@ -505,6 +507,7 @@ load_config (char * file)
 	conf->minio_rq = DEFAULT_MINIO_RQ;
 	get_sys_max_fds(&conf->max_fds);
 	conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
+	conf->wwids_file = set_default(DEFAULT_WWIDS_FILE);
 	conf->bindings_read_only = 0;
 	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
 	conf->features = set_default(DEFAULT_FEATURES);
@@ -603,7 +606,8 @@ load_config (char * file)
 	if (conf->bindings_file == NULL)
 		conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 
-	if (!conf->multipath_dir || !conf->bindings_file)
+	if (!conf->multipath_dir || !conf->bindings_file ||
+	    !conf->wwids_file)
 		goto out;
 
 	return 0;

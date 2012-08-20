@@ -13,6 +13,7 @@
 #include "file.h"
 #include "wwids.h"
 #include "defaults.h"
+#include "config.h"
 
 /*
  * Copyright (c) 2010 Benjamin Marzinski, Redhat
@@ -85,7 +86,7 @@ check_wwids_file(char *wwid, int write_wwid)
 {
 	int fd, can_write, found, ret;
 	FILE *f;
-	fd = open_file(DEFAULT_WWIDS_FILE, &can_write, WWIDS_FILE_HEADER);
+	fd = open_file(conf->wwids_file, &can_write, WWIDS_FILE_HEADER);
 	if (fd < 0)
 		return -1;
 
