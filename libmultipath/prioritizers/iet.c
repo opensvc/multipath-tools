@@ -9,6 +9,22 @@
 #include <debug.h>
 #include <unistd.h>
 
+//
+// This prioritizer suits iSCSI needs, makes it possible to prefer one path.
+//
+// (It's a bit of a misnomer since supports the client side [eg. open-iscsi]
+//  instead of just "iet".)
+//
+// Usage: 
+//   prio      "iet"
+//   prio_args "preferredip=10.11.12.13"
+//
+// Uses /dev/disk/by-path to find the IP of the device.
+// Assigns prio 20 (high) to the preferred IP and prio 10 (low) to the rest.
+//
+// by Olivier Lambert <lambert.olivier.gmail.com>
+//
+
 #define dc_log(prio, msg) condlog(prio, "%s: iet prio: " msg, dev)
 //
 // name: find_regex
@@ -102,7 +118,7 @@ int iet_prio(const char *dev, char * args)
 						// high prio
 						free(ip);
 						closedir(dir_p);
-						return 10;
+						return 20;
 					}
 					free(ip);
 				}
@@ -115,7 +131,7 @@ int iet_prio(const char *dev, char * args)
 	}
 	// nothing found, low prio
 	closedir(dir_p);
-	return 20;
+	return 10;
 }
 
 int getprio(struct path * pp, char * args)
