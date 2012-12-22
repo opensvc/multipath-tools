@@ -508,7 +508,7 @@ def_flush_on_last_del_handler(vector strvec)
 	if ((strlen(buff) == 2 && strcmp(buff, "no") == 0) ||
 	    (strlen(buff) == 1 && strcmp(buff, "0") == 0))
 		conf->flush_on_last_del = FLUSH_DISABLED;
-	if ((strlen(buff) == 3 && strcmp(buff, "yes") == 0) ||
+	else if ((strlen(buff) == 3 && strcmp(buff, "yes") == 0) ||
 	    (strlen(buff) == 1 && strcmp(buff, "1") == 0))
 		conf->flush_on_last_del = FLUSH_ENABLED;
 	else
@@ -1214,7 +1214,7 @@ hw_flush_on_last_del_handler(vector strvec)
 	if ((strlen(buff) == 2 && strcmp(buff, "no") == 0) ||
 	    (strlen(buff) == 1 && strcmp(buff, "0") == 0))
 		hwe->flush_on_last_del = FLUSH_DISABLED;
-	if ((strlen(buff) == 3 && strcmp(buff, "yes") == 0) ||
+	else if ((strlen(buff) == 3 && strcmp(buff, "yes") == 0) ||
 	    (strlen(buff) == 1 && strcmp(buff, "1") == 0))
 		hwe->flush_on_last_del = FLUSH_ENABLED;
 	else
@@ -1609,7 +1609,7 @@ mp_flush_on_last_del_handler(vector strvec)
 	if ((strlen(buff) == 2 && strcmp(buff, "no") == 0) ||
 	    (strlen(buff) == 1 && strcmp(buff, "0") == 0))
 		mpe->flush_on_last_del = FLUSH_DISABLED;
-	if ((strlen(buff) == 3 && strcmp(buff, "yes") == 0) ||
+	else if ((strlen(buff) == 3 && strcmp(buff, "yes") == 0) ||
 	    (strlen(buff) == 1 && strcmp(buff, "1") == 0))
 		mpe->flush_on_last_del = FLUSH_ENABLED;
 	else
