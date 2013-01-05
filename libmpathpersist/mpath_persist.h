@@ -194,15 +194,15 @@ extern int mpath_lib_exit (void );
  *
  * @fd:	The file descriptor of a multipath device. Input argument.
  * @rq_servact: PRIN command service action. Input argument
- * @resp: The response from PRIN service action. The resp is a struct specified below. The caller should
+ * @resp: The response from PRIN service action. The resp is a struct specified above. The caller should
  * 	manage the memory allocation of this struct
  * @noisy: Turn on debugging trace: Input argument. 0->Disable, 1->Enable
  * @verbose: Set verbosity level. Input argument. value:[0-3]. 0->disabled, 3->Max verbose
  *
  * RESTRICTIONS:
  *
- * RETURNS: MPATH_PR_SUCCESS if PR command successful else returns any of the PR status (specified
- *	 above).
+ * RETURNS: MPATH_PR_SUCCESS if PR command successful else returns any of the status specified
+ *       above in RETURN_STATUS.
  *
  */
 extern int mpath_persistent_reserve_in (int fd, int rq_servact, struct prin_resp *resp,
@@ -217,7 +217,7 @@ extern int mpath_persistent_reserve_in (int fd, int rq_servact, struct prin_resp
  * @rq_scope: Persistent reservation scope. The value should be always LU_SCOPE (0h).
  * @rq_type: Persistent reservation type. The valid values of persistent reservation types are
  *	5h (Write exclusive - registrants only)
- *	8h (Exclusive access - registrants only)
+ *	6h (Exclusive access - registrants only)
  *	7h (Write exclusive - All registrants)
  *	8h (Exclusive access - All registrants).
  * @paramp: PROUT command parameter data. The paramp is a struct which describes PROUT
