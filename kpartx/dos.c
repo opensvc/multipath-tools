@@ -98,6 +98,8 @@ read_dos_pt(int fd, struct slice all, struct slice *sp, int ns) {
 			break;
 		}
 		if (is_extended(p.sys_type)) {
+			sp[i].size = 2; /* extended partitions only get two
+					   sectors mapped for LILO to install */
 			n += read_extended_partition(fd, &p, i, sp+n, ns-n);
 		}
 	}

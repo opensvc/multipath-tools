@@ -515,7 +515,6 @@ main(int argc, char **argv){
 			d = c;
 			while (c) {
 				for (j = 0; j < n; j++) {
-					uint64_t start;
 					int k = slices[j].container - 1;
 
 					if (slices[j].size == 0)
@@ -541,11 +540,9 @@ main(int argc, char **argv){
 					}
 					strip_slash(partname);
 
-					start = slices[j].start - slices[k].start;
-					if (safe_sprintf(params, "%d:%d %" PRIu64,
-							 slices[k].major,
-							 slices[k].minor,
-							 start)) {
+					if (safe_sprintf(params, "%s %" PRIu64,
+							 device,
+							 slices[j].start)) {
 						fprintf(stderr, "params too small\n");
 						exit(1);
 					}
