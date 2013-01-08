@@ -659,11 +659,11 @@ path_offline (struct path * pp)
 
 	if (!parent) {
 		condlog(1, "%s: failed to get sysfs information", pp->dev);
-		return PATH_WILD;
+		return PATH_DOWN;
 	}
 
 	if (sysfs_get_state(parent, buff, SCSI_STATE_SIZE))
-		return PATH_WILD;
+		return PATH_DOWN;
 
 	condlog(3, "%s: path state = %s", pp->dev, buff);
 
