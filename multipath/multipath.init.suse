@@ -110,7 +110,7 @@ case "$1" in
 		partlist=$(/sbin/kpartx -l -p _part /dev/disk/by-id/dm-name-$map | sed 's/\([^ ]*\) :.*/\1/p')
 		for part in $partlist; do
 		    [ -e /dev/disk/by-id/dm-name-$part ] && continue
-		    num$((num + 1))
+		    num=$((num + 1))
 		done
 	    done
 	    [ $num -eq 0 ] && break
