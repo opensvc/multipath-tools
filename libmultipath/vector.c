@@ -81,7 +81,7 @@ vector_insert_slot(vector v, int slot, void *value)
 	if (!vector_alloc_slot(v))
 		return NULL;
 
-	for (i = (v->allocated /VECTOR_DEFAULT_SIZE) - 2; i >= slot; i--)
+	for (i = VECTOR_SIZE(v) - 2; i >= slot; i--)
 		v->slot[i + 1] = v->slot[i];
 
 	v->slot[slot] = value;
@@ -97,7 +97,7 @@ find_slot(vector v, void * addr)
 	if (!v)
 		return -1;
 
-	for (i = 0; i < (v->allocated / VECTOR_DEFAULT_SIZE); i++)
+	for (i = 0; i < VECTOR_SIZE(v); i++)
 		if (v->slot[i] == addr)
 			return i;
 
@@ -112,7 +112,7 @@ vector_del_slot(vector v, int slot)
 	if (!v || !v->allocated || slot < 0 || slot > VECTOR_SIZE(v))
 		return;
 
-	for (i = slot + 1; i < (v->allocated / VECTOR_DEFAULT_SIZE); i++)
+	for (i = slot + 1; i < VECTOR_SIZE(v); i++)
 		v->slot[i-1] = v->slot[i];
 
 	v->allocated -= VECTOR_DEFAULT_SIZE;
@@ -140,7 +140,7 @@ vector_repack(vector v)
 	if (!v || !v->allocated)
 		return;
 
-	for (i = 0; i < (v->allocated / VECTOR_DEFAULT_SIZE); i++)
+	for (i = 0; i < VECTOR_SIZE(v); i++)
 		if (i > 0 && v->slot[i] == NULL)
 			vector_del_slot(v, i--);
 }
