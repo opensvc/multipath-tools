@@ -561,7 +561,7 @@ cli_reload(void *v, char **reply, int *len, void *data)
 		return 1;
 	}
 
-	return reload_map(vecs, mpp);
+	return reload_map(vecs, mpp, 0);
 }
 
 int resize_map(struct multipath *mpp, unsigned long long size,

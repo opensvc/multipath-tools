@@ -674,11 +674,12 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 				uev->kernel);
 			return 1;
 		}
-		if (pp->mpp)
-			retval = reload_map(vecs, pp->mpp);
+		if (pp->mpp) {
+			retval = reload_map(vecs, pp->mpp, 0);
 
-		condlog(2, "%s: map %s reloaded (retval %d)",
-			uev->kernel, pp->mpp->alias, retval);
+			condlog(2, "%s: map %s reloaded (retval %d)",
+				uev->kernel, pp->mpp->alias, retval);
+		}
 
 	}
 
@@ -1086,25 +1087,9 @@ int update_prio(struct path *pp, int refresh_all)
 
 int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
 {
-	int i;
-	struct path * pp;
-	char params[PARAMS_SIZE];
-
-	update_mpp_paths(mpp, vecs->pathvec);
-	if (refresh) {
-		vector_foreach_slot (mpp->paths, pp, i)
-			pathinfo(pp, conf->hwtable, DI_PRIO);
-	}
-	params[0] = '\0';
-	if (setup_map(mpp, params, PARAMS_SIZE))
+	if (reload_map(vecs, mpp, refresh))
 		return 1;
 
-	mpp->action = ACT_RELOAD;
-	if (domap(mpp, params) <= 0) {
-		condlog(0, "%s: failed to update map : %s", mpp->alias,
-			strerror(errno));
-		return 1;
-	}
 	dm_lib_release();
 	if (setup_multipath(vecs, mpp) != 0)
 		return 1;

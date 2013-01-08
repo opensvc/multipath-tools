@@ -765,14 +765,17 @@ out:
 	return NULL;
 }
 
-extern int reload_map(struct vectors *vecs, struct multipath *mpp)
+extern int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh)
 {
-	char params[PARAMS_SIZE];
-	int r;
+	char params[PARAMS_SIZE] = {0};
+	struct path *pp;
+	int i, r;
 
 	update_mpp_paths(mpp, vecs->pathvec);
-
-	params[0] = '\0';
+	if (refresh) {
+		vector_foreach_slot (mpp->paths, pp, i)
+			pathinfo(pp, conf->hwtable, DI_PRIO);
+	}
 	if (setup_map(mpp, params, PARAMS_SIZE)) {
 		condlog(0, "%s: failed to setup map", mpp->alias);
 		return 1;
