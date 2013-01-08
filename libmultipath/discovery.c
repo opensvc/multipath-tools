@@ -761,11 +761,13 @@ get_state (struct path * pp, int daemon)
 	checker_clear_message(c);
 	if (daemon)
 		checker_set_async(c);
-	if (!conf->checker_timeout)
-		sysfs_get_timeout(pp, &(c->timeout));
+	if (!conf->checker_timeout &&
+	    (pp->bus != SYSFS_BUS_SCSI ||
+	     sysfs_get_timeout(pp, &(c->timeout))))
+		c->timeout = DEF_TIMEOUT;
 	state = checker_check(c);
 	condlog(3, "%s: state = %s", pp->dev, checker_state_name(state));
-	if (state == PATH_DOWN && strlen(checker_message(c)))
+	if (state != PATH_UP && strlen(checker_message(c)))
 		condlog(3, "%s: checker msg is \"%s\"",
 			pp->dev, checker_message(c));
 	return state;
