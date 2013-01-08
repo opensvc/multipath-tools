@@ -1617,13 +1617,13 @@ child (void * param)
 
 	}
 
+	vecs = gvecs = init_vecs();
+	if (!vecs)
+		exit(1);
+
 	signal_init();
 	setscheduler();
 	set_oom_adj();
-	vecs = gvecs = init_vecs();
-
-	if (!vecs)
-		exit(1);
 
 	conf->daemon = 1;
 	udev_set_sync_support(0);
