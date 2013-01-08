@@ -895,13 +895,11 @@ exit_daemon (int status)
 	if (status != 0)
 		fprintf(stderr, "bad exit status. see daemon.log\n");
 
-	condlog(3, "unlink pidfile");
-	unlink(DEFAULT_PIDFILE);
-
-	pthread_mutex_lock(&exit_mutex);
-	pthread_cond_signal(&exit_cond);
-	pthread_mutex_unlock(&exit_mutex);
-
+	if (running_state != DAEMON_SHUTDOWN) {
+		pthread_mutex_lock(&exit_mutex);
+		pthread_cond_signal(&exit_cond);
+		pthread_mutex_unlock(&exit_mutex);
+	}
 	return status;
 }
 
@@ -1560,6 +1558,7 @@ child (void * param)
 	struct vectors * vecs;
 	struct multipath * mpp;
 	int i;
+	sigset_t set;
 	int rc, pid_rc;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -1672,11 +1671,17 @@ child (void * param)
 
 	running_state = DAEMON_RUNNING;
 	pthread_cond_wait(&exit_cond, &exit_mutex);
+	/* Need to block these to avoid deadlocking */
+	sigemptyset(&set);
+	sigaddset(&set, SIGTERM);
+	sigaddset(&set, SIGINT);
+	pthread_sigmask(SIG_BLOCK, &set, NULL);
 
 	/*
 	 * exit path
 	 */
 	running_state = DAEMON_SHUTDOWN;
+	pthread_sigmask(SIG_UNBLOCK, &set, NULL);
 	block_signal(SIGHUP, NULL);
 	lock(vecs->lock);
 	if (conf->queue_without_daemon == QUE_NO_DAEMON_OFF)
