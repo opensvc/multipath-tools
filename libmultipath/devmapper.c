@@ -284,7 +284,7 @@ dm_addmap (int task, const char *target, struct multipath *mpp, char * params,
 	if (use_uuid && strlen(mpp->wwid) > 0){
 		prefixed_uuid = MALLOC(UUID_PREFIX_LEN + strlen(mpp->wwid) + 1);
 		if (!prefixed_uuid) {
-			condlog(0, "cannot create prefixed uuid : %s\n",
+			condlog(0, "cannot create prefixed uuid : %s",
 				strerror(errno));
 			goto addout;
 		}
@@ -302,7 +302,7 @@ dm_addmap (int task, const char *target, struct multipath *mpp, char * params,
 	if (mpp->attribute_flags & (1 << ATTR_GID) &&
 	    !dm_task_set_gid(dmt, mpp->gid))
 		goto freeout;
-	condlog(4, "%s: addmap [0 %llu %s %s]\n", mpp->alias, mpp->size,
+	condlog(4, "%s: addmap [0 %llu %s %s]", mpp->alias, mpp->size,
 		target, params);
 
 	dm_task_no_open_count(dmt);
@@ -931,7 +931,7 @@ dm_get_name(char *uuid)
 
 	prefixed_uuid = MALLOC(UUID_PREFIX_LEN + strlen(uuid) + 1);
 	if (!prefixed_uuid) {
-		condlog(0, "cannot create prefixed uuid : %s\n",
+		condlog(0, "cannot create prefixed uuid : %s",
 			strerror(errno));
 		goto freeout;
 	}
@@ -1366,7 +1366,7 @@ int dm_reassign(const char *mapname)
 	int r = 0, i;
 
 	if (dm_dev_t(mapname, &dev_t[0], 32)) {
-		condlog(3, "%s: failed to get device number\n", mapname);
+		condlog(3, "%s: failed to get device number", mapname);
 		return 1;
 	}
 

@@ -77,7 +77,7 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 		condlog(4, "write to %s failed: %s", devpath, strerror(errno));
 		size = 0;
 	} else if (size < value_len) {
-		condlog(4, "tried to write %ld to %s. Wrote %ld\n",
+		condlog(4, "tried to write %ld to %s. Wrote %ld",
 			(long)value_len, devpath, (long)size);
 		size = 0;
 	}

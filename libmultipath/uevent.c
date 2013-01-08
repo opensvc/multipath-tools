@@ -422,10 +422,10 @@ int uevent_listen(void)
 	err = udev_monitor_filter_add_match_subsystem_devtype(monitor, "block",
 							      NULL);
 	if (err)
-		condlog(2, "failed to create filter : %s\n", strerror(-err));
+		condlog(2, "failed to create filter : %s", strerror(-err));
 	err = udev_monitor_enable_receiving(monitor);
 	if (err) {
-		condlog(2, "failed to enable receiving : %s\n", strerror(-err));
+		condlog(2, "failed to enable receiving : %s", strerror(-err));
 		goto out;
 	}
 	while (1) {

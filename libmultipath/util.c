@@ -86,7 +86,7 @@ get_word (char * sentence, char ** word)
 	*word = MALLOC(len + 1);
 
 	if (!*word) {
-		condlog(0, "get_word : oom\n");
+		condlog(0, "get_word : oom");
 		return 0;
 	}
 	strncpy(*word, sentence, len);
@@ -178,7 +178,7 @@ devt2devname (char *devname, int devname_len, char *devt)
 				char *p = strrchr(dev, '/');
 
 				if (!p) {
-					condlog(0, "No sysfs entry for %s\n",
+					condlog(0, "No sysfs entry for %s",
 						block_path);
 					return 1;
 				}
@@ -208,7 +208,7 @@ devt2devname (char *devname, int devname_len, char *devt)
 		if ((major == tmpmaj) && (minor == tmpmin)) {
 			if (snprintf(block_path, sizeof(block_path),
 				     "/sys/block/%s", dev) >= sizeof(block_path)) {
-				condlog(0, "device name %s is too long\n", dev);
+				condlog(0, "device name %s is too long", dev);
 				fclose(fd);
 				return 1;
 			}
@@ -218,17 +218,17 @@ devt2devname (char *devname, int devname_len, char *devt)
 	fclose(fd);
 skip_proc:
 	if (strncmp(block_path,"/sys/block", 10)) {
-		condlog(3, "No device found for %u:%u\n", major, minor);
+		condlog(3, "No device found for %u:%u", major, minor);
 		return 1;
 	}
 
 	if (stat(block_path, &statbuf) < 0) {
-		condlog(0, "No sysfs entry for %s\n", block_path);
+		condlog(0, "No sysfs entry for %s", block_path);
 		return 1;
 	}
 
 	if (S_ISDIR(statbuf.st_mode) == 0) {
-		condlog(0, "sysfs entry %s is not a directory\n", block_path);
+		condlog(0, "sysfs entry %s is not a directory", block_path);
 		return 1;
 	}
 	basenamecpy((const char *)block_path, devname, devname_len);

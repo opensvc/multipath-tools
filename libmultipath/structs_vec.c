@@ -483,7 +483,7 @@ int update_multipath (struct vectors *vecs, char *mapname, int reset)
 	mpp = find_mp_by_alias(vecs->mpvec, mapname);
 
 	if (!mpp) {
-		condlog(3, "%s: multipath map not found\n", mapname);
+		condlog(3, "%s: multipath map not found", mapname);
 		return 2;
 	}
 

@@ -1154,7 +1154,7 @@ check_path (struct vectors * vecs, struct path * pp)
 	 * Synchronize with kernel state
 	 */
 	if (update_multipath_strings(pp->mpp, vecs->pathvec)) {
-		condlog(1, "%s: Could not synchronize with kernel state\n",
+		condlog(1, "%s: Could not synchronize with kernel state",
 			pp->dev);
 		pp->dmstate = PSTATE_UNDEF;
 	}
@@ -1611,7 +1611,7 @@ child (void * param)
 		struct rlimit fd_limit;
 
 		if (getrlimit(RLIMIT_NOFILE, &fd_limit) < 0) {
-			condlog(0, "can't get open fds limit: %s\n",
+			condlog(0, "can't get open fds limit: %s",
 				strerror(errno));
 			fd_limit.rlim_cur = 0;
 			fd_limit.rlim_max = 0;
@@ -1622,11 +1622,11 @@ child (void * param)
 				fd_limit.rlim_max = conf->max_fds;
 			if (setrlimit(RLIMIT_NOFILE, &fd_limit) < 0) {
 				condlog(0, "can't set open fds limit to "
-					"%lu/%lu : %s\n",
+					"%lu/%lu : %s",
 					fd_limit.rlim_cur, fd_limit.rlim_max,
 					strerror(errno));
 			} else {
-				condlog(3, "set open fds limit to %lu/%lu\n",
+				condlog(3, "set open fds limit to %lu/%lu",
 					fd_limit.rlim_cur, fd_limit.rlim_max);
 			}
 		}
@@ -1713,7 +1713,8 @@ child (void * param)
 	/* Now all the waitevent threads will start rushing in. */
 	while (vecs->lock.depth > 0) {
 		sleep (1); /* This is weak. */
-		condlog(3,"Have %d wait event checkers threads to de-alloc, waiting..\n", vecs->lock.depth);
+		condlog(3, "Have %d wait event checkers threads to de-alloc,"
+			" waiting...", vecs->lock.depth);
 	}
 	pthread_mutex_destroy(vecs->lock.mutex);
 	FREE(vecs->lock.mutex);
@@ -1900,18 +1901,18 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 
 	resp = mpath_alloc_prin_response(MPATH_PRIN_RKEY_SA);
 	if (!resp){
-		condlog(0,"%s Alloc failed for prin response \n", pp->dev);
+		condlog(0,"%s Alloc failed for prin response", pp->dev);
 		return NULL;
 	}
 
 	ret = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RKEY_SA, resp, 0);
 	if (ret != MPATH_PR_SUCCESS )
 	{
-		condlog(0,"%s : pr in read keys service action failed. Error=%d\n", pp->dev, ret);
+		condlog(0,"%s : pr in read keys service action failed. Error=%d", pp->dev, ret);
 		goto out;
 	}
 
-	condlog(3, " event pr=%d addlen=%d\n",resp->prin_descriptor.prin_readkeys.prgeneration,
+	condlog(3, " event pr=%d addlen=%d",resp->prin_descriptor.prin_readkeys.prgeneration,
 			resp->prin_descriptor.prin_readkeys.additional_length );
 
 	if (resp->prin_descriptor.prin_readkeys.additional_length == 0 )
@@ -1933,7 +1934,7 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 	isFound =0;
 	for (i = 0; i < resp->prin_descriptor.prin_readkeys.additional_length/8; i++ )
 	{
-		condlog(2, "PR IN READKEYS[%d]  reservation key:\n",i);
+		condlog(2, "PR IN READKEYS[%d]  reservation key:",i);
 		dumpHex((char *)&resp->prin_descriptor.prin_readkeys.key_list[i*8], 8 , -1);
 		if (!memcmp(mpp->reservation_key, &resp->prin_descriptor.prin_readkeys.key_list[i*8], 8))
 		{
@@ -1945,7 +1946,7 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 	if (!isFound)
 	{
 		condlog(0, "%s: Either device not registered or ", pp->dev);
-		condlog(0, "host is not authorised for registration. Skip path\n");
+		condlog(0, "host is not authorised for registration. Skip path");
 		ret = MPATH_PR_OTHER;
 		goto out;
 	}
@@ -1959,12 +1960,12 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 	}
 	param->num_transportid = 0;
 
-	condlog(3, "device %s:%s \n", pp->dev, pp->mpp->wwid);
+	condlog(3, "device %s:%s", pp->dev, pp->mpp->wwid);
 
 	ret = prout_do_scsi_ioctl(pp->dev, MPATH_PROUT_REG_IGN_SA, 0, 0, param, 0);
 	if (ret != MPATH_PR_SUCCESS )
 	{
-		condlog(0,"%s: Reservation registration failed. Error: %d\n", pp->dev, ret);
+		condlog(0,"%s: Reservation registration failed. Error: %d", pp->dev, ret);
 	}
 	mpp->prflag = 1;
 
@@ -1991,7 +1992,7 @@ int mpath_pr_event_handle(struct path *pp)
 
 	rc = pthread_create(&thread, NULL , mpath_pr_event_handler_fn, pp);
 	if (rc) {
-		condlog(0, "%s: ERROR; return code from pthread_create() is %d\n", pp->dev, rc);
+		condlog(0, "%s: ERROR; return code from pthread_create() is %d", pp->dev, rc);
 		return -1;
 	}
 	pthread_attr_destroy(&attr);

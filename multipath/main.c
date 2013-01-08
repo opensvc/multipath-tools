@@ -535,7 +535,7 @@ main (int argc, char *argv[])
 		fd_limit.rlim_cur = conf->max_fds;
 		fd_limit.rlim_max = conf->max_fds;
 		if (setrlimit(RLIMIT_NOFILE, &fd_limit) < 0)
-			condlog(0, "can't set open fds limit to %d : %s\n",
+			condlog(0, "can't set open fds limit to %d : %s",
 				conf->max_fds, strerror(errno));
 	}
 

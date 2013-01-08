@@ -100,7 +100,7 @@ assemble_map (struct multipath * mp, char * params, int len)
 		shift = snprintf(p, freechar, " %s %i 1", mp->selector,
 				 VECTOR_SIZE(pgp->paths));
 		if (shift >= freechar) {
-			condlog(0, "%s: params too small\n", mp->alias);
+			condlog(0, "%s: params too small", mp->alias);
 			return 1;
 		}
 		p += shift;
@@ -113,7 +113,7 @@ assemble_map (struct multipath * mp, char * params, int len)
 			    && pp->priority > 0)
 				tmp_minio = minio * pp->priority;
 			if (!strlen(pp->dev_t) ) {
-				condlog(0, "dev_t not set for '%s'\n", pp->dev);
+				condlog(0, "dev_t not set for '%s'", pp->dev);
 				return 1;
 			}
 			shift = snprintf(p, freechar, " %s %d",
