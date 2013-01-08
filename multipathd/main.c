@@ -1389,7 +1389,6 @@ reconfigure (struct vectors * vecs)
 	struct config * old = conf;
 	int retval = 1;
 
-	lock(vecs->lock);
 	/*
 	 * free old map and path vectors ... they use old conf state
 	 */
@@ -1410,7 +1409,6 @@ reconfigure (struct vectors * vecs)
 		retval = 0;
 	}
 
-	unlock(vecs->lock);
 	return retval;
 }
 
@@ -1641,9 +1639,9 @@ child (void * param)
 	/*
 	 * fetch and configure both paths and multipaths
 	 */
-	lock(vecs->lock);
 	running_state = DAEMON_CONFIGURE;
 
+	lock(vecs->lock);
 	if (configure(vecs, 1)) {
 		unlock(vecs->lock);
 		condlog(0, "failure during configuration");
