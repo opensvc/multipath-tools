@@ -3,11 +3,13 @@
 
 #include <pthread.h>
 
-pthread_t log_thr;
+extern pthread_t log_thr;
 
-pthread_mutex_t *logq_lock;
-pthread_mutex_t *logev_lock;
-pthread_cond_t *logev_cond;
+extern pthread_mutex_t logq_lock;
+extern pthread_mutex_t logev_lock;
+extern pthread_cond_t logev_cond;
+
+extern int logq_running;
 
 void log_safe(int prio, const char * fmt, va_list ap);
 void log_thread_start(pthread_attr_t *attr);
