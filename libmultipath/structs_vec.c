@@ -246,11 +246,15 @@ update_multipath_table (struct multipath *mpp, vector pathvec)
 	if (!mpp)
 		return 1;
 
-	if (dm_get_map(mpp->alias, &mpp->size, params))
+	if (dm_get_map(mpp->alias, &mpp->size, params)) {
+		condlog(3, "%s: cannot get map", mpp->alias);
 		return 1;
+	}
 
-	if (disassemble_map(pathvec, params, mpp))
+	if (disassemble_map(pathvec, params, mpp)) {
+		condlog(3, "%s: cannot disassemble map", mpp->alias);
 		return 1;
+	}
 
 	return 0;
 }
@@ -263,11 +267,15 @@ update_multipath_status (struct multipath *mpp)
 	if (!mpp)
 		return 1;
 
-	if(dm_get_status(mpp->alias, status))
+	if (dm_get_status(mpp->alias, status)) {
+		condlog(3, "%s: cannot get status", mpp->alias);
 		return 1;
+	}
 
-	if (disassemble_status(status, mpp))
+	if (disassemble_status(status, mpp)) {
+		condlog(3, "%s: cannot disassemble status", mpp->alias);
 		return 1;
+	}
 
 	return 0;
 }
