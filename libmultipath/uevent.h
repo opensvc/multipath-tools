@@ -20,6 +20,7 @@ struct uevent {
 	char *devpath;
 	char *action;
 	char *kernel;
+	unsigned long seqnum;
 	char *envp[HOTPLUG_NUM_ENVP];
 };
 

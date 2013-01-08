@@ -361,11 +361,20 @@ int failback_listen(void)
 			key = &buffer[bufpos];
 			keylen = strlen(key);
 			uev->envp[i] = key;
+			/* Filter out sequence number */
+			if (strncmp(key, "SEQNUM=", 7) == 0) {
+				char *eptr;
+
+				uev->seqnum = strtoul(key + 7, &eptr, 10);
+				if (eptr == key + 7)
+					uev->seqnum = -1;
+			}
 			bufpos += keylen + 1;
 		}
 		uev->envp[i] = NULL;
 
-		condlog(3, "uevent '%s' from '%s'", uev->action, uev->devpath);
+		condlog(3, "uevent %ld '%s' from '%s'", uev->seqnum,
+			uev->action, uev->devpath);
 		uev->kernel = strrchr(uev->devpath, '/');
 		if (uev->kernel)
 			uev->kernel++;
