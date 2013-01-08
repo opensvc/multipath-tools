@@ -1622,7 +1622,7 @@ mp_flush_on_last_del_handler(vector strvec)
 static int
 mp_prio_handler(vector strvec)
 {
-	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->hwtable);
+	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);
 
 	if (!mpe)
 		return 1;
