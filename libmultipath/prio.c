@@ -86,6 +86,7 @@ struct prio * add_prio (char * name)
 	p = alloc_prio();
 	if (!p)
 		return NULL;
+	snprintf(p->name, PRIO_NAME_LEN, "%s", name);
 	snprintf(libname, LIB_PRIO_NAMELEN, "%s/libprio%s.so",
 		 conf->multipath_dir, name);
 	if (stat(libname,&stbuf) < 0) {
@@ -107,7 +108,6 @@ struct prio * add_prio (char * name)
 		condlog(0, "A dynamic linking error occurred: (%s)", errstr);
 	if (!p->getprio)
 		goto out;
-	snprintf(p->name, PRIO_NAME_LEN, "%s", name);
 	list_add(&p->node, &prioritizers);
 	return p;
 out:
