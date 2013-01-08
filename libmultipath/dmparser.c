@@ -232,13 +232,16 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 	num_pg = atoi(word);
 	FREE(word);
 
-	if (num_pg > 0 && !mpp->pg) {
-		mpp->pg = vector_alloc();
-
-		if (!mpp->pg)
-			return 1;
-	} else
+	if (num_pg > 0) {
+		if (!mpp->pg) {
+			mpp->pg = vector_alloc();
+			if (!mpp->pg)
+				return 1;
+		}
+	} else {
+		free_pgvec(mpp->pg, KEEP_PATHS);
 		mpp->pg = NULL;
+	}
 
 	/*
 	 * first pg to try
