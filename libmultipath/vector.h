@@ -25,7 +25,7 @@
 
 /* vector definition */
 struct _vector {
-	unsigned int allocated;
+	int allocated;
 	void **slot;
 };
 typedef struct _vector *vector;
