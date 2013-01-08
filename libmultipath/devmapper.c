@@ -707,6 +707,30 @@ _dm_flush_map (const char * mapname, int need_sync)
 }
 
 extern int
+dm_suspend_and_flush_map (const char * mapname)
+{
+	int s;
+
+	if (!dm_map_present(mapname))
+		return 0;
+
+	if (dm_type(mapname, TGT_MPATH) <= 0)
+		return 0; /* nothing to do */
+
+	s = dm_queue_if_no_path((char *)mapname, 0);
+	if (!s)
+		s = dm_simplecmd_flush(DM_DEVICE_SUSPEND, mapname, 0);
+
+	if (!dm_flush_map(mapname)) {
+		condlog(4, "multipath map %s removed", mapname);
+		return 0;
+	}
+	condlog(2, "failed to remove multipath map %s", mapname);
+	dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname);
+	return 1;
+}
+
+extern int
 dm_flush_maps (void)
 {
 	int r = 0;
@@ -729,7 +753,7 @@ dm_flush_maps (void)
 		goto out;
 
 	do {
-		r |= dm_flush_map(names->name);
+		r |= dm_suspend_and_flush_map(names->name);
 		next = names->next;
 		names = (void *) names + next;
 	} while (next);

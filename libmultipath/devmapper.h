@@ -22,6 +22,7 @@ int dm_type(const char *, char *);
 int _dm_flush_map (const char *, int);
 #define dm_flush_map(mapname) _dm_flush_map(mapname, 1)
 #define dm_flush_map_nosync(mapname) _dm_flush_map(mapname, 0)
+int dm_suspend_and_flush_map(const char * mapname);
 int dm_flush_maps (void);
 int dm_fail_path(char * mapname, char * path);
 int dm_reinstate_path(char * mapname, char * path);
