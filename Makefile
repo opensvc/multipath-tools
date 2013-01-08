@@ -66,6 +66,13 @@ install:	recurse_install
 
 uninstall:	recurse_uninstall
 
+.PHONY:	TAGS
+TAGS:
+	etags -a libmultipath/*.c
+	etags -a libmultipath/*.h
+	etags -a multipathd/*.c
+	etags -a multipathd/*.h
+
 release:
 	sed -e "s/__VERSION__/${VERSION}/" \
 	multipath-tools.spec.in > multipath-tools.spec
