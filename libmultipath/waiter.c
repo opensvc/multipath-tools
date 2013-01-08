@@ -45,6 +45,8 @@ void free_waiter (void *data)
 
 void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 {
+	pthread_t thread;
+
 	if (mpp->waiter == (pthread_t)0) {
 		condlog(3, "%s: event checker thread already stopped",
 			mpp->alias);
@@ -52,8 +54,9 @@ void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 	}
 	condlog(2, "%s: stop event checker thread (%lu)", mpp->alias,
 		mpp->waiter);
-	pthread_cancel(mpp->waiter);
+	thread = mpp->waiter;
 	mpp->waiter = (pthread_t)0;
+	pthread_cancel(thread);
 }
 
 /*
