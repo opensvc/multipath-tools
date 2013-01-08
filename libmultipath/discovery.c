@@ -680,7 +680,7 @@ path_offline (struct path * pp)
 	return PATH_DOWN;
 }
 
-extern int
+int
 sysfs_pathinfo(struct path * pp)
 {
 	if (common_sysfs_pathinfo(pp))
