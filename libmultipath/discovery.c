@@ -283,7 +283,7 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 	snprintf(value, 11, "%u", mpp->dev_loss);
 	if (mpp->dev_loss &&
 	    sysfs_attr_set_value(rport_dev, "dev_loss_tmo", value, 11) <= 0) {
-		if ((!mpp->fast_io_fail ||
+		if ((mpp->fast_io_fail == MP_FAST_IO_FAIL_UNSET ||
 		     mpp->fast_io_fail == MP_FAST_IO_FAIL_OFF)
 		    && mpp->dev_loss > 600) {
 			condlog(3, "%s: limiting dev_loss_tmo to 600, since "
@@ -296,7 +296,7 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 			goto out;
 		}
 	}
-	if (mpp->fast_io_fail){
+	if (mpp->fast_io_fail != MP_FAST_IO_FAIL_UNSET){
 		if (mpp->fast_io_fail == MP_FAST_IO_FAIL_OFF)
 			sprintf(value, "off");
 		else if (mpp->fast_io_fail == MP_FAST_IO_FAIL_ZERO)
@@ -340,7 +340,7 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 			mpp->alias, mpp->fast_io_fail);
 		mpp->fast_io_fail = MP_FAST_IO_FAIL_OFF;
 	}
-	if (!mpp->dev_loss && !mpp->fast_io_fail)
+	if (!mpp->dev_loss && mpp->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
 		return 0;
 
 	vector_foreach_slot(mpp->paths, pp, i) {

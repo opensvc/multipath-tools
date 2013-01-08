@@ -47,7 +47,7 @@ def_fast_io_fail_handler(vector strvec)
 		conf->fast_io_fail = MP_FAST_IO_FAIL_OFF;
 	else if (sscanf(buff, "%d", &conf->fast_io_fail) != 1 ||
 		 conf->fast_io_fail < MP_FAST_IO_FAIL_ZERO)
-		conf->fast_io_fail = 0;
+		conf->fast_io_fail = MP_FAST_IO_FAIL_UNSET;
 	else if (conf->fast_io_fail == 0)
 		conf->fast_io_fail = MP_FAST_IO_FAIL_ZERO;
 
@@ -882,7 +882,7 @@ hw_fast_io_fail_handler(vector strvec)
 		hwe->fast_io_fail = MP_FAST_IO_FAIL_OFF;
 	else if (sscanf(buff, "%d", &hwe->fast_io_fail) != 1 ||
 		 hwe->fast_io_fail < MP_FAST_IO_FAIL_ZERO)
-		hwe->fast_io_fail = 0;
+		hwe->fast_io_fail = MP_FAST_IO_FAIL_UNSET;
 	else if (hwe->fast_io_fail == 0)
 		hwe->fast_io_fail = MP_FAST_IO_FAIL_ZERO;
 
@@ -1973,7 +1973,7 @@ static int
 snprint_hw_fast_io_fail(char * buff, int len, void * data)
 {
 	struct hwentry * hwe = (struct hwentry *)data;
-	if (!hwe->fast_io_fail)
+	if (hwe->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
 		return 0;
 	if (hwe->fast_io_fail == conf->fast_io_fail)
 		return 0;
@@ -2282,7 +2282,7 @@ snprint_def_polling_interval (char * buff, int len, void * data)
 static int
 snprint_def_fast_io_fail(char * buff, int len, void * data)
 {
-	if (!conf->fast_io_fail)
+	if (conf->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
 		return 0;
 	if (conf->fast_io_fail == MP_FAST_IO_FAIL_OFF)
 		return snprintf(buff, len, "off");
