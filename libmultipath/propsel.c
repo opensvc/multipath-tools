@@ -282,8 +282,11 @@ select_features (struct multipath * mp)
 	} else if (mp->hwe && mp->hwe->features) {
 		mp->features = STRDUP(mp->hwe->features);
 		origin = "controller setting";
-	} else {
+	} else if (conf->features) {
 		mp->features = STRDUP(conf->features);
+		origin = "config file default";
+	} else {
+		mp->features = set_default(DEFAULT_FEATURES);
 		origin = "internal default";
 	}
 	condlog(3, "%s: features = %s (%s)",
@@ -561,18 +564,22 @@ select_fast_io_fail(struct multipath *mp)
 	if (mp->hwe && mp->hwe->fast_io_fail != MP_FAST_IO_FAIL_UNSET) {
 		mp->fast_io_fail = mp->hwe->fast_io_fail;
 		if (mp->fast_io_fail == MP_FAST_IO_FAIL_OFF)
-			condlog(3, "%s: fast_io_fail_tmo = off (controller default)", mp->alias);
+			condlog(3, "%s: fast_io_fail_tmo = off "
+				"(controller setting)", mp->alias);
 		else
-			condlog(3, "%s: fast_io_fail_tmo = %d (controller default)", mp->alias,
+			condlog(3, "%s: fast_io_fail_tmo = %d "
+				"(controller setting)", mp->alias,
 				mp->fast_io_fail == MP_FAST_IO_FAIL_ZERO ? 0 : mp->fast_io_fail);
 		return 0;
 	}
 	if (conf->fast_io_fail != MP_FAST_IO_FAIL_UNSET) {
 		mp->fast_io_fail = conf->fast_io_fail;
 		if (mp->fast_io_fail == MP_FAST_IO_FAIL_OFF)
-			condlog(3, "%s: fast_io_fail_tmo = off (config file default)", mp->alias);
+			condlog(3, "%s: fast_io_fail_tmo = off "
+				"(config file default)", mp->alias);
 		else
-			condlog(3, "%s: fast_io_fail_tmo = %d (config file default)", mp->alias,
+			condlog(3, "%s: fast_io_fail_tmo = %d "
+				"(config file default)", mp->alias,
 				mp->fast_io_fail == MP_FAST_IO_FAIL_ZERO ? 0 : mp->fast_io_fail);
 		return 0;
 	}
