@@ -281,7 +281,7 @@ dm_addmap (int task, const char *target, struct multipath *mpp, char * params,
 	if (ro)
 		dm_task_set_ro(dmt);
 
-	if (use_uuid && mpp->wwid){
+	if (use_uuid && strlen(mpp->wwid) > 0){
 		prefixed_uuid = MALLOC(UUID_PREFIX_LEN + strlen(mpp->wwid) + 1);
 		if (!prefixed_uuid) {
 			condlog(0, "cannot create prefixed uuid : %s\n",
