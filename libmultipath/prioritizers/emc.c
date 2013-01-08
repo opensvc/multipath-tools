@@ -5,6 +5,7 @@
 #include <sg_include.h>
 #include <debug.h>
 #include <prio.h>
+#include <structs.h>
 
 #define INQUIRY_CMD     0x12
 #define INQUIRY_CMDLEN  6

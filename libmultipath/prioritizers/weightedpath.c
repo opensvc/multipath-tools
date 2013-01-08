@@ -60,6 +60,10 @@ int prio_path_weight(struct path *pp, char *prio_args)
 
 	regex = get_next_string(&temp, split_char);
 
+	/* Return default priority if the argument is not parseable */
+	if (!regex)
+		return priority;
+
 	if (!strcmp(regex, HBTL)) {
 		sprintf(path, "%d:%d:%d:%d", pp->sg_id.host_no,
 			pp->sg_id.channel, pp->sg_id.scsi_id, pp->sg_id.lun);
@@ -67,7 +71,7 @@ int prio_path_weight(struct path *pp, char *prio_args)
 		strcpy(path, pp->dev);
 	} else {
 		condlog(0, "%s: %s - Invalid arguments", pp->dev,
-			pp->prio->name);
+			pp->prio.name);
 		return priority;
 	}
 

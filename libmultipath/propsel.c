@@ -383,20 +383,19 @@ extern int
 select_prio (struct path * pp)
 {
 	struct mpentry * mpe;
+	struct prio * p = &pp->prio;
 
 	if ((mpe = find_mpe(pp->wwid))) {
 		if (mpe->prio_name) {
-			pp->prio = prio_lookup(mpe->prio_name);
-			prio_set_args(pp->prio, mpe->prio_args);
+			prio_get(p, mpe->prio_name, mpe->prio_args);
 			condlog(3, "%s: prio = %s (LUN setting)",
-				pp->dev, pp->prio->name);
+				pp->dev, prio_name(p));
 			return 0;
 		}
 	}
 
 	if (pp->hwe && pp->hwe->prio_name) {
-		pp->prio = prio_lookup(pp->hwe->prio_name);
-		prio_set_args(pp->prio, pp->hwe->prio_args);
+		prio_get(p, pp->hwe->prio_name, pp->hwe->prio_name);
 		condlog(3, "%s: prio = %s (controller setting)",
 			pp->dev, pp->hwe->prio_name);
 		condlog(3, "%s: prio args = %s (controller setting)",
@@ -404,16 +403,14 @@ select_prio (struct path * pp)
 		return 0;
 	}
 	if (conf->prio_name) {
-		pp->prio = prio_lookup(conf->prio_name);
-		prio_set_args(pp->prio, conf->prio_args);
+		prio_get(p, conf->prio_name, conf->prio_args);
 		condlog(3, "%s: prio = %s (config file default)",
 			pp->dev, conf->prio_name);
 		condlog(3, "%s: prio args = %s (config file default)",
 			pp->dev, conf->prio_args);
 		return 0;
 	}
-	pp->prio = prio_lookup(DEFAULT_PRIO);
-	prio_set_args(pp->prio, DEFAULT_PRIO_ARGS);
+	prio_get(p, DEFAULT_PRIO, DEFAULT_PRIO_ARGS);
 	condlog(3, "%s: prio = %s (internal default)",
 		pp->dev, DEFAULT_PRIO);
 	condlog(3, "%s: prio = %s (internal default)",

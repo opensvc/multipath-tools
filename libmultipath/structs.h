@@ -3,6 +3,8 @@
 
 #include <sys/types.h>
 
+#include "prio.h"
+
 #define WWID_SIZE		128
 #define SERIAL_SIZE		65
 #define NODE_NAME_SIZE		224
@@ -132,6 +134,7 @@ struct hd_geometry {
       unsigned long start;
 };
 #endif
+
 struct path {
 	char dev[FILE_NAME_SIZE];
 	char dev_t[BLK_DEV_SIZE];
@@ -157,7 +160,8 @@ struct path {
 	int priority;
 	int pgindex;
 	char * uid_attribute;
-	struct prio * prio;
+	struct prio prio;
+	char * prio_args;
 	struct checker checker;
 	struct multipath * mpp;
 	int fd;

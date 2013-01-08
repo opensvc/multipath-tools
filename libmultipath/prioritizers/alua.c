@@ -16,6 +16,7 @@
 
 #include <debug.h>
 #include <prio.h>
+#include <structs.h>
 
 #include "alua.h"
 

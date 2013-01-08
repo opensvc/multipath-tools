@@ -24,6 +24,7 @@
 #include <sg_include.h>
 #include <debug.h>
 #include <prio.h>
+#include <structs.h>
 
 #define INQ_REPLY_LEN 255
 #define INQ_CMD_CODE 0x12
