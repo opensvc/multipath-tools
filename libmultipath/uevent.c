@@ -132,6 +132,17 @@ static void uevq_stop(void *arg)
 	pthread_mutex_unlock(uevq_lockp);
 }
 
+void
+uevq_cleanup(struct list_head *tmpq)
+{
+	struct uevent *uev, *tmp;
+
+	list_for_each_entry_safe(uev, tmp, tmpq, node) {
+		list_del_init(&uev->node);
+		FREE(uev);
+	}
+}
+
 /*
  * Service the uevent queue.
  */
@@ -163,6 +174,7 @@ int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		service_uevq(&uevq_tmp);
 	}
 	condlog(3, "Terminating uev service queue");
+	uevq_cleanup(&uevq);
 	return 0;
 }
 
