@@ -22,6 +22,7 @@ int rdac_prio(const char *dev, int fd)
 	int ret = 0;
 
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
+	memset(sense_buffer, 0, 256);
 	io_hdr.interface_id = 'S';
 	io_hdr.cmd_len = sizeof (inqCmdBlk);
 	io_hdr.mx_sb_len = sizeof (sb);

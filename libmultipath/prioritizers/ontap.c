@@ -80,6 +80,7 @@ static int send_gva(const char *dev, int fd, unsigned char pg,
 	int ret = -1;
 
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
+	memset(results, 0, *results_size);
 	io_hdr.interface_id = 'S';
 	io_hdr.cmd_len = sizeof (cdb);
 	io_hdr.mx_sb_len = sizeof (sb);

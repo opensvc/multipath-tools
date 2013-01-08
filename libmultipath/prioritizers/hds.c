@@ -105,6 +105,7 @@ int hds_modular_prio (const char *dev, int fd)
 	}
 
 	memset (&io_hdr, 0, sizeof (sg_io_hdr_t));
+	memset (inqBuff, 0, INQ_REPLY_LEN);
 	io_hdr.interface_id = 'S';
 	io_hdr.cmd_len = sizeof (inqCmdBlk);
 	io_hdr.mx_sb_len = sizeof (sense_buffer);
