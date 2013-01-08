@@ -87,7 +87,7 @@
 int hds_modular_prio (const char *dev, int fd)
 {
 	int k;
-	char vendor[8];
+	char vendor[9];
 	char product[32];
 	char serial[32];
 	char ldev[32];
@@ -125,7 +125,7 @@ int hds_modular_prio (const char *dev, int fd)
 		return -1;
 	}
 
-	snprintf (vendor, 8, "%.8s", inqBuffp + 8);
+	snprintf (vendor, 9, "%.8s", inqBuffp + 8);
 	snprintf (product, 17, "%.16s", inqBuffp + 16);
 	snprintf (serial, 5, "%.4s", inqBuffp + 40);
 	snprintf (ldev, 5, "%.4s", inqBuffp + 44);
