@@ -94,6 +94,9 @@ find_slot(vector v, void * addr)
 {
 	int i;
 
+	if (!v)
+		return -1;
+
 	for (i = 0; i < (v->allocated / VECTOR_DEFAULT_SIZE); i++)
 		if (v->slot[i] == addr)
 			return i;
