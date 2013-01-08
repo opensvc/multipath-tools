@@ -276,7 +276,6 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 			num_pg_args = atoi(word);
 
 			if (merge_words(&mpp->selector, word, 1)) {
-				FREE(word);
 				goto out1;
 			}
 			FREE(word);
