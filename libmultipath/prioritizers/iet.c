@@ -8,6 +8,7 @@
 #include <prio.h>
 #include <debug.h>
 #include <unistd.h>
+#include <structs.h>
 
 //
 // This prioritizer suits iSCSI needs, makes it possible to prefer one path.
