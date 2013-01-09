@@ -301,7 +301,7 @@ to assign a persistent and unique alias to the multipath, in the form of mpath<n
 If set to 
 .I no
 use the WWID as the alias. In either case this be will
-be overriden by any specific aliases in the \fImultipaths\fR section.
+be overridden by any specific aliases in the \fImultipaths\fR section.
 Default is
 .I no
 .TP
@@ -314,7 +314,7 @@ deleted. Default is
 .TP
 .B max_fds
 Specify the maximum number of file descriptors that can be opened by multipath
-and multipathd.  This is equivalent to ulimit -n. A value of \fImax\fR will set
+and multipathd.  This is equivalent to ulimit \-n. A value of \fImax\fR will set
 this to the system limit from /proc/sys/fs/nr_open. If this is not set, the
 maximum number of open fds is taken from the calling process. It is usually
 1024. To be safe, this should be set to the maximum number of paths plus 32,
@@ -322,7 +322,7 @@ if that number is greated than 1024.
 .TP
 .B checker_timeout
 Specify the timeout to user for path checkers that issue scsi commands with an
-explict timeout, in seconds; default taken from
+explicit timeout, in seconds; default taken from
 .I /sys/block/sd<x>/device/timeout
 .TP
 .B fast_io_fail_tmo
@@ -430,7 +430,7 @@ The
 section is used to revert the actions of the
 .I blacklist
 section, ie to include specific device in the
-multipath topology. This allows to selectively include devices which
+multipath topology. This allows one to selectively include devices which
 would normally be excluded via the
 .I blacklist
 section.

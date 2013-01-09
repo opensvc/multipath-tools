@@ -18,7 +18,7 @@ creation and deletion.
 Add partition mappings
 .TP
 .B \-r
-Readonly partition mappings
+Read-only partition mappings
 .TP
 .B \-d
 Delete partition mappings
@@ -27,7 +27,7 @@ Delete partition mappings
 Update partition mappings
 .TP
 .B \-l
-List partition mappings that would be added -a
+List partition mappings that would be added \-a
 .TP
 .B \-p
 set device name-partition number delimiter
@@ -46,7 +46,7 @@ Sync mode. Don't return until the partitions are created
 .SH EXAMPLE
 To mount all the partitions in a raw disk image:
 .IP
-kpartx -av disk.img
+kpartx \-av disk.img
 .PP
 This will output lines such as:
 .IP
@@ -62,7 +62,7 @@ fsck /dev/mapper/loop3p1
 .PP
 When you're done, you need to remove the devices:
 .IP
-kpartx -d disk.img
+kpartx \-d disk.img
 .SH "SEE ALSO"
 .BR multipath (8)
 .BR multipathd (8)

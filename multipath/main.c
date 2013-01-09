@@ -505,7 +505,7 @@ main (int argc, char *argv[])
 			usage(argv[0]);
 			exit(0);
 		case ':':
-			fprintf(stderr, "Missing option arguement\n");
+			fprintf(stderr, "Missing option argument\n");
 			usage(argv[0]);
 			exit(1);
 		case '?':
