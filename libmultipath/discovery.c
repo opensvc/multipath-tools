@@ -103,6 +103,7 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 
 	udev_list_entry_foreach(entry,
 				udev_enumerate_get_list_entry(udev_iter)) {
+		const char *devtype;
 		devpath = udev_list_entry_get_name(entry);
 		condlog(4, "Discover device %s", devpath);
 		udevice = udev_device_new_from_syspath(conf->udev, devpath);
@@ -111,7 +112,8 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 			r++;
 			continue;
 		}
-		if(!strncmp(udev_device_get_devtype(udevice), "disk", 4))
+		devtype = udev_device_get_devtype(udevice);
+		if(devtype && !strncmp(devtype, "disk", 4))
 			r += path_discover(pathvec, conf, udevice, flag);
 		udev_device_unref(udevice);
 	}
@@ -449,7 +451,8 @@ scsi_sysfs_pathinfo (struct path * pp)
 
 	parent = pp->udev;
 	while (parent) {
-		if (!strncmp(udev_device_get_subsystem(parent), "scsi", 4)) {
+		const char *subsys = udev_device_get_subsystem(parent);
+		if (subsys && !strncmp(subsys, "scsi", 4)) {
 			attr_path = udev_device_get_sysname(parent);
 			if (!attr_path)
 				break;
@@ -515,7 +518,8 @@ ccw_sysfs_pathinfo (struct path * pp)
 
 	parent = pp->udev;
 	while (parent) {
-		if (!strncmp(udev_device_get_subsystem(parent), "ccw", 3))
+		const char *subsys = udev_device_get_subsystem(parent);
+		if (subsys && !strncmp(subsys, "ccw", 3))
 			break;
 		parent = udev_device_get_parent(parent);
 	}
@@ -571,7 +575,8 @@ cciss_sysfs_pathinfo (struct path * pp)
 
 	parent = pp->udev;
 	while (parent) {
-		if (!strncmp(udev_device_get_subsystem(parent), "cciss", 5)) {
+		const char *subsys = udev_device_get_subsystem(parent);
+		if (subsys && !strncmp(subsys, "cciss", 5)) {
 			attr_path = udev_device_get_sysname(parent);
 			if (!attr_path)
 				break;
@@ -652,7 +657,8 @@ path_offline (struct path * pp)
 
 	parent = pp->udev;
 	while (parent) {
-		if (!strncmp(udev_device_get_subsystem(parent), "scsi", 4))
+		const char *subsys = udev_device_get_subsystem(parent);
+		if (subsys && !strncmp(subsys, "scsi", 4))
 			break;
 		parent = udev_device_get_parent(parent);
 	}
