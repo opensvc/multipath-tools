@@ -886,7 +886,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	 * fetch info not available through sysfs
 	 */
 	if (pp->fd < 0)
-		pp->fd = open(udev_device_get_devnode(pp->udev), O_RDWR);
+		pp->fd = open(udev_device_get_devnode(pp->udev), O_RDONLY);
 
 	if (pp->fd < 0) {
 		condlog(4, "Couldn't open node for %s: %s",
