@@ -8,7 +8,7 @@
 
 void dm_init(void);
 int dm_prereq (void);
-int dm_drv_get_rq (void);
+int dm_drv_version (unsigned int * version, char * str);
 int dm_simplecmd_flush (int, const char *, int);
 int dm_simplecmd_noflush (int, const char *);
 int dm_addmap_create (struct multipath *mpp, char *params);
@@ -46,5 +46,11 @@ int dm_reassign_table(const char *name, char *old, char *new);
 int dm_setgeometry(struct multipath *mpp);
 void udev_wait(unsigned int c);
 void udev_set_sync_support(int c);
+
+#define VERSION_GE(v, minv) ( \
+ (v[0] > minv[0]) || \
+ ((v[0] == minv[0]) && (v[1] > minv[1])) || \
+ ((v[0] == minv[0]) && (v[1] == minv[1]) && (v[2] >= minv[2])) \
+)
 
 #endif /* _DEVMAPPER_H */

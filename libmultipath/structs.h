@@ -101,6 +101,12 @@ enum user_friendly_names_states {
 	USER_FRIENDLY_NAMES_ON,
 };
 
+enum retain_hwhandler_states {
+	RETAIN_HWHANDLER_UNDEF,
+	RETAIN_HWHANDLER_OFF,
+	RETAIN_HWHANDLER_ON,
+};
+
 struct scsi_idlun {
 	int dev_id;
 	int host_unique_id;
@@ -192,6 +198,7 @@ struct multipath {
 	int flush_on_last_del;
 	int attribute_flags;
 	int fast_io_fail;
+	int retain_hwhandler;
 	unsigned int dev_loss;
 	uid_t uid;
 	gid_t gid;

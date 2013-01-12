@@ -56,6 +56,7 @@ assemble_map (struct multipath * mp, char * params, int len)
 	int nr_priority_groups, initial_pg_nr;
 	char * p, * f;
 	char no_path_retry[] = "queue_if_no_path";
+	char retain_hwhandler[] = "retain_attached_hw_handler";
 	struct pathgroup * pgp;
 	struct path * pp;
 
@@ -81,6 +82,8 @@ assemble_map (struct multipath * mp, char * params, int len)
 	} else {
 		add_feature(&f, no_path_retry);
 	}
+	if (mp->retain_hwhandler == RETAIN_HWHANDLER_ON)
+		add_feature(&f, retain_hwhandler);
 
 	shift = snprintf(p, freechar, "%s %s %i %i",
 			 f, mp->hwhandler,

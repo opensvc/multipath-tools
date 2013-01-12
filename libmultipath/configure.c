@@ -76,6 +76,7 @@ setup_map (struct multipath * mpp, char * params, int params_size)
 	select_fast_io_fail(mpp);
 	select_dev_loss(mpp);
 	select_reservation_key(mpp);
+	select_retain_hwhandler(mpp);
 
 	sysfs_set_scsi_tmo(mpp);
 	/*
@@ -217,8 +218,10 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 			mpp->alias);
 		return;
 	}
-	if (!cmpp->selector || strncmp(cmpp->hwhandler, mpp->hwhandler,
-		    strlen(mpp->hwhandler))) {
+	if (mpp->retain_hwhandler != RETAIN_HWHANDLER_ON &&
+            (strlen(cmpp->hwhandler) != strlen(mpp->hwhandler) ||
+	     strncmp(cmpp->hwhandler, mpp->hwhandler,
+		    strlen(mpp->hwhandler)))) {
 		mpp->action = ACT_RELOAD;
 		condlog(3, "%s: set ACT_RELOAD (hwhandler change)",
 			mpp->alias);

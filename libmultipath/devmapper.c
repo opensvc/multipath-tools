@@ -98,12 +98,6 @@ dm_init(void) {
 	dm_log_init_verbose(conf ? conf->verbosity + 3 : 0);
 }
 
-#define VERSION_GE(v, minv) ( \
- (v[0] > minv[0]) || \
- ((v[0] == minv[0]) && (v[1] > minv[1])) || \
- ((v[0] == minv[0]) && (v[1] == minv[1]) && (v[2] >= minv[2])) \
-)
-
 static int
 dm_lib_prereq (void)
 {
@@ -126,7 +120,7 @@ dm_lib_prereq (void)
 	return 1;
 }
 
-static int
+int
 dm_drv_version (unsigned int * version, char * str)
 {
 	int r = 2;
@@ -134,6 +128,10 @@ dm_drv_version (unsigned int * version, char * str)
 	struct dm_versions *target;
 	struct dm_versions *last_target;
 	unsigned int *v;
+
+	version[0] = 0;
+	version[1] = 0;
+	version[2] = 0;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_LIST_VERSIONS)))
 		return 1;
@@ -167,28 +165,6 @@ dm_drv_version (unsigned int * version, char * str)
 out:
 	dm_task_destroy(dmt);
 	return r;
-}
-
-int
-dm_drv_get_rq (void)
-{
-	unsigned int minv_dmrq[3] = {1, 1, 0};
-	unsigned int version[3] = {0, 0, 0};
-        unsigned int * v = version;
-
-	if (dm_drv_version(v, TGT_MPATH)) {
-		/* in doubt return least capable */
-		return 0;
-	}
-
-	/* test request based multipath capability */
-	if VERSION_GE(v, minv_dmrq) {
-		condlog(3, "activate request-based multipathing mode "
-			   "(driver >= v%u.%u.%u)",
-			minv_dmrq[0], minv_dmrq[1], minv_dmrq[2]);
-		return 1;
-	}
-	return 0;
 }
 
 static int

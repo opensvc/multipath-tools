@@ -326,6 +326,7 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(fast_io_fail);
 	merge_num(dev_loss);
 	merge_num(user_friendly_names);
+	merge_num(retain_hwhandler);
 
 	return 0;
 }
@@ -385,6 +386,7 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->fast_io_fail = dhwe->fast_io_fail;
 	hwe->dev_loss = dhwe->dev_loss;
 	hwe->user_friendly_names = dhwe->user_friendly_names;
+	hwe->retain_hwhandler = dhwe->retain_hwhandler;
 
 	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
 		goto out;
@@ -501,7 +503,7 @@ load_config (char * file)
 		conf->verbosity = DEFAULT_VERBOSITY;
 
 	conf->udev = udev_new();
-	conf->dmrq = dm_drv_get_rq();
+	dm_drv_version(conf->version, TGT_MPATH);
 	conf->dev_type = DEV_NONE;
 	conf->minio = DEFAULT_MINIO;
 	conf->minio_rq = DEFAULT_MINIO_RQ;
@@ -517,6 +519,7 @@ load_config (char * file)
 	conf->checkint = DEFAULT_CHECKINT;
 	conf->max_checkint = MAX_CHECKINT(conf->checkint);
 	conf->fast_io_fail = DEFAULT_FAST_IO_FAIL;
+	conf->retain_hwhandler = DEFAULT_RETAIN_HWHANDLER;
 
 	/*
 	 * preload default hwtable
