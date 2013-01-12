@@ -947,7 +947,7 @@ cli_getprstatus (void * v, char ** reply, int * len, void * data)
 
 
 	sprintf(*reply,"%d",mpp->prflag);
-	*reply[1]='\0';
+	(*reply)[1]='\0';
 
 
 	condlog(3, "%s: reply = %s", param, *reply);

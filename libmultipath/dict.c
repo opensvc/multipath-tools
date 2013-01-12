@@ -2052,8 +2052,22 @@ snprint_mp_prio_args(char * buff, int len, void * data)
 static int
 snprint_mp_reservation_key (char * buff, int len, void * data)
 {
+	int i;
+	unsigned char *keyp;
+	uint64_t prkey = 0;
 	struct mpentry * mpe = (struct mpentry *)data;
-	return snprintf(buff, len, "%s" , mpe->reservation_key);
+
+	if (!mpe->reservation_key)
+		return 0;
+	keyp = (unsigned char *)mpe->reservation_key;
+	for (i = 0; i < 8; i++) {
+		if (i > 0)
+			prkey <<= 8;
+		prkey |= *keyp;
+		keyp++;
+	}
+
+	return snprintf(buff, len, "0x%" PRIx64, prkey);
 }
 
 	static int
@@ -2721,7 +2735,20 @@ snprint_def_wwids_file (char * buff, int len, void * data)
 static int
 snprint_def_reservation_key(char * buff, int len, void * data)
 {
-	return snprintf(buff, len, "%s", conf->reservation_key);
+	int i;
+	unsigned char *keyp;
+	uint64_t prkey = 0;
+
+	if (!conf->reservation_key)
+		return 0;
+	keyp = (unsigned char *)conf->reservation_key;
+	for (i = 0; i < 8; i++) {
+		if (i > 0)
+			prkey <<= 8;
+		prkey |= *keyp;
+		keyp++;
+	}
+	return snprintf(buff, len, "0x%" PRIx64, prkey);
 }
 
 static int
