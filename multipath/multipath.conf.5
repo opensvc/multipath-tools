@@ -375,6 +375,31 @@ errors are logged at level 3 until the device is restored. If set to
 .I always
 , multipathd always logs the path checker error at logging level 2. Default is
 .I always
+.TP
+.B reservation_key
+This is the service action reservation key used by mpathpersist.  It must be
+set for all multipath devices using persistent reservations, and it must be
+the same as the RESERVATION KEY field of the PERSISTENT RESERVE OUT parameter
+list which contains an 8-byte value provided by the application client to the
+device server to identify the I_T nexus. It is unset by default.
+.TP
+.B retain_attached_hw_handler
+If set to
+.I yes
+and the scsi layer has already attached a hardware_handler to the device,
+multipath will not force the device to use the hardware_handler specified by
+mutipath.conf. If the scsi layer has not attached a hardware handler,
+multipath will continue to use its configured hardware handler. Default is
+.I no
+.TP
+.B detect_prio
+If set to
+.I yes
+, multipath will try to detect if the device supports ALUA. If so, the device
+will automatically use the
+.I alua
+prioritizer. If not, the prioritizer will be selected as usual. Default is
+.I no
 .
 .SH "blacklist section"
 The
@@ -474,6 +499,8 @@ section:
 .B rr_min_io_q
 .TP
 .B features
+.TP
+.B reservation_key
 .RE
 .PD
 .LP
@@ -560,6 +587,10 @@ section:
 .B dev_loss_tmo
 .TP
 .B flush_on_last_del
+.TP
+.B retain_attached_hw_handler
+.TP
+.B detect_prio
 .RE
 .PD
 .LP
