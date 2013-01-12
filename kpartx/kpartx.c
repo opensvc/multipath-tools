@@ -56,6 +56,7 @@ struct pt {
 } pts[MAXTYPES];
 
 int ptct = 0;
+int udev_sync = 0;
 
 static void
 addpts(char *t, ptreader f)
@@ -205,7 +206,6 @@ main(int argc, char **argv){
 	int loopro = 0;
 	int hotplug = 0;
 	int loopcreated = 0;
-	int sync = 0;
 	struct stat buf;
 	uint32_t cookie = 0;
 
@@ -267,7 +267,7 @@ main(int argc, char **argv){
 			what = DELETE;
 			break;
 		case 's':
-			sync = 1;
+			udev_sync = 1;
 			break;
 		case 'u':
 			what = UPDATE;
@@ -278,7 +278,7 @@ main(int argc, char **argv){
 	}
 
 #ifdef LIBDM_API_COOKIE
-	if (!sync)
+	if (!udev_sync)
 		dm_udev_set_sync_support(0);
 #endif
 

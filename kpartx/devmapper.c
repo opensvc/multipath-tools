@@ -78,7 +78,7 @@ dm_simplecmd (int task, const char *name, int no_flush, uint32_t *cookie) {
 	if (no_flush)
 		dm_task_no_flush(dmt);
 
-	if (udev_wait_flag && !dm_task_set_cookie(dmt, cookie, 0))
+	if (udev_wait_flag && !dm_task_set_cookie(dmt, cookie, (udev_sync)? 0 : DM_UDEV_DISABLE_LIBRARY_FALLBACK))
 		goto out;
 	r = dm_task_run(dmt);
 
@@ -128,7 +128,7 @@ dm_addmap (int task, const char *name, const char *target,
 
 	dm_task_no_open_count(dmt);
 
-	if (task == DM_DEVICE_CREATE && !dm_task_set_cookie(dmt, cookie, 0))
+	if (task == DM_DEVICE_CREATE && !dm_task_set_cookie(dmt, cookie, (udev_sync)? 0 : DM_UDEV_DISABLE_LIBRARY_FALLBACK))
 		goto addout;
 	r = dm_task_run (dmt);
 
