@@ -789,9 +789,12 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_NONE,
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = 128,
+		.dev_loss      = MAX_DEV_LOSS_TMO,
 		.checker_name  = TUR,
 		.prio_name     = PRIO_ONTAP,
 		.prio_args     = NULL,
+		.retain_hwhandler = RETAIN_HWHANDLER_ON,
+		.detect_prio   = DETECT_PRIO_ON,
 	},
 	/*
 	 * NEXENTA/COMSTAR controller family
