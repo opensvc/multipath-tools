@@ -652,6 +652,29 @@ def_retain_hwhandler_handler(vector strvec)
 	return 0;
 }
 
+static int
+def_detect_prio_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	if ((strlen(buff) == 2 && !strcmp(buff, "no")) ||
+	    (strlen(buff) == 1 && !strcmp(buff, "0")))
+		conf->detect_prio = DETECT_PRIO_OFF;
+	else if ((strlen(buff) == 3 && !strcmp(buff, "yes")) ||
+		 (strlen(buff) == 1 && !strcmp(buff, "1")))
+		conf->detect_prio = DETECT_PRIO_ON;
+	else
+		conf->detect_prio = DETECT_PRIO_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
 /*
  * blacklist block handlers
  */
@@ -1295,6 +1318,33 @@ hw_retain_hwhandler_handler(vector strvec)
 		hwe->retain_hwhandler = RETAIN_HWHANDLER_ON;
 	else
 		hwe->user_friendly_names = RETAIN_HWHANDLER_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
+static int
+hw_detect_prio_handler(vector strvec)
+{
+	struct hwentry *hwe = VECTOR_LAST_SLOT(conf->hwtable);
+	char * buff;
+
+	if (!hwe)
+		return 1;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	if ((strlen(buff) == 2 && !strcmp(buff, "no")) ||
+	    (strlen(buff) == 1 && !strcmp(buff, "0")))
+		hwe->detect_prio = DETECT_PRIO_OFF;
+	else if ((strlen(buff) == 3 && !strcmp(buff, "yes")) ||
+		 (strlen(buff) == 1 && !strcmp(buff, "1")))
+		hwe->detect_prio = DETECT_PRIO_ON;
+	else
+		hwe->detect_prio = DETECT_PRIO_UNDEF;
 
 	FREE(buff);
 	return 0;
@@ -2337,6 +2387,19 @@ snprint_hw_retain_hwhandler_handler(char * buff, int len, void * data)
 }
 
 static int
+snprint_detect_prio(char * buff, int len, void * data)
+{
+	struct hwentry * hwe = (struct hwentry *)data;
+
+	if (hwe->detect_prio == DETECT_PRIO_ON)
+		return snprintf(buff, len, "yes");
+	else if (hwe->detect_prio == DETECT_PRIO_OFF)
+		return snprintf(buff, len, "no");
+	else
+		return 0;
+}
+
+static int
 snprint_def_polling_interval (char * buff, int len, void * data)
 {
 	return snprintf(buff, len, "%i", conf->checkint);
@@ -2671,6 +2734,15 @@ snprint_def_retain_hwhandler_handler(char * buff, int len, void * data)
 }
 
 static int
+snprint_def_detect_prio(char * buff, int len, void * data)
+{
+	if (conf->detect_prio == DETECT_PRIO_ON)
+		return snprintf(buff, len, "yes");
+	else
+		return snprintf(buff, len, "no");
+}
+
+static int
 snprint_ble_simple (char * buff, int len, void * data)
 {
 	struct blentry * ble = (struct blentry *)data;
@@ -2735,6 +2807,7 @@ init_keywords(void)
 	install_keyword("log_checker_err", &def_log_checker_err_handler, &snprint_def_log_checker_err);
 	install_keyword("reservation_key", &def_reservation_key_handler, &snprint_def_reservation_key);
 	install_keyword("retain_attached_hw_handler", &def_retain_hwhandler_handler, &snprint_def_retain_hwhandler_handler);
+	install_keyword("detect_prio", &def_detect_prio_handler, &snprint_def_detect_prio);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);
@@ -2797,6 +2870,7 @@ init_keywords(void)
 	install_keyword("dev_loss_tmo", &hw_dev_loss_handler, &snprint_hw_dev_loss);
 	install_keyword("user_friendly_names", &hw_names_handler, &snprint_hw_user_friendly_names);
 	install_keyword("retain_attached_hw_handler", &hw_retain_hwhandler_handler, &snprint_hw_retain_hwhandler_handler);
+	install_keyword("detect_prio", &hw_detect_prio_handler, &snprint_detect_prio);
 	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);

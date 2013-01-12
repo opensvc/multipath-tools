@@ -17,6 +17,7 @@
 #include "devmapper.h"
 #include "prio.h"
 #include "discovery.h"
+#include "prioritizers/alua_rtpg.h"
 #include <inttypes.h>
 
 pgpolicyfn *pgpolicies[] = {
@@ -382,11 +383,29 @@ select_getuid (struct path * pp)
 	return 0;
 }
 
+void
+detect_prio(struct path * pp)
+{
+	struct prio *p = &pp->prio;
+
+	if (get_target_port_group_support(pp->fd) > 0)
+		prio_get(p, PRIO_ALUA, DEFAULT_PRIO_ARGS);
+}
+
 extern int
 select_prio (struct path * pp)
 {
 	struct mpentry * mpe;
 	struct prio * p = &pp->prio;
+
+	if (pp->detect_prio == DETECT_PRIO_ON) {
+		detect_prio(pp);
+		if (prio_selected(p)) {
+			condlog(3, "%s: prio = %s (detected setting)",
+				pp->dev, prio_name(p));
+			return 0;
+		}
+	}
 
 	if ((mpe = find_mpe(pp->wwid))) {
 		if (mpe->prio_name) {
@@ -398,7 +417,7 @@ select_prio (struct path * pp)
 	}
 
 	if (pp->hwe && pp->hwe->prio_name) {
-		prio_get(p, pp->hwe->prio_name, pp->hwe->prio_name);
+		prio_get(p, pp->hwe->prio_name, pp->hwe->prio_args);
 		condlog(3, "%s: prio = %s (controller setting)",
 			pp->dev, pp->hwe->prio_name);
 		condlog(3, "%s: prio args = %s (controller setting)",
@@ -704,5 +723,23 @@ select_retain_hwhandler (struct multipath * mp)
 	}
 	mp->retain_hwhandler = 0;
 	condlog(3, "%s: retain_attached_hw_handler = %d (compiled in default)", mp->alias, mp->retain_hwhandler);
+	return 0;
+}
+
+extern int
+select_detect_prio (struct path * pp)
+{
+	if (pp->hwe && pp->hwe->detect_prio) {
+		pp->detect_prio = pp->hwe->detect_prio;
+		condlog(3, "%s: detect_prio = %d (controller default)", pp->dev, pp->detect_prio);
+		return 0;
+	}
+	if (conf->detect_prio) {
+		pp->detect_prio = conf->detect_prio;
+		condlog(3, "%s: detect_prio = %d (config file default)", pp->dev, pp->detect_prio);
+		return 0;
+	}
+	pp->detect_prio = 0;
+	condlog(3, "%s: detect_prio = %d (compiled in default)", pp->dev, pp->detect_prio);
 	return 0;
 }

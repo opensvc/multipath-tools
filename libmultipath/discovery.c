@@ -782,6 +782,7 @@ get_prio (struct path * pp)
 	struct prio * p = &pp->prio;
 
 	if (!prio_selected(p)) {
+		select_detect_prio(pp);
 		select_prio(pp);
 		if (!prio_selected(p)) {
 			condlog(3, "%s: no prio selected", pp->dev);

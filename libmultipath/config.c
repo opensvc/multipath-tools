@@ -333,6 +333,7 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(dev_loss);
 	merge_num(user_friendly_names);
 	merge_num(retain_hwhandler);
+	merge_num(detect_prio);
 
 	return 0;
 }
@@ -393,6 +394,7 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->dev_loss = dhwe->dev_loss;
 	hwe->user_friendly_names = dhwe->user_friendly_names;
 	hwe->retain_hwhandler = dhwe->retain_hwhandler;
+	hwe->detect_prio = dhwe->detect_prio;
 
 	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
 		goto out;
@@ -533,6 +535,7 @@ load_config (char * file)
 	conf->max_checkint = MAX_CHECKINT(conf->checkint);
 	conf->fast_io_fail = DEFAULT_FAST_IO_FAIL;
 	conf->retain_hwhandler = DEFAULT_RETAIN_HWHANDLER;
+	conf->detect_prio = DEFAULT_DETECT_PRIO;
 
 	/*
 	 * preload default hwtable

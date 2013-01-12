@@ -19,3 +19,4 @@ int select_fast_io_fail(struct multipath *mp);
 int select_dev_loss(struct multipath *mp);
 int select_reservation_key(struct multipath *mp);
 int select_retain_hwhandler (struct multipath * mp);
+int select_detect_prio(struct path * pp);

@@ -107,6 +107,12 @@ enum retain_hwhandler_states {
 	RETAIN_HWHANDLER_ON,
 };
 
+enum detect_prio_states {
+	DETECT_PRIO_UNDEF,
+	DETECT_PRIO_OFF,
+	DETECT_PRIO_ON,
+};
+
 struct scsi_idlun {
 	int dev_id;
 	int host_unique_id;
@@ -165,6 +171,7 @@ struct path {
 	int failcount;
 	int priority;
 	int pgindex;
+	int detect_prio;
 	char * uid_attribute;
 	struct prio prio;
 	char * prio_args;

@@ -47,6 +47,7 @@ struct hwentry {
 	unsigned int dev_loss;
 	int user_friendly_names;
 	int retain_hwhandler;
+	int detect_prio;
 	char * bl_product;
 };
 
@@ -110,6 +111,7 @@ struct config {
 	uint32_t cookie;
 	int reassign_maps;
 	int retain_hwhandler;
+	int detect_prio;
 	unsigned int version[3];
 
 	char * dev;
