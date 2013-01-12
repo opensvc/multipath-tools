@@ -1542,8 +1542,12 @@ set_oom_adj (void)
 				strerror(errno));
 			return;
 		}
+#ifdef OOM_ADJUST_MIN
 		file = "/proc/self/oom_adj";
 		score = OOM_ADJUST_MIN;
+#else
+		retry = 0;
+#endif
 	} while (retry--);
 	condlog(0, "couldn't adjust oom score");
 }
