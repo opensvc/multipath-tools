@@ -96,6 +96,12 @@ void log_close (void)
 	return;
 }
 
+void log_reset (char *program_name)
+{
+	closelog();
+	openlog(program_name, 0, LOG_DAEMON);
+}
+
 int log_enqueue (int prio, const char * fmt, va_list ap)
 {
 	int len, fwd;
