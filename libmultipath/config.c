@@ -516,6 +516,7 @@ load_config (char * file)
 	conf->reassign_maps = DEFAULT_REASSIGN_MAPS;
 	conf->checkint = DEFAULT_CHECKINT;
 	conf->max_checkint = MAX_CHECKINT(conf->checkint);
+	conf->fast_io_fail = DEFAULT_FAST_IO_FAIL;
 
 	/*
 	 * preload default hwtable
