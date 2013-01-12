@@ -1018,6 +1018,21 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_RDAC,
 		.prio_args     = NULL,
 	},
+	/* StorageTek 6180 */
+	{
+		.vendor        = "SUN",
+		.product       = "SUN_6180",
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = "1 rdac",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+		.minio         = DEFAULT_MINIO,
+		.minio_rq      = DEFAULT_MINIO_RQ,
+		.checker_name  = RDAC,
+		.prio_name     = PRIO_RDAC,
+	},
 	/* LSI/Engenio/NetApp E-Series RDAC storage */
 	{
 		.vendor        = "(LSI|ENGENIO)",
