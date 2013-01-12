@@ -262,7 +262,7 @@ configure (void)
 	/*
 	 * if we have a blacklisted device parameter, exit early
 	 */
-	if (dev &&
+	if (dev && conf->dev_type == DEV_DEVNODE &&
 	    (filter_devnode(conf->blist_devnode,
 			    conf->elist_devnode, dev) > 0)) {
 		if (conf->dry_run == 2)
@@ -275,16 +275,16 @@ configure (void)
 	 * failing the translation is fatal (by policy)
 	 */
 	if (conf->dev) {
-		refwwid = get_refwwid(conf->dev, conf->dev_type, pathvec);
-
+		int failed = get_refwwid(conf->dev, conf->dev_type, pathvec,
+					 &refwwid);
 		if (!refwwid) {
-			condlog(3, "scope is nul");
+			if (failed == 2 && conf->dry_run == 2)
+				printf("%s is not a valid multipath device path\n", conf->dev);
+			else
+				condlog(3, "scope is nul");
 			goto out;
 		}
 		condlog(3, "scope limited to %s", refwwid);
-		if (filter_wwid(conf->blist_wwid, conf->elist_wwid,
-				refwwid) > 0)
-			goto out;
 		if (conf->dry_run == 2) {
 			if (check_wwids_file(refwwid, 0) == 0){
 				printf("%s is a valid multipath device path\n", conf->dev);

@@ -28,37 +28,45 @@
 #include "prio.h"
 #include "defaults.h"
 
-struct path *
+int
 store_pathinfo (vector pathvec, vector hwtable, struct udev_device *udevice,
-		int flag)
+		int flag, struct path **pp_ptr)
 {
+	int err = 1;
 	struct path * pp;
 	const char * devname;
 
+	if (pp_ptr)
+		*pp_ptr = NULL;
+
 	devname = udev_device_get_sysname(udevice);
 	if (!devname)
-		return NULL;
+		return 1;
 
 	pp = alloc_path();
 
 	if (!pp)
-		return NULL;
+		return 1;
 
 	if(safe_sprintf(pp->dev, "%s", devname)) {
 		condlog(0, "pp->dev too small");
 		goto out;
 	}
 	pp->udev = udev_device_ref(udevice);
-	if (pathinfo(pp, hwtable, flag))
+	err = pathinfo(pp, hwtable, flag | DI_BLACKLIST);
+	if (err)
 		goto out;
 
-	if (store_path(pathvec, pp))
+	err = store_path(pathvec, pp);
+	if (err)
 		goto out;
 
-	return pp;
 out:
-	free_path(pp);
-	return NULL;
+	if (err)
+		free_path(pp);
+	else if (pp_ptr)
+		*pp_ptr = pp;
+	return err;
 }
 
 static int
@@ -78,9 +86,11 @@ path_discover (vector pathvec, struct config * conf,
 
 	pp = find_path_by_dev(pathvec, (char *)devname);
 	if (!pp) {
-		pp = store_pathinfo(pathvec, conf->hwtable,
-				    udevice, flag);
-		return (pp ? 0 : 1);
+		if (store_pathinfo(pathvec, conf->hwtable,
+				   udevice, flag, NULL) != 1)
+			return 0;
+		else
+			return 1;
 	}
 	return pathinfo(pp, conf->hwtable, flag);
 }
@@ -863,6 +873,13 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	if (mask & DI_SYSFS && sysfs_pathinfo(pp))
 		return 1;
 
+	if (mask & DI_BLACKLIST && mask & DI_SYSFS) {
+		if (filter_device(conf->blist_device, conf->elist_device,
+				  pp->vendor_id, pp->product_id) > 0) {
+			return 2;
+		}
+	}
+
 	path_state = path_offline(pp);
 
 	/*
@@ -902,6 +919,12 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 
 	if (path_state == PATH_UP && (mask & DI_WWID) && !strlen(pp->wwid))
 		get_uid(pp);
+	if (mask & DI_BLACKLIST && mask & DI_WWID) {
+		if (filter_wwid(conf->blist_wwid, conf->elist_wwid,
+				pp->wwid) > 0) {
+			return 2;
+		}
+	}
 
 	 /*
 	  * Retrieve path priority, even for PATH_DOWN paths if it has never

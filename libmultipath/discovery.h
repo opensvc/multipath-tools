@@ -33,8 +33,9 @@ int do_tur (char *);
 int path_offline (struct path *);
 int get_state (struct path * pp, int daemon);
 int pathinfo (struct path *, vector hwtable, int mask);
-struct path * store_pathinfo (vector pathvec, vector hwtable,
-			      struct udev_device *udevice, int flag);
+int store_pathinfo (vector pathvec, vector hwtable,
+		    struct udev_device *udevice, int flag,
+		    struct path **pp_ptr);
 int sysfs_set_scsi_tmo (struct multipath *mpp);
 int sysfs_get_timeout(struct path *pp, unsigned int *timeout);
 
@@ -46,14 +47,16 @@ enum discovery_mode {
 	__DI_SERIAL,
 	__DI_CHECKER,
 	__DI_PRIO,
-	__DI_WWID
+	__DI_WWID,
+	__DI_BLACKLIST,
 };
 
 #define DI_SYSFS	(1 << __DI_SYSFS)
 #define DI_SERIAL	(1 << __DI_SERIAL)
 #define DI_CHECKER	(1 << __DI_CHECKER)
 #define DI_PRIO		(1 << __DI_PRIO)
-#define DI_WWID 	(1 << __DI_WWID)
+#define DI_WWID		(1 << __DI_WWID)
+#define DI_BLACKLIST	(1 << __DI_BLACKLIST)
 
 #define DI_ALL		(DI_SYSFS  | DI_SERIAL | DI_CHECKER | DI_PRIO | \
 			 DI_WWID)

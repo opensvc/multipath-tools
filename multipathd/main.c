@@ -299,7 +299,7 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 		condlog(2, "%s: devmap %s registered", alias, dev);
 		return 0;
 	}
-	refwwid = get_refwwid(dev, DEV_DEVMAP, vecs->pathvec);
+	r = get_refwwid(dev, DEV_DEVMAP, vecs->pathvec, &refwwid);
 
 	if (refwwid) {
 		r = coalesce_paths(vecs, NULL, refwwid, 0);
@@ -308,6 +308,8 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 
 	if (!r)
 		condlog(2, "%s: devmap %s added", alias, dev);
+	else if (r == 2)
+		condlog(2, "%s: uev_add_map %s blacklisted", alias, dev);
 	else
 		condlog(0, "%s: uev_add_map %s failed", alias, dev);
 
@@ -373,6 +375,7 @@ static int
 uev_add_path (struct uevent *uev, struct vectors * vecs)
 {
 	struct path *pp;
+	int ret;
 
 	condlog(2, "%s: add path (uevent)", uev->kernel);
 	if (strstr(uev->kernel, "..") != NULL) {
@@ -393,8 +396,11 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 		/*
 		 * get path vital state
 		 */
-		if (!(pp = store_pathinfo(vecs->pathvec, conf->hwtable,
-					  uev->udev, DI_ALL))) {
+		ret = store_pathinfo(vecs->pathvec, conf->hwtable,
+				     uev->udev, DI_ALL, &pp);
+		if (!pp) {
+			if (ret == 2)
+				return 0;
 			condlog(0, "%s: failed to store path info",
 				uev->kernel);
 			return 1;
@@ -402,14 +408,13 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 		pp->checkint = conf->checkint;
 	}
 
-	return (ev_add_path(pp, vecs) != 1)? 0 : 1;
+	return ev_add_path(pp, vecs);
 }
 
 /*
  * returns:
  * 0: added
  * 1: error
- * 2: blacklisted
  */
 int
 ev_add_path (struct path * pp, struct vectors * vecs)
@@ -426,13 +431,6 @@ ev_add_path (struct path * pp, struct vectors * vecs)
 	if (memcmp(empty_buff, pp->wwid, WWID_SIZE) == 0) {
 		condlog(0, "%s: failed to get path uid", pp->dev);
 		goto fail; /* leave path added to pathvec */
-	}
-	if (filter_path(conf, pp) > 0){
-		int i = find_slot(vecs->pathvec, (void *)pp);
-		if (i != -1)
-			vector_del_slot(vecs->pathvec, i);
-		free_path(pp);
-		return 2;
 	}
 	mpp = pp->mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
 rescan:

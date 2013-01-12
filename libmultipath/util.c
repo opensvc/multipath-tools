@@ -27,7 +27,7 @@ basenamecpy (const char * str1, char * str2, int str2len)
 	if (!str1 || !strlen(str1))
 		return 0;
 
-	if (strlen(str1) > str2len)
+	if (strlen(str1) >= str2len)
 		return 0;
 
 	if (!str2)

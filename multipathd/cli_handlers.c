@@ -433,19 +433,18 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 		udevice = udev_device_new_from_subsystem_sysname(conf->udev,
 								 "block",
 								 param);
-		pp = store_pathinfo(vecs->pathvec, conf->hwtable,
-				    udevice, DI_ALL);
+		r = store_pathinfo(vecs->pathvec, conf->hwtable,
+				   udevice, DI_ALL, &pp);
 		udev_device_unref(udevice);
 		if (!pp) {
+			if (r == 2)
+				goto blacklisted;
 			condlog(0, "%s: failed to store path info", param);
 			return 1;
 		}
 		pp->checkint = conf->checkint;
 	}
-	r = ev_add_path(pp, vecs);
-	if (r == 2)
-		goto blacklisted;
-	return r;
+	return ev_add_path(pp, vecs);
 blacklisted:
 	*reply = strdup("blacklisted\n");
 	*len = strlen(*reply) + 1;

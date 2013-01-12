@@ -676,21 +676,32 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 	return 0;
 }
 
-extern char *
-get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
+/*
+ * returns:
+ * 0 - success
+ * 1 - failure
+ * 2 - blacklist
+ */
+extern int
+get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
 {
+	int ret = 1;
 	struct path * pp;
 	char buff[FILE_NAME_SIZE];
 	char * refwwid = NULL, tmpwwid[WWID_SIZE];
 
+	if (!wwid)
+		return 1;
+	*wwid = NULL;
+
 	if (dev_type == DEV_NONE)
-		return NULL;
+		return 1;
 
 	if (dev_type == DEV_DEVNODE) {
 		if (basenamecpy(dev, buff, FILE_NAME_SIZE) == 0) {
 			condlog(1, "basename failed for '%s' (%s)",
 				dev, buff);
-			return NULL;
+			return 1;
 		}
 
 		pp = find_path_by_dev(pathvec, buff);
@@ -699,14 +710,16 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 
 			if (!udevice) {
 				condlog(2, "%s: can't get udev device", buff);
-				return NULL;
+				return 1;
 			}
-			pp = store_pathinfo(pathvec, conf->hwtable, udevice,
-					    DI_SYSFS | DI_WWID);
+			ret = store_pathinfo(pathvec, conf->hwtable, udevice,
+					     DI_SYSFS | DI_WWID, &pp);
 			udev_device_unref(udevice);
 			if (!pp) {
-				condlog(0, "%s can't store path info", buff);
-				return NULL;
+				if (ret == 1)
+					condlog(0, "%s can't store path info",
+						buff);
+				return ret;
 			}
 		}
 		refwwid = pp->wwid;
@@ -721,14 +734,16 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 
 			if (!udevice) {
 				condlog(2, "%s: can't get udev device", dev);
-				return NULL;
+				return 1;
 			}
-			pp = store_pathinfo(pathvec, conf->hwtable, udevice,
-					    DI_SYSFS | DI_WWID);
+			ret = store_pathinfo(pathvec, conf->hwtable, udevice,
+					     DI_SYSFS | DI_WWID, &pp);
 			udev_device_unref(udevice);
 			if (!pp) {
-				condlog(0, "%s can't store path info", buff);
-				return NULL;
+				if (ret == 1)
+					condlog(0, "%s can't store path info",
+						buff);
+				return ret;
 			}
 		}
 		refwwid = pp->wwid;
@@ -738,17 +753,17 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 
 		if (((dm_get_uuid(dev, tmpwwid)) == 0) && (strlen(tmpwwid))) {
 			refwwid = tmpwwid;
-			goto out;
+			goto check;
 		}
 
 		/*
 		 * may be a binding
 		 */
-		refwwid = get_user_friendly_wwid(dev,
-						 conf->bindings_file);
-
-		if (refwwid)
-			return refwwid;
+		if (get_user_friendly_wwid(dev, tmpwwid,
+					   conf->bindings_file) == 0) {
+			refwwid = tmpwwid;
+			goto check;
+		}
 
 		/*
 		 * or may be an alias
@@ -760,12 +775,21 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec)
 		 */
 		if (!refwwid)
 			refwwid = dev;
+
+check:
+		if (refwwid && strlen(refwwid)) {
+			if (filter_wwid(conf->blist_wwid, conf->elist_wwid,
+					refwwid) > 0)
+			return 2;
+		}
 	}
 out:
-	if (refwwid && strlen(refwwid))
-		return STRDUP(refwwid);
+	if (refwwid && strlen(refwwid)) {
+		*wwid = STRDUP(refwwid);
+		return 0;
+	}
 
-	return NULL;
+	return 1;
 }
 
 extern int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh)

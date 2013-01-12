@@ -9,4 +9,4 @@
 
 char *get_user_friendly_alias(char *wwid, char *file, char *prefix,
 			      int bindings_readonly);
-char *get_user_friendly_wwid(char *alias, char *file);
+int get_user_friendly_wwid(char *alias, char *buff, char *file);

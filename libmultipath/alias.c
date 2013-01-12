@@ -13,6 +13,9 @@
 #include "uxsock.h"
 #include "alias.h"
 #include "file.h"
+#include "vector.h"
+#include "checkers.h"
+#include "structs.h"
 
 
 /*
@@ -121,23 +124,23 @@ lookup_binding(FILE *f, char *map_wwid, char **map_alias, char *prefix)
 }
 
 static int
-rlookup_binding(FILE *f, char **map_wwid, char *map_alias)
+rlookup_binding(FILE *f, char *buff, char *map_alias)
 {
-	char buf[LINE_MAX];
+	char line[LINE_MAX];
 	unsigned int line_nr = 0;
 	int id = 0;
 
-	*map_wwid = NULL;
+	buff[0] = '\0';
 
-	while (fgets(buf, LINE_MAX, f)) {
+	while (fgets(line, LINE_MAX, f)) {
 		char *c, *alias, *wwid;
 		int curr_id;
 
 		line_nr++;
-		c = strpbrk(buf, "#\n\r");
+		c = strpbrk(line, "#\n\r");
 		if (c)
 			*c = '\0';
-		alias = strtok(buf, " \t");
+		alias = strtok(line, " \t");
 		if (!alias) /* blank line */
 			continue;
 		curr_id = scan_devname(alias, NULL); /* TBD: Why this call? */
@@ -150,13 +153,16 @@ rlookup_binding(FILE *f, char **map_wwid, char *map_alias)
 				line_nr);
 			continue;
 		}
+		if (strlen(wwid) > WWID_SIZE - 1) {
+			condlog(3,
+				"Ignoring too large wwid at %u in bindings file", line_nr);
+			continue;
+		}
 		if (strcmp(alias, map_alias) == 0){
 			condlog(3, "Found matching alias [%s] in bindings file."
 				"\nSetting wwid to %s", alias, wwid);
-			*map_wwid = strdup(wwid);
-			if (*map_wwid == NULL)
-				condlog(0, "Cannot copy alias from bindings "
-					"file : %s", strerror(errno));
+			strncpy(buff, wwid, WWID_SIZE);
+			buff[WWID_SIZE - 1] = '\0';
 			return id;
 		}
 	}
@@ -255,36 +261,35 @@ get_user_friendly_alias(char *wwid, char *file, char *prefix,
 	return alias;
 }
 
-char *
-get_user_friendly_wwid(char *alias, char *file)
+int
+get_user_friendly_wwid(char *alias, char *buff, char *file)
 {
-	char *wwid;
-	int fd, id, unused;
+	int fd, unused;
 	FILE *f;
 
 	if (!alias || *alias == '\0') {
 		condlog(3, "Cannot find binding for empty alias");
-		return NULL;
+		return -1;
 	}
 
 	fd = open_file(file, &unused, BINDINGS_FILE_HEADER);
 	if (fd < 0)
-		return NULL;
+		return -1;
 
 	f = fdopen(fd, "r");
 	if (!f) {
 		condlog(0, "cannot fdopen on bindings file descriptor : %s",
 			strerror(errno));
 		close(fd);
-		return NULL;
+		return -1;
 	}
 
-	id = rlookup_binding(f, &wwid, alias);
-	if (id < 0) {
+	rlookup_binding(f, buff, alias);
+	if (!strlen(buff)) {
 		fclose(f);
-		return NULL;
+		return -1;
 	}
 
 	fclose(f);
-	return wwid;
+	return 0;
 }
