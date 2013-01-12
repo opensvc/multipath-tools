@@ -125,8 +125,10 @@ int sysfs_check_holders(char * check_devt, char * new_devt)
 		return 0;
 	}
 
-	if (devt2devname(check_dev, PATH_SIZE, check_devt))
+	if (devt2devname(check_dev, PATH_SIZE, check_devt)) {
+		condlog(1, "can't get devname for %s", check_devt);
 		return 0;
+	}
 
 	condlog(3, "%s: checking holder", check_dev);
 
@@ -153,7 +155,7 @@ int sysfs_check_holders(char * check_devt, char * new_devt)
 		}
 		table_name = dm_mapname(major, table_minor);
 
-		condlog(3, "%s: reassign table %s old %s new %s", check_dev,
+		condlog(0, "%s: reassign table %s old %s new %s", check_dev,
 			table_name, check_devt, new_devt);
 
 		dm_reassign_table(table_name, check_devt, new_devt);

@@ -161,6 +161,7 @@ devt2devname (char *devname, int devname_len, char *devt)
 	struct stat statbuf;
 
 	memset(block_path, 0, sizeof(block_path));
+	memset(dev, 0, sizeof(dev));
 	if (sscanf(devt, "%u:%u", &major, &minor) != 2) {
 		condlog(0, "Invalid device number %s", devt);
 		return 1;
@@ -172,7 +173,7 @@ devt2devname (char *devname, int devname_len, char *devt)
 	if (stat("/sys/dev/block", &statbuf) == 0) {
 		/* Newer kernels have /sys/dev/block */
 		sprintf(block_path,"/sys/dev/block/%u:%u", major, minor);
-		if (stat(block_path, &statbuf) == 0) {
+		if (lstat(block_path, &statbuf) == 0) {
 			if (S_ISLNK(statbuf.st_mode) &&
 			    readlink(block_path, dev, FILE_NAME_SIZE) > 0) {
 				char *p = strrchr(dev, '/');

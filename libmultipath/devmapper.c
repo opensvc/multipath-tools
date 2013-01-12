@@ -1394,8 +1394,10 @@ int dm_reassign(const char *mapname)
 		return 1;
 	}
 
-	if (!(dmt = dm_task_create(DM_DEVICE_DEPS)))
+	if (!(dmt = dm_task_create(DM_DEVICE_DEPS))) {
+		condlog(3, "%s: couldn't make dm task", mapname);
 		return 0;
+	}
 
 	if (!dm_task_set_name(dmt, mapname))
 		goto out;
