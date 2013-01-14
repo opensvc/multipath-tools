@@ -68,7 +68,7 @@ typedef struct volume_label
 	char res2[4];	        /* reserved                                  */
 	char lvtoc[14];	        /* owner code for LVTOC                      */
 	char res3[28];	        /* reserved                                  */
-	char ldl_version;       /* version number, valid for ldl format      */
+	uint8_t ldl_version;    /* version number, valid for ldl format      */
 	uint64_t formatted_blocks; /* valid when ldl_version >= f2           */
 } __attribute__ ((packed)) volume_label_t;
 

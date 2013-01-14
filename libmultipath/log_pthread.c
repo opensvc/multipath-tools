@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <syslog.h>
 #include <pthread.h>
 #include <sys/mman.h>
 
