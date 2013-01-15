@@ -2,775 +2,863 @@
 # overwrite these values in your config file.
 
 #defaults {
-#	udev_dir		/dev
-#	polling_interval	5
-#	path_selector		"round-robin 0"
-#	path_grouping_policy	failover
-#	getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#	prio			const
-#	prio_args		""
-#	path_checker		directio
-#	rr_min_io		1000
-#	rr_weight		uniform
-#	failback		manual
-#	no_path_retry		fail
-#	user_friendly_names	no
+#	verbosity 2
+#	polling_interval 5
+#	multipath_dir "/lib64/multipath"
+#	path_selector "service-time 0"
+#	path_grouping_policy "failover"
+#	uid_attribute "ID_SERIAL"
+#	prio "const"
+#	prio_args ""
+#	features "0"
+#	path_checker "directio"
+#	alias_prefix "mpath"
+#	rr_min_io 1000
+#	rr_min_io_rq 1
+#	max_fds 1048576
+#	rr_weight "uniform"
+#	queue_without_daemon "yes"
+#	pg_timeout "none"
+#	flush_on_last_del "no"
+#	user_friendly_names "no"
+#	fast_io_fail_tmo 5
+#	bindings_file "/etc/multipath/bindings"
+#	wwids_file /etc/multipath/wwids
+#	log_checker_err always
+#	retain_attached_hw_handler no
+#	detect_prio no
 #}
-#
 #blacklist {
-#	devnode	"^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"
-#	devnode	"^hd[a-z]"
-#	devnode	"^dcssblk[0-9]*"
+#	devnode "^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"
+#	devnode "^hd[a-z]"
+#	devnode "^dcssblk[0-9]*"
+#	device {
+#		vendor "DGC"
+#		product "LUNZ"
+#	}
+#	device {
+#		vendor "EMC"
+#		product "LUNZ"
+#	}
+#	device {
+#		vendor "IBM"
+#		product "Universal Xport"
+#	}
+#	device {
+#		vendor "IBM"
+#		product "S/390.*"
+#	}
+#	device {
+#		vendor "DELL"
+#		product "Universal Xport"
+#	}
+#	device {
+#		vendor "SGI"
+#		product "Universal Xport"
+#	}
+#	device {
+#		vendor "STK"
+#		product "Universal Xport"
+#	}
+#	device {
+#		vendor "SUN"
+#		product "Universal Xport"
+#	}
+#	device {
+#		vendor "(LSI|ENGENIO)"
+#		product "Universal Xport"
+#	}
 #}
-#
+#blacklist_exceptions {
+#}
 #devices {
 #	device {
-#		vendor			"APPLE*"
-#		product			"Xserve RAID"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		directio
-#		prio			const
-#		prio_args		""
+#		vendor "COMPELNT"
+#		product "Compellent Vol"
+#		path_grouping_policy "multibus"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
 #	}
 #	device {
-#		vendor			"3PARdata"
-#		product			"VV"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		directio
-#		prio			const
-#		prio_args		""
+#		vendor "APPLE*"
+#		product "Xserve RAID "
+#		path_grouping_policy "multibus"
+#		path_checker "directio"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"DEC"
-#		product			"HSG80"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"1 hp_sw"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		hp_sw
-#		prio			hp_sw
-#		prio_args		""
+#		vendor "3PARdata"
+#		product "VV"
+#		path_grouping_policy "multibus"
+#		path_checker "directio"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"HP"
-#		product			"A6189A"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		no_path_retry		12
-#		rr_min_io		1000
-#		path_checker		directio
-#		prio			const
-#		prio_args		""
+#		vendor "DEC"
+#		product "HSG80"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "hp_sw"
+#		features "1 queue_if_no_path"
+#		hardware_handler "1 hp_sw"
+#		prio "hp_sw"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"(COMPAQ|HP)"
-#		product			"(MSA|HSV)1.0.*"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"1 hp_sw"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		rr_weight		uniform
-#		no_path_retry		12
-#		rr_min_io		1000
-#		path_checker		hp_sw
-#		prio			hp_sw
-#		prio_args		""
+#		vendor "HP"
+#		product "A6189A"
+#		path_grouping_policy "multibus"
+#		path_checker "directio"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
+#		no_path_retry 12
 #	}
 #	device {
-#		vendor			"(COMPAQ|HP)"
-#		product			"MSA VOLUME"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		12
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			alua
-#		prio_args		""
+#		vendor "(COMPAQ|HP)"
+#		product "(MSA|HSV)1.0.*"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "hp_sw"
+#		features "1 queue_if_no_path"
+#		hardware_handler "1 hp_sw"
+#		prio "hp_sw"
+#		rr_weight "uniform"
+#		no_path_retry 12
+#		rr_min_io 100
 #	}
 #	device {
-#		vendor			"HP"
-#		product			"MSA2000s*"
-#		getuid_callout		"/sbin/cciss_id %n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		12
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			const
-#		prio_args		""
+#		vendor "(COMPAQ|HP)"
+#		product "MSA VOLUME"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 12
+#		rr_min_io 100
 #	}
 #	device {
-#		vendor			"(COMPAQ|HP)"
-#		product			"HSV1[01]1|HSV2[01]0|HSV300|HSV4[05]0"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		12
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			alua
-#		prio_args		""
+#		vendor "(COMPAQ|HP)"
+#		product "HSV1[01]1|HSV2[01]0|HSV300|HSV4[05]0"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 12
+#		rr_min_io 100
 #	}
 #	device {
-#		vendor			"HP"
-#		product			"MSA2[02]12*"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		12
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			const
-#		prio_args		""
+#		vendor "HP"
+#		product "MSA2[02]12fc|MSA2012i"
+#		path_grouping_policy "multibus"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 18
+#		rr_min_io 100
 #	}
 #	device {
-#		vendor			"HP"
-#		product			"LOGICAL VOLUME.*"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		12
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			const
-#		prio_args		""
+#		vendor "HP"
+#		product "MSA2012sa|MSA23(12|24)(fc|i|sa)|MSA2000s VOLUME"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 18
+#		rr_min_io 100
 #	}
 #	device {
-#		vendor			"DDN"
-#		product			"SAN DataDirector"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		directio
-#		prio			const
-#		prio_args		""
+#		vendor "HP"
+#		product "HSVX700"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "1 alua"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 12
+#		rr_min_io 100
 #	}
 #	device {
-#		vendor			"EMC"
-#		product			"SYMMETRIX"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --page=pre-spc3-83 --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		directio
-#		prio			const
-#		prio_args		""
+#		vendor "HP"
+#		product "LOGICAL VOLUME.*"
+#		path_grouping_policy "multibus"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
+#		no_path_retry 12
 #	}
 #	device {
-#		vendor			"DGC"
-#		product			".*"
-#		product_blacklist	"LUNZ"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"1 emc"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		60
-#		rr_min_io		1000
-#		path_checker		emc_clariion
-#		prio			emc
-#		prio_args		""
+#		vendor "HP"
+#		product "P2000 G3 FC|P2000G3 FC/iSCSI|P2000 G3 SAS|P2000 G3 iSCSI"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 18
+#		rr_min_io 100
 #	}
 #	device {
-#		vendor                  "EMC"
-#		product                 "Invista"
-#		product_blacklist       "LUNZ"
-#		getuid_callout		"/sbin/scsi_id --whitelisted --device=/dev/%n"
-#		features                "0"
-#		hardware_handler        "0"
-#		path_selector           "round-robin 0"
-#		path_grouping_policy    failover
-#		rr_weight               uniform
-#		no_path_retry           5
-#		rr_min_io               1000
-#		path_checker            tur
+#		vendor "DDN"
+#		product "SAN DataDirector"
+#		path_grouping_policy "multibus"
+#		path_checker "directio"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"EMC"
-#		product			"Invista"
-#		product_blacklist	"LUNZ"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --page=pre-spc3-83 --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		no_path_retry		5
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			const
-#		prio_args		""
+#		vendor "EMC"
+#		product "SYMMETRIX"
+#		path_grouping_policy "multibus"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
+#		no_path_retry 6
 #	}
 #	device {
-#		vendor			"FSC"
-#		product			"CentricStor"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_serial
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		directio
-#		prio			const
-#		prio_args		""
+#		vendor "DGC"
+#		product ".*"
+#		product_blacklist "LUNZ"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "emc_clariion"
+#		features "1 queue_if_no_path"
+#		hardware_handler "1 emc"
+#		prio "emc"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 60
 #	}
 #	device {
-#		vendor			"FUJITSU"
-#		product			"ETERNUS_DX(L|400|8000)"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		10
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			alua
-#		prio_args		""
+#		vendor "EMC"
+#		product "Invista"
+#		product_blacklist "LUNZ"
+#		path_grouping_policy "multibus"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
+#		no_path_retry 5
 #	}
 #	device {
-#		vendor			"(HITACHI|HP)"
-#		product			"OPEN-.*"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		rr_min_io		100
-#		path_checker		tur
-#		prio			const
-#		prio_args		""
+#		vendor "FSC"
+#		product "CentricStor"
+#		path_grouping_policy "group_by_serial"
+#		path_checker "directio"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"HITACHI"
-#		product			"DF.*"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			hds
-#		prio_args		""
+#		vendor "FUJITSU"
+#		product "ETERNUS_DX(L|400|8000)"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 10
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"ProFibre 4000R"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		readsector0
-#		prio			const
-#		prio_args		""
+#		vendor "(HITACHI|HP)"
+#		product "OPEN-.*"
+#		path_grouping_policy "multibus"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"1722-600"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"1 rdac"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		300
-#		rr_min_io		1000
-#		path_checker		rdac
-#		prio			rdac
-#		prio_args		""
+#		vendor "HITACHI"
+#		product "DF.*"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "hds"
+#		failback immediate
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"1742"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"1 rdac"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		queue
-#		rr_min_io		1000
-#		path_checker		rdac
-#		prio			rdac
-#		prio_args		""
+#		vendor "IBM"
+#		product "ProFibre 4000R"
+#		path_grouping_policy "multibus"
+#		path_checker "directio"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"1745|1746"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"2 pg_init_retries 50"
-#		hardware_handler	"1 rdac"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		queue
-#		rr_min_io		1000
-#		path_checker		rdac
-#		prio			rdac
-#		prio_args		""
+#		vendor "IBM"
+#		product "^1722-600"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "1 queue_if_no_path"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 300
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"1814"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"1 rdac"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		queue
-#		rr_min_io		1000
-#		path_checker		rdac
-#		prio			rdac
-#		prio_args		""
+#		vendor "IBM"
+#		product "^1724"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "1 queue_if_no_path"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 300
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"1815"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"1 rdac"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		queue
-#		rr_min_io		1000
-#		path_checker		rdac
-#		prio			rdac
-#		prio_args		""
+#		vendor "IBM"
+#		product "^1726"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "1 queue_if_no_path"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 300
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"3526"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"1 rdac"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		queue
-#		rr_min_io		1000
-#		path_checker		rdac
-#		prio			rdac
-#		prio_args		""
+#		vendor "IBM"
+#		product "^1742"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "0"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"3542"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_serial
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			const
-#		prio_args		""
+#		vendor "IBM"
+#		product "^1745|^1746"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "2 pg_init_retries 50"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 15
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"2105(800|F20)"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_serial
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			const
-#		prio_args		""
+#		vendor "IBM"
+#		product "^1814"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "0"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"1750500"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			alua
-#		prio_args		""
+#		vendor "IBM"
+#		product "^1815"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "0"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"2107900"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			const
-#		prio_args		""
+#		vendor "IBM"
+#		product "^1818"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "0"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"2145"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			alua
-#		prio_args		""
+#		vendor "IBM"
+#		product "^3526"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "0"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"S/390 DASD ECKD"
-#		product_blacklist	"S/390.*"
-#		getuid_callout		"/sbin/dasd_id /dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		directio
-#		prio			const
-#		prio_args		""
+#		vendor "IBM"
+#		product "^3542"
+#		path_grouping_policy "group_by_serial"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"NETAPP"
-#		product			"LUN.*"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		rr_min_io		128
-#		path_checker		directio
-#		prio			ontap
-#		prio_args		""
+#		vendor "IBM"
+#		product "^2105800"
+#		path_grouping_policy "group_by_serial"
+#		path_checker "tur"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"NEXENTA"
-#		product			"COMSTAR"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_serial
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		30
-#		rr_min_io		128
-#		path_checker		directio
-#		prio			const
-#		prio_args		""
+#		vendor "IBM"
+#		product "^2105F20"
+#		path_grouping_policy "group_by_serial"
+#		path_checker "tur"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"Nseries.*"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		rr_min_io		128
-#		path_checker		directio
-#		prio			ontap
-#		prio_args		""
+#		vendor "IBM"
+#		product "^1750500"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"Pillar"
-#		product			"Axiom.*"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			alua
-#		prio_args		""
+#		vendor "IBM"
+#		product "^2107900"
+#		path_grouping_policy "multibus"
+#		path_checker "tur"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"IBM"
-#		product			"3303      NVDISK"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#               path_grouping_policy    failover
-#		failback		immediate
-#		no_path_retry		60
-#		rr_weight		uniform
-#		rr_min_io		1000
-#               path_checker            tur
+#		vendor "IBM"
+#		product "^2145"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"AIX"
-#		product			"VDASD"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#               path_grouping_policy    multibus
-#		failback		immediate
-#		no_path_retry		60
-#		rr_weight		uniform
-#		rr_min_io		1000
-#               path_checker            directio
+#		vendor "IBM"
+#		product "S/390 DASD ECKD"
+#		product_blacklist "S/390.*"
+#		path_grouping_policy "multibus"
+#		uid_attribute "ID_UID"
+#		path_checker "directio"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"AIX"
-#		product			"NVDISK"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"1 alua"
-#               path_grouping_policy    group_by_prio
-#		failback		immediate
-#		no_path_retry		60
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker            tur
-#		prio			alua
-#		prio_args		""
+#		vendor "IBM"
+#		product "S/390 DASD FBA"
+#		product_blacklist "S/390.*"
+#		path_grouping_policy "multibus"
+#		uid_attribute "ID_UID"
+#		path_checker "directio"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"SGI"
-#		product			"TP9[13]00"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		directio
-#		prio			const
-#		prio_args		""
+#		vendor "IBM"
+#		product "^IPR.*"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "1 queue_if_no_path"
+#		hardware_handler "1 alua"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
 #	}
 #	device {
-#		vendor			"SGI"
-#		product			"TP9[45]00"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"1 rdac"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		queue
-#		rr_min_io		1000
-#		path_checker		rdac
-#		prio			rdac
-#		prio_args		""
+#		vendor "IBM"
+#		product "1820N00"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
+#		rr_min_io 100
 #	}
 #	device {
-#		vendor			"SGI"
-#		product			"IS.*"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"2 pg_init_retries 50"
-#		hardware_handler	"1 rdac"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		15
-#		rr_min_io		1000
-#		path_checker		rdac
-#		prio			rdac
-#		prio_args		""
+#		vendor "IBM"
+#		product "2810XIV"
+#		path_grouping_policy "multibus"
+#		path_checker "tur"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "const"
+#		failback 15
+#		rr_weight "uniform"
+#		rr_min_io 15
 #	}
 #	device {
-#		vendor			"STK"
-#		product			"OPENstorage D280"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			rdac
-#		prio_args		""
+#		vendor "AIX"
+#		product "VDASD"
+#		path_grouping_policy "multibus"
+#		path_checker "directio"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 60
 #	}
 #	device {
-#		vendor			"SUN"
-#		product			"(StorEdge 3510|T4)"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		directio
-#		prio			const
-#		prio_args		""
+#		vendor "IBM"
+#		product "3303      NVDISK"
+#		path_grouping_policy "failover"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 60
 #	}
 #	device {
-#		vendor			"PIVOT3"
-#		product			"RAIGE VOLUME"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --page=0x80 --device=/dev/%n"
-#		features		"1 queue_if_no_path"
-#		hardware_handler	"0"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	multibus
-#		rr_weight		uniform
-#		rr_min_io		1000
-#		path_checker		tur
-#		prio			const
-#		prio_args		""
+#		vendor "AIX"
+#		product "NVDISK"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "1 alua"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 60
 #	}
 #	device {
-#		vendor			"SUN"
-#		product			"CSM200_R"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"1 rdac"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		queue
-#		rr_min_io		1000
-#		path_checker		rdac
-#		prio			rdac
-#		prio_args		""
+#		vendor "DELL"
+#		product "MD3000"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "2 pg_init_retries 50"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 15
 #	}
 #	device {
-#		vendor			"SUN"
-#		product			"LCSM100_[IF]"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"1 rdac"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		queue
-#		rr_min_io		1000
-#		path_checker		rdac
-#		prio			rdac
-#		prio_args		""
+#		vendor "DELL"
+#		product "MD3000i"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "2 pg_init_retries 50"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 15
 #	}
 #	device {
-#		vendor			"STK"
-#		product			"FLEXLINE 380"
-#		product_blacklist	"Universal Xport"
-#		getuid_callout		"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features		"0"
-#		hardware_handler	"1 rdac"
-#		path_selector		"round-robin 0"
-#		path_grouping_policy	group_by_prio
-#		failback		immediate
-#		rr_weight		uniform
-#		no_path_retry		queue
-#		rr_min_io		1000
-#		path_checker		rdac
-#		prio			rdac
-#		prio_args		""
+#		vendor "DELL"
+#		product "MD32xx"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "2 pg_init_retries 50"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 15
 #	}
 #	device {
-#		vendor			"EUROLOGC"
-#		product			"FC2502"
-#		getuid_callout		"/lib/udev/scsi_id --page=0x80 --whitelisted --device=/dev/%n"
-#		features                "0"
-#		hardware_handler        "0"
-#		path_selector           "round-robin 0"
-#		path_grouping_policy    group_by_prio
-#		rr_weight               uniform
-#		rr_min_io               1000
-#		path_checker		directio
-#		prio			const
+#		vendor "DELL"
+#		product "MD32xxi"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "2 pg_init_retries 50"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 15
 #	}
 #	device {
-#		vendor                  "NEC"
-#		product                 "DISK ARRAY"
-#		getuid_callout          "/lib/udev/scsi_id --whitelisted --device=/dev/%n"
-#		features                "0"
-#		hardware_handler        "1 alua"
-#		path_selector           "round-robin 0"
-#		path_grouping_policy    group_by_prio
-#		failback                immediate
-#		rr_weight               uniform
-#		rr_min_io               1000
-#		path_checker            tur
-#		prio                    alua
+#		vendor "NETAPP"
+#		product "LUN.*"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "3 queue_if_no_path pg_init_retries 50"
+#		hardware_handler "0"
+#		prio "ontap"
+#		failback immediate
+#		rr_weight "uniform"
+#		rr_min_io 128
+#		flush_on_last_del "yes"
+#		dev_loss_tmo "infinity"
+#		retain_attached_hw_handler yes
+#		detect_prio yes
 #	}
+#	device {
+#		vendor "NEXENTA"
+#		product "COMSTAR"
+#		path_grouping_policy "group_by_serial"
+#		path_checker "directio"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "const"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 30
+#		rr_min_io 128
+#	}
+#	device {
+#		vendor "IBM"
+#		product "Nseries.*"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "directio"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "ontap"
+#		failback immediate
+#		rr_weight "uniform"
+#		rr_min_io 128
+#	}
+#	device {
+#		vendor "Pillar"
+#		product "Axiom.*"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "alua"
+#		rr_weight "uniform"
+#	}
+#	device {
+#		vendor "SGI"
+#		product "TP9[13]00"
+#		path_grouping_policy "multibus"
+#		path_checker "directio"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
+#	}
+#	device {
+#		vendor "SGI"
+#		product "TP9[45]00"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "0"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
+#	}
+#	device {
+#		vendor "SGI"
+#		product "IS.*"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "2 pg_init_retries 50"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 15
+#	}
+#	device {
+#		vendor "NEC"
+#		product "DISK ARRAY"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "1 alua"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
+#	}
+#	device {
+#		vendor "STK"
+#		product "OPENstorage D280"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#	}
+#	device {
+#		vendor "SUN"
+#		product "(StorEdge 3510|T4)"
+#		path_grouping_policy "multibus"
+#		path_checker "directio"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
+#	}
+#	device {
+#		vendor "EUROLOGC"
+#		product "FC2502"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "directio"
+#		features "0"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
+#	}
+#	device {
+#		vendor "PIVOT3"
+#		product "RAIGE VOLUME"
+#		path_grouping_policy "multibus"
+#		path_checker "tur"
+#		features "1 queue_if_no_path"
+#		hardware_handler "0"
+#		prio "const"
+#		rr_weight "uniform"
+#		rr_min_io 100
+#	}
+#	device {
+#		vendor "SUN"
+#		product "CSM200_R"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "0"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
+#	}
+#	device {
+#		vendor "SUN"
+#		product "LCSM100_[IEFS]"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "0"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
+#	}
+#	device {
+#		vendor "SUN"
+#		product "SUN_6180"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "0"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
+#		rr_min_io 1000
+#		rr_min_io_rq 1
+#	}
+#	device {
+#		vendor "(LSI|ENGENIO)"
+#		product "INF-01-00"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "2 pg_init_retries 50"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry 15
+#	}
+#	device {
+#		vendor "STK"
+#		product "FLEXLINE 380"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "0"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
+#	}
+#}
+#multipaths {
 #}
