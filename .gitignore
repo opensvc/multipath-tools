@@ -5,6 +5,8 @@
 *.so.0
 *.a
 *.gz
-kpartx
-multipath
-multipathd
+kpartx/kpartx
+multipath/multipath
+multipathd/multipathd
+mpathpersist/mpathpersist
+.nfs*
