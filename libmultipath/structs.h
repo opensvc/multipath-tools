@@ -113,6 +113,19 @@ enum detect_prio_states {
 	DETECT_PRIO_ON,
 };
 
+enum scsi_protocol {
+	SCSI_PROTOCOL_FCP = 0,	/* Fibre Channel */
+	SCSI_PROTOCOL_SPI = 1,	/* parallel SCSI */
+	SCSI_PROTOCOL_SSA = 2,	/* Serial Storage Architecture - Obsolete */
+	SCSI_PROTOCOL_SBP = 3,	/* firewire */
+	SCSI_PROTOCOL_SRP = 4,	/* Infiniband RDMA */
+	SCSI_PROTOCOL_ISCSI = 5,
+	SCSI_PROTOCOL_SAS = 6,
+	SCSI_PROTOCOL_ADT = 7,	/* Media Changers */
+	SCSI_PROTOCOL_ATA = 8,
+	SCSI_PROTOCOL_UNSPEC = 0xf, /* No specific protocol */
+};
+
 struct sg_id {
 	int host_no;
 	int channel;
@@ -120,8 +133,8 @@ struct sg_id {
 	int lun;
 	short h_cmd_per_lun;
 	short d_queue_depth;
-	int unused1;
-	int unused2;
+	enum scsi_protocol proto_id;
+	int transport_id;
 };
 
 # ifndef HDIO_GETGEO

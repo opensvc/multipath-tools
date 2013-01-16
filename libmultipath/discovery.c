@@ -207,6 +207,7 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 {
 	const char *targetid, *value;
 	struct udev_device *parent, *tgtdev;
+	int host, channel, rport_id = -1;
 
 	parent = udev_device_get_parent_with_subsystem_devtype(pp->udev, "scsi", "scsi_device");
 	if (!parent)
@@ -214,6 +215,7 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 	/* Check for SAS */
 	value = udev_device_get_sysattr_value(parent, "sas_address");
 	if (value) {
+		pp->sg_id.proto_id = SCSI_PROTOCOL_SAS;
 		strncpy(node, value, NODE_NAME_SIZE);
 		return 0;
 	}
@@ -221,19 +223,30 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 	parent = udev_device_get_parent_with_subsystem_devtype(pp->udev, "scsi", "scsi_target");
 	if (!parent)
 		return 1;
-	tgtdev = udev_device_new_from_subsystem_sysname(conf->udev, "fc_transport", udev_device_get_sysname(parent));
-	/* Check if it's FibreChannel */
-	if (tgtdev) {
-		const char *value;
-
-		value = udev_device_get_sysattr_value(tgtdev, "node_name");
-		if (value) {
-			strncpy(node, value, NODE_NAME_SIZE);
-			udev_device_unref(tgtdev);
-			return 0;
+	/* Check for FibreChannel */
+	tgtdev = udev_device_get_parent(parent);
+	value = udev_device_get_sysname(tgtdev);
+	if (sscanf(value, "rport-%d:%d-%d",
+		   &host, &channel, &rport_id) == 3) {
+		tgtdev = udev_device_new_from_subsystem_sysname(conf->udev,
+				"fc_remote_ports", value);
+		if (tgtdev) {
+			condlog(3, "SCSI target %d:%d:%d -> "
+				"FC rport %d:%d-%d",
+				pp->sg_id.host_no, pp->sg_id.channel,
+				pp->sg_id.scsi_id, host, channel,
+				rport_id);
+			value = udev_device_get_sysattr_value(tgtdev,
+							      "node_name");
+			if (value) {
+				pp->sg_id.proto_id = SCSI_PROTOCOL_FCP;
+				pp->sg_id.transport_id = rport_id;
+				strncpy(node, value, NODE_NAME_SIZE);
+				udev_device_unref(tgtdev);
+				return 0;
+			} else
+				udev_device_unref(tgtdev);
 		}
-		else
-			udev_device_unref(tgtdev);
 	}
 
 	/* Check for iSCSI */
@@ -253,6 +266,7 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 
 			value = udev_device_get_sysattr_value(tgtdev, "targetname");
 			if (value) {
+				pp->sg_id.proto_id = SCSI_PROTOCOL_ISCSI;
 				strncpy(node, value, NODE_NAME_SIZE);
 				udev_device_unref(tgtdev);
 				return 0;
@@ -267,25 +281,20 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 static void
 sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 {
-	struct udev_device *parent = pp->udev;
 	struct udev_device *rport_dev = NULL;
 	char value[11];
-	const char *rport_id = NULL;
+	char rport_id[32];
 
-	while (parent) {
-		rport_id = udev_device_get_sysname(parent);
-		if (!strncmp(rport_id, "rport-", 6))
-			break;
-		parent = udev_device_get_parent(parent);
-		rport_id = NULL;
-	}
-	if (!parent || !rport_id) {
-		condlog(0, "%s: rport id not found", pp->dev);
+	if (pp->sg_id.proto_id != SCSI_PROTOCOL_FCP) {
+		condlog(3, "%s: Not a FCP device", pp->dev);
 		return;
 	}
-	rport_dev = udev_device_new_from_subsystem_sysname(conf->udev, "fc_remote_ports", rport_id);
+	sprintf(rport_id, "rport-%d:%d-%d",
+		pp->sg_id.host_no, pp->sg_id.channel, pp->sg_id.transport_id);
+	rport_dev = udev_device_new_from_subsystem_sysname(conf->udev,
+				"fc_remote_ports", rport_id);
 	if (!rport_dev) {
-		condlog(3, "%s: No fc_remote_port device for '%s'", pp->dev,
+		condlog(1, "%s: No fc_remote_port device for '%s'", pp->dev,
 			rport_id);
 		return;
 	}
