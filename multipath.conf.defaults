@@ -1,6 +1,6 @@
 # These are the compiled in default settings.  They will be used unless you
 # overwrite these values in your config file.
-
+ 
 #defaults {
 #	verbosity 2
 #	polling_interval 5
@@ -772,6 +772,17 @@
 #		rr_weight "uniform"
 #	}
 #	device {
+#		vendor "SUN"
+#		product "STK6580_6780"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#	}
+#	device {
 #		vendor "EUROLOGC"
 #		product "FC2502"
 #		path_grouping_policy "group_by_prio"
@@ -854,6 +865,30 @@
 #		features "0"
 #		hardware_handler "1 rdac"
 #		prio "rdac"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
+#	}
+#	device {
+#		vendor "Intel"
+#		product "Multi-Flex"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "1 alua"
+#		prio "alua"
+#		failback immediate
+#		rr_weight "uniform"
+#		no_path_retry "queue"
+#	}
+#	device {
+#		vendor "DataCore"
+#		product "SANmelody"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "tur"
+#		features "0"
+#		hardware_handler "0"
+#		prio "alua"
 #		failback immediate
 #		rr_weight "uniform"
 #		no_path_retry "queue"
