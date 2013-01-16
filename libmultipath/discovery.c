@@ -207,7 +207,7 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 {
 	const char *targetid, *value;
 	struct udev_device *parent, *tgtdev;
-	int host, channel, rport_id = -1;
+	int host, channel, rport_id = -1, ata_id = -1;
 
 	parent = udev_device_get_parent_with_subsystem_devtype(pp->udev, "scsi", "scsi_device");
 	if (!parent)
@@ -275,6 +275,23 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 				udev_device_unref(tgtdev);
 		}
 	}
+	/* Check for libata */
+	parent = pp->udev;
+	targetid = NULL;
+	while (parent) {
+		targetid = udev_device_get_sysname(parent);
+		if (targetid && sscanf(targetid, "ata%d", &ata_id) == 1)
+			break;
+		parent = udev_device_get_parent(parent);
+		targetid = NULL;
+	}
+	if (targetid) {
+		pp->sg_id.proto_id = SCSI_PROTOCOL_ATA;
+		pp->sg_id.transport_id = ata_id;
+		snprintf(node, NODE_NAME_SIZE, "ata-%d.00", ata_id);
+		return 0;
+	}
+	pp->sg_id.proto_id = SCSI_PROTOCOL_UNSPEC;
 	return 1;
 }
 
