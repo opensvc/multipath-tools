@@ -79,6 +79,9 @@ if [ -n "$dmdeps" ] ; then
 	*\(94,*)
             echo "DM_TYPE=dasd"
 	    ;;
+	*\(104,* | *\(105,* | *\(106,* | *\(107,* | *\(108,* | *\(109,* | *\(110,* | *\(112,*)
+	    echo "DM_TYPE=cciss"
+	    ;;
 	*\(9*)
             echo "DM_TYPE=raid"
 	    ;;
