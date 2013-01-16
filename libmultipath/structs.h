@@ -113,12 +113,6 @@ enum detect_prio_states {
 	DETECT_PRIO_ON,
 };
 
-struct scsi_idlun {
-	int dev_id;
-	int host_unique_id;
-	int host_no;
-};
-
 struct sg_id {
 	int host_no;
 	int channel;
@@ -128,12 +122,6 @@ struct sg_id {
 	short d_queue_depth;
 	int unused1;
 	int unused2;
-};
-
-struct scsi_dev {
-	char dev[FILE_NAME_SIZE];
-	struct scsi_idlun scsi_id;
-	int host_no;
 };
 
 # ifndef HDIO_GETGEO
@@ -151,7 +139,6 @@ struct path {
 	char dev[FILE_NAME_SIZE];
 	char dev_t[BLK_DEV_SIZE];
 	struct udev_device *udev;
-	struct scsi_idlun scsi_id;
 	struct sg_id sg_id;
 	struct hd_geometry geom;
 	char wwid[WWID_SIZE];
