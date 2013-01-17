@@ -55,6 +55,9 @@ if [ "$dmtbl" = "part" ] ; then
     # The name of the kpartx table is the name of the parent table
     dmname=$($DMSETUP info  -c --noheadings -o name -u $dmuuid)
     echo "DM_NAME=$dmname"
+    if [ "$dmname" != ${dmuuid#mpath-} ] ; then
+	echo "DM_MPATH=${dmuuid#mpath-}"
+    fi
     # We need the dependencies of the parent table to figure out
     # the type if the parent is a multipath table
     case "$dmuuid" in
@@ -63,7 +66,9 @@ if [ "$dmtbl" = "part" ] ; then
 	    ;;
     esac
 elif [ "$dmtbl" = "mpath" ] ; then
-    dmname=$tblname
+    if [ -n "$DM_NAME" -a "$DM_NAME" != "$dmuuid" ] ; then
+	echo "DM_MPATH=$dmuuid"
+    fi
     # We need the dependencies of the table to figure out the type
     dmdeps=$($DMSETUP deps -u $UUID)
 elif [ "$dmtbl" = "dmraid" ] ; then
