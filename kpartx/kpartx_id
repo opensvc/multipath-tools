@@ -83,7 +83,7 @@ fi
 if [ -n "$dmdeps" ] ; then
     case "$dmdeps" in
 	*\(94,*)
-            echo "DM_TYPE=dasd"
+            echo "DM_TYPE=ccw"
 	    ;;
 	*\(104,* | *\(105,* | *\(106,* | *\(107,* | *\(108,* | *\(109,* | *\(110,* | *\(112,*)
 	    echo "DM_TYPE=cciss"
