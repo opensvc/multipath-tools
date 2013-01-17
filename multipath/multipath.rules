@@ -1,7 +1,0 @@
-#
-# udev rules for multipathing.
-# The persistent symlinks are created with the kpartx rules
-#
-
-# socket for uevents
-SUBSYSTEM=="block", RUN+="socket:/org/kernel/dm/multipath_event"
