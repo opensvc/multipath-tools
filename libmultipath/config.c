@@ -335,6 +335,15 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(retain_hwhandler);
 	merge_num(detect_prio);
 
+	/*
+	 * Make sure features is consistent with
+	 * no_path_retry
+	 */
+	if (dst->no_path_retry == NO_PATH_RETRY_FAIL)
+		remove_feature(&dst->features, "queue_if_no_path");
+	else if (dst->no_path_retry != NO_PATH_RETRY_UNDEF)
+		add_feature(&dst->features, "queue_if_no_path");
+
 	return 0;
 }
 
