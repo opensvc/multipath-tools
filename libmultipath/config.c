@@ -418,12 +418,13 @@ out:
 	return 1;
 }
 
-static int
+static void
 factorize_hwtable (vector hw, int n)
 {
 	struct hwentry *hwe1, *hwe2;
 	int i, j;
 
+restart:
 	vector_foreach_slot(hw, hwe1, i) {
 		if (i == n)
 			break;
@@ -435,14 +436,17 @@ factorize_hwtable (vector hw, int n)
 			merge_hwe(hwe2, hwe1);
 			if (hwe_strmatch(hwe2, hwe1) == 0) {
 				vector_del_slot(hw, i);
-				free_hwe(hwe1);
-				n -= 1;
-				i -= 1;
-				break;
+				/*
+				 * Play safe here; we have modified
+				 * the original vector so the outer
+				 * vector_foreach_slot() might
+				 * become confused.
+				 */
+				goto restart;
 			}
 		}
 	}
-	return 0;
+	return;
 }
 
 struct config *
