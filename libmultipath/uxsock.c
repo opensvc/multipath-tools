@@ -25,19 +25,21 @@
  */
 int ux_socket_connect(const char *name)
 {
-	int fd;
+	int fd, len;
 	struct sockaddr_un addr;
 
 	memset(&addr, 0, sizeof(addr));
-	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, name, sizeof(addr.sun_path));
+	addr.sun_family = AF_LOCAL;
+	addr.sun_path[0] = '\0';
+	len = strlen(name) + 1;
+	strncpy(&addr.sun_path[1], name, len);
 
-	fd = socket(AF_UNIX, SOCK_STREAM, 0);
+	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
 	if (fd == -1) {
 		return -1;
 	}
 
-	if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+	if (connect(fd, (struct sockaddr *)&addr, len) == -1) {
 		close(fd);
 		return -1;
 	}
@@ -51,20 +53,19 @@ int ux_socket_connect(const char *name)
  */
 int ux_socket_listen(const char *name)
 {
-	int fd;
+	int fd, len;
 	struct sockaddr_un addr;
 
-	/* get rid of any old socket */
-	unlink(name);
-
-	fd = socket(AF_UNIX, SOCK_STREAM, 0);
+	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
 	if (fd == -1) return -1;
 
 	memset(&addr, 0, sizeof(addr));
-	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, name, sizeof(addr.sun_path));
+	addr.sun_family = AF_LOCAL;
+	addr.sun_path[0] = '\0';
+	len = strlen(name) + 1;
+	strncpy(&addr.sun_path[1], name, len);
 
-	if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+	if (bind(fd, (struct sockaddr *)&addr, len) == -1) {
 		close(fd);
 		return -1;
 	}
