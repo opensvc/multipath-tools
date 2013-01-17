@@ -69,6 +69,7 @@ elif [ "$dmtbl" = "mpath" ] ; then
     if [ -n "$DM_NAME" -a "$DM_NAME" != "$dmuuid" ] ; then
 	echo "DM_MPATH=$dmuuid"
     fi
+    dmname="$dmuuid"
     # We need the dependencies of the table to figure out the type
     dmdeps=$($DMSETUP deps -u $UUID)
 elif [ "$dmtbl" = "dmraid" ] ; then
@@ -92,6 +93,7 @@ if [ -n "$dmdeps" ] ; then
 	    ;;
 	*)
             echo "DM_TYPE=scsi"
+	    echo "DM_WWN=0x${dmname#?}"
 	    ;;
     esac
 else
