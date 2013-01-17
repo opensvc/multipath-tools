@@ -1209,18 +1209,20 @@ check_path (struct vectors * vecs, struct path * pp)
 			reinstate_path(pp, 0);
 		} else {
 			LOG_MSG(4, checker_message(&pp->checker));
-			/*
-			 * double the next check delay.
-			 * max at conf->max_checkint
-			 */
-			if (pp->checkint < (conf->max_checkint / 2))
-				pp->checkint = 2 * pp->checkint;
-			else
-				pp->checkint = conf->max_checkint;
+			if (pp->checkint != conf->max_checkint) {
+				/*
+				 * double the next check delay.
+				 * max at conf->max_checkint
+				 */
+				if (pp->checkint < (conf->max_checkint / 2))
+					pp->checkint = 2 * pp->checkint;
+				else
+					pp->checkint = conf->max_checkint;
 
-			pp->tick = pp->checkint;
-			condlog(4, "%s: delay next check %is",
-				pp->dev_t, pp->tick);
+				pp->tick = pp->checkint;
+				condlog(4, "%s: delay next check %is",
+					pp->dev_t, pp->tick);
+			}
 		}
 	}
 	else if (newstate == PATH_DOWN) {
