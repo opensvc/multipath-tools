@@ -36,6 +36,7 @@ install: $(EXEC) $(EXEC).8
 uninstall:
 	rm -f $(DESTDIR)$(bindir)/$(EXEC)
 	rm -f $(DESTDIR)$(mandir)/$(EXEC).8.gz
+	rm -f $(DESTDIR)$(libudevdir)/kpartx_id
 
 clean:
 	rm -f core *.o $(EXEC) *.gz
