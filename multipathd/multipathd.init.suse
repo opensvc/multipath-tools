@@ -38,7 +38,7 @@ case "$1" in
     start)
 	echo -n "Starting multipathd"
 	ulimit -c unlimited
-	if $DAEMON -k"show daemon" > /dev/null 2>&1 ; then
+	if $DAEMON -k"reconfigure" > /dev/null 2>&1 ; then
 	    echo -n " (multipathd running)"
 	    rc_status -v
 	    rc_exit
