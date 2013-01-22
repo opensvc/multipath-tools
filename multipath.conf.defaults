@@ -151,7 +151,7 @@
 #	}
 #	device {
 #		vendor "(COMPAQ|HP)"
-#		product "HSV1[01]1|HSV2[01]0|HSV300|HSV4[05]0"
+#		product "HSV1[01]1|HSV2[01]0|HSV3[046]0|HSV4[05]0"
 #		path_grouping_policy "group_by_prio"
 #		path_checker "tur"
 #		features "0"
