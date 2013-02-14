@@ -797,12 +797,13 @@ path_offline (struct path * pp)
 
 	condlog(3, "%s: path state = %s", pp->dev, buff);
 
-	if (!strncmp(buff, "offline", 7)) {
+	if (!strncmp(buff, "offline", 7) ||
+	    !strncmp(buff, "transport-offline", 17)) {
 		pp->offline = 1;
 		return PATH_DOWN;
 	}
 	pp->offline = 0;
-	if (!strncmp(buff, "blocked", 7))
+	if (!strncmp(buff, "blocked", 7) || !strncmp(buff, "quiesce", 7))
 		return PATH_PENDING;
 	else if (!strncmp(buff, "running", 7))
 		return PATH_UP;
