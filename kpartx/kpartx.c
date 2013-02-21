@@ -81,6 +81,7 @@ initpts(void)
 	addpts("dasd", read_dasd_pt);
 	addpts("mac", read_mac_pt);
 	addpts("sun", read_sun_pt);
+	addpts("ps3", read_ps3_pt);
 }
 
 static char short_opts[] = "rladfgvp:t:su";

@@ -39,6 +39,7 @@ extern ptreader read_gpt_pt;
 extern ptreader read_dasd_pt;
 extern ptreader read_mac_pt;
 extern ptreader read_sun_pt;
+extern ptreader read_ps3_pt;
 
 char *getblock(int fd, unsigned int secnr);
 
