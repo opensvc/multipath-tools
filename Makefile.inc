@@ -35,7 +35,7 @@ libdir	    = $(prefix)/$(LIB)/multipath
 unitdir     = $(prefix)/lib/systemd/system
 mpathpersistdir = $(TOPDIR)/libmpathpersist
 
-GZIP        = /bin/gzip -9 -c
+GZIP        = gzip -9 -c
 INSTALL_PROGRAM = install
 
 ifndef RPM_OPT_FLAGS
