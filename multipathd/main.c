@@ -531,7 +531,8 @@ rescan:
 			goto fail_map;
 
 	if (retries >= 0) {
-		condlog(2, "%s path added to devmap %s", pp->dev, mpp->alias);
+		condlog(2, "%s [%s]: path added to devmap %s",
+			pp->dev, pp->dev_t, mpp->alias);
 		return 0;
 	}
 	else
@@ -636,8 +637,8 @@ ev_remove_path (struct path *pp, struct vectors * vecs)
 			}
 			sync_map_state(mpp);
 
-			condlog(2, "%s: path removed from map %s",
-				pp->dev, mpp->alias);
+			condlog(2, "%s [%s]: path removed from map %s",
+				pp->dev, pp->dev_t, mpp->alias);
 		}
 	}
 
