@@ -1046,9 +1046,13 @@ static struct hwentry default_hw[] = {
 		.checker_name  = RDAC,
 		.prio_name     = PRIO_RDAC,
 	},
-	/* LSI/Engenio/NetApp E-Series RDAC storage */
+	/* LSI/Engenio/NetApp E-Series RDAC storage
+	 *
+	 * Maintainer : Sean Stewart
+	 * Mail : sean.stewart@netapp.com
+	 */
 	{
-		.vendor        = "(LSI|ENGENIO)",
+		.vendor        = "(NETAPP|LSI|ENGENIO)",
 		.product       = "INF-01-00",
 		.bl_product    = "Universal Xport",
 		.features      = "2 pg_init_retries 50",
@@ -1056,10 +1060,12 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.rr_weight     = RR_WEIGHT_NONE,
-		.no_path_retry = 15,
+		.no_path_retry = 30,
 		.checker_name  = RDAC,
 		.prio_name     = PRIO_RDAC,
 		.prio_args     = NULL,
+		.detect_prio   = DETECT_PRIO_ON,
+		.retain_hwhandler = RETAIN_HWHANDLER_ON,
 	},
 	{
 		.vendor        = "STK",
