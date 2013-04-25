@@ -90,13 +90,20 @@
 #	#
 #	# name    : features
 #	# scope   : multipath & multipathd
-#	# desc    : The default extra features of multipath devices. The
-#	#           only existing feature currently is queue_if_no_path, which
-#	#           is the same as setting no_path_retry to queue.
-#	# values  : "1 queue_if_no_path"
-#	# default : (null)
+#	# desc    : The default extra features of multipath devices.
+#	#           Syntax is "num[ feature_0 feature_1 ...]", where `num' is the
+#	#           number of features in the following (possibly empty) list of
+#	#           features.
+#	# values  : queue_if_no_path = Queue IO if no path is active; consider
+#	#                              using the `no_path_retry' keyword instead.
+#	#           no_partitions    = Disable automatic partitions generation via
+#	#                              kpartx.
+#	# default : "0"
 #	#
+#	features	"0"
 #	features	"1 queue_if_no_path"
+#	features	"1 no_partitions"
+#	features	"2 queue_if_no_path no_partitions"
 #
 #	#
 #	# name    : path_checker, checker
@@ -506,15 +513,8 @@
 #		# as already described
 #		path_selector		"service-time 0"
 #
-#		#
-#		# name    : features
-#		# scope   : multipath & multipathd
-#		# desc    : The extra features of multipath devices. The only
-#		#           existing feature currently is queue_if_no_path,
-#		#           which is the same as setting no_path_retry to queue.
-#		# values  : "1 queue_if_no_path"
-#		#
-#		features	"1 queue_if_no_path"
+#		# as already described
+#		features	"0"
 #
 #		#
 #		# name    : hardware_handler
