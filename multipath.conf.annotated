@@ -31,10 +31,16 @@
 #	# scope   : multipath & multipathd
 #	# desc    : the default path selector algorithm to use
 #	#           these algorithms are offered by the kernel multipath target
-#	# values  : "round-robin 0"
-#	# default : "round-robin 0"
+#	# values  : "round-robin 0"  = Loop through every path in the path group,
+#	#                              sending the same amount of IO to each.
+#	#           "queue-length 0" = Send the next bunch of IO down the path
+#	#                              with the least amount of outstanding IO.
+#	#           "service-time 0" = Choose the path for the next bunch of IO
+#	#                              based on the amount of outstanding IO to
+#	#                              the path and its relative throughput.
+#	# default : "service-time 0"
 #	#
-#	path_selector	"round-robin 0"
+#	path_selector	"service-time 0"
 #
 #	#
 #	# name    : path_grouping_policy
@@ -497,14 +503,8 @@
 #		#
 #		path_checker		directio
 #
-#		#
-#		# name    : path_selector
-#		# scope   : multipathd & multipathd
-#		# desc    : the path selector algorithm to use for this mpath
-#		#           these algo are offered by the kernel mpath target
-#		# values  : "round-robin 0"
-#		#
-#		path_selector		"round-robin 0"
+#		# as already described
+#		path_selector		"service-time 0"
 #
 #		#
 #		# name    : features
