@@ -15,6 +15,7 @@
 #include "../libmultipath/sg_include.h"
 #include "libsg.h"
 #include "checkers.h"
+#include "debug.h"
 
 #define INQUIRY_CMD     0x12
 #define INQUIRY_CMDLEN  6
@@ -199,7 +200,7 @@ int libcheck_check (struct checker * c)
 				 * 02/04/03 not 05/25/01 on read.
 				 */
 				SET_INACTIVE_SNAP(c);
-				MSG(c, "emc_clariion_checker: Active "
+				condlog(3, "emc_clariion_checker: Active "
 					"path to inactive snapshot WWN %s.",
 					wwnstr);
 			} else
@@ -220,7 +221,7 @@ int libcheck_check (struct checker * c)
 	} else {
 		if (IS_INACTIVE_SNAP(c)) {
 			hexadecimal_to_ascii(ct->wwn, wwnstr);
-			MSG(c, "emc_clariion_checker: Passive "
+			condlog(3, "emc_clariion_checker: Passive "
 				"path to inactive snapshot WWN %s.",
 				wwnstr);
 			ret = PATH_DOWN;
