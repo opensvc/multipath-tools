@@ -348,7 +348,7 @@ main(int argc, char **argv){
 	if (delim == NULL) {
 		delim = malloc(DELIM_SIZE);
 		memset(delim, 0, DELIM_SIZE);
-		set_delimiter(device, delim);
+		set_delimiter(mapname, delim);
 	}
 
 	fd = open(device, O_RDONLY);
