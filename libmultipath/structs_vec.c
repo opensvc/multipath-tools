@@ -106,7 +106,7 @@ orphan_paths (vector pathvec, struct multipath * mpp)
 static void
 set_multipath_wwid (struct multipath * mpp)
 {
-	if (mpp->wwid)
+	if (strlen(mpp->wwid))
 		return;
 
 	dm_get_uuid(mpp->alias, mpp->wwid);
