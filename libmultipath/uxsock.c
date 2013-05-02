@@ -31,7 +31,7 @@ int ux_socket_connect(const char *name)
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_LOCAL;
 	addr.sun_path[0] = '\0';
-	len = strlen(name) + 1;
+	len = strlen(name) + 1 + sizeof(sa_family_t);
 	strncpy(&addr.sun_path[1], name, len);
 
 	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
@@ -62,7 +62,7 @@ int ux_socket_listen(const char *name)
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_LOCAL;
 	addr.sun_path[0] = '\0';
-	len = strlen(name) + 1;
+	len = strlen(name) + 1 + sizeof(sa_family_t);
 	strncpy(&addr.sun_path[1], name, len);
 
 	if (bind(fd, (struct sockaddr *)&addr, len) == -1) {

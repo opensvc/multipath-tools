@@ -14,6 +14,7 @@
 #include <debug.h>
 #include "memory.h"
 #include "../libmultipath/uxsock.h"
+#include "../libmultipath/defaults.h"
 
 unsigned long mem_allocated;    /* Total memory used in Bytes */
 
@@ -25,7 +26,7 @@ int update_prflag(char * arg1, char * arg2, int noisy)
 	size_t len;
 	int ret = 0;
 
-	fd = ux_socket_connect("/var/run/multipathd.sock");
+	fd = ux_socket_connect(DEFAULT_SOCKET);
 	if (fd == -1) {
 		condlog (0, "ux socket connect error");
 		return 1 ;
