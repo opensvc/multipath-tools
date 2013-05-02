@@ -53,8 +53,10 @@ typedef int (uev_trigger)(struct uevent *, void * trigger_data);
 
 pthread_t uevq_thr;
 LIST_HEAD(uevq);
-pthread_mutex_t uevq_lock, *uevq_lockp = &uevq_lock;
-pthread_cond_t  uev_cond,  *uev_condp  = &uev_cond;
+pthread_mutex_t uevq_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t *uevq_lockp = &uevq_lock;
+pthread_cond_t uev_cond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t *uev_condp = &uev_cond;
 uev_trigger *my_uev_trigger;
 void * my_trigger_data;
 int servicing_uev;
@@ -409,10 +411,6 @@ int uevent_listen(void)
 	 * thereby not getting to empty the socket's receive buffer queue
 	 * often enough.
 	 */
-	INIT_LIST_HEAD(&uevq);
-
-	pthread_mutex_init(uevq_lockp, NULL);
-	pthread_cond_init(uev_condp, NULL);
 	pthread_cleanup_push(uevq_stop, NULL);
 
 	monitor = udev_monitor_new_from_netlink(conf->udev, "udev");
@@ -525,8 +523,6 @@ out:
 	if (need_failback)
 		err = failback_listen();
 	pthread_cleanup_pop(1);
-	pthread_mutex_destroy(uevq_lockp);
-	pthread_cond_destroy(uev_condp);
 	return err;
 }
 
