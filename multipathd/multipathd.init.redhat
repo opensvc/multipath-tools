@@ -81,23 +81,28 @@ force_stop() {
 	echo
 }
 
-stop() {
+check_root() {
         root_dev=$(awk '{ if ($1 !~ /^[ \t]*#/ && $2 == "/") { print $1; }}' /etc/mtab)
 	dm_num=`dmsetup info -c --noheadings -o minor $root_dev 2> /dev/null`
 	if [ $? -eq 0 ]; then
 		root_dm_device="dm-$dm_num"
 		[ -d $syspath/$root_dm_device ] && teardown_slaves $syspath/$root_dm_device
 	fi
+}
 
-	force_stop
+force_queue_without_daemon() {
+	$DAEMON forcequeueing daemon
 }
 
 restart() {
-	stop
+	force_queue_without_daemon
+	check_root
+	force_stop
 	start
 }
 
 force_restart() {
+	force_queue_without_daemon
 	force_stop
 	start
 }
@@ -115,7 +120,8 @@ start)
 	start
 	;;
 stop)
-	stop
+	check_root
+	force_stop
 	;;
 force-stop)
 	force_stop

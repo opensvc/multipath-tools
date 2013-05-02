@@ -898,6 +898,8 @@ uxlsnrloop (void * ap)
 	set_handler_callback(GETPRSTATUS+MAP, cli_getprstatus);
 	set_handler_callback(SETPRSTATUS+MAP, cli_setprstatus);
 	set_handler_callback(UNSETPRSTATUS+MAP, cli_unsetprstatus);
+	set_handler_callback(FORCEQ+DAEMON, cli_force_no_daemon_q);
+	set_handler_callback(RESTOREQ+DAEMON, cli_restore_no_daemon_q);
 
 	umask(077);
 	uxsock_listen(&uxsock_trigger, ap);

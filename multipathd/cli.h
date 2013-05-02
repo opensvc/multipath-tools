@@ -10,6 +10,7 @@ enum {
 	__RESIZE,
 	__RESET,
 	__RELOAD,
+	__FORCEQ,
 	__DISABLEQ,
 	__RESTOREQ,
 	__PATHS,
@@ -45,6 +46,7 @@ enum {
 #define RESIZE		(1 << __RESIZE)
 #define RESET		(1 << __RESET)
 #define RELOAD		(1 << __RELOAD)
+#define FORCEQ		(1 << __FORCEQ)
 #define DISABLEQ	(1 << __DISABLEQ)
 #define RESTOREQ	(1 << __RESTOREQ)
 #define PATHS		(1 << __PATHS)

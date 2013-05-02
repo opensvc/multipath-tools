@@ -438,14 +438,11 @@ def_queue_without_daemon(vector strvec)
 	if (!buff)
 		return 1;
 
-	if (!strncmp(buff, "off", 3) || !strncmp(buff, "no", 2) ||
-	    !strncmp(buff, "0", 1))
-		conf->queue_without_daemon = QUE_NO_DAEMON_OFF;
-	else if (!strncmp(buff, "on", 2) || !strncmp(buff, "yes", 3) ||
+	if (!strncmp(buff, "on", 2) || !strncmp(buff, "yes", 3) ||
 		 !strncmp(buff, "1", 1))
 		conf->queue_without_daemon = QUE_NO_DAEMON_ON;
 	else
-		conf->queue_without_daemon = QUE_NO_DAEMON_UNDEF;
+		conf->queue_without_daemon = QUE_NO_DAEMON_OFF;
 
 	free(buff);
 	return 0;
@@ -2649,8 +2646,9 @@ snprint_def_queue_without_daemon (char * buff, int len, void * data)
 	case QUE_NO_DAEMON_OFF:
 		return snprintf(buff, len, "\"no\"");
 	case QUE_NO_DAEMON_ON:
-	case QUE_NO_DAEMON_UNDEF:
 		return snprintf(buff, len, "\"yes\"");
+	case QUE_NO_DAEMON_FORCE:
+		return snprintf(buff, len, "\"forced\"");
 	}
 	return 0;
 }

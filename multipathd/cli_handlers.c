@@ -628,6 +628,24 @@ cli_resize(void *v, char **reply, int *len, void *data)
 }
 
 int
+cli_force_no_daemon_q(void * v, char ** reply, int * len, void * data)
+{
+	condlog(2, "force queue_without_daemon (operator)");
+	if (conf->queue_without_daemon == QUE_NO_DAEMON_OFF)
+		conf->queue_without_daemon = QUE_NO_DAEMON_FORCE;
+	return 0;
+}
+
+int
+cli_restore_no_daemon_q(void * v, char ** reply, int * len, void * data)
+{
+	condlog(2, "restore queue_without_daemon (operator)");
+	if (conf->queue_without_daemon == QUE_NO_DAEMON_FORCE)
+		conf->queue_without_daemon = QUE_NO_DAEMON_OFF;
+	return 0;
+}
+
+int
 cli_restore_queueing(void *v, char **reply, int *len, void *data)
 {
 	struct vectors * vecs = (struct vectors *)data;
