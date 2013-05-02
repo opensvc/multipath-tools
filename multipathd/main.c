@@ -1357,6 +1357,7 @@ configure (struct vectors * vecs, int start_waiters)
 
 	sync_maps_state(mpvec);
 	vector_foreach_slot(mpvec, mpp, i){
+		remember_wwid(mpp->wwid);
 		update_map_pr(mpp);
 	}
 
