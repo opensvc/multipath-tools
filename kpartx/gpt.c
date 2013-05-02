@@ -637,6 +637,7 @@ read_gpt_pt (int fd, struct slice all, struct slice *sp, int ns)
 	uint32_t i;
 	int n = 0;
         int last_used_index=-1;
+	int sector_size_mul = get_sector_size(fd)/512;
 
 	if (!find_valid_gpt (fd, &gpt, &ptes) || !gpt || !ptes) {
 		if (gpt)
@@ -652,9 +653,11 @@ read_gpt_pt (int fd, struct slice all, struct slice *sp, int ns)
 			sp[n].size = 0;
 			n++;
 		} else {
-			sp[n].start = __le64_to_cpu(ptes[i].starting_lba);
-			sp[n].size  = __le64_to_cpu(ptes[i].ending_lba) -
-				__le64_to_cpu(ptes[i].starting_lba) + 1;
+			sp[n].start = sector_size_mul *
+				      __le64_to_cpu(ptes[i].starting_lba);
+			sp[n].size  = sector_size_mul *
+				      (__le64_to_cpu(ptes[i].ending_lba) -
+				       __le64_to_cpu(ptes[i].starting_lba) + 1);
                         last_used_index=n;
 			n++;
 		}
