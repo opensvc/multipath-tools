@@ -162,7 +162,10 @@ void prio_put (struct prio * dst)
 	if (!dst)
 		return;
 
-	src = prio_lookup(dst->name);
+	if (!strlen(dst->name))
+		src = NULL;
+	else
+		src = prio_lookup(dst->name);
 	memset(dst, 0x0, sizeof(struct prio));
 	free_prio(src);
 }
