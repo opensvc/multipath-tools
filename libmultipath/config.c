@@ -436,6 +436,8 @@ restart:
 			merge_hwe(hwe2, hwe1);
 			if (hwe_strmatch(hwe2, hwe1) == 0) {
 				vector_del_slot(hw, i);
+				free_hwe(hwe1);
+				n -= 1;
 				/*
 				 * Play safe here; we have modified
 				 * the original vector so the outer
