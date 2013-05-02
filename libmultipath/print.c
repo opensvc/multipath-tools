@@ -8,6 +8,8 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <string.h>
+#include <errno.h>
 
 #include "checkers.h"
 #include "vector.h"
@@ -24,6 +26,7 @@
 #include "switchgroup.h"
 #include "devmapper.h"
 #include "uevent.h"
+#include "debug.h"
 
 #define MAX(x,y) (x > y) ? x : y
 #define TAIL     (line + len - 1 - c)
@@ -754,11 +757,30 @@ snprint_pathgroup (char * line, int len, char * format,
 extern void
 print_multipath_topology (struct multipath * mpp, int verbosity)
 {
-	char buff[MAX_LINE_LEN * MAX_LINES] = {};
+	int resize;
+	char *buff = NULL;
+	char *old = NULL;
+	int len, maxlen = MAX_LINE_LEN * MAX_LINES;
 
-	memset(&buff[0], 0, MAX_LINE_LEN * MAX_LINES);
-	snprint_multipath_topology(&buff[0], MAX_LINE_LEN * MAX_LINES,
-				   mpp, verbosity);
+	buff = MALLOC(maxlen);
+	do {
+		if (!buff) {
+			if (old)
+				FREE(old);
+			condlog(0, "couldn't allocate memory for list: %s\n",
+				strerror(errno));
+			return;
+		}
+
+		len = snprint_multipath_topology(buff, maxlen, mpp, verbosity);
+		resize = (len == maxlen - 1);
+
+		if (resize) {
+			maxlen *= 2;
+			old = buff;
+			buff = REALLOC(buff, maxlen);
+		}
+	} while (resize);
 	printf("%s", buff);
 }
 
