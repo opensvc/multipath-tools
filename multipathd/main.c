@@ -375,7 +375,7 @@ static int
 uev_add_path (struct uevent *uev, struct vectors * vecs)
 {
 	struct path *pp;
-	int ret;
+	int ret, i;
 
 	condlog(2, "%s: add path (uevent)", uev->kernel);
 	if (strstr(uev->kernel, "..") != NULL) {
@@ -392,6 +392,23 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 			uev->kernel);
 		if (pp->mpp)
 			return 0;
+		if (!strlen(pp->wwid)) {
+			udev_device_unref(pp->udev);
+			pp->udev = udev_device_ref(uev->udev);
+			ret = pathinfo(pp, conf->hwtable,
+				       DI_ALL | DI_BLACKLIST);
+			if (ret == 2) {
+				i = find_slot(vecs->pathvec, (void *)pp);
+				if (i != -1)
+					vector_del_slot(vecs->pathvec, i);
+				free_path(pp);
+				return 0;
+			} else if (ret == 1) {
+				condlog(0, "%s: failed to reinitialize path",
+					uev->kernel);
+				return 1;
+			}
+		}
 	} else {
 		/*
 		 * get path vital state

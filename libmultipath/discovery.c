@@ -1034,7 +1034,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 		}
 	}
 
-	if (path_state == PATH_UP && (mask & DI_WWID) && !strlen(pp->wwid))
+	if ((mask & DI_WWID) && !strlen(pp->wwid))
 		get_uid(pp);
 	if (mask & DI_BLACKLIST && mask & DI_WWID) {
 		if (filter_wwid(conf->blist_wwid, conf->elist_wwid,
