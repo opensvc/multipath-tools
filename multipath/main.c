@@ -83,7 +83,7 @@ usage (char * progname)
 {
 	fprintf (stderr, VERSION_STRING);
 	fprintf (stderr, "Usage:\n");
-	fprintf (stderr, "  %s [-c] [-d] [-r] [-v lvl] [-p pol] [-b fil] [-q] [dev]\n", progname);
+	fprintf (stderr, "  %s [-c|-w|-W] [-d] [-r] [-v lvl] [-p pol] [-b fil] [-q] [dev]\n", progname);
 	fprintf (stderr, "  %s -l|-ll|-f [-v lvl] [-b fil] [dev]\n", progname);
 	fprintf (stderr, "  %s -F [-v lvl]\n", progname);
 	fprintf (stderr, "  %s -t\n", progname);
@@ -104,6 +104,8 @@ usage (char * progname)
 		"  -B      treat the bindings file as read only\n" \
 		"  -p      policy failover|multibus|group_by_serial|group_by_prio\n" \
 		"  -b fil  bindings file location\n" \
+		"  -w      remove a device from the wwids file\n" \
+		"  -W      reset the wwids file include only the current devices\n" \
 		"  -p pol  force all maps to specified path grouping policy :\n" \
 		"          . failover            one path per priority group\n" \
 		"          . multibus            all paths in one priority group\n" \
@@ -212,7 +214,6 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 
 		if (!conf->dry_run)
 			reinstate_paths(mpp);
-		remember_wwid(mpp->wwid);
 	}
 	return 0;
 }
@@ -262,7 +263,7 @@ configure (void)
 	/*
 	 * if we have a blacklisted device parameter, exit early
 	 */
-	if (dev && conf->dev_type == DEV_DEVNODE &&
+	if (dev && conf->dev_type == DEV_DEVNODE && conf->dry_run != 3 &&
 	    (filter_devnode(conf->blist_devnode,
 			    conf->elist_devnode, dev) > 0)) {
 		if (conf->dry_run == 2)
@@ -282,6 +283,17 @@ configure (void)
 				printf("%s is not a valid multipath device path\n", conf->dev);
 			else
 				condlog(3, "scope is nul");
+			goto out;
+		}
+		if (conf->dry_run == 3) {
+			r = remove_wwid(refwwid);
+			if (r == 0)
+				printf("wwid '%s' removed\n", refwwid);
+			else if (r == 1) {
+				printf("wwid '%s' not in wwids file\n",
+					refwwid);
+				r = 0;
+			}
 			goto out;
 		}
 		condlog(3, "scope limited to %s", refwwid);
@@ -439,7 +451,7 @@ main (int argc, char *argv[])
 	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
 
-	while ((arg = getopt(argc, argv, ":dchl::FfM:v:p:b:Brtq")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":dchl::FfM:v:p:b:BrtqwW")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
 			break;
@@ -504,6 +516,12 @@ main (int argc, char *argv[])
 		case 'h':
 			usage(argv[0]);
 			exit(0);
+		case 'w':
+			conf->dry_run = 3;
+			break;
+		case 'W':
+			conf->dry_run = 4;
+			break;
 		case ':':
 			fprintf(stderr, "Missing option argument\n");
 			usage(argv[0]);
@@ -553,6 +571,31 @@ main (int argc, char *argv[])
 	if (conf->dry_run == 2 &&
 	    (!conf->dev || conf->dev_type == DEV_DEVMAP)) {
 		condlog(0, "the -c option requires a path to check");
+		goto out;
+	}
+	if (conf->dry_run == 3 && !conf->dev) {
+		condlog(0, "the -w option requires a device");
+		goto out;
+	}
+	if (conf->dry_run == 4) {
+		struct multipath * mpp;
+		int i;
+		vector curmp;
+
+		curmp = vector_alloc();
+		if (!curmp) {
+			condlog(0, "can't allocate memory for mp list");
+			goto out;
+		}
+		if (dm_get_maps(curmp) == 0)
+			r = replace_wwids(curmp);
+		if (r == 0)
+			printf("successfully reset wwids\n");
+		vector_foreach_slot_backwards(curmp, mpp, i) {
+			vector_del_slot(curmp, i);
+			free_multipath(mpp, KEEP_PATHS);
+		}
+		vector_free(curmp);
 		goto out;
 	}
 	if (conf->remove == FLUSH_ONE) {

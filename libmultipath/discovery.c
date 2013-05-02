@@ -53,7 +53,8 @@ store_pathinfo (vector pathvec, vector hwtable, struct udev_device *udevice,
 		goto out;
 	}
 	pp->udev = udev_device_ref(udevice);
-	err = pathinfo(pp, hwtable, flag | DI_BLACKLIST);
+	err = pathinfo(pp, hwtable,
+		       (conf->dry_run == 3)? flag : (flag | DI_BLACKLIST));
 	if (err)
 		goto out;
 
