@@ -205,13 +205,13 @@ find_unused_loop_device (void)
 		fprintf(stderr,
 		    "mount: Could not find any loop device, and, according to %s,\n"
 		    "       this kernel does not know about the loop device.\n"
-		    "       (If so, then recompile or `insmod loop.o'.)",
+		    "       (If so, then recompile or `modprobe loop'.)",
 		      PROC_DEVICES);
 
 	    else
 		fprintf(stderr,
 		    "mount: Could not find any loop device. Maybe this kernel does not know\n"
-		    "       about the loop device (then recompile or `insmod loop.o'), or\n"
+		    "       about the loop device (then recompile or `modprobe loop'), or\n"
 		    "       maybe /dev/loop# has the wrong major number?");
 
 	} else
