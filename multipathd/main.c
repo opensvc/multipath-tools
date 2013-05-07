@@ -60,6 +60,7 @@
 #include "cli_handlers.h"
 #include "lock.h"
 #include "waiter.h"
+#include "wwids.h"
 
 #define FILE_NAME_SIZE 256
 #define CMDSIZE 160
