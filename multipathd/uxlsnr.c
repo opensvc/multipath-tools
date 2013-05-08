@@ -8,6 +8,7 @@
 /*
  * A simple domain socket listener
  */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -19,20 +20,21 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/poll.h>
-
+#include <signal.h>
 #include <checkers.h>
-
 #include <memory.h>
 #include <debug.h>
 #include <vector.h>
 #include <structs.h>
+#include <structs_vec.h>
 #include <uxsock.h>
 #include <defaults.h>
 
+#include "main.h"
 #include "cli.h"
 #include "uxlsnr.h"
 
-#define SLEEP_TIME 5000
+struct timespec sleep_time = {5, 0};
 
 struct client {
 	int fd;
@@ -42,6 +44,8 @@ struct client {
 static struct client *clients;
 static unsigned num_clients;
 struct pollfd *polls;
+volatile sig_atomic_t reconfig_sig = 0;
+volatile sig_atomic_t log_reset_sig = 0;
 
 /*
  * handle a new client joining
@@ -104,6 +108,7 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 	int rlen;
 	char *inbuf;
 	char *reply;
+	sigset_t mask;
 
 	ux_sock = ux_socket_listen(DEFAULT_SOCKET);
 
@@ -115,7 +120,9 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 	pthread_cleanup_push(uxsock_cleanup, NULL);
 
 	polls = (struct pollfd *)MALLOC(0);
-
+	pthread_sigmask(SIG_SETMASK, NULL, &mask);
+	sigdelset(&mask, SIGHUP);
+	sigdelset(&mask, SIGUSR1);
 	while (1) {
 		struct client *c;
 		int i, poll_count;
@@ -132,11 +139,13 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 		}
 
 		/* most of our life is spent in this call */
-		poll_count = poll(polls, i, SLEEP_TIME);
+		poll_count = ppoll(polls, i, &sleep_time, &mask);
 
 		if (poll_count == -1) {
-			if (errno == EINTR)
+			if (errno == EINTR) {
+				handle_signals();
 				continue;
+			}
 
 			/* something went badly wrong! */
 			condlog(0, "poll");

@@ -29,6 +29,5 @@ struct mutex_lock {
 #endif
 
 void cleanup_lock (void * data);
-void block_signal(int signum, sigset_t *old);
 
 #endif /* _LOCK_H */

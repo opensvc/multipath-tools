@@ -17,6 +17,7 @@
 #include <limits.h>
 #include <linux/oom.h>
 #include <libudev.h>
+#include <semaphore.h>
 #include <mpath_persist.h>
 
 /*
@@ -51,6 +52,7 @@
 #include <prio.h>
 #include <pgpolicies.h>
 #include <uevent.h>
+#include <log.h>
 
 #include "main.h"
 #include "pidfile.h"
@@ -81,13 +83,11 @@ struct mpath_event_param
 
 unsigned int mpath_mx_alloc_len;
 
-pthread_cond_t exit_cond = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t exit_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 int logsink;
 enum daemon_status running_state;
 pid_t daemon_pid;
 
+static sem_t exit_sem;
 /*
  * global copy of vecs for use in sig handlers
  */
@@ -833,9 +833,6 @@ out:
 static void *
 ueventloop (void * ap)
 {
-	block_signal(SIGUSR1, NULL);
-	block_signal(SIGHUP, NULL);
-
 	if (uevent_listen())
 		condlog(0, "error starting uevent listener");
 
@@ -845,9 +842,6 @@ ueventloop (void * ap)
 static void *
 uevqloop (void * ap)
 {
-	block_signal(SIGUSR1, NULL);
-	block_signal(SIGHUP, NULL);
-
 	if (uevent_dispatch(&uev_trigger, ap))
 		condlog(0, "error starting uevent dispatcher");
 
@@ -856,9 +850,6 @@ uevqloop (void * ap)
 static void *
 uxlsnrloop (void * ap)
 {
-	block_signal(SIGUSR1, NULL);
-	block_signal(SIGHUP, NULL);
-
 	if (cli_init())
 		return NULL;
 
@@ -908,18 +899,10 @@ uxlsnrloop (void * ap)
 	return NULL;
 }
 
-int
-exit_daemon (int status)
+void
+exit_daemon (void)
 {
-	if (status != 0)
-		fprintf(stderr, "bad exit status. see daemon.log\n");
-
-	if (running_state != DAEMON_SHUTDOWN) {
-		pthread_mutex_lock(&exit_mutex);
-		pthread_cond_signal(&exit_cond);
-		pthread_mutex_unlock(&exit_mutex);
-	}
-	return status;
+	sem_post(&exit_sem);
 }
 
 const char *
@@ -1282,7 +1265,6 @@ checkerloop (void *ap)
 	struct path *pp;
 	int count = 0;
 	unsigned int i;
-	sigset_t old;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	vecs = (struct vectors *)ap;
@@ -1296,7 +1278,6 @@ checkerloop (void *ap)
 	}
 
 	while (1) {
-		block_signal(SIGHUP, &old);
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(vecs->lock);
 		pthread_testcancel();
@@ -1320,7 +1301,6 @@ checkerloop (void *ap)
 		}
 
 		lock_cleanup_pop(vecs->lock);
-		pthread_sigmask(SIG_SETMASK, &old, NULL);
 		sleep(1);
 	}
 	return NULL;
@@ -1480,36 +1460,56 @@ signal_set(int signo, void (*func) (int))
 		return (osig.sa_handler);
 }
 
+void
+handle_signals(void)
+{
+	if (reconfig_sig && running_state == DAEMON_RUNNING) {
+		condlog(2, "reconfigure (signal)");
+		pthread_cleanup_push(cleanup_lock,
+				&gvecs->lock);
+		lock(gvecs->lock);
+		pthread_testcancel();
+		reconfigure(gvecs);
+		lock_cleanup_pop(gvecs->lock);
+	}
+	if (log_reset_sig) {
+		condlog(2, "reset log (signal)");
+		pthread_mutex_lock(&logq_lock);
+		log_reset("multipathd");
+		pthread_mutex_unlock(&logq_lock);
+	}
+	reconfig_sig = 0;
+	log_reset_sig = 0;
+}
+
 static void
 sighup (int sig)
 {
-	condlog(2, "reconfigure (SIGHUP)");
-
-	if (running_state != DAEMON_RUNNING)
-		return;
-
-	reconfigure(gvecs);
-
-#ifdef _DEBUG_
-	dbg_free_final(NULL);
-#endif
+	reconfig_sig = 1;
 }
 
 static void
 sigend (int sig)
 {
-	exit_daemon(0);
+	exit_daemon();
 }
 
 static void
 sigusr1 (int sig)
 {
-	condlog(3, "SIGUSR1 received");
+	log_reset_sig = 1;
 }
 
 static void
 signal_init(void)
 {
+	sigset_t set;
+
+	sigemptyset(&set);
+	sigaddset(&set, SIGHUP);
+	sigaddset(&set, SIGUSR1);
+	pthread_sigmask(SIG_BLOCK, &set, NULL);
+
 	signal_set(SIGHUP, sighup);
 	signal_set(SIGUSR1, sigusr1);
 	signal_set(SIGINT, sigend);
@@ -1582,10 +1582,11 @@ child (void * param)
 	struct vectors * vecs;
 	struct multipath * mpp;
 	int i;
-	sigset_t set;
 	int rc, pid_rc;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
+	sem_init(&exit_sem, 0, 0);
+	signal_init();
 
 	setup_thread_attr(&misc_attr, 64 * 1024, 1);
 	setup_thread_attr(&waiter_attr, 32 * 1024, 1);
@@ -1645,7 +1646,6 @@ child (void * param)
 	if (!vecs)
 		exit(1);
 
-	signal_init();
 	setscheduler();
 	set_oom_adj();
 
@@ -1688,25 +1688,17 @@ child (void * param)
 	}
 	pthread_attr_destroy(&misc_attr);
 
-	pthread_mutex_lock(&exit_mutex);
 	/* Startup complete, create logfile */
 	pid_rc = pidfile_create(DEFAULT_PIDFILE, daemon_pid);
 	/* Ignore errors, we can live without */
 
 	running_state = DAEMON_RUNNING;
-	pthread_cond_wait(&exit_cond, &exit_mutex);
-	/* Need to block these to avoid deadlocking */
-	sigemptyset(&set);
-	sigaddset(&set, SIGTERM);
-	sigaddset(&set, SIGINT);
-	pthread_sigmask(SIG_BLOCK, &set, NULL);
 
 	/*
 	 * exit path
 	 */
+	while(sem_wait(&exit_sem) != 0); /* Do nothing */
 	running_state = DAEMON_SHUTDOWN;
-	pthread_sigmask(SIG_UNBLOCK, &set, NULL);
-	block_signal(SIGHUP, NULL);
 	lock(vecs->lock);
 	if (conf->queue_without_daemon == QUE_NO_DAEMON_OFF)
 		vector_foreach_slot(vecs->mpvec, mpp, i)

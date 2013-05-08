@@ -22,25 +22,12 @@ pthread_cond_t logev_cond;
 
 int logq_running;
 
-static void
-sigusr1 (int sig)
-{
-	pthread_mutex_lock(&logq_lock);
-	log_reset("multipathd");
-	pthread_mutex_unlock(&logq_lock);
-}
-
 void log_safe (int prio, const char * fmt, va_list ap)
 {
-	sigset_t old;
-
 	if (log_thr == (pthread_t)0) {
 		syslog(prio, fmt, ap);
 		return;
 	}
-
-	block_signal(SIGUSR1, &old);
-	block_signal(SIGHUP, NULL);
 
 	pthread_mutex_lock(&logq_lock);
 	log_enqueue(prio, fmt, ap);
@@ -49,8 +36,6 @@ void log_safe (int prio, const char * fmt, va_list ap)
 	pthread_mutex_lock(&logev_lock);
 	pthread_cond_signal(&logev_cond);
 	pthread_mutex_unlock(&logev_lock);
-
-	pthread_sigmask(SIG_SETMASK, &old, NULL);
 }
 
 void log_thread_flush (void)
@@ -81,14 +66,7 @@ static void flush_logqueue (void)
 
 static void * log_thread (void * et)
 {
-	struct sigaction sig;
 	int running;
-
-	sig.sa_handler = sigusr1;
-	sigemptyset(&sig.sa_mask);
-	sig.sa_flags = 0;
-	if (sigaction(SIGUSR1, &sig, NULL) < 0)
-		logdbg(stderr, "Cannot set signal handler");
 
 	pthread_mutex_lock(&logev_lock);
 	logq_running = 1;

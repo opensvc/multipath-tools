@@ -98,7 +98,7 @@ lock_file(int fd, char *file_name)
 	sigaddset(&set, SIGALRM);
 
 	sigaction(SIGALRM, &act, &oldact);
-	sigprocmask(SIG_UNBLOCK, &set, &oldset);
+	pthread_sigmask(SIG_UNBLOCK, &set, &oldset);
 
 	alarm(FILE_TIMEOUT);
 	err = fcntl(fd, F_SETLKW, &lock);
@@ -112,7 +112,7 @@ lock_file(int fd, char *file_name)
 			condlog(0, "%s is locked. Giving up.", file_name);
 	}
 
-	sigprocmask(SIG_SETMASK, &oldset, NULL);
+	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 	sigaction(SIGALRM, &oldact, NULL);
 	return err;
 }

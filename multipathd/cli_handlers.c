@@ -939,8 +939,8 @@ int
 cli_shutdown (void * v, char ** reply, int * len, void * data)
 {
 	condlog(3, "shutdown (operator)");
-
-	return exit_daemon(0);
+	exit_daemon();
+	return 0;
 }
 
 int

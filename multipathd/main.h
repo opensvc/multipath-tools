@@ -16,7 +16,7 @@ struct prin_resp;
 
 extern pid_t daemon_pid;
 
-int exit_daemon(int);
+void exit_daemon(void);
 const char * daemon_status(void);
 int reconfigure (struct vectors *);
 int ev_add_path (struct path *, struct vectors *);
@@ -35,5 +35,6 @@ int mpath_pr_event_handle(struct path *pp);
 void * mpath_pr_event_handler_fn (void * );
 int update_map_pr(struct multipath *mpp);
 void * mpath_pr_event_handler_fn (void * pathp );
+void handle_signals(void);
 
 #endif /* MAIN_H */

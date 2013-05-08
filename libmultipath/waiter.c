@@ -157,8 +157,6 @@ void *waitevent (void *et)
 	waiter = (struct event_thread *)et;
 	pthread_cleanup_push(free_waiter, et);
 
-	block_signal(SIGUSR1, NULL);
-	block_signal(SIGHUP, NULL);
 	while (1) {
 		r = waiteventloop(waiter);
 
