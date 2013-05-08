@@ -64,6 +64,9 @@ struct prio * prio_lookup (char * name)
 {
 	struct prio * p;
 
+	if (!name || !strlen(name))
+		return NULL;
+
 	list_for_each_entry(p, &prioritizers, node) {
 		if (!strncmp(name, p->name, PRIO_NAME_LEN))
 			return p;
@@ -162,10 +165,7 @@ void prio_put (struct prio * dst)
 	if (!dst)
 		return;
 
-	if (!strlen(dst->name))
-		src = NULL;
-	else
-		src = prio_lookup(dst->name);
+	src = prio_lookup(dst->name);
 	memset(dst, 0x0, sizeof(struct prio));
 	free_prio(src);
 }
