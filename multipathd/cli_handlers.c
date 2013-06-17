@@ -603,7 +603,18 @@ cli_resize(void *v, char **reply, int *len, void *data)
 	}
 
 	pgp = VECTOR_SLOT(mpp->pg, 0);
+
+	if (!pgp){
+		condlog(0, "%s: couldn't get path group. cannot resize",
+			mapname);
+		return 1;
+	}
 	pp = VECTOR_SLOT(pgp->paths, 0);
+
+	if (!pp){
+		condlog(0, "%s: couldn't get path. cannot resize", mapname);
+		return 1;
+	}
 	if (!pp->udev || sysfs_get_size(pp, &size)) {
 		condlog(0, "%s: couldn't get size for sysfs. cannot resize",
 			mapname);
