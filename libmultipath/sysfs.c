@@ -59,19 +59,19 @@ ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
 	condlog(4, "open '%s'", devpath);
 	if (stat(devpath, &statbuf) != 0) {
 		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
-		return 0;
+		return -errno;
 	}
 
 	/* skip directories */
 	if (S_ISDIR(statbuf.st_mode)) {
 		condlog(4, "%s is a directory", devpath);
-		return 0;
+		return -EISDIR;
 	}
 
 	/* skip non-writeable files */
 	if ((statbuf.st_mode & S_IRUSR) == 0) {
 		condlog(4, "%s is not readable", devpath);
-		return 0;
+		return -EPERM;
 	}
 
 	/* read attribute value */
@@ -79,12 +79,12 @@ ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
 	if (fd < 0) {
 		condlog(4, "attribute '%s' can not be opened: %s",
 			devpath, strerror(errno));
-		return 0;
+		return -errno;
 	}
 	size = read(fd, value, value_len);
 	if (size < 0) {
 		condlog(4, "read from %s failed: %s", devpath, strerror(errno));
-		size = 0;
+		size = -errno;
 	} else if (size == value_len) {
 		condlog(4, "overflow while reading from %s", devpath);
 		size = 0;
@@ -110,19 +110,19 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 	condlog(4, "open '%s'", devpath);
 	if (stat(devpath, &statbuf) != 0) {
 		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
-		return 0;
+		return -errno;
 	}
 
 	/* skip directories */
 	if (S_ISDIR(statbuf.st_mode)) {
 		condlog(4, "%s is a directory", devpath);
-		return 0;
+		return -EISDIR;
 	}
 
 	/* skip non-writeable files */
 	if ((statbuf.st_mode & S_IWUSR) == 0) {
 		condlog(4, "%s is not writeable", devpath);
-		return 0;
+		return -EPERM;
 	}
 
 	/* write attribute value */
@@ -130,12 +130,12 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 	if (fd < 0) {
 		condlog(4, "attribute '%s' can not be opened: %s",
 			devpath, strerror(errno));
-		return 0;
+		return -errno;
 	}
 	size = write(fd, value, value_len);
 	if (size < 0) {
 		condlog(4, "write to %s failed: %s", devpath, strerror(errno));
-		size = 0;
+		size = -errno;
 	} else if (size < value_len) {
 		condlog(4, "tried to write %ld to %s. Wrote %ld",
 			(long)value_len, devpath, (long)size);
