@@ -2565,10 +2565,16 @@ snprint_def_rr_min_io_rq (char * buff, int len, void * data)
 static int
 snprint_max_fds (char * buff, int len, void * data)
 {
+	int r = 0, max_fds;
+
 	if (!conf->max_fds)
 		return 0;
 
-	return snprintf(buff, len, "%d", conf->max_fds);
+	r = get_sys_max_fds(&max_fds);
+	if (!r && max_fds == conf->max_fds)
+		return snprintf(buff, len, "\"max\"");
+	else
+		return snprintf(buff, len, "%d", conf->max_fds);
 }
 
 static int
