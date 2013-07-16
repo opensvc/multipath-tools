@@ -7,6 +7,7 @@
 #include <vector.h>
 #include <structs.h>
 #include <getopt.h>
+#include <libudev.h>
 #include <mpath_persist.h>
 #include "main.h"
 #include <pthread.h>
@@ -68,7 +69,8 @@ int main (int argc, char * argv[])
 	int noisy = 0;
 	int num_transport =0;
 	void *resp = NULL;
-	struct transportid * tmp; 
+	struct transportid * tmp;
+	struct udev *udev = NULL;
 
 	if (optind == argc)
 	{
@@ -84,8 +86,8 @@ int main (int argc, char * argv[])
 		exit (1);
 	}
 
-
-	mpath_lib_init();
+	udev = udev_new();
+	mpath_lib_init(udev);
 	memset(transportids,0,MPATH_MX_TIDS);
 
 	while (1)
@@ -461,12 +463,13 @@ int main (int argc, char * argv[])
 	if (res < 0)
 	{
 		mpath_lib_exit();
+		udev_unref(udev);
 		return MPATH_PR_FILE_ERROR;
 	}
 
 out :
 	mpath_lib_exit();
-
+	udev_unref(udev);
 	return (ret >= 0) ? ret : MPATH_PR_OTHER;
 }
 

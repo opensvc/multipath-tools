@@ -466,9 +466,6 @@ free_config (struct config * conf)
 	if (conf->dev)
 		FREE(conf->dev);
 
-	if (conf->udev)
-		udev_unref(conf->udev);
-
 	if (conf->multipath_dir)
 		FREE(conf->multipath_dir);
 
@@ -518,12 +515,12 @@ free_config (struct config * conf)
 }
 
 int
-load_config (char * file)
+load_config (char * file, struct udev *udev)
 {
 	if (!conf)
 		conf = alloc_config();
 
-	if (!conf)
+	if (!conf || !udev)
 		return 1;
 
 	/*
@@ -532,7 +529,7 @@ load_config (char * file)
 	if (!conf->verbosity)
 		conf->verbosity = DEFAULT_VERBOSITY;
 
-	conf->udev = udev_new();
+	conf->udev = udev;
 	dm_drv_version(conf->version, TGT_MPATH);
 	conf->dev_type = DEV_NONE;
 	conf->minio = DEFAULT_MINIO;

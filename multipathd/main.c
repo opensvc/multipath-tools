@@ -93,6 +93,8 @@ static sem_t exit_sem;
  */
 struct vectors * gvecs;
 
+struct udev * udev;
+
 static int
 need_switch_pathgroup (struct multipath * mpp, int refresh)
 {
@@ -1403,7 +1405,7 @@ reconfigure (struct vectors * vecs)
 	vecs->pathvec = NULL;
 	conf = NULL;
 
-	if (!load_config(DEFAULT_CONFIGFILE)) {
+	if (!load_config(DEFAULT_CONFIGFILE, udev)) {
 		conf->verbosity = old->verbosity;
 		conf->daemon = 1;
 		configure(vecs, 1);
@@ -1588,6 +1590,8 @@ child (void * param)
 	sem_init(&exit_sem, 0, 0);
 	signal_init();
 
+	udev = udev_new();
+
 	setup_thread_attr(&misc_attr, 64 * 1024, 1);
 	setup_thread_attr(&waiter_attr, 32 * 1024, 1);
 
@@ -1602,7 +1606,7 @@ child (void * param)
 	condlog(2, "--------start up--------");
 	condlog(2, "read " DEFAULT_CONFIGFILE);
 
-	if (load_config(DEFAULT_CONFIGFILE))
+	if (load_config(DEFAULT_CONFIGFILE, udev))
 		exit(1);
 
 	if (init_checkers()) {
@@ -1752,7 +1756,8 @@ child (void * param)
 	 */
 	free_config(conf);
 	conf = NULL;
-
+	udev_unref(udev);
+	udev = NULL;
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
 #endif

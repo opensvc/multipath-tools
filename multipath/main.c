@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <libudev.h>
 
 #include <checkers.h>
 #include <prio.h>
@@ -435,6 +436,7 @@ convert_dev(char *dev)
 int
 main (int argc, char *argv[])
 {
+	struct udev *udev;
 	int arg;
 	extern char *optarg;
 	extern int optind;
@@ -445,10 +447,12 @@ main (int argc, char *argv[])
 		exit(1);
 	}
 
+	udev = udev_new();
+
 	if (dm_prereq())
 		exit(1);
 
-	if (load_config(DEFAULT_CONFIGFILE))
+	if (load_config(DEFAULT_CONFIGFILE, udev))
 		exit(1);
 
 	while ((arg = getopt(argc, argv, ":dchl::FfM:v:p:b:BrtqwW")) != EOF ) {
@@ -560,11 +564,11 @@ main (int argc, char *argv[])
 
 	if (init_checkers()) {
 		condlog(0, "failed to initialize checkers");
-		exit(1);
+		goto out;
 	}
 	if (init_prio()) {
 		condlog(0, "failed to initialize prioritizers");
-		exit(1);
+		goto out;
 	}
 	dm_init();
 
@@ -628,7 +632,7 @@ out:
 	 */
 	free_config(conf);
 	conf = NULL;
-
+	udev_unref(udev);
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
 #endif

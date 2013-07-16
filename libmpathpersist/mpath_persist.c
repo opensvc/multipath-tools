@@ -1,4 +1,3 @@
-#include "mpath_persist.h"
 #include <libdevmapper.h>
 #include <defaults.h>
 #include <sys/stat.h>
@@ -8,6 +7,7 @@
 #include <checkers.h>
 #include <structs.h>
 #include <structs_vec.h>
+#include <libudev.h>
 
 #include <prio.h>
 #include <unistd.h>
@@ -20,6 +20,7 @@
 #include <ctype.h>
 #include <propsel.h>
 
+#include "mpath_persist.h"
 #include "mpathpr.h"
 #include "mpath_pr_ioctl.h"
 
@@ -32,9 +33,9 @@
 
 
 int
-mpath_lib_init (void)
+mpath_lib_init (struct udev *udev)
 {
-	if (load_config(DEFAULT_CONFIGFILE)){
+	if (load_config(DEFAULT_CONFIGFILE, udev)){
 		condlog(0, "Failed to initialize multipath config.");
 		return 1;
 	}

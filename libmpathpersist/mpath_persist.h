@@ -174,7 +174,7 @@ struct prout_param_descriptor { 	/* PROUT parameter descriptor */
  *
  * RETURNS: 0->Success, 1->Failed.
  */
-extern int mpath_lib_init (void );
+extern int mpath_lib_init (struct udev *udev);
 
 
 /*

@@ -157,7 +157,7 @@ void free_mptable (vector mptable);
 
 int store_hwe (vector hwtable, struct hwentry *);
 
-int load_config (char * file);
+int load_config (char * file, struct udev * udev);
 struct config * alloc_config (void);
 void free_config (struct config * conf);
 

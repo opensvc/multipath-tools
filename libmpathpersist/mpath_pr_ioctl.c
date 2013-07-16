@@ -10,8 +10,9 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include "mpath_pr_ioctl.h" 
-#include <mpath_persist.h> 
+#include <libudev.h>
+#include "mpath_pr_ioctl.h"
+#include <mpath_persist.h>
 
 #include <debug.h>
 
