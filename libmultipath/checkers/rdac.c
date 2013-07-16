@@ -74,7 +74,7 @@ int libcheck_init (struct checker * c)
 	io_hdr.dxferp = &current;
 	io_hdr.cmdp = cmd;
 	io_hdr.sbp = sense_b;
-	io_hdr.timeout = c->timeout;
+	io_hdr.timeout = c->timeout * 1000;
 
 	if (ioctl(c->fd, SG_IO, &io_hdr) < 0)
 		goto out;
@@ -150,7 +150,7 @@ retry:
 	io_hdr.dxferp = resp;
 	io_hdr.cmdp = inqCmdBlk;
 	io_hdr.sbp = sense_b;
-	io_hdr.timeout = timeout;
+	io_hdr.timeout = timeout * 1000;
 
 	if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
 		return 1;

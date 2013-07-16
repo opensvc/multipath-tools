@@ -347,8 +347,8 @@ select_checker(struct path *pp)
 		pp->dev, checker_name(c));
 out:
 	if (conf->checker_timeout) {
-		c->timeout = conf->checker_timeout * 1000;
-		condlog(3, "%s: checker timeout = %u ms (config file default)",
+		c->timeout = conf->checker_timeout;
+		condlog(3, "%s: checker timeout = %u s (config file default)",
 				pp->dev, c->timeout);
 	}
 	else if (pp->udev && sysfs_get_timeout(pp, &c->timeout) == 0)

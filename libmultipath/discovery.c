@@ -203,7 +203,7 @@ sysfs_get_timeout(struct path *pp, unsigned int *timeout)
 		return 1;
 	}
 
-	*timeout = t * 1000;
+	*timeout = t;
 
 	return 0;
 }

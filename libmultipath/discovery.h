@@ -14,7 +14,7 @@
 #endif
 
 #ifndef DEF_TIMEOUT
-#define DEF_TIMEOUT	300000
+#define DEF_TIMEOUT	30
 #endif
 
 /*

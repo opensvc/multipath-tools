@@ -114,7 +114,7 @@ int libcheck_check (struct checker * c)
 	io_hdr.dxferp = sense_buffer;
 	io_hdr.cmdp = inqCmdBlk;
 	io_hdr.sbp = sb;
-	io_hdr.timeout = c->timeout;
+	io_hdr.timeout = c->timeout * 1000;
 	io_hdr.pack_id = 0;
 	if (ioctl(c->fd, SG_IO, &io_hdr) < 0) {
 		MSG(c, "emc_clariion_checker: sending query command failed");

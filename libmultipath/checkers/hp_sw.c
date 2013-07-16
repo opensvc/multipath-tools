@@ -70,7 +70,7 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
 	io_hdr.dxferp = resp;
 	io_hdr.cmdp = inqCmdBlk;
 	io_hdr.sbp = sense_b;
-	io_hdr.timeout = timeout;
+	io_hdr.timeout = timeout * 1000;
 
 	if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
 		return 1;
@@ -111,7 +111,7 @@ do_tur (int fd, unsigned int timeout)
 	io_hdr.dxfer_direction = SG_DXFER_NONE;
 	io_hdr.cmdp = turCmdBlk;
 	io_hdr.sbp = sense_buffer;
-	io_hdr.timeout = timeout;
+	io_hdr.timeout = timeout * 1000;
 	io_hdr.pack_id = 0;
 
 	if (ioctl(fd, SG_IO, &io_hdr) < 0)
