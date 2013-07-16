@@ -9,13 +9,6 @@
 ##
 #defaults {
 #	#
-#	# name    : udev_dir
-#	# desc    : directory where udev creates its device nodes
-#	# default : /dev
-#	#
-#	udev_dir	/dev
-#
-#	#
 #	# name    : polling_interval
 #	# scope   : multipathd
 #	# desc    : interval between two path checks in seconds. For
