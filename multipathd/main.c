@@ -1580,7 +1580,7 @@ static int
 child (void * param)
 {
 	pthread_t check_thr, uevent_thr, uxlsnr_thr, uevq_thr;
-	pthread_attr_t log_attr, misc_attr;
+	pthread_attr_t log_attr, misc_attr, uevent_attr;
 	struct vectors * vecs;
 	struct multipath * mpp;
 	int i;
@@ -1593,6 +1593,7 @@ child (void * param)
 	udev = udev_new();
 
 	setup_thread_attr(&misc_attr, 64 * 1024, 1);
+	setup_thread_attr(&uevent_attr, 128 * 1024, 1);
 	setup_thread_attr(&waiter_attr, 32 * 1024, 1);
 
 	if (logsink) {
@@ -1658,10 +1659,11 @@ child (void * param)
 	/*
 	 * Start uevent listener early to catch events
 	 */
-	if ((rc = pthread_create(&uevent_thr, &misc_attr, ueventloop, udev))) {
+	if ((rc = pthread_create(&uevent_thr, &uevent_attr, ueventloop, udev))) {
 		condlog(0, "failed to create uevent thread: %d", rc);
 		exit(1);
 	}
+	pthread_attr_destroy(&uevent_attr);
 	if ((rc = pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs))) {
 		condlog(0, "failed to create cli listener: %d", rc);
 		exit(1);
