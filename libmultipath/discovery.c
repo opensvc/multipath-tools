@@ -320,7 +320,7 @@ static void
 sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 {
 	struct udev_device *rport_dev = NULL;
-	char value[11];
+	char value[16];
 	char rport_id[32];
 	unsigned long long tmo = 0;
 	int ret;
@@ -348,7 +348,7 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 	 * then set fast_io_fail, and _then_ set dev_loss_tmo
 	 * to the correct value.
 	 */
-	value[0] = '\0';
+	memset(value, 0, 16);
 	if (mpp->fast_io_fail != MP_FAST_IO_FAIL_UNSET &&
 	    mpp->fast_io_fail != MP_FAST_IO_FAIL_ZERO &&
 	    mpp->fast_io_fail != MP_FAST_IO_FAIL_OFF) {
@@ -366,17 +366,18 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 			goto out;
 		}
 		if (mpp->fast_io_fail >= tmo) {
-			snprintf(value, 11, "%u", mpp->fast_io_fail);
+			snprintf(value, 16, "%u", mpp->fast_io_fail);
 		}
 	} else if (mpp->dev_loss > 600) {
 		condlog(3, "%s: limiting dev_loss_tmo to 600, since "
 			"fast_io_fail is not set", rport_id);
-		snprintf(value, 11, "%u", 600);
+		snprintf(value, 16, "%u", 600);
 	} else {
-		snprintf(value, 11, "%u", mpp->dev_loss);
+		snprintf(value, 16, "%u", mpp->dev_loss);
 	}
 	if (strlen(value)) {
-		ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo", value, 11);
+		ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
+					   value, strlen(value));
 		if (ret <= 0) {
 			if (ret == -EBUSY)
 				condlog(3, "%s: rport blocked", rport_id);
@@ -392,9 +393,9 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 		else if (mpp->fast_io_fail == MP_FAST_IO_FAIL_ZERO)
 			sprintf(value, "0");
 		else
-			snprintf(value, 11, "%u", mpp->fast_io_fail);
+			snprintf(value, 16, "%u", mpp->fast_io_fail);
 		ret = sysfs_attr_set_value(rport_dev, "fast_io_fail_tmo",
-					   value, 11);
+					   value, strlen(value));
 		if (ret <= 0) {
 			if (ret == -EBUSY)
 				condlog(3, "%s: rport blocked", rport_id);
@@ -404,9 +405,9 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 		}
 	}
 	if (tmo > 0) {
-		snprintf(value, 11, "%u", mpp->dev_loss);
+		snprintf(value, 16, "%u", mpp->dev_loss);
 		ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
-					   value, 11);
+					   value, strlen(value));
 		if (ret <= 0) {
 			if (ret == -EBUSY)
 				condlog(3, "%s: rport blocked", rport_id);
@@ -808,6 +809,9 @@ cciss_sysfs_pathinfo (struct path * pp)
 static int
 common_sysfs_pathinfo (struct path * pp)
 {
+	if (!pp)
+		return 1;
+
 	if (!pp->udev) {
 		condlog(4, "%s: udev not initialised", pp->dev);
 		return 1;
@@ -1058,6 +1062,9 @@ extern int
 pathinfo (struct path *pp, vector hwtable, int mask)
 {
 	int path_state;
+
+	if (!pp)
+		return 1;
 
 	condlog(3, "%s: mask = 0x%x", pp->dev, mask);
 

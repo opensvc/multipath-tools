@@ -102,7 +102,7 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 	int fd;
 	ssize_t size = -1;
 
-	if (!dev || !attr_name || !value)
+	if (!dev || !attr_name || !value || !value_len)
 		return 0;
 
 	snprintf(devpath, PATH_SIZE, "%s/%s", udev_device_get_syspath(dev),
@@ -152,9 +152,10 @@ sysfs_get_size (struct path *pp, unsigned long long * size)
 	char attr[255];
 	int r;
 
-	if (!pp->udev)
+	if (!pp->udev || !size)
 		return 1;
 
+	attr[0] = '\0';
 	if (sysfs_attr_get_value(pp->udev, "size", attr, 255) == 0) {
 		condlog(3, "%s: No size attribute in sysfs", pp->dev);
 		return 1;
@@ -164,6 +165,7 @@ sysfs_get_size (struct path *pp, unsigned long long * size)
 
 	if (r != 1) {
 		condlog(3, "%s: Cannot parse size attribute", pp->dev);
+		*size = 0;
 		return 1;
 	}
 
