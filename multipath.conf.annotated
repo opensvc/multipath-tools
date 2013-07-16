@@ -248,9 +248,10 @@
 #	# desc    : The number of seconds the scsi layer will wait after a
 #	#           problem has been detected on a FC remote port before
 #	#           removing it from the system.
-#	# values  : n > 0
+#	# values  : infinity | n > 0
 #	# default : determined by the OS
 #	dev_loss_tmo 600
+#
 #	# name    : bindings_file
 #	# scope   : multipath
 #	# desc    : The location of the bindings file that is used with
