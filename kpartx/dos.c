@@ -26,7 +26,9 @@ read_extended_partition(int fd, struct partition *ep, int en,
 	int moretodo = 1;
 	int i, n=0;
 
-	next = start = le32_to_cpu(ep->start_sect);
+	int sector_size_mul = get_sector_size(fd)/512;
+
+	next = start = sector_size_mul * le32_to_cpu(ep->start_sect);
 
 	while (moretodo) {
 		here = next;
@@ -45,14 +47,14 @@ read_extended_partition(int fd, struct partition *ep, int en,
 			memcpy(&p, bp + 0x1be + i * sizeof (p), sizeof (p));
 			if (is_extended(p.sys_type)) {
 				if (p.nr_sects && !moretodo) {
-					next = start + le32_to_cpu(p.start_sect);
+					next = start + sector_size_mul * le32_to_cpu(p.start_sect);
 					moretodo = 1;
 				}
 				continue;
 			}
 			if (n < ns) {
-				sp[n].start = here + le32_to_cpu(p.start_sect);
-				sp[n].size = le32_to_cpu(p.nr_sects);
+				sp[n].start = here + sector_size_mul * le32_to_cpu(p.start_sect);
+				sp[n].size = sector_size_mul * le32_to_cpu(p.nr_sects);
 				sp[n].container = en + 1;
 				n++;
 			} else {
@@ -77,6 +79,7 @@ read_dos_pt(int fd, struct slice all, struct slice *sp, int ns) {
 	unsigned long offset = all.start;
 	int i, n=4;
 	unsigned char *bp;
+	int sector_size_mul = get_sector_size(fd)/512;
 
 	bp = (unsigned char *)getblock(fd, offset);
 	if (bp == NULL)
@@ -90,15 +93,15 @@ read_dos_pt(int fd, struct slice all, struct slice *sp, int ns) {
 		if (is_gpt(p.sys_type))
 			return 0;
 		if (i < ns) {
-			sp[i].start =  le32_to_cpu(p.start_sect);
-			sp[i].size = le32_to_cpu(p.nr_sects);
+			sp[i].start =  sector_size_mul * le32_to_cpu(p.start_sect);
+			sp[i].size = sector_size_mul * le32_to_cpu(p.nr_sects);
 		} else {
 			fprintf(stderr,
 				"dos_partition: too many slices\n");
 			break;
 		}
 		if (is_extended(p.sys_type)) {
-			sp[i].size = 2; /* extended partitions only get two
+			sp[i].size = sector_size_mul * 2; /* extended partitions only get two
 					   sectors mapped for LILO to install */
 			n += read_extended_partition(fd, &p, i, sp+n, ns-n);
 		}

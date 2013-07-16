@@ -2,6 +2,7 @@
 #define _KPARTX_H
 
 #include <stdint.h>
+#include <sys/ioctl.h>
 
 /*
  * For each partition type there is a routine that takes
@@ -17,6 +18,13 @@
 
 #define safe_sprintf(var, format, args...)	\
 	snprintf(var, sizeof(var), format, ##args) >= sizeof(var)
+
+#ifndef BLKSSZGET
+#define BLKSSZGET  _IO(0x12,104)	/* get block device sector size */
+#endif
+
+int
+get_sector_size(int filedes);
 
 /*
  * units: 512 byte sectors

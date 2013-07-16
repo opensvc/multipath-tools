@@ -26,6 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <ctype.h>
@@ -694,4 +695,15 @@ getblock (int fd, unsigned int secnr) {
 	}
 
 	return bp->block;
+}
+
+int
+get_sector_size(int filedes)
+{
+	int rc, sector_size = 512;
+
+	rc = ioctl(filedes, BLKSSZGET, &sector_size);
+	if (rc)
+		sector_size = 512;
+	return sector_size;
 }

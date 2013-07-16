@@ -38,6 +38,7 @@
 #include <byteswap.h>
 #include <linux/fs.h>
 #include "crc32.h"
+#include "kpartx.h"
 
 #if BYTE_ORDER == LITTLE_ENDIAN
 #  define __le16_to_cpu(x) (x)
@@ -114,25 +115,6 @@ is_pmbr_valid(legacy_mbr *mbr)
 	return (signature && found);
 }
 
-
-/************************************************************
- * get_sector_size
- * Requires:
- *  - filedes is an open file descriptor, suitable for reading
- * Modifies: nothing
- * Returns:
- *  sector size, or 512.
- ************************************************************/
-static int
-get_sector_size(int filedes)
-{
-	int rc, sector_size = 512;
-
-	rc = ioctl(filedes, BLKSSZGET, &sector_size);
-	if (rc)
-		sector_size = 512;
-	return sector_size;
-}
 
 /************************************************************
  * _get_num_sectors
