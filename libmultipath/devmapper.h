@@ -16,7 +16,7 @@ int dm_addmap_create_ro (struct multipath *mpp, char *params);
 int dm_addmap_reload (struct multipath *mpp, char *params);
 int dm_addmap_reload_ro (struct multipath *mpp, char *params);
 int dm_map_present (const char *);
-int dm_get_map(char *, unsigned long long *, char *);
+int dm_get_map(const char *, unsigned long long *, char *);
 int dm_get_status(char *, char *);
 int dm_type(const char *, char *);
 int _dm_flush_map (const char *, int);
