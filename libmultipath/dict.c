@@ -290,18 +290,27 @@ static int
 max_fds_handler(vector strvec)
 {
 	char * buff;
-	int r = 0;
+	int r = 0, max_fds;
 
 	buff = set_value(strvec);
 
 	if (!buff)
 		return 1;
 
+	r = get_sys_max_fds(&max_fds);
+	if (r) {
+		/* Assume safe limit */
+		max_fds = 4096;
+	}
 	if (strlen(buff) == 3 &&
 	    !strcmp(buff, "max"))
-		r = get_sys_max_fds(&conf->max_fds);
+		conf->max_fds = max_fds;
 	else
 		conf->max_fds = atoi(buff);
+
+	if (conf->max_fds > max_fds)
+		conf->max_fds = max_fds;
+
 	FREE(buff);
 
 	return r;
@@ -2571,7 +2580,7 @@ snprint_max_fds (char * buff, int len, void * data)
 		return 0;
 
 	r = get_sys_max_fds(&max_fds);
-	if (!r && max_fds == conf->max_fds)
+	if (!r && conf->max_fds >= max_fds)
 		return snprintf(buff, len, "\"max\"");
 	else
 		return snprintf(buff, len, "%d", conf->max_fds);
