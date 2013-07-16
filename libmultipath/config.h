@@ -42,7 +42,6 @@ struct hwentry {
 	int no_path_retry;
 	int minio;
 	int minio_rq;
-	int pg_timeout;
 	int flush_on_last_del;
 	int fast_io_fail;
 	unsigned int dev_loss;
@@ -69,7 +68,6 @@ struct mpentry {
 	int no_path_retry;
 	int minio;
 	int minio_rq;
-	int pg_timeout;
 	int flush_on_last_del;
 	int attribute_flags;
 	int user_friendly_names;
@@ -95,7 +93,6 @@ struct config {
 	int no_path_retry;
 	int user_friendly_names;
 	int bindings_read_only;
-	int pg_timeout;
 	int max_fds;
 	int force_reload;
 	int queue_without_daemon;

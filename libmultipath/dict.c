@@ -481,7 +481,6 @@ def_checker_timeout_handler(vector strvec)
 static int
 def_pg_timeout_handler(vector strvec)
 {
-	int pg_timeout;
 	char * buff;
 
 	buff = set_value(strvec);
@@ -489,16 +488,7 @@ def_pg_timeout_handler(vector strvec)
 	if (!buff)
 		return 1;
 
-	if (strlen(buff) == 4 && !strcmp(buff, "none"))
-		conf->pg_timeout = -PGTIMEOUT_NONE;
-	else if (sscanf(buff, "%d", &pg_timeout) == 1 && pg_timeout >= 0) {
-		if (pg_timeout == 0)
-			conf->pg_timeout = -PGTIMEOUT_NONE;
-		else
-			conf->pg_timeout = pg_timeout;
-	}
-	else
-		conf->pg_timeout = PGTIMEOUT_UNDEF;
+	/* Deprecated; device-mapper support has been removed */
 
 	FREE(buff);
 	return 0;
@@ -1238,28 +1228,14 @@ hw_minio_rq_handler(vector strvec)
 static int
 hw_pg_timeout_handler(vector strvec)
 {
-	int pg_timeout;
-	struct hwentry *hwe = VECTOR_LAST_SLOT(conf->hwtable);
 	char *buff;
-
-	if (!hwe)
-		return 1;
 
 	buff = set_value(strvec);
 
 	if (!buff)
 		return 1;
 
-	if (strlen(buff) == 4 && !strcmp(buff, "none"))
-		hwe->pg_timeout = -PGTIMEOUT_NONE;
-	else if (sscanf(buff, "%d", &pg_timeout) == 1 && pg_timeout >= 0) {
-		if (pg_timeout == 0)
-			hwe->pg_timeout = -PGTIMEOUT_NONE;
-		else
-			hwe->pg_timeout = pg_timeout;
-	}
-	else
-		hwe->pg_timeout = PGTIMEOUT_UNDEF;
+	/* Deprecated; device-mapper support has been removed */
 
 	FREE(buff);
 	return 0;
@@ -1672,27 +1648,14 @@ mp_minio_rq_handler(vector strvec)
 static int
 mp_pg_timeout_handler(vector strvec)
 {
-	int pg_timeout;
-	struct mpentry *mpe = VECTOR_LAST_SLOT(conf->mptable);
 	char *buff;
-
-	if (!mpe)
-		return 1;
 
 	buff = set_value(strvec);
 
 	if (!buff)
 		return 1;
-	if (strlen(buff) == 4 && !strcmp(buff, "none"))
-		mpe->pg_timeout = -PGTIMEOUT_NONE;
-	else if (sscanf(buff, "%d", &pg_timeout) == 1 && pg_timeout >= 0) {
-		if (pg_timeout == 0)
-			mpe->pg_timeout = -PGTIMEOUT_NONE;
-		else
-			mpe->pg_timeout = pg_timeout;
-	}
-	else
-		mpe->pg_timeout = PGTIMEOUT_UNDEF;
+
+	/* Deprecated; device-mapper support has been removed */
 
 	FREE(buff);
 	return 0;
@@ -2007,16 +1970,6 @@ snprint_mp_rr_min_io_rq (char * buff, int len, void * data)
 static int
 snprint_mp_pg_timeout (char * buff, int len, void * data)
 {
-	struct mpentry * mpe = (struct mpentry *)data;
-
-	switch (mpe->pg_timeout) {
-	case PGTIMEOUT_UNDEF:
-		break;
-	case -PGTIMEOUT_NONE:
-		return snprintf(buff, len, "\"none\"");
-	default:
-		return snprintf(buff, len, "%i", mpe->pg_timeout);
-	}
 	return 0;
 }
 
@@ -2365,19 +2318,6 @@ snprint_hw_rr_min_io_rq (char * buff, int len, void * data)
 static int
 snprint_hw_pg_timeout (char * buff, int len, void * data)
 {
-	struct hwentry * hwe = (struct hwentry *)data;
-
-	if (!hwe->pg_timeout)
-		return 0;
-
-	switch (hwe->pg_timeout) {
-	case PGTIMEOUT_UNDEF:
-		break;
-	case -PGTIMEOUT_NONE:
-		return snprintf(buff, len, "\"none\"");
-	default:
-		return snprintf(buff, len, "%i", hwe->pg_timeout);
-	}
 	return 0;
 }
 
@@ -2709,13 +2649,6 @@ snprint_def_checker_timeout (char *buff, int len, void *data)
 static int
 snprint_def_pg_timeout (char * buff, int len, void * data)
 {
-	switch (conf->pg_timeout) {
-	case PGTIMEOUT_UNDEF:
-	case -PGTIMEOUT_NONE:
-		return snprintf(buff, len, "\"none\"");
-	default:
-		return snprintf(buff, len, "%i", conf->pg_timeout);
-	}
 	return 0;
 }
 

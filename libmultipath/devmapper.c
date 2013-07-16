@@ -806,16 +806,6 @@ dm_queue_if_no_path(char *mapname, int enable)
 	return dm_message(mapname, message);
 }
 
-int
-dm_set_pg_timeout(char *mapname, int timeout_val)
-{
-	char message[24];
-
-	if (snprintf(message, 24, "set_pg_timeout %d", timeout_val) >= 24)
-		return 1;
-	return dm_message(mapname, message);
-}
-
 static int
 dm_groupmsg (char * msg, char * mapname, int index)
 {

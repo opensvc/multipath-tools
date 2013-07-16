@@ -202,7 +202,6 @@ struct multipath {
 	int no_path_retry; /* number of retries after all paths are down */
 	int retry_tick;    /* remaining times for retries */
 	int minio;
-	int pg_timeout;
 	int flush_on_last_del;
 	int attribute_flags;
 	int fast_io_fail;

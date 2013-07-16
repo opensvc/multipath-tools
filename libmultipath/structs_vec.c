@@ -364,7 +364,6 @@ __setup_multipath (struct vectors * vecs, struct multipath * mpp, int reset)
 		select_rr_weight(mpp);
 		select_pgfailback(mpp);
 		set_no_path_retry(mpp);
-		select_pg_timeout(mpp);
 		select_flush_on_last_del(mpp);
 	}
 

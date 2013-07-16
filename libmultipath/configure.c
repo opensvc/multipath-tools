@@ -69,7 +69,6 @@ setup_map (struct multipath * mpp, char * params, int params_size)
 	select_rr_weight(mpp);
 	select_minio(mpp);
 	select_no_path_retry(mpp);
-	select_pg_timeout(mpp);
 	select_mode(mpp);
 	select_uid(mpp);
 	select_gid(mpp);
@@ -210,7 +209,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 			mpp->alias);
 		return;
 	}
-	if (!mpp->no_path_retry && !mpp->pg_timeout &&
+	if (!mpp->no_path_retry &&
 	    (strlen(cmpp->features) != strlen(mpp->features) ||
 	     strcmp(cmpp->features, mpp->features))) {
 		mpp->action =  ACT_RELOAD;
@@ -627,12 +626,6 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 						    "queue_if_no_path");
 			}
 		}
-		if (mpp->pg_timeout != PGTIMEOUT_UNDEF) {
-			if (mpp->pg_timeout == -PGTIMEOUT_NONE)
-				dm_set_pg_timeout(mpp->alias,  0);
-			else
-				dm_set_pg_timeout(mpp->alias, mpp->pg_timeout);
-		}
 
 		if (!conf->daemon && mpp->action != ACT_NOTHING)
 			print_multipath_topology(mpp, conf->verbosity);
@@ -826,12 +819,6 @@ extern int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh)
 			dm_queue_if_no_path(mpp->alias, 0);
 		else
 			dm_queue_if_no_path(mpp->alias, 1);
-	}
-	if (mpp->pg_timeout != PGTIMEOUT_UNDEF) {
-		if (mpp->pg_timeout == -PGTIMEOUT_NONE)
-			dm_set_pg_timeout(mpp->alias,  0);
-		else
-			dm_set_pg_timeout(mpp->alias, mpp->pg_timeout);
 	}
 
 	return 0;

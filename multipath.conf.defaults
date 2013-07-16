@@ -17,7 +17,6 @@
 #	max_fds 1048576
 #	rr_weight "uniform"
 #	queue_without_daemon "yes"
-#	pg_timeout "none"
 #	flush_on_last_del "no"
 #	user_friendly_names "no"
 #	fast_io_fail_tmo 5

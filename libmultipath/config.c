@@ -334,7 +334,6 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(no_path_retry);
 	merge_num(minio);
 	merge_num(minio_rq);
-	merge_num(pg_timeout);
 	merge_num(flush_on_last_del);
 	merge_num(fast_io_fail);
 	merge_num(dev_loss);
@@ -407,7 +406,6 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->no_path_retry = dhwe->no_path_retry;
 	hwe->minio = dhwe->minio;
 	hwe->minio_rq = dhwe->minio_rq;
-	hwe->pg_timeout = dhwe->pg_timeout;
 	hwe->flush_on_last_del = dhwe->flush_on_last_del;
 	hwe->fast_io_fail = dhwe->fast_io_fail;
 	hwe->dev_loss = dhwe->dev_loss;
