@@ -167,6 +167,9 @@ free_hwe (struct hwentry * hwe)
 	if (hwe->revision)
 		FREE(hwe->revision);
 
+	if (hwe->getuid)
+		FREE(hwe->getuid);
+
 	if (hwe->uid_attribute)
 		FREE(hwe->uid_attribute);
 
@@ -223,6 +226,9 @@ free_mpe (struct mpentry * mpe)
 
 	if (mpe->selector)
 		FREE(mpe->selector);
+
+	if (mpe->getuid)
+		FREE(mpe->getuid);
 
 	if (mpe->uid_attribute)
 		FREE(mpe->uid_attribute);
@@ -312,6 +318,7 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_str(vendor);
 	merge_str(product);
 	merge_str(revision);
+	merge_str(getuid);
 	merge_str(uid_attribute);
 	merge_str(features);
 	merge_str(hwhandler);
@@ -368,6 +375,9 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 		goto out;
 
 	if (dhwe->uid_attribute && !(hwe->uid_attribute = set_param_str(dhwe->uid_attribute)))
+		goto out;
+
+	if (dhwe->getuid && !(hwe->getuid = set_param_str(dhwe->getuid)))
 		goto out;
 
 	if (dhwe->features && !(hwe->features = set_param_str(dhwe->features)))
@@ -474,6 +484,9 @@ free_config (struct config * conf)
 
 	if (conf->uid_attribute)
 		FREE(conf->uid_attribute);
+
+	if (conf->getuid)
+		FREE(conf->getuid);
 
 	if (conf->features)
 		FREE(conf->features);

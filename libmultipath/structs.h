@@ -173,6 +173,7 @@ struct path {
 	int pgindex;
 	int detect_prio;
 	char * uid_attribute;
+	char * getuid;
 	struct prio prio;
 	char * prio_args;
 	struct checker checker;

@@ -59,10 +59,20 @@
 #	path_grouping_policy	multibus
 #
 #	#
+#	# name    : uid_attribute
+#	# scope   : multipath & multipathd
+#	# desc    : the default udev attribute from which the path
+#	# 	    identifier should be generated.
+#	# default : ID_SERIAL
+#	#
+#	uid_attribute	"ID_SERIAL"
+#
+#	#
 #	# name    : getuid_callout
 #	# scope   : multipath & multipathd
 #	# desc    : the default program and args to callout to obtain a unique 
-#	#           path identifier. Absolute path required
+#	#           path identifier. This parameter is deprecated.
+#	#           This parameter is deprecated, superseded by uid_attribute
 #	# default : /lib/udev/scsi_id --whitelisted --device=/dev/%n
 #	#
 #	getuid_callout	"/lib/udev/scsi_id --whitelisted --device=/dev/%n"
