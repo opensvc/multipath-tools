@@ -800,8 +800,14 @@ extern int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh)
 
 	update_mpp_paths(mpp, vecs->pathvec);
 	if (refresh) {
-		vector_foreach_slot (mpp->paths, pp, i)
-			pathinfo(pp, conf->hwtable, DI_PRIO);
+		vector_foreach_slot (mpp->paths, pp, i) {
+			r = pathinfo(pp, conf->hwtable, DI_PRIO);
+			if (r) {
+				condlog(2, "%s: failed to refresh pathinfo",
+					mpp->alias);
+				return 1;
+			}
+		}
 	}
 	if (setup_map(mpp, params, PARAMS_SIZE)) {
 		condlog(0, "%s: failed to setup map", mpp->alias);

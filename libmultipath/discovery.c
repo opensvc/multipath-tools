@@ -125,8 +125,10 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 			continue;
 		}
 		devtype = udev_device_get_devtype(udevice);
-		if(devtype && !strncmp(devtype, "disk", 4))
-			r += path_discover(pathvec, conf, udevice, flag);
+		if(devtype && !strncmp(devtype, "disk", 4)) {
+			r += path_discover(pathvec, conf,
+						   udevice, flag);
+		}
 		udev_device_unref(udevice);
 	}
 	udev_enumerate_unref(udev_iter);

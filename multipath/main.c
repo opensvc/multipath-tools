@@ -152,16 +152,21 @@ update_paths (struct multipath * mpp)
 					continue;
 				}
 				pp->mpp = mpp;
-				pathinfo(pp, conf->hwtable, DI_ALL);
+				if (pathinfo(pp, conf->hwtable, DI_ALL))
+					pp->state = PATH_UNCHECKED;
 				continue;
 			}
 			pp->mpp = mpp;
 			if (pp->state == PATH_UNCHECKED ||
-			    pp->state == PATH_WILD)
-				pathinfo(pp, conf->hwtable, DI_CHECKER);
+			    pp->state == PATH_WILD) {
+				if (pathinfo(pp, conf->hwtable, DI_CHECKER))
+					pp->state = PATH_UNCHECKED;
+			}
 
-			if (pp->priority == PRIO_UNDEF)
-				pathinfo(pp, conf->hwtable, DI_PRIO);
+			if (pp->priority == PRIO_UNDEF) {
+				if (pathinfo(pp, conf->hwtable, DI_PRIO))
+					pp->priority = PRIO_UNDEF;
+			}
 		}
 	}
 	return 0;
