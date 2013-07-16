@@ -1029,6 +1029,8 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 			if (pp->state == PATH_UNCHECKED ||
 			    pp->state == PATH_WILD)
 				goto blank;
+			if (pp->state == PATH_TIMEOUT)
+				pp->state = PATH_DOWN;
 		} else {
 			condlog(3, "%s: path inaccessible", pp->dev);
 			pp->chkrstate = pp->state = path_state;

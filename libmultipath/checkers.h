@@ -46,6 +46,10 @@
  * PATH_PENDING:
  * - Use: All async checkers
  * - Description: Indicates a check IO is in flight.
+ *
+ * PATH_TIMEOUT:
+ * - Use: Only tur checker
+ * - Description: Command timed out
  */
 enum path_check_state {
 	PATH_WILD,
@@ -55,6 +59,7 @@ enum path_check_state {
 	PATH_SHAKY,
 	PATH_GHOST,
 	PATH_PENDING,
+	PATH_TIMEOUT,
 	PATH_MAX_STATE
 };
 

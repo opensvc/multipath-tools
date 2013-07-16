@@ -297,7 +297,7 @@ libcheck_check (struct checker * c)
 				pthread_cancel(ct->thread);
 				ct->running = 0;
 				MSG(c, MSG_TUR_TIMEOUT);
-				tur_status = PATH_DOWN;
+				tur_status = PATH_TIMEOUT;
 				ct->state = PATH_UNCHECKED;
 			} else {
 				condlog(3, "%d:%d: tur checker not finished",
