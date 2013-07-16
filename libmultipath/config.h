@@ -136,9 +136,11 @@ struct config {
 	vector blist_devnode;
 	vector blist_wwid;
 	vector blist_device;
+	vector blist_property;
 	vector elist_devnode;
 	vector elist_wwid;
 	vector elist_device;
+	vector elist_property;
 };
 
 struct config * conf;

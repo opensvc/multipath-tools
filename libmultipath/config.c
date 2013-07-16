@@ -513,10 +513,12 @@ free_config (struct config * conf)
 
 	free_blacklist(conf->blist_devnode);
 	free_blacklist(conf->blist_wwid);
+	free_blacklist(conf->blist_property);
 	free_blacklist_device(conf->blist_device);
 
 	free_blacklist(conf->elist_devnode);
 	free_blacklist(conf->elist_wwid);
+	free_blacklist(conf->elist_property);
 	free_blacklist_device(conf->elist_device);
 
 	free_mptable(conf->mptable);
@@ -619,8 +621,12 @@ load_config (char * file, struct udev *udev)
 		if (!conf->blist_device)
 			goto out;
 	}
-	if (setup_default_blist(conf))
-		goto out;
+	if (conf->blist_property == NULL) {
+		conf->blist_property = vector_alloc();
+
+		if (!conf->blist_property)
+			goto out;
+	}
 
 	if (conf->elist_devnode == NULL) {
 		conf->elist_devnode = vector_alloc();
@@ -641,6 +647,15 @@ load_config (char * file, struct udev *udev)
 		if (!conf->elist_device)
 			goto out;
 	}
+
+	if (conf->elist_property == NULL) {
+		conf->elist_property = vector_alloc();
+
+		if (!conf->elist_property)
+			goto out;
+	}
+	if (setup_default_blist(conf))
+		goto out;
 
 	if (conf->mptable == NULL) {
 		conf->mptable = vector_alloc();

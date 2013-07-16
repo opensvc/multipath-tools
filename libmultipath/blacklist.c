@@ -2,6 +2,7 @@
  * Copyright (c) 2004, 2005 Christophe Varoqui
  */
 #include <stdio.h>
+#include <libudev.h>
 
 #include "checkers.h"
 #include "memory.h"
@@ -96,7 +97,7 @@ set_ble_device (vector blist, char * vendor, char * product, int origin)
 }
 
 int
-_blacklist_exceptions (vector elist, char * str)
+_blacklist_exceptions (vector elist, const char * str)
 {
 	int i;
 	struct blentry * ele;
@@ -109,7 +110,7 @@ _blacklist_exceptions (vector elist, char * str)
 }
 
 int
-_blacklist (vector blist, char * str)
+_blacklist (vector blist, const char * str)
 {
 	int i;
 	struct blentry * ble;
@@ -175,6 +176,12 @@ setup_default_blist (struct config * conf)
 	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
 		return 1;
 
+	str = STRDUP("(ID_SCSI_VPD|ID_WWN)");
+	if (!str)
+		return 1;
+	if (store_ble(conf->elist_property, str, ORIGIN_DEFAULT))
+		return 1;
+
 	vector_foreach_slot (conf->hwtable, hwe, i) {
 		if (hwe->bl_product) {
 			if (_blacklist_device(conf->blist_device, hwe->vendor,
@@ -196,16 +203,20 @@ setup_default_blist (struct config * conf)
 	return 0;
 }
 
-#define LOG_BLIST(M) \
-	if (vendor && product)						 \
-		condlog(3, "%s: (%s:%s) %s", dev, vendor, product, (M)); \
-	else if (wwid)							 \
-		condlog(3, "%s: (%s) %s", dev, wwid, (M));		 \
-	else								 \
-		condlog(3, "%s: %s", dev, (M))
+#define LOG_BLIST(M,S)							\
+	if (vendor && product)						\
+		condlog(3, "%s: (%s:%s) %s %s",				\
+			dev, vendor, product, (M), (S));		\
+	else if (wwid)							\
+		condlog(3, "%s: %s %s %s", dev, (M), wwid, (S));	\
+	else if (env)							\
+		condlog(3, "%s: %s %s %s", dev, (M), env, (S));		\
+	else								\
+		condlog(3, "%s: %s %s", dev, (M), (S))
 
 void
-log_filter (char *dev, char *vendor, char *product, char *wwid, int r)
+log_filter (const char *dev, char *vendor, char *product, char *wwid,
+	    const char *env, int r)
 {
 	/*
 	 * Try to sort from most likely to least.
@@ -214,22 +225,31 @@ log_filter (char *dev, char *vendor, char *product, char *wwid, int r)
 	case MATCH_NOTHING:
 		break;
 	case MATCH_DEVICE_BLIST:
-		LOG_BLIST("vendor/product blacklisted");
+		LOG_BLIST("vendor/product", "blacklisted");
 		break;
 	case MATCH_WWID_BLIST:
-		LOG_BLIST("wwid blacklisted");
+		LOG_BLIST("wwid", "blacklisted");
 		break;
 	case MATCH_DEVNODE_BLIST:
-		LOG_BLIST("device node name blacklisted");
+		LOG_BLIST("device node name", "blacklisted");
+		break;
+	case MATCH_PROPERTY_BLIST:
+		LOG_BLIST("udev property", "blacklisted");
 		break;
 	case MATCH_DEVICE_BLIST_EXCEPT:
-		LOG_BLIST("vendor/product whitelisted");
+		LOG_BLIST("vendor/product", "whitelisted");
 		break;
 	case MATCH_WWID_BLIST_EXCEPT:
-		LOG_BLIST("wwid whitelisted");
+		LOG_BLIST("wwid", "whitelisted");
 		break;
 	case MATCH_DEVNODE_BLIST_EXCEPT:
-		LOG_BLIST("device node name whitelisted");
+		LOG_BLIST("device node name", "whitelisted");
+		break;
+	case MATCH_PROPERTY_BLIST_EXCEPT:
+		LOG_BLIST("udev property", "whitelisted");
+		break;
+	case MATCH_PROPERTY_BLIST_MISSING:
+		LOG_BLIST("blacklisted,", "udev property missing");
 		break;
 	}
 }
@@ -250,7 +270,7 @@ int
 filter_device (vector blist, vector elist, char * vendor, char * product)
 {
 	int r = _filter_device(blist, elist, vendor, product);
-	log_filter(NULL, vendor, product, NULL, r);
+	log_filter(NULL, vendor, product, NULL, NULL, r);
 	return r;
 }
 
@@ -270,7 +290,7 @@ int
 filter_devnode (vector blist, vector elist, char * dev)
 {
 	int r = _filter_devnode(blist, elist, dev);
-	log_filter(dev, NULL, NULL, NULL, r);
+	log_filter(dev, NULL, NULL, NULL, NULL, r);
 	return r;
 }
 
@@ -290,7 +310,7 @@ int
 filter_wwid (vector blist, vector elist, char * wwid)
 {
 	int r = _filter_wwid(blist, elist, wwid);
-	log_filter(NULL, NULL, NULL, wwid, r);
+	log_filter(NULL, NULL, NULL, wwid, NULL, r);
 	return r;
 }
 
@@ -314,8 +334,53 @@ int
 filter_path (struct config * conf, struct path * pp)
 {
 	int r=_filter_path(conf, pp);
-	log_filter(pp->dev, pp->vendor_id, pp->product_id, pp->wwid, r);
+	log_filter(pp->dev, pp->vendor_id, pp->product_id, pp->wwid, NULL, r);
 	return r;
+}
+
+int
+_filter_property (struct config *conf, const char *env)
+{
+	if (_blacklist_exceptions(conf->elist_property, env))
+		return MATCH_PROPERTY_BLIST_EXCEPT;
+	if (_blacklist(conf->blist_property, env))
+		return MATCH_PROPERTY_BLIST;
+
+	return 0;
+}
+
+int
+filter_property(struct config * conf, struct udev_device * udev)
+{
+	const char *devname = udev_device_get_sysname(udev);
+	struct udev_list_entry *list_entry;
+	int r;
+
+	if (!udev)
+		return 0;
+
+	udev_list_entry_foreach(list_entry,
+				udev_device_get_properties_list_entry(udev)) {
+		const char *env;
+
+		env = udev_list_entry_get_name(list_entry);
+		if (!env)
+			continue;
+
+		r = _filter_property(conf, env);
+		if (r) {
+			log_filter(devname, NULL, NULL, NULL, env, r);
+			return r;
+		}
+	}
+
+	/*
+	 * This is the inverse of the 'normal' matching;
+	 * the environment variable _has_ to match.
+	 */
+	log_filter(devname, NULL, NULL, NULL, NULL,
+		   MATCH_PROPERTY_BLIST_MISSING);
+	return MATCH_PROPERTY_BLIST_MISSING;
 }
 
 void

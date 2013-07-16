@@ -691,8 +691,10 @@ blacklist_handler(vector strvec)
 	conf->blist_devnode = vector_alloc();
 	conf->blist_wwid = vector_alloc();
 	conf->blist_device = vector_alloc();
+	conf->blist_property = vector_alloc();
 
-	if (!conf->blist_devnode || !conf->blist_wwid || !conf->blist_device)
+	if (!conf->blist_devnode || !conf->blist_wwid ||
+	    !conf->blist_device || !conf->blist_property)
 		return 1;
 
 	return 0;
@@ -704,8 +706,10 @@ blacklist_exceptions_handler(vector strvec)
 	conf->elist_devnode = vector_alloc();
 	conf->elist_wwid = vector_alloc();
 	conf->elist_device = vector_alloc();
+	conf->elist_property = vector_alloc();
 
-	if (!conf->elist_devnode || !conf->elist_wwid || !conf->elist_device)
+	if (!conf->elist_devnode || !conf->elist_wwid ||
+	    !conf->elist_device || !conf->elist_property)
 		return 1;
 
 	return 0;
@@ -761,6 +765,32 @@ ble_except_wwid_handler(vector strvec)
 		return 1;
 
 	return store_ble(conf->elist_wwid, buff, ORIGIN_CONFIG);
+}
+
+static int
+ble_property_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	return store_ble(conf->blist_property, buff, ORIGIN_CONFIG);
+}
+
+static int
+ble_except_property_handler(vector strvec)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	return store_ble(conf->elist_property, buff, ORIGIN_CONFIG);
 }
 
 static int
@@ -2830,6 +2860,7 @@ init_keywords(void)
 	install_keyword_root("blacklist", &blacklist_handler);
 	install_keyword_multi("devnode", &ble_devnode_handler, &snprint_ble_simple);
 	install_keyword_multi("wwid", &ble_wwid_handler, &snprint_ble_simple);
+	install_keyword_multi("property", &ble_property_handler, &snprint_ble_simple);
 	install_keyword_multi("device", &ble_device_handler, NULL);
 	install_sublevel();
 	install_keyword("vendor", &ble_vendor_handler, &snprint_bled_vendor);
@@ -2838,6 +2869,7 @@ init_keywords(void)
 	install_keyword_root("blacklist_exceptions", &blacklist_exceptions_handler);
 	install_keyword_multi("devnode", &ble_except_devnode_handler, &snprint_ble_simple);
 	install_keyword_multi("wwid", &ble_except_wwid_handler, &snprint_ble_simple);
+	install_keyword_multi("property", &ble_except_property_handler, &snprint_ble_simple);
 	install_keyword_multi("device", &ble_except_device_handler, NULL);
 	install_sublevel();
 	install_keyword("vendor", &ble_except_vendor_handler, &snprint_bled_vendor);

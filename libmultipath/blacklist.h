@@ -1,15 +1,19 @@
 #ifndef _BLACKLIST_H
 #define _BLACKLIST_H
 
+#include <libudev.h>
 #include "regex.h"
 
-#define MATCH_NOTHING       0
-#define MATCH_WWID_BLIST    1
-#define MATCH_DEVICE_BLIST  2
-#define MATCH_DEVNODE_BLIST 3
-#define MATCH_WWID_BLIST_EXCEPT    -MATCH_WWID_BLIST
-#define MATCH_DEVICE_BLIST_EXCEPT  -MATCH_DEVICE_BLIST
-#define MATCH_DEVNODE_BLIST_EXCEPT -MATCH_DEVNODE_BLIST
+#define MATCH_NOTHING        0
+#define MATCH_WWID_BLIST     1
+#define MATCH_DEVICE_BLIST   2
+#define MATCH_DEVNODE_BLIST  3
+#define MATCH_PROPERTY_BLIST 4
+#define MATCH_PROPERTY_BLIST_MISSING 5
+#define MATCH_WWID_BLIST_EXCEPT     -MATCH_WWID_BLIST
+#define MATCH_DEVICE_BLIST_EXCEPT   -MATCH_DEVICE_BLIST
+#define MATCH_DEVNODE_BLIST_EXCEPT  -MATCH_DEVNODE_BLIST
+#define MATCH_PROPERTY_BLIST_EXCEPT -MATCH_PROPERTY_BLIST
 
 struct blentry {
 	char * str;
@@ -31,6 +35,7 @@ int filter_devnode (vector, vector, char *);
 int filter_wwid (vector, vector, char *);
 int filter_device (vector, vector, char *, char *);
 int filter_path (struct config *, struct path *);
+int filter_property(struct config *, struct udev_device *);
 int store_ble (vector, char *, int);
 int set_ble_device (vector, char *, char *, int);
 void free_blacklist (vector);

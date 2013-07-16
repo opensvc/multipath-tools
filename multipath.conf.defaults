@@ -68,6 +68,7 @@
 #	}
 #}
 #blacklist_exceptions {
+#	property "(ID_SCSI_VPD|ID_WWN)"
 #}
 #devices {
 #	device {

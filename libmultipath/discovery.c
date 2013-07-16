@@ -82,6 +82,9 @@ path_discover (vector pathvec, struct config * conf,
 	if (!devname)
 		return 0;
 
+	if (filter_property(conf, udevice) > 0)
+		return 0;
+
 	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
 			   (char *)devname) > 0)
 		return 0;

@@ -422,6 +422,9 @@ The \fIWorld Wide Identification\fR of a device.
 .B devnode
 Regular expression of the device nodes to be excluded.
 .TP
+.B property
+Regular expresion of the udev property to be excluded.
+.TP
 .B device
 Subsection for the device description. This subsection recognizes the
 .I vendor
@@ -446,8 +449,12 @@ The following keywords are recognized:
 .B wwid
 The \fIWorld Wide Identification\fR of a device.
 .TP
+.B property
+Regular expresion of the udev property to be whitelisted. Defaults to
+.I (ID_WWN|ID_SCSI_VPD)
+.TP
 .B devnode
-Regular expression of the device nodes to be excluded.
+Regular expression of the device nodes to be whitelisted.
 .TP
 .B device
 Subsection for the device description. This subsection recognizes the
@@ -457,6 +464,16 @@ and
 keywords. For a full description of these keywords please see the
 .I devices
 section description.
+.LP
+The
+.I property
+blacklist and whitelist handling is different from the usual handling
+in the sense that the whitelist
+.B has
+to be set, otherwise the device will be blacklisted.
+In these cases the message
+.I blacklisted, udev property missing
+will be displayed.
 .SH "multipaths section"
 The only recognized attribute for the
 .B multipaths

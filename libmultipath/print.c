@@ -1078,6 +1078,19 @@ snprint_blacklist_report (char * buff, int len)
 
 	if ((len - fwd - threshold) <= 0)
 		return len;
+	fwd += snprintf(buff + fwd, len - fwd, "udev property rules:\n"
+					       "- blacklist:\n");
+	if (!snprint_blacklist_group(buff, len, &fwd, &conf->blist_property))
+		return len;
+
+	if ((len - fwd - threshold) <= 0)
+		return len;
+	fwd += snprintf(buff + fwd, len - fwd, "- exceptions:\n");
+	if (snprint_blacklist_group(buff, len, &fwd, &conf->elist_property) == 0)
+		return len;
+
+	if ((len - fwd - threshold) <= 0)
+		return len;
 	fwd += snprintf(buff + fwd, len - fwd, "wwid rules:\n"
 					       "- blacklist:\n");
 	if (snprint_blacklist_group(buff, len, &fwd, &conf->blist_wwid) == 0)
@@ -1136,6 +1149,15 @@ snprint_blacklist (char * buff, int len)
 	}
 	vector_foreach_slot (conf->blist_wwid, ble, i) {
 		kw = find_keyword(rootkw->sub, "wwid");
+		if (!kw)
+			return 0;
+		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
+				       kw, ble);
+		if (fwd > len)
+			return len;
+	}
+	vector_foreach_slot (conf->blist_property, ble, i) {
+		kw = find_keyword(rootkw->sub, "property");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
@@ -1204,6 +1226,15 @@ snprint_blacklist_except (char * buff, int len)
 	}
 	vector_foreach_slot (conf->elist_wwid, ele, i) {
 		kw = find_keyword(rootkw->sub, "wwid");
+		if (!kw)
+			return 0;
+		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
+				       kw, ele);
+		if (fwd > len)
+			return len;
+	}
+	vector_foreach_slot (conf->elist_property, ele, i) {
+		kw = find_keyword(rootkw->sub, "property");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
