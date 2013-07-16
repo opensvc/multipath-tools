@@ -47,7 +47,6 @@
 #include "list.h"
 #include "uevent.h"
 #include "vector.h"
-#include "config.h"
 
 typedef int (uev_trigger)(struct uevent *, void * trigger_data);
 
@@ -127,11 +126,14 @@ service_uevq(struct list_head *tmpq)
 
 static void uevq_stop(void *arg)
 {
+	struct udev *udev = arg;
+
 	condlog(3, "Stopping uev queue");
 	pthread_mutex_lock(uevq_lockp);
 	my_uev_trigger = NULL;
 	pthread_cond_signal(uev_condp);
 	pthread_mutex_unlock(uevq_lockp);
+	udev_unref(udev);
 }
 
 void
@@ -399,7 +401,7 @@ exit:
 	return 1;
 }
 
-int uevent_listen(void)
+int uevent_listen(struct udev *udev)
 {
 	int err;
 	struct udev_monitor *monitor = NULL;
@@ -411,11 +413,17 @@ int uevent_listen(void)
 	 * thereby not getting to empty the socket's receive buffer queue
 	 * often enough.
 	 */
-	pthread_cleanup_push(uevq_stop, NULL);
+	if (!udev) {
+		condlog(1, "no udev context");
+		return 1;
+	}
+	udev_ref(udev);
+	pthread_cleanup_push(uevq_stop, udev);
 
-	monitor = udev_monitor_new_from_netlink(conf->udev, "udev");
+	monitor = udev_monitor_new_from_netlink(udev, "udev");
 	if (!monitor) {
 		condlog(2, "failed to create udev monitor");
+		err = 2;
 		goto out;
 	}
 #ifdef LIBUDEV_API_RECVBUF
