@@ -958,6 +958,7 @@ get_prio (struct path * pp)
 		select_prio(pp);
 		if (!prio_selected(p)) {
 			condlog(3, "%s: no prio selected", pp->dev);
+			pp->priority = PRIO_UNDEF;
 			return 1;
 		}
 	}

@@ -447,7 +447,7 @@ select_prio (struct path * pp)
 	prio_get(p, DEFAULT_PRIO, DEFAULT_PRIO_ARGS);
 	condlog(3, "%s: prio = %s (internal default)",
 		pp->dev, DEFAULT_PRIO);
-	condlog(3, "%s: prio = %s (internal default)",
+	condlog(3, "%s: prio args = %s (internal default)",
 		pp->dev, DEFAULT_PRIO_ARGS);
 	return 0;
 }
