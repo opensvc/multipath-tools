@@ -165,7 +165,6 @@ declare_sysfs_get_str(cutype);
 declare_sysfs_get_str(vendor);
 declare_sysfs_get_str(model);
 declare_sysfs_get_str(rev);
-declare_sysfs_get_str(state);
 declare_sysfs_get_str(dev);
 
 int
@@ -831,7 +830,8 @@ path_offline (struct path * pp)
 		return PATH_DOWN;
 	}
 
-	if (sysfs_get_state(parent, buff, SCSI_STATE_SIZE))
+	memset(buff, 0x0, SCSI_STATE_SIZE);
+	if (sysfs_attr_get_value(parent, "state", buff, SCSI_STATE_SIZE) <= 0)
 		return PATH_DOWN;
 
 	condlog(3, "%s: path state = %s", pp->dev, buff);
