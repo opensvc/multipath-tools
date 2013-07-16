@@ -366,7 +366,7 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 			goto out;
 		}
 		if (mpp->fast_io_fail >= tmo) {
-			snprintf(value, 16, "%u", mpp->fast_io_fail);
+			snprintf(value, 16, "%u", mpp->fast_io_fail + 1);
 		}
 	} else if (mpp->dev_loss > 600) {
 		condlog(3, "%s: limiting dev_loss_tmo to 600, since "
