@@ -4,7 +4,6 @@
 #defaults {
 #	verbosity 2
 #	polling_interval 5
-#	multipath_dir "/lib64/multipath"
 #	path_selector "service-time 0"
 #	path_grouping_policy "failover"
 #	uid_attribute "ID_SERIAL"
