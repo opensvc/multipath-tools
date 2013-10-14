@@ -37,6 +37,29 @@ static void print_reply(char *s)
 		putchar(*s++);
 	}
 }
+
+static int need_quit(char *str, size_t len)
+{
+	char *ptr, *start;
+	size_t trimed_len = len;
+
+	for (ptr = str; trimed_len && isspace(*ptr);
+	     trimed_len--, ptr++)
+		;
+
+	start = ptr;
+
+	for (ptr = str + len - 1; trimed_len && isspace(*ptr);
+	     trimed_len--, ptr--)
+		;
+
+	if ((trimed_len == 4 && !strncmp(start, "exit", 4)) ||
+	    (trimed_len == 4 && !strncmp(start, "quit", 4)))
+		return 1;
+
+	return 0;
+}
+
 /*
  * process the client
  */
@@ -56,9 +79,8 @@ static void process(int fd)
 			free(line);
 			continue;
 		}
-		if (!strncmp(line, "exit", 4) && llen == 4)
-			break;
-		if (!strncmp(line, "quit", 4) && llen == 4)
+
+		if (need_quit(line, llen))
 			break;
 
 		if (send_packet(fd, line, llen + 1) != 0) break;
