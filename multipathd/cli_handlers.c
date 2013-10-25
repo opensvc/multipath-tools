@@ -567,6 +567,7 @@ int resize_map(struct multipath *mpp, unsigned long long size,
 	       struct vectors * vecs)
 {
 	char params[PARAMS_SIZE] = {0};
+	unsigned long long orig_size = mpp->size;
 
 	mpp->size = size;
 	update_mpp_paths(mpp, vecs->pathvec);
@@ -575,6 +576,7 @@ int resize_map(struct multipath *mpp, unsigned long long size,
 	if (domap(mpp, params) <= 0) {
 		condlog(0, "%s: failed to resize map : %s", mpp->alias,
 			strerror(errno));
+		mpp->size = orig_size;
 		return 1;
 	}
 	return 0;
