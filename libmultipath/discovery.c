@@ -1138,8 +1138,6 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 			if (!strlen(pp->wwid))
 				get_uid(pp);
 			get_prio(pp);
-		} else {
-			pp->priority = PRIO_UNDEF;
 		}
 	}
 
