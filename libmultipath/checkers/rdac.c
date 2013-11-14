@@ -34,6 +34,18 @@
 #define MSG_RDAC_UP    "rdac checker reports path is up"
 #define MSG_RDAC_DOWN  "rdac checker reports path is down"
 #define MSG_RDAC_GHOST "rdac checker reports path is ghost"
+#define MSG_RDAC_DOWN_TYPE(STR) MSG_RDAC_DOWN": "STR
+
+#define RTPG_UNAVAILABLE	0x3
+#define RTPG_OFFLINE		0xE
+#define RTPG_TRANSITIONING	0xF
+
+#define RTPG_UNAVAIL_NON_RESPONSIVE	0x2
+#define RTPG_UNAVAIL_IN_RESET		0x3
+#define RTPG_UNAVAIL_CFW_DL1		0x4
+#define RTPG_UNAVAIL_CFW_DL2		0x5
+#define RTPG_UNAVAIL_QUIESCED		0x6
+#define RTPG_UNAVAIL_SERVICE_MODE	0x7
 
 struct control_mode_page {
 	unsigned char header[8];
@@ -199,22 +211,64 @@ struct volume_access_inq
 	char PQ_PDT;
 	char dontcare0[7];
 	char avtcvp;
-	char dontcare1;
-	char asym_access_state_cur;
+	char vol_ppp;
+	char aas_cur;
 	char vendor_specific_cur;
-	char dontcare2[36];
+	char aas_alt;
+	char vendor_specific_alt;
+	char dontcare1[34];
 };
+
+const char
+*checker_msg_string(struct volume_access_inq *inq)
+{
+	/* lun not connected */
+	if (((inq->PQ_PDT & 0xE0) == 0x20) || (inq->PQ_PDT & 0x7f))
+		return MSG_RDAC_DOWN_TYPE("lun not connected");
+
+	/* if no tpg data is available, give the generic path down message */
+	if (!(inq->avtcvp & 0x10))
+		return MSG_RDAC_DOWN;
+
+	/* controller is booting up */
+	if (((inq->aas_cur & 0x0F) == RTPG_TRANSITIONING) &&
+		(inq->aas_alt & 0x0F) != RTPG_TRANSITIONING)
+		return MSG_RDAC_DOWN_TYPE("ctlr is in startup sequence");
+
+	/* if not unavailable, give generic message */
+	if ((inq->aas_cur & 0x0F) != RTPG_UNAVAILABLE)
+		return MSG_RDAC_DOWN;
+
+	/* target port group unavailable */
+	switch (inq->vendor_specific_cur) {
+	case RTPG_UNAVAIL_NON_RESPONSIVE:
+		return MSG_RDAC_DOWN_TYPE("non-responsive to queries");
+	case RTPG_UNAVAIL_IN_RESET:
+		return MSG_RDAC_DOWN_TYPE("ctlr held in reset");
+	case RTPG_UNAVAIL_CFW_DL1:
+	case RTPG_UNAVAIL_CFW_DL2:
+		return MSG_RDAC_DOWN_TYPE("ctlr firmware downloading");
+	case RTPG_UNAVAIL_QUIESCED:
+		return MSG_RDAC_DOWN_TYPE("ctlr quiesced by admin request");
+	case RTPG_UNAVAIL_SERVICE_MODE:
+		return MSG_RDAC_DOWN_TYPE("ctlr is in service mode");
+	default:
+		return MSG_RDAC_DOWN_TYPE("ctlr is unavailable");
+	}
+}
 
 extern int
 libcheck_check (struct checker * c)
 {
 	struct volume_access_inq inq;
-	int ret;
+	int ret, inqfail;
 
+	inqfail = 0;
 	memset(&inq, 0, sizeof(struct volume_access_inq));
 	if (0 != do_inq(c->fd, 0xC9, &inq, sizeof(struct volume_access_inq),
 			c->timeout)) {
 		ret = PATH_DOWN;
+		inqfail = 1;
 		goto done;
 	} else if (((inq.PQ_PDT & 0xE0) == 0x20) || (inq.PQ_PDT & 0x7f)) {
 		/* LUN not connected*/
@@ -222,12 +276,27 @@ libcheck_check (struct checker * c)
 		goto done;
 	}
 
-	/* check if controller is in service mode */
-	if ((inq.avtcvp & 0x10) &&
-	    ((inq.asym_access_state_cur & 0x0F) == 0x3) &&
-	    (inq.vendor_specific_cur == 0x7)) {
-		ret = PATH_DOWN;
-		goto done;
+	/* If TPGDE bit set, evaluate TPG information */
+	if ((inq.avtcvp & 0x10)) {
+		switch (inq.aas_cur & 0x0F) {
+		/* Never use the path if it reports unavailable */
+		case RTPG_UNAVAILABLE:
+			ret = PATH_DOWN;
+			goto done;
+		/*
+		 * If both controllers report transitioning, it
+		 * means mode select or STPG is being processed.
+		 *
+		 * If this controller alone is transitioning, it's
+		 * booting and we shouldn't use it yet.
+		 */
+		case RTPG_TRANSITIONING:
+			if ((inq.aas_alt & 0xF) != RTPG_TRANSITIONING) {
+				ret = PATH_DOWN;
+				goto done;
+			}
+			break;
+		}
 	}
 
 	/* If owner set or ioship mode is enabled return PATH_UP always */
@@ -239,7 +308,8 @@ libcheck_check (struct checker * c)
 done:
 	switch (ret) {
 	case PATH_DOWN:
-		MSG(c, MSG_RDAC_DOWN);
+		MSG(c, (inqfail) ? MSG_RDAC_DOWN_TYPE("inquiry failed") :
+			checker_msg_string(&inq));
 		break;
 	case PATH_UP:
 		MSG(c, MSG_RDAC_UP);
