@@ -107,9 +107,24 @@ size_t write_all(int fd, const void *buf, size_t len)
 size_t read_all(int fd, void *buf, size_t len)
 {
 	size_t total = 0;
+	ssize_t n;
+	int ret;
+	struct pollfd pfd;
 
 	while (len) {
-		ssize_t n = read(fd, buf, len);
+		pfd.fd = fd;
+		pfd.events = POLLIN;
+		ret = poll(&pfd, 1, 1000);
+		if (!ret) {
+			errno = ETIMEDOUT;
+			return total;
+		} else if (ret < 0) {
+			if (errno == EINTR)
+				continue;
+			return total;
+		} else if (!pfd.revents & POLLIN)
+			continue;
+		n = read(fd, buf, len);
 		if (n < 0) {
 			if ((errno == EINTR) || (errno == EAGAIN))
 				continue;
