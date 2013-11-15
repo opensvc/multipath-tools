@@ -112,8 +112,7 @@ size_t strlcpy(char *dst, const char *src, size_t size)
 		bytes++;
 	}
 
-	/* If size == 0 there is no space for a final null... */
-	if (size)
+	if (bytes == size)
 		*q = '\0';
 	return bytes;
 }
