@@ -518,7 +518,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 		/* 1. if path has no unique id or wwid blacklisted */
 		if (memcmp(empty_buff, pp1->wwid, WWID_SIZE) == 0 ||
 		    filter_path(conf, pp1) > 0) {
-			orphan_path(pp1);
+			orphan_path(pp1, "wwid blacklisted");
 			continue;
 		}
 
@@ -528,7 +528,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 
 		/* 3. if path has disappeared */
 		if (!pp1->size) {
-			orphan_path(pp1);
+			orphan_path(pp1, "invalid size");
 			continue;
 		}
 

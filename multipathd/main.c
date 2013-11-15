@@ -139,6 +139,7 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 	int j;
 
 	vector_foreach_slot (ompv, ompp, i) {
+		condlog(3, "%s: coalesce map", ompp->alias);
 		if (!find_mp_by_wwid(nmpv, ompp->wwid)) {
 			/*
 			 * remove all current maps not allowed by the
@@ -229,7 +230,7 @@ flush_map(struct multipath * mpp, struct vectors * vecs)
 	}
 	else {
 		dm_lib_release();
-		condlog(2, "%s: devmap removed", mpp->alias);
+		condlog(2, "%s: map flushed", mpp->alias);
 	}
 
 	orphan_paths(vecs->pathvec, mpp);
@@ -561,7 +562,7 @@ rescan:
 fail_map:
 	remove_map(mpp, vecs, 1);
 fail:
-	orphan_path(pp);
+	orphan_path(pp, "failed to add path");
 	return 1;
 }
 

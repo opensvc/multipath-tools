@@ -77,8 +77,9 @@ adopt_paths (vector pathvec, struct multipath * mpp, int get_info)
 }
 
 extern void
-orphan_path (struct path * pp)
+orphan_path (struct path * pp, const char *reason)
 {
+	condlog(3, "%s: orphan path, %s", pp->dev, reason);
 	pp->mpp = NULL;
 	pp->dmstate = PSTATE_UNDEF;
 	pp->uid_attribute = NULL;
@@ -98,8 +99,7 @@ orphan_paths (vector pathvec, struct multipath * mpp)
 
 	vector_foreach_slot (pathvec, pp, i) {
 		if (pp->mpp == mpp) {
-			condlog(4, "%s: orphaned", pp->dev);
-			orphan_path(pp);
+			orphan_path(pp, "map flushed");
 		}
 	}
 }
