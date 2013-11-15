@@ -140,11 +140,15 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 }
 
 #define declare_sysfs_get_str(fname)					\
-extern int								\
+extern ssize_t								\
 sysfs_get_##fname (struct udev_device * udev, char * buff, size_t len)	\
 {									\
+	ssize_t ret;							\
 	const char * attr;						\
 	const char * devname;						\
+									\
+	if (!udev)							\
+		return -ENOSYS;						\
 									\
 	devname = udev_device_get_sysname(udev);			\
 									\
@@ -152,19 +156,18 @@ sysfs_get_##fname (struct udev_device * udev, char * buff, size_t len)	\
 	if (!attr) {							\
 		condlog(3, "%s: attribute %s not found in sysfs",	\
 			devname, #fname);				\
-		return 1;						\
+		return -ENXIO;						\
 	}								\
 	if (strlen(attr) > len) {					\
 		condlog(3, "%s: overflow in attribute %s",		\
 			devname, #fname);				\
-		return 2;						\
+		return -EINVAL;						\
 	}								\
-	strlcpy(buff, attr, len);					\
-	return 0;							\
+	ret = strlcpy(buff, attr, len);					\
+	return ret;							\
 }
 
 declare_sysfs_get_str(devtype);
-declare_sysfs_get_str(cutype);
 declare_sysfs_get_str(vendor);
 declare_sysfs_get_str(model);
 declare_sysfs_get_str(rev);
@@ -180,7 +183,7 @@ sysfs_get_timeout(struct path *pp, unsigned int *timeout)
 	unsigned int t;
 
 	if (!pp->udev || pp->bus != SYSFS_BUS_SCSI)
-		return 1;
+		return -ENOSYS;
 
 	parent = pp->udev;
 	while (parent) {
@@ -192,7 +195,7 @@ sysfs_get_timeout(struct path *pp, unsigned int *timeout)
 	}
 	if (!attr) {
 		condlog(3, "%s: No timeout value in sysfs", pp->dev);
-		return 1;
+		return -ENXIO;
 	}
 
 	r = sscanf(attr, "%u\n", &t);
@@ -200,7 +203,7 @@ sysfs_get_timeout(struct path *pp, unsigned int *timeout)
 	if (r != 1) {
 		condlog(3, "%s: Cannot parse timeout attribute '%s'",
 			pp->dev, attr);
-		return 1;
+		return -EINVAL;
 	}
 
 	*timeout = t;
@@ -650,17 +653,17 @@ scsi_sysfs_pathinfo (struct path * pp)
 	if (!attr_path || pp->sg_id.host_no == -1)
 		return 1;
 
-	if (sysfs_get_vendor(parent, pp->vendor_id, SCSI_VENDOR_SIZE))
+	if (sysfs_get_vendor(parent, pp->vendor_id, SCSI_VENDOR_SIZE) <= 0)
 		return 1;
 
 	condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
 
-	if (sysfs_get_model(parent, pp->product_id, SCSI_PRODUCT_SIZE))
+	if (sysfs_get_model(parent, pp->product_id, SCSI_PRODUCT_SIZE) <= 0)
 		return 1;
 
 	condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 
-	if (sysfs_get_rev(parent, pp->rev, SCSI_REV_SIZE))
+	if (sysfs_get_rev(parent, pp->rev, SCSI_REV_SIZE) <= 0)
 		return 1;
 
 	condlog(3, "%s: rev = %s", pp->dev, pp->rev);
@@ -712,7 +715,7 @@ ccw_sysfs_pathinfo (struct path * pp)
 
 	condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
 
-	if (sysfs_get_devtype(parent, attr_buff, FILE_NAME_SIZE))
+	if (sysfs_get_devtype(parent, attr_buff, FILE_NAME_SIZE) <= 0)
 		return 1;
 
 	if (!strncmp(attr_buff, "3370", 4)) {
@@ -772,17 +775,17 @@ cciss_sysfs_pathinfo (struct path * pp)
 	if (!attr_path || pp->sg_id.host_no == -1)
 		return 1;
 
-	if (sysfs_get_vendor(parent, pp->vendor_id, SCSI_VENDOR_SIZE))
+	if (sysfs_get_vendor(parent, pp->vendor_id, SCSI_VENDOR_SIZE) <= 0)
 		return 1;
 
 	condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
 
-	if (sysfs_get_model(parent, pp->product_id, SCSI_PRODUCT_SIZE))
+	if (sysfs_get_model(parent, pp->product_id, SCSI_PRODUCT_SIZE) <= 0)
 		return 1;
 
 	condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 
-	if (sysfs_get_rev(parent, pp->rev, SCSI_REV_SIZE))
+	if (sysfs_get_rev(parent, pp->rev, SCSI_REV_SIZE) <= 0)
 		return 1;
 
 	condlog(3, "%s: rev = %s", pp->dev, pp->rev);
@@ -816,7 +819,7 @@ common_sysfs_pathinfo (struct path * pp)
 		condlog(4, "%s: udev not initialised", pp->dev);
 		return 1;
 	}
-	if (sysfs_get_dev(pp->udev, pp->dev_t, BLK_DEV_SIZE)) {
+	if (sysfs_get_dev(pp->udev, pp->dev_t, BLK_DEV_SIZE) <= 0) {
 		condlog(3, "%s: no 'dev' attribute in sysfs", pp->dev);
 		return 1;
 	}
@@ -956,8 +959,7 @@ get_state (struct path * pp, int daemon)
 	if (daemon)
 		checker_set_async(c);
 	if (!conf->checker_timeout &&
-	    (pp->bus != SYSFS_BUS_SCSI ||
-	     sysfs_get_timeout(pp, &(c->timeout))))
+	    sysfs_get_timeout(pp, &(c->timeout)) <= 0)
 		c->timeout = DEF_TIMEOUT;
 	state = checker_check(c);
 	condlog(3, "%s: state = %s", pp->dev, checker_state_name(state));

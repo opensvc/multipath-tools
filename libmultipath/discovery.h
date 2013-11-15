@@ -26,7 +26,7 @@
 
 struct config;
 
-int sysfs_get_dev (struct udev_device *udev, char * buff, size_t len);
+ssize_t sysfs_get_dev (struct udev_device *udev, char * buff, size_t len);
 int path_discovery (vector pathvec, struct config * conf, int flag);
 
 int do_tur (char *);
