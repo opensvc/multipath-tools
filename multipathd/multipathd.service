@@ -6,10 +6,11 @@ DefaultDependencies=no
 Conflicts=shutdown.target
 
 [Service]
+Type=notify
+NotifyAccess=main
 ExecStartPre=/sbin/modprobe dm-multipath
 ExecStart=/sbin/multipathd -d -s
 ExecReload=/sbin/multipathd reconfigure
-ExecStop=/sbin/multipathd shutdown
 
 [Install]
 WantedBy=sysinit.target

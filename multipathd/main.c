@@ -17,6 +17,9 @@
 #include <limits.h>
 #include <linux/oom.h>
 #include <libudev.h>
+#ifdef USE_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
 #include <semaphore.h>
 #include <mpath_persist.h>
 
@@ -1605,19 +1608,22 @@ child (void * param)
 
 	running_state = DAEMON_START;
 
+#ifdef USE_SYSTEMD
+	sd_notify(0, "STATUS=startup");
+#endif
 	condlog(2, "--------start up--------");
 	condlog(2, "read " DEFAULT_CONFIGFILE);
 
 	if (load_config(DEFAULT_CONFIGFILE, udev))
-		exit(1);
+		goto failed;
 
 	if (init_checkers()) {
 		condlog(0, "failed to initialize checkers");
-		exit(1);
+		goto failed;
 	}
 	if (init_prio()) {
 		condlog(0, "failed to initialize prioritizers");
-		exit(1);
+		goto failed;
 	}
 
 	setlogmask(LOG_UPTO(conf->verbosity + 3));
@@ -1650,7 +1656,7 @@ child (void * param)
 
 	vecs = gvecs = init_vecs();
 	if (!vecs)
-		exit(1);
+		goto failed;
 
 	setscheduler();
 	set_oom_adj();
@@ -1662,23 +1668,26 @@ child (void * param)
 	 */
 	if ((rc = pthread_create(&uevent_thr, &uevent_attr, ueventloop, udev))) {
 		condlog(0, "failed to create uevent thread: %d", rc);
-		exit(1);
+		goto failed;
 	}
 	pthread_attr_destroy(&uevent_attr);
 	if ((rc = pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs))) {
 		condlog(0, "failed to create cli listener: %d", rc);
-		exit(1);
+		goto failed;
 	}
 	/*
 	 * fetch and configure both paths and multipaths
 	 */
+#ifdef USE_SYSTEMD
+	sd_notify(0, "STATUS=configure");
+#endif
 	running_state = DAEMON_CONFIGURE;
 
 	lock(vecs->lock);
 	if (configure(vecs, 1)) {
 		unlock(vecs->lock);
 		condlog(0, "failure during configuration");
-		exit(1);
+		goto failed;
 	}
 	unlock(vecs->lock);
 
@@ -1687,11 +1696,11 @@ child (void * param)
 	 */
 	if ((rc = pthread_create(&check_thr, &misc_attr, checkerloop, vecs))) {
 		condlog(0,"failed to create checker loop thread: %d", rc);
-		exit(1);
+		goto failed;
 	}
 	if ((rc = pthread_create(&uevq_thr, &misc_attr, uevqloop, vecs))) {
 		condlog(0, "failed to create uevent dispatcher: %d", rc);
-		exit(1);
+		goto failed;
 	}
 	pthread_attr_destroy(&misc_attr);
 
@@ -1700,11 +1709,18 @@ child (void * param)
 	/* Ignore errors, we can live without */
 
 	running_state = DAEMON_RUNNING;
+#ifdef USE_SYSTEMD
+	sd_notify(0, "READY=1\nSTATUS=running");
+#endif
 
 	/*
 	 * exit path
 	 */
 	while(sem_wait(&exit_sem) != 0); /* Do nothing */
+
+#ifdef USE_SYSTEMD
+	sd_notify(0, "STATUS=shutdown");
+#endif
 	running_state = DAEMON_SHUTDOWN;
 	lock(vecs->lock);
 	if (conf->queue_without_daemon == QUE_NO_DAEMON_OFF)
@@ -1765,7 +1781,16 @@ child (void * param)
 	dbg_free_final(NULL);
 #endif
 
+#ifdef USE_SYSTEMD
+	sd_notify(0, "ERRNO=0");
+#endif
 	exit(0);
+
+failed:
+#ifdef USE_SYSTEMD
+	sd_notify(0, "ERRNO=1");
+#endif
+	exit(1);
 }
 
 static int

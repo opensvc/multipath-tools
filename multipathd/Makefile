@@ -6,6 +6,9 @@ include ../Makefile.inc
 # basic flags setting
 #
 CFLAGS += -I$(multipathdir) -I$(mpathpersistdir)
+ifdef SYSTEMD
+	CFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
+endif
 LDFLAGS += -lpthread -ldevmapper -lreadline
 ifdef SYSTEMD
 	LDFLAGS += -lsystemd-daemon
