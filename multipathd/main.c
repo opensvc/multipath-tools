@@ -1552,7 +1552,13 @@ set_oom_adj (void)
 #endif
 	FILE *fp;
 	struct stat st;
+	char *envp;
 
+	envp = getenv("OOMScoreAdjust");
+	if (envp) {
+		condlog(3, "Using systemd provided OOMScoreAdjust");
+		return;
+	}
 	do {
 		if (stat(file, &st) == 0){
 			fp = fopen(file, "w");
@@ -1628,7 +1634,11 @@ child (void * param)
 
 	setlogmask(LOG_UPTO(conf->verbosity + 3));
 
-	if (conf->max_fds) {
+	envp = getenv("LimitNOFILE");
+
+	if (envp) {
+		condlog(2,"Using systemd provided open fds limit of %s", envp);
+	} else if (conf->max_fds) {
 		struct rlimit fd_limit;
 
 		if (getrlimit(RLIMIT_NOFILE, &fd_limit) < 0) {
