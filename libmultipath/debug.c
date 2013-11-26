@@ -21,15 +21,18 @@ void dlog (int sink, int prio, const char * fmt, ...)
 	thres = (conf) ? conf->verbosity : 0;
 
 	if (prio <= thres) {
-		if (!sink) {
-			time_t t = time(NULL);
-			struct tm *tb = localtime(&t);
-			char buff[16];
+		if (sink < 1) {
+			if (sink == 0) {
+				time_t t = time(NULL);
+				struct tm *tb = localtime(&t);
+				char buff[16];
 
-			strftime(buff, sizeof(buff), "%b %d %H:%M:%S", tb);
-			buff[sizeof(buff)-1] = '\0';
+				strftime(buff, sizeof(buff),
+					 "%b %d %H:%M:%S", tb);
+				buff[sizeof(buff)-1] = '\0';
 
-			fprintf(stdout, "%s | ", buff);
+				fprintf(stdout, "%s | ", buff);
+			}
 			vfprintf(stdout, fmt, ap);
 		}
 		else

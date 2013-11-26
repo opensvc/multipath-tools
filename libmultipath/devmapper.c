@@ -71,15 +71,17 @@ dm_write_log (int level, const char *file, int line, const char *f, ...)
 		return;
 
 	va_start(ap, f);
-	if (!logsink) {
-		time_t t = time(NULL);
-		struct tm *tb = localtime(&t);
-		char buff[16];
+	if (logsink < 1) {
+		if (logsink == 0) {
+			time_t t = time(NULL);
+			struct tm *tb = localtime(&t);
+			char buff[16];
 
-		strftime(buff, sizeof(buff), "%b %d %H:%M:%S", tb);
-		buff[sizeof(buff)-1] = '\0';
+			strftime(buff, sizeof(buff), "%b %d %H:%M:%S", tb);
+			buff[sizeof(buff)-1] = '\0';
 
-		fprintf(stdout, "%s | ", buff);
+			fprintf(stdout, "%s | ", buff);
+		}
 		fprintf(stdout, "libdevmapper: %s(%i): ", file, line);
 		vfprintf(stdout, f, ap);
 		fprintf(stdout, "\n");
