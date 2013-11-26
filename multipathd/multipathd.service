@@ -6,11 +6,11 @@ DefaultDependencies=no
 Conflicts=shutdown.target
 
 [Service]
-Type=forking
-PIDFile=/var/run/multipathd.pid
-ExecStart=/sbin/multipathd
+ExecStartPre=/sbin/modprobe dm-multipath
+ExecStart=/sbin/multipathd -d -s
 ExecReload=/sbin/multipathd reconfigure
-#ExecStop=/path/to/scrip delete-me if not necessary
+ExecStop=/sbin/multipathd shutdown
 
 [Install]
 WantedBy=sysinit.target
+Also=multipathd.socket

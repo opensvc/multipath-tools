@@ -1,0 +1,5 @@
+[Socket]
+ListenStream=@/org/kernel/linux/storage/multipathd
+
+[Install]
+WantedBy=sockets.target
