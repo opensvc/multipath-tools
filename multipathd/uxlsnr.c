@@ -112,10 +112,8 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 
 	ux_sock = ux_socket_listen(DEFAULT_SOCKET);
 
-	if (ux_sock == -1) {
-		condlog(0, "ux_socket_listen error");
+	if (ux_sock == -1)
 		exit(1);
-	}
 
 	pthread_cleanup_push(uxsock_cleanup, NULL);
 

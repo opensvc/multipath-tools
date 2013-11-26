@@ -121,10 +121,8 @@ int uxclnt(char * inbuf)
 	int fd;
 
 	fd = ux_socket_connect(DEFAULT_SOCKET);
-	if (fd == -1) {
-		perror("ux_socket_connect");
+	if (fd == -1)
 		exit(1);
-	}
 
 	if (inbuf)
 		process_req(fd, inbuf);

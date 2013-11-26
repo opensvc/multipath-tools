@@ -19,6 +19,7 @@
 
 #include "memory.h"
 #include "uxsock.h"
+#include "debug.h"
 
 /*
  * connect to a unix domain socket
@@ -36,10 +37,12 @@ int ux_socket_connect(const char *name)
 
 	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
 	if (fd == -1) {
+		condlog(3, "Couldn't create ux_socket, error %d", errno);
 		return -1;
 	}
 
 	if (connect(fd, (struct sockaddr *)&addr, len) == -1) {
+		condlog(3, "Couldn't connect to ux_socket, error %d", errno);
 		close(fd);
 		return -1;
 	}
@@ -57,7 +60,10 @@ int ux_socket_listen(const char *name)
 	struct sockaddr_un addr;
 
 	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
-	if (fd == -1) return -1;
+	if (fd == -1) {
+		condlog(3, "Couldn't create ux_socket, error %d", errno);
+		return -1;
+	}
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_LOCAL;
@@ -66,15 +72,16 @@ int ux_socket_listen(const char *name)
 	strncpy(&addr.sun_path[1], name, len);
 
 	if (bind(fd, (struct sockaddr *)&addr, len) == -1) {
+		condlog(3, "Couldn't bind to ux_socket, error %d", errno);
 		close(fd);
 		return -1;
 	}
 
 	if (listen(fd, 10) == -1) {
+		condlog(3, "Couldn't listen to ux_socket, error %d", errno);
 		close(fd);
 		return -1;
 	}
-
 	return fd;
 }
 
