@@ -345,14 +345,14 @@ __setup_multipath (struct vectors * vecs, struct multipath * mpp, int reset)
 		goto out;
 	}
 
-	set_multipath_wwid(mpp);
-	mpp->mpe = find_mpe(mpp->wwid);
-	condlog(3, "%s: discover", mpp->alias);
-
 	if (update_multipath_strings(mpp, vecs->pathvec)) {
 		condlog(0, "%s: failed to setup multipath", mpp->alias);
 		goto out;
 	}
+
+	set_multipath_wwid(mpp);
+	mpp->mpe = find_mpe(mpp->wwid);
+	condlog(3, "%s: discover", mpp->alias);
 
 	if (!mpp->hwe)
 		mpp->hwe = extract_hwe_from_path(mpp);
