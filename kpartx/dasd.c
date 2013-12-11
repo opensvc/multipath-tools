@@ -46,6 +46,8 @@ unsigned long long sectors512(unsigned long long sectors, int blocksize)
 	return sectors * (blocksize >> 9);
 }
 
+typedef unsigned int __attribute__((__may_alias__)) label_ints_t;
+
 /*
  */
 int 
@@ -169,7 +171,7 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 		/*
 		 * VM style CMS1 labeled disk
 		 */
-		unsigned int *label = (unsigned int *) &vlabel;
+		label_ints_t *label = (label_ints_t *) &vlabel;
 
 		blocksize = label[4];
 		if (label[14] != 0) {
