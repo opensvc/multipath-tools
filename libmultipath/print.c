@@ -426,6 +426,16 @@ snprint_path_serial (char * buff, size_t len, struct path * pp)
 }
 
 static int
+snprint_path_mpp (char * buff, size_t len, struct path * pp)
+{
+	if (!pp->mpp)
+		return snprintf(buff, len, "[orphan]");
+	if (!pp->mpp->alias)
+		return snprintf(buff, len, "[unknown]");
+	return snprint_str(buff, len, pp->mpp->alias);
+}
+
+static int
 snprint_path_checker (char * buff, size_t len, struct path * pp)
 {
 	struct checker * c = &pp->checker;
@@ -468,6 +478,7 @@ struct path_data pd[] = {
 	{'p', "pri",           0, snprint_pri},
 	{'S', "size",          0, snprint_path_size},
 	{'z', "serial",        0, snprint_path_serial},
+	{'m', "multipath",     0, snprint_path_mpp},
 	{0, NULL, 0 , NULL}
 };
 
