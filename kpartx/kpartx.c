@@ -205,7 +205,6 @@ main(int argc, char **argv){
 	char * delim = NULL;
 	char *uuid = NULL;
 	char *mapname = NULL;
-	int loopro = 0;
 	int hotplug = 0;
 	int loopcreated = 0;
 	struct stat buf;
@@ -316,7 +315,7 @@ main(int argc, char **argv){
 		if (!loopdev) {
 			loopdev = find_unused_loop_device();
 
-			if (set_loop(loopdev, device, 0, &loopro)) {
+			if (set_loop(loopdev, device, 0, &ro)) {
 				fprintf(stderr, "can't set up loop\n");
 				exit (1);
 			}

@@ -230,7 +230,7 @@ set_loop (const char *device, const char *file, int offset, int *loopro)
 
 	if ((ffd = open (file, mode)) < 0) {
 
-		if (!*loopro && errno == EROFS)
+		if (!*loopro && (errno == EROFS || errno == EACCES))
 			ffd = open (file, mode = O_RDONLY);
 
 		if (ffd < 0) {
