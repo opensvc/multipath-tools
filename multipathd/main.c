@@ -139,7 +139,6 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 	struct multipath * ompp;
 	vector ompv = vecs->mpvec;
 	unsigned int i;
-	int j;
 
 	vector_foreach_slot (ompv, ompp, i) {
 		condlog(3, "%s: coalesce map", ompp->alias);
@@ -154,16 +153,17 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 				/*
 				 * may be just because the device is open
 				 */
+				if (setup_multipath(vecs, ompp) != 0) {
+					i--;
+					continue;
+				}
 				if (!vector_alloc_slot(nmpv))
 					return 1;
 
 				vector_set_slot(nmpv, ompp);
-				setup_multipath(vecs, ompp);
 
-				if ((j = find_slot(ompv, (void *)ompp)) != -1)
-					vector_del_slot(ompv, j);
-
-				continue;
+				vector_del_slot(ompv, i);
+				i--;
 			}
 			else {
 				dm_lib_release();

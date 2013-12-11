@@ -634,7 +634,8 @@ cli_resize(void *v, char **reply, int *len, void *data)
 		return 1;
 
 	dm_lib_release();
-	setup_multipath(vecs, mpp);
+	if (setup_multipath(vecs, mpp) != 0)
+		return 1;
 	sync_map_state(mpp);
 
 	return 0;
