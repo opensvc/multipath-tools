@@ -1521,6 +1521,12 @@ sigusr1 (int sig)
 }
 
 static void
+sigusr2 (int sig)
+{
+	condlog(3, "SIGUSR2 received");
+}
+
+static void
 signal_init(void)
 {
 	sigset_t set;
@@ -1528,10 +1534,12 @@ signal_init(void)
 	sigemptyset(&set);
 	sigaddset(&set, SIGHUP);
 	sigaddset(&set, SIGUSR1);
+	sigaddset(&set, SIGUSR2);
 	pthread_sigmask(SIG_BLOCK, &set, NULL);
 
 	signal_set(SIGHUP, sighup);
 	signal_set(SIGUSR1, sigusr1);
+	signal_set(SIGUSR2, sigusr2);
 	signal_set(SIGINT, sigend);
 	signal_set(SIGTERM, sigend);
 	signal(SIGPIPE, SIG_IGN);

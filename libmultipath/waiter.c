@@ -57,6 +57,7 @@ void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 	thread = mpp->waiter;
 	mpp->waiter = (pthread_t)0;
 	pthread_cancel(thread);
+	pthread_kill(thread, SIGUSR2);
 }
 
 /*
@@ -65,6 +66,7 @@ void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs)
  */
 int waiteventloop (struct event_thread *waiter)
 {
+	sigset_t set, oldset;
 	int event_nr;
 	int r;
 
@@ -97,8 +99,15 @@ int waiteventloop (struct event_thread *waiter)
 	dm_task_no_open_count(waiter->dmt);
 
 	/* wait */
-	r = dm_task_run(waiter->dmt);
+	sigemptyset(&set);
+	sigaddset(&set, SIGUSR2);
+	pthread_sigmask(SIG_UNBLOCK, &set, &oldset);
 
+	pthread_testcancel();
+	r = dm_task_run(waiter->dmt);
+	pthread_testcancel();
+
+	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 	dm_task_destroy(waiter->dmt);
 	waiter->dmt = NULL;
 
