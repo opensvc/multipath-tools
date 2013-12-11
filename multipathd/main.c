@@ -1609,6 +1609,7 @@ child (void * param)
 	struct multipath * mpp;
 	int i;
 	int rc, pid_rc;
+	char *envp;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	sem_init(&exit_sem, 0, 0);
