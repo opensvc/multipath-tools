@@ -300,42 +300,39 @@ dm_addmap (int task, const char *target, struct multipath *mpp, char * params,
 	return r;
 }
 
-static int
-_dm_addmap_create (struct multipath *mpp, char * params, int ro) {
-	int r;
-	r = dm_addmap(DM_DEVICE_CREATE, TGT_MPATH, mpp, params, 1, ro);
-	/*
-	 * DM_DEVICE_CREATE is actually DM_DEV_CREATE + DM_TABLE_LOAD.
-	 * Failing the second part leaves an empty map. Clean it up.
-	 */
-	if (!r && dm_map_present(mpp->alias)) {
-		condlog(3, "%s: failed to load map (a path might be in use)",
-			mpp->alias);
-		dm_flush_map_nosync(mpp->alias);
+extern int
+dm_addmap_create (struct multipath *mpp, char * params) {
+	int ro;
+
+	for (ro = 0; ro <= 1; ro++) {
+		int err;
+
+		if (dm_addmap(DM_DEVICE_CREATE, TGT_MPATH, mpp, params, 1, ro))
+			return 1;
+		/*
+		 * DM_DEVICE_CREATE is actually DM_DEV_CREATE + DM_TABLE_LOAD.
+		 * Failing the second part leaves an empty map. Clean it up.
+		 */
+		err = errno;
+		if (dm_map_present(mpp->alias)) {
+			condlog(3, "%s: failed to load map (a path might be in use)", mpp->alias);
+			dm_flush_map_nosync(mpp->alias);
+		}
+		if (err != EROFS)
+			break;
 	}
-	return r;
+	return 0;
 }
 
 #define ADDMAP_RW 0
 #define ADDMAP_RO 1
 
 extern int
-dm_addmap_create (struct multipath *mpp, char *params) {
-	return _dm_addmap_create(mpp, params, ADDMAP_RW);
-}
-
-extern int
-dm_addmap_create_ro (struct multipath *mpp, char *params) {
-	return _dm_addmap_create(mpp, params, ADDMAP_RO);
-}
-
-extern int
 dm_addmap_reload (struct multipath *mpp, char *params) {
-	return dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, params, 0, ADDMAP_RW);
-}
-
-extern int
-dm_addmap_reload_ro (struct multipath *mpp, char *params) {
+	if (dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, params, 0, ADDMAP_RW))
+		return 1;
+	if (errno != EROFS)
+		return 0;
 	return dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, params, 0, ADDMAP_RO);
 }
 
