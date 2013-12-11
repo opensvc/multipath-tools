@@ -2459,16 +2459,12 @@ snprint_def_verbosity (char * buff, int len, void * data)
 static int
 snprint_def_max_polling_interval (char * buff, int len, void * data)
 {
-	if (conf->max_checkint == MAX_CHECKINT(conf->checkint))
-		return 0;
 	return snprintf(buff, len, "%i", conf->max_checkint);
 }
 
 static int
 snprint_reassign_maps (char * buff, int len, void * data)
 {
-	if (conf->reassign_maps == DEFAULT_REASSIGN_MAPS)
-		return 0;
 	return snprintf(buff, len, "\"%s\"",
 			conf->reassign_maps?"yes":"no");
 }
