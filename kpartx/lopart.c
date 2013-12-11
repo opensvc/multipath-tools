@@ -32,6 +32,10 @@
 #include "lopart.h"
 #include "xstrncpy.h"
 
+#ifndef LOOP_CTL_GET_FREE
+#define LOOP_CTL_GET_FREE       0x4C82
+#endif
+
 #if !defined (__alpha__) && !defined (__ia64__) && !defined (__x86_64__) \
         && !defined (__s390x__)
 #define int2ptr(x)	((void *) ((int) x))
@@ -140,14 +144,23 @@ find_unused_loop_device (void)
 
 	char dev[20];
 	char *loop_formats[] = { "/dev/loop%d", "/dev/loop/%d" };
-	int i, j, fd, somedev = 0, someloop = 0, loop_known = 0;
+	int i, j, fd, first = 0, somedev = 0, someloop = 0, loop_known = 0;
 	struct stat statbuf;
 	struct loop_info loopinfo;
 	FILE *procdev;
 
+	if (stat("/dev/loop-control", &statbuf) == 0 &&
+	    S_ISCHR(statbuf.st_mode)) {
+		fd = open("/dev/loop-control", O_RDWR);
+		if (fd >= 0)
+			first = ioctl(fd, LOOP_CTL_GET_FREE);
+		close(fd);
+		if (first < 0)
+			first = 0;
+	}
 	for (j = 0; j < SIZE(loop_formats); j++) {
 
-	    for(i = 0; i < 256; i++) {
+	    for(i = first; i < 256; i++) {
 		sprintf(dev, loop_formats[j], i);
 
 		if (stat (dev, &statbuf) == 0 && S_ISBLK(statbuf.st_mode)) {
