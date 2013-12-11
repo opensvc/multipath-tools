@@ -794,6 +794,7 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ONTAP,
 		.prio_args     = NULL,
 		.retain_hwhandler = RETAIN_HWHANDLER_ON,
+		.user_friendly_names = USER_FRIENDLY_NAMES_OFF,
 		.detect_prio   = DETECT_PRIO_ON,
 	},
 	/*
