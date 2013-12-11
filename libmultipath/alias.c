@@ -46,11 +46,11 @@ format_devname(char *name, int id, int len, char *prefix)
 	memset(name,0, len);
 	strcpy(name, prefix);
 	for (pos = len - 1; pos >= prefix_len; pos--) {
+		id--;
 		name[pos] = 'a' + id % 26;
 		if (id < 26)
 			break;
 		id /= 26;
-		id--;
 	}
 	memmove(name + prefix_len, name + pos, len - pos);
 	name[prefix_len + len - pos] = '\0';
@@ -66,13 +66,22 @@ scan_devname(char *alias, char *prefix)
 	if (!prefix || strncmp(alias, prefix, strlen(prefix)))
 		return -1;
 
+	if (strlen(alias) == strlen(prefix))
+		return -1;	
+
+	if (strlen(alias) > strlen(prefix) + 7)
+		/* id of 'aaaaaaaa' overflows int */
+		return -1;
+
 	c = alias + strlen(prefix);
 	while (*c != '\0' && *c != ' ' && *c != '\t') {
+		if (*c < 'a' || *c > 'z')
+			return -1;
 		i = *c - 'a';
 		n = ( n * 26 ) + i;
+		if (n < 0)
+			return -1;
 		c++;
-		if (*c < 'a' || *c > 'z')
-			break;
 		n++;
 	}
 
@@ -84,7 +93,9 @@ lookup_binding(FILE *f, char *map_wwid, char **map_alias, char *prefix)
 {
 	char buf[LINE_MAX];
 	unsigned int line_nr = 0;
-	int id = 0;
+	int id = 1;
+	int biggest_id = 1;
+	int smallest_bigger_id = INT_MAX;
 
 	*map_alias = NULL;
 
@@ -100,8 +111,12 @@ lookup_binding(FILE *f, char *map_wwid, char **map_alias, char *prefix)
 		if (!alias) /* blank line */
 			continue;
 		curr_id = scan_devname(alias, prefix);
-		if (curr_id >= id)
-			id = curr_id + 1;
+		if (curr_id == id)
+			id++;
+		if (curr_id > biggest_id)
+			biggest_id = curr_id;
+		if (curr_id > id && curr_id < smallest_bigger_id)
+			smallest_bigger_id = curr_id;
 		wwid = strtok(NULL, " \t");
 		if (!wwid){
 			condlog(3,
@@ -116,11 +131,17 @@ lookup_binding(FILE *f, char *map_wwid, char **map_alias, char *prefix)
 			if (*map_alias == NULL)
 				condlog(0, "Cannot copy alias from bindings "
 					"file : %s", strerror(errno));
-			return id;
+			return 0;
 		}
 	}
 	condlog(3, "No matching wwid [%s] in bindings file.", map_wwid);
-	return id;
+	if (id < 0) {
+		condlog(0, "no more available user_friendly_names");
+		return 0;
+	}
+	if (id < smallest_bigger_id)
+		return id;
+	return biggest_id + 1;
 }
 
 static int
@@ -254,7 +275,7 @@ get_user_friendly_alias(char *wwid, char *file, char *prefix,
 		return NULL;
 	}
 
-	if (!alias && can_write && !bindings_read_only)
+	if (!alias && can_write && !bindings_read_only && id)
 		alias = allocate_binding(fd, wwid, id, prefix);
 
 	fclose(f);
