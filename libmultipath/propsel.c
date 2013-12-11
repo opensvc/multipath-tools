@@ -396,10 +396,17 @@ select_getuid (struct path * pp)
 void
 detect_prio(struct path * pp)
 {
+	int ret;
 	struct prio *p = &pp->prio;
 
-	if (get_target_port_group_support(pp->fd) > 0)
-		prio_get(p, PRIO_ALUA, DEFAULT_PRIO_ARGS);
+	if (get_target_port_group_support(pp->fd) <= 0)
+		return;
+	ret = get_target_port_group(pp->fd);
+	if (ret < 0)
+		return;
+	if (get_asymmetric_access_state(pp->fd, ret) < 0)
+		return;
+	prio_get(p, PRIO_ALUA, DEFAULT_PRIO_ARGS);
 }
 
 extern int
