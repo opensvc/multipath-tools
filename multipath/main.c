@@ -255,16 +255,7 @@ configure (void)
 	vecs.pathvec = pathvec;
 	vecs.mpvec = curmp;
 
-	/*
-	 * dev is "/dev/" . "sysfs block dev"
-	 */
-	if (conf->dev) {
-		if (!strncmp(conf->dev, "/dev/", 5) &&
-		    strlen(conf->dev) > 5)
-			dev = conf->dev + 5;
-		else
-			dev = conf->dev;
-	}
+	dev = convert_dev(conf->dev, (conf->dev_type == DEV_DEVNODE));
 
 	/*
 	 * if we have a blacklisted device parameter, exit early
@@ -428,16 +419,6 @@ get_dev_type(char *dev) {
 		return DEV_DEVMAP;
 }
 
-static void
-convert_dev(char *dev)
-{
-	char *ptr = strstr(dev, "cciss/");
-	if (ptr) {
-		ptr += 5;
-		*ptr = '!';
-	}
-}
-
 int
 main (int argc, char *argv[])
 {
@@ -552,8 +533,6 @@ main (int argc, char *argv[])
 
 		strncpy(conf->dev, argv[optind], FILE_NAME_SIZE);
 		conf->dev_type = get_dev_type(conf->dev);
-		if (conf->dev_type == DEV_DEVNODE)
-			convert_dev(conf->dev);
 	}
 	conf->daemon = 0;
 

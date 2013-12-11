@@ -235,6 +235,28 @@ skip_proc:
 	return 0;
 }
 
+/* This function returns a pointer inside of the supplied pathname string.
+ * If is_path_device is true, it may also modify the supplied string */
+char *convert_dev(char *name, int is_path_device)
+{
+	char *ptr;
+
+	if (!name)
+		return NULL;
+	if (is_path_device) {
+		ptr = strstr(name, "cciss/");
+		if (ptr) {
+			ptr += 5;
+			*ptr = '!';
+		}
+	}
+	if (!strncmp(name, "/dev/", 5) && strlen(name) > 5)
+		ptr = name + 5;
+	else
+		ptr = name;
+	return ptr;
+}
+
 dev_t parse_devt(const char *dev_t)
 {
 	int maj, min;
