@@ -4,6 +4,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdio.h>
+#include <sys/types.h>
 
 #include "checkers.h"
 #include "vector.h"
@@ -98,6 +99,11 @@ replace_wwids(vector mp)
 	}
 	if (ftruncate(fd, 0) < 0) {
 		condlog(0, "cannot truncate wwids file : %s", strerror(errno));
+		goto out_file;
+	}
+	if (lseek(fd, 0, SEEK_SET) < 0) {
+		condlog(0, "cannot seek to the start of the file : %s",
+			strerror(errno));
 		goto out_file;
 	}
 	len = strlen(WWIDS_FILE_HEADER);
