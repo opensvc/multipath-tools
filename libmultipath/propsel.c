@@ -263,8 +263,6 @@ select_alias (struct multipath * mp)
 					conf->bindings_file, mp->alias_prefix, conf->bindings_read_only);
 		}
 		if (mp->alias == NULL)
-			mp->alias = dm_get_name(mp->wwid);
-		if (mp->alias == NULL)
 			mp->alias = STRDUP(mp->wwid);
 	}
 

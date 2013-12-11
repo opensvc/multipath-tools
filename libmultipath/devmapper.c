@@ -922,51 +922,6 @@ out:
 	return r;
 }
 
-extern char *
-dm_get_name(char *uuid)
-{
-	struct dm_task *dmt;
-	struct dm_info info;
-	char *prefixed_uuid, *name = NULL;
-	const char *nametmp;
-
-	dmt = dm_task_create(DM_DEVICE_INFO);
-	if (!dmt)
-		return NULL;
-
-	prefixed_uuid = MALLOC(UUID_PREFIX_LEN + strlen(uuid) + 1);
-	if (!prefixed_uuid) {
-		condlog(0, "cannot create prefixed uuid : %s",
-			strerror(errno));
-		goto freeout;
-	}
-	sprintf(prefixed_uuid, UUID_PREFIX "%s", uuid);
-	if (!dm_task_set_uuid(dmt, prefixed_uuid))
-		goto freeout;
-
-	if (!dm_task_run(dmt))
-		goto freeout;
-
-	if (!dm_task_get_info(dmt, &info) || !info.exists)
-		goto freeout;
-
-	nametmp = dm_task_get_name(dmt);
-	if (nametmp && strlen(nametmp)) {
-		name = MALLOC(strlen(nametmp) + 1);
-		if (name)
-			strcpy(name, nametmp);
-	} else {
-		condlog(2, "%s: no device-mapper name found", uuid);
-	}
-
-freeout:
-	if (prefixed_uuid)
-		FREE(prefixed_uuid);
-	dm_task_destroy(dmt);
-
-	return name;
-}
-
 int
 dm_geteventnr (char *name)
 {
