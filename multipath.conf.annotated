@@ -275,7 +275,22 @@
 #	#           the user_friendly_names option.
 #	# values  : <full_pathname>
 #	# default : "/var/lib/multipath/bindings"
-#	bindings_file "/etc/multipath_bindings"
+#	bindings_file "/etc/multipath/bindings"
+#
+#	# name    : wwids_file
+#	# scope   : multipath
+#	# desc    : The location of the wwids file multipath uses to
+#       #           keep track of the created multipath devices.
+#	# values  : <full_pathname>
+#	# default : "/var/lib/multipath/wwids"
+#	wwids_file "/etc/multipath/wwids"
+#
+#	# name    : reservation_key
+#	# scope   : multipath
+#	# desc    : Service action reservation key used by mpathpersist.
+#	# values  : <key>
+#	# default : (null)
+#	reservation_key "mpathkey"
 #
 #}
 #	
