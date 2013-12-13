@@ -1142,6 +1142,17 @@ check_path (struct vectors * vecs, struct path * pp)
 		pathinfo(pp, conf->hwtable, 0);
 		return 1;
 	}
+	if (!pp->mpp) {
+		if (!strlen(pp->wwid) &&
+		    (newstate == PATH_UP || newstate == PATH_GHOST)) {
+			condlog(2, "%s: add missing path", pp->dev);
+			if (pathinfo(pp, conf->hwtable, DI_ALL) == 0) {
+				ev_add_path(pp, vecs);
+				pp->tick = 1;
+			}
+		}
+		return;
+	}
 	/*
 	 * Async IO in flight. Keep the previous path state
 	 * and reschedule as soon as possible
