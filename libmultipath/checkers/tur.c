@@ -298,7 +298,6 @@ libcheck_check (struct checker * c)
 				ct->running = 0;
 				MSG(c, MSG_TUR_TIMEOUT);
 				tur_status = PATH_TIMEOUT;
-				ct->state = PATH_UNCHECKED;
 			} else {
 				condlog(3, "%d:%d: tur checker not finished",
 					TUR_DEVT(ct));
@@ -317,9 +316,9 @@ libcheck_check (struct checker * c)
 		if (ct->thread) {
 			/* pthread cancel failed. continue in sync mode */
 			pthread_mutex_unlock(&ct->lock);
-			condlog(3, "%d:%d: tur thread not responding, "
-				"using sync mode", TUR_DEVT(ct));
-			return tur_check(c->fd, c->timeout, c->message);
+			condlog(3, "%d:%d: tur thread not responding",
+				TUR_DEVT(ct));
+			return PATH_TIMEOUT;
 		}
 		/* Start new TUR checker */
 		ct->state = PATH_UNCHECKED;
