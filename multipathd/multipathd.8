@@ -128,10 +128,53 @@ Restore queuing on multipahted map $map
 .B quit|exit
 End interactive session.
 
+.SH "SYSTEMD INTEGRATION"
+When compiled with systemd support two systemd service files are
+installed,
+.I multipathd.service
+and
+.I multipathd.socket
+The
+.I multipathd.socket
+service instructs systemd to intercept the CLI command socket, so
+that any call to the CLI interface will start-up the daemon if
+required.
+The
+.I multipathd.service
+file carries the definitions for controlling the multipath daemon.
+The daemon itself uses the
+.B sd_notify(3)
+interface to communicate with systemd. The following unit keywords are
+recognized:
+.TP
+.I WatchdogSec=
+Enables the internal watchdog from systemd. multipath will send a
+notification via
+.B sd_notify(3)
+to systemd to reset the watchdog. If specified the
+.I polling_interval
+and
+.I max_polling_interval
+settings will be overridden by the watchdog settings.
+
+Please note that systemd prior to version 207 has issues which prevent
+the systemd-provided watchdog from working correctly. So the watchdog
+is not enabled per default, but has to be enabled manually by updating
+the multipathd.service file.
+.TP
+.I OOMScoreAdjust=
+Overrides the internal OOM adjust mechanism
+.TP
+.I LimitNOFILE=
+Overrides the
+.I max_fds
+configuration setting.
+
 .SH "SEE ALSO"
 .BR multipath (8)
 .BR kpartx (8)
-.BR hotplug (8)
+.BR sd_notify (3)
+.BR system.service (5)
 .SH "AUTHORS"
 .B multipathd
 was developed by Christophe Varoqui, <christophe.varoqui@opensvc.com> and others.

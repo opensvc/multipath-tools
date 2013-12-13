@@ -1294,7 +1294,10 @@ checkerloop (void *ap)
 		lock(vecs->lock);
 		pthread_testcancel();
 		condlog(4, "tick");
-
+#ifdef USE_SYSTEMD
+		if (conf->watchdog)
+			sd_notify(0, "WATCHDOG=1");
+#endif
 		if (vecs->pathvec) {
 			vector_foreach_slot (vecs->pathvec, pp, i) {
 				num_paths += check_path(vecs, pp);
@@ -1616,6 +1619,9 @@ child (void * param)
 	struct vectors * vecs;
 	struct multipath * mpp;
 	int i;
+#ifdef USE_SYSTEMD
+	unsigned long checkint;
+#endif
 	int rc, pid_rc;
 	char *envp;
 
@@ -1696,6 +1702,21 @@ child (void * param)
 
 	conf->daemon = 1;
 	udev_set_sync_support(0);
+#ifdef USE_SYSTEMD
+	envp = getenv("WATCHDOG_USEC");
+	if (envp && sscanf(envp, "%lu", &checkint) == 1) {
+		/* Value is in microseconds */
+		conf->max_checkint = checkint / 1000000;
+		/* Rescale checkint */
+		if (conf->checkint > conf->max_checkint)
+			conf->checkint = conf->max_checkint;
+		else
+			conf->checkint = conf->max_checkint / 4;
+		condlog(3, "enabling watchdog, interval %d max %d",
+			conf->checkint, conf->max_checkint);
+		conf->watchdog = conf->checkint;
+	}
+#endif
 	/*
 	 * Start uevent listener early to catch events
 	 */

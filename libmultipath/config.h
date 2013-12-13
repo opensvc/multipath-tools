@@ -98,6 +98,9 @@ struct config {
 	int queue_without_daemon;
 	int checker_timeout;
 	int daemon;
+#ifdef USE_SYSTEMD
+	int watchdog;
+#endif
 	int flush_on_last_del;
 	int attribute_flags;
 	int fast_io_fail;
