@@ -685,7 +685,7 @@ select_retain_hwhandler (struct multipath * mp)
 
 	if (!VERSION_GE(conf->version, minv_dm_retain)) {
 		mp->retain_hwhandler = RETAIN_HWHANDLER_OFF;
-		condlog(3, "%s: retain_attached_hw_hander disabled (requires kernel version >= 1.5.0)", mp->alias);
+		condlog(3, "%s: retain_attached_hw_handler disabled (requires kernel version >= 1.5.0)", mp->alias);
 		return 0;
 	}
 
