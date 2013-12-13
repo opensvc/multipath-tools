@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <syslog.h>
+#include <time.h>
 
 #include "memory.h"
 #include "log.h"

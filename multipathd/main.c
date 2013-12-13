@@ -22,6 +22,7 @@
 #endif
 #include <semaphore.h>
 #include <mpath_persist.h>
+#include <time.h>
 
 /*
  * libcheckers
