@@ -38,7 +38,7 @@ man3dir      = $(prefix)/usr/share/man/man3
 rcdir	    = $(prefix)/etc/init.d
 syslibdir   = $(prefix)/$(LIB)
 libdir	    = $(prefix)/$(LIB)/multipath
-unitdir     = $(prefix)/lib/systemd/system
+unitdir     = $(prefix)/usr/lib/systemd/system
 mpathpersistdir = $(TOPDIR)/libmpathpersist
 
 GZIP        = gzip -9 -c
