@@ -1125,6 +1125,11 @@ check_path (struct vectors * vecs, struct path * pp)
 	pp->tick = conf->checkint;
 
 	newstate = path_offline(pp);
+	if (newstate == PATH_REMOVED) {
+		condlog(2, "%s: remove path (checker)", pp->dev);
+		ev_remove_path(pp, vecs);
+		return;
+	}
 	if (newstate == PATH_UP)
 		newstate = get_state(pp, 1);
 	else

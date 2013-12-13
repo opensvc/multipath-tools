@@ -59,7 +59,7 @@ ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
 	condlog(4, "open '%s'", devpath);
 	if (stat(devpath, &statbuf) != 0) {
 		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
-		return -errno;
+		return -ENXIO;
 	}
 
 	/* skip directories */
