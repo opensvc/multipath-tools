@@ -8,6 +8,7 @@ Conflicts=shutdown.target
 [Service]
 Type=notify
 NotifyAccess=main
+LimitCORE=infinity
 ExecStartPre=/sbin/modprobe dm-multipath
 ExecStart=/sbin/multipathd -d -s
 ExecReload=/sbin/multipathd reconfigure
