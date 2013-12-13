@@ -10,13 +10,14 @@
 #include "vector.h"
 #include "structs.h"
 
-void
+size_t
 strchop(char *str)
 {
 	int i;
 
 	for (i=strlen(str)-1; i >=0 && isspace(str[i]); --i) ;
 	str[++i] = '\0';
+	return strlen(str);
 }
 
 int

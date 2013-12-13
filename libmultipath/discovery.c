@@ -164,7 +164,7 @@ sysfs_get_##fname (struct udev_device * udev, char * buff, size_t len)	\
 		return -EINVAL;						\
 	}								\
 	ret = strlcpy(buff, attr, len);					\
-	return ret;							\
+	return strchop(buff);						\
 }
 
 declare_sysfs_get_str(devtype);
