@@ -143,7 +143,6 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 extern ssize_t								\
 sysfs_get_##fname (struct udev_device * udev, char * buff, size_t len)	\
 {									\
-	ssize_t ret;							\
 	const char * attr;						\
 	const char * devname;						\
 									\
@@ -163,7 +162,7 @@ sysfs_get_##fname (struct udev_device * udev, char * buff, size_t len)	\
 			devname, #fname);				\
 		return -EINVAL;						\
 	}								\
-	ret = strlcpy(buff, attr, len);					\
+	strlcpy(buff, attr, len);					\
 	return strchop(buff);						\
 }
 
