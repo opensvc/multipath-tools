@@ -839,6 +839,8 @@ out:
 static void *
 ueventloop (void * ap)
 {
+	struct udev *udev = ap;
+
 	if (uevent_listen(udev))
 		condlog(0, "error starting uevent listener");
 
