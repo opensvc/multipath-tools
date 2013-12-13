@@ -1436,6 +1436,9 @@ reconfigure (struct vectors * vecs)
 	vecs->pathvec = NULL;
 	conf = NULL;
 
+	/* Re-read any timezone changes */
+	tzset();
+
 	if (!load_config(DEFAULT_CONFIGFILE, udev)) {
 		conf->verbosity = old->verbosity;
 		conf->daemon = 1;

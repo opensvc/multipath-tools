@@ -99,6 +99,7 @@ void log_close (void)
 void log_reset (char *program_name)
 {
 	closelog();
+	tzset();
 	openlog(program_name, 0, LOG_DAEMON);
 }
 
