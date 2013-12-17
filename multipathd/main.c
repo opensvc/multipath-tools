@@ -1107,6 +1107,9 @@ int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
 	return 0;
 }
 
+/*
+ * Returns '1' if the path has been checked, '0' otherwise
+ */
 int
 check_path (struct vectors * vecs, struct path * pp)
 {
@@ -1131,7 +1134,7 @@ check_path (struct vectors * vecs, struct path * pp)
 	if (newstate == PATH_REMOVED) {
 		condlog(2, "%s: remove path (checker)", pp->dev);
 		ev_remove_path(pp, vecs);
-		return;
+		return 0;
 	}
 	if (newstate == PATH_UP)
 		newstate = get_state(pp, 1);
@@ -1152,7 +1155,7 @@ check_path (struct vectors * vecs, struct path * pp)
 				pp->tick = 1;
 			}
 		}
-		return;
+		return 0;
 	}
 	/*
 	 * Async IO in flight. Keep the previous path state
