@@ -157,13 +157,12 @@ sysfs_get_##fname (struct udev_device * udev, char * buff, size_t len)	\
 			devname, #fname);				\
 		return -ENXIO;						\
 	}								\
-	if (strlen(attr) > len) {					\
+	if (strchop(attr) > len) {					\
 		condlog(3, "%s: overflow in attribute %s",		\
 			devname, #fname);				\
 		return -EINVAL;						\
 	}								\
-	strlcpy(buff, attr, len);					\
-	return strchop(buff);						\
+	return strlcpy(buff, attr, len);				\
 }
 
 declare_sysfs_get_str(devtype);
