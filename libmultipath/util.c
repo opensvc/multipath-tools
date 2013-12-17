@@ -44,8 +44,7 @@ basenamecpy (const char * str1, char * str2, int str2len)
 
 	strncpy(str2, p, str2len);
 	str2[str2len - 1] = '\0';
-	strchop(str2);
-	return strlen(str2);
+	return strchop(str2);
 }
 
 int
