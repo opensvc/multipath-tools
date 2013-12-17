@@ -142,15 +142,6 @@ size_t strlcat(char *dst, const char *src, size_t size)
 	return bytes;
 }
 
-void remove_trailing_chars(char *path, char c)
-{
-	size_t len;
-
-	len = strlen(path);
-	while (len > 0 && path[len-1] == c)
-		path[--len] = '\0';
-}
-
 extern int
 devt2devname (char *devname, int devname_len, char *devt)
 {
