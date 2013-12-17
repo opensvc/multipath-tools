@@ -1457,6 +1457,7 @@ reconfigure (struct vectors * vecs)
 	tzset();
 
 	if (!load_config(DEFAULT_CONFIGFILE, udev)) {
+		dm_drv_version(conf->version, TGT_MPATH);
 		conf->verbosity = old->verbosity;
 		conf->daemon = 1;
 		configure(vecs, 1);
@@ -1682,6 +1683,7 @@ child (void * param)
 	if (load_config(DEFAULT_CONFIGFILE, udev))
 		goto failed;
 
+	dm_drv_version(conf->version, TGT_MPATH);
 	if (init_checkers()) {
 		condlog(0, "failed to initialize checkers");
 		goto failed;

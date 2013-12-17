@@ -543,7 +543,6 @@ load_config (char * file, struct udev *udev)
 		conf->verbosity = DEFAULT_VERBOSITY;
 
 	conf->udev = udev;
-	dm_drv_version(conf->version, TGT_MPATH);
 	conf->dev_type = DEV_NONE;
 	conf->minio = DEFAULT_MINIO;
 	conf->minio_rq = DEFAULT_MINIO_RQ;

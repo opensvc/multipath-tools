@@ -428,15 +428,7 @@ main (int argc, char *argv[])
 	extern int optind;
 	int r = 1;
 
-	if (getuid() != 0) {
-		fprintf(stderr, "need to be root\n");
-		exit(1);
-	}
-
 	udev = udev_new();
-
-	if (dm_prereq())
-		exit(1);
 
 	if (load_config(DEFAULT_CONFIGFILE, udev))
 		exit(1);
@@ -502,7 +494,7 @@ main (int argc, char *argv[])
 			break;
 		case 't':
 			r = dump_config();
-			goto out;
+			goto out_free_config;
 		case 'h':
 			usage(argv[0]);
 			exit(0);
@@ -525,6 +517,16 @@ main (int argc, char *argv[])
 			exit(1);
 		}
 	}
+
+	if (getuid() != 0) {
+		fprintf(stderr, "need to be root\n");
+		exit(1);
+	}
+
+	if (dm_prereq())
+		exit(1);
+	dm_drv_version(conf->version, TGT_MPATH);
+
 	if (optind < argc) {
 		conf->dev = MALLOC(FILE_NAME_SIZE);
 
@@ -609,6 +611,8 @@ out:
 
 	cleanup_prio();
 	cleanup_checkers();
+
+out_free_config:
 	/*
 	 * Freeing config must be done after dm_lib_exit(), because
 	 * the logging function (dm_write_log()), which is called there,
