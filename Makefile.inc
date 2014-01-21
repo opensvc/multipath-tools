@@ -27,10 +27,14 @@ ifndef SYSTEMD
 	endif
 endif
 
+ifndef SYSTEMDPATH
+	SYSTEMDPATH=usr/lib
+endif
+
 prefix      = 
 exec_prefix = $(prefix)
 bindir      = $(exec_prefix)/sbin
-libudevdir  = ${prefix}/lib/udev
+libudevdir  = $(prefix)/$(SYSTEMDPATH)/udev
 udevrulesdir = $(libudevdir)/rules.d
 multipathdir = $(TOPDIR)/libmultipath
 mandir      = $(prefix)/usr/share/man/man8
@@ -39,7 +43,7 @@ man3dir      = $(prefix)/usr/share/man/man3
 rcdir	    = $(prefix)/etc/init.d
 syslibdir   = $(prefix)/$(LIB)
 libdir	    = $(prefix)/$(LIB)/multipath
-unitdir     = $(prefix)/usr/lib/systemd/system
+unitdir     = $(prefix)/$(SYSTEMDPATH)/systemd/system
 mpathpersistdir = $(TOPDIR)/libmpathpersist
 
 GZIP        = gzip -9 -c
