@@ -32,6 +32,9 @@ GOTO="run_kpartx"
 LABEL="mpath_kpartx_end"
 
 ## Code for other subsystems (non-multipath) could be placed here ##
+ENV{DM_UUID}=="DMRAID-*|dmraid-*", \
+	ENV{DM_SUSPENDED}!="1", ENV{DM_NOSCAN}!="1", \
+	GOTO="run_kpartx"
 
 GOTO="kpartx_end"
 
