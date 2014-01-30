@@ -1409,7 +1409,7 @@ configure (struct vectors * vecs, int start_waiters)
 	struct multipath * mpp;
 	struct path * pp;
 	vector mpvec;
-	int i;
+	int i, ret;
 
 	if (!vecs->pathvec && !(vecs->pathvec = vector_alloc()))
 		return 1;
@@ -1423,7 +1423,9 @@ configure (struct vectors * vecs, int start_waiters)
 	/*
 	 * probe for current path (from sysfs) and map (from dm) sets
 	 */
-	path_discovery(vecs->pathvec, conf, DI_ALL);
+	ret = path_discovery(vecs->pathvec, conf, DI_ALL);
+	if (ret < 0)
+		return 1;
 
 	vector_foreach_slot (vecs->pathvec, pp, i){
 		if (filter_path(conf, pp) > 0){

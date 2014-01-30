@@ -178,7 +178,7 @@ int mpath_persistent_reserve_in (int fd, int rq_servact, struct prin_resp *resp,
 		goto out;
 	}
 
-	if (path_discovery(pathvec, conf, DI_SYSFS | DI_CHECKER)) {
+	if (path_discovery(pathvec, conf, DI_SYSFS | DI_CHECKER) < 0) {
 		ret = MPATH_PR_DMMP_ERROR;
 		goto out1;
 	}
@@ -262,13 +262,13 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	curmp = vector_alloc ();
 	pathvec = vector_alloc ();
 
-	 if (!curmp || !pathvec){
-                condlog (0, "%s: vector allocation failed.", alias);
-                ret = MPATH_PR_DMMP_ERROR;
-                goto out;
-        }
+	if (!curmp || !pathvec){
+		condlog (0, "%s: vector allocation failed.", alias);
+		ret = MPATH_PR_DMMP_ERROR;
+		goto out;
+	}
 
-	if (path_discovery(pathvec, conf, DI_SYSFS | DI_CHECKER)) {
+	if (path_discovery(pathvec, conf, DI_SYSFS | DI_CHECKER) < 0) {
 		ret = MPATH_PR_DMMP_ERROR;
 		goto out1;
 	}

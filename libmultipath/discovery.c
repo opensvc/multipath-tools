@@ -34,7 +34,7 @@ int
 store_pathinfo (vector pathvec, vector hwtable, struct udev_device *udevice,
 		int flag, struct path **pp_ptr)
 {
-	int err = 1;
+	int err = PATHINFO_FAILED;
 	struct path * pp;
 	const char * devname;
 
@@ -43,12 +43,12 @@ store_pathinfo (vector pathvec, vector hwtable, struct udev_device *udevice,
 
 	devname = udev_device_get_sysname(udevice);
 	if (!devname)
-		return 1;
+		return PATHINFO_FAILED;
 
 	pp = alloc_path();
 
 	if (!pp)
-		return 1;
+		return PATHINFO_FAILED;
 
 	if(safe_sprintf(pp->dev, "%s", devname)) {
 		condlog(0, "pp->dev too small");
@@ -82,22 +82,19 @@ path_discover (vector pathvec, struct config * conf,
 
 	devname = udev_device_get_sysname(udevice);
 	if (!devname)
-		return 0;
+		return PATHINFO_FAILED;
 
 	if (filter_property(conf, udevice) > 0)
-		return 0;
+		return PATHINFO_SKIPPED;
 
 	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
 			   (char *)devname) > 0)
-		return 0;
+		return PATHINFO_SKIPPED;
 
 	pp = find_path_by_dev(pathvec, (char *)devname);
 	if (!pp) {
-		if (store_pathinfo(pathvec, conf->hwtable,
-				   udevice, flag, NULL) != 1)
-			return 0;
-		else
-			return 1;
+		return store_pathinfo(pathvec, conf->hwtable,
+				      udevice, flag, NULL);
 	}
 	return pathinfo(pp, conf->hwtable, flag);
 }
@@ -109,11 +106,11 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 	struct udev_list_entry *entry;
 	struct udev_device *udevice;
 	const char *devpath;
-	int r = 0;
+	int num_paths = 0, total_paths = 0;
 
 	udev_iter = udev_enumerate_new(conf->udev);
 	if (!udev_iter)
-		return 1;
+		return -ENOMEM;
 
 	udev_enumerate_add_match_subsystem(udev_iter, "block");
 	udev_enumerate_scan_devices(udev_iter);
@@ -126,19 +123,20 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 		udevice = udev_device_new_from_syspath(conf->udev, devpath);
 		if (!udevice) {
 			condlog(4, "%s: no udev information", devpath);
-			r++;
 			continue;
 		}
 		devtype = udev_device_get_devtype(udevice);
 		if(devtype && !strncmp(devtype, "disk", 4)) {
-			r += path_discover(pathvec, conf,
-						   udevice, flag);
+			total_paths++;
+			if (path_discover(pathvec, conf,
+					  udevice, flag) == PATHINFO_OK)
+				num_paths++;
 		}
 		udev_device_unref(udevice);
 	}
 	udev_enumerate_unref(udev_iter);
-	condlog(4, "Discovery status %d", r);
-	return r;
+	condlog(4, "Discovered %d/%d paths", num_paths, total_paths);
+	return (total_paths - num_paths);
 }
 
 #define declare_sysfs_get_str(fname)					\
@@ -1034,7 +1032,7 @@ get_state (struct path * pp, int daemon)
 
 	if (!checker_selected(c)) {
 		if (daemon) {
-			if (pathinfo(pp, conf->hwtable, DI_SYSFS) != 0) {
+			if (pathinfo(pp, conf->hwtable, DI_SYSFS) != PATHINFO_OK) {
 				condlog(3, "%s: couldn't get sysfs pathinfo",
 					pp->dev);
 				return PATH_UNCHECKED;
@@ -1168,7 +1166,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	int path_state;
 
 	if (!pp)
-		return 1;
+		return PATHINFO_FAILED;
 
 	condlog(3, "%s: mask = 0x%x", pp->dev, mask);
 
@@ -1176,12 +1174,12 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	 * fetch info available in sysfs
 	 */
 	if (mask & DI_SYSFS && sysfs_pathinfo(pp))
-		return 1;
+		return PATHINFO_FAILED;
 
 	if (mask & DI_BLACKLIST && mask & DI_SYSFS) {
 		if (filter_device(conf->blist_device, conf->elist_device,
 				  pp->vendor_id, pp->product_id) > 0) {
-			return 2;
+			return PATHINFO_SKIPPED;
 		}
 	}
 
@@ -1234,7 +1232,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	if (mask & DI_BLACKLIST && mask & DI_WWID) {
 		if (filter_wwid(conf->blist_wwid, conf->elist_wwid,
 				pp->wwid) > 0) {
-			return 2;
+			return PATHINFO_SKIPPED;
 		}
 	}
 
@@ -1251,7 +1249,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	}
 
 	pp->initialized = 1;
-	return 0;
+	return PATHINFO_OK;
 
 blank:
 	/*

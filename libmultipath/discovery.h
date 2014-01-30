@@ -24,6 +24,10 @@
 #define SCSI_COMMAND_TERMINATED 0x22
 #define SG_ERR_DRIVER_SENSE     0x08
 
+#define PATHINFO_OK 0
+#define PATHINFO_FAILED 1
+#define PATHINFO_SKIPPED 2
+
 struct config;
 
 ssize_t sysfs_get_dev (struct udev_device *udev, char * buff, size_t len);

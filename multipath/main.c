@@ -343,7 +343,7 @@ configure (void)
 		/* maximum info */
 		di_flag = DI_ALL;
 
-	if (path_discovery(pathvec, conf, di_flag))
+	if (path_discovery(pathvec, conf, di_flag) < 0)
 		goto out;
 
 	if (conf->verbosity > 2)
