@@ -4,6 +4,7 @@
  * Copyright (c) 2005 Mike Anderson
  */
 #include <stdio.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -143,6 +144,7 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 extern ssize_t								\
 sysfs_get_##fname (struct udev_device * udev, char * buff, size_t len)	\
 {									\
+	int l;							\
 	const char * attr;						\
 	const char * devname;						\
 									\
@@ -157,12 +159,14 @@ sysfs_get_##fname (struct udev_device * udev, char * buff, size_t len)	\
 			devname, #fname);				\
 		return -ENXIO;						\
 	}								\
-	if (strchop(attr) > len) {					\
+	for (l = strlen(attr); l >= 1 && isspace(attr[l-1]); l--);	\
+	if (l > len) {							\
 		condlog(3, "%s: overflow in attribute %s",		\
 			devname, #fname);				\
 		return -EINVAL;						\
 	}								\
-	return strlcpy(buff, attr, len);				\
+	strlcpy(buff, attr, len);					\
+	return strchop(buff);						\
 }
 
 declare_sysfs_get_str(devtype);
