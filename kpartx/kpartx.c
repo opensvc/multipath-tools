@@ -440,7 +440,7 @@ main(int argc, char **argv){
 					continue;
 
 				if (!dm_simplecmd(DM_DEVICE_REMOVE, partname,
-						  0, &cookie)) {
+						  0, &cookie, 0)) {
 					r++;
 					continue;
 				}
@@ -498,7 +498,7 @@ main(int argc, char **argv){
 				}
 				if (op == DM_DEVICE_RELOAD &&
 				    !dm_simplecmd(DM_DEVICE_RESUME, partname,
-						  1, &cookie)) {
+						  1, &cookie, MPATH_UDEV_RELOAD_FLAG)) {
 					fprintf(stderr, "resume failed on %s\n",
 						partname);
 					r++;
@@ -560,7 +560,7 @@ main(int argc, char **argv){
 					if (op == DM_DEVICE_RELOAD)
 						dm_simplecmd(DM_DEVICE_RESUME,
 							     partname, 1,
-							     &cookie);
+							     &cookie, MPATH_UDEV_RELOAD_FLAG);
 
 					dm_devn(partname, &slices[j].major,
 						&slices[j].minor);
@@ -593,7 +593,7 @@ main(int argc, char **argv){
 					continue;
 
 				if (!dm_simplecmd(DM_DEVICE_REMOVE,
-						  partname, 1, &cookie)) {
+						  partname, 1, &cookie, 0)) {
 					r++;
 					continue;
 				}

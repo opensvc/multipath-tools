@@ -6,11 +6,17 @@
 #define TGT_MPATH	"multipath"
 #define TGT_PART	"linear"
 
+#ifdef DM_SUBSYSTEM_UDEV_FLAG0
+#define MPATH_UDEV_RELOAD_FLAG DM_SUBSYSTEM_UDEV_FLAG0
+#else
+#define MPATH_UDEV_RELOAD_FLAG 0
+#endif
+
 void dm_init(void);
 int dm_prereq (void);
 int dm_drv_version (unsigned int * version, char * str);
-int dm_simplecmd_flush (int, const char *, int);
-int dm_simplecmd_noflush (int, const char *);
+int dm_simplecmd_flush (int, const char *, int, uint16_t);
+int dm_simplecmd_noflush (int, const char *, uint16_t);
 int dm_addmap_create (struct multipath *mpp, char *params);
 int dm_addmap_reload (struct multipath *mpp, char *params);
 int dm_map_present (const char *);

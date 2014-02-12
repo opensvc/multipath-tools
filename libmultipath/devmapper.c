@@ -105,7 +105,9 @@ dm_lib_prereq (void)
 {
 	char version[64];
 	int v[3];
-#ifdef LIBDM_API_COOKIE
+#if defined(DM_SUBSYSTEM_UDEV_FLAG0)
+	int minv[3] = {1, 2, 82};
+#elif defined(LIBDM_API_COOKIE)
 	int minv[3] = {1, 2, 38};
 #else
 	int minv[3] = {1, 2, 8};
@@ -202,7 +204,7 @@ dm_prereq (void)
 }
 
 static int
-dm_simplecmd (int task, const char *name, int no_flush, int need_sync) {
+dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t udev_flags) {
 	int r = 0;
 	int udev_wait_flag = (need_sync && (task == DM_DEVICE_RESUME ||
 					    task == DM_DEVICE_REMOVE));
@@ -221,7 +223,7 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync) {
 		dm_task_no_flush(dmt);		/* for DM_DEVICE_SUSPEND/RESUME */
 #endif
 
-	if (udev_wait_flag && !dm_task_set_cookie(dmt, &conf->cookie, (conf->daemon)? DM_UDEV_DISABLE_LIBRARY_FALLBACK : 0))
+	if (udev_wait_flag && !dm_task_set_cookie(dmt, &conf->cookie, ((conf->daemon)? DM_UDEV_DISABLE_LIBRARY_FALLBACK : 0) | udev_flags))
 		goto out;
 	r = dm_task_run (dmt);
 
@@ -231,13 +233,13 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync) {
 }
 
 extern int
-dm_simplecmd_flush (int task, const char *name, int needsync) {
-	return dm_simplecmd(task, name, 0, needsync);
+dm_simplecmd_flush (int task, const char *name, int needsync, uint16_t udev_flags) {
+	return dm_simplecmd(task, name, 0, needsync, udev_flags);
 }
 
 extern int
-dm_simplecmd_noflush (int task, const char *name) {
-	return dm_simplecmd(task, name, 1, 1);
+dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags) {
+	return dm_simplecmd(task, name, 1, 1, udev_flags);
 }
 
 extern int
@@ -672,7 +674,7 @@ _dm_flush_map (const char * mapname, int need_sync)
 		return 1;
 	}
 
-	r = dm_simplecmd_flush(DM_DEVICE_REMOVE, mapname, need_sync);
+	r = dm_simplecmd_flush(DM_DEVICE_REMOVE, mapname, need_sync, 0);
 
 	if (r) {
 		condlog(4, "multipath map %s removed", mapname);
@@ -705,14 +707,14 @@ dm_suspend_and_flush_map (const char * mapname)
 	if (s)
 		queue_if_no_path = 0;
 	else
-		s = dm_simplecmd_flush(DM_DEVICE_SUSPEND, mapname, 0);
+		s = dm_simplecmd_flush(DM_DEVICE_SUSPEND, mapname, 0, 0);
 
 	if (!dm_flush_map(mapname)) {
 		condlog(4, "multipath map %s removed", mapname);
 		return 0;
 	}
 	condlog(2, "failed to remove multipath map %s", mapname);
-	dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname);
+	dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname, 0);
 	if (queue_if_no_path)
 		s = dm_queue_if_no_path((char *)mapname, 1);
 	return 1;
@@ -1069,7 +1071,7 @@ dm_remove_partmaps (const char * mapname, int need_sync)
 			condlog(4, "partition map %s removed",
 				names->name);
 			dm_simplecmd_flush(DM_DEVICE_REMOVE, names->name,
-					   need_sync);
+					   need_sync, 0);
 		}
 
 		next = names->next;
@@ -1297,7 +1299,7 @@ int dm_reassign_table(const char *name, char *old, char *new)
 			condlog(3, "%s: failed to reassign targets", name);
 			goto out_reload;
 		}
-		dm_simplecmd_noflush(DM_DEVICE_RESUME, name);
+		dm_simplecmd_noflush(DM_DEVICE_RESUME, name, MPATH_UDEV_RELOAD_FLAG);
 	}
 	r = 1;
 

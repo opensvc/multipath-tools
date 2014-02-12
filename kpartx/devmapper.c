@@ -60,7 +60,7 @@ dm_prereq (char * str, int x, int y, int z)
 }
 
 extern int
-dm_simplecmd (int task, const char *name, int no_flush, uint32_t *cookie) {
+dm_simplecmd (int task, const char *name, int no_flush, uint32_t *cookie, uint16_t udev_flags) {
 	int r = 0;
 	int udev_wait_flag = (task == DM_DEVICE_RESUME ||
 			      task == DM_DEVICE_REMOVE);
@@ -78,7 +78,7 @@ dm_simplecmd (int task, const char *name, int no_flush, uint32_t *cookie) {
 	if (no_flush)
 		dm_task_no_flush(dmt);
 
-	if (udev_wait_flag && !dm_task_set_cookie(dmt, cookie, (udev_sync)? 0 : DM_UDEV_DISABLE_LIBRARY_FALLBACK))
+	if (udev_wait_flag && !dm_task_set_cookie(dmt, cookie, ((udev_sync)? 0 : DM_UDEV_DISABLE_LIBRARY_FALLBACK) | udev_flags))
 		goto out;
 	r = dm_task_run(dmt);
 

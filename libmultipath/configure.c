@@ -389,13 +389,13 @@ domap (struct multipath * mpp, char * params)
 	case ACT_RELOAD:
 		r = dm_addmap_reload(mpp, params);
 		if (r)
-			r = dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias);
+			r = dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias, MPATH_UDEV_RELOAD_FLAG);
 		break;
 
 	case ACT_RESIZE:
 		r = dm_addmap_reload(mpp, params);
 		if (r)
-			r = dm_simplecmd_flush(DM_DEVICE_RESUME, mpp->alias, 1);
+			r = dm_simplecmd_flush(DM_DEVICE_RESUME, mpp->alias, 1, 0);
 		break;
 
 	case ACT_RENAME:
