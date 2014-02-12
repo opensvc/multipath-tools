@@ -1,0 +1,34 @@
+ACTION!="add|change", GOTO="mpath_end"
+ENV{DM_UDEV_RULES_VSN}!="?*", GOTO="mpath_end"
+ENV{DM_UUID}!="mpath-?*", GOTO="mpath_end"
+
+# Do not initiate scanning if no path is available,
+# otherwise there would be a hang or IO error on access.
+# We'd like to avoid this, especially within udev processing.
+ENV{DM_NR_VALID_PATHS}!="?*", IMPORT{db}="DM_NR_VALID_PATHS"
+ENV{DM_NR_VALID_PATHS}=="0", ENV{DM_NOSCAN}="1"
+
+# Also skip all foreign rules if no path is available.
+# Remember the original value of DM_DISABLE_OTHER_RULES_FLAG
+# and restore it back once we have at least one path available.
+IMPORT{db}="DM_DISABLE_OTHER_RULES_FLAG_OLD"
+ENV{DM_ACTION}=="PATH_FAILED",\
+	ENV{DM_NR_VALID_PATHS}=="0",\
+	ENV{DM_DISABLE_OTHER_RULES_FLAG_OLD}=="",\
+	ENV{DM_DISABLE_OTHER_RULES_FLAG_OLD}="$env{DM_UDEV_DISABLE_OTHER_RULES_FLAG}",\
+	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="1"
+ENV{DM_ACTION}=="PATH_REINSTATED",\
+	ENV{DM_NR_VALID_PATHS}=="1",\
+	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="$env{DM_DISABLE_OTHER_RULES_FLAG_OLD}",\
+	ENV{DM_DISABLE_OTHER_RULES_FLAG_OLD}="",\
+	ENV{DM_ACTIVATION}="1"
+
+# DM_SUBSYSTEM_UDEV_FLAG0 is the "RELOAD" flag for multipath subsystem.
+# Drop the DM_ACTIVATION flag here as mpath reloads tables if any of its
+# paths are lost/recovered. For any stack above the mpath device, this is not
+# something that should be reacted upon since it would be useless extra work.
+# It's exactly mpath's job to provide *seamless* device access to any of the
+# paths that are available underneath.
+ENV{DM_SUBSYSTEM_UDEV_FLAG0}=="1", ENV{DM_ACTIVATION}="0"
+
+LABEL="mpath_end"
