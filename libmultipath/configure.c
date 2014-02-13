@@ -962,6 +962,9 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
 				return ret;
 			}
 		}
+		if (pp->udev && filter_property(conf, pp->udev) > 0)
+			return 2;
+
 		refwwid = pp->wwid;
 		goto out;
 	}
@@ -986,6 +989,9 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
 				return ret;
 			}
 		}
+		if (pp->udev && filter_property(conf, pp->udev) > 0)
+			return 2;
+
 		refwwid = pp->wwid;
 		goto out;
 	}
