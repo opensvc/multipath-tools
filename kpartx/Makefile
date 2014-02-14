@@ -28,8 +28,8 @@ install: $(EXEC) $(EXEC).8
 	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(libudevdir)
 	$(INSTALL_PROGRAM) -m 755 kpartx_id $(DESTDIR)$(libudevdir)
-	$(INSTALL_PROGRAM) -d $(DESTDIR)/etc/udev/rules.d
-	$(INSTALL_PROGRAM) -m 644 kpartx.rules $(DESTDIR)/etc/udev/rules.d/
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(libudevdir)/rules.d
+	$(INSTALL_PROGRAM) -m 644 kpartx.rules $(DESTDIR)$(libudevdir)/rules.d/66-kpartx.rules
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
 
@@ -37,6 +37,8 @@ uninstall:
 	rm -f $(DESTDIR)$(bindir)/$(EXEC)
 	rm -f $(DESTDIR)$(mandir)/$(EXEC).8.gz
 	rm -f $(DESTDIR)$(libudevdir)/kpartx_id
+	rm -f $(DESTDIR)$(libudevdir)/rules.d/66-kpartx.rules
+	rm -f $(DESTDIR)$(libudevdir)/rules.d/67-kpartx-compat.rules
 
 clean:
 	rm -f core *.o $(EXEC) *.gz
