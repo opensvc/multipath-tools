@@ -351,12 +351,12 @@ select_getuid (struct path * pp)
 {
 	char *origin;
 
-	pp_set_ovr(uid_attribute);
 	pp_set_ovr(getuid);
-	pp_set_hwe(uid_attribute);
+	pp_set_ovr(uid_attribute);
 	pp_set_hwe(getuid);
-	pp_set_conf(uid_attribute);
+	pp_set_hwe(uid_attribute);
 	pp_set_conf(getuid);
+	pp_set_conf(uid_attribute);
 	pp_set_default(uid_attribute, DEFAULT_UID_ATTRIBUTE);
 out:
 	if (pp->uid_attribute)
