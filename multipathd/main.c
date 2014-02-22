@@ -1118,9 +1118,6 @@ check_path (struct vectors * vecs, struct path * pp)
 	int chkr_new_path_up = 0;
 	int oldchkrstate = pp->chkrstate;
 
-	if (!pp->mpp)
-		return 0;
-
 	if (pp->tick && --pp->tick)
 		return 0; /* don't check this path yet */
 
