@@ -1,0 +1,13 @@
+# Set DM_MULTIPATH_DEVICE_PATH if the device should be handled by multipath
+SUBSYSTEM!="block", GOTO="end_mpath"
+
+ENV{MPATH_SBIN_PATH}="/sbin"
+TEST!="$env{MPATH_SBIN_PATH}/multipath", ENV{MPATH_SBIN_PATH}="/usr/sbin"
+
+SUBSYSTEM=="block", ACTION=="add|change", KERNEL!="dm-*", \
+	ENV{DM_MULTIPATH_DEVICE_PATH}!="1", \
+	PROGRAM=="$env{MPATH_SBIN_PATH}/multipath -v 0 -c $tempnode", \
+	ENV{DM_MULTIPATH_DEVICE_PATH}="1" \
+	ENV{SYSTEMD_READY}="0"
+
+LABEL="end_mpath"
