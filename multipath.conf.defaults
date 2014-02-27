@@ -31,6 +31,7 @@
 #	devnode "^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"
 #	devnode "^hd[a-z]"
 #	devnode "^dcssblk[0-9]*"
+#	devnode "^nvme.*"
 #	device {
 #		vendor "DGC"
 #		product "LUNZ"
