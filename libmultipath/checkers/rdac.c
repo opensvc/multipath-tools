@@ -308,7 +308,7 @@ libcheck_check (struct checker * c)
 done:
 	switch (ret) {
 	case PATH_DOWN:
-		MSG(c, (inqfail) ? MSG_RDAC_DOWN_TYPE("inquiry failed") :
+		MSG(c, "%s", (inqfail) ? MSG_RDAC_DOWN_TYPE("inquiry failed") :
 			checker_msg_string(&inq));
 		break;
 	case PATH_UP:
