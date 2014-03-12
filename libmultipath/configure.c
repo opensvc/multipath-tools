@@ -39,6 +39,211 @@
 #include "uxsock.h"
 #include "wwids.h"
 
+/* group paths in pg by host adapter
+ */
+int group_by_host_adapter(struct pathgroup *pgp, vector adapters)
+{
+	struct adapter_group *agp;
+	struct host_group *hgp;
+	struct path *pp, *pp1;
+	char adapter_name1[SLOT_NAME_SIZE];
+	char adapter_name2[SLOT_NAME_SIZE];
+	int i, j;
+	int found_hostgroup = 0;
+
+	while (VECTOR_SIZE(pgp->paths) > 0) {
+
+		pp = VECTOR_SLOT(pgp->paths, 0);
+
+		if (sysfs_get_host_adapter_name(pp, adapter_name1))
+			return 1;
+		/* create a new host adapter group
+		 */
+		agp = alloc_adaptergroup();
+		if (!agp)
+			goto out;
+		agp->pgp = pgp;
+
+		strncpy(agp->adapter_name, adapter_name1, SLOT_NAME_SIZE);
+		store_adaptergroup(adapters, agp);
+
+		/* create a new host port group
+		 */
+		hgp = alloc_hostgroup();
+		if (!hgp)
+			goto out;
+		if (store_hostgroup(agp->host_groups, hgp))
+			goto out;
+
+		hgp->host_no = pp->sg_id.host_no;
+		agp->num_hosts++;
+		if (store_path(hgp->paths, pp))
+			goto out;
+
+		hgp->num_paths++;
+		/* delete path from path group
+		 */
+		vector_del_slot(pgp->paths, 0);
+
+		/* add all paths belonging to same host adapter
+		 */
+		vector_foreach_slot(pgp->paths, pp1, i) {
+			if (sysfs_get_host_adapter_name(pp1, adapter_name2))
+				goto out;
+			if (strcmp(adapter_name1, adapter_name2) == 0) {
+				found_hostgroup = 0;
+				vector_foreach_slot(agp->host_groups, hgp, j) {
+					if (hgp->host_no == pp1->sg_id.host_no) {
+						if (store_path(hgp->paths, pp1))
+							goto out;
+						hgp->num_paths++;
+						found_hostgroup = 1;
+						break;
+					}
+				}
+				if (!found_hostgroup) {
+					/* this path belongs to new host port
+					 * within this adapter
+					 */
+					hgp = alloc_hostgroup();
+					if (!hgp)
+						goto out;
+
+					if (store_hostgroup(agp->host_groups, hgp))
+						goto out;
+
+					agp->num_hosts++;
+					if (store_path(hgp->paths, pp1))
+						goto out;
+
+					hgp->host_no = pp1->sg_id.host_no;
+					hgp->num_paths++;
+				}
+				/* delete paths from original path_group
+				 * as they are added into adapter group now
+				 */
+				vector_del_slot(pgp->paths, i);
+				i--;
+			}
+		}
+	}
+	return 0;
+
+out:	/* add back paths into pg as re-ordering failed
+	 */
+	vector_foreach_slot(adapters, agp, i) {
+			vector_foreach_slot(agp->host_groups, hgp, j) {
+				while (VECTOR_SIZE(hgp->paths) > 0) {
+					pp = VECTOR_SLOT(hgp->paths, 0);
+					if (store_path(pgp->paths, pp))
+						condlog(3, "failed to restore "
+						"path %s into path group",
+						 pp->dev);
+					vector_del_slot(hgp->paths, 0);
+				}
+			}
+		}
+	free_adaptergroup(adapters);
+	return 1;
+}
+
+/* re-order paths in pg by alternating adapters and host ports
+ * for optimized selection
+ */
+int order_paths_in_pg_by_alt_adapters(struct pathgroup *pgp, vector adapters,
+		 int total_paths)
+{
+	int next_adapter_index = 0;
+	struct adapter_group *agp;
+	struct host_group *hgp;
+	struct path *pp;
+
+	while (total_paths > 0) {
+		agp = VECTOR_SLOT(adapters, next_adapter_index);
+
+		hgp = VECTOR_SLOT(agp->host_groups, agp->next_host_index);
+
+		if (!hgp->num_paths) {
+			agp->next_host_index++;
+			agp->next_host_index %= agp->num_hosts;
+			next_adapter_index++;
+			next_adapter_index %= VECTOR_SIZE(adapters);
+			continue;
+		}
+
+		pp  = VECTOR_SLOT(hgp->paths, 0);
+
+		if (store_path(pgp->paths, pp))
+			return 1;
+
+		total_paths--;
+
+		vector_del_slot(hgp->paths, 0);
+
+		hgp->num_paths--;
+
+		agp->next_host_index++;
+		agp->next_host_index %= agp->num_hosts;
+		next_adapter_index++;
+		next_adapter_index %= VECTOR_SIZE(adapters);
+	}
+
+	/* all paths are added into path_group
+	 * in crafted child order
+	 */
+	return 0;
+}
+
+/* round-robin: order paths in path group to alternate
+ * between all host adapters
+ */
+int rr_optimize_path_order(struct pathgroup *pgp)
+{
+	vector adapters;
+	struct path *pp;
+	int total_paths;
+	int i;
+
+	total_paths = VECTOR_SIZE(pgp->paths);
+	vector_foreach_slot(pgp->paths, pp, i) {
+		if (pp->sg_id.proto_id != SCSI_PROTOCOL_FCP &&
+			pp->sg_id.proto_id != SCSI_PROTOCOL_SAS &&
+			pp->sg_id.proto_id != SCSI_PROTOCOL_ISCSI &&
+			pp->sg_id.proto_id != SCSI_PROTOCOL_SRP) {
+			/* return success as default path order
+			 * is maintained in path group
+			 */
+			return 0;
+		}
+	}
+	adapters = vector_alloc();
+	if (!adapters)
+		return 0;
+
+	/* group paths in path group by host adapters
+	 */
+	if (group_by_host_adapter(pgp, adapters)) {
+		condlog(3, "Failed to group paths by adapters");
+		free_adaptergroup(adapters);
+		return 0;
+	}
+
+	/* re-order paths in pg to alternate between adapters and host ports
+	 */
+	if (order_paths_in_pg_by_alt_adapters(pgp, adapters, total_paths)) {
+		condlog(3, "Failed to re-order paths in pg by adapters "
+			"and host ports");
+		free_adaptergroup(adapters);
+		/* return failure as original paths are
+		 * removed form pgp
+		 */
+		return 1;
+	}
+
+	free_adaptergroup(adapters);
+	return 0;
+}
+
 extern int
 setup_map (struct multipath * mpp, char * params, int params_size)
 {
@@ -99,6 +304,22 @@ setup_map (struct multipath * mpp, char * params, int params_size)
 	 * to switch over (default to first)
 	 */
 	mpp->bestpg = select_path_group(mpp);
+
+	/* re-order paths in all path groups in an optimized way
+	 * for round-robin path selectors to get maximum throughput.
+	 */
+	if (!strncmp(mpp->selector, "round-robin", 11)) {
+		vector_foreach_slot(mpp->pg, pgp, i) {
+			if (VECTOR_SIZE(pgp->paths) <= 2)
+				continue;
+			if (rr_optimize_path_order(pgp)) {
+				condlog(2, "cannot re-order paths for "
+					"optimization: %s",
+					mpp->alias);
+				return 1;
+			}
+		}
+	}
 
 	/*
 	 * transform the mp->pg vector of vectors of paths

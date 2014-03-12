@@ -321,6 +321,93 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 	return 1;
 }
 
+int sysfs_get_host_adapter_name(struct path *pp, char *adapter_name)
+{
+	int proto_id;
+
+	if (!pp || !adapter_name)
+		return 1;
+
+	proto_id = pp->sg_id.proto_id;
+
+	if (proto_id != SCSI_PROTOCOL_FCP &&
+	    proto_id != SCSI_PROTOCOL_SAS &&
+	    proto_id != SCSI_PROTOCOL_ISCSI &&
+	    proto_id != SCSI_PROTOCOL_SRP) {
+		return 1;
+	}
+	/* iscsi doesn't have adapter info in sysfs
+	 * get ip_address for grouping paths
+	 */
+	if (pp->sg_id.proto_id == SCSI_PROTOCOL_ISCSI)
+		return sysfs_get_iscsi_ip_address(pp, adapter_name);
+
+	/* fetch adapter pci name for other protocols
+	 */
+	return sysfs_get_host_pci_name(pp, adapter_name);
+}
+
+int sysfs_get_host_pci_name(struct path *pp, char *pci_name)
+{
+	struct udev_device *hostdev, *parent;
+	char host_name[HOST_NAME_LEN];
+	const char *driver_name, *value;
+
+	if (!pp || !pci_name)
+		return 1;
+
+	sprintf(host_name, "host%d", pp->sg_id.host_no);
+	hostdev = udev_device_new_from_subsystem_sysname(conf->udev,
+			"scsi_host", host_name);
+	if (!hostdev)
+		return 1;
+
+	parent = udev_device_get_parent(hostdev);
+	while (parent) {
+		driver_name = udev_device_get_driver(parent);
+		if (!driver_name) {
+			parent = udev_device_get_parent(parent);
+			continue;
+		}
+		if (!strcmp(driver_name, "pcieport"))
+			break;
+		parent = udev_device_get_parent(parent);
+	}
+	if (parent) {
+		/* pci_device found
+		 */
+		value = udev_device_get_sysname(parent);
+
+		strncpy(pci_name, value, SLOT_NAME_SIZE);
+		udev_device_unref(hostdev);
+		return 0;
+	}
+	udev_device_unref(hostdev);
+	return 1;
+}
+
+int sysfs_get_iscsi_ip_address(struct path *pp, char *ip_address)
+{
+	struct udev_device *hostdev;
+	char host_name[HOST_NAME_LEN];
+	const char *value;
+
+	sprintf(host_name, "host%d", pp->sg_id.host_no);
+	hostdev = udev_device_new_from_subsystem_sysname(conf->udev,
+			"iscsi_host", host_name);
+	if (hostdev) {
+		value = udev_device_get_sysattr_value(hostdev,
+				"ip_address");
+		if (value) {
+			strncpy(ip_address, value, SLOT_NAME_SIZE);
+			udev_device_unref(hostdev);
+			return 0;
+		} else
+			udev_device_unref(hostdev);
+	}
+	return 1;
+}
+
 static void
 sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 {

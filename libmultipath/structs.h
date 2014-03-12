@@ -15,7 +15,8 @@
 #define BLK_DEV_SIZE		33
 #define PATH_SIZE		512
 #define NAME_SIZE		512
-
+#define HOST_NAME_LEN		8
+#define SLOT_NAME_SIZE		32
 
 #define SCSI_VENDOR_SIZE	9
 #define SCSI_PRODUCT_SIZE	17
@@ -251,6 +252,20 @@ struct pathgroup {
 	char * selector;
 };
 
+struct adapter_group {
+	char adapter_name[SLOT_NAME_SIZE];
+	struct pathgroup *pgp;
+	int num_hosts;
+	vector host_groups;
+	int next_host_index;
+};
+
+struct host_group {
+	int host_no;
+	int num_paths;
+	vector paths;
+};
+
 struct path * alloc_path (void);
 struct pathgroup * alloc_pathgroup (void);
 struct multipath * alloc_multipath (void);
@@ -262,6 +277,14 @@ void free_multipath (struct multipath *, enum free_path_mode free_paths);
 void free_multipath_attributes (struct multipath *);
 void drop_multipath (vector mpvec, char * wwid, enum free_path_mode free_paths);
 void free_multipathvec (vector mpvec, enum free_path_mode free_paths);
+
+struct adapter_group * alloc_adaptergroup(void);
+struct host_group * alloc_hostgroup(void);
+void free_adaptergroup(vector adapters);
+void free_hostgroup(vector hostgroups);
+
+int store_adaptergroup(vector adapters, struct adapter_group *agp);
+int store_hostgroup(vector hostgroupvec, struct host_group *hgp);
 
 int store_path (vector pathvec, struct path * pp);
 int store_pathgroup (vector pgvec, struct pathgroup * pgp);

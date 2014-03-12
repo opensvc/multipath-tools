@@ -18,6 +18,70 @@
 #include "blacklist.h"
 #include "prio.h"
 
+struct adapter_group *
+alloc_adaptergroup(void)
+{
+	struct adapter_group *agp;
+
+	agp = (struct adapter_group *)MALLOC(sizeof(struct adapter_group));
+
+	if (!agp)
+		return NULL;
+
+	agp->host_groups = vector_alloc();
+	if (!agp->host_groups) {
+		FREE(agp);
+		agp = NULL;
+	}
+	return agp;
+}
+
+void free_adaptergroup(vector adapters)
+{
+	int i;
+	struct adapter_group *agp;
+
+	vector_foreach_slot(adapters, agp, i) {
+		free_hostgroup(agp->host_groups);
+		FREE(agp);
+	}
+	vector_free(adapters);
+}
+
+void free_hostgroup(vector hostgroups)
+{
+	int i;
+	struct host_group *hgp;
+
+	if (!hostgroups)
+		return;
+
+	vector_foreach_slot(hostgroups, hgp, i) {
+		vector_free(hgp->paths);
+		FREE(hgp);
+	}
+	vector_free(hostgroups);
+}
+
+struct host_group *
+alloc_hostgroup(void)
+{
+	struct host_group *hgp;
+
+	hgp = (struct host_group *)MALLOC(sizeof(struct host_group));
+
+	if (!hgp)
+		return NULL;
+
+	hgp->paths = vector_alloc();
+
+	if (!hgp->paths) {
+		FREE(hgp);
+		hgp = NULL;
+	}
+	return hgp;
+}
+
 struct path *
 alloc_path (void)
 {
@@ -239,6 +303,26 @@ store_pathgroup (vector pgvec, struct pathgroup * pgp)
 
 	vector_set_slot(pgvec, pgp);
 
+	return 0;
+}
+
+int
+store_hostgroup(vector hostgroupvec, struct host_group * hgp)
+{
+	if (!vector_alloc_slot(hostgroupvec))
+		return 1;
+
+	vector_set_slot(hostgroupvec, hgp);
+	return 0;
+}
+
+int
+store_adaptergroup(vector adapters, struct adapter_group * agp)
+{
+	if (!vector_alloc_slot(adapters))
+		return 1;
+
+	vector_set_slot(adapters, agp);
 	return 0;
 }
 
