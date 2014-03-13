@@ -11,7 +11,11 @@ ifdef SYSTEMD
 endif
 LDFLAGS += -lpthread -ldevmapper -lreadline
 ifdef SYSTEMD
-	LDFLAGS += -lsystemd-daemon
+	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
+		LDFLAGS += -lsystemd
+	else
+		LDFLAGS += -lsystemd-daemon
+	endif
 endif
 LDFLAGS += -ludev -ldl \
 	-L$(multipathdir) -lmultipath -L$(mpathpersistdir) -lmpathpersist

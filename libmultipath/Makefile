@@ -9,7 +9,11 @@ DEVLIB = libmultipath.so
 LIBS = $(DEVLIB).$(SONAME)
 LIBDEPS = -lpthread -ldl -ldevmapper -ludev
 ifdef SYSTEMD
-	LIBDEPS += -lsystemd-daemon
+	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
+		LIBDEPS += -lsystemd
+	else
+		LIBDEPS += -lsystemd-daemon
+	endif
 endif
 
 OBJS = memory.o parser.o vector.o devmapper.o callout.o \
