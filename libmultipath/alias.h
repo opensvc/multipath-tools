@@ -10,3 +10,5 @@
 char *get_user_friendly_alias(char *wwid, char *file, char *prefix,
 			      int bindings_readonly);
 int get_user_friendly_wwid(char *alias, char *buff, char *file);
+char *use_existing_alias (char *wwid, char *file, char *alias_old,
+		char *prefix, int bindings_read_only);

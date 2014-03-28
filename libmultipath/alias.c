@@ -145,7 +145,7 @@ lookup_binding(FILE *f, char *map_wwid, char **map_alias, char *prefix)
 }
 
 static int
-rlookup_binding(FILE *f, char *buff, char *map_alias)
+rlookup_binding(FILE *f, char *buff, char *map_alias, char *prefix)
 {
 	char line[LINE_MAX];
 	unsigned int line_nr = 0;
@@ -164,7 +164,7 @@ rlookup_binding(FILE *f, char *buff, char *map_alias)
 		alias = strtok(line, " \t");
 		if (!alias) /* blank line */
 			continue;
-		curr_id = scan_devname(alias, NULL); /* TBD: Why this call? */
+		curr_id = scan_devname(alias, prefix);
 		if (curr_id >= id)
 			id = curr_id + 1;
 		wwid = strtok(NULL, " \t");
@@ -188,6 +188,11 @@ rlookup_binding(FILE *f, char *buff, char *map_alias)
 		}
 	}
 	condlog(3, "No matching alias [%s] in bindings file.", map_alias);
+
+	/* Get the theoretical id for this map alias.
+	 * Used by use_existing_alias
+	 */
+	id = scan_devname(map_alias, prefix);
 	return id;
 }
 
@@ -233,6 +238,59 @@ allocate_binding(int fd, char *wwid, int id, char *prefix)
 	else
 		condlog(3, "Created new binding [%s] for WWID [%s]", alias,
 			wwid);
+	return alias;
+}
+
+char *
+use_existing_alias (char *wwid, char *file, char *alias_old,
+		char *prefix, int bindings_read_only)
+{
+	char *alias = NULL;
+	int id = 0;
+	int fd, can_write;
+	char buff[WWID_SIZE];
+	FILE *f;
+
+	fd = open_file(file, &can_write, BINDINGS_FILE_HEADER);
+	if (fd < 0)
+		return NULL;
+
+	f = fdopen(fd, "r");
+	if (!f) {
+		condlog(0, "cannot fdopen on bindings file descriptor");
+		close(fd);
+		return NULL;
+	}
+	/* lookup the binding. if it exsists, the wwid will be in buff
+	 * either way, id contains the id for the alias
+	 */
+	id = rlookup_binding(f , buff,  alias_old, prefix);
+	if (id < 0)
+		goto out;
+
+	if (strlen(buff) > 0) {
+		/* if buff is our wwid, it's already
+		 * allocated correctly
+		 */
+		if (strcmp(buff, wwid) == 0)
+			alias = STRDUP(alias_old);
+		else {
+			alias = NULL;
+			condlog(0, "alias %s already bound to wwid %s, cannot reuse",
+				alias_old, buff);
+		}
+		goto out;	
+	}
+
+	/* allocate the existing alias in the bindings file */
+	if (can_write && id && !bindings_read_only) {
+		alias = allocate_binding(fd, wwid, id, prefix);
+		condlog(0, "Allocated existing binding [%s] for WWID [%s]",
+			alias, wwid);
+	}
+
+out:
+	fclose(f);
 	return alias;
 }
 
@@ -305,7 +363,7 @@ get_user_friendly_wwid(char *alias, char *buff, char *file)
 		return -1;
 	}
 
-	rlookup_binding(f, buff, alias);
+	rlookup_binding(f, buff, alias, NULL);
 	if (!strlen(buff)) {
 		fclose(f);
 		return -1;

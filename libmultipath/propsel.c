@@ -253,18 +253,30 @@ want_user_friendly_names(struct multipath * mp)
 extern int
 select_alias (struct multipath * mp)
 {
-	if (mp->mpe && mp->mpe->alias)
+	if (mp->mpe && mp->mpe->alias) {
 		mp->alias = STRDUP(mp->mpe->alias);
-	else {
-		mp->alias = NULL;
-		if (want_user_friendly_names(mp)) {
-			select_alias_prefix(mp);
-			mp->alias = get_user_friendly_alias(mp->wwid,
-					conf->bindings_file, mp->alias_prefix, conf->bindings_read_only);
-		}
-		if (mp->alias == NULL)
-			mp->alias = STRDUP(mp->wwid);
+		goto out;
 	}
+
+	mp->alias = NULL;
+	if (!want_user_friendly_names(mp))
+		goto out;
+
+	select_alias_prefix(mp);
+	
+	if (strlen(mp->alias_old) > 0) {
+		mp->alias = use_existing_alias(mp->wwid, conf->bindings_file,
+				mp->alias_old, mp->alias_prefix,
+				conf->bindings_read_only);
+		memset (mp->alias_old, 0, WWID_SIZE);
+	} 
+
+	if (mp->alias == NULL)
+		mp->alias = get_user_friendly_alias(mp->wwid,
+				conf->bindings_file, mp->alias_prefix, conf->bindings_read_only);
+out:
+	if (mp->alias == NULL)
+		mp->alias = STRDUP(mp->wwid);
 
 	return mp->alias ? 0 : 1;
 }

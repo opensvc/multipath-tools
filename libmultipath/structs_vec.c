@@ -403,6 +403,20 @@ out:
 	return NULL;
 }
 
+static void
+find_existing_alias (struct multipath * mpp,
+		     struct vectors *vecs)
+{
+	struct multipath * mp;
+	int i;
+
+	vector_foreach_slot (vecs->mpvec, mp, i)
+		if (strcmp(mp->wwid, mpp->wwid) == 0) {
+			strncpy(mpp->alias_old, mp->alias, WWID_SIZE);
+			return;
+		}
+}
+
 extern struct multipath *
 add_map_with_path (struct vectors * vecs,
 		   struct path * pp, int add_vec)
@@ -416,6 +430,7 @@ add_map_with_path (struct vectors * vecs,
 	mpp->hwe = pp->hwe;
 
 	strcpy(mpp->wwid, pp->wwid);
+	find_existing_alias(mpp, vecs);
 	if (select_alias(mpp))
 		goto out;
 	mpp->size = pp->size;
