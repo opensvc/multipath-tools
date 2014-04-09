@@ -226,6 +226,12 @@ extract_hwe_from_path(struct multipath * mpp)
 	}
 
 	if (pp) {
+		if (!strlen(pp->vendor_id) ||
+		    !strlen(pp->product_id) ||
+		    !strlen(pp->rev)) {
+			condlog(3, "%s: no device details available", pp->dev);
+			return NULL;
+		}
 		condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
 		condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 		condlog(3, "%s: rev = %s", pp->dev, pp->rev);
