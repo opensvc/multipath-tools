@@ -2056,6 +2056,7 @@ main (int argc, char *argv[])
 		if (!isatty(fileno(stdout)))
 			setbuf(stdout, NULL);
 		err = 0;
+		daemon_pid = getpid();
 	} else
 		err = daemonize();
 
