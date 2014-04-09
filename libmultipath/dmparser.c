@@ -336,10 +336,16 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 					goto out1;
 
 				strncpy(pp->dev_t, word, BLK_DEV_SIZE);
-
+				if (strlen(mpp->wwid)) {
+					strncpy(pp->wwid, mpp->wwid, WWID_SIZE);
+				}
 				/* Only call this in multipath client mode */
 				if (!conf->daemon && store_path(pathvec, pp))
 					goto out1;
+			} else {
+				if (!strlen(pp->wwid) &&
+				    strlen(mpp->wwid))
+					strncpy(pp->wwid, mpp->wwid, WWID_SIZE);
 			}
 			FREE(word);
 
