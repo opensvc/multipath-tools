@@ -12,12 +12,6 @@ ENV{DM_DEPS}=="0", GOTO="kpartx_end"
 
 ENV{DM_UUID}=="?*", IMPORT{program}=="kpartx_id %M %m $env{DM_UUID}"
 
-ENV{DM_ACTION}=="PATH_FAILED", ENV{DM_NR_VALID_PATHS}=="0", \
-	GOTO="blkid_end"
-ENV{DM_UUID}=="mpath-*", IMPORT{program}="/sbin/blkid -o udev -p $tempnode"
-ENV{DM_PART}=="?*", IMPORT{program}="/sbin/blkid -o udev -p $tempnode"
-LABEL="blkid_end"
-
 OPTIONS="link_priority=50"
 
 # Create persistent links for multipath tables
