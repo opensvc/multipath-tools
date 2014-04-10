@@ -71,6 +71,35 @@ show_paths (char ** r, int * len, struct vectors * vecs, char * style)
 }
 
 int
+show_path (char ** r, int * len, struct vectors * vecs, struct path *pp,
+	   char * style)
+{
+	char * c;
+	char * reply;
+	unsigned int maxlen = INITIAL_REPLY_LEN;
+	int again = 1;
+
+	get_path_layout(vecs->pathvec, 1);
+	reply = MALLOC(maxlen);
+
+	while (again) {
+		if (!reply)
+			return 1;
+
+		c = reply;
+
+		c += snprint_path(c, reply + maxlen - c, style, pp);
+
+		again = ((c - reply) == (maxlen - 1));
+
+		REALLOC_REPLY(reply, again, maxlen);
+	}
+	*r = reply;
+	*len = (int)(c - reply + 1);
+	return 0;
+}
+
+int
 show_map_topology (char ** r, int * len, struct multipath * mpp,
 		   struct vectors * vecs)
 {
@@ -236,6 +265,21 @@ cli_list_paths_fmt (void * v, char ** reply, int * len, void * data)
 	condlog(3, "list paths (operator)");
 
 	return show_paths(reply, len, vecs, fmt);
+}
+
+int
+cli_list_path (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	char * param = get_keyparam(v, PATH);
+	struct path *pp;
+
+	param = convert_dev(param, 1);
+	condlog(3, "%s: list path (operator)", param);
+
+	pp = find_path_by_dev(vecs->pathvec, param);
+
+	return show_path(reply, len, vecs, pp, "%o");
 }
 
 int

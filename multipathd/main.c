@@ -886,6 +886,7 @@ uxlsnrloop (void * ap)
 
 	set_handler_callback(LIST+PATHS, cli_list_paths);
 	set_handler_callback(LIST+PATHS+FMT, cli_list_paths_fmt);
+	set_handler_callback(LIST+PATH, cli_list_path);
 	set_handler_callback(LIST+MAPS, cli_list_maps);
 	set_handler_callback(LIST+STATUS, cli_list_status);
 	set_handler_callback(LIST+DAEMON, cli_list_daemon);

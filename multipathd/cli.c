@@ -425,6 +425,7 @@ cli_init (void) {
 
 	add_handler(LIST+PATHS, NULL);
 	add_handler(LIST+PATHS+FMT, NULL);
+	add_handler(LIST+PATH, NULL);
 	add_handler(LIST+STATUS, NULL);
 	add_handler(LIST+DAEMON, NULL);
 	add_handler(LIST+MAPS, NULL);
