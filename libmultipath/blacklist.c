@@ -196,7 +196,7 @@ setup_default_blist (struct config * conf)
 	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
 		return 1;
 
-	str = STRDUP("(ID_SCSI_VPD|ID_WWN)");
+	str = STRDUP("(SCSI_IDENT_.*|ID_WWN)");
 	if (!str)
 		return 1;
 	if (store_ble(conf->elist_property, str, ORIGIN_DEFAULT))
