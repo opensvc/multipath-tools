@@ -228,6 +228,8 @@ setup_default_blist (struct config * conf)
 	if (vendor && product)						\
 		condlog(3, "%s: (%s:%s) %s %s",				\
 			dev, vendor, product, (M), (S));		\
+	else if (wwid && !dev)						\
+		condlog(3, "%s: %s %s", wwid, (M), (S));		\
 	else if (wwid)							\
 		condlog(3, "%s: %s %s %s", dev, (M), wwid, (S));	\
 	else if (env)							\
@@ -328,10 +330,10 @@ _filter_wwid (vector blist, vector elist, char * wwid)
 }
 
 int
-filter_wwid (vector blist, vector elist, char * wwid)
+filter_wwid (vector blist, vector elist, char * wwid, char * dev)
 {
 	int r = _filter_wwid(blist, elist, wwid);
-	log_filter(NULL, NULL, NULL, wwid, NULL, r);
+	log_filter(dev, NULL, NULL, wwid, NULL, r);
 	return r;
 }
 

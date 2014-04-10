@@ -1025,7 +1025,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
 check:
 		if (refwwid && strlen(refwwid)) {
 			if (filter_wwid(conf->blist_wwid, conf->elist_wwid,
-					refwwid) > 0)
+					refwwid, NULL) > 0)
 			return 2;
 		}
 	}

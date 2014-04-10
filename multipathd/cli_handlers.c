@@ -494,7 +494,7 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 	param = convert_dev(param, 0);
 	condlog(2, "%s: add map (operator)", param);
 
-	if (filter_wwid(conf->blist_wwid, conf->elist_wwid, param) > 0) {
+	if (filter_wwid(conf->blist_wwid, conf->elist_wwid, param, NULL) > 0) {
 		*reply = strdup("blacklisted\n");
 		*len = strlen(*reply) + 1;
 		condlog(2, "%s: map blacklisted", param);
