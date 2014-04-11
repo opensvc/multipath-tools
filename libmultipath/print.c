@@ -287,7 +287,7 @@ snprint_path_uuid (char * buff, size_t len, struct path * pp)
 static int
 snprint_hcil (char * buff, size_t len, struct path * pp)
 {
-	if (pp->sg_id.host_no < 0)
+	if (!pp || pp->sg_id.host_no < 0)
 		return snprintf(buff, len, "#:#:#:#");
 
 	return snprintf(buff, len, "%i:%i:%i:%i",
@@ -300,7 +300,7 @@ snprint_hcil (char * buff, size_t len, struct path * pp)
 static int
 snprint_dev (char * buff, size_t len, struct path * pp)
 {
-	if (!strlen(pp->dev))
+	if (!pp || !strlen(pp->dev))
 		return snprintf(buff, len, "-");
 	else
 		return snprint_str(buff, len, pp->dev);
@@ -309,7 +309,7 @@ snprint_dev (char * buff, size_t len, struct path * pp)
 static int
 snprint_dev_t (char * buff, size_t len, struct path * pp)
 {
-	if (!strlen(pp->dev))
+	if (!pp || !strlen(pp->dev))
 		return snprintf(buff, len, "#:#");
 	else
 		return snprint_str(buff, len, pp->dev_t);
@@ -318,8 +318,12 @@ snprint_dev_t (char * buff, size_t len, struct path * pp)
 static int
 snprint_offline (char * buff, size_t len, struct path * pp)
 {
-	if (pp->offline)
+	if (!pp)
+		return snprintf(buff, len, "unknown");
+	else if (pp->offline)
 		return snprintf(buff, len, "offline");
+	else if (!pp->mpp)
+		return snprintf(buff, len, "orphan");
 	else
 		return snprintf(buff, len, "running");
 }
@@ -327,6 +331,9 @@ snprint_offline (char * buff, size_t len, struct path * pp)
 static int
 snprint_chk_state (char * buff, size_t len, struct path * pp)
 {
+	if (!pp)
+		return snprintf(buff, len, "undef");
+
 	switch (pp->state) {
 	case PATH_UP:
 		return snprintf(buff, len, "ready");
@@ -350,6 +357,9 @@ snprint_chk_state (char * buff, size_t len, struct path * pp)
 static int
 snprint_dm_path_state (char * buff, size_t len, struct path * pp)
 {
+	if (!pp)
+		return snprintf(buff, len, "undef");
+
 	switch (pp->dmstate) {
 	case PSTATE_ACTIVE:
 		return snprintf(buff, len, "active");
@@ -370,7 +380,7 @@ snprint_vpr (char * buff, size_t len, struct path * pp)
 static int
 snprint_next_check (char * buff, size_t len, struct path * pp)
 {
-	if (!pp->mpp)
+	if (!pp || !pp->mpp)
 		return snprintf(buff, len, "orphan");
 
 	return snprint_progress(buff, len, pp->tick, pp->checkint);
@@ -379,7 +389,7 @@ snprint_next_check (char * buff, size_t len, struct path * pp)
 static int
 snprint_pri (char * buff, size_t len, struct path * pp)
 {
-	return snprint_int(buff, len, pp->priority);
+	return snprint_int(buff, len, pp ? pp->priority : -1);
 }
 
 static int
