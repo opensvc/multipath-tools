@@ -93,6 +93,8 @@ ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
 	}
 
 	close(fd);
+	if (size > 0)
+		size = strchop(value);
 	return size;
 }
 
