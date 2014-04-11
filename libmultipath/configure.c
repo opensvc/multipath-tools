@@ -957,8 +957,8 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
 			udev_device_unref(udevice);
 			if (!pp) {
 				if (ret == 1)
-					condlog(0, "%s can't store path info",
-						buff);
+					condlog(0, "%s: can't store path info",
+						dev);
 				return ret;
 			}
 		}
@@ -995,6 +995,30 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
 		refwwid = pp->wwid;
 		goto out;
 	}
+
+	if (dev_type == DEV_UEVENT) {
+		struct udev_device *udevice = udev_device_new_from_environment(conf->udev);
+
+		if (!udevice) {
+			condlog(2, "%s: can't get udev device", dev);
+			return 1;
+		}
+		ret = store_pathinfo(pathvec, conf->hwtable, udevice,
+				     DI_SYSFS | DI_WWID, &pp);
+		udev_device_unref(udevice);
+		if (!pp) {
+			if (ret == 1)
+				condlog(0, "%s: can't store path info",
+					dev);
+			return ret;
+		}
+		if (pp->udev && filter_property(conf, pp->udev) > 0)
+			return 2;
+
+		refwwid = pp->wwid;
+		goto out;
+	}
+
 	if (dev_type == DEV_DEVMAP) {
 
 		if (((dm_get_uuid(dev, tmpwwid)) == 0) && (strlen(tmpwwid))) {

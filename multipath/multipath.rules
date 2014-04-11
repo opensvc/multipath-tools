@@ -6,7 +6,7 @@ TEST!="$env{MPATH_SBIN_PATH}/multipath", ENV{MPATH_SBIN_PATH}="/usr/sbin"
 
 SUBSYSTEM=="block", ACTION=="add|change", KERNEL!="dm-*", \
 	ENV{DM_MULTIPATH_DEVICE_PATH}!="1", \
-	PROGRAM=="$env{MPATH_SBIN_PATH}/multipath -v 0 -c $tempnode", \
+	PROGRAM=="$env{MPATH_SBIN_PATH}/multipath -u %k", \
 	ENV{DM_MULTIPATH_DEVICE_PATH}="1" \
 	ENV{SYSTEMD_READY}="0"
 

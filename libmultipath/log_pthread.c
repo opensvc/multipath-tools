@@ -25,7 +25,7 @@ int logq_running;
 void log_safe (int prio, const char * fmt, va_list ap)
 {
 	if (log_thr == (pthread_t)0) {
-		syslog(prio, fmt, ap);
+		vsyslog(prio, fmt, ap);
 		return;
 	}
 

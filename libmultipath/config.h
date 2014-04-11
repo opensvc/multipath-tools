@@ -19,7 +19,8 @@ enum devtypes {
 	DEV_NONE,
 	DEV_DEVT,
 	DEV_DEVNODE,
-	DEV_DEVMAP
+	DEV_DEVMAP,
+	DEV_UEVENT
 };
 
 enum mpath_cmds {
