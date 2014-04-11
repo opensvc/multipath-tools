@@ -132,7 +132,7 @@ int prio_getprio (struct prio * p, struct path * pp)
 
 int prio_selected (struct prio * p)
 {
-	if (!p || !p->getprio)
+	if (!p)
 		return 0;
 	return (p->getprio) ? 1 : 0;
 }
@@ -169,7 +169,7 @@ void prio_put (struct prio * dst)
 {
 	struct prio * src;
 
-	if (!dst)
+	if (!dst || !dst->getprio)
 		return;
 
 	src = prio_lookup(dst->name);

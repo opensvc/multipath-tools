@@ -195,7 +195,7 @@ void checker_put (struct checker * dst)
 {
 	struct checker * src;
 
-	if (!dst)
+	if (!dst || !dst->check)
 		return;
 	src = checker_lookup(dst->name);
 	if (dst->free)
