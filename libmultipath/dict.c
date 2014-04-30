@@ -43,6 +43,9 @@ def_fast_io_fail_handler(vector strvec)
 	char * buff;
 
 	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
 	if (strlen(buff) == 3 && !strcmp(buff, "off"))
 		conf->fast_io_fail = MP_FAST_IO_FAIL_OFF;
 	else if (sscanf(buff, "%d", &conf->fast_io_fail) != 1 ||
