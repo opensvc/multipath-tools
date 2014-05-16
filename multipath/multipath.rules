@@ -4,7 +4,7 @@ SUBSYSTEM!="block", GOTO="end_mpath"
 ENV{MPATH_SBIN_PATH}="/sbin"
 TEST!="$env{MPATH_SBIN_PATH}/multipath", ENV{MPATH_SBIN_PATH}="/usr/sbin"
 
-SUBSYSTEM=="block", ACTION=="add|change", KERNEL!="dm-*", \
+SUBSYSTEM=="block", ACTION=="add|change", KERNEL=="sd*[!0-9]|dasd*[!0-9]", \
 	ENV{DM_MULTIPATH_DEVICE_PATH}!="1", \
 	PROGRAM=="$env{MPATH_SBIN_PATH}/multipath -u %k", \
 	ENV{DM_MULTIPATH_DEVICE_PATH}="1" \
