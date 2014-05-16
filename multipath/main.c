@@ -582,6 +582,7 @@ main (int argc, char *argv[])
 	if (dm_prereq())
 		exit(1);
 	dm_drv_version(conf->version, TGT_MPATH);
+	udev_set_sync_support(1);
 
 	if (optind < argc) {
 		conf->dev = MALLOC(FILE_NAME_SIZE);
