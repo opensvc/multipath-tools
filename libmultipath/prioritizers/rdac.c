@@ -14,15 +14,15 @@
 
 int rdac_prio(const char *dev, int fd)
 {
-	unsigned char sense_buffer[256];
+	unsigned char sense_buffer[128];
 	unsigned char sb[128];
 	unsigned char inqCmdBlk[INQUIRY_CMDLEN] = {INQUIRY_CMD, 1, 0xC9, 0,
-						sizeof(sb), 0};
+						sizeof(sense_buffer), 0};
 	struct sg_io_hdr io_hdr;
 	int ret = 0;
 
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
-	memset(sense_buffer, 0, 256);
+	memset(sense_buffer, 0, 128);
 	io_hdr.interface_id = 'S';
 	io_hdr.cmd_len = sizeof (inqCmdBlk);
 	io_hdr.mx_sb_len = sizeof (sb);
