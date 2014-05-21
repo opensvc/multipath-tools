@@ -56,7 +56,7 @@ int group_by_host_adapter(struct pathgroup *pgp, vector adapters)
 		pp = VECTOR_SLOT(pgp->paths, 0);
 
 		if (sysfs_get_host_adapter_name(pp, adapter_name1))
-			return 1;
+			goto out;
 		/* create a new host adapter group
 		 */
 		agp = alloc_adaptergroup();

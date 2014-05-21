@@ -397,7 +397,7 @@ int sysfs_get_iscsi_ip_address(struct path *pp, char *ip_address)
 			"iscsi_host", host_name);
 	if (hostdev) {
 		value = udev_device_get_sysattr_value(hostdev,
-				"ip_address");
+				"ipaddress");
 		if (value) {
 			strncpy(ip_address, value, SLOT_NAME_SIZE);
 			udev_device_unref(hostdev);
