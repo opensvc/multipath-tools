@@ -67,7 +67,7 @@ scan_devname(char *alias, char *prefix)
 		return -1;
 
 	if (strlen(alias) == strlen(prefix))
-		return -1;	
+		return -1;
 
 	if (strlen(alias) > strlen(prefix) + 7)
 		/* id of 'aaaaaaaa' overflows int */
@@ -279,7 +279,7 @@ use_existing_alias (char *wwid, char *file, char *alias_old,
 			condlog(0, "alias %s already bound to wwid %s, cannot reuse",
 				alias_old, buff);
 		}
-		goto out;	
+		goto out;
 	}
 
 	/* allocate the existing alias in the bindings file */

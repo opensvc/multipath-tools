@@ -263,7 +263,7 @@ select_alias (struct multipath * mp)
 		goto out;
 
 	select_alias_prefix(mp);
-	
+
 	if (strlen(mp->alias_old) > 0) {
 		mp->alias = use_existing_alias(mp->wwid, conf->bindings_file,
 				mp->alias_old, mp->alias_prefix,
