@@ -40,8 +40,8 @@ ENV{ID_FS_USAGE}=="filesystem|other", ENV{ID_FS_LABEL_ENC}=="?*", \
 	SYMLINK+="disk/by-label/$env{ID_FS_LABEL_ENC}"
 
 # Create dm tables for partitions
-ENV{DM_ACTION}=="PATH_FAILED", ENV{DM_NR_VALID_PATHS}=="0", \
-	GOTO="kpartx_end"
+ENV{DM_ACTION}=="PATH_FAILED|PATH_REINSTATED", GOTO="kpartx_end"
+ENV{DM_NR_VALID_PATHS}=="0", GOTO="kpartx_end"
 ENV{DM_STATE}!="SUSPENDED", ENV{DM_UUID}=="mpath-*", \
         RUN+="/sbin/kpartx -u -p -part /dev/$name"
 
