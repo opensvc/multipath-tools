@@ -290,7 +290,7 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 		if (tgtdev) {
 			const char *value;
 
-			value = udev_device_get_sysattr_value(tgtdev, "tgtname");
+			value = udev_device_get_sysattr_value(tgtdev, "targetname");
 			if (value) {
 				pp->sg_id.proto_id = SCSI_PROTOCOL_ISCSI;
 				pp->sg_id.transport_id = tgtid;
