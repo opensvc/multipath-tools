@@ -467,6 +467,7 @@ ev_add_path (struct path * pp, struct vectors * vecs)
 	char params[PARAMS_SIZE] = {0};
 	int retries = 3;
 	int start_waiter = 0;
+	int ret;
 
 	/*
 	 * need path UID to go any further
@@ -546,7 +547,15 @@ rescan:
 	/*
 	 * reload the map for the multipath mapped device
 	 */
-	if (domap(mpp, params) <= 0) {
+retry:
+	ret = domap(mpp, params);
+	if (ret <= 0) {
+		if (ret < 0 && retries-- > 0) {
+			condlog(0, "%s: retry domap for addition of new "
+				"path %s", mpp->alias, pp->dev);
+			sleep(1);
+			goto retry;
+		}
 		condlog(0, "%s: failed in domap for addition of new "
 			"path %s", mpp->alias, pp->dev);
 		/*
