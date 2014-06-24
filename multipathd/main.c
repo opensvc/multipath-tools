@@ -1998,6 +1998,7 @@ main (int argc, char *argv[])
 	extern int optind;
 	int arg;
 	int err;
+	int foreground = 0;
 
 	logsink = 1;
 	running_state = DAEMON_INIT;
@@ -2022,7 +2023,9 @@ main (int argc, char *argv[])
 	while ((arg = getopt(argc, argv, ":dsv:k::B")) != EOF ) {
 	switch(arg) {
 		case 'd':
-			logsink = 0;
+			foreground = 1;
+			if (logsink > 0)
+				logsink = 0;
 			//debug=1; /* ### comment me out ### */
 			break;
 		case 'v':
@@ -2062,7 +2065,7 @@ main (int argc, char *argv[])
 		exit(0);
 	}
 
-	if (logsink < 1) {
+	if (foreground) {
 		if (!isatty(fileno(stdout)))
 			setbuf(stdout, NULL);
 		err = 0;
