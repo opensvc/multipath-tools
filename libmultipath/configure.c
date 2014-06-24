@@ -546,7 +546,7 @@ lock_multipath (struct multipath * mpp, int lock)
 		if (!pgp->paths)
 			continue;
 		vector_foreach_slot(pgp->paths, pp, j) {
-			if (lock && flock(pp->fd, LOCK_EX | LOCK_NB) &&
+			if (lock && flock(pp->fd, LOCK_SH | LOCK_NB) &&
 			    errno == EWOULDBLOCK)
 				goto fail;
 			else if (!lock)
