@@ -567,10 +567,9 @@ dm_dev_t (const char * mapname, char * dev_t, int len)
 	if (!dm_task_run(dmt))
 		goto out;
 
-	if (!dm_task_get_info(dmt, &info))
+	if (!dm_task_get_info(dmt, &info) || !info.exists)
 		goto out;
 
-	r = info.open_count;
 	if (snprintf(dev_t, len, "%i:%i", info.major, info.minor) > len)
 		    goto out;
 
