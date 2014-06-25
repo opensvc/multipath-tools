@@ -385,6 +385,8 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 				cmpp->alias, mpp->alias);
 			strncpy(mpp->alias_old, cmpp->alias, WWID_SIZE);
 			mpp->action = ACT_RENAME;
+			if (force_reload)
+				mpp->action = ACT_RENAME2;
 			return;
 		}
 		mpp->action = ACT_CREATE;
@@ -621,6 +623,15 @@ domap (struct multipath * mpp, char * params)
 
 	case ACT_RENAME:
 		r = dm_rename(mpp->alias_old, mpp->alias);
+		break;
+
+	case ACT_RENAME2:
+		r = dm_rename(mpp->alias_old, mpp->alias);
+		if (r) {
+			r = dm_addmap_reload(mpp, params);
+			if (r)
+				r = dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias, MPATH_UDEV_RELOAD_FLAG);
+		}
 		break;
 
 	default:
