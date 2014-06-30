@@ -561,7 +561,7 @@ rescan:
 		return 0;
 	}
 	else
-		return 1;
+		goto fail;
 
 fail_map:
 	remove_map(mpp, vecs, 1);
