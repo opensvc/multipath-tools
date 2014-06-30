@@ -408,11 +408,11 @@ set_value(vector strvec)
 			len += strlen(str);
 			if (!alloc)
 				alloc =
-				    (char *) MALLOC(sizeof (char *) *
+				    (char *) MALLOC(sizeof (char) *
 						    (len + 1));
 			else {
 				alloc =
-				    REALLOC(alloc, sizeof (char *) * (len + 1));
+				    REALLOC(alloc, sizeof (char) * (len + 1));
 				tmp = VECTOR_SLOT(strvec, i-1);
 				if (alloc && *str != '"' && *tmp != '"')
 					strncat(alloc, " ", 1);
@@ -422,7 +422,7 @@ set_value(vector strvec)
 				strncat(alloc, str, strlen(str));
 		}
 	} else {
-		alloc = MALLOC(sizeof (char *) * (size + 1));
+		alloc = MALLOC(sizeof (char) * (size + 1));
 		if (alloc)
 			memcpy(alloc, str, size);
 	}
