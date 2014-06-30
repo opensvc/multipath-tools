@@ -84,7 +84,7 @@ usage (char * progname)
 {
 	fprintf (stderr, VERSION_STRING);
 	fprintf (stderr, "Usage:\n");
-	fprintf (stderr, "  %s [-c|-w|-W] [-d] [-r] [-v lvl] [-p pol] [-b fil] [-q] [dev]\n", progname);
+	fprintf (stderr, "  %s [-a|-c|-w|-W] [-d] [-r] [-v lvl] [-p pol] [-b fil] [-q] [dev]\n", progname);
 	fprintf (stderr, "  %s -l|-ll|-f [-v lvl] [-b fil] [dev]\n", progname);
 	fprintf (stderr, "  %s -F [-v lvl]\n", progname);
 	fprintf (stderr, "  %s -t\n", progname);
@@ -97,6 +97,7 @@ usage (char * progname)
 		"  -ll     show multipath topology (maximum info)\n" \
 		"  -f      flush a multipath device map\n" \
 		"  -F      flush all multipath device maps\n" \
+		"  -a      add a device wwid to the wwids file\n" \
 		"  -c      check if a device should be a path in a multipath device\n" \
 		"  -q      allow queue_if_no_path when multipathd is not running\n"\
 		"  -d      dry run, do not create or update devmaps\n" \
@@ -295,6 +296,15 @@ configure (void)
 			}
 			goto out;
 		}
+		if (conf->cmd == CMD_ADD_WWID) {
+			r = remember_wwid(refwwid);
+			if (r == 0)
+				printf("wwid '%s' added\n", refwwid);
+			else
+				printf("failed adding '%s' to wwids file\n",
+				       refwwid);
+			goto out;
+		}
 		condlog(3, "scope limited to %s", refwwid);
 		if (conf->cmd == CMD_VALID_PATH) {
 			if (check_wwids_file(refwwid, 0) == 0){
@@ -435,7 +445,7 @@ main (int argc, char *argv[])
 	if (load_config(DEFAULT_CONFIGFILE, udev))
 		exit(1);
 
-	while ((arg = getopt(argc, argv, ":dchl::FfM:v:p:b:BrtqwW")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":adchl::FfM:v:p:b:BrtqwW")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
 			break;
@@ -504,6 +514,9 @@ main (int argc, char *argv[])
 			break;
 		case 'W':
 			conf->cmd = CMD_RESET_WWIDS;
+			break;
+		case 'a':
+			conf->cmd = CMD_ADD_WWID;
 			break;
 		case ':':
 			fprintf(stderr, "Missing option argument\n");

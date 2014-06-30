@@ -30,6 +30,7 @@ enum mpath_cmds {
 	CMD_VALID_PATH,
 	CMD_REMOVE_WWID,
 	CMD_RESET_WWIDS,
+	CMD_ADD_WWID,
 };
 
 struct hwentry {

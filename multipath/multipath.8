@@ -8,7 +8,7 @@ multipath \- Device mapper target autoconfig
 .RB [\| \-b\ \c
 .IR bindings_file \|]
 .RB [\| \-d \|]
-.RB [\| \-h | \-l | \-ll | \-f | \-t | \-F | \-B | \-c | \-q | \|-r | \-w | \-W \|]
+.RB [\| \-h | \-l | \-ll | \-f | \-t | \-F | \-B | \-c | \-q | \|-r | \-a | \-w | \-W \|]
 .RB [\| \-p\ \c
 .BR failover | multibus | group_by_serial | group_by_prio | group_by_node_name \|]
 .RB [\| device \|]
@@ -67,6 +67,9 @@ check if a block device should be a path in a multipath device
 .TP
 .B \-q
 allow device tables with queue_if_no_path when multipathd is not running
+.TP
+.B \-a
+add the wwid for the specified device to the wwids file
 .TP
 .B \-w
 remove the wwid for the specified device from the wwids file
