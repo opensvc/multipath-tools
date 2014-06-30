@@ -80,6 +80,9 @@ Show all available block devices by name including the information if they are b
 .B list|show status
 Show the number of path checkers in each possible state, the number of monitored paths, and whether multipathd is currently handling a uevent.
 .TP
+.B list|show daemon
+Show the current state of the multipathd daemon
+.TP
 .B add path $path
 Add a path to the list of monitored paths. $path is as listed in /sys/block (e.g. sda).
 .TP 
@@ -107,6 +110,13 @@ Sets map $map into suspend state.
 .B resume map|multipath $map
 Resumes map $map from suspend state.
 .TP
+.B reset map|multipath $map
+Reassign existing device-mapper table(s) use use the multipath device, instead
+of its path devices.
+.TP
+.B reload map|multipath $map
+Reload a multipath device.
+.TP
 .B fail path $path
 Sets path $path into failed state.
 .TP
@@ -125,8 +135,27 @@ Disable queuing on multipathed map $map
 .B restorequeueing map|multipath $map
 Restore queuing on multipahted map $map
 .TP
+.B forcequeueing daemon
+Forces multipathd into queue_without_daemon mode, so that no_path_retry queueing
+will not be disabled when the daemon stops
+.TP
+.B restorequeueing daemon
+Restores configured queue_without_daemon mode
+.TP
+.B map|multipath $map setprstatus
+Enable persistent reservation management on $map
+.TP
+.B map|multipath $map unsetprstatus
+Disable persistent reservation management on $map
+.TP
+.B map|multipath $map getprstatus
+Get the current persistent reservation management status of $map
+.TP
 .B quit|exit
 End interactive session.
+.TP
+.B shutdown
+Stop multipathd.
 
 .SH "SYSTEMD INTEGRATION"
 When compiled with systemd support two systemd service files are
