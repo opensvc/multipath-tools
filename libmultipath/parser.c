@@ -387,36 +387,57 @@ set_value(vector strvec)
 	char *alloc = NULL;
 	char *tmp;
 
-	if (!str)
+	if (!str) {
+		condlog(0, "option '%s' missing value",
+			(char *)VECTOR_SLOT(strvec, 0));
 		return NULL;
-
+	}
 	size = strlen(str);
-	if (size == 0)
+	if (size == 0) {
+		condlog(0, "option '%s' has empty value",
+			(char *)VECTOR_SLOT(strvec, 0));
 		return NULL;
-
-	if (*str == '"') {
-		for (i = 2; i < VECTOR_SIZE(strvec); i++) {
-			str = VECTOR_SLOT(strvec, i);
-			len += strlen(str);
-			if (!alloc)
-				alloc =
-				    (char *) MALLOC(sizeof (char) *
-						    (len + 1));
-			else {
-				alloc =
-				    REALLOC(alloc, sizeof (char) * (len + 1));
-				tmp = VECTOR_SLOT(strvec, i-1);
-				if (alloc && *str != '"' && *tmp != '"')
-					strncat(alloc, " ", 1);
-			}
-
-			if (alloc && i != VECTOR_SIZE(strvec)-1)
-				strncat(alloc, str, strlen(str));
-		}
-	} else {
+	}
+	if (*str != '"') {
 		alloc = MALLOC(sizeof (char) * (size + 1));
 		if (alloc)
 			memcpy(alloc, str, size);
+		else
+			condlog(0, "can't allocate memeory for option '%s'",
+				(char *)VECTOR_SLOT(strvec, 0));
+		return alloc;
+	}
+	/* Even empty quotes counts as a value (An empty string) */
+	alloc = (char *) MALLOC(sizeof (char));
+	if (!alloc) {
+		condlog(0, "can't allocate memeory for option '%s'",
+			(char *)VECTOR_SLOT(strvec, 0));
+		return NULL;
+	}
+	for (i = 2; i < VECTOR_SIZE(strvec); i++) {
+		str = VECTOR_SLOT(strvec, i);
+		if (!str) {
+			free(alloc);
+			condlog(0, "parse error for option '%s'",
+				(char *)VECTOR_SLOT(strvec, 0));
+			return NULL;
+		}
+		if (*str == '"')
+			break;
+		tmp = alloc;
+		/* The first +1 is for the NULL byte. The rest are for the
+		 * spaces between words */
+		len += strlen(str) + 1;
+		alloc = REALLOC(alloc, sizeof (char) * len);
+		if (!alloc) {
+			FREE(tmp);
+			condlog(0, "can't allocate memeory for option '%s'",
+				(char *)VECTOR_SLOT(strvec, 0));
+			return NULL;
+		}
+		if (*alloc != '\0')
+			strncat(alloc, " ", 1);
+		strncat(alloc, str, strlen(str));
 	}
 	return alloc;
 }
@@ -457,6 +478,74 @@ void free_uniques(vector uniques)
 }
 
 int
+is_sublevel_keyword(char *str)
+{
+	return (strcmp(str, "defaults") == 0 || strcmp(str, "blacklist") == 0 ||
+		strcmp(str, "blacklist_exceptions") == 0 ||
+		strcmp(str, "devices") == 0 || strcmp(str, "devices") == 0 ||
+		strcmp(str, "device") == 0 || strcmp(str, "multipaths") == 0 ||
+		strcmp(str, "multipath") == 0);
+}
+
+int
+validate_config_strvec(vector strvec)
+{
+	char *str;
+	int i;
+
+	str = VECTOR_SLOT(strvec, 0);
+	if (str == NULL) {
+		condlog(0, "can't parse option on line %d of config file",
+			line_nr);
+	return -1;
+	}
+	if (*str == '}') {
+		if (VECTOR_SIZE(strvec) > 1)
+			condlog(0, "ignoring extra data starting with '%s' on line %d of config file", (char *)VECTOR_SLOT(strvec, 1), line_nr);
+		return 0;
+	}
+	if (*str == '{') {
+		condlog(0, "invalid keyword '%s' on line %d of config file", str, line_nr);
+		return -1;
+	}
+	if (is_sublevel_keyword(str)) {
+		str = VECTOR_SLOT(strvec, 1);
+		if (str == NULL)
+			condlog(0, "missing '{' on line %d of config file", line_nr);
+		else if (*str != '{')
+			condlog(0, "expecting '{' on line %d of config file. found '%s'", line_nr, str);
+		else if (VECTOR_SIZE(strvec) > 2)
+			condlog(0, "ignoring extra data starting with '%s' on line %d of config file", (char *)VECTOR_SLOT(strvec, 2), line_nr);
+		return 0;
+	}
+	str = VECTOR_SLOT(strvec, 1);
+	if (str == NULL) {
+		condlog(0, "missing value for option '%s' on line %d of config file", (char *)VECTOR_SLOT(strvec, 0), line_nr);
+		return -1;
+	}
+	if (*str != '"') {
+		if (VECTOR_SIZE(strvec) > 2)
+			condlog(0, "ignoring extra data starting with '%s' on line %d of config file", (char *)VECTOR_SLOT(strvec, 2), line_nr);
+		return 0;
+	}
+	for (i = 2; i < VECTOR_SIZE(strvec); i++) {
+		str = VECTOR_SLOT(strvec, i);
+		if (str == NULL) {
+			condlog(0, "can't parse value on line %d of config file", line_nr);
+			return -1;
+		}
+		if (*str == '"') {
+			if (VECTOR_SIZE(strvec) > i + 1)
+				condlog(0, "ignoring extra data starting with '%s' on line %d of config file", (char *)VECTOR_SLOT(strvec, (i + 1)), line_nr);
+			return 0;
+		}
+	}
+	condlog(0, "missing closing quotes on line %d of config file",
+		line_nr);
+	return 0;
+}
+
+int
 process_stream(vector keywords)
 {
 	int i;
@@ -484,11 +573,20 @@ process_stream(vector keywords)
 		if (!strvec)
 			continue;
 
+		if (validate_config_strvec(strvec) != 0) {
+			free_strvec(strvec);
+			continue;
+		}
+
 		str = VECTOR_SLOT(strvec, 0);
 
-		if (!strcmp(str, EOB) && kw_level > 0) {
-			free_strvec(strvec);
-			break;
+		if (!strcmp(str, EOB)) {
+			if (kw_level > 0) {
+				free_strvec(strvec);
+				break;
+			}
+			condlog(0, "unmatched '%s' at line %d of config file",
+				EOB, line_nr);
 		}
 
 		for (i = 0; i < VECTOR_SIZE(keywords); i++) {
