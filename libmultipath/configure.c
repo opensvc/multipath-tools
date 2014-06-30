@@ -160,8 +160,16 @@ int order_paths_in_pg_by_alt_adapters(struct pathgroup *pgp, vector adapters,
 
 	while (total_paths > 0) {
 		agp = VECTOR_SLOT(adapters, next_adapter_index);
+		if (!agp) {
+			condlog(0, "can't get adapter group %d", next_adapter_index);
+			return 1;
+		}
 
 		hgp = VECTOR_SLOT(agp->host_groups, agp->next_host_index);
+		if (!hgp) {
+			condlog(0, "can't get host group %d of adapter group %d", next_adapter_index, agp->next_host_index);
+			return 1;
+		}
 
 		if (!hgp->num_paths) {
 			agp->next_host_index++;
@@ -223,8 +231,8 @@ int rr_optimize_path_order(struct pathgroup *pgp)
 	/* group paths in path group by host adapters
 	 */
 	if (group_by_host_adapter(pgp, adapters)) {
+		/* already freed adapters */
 		condlog(3, "Failed to group paths by adapters");
-		free_adaptergroup(adapters);
 		return 0;
 	}
 
