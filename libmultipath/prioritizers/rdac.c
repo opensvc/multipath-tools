@@ -31,7 +31,7 @@ int rdac_prio(const char *dev, int fd)
 	io_hdr.dxferp = sense_buffer;
 	io_hdr.cmdp = inqCmdBlk;
 	io_hdr.sbp = sb;
-	io_hdr.timeout = 60000;
+	io_hdr.timeout = get_prio_timeout(60000);
 	io_hdr.pack_id = 0;
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
 		pp_rdac_log(0, "sending inquiry command failed");

@@ -46,7 +46,7 @@ int hp_sw_prio(const char *dev, int fd)
 	io_hdr.dxfer_direction = SG_DXFER_NONE;
 	io_hdr.cmdp = turCmdBlk;
 	io_hdr.sbp = sb;
-	io_hdr.timeout = 60000;
+	io_hdr.timeout = get_prio_timeout(60000);
 	io_hdr.pack_id = 0;
  retry:
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {

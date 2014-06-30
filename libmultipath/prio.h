@@ -51,6 +51,7 @@ struct prio {
 	int (*getprio)(struct path *, char *);
 };
 
+unsigned int get_prio_timeout(unsigned int default_timeout);
 int init_prio (void);
 void cleanup_prio (void);
 struct prio * add_prio (char *);

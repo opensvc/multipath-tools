@@ -114,7 +114,7 @@ int hds_modular_prio (const char *dev, int fd)
 	io_hdr.dxferp = inqBuff;
 	io_hdr.cmdp = inqCmdBlk;
 	io_hdr.sbp = sense_buffer;
-	io_hdr.timeout = 2000;	/* TimeOut = 2 seconds */
+	io_hdr.timeout = get_prio_timeout(2000); /* TimeOut = 2 seconds */
 
 	if (ioctl (fd, SG_IO, &io_hdr) < 0) {
 		pp_hds_log(0, "SG_IO error");

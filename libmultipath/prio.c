@@ -10,6 +10,13 @@
 
 static LIST_HEAD(prioritizers);
 
+unsigned int get_prio_timeout(unsigned int default_timeout)
+{
+	if (conf->checker_timeout)
+		return conf->checker_timeout * 1000;
+	return default_timeout;
+}
+
 int init_prio (void)
 {
 	if (!add_prio(DEFAULT_PRIO))

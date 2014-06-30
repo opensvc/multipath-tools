@@ -243,8 +243,9 @@
 #	#
 #	# name    : checker_timeout
 #	# scope   : multipath & multipathd
-#	# desc    : The timeout to use for path checkers that issue scsi
-#	#           commands with an explicit timeout, in seconds.
+#	# desc    : The timeout to use for path checkers and prioritizers
+#	#           that issue scsi commands with an explicit timeout, in
+#	#           seconds.
 #	# values  : n > 0
 #	# default : taken from /sys/block/sd<x>/device/timeout
 #	checker_timeout 60

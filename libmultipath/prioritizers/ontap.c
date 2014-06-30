@@ -89,7 +89,7 @@ static int send_gva(const char *dev, int fd, unsigned char pg,
 	io_hdr.dxferp = results;
 	io_hdr.cmdp = cdb;
 	io_hdr.sbp = sb;
-	io_hdr.timeout = SG_TIMEOUT;
+	io_hdr.timeout = get_prio_timeout(SG_TIMEOUT);
 	io_hdr.pack_id = 0;
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
 		pp_ontap_log(0, "SG_IO ioctl failed, errno=%d", errno);
@@ -141,7 +141,7 @@ static int get_proxy(const char *dev, int fd)
 	io_hdr.dxferp = results;
 	io_hdr.cmdp = cdb;
 	io_hdr.sbp = sb;
-	io_hdr.timeout = SG_TIMEOUT;
+	io_hdr.timeout = get_prio_timeout(SG_TIMEOUT);
 	io_hdr.pack_id = 0;
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
 		pp_ontap_log(0, "ioctl sending inquiry command failed, "
