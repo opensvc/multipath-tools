@@ -22,6 +22,16 @@ enum devtypes {
 	DEV_DEVMAP
 };
 
+enum mpath_cmds {
+	CMD_CREATE,
+	CMD_DRY_RUN,
+	CMD_LIST_SHORT,
+	CMD_LIST_LONG,
+	CMD_VALID_PATH,
+	CMD_REMOVE_WWID,
+	CMD_RESET_WWIDS,
+};
+
 struct hwentry {
 	char * vendor;
 	char * product;
@@ -78,8 +88,7 @@ struct mpentry {
 
 struct config {
 	int verbosity;
-	int dry_run;
-	int list;
+	enum mpath_cmds cmd;
 	int pgpolicy_flag;
 	int pgpolicy;
 	enum devtypes dev_type;

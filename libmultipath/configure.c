@@ -579,7 +579,7 @@ domap (struct multipath * mpp, char * params)
 	/*
 	 * last chance to quit before touching the devmaps
 	 */
-	if (conf->dry_run && mpp->action != ACT_NOTHING) {
+	if (conf->cmd == CMD_DRY_RUN && mpp->action != ACT_NOTHING) {
 		print_multipath_topology(mpp, conf->verbosity);
 		return DOMAP_DRY;
 	}

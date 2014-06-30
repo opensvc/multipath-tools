@@ -207,18 +207,19 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 		 * If not in "fast list mode", we need to fetch information
 		 * about them
 		 */
-		if (conf->list != 1)
+		if (conf->cmd != CMD_LIST_SHORT)
 			update_paths(mpp);
 
-		if (conf->list > 1)
+		if (conf->cmd == CMD_LIST_LONG)
 			mpp->bestpg = select_path_group(mpp);
 
 		disassemble_status(status, mpp);
 
-		if (conf->list)
+		if (conf->cmd == CMD_LIST_SHORT ||
+		    conf->cmd == CMD_LIST_LONG)
 			print_multipath_topology(mpp, conf->verbosity);
 
-		if (!conf->dry_run)
+		if (conf->cmd == CMD_CREATE)
 			reinstate_paths(mpp);
 	}
 	return 0;
@@ -260,10 +261,11 @@ configure (void)
 	/*
 	 * if we have a blacklisted device parameter, exit early
 	 */
-	if (dev && conf->dev_type == DEV_DEVNODE && conf->dry_run != 3 &&
+	if (dev && conf->dev_type == DEV_DEVNODE &&
+	    conf->cmd != CMD_REMOVE_WWID &&
 	    (filter_devnode(conf->blist_devnode,
 			    conf->elist_devnode, dev) > 0)) {
-		if (conf->dry_run == 2)
+		if (conf->cmd == CMD_VALID_PATH)
 			printf("%s is not a valid multipath device path\n",
 			       conf->dev);
 		goto out;
@@ -276,13 +278,13 @@ configure (void)
 		int failed = get_refwwid(conf->dev, conf->dev_type, pathvec,
 					 &refwwid);
 		if (!refwwid) {
-			if (failed == 2 && conf->dry_run == 2)
+			if (failed == 2 && conf->cmd == CMD_VALID_PATH)
 				printf("%s is not a valid multipath device path\n", conf->dev);
 			else
 				condlog(3, "scope is nul");
 			goto out;
 		}
-		if (conf->dry_run == 3) {
+		if (conf->cmd == CMD_REMOVE_WWID) {
 			r = remove_wwid(refwwid);
 			if (r == 0)
 				printf("wwid '%s' removed\n", refwwid);
@@ -294,7 +296,7 @@ configure (void)
 			goto out;
 		}
 		condlog(3, "scope limited to %s", refwwid);
-		if (conf->dry_run == 2) {
+		if (conf->cmd == CMD_VALID_PATH) {
 			if (check_wwids_file(refwwid, 0) == 0){
 				printf("%s is a valid multipath device path\n", conf->dev);
 				r = 0;
@@ -311,10 +313,10 @@ configure (void)
 	if (conf->dev)
 		di_flag = DI_WWID;
 
-	if (conf->list > 1)
+	if (conf->cmd == CMD_LIST_LONG)
 		/* extended path info '-ll' */
 		di_flag |= DI_SYSFS | DI_CHECKER;
-	else if (conf->list)
+	else if (conf->cmd == CMD_LIST_SHORT)
 		/* minimum path info '-l' */
 		di_flag |= DI_SYSFS;
 	else
@@ -334,7 +336,7 @@ configure (void)
 
 	filter_pathvec(pathvec, refwwid);
 
-	if (conf->list) {
+	if (conf->cmd != CMD_CREATE && conf->cmd != CMD_DRY_RUN) {
 		r = 0;
 		goto out;
 	}
@@ -456,11 +458,11 @@ main (int argc, char *argv[])
 			conf->allow_queueing = 1;
 			break;
 		case 'c':
-			conf->dry_run = 2;
+			conf->cmd = CMD_VALID_PATH;
 			break;
 		case 'd':
-			if (!conf->dry_run)
-				conf->dry_run = 1;
+			if (conf->cmd == CMD_CREATE)
+				conf->cmd = CMD_DRY_RUN;
 			break;
 		case 'f':
 			conf->remove = FLUSH_ONE;
@@ -469,11 +471,10 @@ main (int argc, char *argv[])
 			conf->remove = FLUSH_ALL;
 			break;
 		case 'l':
-			conf->list = 1;
-			conf->dry_run = 1;
-
 			if (optarg && !strncmp(optarg, "l", 1))
-				conf->list++;
+				conf->cmd = CMD_LIST_LONG;
+			else
+				conf->cmd = CMD_LIST_SHORT;
 
 			break;
 		case 'M':
@@ -499,10 +500,10 @@ main (int argc, char *argv[])
 			usage(argv[0]);
 			exit(0);
 		case 'w':
-			conf->dry_run = 3;
+			conf->cmd = CMD_REMOVE_WWID;
 			break;
 		case 'W':
-			conf->dry_run = 4;
+			conf->cmd = CMD_RESET_WWIDS;
 			break;
 		case ':':
 			fprintf(stderr, "Missing option argument\n");
@@ -558,16 +559,16 @@ main (int argc, char *argv[])
 	}
 	dm_init();
 
-	if (conf->dry_run == 2 &&
+	if (conf->cmd == CMD_VALID_PATH &&
 	    (!conf->dev || conf->dev_type == DEV_DEVMAP)) {
 		condlog(0, "the -c option requires a path to check");
 		goto out;
 	}
-	if (conf->dry_run == 3 && !conf->dev) {
+	if (conf->cmd == CMD_REMOVE_WWID && !conf->dev) {
 		condlog(0, "the -w option requires a device");
 		goto out;
 	}
-	if (conf->dry_run == 4) {
+	if (conf->cmd == CMD_RESET_WWIDS) {
 		struct multipath * mpp;
 		int i;
 		vector curmp;

@@ -56,7 +56,8 @@ store_pathinfo (vector pathvec, vector hwtable, struct udev_device *udevice,
 	}
 	pp->udev = udev_device_ref(udevice);
 	err = pathinfo(pp, hwtable,
-		       (conf->dry_run == 3)? flag : (flag | DI_BLACKLIST));
+		       (conf->cmd == CMD_REMOVE_WWID)? flag :
+						       (flag | DI_BLACKLIST));
 	if (err)
 		goto out;
 
@@ -1127,7 +1128,8 @@ get_uid (struct path * pp)
 
 		value = udev_device_get_property_value(pp->udev,
 						       pp->uid_attribute);
-		if ((!value || strlen(value) == 0) && conf->dry_run == 2)
+		if ((!value || strlen(value) == 0) &&
+		    conf->cmd == CMD_VALID_PATH)
 			value = getenv(pp->uid_attribute);
 		if (value && strlen(value)) {
 			size_t len = WWID_SIZE;
