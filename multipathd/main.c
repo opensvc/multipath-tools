@@ -1170,6 +1170,10 @@ check_path (struct vectors * vecs, struct path * pp)
 			pp->dev);
 		pp->dmstate = PSTATE_UNDEF;
 	}
+	/* if update_multipath_strings orphaned the path, quit early */
+	if (!pp->mpp)
+		return 0;
+
 	pp->chkrstate = newstate;
 	if (newstate != pp->state) {
 		int oldstate = pp->state;

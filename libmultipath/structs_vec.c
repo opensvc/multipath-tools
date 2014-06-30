@@ -281,12 +281,38 @@ update_multipath_status (struct multipath *mpp)
 	return 0;
 }
 
+void sync_paths(struct multipath *mpp, vector pathvec)
+{
+	struct path *pp;
+	struct pathgroup  *pgp;
+	int found, i, j;
+
+	vector_foreach_slot (mpp->paths, pp, i) {
+		found = 0;
+		vector_foreach_slot(mpp->pg, pgp, j) {
+			if (find_slot(pgp->paths, (void *)pp) != -1) {
+				found = 1;
+				break;
+			}
+		}
+		if (!found) {
+			condlog(3, "%s dropped path %s", mpp->alias, pp->dev);
+			vector_del_slot(mpp->paths, i--);
+			orphan_path(pp, "path removed externally");
+		}
+	}
+	update_mpp_paths(mpp, pathvec);
+	vector_foreach_slot (mpp->paths, pp, i)
+		pp->mpp = mpp;
+}
+
 extern int
 update_multipath_strings (struct multipath *mpp, vector pathvec)
 {
 	if (!mpp)
 		return 1;
 
+	update_mpp_paths(mpp, pathvec);
 	condlog(4, "%s: %s", mpp->alias, __FUNCTION__);
 
 	free_multipath_attributes(mpp);
@@ -295,6 +321,7 @@ update_multipath_strings (struct multipath *mpp, vector pathvec)
 
 	if (update_multipath_table(mpp, pathvec))
 		return 1;
+	sync_paths(mpp, pathvec);
 
 	if (update_multipath_status(mpp))
 		return 1;
@@ -508,13 +535,9 @@ int update_multipath (struct vectors *vecs, char *mapname, int reset)
 		return 2;
 	}
 
-	free_pgvec(mpp->pg, KEEP_PATHS);
-	mpp->pg = NULL;
-
 	if (__setup_multipath(vecs, mpp, reset))
 		return 1; /* mpp freed in setup_multipath */
 
-	adopt_paths(vecs->pathvec, mpp, 0);
 	/*
 	 * compare checkers states with DM states
 	 */
