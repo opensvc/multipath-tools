@@ -1053,8 +1053,12 @@ get_state (struct path * pp, int daemon)
 		}
 	}
 	checker_clear_message(c);
-	if (daemon)
-		checker_set_async(c);
+	if (daemon) {
+		if (conf->force_sync == 0)
+			checker_set_async(c);
+		else
+			checker_set_sync(c);
+	}
 	if (!conf->checker_timeout &&
 	    sysfs_get_timeout(pp, &(c->timeout)) <= 0)
 		c->timeout = DEF_TIMEOUT;

@@ -270,6 +270,7 @@
 #	# default : determined by the OS
 #	dev_loss_tmo 600
 #
+#	#
 #	# name    : bindings_file
 #	# scope   : multipath
 #	# desc    : The location of the bindings file that is used with
@@ -278,6 +279,7 @@
 #	# default : "/var/lib/multipath/bindings"
 #	bindings_file "/etc/multipath/bindings"
 #
+#	#
 #	# name    : wwids_file
 #	# scope   : multipath
 #	# desc    : The location of the wwids file multipath uses to
@@ -286,6 +288,7 @@
 #	# default : "/var/lib/multipath/wwids"
 #	wwids_file "/etc/multipath/wwids"
 #
+#	#
 #	# name    : reservation_key
 #	# scope   : multipath
 #	# desc    : Service action reservation key used by mpathpersist.
@@ -293,6 +296,14 @@
 #	# default : (null)
 #	reservation_key "mpathkey"
 #
+#	#
+#	# name    : force_sync
+#	# scope   : multipathd
+#	# desc    : If set to yes, multipath will run all of the checkers in
+#	#           sync mode, even if the checker has an async mode.
+#	# values  : yes|no
+#	# default : no
+#	force_sync yes
 #}
 #	
 ##

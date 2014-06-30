@@ -409,6 +409,15 @@ will automatically use the
 .I alua
 prioritizer. If not, the prioritizer will be selected as usual. Default is
 .I no
+.TP
+.B force_sync
+If set to
+.I yes
+, multipathd will call the path checkers in sync mode only.  This means that
+only one checker will run at a time.  This is useful in the case where many
+multipathd checkers running in parallel causes significant CPU pressure. The
+Default is
+.I no
 .
 .SH "blacklist section"
 The

@@ -561,6 +561,7 @@ load_config (char * file, struct udev *udev)
 	conf->fast_io_fail = DEFAULT_FAST_IO_FAIL;
 	conf->retain_hwhandler = DEFAULT_RETAIN_HWHANDLER;
 	conf->detect_prio = DEFAULT_DETECT_PRIO;
+	conf->force_sync = 0;
 
 	/*
 	 * preload default hwtable
