@@ -289,6 +289,19 @@ static struct hwentry default_hw[] = {
 		.prio_name     = DEFAULT_PRIO,
 		.prio_args     = NULL,
 	},
+	{
+		.vendor        = "XtremIO",
+		.product       = "XtremApp",
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = 5,
+		.checker_name  = TUR,
+		.prio_name     = DEFAULT_PRIO,
+		.prio_args     = NULL,
+	},
 	/*
 	 * Fujitsu controller family
 	 *
