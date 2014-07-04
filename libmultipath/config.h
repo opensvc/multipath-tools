@@ -106,6 +106,7 @@ struct config {
 	int max_fds;
 	int force_reload;
 	int queue_without_daemon;
+	int ignore_wwids;
 	int checker_timeout;
 	int daemon;
 #ifdef USE_SYSTEMD

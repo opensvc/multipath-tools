@@ -84,7 +84,7 @@ usage (char * progname)
 {
 	fprintf (stderr, VERSION_STRING);
 	fprintf (stderr, "Usage:\n");
-	fprintf (stderr, "  %s [-a|-c|-w|-W] [-d] [-r] [-v lvl] [-p pol] [-b fil] [-q] [dev]\n", progname);
+	fprintf (stderr, "  %s [-a|-c|-w|-W] [-d] [-r] [-i] [-v lvl] [-p pol] [-b fil] [-q] [dev]\n", progname);
 	fprintf (stderr, "  %s -l|-ll|-f [-v lvl] [-b fil] [dev]\n", progname);
 	fprintf (stderr, "  %s -F [-v lvl]\n", progname);
 	fprintf (stderr, "  %s -t\n", progname);
@@ -103,6 +103,7 @@ usage (char * progname)
 		"  -d      dry run, do not create or update devmaps\n" \
 		"  -t      dump internal hardware table\n" \
 		"  -r      force devmap reload\n" \
+		"  -i      ignore wwids file\n" \
 		"  -B      treat the bindings file as read only\n" \
 		"  -p      policy failover|multibus|group_by_serial|group_by_prio\n" \
 		"  -b fil  bindings file location\n" \
@@ -307,12 +308,12 @@ configure (void)
 		}
 		condlog(3, "scope limited to %s", refwwid);
 		if (conf->cmd == CMD_VALID_PATH) {
-			if (check_wwids_file(refwwid, 0) == 0){
-				printf("%s is a valid multipath device path\n", conf->dev);
+			if (conf->ignore_wwids ||
+			    check_wwids_file(refwwid, 0) == 0)
 				r = 0;
-			}
-			else
-				printf("%s is not a valid multipath device path\n", conf->dev);
+
+			printf("%s %s a valid multipath device path\n",
+			       conf->dev, r == 0 ? "is" : "is not");
 			goto out;
 		}
 	}
@@ -445,7 +446,7 @@ main (int argc, char *argv[])
 	if (load_config(DEFAULT_CONFIGFILE, udev))
 		exit(1);
 
-	while ((arg = getopt(argc, argv, ":adchl::FfM:v:p:b:BrtqwW")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":adchl::FfM:v:p:b:BritqwW")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
 			break;
@@ -502,6 +503,9 @@ main (int argc, char *argv[])
 			break;
 		case 'r':
 			conf->force_reload = 1;
+			break;
+		case 'i':
+			conf->ignore_wwids = 1;
 			break;
 		case 't':
 			r = dump_config();
