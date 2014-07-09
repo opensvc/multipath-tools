@@ -56,6 +56,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <wwids.h>
+#include <uxsock.h>
 #include "dev_t.h"
 
 int logsink;
@@ -621,6 +622,18 @@ main (int argc, char *argv[])
 	    (!conf->dev || conf->dev_type == DEV_DEVMAP)) {
 		condlog(0, "the -c option requires a path to check");
 		goto out;
+	}
+	if (conf->cmd == CMD_VALID_PATH &&
+	    conf->dev_type == DEV_UEVENT) {
+		int fd;
+
+		fd = ux_socket_connect(DEFAULT_SOCKET);
+		if (fd == -1) {
+			printf("%s is not a valid multipath device path\n",
+				conf->dev);
+			goto out;
+		}
+		close(fd);
 	}
 	if (conf->cmd == CMD_REMOVE_WWID && !conf->dev) {
 		condlog(0, "the -w option requires a device");
