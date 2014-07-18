@@ -63,6 +63,13 @@ alloc_ble_device (vector blist)
 	return 0;
 }
 
+static int lm_regcomp(regex_t *preg, const char *pattern, int cflags)
+{
+	if (strcmp(pattern, "*") == 0)
+		pattern = ".*";
+	return regcomp(preg, pattern, cflags);
+}
+
 extern int
 set_ble_device (vector blist, char * vendor, char * product, int origin)
 {
@@ -77,16 +84,16 @@ set_ble_device (vector blist, char * vendor, char * product, int origin)
 		return 1;
 
 	if (vendor) {
-		if (regcomp(&ble->vendor_reg, vendor,
-			    REG_EXTENDED|REG_NOSUB)) {
+		if (lm_regcomp(&ble->vendor_reg, vendor,
+			       REG_EXTENDED|REG_NOSUB)) {
 			FREE(vendor);
 			return 1;
 		}
 		ble->vendor = vendor;
 	}
 	if (product) {
-		if (regcomp(&ble->product_reg, product,
-			    REG_EXTENDED|REG_NOSUB)) {
+		if (lm_regcomp(&ble->product_reg, product,
+			       REG_EXTENDED|REG_NOSUB)) {
 			FREE(product);
 			return 1;
 		}
