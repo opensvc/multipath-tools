@@ -282,18 +282,12 @@ out:
 int
 read_line(char *buf, int size)
 {
-	int ch;
-	int count = 0;
+	char *p;
 
-	while ((ch = fgetc(stream)) != EOF && (int) ch != '\n'
-	       && (int) ch != '\r') {
-		if (count < size)
-			buf[count] = (int) ch;
-		else
-			break;
-		count++;
-	}
-	return (ch == EOF) ? 0 : 1;
+	if (fgets(buf, size, stream) == NULL)
+		return 0;
+	strtok_r(buf, "\n\r", &p);
+	return 1;
 }
 
 vector
@@ -341,7 +335,6 @@ read_value_block(void)
 			}
 			free_strvec(vec);
 		}
-		memset(buf, 0, MAXBUF);
 	}
 	FREE(buf);
 	return elements;
@@ -379,7 +372,6 @@ alloc_value_block(vector strvec, void (*alloc_func) (vector))
 
 			free_strvec(vec);
 		}
-		memset(buf, 0, MAXBUF);
 	}
 	FREE(buf);
 	return 0;
@@ -489,8 +481,6 @@ process_stream(vector keywords)
 	while (read_line(buf, MAXBUF)) {
 		line_nr++;
 		strvec = alloc_strvec(buf);
-		memset(buf,0, MAXBUF);
-
 		if (!strvec)
 			continue;
 
