@@ -460,7 +460,7 @@ int
 process_stream(vector keywords)
 {
 	int i;
-	int r = 0;
+	int r = 0, t;
 	struct keyword *keyword;
 	char *str;
 	char *buf;
@@ -501,8 +501,13 @@ process_stream(vector keywords)
 						free_strvec(strvec);
 						goto out;
 				}
-				if (keyword->handler)
-					r += (*keyword->handler) (strvec);
+				if (keyword->handler) {
+					t = (*keyword->handler) (strvec);
+					r += t;
+					if (t)
+						condlog(1, "multipath.conf +%d parsing failed: %s",
+							line_nr, buf);
+				}
 
 				if (keyword->sub) {
 					kw_level++;
