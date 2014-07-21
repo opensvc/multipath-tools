@@ -46,7 +46,7 @@ GZIP        = gzip -9 -c
 INSTALL_PROGRAM = install
 
 ifndef RPM_OPT_FLAGS
-	RPM_OPT_FLAGS = -O2 -g -pipe -Wformat-security -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4
+	RPM_OPT_FLAGS = -O2 -g -pipe -Wformat-security -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4
 endif
 
 OPTFLAGS     = $(RPM_OPT_FLAGS) -Wunused -Wstrict-prototypes
