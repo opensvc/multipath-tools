@@ -958,7 +958,6 @@ path_offline (struct path * pp)
 	condlog(3, "%s: path state = %s", pp->dev, buff);
 
 	if (!strncmp(buff, "offline", 7) ||
-	    !strncmp(buff, "quiesce", 7) ||
 	    !strncmp(buff, "transport-offline", 17)) {
 		pp->offline = 1;
 		return PATH_DOWN;
