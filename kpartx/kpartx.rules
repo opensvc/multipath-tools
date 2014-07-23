@@ -14,19 +14,14 @@ ENV{DM_UUID}=="?*", IMPORT{program}=="kpartx_id %M %m $env{DM_UUID}"
 
 OPTIONS="link_priority=50"
 
-# Create persistent links for multipath tables
-ENV{DM_UUID}=="mpath-*", \
+ENV{DM_UUID}=="?*", ENV{DM_TYPE}=="?*" \
 	SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}"
-ENV{DM_MPATH}=="?*", ENV{DM_PART}!="?*", \
-	SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_MPATH}"
+
+# Create persistent links for multipath tables
 ENV{DM_WWN}=="?*", ENV{DM_PART}!="?*", \
 	SYMLINK+="disk/by-id/wwn-$env{DM_WWN}"
 
 # Create persistent links for partitions
-ENV{DM_PART}=="?*", \
-        SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}-part$env{DM_PART}"
-ENV{DM_MPATH}=="?*", ENV{DM_PART}=="?*", \
-	SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_MPATH}-part$env{DM_PART}"
 ENV{DM_WWN}=="?*", ENV{DM_PART}=="?*", \
 	SYMLINK+="disk/by-id/wwn-$env{DM_WWN}-part$env{DM_PART}"
 
