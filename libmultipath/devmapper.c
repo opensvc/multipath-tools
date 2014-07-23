@@ -615,6 +615,9 @@ dm_get_opencount (const char * mapname)
 	if (!dm_task_get_info(dmt, &info))
 		goto out;
 
+	if (!info.exists)
+		goto out;
+
 	r = info.open_count;
 out:
 	dm_task_destroy(dmt);
@@ -640,6 +643,9 @@ dm_get_major (char * mapname)
 	if (!dm_task_get_info(dmt, &info))
 		goto out;
 
+	if (!info.exists)
+		goto out;
+
 	r = info.major;
 out:
 	dm_task_destroy(dmt);
@@ -663,6 +669,9 @@ dm_get_minor (char * mapname)
 		goto out;
 
 	if (!dm_task_get_info(dmt, &info))
+		goto out;
+
+	if (!info.exists)
 		goto out;
 
 	r = info.minor;
