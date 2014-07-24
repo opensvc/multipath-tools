@@ -100,13 +100,15 @@ struct key {
 
 struct handler {
 	uint64_t fingerprint;
+	int locked;
 	int (*fn)(void *, char **, int *, void *);
 };
 
 int alloc_handlers (void);
 int add_handler (uint64_t fp, int (*fn)(void *, char **, int *, void *));
 int set_handler_callback (uint64_t fp, int (*fn)(void *, char **, int *, void *));
-int parse_cmd (char * cmd, char ** reply, int * len, void *);
+int set_unlocked_handler_callback (uint64_t fp, int (*fn)(void *, char **, int *, void *));
+int parse_cmd (char * cmd, char ** reply, int * len, void *, int);
 int load_keys (void);
 char * get_keyparam (vector v, uint64_t code);
 void free_keys (vector vec);
