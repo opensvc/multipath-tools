@@ -34,9 +34,11 @@
 #include <sys/socket.h>
 #include <sys/user.h>
 #include <sys/un.h>
+#include <sys/poll.h>
 #include <linux/types.h>
 #include <linux/netlink.h>
 #include <pthread.h>
+#include <signal.h>
 #include <limits.h>
 #include <sys/mman.h>
 #include <libudev.h>
@@ -470,10 +472,14 @@ struct uevent *uevent_from_udev_device(struct udev_device *dev)
 
 int uevent_listen(struct udev *udev)
 {
-	int err;
+	int err = 2;
 	struct udev_monitor *monitor = NULL;
-	int fd, socket_flags;
+	int fd, fd_ep = -1, socket_flags, events;
 	int need_failback = 1;
+	int timeout = 30;
+	sigset_t mask;
+	LIST_HEAD(uevlisten_tmp);
+
 	/*
 	 * Queue uevents for service by dedicated thread so that the uevent
 	 * listening thread does not block on multipathd locks (vecs->lock)
@@ -490,7 +496,6 @@ int uevent_listen(struct udev *udev)
 	monitor = udev_monitor_new_from_netlink(udev, "udev");
 	if (!monitor) {
 		condlog(2, "failed to create udev monitor");
-		err = 2;
 		goto out;
 	}
 #ifdef LIBUDEV_API_RECVBUF
@@ -522,28 +527,63 @@ int uevent_listen(struct udev *udev)
 		condlog(2, "failed to enable receiving : %s", strerror(-err));
 		goto out;
 	}
+
+	pthread_sigmask(SIG_SETMASK, NULL, &mask);
+	sigdelset(&mask, SIGHUP);
+	sigdelset(&mask, SIGUSR1);
+	events = 0;
 	while (1) {
 		struct uevent *uev;
 		struct udev_device *dev;
+		struct pollfd ev_poll;
+		struct timespec poll_timeout;
+		int fdcount;
 
-		dev = udev_monitor_receive_device(monitor);
-		if (!dev) {
-			condlog(0, "failed getting udev device");
+		memset(&ev_poll, 0, sizeof(struct pollfd));
+		ev_poll.fd = fd;
+		ev_poll.events = POLLIN;
+		memset(&poll_timeout, 0, sizeof(struct timespec));
+		poll_timeout.tv_sec = timeout;
+		errno = 0;
+		fdcount = ppoll(&ev_poll, 1, &poll_timeout, &mask);
+		if (fdcount && ev_poll.revents & POLLIN) {
+			timeout = 0;
+			dev = udev_monitor_receive_device(monitor);
+			if (!dev) {
+				condlog(0, "failed getting udev device");
+				continue;
+			}
+			uev = uevent_from_udev_device(dev);
+			if (!uev)
+				continue;
+			list_add_tail(&uev->node, &uevlisten_tmp);
+			events++;
 			continue;
 		}
-		uev = uevent_from_udev_device(dev);
-		if (!uev)
-			continue;
-		/*
-		 * Queue uevent and poke service pthread.
-		 */
-		pthread_mutex_lock(uevq_lockp);
-		list_add_tail(&uev->node, &uevq);
-		pthread_cond_signal(uev_condp);
-		pthread_mutex_unlock(uevq_lockp);
+		if (fdcount < 0) {
+			if (errno != EINTR)
+				condlog(0, "error receiving "
+					"uevent message: %m");
+			err = -errno;
+			break;
+		}
+		if (!list_empty(&uevlisten_tmp)) {
+			/*
+			 * Queue uevents and poke service pthread.
+			 */
+			condlog(3, "Forwarding %d uevents", events);
+			pthread_mutex_lock(uevq_lockp);
+			list_splice_tail_init(&uevlisten_tmp, &uevq);
+			pthread_cond_signal(uev_condp);
+			pthread_mutex_unlock(uevq_lockp);
+			events = 0;
+		}
+		timeout = 30;
 	}
 	need_failback = 0;
 out:
+	if (fd_ep >= 0)
+		close(fd_ep);
 	if (monitor)
 		udev_monitor_unref(monitor);
 	if (need_failback)
