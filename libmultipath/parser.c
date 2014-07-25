@@ -603,7 +603,7 @@ process_stream(vector keywords)
 					t = (*keyword->handler) (strvec);
 					r += t;
 					if (t)
-						condlog(1, "multipath.conf +%d parsing failed: %s",
+						condlog(1, "multipath.conf +%d, parsing failed: %s",
 							line_nr, buf);
 				}
 
