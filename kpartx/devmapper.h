@@ -1,6 +1,5 @@
-#define MAJOR(dev)      ((dev & 0xfff00) >> 8)
-#define MINOR(dev)      ((dev & 0xff) | ((dev >> 12) & 0xfff00))
-#define MKDEV(ma,mi)    ((mi & 0xff) | (ma << 8) | ((mi & ~0xff) << 12))
+#ifndef _KPARTX_DEVMAPPER_H
+#define _KPARTX_DEVMAPPER_H
 
 #ifdef DM_SUBSYSTEM_UDEV_FLAG0
 #define MPATH_UDEV_RELOAD_FLAG DM_SUBSYSTEM_UDEV_FLAG0
@@ -20,3 +19,5 @@ dev_t dm_get_first_dep(char *devname);
 char * dm_mapuuid(int major, int minor);
 int dm_devn (char * mapname, int *major, int *minor);
 int dm_no_partitions(int major, int minor);
+
+#endif /* _KPARTX_DEVMAPPER_H */

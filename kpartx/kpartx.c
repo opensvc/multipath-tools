@@ -168,8 +168,8 @@ get_hotplug_device(void)
 	if (stat(devname, &buf))
 		return NULL;
 
-	major = (unsigned int)MAJOR(buf.st_rdev);
-	minor = (unsigned int)MINOR(buf.st_rdev);
+	major = major(buf.st_rdev);
+	minor = minor(buf.st_rdev);
 
 	if (!(mapname = dm_mapname(major, minor))) /* Not dm device. */
 		return NULL;
@@ -327,10 +327,8 @@ main(int argc, char **argv){
 	off = find_devname_offset(device);
 
 	if (!loopdev) {
-		uuid = dm_mapuuid((unsigned int)MAJOR(buf.st_rdev),
-				  (unsigned int)MINOR(buf.st_rdev));
-		mapname = dm_mapname((unsigned int)MAJOR(buf.st_rdev),
-				     (unsigned int)MINOR(buf.st_rdev));
+		uuid = dm_mapuuid(major(buf.st_rdev), minor(buf.st_rdev));
+		mapname = dm_mapname(major(buf.st_rdev), minor(buf.st_rdev));
 	}
 
 	if (!uuid)
@@ -339,8 +337,7 @@ main(int argc, char **argv){
 	if (!mapname)
 		mapname = device + off;
 	else if (!force_devmap &&
-		 dm_no_partitions((unsigned int)MAJOR(buf.st_rdev),
-				  (unsigned int)MINOR(buf.st_rdev))) {
+		 dm_no_partitions(major(buf.st_rdev), minor(buf.st_rdev))) {
 		/* Feature 'no_partitions' is set, return */
 		return 0;
 	}
