@@ -57,7 +57,6 @@
 #include <sys/resource.h>
 #include <wwids.h>
 #include <uxsock.h>
-#include "dev_t.h"
 
 int logsink;
 
@@ -454,7 +453,7 @@ get_dev_type(char *dev) {
 	int i;
 
 	if (stat(dev, &buf) == 0 && S_ISBLK(buf.st_mode)) {
-		if (dm_is_dm_major(MAJOR(buf.st_rdev)))
+		if (dm_is_dm_major(major(buf.st_rdev)))
 			return DEV_DEVMAP;
 		return DEV_DEVNODE;
 	}
