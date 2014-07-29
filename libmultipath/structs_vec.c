@@ -558,7 +558,7 @@ int update_multipath (struct vectors *vecs, char *mapname, int reset)
 
 			if (pp->state != PATH_DOWN) {
 				int oldstate = pp->state;
-				condlog(2, "%s: mark as failed", pp->dev_t);
+				condlog(2, "%s: mark as failed", pp->dev);
 				mpp->stat_path_failures++;
 				pp->state = PATH_DOWN;
 				if (oldstate == PATH_UP ||

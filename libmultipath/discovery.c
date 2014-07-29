@@ -1215,6 +1215,11 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 				goto blank;
 			if (pp->state == PATH_TIMEOUT)
 				pp->state = PATH_DOWN;
+			if (pp->state == PATH_UP && !pp->size) {
+				condlog(3, "%s: device size is 0, "
+					"path unuseable", pp->dev);
+				pp->state = PATH_GHOST;
+			}
 		} else {
 			condlog(3, "%s: path inaccessible", pp->dev);
 			pp->chkrstate = pp->state = path_state;
