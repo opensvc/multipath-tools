@@ -172,7 +172,6 @@ declare_sysfs_get_str(devtype);
 declare_sysfs_get_str(vendor);
 declare_sysfs_get_str(model);
 declare_sysfs_get_str(rev);
-declare_sysfs_get_str(dev);
 
 int
 sysfs_get_timeout(struct path *pp, unsigned int *timeout)
@@ -900,6 +899,8 @@ cciss_sysfs_pathinfo (struct path * pp)
 static int
 common_sysfs_pathinfo (struct path * pp)
 {
+	dev_t devt;
+
 	if (!pp)
 		return 1;
 
@@ -907,10 +908,8 @@ common_sysfs_pathinfo (struct path * pp)
 		condlog(4, "%s: udev not initialised", pp->dev);
 		return 1;
 	}
-	if (sysfs_get_dev(pp->udev, pp->dev_t, BLK_DEV_SIZE) <= 0) {
-		condlog(3, "%s: no 'dev' attribute in sysfs", pp->dev);
-		return 1;
-	}
+	devt = udev_device_get_devnum(pp->udev);
+	snprintf(pp->dev_t, BLK_DEV_SIZE, "%d:%d", major(devt), minor(devt));
 
 	condlog(3, "%s: dev_t = %s", pp->dev, pp->dev_t);
 

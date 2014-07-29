@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "structs.h"
 #include "structs_vec.h"
+#include "sysfs.h"
 #include "waiter.h"
 #include "devmapper.h"
 #include "dmparser.h"
@@ -501,7 +502,8 @@ verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
 		/*
 		 * see if path is in sysfs
 		 */
-		if (sysfs_get_dev(pp->udev, pp->dev_t, BLK_DEV_SIZE) <= 0) {
+		if (sysfs_attr_get_value(pp->udev, "dev",
+					 pp->dev_t, BLK_DEV_SIZE) < 0) {
 			if (pp->state != PATH_DOWN) {
 				condlog(1, "%s: removing valid path %s in state %d",
 					mpp->alias, pp->dev, pp->state);
