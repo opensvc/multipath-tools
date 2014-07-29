@@ -19,7 +19,7 @@ int adopt_paths (vector pathvec, struct multipath * mpp, int get_info);
 void orphan_paths (vector pathvec, struct multipath * mpp);
 void orphan_path (struct path * pp, const char *reason);
 
-int verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec);
+int verify_paths(struct multipath * mpp, struct vectors * vecs);
 int update_mpp_paths(struct multipath * mpp, vector pathvec);
 int __setup_multipath (struct vectors * vecs, struct multipath * mpp,
 		       int reset);

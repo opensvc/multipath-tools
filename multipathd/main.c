@@ -495,7 +495,7 @@ rescan:
 		if (adopt_paths(vecs->pathvec, mpp, 1))
 			goto fail; /* leave path added to pathvec */
 
-		verify_paths(mpp, vecs, NULL);
+		verify_paths(mpp, vecs);
 		mpp->flush_on_last_del = FLUSH_UNDEF;
 		mpp->action = ACT_RELOAD;
 	} else {

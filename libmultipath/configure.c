@@ -820,7 +820,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			if (pp2->priority == PRIO_UNDEF)
 				mpp->action = ACT_REJECT;
 		}
-		verify_paths(mpp, vecs, NULL);
+		verify_paths(mpp, vecs);
 
 		params[0] = '\0';
 		if (setup_map(mpp, params, PARAMS_SIZE)) {

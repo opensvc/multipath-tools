@@ -489,7 +489,7 @@ out:
 }
 
 extern int
-verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
+verify_paths(struct multipath * mpp, struct vectors * vecs)
 {
 	struct path * pp;
 	int count = 0;
@@ -515,14 +515,10 @@ verify_paths(struct multipath * mpp, struct vectors * vecs, vector rpvec)
 			vector_del_slot(mpp->paths, i);
 			i--;
 
-			if (rpvec)
-				store_path(rpvec, pp);
-			else {
-				if ((j = find_slot(vecs->pathvec,
-						   (void *)pp)) != -1)
-					vector_del_slot(vecs->pathvec, j);
-				free_path(pp);
-			}
+			if ((j = find_slot(vecs->pathvec,
+					   (void *)pp)) != -1)
+				vector_del_slot(vecs->pathvec, j);
+			free_path(pp);
 		} else {
 			condlog(4, "%s: verified path %s dev_t %s",
 				mpp->alias, pp->dev, pp->dev_t);
