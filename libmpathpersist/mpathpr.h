@@ -50,6 +50,5 @@ int send_prout_activepath(char * dev, int rq_servact, int rq_scope,
 int update_prflag(char * arg1, char * arg2, int noisy);
 void * mpath_alloc_prin_response(int prin_sa);
 int update_map_pr(struct multipath *mpp);
-int devt2devname (char *devname, char *devt);
 
-#endif  
+#endif
