@@ -127,7 +127,6 @@ struct config {
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;
-	uint32_t cookie;
 	int reassign_maps;
 	int retain_hwhandler;
 	int detect_prio;

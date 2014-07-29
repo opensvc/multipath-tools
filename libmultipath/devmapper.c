@@ -216,6 +216,7 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t 
 	int r = 0;
 	int udev_wait_flag = (need_sync && (task == DM_DEVICE_RESUME ||
 					    task == DM_DEVICE_REMOVE));
+	uint32_t cookie = 0;
 	struct dm_task *dmt;
 
 	if (!(dmt = dm_task_create (task)))
@@ -234,10 +235,18 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t 
 	if (do_deferred(deferred_remove))
 		dm_task_deferred_remove(dmt);
 #endif
-	if (udev_wait_flag && !dm_task_set_cookie(dmt, &conf->cookie, ((conf->daemon)? DM_UDEV_DISABLE_LIBRARY_FALLBACK : 0) | udev_flags))
+	if (udev_wait_flag && !dm_task_set_cookie(dmt, &cookie, ((conf->daemon)? DM_UDEV_DISABLE_LIBRARY_FALLBACK : 0) | udev_flags)) {
+		dm_udev_complete(cookie);
 		goto out;
+	}
 	r = dm_task_run (dmt);
 
+	if (udev_wait_flag) {
+		if (!r)
+			dm_udev_complete(cookie);
+		else
+			udev_wait(cookie);
+	}
 	out:
 	dm_task_destroy (dmt);
 	return r;
@@ -249,8 +258,8 @@ dm_simplecmd_flush (int task, const char *name, int needsync, uint16_t udev_flag
 }
 
 extern int
-dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags) {
-	return dm_simplecmd(task, name, 1, 1, udev_flags, 0);
+dm_simplecmd_noflush (int task, const char *name, int needsync, uint16_t udev_flags) {
+	return dm_simplecmd(task, name, 1, needsync, udev_flags, 0);
 }
 
 static int
@@ -265,6 +274,7 @@ dm_addmap (int task, const char *target, struct multipath *mpp, char * params,
 	int r = 0;
 	struct dm_task *dmt;
 	char *prefixed_uuid = NULL;
+	uint32_t cookie = 0;
 
 	if (!(dmt = dm_task_create (task)))
 		return 0;
@@ -305,10 +315,18 @@ dm_addmap (int task, const char *target, struct multipath *mpp, char * params,
 	dm_task_no_open_count(dmt);
 
 	if (task == DM_DEVICE_CREATE &&
-	    !dm_task_set_cookie(dmt, &conf->cookie, (conf->daemon)? DM_UDEV_DISABLE_LIBRARY_FALLBACK : 0))
+	    !dm_task_set_cookie(dmt, &cookie, (conf->daemon)? DM_UDEV_DISABLE_LIBRARY_FALLBACK : 0)) {
+		dm_udev_complete(cookie);
 		goto freeout;
+	}
 	r = dm_task_run (dmt);
 
+	if (task == DM_DEVICE_CREATE) {
+		if (!r)
+			dm_udev_complete(cookie);
+		else
+			udev_wait(cookie);
+	}
 	freeout:
 	if (prefixed_uuid)
 		FREE(prefixed_uuid);
@@ -326,7 +344,8 @@ dm_addmap_create (struct multipath *mpp, char * params) {
 	for (ro = 0; ro <= 1; ro++) {
 		int err;
 
-		if (dm_addmap(DM_DEVICE_CREATE, TGT_MPATH, mpp, params, 1, ro))
+		if (dm_addmap(DM_DEVICE_CREATE, TGT_MPATH,
+			      mpp, params, 1, ro))
 			return 1;
 		/*
 		 * DM_DEVICE_CREATE is actually DM_DEV_CREATE + DM_TABLE_LOAD.
@@ -755,14 +774,14 @@ dm_suspend_and_flush_map (const char * mapname)
 	if (s)
 		queue_if_no_path = 0;
 	else
-		s = dm_simplecmd_flush(DM_DEVICE_SUSPEND, mapname, 0, 0);
+		s = dm_simplecmd_flush(DM_DEVICE_SUSPEND, mapname, 1, 0);
 
 	if (!dm_flush_map(mapname)) {
 		condlog(4, "multipath map %s removed", mapname);
 		return 0;
 	}
 	condlog(2, "failed to remove multipath map %s", mapname);
-	dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname, 0);
+	dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname, 1, 0);
 	if (queue_if_no_path)
 		s = dm_queue_if_no_path((char *)mapname, 1);
 	return 1;
@@ -1312,6 +1331,7 @@ dm_rename (char * old, char * new)
 {
 	int r = 0;
 	struct dm_task *dmt;
+	uint32_t cookie;
 
 	if (dm_rename_partmaps(old, new))
 		return r;
@@ -1327,14 +1347,18 @@ dm_rename (char * old, char * new)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_set_cookie(dmt, &conf->cookie, (conf->daemon)? DM_UDEV_DISABLE_LIBRARY_FALLBACK : 0))
+	if (!dm_task_set_cookie(dmt, &cookie, (conf->daemon)? DM_UDEV_DISABLE_LIBRARY_FALLBACK : 0))
 		goto out;
-	if (!dm_task_run(dmt))
-		goto out;
+	r = dm_task_run(dmt);
 
-	r = 1;
+	if (!r)
+		dm_udev_complete(cookie);
+	else
+		udev_wait(cookie);
+
 out:
 	dm_task_destroy(dmt);
+
 	return r;
 }
 
@@ -1399,7 +1423,7 @@ int dm_reassign_table(const char *name, char *old, char *new)
 			condlog(3, "%s: failed to reassign targets", name);
 			goto out_reload;
 		}
-		dm_simplecmd_noflush(DM_DEVICE_RESUME, name, MPATH_UDEV_RELOAD_FLAG);
+		dm_simplecmd_noflush(DM_DEVICE_RESUME, name, 1, MPATH_UDEV_RELOAD_FLAG);
 	}
 	r = 1;
 

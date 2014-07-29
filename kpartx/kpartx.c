@@ -208,7 +208,6 @@ main(int argc, char **argv){
 	int hotplug = 0;
 	int loopcreated = 0;
 	struct stat buf;
-	uint32_t cookie = 0;
 
 	initpts();
 	init_crc32();
@@ -281,6 +280,8 @@ main(int argc, char **argv){
 #ifdef LIBDM_API_COOKIE
 	if (!udev_sync)
 		dm_udev_set_sync_support(0);
+	else
+		dm_udev_set_sync_support(1);
 #endif
 
 	if (dm_prereq(DM_TARGET, 0, 0, 0) && (what == ADD || what == DELETE || what == UPDATE)) {
@@ -437,7 +438,7 @@ main(int argc, char **argv){
 					continue;
 
 				if (!dm_simplecmd(DM_DEVICE_REMOVE, partname,
-						  0, &cookie, 0)) {
+						  0, 0)) {
 					r++;
 					continue;
 				}
@@ -488,18 +489,19 @@ main(int argc, char **argv){
 				if (!dm_addmap(op, partname, DM_TARGET, params,
 					       slices[j].size, ro, uuid, j+1,
 					       buf.st_mode & 0777, buf.st_uid,
-					       buf.st_gid, &cookie)) {
+					       buf.st_gid)) {
 					fprintf(stderr, "create/reload failed on %s\n",
 						partname);
 					r++;
 				}
 				if (op == DM_DEVICE_RELOAD &&
 				    !dm_simplecmd(DM_DEVICE_RESUME, partname,
-						  1, &cookie, MPATH_UDEV_RELOAD_FLAG)) {
+						  1, MPATH_UDEV_RELOAD_FLAG)) {
 					fprintf(stderr, "resume failed on %s\n",
 						partname);
 					r++;
 				}
+
 				dm_devn(partname, &slices[j].major,
 					&slices[j].minor);
 
@@ -551,14 +553,12 @@ main(int argc, char **argv){
 					dm_addmap(op, partname, DM_TARGET, params,
 						  slices[j].size, ro, uuid, j+1,
 						  buf.st_mode & 0777,
-						  buf.st_uid, buf.st_gid,
-						  &cookie);
+						  buf.st_uid, buf.st_gid);
 
 					if (op == DM_DEVICE_RELOAD)
 						dm_simplecmd(DM_DEVICE_RESUME,
 							     partname, 1,
-							     &cookie, MPATH_UDEV_RELOAD_FLAG);
-
+							     MPATH_UDEV_RELOAD_FLAG);
 					dm_devn(partname, &slices[j].major,
 						&slices[j].minor);
 
@@ -590,7 +590,7 @@ main(int argc, char **argv){
 					continue;
 
 				if (!dm_simplecmd(DM_DEVICE_REMOVE,
-						  partname, 1, &cookie, 0)) {
+						  partname, 1, 0)) {
 					r++;
 					continue;
 				}
@@ -616,9 +616,7 @@ main(int argc, char **argv){
 		}
 		printf("loop deleted : %s\n", device);
 	}
-#ifdef LIBDM_API_COOKIE
-	dm_udev_wait(cookie);
-#endif
+
 	dm_lib_release();
 	dm_lib_exit();
 

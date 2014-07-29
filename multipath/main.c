@@ -675,8 +675,6 @@ main (int argc, char *argv[])
 		condlog(3, "restart multipath configuration process");
 
 out:
-	udev_wait(conf->cookie);
-
 	dm_lib_release();
 	dm_lib_exit();
 
