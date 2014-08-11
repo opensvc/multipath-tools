@@ -1095,7 +1095,7 @@ scsi_sysfs_pathinfo (struct path * pp)
 
 	condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 
-	if (sysfs_get_rev(parent, pp->rev, SCSI_REV_SIZE) <= 0)
+	if (sysfs_get_rev(parent, pp->rev, SCSI_REV_SIZE) < 0)
 		return 1;
 
 	condlog(3, "%s: rev = %s", pp->dev, pp->rev);
