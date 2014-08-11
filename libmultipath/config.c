@@ -617,6 +617,7 @@ load_config (char * file, struct udev *udev)
 	conf->partition_delim = NULL;
 	conf->processed_main_config = 0;
 	conf->find_multipaths = DEFAULT_FIND_MULTIPATHS;
+	conf->uxsock_timeout = DEFAULT_UXSOCK_TIMEOUT;
 	conf->uid_attribute = set_default(DEFAULT_UID_ATTRIBUTE);
 
 	/*

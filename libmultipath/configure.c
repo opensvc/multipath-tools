@@ -714,7 +714,7 @@ int check_daemon(void)
 
 	if (send_packet(fd, "show daemon", 12) != 0)
 		goto out;
-	if (recv_packet(fd, &reply, &len, DEFAULT_UXSOCK_TIMEOUT) != 0)
+	if (recv_packet(fd, &reply, &len, conf->uxsock_timeout) != 0)
 		goto out;
 
 	if (strstr(reply, "shutdown"))

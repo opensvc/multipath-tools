@@ -1034,6 +1034,26 @@ declare_hw_snprint(delay_wait_checks, print_delay_checks)
 declare_mp_handler(delay_wait_checks, set_delay_checks)
 declare_mp_snprint(delay_wait_checks, print_delay_checks)
 
+static int
+def_uxsock_timeout_handler(vector strvec)
+{
+	unsigned int uxsock_timeout;
+	char *buff;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if (sscanf(buff, "%u", &uxsock_timeout) == 1 &&
+	    uxsock_timeout > DEFAULT_UXSOCK_TIMEOUT)
+		conf->uxsock_timeout = uxsock_timeout;
+	else
+		conf->uxsock_timeout = DEFAULT_UXSOCK_TIMEOUT;
+
+	free(buff);
+	return 0;
+}
+
 /*
  * blacklist block handlers
  */
@@ -1113,6 +1133,15 @@ declare_ble_handler(blist_wwid)
 declare_ble_handler(elist_wwid)
 declare_ble_handler(blist_property)
 declare_ble_handler(elist_property)
+
+static int
+snprint_def_uxsock_timeout(char * buff, int len, void * data)
+{
+	if (conf->uxsock_timeout == DEFAULT_UXSOCK_TIMEOUT)
+		return 0;
+
+	return snprintf(buff, len, "%u", conf->uxsock_timeout);
+}
 
 static int
 snprint_ble_simple (char * buff, int len, void * data)
@@ -1335,6 +1364,7 @@ init_keywords(void)
 	install_keyword("delay_watch_checks", &def_delay_watch_checks_handler, &snprint_def_delay_watch_checks);
 	install_keyword("delay_wait_checks", &def_delay_wait_checks_handler, &snprint_def_delay_wait_checks);
 	install_keyword("find_multipaths", &def_find_multipaths_handler, &snprint_def_find_multipaths);
+	install_keyword("uxsock_timeout", &def_uxsock_timeout_handler, &snprint_def_uxsock_timeout);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);

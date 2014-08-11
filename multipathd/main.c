@@ -2023,7 +2023,9 @@ main (int argc, char *argv[])
 			logsink = -1;
 			break;
 		case 'k':
-			uxclnt(optarg, DEFAULT_UXSOCK_TIMEOUT);
+			if (load_config(DEFAULT_CONFIGFILE, udev_new()))
+				exit(1);
+			uxclnt(optarg, conf->uxsock_timeout);
 			exit(0);
 		case 'B':
 			conf->bindings_read_only = 1;
@@ -2037,6 +2039,8 @@ main (int argc, char *argv[])
 		char * s = cmd;
 		char * c = s;
 
+		if (load_config(DEFAULT_CONFIGFILE, udev_new()))
+			exit(1);
 		while (optind < argc) {
 			if (strchr(argv[optind], ' '))
 				c += snprintf(c, s + CMDSIZE - c, "\"%s\" ", argv[optind]);
@@ -2045,7 +2049,7 @@ main (int argc, char *argv[])
 			optind++;
 		}
 		c += snprintf(c, s + CMDSIZE - c, "\n");
-		uxclnt(s, DEFAULT_UXSOCK_TIMEOUT);
+		uxclnt(s, conf->uxsock_timeout);
 		exit(0);
 	}
 
