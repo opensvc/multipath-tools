@@ -322,8 +322,6 @@ snprint_offline (char * buff, size_t len, struct path * pp)
 		return snprintf(buff, len, "unknown");
 	else if (pp->offline)
 		return snprintf(buff, len, "offline");
-	else if (!pp->mpp)
-		return snprintf(buff, len, "orphan");
 	else
 		return snprintf(buff, len, "running");
 }
