@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -63,10 +64,11 @@ static int need_quit(char *str, size_t len)
 /*
  * process the client
  */
-static void process(int fd)
+static void process(int fd, unsigned int timeout)
 {
 	char *line;
 	char *reply;
+	int ret;
 
 	cli_init();
 	rl_readline_name = "multipathd";
@@ -84,7 +86,8 @@ static void process(int fd)
 			break;
 
 		if (send_packet(fd, line, llen + 1) != 0) break;
-		if (recv_packet(fd, &reply, &len) != 0) break;
+		ret = recv_packet(fd, &reply, &len, timeout);
+		if (ret != 0) break;
 
 		print_reply(reply);
 
@@ -96,18 +99,23 @@ static void process(int fd)
 	}
 }
 
-static void process_req(int fd, char * inbuf)
+static void process_req(int fd, char * inbuf, unsigned int timeout)
 {
 	char *reply;
 	size_t len;
+	int ret;
 
 	if (send_packet(fd, inbuf, strlen(inbuf) + 1) != 0) {
 		printf("cannot send packet\n");
 		return;
 	}
-	if (recv_packet(fd, &reply, &len) != 0)
-		printf("error receiving packet\n");
-	else {
+	ret = recv_packet(fd, &reply, &len, timeout);
+	if (ret < 0) {
+		if (ret == -ETIMEDOUT)
+			printf("timeout receiving packet\n");
+		else
+			printf("error %d receiving packet\n", ret);
+	} else {
 		printf("%s", reply);
 		FREE(reply);
 	}
@@ -116,7 +124,7 @@ static void process_req(int fd, char * inbuf)
 /*
  * entry point
  */
-int uxclnt(char * inbuf)
+int uxclnt(char * inbuf, unsigned int timeout)
 {
 	int fd;
 
@@ -125,9 +133,9 @@ int uxclnt(char * inbuf)
 		exit(1);
 
 	if (inbuf)
-		process_req(fd, inbuf);
+		process_req(fd, inbuf, timeout);
 	else
-		process(fd);
+		process(fd, timeout);
 
 	return 0;
 }

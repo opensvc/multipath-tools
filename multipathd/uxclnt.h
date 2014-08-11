@@ -1,1 +1,1 @@
-int uxclnt(char * inbuf);
+int uxclnt(char * inbuf, unsigned int timeout);

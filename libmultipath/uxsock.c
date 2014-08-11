@@ -128,7 +128,7 @@ size_t write_all(int fd, const void *buf, size_t len)
 /*
  * keep reading until its all read
  */
-size_t read_all(int fd, void *buf, size_t len)
+ssize_t read_all(int fd, void *buf, size_t len, unsigned int timeout)
 {
 	size_t total = 0;
 	ssize_t n;
@@ -138,21 +138,20 @@ size_t read_all(int fd, void *buf, size_t len)
 	while (len) {
 		pfd.fd = fd;
 		pfd.events = POLLIN;
-		ret = poll(&pfd, 1, 1000);
+		ret = poll(&pfd, 1, timeout);
 		if (!ret) {
-			errno = ETIMEDOUT;
-			return total;
+			return -ETIMEDOUT;
 		} else if (ret < 0) {
 			if (errno == EINTR)
 				continue;
-			return total;
+			return -errno;
 		} else if (!pfd.revents & POLLIN)
 			continue;
 		n = read(fd, buf, len);
 		if (n < 0) {
 			if ((errno == EINTR) || (errno == EAGAIN))
 				continue;
-			return total;
+			return -errno;
 		}
 		if (!n)
 			return total;
@@ -190,12 +189,20 @@ int send_packet(int fd, const char *buf, size_t len)
 /*
  * receive a packet in length prefix format
  */
-int recv_packet(int fd, char **buf, size_t *len)
+int recv_packet(int fd, char **buf, size_t *len, unsigned int timeout)
 {
-	if (read_all(fd, len, sizeof(*len)) != sizeof(*len)) {
+	ssize_t ret;
+
+	ret = read_all(fd, len, sizeof(*len), timeout);
+	if (ret < 0) {
 		(*buf) = NULL;
 		*len = 0;
-		return -1;
+		return ret;
+	}
+	if (ret < sizeof(*len)) {
+		(*buf) = NULL;
+		*len = 0;
+		return -EIO;
 	}
 	if (len == 0) {
 		(*buf) = NULL;
@@ -204,11 +211,12 @@ int recv_packet(int fd, char **buf, size_t *len)
 	(*buf) = MALLOC(*len);
 	if (!*buf)
 		return -1;
-	if (read_all(fd, *buf, *len) != *len) {
+	ret = read_all(fd, *buf, *len, timeout);
+	if (ret != *len) {
 		FREE(*buf);
 		(*buf) = NULL;
 		*len = 0;
-		return -1;
+		return ret < 0 ? ret : -EIO;
 	}
 	return 0;
 }

@@ -158,7 +158,8 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 			struct client *next = c->next;
 
 			if (polls[i].revents & POLLIN) {
-				if (recv_packet(c->fd, &inbuf, &len) != 0) {
+				if (recv_packet(c->fd, &inbuf, &len,
+						DEFAULT_UXSOCK_TIMEOUT) != 0) {
 					dead_client(c);
 				} else {
 					inbuf[len - 1] = 0;

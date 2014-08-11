@@ -35,15 +35,19 @@ int update_prflag(char * arg1, char * arg2, int noisy)
 	snprintf(str,sizeof(str),"map %s %s", arg1, arg2);
 	condlog (2, "%s: pr flag message=%s", arg1, str);
 	send_packet(fd, str, strlen(str) + 1);
-	recv_packet(fd, &reply, &len);
-
-	condlog (2, "%s: message=%s reply=%s", arg1, str, reply);
-	if (!reply || strncmp(reply,"ok", 2) == 0)
-		ret = -1;
-	else if (strncmp(reply, "fail", 4) == 0)
+	ret = recv_packet(fd, &reply, &len, DEFAULT_UXSOCK_TIMEOUT);
+	if (ret < 0) {
+		condlog(2, "%s: message=%s error=%d", arg1, str, -ret);
 		ret = -2;
-	else{
-		ret = atoi(reply);
+	} else {
+		condlog (2, "%s: message=%s reply=%s", arg1, str, reply);
+		if (!reply || strncmp(reply,"ok", 2) == 0)
+			ret = -1;
+		else if (strncmp(reply, "fail", 4) == 0)
+			ret = -2;
+		else{
+			ret = atoi(reply);
+		}
 	}
 
 	free(reply);
