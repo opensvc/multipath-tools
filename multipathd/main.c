@@ -965,19 +965,23 @@ fail_path (struct path * pp, int del_active)
 /*
  * caller must have locked the path list before calling that function
  */
-static void
+static int
 reinstate_path (struct path * pp, int add_active)
 {
-	if (!pp->mpp)
-		return;
+	int ret = 0;
 
-	if (dm_reinstate_path(pp->mpp->alias, pp->dev_t))
+	if (!pp->mpp)
+		return 0;
+
+	if (dm_reinstate_path(pp->mpp->alias, pp->dev_t)) {
 		condlog(0, "%s: reinstate failed", pp->dev_t);
-	else {
+		ret = 1;
+	} else {
 		condlog(2, "%s: reinstated", pp->dev_t);
 		if (add_active)
 			update_queue_mode_add_path(pp->mpp);
 	}
+	return ret;
 }
 
 static void
@@ -1132,6 +1136,7 @@ check_path (struct vectors * vecs, struct path * pp)
 	int newstate;
 	int new_path_up = 0;
 	int chkr_new_path_up = 0;
+	int add_active;
 	int oldchkrstate = pp->chkrstate;
 
 	if (pp->initialized && !pp->mpp)
@@ -1259,11 +1264,17 @@ check_path (struct vectors * vecs, struct path * pp)
 		    oldstate != PATH_GHOST) {
 			if (pp->mpp->delay_watch_checks > 0)
 				pp->watch_checks = pp->mpp->delay_watch_checks;
-			reinstate_path(pp, 1);
+			add_active = 1;
 		} else {
 			if (pp->watch_checks > 0)
 				pp->watch_checks--;
-			reinstate_path(pp, 0);
+			add_active = 0;
+		}
+		if (reinstate_path(pp, add_active)) {
+			condlog(3, "%s: reload map", pp->dev);
+			ev_add_path(pp, vecs);
+			pp->tick = 1;
+			return 0;
 		}
 		new_path_up = 1;
 
@@ -1281,7 +1292,12 @@ check_path (struct vectors * vecs, struct path * pp)
 		if (pp->dmstate == PSTATE_FAILED ||
 		    pp->dmstate == PSTATE_UNDEF) {
 			/* Clear IO errors */
-			reinstate_path(pp, 0);
+			if (reinstate_path(pp, 0)) {
+				condlog(3, "%s: reload map", pp->dev);
+				ev_add_path(pp, vecs);
+				pp->tick = 1;
+				return 0;
+			}
 		} else {
 			LOG_MSG(4, checker_message(&pp->checker));
 			if (pp->checkint != conf->max_checkint) {
