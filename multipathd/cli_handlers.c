@@ -229,9 +229,12 @@ show_config (char ** r, int * len)
 			maxlen *= 2;
 			continue;
 		}
-		c += snprint_mptable(c, reply + maxlen - c, conf->mptable);
-		again = ((c - reply) == maxlen);
-		REALLOC_REPLY(reply, again, maxlen);
+		if (VECTOR_SIZE(conf->mptable) > 0) {
+			c += snprint_mptable(c, reply + maxlen - c,
+					     conf->mptable);
+			again = ((c - reply) == maxlen);
+			REALLOC_REPLY(reply, again, maxlen);
+		}
 	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
