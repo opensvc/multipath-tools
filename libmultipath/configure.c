@@ -768,8 +768,8 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			continue;
 
 		/* 3. if path has disappeared */
-		if (!pp1->size) {
-			orphan_path(pp1, "invalid size");
+		if (pp1->state == PATH_REMOVED) {
+			orphan_path(pp1, "path removed");
 			continue;
 		}
 
@@ -806,10 +806,11 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			if (strcmp(pp1->wwid, pp2->wwid))
 				continue;
 
-			if (!pp2->size)
-				continue;
+			if (!mpp->size && pp2->size)
+				mpp->size = pp2->size;
 
-			if (pp2->size != mpp->size) {
+			if (mpp->size && pp2->size &&
+			    pp2->size != mpp->size) {
 				/*
 				 * ouch, avoid feeding that to the DM
 				 */
