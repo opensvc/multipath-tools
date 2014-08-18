@@ -20,6 +20,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/poll.h>
+#include <sys/time.h>
 #include <signal.h>
 #include <checkers.h>
 #include <memory.h>
@@ -29,6 +30,7 @@
 #include <structs_vec.h>
 #include <uxsock.h>
 #include <defaults.h>
+#include <config.h>
 
 #include "main.h"
 #include "cli.h"
@@ -91,6 +93,24 @@ void free_polls (void)
 		FREE(polls);
 }
 
+void check_timeout(struct timeval start_time, char *inbuf,
+		   unsigned int timeout)
+{
+	struct timeval diff_time, end_time;
+
+	if (start_time.tv_sec && gettimeofday(&end_time, NULL) == 0) {
+		timersub(&end_time, &start_time, &diff_time);
+		unsigned long msecs;
+
+		msecs = diff_time.tv_sec * 1000 +
+			diff_time.tv_usec / 1000;
+		if (msecs > timeout)
+			condlog(2, "cli cmd '%s' timeout reached "
+				"after %lu.%06lu secs", inbuf,
+				diff_time.tv_sec, diff_time.tv_usec);
+	}
+}
+
 void uxsock_cleanup(void *arg)
 {
 	cli_exit();
@@ -105,15 +125,24 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 {
 	int ux_sock;
 	size_t len;
-	int rlen;
+	int rlen, timeout;
 	char *inbuf;
 	char *reply;
 	sigset_t mask;
 
 	ux_sock = ux_socket_listen(DEFAULT_SOCKET);
 
-	if (ux_sock == -1)
-		exit(1);
+	if (ux_sock == -1) {
+		condlog(1, "could not create uxsock: %d", errno);
+		return NULL;
+	}
+
+	if (!conf) {
+		condlog(1, "configuration changed");
+		return NULL;
+	}
+
+	timeout = conf->uxsock_timeout;
 
 	pthread_cleanup_push(uxsock_cleanup, NULL);
 
@@ -124,6 +153,14 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 	while (1) {
 		struct client *c;
 		int i, poll_count;
+
+		/*
+		 * Store configuration timeout;
+		 * configuration might change during
+		 * the call to 'reconfigure'.
+		 */
+		if (conf)
+			timeout = conf->uxsock_timeout;
 
 		/* setup for a poll */
 		polls = REALLOC(polls, (1+num_clients) * sizeof(*polls));
@@ -158,8 +195,13 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 			struct client *next = c->next;
 
 			if (polls[i].revents & POLLIN) {
+				struct timeval start_time;
+
+				if (gettimeofday(&start_time, NULL) != 0)
+					start_time.tv_sec = 0;
+
 				if (recv_packet(c->fd, &inbuf, &len,
-						DEFAULT_UXSOCK_TIMEOUT) != 0) {
+						timeout) != 0) {
 					dead_client(c);
 				} else {
 					inbuf[len - 1] = 0;
@@ -176,6 +218,8 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 						FREE(reply);
 						reply = NULL;
 					}
+					check_timeout(start_time, inbuf,
+						      timeout);
 					FREE(inbuf);
 				}
 			}

@@ -1522,6 +1522,8 @@ reconfigure (struct vectors * vecs)
 	struct config * old = conf;
 	int retval = 1;
 
+	running_state = DAEMON_CONFIGURE;
+
 	/*
 	 * free old map and path vectors ... they use old conf state
 	 */
@@ -1545,6 +1547,8 @@ reconfigure (struct vectors * vecs)
 		free_config(old);
 		retval = 0;
 	}
+
+	running_state = DAEMON_RUNNING;
 
 	return retval;
 }
