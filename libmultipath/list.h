@@ -8,6 +8,8 @@
 #ifndef _LIST_H
 #define _LIST_H
 
+#include <stddef.h>
+
 /**
  * container_of - cast a member of a structure out to the containing structure
  *

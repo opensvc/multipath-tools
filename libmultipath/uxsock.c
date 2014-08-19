@@ -210,7 +210,7 @@ int recv_packet(int fd, char **buf, size_t *len, unsigned int timeout)
 	}
 	(*buf) = MALLOC(*len);
 	if (!*buf)
-		return -1;
+		return -ENOMEM;
 	ret = read_all(fd, *buf, *len, timeout);
 	if (ret != *len) {
 		FREE(*buf);

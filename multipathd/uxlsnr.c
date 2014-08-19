@@ -39,11 +39,11 @@
 struct timespec sleep_time = {5, 0};
 
 struct client {
+	struct list_head node;
 	int fd;
-	struct client *next, *prev;
 };
 
-static struct client *clients;
+LIST_HEAD(clients);
 static unsigned num_clients;
 struct pollfd *polls;
 volatile sig_atomic_t reconfig_sig = 0;
@@ -67,10 +67,10 @@ static void new_client(int ux_sock)
 	/* put it in our linked list */
 	c = (struct client *)MALLOC(sizeof(*c));
 	memset(c, 0, sizeof(*c));
+	INIT_LIST_HEAD(&c->node);
 	c->fd = fd;
-	c->next = clients;
-	if (c->next) c->next->prev = c;
-	clients = c;
+
+	list_add_tail(&c->node, &clients);
 	num_clients++;
 }
 
@@ -80,9 +80,8 @@ static void new_client(int ux_sock)
 static void dead_client(struct client *c)
 {
 	close(c->fd);
-	if (c->prev) c->prev->next = c->next;
-	if (c->next) c->next->prev = c->prev;
-	if (c == clients) clients = c->next;
+	c->fd = -1;
+	list_del_init(&c->node);
 	FREE(c);
 	num_clients--;
 }
@@ -151,7 +150,7 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 	sigdelset(&mask, SIGHUP);
 	sigdelset(&mask, SIGUSR1);
 	while (1) {
-		struct client *c;
+		struct client *c, *tmp;
 		int i, poll_count;
 
 		/*
@@ -168,9 +167,13 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 		polls[0].events = POLLIN;
 
 		/* setup the clients */
-		for (i=1, c = clients; c; i++, c = c->next) {
+		i = 1;
+		list_for_each_entry(c, &clients, node) {
 			polls[i].fd = c->fd;
 			polls[i].events = POLLIN;
+			if (i > num_clients)
+				break;
+			i++;
 		}
 
 		/* most of our life is spent in this call */
@@ -191,12 +194,22 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 			continue;
 
 		/* see if a client wants to speak to us */
-		for (i=1, c = clients; c; i++) {
-			struct client *next = c->next;
-
+		for (i = 1; i < num_clients + 1; i++) {
 			if (polls[i].revents & POLLIN) {
 				struct timeval start_time;
 
+				c = NULL;
+				list_for_each_entry(tmp, &clients, node) {
+					if (tmp->fd == polls[i].fd) {
+						c = tmp;
+						break;
+					}
+				}
+				if (!c) {
+					condlog(3, "cli%d: invalid fd %d",
+						i, polls[i].fd);
+					continue;
+				}
 				if (gettimeofday(&start_time, NULL) != 0)
 					start_time.tv_sec = 0;
 
@@ -223,7 +236,6 @@ void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
 					FREE(inbuf);
 				}
 			}
-			c = next;
 		}
 
 		/* see if we got a new client */
