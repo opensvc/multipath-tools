@@ -482,7 +482,6 @@ int
 ev_add_path (struct path * pp, struct vectors * vecs)
 {
 	struct multipath * mpp;
-	char empty_buff[WWID_SIZE] = {0};
 	char params[PARAMS_SIZE] = {0};
 	int retries = 3;
 	int start_waiter = 0;
@@ -491,7 +490,7 @@ ev_add_path (struct path * pp, struct vectors * vecs)
 	/*
 	 * need path UID to go any further
 	 */
-	if (memcmp(empty_buff, pp->wwid, WWID_SIZE) == 0) {
+	if (strlen(pp->wwid) == 0) {
 		condlog(0, "%s: failed to get path uid", pp->dev);
 		goto fail; /* leave path added to pathvec */
 	}

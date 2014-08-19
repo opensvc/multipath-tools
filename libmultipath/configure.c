@@ -734,15 +734,12 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 {
 	int r = 1;
 	int k, i;
-	char empty_buff[WWID_SIZE];
 	char params[PARAMS_SIZE];
 	struct multipath * mpp;
 	struct path * pp1;
 	struct path * pp2;
 	vector curmp = vecs->mpvec;
 	vector pathvec = vecs->pathvec;
-
-	memset(empty_buff, 0, WWID_SIZE);
 
 	/* ignore refwwid if it's empty */
 	if (refwwid && !strlen(refwwid))
@@ -757,7 +754,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 		/* skip this path for some reason */
 
 		/* 1. if path has no unique id or wwid blacklisted */
-		if (memcmp(empty_buff, pp1->wwid, WWID_SIZE) == 0 ||
+		if (strlen(pp1->wwid) == 0 ||
 		    filter_path(conf, pp1) > 0) {
 			orphan_path(pp1, "wwid blacklisted");
 			continue;
