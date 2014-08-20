@@ -119,8 +119,7 @@ void uxsock_cleanup(void *arg)
 /*
  * entry point
  */
-void * uxsock_listen(int (*uxsock_trigger)(char *, char **, int *, void *),
-			void * trigger_data)
+void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 {
 	int ux_sock;
 	size_t len;
