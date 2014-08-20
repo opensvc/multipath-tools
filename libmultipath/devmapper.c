@@ -42,23 +42,14 @@ static inline int dm_task_set_cookie(struct dm_task *dmt, uint32_t *c, int a)
 	return 1;
 }
 
-void udev_wait(unsigned int c)
+void dm_udev_wait(unsigned int c)
 {
 }
 
-void udev_set_sync_support(int c)
+void dm_udev_set_sync_support(int c)
 {
-}
-#else
-void udev_wait(unsigned int c)
-{
-	dm_udev_wait(c);
 }
 
-void udev_set_sync_support(int c)
-{
-	dm_udev_set_sync_support(c);
-}
 #endif
 
 static void
@@ -245,7 +236,7 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t 
 		if (!r)
 			dm_udev_complete(cookie);
 		else
-			udev_wait(cookie);
+			dm_udev_wait(cookie);
 	}
 	out:
 	dm_task_destroy (dmt);
@@ -325,7 +316,7 @@ dm_addmap (int task, const char *target, struct multipath *mpp, char * params,
 		if (!r)
 			dm_udev_complete(cookie);
 		else
-			udev_wait(cookie);
+			dm_udev_wait(cookie);
 	}
 	freeout:
 	if (prefixed_uuid)
@@ -1354,7 +1345,7 @@ dm_rename (char * old, char * new)
 	if (!r)
 		dm_udev_complete(cookie);
 	else
-		udev_wait(cookie);
+		dm_udev_wait(cookie);
 
 out:
 	dm_task_destroy(dmt);
