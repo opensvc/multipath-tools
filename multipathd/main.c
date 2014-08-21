@@ -97,16 +97,105 @@ struct mpath_event_param
 unsigned int mpath_mx_alloc_len;
 
 int logsink;
-enum daemon_status running_state;
+enum daemon_status running_state = DAEMON_INIT;
 pid_t daemon_pid;
+pthread_mutex_t config_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t config_cond = PTHREAD_COND_INITIALIZER;
 
-static sem_t exit_sem;
 /*
  * global copy of vecs for use in sig handlers
  */
 struct vectors * gvecs;
 
 struct udev * udev;
+
+const char *
+daemon_status(void)
+{
+	switch (running_state) {
+	case DAEMON_INIT:
+		return "init";
+	case DAEMON_START:
+		return "startup";
+	case DAEMON_CONFIGURE:
+		return "configure";
+	case DAEMON_IDLE:
+		return "idle";
+	case DAEMON_RUNNING:
+		return "running";
+	case DAEMON_SHUTDOWN:
+		return "shutdown";
+	}
+	return NULL;
+}
+
+/*
+ * I love you too, systemd ...
+ */
+const char *
+sd_notify_status(void)
+{
+	switch (running_state) {
+	case DAEMON_INIT:
+		return "STATUS=init";
+	case DAEMON_START:
+		return "STATUS=startup";
+	case DAEMON_CONFIGURE:
+		return "STATUS=configure";
+	case DAEMON_IDLE:
+		return "STATUS=idle";
+	case DAEMON_RUNNING:
+		return "STATUS=running";
+	case DAEMON_SHUTDOWN:
+		return "STATUS=shutdown";
+	}
+	return NULL;
+}
+
+static void config_cleanup(void *arg)
+{
+	pthread_mutex_unlock(&config_lock);
+}
+
+void post_config_state(enum daemon_status state)
+{
+	pthread_mutex_lock(&config_lock);
+	if (state != running_state) {
+		running_state = state;
+		pthread_cond_broadcast(&config_cond);
+#ifdef USE_SYSTEMD
+		sd_notify(0, sd_notify_status());
+#endif
+	}
+	pthread_mutex_unlock(&config_lock);
+}
+
+int set_config_state(enum daemon_status state)
+{
+	int rc = 0;
+
+	pthread_cleanup_push(config_cleanup, NULL);
+	pthread_mutex_lock(&config_lock);
+	if (running_state != state) {
+		if (running_state != DAEMON_IDLE) {
+			struct timespec ts;
+
+			clock_gettime(CLOCK_REALTIME, &ts);
+			ts.tv_sec += 1;
+			rc = pthread_cond_timedwait(&config_cond,
+						    &config_lock, &ts);
+		}
+		if (!rc) {
+			running_state = state;
+			pthread_cond_broadcast(&config_cond);
+#ifdef USE_SYSTEMD
+			sd_notify(0, sd_notify_status());
+#endif
+		}
+	}
+	pthread_cleanup_pop(1);
+	return rc;
+}
 
 static int
 need_switch_pathgroup (struct multipath * mpp, int refresh)
@@ -352,7 +441,7 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 	if (mpp) {
 		if (mpp->wait_for_udev > 1) {
 			if (update_map(mpp, vecs))
-			/* setup multipathd removed the map */
+				/* setup multipathd removed the map */
 				return 1;
 		}
 		if (mpp->wait_for_udev) {
@@ -360,7 +449,7 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 			if (conf->delayed_reconfig &&
 			    !need_to_delay_reconfig(vecs)) {
 				condlog(2, "reconfigure (delayed)");
-				reconfigure(vecs);
+				set_config_state(DAEMON_CONFIGURE);
 				return 0;
 			}
 		}
@@ -905,6 +994,16 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	if (uev_discard(uev->devpath))
 		return 0;
 
+	pthread_cleanup_push(config_cleanup, NULL);
+	pthread_mutex_lock(&config_lock);
+	if (running_state != DAEMON_IDLE &&
+	    running_state != DAEMON_RUNNING)
+		pthread_cond_wait(&config_cond, &config_lock);
+	pthread_cleanup_pop(1);
+
+	if (running_state == DAEMON_SHUTDOWN)
+		return 0;
+
 	pthread_cleanup_push(cleanup_lock, &vecs->lock);
 	lock(vecs->lock);
 	pthread_testcancel();
@@ -1032,25 +1131,7 @@ uxlsnrloop (void * ap)
 void
 exit_daemon (void)
 {
-	sem_post(&exit_sem);
-}
-
-const char *
-daemon_status(void)
-{
-	switch (running_state) {
-	case DAEMON_INIT:
-		return "init";
-	case DAEMON_START:
-		return "startup";
-	case DAEMON_CONFIGURE:
-		return "configure";
-	case DAEMON_RUNNING:
-		return "running";
-	case DAEMON_SHUTDOWN:
-		return "shutdown";
-	}
-	return NULL;
+	post_config_state(DAEMON_SHUTDOWN);
 }
 
 static void
@@ -1179,7 +1260,7 @@ missing_uev_wait_tick(struct vectors *vecs)
 	if (timed_out && conf->delayed_reconfig &&
 	    !need_to_delay_reconfig(vecs)) {
 		condlog(2, "reconfigure (delayed)");
-		reconfigure(vecs);
+		set_config_state(DAEMON_CONFIGURE);
 	}
 }
 
@@ -1542,11 +1623,18 @@ checkerloop (void *ap)
 
 	while (1) {
 		struct timeval diff_time, start_time, end_time;
-		int num_paths = 0, ticks = 0, signo, strict_timing;
+		int num_paths = 0, ticks = 0, signo, strict_timing, rc = 0;
 		sigset_t mask;
 
 		if (gettimeofday(&start_time, NULL) != 0)
 			start_time.tv_sec = 0;
+
+		rc = set_config_state(DAEMON_RUNNING);
+		if (rc == ETIMEDOUT) {
+			condlog(4, "timeout waiting for DAEMON_IDLE");
+			continue;
+		}
+
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(vecs->lock);
 		pthread_testcancel();
@@ -1601,6 +1689,7 @@ checkerloop (void *ap)
 			}
 		}
 
+		post_config_state(DAEMON_IDLE);
 		if (!strict_timing)
 			sleep(1);
 		else {
@@ -1735,8 +1824,6 @@ reconfigure (struct vectors * vecs)
 	struct config * old = conf;
 	int retval = 1;
 
-	running_state = DAEMON_CONFIGURE;
-
 	/*
 	 * free old map and path vectors ... they use old conf state
 	 */
@@ -1765,8 +1852,6 @@ reconfigure (struct vectors * vecs)
 		conf = old;
 	}
 	uxsock_timeout = conf->uxsock_timeout;
-
-	running_state = DAEMON_RUNNING;
 
 	return retval;
 }
@@ -1820,20 +1905,9 @@ signal_set(int signo, void (*func) (int))
 void
 handle_signals(void)
 {
-	if (reconfig_sig && running_state == DAEMON_RUNNING) {
-		pthread_cleanup_push(cleanup_lock,
-				&gvecs->lock);
-		lock(gvecs->lock);
-		pthread_testcancel();
-		if (need_to_delay_reconfig(gvecs)) {
-			conf->delayed_reconfig = 1;
-			condlog(2, "delaying reconfigure (signal)");
-		}
-		else {
-			condlog(2, "reconfigure (signal)");
-			reconfigure(gvecs);
-		}
-		lock_cleanup_pop(gvecs->lock);
+	if (reconfig_sig) {
+		condlog(2, "reconfigure (signal)");
+		set_config_state(DAEMON_CONFIGURE);
 	}
 	if (log_reset_sig) {
 		condlog(2, "reset log (signal)");
@@ -1967,7 +2041,6 @@ child (void * param)
 	char *envp;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
-	sem_init(&exit_sem, 0, 0);
 	signal_init();
 
 	udev = udev_new();
@@ -1988,11 +2061,8 @@ child (void * param)
 		exit(1);
 	}
 
-	running_state = DAEMON_START;
+	post_config_state(DAEMON_START);
 
-#ifdef USE_SYSTEMD
-	sd_notify(0, "STATUS=startup");
-#endif
 	condlog(2, "--------start up--------");
 	condlog(2, "read " DEFAULT_CONFIGFILE);
 
@@ -2068,6 +2138,11 @@ child (void * param)
 	}
 #endif
 	/*
+	 * Signal start of configuration
+	 */
+	post_config_state(DAEMON_CONFIGURE);
+
+	/*
 	 * Start uevent listener early to catch events
 	 */
 	if ((rc = pthread_create(&uevent_thr, &uevent_attr, ueventloop, udev))) {
@@ -2079,21 +2154,6 @@ child (void * param)
 		condlog(0, "failed to create cli listener: %d", rc);
 		goto failed;
 	}
-	/*
-	 * fetch and configure both paths and multipaths
-	 */
-#ifdef USE_SYSTEMD
-	sd_notify(0, "STATUS=configure");
-#endif
-	running_state = DAEMON_CONFIGURE;
-
-	lock(vecs->lock);
-	if (configure(vecs, 1)) {
-		unlock(vecs->lock);
-		condlog(0, "failure during configuration");
-		goto failed;
-	}
-	unlock(vecs->lock);
 
 	/*
 	 * start threads
@@ -2108,20 +2168,32 @@ child (void * param)
 	}
 	pthread_attr_destroy(&misc_attr);
 
-	running_state = DAEMON_RUNNING;
 #ifdef USE_SYSTEMD
-	sd_notify(0, "READY=1\nSTATUS=running");
+	sd_notify(0, "READY=1");
 #endif
 
-	/*
-	 * exit path
-	 */
-	while(sem_wait(&exit_sem) != 0); /* Do nothing */
+	while (running_state != DAEMON_SHUTDOWN) {
+		pthread_cleanup_push(config_cleanup, NULL);
+		pthread_mutex_lock(&config_lock);
+		if (running_state != DAEMON_CONFIGURE &&
+		    running_state != DAEMON_SHUTDOWN) {
+			pthread_cond_wait(&config_cond, &config_lock);
+		}
+		pthread_cleanup_pop(1);
+		if (running_state == DAEMON_CONFIGURE) {
+			pthread_cleanup_push(cleanup_lock, &vecs->lock);
+			lock(vecs->lock);
+			pthread_testcancel();
+			if (!need_to_delay_reconfig(vecs)) {
+				reconfigure(vecs);
+			} else {
+				conf->delayed_reconfig = 1;
+			}
+			lock_cleanup_pop(vecs->lock);
+			post_config_state(DAEMON_IDLE);
+		}
+	}
 
-#ifdef USE_SYSTEMD
-	sd_notify(0, "STATUS=shutdown");
-#endif
-	running_state = DAEMON_SHUTDOWN;
 	lock(vecs->lock);
 	if (conf->queue_without_daemon == QUE_NO_DAEMON_OFF)
 		vector_foreach_slot(vecs->mpvec, mpp, i)
@@ -2254,7 +2326,6 @@ main (int argc, char *argv[])
 	int foreground = 0;
 
 	logsink = 1;
-	running_state = DAEMON_INIT;
 	dm_init();
 
 	if (getuid() != 0) {

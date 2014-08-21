@@ -909,17 +909,13 @@ cli_switch_group(void * v, char ** reply, int * len, void * data)
 int
 cli_reconfigure(void * v, char ** reply, int * len, void * data)
 {
-	struct vectors * vecs = (struct vectors *)data;
-
-	if (need_to_delay_reconfig(vecs)) {
-		conf->delayed_reconfig = 1;
-		condlog(2, "delaying reconfigure (operator)");
-		return 0;
-	}
-
 	condlog(2, "reconfigure (operator)");
 
-	return reconfigure(vecs);
+	if (set_config_state(DAEMON_CONFIGURE) == ETIMEDOUT) {
+		condlog(2, "timeout starting reconfiguration");
+		return 1;
+	}
+	return 0;
 }
 
 int

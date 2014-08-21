@@ -529,8 +529,6 @@ int uevent_listen(struct udev *udev)
 	}
 
 	pthread_sigmask(SIG_SETMASK, NULL, &mask);
-	sigdelset(&mask, SIGHUP);
-	sigdelset(&mask, SIGUSR1);
 	events = 0;
 	while (1) {
 		struct uevent *uev;
@@ -561,9 +559,11 @@ int uevent_listen(struct udev *udev)
 			continue;
 		}
 		if (fdcount < 0) {
-			if (errno != EINTR)
-				condlog(0, "error receiving "
-					"uevent message: %m");
+			if (errno == EINTR)
+				continue;
+
+			condlog(0, "error receiving "
+				"uevent message: %m");
 			err = -errno;
 			break;
 		}
