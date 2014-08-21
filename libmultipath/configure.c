@@ -577,7 +577,7 @@ fail:
 extern int
 domap (struct multipath * mpp, char * params)
 {
-	int r = 0;
+	int r = DOMAP_FAIL;
 
 	/*
 	 * last chance to quit before touching the devmaps
@@ -585,6 +585,12 @@ domap (struct multipath * mpp, char * params)
 	if (conf->cmd == CMD_DRY_RUN && mpp->action != ACT_NOTHING) {
 		print_multipath_topology(mpp, conf->verbosity);
 		return DOMAP_DRY;
+	}
+
+	if (mpp->action == ACT_CREATE &&
+	    dm_map_present(mpp->alias)) {
+		condlog(3, "%s: map already present", mpp->alias);
+		mpp->action = ACT_RELOAD;
 	}
 
 	switch (mpp->action) {
@@ -607,12 +613,6 @@ domap (struct multipath * mpp, char * params)
 			condlog(3, "%s: failed to create map (in use)",
 				mpp->alias);
 			return DOMAP_RETRY;
-		}
-
-		if (dm_map_present(mpp->alias)) {
-			condlog(3, "%s: map already present", mpp->alias);
-			lock_multipath(mpp, 0);
-			break;
 		}
 
 		r = dm_addmap_create(mpp, params);
@@ -650,7 +650,7 @@ domap (struct multipath * mpp, char * params)
 		break;
 	}
 
-	if (r) {
+	if (r == DOMAP_OK) {
 		/*
 		 * DM_DEVICE_CREATE, DM_DEVICE_RENAME, or DM_DEVICE_RELOAD
 		 * succeeded

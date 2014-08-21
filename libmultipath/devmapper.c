@@ -347,8 +347,11 @@ dm_addmap_create (struct multipath *mpp, char * params) {
 			condlog(3, "%s: failed to load map (a path might be in use)", mpp->alias);
 			dm_flush_map_nosync(mpp->alias);
 		}
-		if (err != EROFS)
+		if (err != EROFS) {
+			condlog(3, "%s: failed to load map, error %d",
+				mpp->alias, err);
 			break;
+		}
 	}
 	return 0;
 }
