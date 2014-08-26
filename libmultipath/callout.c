@@ -125,7 +125,7 @@ int execute_program(char *path, char *value, int len)
 			if (status == 0)
 				retval = 0;
 			else
-				condlog(0, "%s exitted with %d", argv[0], status);
+				condlog(0, "%s exited with %d", argv[0], status);
 		}
 		else if (WIFSIGNALED(status))
 			condlog(0, "%s was terminated by signal %d", argv[0], WTERMSIG(status));
