@@ -630,7 +630,7 @@ select_flush_on_last_del(struct multipath *mp)
 	}
 	if (mp->hwe && mp->hwe->flush_on_last_del != FLUSH_UNDEF) {
 		mp->flush_on_last_del = mp->hwe->flush_on_last_del;
-		condlog(3, "%s: flush_on_last_del = %i (controler setting)",
+		condlog(3, "%s: flush_on_last_del = %i (controller setting)",
 			mp->alias, mp->flush_on_last_del);
 		return 0;
 	}
