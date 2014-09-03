@@ -29,6 +29,10 @@
  */
 #include <checkers.h>
 
+#ifdef USE_SYSTEMD
+static int use_watchdog;
+#endif
+
 /*
  * libmultipath
  */
@@ -1400,7 +1404,7 @@ checkerloop (void *ap)
 		pthread_testcancel();
 		condlog(4, "tick");
 #ifdef USE_SYSTEMD
-		if (conf->watchdog)
+		if (use_watchdog)
 			sd_notify(0, "WATCHDOG=1");
 #endif
 		if (vecs->pathvec) {
@@ -1830,7 +1834,7 @@ child (void * param)
 			conf->checkint = conf->max_checkint / 4;
 		condlog(3, "enabling watchdog, interval %d max %d",
 			conf->checkint, conf->max_checkint);
-		conf->watchdog = conf->checkint;
+		use_watchdog = conf->checkint;
 	}
 #endif
 	/*
