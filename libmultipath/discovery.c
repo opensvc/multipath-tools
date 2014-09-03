@@ -1026,9 +1026,6 @@ scsi_sysfs_pathinfo (struct path * pp)
 
 	condlog(3, "%s: rev = %s", pp->dev, pp->rev);
 
-	if (get_vpd(parent, 0x80, pp->serial, SERIAL_SIZE) >= 0)
-		condlog(3, "%s: serial = %s", pp->dev, pp->serial);
-
 	/*
 	 * set the hwe configlet pointer
 	 */
@@ -1276,13 +1273,36 @@ sysfs_pathinfo(struct path * pp)
 static int
 scsi_ioctl_pathinfo (struct path * pp, int mask)
 {
-	if (mask & DI_SERIAL) {
-		if (strlen(pp->serial) == 0)
-			get_serial(pp->serial, SERIAL_SIZE, pp->fd);
-		condlog(3, "%s: serial = %s", pp->dev, pp->serial);
-	}
+	struct udev_device *parent;
+	const char *attr_path = NULL;
 
-	return 0;
+	if (!(mask & DI_SERIAL))
+		return 0;
+
+	parent = pp->udev;
+	while (parent) {
+		const char *subsys = udev_device_get_subsystem(parent);
+		if (subsys && !strncmp(subsys, "scsi", 4)) {
+			attr_path = udev_device_get_sysname(parent);
+			if (!attr_path)
+				break;
+			if (sscanf(attr_path, "%i:%i:%i:%i",
+				   &pp->sg_id.host_no,
+				   &pp->sg_id.channel,
+				   &pp->sg_id.scsi_id,
+				   &pp->sg_id.lun) == 4)
+				break;
+		}
+		parent = udev_device_get_parent(parent);
+	}
+	if (!attr_path || pp->sg_id.host_no == -1)
+		return -ENODEV;
+
+	if (get_vpd(parent, 0x80, pp->serial, SERIAL_SIZE) > 0)
+		condlog(3, "%s: serial = %s",
+			pp->dev, pp->serial);
+
+	return strlen(pp->serial) ? 0 : -EIO;
 }
 
 static int
