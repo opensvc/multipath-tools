@@ -275,6 +275,19 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 		}
 	}
 
+	/* Check for USB */
+	tgtdev = udev_device_get_parent(parent);
+	while (tgtdev) {
+		value = udev_device_get_subsystem(tgtdev);
+		if (value && !strcmp(value, "usb")) {
+			pp->sg_id.proto_id = SCSI_PROTOCOL_UNSPEC;
+			tgtname = udev_device_get_sysname(tgtdev);
+			strncpy(node, tgtname, strlen(tgtname));
+			condlog(3, "%s: skip USB device %s", pp->dev, node);
+			return 1;
+		}
+		tgtdev = udev_device_get_parent(tgtdev);
+	}
 	parent = udev_device_get_parent_with_subsystem_devtype(pp->udev, "scsi", "scsi_target");
 	if (!parent)
 		return 1;
