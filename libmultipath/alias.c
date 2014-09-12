@@ -149,13 +149,11 @@ rlookup_binding(FILE *f, char *buff, char *map_alias, char *prefix)
 {
 	char line[LINE_MAX];
 	unsigned int line_nr = 0;
-	int id = 0;
 
 	buff[0] = '\0';
 
 	while (fgets(line, LINE_MAX, f)) {
 		char *c, *alias, *wwid;
-		int curr_id;
 
 		line_nr++;
 		c = strpbrk(line, "#\n\r");
@@ -164,9 +162,6 @@ rlookup_binding(FILE *f, char *buff, char *map_alias, char *prefix)
 		alias = strtok(line, " \t");
 		if (!alias) /* blank line */
 			continue;
-		curr_id = scan_devname(alias, prefix);
-		if (curr_id >= id)
-			id = curr_id + 1;
 		wwid = strtok(NULL, " \t");
 		if (!wwid){
 			condlog(3,
@@ -184,16 +179,12 @@ rlookup_binding(FILE *f, char *buff, char *map_alias, char *prefix)
 				"\nSetting wwid to %s", alias, wwid);
 			strncpy(buff, wwid, WWID_SIZE);
 			buff[WWID_SIZE - 1] = '\0';
-			return id;
+			return 0;
 		}
 	}
 	condlog(3, "No matching alias [%s] in bindings file.", map_alias);
 
-	/* Get the theoretical id for this map alias.
-	 * Used by use_existing_alias
-	 */
-	id = scan_devname(map_alias, prefix);
-	return id;
+	return -1;
 }
 
 static char *
@@ -264,9 +255,7 @@ use_existing_alias (char *wwid, char *file, char *alias_old,
 	/* lookup the binding. if it exsists, the wwid will be in buff
 	 * either way, id contains the id for the alias
 	 */
-	id = rlookup_binding(f , buff,  alias_old, prefix);
-	if (id < 0)
-		goto out;
+	rlookup_binding(f, buff, alias_old, prefix);
 
 	if (strlen(buff) > 0) {
 		/* if buff is our wwid, it's already
@@ -283,7 +272,17 @@ use_existing_alias (char *wwid, char *file, char *alias_old,
 	}
 
 	/* allocate the existing alias in the bindings file */
-	if (can_write && id && !bindings_read_only) {
+	id = scan_devname(alias_old, prefix);
+	if (id <= 0)
+		goto out;
+
+	if (fflush(f) != 0) {
+		condlog(0, "cannot fflush bindings file stream : %s",
+			strerror(errno));
+		goto out;
+	}
+
+	if (can_write && !bindings_read_only) {
 		alias = allocate_binding(fd, wwid, id, prefix);
 		condlog(0, "Allocated existing binding [%s] for WWID [%s]",
 			alias, wwid);

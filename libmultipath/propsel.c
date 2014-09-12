@@ -269,7 +269,7 @@ select_alias (struct multipath * mp)
 				mp->alias_old, mp->alias_prefix,
 				conf->bindings_read_only);
 		memset (mp->alias_old, 0, WWID_SIZE);
-	} 
+	}
 
 	if (mp->alias == NULL)
 		mp->alias = get_user_friendly_alias(mp->wwid,
