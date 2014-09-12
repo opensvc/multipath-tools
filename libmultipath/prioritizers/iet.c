@@ -109,6 +109,7 @@ int iet_prio(const char *dev, char * args)
 			ssize_t nchars = readlink(path, buffer, sizeof(buffer)-1);
 			if (nchars != -1) {
 				char *device;
+				buffer[nchars] = '\0';
 				device = find_regex(buffer,"(sd[a-z]+)");
 				// if device parsed is the right one
 				if (device!=NULL && strncmp(device, dev, strlen(device)) == 0) {
@@ -118,6 +119,7 @@ int iet_prio(const char *dev, char * args)
 					if (ip!=NULL && strncmp(ip, preferredip, strlen(ip)) == 0) {
 						// high prio
 						free(ip);
+						free(device);
 						closedir(dir_p);
 						return 20;
 					}

@@ -132,8 +132,9 @@ dm_addmap (int task, const char *name, const char *target,
 		goto addout;
 	r = dm_task_run (dmt);
 
-	addout:
+addout:
 	dm_task_destroy (dmt);
+	free(prefixed_uuid);
 
 	return r;
 }

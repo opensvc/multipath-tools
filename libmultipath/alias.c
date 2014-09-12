@@ -328,6 +328,7 @@ get_user_friendly_alias(char *wwid, char *file, char *prefix,
 	if (fflush(f) != 0) {
 		condlog(0, "cannot fflush bindings file stream : %s",
 			strerror(errno));
+		free(alias);
 		fclose(f);
 		return NULL;
 	}

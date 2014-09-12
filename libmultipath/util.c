@@ -165,7 +165,7 @@ devt2devname (char *devname, int devname_len, char *devt)
 		sprintf(block_path,"/sys/dev/block/%u:%u", major, minor);
 		if (lstat(block_path, &statbuf) == 0) {
 			if (S_ISLNK(statbuf.st_mode) &&
-			    readlink(block_path, dev, FILE_NAME_SIZE) > 0) {
+			    readlink(block_path, dev, FILE_NAME_SIZE-1) > 0) {
 				char *p = strrchr(dev, '/');
 
 				if (!p) {

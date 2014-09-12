@@ -80,6 +80,8 @@ set_ble_device (vector blist, char * vendor, char * product, int origin)
 		if (regcomp(&ble->vendor_reg, vendor,
 			    REG_EXTENDED|REG_NOSUB)) {
 			FREE(vendor);
+			if (product)
+				FREE(product);
 			return 1;
 		}
 		ble->vendor = vendor;
@@ -88,6 +90,10 @@ set_ble_device (vector blist, char * vendor, char * product, int origin)
 		if (regcomp(&ble->product_reg, product,
 			    REG_EXTENDED|REG_NOSUB)) {
 			FREE(product);
+			if (vendor) {
+				ble->vendor = NULL;
+				FREE(vendor);
+			}
 			return 1;
 		}
 		ble->product = product;
@@ -202,6 +208,7 @@ setup_default_blist (struct config * conf)
 					   STRDUP(hwe->bl_product),
 					   ORIGIN_DEFAULT)) {
 				FREE(ble);
+				vector_del_slot(conf->blist_device, VECTOR_SIZE(conf->blist_device) - 1);
 				return 1;
 			}
 		}
