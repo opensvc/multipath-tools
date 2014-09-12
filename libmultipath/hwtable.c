@@ -1121,6 +1121,19 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.prio_args     = NULL,
 	},
+	{
+		.vendor        = "XtremIO",
+		.product       = "XtremApp",
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.selector      = "queue-length 0",
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.checker_name  = DIRECTIO,
+		.fast_io_fail  = 15,
+		.prio_name     = DEFAULT_PRIO,
+		.prio_args     = NULL,
+	},
 	/*
 	 * EOL
 	 */
