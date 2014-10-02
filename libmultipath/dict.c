@@ -496,7 +496,7 @@ set_fast_io_fail(vector strvec, void *ptr)
 	return 0;
 }
 
-static int
+int
 print_fast_io_fail(char * buff, int len, void *ptr)
 {
 	int *int_ptr = (int *)ptr;
@@ -534,7 +534,7 @@ set_dev_loss(vector strvec, void *ptr)
 	return 0;
 }
 
-static int
+int
 print_dev_loss(char * buff, int len, void *ptr)
 {
 	unsigned int *uint_ptr = (unsigned int *)ptr;
@@ -567,7 +567,7 @@ set_pgpolicy(vector strvec, void *ptr)
 	return 0;
 }
 
-static int
+int
 print_pgpolicy(char * buff, int len, void *ptr)
 {
 	char str[POLICY_NAME_SIZE];
@@ -683,7 +683,7 @@ set_rr_weight(vector strvec, void *ptr)
 	return 0;
 }
 
-static int
+int
 print_rr_weight (char * buff, int len, void *ptr)
 {
 	int *int_ptr = (int *)ptr;
@@ -727,7 +727,7 @@ set_pgfailback(vector strvec, void *ptr)
 	return 0;
 }
 
-static int
+int
 print_pgfailback (char * buff, int len, void *ptr)
 {
 	int *int_ptr = (int *)ptr;
@@ -774,7 +774,7 @@ set_no_path_retry(vector strvec, void *ptr)
 	return 0;
 }
 
-static int
+int
 print_no_path_retry(char * buff, int len, void *ptr)
 {
 	int *int_ptr = (int *)ptr;
@@ -873,7 +873,7 @@ set_reservation_key(vector strvec, void *ptr)
 	return 0;
 }
 
-static int
+int
 print_reservation_key(char * buff, int len, void * ptr)
 {
 	unsigned char **uchar_ptr = (unsigned char **)ptr;

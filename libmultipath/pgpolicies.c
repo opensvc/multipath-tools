@@ -27,7 +27,7 @@ get_pgpolicy_id (char * str)
 	if (0 == strncmp(str, "group_by_node_name", 18))
 		return GROUP_BY_NODE_NAME;
 
-	return -1;
+	return IOPOLICY_UNDEF;
 }
 
 extern int
