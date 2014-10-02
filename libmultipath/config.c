@@ -556,7 +556,7 @@ load_config (char * file, struct udev *udev)
 	conf->attribute_flags = 0;
 	conf->reassign_maps = DEFAULT_REASSIGN_MAPS;
 	conf->checkint = DEFAULT_CHECKINT;
-	conf->max_checkint = MAX_CHECKINT(conf->checkint);
+	conf->max_checkint = 0;
 	conf->pgfailback = DEFAULT_FAILBACK;
 	conf->fast_io_fail = DEFAULT_FAST_IO_FAIL;
 	conf->retain_hwhandler = DEFAULT_RETAIN_HWHANDLER;
@@ -599,7 +599,8 @@ load_config (char * file, struct udev *udev)
 	} else {
 		init_keywords();
 	}
-
+	if (conf->max_checkint == 0)
+		conf->max_checkint = MAX_CHECKINT(conf->checkint);
 	/*
 	 * fill the voids left in the config file
 	 */

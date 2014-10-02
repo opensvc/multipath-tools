@@ -67,15 +67,15 @@ enum pgstates {
 	PGSTATE_ACTIVE
 };
 
-enum queue_without_daemon_states {
-	QUE_NO_DAEMON_OFF,
-	QUE_NO_DAEMON_ON,
-	QUE_NO_DAEMON_FORCE,
+enum yes_no_states {
+	YN_NO,
+	YN_YES,
 };
 
-enum pgtimeouts {
-	PGTIMEOUT_UNDEF,
-	PGTIMEOUT_NONE
+enum queue_without_daemon_states {
+	QUE_NO_DAEMON_OFF = YN_NO,
+	QUE_NO_DAEMON_ON = YN_YES,
+	QUE_NO_DAEMON_FORCE,
 };
 
 enum attribute_bits {
@@ -84,10 +84,16 @@ enum attribute_bits {
 	ATTR_MODE,
 };
 
+enum yes_no_undef_states {
+	YNU_UNDEF,
+	YNU_NO,
+	YNU_YES,
+};
+
 enum flush_states {
-	FLUSH_UNDEF,
-	FLUSH_DISABLED,
-	FLUSH_ENABLED,
+	FLUSH_UNDEF = YNU_UNDEF,
+	FLUSH_DISABLED = YNU_NO,
+	FLUSH_ENABLED = YNU_YES,
 	FLUSH_IN_PROGRESS,
 };
 
@@ -97,21 +103,21 @@ enum log_checker_err_states {
 };
 
 enum user_friendly_names_states {
-	USER_FRIENDLY_NAMES_UNDEF,
-	USER_FRIENDLY_NAMES_OFF,
-	USER_FRIENDLY_NAMES_ON,
+	USER_FRIENDLY_NAMES_UNDEF = YNU_UNDEF,
+	USER_FRIENDLY_NAMES_OFF = YNU_NO,
+	USER_FRIENDLY_NAMES_ON = YNU_YES,
 };
 
 enum retain_hwhandler_states {
-	RETAIN_HWHANDLER_UNDEF,
-	RETAIN_HWHANDLER_OFF,
-	RETAIN_HWHANDLER_ON,
+	RETAIN_HWHANDLER_UNDEF = YNU_UNDEF,
+	RETAIN_HWHANDLER_OFF = YNU_NO,
+	RETAIN_HWHANDLER_ON = YNU_YES,
 };
 
 enum detect_prio_states {
-	DETECT_PRIO_UNDEF,
-	DETECT_PRIO_OFF,
-	DETECT_PRIO_ON,
+	DETECT_PRIO_UNDEF = YNU_UNDEF,
+	DETECT_PRIO_OFF = YNU_NO,
+	DETECT_PRIO_ON = YNU_YES,
 };
 
 enum scsi_protocol {
