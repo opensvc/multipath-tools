@@ -654,6 +654,32 @@
 #		no_path_retry 15
 #	}
 #	device {
+#		vendor "DELL"
+#		product "MD36xxi"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "2 pg_init_retries 50"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback "immediate"
+#		rr_weight "uniform"
+#		no_path_retry 15
+#	}
+#	device {
+#		vendor "DELL"
+#		product "MD36xxf"
+#		product_blacklist "Universal Xport"
+#		path_grouping_policy "group_by_prio"
+#		path_checker "rdac"
+#		features "2 pg_init_retries 50"
+#		hardware_handler "1 rdac"
+#		prio "rdac"
+#		failback "immediate"
+#		rr_weight "uniform"
+#		no_path_retry 15
+#	}
+#	device {
 #		vendor "NETAPP"
 #		product "LUN.*"
 #		path_grouping_policy "group_by_prio"

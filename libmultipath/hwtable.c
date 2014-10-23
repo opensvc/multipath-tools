@@ -772,6 +772,36 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_RDAC,
 		.prio_args     = NULL,
 	},
+	{
+		/* DELL MD36xxi */
+		.vendor        = "DELL",
+		.product       = "MD36xxi",
+		.bl_product    = "Universal Xport",
+		.features      = "2 pg_init_retries 50",
+		.hwhandler     = "1 rdac",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = 15,
+		.checker_name  = RDAC,
+		.prio_name     = PRIO_RDAC,
+		.prio_args     = NULL,
+	},
+	{
+		/* DELL MD36xxf */
+		.vendor        = "DELL",
+		.product       = "MD36xxf",
+		.bl_product    = "Universal Xport",
+		.features      = "2 pg_init_retries 50",
+		.hwhandler     = "1 rdac",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = 15,
+		.checker_name  = RDAC,
+		.prio_name     = PRIO_RDAC,
+		.prio_args     = NULL,
+	},
 	/*
 	 * NETAPP controller family
 	 *
