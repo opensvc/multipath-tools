@@ -523,6 +523,7 @@ free_config (struct config * conf)
 
 	free_mptable(conf->mptable);
 	free_hwtable(conf->hwtable);
+	free_hwe(conf->overrides);
 	free_keywords(conf->keywords);
 	FREE(conf);
 }

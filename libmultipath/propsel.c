@@ -48,6 +48,8 @@ do {									\
 do_set(var, mp->mpe, mp->var, "(LUN setting)")
 #define mp_set_hwe(var)							\
 do_set(var, mp->hwe, mp->var, "(controller setting)")
+#define mp_set_ovr(var)							\
+do_set(var, conf->overrides, mp->var, "(overrides setting)")
 #define mp_set_conf(var)						\
 do_set(var, conf, mp->var, "(config file default)")
 #define mp_set_default(var, value)					\
@@ -59,6 +61,8 @@ do_set(var, mpe, pp->var, "(LUN setting)")
 do_set(var, pp->hwe, pp->var, "(controller setting)")
 #define pp_set_conf(var)						\
 do_set(var, conf, pp->var, "(config file default)")
+#define pp_set_ovr(var)							\
+do_set(var, conf->overrides, pp->var, "(overrides setting)")
 #define pp_set_default(var, value)					\
 do_default(pp->var, value)
 
@@ -130,6 +134,7 @@ select_rr_weight (struct multipath * mp)
 	char *origin, buff[13];
 
 	mp_set_mpe(rr_weight);
+	mp_set_ovr(rr_weight);
 	mp_set_hwe(rr_weight);
 	mp_set_conf(rr_weight);
 	mp_set_default(rr_weight, RR_WEIGHT_NONE);
@@ -145,6 +150,7 @@ select_pgfailback (struct multipath * mp)
 	char *origin, buff[13];
 
 	mp_set_mpe(pgfailback);
+	mp_set_ovr(pgfailback);
 	mp_set_hwe(pgfailback);
 	mp_set_conf(pgfailback);
 	mp_set_default(pgfailback, DEFAULT_FAILBACK);
@@ -165,6 +171,7 @@ select_pgpolicy (struct multipath * mp)
 		goto out;
 	}
 	mp_set_mpe(pgpolicy);
+	mp_set_ovr(pgpolicy);
 	mp_set_hwe(pgpolicy);
 	mp_set_conf(pgpolicy);
 	mp_set_default(pgpolicy, DEFAULT_PGPOLICY);
@@ -181,10 +188,12 @@ select_selector (struct multipath * mp)
 	char *origin;
 
 	mp_set_mpe(selector);
+	mp_set_ovr(selector);
 	mp_set_hwe(selector);
 	mp_set_conf(selector);
-	mp_set_default(selector, set_default(DEFAULT_SELECTOR));
+	mp_set_default(selector, DEFAULT_SELECTOR);
 out:
+	mp->selector = STRDUP(mp->selector);
 	condlog(3, "%s: path_selector = \"%s\" %s", mp->alias, mp->selector,
 		origin);
 	return 0;
@@ -195,6 +204,7 @@ select_alias_prefix (struct multipath * mp)
 {
 	char *origin;
 
+	mp_set_ovr(alias_prefix);
 	mp_set_hwe(alias_prefix);
 	mp_set_conf(alias_prefix);
 	mp_set_default(alias_prefix, DEFAULT_ALIAS_PREFIX);
@@ -206,19 +216,30 @@ out:
 static int
 want_user_friendly_names(struct multipath * mp)
 {
-	if (mp->mpe &&
-	    mp->mpe->user_friendly_names != USER_FRIENDLY_NAMES_UNDEF)
-		return (mp->mpe->user_friendly_names == USER_FRIENDLY_NAMES_ON);
-	if (mp->hwe &&
-	    mp->hwe->user_friendly_names != USER_FRIENDLY_NAMES_UNDEF)
-		return (mp->hwe->user_friendly_names == USER_FRIENDLY_NAMES_ON);
-	return (conf->user_friendly_names  == USER_FRIENDLY_NAMES_ON);
+
+	char *origin;
+	int user_friendly_names;
+
+	do_set(user_friendly_names, mp->mpe, user_friendly_names,
+	       "(LUN setting)");
+	do_set(user_friendly_names, conf->overrides, user_friendly_names,
+	       "(overrides setting)");
+	do_set(user_friendly_names, mp->hwe, user_friendly_names,
+	       "(controller setting)");
+	do_set(user_friendly_names, conf, user_friendly_names,
+	       "(config file setting)");
+	do_default(user_friendly_names, USER_FRIENDLY_NAMES_OFF);
+out:
+	condlog(3, "%s: user_friendly_names = %s %s", mp->wwid,
+		(user_friendly_names == USER_FRIENDLY_NAMES_ON)? "yes" : "no",
+		origin);
+	return (user_friendly_names == USER_FRIENDLY_NAMES_ON);
 }
 
 extern int
 select_alias (struct multipath * mp)
 {
-	char *origin;
+	char *origin = NULL;
 
 	if (mp->mpe && mp->mpe->alias) {
 		mp->alias = STRDUP(mp->mpe->alias);
@@ -261,6 +282,7 @@ select_features (struct multipath * mp)
 	char *origin;
 
 	mp_set_mpe(features);
+	mp_set_ovr(features);
 	mp_set_hwe(features);
 	mp_set_conf(features);
 	mp_set_default(features, DEFAULT_FEATURES);
@@ -287,8 +309,9 @@ select_hwhandler (struct multipath * mp)
 
 	mp_set_hwe(hwhandler);
 	mp_set_conf(hwhandler);
-	mp_set_default(hwhandler, set_default(DEFAULT_HWHANDLER));
+	mp_set_default(hwhandler, DEFAULT_HWHANDLER);
 out:
+	mp->hwhandler = STRDUP(mp->hwhandler);
 	condlog(3, "%s: hardware_handler = \"%s\" %s", mp->alias, mp->hwhandler,
 		origin);
 	return 0;
@@ -300,6 +323,7 @@ select_checker(struct path *pp)
 	char *origin, *checker_name;
 	struct checker * c = &pp->checker;
 
+	do_set(checker_name, conf->overrides, checker_name, "(overrides setting)");
 	do_set(checker_name, pp->hwe, checker_name, "(controller setting)");
 	do_set(checker_name, conf, checker_name, "(config file setting)");
 	do_default(checker_name, DEFAULT_CHECKER);
@@ -327,6 +351,8 @@ select_getuid (struct path * pp)
 {
 	char *origin;
 
+	pp_set_ovr(uid_attribute);
+	pp_set_ovr(getuid);
 	pp_set_hwe(uid_attribute);
 	pp_set_hwe(getuid);
 	pp_set_conf(uid_attribute);
@@ -383,6 +409,7 @@ select_prio (struct path * pp)
 	}
 	mpe = find_mpe(pp->wwid);
 	set_prio(mpe, "(LUN setting)");
+	set_prio(conf->overrides, "(overrides setting)");
 	set_prio(pp->hwe, "controller setting)");
 	set_prio(conf, "(config file default)");
 	prio_get(p, DEFAULT_PRIO, DEFAULT_PRIO_ARGS);
@@ -405,6 +432,7 @@ select_no_path_retry(struct multipath *mp)
 		return 0;
 	}
 	mp_set_mpe(no_path_retry);
+	mp_set_ovr(no_path_retry);
 	mp_set_hwe(no_path_retry);
 	mp_set_conf(no_path_retry);
 out:
@@ -427,6 +455,7 @@ select_minio_rq (struct multipath * mp)
 	char *origin;
 
 	do_set(minio_rq, mp->mpe, mp->minio, "(LUN setting)");
+	do_set(minio_rq, conf->overrides, mp->minio, "(overrides setting)");
 	do_set(minio_rq, mp->hwe, mp->minio, "(controller setting)");
 	do_set(minio_rq, conf, mp->minio, "(config file setting)");
 	do_default(mp->minio, DEFAULT_MINIO_RQ);
@@ -441,6 +470,7 @@ select_minio_bio (struct multipath * mp)
 	char *origin;
 
 	mp_set_mpe(minio);
+	mp_set_ovr(minio);
 	mp_set_hwe(minio);
 	mp_set_conf(minio);
 	mp_set_default(minio, DEFAULT_MINIO);
@@ -465,6 +495,7 @@ select_fast_io_fail(struct multipath *mp)
 {
 	char *origin, buff[12];
 
+	mp_set_ovr(fast_io_fail);
 	mp_set_hwe(fast_io_fail);
 	mp_set_conf(fast_io_fail);
 	mp_set_default(fast_io_fail, DEFAULT_FAST_IO_FAIL);
@@ -479,6 +510,7 @@ select_dev_loss(struct multipath *mp)
 {
 	char *origin, buff[12];
 
+	mp_set_ovr(dev_loss);
 	mp_set_hwe(dev_loss);
 	mp_set_conf(dev_loss);
 	mp->dev_loss = 0;
@@ -497,6 +529,7 @@ select_flush_on_last_del(struct multipath *mp)
 	if (mp->flush_on_last_del == FLUSH_IN_PROGRESS)
 		return 0;
 	mp_set_mpe(flush_on_last_del);
+	mp_set_ovr(flush_on_last_del);
 	mp_set_hwe(flush_on_last_del);
 	mp_set_conf(flush_on_last_del);
 	mp_set_default(flush_on_last_del, FLUSH_DISABLED);
@@ -532,6 +565,7 @@ select_retain_hwhandler (struct multipath * mp)
 		origin = "(requires kernel version >= 1.5.0)";
 		goto out;
 	}
+	mp_set_ovr(retain_hwhandler);
 	mp_set_hwe(retain_hwhandler);
 	mp_set_conf(retain_hwhandler);
 	mp_set_default(retain_hwhandler, DEFAULT_RETAIN_HWHANDLER);
@@ -547,6 +581,7 @@ select_detect_prio (struct path * pp)
 {
 	char *origin;
 
+	pp_set_ovr(detect_prio);
 	pp_set_hwe(detect_prio);
 	pp_set_conf(detect_prio);
 	pp_set_default(detect_prio, DEFAULT_DETECT_PRIO);

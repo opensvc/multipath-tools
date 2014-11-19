@@ -72,3 +72,6 @@
 #		path_grouping_policy	multibus
 #	}
 #}
+#overrides {
+#	no_path_retry			fail
+#}

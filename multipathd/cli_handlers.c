@@ -190,6 +190,16 @@ show_config (char ** r, int * len)
 			maxlen *= 2;
 			continue;
 		}
+		c += snprint_overrides(c, reply + maxlen - c, conf->overrides);
+		again = ((c - reply) == maxlen);
+		if (again) {
+			reply = REALLOC(reply, maxlen * 2);
+			if (!reply)
+				return 1;
+			memset(reply + maxlen, 0, maxlen);
+			maxlen *= 2;
+			continue;
+		}
 		c += snprint_mptable(c, reply + maxlen - c, conf->mptable);
 		again = ((c - reply) == maxlen);
 		REALLOC_REPLY(reply, again, maxlen);

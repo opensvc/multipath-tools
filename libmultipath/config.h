@@ -145,6 +145,7 @@ struct config {
 	vector keywords;
 	vector mptable;
 	vector hwtable;
+	struct hwentry *overrides;
 
 	vector blist_devnode;
 	vector blist_wwid;

@@ -61,6 +61,10 @@ the udev attribute given by the
 .TP
 .B devices
 This section defines the device-specific settings.
+.TP
+.B overrides
+This section defines values for attributes that should override the
+device-specific settings for all devices.
 .RE
 .LP
 .SH "defaults section"
@@ -622,6 +626,59 @@ section:
 .B dev_loss_tmo
 .TP
 .B flush_on_last_del
+.TP
+.B retain_attached_hw_handler
+.TP
+.B detect_prio
+.RE
+.PD
+.LP
+.SH "overrides section"
+The overrides section recognizes the following optional attributes; if not set
+the values are taken from the
+.I devices
+or
+.I defaults
+sections:
+.sp 1
+.PD .1v
+.RS
+.TP 18
+.B path_grouping_policy
+.TP
+.B uid_attribute
+.TP
+.B getuid_callout
+.TP
+.B path_selector
+.TP
+.B path_checker
+.TP
+.B alias_prefix
+.TP
+.B features
+.TP
+.B prio
+.TP
+.B prio_args
+.TP
+.B failback
+.TP
+.B rr_weight
+.TP
+.B no_path_retry
+.TP
+.B rr_min_io
+.TP
+.B rr_min_io_rq
+.TP
+.B flush_on_last_del
+.TP
+.B fast_io_fail_tmo
+.TP
+.B dev_loss_tmo
+.TP
+.B user_friendly_names
 .TP
 .B retain_attached_hw_handler
 .TP

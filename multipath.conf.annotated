@@ -485,7 +485,8 @@
 ## scope : multipath & multipathd
 ## desc  : list of per storage controller settings
 ##	  overrides default settings (device_maps block)
-##         overriden by per multipath settings (multipaths block)
+##        overriden by per multipath settings (multipaths block)
+##	  and the overrides settings (overrides block)
 ##
 #devices {
 #	#
@@ -650,4 +651,19 @@
 #		path_checker		tur
 #		rr_weight		priorities
 #	}
+#}
+#
+##
+## name  : devices
+## scope : multipath & multipathd
+## desc  : list of settings to override all hadware settings for all devices
+##	  overrides default settings (device_maps block)
+##	  and per device type settings (devices block)
+##        overriden by per multipath settings (multipaths block)
+##
+#	attributes and values are identical to the device block
+#
+#overrides {
+#	dev_loss_tmo		60
+#	no_path_retry		fail
 #}

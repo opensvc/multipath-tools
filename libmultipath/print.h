@@ -50,6 +50,7 @@ int snprint_status (char *, int, struct vectors *);
 int snprint_devices (char *, int, struct vectors *);
 int snprint_hwtable (char *, int, vector);
 int snprint_mptable (char *, int, vector);
+int snprint_overrides (char *, int, struct hwentry *);
 
 void print_multipath_topology (struct multipath * mpp, int verbosity);
 void print_path (struct path * pp, char * style);

@@ -405,6 +405,12 @@ dump_config (void)
 			reply = REALLOC(reply, maxlen *= 2);
 			continue;
 		}
+		c += snprint_overrides(c, reply + maxlen - c, conf->overrides);
+		again = ((c - reply) == maxlen);
+		if (again) {
+			reply = REALLOC(reply, maxlen *= 2);
+			continue;
+		}
 		c += snprint_mptable(c, reply + maxlen - c, conf->mptable);
 		again = ((c - reply) == maxlen);
 		if (again)

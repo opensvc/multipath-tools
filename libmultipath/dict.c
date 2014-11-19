@@ -181,6 +181,22 @@ snprint_hw_ ## option (char * buff, int len, void * data)		\
 	return function (buff, len, &hwe->option);			\
 }
 
+#define declare_ovr_handler(option, function)				\
+static int								\
+ovr_ ## option ## _handler (vector strvec)				\
+{									\
+	if (!conf->overrides)						\
+		return 1;						\
+	return function (strvec, &conf->overrides->option);		\
+}
+
+#define declare_ovr_snprint(option, function)				\
+static int								\
+snprint_ovr_ ## option (char * buff, int len, void * data)		\
+{									\
+	return function (buff, len, &conf->overrides->option);		\
+}
+
 #define declare_mp_handler(option, function)				\
 static int								\
 mp_ ## option ## _handler (vector strvec)				\
@@ -218,21 +234,29 @@ declare_def_handler(selector, set_str)
 declare_def_snprint_defstr(selector, print_str, DEFAULT_SELECTOR)
 declare_hw_handler(selector, set_str)
 declare_hw_snprint(selector, print_str)
+declare_ovr_handler(selector, set_str)
+declare_ovr_snprint(selector, print_str)
 declare_mp_handler(selector, set_str)
 declare_mp_snprint(selector, print_str)
 
 declare_def_handler(uid_attribute, set_str)
 declare_def_snprint_defstr(uid_attribute, print_str, DEFAULT_UID_ATTRIBUTE)
+declare_ovr_handler(uid_attribute, set_str)
+declare_ovr_snprint(uid_attribute, print_str)
 declare_hw_handler(uid_attribute, set_str)
 declare_hw_snprint(uid_attribute, print_str)
 
 declare_def_handler(getuid, set_str)
 declare_def_snprint(getuid, print_str)
+declare_ovr_handler(getuid, set_str)
+declare_ovr_snprint(getuid, print_str)
 declare_hw_handler(getuid, set_str)
 declare_hw_snprint(getuid, print_str)
 
 declare_def_handler(prio_name, set_str)
 declare_def_snprint_defstr(prio_name, print_str, DEFAULT_PRIO)
+declare_ovr_handler(prio_name, set_str)
+declare_ovr_snprint(prio_name, print_str)
 declare_hw_handler(prio_name, set_str)
 declare_hw_snprint(prio_name, print_str)
 declare_mp_handler(prio_name, set_str)
@@ -240,11 +264,15 @@ declare_mp_snprint(prio_name, print_str)
 
 declare_def_handler(alias_prefix, set_str)
 declare_def_snprint_defstr(alias_prefix, print_str, DEFAULT_ALIAS_PREFIX)
+declare_ovr_handler(alias_prefix, set_str)
+declare_ovr_snprint(alias_prefix, print_str)
 declare_hw_handler(alias_prefix, set_str)
 declare_hw_snprint(alias_prefix, print_str)
 
 declare_def_handler(prio_args, set_str)
 declare_def_snprint_defstr(prio_args, print_str, DEFAULT_PRIO_ARGS)
+declare_ovr_handler(prio_args, set_str)
+declare_ovr_snprint(prio_args, print_str)
 declare_hw_handler(prio_args, set_str)
 declare_hw_snprint(prio_args, print_str)
 declare_mp_handler(prio_args, set_str)
@@ -252,6 +280,8 @@ declare_mp_snprint(prio_args, print_str)
 
 declare_def_handler(features, set_str)
 declare_def_snprint_defstr(features, print_str, DEFAULT_FEATURES)
+declare_ovr_handler(features, set_str)
+declare_ovr_snprint(features, print_str)
 declare_hw_handler(features, set_str)
 declare_hw_snprint(features, print_str)
 declare_mp_handler(features, set_str)
@@ -259,11 +289,15 @@ declare_mp_snprint(features, print_str)
 
 declare_def_handler(checker_name, set_str)
 declare_def_snprint_defstr(checker_name, print_str, DEFAULT_CHECKER)
+declare_ovr_handler(checker_name, set_str)
+declare_ovr_snprint(checker_name, print_str)
 declare_hw_handler(checker_name, set_str)
 declare_hw_snprint(checker_name, print_str)
 
 declare_def_handler(minio, set_int)
 declare_def_snprint_defint(minio, print_int, DEFAULT_MINIO)
+declare_ovr_handler(minio, set_int)
+declare_ovr_snprint(minio, print_nonzero)
 declare_hw_handler(minio, set_int)
 declare_hw_snprint(minio, print_nonzero)
 declare_mp_handler(minio, set_int)
@@ -271,6 +305,8 @@ declare_mp_snprint(minio, print_nonzero)
 
 declare_def_handler(minio_rq, set_int)
 declare_def_snprint_defint(minio_rq, print_int, DEFAULT_MINIO_RQ)
+declare_ovr_handler(minio_rq, set_int)
+declare_ovr_snprint(minio_rq, print_nonzero)
 declare_hw_handler(minio_rq, set_int)
 declare_hw_snprint(minio_rq, print_nonzero)
 declare_mp_handler(minio_rq, set_int)
@@ -296,6 +332,8 @@ declare_def_snprint(checker_timeout, print_nonzero)
 
 declare_def_handler(flush_on_last_del, set_yes_no_undef)
 declare_def_snprint_defint(flush_on_last_del, print_yes_no_undef, YNU_NO)
+declare_ovr_handler(flush_on_last_del, set_yes_no_undef)
+declare_ovr_snprint(flush_on_last_del, print_yes_no_undef)
 declare_hw_handler(flush_on_last_del, set_yes_no_undef)
 declare_hw_snprint(flush_on_last_del, print_yes_no_undef)
 declare_mp_handler(flush_on_last_del, set_yes_no_undef)
@@ -303,6 +341,8 @@ declare_mp_snprint(flush_on_last_del, print_yes_no_undef)
 
 declare_def_handler(user_friendly_names, set_yes_no_undef)
 declare_def_snprint_defint(user_friendly_names, print_yes_no_undef, YNU_NO)
+declare_ovr_handler(user_friendly_names, set_yes_no_undef)
+declare_ovr_snprint(user_friendly_names, print_yes_no_undef)
 declare_hw_handler(user_friendly_names, set_yes_no_undef)
 declare_hw_snprint(user_friendly_names, print_yes_no_undef)
 declare_mp_handler(user_friendly_names, set_yes_no_undef)
@@ -316,11 +356,15 @@ declare_def_snprint(wwids_file, print_str)
 
 declare_def_handler(retain_hwhandler, set_yes_no_undef)
 declare_def_snprint_defint(retain_hwhandler, print_yes_no_undef, YNU_NO)
+declare_ovr_handler(retain_hwhandler, set_yes_no_undef)
+declare_ovr_snprint(retain_hwhandler, print_yes_no_undef)
 declare_hw_handler(retain_hwhandler, set_yes_no_undef)
 declare_hw_snprint(retain_hwhandler, print_yes_no_undef)
 
 declare_def_handler(detect_prio, set_yes_no_undef)
 declare_def_snprint_defint(detect_prio, print_yes_no_undef, YNU_NO)
+declare_ovr_handler(detect_prio, set_yes_no_undef)
+declare_ovr_snprint(detect_prio, print_yes_no_undef)
 declare_hw_handler(detect_prio, set_yes_no_undef)
 declare_hw_snprint(detect_prio, print_yes_no_undef)
 
@@ -512,6 +556,8 @@ print_fast_io_fail(char * buff, int len, void *ptr)
 
 declare_def_handler(fast_io_fail, set_fast_io_fail)
 declare_def_snprint(fast_io_fail, print_fast_io_fail)
+declare_ovr_handler(fast_io_fail, set_fast_io_fail)
+declare_ovr_snprint(fast_io_fail, print_fast_io_fail)
 declare_hw_handler(fast_io_fail, set_fast_io_fail)
 declare_hw_snprint(fast_io_fail, print_fast_io_fail)
 
@@ -548,6 +594,8 @@ print_dev_loss(char * buff, int len, void *ptr)
 
 declare_def_handler(dev_loss, set_dev_loss)
 declare_def_snprint(dev_loss, print_dev_loss)
+declare_ovr_handler(dev_loss, set_dev_loss)
+declare_ovr_snprint(dev_loss, print_dev_loss)
 declare_hw_handler(dev_loss, set_dev_loss)
 declare_hw_snprint(dev_loss, print_dev_loss)
 
@@ -583,6 +631,8 @@ print_pgpolicy(char * buff, int len, void *ptr)
 
 declare_def_handler(pgpolicy, set_pgpolicy)
 declare_def_snprint_defint(pgpolicy, print_pgpolicy, DEFAULT_PGPOLICY)
+declare_ovr_handler(pgpolicy, set_pgpolicy)
+declare_ovr_snprint(pgpolicy, print_pgpolicy)
 declare_hw_handler(pgpolicy, set_pgpolicy)
 declare_hw_snprint(pgpolicy, print_pgpolicy)
 declare_mp_handler(pgpolicy, set_pgpolicy)
@@ -700,6 +750,8 @@ print_rr_weight (char * buff, int len, void *ptr)
 
 declare_def_handler(rr_weight, set_rr_weight)
 declare_def_snprint_defint(rr_weight, print_rr_weight, RR_WEIGHT_NONE)
+declare_ovr_handler(rr_weight, set_rr_weight)
+declare_ovr_snprint(rr_weight, print_rr_weight)
 declare_hw_handler(rr_weight, set_rr_weight)
 declare_hw_snprint(rr_weight, print_rr_weight)
 declare_mp_handler(rr_weight, set_rr_weight)
@@ -748,6 +800,8 @@ print_pgfailback (char * buff, int len, void *ptr)
 
 declare_def_handler(pgfailback, set_pgfailback)
 declare_def_snprint_defint(pgfailback, print_pgfailback, DEFAULT_FAILBACK)
+declare_ovr_handler(pgfailback, set_pgfailback)
+declare_ovr_snprint(pgfailback, print_pgfailback)
 declare_hw_handler(pgfailback, set_pgfailback)
 declare_hw_snprint(pgfailback, print_pgfailback)
 declare_mp_handler(pgfailback, set_pgfailback)
@@ -793,6 +847,8 @@ print_no_path_retry(char * buff, int len, void *ptr)
 
 declare_def_handler(no_path_retry, set_no_path_retry)
 declare_def_snprint(no_path_retry, print_no_path_retry)
+declare_ovr_handler(no_path_retry, set_no_path_retry)
+declare_ovr_snprint(no_path_retry, print_no_path_retry)
 declare_hw_handler(no_path_retry, set_no_path_retry)
 declare_hw_snprint(no_path_retry, print_no_path_retry)
 declare_mp_handler(no_path_retry, set_no_path_retry)
@@ -1061,6 +1117,25 @@ declare_hw_handler(hwhandler, set_str)
 declare_hw_snprint(hwhandler, print_str)
 
 /*
+ * overrides handlers
+ */
+static int
+overrides_handler(vector strvec)
+{
+	struct hwentry * overrides;
+
+	overrides = alloc_hwe();
+
+	if (!overrides)
+		return 1;
+
+	conf->overrides = overrides;
+	return 0;
+}
+
+
+
+/*
  * multipaths block handlers
  */
 static int
@@ -1235,6 +1310,29 @@ init_keywords(void)
 	install_keyword("retain_attached_hw_handler", &hw_retain_hwhandler_handler, &snprint_hw_retain_hwhandler);
 	install_keyword("detect_prio", &hw_detect_prio_handler, &snprint_hw_detect_prio);
 	install_sublevel_end();
+
+	install_keyword_root("overrides", &overrides_handler);
+	install_keyword("path_grouping_policy", &ovr_pgpolicy_handler, &snprint_ovr_pgpolicy);
+	install_keyword("uid_attribute", &ovr_uid_attribute_handler, &snprint_ovr_uid_attribute);
+	install_keyword("getuid_callout", &ovr_getuid_handler, &snprint_ovr_getuid);
+	install_keyword("path_selector", &ovr_selector_handler, &snprint_ovr_selector);
+	install_keyword("path_checker", &ovr_checker_name_handler, &snprint_ovr_checker_name);
+	install_keyword("checker", &ovr_checker_name_handler, NULL);
+	install_keyword("alias_prefix", &ovr_alias_prefix_handler, &snprint_ovr_alias_prefix);
+	install_keyword("features", &ovr_features_handler, &snprint_ovr_features);
+	install_keyword("prio", &ovr_prio_name_handler, &snprint_ovr_prio_name);
+	install_keyword("prio_args", &ovr_prio_args_handler, &snprint_ovr_prio_args);
+	install_keyword("failback", &ovr_pgfailback_handler, &snprint_ovr_pgfailback);
+	install_keyword("rr_weight", &ovr_rr_weight_handler, &snprint_ovr_rr_weight);
+	install_keyword("no_path_retry", &ovr_no_path_retry_handler, &snprint_ovr_no_path_retry);
+	install_keyword("rr_min_io", &ovr_minio_handler, &snprint_ovr_minio);
+	install_keyword("rr_min_io_rq", &ovr_minio_rq_handler, &snprint_ovr_minio_rq);
+	install_keyword("flush_on_last_del", &ovr_flush_on_last_del_handler, &snprint_ovr_flush_on_last_del);
+	install_keyword("fast_io_fail_tmo", &ovr_fast_io_fail_handler, &snprint_ovr_fast_io_fail);
+	install_keyword("dev_loss_tmo", &ovr_dev_loss_handler, &snprint_ovr_dev_loss);
+	install_keyword("user_friendly_names", &ovr_user_friendly_names_handler, &snprint_ovr_user_friendly_names);
+	install_keyword("retain_attached_hw_handler", &ovr_retain_hwhandler_handler, &snprint_ovr_retain_hwhandler);
+	install_keyword("detect_prio", &ovr_detect_prio_handler, &snprint_ovr_detect_prio);
 
 	install_keyword_root("multipaths", &multipaths_handler);
 	install_keyword_multi("multipath", &multipath_handler, NULL);
