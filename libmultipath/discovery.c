@@ -829,7 +829,7 @@ get_vpd (struct udev_device *parent, int pg, char * str, int maxlen)
 	} else if (pg == 0x83) {
 		unsigned char *d;
 		unsigned char *vpd = NULL;
-		int vpd_type, vpd_len, prio = -1, i;
+		int vpd_type, vpd_len, prio = -1, i, naa_prio;
 
 		d = (unsigned char *)buff + 4;
 		while (d < (unsigned char *)buff + buff_len) {
@@ -841,8 +841,30 @@ get_vpd (struct udev_device *parent, int pg, char * str, int maxlen)
 			switch (d[1] & 0xf) {
 			case 0x3:
 				/* NAA: Prio 5 */
-				if (prio < 5) {
-					prio = 5;
+				switch (d[4] >> 4) {
+				case 6:
+					/* IEEE Registered Extended: Prio 8 */
+					naa_prio = 8;
+					break;
+				case 5:
+					/* IEEE Registered: Prio 7 */
+					naa_prio = 7;
+					break;
+				case 2:
+					/* IEEE Extended: Prio 6 */
+					naa_prio = 6;
+					break;
+				case 3:
+					/* IEEE Locally assigned: Prio 1 */
+					naa_prio = 1;
+					break;
+				default:
+					/* Default: no priority */
+					naa_prio = -1;
+					break;
+				}
+				if (prio < naa_prio) {
+					prio = naa_prio;
 					vpd = d;
 				}
 				break;
