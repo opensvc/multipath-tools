@@ -1497,13 +1497,17 @@ get_uid (struct path * pp)
 		}
 		if (len <= 0) {
 			len = get_vpd_uid(pp);
-			if (len > 0)
+			if (len > 0) {
 				origin = "sysfs";
+				pp->uid_attribute = NULL;
+			}
 		}
 		if (len <= 0) {
 			len = get_udev_uid(pp, DEFAULT_UID_ATTRIBUTE);
-			if (len > 0)
-				origin = "udev";
+			if (len > 0) {
+				origin = "default";
+				pp->uid_attribute = DEFAULT_UID_ATTRIBUTE;
+			}
 		}
 	}
 	if ( len < 0 ) {
