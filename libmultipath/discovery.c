@@ -998,7 +998,7 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 }
 
 static int
-get_vpd (struct udev_device *parent, int fd, int pg, char * str, int maxlen)
+get_vpd_sysfs (struct udev_device *parent, int pg, char * str, int maxlen)
 {
 	int len, buff_len;
 	unsigned char buff[4096];
@@ -1006,11 +1006,39 @@ get_vpd (struct udev_device *parent, int fd, int pg, char * str, int maxlen)
 	memset(buff, 0x0, 4096);
 	if (!parent || sysfs_get_vpd(parent, pg, buff, 4096) <= 0) {
 		condlog(3, "failed to read sysfs vpd pg%02x", pg);
-		if (sgio_get_vpd(buff, 4096, fd) <= 0) {
-			condlog(3, "failed to issue vpd inquiry for pg%02x",
-				pg);
-			return -errno;
-		}
+		return -EINVAL;
+	}
+
+	if (buff[1] != pg) {
+		condlog(3, "vpd pg%02x error, invalid vpd page %02x",
+			pg, buff[1]);
+		return -ENODATA;
+	}
+	buff_len = (buff[2] << 8) + buff[3] + 4;
+	if (buff_len > 4096)
+		condlog(3, "vpd pg%02x page truncated", pg);
+
+	if (pg == 0x80)
+		len = parse_vpd_pg80(buff, str, maxlen);
+	else if (pg == 0x83)
+		len = parse_vpd_pg83(buff, buff_len, str, maxlen);
+	else
+		len = -ENOSYS;
+
+	return len;
+}
+
+static int
+get_vpd_sgio (int fd, int pg, char * str, int maxlen)
+{
+	int len, buff_len;
+	unsigned char buff[4096];
+
+	memset(buff, 0x0, 4096);
+	if (sgio_get_vpd(buff, 4096, fd) <= 0) {
+		condlog(3, "failed to issue vpd inquiry for pg%02x",
+			pg);
+		return -errno;
 	}
 
 	if (buff[1] != pg) {
@@ -1344,7 +1372,7 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 	if (!attr_path || pp->sg_id.host_no == -1)
 		return -ENODEV;
 
-	if (get_vpd(parent, pp->fd, 0x80, pp->serial, SERIAL_SIZE) > 0)
+	if (get_vpd_sysfs(parent, 0x80, pp->serial, SERIAL_SIZE) > 0)
 		condlog(3, "%s: serial = %s",
 			pp->dev, pp->serial);
 
@@ -1474,7 +1502,7 @@ get_vpd_uid(struct path * pp)
 		parent = udev_device_get_parent(parent);
 	}
 
-	return get_vpd(parent, pp->fd, 0x83, pp->wwid, WWID_SIZE);
+	return get_vpd_sysfs(parent, 0x83, pp->wwid, WWID_SIZE);
 }
 
 static int
@@ -1513,19 +1541,30 @@ get_uid (struct path * pp)
 		if (pp->uid_attribute) {
 			len = get_udev_uid(pp, pp->uid_attribute);
 			origin = "udev";
+			if (len <= 0)
+				condlog(2,
+					"%s: failed to get UID attribute '%s'",
+					pp->dev, pp->uid_attribute);
 		}
 		if (len <= 0) {
 			len = get_vpd_uid(pp);
 			if (len > 0) {
 				origin = "sysfs";
 				pp->uid_attribute = NULL;
+			} else {
+				condlog(2, "%s: failed to get sysfs vpd pg83",
+					pp->dev);
 			}
 		}
 		if (len <= 0) {
-			len = get_udev_uid(pp, DEFAULT_UID_ATTRIBUTE);
+			len = get_vpd_sgio(pp->fd, 0x83, pp->wwid,
+					   WWID_SIZE);
 			if (len > 0) {
-				origin = "default";
-				pp->uid_attribute = DEFAULT_UID_ATTRIBUTE;
+				origin = "sgio";
+				pp->uid_attribute = NULL;
+			} else {
+				condlog(2, "%s: failed to get sgio vpd pg83",
+					pp->dev);
 			}
 		}
 	}
