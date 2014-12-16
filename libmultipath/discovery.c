@@ -1509,7 +1509,7 @@ static int
 get_uid (struct path * pp)
 {
 	char *c;
-	const char *origin = "none";
+	const char *origin = "unknown";
 	ssize_t len = 0;
 
 	if (!pp->uid_attribute && !pp->getuid)
@@ -1542,35 +1542,28 @@ get_uid (struct path * pp)
 			len = get_udev_uid(pp, pp->uid_attribute);
 			origin = "udev";
 			if (len <= 0)
-				condlog(2,
-					"%s: failed to get UID attribute '%s'",
-					pp->dev, pp->uid_attribute);
+				condlog(1,
+					"%s: failed to get udev uid: %s",
+					pp->dev, strerror(-len));
+
 		}
-		if (len <= 0) {
+		if (len <= 0 &&
+		    !strcmp(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE)) {
 			len = get_vpd_uid(pp);
-			if (len > 0) {
-				origin = "sysfs";
-				pp->uid_attribute = NULL;
-			} else {
-				condlog(2, "%s: failed to get sysfs vpd pg83",
-					pp->dev);
-			}
-		}
-		if (len <= 0) {
-			len = get_vpd_sgio(pp->fd, 0x83, pp->wwid,
-					   WWID_SIZE);
-			if (len > 0) {
+			origin = "sysfs";
+			pp->uid_attribute = NULL;
+			if (len < 0) {
+				condlog(1, "%s: failed to get sysfs uid: %s",
+					pp->dev, strerror(-len));
+				len = get_vpd_sgio(pp->fd, 0x83, pp->wwid,
+						   WWID_SIZE);
 				origin = "sgio";
-				pp->uid_attribute = NULL;
-			} else {
-				condlog(2, "%s: failed to get sgio vpd pg83",
-					pp->dev);
 			}
 		}
 	}
 	if ( len < 0 ) {
-		condlog(1, "%s: failed to get uid: %s",
-			pp->dev, strerror(-len));
+		condlog(1, "%s: failed to get %s uid: %s",
+			pp->dev, origin, strerror(-len));
 		memset(pp->wwid, 0x0, WWID_SIZE);
 	} else {
 		/* Strip any trailing blanks */
