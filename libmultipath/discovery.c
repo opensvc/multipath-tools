@@ -148,6 +148,7 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 		return -ENOMEM;
 
 	udev_enumerate_add_match_subsystem(udev_iter, "block");
+	udev_enumerate_add_match_is_initialized(udev_iter);
 	udev_enumerate_scan_devices(udev_iter);
 
 	udev_list_entry_foreach(entry,
