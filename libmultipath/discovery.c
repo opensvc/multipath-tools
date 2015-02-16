@@ -1370,13 +1370,13 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 		parent = udev_device_get_parent(parent);
 	}
 	if (!attr_path || pp->sg_id.host_no == -1)
-		return -ENODEV;
+		return 0;
 
 	if (get_vpd_sysfs(parent, 0x80, pp->serial, SERIAL_SIZE) > 0)
 		condlog(3, "%s: serial = %s",
 			pp->dev, pp->serial);
 
-	return strlen(pp->serial) ? 0 : -EIO;
+	return 0;
 }
 
 static int
