@@ -47,9 +47,6 @@ struct keyword {
 	int unique;
 };
 
-/* global var exported */
-FILE *stream;
-
 /* Reloading helpers */
 #define SET_RELOAD      (reload = 1)
 #define UNSET_RELOAD    (reload = 0)
@@ -72,9 +69,6 @@ extern int _install_keyword(char *string, int (*handler) (vector),
 extern void dump_keywords(vector keydump, int level);
 extern void free_keywords(vector keywords);
 extern vector alloc_strvec(char *string);
-extern int read_line(char *buf, int size);
-extern vector read_value_block(void);
-extern int alloc_value_block(vector strvec, void (*alloc_func) (vector));
 extern void *set_value(vector strvec);
 extern int alloc_keywords(void);
 extern int process_file(char *conf_file);

@@ -280,8 +280,8 @@ out:
 	return NULL;
 }
 
-int
-read_line(char *buf, int size)
+static int
+read_line(FILE *stream, char *buf, int size)
 {
 	char *p;
 
@@ -289,93 +289,6 @@ read_line(char *buf, int size)
 		return 0;
 	strtok_r(buf, "\n\r", &p);
 	return 1;
-}
-
-vector
-read_value_block(void)
-{
-	char *buf;
-	int i;
-	char *str = NULL;
-	char *dup;
-	vector vec = NULL;
-	vector elements = vector_alloc();
-
-	if (!elements)
-		return NULL;
-
-	buf = (char *) MALLOC(MAXBUF);
-
-	if (!buf) {
-		vector_free(elements);
-		return NULL;
-	}
-
-	while (read_line(buf, MAXBUF)) {
-		vec = alloc_strvec(buf);
-		if (vec) {
-			str = VECTOR_SLOT(vec, 0);
-			if (!strcmp(str, EOB)) {
-				free_strvec(vec);
-				break;
-			}
-
-			for (i = 0; i < VECTOR_SIZE(vec); i++) {
-				str = VECTOR_SLOT(vec, i);
-				dup = (char *) MALLOC(strlen(str) + 1);
-				if (!dup)
-					goto out;
-				memcpy(dup, str, strlen(str));
-
-				if (!vector_alloc_slot(elements)) {
-					free_strvec(vec);
-					goto out1;
-				}
-
-				vector_set_slot(elements, dup);
-			}
-			free_strvec(vec);
-		}
-	}
-	FREE(buf);
-	return elements;
-out1:
-	FREE(dup);
-out:
-	FREE(buf);
-	vector_free(elements);
-	return NULL;
-}
-
-int
-alloc_value_block(vector strvec, void (*alloc_func) (vector))
-{
-	char *buf;
-	char *str = NULL;
-	vector vec = NULL;
-
-	buf = (char *) MALLOC(MAXBUF);
-
-	if (!buf)
-		return 1;
-
-	while (read_line(buf, MAXBUF)) {
-		vec = alloc_strvec(buf);
-		if (vec) {
-			str = VECTOR_SLOT(vec, 0);
-			if (!strcmp(str, EOB)) {
-				free_strvec(vec);
-				break;
-			}
-
-			if (VECTOR_SIZE(vec))
-				(*alloc_func) (vec);
-
-			free_strvec(vec);
-		}
-	}
-	FREE(buf);
-	return 0;
 }
 
 void *
@@ -553,7 +466,7 @@ validate_config_strvec(vector strvec, char *file)
 }
 
 static int
-process_stream(vector keywords, char *file)
+process_stream(FILE *stream, vector keywords, char *file)
 {
 	int i;
 	int r = 0, t;
@@ -574,7 +487,7 @@ process_stream(vector keywords, char *file)
 		return 1;
 	}
 
-	while (read_line(buf, MAXBUF)) {
+	while (read_line(stream, buf, MAXBUF)) {
 		line_nr++;
 		strvec = alloc_strvec(buf);
 		if (!strvec)
@@ -616,7 +529,8 @@ process_stream(vector keywords, char *file)
 
 				if (keyword->sub) {
 					kw_level++;
-					r += process_stream(keyword->sub, file);
+					r += process_stream(stream,
+							    keyword->sub, file);
 					kw_level--;
 				}
 				break;
@@ -651,6 +565,7 @@ int
 process_file(char *file)
 {
 	int r;
+	FILE *stream;
 
 	if (!keywords) {
 		condlog(0, "No keywords alocated");
@@ -665,7 +580,7 @@ process_file(char *file)
 
 	/* Stream handling */
 	line_nr = 0;
-	r = process_stream(keywords, file);
+	r = process_stream(stream, keywords, file);
 	fclose(stream);
 	//free_keywords(keywords);
 
