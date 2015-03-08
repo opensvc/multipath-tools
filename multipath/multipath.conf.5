@@ -432,6 +432,13 @@ still in use, it will be freed when the last user closes it.  If path is added
 to the multipath device before the last user closes it, the deferred remove
 will be canceled. Default is
 .I no
+.TP
+.B config_dir
+If set to anything other than "", multipath will search this directory
+alphabetically for file ending in ".conf" and it will read configuration
+information from them, just as if it was in /etc/multipath.conf.  config_dir
+must either be "" or a fully qualified directory name. Default is
+.I "/etc/multipath/conf.d"
 .
 .SH "blacklist section"
 The

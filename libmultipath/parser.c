@@ -18,6 +18,7 @@
  */
 
 #include <syslog.h>
+#include <errno.h>
 
 #include "parser.h"
 #include "memory.h"
@@ -445,14 +446,15 @@ set_value(vector strvec)
 /* non-recursive configuration stream handler */
 static int kw_level = 0;
 
-int warn_on_duplicates(vector uniques, char *str)
+int warn_on_duplicates(vector uniques, char *str, char *file)
 {
 	char *tmp;
 	int i;
 
 	vector_foreach_slot(uniques, tmp, i) {
 		if (!strcmp(str, tmp)) {
-			condlog(1, "multipath.conf line %d, duplicate keyword: %s", line_nr, str);
+			condlog(1, "%s line %d, duplicate keyword: %s",
+				file, line_nr, str);
 			return 0;
 		}
 	}
@@ -488,65 +490,70 @@ is_sublevel_keyword(char *str)
 }
 
 int
-validate_config_strvec(vector strvec)
+validate_config_strvec(vector strvec, char *file)
 {
 	char *str;
 	int i;
 
 	str = VECTOR_SLOT(strvec, 0);
 	if (str == NULL) {
-		condlog(0, "can't parse option on line %d of config file",
-			line_nr);
+		condlog(0, "can't parse option on line %d of %s",
+			line_nr, file);
 	return -1;
 	}
 	if (*str == '}') {
 		if (VECTOR_SIZE(strvec) > 1)
-			condlog(0, "ignoring extra data starting with '%s' on line %d of config file", (char *)VECTOR_SLOT(strvec, 1), line_nr);
+			condlog(0, "ignoring extra data starting with '%s' on line %d of %s", (char *)VECTOR_SLOT(strvec, 1), line_nr, file);
 		return 0;
 	}
 	if (*str == '{') {
-		condlog(0, "invalid keyword '%s' on line %d of config file", str, line_nr);
+		condlog(0, "invalid keyword '%s' on line %d of %s",
+			str, line_nr, file);
 		return -1;
 	}
 	if (is_sublevel_keyword(str)) {
 		str = VECTOR_SLOT(strvec, 1);
 		if (str == NULL)
-			condlog(0, "missing '{' on line %d of config file", line_nr);
+			condlog(0, "missing '{' on line %d of %s",
+				line_nr, file);
 		else if (*str != '{')
-			condlog(0, "expecting '{' on line %d of config file. found '%s'", line_nr, str);
+			condlog(0, "expecting '{' on line %d of %s. found '%s'",
+				line_nr, file, str);
 		else if (VECTOR_SIZE(strvec) > 2)
-			condlog(0, "ignoring extra data starting with '%s' on line %d of config file", (char *)VECTOR_SLOT(strvec, 2), line_nr);
+			condlog(0, "ignoring extra data starting with '%s' on line %d of %s", (char *)VECTOR_SLOT(strvec, 2), line_nr, file);
 		return 0;
 	}
 	str = VECTOR_SLOT(strvec, 1);
 	if (str == NULL) {
-		condlog(0, "missing value for option '%s' on line %d of config file", (char *)VECTOR_SLOT(strvec, 0), line_nr);
+		condlog(0, "missing value for option '%s' on line %d of %s",
+			(char *)VECTOR_SLOT(strvec, 0), line_nr, file);
 		return -1;
 	}
 	if (*str != '"') {
 		if (VECTOR_SIZE(strvec) > 2)
-			condlog(0, "ignoring extra data starting with '%s' on line %d of config file", (char *)VECTOR_SLOT(strvec, 2), line_nr);
+			condlog(0, "ignoring extra data starting with '%s' on line %d of %s", (char *)VECTOR_SLOT(strvec, 2), line_nr, file);
 		return 0;
 	}
 	for (i = 2; i < VECTOR_SIZE(strvec); i++) {
 		str = VECTOR_SLOT(strvec, i);
 		if (str == NULL) {
-			condlog(0, "can't parse value on line %d of config file", line_nr);
+			condlog(0, "can't parse value on line %d of %s",
+				line_nr, file);
 			return -1;
 		}
 		if (*str == '"') {
 			if (VECTOR_SIZE(strvec) > i + 1)
-				condlog(0, "ignoring extra data starting with '%s' on line %d of config file", (char *)VECTOR_SLOT(strvec, (i + 1)), line_nr);
+				condlog(0, "ignoring extra data starting with '%s' on line %d of %s", (char *)VECTOR_SLOT(strvec, (i + 1)), line_nr, file);
 			return 0;
 		}
 	}
-	condlog(0, "missing closing quotes on line %d of config file",
-		line_nr);
+	condlog(0, "missing closing quotes on line %d of %s",
+		line_nr, file);
 	return 0;
 }
 
-int
-process_stream(vector keywords)
+static int
+process_stream(vector keywords, char *file)
 {
 	int i;
 	int r = 0, t;
@@ -573,7 +580,7 @@ process_stream(vector keywords)
 		if (!strvec)
 			continue;
 
-		if (validate_config_strvec(strvec) != 0) {
+		if (validate_config_strvec(strvec, file) != 0) {
 			free_strvec(strvec);
 			continue;
 		}
@@ -585,8 +592,8 @@ process_stream(vector keywords)
 				free_strvec(strvec);
 				break;
 			}
-			condlog(0, "unmatched '%s' at line %d of config file",
-				EOB, line_nr);
+			condlog(0, "unmatched '%s' at line %d of %s",
+				EOB, line_nr, file);
 		}
 
 		for (i = 0; i < VECTOR_SIZE(keywords); i++) {
@@ -594,7 +601,7 @@ process_stream(vector keywords)
 
 			if (!strcmp(keyword->string, str)) {
 				if (keyword->unique &&
-				    warn_on_duplicates(uniques, str)) {
+				    warn_on_duplicates(uniques, str, file)) {
 						r = 1;
 						free_strvec(strvec);
 						goto out;
@@ -609,15 +616,15 @@ process_stream(vector keywords)
 
 				if (keyword->sub) {
 					kw_level++;
-					r += process_stream(keyword->sub);
+					r += process_stream(keyword->sub, file);
 					kw_level--;
 				}
 				break;
 			}
 		}
 		if (i >= VECTOR_SIZE(keywords))
-			condlog(1, "multipath.conf +%d, invalid keyword: %s",
-				line_nr, str);
+			condlog(1, "%s line %d, invalid keyword: %s",
+				file, line_nr, str);
 
 		free_strvec(strvec);
 	}
@@ -641,27 +648,24 @@ int alloc_keywords(void)
 
 /* Data initialization */
 int
-init_data(char *conf_file, void (*init_keywords) (void))
+process_file(char *file)
 {
 	int r;
 
-	stream = fopen(conf_file, "r");
+	if (!keywords) {
+		condlog(0, "No keywords alocated");
+		return 1;
+	}
+	stream = fopen(file, "r");
 	if (!stream) {
-		syslog(LOG_WARNING, "Configuration file open problem");
+		condlog(0, "couldn't open configuration file '%s': %s",
+			file, strerror(errno));
 		return 1;
 	}
 
-	/* Init Keywords structure */
-	(*init_keywords) ();
-
-/* Dump configuration *
-  vector_dump(keywords);
-  dump_keywords(keywords, 0);
-*/
-
 	/* Stream handling */
 	line_nr = 0;
-	r = process_stream(keywords);
+	r = process_stream(keywords, file);
 	fclose(stream);
 	//free_keywords(keywords);
 

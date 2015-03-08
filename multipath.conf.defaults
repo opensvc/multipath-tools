@@ -26,6 +26,7 @@
 #	log_checker_err always
 #	retain_attached_hw_handler no
 #	detect_prio no
+#	config_dir "/etc/multipath/conf.d"
 #}
 #blacklist {
 #	devnode "^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"

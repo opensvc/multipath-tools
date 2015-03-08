@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <libudev.h>
+#include <dirent.h>
+#include <limits.h>
+#include <errno.h>
 
 #include "checkers.h"
 #include "memory.h"
@@ -499,6 +502,7 @@ free_config (struct config * conf)
 
 	if (conf->wwids_file)
 		FREE(conf->wwids_file);
+
 	if (conf->prio_name)
 		FREE(conf->prio_name);
 
@@ -512,6 +516,10 @@ free_config (struct config * conf)
 
 	if (conf->checker_name)
 		FREE(conf->checker_name);
+
+	if (conf->config_dir)
+		FREE(conf->config_dir);
+
 	if (conf->reservation_key)
 		FREE(conf->reservation_key);
 
@@ -530,6 +538,43 @@ free_config (struct config * conf)
 	free_hwe(conf->overrides);
 	free_keywords(conf->keywords);
 	FREE(conf);
+}
+
+/* if multipath fails to process the config directory, it should continue,
+ * with just a warning message */
+static void
+process_config_dir(vector keywords, char *dir)
+{
+	struct dirent **namelist;
+	int i, n;
+	char path[LINE_MAX];
+	int old_hwtable_size;
+
+	if (dir[0] != '/') {
+		condlog(1, "config_dir '%s' must be a fully qualified path",
+			dir);
+		return;
+	}
+	n = scandir(dir, &namelist, NULL, alphasort);
+	if (n < 0) {
+		if (errno == ENOENT)
+			condlog(3, "No configuration dir '%s'", dir);
+		else
+			condlog(0, "couldn't open configuration dir '%s': %s",
+				dir, strerror(errno));
+		return;
+	}
+	for (i = 0; i < n; i++) {
+		if (!strstr(namelist[i]->d_name, ".conf"))
+			continue;
+		old_hwtable_size = VECTOR_SIZE(conf->hwtable);
+		snprintf(path, LINE_MAX, "%s/%s", dir, namelist[i]->d_name);
+		path[LINE_MAX-1] = '\0';
+		process_file(path);
+		if (VECTOR_SIZE(conf->hwtable) > old_hwtable_size)
+			factorize_hwtable(conf->hwtable, old_hwtable_size);
+
+	}
 }
 
 int
@@ -568,6 +613,7 @@ load_config (char * file, struct udev *udev)
 	conf->detect_prio = DEFAULT_DETECT_PRIO;
 	conf->force_sync = 0;
 	conf->partition_delim = NULL;
+	conf->processed_main_config = 0;
 
 	/*
 	 * preload default hwtable
@@ -586,11 +632,12 @@ load_config (char * file, struct udev *udev)
 	 */
 	set_current_keywords(&conf->keywords);
 	alloc_keywords();
+	init_keywords();
 	if (filepresent(file)) {
 		int builtin_hwtable_size;
 
 		builtin_hwtable_size = VECTOR_SIZE(conf->hwtable);
-		if (init_data(file, init_keywords)) {
+		if (process_file(file)) {
 			condlog(0, "error parsing config file");
 			goto out;
 		}
@@ -602,14 +649,19 @@ load_config (char * file, struct udev *udev)
 			factorize_hwtable(conf->hwtable, builtin_hwtable_size);
 		}
 
-	} else {
-		init_keywords();
 	}
-	if (conf->max_checkint == 0)
-		conf->max_checkint = MAX_CHECKINT(conf->checkint);
+
+	conf->processed_main_config = 1;
+	if (conf->config_dir == NULL)
+		conf->config_dir = set_default(DEFAULT_CONFIG_DIR);
+	if (conf->config_dir && conf->config_dir[0] != '\0')
+		process_config_dir(conf->keywords, conf->config_dir);
+
 	/*
 	 * fill the voids left in the config file
 	 */
+	if (conf->max_checkint == 0)
+		conf->max_checkint = MAX_CHECKINT(conf->checkint);
 	if (conf->blist_devnode == NULL) {
 		conf->blist_devnode = vector_alloc();
 

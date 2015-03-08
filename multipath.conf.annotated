@@ -304,6 +304,16 @@
 #	# values  : yes|no
 #	# default : no
 #	force_sync yes
+#
+#	#
+#	# name    : config_dir
+#	# scope   : multipath & multipathd
+#	# desc    : If not set to an empty string, multipath will search
+#	#           this directory alphabetically for files ending in ".conf"
+#	#           and it will read configuration information from these
+#	#           files, just as if it was in /etc/multipath.conf
+#	# values  : "" or a fully qualified pathname
+#	# default : "/etc/multipath/conf.d"
 #}
 #	
 ##

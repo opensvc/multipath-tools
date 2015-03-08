@@ -38,6 +38,9 @@ static int
 set_str(vector strvec, void *ptr)
 {
 	char **str_ptr = (char **)ptr;
+
+	if (*str_ptr)
+		FREE(*str_ptr);
 	*str_ptr = set_value(strvec);
 
 	if (!*str_ptr)
@@ -382,6 +385,16 @@ declare_hw_handler(deferred_remove, set_yes_no_undef)
 declare_hw_snprint(deferred_remove, print_yes_no_undef)
 declare_mp_handler(deferred_remove, set_yes_no_undef)
 declare_mp_snprint(deferred_remove, print_yes_no_undef)
+
+static int
+def_config_dir_handler(vector strvec)
+{
+	/* this is only valid in the main config file */
+	if (conf->processed_main_config)
+		return 0;
+	return set_str(strvec, &conf->config_dir);
+}
+declare_def_snprint(config_dir, print_str)
 
 #define declare_def_attr_handler(option, function)			\
 static int								\
@@ -972,10 +985,14 @@ declare_mp_snprint(reservation_key, print_reservation_key)
 static int
 blacklist_handler(vector strvec)
 {
-	conf->blist_devnode = vector_alloc();
-	conf->blist_wwid = vector_alloc();
-	conf->blist_device = vector_alloc();
-	conf->blist_property = vector_alloc();
+	if (!conf->blist_devnode)
+		conf->blist_devnode = vector_alloc();
+	if (!conf->blist_wwid)
+		conf->blist_wwid = vector_alloc();
+	if (!conf->blist_device)
+		conf->blist_device = vector_alloc();
+	if (!conf->blist_property)
+		conf->blist_property = vector_alloc();
 
 	if (!conf->blist_devnode || !conf->blist_wwid ||
 	    !conf->blist_device || !conf->blist_property)
@@ -987,10 +1004,14 @@ blacklist_handler(vector strvec)
 static int
 blacklist_exceptions_handler(vector strvec)
 {
-	conf->elist_devnode = vector_alloc();
-	conf->elist_wwid = vector_alloc();
-	conf->elist_device = vector_alloc();
-	conf->elist_property = vector_alloc();
+	if (!conf->elist_devnode)
+		conf->elist_devnode = vector_alloc();
+	if (!conf->elist_wwid)
+		conf->elist_wwid = vector_alloc();
+	if (!conf->elist_device)
+		conf->elist_device = vector_alloc();
+	if (!conf->elist_property)
+		conf->elist_property = vector_alloc();
 
 	if (!conf->elist_devnode || !conf->elist_wwid ||
 	    !conf->elist_device || !conf->elist_property)
@@ -1134,14 +1155,12 @@ declare_hw_snprint(hwhandler, print_str)
 static int
 overrides_handler(vector strvec)
 {
-	struct hwentry * overrides;
+	if (!conf->overrides)
+		conf->overrides = alloc_hwe();
 
-	overrides = alloc_hwe();
-
-	if (!overrides)
+	if (!conf->overrides)
 		return 1;
 
-	conf->overrides = overrides;
 	return 0;
 }
 
@@ -1153,7 +1172,8 @@ overrides_handler(vector strvec)
 static int
 multipaths_handler(vector strvec)
 {
-	conf->mptable = vector_alloc();
+	if (!conf->mptable)
+		conf->mptable = vector_alloc();
 
 	if (!conf->mptable)
 		return 1;
@@ -1256,6 +1276,7 @@ init_keywords(void)
 	install_keyword("force_sync", &def_force_sync_handler, &snprint_def_force_sync);
 	install_keyword("deferred_remove", &def_deferred_remove_handler, &snprint_def_deferred_remove);
 	install_keyword("partition_delimiter", &def_partition_delim_handler, &snprint_def_partition_delim);
+	install_keyword("config_dir", &def_config_dir_handler, &snprint_def_config_dir);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);

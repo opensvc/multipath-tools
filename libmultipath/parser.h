@@ -76,9 +76,8 @@ extern int read_line(char *buf, int size);
 extern vector read_value_block(void);
 extern int alloc_value_block(vector strvec, void (*alloc_func) (vector));
 extern void *set_value(vector strvec);
-extern int process_stream(vector keywords);
 extern int alloc_keywords(void);
-extern int init_data(char *conf_file, void (*init_keywords) (void));
+extern int process_file(char *conf_file);
 extern struct keyword * find_keyword(vector v, char * name);
 void set_current_keywords (vector *k);
 int snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw,

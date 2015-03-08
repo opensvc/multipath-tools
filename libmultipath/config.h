@@ -127,6 +127,7 @@ struct config {
 	int detect_prio;
 	int force_sync;
 	int deferred_remove;
+	int processed_main_config;
 	unsigned int version[3];
 
 	char * dev;
@@ -144,6 +145,7 @@ struct config {
 	char * checker_name;
 	char * alias_prefix;
 	char * partition_delim;
+	char * config_dir;
 	unsigned char * reservation_key;
 
 	vector keywords;

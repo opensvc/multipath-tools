@@ -27,5 +27,6 @@
 #define DEFAULT_CONFIGFILE	"/etc/multipath.conf"
 #define DEFAULT_BINDINGS_FILE	"/etc/multipath/bindings"
 #define DEFAULT_WWIDS_FILE	"/etc/multipath/wwids"
+#define DEFAULT_CONFIG_DIR	"/etc/multipath/conf.d"
 
 char * set_default (char * str);
