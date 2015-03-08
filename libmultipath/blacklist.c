@@ -135,8 +135,12 @@ _blacklist_exceptions_device(vector elist, char * vendor, char * product)
 	struct blentry_device * ble;
 
 	vector_foreach_slot (elist, ble, i) {
-		if (!regexec(&ble->vendor_reg, vendor, 0, NULL, 0) &&
-		    !regexec(&ble->product_reg, product, 0, NULL, 0))
+		if (!ble->vendor && !ble->product)
+			continue;
+		if ((!ble->vendor ||
+		     !regexec(&ble->vendor_reg, vendor, 0, NULL, 0)) &&
+		    (!ble->product ||
+		     !regexec(&ble->product_reg, product, 0, NULL, 0)))
 			return 1;
 	}
 	return 0;
@@ -149,8 +153,12 @@ _blacklist_device (vector blist, char * vendor, char * product)
 	struct blentry_device * ble;
 
 	vector_foreach_slot (blist, ble, i) {
-		if (!regexec(&ble->vendor_reg, vendor, 0, NULL, 0) &&
-		    !regexec(&ble->product_reg, product, 0, NULL, 0))
+		if (!ble->vendor && !ble->product)
+			continue;
+		if ((!ble->vendor ||
+		     !regexec(&ble->vendor_reg, vendor, 0, NULL, 0)) &&
+		    (!ble->product ||
+		     !regexec(&ble->product_reg, product, 0, NULL, 0)))
 			return 1;
 	}
 	return 0;
