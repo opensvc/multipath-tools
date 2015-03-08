@@ -272,6 +272,8 @@ static struct hwentry default_hw[] = {
 		.checker_name  = EMC_CLARIION,
 		.prio_name     = PRIO_EMC,
 		.prio_args     = NULL,
+		.retain_hwhandler = RETAIN_HWHANDLER_ON,
+		.detect_prio   = DETECT_PRIO_ON,
 	},
 	{
 		.vendor        = "EMC",

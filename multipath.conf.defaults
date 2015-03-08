@@ -263,6 +263,8 @@
 #		failback "immediate"
 #		rr_weight "uniform"
 #		no_path_retry 60
+#		retain_attached_hw_handler yes
+#		detect_prio yes
 #	}
 #	device {
 #		vendor "EMC"
