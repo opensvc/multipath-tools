@@ -28,6 +28,11 @@ Suppress timestamps. Do not prefix logging messages with a timestamp.
 .B -v "level"
 Verbosity level. Print additional information while running multipathd. A  level of 0 means only print errors. A level of 3 or greater prints debugging information as well. 
 .TP
+.B -B
+Read-only bindings file. Multipathd will not write to the user_friendly_names
+bindings file. If a user_friendly_name doesn't already exist for a device, it
+will use its WWID as its alias.
+.TP
 .B -k 
 multipathd will enter interactive mode. From this mode, the available commands can be viewed by entering "help". When you are finished entering commands, press CTRL-D to quit.
 
