@@ -158,7 +158,7 @@ sysfs_get_size (struct path *pp, unsigned long long * size)
 		return 1;
 
 	attr[0] = '\0';
-	if (sysfs_attr_get_value(pp->udev, "size", attr, 255) == 0) {
+	if (sysfs_attr_get_value(pp->udev, "size", attr, 255) <= 0) {
 		condlog(3, "%s: No size attribute in sysfs", pp->dev);
 		return 1;
 	}
