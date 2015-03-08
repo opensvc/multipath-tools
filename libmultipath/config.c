@@ -340,6 +340,7 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(user_friendly_names);
 	merge_num(retain_hwhandler);
 	merge_num(detect_prio);
+	merge_num(deferred_remove);
 
 	/*
 	 * Make sure features is consistent with
@@ -412,6 +413,7 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->user_friendly_names = dhwe->user_friendly_names;
 	hwe->retain_hwhandler = dhwe->retain_hwhandler;
 	hwe->detect_prio = dhwe->detect_prio;
+	conf->deferred_remove = DEFAULT_DEFERRED_REMOVE;
 
 	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
 		goto out;

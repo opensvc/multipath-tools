@@ -422,6 +422,16 @@ only one checker will run at a time.  This is useful in the case where many
 multipathd checkers running in parallel causes significant CPU pressure. The
 Default is
 .I no
+.TP
+.B deferred_remove
+If set to
+.I yes
+, multipathd will do a deferred remove instead of a regular remove when the
+last path device has been deleted.  This means that if the multipath device is
+still in use, it will be freed when the last user closes it.  If path is added
+to the multipath device before the last user closes it, the deferred remove
+will be canceled. Default is
+.I no
 .
 .SH "blacklist section"
 The
@@ -540,6 +550,8 @@ section:
 .B features
 .TP
 .B reservation_key
+.TP
+.B deferred_remove
 .RE
 .PD
 .LP
@@ -630,6 +642,8 @@ section:
 .B retain_attached_hw_handler
 .TP
 .B detect_prio
+.TP
+.B deferred_remove
 .RE
 .PD
 .LP
@@ -683,6 +697,8 @@ sections:
 .B retain_attached_hw_handler
 .TP
 .B detect_prio
+.TP
+.B deferred_remove
 .RE
 .PD
 .LP

@@ -120,6 +120,13 @@ enum detect_prio_states {
 	DETECT_PRIO_ON = YNU_YES,
 };
 
+enum deferred_remove_states {
+	DEFERRED_REMOVE_UNDEF = YNU_UNDEF,
+	DEFERRED_REMOVE_OFF = YNU_NO,
+	DEFERRED_REMOVE_ON = YNU_YES,
+	DEFERRED_REMOVE_IN_PROGRESS,
+};
+
 enum scsi_protocol {
 	SCSI_PROTOCOL_FCP = 0,	/* Fibre Channel */
 	SCSI_PROTOCOL_SPI = 1,	/* parallel SCSI */
@@ -213,6 +220,7 @@ struct multipath {
 	int attribute_flags;
 	int fast_io_fail;
 	int retain_hwhandler;
+	int deferred_remove;
 	unsigned int dev_loss;
 	uid_t uid;
 	gid_t gid;

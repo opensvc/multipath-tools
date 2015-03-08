@@ -46,6 +46,12 @@ ifdef SYSTEMD
 	CFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
 endif
 
+LIBDM_API_DEFERRED = $(shell grep -Ecs '^[a-z]*[[:space:]]+dm_task_deferred_remove' /usr/include/libdevmapper.h)
+
+ifneq ($(strip $(LIBDM_API_DEFERRED)),0)
+	CFLAGS += -DLIBDM_API_DEFERRED
+endif
+
 all: $(LIBS)
 
 $(LIBS): $(OBJS)

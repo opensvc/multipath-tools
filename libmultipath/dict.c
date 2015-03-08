@@ -374,6 +374,15 @@ declare_hw_snprint(detect_prio, print_yes_no_undef)
 declare_def_handler(force_sync, set_yes_no)
 declare_def_snprint(force_sync, print_yes_no)
 
+declare_def_handler(deferred_remove, set_yes_no_undef)
+declare_def_snprint_defint(deferred_remove, print_yes_no_undef, YNU_NO)
+declare_ovr_handler(deferred_remove, set_yes_no_undef)
+declare_ovr_snprint(deferred_remove, print_yes_no_undef)
+declare_hw_handler(deferred_remove, set_yes_no_undef)
+declare_hw_snprint(deferred_remove, print_yes_no_undef)
+declare_mp_handler(deferred_remove, set_yes_no_undef)
+declare_mp_snprint(deferred_remove, print_yes_no_undef)
+
 #define declare_def_attr_handler(option, function)			\
 static int								\
 def_ ## option ## _handler (vector strvec)				\
@@ -1245,6 +1254,7 @@ init_keywords(void)
 	install_keyword("retain_attached_hw_handler", &def_retain_hwhandler_handler, &snprint_def_retain_hwhandler);
 	install_keyword("detect_prio", &def_detect_prio_handler, &snprint_def_detect_prio);
 	install_keyword("force_sync", &def_force_sync_handler, &snprint_def_force_sync);
+	install_keyword("deferred_remove", &def_deferred_remove_handler, &snprint_def_deferred_remove);
 	install_keyword("partition_delimiter", &def_partition_delim_handler, &snprint_def_partition_delim);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
@@ -1313,6 +1323,7 @@ init_keywords(void)
 	install_keyword("user_friendly_names", &hw_user_friendly_names_handler, &snprint_hw_user_friendly_names);
 	install_keyword("retain_attached_hw_handler", &hw_retain_hwhandler_handler, &snprint_hw_retain_hwhandler);
 	install_keyword("detect_prio", &hw_detect_prio_handler, &snprint_hw_detect_prio);
+	install_keyword("deferred_remove", &hw_deferred_remove_handler, &snprint_hw_deferred_remove);
 	install_sublevel_end();
 
 	install_keyword_root("overrides", &overrides_handler);
@@ -1337,6 +1348,7 @@ init_keywords(void)
 	install_keyword("user_friendly_names", &ovr_user_friendly_names_handler, &snprint_ovr_user_friendly_names);
 	install_keyword("retain_attached_hw_handler", &ovr_retain_hwhandler_handler, &snprint_ovr_retain_hwhandler);
 	install_keyword("detect_prio", &ovr_detect_prio_handler, &snprint_ovr_detect_prio);
+	install_keyword("deferred_remove", &ovr_deferred_remove_handler, &snprint_ovr_deferred_remove);
 
 	install_keyword_root("multipaths", &multipaths_handler);
 	install_keyword_multi("multipath", &multipath_handler, NULL);
@@ -1360,5 +1372,6 @@ init_keywords(void)
 	install_keyword("gid", &mp_gid_handler, &snprint_mp_gid);
 	install_keyword("reservation_key", &mp_reservation_key_handler, &snprint_mp_reservation_key);
 	install_keyword("user_friendly_names", &mp_user_friendly_names_handler, &snprint_mp_user_friendly_names);
+	install_keyword("deferred_remove", &mp_deferred_remove_handler, &snprint_mp_deferred_remove);
 	install_sublevel_end();
 }

@@ -32,6 +32,8 @@
 #define UUID_PREFIX "mpath-"
 #define UUID_PREFIX_LEN 6
 
+static int dm_cancel_remove_partmaps(const char * mapname);
+
 #ifndef LIBDM_API_COOKIE
 static inline int dm_task_set_cookie(struct dm_task *dmt, uint32_t *c, int a)
 {
@@ -105,7 +107,9 @@ dm_lib_prereq (void)
 {
 	char version[64];
 	int v[3];
-#if defined(DM_SUBSYSTEM_UDEV_FLAG0)
+#if defined(LIBDM_API_DEFERRED)
+	int minv[3] = {1, 2, 89};
+#elif defined(DM_SUBSYSTEM_UDEV_FLAG0)
 	int minv[3] = {1, 2, 82};
 #elif defined(LIBDM_API_COOKIE)
 	int minv[3] = {1, 2, 38};
@@ -203,8 +207,10 @@ dm_prereq (void)
 	return dm_drv_prereq();
 }
 
+#define do_deferred(x) ((x) == DEFERRED_REMOVE_ON || (x) == DEFERRED_REMOVE_IN_PROGRESS)
+
 static int
-dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t udev_flags) {
+dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t udev_flags, int deferred_remove) {
 	int r = 0;
 	int udev_wait_flag = (need_sync && (task == DM_DEVICE_RESUME ||
 					    task == DM_DEVICE_REMOVE));
@@ -222,7 +228,10 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t 
 	if (no_flush)
 		dm_task_no_flush(dmt);		/* for DM_DEVICE_SUSPEND/RESUME */
 #endif
-
+#ifdef LIBDM_API_DEFERRED
+	if (do_deferred(deferred_remove))
+		dm_task_deferred_remove(dmt);
+#endif
 	if (udev_wait_flag && !dm_task_set_cookie(dmt, &conf->cookie, ((conf->daemon)? DM_UDEV_DISABLE_LIBRARY_FALLBACK : 0) | udev_flags))
 		goto out;
 	r = dm_task_run (dmt);
@@ -234,12 +243,18 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t 
 
 extern int
 dm_simplecmd_flush (int task, const char *name, int needsync, uint16_t udev_flags) {
-	return dm_simplecmd(task, name, 0, needsync, udev_flags);
+	return dm_simplecmd(task, name, 0, needsync, udev_flags, 0);
 }
 
 extern int
 dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags) {
-	return dm_simplecmd(task, name, 1, 1, udev_flags);
+	return dm_simplecmd(task, name, 1, 1, udev_flags, 0);
+}
+
+static int
+dm_device_remove (const char *name, int needsync, int deferred_remove) {
+	return dm_simplecmd(DM_DEVICE_REMOVE, name, 0, needsync, 0,
+			    deferred_remove);
 }
 
 extern int
@@ -655,7 +670,7 @@ out:
 }
 
 extern int
-_dm_flush_map (const char * mapname, int need_sync)
+_dm_flush_map (const char * mapname, int need_sync, int deferred_remove)
 {
 	int r;
 
@@ -665,22 +680,45 @@ _dm_flush_map (const char * mapname, int need_sync)
 	if (dm_type(mapname, TGT_MPATH) <= 0)
 		return 0; /* nothing to do */
 
-	if (dm_remove_partmaps(mapname, need_sync))
+	if (dm_remove_partmaps(mapname, need_sync, deferred_remove))
 		return 1;
 
-	if (dm_get_opencount(mapname)) {
+	if (!do_deferred(deferred_remove) && dm_get_opencount(mapname)) {
 		condlog(2, "%s: map in use", mapname);
 		return 1;
 	}
 
-	r = dm_simplecmd_flush(DM_DEVICE_REMOVE, mapname, need_sync, 0);
+	r = dm_device_remove(mapname, need_sync, deferred_remove);
 
 	if (r) {
+		if (do_deferred(deferred_remove) && dm_map_present(mapname)) {
+			condlog(4, "multipath map %s remove deferred",
+				mapname);
+			return 2;
+		}
 		condlog(4, "multipath map %s removed", mapname);
 		return 0;
 	}
 	return 1;
 }
+
+#ifdef LIBDM_API_DEFERRED
+
+int
+dm_flush_map_nopaths(const char * mapname, int deferred_remove)
+{
+	return _dm_flush_map(mapname, 1, deferred_remove);
+}
+
+#else
+
+int
+dm_flush_map_nopaths(const char * mapname, int deferred_remove)
+{
+	return _dm_flush_map(mapname, 1, 0);
+}
+
+#endif
 
 extern int
 dm_suspend_and_flush_map (const char * mapname)
@@ -1068,6 +1106,7 @@ out:
 
 struct remove_data {
 	int need_sync;
+	int deferred_remove;
 };
 
 static int
@@ -1076,24 +1115,97 @@ remove_partmap(char *name, void *data)
 	struct remove_data *rd = (struct remove_data *)data;
 
 	if (dm_get_opencount(name)) {
-		dm_remove_partmaps(name, rd->need_sync);
-		if (dm_get_opencount(name)) {
+		dm_remove_partmaps(name, rd->need_sync, rd->deferred_remove);
+		if (!do_deferred(rd->deferred_remove) &&
+		    dm_get_opencount(name)) {
 			condlog(2, "%s: map in use", name);
 			return 1;
 		}
 	}
 	condlog(4, "partition map %s removed", name);
-	dm_simplecmd_flush(DM_DEVICE_REMOVE, name,
-			   rd->need_sync, 0);
+	dm_device_remove(name, rd->need_sync, rd->deferred_remove);
 	return 0;
 }
 
 int
-dm_remove_partmaps (const char * mapname, int need_sync)
+dm_remove_partmaps (const char * mapname, int need_sync, int deferred_remove)
 {
-	struct remove_data rd = { need_sync };
+	struct remove_data rd = { need_sync, deferred_remove };
 	return do_foreach_partmaps(mapname, remove_partmap, &rd);
 }
+
+#ifdef LIBDM_API_DEFERRED
+
+static int
+cancel_remove_partmap (char *name, void *unused)
+{
+	if (dm_get_opencount(name))
+		dm_cancel_remove_partmaps(name);
+	if (dm_message(name, "@cancel_deferred_remove") != 0)
+		condlog(0, "%s: can't cancel deferred remove: %s", name,
+			strerror(errno));
+	return 0;
+}
+
+static int
+dm_get_deferred_remove (char * mapname)
+{
+	int r = -1;
+	struct dm_task *dmt;
+	struct dm_info info;
+
+	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
+		return -1;
+
+	if (!dm_task_set_name(dmt, mapname))
+		goto out;
+
+	if (!dm_task_run(dmt))
+		goto out;
+
+	if (!dm_task_get_info(dmt, &info))
+		goto out;
+
+	r = info.deferred_remove;
+out:
+	dm_task_destroy(dmt);
+	return r;
+}
+
+static int
+dm_cancel_remove_partmaps(const char * mapname) {
+	return do_foreach_partmaps(mapname, cancel_remove_partmap, NULL);
+}
+
+int
+dm_cancel_deferred_remove (struct multipath *mpp)
+{
+	int r = 0;
+
+	if (!dm_get_deferred_remove(mpp->alias))
+		return 0;
+	if (mpp->deferred_remove == DEFERRED_REMOVE_IN_PROGRESS)
+		mpp->deferred_remove = DEFERRED_REMOVE_ON;
+
+	dm_cancel_remove_partmaps(mpp->alias);
+	r = dm_message(mpp->alias, "@cancel_deferred_remove");
+	if (r)
+		condlog(0, "%s: can't cancel deferred remove: %s", mpp->alias,
+				strerror(errno));
+	else
+		condlog(2, "%s: canceled deferred remove", mpp->alias);
+	return r;
+}
+
+#else
+
+int
+dm_cancel_deferred_remove (struct multipath *mpp)
+{
+	return 0;
+}
+
+#endif
 
 static struct dm_info *
 alloc_dminfo (void)

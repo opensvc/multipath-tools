@@ -218,19 +218,30 @@ sync_maps_state(vector mpvec)
 }
 
 static int
-flush_map(struct multipath * mpp, struct vectors * vecs)
+flush_map(struct multipath * mpp, struct vectors * vecs, int nopaths)
 {
+	int r;
+
+	if (nopaths)
+		r = dm_flush_map_nopaths(mpp->alias, mpp->deferred_remove);
+	else
+		r = dm_flush_map(mpp->alias);
 	/*
 	 * clear references to this map before flushing so we can ignore
 	 * the spurious uevent we may generate with the dm_flush_map call below
 	 */
-	if (dm_flush_map(mpp->alias)) {
+	if (r) {
 		/*
 		 * May not really be an error -- if the map was already flushed
 		 * from the device mapper by dmsetup(8) for instance.
 		 */
-		condlog(0, "%s: can't flush", mpp->alias);
-		return 1;
+		if (r == 1)
+			condlog(0, "%s: can't flush", mpp->alias);
+		else {
+			condlog(2, "%s: devmap deferred remove", mpp->alias);
+			mpp->deferred_remove = DEFERRED_REMOVE_IN_PROGRESS;
+		}
+		return r;
 	}
 	else {
 		dm_lib_release();
@@ -376,7 +387,7 @@ ev_remove_map (char * devname, char * alias, int minor, struct vectors * vecs)
 			mpp->alias, mpp->dmi->minor, minor);
 		return 0;
 	}
-	return flush_map(mpp, vecs);
+	return flush_map(mpp, vecs, 0);
 }
 
 static int
@@ -627,7 +638,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs)
 				mpp->flush_on_last_del = FLUSH_IN_PROGRESS;
 				dm_queue_if_no_path(mpp->alias, 0);
 			}
-			if (!flush_map(mpp, vecs)) {
+			if (!flush_map(mpp, vecs, 1)) {
 				condlog(2, "%s: removed map after"
 					" removing all paths",
 					alias);

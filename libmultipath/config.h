@@ -59,6 +59,7 @@ struct hwentry {
 	int user_friendly_names;
 	int retain_hwhandler;
 	int detect_prio;
+	int deferred_remove;
 	char * bl_product;
 };
 
@@ -82,6 +83,7 @@ struct mpentry {
 	int flush_on_last_del;
 	int attribute_flags;
 	int user_friendly_names;
+	int deferred_remove;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;
@@ -124,6 +126,7 @@ struct config {
 	int retain_hwhandler;
 	int detect_prio;
 	int force_sync;
+	int deferred_remove;
 	unsigned int version[3];
 
 	char * dev;

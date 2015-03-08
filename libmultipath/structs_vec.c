@@ -392,6 +392,8 @@ __setup_multipath (struct vectors * vecs, struct multipath * mpp, int reset)
 		select_pgfailback(mpp);
 		set_no_path_retry(mpp);
 		select_flush_on_last_del(mpp);
+		if (VECTOR_SIZE(mpp->paths) != 0)
+			dm_cancel_deferred_remove(mpp);
 	}
 
 	return 0;
@@ -564,7 +566,6 @@ int update_multipath (struct vectors *vecs, char *mapname, int reset)
 			}
 		}
 	}
-
 	return 0;
 }
 

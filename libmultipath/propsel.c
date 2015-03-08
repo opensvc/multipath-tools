@@ -590,3 +590,29 @@ out:
 		(pp->detect_prio == DETECT_PRIO_ON)? "yes" : "no", origin);
 	return 0;
 }
+
+extern int
+select_deferred_remove (struct multipath *mp)
+{
+	char *origin;
+
+#ifndef LIBDM_API_DEFERRED
+	mp->deferred_remove = DEFERRED_REMOVE_OFF;
+	origin = "(not compiled with support)";
+	goto out;
+#endif
+	if (mp->deferred_remove == DEFERRED_REMOVE_IN_PROGRESS) {
+		condlog(3, "%s: deferred remove in progress", mp->alias);
+		return 0;
+	}
+	mp_set_mpe(deferred_remove);
+	mp_set_ovr(deferred_remove);
+	mp_set_hwe(deferred_remove);
+	mp_set_conf(deferred_remove);
+	mp_set_default(deferred_remove, DEFAULT_DEFERRED_REMOVE);
+out:
+	condlog(3, "%s: deferred_remove = %s %s", mp->alias,
+		(mp->deferred_remove == DEFERRED_REMOVE_ON)? "yes" : "no",
+		origin);
+	return 0;
+}

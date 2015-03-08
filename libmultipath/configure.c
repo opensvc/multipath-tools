@@ -289,6 +289,7 @@ setup_map (struct multipath * mpp, char * params, int params_size)
 	select_dev_loss(mpp);
 	select_reservation_key(mpp);
 	select_retain_hwhandler(mpp);
+	select_deferred_remove(mpp);
 
 	sysfs_set_scsi_tmo(mpp);
 	/*
