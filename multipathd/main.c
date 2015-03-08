@@ -314,10 +314,15 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 	/*
 	 * now we can register the map
 	 */
-	if (map_present && (mpp = add_map_without_path(vecs, alias))) {
-		sync_map_state(mpp);
-		condlog(2, "%s: devmap %s registered", alias, dev);
-		return 0;
+	if (map_present) {
+		if ((mpp = add_map_without_path(vecs, alias))) {
+			sync_map_state(mpp);
+			condlog(2, "%s: devmap %s registered", alias, dev);
+			return 0;
+		} else {
+			condlog(2, "%s: uev_add_map failed", dev);
+			return 1;
+		}
 	}
 	r = get_refwwid(dev, DEV_DEVMAP, vecs->pathvec, &refwwid);
 
