@@ -657,9 +657,8 @@ ev_remove_path (struct path *pp, struct vectors * vecs)
 			/*
 			 * update our state from kernel
 			 */
-			if (setup_multipath(vecs, mpp)) {
-				goto fail;
-			}
+			if (setup_multipath(vecs, mpp))
+				return 1;
 			sync_map_state(mpp);
 
 			condlog(2, "%s [%s]: path removed from map %s",
