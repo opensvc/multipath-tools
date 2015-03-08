@@ -616,3 +616,35 @@ out:
 		origin);
 	return 0;
 }
+
+extern int
+select_delay_watch_checks(struct multipath *mp)
+{
+	char *origin, buff[12];
+
+	mp_set_mpe(delay_watch_checks);
+	mp_set_ovr(delay_watch_checks);
+	mp_set_hwe(delay_watch_checks);
+	mp_set_conf(delay_watch_checks);
+	mp_set_default(delay_watch_checks, DEFAULT_DELAY_CHECKS);
+out:
+	print_delay_checks(buff, 12, &mp->delay_watch_checks);
+	condlog(3, "%s: delay_watch_checks = %s %s", mp->alias, buff, origin);
+	return 0;
+}
+
+extern int
+select_delay_wait_checks(struct multipath *mp)
+{
+	char *origin, buff[12];
+
+	mp_set_mpe(delay_wait_checks);
+	mp_set_ovr(delay_wait_checks);
+	mp_set_hwe(delay_wait_checks);
+	mp_set_conf(delay_wait_checks);
+	mp_set_default(delay_wait_checks, DEFAULT_DELAY_CHECKS);
+out:
+	print_delay_checks(buff, 12, &mp->delay_wait_checks);
+	condlog(3, "%s: delay_wait_checks = %s %s", mp->alias, buff, origin);
+	return 0;
+}

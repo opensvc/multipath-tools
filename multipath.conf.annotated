@@ -314,6 +314,30 @@
 #	#           files, just as if it was in /etc/multipath.conf
 #	# values  : "" or a fully qualified pathname
 #	# default : "/etc/multipath/conf.d"
+#
+#	#
+#	# name    : delay_watch_checks
+#	# scope   : multipathd
+#	# desc    : If set to a value greater than 0, multipathd will watch
+#	#           paths that have recently become valid for this many
+#	#           checks.  If they fail again while they are being watched,
+#	#           when they next become valid, they will not be used until
+#	#           they have stayed up for delay_wait_checks checks.
+#	# values  : no|<n> > 0
+#	# default : no
+#	delay_watch_checks 12
+#
+#	#
+#	# name    : delay_wait_checks
+#	# scope   : multipathd
+#	# desc    : If set to a value greater than 0, when a device that has
+#	#           recently come back online fails again within
+#	#           delay_watch_checks checks, the next time it comes back
+#	#           online, it will marked and delayed, and not used until
+#	#           it has passed delay_wait_checks checks.
+#	# values  : no|<n> > 0
+#	# default : no
+#	delay_wait_checks 12
 #}
 #	
 ##
@@ -482,6 +506,28 @@
 #		# default : determined by the process
 #		gid 0
 #
+#		#
+#		# name    : delay_watch_checks
+#		# scope   : multipathd
+#		# desc    : If set to a value greater than 0, multipathd will
+#		#           watch paths that have recently become valid for
+#		#           this many checks.  If they fail again while they
+#		#           are being watched, when they next become valid,
+#		#           they will not be used until they have stayed up for
+#		#           delay_wait_checks checks.
+#		# values  : no|<n> > 0
+#		delay_watch_checks 12
+#
+#		#
+#		# name    : delay_wait_checks
+#		# scope   : multipathd
+#		# desc    : If set to a value greater than 0, when a device
+#		#           that has recently come back online fails again
+#		#           within delay_watch_checks checks, the next time it
+#		#           comes online, it will marked and delayed, and not
+#		#           used until it has passed delay_wait_checks checks.
+#		# values  : no|<n> > 0
+#		delay_wait_checks 12
 #	}
 #	multipath {
 #		wwid	1DEC_____321816758474
@@ -653,6 +699,30 @@
 #		#           before removing it from the system.
 #		# values  : n > 0
 #		dev_loss_tmo 600
+#
+#		#
+#		# name    : delay_watch_checks
+#		# scope   : multipathd
+#		# desc    : If set to a value greater than 0, multipathd will
+#		#           watch paths that have recently become valid for
+#		#           this many checks.  If they fail again while they
+#		#           are being watched, when they next become valid,
+#		#           they will not be used until they have stayed up for
+#		#           delay_wait_checks checks.
+#		# values  : no|<n> > 0
+#		delay_watch_checks 12
+#
+#		#
+#		# name    : delay_wait_checks
+#		# scope   : multipathd
+#		# desc    : If set to a value greater than 0, when a device
+#		#           that has recently come back online fails again
+#		#           within delay_watch_checks checks, the next time it
+#		#           comes online, it will marked and delayed, and not
+#		#           used until it has passed delay_wait_checks checks.
+#		# values  : no|<n> > 0
+#		delay_wait_checks 12
+#
 #	}
 #	device {
 #		vendor			"COMPAQ  "

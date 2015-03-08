@@ -979,6 +979,58 @@ declare_def_snprint(reservation_key, print_reservation_key)
 declare_mp_handler(reservation_key, set_reservation_key)
 declare_mp_snprint(reservation_key, print_reservation_key)
 
+static int
+set_delay_checks(vector strvec, void *ptr)
+{
+	int *int_ptr = (int *)ptr;
+	char * buff;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if (!strcmp(buff, "no") || !strcmp(buff, "0"))
+		*int_ptr = DELAY_CHECKS_OFF;
+	else if ((*int_ptr = atoi(buff)) < 1)
+		*int_ptr = DELAY_CHECKS_UNDEF;
+
+	FREE(buff);
+	return 0;
+}
+
+int
+print_delay_checks(char * buff, int len, void *ptr)
+{
+	int *int_ptr = (int *)ptr;
+
+	switch(*int_ptr) {
+	case DELAY_CHECKS_UNDEF:
+		return 0;
+	case DELAY_CHECKS_OFF:
+		return snprintf(buff, len, "\"off\"");
+	default:
+		return snprintf(buff, len, "%i", *int_ptr);
+	}
+}
+
+declare_def_handler(delay_watch_checks, set_delay_checks)
+declare_def_snprint(delay_watch_checks, print_delay_checks)
+declare_ovr_handler(delay_watch_checks, set_delay_checks)
+declare_ovr_snprint(delay_watch_checks, print_delay_checks)
+declare_hw_handler(delay_watch_checks, set_delay_checks)
+declare_hw_snprint(delay_watch_checks, print_delay_checks)
+declare_mp_handler(delay_watch_checks, set_delay_checks)
+declare_mp_snprint(delay_watch_checks, print_delay_checks)
+
+declare_def_handler(delay_wait_checks, set_delay_checks)
+declare_def_snprint(delay_wait_checks, print_delay_checks)
+declare_ovr_handler(delay_wait_checks, set_delay_checks)
+declare_ovr_snprint(delay_wait_checks, print_delay_checks)
+declare_hw_handler(delay_wait_checks, set_delay_checks)
+declare_hw_snprint(delay_wait_checks, print_delay_checks)
+declare_mp_handler(delay_wait_checks, set_delay_checks)
+declare_mp_snprint(delay_wait_checks, print_delay_checks)
+
 /*
  * blacklist block handlers
  */
@@ -1277,6 +1329,8 @@ init_keywords(void)
 	install_keyword("deferred_remove", &def_deferred_remove_handler, &snprint_def_deferred_remove);
 	install_keyword("partition_delimiter", &def_partition_delim_handler, &snprint_def_partition_delim);
 	install_keyword("config_dir", &def_config_dir_handler, &snprint_def_config_dir);
+	install_keyword("delay_watch_checks", &def_delay_watch_checks_handler, &snprint_def_delay_watch_checks);
+	install_keyword("delay_wait_checks", &def_delay_wait_checks_handler, &snprint_def_delay_wait_checks);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);
@@ -1345,6 +1399,8 @@ init_keywords(void)
 	install_keyword("retain_attached_hw_handler", &hw_retain_hwhandler_handler, &snprint_hw_retain_hwhandler);
 	install_keyword("detect_prio", &hw_detect_prio_handler, &snprint_hw_detect_prio);
 	install_keyword("deferred_remove", &hw_deferred_remove_handler, &snprint_hw_deferred_remove);
+	install_keyword("delay_watch_checks", &hw_delay_watch_checks_handler, &snprint_hw_delay_watch_checks);
+	install_keyword("delay_wait_checks", &hw_delay_wait_checks_handler, &snprint_hw_delay_wait_checks);
 	install_sublevel_end();
 
 	install_keyword_root("overrides", &overrides_handler);
@@ -1370,6 +1426,8 @@ init_keywords(void)
 	install_keyword("retain_attached_hw_handler", &ovr_retain_hwhandler_handler, &snprint_ovr_retain_hwhandler);
 	install_keyword("detect_prio", &ovr_detect_prio_handler, &snprint_ovr_detect_prio);
 	install_keyword("deferred_remove", &ovr_deferred_remove_handler, &snprint_ovr_deferred_remove);
+	install_keyword("delay_watch_checks", &ovr_delay_watch_checks_handler, &snprint_ovr_delay_watch_checks);
+	install_keyword("delay_wait_checks", &ovr_delay_wait_checks_handler, &snprint_ovr_delay_wait_checks);
 
 	install_keyword_root("multipaths", &multipaths_handler);
 	install_keyword_multi("multipath", &multipath_handler, NULL);
@@ -1394,5 +1452,7 @@ init_keywords(void)
 	install_keyword("reservation_key", &mp_reservation_key_handler, &snprint_mp_reservation_key);
 	install_keyword("user_friendly_names", &mp_user_friendly_names_handler, &snprint_mp_user_friendly_names);
 	install_keyword("deferred_remove", &mp_deferred_remove_handler, &snprint_mp_deferred_remove);
+	install_keyword("delay_watch_checks", &mp_delay_watch_checks_handler, &snprint_mp_delay_watch_checks);
+	install_keyword("delay_wait_checks", &mp_delay_wait_checks_handler, &snprint_mp_delay_wait_checks);
 	install_sublevel_end();
 }

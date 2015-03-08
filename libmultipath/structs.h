@@ -140,6 +140,11 @@ enum scsi_protocol {
 	SCSI_PROTOCOL_UNSPEC = 0xf, /* No specific protocol */
 };
 
+enum delay_checks_states {
+	DELAY_CHECKS_OFF = -1,
+	DELAY_CHECKS_UNDEF = 0,
+};
+
 struct sg_id {
 	int host_no;
 	int channel;
@@ -186,6 +191,8 @@ struct path {
 	int priority;
 	int pgindex;
 	int detect_prio;
+	int watch_checks;
+	int wait_checks;
 	char * uid_attribute;
 	char * getuid;
 	struct prio prio;
@@ -221,6 +228,8 @@ struct multipath {
 	int fast_io_fail;
 	int retain_hwhandler;
 	int deferred_remove;
+	int delay_watch_checks;
+	int delay_wait_checks;
 	unsigned int dev_loss;
 	uid_t uid;
 	gid_t gid;

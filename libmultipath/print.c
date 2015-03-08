@@ -340,6 +340,8 @@ snprint_chk_state (char * buff, size_t len, struct path * pp)
 		return snprintf(buff, len, "i/o pending");
 	case PATH_TIMEOUT:
 		return snprintf(buff, len, "i/o timeout");
+	case PATH_DELAYED:
+		return snprintf(buff, len, "delayed");
 	default:
 		return snprintf(buff, len, "undef");
 	}

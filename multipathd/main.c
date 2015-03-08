@@ -192,7 +192,8 @@ sync_map_state(struct multipath *mpp)
 	vector_foreach_slot (mpp->pg, pgp, i){
 		vector_foreach_slot (pgp->paths, pp, j){
 			if (pp->state == PATH_UNCHECKED || 
-			    pp->state == PATH_WILD)
+			    pp->state == PATH_WILD ||
+			    pp->state == PATH_DELAYED)
 				continue;
 			if ((pp->dmstate == PSTATE_FAILED ||
 			     pp->dmstate == PSTATE_UNDEF) &&
@@ -1184,6 +1185,16 @@ check_path (struct vectors * vecs, struct path * pp)
 	if (!pp->mpp)
 		return 0;
 
+	if ((newstate == PATH_UP || newstate == PATH_GHOST) &&
+	     pp->wait_checks > 0) {
+		if (pp->mpp && pp->mpp->nr_active > 0) {
+			pp->state = PATH_DELAYED;
+			pp->wait_checks--;
+			return 1;
+		} else
+			pp->wait_checks = 0;
+	}
+
 	pp->chkrstate = newstate;
 	if (newstate != pp->state) {
 		int oldstate = pp->state;
@@ -1203,9 +1214,14 @@ check_path (struct vectors * vecs, struct path * pp)
 			 * proactively fail path in the DM
 			 */
 			if (oldstate == PATH_UP ||
-			    oldstate == PATH_GHOST)
+			    oldstate == PATH_GHOST) {
 				fail_path(pp, 1);
-			else
+				if (pp->mpp->delay_wait_checks > 0 &&
+				    pp->watch_checks > 0) {
+					pp->wait_checks = pp->mpp->delay_wait_checks;
+					pp->watch_checks = 0;
+				}
+			}else
 				fail_path(pp, 0);
 
 			/*
@@ -1232,11 +1248,15 @@ check_path (struct vectors * vecs, struct path * pp)
 		 * reinstate this path
 		 */
 		if (oldstate != PATH_UP &&
-		    oldstate != PATH_GHOST)
+		    oldstate != PATH_GHOST) {
+			if (pp->mpp->delay_watch_checks > 0)
+				pp->watch_checks = pp->mpp->delay_watch_checks;
 			reinstate_path(pp, 1);
-		else
+		} else {
+			if (pp->watch_checks > 0)
+				pp->watch_checks--;
 			reinstate_path(pp, 0);
-
+		}
 		new_path_up = 1;
 
 		if (oldchkrstate != PATH_UP && oldchkrstate != PATH_GHOST)
@@ -1269,6 +1289,8 @@ check_path (struct vectors * vecs, struct path * pp)
 				condlog(4, "%s: delay next check %is",
 					pp->dev_t, pp->checkint);
 			}
+			if (pp->watch_checks > 0)
+				pp->watch_checks--;
 			pp->tick = pp->checkint;
 		}
 	}

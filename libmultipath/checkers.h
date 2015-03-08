@@ -54,6 +54,14 @@
  * PATH REMOVED:
  * - Use: All checkers
  * - Description: Device has been removed from the system
+ *
+ * PATH_DELAYED:
+ * - Use: None of the checkers (returned if the path is being delayed before
+ *   reintegration.
+ * - Description: If a path fails after being up for less than
+ *   delay_watch_checks checks, when it comes back up again, it will not
+ *   be marked as up until it has been up for delay_wait_checks checks.
+ *   During this time, it is marked as "delayed"
  */
 enum path_check_state {
 	PATH_WILD,
@@ -65,6 +73,7 @@ enum path_check_state {
 	PATH_PENDING,
 	PATH_TIMEOUT,
 	PATH_REMOVED,
+	PATH_DELAYED,
 	PATH_MAX_STATE
 };
 

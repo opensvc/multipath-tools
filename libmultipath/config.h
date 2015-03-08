@@ -60,6 +60,8 @@ struct hwentry {
 	int retain_hwhandler;
 	int detect_prio;
 	int deferred_remove;
+	int delay_watch_checks;
+	int delay_wait_checks;
 	char * bl_product;
 };
 
@@ -84,6 +86,8 @@ struct mpentry {
 	int attribute_flags;
 	int user_friendly_names;
 	int deferred_remove;
+	int delay_watch_checks;
+	int delay_wait_checks;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;
@@ -128,6 +132,8 @@ struct config {
 	int force_sync;
 	int deferred_remove;
 	int processed_main_config;
+	int delay_watch_checks;
+	int delay_wait_checks;
 	unsigned int version[3];
 
 	char * dev;

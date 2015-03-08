@@ -20,3 +20,5 @@ int select_reservation_key(struct multipath *mp);
 int select_retain_hwhandler (struct multipath * mp);
 int select_detect_prio(struct path * pp);
 int select_deferred_remove(struct multipath *mp);
+int select_delay_watch_checks (struct multipath * mp);
+int select_delay_wait_checks (struct multipath * mp);
