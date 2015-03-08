@@ -2011,9 +2011,11 @@ main (int argc, char *argv[])
 		exit(0);
 	}
 
-	if (logsink < 1)
+	if (logsink < 1) {
+		if (!isatty(fileno(stdout)))
+			setbuf(stdout, NULL);
 		err = 0;
-	else
+	} else
 		err = daemonize();
 
 	if (err < 0)
