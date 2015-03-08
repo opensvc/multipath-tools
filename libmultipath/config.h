@@ -140,6 +140,7 @@ struct config {
 	char * prio_args;
 	char * checker_name;
 	char * alias_prefix;
+	char * partition_delim;
 	unsigned char * reservation_key;
 
 	vector keywords;

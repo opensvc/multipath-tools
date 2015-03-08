@@ -502,6 +502,8 @@ free_config (struct config * conf)
 
 	if (conf->alias_prefix)
 		FREE(conf->alias_prefix);
+	if (conf->partition_delim)
+		FREE(conf->partition_delim);
 
 	if (conf->prio_args)
 		FREE(conf->prio_args);
@@ -563,6 +565,7 @@ load_config (char * file, struct udev *udev)
 	conf->retain_hwhandler = DEFAULT_RETAIN_HWHANDLER;
 	conf->detect_prio = DEFAULT_DETECT_PRIO;
 	conf->force_sync = 0;
+	conf->partition_delim = NULL;
 
 	/*
 	 * preload default hwtable

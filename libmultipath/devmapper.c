@@ -1142,6 +1142,8 @@ dm_rename_partmaps (char * old, char * new)
 	unsigned long long size;
 	char dev_t[32];
 	int r = 1;
+	int offset;
+	char *delim;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_LIST)))
 		return 1;
@@ -1161,6 +1163,13 @@ dm_rename_partmaps (char * old, char * new)
 
 	if (dm_dev_t(old, &dev_t[0], 32))
 		goto out;
+
+	if (conf->partition_delim)
+		delim = conf->partition_delim;
+	if (isdigit(new[strlen(new)-1]))
+		delim = "p";
+	else
+		delim = "";
 
 	do {
 		if (
@@ -1189,8 +1198,9 @@ dm_rename_partmaps (char * old, char * new)
 				 * then it's a kpartx generated partition.
 				 * Rename it.
 				 */
-				snprintf(buff, PARAMS_SIZE, "%s%s",
-					 new, names->name + strlen(old));
+				for (offset = strlen(old); names->name[offset] && !(isdigit(names->name[offset])); offset++); /* do nothing */
+				snprintf(buff, PARAMS_SIZE, "%s%s%s",
+					 new, delim, names->name + offset);
 				dm_rename(names->name, buff);
 				condlog(4, "partition map %s renamed",
 					names->name);
