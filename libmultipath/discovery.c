@@ -31,6 +31,40 @@
 #include "defaults.h"
 
 int
+alloc_path_with_pathinfo (vector hwtable, struct udev_device *udevice,
+			  int flag, struct path **pp_ptr)
+{
+	int err = PATHINFO_FAILED;
+	struct path * pp;
+	const char * devname;
+
+	if (pp_ptr)
+		*pp_ptr = NULL;
+
+	devname = udev_device_get_sysname(udevice);
+	if (!devname)
+		return PATHINFO_FAILED;
+
+	pp = alloc_path();
+
+	if (!pp)
+		return PATHINFO_FAILED;
+
+	if (safe_sprintf(pp->dev, "%s", devname)) {
+		condlog(0, "pp->dev too small");
+	} else {
+		pp->udev = udev_device_ref(udevice);
+		err = pathinfo(pp, hwtable, flag | DI_BLACKLIST);
+	}
+
+	if (err)
+		free_path(pp);
+	else if (pp_ptr)
+		*pp_ptr = pp;
+	return err;
+}
+
+int
 store_pathinfo (vector pathvec, vector hwtable, struct udev_device *udevice,
 		int flag, struct path **pp_ptr)
 {

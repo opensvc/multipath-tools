@@ -36,6 +36,8 @@ int do_tur (char *);
 int path_offline (struct path *);
 int get_state (struct path * pp, int daemon);
 int pathinfo (struct path *, vector hwtable, int mask);
+int alloc_path_with_pathinfo (vector hwtable, struct udev_device *udevice,
+			      int flag, struct path **pp_ptr);
 int store_pathinfo (vector pathvec, vector hwtable,
 		    struct udev_device *udevice, int flag,
 		    struct path **pp_ptr);
