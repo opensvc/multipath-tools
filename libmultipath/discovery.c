@@ -1250,6 +1250,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 		}
 	}
 
+	pp->initialized = 1;
 	return 0;
 
 blank:
@@ -1258,6 +1259,7 @@ blank:
 	 */
 	memset(pp->wwid, 0, WWID_SIZE);
 	pp->chkrstate = pp->state = PATH_DOWN;
+	pp->initialized = 0;
 
 	return 0;
 }

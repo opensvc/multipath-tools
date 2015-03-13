@@ -200,6 +200,7 @@ struct path {
 	struct checker checker;
 	struct multipath * mpp;
 	int fd;
+	int initialized;
 
 	/* configlet pointers */
 	struct hwentry * hwe;
