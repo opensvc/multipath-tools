@@ -91,6 +91,28 @@ directory where the dynamic shared objects are stored; default is system
 dependent, commonly
 .I /lib/multipath
 .TP
+.B find_multipaths
+If set to
+.I yes
+, instead of trying to create a multipath device for every non-blacklisted
+path, multipath will only create a device if one of three condidions are
+met.
+.I 1
+There are at least two non-blacklisted paths with the same wwid,
+.I 2
+the user manually forces the creation, by specifying a device with the multipath
+command, or
+.I 3
+a path has the same WWID as a multipath device that was previously created
+while find_multipaths was set (even if that multipath device doesn't currently
+exist).
+Whenever a multipath device is created with find_multipaths set, multipath will
+remeber the WWID of the device, so that it will automatically create the
+device again, as soon as it sees a path with that WWID. This should allow most
+users to have multipath automatically choose the correct paths to make into
+multipath devices, without having to edit the blacklist; Default is
+.I no
+.TP
 .B verbosity
 default verbosity. Higher values increase the verbosity level. Valid
 levels are between 0 and 6; default is
