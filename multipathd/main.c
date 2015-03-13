@@ -54,6 +54,7 @@
 #include <print.h>
 #include <configure.h>
 #include <prio.h>
+#include <wwids.h>
 #include <pgpolicies.h>
 #include <uevent.h>
 #include <log.h>
@@ -513,6 +514,11 @@ rescan:
 			return 1;
 		}
 
+		if (conf->find_multipaths &&
+		    !should_multipath(pp, vecs->pathvec)) {
+			orphan_path(pp, "only one path");
+			return 0;
+		}
 		condlog(4,"%s: creating new map", pp->dev);
 		if ((mpp = add_map_with_path(vecs, pp, 1))) {
 			mpp->action = ACT_CREATE;

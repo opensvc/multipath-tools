@@ -236,6 +236,9 @@ declare_def_snprint(multipath_dir, print_str)
 declare_def_handler(partition_delim, set_str)
 declare_def_snprint(partition_delim, print_str)
 
+declare_def_handler(find_multipaths, set_yes_no)
+declare_def_snprint(find_multipaths, print_yes_no)
+
 declare_def_handler(selector, set_str)
 declare_def_snprint_defstr(selector, print_str, DEFAULT_SELECTOR)
 declare_hw_handler(selector, set_str)
@@ -1331,6 +1334,7 @@ init_keywords(void)
 	install_keyword("config_dir", &def_config_dir_handler, &snprint_def_config_dir);
 	install_keyword("delay_watch_checks", &def_delay_watch_checks_handler, &snprint_def_delay_watch_checks);
 	install_keyword("delay_wait_checks", &def_delay_wait_checks_handler, &snprint_def_delay_wait_checks);
+	install_keyword("find_multipaths", &def_find_multipaths_handler, &snprint_def_find_multipaths);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);

@@ -197,6 +197,9 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 			continue;
 		}
 
+		if (conf->cmd == CMD_VALID_PATH)
+			continue;
+
 		dm_get_map(mpp->alias, &mpp->size, params);
 		condlog(3, "params = %s", params);
 		dm_get_status(mpp->alias, status);
@@ -307,7 +310,13 @@ configure (void)
 			goto out;
 		}
 		condlog(3, "scope limited to %s", refwwid);
-		if (conf->cmd == CMD_VALID_PATH) {
+		/* If you are ignoring the wwids file and find_multipaths is
+		 * set, you need to actually check if there are two available
+		 * paths to determine if this path should be multipathed. To
+		 * do this, we put off the check until after discovering all
+		 * the paths */
+		if (conf->cmd == CMD_VALID_PATH &&
+		    (!conf->find_multipaths || !conf->ignore_wwids)) {
 			if (conf->ignore_wwids ||
 			    check_wwids_file(refwwid, 0) == 0)
 				r = 0;
@@ -347,6 +356,20 @@ configure (void)
 
 	filter_pathvec(pathvec, refwwid);
 
+
+	if (conf->cmd == CMD_VALID_PATH) {
+		/* This only happens if find_multipaths is and
+		 * ignore_wwids is set.
+		 * If there is currently a multipath device matching
+		 * the refwwid, or there is more than one path matching
+		 * the refwwid, then the path is valid */
+		if (VECTOR_SIZE(curmp) != 0 || VECTOR_SIZE(pathvec) > 1)
+			r = 0;
+		printf("%s %s a valid multipath device path\n",
+		       conf->dev, r == 0 ? "is" : "is not");
+		goto out;
+	}
+
 	if (conf->cmd != CMD_CREATE && conf->cmd != CMD_DRY_RUN) {
 		r = 0;
 		goto out;
@@ -355,7 +378,7 @@ configure (void)
 	/*
 	 * core logic entry point
 	 */
-	r = coalesce_paths(&vecs, NULL, NULL, conf->force_reload);
+	r = coalesce_paths(&vecs, NULL, refwwid, conf->force_reload);
 
 out:
 	if (refwwid)

@@ -616,6 +616,7 @@ load_config (char * file, struct udev *udev)
 	conf->force_sync = 0;
 	conf->partition_delim = NULL;
 	conf->processed_main_config = 0;
+	conf->find_multipaths = DEFAULT_FIND_MULTIPATHS;
 
 	/*
 	 * preload default hwtable

@@ -743,6 +743,10 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 
 	memset(empty_buff, 0, WWID_SIZE);
 
+	/* ignore refwwid if it's empty */
+	if (refwwid && !strlen(refwwid))
+		refwwid = NULL;
+
 	if (force_reload) {
 		vector_foreach_slot (pathvec, pp1, k) {
 			pp1->mpp = NULL;
@@ -771,6 +775,13 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 		/* 4. path is out of scope */
 		if (refwwid && strncmp(pp1->wwid, refwwid, WWID_SIZE))
 			continue;
+
+		/* If find_multipaths was selected check if the path is valid */
+		if (conf->find_multipaths && !refwwid &&
+		    !should_multipath(pp1, pathvec)) {
+			orphan_path(pp1, "only one path");
+			continue;
+		}
 
 		/*
 		 * at this point, we know we really got a new mp

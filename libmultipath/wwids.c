@@ -261,6 +261,32 @@ out:
 }
 
 int
+should_multipath(struct path *pp1, vector pathvec)
+{
+	int i;
+	struct path *pp2;
+
+	condlog(4, "checking if %s should be multipathed", pp1->dev);
+	vector_foreach_slot(pathvec, pp2, i) {
+		if (pp1->dev == pp2->dev)
+			continue;
+		if (strncmp(pp1->wwid, pp2->wwid, WWID_SIZE) == 0) {
+			condlog(3, "found multiple paths with wwid %s, "
+				"multipathing %s", pp1->wwid, pp1->dev);
+			return 1;
+		}
+	}
+	if (check_wwids_file(pp1->wwid, 0) < 0) {
+		condlog(3, "wwid %s not in wwids file, skipping %s",
+			pp1->wwid, pp1->dev);
+		return 0;
+	}
+	condlog(3, "found wwid %s in wwids file, multipathing %s", pp1->wwid,
+		pp1->dev);
+	return 1;
+}
+
+int
 remember_wwid(char *wwid)
 {
 	int ret = check_wwids_file(wwid, 1);
