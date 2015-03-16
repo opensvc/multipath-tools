@@ -32,7 +32,9 @@
 #define UUID_PREFIX "mpath-"
 #define UUID_PREFIX_LEN 6
 
+#ifdef LIBDM_API_DEFERRED
 static int dm_cancel_remove_partmaps(const char * mapname);
+#endif
 
 #ifndef LIBDM_API_COOKIE
 static inline int dm_task_set_cookie(struct dm_task *dmt, uint32_t *c, int a)
