@@ -7,11 +7,11 @@ ENV{DM_UUID}!="mpath-?*", GOTO="mpath_end"
 # We'd like to avoid this, especially within udev processing.
 ENV{DM_NR_VALID_PATHS}!="?*", IMPORT{db}="DM_NR_VALID_PATHS"
 ENV{DM_NR_VALID_PATHS}!="0", GOTO="mpath_blkid_end"
-IMPORT{db}="ID_FS_TYPE"
-IMPORT{db}="ID_FS_USAGE"
-IMPORT{db}="ID_FS_UUID"
-IMPORT{db}="ID_FS_UUID_ENC"
-IMPORT{db}="ID_FS_VERSION"
+ENV{ID_FS_TYPE}!="?*", IMPORT{db}="ID_FS_TYPE"
+ENV{ID_FS_USAGE}!="?*", IMPORT{db}="ID_FS_USAGE"
+ENV{ID_FS_UUID}!="?*", IMPORT{db}="ID_FS_UUID"
+ENV{ID_FS_ENC}!="?*", IMPORT{db}="ID_FS_UUID_ENC"
+ENV{ID_FS_VERSION}!="?*", IMPORT{db}="ID_FS_VERSION"
 LABEL="mpath_blkid_end"
 
 # Also skip all foreign rules if no path is available.
