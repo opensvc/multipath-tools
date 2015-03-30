@@ -743,7 +743,7 @@ static struct hwentry default_hw[] = {
 		.prio_args     = NULL,
 	},
 	{
-		/* DELL MD3000 */
+		/* DELL MD3000/MD3000i */
 		.vendor        = "DELL",
 		.product       = "MD3000",
 		.bl_product    = "Universal Xport",
@@ -758,22 +758,7 @@ static struct hwentry default_hw[] = {
 		.prio_args     = NULL,
 	},
 	{
-		/* DELL MD3000i */
-		.vendor        = "DELL",
-		.product       = "MD3000i",
-		.bl_product    = "Universal Xport",
-		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
-		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.rr_weight     = RR_WEIGHT_NONE,
-		.no_path_retry = 15,
-		.checker_name  = RDAC,
-		.prio_name     = PRIO_RDAC,
-		.prio_args     = NULL,
-	},
-	{
-		/* DELL MD32xx */
+		/* DELL MD32xx/MD32xxi */
 		.vendor        = "DELL",
 		.product       = "MD32xx",
 		.bl_product    = "Universal Xport",
@@ -788,39 +773,9 @@ static struct hwentry default_hw[] = {
 		.prio_args     = NULL,
 	},
 	{
-		/* DELL MD32xxi */
+		/* DELL MD36xxi/MD36xxf */
 		.vendor        = "DELL",
-		.product       = "MD32xxi",
-		.bl_product    = "Universal Xport",
-		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
-		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.rr_weight     = RR_WEIGHT_NONE,
-		.no_path_retry = 15,
-		.checker_name  = RDAC,
-		.prio_name     = PRIO_RDAC,
-		.prio_args     = NULL,
-	},
-	{
-		/* DELL MD36xxi */
-		.vendor        = "DELL",
-		.product       = "MD36xxi",
-		.bl_product    = "Universal Xport",
-		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
-		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.rr_weight     = RR_WEIGHT_NONE,
-		.no_path_retry = 15,
-		.checker_name  = RDAC,
-		.prio_name     = PRIO_RDAC,
-		.prio_args     = NULL,
-	},
-	{
-		/* DELL MD36xxf */
-		.vendor        = "DELL",
-		.product       = "MD36xxf",
+		.product       = "MD36xx(i|f)",
 		.bl_product    = "Universal Xport",
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
