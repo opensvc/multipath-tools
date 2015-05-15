@@ -426,7 +426,7 @@ main(int argc, char **argv){
 			break;
 
 		case DELETE:
-			for (j = n-1; j >= 0; j--) {
+			for (j = MAXSLICES-1; j >= 0; j--) {
 				if (safe_sprintf(partname, "%s%s%d",
 					     mapname, delim, j+1)) {
 					fprintf(stderr, "partname too small\n");
@@ -434,7 +434,7 @@ main(int argc, char **argv){
 				}
 				strip_slash(partname);
 
-				if (!slices[j].size || !dm_map_present(partname))
+				if (!dm_map_present(partname))
 					continue;
 
 				if (!dm_simplecmd(DM_DEVICE_REMOVE, partname,
