@@ -1,5 +1,6 @@
 [Unit]
 Description=Device-Mapper Multipath Device Controller
+Requires=blk-availability.service
 Before=iscsi.service iscsid.service lvm2-activation-early.service
 Before=local-fs-pre.target
 After=multipathd.socket
