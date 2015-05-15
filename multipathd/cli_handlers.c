@@ -23,20 +23,6 @@
 #include "cli.h"
 #include "uevent.h"
 
-#define REALLOC_REPLY(r, a, m)					\
-	do {							\
-		if ((a)) {					\
-			char *tmp = (r);			\
-			(r) = REALLOC((r), (m) * 2);		\
-			if ((r)) {				\
-				memset((r) + (m), 0, (m));	\
-				(m) *= 2;			\
-			}					\
-			else					\
-				free(tmp);			\
-		}						\
-	} while (0)
-
 int
 show_paths (char ** r, int * len, struct vectors * vecs, char * style)
 {

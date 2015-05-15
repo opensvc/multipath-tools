@@ -71,7 +71,21 @@ enum {
 #define SETPRSTATUS	(1UL << __SETPRSTATUS)
 #define UNSETPRSTATUS	(1UL << __UNSETPRSTATUS)
 
-#define INITIAL_REPLY_LEN	1100
+#define INITIAL_REPLY_LEN	1200
+
+#define REALLOC_REPLY(r, a, m)					\
+	do {							\
+		if ((a)) {					\
+			char *tmp = (r);			\
+			(r) = REALLOC((r), (m) * 2);		\
+			if ((r)) {				\
+				memset((r) + (m), 0, (m));	\
+				(m) *= 2;			\
+			}					\
+			else					\
+				free(tmp);			\
+		}						\
+	} while (0)
 
 struct key {
 	char * str;

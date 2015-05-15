@@ -320,52 +320,90 @@ alloc_handlers (void)
 }
 
 static int
-genhelp_sprint_aliases (char * reply, vector keys, struct key * refkw)
+genhelp_sprint_aliases (char * reply, int maxlen, vector keys,
+			struct key * refkw)
 {
-	int i, fwd = 0;
+	int i, len = 0;
 	struct key * kw;
 
-	vector_foreach_slot (keys, kw, i)
-		if (kw->code == refkw->code && kw != refkw)
-			fwd += sprintf(reply, "|%s", kw->str);
+	vector_foreach_slot (keys, kw, i) {
+		if (kw->code == refkw->code && kw != refkw) {
+			len += snprintf(reply + len, maxlen - len,
+					"|%s", kw->str);
+			if (len >= maxlen)
+				return len;
+		}
+	}
 
-	return fwd;
+	return len;
 }
 
-static char *
-genhelp_handler (void)
-{
+static int
+do_genhelp(char *reply, int maxlen) {
+	int len = 0;
 	int i, j;
 	unsigned long fp;
 	struct handler * h;
 	struct key * kw;
-	char * reply;
-	char * p;
 
-	reply = MALLOC(INITIAL_REPLY_LEN);
-
-	if (!reply)
-		return NULL;
-
-	p = reply;
-	p += sprintf(p, VERSION_STRING);
-	p += sprintf(p, "CLI commands reference:\n");
+	len += snprintf(reply + len, maxlen - len, VERSION_STRING);
+	if (len >= maxlen)
+		goto out;
+	len += snprintf(reply + len, maxlen - len, "CLI commands reference:\n");
+	if (len >= maxlen)
+		goto out;
 
 	vector_foreach_slot (handlers, h, i) {
 		fp = h->fingerprint;
 		vector_foreach_slot (keys, kw, j) {
 			if ((kw->code & fp)) {
 				fp -= kw->code;
-				p += sprintf(p, " %s", kw->str);
-				p += genhelp_sprint_aliases(p, keys, kw);
+				len += snprintf(reply + len , maxlen - len,
+						" %s", kw->str);
+				if (len >= maxlen)
+					goto out;
+				len += genhelp_sprint_aliases(reply + len,
+							      maxlen - len,
+							      keys, kw);
+				if (len >= maxlen)
+					goto out;
 
-				if (kw->has_param)
-					p += sprintf(p, " $%s", kw->str);
+				if (kw->has_param) {
+					len += snprintf(reply + len,
+							maxlen - len,
+							" $%s", kw->str);
+					if (len >= maxlen)
+						goto out;
+				}
 			}
 		}
-		p += sprintf(p, "\n");
+		len += snprintf(reply + len, maxlen - len, "\n");
+		if (len >= maxlen)
+			goto out;
 	}
+out:
+	return len;
+}
 
+
+static char *
+genhelp_handler (void)
+{
+	char * reply;
+	char * p = NULL;
+	int maxlen = INITIAL_REPLY_LEN;
+	int again = 1;
+
+	reply = MALLOC(maxlen);
+
+	while (again) {
+		if (!reply)
+			return NULL;
+		p = reply;
+		p += do_genhelp(reply, maxlen);
+		again = ((p - reply) >= maxlen);
+		REALLOC_REPLY(reply, again, maxlen);
+	}
 	return reply;
 }
 
