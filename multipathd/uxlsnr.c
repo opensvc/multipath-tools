@@ -65,6 +65,10 @@ static void new_client(int ux_sock)
 		return;
 
 	c = (struct client *)MALLOC(sizeof(*c));
+	if (!c) {
+		close(fd);
+		return;
+	}
 	memset(c, 0, sizeof(*c));
 	INIT_LIST_HEAD(&c->node);
 	c->fd = fd;
@@ -151,6 +155,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 	sigdelset(&mask, SIGHUP);
 	sigdelset(&mask, SIGUSR1);
 	while (1) {
+		struct pollfd *new;
 		struct client *c, *tmp;
 		int i, poll_count, num_clients;
 
@@ -168,7 +173,19 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 		list_for_each_entry(c, &clients, node) {
 			num_clients++;
 		}
-		polls = REALLOC(polls, (1+num_clients) * sizeof(*polls));
+		new = REALLOC(polls, (1+num_clients) * sizeof(*polls));
+		/* If we can't allocate poliing space for the new client,
+		 * close it */
+		if (!new) {
+			if (!num_clients) {
+				condlog(1, "can't listen for new clients");
+				return NULL;
+			}
+			dead_client(list_entry(clients.prev,
+					       typeof(struct client), node));
+		}
+		else
+			polls = new;		
 		polls[0].fd = ux_sock;
 		polls[0].events = POLLIN;
 

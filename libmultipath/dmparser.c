@@ -20,14 +20,16 @@
 static int
 merge_words (char ** dst, char * word, int space)
 {
-	char * p;
+	char * p = *dst;
 	int len;
 
 	len = strlen(*dst) + strlen(word) + space;
 	*dst = REALLOC(*dst, len + 1);
 
-	if (!*dst)
+	if (!*dst) {
+		free(p);
 		return 1;
+	}
 
 	p = *dst;
 

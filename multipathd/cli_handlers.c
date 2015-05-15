@@ -26,11 +26,14 @@
 #define REALLOC_REPLY(r, a, m)					\
 	do {							\
 		if ((a)) {					\
+			char *tmp = (r);			\
 			(r) = REALLOC((r), (m) * 2);		\
 			if ((r)) {				\
 				memset((r) + (m), 0, (m));	\
 				(m) *= 2;			\
 			}					\
+			else					\
+				free(tmp);			\
 		}						\
 	} while (0)
 
@@ -173,7 +176,7 @@ show_config (char ** r, int * len)
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
-	reply = MALLOC(maxlen);
+	c = reply = MALLOC(maxlen);
 
 	while (again) {
 		if (!reply)
@@ -181,54 +184,29 @@ show_config (char ** r, int * len)
 		c = reply;
 		c += snprint_defaults(c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
-		if (again) {
-			reply = REALLOC(reply, maxlen * 2);
-			if (!reply)
-				return 1;
-			memset(reply + maxlen, 0, maxlen);
-			maxlen *= 2;
+		REALLOC_REPLY(reply, again, maxlen);
+		if (again)
 			continue;
-		}
 		c += snprint_blacklist(c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
-		if (again) {
-			reply = REALLOC(reply, maxlen * 2);
-			if (!reply)
-				return 1;
-			memset(reply + maxlen, 0, maxlen);
-			maxlen *= 2;
+		REALLOC_REPLY(reply, again, maxlen);
+		if (again)
 			continue;
-		}
 		c += snprint_blacklist_except(c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
-		if (again) {
-			reply = REALLOC(reply, maxlen * 2);
-			if (!reply)
-				return 1;
-			memset(reply + maxlen, 0, maxlen);
-			maxlen *= 2;
+		REALLOC_REPLY(reply, again, maxlen);
+		if (again)
 			continue;
-		}
 		c += snprint_hwtable(c, reply + maxlen - c, conf->hwtable);
 		again = ((c - reply) == maxlen);
-		if (again) {
-			reply = REALLOC(reply, maxlen * 2);
-			if (!reply)
-				return 1;
-			memset(reply + maxlen, 0, maxlen);
-			maxlen *= 2;
+		REALLOC_REPLY(reply, again, maxlen);
+		if (again)
 			continue;
-		}
 		c += snprint_overrides(c, reply + maxlen - c, conf->overrides);
 		again = ((c - reply) == maxlen);
-		if (again) {
-			reply = REALLOC(reply, maxlen * 2);
-			if (!reply)
-				return 1;
-			memset(reply + maxlen, 0, maxlen);
-			maxlen *= 2;
+		REALLOC_REPLY(reply, again, maxlen);
+		if (again)
 			continue;
-		}
 		if (VECTOR_SIZE(conf->mptable) > 0) {
 			c += snprint_mptable(c, reply + maxlen - c,
 					     conf->mptable);

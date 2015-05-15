@@ -395,7 +395,7 @@ out:
 static int
 dump_config (void)
 {
-	char * c;
+	char * c, * tmp = NULL;
 	char * reply;
 	unsigned int maxlen = 256;
 	int again = 1;
@@ -403,9 +403,12 @@ dump_config (void)
 	reply = MALLOC(maxlen);
 
 	while (again) {
-		if (!reply)
+		if (!reply) {
+			if (tmp)
+				free(tmp);
 			return 1;
-		c = reply;
+		}
+		c = tmp = reply;
 		c += snprint_defaults(c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		if (again) {
