@@ -46,6 +46,21 @@ unsigned long long sectors512(unsigned long long sectors, int blocksize)
 	return sectors * (blocksize >> 9);
 }
 
+/*
+ * Magic records per track calculation, copied from fdasd.c
+ */
+static unsigned int ceil_quot(unsigned int d1, unsigned int d2)
+{
+	return (d1 + (d2 - 1)) / d2;
+}
+
+unsigned int recs_per_track(unsigned int dl)
+{
+	int dn = ceil_quot(dl + 6, 232) + 1;
+	return 1729 / (10 + 9 + ceil_quot(dl + 6 * dn, 34));
+}
+
+
 typedef unsigned int __attribute__((__may_alias__)) label_ints_t;
 
 /*
@@ -124,19 +139,31 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 	}
 
 	if (ioctl(fd_dasd, BIODASDINFO, (unsigned long)&info) != 0) {
-		goto out;
+		info.label_block = 2;
+		info.FBA_layout = 0;
+		memcpy(info.type, "ECKD", sizeof(info.type));
 	}
-
-	if (ioctl(fd_dasd, HDIO_GETGEO, (unsigned long)&geo) != 0) {
-		goto out;
-	}
-
-	if (ioctl(fd_dasd, BLKGETSIZE64, &disksize) != 0)
-		goto out;
-	disksize >>= 9;
 
 	if (ioctl(fd_dasd, BLKSSZGET, &blocksize) != 0)
 		goto out;
+
+	if (ioctl(fd_dasd, BLKGETSIZE64, &disksize) != 0)
+		goto out;
+
+	if (ioctl(fd_dasd, HDIO_GETGEO, (unsigned long)&geo) != 0) {
+		unsigned int cyl;
+
+		geo.heads = 15;
+		geo.sectors = recs_per_track(blocksize);
+		cyl = disksize / (blocksize * geo.heads * geo.sectors);
+		if (cyl < LV_COMPAT_CYL)
+			geo.cylinders = cyl;
+		else
+			geo.cylinders = LV_COMPAT_CYL;
+		geo.start = 0;
+	}
+
+	disksize >>= 9;
 
 	if (blocksize < 512 || blocksize > 4096)
 		goto out;

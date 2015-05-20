@@ -164,6 +164,7 @@ typedef struct dasd_information_t {
 #define BLKGETSIZE _IO(0x12,96)
 #define BLKSSZGET _IO(0x12,104)
 #define BLKGETSIZE64 _IOR(0x12,114,size_t) /* device size in bytes (u64 *arg)*/
+#define LV_COMPAT_CYL 0xFFFE
 
 /*
  * Only compile this on S/390. Doesn't make any sense
