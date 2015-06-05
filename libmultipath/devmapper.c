@@ -230,7 +230,9 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t 
 	if (do_deferred(deferred_remove))
 		dm_task_deferred_remove(dmt);
 #endif
-	if (udev_wait_flag && !dm_task_set_cookie(dmt, &cookie, ((conf->daemon)? DM_UDEV_DISABLE_LIBRARY_FALLBACK : 0) | udev_flags)) {
+	if (udev_wait_flag &&
+	    !dm_task_set_cookie(dmt, &cookie,
+				DM_UDEV_DISABLE_LIBRARY_FALLBACK | udev_flags)) {
 		dm_udev_complete(cookie);
 		goto out;
 	}
@@ -310,7 +312,8 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 	dm_task_no_open_count(dmt);
 
 	if (task == DM_DEVICE_CREATE &&
-	    !dm_task_set_cookie(dmt, &cookie, (conf->daemon)? DM_UDEV_DISABLE_LIBRARY_FALLBACK : 0)) {
+	    !dm_task_set_cookie(dmt, &cookie,
+				DM_UDEV_DISABLE_LIBRARY_FALLBACK)) {
 		dm_udev_complete(cookie);
 		goto freeout;
 	}
@@ -1401,7 +1404,8 @@ dm_rename (const char * old, char * new)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_set_cookie(dmt, &cookie, (conf->daemon)? DM_UDEV_DISABLE_LIBRARY_FALLBACK : 0))
+	if (!dm_task_set_cookie(dmt, &cookie,
+				DM_UDEV_DISABLE_LIBRARY_FALLBACK))
 		goto out;
 	r = dm_task_run(dmt);
 
