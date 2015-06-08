@@ -174,12 +174,14 @@ snprint_queueing (char * buff, size_t len, struct multipath * mpp)
 	else if (mpp->no_path_retry == NO_PATH_RETRY_UNDEF)
 		return snprintf(buff, len, "-");
 	else if (mpp->no_path_retry > 0) {
-		if (mpp->retry_tick)
+		if (mpp->retry_tick > 0)
 			return snprintf(buff, len, "%i sec",
 					mpp->retry_tick);
-		else
+		else if (mpp->retry_tick == 0)
 			return snprintf(buff, len, "%i chk",
 					mpp->no_path_retry);
+		else
+			return snprintf(buff, len, "off");
 	}
 	return 0;
 }

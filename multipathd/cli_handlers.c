@@ -807,7 +807,7 @@ cli_disable_queueing(void *v, char **reply, int *len, void *data)
 		return 1;
 	}
 
-	mpp->retry_tick = 0;
+	mpp->retry_tick = -1;
 	dm_queue_if_no_path(mpp->alias, 0);
 	return 0;
 }
@@ -821,7 +821,7 @@ cli_disable_all_queueing(void *v, char **reply, int *len, void *data)
 
 	condlog(2, "disable queueing (operator)");
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		mpp->retry_tick = 0;
+		mpp->retry_tick = -1;
 		dm_queue_if_no_path(mpp->alias, 0);
 	}
 	return 0;

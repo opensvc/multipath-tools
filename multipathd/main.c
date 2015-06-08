@@ -1200,7 +1200,7 @@ retry_count_tick(vector mpvec)
 	unsigned int i;
 
 	vector_foreach_slot (mpvec, mpp, i) {
-		if (mpp->retry_tick) {
+		if (mpp->retry_tick > 0) {
 			mpp->stat_total_queueing_time++;
 			condlog(4, "%s: Retrying.. No active path", mpp->alias);
 			if(--mpp->retry_tick == 0) {
