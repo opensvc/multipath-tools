@@ -399,6 +399,9 @@ declare_def_snprint(retrigger_delay, print_int)
 declare_def_handler(uev_wait_timeout, set_int)
 declare_def_snprint(uev_wait_timeout, print_int)
 
+declare_def_handler(strict_timing, set_yes_no)
+declare_def_snprint(strict_timing, print_yes_no)
+
 static int
 def_config_dir_handler(vector strvec)
 {
@@ -1365,6 +1368,7 @@ init_keywords(void)
 	install_keyword("retain_attached_hw_handler", &def_retain_hwhandler_handler, &snprint_def_retain_hwhandler);
 	install_keyword("detect_prio", &def_detect_prio_handler, &snprint_def_detect_prio);
 	install_keyword("force_sync", &def_force_sync_handler, &snprint_def_force_sync);
+	install_keyword("strict_timing", &def_strict_timing_handler, &snprint_def_strict_timing);
 	install_keyword("deferred_remove", &def_deferred_remove_handler, &snprint_def_deferred_remove);
 	install_keyword("partition_delimiter", &def_partition_delim_handler, &snprint_def_partition_delim);
 	install_keyword("config_dir", &def_config_dir_handler, &snprint_def_config_dir);

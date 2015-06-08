@@ -135,6 +135,7 @@ struct config {
 	int delay_watch_checks;
 	int delay_wait_checks;
 	int uxsock_timeout;
+	int strict_timing;
 	int retrigger_tries;
 	int retrigger_delay;
 	int ignore_new_devs;

@@ -1261,7 +1261,7 @@ int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
  * Returns '1' if the path has been checked, '0' otherwise
  */
 int
-check_path (struct vectors * vecs, struct path * pp)
+check_path (struct vectors * vecs, struct path * pp, int ticks)
 {
 	int newstate;
 	int new_path_up = 0;
@@ -1274,7 +1274,9 @@ check_path (struct vectors * vecs, struct path * pp)
 	     pp->initialized == INIT_REQUESTED_UDEV) && !pp->mpp)
 		return 0;
 
-	if (pp->tick && --pp->tick)
+	if (pp->tick)
+		pp->tick -= (pp->tick > ticks) ? ticks : pp->tick;
+	if (pp->tick)
 		return 0; /* don't check this path yet */
 
 	if (!pp->mpp && pp->initialized == INIT_MISSING_UDEV &&
@@ -1516,6 +1518,8 @@ checkerloop (void *ap)
 	struct path *pp;
 	int count = 0;
 	unsigned int i;
+	struct itimerval timer_tick_it;
+	struct timeval last_time;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	vecs = (struct vectors *)ap;
@@ -1528,23 +1532,41 @@ checkerloop (void *ap)
 		pp->checkint = conf->checkint;
 	}
 
+	/* Tweak start time for initial path check */
+	if (gettimeofday(&last_time, NULL) != 0)
+		last_time.tv_sec = 0;
+	else
+		last_time.tv_sec -= 1;
+
 	while (1) {
 		struct timeval diff_time, start_time, end_time;
-		int num_paths = 0;
+		int num_paths = 0, ticks = 0, signo, strict_timing;
+		sigset_t mask;
 
 		if (gettimeofday(&start_time, NULL) != 0)
 			start_time.tv_sec = 0;
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(vecs->lock);
 		pthread_testcancel();
-		condlog(4, "tick");
+		strict_timing = conf->strict_timing;
+		if (start_time.tv_sec && last_time.tv_sec) {
+			timersub(&start_time, &last_time, &diff_time);
+			condlog(4, "tick (%lu.%06lu secs)",
+				diff_time.tv_sec, diff_time.tv_usec);
+			last_time.tv_sec = start_time.tv_sec;
+			last_time.tv_usec = start_time.tv_usec;
+			ticks = diff_time.tv_sec;
+		} else {
+			ticks = 1;
+			condlog(4, "tick (%d ticks)", ticks);
+		}
 #ifdef USE_SYSTEMD
 		if (use_watchdog)
 			sd_notify(0, "WATCHDOG=1");
 #endif
 		if (vecs->pathvec) {
 			vector_foreach_slot (vecs->pathvec, pp, i) {
-				num_paths += check_path(vecs, pp);
+				num_paths += check_path(vecs, pp, ticks);
 			}
 		}
 		if (vecs->mpvec) {
@@ -1561,15 +1583,49 @@ checkerloop (void *ap)
 		}
 
 		lock_cleanup_pop(vecs->lock);
+		diff_time.tv_usec = 0;
 		if (start_time.tv_sec &&
-		    gettimeofday(&end_time, NULL) == 0 &&
-		    num_paths) {
+		    gettimeofday(&end_time, NULL)) {
 			timersub(&end_time, &start_time, &diff_time);
-			condlog(3, "checked %d path%s in %lu.%06lu secs",
-				num_paths, num_paths > 1 ? "s" : "",
-				diff_time.tv_sec, diff_time.tv_usec);
+			if (num_paths) {
+				condlog(3, "checked %d path%s in %lu.%06lu secs",
+					num_paths, num_paths > 1 ? "s" : "",
+					diff_time.tv_sec, diff_time.tv_usec);
+				if (diff_time.tv_sec > conf->max_checkint)
+					condlog(1, "path checkers took longer "
+						"than %lu seconds, consider "
+						"increasing max_polling_interval",
+						diff_time.tv_sec);
+			}
 		}
-		sleep(1);
+
+		if (!strict_timing)
+			sleep(1);
+		else {
+			timer_tick_it.it_interval.tv_sec = 0;
+			timer_tick_it.it_interval.tv_usec = 0;
+			if (diff_time.tv_usec) {
+				timer_tick_it.it_value.tv_sec = 0;
+				timer_tick_it.it_value.tv_usec =
+					(unsigned long)1000000 - diff_time.tv_usec;
+			} else {
+				timer_tick_it.it_value.tv_sec = 1;
+				timer_tick_it.it_value.tv_usec = 0;
+			}
+			setitimer(ITIMER_REAL, &timer_tick_it, NULL);
+
+			sigemptyset(&mask);
+			sigaddset(&mask, SIGALRM);
+			condlog(3, "waiting for %lu.%06lu secs",
+				timer_tick_it.it_value.tv_sec,
+				timer_tick_it.it_value.tv_usec);
+			if (sigwait(&mask, &signo) != 0) {
+				condlog(3, "sigwait failed with error %d",
+					errno);
+				conf->strict_timing = 0;
+				break;
+			}
+		}
 	}
 	return NULL;
 }
@@ -1820,6 +1876,7 @@ signal_init(void)
 	sigaddset(&set, SIGHUP);
 	sigaddset(&set, SIGUSR1);
 	sigaddset(&set, SIGUSR2);
+	sigaddset(&set, SIGALRM);
 	pthread_sigmask(SIG_BLOCK, &set, NULL);
 
 	signal_set(SIGHUP, sighup);

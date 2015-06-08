@@ -498,6 +498,20 @@ used until it has passed
 checks. Default is
 .I no
 .TP
+.B strict_timinig
+If set to
+.I yes
+, multipathd will start a new path checker loop after exactly one second,
+so that each path check will occur at exactly
+.I polling_interval
+seconds. On busy systems path checks might take longer than one second;
+here the missing ticks will be accounted for on the next round.
+A warning will be printed if path checks take longer than
+.I polling_interval
+seconds.
+Default is
+.I no
+.TP
 .B uxsock_timeout
 CLI receive timeout in milliseconds. For larger systems CLI commands
 might timeout before the multipathd lock is released and the CLI command
