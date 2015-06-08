@@ -497,6 +497,8 @@ cli_init (void) {
 	add_handler(LIST+MAPS+TOPOLOGY, NULL);
 	add_handler(LIST+TOPOLOGY, NULL);
 	add_handler(LIST+MAP+TOPOLOGY, NULL);
+	add_handler(LIST+MAP+FMT, NULL);
+	add_handler(LIST+MAP+RAW+FMT, NULL);
 	add_handler(LIST+CONFIG, NULL);
 	add_handler(LIST+BLACKLIST, NULL);
 	add_handler(LIST+DEVICES, NULL);

@@ -992,6 +992,8 @@ uxlsnrloop (void * ap)
 	set_handler_callback(LIST+MAPS+TOPOLOGY, cli_list_maps_topology);
 	set_handler_callback(LIST+TOPOLOGY, cli_list_maps_topology);
 	set_handler_callback(LIST+MAP+TOPOLOGY, cli_list_map_topology);
+	set_handler_callback(LIST+MAP+FMT, cli_list_map_fmt);
+	set_handler_callback(LIST+MAP+RAW+FMT, cli_list_map_fmt);
 	set_handler_callback(LIST+CONFIG, cli_list_config);
 	set_handler_callback(LIST+BLACKLIST, cli_list_blacklist);
 	set_handler_callback(LIST+DEVICES, cli_list_devices);
