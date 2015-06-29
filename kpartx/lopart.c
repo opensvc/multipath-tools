@@ -103,6 +103,14 @@ find_loop_by_file (const char * filename)
 	int i, j, fd;
 	struct stat statbuf;
 	struct loop_info loopinfo;
+	dev_t file_dev;
+	ino_t file_ino;
+
+	if (stat (filename, &statbuf) != 0) {
+		return NULL;
+	}
+	file_dev = statbuf.st_dev;
+	file_ino = statbuf.st_ino;
 
 	for (j = 0; j < SIZE(loop_formats); j++) {
 
@@ -123,7 +131,7 @@ find_loop_by_file (const char * filename)
 				continue;
 			}
 
-			if (0 == strcmp(filename, loopinfo.lo_name)) {
+			if (loopinfo.lo_device == file_dev && loopinfo.lo_inode == file_ino) {
 				close (fd);
 				return xstrdup(dev); /*found */
 			}
