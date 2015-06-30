@@ -265,7 +265,7 @@ dm_device_remove (const char *name, int needsync, int deferred_remove) {
 			    deferred_remove);
 }
 
-extern int
+static int
 dm_addmap (int task, const char *target, struct multipath *mpp,
 	   char * params, int ro) {
 	int r = 0;
