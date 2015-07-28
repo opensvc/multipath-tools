@@ -535,8 +535,8 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 	char * param = get_keyparam(v, MAP);
 	int major, minor;
 	char dev_path[PATH_SIZE];
-	char *alias;
-	int rc;
+	char *alias, *refwwid;
+	int rc, count = 0;
 
 	param = convert_dev(param, 0);
 	condlog(2, "%s: add map (operator)", param);
@@ -545,27 +545,40 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 		*reply = strdup("blacklisted\n");
 		*len = strlen(*reply) + 1;
 		condlog(2, "%s: map blacklisted", param);
-		return 0;
+		return 1;
 	}
-	minor = dm_get_minor(param);
-	if (minor < 0) {
-		condlog(2, "%s: not a device mapper table", param);
-		return 0;
-	}
-	major = dm_get_major(param);
-	if (major < 0) {
-		condlog(2, "%s: not a device mapper table", param);
-		return 0;
-	}
-	sprintf(dev_path,"dm-%d", minor);
-	alias = dm_mapname(major, minor);
+	do {
+		minor = dm_get_minor(param);
+		if (minor < 0)
+			condlog(2, "%s: not a device mapper table", param);
+		major = dm_get_major(param);
+		if (major < 0)
+			condlog(2, "%s: not a device mapper table", param);
+		sprintf(dev_path, "dm-%d", minor);
+		alias = dm_mapname(major, minor);
+		/*if there is no mapname found, we first create the device*/
+		if (!alias && !count) {
+			condlog(2, "%s: mapname not found for %d:%d",
+				param, major, minor);
+			rc = get_refwwid(param, DEV_DEVMAP, vecs->pathvec,
+								&refwwid);
+			if (refwwid) {
+				if (coalesce_paths(vecs, NULL, refwwid, 0))
+					condlog(2, "%s: coalesce_paths failed",
+									param);
+				dm_lib_release();
+			}
+		} /*we attempt to create device only once*/
+		count++;
+	} while (!alias && (count < 2));
+
 	if (!alias) {
-		condlog(2, "%s: mapname not found for %d:%d",
-			param, major, minor);
-		return 0;
+		condlog(2, "%s: add map failed", param);
+		return 1;
 	}
 	rc = ev_add_map(dev_path, alias, vecs);
 	FREE(alias);
+	FREE(refwwid);
 	return rc;
 }
 
