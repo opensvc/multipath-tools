@@ -249,11 +249,20 @@ snprint_multipath_uuid (char * buff, size_t len, struct multipath * mpp)
 static int
 snprint_multipath_vpr (char * buff, size_t len, struct multipath * mpp)
 {
-	struct path * pp = first_path(mpp);
-	if (!pp)
-		return 0;
-	return snprintf(buff, len, "%s,%s",
-			pp->vendor_id, pp->product_id);
+	struct pathgroup * pgp;
+	struct path * pp;
+	int i, j;
+
+	vector_foreach_slot(mpp->pg, pgp, i) {
+		if (!pgp)
+			continue;
+		vector_foreach_slot(pgp->paths, pp, j) {
+			if (strlen(pp->vendor_id) && strlen(pp->product_id))
+				return snprintf(buff, len, "%s,%s",
+						pp->vendor_id, pp->product_id);
+		}
+	}
+	return snprintf(buff, len, "##,##");
 }
 
 static int
