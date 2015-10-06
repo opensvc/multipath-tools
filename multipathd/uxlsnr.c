@@ -185,7 +185,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 					       typeof(struct client), node));
 		}
 		else
-			polls = new;		
+			polls = new;
 		polls[0].fd = ux_sock;
 		polls[0].events = POLLIN;
 
