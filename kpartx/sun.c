@@ -82,8 +82,6 @@ read_sun_pt(int fd, struct slice all, struct slice *sp, int ns) {
 	for(i=0, n=0; i<SUN_DISK_MAXPARTITIONS; i++) {
 		s = &l->partitions[i];
 
-		if (s->num_sectors == 0)
-			continue;
 		if (n < ns) {
 			sp[n].start = offset +
 				be32_to_cpu(s->start_cylinder) * be16_to_cpu(l->nsect) * be16_to_cpu(l->ntrks);
