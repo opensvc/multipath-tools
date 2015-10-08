@@ -26,13 +26,14 @@ enum {
 	__CONFIG,
 	__BLACKLIST,
 	__DEVICES,
-	__FMT,
+	__RAW,
 	__WILDCARDS,
 	__QUIT,
 	__SHUTDOWN,
 	__GETPRSTATUS,
 	__SETPRSTATUS,
 	__UNSETPRSTATUS,
+	__FMT,
 };
 
 #define LIST		(1 << __LIST)
@@ -62,7 +63,7 @@ enum {
 #define CONFIG		(1 << __CONFIG)
 #define BLACKLIST	(1 << __BLACKLIST)
 #define DEVICES		(1 << __DEVICES)
-#define FMT		(1 << __FMT)
+#define RAW		(1 << __RAW)
 #define COUNT		(1 << __COUNT)
 #define WILDCARDS	(1 << __WILDCARDS)
 #define QUIT		(1 << __QUIT)
@@ -70,6 +71,7 @@ enum {
 #define GETPRSTATUS	(1UL << __GETPRSTATUS)
 #define SETPRSTATUS	(1UL << __SETPRSTATUS)
 #define UNSETPRSTATUS	(1UL << __UNSETPRSTATUS)
+#define FMT		(1UL << __FMT)
 
 #define INITIAL_REPLY_LEN	1200
 

@@ -37,8 +37,8 @@ void get_path_layout (vector pathvec, int header);
 void get_multipath_layout (vector mpvec, int header);
 int snprint_path_header (char *, int, char *);
 int snprint_multipath_header (char *, int, char *);
-int snprint_path (char *, int, char *, struct path *);
-int snprint_multipath (char *, int, char *, struct multipath *);
+int snprint_path (char *, int, char *, struct path *, int);
+int snprint_multipath (char *, int, char *, struct multipath *, int);
 int snprint_multipath_topology (char *, int, struct multipath * mpp,
 				int verbosity);
 int snprint_defaults (char *, int);

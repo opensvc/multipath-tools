@@ -741,7 +741,7 @@ snprint_multipath_header (char * line, int len, char * format)
 
 int
 snprint_multipath (char * line, int len, char * format,
-	     struct multipath * mpp)
+	     struct multipath * mpp, int pad)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
@@ -768,7 +768,8 @@ snprint_multipath (char * line, int len, char * format,
 
 		data->snprint(buff, MAX_FIELD_LEN, mpp);
 		PRINT(c, TAIL, "%s", buff);
-		PAD(data->width);
+		if (pad)
+			PAD(data->width);
 		buff[0] = '\0';
 	} while (*f++);
 
@@ -811,7 +812,7 @@ snprint_path_header (char * line, int len, char * format)
 
 int
 snprint_path (char * line, int len, char * format,
-	     struct path * pp)
+	     struct path * pp, int pad)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
@@ -838,7 +839,8 @@ snprint_path (char * line, int len, char * format,
 
 		data->snprint(buff, MAX_FIELD_LEN, pp);
 		PRINT(c, TAIL, "%s", buff);
-		PAD(data->width);
+		if (pad)
+			PAD(data->width);
 	} while (*f++);
 
 	ENDLINE;
@@ -930,7 +932,7 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 	reset_multipath_layout();
 
 	if (verbosity == 1)
-		return snprint_multipath(buff, len, "%n", mpp);
+		return snprint_multipath(buff, len, "%n", mpp, 1);
 
 	if(isatty(1))
 		c += sprintf(c, "%c[%dm", 0x1B, 1); /* bold on */
@@ -949,10 +951,11 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 	if(isatty(1))
 		c += sprintf(c, "%c[%dm", 0x1B, 0); /* bold off */
 
-	fwd += snprint_multipath(buff + fwd, len - fwd, style, mpp);
+	fwd += snprint_multipath(buff + fwd, len - fwd, style, mpp, 1);
 	if (fwd > len)
 		return len;
-	fwd += snprint_multipath(buff + fwd, len - fwd, PRINT_MAP_PROPS, mpp);
+	fwd += snprint_multipath(buff + fwd, len - fwd, PRINT_MAP_PROPS, mpp,
+				 1);
 	if (fwd > len)
 		return len;
 
@@ -979,7 +982,7 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 				strcpy(f, " |- " PRINT_PATH_INDENT);
 			else
 				strcpy(f, " `- " PRINT_PATH_INDENT);
-			fwd += snprint_path(buff + fwd, len - fwd, fmt, pp);
+			fwd += snprint_path(buff + fwd, len - fwd, fmt, pp, 1);
 			if (fwd > len)
 				return len;
 		}
@@ -1511,7 +1514,7 @@ snprint_devices (char * buff, int len, struct vectors *vecs)
 			if (r > 0)
 				fwd += snprintf(buff + fwd, len - fwd,
 						" devnode blacklisted, unmonitored");
-			else if (r < 0)
+			else if (r <= 0)
 				fwd += snprintf(buff + fwd, len - fwd,
 						" devnode whitelisted, unmonitored");
 		} else
@@ -1541,7 +1544,7 @@ print_path (struct path * pp, char * style)
 	char line[MAX_LINE_LEN];
 
 	memset(&line[0], 0, MAX_LINE_LEN);
-	snprint_path(&line[0], MAX_LINE_LEN, style, pp);
+	snprint_path(&line[0], MAX_LINE_LEN, style, pp, 1);
 	printf("%s", line);
 }
 
@@ -1551,7 +1554,7 @@ print_multipath (struct multipath * mpp, char * style)
 	char line[MAX_LINE_LEN];
 
 	memset(&line[0], 0, MAX_LINE_LEN);
-	snprint_multipath(&line[0], MAX_LINE_LEN, style, mpp);
+	snprint_multipath(&line[0], MAX_LINE_LEN, style, mpp, 1);
 	printf("%s", line);
 }
 

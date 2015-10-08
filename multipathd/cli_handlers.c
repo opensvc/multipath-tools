@@ -24,7 +24,8 @@
 #include "uevent.h"
 
 int
-show_paths (char ** r, int * len, struct vectors * vecs, char * style)
+show_paths (char ** r, int * len, struct vectors * vecs, char * style,
+	    int pretty)
 {
 	int i;
 	struct path * pp;
@@ -42,13 +43,13 @@ show_paths (char ** r, int * len, struct vectors * vecs, char * style)
 
 		c = reply;
 
-		if (VECTOR_SIZE(vecs->pathvec) > 0)
+		if (pretty && VECTOR_SIZE(vecs->pathvec) > 0)
 			c += snprint_path_header(c, reply + maxlen - c,
 						 style);
 
 		vector_foreach_slot(vecs->pathvec, pp, i)
 			c += snprint_path(c, reply + maxlen - c,
-					  style, pp);
+					  style, pp, pretty);
 
 		again = ((c - reply) == (maxlen - 1));
 
@@ -77,7 +78,7 @@ show_path (char ** r, int * len, struct vectors * vecs, struct path *pp,
 
 		c = reply;
 
-		c += snprint_path(c, reply + maxlen - c, style, pp);
+		c += snprint_path(c, reply + maxlen - c, style, pp, 0);
 
 		again = ((c - reply) == (maxlen - 1));
 
@@ -220,7 +221,7 @@ cli_list_paths (void * v, char ** reply, int * len, void * data)
 
 	condlog(3, "list paths (operator)");
 
-	return show_paths(reply, len, vecs, PRINT_PATH_CHECKER);
+	return show_paths(reply, len, vecs, PRINT_PATH_CHECKER, 1);
 }
 
 int
@@ -231,7 +232,18 @@ cli_list_paths_fmt (void * v, char ** reply, int * len, void * data)
 
 	condlog(3, "list paths (operator)");
 
-	return show_paths(reply, len, vecs, fmt);
+	return show_paths(reply, len, vecs, fmt, 1);
+}
+
+int
+cli_list_paths_raw (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	char * fmt = get_keyparam(v, FMT);
+
+	condlog(3, "list paths (operator)");
+
+	return show_paths(reply, len, vecs, fmt, 0);
 }
 
 int
@@ -337,7 +349,8 @@ show_daemon (char ** r, int *len)
 }
 
 int
-show_maps (char ** r, int *len, struct vectors * vecs, char * style)
+show_maps (char ** r, int *len, struct vectors * vecs, char * style,
+	   int pretty)
 {
 	int i;
 	struct multipath * mpp;
@@ -354,13 +367,13 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style)
 			return 1;
 
 		c = reply;
-		if (VECTOR_SIZE(vecs->mpvec) > 0)
+		if (pretty && VECTOR_SIZE(vecs->mpvec) > 0)
 			c += snprint_multipath_header(c, reply + maxlen - c,
 						      style);
 
 		vector_foreach_slot(vecs->mpvec, mpp, i)
 			c += snprint_multipath(c, reply + maxlen - c,
-					       style, mpp);
+					       style, mpp, pretty);
 
 		again = ((c - reply) == (maxlen - 1));
 
@@ -379,7 +392,18 @@ cli_list_maps_fmt (void * v, char ** reply, int * len, void * data)
 
 	condlog(3, "list maps (operator)");
 
-	return show_maps(reply, len, vecs, fmt);
+	return show_maps(reply, len, vecs, fmt, 1);
+}
+
+int
+cli_list_maps_raw (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	char * fmt = get_keyparam(v, FMT);
+
+	condlog(3, "list maps (operator)");
+
+	return show_maps(reply, len, vecs, fmt, 0);
 }
 
 int
@@ -389,7 +413,7 @@ cli_list_maps (void * v, char ** reply, int * len, void * data)
 
 	condlog(3, "list maps (operator)");
 
-	return show_maps(reply, len, vecs, PRINT_MAP_NAMES);
+	return show_maps(reply, len, vecs, PRINT_MAP_NAMES, 1);
 }
 
 int
@@ -409,7 +433,7 @@ cli_list_maps_status (void * v, char ** reply, int * len, void * data)
 
 	condlog(3, "list maps status (operator)");
 
-	return show_maps(reply, len, vecs, PRINT_MAP_STATUS);
+	return show_maps(reply, len, vecs, PRINT_MAP_STATUS, 1);
 }
 
 int
@@ -419,7 +443,7 @@ cli_list_maps_stats (void * v, char ** reply, int * len, void * data)
 
 	condlog(3, "list maps stats (operator)");
 
-	return show_maps(reply, len, vecs, PRINT_MAP_STATS);
+	return show_maps(reply, len, vecs, PRINT_MAP_STATS, 1);
 }
 
 int

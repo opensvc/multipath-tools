@@ -901,6 +901,7 @@ uxlsnrloop (void * ap)
 
 	set_handler_callback(LIST+PATHS, cli_list_paths);
 	set_handler_callback(LIST+PATHS+FMT, cli_list_paths_fmt);
+	set_handler_callback(LIST+PATHS+RAW+FMT, cli_list_paths_raw);
 	set_handler_callback(LIST+PATH, cli_list_path);
 	set_handler_callback(LIST+MAPS, cli_list_maps);
 	set_handler_callback(LIST+STATUS, cli_list_status);
@@ -908,6 +909,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(LIST+MAPS+STATUS, cli_list_maps_status);
 	set_handler_callback(LIST+MAPS+STATS, cli_list_maps_stats);
 	set_handler_callback(LIST+MAPS+FMT, cli_list_maps_fmt);
+	set_handler_callback(LIST+MAPS+RAW+FMT, cli_list_maps_raw);
 	set_handler_callback(LIST+MAPS+TOPOLOGY, cli_list_maps_topology);
 	set_handler_callback(LIST+TOPOLOGY, cli_list_maps_topology);
 	set_handler_callback(LIST+MAP+TOPOLOGY, cli_list_map_topology);

@@ -180,7 +180,7 @@ load_keys (void)
 	r += add_key(keys, "config", CONFIG, 0);
 	r += add_key(keys, "blacklist", BLACKLIST, 0);
 	r += add_key(keys, "devices", DEVICES, 0);
-	r += add_key(keys, "format", FMT, 1);
+	r += add_key(keys, "raw", RAW, 0);
 	r += add_key(keys, "wildcards", WILDCARDS, 0);
 	r += add_key(keys, "quit", QUIT, 0);
 	r += add_key(keys, "exit", QUIT, 0);
@@ -188,6 +188,7 @@ load_keys (void)
 	r += add_key(keys, "getprstatus", GETPRSTATUS, 0);
 	r += add_key(keys, "setprstatus", SETPRSTATUS, 0);
 	r += add_key(keys, "unsetprstatus", UNSETPRSTATUS, 0);
+	r += add_key(keys, "format", FMT, 1);
 
 	if (r) {
 		free_keys(keys);
@@ -463,6 +464,7 @@ cli_init (void) {
 
 	add_handler(LIST+PATHS, NULL);
 	add_handler(LIST+PATHS+FMT, NULL);
+	add_handler(LIST+PATHS+RAW+FMT, NULL);
 	add_handler(LIST+PATH, NULL);
 	add_handler(LIST+STATUS, NULL);
 	add_handler(LIST+DAEMON, NULL);
@@ -470,6 +472,7 @@ cli_init (void) {
 	add_handler(LIST+MAPS+STATUS, NULL);
 	add_handler(LIST+MAPS+STATS, NULL);
 	add_handler(LIST+MAPS+FMT, NULL);
+	add_handler(LIST+MAPS+RAW+FMT, NULL);
 	add_handler(LIST+MAPS+TOPOLOGY, NULL);
 	add_handler(LIST+TOPOLOGY, NULL);
 	add_handler(LIST+MAP+TOPOLOGY, NULL);
