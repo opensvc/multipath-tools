@@ -15,7 +15,7 @@
 #define BLK_DEV_SIZE		33
 #define PATH_SIZE		512
 #define NAME_SIZE		512
-#define HOST_NAME_LEN		8
+#define HOST_NAME_LEN		16
 #define SLOT_NAME_SIZE		40
 
 #define SCSI_VENDOR_SIZE	9
