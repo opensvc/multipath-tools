@@ -581,6 +581,48 @@ out:
 	return r;
 }
 
+extern int
+dm_is_mpath(const char * name)
+{
+	int r = 0;
+	struct dm_task *dmt;
+	struct dm_info info;
+	uint64_t start, length;
+	char *target_type = NULL;
+	char *params;
+	const char *uuid;
+
+	if (!(dmt = dm_task_create(DM_DEVICE_TABLE)))
+		return 0;
+
+	if (!dm_task_set_name(dmt, name))
+		goto out;
+
+	dm_task_no_open_count(dmt);
+
+	if (!dm_task_run(dmt))
+		goto out;
+
+	if (!dm_task_get_info(dmt, &info) || !info.exists)
+		goto out;
+
+	uuid = dm_task_get_uuid(dmt);
+
+	if (!uuid || strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN) != 0)
+		goto out;
+
+	/* Fetch 1st target */
+	dm_get_next_target(dmt, NULL, &start, &length, &target_type, &params);
+
+	if (!target_type || strcmp(target_type, TGT_MPATH) != 0)
+		goto out;
+
+	r = 1;
+out:
+	dm_task_destroy(dmt);
+	return r;
+}
+
 static int
 dm_dev_t (const char * mapname, char * dev_t, int len)
 {
@@ -698,10 +740,7 @@ _dm_flush_map (const char * mapname, int need_sync, int deferred_remove)
 {
 	int r;
 
-	if (!dm_map_present(mapname))
-		return 0;
-
-	if (dm_type(mapname, TGT_MPATH) <= 0)
+	if (!dm_is_mpath(mapname))
 		return 0; /* nothing to do */
 
 	if (dm_remove_partmaps(mapname, need_sync, deferred_remove))
@@ -751,10 +790,7 @@ dm_suspend_and_flush_map (const char * mapname)
 	unsigned long long mapsize;
 	char params[PARAMS_SIZE] = {0};
 
-	if (!dm_map_present(mapname))
-		return 0;
-
-	if (dm_type(mapname, TGT_MPATH) <= 0)
+	if (!dm_is_mpath(mapname))
 		return 0; /* nothing to do */
 
 	if (!dm_get_map(mapname, &mapsize, params)) {
@@ -915,7 +951,6 @@ dm_get_maps (vector mp)
 {
 	struct multipath * mpp;
 	int r = 1;
-	int info;
 	struct dm_task *dmt;
 	struct dm_names *names;
 	unsigned next = 0;
@@ -940,9 +975,7 @@ dm_get_maps (vector mp)
 	}
 
 	do {
-		info = dm_type(names->name, TGT_MPATH);
-
-		if (info <= 0)
+		if (!dm_is_mpath(names->name))
 			goto next;
 
 		mpp = alloc_multipath();
@@ -955,13 +988,11 @@ dm_get_maps (vector mp)
 		if (!mpp->alias)
 			goto out1;
 
-		if (info > 0) {
-			if (dm_get_map(names->name, &mpp->size, NULL))
-				goto out1;
+		if (dm_get_map(names->name, &mpp->size, NULL))
+			goto out1;
 
-			dm_get_uuid(names->name, mpp->wwid);
-			dm_get_info(names->name, &mpp->dmi);
-		}
+		dm_get_uuid(names->name, mpp->wwid);
+		dm_get_info(names->name, &mpp->dmi);
 
 		if (!vector_alloc_slot(mp))
 			goto out1;

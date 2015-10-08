@@ -294,7 +294,7 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 
 	map_present = dm_map_present(alias);
 
-	if (map_present && dm_type(alias, TGT_MPATH) <= 0) {
+	if (map_present && !dm_is_mpath(alias)) {
 		condlog(4, "%s: not a multipath map", alias);
 		return 0;
 	}

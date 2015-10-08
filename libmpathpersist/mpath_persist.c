@@ -168,7 +168,7 @@ int mpath_persistent_reserve_in (int fd, int rq_servact,
 
 	condlog(3, "alias = %s", alias);
 	map_present = dm_map_present(alias);
-	if (map_present && dm_type(alias, TGT_MPATH) <= 0){
+	if (map_present && !dm_is_mpath(alias)){
 		condlog( 0, "%s: not a multipath device.", alias);
 		ret = MPATH_PR_DMMP_ERROR;
 		goto out;
@@ -258,7 +258,7 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	condlog(3, "alias = %s", alias);
 	map_present = dm_map_present(alias);
 
-	if (map_present && dm_type(alias, TGT_MPATH) <= 0){
+	if (map_present && !dm_is_mpath(alias)){
 		condlog(3, "%s: not a multipath device.", alias);
 		ret = MPATH_PR_DMMP_ERROR;
 		goto out;
