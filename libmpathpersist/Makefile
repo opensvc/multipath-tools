@@ -39,8 +39,8 @@ install: $(LIBS)
 
 uninstall:
 	rm -f $(DESTDIR)$(syslibdir)/$(LIBS)
-	rm $(DESTDIR)$(mandir)/mpath_persistent_reserve_in.3.gz	
-	rm $(DESTDIR)$(mandir)/mpath_persistent_reserve_out.3.gz	
+	rm $(DESTDIR)$(man3dir)/mpath_persistent_reserve_in.3.gz	
+	rm $(DESTDIR)$(man3dir)/mpath_persistent_reserve_out.3.gz	
 
 clean:
 	rm -f core *.a *.o 
