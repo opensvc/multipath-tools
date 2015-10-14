@@ -29,6 +29,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <sys/resource.h>
 
 #define __STDC_FORMAT_MACROS 1
 
@@ -39,6 +41,16 @@ mpath_lib_init (struct udev *udev)
 	if (load_config(DEFAULT_CONFIGFILE, udev)){
 		condlog(0, "Failed to initialize multipath config.");
 		return 1;
+	}
+
+	if (conf->max_fds) {
+		struct rlimit fd_limit;
+
+		fd_limit.rlim_cur = conf->max_fds;
+		fd_limit.rlim_max = conf->max_fds;
+		if (setrlimit(RLIMIT_NOFILE, &fd_limit) < 0)
+			condlog(0, "can't set open fds limit to %d : %s",
+				   conf->max_fds, strerror(errno));
 	}
 
 	return 0;
