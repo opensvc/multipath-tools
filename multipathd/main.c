@@ -2234,7 +2234,9 @@ main (int argc, char *argv[])
 			conf->ignore_new_devs = 1;
 			break;
 		default:
-			;
+			fprintf(stderr, "Invalid argument '-%c'\n",
+				optopt);
+			exit(1);
 		}
 	}
 	if (optind < argc) {
