@@ -1513,7 +1513,7 @@ get_vpd_uid(struct path * pp)
 }
 
 static int
-get_uid (struct path * pp)
+get_uid (struct path * pp, int path_state)
 {
 	char *c;
 	const char *origin = "unknown";
@@ -1533,13 +1533,14 @@ get_uid (struct path * pp)
 
 		/* Use 'getuid' callout, deprecated */
 		condlog(1, "%s: using deprecated getuid callout", pp->dev);
-		if (apply_format(pp->getuid, &buff[0], pp)) {
+		if (path_state != PATH_UP) {
+			condlog(3, "%s: path inaccessible", pp->dev);
+			len = -EWOULDBLOCK;
+		} else if (apply_format(pp->getuid, &buff[0], pp)) {
 			condlog(0, "error formatting uid callout command");
-			memset(pp->wwid, 0, WWID_SIZE);
 			len = -EINVAL;
 		} else if (execute_program(buff, pp->wwid, WWID_SIZE)) {
 			condlog(3, "error calling out %s", buff);
-			memset(pp->wwid, 0, WWID_SIZE);
 			len = -EIO;
 		} else
 			len = strlen(pp->wwid);
@@ -1559,7 +1560,7 @@ get_uid (struct path * pp)
 			len = get_vpd_uid(pp);
 			origin = "sysfs";
 			pp->uid_attribute = NULL;
-			if (len < 0) {
+			if (len < 0 && path_state == PATH_UP) {
 				condlog(1, "%s: failed to get sysfs uid: %s",
 					pp->dev, strerror(-len));
 				len = get_vpd_sgio(pp->fd, 0x83, pp->wwid,
@@ -1659,7 +1660,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	}
 
 	if ((mask & DI_WWID) && !strlen(pp->wwid)) {
-		get_uid(pp);
+		get_uid(pp, path_state);
 		if (!strlen(pp->wwid)) {
 			pp->initialized = INIT_MISSING_UDEV;
 			pp->tick = conf->retrigger_delay;
