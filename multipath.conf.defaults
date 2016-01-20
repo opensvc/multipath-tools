@@ -940,6 +940,17 @@
 #		rr_weight "uniform"
 #		no_path_retry "queue"
 #	}
+#	device {
+#		vendor "PURE"
+#		path_selector "queue-length 0"
+#		path_grouping_policy "multibus"
+#		path_checker "tur"
+#		fast_io_fail_tmo 10
+#		user_friendly_names "no"
+#		no_path_retry 0
+#		features 0
+#		dev_loss_tmo 60
+#	}
 #}
 #multipaths {
 #}
