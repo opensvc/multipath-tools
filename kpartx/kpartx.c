@@ -477,8 +477,8 @@ main(int argc, char **argv){
 				}
 				strip_slash(partname);
 
-				if (safe_sprintf(params, "%s %" PRIu64 ,
-						 device, slices[j].start)) {
+				if (safe_sprintf(params, "%d:%d %" PRIu64 ,
+						 major(buf.st_rdev), minor(buf.st_rdev), slices[j].start)) {
 					fprintf(stderr, "params too small\n");
 					exit(1);
 				}
@@ -540,8 +540,8 @@ main(int argc, char **argv){
 					}
 					strip_slash(partname);
 
-					if (safe_sprintf(params, "%s %" PRIu64,
-							 device,
+					if (safe_sprintf(params, "%d:%d %" PRIu64,
+							 major(buf.st_rdev), minor(buf.st_rdev),
 							 slices[j].start)) {
 						fprintf(stderr, "params too small\n");
 						exit(1);
@@ -563,8 +563,8 @@ main(int argc, char **argv){
 						&slices[j].minor);
 
 					if (verbose)
-						printf("add map %s : 0 %" PRIu64 " %s %s\n",
-						       partname, slices[j].size,
+						printf("add map %s (%d:%d): 0 %" PRIu64 " %s %s\n",
+						       partname, slices[j].major, slices[j].minor, slices[j].size,
 						       DM_TARGET, params);
 					c--;
 				}
