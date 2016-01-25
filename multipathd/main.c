@@ -126,6 +126,9 @@ need_switch_pathgroup (struct multipath * mpp, int refresh)
 			vector_foreach_slot (pgp->paths, pp, j)
 				pathinfo(pp, conf->hwtable, DI_PRIO);
 
+	if (!mpp->pg || VECTOR_SIZE(mpp->paths) == 0)
+		return 0;
+
 	mpp->bestpg = select_path_group(mpp);
 
 	if (mpp->bestpg != mpp->nextpg)
