@@ -323,6 +323,11 @@ main(int argc, char **argv){
 			loopcreated = 1;
 		}
 		device = loopdev;
+
+		if (stat(device, &buf)) {
+			printf("failed to stat() %s\n", device);
+			exit (1);
+		}
 	}
 
 	off = find_devname_offset(device);
