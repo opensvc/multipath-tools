@@ -1696,6 +1696,8 @@ reconfigure (struct vectors * vecs)
 		configure(vecs, 1);
 		free_config(old);
 		retval = 0;
+	} else {
+		conf = old;
 	}
 
 	running_state = DAEMON_RUNNING;
