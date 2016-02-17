@@ -275,7 +275,7 @@ update_map (struct multipath *mpp, struct vectors *vecs)
 
 retry:
 	condlog(4, "%s: updating new map", mpp->alias);
-	if (adopt_paths(vecs->pathvec, mpp, 1)) {
+	if (adopt_paths(vecs->pathvec, mpp)) {
 		condlog(0, "%s: failed to adopt paths for new map update",
 			mpp->alias);
 		retries = -1;
@@ -578,7 +578,7 @@ rescan:
 
 		condlog(4,"%s: adopting all paths for path %s",
 			mpp->alias, pp->dev);
-		if (adopt_paths(vecs->pathvec, mpp, 1))
+		if (adopt_paths(vecs->pathvec, mpp))
 			goto fail; /* leave path added to pathvec */
 
 		verify_paths(mpp, vecs);
