@@ -1599,6 +1599,16 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	condlog(3, "%s: mask = 0x%x", pp->dev, mask);
 
 	/*
+	 * Sanity check: we need the device number to
+	 * avoid inconsistent information in
+	 * find_path_by_dev()/find_path_by_devt()
+	 */
+	if (!strlen(pp->dev_t) && !(mask & DI_SYSFS)) {
+		condlog(1, "%s: empty device number", pp->dev);
+		mask |= DI_SYSFS;
+	}
+
+	/*
 	 * fetch info available in sysfs
 	 */
 	if (mask & DI_SYSFS && sysfs_pathinfo(pp))
