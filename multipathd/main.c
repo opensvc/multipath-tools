@@ -62,6 +62,7 @@ static int use_watchdog;
 #include <pgpolicies.h>
 #include <uevent.h>
 #include <log.h>
+#include "prioritizers/alua_rtpg.h"
 
 #include "main.h"
 #include "pidfile.h"
@@ -1161,6 +1162,7 @@ check_path (struct vectors * vecs, struct path * pp)
 	int new_path_up = 0;
 	int chkr_new_path_up = 0;
 	int add_active;
+	int disable_reinstate = 0;
 	int oldchkrstate = pp->chkrstate;
 
 	if (pp->initialized && !pp->mpp)
@@ -1235,6 +1237,16 @@ check_path (struct vectors * vecs, struct path * pp)
 			pp->wait_checks = 0;
 	}
 
+	/*
+	 * don't reinstate failed path, if its in stand-by
+	 * and if target supports only implicit tpgs mode.
+	 * this will prevent unnecessary i/o by dm on stand-by
+	 * paths if there are no other active paths in map.
+	 */
+	disable_reinstate = (newstate == PATH_GHOST &&
+			    pp->mpp->nr_active == 0 &&
+			    pp->tpgs == TPGS_IMPLICIT) ? 1 : 0;
+
 	pp->chkrstate = newstate;
 	if (newstate != pp->state) {
 		int oldstate = pp->state;
@@ -1297,7 +1309,7 @@ check_path (struct vectors * vecs, struct path * pp)
 				pp->watch_checks--;
 			add_active = 0;
 		}
-		if (reinstate_path(pp, add_active)) {
+		if (!disable_reinstate && reinstate_path(pp, add_active)) {
 			condlog(3, "%s: reload map", pp->dev);
 			ev_add_path(pp, vecs);
 			pp->tick = 1;
@@ -1316,8 +1328,9 @@ check_path (struct vectors * vecs, struct path * pp)
 			enable_group(pp);
 	}
 	else if (newstate == PATH_UP || newstate == PATH_GHOST) {
-		if (pp->dmstate == PSTATE_FAILED ||
-		    pp->dmstate == PSTATE_UNDEF) {
+		if ((pp->dmstate == PSTATE_FAILED ||
+		    pp->dmstate == PSTATE_UNDEF) &&
+		    !disable_reinstate) {
 			/* Clear IO errors */
 			if (reinstate_path(pp, 0)) {
 				condlog(3, "%s: reload map", pp->dev);

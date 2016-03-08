@@ -193,6 +193,7 @@ struct path {
 	int detect_prio;
 	int watch_checks;
 	int wait_checks;
+	int tpgs;
 	char * uid_attribute;
 	char * getuid;
 	struct prio prio;

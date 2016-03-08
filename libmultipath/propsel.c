@@ -373,9 +373,11 @@ detect_prio(struct path * pp)
 {
 	int ret;
 	struct prio *p = &pp->prio;
+	int tpgs = 0;
 
-	if (get_target_port_group_support(pp->fd) <= 0)
+	if ((tpgs = get_target_port_group_support(pp->fd)) <= 0)
 		return;
+	pp->tpgs = tpgs;
 	ret = get_target_port_group(pp->fd);
 	if (ret < 0)
 		return;
@@ -415,6 +417,15 @@ select_prio (struct path * pp)
 	prio_get(p, DEFAULT_PRIO, DEFAULT_PRIO_ARGS);
 	origin = "(internal default)";
 out:
+	/*
+	 * fetch tpgs mode for alua, if its not already obtained
+	 */
+	if (!strncmp(prio_name(p), PRIO_ALUA, PRIO_NAME_LEN)) {
+		int tpgs = 0;
+		if(!pp->tpgs && 
+		   (tpgs = get_target_port_group_support(pp->fd)) >= 0)
+			pp->tpgs = tpgs;
+	}
 	condlog(3, "%s: prio = %s %s", pp->dev, prio_name(p), origin);
 	condlog(3, "%s: prio args = \"%s\" %s", pp->dev, prio_args(p), origin);
 	return 0;
