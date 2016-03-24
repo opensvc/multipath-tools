@@ -977,7 +977,11 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
 
 	if (dev_type == DEV_DEVT) {
 		strchop(dev);
-		pp = find_path_by_devt(pathvec, dev);
+		if (devt2devname(buff, FILE_NAME_SIZE, dev)) {
+			condlog(0, "%s: cannot find block device\n", dev);
+			return 1;
+		}
+		pp = find_path_by_dev(pathvec, buff);
 		if (!pp) {
 			struct udev_device *udevice = udev_device_new_from_devnum(conf->udev, 'b', parse_devt(dev));
 

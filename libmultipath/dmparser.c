@@ -320,14 +320,23 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 		FREE(word);
 
 		for (j = 0; j < num_paths; j++) {
+			char devname[FILE_NAME_SIZE];
+
 			pp = NULL;
 			p += get_word(p, &word);
 
 			if (!word)
 				goto out;
 
+			if (devt2devname(devname, FILE_NAME_SIZE, word)) {
+				condlog(2, "%s: cannot find block device",
+					word);
+				FREE(word);
+				continue;
+			}
+
 			if (pathvec)
-				pp = find_path_by_devt(pathvec, word);
+				pp = find_path_by_dev(pathvec, devname);
 
 			if (!pp) {
 				pp = alloc_path();
@@ -336,6 +345,7 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 					goto out1;
 
 				strncpy(pp->dev_t, word, BLK_DEV_SIZE);
+				strncpy(pp->dev, devname, FILE_NAME_SIZE);
 				if (strlen(mpp->wwid)) {
 					strncpy(pp->wwid, mpp->wwid, WWID_SIZE);
 				}
