@@ -32,14 +32,21 @@
 #define MAX(x,y) (x > y) ? x : y
 #define TAIL     (line + len - 1 - c)
 #define NOPAD    s = c
-#define PAD(x)   while ((int)(c - s) < (x) && (c < (line + len - 1))) \
-			*c++ = ' '; s = c
+#define PAD(x) \
+do { \
+	while ((int)(c - s) < (x) && (c < (line + len - 1))) \
+		*c++ = ' '; \
+	s = c; \
+} while (0)
+
 #define ENDLINE \
 		if (c > line) \
 			line[c - line - 1] = '\n'
-#define PRINT(var, size, format, args...)      \
-		fwd = snprintf(var, size, format, ##args); \
-		 c += (fwd >= size) ? size : fwd;
+#define PRINT(var, size, format, args...) \
+do { \
+	fwd = snprintf(var, size, format, ##args); \
+	c += (fwd >= size) ? size : fwd; \
+} while (0)
 
 /*
  * information printing helpers
