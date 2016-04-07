@@ -10,8 +10,9 @@ DEVLIB = libmpathpersist.so
 LIBS = $(DEVLIB).$(SONAME)
 
 
-CFLAGS += -I$(multipathdir) -I$(mpathpersistdir) 
-LIBDEPS +=  -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath
+CFLAGS += -I$(multipathdir) -I$(mpathpersistdir) -I$(mpathcmddir) 
+LIBDEPS +=  -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath \
+	-L$(mpathcmddir) -lmpathcmd
 
 OBJS = mpath_persist.o mpath_updatepr.o mpath_pr_ioctl.o 
 
@@ -30,12 +31,12 @@ install: $(LIBS)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(syslibdir)
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(man3dir)
-	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)/usr/include/
+	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(incdir)
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)/usr/share/doc/mpathpersist/
 	ln -sf $(DESTDIR)$(syslibdir)/$(LIBS) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 	install -m 644 mpath_persistent_reserve_in.3.gz $(DESTDIR)$(man3dir)	
 	install -m 644 mpath_persistent_reserve_out.3.gz $(DESTDIR)$(man3dir)	
-	install -m 644 mpath_persist.h $(DESTDIR)/usr/include/
+	install -m 644 mpath_persist.h $(DESTDIR)$(incdir)
 
 uninstall:
 	rm -f $(DESTDIR)$(syslibdir)/$(LIBS)

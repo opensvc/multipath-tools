@@ -5,7 +5,7 @@ include ../Makefile.inc
 #
 # basic flags setting
 #
-CFLAGS += -I$(multipathdir) -I$(mpathpersistdir)
+CFLAGS += -I$(multipathdir) -I$(mpathpersistdir) -I$(mpathcmddir)
 ifdef SYSTEMD
 	CFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
 endif
@@ -18,7 +18,8 @@ ifdef SYSTEMD
 	endif
 endif
 LDFLAGS += -ludev -ldl \
-	-L$(multipathdir) -lmultipath -L$(mpathpersistdir) -lmpathpersist
+	-L$(multipathdir) -lmultipath -L$(mpathpersistdir) -lmpathpersist \
+	-L$(mpathcmddir) -lmpathcmd
 
 #
 # debuging stuff

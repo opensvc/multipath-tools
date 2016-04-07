@@ -18,6 +18,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include <mpath_cmd.h>
 #include <uxsock.h>
 #include <memory.h>
 #include <defaults.h>
@@ -74,7 +75,6 @@ static void process(int fd, unsigned int timeout)
 	rl_readline_name = "multipathd";
 	rl_completion_entry_function = key_generator;
 	while ((line = readline("multipathd> "))) {
-		size_t len;
 		size_t llen = strlen(line);
 
 		if (!llen) {
@@ -85,8 +85,8 @@ static void process(int fd, unsigned int timeout)
 		if (need_quit(line, llen))
 			break;
 
-		if (send_packet(fd, line, llen + 1) != 0) break;
-		ret = recv_packet(fd, &reply, &len, timeout);
+		if (send_packet(fd, line) != 0) break;
+		ret = recv_packet(fd, &reply, timeout);
 		if (ret != 0) break;
 
 		print_reply(reply);
@@ -102,14 +102,13 @@ static void process(int fd, unsigned int timeout)
 static void process_req(int fd, char * inbuf, unsigned int timeout)
 {
 	char *reply;
-	size_t len;
 	int ret;
 
-	if (send_packet(fd, inbuf, strlen(inbuf) + 1) != 0) {
+	if (send_packet(fd, inbuf) != 0) {
 		printf("cannot send packet\n");
 		return;
 	}
-	ret = recv_packet(fd, &reply, &len, timeout);
+	ret = recv_packet(fd, &reply, timeout);
 	if (ret < 0) {
 		if (ret == -ETIMEDOUT)
 			printf("timeout receiving packet\n");
@@ -128,7 +127,7 @@ int uxclnt(char * inbuf, unsigned int timeout)
 {
 	int fd;
 
-	fd = ux_socket_connect(DEFAULT_SOCKET);
+	fd = mpath_connect();
 	if (fd == -1)
 		exit(1);
 

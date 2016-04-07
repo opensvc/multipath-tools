@@ -57,6 +57,7 @@
 #include <sys/resource.h>
 #include <wwids.h>
 #include <uxsock.h>
+#include <mpath_cmd.h>
 
 int logsink;
 
@@ -633,13 +634,13 @@ main (int argc, char *argv[])
 	    conf->dev_type == DEV_UEVENT) {
 		int fd;
 
-		fd = ux_socket_connect(DEFAULT_SOCKET);
+		fd = mpath_connect();
 		if (fd == -1) {
 			printf("%s is not a valid multipath device path\n",
 				conf->dev);
 			goto out;
 		}
-		close(fd);
+		mpath_disconnect(fd);
 	}
 	if (conf->cmd == CMD_REMOVE_WWID && !conf->dev) {
 		condlog(0, "the -w option requires a device");

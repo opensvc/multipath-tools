@@ -20,6 +20,7 @@ export KRNLSRC
 export KRNLOBJ
 
 BUILDDIRS = \
+	libmpathcmd \
 	libmultipath \
 	libmultipath/prioritizers \
 	libmultipath/checkers \

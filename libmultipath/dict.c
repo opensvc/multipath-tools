@@ -21,6 +21,7 @@
 #include "prio.h"
 #include "errno.h"
 #include <inttypes.h>
+#include <mpath_cmd.h>
 
 static int
 set_int(vector strvec, void *ptr)
@@ -1051,10 +1052,10 @@ def_uxsock_timeout_handler(vector strvec)
 		return 1;
 
 	if (sscanf(buff, "%u", &uxsock_timeout) == 1 &&
-	    uxsock_timeout > DEFAULT_UXSOCK_TIMEOUT)
+	    uxsock_timeout > DEFAULT_REPLY_TIMEOUT)
 		conf->uxsock_timeout = uxsock_timeout;
 	else
-		conf->uxsock_timeout = DEFAULT_UXSOCK_TIMEOUT;
+		conf->uxsock_timeout = DEFAULT_REPLY_TIMEOUT;
 
 	free(buff);
 	return 0;
@@ -1143,9 +1144,6 @@ declare_ble_handler(elist_property)
 static int
 snprint_def_uxsock_timeout(char * buff, int len, void * data)
 {
-	if (conf->uxsock_timeout == DEFAULT_UXSOCK_TIMEOUT)
-		return 0;
-
 	return snprintf(buff, len, "%u", conf->uxsock_timeout);
 }
 

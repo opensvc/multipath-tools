@@ -19,40 +19,11 @@
 #ifdef USE_SYSTEMD
 #include <systemd/sd-daemon.h>
 #endif
+#include <mpath_cmd.h>
 
 #include "memory.h"
 #include "uxsock.h"
 #include "debug.h"
-
-/*
- * connect to a unix domain socket
- */
-int ux_socket_connect(const char *name)
-{
-	int fd, len;
-	struct sockaddr_un addr;
-
-	memset(&addr, 0, sizeof(addr));
-	addr.sun_family = AF_LOCAL;
-	addr.sun_path[0] = '\0';
-	len = strlen(name) + 1 + sizeof(sa_family_t);
-	strncpy(&addr.sun_path[1], name, len);
-
-	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
-	if (fd == -1) {
-		condlog(3, "Couldn't create ux_socket, error %d", errno);
-		return -1;
-	}
-
-	if (connect(fd, (struct sockaddr *)&addr, len) == -1) {
-		condlog(3, "Couldn't connect to ux_socket, error %d", errno);
-		close(fd);
-		return -1;
-	}
-
-	return fd;
-}
-
 /*
  * create a unix domain socket and start listening on it
  * return a file descriptor open on the socket
@@ -165,7 +136,7 @@ ssize_t read_all(int fd, void *buf, size_t len, unsigned int timeout)
 /*
  * send a packet in length prefix format
  */
-int send_packet(int fd, const char *buf, size_t len)
+int send_packet(int fd, const char *buf)
 {
 	int ret = 0;
 	sigset_t set, old;
@@ -175,10 +146,7 @@ int send_packet(int fd, const char *buf, size_t len)
 	sigaddset(&set, SIGPIPE);
 	pthread_sigmask(SIG_BLOCK, &set, &old);
 
-	if (write_all(fd, &len, sizeof(len)) != sizeof(len))
-		ret = -1;
-	if (!ret && write_all(fd, buf, len) != len)
-		ret = -1;
+	ret = mpath_send_cmd(fd, buf);
 
 	/* And unblock it again */
 	pthread_sigmask(SIG_SETMASK, &old, NULL);
@@ -189,34 +157,23 @@ int send_packet(int fd, const char *buf, size_t len)
 /*
  * receive a packet in length prefix format
  */
-int recv_packet(int fd, char **buf, size_t *len, unsigned int timeout)
+int recv_packet(int fd, char **buf, unsigned int timeout)
 {
-	ssize_t ret;
+	int err;
+	ssize_t len;
 
-	ret = read_all(fd, len, sizeof(*len), timeout);
-	if (ret < 0) {
-		(*buf) = NULL;
-		*len = 0;
-		return ret;
-	}
-	if (ret < sizeof(*len)) {
-		(*buf) = NULL;
-		*len = 0;
-		return -EIO;
-	}
-	if (len == 0) {
-		(*buf) = NULL;
-		return 0;
-	}
-	(*buf) = MALLOC(*len);
+	*buf = NULL;
+	len = mpath_recv_reply_len(fd, timeout);
+	if (len <= 0)
+		return len;
+	(*buf) = MALLOC(len);
 	if (!*buf)
 		return -ENOMEM;
-	ret = read_all(fd, *buf, *len, timeout);
-	if (ret != *len) {
+	err = mpath_recv_reply_data(fd, *buf, len, timeout);
+	if (err) {
 		FREE(*buf);
 		(*buf) = NULL;
-		*len = 0;
-		return ret < 0 ? ret : -EIO;
+		return err;
 	}
 	return 0;
 }

@@ -12,9 +12,9 @@
 #include <sys/poll.h>
 #include <errno.h>
 #include <debug.h>
+#include <mpath_cmd.h>
+#include <uxsock.h>
 #include "memory.h"
-#include "../libmultipath/uxsock.h"
-#include "../libmultipath/defaults.h"
 
 unsigned long mem_allocated;    /* Total memory used in Bytes */
 
@@ -23,10 +23,9 @@ int update_prflag(char * arg1, char * arg2, int noisy)
 	int fd;
 	char str[64];
 	char *reply;
-	size_t len;
 	int ret = 0;
 
-	fd = ux_socket_connect(DEFAULT_SOCKET);
+	fd = mpath_connect();
 	if (fd == -1) {
 		condlog (0, "ux socket connect error");
 		return 1 ;
@@ -34,10 +33,10 @@ int update_prflag(char * arg1, char * arg2, int noisy)
 
 	snprintf(str,sizeof(str),"map %s %s", arg1, arg2);
 	condlog (2, "%s: pr flag message=%s", arg1, str);
-	send_packet(fd, str, strlen(str) + 1);
-	ret = recv_packet(fd, &reply, &len, DEFAULT_UXSOCK_TIMEOUT);
+	send_packet(fd, str);
+	ret = recv_packet(fd, &reply, DEFAULT_REPLY_TIMEOUT);
 	if (ret < 0) {
-		condlog(2, "%s: message=%s error=%d", arg1, str, -ret);
+		condlog(2, "%s: message=%s error=%d", arg1, str, errno);
 		ret = -2;
 	} else {
 		condlog (2, "%s: message=%s reply=%s", arg1, str, reply);
@@ -51,5 +50,6 @@ int update_prflag(char * arg1, char * arg2, int noisy)
 	}
 
 	free(reply);
+	mpath_disconnect(fd);
 	return ret;
 }

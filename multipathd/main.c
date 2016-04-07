@@ -21,6 +21,7 @@
 #include <systemd/sd-daemon.h>
 #endif
 #include <semaphore.h>
+#include <mpath_cmd.h>
 #include <mpath_persist.h>
 #include <time.h>
 

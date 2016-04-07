@@ -31,6 +31,7 @@
 #include <uxsock.h>
 #include <defaults.h>
 #include <config.h>
+#include <mpath_cmd.h>
 
 #include "main.h"
 #include "cli.h"
@@ -128,7 +129,6 @@ void uxsock_cleanup(void *arg)
 void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 {
 	int ux_sock;
-	size_t len;
 	int rlen, timeout;
 	char *inbuf;
 	char *reply;
@@ -236,18 +236,15 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 				}
 				if (gettimeofday(&start_time, NULL) != 0)
 					start_time.tv_sec = 0;
-
-				if (recv_packet(c->fd, &inbuf, &len,
-						timeout) != 0) {
+				if (recv_packet(c->fd, &inbuf, timeout) != 0) {
 					dead_client(c);
 				} else {
-					inbuf[len - 1] = 0;
 					condlog(4, "Got request [%s]", inbuf);
 					uxsock_trigger(inbuf, &reply, &rlen,
 						       trigger_data);
 					if (reply) {
-						if (send_packet(c->fd, reply,
-								rlen) != 0) {
+						if (send_packet(c->fd,
+								reply) != 0) {
 							dead_client(c);
 						}
 						condlog(4, "Reply [%d bytes]",

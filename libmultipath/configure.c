@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <libdevmapper.h>
 #include <libudev.h>
+#include <mpath_cmd.h>
 
 #include "checkers.h"
 #include "vector.h"
@@ -708,16 +709,15 @@ int check_daemon(void)
 {
 	int fd;
 	char *reply;
-	size_t len;
 	int ret = 0;
 
-	fd = ux_socket_connect(DEFAULT_SOCKET);
+	fd = mpath_connect();
 	if (fd == -1)
 		return 0;
 
-	if (send_packet(fd, "show daemon", 12) != 0)
+	if (send_packet(fd, "show daemon") != 0)
 		goto out;
-	if (recv_packet(fd, &reply, &len, conf->uxsock_timeout) != 0)
+	if (recv_packet(fd, &reply, conf->uxsock_timeout) != 0)
 		goto out;
 
 	if (strstr(reply, "shutdown"))
@@ -728,7 +728,7 @@ int check_daemon(void)
 out_free:
 	FREE(reply);
 out:
-	close(fd);
+	mpath_disconnect(fd);
 	return ret;
 }
 

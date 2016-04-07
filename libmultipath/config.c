@@ -24,6 +24,7 @@
 #include "defaults.h"
 #include "prio.h"
 #include "devmapper.h"
+#include "mpath_cmd.h"
 
 static int
 hwe_strmatch (struct hwentry *hwe1, struct hwentry *hwe2)
@@ -616,7 +617,7 @@ load_config (char * file, struct udev *udev)
 	conf->partition_delim = NULL;
 	conf->processed_main_config = 0;
 	conf->find_multipaths = DEFAULT_FIND_MULTIPATHS;
-	conf->uxsock_timeout = DEFAULT_UXSOCK_TIMEOUT;
+	conf->uxsock_timeout = DEFAULT_REPLY_TIMEOUT;
 	conf->uid_attribute = set_default(DEFAULT_UID_ATTRIBUTE);
 	conf->retrigger_tries = DEFAULT_RETRIGGER_TRIES;
 	conf->retrigger_delay = DEFAULT_RETRIGGER_DELAY;

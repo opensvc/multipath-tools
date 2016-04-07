@@ -50,9 +50,11 @@ man5dir     = $(prefix)/usr/share/man/man5
 man3dir      = $(prefix)/usr/share/man/man3
 rcdir	    = $(prefix)/etc/init.d
 syslibdir   = $(prefix)/$(LIB)
+incdir      = $(prefix)/usr/include
 libdir	    = $(prefix)/$(LIB)/multipath
 unitdir     = $(prefix)/$(SYSTEMDPATH)/systemd/system
 mpathpersistdir = $(TOPDIR)/libmpathpersist
+mpathcmddir = $(TOPDIR)/libmpathcmd
 
 GZIP        = gzip -9 -c
 INSTALL_PROGRAM = install

@@ -7,7 +7,8 @@ include ../Makefile.inc
 SONAME=0
 DEVLIB = libmultipath.so
 LIBS = $(DEVLIB).$(SONAME)
-LIBDEPS = -lpthread -ldl -ldevmapper -ludev
+CFLAGS += -I$(mpathcmddir)
+LIBDEPS = -lpthread -ldl -ldevmapper -ludev -L$(mpathcmddir) -lmpathcmd
 ifdef SYSTEMD
 	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
 		LIBDEPS += -lsystemd
