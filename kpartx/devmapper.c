@@ -167,11 +167,15 @@ addout:
 }
 
 extern int
-dm_map_present (char * str)
+dm_map_present (char * str, char **uuid)
 {
 	int r = 0;
 	struct dm_task *dmt;
+	const char *uuidtmp;
 	struct dm_info info;
+
+	if (uuid)
+		*uuid = NULL;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
 		return 0;
@@ -187,8 +191,15 @@ dm_map_present (char * str)
 	if (!dm_task_get_info(dmt, &info))
 		goto out;
 
-	if (info.exists)
-		r = 1;
+	if (!info.exists)
+		goto out;
+
+	r = 1;
+	if (uuid) {
+		uuidtmp = dm_task_get_uuid(dmt);
+		if (uuidtmp && strlen(uuidtmp))
+			*uuid = strdup(uuidtmp);
+	}
 out:
 	dm_task_destroy(dmt);
 	return r;

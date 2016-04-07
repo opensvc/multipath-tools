@@ -191,6 +191,21 @@ get_hotplug_device(void)
 	return device;
 }
 
+static int
+check_uuid(char *uuid, char *part_uuid, char **err_msg) {
+	char *map_uuid = strchr(part_uuid, '-');
+	if (!map_uuid || strncmp(part_uuid, "part", 4) != 0) {
+		*err_msg = "not a kpartx partition";
+		return -1;
+	}
+	map_uuid++;
+	if (strcmp(uuid, map_uuid) != 0) {
+		*err_msg = "a partition of a different device";
+		return -1;
+	}
+	return 0;
+}
+
 int
 main(int argc, char **argv){
 	int i, j, m, n, op, off, arg, c, d, ro=0;
@@ -432,6 +447,8 @@ main(int argc, char **argv){
 
 		case DELETE:
 			for (j = MAXSLICES-1; j >= 0; j--) {
+				char *part_uuid, *reason;
+
 				if (safe_sprintf(partname, "%s%s%d",
 					     mapname, delim, j+1)) {
 					fprintf(stderr, "partname too small\n");
@@ -439,8 +456,17 @@ main(int argc, char **argv){
 				}
 				strip_slash(partname);
 
-				if (!dm_map_present(partname))
+				if (!dm_map_present(partname, &part_uuid))
 					continue;
+
+				if (part_uuid && uuid) {
+					if (check_uuid(uuid, part_uuid, &reason) != 0) {
+						fprintf(stderr, "%s is %s. Not removing\n", partname, reason);
+						free(part_uuid);
+						continue;
+					}
+					free(part_uuid);
+				}
 
 				if (!dm_simplecmd(DM_DEVICE_REMOVE, partname,
 						  0, 0)) {
@@ -466,6 +492,8 @@ main(int argc, char **argv){
 		case UPDATE:
 			/* ADD and UPDATE share the same code that adds new partitions. */
 			for (j = 0, c = 0; j < n; j++) {
+				char *part_uuid, *reason;
+
 				if (slices[j].size == 0)
 					continue;
 
@@ -488,8 +516,18 @@ main(int argc, char **argv){
 					exit(1);
 				}
 
-				op = (dm_map_present(partname) ?
+				op = (dm_map_present(partname, &part_uuid) ?
 					DM_DEVICE_RELOAD : DM_DEVICE_CREATE);
+
+				if (part_uuid && uuid) {
+					if (check_uuid(uuid, part_uuid, &reason) != 0) {
+						fprintf(stderr, "%s is already in use, and %s\n", partname, reason);
+						r++;
+						free(part_uuid);
+						continue;
+					}
+					free(part_uuid);
+				}
 
 				if (!dm_addmap(op, partname, DM_TARGET, params,
 					       slices[j].size, ro, uuid, j+1,
@@ -498,6 +536,7 @@ main(int argc, char **argv){
 					fprintf(stderr, "create/reload failed on %s\n",
 						partname);
 					r++;
+					continue;
 				}
 				if (op == DM_DEVICE_RELOAD &&
 				    !dm_simplecmd(DM_DEVICE_RESUME, partname,
@@ -505,6 +544,7 @@ main(int argc, char **argv){
 					fprintf(stderr, "resume failed on %s\n",
 						partname);
 					r++;
+					continue;
 				}
 
 				dm_devn(partname, &slices[j].major,
@@ -520,6 +560,7 @@ main(int argc, char **argv){
 			d = c;
 			while (c) {
 				for (j = 0; j < n; j++) {
+					char *part_uuid, *reason;
 					int k = slices[j].container - 1;
 
 					if (slices[j].size == 0)
@@ -552,8 +593,18 @@ main(int argc, char **argv){
 						exit(1);
 					}
 
-					op = (dm_map_present(partname) ?
+					op = (dm_map_present(partname,
+							     &part_uuid) ?
 					      DM_DEVICE_RELOAD : DM_DEVICE_CREATE);
+
+					if (part_uuid && uuid) {
+						if (check_uuid(uuid, part_uuid, &reason) != 0) {
+							fprintf(stderr, "%s is already in use, and %s\n", partname, reason);
+							free(part_uuid);
+							continue;
+						}
+						free(part_uuid);
+					}
 
 					dm_addmap(op, partname, DM_TARGET, params,
 						  slices[j].size, ro, uuid, j+1,
@@ -584,6 +635,7 @@ main(int argc, char **argv){
 			}
 
 			for (j = MAXSLICES-1; j >= 0; j--) {
+				char *part_uuid, *reason;
 				if (safe_sprintf(partname, "%s%s%d",
 					     mapname, delim, j+1)) {
 					fprintf(stderr, "partname too small\n");
@@ -591,8 +643,18 @@ main(int argc, char **argv){
 				}
 				strip_slash(partname);
 
-				if (slices[j].size || !dm_map_present(partname))
+				if (slices[j].size ||
+				    !dm_map_present(partname, &part_uuid))
 					continue;
+
+				if (part_uuid && uuid) {
+					if (check_uuid(uuid, part_uuid, &reason) != 0) {
+						fprintf(stderr, "%s is %s. Not removing\n", partname, reason);
+						free(part_uuid);
+						continue;
+					}
+					free(part_uuid);
+				}
 
 				if (!dm_simplecmd(DM_DEVICE_REMOVE,
 						  partname, 1, 0)) {
