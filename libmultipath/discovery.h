@@ -45,6 +45,8 @@ int sysfs_set_scsi_tmo (struct multipath *mpp);
 int sysfs_get_timeout(struct path *pp, unsigned int *timeout);
 int sysfs_get_host_pci_name(struct path *pp, char *pci_name);
 int sysfs_get_iscsi_ip_address(struct path *pp, char *ip_address);
+ssize_t sysfs_get_vpd (struct udev_device * udev, int pg, unsigned char * buff,
+		       size_t len);
 
 /*
  * discovery bitmask

@@ -51,24 +51,22 @@ static const char *aas_print_string(int rc)
 }
 
 int
-get_alua_info(int fd)
+get_alua_info(struct path * pp)
 {
 	int	rc;
 	int	tpg;
 
-	rc = get_target_port_group_support(fd);
-	if (rc < 0)
-		return -ALUA_PRIO_TPGS_FAILED;
-
-	if (rc == TPGS_NONE)
-		return -ALUA_PRIO_NOT_SUPPORTED;
-
-	tpg = get_target_port_group(fd);
-	if (tpg < 0)
+	tpg = get_target_port_group(pp);
+	if (tpg < 0) {
+		rc = get_target_port_group_support(pp->fd);
+		if (rc < 0)
+			return -ALUA_PRIO_TPGS_FAILED;
+		if (rc == TPGS_NONE)
+			return -ALUA_PRIO_NOT_SUPPORTED;
 		return -ALUA_PRIO_RTPG_FAILED;
-
+	}
 	condlog(3, "reported target port group is %i", tpg);
-	rc = get_asymmetric_access_state(fd, tpg);
+	rc = get_asymmetric_access_state(pp->fd, tpg);
 	if (rc < 0)
 		return -ALUA_PRIO_GETAAS_FAILED;
 
@@ -86,7 +84,7 @@ int getprio (struct path * pp, char * args)
 	if (pp->fd < 0)
 		return -ALUA_PRIO_NO_INFORMATION;
 
-	rc = get_alua_info(pp->fd);
+	rc = get_alua_info(pp);
 	if (rc >= 0) {
 		aas = (rc & 0x0f);
 		priopath = (rc & 0x80);

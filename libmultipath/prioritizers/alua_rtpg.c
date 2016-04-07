@@ -17,15 +17,18 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <inttypes.h>
+#include <libudev.h>
 
 #define __user
 #include <scsi/sg.h>
 
+#include "../structs.h"
 #include "../prio.h"
+#include "../discovery.h"
 #include "alua_rtpg.h"
 
 #define SENSE_BUFF_LEN  32
-#define DEF_TIMEOUT     60000
+#define SGIO_TIMEOUT     60000
 
 /*
  * Macro used to print debug messaged.
@@ -135,7 +138,7 @@ do_inquiry(int fd, int evpd, unsigned int codepage, void *resp, int resplen)
 	hdr.dxfer_len		= resplen;
 	hdr.sbp			= sense;
 	hdr.mx_sb_len		= sizeof(sense);
-	hdr.timeout		= get_prio_timeout(DEF_TIMEOUT);
+	hdr.timeout		= get_prio_timeout(SGIO_TIMEOUT);
 
 	if (ioctl(fd, SG_IO, &hdr) < 0) {
 		PRINT_DEBUG("do_inquiry: IOCTL failed!\n");
@@ -170,8 +173,27 @@ get_target_port_group_support(int fd)
 	return rc;
 }
 
+static int
+get_sysfs_pg83(struct path *pp, unsigned char *buff, int buflen)
+{
+	struct udev_device *parent = pp->udev;
+
+	while (parent) {
+		const char *subsys = udev_device_get_subsystem(parent);
+		if (subsys && !strncmp(subsys, "scsi", 4))
+			break;
+		parent = udev_device_get_parent(parent);
+	}
+
+	if (!parent || sysfs_get_vpd(parent, 0x83, buff, buflen) <= 0) {
+		PRINT_DEBUG("failed to read sysfs vpd pg83\n");
+		return -1;
+	}
+	return 0;
+}
+
 int
-get_target_port_group(int fd)
+get_target_port_group(struct path * pp)
 {
 	unsigned char		*buf;
 	struct vpd83_data *	vpd83;
@@ -179,7 +201,7 @@ get_target_port_group(int fd)
 	int			rc;
 	int			buflen, scsi_buflen;
 
-	buflen = 128; /* Lets start from 128 */
+	buflen = 4096;
 	buf = (unsigned char *)malloc(buflen);
 	if (!buf) {
 		PRINT_DEBUG("malloc failed: could not allocate"
@@ -188,24 +210,29 @@ get_target_port_group(int fd)
 	}
 
 	memset(buf, 0, buflen);
-	rc = do_inquiry(fd, 1, 0x83, buf, buflen);
-	if (rc < 0)
-		goto out;
 
-	scsi_buflen = (buf[2] << 8 | buf[3]) + 4;
-	if (buflen < scsi_buflen) {
-		free(buf);
-		buf = (unsigned char *)malloc(scsi_buflen);
-		if (!buf) {
-			PRINT_DEBUG("malloc failed: could not allocate"
-				     "%u bytes\n", scsi_buflen);
-			return -RTPG_RTPG_FAILED;
-		}
-		buflen = scsi_buflen;
-		memset(buf, 0, buflen);
-		rc = do_inquiry(fd, 1, 0x83, buf, buflen);
+	rc = get_sysfs_pg83(pp, buf, buflen);
+
+	if (rc < 0) {
+		rc = do_inquiry(pp->fd, 1, 0x83, buf, buflen);
 		if (rc < 0)
 			goto out;
+
+		scsi_buflen = (buf[2] << 8 | buf[3]) + 4;
+		if (buflen < scsi_buflen) {
+			free(buf);
+			buf = (unsigned char *)malloc(scsi_buflen);
+			if (!buf) {
+				PRINT_DEBUG("malloc failed: could not allocate"
+					    "%u bytes\n", scsi_buflen);
+				return -RTPG_RTPG_FAILED;
+			}
+			buflen = scsi_buflen;
+			memset(buf, 0, buflen);
+			rc = do_inquiry(pp->fd, 1, 0x83, buf, buflen);
+			if (rc < 0)
+				goto out;
+		}
 	}
 
 	vpd83 = (struct vpd83_data *) buf;
@@ -254,7 +281,7 @@ do_rtpg(int fd, void* resp, long resplen)
 	hdr.dxfer_len		= resplen;
 	hdr.mx_sb_len		= sizeof(sense);
 	hdr.sbp			= sense;
-	hdr.timeout		= get_prio_timeout(DEF_TIMEOUT);
+	hdr.timeout		= get_prio_timeout(SGIO_TIMEOUT);
 
 	if (ioctl(fd, SG_IO, &hdr) < 0)
 		return -RTPG_RTPG_FAILED;
@@ -278,7 +305,7 @@ get_asymmetric_access_state(int fd, unsigned int tpg)
 	int			buflen;
 	uint32_t		scsi_buflen;
 
-	buflen = 128; /* Initial value from old code */
+	buflen = 4096;
 	buf = (unsigned char *)malloc(buflen);
 	if (!buf) {
 		PRINT_DEBUG ("malloc failed: could not allocate"

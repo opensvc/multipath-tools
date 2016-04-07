@@ -378,7 +378,7 @@ detect_prio(struct path * pp)
 	if ((tpgs = get_target_port_group_support(pp->fd)) <= 0)
 		return;
 	pp->tpgs = tpgs;
-	ret = get_target_port_group(pp->fd);
+	ret = get_target_port_group(pp);
 	if (ret < 0)
 		return;
 	if (get_asymmetric_access_state(pp->fd, ret) < 0)
