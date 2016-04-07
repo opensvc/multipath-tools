@@ -1768,7 +1768,7 @@ child (void * param)
 #ifdef USE_SYSTEMD
 	unsigned long checkint;
 #endif
-	int rc, pid_rc;
+	int rc;
 	char *envp;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -1785,6 +1785,12 @@ child (void * param)
 		setup_thread_attr(&log_attr, 64 * 1024, 0);
 		log_thread_start(&log_attr);
 		pthread_attr_destroy(&log_attr);
+	}
+	if (pidfile_create(DEFAULT_PIDFILE, daemon_pid)) {
+		condlog(1, "failed to create pidfile");
+		if (logsink == 1)
+			log_thread_stop();
+		exit(1);
 	}
 
 	running_state = DAEMON_START;
@@ -1905,10 +1911,6 @@ child (void * param)
 	}
 	pthread_attr_destroy(&misc_attr);
 
-	/* Startup complete, create logfile */
-	pid_rc = pidfile_create(DEFAULT_PIDFILE, daemon_pid);
-	/* Ignore errors, we can live without */
-
 	running_state = DAEMON_RUNNING;
 #ifdef USE_SYSTEMD
 	sd_notify(0, "READY=1\nSTATUS=running");
@@ -1959,10 +1961,8 @@ child (void * param)
 	dm_lib_exit();
 
 	/* We're done here */
-	if (!pid_rc) {
-		condlog(3, "unlink pidfile");
-		unlink(DEFAULT_PIDFILE);
-	}
+	condlog(3, "unlink pidfile");
+	unlink(DEFAULT_PIDFILE);
 
 	condlog(2, "--------shut down-------");
 
