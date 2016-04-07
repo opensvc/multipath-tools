@@ -458,11 +458,6 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 		condlog(3, "%s: failed to get path info", uev->kernel);
 		return 1;
 	}
-	if (!strlen(pp->wwid)) {
-		condlog(3, "%s: Failed to get path wwid", uev->kernel);
-		free_path(pp);
-		return 1;
-	}
 	ret = store_path(vecs->pathvec, pp);
 	if (!ret) {
 		pp->checkint = conf->checkint;
@@ -722,20 +717,23 @@ static int
 uev_update_path (struct uevent *uev, struct vectors * vecs)
 {
 	int ro, retval = 0;
+	struct path * pp;
+
+	pp = find_path_by_dev(vecs->pathvec, uev->kernel);
+	if (!pp) {
+		condlog(0, "%s: spurious uevent, path not found",
+			uev->kernel);
+		return 1;
+	}
+
+	if (pp->initialized == INIT_REQUESTED_UDEV)
+		return uev_add_path(uev, vecs);
 
 	ro = uevent_get_disk_ro(uev);
 
 	if (ro >= 0) {
-		struct path * pp;
-
 		condlog(2, "%s: update path write_protect to '%d' (uevent)",
 			uev->kernel, ro);
-		pp = find_path_by_dev(vecs->pathvec, uev->kernel);
-		if (!pp) {
-			condlog(0, "%s: spurious uevent, path not found",
-				uev->kernel);
-			return 1;
-		}
 		if (pp->mpp) {
 			retval = reload_map(vecs, pp->mpp, 0);
 
@@ -1165,11 +1163,23 @@ check_path (struct vectors * vecs, struct path * pp)
 	int disable_reinstate = 0;
 	int oldchkrstate = pp->chkrstate;
 
-	if (pp->initialized && !pp->mpp)
+	if ((pp->initialized == INIT_OK ||
+	     pp->initialized == INIT_REQUESTED_UDEV) && !pp->mpp)
 		return 0;
 
 	if (pp->tick && --pp->tick)
 		return 0; /* don't check this path yet */
+
+	if (!pp->mpp && pp->initialized == INIT_MISSING_UDEV &&
+	    pp->retriggers < conf->retrigger_tries) {
+		condlog(2, "%s: triggering change event to reinitialize",
+			pp->dev);
+		pp->initialized = INIT_REQUESTED_UDEV;
+		pp->retriggers++;
+		sysfs_attr_set_value(pp->udev, "uevent", "change",
+				     strlen("change"));
+		return 0;
+	} 
 
 	/*
 	 * provision a next check soonest,
@@ -1197,7 +1207,7 @@ check_path (struct vectors * vecs, struct path * pp)
 		return 1;
 	}
 	if (!pp->mpp) {
-		if (!strlen(pp->wwid) &&
+		if (!strlen(pp->wwid) && pp->initialized != INIT_MISSING_UDEV &&
 		    (newstate == PATH_UP || newstate == PATH_GHOST)) {
 			condlog(2, "%s: add missing path", pp->dev);
 			if (pathinfo(pp, conf->hwtable, DI_ALL) == 0) {

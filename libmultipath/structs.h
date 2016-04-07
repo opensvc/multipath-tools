@@ -145,6 +145,13 @@ enum delay_checks_states {
 	DELAY_CHECKS_UNDEF = 0,
 };
 
+enum initialized_states {
+	INIT_FAILED,
+	INIT_MISSING_UDEV,
+	INIT_REQUESTED_UDEV,
+	INIT_OK,
+};
+
 struct sg_id {
 	int host_no;
 	int channel;
@@ -202,6 +209,7 @@ struct path {
 	struct multipath * mpp;
 	int fd;
 	int initialized;
+	int retriggers;
 
 	/* configlet pointers */
 	struct hwentry * hwe;

@@ -135,6 +135,8 @@ struct config {
 	int delay_watch_checks;
 	int delay_wait_checks;
 	int uxsock_timeout;
+	int retrigger_tries;
+	int retrigger_delay;
 	unsigned int version[3];
 
 	char * dev;

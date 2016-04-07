@@ -1547,7 +1547,7 @@ get_uid (struct path * pp)
 					pp->dev, strerror(-len));
 
 		}
-		if (len <= 0 &&
+		if (len <= 0 && pp->retriggers >= conf->retrigger_tries &&
 		    !strcmp(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE)) {
 			len = get_vpd_uid(pp);
 			origin = "sysfs";
@@ -1651,11 +1651,19 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 		}
 	}
 
-	if ((mask & DI_WWID) && !strlen(pp->wwid))
+	if ((mask & DI_WWID) && !strlen(pp->wwid)) {
 		get_uid(pp);
+		if (!strlen(pp->wwid)) {
+			pp->initialized = INIT_MISSING_UDEV;
+			pp->tick = conf->retrigger_delay;
+			return PATHINFO_OK;
+		}
+		else
+			pp->tick = 1;
+	}
+
 	if (mask & DI_BLACKLIST && mask & DI_WWID) {
-		if (!strlen(pp->wwid) ||
-		    filter_wwid(conf->blist_wwid, conf->elist_wwid,
+		if (filter_wwid(conf->blist_wwid, conf->elist_wwid,
 				pp->wwid, pp->dev) > 0) {
 			return PATHINFO_SKIPPED;
 		}
@@ -1665,17 +1673,13 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	  * Retrieve path priority, even for PATH_DOWN paths if it has never
 	  * been successfully obtained before.
 	  */
-	if ((mask & DI_PRIO) && path_state == PATH_UP) {
+	if ((mask & DI_PRIO) && path_state == PATH_UP && strlen(pp->wwid)) {
 		if (pp->state != PATH_DOWN || pp->priority == PRIO_UNDEF) {
-			if (!strlen(pp->wwid))
-				get_uid(pp);
-			if (!strlen(pp->wwid))
-				return PATHINFO_SKIPPED;
 			get_prio(pp);
 		}
 	}
 
-	pp->initialized = 1;
+	pp->initialized = INIT_OK;
 	return PATHINFO_OK;
 
 blank:
@@ -1684,7 +1688,7 @@ blank:
 	 */
 	memset(pp->wwid, 0, WWID_SIZE);
 	pp->chkrstate = pp->state = PATH_DOWN;
-	pp->initialized = 0;
+	pp->initialized = INIT_FAILED;
 
-	return 0;
+	return PATHINFO_OK;
 }
