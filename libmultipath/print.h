@@ -51,6 +51,10 @@ int snprint_devices (char *, int, struct vectors *);
 int snprint_hwtable (char *, int, vector);
 int snprint_mptable (char *, int, vector);
 int snprint_overrides (char *, int, struct hwentry *);
+int snprint_host_wwnn (char *, size_t, struct path *);
+int snprint_host_wwpn (char *, size_t, struct path *);
+int snprint_tgt_wwnn (char *, size_t, struct path *);
+int snprint_tgt_wwpn (char *, size_t, struct path *);
 
 void print_multipath_topology (struct multipath * mpp, int verbosity);
 void print_path (struct path * pp, char * style);

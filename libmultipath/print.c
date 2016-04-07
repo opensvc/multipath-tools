@@ -489,19 +489,19 @@ out:
 	return ret;
 }
 
-static int
+int
 snprint_host_wwnn (char * buff, size_t len, struct path * pp)
 {
 	return snprint_host_attr(buff, len, pp, "node_name");
 }
 
-static int
+int
 snprint_host_wwpn (char * buff, size_t len, struct path * pp)
 {
 	return snprint_host_attr(buff, len, pp, "port_name");
 }
 
-static int
+int
 snprint_tgt_wwpn (char * buff, size_t len, struct path * pp)
 {
 	struct udev_device *rport_dev = NULL;
@@ -531,7 +531,7 @@ out:
 }
 
 
-static int
+int
 snprint_tgt_wwnn (char * buff, size_t len, struct path * pp)
 {
 	if (pp->tgt_node_name[0] == '\0')

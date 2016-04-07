@@ -32,6 +32,8 @@
 #include <memory.h>
 #include <debug.h>
 #include <regex.h>
+#include <structs_vec.h>
+#include <print.h>
 
 char *get_next_string(char **temp, char *split_char)
 {
@@ -40,6 +42,36 @@ char *get_next_string(char **temp, char *split_char)
 	while (token != NULL && !strcmp(token, ""))
 		token = strsep(temp, split_char);
 	return token;
+}
+
+#define CHECK_LEN \
+do { \
+	if ((p - str) >= (len - 1)) { \
+		condlog(0, "%s: %s - buffer size too small", pp->dev, pp->prio.name); \
+		return -1; \
+	} \
+} while(0)
+
+static int
+build_wwn_path(struct path *pp, char *str, int len)
+{
+	char *p = str;
+
+	p += snprint_host_wwnn(p, str + len - p, pp);
+	CHECK_LEN;
+	p += snprintf(p, str + len - p, ":");
+	CHECK_LEN;
+	p += snprint_host_wwpn(p, str + len - p, pp);
+	CHECK_LEN;
+	p += snprintf(p, str + len - p, ":");
+	CHECK_LEN;
+	p += snprint_tgt_wwnn(p, str + len - p, pp);
+	CHECK_LEN;
+	p += snprintf(p, str + len - p, ":");
+	CHECK_LEN;
+	p += snprint_tgt_wwpn(p, str + len - p, pp);
+	CHECK_LEN;
+	return 0;
 }
 
 /* main priority routine */
@@ -71,6 +103,11 @@ int prio_path_weight(struct path *pp, char *prio_args)
 			pp->sg_id.channel, pp->sg_id.scsi_id, pp->sg_id.lun);
 	} else if (!strcmp(regex, DEV_NAME)) {
 		strcpy(path, pp->dev);
+	} else if (!strcmp(regex, WWN)) {
+		if (build_wwn_path(pp, path, FILE_NAME_SIZE) != 0) {
+			FREE(arg);
+			return priority;
+		}
 	} else {
 		condlog(0, "%s: %s - Invalid arguments", pp->dev,
 			pp->prio.name);
