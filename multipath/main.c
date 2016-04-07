@@ -107,7 +107,6 @@ usage (char * progname)
 		"  -r      force devmap reload\n" \
 		"  -i      ignore wwids file\n" \
 		"  -B      treat the bindings file as read only\n" \
-		"  -p      policy failover|multibus|group_by_serial|group_by_prio\n" \
 		"  -b fil  bindings file location\n" \
 		"  -w      remove a device from the wwids file\n" \
 		"  -W      reset the wwids file include only the current devices\n" \
