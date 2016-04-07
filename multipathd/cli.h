@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 enum {
 	__LIST,
 	__ADD,
@@ -68,10 +70,10 @@ enum {
 #define WILDCARDS	(1 << __WILDCARDS)
 #define QUIT		(1 << __QUIT)
 #define SHUTDOWN	(1 << __SHUTDOWN)
-#define GETPRSTATUS	(1UL << __GETPRSTATUS)
-#define SETPRSTATUS	(1UL << __SETPRSTATUS)
-#define UNSETPRSTATUS	(1UL << __UNSETPRSTATUS)
-#define FMT		(1UL << __FMT)
+#define GETPRSTATUS	(1ULL << __GETPRSTATUS)
+#define SETPRSTATUS	(1ULL << __SETPRSTATUS)
+#define UNSETPRSTATUS	(1ULL << __UNSETPRSTATUS)
+#define FMT		(1ULL << __FMT)
 
 #define INITIAL_REPLY_LEN	1200
 
@@ -92,21 +94,21 @@ enum {
 struct key {
 	char * str;
 	char * param;
-	unsigned long code;
+	uint64_t code;
 	int has_param;
 };
 
 struct handler {
-	unsigned long fingerprint;
+	uint64_t fingerprint;
 	int (*fn)(void *, char **, int *, void *);
 };
 
 int alloc_handlers (void);
-int add_handler (unsigned long fp, int (*fn)(void *, char **, int *, void *));
-int set_handler_callback (unsigned long fp, int (*fn)(void *, char **, int *, void *));
+int add_handler (uint64_t fp, int (*fn)(void *, char **, int *, void *));
+int set_handler_callback (uint64_t fp, int (*fn)(void *, char **, int *, void *));
 int parse_cmd (char * cmd, char ** reply, int * len, void *);
 int load_keys (void);
-char * get_keyparam (vector v, unsigned long code);
+char * get_keyparam (vector v, uint64_t code);
 void free_keys (vector vec);
 void free_handlers (void);
 int cli_init (void);

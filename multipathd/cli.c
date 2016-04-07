@@ -26,7 +26,7 @@ alloc_handler (void)
 }
 
 static int
-add_key (vector vec, char * str, unsigned long code, int has_param)
+add_key (vector vec, char * str, uint64_t code, int has_param)
 {
 	struct key * kw;
 
@@ -57,7 +57,7 @@ out:
 }
 
 int
-add_handler (unsigned long fp, int (*fn)(void *, char **, int *, void *))
+add_handler (uint64_t fp, int (*fn)(void *, char **, int *, void *))
 {
 	struct handler * h;
 
@@ -79,7 +79,7 @@ add_handler (unsigned long fp, int (*fn)(void *, char **, int *, void *))
 }
 
 static struct handler *
-find_handler (unsigned long fp)
+find_handler (uint64_t fp)
 {
 	int i;
 	struct handler *h;
@@ -92,7 +92,7 @@ find_handler (unsigned long fp)
 }
 
 int
-set_handler_callback (unsigned long fp, int (*fn)(void *, char **, int *, void *))
+set_handler_callback (uint64_t fp, int (*fn)(void *, char **, int *, void *))
 {
 	struct handler * h = find_handler(fp);
 
@@ -293,11 +293,11 @@ out:
 	return r;
 }
 
-static unsigned long 
+static uint64_t
 fingerprint(vector vec)
 {
 	int i;
-	unsigned long fp = 0;
+	uint64_t fp = 0;
 	struct key * kw;
 
 	if (!vec)
@@ -343,7 +343,7 @@ static int
 do_genhelp(char *reply, int maxlen) {
 	int len = 0;
 	int i, j;
-	unsigned long fp;
+	uint64_t fp;
 	struct handler * h;
 	struct key * kw;
 
@@ -442,7 +442,7 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data)
 }
 
 char *
-get_keyparam (vector v, unsigned long code)
+get_keyparam (vector v, uint64_t code)
 {
 	struct key * kw;
 	int i;
@@ -516,7 +516,7 @@ void cli_exit(void)
 }
 
 static int
-key_match_fingerprint (struct key * kw, unsigned long fp)
+key_match_fingerprint (struct key * kw, uint64_t fp)
 {
 	if (!fp)
 		return 0;
@@ -531,7 +531,7 @@ char *
 key_generator (const char * str, int state)
 {
 	static int index, len, has_param;
-	static unsigned long rlfp;	
+	static uint64_t rlfp;
 	struct key * kw;
 	int i;
 	struct handler *h;
@@ -601,7 +601,7 @@ key_generator (const char * str, int state)
 			 * nfp is the candidate fingerprint we try to
 			 * validate against all known command fingerprints.
 			 */
-			unsigned long nfp = rlfp | kw->code;
+			uint64_t nfp = rlfp | kw->code;
 			vector_foreach_slot(handlers, h, i) {
 				if (!rlfp || ((h->fingerprint & nfp) == nfp)) {
 					/*
