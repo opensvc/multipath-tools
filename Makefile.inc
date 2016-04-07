@@ -21,6 +21,14 @@ ifndef LIB
 	endif
 endif
 
+ifndef RUN
+	ifeq ($(shell test -L /var/run -o ! -d /var/run && echo 1),1)
+		RUN=run
+	else
+		RUN=var/run
+	endif
+endif
+
 ifndef SYSTEMD
 	ifeq ($(shell systemctl --version > /dev/null 2>&1 && echo 1), 1)
 		SYSTEMD = $(shell systemctl --version 2> /dev/null |  sed -n 's/systemd \([0-9]*\)/\1/p')
@@ -54,7 +62,7 @@ ifndef RPM_OPT_FLAGS
 endif
 
 OPTFLAGS     = $(RPM_OPT_FLAGS) -Wunused -Wstrict-prototypes
-CFLAGS	     = $(OPTFLAGS) -fPIC -DLIB_STRING=\"${LIB}\"
+CFLAGS	     = $(OPTFLAGS) -fPIC -DLIB_STRING=\"${LIB}\" -DRUN_DIR=\"${RUN}\"
 SHARED_FLAGS = -shared
 
 %.o:	%.c
