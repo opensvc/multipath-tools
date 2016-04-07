@@ -1570,6 +1570,7 @@ reconfigure (struct vectors * vecs)
 	if (!load_config(DEFAULT_CONFIGFILE, udev)) {
 		dm_drv_version(conf->version, TGT_MPATH);
 		conf->verbosity = old->verbosity;
+		conf->bindings_read_only = old->bindings_read_only;
 		conf->daemon = 1;
 		configure(vecs, 1);
 		free_config(old);

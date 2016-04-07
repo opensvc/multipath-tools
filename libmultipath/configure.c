@@ -421,6 +421,9 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 		condlog(2, "%s: unable to rename %s to %s (%s is used by %s)",
 			mpp->wwid, cmpp->alias, mpp->alias,
 			mpp->alias, cmpp_by_name->wwid);
+		/* reset alias to existing alias */
+		FREE(mpp->alias);
+		mpp->alias = STRDUP(cmpp->alias);
 		mpp->action = ACT_NOTHING;
 		return;
 	}

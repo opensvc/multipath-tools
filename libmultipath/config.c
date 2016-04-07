@@ -601,7 +601,6 @@ load_config (char * file, struct udev *udev)
 	get_sys_max_fds(&conf->max_fds);
 	conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 	conf->wwids_file = set_default(DEFAULT_WWIDS_FILE);
-	conf->bindings_read_only = 0;
 	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
 	conf->features = set_default(DEFAULT_FEATURES);
 	conf->flush_on_last_del = 0;
