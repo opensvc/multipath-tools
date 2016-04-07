@@ -488,6 +488,14 @@ can be processed. This will result in errors like
 In these cases it is recommended to increase the CLI timeout to avoid
 those issues. The default is
 .I 1000
+.TP
+.B missing_uev_wait_timeout
+Controls how many seconds multipathd will wait, after a new multipath device
+is created, to receive a change event from udev for the device, before
+automatically enabling device reloads. Usually multipathd will delay reloads
+on a device until it receives a change uevent from the initial table load. The
+default is
+.I 30
 .
 .SH "blacklist section"
 The

@@ -621,6 +621,7 @@ load_config (char * file, struct udev *udev)
 	conf->uid_attribute = set_default(DEFAULT_UID_ATTRIBUTE);
 	conf->retrigger_tries = DEFAULT_RETRIGGER_TRIES;
 	conf->retrigger_delay = DEFAULT_RETRIGGER_DELAY;
+	conf->uev_wait_timeout = DEFAULT_UEV_WAIT_TIMEOUT;
 
 	/*
 	 * preload default hwtable

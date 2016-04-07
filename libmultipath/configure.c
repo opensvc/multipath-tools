@@ -676,6 +676,10 @@ domap (struct multipath * mpp, char * params)
 			 */
 			if (mpp->action != ACT_CREATE)
 				mpp->action = ACT_NOTHING;
+			else {
+				mpp->wait_for_udev = 1;
+				mpp->uev_wait_tick = conf->uev_wait_timeout;
+			}
 		}
 		dm_setgeometry(mpp);
 		return DOMAP_OK;

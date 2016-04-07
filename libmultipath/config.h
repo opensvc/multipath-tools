@@ -138,6 +138,8 @@ struct config {
 	int retrigger_tries;
 	int retrigger_delay;
 	int ignore_new_devs;
+	int delayed_reconfig;
+	int uev_wait_timeout;
 	unsigned int version[3];
 
 	char * dev;

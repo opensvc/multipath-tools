@@ -262,6 +262,47 @@ flush_map(struct multipath * mpp, struct vectors * vecs, int nopaths)
 	return 0;
 }
 
+int
+update_map (struct multipath *mpp, struct vectors *vecs)
+{
+	int retries = 3;
+	char params[PARAMS_SIZE] = {0};
+
+retry:
+	condlog(4, "%s: updating new map", mpp->alias);
+	if (adopt_paths(vecs->pathvec, mpp, 1)) {
+		condlog(0, "%s: failed to adopt paths for new map update",
+			mpp->alias);
+		retries = -1;
+		goto fail;
+	}
+	verify_paths(mpp, vecs);
+	mpp->flush_on_last_del = FLUSH_UNDEF;
+	mpp->action = ACT_RELOAD;
+
+	if (setup_map(mpp, params, PARAMS_SIZE)) {
+		condlog(0, "%s: failed to setup new map in update", mpp->alias);
+		retries = -1;
+		goto fail;
+	}
+	if (domap(mpp, params) <= 0 && retries-- > 0) {
+		condlog(0, "%s: map_udate sleep", mpp->alias);
+		sleep(1);
+		goto retry;
+	}
+	dm_lib_release();
+
+fail:
+	if (setup_multipath(vecs, mpp))
+		return 1;
+
+	sync_map_state(mpp);
+
+	if (retries < 0)
+		condlog(0, "%s: failed reload in new map update", mpp->alias);
+	return 0;
+}
+
 static int
 uev_add_map (struct uevent * uev, struct vectors * vecs)
 {
@@ -304,6 +345,20 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 	mpp = find_mp_by_alias(vecs->mpvec, alias);
 
 	if (mpp) {
+		if (mpp->wait_for_udev > 1) {
+			if (update_map(mpp, vecs))
+			/* setup multipathd removed the map */
+				return 1;
+		}
+		if (mpp->wait_for_udev) {
+			mpp->wait_for_udev = 0;
+			if (conf->delayed_reconfig &&
+			    !need_to_delay_reconfig(vecs)) {
+				condlog(2, "reconfigure (delayed)");
+				reconfigure(vecs);
+				return 0;
+			}
+		}
 		/*
 		 * Not really an error -- we generate our own uevent
 		 * if we create a multipath mapped device as a result
@@ -495,7 +550,14 @@ ev_add_path (struct path * pp, struct vectors * vecs)
 		condlog(0, "%s: failed to get path uid", pp->dev);
 		goto fail; /* leave path added to pathvec */
 	}
-	mpp = pp->mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
+	mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
+	if (mpp && mpp->wait_for_udev) {
+		mpp->wait_for_udev = 2;
+		orphan_path(pp, "waiting for create to complete");
+		return 0;
+	}
+
+	pp->mpp = mpp;
 rescan:
 	if (mpp) {
 		if (mpp->size != pp->size) {
@@ -678,6 +740,12 @@ ev_remove_path (struct path *pp, struct vectors * vecs)
 				" removal of path %s", mpp->alias, pp->dev);
 			goto fail;
 		}
+
+		if (mpp->wait_for_udev) {
+			mpp->wait_for_udev = 2;
+			goto out;
+		}
+
 		/*
 		 * reload the map
 		 */
@@ -735,6 +803,11 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 		condlog(2, "%s: update path write_protect to '%d' (uevent)",
 			uev->kernel, ro);
 		if (pp->mpp) {
+			if (pp->mpp->wait_for_udev) {
+				pp->mpp->wait_for_udev = 2;
+				return 0;
+			}
+
 			retval = reload_map(vecs, pp->mpp, 0);
 
 			condlog(2, "%s: map %s reloaded (retval %d)",
@@ -1075,6 +1148,33 @@ followover_should_failback(struct path * pp)
 }
 
 static void
+missing_uev_wait_tick(struct vectors *vecs)
+{
+	struct multipath * mpp;
+	unsigned int i;
+	int timed_out = 0;
+
+	vector_foreach_slot (vecs->mpvec, mpp, i) {
+		if (mpp->wait_for_udev && --mpp->uev_wait_tick <= 0) {
+			timed_out = 1;
+			condlog(0, "%s: timeout waiting on creation uevent. enabling reloads", mpp->alias);
+			if (mpp->wait_for_udev > 1 && update_map(mpp, vecs)) {
+				/* update_map removed map */
+				i--;
+				continue;
+			}
+			mpp->wait_for_udev = 0;
+		}
+	}
+
+	if (timed_out && conf->delayed_reconfig &&
+	    !need_to_delay_reconfig(vecs)) {
+		condlog(2, "reconfigure (delayed)");
+		reconfigure(vecs);
+	}
+}
+
+static void
 defered_failback_tick (vector mpvec)
 {
 	struct multipath * mpp;
@@ -1378,6 +1478,9 @@ check_path (struct vectors * vecs, struct path * pp)
 
 	pp->state = newstate;
 
+
+	if (pp->mpp->wait_for_udev)
+		return 1;
 	/*
 	 * path prio refreshing
 	 */
@@ -1440,6 +1543,7 @@ checkerloop (void *ap)
 		if (vecs->mpvec) {
 			defered_failback_tick(vecs->mpvec);
 			retry_count_tick(vecs->mpvec);
+			missing_uev_wait_tick(vecs);
 		}
 		if (count)
 			count--;
@@ -1545,6 +1649,22 @@ configure (struct vectors * vecs, int start_waiters)
 }
 
 int
+need_to_delay_reconfig(struct vectors * vecs)
+{
+	struct multipath *mpp;
+	int i;
+
+	if (!VECTOR_SIZE(vecs->mpvec))
+		return 0;
+
+	vector_foreach_slot(vecs->mpvec, mpp, i) {
+		if (mpp->wait_for_udev)
+			return 1;
+	}
+	return 0;
+}
+
+int
 reconfigure (struct vectors * vecs)
 {
 	struct config * old = conf;
@@ -1633,12 +1753,18 @@ void
 handle_signals(void)
 {
 	if (reconfig_sig && running_state == DAEMON_RUNNING) {
-		condlog(2, "reconfigure (signal)");
 		pthread_cleanup_push(cleanup_lock,
 				&gvecs->lock);
 		lock(gvecs->lock);
 		pthread_testcancel();
-		reconfigure(gvecs);
+		if (need_to_delay_reconfig(gvecs)) {
+			conf->delayed_reconfig = 1;
+			condlog(2, "delaying reconfigure (signal)");
+		}
+		else {
+			condlog(2, "reconfigure (signal)");
+			reconfigure(gvecs);
+		}
 		lock_cleanup_pop(gvecs->lock);
 	}
 	if (log_reset_sig) {

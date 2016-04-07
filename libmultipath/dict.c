@@ -396,6 +396,9 @@ declare_def_snprint(retrigger_tries, print_int)
 declare_def_handler(retrigger_delay, set_int)
 declare_def_snprint(retrigger_delay, print_int)
 
+declare_def_handler(uev_wait_timeout, set_int)
+declare_def_snprint(uev_wait_timeout, print_int)
+
 static int
 def_config_dir_handler(vector strvec)
 {
@@ -1371,6 +1374,7 @@ init_keywords(void)
 	install_keyword("uxsock_timeout", &def_uxsock_timeout_handler, &snprint_def_uxsock_timeout);
 	install_keyword("retrigger_tries", &def_retrigger_tries_handler, &snprint_def_retrigger_tries);
 	install_keyword("retrigger_delay", &def_retrigger_delay_handler, &snprint_def_retrigger_delay);
+	install_keyword("missing_uev_wait_timeout", &def_uev_wait_timeout_handler, &snprint_def_uev_wait_timeout);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);

@@ -226,6 +226,8 @@ struct multipath {
 	int bestpg;
 	int queuedio;
 	int action;
+	int wait_for_udev;
+	int uev_wait_tick;
 	int pgfailback;
 	int failback_tick;
 	int rr_weight;

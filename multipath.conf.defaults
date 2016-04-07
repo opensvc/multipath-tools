@@ -29,6 +29,7 @@
 #	config_dir "/etc/multipath/conf.d"
 #	delay_watch_checks no
 #	delay_wait_checks no
+#	missing_uev_wait_timeout 30
 #}
 #blacklist {
 #	devnode "^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*"

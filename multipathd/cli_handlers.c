@@ -623,6 +623,11 @@ cli_reload(void *v, char **reply, int *len, void *data)
 		condlog(0, "%s: invalid map name. cannot reload", mapname);
 		return 1;
 	}
+	if (mpp->wait_for_udev) {
+		condlog(2, "%s: device not fully created, failing reload",
+			mpp->alias);
+		return 1;
+	}
 
 	return reload_map(vecs, mpp, 0);
 }
@@ -666,6 +671,12 @@ cli_resize(void *v, char **reply, int *len, void *data)
 
 	if (!mpp) {
 		condlog(0, "%s: invalid map name. cannot resize", mapname);
+		return 1;
+	}
+
+	if (mpp->wait_for_udev) {
+		condlog(2, "%s: device not fully created, failing resize",
+			mpp->alias);
 		return 1;
 	}
 
@@ -833,6 +844,12 @@ cli_reconfigure(void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 
+	if (need_to_delay_reconfig(vecs)) {
+		conf->delayed_reconfig = 1;
+		condlog(2, "delaying reconfigure (operator)");
+		return 0;
+	}
+
 	condlog(2, "reconfigure (operator)");
 
 	return reconfigure(vecs);
@@ -843,17 +860,25 @@ cli_suspend(void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
-	int r = dm_simplecmd_noflush(DM_DEVICE_SUSPEND, param, 0, 0);
+	int r;
+	struct multipath * mpp;
 
 	param = convert_dev(param, 0);
+	mpp = find_mp_by_alias(vecs->mpvec, param);
+	if (!mpp)
+		return 1;
+
+	if (mpp->wait_for_udev) {
+		condlog(2, "%s: device not fully created, failing suspend",
+			mpp->alias);
+		return 1;
+	}
+
+	r = dm_simplecmd_noflush(DM_DEVICE_SUSPEND, param, 0, 0);
+
 	condlog(2, "%s: suspend (operator)", param);
 
 	if (!r) /* error */
-		return 1;
-
-	struct multipath * mpp = find_mp_by_alias(vecs->mpvec, param);
-
-	if (!mpp)
 		return 1;
 
 	dm_get_info(param, &mpp->dmi);
@@ -865,17 +890,25 @@ cli_resume(void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
-	int r = dm_simplecmd_noflush(DM_DEVICE_RESUME, param, 0, 0);
+	int r;
+	struct multipath * mpp;
 
 	param = convert_dev(param, 0);
+	mpp = find_mp_by_alias(vecs->mpvec, param);
+	if (!mpp)
+		return 1;
+
+	if (mpp->wait_for_udev) {
+		condlog(2, "%s: device not fully created, failing resume",
+			mpp->alias);
+		return 1;
+	}
+
+	r = dm_simplecmd_noflush(DM_DEVICE_RESUME, param, 0, 0);
+
 	condlog(2, "%s: resume (operator)", param);
 
 	if (!r) /* error */
-		return 1;
-
-	struct multipath * mpp = find_mp_by_alias(vecs->mpvec, param);
-
-	if (!mpp)
 		return 1;
 
 	dm_get_info(param, &mpp->dmi);
@@ -908,9 +941,21 @@ cli_reinstate(void * v, char ** reply, int * len, void * data)
 int
 cli_reassign (void * v, char ** reply, int * len, void * data)
 {
+	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
+	struct multipath *mpp;
 
 	param = convert_dev(param, 0);
+	mpp = find_mp_by_alias(vecs->mpvec, param);
+	if (!mpp)
+		return 1;
+
+	if (mpp->wait_for_udev) {
+		condlog(2, "%s: device not fully created, failing reassign",
+			mpp->alias);
+		return 1;
+	}
+
 	condlog(3, "%s: reset devices (operator)", param);
 
 	dm_reassign(param);

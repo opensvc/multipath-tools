@@ -18,6 +18,7 @@ extern pid_t daemon_pid;
 
 void exit_daemon(void);
 const char * daemon_status(void);
+int need_to_delay_reconfig (struct vectors *);
 int reconfigure (struct vectors *);
 int ev_add_path (struct path *, struct vectors *);
 int ev_remove_path (struct path *, struct vectors *);
