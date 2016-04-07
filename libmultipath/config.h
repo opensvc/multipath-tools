@@ -137,6 +137,7 @@ struct config {
 	int uxsock_timeout;
 	int retrigger_tries;
 	int retrigger_delay;
+	int ignore_new_devs;
 	unsigned int version[3];
 
 	char * dev;

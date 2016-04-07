@@ -35,6 +35,10 @@ will use its WWID as its alias.
 .TP
 .B -k 
 multipathd will enter interactive mode. From this mode, the available commands can be viewed by entering "help". When you are finished entering commands, press CTRL-D to quit.
+.TP
+.B -n
+ignore new devices. Multipathd will not create a multipath device unless the
+wwid for the device is already listed in the wwids file.
 
 .SH COMMANDS
 .TP

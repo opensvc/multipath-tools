@@ -518,8 +518,7 @@ rescan:
 		mpp->flush_on_last_del = FLUSH_UNDEF;
 		mpp->action = ACT_RELOAD;
 	} else {
-		if (conf->find_multipaths &&
-		    !should_multipath(pp, vecs->pathvec)) {
+		if (!should_multipath(pp, vecs->pathvec)) {
 			orphan_path(pp, "only one path");
 			return 0;
 		}
@@ -1572,6 +1571,7 @@ reconfigure (struct vectors * vecs)
 		dm_drv_version(conf->version, TGT_MPATH);
 		conf->verbosity = old->verbosity;
 		conf->bindings_read_only = old->bindings_read_only;
+		conf->ignore_new_devs = old->ignore_new_devs;
 		conf->daemon = 1;
 		configure(vecs, 1);
 		free_config(old);
@@ -2076,7 +2076,7 @@ main (int argc, char *argv[])
 	if (!conf)
 		exit(1);
 
-	while ((arg = getopt(argc, argv, ":dsv:k::B")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":dsv:k::Bn")) != EOF ) {
 	switch(arg) {
 		case 'd':
 			foreground = 1;
@@ -2101,6 +2101,9 @@ main (int argc, char *argv[])
 			exit(0);
 		case 'B':
 			conf->bindings_read_only = 1;
+			break;
+		case 'n':
+			conf->ignore_new_devs = 1;
 			break;
 		default:
 			;
