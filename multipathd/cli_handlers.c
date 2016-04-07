@@ -511,7 +511,7 @@ cli_del_path (void * v, char ** reply, int * len, void * data)
 	pp = find_path_by_dev(vecs->pathvec, param);
 	if (!pp) {
 		condlog(0, "%s: path already removed", param);
-		return 0;
+		return 1;
 	}
 	return ev_remove_path(pp, vecs);
 }
@@ -585,19 +585,19 @@ cli_del_map (void * v, char ** reply, int * len, void * data)
 	minor = dm_get_minor(param);
 	if (minor < 0) {
 		condlog(2, "%s: not a device mapper table", param);
-		return 0;
+		return 1;
 	}
 	major = dm_get_major(param);
 	if (major < 0) {
 		condlog(2, "%s: not a device mapper table", param);
-		return 0;
+		return 1;
 	}
 	sprintf(dev_path,"dm-%d", minor);
 	alias = dm_mapname(major, minor);
 	if (!alias) {
 		condlog(2, "%s: mapname not found for %d:%d",
 			param, major, minor);
-		return 0;
+		return 1;
 	}
 	rc = ev_remove_map(param, alias, minor, vecs);
 	FREE(alias);

@@ -448,12 +448,12 @@ ev_remove_map (char * devname, char * alias, int minor, struct vectors * vecs)
 	if (!mpp) {
 		condlog(2, "%s: devmap not registered, can't remove",
 			devname);
-		return 0;
+		return 1;
 	}
 	if (strcmp(mpp->alias, alias)) {
 		condlog(2, "%s: minor number mismatch (map %d, event %d)",
 			mpp->alias, mpp->dmi->minor, minor);
-		return 0;
+		return 1;
 	}
 	return flush_map(mpp, vecs, 0);
 }
