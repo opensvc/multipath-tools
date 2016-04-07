@@ -193,7 +193,9 @@ Return a constant priority of \fI1\fR.
 Generate the path priority for EMC arrays.
 .TP
 .B alua
-Generate the path priority based on the SCSI-3 ALUA settings.
+Generate the path priority based on the SCSI-3 ALUA settings. This prioritizer
+accepts the optional prio_arg
+.I exclusive_pref_bit
 .TP
 .B ontap
 Generate the path priority for NetApp arrays.
@@ -219,13 +221,24 @@ Default value is \fBnone\fR.
 .RE
 .TP
 .B prio_args
-Arguments to pass to to the prio function.  Currently only used with
-.I weighted, which needs a value of the form
+Arguments to pass to to the prio function. This only applies to certain
+prioritizers
+.RS
+.TP 12
+.B weighted
+Needs a value of the form
 .I "<hbtl|devname> <regex1> <prio1> <regex2> <prio2> ..."
 .I hbtl
 regex can be of SCSI H:B:T:L format  Ex: 1:0:.:. , *:0:0:.
 .I devname
 regex can be of device name format  Ex: sda , sd.e
+.TP
+.B alua
+If
+.I exclusive_pref_bit
+is set, paths with the TPGS pref bit set will always be in their own path
+group.
+.RE
 .TP
 .B features
 Specify any device-mapper features to be used. Syntax is
