@@ -21,11 +21,11 @@ struct mutex_lock {
 	a.depth--; pthread_mutex_unlock(a.mutex)
 #define lock_cleanup_pop(a) \
 		fprintf(stderr, "%s:%s(%i) unlock %p depth: %d (%ld)\n", __FILE__, __FUNCTION__, __LINE__, a.mutex, a.depth, pthread_self()); \
-	pthread_cleanup_pop(1);
+	pthread_cleanup_pop(1)
 #else
 #define lock(a) a.depth++; pthread_mutex_lock(a.mutex)
 #define unlock(a) a.depth--; pthread_mutex_unlock(a.mutex)
-#define lock_cleanup_pop(a) pthread_cleanup_pop(1);
+#define lock_cleanup_pop(a) pthread_cleanup_pop(1)
 #endif
 
 void cleanup_lock (void * data);
