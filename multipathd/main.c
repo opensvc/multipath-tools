@@ -968,8 +968,10 @@ uevqloop (void * ap)
 static void *
 uxlsnrloop (void * ap)
 {
-	if (cli_init())
+	if (cli_init()) {
+		condlog(1, "Failed to init uxsock listener");
 		return NULL;
+	}
 
 	set_handler_callback(LIST+PATHS, cli_list_paths);
 	set_handler_callback(LIST+PATHS+FMT, cli_list_paths_fmt);
@@ -1279,7 +1281,7 @@ check_path (struct vectors * vecs, struct path * pp)
 		sysfs_attr_set_value(pp->udev, "uevent", "change",
 				     strlen("change"));
 		return 0;
-	} 
+	}
 
 	/*
 	 * provision a next check soonest,
