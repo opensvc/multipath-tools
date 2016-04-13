@@ -394,7 +394,7 @@ retry interval
 if a number of retries is given with \fIno_path_retry\fR and the
 overall retry interval is longer than the specified \fIdev_loss_tmo\fR value.
 The linux kernel will cap this value to \fI300\fR if \fBfast_io_fail_tmo\fR
-is not set.
+is not set. Default is 600.
 .TP
 .B queue_without_daemon
 If set to

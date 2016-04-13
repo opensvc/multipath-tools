@@ -504,6 +504,22 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 		pp->sg_id.channel, pp->sg_id.scsi_id, rport_id);
 
 	/*
+	 * read the current dev_loss_tmo value from sysfs
+	 */
+	ret = sysfs_attr_get_value(rport_dev, "dev_loss_tmo", value, 16);
+	if (ret <= 0) {
+		condlog(0, "%s: failed to read dev_loss_tmo value, "
+			"error %d", rport_id, -ret);
+		goto out;
+	}
+	tmo = strtoull(value, &eptr, 0);
+	if (value == eptr || tmo == ULLONG_MAX) {
+		condlog(0, "%s: Cannot parse dev_loss_tmo "
+			"attribute '%s'", rport_id, value);
+		goto out;
+	}
+
+	/*
 	 * This is tricky.
 	 * dev_loss_tmo will be limited to 600 if fast_io_fail
 	 * is _not_ set.
@@ -514,45 +530,31 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 	 * then set fast_io_fail, and _then_ set dev_loss_tmo
 	 * to the correct value.
 	 */
-	memset(value, 0, 16);
 	if (mpp->fast_io_fail != MP_FAST_IO_FAIL_UNSET &&
 	    mpp->fast_io_fail != MP_FAST_IO_FAIL_ZERO &&
 	    mpp->fast_io_fail != MP_FAST_IO_FAIL_OFF) {
 		/* Check if we need to temporarily increase dev_loss_tmo */
-		ret = sysfs_attr_get_value(rport_dev, "dev_loss_tmo",
-					   value, 16);
-		if (ret <= 0) {
-			condlog(0, "%s: failed to read dev_loss_tmo value, "
-				"error %d", rport_id, -ret);
-			goto out;
-		}
-		tmo = strtoull(value, &eptr, 0);
-		if (value == eptr || tmo == ULLONG_MAX) {
-			condlog(0, "%s: Cannot parse dev_loss_tmo "
-				"attribute '%s'", rport_id, value);
-			goto out;
-		}
 		if (mpp->fast_io_fail >= tmo) {
+			/* Increase dev_loss_tmo temporarily */
 			snprintf(value, 16, "%u", mpp->fast_io_fail + 1);
+			ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
+						   value, strlen(value));
+			if (ret <= 0) {
+				if (ret == -EBUSY)
+					condlog(3, "%s: rport blocked",
+						rport_id);
+				else
+					condlog(0, "%s: failed to set "
+						"dev_loss_tmo to %s, error %d",
+						rport_id, value, -ret);
+				goto out;
+			}
 		}
-	} else if (mpp->dev_loss > 600) {
-		condlog(3, "%s: limiting dev_loss_tmo to 600, since "
-			"fast_io_fail is not set", rport_id);
-		snprintf(value, 16, "%u", 600);
-	} else {
-		snprintf(value, 16, "%u", mpp->dev_loss);
-	}
-	if (strlen(value)) {
-		ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
-					   value, strlen(value));
-		if (ret <= 0) {
-			if (ret == -EBUSY)
-				condlog(3, "%s: rport blocked", rport_id);
-			else
-				condlog(0, "%s: failed to set dev_loss_tmo to %s, error %d",
-					rport_id, value, -ret);
-			goto out;
-		}
+	} else if (mpp->dev_loss > DEFAULT_DEV_LOSS_TMO) {
+		condlog(3, "%s: limiting dev_loss_tmo to %d, since "
+			"fast_io_fail is not set",
+			rport_id, DEFAULT_DEV_LOSS_TMO);
+		mpp->dev_loss = DEFAULT_DEV_LOSS_TMO;
 	}
 	if (mpp->fast_io_fail != MP_FAST_IO_FAIL_UNSET) {
 		if (mpp->fast_io_fail == MP_FAST_IO_FAIL_OFF)
@@ -571,7 +573,7 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 					rport_id, value, -ret);
 		}
 	}
-	if (tmo > 0) {
+	if (mpp->dev_loss > 0) {
 		snprintf(value, 16, "%u", mpp->dev_loss);
 		ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
 					   value, strlen(value));
@@ -673,11 +675,11 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 			no_path_retry_tmo = MAX_DEV_LOSS_TMO;
 		if (no_path_retry_tmo > dev_loss_tmo)
 			dev_loss_tmo = no_path_retry_tmo;
-		condlog(3, "%s: update dev_loss_tmo to %d",
+		condlog(3, "%s: update dev_loss_tmo to %u",
 			mpp->alias, dev_loss_tmo);
 	} else if (mpp->no_path_retry == NO_PATH_RETRY_QUEUE) {
 		dev_loss_tmo = MAX_DEV_LOSS_TMO;
-		condlog(3, "%s: update dev_loss_tmo to %d",
+		condlog(3, "%s: update dev_loss_tmo to %u",
 			mpp->alias, dev_loss_tmo);
 	}
 	mpp->dev_loss = dev_loss_tmo;
