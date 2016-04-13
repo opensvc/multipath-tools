@@ -248,8 +248,8 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t 
 }
 
 extern int
-dm_simplecmd_flush (int task, const char *name, int needsync, uint16_t udev_flags) {
-	return dm_simplecmd(task, name, 0, needsync, udev_flags, 0);
+dm_simplecmd_flush (int task, const char *name, uint16_t udev_flags) {
+	return dm_simplecmd(task, name, 0, 1, udev_flags, 0);
 }
 
 extern int
@@ -833,7 +833,7 @@ dm_suspend_and_flush_map (const char * mapname)
 	if (s)
 		queue_if_no_path = 0;
 	else
-		s = dm_simplecmd_flush(DM_DEVICE_SUSPEND, mapname, 1, 0);
+		s = dm_simplecmd_flush(DM_DEVICE_SUSPEND, mapname, 0);
 
 	if (!dm_flush_map(mapname)) {
 		condlog(4, "multipath map %s removed", mapname);
