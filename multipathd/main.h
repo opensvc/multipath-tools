@@ -15,6 +15,7 @@ struct prout_param_descriptor;
 struct prin_resp;
 
 extern pid_t daemon_pid;
+extern int uxsock_timeout;
 
 void exit_daemon(void);
 const char * daemon_status(void);

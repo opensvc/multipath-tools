@@ -34,6 +34,8 @@
 static int use_watchdog;
 #endif
 
+int uxsock_timeout;
+
 /*
  * libmultipath
  */
@@ -1701,6 +1703,7 @@ reconfigure (struct vectors * vecs)
 	} else {
 		conf = old;
 	}
+	uxsock_timeout = conf->uxsock_timeout;
 
 	running_state = DAEMON_RUNNING;
 
@@ -1933,6 +1936,8 @@ child (void * param)
 
 	if (load_config(DEFAULT_CONFIGFILE, udev))
 		goto failed;
+
+	uxsock_timeout = conf->uxsock_timeout;
 
 	dm_drv_version(conf->version, TGT_MPATH);
 	if (init_checkers()) {
