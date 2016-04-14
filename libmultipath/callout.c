@@ -201,8 +201,10 @@ apply_format (char * string, char * cmd, struct path * pp)
 	}
 	pos++;
 
-	if (!*pos)
+	if (!*pos) {
+		condlog(3, "formatted callout = %s", dst);
 		return 0;
+	}
 
 	len = strlen(pos) + 1;
 	myfree -= len;
@@ -211,6 +213,6 @@ apply_format (char * string, char * cmd, struct path * pp)
 		return 1;
 
 	snprintf(p, len, "%s", pos);
-	condlog(3, "reformated callout = %s", dst);
+	condlog(3, "reformatted callout = %s", dst);
 	return 0;
 }
