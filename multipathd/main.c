@@ -2294,7 +2294,7 @@ main (int argc, char *argv[])
 		case 'k':
 			if (load_config(DEFAULT_CONFIGFILE, udev_new()))
 				exit(1);
-			uxclnt(optarg, conf->uxsock_timeout);
+			uxclnt(optarg, uxsock_timeout + 100);
 			exit(0);
 		case 'B':
 			conf->bindings_read_only = 1;
@@ -2324,7 +2324,7 @@ main (int argc, char *argv[])
 			optind++;
 		}
 		c += snprintf(c, s + CMDSIZE - c, "\n");
-		uxclnt(s, conf->uxsock_timeout);
+		uxclnt(s, uxsock_timeout + 100);
 		exit(0);
 	}
 
