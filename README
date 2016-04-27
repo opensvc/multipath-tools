@@ -12,3 +12,5 @@ To get latest code: git clone http://git.opensvc.com/multipath-tools/.git
 
 Mailing list: http://www.redhat.com/mailman/listinfo/dm-devel
 Gitweb: http://git.opensvc.com/?p=multipath-tools/.git
+
+Current maintainer is Christophe Varoqui <christophe.varoqui@opensvc.com>
