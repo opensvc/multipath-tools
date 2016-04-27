@@ -6,7 +6,7 @@ Device Mapper multipathing driver:
 multipath - Device mapper target autoconfig.
 multipathd - Multipath daemon.
 mpathpersist - Manages SCSI persistent reservations on dm multipath devices.
-kpartxrtx - Create device maps from partition tables.
+kpartx - Create device maps from partition tables.
 
 To get latest code: git clone http://git.opensvc.com/multipath-tools/.git
 
