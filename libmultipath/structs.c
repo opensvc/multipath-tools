@@ -418,6 +418,7 @@ find_path_by_dev (vector pathvec, char * dev)
 		if (!strcmp(pp->dev, dev))
 			return pp;
 
+	condlog(4, "%s: dev not found in pathvec", dev);
 	return NULL;
 }
 
@@ -434,6 +435,7 @@ find_path_by_devt (vector pathvec, char * dev_t)
 		if (!strcmp(pp->dev_t, dev_t))
 			return pp;
 
+	condlog(4, "%s: dev_t not found in pathvec", dev_t);
 	return NULL;
 }
 
