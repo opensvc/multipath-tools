@@ -284,7 +284,7 @@ configure (void)
 		int failed = get_refwwid(conf->dev, conf->dev_type, pathvec,
 					 &refwwid);
 		if (!refwwid) {
-			condlog(3, "%s: failed to get wwid", conf->dev);
+			condlog(4, "%s: failed to get wwid", conf->dev);
 			if (failed == 2 && conf->cmd == CMD_VALID_PATH)
 				printf("%s is not a valid multipath device path\n", conf->dev);
 			else
