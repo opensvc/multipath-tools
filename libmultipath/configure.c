@@ -398,7 +398,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 			strncpy(mpp->alias_old, cmpp->alias, WWID_SIZE);
 			mpp->action = ACT_RENAME;
 			if (force_reload)
-				mpp->action = ACT_RENAME2;
+				mpp->action = ACT_FORCERENAME;
 			return;
 		}
 		mpp->action = ACT_CREATE;
@@ -641,7 +641,7 @@ domap (struct multipath * mpp, char * params)
 		r = dm_rename(mpp->alias_old, mpp->alias);
 		break;
 
-	case ACT_RENAME2:
+	case ACT_FORCERENAME:
 		r = dm_rename(mpp->alias_old, mpp->alias);
 		if (r) {
 			r = dm_addmap_reload(mpp, params);

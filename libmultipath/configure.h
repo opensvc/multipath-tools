@@ -18,7 +18,7 @@ enum actions {
 	ACT_RENAME,
 	ACT_CREATE,
 	ACT_RESIZE,
-	ACT_RENAME2,
+	ACT_FORCERENAME,
 };
 
 #define FLUSH_ONE 1
