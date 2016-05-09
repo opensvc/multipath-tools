@@ -232,10 +232,9 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t 
 #endif
 	if (udev_wait_flag &&
 	    !dm_task_set_cookie(dmt, &cookie,
-				DM_UDEV_DISABLE_LIBRARY_FALLBACK | udev_flags)) {
-		dm_udev_complete(cookie);
+				DM_UDEV_DISABLE_LIBRARY_FALLBACK | udev_flags))
 		goto out;
-	}
+
 	r = dm_task_run (dmt);
 
 	if (udev_wait_flag) {
@@ -320,10 +319,9 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 
 	if (task == DM_DEVICE_CREATE &&
 	    !dm_task_set_cookie(dmt, &cookie,
-				DM_UDEV_DISABLE_LIBRARY_FALLBACK)) {
-		dm_udev_complete(cookie);
+				DM_UDEV_DISABLE_LIBRARY_FALLBACK))
 		goto freeout;
-	}
+
 	r = dm_task_run (dmt);
 
 	if (task == DM_DEVICE_CREATE) {
