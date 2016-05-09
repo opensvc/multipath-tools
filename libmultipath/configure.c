@@ -628,7 +628,7 @@ domap (struct multipath * mpp, char * params)
 		r = dm_addmap_reload(mpp, params);
 		if (r)
 			r = dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias,
-						 0, MPATH_UDEV_RELOAD_FLAG);
+						 1, MPATH_UDEV_RELOAD_FLAG);
 		break;
 
 	case ACT_RESIZE:
@@ -646,7 +646,9 @@ domap (struct multipath * mpp, char * params)
 		if (r) {
 			r = dm_addmap_reload(mpp, params);
 			if (r)
-				r = dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias, 0, MPATH_UDEV_RELOAD_FLAG);
+				r = dm_simplecmd_noflush(DM_DEVICE_RESUME,
+							 mpp->alias, 1,
+							 MPATH_UDEV_RELOAD_FLAG);
 		}
 		break;
 
