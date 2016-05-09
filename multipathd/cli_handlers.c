@@ -937,7 +937,7 @@ cli_suspend(void * v, char ** reply, int * len, void * data)
 		return 1;
 	}
 
-	r = dm_simplecmd_noflush(DM_DEVICE_SUSPEND, param, 0, 0);
+	r = dm_simplecmd_noflush(DM_DEVICE_SUSPEND, param, 0);
 
 	condlog(2, "%s: suspend (operator)", param);
 
@@ -967,7 +967,7 @@ cli_resume(void * v, char ** reply, int * len, void * data)
 		return 1;
 	}
 
-	r = dm_simplecmd_noflush(DM_DEVICE_RESUME, param, 1, 0);
+	r = dm_simplecmd_noflush(DM_DEVICE_RESUME, param, 0);
 
 	condlog(2, "%s: resume (operator)", param);
 

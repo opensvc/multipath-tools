@@ -254,8 +254,8 @@ dm_simplecmd_flush (int task, const char *name, uint16_t udev_flags) {
 }
 
 extern int
-dm_simplecmd_noflush (int task, const char *name, int needsync, uint16_t udev_flags) {
-	return dm_simplecmd(task, name, 1, needsync, udev_flags, 0);
+dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags) {
+	return dm_simplecmd(task, name, 1, 1, udev_flags, 0);
 }
 
 static int
@@ -847,7 +847,7 @@ dm_suspend_and_flush_map (const char * mapname)
 		return 0;
 	}
 	condlog(2, "failed to remove multipath map %s", mapname);
-	dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname, 1, 0);
+	dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname, 0);
 	if (queue_if_no_path)
 		s = dm_queue_if_no_path((char *)mapname, 1);
 	return 1;
@@ -1486,7 +1486,8 @@ int dm_reassign_table(const char *name, char *old, char *new)
 			condlog(3, "%s: failed to reassign targets", name);
 			goto out_reload;
 		}
-		dm_simplecmd_noflush(DM_DEVICE_RESUME, name, 1, MPATH_UDEV_RELOAD_FLAG);
+		dm_simplecmd_noflush(DM_DEVICE_RESUME, name,
+				     MPATH_UDEV_RELOAD_FLAG);
 	}
 	r = 1;
 
