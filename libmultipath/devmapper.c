@@ -285,16 +285,23 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 	if (ro)
 		dm_task_set_ro(dmt);
 
-	if ((task == DM_DEVICE_CREATE) && strlen(mpp->wwid) > 0){
-		prefixed_uuid = MALLOC(UUID_PREFIX_LEN + strlen(mpp->wwid) + 1);
-		if (!prefixed_uuid) {
-			condlog(0, "cannot create prefixed uuid : %s",
-				strerror(errno));
-			goto addout;
+	if (task == DM_DEVICE_CREATE) {
+		if (strlen(mpp->wwid) > 0) {
+			prefixed_uuid = MALLOC(UUID_PREFIX_LEN +
+					       strlen(mpp->wwid) + 1);
+			if (!prefixed_uuid) {
+				condlog(0, "cannot create prefixed uuid : %s",
+					strerror(errno));
+				goto addout;
+			}
+			sprintf(prefixed_uuid, UUID_PREFIX "%s", mpp->wwid);
+			if (!dm_task_set_uuid(dmt, prefixed_uuid))
+				goto freeout;
 		}
-		sprintf(prefixed_uuid, UUID_PREFIX "%s", mpp->wwid);
-		if (!dm_task_set_uuid(dmt, prefixed_uuid))
-			goto freeout;
+		dm_task_skip_lockfs(dmt);
+#ifdef LIBDM_API_FLUSH
+		dm_task_no_flush(dmt);
+#endif
 	}
 
 	if (mpp->attribute_flags & (1 << ATTR_MODE) &&
