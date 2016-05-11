@@ -288,7 +288,7 @@ set_loop (const char *device, const char *file, int offset, int *loopro)
 extern int 
 del_loop (const char *device)
 {
-	int retries = 3;
+	int retries = 5;
 	int fd;
 
 	if ((fd = open (device, O_RDONLY)) < 0) {
