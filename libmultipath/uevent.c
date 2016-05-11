@@ -477,7 +477,6 @@ int uevent_listen(struct udev *udev)
 	int fd, fd_ep = -1, socket_flags, events;
 	int need_failback = 1;
 	int timeout = 30;
-	sigset_t mask;
 	LIST_HEAD(uevlisten_tmp);
 
 	/*
@@ -528,22 +527,20 @@ int uevent_listen(struct udev *udev)
 		goto out;
 	}
 
-	pthread_sigmask(SIG_SETMASK, NULL, &mask);
 	events = 0;
 	while (1) {
 		struct uevent *uev;
 		struct udev_device *dev;
 		struct pollfd ev_poll;
-		struct timespec poll_timeout;
+		int poll_timeout;
 		int fdcount;
 
 		memset(&ev_poll, 0, sizeof(struct pollfd));
 		ev_poll.fd = fd;
 		ev_poll.events = POLLIN;
-		memset(&poll_timeout, 0, sizeof(struct timespec));
-		poll_timeout.tv_sec = timeout;
+		poll_timeout = timeout * 1000;
 		errno = 0;
-		fdcount = ppoll(&ev_poll, 1, &poll_timeout, &mask);
+		fdcount = poll(&ev_poll, 1, poll_timeout);
 		if (fdcount && ev_poll.revents & POLLIN) {
 			timeout = 0;
 			dev = udev_monitor_receive_device(monitor);
