@@ -274,6 +274,61 @@ snprint_multipath_vpr (char * buff, size_t len, struct multipath * mpp)
 	return snprintf(buff, len, "##,##");
 }
 
+
+static int
+snprint_multipath_vend (char * buff, size_t len, struct multipath * mpp)
+{
+	struct pathgroup * pgp;
+	struct path * pp;
+	int i, j;
+
+	vector_foreach_slot(mpp->pg, pgp, i) {
+		if (!pgp)
+			continue;
+		vector_foreach_slot(pgp->paths, pp, j) {
+			if (strlen(pp->vendor_id))
+				return snprintf(buff, len, "%s", pp->vendor_id);
+		}
+	}
+	return snprintf(buff, len, "##");
+}
+
+static int
+snprint_multipath_prod (char * buff, size_t len, struct multipath * mpp)
+{
+	struct pathgroup * pgp;
+	struct path * pp;
+	int i, j;
+
+	vector_foreach_slot(mpp->pg, pgp, i) {
+		if (!pgp)
+			continue;
+		vector_foreach_slot(pgp->paths, pp, j) {
+			if (strlen(pp->product_id))
+				return snprintf(buff, len, "%s", pp->product_id);
+		}
+	}
+	return snprintf(buff, len, "##");
+}
+
+static int
+snprint_multipath_rev (char * buff, size_t len, struct multipath * mpp)
+{
+	struct pathgroup * pgp;
+	struct path * pp;
+	int i, j;
+
+	vector_foreach_slot(mpp->pg, pgp, i) {
+		if (!pgp)
+			continue;
+		vector_foreach_slot(pgp->paths, pp, j) {
+			if (strlen(pp->rev))
+				return snprintf(buff, len, "%s", pp->rev);
+		}
+	}
+	return snprintf(buff, len, "##");
+}
+
 static int
 snprint_action (char * buff, size_t len, struct multipath * mpp)
 {
@@ -577,6 +632,9 @@ struct multipath_data mpd[] = {
 	{'3', "total_q_time",  0, snprint_total_q_time},
 	{'4', "q_timeouts",    0, snprint_q_timeouts},
 	{'s', "vend/prod/rev", 0, snprint_multipath_vpr},
+	{'v', "vend",          0, snprint_multipath_vend},
+	{'p', "prod",          0, snprint_multipath_prod},
+	{'e', "rev",           0, snprint_multipath_rev},
 	{0, NULL, 0 , NULL}
 };
 
@@ -996,6 +1054,170 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 				return len;
 		}
 	}
+	return fwd;
+}
+
+static int
+snprint_json (char * buff, int len, int indent, char *json_str)
+{
+	int fwd = 0, i;
+
+	for (i = 0; i < indent; i++) {
+		fwd += snprintf(buff + fwd, len - fwd, PRINT_JSON_INDENT);
+		if (fwd > len)
+			return fwd;
+	}
+
+	fwd += snprintf(buff + fwd, len - fwd, "%s", json_str);
+	return fwd;
+}
+
+static int
+snprint_json_header (char * buff, int len)
+{
+	int fwd = 0;
+
+	fwd +=  snprint_json(buff, len, 0, PRINT_JSON_START_ELEM);
+	if (fwd > len)
+		return fwd;
+
+	fwd +=  snprintf(buff + fwd, len  - fwd, PRINT_JSON_START_VERSION,
+			PRINT_JSON_MAJOR_VERSION, PRINT_JSON_MINOR_VERSION);
+	return fwd;
+}
+
+static int
+snprint_json_elem_footer (char * buff, int len, int indent, int last)
+{
+	int fwd = 0, i;
+
+	for (i = 0; i < indent; i++) {
+		fwd += snprintf(buff + fwd, len - fwd, PRINT_JSON_INDENT);
+		if (fwd > len)
+			return fwd;
+	}
+
+	if (last == 1)
+		fwd += snprintf(buff + fwd, len - fwd, "%s", PRINT_JSON_END_LAST_ELEM);
+	else
+		fwd += snprintf(buff + fwd, len - fwd, "%s", PRINT_JSON_END_ELEM);
+	return fwd;
+}
+
+static int
+snprint_multipath_fields_json (char * buff, int len,
+		struct multipath * mpp, int last)
+{
+	int i, j, fwd = 0;
+	struct path *pp;
+	struct pathgroup *pgp;
+
+	fwd += snprint_multipath(buff, len, PRINT_JSON_MAP, mpp, 0);
+	if (fwd > len)
+		return fwd;
+
+	fwd += snprint_json(buff + fwd, len - fwd, 2, PRINT_JSON_START_GROUPS);
+	if (fwd > len)
+		return fwd;
+
+	vector_foreach_slot (mpp->pg, pgp, i) {
+
+		pgp->selector = mpp->selector;
+		fwd += snprint_pathgroup(buff + fwd, len - fwd, PRINT_JSON_GROUP, pgp);
+		if (fwd > len)
+			return fwd;
+
+		fwd += snprintf(buff + fwd, len - fwd, PRINT_JSON_GROUP_NUM, i + 1);
+		if (fwd > len)
+			return fwd;
+
+		fwd += snprint_json(buff + fwd, len - fwd, 3, PRINT_JSON_START_PATHS);
+		if (fwd > len)
+			return fwd;
+
+		vector_foreach_slot (pgp->paths, pp, j) {
+			fwd += snprint_path(buff + fwd, len - fwd, PRINT_JSON_PATH, pp, 0);
+			if (fwd > len)
+				return fwd;
+
+			fwd += snprint_json_elem_footer(buff + fwd,
+					len - fwd, 3, j + 1 == VECTOR_SIZE(pgp->paths));
+			if (fwd > len)
+				return fwd;
+		}
+		fwd += snprint_json(buff + fwd, len - fwd, 0, PRINT_JSON_END_ARRAY);
+		if (fwd > len)
+			return fwd;
+
+		fwd +=  snprint_json_elem_footer(buff + fwd,
+				len - fwd, 2, i + 1 == VECTOR_SIZE(mpp->pg));
+		if (fwd > len)
+			return fwd;
+	}
+
+	fwd += snprint_json(buff + fwd, len - fwd, 0, PRINT_JSON_END_ARRAY);
+	if (fwd > len)
+		return fwd;
+
+	fwd += snprint_json_elem_footer(buff + fwd, len - fwd, 1, last);
+	return fwd;
+}
+
+int
+snprint_multipath_map_json (char * buff, int len,
+		struct multipath * mpp, int last){
+	int fwd = 0;
+
+	fwd +=  snprint_json_header(buff, len);
+	if (fwd > len)
+		return len;
+
+	fwd +=  snprint_json(buff + fwd, len - fwd, 0, PRINT_JSON_START_MAP);
+	if (fwd > len)
+		return len;
+
+	fwd += snprint_multipath_fields_json(buff + fwd, len - fwd, mpp, 1);
+	if (fwd > len)
+		return len;
+
+	fwd +=  snprint_json(buff + fwd, len - fwd, 0, "\n");
+	if (fwd > len)
+		return len;
+
+	fwd +=  snprint_json(buff + fwd, len - fwd, 0, PRINT_JSON_END_LAST);
+	if (fwd > len)
+		return len;
+	return fwd;
+}
+
+int
+snprint_multipath_topology_json (char * buff, int len, struct vectors * vecs)
+{
+	int i, fwd = 0;
+	struct multipath * mpp;
+
+	fwd +=  snprint_json_header(buff, len);
+	if (fwd > len)
+		return len;
+
+	fwd +=  snprint_json(buff + fwd, len  - fwd, 1, PRINT_JSON_START_MAPS);
+	if (fwd > len)
+		return len;
+
+	vector_foreach_slot(vecs->mpvec, mpp, i) {
+		fwd += snprint_multipath_fields_json(buff + fwd, len - fwd,
+				mpp, i + 1 == VECTOR_SIZE(vecs->mpvec));
+		if (fwd > len)
+			return len;
+	}
+
+	fwd +=  snprint_json(buff + fwd, len - fwd, 0, PRINT_JSON_END_ARRAY);
+	if (fwd > len)
+		return len;
+
+	fwd +=  snprint_json(buff + fwd, len - fwd, 0, PRINT_JSON_END_LAST);
+	if (fwd > len)
+		return len;
 	return fwd;
 }
 

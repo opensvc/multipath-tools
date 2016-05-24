@@ -156,6 +156,70 @@ show_maps_topology (char ** r, int * len, struct vectors * vecs)
 }
 
 int
+show_maps_json (char ** r, int * len, struct vectors * vecs)
+{
+	int i;
+	struct multipath * mpp;
+	char * c;
+	char * reply;
+	unsigned int maxlen = INITIAL_REPLY_LEN *
+			PRINT_JSON_MULTIPLIER * VECTOR_SIZE(vecs->mpvec);
+	int again = 1;
+
+	vector_foreach_slot(vecs->mpvec, mpp, i) {
+		if (update_multipath(vecs, mpp->alias, 0)) {
+			return 1;
+		}
+	}
+
+	reply = MALLOC(maxlen);
+
+	while (again) {
+		if (!reply)
+			return 1;
+
+		c = reply;
+
+		c += snprint_multipath_topology_json(c, maxlen, vecs);
+		again = ((c - reply) == maxlen);
+
+		REALLOC_REPLY(reply, again, maxlen);
+	}
+	*r = reply;
+	*len = (int)(c - reply);
+	return 0;
+}
+
+int
+show_map_json (char ** r, int * len, struct multipath * mpp,
+		   struct vectors * vecs)
+{
+	char * c;
+	char * reply;
+	unsigned int maxlen = INITIAL_REPLY_LEN;
+	int again = 1;
+
+	if (update_multipath(vecs, mpp->alias, 0))
+		return 1;
+	reply = MALLOC(maxlen);
+
+	while (again) {
+		if (!reply)
+			return 1;
+
+		c = reply;
+
+		c += snprint_multipath_map_json(c, maxlen, mpp, 1);
+		again = ((c - reply) == maxlen);
+
+		REALLOC_REPLY(reply, again, maxlen);
+	}
+	*r = reply;
+	*len = (int)(c - reply);
+	return 0;
+}
+
+int
 show_config (char ** r, int * len)
 {
 	char * c;
@@ -288,6 +352,35 @@ cli_list_maps_topology (void * v, char ** reply, int * len, void * data)
 	condlog(3, "list multipaths (operator)");
 
 	return show_maps_topology(reply, len, vecs);
+}
+
+int
+cli_list_map_json (void * v, char ** reply, int * len, void * data)
+{
+	struct multipath * mpp;
+	struct vectors * vecs = (struct vectors *)data;
+	char * param = get_keyparam(v, MAP);
+
+	param = convert_dev(param, 0);
+	get_path_layout(vecs->pathvec, 0);
+	mpp = find_mp_by_str(vecs->mpvec, param);
+
+	if (!mpp)
+		return 1;
+
+	condlog(3, "list multipath json %s (operator)", param);
+
+	return show_map_json(reply, len, mpp, vecs);
+}
+
+int
+cli_list_maps_json (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+
+	condlog(3, "list multipaths json (operator)");
+
+	return show_maps_json(reply, len, vecs);
 }
 
 int

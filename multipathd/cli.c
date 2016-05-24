@@ -207,6 +207,7 @@ load_keys (void)
 	r += add_key(keys, "setprstatus", SETPRSTATUS, 0);
 	r += add_key(keys, "unsetprstatus", UNSETPRSTATUS, 0);
 	r += add_key(keys, "format", FMT, 1);
+	r += add_key(keys, "json", JSON, 0);
 
 	if (r) {
 		free_keys(keys);
@@ -537,8 +538,10 @@ cli_init (void) {
 	add_handler(LIST+MAPS+FMT, NULL);
 	add_handler(LIST+MAPS+RAW+FMT, NULL);
 	add_handler(LIST+MAPS+TOPOLOGY, NULL);
+	add_handler(LIST+MAPS+JSON, NULL);
 	add_handler(LIST+TOPOLOGY, NULL);
 	add_handler(LIST+MAP+TOPOLOGY, NULL);
+	add_handler(LIST+MAP+JSON, NULL);
 	add_handler(LIST+MAP+FMT, NULL);
 	add_handler(LIST+MAP+RAW+FMT, NULL);
 	add_handler(LIST+CONFIG, NULL);

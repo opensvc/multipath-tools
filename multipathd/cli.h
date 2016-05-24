@@ -36,6 +36,7 @@ enum {
 	__SETPRSTATUS,
 	__UNSETPRSTATUS,
 	__FMT,
+	__JSON,
 };
 
 #define LIST		(1 << __LIST)
@@ -74,6 +75,7 @@ enum {
 #define SETPRSTATUS	(1ULL << __SETPRSTATUS)
 #define UNSETPRSTATUS	(1ULL << __UNSETPRSTATUS)
 #define FMT		(1ULL << __FMT)
+#define JSON		(1ULL << __JSON)
 
 #define INITIAL_REPLY_LEN	1200
 
