@@ -1166,6 +1166,15 @@ static struct hwentry default_hw[] = {
 		.dev_loss      = 60,
 		.prio_args     = NULL,
 	},
+	{
+		.vendor        = "HUAWEI",
+		.product       = "XSG1",
+		.features      = DEFAULT_FEATURES,
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.checker_name  = TUR,
+	},
 	/*
 	 * EOL
 	 */
