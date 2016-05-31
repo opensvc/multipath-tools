@@ -497,7 +497,7 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data, int timeout )
 			pthread_testcancel();
 			r = h->fn(cmdvec, reply, len, data);
 		}
-		lock_cleanup_pop(vecs->lock);
+		pthread_cleanup_pop(!r);
 	} else
 		r = h->fn(cmdvec, reply, len, data);
 	free_keys(cmdvec);
