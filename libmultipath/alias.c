@@ -36,6 +36,14 @@
  * See the file COPYING included with this distribution for more details.
  */
 
+int
+valid_alias(char *alias)
+{
+	if (strchr(alias, '/') != NULL)
+		return 0;
+	return 1;
+}
+
 
 static int
 format_devname(char *name, int id, int len, char *prefix)

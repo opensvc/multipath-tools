@@ -7,6 +7,7 @@
 "# alias wwid\n" \
 "#\n"
 
+int valid_alias(char *alias);
 char *get_user_friendly_alias(char *wwid, char *file, char *prefix,
 			      int bindings_readonly);
 int get_user_friendly_wwid(char *alias, char *buff, char *file);

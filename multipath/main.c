@@ -465,8 +465,9 @@ get_dev_type(char *dev) {
 	}
 	else if (sscanf(dev, "%d:%d", &i, &i) == 2)
 		return DEV_DEVT;
-	else
+	else if (valid_alias(dev))
 		return DEV_DEVMAP;
+	return DEV_NONE;
 }
 
 int
@@ -596,6 +597,10 @@ main (int argc, char *argv[])
 		strncpy(conf->dev, argv[optind], FILE_NAME_SIZE);
 		if (conf->dev_type != DEV_UEVENT)
 			conf->dev_type = get_dev_type(conf->dev);
+		if (conf->dev_type == DEV_NONE) {
+			condlog(0, "'%s' is not a valid argument\n", conf->dev);
+			goto out;
+		}
 	}
 	conf->daemon = 0;
 	if (conf->dev_type == DEV_UEVENT) {
