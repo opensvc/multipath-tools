@@ -77,19 +77,13 @@ dm_simplecmd (int task, const char *name, int no_flush, uint16_t udev_flags) {
 #ifdef LIBDM_API_COOKIE
 	if (!udev_sync)
 		udev_flags |= DM_UDEV_DISABLE_LIBRARY_FALLBACK;
-	if (udev_wait_flag && !dm_task_set_cookie(dmt, &cookie, udev_flags)) {
-		dm_udev_complete(cookie);
+	if (udev_wait_flag && !dm_task_set_cookie(dmt, &cookie, udev_flags))
 		goto out;
-	}
 #endif
 	r = dm_task_run(dmt);
 #ifdef LIBDM_API_COOKIE
-	if (udev_wait_flag) {
-		if (!r)
-			dm_udev_complete(cookie);
-		else
+	if (udev_wait_flag)
 			dm_udev_wait(cookie);
-	}
 #endif
 	out:
 	dm_task_destroy(dmt);
@@ -145,19 +139,13 @@ dm_addmap (int task, const char *name, const char *target,
 	if (!udev_sync)
 		udev_flags = DM_UDEV_DISABLE_LIBRARY_FALLBACK;
 	if (task == DM_DEVICE_CREATE &&
-	    !dm_task_set_cookie(dmt, &cookie, udev_flags)) {
-		dm_udev_complete(cookie);
+	    !dm_task_set_cookie(dmt, &cookie, udev_flags))
 		goto addout;
-	}
 #endif
 	r = dm_task_run (dmt);
 #ifdef LIBDM_API_COOKIE
-	if (task == DM_DEVICE_CREATE) {
-		if (!r)
-			dm_udev_complete(cookie);
-		else
+	if (task == DM_DEVICE_CREATE)
 			dm_udev_wait(cookie);
-	}
 #endif
 addout:
 	dm_task_destroy (dmt);
