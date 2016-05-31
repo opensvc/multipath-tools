@@ -79,7 +79,7 @@ read_dos_pt(int fd, struct slice all, struct slice *sp, int ns) {
 	unsigned long offset = all.start;
 	int i, n=4;
 	unsigned char *bp;
-	int sector_size_mul = get_sector_size(fd)/512;
+	uint64_t  sector_size_mul = get_sector_size(fd)/512;
 
 	bp = (unsigned char *)getblock(fd, offset);
 	if (bp == NULL)
