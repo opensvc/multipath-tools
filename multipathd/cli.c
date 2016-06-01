@@ -109,7 +109,7 @@ set_handler_callback (uint64_t fp, int (*fn)(void *, char **, int *, void *))
 }
 
 int
-set_unlocked_handler_callback (unsigned long fp,int (*fn)(void *, char **, int *, void *))
+set_unlocked_handler_callback (uint64_t fp,int (*fn)(void *, char **, int *, void *))
 {
 	struct handler * h = find_handler(fp);
 
