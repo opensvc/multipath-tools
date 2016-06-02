@@ -1,5 +1,6 @@
 multipath-tools for Linux <http://christophe.varoqui.free.fr/>
 
+
 This package provides the following binaries to drive the
 Device Mapper multipathing driver:
 
@@ -8,7 +9,15 @@ multipathd - Multipath daemon.
 mpathpersist - Manages SCSI persistent reservations on dm multipath devices.
 kpartx - Create device maps from partition tables.
 
-To get latest code: git clone http://git.opensvc.com/multipath-tools/.git
+
+tarballs are not generated anymore, to get a specific release do:
+git clone http://git.opensvc.com/multipath-tools/.git
+cd multipath-tools
+git tag
+git archive --format=tar.gz --prefix=multipath-tools-X.Y.Z/ X.Y.Z > ../multipath-tools-X.Y.Z.tar.gz
+
+
+To get latest devel code: git clone http://git.opensvc.com/multipath-tools/.git
 
 Mailing list: http://www.redhat.com/mailman/listinfo/dm-devel
 Gitweb: http://git.opensvc.com/?p=multipath-tools/.git
