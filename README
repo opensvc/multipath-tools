@@ -16,6 +16,10 @@ cd multipath-tools
 git tag
 git archive --format=tar.gz --prefix=multipath-tools-X.Y.Z/ X.Y.Z > ../multipath-tools-X.Y.Z.tar.gz
 
+Alternatively it may be obtained from gitweb, go to:
+http://git.opensvc.com/?p=multipath-tools/.git;a=tags
+select a release-tag and then click on "snapshot".
+
 
 To get latest devel code: git clone http://git.opensvc.com/multipath-tools/.git
 
