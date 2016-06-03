@@ -19,7 +19,7 @@ install: $(LIBS)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
 	ln -sf $(LIBS) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(incdir)
-	$(INSTALL_PROGRAM) -m 755 mpath_cmd.h $(DESTDIR)$(incdir)
+	$(INSTALL_PROGRAM) -m 644 mpath_cmd.h $(DESTDIR)$(incdir)
 
 uninstall:
 	rm -f $(DESTDIR)$(syslibdir)/$(LIBS)
