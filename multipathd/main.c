@@ -484,7 +484,7 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 			return 1;
 		}
 	}
-	r = get_refwwid(dev, DEV_DEVMAP, vecs->pathvec, &refwwid);
+	r = get_refwwid(CMD_NONE, dev, DEV_DEVMAP, vecs->pathvec, &refwwid);
 
 	if (refwwid) {
 		r = coalesce_paths(vecs, NULL, refwwid, 0, CMD_NONE);

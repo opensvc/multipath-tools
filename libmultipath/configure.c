@@ -925,12 +925,14 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
  * 2 - blacklist
  */
 extern int
-get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
+get_refwwid (enum mpath_cmds cmd, char * dev, enum devtypes dev_type,
+	     vector pathvec, char **wwid)
 {
 	int ret = 1;
 	struct path * pp;
 	char buff[FILE_NAME_SIZE];
 	char * refwwid = NULL, tmpwwid[WWID_SIZE];
+	int flags = DI_SYSFS | DI_WWID;
 
 	if (!wwid)
 		return 1;
@@ -938,6 +940,9 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
 
 	if (dev_type == DEV_NONE)
 		return 1;
+
+	if (cmd != CMD_REMOVE_WWID)
+		flags |= DI_BLACKLIST;
 
 	if (dev_type == DEV_DEVNODE) {
 		if (basenamecpy(dev, buff, FILE_NAME_SIZE) == 0) {
@@ -955,7 +960,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
 				return 1;
 			}
 			ret = store_pathinfo(pathvec, conf->hwtable, udevice,
-					     DI_SYSFS | DI_WWID, &pp);
+					     flags, &pp);
 			udev_device_unref(udevice);
 			if (!pp) {
 				if (ret == 1)
@@ -987,7 +992,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
 				return 1;
 			}
 			ret = store_pathinfo(pathvec, conf->hwtable, udevice,
-					     DI_SYSFS | DI_WWID, &pp);
+					     flags, &pp);
 			udev_device_unref(udevice);
 			if (!pp) {
 				if (ret == 1)
@@ -1012,7 +1017,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
 			return 1;
 		}
 		ret = store_pathinfo(pathvec, conf->hwtable, udevice,
-				     DI_SYSFS | DI_WWID, &pp);
+				     flags, &pp);
 		udev_device_unref(udevice);
 		if (!pp) {
 			if (ret == 1)

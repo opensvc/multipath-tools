@@ -90,9 +90,7 @@ store_pathinfo (vector pathvec, vector hwtable, struct udev_device *udevice,
 		goto out;
 	}
 	pp->udev = udev_device_ref(udevice);
-	err = pathinfo(pp, hwtable,
-		       (conf->cmd == CMD_REMOVE_WWID)? flag :
-						       (flag | DI_BLACKLIST));
+	err = pathinfo(pp, hwtable, flag);
 	if (err)
 		goto out;
 

@@ -281,8 +281,8 @@ configure (void)
 	 * failing the translation is fatal (by policy)
 	 */
 	if (conf->dev) {
-		int failed = get_refwwid(conf->dev, conf->dev_type, pathvec,
-					 &refwwid);
+		int failed = get_refwwid(conf->cmd, conf->dev, conf->dev_type,
+					 pathvec, &refwwid);
 		if (!refwwid) {
 			condlog(4, "%s: failed to get wwid", conf->dev);
 			if (failed == 2 && conf->cmd == CMD_VALID_PATH)
