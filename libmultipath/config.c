@@ -419,7 +419,6 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->user_friendly_names = dhwe->user_friendly_names;
 	hwe->retain_hwhandler = dhwe->retain_hwhandler;
 	hwe->detect_prio = dhwe->detect_prio;
-	conf->deferred_remove = DEFAULT_DEFERRED_REMOVE;
 
 	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
 		goto out;
@@ -622,6 +621,7 @@ load_config (char * file, struct udev *udev)
 	conf->retrigger_tries = DEFAULT_RETRIGGER_TRIES;
 	conf->retrigger_delay = DEFAULT_RETRIGGER_DELAY;
 	conf->uev_wait_timeout = DEFAULT_UEV_WAIT_TIMEOUT;
+	conf->deferred_remove = DEFAULT_DEFERRED_REMOVE;
 
 	/*
 	 * preload default hwtable
