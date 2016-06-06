@@ -2111,6 +2111,7 @@ child (void * param)
 
 	uxsock_timeout = conf->uxsock_timeout;
 
+	dm_init(conf->verbosity);
 	dm_drv_version(conf->version, TGT_MPATH);
 	if (init_checkers()) {
 		condlog(0, "failed to initialize checkers");
@@ -2368,7 +2369,6 @@ main (int argc, char *argv[])
 	int foreground = 0;
 
 	logsink = 1;
-	dm_init();
 
 	if (getuid() != 0) {
 		fprintf(stderr, "need to be root\n");

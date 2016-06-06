@@ -19,7 +19,6 @@
 #include "debug.h"
 #include "memory.h"
 #include "devmapper.h"
-#include "config.h"
 #include "sysfs.h"
 
 #include "log_pthread.h"
@@ -31,6 +30,8 @@
 
 #define UUID_PREFIX "mpath-"
 #define UUID_PREFIX_LEN 6
+
+static int dm_conf_verbosity;
 
 #ifdef LIBDM_API_DEFERRED
 static int dm_cancel_remove_partmaps(const char * mapname);
@@ -65,7 +66,7 @@ dm_write_log (int level, const char *file, int line, const char *f, ...)
 	if (level > 6)
 		level = 6;
 
-	thres = (conf) ? conf->verbosity : 0;
+	thres = dm_conf_verbosity;
 	if (thres <= 3 || level > thres)
 		return;
 
@@ -94,9 +95,9 @@ dm_write_log (int level, const char *file, int line, const char *f, ...)
 }
 
 extern void
-dm_init(void) {
+dm_init(int v) {
 	dm_log_init(&dm_write_log);
-	dm_log_init_verbose(conf ? conf->verbosity + 3 : 0);
+	dm_log_init_verbose(v + 3);
 }
 
 static int
@@ -1375,21 +1376,21 @@ rename_partmap (const char *name, void *data)
 	for (offset = strlen(rd->old); name[offset] && !(isdigit(name[offset])); offset++); /* do nothing */
 	snprintf(buff, PARAMS_SIZE, "%s%s%s", rd->new, rd->delim,
 		 name + offset);
-	dm_rename(name, buff);
+	dm_rename(name, buff, rd->delim);
 	condlog(4, "partition map %s renamed", name);
 	return 0;
 }
 
 int
-dm_rename_partmaps (const char * old, char * new)
+dm_rename_partmaps (const char * old, char * new, char *delim)
 {
 	struct rename_data rd;
 
 	rd.old = old;
 	rd.new = new;
 
-	if (conf->partition_delim)
-		rd.delim = conf->partition_delim;
+	if (delim)
+		rd.delim = delim;
 	if (isdigit(new[strlen(new)-1]))
 		rd.delim = "p";
 	else
@@ -1398,13 +1399,13 @@ dm_rename_partmaps (const char * old, char * new)
 }
 
 int
-dm_rename (const char * old, char * new)
+dm_rename (const char * old, char * new, char *delim)
 {
 	int r = 0;
 	struct dm_task *dmt;
 	uint32_t cookie;
 
-	if (dm_rename_partmaps(old, new))
+	if (dm_rename_partmaps(old, new, delim))
 		return r;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_RENAME)))

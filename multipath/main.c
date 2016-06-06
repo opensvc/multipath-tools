@@ -583,6 +583,7 @@ main (int argc, char *argv[])
 		exit(1);
 	}
 
+	dm_init(conf->verbosity);
 	if (dm_prereq())
 		exit(1);
 	dm_drv_version(conf->version, TGT_MPATH);
@@ -627,7 +628,6 @@ main (int argc, char *argv[])
 		condlog(0, "failed to initialize prioritizers");
 		goto out;
 	}
-	dm_init();
 
 	if (conf->cmd == CMD_VALID_PATH &&
 	    (!conf->dev || conf->dev_type == DEV_DEVMAP)) {

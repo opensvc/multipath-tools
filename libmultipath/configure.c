@@ -633,11 +633,13 @@ domap (struct multipath * mpp, char * params)
 		break;
 
 	case ACT_RENAME:
-		r = dm_rename(mpp->alias_old, mpp->alias);
+		r = dm_rename(mpp->alias_old, mpp->alias,
+			      conf->partition_delim);
 		break;
 
 	case ACT_FORCERENAME:
-		r = dm_rename(mpp->alias_old, mpp->alias);
+		r = dm_rename(mpp->alias_old, mpp->alias,
+			      conf->partition_delim);
 		if (r)
 			r = dm_addmap_reload(mpp, params, 0);
 		break;
