@@ -487,7 +487,7 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 	r = get_refwwid(dev, DEV_DEVMAP, vecs->pathvec, &refwwid);
 
 	if (refwwid) {
-		r = coalesce_paths(vecs, NULL, refwwid, 0, 1);
+		r = coalesce_paths(vecs, NULL, refwwid, 0, CMD_NONE);
 		dm_lib_release();
 	}
 
@@ -1798,7 +1798,7 @@ configure (struct vectors * vecs, int start_waiters)
 	/*
 	 * create new set of maps & push changed ones into dm
 	 */
-	if (coalesce_paths(vecs, mpvec, NULL, 1, 1))
+	if (coalesce_paths(vecs, mpvec, NULL, 1, CMD_NONE))
 		return 1;
 
 	/*

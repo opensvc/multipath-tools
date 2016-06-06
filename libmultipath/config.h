@@ -24,6 +24,7 @@ enum devtypes {
 };
 
 enum mpath_cmds {
+	CMD_NONE,
 	CMD_CREATE,
 	CMD_DRY_RUN,
 	CMD_LIST_SHORT,

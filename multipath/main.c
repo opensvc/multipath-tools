@@ -381,7 +381,7 @@ configure (void)
 	 * core logic entry point
 	 */
 	r = coalesce_paths(&vecs, NULL, refwwid,
-			   conf->force_reload, 0);
+			   conf->force_reload, conf->cmd);
 
 out:
 	if (refwwid)
@@ -484,7 +484,8 @@ main (int argc, char *argv[])
 	logsink = 0;
 	if (load_config(DEFAULT_CONFIGFILE, udev))
 		exit(1);
-
+	/* Default to CMD_CREATE */
+	conf->cmd = CMD_CREATE;
 	while ((arg = getopt(argc, argv, ":adchl::FfM:v:p:b:BritquwW")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);

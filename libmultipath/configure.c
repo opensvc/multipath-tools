@@ -586,7 +586,7 @@ domap (struct multipath * mpp, char * params, int is_daemon)
 	/*
 	 * last chance to quit before touching the devmaps
 	 */
-	if (conf->cmd == CMD_DRY_RUN && mpp->action != ACT_NOTHING) {
+	if (mpp->action == ACT_DRY_RUN) {
 		print_multipath_topology(mpp, conf->verbosity);
 		return DOMAP_DRY;
 	}
@@ -731,10 +731,11 @@ out:
 }
 
 extern int
-coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_reload, int is_daemon)
+coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_reload, enum mpath_cmds cmd)
 {
 	int r = 1;
 	int k, i;
+	int is_daemon = (cmd == CMD_NONE) ? 1 : 0;
 	char params[PARAMS_SIZE];
 	struct multipath * mpp;
 	struct path * pp1;
@@ -827,6 +828,8 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			continue;
 		}
 
+		if (cmd == CMD_DRY_RUN)
+			mpp->action = ACT_DRY_RUN;
 		if (mpp->action == ACT_UNDEF)
 			select_action(mpp, curmp, force_reload);
 
