@@ -99,7 +99,6 @@ struct config {
 	int verbosity;
 	int pgpolicy_flag;
 	int pgpolicy;
-	enum devtypes dev_type;
 	int minio;
 	int minio_rq;
 	int checkint;

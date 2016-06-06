@@ -239,7 +239,7 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
  *   1: Failure
  */
 static int
-configure (enum mpath_cmds cmd)
+configure (enum mpath_cmds cmd, enum devtypes dev_type)
 {
 	vector curmp = NULL;
 	vector pathvec = NULL;
@@ -262,12 +262,12 @@ configure (enum mpath_cmds cmd)
 	vecs.pathvec = pathvec;
 	vecs.mpvec = curmp;
 
-	dev = convert_dev(conf->dev, (conf->dev_type == DEV_DEVNODE));
+	dev = convert_dev(conf->dev, (dev_type == DEV_DEVNODE));
 
 	/*
 	 * if we have a blacklisted device parameter, exit early
 	 */
-	if (dev && conf->dev_type == DEV_DEVNODE &&
+	if (dev && dev_type == DEV_DEVNODE &&
 	    cmd != CMD_REMOVE_WWID &&
 	    (filter_devnode(conf->blist_devnode,
 			    conf->elist_devnode, dev) > 0)) {
@@ -281,7 +281,7 @@ configure (enum mpath_cmds cmd)
 	 * failing the translation is fatal (by policy)
 	 */
 	if (conf->dev) {
-		int failed = get_refwwid(cmd, conf->dev, conf->dev_type,
+		int failed = get_refwwid(cmd, conf->dev, dev_type,
 					 pathvec, &refwwid);
 		if (!refwwid) {
 			condlog(4, "%s: failed to get wwid", conf->dev);
@@ -480,6 +480,7 @@ main (int argc, char *argv[])
 	extern int optind;
 	int r = 1;
 	enum mpath_cmds cmd = CMD_CREATE;
+	enum devtypes dev_type;
 
 	udev = udev_new();
 	logsink = 0;
@@ -554,7 +555,7 @@ main (int argc, char *argv[])
 			exit(0);
 		case 'u':
 			cmd = CMD_VALID_PATH;
-			conf->dev_type = DEV_UEVENT;
+			dev_type = DEV_UEVENT;
 			break;
 		case 'w':
 			cmd = CMD_REMOVE_WWID;
@@ -597,14 +598,14 @@ main (int argc, char *argv[])
 			goto out;
 
 		strncpy(conf->dev, argv[optind], FILE_NAME_SIZE);
-		if (conf->dev_type != DEV_UEVENT)
-			conf->dev_type = get_dev_type(conf->dev);
-		if (conf->dev_type == DEV_NONE) {
+		if (dev_type != DEV_UEVENT)
+			dev_type = get_dev_type(conf->dev);
+		if (dev_type == DEV_NONE) {
 			condlog(0, "'%s' is not a valid argument\n", conf->dev);
 			goto out;
 		}
 	}
-	if (conf->dev_type == DEV_UEVENT) {
+	if (dev_type == DEV_UEVENT) {
 		openlog("multipath", 0, LOG_DAEMON);
 		setlogmask(LOG_UPTO(conf->verbosity + 3));
 		logsink = 1;
@@ -630,12 +631,12 @@ main (int argc, char *argv[])
 	}
 
 	if (cmd == CMD_VALID_PATH &&
-	    (!conf->dev || conf->dev_type == DEV_DEVMAP)) {
+	    (!conf->dev || dev_type == DEV_DEVMAP)) {
 		condlog(0, "the -c option requires a path to check");
 		goto out;
 	}
 	if (cmd == CMD_VALID_PATH &&
-	    conf->dev_type == DEV_UEVENT) {
+	    dev_type == DEV_UEVENT) {
 		int fd;
 
 		fd = mpath_connect();
@@ -672,7 +673,7 @@ main (int argc, char *argv[])
 		goto out;
 	}
 	if (conf->remove == FLUSH_ONE) {
-		if (conf->dev_type == DEV_DEVMAP) {
+		if (dev_type == DEV_DEVMAP) {
 			r = dm_suspend_and_flush_map(conf->dev);
 		} else
 			condlog(0, "must provide a map name to remove");
@@ -683,7 +684,7 @@ main (int argc, char *argv[])
 		r = dm_flush_maps();
 		goto out;
 	}
-	while ((r = configure(cmd)) < 0)
+	while ((r = configure(cmd, dev_type)) < 0)
 		condlog(3, "restart multipath configuration process");
 
 out:
@@ -693,7 +694,7 @@ out:
 	cleanup_prio();
 	cleanup_checkers();
 
-	if (conf->dev_type == DEV_UEVENT)
+	if (dev_type == DEV_UEVENT)
 		closelog();
 
 out_free_config:
