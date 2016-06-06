@@ -206,7 +206,7 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 		dm_get_status(mpp->alias, status);
 		condlog(3, "status = %s", status);
 
-		disassemble_map(pathvec, params, mpp, conf->daemon);
+		disassemble_map(pathvec, params, mpp, 0);
 
 		/*
 		 * disassemble_map() can add new paths to pathvec.
@@ -381,7 +381,7 @@ configure (void)
 	 * core logic entry point
 	 */
 	r = coalesce_paths(&vecs, NULL, refwwid,
-			   conf->force_reload, conf->daemon);
+			   conf->force_reload, 0);
 
 out:
 	if (refwwid)
@@ -604,7 +604,6 @@ main (int argc, char *argv[])
 			goto out;
 		}
 	}
-	conf->daemon = 0;
 	if (conf->dev_type == DEV_UEVENT) {
 		openlog("multipath", 0, LOG_DAEMON);
 		setlogmask(LOG_UPTO(conf->verbosity + 3));

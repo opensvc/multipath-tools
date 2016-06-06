@@ -115,7 +115,6 @@ struct config {
 	int queue_without_daemon;
 	int ignore_wwids;
 	int checker_timeout;
-	int daemon;
 	int flush_on_last_del;
 	int attribute_flags;
 	int fast_io_fail;

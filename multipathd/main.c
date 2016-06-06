@@ -379,7 +379,7 @@ retry:
 		retries = -1;
 		goto fail;
 	}
-	if (domap(mpp, params, conf->daemon) <= 0 && retries-- > 0) {
+	if (domap(mpp, params, 1) <= 0 && retries-- > 0) {
 		condlog(0, "%s: map_udate sleep", mpp->alias);
 		sleep(1);
 		goto retry;
@@ -487,7 +487,7 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 	r = get_refwwid(dev, DEV_DEVMAP, vecs->pathvec, &refwwid);
 
 	if (refwwid) {
-		r = coalesce_paths(vecs, NULL, refwwid, 0, conf->daemon);
+		r = coalesce_paths(vecs, NULL, refwwid, 0, 1);
 		dm_lib_release();
 	}
 
@@ -724,7 +724,7 @@ rescan:
 	 * reload the map for the multipath mapped device
 	 */
 retry:
-	ret = domap(mpp, params, conf->daemon);
+	ret = domap(mpp, params, 1);
 	if (ret <= 0) {
 		if (ret < 0 && retries-- > 0) {
 			condlog(0, "%s: retry domap for addition of new "
@@ -866,7 +866,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs)
 		 * reload the map
 		 */
 		mpp->action = ACT_RELOAD;
-		if (domap(mpp, params, conf->daemon) <= 0) {
+		if (domap(mpp, params, 1) <= 0) {
 			condlog(0, "%s: failed in domap for "
 				"removal of path %s",
 				mpp->alias, pp->dev);
@@ -931,7 +931,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 				}
 			}
 			if (mpp) {
-				retval = reload_map(vecs, mpp, 0, conf->daemon);
+				retval = reload_map(vecs, mpp, 0, 1);
 
 				condlog(2, "%s: map %s reloaded (retval %d)",
 					uev->kernel, mpp->alias, retval);
@@ -1361,7 +1361,7 @@ int update_prio(struct path *pp, int refresh_all)
 
 int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
 {
-	if (reload_map(vecs, mpp, refresh, conf->daemon))
+	if (reload_map(vecs, mpp, refresh, 1))
 		return 1;
 
 	dm_lib_release();
@@ -1452,7 +1452,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	/*
 	 * Synchronize with kernel state
 	 */
-	if (update_multipath_strings(pp->mpp, vecs->pathvec)) {
+	if (update_multipath_strings(pp->mpp, vecs->pathvec, 1)) {
 		condlog(1, "%s: Could not synchronize with kernel state",
 			pp->dev);
 		pp->dmstate = PSTATE_UNDEF;
@@ -1798,7 +1798,7 @@ configure (struct vectors * vecs, int start_waiters)
 	/*
 	 * create new set of maps & push changed ones into dm
 	 */
-	if (coalesce_paths(vecs, mpvec, NULL, 1, conf->daemon))
+	if (coalesce_paths(vecs, mpvec, NULL, 1, 1))
 		return 1;
 
 	/*
@@ -1882,7 +1882,6 @@ reconfigure (struct vectors * vecs)
 		conf->verbosity = old->verbosity;
 		conf->bindings_read_only = old->bindings_read_only;
 		conf->ignore_new_devs = old->ignore_new_devs;
-		conf->daemon = 1;
 		configure(vecs, 1);
 		free_config(old);
 		retval = 0;
@@ -2161,7 +2160,6 @@ child (void * param)
 	setscheduler();
 	set_oom_adj();
 
-	conf->daemon = 1;
 	dm_udev_set_sync_support(0);
 #ifdef USE_SYSTEMD
 	envp = getenv("WATCHDOG_USEC");
