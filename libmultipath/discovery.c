@@ -32,7 +32,7 @@
 #include "defaults.h"
 
 int
-alloc_path_with_pathinfo (vector hwtable, struct udev_device *udevice,
+alloc_path_with_pathinfo (struct config *conf, struct udev_device *udevice,
 			  int flag, struct path **pp_ptr)
 {
 	int err = PATHINFO_FAILED;
@@ -55,7 +55,7 @@ alloc_path_with_pathinfo (vector hwtable, struct udev_device *udevice,
 		condlog(0, "pp->dev too small");
 	} else {
 		pp->udev = udev_device_ref(udevice);
-		err = pathinfo(pp, hwtable, flag | DI_BLACKLIST);
+		err = pathinfo(pp, conf, flag | DI_BLACKLIST);
 	}
 
 	if (err)
@@ -66,8 +66,8 @@ alloc_path_with_pathinfo (vector hwtable, struct udev_device *udevice,
 }
 
 int
-store_pathinfo (vector pathvec, vector hwtable, struct udev_device *udevice,
-		int flag, struct path **pp_ptr)
+store_pathinfo (vector pathvec, struct config *conf,
+		struct udev_device *udevice, int flag, struct path **pp_ptr)
 {
 	int err = PATHINFO_FAILED;
 	struct path * pp;
@@ -90,7 +90,7 @@ store_pathinfo (vector pathvec, vector hwtable, struct udev_device *udevice,
 		goto out;
 	}
 	pp->udev = udev_device_ref(udevice);
-	err = pathinfo(pp, hwtable, flag);
+	err = pathinfo(pp, conf, flag);
 	if (err)
 		goto out;
 
@@ -126,10 +126,10 @@ path_discover (vector pathvec, struct config * conf,
 
 	pp = find_path_by_dev(pathvec, (char *)devname);
 	if (!pp) {
-		return store_pathinfo(pathvec, conf->hwtable,
+		return store_pathinfo(pathvec, conf,
 				      udevice, flag, NULL);
 	}
-	return pathinfo(pp, conf->hwtable, flag);
+	return pathinfo(pp, conf, flag);
 }
 
 int
@@ -1397,7 +1397,7 @@ cciss_ioctl_pathinfo (struct path * pp, int mask)
 }
 
 int
-get_state (struct path * pp, vector hwtable, int daemon)
+get_state (struct path * pp, struct config *conf, int daemon)
 {
 	struct checker * c = &pp->checker;
 	int state;
@@ -1406,7 +1406,7 @@ get_state (struct path * pp, vector hwtable, int daemon)
 
 	if (!checker_selected(c)) {
 		if (daemon) {
-			if (pathinfo(pp, hwtable, DI_SYSFS) != PATHINFO_OK) {
+			if (pathinfo(pp, conf, DI_SYSFS) != PATHINFO_OK) {
 				condlog(3, "%s: couldn't get sysfs pathinfo",
 					pp->dev);
 				return PATH_UNCHECKED;
@@ -1588,7 +1588,7 @@ get_uid (struct path * pp, int path_state)
 }
 
 extern int
-pathinfo (struct path *pp, vector hwtable, int mask)
+pathinfo (struct path *pp, struct config *conf, int mask)
 {
 	int path_state;
 
@@ -1610,7 +1610,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 	/*
 	 * fetch info available in sysfs
 	 */
-	if (mask & DI_SYSFS && sysfs_pathinfo(pp, hwtable))
+	if (mask & DI_SYSFS && sysfs_pathinfo(pp, conf->hwtable))
 		return PATHINFO_FAILED;
 
 	if (mask & DI_BLACKLIST && mask & DI_SYSFS) {
@@ -1649,7 +1649,7 @@ pathinfo (struct path *pp, vector hwtable, int mask)
 
 	if (mask & DI_CHECKER) {
 		if (path_state == PATH_UP) {
-			pp->chkrstate = pp->state = get_state(pp, hwtable, 0);
+			pp->chkrstate = pp->state = get_state(pp, conf, 0);
 			if (pp->state == PATH_UNCHECKED ||
 			    pp->state == PATH_WILD)
 				goto blank;

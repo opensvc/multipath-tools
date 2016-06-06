@@ -69,7 +69,7 @@ adopt_paths (vector pathvec, struct multipath * mpp)
 			if (!find_path_by_dev(mpp->paths, pp->dev) &&
 			    store_path(mpp->paths, pp))
 					return 1;
-			if (pathinfo(pp, conf->hwtable,
+			if (pathinfo(pp, conf,
 				     DI_PRIO | DI_CHECKER))
 				return 1;
 		}

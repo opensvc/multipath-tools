@@ -640,7 +640,7 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 		udevice = udev_device_new_from_subsystem_sysname(udev,
 								 "block",
 								 param);
-		r = store_pathinfo(vecs->pathvec, conf->hwtable,
+		r = store_pathinfo(vecs->pathvec, conf,
 				   udevice, DI_ALL, &pp);
 		udev_device_unref(udevice);
 		if (!pp) {

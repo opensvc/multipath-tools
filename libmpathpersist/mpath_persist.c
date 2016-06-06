@@ -94,16 +94,16 @@ updatepaths (struct multipath * mpp)
 					continue;
 				}
 				pp->mpp = mpp;
-				pathinfo(pp, conf->hwtable, DI_ALL);
+				pathinfo(pp, conf, DI_ALL);
 				continue;
 			}
 			pp->mpp = mpp;
 			if (pp->state == PATH_UNCHECKED ||
 					pp->state == PATH_WILD)
-				pathinfo(pp, conf->hwtable, DI_CHECKER);
+				pathinfo(pp, conf, DI_CHECKER);
 
 			if (pp->priority == PRIO_UNDEF)
-				pathinfo(pp, conf->hwtable, DI_PRIO);
+				pathinfo(pp, conf, DI_PRIO);
 		}
 	}
 	return 0;

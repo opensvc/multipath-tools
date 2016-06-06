@@ -959,7 +959,7 @@ get_refwwid (enum mpath_cmds cmd, char * dev, enum devtypes dev_type,
 				condlog(2, "%s: can't get udev device", buff);
 				return 1;
 			}
-			ret = store_pathinfo(pathvec, conf->hwtable, udevice,
+			ret = store_pathinfo(pathvec, conf, udevice,
 					     flags, &pp);
 			udev_device_unref(udevice);
 			if (!pp) {
@@ -991,7 +991,7 @@ get_refwwid (enum mpath_cmds cmd, char * dev, enum devtypes dev_type,
 				condlog(2, "%s: can't get udev device", dev);
 				return 1;
 			}
-			ret = store_pathinfo(pathvec, conf->hwtable, udevice,
+			ret = store_pathinfo(pathvec, conf, udevice,
 					     flags, &pp);
 			udev_device_unref(udevice);
 			if (!pp) {
@@ -1016,7 +1016,7 @@ get_refwwid (enum mpath_cmds cmd, char * dev, enum devtypes dev_type,
 			condlog(2, "%s: can't get udev device", dev);
 			return 1;
 		}
-		ret = store_pathinfo(pathvec, conf->hwtable, udevice,
+		ret = store_pathinfo(pathvec, conf, udevice,
 				     flags, &pp);
 		udev_device_unref(udevice);
 		if (!pp) {
@@ -1085,7 +1085,7 @@ extern int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh, 
 	update_mpp_paths(mpp, vecs->pathvec);
 	if (refresh) {
 		vector_foreach_slot (mpp->paths, pp, i) {
-			r = pathinfo(pp, conf->hwtable, DI_PRIO);
+			r = pathinfo(pp, conf, DI_PRIO);
 			if (r) {
 				condlog(2, "%s: failed to refresh pathinfo",
 					mpp->alias);

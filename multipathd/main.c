@@ -213,7 +213,7 @@ need_switch_pathgroup (struct multipath * mpp, int refresh)
 	if (refresh)
 		vector_foreach_slot (mpp->pg, pgp, i)
 			vector_foreach_slot (pgp->paths, pp, j)
-				pathinfo(pp, conf->hwtable, DI_PRIO);
+				pathinfo(pp, conf, DI_PRIO);
 
 	if (!mpp->pg || VECTOR_SIZE(mpp->paths) == 0)
 		return 0;
@@ -590,7 +590,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 			condlog(3, "%s: reinitialize path", uev->kernel);
 			udev_device_unref(pp->udev);
 			pp->udev = udev_device_ref(uev->udev);
-			r = pathinfo(pp, conf->hwtable,
+			r = pathinfo(pp, conf,
 				     DI_ALL | DI_BLACKLIST);
 			if (r == PATHINFO_OK)
 				ret = ev_add_path(pp, vecs);
@@ -615,7 +615,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 	/*
 	 * get path vital state
 	 */
-	ret = alloc_path_with_pathinfo(conf->hwtable, uev->udev,
+	ret = alloc_path_with_pathinfo(conf, uev->udev,
 				       DI_ALL, &pp);
 	if (!pp) {
 		if (ret == PATHINFO_SKIPPED)
@@ -1344,7 +1344,7 @@ int update_prio(struct path *pp, int refresh_all)
 		vector_foreach_slot (pp->mpp->pg, pgp, i) {
 			vector_foreach_slot (pgp->paths, pp1, j) {
 				oldpriority = pp1->priority;
-				pathinfo(pp1, conf->hwtable, DI_PRIO);
+				pathinfo(pp1, conf, DI_PRIO);
 				if (pp1->priority != oldpriority)
 					changed = 1;
 			}
@@ -1352,7 +1352,7 @@ int update_prio(struct path *pp, int refresh_all)
 		return changed;
 	}
 	oldpriority = pp->priority;
-	pathinfo(pp, conf->hwtable, DI_PRIO);
+	pathinfo(pp, conf, DI_PRIO);
 
 	if (pp->priority == oldpriority)
 		return 0;
@@ -1421,20 +1421,20 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 		newstate = PATH_DOWN;
 
 	if (newstate == PATH_UP)
-		newstate = get_state(pp, conf->hwtable, 1);
+		newstate = get_state(pp, conf, 1);
 	else
 		checker_clear_message(&pp->checker);
 
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
 		condlog(2, "%s: unusable path", pp->dev);
-		pathinfo(pp, conf->hwtable, 0);
+		pathinfo(pp, conf, 0);
 		return 1;
 	}
 	if (!pp->mpp) {
 		if (!strlen(pp->wwid) && pp->initialized != INIT_MISSING_UDEV &&
 		    (newstate == PATH_UP || newstate == PATH_GHOST)) {
 			condlog(2, "%s: add missing path", pp->dev);
-			if (pathinfo(pp, conf->hwtable, DI_ALL) == 0) {
+			if (pathinfo(pp, conf, DI_ALL) == 0) {
 				ev_add_path(pp, vecs);
 				pp->tick = 1;
 			}
