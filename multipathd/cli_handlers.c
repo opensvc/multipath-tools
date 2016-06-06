@@ -637,7 +637,7 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 	} else {
 		struct udev_device *udevice;
 
-		udevice = udev_device_new_from_subsystem_sysname(conf->udev,
+		udevice = udev_device_new_from_subsystem_sysname(udev,
 								 "block",
 								 param);
 		r = store_pathinfo(vecs->pathvec, conf->hwtable,

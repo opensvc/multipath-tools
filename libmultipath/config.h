@@ -141,7 +141,6 @@ struct config {
 	int uev_wait_timeout;
 	unsigned int version[3];
 
-	struct udev * udev;
 	char * multipath_dir;
 	char * selector;
 	char * uid_attribute;
@@ -174,6 +173,7 @@ struct config {
 };
 
 struct config * conf;
+extern struct udev * udev;
 
 struct hwentry * find_hwe (vector hwtable, char * vendor, char * product, char *revision);
 struct mpentry * find_mpe (vector mptable, char * wwid);
@@ -189,7 +189,7 @@ void free_mptable (vector mptable);
 
 int store_hwe (vector hwtable, struct hwentry *);
 
-int load_config (char * file, struct udev * udev);
+int load_config (char * file);
 struct config * alloc_config (void);
 void free_config (struct config * conf);
 

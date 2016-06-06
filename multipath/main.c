@@ -60,6 +60,7 @@
 #include <mpath_cmd.h>
 
 int logsink;
+struct udev *udev;
 
 static int
 filter_pathvec (vector pathvec, char * refwwid)
@@ -474,7 +475,6 @@ get_dev_type(char *dev) {
 int
 main (int argc, char *argv[])
 {
-	struct udev *udev;
 	int arg;
 	extern char *optarg;
 	extern int optind;
@@ -485,7 +485,7 @@ main (int argc, char *argv[])
 
 	udev = udev_new();
 	logsink = 0;
-	if (load_config(DEFAULT_CONFIGFILE, udev))
+	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
 	while ((arg = getopt(argc, argv, ":adchl::FfM:v:p:b:BritquwW")) != EOF ) {
 		switch(arg) {

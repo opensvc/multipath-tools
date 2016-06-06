@@ -34,11 +34,12 @@
 
 #define __STDC_FORMAT_MACROS 1
 
+struct udev *udev;
 
 int
 mpath_lib_init (struct udev *udev)
 {
-	if (load_config(DEFAULT_CONFIGFILE, udev)){
+	if (load_config(DEFAULT_CONFIGFILE)){
 		condlog(0, "Failed to initialize multipath config.");
 		return 1;
 	}

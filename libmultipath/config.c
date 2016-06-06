@@ -577,7 +577,7 @@ process_config_dir(vector keywords, char *dir)
 }
 
 int
-load_config (char * file, struct udev *udev)
+load_config (char * file)
 {
 	if (!conf)
 		conf = alloc_config();
@@ -591,7 +591,6 @@ load_config (char * file, struct udev *udev)
 	if (!conf->verbosity)
 		conf->verbosity = DEFAULT_VERBOSITY;
 
-	conf->udev = udev;
 	conf->minio = DEFAULT_MINIO;
 	conf->minio_rq = DEFAULT_MINIO_RQ;
 	get_sys_max_fds(&conf->max_fds);

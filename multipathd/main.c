@@ -1877,7 +1877,7 @@ reconfigure (struct vectors * vecs)
 	/* Re-read any timezone changes */
 	tzset();
 
-	if (!load_config(DEFAULT_CONFIGFILE, udev)) {
+	if (!load_config(DEFAULT_CONFIGFILE)) {
 		dm_drv_version(conf->version, TGT_MPATH);
 		conf->verbosity = old->verbosity;
 		conf->bindings_read_only = old->bindings_read_only;
@@ -2081,8 +2081,6 @@ child (void * param)
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	signal_init();
 
-	udev = udev_new();
-
 	setup_thread_attr(&misc_attr, 64 * 1024, 1);
 	setup_thread_attr(&uevent_attr, DEFAULT_UEVENT_STACKSIZE * 1024, 1);
 	setup_thread_attr(&waiter_attr, 32 * 1024, 1);
@@ -2105,7 +2103,7 @@ child (void * param)
 	condlog(2, "--------start up--------");
 	condlog(2, "read " DEFAULT_CONFIGFILE);
 
-	if (load_config(DEFAULT_CONFIGFILE, udev))
+	if (load_config(DEFAULT_CONFIGFILE))
 		goto failed;
 
 	uxsock_timeout = conf->uxsock_timeout;
@@ -2384,6 +2382,8 @@ main (int argc, char *argv[])
 	if (!conf)
 		exit(1);
 
+	udev = udev_new();
+
 	while ((arg = getopt(argc, argv, ":dsv:k::Bn")) != EOF ) {
 	switch(arg) {
 		case 'd':
@@ -2403,7 +2403,7 @@ main (int argc, char *argv[])
 			logsink = -1;
 			break;
 		case 'k':
-			if (load_config(DEFAULT_CONFIGFILE, udev_new()))
+			if (load_config(DEFAULT_CONFIGFILE))
 				exit(1);
 			uxclnt(optarg, uxsock_timeout + 100);
 			exit(0);
@@ -2424,7 +2424,7 @@ main (int argc, char *argv[])
 		char * s = cmd;
 		char * c = s;
 
-		if (load_config(DEFAULT_CONFIGFILE, udev_new()))
+		if (load_config(DEFAULT_CONFIGFILE))
 			exit(1);
 		memset(cmd, 0x0, CMDSIZE);
 		while (optind < argc) {

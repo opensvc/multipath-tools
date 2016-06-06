@@ -141,7 +141,7 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 	const char *devpath;
 	int num_paths = 0, total_paths = 0;
 
-	udev_iter = udev_enumerate_new(conf->udev);
+	udev_iter = udev_enumerate_new(udev);
 	if (!udev_iter)
 		return -ENOMEM;
 
@@ -154,7 +154,7 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 		const char *devtype;
 		devpath = udev_list_entry_get_name(entry);
 		condlog(4, "Discover device %s", devpath);
-		udevice = udev_device_new_from_syspath(conf->udev, devpath);
+		udevice = udev_device_new_from_syspath(udev, devpath);
 		if (!udevice) {
 			condlog(4, "%s: no udev information", devpath);
 			continue;
@@ -323,7 +323,7 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 	value = udev_device_get_sysname(tgtdev);
 	if (sscanf(value, "rport-%d:%d-%d",
 		   &host, &channel, &tgtid) == 3) {
-		tgtdev = udev_device_new_from_subsystem_sysname(conf->udev,
+		tgtdev = udev_device_new_from_subsystem_sysname(udev,
 				"fc_remote_ports", value);
 		if (tgtdev) {
 			condlog(3, "SCSI target %d:%d:%d -> "
@@ -356,7 +356,7 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 		tgtid = -1;
 	}
 	if (parent && tgtname) {
-		tgtdev = udev_device_new_from_subsystem_sysname(conf->udev,
+		tgtdev = udev_device_new_from_subsystem_sysname(udev,
 				"iscsi_session", tgtname);
 		if (tgtdev) {
 			const char *value;
@@ -430,7 +430,7 @@ int sysfs_get_host_pci_name(struct path *pp, char *pci_name)
 		return 1;
 
 	sprintf(host_name, "host%d", pp->sg_id.host_no);
-	hostdev = udev_device_new_from_subsystem_sysname(conf->udev,
+	hostdev = udev_device_new_from_subsystem_sysname(udev,
 			"scsi_host", host_name);
 	if (!hostdev)
 		return 1;
@@ -466,7 +466,7 @@ int sysfs_get_iscsi_ip_address(struct path *pp, char *ip_address)
 	const char *value;
 
 	sprintf(host_name, "host%d", pp->sg_id.host_no);
-	hostdev = udev_device_new_from_subsystem_sysname(conf->udev,
+	hostdev = udev_device_new_from_subsystem_sysname(udev,
 			"iscsi_host", host_name);
 	if (hostdev) {
 		value = udev_device_get_sysattr_value(hostdev,
@@ -492,7 +492,7 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 
 	sprintf(rport_id, "rport-%d:%d-%d",
 		pp->sg_id.host_no, pp->sg_id.channel, pp->sg_id.transport_id);
-	rport_dev = udev_device_new_from_subsystem_sysname(conf->udev,
+	rport_dev = udev_device_new_from_subsystem_sysname(udev,
 				"fc_remote_ports", rport_id);
 	if (!rport_dev) {
 		condlog(1, "%s: No fc_remote_port device for '%s'", pp->dev,
@@ -596,7 +596,7 @@ sysfs_set_session_tmo(struct multipath *mpp, struct path *pp)
 	char value[11];
 
 	sprintf(session_id, "session%d", pp->sg_id.transport_id);
-	session_dev = udev_device_new_from_subsystem_sysname(conf->udev,
+	session_dev = udev_device_new_from_subsystem_sysname(udev,
 				"iscsi_session", session_id);
 	if (!session_dev) {
 		condlog(1, "%s: No iscsi session for '%s'", pp->dev,
@@ -638,7 +638,7 @@ sysfs_set_nexus_loss_tmo(struct multipath *mpp, struct path *pp)
 
 	sprintf(end_dev_id, "end_device-%d:%d",
 		pp->sg_id.host_no, pp->sg_id.transport_id);
-	sas_dev = udev_device_new_from_subsystem_sysname(conf->udev,
+	sas_dev = udev_device_new_from_subsystem_sysname(udev,
 				"sas_end_device", end_dev_id);
 	if (!sas_dev) {
 		condlog(1, "%s: No SAS end device for '%s'", pp->dev,
