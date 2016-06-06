@@ -141,7 +141,6 @@ struct config {
 	int uev_wait_timeout;
 	unsigned int version[3];
 
-	char * dev;
 	struct udev * udev;
 	char * multipath_dir;
 	char * selector;

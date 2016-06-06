@@ -478,9 +478,6 @@ free_config (struct config * conf)
 	if (!conf)
 		return;
 
-	if (conf->dev)
-		FREE(conf->dev);
-
 	if (conf->multipath_dir)
 		FREE(conf->multipath_dir);
 
