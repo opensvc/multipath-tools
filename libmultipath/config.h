@@ -97,7 +97,6 @@ struct mpentry {
 
 struct config {
 	int verbosity;
-	enum mpath_cmds cmd;
 	int pgpolicy_flag;
 	int pgpolicy;
 	enum devtypes dev_type;
