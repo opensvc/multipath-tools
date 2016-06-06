@@ -579,7 +579,7 @@ fail:
 #define DOMAP_DRY	3
 
 extern int
-domap (struct multipath * mpp, char * params)
+domap (struct multipath * mpp, char * params, int is_daemon)
 {
 	int r = DOMAP_FAIL;
 
@@ -655,7 +655,7 @@ domap (struct multipath * mpp, char * params)
 		 */
 		if (mpp->action == ACT_CREATE)
 			remember_wwid(mpp->wwid);
-		if (!conf->daemon) {
+		if (!is_daemon) {
 			/* multipath client mode */
 			dm_switchgroup(mpp->alias, mpp->bestpg);
 		} else  {
@@ -731,7 +731,7 @@ out:
 }
 
 extern int
-coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_reload)
+coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_reload, int is_daemon)
 {
 	int r = 1;
 	int k, i;
@@ -830,7 +830,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 		if (mpp->action == ACT_UNDEF)
 			select_action(mpp, curmp, force_reload);
 
-		r = domap(mpp, params);
+		r = domap(mpp, params, is_daemon);
 
 		if (r == DOMAP_FAIL || r == DOMAP_RETRY) {
 			condlog(3, "%s: domap (%u) failure "
@@ -848,7 +848,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 		if (r == DOMAP_DRY)
 			continue;
 
-		if (!conf->daemon && !conf->allow_queueing && !check_daemon()) {
+		if (!is_daemon && !conf->allow_queueing && !check_daemon()) {
 			if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
 			    mpp->no_path_retry != NO_PATH_RETRY_FAIL)
 				condlog(3, "%s: multipathd not running, unset "
@@ -873,7 +873,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			}
 		}
 
-		if (!conf->daemon && mpp->action != ACT_NOTHING)
+		if (!is_daemon && mpp->action != ACT_NOTHING)
 			print_multipath_topology(mpp, conf->verbosity);
 
 		if (newmp) {
@@ -1068,7 +1068,7 @@ out:
 	return 1;
 }
 
-extern int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh)
+extern int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh, int is_daemon)
 {
 	char params[PARAMS_SIZE] = {0};
 	struct path *pp;
@@ -1091,7 +1091,7 @@ extern int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh)
 	}
 	select_action(mpp, vecs->mpvec, 1);
 
-	r = domap(mpp, params);
+	r = domap(mpp, params, is_daemon);
 	if (r == DOMAP_FAIL || r == DOMAP_RETRY) {
 		condlog(3, "%s: domap (%u) failure "
 			"for reload map", mpp->alias, r);

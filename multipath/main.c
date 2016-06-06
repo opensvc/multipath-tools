@@ -380,7 +380,8 @@ configure (void)
 	/*
 	 * core logic entry point
 	 */
-	r = coalesce_paths(&vecs, NULL, refwwid, conf->force_reload);
+	r = coalesce_paths(&vecs, NULL, refwwid,
+			   conf->force_reload, conf->daemon);
 
 out:
 	if (refwwid)

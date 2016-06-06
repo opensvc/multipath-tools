@@ -247,7 +247,7 @@ extract_hwe_from_path(struct multipath * mpp)
 }
 
 static int
-update_multipath_table (struct multipath *mpp, vector pathvec)
+update_multipath_table (struct multipath *mpp, vector pathvec, int is_daemon)
 {
 	char params[PARAMS_SIZE] = {0};
 
@@ -259,7 +259,7 @@ update_multipath_table (struct multipath *mpp, vector pathvec)
 		return 1;
 	}
 
-	if (disassemble_map(pathvec, params, mpp, conf->daemon)) {
+	if (disassemble_map(pathvec, params, mpp, is_daemon)) {
 		condlog(3, "%s: cannot disassemble map", mpp->alias);
 		return 1;
 	}
@@ -314,7 +314,7 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 }
 
 extern int
-update_multipath_strings (struct multipath *mpp, vector pathvec)
+update_multipath_strings (struct multipath *mpp, vector pathvec, int is_daemon)
 {
 	if (!mpp)
 		return 1;
@@ -326,7 +326,7 @@ update_multipath_strings (struct multipath *mpp, vector pathvec)
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
 
-	if (update_multipath_table(mpp, pathvec))
+	if (update_multipath_table(mpp, pathvec, is_daemon))
 		return 1;
 	sync_paths(mpp, pathvec);
 
@@ -365,7 +365,8 @@ set_no_path_retry(struct multipath *mpp)
 }
 
 extern int
-__setup_multipath (struct vectors * vecs, struct multipath * mpp, int reset)
+__setup_multipath (struct vectors * vecs, struct multipath * mpp,
+		   int reset, int is_daemon)
 {
 	if (dm_get_info(mpp->alias, &mpp->dmi)) {
 		/* Error accessing table */
@@ -379,7 +380,7 @@ __setup_multipath (struct vectors * vecs, struct multipath * mpp, int reset)
 		goto out;
 	}
 
-	if (update_multipath_strings(mpp, vecs->pathvec)) {
+	if (update_multipath_strings(mpp, vecs->pathvec, is_daemon)) {
 		condlog(0, "%s: failed to setup multipath", mpp->alias);
 		goto out;
 	}
@@ -548,7 +549,7 @@ int update_multipath (struct vectors *vecs, char *mapname, int reset)
 		return 2;
 	}
 
-	if (__setup_multipath(vecs, mpp, reset))
+	if (__setup_multipath(vecs, mpp, reset, 1))
 		return 1; /* mpp freed in setup_multipath */
 
 	/*

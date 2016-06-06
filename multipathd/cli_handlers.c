@@ -711,7 +711,7 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 			rc = get_refwwid(param, DEV_DEVMAP, vecs->pathvec,
 								&refwwid);
 			if (refwwid) {
-				if (coalesce_paths(vecs, NULL, refwwid, 0))
+				if (coalesce_paths(vecs, NULL, refwwid, 0, conf->daemon))
 					condlog(2, "%s: coalesce_paths failed",
 									param);
 				dm_lib_release();
@@ -789,7 +789,7 @@ cli_reload(void *v, char **reply, int *len, void *data)
 		return 1;
 	}
 
-	return reload_map(vecs, mpp, 0);
+	return reload_map(vecs, mpp, 0, conf->daemon);
 }
 
 int resize_map(struct multipath *mpp, unsigned long long size,
@@ -802,7 +802,7 @@ int resize_map(struct multipath *mpp, unsigned long long size,
 	update_mpp_paths(mpp, vecs->pathvec);
 	setup_map(mpp, params, PARAMS_SIZE);
 	mpp->action = ACT_RESIZE;
-	if (domap(mpp, params) <= 0) {
+	if (domap(mpp, params, conf->daemon) <= 0) {
 		condlog(0, "%s: failed to resize map : %s", mpp->alias,
 			strerror(errno));
 		mpp->size = orig_size;

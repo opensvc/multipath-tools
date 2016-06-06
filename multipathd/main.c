@@ -379,7 +379,7 @@ retry:
 		retries = -1;
 		goto fail;
 	}
-	if (domap(mpp, params) <= 0 && retries-- > 0) {
+	if (domap(mpp, params, conf->daemon) <= 0 && retries-- > 0) {
 		condlog(0, "%s: map_udate sleep", mpp->alias);
 		sleep(1);
 		goto retry;
@@ -487,7 +487,7 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 	r = get_refwwid(dev, DEV_DEVMAP, vecs->pathvec, &refwwid);
 
 	if (refwwid) {
-		r = coalesce_paths(vecs, NULL, refwwid, 0);
+		r = coalesce_paths(vecs, NULL, refwwid, 0, conf->daemon);
 		dm_lib_release();
 	}
 
@@ -724,7 +724,7 @@ rescan:
 	 * reload the map for the multipath mapped device
 	 */
 retry:
-	ret = domap(mpp, params);
+	ret = domap(mpp, params, conf->daemon);
 	if (ret <= 0) {
 		if (ret < 0 && retries-- > 0) {
 			condlog(0, "%s: retry domap for addition of new "
@@ -866,7 +866,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs)
 		 * reload the map
 		 */
 		mpp->action = ACT_RELOAD;
-		if (domap(mpp, params) <= 0) {
+		if (domap(mpp, params, conf->daemon) <= 0) {
 			condlog(0, "%s: failed in domap for "
 				"removal of path %s",
 				mpp->alias, pp->dev);
@@ -931,7 +931,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 				}
 			}
 			if (mpp) {
-				retval = reload_map(vecs, mpp, 0);
+				retval = reload_map(vecs, mpp, 0, conf->daemon);
 
 				condlog(2, "%s: map %s reloaded (retval %d)",
 					uev->kernel, mpp->alias, retval);
@@ -1361,7 +1361,7 @@ int update_prio(struct path *pp, int refresh_all)
 
 int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
 {
-	if (reload_map(vecs, mpp, refresh))
+	if (reload_map(vecs, mpp, refresh, conf->daemon))
 		return 1;
 
 	dm_lib_release();
@@ -1798,7 +1798,7 @@ configure (struct vectors * vecs, int start_waiters)
 	/*
 	 * create new set of maps & push changed ones into dm
 	 */
-	if (coalesce_paths(vecs, mpvec, NULL, 1))
+	if (coalesce_paths(vecs, mpvec, NULL, 1, conf->daemon))
 		return 1;
 
 	/*

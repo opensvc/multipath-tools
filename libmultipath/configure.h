@@ -25,9 +25,9 @@ enum actions {
 #define FLUSH_ALL 2
 
 int setup_map (struct multipath * mpp, char * params, int params_size );
-int domap (struct multipath * mpp, char * params);
+int domap (struct multipath * mpp, char * params, int is_daemon);
 int reinstate_paths (struct multipath *mpp);
-int coalesce_paths (struct vectors *vecs, vector curmp, char * refwwid, int force_reload);
+int coalesce_paths (struct vectors *vecs, vector curmp, char * refwwid, int force_reload, int is_daemon);
 int get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid);
-int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh);
+int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh, int is_daemon);
 int sysfs_get_host_adapter_name(struct path *pp, char *adapter_name);
