@@ -1421,7 +1421,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 		newstate = PATH_DOWN;
 
 	if (newstate == PATH_UP)
-		newstate = get_state(pp, 1);
+		newstate = get_state(pp, conf->hwtable, 1);
 	else
 		checker_clear_message(&pp->checker);
 
