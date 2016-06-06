@@ -179,8 +179,8 @@ struct config {
 struct config * conf;
 
 struct hwentry * find_hwe (vector hwtable, char * vendor, char * product, char *revision);
-struct mpentry * find_mpe (char * wwid);
-char * get_mpe_wwid (char * alias);
+struct mpentry * find_mpe (vector mptable, char * wwid);
+char * get_mpe_wwid (vector mptable, char * alias);
 
 struct hwentry * alloc_hwe (void);
 struct mpentry * alloc_mpe (void);

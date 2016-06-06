@@ -385,7 +385,7 @@ __setup_multipath (struct vectors * vecs, struct multipath * mpp, int reset)
 	}
 
 	set_multipath_wwid(mpp);
-	mpp->mpe = find_mpe(mpp->wwid);
+	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
 	condlog(3, "%s: discover", mpp->alias);
 
 	if (!mpp->hwe)
@@ -469,7 +469,7 @@ add_map_with_path (struct vectors * vecs,
 	if (!(mpp = alloc_multipath()))
 		return NULL;
 
-	mpp->mpe = find_mpe(pp->wwid);
+	mpp->mpe = find_mpe(conf->mptable, pp->wwid);
 	mpp->hwe = pp->hwe;
 
 	strcpy(mpp->wwid, pp->wwid);

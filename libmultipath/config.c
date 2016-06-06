@@ -125,7 +125,7 @@ find_hwe (vector hwtable, char * vendor, char * product, char * revision)
 }
 
 extern struct mpentry *
-find_mpe (char * wwid)
+find_mpe (vector mptable, char * wwid)
 {
 	int i;
 	struct mpentry * mpe;
@@ -133,7 +133,7 @@ find_mpe (char * wwid)
 	if (!wwid)
 		return NULL;
 
-	vector_foreach_slot (conf->mptable, mpe, i)
+	vector_foreach_slot (mptable, mpe, i)
 		if (mpe->wwid && !strcmp(mpe->wwid, wwid))
 			return mpe;
 
@@ -141,7 +141,7 @@ find_mpe (char * wwid)
 }
 
 extern char *
-get_mpe_wwid (char * alias)
+get_mpe_wwid (vector mptable, char * alias)
 {
 	int i;
 	struct mpentry * mpe;
@@ -149,7 +149,7 @@ get_mpe_wwid (char * alias)
 	if (!alias)
 		return NULL;
 
-	vector_foreach_slot (conf->mptable, mpe, i)
+	vector_foreach_slot (mptable, mpe, i)
 		if (mpe->alias && strcmp(mpe->alias, alias) == 0)
 			return mpe->wwid;
 

@@ -1042,7 +1042,7 @@ get_refwwid (char * dev, enum devtypes dev_type, vector pathvec, char **wwid)
 		/*
 		 * or may be an alias
 		 */
-		refwwid = get_mpe_wwid(dev);
+		refwwid = get_mpe_wwid(conf->mptable, dev);
 
 		/*
 		 * or directly a wwid

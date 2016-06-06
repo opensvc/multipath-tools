@@ -409,7 +409,7 @@ select_prio (struct path * pp)
 			goto out;
 		}
 	}
-	mpe = find_mpe(pp->wwid);
+	mpe = find_mpe(conf->mptable, pp->wwid);
 	set_prio(mpe, "(LUN setting)");
 	set_prio(conf->overrides, "(overrides setting)");
 	set_prio(pp->hwe, "controller setting)");
