@@ -661,14 +661,14 @@ sysfs_set_nexus_loss_tmo(struct multipath *mpp, struct path *pp)
 }
 
 int
-sysfs_set_scsi_tmo (struct multipath *mpp)
+sysfs_set_scsi_tmo (struct multipath *mpp, int checkint)
 {
 	struct path *pp;
 	int i;
 	int dev_loss_tmo = mpp->dev_loss;
 
 	if (mpp->no_path_retry > 0) {
-		uint64_t no_path_retry_tmo = mpp->no_path_retry * conf->checkint;
+		uint64_t no_path_retry_tmo = mpp->no_path_retry * checkint;
 
 		if (no_path_retry_tmo > MAX_DEV_LOSS_TMO)
 			no_path_retry_tmo = MAX_DEV_LOSS_TMO;

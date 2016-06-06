@@ -41,7 +41,7 @@ int alloc_path_with_pathinfo (vector hwtable, struct udev_device *udevice,
 int store_pathinfo (vector pathvec, vector hwtable,
 		    struct udev_device *udevice, int flag,
 		    struct path **pp_ptr);
-int sysfs_set_scsi_tmo (struct multipath *mpp);
+int sysfs_set_scsi_tmo (struct multipath *mpp, int checkint);
 int sysfs_get_timeout(struct path *pp, unsigned int *timeout);
 int sysfs_get_host_pci_name(struct path *pp, char *pci_name);
 int sysfs_get_iscsi_ip_address(struct path *pp, char *ip_address);

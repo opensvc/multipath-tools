@@ -294,7 +294,7 @@ setup_map (struct multipath * mpp, char * params, int params_size)
 	select_delay_watch_checks(mpp);
 	select_delay_wait_checks(mpp);
 
-	sysfs_set_scsi_tmo(mpp);
+	sysfs_set_scsi_tmo(mpp, conf->checkint);
 	/*
 	 * assign paths to path groups -- start with no groups and all paths
 	 * in mpp->paths
