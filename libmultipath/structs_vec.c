@@ -259,7 +259,7 @@ update_multipath_table (struct multipath *mpp, vector pathvec)
 		return 1;
 	}
 
-	if (disassemble_map(pathvec, params, mpp)) {
+	if (disassemble_map(pathvec, params, mpp, conf->daemon)) {
 		condlog(3, "%s: cannot disassemble map", mpp->alias);
 		return 1;
 	}

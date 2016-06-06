@@ -13,7 +13,6 @@
 #include "structs.h"
 #include "util.h"
 #include "debug.h"
-#include "config.h"
 
 #define WORD_SIZE 64
 
@@ -142,7 +141,8 @@ assemble_map (struct multipath * mp, char * params, int len)
 }
 
 extern int
-disassemble_map (vector pathvec, char * params, struct multipath * mpp)
+disassemble_map (vector pathvec, char * params, struct multipath * mpp,
+		 int is_daemon)
 {
 	char * word;
 	char * p;
@@ -351,7 +351,7 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 						WWID_SIZE - 1);
 				}
 				/* Only call this in multipath client mode */
-				if (!conf->daemon && store_path(pathvec, pp))
+				if (!is_daemon && store_path(pathvec, pp))
 					goto out1;
 			} else {
 				if (!strlen(pp->wwid) &&

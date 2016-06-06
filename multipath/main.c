@@ -206,7 +206,7 @@ get_dm_mpvec (vector curmp, vector pathvec, char * refwwid)
 		dm_get_status(mpp->alias, status);
 		condlog(3, "status = %s", status);
 
-		disassemble_map(pathvec, params, mpp);
+		disassemble_map(pathvec, params, mpp, conf->daemon);
 
 		/*
 		 * disassemble_map() can add new paths to pathvec.
