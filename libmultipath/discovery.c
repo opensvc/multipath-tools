@@ -1479,7 +1479,7 @@ get_udev_uid(struct path * pp, char *uid_attribute)
 
 	value = udev_device_get_property_value(pp->udev,
 					       uid_attribute);
-	if ((!value || strlen(value) == 0) && conf->cmd == CMD_VALID_PATH)
+	if (!value || strlen(value) == 0)
 		value = getenv(uid_attribute);
 	if (value && strlen(value)) {
 		if (strlen(value) + 1 > WWID_SIZE) {
