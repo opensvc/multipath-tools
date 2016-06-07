@@ -40,8 +40,8 @@ static struct hwentry default_hw[] = {
 	 * Mail : g.shyamsundar@yahoo.co.in
 	 */
 	{
-		.vendor        = "APPLE*",
-		.product       = "Xserve RAID ",
+		.vendor        = "APPLE.*",
+		.product       = "Xserve RAID",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = DEFAULT_HWHANDLER,
 		.pgpolicy      = MULTIBUS,
