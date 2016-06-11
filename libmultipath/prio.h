@@ -19,16 +19,17 @@ struct path;
 /*
  * Known prioritizers for use in hwtable.c
  */
-#define PRIO_ALUA "alua"
-#define PRIO_CONST "const"
-#define PRIO_EMC "emc"
-#define PRIO_HDS "hds"
-#define PRIO_HP_SW "hp_sw"
-#define PRIO_ONTAP "ontap"
-#define PRIO_RANDOM "random"
-#define PRIO_RDAC "rdac"
-#define PRIO_DATACORE "datacore"
-#define PRIO_WEIGHTED_PATH "weightedpath"
+#define PRIO_ALUA		"alua"
+#define PRIO_CONST		"const"
+#define PRIO_DATACORE		"datacore"
+#define PRIO_EMC		"emc"
+#define PRIO_HDS		"hds"
+#define PRIO_HP_SW		"hp_sw"
+#define PRIO_IET		"iet"
+#define PRIO_ONTAP		"ontap"
+#define PRIO_RANDOM		"random"
+#define PRIO_RDAC		"rdac"
+#define PRIO_WEIGHTED_PATH	"weightedpath"
 
 /*
  * Value used to mark the fact prio was not defined

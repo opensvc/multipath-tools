@@ -5,17 +5,17 @@
 include ../../Makefile.inc
 
 LIBS = \
-	libpriorandom.so \
-	libprioconst.so \
-	libpriohp_sw.so \
-	libprioemc.so \
-	libpriordac.so \
 	libprioalua.so \
-	libprioontap.so \
+	libprioconst.so \
 	libpriodatacore.so \
+	libprioemc.so \
 	libpriohds.so \
-	libprioweightedpath.so \
-	libprioiet.so
+	libpriohp_sw.so \
+	libprioiet.so \
+	libprioontap.so \
+	libpriorandom.so \
+	libpriordac.so \
+	libprioweightedpath.so
 
 CFLAGS += -I..
 
