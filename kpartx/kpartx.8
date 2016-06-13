@@ -50,15 +50,15 @@ kpartx \-av disk.img
 .PP
 This will output lines such as:
 .IP
-loop3p1 : 0 20964762 /dev/loop3 63
+add map loop1p1 (254:4): 0 409597 linear 7:1 3
 .PP
 The
-.I loop3p1
+.I loop1p1
 is the name of a device file under
 .I /dev/mapper
 which you can use to access the partition, for example to fsck it:
 .IP
-fsck /dev/mapper/loop3p1
+fsck /dev/mapper/loop1p1
 .PP
 When you're done, you need to remove the devices:
 .IP
