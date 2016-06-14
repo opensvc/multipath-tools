@@ -73,6 +73,10 @@ void put_multipath_config(struct config *conf)
 	/* Noop for now */
 }
 
+void rcu_register_thread_memb(void) {}
+
+void rcu_unregister_thread_memb(void) {}
+
 static int
 filter_pathvec (vector pathvec, char * refwwid)
 {

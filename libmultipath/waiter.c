@@ -9,6 +9,7 @@
 #include <sys/mman.h>
 #include <pthread.h>
 #include <signal.h>
+#include <urcu.h>
 
 #include "vector.h"
 #include "memory.h"
@@ -41,6 +42,7 @@ void free_waiter (void *data)
 	if (wp->dmt)
 		dm_task_destroy(wp->dmt);
 
+	rcu_unregister_thread();
 	FREE(wp);
 }
 
@@ -167,6 +169,7 @@ void *waitevent (void *et)
 	waiter = (struct event_thread *)et;
 	pthread_cleanup_push(free_waiter, et);
 
+	rcu_register_thread();
 	while (1) {
 		r = waiteventloop(waiter);
 

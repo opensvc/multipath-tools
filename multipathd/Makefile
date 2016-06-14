@@ -9,7 +9,7 @@ CFLAGS += -I$(multipathdir) -I$(mpathpersistdir) -I$(mpathcmddir)
 ifdef SYSTEMD
 	CFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
 endif
-LDFLAGS += -lpthread -ldevmapper -lreadline
+LDFLAGS += -lurcu -lpthread -ldevmapper -lreadline
 ifdef SYSTEMD
 	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
 		LDFLAGS += -lsystemd

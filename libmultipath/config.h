@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <stdint.h>
+#include <urcu.h>
 
 #define ORIGIN_DEFAULT 0
 #define ORIGIN_CONFIG  1
@@ -96,6 +97,7 @@ struct mpentry {
 };
 
 struct config {
+	struct rcu_head rcu;
 	int verbosity;
 	int pgpolicy_flag;
 	int pgpolicy;

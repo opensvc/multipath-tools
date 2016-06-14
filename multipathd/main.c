@@ -17,6 +17,7 @@
 #include <limits.h>
 #include <linux/oom.h>
 #include <libudev.h>
+#include <urcu.h>
 #ifdef USE_SYSTEMD
 #include <systemd/sd-daemon.h>
 #endif
@@ -206,12 +207,13 @@ int set_config_state(enum daemon_status state)
 
 struct config *get_multipath_config(void)
 {
-	return multipath_conf;
+	rcu_read_lock();
+	return rcu_dereference(multipath_conf);
 }
 
 void put_multipath_config(struct config *conf)
 {
-	/* Noop for now */
+	rcu_read_unlock();
 }
 
 static int
@@ -1124,23 +1126,33 @@ out:
 	return r;
 }
 
+static void *rcu_unregister(void *param)
+{
+	rcu_unregister_thread();
+	return NULL;
+}
+
 static void *
 ueventloop (void * ap)
 {
 	struct udev *udev = ap;
 
+	pthread_cleanup_push(rcu_unregister, NULL);
+	rcu_register_thread();
 	if (uevent_listen(udev))
 		condlog(0, "error starting uevent listener");
-
+	pthread_cleanup_pop(1);
 	return NULL;
 }
 
 static void *
 uevqloop (void * ap)
 {
+	pthread_cleanup_push(rcu_unregister, NULL);
+	rcu_register_thread();
 	if (uevent_dispatch(&uev_trigger, ap))
 		condlog(0, "error starting uevent dispatcher");
-
+	pthread_cleanup_pop(1);
 	return NULL;
 }
 static void *
@@ -1150,7 +1162,8 @@ uxlsnrloop (void * ap)
 		condlog(1, "Failed to init uxsock listener");
 		return NULL;
 	}
-
+	pthread_cleanup_push(rcu_unregister, NULL);
+	rcu_register_thread();
 	set_handler_callback(LIST+PATHS, cli_list_paths);
 	set_handler_callback(LIST+PATHS+FMT, cli_list_paths_fmt);
 	set_handler_callback(LIST+PATHS+RAW+FMT, cli_list_paths_raw);
@@ -1200,7 +1213,7 @@ uxlsnrloop (void * ap)
 
 	umask(077);
 	uxsock_listen(&uxsock_trigger, ap);
-
+	pthread_cleanup_pop(1);
 	return NULL;
 }
 
@@ -1713,6 +1726,8 @@ checkerloop (void *ap)
 	struct timeval last_time;
 	struct config *conf;
 
+	pthread_cleanup_push(rcu_unregister, NULL);
+	rcu_register_thread();
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	vecs = (struct vectors *)ap;
 	condlog(2, "path checkers start up");
@@ -1844,6 +1859,7 @@ checkerloop (void *ap)
 			}
 		}
 	}
+	pthread_cleanup_pop(1);
 	return NULL;
 }
 
@@ -1947,6 +1963,13 @@ need_to_delay_reconfig(struct vectors * vecs)
 	return 0;
 }
 
+void rcu_free_config(struct rcu_head *head)
+{
+	struct config *conf = container_of(head, struct config, rcu);
+
+	free_config(conf);
+}
+
 int
 reconfigure (struct vectors * vecs)
 {
@@ -1979,12 +2002,12 @@ reconfigure (struct vectors * vecs)
 		conf->ignore_new_devs = ignore_new_devs;
 	uxsock_timeout = conf->uxsock_timeout;
 
-	old = multipath_conf;
-	multipath_conf = conf;
+	old = rcu_dereference(multipath_conf);
+	rcu_assign_pointer(multipath_conf, conf);
+	call_rcu(&old->rcu, rcu_free_config);
 
 	configure(vecs, 1);
 
-	free_config(old);
 
 	return 0;
 }
@@ -2177,6 +2200,7 @@ child (void * param)
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	signal_init();
+	rcu_init();
 
 	setup_thread_attr(&misc_attr, 64 * 1024, 1);
 	setup_thread_attr(&uevent_attr, DEFAULT_UEVENT_STACKSIZE * 1024, 1);
