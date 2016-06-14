@@ -111,6 +111,8 @@ struct vectors * gvecs;
 
 struct udev * udev;
 
+struct config *multipath_conf;
+
 const char *
 daemon_status(void)
 {
@@ -197,6 +199,16 @@ int set_config_state(enum daemon_status state)
 	}
 	pthread_cleanup_pop(1);
 	return rc;
+}
+
+struct config *get_multipath_config(void)
+{
+	return multipath_conf;
+}
+
+void put_multipath_config(struct config *conf)
+{
+	/* Noop for now */
 }
 
 static int
@@ -1781,7 +1793,7 @@ configure (struct vectors * vecs, int start_waiters)
 	/*
 	 * probe for current path (from sysfs) and map (from dm) sets
 	 */
-	ret = path_discovery(vecs->pathvec, conf, DI_ALL);
+	ret = path_discovery(vecs->pathvec, DI_ALL);
 	if (ret < 0)
 		return 1;
 
@@ -1885,6 +1897,7 @@ reconfigure (struct vectors * vecs)
 		conf->bindings_read_only = old->bindings_read_only;
 		conf->ignore_new_devs = old->ignore_new_devs;
 		configure(vecs, 1);
+		multipath_conf = conf;
 		free_config(old);
 		retval = 0;
 	} else {
@@ -2109,7 +2122,7 @@ child (void * param)
 		goto failed;
 
 	uxsock_timeout = conf->uxsock_timeout;
-
+	multipath_conf = conf;
 	dm_init(conf->verbosity);
 	dm_drv_version(conf->version, TGT_MPATH);
 	if (init_checkers(conf->multipath_dir)) {

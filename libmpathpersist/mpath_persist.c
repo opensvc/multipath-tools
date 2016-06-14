@@ -203,7 +203,7 @@ int mpath_persistent_reserve_in (int fd, int rq_servact,
 		goto out;
 	}
 
-	if (path_discovery(pathvec, conf, DI_SYSFS | DI_CHECKER) < 0) {
+	if (path_discovery(pathvec, DI_SYSFS | DI_CHECKER) < 0) {
 		ret = MPATH_PR_DMMP_ERROR;
 		goto out1;
 	}
@@ -297,7 +297,7 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 		goto out;
 	}
 
-	if (path_discovery(pathvec, conf, DI_SYSFS | DI_CHECKER) < 0) {
+	if (path_discovery(pathvec, DI_SYSFS | DI_CHECKER) < 0) {
 		ret = MPATH_PR_DMMP_ERROR;
 		goto out1;
 	}

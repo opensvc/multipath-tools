@@ -16,9 +16,12 @@ void dlog (int sink, int prio, const char * fmt, ...)
 {
 	va_list ap;
 	int thres;
+	struct config *conf;
 
 	va_start(ap, fmt);
+	conf = get_multipath_config();
 	thres = (conf) ? conf->verbosity : 0;
+	put_multipath_config(conf);
 
 	if (prio <= thres) {
 		if (sink < 1) {

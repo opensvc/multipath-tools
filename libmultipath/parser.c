@@ -164,6 +164,7 @@ snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw, void *data)
 	int r;
 	int fwd = 0;
 	char *f = fmt;
+	struct config *conf;
 
 	if (!kw || !kw->print)
 		return 0;
@@ -182,7 +183,9 @@ snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw, void *data)
 			fwd += snprintf(buff + fwd, len - fwd, "%s", kw->string);
 			break;
 		case 'v':
+			conf = get_multipath_config();
 			r = kw->print(conf, buff + fwd, len - fwd, data);
+			put_multipath_config(conf);
 			if (!r) { /* no output if no value */
 				buff = '\0';
 				return 0;

@@ -48,8 +48,9 @@ update_mpp_paths(struct multipath * mpp, vector pathvec)
 extern int
 adopt_paths (vector pathvec, struct multipath * mpp)
 {
-	int i;
+	int i, ret;
 	struct path * pp;
+	struct config *conf;
 
 	if (!mpp)
 		return 0;
@@ -69,8 +70,11 @@ adopt_paths (vector pathvec, struct multipath * mpp)
 			if (!find_path_by_dev(mpp->paths, pp->dev) &&
 			    store_path(mpp->paths, pp))
 					return 1;
-			if (pathinfo(pp, conf,
-				     DI_PRIO | DI_CHECKER))
+			conf = get_multipath_config();
+			ret = pathinfo(pp, conf,
+				       DI_PRIO | DI_CHECKER);
+			put_multipath_config(conf);
+			if (ret)
 				return 1;
 		}
 	}
@@ -237,9 +241,12 @@ extract_hwe_from_path(struct multipath * mpp)
 		condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 		condlog(3, "%s: rev = %s", pp->dev, pp->rev);
 		if (!pp->hwe) {
+			struct config *conf = get_multipath_config();
+
 			condlog(3, "searching hwtable");
 			pp->hwe = find_hwe(conf->hwtable, pp->vendor_id,
 					   pp->product_id, pp->rev);
+			put_multipath_config(conf);
 		}
 	}
 
@@ -355,10 +362,12 @@ set_no_path_retry(struct config *conf, struct multipath *mpp)
 	default:
 		dm_queue_if_no_path(mpp->alias, 1);
 		if (mpp->nr_active == 0) {
+			struct config *conf = get_multipath_config();
 			/* Enter retry mode */
 			mpp->retry_tick = mpp->no_path_retry * conf->checkint;
 			condlog(1, "%s: Entering recovery mode: max_retries=%d",
 				mpp->alias, mpp->no_path_retry);
+			put_multipath_config(conf);
 		}
 		break;
 	}
@@ -368,6 +377,8 @@ extern int
 __setup_multipath (struct vectors * vecs, struct multipath * mpp,
 		   int reset, int is_daemon)
 {
+	struct config *conf;
+
 	if (dm_get_info(mpp->alias, &mpp->dmi)) {
 		/* Error accessing table */
 		condlog(3, "%s: cannot access table", mpp->alias);
@@ -386,7 +397,9 @@ __setup_multipath (struct vectors * vecs, struct multipath * mpp,
 	}
 
 	set_multipath_wwid(mpp);
+	conf = get_multipath_config();
 	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
+	put_multipath_config(conf);
 	condlog(3, "%s: discover", mpp->alias);
 
 	if (!mpp->hwe)
@@ -463,6 +476,7 @@ add_map_with_path (struct vectors * vecs,
 		   struct path * pp, int add_vec)
 {
 	struct multipath * mpp;
+	struct config *conf = NULL;
 
 	if (!strlen(pp->wwid))
 		return NULL;
@@ -470,8 +484,10 @@ add_map_with_path (struct vectors * vecs,
 	if (!(mpp = alloc_multipath()))
 		return NULL;
 
+	conf = get_multipath_config();
 	mpp->mpe = find_mpe(conf->mptable, pp->wwid);
 	mpp->hwe = pp->hwe;
+	put_multipath_config(conf);
 
 	strcpy(mpp->wwid, pp->wwid);
 	find_existing_alias(mpp, vecs);
@@ -561,6 +577,7 @@ int update_multipath (struct vectors *vecs, char *mapname, int reset)
 				continue;
 
 			if (pp->state != PATH_DOWN) {
+				struct config *conf = get_multipath_config();
 				int oldstate = pp->state;
 				condlog(2, "%s: mark as failed", pp->dev);
 				mpp->stat_path_failures++;
@@ -575,6 +592,7 @@ int update_multipath (struct vectors *vecs, char *mapname, int reset)
 				 */
 				if (pp->tick > conf->checkint)
 					pp->tick = conf->checkint;
+				put_multipath_config(conf);
 			}
 		}
 	}
@@ -591,6 +609,8 @@ int update_multipath (struct vectors *vecs, char *mapname, int reset)
 void update_queue_mode_del_path(struct multipath *mpp)
 {
 	if (--mpp->nr_active == 0 && mpp->no_path_retry > 0) {
+		struct config *conf = get_multipath_config();
+
 		/*
 		 * Enter retry mode.
 		 * meaning of +1: retry_tick may be decremented in
@@ -600,6 +620,7 @@ void update_queue_mode_del_path(struct multipath *mpp)
 		mpp->retry_tick = mpp->no_path_retry * conf->checkint + 1;
 		condlog(1, "%s: Entering recovery mode: max_retries=%d",
 			mpp->alias, mpp->no_path_retry);
+		put_multipath_config(conf);
 	}
 	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
 }

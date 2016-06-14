@@ -133,11 +133,12 @@ path_discover (vector pathvec, struct config * conf,
 }
 
 int
-path_discovery (vector pathvec, struct config * conf, int flag)
+path_discovery (vector pathvec, int flag)
 {
 	struct udev_enumerate *udev_iter;
 	struct udev_list_entry *entry;
 	struct udev_device *udevice;
+	struct config *conf;
 	const char *devpath;
 	int num_paths = 0, total_paths = 0;
 
@@ -162,9 +163,11 @@ path_discovery (vector pathvec, struct config * conf, int flag)
 		devtype = udev_device_get_devtype(udevice);
 		if(devtype && !strncmp(devtype, "disk", 4)) {
 			total_paths++;
+			conf = get_multipath_config();
 			if (path_discover(pathvec, conf,
 					  udevice, flag) == PATHINFO_OK)
 				num_paths++;
+			put_multipath_config(conf);
 		}
 		udev_device_unref(udevice);
 	}
@@ -1446,21 +1449,27 @@ get_state (struct path * pp, struct config *conf, int daemon)
 static int
 get_prio (struct path * pp)
 {
+	struct prio * p;
+	struct config *conf;
+
 	if (!pp)
 		return 0;
 
-	struct prio * p = &pp->prio;
-
+	p = &pp->prio;
 	if (!prio_selected(p)) {
+		conf = get_multipath_config();
 		select_detect_prio(conf, pp);
 		select_prio(conf, pp);
+		put_multipath_config(conf);
 		if (!prio_selected(p)) {
 			condlog(3, "%s: no prio selected", pp->dev);
 			pp->priority = PRIO_UNDEF;
 			return 1;
 		}
 	}
+	conf = get_multipath_config();
 	pp->priority = prio_getprio(p, pp, conf->checker_timeout);
+	put_multipath_config(conf);
 	if (pp->priority < 0) {
 		condlog(3, "%s: %s prio error", pp->dev, prio_name(p));
 		pp->priority = PRIO_UNDEF;
@@ -1518,9 +1527,13 @@ get_uid (struct path * pp, int path_state)
 	char *c;
 	const char *origin = "unknown";
 	ssize_t len = 0;
+	struct config *conf;
 
-	if (!pp->uid_attribute && !pp->getuid)
+	if (!pp->uid_attribute && !pp->getuid) {
+		conf = get_multipath_config();
 		select_getuid(conf, pp);
+		put_multipath_config(conf);
+	}
 
 	if (!pp->udev) {
 		condlog(1, "%s: no udev information", pp->dev);
@@ -1546,6 +1559,8 @@ get_uid (struct path * pp, int path_state)
 			len = strlen(pp->wwid);
 		origin = "callout";
 	} else {
+		int retrigger;
+
 		if (pp->uid_attribute) {
 			len = get_udev_uid(pp, pp->uid_attribute);
 			origin = "udev";
@@ -1555,7 +1570,10 @@ get_uid (struct path * pp, int path_state)
 					pp->dev, strerror(-len));
 
 		}
-		if (len <= 0 && pp->retriggers >= conf->retrigger_tries &&
+		conf = get_multipath_config();
+		retrigger = conf->retrigger_tries;
+		put_multipath_config(conf);
+		if (len <= 0 && pp->retriggers >= retrigger &&
 		    !strcmp(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE)) {
 			len = get_vpd_uid(pp);
 			origin = "sysfs";

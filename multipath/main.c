@@ -61,6 +61,17 @@
 
 int logsink;
 struct udev *udev;
+struct config *multipath_conf;
+
+struct config *get_multipath_config(void)
+{
+	return multipath_conf;
+}
+
+void put_multipath_config(struct config *conf)
+{
+	/* Noop for now */
+}
 
 static int
 filter_pathvec (vector pathvec, char * refwwid)
@@ -346,7 +357,7 @@ configure (enum mpath_cmds cmd, enum devtypes dev_type, char *devpath)
 		/* maximum info */
 		di_flag = DI_ALL;
 
-	if (path_discovery(pathvec, conf, di_flag) < 0)
+	if (path_discovery(pathvec, di_flag) < 0)
 		goto out;
 
 	if (conf->verbosity > 2)
@@ -487,6 +498,7 @@ main (int argc, char *argv[])
 	logsink = 0;
 	if (load_config(DEFAULT_CONFIGFILE))
 		exit(1);
+	multipath_conf = conf;
 	while ((arg = getopt(argc, argv, ":adchl::FfM:v:p:b:BritquwW")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);

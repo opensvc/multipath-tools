@@ -41,6 +41,17 @@ int construct_transportid(const char * inp, struct transportid transid[], int nu
 
 int logsink;
 unsigned int mpath_mx_alloc_len;
+struct config *multipath_conf;
+
+struct config *get_multipath_config(void)
+{
+	return multipath_conf;
+}
+
+void put_multipath_config(struct config *conf)
+{
+	/* Noop for now */
+}
 
 int main (int argc, char * argv[])
 {
@@ -90,6 +101,7 @@ int main (int argc, char * argv[])
 	udev = udev_new();
 	mpath_lib_init(udev);
 	memset(transportids,0,MPATH_MX_TIDS);
+	multipath_conf = conf;
 
 	while (1)
 	{

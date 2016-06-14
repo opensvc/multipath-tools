@@ -226,12 +226,16 @@ show_config (char ** r, int * len)
 	char * reply;
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
+	struct config *conf;
 
 	c = reply = MALLOC(maxlen);
 
+	conf = get_multipath_config();
 	while (again) {
-		if (!reply)
+		if (!reply) {
+			put_multipath_config(conf);
 			return 1;
+		}
 		c = reply;
 		c += snprint_defaults(conf, c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
@@ -265,6 +269,7 @@ show_config (char ** r, int * len)
 			REALLOC_REPLY(reply, again, maxlen);
 		}
 	}
+	put_multipath_config(conf);
 	*r = reply;
 	*len = (int)(c - reply + 1);
 	return 0;
@@ -621,19 +626,24 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 	char * param = get_keyparam(v, PATH);
 	struct path *pp;
 	int r;
+	struct config *conf;
 
 	param = convert_dev(param, 1);
 	condlog(2, "%s: add path (operator)", param);
-
+	conf = get_multipath_config();
 	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
-			   param) > 0)
+			   param) > 0) {
+		put_multipath_config(conf);
 		goto blacklisted;
+	}
 
 	pp = find_path_by_dev(vecs->pathvec, param);
 	if (pp) {
 		condlog(2, "%s: path already in pathvec", param);
-		if (pp->mpp)
+		if (pp->mpp) {
+			put_multipath_config(conf);
 			return 0;
+		}
 	} else {
 		struct udev_device *udevice;
 
@@ -644,6 +654,7 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 				   udevice, DI_ALL, &pp);
 		udev_device_unref(udevice);
 		if (!pp) {
+			put_multipath_config(conf);
 			if (r == 2)
 				goto blacklisted;
 			condlog(0, "%s: failed to store path info", param);
@@ -651,6 +662,7 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 		}
 		pp->checkint = conf->checkint;
 	}
+	put_multipath_config(conf);
 	return ev_add_path(pp, vecs);
 blacklisted:
 	*reply = strdup("blacklisted\n");
@@ -685,16 +697,20 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 	char dev_path[PATH_SIZE];
 	char *alias, *refwwid;
 	int rc, count = 0;
+	struct config *conf;
 
 	param = convert_dev(param, 0);
 	condlog(2, "%s: add map (operator)", param);
 
+	conf = get_multipath_config();
 	if (filter_wwid(conf->blist_wwid, conf->elist_wwid, param, NULL) > 0) {
+		put_multipath_config(conf);
 		*reply = strdup("blacklisted\n");
 		*len = strlen(*reply) + 1;
 		condlog(2, "%s: map blacklisted", param);
 		return 1;
 	}
+	put_multipath_config(conf);
 	do {
 		minor = dm_get_minor(param);
 		if (minor < 0)
@@ -880,18 +896,24 @@ cli_resize(void *v, char **reply, int *len, void *data)
 int
 cli_force_no_daemon_q(void * v, char ** reply, int * len, void * data)
 {
+	struct config *conf = get_multipath_config();
+
 	condlog(2, "force queue_without_daemon (operator)");
 	if (conf->queue_without_daemon == QUE_NO_DAEMON_OFF)
 		conf->queue_without_daemon = QUE_NO_DAEMON_FORCE;
+	put_multipath_config(conf);
 	return 0;
 }
 
 int
 cli_restore_no_daemon_q(void * v, char ** reply, int * len, void * data)
 {
+	struct config *conf = get_multipath_config();
+
 	condlog(2, "restore queue_without_daemon (operator)");
 	if (conf->queue_without_daemon == QUE_NO_DAEMON_FORCE)
 		conf->queue_without_daemon = QUE_NO_DAEMON_OFF;
+	put_multipath_config(conf);
 	return 0;
 }
 
@@ -920,8 +942,11 @@ cli_restore_queueing(void *v, char **reply, int *len, void *data)
 		dm_queue_if_no_path(mpp->alias, 1);
 		if (mpp->nr_active > 0)
 			mpp->retry_tick = 0;
-		else
+		else {
+			struct config *conf = get_multipath_config();
 			mpp->retry_tick = mpp->no_path_retry * conf->checkint;
+			put_multipath_config(conf);
+		}
 	}
 	return 0;
 }
@@ -940,8 +965,11 @@ cli_restore_all_queueing(void *v, char **reply, int *len, void *data)
 			dm_queue_if_no_path(mpp->alias, 1);
 			if (mpp->nr_active > 0)
 				mpp->retry_tick = 0;
-			else
+			else {
+				struct config *conf = get_multipath_config();
 				mpp->retry_tick = mpp->no_path_retry * conf->checkint;
+				put_multipath_config(conf);
+			}
 		}
 	}
 	return 0;
@@ -1154,12 +1182,15 @@ show_blacklist (char ** r, int * len)
 	char *reply = NULL;
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
+	struct config *conf = get_multipath_config();
 
 	reply = MALLOC(maxlen);
 
 	while (again) {
-		if (!reply)
+		if (!reply) {
+			put_multipath_config(conf);
 			return 1;
+		}
 
 		c = reply;
 		c += snprint_blacklist_report(conf, c, maxlen);
@@ -1169,6 +1200,7 @@ show_blacklist (char ** r, int * len)
 
 	*r = reply;
 	*len = (int)(c - reply + 1);
+	put_multipath_config(conf);
 
 	return 0;
 }
@@ -1188,12 +1220,15 @@ show_devices (char ** r, int * len, struct vectors *vecs)
 	char *reply = NULL;
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
+	struct config *conf = get_multipath_config();
 
 	reply = MALLOC(maxlen);
 
 	while (again) {
-		if (!reply)
+		if (!reply) {
+			put_multipath_config(conf);
 			return 1;
+		}
 
 		c = reply;
 		c += snprint_devices(conf, c, maxlen, vecs);
@@ -1203,6 +1238,7 @@ show_devices (char ** r, int * len, struct vectors *vecs)
 
 	*r = reply;
 	*len = (int)(c - reply + 1);
+	put_multipath_config(conf);
 
 	return 0;
 }

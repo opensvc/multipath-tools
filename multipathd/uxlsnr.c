@@ -144,11 +144,6 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 		return NULL;
 	}
 
-	if (!conf) {
-		condlog(1, "uxsock: configuration changed");
-		return NULL;
-	}
-
 	pthread_cleanup_push(uxsock_cleanup, NULL);
 
 	condlog(3, "uxsock: startup listener");
