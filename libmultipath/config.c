@@ -576,14 +576,13 @@ process_config_dir(struct config *conf, vector keywords, char *dir)
 	}
 }
 
-int
+struct config *
 load_config (char * file)
 {
-	if (!conf)
-		conf = alloc_config();
+	struct config *conf = alloc_config();
 
-	if (!conf || !udev)
-		return 1;
+	if (!conf)
+		return NULL;
 
 	/*
 	 * internal defaults
@@ -731,9 +730,9 @@ load_config (char * file)
 	    !conf->wwids_file)
 		goto out;
 
-	return 0;
+	return conf;
 out:
 	free_config(conf);
-	return 1;
+	return NULL;
 }
 

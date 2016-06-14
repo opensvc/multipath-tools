@@ -172,9 +172,9 @@ struct prout_param_descriptor { 	/* PROUT parameter descriptor */
  *	before performing reservation management functions.
  * RESTRICTIONS:
  *
- * RETURNS: 0->Success, 1->Failed.
+ * RETURNS: struct config ->Success, NULL->Failed.
  */
-extern int mpath_lib_init (struct udev *udev);
+extern struct config * mpath_lib_init (struct udev *udev);
 
 
 /*
@@ -185,7 +185,7 @@ extern int mpath_lib_init (struct udev *udev);
  *
  * RETURNS: 0->Success, 1->Failed.
  */
-extern int mpath_lib_exit (void );
+extern int mpath_lib_exit (struct config *conf);
 
 
 /*

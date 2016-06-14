@@ -83,6 +83,7 @@ int main (int argc, char * argv[])
 	void *resp = NULL;
 	struct transportid * tmp;
 	struct udev *udev = NULL;
+	struct config *conf;
 
 	if (optind == argc)
 	{
@@ -99,7 +100,7 @@ int main (int argc, char * argv[])
 	}
 
 	udev = udev_new();
-	mpath_lib_init(udev);
+	conf = mpath_lib_init(udev);
 	memset(transportids,0,MPATH_MX_TIDS);
 	multipath_conf = conf;
 
@@ -475,13 +476,13 @@ int main (int argc, char * argv[])
 	res = close (fd);
 	if (res < 0)
 	{
-		mpath_lib_exit();
+		mpath_lib_exit(conf);
 		udev_unref(udev);
 		return MPATH_PR_FILE_ERROR;
 	}
 
 out :
-	mpath_lib_exit();
+	mpath_lib_exit(conf);
 	udev_unref(udev);
 	return (ret >= 0) ? ret : MPATH_PR_OTHER;
 }

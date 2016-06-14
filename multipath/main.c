@@ -148,6 +148,7 @@ update_paths (struct multipath * mpp)
 	int i, j;
 	struct pathgroup * pgp;
 	struct path * pp;
+	struct config *conf;
 
 	if (!mpp->pg)
 		return 0;
@@ -167,20 +168,26 @@ update_paths (struct multipath * mpp)
 					continue;
 				}
 				pp->mpp = mpp;
+				conf = get_multipath_config();
 				if (pathinfo(pp, conf, DI_ALL))
 					pp->state = PATH_UNCHECKED;
+				put_multipath_config(conf);
 				continue;
 			}
 			pp->mpp = mpp;
 			if (pp->state == PATH_UNCHECKED ||
 			    pp->state == PATH_WILD) {
+				conf = get_multipath_config();
 				if (pathinfo(pp, conf, DI_CHECKER))
 					pp->state = PATH_UNCHECKED;
+				put_multipath_config(conf);
 			}
 
 			if (pp->priority == PRIO_UNDEF) {
+				conf = get_multipath_config();
 				if (pathinfo(pp, conf, DI_PRIO))
 					pp->priority = PRIO_UNDEF;
+				put_multipath_config(conf);
 			}
 		}
 	}
@@ -234,8 +241,11 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 		disassemble_status(status, mpp);
 
 		if (cmd == CMD_LIST_SHORT ||
-		    cmd == CMD_LIST_LONG)
+		    cmd == CMD_LIST_LONG) {
+			struct config *conf = get_multipath_config();
 			print_multipath_topology(mpp, conf->verbosity);
+			put_multipath_config(conf);
+		}
 
 		if (cmd == CMD_CREATE)
 			reinstate_paths(mpp);
@@ -260,6 +270,7 @@ configure (enum mpath_cmds cmd, enum devtypes dev_type, char *devpath)
 	int di_flag = 0;
 	char * refwwid = NULL;
 	char * dev = NULL;
+	struct config *conf;
 
 	/*
 	 * allocate core vectors to store paths and multipaths
@@ -279,6 +290,7 @@ configure (enum mpath_cmds cmd, enum devtypes dev_type, char *devpath)
 	/*
 	 * if we have a blacklisted device parameter, exit early
 	 */
+	conf = get_multipath_config();
 	if (dev && dev_type == DEV_DEVNODE &&
 	    cmd != CMD_REMOVE_WWID &&
 	    (filter_devnode(conf->blist_devnode,
@@ -286,8 +298,10 @@ configure (enum mpath_cmds cmd, enum devtypes dev_type, char *devpath)
 		if (cmd == CMD_VALID_PATH)
 			printf("%s is not a valid multipath device path\n",
 			       devpath);
+		put_multipath_config(conf);
 		goto out;
 	}
+	put_multipath_config(conf);
 	/*
 	 * scope limiting must be translated into a wwid
 	 * failing the translation is fatal (by policy)
@@ -493,10 +507,12 @@ main (int argc, char *argv[])
 	enum mpath_cmds cmd = CMD_CREATE;
 	enum devtypes dev_type;
 	char *dev = NULL;
+	struct config *conf;
 
 	udev = udev_new();
 	logsink = 0;
-	if (load_config(DEFAULT_CONFIGFILE))
+	conf = load_config(DEFAULT_CONFIGFILE);
+	if (!conf)
 		exit(1);
 	multipath_conf = conf;
 	while ((arg = getopt(argc, argv, ":adchl::FfM:v:p:b:BritquwW")) != EOF ) {

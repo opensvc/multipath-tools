@@ -36,12 +36,15 @@
 
 struct udev *udev;
 
-int
+struct config *
 mpath_lib_init (struct udev *udev)
 {
-	if (load_config(DEFAULT_CONFIGFILE)){
+	struct config *conf;
+
+	conf = load_config(DEFAULT_CONFIGFILE);
+	if (!conf) {
 		condlog(0, "Failed to initialize multipath config.");
-		return 1;
+		return NULL;
 	}
 
 	if (conf->max_fds) {
@@ -54,11 +57,11 @@ mpath_lib_init (struct udev *udev)
 				   conf->max_fds, strerror(errno));
 	}
 
-	return 0;
+	return conf;
 }
 
 int
-mpath_lib_exit (void)
+mpath_lib_exit (struct config *conf)
 {
 	dm_lib_release();
 	dm_lib_exit();
