@@ -7,7 +7,6 @@
 #include "debug.h"
 #include "checkers.h"
 #include "vector.h"
-#include "config.h"
 
 char *checker_state_names[] = {
       "wild",
@@ -29,9 +28,9 @@ char * checker_state_name (int i)
 	return checker_state_names[i];
 }
 
-int init_checkers (void)
+int init_checkers (char *multipath_dir)
 {
-	if (!add_checker(DEFAULT_CHECKER))
+	if (!add_checker(multipath_dir, DEFAULT_CHECKER))
 		return 1;
 	return 0;
 }
@@ -89,10 +88,10 @@ struct checker * checker_lookup (char * name)
 		if (!strncmp(name, c->name, CHECKER_NAME_LEN))
 			return c;
 	}
-	return add_checker(name);
+	return NULL;
 }
 
-struct checker * add_checker (char * name)
+struct checker * add_checker (char *multipath_dir, char * name)
 {
 	char libname[LIB_CHECKER_NAMELEN];
 	struct stat stbuf;
@@ -104,10 +103,10 @@ struct checker * add_checker (char * name)
 		return NULL;
 	snprintf(c->name, CHECKER_NAME_LEN, "%s", name);
 	snprintf(libname, LIB_CHECKER_NAMELEN, "%s/libcheck%s.so",
-		 conf->multipath_dir, name);
+		 multipath_dir, name);
 	if (stat(libname,&stbuf) < 0) {
 		condlog(0,"Checker '%s' not found in %s",
-			name, conf->multipath_dir);
+			name, multipath_dir);
 		goto out;
 	}
 	condlog(3, "loading %s checker", libname);
@@ -253,13 +252,18 @@ void checker_clear_message (struct checker *c)
 	c->message[0] = '\0';
 }
 
-void checker_get (struct checker * dst, char * name)
+void checker_get (char *multipath_dir, struct checker * dst, char * name)
 {
-	struct checker * src = checker_lookup(name);
+	struct checker * src = NULL;
 
 	if (!dst)
 		return;
 
+	if (name && strlen(name)) {
+		src = checker_lookup(name);
+		if (!src)
+			src = add_checker(multipath_dir, name);
+	}
 	if (!src) {
 		dst->check = NULL;
 		return;

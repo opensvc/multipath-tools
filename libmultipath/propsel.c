@@ -328,7 +328,7 @@ select_checker(struct path *pp)
 	do_set(checker_name, conf, checker_name, "(config file setting)");
 	do_default(checker_name, DEFAULT_CHECKER);
 out:
-	checker_get(c, checker_name);
+	checker_get(conf->multipath_dir, c, checker_name);
 	condlog(3, "%s: path_checker = %s %s", pp->dev, c->name, origin);
 	if (conf->checker_timeout) {
 		c->timeout = conf->checker_timeout;

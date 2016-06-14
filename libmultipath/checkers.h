@@ -119,9 +119,9 @@ struct checker {
 #define MSG(c, fmt, args...) snprintf((c)->message, CHECKER_MSG_LEN, fmt, ##args);
 
 char * checker_state_name (int);
-int init_checkers (void);
+int init_checkers (char *);
 void cleanup_checkers (void);
-struct checker * add_checker (char *);
+struct checker * add_checker (char *, char *);
 struct checker * checker_lookup (char *);
 int checker_init (struct checker *, void **);
 void checker_put (struct checker *);
@@ -136,6 +136,6 @@ int checker_selected (struct checker *);
 char * checker_name (struct checker *);
 char * checker_message (struct checker *);
 void checker_clear_message (struct checker *c);
-void checker_get (struct checker *, char *);
+void checker_get (char *, struct checker *, char *);
 
 #endif /* _CHECKERS_H */

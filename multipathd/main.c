@@ -2110,7 +2110,7 @@ child (void * param)
 
 	dm_init(conf->verbosity);
 	dm_drv_version(conf->version, TGT_MPATH);
-	if (init_checkers()) {
+	if (init_checkers(conf->multipath_dir)) {
 		condlog(0, "failed to initialize checkers");
 		goto failed;
 	}

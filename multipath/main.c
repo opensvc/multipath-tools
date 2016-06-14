@@ -622,7 +622,7 @@ main (int argc, char *argv[])
 				conf->max_fds, strerror(errno));
 	}
 
-	if (init_checkers()) {
+	if (init_checkers(conf->multipath_dir)) {
 		condlog(0, "failed to initialize checkers");
 		goto out;
 	}
