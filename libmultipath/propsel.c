@@ -383,13 +383,13 @@ detect_prio(struct path * pp)
 		return;
 	if (get_asymmetric_access_state(pp->fd, ret) < 0)
 		return;
-	prio_get(p, PRIO_ALUA, DEFAULT_PRIO_ARGS);
+	prio_get(conf->multipath_dir, p, PRIO_ALUA, DEFAULT_PRIO_ARGS);
 }
 
-#define set_prio(src, msg)						\
+#define set_prio(dir, src, msg)						\
 do {									\
 	if (src && src->prio_name) {					\
-		prio_get(p, src->prio_name, src->prio_args);		\
+		prio_get(dir, p, src->prio_name, src->prio_args); \
 		origin = msg;						\
 		goto out;						\
 	}								\
@@ -410,11 +410,11 @@ select_prio (struct path * pp)
 		}
 	}
 	mpe = find_mpe(conf->mptable, pp->wwid);
-	set_prio(mpe, "(LUN setting)");
-	set_prio(conf->overrides, "(overrides setting)");
-	set_prio(pp->hwe, "controller setting)");
-	set_prio(conf, "(config file default)");
-	prio_get(p, DEFAULT_PRIO, DEFAULT_PRIO_ARGS);
+	set_prio(conf->multipath_dir, mpe, "(LUN setting)");
+	set_prio(conf->multipath_dir, conf->overrides, "(overrides setting)");
+	set_prio(conf->multipath_dir, pp->hwe, "controller setting)");
+	set_prio(conf->multipath_dir, conf, "(config file default)");
+	prio_get(conf->multipath_dir, p, DEFAULT_PRIO, DEFAULT_PRIO_ARGS);
 	origin = "(internal default)";
 out:
 	/*

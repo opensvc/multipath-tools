@@ -2114,7 +2114,7 @@ child (void * param)
 		condlog(0, "failed to initialize checkers");
 		goto failed;
 	}
-	if (init_prio()) {
+	if (init_prio(conf->multipath_dir)) {
 		condlog(0, "failed to initialize prioritizers");
 		goto failed;
 	}

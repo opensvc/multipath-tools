@@ -626,7 +626,7 @@ main (int argc, char *argv[])
 		condlog(0, "failed to initialize checkers");
 		goto out;
 	}
-	if (init_prio()) {
+	if (init_prio(conf->multipath_dir)) {
 		condlog(0, "failed to initialize prioritizers");
 		goto out;
 	}

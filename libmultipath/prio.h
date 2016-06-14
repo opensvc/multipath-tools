@@ -53,12 +53,12 @@ struct prio {
 };
 
 unsigned int get_prio_timeout(unsigned int default_timeout);
-int init_prio (void);
+int init_prio (char *);
 void cleanup_prio (void);
-struct prio * add_prio (char *);
+struct prio * add_prio (char *, char *);
 struct prio * prio_lookup (char *);
 int prio_getprio (struct prio *, struct path *);
-void prio_get (struct prio *, char *, char *);
+void prio_get (char *, struct prio *, char *, char *);
 void prio_put (struct prio *);
 int prio_selected (struct prio *);
 char * prio_name (struct prio *);

@@ -17,9 +17,9 @@ unsigned int get_prio_timeout(unsigned int default_timeout)
 	return default_timeout;
 }
 
-int init_prio (void)
+int init_prio (char *multipath_dir)
 {
-	if (!add_prio(DEFAULT_PRIO))
+	if (!add_prio(multipath_dir, DEFAULT_PRIO))
 		return 1;
 	return 0;
 }
@@ -78,7 +78,7 @@ struct prio * prio_lookup (char * name)
 		if (!strncmp(name, p->name, PRIO_NAME_LEN))
 			return p;
 	}
-	return add_prio(name);
+	return NULL;
 }
 
 int prio_set_args (struct prio * p, char * args)
@@ -86,7 +86,7 @@ int prio_set_args (struct prio * p, char * args)
 	return snprintf(p->args, PRIO_ARGS_LEN, "%s", args);
 }
 
-struct prio * add_prio (char * name)
+struct prio * add_prio (char *multipath_dir, char * name)
 {
 	char libname[LIB_PRIO_NAMELEN];
 	struct stat stbuf;
@@ -98,10 +98,10 @@ struct prio * add_prio (char * name)
 		return NULL;
 	snprintf(p->name, PRIO_NAME_LEN, "%s", name);
 	snprintf(libname, LIB_PRIO_NAMELEN, "%s/libprio%s.so",
-		 conf->multipath_dir, name);
+		 multipath_dir, name);
 	if (stat(libname,&stbuf) < 0) {
 		condlog(0,"Prioritizer '%s' not found in %s",
-			name, conf->multipath_dir);
+			name, multipath_dir);
 		goto out;
 	}
 	condlog(3, "loading %s prioritizer", libname);
@@ -147,10 +147,18 @@ char * prio_args (struct prio * p)
 	return p->args;
 }
 
-void prio_get (struct prio * dst, char * name, char * args)
+void prio_get (char *multipath_dir, struct prio * dst, char * name, char * args)
 {
-	struct prio * src = prio_lookup(name);
+	struct prio * src = NULL;
 
+	if (!dst)
+		return;
+
+	if (name && strlen(name)) {
+		src = prio_lookup(name);
+		if (!src)
+			src = add_prio(multipath_dir, name);
+	}
 	if (!src) {
 		dst->getprio = NULL;
 		return;
