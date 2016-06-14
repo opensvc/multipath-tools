@@ -6,14 +6,14 @@
 
 #include "debug.h"
 #include "prio.h"
-#include "config.h"
 
 static LIST_HEAD(prioritizers);
 
-unsigned int get_prio_timeout(unsigned int default_timeout)
+unsigned int get_prio_timeout(unsigned int checker_timeout,
+			      unsigned int default_timeout)
 {
-	if (conf->checker_timeout)
-		return conf->checker_timeout * 1000;
+	if (checker_timeout)
+		return checker_timeout * 1000;
 	return default_timeout;
 }
 
@@ -67,7 +67,7 @@ void cleanup_prio(void)
 	}
 }
 
-struct prio * prio_lookup (char * name)
+static struct prio * prio_lookup (char * name)
 {
 	struct prio * p;
 
@@ -112,7 +112,7 @@ struct prio * add_prio (char *multipath_dir, char * name)
 				errstr);
 		goto out;
 	}
-	p->getprio = (int (*)(struct path *, char *)) dlsym(p->handle, "getprio");
+	p->getprio = (int (*)(struct path *, char *, unsigned int)) dlsym(p->handle, "getprio");
 	errstr = dlerror();
 	if (errstr != NULL)
 		condlog(0, "A dynamic linking error occurred: (%s)", errstr);
@@ -125,9 +125,9 @@ out:
 	return NULL;
 }
 
-int prio_getprio (struct prio * p, struct path * pp)
+int prio_getprio (struct prio * p, struct path * pp, unsigned int timeout)
 {
-	return p->getprio(pp, p->args);
+	return p->getprio(pp, p->args, timeout);
 }
 
 int prio_selected (struct prio * p)

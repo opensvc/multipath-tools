@@ -374,14 +374,15 @@ detect_prio(struct path * pp)
 	int ret;
 	struct prio *p = &pp->prio;
 	int tpgs = 0;
+	unsigned int timeout = conf->checker_timeout;
 
-	if ((tpgs = get_target_port_group_support(pp->fd)) <= 0)
+	if ((tpgs = get_target_port_group_support(pp->fd, timeout)) <= 0)
 		return;
 	pp->tpgs = tpgs;
-	ret = get_target_port_group(pp);
+	ret = get_target_port_group(pp, timeout);
 	if (ret < 0)
 		return;
-	if (get_asymmetric_access_state(pp->fd, ret) < 0)
+	if (get_asymmetric_access_state(pp->fd, ret, timeout) < 0)
 		return;
 	prio_get(conf->multipath_dir, p, PRIO_ALUA, DEFAULT_PRIO_ARGS);
 }
@@ -422,8 +423,10 @@ out:
 	 */
 	if (!strncmp(prio_name(p), PRIO_ALUA, PRIO_NAME_LEN)) {
 		int tpgs = 0;
+		unsigned int timeout = conf->checker_timeout;
+
 		if(!pp->tpgs &&
-		   (tpgs = get_target_port_group_support(pp->fd)) >= 0)
+		   (tpgs = get_target_port_group_support(pp->fd, timeout)) >= 0)
 			pp->tpgs = tpgs;
 	}
 	condlog(3, "%s: prio = %s %s", pp->dev, prio_name(p), origin);

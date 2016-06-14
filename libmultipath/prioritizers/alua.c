@@ -51,14 +51,14 @@ static const char *aas_print_string(int rc)
 }
 
 int
-get_alua_info(struct path * pp)
+get_alua_info(struct path * pp, unsigned int timeout)
 {
 	int	rc;
 	int	tpg;
 
-	tpg = get_target_port_group(pp);
+	tpg = get_target_port_group(pp, timeout);
 	if (tpg < 0) {
-		rc = get_target_port_group_support(pp->fd);
+		rc = get_target_port_group_support(pp->fd, timeout);
 		if (rc < 0)
 			return -ALUA_PRIO_TPGS_FAILED;
 		if (rc == TPGS_NONE)
@@ -66,7 +66,7 @@ get_alua_info(struct path * pp)
 		return -ALUA_PRIO_RTPG_FAILED;
 	}
 	condlog(3, "reported target port group is %i", tpg);
-	rc = get_asymmetric_access_state(pp->fd, tpg);
+	rc = get_asymmetric_access_state(pp->fd, tpg, timeout);
 	if (rc < 0)
 		return -ALUA_PRIO_GETAAS_FAILED;
 
@@ -91,7 +91,7 @@ int get_exclusive_perf_arg(char *args)
 	return 1;
 }
 
-int getprio (struct path * pp, char * args)
+int getprio (struct path * pp, char * args, unsigned int timeout)
 {
 	int rc;
 	int aas;
@@ -102,7 +102,7 @@ int getprio (struct path * pp, char * args)
 		return -ALUA_PRIO_NO_INFORMATION;
 
 	exclusive_perf = get_exclusive_perf_arg(args);
-	rc = get_alua_info(pp);
+	rc = get_alua_info(pp, timeout);
 	if (rc >= 0) {
 		aas = (rc & 0x0f);
 		priopath = (rc & 0x80);

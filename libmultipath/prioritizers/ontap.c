@@ -71,7 +71,8 @@ static void process_sg_error(struct sg_io_hdr *io_hdr)
  *  0: success
  */
 static int send_gva(const char *dev, int fd, unsigned char pg,
-		    unsigned char *results, int *results_size)
+		    unsigned char *results, int *results_size,
+		    unsigned int timeout)
 {
 	unsigned char sb[128];
 	unsigned char cdb[10] = {0xc0, 0, 0x1, 0xa, 0x98, 0xa,
@@ -89,7 +90,7 @@ static int send_gva(const char *dev, int fd, unsigned char pg,
 	io_hdr.dxferp = results;
 	io_hdr.cmdp = cdb;
 	io_hdr.sbp = sb;
-	io_hdr.timeout = get_prio_timeout(SG_TIMEOUT);
+	io_hdr.timeout = get_prio_timeout(timeout, SG_TIMEOUT);
 	io_hdr.pack_id = 0;
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
 		pp_ontap_log(0, "SG_IO ioctl failed, errno=%d", errno);
@@ -122,7 +123,7 @@ static int send_gva(const char *dev, int fd, unsigned char pg,
  *  0: Device _not_ proxy path
  *  1: Device _is_ proxy path
  */
-static int get_proxy(const char *dev, int fd)
+static int get_proxy(const char *dev, int fd, unsigned int timeout)
 {
 	unsigned char results[256];
 	unsigned char sb[128];
@@ -141,7 +142,7 @@ static int get_proxy(const char *dev, int fd)
 	io_hdr.dxferp = results;
 	io_hdr.cmdp = cdb;
 	io_hdr.sbp = sb;
-	io_hdr.timeout = get_prio_timeout(SG_TIMEOUT);
+	io_hdr.timeout = get_prio_timeout(timeout, SG_TIMEOUT);
 	io_hdr.pack_id = 0;
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
 		pp_ontap_log(0, "ioctl sending inquiry command failed, "
@@ -182,7 +183,7 @@ static int get_proxy(const char *dev, int fd)
  * 2: iSCSI software
  * 1: FCP proxy
  */
-static int ontap_prio(const char *dev, int fd)
+static int ontap_prio(const char *dev, int fd, unsigned int timeout)
 {
 	unsigned char results[RESULTS_MAX];
 	int results_size=RESULTS_MAX;
@@ -195,7 +196,7 @@ static int ontap_prio(const char *dev, int fd)
 	is_iscsi_software = is_iscsi_hardware = is_proxy = 0;
 
 	memset(&results, 0, sizeof (results));
-	rc = send_gva(dev, fd, 0x41, results, &results_size);
+	rc = send_gva(dev, fd, 0x41, results, &results_size, timeout);
 	if (rc >= 0) {
 		tot_len = results[0] << 24 | results[1] << 16 |
 			  results[2] << 8 | results[3];
@@ -221,7 +222,7 @@ static int ontap_prio(const char *dev, int fd)
 	}
 
  try_fcp_proxy:
-	rc = get_proxy(dev, fd);
+	rc = get_proxy(dev, fd, timeout);
 	if (rc >= 0) {
 		is_proxy = rc;
 	}
@@ -241,7 +242,7 @@ static int ontap_prio(const char *dev, int fd)
 	}
 }
 
-int getprio (struct path * pp, char * args)
+int getprio (struct path * pp, char * args, unsigned int timeout)
 {
-	return ontap_prio(pp->dev, pp->fd);
+	return ontap_prio(pp->dev, pp->fd, timeout);
 }

@@ -12,7 +12,7 @@
 
 #define pp_emc_log(prio, msg) condlog(prio, "%s: emc prio: " msg, dev)
 
-int emc_clariion_prio(const char *dev, int fd)
+int emc_clariion_prio(const char *dev, int fd, unsigned int timeout)
 {
 	unsigned char sense_buffer[128];
 	unsigned char sb[128];
@@ -31,7 +31,7 @@ int emc_clariion_prio(const char *dev, int fd)
 	io_hdr.dxferp = sense_buffer;
 	io_hdr.cmdp = inqCmdBlk;
 	io_hdr.sbp = sb;
-	io_hdr.timeout = get_prio_timeout(60000);
+	io_hdr.timeout = get_prio_timeout(timeout, 60000);
 	io_hdr.pack_id = 0;
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
 		pp_emc_log(0, "sending query command failed");
@@ -81,7 +81,7 @@ out:
 	return(ret);
 }
 
-int getprio (struct path * pp, char * args)
+int getprio (struct path * pp, char * args, unsigned int timeout)
 {
-	return emc_clariion_prio(pp->dev, pp->fd);
+	return emc_clariion_prio(pp->dev, pp->fd, timeout);
 }

@@ -115,7 +115,8 @@ scsi_error(struct sg_io_hdr *hdr)
  * Helper function to setup and run a SCSI inquiry command.
  */
 int
-do_inquiry(int fd, int evpd, unsigned int codepage, void *resp, int resplen)
+do_inquiry(int fd, int evpd, unsigned int codepage,
+	   void *resp, int resplen, unsigned int timeout)
 {
 	struct inquiry_command	cmd;
 	struct sg_io_hdr	hdr;
@@ -139,7 +140,7 @@ do_inquiry(int fd, int evpd, unsigned int codepage, void *resp, int resplen)
 	hdr.dxfer_len		= resplen;
 	hdr.sbp			= sense;
 	hdr.mx_sb_len		= sizeof(sense);
-	hdr.timeout		= get_prio_timeout(SGIO_TIMEOUT);
+	hdr.timeout		= get_prio_timeout(timeout, SGIO_TIMEOUT);
 
 	if (ioctl(fd, SG_IO, &hdr) < 0) {
 		PRINT_DEBUG("do_inquiry: IOCTL failed!\n");
@@ -160,13 +161,13 @@ do_inquiry(int fd, int evpd, unsigned int codepage, void *resp, int resplen)
  * data returned by the standard inquiry command.
  */
 int
-get_target_port_group_support(int fd)
+get_target_port_group_support(int fd, unsigned int timeout)
 {
 	struct inquiry_data	inq;
 	int			rc;
 
 	memset((unsigned char *)&inq, 0, sizeof(inq));
-	rc = do_inquiry(fd, 0, 0x00, &inq, sizeof(inq));
+	rc = do_inquiry(fd, 0, 0x00, &inq, sizeof(inq), timeout);
 	if (!rc) {
 		rc = inquiry_data_get_tpgs(&inq);
 	}
@@ -194,7 +195,7 @@ get_sysfs_pg83(struct path *pp, unsigned char *buff, int buflen)
 }
 
 int
-get_target_port_group(struct path * pp)
+get_target_port_group(struct path * pp, unsigned int timeout)
 {
 	unsigned char		*buf;
 	struct vpd83_data *	vpd83;
@@ -215,7 +216,7 @@ get_target_port_group(struct path * pp)
 	rc = get_sysfs_pg83(pp, buf, buflen);
 
 	if (rc < 0) {
-		rc = do_inquiry(pp->fd, 1, 0x83, buf, buflen);
+		rc = do_inquiry(pp->fd, 1, 0x83, buf, buflen, timeout);
 		if (rc < 0)
 			goto out;
 
@@ -233,7 +234,7 @@ get_target_port_group(struct path * pp)
 			}
 			buflen = scsi_buflen;
 			memset(buf, 0, buflen);
-			rc = do_inquiry(pp->fd, 1, 0x83, buf, buflen);
+			rc = do_inquiry(pp->fd, 1, 0x83, buf, buflen, timeout);
 			if (rc < 0)
 				goto out;
 		}
@@ -264,7 +265,7 @@ out:
 }
 
 int
-do_rtpg(int fd, void* resp, long resplen)
+do_rtpg(int fd, void* resp, long resplen, unsigned int timeout)
 {
 	struct rtpg_command	cmd;
 	struct sg_io_hdr	hdr;
@@ -285,7 +286,7 @@ do_rtpg(int fd, void* resp, long resplen)
 	hdr.dxfer_len		= resplen;
 	hdr.mx_sb_len		= sizeof(sense);
 	hdr.sbp			= sense;
-	hdr.timeout		= get_prio_timeout(SGIO_TIMEOUT);
+	hdr.timeout		= get_prio_timeout(timeout, SGIO_TIMEOUT);
 
 	if (ioctl(fd, SG_IO, &hdr) < 0)
 		return -RTPG_RTPG_FAILED;
@@ -300,7 +301,7 @@ do_rtpg(int fd, void* resp, long resplen)
 }
 
 int
-get_asymmetric_access_state(int fd, unsigned int tpg)
+get_asymmetric_access_state(int fd, unsigned int tpg, unsigned int timeout)
 {
 	unsigned char		*buf;
 	struct rtpg_data *	tpgd;
@@ -317,7 +318,7 @@ get_asymmetric_access_state(int fd, unsigned int tpg)
 		return -RTPG_RTPG_FAILED;
 	}
 	memset(buf, 0, buflen);
-	rc = do_rtpg(fd, buf, buflen);
+	rc = do_rtpg(fd, buf, buflen, timeout);
 	if (rc < 0)
 		goto out;
 	scsi_buflen = (buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3]) + 4;
@@ -333,7 +334,7 @@ get_asymmetric_access_state(int fd, unsigned int tpg)
 		}
 		buflen = scsi_buflen;
 		memset(buf, 0, buflen);
-		rc = do_rtpg(fd, buf, buflen);
+		rc = do_rtpg(fd, buf, buflen, timeout);
 		if (rc < 0)
 			goto out;
 	}

@@ -1460,7 +1460,7 @@ get_prio (struct path * pp)
 			return 1;
 		}
 	}
-	pp->priority = prio_getprio(p, pp);
+	pp->priority = prio_getprio(p, pp, conf->checker_timeout);
 	if (pp->priority < 0) {
 		condlog(3, "%s: %s prio error", pp->dev, prio_name(p));
 		pp->priority = PRIO_UNDEF;

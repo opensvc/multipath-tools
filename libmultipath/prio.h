@@ -49,15 +49,15 @@ struct prio {
 	struct list_head node;
 	char name[PRIO_NAME_LEN];
 	char args[PRIO_ARGS_LEN];
-	int (*getprio)(struct path *, char *);
+	int (*getprio)(struct path *, char *, unsigned int);
 };
 
-unsigned int get_prio_timeout(unsigned int default_timeout);
+unsigned int get_prio_timeout(unsigned int checker_timeout,
+			      unsigned int default_timeout);
 int init_prio (char *);
 void cleanup_prio (void);
 struct prio * add_prio (char *, char *);
-struct prio * prio_lookup (char *);
-int prio_getprio (struct prio *, struct path *);
+int prio_getprio (struct prio *, struct path *, unsigned int);
 void prio_get (char *, struct prio *, char *, char *);
 void prio_put (struct prio *);
 int prio_selected (struct prio *);
