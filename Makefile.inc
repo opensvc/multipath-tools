@@ -39,7 +39,7 @@ ifndef SYSTEMDPATH
 	SYSTEMDPATH=usr/lib
 endif
 
-prefix      = 
+prefix      =
 exec_prefix = $(prefix)
 bindir      = $(exec_prefix)/sbin
 libudevdir  = $(prefix)/$(SYSTEMDPATH)/udev

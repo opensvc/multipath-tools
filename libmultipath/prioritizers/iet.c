@@ -16,7 +16,7 @@
 // (It's a bit of a misnomer since supports the client side [eg. open-iscsi]
 //  instead of just "iet".)
 //
-// Usage: 
+// Usage:
 //   prio      "iet"
 //   prio_args "preferredip=10.11.12.13"
 //

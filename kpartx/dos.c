@@ -1,7 +1,7 @@
 /*
  * Source: copy of util-linux' partx dos.c
  *
- * Copyrights of the original file apply 
+ * Copyrights of the original file apply
  * Copyright (c) 2005 Bastian Blank
  */
 #include "kpartx.h"

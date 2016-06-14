@@ -29,12 +29,12 @@ static const char * pr_type_strs[] = {
 };
 
 int get_transportids_length(unsigned char * transportid_arr, int max_transportid, int num_transportids);
-void mpath_print_buf_readcap(struct prin_resp *pr_buff); 
+void mpath_print_buf_readcap(struct prin_resp *pr_buff);
 void mpath_print_buf_readfullstat(struct prin_resp *pr_buff);
 void mpath_print_buf_readresv(struct prin_resp *pr_buff);
 void mpath_print_buf_readkeys(struct prin_resp *pr_buff);
 void dumpHex(const char* str, int len, int no_ascii);
-void * mpath_alloc_prin_response(int prin_sa);	
+void * mpath_alloc_prin_response(int prin_sa);
 void mpath_print_transport_id(struct prin_fulldescr *fdesc);
 int construct_transportid(const char * inp, struct transportid transid[], int num_transportids);
 
@@ -236,7 +236,7 @@ int main (int argc, char * argv[])
                                 break;
 
 			default:
-				fprintf(stderr, "unrecognised switch " "code 0x%x ??\n", c);	
+				fprintf(stderr, "unrecognised switch " "code 0x%x ??\n", c);
 				usage ();
 				ret = MPATH_PR_SYNTAX_ERROR;
 				goto out;
@@ -379,29 +379,29 @@ int main (int argc, char * argv[])
 		if (ret != MPATH_PR_SUCCESS )
 		{
 			fprintf (stderr, "Persistent Reserve IN command failed\n");
-			goto out;	
+			goto out;
 		}
 
 		switch(prin_sa)
-		{			
-			case MPATH_PRIN_RKEY_SA: 
-				mpath_print_buf_readkeys(resp);		
+		{
+			case MPATH_PRIN_RKEY_SA:
+				mpath_print_buf_readkeys(resp);
 				break;
-			case MPATH_PRIN_RRES_SA: 
+			case MPATH_PRIN_RRES_SA:
 				mpath_print_buf_readresv(resp);
 				break;
 			case MPATH_PRIN_RCAP_SA:
-				mpath_print_buf_readcap(resp);		
+				mpath_print_buf_readcap(resp);
 				break;
 			case MPATH_PRIN_RFSTAT_SA:
-				mpath_print_buf_readfullstat(resp);		
+				mpath_print_buf_readfullstat(resp);
 				break;
 		}
 		free(resp);
 	}
 	else if (prout)
 	{
-		int j; 
+		int j;
 		struct prout_param_descriptor *paramp;
 
 		paramp= malloc(sizeof(struct prout_param_descriptor) + (sizeof(struct transportid *)*(MPATH_MX_TIDS )));
@@ -423,7 +423,7 @@ int main (int argc, char * argv[])
 		if (param_aptpl)
 			paramp->sa_flags |= 0x1;
 
-		if (num_transport) 
+		if (num_transport)
 		{
 			paramp->sa_flags |= MPATH_F_SPEC_I_PT_MASK;
 			paramp->num_transportid = num_transport;
@@ -538,7 +538,7 @@ void mpath_print_buf_readresv( struct prin_resp *pr_buff)
 {
 	int j, num, scope=0, type=0;
 	unsigned char *keyp;
-	uint64_t prkey;	
+	uint64_t prkey;
 
 	num = pr_buff->prin_descriptor.prin_readresv.additional_length / 8;
 	if (0 == num)
@@ -548,7 +548,7 @@ void mpath_print_buf_readresv( struct prin_resp *pr_buff)
 	}
 	else
 		printf("  PR generation=0x%x, Reservation follows:\n", pr_buff->prin_descriptor.prin_readresv.prgeneration);
-	keyp = (unsigned  char *)&pr_buff->prin_descriptor.prin_readkeys.key_list[0]; 
+	keyp = (unsigned  char *)&pr_buff->prin_descriptor.prin_readkeys.key_list[0];
 	prkey = 0;
 	for (j = 0; j < 8; ++j) {
 		if (j > 0)
@@ -561,7 +561,7 @@ void mpath_print_buf_readresv( struct prin_resp *pr_buff)
 	scope = (pr_buff->prin_descriptor.prin_readresv.scope_type >> 4) &  0x0f;
 	type = pr_buff->prin_descriptor.prin_readresv.scope_type & 0x0f;
 
-	if (scope == 0)	
+	if (scope == 0)
 		printf("  scope = LU_SCOPE, type = %s", pr_type_strs[type]);
 	else
 		printf("  scope = %d, type = %s", scope, pr_type_strs[type]);
@@ -610,7 +610,7 @@ void mpath_print_buf_readfullstat( struct prin_resp *pr_buff)
 	uint16_t  rel_pt_addr;
 	unsigned char * keyp;
 
-	num = pr_buff->prin_descriptor.prin_readfd.number_of_descriptor;	
+	num = pr_buff->prin_descriptor.prin_readfd.number_of_descriptor;
 	if (0 == num)
 	{
 		printf("  PR generation=0x%x \n", pr_buff->prin_descriptor.prin_readfd.prgeneration);
@@ -632,7 +632,7 @@ void mpath_print_buf_readfullstat( struct prin_resp *pr_buff)
 		}
 		printf("   Key = 0x%" PRIx64 "\n", prkey);
 
-		if (pr_buff->prin_descriptor.prin_readfd.descriptors[i]->flag & 0x02)	
+		if (pr_buff->prin_descriptor.prin_readfd.descriptors[i]->flag & 0x02)
 			printf("      All target ports bit set\n");
 		else {
 			printf("      All target ports bit clear\n");
@@ -705,7 +705,7 @@ mpath_print_transport_id(struct prin_fulldescr *fdesc)
 		case MPATH_PROTOCOL_ID_FC:
 			printf("   FCP-2 ");
 			if (0 != fdesc->trnptid.format_code)
-				printf(" [Unexpected format code: %d]\n", 
+				printf(" [Unexpected format code: %d]\n",
 						fdesc->trnptid.format_code);
 			dumpHex((const char *)fdesc->trnptid.n_port_name, 8, 0);
 			break;

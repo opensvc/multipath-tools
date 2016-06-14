@@ -1,10 +1,10 @@
-/* 
+/*
  * Soft:        Keepalived is a failover program for the LVS project
  *              <www.linuxvirtualserver.org>. It monitor & manipulate
  *              a loadbalanced server pool using multi-layer checks.
- * 
+ *
  * Part:        vector.c include file.
- *  
+ *
  * Version:     $Id: vector.h,v 1.0.3 2003/05/11 02:28:03 acassen Exp $
  *
  * Author:      Alexandre Cassen, <acassen@linux-vs.org>

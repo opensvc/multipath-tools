@@ -1,5 +1,5 @@
 .\"
-.TH MPATH_PERSISTENT_RESERVE_IN 3  2011-04-08 "Linux Manpage" 
+.TH MPATH_PERSISTENT_RESERVE_IN 3  2011-04-08 "Linux Manpage"
 .SH NAME
 mpath_persistent_reserve_in
 .SH SYNOPSIS
@@ -34,10 +34,10 @@ sends PRIN command to the DM device and gets the response.
 .I MPATH_PR_SUCCESS
 .B if PR command successful
 .br
-.I MPATH_PR_SYNTAX_ERROR        
+.I MPATH_PR_SYNTAX_ERROR
 .B if  syntax error or invalid parameter
 .br
-.I MPATH_PR_SENSE_NOT_READY     
+.I MPATH_PR_SENSE_NOT_READY
 .B  if command fails with [sk,asc,ascq: 0x2,*,*]
 .br
 .I MPATH_PR_SENSE_MEDIUM_ERROR
@@ -61,14 +61,14 @@ sends PRIN command to the DM device and gets the response.
 .I MPATH_PR_NO_SENSE
 .B  if command fails with [sk,asc,ascq: 0x0,*,*]
 .br
-.I MPATH_PR_SENSE_MALFORMED  
+.I MPATH_PR_SENSE_MALFORMED
 .B if command fails with SCSI command malformed
 .br
 .I MPATH_PR_FILE_ERROR
 .B if command fails while accessing file (device node) problems(e.g. not found)
 .br
 .I MPATH_PR_DMMP_ERROR
-.B if Device Mapper related error.(e.g Error in getting dm info) 
+.B if Device Mapper related error.(e.g Error in getting dm info)
 .br
 .I MPATH_PR_OTHER
 .B if other error/warning has occurred(e.g transport or driver error)

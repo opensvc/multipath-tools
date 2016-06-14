@@ -2,9 +2,9 @@
 #
 include ../Makefile.inc
 
-OBJS = main.o 
+OBJS = main.o
 
-CFLAGS += -I$(multipathdir) -I$(mpathpersistdir) 
+CFLAGS += -I$(multipathdir) -I$(mpathpersistdir)
 LDFLAGS += -lpthread -ldevmapper -L$(mpathpersistdir) -lmpathpersist -L$(multipathdir) -L$(mpathcmddir) -lmpathcmd -lmultipath -ludev
 
 EXEC = mpathpersist

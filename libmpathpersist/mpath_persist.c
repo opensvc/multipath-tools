@@ -530,7 +530,7 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 				memcpy(&thread[i].param.paramp->key, &thread[i].param.paramp->sa_key, 8);
 				memset(&thread[i].param.paramp->sa_key, 0, 8);
 				thread[i].param.status = MPATH_PR_SUCCESS;
-				rc = pthread_create(&thread[i].id, &attr, mpath_prout_pthread_fn, 
+				rc = pthread_create(&thread[i].id, &attr, mpath_prout_pthread_fn,
 						(void *)(&thread[i].param));
 				if (rc){
 					condlog (0, "%s: failed to create thread for rollback. %d",  mpp->wwid, rc);

@@ -422,7 +422,7 @@ out:
 	 */
 	if (!strncmp(prio_name(p), PRIO_ALUA, PRIO_NAME_LEN)) {
 		int tpgs = 0;
-		if(!pp->tpgs && 
+		if(!pp->tpgs &&
 		   (tpgs = get_target_port_group_support(pp->fd)) >= 0)
 			pp->tpgs = tpgs;
 	}

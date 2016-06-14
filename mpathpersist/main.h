@@ -18,7 +18,7 @@ static struct option long_options[] = {
 	{"register", 0, 0, 'G'},
 	{"register-ignore", 0, 0, 'I'},
 	{"release", 0, 0, 'L'},
-	{"report-capabilities", 0, 0, 'c'},		
+	{"report-capabilities", 0, 0, 'c'},
 	{"reserve", 0, 0, 'R'},
 	{"transport-id", 1, 0, 'X'},
 	{"alloc-length", 1, 0, 'l'},

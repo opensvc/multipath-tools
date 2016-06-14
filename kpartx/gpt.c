@@ -1,7 +1,7 @@
 /*
     gpt.[ch]
 
-    Copyright (C) 2000-2001 Dell Computer Corporation <Matt_Domsch@dell.com> 
+    Copyright (C) 2000-2001 Dell Computer Corporation <Matt_Domsch@dell.com>
 
     EFI GUID Partition Table handling
     Per Intel EFI Specification v1.02
@@ -77,7 +77,7 @@ struct blkdev_ioctl_param {
  * @len - length of buf
  *
  * Description: Returns EFI-style CRC32 value for @buf
- * 
+ *
  * This function uses the little endian Ethernet polynomial
  * but seeds the function with ~0, and xor's with ~0 at the end.
  * Note, the EFI Specification, v1.02, has a reference to
@@ -122,7 +122,7 @@ is_pmbr_valid(legacy_mbr *mbr)
  *  - filedes is an open file descriptor, suitable for reading
  * Modifies: nothing
  * Returns:
- *  Last LBA value on success 
+ *  Last LBA value on success
  *  0 on error
  *
  * Try getting BLKGETSIZE64 and BLKSSZGET first,
@@ -146,9 +146,9 @@ _get_num_sectors(int filedes)
 
 /************************************************************
  * last_lba(): return number of last logical block of device
- * 
+ *
  * @fd
- * 
+ *
  * Description: returns Last LBA value on success, 0 on error.
  * Notes: The value st_blocks gives the size of the file
  *        in 512-byte blocks, which is OK if
@@ -188,7 +188,7 @@ read_lastoddsector(int fd, uint64_t lba, void *buffer, size_t count)
         int rc;
         struct blkdev_ioctl_param ioctl_param;
 
-        if (!buffer) return 0; 
+        if (!buffer) return 0;
 
         ioctl_param.block = 0; /* read the last sector */
         ioctl_param.content_length = count;
@@ -229,7 +229,7 @@ read_lba(int fd, uint64_t lba, void *buffer, size_t bytes)
 /**
  * alloc_read_gpt_entries(): reads partition entries from disk
  * @fd  is an open file descriptor to the whole disk
- * @gpt is a buffer into which the GPT will be put  
+ * @gpt is a buffer into which the GPT will be put
  * Description: Returns ptes on success,  NULL on error.
  * Allocates space for PTEs based on information found in @gpt.
  * Notes: remember to free pte when you're done!
@@ -260,7 +260,7 @@ alloc_read_gpt_entries(int fd, gpt_header * gpt)
  * alloc_read_gpt_header(): Allocates GPT header, reads into it from disk
  * @fd  is an open file descriptor to the whole disk
  * @lba is the Logical Block Address of the partition table
- * 
+ *
  * Description: returns GPT header on success, NULL on error.   Allocates
  * and fills a GPT header starting at @ from @bdev.
  * Note: remember to free gpt when finished with it.
@@ -306,7 +306,7 @@ is_gpt_valid(int fd, uint64_t lba,
 
 	/* Check the GUID Partition Table signature */
 	if (__le64_to_cpu((*gpt)->signature) != GPT_HEADER_SIGNATURE) {
-		/* 
+		/*
 		   printf("GUID Partition Table Header signature is wrong: %" PRIx64" != %" PRIx64 "\n",
 		   __le64_to_cpu((*gpt)->signature), GUID_PT_HEADER_SIGNATURE);
 		 */
@@ -387,7 +387,7 @@ is_gpt_valid(int fd, uint64_t lba,
  * @lastlba is the last LBA number
  * Description: Returns nothing.  Sanity checks pgpt and agpt fields
  * and prints warnings on discrepancies.
- * 
+ *
  */
 static void
 compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
@@ -397,7 +397,7 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 		return;
 	if (__le64_to_cpu(pgpt->my_lba) != __le64_to_cpu(agpt->alternate_lba)) {
 		error_found++;
-		fprintf(stderr, 
+		fprintf(stderr,
 		       "GPT:Primary header LBA != Alt. header alternate_lba\n");
 #ifdef DEBUG
 		fprintf(stderr,  "GPT:%" PRIx64 " != %" PRIx64 "\n",
@@ -407,7 +407,7 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 	}
 	if (__le64_to_cpu(pgpt->alternate_lba) != __le64_to_cpu(agpt->my_lba)) {
 		error_found++;
-		fprintf(stderr, 
+		fprintf(stderr,
 		       "GPT:Primary header alternate_lba != Alt. header my_lba\n");
 #ifdef DEBUG
 		fprintf(stderr,  "GPT:%" PRIx64 " != %" PRIx64 "\n",
@@ -450,7 +450,7 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 	if (__le32_to_cpu(pgpt->sizeof_partition_entry) !=
             __le32_to_cpu(agpt->sizeof_partition_entry)) {
 		error_found++;
-		fprintf(stderr, 
+		fprintf(stderr,
 		       "GPT:sizeof_partition_entry values don't match: "
 		       "0x%x != 0x%x\n",
                        __le32_to_cpu(pgpt->sizeof_partition_entry),
@@ -459,7 +459,7 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 	if (__le32_to_cpu(pgpt->partition_entry_array_crc32) !=
             __le32_to_cpu(agpt->partition_entry_array_crc32)) {
 		error_found++;
-		fprintf(stderr, 
+		fprintf(stderr,
 		       "GPT:partition_entry_array_crc32 values don't match: "
 		       "0x%x != 0x%x\n",
                        __le32_to_cpu(pgpt->partition_entry_array_crc32),
@@ -467,7 +467,7 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 	}
 	if (__le64_to_cpu(pgpt->alternate_lba) != lastlba) {
 		error_found++;
-		fprintf(stderr, 
+		fprintf(stderr,
 		       "GPT:Primary header thinks Alt. header is not at the end of the disk.\n");
 #ifdef DEBUG
 		fprintf(stderr,  "GPT:%" PRIx64 " != %" PRIx64 "\n",
@@ -477,7 +477,7 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 
 	if (__le64_to_cpu(agpt->my_lba) != lastlba) {
 		error_found++;
-		fprintf(stderr, 
+		fprintf(stderr,
 		       "GPT:Alternate GPT header not at the end of the disk.\n");
 #ifdef DEBUG
 		fprintf(stderr,  "GPT:%" PRIx64 " != %" PRIx64 "\n",
@@ -486,7 +486,7 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 	}
 
 	if (error_found)
-		fprintf(stderr, 
+		fprintf(stderr,
 		       "GPT: Use GNU Parted to correct GPT errors.\n");
 	return;
 }
@@ -560,7 +560,7 @@ find_valid_gpt(int fd, gpt_header ** gpt, gpt_entry ** ptes)
 
         /* Would fail due to bad PMBR, but force GPT anyhow */
         if ((good_pgpt || good_agpt) && !good_pmbr && force_gpt) {
-                fprintf(stderr, 
+                fprintf(stderr,
                        "  Warning: Disk has a valid GPT signature but "
                        "invalid PMBR.\n"
                        "  Use GNU Parted to correct disk.\n"
@@ -576,7 +576,7 @@ find_valid_gpt(int fd, gpt_header ** gpt, gpt_entry ** ptes)
                 if (agpt)  { free(agpt);   agpt = NULL; }
                 if (aptes) { free(aptes); aptes = NULL; }
                 if (!good_agpt) {
-                        fprintf(stderr, 
+                        fprintf(stderr,
 			       "Alternate GPT is invalid, "
                                "using primary GPT.\n");
                 }
@@ -587,7 +587,7 @@ find_valid_gpt(int fd, gpt_header ** gpt, gpt_entry ** ptes)
                 *ptes = aptes;
                 if (pgpt)  { free(pgpt);   pgpt = NULL; }
                 if (pptes) { free(pptes); pptes = NULL; }
-                fprintf(stderr, 
+                fprintf(stderr,
                        "Primary GPT is invalid, using alternate GPT.\n");
                 return 1;
         }
@@ -603,7 +603,7 @@ find_valid_gpt(int fd, gpt_header ** gpt, gpt_entry ** ptes)
 }
 
 /**
- * read_gpt_pt() 
+ * read_gpt_pt()
  * @fd
  * @all - slice with start/size of whole disk
  *

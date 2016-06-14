@@ -9,7 +9,7 @@
  *
  * Author(s): Jan Kunigk
  *            S. Bader <shbader@de.ibm.com>
- * 
+ *
  * This file is released under the GPL.
  */
 #include <stdio.h>

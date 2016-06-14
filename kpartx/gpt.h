@@ -1,7 +1,7 @@
 /*
     gpt.[ch]
 
-    Copyright (C) 2000-2001 Dell Computer Corporation <Matt_Domsch@dell.com> 
+    Copyright (C) 2000-2001 Dell Computer Corporation <Matt_Domsch@dell.com>
 
     EFI GUID Partition Table handling
     Per Intel EFI Specification v1.02
@@ -76,15 +76,15 @@ typedef struct _gpt_entry {
 } __attribute__ ((packed)) gpt_entry;
 
 
-/* 
+/*
    These values are only defaults.  The actual on-disk structures
    may define different sizes, so use those unless creating a new GPT disk!
 */
 
 #define GPT_DEFAULT_RESERVED_PARTITION_ENTRY_ARRAY_SIZE 16384
-/* 
+/*
    Number of actual partition entries should be calculated
-   as: 
+   as:
 */
 #define GPT_DEFAULT_RESERVED_PARTITION_ENTRIES \
         (GPT_DEFAULT_RESERVED_PARTITION_ENTRY_ARRAY_SIZE / \
@@ -118,7 +118,7 @@ int read_gpt_pt (int fd, struct slice all, struct slice *sp, int ns);
  * of the file.
  * ---------------------------------------------------------------------------
  * Local variables:
- * c-indent-level: 4 
+ * c-indent-level: 4
  * c-brace-imaginary-offset: 0
  * c-brace-offset: -4
  * c-argdecl-indent: 4

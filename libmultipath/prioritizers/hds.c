@@ -6,15 +6,15 @@
  *
  * Prioritizer for Device Mapper Multipath and HDS Storage
  *
- * Hitachis Modular Storage contains two controllers for redundancy. The 
- * Storage internal LUN (LDEV) will normally allocated via two pathes to the 
- * server (one path per controller). For performance reasons should the server 
+ * Hitachis Modular Storage contains two controllers for redundancy. The
+ * Storage internal LUN (LDEV) will normally allocated via two pathes to the
+ * server (one path per controller). For performance reasons should the server
  * access to a LDEV only via one controller. The other path to the other
- * controller is stand-by. It is also possible to allocate more as one path 
- * for a LDEV per controller. Here is active/active access allowed. The other 
+ * controller is stand-by. It is also possible to allocate more as one path
+ * for a LDEV per controller. Here is active/active access allowed. The other
  * pathes via the other controller are stand-by.
  *
- * This prioritizer checks with inquiry command the represented LDEV and 
+ * This prioritizer checks with inquiry command the represented LDEV and
  * Controller number and gives back a priority followed by this scheme:
  *
  * CONTROLLER ODD  and LDEV  ODD: PRIORITY 1
@@ -22,19 +22,19 @@
  * CONTROLLER EVEN and LDEV  ODD: PRIORITY 0
  * CONTROLLER EVEN and LDEV EVEN: PRIORITY 1
  *
- * In the storage you can define for each LDEV a owner controller. If the 
- * server makes IOs via the other controller the storage will switch the 
- * ownership automatically. In this case you can see in the storage that the 
+ * In the storage you can define for each LDEV a owner controller. If the
+ * server makes IOs via the other controller the storage will switch the
+ * ownership automatically. In this case you can see in the storage that the
  * current controller is different from the default controller, but this is
  * absolutely no problem.
  *
- * With this prioritizer it is possible to establish a static load balancing. 
- * Half of the LUNs are accessed via one HBA/storage controller and the other 
+ * With this prioritizer it is possible to establish a static load balancing.
+ * Half of the LUNs are accessed via one HBA/storage controller and the other
  * half via the other HBA/storage controller.
  *
  * In cluster environmemnts (RAC) it also guarantees that all cluster nodes have
  * access to the LDEVs via the same controller.
- * 
+ *
  * You can run the prioritizer manually in verbose mode:
  * # pp_hds_modular -v 8:224
  * VENDOR:  HITACHI
@@ -50,7 +50,7 @@
  * Changes 2006-07-16:
  *         - Changed to forward declaration of functions
  *         - The switch-statement was changed to a logical expression
- *         - unlinking of the devpath now also occurs at the end of 
+ *         - unlinking of the devpath now also occurs at the end of
  *           hds_modular_prio to avoid old /tmp/.pp_balance.%u.%u.devnode
  *           entries in /tmp-Directory
  *         - The for-statements for passing variables where changed to

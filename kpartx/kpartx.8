@@ -9,8 +9,8 @@ kpartx \- Create device maps from partition tables
 .RB wholedisk
 .SH DESCRIPTION
 This tool, derived from util-linux' partx, reads partition
-tables on specified device and create device maps over partitions 
-segments detected. It is called from hotplug upon device maps 
+tables on specified device and create device maps over partitions
+segments detected. It is called from hotplug upon device maps
 creation and deletion.
 .SH OPTIONS
 .TP
@@ -52,9 +52,9 @@ This will output lines such as:
 .IP
 loop3p1 : 0 20964762 /dev/loop3 63
 .PP
-The 
+The
 .I loop3p1
-is the name of a device file under 
+is the name of a device file under
 .I /dev/mapper
 which you can use to access the partition, for example to fsck it:
 .IP

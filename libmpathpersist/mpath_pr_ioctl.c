@@ -64,7 +64,7 @@ int prout_do_scsi_ioctl(char * dev, int rq_servact, int rq_scope,
 	{
 		translen = format_transportids(paramp);
 		paramlen = 24 + translen;
-	}	
+	}
 	else
 		paramlen = 24;
 
@@ -75,7 +75,7 @@ int prout_do_scsi_ioctl(char * dev, int rq_servact, int rq_scope,
 	cdb[8] = (unsigned char)(paramlen & 0xff);
 
 retry :
-	condlog(3, "%s: rq_servact = %d", dev, rq_servact); 
+	condlog(3, "%s: rq_servact = %d", dev, rq_servact);
 	condlog(3, "%s: rq_scope = %d ", dev, rq_scope);
 	condlog(3, "%s: rq_type = %d ", dev, rq_type);
 	condlog(3, "%s: paramlen = %d", dev, paramlen);
@@ -119,7 +119,7 @@ retry :
 	if (status == MPATH_PR_SENSE_UNIT_ATTENTION && (retry > 0))
 	{
 		--retry;
-		condlog(2, "%s: retrying for Unit Attention. Remaining retries = %d", 
+		condlog(2, "%s: retrying for Unit Attention. Remaining retries = %d",
 			dev, retry);
 		goto retry;
 	}
@@ -134,13 +134,13 @@ retry :
 		goto retry;
 	}
 
-	close(fd);	
+	close(fd);
 	return status;
 }
 
 uint32_t  format_transportids(struct prout_param_descriptor *paramp)
 {
-	int i = 0, len;	
+	int i = 0, len;
 	uint32_t buff_offset = 4;
 	memset(paramp->private_buffer, 0, MPATH_MAX_PARAM_LEN);
 	for (i=0; i < paramp->num_transportid; i++ )
@@ -163,20 +163,20 @@ uint32_t  format_transportids(struct prout_param_descriptor *paramp)
 				break;
 			case MPATH_PROTOCOL_ID_ISCSI:
 				buff_offset += 1;
-				len = (paramp->trnptid_list[i]->iscsi_name[1] & 0xff)+2;	
+				len = (paramp->trnptid_list[i]->iscsi_name[1] & 0xff)+2;
 				memcpy(&paramp->private_buffer[buff_offset], &paramp->trnptid_list[i]->iscsi_name,len);
-				buff_offset += len ; 
+				buff_offset += len ;
 				break;
 		}
 
 	}
-	buff_offset -= 4; 
+	buff_offset -= 4;
 	paramp->private_buffer[0] = (unsigned char)((buff_offset >> 24) & 0xff);
 	paramp->private_buffer[1] = (unsigned char)((buff_offset >> 16) & 0xff);
 	paramp->private_buffer[2] = (unsigned char)((buff_offset >> 8) & 0xff);
 	paramp->private_buffer[3] = (unsigned char)(buff_offset & 0xff);
-	buff_offset += 4; 
-	return buff_offset;	
+	buff_offset += 4;
+	return buff_offset;
 }
 
 void mpath_format_readkeys( struct prin_resp *pr_buff, int len, int noisy)
@@ -400,7 +400,7 @@ out:
 
 int mpath_translate_response (char * dev, struct sg_io_hdr io_hdr, SenseData_t Sensedata, int noisy)
 {
-	condlog(3, "%s: status driver:%02x host:%02x scsi:%02x", dev, 
+	condlog(3, "%s: status driver:%02x host:%02x scsi:%02x", dev,
 			io_hdr.driver_status, io_hdr.host_status ,io_hdr.status);
 	io_hdr.status &= 0x7e;
 	if ((0 == io_hdr.status) && (0 == io_hdr.host_status) &&

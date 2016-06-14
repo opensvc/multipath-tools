@@ -7,7 +7,7 @@ cp /bin/readlink $INITRDDIR/bin/
 
 PROGS="/sbin/udev /sbin/udevstart /bin/mountpoint /bin/readlink"
 LIBS=`ldd $PROGS | grep -v linux-gate.so | sort -u | \
-awk '{print $3}'` 
+awk '{print $3}'`
 for i in $LIBS
 do
 	mkdir -p `dirname $INITRDDIR/$i`

@@ -285,7 +285,7 @@ set_loop (const char *device, const char *file, int offset, int *loopro)
 	return 0;
 }
 
-extern int 
+extern int
 del_loop (const char *device)
 {
 	int retries = 5;

@@ -65,7 +65,7 @@ typedef unsigned int __attribute__((__may_alias__)) label_ints_t;
 
 /*
  */
-int 
+int
 read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 {
 	int retval = -1;

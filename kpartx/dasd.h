@@ -27,33 +27,33 @@
 #ifndef _DASD_H
 #define _DASD_H
 
-typedef struct ttr 
+typedef struct ttr
 {
         uint16_t tt;
         uint8_t  r;
 } __attribute__ ((packed)) ttr_t;
 
-typedef struct cchhb 
+typedef struct cchhb
 {
         uint16_t cc;
         uint16_t hh;
         uint8_t b;
 } __attribute__ ((packed)) cchhb_t;
 
-typedef struct cchh 
+typedef struct cchh
 {
         uint16_t cc;
         uint16_t hh;
 } __attribute__ ((packed)) cchh_t;
 
-typedef struct labeldate 
+typedef struct labeldate
 {
         uint8_t  year;
         uint16_t day;
 } __attribute__ ((packed)) labeldate_t;
 
 
-typedef struct volume_label 
+typedef struct volume_label
 {
         char volkey[4];         /* volume key = volume label                 */
 	char vollbl[4];	        /* volume label                              */
@@ -73,7 +73,7 @@ typedef struct volume_label
 } __attribute__ ((packed)) volume_label_t;
 
 
-typedef struct extent 
+typedef struct extent
 {
         uint8_t  typeind;          /* extent type indicator                     */
         uint8_t  seqno;            /* extent sequence number                    */
@@ -82,7 +82,7 @@ typedef struct extent
 } __attribute__ ((packed)) extent_t;
 
 
-typedef struct dev_const 
+typedef struct dev_const
 {
         uint16_t DS4DSCYL;           /* number of logical cyls                  */
         uint16_t DS4DSTRK;           /* number of tracks in a logical cylinder  */
@@ -97,7 +97,7 @@ typedef struct dev_const
 } __attribute__ ((packed)) dev_const_t;
 
 
-typedef struct format1_label 
+typedef struct format1_label
 {
 	char  DS1DSNAM[44];       /* data set name                           */
 	uint8_t  DS1FMTID;           /* format identifier                       */
@@ -243,12 +243,12 @@ static unsigned char EBCtoASC[256] =
 	0x38, 0x39, 0x07, 0x07, 0x9A, 0x07, 0x07, 0x07
 };
 
-static inline void 
+static inline void
 vtoc_ebcdic_dec (const char *source, char *target, int l)
 {
 	int i;
 
-	for (i = 0; i < l; i++) 
+	for (i = 0; i < l; i++)
 		target[i]=(char)EBCtoASC[(unsigned char)(source[i])];
 }
 

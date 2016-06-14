@@ -292,7 +292,7 @@ sync_map_state(struct multipath *mpp)
 
 	vector_foreach_slot (mpp->pg, pgp, i){
 		vector_foreach_slot (pgp->paths, pp, j){
-			if (pp->state == PATH_UNCHECKED || 
+			if (pp->state == PATH_UNCHECKED ||
 			    pp->state == PATH_WILD ||
 			    pp->state == PATH_DELAYED)
 				continue;
