@@ -975,6 +975,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "SUN",
 		.product       = "STK6580_6780",
+		.bl_product    = "Universal Xport",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
 		.pgpolicy      = GROUP_BY_PRIO,
@@ -1051,6 +1052,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "SUN",
 		.product       = "SUN_6180",
+		.bl_product    = "Universal Xport",
 		.features      = DEFAULT_FEATURES,
 		.hwhandler     = "1 rdac",
 		.pgpolicy      = GROUP_BY_PRIO,
