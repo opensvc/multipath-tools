@@ -102,13 +102,13 @@ int snprint_multipath_topology_json (char * buff, int len,
 				struct vectors * vecs);
 int snprint_multipath_map_json (char * buff, int len,
 				struct multipath * mpp, int last);
-int snprint_defaults (char *, int);
-int snprint_blacklist (char *, int);
-int snprint_blacklist_except (char *, int);
-int snprint_blacklist_report (char *, int);
+int snprint_defaults (struct config *, char *, int);
+int snprint_blacklist (struct config *, char *, int);
+int snprint_blacklist_except (struct config *, char *, int);
+int snprint_blacklist_report (struct config *, char *, int);
 int snprint_wildcards (char *, int);
 int snprint_status (char *, int, struct vectors *);
-int snprint_devices (char *, int, struct vectors *);
+int snprint_devices (struct config *, char *, int, struct vectors *);
 int snprint_hwtable (char *, int, vector);
 int snprint_mptable (char *, int, vector);
 int snprint_overrides (char *, int, struct hwentry *);

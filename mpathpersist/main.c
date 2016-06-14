@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <checkers.h>
 #include <vector.h>
+#include <config.h>
 #include <structs.h>
 #include <getopt.h>
 #include <libudev.h>

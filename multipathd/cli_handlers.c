@@ -233,17 +233,17 @@ show_config (char ** r, int * len)
 		if (!reply)
 			return 1;
 		c = reply;
-		c += snprint_defaults(c, reply + maxlen - c);
+		c += snprint_defaults(conf, c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		REALLOC_REPLY(reply, again, maxlen);
 		if (again)
 			continue;
-		c += snprint_blacklist(c, reply + maxlen - c);
+		c += snprint_blacklist(conf, c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		REALLOC_REPLY(reply, again, maxlen);
 		if (again)
 			continue;
-		c += snprint_blacklist_except(c, reply + maxlen - c);
+		c += snprint_blacklist_except(conf, c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		REALLOC_REPLY(reply, again, maxlen);
 		if (again)
@@ -1162,7 +1162,7 @@ show_blacklist (char ** r, int * len)
 			return 1;
 
 		c = reply;
-		c += snprint_blacklist_report(c, maxlen);
+		c += snprint_blacklist_report(conf, c, maxlen);
 		again = ((c - reply) == maxlen);
 		REALLOC_REPLY(reply, again, maxlen);
 	}
@@ -1196,7 +1196,7 @@ show_devices (char ** r, int * len, struct vectors *vecs)
 			return 1;
 
 		c = reply;
-		c += snprint_devices(c, maxlen, vecs);
+		c += snprint_devices(conf, c, maxlen, vecs);
 		again = ((c - reply) == maxlen);
 		REALLOC_REPLY(reply, again, maxlen);
 	}

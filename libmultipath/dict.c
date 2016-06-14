@@ -135,21 +135,21 @@ print_yes_no_undef (char *buff, int len, void *ptr)
 
 #define declare_def_handler(option, function)				\
 static int								\
-def_ ## option ## _handler (vector strvec)				\
+def_ ## option ## _handler (struct config *conf, vector strvec)		\
 {									\
 	return function (strvec, &conf->option);			\
 }
 
 #define declare_def_snprint(option, function)				\
 static int								\
-snprint_def_ ## option (char * buff, int len, void * data)		\
+snprint_def_ ## option (struct config *conf, char * buff, int len, void * data) \
 {									\
 	return function (buff, len, &conf->option);			\
 }
 
 #define declare_def_snprint_defint(option, function, value)		\
 static int								\
-snprint_def_ ## option (char * buff, int len, void * data)		\
+snprint_def_ ## option (struct config *conf, char * buff, int len, void * data) \
 {									\
 	int i = value;							\
 	if (!conf->option)						\
@@ -159,7 +159,7 @@ snprint_def_ ## option (char * buff, int len, void * data)		\
 
 #define declare_def_snprint_defstr(option, function, value)		\
 static int								\
-snprint_def_ ## option (char * buff, int len, void * data)		\
+snprint_def_ ## option (struct config *conf, char * buff, int len, void * data) \
 {									\
 	char *s = value;						\
 	if (!conf->option)						\
@@ -169,7 +169,7 @@ snprint_def_ ## option (char * buff, int len, void * data)		\
 
 #define declare_hw_handler(option, function)				\
 static int								\
-hw_ ## option ## _handler (vector strvec)				\
+hw_ ## option ## _handler (struct config *conf, vector strvec)		\
 {									\
 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);		\
 	if (!hwe)							\
@@ -179,7 +179,7 @@ hw_ ## option ## _handler (vector strvec)				\
 
 #define declare_hw_snprint(option, function)				\
 static int								\
-snprint_hw_ ## option (char * buff, int len, void * data)		\
+snprint_hw_ ## option (struct config *conf, char * buff, int len, void * data) \
 {									\
 	struct hwentry * hwe = (struct hwentry *)data;			\
 	return function (buff, len, &hwe->option);			\
@@ -187,7 +187,7 @@ snprint_hw_ ## option (char * buff, int len, void * data)		\
 
 #define declare_ovr_handler(option, function)				\
 static int								\
-ovr_ ## option ## _handler (vector strvec)				\
+ovr_ ## option ## _handler (struct config *conf, vector strvec)		\
 {									\
 	if (!conf->overrides)						\
 		return 1;						\
@@ -196,14 +196,14 @@ ovr_ ## option ## _handler (vector strvec)				\
 
 #define declare_ovr_snprint(option, function)				\
 static int								\
-snprint_ovr_ ## option (char * buff, int len, void * data)		\
+snprint_ovr_ ## option (struct config *conf, char * buff, int len, void * data) \
 {									\
 	return function (buff, len, &conf->overrides->option);		\
 }
 
 #define declare_mp_handler(option, function)				\
 static int								\
-mp_ ## option ## _handler (vector strvec)				\
+mp_ ## option ## _handler (struct config *conf, vector strvec)		\
 {									\
 	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);		\
 	if (!mpe)							\
@@ -213,7 +213,7 @@ mp_ ## option ## _handler (vector strvec)				\
 
 #define declare_mp_snprint(option, function)				\
 static int								\
-snprint_mp_ ## option (char * buff, int len, void * data)		\
+snprint_mp_ ## option (struct config *conf, char * buff, int len, void * data) \
 {									\
 	struct mpentry * mpe = (struct mpentry *)data;			\
 	return function (buff, len, &mpe->option);			\
@@ -324,7 +324,8 @@ declare_mp_snprint(minio_rq, print_nonzero)
 
 declare_def_handler(queue_without_daemon, set_yes_no)
 static int
-snprint_def_queue_without_daemon (char * buff, int len, void * data)
+snprint_def_queue_without_daemon (struct config *conf,
+				  char * buff, int len, void * data)
 {
 	switch (conf->queue_without_daemon) {
 	case QUE_NO_DAEMON_OFF:
@@ -403,7 +404,7 @@ declare_def_handler(strict_timing, set_yes_no)
 declare_def_snprint(strict_timing, print_yes_no)
 
 static int
-def_config_dir_handler(vector strvec)
+def_config_dir_handler(struct config *conf, vector strvec)
 {
 	/* this is only valid in the main config file */
 	if (conf->processed_main_config)
@@ -414,14 +415,14 @@ declare_def_snprint(config_dir, print_str)
 
 #define declare_def_attr_handler(option, function)			\
 static int								\
-def_ ## option ## _handler (vector strvec)				\
+def_ ## option ## _handler (struct config *conf, vector strvec)		\
 {									\
 	return function (strvec, &conf->option, &conf->attribute_flags);\
 }
 
 #define declare_def_attr_snprint(option, function)			\
 static int								\
-snprint_def_ ## option (char * buff, int len, void * data)		\
+snprint_def_ ## option (struct config *conf, char * buff, int len, void * data) \
 {									\
 	return function (buff, len, &conf->option,			\
 			 &conf->attribute_flags);			\
@@ -429,7 +430,7 @@ snprint_def_ ## option (char * buff, int len, void * data)		\
 
 #define declare_mp_attr_handler(option, function)			\
 static int								\
-mp_ ## option ## _handler (vector strvec)				\
+mp_ ## option ## _handler (struct config *conf, vector strvec)		\
 {									\
 	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);		\
 	if (!mpe)							\
@@ -439,7 +440,7 @@ mp_ ## option ## _handler (vector strvec)				\
 
 #define declare_mp_attr_snprint(option, function)			\
 static int								\
-snprint_mp_ ## option (char * buff, int len, void * data)		\
+snprint_mp_ ## option (struct config *conf, char * buff, int len, void * data) \
 {									\
 	struct mpentry * mpe = (struct mpentry *)data;			\
 	return function (buff, len, &mpe->option,			\
@@ -708,7 +709,7 @@ get_sys_max_fds(int *max_fds)
 
 
 static int
-max_fds_handler(vector strvec)
+max_fds_handler(struct config *conf, vector strvec)
 {
 	char * buff;
 	int r = 0, max_fds;
@@ -738,7 +739,7 @@ max_fds_handler(vector strvec)
 }
 
 static int
-snprint_max_fds (char * buff, int len, void * data)
+snprint_max_fds (struct config *conf, char * buff, int len, void * data)
 {
 	int r = 0, max_fds;
 
@@ -898,7 +899,7 @@ declare_mp_handler(no_path_retry, set_no_path_retry)
 declare_mp_snprint(no_path_retry, print_no_path_retry)
 
 static int
-def_log_checker_err_handler(vector strvec)
+def_log_checker_err_handler(struct config *conf, vector strvec)
 {
 	char * buff;
 
@@ -917,7 +918,7 @@ def_log_checker_err_handler(vector strvec)
 }
 
 static int
-snprint_def_log_checker_err (char * buff, int len, void * data)
+snprint_def_log_checker_err (struct config *conf, char * buff, int len, void * data)
 {
 	if (conf->log_checker_err == LOG_CHKR_ERR_ONCE)
 		return snprintf(buff, len, "once");
@@ -1050,7 +1051,7 @@ declare_mp_handler(delay_wait_checks, set_delay_checks)
 declare_mp_snprint(delay_wait_checks, print_delay_checks)
 
 static int
-def_uxsock_timeout_handler(vector strvec)
+def_uxsock_timeout_handler(struct config *conf, vector strvec)
 {
 	unsigned int uxsock_timeout;
 	char *buff;
@@ -1073,7 +1074,7 @@ def_uxsock_timeout_handler(vector strvec)
  * blacklist block handlers
  */
 static int
-blacklist_handler(vector strvec)
+blacklist_handler(struct config *conf, vector strvec)
 {
 	if (!conf->blist_devnode)
 		conf->blist_devnode = vector_alloc();
@@ -1092,7 +1093,7 @@ blacklist_handler(vector strvec)
 }
 
 static int
-blacklist_exceptions_handler(vector strvec)
+blacklist_exceptions_handler(struct config *conf, vector strvec)
 {
 	if (!conf->elist_devnode)
 		conf->elist_devnode = vector_alloc();
@@ -1112,7 +1113,7 @@ blacklist_exceptions_handler(vector strvec)
 
 #define declare_ble_handler(option)					\
 static int								\
-ble_ ## option ## _handler (vector strvec)				\
+ble_ ## option ## _handler (struct config *conf, vector strvec)		\
 {									\
 	char * buff;							\
 									\
@@ -1128,7 +1129,7 @@ ble_ ## option ## _handler (vector strvec)				\
 
 #define declare_ble_device_handler(name, option, vend, prod)		\
 static int								\
-ble_ ## option ## _ ## name ## _handler (vector strvec)			\
+ble_ ## option ## _ ## name ## _handler (struct config *conf, vector strvec) \
 {									\
 	char * buff;							\
 									\
@@ -1150,13 +1151,13 @@ declare_ble_handler(blist_property)
 declare_ble_handler(elist_property)
 
 static int
-snprint_def_uxsock_timeout(char * buff, int len, void * data)
+snprint_def_uxsock_timeout(struct config *conf, char * buff, int len, void * data)
 {
 	return snprintf(buff, len, "%u", conf->uxsock_timeout);
 }
 
 static int
-snprint_ble_simple (char * buff, int len, void * data)
+snprint_ble_simple (struct config *conf, char * buff, int len, void * data)
 {
 	struct blentry * ble = (struct blentry *)data;
 
@@ -1164,13 +1165,13 @@ snprint_ble_simple (char * buff, int len, void * data)
 }
 
 static int
-ble_device_handler(vector strvec)
+ble_device_handler(struct config *conf, vector strvec)
 {
 	return alloc_ble_device(conf->blist_device);
 }
 
 static int
-ble_except_device_handler(vector strvec)
+ble_except_device_handler(struct config *conf, vector strvec)
 {
 	return alloc_ble_device(conf->elist_device);
 }
@@ -1181,7 +1182,7 @@ declare_ble_device_handler(product, blist_device, NULL, buff)
 declare_ble_device_handler(product, elist_device, NULL, buff)
 
 static int
-snprint_bled_vendor (char * buff, int len, void * data)
+snprint_bled_vendor (struct config *conf, char * buff, int len, void * data)
 {
 	struct blentry_device * bled = (struct blentry_device *)data;
 
@@ -1189,7 +1190,7 @@ snprint_bled_vendor (char * buff, int len, void * data)
 }
 
 static int
-snprint_bled_product (char * buff, int len, void * data)
+snprint_bled_product (struct config *conf, char * buff, int len, void * data)
 {
 	struct blentry_device * bled = (struct blentry_device *)data;
 
@@ -1200,7 +1201,7 @@ snprint_bled_product (char * buff, int len, void * data)
  * devices block handlers
  */
 static int
-devices_handler(vector strvec)
+devices_handler(struct config *conf, vector strvec)
 {
 	if (!conf->hwtable)
 		conf->hwtable = vector_alloc();
@@ -1212,7 +1213,7 @@ devices_handler(vector strvec)
 }
 
 static int
-device_handler(vector strvec)
+device_handler(struct config *conf, vector strvec)
 {
 	struct hwentry * hwe;
 
@@ -1249,7 +1250,7 @@ declare_hw_snprint(hwhandler, print_str)
  * overrides handlers
  */
 static int
-overrides_handler(vector strvec)
+overrides_handler(struct config *conf, vector strvec)
 {
 	if (!conf->overrides)
 		conf->overrides = alloc_hwe();
@@ -1266,7 +1267,7 @@ overrides_handler(vector strvec)
  * multipaths block handlers
  */
 static int
-multipaths_handler(vector strvec)
+multipaths_handler(struct config *conf, vector strvec)
 {
 	if (!conf->mptable)
 		conf->mptable = vector_alloc();
@@ -1278,7 +1279,7 @@ multipaths_handler(vector strvec)
 }
 
 static int
-multipath_handler(vector strvec)
+multipath_handler(struct config *conf, vector strvec)
 {
 	struct mpentry * mpe;
 
@@ -1307,7 +1308,7 @@ declare_mp_snprint(alias, print_str)
  */
 
 static int
-deprecated_handler(vector strvec)
+deprecated_handler(struct config *conf, vector strvec)
 {
 	char * buff;
 
@@ -1321,7 +1322,7 @@ deprecated_handler(vector strvec)
 }
 
 static int
-snprint_deprecated (char * buff, int len, void * data)
+snprint_deprecated (struct config *conf, char * buff, int len, void * data)
 {
 	return 0;
 }

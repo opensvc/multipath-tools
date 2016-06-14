@@ -1412,7 +1412,7 @@ get_state (struct path * pp, struct config *conf, int daemon)
 				return PATH_UNCHECKED;
 			}
 		}
-		select_checker(pp);
+		select_checker(conf, pp);
 		if (!checker_selected(c)) {
 			condlog(3, "%s: No checker selected", pp->dev);
 			return PATH_UNCHECKED;
@@ -1452,8 +1452,8 @@ get_prio (struct path * pp)
 	struct prio * p = &pp->prio;
 
 	if (!prio_selected(p)) {
-		select_detect_prio(pp);
-		select_prio(pp);
+		select_detect_prio(conf, pp);
+		select_prio(conf, pp);
 		if (!prio_selected(p)) {
 			condlog(3, "%s: no prio selected", pp->dev);
 			pp->priority = PRIO_UNDEF;
@@ -1520,7 +1520,7 @@ get_uid (struct path * pp, int path_state)
 	ssize_t len = 0;
 
 	if (!pp->uid_attribute && !pp->getuid)
-		select_getuid(pp);
+		select_getuid(conf, pp);
 
 	if (!pp->udev) {
 		condlog(1, "%s: no udev information", pp->dev);

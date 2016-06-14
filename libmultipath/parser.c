@@ -20,6 +20,8 @@
 #include <syslog.h>
 #include <errno.h>
 
+#include "vector.h"
+#include "config.h"
 #include "parser.h"
 #include "memory.h"
 #include "debug.h"
@@ -37,8 +39,9 @@ void set_current_keywords (vector *k)
 }
 
 int
-keyword_alloc(vector keywords, char *string, int (*handler) (vector),
-		int (*print) (char *, int, void *), int unique)
+keyword_alloc(vector keywords, char *string,
+	      int (*handler) (struct config *, vector),
+	      int (*print) (struct config *, char *, int, void *), int unique)
 {
 	struct keyword *keyword;
 
@@ -62,7 +65,7 @@ keyword_alloc(vector keywords, char *string, int (*handler) (vector),
 }
 
 int
-install_keyword_root(char *string, int (*handler) (vector))
+install_keyword_root(char *string, int (*handler) (struct config *, vector))
 {
 	int r = keyword_alloc(keywords, string, handler, NULL, 1);
 	if (!r)
@@ -83,8 +86,8 @@ install_sublevel_end(void)
 }
 
 int
-_install_keyword(char *string, int (*handler) (vector),
-		int (*print) (char *, int, void *), int unique)
+_install_keyword(char *string, int (*handler) (struct config *, vector),
+		 int (*print) (struct config *, char *, int, void *), int unique)
 {
 	int i = 0;
 	struct keyword *keyword;
@@ -179,7 +182,7 @@ snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw, void *data)
 			fwd += snprintf(buff + fwd, len - fwd, "%s", kw->string);
 			break;
 		case 'v':
-			r = kw->print(buff + fwd, len - fwd, data);
+			r = kw->print(conf, buff + fwd, len - fwd, data);
 			if (!r) { /* no output if no value */
 				buff = '\0';
 				return 0;
@@ -466,7 +469,7 @@ validate_config_strvec(vector strvec, char *file)
 }
 
 static int
-process_stream(FILE *stream, vector keywords, char *file)
+process_stream(struct config *conf, FILE *stream, vector keywords, char *file)
 {
 	int i;
 	int r = 0, t;
@@ -520,7 +523,7 @@ process_stream(FILE *stream, vector keywords, char *file)
 						goto out;
 				}
 				if (keyword->handler) {
-					t = (*keyword->handler) (strvec);
+				    t = (*keyword->handler) (conf, strvec);
 					r += t;
 					if (t)
 						condlog(1, "multipath.conf +%d, parsing failed: %s",
@@ -529,7 +532,7 @@ process_stream(FILE *stream, vector keywords, char *file)
 
 				if (keyword->sub) {
 					kw_level++;
-					r += process_stream(stream,
+					r += process_stream(conf, stream,
 							    keyword->sub, file);
 					kw_level--;
 				}
@@ -562,7 +565,7 @@ int alloc_keywords(void)
 
 /* Data initialization */
 int
-process_file(char *file)
+process_file(struct config *conf, char *file)
 {
 	int r;
 	FILE *stream;
@@ -580,7 +583,7 @@ process_file(char *file)
 
 	/* Stream handling */
 	line_nr = 0;
-	r = process_stream(stream, keywords, file);
+	r = process_stream(conf, stream, keywords, file);
 	fclose(stream);
 	//free_keywords(keywords);
 

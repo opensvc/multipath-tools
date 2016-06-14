@@ -1,6 +1,8 @@
 #ifndef _STRUCTS_VEC_H
 #define _STRUCTS_VEC_H
 
+#include "vector.h"
+#include "config.h"
 #include "lock.h"
 /*
 struct mutex_lock {
@@ -13,7 +15,7 @@ struct vectors {
 	vector mpvec;
 };
 
-void set_no_path_retry(struct multipath *mpp);
+void set_no_path_retry(struct config *conf, struct multipath *mpp);
 
 int adopt_paths (vector pathvec, struct multipath * mpp);
 void orphan_paths (vector pathvec, struct multipath * mpp);

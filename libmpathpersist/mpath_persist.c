@@ -317,7 +317,7 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 		goto out1;
 	}
 
-	select_reservation_key(mpp);
+	select_reservation_key(conf, mpp);
 
 	switch(rq_servact)
 	{

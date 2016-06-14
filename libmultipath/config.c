@@ -542,7 +542,7 @@ free_config (struct config * conf)
 /* if multipath fails to process the config directory, it should continue,
  * with just a warning message */
 static void
-process_config_dir(vector keywords, char *dir)
+process_config_dir(struct config *conf, vector keywords, char *dir)
 {
 	struct dirent **namelist;
 	int i, n;
@@ -569,7 +569,7 @@ process_config_dir(vector keywords, char *dir)
 		old_hwtable_size = VECTOR_SIZE(conf->hwtable);
 		snprintf(path, LINE_MAX, "%s/%s", dir, namelist[i]->d_name);
 		path[LINE_MAX-1] = '\0';
-		process_file(path);
+		process_file(conf, path);
 		if (VECTOR_SIZE(conf->hwtable) > old_hwtable_size)
 			factorize_hwtable(conf->hwtable, old_hwtable_size);
 
@@ -640,7 +640,7 @@ load_config (char * file)
 		int builtin_hwtable_size;
 
 		builtin_hwtable_size = VECTOR_SIZE(conf->hwtable);
-		if (process_file(file)) {
+		if (process_file(conf, file)) {
 			condlog(0, "error parsing config file");
 			goto out;
 		}
@@ -658,7 +658,7 @@ load_config (char * file)
 	if (conf->config_dir == NULL)
 		conf->config_dir = set_default(DEFAULT_CONFIG_DIR);
 	if (conf->config_dir && conf->config_dir[0] != '\0')
-		process_config_dir(conf->keywords, conf->config_dir);
+		process_config_dir(conf, conf->keywords, conf->config_dir);
 
 	/*
 	 * fill the voids left in the config file

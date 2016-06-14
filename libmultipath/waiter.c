@@ -13,6 +13,7 @@
 #include "vector.h"
 #include "memory.h"
 #include "checkers.h"
+#include "config.h"
 #include "structs.h"
 #include "structs_vec.h"
 #include "devmapper.h"

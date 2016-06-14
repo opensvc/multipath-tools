@@ -38,11 +38,11 @@
 #include <devmapper.h>
 #include <util.h>
 #include <defaults.h>
+#include <config.h>
 #include <structs.h>
 #include <structs_vec.h>
 #include <dmparser.h>
 #include <sysfs.h>
-#include <config.h>
 #include <blacklist.h>
 #include <discovery.h>
 #include <debug.h>
@@ -395,7 +395,7 @@ out:
 }
 
 static int
-dump_config (void)
+dump_config (struct config *conf)
 {
 	char * c, * tmp = NULL;
 	char * reply;
@@ -411,19 +411,19 @@ dump_config (void)
 			return 1;
 		}
 		c = tmp = reply;
-		c += snprint_defaults(c, reply + maxlen - c);
+		c += snprint_defaults(conf, c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		if (again) {
 			reply = REALLOC(reply, maxlen *= 2);
 			continue;
 		}
-		c += snprint_blacklist(c, reply + maxlen - c);
+		c += snprint_blacklist(conf, c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		if (again) {
 			reply = REALLOC(reply, maxlen *= 2);
 			continue;
 		}
-		c += snprint_blacklist_except(c, reply + maxlen - c);
+		c += snprint_blacklist_except(conf, c, reply + maxlen - c);
 		again = ((c - reply) == maxlen);
 		if (again) {
 			reply = REALLOC(reply, maxlen *= 2);
@@ -549,7 +549,7 @@ main (int argc, char *argv[])
 			conf->ignore_wwids = 1;
 			break;
 		case 't':
-			r = dump_config();
+			r = dump_config(conf);
 			goto out_free_config;
 		case 'h':
 			usage(argv[0]);

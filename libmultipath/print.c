@@ -16,11 +16,11 @@
 #include "vector.h"
 #include "structs.h"
 #include "structs_vec.h"
-#include "print.h"
 #include "dmparser.h"
 #include "config.h"
 #include "configure.h"
 #include "pgpolicies.h"
+#include "print.h"
 #include "defaults.h"
 #include "parser.h"
 #include "blacklist.h"
@@ -1354,7 +1354,7 @@ out:
 }
 
 extern int
-snprint_defaults (char * buff, int len)
+snprint_defaults (struct config *conf, char * buff, int len)
 {
 	int fwd = 0;
 	int i;
@@ -1436,7 +1436,7 @@ snprint_blacklist_devgroup (char *buff, int len, int *fwd, vector *vec)
 }
 
 extern int
-snprint_blacklist_report (char * buff, int len)
+snprint_blacklist_report (struct config *conf, char * buff, int len)
 {
 	int threshold = MAX_LINE_LEN;
 	int fwd = 0;
@@ -1499,7 +1499,7 @@ snprint_blacklist_report (char * buff, int len)
 }
 
 extern int
-snprint_blacklist (char * buff, int len)
+snprint_blacklist (struct config *conf, char * buff, int len)
 {
 	int i;
 	struct blentry * ble;
@@ -1576,7 +1576,7 @@ snprint_blacklist (char * buff, int len)
 }
 
 extern int
-snprint_blacklist_except (char * buff, int len)
+snprint_blacklist_except (struct config *conf, char * buff, int len)
 {
 	int i;
 	struct blentry * ele;
@@ -1685,7 +1685,7 @@ snprint_status (char * buff, int len, struct vectors *vecs)
 }
 
 extern int
-snprint_devices (char * buff, int len, struct vectors *vecs)
+snprint_devices (struct config *conf, char * buff, int len, struct vectors *vecs)
 {
 	DIR *blkdir;
 	struct dirent *blkdev;

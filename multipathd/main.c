@@ -21,8 +21,6 @@
 #include <systemd/sd-daemon.h>
 #endif
 #include <semaphore.h>
-#include <mpath_cmd.h>
-#include <mpath_persist.h>
 #include <time.h>
 
 /*
@@ -65,6 +63,10 @@ int uxsock_timeout;
 #include <pgpolicies.h>
 #include <uevent.h>
 #include <log.h>
+
+#include <mpath_cmd.h>
+#include <mpath_persist.h>
+
 #include "prioritizers/alua_rtpg.h"
 
 #include "main.h"

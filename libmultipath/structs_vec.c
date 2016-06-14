@@ -6,13 +6,13 @@
 #include "vector.h"
 #include "defaults.h"
 #include "debug.h"
+#include "config.h"
 #include "structs.h"
 #include "structs_vec.h"
 #include "sysfs.h"
 #include "waiter.h"
 #include "devmapper.h"
 #include "dmparser.h"
-#include "config.h"
 #include "propsel.h"
 #include "discovery.h"
 #include "prio.h"
@@ -337,11 +337,11 @@ update_multipath_strings (struct multipath *mpp, vector pathvec, int is_daemon)
 }
 
 extern void
-set_no_path_retry(struct multipath *mpp)
+set_no_path_retry(struct config *conf, struct multipath *mpp)
 {
 	mpp->retry_tick = 0;
 	mpp->nr_active = pathcount(mpp, PATH_UP) + pathcount(mpp, PATH_GHOST);
-	select_no_path_retry(mpp);
+	select_no_path_retry(conf, mpp);
 
 	switch (mpp->no_path_retry) {
 	case NO_PATH_RETRY_UNDEF:
@@ -396,10 +396,10 @@ __setup_multipath (struct vectors * vecs, struct multipath * mpp,
 			mpp->alias);
 	}
 	if (reset) {
-		select_rr_weight(mpp);
-		select_pgfailback(mpp);
-		set_no_path_retry(mpp);
-		select_flush_on_last_del(mpp);
+		select_rr_weight(conf, mpp);
+		select_pgfailback(conf, mpp);
+		set_no_path_retry(conf, mpp);
+		select_flush_on_last_del(conf, mpp);
 		if (VECTOR_SIZE(mpp->paths) != 0)
 			dm_cancel_deferred_remove(mpp);
 	}
@@ -475,7 +475,7 @@ add_map_with_path (struct vectors * vecs,
 
 	strcpy(mpp->wwid, pp->wwid);
 	find_existing_alias(mpp, vecs);
-	if (select_alias(mpp))
+	if (select_alias(conf, mpp))
 		goto out;
 	mpp->size = pp->size;
 

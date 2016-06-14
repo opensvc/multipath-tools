@@ -275,24 +275,24 @@ setup_map (struct multipath * mpp, char * params, int params_size)
 	/*
 	 * properties selectors
 	 */
-	select_pgfailback(mpp);
-	select_pgpolicy(mpp);
-	select_selector(mpp);
-	select_features(mpp);
-	select_hwhandler(mpp);
-	select_rr_weight(mpp);
-	select_minio(mpp);
-	select_no_path_retry(mpp);
-	select_mode(mpp);
-	select_uid(mpp);
-	select_gid(mpp);
-	select_fast_io_fail(mpp);
-	select_dev_loss(mpp);
-	select_reservation_key(mpp);
-	select_retain_hwhandler(mpp);
-	select_deferred_remove(mpp);
-	select_delay_watch_checks(mpp);
-	select_delay_wait_checks(mpp);
+	select_pgfailback(conf, mpp);
+	select_pgpolicy(conf, mpp);
+	select_selector(conf, mpp);
+	select_features(conf, mpp);
+	select_hwhandler(conf, mpp);
+	select_rr_weight(conf, mpp);
+	select_minio(conf, mpp);
+	select_no_path_retry(conf, mpp);
+	select_mode(conf, mpp);
+	select_uid(conf, mpp);
+	select_gid(conf, mpp);
+	select_fast_io_fail(conf, mpp);
+	select_dev_loss(conf, mpp);
+	select_reservation_key(conf, mpp);
+	select_retain_hwhandler(conf, mpp);
+	select_deferred_remove(conf, mpp);
+	select_delay_watch_checks(conf, mpp);
+	select_delay_wait_checks(conf, mpp);
 
 	sysfs_set_scsi_tmo(mpp, conf->checkint);
 	/*
