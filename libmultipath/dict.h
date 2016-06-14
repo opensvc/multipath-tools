@@ -5,7 +5,7 @@
 #include "vector.h"
 #endif
 
-void init_keywords(void);
+void init_keywords(vector keywords);
 int get_sys_max_fds(int *);
 int print_rr_weight (char * buff, int len, void *ptr);
 int print_pgfailback (char * buff, int len, void *ptr);

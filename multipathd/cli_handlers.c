@@ -252,18 +252,20 @@ show_config (char ** r, int * len)
 		REALLOC_REPLY(reply, again, maxlen);
 		if (again)
 			continue;
-		c += snprint_hwtable(c, reply + maxlen - c, conf->hwtable);
+		c += snprint_hwtable(conf, c, reply + maxlen - c,
+				     conf->hwtable);
 		again = ((c - reply) == maxlen);
 		REALLOC_REPLY(reply, again, maxlen);
 		if (again)
 			continue;
-		c += snprint_overrides(c, reply + maxlen - c, conf->overrides);
+		c += snprint_overrides(conf, c, reply + maxlen - c,
+				       conf->overrides);
 		again = ((c - reply) == maxlen);
 		REALLOC_REPLY(reply, again, maxlen);
 		if (again)
 			continue;
 		if (VECTOR_SIZE(conf->mptable) > 0) {
-			c += snprint_mptable(c, reply + maxlen - c,
+			c += snprint_mptable(conf, c, reply + maxlen - c,
 					     conf->mptable);
 			again = ((c - reply) == maxlen);
 			REALLOC_REPLY(reply, again, maxlen);

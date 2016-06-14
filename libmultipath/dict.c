@@ -1330,7 +1330,7 @@ snprint_deprecated (struct config *conf, char * buff, int len, void * data)
 #define __deprecated
 
 void
-init_keywords(void)
+init_keywords(vector keywords)
 {
 	install_keyword_root("defaults", NULL);
 	install_keyword("verbosity", &def_verbosity_handler, &snprint_def_verbosity);

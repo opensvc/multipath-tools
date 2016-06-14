@@ -28,15 +28,7 @@
 
 /* local vars */
 static int sublevel = 0;
-static vector keywords = NULL;
-static vector *keywords_addr = NULL;
 static int line_nr;
-
-void set_current_keywords (vector *k)
-{
-	keywords_addr = k;
-	keywords = NULL;
-}
 
 int
 keyword_alloc(vector keywords, char *string,
@@ -64,15 +56,6 @@ keyword_alloc(vector keywords, char *string,
 	return 0;
 }
 
-int
-install_keyword_root(char *string, int (*handler) (struct config *, vector))
-{
-	int r = keyword_alloc(keywords, string, handler, NULL, 1);
-	if (!r)
-		*keywords_addr = keywords;
-	return r;
-}
-
 void
 install_sublevel(void)
 {
@@ -86,7 +69,8 @@ install_sublevel_end(void)
 }
 
 int
-_install_keyword(char *string, int (*handler) (struct config *, vector),
+_install_keyword(vector keywords, char *string,
+		 int (*handler) (struct config *, vector),
 		 int (*print) (struct config *, char *, int, void *), int unique)
 {
 	int i = 0;
@@ -130,7 +114,7 @@ free_keywords(vector keywords)
 }
 
 struct keyword *
-find_keyword(vector v, char * name)
+find_keyword(vector keywords, vector v, char * name)
 {
 	struct keyword *keyword;
 	int i;
@@ -150,7 +134,7 @@ find_keyword(vector v, char * name)
 		    !strcmp(keyword->string, name))
 			return keyword;
 		if (keyword->sub) {
-			keyword = find_keyword(keyword->sub, name);
+			keyword = find_keyword(keywords, keyword->sub, name);
 			if (keyword)
 				return keyword;
 		}
@@ -555,17 +539,6 @@ out:
 	return r;
 }
 
-int alloc_keywords(void)
-{
-	if (!keywords)
-		keywords = vector_alloc();
-
-	if (!keywords)
-		return 1;
-
-	return 0;
-}
-
 /* Data initialization */
 int
 process_file(struct config *conf, char *file)
@@ -573,7 +546,7 @@ process_file(struct config *conf, char *file)
 	int r;
 	FILE *stream;
 
-	if (!keywords) {
+	if (!conf->keywords) {
 		condlog(0, "No keywords alocated");
 		return 1;
 	}
@@ -586,7 +559,7 @@ process_file(struct config *conf, char *file)
 
 	/* Stream handling */
 	line_nr = 0;
-	r = process_stream(conf, stream, keywords, file);
+	r = process_stream(conf, stream, conf->keywords, file);
 	fclose(stream);
 	//free_keywords(keywords);
 

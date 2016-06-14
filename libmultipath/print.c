@@ -1212,19 +1212,19 @@ snprint_multipath_topology_json (char * buff, int len, struct vectors * vecs)
 }
 
 static int
-snprint_hwentry (char * buff, int len, struct hwentry * hwe)
+snprint_hwentry (struct config *conf, char * buff, int len, struct hwentry * hwe)
 {
 	int i;
 	int fwd = 0;
 	struct keyword * kw;
 	struct keyword * rootkw;
 
-	rootkw = find_keyword(NULL, "devices");
+	rootkw = find_keyword(conf->keywords, NULL, "devices");
 
 	if (!rootkw || !rootkw->sub)
 		return 0;
 
-	rootkw = find_keyword(rootkw->sub, "device");
+	rootkw = find_keyword(conf->keywords, rootkw->sub, "device");
 
 	if (!rootkw)
 		return 0;
@@ -1245,14 +1245,14 @@ snprint_hwentry (char * buff, int len, struct hwentry * hwe)
 }
 
 extern int
-snprint_hwtable (char * buff, int len, vector hwtable)
+snprint_hwtable (struct config *conf, char * buff, int len, vector hwtable)
 {
 	int fwd = 0;
 	int i;
 	struct hwentry * hwe;
 	struct keyword * rootkw;
 
-	rootkw = find_keyword(NULL, "devices");
+	rootkw = find_keyword(conf->keywords, NULL, "devices");
 	if (!rootkw)
 		return 0;
 
@@ -1260,7 +1260,7 @@ snprint_hwtable (char * buff, int len, vector hwtable)
 	if (fwd > len)
 		return len;
 	vector_foreach_slot (hwtable, hwe, i) {
-		fwd += snprint_hwentry(buff + fwd, len - fwd, hwe);
+		fwd += snprint_hwentry(conf, buff + fwd, len - fwd, hwe);
 		if (fwd > len)
 			return len;
 	}
@@ -1271,14 +1271,14 @@ snprint_hwtable (char * buff, int len, vector hwtable)
 }
 
 static int
-snprint_mpentry (char * buff, int len, struct mpentry * mpe)
+snprint_mpentry (struct config *conf, char * buff, int len, struct mpentry * mpe)
 {
 	int i;
 	int fwd = 0;
 	struct keyword * kw;
 	struct keyword * rootkw;
 
-	rootkw = find_keyword(NULL, "multipath");
+	rootkw = find_keyword(conf->keywords, NULL, "multipath");
 	if (!rootkw)
 		return 0;
 
@@ -1298,14 +1298,14 @@ snprint_mpentry (char * buff, int len, struct mpentry * mpe)
 }
 
 extern int
-snprint_mptable (char * buff, int len, vector mptable)
+snprint_mptable (struct config *conf, char * buff, int len, vector mptable)
 {
 	int fwd = 0;
 	int i;
 	struct mpentry * mpe;
 	struct keyword * rootkw;
 
-	rootkw = find_keyword(NULL, "multipaths");
+	rootkw = find_keyword(conf->keywords, NULL, "multipaths");
 	if (!rootkw)
 		return 0;
 
@@ -1313,7 +1313,7 @@ snprint_mptable (char * buff, int len, vector mptable)
 	if (fwd > len)
 		return len;
 	vector_foreach_slot (mptable, mpe, i) {
-		fwd += snprint_mpentry(buff + fwd, len - fwd, mpe);
+		fwd += snprint_mpentry(conf, buff + fwd, len - fwd, mpe);
 		if (fwd > len)
 			return len;
 	}
@@ -1324,14 +1324,14 @@ snprint_mptable (char * buff, int len, vector mptable)
 }
 
 extern int
-snprint_overrides (char * buff, int len, struct hwentry *overrides)
+snprint_overrides (struct config *conf, char * buff, int len, struct hwentry *overrides)
 {
 	int fwd = 0;
 	int i;
 	struct keyword *rootkw;
 	struct keyword *kw;
 
-	rootkw = find_keyword(NULL, "overrides");
+	rootkw = find_keyword(conf->keywords, NULL, "overrides");
 	if (!rootkw)
 		return 0;
 
@@ -1361,7 +1361,7 @@ snprint_defaults (struct config *conf, char * buff, int len)
 	struct keyword *rootkw;
 	struct keyword *kw;
 
-	rootkw = find_keyword(NULL, "defaults");
+	rootkw = find_keyword(conf->keywords, NULL, "defaults");
 	if (!rootkw)
 		return 0;
 
@@ -1508,7 +1508,7 @@ snprint_blacklist (struct config *conf, char * buff, int len)
 	struct keyword *rootkw;
 	struct keyword *kw;
 
-	rootkw = find_keyword(NULL, "blacklist");
+	rootkw = find_keyword(conf->keywords, NULL, "blacklist");
 	if (!rootkw)
 		return 0;
 
@@ -1517,7 +1517,7 @@ snprint_blacklist (struct config *conf, char * buff, int len)
 		return len;
 
 	vector_foreach_slot (conf->blist_devnode, ble, i) {
-		kw = find_keyword(rootkw->sub, "devnode");
+		kw = find_keyword(conf->keywords, rootkw->sub, "devnode");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
@@ -1526,7 +1526,7 @@ snprint_blacklist (struct config *conf, char * buff, int len)
 			return len;
 	}
 	vector_foreach_slot (conf->blist_wwid, ble, i) {
-		kw = find_keyword(rootkw->sub, "wwid");
+		kw = find_keyword(conf->keywords, rootkw->sub, "wwid");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
@@ -1535,7 +1535,7 @@ snprint_blacklist (struct config *conf, char * buff, int len)
 			return len;
 	}
 	vector_foreach_slot (conf->blist_property, ble, i) {
-		kw = find_keyword(rootkw->sub, "property");
+		kw = find_keyword(conf->keywords, rootkw->sub, "property");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
@@ -1543,7 +1543,7 @@ snprint_blacklist (struct config *conf, char * buff, int len)
 		if (fwd > len)
 			return len;
 	}
-	rootkw = find_keyword(rootkw->sub, "device");
+	rootkw = find_keyword(conf->keywords, rootkw->sub, "device");
 	if (!rootkw)
 		return 0;
 
@@ -1551,14 +1551,14 @@ snprint_blacklist (struct config *conf, char * buff, int len)
 		fwd += snprintf(buff + fwd, len - fwd, "\tdevice {\n");
 		if (fwd > len)
 			return len;
-		kw = find_keyword(rootkw->sub, "vendor");
+		kw = find_keyword(conf->keywords, rootkw->sub, "vendor");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
 				       kw, bled);
 		if (fwd > len)
 			return len;
-		kw = find_keyword(rootkw->sub, "product");
+		kw = find_keyword(conf->keywords, rootkw->sub, "product");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
@@ -1585,7 +1585,7 @@ snprint_blacklist_except (struct config *conf, char * buff, int len)
 	struct keyword *rootkw;
 	struct keyword *kw;
 
-	rootkw = find_keyword(NULL, "blacklist_exceptions");
+	rootkw = find_keyword(conf->keywords, NULL, "blacklist_exceptions");
 	if (!rootkw)
 		return 0;
 
@@ -1594,7 +1594,7 @@ snprint_blacklist_except (struct config *conf, char * buff, int len)
 		return len;
 
 	vector_foreach_slot (conf->elist_devnode, ele, i) {
-		kw = find_keyword(rootkw->sub, "devnode");
+		kw = find_keyword(conf->keywords, rootkw->sub, "devnode");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
@@ -1603,7 +1603,7 @@ snprint_blacklist_except (struct config *conf, char * buff, int len)
 			return len;
 	}
 	vector_foreach_slot (conf->elist_wwid, ele, i) {
-		kw = find_keyword(rootkw->sub, "wwid");
+		kw = find_keyword(conf->keywords, rootkw->sub, "wwid");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
@@ -1612,7 +1612,7 @@ snprint_blacklist_except (struct config *conf, char * buff, int len)
 			return len;
 	}
 	vector_foreach_slot (conf->elist_property, ele, i) {
-		kw = find_keyword(rootkw->sub, "property");
+		kw = find_keyword(conf->keywords, rootkw->sub, "property");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
@@ -1620,7 +1620,7 @@ snprint_blacklist_except (struct config *conf, char * buff, int len)
 		if (fwd > len)
 			return len;
 	}
-	rootkw = find_keyword(rootkw->sub, "device");
+	rootkw = find_keyword(conf->keywords, rootkw->sub, "device");
 	if (!rootkw)
 		return 0;
 
@@ -1628,14 +1628,14 @@ snprint_blacklist_except (struct config *conf, char * buff, int len)
 		fwd += snprintf(buff + fwd, len - fwd, "\tdevice {\n");
 		if (fwd > len)
 			return len;
-		kw = find_keyword(rootkw->sub, "vendor");
+		kw = find_keyword(conf->keywords, rootkw->sub, "vendor");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
 				       kw, eled);
 		if (fwd > len)
 			return len;
-		kw = find_keyword(rootkw->sub, "product");
+		kw = find_keyword(conf->keywords, rootkw->sub, "product");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",

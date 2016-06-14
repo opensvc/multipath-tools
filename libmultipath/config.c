@@ -632,9 +632,8 @@ load_config (char * file)
 	/*
 	 * read the config file
 	 */
-	set_current_keywords(&conf->keywords);
-	alloc_keywords();
-	init_keywords();
+	conf->keywords = vector_alloc();
+	init_keywords(conf->keywords);
 	if (filepresent(file)) {
 		int builtin_hwtable_size;
 
