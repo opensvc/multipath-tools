@@ -715,6 +715,7 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 					condlog(2, "%s: coalesce_paths failed",
 									param);
 				dm_lib_release();
+				FREE(refwwid);
 			}
 		} /*we attempt to create device only once*/
 		count++;
@@ -726,7 +727,6 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 	}
 	rc = ev_add_map(dev_path, alias, vecs);
 	FREE(alias);
-	FREE(refwwid);
 	return rc;
 }
 
