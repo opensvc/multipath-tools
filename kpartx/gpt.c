@@ -206,9 +206,10 @@ read_lba(int fd, uint64_t lba, void *buffer, size_t bytes)
 	int sector_size = get_sector_size(fd);
 	off_t offset = lba * sector_size;
 	uint64_t lastlba;
-        ssize_t bytesread;
+	ssize_t bytesread;
 
-	lseek(fd, offset, SEEK_SET);
+	if (lseek(fd, offset, SEEK_SET) < 0)
+		return 0;
 	bytesread = read(fd, buffer, bytes);
 
 	lastlba = last_lba(fd);
