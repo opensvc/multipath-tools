@@ -229,7 +229,8 @@ allocate_binding(int fd, char *wwid, int id, char *prefix)
 		return NULL;
 	}
 	c = strchr(buf, ' ');
-	*c = '\0';
+	if (c)
+		*c = '\0';
 	alias = strdup(buf);
 	if (alias == NULL)
 		condlog(0, "cannot copy new alias from bindings file : %s",
