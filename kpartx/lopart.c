@@ -154,13 +154,15 @@ find_unused_loop_device (void)
 	while (next_loop_dev == NULL) {
 		if (stat("/dev/loop-control", &statbuf) == 0 &&
 		    S_ISCHR(statbuf.st_mode)) {
-			fd = open("/dev/loop-control", O_RDWR);
-			if (fd < 0)
+			int next_loop_fd;
+
+			next_loop_fd = open("/dev/loop-control", O_RDWR);
+			if (next_loop_fd < 0)
 				return NULL;
-			next_loop = ioctl(fd, LOOP_CTL_GET_FREE);
+			next_loop = ioctl(next_loop_fd, LOOP_CTL_GET_FREE);
+			close(next_loop_fd);
 			if (next_loop < 0)
 				return NULL;
-			close(fd);
 		}
 
 		sprintf(dev, "/dev/loop%d", next_loop);
@@ -173,11 +175,8 @@ find_unused_loop_device (void)
 
 				if(ioctl (fd, LOOP_GET_STATUS, &loopinfo) == 0)
 					someloop++;		/* in use */
-
-				else if (errno == ENXIO) {
-					close (fd);
+				else if (errno == ENXIO)
 					next_loop_dev = xstrdup(dev);
-				}
 
 				close (fd);
 			}
