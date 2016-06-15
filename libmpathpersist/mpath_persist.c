@@ -195,6 +195,10 @@ int mpath_persistent_reserve_in (int fd, int rq_servact,
 	if (!curmp || !pathvec){
 		condlog (0, "%s: vector allocation failed.", alias);
 		ret = MPATH_PR_DMMP_ERROR;
+		if (curmp)
+			vector_free(curmp);
+		if (pathvec)
+			vector_free(pathvec);
 		goto out;
 	}
 
@@ -285,6 +289,10 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	if (!curmp || !pathvec){
 		condlog (0, "%s: vector allocation failed.", alias);
 		ret = MPATH_PR_DMMP_ERROR;
+		if (curmp)
+			vector_free(curmp);
+		if (pathvec)
+			vector_free(pathvec);
 		goto out;
 	}
 
