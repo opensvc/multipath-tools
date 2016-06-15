@@ -782,8 +782,6 @@ snprint_multipath_header (char * line, int len, char * format)
 	int fwd;
 	struct multipath_data * data;
 
-	memset(line, 0, len);
-
 	do {
 		if (!TAIL)
 			break;
@@ -816,8 +814,6 @@ snprint_multipath (char * line, int len, char * format,
 	int fwd;
 	struct multipath_data * data;
 	char buff[MAX_FIELD_LEN] = {};
-
-	memset(line, 0, len);
 
 	do {
 		if (!TAIL)
@@ -853,8 +849,6 @@ snprint_path_header (char * line, int len, char * format)
 	int fwd;
 	struct path_data * data;
 
-	memset(line, 0, len);
-
 	do {
 		if (!TAIL)
 			break;
@@ -887,8 +881,6 @@ snprint_path (char * line, int len, char * format,
 	int fwd;
 	struct path_data * data;
 	char buff[MAX_FIELD_LEN];
-
-	memset(line, 0, len);
 
 	do {
 		if (!TAIL)
@@ -924,8 +916,6 @@ snprint_pathgroup (char * line, int len, char * format,
 	int fwd;
 	struct pathgroup_data * data;
 	char buff[MAX_FIELD_LEN];
-
-	memset(line, 0, len);
 
 	do {
 		if (!TAIL)
