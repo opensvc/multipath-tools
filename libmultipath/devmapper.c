@@ -1447,7 +1447,7 @@ void dm_reassign_deps(char *table, char *dep, char *newdep)
 
 int dm_reassign_table(const char *name, char *old, char *new)
 {
-	int r, modified = 0;
+	int r = 0, modified = 0;
 	uint64_t start, length;
 	struct dm_task *dmt, *reload_dmt;
 	char *target, *params = NULL;
