@@ -653,9 +653,11 @@ remove_feature(char **f, char *o)
 	 * about to be removed
 	 */
 	p = strchr(*f, ' ');
-	if (!p)
+	if (!p) {
 		/* Internal error, feature string inconsistent */
+		FREE(n);
 		return 1;
+	}
 	while (*p == ' ')
 		p++;
 	p--;
