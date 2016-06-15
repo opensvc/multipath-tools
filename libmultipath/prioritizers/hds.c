@@ -151,6 +151,7 @@ int hds_modular_prio (const char *dev, int fd)
 			return 0;
 			break;
 		}
+		break;
 	case '1': case '3': case '5': case '7': case '9':
 		switch (ldev[3]) {
 		case '0': case '2': case '4': case '6': case '8': case 'A': case 'C': case 'E':
@@ -162,6 +163,7 @@ int hds_modular_prio (const char *dev, int fd)
 			return 1;
 			break;
 		}
+		break;
 	}
 	return -1;
 }
