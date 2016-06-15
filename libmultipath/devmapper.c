@@ -116,7 +116,10 @@ dm_lib_prereq (void)
 
 	dm_get_library_version(version, sizeof(version));
 	condlog(3, "libdevmapper version %s", version);
-	sscanf(version, "%d.%d.%d ", &v[0], &v[1], &v[2]);
+	if (sscanf(version, "%d.%d.%d ", &v[0], &v[1], &v[2]) != 3) {
+		condlog(0, "invalid libdevmapper version %s", version);
+		return 1;
+	}
 
 	if VERSION_GE(v, minv)
 		return 0;
