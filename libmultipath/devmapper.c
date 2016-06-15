@@ -421,7 +421,6 @@ dm_get_map(const char * name, unsigned long long * size, char * outparams)
 {
 	int r = 1;
 	struct dm_task *dmt;
-	void *next = NULL;
 	uint64_t start, length;
 	char *target_type = NULL;
 	char *params = NULL;
@@ -438,8 +437,8 @@ dm_get_map(const char * name, unsigned long long * size, char * outparams)
 		goto out;
 
 	/* Fetch 1st target */
-	next = dm_get_next_target(dmt, next, &start, &length,
-				  &target_type, &params);
+	dm_get_next_target(dmt, NULL, &start, &length,
+			   &target_type, &params);
 
 	if (size)
 		*size = length;
@@ -530,7 +529,6 @@ dm_get_status(char * name, char * outstatus)
 {
 	int r = 1;
 	struct dm_task *dmt;
-	void *next = NULL;
 	uint64_t start, length;
 	char *target_type;
 	char *status;
@@ -547,8 +545,8 @@ dm_get_status(char * name, char * outstatus)
 		goto out;
 
 	/* Fetch 1st target */
-	next = dm_get_next_target(dmt, next, &start, &length,
-				  &target_type, &status);
+	dm_get_next_target(dmt, NULL, &start, &length,
+			   &target_type, &status);
 
 	if (snprintf(outstatus, PARAMS_SIZE, "%s", status) <= PARAMS_SIZE)
 		r = 0;
@@ -571,7 +569,6 @@ dm_type(const char * name, char * type)
 {
 	int r = 0;
 	struct dm_task *dmt;
-	void *next = NULL;
 	uint64_t start, length;
 	char *target_type = NULL;
 	char *params;
@@ -588,8 +585,8 @@ dm_type(const char * name, char * type)
 		goto out;
 
 	/* Fetch 1st target */
-	next = dm_get_next_target(dmt, next, &start, &length,
-				  &target_type, &params);
+	dm_get_next_target(dmt, NULL, &start, &length,
+			   &target_type, &params);
 
 	if (!target_type)
 		r = -1;
