@@ -311,7 +311,6 @@ dm_get_map(int major, int minor, char * outparams)
 {
 	int r = 1;
 	struct dm_task *dmt;
-	void *next = NULL;
 	uint64_t start, length;
 	char *target_type = NULL;
 	char *params = NULL;
@@ -327,8 +326,8 @@ dm_get_map(int major, int minor, char * outparams)
 		goto out;
 
 	/* Fetch 1st target */
-	next = dm_get_next_target(dmt, next, &start, &length,
-				  &target_type, &params);
+	dm_get_next_target(dmt, NULL, &start, &length,
+			   &target_type, &params);
 
 	if (snprintf(outparams, PARAMS_SIZE, "%s", params) <= PARAMS_SIZE)
 		r = 0;
