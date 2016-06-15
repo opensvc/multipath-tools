@@ -150,7 +150,7 @@ static char *
 get_hotplug_device(void)
 {
 	unsigned int major, minor, off, len;
-	const char *mapname;
+	char *mapname;
 	char *devname = NULL;
 	char *device = NULL;
 	char *var = NULL;
