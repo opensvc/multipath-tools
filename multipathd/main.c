@@ -2085,6 +2085,7 @@ child (void * param)
 	unsigned long checkint;
 #endif
 	int rc;
+	int pid_fd = -1;
 	char *envp;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -2101,7 +2102,8 @@ child (void * param)
 		log_thread_start(&log_attr);
 		pthread_attr_destroy(&log_attr);
 	}
-	if (pidfile_create(DEFAULT_PIDFILE, daemon_pid)) {
+	pid_fd = pidfile_create(DEFAULT_PIDFILE, daemon_pid);
+	if (pid_fd < 0) {
 		condlog(1, "failed to create pidfile");
 		if (logsink == 1)
 			log_thread_stop();
@@ -2307,6 +2309,8 @@ failed:
 #ifdef USE_SYSTEMD
 	sd_notify(0, "ERRNO=1");
 #endif
+	if (pid_fd >= 0)
+		close(pid_fd);
 	exit(1);
 }
 
