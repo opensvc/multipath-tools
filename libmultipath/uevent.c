@@ -474,7 +474,7 @@ int uevent_listen(struct udev *udev)
 {
 	int err = 2;
 	struct udev_monitor *monitor = NULL;
-	int fd, fd_ep = -1, socket_flags, events;
+	int fd, socket_flags, events;
 	int need_failback = 1;
 	int timeout = 30;
 	LIST_HEAD(uevlisten_tmp);
@@ -579,8 +579,6 @@ int uevent_listen(struct udev *udev)
 	}
 	need_failback = 0;
 out:
-	if (fd_ep >= 0)
-		close(fd_ep);
 	if (monitor)
 		udev_monitor_unref(monitor);
 	if (need_failback)
