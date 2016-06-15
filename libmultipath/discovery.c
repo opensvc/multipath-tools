@@ -1179,16 +1179,17 @@ ccw_sysfs_pathinfo (struct path * pp)
 	 */
 	attr_path = udev_device_get_sysname(parent);
 	pp->sg_id.lun = 0;
-	sscanf(attr_path, "%i.%i.%x",
-			&pp->sg_id.host_no,
-			&pp->sg_id.channel,
-			&pp->sg_id.scsi_id);
-	condlog(3, "%s: h:b:t:l = %i:%i:%i:%i",
+	if (sscanf(attr_path, "%i.%i.%x",
+		   &pp->sg_id.host_no,
+		   &pp->sg_id.channel,
+		   &pp->sg_id.scsi_id) == 3) {
+		condlog(3, "%s: h:b:t:l = %i:%i:%i:%i",
 			pp->dev,
 			pp->sg_id.host_no,
 			pp->sg_id.channel,
 			pp->sg_id.scsi_id,
 			pp->sg_id.lun);
+	}
 
 	return 0;
 }
