@@ -1434,15 +1434,18 @@ out:
 void dm_reassign_deps(char *table, char *dep, char *newdep)
 {
 	char *p, *n;
-	char newtable[PARAMS_SIZE];
+	char *newtable;
 
-	strcpy(newtable, table);
+	newtable = strdup(table);
+	if (!newtable)
+		return;
 	p = strstr(newtable, dep);
 	n = table + (p - newtable);
 	strcpy(n, newdep);
 	n += strlen(newdep);
 	p += strlen(dep);
 	strcat(n, p);
+	free(newtable);
 }
 
 int dm_reassign_table(const char *name, char *old, char *new)
@@ -1451,7 +1454,7 @@ int dm_reassign_table(const char *name, char *old, char *new)
 	uint64_t start, length;
 	struct dm_task *dmt, *reload_dmt;
 	char *target, *params = NULL;
-	char buff[PARAMS_SIZE];
+	char *buff;
 	void *next = NULL;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_TABLE)))
@@ -1472,8 +1475,12 @@ int dm_reassign_table(const char *name, char *old, char *new)
 	do {
 		next = dm_get_next_target(dmt, next, &start, &length,
 					  &target, &params);
-		memset(buff, 0, PARAMS_SIZE);
-		strcpy(buff, params);
+		buff = strdup(params);
+		if (!buff) {
+			condlog(3, "%s: failed to replace target %s, "
+				"out of memory", name, target);
+			goto out_reload;
+		}
 		if (strcmp(target, TGT_MPATH) && strstr(params, old)) {
 			condlog(3, "%s: replace target %s %s",
 				name, target, buff);
@@ -1483,6 +1490,7 @@ int dm_reassign_table(const char *name, char *old, char *new)
 			modified++;
 		}
 		dm_task_add_target(reload_dmt, start, length, target, buff);
+		free(buff);
 	} while (next);
 
 	if (modified) {
