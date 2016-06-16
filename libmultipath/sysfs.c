@@ -57,23 +57,6 @@ ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
 	snprintf(devpath, PATH_SIZE, "%s/%s", udev_device_get_syspath(dev),
 		 attr_name);
 	condlog(4, "open '%s'", devpath);
-	if (stat(devpath, &statbuf) != 0) {
-		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
-		return -ENXIO;
-	}
-
-	/* skip directories */
-	if (S_ISDIR(statbuf.st_mode)) {
-		condlog(4, "%s is a directory", devpath);
-		return -EISDIR;
-	}
-
-	/* skip non-writeable files */
-	if ((statbuf.st_mode & S_IRUSR) == 0) {
-		condlog(4, "%s is not readable", devpath);
-		return -EPERM;
-	}
-
 	/* read attribute value */
 	fd = open(devpath, O_RDONLY);
 	if (fd < 0) {
@@ -81,6 +64,24 @@ ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
 			devpath, strerror(errno));
 		return -errno;
 	}
+	if (fstat(fd, &statbuf) < 0) {
+		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
+		close(fd);
+		return -ENXIO;
+	}
+	/* skip directories */
+	if (S_ISDIR(statbuf.st_mode)) {
+		condlog(4, "%s is a directory", devpath);
+		close(fd);
+		return -EISDIR;
+	}
+	/* skip non-writeable files */
+	if ((statbuf.st_mode & S_IRUSR) == 0) {
+		condlog(4, "%s is not readable", devpath);
+		close(fd);
+		return -EPERM;
+	}
+
 	size = read(fd, value, value_len);
 	if (size < 0) {
 		condlog(4, "read from %s failed: %s", devpath, strerror(errno));
@@ -112,23 +113,6 @@ ssize_t sysfs_bin_attr_get_value(struct udev_device *dev, const char *attr_name,
 	snprintf(devpath, PATH_SIZE, "%s/%s", udev_device_get_syspath(dev),
 		 attr_name);
 	condlog(4, "open '%s'", devpath);
-	if (stat(devpath, &statbuf) != 0) {
-		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
-		return -ENXIO;
-	}
-
-	/* skip directories */
-	if (S_ISDIR(statbuf.st_mode)) {
-		condlog(4, "%s is a directory", devpath);
-		return -EISDIR;
-	}
-
-	/* skip non-writeable files */
-	if ((statbuf.st_mode & S_IRUSR) == 0) {
-		condlog(4, "%s is not readable", devpath);
-		return -EPERM;
-	}
-
 	/* read attribute value */
 	fd = open(devpath, O_RDONLY);
 	if (fd < 0) {
@@ -136,6 +120,26 @@ ssize_t sysfs_bin_attr_get_value(struct udev_device *dev, const char *attr_name,
 			devpath, strerror(errno));
 		return -errno;
 	}
+	if (fstat(fd, &statbuf) != 0) {
+		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
+		close(fd);
+		return -ENXIO;
+	}
+
+	/* skip directories */
+	if (S_ISDIR(statbuf.st_mode)) {
+		condlog(4, "%s is a directory", devpath);
+		close(fd);
+		return -EISDIR;
+	}
+
+	/* skip non-writeable files */
+	if ((statbuf.st_mode & S_IRUSR) == 0) {
+		condlog(4, "%s is not readable", devpath);
+		close(fd);
+		return -EPERM;
+	}
+
 	size = read(fd, value, value_len);
 	if (size < 0) {
 		condlog(4, "read from %s failed: %s", devpath, strerror(errno));
@@ -163,23 +167,6 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 	snprintf(devpath, PATH_SIZE, "%s/%s", udev_device_get_syspath(dev),
 		 attr_name);
 	condlog(4, "open '%s'", devpath);
-	if (stat(devpath, &statbuf) != 0) {
-		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
-		return -errno;
-	}
-
-	/* skip directories */
-	if (S_ISDIR(statbuf.st_mode)) {
-		condlog(4, "%s is a directory", devpath);
-		return -EISDIR;
-	}
-
-	/* skip non-writeable files */
-	if ((statbuf.st_mode & S_IWUSR) == 0) {
-		condlog(4, "%s is not writeable", devpath);
-		return -EPERM;
-	}
-
 	/* write attribute value */
 	fd = open(devpath, O_WRONLY);
 	if (fd < 0) {
@@ -187,6 +174,26 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 			devpath, strerror(errno));
 		return -errno;
 	}
+	if (fstat(fd, &statbuf) != 0) {
+		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
+		close(fd);
+		return -errno;
+	}
+
+	/* skip directories */
+	if (S_ISDIR(statbuf.st_mode)) {
+		condlog(4, "%s is a directory", devpath);
+		close(fd);
+		return -EISDIR;
+	}
+
+	/* skip non-writeable files */
+	if ((statbuf.st_mode & S_IWUSR) == 0) {
+		condlog(4, "%s is not writeable", devpath);
+		close(fd);
+		return -EPERM;
+	}
+
 	size = write(fd, value, value_len);
 	if (size < 0) {
 		condlog(4, "write to %s failed: %s", devpath, strerror(errno));
