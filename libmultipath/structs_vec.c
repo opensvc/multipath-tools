@@ -447,8 +447,8 @@ find_existing_alias (struct multipath * mpp,
 	int i;
 
 	vector_foreach_slot (vecs->mpvec, mp, i)
-		if (strcmp(mp->wwid, mpp->wwid) == 0) {
-			strncpy(mpp->alias_old, mp->alias, WWID_SIZE);
+		if (strncmp(mp->wwid, mpp->wwid, WWID_SIZE - 1) == 0) {
+			strncpy(mpp->alias_old, mp->alias, WWID_SIZE - 1);
 			return;
 		}
 }

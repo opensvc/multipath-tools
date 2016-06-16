@@ -65,7 +65,7 @@ int group_by_host_adapter(struct pathgroup *pgp, vector adapters)
 			goto out;
 		agp->pgp = pgp;
 
-		strncpy(agp->adapter_name, adapter_name1, SLOT_NAME_SIZE);
+		strncpy(agp->adapter_name, adapter_name1, SLOT_NAME_SIZE - 1);
 		store_adaptergroup(adapters, agp);
 
 		/* create a new host port group
@@ -395,7 +395,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 		if (cmpp) {
 			condlog(2, "%s: rename %s to %s", mpp->wwid,
 				cmpp->alias, mpp->alias);
-			strncpy(mpp->alias_old, cmpp->alias, WWID_SIZE);
+			strncpy(mpp->alias_old, cmpp->alias, WWID_SIZE - 1);
 			mpp->action = ACT_RENAME;
 			if (force_reload)
 				mpp->action = ACT_FORCERENAME;
@@ -410,7 +410,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 	if (!cmpp) {
 		condlog(2, "%s: remove (wwid changed)", mpp->alias);
 		dm_flush_map(mpp->alias);
-		strncpy(cmpp_by_name->wwid, mpp->wwid, WWID_SIZE);
+		strncpy(cmpp_by_name->wwid, mpp->wwid, WWID_SIZE - 1);
 		drop_multipath(curmp, cmpp_by_name->wwid, KEEP_PATHS);
 		mpp->action = ACT_CREATE;
 		condlog(3, "%s: set ACT_CREATE (map wwid change)",
@@ -770,7 +770,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 		}
 
 		/* 4. path is out of scope */
-		if (refwwid && strncmp(pp1->wwid, refwwid, WWID_SIZE))
+		if (refwwid && strncmp(pp1->wwid, refwwid, WWID_SIZE - 1))
 			continue;
 
 		/* If find_multipaths was selected check if the path is valid */
@@ -896,7 +896,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			if (!deadmap(mpp))
 				continue;
 
-			strncpy(alias, mpp->alias, WWID_SIZE);
+			strncpy(alias, mpp->alias, WWID_SIZE - 1);
 
 			if ((j = find_slot(newmp, (void *)mpp)) != -1)
 				vector_del_slot(newmp, j);
