@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/ioctl.h>
 #include <inttypes.h>
 #include <libudev.h>
@@ -219,6 +220,9 @@ get_target_port_group(struct path * pp)
 			goto out;
 
 		scsi_buflen = (buf[2] << 8 | buf[3]) + 4;
+		/* Paranoia */
+		if (scsi_buflen >= USHRT_MAX)
+			scsi_buflen = USHRT_MAX;
 		if (buflen < scsi_buflen) {
 			free(buf);
 			buf = (unsigned char *)malloc(scsi_buflen);
@@ -303,7 +307,7 @@ get_asymmetric_access_state(int fd, unsigned int tpg)
 	struct rtpg_tpg_dscr *	dscr;
 	int			rc;
 	int			buflen;
-	uint32_t		scsi_buflen;
+	uint64_t		scsi_buflen;
 
 	buflen = 4096;
 	buf = (unsigned char *)malloc(buflen);
@@ -317,6 +321,8 @@ get_asymmetric_access_state(int fd, unsigned int tpg)
 	if (rc < 0)
 		goto out;
 	scsi_buflen = (buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3]) + 4;
+	if (scsi_buflen > UINT_MAX)
+		scsi_buflen = UINT_MAX;
 	if (buflen < scsi_buflen) {
 		free(buf);
 		buf = (unsigned char *)malloc(scsi_buflen);
