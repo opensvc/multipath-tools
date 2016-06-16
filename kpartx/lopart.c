@@ -117,13 +117,15 @@ find_loop_by_file (const char * filename)
 			continue;
 		sprintf(dev, "/dev/%s", dent->d_name);
 
-		if (stat (dev, &statbuf) != 0 ||
-		    !S_ISBLK(statbuf.st_mode))
-			continue;
-
 		fd = open (dev, O_RDONLY);
 		if (fd < 0)
 			break;
+
+		if (fstat (fd, &statbuf) != 0 ||
+		    !S_ISBLK(statbuf.st_mode)) {
+			close (fd);
+			continue;
+		}
 
 		if (ioctl (fd, LOOP_GET_STATUS, &loopinfo) != 0) {
 			close (fd);
