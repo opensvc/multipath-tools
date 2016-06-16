@@ -670,7 +670,7 @@ sysfs_set_scsi_tmo (struct multipath *mpp)
 	int dev_loss_tmo = mpp->dev_loss;
 
 	if (mpp->no_path_retry > 0) {
-		int no_path_retry_tmo = mpp->no_path_retry * conf->checkint;
+		uint64_t no_path_retry_tmo = mpp->no_path_retry * conf->checkint;
 
 		if (no_path_retry_tmo > MAX_DEV_LOSS_TMO)
 			no_path_retry_tmo = MAX_DEV_LOSS_TMO;
