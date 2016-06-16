@@ -169,19 +169,18 @@ find_unused_loop_device (void)
 
 		sprintf(dev, "/dev/loop%d", next_loop);
 
-		if (stat (dev, &statbuf) == 0 && S_ISBLK(statbuf.st_mode)) {
-			somedev++;
-			fd = open (dev, O_RDONLY);
-
-			if (fd >= 0) {
-
+		fd = open (dev, O_RDONLY);
+		if (fd >= 0) {
+			if (fstat (fd, &statbuf) == 0 &&
+			    S_ISBLK(statbuf.st_mode)) {
+				somedev++;
 				if(ioctl (fd, LOOP_GET_STATUS, &loopinfo) == 0)
 					someloop++;		/* in use */
 				else if (errno == ENXIO)
 					next_loop_dev = xstrdup(dev);
 
-				close (fd);
 			}
+			close (fd);
 
 			/* continue trying as long as devices exist */
 			continue;
