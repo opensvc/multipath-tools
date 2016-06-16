@@ -33,10 +33,14 @@ int update_prflag(char * arg1, char * arg2, int noisy)
 
 	snprintf(str,sizeof(str),"map %s %s", arg1, arg2);
 	condlog (2, "%s: pr flag message=%s", arg1, str);
-	send_packet(fd, str);
+	if (send_packet(fd, str) != 0) {
+		condlog(2, "%s: message=%s send error=%d", arg1, str, errno);
+		mpath_disconnect(fd);
+		return -2;
+	}
 	ret = recv_packet(fd, &reply, DEFAULT_REPLY_TIMEOUT);
 	if (ret < 0) {
-		condlog(2, "%s: message=%s error=%d", arg1, str, errno);
+		condlog(2, "%s: message=%s recv error=%d", arg1, str, errno);
 		ret = -2;
 	} else {
 		condlog (2, "%s: message=%s reply=%s", arg1, str, reply);
