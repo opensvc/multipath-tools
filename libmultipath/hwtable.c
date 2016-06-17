@@ -1219,6 +1219,22 @@ static struct hwentry default_hw[] = {
 		.dev_loss      = 30,
 	},
 	/*
+	 * Violin Memory, Inc.
+	 */
+	{
+		.vendor        = "VIOLIN",
+		.product       = "CONCERTO ARRAY",
+		.selector      = "round-robin 0",
+		.pgpolicy      = MULTIBUS,
+		.prio_name     = PRIO_ALUA,
+		.checker_name  = TUR,
+		.minio         = 100,
+		.rr_weight     = RR_WEIGHT_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.features      = "1 queue_if_no_path",
+		.no_path_retry = 300,
+	},
+	/*
 	 * EOL
 	 */
 	{
