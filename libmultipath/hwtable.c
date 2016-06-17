@@ -1235,6 +1235,25 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 300,
 	},
 	/*
+	 * Infinidat, Inc.
+	 */
+	{
+		.vendor        = "NFINIDAT",
+		.product       = "InfiniBox.*",
+		.prio_name     = PRIO_ALUA,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.checker_name  = TUR,
+		.selector      = "round-robin 0",
+		.features      = DEFAULT_FEATURES,
+		.pgfailback    = 30,
+		.rr_weight     = RR_WEIGHT_PRIO,
+		.no_path_retry = NO_PATH_RETRY_FAIL,
+		.minio_rq      = 1,
+		.flush_on_last_del = FLUSH_ENABLED,
+		.fast_io_fail  = 5,
+		.dev_loss      = 30,
+	},
+	/*
 	 * EOL
 	 */
 	{
