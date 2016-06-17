@@ -10,7 +10,7 @@
 
 /*
  * Tuning suggestions on these parameters should go to
- * dm-devel@redhat.com
+ * dm-devel@redhat.com (subscribers-only, see README)
  *
  * You are welcome to claim maintainership over a controller
  * family. Please mail the currently enlisted maintainer and
