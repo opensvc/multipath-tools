@@ -838,7 +838,7 @@ static struct hwentry default_hw[] = {
 	 * Pillar Data controller family
 	 *
 	 * Maintainer : Srinivasan Ramani
-	 * Mail : sramani@pillardata.com
+	 * Mail : srinivas.ramani@oracle.com
 	 */
 	{
 		.vendor        = "Pillar",
