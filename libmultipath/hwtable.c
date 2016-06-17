@@ -802,6 +802,23 @@ static struct hwentry default_hw[] = {
 		.detect_prio   = DETECT_PRIO_ON,
 	},
 	/*
+	 * IBM NSeries (NETAPP)
+	 */
+	{
+		.vendor        = "IBM",
+		.product       = "Nseries.*",
+		.features      = "1 queue_if_no_path",
+		.hwhandler     = DEFAULT_HWHANDLER,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = 128,
+		.checker_name  = DIRECTIO,
+		.prio_name     = PRIO_ONTAP,
+		.prio_args     = NULL,
+	},
+	/*
 	 * NEXENTA
 	 *
 	 * Maintainer : Yacine Kheddache
@@ -819,23 +836,6 @@ static struct hwentry default_hw[] = {
 		.minio         = 128,
 		.checker_name  = DIRECTIO,
 		.prio_name     = DEFAULT_PRIO,
-		.prio_args     = NULL,
-	},
-	/*
-	 * IBM NSeries (NETAPP)
-	 */
-	{
-		.vendor        = "IBM",
-		.product       = "Nseries.*",
-		.features      = "1 queue_if_no_path",
-		.hwhandler     = DEFAULT_HWHANDLER,
-		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.rr_weight     = RR_WEIGHT_NONE,
-		.no_path_retry = NO_PATH_RETRY_UNDEF,
-		.minio         = 128,
-		.checker_name  = DIRECTIO,
-		.prio_name     = PRIO_ONTAP,
 		.prio_args     = NULL,
 	},
 	/*
