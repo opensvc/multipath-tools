@@ -19,9 +19,6 @@
 static struct hwentry default_hw[] = {
 	/*
 	 * Compellent Technologies, Inc.
-	 *
-	 * Maintainer : Jim Lester, Compellent
-	 * Mail : jim.lester@compellent.com
 	 */
 	{
 		.vendor        = "COMPELNT",
@@ -780,9 +777,6 @@ static struct hwentry default_hw[] = {
 	},
 	/*
 	 * NETAPP controller family
-	 *
-	 * Maintainer : Dave Wysochanski
-	 * Mail : davidw@netapp.com
 	 */
 	{
 		.vendor        = "NETAPP",
@@ -825,9 +819,6 @@ static struct hwentry default_hw[] = {
 	},
 	/*
 	 * IBM NSeries (NETAPP) controller family
-	 *
-	 * Maintainer : Dave Wysochanski
-	 * Mail : davidw@netapp.com
 	 */
 	{
 		.vendor        = "IBM",
