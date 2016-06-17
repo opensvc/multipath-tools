@@ -798,7 +798,6 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ONTAP,
 		.prio_args     = NULL,
 		.retain_hwhandler = RETAIN_HWHANDLER_ON,
-		.user_friendly_names = USER_FRIENDLY_NAMES_OFF,
 		.detect_prio   = DETECT_PRIO_ON,
 	},
 	/*
@@ -1142,7 +1141,6 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.checker_name  = TUR,
 		.fast_io_fail  = 10,
-		.user_friendly_names = USER_FRIENDLY_NAMES_OFF,
 		.prio_name     = DEFAULT_PRIO,
 		.no_path_retry = 0,
 		.dev_loss      = 60,
