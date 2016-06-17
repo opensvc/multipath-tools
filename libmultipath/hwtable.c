@@ -1254,6 +1254,22 @@ static struct hwentry default_hw[] = {
 		.dev_loss      = 30,
 	},
 	/*
+	 * Tegile Systems, Inc.
+	 */
+	{
+		.vendor        = "TEGILE",
+		.product       = "ZEBI-FC|INTELLIFLASH",
+		.hwhandler     = "1 alua",
+		.selector      = "round-robin 0",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.no_path_retry = 10,
+		.dev_loss      = 50,
+		.checker_name  = TUR,
+		.prio_name     = PRIO_ALUA,
+		.pgfailback    = 30,
+		.minio         = 128,
+	},
+	/*
 	 * EOL
 	 */
 	{
