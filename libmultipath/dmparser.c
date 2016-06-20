@@ -344,10 +344,11 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 				if (!pp)
 					goto out1;
 
-				strncpy(pp->dev_t, word, BLK_DEV_SIZE);
-				strncpy(pp->dev, devname, FILE_NAME_SIZE);
+				strncpy(pp->dev_t, word, BLK_DEV_SIZE - 1);
+				strncpy(pp->dev, devname, FILE_NAME_SIZE - 1);
 				if (strlen(mpp->wwid)) {
-					strncpy(pp->wwid, mpp->wwid, WWID_SIZE);
+					strncpy(pp->wwid, mpp->wwid,
+						WWID_SIZE - 1);
 				}
 				/* Only call this in multipath client mode */
 				if (!conf->daemon && store_path(pathvec, pp))
@@ -355,7 +356,8 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 			} else {
 				if (!strlen(pp->wwid) &&
 				    strlen(mpp->wwid))
-					strncpy(pp->wwid, mpp->wwid, WWID_SIZE);
+					strncpy(pp->wwid, mpp->wwid,
+						WWID_SIZE - 1);
 			}
 			FREE(word);
 
@@ -367,14 +369,16 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp)
 			 * in the get_dm_mpvec() code path
 			 */
 			if (!strlen(mpp->wwid))
-				strncpy(mpp->wwid, pp->wwid, WWID_SIZE);
+				strncpy(mpp->wwid, pp->wwid,
+					WWID_SIZE - 1);
 
 			/*
 			 * Update wwid for paths which may not have been
 			 * active at the time the getuid callout was run
 			 */
 			else if (!strlen(pp->wwid))
-				strncpy(pp->wwid, mpp->wwid, WWID_SIZE);
+				strncpy(pp->wwid, mpp->wwid,
+					WWID_SIZE - 1);
 
 			pgp->id ^= (long)pp;
 			pp->pgindex = i + 1;

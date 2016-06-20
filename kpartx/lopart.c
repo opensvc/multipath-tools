@@ -117,13 +117,15 @@ find_loop_by_file (const char * filename)
 			continue;
 		sprintf(dev, "/dev/%s", dent->d_name);
 
-		if (stat (dev, &statbuf) != 0 ||
-		    !S_ISBLK(statbuf.st_mode))
-			continue;
-
 		fd = open (dev, O_RDONLY);
 		if (fd < 0)
 			break;
+
+		if (fstat (fd, &statbuf) != 0 ||
+		    !S_ISBLK(statbuf.st_mode)) {
+			close (fd);
+			continue;
+		}
 
 		if (ioctl (fd, LOOP_GET_STATUS, &loopinfo) != 0) {
 			close (fd);
@@ -154,33 +156,31 @@ find_unused_loop_device (void)
 	while (next_loop_dev == NULL) {
 		if (stat("/dev/loop-control", &statbuf) == 0 &&
 		    S_ISCHR(statbuf.st_mode)) {
-			fd = open("/dev/loop-control", O_RDWR);
-			if (fd < 0)
+			int next_loop_fd;
+
+			next_loop_fd = open("/dev/loop-control", O_RDWR);
+			if (next_loop_fd < 0)
 				return NULL;
-			next_loop = ioctl(fd, LOOP_CTL_GET_FREE);
+			next_loop = ioctl(next_loop_fd, LOOP_CTL_GET_FREE);
+			close(next_loop_fd);
 			if (next_loop < 0)
 				return NULL;
-			close(fd);
 		}
 
 		sprintf(dev, "/dev/loop%d", next_loop);
 
-		if (stat (dev, &statbuf) == 0 && S_ISBLK(statbuf.st_mode)) {
-			somedev++;
-			fd = open (dev, O_RDONLY);
-
-			if (fd >= 0) {
-
+		fd = open (dev, O_RDONLY);
+		if (fd >= 0) {
+			if (fstat (fd, &statbuf) == 0 &&
+			    S_ISBLK(statbuf.st_mode)) {
+				somedev++;
 				if(ioctl (fd, LOOP_GET_STATUS, &loopinfo) == 0)
 					someloop++;		/* in use */
-
-				else if (errno == ENXIO) {
-					close (fd);
+				else if (errno == ENXIO)
 					next_loop_dev = xstrdup(dev);
-				}
 
-				close (fd);
 			}
+			close (fd);
 
 			/* continue trying as long as devices exist */
 			continue;
@@ -253,6 +253,7 @@ set_loop (const char *device, const char *file, int offset, int *loopro)
 	}
 
 	if ((fd = open (device, mode)) < 0) {
+		close(ffd);
 		perror (device);
 		return 1;
 	}

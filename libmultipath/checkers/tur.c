@@ -331,9 +331,11 @@ libcheck_check (struct checker * c)
 		setup_thread_attr(&attr, 32 * 1024, 1);
 		r = pthread_create(&ct->thread, &attr, tur_thread, ct);
 		if (r) {
+			pthread_spin_lock(&ct->hldr_lock);
+			ct->holders--;
+			pthread_spin_unlock(&ct->hldr_lock);
 			pthread_mutex_unlock(&ct->lock);
 			ct->thread = 0;
-			ct->holders--;
 			condlog(3, "%d:%d: failed to start tur thread, using"
 				" sync mode", TUR_DEVT(ct));
 			return tur_check(c->fd, c->timeout, c->message);

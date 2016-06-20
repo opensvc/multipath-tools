@@ -150,7 +150,7 @@ static char *
 get_hotplug_device(void)
 {
 	unsigned int major, minor, off, len;
-	const char *mapname;
+	char *mapname;
 	char *devname = NULL;
 	char *device = NULL;
 	char *var = NULL;
@@ -178,16 +178,21 @@ get_hotplug_device(void)
 	len = strlen(mapname);
 
 	/* Dirname + mapname + \0 */
-	if (!(device = (char *)malloc(sizeof(char) * (off + len + 1))))
+	if (!(device = (char *)malloc(sizeof(char) * (off + len + 1)))) {
+		free(mapname);
 		return NULL;
+	}
 
 	/* Create new device name. */
 	snprintf(device, off + 1, "%s", devname);
 	snprintf(device + off, len + 1, "%s", mapname);
 
-	if (strlen(device) != (off + len))
+	if (strlen(device) != (off + len)) {
+		free(device);
+		free(mapname);
 		return NULL;
-
+	}
+	free(mapname);
 	return device;
 }
 

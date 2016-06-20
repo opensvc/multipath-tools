@@ -19,7 +19,6 @@ sg_read (int sg_fd, unsigned char * buff, int buff_len,
 	long long start_block = 0;
 	int bs = 512;
 	int cdbsz = 10;
-	int * diop = NULL;
 
 	unsigned char rdCmd[cdbsz];
 	unsigned char *sbb = sense;
@@ -55,8 +54,6 @@ sg_read (int sg_fd, unsigned char * buff, int buff_len,
 	io_hdr.sbp = sense;
 	io_hdr.timeout = timeout * 1000;
 	io_hdr.pack_id = (int)start_block;
-	if (diop && *diop)
-	io_hdr.flags |= SG_FLAG_DIRECT_IO;
 
 retry:
 	memset(sense, 0, sense_len);

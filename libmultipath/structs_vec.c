@@ -414,8 +414,12 @@ add_map_without_path (struct vectors * vecs, char * alias)
 {
 	struct multipath * mpp = alloc_multipath();
 
-	if (!mpp || !alias)
+	if (!mpp)
 		return NULL;
+	if (!alias) {
+		FREE(mpp);
+		return NULL;
+	}
 
 	mpp->alias = STRDUP(alias);
 
@@ -447,8 +451,8 @@ find_existing_alias (struct multipath * mpp,
 	int i;
 
 	vector_foreach_slot (vecs->mpvec, mp, i)
-		if (strcmp(mp->wwid, mpp->wwid) == 0) {
-			strncpy(mpp->alias_old, mp->alias, WWID_SIZE);
+		if (strncmp(mp->wwid, mpp->wwid, WWID_SIZE - 1) == 0) {
+			strncpy(mpp->alias_old, mp->alias, WWID_SIZE - 1);
 			return;
 		}
 }

@@ -84,7 +84,7 @@ updatepaths (struct multipath * mpp)
 
 		vector_foreach_slot (pgp->paths, pp, j){
 			if (!strlen(pp->dev)){
-				if (devt2devname(pp->dev, PATH_SIZE,
+				if (devt2devname(pp->dev, FILE_NAME_SIZE,
 						 pp->dev_t)){
 					/*
 					 * path is not in sysfs anymore
@@ -195,6 +195,10 @@ int mpath_persistent_reserve_in (int fd, int rq_servact,
 	if (!curmp || !pathvec){
 		condlog (0, "%s: vector allocation failed.", alias);
 		ret = MPATH_PR_DMMP_ERROR;
+		if (curmp)
+			vector_free(curmp);
+		if (pathvec)
+			vector_free(pathvec);
 		goto out;
 	}
 
@@ -285,6 +289,10 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	if (!curmp || !pathvec){
 		condlog (0, "%s: vector allocation failed.", alias);
 		ret = MPATH_PR_DMMP_ERROR;
+		if (curmp)
+			vector_free(curmp);
+		if (pathvec)
+			vector_free(pathvec);
 		goto out;
 	}
 
@@ -375,7 +383,8 @@ get_mpvec (vector curmp, vector pathvec, char * refwwid)
 		/*
 		 * discard out of scope maps
 		 */
-		if (mpp->alias && refwwid && strncmp (mpp->alias, refwwid, WWID_SIZE)){
+		if (mpp->alias && refwwid &&
+		    strncmp (mpp->alias, refwwid, WWID_SIZE - 1)){
 			free_multipath (mpp, KEEP_PATHS);
 			vector_del_slot (curmp, i);
 			i--;
@@ -485,7 +494,8 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 				condlog (1, "%s: %s path not up. Skip.", mpp->wwid, pp->dev);
 				continue;
 			}
-			strncpy(thread[count].param.dev, pp->dev, FILE_NAME_SIZE);
+			strncpy(thread[count].param.dev, pp->dev,
+				FILE_NAME_SIZE - 1);
 
 			if (count && (thread[count].param.paramp->sa_flags & MPATH_F_SPEC_I_PT_MASK)){
 				/*
@@ -602,7 +612,7 @@ int send_prout_activepath(char * dev, int rq_servact, int rq_scope,
 	int rc;
 
 	memset(&thread, 0, sizeof(thread));
-	strncpy(param.dev, dev, FILE_NAME_SIZE);
+	strncpy(param.dev, dev, FILE_NAME_SIZE - 1);
 	/* Initialize and set thread joinable attribute */
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -670,7 +680,8 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 				continue;
 			}
 
-			strncpy(thread[count].param.dev, pp->dev, FILE_NAME_SIZE);
+			strncpy(thread[count].param.dev, pp->dev,
+				FILE_NAME_SIZE - 1);
 			condlog (3, "%s: sending pr out command to %s", mpp->wwid, pp->dev);
 			rc = pthread_create (&thread[count].id, &attr, mpath_prout_pthread_fn,
 					(void *) (&thread[count].param));

@@ -805,6 +805,8 @@ set_pgfailback(vector strvec, void *ptr)
 	char * buff;
 
 	buff = set_value(strvec);
+	if (!buff)
+		return 1;
 
 	if (strlen(buff) == 6 && !strcmp(buff, "manual"))
 		*int_ptr = -FAILBACK_MANUAL;

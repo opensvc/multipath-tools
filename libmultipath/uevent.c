@@ -291,8 +291,12 @@ int failback_listen(void)
 		}
 
 		/* enable receiving of the sender credentials */
-		setsockopt(sock, SOL_SOCKET, SO_PASSCRED,
-			   &feature_on, sizeof(feature_on));
+		retval = setsockopt(sock, SOL_SOCKET, SO_PASSCRED,
+				    &feature_on, sizeof(feature_on));
+		if (retval < 0) {
+			condlog(0, "failed to enable credential passing, exit");
+			goto exit;
+		}
 
 	} else {
 		/* Fallback to read kernel netlink events */
@@ -330,8 +334,11 @@ int failback_listen(void)
 		condlog(3, "receive buffer size for socket is %u.", rcvsz);
 
 		/* enable receiving of the sender credentials */
-		setsockopt(sock, SOL_SOCKET, SO_PASSCRED,
-			   &feature_on, sizeof(feature_on));
+		if (setsockopt(sock, SOL_SOCKET, SO_PASSCRED,
+			       &feature_on, sizeof(feature_on)) < 0) {
+			condlog(0, "error on enabling credential passing for socket");
+			exit(1);
+		}
 
 		retval = bind(sock, (struct sockaddr *) &snl,
 			      sizeof(struct sockaddr_nl));
@@ -474,7 +481,7 @@ int uevent_listen(struct udev *udev)
 {
 	int err = 2;
 	struct udev_monitor *monitor = NULL;
-	int fd, fd_ep = -1, socket_flags, events;
+	int fd, socket_flags, events;
 	int need_failback = 1;
 	int timeout = 30;
 	LIST_HEAD(uevlisten_tmp);
@@ -579,8 +586,6 @@ int uevent_listen(struct udev *udev)
 	}
 	need_failback = 0;
 out:
-	if (fd_ep >= 0)
-		close(fd_ep);
 	if (monitor)
 		udev_monitor_unref(monitor);
 	if (need_failback)

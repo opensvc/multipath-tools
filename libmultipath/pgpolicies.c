@@ -341,8 +341,10 @@ group_by_prio (struct multipath * mp)
 		if (!pgp)
 			goto out;
 
-		if (store_path(pgp->paths, VECTOR_SLOT(mp->paths, 0)))
-				goto out;
+		if (store_path(pgp->paths, VECTOR_SLOT(mp->paths, 0))) {
+			free_pathgroup(pgp, KEEP_PATHS);
+			goto out;
+		}
 
 		vector_del_slot(mp->paths, 0);
 
@@ -350,11 +352,15 @@ group_by_prio (struct multipath * mp)
 		 * Store the new path group into the vector.
 		 */
 		if (i < VECTOR_SIZE(mp->pg)) {
-			if (!vector_insert_slot(mp->pg, i, pgp))
+			if (!vector_insert_slot(mp->pg, i, pgp)) {
+				free_pathgroup(pgp, KEEP_PATHS);
 				goto out;
+			}
 		} else {
-			if (store_pathgroup(mp->pg, pgp))
+			if (store_pathgroup(mp->pg, pgp)) {
+				free_pathgroup(pgp, KEEP_PATHS);
 				goto out;
+			}
 		}
 
 		/*

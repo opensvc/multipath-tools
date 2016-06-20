@@ -104,9 +104,11 @@ void libcheck_free (struct checker * c)
 
 	if (ct->reset_flags) {
 		if ((flags = fcntl(c->fd, F_GETFL)) >= 0) {
+			int ret __attribute__ ((unused));
+
 			flags &= ~O_DIRECT;
 			/* No point in checking for errors */
-			fcntl(c->fd, F_SETFL, flags);
+			ret = fcntl(c->fd, F_SETFL, flags);
 		}
 	}
 

@@ -116,7 +116,10 @@ dm_lib_prereq (void)
 
 	dm_get_library_version(version, sizeof(version));
 	condlog(3, "libdevmapper version %s", version);
-	sscanf(version, "%d.%d.%d ", &v[0], &v[1], &v[2]);
+	if (sscanf(version, "%d.%d.%d ", &v[0], &v[1], &v[2]) != 3) {
+		condlog(0, "invalid libdevmapper version %s", version);
+		return 1;
+	}
 
 	if VERSION_GE(v, minv)
 		return 0;
@@ -421,7 +424,6 @@ dm_get_map(const char * name, unsigned long long * size, char * outparams)
 {
 	int r = 1;
 	struct dm_task *dmt;
-	void *next = NULL;
 	uint64_t start, length;
 	char *target_type = NULL;
 	char *params = NULL;
@@ -438,8 +440,8 @@ dm_get_map(const char * name, unsigned long long * size, char * outparams)
 		goto out;
 
 	/* Fetch 1st target */
-	next = dm_get_next_target(dmt, next, &start, &length,
-				  &target_type, &params);
+	dm_get_next_target(dmt, NULL, &start, &length,
+			   &target_type, &params);
 
 	if (size)
 		*size = length;
@@ -530,7 +532,6 @@ dm_get_status(char * name, char * outstatus)
 {
 	int r = 1;
 	struct dm_task *dmt;
-	void *next = NULL;
 	uint64_t start, length;
 	char *target_type;
 	char *status;
@@ -547,8 +548,8 @@ dm_get_status(char * name, char * outstatus)
 		goto out;
 
 	/* Fetch 1st target */
-	next = dm_get_next_target(dmt, next, &start, &length,
-				  &target_type, &status);
+	dm_get_next_target(dmt, NULL, &start, &length,
+			   &target_type, &status);
 
 	if (snprintf(outstatus, PARAMS_SIZE, "%s", status) <= PARAMS_SIZE)
 		r = 0;
@@ -571,7 +572,6 @@ dm_type(const char * name, char * type)
 {
 	int r = 0;
 	struct dm_task *dmt;
-	void *next = NULL;
 	uint64_t start, length;
 	char *target_type = NULL;
 	char *params;
@@ -588,8 +588,8 @@ dm_type(const char * name, char * type)
 		goto out;
 
 	/* Fetch 1st target */
-	next = dm_get_next_target(dmt, next, &start, &length,
-				  &target_type, &params);
+	dm_get_next_target(dmt, NULL, &start, &length,
+			   &target_type, &params);
 
 	if (!target_type)
 		r = -1;
@@ -1434,24 +1434,27 @@ out:
 void dm_reassign_deps(char *table, char *dep, char *newdep)
 {
 	char *p, *n;
-	char newtable[PARAMS_SIZE];
+	char *newtable;
 
-	strcpy(newtable, table);
+	newtable = strdup(table);
+	if (!newtable)
+		return;
 	p = strstr(newtable, dep);
 	n = table + (p - newtable);
 	strcpy(n, newdep);
 	n += strlen(newdep);
 	p += strlen(dep);
 	strcat(n, p);
+	free(newtable);
 }
 
 int dm_reassign_table(const char *name, char *old, char *new)
 {
-	int r, modified = 0;
+	int r = 0, modified = 0;
 	uint64_t start, length;
 	struct dm_task *dmt, *reload_dmt;
 	char *target, *params = NULL;
-	char buff[PARAMS_SIZE];
+	char *buff;
 	void *next = NULL;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_TABLE)))
@@ -1472,8 +1475,12 @@ int dm_reassign_table(const char *name, char *old, char *new)
 	do {
 		next = dm_get_next_target(dmt, next, &start, &length,
 					  &target, &params);
-		memset(buff, 0, PARAMS_SIZE);
-		strcpy(buff, params);
+		buff = strdup(params);
+		if (!buff) {
+			condlog(3, "%s: failed to replace target %s, "
+				"out of memory", name, target);
+			goto out_reload;
+		}
 		if (strcmp(target, TGT_MPATH) && strstr(params, old)) {
 			condlog(3, "%s: replace target %s %s",
 				name, target, buff);
@@ -1483,6 +1490,7 @@ int dm_reassign_table(const char *name, char *old, char *new)
 			modified++;
 		}
 		dm_task_add_target(reload_dmt, start, length, target, buff);
+		free(buff);
 	} while (next);
 
 	if (modified) {

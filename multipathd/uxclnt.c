@@ -135,6 +135,6 @@ int uxclnt(char * inbuf, unsigned int timeout)
 		process_req(fd, inbuf, timeout);
 	else
 		process(fd, timeout);
-
+	mpath_disconnect(fd);
 	return 0;
 }

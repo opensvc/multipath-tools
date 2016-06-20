@@ -22,7 +22,7 @@ int pidfile_create(const char *pidFile, pid_t pid)
 		       (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))) < 0) {
 		condlog(0, "Cannot open pidfile [%s], error was [%s]",
 			pidFile, strerror(errno));
-		return 1;
+		return -errno;
 	}
 	lock.l_type = F_WRLCK;
 	lock.l_start = 0;
@@ -60,8 +60,8 @@ int pidfile_create(const char *pidFile, pid_t pid)
 			"error was [%s]", pidFile, strerror(errno));
 		goto fail;
 	}
-	return 0;
+	return fd;
 fail:
 	close(fd);
-	return 1;
+	return -errno;
 }
