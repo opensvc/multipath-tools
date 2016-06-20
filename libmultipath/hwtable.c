@@ -1156,47 +1156,6 @@ static struct hwentry default_hw[] = {
 		.checker_name  = TUR,
 	},
 	/*
-	 * Tegile Systems, Inc.
-	 *
-	 * Maintainer : Christophe Varoqui
-	 * Mail : christophe.varoqui@opensvc.com
-	 */
-	{
-		.vendor        = "TEGILE",
-		.product       = "ZEBI-FC|INTELLIFLASH",
-		.hwhandler     = "1 alua",
-		.selector      = "round-robin 0",
-		.pgpolicy      = GROUP_BY_PRIO,
-		.no_path_retry = 10,
-		.dev_loss      = 50,
-		.checker_name  = TUR,
-		.prio_name     = PRIO_ALUA,
-		.pgfailback    = 30,
-		.minio         = 128,
-	},
-	/*
-	 * Infinidat, Inc.
-	 *
-	 * Maintainer : Christophe Varoqui
-	 * Mail : christophe.varoqui@opensvc.com
-	 */
-	{
-		.vendor        = "NFINIDAT",
-		.product       = "InfiniBox.*",
-		.prio_name     = PRIO_ALUA,
-		.pgpolicy      = GROUP_BY_PRIO,
-		.checker_name  = TUR,
-		.selector      = "round-robin 0",
-		.features      = DEFAULT_FEATURES,
-		.pgfailback    = 30,
-		.rr_weight     = RR_WEIGHT_PRIO,
-		.no_path_retry = NO_PATH_RETRY_FAIL,
-		.minio_rq      = 1,
-		.flush_on_last_del = FLUSH_ENABLED,
-		.fast_io_fail  = 5,
-		.dev_loss      = 30,
-	},
-	/*
 	 * Violin Memory
 	 */
 	{
