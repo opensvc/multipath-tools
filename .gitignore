@@ -10,3 +10,5 @@ multipath/multipath
 multipathd/multipathd
 mpathpersist/mpathpersist
 .nfs*
+*.swp
+*.patch
