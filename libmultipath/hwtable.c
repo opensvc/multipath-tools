@@ -611,7 +611,7 @@ static struct hwentry default_hw[] = {
 		/* IBM S/390 ECKD DASD */
 		.vendor        = "IBM",
 		.product       = "S/390 DASD ECKD",
-		.bl_product       = "S/390.*",
+		.bl_product    = "S/390.*",
 		.uid_attribute = "ID_UID",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
@@ -627,7 +627,7 @@ static struct hwentry default_hw[] = {
 		/* IBM S/390 FBA DASD */
 		.vendor        = "IBM",
 		.product       = "S/390 DASD FBA",
-		.bl_product       = "S/390.*",
+		.bl_product    = "S/390.*",
 		.uid_attribute = "ID_UID",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = DEFAULT_HWHANDLER,
