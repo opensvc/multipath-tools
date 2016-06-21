@@ -1195,7 +1195,7 @@ static struct hwentry default_hw[] = {
 	 */
 	{
 		.vendor        = "TEGILE",
-		.product       = "ZEBI-FC|INTELLIFLASH",
+		.product       = "ZEBI-(FC|ISCSI)|INTELLIFLASH",
 		.hwhandler     = "1 alua",
 		.selector      = "round-robin 0",
 		.pgpolicy      = GROUP_BY_PRIO,
