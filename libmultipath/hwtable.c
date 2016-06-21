@@ -267,8 +267,8 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* DGC CLARiiON CX/AX and EMC VNX */
-		.vendor        = "DGC",
-		.product       = ".*",
+		.vendor        = "^DGC",
+		.product       = "^RAID|^DISK|^VRAID",
 		.bl_product    = "LUNZ",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 emc",
