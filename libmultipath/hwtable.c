@@ -735,7 +735,7 @@ static struct hwentry default_hw[] = {
 	 * DELL
 	 */
 	{
-		/* DELL MD3000/MD3000i */
+		/* DELL MD3000 */
 		.vendor        = "DELL",
 		.product       = "MD3000",
 		.bl_product    = "Universal Xport",
@@ -750,24 +750,9 @@ static struct hwentry default_hw[] = {
 		.prio_args     = NULL,
 	},
 	{
-		/* DELL MD32xx/MD32xxi */
+		/* DELL MD32xx/MD36xx */
 		.vendor        = "DELL",
-		.product       = "MD32xx",
-		.bl_product    = "Universal Xport",
-		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
-		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.rr_weight     = RR_WEIGHT_NONE,
-		.no_path_retry = 15,
-		.checker_name  = RDAC,
-		.prio_name     = PRIO_RDAC,
-		.prio_args     = NULL,
-	},
-	{
-		/* DELL MD36xxi/MD36xxf */
-		.vendor        = "DELL",
-		.product       = "MD36xx(i|f)",
+		.product       = "MD32xx|MD36xx",
 		.bl_product    = "Universal Xport",
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
