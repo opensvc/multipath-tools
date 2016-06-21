@@ -15,6 +15,11 @@
  * You are welcome to claim maintainership over a controller
  * family. Please mail the currently enlisted maintainer and
  * the upstream package maintainer.
+ *
+ * WARNING:
+ *
+ * Devices with a proprietary handler must also be included in
+ * the kernel side. Currently at drivers/scsi/scsi_dh.c
  */
 static struct hwentry default_hw[] = {
 	/*
