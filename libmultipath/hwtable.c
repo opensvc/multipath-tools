@@ -189,7 +189,6 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.prio_args     = NULL,
 	},
-
 	{
 		/* HP SVSP */
 		.vendor        = "HP",
@@ -205,7 +204,6 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.prio_args     = NULL,
 	},
-
 	{
 		/* HP Smart Array */
 		.vendor        = "HP",
@@ -861,7 +859,6 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.prio_args     = NULL,
 	},
-
 	/*
 	 * SGI
 	 */
@@ -910,7 +907,7 @@ static struct hwentry default_hw[] = {
 	 * NEC
 	 */
 	{
-		/* Storage M Series */
+		/* M-Series */
 		.vendor        = "NEC",
 		.product       = "DISK ARRAY",
 		.features      = DEFAULT_FEATURES,
