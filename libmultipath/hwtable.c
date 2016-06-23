@@ -750,7 +750,10 @@ static struct hwentry default_hw[] = {
 		.prio_args     = NULL,
 	},
 	/*
-	 * NETAPP
+	 * NETAPP ONTAP family
+	 *
+	 * Maintainer : Martin George
+	 * Mail : marting@netapp.com
 	 */
 	{
 		.vendor        = "NETAPP",
@@ -769,10 +772,8 @@ static struct hwentry default_hw[] = {
 		.retain_hwhandler = RETAIN_HWHANDLER_ON,
 		.detect_prio   = DETECT_PRIO_ON,
 	},
-	/*
-	 * IBM NSeries (NETAPP)
-	 */
 	{
+		/* IBM NSeries */
 		.vendor        = "IBM",
 		.product       = "Nseries.*",
 		.features      = "1 queue_if_no_path",
