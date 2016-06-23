@@ -271,7 +271,7 @@ are
 .TP 12
 .B readsector0
 (Deprecated) Read the first sector of the device. This checker is being
-deprecated, please use \fIdirectio\fR instead
+deprecated, please use \fItur\fR instead
 .TP
 .B tur
 Issue a
@@ -289,9 +289,11 @@ Check the path state for HP storage arrays with Active/Standby firmware.
 Check the path state for LSI/Engenio/NetApp E-Series RDAC storage controller.
 .TP
 .B directio
-Read the first sector with direct I/O.
+(Deprecated) Read the first sector with direct I/O. This checker is being
+deprecated, it will cause spurious path failures under high load.
+Please use \fItur\fR instead.
 .TP
-Default value is \fIdirectio\fR.
+Default value is \fItur\fR.
 .RE
 .TP
 .B failback
