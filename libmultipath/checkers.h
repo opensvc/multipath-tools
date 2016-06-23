@@ -85,7 +85,7 @@ enum path_check_state {
 #define READSECTOR0  "readsector0"
 #define CCISS_TUR    "cciss_tur"
 
-#define DEFAULT_CHECKER DIRECTIO
+#define DEFAULT_CHECKER TUR
 
 #define ASYNC_TIMEOUT_SEC	30
 
