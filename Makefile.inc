@@ -48,7 +48,6 @@ multipathdir = $(TOPDIR)/libmultipath
 mandir      = $(prefix)/usr/share/man/man8
 man5dir     = $(prefix)/usr/share/man/man5
 man3dir      = $(prefix)/usr/share/man/man3
-rcdir	    = $(prefix)/etc/init.d
 syslibdir   = $(prefix)/$(LIB)
 incdir      = $(prefix)/usr/include
 libdir	    = $(prefix)/$(LIB)/multipath
