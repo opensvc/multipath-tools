@@ -60,8 +60,6 @@ recurse_uninstall:
 	done
 
 clean:	recurse_clean
-	rm -f multipath-tools.spec
-	rm -rf rpms
 
 install:	recurse_install
 
@@ -73,10 +71,3 @@ TAGS:
 	etags -a libmultipath/*.h
 	etags -a multipathd/*.c
 	etags -a multipathd/*.h
-
-release:
-	sed -e "s/__VERSION__/${VERSION}/" \
-	multipath-tools.spec.in > multipath-tools.spec
-
-rpm: release
-	rpmbuild -bb multipath-tools.spec
