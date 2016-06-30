@@ -41,6 +41,8 @@ uninstall:
 	rm -f $(DESTDIR)$(syslibdir)/$(LIBS)
 	rm $(DESTDIR)$(man3dir)/mpath_persistent_reserve_in.3.gz
 	rm $(DESTDIR)$(man3dir)/mpath_persistent_reserve_out.3.gz
+	rm -f $(DESTDIR)$(incdir)/mpath_persist.h
+	rm -f $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 clean:
 	rm -f core *.a *.o
