@@ -1439,7 +1439,8 @@ int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
 }
 
 /*
- * Returns '1' if the path has been checked, '0' otherwise
+ * Returns '1' if the path has been checked, '-1' if it was blacklisted
+ * and '0' otherwise
  */
 int
 check_path (struct vectors * vecs, struct path * pp, int ticks)
@@ -1452,6 +1453,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	int oldchkrstate = pp->chkrstate;
 	int retrigger_tries, checkint;
 	struct config *conf;
+	int ret;
 
 	if ((pp->initialized == INIT_OK ||
 	     pp->initialized == INIT_REQUESTED_UDEV) && !pp->mpp)
@@ -1511,10 +1513,14 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 		    (newstate == PATH_UP || newstate == PATH_GHOST)) {
 			condlog(2, "%s: add missing path", pp->dev);
 			conf = get_multipath_config();
-			if (pathinfo(pp, conf, DI_ALL) == 0) {
+			ret = pathinfo(pp, conf, DI_ALL | DI_BLACKLIST);
+			if (ret == PATHINFO_OK) {
 				ev_add_path(pp, vecs);
 				pp->tick = 1;
-			}
+			} else if (ret == PATHINFO_SKIPPED) {
+				put_multipath_config(conf);
+				return -1;
+			} 
 			put_multipath_config(conf);
 		}
 		return 0;
@@ -1779,7 +1785,13 @@ checkerloop (void *ap)
 			lock(vecs->lock);
 			pthread_testcancel();
 			vector_foreach_slot (vecs->pathvec, pp, i) {
-				num_paths += check_path(vecs, pp, ticks);
+				rc = check_path(vecs, pp, ticks);
+				if (rc < 0) {
+					vector_del_slot(vecs->pathvec, i);
+					free_path(pp);
+					i--;
+				} else;
+					num_paths += rc;
 			}
 			lock_cleanup_pop(vecs->lock);
 		}
