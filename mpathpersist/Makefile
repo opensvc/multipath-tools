@@ -16,10 +16,10 @@ $(EXEC): $(OBJS)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 	
 install:
-	install -d $(DESTDIR)$(bindir)
-	install -m 755 $(EXEC) $(DESTDIR)$(bindir)/
-	install -d $(DESTDIR)$(mandir)
-	install -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
+	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)/
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)
+	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
 	
 clean:
 	$(RM) *.o $(EXEC)
