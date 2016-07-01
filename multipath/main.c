@@ -318,7 +318,7 @@ configure (enum mpath_cmds cmd, enum devtypes dev_type, char *devpath)
 			if (failed == 2 && cmd == CMD_VALID_PATH)
 				printf("%s is not a valid multipath device path\n", devpath);
 			else
-				condlog(3, "scope is nul");
+				condlog(3, "scope is null");
 			goto out;
 		}
 		if (cmd == CMD_REMOVE_WWID) {
@@ -390,7 +390,7 @@ configure (enum mpath_cmds cmd, enum devtypes dev_type, char *devpath)
 
 
 	if (cmd == CMD_VALID_PATH) {
-		/* This only happens if find_multipaths is and
+		/* This only happens if find_multipaths and
 		 * ignore_wwids is set.
 		 * If there is currently a multipath device matching
 		 * the refwwid, or there is more than one path matching
