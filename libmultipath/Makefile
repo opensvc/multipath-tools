@@ -57,7 +57,7 @@ all: $(LIBS)
 
 $(LIBS): $(OBJS)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ $(CFLAGS) -o $@ $(OBJS) $(LIBDEPS)
-	ln -sf $@ $(DEVLIB)
+	$(LN) $@ $(DEVLIB)
 
 install:
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)

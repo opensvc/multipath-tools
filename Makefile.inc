@@ -57,6 +57,7 @@ mpathcmddir = $(TOPDIR)/libmpathcmd
 
 GZIP        = gzip -9 -c
 RM          = rm -f
+LN          = ln -sf
 INSTALL_PROGRAM = install
 
 OPTFLAGS     = -Wunused -Wstrict-prototypes -O2 -g -pipe -Wformat-security -Wall \
