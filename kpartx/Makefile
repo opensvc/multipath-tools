@@ -34,11 +34,11 @@ install: $(EXEC) $(EXEC).8
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
 
 uninstall:
-	rm -f $(DESTDIR)$(bindir)/$(EXEC)
-	rm -f $(DESTDIR)$(mandir)/$(EXEC).8.gz
-	rm -f $(DESTDIR)$(libudevdir)/kpartx_id
-	rm -f $(DESTDIR)$(libudevdir)/rules.d/66-kpartx.rules
-	rm -f $(DESTDIR)$(libudevdir)/rules.d/67-kpartx-compat.rules
+	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
+	$(RM) $(DESTDIR)$(mandir)/$(EXEC).8.gz
+	$(RM) $(DESTDIR)$(libudevdir)/kpartx_id
+	$(RM) $(DESTDIR)$(libudevdir)/rules.d/66-kpartx.rules
+	$(RM) $(DESTDIR)$(libudevdir)/rules.d/67-kpartx-compat.rules
 
 clean:
-	rm -f core *.o $(EXEC) *.gz
+	$(RM) core *.o $(EXEC) *.gz

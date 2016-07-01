@@ -22,9 +22,9 @@ install:
 	install -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
 	
 clean:
-	rm -f *.o $(EXEC)
-	rm -f mpathpersist.8.gz
+	$(RM) *.o $(EXEC)
+	$(RM) mpathpersist.8.gz
 
 uninstall:
-	rm $(DESTDIR)$(bindir)/$(EXEC)
-	rm $(DESTDIR)$(mandir)/$(EXEC).8.gz
+	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
+	$(RM) $(DESTDIR)$(mandir)/$(EXEC).8.gz

@@ -22,9 +22,9 @@ install: $(LIBS)
 	$(INSTALL_PROGRAM) -m 644 mpath_cmd.h $(DESTDIR)$(incdir)
 
 uninstall:
-	rm -f $(DESTDIR)$(syslibdir)/$(LIBS)
-	rm -f $(DESTDIR)$(syslibdir)/$(DEVLIB)
-	rm -f $(DESTDIR)$(incdir)/mpath_cmd.h
+	$(RM) $(DESTDIR)$(syslibdir)/$(LIBS)
+	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
+	$(RM) $(DESTDIR)$(incdir)/mpath_cmd.h
 
 clean:
-	rm -f core *.a *.o *.gz *.so *.so.*
+	$(RM) core *.a *.o *.gz *.so *.so.*

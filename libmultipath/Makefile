@@ -65,7 +65,7 @@ install:
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(libdir)
 
 uninstall:
-	rm -f $(DESTDIR)$(syslibdir)/$(LIBS)
+	$(RM) $(DESTDIR)$(syslibdir)/$(LIBS)
 
 clean:
-	rm -f core *.a *.o *.gz *.so *.so.*
+	$(RM) core *.a *.o *.gz *.so *.so.*

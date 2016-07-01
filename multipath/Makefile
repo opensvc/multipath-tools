@@ -31,11 +31,11 @@ install:
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).conf.5.gz $(DESTDIR)$(man5dir)
 
 uninstall:
-	rm $(DESTDIR)$(bindir)/$(EXEC)
-	rm $(DESTDIR)$(udevrulesdir)/11-dm-mpath.rules
-	rm $(DESTDIR)$(libudevdir)/rules.d/56-multipath.rules
-	rm $(DESTDIR)$(mandir)/$(EXEC).8.gz
-	rm $(DESTDIR)$(man5dir)/$(EXEC).conf.5.gz
+	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
+	$(RM) $(DESTDIR)$(udevrulesdir)/11-dm-mpath.rules
+	$(RM) $(DESTDIR)$(libudevdir)/rules.d/56-multipath.rules
+	$(RM) $(DESTDIR)$(mandir)/$(EXEC).8.gz
+	$(RM) $(DESTDIR)$(man5dir)/$(EXEC).conf.5.gz
 
 clean:
-	rm -f core *.o $(EXEC) *.gz
+	$(RM) core *.o $(EXEC) *.gz

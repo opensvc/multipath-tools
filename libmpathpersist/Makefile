@@ -38,14 +38,14 @@ install: $(LIBS)
 	install -m 644 mpath_persist.h $(DESTDIR)$(incdir)
 
 uninstall:
-	rm -f $(DESTDIR)$(syslibdir)/$(LIBS)
-	rm $(DESTDIR)$(man3dir)/mpath_persistent_reserve_in.3.gz
-	rm $(DESTDIR)$(man3dir)/mpath_persistent_reserve_out.3.gz
-	rm -f $(DESTDIR)$(incdir)/mpath_persist.h
-	rm -f $(DESTDIR)$(syslibdir)/$(DEVLIB)
+	$(RM) $(DESTDIR)$(syslibdir)/$(LIBS)
+	$(RM) $(DESTDIR)$(man3dir)/mpath_persistent_reserve_in.3.gz
+	$(RM) $(DESTDIR)$(man3dir)/mpath_persistent_reserve_out.3.gz
+	$(RM) $(DESTDIR)$(incdir)/mpath_persist.h
+	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 clean:
-	rm -f core *.a *.o
-	rm -f libmpathpersist.so.0
-	rm -f libmpathpersist.so
-	rm -f mpath_persistent_reserve_in.3.gz mpath_persistent_reserve_out.3.gz
+	$(RM) core *.a *.o
+	$(RM) libmpathpersist.so.0
+	$(RM) libmpathpersist.so
+	$(RM) mpath_persistent_reserve_in.3.gz mpath_persistent_reserve_out.3.gz

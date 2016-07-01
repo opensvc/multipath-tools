@@ -27,7 +27,7 @@ install:
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(libdir)
 
 uninstall:
-	for file in $(LIBS); do rm -f $(DESTDIR)$(libdir)/$$file; done
+	for file in $(LIBS); do $(RM) $(DESTDIR)$(libdir)/$$file; done
 
 clean:
-	rm -f core *.a *.o *.gz *.so
+	$(RM) core *.a *.o *.gz *.so

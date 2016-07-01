@@ -55,11 +55,11 @@ endif
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
 
 uninstall:
-	rm -f $(DESTDIR)$(bindir)/$(EXEC)
-	rm -f $(DESTDIR)$(mandir)/$(EXEC).8.gz
-	rm -f $(DESTDIR)$(unitdir)/$(EXEC).service
-	rm -f $(DESTDIR)$(unitdir)/$(EXEC).socket
+	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
+	$(RM) $(DESTDIR)$(mandir)/$(EXEC).8.gz
+	$(RM) $(DESTDIR)$(unitdir)/$(EXEC).service
+	$(RM) $(DESTDIR)$(unitdir)/$(EXEC).socket
 
 clean:
-	rm -f core *.o $(EXEC) *.gz
+	$(RM) core *.o $(EXEC) *.gz
 
