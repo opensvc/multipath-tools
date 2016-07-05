@@ -295,7 +295,8 @@ configure (enum mpath_cmds cmd, enum devtypes dev_type, char *devpath)
 	 * if we have a blacklisted device parameter, exit early
 	 */
 	conf = get_multipath_config();
-	if (dev && dev_type == DEV_DEVNODE &&
+	if (dev && (dev_type == DEV_DEVNODE ||
+		    dev_type == DEV_UEVENT) &&
 	    cmd != CMD_REMOVE_WWID &&
 	    (filter_devnode(conf->blist_devnode,
 			    conf->elist_devnode, dev) > 0)) {
