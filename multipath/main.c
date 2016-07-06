@@ -570,7 +570,7 @@ main (int argc, char *argv[])
 			break;
 		case 'p':
 			conf->pgpolicy_flag = get_pgpolicy_id(optarg);
-			if (conf->pgpolicy_flag == -1) {
+			if (conf->pgpolicy_flag == IOPOLICY_UNDEF) {
 				printf("'%s' is not a valid policy\n", optarg);
 				usage(argv[0]);
 				exit(1);
