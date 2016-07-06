@@ -2424,6 +2424,7 @@ child (void * param)
 	conf = NULL;
 	udev_unref(udev);
 	udev = NULL;
+	pthread_attr_destroy(&waiter_attr);
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
 #endif
