@@ -230,7 +230,6 @@ static struct hwentry default_hw[] = {
 		.selector      = "queue-length 0",
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
-		.fast_io_fail  = 5,
 	},
 	/*
 	 * Fujitsu
@@ -915,7 +914,6 @@ static struct hwentry default_hw[] = {
 		.rr_weight     = RR_WEIGHT_PRIO,
 		.no_path_retry = NO_PATH_RETRY_FAIL,
 		.flush_on_last_del = FLUSH_ENABLED,
-		.fast_io_fail  = 5,
 		.dev_loss      = 30,
 	},
 	/*
