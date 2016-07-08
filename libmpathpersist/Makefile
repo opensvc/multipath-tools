@@ -3,8 +3,6 @@
 BUILD = glibc
 include ../Makefile.inc
 
-INSTALL_PROGRAM = install
-
 SONAME=0
 DEVLIB = libmpathpersist.so
 LIBS = $(DEVLIB).$(SONAME)
