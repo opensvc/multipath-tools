@@ -549,6 +549,16 @@ will be canceled.
 Default value is: \fBno\fR
 .RE
 .TP
+.B partition_delimiter
+If this value is not set, when multipath renames a device, it will act just
+like the kpartx default does, only adding a \fI"p"\fR to names ending in a
+number. If this parameter is set, multipath will act like kpartx does with
+the \fI-p\fR option is used, and always add delimiter.
+.RS
+.TP
+Default value is: \fB<unset>\fR
+.RE
+.TP
 .B config_dir
 If set to anything other than "", multipath will search this directory
 alphabetically for file ending in ".conf" and it will read configuration
