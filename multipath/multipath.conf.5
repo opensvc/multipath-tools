@@ -296,9 +296,9 @@ Specify any device-mapper features to be used. Syntax is
 .I num list
 where
 .I num
-is the number of features in
+is the number, between 0 and 6, of features in
 .I list.
-Possible values for the feature list are
+Possible values for the feature list are:
 .RS
 .TP 12
 .I queue_if_no_path
@@ -308,6 +308,12 @@ keyword.
 .TP
 .I no_partitions
 Disable automatic partitions generation via kpartx.
+.TP
+.I pg_init_retries
+Number of times to retry pg_init, it must be between 1 and 50.
+.TP
+.I pg_init_delay_msecs
+Number of msecs before pg_init retry, it must be between 0 and 60000.
 .TP
 Default value is: \fB0\fR
 .RE
