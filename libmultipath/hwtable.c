@@ -914,7 +914,6 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = 30,
 		.rr_weight     = RR_WEIGHT_PRIO,
 		.no_path_retry = NO_PATH_RETRY_FAIL,
-		.minio_rq      = 1,
 		.flush_on_last_del = FLUSH_ENABLED,
 		.fast_io_fail  = 5,
 		.dev_loss      = 30,
