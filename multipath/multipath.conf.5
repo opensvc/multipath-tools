@@ -247,6 +247,12 @@ Generate a random priority between 1 and 10.
 Generate the path priority based on the regular expression and the
 priority provided as argument. requires prio_args keyword.
 .TP
+.I datacore
+???. Requires prio_args keyword.
+.TP
+.I iet
+???. Requires prio_args keyword.
+.TP
 Default value is: \fBconst\fR
 .RE
 .TP
@@ -273,6 +279,14 @@ If
 .I exclusive_pref_bit
 is set, paths with the TPGS pref bit set will always be in their own path
 group.
+.TP
+.I datacore
+.I preferredsds
+???
+.TP
+.I iet
+.I preferredip
+???
 .TP
 Default value is: \fB<unset>\fR
 .RE
