@@ -212,26 +212,32 @@ are implemented:
 Return a constant priority of \fI1\fR.
 .TP
 .I emc
+(Hardware-dependent)
 Generate the path priority for DGC class arrays as CLARiiON CX/AX and
 EMC VNX families.
 .TP
 .I alua
+(Hardware-dependent)
 Generate the path priority based on the SCSI-3 ALUA settings. This prioritizer
 accepts the optional prio_arg
 .I exclusive_pref_bit
 .TP
 .I ontap
+(Hardware-dependent)
 Generate the path priority for NetApp ONTAP class and OEM arrays as IBM NSeries.
 .TP
 .I rdac
+(Hardware-dependent)
 Generate the path priority for LSI/Engenio/NetApp RDAC class as NetApp E/EF
 Series, and OEM arrays from IBM DELL SGI STK and SUN.
 .TP
 .I hp_sw
+(Hardware-dependent)
 Generate the path priority for HP/COMPAQ/DEC HSG80 and MSA/HSV arrays with
 Active/Standby mode exclusively.
 .TP
 .I hds
+(Hardware-dependent)
 Generate the path priority for Hitachi HDS Modular storage arrays.
 .TP
 .I random
@@ -307,14 +313,17 @@ Issue a
 command to the device.
 .TP
 .I emc_clariion
+(Hardware-dependent)
 Query the DGC/EMC specific EVPD page 0xC0 to determine the path state
 for CLARiiON CX/AX and EMC VNX arrays families.
 .TP
 .I hp_sw
+(Hardware-dependent)
 Check the path state for HP/COMPAQ/DEC HSG80 and MSA/HSV arrays with
 Active/Standby mode exclusively.
 .TP
 .I rdac
+(Hardware-dependent)
 Check the path state for LSI/Engenio/NetApp RDAC class as NetApp E/EF
 Series, and OEM arrays from IBM DELL SGI STK and SUN.
 .TP
@@ -812,17 +821,21 @@ The following hardware handler are implemented:
 .RS
 .TP 12
 .I 1 emc
+(Hardware-dependent)
 Hardware handler for DGC class arrays as CLARiiON CX/AX and EMC VNX families.
 .TP
 .I 1 rdac
+(Hardware-dependent)
 Hardware handler for LSI/Engenio/NetApp RDAC class as NetApp E/EF
 Series, and OEM arrays from IBM DELL SGI STK and SUN.
 .TP
 .I 1 hp_sw
+(Hardware-dependent)
 Hardware handler for HP/COMPAQ/DEC HSG80 and MSA/HSV arrays with
 Active/Standby mode exclusively.
 .TP
 .I 1 alua
+(Hardware-dependent)
 Hardware handler for SCSI-3 ALUA compatible arrays.
 .RE
 .LP
