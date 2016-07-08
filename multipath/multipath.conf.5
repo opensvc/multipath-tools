@@ -212,7 +212,8 @@ are implemented:
 Return a constant priority of \fI1\fR.
 .TP
 .I emc
-Generate the path priority for EMC arrays.
+Generate the path priority for DGC class arrays as CLARiiON CX/AX and
+EMC VNX families.
 .TP
 .I alua
 Generate the path priority based on the SCSI-3 ALUA settings. This prioritizer
@@ -305,8 +306,8 @@ Issue a
 command to the device.
 .TP
 .I emc_clariion
-Query the EMC Clariion specific EVPD page 0xC0 to determine the path
-state.
+Query the DGC/EMC specific EVPD page 0xC0 to determine the path state
+for CLARiiON CX/AX and EMC VNX arrays families.
 .TP
 .I hp_sw
 Check the path state for HP storage arrays with Active/Standby firmware.
@@ -808,7 +809,7 @@ The following hardware handler are implemented:
 .RS
 .TP 12
 .I 1 emc
-Hardware handler for EMC storage arrays.
+Hardware handler for DGC class arrays as CLARiiON CX/AX and EMC VNX families.
 .TP
 .I 1 rdac
 Hardware handler for LSI/Engenio/NetApp E-Series RDAC storage controller.
