@@ -139,7 +139,7 @@ device, not the underlying block devices. Possible values are
 \fIyes\fR and \fIno\fR.
 .RS
 .TP
-Default value is: \fByes\fR
+Default value is: \fBno\fR
 .RE
 .TP
 .B path_selector
@@ -157,6 +157,8 @@ Send the next bunch of IO down the path with the least amount of outstanding IO.
 .I "service-time 0"
 Choose the path for the next bunch of IO based on the amount of outstanding IO
 to the path and its relative throughput.
+.TP
+Default value is: \fBservice-time 0\fR
 .RE
 .TP
 .B path_grouping_policy
@@ -237,7 +239,7 @@ Generate a random priority between 1 and 10.
 Generate the path priority based on the regular expression and the
 priority provided as argument. requires prio_args keyword.
 .TP
-Default value is: \fBnone\fR
+Default value is: \fBconst\fR
 .RE
 .TP
 .B prio_args
@@ -263,6 +265,8 @@ If
 .I exclusive_pref_bit
 is set, paths with the TPGS pref bit set will always be in their own path
 group.
+.TP
+Default value is: \fB<unset>\fR
 .RE
 .TP
 .B features
@@ -282,6 +286,8 @@ keyword.
 .TP
 .I no_partitions
 Disable automatic partitions generation via kpartx.
+.TP
+Default value is: \fB0\fR
 .RE
 .TP
 .B path_checker
@@ -415,6 +421,10 @@ this to the system limit from /proc/sys/fs/nr_open. If this is not set, the
 maximum number of open fds is taken from the calling process. It is usually
 1024. To be safe, this should be set to the maximum number of paths plus 32,
 if that number is greated than 1024.
+.RS
+.TP
+Default value is: \fBmax\fR
+.RE
 .TP
 .B checker_timeout
 Specify the timeout to use for path checkers and prioritizers that issue scsi
@@ -430,6 +440,10 @@ detected on a FC remote port before failing IO to devices on that remote port.
 This should be smaller than dev_loss_tmo. Setting this to
 .I off
 will disable the timeout.
+.RS
+.TP
+Default value is: in \fB5\fR
+.RE
 .TP
 .B dev_loss_tmo
 Specify the number of seconds the scsi layer will wait after a problem has
