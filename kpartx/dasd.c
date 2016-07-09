@@ -112,7 +112,7 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 		 * major/minor into an openable device file, so we have
 		 * to create one for ourselves.
 		 */
-		
+
 		sprintf(pathname, "/dev/.kpartx-node-%u-%u",
 			(unsigned int)major(dev), (unsigned int)minor(dev));
 		if ((fd_dasd = open(pathname, O_RDONLY)) == -1) {

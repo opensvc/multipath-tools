@@ -1714,7 +1714,7 @@ pathinfo (struct path *pp, struct config *conf, int mask)
 			get_prio(pp);
 		}
 	}
-	
+
 	if ((mask & DI_ALL) == DI_ALL)
 		pp->initialized = INIT_OK;
 	return PATHINFO_OK;

@@ -76,9 +76,9 @@ is_loop_device (const char *device)
 	loopmajor = 0;
 
 	if ((procdev = fopen(PROC_DEVICES, "r")) != NULL) {
-		
+
 		while (fgets (line, sizeof(line), procdev)) {
-			
+
 			if ((cp = strstr (line, " loop\n")) != NULL) {
 				*cp='\0';
 				loopmajor=atoi(line);

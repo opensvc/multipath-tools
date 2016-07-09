@@ -1520,7 +1520,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 			} else if (ret == PATHINFO_SKIPPED) {
 				put_multipath_config(conf);
 				return -1;
-			} 
+			}
 			put_multipath_config(conf);
 		}
 		return 0;

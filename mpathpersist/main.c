@@ -423,7 +423,7 @@ int main (int argc, char * argv[])
 		struct prout_param_descriptor *paramp;
 
 		paramp= malloc(sizeof(struct prout_param_descriptor) + (sizeof(struct transportid *)*(MPATH_MX_TIDS )));
-		
+
 		memset(paramp, 0, sizeof(struct prout_param_descriptor) + (sizeof(struct transportid *)*(MPATH_MX_TIDS)));
 
 		for (j = 7; j >= 0; --j) {
