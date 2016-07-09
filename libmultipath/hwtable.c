@@ -212,8 +212,6 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = (300 / DEFAULT_CHECKINT),
 		.checker_name  = EMC_CLARIION,
 		.prio_name     = PRIO_EMC,
-		.retain_hwhandler = RETAIN_HWHANDLER_ON,
-		.detect_prio   = DETECT_PRIO_ON,
 	},
 	{
 		.vendor        = "EMC",
@@ -611,8 +609,6 @@ static struct hwentry default_hw[] = {
 		.minio         = 128,
 		.dev_loss      = MAX_DEV_LOSS_TMO,
 		.prio_name     = PRIO_ONTAP,
-		.retain_hwhandler = RETAIN_HWHANDLER_ON,
-		.detect_prio   = DETECT_PRIO_ON,
 	},
 	{
 		/* IBM NSeries */
@@ -815,8 +811,6 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 		.checker_name  = RDAC,
 		.prio_name     = PRIO_RDAC,
-		.detect_prio   = DETECT_PRIO_ON,
-		.retain_hwhandler = RETAIN_HWHANDLER_ON,
 	},
 	{
 		.vendor        = "STK",
