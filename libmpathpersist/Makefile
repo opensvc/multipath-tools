@@ -1,6 +1,5 @@
 # Makefile
 #
-BUILD = glibc
 include ../Makefile.inc
 
 SONAME=0
