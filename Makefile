@@ -40,7 +40,7 @@ all: recurse
 
 recurse:
 	@for dir in $(BUILDDIRS); do \
-	$(MAKE) -C $$dir BUILD=$(BUILD) VERSION=$(VERSION) \
+	$(MAKE) -C $$dir VERSION=$(VERSION) \
 		KRNLSRC=$(KRNLSRC) KRNLOBJ=$(KRNLOBJ) || exit $?; \
 	done
 
