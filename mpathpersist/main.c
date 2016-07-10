@@ -834,4 +834,3 @@ my_cont_b:
 	}
 	return 0;
 }
-

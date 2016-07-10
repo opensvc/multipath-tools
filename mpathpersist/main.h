@@ -26,4 +26,3 @@ static struct option long_options[] = {
 };
 
 static void usage(void);
-

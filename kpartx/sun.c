@@ -126,4 +126,3 @@ read_sun_pt(int fd, struct slice all, struct slice *sp, int ns) {
 	}
 	return n;
 }
-

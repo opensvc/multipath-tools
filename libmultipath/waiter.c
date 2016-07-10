@@ -213,4 +213,3 @@ out:
 	condlog(0, "failed to start waiter thread");
 	return 1;
 }
-

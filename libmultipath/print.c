@@ -1827,4 +1827,3 @@ print_all_paths_custo (vector pathvec, int banner, char *fmt)
 	vector_foreach_slot (pathvec, pp, i)
 		print_path(pp, fmt);
 }
-

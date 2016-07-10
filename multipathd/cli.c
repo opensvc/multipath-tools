@@ -688,4 +688,3 @@ key_generator (const char * str, int state)
 	 */
 	return ((char *)NULL);
 }
-

@@ -2713,4 +2713,3 @@ int mpath_pr_event_handle(struct path *pp)
 	rc = pthread_join(thread, NULL);
 	return 0;
 }
-

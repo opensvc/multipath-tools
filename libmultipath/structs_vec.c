@@ -636,4 +636,3 @@ void update_queue_mode_add_path(struct multipath *mpp)
 	}
 	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
 }
-

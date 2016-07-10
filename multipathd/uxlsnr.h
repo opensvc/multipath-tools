@@ -10,4 +10,3 @@ extern volatile sig_atomic_t reconfig_sig;
 extern volatile sig_atomic_t log_reset_sig;
 
 #endif
-

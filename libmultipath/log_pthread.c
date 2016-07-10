@@ -130,4 +130,3 @@ void log_thread_stop (void)
 
 	log_close();
 }
-

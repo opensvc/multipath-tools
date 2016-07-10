@@ -925,6 +925,3 @@ int update_map_pr(struct multipath *mpp)
 	free(resp);
 	return MPATH_PR_SUCCESS;
 }
-
-
-

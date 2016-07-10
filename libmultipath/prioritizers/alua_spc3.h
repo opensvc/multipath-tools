@@ -323,4 +323,3 @@ struct rtpg_data {
 		)
 
 #endif /* __SPC3_H__ */
-

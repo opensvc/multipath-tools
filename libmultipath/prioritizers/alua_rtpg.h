@@ -27,4 +27,3 @@ int get_target_port_group(struct path * pp, unsigned int timeout);
 int get_asymmetric_access_state(int fd, unsigned int tpg, unsigned int timeout);
 
 #endif /* __RTPG_H__ */
-

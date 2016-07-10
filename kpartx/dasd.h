@@ -113,7 +113,7 @@ typedef struct format1_label
         uint16_t DS1SCXTV;           /* secondary space extension value         */
         uint8_t  DS1DSRG1;           /* data set organisation byte 1            */
         uint8_t  DS1DSRG2;           /* data set organisation byte 2            */
-  	uint8_t  DS1RECFM;           /* record format                           */
+	uint8_t  DS1RECFM;           /* record format                           */
 	uint8_t  DS1OPTCD;           /* option code                             */
 	uint16_t DS1BLKL;            /* block length                            */
 	uint16_t DS1LRECL;           /* record length                           */
@@ -121,7 +121,7 @@ typedef struct format1_label
 	uint16_t DS1RKP;             /* relative key position                   */
 	uint8_t  DS1DSIND;           /* data set indicators                     */
         uint8_t  DS1SCAL1;           /* secondary allocation flag byte          */
-  	char DS1SCAL3[3];         /* secondary allocation quantity           */
+	char DS1SCAL3[3];         /* secondary allocation quantity           */
 	ttr_t DS1LSTAR;           /* last used track and block on track      */
 	uint16_t DS1TRBAL;           /* space remaining on last used track      */
         uint16_t res1;               /* reserved                                */

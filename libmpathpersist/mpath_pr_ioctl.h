@@ -107,5 +107,3 @@ typedef struct SenseData
 
 /* Driver status */
 #define DRIVER_OK 0x00
-
-

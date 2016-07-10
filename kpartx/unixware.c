@@ -17,7 +17,7 @@ struct unixware_disklabel {
 	unsigned int   d_type;		/* drive type */
 	unsigned char  d_magic[4];	/* the magic number */
 	unsigned int   d_version;	/* version number */
-	char    d_serial[12];	   	/* serial number of the device */
+	char    d_serial[12];		/* serial number of the device */
 	unsigned int   d_ncylinders;	/* # of data cylinders per device */
 	unsigned int   d_ntracks;	/* # of tracks per cylinder */
 	unsigned int   d_nsectors;	/* # of data sectors per track */
@@ -37,7 +37,7 @@ struct unixware_disklabel {
 	struct unixware_vtoc {
 		unsigned char   v_magic[4];	/* the magic number */
 		unsigned int    v_version;	/* version number */
-		char    v_name[8];	      	/* volume name */
+		char    v_name[8];		/* volume name */
 		unsigned short  v_nslices;	/* # of slices */
 		unsigned short  v_unknown1;	/* ? */
 		unsigned int    v_reserved[10];	/* reserved */
@@ -55,7 +55,7 @@ read_unixware_pt(int fd, struct slice all, struct slice *sp, int ns) {
 	char *bp;
 	int n = 0;
 
-	bp = getblock(fd, offset+29); 	/* 1 sector suffices */
+	bp = getblock(fd, offset+29);	/* 1 sector suffices */
 	if (bp == NULL)
 		return -1;
 

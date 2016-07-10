@@ -139,4 +139,3 @@ void cciss_free (struct checker * c);
 int cciss_tur( struct checker *);
 
 #endif
-

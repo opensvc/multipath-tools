@@ -125,4 +125,3 @@ void print_map (struct multipath * mpp, char * params);
 void print_all_paths (vector pathvec, int banner);
 void print_all_paths_custo (vector pathvec, int banner, char *fmt);
 void print_hwtable (vector hwtable);
-

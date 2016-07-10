@@ -110,4 +110,3 @@ int getprio (struct path * pp, char * args)
 {
         return datacore_prio(pp->dev, pp->fd, args);
 }
-

@@ -277,8 +277,8 @@ uint32_t attribute((pure)) crc32_be(uint32_t crc, unsigned char const *p, size_t
  *
  * A big-endian CRC written this way would be coded like:
  * for (i = 0; i < input_bits; i++) {
- * 	multiple = remainder & 0x80000000 ? CRCPOLY : 0;
- * 	remainder = (remainder << 1 | next_input_bit()) ^ multiple;
+ *	multiple = remainder & 0x80000000 ? CRCPOLY : 0;
+ *	remainder = (remainder << 1 | next_input_bit()) ^ multiple;
  * }
  * Notice how, to get at bit 32 of the shifted remainder, we look
  * at bit 31 of the remainder *before* shifting it.
@@ -297,14 +297,14 @@ uint32_t attribute((pure)) crc32_be(uint32_t crc, unsigned char const *p, size_t
  * This changes the code to:
  * for (i = 0; i < input_bits; i++) {
  *      remainder ^= next_input_bit() << 31;
- * 	multiple = (remainder & 0x80000000) ? CRCPOLY : 0;
- * 	remainder = (remainder << 1) ^ multiple;
+ *	multiple = (remainder & 0x80000000) ? CRCPOLY : 0;
+ *	remainder = (remainder << 1) ^ multiple;
  * }
  * With this optimization, the little-endian code is simpler:
  * for (i = 0; i < input_bits; i++) {
  *      remainder ^= next_input_bit();
- * 	multiple = (remainder & 1) ? CRCPOLY : 0;
- * 	remainder = (remainder >> 1) ^ multiple;
+ *	multiple = (remainder & 1) ? CRCPOLY : 0;
+ *	remainder = (remainder >> 1) ^ multiple;
  * }
  *
  * Note that the other details of endianness have been hidden in CRCPOLY
@@ -314,19 +314,19 @@ uint32_t attribute((pure)) crc32_be(uint32_t crc, unsigned char const *p, size_t
  * order, we can actually do the merging 8 or more bits at a time rather
  * than one bit at a time:
  * for (i = 0; i < input_bytes; i++) {
- * 	remainder ^= next_input_byte() << 24;
- * 	for (j = 0; j < 8; j++) {
- * 		multiple = (remainder & 0x80000000) ? CRCPOLY : 0;
- * 		remainder = (remainder << 1) ^ multiple;
- * 	}
+ *	remainder ^= next_input_byte() << 24;
+ *	for (j = 0; j < 8; j++) {
+ *		multiple = (remainder & 0x80000000) ? CRCPOLY : 0;
+ *		remainder = (remainder << 1) ^ multiple;
+ *	}
  * }
  * Or in little-endian:
  * for (i = 0; i < input_bytes; i++) {
- * 	remainder ^= next_input_byte();
- * 	for (j = 0; j < 8; j++) {
- * 		multiple = (remainder & 1) ? CRCPOLY : 0;
- * 		remainder = (remainder << 1) ^ multiple;
- * 	}
+ *	remainder ^= next_input_byte();
+ *	for (j = 0; j < 8; j++) {
+ *		multiple = (remainder & 1) ? CRCPOLY : 0;
+ *		remainder = (remainder << 1) ^ multiple;
+ *	}
  * }
  * If the input is a multiple of 32 bits, you can even XOR in a 32-bit
  * word at a time and increase the inner loop count to 32.

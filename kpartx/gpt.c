@@ -333,7 +333,7 @@ is_gpt_valid(int fd, uint64_t lba,
 	if (__le64_to_cpu((*gpt)->my_lba) != lba) {
 		/*
 		printf( "my_lba % PRIx64 "x != lba %"PRIx64 "x.\n",
-		 		__le64_to_cpu((*gpt)->my_lba), lba);
+				__le64_to_cpu((*gpt)->my_lba), lba);
 		 */
 		free(*gpt);
 		*gpt = NULL;

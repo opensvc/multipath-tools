@@ -12,7 +12,7 @@ extern "C" {
 
 #define MPATH_MAX_PARAM_LEN	8192
 
-#define MPATH_MX_TIDS 		32	  /* Max number of transport ids"*/
+#define MPATH_MX_TIDS		32	  /* Max number of transport ids"*/
 #define MPATH_MX_TID_LEN	256	  /* Max lenght of transport id */
 
 /* PRIN Service Actions */
@@ -34,24 +34,24 @@ extern "C" {
 #define MPATH_LU_SCOPE		0x00	    /* LU_SCOPE */
 
 /* Persistent reservations type */
-#define MPATH_PRTPE_WE	 	0x01	    /* Write Exclusive */
-#define MPATH_PRTPE_EA 		0x03	    /* Exclusive Access*/
-#define MPATH_PRTPE_WE_RO 	0x05	    /* WriteExclusive Registrants Only */
-#define MPATH_PRTPE_EA_RO 	0x06	    /* Exclusive Access. Registrants Only*/
+#define MPATH_PRTPE_WE		0x01	    /* Write Exclusive */
+#define MPATH_PRTPE_EA		0x03	    /* Exclusive Access*/
+#define MPATH_PRTPE_WE_RO	0x05	    /* WriteExclusive Registrants Only */
+#define MPATH_PRTPE_EA_RO	0x06	    /* Exclusive Access. Registrants Only*/
 #define MPATH_PRTPE_WE_AR	0x07	    /* Write Exclusive. All Registrants*/
-#define MPATH_PRTPE_EA_AR 	0x08	    /* Exclusive Access. All Registrants */
+#define MPATH_PRTPE_EA_AR	0x08	    /* Exclusive Access. All Registrants */
 
 
 /* PR RETURN_STATUS */
-#define MPATH_PR_SUCCESS 		0
+#define MPATH_PR_SUCCESS		0
 #define MPATH_PR_SYNTAX_ERROR		1   /*  syntax error or invalid parameter */
 					    /* status for check condition */
-#define MPATH_PR_SENSE_NOT_READY 	2   /*	[sk,asc,ascq: 0x2,*,*] */
+#define MPATH_PR_SENSE_NOT_READY	2   /*	[sk,asc,ascq: 0x2,*,*] */
 #define MPATH_PR_SENSE_MEDIUM_ERROR	3   /*	[sk,asc,ascq: 0x3,*,*] */
 #define MPATH_PR_SENSE_HARDWARE_ERROR	4   /*	[sk,asc,ascq: 0x4,*,*] */
-#define MPATH_PR_ILLEGAL_REQ 		5   /*	[sk,asc,ascq: 0x5,*,*]*/
+#define MPATH_PR_ILLEGAL_REQ		5   /*	[sk,asc,ascq: 0x5,*,*]*/
 #define MPATH_PR_SENSE_UNIT_ATTENTION	6   /*	[sk,asc,ascq: 0x6,*,*] */
-#define MPATH_PR_SENSE_INVALID_OP	7   /* 	[sk,asc,ascq: 0x5,0x20,0x0]*/
+#define MPATH_PR_SENSE_INVALID_OP	7   /*	[sk,asc,ascq: 0x5,0x20,0x0]*/
 #define MPATH_PR_SENSE_ABORTED_COMMAND  8   /*  [sk,asc,ascq: 0xb,*,*] */
 #define MPATH_PR_NO_SENSE		9   /*	[sk,asc,ascq: 0x0,*,*] */
 
@@ -66,7 +66,7 @@ extern "C" {
 #define MPATH_F_APTPL_MASK		0x01	/* APTPL MASK*/
 #define MPATH_F_ALL_TG_PT_MASK		0x04	/* ALL_TG_PT MASK*/
 #define MPATH_F_SPEC_I_PT_MASK		0x08	/* SPEC_I_PT MASK*/
-#define MPATH_PR_TYPE_MASK 		0x0f	/* TYPE MASK*/
+#define MPATH_PR_TYPE_MASK		0x0f	/* TYPE MASK*/
 #define MPATH_PR_SCOPE_MASK		0xf0	/* SCOPE MASK*/
 
 /*Transport ID PROTOCOL IDENTIFIER values */
@@ -125,7 +125,7 @@ struct transportid
 struct prin_fulldescr
 {
 	uint8_t key[8];
-	uint8_t flag; 			/* All_tg_pt and reservation holder */
+	uint8_t flag;			/* All_tg_pt and reservation holder */
 	uint8_t scope_type;		/* Use PR SCOPE AND TYPE MASK specified above.
 					   Meaningful only for reservation holder */
 	uint16_t rtpi;
@@ -151,7 +151,7 @@ struct prin_resp
 	}prin_descriptor;
 };
 
-struct prout_param_descriptor { 	/* PROUT parameter descriptor */
+struct prout_param_descriptor {		/* PROUT parameter descriptor */
 	uint8_t	 key[8];
 	uint8_t	 sa_key[8];
 	uint32_t _obsolete;
@@ -195,7 +195,7 @@ extern int mpath_lib_exit (struct config *conf);
  * @fd:	The file descriptor of a multipath device. Input argument.
  * @rq_servact: PRIN command service action. Input argument
  * @resp: The response from PRIN service action. The resp is a struct specified above. The caller should
- * 	manage the memory allocation of this struct
+ *	manage the memory allocation of this struct
  * @noisy: Turn on debugging trace: Input argument. 0->Disable, 1->Enable
  * @verbose: Set verbosity level. Input argument. value:[0-3]. 0->disabled, 3->Max verbose
  *
@@ -221,7 +221,7 @@ extern int mpath_persistent_reserve_in (int fd, int rq_servact, struct prin_resp
  *	7h (Write exclusive - All registrants)
  *	8h (Exclusive access - All registrants).
  * @paramp: PROUT command parameter data. The paramp is a struct which describes PROUT
- * 	    parameter list. The caller should manage the memory allocation of this struct.
+ *	    parameter list. The caller should manage the memory allocation of this struct.
  * @noisy: Turn on debugging trace: Input argument.0->Disable, 1->Enable.
  * @verbose: Set verbosity level. Input argument. value:0 to 3. 0->disabled, 3->Max verbose
  *

@@ -140,4 +140,3 @@ int getprio(struct path *pp, char *args)
 {
 	return prio_path_weight(pp, args);
 }
-

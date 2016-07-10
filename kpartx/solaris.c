@@ -11,7 +11,7 @@
 struct solaris_x86_slice {
 	unsigned short	s_tag;		/* ID tag of partition */
 	unsigned short	s_flag;		/* permision flags */
-	daddr_t 	s_start;	/* start sector no of partition */
+	daddr_t		s_start;	/* start sector no of partition */
 	long		s_size;		/* # of blocks in partition */
 };
 
@@ -37,7 +37,7 @@ read_solaris_pt(int fd, struct slice all, struct slice *sp, int ns) {
 	int i, n;
 	char *bp;
 
-	bp = getblock(fd, offset+1); 	/* 1 sector suffices */
+	bp = getblock(fd, offset+1);	/* 1 sector suffices */
 	if (bp == NULL)
 		return -1;
 
@@ -68,4 +68,3 @@ read_solaris_pt(int fd, struct slice all, struct slice *sp, int ns) {
 	}
 	return n;
 }
-
