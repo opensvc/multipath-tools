@@ -30,4 +30,3 @@ if [ -f /etc/multipath.conf ]
 then
 	cp /etc/multipath.conf $INITRDDIR/etc/
 fi
-

@@ -41,5 +41,3 @@ ENV{DM_STATE}!="SUSPENDED", ENV{DM_UUID}=="mpath-*", \
         RUN+="/sbin/kpartx -u -p -part /dev/$name"
 
 LABEL="kpartx_end"
-
-

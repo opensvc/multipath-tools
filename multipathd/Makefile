@@ -62,4 +62,3 @@ uninstall:
 
 clean:
 	$(RM) core *.o $(EXEC) *.gz
-

@@ -68,4 +68,3 @@ SHARED_FLAGS = -shared
 
 %.o:	%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
-
