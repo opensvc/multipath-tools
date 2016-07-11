@@ -673,6 +673,21 @@ those issues.
 Default value is: \fB1000\fR
 .RE
 .TP
+.B retrigger_tries
+Sets the number of times multipathd will try to retrigger a uevent to get the
+WWID.
+.RS
+.TP
+Default value is: \fB3\fR
+.RE
+.TP
+.B retrigger_delay
+Sets the amount of time, in seconds, to wait between retriggers.
+.RS
+.TP
+Default value is: \fB10\fR
+.RE
+.TP
 .B missing_uev_wait_timeout
 Controls how many seconds multipathd will wait, after a new multipath device
 is created, to receive a change event from udev for the device, before
