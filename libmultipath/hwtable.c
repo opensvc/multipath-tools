@@ -16,6 +16,8 @@
  * family. Please mail the currently enlisted maintainer and
  * the upstream package maintainer.
  *
+ * Please, use the TEMPLATE below to add new hardware.
+ *
  * WARNING:
  *
  * Devices with a proprietary handler must also be included in
@@ -756,6 +758,46 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = 30,
 		.minio         = 128,
 	},
+#if 0
+	/*
+	 * Copy this TEMPLATE to add new hardware.
+	 *
+	 * Keep only mandatory and modified attributes.
+	 * Standard attributes must be removed.
+	 *
+	 * COMPANY_NAME
+	 *
+	 * Maintainer : XXX
+	 * Mail : XXX
+	 */
+	{
+		.vendor        = "VENDOR", (Mandatory)
+		.product       = "PRODUCT", (Mandatory)
+		.revision      = "REVISION",
+		.bl_product    = "BL_PRODUCT",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.uid_attribute = "ID_SERIAL",
+		.selector      = "service-time 0",
+		.checker_name  = TUR,
+		.features      = "0",
+		.hwhandler     = "0",
+		.prio_name     = "const",
+		.prio_args     = "",
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = 1000,
+		.minio_rq      = 1,
+		.flush_on_last_del = FLUSH_DISABLED,
+		.fast_io_fail  = 5,
+		.dev_loss      = 600,
+		.retain_hwhandler = RETAIN_HWHANDLER_ON,
+		.detect_prio   = DETECT_PRIO_ON,
+		.deferred_remove = DEFERRED_REMOVE_OFF,
+		.delay_watch_checks = DELAY_CHECKS_OFF,
+		.delay_wait_checks = DELAY_CHECKS_OFF,
+	},
+#endif
 	/*
 	 * EOL
 	 */
