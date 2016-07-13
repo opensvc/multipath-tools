@@ -482,14 +482,14 @@ main(int argc, char **argv){
 					printf("del devmap : %s\n", partname);
 			}
 
-			if (S_ISREG (buf.st_mode)) {
-				if (del_loop(device)) {
+			if (loopdev) {
+				if (del_loop(loopdev)) {
 					if (verbose)
 						printf("can't del loop : %s\n",
-							device);
+							loopdev);
 					exit(1);
 				}
-				printf("loop deleted : %s\n", device);
+				printf("loop deleted : %s\n", loopdev);
 			}
 			break;
 
