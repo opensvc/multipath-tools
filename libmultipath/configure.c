@@ -924,16 +924,14 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 	if (newmp) {
 		vector_foreach_slot (newmp, mpp, i) {
 			char alias[WWID_SIZE];
-			int j;
 
 			if (!deadmap(mpp))
 				continue;
 
 			strncpy(alias, mpp->alias, WWID_SIZE - 1);
 
-			if ((j = find_slot(newmp, (void *)mpp)) != -1)
-				vector_del_slot(newmp, j);
-
+			vector_del_slot(newmp, i);
+			i--;
 			remove_map(mpp, vecs, 0);
 
 			if (dm_flush_map(alias))
