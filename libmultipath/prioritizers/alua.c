@@ -75,7 +75,7 @@ get_alua_info(struct path * pp, unsigned int timeout)
 	return rc;
 }
 
-int get_exclusive_perf_arg(char *args)
+int get_exclusive_pref_arg(char *args)
 {
 	char *ptr;
 
@@ -96,12 +96,12 @@ int getprio (struct path * pp, char * args, unsigned int timeout)
 	int rc;
 	int aas;
 	int priopath;
-	int exclusive_perf;
+	int exclusive_pref;
 
 	if (pp->fd < 0)
 		return -ALUA_PRIO_NO_INFORMATION;
 
-	exclusive_perf = get_exclusive_perf_arg(args);
+	exclusive_pref = get_exclusive_pref_arg(args);
 	rc = get_alua_info(pp, timeout);
 	if (rc >= 0) {
 		aas = (rc & 0x0f);
@@ -122,7 +122,7 @@ int getprio (struct path * pp, char * args, unsigned int timeout)
 			default:
 				rc = 0;
 		}
-		if (priopath && (aas != AAS_OPTIMIZED || exclusive_perf))
+		if (priopath && (aas != AAS_OPTIMIZED || exclusive_pref))
 			rc += 80;
 	} else {
 		switch(-rc) {
