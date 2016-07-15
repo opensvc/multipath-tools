@@ -30,6 +30,7 @@ struct path;
 #define PRIO_RANDOM		"random"
 #define PRIO_RDAC		"rdac"
 #define PRIO_WEIGHTED_PATH	"weightedpath"
+#define PRIO_SYSFS		"sysfs"
 
 /*
  * Value used to mark the fact prio was not defined

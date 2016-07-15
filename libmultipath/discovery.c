@@ -209,6 +209,8 @@ declare_sysfs_get_str(devtype);
 declare_sysfs_get_str(vendor);
 declare_sysfs_get_str(model);
 declare_sysfs_get_str(rev);
+declare_sysfs_get_str(access_state);
+declare_sysfs_get_str(preferred_path);
 
 ssize_t
 sysfs_get_vpd (struct udev_device * udev, int pg,
@@ -482,6 +484,37 @@ int sysfs_get_iscsi_ip_address(struct path *pp, char *ip_address)
 			udev_device_unref(hostdev);
 	}
 	return 1;
+}
+
+int
+sysfs_get_asymmetric_access_state(struct path *pp, char *buff, int buflen)
+{
+	struct udev_device *parent = pp->udev;
+	char value[16], *eptr;
+	unsigned int preferred;
+
+	while (parent) {
+		const char *subsys = udev_device_get_subsystem(parent);
+		if (subsys && !strncmp(subsys, "scsi", 4))
+			break;
+		parent = udev_device_get_parent(parent);
+	}
+
+	if (!parent)
+		return -1;
+
+	if (sysfs_get_access_state(parent, buff, buflen) <= 0)
+		return -1;
+
+	if (sysfs_get_preferred_path(parent, value, 16) <= 0)
+		return 0;
+
+	preferred = strtoul(value, &eptr, 0);
+	if (value == eptr || preferred == ULONG_MAX) {
+		/* Parse error, ignore */
+		return 0;
+	}
+	return  preferred;
 }
 
 static void

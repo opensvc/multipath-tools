@@ -47,6 +47,8 @@ int sysfs_get_host_pci_name(struct path *pp, char *pci_name);
 int sysfs_get_iscsi_ip_address(struct path *pp, char *ip_address);
 ssize_t sysfs_get_vpd (struct udev_device * udev, int pg, unsigned char * buff,
 		       size_t len);
+int sysfs_get_asymmetric_access_state(struct path *pp,
+				      char *buff, int buflen);
 
 /*
  * discovery bitmask

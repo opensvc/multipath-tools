@@ -187,6 +187,11 @@ are implemented:
 .I const
 Return a constant priority of \fI1\fR.
 .TP
+.I sysfs
+Use the sysfs attributes \fIaccess_state\fR and \fIpreferred_path\fR to
+generate the path priority. This prioritizer accepts the optional prio_arg
+.I exclusive_pref_bit
+.TP
 .I emc
 (Hardware-dependent)
 Generate the path priority for DGC class arrays as CLARiiON CX/AX and
@@ -252,8 +257,8 @@ these values can be looked up through sysfs or by running
 .I alua
 If
 .I exclusive_pref_bit
-is set, paths with the TPGS pref bit set will always be in their own path
-group.
+is set, paths with the \fIpreferred path\fR bit set will always
+be in their own path group.
 .TP
 .I datacore
 .I preferredsds

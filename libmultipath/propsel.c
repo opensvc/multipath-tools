@@ -375,6 +375,8 @@ detect_prio(struct config *conf, struct path * pp)
 	struct prio *p = &pp->prio;
 	int tpgs = 0;
 	unsigned int timeout = conf->checker_timeout;
+	char buff[512];
+	char *default_prio = PRIO_ALUA;
 
 	if ((tpgs = get_target_port_group_support(pp->fd, timeout)) <= 0)
 		return;
@@ -384,7 +386,9 @@ detect_prio(struct config *conf, struct path * pp)
 		return;
 	if (get_asymmetric_access_state(pp->fd, ret, timeout) < 0)
 		return;
-	prio_get(conf->multipath_dir, p, PRIO_ALUA, DEFAULT_PRIO_ARGS);
+	if (sysfs_get_asymmetric_access_state(pp, buff, 512) >= 0)
+		default_prio = PRIO_SYSFS;
+	prio_get(conf->multipath_dir, p, default_prio, DEFAULT_PRIO_ARGS);
 }
 
 #define set_prio(dir, src, msg)					\
