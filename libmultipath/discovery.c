@@ -1569,6 +1569,9 @@ get_uid (struct path * pp, int path_state)
 					"%s: failed to get udev uid: %s",
 					pp->dev, strerror(-len));
 
+		} else {
+			len = get_vpd_uid(pp);
+			origin = "sysfs";
 		}
 		conf = get_multipath_config();
 		retrigger = conf->retrigger_tries;
