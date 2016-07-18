@@ -28,7 +28,7 @@ int mpath_translate_response (char * dev, struct sg_io_hdr io_hdr,
 			      SenseData_t *Sensedata, int noisy);
 void dumpHex(const char* str, int len, int no_ascii);
 int prout_do_scsi_ioctl( char * dev, int rq_servact, int rq_scope,
-                unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy);
+		unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy);
 uint32_t  format_transportids(struct prout_param_descriptor *paramp);
 void mpath_reverse_uint32_byteorder(uint32_t *num);
 void mpath_reverse_uint16_byteorder(uint16_t *num);
@@ -39,7 +39,7 @@ int mpath_isLittleEndian(void);
 extern unsigned int mpath_mx_alloc_len;
 
 int prout_do_scsi_ioctl(char * dev, int rq_servact, int rq_scope,
-                unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy)
+		unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy)
 {
 
 	int status, paramlen = 24, ret = 0;
@@ -182,25 +182,25 @@ uint32_t  format_transportids(struct prout_param_descriptor *paramp)
 
 void mpath_format_readkeys( struct prin_resp *pr_buff, int len, int noisy)
 {
-        mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readkeys.prgeneration);
-        mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readkeys.additional_length);
+	mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readkeys.prgeneration);
+	mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readkeys.additional_length);
 }
 
 void mpath_format_readresv(struct prin_resp *pr_buff, int len, int noisy)
 {
 
-        mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readkeys.prgeneration);
-        mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readkeys.additional_length);
+	mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readkeys.prgeneration);
+	mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readkeys.additional_length);
 
-        return;
+	return;
 }
 
 void mpath_format_reportcapabilities(struct prin_resp *pr_buff, int len, int noisy)
 {
-        mpath_reverse_uint16_byteorder(&pr_buff->prin_descriptor.prin_readcap.length);
-        mpath_reverse_uint16_byteorder(&pr_buff->prin_descriptor.prin_readcap.pr_type_mask);
+	mpath_reverse_uint16_byteorder(&pr_buff->prin_descriptor.prin_readcap.length);
+	mpath_reverse_uint16_byteorder(&pr_buff->prin_descriptor.prin_readcap.pr_type_mask);
 
-        return;
+	return;
 }
 
 void mpath_format_readfullstatus(struct prin_resp *pr_buff, int len, int noisy)
@@ -305,11 +305,11 @@ int prin_do_scsi_ioctl(char * dev, int rq_servact, struct prin_resp * resp, int 
 	{MPATH_PRIN_CMD, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 	snprintf(devname, FILE_NAME_SIZE, "/dev/%s",dev);
-        fd = open(devname, O_WRONLY);
-        if(fd < 0){
+	fd = open(devname, O_WRONLY);
+	if(fd < 0){
 		condlog(0, "%s: Unable to open device ", dev);
 		return MPATH_PR_FILE_ERROR;
-         }
+	}
 
 	if (mpath_mx_alloc_len)
 		mx_resp_len = mpath_mx_alloc_len;
@@ -559,25 +559,25 @@ dumpHex(const char* str, int len, int log)
 
 int get_prin_length(int rq_servact)
 {
-        int mx_resp_len;
-        switch (rq_servact)
-        {
-                case MPATH_PRIN_RKEY_SA:
-                        mx_resp_len =  sizeof(struct prin_readdescr);
-                        break;
-                case MPATH_PRIN_RRES_SA :
-                        mx_resp_len =  sizeof(struct prin_resvdescr);
-                        break;
-                case MPATH_PRIN_RCAP_SA :
-                        mx_resp_len = sizeof(struct prin_capdescr);
-                        break;
-                case MPATH_PRIN_RFSTAT_SA:
-                        mx_resp_len = sizeof(struct print_fulldescr_list) + sizeof(struct prin_fulldescr *)*32;
-                        break;
+	int mx_resp_len;
+	switch (rq_servact)
+	{
+		case MPATH_PRIN_RKEY_SA:
+			mx_resp_len =  sizeof(struct prin_readdescr);
+			break;
+		case MPATH_PRIN_RRES_SA :
+			mx_resp_len =  sizeof(struct prin_resvdescr);
+			break;
+		case MPATH_PRIN_RCAP_SA :
+			mx_resp_len = sizeof(struct prin_capdescr);
+			break;
+		case MPATH_PRIN_RFSTAT_SA:
+			mx_resp_len = sizeof(struct print_fulldescr_list) + sizeof(struct prin_fulldescr *)*32;
+			break;
 		default:
 			condlog(0, "invalid service action, %d", rq_servact);
 			mx_resp_len = 0;
 			break;
-        }
-        return mx_resp_len;
+	}
+	return mx_resp_len;
 }

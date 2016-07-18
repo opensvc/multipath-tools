@@ -65,9 +65,9 @@
 #endif
 
 struct blkdev_ioctl_param {
-        unsigned int block;
-        size_t content_length;
-        char * block_contents;
+	unsigned int block;
+	size_t content_length;
+	char * block_contents;
 };
 
 /**
@@ -106,7 +106,7 @@ is_pmbr_valid(legacy_mbr *mbr)
 	signature = (__le16_to_cpu(mbr->signature) == MSDOS_MBR_SIGNATURE);
 	for (i = 0; signature && i < 4; i++) {
 		if (mbr->partition[i].sys_type ==
-                    EFI_PMBR_OSTYPE_EFI_GPT) {
+		    EFI_PMBR_OSTYPE_EFI_GPT) {
 			found = 1;
 			break;
 		}
@@ -184,19 +184,19 @@ last_lba(int filedes)
 static ssize_t
 read_lastoddsector(int fd, uint64_t lba, void *buffer, size_t count)
 {
-        int rc;
-        struct blkdev_ioctl_param ioctl_param;
+	int rc;
+	struct blkdev_ioctl_param ioctl_param;
 
-        if (!buffer) return 0;
+	if (!buffer) return 0;
 
-        ioctl_param.block = 0; /* read the last sector */
-        ioctl_param.content_length = count;
-        ioctl_param.block_contents = buffer;
+	ioctl_param.block = 0; /* read the last sector */
+	ioctl_param.content_length = count;
+	ioctl_param.block_contents = buffer;
 
-        rc = ioctl(fd, BLKGETLASTSECT, &ioctl_param);
-        if (rc == -1) perror("read failed");
+	rc = ioctl(fd, BLKGETLASTSECT, &ioctl_param);
+	if (rc == -1) perror("read failed");
 
-        return !rc;
+	return !rc;
 }
 
 static ssize_t
@@ -215,15 +215,15 @@ read_lba(int fd, uint64_t lba, void *buffer, size_t bytes)
 	if (!lastlba)
 		return bytesread;
 
-        /* Kludge.  This is necessary to read/write the last
-           block of an odd-sized disk, until Linux 2.5.x kernel fixes.
-           This is only used by gpt.c, and only to read
-           one sector, so we don't have to be fancy.
-        */
-        if (!bytesread && !(lastlba & 1) && lba == lastlba) {
-                bytesread = read_lastoddsector(fd, lba, buffer, bytes);
-        }
-        return bytesread;
+	/* Kludge.  This is necessary to read/write the last
+	   block of an odd-sized disk, until Linux 2.5.x kernel fixes.
+	   This is only used by gpt.c, and only to read
+	   one sector, so we don't have to be fancy.
+	*/
+	if (!bytesread && !(lastlba & 1) && lba == lastlba) {
+		bytesread = read_lastoddsector(fd, lba, buffer, bytes);
+	}
+	return bytesread;
 }
 
 /**
@@ -238,10 +238,10 @@ static gpt_entry *
 alloc_read_gpt_entries(int fd, gpt_header * gpt)
 {
 	gpt_entry *pte;
-        size_t count = __le32_to_cpu(gpt->num_partition_entries) *
-                __le32_to_cpu(gpt->sizeof_partition_entry);
+	size_t count = __le32_to_cpu(gpt->num_partition_entries) *
+		__le32_to_cpu(gpt->sizeof_partition_entry);
 
-        if (!count) return NULL;
+	if (!count) return NULL;
 
 	pte = (gpt_entry *)malloc(count);
 	if (!pte)
@@ -249,7 +249,7 @@ alloc_read_gpt_entries(int fd, gpt_header * gpt)
 	memset(pte, 0, count);
 
 	if (!read_lba(fd, __le64_to_cpu(gpt->partition_entry_lba), pte,
-                      count)) {
+		      count)) {
 		free(pte);
 		return NULL;
 	}
@@ -294,13 +294,13 @@ alloc_read_gpt_header(int fd, uint64_t lba)
  */
 static int
 is_gpt_valid(int fd, uint64_t lba,
-             gpt_header ** gpt, gpt_entry ** ptes)
+	     gpt_header ** gpt, gpt_entry ** ptes)
 {
 	int rc = 0;		/* default to not valid */
 	uint32_t crc, origcrc;
 
 	if (!gpt || !ptes)
-                return 0;
+		return 0;
 	if (!(*gpt = alloc_read_gpt_header(fd, lba)))
 		return 0;
 
@@ -366,7 +366,7 @@ is_gpt_valid(int fd, uint64_t lba,
 
 	/* Check the GUID Partition Entry Array CRC */
 	crc = efi_crc32(*ptes,
-                        __le32_to_cpu((*gpt)->num_partition_entries) *
+			__le32_to_cpu((*gpt)->num_partition_entries) *
 			__le32_to_cpu((*gpt)->sizeof_partition_entry));
 	if (crc != __le32_to_cpu((*gpt)->partition_entry_array_crc32)) {
 		// printf("GUID Partitition Entry Array CRC check failed.\n");
@@ -402,7 +402,7 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 #ifdef DEBUG
 		fprintf(stderr,  "GPT:%" PRIx64 " != %" PRIx64 "\n",
 		       __le64_to_cpu(pgpt->my_lba),
-                       __le64_to_cpu(agpt->alternate_lba));
+		       __le64_to_cpu(agpt->alternate_lba));
 #endif
 	}
 	if (__le64_to_cpu(pgpt->alternate_lba) != __le64_to_cpu(agpt->my_lba)) {
@@ -412,27 +412,27 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 #ifdef DEBUG
 		fprintf(stderr,  "GPT:%" PRIx64 " != %" PRIx64 "\n",
 		       __le64_to_cpu(pgpt->alternate_lba),
-                       __le64_to_cpu(agpt->my_lba));
+		       __le64_to_cpu(agpt->my_lba));
 #endif
 	}
 	if (__le64_to_cpu(pgpt->first_usable_lba) !=
-            __le64_to_cpu(agpt->first_usable_lba)) {
+	    __le64_to_cpu(agpt->first_usable_lba)) {
 		error_found++;
 		fprintf(stderr,  "GPT:first_usable_lbas don't match.\n");
 #ifdef DEBUG
 		fprintf(stderr,  "GPT:%" PRIx64 " != %" PRIx64 "\n",
 		       __le64_to_cpu(pgpt->first_usable_lba),
-                       __le64_to_cpu(agpt->first_usable_lba));
+		       __le64_to_cpu(agpt->first_usable_lba));
 #endif
 	}
 	if (__le64_to_cpu(pgpt->last_usable_lba) !=
-            __le64_to_cpu(agpt->last_usable_lba)) {
+	    __le64_to_cpu(agpt->last_usable_lba)) {
 		error_found++;
 		fprintf(stderr,  "GPT:last_usable_lbas don't match.\n");
 #ifdef DEBUG
 		fprintf(stderr,  "GPT:%" PRIx64 " != %" PRIx64 "\n",
 		       __le64_to_cpu(pgpt->last_usable_lba),
-                       __le64_to_cpu(agpt->last_usable_lba));
+		       __le64_to_cpu(agpt->last_usable_lba));
 #endif
 	}
 	if (efi_guidcmp(pgpt->disk_guid, agpt->disk_guid)) {
@@ -440,7 +440,7 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 		fprintf(stderr,  "GPT:disk_guids don't match.\n");
 	}
 	if (__le32_to_cpu(pgpt->num_partition_entries) !=
-            __le32_to_cpu(agpt->num_partition_entries)) {
+	    __le32_to_cpu(agpt->num_partition_entries)) {
 		error_found++;
 		fprintf(stderr,  "GPT:num_partition_entries don't match: "
 		       "0x%x != 0x%x\n",
@@ -448,21 +448,21 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 		       __le32_to_cpu(agpt->num_partition_entries));
 	}
 	if (__le32_to_cpu(pgpt->sizeof_partition_entry) !=
-            __le32_to_cpu(agpt->sizeof_partition_entry)) {
+	    __le32_to_cpu(agpt->sizeof_partition_entry)) {
 		error_found++;
 		fprintf(stderr,
 		       "GPT:sizeof_partition_entry values don't match: "
 		       "0x%x != 0x%x\n",
-                       __le32_to_cpu(pgpt->sizeof_partition_entry),
+		       __le32_to_cpu(pgpt->sizeof_partition_entry),
 		       __le32_to_cpu(agpt->sizeof_partition_entry));
 	}
 	if (__le32_to_cpu(pgpt->partition_entry_array_crc32) !=
-            __le32_to_cpu(agpt->partition_entry_array_crc32)) {
+	    __le32_to_cpu(agpt->partition_entry_array_crc32)) {
 		error_found++;
 		fprintf(stderr,
 		       "GPT:partition_entry_array_crc32 values don't match: "
 		       "0x%x != 0x%x\n",
-                       __le32_to_cpu(pgpt->partition_entry_array_crc32),
+		       __le32_to_cpu(pgpt->partition_entry_array_crc32),
 		       __le32_to_cpu(agpt->partition_entry_array_crc32));
 	}
 	if (__le64_to_cpu(pgpt->alternate_lba) != lastlba) {
@@ -504,7 +504,7 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 static int
 find_valid_gpt(int fd, gpt_header ** gpt, gpt_entry ** ptes)
 {
-        extern int force_gpt;
+	extern int force_gpt;
 	int good_pgpt = 0, good_agpt = 0, good_pmbr = 0;
 	gpt_header *pgpt = NULL, *agpt = NULL;
 	gpt_entry *pptes = NULL, *aptes = NULL;
@@ -517,89 +517,89 @@ find_valid_gpt(int fd, gpt_header ** gpt, gpt_entry ** ptes)
 		return 0;
 	good_pgpt = is_gpt_valid(fd, GPT_PRIMARY_PARTITION_TABLE_LBA,
 				 &pgpt, &pptes);
-        if (good_pgpt) {
+	if (good_pgpt) {
 		good_agpt = is_gpt_valid(fd,
-                                         __le64_to_cpu(pgpt->alternate_lba),
+					 __le64_to_cpu(pgpt->alternate_lba),
 					 &agpt, &aptes);
-                if (!good_agpt) {
-                        good_agpt = is_gpt_valid(fd, lastlba,
-                                                 &agpt, &aptes);
-                }
-        }
-        else {
-                good_agpt = is_gpt_valid(fd, lastlba,
-                                         &agpt, &aptes);
-        }
+		if (!good_agpt) {
+			good_agpt = is_gpt_valid(fd, lastlba,
+						 &agpt, &aptes);
+		}
+	}
+	else {
+		good_agpt = is_gpt_valid(fd, lastlba,
+					 &agpt, &aptes);
+	}
 
-        /* The obviously unsuccessful case */
-        if (!good_pgpt && !good_agpt) {
-                goto fail;
-        }
+	/* The obviously unsuccessful case */
+	if (!good_pgpt && !good_agpt) {
+		goto fail;
+	}
 
 	/* This will be added to the EFI Spec. per Intel after v1.02. */
-        legacymbr = malloc(sizeof (*legacymbr));
-        if (legacymbr) {
-                memset(legacymbr, 0, sizeof (*legacymbr));
-                read_lba(fd, 0, (uint8_t *) legacymbr,
-                         sizeof (*legacymbr));
-                good_pmbr = is_pmbr_valid(legacymbr);
-                free(legacymbr);
-                legacymbr=NULL;
-        }
+	legacymbr = malloc(sizeof (*legacymbr));
+	if (legacymbr) {
+		memset(legacymbr, 0, sizeof (*legacymbr));
+		read_lba(fd, 0, (uint8_t *) legacymbr,
+			 sizeof (*legacymbr));
+		good_pmbr = is_pmbr_valid(legacymbr);
+		free(legacymbr);
+		legacymbr=NULL;
+	}
 
-        /* Failure due to bad PMBR */
-        if ((good_pgpt || good_agpt) && !good_pmbr && !force_gpt) {
-                fprintf(stderr,
-                       "  Warning: Disk has a valid GPT signature "
-                       "but invalid PMBR.\n"
-                       "  Assuming this disk is *not* a GPT disk anymore.\n"
-                       "  Use gpt kernel option to override.  "
-                       "Use GNU Parted to correct disk.\n");
-                goto fail;
-        }
+	/* Failure due to bad PMBR */
+	if ((good_pgpt || good_agpt) && !good_pmbr && !force_gpt) {
+		fprintf(stderr,
+		       "  Warning: Disk has a valid GPT signature "
+		       "but invalid PMBR.\n"
+		       "  Assuming this disk is *not* a GPT disk anymore.\n"
+		       "  Use gpt kernel option to override.  "
+		       "Use GNU Parted to correct disk.\n");
+		goto fail;
+	}
 
-        /* Would fail due to bad PMBR, but force GPT anyhow */
-        if ((good_pgpt || good_agpt) && !good_pmbr && force_gpt) {
-                fprintf(stderr,
-                       "  Warning: Disk has a valid GPT signature but "
-                       "invalid PMBR.\n"
-                       "  Use GNU Parted to correct disk.\n"
-                       "  gpt option taken, disk treated as GPT.\n");
-        }
+	/* Would fail due to bad PMBR, but force GPT anyhow */
+	if ((good_pgpt || good_agpt) && !good_pmbr && force_gpt) {
+		fprintf(stderr,
+		       "  Warning: Disk has a valid GPT signature but "
+		       "invalid PMBR.\n"
+		       "  Use GNU Parted to correct disk.\n"
+		       "  gpt option taken, disk treated as GPT.\n");
+	}
 
-        compare_gpts(pgpt, agpt, lastlba);
+	compare_gpts(pgpt, agpt, lastlba);
 
-        /* The good cases */
-        if (good_pgpt && (good_pmbr || force_gpt)) {
-                *gpt  = pgpt;
-                *ptes = pptes;
-                if (agpt)  { free(agpt);   agpt = NULL; }
-                if (aptes) { free(aptes); aptes = NULL; }
-                if (!good_agpt) {
-                        fprintf(stderr,
+	/* The good cases */
+	if (good_pgpt && (good_pmbr || force_gpt)) {
+		*gpt  = pgpt;
+		*ptes = pptes;
+		if (agpt)  { free(agpt);   agpt = NULL; }
+		if (aptes) { free(aptes); aptes = NULL; }
+		if (!good_agpt) {
+			fprintf(stderr,
 			       "Alternate GPT is invalid, "
-                               "using primary GPT.\n");
-                }
-                return 1;
-        }
-        else if (good_agpt && (good_pmbr || force_gpt)) {
-                *gpt  = agpt;
-                *ptes = aptes;
-                if (pgpt)  { free(pgpt);   pgpt = NULL; }
-                if (pptes) { free(pptes); pptes = NULL; }
-                fprintf(stderr,
-                       "Primary GPT is invalid, using alternate GPT.\n");
-                return 1;
-        }
+			       "using primary GPT.\n");
+		}
+		return 1;
+	}
+	else if (good_agpt && (good_pmbr || force_gpt)) {
+		*gpt  = agpt;
+		*ptes = aptes;
+		if (pgpt)  { free(pgpt);   pgpt = NULL; }
+		if (pptes) { free(pptes); pptes = NULL; }
+		fprintf(stderr,
+		       "Primary GPT is invalid, using alternate GPT.\n");
+		return 1;
+	}
 
  fail:
-        if (pgpt)  { free(pgpt);   pgpt=NULL; }
-        if (agpt)  { free(agpt);   agpt=NULL; }
-        if (pptes) { free(pptes); pptes=NULL; }
-        if (aptes) { free(aptes); aptes=NULL; }
-        *gpt = NULL;
-        *ptes = NULL;
-        return 0;
+	if (pgpt)  { free(pgpt);   pgpt=NULL; }
+	if (agpt)  { free(agpt);   agpt=NULL; }
+	if (pptes) { free(pptes); pptes=NULL; }
+	if (aptes) { free(aptes); aptes=NULL; }
+	*gpt = NULL;
+	*ptes = NULL;
+	return 0;
 }
 
 /**
@@ -618,7 +618,7 @@ read_gpt_pt (int fd, struct slice all, struct slice *sp, int ns)
 	gpt_entry *ptes = NULL;
 	uint32_t i;
 	int n = 0;
-        int last_used_index=-1;
+	int last_used_index=-1;
 	int sector_size_mul = get_sector_size(fd)/512;
 
 	if (!find_valid_gpt (fd, &gpt, &ptes) || !gpt || !ptes) {
@@ -640,7 +640,7 @@ read_gpt_pt (int fd, struct slice all, struct slice *sp, int ns)
 			sp[n].size  = sector_size_mul *
 				      (__le64_to_cpu(ptes[i].ending_lba) -
 				       __le64_to_cpu(ptes[i].starting_lba) + 1);
-                        last_used_index=n;
+			last_used_index=n;
 			n++;
 		}
 	}

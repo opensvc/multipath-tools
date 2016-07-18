@@ -82,7 +82,7 @@
 #define INQ_CMD_LEN 6
 
 #define pp_hds_log(prio, fmt, args...) \
-        condlog(prio, "%s: hds prio: " fmt, dev, ##args)
+	condlog(prio, "%s: hds prio: " fmt, dev, ##args)
 
 int hds_modular_prio (const char *dev, int fd, unsigned int timeout)
 {

@@ -62,7 +62,7 @@ typedef struct _gpt_header {
 typedef struct _gpt_entry_attributes {
 	uint64_t required_to_function:1;
 	uint64_t reserved:47;
-        uint64_t type_guid_specific:16;
+	uint64_t type_guid_specific:16;
 } __attribute__ ((packed)) gpt_entry_attributes;
 
 typedef struct _gpt_entry {
@@ -86,8 +86,8 @@ typedef struct _gpt_entry {
    as:
 */
 #define GPT_DEFAULT_RESERVED_PARTITION_ENTRIES \
-        (GPT_DEFAULT_RESERVED_PARTITION_ENTRY_ARRAY_SIZE / \
-         sizeof(gpt_entry))
+	(GPT_DEFAULT_RESERVED_PARTITION_ENTRY_ARRAY_SIZE / \
+	 sizeof(gpt_entry))
 
 
 /* Protected Master Boot Record  & Legacy MBR share same structure */

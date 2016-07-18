@@ -31,7 +31,7 @@
 #define SG_TIMEOUT	60000
 
 #define pp_ontap_log(prio, fmt, args...) \
-        condlog(prio, "%s: ontap prio: " fmt, dev, ##args)
+	condlog(prio, "%s: ontap prio: " fmt, dev, ##args)
 
 static void dump_cdb(unsigned char *cdb, int size)
 {

@@ -459,7 +459,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 		return;
 	}
 	if (mpp->retain_hwhandler != RETAIN_HWHANDLER_ON &&
-            (strlen(cmpp->hwhandler) != strlen(mpp->hwhandler) ||
+	    (strlen(cmpp->hwhandler) != strlen(mpp->hwhandler) ||
 	     strncmp(cmpp->hwhandler, mpp->hwhandler,
 		    strlen(mpp->hwhandler)))) {
 		mpp->action = ACT_RELOAD;

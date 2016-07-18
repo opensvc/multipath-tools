@@ -167,9 +167,9 @@ dm_drv_version (unsigned int * version, char * str)
 		goto out;
 	}
 	v = target->version;
-        version[0] = v[0];
-        version[1] = v[1];
-        version[2] = v[2];
+	version[0] = v[0];
+	version[1] = v[1];
+	version[2] = v[2];
 	r = 0;
 out:
 	dm_task_destroy(dmt);
@@ -181,7 +181,7 @@ dm_drv_prereq (void)
 {
 	unsigned int minv[3] = {1, 0, 3};
 	unsigned int version[3] = {0, 0, 0};
-        unsigned int * v = version;
+	unsigned int * v = version;
 
 	if (dm_drv_version(v, TGT_MPATH)) {
 		/* in doubt return not capable */

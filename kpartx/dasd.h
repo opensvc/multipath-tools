@@ -27,40 +27,40 @@
 
 typedef struct ttr
 {
-        uint16_t tt;
-        uint8_t  r;
+	uint16_t tt;
+	uint8_t  r;
 } __attribute__ ((packed)) ttr_t;
 
 typedef struct cchhb
 {
-        uint16_t cc;
-        uint16_t hh;
-        uint8_t b;
+	uint16_t cc;
+	uint16_t hh;
+	uint8_t b;
 } __attribute__ ((packed)) cchhb_t;
 
 typedef struct cchh
 {
-        uint16_t cc;
-        uint16_t hh;
+	uint16_t cc;
+	uint16_t hh;
 } __attribute__ ((packed)) cchh_t;
 
 typedef struct labeldate
 {
-        uint8_t  year;
-        uint16_t day;
+	uint8_t  year;
+	uint16_t day;
 } __attribute__ ((packed)) labeldate_t;
 
 
 typedef struct volume_label
 {
-        char volkey[4];         /* volume key = volume label                 */
+	char volkey[4];         /* volume key = volume label                 */
 	char vollbl[4];	        /* volume label                              */
 	char volid[6];	        /* volume identifier                         */
 	uint8_t security;	        /* security byte                             */
 	cchhb_t vtoc;           /* VTOC address                              */
 	char res1[5];	        /* reserved                                  */
-        char cisize[4];	        /* CI-size for FBA,...                       */
-                                /* ...blanks for CKD                         */
+	char cisize[4];	        /* CI-size for FBA,...                       */
+				/* ...blanks for CKD                         */
 	char blkperci[4];       /* no of blocks per CI (FBA), blanks for CKD */
 	char labperci[4];       /* no of labels per CI (FBA), blanks for CKD */
 	char res2[4];	        /* reserved                                  */
@@ -73,25 +73,25 @@ typedef struct volume_label
 
 typedef struct extent
 {
-        uint8_t  typeind;          /* extent type indicator                     */
-        uint8_t  seqno;            /* extent sequence number                    */
-        cchh_t llimit;          /* starting point of this extent             */
-        cchh_t ulimit;          /* ending point of this extent               */
+	uint8_t  typeind;          /* extent type indicator                     */
+	uint8_t  seqno;            /* extent sequence number                    */
+	cchh_t llimit;          /* starting point of this extent             */
+	cchh_t ulimit;          /* ending point of this extent               */
 } __attribute__ ((packed)) extent_t;
 
 
 typedef struct dev_const
 {
-        uint16_t DS4DSCYL;           /* number of logical cyls                  */
-        uint16_t DS4DSTRK;           /* number of tracks in a logical cylinder  */
-        uint16_t DS4DEVTK;           /* device track length                     */
-        uint8_t  DS4DEVI;            /* non-last keyed record overhead          */
-        uint8_t  DS4DEVL;            /* last keyed record overhead              */
-        uint8_t  DS4DEVK;            /* non-keyed record overhead differential  */
-        uint8_t  DS4DEVFG;           /* flag byte                               */
-        uint16_t DS4DEVTL;           /* device tolerance                        */
-        uint8_t  DS4DEVDT;           /* number of DSCB's per track              */
-        uint8_t  DS4DEVDB;           /* number of directory blocks per track    */
+	uint16_t DS4DSCYL;           /* number of logical cyls                  */
+	uint16_t DS4DSTRK;           /* number of tracks in a logical cylinder  */
+	uint16_t DS4DEVTK;           /* device track length                     */
+	uint8_t  DS4DEVI;            /* non-last keyed record overhead          */
+	uint8_t  DS4DEVL;            /* last keyed record overhead              */
+	uint8_t  DS4DEVK;            /* non-keyed record overhead differential  */
+	uint8_t  DS4DEVFG;           /* flag byte                               */
+	uint16_t DS4DEVTL;           /* device tolerance                        */
+	uint8_t  DS4DEVDT;           /* number of DSCB's per track              */
+	uint8_t  DS4DEVDB;           /* number of directory blocks per track    */
 } __attribute__ ((packed)) dev_const_t;
 
 
@@ -104,15 +104,15 @@ typedef struct format1_label
 	labeldate_t DS1CREDT;     /* creation date: ydd                      */
 	labeldate_t DS1EXPDT;     /* expiration date                         */
 	uint8_t  DS1NOEPV;           /* number of extents on volume             */
-        uint8_t  DS1NOBDB;           /* no. of bytes used in last direction blk */
+	uint8_t  DS1NOBDB;           /* no. of bytes used in last direction blk */
 	uint8_t  DS1FLAG1;           /* flag 1                                  */
 	char  DS1SYSCD[13];       /* system code                             */
 	labeldate_t DS1REFD;      /* date last referenced                    */
-        uint8_t  DS1SMSFG;           /* system managed storage indicators       */
-        uint8_t  DS1SCXTF;           /* sec. space extension flag byte          */
-        uint16_t DS1SCXTV;           /* secondary space extension value         */
-        uint8_t  DS1DSRG1;           /* data set organisation byte 1            */
-        uint8_t  DS1DSRG2;           /* data set organisation byte 2            */
+	uint8_t  DS1SMSFG;           /* system managed storage indicators       */
+	uint8_t  DS1SCXTF;           /* sec. space extension flag byte          */
+	uint16_t DS1SCXTV;           /* secondary space extension value         */
+	uint8_t  DS1DSRG1;           /* data set organisation byte 1            */
+	uint8_t  DS1DSRG2;           /* data set organisation byte 2            */
 	uint8_t  DS1RECFM;           /* record format                           */
 	uint8_t  DS1OPTCD;           /* option code                             */
 	uint16_t DS1BLKL;            /* block length                            */
@@ -120,11 +120,11 @@ typedef struct format1_label
 	uint8_t  DS1KEYL;            /* key length                              */
 	uint16_t DS1RKP;             /* relative key position                   */
 	uint8_t  DS1DSIND;           /* data set indicators                     */
-        uint8_t  DS1SCAL1;           /* secondary allocation flag byte          */
+	uint8_t  DS1SCAL1;           /* secondary allocation flag byte          */
 	char DS1SCAL3[3];         /* secondary allocation quantity           */
 	ttr_t DS1LSTAR;           /* last used track and block on track      */
 	uint16_t DS1TRBAL;           /* space remaining on last used track      */
-        uint16_t res1;               /* reserved                                */
+	uint16_t res1;               /* reserved                                */
 	extent_t DS1EXT1;         /* first extent description                */
 	extent_t DS1EXT2;         /* second extent description               */
 	extent_t DS1EXT3;         /* third extent description                */
@@ -176,16 +176,16 @@ static unsigned char EBCtoASC[256] =
 /* 0x08  -GE  -SPS  -RPT    VT    FF    CR    SO    SI */
 	0x07, 0x07, 0x07, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
 /* 0x10  DLE   DC1   DC2   DC3  -RES   -NL    BS  -POC
-                                -ENP  ->LF             */
+				-ENP  ->LF             */
 	0x10, 0x11, 0x12, 0x13, 0x07, 0x0A, 0x08, 0x07,
 /* 0x18  CAN    EM  -UBS  -CU1  -IFS  -IGS  -IRS  -ITB
-                                                  -IUS */
+						  -IUS */
 	0x18, 0x19, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07,
 /* 0x20  -DS  -SOS    FS  -WUS  -BYP    LF   ETB   ESC
-                                -INP                   */
+				-INP                   */
 	0x07, 0x07, 0x1C, 0x07, 0x07, 0x0A, 0x17, 0x1B,
 /* 0x28  -SA  -SFE   -SM  -CSP  -MFA   ENQ   ACK   BEL
-                     -SW                               */
+		     -SW                               */
 	0x07, 0x07, 0x07, 0x07, 0x07, 0x05, 0x06, 0x07,
 /* 0x30 ----  ----   SYN   -IR   -PP  -TRN  -NBS   EOT */
 	0x07, 0x07, 0x16, 0x07, 0x07, 0x07, 0x07, 0x04,

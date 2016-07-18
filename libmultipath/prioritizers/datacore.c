@@ -46,7 +46,7 @@ int datacore_prio (const char *dev, int sg_fd, char * args)
 	unsigned char sense_buffer[32];
 	sg_io_hdr_t io_hdr;
 
-        int timeout = 2000;
+	int timeout = 2000;
 	char preferredsds_buff[255] = "";
 	char * preferredsds = &preferredsds_buff[0];
 
@@ -56,7 +56,7 @@ int datacore_prio (const char *dev, int sg_fd, char * args)
 	}
 
 	if (sscanf(args, "timeout=%i preferredsds=%s",
-                   &timeout, preferredsds) == 2) {}
+		   &timeout, preferredsds) == 2) {}
 	else if (sscanf(args, "preferredsds=%s timeout=%i",
 			preferredsds, &timeout) == 2) {}
 	else if (sscanf(args, "preferredsds=%s",
@@ -108,5 +108,5 @@ int datacore_prio (const char *dev, int sg_fd, char * args)
 
 int getprio (struct path * pp, char * args)
 {
-        return datacore_prio(pp->dev, pp->fd, args);
+	return datacore_prio(pp->dev, pp->fd, args);
 }

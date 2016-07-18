@@ -50,7 +50,7 @@ read_disklabel(int fd, struct disklabel *label) {
 int
 read_ps3_pt(int fd, struct slice all, struct slice *sp, int ns) {
 	struct disklabel label;
-        int n = 0;
+	int n = 0;
 	int i;
 
 	if (!read_disklabel(fd, &label))

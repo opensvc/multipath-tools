@@ -46,13 +46,13 @@ int debug;
 #define MAX_ALLOC_LIST 2048
 
 #define MALLOC(n)    ( dbg_malloc((n), \
-                      (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
+		      (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
 #define FREE(b)      ( dbg_free((b), \
-                      (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
+		      (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
 #define REALLOC(b,n) ( dbg_realloc((b), (n), \
-                      (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
+		      (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
 #define STRDUP(n)    ( dbg_strdup((n), \
-                      (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
+		      (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
 
 /* Memory debug prototypes defs */
 extern void *dbg_malloc(unsigned long, char *, char *, int);

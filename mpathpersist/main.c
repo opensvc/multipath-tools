@@ -243,15 +243,15 @@ int main (int argc, char * argv[])
 				break;
 
 			case 'l':
-                                if (1 != sscanf(optarg, "%u", &mpath_mx_alloc_len)) {
-                                        fprintf(stderr, "bad argument to '--alloc-length'\n");
-                                        return MPATH_PR_SYNTAX_ERROR;
-                                } else if (MPATH_MAX_PARAM_LEN < mpath_mx_alloc_len) {
-                                        fprintf(stderr, "'--alloc-length' argument exceeds maximum"
-                                                        " limit(%d)\n", MPATH_MAX_PARAM_LEN);
-                                        return MPATH_PR_SYNTAX_ERROR;
-                                }
-                                break;
+				if (1 != sscanf(optarg, "%u", &mpath_mx_alloc_len)) {
+					fprintf(stderr, "bad argument to '--alloc-length'\n");
+					return MPATH_PR_SYNTAX_ERROR;
+				} else if (MPATH_MAX_PARAM_LEN < mpath_mx_alloc_len) {
+					fprintf(stderr, "'--alloc-length' argument exceeds maximum"
+							" limit(%d)\n", MPATH_MAX_PARAM_LEN);
+					return MPATH_PR_SYNTAX_ERROR;
+				}
+				break;
 
 			default:
 				fprintf(stderr, "unrecognised switch " "code 0x%x ??\n", c);
@@ -745,9 +745,9 @@ mpath_print_transport_id(struct prin_fulldescr *fdesc)
 		case MPATH_PROTOCOL_ID_SAS:
 			printf("   SAS ");
 			 if (0 != fdesc->trnptid.format_code)
-                                printf(" [Unexpected format code: %d]\n",
-                                                fdesc->trnptid.format_code);
-                        dumpHex((const char *)fdesc->trnptid.sas_address, 8, 0);
+				printf(" [Unexpected format code: %d]\n",
+						fdesc->trnptid.format_code);
+			dumpHex((const char *)fdesc->trnptid.sas_address, 8, 0);
 			break;
 		default:
 			return;
