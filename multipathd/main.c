@@ -1997,9 +1997,7 @@ reconfigure (struct vectors * vecs)
 	if (VECTOR_SIZE(vecs->mpvec))
 		remove_maps_and_stop_waiters(vecs);
 
-	if (VECTOR_SIZE(vecs->pathvec))
-		free_pathvec(vecs->pathvec, FREE_PATHS);
-
+	free_pathvec(vecs->pathvec, FREE_PATHS);
 	vecs->pathvec = NULL;
 
 	/* Re-read any timezone changes */
