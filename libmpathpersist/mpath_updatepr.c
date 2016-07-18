@@ -11,9 +11,9 @@
 #include <sys/un.h>
 #include <sys/poll.h>
 #include <errno.h>
-#include <debug.h>
-#include <mpath_cmd.h>
-#include <uxsock.h>
+#include "debug.h"
+#include "mpath_cmd.h"
+#include "uxsock.h"
 #include "memory.h"
 
 unsigned long mem_allocated;    /* Total memory used in Bytes */

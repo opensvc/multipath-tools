@@ -19,7 +19,7 @@
 #ifdef USE_SYSTEMD
 #include <systemd/sd-daemon.h>
 #endif
-#include <mpath_cmd.h>
+#include "mpath_cmd.h"
 
 #include "memory.h"
 #include "uxsock.h"

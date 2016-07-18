@@ -3,7 +3,7 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include <prio.h>
+#include "prio.h"
 
 int getprio (struct path * pp, char * args)
 {

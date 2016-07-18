@@ -21,7 +21,7 @@
 #include "prio.h"
 #include "errno.h"
 #include <inttypes.h>
-#include <mpath_cmd.h>
+#include "mpath_cmd.h"
 
 static int
 set_int(vector strvec, void *ptr)

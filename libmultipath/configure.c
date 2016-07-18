@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <libdevmapper.h>
 #include <libudev.h>
-#include <mpath_cmd.h>
+#include "mpath_cmd.h"
 
 #include "checkers.h"
 #include "vector.h"

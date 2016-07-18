@@ -14,9 +14,9 @@
  */
 #include <stdio.h>
 
-#include <debug.h>
-#include <prio.h>
-#include <structs.h>
+#include "debug.h"
+#include "prio.h"
+#include "structs.h"
 
 #include "alua.h"
 

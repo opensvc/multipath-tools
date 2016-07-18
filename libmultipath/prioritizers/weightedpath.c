@@ -25,15 +25,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <prio.h>
+#include "prio.h"
 #include "weightedpath.h"
-#include <config.h>
-#include <structs.h>
+#include "config.h"
+#include "structs.h"
 #include <memory.h>
-#include <debug.h>
+#include "debug.h"
 #include <regex.h>
-#include <structs_vec.h>
-#include <print.h>
+#include "structs_vec.h"
+#include "print.h"
 
 char *get_next_string(char **temp, char *split_char)
 {

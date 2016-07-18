@@ -12,10 +12,10 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
-#include <sg_include.h>
-#include <debug.h>
-#include <prio.h>
-#include <structs.h>
+#include "sg_include.h"
+#include "debug.h"
+#include "prio.h"
+#include "structs.h"
 
 #define TUR_CMD_LEN		6
 #define SCSI_CHECK_CONDITION	0x2

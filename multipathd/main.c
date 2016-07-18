@@ -27,7 +27,7 @@
 /*
  * libcheckers
  */
-#include <checkers.h>
+#include "checkers.h"
 
 #ifdef USE_SYSTEMD
 static int use_watchdog;
@@ -38,35 +38,35 @@ int uxsock_timeout;
 /*
  * libmultipath
  */
-#include <parser.h>
-#include <vector.h>
+#include "parser.h"
+#include "vector.h"
 #include <memory.h>
-#include <config.h>
-#include <util.h>
-#include <hwtable.h>
-#include <defaults.h>
-#include <structs.h>
-#include <blacklist.h>
-#include <structs_vec.h>
-#include <dmparser.h>
-#include <devmapper.h>
-#include <sysfs.h>
-#include <dict.h>
-#include <discovery.h>
-#include <debug.h>
-#include <propsel.h>
-#include <uevent.h>
-#include <switchgroup.h>
-#include <print.h>
-#include <configure.h>
-#include <prio.h>
-#include <wwids.h>
-#include <pgpolicies.h>
-#include <uevent.h>
-#include <log.h>
+#include "config.h"
+#include "util.h"
+#include "hwtable.h"
+#include "defaults.h"
+#include "structs.h"
+#include "blacklist.h"
+#include "structs_vec.h"
+#include "dmparser.h"
+#include "devmapper.h"
+#include "sysfs.h"
+#include "dict.h"
+#include "discovery.h"
+#include "debug.h"
+#include "propsel.h"
+#include "uevent.h"
+#include "switchgroup.h"
+#include "print.h"
+#include "configure.h"
+#include "prio.h"
+#include "wwids.h"
+#include "pgpolicies.h"
+#include "uevent.h"
+#include "log.h"
 
-#include <mpath_cmd.h>
-#include <mpath_persist.h>
+#include "mpath_cmd.h"
+#include "mpath_persist.h"
 
 #include "prioritizers/alua_rtpg.h"
 

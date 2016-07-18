@@ -8,7 +8,7 @@
 #include <unistd.h>    /* for unlink() */
 #include <fcntl.h>     /* for fcntl() */
 
-#include <debug.h>
+#include "debug.h"
 
 #include "pidfile.h"
 

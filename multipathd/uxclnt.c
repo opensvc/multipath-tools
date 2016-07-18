@@ -18,12 +18,12 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include <mpath_cmd.h>
-#include <uxsock.h>
+#include "mpath_cmd.h"
+#include "uxsock.h"
 #include <memory.h>
-#include <defaults.h>
+#include "defaults.h"
 
-#include <vector.h>
+#include "vector.h"
 #include "cli.h"
 
 static void print_reply(char *s)

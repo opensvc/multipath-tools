@@ -22,16 +22,16 @@
 #include <sys/poll.h>
 #include <sys/time.h>
 #include <signal.h>
-#include <checkers.h>
+#include "checkers.h"
 #include <memory.h>
-#include <debug.h>
-#include <vector.h>
-#include <structs.h>
-#include <structs_vec.h>
-#include <uxsock.h>
-#include <defaults.h>
-#include <config.h>
-#include <mpath_cmd.h>
+#include "debug.h"
+#include "vector.h"
+#include "structs.h"
+#include "structs_vec.h"
+#include "uxsock.h"
+#include "defaults.h"
+#include "config.h"
+#include "mpath_cmd.h"
 
 #include "main.h"
 #include "cli.h"

@@ -12,9 +12,9 @@
 #include <unistd.h>
 #include <libudev.h>
 #include "mpath_pr_ioctl.h"
-#include <mpath_persist.h>
+#include "mpath_persist.h"
 
-#include <debug.h>
+#include "debug.h"
 
 #define FILE_NAME_SIZE          256
 
