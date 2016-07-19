@@ -20,7 +20,7 @@
 
 #include "mpath_cmd.h"
 #include "uxsock.h"
-#include <memory.h>
+#include "memory.h"
 #include "defaults.h"
 
 #include "vector.h"
