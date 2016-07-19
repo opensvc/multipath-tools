@@ -2,7 +2,7 @@
 #define _BLACKLIST_H
 
 #include <libudev.h>
-#include "regex.h"
+#include <regex.h>
 
 #define MATCH_NOTHING        0
 #define MATCH_WWID_BLIST     1

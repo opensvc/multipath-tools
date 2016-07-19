@@ -19,7 +19,7 @@
 #include "blacklist.h"
 #include "defaults.h"
 #include "prio.h"
-#include "errno.h"
+#include <errno.h>
 #include <inttypes.h>
 #include "mpath_cmd.h"
 
