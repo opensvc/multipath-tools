@@ -33,7 +33,7 @@
 #include "checkers.h"
 #include "prio.h"
 #include "vector.h"
-#include <memory.h>
+#include "memory.h"
 #include <libdevmapper.h>
 #include "devmapper.h"
 #include "util.h"

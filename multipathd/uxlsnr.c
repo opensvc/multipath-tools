@@ -23,7 +23,7 @@
 #include <sys/time.h>
 #include <signal.h>
 #include "checkers.h"
-#include <memory.h>
+#include "memory.h"
 #include "debug.h"
 #include "vector.h"
 #include "structs.h"

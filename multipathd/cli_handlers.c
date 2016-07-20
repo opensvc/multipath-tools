@@ -2,7 +2,7 @@
  * Copyright (c) 2005 Christophe Varoqui
  */
 #include "checkers.h"
-#include <memory.h>
+#include "memory.h"
 #include "vector.h"
 #include "structs.h"
 #include "structs_vec.h"

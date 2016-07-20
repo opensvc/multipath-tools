@@ -40,7 +40,7 @@ int uxsock_timeout;
  */
 #include "parser.h"
 #include "vector.h"
-#include <memory.h>
+#include "memory.h"
 #include "config.h"
 #include "util.h"
 #include "hwtable.h"

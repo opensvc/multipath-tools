@@ -4,7 +4,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <pthread.h>
-#include <memory.h>
+#include "memory.h"
 #include "vector.h"
 #include "structs.h"
 #include "structs_vec.h"
