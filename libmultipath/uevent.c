@@ -33,7 +33,7 @@
 #include <sys/socket.h>
 #include <sys/user.h>
 #include <sys/un.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <linux/types.h>
 #include <linux/netlink.h>
 #include <pthread.h>

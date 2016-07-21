@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <errno.h>
 #include "debug.h"
 #include "mpath_cmd.h"
