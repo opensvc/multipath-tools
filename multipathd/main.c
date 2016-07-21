@@ -1790,7 +1790,7 @@ checkerloop (void *ap)
 					vector_del_slot(vecs->pathvec, i);
 					free_path(pp);
 					i--;
-				} else;
+				} else
 					num_paths += rc;
 			}
 			lock_cleanup_pop(vecs->lock);
