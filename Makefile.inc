@@ -60,9 +60,10 @@ RM          = rm -f
 LN          = ln -sf
 INSTALL_PROGRAM = install
 
-CFLAGS      = -Wunused -Wstrict-prototypes -O2 -g -pipe -Wformat-security -Wall \
-		-Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 \
-		-fPIC -DLIB_STRING=\"${LIB}\" -DRUN_DIR=\"${RUN}\"
+OPTFLAGS     = -Wunused -Wstrict-prototypes -O2 -g -pipe -Wformat-security -Wall \
+		-Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4
+
+CFLAGS	     = $(OPTFLAGS) -fPIC -DLIB_STRING=\"${LIB}\" -DRUN_DIR=\"${RUN}\"
 SHARED_FLAGS = -shared
 
 %.o:	%.c
