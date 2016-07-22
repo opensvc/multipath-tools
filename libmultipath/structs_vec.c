@@ -409,10 +409,12 @@ __setup_multipath (struct vectors * vecs, struct multipath * mpp,
 			mpp->alias);
 	}
 	if (reset) {
+		conf = get_multipath_config();
 		select_rr_weight(conf, mpp);
 		select_pgfailback(conf, mpp);
 		set_no_path_retry(conf, mpp);
 		select_flush_on_last_del(conf, mpp);
+		put_multipath_config(conf);
 		if (VECTOR_SIZE(mpp->paths) != 0)
 			dm_cancel_deferred_remove(mpp);
 	}

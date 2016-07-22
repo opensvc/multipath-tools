@@ -2245,7 +2245,7 @@ child (void * param)
 	if (ignore_new_devs)
 		conf->ignore_new_devs = ignore_new_devs;
 	uxsock_timeout = conf->uxsock_timeout;
-	multipath_conf = conf;
+	rcu_assign_pointer(multipath_conf, conf);
 	dm_init(conf->verbosity);
 	dm_drv_version(conf->version, TGT_MPATH);
 	if (init_checkers(conf->multipath_dir)) {
@@ -2313,6 +2313,11 @@ child (void * param)
 	}
 #endif
 	/*
+	 * Startup done, invalidate configuration
+	 */
+	conf = NULL;
+
+	/*
 	 * Signal start of configuration
 	 */
 	post_config_state(DAEMON_CONFIGURE);
@@ -2362,7 +2367,9 @@ child (void * param)
 			if (!need_to_delay_reconfig(vecs)) {
 				reconfigure(vecs);
 			} else {
+				conf = get_multipath_config();
 				conf->delayed_reconfig = 1;
+				put_multipath_config(conf);
 			}
 			lock_cleanup_pop(vecs->lock);
 			post_config_state(DAEMON_IDLE);
@@ -2370,9 +2377,11 @@ child (void * param)
 	}
 
 	lock(vecs->lock);
+	conf = get_multipath_config();
 	if (conf->queue_without_daemon == QUE_NO_DAEMON_OFF)
 		vector_foreach_slot(vecs->mpvec, mpp, i)
 			dm_queue_if_no_path(mpp->alias, 0);
+	put_multipath_config(conf);
 	remove_maps_and_stop_waiters(vecs);
 	unlock(vecs->lock);
 
@@ -2418,8 +2427,9 @@ child (void * param)
 	 * because logging functions like dlog() and dm_write_log()
 	 * reference the config.
 	 */
-	free_config(conf);
-	conf = NULL;
+	conf = rcu_dereference(multipath_conf);
+	rcu_assign_pointer(multipath_conf, NULL);
+	call_rcu(&conf->rcu, rcu_free_config);
 	udev_unref(udev);
 	udev = NULL;
 	pthread_attr_destroy(&waiter_attr);
