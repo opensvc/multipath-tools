@@ -549,8 +549,16 @@ If set to
 .I yes
 , multipath will try to detect if the device supports SCSI-3 ALUA. If so, the
 device will automatically use the
+.I sysfs
+prioritizer if the required sysfs attributes
+.I access_state
+and
+.I preferred_path
+are supported, or the
 .I alua
-prioritizer. If not, the prioritizer will be selected as usual.
+prioritizer if not. If set to
+.I no
+, the prioritizer will be selected as usual.
 .RS
 .TP
 Default value is: \fByes\fR
