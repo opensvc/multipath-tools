@@ -756,7 +756,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.fast_io_fail  = 10,
-		.no_path_retry = 0,
 		.dev_loss      = 60,
 	},
 	{
