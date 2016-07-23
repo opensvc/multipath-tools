@@ -812,7 +812,8 @@ static struct hwentry default_hw[] = {
 	 * Copy this TEMPLATE to add new hardware.
 	 *
 	 * Keep only mandatory and modified attributes.
-	 * Standard attributes must be removed.
+	 * Attributes with default values must be removed.
+	 * .vendor and .product are mandatory, all other are optional.
 	 *
 	 * COMPANY_NAME
 	 *
@@ -820,8 +821,8 @@ static struct hwentry default_hw[] = {
 	 * Mail : XXX
 	 */
 	{
-		.vendor        = "VENDOR", (Mandatory)
-		.product       = "PRODUCT", (Mandatory)
+		.vendor        = "VENDOR",
+		.product       = "PRODUCT",
 		.revision      = "REVISION",
 		.bl_product    = "BL_PRODUCT",
 		.pgpolicy      = GROUP_BY_PRIO,
