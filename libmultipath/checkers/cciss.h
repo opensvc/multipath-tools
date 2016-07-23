@@ -43,76 +43,76 @@
 
 //Command List Structure
 typedef union _SCSI3Addr_struct {
-   struct {
-    BYTE Dev;
-    BYTE Bus:6;
-    BYTE Mode:2;        // b00
-  } PeripDev;
-   struct {
-    BYTE DevLSB;
-    BYTE DevMSB:6;
-    BYTE Mode:2;        // b01
-  } LogDev;
-   struct {
-    BYTE Dev:5;
-    BYTE Bus:3;
-    BYTE Targ:6;
-    BYTE Mode:2;        // b10
-  } LogUnit;
+	struct {
+		BYTE Dev;
+		BYTE Bus:6;
+		BYTE Mode:2;        // b00
+	} PeripDev;
+	struct {
+		BYTE DevLSB;
+		BYTE DevMSB:6;
+		BYTE Mode:2;        // b01
+	} LogDev;
+	struct {
+		BYTE Dev:5;
+		BYTE Bus:3;
+		BYTE Targ:6;
+		BYTE Mode:2;        // b10
+	} LogUnit;
 } SCSI3Addr_struct;
 
 typedef struct _PhysDevAddr_struct {
-  DWORD             TargetId:24;
-  DWORD             Bus:6;
-  DWORD             Mode:2;
-  SCSI3Addr_struct  Target[2]; //2 level target device addr
+	DWORD             TargetId:24;
+	DWORD             Bus:6;
+	DWORD             Mode:2;
+	SCSI3Addr_struct  Target[2]; //2 level target device addr
 } PhysDevAddr_struct;
 
 typedef struct _LogDevAddr_struct {
-  DWORD            VolId:30;
-  DWORD            Mode:2;
-  BYTE             reserved[4];
+	DWORD            VolId:30;
+	DWORD            Mode:2;
+	BYTE             reserved[4];
 } LogDevAddr_struct;
 
 typedef union _LUNAddr_struct {
-  BYTE               LunAddrBytes[8];
-  SCSI3Addr_struct   SCSI3Lun[4];
-  PhysDevAddr_struct PhysDev;
-  LogDevAddr_struct  LogDev;
+	BYTE               LunAddrBytes[8];
+	SCSI3Addr_struct   SCSI3Lun[4];
+	PhysDevAddr_struct PhysDev;
+	LogDevAddr_struct  LogDev;
 } LUNAddr_struct;
 
 typedef struct _RequestBlock_struct {
-  BYTE   CDBLen;
-  struct {
-    BYTE Type:3;
-    BYTE Attribute:3;
-    BYTE Direction:2;
-  } Type;
-  HWORD  Timeout;
-  BYTE   CDB[16];
+	BYTE   CDBLen;
+	struct {
+		BYTE Type:3;
+		BYTE Attribute:3;
+		BYTE Direction:2;
+	} Type;
+	HWORD  Timeout;
+	BYTE   CDB[16];
 } RequestBlock_struct;
 
 typedef union _MoreErrInfo_struct{
-  struct {
-    BYTE  Reserved[3];
-    BYTE  Type;
-    DWORD ErrorInfo;
-  }Common_Info;
-  struct{
-    BYTE  Reserved[2];
-    BYTE  offense_size;//size of offending entry
-    BYTE  offense_num; //byte # of offense 0-base
-    DWORD offense_value;
-  }Invalid_Cmd;
-}MoreErrInfo_struct;
+	struct {
+		BYTE  Reserved[3];
+		BYTE  Type;
+		DWORD ErrorInfo;
+	} Common_Info;
+	struct{
+		BYTE  Reserved[2];
+		BYTE  offense_size;//size of offending entry
+		BYTE  offense_num; //byte # of offense 0-base
+		DWORD offense_value;
+	} Invalid_Cmd;
+} MoreErrInfo_struct;
 
 typedef struct _ErrorInfo_struct {
-  BYTE               ScsiStatus;
-  BYTE               SenseLen;
-  HWORD              CommandStatus;
-  DWORD              ResidualCnt;
-  MoreErrInfo_struct MoreErrInfo;
-  BYTE               SenseInfo[SENSEINFOBYTES];
+	BYTE               ScsiStatus;
+	BYTE               SenseLen;
+	HWORD              CommandStatus;
+	DWORD              ResidualCnt;
+	MoreErrInfo_struct MoreErrInfo;
+	BYTE               SenseInfo[SENSEINFOBYTES];
 } ErrorInfo_struct;
 
 #pragma pack()

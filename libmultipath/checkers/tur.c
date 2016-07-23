@@ -107,7 +107,7 @@ tur_check(int fd, unsigned int timeout, char *msg)
 	unsigned char sense_buffer[32];
 	int retry_tur = 5;
 
- retry:
+retry:
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
 	memset(&sense_buffer, 0, 32);
 	io_hdr.interface_id = 'S';

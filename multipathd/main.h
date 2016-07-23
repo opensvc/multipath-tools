@@ -4,12 +4,12 @@
 #define MAPGCINT 5
 
 enum daemon_status {
-    DAEMON_INIT,
-    DAEMON_START,
-    DAEMON_CONFIGURE,
-    DAEMON_IDLE,
-    DAEMON_RUNNING,
-    DAEMON_SHUTDOWN,
+	DAEMON_INIT,
+	DAEMON_START,
+	DAEMON_CONFIGURE,
+	DAEMON_IDLE,
+	DAEMON_RUNNING,
+	DAEMON_SHUTDOWN,
 };
 
 struct prout_param_descriptor;

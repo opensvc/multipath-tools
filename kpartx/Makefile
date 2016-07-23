@@ -14,7 +14,7 @@ endif
 
 LDFLAGS = -ldevmapper
 OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o dasd.o sun.o \
-       gpt.o mac.o ps3.o crc32.o lopart.o xstrncpy.o devmapper.o
+	gpt.o mac.o ps3.o crc32.o lopart.o xstrncpy.o devmapper.o
 EXEC = kpartx
 
 all: $(EXEC)

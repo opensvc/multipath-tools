@@ -113,7 +113,7 @@ static int send_gva(const char *dev, int fd, unsigned char pg,
 		goto out;
 	}
 	ret = 0;
- out:
+out:
 	return(ret);
 }
 
@@ -171,7 +171,7 @@ static int get_proxy(const char *dev, int fd, unsigned int timeout)
 	}
 	ret = (results[19] & 0x02) >> 1;
 
- out:
+out:
 	return(ret);
 }
 
@@ -221,13 +221,13 @@ static int ontap_prio(const char *dev, int fd, unsigned int timeout)
 		return 0;
 	}
 
- try_fcp_proxy:
+try_fcp_proxy:
 	rc = get_proxy(dev, fd, timeout);
 	if (rc >= 0) {
 		is_proxy = rc;
 	}
 
- prio_select:
+prio_select:
 	if (is_iscsi_hardware) {
 		return 3;
 	} else if (is_iscsi_software) {

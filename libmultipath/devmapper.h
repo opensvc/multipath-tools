@@ -52,9 +52,9 @@ int dm_reassign_table(const char *name, char *old, char *new);
 int dm_setgeometry(struct multipath *mpp);
 
 #define VERSION_GE(v, minv) ( \
- (v[0] > minv[0]) || \
- ((v[0] == minv[0]) && (v[1] > minv[1])) || \
- ((v[0] == minv[0]) && (v[1] == minv[1]) && (v[2] >= minv[2])) \
+	(v[0] > minv[0]) || \
+	((v[0] == minv[0]) && (v[1] > minv[1])) || \
+	((v[0] == minv[0]) && (v[1] == minv[1]) && (v[2] >= minv[2])) \
 )
 
 #endif /* _DEVMAPPER_H */

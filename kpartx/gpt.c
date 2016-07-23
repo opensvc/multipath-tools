@@ -592,7 +592,7 @@ find_valid_gpt(int fd, gpt_header ** gpt, gpt_entry ** ptes)
 		return 1;
 	}
 
- fail:
+fail:
 	if (pgpt)  { free(pgpt);   pgpt=NULL; }
 	if (agpt)  { free(agpt);   agpt=NULL; }
 	if (pptes) { free(pptes); pptes=NULL; }

@@ -18,12 +18,12 @@ ifdef SYSTEMD
 endif
 
 OBJS = memory.o parser.o vector.o devmapper.o callout.o \
-       hwtable.o blacklist.o util.o dmparser.o config.o \
-       structs.o discovery.o propsel.o dict.o \
-       pgpolicies.o debug.o defaults.o uevent.o \
-       switchgroup.o uxsock.o print.o alias.o log_pthread.o \
-       log.o configure.o structs_vec.o sysfs.o prio.o checkers.o \
-       lock.o waiter.o file.o wwids.o prioritizers/alua_rtpg.o
+	hwtable.o blacklist.o util.o dmparser.o config.o \
+	structs.o discovery.o propsel.o dict.o \
+	pgpolicies.o debug.o defaults.o uevent.o \
+	switchgroup.o uxsock.o print.o alias.o log_pthread.o \
+	log.o configure.o structs_vec.o sysfs.o prio.o checkers.o \
+	lock.o waiter.o file.o wwids.o prioritizers/alua_rtpg.o
 
 LIBDM_API_FLUSH = $(shell grep -Ecs '^[a-z]*[[:space:]]+dm_task_no_flush' /usr/include/libdevmapper.h)
 

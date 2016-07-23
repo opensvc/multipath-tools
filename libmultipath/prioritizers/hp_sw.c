@@ -48,7 +48,7 @@ int hp_sw_prio(const char *dev, int fd, unsigned int timeout)
 	io_hdr.sbp = sb;
 	io_hdr.timeout = get_prio_timeout(timeout, 60000);
 	io_hdr.pack_id = 0;
- retry:
+retry:
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
 		pp_hp_sw_log(0, "sending tur command failed");
 		goto out;

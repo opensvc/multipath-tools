@@ -38,6 +38,6 @@ ENV{ID_FS_USAGE}=="filesystem|other", ENV{ID_FS_LABEL_ENC}=="?*", \
 ENV{DM_ACTION}=="PATH_FAILED|PATH_REINSTATED", GOTO="kpartx_end"
 ENV{DM_NR_VALID_PATHS}=="0", GOTO="kpartx_end"
 ENV{DM_STATE}!="SUSPENDED", ENV{DM_UUID}=="mpath-*", \
-        RUN+="/sbin/kpartx -u -p -part /dev/$name"
+	RUN+="/sbin/kpartx -u -p -part /dev/$name"
 
 LABEL="kpartx_end"

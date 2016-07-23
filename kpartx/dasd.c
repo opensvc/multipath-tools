@@ -280,7 +280,7 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 		retval = 1;
 	}
 
- out:
+out:
 	if (data != NULL)
 		free(data);
 	if (fd_dasd != -1 && fd_dasd != fd)

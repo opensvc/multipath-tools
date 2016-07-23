@@ -9,16 +9,16 @@
 #include "vector.h"
 
 char *checker_state_names[] = {
-      "wild",
-      "unchecked",
-      "down",
-      "up",
-      "shaky",
-      "ghost",
-      "pending",
-      "timeout",
-      "removed",
-      "delayed",
+	"wild",
+	"unchecked",
+	"down",
+	"up",
+	"shaky",
+	"ghost",
+	"pending",
+	"timeout",
+	"removed",
+	"delayed",
 };
 
 static LIST_HEAD(checkers);

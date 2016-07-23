@@ -5,17 +5,17 @@
 
 #if 0
 static const char * pr_type_strs[] = {
-    "obsolete [0]",
-    "Write Exclusive",
-    "obsolete [2]",
-    "Exclusive Access",
-    "obsolete [4]",
-    "Write Exclusive, registrants only",
-    "Exclusive Access, registrants only",
-    "Write Exclusive, all registrants",
-    "Exclusive Access, all registrants",
-    "obsolete [9]", "obsolete [0xa]", "obsolete [0xb]", "obsolete [0xc]",
-    "obsolete [0xd]", "obsolete [0xe]", "obsolete [0xf]",
+	"obsolete [0]",
+	"Write Exclusive",
+	"obsolete [2]",
+	"Exclusive Access",
+	"obsolete [4]",
+	"Write Exclusive, registrants only",
+	"Exclusive Access, registrants only",
+	"Write Exclusive, all registrants",
+	"Exclusive Access, all registrants",
+	"obsolete [9]", "obsolete [0xa]", "obsolete [0xb]", "obsolete [0xc]",
+	"obsolete [0xd]", "obsolete [0xe]", "obsolete [0xf]",
 };
 #endif
 
@@ -24,43 +24,43 @@ typedef unsigned char    BYTE;      /* unsigned numeric, bit patterns */
 
 typedef struct SenseData
 {
-    BYTE        Error_Code;
-    BYTE        Segment_Number; /* not applicable to DAC */
-    BYTE        Sense_Key;
-    BYTE        Information[ 4 ];
-    BYTE        Additional_Len;
-    LWORD       Command_Specific_Info;
-    BYTE        ASC;
-    BYTE        ASCQ;
-    BYTE        Field_Replaceable_Unit;
-    BYTE        Sense_Key_Specific_Info[ 3 ];
-    BYTE        Recovery_Action[ 2 ];
-    BYTE        Total_Errors;
-    BYTE        Total_Retries;
-    BYTE        ASC_Stack_1;
-    BYTE        ASCQ_Stack_1;
-    BYTE        ASC_Stack_2;
-    BYTE        ASCQ_Stack_2;
-    BYTE        Additional_FRU_Info[ 8 ];
-    BYTE        Error_Specific_Info[ 3 ];
-    BYTE        Error_Detection_Point[ 4 ];
-    BYTE        Original_CDB[10];
-    BYTE        Host_ID;
-    BYTE        Host_Descriptor[ 2 ];
-    BYTE        Serial_Number[ 16 ];
-    BYTE        Array_SW_Revision[ 4 ];
-    BYTE        Data_Xfer_Operation;
-    BYTE        LUN_Number;
-    BYTE        LUN_Status;
-    BYTE        Drive_ID;
-    BYTE        Xfer_Start_Drive_ID;
-    BYTE        Drive_SW_Revision[ 4 ];
-    BYTE        Drive_Product_ID[ 16 ];
-    BYTE        PowerUp_Status[ 2 ];
-    BYTE        RAID_Level;
-    BYTE        Drive_Sense_ID[ 2 ];
-    BYTE        Drive_Sense_Data[ 32 ];
-    BYTE        Reserved2[24];
+	BYTE        Error_Code;
+	BYTE        Segment_Number; /* not applicable to DAC */
+	BYTE        Sense_Key;
+	BYTE        Information[ 4 ];
+	BYTE        Additional_Len;
+	LWORD       Command_Specific_Info;
+	BYTE        ASC;
+	BYTE        ASCQ;
+	BYTE        Field_Replaceable_Unit;
+	BYTE        Sense_Key_Specific_Info[ 3 ];
+	BYTE        Recovery_Action[ 2 ];
+	BYTE        Total_Errors;
+	BYTE        Total_Retries;
+	BYTE        ASC_Stack_1;
+	BYTE        ASCQ_Stack_1;
+	BYTE        ASC_Stack_2;
+	BYTE        ASCQ_Stack_2;
+	BYTE        Additional_FRU_Info[ 8 ];
+	BYTE        Error_Specific_Info[ 3 ];
+	BYTE        Error_Detection_Point[ 4 ];
+	BYTE        Original_CDB[10];
+	BYTE        Host_ID;
+	BYTE        Host_Descriptor[ 2 ];
+	BYTE        Serial_Number[ 16 ];
+	BYTE        Array_SW_Revision[ 4 ];
+	BYTE        Data_Xfer_Operation;
+	BYTE        LUN_Number;
+	BYTE        LUN_Status;
+	BYTE        Drive_ID;
+	BYTE        Xfer_Start_Drive_ID;
+	BYTE        Drive_SW_Revision[ 4 ];
+	BYTE        Drive_Product_ID[ 16 ];
+	BYTE        PowerUp_Status[ 2 ];
+	BYTE        RAID_Level;
+	BYTE        Drive_Sense_ID[ 2 ];
+	BYTE        Drive_Sense_Data[ 32 ];
+	BYTE        Reserved2[24];
 } SenseData_t;
 
 #define MPATH_PRIN_CMD 0x5e
