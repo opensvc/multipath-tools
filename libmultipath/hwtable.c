@@ -95,7 +95,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* EVA 3000/5000 with new firmware, EVA 4000/6000/8000 */
 		.vendor        = "(COMPAQ|HP)",
-		.product       = "HSV1[01]1|HSV2[01]0|HSV3[046]0|HSV4[05]0",
+		.product       = "(HSV1[01]1|HSV2[01]0|HSV3[046]0|HSV4[05]0)",
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 12,
 		.minio         = 100,
@@ -104,7 +104,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* HP MSA2000 family with old firmware */
 		.vendor        = "HP",
-		.product       = "MSA2[02]12fc|MSA2012i",
+		.product       = "(MSA2[02]12fc|MSA2012i)",
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 18,
@@ -113,7 +113,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* HP MSA2000 family with new firmware */
 		.vendor        = "HP",
-		.product       = "MSA2012sa|MSA23(12|24)(fc|i|sa)|MSA2000s VOLUME",
+		.product       = "(MSA2012sa|MSA23(12|24)(fc|i|sa)|MSA2000s VOLUME)",
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 18,
 		.minio         = 100,
@@ -149,7 +149,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* HP P2000 family */
 		.vendor        = "HP",
-		.product       = "P2000 G3 FC|P2000G3 FC/iSCSI|P2000 G3 SAS|P2000 G3 iSCSI",
+		.product       = "(P2000 G3 FC|P2000G3 FC/iSCSI|P2000 G3 SAS|P2000 G3 iSCSI)",
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 18,
 		.minio         = 100,
@@ -180,7 +180,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* DGC CLARiiON CX/AX and EMC VNX */
 		.vendor        = "^DGC",
-		.product       = "^RAID|^DISK|^VRAID",
+		.product       = "^(RAID|DISK|VRAID)",
 		.bl_product    = "LUNZ",
 		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 emc",
@@ -301,7 +301,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		.vendor        = "IBM",
-		.product       = "^1745|^1746",
+		.product       = "^(1745|1746)",
 		.bl_product    = "Universal Xport",
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
@@ -497,7 +497,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* DELL MD32xx/MD36xx */
 		.vendor        = "DELL",
-		.product       = "MD32xx|MD36xx",
+		.product       = "(MD32xx|MD36xx)",
 		.bl_product    = "Universal Xport",
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
@@ -509,7 +509,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* DELL MD34xx/MD38xx */
 		.vendor        = "DELL",
-		.product       = "MD34xx|MD38xx",
+		.product       = "(MD34xx|MD38xx)",
 		.bl_product    = "Universal Xport",
 		.features      = "2 pg_init_retries 50",
 		.hwhandler     = "1 rdac",
@@ -798,7 +798,7 @@ static struct hwentry default_hw[] = {
 	 */
 	{
 		.vendor        = "TEGILE",
-		.product       = "ZEBI-(FC|ISCSI)|INTELLIFLASH",
+		.product       = "(ZEBI-(FC|ISCSI)|INTELLIFLASH)",
 		.hwhandler     = "1 alua",
 		.selector      = "round-robin 0",
 		.no_path_retry = 10,
