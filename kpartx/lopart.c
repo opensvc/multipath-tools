@@ -211,23 +211,21 @@ find_unused_loop_device (void)
 		fprintf(stderr, "mount: could not find any device /dev/loop#");
 
 	else if (!someloop) {
-	    if (loop_known == 1)
-		fprintf(stderr,
-		    "mount: Could not find any loop device.\n"
-		    "       Maybe /dev/loop# has a wrong major number?");
-	    else if (loop_known == -1)
-		fprintf(stderr,
-		    "mount: Could not find any loop device, and, according to %s,\n"
-		    "       this kernel does not know about the loop device.\n"
-		    "       (If so, then recompile or `modprobe loop'.)",
-		      PROC_DEVICES);
-
-	    else
-		fprintf(stderr,
-		    "mount: Could not find any loop device. Maybe this kernel does not know\n"
-		    "       about the loop device (then recompile or `modprobe loop'), or\n"
-		    "       maybe /dev/loop# has the wrong major number?");
-
+		if (loop_known == 1)
+			fprintf(stderr,
+				"mount: Could not find any loop device.\n"
+				"       Maybe /dev/loop# has a wrong major number?");
+		else if (loop_known == -1)
+			fprintf(stderr,
+				"mount: Could not find any loop device, and, according to %s,\n"
+				"       this kernel does not know about the loop device.\n"
+				"       (If so, then recompile or `modprobe loop'.)",
+				PROC_DEVICES);
+		else
+			fprintf(stderr,
+				"mount: Could not find any loop device. Maybe this kernel does not know\n"
+				"       about the loop device (then recompile or `modprobe loop'), or\n"
+				"       maybe /dev/loop# has the wrong major number?");
 	} else
 		fprintf(stderr, "mount: could not find any free loop device");
 	return 0;

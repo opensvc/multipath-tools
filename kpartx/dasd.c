@@ -233,7 +233,7 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 			    || EBCtoASC[f1.DS1FMTID] == '5'
 			    || EBCtoASC[f1.DS1FMTID] == '7'
 			    || EBCtoASC[f1.DS1FMTID] == '9') {
-			        blk++;
+				blk++;
 				continue;
 			}
 
@@ -243,7 +243,7 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 				break;
 
 			/* OK, we got valid partition data */
-		        offset = cchh2blk(&f1.DS1EXT1.llimit, &geo);
+			offset = cchh2blk(&f1.DS1EXT1.llimit, &geo);
 			size  = cchh2blk(&f1.DS1EXT1.ulimit, &geo) -
 				offset + geo.sectors;
 			sp[counter].start = sectors512(offset, blocksize);

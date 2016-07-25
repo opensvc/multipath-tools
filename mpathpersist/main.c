@@ -744,7 +744,7 @@ mpath_print_transport_id(struct prin_fulldescr *fdesc)
 			break;
 		case MPATH_PROTOCOL_ID_SAS:
 			printf("   SAS ");
-			 if (0 != fdesc->trnptid.format_code)
+			if (0 != fdesc->trnptid.format_code)
 				printf(" [Unexpected format code: %d]\n",
 						fdesc->trnptid.format_code);
 			dumpHex((const char *)fdesc->trnptid.sas_address, 8, 0);

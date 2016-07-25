@@ -664,7 +664,7 @@ dm_dev_t (const char * mapname, char * dev_t, int len)
 		goto out;
 
 	if (snprintf(dev_t, len, "%i:%i", info.major, info.minor) > len)
-		    goto out;
+		goto out;
 
 	r = 0;
 out:
