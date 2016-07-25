@@ -511,7 +511,7 @@ main (int argc, char *argv[])
 	extern int optind;
 	int r = 1;
 	enum mpath_cmds cmd = CMD_CREATE;
-	enum devtypes dev_type;
+	enum devtypes dev_type = DEV_NONE;
 	char *dev = NULL;
 	struct config *conf;
 
