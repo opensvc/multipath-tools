@@ -49,8 +49,6 @@ struct client {
 LIST_HEAD(clients);
 pthread_mutex_t client_lock = PTHREAD_MUTEX_INITIALIZER;
 struct pollfd *polls;
-volatile sig_atomic_t reconfig_sig = 0;
-volatile sig_atomic_t log_reset_sig = 0;
 
 /*
  * handle a new client joining

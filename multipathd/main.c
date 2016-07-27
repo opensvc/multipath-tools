@@ -117,6 +117,11 @@ struct udev * udev;
 
 struct config *multipath_conf;
 
+/* Local variables */
+static volatile sig_atomic_t exit_sig;
+static volatile sig_atomic_t reconfig_sig;
+static volatile sig_atomic_t log_reset_sig;
+
 const char *
 daemon_status(void)
 {
@@ -2070,6 +2075,10 @@ signal_set(int signo, void (*func) (int))
 void
 handle_signals(void)
 {
+	if (exit_sig) {
+		condlog(2, "exit (signal)");
+		exit_daemon();
+	}
 	if (reconfig_sig) {
 		condlog(2, "reconfigure (signal)");
 		set_config_state(DAEMON_CONFIGURE);
@@ -2080,6 +2089,7 @@ handle_signals(void)
 		log_reset("multipathd");
 		pthread_mutex_unlock(&logq_lock);
 	}
+	exit_sig = 0;
 	reconfig_sig = 0;
 	log_reset_sig = 0;
 }
@@ -2093,7 +2103,7 @@ sighup (int sig)
 static void
 sigend (int sig)
 {
-	exit_daemon();
+	exit_sig = 1;
 }
 
 static void
