@@ -459,7 +459,7 @@ out:
 		condlog(3, "%s: no_path_retry = %s %s", mp->alias, buff,
 			origin);
 	else if (mp->no_path_retry != NO_PATH_RETRY_UNDEF)
-		condlog(3, "%s: no_path_retry = %s (inheritied setting)",
+		condlog(3, "%s: no_path_retry = %s (inherited setting)",
 			mp->alias, buff);
 	else
 		condlog(3, "%s: no_path_retry = undef (internal default)",
