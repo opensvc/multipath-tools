@@ -2124,11 +2124,8 @@ signal_init(void)
 	sigset_t set;
 
 	sigemptyset(&set);
-	sigaddset(&set, SIGHUP);
-	sigaddset(&set, SIGUSR1);
-	sigaddset(&set, SIGUSR2);
-	sigaddset(&set, SIGALRM);
-	pthread_sigmask(SIG_BLOCK, &set, NULL);
+	sigaddset(&set, SIGPIPE);
+	pthread_sigmask(SIG_SETMASK, &set, NULL);
 
 	signal_set(SIGHUP, sighup);
 	signal_set(SIGUSR1, sigusr1);

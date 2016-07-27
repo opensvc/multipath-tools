@@ -150,9 +150,11 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 		condlog(0, "uxsock: failed to allocate poll fds");
 		return NULL;
 	}
-	pthread_sigmask(SIG_SETMASK, NULL, &mask);
-	sigdelset(&mask, SIGHUP);
-	sigdelset(&mask, SIGUSR1);
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGINT);
+	sigaddset(&mask, SIGTERM);
+	sigaddset(&mask, SIGHUP);
+	sigaddset(&mask, SIGUSR1);
 	while (1) {
 		struct client *c, *tmp;
 		int i, poll_count, num_clients;
@@ -208,8 +210,10 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 			break;
 		}
 
-		if (poll_count == 0)
+		if (poll_count == 0) {
+			handle_signals();
 			continue;
+		}
 
 		/* see if a client wants to speak to us */
 		for (i = 1; i < num_clients + 1; i++) {
