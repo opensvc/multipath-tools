@@ -11,11 +11,7 @@ struct event_thread {
 	struct vectors *vecs;
 };
 
-struct event_thread * alloc_waiter (void);
-void free_waiter (void *data);
 void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs);
 int start_waiter_thread (struct multipath *mpp, struct vectors *vecs);
-int waiteventloop (struct event_thread *waiter);
-void *waitevent (void *et);
 
 #endif /* _WAITER_H */

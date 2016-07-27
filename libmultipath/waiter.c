@@ -24,7 +24,7 @@
 
 pthread_attr_t waiter_attr;
 
-struct event_thread *alloc_waiter (void)
+static struct event_thread *alloc_waiter (void)
 {
 
 	struct event_thread *wp;
@@ -35,7 +35,7 @@ struct event_thread *alloc_waiter (void)
 	return wp;
 }
 
-void free_waiter (void *data)
+static void free_waiter (void *data)
 {
 	struct event_thread *wp = (struct event_thread *)data;
 
@@ -67,7 +67,7 @@ void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs)
  * returns the reschedule delay
  * negative means *stop*
  */
-int waiteventloop (struct event_thread *waiter)
+static int waiteventloop (struct event_thread *waiter)
 {
 	sigset_t set, oldset;
 	int event_nr;
@@ -159,7 +159,7 @@ int waiteventloop (struct event_thread *waiter)
 	return -1; /* never reach there */
 }
 
-void *waitevent (void *et)
+static void *waitevent (void *et)
 {
 	int r;
 	struct event_thread *waiter;
