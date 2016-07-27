@@ -1,11 +1,9 @@
 #include <sys/types.h> /* for pid_t */
 #include <sys/stat.h>  /* for open */
-#include <signal.h>    /* for kill() */
-#include <errno.h>     /* for ESHRC */
-#include <stdio.h>     /* for f...() */
+#include <errno.h>     /* for EACCESS and EAGAIN */
+#include <stdio.h>     /* for snprintf() */
 #include <string.h>    /* for memset() */
-#include <stdlib.h>    /* for atoi() */
-#include <unistd.h>    /* for unlink() */
+#include <unistd.h>    /* for ftruncate() */
 #include <fcntl.h>     /* for fcntl() */
 
 #include "debug.h"

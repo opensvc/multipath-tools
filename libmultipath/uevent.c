@@ -37,7 +37,6 @@
 #include <linux/types.h>
 #include <linux/netlink.h>
 #include <pthread.h>
-#include <signal.h>
 #include <limits.h>
 #include <sys/mman.h>
 #include <libudev.h>

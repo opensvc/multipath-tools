@@ -1,7 +1,7 @@
 #ifndef _LOCK_H
 #define _LOCK_H
 
-#include <signal.h>
+#include <pthread.h>
 
 /*
  * Wrapper for the mutex. Includes a ref-count to keep
