@@ -1126,10 +1126,9 @@ out:
 	return r;
 }
 
-static void *rcu_unregister(void *param)
+static void rcu_unregister(void *param)
 {
 	rcu_unregister_thread();
-	return NULL;
 }
 
 static void *
