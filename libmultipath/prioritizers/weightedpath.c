@@ -53,6 +53,16 @@ do { \
 } while(0)
 
 static int
+build_serial_path(struct path *pp, char *str, int len)
+{
+	char *p = str;
+
+	p += snprint_path_serial(p, str + len - p, pp);
+	CHECK_LEN;
+	return 0;
+}
+
+static int
 build_wwn_path(struct path *pp, char *str, int len)
 {
 	char *p = str;
@@ -103,8 +113,13 @@ int prio_path_weight(struct path *pp, char *prio_args)
 			pp->sg_id.channel, pp->sg_id.scsi_id, pp->sg_id.lun);
 	} else if (!strcmp(regex, DEV_NAME)) {
 		strcpy(path, pp->dev);
+	} else if (!strcmp(regex, SERIAL)) {
+		if (build_serial_path(pp, path, FILE_NAME_SIZE) != 0) {
+			FREE(arg);
+			return priority;
+		}
 	} else if (!strcmp(regex, WWN)) {
-		if (build_wwn_path(pp, path, FILE_NAME_SIZE) != 0) {
+		if (build_serial_path(pp, path, FILE_NAME_SIZE) != 0) {
 			FREE(arg);
 			return priority;
 		}

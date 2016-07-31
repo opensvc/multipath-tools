@@ -503,7 +503,7 @@ snprint_path_size (char * buff, size_t len, struct path * pp)
 	return snprint_size(buff, len, pp->size);
 }
 
-static int
+int
 snprint_path_serial (char * buff, size_t len, struct path * pp)
 {
 	return snprint_str(buff, len, pp->serial);

@@ -112,6 +112,7 @@ int snprint_devices (struct config *, char *, int, struct vectors *);
 int snprint_hwtable (struct config *, char *, int, vector);
 int snprint_mptable (struct config *, char *, int, vector);
 int snprint_overrides (struct config *, char *, int, struct hwentry *);
+int snprint_path_serial (char *, size_t, struct path *);
 int snprint_host_wwnn (char *, size_t, struct path *);
 int snprint_host_wwpn (char *, size_t, struct path *);
 int snprint_tgt_wwnn (char *, size_t, struct path *);
