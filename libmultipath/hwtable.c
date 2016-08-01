@@ -882,6 +882,7 @@ static struct hwentry default_hw[] = {
 	 * Mail : XXX
 	 */
 	{
+		/* If product-ID is different from marketing name add a comment */
 		.vendor        = "VENDOR",
 		.product       = "PRODUCT",
 		.revision      = "REVISION",
