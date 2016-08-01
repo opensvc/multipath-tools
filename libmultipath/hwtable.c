@@ -679,7 +679,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "EUROLOGC",
 		.product       = "FC2502",
-		.pgpolicy      = GROUP_BY_PRIO,
+		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
 	/*
