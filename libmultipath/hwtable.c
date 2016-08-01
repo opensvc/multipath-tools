@@ -52,8 +52,11 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "3PARdata",
 		.product       = "VV",
-		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.hwhandler     = "1 alua",
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 18,
 	},
 	{
 		.vendor        = "DEC",
