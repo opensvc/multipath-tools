@@ -31,7 +31,7 @@ static struct hwentry default_hw[] = {
 		.vendor        = "COMPELNT",
 		.product       = "Compellent Vol",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
 	/*
@@ -110,7 +110,7 @@ static struct hwentry default_hw[] = {
 		.vendor        = "HP",
 		.product       = "(MSA2[02]12fc|MSA2012i)",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 18,
 		.minio         = 100,
 	},
@@ -483,14 +483,14 @@ static struct hwentry default_hw[] = {
 		.vendor        = "AIX",
 		.product       = "VDASD",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = (300 / DEFAULT_CHECKINT),
 	},
 	{
 		/* IBM 3303 NVDISK */
 		.vendor        = "IBM",
 		.product       = "3303      NVDISK",
-		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = (300 / DEFAULT_CHECKINT),
 	},
 	{
@@ -799,7 +799,7 @@ static struct hwentry default_hw[] = {
 		.product       = "FlashArray",
 		.selector      = "queue-length 0",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.pgfailback    = FAILBACK_UNDEF,
 		.fast_io_fail  = 10,
 		.dev_loss      = 60,
 	},
@@ -807,7 +807,7 @@ static struct hwentry default_hw[] = {
 		.vendor        = "HUAWEI",
 		.product       = "XSG1",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.pgfailback    = FAILBACK_UNDEF,
 	},
 	/*
 	 * Violin Memory
