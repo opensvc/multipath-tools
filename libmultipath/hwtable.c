@@ -818,7 +818,7 @@ static struct hwentry default_hw[] = {
 	 * Huawei
 	 */
 	{
-		.vendor        = "HUAWEI",
+		.vendor        = "(HUAWEI|HUASY)",
 		.product       = "XSG1",
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
