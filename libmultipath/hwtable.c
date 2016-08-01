@@ -901,18 +901,6 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = NULL,
 		.product       = NULL,
-		.features      = NULL,
-		.hwhandler     = NULL,
-		.selector      = NULL,
-		.pgpolicy      = 0,
-		.pgfailback    = 0,
-		.rr_weight     = 0,
-		.no_path_retry = 0,
-		.minio         = 0,
-		.minio_rq      = 0,
-		.checker_name  = NULL,
-		.prio_name     = NULL,
-		.prio_args     = NULL,
 	},
 };
 
