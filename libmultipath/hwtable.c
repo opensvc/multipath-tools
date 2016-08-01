@@ -586,7 +586,7 @@ static struct hwentry default_hw[] = {
 		.product       = "COMSTAR",
 		.features      = "1 queue_if_no_path",
 		.pgpolicy      = GROUP_BY_SERIAL,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 30,
 		.minio         = 128,
 	},
