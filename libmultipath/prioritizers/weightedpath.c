@@ -119,7 +119,7 @@ int prio_path_weight(struct path *pp, char *prio_args)
 			return priority;
 		}
 	} else if (!strcmp(regex, WWN)) {
-		if (build_serial_path(pp, path, FILE_NAME_SIZE) != 0) {
+		if (build_wwn_path(pp, path, FILE_NAME_SIZE) != 0) {
 			FREE(arg);
 			return priority;
 		}
