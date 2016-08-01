@@ -576,16 +576,6 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ONTAP,
 	},
 	{
-		/* IBM NSeries */
-		.vendor        = "IBM",
-		.product       = "Nseries.*",
-		.features      = "1 queue_if_no_path",
-		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.minio         = 128,
-		.prio_name     = PRIO_ONTAP,
-	},
-	{
 		/*
 		 * RDAC family
 		 *
