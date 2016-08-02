@@ -68,7 +68,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 12,
 	},
 	{
-		/* MSA 1000/MSA1500 EVA 3000/5000 with old firmware */
+		/* MSA 1000/1500 and EVA 3000/5000, with old firmware */
 		.vendor        = "(COMPAQ|HP)",
 		.product       = "(MSA|HSV)1.0.*",
 		.features      = "1 queue_if_no_path",
@@ -174,6 +174,7 @@ static struct hwentry default_hw[] = {
 	 * Mail : egoggin@emc.com
 	 */
 	{
+		/* Symmetrix / DMX / VMAX */
 		.vendor        = "EMC",
 		.product       = "SYMMETRIX",
 		.pgpolicy      = MULTIBUS,
@@ -194,6 +195,7 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_EMC,
 	},
 	{
+		/* Invista / VPLEX */
 		.vendor        = "EMC",
 		.product       = "Invista",
 		.bl_product    = "LUNZ",
@@ -290,11 +292,13 @@ static struct hwentry default_hw[] = {
 	 * Mail : matthias.rudolph@hds.com
 	 */
 	{
+		/* USP-V, HUS VM, VSP, VSP G1000 and VSP GX00 families */
 		.vendor        = "(HITACHI|HP)",
 		.product       = "OPEN-.*",
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
+		/* AMS 2000 and HUS 100 families */
 	{
 		.vendor        = "HITACHI",
 		.product       = "DF.*",
@@ -578,7 +582,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/*
-		 * RDAC family
+		 * SANtricity(RDAC) family
 		 *
 		 * Maintainer : Sean Stewart
 		 * Mail : sean.stewart@netapp.com
@@ -630,7 +634,7 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_RDAC,
 	},
 	{
-		/* InfiniteStorage */
+		/* InfiniteStorage ??? */
 		.vendor        = "SGI",
 		.product       = "IS.*",
 		.bl_product    = "Universal Xport",
@@ -722,7 +726,7 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_RDAC,
 	},
 	{
-		/* 2510 / 2540 / 2530 / 2540 */
+		/* 2510 / 2530 / 2540 */
 		.vendor        = "SUN",
 		.product       = "LCSM100_[IEFS]",
 		.bl_product    = "Universal Xport",
