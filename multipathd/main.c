@@ -2536,7 +2536,7 @@ main (int argc, char *argv[])
 	udev = udev_new();
 
 	while ((arg = getopt(argc, argv, ":dsv:k::Bn")) != EOF ) {
-	switch(arg) {
+		switch(arg) {
 		case 'd':
 			foreground = 1;
 			if (logsink > 0)

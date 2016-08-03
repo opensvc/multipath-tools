@@ -258,7 +258,8 @@ main(int argc, char **argv){
 		exit(1);
 	}
 
-	while ((arg = getopt(argc, argv, short_opts)) != EOF) switch(arg) {
+	while ((arg = getopt(argc, argv, short_opts)) != EOF)
+		switch(arg) {
 		case 'r':
 			ro=1;
 			break;
@@ -295,7 +296,7 @@ main(int argc, char **argv){
 		default:
 			usage();
 			exit(1);
-	}
+		}
 
 #ifdef LIBDM_API_COOKIE
 	if (!udev_sync)

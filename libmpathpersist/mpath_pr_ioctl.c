@@ -272,22 +272,22 @@ decode_transport_id(struct prin_fulldescr *fdesc, unsigned char * p, int length)
 		fdesc->trnptid.format_code = ((p[0] >> 6) & 0x3);
 		fdesc->trnptid.protocol_id = (p[0] & 0xf);
 		switch (fdesc->trnptid.protocol_id) {
-			case MPATH_PROTOCOL_ID_FC:
-				memcpy(&fdesc->trnptid.n_port_name, &p[8], 8);
-				jump = 24;
-				break;
-			case MPATH_PROTOCOL_ID_ISCSI:
-				num = ((p[2] << 8) | p[3]);
-				memcpy(&fdesc->trnptid.iscsi_name, &p[4], num);
-				jump = (((num + 4) < 24) ? 24 : num + 4);
-				break;
-			case MPATH_PROTOCOL_ID_SAS:
-				memcpy(&fdesc->trnptid.sas_address, &p[4], 8);
-				jump = 24;
-				break;
-			default:
-				jump = 24;
-				break;
+		case MPATH_PROTOCOL_ID_FC:
+			memcpy(&fdesc->trnptid.n_port_name, &p[8], 8);
+			jump = 24;
+			break;
+		case MPATH_PROTOCOL_ID_ISCSI:
+			num = ((p[2] << 8) | p[3]);
+			memcpy(&fdesc->trnptid.iscsi_name, &p[4], num);
+			jump = (((num + 4) < 24) ? 24 : num + 4);
+			break;
+		case MPATH_PROTOCOL_ID_SAS:
+			memcpy(&fdesc->trnptid.sas_address, &p[4], 8);
+			jump = 24;
+			break;
+		default:
+			jump = 24;
+			break;
 		}
 	}
 }
@@ -411,57 +411,57 @@ int mpath_translate_response (char * dev, struct sg_io_hdr io_hdr,
 		return MPATH_PR_SUCCESS;
 
 	switch(io_hdr.status) {
-		case SAM_STAT_GOOD:
-			break;
-		case SAM_STAT_CHECK_CONDITION:
-			condlog(2, "%s: Sense_Key=%02x, ASC=%02x ASCQ=%02x",
-				dev, Sensedata->Sense_Key,
-				Sensedata->ASC, Sensedata->ASCQ);
-			switch(Sensedata->Sense_Key) {
-				case NO_SENSE:
-					return MPATH_PR_NO_SENSE;
-				case RECOVERED_ERROR:
-					return MPATH_PR_SUCCESS;
-				case NOT_READY:
-					return MPATH_PR_SENSE_NOT_READY;
-				case MEDIUM_ERROR:
-					return MPATH_PR_SENSE_MEDIUM_ERROR;
-				case BLANK_CHECK:
-					return MPATH_PR_OTHER;
-				case HARDWARE_ERROR:
-					return MPATH_PR_SENSE_HARDWARE_ERROR;
-				case ILLEGAL_REQUEST:
-					return MPATH_PR_ILLEGAL_REQ;
-				case UNIT_ATTENTION:
-					return MPATH_PR_SENSE_UNIT_ATTENTION;
-				case DATA_PROTECT:
-				case COPY_ABORTED:
-					return MPATH_PR_OTHER;
-				case ABORTED_COMMAND:
-					return MPATH_PR_SENSE_ABORTED_COMMAND;
-
-				default :
-					return MPATH_PR_OTHER;
-			}
-		case SAM_STAT_RESERVATION_CONFLICT:
-			return MPATH_PR_RESERV_CONFLICT;
+	case SAM_STAT_GOOD:
+		break;
+	case SAM_STAT_CHECK_CONDITION:
+		condlog(2, "%s: Sense_Key=%02x, ASC=%02x ASCQ=%02x",
+			dev, Sensedata->Sense_Key,
+			Sensedata->ASC, Sensedata->ASCQ);
+		switch(Sensedata->Sense_Key) {
+		case NO_SENSE:
+			return MPATH_PR_NO_SENSE;
+		case RECOVERED_ERROR:
+			return MPATH_PR_SUCCESS;
+		case NOT_READY:
+			return MPATH_PR_SENSE_NOT_READY;
+		case MEDIUM_ERROR:
+			return MPATH_PR_SENSE_MEDIUM_ERROR;
+		case BLANK_CHECK:
+			return MPATH_PR_OTHER;
+		case HARDWARE_ERROR:
+			return MPATH_PR_SENSE_HARDWARE_ERROR;
+		case ILLEGAL_REQUEST:
+			return MPATH_PR_ILLEGAL_REQ;
+		case UNIT_ATTENTION:
+			return MPATH_PR_SENSE_UNIT_ATTENTION;
+		case DATA_PROTECT:
+		case COPY_ABORTED:
+			return MPATH_PR_OTHER;
+		case ABORTED_COMMAND:
+			return MPATH_PR_SENSE_ABORTED_COMMAND;
 
 		default :
-			return  MPATH_PR_OTHER;
+			return MPATH_PR_OTHER;
+		}
+	case SAM_STAT_RESERVATION_CONFLICT:
+		return MPATH_PR_RESERV_CONFLICT;
+
+	default :
+		return  MPATH_PR_OTHER;
 	}
 
 	switch(io_hdr.host_status) {
-		case DID_OK :
-			break;
-		default :
-			return MPATH_PR_OTHER;
+	case DID_OK :
+		break;
+	default :
+		return MPATH_PR_OTHER;
 	}
 	switch(io_hdr.driver_status)
 	{
-		case DRIVER_OK:
-			break;
-		default :
-			return MPATH_PR_OTHER;
+	case DRIVER_OK:
+		break;
+	default :
+		return MPATH_PR_OTHER;
 	}
 	return MPATH_PR_SUCCESS;
 }
