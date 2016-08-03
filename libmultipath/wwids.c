@@ -273,7 +273,7 @@ out:
 int
 should_multipath(struct path *pp1, vector pathvec)
 {
-	int i, ignore_new_devs;;
+	int i, ignore_new_devs;
 	struct path *pp2;
 	struct config *conf;
 

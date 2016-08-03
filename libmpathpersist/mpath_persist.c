@@ -642,7 +642,7 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	struct path *pp = NULL;
 	int active_pathcount = 0;
 	pthread_attr_t attr;
-	int rc, found = 0;;
+	int rc, found = 0;
 	int count = 0;
 	int status = MPATH_PR_SUCCESS;
 	struct prin_resp resp;
