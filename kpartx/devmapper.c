@@ -47,7 +47,7 @@ dm_prereq (char * str, int x, int y, int z)
 		target = (void *) target + target->next;
 	} while (last_target != target);
 
-	out:
+out:
 	dm_task_destroy(dmt);
 	return r;
 }
@@ -85,7 +85,7 @@ dm_simplecmd (int task, const char *name, int no_flush, uint16_t udev_flags) {
 	if (udev_wait_flag)
 			dm_udev_wait(cookie);
 #endif
-	out:
+out:
 	dm_task_destroy(dmt);
 	return r;
 }

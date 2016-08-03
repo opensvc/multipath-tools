@@ -243,7 +243,7 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t 
 
 	if (udev_wait_flag)
 			dm_udev_wait(cookie);
-	out:
+out:
 	dm_task_destroy (dmt);
 	return r;
 }
@@ -327,11 +327,11 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 
 	if (task == DM_DEVICE_CREATE)
 			dm_udev_wait(cookie);
-	freeout:
+freeout:
 	if (prefixed_uuid)
 		FREE(prefixed_uuid);
 
-	addout:
+addout:
 	dm_task_destroy (dmt);
 
 	return r;
@@ -891,7 +891,7 @@ dm_flush_maps (void)
 		names = (void *) names + next;
 	} while (next);
 
-	out:
+out:
 	dm_task_destroy (dmt);
 	return r;
 }
