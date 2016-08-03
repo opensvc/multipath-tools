@@ -466,7 +466,7 @@ int mpath_translate_response (char * dev, struct sg_io_hdr io_hdr,
 	return MPATH_PR_SUCCESS;
 }
 
-int mpath_isLittleEndian()
+int mpath_isLittleEndian(void)
 {
 	int num = 1;
 	if(*(char *)&num == 1)
