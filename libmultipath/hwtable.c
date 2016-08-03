@@ -523,12 +523,12 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = 15,
 		.minio         = 15,
 	},
-	/*
-	 * IBM Power Virtual SCSI Devices
-	 *
-	 * Maintainer : Brian King, IBM
-	 * Mail : brking@linux.vnet.ibm.com
-	 */
+		/*
+		 * IBM Power Virtual SCSI Devices
+		 *
+		 * Maintainer : Brian King, IBM
+		 * Mail : brking@linux.vnet.ibm.com
+		 */
 	{
 		.vendor        = "AIX",
 		.product       = "VDASD",
