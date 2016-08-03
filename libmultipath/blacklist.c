@@ -210,7 +210,7 @@ setup_default_blist (struct config * conf)
 			if (alloc_ble_device(conf->blist_device))
 				return 1;
 			ble = VECTOR_SLOT(conf->blist_device,
-					  VECTOR_SIZE(conf->blist_device) -1);
+					  VECTOR_SIZE(conf->blist_device) - 1);
 			if (set_ble_device(conf->blist_device,
 					   STRDUP(hwe->vendor),
 					   STRDUP(hwe->bl_product),

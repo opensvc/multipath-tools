@@ -514,7 +514,7 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 			if (rc){
 				condlog (0, "%s: failed to create thread %d", mpp->wwid, rc);
 			}
-			count = count +1;
+			count = count + 1;
 		}
 	}
 	for( i=0; i < active_pathcount ; i++){

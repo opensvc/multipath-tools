@@ -662,7 +662,7 @@ void mpath_print_buf_readfullstat( struct prin_resp *pr_buff)
 
 		if (pr_buff->prin_descriptor.prin_readfd.descriptors[i]->flag & 0x1) {
 			printf("      << Reservation holder >>\n");
-			j = ((pr_buff->prin_descriptor.prin_readfd.descriptors[i]->scope_type>> 4) & 0xf);
+			j = ((pr_buff->prin_descriptor.prin_readfd.descriptors[i]->scope_type >> 4) & 0xf);
 			if (0 == j)
 				printf("      scope: LU_SCOPE, ");
 			else

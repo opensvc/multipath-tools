@@ -28,7 +28,7 @@ struct disklabel {
 	u_int64_t d_res2;
 	u_int64_t d_res3;
 	struct d_partition d_partitions[MAX_PARTITIONS];
-	u_int8_t d_pad[0x600 - MAX_PARTITIONS * sizeof(struct d_partition)- 0x30];
+	u_int8_t d_pad[0x600 - MAX_PARTITIONS * sizeof(struct d_partition) - 0x30];
 };
 
 static int

@@ -345,7 +345,7 @@ libcheck_check (struct checker * c)
 		r = pthread_cond_timedwait(&ct->active, &ct->lock, &tsp);
 		tur_status = ct->state;
 		strncpy(c->message, ct->message,CHECKER_MSG_LEN);
-		c->message[CHECKER_MSG_LEN -1] = '\0';
+		c->message[CHECKER_MSG_LEN - 1] = '\0';
 		pthread_mutex_unlock(&ct->lock);
 		if (ct->thread &&
 		    (tur_status == PATH_PENDING || tur_status == PATH_UNCHECKED)) {
