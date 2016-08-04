@@ -1,6 +1,8 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
+#include <sys/types.h>
+
 size_t strchop(char *);
 int basenamecpy (const char * src, char * dst, int);
 int filepresent (char * run);
