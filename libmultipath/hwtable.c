@@ -276,7 +276,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* FibreCAT S80 */
-		.vendor        = "EUROLOGC",
+		.vendor        = "(EUROLOGC|EuroLogc)",
 		.product       = "FC2502",
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
@@ -755,7 +755,7 @@ static struct hwentry default_hw[] = {
 	 * Intel
 	 */
 	{
-		.vendor	       = "Intel",
+		.vendor	       = "(Intel|INTEL)",
 		.product       = "Multi-Flex",
 		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
