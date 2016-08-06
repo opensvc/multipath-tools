@@ -846,21 +846,6 @@ static struct hwentry default_hw[] = {
 		.flush_on_last_del = FLUSH_ENABLED,
 		.dev_loss      = 30,
 	},
-	/*
-	 * Tegile Systems
-	 */
-	{
-		.vendor        = "TEGILE",
-		.product       = "(ZEBI-(FC|ISCSI)|INTELLIFLASH)",
-		.hwhandler     = "1 alua",
-		.selector      = "round-robin 0",
-		.no_path_retry = 10,
-		.dev_loss      = 50,
-		.prio_name     = PRIO_ALUA,
-		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = 30,
-		.minio         = 128,
-	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
