@@ -816,21 +816,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
-	/*
-	 * Violin Memory
-	 */
-	{
-		.vendor        = "VIOLIN",
-		.product       = "CONCERTO ARRAY",
-		.selector      = "round-robin 0",
-		.pgpolicy      = MULTIBUS,
-		.prio_name     = PRIO_ALUA,
-		.minio         = 100,
-		.rr_weight     = RR_WEIGHT_PRIO,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.features      = "1 queue_if_no_path",
-		.no_path_retry = 300,
-	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
