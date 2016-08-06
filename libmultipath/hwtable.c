@@ -831,21 +831,6 @@ static struct hwentry default_hw[] = {
 		.features      = "1 queue_if_no_path",
 		.no_path_retry = 300,
 	},
-	/*
-	 * Infinidat
-	 */
-	{
-		.vendor        = "NFINIDAT",
-		.product       = "InfiniBox",
-		.prio_name     = PRIO_ALUA,
-		.selector      = "round-robin 0",
-		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = 30,
-		.rr_weight     = RR_WEIGHT_PRIO,
-		.no_path_retry = NO_PATH_RETRY_FAIL,
-		.flush_on_last_del = FLUSH_ENABLED,
-		.dev_loss      = 30,
-	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
