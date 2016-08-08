@@ -52,6 +52,7 @@ enum sysfs_buses {
 	SYSFS_BUS_IDE,
 	SYSFS_BUS_CCW,
 	SYSFS_BUS_CCISS,
+	SYSFS_BUS_RBD,
 };
 
 enum pathstates {

@@ -84,6 +84,7 @@ enum path_check_state {
 #define EMC_CLARIION "emc_clariion"
 #define READSECTOR0  "readsector0"
 #define CCISS_TUR    "cciss_tur"
+#define RBD          "rbd"
 
 #define DEFAULT_CHECKER TUR
 
