@@ -97,6 +97,11 @@ void libcheck_free (struct checker * c)
 	return;
 }
 
+void libcheck_repair (struct checker * c)
+{
+	return;
+}
+
 #define TUR_MSG(msg, fmt, args...) snprintf(msg, CHECKER_MSG_LEN, fmt, ##args);
 
 int

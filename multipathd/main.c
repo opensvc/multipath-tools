@@ -1725,6 +1725,14 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	return 1;
 }
 
+void repair_path(struct vectors * vecs, struct path * pp)
+{
+	if (pp->state != PATH_DOWN)
+		return;
+
+	checker_repair(&pp->checker);
+}
+
 static void *
 checkerloop (void *ap)
 {
@@ -1796,6 +1804,7 @@ checkerloop (void *ap)
 					i--;
 				} else
 					num_paths += rc;
+				repair_path(vecs, pp);
 			}
 			lock_cleanup_pop(vecs->lock);
 		}

@@ -138,6 +138,14 @@ struct checker * add_checker (char *multipath_dir, char * name)
 	if (!c->free)
 		goto out;
 
+	c->repair = (void (*)(struct checker *)) dlsym(c->handle,
+						       "libcheck_repair");
+	errstr = dlerror();
+	if (errstr != NULL)
+		condlog(0, "A dynamic linking error occurred: (%s)", errstr);
+	if (!c->repair)
+		goto out;
+
 	c->fd = 0;
 	c->sync = 1;
 	list_add(&c->node, &checkers);
@@ -201,6 +209,20 @@ void checker_put (struct checker * dst)
 		dst->free(dst);
 	memset(dst, 0x0, sizeof(struct checker));
 	free_checker(src);
+}
+
+void checker_repair (struct checker * c)
+{
+	if (!c)
+		return;
+
+	c->message[0] = '\0';
+	if (c->disable) {
+		MSG(c, "checker disabled");
+		return;
+	}
+
+	c->repair(c);
 }
 
 int checker_check (struct checker * c)
@@ -272,6 +294,7 @@ void checker_get (char *multipath_dir, struct checker * dst, char * name)
 	dst->sync = src->sync;
 	strncpy(dst->name, src->name, CHECKER_NAME_LEN);
 	strncpy(dst->message, src->message, CHECKER_MSG_LEN);
+	dst->repair = src->repair;
 	dst->check = src->check;
 	dst->init = src->init;
 	dst->free = src->free;
