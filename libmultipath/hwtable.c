@@ -816,6 +816,20 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
+	/*
+	 * Red Hat
+	 *
+	 * Maintainer: Mike Christie
+	 * Mail: mchristi@redhat.com
+	 */
+	{
+		.vendor        = "Ceph",
+		.product       = "RBD",
+		.pgpolicy      = FAILOVER,
+		.no_path_retry = NO_PATH_RETRY_FAIL,
+		.checker_name  = RBD,
+		.deferred_remove = DEFERRED_REMOVE_ON,
+	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
