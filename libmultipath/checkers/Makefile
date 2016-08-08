@@ -11,11 +11,15 @@ LIBS= \
 	libcheckdirectio.so \
 	libcheckemc_clariion.so \
 	libcheckhp_sw.so \
-	libcheckrdac.so
+	libcheckrdac.so \
+	libcheckrbd.so
 
 CFLAGS += -I..
 
 all: $(LIBS)
+
+libcheckrbd.so: rbd.o
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ -lrados -ludev
 
 libcheckdirectio.so: libsg.o directio.o
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ -laio
