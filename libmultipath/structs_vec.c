@@ -88,8 +88,6 @@ orphan_path (struct path * pp, const char *reason)
 	pp->mpp = NULL;
 	pp->dmstate = PSTATE_UNDEF;
 	pp->uid_attribute = NULL;
-	if (pp->getuid)
-		free(pp->getuid);
 	pp->getuid = NULL;
 	prio_put(&pp->prio);
 	checker_put(&pp->checker);
