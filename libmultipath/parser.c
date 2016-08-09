@@ -171,7 +171,7 @@ snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw, void *data)
 			r = kw->print(conf, buff + fwd, len - fwd, data);
 			put_multipath_config(conf);
 			if (!r) { /* no output if no value */
-				buff = '\0';
+				buff[0] = '\0';
 				return 0;
 			}
 			fwd += r;
