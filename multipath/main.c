@@ -212,7 +212,7 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 		/*
 		 * discard out of scope maps
 		 */
-		if (mpp->wwid && refwwid &&
+		if (refwwid && strlen(refwwid) &&
 		    strncmp(mpp->wwid, refwwid, WWID_SIZE)) {
 			condlog(3, "skip map %s: out of scope", mpp->alias);
 			free_multipath(mpp, KEEP_PATHS);
