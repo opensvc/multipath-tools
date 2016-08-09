@@ -491,7 +491,7 @@ sysfs_get_asymmetric_access_state(struct path *pp, char *buff, int buflen)
 {
 	struct udev_device *parent = pp->udev;
 	char value[16], *eptr;
-	unsigned int preferred;
+	unsigned long preferred;
 
 	while (parent) {
 		const char *subsys = udev_device_get_subsystem(parent);
