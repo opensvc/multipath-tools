@@ -145,7 +145,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 	pthread_cleanup_push(uxsock_cleanup, NULL);
 
 	condlog(3, "uxsock: startup listener");
-	polls = (struct pollfd *)MALLOC(MIN_POLLS + 1);
+	polls = (struct pollfd *)MALLOC((MIN_POLLS + 1) * sizeof(struct pollfd));
 	if (!polls) {
 		condlog(0, "uxsock: failed to allocate poll fds");
 		return NULL;
@@ -167,9 +167,11 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 		}
 		if (num_clients != old_clients) {
 			struct pollfd *new;
-			if (num_clients < MIN_POLLS) {
+			if (num_clients <= MIN_POLLS && old_clients > MIN_POLLS) {
 				new = REALLOC(polls, (1 + MIN_POLLS) *
 						sizeof(struct pollfd));
+			} else if (num_clients <= MIN_POLLS && old_clients <= MIN_POLLS) {
+				new = polls;
 			} else {
 				new = REALLOC(polls, (1+num_clients) *
 						sizeof(struct pollfd));
@@ -181,7 +183,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 				pthread_yield();
 				continue;
 			}
-			num_clients = old_clients;
+			old_clients = num_clients;
 			polls = new;
 		}
 		polls[0].fd = ux_sock;
