@@ -864,8 +864,8 @@ static struct hwentry default_hw[] = {
 	 *
 	 * Keep only mandatory and modified attributes.
 	 * Attributes with default values must be removed.
-	 * .vendor and .product are mandatory, all other are optional.
-	 * POSIX Extended regex can be used in .vendor, .product, .revision and .bl_product
+	 * Only .vendor and .product are mandatory, all other are optional.
+	 * .vendor, .product, .revision and .bl_product are POSIX Extended regex
 	 *
 	 * COMPANY_NAME
 	 *
