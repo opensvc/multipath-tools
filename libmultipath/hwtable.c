@@ -460,7 +460,7 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
-		/* SAN Volume Controller / Storwize */
+		/* Storwize family / SAN Volume Controller / Flex System V7000 */
 		.vendor        = "IBM",
 		.product       = "^2145",
 		.features      = "1 queue_if_no_path",
@@ -803,6 +803,7 @@ static struct hwentry default_hw[] = {
 	 * Huawei
 	 */
 	{
+		/* OceanStor V3 */
 		.vendor        = "(HUAWEI|HUASY)",
 		.product       = "XSG1",
 		.pgpolicy      = MULTIBUS,
