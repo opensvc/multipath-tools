@@ -602,13 +602,13 @@ static struct hwentry default_hw[] = {
 	 */
 	{
 		.vendor        = "SGI",
-		.product       = "TP9[13]00",
+		.product       = "TP9100",
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
 		.vendor        = "SGI",
-		.product       = "TP9[45]00",
+		.product       = "TP9[345]00",
 		.bl_product    = "Universal Xport",
 		.hwhandler     = "1 rdac",
 		.pgpolicy      = GROUP_BY_PRIO,
