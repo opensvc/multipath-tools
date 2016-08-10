@@ -529,8 +529,9 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = (300 / DEFAULT_CHECKINT),
 	},
 	{
+		/* 3303 NVDISK */
 		.vendor        = "IBM",
-		.product       = "3303      NVDISK",
+		.product       = "3303[ ]+NVDISK",
 		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = (300 / DEFAULT_CHECKINT),
 	},
