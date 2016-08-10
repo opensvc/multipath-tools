@@ -645,19 +645,27 @@ static struct hwentry default_hw[] = {
 	/*
 	 * Oracle
 	 */
-	{
 		/*
-		 * Pillar Data
+		 * Pillar Data / Oracle FS
 		 *
 		 * Maintainer : Srinivasan Ramani
 		 * Mail : srinivas.ramani@oracle.com
 		 */
-		.vendor        = "Pillar",
-		.product       = "Axiom",
+	{
+		.vendor        = "^Pillar",
+		.product       = "^Axiom",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
 	},
+	{
+		.vendor        = "^Oracle",
+		.product       = "^Oracle FS",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+	},
+		/* Sun - StorageTek */
 	{
 		.vendor        = "STK",
 		.product       = "OPENstorage D280",
