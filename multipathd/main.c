@@ -1601,7 +1601,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 		pp->checkint = conf->checkint;
 		put_multipath_config(conf);
 
-		if (newstate == PATH_DOWN || newstate == PATH_SHAKY) {
+		if (newstate == PATH_DOWN || newstate == PATH_SHAKY || newstate == PATH_TIMEOUT) {
 			/*
 			 * proactively fail path in the DM
 			 */
