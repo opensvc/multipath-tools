@@ -818,7 +818,6 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "Ceph",
 		.product       = "RBD",
-		.pgpolicy      = FAILOVER,
 		.no_path_retry = NO_PATH_RETRY_FAIL,
 		.checker_name  = RBD,
 		.deferred_remove = DEFERRED_REMOVE_ON,
