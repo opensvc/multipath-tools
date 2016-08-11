@@ -527,7 +527,7 @@ static struct hwentry default_hw[] = {
 		.product       = "2810XIV",
 		.features      = "1 queue_if_no_path",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = 15,
+		.pgfailback    = FAILBACK_UNDEF,
 		.minio         = 15,
 	},
 		/*
