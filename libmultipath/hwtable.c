@@ -435,17 +435,9 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
-		/* Enterprise Storage Server / Shark 800 */
+		/* Enterprise Storage Server / Shark family */
 		.vendor        = "IBM",
-		.product       = "^2105800",
-		.features      = "1 queue_if_no_path",
-		.pgpolicy      = GROUP_BY_SERIAL,
-		.pgfailback    = FAILBACK_UNDEF,
-	},
-	{
-		/* Enterprise Storage Server / Shark F20 */
-		.vendor        = "IBM",
-		.product       = "^2105F20",
+		.product       = "^2105",
 		.features      = "1 queue_if_no_path",
 		.pgpolicy      = GROUP_BY_SERIAL,
 		.pgfailback    = FAILBACK_UNDEF,
