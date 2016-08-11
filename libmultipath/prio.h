@@ -12,9 +12,7 @@ struct path;
 
 #include "list.h"
 #include "memory.h"
-
-#define DEFAULT_PRIO "const"
-#define DEFAULT_PRIO_ARGS ""
+#include "defaults.h"
 
 /*
  * Known prioritizers for use in hwtable.c
