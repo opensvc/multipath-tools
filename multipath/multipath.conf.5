@@ -147,10 +147,11 @@ Default value is: \fBno\fR
 .
 .TP
 .B multipath_dir
-Directory where the dynamic shared objects are stored. Defined at compile time.
+Directory where the dynamic shared objects are stored.
 .RS
 .TP
-Default value is: \fB<system dependent>\fR, commonly \fI/lib64/multipath/\fR
+Default value is: \fB<system dependent>\fR. Defined at compile time, commonly
+\fI/lib64/multipath/\fR.
 .RE
 .
 .
@@ -302,8 +303,9 @@ regex can be of SCSI H:B:T:L format. For example: 1:0:.:. , *:0:0:.
 regex can be of device name format. For example: sda , sd.e
 .TP
 .I serial
-regex can be of serial number format. For example: .*J1FR.*324 . The serial can be looked
-up through sysfs or by running multipathd show paths format "%z". For example: 0395J1FR904324
+regex can be of serial number format. For example: .*J1FR.*324 . The serial can
+be looked up through sysfs or by running multipathd show paths format "%z". For
+example: 0395J1FR904324
 .TP
 .I wwn
 regex can be of the form \fI"host_wwnn:host_wwpn:target_wwnn:target_wwpn"\fR
@@ -335,8 +337,8 @@ Possible values for the feature list are:
 .RS
 .TP 12
 .I queue_if_no_path
-(Superseded by \fIno_path_retry\fR) Queue IO if no path is active. Identical to the \fIno_path_retry\fR with
-\fIqueue\fR value. See KNOWN ISSUES.
+(Superseded by \fIno_path_retry\fR) Queue IO if no path is active. Identical to
+the \fIno_path_retry\fR with \fIqueue\fR value. See KNOWN ISSUES.
 .TP
 .I no_partitions
 Disable automatic partitions generation via kpartx.
@@ -576,7 +578,8 @@ Default value is: \fB600\fR
 .
 .TP
 .B bindings_file
-The full pathname of the binding file to be used when the user_friendly_names option is set.
+The full pathname of the binding file to be used when the user_friendly_names
+option is set.
 .RS
 .TP
 Default value is: \fB/etc/multipath/bindings\fR
