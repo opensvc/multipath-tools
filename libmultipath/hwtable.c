@@ -855,6 +855,15 @@ static struct hwentry default_hw[] = {
 		.checker_name  = RBD,
 		.deferred_remove = DEFERRED_REMOVE_ON,
 	},
+	/*
+	 * Kove
+	 */
+	{
+		.vendor        = "KOVE",
+		.product       = "XPD",
+		.pgpolicy      = MULTIBUS,
+		.pgfailback    = FAILBACK_UNDEF,
+	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
