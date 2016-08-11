@@ -1,3 +1,7 @@
+/*
+ * If you add or modify a value also update multipath/multipath.conf.5
+ * and the TEMPLATE in libmultipath/hwtable.c
+ */
 #define DEFAULT_UID_ATTRIBUTE	"ID_SERIAL"
 #define DEFAULT_UDEVDIR		"/dev"
 #define DEFAULT_MULTIPATHDIR	"/" LIB_STRING "/multipath"

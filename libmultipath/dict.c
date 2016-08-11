@@ -1329,6 +1329,9 @@ snprint_deprecated (struct config *conf, char * buff, int len, void * data)
 
 #define __deprecated
 
+/*
+ * If you add or remove a keywork also update multipath/multipath.conf.5
+ */
 void
 init_keywords(vector keywords)
 {

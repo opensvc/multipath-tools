@@ -5,6 +5,7 @@ include ../../Makefile.inc
 
 CFLAGS += -I..
 
+# If you add or remove a prioritizer also update multipath/multipath.conf.5
 LIBS = \
 	libprioalua.so \
 	libprioconst.so \
