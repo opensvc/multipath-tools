@@ -367,7 +367,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* DS3500 / DS3512 / DS3524 */
 		.vendor        = "IBM",
-		.product       = "^(1745|1746)",
+		.product       = "^1746",
 		.bl_product    = "Universal Xport",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
