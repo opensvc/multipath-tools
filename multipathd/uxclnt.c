@@ -28,6 +28,9 @@
 
 static void print_reply(char *s)
 {
+	if (!s)
+		return;
+
 	if (isatty(1)) {
 		printf("%s", s);
 		return;

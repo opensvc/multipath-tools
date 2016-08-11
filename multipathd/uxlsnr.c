@@ -243,6 +243,10 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 					dead_client(c);
 					continue;
 				}
+				if (!inbuf) {
+					condlog(4, "recv_packet get null request");
+					continue;
+				}
 				condlog(4, "cli[%d]: Got request [%s]",
 					i, inbuf);
 				uxsock_trigger(inbuf, &reply, &rlen,
