@@ -1,16 +1,16 @@
-# Makefile
 #
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
 include ../Makefile.inc
 
-OBJS = main.o
-
 CFLAGS += -I$(multipathdir) -I$(mpathcmddir)
+
 LDFLAGS += -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath -ludev \
-	-L$(mpathcmddir) -lmpathcmd
+	   -L$(mpathcmddir) -lmpathcmd
 
 EXEC = multipath
+
+OBJS = main.o
 
 all: $(EXEC)
 

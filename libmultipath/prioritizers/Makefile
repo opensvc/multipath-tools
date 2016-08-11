@@ -1,8 +1,9 @@
-# Makefile
 #
 # Copyright (C) 2007 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
 include ../../Makefile.inc
+
+CFLAGS += -I..
 
 LIBS = \
 	libprioalua.so \
@@ -17,8 +18,6 @@ LIBS = \
 	libpriordac.so \
 	libprioweightedpath.so \
 	libpriosysfs.so
-
-CFLAGS += -I..
 
 all: $(LIBS)
 

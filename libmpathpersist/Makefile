@@ -1,23 +1,20 @@
-# Makefile
-#
 include ../Makefile.inc
 
-SONAME=0
+SONAME = 0
 DEVLIB = libmpathpersist.so
 LIBS = $(DEVLIB).$(SONAME)
 
-
 CFLAGS += -I$(multipathdir) -I$(mpathpersistdir) -I$(mpathcmddir)
-LIBDEPS +=  -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath \
-	-L$(mpathcmddir) -lmpathcmd
+
+LIBDEPS += -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath \
+	   -L$(mpathcmddir) -lmpathcmd
 
 OBJS = mpath_persist.o mpath_updatepr.o mpath_pr_ioctl.o
 
 all: $(LIBS)
 
-
 $(LIBS):
-	$(CC) -Wall -fPIC -c $(CFLAGS) *.c
+	$(CC) -c $(CFLAGS) *.c
 	$(CC) $(SHARED_FLAGS) $(LIBDEPS) -Wl,-soname=$@ $(CFLAGS) -o $@ $(OBJS)
 	$(LN) $(LIBS) $(DEVLIB)
 	$(GZIP) mpath_persistent_reserve_in.3 > mpath_persistent_reserve_in.3.gz
@@ -42,7 +39,4 @@ uninstall:
 	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 clean:
-	$(RM) core *.a *.o
-	$(RM) libmpathpersist.so.0
-	$(RM) libmpathpersist.so
-	$(RM) mpath_persistent_reserve_in.3.gz mpath_persistent_reserve_out.3.gz
+	$(RM) core *.a *.o *.so *.so.* *.gz

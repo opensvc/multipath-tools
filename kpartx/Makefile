@@ -1,4 +1,3 @@
-# Makefile
 #
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
@@ -6,15 +5,17 @@ include ../Makefile.inc
 
 CFLAGS += -I. -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 
+LDFLAGS = -ldevmapper
+
 LIBDM_API_COOKIE = $(shell grep -Ecs '^[a-z]*[[:space:]]+dm_task_set_cookie' /usr/include/libdevmapper.h)
 
 ifneq ($(strip $(LIBDM_API_COOKIE)),0)
 	CFLAGS += -DLIBDM_API_COOKIE
 endif
 
-LDFLAGS = -ldevmapper
 OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o dasd.o sun.o \
 	gpt.o mac.o ps3.o crc32.o lopart.o xstrncpy.o devmapper.o
+
 EXEC = kpartx
 
 all: $(EXEC)

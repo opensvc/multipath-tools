@@ -1,29 +1,24 @@
-# Makefile
 #
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
 include ../Makefile.inc
 
-SONAME=0
+SONAME = 0
 DEVLIB = libmultipath.so
 LIBS = $(DEVLIB).$(SONAME)
+
 CFLAGS += -I$(mpathcmddir)
+
 LIBDEPS = -lpthread -ldl -ldevmapper -ludev -L$(mpathcmddir) -lmpathcmd
+
 ifdef SYSTEMD
+	CFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
 	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
 		LIBDEPS += -lsystemd
 	else
 		LIBDEPS += -lsystemd-daemon
 	endif
 endif
-
-OBJS = memory.o parser.o vector.o devmapper.o callout.o \
-	hwtable.o blacklist.o util.o dmparser.o config.o \
-	structs.o discovery.o propsel.o dict.o \
-	pgpolicies.o debug.o defaults.o uevent.o \
-	switchgroup.o uxsock.o print.o alias.o log_pthread.o \
-	log.o configure.o structs_vec.o sysfs.o prio.o checkers.o \
-	lock.o waiter.o file.o wwids.o prioritizers/alua_rtpg.o
 
 LIBDM_API_FLUSH = $(shell grep -Ecs '^[a-z]*[[:space:]]+dm_task_no_flush' /usr/include/libdevmapper.h)
 
@@ -43,15 +38,19 @@ ifneq ($(strip $(LIBUDEV_API_RECVBUF)),0)
 	CFLAGS += -DLIBUDEV_API_RECVBUF
 endif
 
-ifdef SYSTEMD
-	CFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
-endif
-
 LIBDM_API_DEFERRED = $(shell grep -Ecs '^[a-z]*[[:space:]]+dm_task_deferred_remove' /usr/include/libdevmapper.h)
 
 ifneq ($(strip $(LIBDM_API_DEFERRED)),0)
 	CFLAGS += -DLIBDM_API_DEFERRED
 endif
+
+OBJS = memory.o parser.o vector.o devmapper.o callout.o \
+	hwtable.o blacklist.o util.o dmparser.o config.o \
+	structs.o discovery.o propsel.o dict.o \
+	pgpolicies.o debug.o defaults.o uevent.o \
+	switchgroup.o uxsock.o print.o alias.o log_pthread.o \
+	log.o configure.o structs_vec.o sysfs.o prio.o checkers.o \
+	lock.o waiter.o file.o wwids.o prioritizers/alua_rtpg.o
 
 all: $(LIBS)
 
@@ -70,4 +69,4 @@ uninstall:
 	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 clean:
-	$(RM) core *.a *.o *.gz *.so *.so.*
+	$(RM) core *.a *.o *.so *.so.* *.gz

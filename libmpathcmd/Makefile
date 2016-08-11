@@ -1,8 +1,6 @@
-# Makefile
-#
 include ../Makefile.inc
 
-SONAME=0
+SONAME = 0
 DEVLIB = libmpathcmd.so
 LIBS = $(DEVLIB).$(SONAME)
 
@@ -27,4 +25,4 @@ uninstall:
 	$(RM) $(DESTDIR)$(incdir)/mpath_cmd.h
 
 clean:
-	$(RM) core *.a *.o *.gz *.so *.so.*
+	$(RM) core *.a *.o *.so *.so.* *.gz

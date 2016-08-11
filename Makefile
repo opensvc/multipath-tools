@@ -1,4 +1,3 @@
-# Makefile
 #
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
@@ -6,16 +5,17 @@
 #
 # Try to supply the linux kernel headers.
 #
-ifeq    ($(KRNLSRC),)
-KRNLLIB = /lib/modules/$(shell uname -r)
-ifeq    ($(shell test -r $(KRNLLIB)/source && echo 1),1)
-KRNLSRC = $(KRNLLIB)/source
-KRNLOBJ = $(KRNLLIB)/build
-else
-KRNLSRC = $(KRNLLIB)/build
-KRNLOBJ = $(KRNLLIB)/build
+ifeq ($(KRNLSRC),)
+	KRNLLIB = /lib/modules/$(shell uname -r)
+	ifeq ($(shell test -r $(KRNLLIB)/source && echo 1),1)
+		KRNLSRC = $(KRNLLIB)/source
+		KRNLOBJ = $(KRNLLIB)/build
+	else
+		KRNLSRC = $(KRNLLIB)/build
+		KRNLOBJ = $(KRNLLIB)/build
+	endif
 endif
-endif
+
 export KRNLSRC
 export KRNLOBJ
 
@@ -30,10 +30,10 @@ BUILDDIRS = \
 	mpathpersist \
 	kpartx
 
-ifeq   ($(MULTIPATH_VERSION),)
-VERSION = $(shell basename ${PWD} | cut -d'-' -f3)
+ifeq ($(MULTIPATH_VERSION),)
+	VERSION = $(shell basename ${PWD} | cut -d'-' -f3)
 else
-VERSION = $(MULTIPATH_VERSION)
+	VERSION = $(MULTIPATH_VERSION)
 endif
 
 all: recurse
@@ -59,11 +59,11 @@ recurse_uninstall:
 	$(MAKE) -C $$dir uninstall || exit $?; \
 	done
 
-clean:	recurse_clean
+clean: recurse_clean
 
-install:	recurse_install
+install: recurse_install
 
-uninstall:	recurse_uninstall
+uninstall: recurse_uninstall
 
 .PHONY:	TAGS
 TAGS:

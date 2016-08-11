@@ -1,8 +1,9 @@
-# Makefile
 #
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
 include ../../Makefile.inc
+
+CFLAGS += -I..
 
 LIBS= \
 	libcheckcciss_tur.so \
@@ -13,8 +14,6 @@ LIBS= \
 	libcheckhp_sw.so \
 	libcheckrdac.so \
 	libcheckrbd.so
-
-CFLAGS += -I..
 
 all: $(LIBS)
 

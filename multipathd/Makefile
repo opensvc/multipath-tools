@@ -1,25 +1,4 @@
-EXEC = multipathd
-
 include ../Makefile.inc
-
-#
-# basic flags setting
-#
-CFLAGS += -I$(multipathdir) -I$(mpathpersistdir) -I$(mpathcmddir)
-ifdef SYSTEMD
-	CFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
-endif
-LDFLAGS += -lurcu -lpthread -ldevmapper -lreadline
-ifdef SYSTEMD
-	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
-		LDFLAGS += -lsystemd
-	else
-		LDFLAGS += -lsystemd-daemon
-	endif
-endif
-LDFLAGS += -ludev -ldl \
-	-L$(multipathdir) -lmultipath -L$(mpathpersistdir) -lmpathpersist \
-	-L$(mpathcmddir) -lmpathcmd
 
 #
 # debuging stuff
@@ -27,16 +6,25 @@ LDFLAGS += -ludev -ldl \
 #CFLAGS += -DLCKDBG
 #CFLAGS += -D_DEBUG_
 #CFLAGS += -DLOGDBG
+CFLAGS += -I$(multipathdir) -I$(mpathpersistdir) -I$(mpathcmddir)
 
-#
-# object files
-#
+LDFLAGS += -ludev -ldl -L$(multipathdir) -lmultipath -L$(mpathpersistdir) \
+	   -lmpathpersist -L$(mpathcmddir) -lmpathcmd -lurcu -lpthread \
+	   -ldevmapper -lreadline
+
+ifdef SYSTEMD
+	CFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
+	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
+		LDFLAGS += -lsystemd
+	else
+		LDFLAGS += -lsystemd-daemon
+	endif
+endif
+
 OBJS = main.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o
 
+EXEC = multipathd
 
-#
-# directives
-#
 all : $(EXEC)
 
 $(EXEC): $(OBJS)

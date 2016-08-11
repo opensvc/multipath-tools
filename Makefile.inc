@@ -1,6 +1,6 @@
-# Makefile.inc
 #
 # Copyright (C) 2004 Christophe Varoqui, <christophe.varoqui@opensvc.com>
+#
 
 #
 # Allow to force some libraries to be used statically. (Uncomment one of the
@@ -39,32 +39,32 @@ ifndef SYSTEMDPATH
 	SYSTEMDPATH=usr/lib
 endif
 
-prefix      =
-exec_prefix = $(prefix)
-bindir      = $(exec_prefix)/sbin
-libudevdir  = $(prefix)/$(SYSTEMDPATH)/udev
-udevrulesdir = $(libudevdir)/rules.d
-multipathdir = $(TOPDIR)/libmultipath
-mandir      = $(prefix)/usr/share/man/man8
-man5dir     = $(prefix)/usr/share/man/man5
-man3dir      = $(prefix)/usr/share/man/man3
-syslibdir   = $(prefix)/$(LIB)
-incdir      = $(prefix)/usr/include
-libdir	    = $(prefix)/$(LIB)/multipath
-unitdir     = $(prefix)/$(SYSTEMDPATH)/systemd/system
-mpathpersistdir = $(TOPDIR)/libmpathpersist
-mpathcmddir = $(TOPDIR)/libmpathcmd
+prefix		=
+exec_prefix	= $(prefix)
+bindir		= $(exec_prefix)/sbin
+libudevdir	= $(prefix)/$(SYSTEMDPATH)/udev
+udevrulesdir	= $(libudevdir)/rules.d
+multipathdir	= $(TOPDIR)/libmultipath
+mandir		= $(prefix)/usr/share/man/man8
+man5dir		= $(prefix)/usr/share/man/man5
+man3dir		= $(prefix)/usr/share/man/man3
+syslibdir	= $(prefix)/$(LIB)
+incdir		= $(prefix)/usr/include
+libdir		= $(prefix)/$(LIB)/multipath
+unitdir		= $(prefix)/$(SYSTEMDPATH)/systemd/system
+mpathpersistdir	= $(TOPDIR)/libmpathpersist
+mpathcmddir	= $(TOPDIR)/libmpathcmd
 
-GZIP        = gzip -9 -c
-RM          = rm -f
-LN          = ln -sf
-INSTALL_PROGRAM = install
+GZIP		= gzip -9 -c
+RM		= rm -f
+LN		= ln -sf
+INSTALL_PROGRAM	= install
 
-OPTFLAGS     = -Wunused -Wstrict-prototypes -O2 -g -pipe -Wformat-security -Wall \
-		-Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4
+OPTFLAGS	= -Wunused -Wstrict-prototypes -O2 -g -pipe -Wformat-security -Wall \
+		  -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4
 
-CFLAGS	     = $(OPTFLAGS) -fPIC -DLIB_STRING=\"${LIB}\" -DRUN_DIR=\"${RUN}\"
-SHARED_FLAGS = -shared
+CFLAGS		= $(OPTFLAGS) -fPIC -DLIB_STRING=\"${LIB}\" -DRUN_DIR=\"${RUN}\"
+SHARED_FLAGS	= -shared
 
 %.o:	%.c
 	$(CC) $(CFLAGS) -c -o $@ $<

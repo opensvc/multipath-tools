@@ -1,13 +1,13 @@
-# Makefile
-#
 include ../Makefile.inc
 
-OBJS = main.o
-
 CFLAGS += -I$(multipathdir) -I$(mpathpersistdir)
-LDFLAGS += -lpthread -ldevmapper -L$(mpathpersistdir) -lmpathpersist -L$(multipathdir) -L$(mpathcmddir) -lmpathcmd -lmultipath -ludev
+
+LDFLAGS += -lpthread -ldevmapper -L$(mpathpersistdir) -lmpathpersist \
+	   -L$(multipathdir) -L$(mpathcmddir) -lmpathcmd -lmultipath -ludev
 
 EXEC = mpathpersist
+
+OBJS = main.o
 
 all: $(EXEC)
 
@@ -22,8 +22,7 @@ install:
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
 
 clean:
-	$(RM) *.o $(EXEC)
-	$(RM) mpathpersist.8.gz
+	$(RM) core *.o $(EXEC) *.gz
 
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
