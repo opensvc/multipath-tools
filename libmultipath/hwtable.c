@@ -169,9 +169,6 @@ static struct hwentry default_hw[] = {
 	},
 	/*
 	 * EMC
-	 *
-	 * Maintainer : Edward Goggin
-	 * Mail : egoggin@emc.com
 	 */
 	{
 		/* Symmetrix / DMX / VMAX */
