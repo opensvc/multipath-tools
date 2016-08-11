@@ -287,14 +287,14 @@ static struct hwentry default_hw[] = {
 	{
 		/* USP-V, HUS VM, VSP, VSP G1000 and VSP GX00 families */
 		.vendor        = "(HITACHI|HP)",
-		.product       = "OPEN-",
+		.product       = "^OPEN-",
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
 		/* AMS 2000 and HUS 100 families */
 		.vendor        = "HITACHI",
-		.product       = "DF",
+		.product       = "^DF",
 		.features      = "1 queue_if_no_path",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
