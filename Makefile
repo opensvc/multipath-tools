@@ -16,6 +16,12 @@ ifeq ($(KRNLSRC),)
 	endif
 endif
 
+ifeq ($(MULTIPATH_VERSION),)
+	VERSION = $(shell basename ${PWD} | cut -d'-' -f3)
+else
+	VERSION = $(MULTIPATH_VERSION)
+endif
+
 export KRNLSRC
 export KRNLOBJ
 
@@ -29,12 +35,6 @@ BUILDDIRS = \
 	multipathd \
 	mpathpersist \
 	kpartx
-
-ifeq ($(MULTIPATH_VERSION),)
-	VERSION = $(shell basename ${PWD} | cut -d'-' -f3)
-else
-	VERSION = $(MULTIPATH_VERSION)
-endif
 
 all: recurse
 
