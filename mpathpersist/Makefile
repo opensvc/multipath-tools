@@ -12,7 +12,7 @@ OBJS = main.o
 all: $(EXEC)
 
 $(EXEC): $(OBJS)
-	$(CC) -g $(OBJS) -o $(EXEC) $(LDFLAGS) $(CFLAGS)
+	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS) $(CFLAGS)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 
 install:
