@@ -5,7 +5,7 @@ include ../Makefile.inc
 
 CFLAGS += -I. -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 
-LDFLAGS = -ldevmapper
+LDFLAGS += -ldevmapper
 
 LIBDM_API_COOKIE = $(shell grep -Ecs '^[a-z]*[[:space:]]+dm_task_set_cookie' /usr/include/libdevmapper.h)
 
