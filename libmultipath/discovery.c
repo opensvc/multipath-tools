@@ -1435,10 +1435,14 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 	if (!attr_path || pp->sg_id.host_no == -1)
 		return 0;
 
-	if (get_vpd_sysfs(parent, 0x80, pp->serial, SERIAL_SIZE) > 0)
-		condlog(3, "%s: serial = %s",
-			pp->dev, pp->serial);
+	if (get_vpd_sysfs(parent, 0x80, pp->serial, SERIAL_SIZE) <= 0) {
+		if (get_serial(pp->serial, SERIAL_SIZE, pp->fd)) {
+			condlog(2, "%s: fail to get serial", pp->dev);
+			return 0;
+		}
+	}
 
+	condlog(3, "%s: serial = %s", pp->dev, pp->serial);
 	return 0;
 }
 
