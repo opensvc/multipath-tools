@@ -623,7 +623,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		.vendor        = "SGI",
-		.product       = "TP9[345]00",
+		.product       = "TP9[3457]00",
 		.bl_product    = "Universal Xport",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
@@ -725,9 +725,9 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	{
-		/* 6140 */
+		/* 6130 / 6140 */
 		.vendor        = "SUN",
-		.product       = "CSM200_R",
+		.product       = "CSM[12]00_R",
 		.bl_product    = "Universal Xport",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
