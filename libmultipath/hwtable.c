@@ -738,7 +738,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	{
-		/* 2510 / 2530 / 2540 */
+		/* 2500 / 2510 / 2530 / 2540 */
 		.vendor        = "SUN",
 		.product       = "LCSM100_[IEFS]",
 		.bl_product    = "Universal Xport",
