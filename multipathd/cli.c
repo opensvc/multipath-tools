@@ -490,7 +490,7 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data, int timeout )
 			vecs->lock.depth++;
 			r = pthread_mutex_timedlock(vecs->lock.mutex, &tmo);
 		} else {
-			lock(vecs->lock);
+			lock(&vecs->lock);
 			r = 0;
 		}
 		if (r == 0) {

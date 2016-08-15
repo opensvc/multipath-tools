@@ -138,7 +138,7 @@ static int waiteventloop (struct event_thread *waiter)
 		 * 5) a switch group : nothing to do
 		 */
 		pthread_cleanup_push(cleanup_lock, &waiter->vecs->lock);
-		lock(waiter->vecs->lock);
+		lock(&waiter->vecs->lock);
 		pthread_testcancel();
 		r = update_multipath(waiter->vecs, waiter->mapname, 1);
 		lock_cleanup_pop(waiter->vecs->lock);

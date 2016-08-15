@@ -12,8 +12,18 @@ struct mutex_lock {
 	int depth;
 };
 
-#define lock(a) a.depth++; pthread_mutex_lock(a.mutex)
-#define unlock(a) a.depth--; pthread_mutex_unlock(a.mutex)
+static inline void lock(struct mutex_lock *a)
+{
+	a->depth++;
+	pthread_mutex_lock(a->mutex);
+}
+
+static inline void unlock(struct mutex_lock *a)
+{
+	a->depth--;
+	pthread_mutex_unlock(a->mutex);
+}
+
 #define lock_cleanup_pop(a) pthread_cleanup_pop(1)
 
 void cleanup_lock (void * data);

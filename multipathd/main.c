@@ -451,7 +451,7 @@ uev_add_map (struct uevent * uev, struct vectors * vecs)
 		}
 	}
 	pthread_cleanup_push(cleanup_lock, &vecs->lock);
-	lock(vecs->lock);
+	lock(&vecs->lock);
 	pthread_testcancel();
 	rc = ev_add_map(uev->kernel, alias, vecs);
 	lock_cleanup_pop(vecs->lock);
@@ -557,7 +557,7 @@ uev_remove_map (struct uevent * uev, struct vectors * vecs)
 	minor = uevent_get_minor(uev);
 
 	pthread_cleanup_push(cleanup_lock, &vecs->lock);
-	lock(vecs->lock);
+	lock(&vecs->lock);
 	pthread_testcancel();
 	mpp = find_mp_by_minor(vecs->mpvec, minor);
 
@@ -618,7 +618,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 	}
 
 	pthread_cleanup_push(cleanup_lock, &vecs->lock);
-	lock(vecs->lock);
+	lock(&vecs->lock);
 	pthread_testcancel();
 	pp = find_path_by_dev(vecs->pathvec, uev->kernel);
 	if (pp) {
@@ -668,7 +668,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 		return 1;
 	}
 	pthread_cleanup_push(cleanup_lock, &vecs->lock);
-	lock(vecs->lock);
+	lock(&vecs->lock);
 	pthread_testcancel();
 	ret = store_path(vecs->pathvec, pp);
 	if (!ret) {
@@ -831,7 +831,7 @@ uev_remove_path (struct uevent *uev, struct vectors * vecs)
 
 	condlog(2, "%s: remove path (uevent)", uev->kernel);
 	pthread_cleanup_push(cleanup_lock, &vecs->lock);
-	lock(vecs->lock);
+	lock(&vecs->lock);
 	pthread_testcancel();
 	pp = find_path_by_dev(vecs->pathvec, uev->kernel);
 	if (pp)
@@ -957,7 +957,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 		condlog(2, "%s: update path write_protect to '%d' (uevent)",
 			uev->kernel, ro);
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
-		lock(vecs->lock);
+		lock(&vecs->lock);
 		pthread_testcancel();
 		/*
 		 * pthread_mutex_lock() and pthread_mutex_unlock()
@@ -1797,7 +1797,7 @@ checkerloop (void *ap)
 		}
 		if (vecs->pathvec) {
 			pthread_cleanup_push(cleanup_lock, &vecs->lock);
-			lock(vecs->lock);
+			lock(&vecs->lock);
 			pthread_testcancel();
 			vector_foreach_slot (vecs->pathvec, pp, i) {
 				rc = check_path(vecs, pp, ticks);
@@ -1812,7 +1812,7 @@ checkerloop (void *ap)
 		}
 		if (vecs->mpvec) {
 			pthread_cleanup_push(cleanup_lock, &vecs->lock);
-			lock(vecs->lock);
+			lock(&vecs->lock);
 			pthread_testcancel();
 			defered_failback_tick(vecs->mpvec);
 			retry_count_tick(vecs->mpvec);
@@ -1823,7 +1823,7 @@ checkerloop (void *ap)
 			count--;
 		else {
 			pthread_cleanup_push(cleanup_lock, &vecs->lock);
-			lock(vecs->lock);
+			lock(&vecs->lock);
 			pthread_testcancel();
 			condlog(4, "map garbage collection");
 			mpvec_garbage_collector(vecs);
@@ -2379,7 +2379,7 @@ child (void * param)
 		pthread_cleanup_pop(1);
 		if (running_state == DAEMON_CONFIGURE) {
 			pthread_cleanup_push(cleanup_lock, &vecs->lock);
-			lock(vecs->lock);
+			lock(&vecs->lock);
 			pthread_testcancel();
 			if (!need_to_delay_reconfig(vecs)) {
 				reconfigure(vecs);
@@ -2393,24 +2393,24 @@ child (void * param)
 		}
 	}
 
-	lock(vecs->lock);
+	lock(&vecs->lock);
 	conf = get_multipath_config();
 	if (conf->queue_without_daemon == QUE_NO_DAEMON_OFF)
 		vector_foreach_slot(vecs->mpvec, mpp, i)
 			dm_queue_if_no_path(mpp->alias, 0);
 	put_multipath_config(conf);
 	remove_maps_and_stop_waiters(vecs);
-	unlock(vecs->lock);
+	unlock(&vecs->lock);
 
 	pthread_cancel(check_thr);
 	pthread_cancel(uevent_thr);
 	pthread_cancel(uxlsnr_thr);
 	pthread_cancel(uevq_thr);
 
-	lock(vecs->lock);
+	lock(&vecs->lock);
 	free_pathvec(vecs->pathvec, FREE_PATHS);
 	vecs->pathvec = NULL;
-	unlock(vecs->lock);
+	unlock(&vecs->lock);
 	/* Now all the waitevent threads will start rushing in. */
 	while (vecs->lock.depth > 0) {
 		sleep (1); /* This is weak. */

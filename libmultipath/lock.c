@@ -2,5 +2,7 @@
 
 void cleanup_lock (void * data)
 {
-	unlock ((*(struct mutex_lock *)data));
+	struct mutex_lock *lock = data;
+
+	unlock(lock);
 }
