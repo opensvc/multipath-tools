@@ -4,11 +4,7 @@
 #include "vector.h"
 #include "config.h"
 #include "lock.h"
-/*
-struct mutex_lock {
-	pthread_mutex_t *mutex;
-	int depth;
-}; */
+
 struct vectors {
 	struct mutex_lock lock; /* defined in lock.h */
 	vector pathvec;
