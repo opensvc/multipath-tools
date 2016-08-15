@@ -2047,21 +2047,10 @@ init_vecs (void)
 	if (!vecs)
 		return NULL;
 
-	vecs->lock.mutex =
-		(pthread_mutex_t *)MALLOC(sizeof(pthread_mutex_t));
-
-	if (!vecs->lock.mutex)
-		goto out;
-
-	pthread_mutex_init(vecs->lock.mutex, NULL);
+	pthread_mutex_init(&vecs->lock.mutex, NULL);
 	vecs->lock.depth = 0;
 
 	return vecs;
-
-out:
-	FREE(vecs);
-	condlog(0, "failed to init paths");
-	return NULL;
 }
 
 static void *
@@ -2417,10 +2406,7 @@ child (void * param)
 		condlog(3, "Have %d wait event checkers threads to de-alloc,"
 			" waiting...", vecs->lock.depth);
 	}
-	pthread_mutex_destroy(vecs->lock.mutex);
-	FREE(vecs->lock.mutex);
-	vecs->lock.depth = 0;
-	vecs->lock.mutex = NULL;
+	pthread_mutex_destroy(&vecs->lock.mutex);
 	FREE(vecs);
 	vecs = NULL;
 

@@ -488,7 +488,7 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data, int timeout )
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		if (tmo.tv_sec) {
 			vecs->lock.depth++;
-			r = pthread_mutex_timedlock(vecs->lock.mutex, &tmo);
+			r = pthread_mutex_timedlock(&vecs->lock.mutex, &tmo);
 		} else {
 			lock(&vecs->lock);
 			r = 0;
