@@ -2048,7 +2048,6 @@ init_vecs (void)
 		return NULL;
 
 	pthread_mutex_init(&vecs->lock.mutex, NULL);
-	vecs->lock.depth = 0;
 
 	return vecs;
 }
@@ -2396,16 +2395,16 @@ child (void * param)
 	pthread_cancel(uxlsnr_thr);
 	pthread_cancel(uevq_thr);
 
+	pthread_join(check_thr, NULL);
+	pthread_join(uevent_thr, NULL);
+	pthread_join(uxlsnr_thr, NULL);
+	pthread_join(uevq_thr, NULL);
+
 	lock(&vecs->lock);
 	free_pathvec(vecs->pathvec, FREE_PATHS);
 	vecs->pathvec = NULL;
 	unlock(&vecs->lock);
-	/* Now all the waitevent threads will start rushing in. */
-	while (vecs->lock.depth > 0) {
-		sleep (1); /* This is weak. */
-		condlog(3, "Have %d wait event checkers threads to de-alloc,"
-			" waiting...", vecs->lock.depth);
-	}
+
 	pthread_mutex_destroy(&vecs->lock.mutex);
 	FREE(vecs);
 	vecs = NULL;

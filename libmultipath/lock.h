@@ -3,35 +3,22 @@
 
 #include <pthread.h>
 
-/*
- * Wrapper for the mutex. Includes a ref-count to keep
- * track of how many there are out-standing threads blocking
- * on a mutex. */
 struct mutex_lock {
 	pthread_mutex_t mutex;
-	int depth;
 };
 
 static inline void lock(struct mutex_lock *a)
 {
-	a->depth++;
 	pthread_mutex_lock(&a->mutex);
 }
 
 static inline int timedlock(struct mutex_lock *a, struct timespec *tmo)
 {
-	int r;
-
-	a->depth++;
-	r = pthread_mutex_timedlock(&a->mutex, tmo);
-	if (r)
-		a->depth--;
-	return r;
+	return pthread_mutex_timedlock(&a->mutex, tmo);
 }
 
 static inline void unlock(struct mutex_lock *a)
 {
-	a->depth--;
 	pthread_mutex_unlock(&a->mutex);
 }
 
