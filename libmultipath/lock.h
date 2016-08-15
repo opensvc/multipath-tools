@@ -18,6 +18,17 @@ static inline void lock(struct mutex_lock *a)
 	pthread_mutex_lock(&a->mutex);
 }
 
+static inline int timedlock(struct mutex_lock *a, struct timespec *tmo)
+{
+	int r;
+
+	a->depth++;
+	r = pthread_mutex_timedlock(&a->mutex, tmo);
+	if (r)
+		a->depth--;
+	return r;
+}
+
 static inline void unlock(struct mutex_lock *a)
 {
 	a->depth--;
