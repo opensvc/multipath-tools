@@ -22,6 +22,9 @@
  *
  * Devices with a proprietary handler must also be included in
  * the kernel side. Currently at drivers/scsi/scsi_dh.c
+ *
+ * Moreover, if a device needs a special treatment by the SCSI
+ * subsystem it should be included in drivers/scsi/scsi_devinfo.c
  */
 static struct hwentry default_hw[] = {
 	/*
