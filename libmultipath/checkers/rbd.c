@@ -355,7 +355,7 @@ static int sysfs_write_rbd_bus(const char *which, const char *buf,
 	int fd;
 	int r;
 
-	/* we require newer kernels so single_major should alwayws be there */
+	/* we require newer kernels so single_major should always be there */
 	snprintf(sysfs_path, sizeof(sysfs_path),
 		 "/sys/bus/rbd/%s_single_major", which);
 	fd = open(sysfs_path, O_WRONLY);
