@@ -7,7 +7,7 @@
 .\"
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATH.CONF 5 2016-08-07 "Linux"
+.TH MULTIPATH.CONF 5 2016-08-09 "Linux"
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -163,7 +163,8 @@ kernel multipath target. There are three selector algorithms:
 .TP 12
 .I "round-robin 0"
 Loop through every path in the path group, sending the same amount of IO to
-each.
+each. Some aspects of behavior can be controlled with the attributes:
+\fIrr_min_io\fR, \fIrr_min_io_rq\fR and \fIrr_weight\fR.
 .TP
 .I "queue-length 0"
 Send the next bunch of IO down the path with the least amount of outstanding IO.
@@ -433,8 +434,9 @@ Default value is: \fBmanual\fR
 .
 .TP
 .B  rr_min_io
-The number of IO to route to a path before switching to the next in
-the same path group. This is only for BIO based multipath.
+Number of IO requests to route to a path before switching to the next in the
+same path group. This is only for \fIBlock I/O\fR(BIO) based multipath and 
+only apply to \fIround-robin\fR path_selector.
 .RS
 .TP
 Default value is: \fB1000\fR
@@ -443,8 +445,9 @@ Default value is: \fB1000\fR
 .
 .TP
 .B rr_min_io_rq
-The number of IO requests to route to a path before switching to the
-next in the same path group. This is only for request based multipath.
+Number of IO requests to route to a path before switching to the next in the
+same path group. This is only for \fIRequest\fR based multipath and
+only apply to \fIround-robin\fR path_selector.
 .RS
 .TP
 Default value is: \fB1\fR
@@ -467,11 +470,12 @@ Default value is: \fBmax\fR
 .
 .TP
 .B rr_weight
-If set to \fIpriorities\fR the multipath configurator will assign
-path weights as "path prio * rr_min_io". Possible values are
+If set to \fIpriorities\fR the multipath configurator will assign path weights
+as "path prio * rr_min_io". Possible values are
 .I priorities
 or
 .I uniform .
+Only apply to \fIround-robin\fR path_selector.
 .RS
 .TP
 Default value is: \fBuniform\fR

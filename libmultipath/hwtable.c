@@ -79,7 +79,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 12,
-		.minio         = 100,
 		.checker_name  = HP_SW,
 		.prio_name     = PRIO_HP_SW,
 	},
@@ -90,7 +89,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 12,
-		.minio         = 100,
 		.prio_name     = PRIO_ALUA,
 	},
 	{
@@ -100,7 +98,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 12,
-		.minio         = 100,
 		.prio_name     = PRIO_ALUA,
 	},
 	{
@@ -110,7 +107,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 18,
-		.minio         = 100,
 	},
 	{
 		/* MSA2000 family with new firmware */
@@ -119,7 +115,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 18,
-		.minio         = 100,
 		.prio_name     = PRIO_ALUA,
 	},
 	{
@@ -129,7 +124,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 18,
-		.minio         = 100,
 		.prio_name     = PRIO_ALUA,
 	},
 	{
@@ -140,7 +134,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 12,
-		.minio         = 100,
 		.prio_name     = PRIO_ALUA,
 	},
 	{
@@ -158,7 +151,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 18,
-		.minio         = 100,
 		.prio_name     = PRIO_ALUA,
 	},
 	/*
@@ -520,7 +512,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
-		.minio         = 100,
 		.prio_name     = PRIO_ALUA,
 	},
 	{
@@ -530,7 +521,6 @@ static struct hwentry default_hw[] = {
 		.features      = "1 queue_if_no_path",
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
-		.minio         = 15,
 	},
 		/*
 		 * IBM Power Virtual SCSI Devices
@@ -577,7 +567,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.flush_on_last_del = FLUSH_ENABLED,
-		.minio         = 128,
 		.dev_loss      = MAX_DEV_LOSS_TMO,
 		.prio_name     = PRIO_ONTAP,
 	},
@@ -612,7 +601,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_SERIAL,
 		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 30,
-		.minio         = 128,
 	},
 	/*
 	 * SGI
@@ -776,7 +764,6 @@ static struct hwentry default_hw[] = {
 		.features      = "1 queue_if_no_path",
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
-		.minio         = 100,
 	},
 	/*
 	 * Intel
@@ -800,7 +787,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 12,
-		.minio         = 100,
 		.prio_name     = PRIO_ALUA,
 	},
 	/*
