@@ -8,16 +8,16 @@ include ../Makefile.inc
 #CFLAGS += -DLOGDBG
 CFLAGS += -I$(multipathdir) -I$(mpathpersistdir) -I$(mpathcmddir)
 
-LDFLAGS += -ludev -ldl -L$(multipathdir) -lmultipath -L$(mpathpersistdir) \
+LIBDEPS += -ludev -ldl -L$(multipathdir) -lmultipath -L$(mpathpersistdir) \
 	   -lmpathpersist -L$(mpathcmddir) -lmpathcmd -lurcu -lpthread \
 	   -ldevmapper -lreadline
 
 ifdef SYSTEMD
 	CFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
 	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
-		LDFLAGS += -lsystemd
+		LIBDEPS += -lsystemd
 	else
-		LDFLAGS += -lsystemd-daemon
+		LIBDEPS += -lsystemd-daemon
 	endif
 endif
 
@@ -28,7 +28,7 @@ EXEC = multipathd
 all : $(EXEC)
 
 $(EXEC): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(EXEC)
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(EXEC) $(LIBDEPS)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 
 install:

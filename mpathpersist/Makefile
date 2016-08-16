@@ -2,7 +2,7 @@ include ../Makefile.inc
 
 CFLAGS += -I$(multipathdir) -I$(mpathpersistdir)
 
-LDFLAGS += -lpthread -ldevmapper -L$(mpathpersistdir) -lmpathpersist \
+LIBDEPS += -lpthread -ldevmapper -L$(mpathpersistdir) -lmpathpersist \
 	   -L$(multipathdir) -L$(mpathcmddir) -lmpathcmd -lmultipath -ludev
 
 EXEC = mpathpersist
@@ -12,7 +12,7 @@ OBJS = main.o
 all: $(EXEC)
 
 $(EXEC): $(OBJS)
-	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS) $(CFLAGS)
+	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS) $(CFLAGS) $(LIBDEPS)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 
 install:

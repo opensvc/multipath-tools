@@ -5,7 +5,7 @@ include ../Makefile.inc
 
 CFLAGS += -I$(multipathdir) -I$(mpathcmddir)
 
-LDFLAGS += -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath -ludev \
+LIBDEPS += -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath -ludev \
 	   -L$(mpathcmddir) -lmpathcmd
 
 EXEC = multipath
@@ -15,7 +15,7 @@ OBJS = main.o
 all: $(EXEC)
 
 $(EXEC): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(EXEC) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(OBJS) -o $(EXEC) $(LDFLAGS) $(LIBDEPS)
 	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 	$(GZIP) $(EXEC).conf.5 > $(EXEC).conf.5.gz
 
