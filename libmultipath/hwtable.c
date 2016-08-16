@@ -206,7 +206,6 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "XtremIO",
 		.product       = "XtremApp",
-		.selector      = "queue-length 0",
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
@@ -829,7 +828,6 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "PURE",
 		.product       = "FlashArray",
-		.selector      = "queue-length 0",
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 		.fast_io_fail  = 10,
