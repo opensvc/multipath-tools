@@ -16,7 +16,6 @@
 #include "uxsock.h"
 #include "memory.h"
 
-unsigned long mem_allocated;    /* Total memory used in Bytes */
 
 int update_prflag(char * arg1, char * arg2, int noisy)
 {

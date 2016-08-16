@@ -29,15 +29,6 @@
 #include <string.h>
 #include <assert.h>
 
-/* extern types */
-extern unsigned long mem_allocated;
-extern void *xalloc(unsigned long size);
-extern void *zalloc(unsigned long size);
-extern void xfree(void *p);
-
-/* Global alloc macro */
-#define ALLOC(n) (xalloc(n))
-
 /* Local defines */
 #ifdef _DEBUG_
 
@@ -63,8 +54,8 @@ extern void dbg_free_final(char *);
 
 #else
 
-#define MALLOC(n)    (zalloc(n))
-#define FREE(p)      (xfree(p))
+#define MALLOC(n)    (calloc(1,(n)))
+#define FREE(p)      do { free(p); p = NULL; } while(0)
 #define REALLOC(p,n) (realloc((p),(n)))
 #define STRDUP(n)    (strdup(n))
 

@@ -22,37 +22,6 @@
 
 #include "memory.h"
 
-/* Global var */
-unsigned long mem_allocated;	/* Total memory used in Bytes */
-
-void *
-xalloc(unsigned long size)
-{
-	void *mem;
-	if ((mem = malloc(size)))
-		mem_allocated += size;
-	return mem;
-}
-
-void *
-zalloc(unsigned long size)
-{
-	void *mem;
-	if ((mem = malloc(size))) {
-		memset(mem, 0, size);
-		mem_allocated += size;
-	}
-	return mem;
-}
-
-void
-xfree(void *p)
-{
-	mem_allocated -= sizeof (p);
-	free(p);
-	p = NULL;
-}
-
 /*
  * Memory management. in debug mode,
  * help finding eventual memory leak.
