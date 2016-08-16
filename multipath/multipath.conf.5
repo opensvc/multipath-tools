@@ -3,11 +3,11 @@
 .\" Make sure there are no errors with:
 .\" groff -z -wall -b -e -t multipath/multipath.conf.5
 .\"
-.\" TODO: Look for XXX
+.\" TODO: Look for XXX and ???
 .\"
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATH.CONF 5 2016-08-09 "Linux"
+.TH MULTIPATH.CONF 5 2016-08-12 "Linux"
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -166,12 +166,15 @@ Loop through every path in the path group, sending the same amount of IO to
 each. Some aspects of behavior can be controlled with the attributes:
 \fIrr_min_io\fR, \fIrr_min_io_rq\fR and \fIrr_weight\fR.
 .TP
+.\" XXX
 .I "queue-length 0"
-Send the next bunch of IO down the path with the least amount of outstanding IO.
+(Since ??? kernel) Choose the path for the next bunch of IO based on the amount
+of outstanding IO to the path.
 .TP
+.\" XXX
 .I "service-time 0"
-Choose the path for the next bunch of IO based on the amount of outstanding IO
-to the path and its relative throughput.
+(Since ??? kernel) Choose the path for the next bunch of IO based on the amount
+of outstanding IO to the path and its relative throughput.
 .TP
 Default value is: \fBservice-time 0\fR
 .RE
@@ -333,22 +336,31 @@ Default value is: \fB<unset>\fR
 .TP
 .B features
 Specify any device-mapper features to be used. Syntax is \fInum list\fR
-where \fInum\fR is the number, between 0 and 6, of features in \fIlist\fR.
+where \fInum\fR is the number, between 0 and 8, of features in \fIlist\fR.
 Possible values for the feature list are:
 .RS
 .TP 12
+.\" XXX
 .I queue_if_no_path
-(Superseded by \fIno_path_retry\fR) Queue IO if no path is active. Identical to
-the \fIno_path_retry\fR with \fIqueue\fR value. See KNOWN ISSUES.
+(Superseded by \fIno_path_retry\fR) (Since ??? kernel) Queue IO if no path is active.
+Identical to the \fIno_path_retry\fR with \fIqueue\fR value. See KNOWN ISSUES.
 .TP
 .I no_partitions
 Disable automatic partitions generation via kpartx.
 .TP
-.I pg_init_retries
-Number of times to retry pg_init, it must be between 1 and 50.
+.\" XXX
+.I pg_init_retries <times>
+(Since ??? kernel) Number of times to retry pg_init, it must be between 1 and 50.
 .TP
-.I pg_init_delay_msecs
-Number of msecs before pg_init retry, it must be between 0 and 60000.
+.\" XXX
+.I pg_init_delay_msecs <msecs>
+(Since ??? kernel) Number of msecs before pg_init retry, it must be between 0 and 60000.
+.TP
+.\" XXX
+.I queue_mode <mode>
+(Since ??? kernel) Select the the queue_mode per multipath device.
+Where <mode> can be \fIbio\fR, \fIrq\fR or \fImq\fR. Which corresponds to
+bio-based, request_fn rq-based, and blk-mq rq-based respectively.
 .TP
 Default value is: \fB0\fR
 .RE
