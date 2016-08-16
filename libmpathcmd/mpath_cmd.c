@@ -33,7 +33,7 @@ static ssize_t read_all(int fd, void *buf, size_t len, unsigned int timeout)
 			return -1;
 		} else if (!pfd.revents & POLLIN)
 			continue;
-		n = read(fd, buf, len);
+		n = recv(fd, buf, len, 0);
 		if (n < 0) {
 			if ((errno == EINTR) || (errno == EAGAIN))
 				continue;
@@ -56,7 +56,7 @@ static size_t write_all(int fd, const void *buf, size_t len)
 	size_t total = 0;
 
 	while (len) {
-		ssize_t n = write(fd, buf, len);
+		ssize_t n = send(fd, buf, len, MSG_NOSIGNAL);
 		if (n < 0) {
 			if ((errno == EINTR) || (errno == EAGAIN))
 				continue;

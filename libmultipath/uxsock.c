@@ -81,7 +81,7 @@ size_t write_all(int fd, const void *buf, size_t len)
 	size_t total = 0;
 
 	while (len) {
-		ssize_t n = write(fd, buf, len);
+		ssize_t n = send(fd, buf, len, MSG_NOSIGNAL);
 		if (n < 0) {
 			if ((errno == EINTR) || (errno == EAGAIN))
 				continue;
@@ -138,20 +138,7 @@ ssize_t read_all(int fd, void *buf, size_t len, unsigned int timeout)
  */
 int send_packet(int fd, const char *buf)
 {
-	int ret = 0;
-	sigset_t set, old;
-
-	/* Block SIGPIPE */
-	sigemptyset(&set);
-	sigaddset(&set, SIGPIPE);
-	pthread_sigmask(SIG_BLOCK, &set, &old);
-
-	ret = mpath_send_cmd(fd, buf);
-
-	/* And unblock it again */
-	pthread_sigmask(SIG_SETMASK, &old, NULL);
-
-	return ret;
+	return mpath_send_cmd(fd, buf);
 }
 
 /*
