@@ -205,6 +205,12 @@ static struct hwentry default_hw[] = {
 	 * DELL
 	 */
 	{
+		/*
+		 * Dell SC Series, formerly Compellent
+		 *
+		 * Maintainer : Sean McGinnis
+		 * Mail : sean_mcginnis@dell.com
+		 */
 		.vendor        = "COMPELNT",
 		.product       = "Compellent Vol",
 		.pgpolicy      = MULTIBUS,
