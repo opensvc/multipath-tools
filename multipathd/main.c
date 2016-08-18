@@ -2211,8 +2211,8 @@ child (void * param)
 	signal_init();
 	rcu_init();
 
-	setup_thread_attr(&misc_attr, 64 * 1024, 1);
-	setup_thread_attr(&uevent_attr, DEFAULT_UEVENT_STACKSIZE * 1024, 1);
+	setup_thread_attr(&misc_attr, 64 * 1024, 0);
+	setup_thread_attr(&uevent_attr, DEFAULT_UEVENT_STACKSIZE * 1024, 0);
 	setup_thread_attr(&waiter_attr, 32 * 1024, 1);
 
 	if (logsink == 1) {
