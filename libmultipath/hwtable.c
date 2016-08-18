@@ -55,7 +55,7 @@ static struct hwentry default_hw[] = {
 		/* RA8000 / ESA12000 */
 		.vendor        = "DEC",
 		.product       = "HSG80",
-		.features      = "1 queue_if_no_path",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.hwhandler     = "1 hp_sw",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = FAILBACK_UNDEF,
@@ -74,7 +74,6 @@ static struct hwentry default_hw[] = {
 		/* MSA 1000/1500 and EVA 3000/5000, with old firmware */
 		.vendor        = "(COMPAQ|HP)",
 		.product       = "(MSA|HSV)1[01]0",
-		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 hp_sw",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = FAILBACK_UNDEF,
@@ -178,7 +177,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "^DGC",
 		.product       = "^(RAID|DISK|VRAID)",
 		.bl_product    = "LUNZ",
-		.features      = "1 queue_if_no_path",
 		.hwhandler     = "1 emc",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
@@ -265,7 +263,6 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "FUJITSU",
 		.product       = "ETERNUS_DX(H|L|M|400|8000)",
-		.features      = "1 queue_if_no_path",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 10,
@@ -295,7 +292,7 @@ static struct hwentry default_hw[] = {
 		/* AMS 2000 and HUS 100 families */
 		.vendor        = "HITACHI",
 		.product       = "^DF",
-		.features      = "1 queue_if_no_path",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_HDS,
@@ -453,7 +450,7 @@ static struct hwentry default_hw[] = {
 		/* Enterprise Storage Server / Shark family */
 		.vendor        = "IBM",
 		.product       = "^2105",
-		.features      = "1 queue_if_no_path",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = GROUP_BY_SERIAL,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
@@ -461,7 +458,7 @@ static struct hwentry default_hw[] = {
 		/* DS6000 */
 		.vendor        = "IBM",
 		.product       = "^1750500",
-		.features      = "1 queue_if_no_path",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
@@ -470,7 +467,7 @@ static struct hwentry default_hw[] = {
 		/* DS8000 */
 		.vendor        = "IBM",
 		.product       = "^2107900",
-		.features      = "1 queue_if_no_path",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
@@ -478,7 +475,7 @@ static struct hwentry default_hw[] = {
 		/* Storwize family / SAN Volume Controller / Flex System V7000 */
 		.vendor        = "IBM",
 		.product       = "^2145",
-		.features      = "1 queue_if_no_path",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
@@ -488,7 +485,7 @@ static struct hwentry default_hw[] = {
 		.product       = "S/390 DASD ECKD",
 		.bl_product    = "S/390",
 		.uid_attribute = "ID_UID",
-		.features      = "1 queue_if_no_path",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
@@ -497,7 +494,7 @@ static struct hwentry default_hw[] = {
 		.product       = "S/390 DASD FBA",
 		.bl_product    = "S/390",
 		.uid_attribute = "ID_UID",
-		.features      = "1 queue_if_no_path",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
@@ -505,7 +502,7 @@ static struct hwentry default_hw[] = {
 		/* Power RAID */
 		.vendor        = "IBM",
 		.product       = "^IPR",
-		.features      = "1 queue_if_no_path",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
@@ -524,7 +521,7 @@ static struct hwentry default_hw[] = {
 		/* XIV Storage System */
 		.vendor        = "IBM",
 		.product       = "2810XIV",
-		.features      = "1 queue_if_no_path",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
@@ -569,7 +566,8 @@ static struct hwentry default_hw[] = {
 		 */
 		.vendor        = "NETAPP",
 		.product       = "LUN",
-		.features      = "3 queue_if_no_path pg_init_retries 50",
+		.features      = "2 pg_init_retries 50",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.flush_on_last_del = FLUSH_ENABLED,
@@ -603,7 +601,6 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "NEXENTA",
 		.product       = "COMSTAR",
-		.features      = "1 queue_if_no_path",
 		.pgpolicy      = GROUP_BY_SERIAL,
 		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 30,
@@ -767,7 +764,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "PIVOT3",
 		.product       = "RAIGE VOLUME",
-		.features      = "1 queue_if_no_path",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
