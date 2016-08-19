@@ -472,7 +472,7 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
-		/* Storwize family / SAN Volume Controller / Flex System V7000 */
+		/* Storwize family / SAN Volume Controller / Flex System V7000 / FlashSystem V840/V9000 */
 		.vendor        = "IBM",
 		.product       = "^2145",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
@@ -518,7 +518,7 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 	},
 	{
-		/* XIV Storage System */
+		/* XIV Storage System / FlashSystem A9000/A9000R */
 		.vendor        = "IBM",
 		.product       = "2810XIV",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
