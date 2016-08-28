@@ -18,12 +18,12 @@ $(EXEC): $(OBJS)
 install:
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)/
-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)
-	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(mandir)
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(man8dir)
+	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(man8dir)
 
 clean:
 	$(RM) core *.o $(EXEC) *.gz
 
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
-	$(RM) $(DESTDIR)$(mandir)/$(EXEC).8.gz
+	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8.gz

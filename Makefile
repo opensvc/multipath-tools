@@ -14,6 +14,8 @@ ifeq ($(KRNLSRC),)
 		KRNLSRC = $(KRNLLIB)/build
 		KRNLOBJ = $(KRNLLIB)/build
 	endif
+	export KRNLSRC
+	export KRNLOBJ
 endif
 
 ifeq ($(MULTIPATH_VERSION),)
@@ -21,9 +23,6 @@ ifeq ($(MULTIPATH_VERSION),)
 else
 	VERSION = $(MULTIPATH_VERSION)
 endif
-
-export KRNLSRC
-export KRNLOBJ
 
 BUILDDIRS = \
 	libmpathcmd \
