@@ -1330,7 +1330,7 @@ snprint_deprecated (struct config *conf, char * buff, int len, void * data)
 #define __deprecated
 
 /*
- * If you add or remove a keywork also update multipath/multipath.conf.5
+ * If you add or remove a keyword also update multipath/multipath.conf.5
  */
 void
 init_keywords(vector keywords)
@@ -1421,7 +1421,10 @@ init_keywords(vector keywords)
 	__deprecated install_keyword("product", &ble_product_handler, &snprint_bled_product);
 	__deprecated install_sublevel_end();
 #endif
-
+/*
+ * If you add or remove a "device subsection" keyword also update
+ * multipath/multipath.conf.5 and the TEMPLATE in libmultipath/hwtable.c
+ */
 	install_keyword_root("devices", &devices_handler);
 	install_keyword_multi("device", &device_handler, NULL);
 	install_sublevel();
