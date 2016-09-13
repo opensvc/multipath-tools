@@ -2570,6 +2570,7 @@ main (int argc, char *argv[])
 				exit(1);
 			if (verbosity)
 				conf->verbosity = verbosity;
+			uxsock_timeout = conf->uxsock_timeout;
 			uxclnt(optarg, uxsock_timeout + 100);
 			exit(0);
 		case 'B':
@@ -2594,6 +2595,7 @@ main (int argc, char *argv[])
 			exit(1);
 		if (verbosity)
 			conf->verbosity = verbosity;
+		uxsock_timeout = conf->uxsock_timeout;
 		memset(cmd, 0x0, CMDSIZE);
 		while (optind < argc) {
 			if (strchr(argv[optind], ' '))
