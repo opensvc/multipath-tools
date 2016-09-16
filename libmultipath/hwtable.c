@@ -155,7 +155,7 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 	},
 	/*
-	 * EMC
+	 * Dell EMC
 	 */
 	{
 		/* Symmetrix / DMX / VMAX */
@@ -189,9 +189,6 @@ static struct hwentry default_hw[] = {
 		.product       = "XtremApp",
 		.pgpolicy      = MULTIBUS,
 	},
-	/*
-	 * DELL
-	 */
 	{
 		/*
 		 * Dell SC Series, formerly Compellent
