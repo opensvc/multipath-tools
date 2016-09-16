@@ -245,7 +245,7 @@ generate the path priority. This prioritizer accepts the optional prio_arg
 .I emc
 (Hardware-dependent)
 Generate the path priority for DGC class arrays as CLARiiON CX/AX and
-EMC VNX families.
+EMC VNX and Unity families.
 .TP
 .I alua
 (Hardware-dependent)
@@ -382,7 +382,7 @@ Issue a \fITEST UNIT READY\fR command to the device.
 .I emc_clariion
 (Hardware-dependent)
 Query the DGC/EMC specific EVPD page 0xC0 to determine the path state
-for CLARiiON CX/AX and EMC VNX arrays families.
+for CLARiiON CX/AX and EMC VNX and Unity arrays families.
 .TP
 .I hp_sw
 (Hardware-dependent)
@@ -1002,7 +1002,8 @@ The following hardware handler are implemented:
 .TP 12
 .I 1 emc
 (Hardware-dependent)
-Hardware handler for DGC class arrays as CLARiiON CX/AX and EMC VNX families.
+Hardware handler for DGC class arrays as CLARiiON CX/AX and EMC VNX and Unity
+families.
 .TP
 .I 1 rdac
 (Hardware-dependent)
