@@ -105,7 +105,7 @@ int main (int argc, char * argv[])
 
 	udev = udev_new();
 	conf = mpath_lib_init(udev);
-	memset(transportids,0,MPATH_MX_TIDS);
+	memset(transportids, 0, MPATH_MX_TIDS * sizeof(struct transportid));
 	multipath_conf = conf;
 
 	while (1)
