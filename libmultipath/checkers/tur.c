@@ -225,8 +225,8 @@ void *tur_thread(void *ctx)
 	/* TUR checker done */
 	pthread_mutex_lock(&ct->lock);
 	ct->state = state;
-	pthread_mutex_unlock(&ct->lock);
 	pthread_cond_signal(&ct->active);
+	pthread_mutex_unlock(&ct->lock);
 
 	condlog(3, "%d:%d: tur checker finished, state %s",
 		TUR_DEVT(ct), checker_state_name(state));

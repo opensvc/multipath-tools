@@ -527,8 +527,8 @@ void *rbd_thread(void *ctx)
 	/* checker done */
 	pthread_mutex_lock(&ct->lock);
 	ct->state = state;
-	pthread_mutex_unlock(&ct->lock);
 	pthread_cond_signal(&ct->active);
+	pthread_mutex_unlock(&ct->lock);
 
 	condlog(3, "rbd%d thead finished, state %s", ct->rbd_bus_id,
 		checker_state_name(state));
