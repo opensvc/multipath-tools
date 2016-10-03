@@ -37,7 +37,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "APPLE",
 		.product       = "Xserve RAID",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	/*
 	 * HPE
@@ -58,7 +57,6 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.hwhandler     = "1 hp_sw",
 		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = FAILBACK_UNDEF,
 		.checker_name  = HP_SW,
 		.prio_name     = PRIO_HP_SW,
 	},
@@ -67,7 +65,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "HP",
 		.product       = "A6189A",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 12,
 	},
 	{
@@ -76,7 +73,6 @@ static struct hwentry default_hw[] = {
 		.product       = "(MSA|HSV)1[01]0",
 		.hwhandler     = "1 hp_sw",
 		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 12,
 		.checker_name  = HP_SW,
 		.prio_name     = PRIO_HP_SW,
@@ -104,7 +100,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "HP",
 		.product       = "(MSA2[02]12fc|MSA2012i)",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 18,
 	},
 	{
@@ -140,7 +135,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "HP",
 		.product       = "LOGICAL VOLUME",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 12,
 	},
 	{
@@ -159,7 +153,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "DDN",
 		.product       = "SAN DataDirector",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	/*
 	 * EMC
@@ -169,7 +162,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "EMC",
 		.product       = "SYMMETRIX",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 6,
 	},
 	{
@@ -190,14 +182,12 @@ static struct hwentry default_hw[] = {
 		.product       = "Invista",
 		.bl_product    = "LUNZ",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 5,
 	},
 	{
 		.vendor        = "XtremIO",
 		.product       = "XtremApp",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	/*
 	 * DELL
@@ -212,7 +202,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "COMPELNT",
 		.product       = "Compellent Vol",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
 	{
@@ -258,7 +247,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "FSC",
 		.product       = "CentricStor",
 		.pgpolicy      = GROUP_BY_SERIAL,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
 		.vendor        = "FUJITSU",
@@ -273,7 +261,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "(EUROLOGC|EuroLogc)",
 		.product       = "FC2502",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	/*
 	 * Hitachi
@@ -286,7 +273,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "(HITACHI|HP)",
 		.product       = "^OPEN-",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
 		/* AMS 2000 and HUS 100 families */
@@ -307,7 +293,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "IBM",
 		.product       = "ProFibre 4000R",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
 		/* DS4300 / FAStT600 */
@@ -457,7 +442,6 @@ static struct hwentry default_hw[] = {
 		.product       = "^2105",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MUTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
 		/* DS6000 */
@@ -474,7 +458,6 @@ static struct hwentry default_hw[] = {
 		.product       = "^2107900",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
 		/* Storwize family / SAN Volume Controller / Flex System V7000 / FlashSystem V840/V9000 */
@@ -492,7 +475,6 @@ static struct hwentry default_hw[] = {
 		.uid_attribute = "ID_UID",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
 		.vendor        = "IBM",
@@ -501,7 +483,6 @@ static struct hwentry default_hw[] = {
 		.uid_attribute = "ID_UID",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
 		/* Power RAID */
@@ -528,7 +509,6 @@ static struct hwentry default_hw[] = {
 		.product       = "2810XIV",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 		/*
 		 * IBM Power Virtual SCSI Devices
@@ -540,14 +520,12 @@ static struct hwentry default_hw[] = {
 		.vendor        = "AIX",
 		.product       = "VDASD",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = (300 / DEFAULT_CHECKINT),
 	},
 	{
 		/* 3303 NVDISK */
 		.vendor        = "IBM",
 		.product       = "3303[ ]+NVDISK",
-		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = (300 / DEFAULT_CHECKINT),
 	},
 	{
@@ -607,7 +585,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "NEXENTA",
 		.product       = "COMSTAR",
 		.pgpolicy      = GROUP_BY_SERIAL,
-		.pgfailback    = FAILBACK_UNDEF,
 		.no_path_retry = 30,
 	},
 	/*
@@ -617,7 +594,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "SGI",
 		.product       = "TP9100",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
 		.vendor        = "SGI",
@@ -708,7 +684,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "SUN",
 		.product       = "(StorEdge 3510|T4)",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
 		.vendor        = "SUN",
@@ -771,7 +746,6 @@ static struct hwentry default_hw[] = {
 		.product       = "RAIGE VOLUME",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	/*
 	 * Intel
@@ -823,7 +797,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "PURE",
 		.product       = "FlashArray",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 		.fast_io_fail  = 10,
 		.dev_loss      = 60,
 	},
@@ -835,7 +808,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "(HUAWEI|HUASY)",
 		.product       = "XSG1",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 	/*
 	 * Red Hat
@@ -857,7 +829,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "KOVE",
 		.product       = "XPD",
 		.pgpolicy      = MULTIBUS,
-		.pgfailback    = FAILBACK_UNDEF,
 	},
 #if 0
 	/*
