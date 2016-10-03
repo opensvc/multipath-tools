@@ -441,7 +441,7 @@ static struct hwentry default_hw[] = {
 		.vendor        = "IBM",
 		.product       = "^2105",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
-		.pgpolicy      = MUTIBUS,
+		.pgpolicy      = MULTIBUS,
 	},
 	{
 		/* DS6000 */
