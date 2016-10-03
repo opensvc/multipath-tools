@@ -443,15 +443,20 @@ static struct hwentry default_hw[] = {
 		/* DS4200 / FAStT200 */
 		.vendor        = "IBM",
 		.product       = "^3542",
-		.pgpolicy      = GROUP_BY_SERIAL,
-		.pgfailback    = FAILBACK_UNDEF,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.checker_name  = RDAC,
+		.features      = "2 pg_init_retries 50",
+		.hwhandler     = "1 rdac",
+		.prio_name     = PRIO_RDAC,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 30,
 	},
 	{
 		/* Enterprise Storage Server / Shark family */
 		.vendor        = "IBM",
 		.product       = "^2105",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
-		.pgpolicy      = GROUP_BY_SERIAL,
+		.pgpolicy      = MUTIBUS,
 		.pgfailback    = FAILBACK_UNDEF,
 	},
 	{
