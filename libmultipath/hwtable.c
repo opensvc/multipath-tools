@@ -428,6 +428,7 @@ static struct hwentry default_hw[] = {
 		/* DS4200 / FAStT200 */
 		.vendor        = "IBM",
 		.product       = "^3542",
+		.bl_product    = "Universal Xport",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
