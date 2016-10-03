@@ -849,6 +849,10 @@ The following keywords are recognized:
 .TP 17
 .B devnode
 Regular expression of the device nodes to be excluded.
+.RS
+.TP
+Default value is: \fB^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]\fR, \fB^(td|hd|vd)[a-z]\fR, \fB^dcssblk[0-9]\fR and \fB^nvme\fR
+.RE
 .TP
 .B wwid
 The \fIWorld Wide Identification\fR of a device.
@@ -888,7 +892,7 @@ The \fIWorld Wide Identification\fR of a device.
 Regular expression of the udev property to be whitelisted.
 .RS
 .TP
-Default value is: \fB(ID_WWN|SCSI_IDENT_.*)\fR
+Default value is: \fB(SCSI_IDENT_|ID_WWN)\fR
 .RE
 .TP
 .B device

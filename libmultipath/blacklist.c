@@ -172,7 +172,7 @@ setup_default_blist (struct config * conf)
 	char * str;
 	int i;
 
-	str = STRDUP("^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]*");
+	str = STRDUP("^(ram|raw|loop|fd|md|dm-|sr|scd|st)[0-9]");
 	if (!str)
 		return 1;
 	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
@@ -184,19 +184,19 @@ setup_default_blist (struct config * conf)
 	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
 		return 1;
 
-	str = STRDUP("^dcssblk[0-9]*");
+	str = STRDUP("^dcssblk[0-9]");
 	if (!str)
 		return 1;
 	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
 		return 1;
 
-	str = STRDUP("^nvme.*");
+	str = STRDUP("^nvme");
 	if (!str)
 		return 1;
 	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
 		return 1;
 
-	str = STRDUP("(SCSI_IDENT_.*|ID_WWN)");
+	str = STRDUP("(SCSI_IDENT_|ID_WWN)");
 	if (!str)
 		return 1;
 	if (store_ble(conf->elist_property, str, ORIGIN_DEFAULT))
