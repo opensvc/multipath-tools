@@ -25,6 +25,11 @@
 #include <time.h>
 
 /*
+ * libmultipath
+ */
+#include "time-util.h"
+
+/*
  * libcheckers
  */
 #include "checkers.h"
@@ -106,7 +111,7 @@ int ignore_new_devs;
 enum daemon_status running_state = DAEMON_INIT;
 pid_t daemon_pid;
 pthread_mutex_t config_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t config_cond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t config_cond;
 
 /*
  * global copy of vecs for use in sig handlers
@@ -193,7 +198,7 @@ int set_config_state(enum daemon_status state)
 		if (running_state != DAEMON_IDLE) {
 			struct timespec ts;
 
-			clock_gettime(CLOCK_REALTIME, &ts);
+			clock_gettime(CLOCK_MONOTONIC, &ts);
 			ts.tv_sec += 1;
 			rc = pthread_cond_timedwait(&config_cond,
 						    &config_lock, &ts);
@@ -1744,7 +1749,7 @@ checkerloop (void *ap)
 	int count = 0;
 	unsigned int i;
 	struct itimerval timer_tick_it;
-	struct timeval last_time;
+	struct timespec last_time;
 	struct config *conf;
 
 	pthread_cleanup_push(rcu_unregister, NULL);
@@ -1763,24 +1768,23 @@ checkerloop (void *ap)
 	}
 
 	/* Tweak start time for initial path check */
-	if (gettimeofday(&last_time, NULL) != 0)
+	if (clock_gettime(CLOCK_MONOTONIC, &last_time) != 0)
 		last_time.tv_sec = 0;
 	else
 		last_time.tv_sec -= 1;
 
 	while (1) {
-		struct timeval diff_time, start_time, end_time;
+		struct timespec diff_time, start_time, end_time;
 		int num_paths = 0, ticks = 0, signo, strict_timing, rc = 0;
 		sigset_t mask;
 
-		if (gettimeofday(&start_time, NULL) != 0)
+		if (clock_gettime(CLOCK_MONOTONIC, &start_time) != 0)
 			start_time.tv_sec = 0;
 		if (start_time.tv_sec && last_time.tv_sec) {
-			timersub(&start_time, &last_time, &diff_time);
+			timespecsub(&start_time, &last_time, &diff_time);
 			condlog(4, "tick (%lu.%06lu secs)",
-				diff_time.tv_sec, diff_time.tv_usec);
-			last_time.tv_sec = start_time.tv_sec;
-			last_time.tv_usec = start_time.tv_usec;
+				diff_time.tv_sec, diff_time.tv_nsec / 1000);
+			last_time = start_time;
 			ticks = diff_time.tv_sec;
 		} else {
 			ticks = 1;
@@ -1831,16 +1835,17 @@ checkerloop (void *ap)
 			lock_cleanup_pop(vecs->lock);
 		}
 
-		diff_time.tv_usec = 0;
+		diff_time.tv_nsec = 0;
 		if (start_time.tv_sec &&
-		    gettimeofday(&end_time, NULL) == 0) {
-			timersub(&end_time, &start_time, &diff_time);
+		    clock_gettime(CLOCK_MONOTONIC, &end_time) == 0) {
+			timespecsub(&end_time, &start_time, &diff_time);
 			if (num_paths) {
 				unsigned int max_checkint;
 
 				condlog(3, "checked %d path%s in %lu.%06lu secs",
 					num_paths, num_paths > 1 ? "s" : "",
-					diff_time.tv_sec, diff_time.tv_usec);
+					diff_time.tv_sec,
+					diff_time.tv_nsec / 1000);
 				conf = get_multipath_config();
 				max_checkint = conf->max_checkint;
 				put_multipath_config(conf);
@@ -1861,10 +1866,10 @@ checkerloop (void *ap)
 		else {
 			timer_tick_it.it_interval.tv_sec = 0;
 			timer_tick_it.it_interval.tv_usec = 0;
-			if (diff_time.tv_usec) {
+			if (diff_time.tv_nsec) {
 				timer_tick_it.it_value.tv_sec = 0;
 				timer_tick_it.it_value.tv_usec =
-					(unsigned long)1000000 - diff_time.tv_usec;
+				     1000UL * 1000 * 1000 - diff_time.tv_nsec;
 			} else {
 				timer_tick_it.it_value.tv_sec = 1;
 				timer_tick_it.it_value.tv_usec = 0;
@@ -2523,6 +2528,8 @@ main (int argc, char *argv[])
 			strerror(errno));
 	umask(umask(077) | 022);
 
+	pthread_cond_init_mono(&config_cond);
+	
 	udev = udev_new();
 
 	while ((arg = getopt(argc, argv, ":dsv:k::Bn")) != EOF ) {

@@ -27,6 +27,7 @@
 
 #include "../libmultipath/debug.h"
 #include "../libmultipath/uevent.h"
+#include "../libmultipath/time-util.h"
 
 struct rbd_checker_context;
 typedef int (thread_fn)(struct rbd_checker_context *ct, char *msg);
@@ -75,7 +76,7 @@ int libcheck_init(struct checker * c)
 		return 1;
 	memset(ct, 0, sizeof(struct rbd_checker_context));
 	ct->holders = 1;
-	pthread_cond_init(&ct->active, NULL);
+	pthread_cond_init_mono(&ct->active);
 	pthread_mutex_init(&ct->lock, NULL);
 	pthread_spin_init(&ct->hldr_lock, PTHREAD_PROCESS_PRIVATE);
 	c->context = ct;
@@ -538,12 +539,9 @@ static void *rbd_thread(void *ctx)
 
 static void rbd_timeout(struct timespec *tsp)
 {
-	struct timeval now;
-
-	gettimeofday(&now, NULL);
-	tsp->tv_sec = now.tv_sec;
-	tsp->tv_nsec = now.tv_usec * 1000;
-	tsp->tv_nsec += 1000000; /* 1 millisecond */
+	clock_gettime(CLOCK_MONOTONIC, tsp);
+	tsp->tv_nsec += 1000 * 1000; /* 1 millisecond */
+	normalize_timespec(tsp);
 }
 
 static int rbd_exec_fn(struct checker *c, thread_fn *fn)

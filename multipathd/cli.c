@@ -454,7 +454,6 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data, int timeout )
 	struct handler * h;
 	vector cmdvec = NULL;
 	struct timespec tmo;
-	struct timeval now;
 
 	r = get_cmdvec(cmd, &cmdvec);
 
@@ -476,9 +475,8 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data, int timeout )
 	/*
 	 * execute handler
 	 */
-	if (gettimeofday(&now, NULL) == 0) {
-		tmo.tv_sec = now.tv_sec + timeout;
-		tmo.tv_nsec = now.tv_usec * 1000;
+	if (clock_gettime(CLOCK_MONOTONIC, &tmo) == 0) {
+		tmo.tv_sec += timeout;
 	} else {
 		tmo.tv_sec = 0;
 	}

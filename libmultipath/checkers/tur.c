@@ -20,6 +20,7 @@
 #include "../libmultipath/debug.h"
 #include "../libmultipath/sg_include.h"
 #include "../libmultipath/uevent.h"
+#include "../libmultipath/time-util.h"
 
 #define TUR_CMD_LEN 6
 #define HEAVY_CHECK_COUNT       10
@@ -60,7 +61,7 @@ int libcheck_init (struct checker * c)
 	ct->state = PATH_UNCHECKED;
 	ct->fd = -1;
 	ct->holders = 1;
-	pthread_cond_init(&ct->active, NULL);
+	pthread_cond_init_mono(&ct->active);
 	pthread_mutex_init(&ct->lock, NULL);
 	pthread_spin_init(&ct->hldr_lock, PTHREAD_PROCESS_PRIVATE);
 	c->context = ct;
@@ -237,29 +238,26 @@ static void *tur_thread(void *ctx)
 
 static void tur_timeout(struct timespec *tsp)
 {
-	struct timeval now;
-
-	gettimeofday(&now, NULL);
-	tsp->tv_sec = now.tv_sec;
-	tsp->tv_nsec = now.tv_usec * 1000;
-	tsp->tv_nsec += 1000000; /* 1 millisecond */
+	clock_gettime(CLOCK_MONOTONIC, tsp);
+	tsp->tv_nsec += 1000 * 1000; /* 1 millisecond */
+	normalize_timespec(tsp);
 }
 
 static void tur_set_async_timeout(struct checker *c)
 {
 	struct tur_checker_context *ct = c->context;
-	struct timeval now;
+	struct timespec now;
 
-	gettimeofday(&now, NULL);
+	clock_gettime(CLOCK_MONOTONIC, &now);
 	ct->time = now.tv_sec + c->timeout;
 }
 
 static int tur_check_async_timeout(struct checker *c)
 {
 	struct tur_checker_context *ct = c->context;
-	struct timeval now;
+	struct timespec now;
 
-	gettimeofday(&now, NULL);
+	clock_gettime(CLOCK_MONOTONIC, &now);
 	return (now.tv_sec > ct->time);
 }
 

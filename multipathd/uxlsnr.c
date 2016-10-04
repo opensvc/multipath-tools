@@ -32,6 +32,7 @@
 #include "defaults.h"
 #include "config.h"
 #include "mpath_cmd.h"
+#include "time-util.h"
 
 #include "main.h"
 #include "cli.h"
@@ -99,21 +100,22 @@ void free_polls (void)
 		FREE(polls);
 }
 
-void check_timeout(struct timeval start_time, char *inbuf,
+void check_timeout(struct timespec start_time, char *inbuf,
 		   unsigned int timeout)
 {
-	struct timeval diff_time, end_time;
+	struct timespec diff_time, end_time;
 
-	if (start_time.tv_sec && gettimeofday(&end_time, NULL) == 0) {
-		timersub(&end_time, &start_time, &diff_time);
+	if (start_time.tv_sec &&
+	    clock_gettime(CLOCK_MONOTONIC, &end_time) == 0) {
 		unsigned long msecs;
 
+		timespecsub(&end_time, &start_time, &diff_time);
 		msecs = diff_time.tv_sec * 1000 +
-			diff_time.tv_usec / 1000;
+			diff_time.tv_nsec / (1000 * 1000);
 		if (msecs > timeout)
 			condlog(2, "cli cmd '%s' timeout reached "
 				"after %lu.%06lu secs", inbuf,
-				diff_time.tv_sec, diff_time.tv_usec);
+				diff_time.tv_sec, diff_time.tv_nsec / 1000);
 	}
 }
 
@@ -220,7 +222,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 		/* see if a client wants to speak to us */
 		for (i = 1; i < num_clients + 1; i++) {
 			if (polls[i].revents & POLLIN) {
-				struct timeval start_time;
+				struct timespec start_time;
 
 				c = NULL;
 				pthread_mutex_lock(&client_lock);
@@ -236,7 +238,8 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 						i, polls[i].fd);
 					continue;
 				}
-				if (gettimeofday(&start_time, NULL) != 0)
+				if (clock_gettime(CLOCK_MONOTONIC, &start_time)
+				    != 0)
 					start_time.tv_sec = 0;
 				if (recv_packet(c->fd, &inbuf,
 						uxsock_timeout) != 0) {
