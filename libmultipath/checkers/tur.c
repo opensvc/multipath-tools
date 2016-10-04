@@ -21,6 +21,7 @@
 #include "../libmultipath/sg_include.h"
 #include "../libmultipath/uevent.h"
 #include "../libmultipath/time-util.h"
+#include "../libmultipath/util.h"
 
 #define TUR_CMD_LEN 6
 #define HEAVY_CHECK_COUNT       10
@@ -311,8 +312,7 @@ libcheck_check (struct checker * c)
 			/* TUR checker done */
 			ct->running = 0;
 			tur_status = ct->state;
-			strncpy(c->message, ct->message, CHECKER_MSG_LEN);
-			c->message[CHECKER_MSG_LEN - 1] = '\0';
+			strlcpy(c->message, ct->message, sizeof(c->message));
 		}
 		pthread_mutex_unlock(&ct->lock);
 	} else {
@@ -347,8 +347,7 @@ libcheck_check (struct checker * c)
 		tur_timeout(&tsp);
 		r = pthread_cond_timedwait(&ct->active, &ct->lock, &tsp);
 		tur_status = ct->state;
-		strncpy(c->message, ct->message,CHECKER_MSG_LEN);
-		c->message[CHECKER_MSG_LEN - 1] = '\0';
+		strlcpy(c->message, ct->message, sizeof(c->message));
 		pthread_mutex_unlock(&ct->lock);
 		if (ct->thread &&
 		    (tur_status == PATH_PENDING || tur_status == PATH_UNCHECKED)) {
