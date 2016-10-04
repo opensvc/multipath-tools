@@ -73,7 +73,6 @@ static int
 snprint_size (char * buff, size_t len, unsigned long long size)
 {
 	float s = (float)(size >> 1); /* start with KB */
-	char fmt[6] = {};
 	char units[] = {'K','M','G','T','P'};
 	char *u = units;
 
@@ -81,12 +80,8 @@ snprint_size (char * buff, size_t len, unsigned long long size)
 		s = s / 1024;
 		u++;
 	}
-	if (s < 10)
-		snprintf(fmt, 6, "%%.1f%c", *u);
-	else
-		snprintf(fmt, 6, "%%.0f%c", *u);
 
-	return snprintf(buff, len, fmt, s);
+	return snprintf(buff, len, "%.*f%c", s < 10, s, *u);
 }
 
 /*
