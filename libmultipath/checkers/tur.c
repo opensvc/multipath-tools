@@ -104,10 +104,17 @@ void libcheck_repair (struct checker * c)
 	return;
 }
 
-#define TUR_MSG(msg, fmt, args...) snprintf(msg, CHECKER_MSG_LEN, fmt, ##args);
+#define TUR_MSG(fmt, args...)					\
+	do {							\
+		char msg[CHECKER_MSG_LEN];			\
+								\
+		snprintf(msg, sizeof(msg), fmt, ##args);	\
+		copy_message(cb_arg, msg);			\
+	} while (0)
 
 static int
-tur_check(int fd, unsigned int timeout, char *msg)
+tur_check(int fd, unsigned int timeout,
+	  void (*copy_message)(void *, const char *), void *cb_arg)
 {
 	struct sg_io_hdr io_hdr;
 	unsigned char turCmdBlk[TUR_CMD_LEN] = { 0x00, 0, 0, 0, 0, 0 };
@@ -126,7 +133,7 @@ retry:
 	io_hdr.timeout = timeout * 1000;
 	io_hdr.pack_id = 0;
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
-		TUR_MSG(msg, MSG_TUR_DOWN);
+		TUR_MSG(MSG_TUR_DOWN);
 		return PATH_DOWN;
 	}
 	if ((io_hdr.status & 0x7e) == 0x18) {
@@ -134,7 +141,7 @@ retry:
 		 * SCSI-3 arrays might return
 		 * reservation conflict on TUR
 		 */
-		TUR_MSG(msg, MSG_TUR_UP);
+		TUR_MSG(MSG_TUR_UP);
 		return PATH_UP;
 	}
 	if (io_hdr.info & SG_INFO_OK_MASK) {
@@ -179,14 +186,14 @@ retry:
 				 * LOGICAL UNIT NOT ACCESSIBLE,
 				 * TARGET PORT IN STANDBY STATE
 				 */
-				TUR_MSG(msg, MSG_TUR_GHOST);
+				TUR_MSG(MSG_TUR_GHOST);
 				return PATH_GHOST;
 			}
 		}
-		TUR_MSG(msg, MSG_TUR_DOWN);
+		TUR_MSG(MSG_TUR_DOWN);
 		return PATH_DOWN;
 	}
-	TUR_MSG(msg, MSG_TUR_UP);
+	TUR_MSG(MSG_TUR_UP);
 	return PATH_UP;
 }
 
@@ -206,6 +213,15 @@ static void cleanup_func(void *data)
 		cleanup_context(ct);
 }
 
+static void copy_msg_to_tcc(void *ct_p, const char *msg)
+{
+	struct tur_checker_context *ct = ct_p;
+
+	pthread_mutex_lock(&ct->lock);
+	strlcpy(ct->message, msg, sizeof(ct->message));
+	pthread_mutex_unlock(&ct->lock);
+}
+
 static void *tur_thread(void *ctx)
 {
 	struct tur_checker_context *ct = ctx;
@@ -213,16 +229,16 @@ static void *tur_thread(void *ctx)
 
 	condlog(3, "%d:%d: tur checker starting up", TUR_DEVT(ct));
 
-	ct->message[0] = '\0';
 	/* This thread can be canceled, so setup clean up */
 	tur_thread_cleanup_push(ct);
 
 	/* TUR checker start up */
 	pthread_mutex_lock(&ct->lock);
 	ct->state = PATH_PENDING;
+	ct->message[0] = '\0';
 	pthread_mutex_unlock(&ct->lock);
 
-	state = tur_check(ct->fd, ct->timeout, ct->message);
+	state = tur_check(ct->fd, ct->timeout, copy_msg_to_tcc, ct->message);
 
 	/* TUR checker done */
 	pthread_mutex_lock(&ct->lock);
@@ -262,6 +278,13 @@ static int tur_check_async_timeout(struct checker *c)
 	return (now.tv_sec > ct->time);
 }
 
+static void copy_msg_to_checker(void *c_p, const char *msg)
+{
+	struct checker *c = c_p;
+
+	strlcpy(c->message, msg, sizeof(c->message));
+}
+
 extern int
 libcheck_check (struct checker * c)
 {
@@ -279,7 +302,7 @@ libcheck_check (struct checker * c)
 		ct->devt = sb.st_rdev;
 
 	if (c->sync)
-		return tur_check(c->fd, c->timeout, c->message);
+		return tur_check(c->fd, c->timeout, copy_msg_to_checker, c);
 
 	/*
 	 * Async mode
@@ -342,7 +365,8 @@ libcheck_check (struct checker * c)
 			ct->thread = 0;
 			condlog(3, "%d:%d: failed to start tur thread, using"
 				" sync mode", TUR_DEVT(ct));
-			return tur_check(c->fd, c->timeout, c->message);
+			return tur_check(c->fd, c->timeout,
+					 copy_msg_to_checker, c);
 		}
 		tur_timeout(&tsp);
 		r = pthread_cond_timedwait(&ct->active, &ct->lock, &tsp);
