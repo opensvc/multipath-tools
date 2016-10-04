@@ -23,6 +23,7 @@
 #endif
 #include <semaphore.h>
 #include <time.h>
+#include <valgrind/drd.h>
 
 /*
  * libmultipath
@@ -2514,6 +2515,13 @@ main (int argc, char *argv[])
 	int err;
 	int foreground = 0;
 	struct config *conf;
+
+	ANNOTATE_BENIGN_RACE_SIZED(&multipath_conf, sizeof(multipath_conf),
+				   "Manipulated through RCU");
+	ANNOTATE_BENIGN_RACE_SIZED(&running_state, sizeof(running_state),
+		"Suppress complaints about unprotected running_state reads");
+	ANNOTATE_BENIGN_RACE_SIZED(&uxsock_timeout, sizeof(uxsock_timeout),
+		"Suppress complaints about this scalar variable");
 
 	logsink = 1;
 

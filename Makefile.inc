@@ -54,6 +54,7 @@ libdir		= $(prefix)/$(LIB)/multipath
 unitdir		= $(prefix)/$(SYSTEMDPATH)/systemd/system
 mpathpersistdir	= $(TOPDIR)/libmpathpersist
 mpathcmddir	= $(TOPDIR)/libmpathcmd
+thirdpartydir	= $(TOPDIR)/third-party
 
 GZIP		= gzip -9 -c
 RM		= rm -f

@@ -8,7 +8,7 @@
 #include "log_pthread.h"
 #include <sys/types.h>
 #include <time.h>
-
+#include <valgrind/drd.h>
 #include "vector.h"
 #include "config.h"
 
@@ -20,7 +20,9 @@ void dlog (int sink, int prio, const char * fmt, ...)
 
 	va_start(ap, fmt);
 	conf = get_multipath_config();
+	ANNOTATE_IGNORE_READS_BEGIN();
 	thres = (conf) ? conf->verbosity : 0;
+	ANNOTATE_IGNORE_READS_END();
 	put_multipath_config(conf);
 
 	if (prio <= thres) {
