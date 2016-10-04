@@ -422,9 +422,9 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	{
-		/* DS4200 / FAStT200 */
+		/* FAStT200 and FAStT500 */
 		.vendor        = "IBM",
-		.product       = "^3542",
+		.product       = "^(3542|3552)",
 		.bl_product    = "Universal Xport",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
