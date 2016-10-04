@@ -224,6 +224,17 @@ static void cleanup_func(void *data)
 		cleanup_context(ct);
 }
 
+static int tur_running(struct tur_checker_context *ct)
+{
+	pthread_t thread;
+
+	pthread_spin_lock(&ct->hldr_lock);
+	thread = ct->thread;
+	pthread_spin_unlock(&ct->hldr_lock);
+
+	return thread != 0;
+}
+
 static void copy_msg_to_tcc(void *ct_p, const char *msg)
 {
 	struct tur_checker_context *ct = ct_p;
@@ -334,7 +345,13 @@ libcheck_check (struct checker * c)
 	}
 
 	if (ct->running) {
-		/* Check if TUR checker is still running */
+		/*
+		 * Check if TUR checker is still running. Hold hldr_lock
+		 * around the pthread_cancel() call to avoid that
+		 * pthread_cancel() gets called after the (detached) TUR
+		 * thread has exited.
+		 */
+		pthread_spin_lock(&ct->hldr_lock);
 		if (ct->thread) {
 			if (tur_check_async_timeout(c)) {
 				condlog(3, "%s: tur checker timeout",
@@ -355,9 +372,10 @@ libcheck_check (struct checker * c)
 			tur_status = ct->state;
 			strlcpy(c->message, ct->message, sizeof(c->message));
 		}
+		pthread_spin_unlock(&ct->hldr_lock);
 		pthread_mutex_unlock(&ct->lock);
 	} else {
-		if (ct->thread) {
+		if (tur_running(ct)) {
 			/* pthread cancel failed. continue in sync mode */
 			pthread_mutex_unlock(&ct->lock);
 			condlog(3, "%s: tur thread not responding",
@@ -391,7 +409,7 @@ libcheck_check (struct checker * c)
 		tur_status = ct->state;
 		strlcpy(c->message, ct->message, sizeof(c->message));
 		pthread_mutex_unlock(&ct->lock);
-		if (ct->thread &&
+		if (tur_running(ct) &&
 		    (tur_status == PATH_PENDING || tur_status == PATH_UNCHECKED)) {
 			condlog(3, "%s: tur checker still running",
 				tur_devt(devt, sizeof(devt), ct));
