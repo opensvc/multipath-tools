@@ -333,6 +333,7 @@ libcheck_check (struct checker * c)
 		tur_set_async_timeout(c);
 		setup_thread_attr(&attr, 32 * 1024, 1);
 		r = pthread_create(&ct->thread, &attr, tur_thread, ct);
+		pthread_attr_destroy(&attr);
 		if (r) {
 			pthread_spin_lock(&ct->hldr_lock);
 			ct->holders--;
@@ -343,7 +344,6 @@ libcheck_check (struct checker * c)
 				" sync mode", TUR_DEVT(ct));
 			return tur_check(c->fd, c->timeout, c->message);
 		}
-		pthread_attr_destroy(&attr);
 		tur_timeout(&tsp);
 		r = pthread_cond_timedwait(&ct->active, &ct->lock, &tsp);
 		tur_status = ct->state;
