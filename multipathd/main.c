@@ -1742,6 +1742,19 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	return 1;
 }
 
+static void init_path_check_interval(struct vectors *vecs)
+{
+	struct config *conf;
+	struct path *pp;
+	unsigned int i;
+
+	vector_foreach_slot (vecs->pathvec, pp, i) {
+		conf = get_multipath_config();
+		pp->checkint = conf->checkint;
+		put_multipath_config(conf);
+	}
+}
+
 static void *
 checkerloop (void *ap)
 {
@@ -1758,15 +1771,6 @@ checkerloop (void *ap)
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	vecs = (struct vectors *)ap;
 	condlog(2, "path checkers start up");
-
-	/*
-	 * init the path check interval
-	 */
-	vector_foreach_slot (vecs->pathvec, pp, i) {
-		conf = get_multipath_config();
-		pp->checkint = conf->checkint;
-		put_multipath_config(conf);
-	}
 
 	/* Tweak start time for initial path check */
 	if (clock_gettime(CLOCK_MONOTONIC, &last_time) != 0)
@@ -2326,6 +2330,8 @@ child (void * param)
 	 * Signal start of configuration
 	 */
 	post_config_state(DAEMON_CONFIGURE);
+
+	init_path_check_interval(vecs);
 
 	/*
 	 * Start uevent listener early to catch events
