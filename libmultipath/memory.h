@@ -27,7 +27,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 /* Local defines */
 #ifdef _DEBUG_

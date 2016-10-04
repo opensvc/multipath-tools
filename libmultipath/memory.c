@@ -20,6 +20,7 @@
  * Copyright (C) 2001-2005 Alexandre Cassen, <acassen@linux-vs.org>
  */
 
+#include <assert.h>
 #include "memory.h"
 
 /*
