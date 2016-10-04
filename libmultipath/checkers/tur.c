@@ -215,7 +215,7 @@ static void *tur_thread(void *ctx)
 
 	ct->message[0] = '\0';
 	/* This thread can be canceled, so setup clean up */
-	tur_thread_cleanup_push(ct)
+	tur_thread_cleanup_push(ct);
 
 	/* TUR checker start up */
 	pthread_mutex_lock(&ct->lock);
