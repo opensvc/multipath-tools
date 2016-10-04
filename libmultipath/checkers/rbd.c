@@ -220,7 +220,7 @@ free_ct:
 	return 1;
 }
 
-void cleanup_context(struct rbd_checker_context *ct)
+static void cleanup_context(struct rbd_checker_context *ct)
 {
 	pthread_mutex_destroy(&ct->lock);
 	pthread_cond_destroy(&ct->active);
@@ -317,7 +317,7 @@ free_bufs:
 	return ret;
 }
 
-int rbd_check(struct rbd_checker_context *ct, char *msg)
+static int rbd_check(struct rbd_checker_context *ct, char *msg)
 {
 	if (ct->blacklisted || rbd_is_blacklisted(ct, msg) == 1)
 		return PATH_DOWN;
@@ -333,7 +333,7 @@ int rbd_check(struct rbd_checker_context *ct, char *msg)
 	return PATH_UP;
 }
 
-int safe_write(int fd, const void *buf, size_t count)
+static int safe_write(int fd, const void *buf, size_t count)
 {
 	while (count > 0) {
 		ssize_t r = write(fd, buf, count);
@@ -493,7 +493,7 @@ static int rbd_repair(struct rbd_checker_context *ct, char *msg)
 #define rbd_thread_cleanup_push(ct) pthread_cleanup_push(cleanup_func, ct)
 #define rbd_thread_cleanup_pop(ct) pthread_cleanup_pop(1)
 
-void cleanup_func(void *data)
+static void cleanup_func(void *data)
 {
 	int holders;
 	struct rbd_checker_context *ct = data;
@@ -506,7 +506,7 @@ void cleanup_func(void *data)
 		cleanup_context(ct);
 }
 
-void *rbd_thread(void *ctx)
+static void *rbd_thread(void *ctx)
 {
 	struct rbd_checker_context *ct = ctx;
 	int state;
