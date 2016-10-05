@@ -146,6 +146,15 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 18,
 		.prio_name     = PRIO_ALUA,
 	},
+	{
+		/* StoreVirtual 4000 family */
+		.vendor        = "LEFTHAND",
+		.product       = "^(P4000|iSCSIDisk)",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 18,
+		.prio_name     = PRIO_ALUA,
+	},
 	/*
 	 * DataDirect Networks
 	 */
