@@ -573,6 +573,18 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
 	},
+	{
+		/*
+		 * SolidFir family
+		 *
+		 * Maintainer : PJ Waskiewicz
+		 * Mail : pj.waskiewicz@netapp.com
+		 */
+		.vendor        = "SolidFir",
+		.product       = "SSD SAN",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 24,
+	},
 	/*
 	 * Nexenta
 	 *
