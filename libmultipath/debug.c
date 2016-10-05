@@ -8,7 +8,7 @@
 #include "log_pthread.h"
 #include <sys/types.h>
 #include <time.h>
-#include <valgrind/drd.h>
+#include <../third-party/valgrind/drd.h>
 #include "vector.h"
 #include "config.h"
 
