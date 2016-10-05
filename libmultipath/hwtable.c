@@ -268,6 +268,14 @@ static struct hwentry default_hw[] = {
 		.product       = "FC2502",
 		.pgpolicy      = MULTIBUS,
 	},
+	{
+		.vendor        = "FUJITSU",
+		.product       = "E[248]000",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 10,
+		.prio_name     = PRIO_ALUA,
+	},
 	/*
 	 * Hitachi
 	 *
