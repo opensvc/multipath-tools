@@ -886,6 +886,17 @@ static struct hwentry default_hw[] = {
 		.product       = "K2",
 		.pgpolicy      = MULTIBUS,
 	},
+	/*
+	 * Tegile Systems
+	 */
+	{
+		.vendor        = "TEGILE",
+		.product       = "(ZEBI-(FC|ISCSI)|INTELLIFLASH)",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 10,
+	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
