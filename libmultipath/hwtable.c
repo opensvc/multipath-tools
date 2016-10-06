@@ -867,6 +867,17 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
 	},
+	/*
+	 * Nimble Storage
+	 */
+	{
+		.vendor        = "Nimble",
+		.product       = "Server",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
