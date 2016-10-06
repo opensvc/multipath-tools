@@ -878,6 +878,14 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
+	/*
+	 * Kaminario
+	 */
+	{
+		.vendor        = "KMNRIO",
+		.product       = "K2",
+		.pgpolicy      = MULTIBUS,
+	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
