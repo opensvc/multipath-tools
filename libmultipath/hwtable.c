@@ -857,6 +857,16 @@ static struct hwentry default_hw[] = {
 		.product       = "XPD",
 		.pgpolicy      = MULTIBUS,
 	},
+	/*
+	 * Infinidat
+	 */
+	{
+		.vendor        = "NFINIDAT",
+		.product       = "InfiniBox",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
