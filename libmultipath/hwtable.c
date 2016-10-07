@@ -781,6 +781,14 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
 	},
+	{
+		.vendor        = "(NexGen|Pivot3)",
+		.product       = "(TierStore|vSTAC)",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+	},
 	/*
 	 * Intel
 	 */
