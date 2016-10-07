@@ -525,6 +525,13 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
 	},
+	{
+		/* FlashSystem 710/720/810/820/840/900 */
+		.vendor        = "IBM",
+		.product       = "FlashSystem",
+		.no_path_retry = NO_PATH_RETRY_FAIL,
+		.pgpolicy      = MULTIBUS,
+	},
 		/*
 		 * IBM Power Virtual SCSI Devices
 		 *
