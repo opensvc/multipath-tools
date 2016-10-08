@@ -23,7 +23,6 @@
 #endif
 #include <semaphore.h>
 #include <time.h>
-#include <valgrind/drd.h>
 
 /*
  * libmultipath
@@ -85,6 +84,7 @@ int uxsock_timeout;
 #include "lock.h"
 #include "waiter.h"
 #include "wwids.h"
+#include "../third-party/valgrind/drd.h"
 
 #define FILE_NAME_SIZE 256
 #define CMDSIZE 160
