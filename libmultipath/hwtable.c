@@ -904,6 +904,27 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.no_path_retry = 10,
 	},
+	/*
+	 * Imation/Nexsan
+	 */
+	{
+		/* E-Series */
+		.vendor        = "NEXSAN",
+		.product       = "NXS-B0",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 15,
+	},
+	{
+		/* SATABeast / SATABoy */
+		.vendor        = "NEXSAN",
+		.product       = "SATAB",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 15,
+	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
