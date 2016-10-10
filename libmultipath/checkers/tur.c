@@ -64,6 +64,7 @@ static const char *tur_devt(char *devt_buf, int size,
 int libcheck_init (struct checker * c)
 {
 	struct tur_checker_context *ct;
+	pthread_mutexattr_t attr;
 
 	ct = malloc(sizeof(struct tur_checker_context));
 	if (!ct)
@@ -74,7 +75,10 @@ int libcheck_init (struct checker * c)
 	ct->fd = -1;
 	ct->holders = 1;
 	pthread_cond_init_mono(&ct->active);
-	pthread_mutex_init(&ct->lock, NULL);
+	pthread_mutexattr_init(&attr);
+	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+	pthread_mutex_init(&ct->lock, &attr);
+	pthread_mutexattr_destroy(&attr);
 	pthread_spin_init(&ct->hldr_lock, PTHREAD_PROCESS_PRIVATE);
 	c->context = ct;
 
