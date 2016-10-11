@@ -552,7 +552,7 @@ static int rbd_exec_fn(struct checker *c, thread_fn *fn)
 	int rbd_status, r;
 
 	if (c->sync)
-		return rbd_check(ct, c->message);
+		return fn(ct, c->message);
 	/*
 	 * Async mode
 	 */
