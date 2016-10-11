@@ -46,6 +46,7 @@ struct rbd_checker_context {
 	char *username;
 	int remapped;
 	int blacklisted;
+	int lock_on_read:1;
 
 	rados_t cluster;
 
@@ -141,6 +142,9 @@ int libcheck_init(struct checker * c)
 			ct->rbd_bus_id);
 		goto free_addr;
 	}
+
+	if (strstr(config_info, "lock_on_read"))
+		ct->lock_on_read = 1;
 
 	ct->config_info = strdup(config_info);
 	if (!ct->config_info)
@@ -398,7 +402,10 @@ static int rbd_remap(struct rbd_checker_context *ct)
 	case 0:
 		argv[i++] = "rbd";
 		argv[i++] = "map";
-		argv[i++] = "-o noshare";
+		if (ct->lock_on_read)
+			argv[i++] = "-o noshare,lock_on_read";
+		else
+			argv[i++] = "-o noshare";
 		if (ct->username) {
 			argv[i++] = "--id";
 			argv[i++] = ct->username;
