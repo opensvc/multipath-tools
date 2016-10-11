@@ -34,6 +34,8 @@ typedef int (thread_fn)(struct rbd_checker_context *ct, char *msg);
 
 #define RBD_MSG(msg, fmt, args...) snprintf(msg, CHECKER_MSG_LEN, fmt, ##args);
 
+#define RBD_FEATURE_EXCLUSIVE_LOCK	(1 << 2)
+
 struct rbd_checker_context {
 	int rbd_bus_id;
 	char *client_addr;
@@ -66,8 +68,9 @@ int libcheck_init(struct checker * c)
 	struct udev_device *bus_dev;
 	struct udev *udev;
 	struct stat sb;
-	const char *block_name, *addr, *config_info;
+	const char *block_name, *addr, *config_info, *features_str;
 	const char *image, *pool, *snap, *username;
+	uint64_t features = 0;
 	char sysfs_path[PATH_SIZE];
 	int ret;
 
@@ -119,6 +122,15 @@ int libcheck_init(struct checker * c)
 	ct->client_addr = strdup(addr);
 	if (!ct->client_addr)
 		goto free_dev;
+
+	features_str = udev_device_get_sysattr_value(bus_dev, "features");
+	if (!features_str)
+		goto free_addr;
+	features = strtoll(features_str, NULL, 16);
+	if (!(features & RBD_FEATURE_EXCLUSIVE_LOCK)) {
+		condlog(3, "Exclusive lock not set.");
+		goto free_addr;
+	}
 
 	config_info = udev_device_get_sysattr_value(bus_dev, "config_info");
 	if (!config_info)
