@@ -124,6 +124,11 @@ int libcheck_init(struct checker * c)
 	if (!config_info)
 		goto free_addr;
 
+	if (!strstr(config_info, "noshare")) {
+		condlog(3, "Only nonshared clients supported.");
+		goto free_addr;
+	}
+
 	ct->config_info = strdup(config_info);
 	if (!ct->config_info)
 		goto free_addr;
