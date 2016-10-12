@@ -933,6 +933,15 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.no_path_retry = 15,
 	},
+	/*
+	 * Xiotech
+	 */
+	{
+		.vendor        = "(XIOTECH|XIOtech)",
+		.product       = "ISE",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 12,
+	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
