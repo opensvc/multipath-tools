@@ -481,6 +481,7 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data, int timeout )
 		tmo.tv_sec = 0;
 	}
 	if (h->locked) {
+		int locked = 0;
 		struct vectors * vecs = (struct vectors *)data;
 
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
@@ -491,10 +492,11 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data, int timeout )
 			r = 0;
 		}
 		if (r == 0) {
+			locked = 1;
 			pthread_testcancel();
 			r = h->fn(cmdvec, reply, len, data);
 		}
-		pthread_cleanup_pop(!r);
+		pthread_cleanup_pop(locked);
 	} else
 		r = h->fn(cmdvec, reply, len, data);
 	free_keys(cmdvec);
