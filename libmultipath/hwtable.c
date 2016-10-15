@@ -944,6 +944,32 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 		.no_path_retry = 12,
 	},
+	/*
+	 * Violin Memory
+	 */
+	{
+		/* V3000 / V6000 Series */
+		.vendor        = "VIOLIN",
+		.product       = "SAN ARRAY$",
+		.pgpolicy      = GROUP_BY_SERIAL,
+		.no_path_retry = 30,
+	},
+	{
+		.vendor        = "VIOLIN",
+		.product       = "SAN ARRAY ALUA",
+		.hwhandler     = "1 alua",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 30,
+	},
+	{
+		/* FSP 7000 family */
+		.vendor        = "VIOLIN",
+		.product       = "CONCERTO ARRAY",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 30,
+	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
