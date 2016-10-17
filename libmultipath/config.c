@@ -597,7 +597,7 @@ load_config (char * file)
 	conf->wwids_file = set_default(DEFAULT_WWIDS_FILE);
 	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
 	conf->features = set_default(DEFAULT_FEATURES);
-	conf->flush_on_last_del = 0;
+	conf->flush_on_last_del = DEFAULT_FLUSH;
 	conf->attribute_flags = 0;
 	conf->reassign_maps = DEFAULT_REASSIGN_MAPS;
 	conf->checkint = DEFAULT_CHECKINT;
