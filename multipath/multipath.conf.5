@@ -498,14 +498,21 @@ Default value is: \fBuniform\fR
 .
 .TP
 .B no_path_retry
-Specify the number of retries until disable queueing, or
-.I fail
-for immediate failure (no queueing),
-.I queue
-for never stop queueing. If unset no queueing is attempted. See KNOWN ISSUES.
+Specify what to do when all paths are down. Possible values are:
 .RS
+.TP 12
+.I value > 0
+number of retries until disable I/O queueing.
 .TP
-Default value is: \fB<unset>\fR
+.I fail
+for immediate failure (no I/O queueing).
+.TP
+.I queue
+for never stop I/O queueing. Similar to \fIqueue_if_no_path\fR.
+.TP
+See KNOWN ISSUES.
+.TP
+Default value is: \fBfail\fR
 .RE
 .
 .
