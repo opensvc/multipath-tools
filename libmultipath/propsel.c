@@ -137,7 +137,7 @@ select_rr_weight (struct config *conf, struct multipath * mp)
 	mp_set_ovr(rr_weight);
 	mp_set_hwe(rr_weight);
 	mp_set_conf(rr_weight);
-	mp_set_default(rr_weight, RR_WEIGHT_NONE);
+	mp_set_default(rr_weight, DEFAULT_RR_WEIGHT);
 out:
 	print_rr_weight(buff, 13, &mp->rr_weight);
 	condlog(3, "%s: rr_weight = %s %s", mp->alias, buff, origin);
@@ -550,7 +550,7 @@ select_flush_on_last_del(struct config *conf, struct multipath *mp)
 	mp_set_ovr(flush_on_last_del);
 	mp_set_hwe(flush_on_last_del);
 	mp_set_conf(flush_on_last_del);
-	mp_set_default(flush_on_last_del, FLUSH_DISABLED);
+	mp_set_default(flush_on_last_del, DEFAULT_FLUSH);
 out:
 	condlog(3, "%s: flush_on_last_del = %s %s", mp->alias,
 		(mp->flush_on_last_del == FLUSH_ENABLED)? "yes" : "no", origin);

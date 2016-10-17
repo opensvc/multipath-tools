@@ -31,6 +31,7 @@
 #define DEFAULT_PRIO		"const"
 #define DEFAULT_PRIO_ARGS	""
 #define DEFAULT_CHECKER		TUR
+#define DEFAULT_FLUSH		FLUSH_DISABLED
 
 #define DEFAULT_CHECKINT	5
 #define MAX_CHECKINT(a)		(a << 2)
