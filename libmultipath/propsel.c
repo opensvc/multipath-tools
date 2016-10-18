@@ -228,7 +228,7 @@ want_user_friendly_names(struct config *conf, struct multipath * mp)
 	       "(controller setting)");
 	do_set(user_friendly_names, conf, user_friendly_names,
 	       "(config file setting)");
-	do_default(user_friendly_names, USER_FRIENDLY_NAMES_OFF);
+	do_default(user_friendly_names, DEFAULT_USER_FRIENDLY_NAMES);
 out:
 	condlog(3, "%s: user_friendly_names = %s %s", mp->wwid,
 		(user_friendly_names == USER_FRIENDLY_NAMES_ON)? "yes" : "no",
