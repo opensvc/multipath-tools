@@ -1804,30 +1804,29 @@ checkerloop (void *ap)
 			condlog(4, "timeout waiting for DAEMON_IDLE");
 			continue;
 		}
-		if (vecs->pathvec) {
-			pthread_cleanup_push(cleanup_lock, &vecs->lock);
-			lock(&vecs->lock);
-			pthread_testcancel();
-			vector_foreach_slot (vecs->pathvec, pp, i) {
-				rc = check_path(vecs, pp, ticks);
-				if (rc < 0) {
-					vector_del_slot(vecs->pathvec, i);
-					free_path(pp);
-					i--;
-				} else
-					num_paths += rc;
-			}
-			lock_cleanup_pop(vecs->lock);
+
+		pthread_cleanup_push(cleanup_lock, &vecs->lock);
+		lock(&vecs->lock);
+		pthread_testcancel();
+		vector_foreach_slot (vecs->pathvec, pp, i) {
+			rc = check_path(vecs, pp, ticks);
+			if (rc < 0) {
+				vector_del_slot(vecs->pathvec, i);
+				free_path(pp);
+				i--;
+			} else
+				num_paths += rc;
 		}
-		if (vecs->mpvec) {
-			pthread_cleanup_push(cleanup_lock, &vecs->lock);
-			lock(&vecs->lock);
-			pthread_testcancel();
-			defered_failback_tick(vecs->mpvec);
-			retry_count_tick(vecs->mpvec);
-			missing_uev_wait_tick(vecs);
-			lock_cleanup_pop(vecs->lock);
-		}
+		lock_cleanup_pop(vecs->lock);
+
+		pthread_cleanup_push(cleanup_lock, &vecs->lock);
+		lock(&vecs->lock);
+		pthread_testcancel();
+		defered_failback_tick(vecs->mpvec);
+		retry_count_tick(vecs->mpvec);
+		missing_uev_wait_tick(vecs);
+		lock_cleanup_pop(vecs->lock);
+
 		if (count)
 			count--;
 		else {
