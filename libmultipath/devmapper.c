@@ -534,8 +534,8 @@ dm_get_status(char * name, char * outstatus)
 	int r = 1;
 	struct dm_task *dmt;
 	uint64_t start, length;
-	char *target_type;
-	char *status;
+	char *target_type = NULL;
+	char *status = NULL;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_STATUS)))
 		return 1;
@@ -551,6 +551,10 @@ dm_get_status(char * name, char * outstatus)
 	/* Fetch 1st target */
 	dm_get_next_target(dmt, NULL, &start, &length,
 			   &target_type, &status);
+	if (!status) {
+		condlog(2, "get null status.");
+		goto out;
+	}
 
 	if (snprintf(outstatus, PARAMS_SIZE, "%s", status) <= PARAMS_SIZE)
 		r = 0;
