@@ -1454,8 +1454,7 @@ void repair_path(struct path * pp)
 		return;
 
 	checker_repair(&pp->checker);
-	if (strlen(checker_message(&pp->checker)))
-		LOG_MSG(1, checker_message(&pp->checker));
+	LOG_MSG(1, checker_message(&pp->checker));
 }
 
 /*
@@ -1590,8 +1589,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 		int oldstate = pp->state;
 		pp->state = newstate;
 
-		if (strlen(checker_message(&pp->checker)))
-			LOG_MSG(1, checker_message(&pp->checker));
+		LOG_MSG(1, checker_message(&pp->checker));
 
 		/*
 		 * upon state change, reset the checkint
@@ -1703,8 +1701,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 			pp->tick = pp->checkint;
 		}
 	}
-	else if (newstate == PATH_DOWN &&
-		 strlen(checker_message(&pp->checker))) {
+	else if (newstate == PATH_DOWN) {
 		int log_checker_err;
 
 		conf = get_multipath_config();
