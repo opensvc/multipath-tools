@@ -1,8 +1,8 @@
-multipath-tools for Linux <http://christophe.varoqui.free.fr/>
+	multipath-tools for Linux <http://christophe.varoqui.free.fr/>
 
 
-This package provides the following binaries to drive the
-Device Mapper multipathing driver:
+This package provides the following binaries to drive the Device Mapper
+multipathing driver:
 
 multipath - Device mapper target autoconfig.
 multipathd - Multipath daemon.
@@ -10,20 +10,38 @@ mpathpersist - Manages SCSI persistent reservations on dm multipath devices.
 kpartx - Create device maps from partition tables.
 
 
-tarballs are not generated anymore, to get a specific release do:
-git clone http://git.opensvc.com/multipath-tools/.git
+Releases
+========
+Tarballs are not generated anymore, to get a specific release do:
+git clone https://git.opensvc.com/multipath-tools/.git
 cd multipath-tools
 git tag
 git archive --format=tar.gz --prefix=multipath-tools-X.Y.Z/ X.Y.Z > ../multipath-tools-X.Y.Z.tar.gz
 
 Alternatively it may be obtained from gitweb, go to:
-http://git.opensvc.com/?p=multipath-tools/.git;a=tags
+https://git.opensvc.com/?p=multipath-tools/.git;a=tags
 select a release-tag and then click on "snapshot".
 
 
-To get latest devel code: git clone http://git.opensvc.com/multipath-tools/.git
+Source code
+===========
+To get latest devel code: git clone https://git.opensvc.com/multipath-tools/.git
+Gitweb: https://git.opensvc.com/?p=multipath-tools/.git
 
-Mailing list: http://www.redhat.com/mailman/listinfo/dm-devel
-Gitweb: http://git.opensvc.com/?p=multipath-tools/.git
 
-Current maintainer is Christophe Varoqui <christophe.varoqui@opensvc.com>
+Mailing list (subscribers-only)
+============
+To subscribe and archives: https://www.redhat.com/mailman/listinfo/dm-devel
+Searchable: https://marc.info/?l=dm-devel
+
+
+Changelog
+=========
+pre-0.4.5: https://web.archive.org/web/20070309224034/http://christophe.varoqui.free.fr/wiki/wakka.php?wiki=ChangeLog
+post-0.4.5: https://git.opensvc.com/?p=multipath-tools/.git;a=log
+
+
+Maintainer
+==========
+Christophe Varoqui <christophe.varoqui@opensvc.com>
+Device-mapper development mailing list <dm-devel@redhat.com>
