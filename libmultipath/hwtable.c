@@ -163,6 +163,20 @@ static struct hwentry default_hw[] = {
 		.product       = "SAN DataDirector",
 		.pgpolicy      = MULTIBUS,
 	},
+	{
+		.vendor        = "DDN",
+		.product       = "^EF3010",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 30,
+	},
+	{
+		.vendor        = "DDN",
+		.product       = "^(EF3015|S2A|SFA)",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 30,
+	},
 	/*
 	 * Dell EMC
 	 */
@@ -532,6 +546,15 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_FAIL,
 		.pgpolicy      = MULTIBUS,
 	},
+	{
+		/* DDN */
+		.vendor        = "IBM",
+		.product       = "^(DCS9900|2851)",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 30,
+	},
 		/*
 		 * IBM Power Virtual SCSI Devices
 		 *
@@ -652,6 +675,15 @@ static struct hwentry default_hw[] = {
 		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 30,
+	},
+	{
+		/* DDN */
+		.vendor        = "SGI",
+		.product       = "^DD[46]A-",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
 		.no_path_retry = 30,
 	},
 	/*
