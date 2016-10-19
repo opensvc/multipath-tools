@@ -827,6 +827,7 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor	       = "(Intel|INTEL)",
 		.product       = "Multi-Flex",
+		.bl_product    = "VTrak V-LUN",
 		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
@@ -999,6 +1000,16 @@ static struct hwentry default_hw[] = {
 		/* FSP 7000 family */
 		.vendor        = "VIOLIN",
 		.product       = "CONCERTO ARRAY",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 30,
+	},
+	/*
+	 * Promise Technology
+	 */
+	{
+		.vendor        = "Promise",
+		.product       = "VTrak",
+		.bl_product    = "VTrak V-LUN",
 		.pgpolicy      = MULTIBUS,
 		.no_path_retry = 30,
 	},
