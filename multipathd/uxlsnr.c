@@ -182,7 +182,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 				pthread_mutex_unlock(&client_lock);
 				condlog(0, "%s: failed to realloc %d poll fds",
 					"uxsock", 1 + num_clients);
-				pthread_yield();
+				sched_yield();
 				continue;
 			}
 			old_clients = num_clients;
