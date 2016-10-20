@@ -304,7 +304,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* AMS 2000 and HUS 100 families */
-		.vendor        = "HITACHI",
+		.vendor        = "(HITACHI|HP)",
 		.product       = "^DF",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = GROUP_BY_PRIO,
