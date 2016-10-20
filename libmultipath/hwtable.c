@@ -1013,6 +1013,18 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 		.no_path_retry = 30,
 	},
+	/*
+	 * Infortrend Technology
+	 */
+	{
+		/* EonStor / ESVA */
+		.vendor        = "^IFT",
+		.product       = ".*",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 30,
+	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.
