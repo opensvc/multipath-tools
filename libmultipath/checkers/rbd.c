@@ -464,7 +464,7 @@ static int rbd_rm_blacklist(struct rbd_checker_context *ct)
 	cmd[1] = NULL;
 
 	ret = rados_mon_command(ct->cluster, (const char **)cmd, 1, "", 0,
-				NULL, 0, &stat, &stat_len);
+				NULL, NULL, &stat, &stat_len);
 	if (ret < 0) {
 		condlog(1, "rbd%d: repair failed to remove blacklist for %s %d",
 			ct->rbd_bus_id, ct->client_addr, ret);

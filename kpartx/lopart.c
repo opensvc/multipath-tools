@@ -228,7 +228,7 @@ find_unused_loop_device (void)
 				"       maybe /dev/loop# has the wrong major number?");
 	} else
 		fprintf(stderr, "mount: could not find any free loop device");
-	return 0;
+	return NULL;
 }
 
 extern int
