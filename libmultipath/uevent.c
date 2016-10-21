@@ -49,7 +49,6 @@
 
 typedef int (uev_trigger)(struct uevent *, void * trigger_data);
 
-pthread_t uevq_thr;
 LIST_HEAD(uevq);
 pthread_mutex_t uevq_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t *uevq_lockp = &uevq_lock;
