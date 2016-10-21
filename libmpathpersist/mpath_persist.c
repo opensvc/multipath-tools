@@ -414,17 +414,6 @@ get_mpvec (vector curmp, vector pathvec, char * refwwid)
 	return MPATH_PR_SUCCESS ;
 }
 
-void * mpath_prin_pthread_fn (void *p)
-{
-	int ret;
-	struct prin_param * pparam = (struct prin_param *)p;
-
-	ret = prin_do_scsi_ioctl(pparam->dev, pparam->rq_servact,
-				 pparam->resp,  pparam->noisy);
-	pparam->status = ret;
-	pthread_exit(NULL);
-}
-
 int mpath_send_prin_activepath (char * dev, int rq_servact,
 				struct prin_resp * resp, int noisy)
 {
