@@ -504,7 +504,6 @@ compare_gpts(gpt_header *pgpt, gpt_header *agpt, uint64_t lastlba)
 static int
 find_valid_gpt(int fd, gpt_header ** gpt, gpt_entry ** ptes)
 {
-	extern int force_gpt;
 	int good_pgpt = 0, good_agpt = 0, good_pmbr = 0;
 	gpt_header *pgpt = NULL, *agpt = NULL;
 	gpt_entry *pptes = NULL, *aptes = NULL;

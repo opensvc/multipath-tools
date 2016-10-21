@@ -39,6 +39,8 @@ struct slice {
 
 typedef int (ptreader)(int fd, struct slice all, struct slice *sp, int ns);
 
+extern int force_gpt;
+
 extern ptreader read_dos_pt;
 extern ptreader read_bsd_pt;
 extern ptreader read_solaris_pt;
