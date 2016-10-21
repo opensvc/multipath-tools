@@ -106,7 +106,7 @@ int datacore_prio (const char *dev, int sg_fd, char * args)
 	return 0;
 }
 
-int getprio (struct path * pp, char * args)
+int getprio(struct path * pp, char * args, unsigned int timeout)
 {
 	return datacore_prio(pp->dev, pp->fd, args);
 }

@@ -151,7 +151,7 @@ int prio_path_weight(struct path *pp, char *prio_args)
 	return priority;
 }
 
-int getprio(struct path *pp, char *args)
+int getprio(struct path *pp, char *args, unsigned int timeout)
 {
 	return prio_path_weight(pp, args);
 }

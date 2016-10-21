@@ -64,4 +64,7 @@ char * prio_name (struct prio *);
 char * prio_args (struct prio *);
 int prio_set_args (struct prio *, char *);
 
+/* The only function exported by prioritizer dynamic libraries (.so) */
+int getprio(struct path *, char *, unsigned int);
+
 #endif /* _PRIO_H */
