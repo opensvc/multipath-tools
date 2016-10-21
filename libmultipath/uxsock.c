@@ -116,7 +116,7 @@ ssize_t read_all(int fd, void *buf, size_t len, unsigned int timeout)
 			if (errno == EINTR)
 				continue;
 			return -errno;
-		} else if (!pfd.revents & POLLIN)
+		} else if (!(pfd.revents & POLLIN))
 			continue;
 		n = read(fd, buf, len);
 		if (n < 0) {

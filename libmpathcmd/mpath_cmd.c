@@ -31,7 +31,7 @@ static ssize_t read_all(int fd, void *buf, size_t len, unsigned int timeout)
 			if (errno == EINTR)
 				continue;
 			return -1;
-		} else if (!pfd.revents & POLLIN)
+		} else if (!(pfd.revents & POLLIN))
 			continue;
 		n = recv(fd, buf, len, 0);
 		if (n < 0) {
