@@ -19,7 +19,7 @@
 
 #include "../libmultipath/debug.h"
 #include "../libmultipath/sg_include.h"
-#include "../libmultipath/uevent.h"
+#include "../libmultipath/util.h"
 #include "../libmultipath/time-util.h"
 #include "../libmultipath/util.h"
 

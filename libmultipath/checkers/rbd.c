@@ -26,7 +26,7 @@
 #include "checkers.h"
 
 #include "../libmultipath/debug.h"
-#include "../libmultipath/uevent.h"
+#include "../libmultipath/util.h"
 #include "../libmultipath/time-util.h"
 
 struct rbd_checker_context;

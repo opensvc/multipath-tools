@@ -1,7 +1,10 @@
-#include <string.h>
+#include <assert.h>
 #include <ctype.h>
-#include <sys/types.h>
+#include <limits.h>
+#include <pthread.h>
+#include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "debug.h"
@@ -257,4 +260,22 @@ dev_t parse_devt(const char *dev_t)
 		return 0;
 
 	return makedev(maj, min);
+}
+
+void
+setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
+{
+	int ret;
+
+	ret = pthread_attr_init(attr);
+	assert(ret == 0);
+	if (stacksize < PTHREAD_STACK_MIN)
+		stacksize = PTHREAD_STACK_MIN;
+	ret = pthread_attr_setstacksize(attr, stacksize);
+	assert(ret == 0);
+	if (detached) {
+		ret = pthread_attr_setdetachstate(attr,
+						  PTHREAD_CREATE_DETACHED);
+		assert(ret == 0);
+	}
 }
