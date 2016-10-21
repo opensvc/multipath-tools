@@ -124,15 +124,11 @@ service_uevq(struct list_head *tmpq)
 	}
 }
 
-static void uevq_stop(void *arg)
+static void uevent_cleanup(void *arg)
 {
 	struct udev *udev = arg;
 
-	condlog(3, "Stopping uev queue");
-	pthread_mutex_lock(uevq_lockp);
-	my_uev_trigger = NULL;
-	pthread_cond_signal(uev_condp);
-	pthread_mutex_unlock(uevq_lockp);
+	condlog(3, "Releasing uevent_listen() resources");
 	udev_unref(udev);
 }
 
@@ -495,7 +491,7 @@ int uevent_listen(struct udev *udev)
 		return 1;
 	}
 	udev_ref(udev);
-	pthread_cleanup_push(uevq_stop, udev);
+	pthread_cleanup_push(uevent_cleanup, udev);
 
 	monitor = udev_monitor_new_from_netlink(udev, "udev");
 	if (!monitor) {
