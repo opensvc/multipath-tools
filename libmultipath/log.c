@@ -15,6 +15,8 @@
 
 #define ALIGN(len, s) (((len)+(s)-1)/(s)*(s))
 
+struct logarea* la;
+
 #if LOGDBG
 static void dump_logarea (void)
 {

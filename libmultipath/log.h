@@ -29,7 +29,7 @@ struct logarea {
 	char * buff;
 };
 
-struct logarea * la;
+extern struct logarea* la;
 
 int log_init (char * progname, int size);
 void log_close (void);
