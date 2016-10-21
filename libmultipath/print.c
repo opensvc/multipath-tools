@@ -1753,12 +1753,6 @@ snprint_devices (struct config *conf, char * buff, int len, struct vectors *vecs
 	return fwd;
 }
 
-extern int
-snprint_config (char * buff, int len)
-{
-	return 0;
-}
-
 /*
  * stdout printing helpers
  */
