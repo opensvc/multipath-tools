@@ -35,6 +35,7 @@
 #define __STDC_FORMAT_MACROS 1
 
 struct udev *udev;
+struct config *conf;
 
 struct config *
 mpath_lib_init (struct udev *udev)

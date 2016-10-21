@@ -26,7 +26,7 @@ struct threadinfo {
 };
 
 
-struct config * conf;
+extern struct config *conf;
 
 
 int prin_do_scsi_ioctl(char * dev, int rq_servact, struct prin_resp * resp, int noisy);
