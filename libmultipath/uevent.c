@@ -104,9 +104,6 @@ setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
 	}
 }
 
-/*
- * Called with uevq_lockp held
- */
 void
 service_uevq(struct list_head *tmpq)
 {
