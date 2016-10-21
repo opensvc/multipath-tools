@@ -142,4 +142,10 @@ char * checker_message (struct checker *);
 void checker_clear_message (struct checker *c);
 void checker_get (char *, struct checker *, char *);
 
+/* Functions exported by path checker dynamic libraries (.so) */
+int libcheck_check(struct checker *);
+int libcheck_init(struct checker *);
+void libcheck_free(struct checker *);
+void libcheck_repair(struct checker *);
+
 #endif /* _CHECKERS_H */
