@@ -46,7 +46,7 @@ struct rbd_checker_context {
 	char *username;
 	int remapped;
 	int blacklisted;
-	int lock_on_read:1;
+	unsigned lock_on_read:1;
 
 	rados_t cluster;
 
