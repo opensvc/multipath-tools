@@ -1029,10 +1029,9 @@ static struct hwentry default_hw[] = {
 	/*
 	 * Copy this TEMPLATE to add new hardware.
 	 *
-	 * Keep only mandatory and modified attributes.
+	 * Keep only mandatory(.vendor and .product) and modified attributes.
 	 * Attributes with default values must be removed.
-	 * Only .vendor and .product are mandatory, all other are optional.
-	 * .vendor, .product, .revision and .bl_product are POSIX Extended regex
+	 * .vendor, .product, .revision and .bl_product are POSIX Extended regex.
 	 *
 	 * COMPANY_NAME
 	 *
@@ -1049,9 +1048,10 @@ static struct hwentry default_hw[] = {
 		.uid_attribute = "ID_SERIAL",
 		.selector      = "service-time 0",
 		.checker_name  = TUR,
+		.alias_prefix  = "mpath",
 		.features      = "0",
 		.hwhandler     = "0",
-		.prio_name     = "const",
+		.prio_name     = PRIO_CONST,
 		.prio_args     = "",
 		.pgfailback    = -FAILBACK_MANUAL,
 		.rr_weight     = RR_WEIGHT_NONE,
@@ -1059,6 +1059,7 @@ static struct hwentry default_hw[] = {
 		.minio         = 1000,
 		.minio_rq      = 1,
 		.flush_on_last_del = FLUSH_DISABLED,
+		.user_friendly_names = USER_FRIENDLY_NAMES_OFF,
 		.fast_io_fail  = 5,
 		.dev_loss      = 600,
 		.retain_hwhandler = RETAIN_HWHANDLER_ON,
