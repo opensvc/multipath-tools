@@ -737,6 +737,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	{
+		/* 6540 */
 		.vendor        = "STK",
 		.product       = "FLEXLINE 380",
 		.bl_product    = "Universal Xport",
