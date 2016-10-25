@@ -725,6 +725,19 @@ static struct hwentry default_hw[] = {
 	},
 		/* Sun - StorageTek */
 	{
+		/* B210, B220, B240 and B280 */
+		.vendor        = "STK",
+		.product       = "BladeCtlr",
+		.bl_product    = "Universal Xport",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.checker_name  = RDAC,
+		.features      = "2 pg_init_retries 50",
+		.hwhandler     = "1 rdac",
+		.prio_name     = PRIO_RDAC,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 30,
+	},
+	{
 		/* 9176, D173, D178, D210, D220, D240 and D280 */
 		.vendor        = "STK",
 		.product       = "OPENstorage",
