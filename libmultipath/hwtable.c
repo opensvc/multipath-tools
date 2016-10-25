@@ -726,7 +726,7 @@ static struct hwentry default_hw[] = {
 		/* Sun - StorageTek */
 	{
 		.vendor        = "STK",
-		.product       = "OPENstorage D280",
+		.product       = "OPENstorage",
 		.bl_product    = "Universal Xport",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
