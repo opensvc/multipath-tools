@@ -32,7 +32,7 @@ static const char * aas_string[] = {
 	[AAS_STANDBY]		= "standby",
 	[AAS_UNAVAILABLE]	= "unavailable",
 	[AAS_LBA_DEPENDENT]	= "lba dependent",
-	[AAS_RESERVED]		= "invalid/reserved",
+	[AAS_RESERVED]		= "ARRAY BUG: invalid TPGs state!",
 	[AAS_OFFLINE]		= "offline",
 	[AAS_TRANSITIONING]	= "transitioning between states",
 };
