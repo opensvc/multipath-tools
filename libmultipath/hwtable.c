@@ -819,6 +819,15 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
 	},
+	{
+		/* ZFS Storage Appliances */
+		.vendor        = "SUN",
+		.product       = "(Sun Storage|ZFS Storage|COMSTAR)",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 30,
+	},
 	/*
 	 * Pivot3
 	 *
