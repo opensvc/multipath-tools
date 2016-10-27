@@ -65,12 +65,12 @@ get_alua_info(struct path * pp, unsigned int timeout)
 			return -ALUA_PRIO_NOT_SUPPORTED;
 		return -ALUA_PRIO_RTPG_FAILED;
 	}
-	condlog(3, "reported target port group is %i", tpg);
+	condlog(3, "%s: reported target port group is %i", pp->dev, tpg);
 	rc = get_asymmetric_access_state(pp->fd, tpg, timeout);
 	if (rc < 0)
 		return -ALUA_PRIO_GETAAS_FAILED;
 
-	condlog(3, "aas = %02x [%s]%s", rc, aas_print_string(rc),
+	condlog(3, "%s: aas = %02x [%s]%s", pp->dev, rc, aas_print_string(rc),
 		(rc & 0x80) ? " [preferred]" : "");
 	return rc;
 }
