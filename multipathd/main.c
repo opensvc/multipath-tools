@@ -715,7 +715,10 @@ ev_add_path (struct path * pp, struct vectors * vecs)
 		goto fail; /* leave path added to pathvec */
 	}
 	mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
-	if (mpp && mpp->wait_for_udev) {
+	if (mpp && mpp->wait_for_udev &&
+	    (pathcount(mpp, PATH_UP) > 0 ||
+	     (pathcount(mpp, PATH_GHOST) > 0 && pp->tpgs != TPGS_IMPLICIT))) {
+		/* if wait_for_udev is set and valid paths exist */
 		mpp->wait_for_udev = 2;
 		orphan_path(pp, "waiting for create to complete");
 		return 0;
