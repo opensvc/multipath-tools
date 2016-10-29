@@ -498,9 +498,14 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style,
 			c += snprint_multipath_header(c, reply + maxlen - c,
 						      style);
 
-		vector_foreach_slot(vecs->mpvec, mpp, i)
+		vector_foreach_slot(vecs->mpvec, mpp, i) {
+			if (update_multipath(vecs, mpp->alias, 0)) {
+				i--;
+				continue;
+			}
 			c += snprint_multipath(c, reply + maxlen - c,
 					       style, mpp, pretty);
+		}
 
 		again = ((c - reply) == (maxlen - 1));
 
@@ -997,6 +1002,8 @@ cli_disable_queueing(void *v, char **reply, int *len, void *data)
 		return 1;
 	}
 
+	if (mpp->nr_active == 0)
+		mpp->stat_map_failures++;
 	mpp->retry_tick = -1;
 	dm_queue_if_no_path(mpp->alias, 0);
 	return 0;
@@ -1011,6 +1018,8 @@ cli_disable_all_queueing(void *v, char **reply, int *len, void *data)
 
 	condlog(2, "disable queueing (operator)");
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
+		if (mpp->nr_active == 0)
+			mpp->stat_map_failures++;
 		mpp->retry_tick = -1;
 		dm_queue_if_no_path(mpp->alias, 0);
 	}

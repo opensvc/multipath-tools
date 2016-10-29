@@ -889,6 +889,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs)
 				mpp->retry_tick = 0;
 				mpp->no_path_retry = NO_PATH_RETRY_FAIL;
 				mpp->flush_on_last_del = FLUSH_IN_PROGRESS;
+				mpp->stat_map_failures++;
 				dm_queue_if_no_path(mpp->alias, 0);
 			}
 			if (!flush_map(mpp, vecs, 1)) {
@@ -1397,6 +1398,7 @@ retry_count_tick(vector mpvec)
 			mpp->stat_total_queueing_time++;
 			condlog(4, "%s: Retrying.. No active path", mpp->alias);
 			if(--mpp->retry_tick == 0) {
+				mpp->stat_map_failures++;
 				dm_queue_if_no_path(mpp->alias, 0);
 				condlog(2, "%s: Disable queueing", mpp->alias);
 			}

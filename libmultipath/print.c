@@ -245,6 +245,12 @@ snprint_q_timeouts (char * buff, size_t len, struct multipath * mpp)
 }
 
 static int
+snprint_map_failures (char * buff, size_t len, struct multipath * mpp)
+{
+	return snprint_uint(buff, len, mpp->stat_map_failures);
+}
+
+static int
 snprint_multipath_uuid (char * buff, size_t len, struct multipath * mpp)
 {
 	return snprint_str(buff, len, mpp->wwid);
@@ -619,6 +625,7 @@ struct multipath_data mpd[] = {
 	{'t', "dm-st",         0, snprint_dm_map_state},
 	{'S', "size",          0, snprint_multipath_size},
 	{'f', "features",      0, snprint_features},
+	{'x', "failures",      0, snprint_map_failures},
 	{'h', "hwhandler",     0, snprint_hwhandler},
 	{'A', "action",        0, snprint_action},
 	{'0', "path_faults",   0, snprint_path_faults},

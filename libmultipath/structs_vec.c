@@ -610,19 +610,23 @@ int update_multipath (struct vectors *vecs, char *mapname, int reset)
  */
 void update_queue_mode_del_path(struct multipath *mpp)
 {
-	if (--mpp->nr_active == 0 && mpp->no_path_retry > 0) {
-		struct config *conf = get_multipath_config();
+	if (--mpp->nr_active == 0) {
+		if (mpp->no_path_retry > 0) {
+			struct config *conf = get_multipath_config();
 
-		/*
-		 * Enter retry mode.
-		 * meaning of +1: retry_tick may be decremented in
-		 *                checkerloop before starting retry.
-		 */
-		mpp->stat_queueing_timeouts++;
-		mpp->retry_tick = mpp->no_path_retry * conf->checkint + 1;
-		condlog(1, "%s: Entering recovery mode: max_retries=%d",
-			mpp->alias, mpp->no_path_retry);
-		put_multipath_config(conf);
+			/*
+			 * Enter retry mode.
+			 * meaning of +1: retry_tick may be decremented in
+			 *                checkerloop before starting retry.
+			 */
+			mpp->stat_queueing_timeouts++;
+			mpp->retry_tick = mpp->no_path_retry *
+					  conf->checkint + 1;
+			condlog(1, "%s: Entering recovery mode: max_retries=%d",
+				mpp->alias, mpp->no_path_retry);
+			put_multipath_config(conf);
+		} else if (mpp->no_path_retry != NO_PATH_RETRY_QUEUE)
+			mpp->stat_map_failures++;
 	}
 	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
 }
