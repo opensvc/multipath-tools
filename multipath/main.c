@@ -521,6 +521,7 @@ main (int argc, char *argv[])
 	if (!conf)
 		exit(1);
 	multipath_conf = conf;
+	conf->retrigger_tries = 0;
 	while ((arg = getopt(argc, argv, ":adchl::FfM:v:p:b:BritquwW")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
