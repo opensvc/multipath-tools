@@ -1424,7 +1424,7 @@ dm_rename (const char * old, char * new, char *delim, int skip_kpartx)
 {
 	int r = 0;
 	struct dm_task *dmt;
-	uint32_t cookie;
+	uint32_t cookie = 0;
 	uint16_t udev_flags = DM_UDEV_DISABLE_LIBRARY_FALLBACK | ((skip_kpartx == SKIP_KPARTX_ON)? MPATH_UDEV_NO_KPARTX_FLAG : 0);
 
 	if (dm_rename_partmaps(old, new, delim))
