@@ -958,6 +958,12 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 {
 	int ro, retval = 0;
 	struct path * pp;
+	struct config *conf;
+	int disable_changed_wwids;
+
+	conf = get_multipath_config();
+	disable_changed_wwids = conf->disable_changed_wwids;
+	put_multipath_config(conf);
 
 	ro = uevent_get_disk_ro(uev);
 
@@ -968,6 +974,25 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 	pp = find_path_by_dev(vecs->pathvec, uev->kernel);
 	if (pp) {
 		struct multipath *mpp = pp->mpp;
+
+		if (disable_changed_wwids &&
+		    (strlen(pp->wwid) || pp->wwid_changed)) {
+			char wwid[WWID_SIZE];
+
+			strcpy(wwid, pp->wwid);
+			get_uid(pp, pp->state, uev->udev);
+			if (strcmp(wwid, pp->wwid) != 0) {
+				condlog(0, "%s: path wwid changed from '%s' to '%s'. disallowing", uev->kernel, wwid, pp->wwid);
+				strcpy(pp->wwid, wwid);
+				if (!pp->wwid_changed) {
+					pp->wwid_changed = 1;
+					pp->tick = 1;
+					dm_fail_path(pp->mpp->alias, pp->dev_t);
+				}
+				goto out;
+			} else
+				pp->wwid_changed = 0;
+		}
 
 		if (pp->initialized == INIT_REQUESTED_UDEV)
 			retval = uev_add_path(uev, vecs);
@@ -983,6 +1008,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			}
 		}
 	}
+out:
 	lock_cleanup_pop(vecs->lock);
 	if (!pp)
 		condlog(0, "%s: spurious uevent, path not found", uev->kernel);
@@ -1508,6 +1534,12 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 		put_multipath_config(conf);
 	} else
 		checker_clear_message(&pp->checker);
+
+	if (pp->wwid_changed) {
+		condlog(2, "%s: path wwid has changed. Refusing to use",
+			pp->dev);
+		newstate = PATH_DOWN;
+	}
 
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
 		condlog(2, "%s: unusable path", pp->dev);

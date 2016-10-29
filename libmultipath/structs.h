@@ -217,6 +217,7 @@ struct path {
 	int fd;
 	int initialized;
 	int retriggers;
+	int wwid_changed;
 
 	/* configlet pointers */
 	struct hwentry * hwe;

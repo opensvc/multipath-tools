@@ -144,6 +144,7 @@ struct config {
 	int delayed_reconfig;
 	int uev_wait_timeout;
 	int skip_kpartx;
+	int disable_changed_wwids;
 	unsigned int version[3];
 
 	char * multipath_dir;

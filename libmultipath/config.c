@@ -618,6 +618,7 @@ load_config (char * file)
 	conf->uev_wait_timeout = DEFAULT_UEV_WAIT_TIMEOUT;
 	conf->deferred_remove = DEFAULT_DEFERRED_REMOVE;
 	conf->skip_kpartx = DEFAULT_SKIP_KPARTX;
+	conf->disable_changed_wwids = DEFAULT_DISABLE_CHANGED_WWIDS;
 
 	/*
 	 * preload default hwtable

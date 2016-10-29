@@ -1538,13 +1538,12 @@ get_prio (struct path * pp)
 }
 
 static int
-get_udev_uid(struct path * pp, char *uid_attribute)
+get_udev_uid(struct path * pp, char *uid_attribute, struct udev_device *udev)
 {
 	ssize_t len;
 	const char *value;
 
-	value = udev_device_get_property_value(pp->udev,
-					       uid_attribute);
+	value = udev_device_get_property_value(udev, uid_attribute);
 	if (!value || strlen(value) == 0)
 		value = getenv(uid_attribute);
 	if (value && strlen(value)) {
@@ -1625,8 +1624,8 @@ get_vpd_uid(struct path * pp)
 	return get_vpd_sysfs(parent, 0x83, pp->wwid, WWID_SIZE);
 }
 
-static int
-get_uid (struct path * pp, int path_state)
+int
+get_uid (struct path * pp, int path_state, struct udev_device *udev)
 {
 	char *c;
 	const char *origin = "unknown";
@@ -1639,7 +1638,7 @@ get_uid (struct path * pp, int path_state)
 		put_multipath_config(conf);
 	}
 
-	if (!pp->udev) {
+	if (!udev) {
 		condlog(1, "%s: no udev information", pp->dev);
 		return 1;
 	}
@@ -1669,7 +1668,7 @@ get_uid (struct path * pp, int path_state)
 		int retrigger;
 
 		if (pp->uid_attribute) {
-			len = get_udev_uid(pp, pp->uid_attribute);
+			len = get_udev_uid(pp, pp->uid_attribute, udev);
 			origin = "udev";
 			if (len <= 0)
 				condlog(1,
@@ -1798,7 +1797,7 @@ pathinfo (struct path *pp, struct config *conf, int mask)
 	}
 
 	if ((mask & DI_WWID) && !strlen(pp->wwid)) {
-		get_uid(pp, path_state);
+		get_uid(pp, path_state, pp->udev);
 		if (!strlen(pp->wwid)) {
 			pp->initialized = INIT_MISSING_UDEV;
 			pp->tick = conf->retrigger_delay;
