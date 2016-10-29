@@ -957,51 +957,35 @@ static int
 uev_update_path (struct uevent *uev, struct vectors * vecs)
 {
 	int ro, retval = 0;
+	struct path * pp;
 
 	ro = uevent_get_disk_ro(uev);
 
-	if (ro >= 0) {
-		struct path * pp;
-		struct multipath *mpp = NULL;
+	pthread_cleanup_push(cleanup_lock, &vecs->lock);
+	lock(&vecs->lock);
+	pthread_testcancel();
 
-		condlog(2, "%s: update path write_protect to '%d' (uevent)",
-			uev->kernel, ro);
-		pthread_cleanup_push(cleanup_lock, &vecs->lock);
-		lock(&vecs->lock);
-		pthread_testcancel();
-		/*
-		 * pthread_mutex_lock() and pthread_mutex_unlock()
-		 * need to be at the same indentation level, hence
-		 * this slightly convoluted codepath.
-		 */
-		pp = find_path_by_dev(vecs->pathvec, uev->kernel);
-		if (pp) {
-			if (pp->initialized == INIT_REQUESTED_UDEV) {
-				retval = 2;
-			} else {
-				mpp = pp->mpp;
-				if (mpp && mpp->wait_for_udev) {
-					mpp->wait_for_udev = 2;
-					mpp = NULL;
-					retval = 0;
-				}
-			}
-			if (mpp) {
+	pp = find_path_by_dev(vecs->pathvec, uev->kernel);
+	if (pp) {
+		struct multipath *mpp = pp->mpp;
+
+		if (pp->initialized == INIT_REQUESTED_UDEV)
+			retval = uev_add_path(uev, vecs);
+		else if (mpp && ro >= 0) {
+			condlog(2, "%s: update path write_protect to '%d' (uevent)", uev->kernel, ro);
+
+			if (mpp->wait_for_udev)
+				mpp->wait_for_udev = 2;
+			else {
 				retval = reload_map(vecs, mpp, 0, 1);
-
 				condlog(2, "%s: map %s reloaded (retval %d)",
 					uev->kernel, mpp->alias, retval);
 			}
 		}
-		lock_cleanup_pop(vecs->lock);
-		if (!pp) {
-			condlog(0, "%s: spurious uevent, path not found",
-				uev->kernel);
-			return 1;
-		}
-		if (retval == 2)
-			return uev_add_path(uev, vecs);
 	}
+	lock_cleanup_pop(vecs->lock);
+	if (!pp)
+		condlog(0, "%s: spurious uevent, path not found", uev->kernel);
 
 	return retval;
 }
