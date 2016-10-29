@@ -380,6 +380,14 @@ disassemble_map (vector pathvec, char * params, struct multipath * mpp,
 				strncpy(pp->wwid, mpp->wwid,
 					WWID_SIZE - 1);
 
+			/*
+			 * Do not allow in-use patch to change wwid
+			 */
+			else if (strcmp(pp->wwid, mpp->wwid) != 0) {
+				condlog(0, "%s: path wwid appears to have changed. Using map wwid.\n", pp->dev_t);
+				strncpy(pp->wwid, mpp->wwid, WWID_SIZE);
+			}
+
 			pgp->id ^= (long)pp;
 			pp->pgindex = i + 1;
 
