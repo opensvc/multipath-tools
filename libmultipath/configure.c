@@ -809,8 +809,10 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 		 * at this point, we know we really got a new mp
 		 */
 		mpp = add_map_with_path(vecs, pp1, 0);
-		if (!mpp)
-			return 1;
+		if (!mpp) {
+			orphan_path(pp1, "failed to create multipath device");
+			continue;
+		}
 
 		if (pp1->priority == PRIO_UNDEF)
 			mpp->action = ACT_REJECT;
@@ -862,7 +864,7 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
 			condlog(3, "%s: domap (%u) failure "
 				   "for create/reload map",
 				mpp->alias, r);
-			if (r == DOMAP_FAIL) {
+			if (r == DOMAP_FAIL || is_daemon) {
 				condlog(2, "%s: %s map",
 					mpp->alias, (mpp->action == ACT_CREATE)?
 					"ignoring" : "removing");

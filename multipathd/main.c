@@ -1017,7 +1017,7 @@ map_discovery (struct vectors * vecs)
 
 	vector_foreach_slot (vecs->mpvec, mpp, i)
 		if (setup_multipath(vecs, mpp))
-			return 1;
+			i--;
 
 	return 0;
 }
@@ -1910,21 +1910,29 @@ configure (struct vectors * vecs, int start_waiters)
 	int i, ret;
 	struct config *conf;
 
-	if (!vecs->pathvec && !(vecs->pathvec = vector_alloc()))
+	if (!vecs->pathvec && !(vecs->pathvec = vector_alloc())) {
+		condlog(0, "couldn't allocate path vec in configure");
 		return 1;
+	}
 
-	if (!vecs->mpvec && !(vecs->mpvec = vector_alloc()))
+	if (!vecs->mpvec && !(vecs->mpvec = vector_alloc())) {
+		condlog(0, "couldn't allocate multipath vec in configure");
 		return 1;
+	}
 
-	if (!(mpvec = vector_alloc()))
+	if (!(mpvec = vector_alloc())) {
+		condlog(0, "couldn't allocate new maps vec in configure");
 		return 1;
+	}
 
 	/*
 	 * probe for current path (from sysfs) and map (from dm) sets
 	 */
 	ret = path_discovery(vecs->pathvec, DI_ALL);
-	if (ret < 0)
+	if (ret < 0) {
+		condlog(0, "configure failed at path discovery");
 		return 1;
+	}
 
 	vector_foreach_slot (vecs->pathvec, pp, i){
 		conf = get_multipath_config();
@@ -1937,21 +1945,27 @@ configure (struct vectors * vecs, int start_waiters)
 			pp->checkint = conf->checkint;
 		put_multipath_config(conf);
 	}
-	if (map_discovery(vecs))
+	if (map_discovery(vecs)) {
+		condlog(0, "configure failed at map discovery");
 		return 1;
+	}
 
 	/*
 	 * create new set of maps & push changed ones into dm
 	 */
-	if (coalesce_paths(vecs, mpvec, NULL, 1, CMD_NONE))
+	if (coalesce_paths(vecs, mpvec, NULL, 1, CMD_NONE)) {
+		condlog(0, "configure failed while coalescing paths");
 		return 1;
+	}
 
 	/*
 	 * may need to remove some maps which are no longer relevant
 	 * e.g., due to blacklist changes in conf file
 	 */
-	if (coalesce_maps(vecs, mpvec))
+	if (coalesce_maps(vecs, mpvec)) {
+		condlog(0, "configure failed while coalescing maps");
 		return 1;
+	}
 
 	dm_lib_release();
 
@@ -1976,11 +1990,16 @@ configure (struct vectors * vecs, int start_waiters)
 	 * start dm event waiter threads for these new maps
 	 */
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (setup_multipath(vecs, mpp))
-			return 1;
-		if (start_waiters)
-			if (start_waiter_thread(mpp, vecs))
-				return 1;
+		if (setup_multipath(vecs, mpp)) {
+			i--;
+			continue;
+		}
+		if (start_waiters) {
+			if (start_waiter_thread(mpp, vecs)) {
+				remove_map(mpp, vecs, 1);
+				i--;
+			}
+		}
 	}
 	return 0;
 }
