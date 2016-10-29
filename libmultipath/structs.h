@@ -128,6 +128,12 @@ enum deferred_remove_states {
 	DEFERRED_REMOVE_IN_PROGRESS,
 };
 
+enum skip_kpartx_states {
+	SKIP_KPARTX_UNDEF = YNU_UNDEF,
+	SKIP_KPARTX_OFF = YNU_NO,
+	SKIP_KPARTX_ON = YNU_YES,
+};
+
 enum scsi_protocol {
 	SCSI_PROTOCOL_FCP = 0,	/* Fibre Channel */
 	SCSI_PROTOCOL_SPI = 1,	/* parallel SCSI */
@@ -243,6 +249,7 @@ struct multipath {
 	int deferred_remove;
 	int delay_watch_checks;
 	int delay_wait_checks;
+	int skip_kpartx;
 	unsigned int dev_loss;
 	uid_t uid;
 	gid_t gid;

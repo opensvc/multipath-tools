@@ -347,6 +347,7 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(deferred_remove);
 	merge_num(delay_watch_checks);
 	merge_num(delay_wait_checks);
+	merge_num(skip_kpartx);
 
 	/*
 	 * Make sure features is consistent with
@@ -616,6 +617,7 @@ load_config (char * file)
 	conf->retrigger_delay = DEFAULT_RETRIGGER_DELAY;
 	conf->uev_wait_timeout = DEFAULT_UEV_WAIT_TIMEOUT;
 	conf->deferred_remove = DEFAULT_DEFERRED_REMOVE;
+	conf->skip_kpartx = DEFAULT_SKIP_KPARTX;
 
 	/*
 	 * preload default hwtable

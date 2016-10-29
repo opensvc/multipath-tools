@@ -842,6 +842,17 @@ Default value is: \fB30\fR
 .RE
 .
 .
+.TP
+.B skip_kpartx
+If set to
+.I yes
+, kpartx will not automatically create partitions on the device.
+.RS
+.TP
+The default is \fBno\fR
+.RE
+.
+.
 .\" ----------------------------------------------------------------------------
 .SH "blacklist section"
 .\" ----------------------------------------------------------------------------
@@ -972,6 +983,8 @@ are taken from the \fIdefaults\fR or \fIdevices\fR section:
 .B delay_watch_checks
 .TP
 .B delay_wait_checks
+.TP
+.B skip_kpartx
 .RE
 .PD
 .LP
@@ -1081,6 +1094,8 @@ section:
 .B delay_watch_checks
 .TP
 .B delay_wait_checks
+.TP
+.B skip_kpartx
 .RE
 .PD
 .LP
@@ -1141,6 +1156,8 @@ the values are taken from the \fIdevices\fR or \fIdefaults\fR sections:
 .B delay_watch_checks
 .TP
 .B delay_wait_checks
+.TP
+.B skip_kpartx
 .RE
 .PD
 .LP

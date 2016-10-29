@@ -665,4 +665,22 @@ out:
 	print_delay_checks(buff, 12, &mp->delay_wait_checks);
 	condlog(3, "%s: delay_wait_checks = %s %s", mp->alias, buff, origin);
 	return 0;
+
+}
+
+extern int
+select_skip_kpartx (struct config *conf, struct multipath * mp)
+{
+	char *origin;
+
+	mp_set_mpe(skip_kpartx);
+	mp_set_ovr(skip_kpartx);
+	mp_set_hwe(skip_kpartx);
+	mp_set_conf(skip_kpartx);
+	mp_set_default(skip_kpartx, DEFAULT_SKIP_KPARTX);
+out:
+	condlog(3, "%s: skip_kpartx = %s %s", mp->alias,
+		(mp->skip_kpartx == SKIP_KPARTX_ON)? "yes" : "no",
+		origin);
+	return 0;
 }

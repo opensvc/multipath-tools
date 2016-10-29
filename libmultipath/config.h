@@ -65,6 +65,7 @@ struct hwentry {
 	int deferred_remove;
 	int delay_watch_checks;
 	int delay_wait_checks;
+	int skip_kpartx;
 	char * bl_product;
 };
 
@@ -91,6 +92,7 @@ struct mpentry {
 	int deferred_remove;
 	int delay_watch_checks;
 	int delay_wait_checks;
+	int skip_kpartx;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;
@@ -141,6 +143,7 @@ struct config {
 	int ignore_new_devs;
 	int delayed_reconfig;
 	int uev_wait_timeout;
+	int skip_kpartx;
 	unsigned int version[3];
 
 	char * multipath_dir;

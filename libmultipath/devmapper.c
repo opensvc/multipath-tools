@@ -213,8 +213,9 @@ dm_prereq (void)
 static int
 dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t udev_flags, int deferred_remove) {
 	int r = 0;
-	int udev_wait_flag = (need_sync && (task == DM_DEVICE_RESUME ||
-					    task == DM_DEVICE_REMOVE));
+	int udev_wait_flag = ((need_sync || udev_flags) &&
+			      (task == DM_DEVICE_RESUME ||
+			       task == DM_DEVICE_REMOVE));
 	uint32_t cookie = 0;
 	struct dm_task *dmt;
 
@@ -266,11 +267,12 @@ dm_device_remove (const char *name, int needsync, int deferred_remove) {
 
 static int
 dm_addmap (int task, const char *target, struct multipath *mpp,
-	   char * params, int ro) {
+	   char * params, int ro, int skip_kpartx) {
 	int r = 0;
 	struct dm_task *dmt;
 	char *prefixed_uuid = NULL;
 	uint32_t cookie = 0;
+	uint16_t udev_flags = DM_UDEV_DISABLE_LIBRARY_FALLBACK | ((skip_kpartx == SKIP_KPARTX_ON)? MPATH_UDEV_NO_KPARTX_FLAG : 0);
 
 	if (!(dmt = dm_task_create (task)))
 		return 0;
@@ -319,8 +321,7 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 	dm_task_no_open_count(dmt);
 
 	if (task == DM_DEVICE_CREATE &&
-	    !dm_task_set_cookie(dmt, &cookie,
-				DM_UDEV_DISABLE_LIBRARY_FALLBACK))
+	    !dm_task_set_cookie(dmt, &cookie, udev_flags))
 		goto freeout;
 
 	r = dm_task_run (dmt);
@@ -344,7 +345,8 @@ dm_addmap_create (struct multipath *mpp, char * params) {
 	for (ro = 0; ro <= 1; ro++) {
 		int err;
 
-		if (dm_addmap(DM_DEVICE_CREATE, TGT_MPATH, mpp, params, ro))
+		if (dm_addmap(DM_DEVICE_CREATE, TGT_MPATH, mpp, params, ro,
+			      mpp->skip_kpartx))
 			return 1;
 		/*
 		 * DM_DEVICE_CREATE is actually DM_DEV_CREATE + DM_TABLE_LOAD.
@@ -371,7 +373,9 @@ extern int
 dm_addmap_reload (struct multipath *mpp, char *params, int flush)
 {
 	int r;
-	uint16_t udev_flags = flush ? 0 : MPATH_UDEV_RELOAD_FLAG;
+	uint16_t udev_flags = (flush ? 0 : MPATH_UDEV_RELOAD_FLAG) |
+			      ((mpp->skip_kpartx == SKIP_KPARTX_ON)?
+			       MPATH_UDEV_NO_KPARTX_FLAG : 0);
 
 	/*
 	 * DM_DEVICE_RELOAD cannot wait on a cookie, as
@@ -379,12 +383,13 @@ dm_addmap_reload (struct multipath *mpp, char *params, int flush)
 	 * DM_DEVICE_RESUME. So call DM_DEVICE_RESUME
 	 * after each successful call to DM_DEVICE_RELOAD.
 	 */
-	r = dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, params, ADDMAP_RW);
+	r = dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, params, ADDMAP_RW,
+		      SKIP_KPARTX_OFF);
 	if (!r) {
 		if (errno != EROFS)
 			return 0;
 		r = dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp,
-			      params, ADDMAP_RO);
+			      params, ADDMAP_RO, SKIP_KPARTX_OFF);
 	}
 	if (r)
 		r = dm_simplecmd(DM_DEVICE_RESUME, mpp->alias, flush,
@@ -761,6 +766,12 @@ out:
 }
 
 static int
+has_partmap(const char *name, void *data)
+{
+	return 1;
+}
+
+static int
 partmap_in_use(const char *name, void *data)
 {
 	int part_count, *ret_count = (int *)data;
@@ -839,9 +850,15 @@ dm_suspend_and_flush_map (const char * mapname)
 	int s = 0, queue_if_no_path = 0;
 	unsigned long long mapsize;
 	char params[PARAMS_SIZE] = {0};
+	int udev_flags = 0;
 
 	if (!dm_is_mpath(mapname))
 		return 0; /* nothing to do */
+
+	/* if the device currently has no partitions, do not
+ 	   run kpartx on it if you fail to delete it */
+	if (do_foreach_partmaps(mapname, has_partmap, NULL) == 0)
+		udev_flags |= MPATH_UDEV_NO_KPARTX_FLAG;
 
 	if (!dm_get_map(mapname, &mapsize, params)) {
 		if (strstr(params, "queue_if_no_path"))
@@ -861,7 +878,7 @@ dm_suspend_and_flush_map (const char * mapname)
 		return 0;
 	}
 	condlog(2, "failed to remove multipath map %s", mapname);
-	dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname, 0);
+	dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname, udev_flags);
 	if (queue_if_no_path)
 		s = dm_queue_if_no_path((char *)mapname, 1);
 	return 1;
@@ -1380,7 +1397,7 @@ rename_partmap (const char *name, void *data)
 	for (offset = strlen(rd->old); name[offset] && !(isdigit(name[offset])); offset++); /* do nothing */
 	snprintf(buff, PARAMS_SIZE, "%s%s%s", rd->new, rd->delim,
 		 name + offset);
-	dm_rename(name, buff, rd->delim);
+	dm_rename(name, buff, rd->delim, SKIP_KPARTX_OFF);
 	condlog(4, "partition map %s renamed", name);
 	return 0;
 }
@@ -1403,11 +1420,12 @@ dm_rename_partmaps (const char * old, char * new, char *delim)
 }
 
 int
-dm_rename (const char * old, char * new, char *delim)
+dm_rename (const char * old, char * new, char *delim, int skip_kpartx)
 {
 	int r = 0;
 	struct dm_task *dmt;
 	uint32_t cookie;
+	uint16_t udev_flags = DM_UDEV_DISABLE_LIBRARY_FALLBACK | ((skip_kpartx == SKIP_KPARTX_ON)? MPATH_UDEV_NO_KPARTX_FLAG : 0);
 
 	if (dm_rename_partmaps(old, new, delim))
 		return r;
@@ -1423,8 +1441,7 @@ dm_rename (const char * old, char * new, char *delim)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_set_cookie(dmt, &cookie,
-				DM_UDEV_DISABLE_LIBRARY_FALLBACK))
+	if (!dm_task_set_cookie(dmt, &cookie, udev_flags))
 		goto out;
 	r = dm_task_run(dmt);
 

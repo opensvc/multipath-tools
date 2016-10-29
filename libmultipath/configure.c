@@ -295,6 +295,7 @@ setup_map (struct multipath * mpp, char * params, int params_size)
 	select_deferred_remove(conf, mpp);
 	select_delay_watch_checks(conf, mpp);
 	select_delay_wait_checks(conf, mpp);
+	select_skip_kpartx(conf, mpp);
 
 	sysfs_set_scsi_tmo(mpp, conf->checkint);
 	put_multipath_config(conf);
@@ -641,14 +642,14 @@ domap (struct multipath * mpp, char * params, int is_daemon)
 	case ACT_RENAME:
 		conf = get_multipath_config();
 		r = dm_rename(mpp->alias_old, mpp->alias,
-			      conf->partition_delim);
+			      conf->partition_delim, mpp->skip_kpartx);
 		put_multipath_config(conf);
 		break;
 
 	case ACT_FORCERENAME:
 		conf = get_multipath_config();
 		r = dm_rename(mpp->alias_old, mpp->alias,
-			      conf->partition_delim);
+			      conf->partition_delim, mpp->skip_kpartx);
 		put_multipath_config(conf);
 		if (r)
 			r = dm_addmap_reload(mpp, params, 0);

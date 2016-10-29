@@ -22,3 +22,4 @@ int select_detect_prio(struct config *conf, struct path * pp);
 int select_deferred_remove(struct config *conf, struct multipath *mp);
 int select_delay_watch_checks (struct config *conf, struct multipath * mp);
 int select_delay_wait_checks (struct config *conf, struct multipath * mp);
+int select_skip_kpartx (struct config *conf, struct multipath * mp);

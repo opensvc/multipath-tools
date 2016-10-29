@@ -1078,19 +1078,21 @@ cli_resume(void * v, char ** reply, int * len, void * data)
 	char * param = get_keyparam(v, MAP);
 	int r;
 	struct multipath * mpp;
+	uint16_t udev_flags;
 
 	param = convert_dev(param, 0);
 	mpp = find_mp_by_alias(vecs->mpvec, param);
 	if (!mpp)
 		return 1;
 
+	udev_flags = (mpp->skip_kpartx)? MPATH_UDEV_NO_KPARTX_FLAG : 0;
 	if (mpp->wait_for_udev) {
 		condlog(2, "%s: device not fully created, failing resume",
 			mpp->alias);
 		return 1;
 	}
 
-	r = dm_simplecmd_noflush(DM_DEVICE_RESUME, param, 0);
+	r = dm_simplecmd_noflush(DM_DEVICE_RESUME, param, udev_flags);
 
 	condlog(2, "%s: resume (operator)", param);
 
