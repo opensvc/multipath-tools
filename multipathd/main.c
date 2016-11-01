@@ -1587,7 +1587,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 
 	if ((newstate == PATH_UP || newstate == PATH_GHOST) &&
 	     pp->wait_checks > 0) {
-		if (pp->mpp && pp->mpp->nr_active > 0) {
+		if (pp->mpp->nr_active > 0) {
 			pp->state = PATH_DELAYED;
 			pp->wait_checks--;
 			return 1;
