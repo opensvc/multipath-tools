@@ -520,6 +520,17 @@ add_feature (char **f, char *n)
 	if (!n || *n == '0')
 		return 0;
 
+	/* default feature is null */
+	if(!*f)
+	{
+		l = asprintf(&t, "1 %s", n);
+		if(l == -1)
+			return 1;
+			
+		*f = t;
+		return 0;
+	}
+
 	/* Check if feature is already present */
 	if (strstr(*f, n))
 		return 0;
