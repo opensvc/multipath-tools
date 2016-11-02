@@ -785,7 +785,7 @@ snprint_multipath_header (char * line, int len, char * format)
 	struct multipath_data * data;
 
 	do {
-		if (!TAIL)
+		if (TAIL <= 0)
 			break;
 
 		if (*f != '%') {
@@ -818,7 +818,7 @@ snprint_multipath (char * line, int len, char * format,
 	char buff[MAX_FIELD_LEN] = {};
 
 	do {
-		if (!TAIL)
+		if (TAIL <= 0)
 			break;
 
 		if (*f != '%') {
@@ -852,7 +852,7 @@ snprint_path_header (char * line, int len, char * format)
 	struct path_data * data;
 
 	do {
-		if (!TAIL)
+		if (TAIL <= 0)
 			break;
 
 		if (*f != '%') {
@@ -885,7 +885,7 @@ snprint_path (char * line, int len, char * format,
 	char buff[MAX_FIELD_LEN];
 
 	do {
-		if (!TAIL)
+		if (TAIL <= 0)
 			break;
 
 		if (*f != '%') {
@@ -920,7 +920,7 @@ snprint_pathgroup (char * line, int len, char * format,
 	char buff[MAX_FIELD_LEN];
 
 	do {
-		if (!TAIL)
+		if (TAIL <= 0)
 			break;
 
 		if (*f != '%') {
@@ -1011,11 +1011,11 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 		c += sprintf(c, "%c[%dm", 0x1B, 0); /* bold off */
 
 	fwd += snprint_multipath(buff + fwd, len - fwd, style, mpp, 1);
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	fwd += snprint_multipath(buff + fwd, len - fwd, PRINT_MAP_PROPS, mpp,
 				 1);
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 
 	if (!mpp->pg)
@@ -1029,7 +1029,7 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 		} else
 			strcpy(f, "`-+- " PRINT_PG_INDENT);
 		fwd += snprint_pathgroup(buff + fwd, len - fwd, fmt, pgp);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 
 		vector_foreach_slot (pgp->paths, pp, i) {
@@ -1042,12 +1042,13 @@ snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
 			else
 				strcpy(f, " `- " PRINT_PATH_INDENT);
 			fwd += snprint_path(buff + fwd, len - fwd, fmt, pp, 1);
-			if (fwd > len)
+			if (fwd >= len)
 				return len;
 		}
 	}
 	return fwd;
 }
+
 
 static int
 snprint_json (char * buff, int len, int indent, char *json_str)
@@ -1056,7 +1057,7 @@ snprint_json (char * buff, int len, int indent, char *json_str)
 
 	for (i = 0; i < indent; i++) {
 		fwd += snprintf(buff + fwd, len - fwd, PRINT_JSON_INDENT);
-		if (fwd > len)
+		if (fwd >= len)
 			return fwd;
 	}
 
@@ -1070,7 +1071,7 @@ snprint_json_header (char * buff, int len)
 	int fwd = 0;
 
 	fwd +=  snprint_json(buff, len, 0, PRINT_JSON_START_ELEM);
-	if (fwd > len)
+	if (fwd >= len)
 		return fwd;
 
 	fwd +=  snprintf(buff + fwd, len  - fwd, PRINT_JSON_START_VERSION,
@@ -1085,7 +1086,7 @@ snprint_json_elem_footer (char * buff, int len, int indent, int last)
 
 	for (i = 0; i < indent; i++) {
 		fwd += snprintf(buff + fwd, len - fwd, PRINT_JSON_INDENT);
-		if (fwd > len)
+		if (fwd >= len)
 			return fwd;
 	}
 
@@ -1105,50 +1106,50 @@ snprint_multipath_fields_json (char * buff, int len,
 	struct pathgroup *pgp;
 
 	fwd += snprint_multipath(buff, len, PRINT_JSON_MAP, mpp, 0);
-	if (fwd > len)
+	if (fwd >= len)
 		return fwd;
 
 	fwd += snprint_json(buff + fwd, len - fwd, 2, PRINT_JSON_START_GROUPS);
-	if (fwd > len)
+	if (fwd >= len)
 		return fwd;
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
 
 		pgp->selector = mpp->selector;
 		fwd += snprint_pathgroup(buff + fwd, len - fwd, PRINT_JSON_GROUP, pgp);
-		if (fwd > len)
+		if (fwd >= len)
 			return fwd;
 
 		fwd += snprintf(buff + fwd, len - fwd, PRINT_JSON_GROUP_NUM, i + 1);
-		if (fwd > len)
+		if (fwd >= len)
 			return fwd;
 
 		fwd += snprint_json(buff + fwd, len - fwd, 3, PRINT_JSON_START_PATHS);
-		if (fwd > len)
+		if (fwd >= len)
 			return fwd;
 
 		vector_foreach_slot (pgp->paths, pp, j) {
 			fwd += snprint_path(buff + fwd, len - fwd, PRINT_JSON_PATH, pp, 0);
-			if (fwd > len)
+			if (fwd >= len)
 				return fwd;
 
 			fwd += snprint_json_elem_footer(buff + fwd,
 					len - fwd, 3, j + 1 == VECTOR_SIZE(pgp->paths));
-			if (fwd > len)
+			if (fwd >= len)
 				return fwd;
 		}
 		fwd += snprint_json(buff + fwd, len - fwd, 0, PRINT_JSON_END_ARRAY);
-		if (fwd > len)
+		if (fwd >= len)
 			return fwd;
 
 		fwd +=  snprint_json_elem_footer(buff + fwd,
 				len - fwd, 2, i + 1 == VECTOR_SIZE(mpp->pg));
-		if (fwd > len)
+		if (fwd >= len)
 			return fwd;
 	}
 
 	fwd += snprint_json(buff + fwd, len - fwd, 0, PRINT_JSON_END_ARRAY);
-	if (fwd > len)
+	if (fwd >= len)
 		return fwd;
 
 	fwd += snprint_json_elem_footer(buff + fwd, len - fwd, 1, last);
@@ -1161,23 +1162,23 @@ snprint_multipath_map_json (char * buff, int len,
 	int fwd = 0;
 
 	fwd +=  snprint_json_header(buff, len);
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 
 	fwd +=  snprint_json(buff + fwd, len - fwd, 0, PRINT_JSON_START_MAP);
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 
 	fwd += snprint_multipath_fields_json(buff + fwd, len - fwd, mpp, 1);
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 
 	fwd +=  snprint_json(buff + fwd, len - fwd, 0, "\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 
 	fwd +=  snprint_json(buff + fwd, len - fwd, 0, PRINT_JSON_END_LAST);
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	return fwd;
 }
@@ -1189,26 +1190,26 @@ snprint_multipath_topology_json (char * buff, int len, struct vectors * vecs)
 	struct multipath * mpp;
 
 	fwd +=  snprint_json_header(buff, len);
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 
 	fwd +=  snprint_json(buff + fwd, len  - fwd, 1, PRINT_JSON_START_MAPS);
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
 		fwd += snprint_multipath_fields_json(buff + fwd, len - fwd,
 				mpp, i + 1 == VECTOR_SIZE(vecs->mpvec));
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 
 	fwd +=  snprint_json(buff + fwd, len - fwd, 0, PRINT_JSON_END_ARRAY);
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 
 	fwd +=  snprint_json(buff + fwd, len - fwd, 0, PRINT_JSON_END_LAST);
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	return fwd;
 }
@@ -1232,16 +1233,16 @@ snprint_hwentry (struct config *conf, char * buff, int len, struct hwentry * hwe
 		return 0;
 
 	fwd += snprintf(buff + fwd, len - fwd, "\tdevice {\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	iterate_sub_keywords(rootkw, kw, i) {
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
 				kw, hwe);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	fwd += snprintf(buff + fwd, len - fwd, "\t}\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	return fwd;
 }
@@ -1259,15 +1260,15 @@ snprint_hwtable (struct config *conf, char * buff, int len, vector hwtable)
 		return 0;
 
 	fwd += snprintf(buff + fwd, len - fwd, "devices {\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	vector_foreach_slot (hwtable, hwe, i) {
 		fwd += snprint_hwentry(conf, buff + fwd, len - fwd, hwe);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	fwd += snprintf(buff + fwd, len - fwd, "}\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	return fwd;
 }
@@ -1285,16 +1286,16 @@ snprint_mpentry (struct config *conf, char * buff, int len, struct mpentry * mpe
 		return 0;
 
 	fwd += snprintf(buff + fwd, len - fwd, "\tmultipath {\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	iterate_sub_keywords(rootkw, kw, i) {
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
 				kw, mpe);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	fwd += snprintf(buff + fwd, len - fwd, "\t}\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	return fwd;
 }
@@ -1312,15 +1313,15 @@ snprint_mptable (struct config *conf, char * buff, int len, vector mptable)
 		return 0;
 
 	fwd += snprintf(buff + fwd, len - fwd, "multipaths {\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	vector_foreach_slot (mptable, mpe, i) {
 		fwd += snprint_mpentry(conf, buff + fwd, len - fwd, mpe);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	fwd += snprintf(buff + fwd, len - fwd, "}\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	return fwd;
 }
@@ -1338,19 +1339,19 @@ snprint_overrides (struct config *conf, char * buff, int len, struct hwentry *ov
 		return 0;
 
 	fwd += snprintf(buff + fwd, len - fwd, "overrides {\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	if (!overrides)
 		goto out;
 	iterate_sub_keywords(rootkw, kw, i) {
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
 				       kw, NULL);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 out:
 	fwd += snprintf(buff + fwd, len - fwd, "}\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	return fwd;
 }
@@ -1368,17 +1369,17 @@ snprint_defaults (struct config *conf, char * buff, int len)
 		return 0;
 
 	fwd += snprintf(buff + fwd, len - fwd, "defaults {\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 
 	iterate_sub_keywords(rootkw, kw, i) {
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
 				kw, NULL);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	fwd += snprintf(buff + fwd, len - fwd, "}\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	return fwd;
 }
@@ -1515,7 +1516,7 @@ snprint_blacklist (struct config *conf, char * buff, int len)
 		return 0;
 
 	fwd += snprintf(buff + fwd, len - fwd, "blacklist {\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 
 	vector_foreach_slot (conf->blist_devnode, ble, i) {
@@ -1524,7 +1525,7 @@ snprint_blacklist (struct config *conf, char * buff, int len)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
 				       kw, ble);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	vector_foreach_slot (conf->blist_wwid, ble, i) {
@@ -1533,7 +1534,7 @@ snprint_blacklist (struct config *conf, char * buff, int len)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
 				       kw, ble);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	vector_foreach_slot (conf->blist_property, ble, i) {
@@ -1542,7 +1543,7 @@ snprint_blacklist (struct config *conf, char * buff, int len)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
 				       kw, ble);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	rootkw = find_keyword(conf->keywords, rootkw->sub, "device");
@@ -1551,28 +1552,28 @@ snprint_blacklist (struct config *conf, char * buff, int len)
 
 	vector_foreach_slot (conf->blist_device, bled, i) {
 		fwd += snprintf(buff + fwd, len - fwd, "\tdevice {\n");
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 		kw = find_keyword(conf->keywords, rootkw->sub, "vendor");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
 				       kw, bled);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 		kw = find_keyword(conf->keywords, rootkw->sub, "product");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
 				       kw, bled);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 		fwd += snprintf(buff + fwd, len - fwd, "\t}\n");
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	fwd += snprintf(buff + fwd, len - fwd, "}\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	return fwd;
 }
@@ -1592,7 +1593,7 @@ snprint_blacklist_except (struct config *conf, char * buff, int len)
 		return 0;
 
 	fwd += snprintf(buff + fwd, len - fwd, "blacklist_exceptions {\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 
 	vector_foreach_slot (conf->elist_devnode, ele, i) {
@@ -1601,7 +1602,7 @@ snprint_blacklist_except (struct config *conf, char * buff, int len)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
 				       kw, ele);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	vector_foreach_slot (conf->elist_wwid, ele, i) {
@@ -1610,7 +1611,7 @@ snprint_blacklist_except (struct config *conf, char * buff, int len)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
 				       kw, ele);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	vector_foreach_slot (conf->elist_property, ele, i) {
@@ -1619,7 +1620,7 @@ snprint_blacklist_except (struct config *conf, char * buff, int len)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t%k %v\n",
 				       kw, ele);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	rootkw = find_keyword(conf->keywords, rootkw->sub, "device");
@@ -1628,28 +1629,28 @@ snprint_blacklist_except (struct config *conf, char * buff, int len)
 
 	vector_foreach_slot (conf->elist_device, eled, i) {
 		fwd += snprintf(buff + fwd, len - fwd, "\tdevice {\n");
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 		kw = find_keyword(conf->keywords, rootkw->sub, "vendor");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
 				       kw, eled);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 		kw = find_keyword(conf->keywords, rootkw->sub, "product");
 		if (!kw)
 			return 0;
 		fwd += snprint_keyword(buff + fwd, len - fwd, "\t\t%k %v\n",
 				       kw, eled);
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 		fwd += snprintf(buff + fwd, len - fwd, "\t}\n");
-		if (fwd > len)
+		if (fwd >= len)
 			return len;
 	}
 	fwd += snprintf(buff + fwd, len - fwd, "}\n");
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	return fwd;
 }
@@ -1681,7 +1682,7 @@ snprint_status (char * buff, int len, struct vectors *vecs)
 	fwd += snprintf(buff + fwd, len - fwd, "\npaths: %d\nbusy: %s\n",
 			monitored_count, is_uevent_busy()? "True" : "False");
 
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	return fwd;
 }
@@ -1747,7 +1748,7 @@ snprint_devices (struct config *conf, char * buff, int len, struct vectors *vecs
 	}
 	closedir(blkdir);
 
-	if (fwd > len)
+	if (fwd >= len)
 		return len;
 	return fwd;
 }
