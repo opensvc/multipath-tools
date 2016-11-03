@@ -526,7 +526,7 @@ add_feature (char **f, char *n)
 		l = asprintf(&t, "1 %s", n);
 		if(l == -1)
 			return 1;
-			
+
 		*f = t;
 		return 0;
 	}
