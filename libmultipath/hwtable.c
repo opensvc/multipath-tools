@@ -725,6 +725,7 @@ static struct hwentry default_hw[] = {
 	},
 		/* Sun - StorageTek */
 	{
+		/* 9176, D173, D178, D210, D220, D240 and D280 */
 		.vendor        = "STK",
 		.product       = "OPENstorage",
 		.bl_product    = "Universal Xport",
