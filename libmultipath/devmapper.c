@@ -856,7 +856,7 @@ dm_suspend_and_flush_map (const char * mapname)
 		return 0; /* nothing to do */
 
 	/* if the device currently has no partitions, do not
- 	   run kpartx on it if you fail to delete it */
+	   run kpartx on it if you fail to delete it */
 	if (do_foreach_partmaps(mapname, has_partmap, NULL) == 0)
 		udev_flags |= MPATH_UDEV_NO_KPARTX_FLAG;
 
