@@ -174,7 +174,7 @@ int libcheck_init(struct checker * c)
 
 	ct->image = strdup(image);
 	if (!ct->image)
-		goto free_info;
+		goto free_username;
 
 	pool = udev_device_get_sysattr_value(bus_dev, "pool");
 	if (!pool)
