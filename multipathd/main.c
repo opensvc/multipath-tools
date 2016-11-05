@@ -2579,7 +2579,7 @@ main (int argc, char *argv[])
 	umask(umask(077) | 022);
 
 	pthread_cond_init_mono(&config_cond);
-	
+
 	udev = udev_new();
 
 	while ((arg = getopt(argc, argv, ":dsv:k::Bn")) != EOF ) {
