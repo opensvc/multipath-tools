@@ -112,8 +112,8 @@ struct checker {
 						multipath-wide. Use MALLOC if
 						you want to stuff data in. */
 	int (*check)(struct checker *);
-	void (*repair)(struct checker *);     /* called if check returns
-					        PATH_DOWN to bring path into
+	void (*repair)(struct checker *);    /* called if check returns
+						PATH_DOWN to bring path into
 						usable state */
 	int (*init)(struct checker *);       /* to allocate the context */
 	void (*free)(struct checker *);      /* to free the context */
