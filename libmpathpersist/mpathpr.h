@@ -25,10 +25,6 @@ struct threadinfo {
 	struct prout_param param;
 };
 
-
-extern struct config *conf;
-
-
 int prin_do_scsi_ioctl(char * dev, int rq_servact, struct prin_resp * resp, int noisy);
 int prout_do_scsi_ioctl( char * dev, int rq_servact, int rq_scope,
 		unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy);

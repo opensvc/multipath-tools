@@ -35,7 +35,6 @@
 #define __STDC_FORMAT_MACROS 1
 
 struct udev *udev;
-struct config *conf;
 
 struct config *
 mpath_lib_init (struct udev *udev)
@@ -79,6 +78,7 @@ updatepaths (struct multipath * mpp)
 	int i, j;
 	struct pathgroup * pgp;
 	struct path * pp;
+	struct config *conf;
 
 	if (!mpp->pg)
 		return 0;
@@ -98,16 +98,24 @@ updatepaths (struct multipath * mpp)
 					continue;
 				}
 				pp->mpp = mpp;
+				conf = get_multipath_config();
 				pathinfo(pp, conf, DI_ALL);
+				put_multipath_config(conf);
 				continue;
 			}
 			pp->mpp = mpp;
 			if (pp->state == PATH_UNCHECKED ||
-					pp->state == PATH_WILD)
+					pp->state == PATH_WILD) {
+				conf = get_multipath_config();
 				pathinfo(pp, conf, DI_CHECKER);
+				put_multipath_config(conf);
+			}
 
-			if (pp->priority == PRIO_UNDEF)
+			if (pp->priority == PRIO_UNDEF) {
+				conf = get_multipath_config();
 				pathinfo(pp, conf, DI_PRIO);
+				put_multipath_config(conf);
+			}
 		}
 	}
 	return 0;
@@ -160,8 +168,11 @@ int mpath_persistent_reserve_in (int fd, int rq_servact,
 	int map_present;
 	int major, minor;
 	int ret;
+	struct config *conf;
 
+	conf = get_multipath_config();
 	conf->verbosity = verbose;
+	put_multipath_config(conf);
 
 	if (fstat( fd, &info) != 0){
 		condlog(0, "stat error %d", fd);
@@ -253,8 +264,11 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	int j;
 	unsigned char *keyp;
 	uint64_t prkey;
+	struct config *conf;
 
+	conf = get_multipath_config();
 	conf->verbosity = verbose;
+	put_multipath_config(conf);
 
 	if (fstat( fd, &info) != 0){
 		condlog(0, "stat error fd=%d", fd);
@@ -321,7 +335,9 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 		goto out1;
 	}
 
+	conf = get_multipath_config();
 	select_reservation_key(conf, mpp);
+	put_multipath_config(conf);
 
 	switch(rq_servact)
 	{
