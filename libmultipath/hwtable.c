@@ -899,8 +899,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "PURE",
 		.product       = "FlashArray",
 		.pgpolicy      = MULTIBUS,
-		.fast_io_fail  = 10,
-		.dev_loss      = 60,
 	},
 	/*
 	 * Huawei
