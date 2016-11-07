@@ -1573,10 +1573,9 @@ int dm_reassign(const char *mapname)
 		sysfs_check_holders(dm_dep, dev_t);
 	}
 
-	dm_task_destroy (dmt);
-
 	r = 1;
 out:
+	dm_task_destroy (dmt);
 	return r;
 }
 
