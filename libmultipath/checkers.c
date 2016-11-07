@@ -213,7 +213,7 @@ void checker_put (struct checker * dst)
 
 void checker_repair (struct checker * c)
 {
-	if (!c || !checker_selected(c))
+	if (!checker_selected(c))
 		return;
 
 	c->message[0] = '\0';
