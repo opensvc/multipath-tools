@@ -66,7 +66,7 @@
 
 #define MAX_LINE_LEN  80
 #define MAX_LINES     64
-#define MAX_FIELD_LEN 64
+#define MAX_FIELD_LEN 128
 #define PROGRESS_LEN  10
 
 struct path_data {
