@@ -864,6 +864,16 @@ Default value is \fBno\fR
 .RE
 .
 .
+.TP
+.B remove_retries
+This sets how may times multipath will retry removing a device that is in-use.
+Between each attempt, multipath will sleep 1 second.
+.RS
+.TP
+Default value is \fB0\fR
+.RE
+.
+.
 .\" ----------------------------------------------------------------------------
 .SH "blacklist section"
 .\" ----------------------------------------------------------------------------

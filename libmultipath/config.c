@@ -620,6 +620,7 @@ load_config (char * file)
 	conf->deferred_remove = DEFAULT_DEFERRED_REMOVE;
 	conf->skip_kpartx = DEFAULT_SKIP_KPARTX;
 	conf->disable_changed_wwids = DEFAULT_DISABLE_CHANGED_WWIDS;
+	conf->remove_retries = 0;
 
 	/*
 	 * preload default hwtable

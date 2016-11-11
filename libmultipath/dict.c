@@ -415,6 +415,9 @@ declare_mp_snprint(skip_kpartx, print_yes_no_undef)
 declare_def_handler(disable_changed_wwids, set_yes_no)
 declare_def_snprint(disable_changed_wwids, print_yes_no)
 
+declare_def_handler(remove_retries, set_int)
+declare_def_snprint(remove_retries, print_int)
+
 static int
 def_config_dir_handler(struct config *conf, vector strvec)
 {
@@ -1399,6 +1402,7 @@ init_keywords(vector keywords)
 	install_keyword("missing_uev_wait_timeout", &def_uev_wait_timeout_handler, &snprint_def_uev_wait_timeout);
 	install_keyword("skip_kpartx", &def_skip_kpartx_handler, &snprint_def_skip_kpartx);
 	install_keyword("disable_changed_wwids", &def_disable_changed_wwids_handler, &snprint_def_disable_changed_wwids);
+	install_keyword("remove_retries", &def_remove_retries_handler, &snprint_def_remove_retries);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);

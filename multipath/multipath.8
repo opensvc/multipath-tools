@@ -28,6 +28,8 @@ multipath \- Device mapper target autoconfig.
 .RB [\| \-h | \-l | \-ll | \-f | \-t | \-F | \-B | \-c | \-q | \|-r | \|-i | \-a | \|-u | \-w | \-W \|]
 .RB [\| \-p\ \c
 .IR failover | multibus | group_by_serial | group_by_prio | group_by_node_name \|]
+.RB [\| \-R\ \c
+.IR retries \|]
 .RB [\| device \|]
 .
 .
@@ -153,6 +155,11 @@ in \fI/sys/class/fc_transport/target*/node_name\fR.
 .TP
 .RE
 Existing maps are not modified.
+.
+.TP
+.BI \-R " retries"
+Number of times to retry flushing multipath devices that are in-use. The default
+is \fI0\fR.
 .
 .TP
 .BI device

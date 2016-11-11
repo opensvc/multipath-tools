@@ -103,8 +103,8 @@ usage (char * progname)
 	fprintf (stderr, VERSION_STRING);
 	fprintf (stderr, "Usage:\n");
 	fprintf (stderr, "  %s [-a|-c|-w|-W] [-d] [-r] [-i] [-v lvl] [-p pol] [-b fil] [-q] [dev]\n", progname);
-	fprintf (stderr, "  %s -l|-ll|-f [-v lvl] [-b fil] [dev]\n", progname);
-	fprintf (stderr, "  %s -F [-v lvl]\n", progname);
+	fprintf (stderr, "  %s -l|-ll|-f [-v lvl] [-b fil] [-R num] [dev]\n", progname);
+	fprintf (stderr, "  %s -F [-v lvl] [-R num]\n", progname);
 	fprintf (stderr, "  %s -t\n", progname);
 	fprintf (stderr, "  %s -h\n", progname);
 	fprintf (stderr,
@@ -137,6 +137,7 @@ usage (char * progname)
 		"          . 1 print created devmap names only\n"
 		"          . 2 default verbosity\n"
 		"          . 3 print debug information\n"
+		"  -R num  number of times to retry removes of in-use devices\n"
 		"  dev     action limited to:\n"
 		"          . multipath named 'dev' (ex: mpath0) or\n"
 		"          . multipath whose wwid is 'dev' (ex: 60051..)\n"
@@ -514,6 +515,7 @@ main (int argc, char *argv[])
 	enum devtypes dev_type = DEV_NONE;
 	char *dev = NULL;
 	struct config *conf;
+	int retries = -1;
 
 	udev = udev_new();
 	logsink = 0;
@@ -522,7 +524,7 @@ main (int argc, char *argv[])
 		exit(1);
 	multipath_conf = conf;
 	conf->retrigger_tries = 0;
-	while ((arg = getopt(argc, argv, ":adchl::FfM:v:p:b:BritquwW")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":adchl::FfM:v:p:b:BrR:itquwW")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
 			break;
@@ -601,6 +603,9 @@ main (int argc, char *argv[])
 			break;
 		case 'a':
 			cmd = CMD_ADD_WWID;
+			break;
+		case 'R':
+			retries = atoi(optarg);
 			break;
 		case ':':
 			fprintf(stderr, "Missing option argument\n");
@@ -708,16 +713,18 @@ main (int argc, char *argv[])
 		vector_free(curmp);
 		goto out;
 	}
+	if (retries < 0)
+		retries = conf->remove_retries;
 	if (conf->remove == FLUSH_ONE) {
 		if (dev_type == DEV_DEVMAP) {
-			r = dm_suspend_and_flush_map(dev);
+			r = dm_suspend_and_flush_map(dev, retries);
 		} else
 			condlog(0, "must provide a map name to remove");
 
 		goto out;
 	}
 	else if (conf->remove == FLUSH_ALL) {
-		r = dm_flush_maps();
+		r = dm_flush_maps(retries);
 		goto out;
 	}
 	while ((r = configure(cmd, dev_type, dev)) < 0)

@@ -35,8 +35,8 @@ int dm_flush_map_nopaths(const char * mapname, int deferred_remove);
 #define dm_flush_map(mapname) _dm_flush_map(mapname, 1, 0)
 #define dm_flush_map_nosync(mapname) _dm_flush_map(mapname, 0, 0)
 int dm_cancel_deferred_remove(struct multipath *mpp);
-int dm_suspend_and_flush_map(const char * mapname);
-int dm_flush_maps (void);
+int dm_suspend_and_flush_map(const char * mapname, int retries);
+int dm_flush_maps (int retries);
 int dm_fail_path(char * mapname, char * path);
 int dm_reinstate_path(char * mapname, char * path);
 int dm_queue_if_no_path(char *mapname, int enable);

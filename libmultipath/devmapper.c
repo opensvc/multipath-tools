@@ -845,9 +845,9 @@ dm_flush_map_nopaths(const char * mapname, int deferred_remove)
 #endif
 
 extern int
-dm_suspend_and_flush_map (const char * mapname)
+dm_suspend_and_flush_map (const char * mapname, int retries)
 {
-	int s = 0, queue_if_no_path = 0;
+	int need_reset = 0, queue_if_no_path = 0;
 	unsigned long long mapsize;
 	char params[PARAMS_SIZE] = {0};
 	int udev_flags = 0;
@@ -865,27 +865,29 @@ dm_suspend_and_flush_map (const char * mapname)
 			queue_if_no_path = 1;
 	}
 
-	if (queue_if_no_path)
-		s = dm_queue_if_no_path((char *)mapname, 0);
-	/* Leave queue_if_no_path alone if unset failed */
-	if (s)
-		queue_if_no_path = 0;
-	else
-		s = dm_simplecmd_flush(DM_DEVICE_SUSPEND, mapname, 0);
+	if (queue_if_no_path && dm_queue_if_no_path((char *)mapname, 0) == 0)
+		need_reset = 1;
 
-	if (!dm_flush_map(mapname)) {
-		condlog(4, "multipath map %s removed", mapname);
-		return 0;
-	}
+	do {
+		if (!queue_if_no_path || need_reset)
+			dm_simplecmd_flush(DM_DEVICE_SUSPEND, mapname, 0);
+
+		if (!dm_flush_map(mapname)) {
+			condlog(4, "multipath map %s removed", mapname);
+			return 0;
+		}
+		dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname, udev_flags);
+		if (retries)
+			sleep(1);
+	} while (retries-- > 0);
 	condlog(2, "failed to remove multipath map %s", mapname);
-	dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname, udev_flags);
-	if (queue_if_no_path)
-		s = dm_queue_if_no_path((char *)mapname, 1);
+	if (need_reset)
+		dm_queue_if_no_path((char *)mapname, 1);
 	return 1;
 }
 
 extern int
-dm_flush_maps (void)
+dm_flush_maps (int retries)
 {
 	int r = 0;
 	struct dm_task *dmt;
@@ -907,7 +909,7 @@ dm_flush_maps (void)
 		goto out;
 
 	do {
-		r |= dm_suspend_and_flush_map(names->name);
+		r |= dm_suspend_and_flush_map(names->name, retries);
 		next = names->next;
 		names = (void *) names + next;
 	} while (next);
