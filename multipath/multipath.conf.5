@@ -853,6 +853,17 @@ The default is \fBno\fR
 .RE
 .
 .
+.TP
+.B disable_changed_wwids
+If set to \fIyes\fR, multipathd will check the path wwid on change events, and
+if it has changed from the wwid of the multipath device, multipathd will
+disable access to the path until the wwid changes back.
+.RS
+.TP
+Default value is \fBno\fR
+.RE
+.
+.
 .\" ----------------------------------------------------------------------------
 .SH "blacklist section"
 .\" ----------------------------------------------------------------------------
