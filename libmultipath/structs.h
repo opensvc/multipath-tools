@@ -134,6 +134,11 @@ enum skip_kpartx_states {
 	SKIP_KPARTX_ON = YNU_YES,
 };
 
+enum max_sectors_kb_states {
+	MAX_SECTORS_KB_UNDEF = 0,
+	MAX_SECTORS_KB_MIN = 4,  /* can't be smaller than page size */
+};
+
 enum scsi_protocol {
 	SCSI_PROTOCOL_FCP = 0,	/* Fibre Channel */
 	SCSI_PROTOCOL_SPI = 1,	/* parallel SCSI */
@@ -251,6 +256,7 @@ struct multipath {
 	int delay_watch_checks;
 	int delay_wait_checks;
 	int skip_kpartx;
+	int max_sectors_kb;
 	unsigned int dev_loss;
 	uid_t uid;
 	gid_t gid;

@@ -349,6 +349,7 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(delay_watch_checks);
 	merge_num(delay_wait_checks);
 	merge_num(skip_kpartx);
+	merge_num(max_sectors_kb);
 
 	/*
 	 * Make sure features is consistent with
@@ -621,6 +622,7 @@ load_config (char * file)
 	conf->skip_kpartx = DEFAULT_SKIP_KPARTX;
 	conf->disable_changed_wwids = DEFAULT_DISABLE_CHANGED_WWIDS;
 	conf->remove_retries = 0;
+	conf->max_sectors_kb = DEFAULT_MAX_SECTORS_KB;
 
 	/*
 	 * preload default hwtable

@@ -66,6 +66,7 @@ struct hwentry {
 	int delay_watch_checks;
 	int delay_wait_checks;
 	int skip_kpartx;
+	int max_sectors_kb;
 	char * bl_product;
 };
 
@@ -93,6 +94,7 @@ struct mpentry {
 	int delay_watch_checks;
 	int delay_wait_checks;
 	int skip_kpartx;
+	int max_sectors_kb;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;
@@ -146,6 +148,7 @@ struct config {
 	int skip_kpartx;
 	int disable_changed_wwids;
 	int remove_retries;
+	int max_sectors_kb;
 	unsigned int version[3];
 
 	char * multipath_dir;

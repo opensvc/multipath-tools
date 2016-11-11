@@ -684,3 +684,19 @@ out:
 		origin);
 	return 0;
 }
+
+extern int
+select_max_sectors_kb (struct config *conf, struct multipath * mp)
+{
+	char *origin;
+
+	mp_set_mpe(max_sectors_kb);
+	mp_set_ovr(max_sectors_kb);
+	mp_set_hwe(max_sectors_kb);
+	mp_set_conf(max_sectors_kb);
+	return 0;
+out:
+	condlog(3, "%s: max_sectors_kb = %i %s", mp->alias, mp->max_sectors_kb,
+		origin);
+	return 0;
+}

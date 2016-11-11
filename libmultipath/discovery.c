@@ -212,6 +212,29 @@ declare_sysfs_get_str(rev);
 declare_sysfs_get_str(access_state);
 declare_sysfs_get_str(preferred_path);
 
+int
+sysfs_set_max_sectors_kb(struct multipath *mpp)
+{
+	struct path *pp;
+	char buff[11];
+	int i, ret, err = 0;
+
+	if (mpp->max_sectors_kb == MAX_SECTORS_KB_UNDEF)
+		return 0;
+	snprintf(buff, 11, "%d", mpp->max_sectors_kb);
+
+	vector_foreach_slot(mpp->paths, pp, i) {
+		ret = sysfs_attr_set_value(pp->udev, "queue/max_sectors_kb",
+					   buff, strlen(buff));
+		if (ret < 0) {
+			condlog(0, "failed setting max_sectors_kb on %s : %s",
+				pp->dev, strerror(-ret));
+			err = 1;
+		}
+	}
+	return err;
+}
+
 ssize_t
 sysfs_get_vpd (struct udev_device * udev, int pg,
 	       unsigned char * buff, size_t len)

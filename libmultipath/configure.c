@@ -296,8 +296,10 @@ setup_map (struct multipath * mpp, char * params, int params_size)
 	select_delay_watch_checks(conf, mpp);
 	select_delay_wait_checks(conf, mpp);
 	select_skip_kpartx(conf, mpp);
+	select_max_sectors_kb(conf, mpp);
 
 	sysfs_set_scsi_tmo(mpp, conf->checkint);
+	sysfs_set_max_sectors_kb(mpp);
 	put_multipath_config(conf);
 	/*
 	 * assign paths to path groups -- start with no groups and all paths

@@ -874,6 +874,16 @@ Default value is \fB0\fR
 .RE
 .
 .
+.TP
+.B max_sectors_kb
+Sets the max_sectors_kb device parameter on all path devices and the multipath
+device to the specified value.
+.RS
+.TP
+Default is device dependent.
+.RE
+.
+.
 .\" ----------------------------------------------------------------------------
 .SH "blacklist section"
 .\" ----------------------------------------------------------------------------
@@ -1006,6 +1016,8 @@ are taken from the \fIdefaults\fR or \fIdevices\fR section:
 .B delay_wait_checks
 .TP
 .B skip_kpartx
+.TP
+.B max_sectors_kb
 .RE
 .PD
 .LP
@@ -1117,6 +1129,8 @@ section:
 .B delay_wait_checks
 .TP
 .B skip_kpartx
+.TP
+.B max_sectors_kb
 .RE
 .PD
 .LP
