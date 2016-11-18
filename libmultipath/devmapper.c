@@ -392,7 +392,7 @@ int dm_addmap_reload(struct multipath *mpp, char *params, int flush)
 			      params, ADDMAP_RO, SKIP_KPARTX_OFF);
 	}
 	if (r)
-		r = dm_simplecmd(DM_DEVICE_RESUME, mpp->alias, flush,
+		r = dm_simplecmd(DM_DEVICE_RESUME, mpp->alias, !flush,
 				 1, udev_flags, 0);
 	return r;
 }
