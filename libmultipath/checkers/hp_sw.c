@@ -128,8 +128,7 @@ do_tur (int fd, unsigned int timeout)
 	return 0;
 }
 
-extern int
-libcheck_check (struct checker * c)
+int libcheck_check(struct checker * c)
 {
 	char buff[MX_ALLOC_LEN];
 

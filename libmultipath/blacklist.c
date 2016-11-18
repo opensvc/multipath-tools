@@ -13,8 +13,7 @@
 #include "config.h"
 #include "blacklist.h"
 
-extern int
-store_ble (vector blist, char * str, int origin)
+int store_ble(vector blist, char * str, int origin)
 {
 	struct blentry * ble;
 
@@ -47,8 +46,7 @@ out:
 }
 
 
-extern int
-alloc_ble_device (vector blist)
+int alloc_ble_device(vector blist)
 {
 	struct blentry_device * ble = MALLOC(sizeof(struct blentry_device));
 
@@ -63,8 +61,7 @@ alloc_ble_device (vector blist)
 	return 0;
 }
 
-extern int
-set_ble_device (vector blist, char * vendor, char * product, int origin)
+int set_ble_device(vector blist, char * vendor, char * product, int origin)
 {
 	struct blentry_device * ble;
 

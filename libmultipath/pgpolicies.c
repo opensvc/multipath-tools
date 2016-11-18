@@ -13,8 +13,7 @@
 #include "pgpolicies.h"
 #include "switchgroup.h"
 
-extern int
-get_pgpolicy_id (char * str)
+int get_pgpolicy_id(char * str)
 {
 	if (0 == strncmp(str, "failover", 8))
 		return FAILOVER;
@@ -30,8 +29,7 @@ get_pgpolicy_id (char * str)
 	return IOPOLICY_UNDEF;
 }
 
-extern int
-get_pgpolicy_name (char * buff, int len, int id)
+int get_pgpolicy_name(char * buff, int len, int id)
 {
 	char * s;
 
@@ -89,8 +87,8 @@ sort_pathgroups (struct multipath *mp) {
 /*
  * One path group per unique tgt_node_name present in the path vector
  */
-extern int
-group_by_node_name (struct multipath * mp) {
+int group_by_node_name(struct multipath * mp)
+{
 	int i, j;
 	int * bitmap;
 	struct path * pp;
@@ -165,8 +163,8 @@ out:
 /*
  * One path group per unique serial number present in the path vector
  */
-extern int
-group_by_serial (struct multipath * mp) {
+int group_by_serial(struct multipath * mp)
+{
 	int i, j;
 	int * bitmap;
 	struct path * pp;
@@ -237,8 +235,7 @@ out:
 	return 1;
 }
 
-extern int
-one_path_per_group (struct multipath * mp)
+int one_path_per_group(struct multipath *mp)
 {
 	int i;
 	struct path * pp;
@@ -275,8 +272,7 @@ out:
 	return 1;
 }
 
-extern int
-one_group (struct multipath * mp)	/* aka multibus */
+int one_group(struct multipath *mp)	/* aka multibus */
 {
 	struct pathgroup * pgp;
 
@@ -313,8 +309,7 @@ out:
 	return 1;
 }
 
-extern int
-group_by_prio (struct multipath * mp)
+int group_by_prio(struct multipath *mp)
 {
 	int i;
 	unsigned int prio;

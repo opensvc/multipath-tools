@@ -36,7 +36,7 @@ void decode_transport_id(struct prin_fulldescr *fdesc, unsigned char * p, int le
 int get_prin_length(int rq_servact);
 int mpath_isLittleEndian(void);
 
-extern unsigned int mpath_mx_alloc_len;
+unsigned int mpath_mx_alloc_len;
 
 int prout_do_scsi_ioctl(char * dev, int rq_servact, int rq_scope,
 		unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy)

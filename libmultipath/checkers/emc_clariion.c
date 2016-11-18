@@ -50,8 +50,7 @@ struct emc_clariion_checker_LU_context {
 	int inactive_snap;
 };
 
-extern void
-hexadecimal_to_ascii(char * wwn, char *wwnstr)
+void hexadecimal_to_ascii(char * wwn, char *wwnstr)
 {
 	int i,j, nbl;
 

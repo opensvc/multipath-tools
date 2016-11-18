@@ -62,8 +62,7 @@ xstrdup (const char *s)
 	return t;
 }
 
-extern int
-is_loop_device (const char *device)
+int is_loop_device(const char *device)
 {
 	struct stat statbuf;
 	int loopmajor;
@@ -96,8 +95,7 @@ is_loop_device (const char *device)
 
 #define SIZE(a) (sizeof(a)/sizeof(a[0]))
 
-extern char *
-find_loop_by_file (const char * filename)
+char *find_loop_by_file(const char *filename)
 {
 	DIR *dir;
 	struct dirent *dent;
@@ -144,8 +142,7 @@ find_loop_by_file (const char * filename)
 	return found;
 }
 
-extern char *
-find_unused_loop_device (void)
+char *find_unused_loop_device(void)
 {
 	char dev[20], *next_loop_dev = NULL;
 	int fd, next_loop = 0, somedev = 0, someloop = 0, loop_known = 0;
@@ -231,8 +228,7 @@ find_unused_loop_device (void)
 	return NULL;
 }
 
-extern int
-set_loop (const char *device, const char *file, int offset, int *loopro)
+int set_loop(const char *device, const char *file, int offset, int *loopro)
 {
 	struct loop_info loopinfo;
 	int fd, ffd, mode;
@@ -284,8 +280,7 @@ set_loop (const char *device, const char *file, int offset, int *loopro)
 	return 0;
 }
 
-extern int
-del_loop (const char *device)
+int del_loop(const char *device)
 {
 	int retries = 5;
 	int fd;

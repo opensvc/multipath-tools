@@ -314,8 +314,7 @@ static void copy_msg_to_checker(void *c_p, const char *msg)
 	strlcpy(c->message, msg, sizeof(c->message));
 }
 
-extern int
-libcheck_check (struct checker * c)
+int libcheck_check(struct checker * c)
 {
 	struct tur_checker_context *ct = c->context;
 	struct timespec tsp;

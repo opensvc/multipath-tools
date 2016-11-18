@@ -64,8 +64,7 @@ void libcheck_repair (struct checker * c)
 	return;
 }
 
-extern int
-libcheck_check (struct checker * c)
+int libcheck_check(struct checker * c)
 {
 	int rc;
 	int ret;

@@ -140,9 +140,8 @@ assemble_map (struct multipath * mp, char * params, int len)
 	return 0;
 }
 
-extern int
-disassemble_map (vector pathvec, char * params, struct multipath * mpp,
-		 int is_daemon)
+int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
+		    int is_daemon)
 {
 	char * word;
 	char * p;
@@ -425,8 +424,7 @@ out:
 	return 1;
 }
 
-extern int
-disassemble_status (char * params, struct multipath * mpp)
+int disassemble_status(char *params, struct multipath *mpp)
 {
 	char * word;
 	char * p;

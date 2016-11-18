@@ -201,8 +201,7 @@ alloc_multipath (void)
 	return mpp;
 }
 
-extern void
-free_multipath_attributes (struct multipath * mpp)
+void free_multipath_attributes(struct multipath *mpp)
 {
 	if (!mpp)
 		return;
@@ -439,8 +438,7 @@ find_path_by_devt (vector pathvec, char * dev_t)
 	return NULL;
 }
 
-extern int
-pathcountgr (struct pathgroup * pgp, int state)
+int pathcountgr(struct pathgroup *pgp, int state)
 {
 	struct path *pp;
 	int count = 0;
@@ -453,8 +451,7 @@ pathcountgr (struct pathgroup * pgp, int state)
 	return count;
 }
 
-extern int
-pathcount (struct multipath * mpp, int state)
+int pathcount(struct multipath *mpp, int state)
 {
 	struct pathgroup *pgp;
 	int count = 0;
@@ -467,8 +464,7 @@ pathcount (struct multipath * mpp, int state)
 	return count;
 }
 
-extern int
-pathcmp (struct pathgroup *pgp, struct pathgroup *cpgp)
+int pathcmp(struct pathgroup *pgp, struct pathgroup *cpgp)
 {
 	int i, j;
 	struct path *pp, *cpp;
@@ -498,8 +494,7 @@ first_path (struct multipath * mpp)
 	return pgp?VECTOR_SLOT(pgp->paths, 0):NULL;
 }
 
-extern void
-setup_feature(struct multipath * mpp, char *feature)
+void setup_feature(struct multipath *mpp, char *feature)
 {
 	if (!strncmp(feature, "queue_if_no_path", 16)) {
 		if (mpp->no_path_retry <= NO_PATH_RETRY_UNDEF)
@@ -507,8 +502,7 @@ setup_feature(struct multipath * mpp, char *feature)
 	}
 }
 
-extern int
-add_feature (char **f, char *n)
+int add_feature(char **f, char *n)
 {
 	int c = 0, d, l;
 	char *e, *p, *t;
@@ -592,8 +586,7 @@ add_feature (char **f, char *n)
 	return 0;
 }
 
-extern int
-remove_feature(char **f, char *o)
+int remove_feature(char **f, char *o)
 {
 	int c = 0, d, l;
 	char *e, *p, *n;

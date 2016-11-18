@@ -559,8 +559,7 @@ out:
 	return err;
 }
 
-extern int
-uevent_get_major(struct uevent *uev)
+int uevent_get_major(struct uevent *uev)
 {
 	char *p, *q;
 	int i, major = -1;
@@ -579,8 +578,7 @@ uevent_get_major(struct uevent *uev)
 	return major;
 }
 
-extern int
-uevent_get_minor(struct uevent *uev)
+int uevent_get_minor(struct uevent *uev)
 {
 	char *p, *q;
 	int i, minor = -1;
@@ -599,8 +597,7 @@ uevent_get_minor(struct uevent *uev)
 	return minor;
 }
 
-extern int
-uevent_get_disk_ro(struct uevent *uev)
+int uevent_get_disk_ro(struct uevent *uev)
 {
 	char *p, *q;
 	int i, ro = -1;
@@ -619,8 +616,7 @@ uevent_get_disk_ro(struct uevent *uev)
 	return ro;
 }
 
-extern char *
-uevent_get_dm_name(struct uevent *uev)
+char *uevent_get_dm_name(struct uevent *uev)
 {
 	char *p = NULL;
 	int i;

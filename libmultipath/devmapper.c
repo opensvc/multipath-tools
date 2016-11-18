@@ -94,8 +94,8 @@ dm_write_log (int level, const char *file, int line, const char *f, ...)
 	return;
 }
 
-extern void
-dm_init(int v) {
+void dm_init(int v)
+{
 	dm_log_init(&dm_write_log);
 	dm_log_init_verbose(v + 3);
 }
@@ -200,8 +200,7 @@ dm_drv_prereq (void)
 	return 1;
 }
 
-extern int
-dm_prereq (void)
+int dm_prereq(void)
 {
 	if (dm_lib_prereq())
 		return 1;
@@ -249,13 +248,13 @@ out:
 	return r;
 }
 
-extern int
-dm_simplecmd_flush (int task, const char *name, uint16_t udev_flags) {
+int dm_simplecmd_flush (int task, const char *name, uint16_t udev_flags)
+{
 	return dm_simplecmd(task, name, 0, 1, udev_flags, 0);
 }
 
-extern int
-dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags) {
+int dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags)
+{
 	return dm_simplecmd(task, name, 1, 1, udev_flags, 0);
 }
 
@@ -338,8 +337,8 @@ addout:
 	return r;
 }
 
-extern int
-dm_addmap_create (struct multipath *mpp, char * params) {
+int dm_addmap_create (struct multipath *mpp, char * params)
+{
 	int ro;
 
 	for (ro = 0; ro <= 1; ro++) {
@@ -369,8 +368,7 @@ dm_addmap_create (struct multipath *mpp, char * params) {
 #define ADDMAP_RW 0
 #define ADDMAP_RO 1
 
-extern int
-dm_addmap_reload (struct multipath *mpp, char *params, int flush)
+int dm_addmap_reload(struct multipath *mpp, char *params, int flush)
 {
 	int r;
 	uint16_t udev_flags = (flush ? 0 : MPATH_UDEV_RELOAD_FLAG) |
@@ -397,8 +395,7 @@ dm_addmap_reload (struct multipath *mpp, char *params, int flush)
 	return r;
 }
 
-extern int
-dm_map_present (const char * str)
+int dm_map_present(const char * str)
 {
 	int r = 0;
 	struct dm_task *dmt;
@@ -425,8 +422,7 @@ out:
 	return r;
 }
 
-extern int
-dm_get_map(const char * name, unsigned long long * size, char * outparams)
+int dm_get_map(const char *name, unsigned long long *size, char *outparams)
 {
 	int r = 1;
 	struct dm_task *dmt;
@@ -492,8 +488,7 @@ uuidout:
 	return r;
 }
 
-extern int
-dm_get_uuid(char *name, char *uuid)
+int dm_get_uuid(char *name, char *uuid)
 {
 	char uuidtmp[WWID_SIZE];
 
@@ -533,8 +528,7 @@ dm_compare_uuid(const char* mapname1, const char* mapname2)
 	return 1;
 }
 
-extern int
-dm_get_status(char * name, char * outstatus)
+int dm_get_status(char *name, char *outstatus)
 {
 	int r = 1;
 	struct dm_task *dmt;
@@ -577,8 +571,7 @@ out:
  *    0 : no match
  *   -1 : empty map
  */
-extern int
-dm_type(const char * name, char * type)
+int dm_type(const char *name, char *type)
 {
 	int r = 0;
 	struct dm_task *dmt;
@@ -611,8 +604,7 @@ out:
 	return r;
 }
 
-extern int
-dm_is_mpath(const char * name)
+int dm_is_mpath(const char *name)
 {
 	int r = 0;
 	struct dm_task *dmt;
@@ -791,8 +783,7 @@ partmap_in_use(const char *name, void *data)
 	return 0;
 }
 
-extern int
-_dm_flush_map (const char * mapname, int need_sync, int deferred_remove)
+int _dm_flush_map(const char *mapname, int need_sync, int deferred_remove)
 {
 	int r;
 

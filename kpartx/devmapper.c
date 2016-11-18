@@ -14,8 +14,7 @@
 #define MAX_PREFIX_LEN 8
 #define PARAMS_SIZE 1024
 
-extern int
-dm_prereq (char * str, int x, int y, int z)
+int dm_prereq(char * str, int x, int y, int z)
 {
 	int r = 1;
 	struct dm_task *dmt;
@@ -52,8 +51,8 @@ out:
 	return r;
 }
 
-extern int
-dm_simplecmd (int task, const char *name, int no_flush, uint16_t udev_flags) {
+int dm_simplecmd(int task, const char *name, int no_flush, uint16_t udev_flags)
+{
 	int r = 0;
 	int udev_wait_flag = (task == DM_DEVICE_RESUME ||
 			      task == DM_DEVICE_REMOVE);
@@ -90,10 +89,10 @@ out:
 	return r;
 }
 
-extern int
-dm_addmap (int task, const char *name, const char *target,
-	   const char *params, uint64_t size, int ro, const char *uuid, int part,
-	   mode_t mode, uid_t uid, gid_t gid) {
+int dm_addmap(int task, const char *name, const char *target,
+	      const char *params, uint64_t size, int ro, const char *uuid,
+	      int part, mode_t mode, uid_t uid, gid_t gid)
+{
 	int r = 0;
 	struct dm_task *dmt;
 	char *prefixed_uuid = NULL;
@@ -154,8 +153,7 @@ addout:
 	return r;
 }
 
-extern int
-dm_map_present (char * str, char **uuid)
+int dm_map_present(char * str, char **uuid)
 {
 	int r = 0;
 	struct dm_task *dmt;

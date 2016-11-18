@@ -81,8 +81,7 @@ do_attr_set(var, mp->mpe, shift, "(LUN setting)")
 #define set_attr_conf(var, shift)					\
 do_attr_set(var, conf, shift, "(config file default)")
 
-extern int
-select_mode (struct config *conf, struct multipath *mp)
+int select_mode(struct config *conf, struct multipath *mp)
 {
 	char *origin;
 
@@ -95,8 +94,7 @@ out:
 	return 0;
 }
 
-extern int
-select_uid (struct config *conf, struct multipath *mp)
+int select_uid(struct config *conf, struct multipath *mp)
 {
 	char *origin;
 
@@ -109,8 +107,7 @@ out:
 	return 0;
 }
 
-extern int
-select_gid (struct config *conf, struct multipath *mp)
+int select_gid(struct config *conf, struct multipath *mp)
 {
 	char *origin;
 
@@ -128,8 +125,7 @@ out:
  * traverse the configuration layers from most specific to most generic
  * stop at first explicit setting found
  */
-extern int
-select_rr_weight (struct config *conf, struct multipath * mp)
+int select_rr_weight(struct config *conf, struct multipath * mp)
 {
 	char *origin, buff[13];
 
@@ -144,8 +140,7 @@ out:
 	return 0;
 }
 
-extern int
-select_pgfailback (struct config *conf, struct multipath * mp)
+int select_pgfailback(struct config *conf, struct multipath * mp)
 {
 	char *origin, buff[13];
 
@@ -160,8 +155,7 @@ out:
 	return 0;
 }
 
-extern int
-select_pgpolicy (struct config *conf, struct multipath * mp)
+int select_pgpolicy(struct config *conf, struct multipath * mp)
 {
 	char *origin, buff[POLICY_NAME_SIZE];
 
@@ -182,8 +176,7 @@ out:
 	return 0;
 }
 
-extern int
-select_selector (struct config *conf, struct multipath * mp)
+int select_selector(struct config *conf, struct multipath * mp)
 {
 	char *origin;
 
@@ -236,8 +229,7 @@ out:
 	return (user_friendly_names == USER_FRIENDLY_NAMES_ON);
 }
 
-extern int
-select_alias (struct config *conf, struct multipath * mp)
+int select_alias(struct config *conf, struct multipath * mp)
 {
 	char *origin = NULL;
 
@@ -276,8 +268,7 @@ out:
 	return mp->alias ? 0 : 1;
 }
 
-extern int
-select_features (struct config *conf, struct multipath * mp)
+int select_features(struct config *conf, struct multipath *mp)
 {
 	char *origin;
 
@@ -302,8 +293,7 @@ out:
 	return 0;
 }
 
-extern int
-select_hwhandler (struct config *conf, struct multipath * mp)
+int select_hwhandler(struct config *conf, struct multipath *mp)
 {
 	char *origin;
 
@@ -317,8 +307,7 @@ out:
 	return 0;
 }
 
-extern int
-select_checker(struct config *conf, struct path *pp)
+int select_checker(struct config *conf, struct path *pp)
 {
 	char *origin, *checker_name;
 	struct checker * c = &pp->checker;
@@ -346,8 +335,7 @@ out:
 	return 0;
 }
 
-extern int
-select_getuid (struct config *conf, struct path * pp)
+int select_getuid(struct config *conf, struct path *pp)
 {
 	char *origin;
 
@@ -400,8 +388,7 @@ do {									\
 	}								\
 } while(0)
 
-extern int
-select_prio (struct config *conf, struct path * pp)
+int select_prio(struct config *conf, struct path *pp)
 {
 	char *origin;
 	struct mpentry * mpe;
@@ -438,8 +425,7 @@ out:
 	return 0;
 }
 
-extern int
-select_no_path_retry(struct config *conf, struct multipath *mp)
+int select_no_path_retry(struct config *conf, struct multipath *mp)
 {
 	char *origin = NULL;
 	char buff[12];
@@ -497,8 +483,7 @@ out:
 	return 0;
 }
 
-extern int
-select_minio (struct config *conf, struct multipath * mp)
+int select_minio(struct config *conf, struct multipath *mp)
 {
 	unsigned int minv_dmrq[3] = {1, 1, 0};
 
@@ -508,8 +493,7 @@ select_minio (struct config *conf, struct multipath * mp)
 		return select_minio_bio(conf, mp);
 }
 
-extern int
-select_fast_io_fail(struct config *conf, struct multipath *mp)
+int select_fast_io_fail(struct config *conf, struct multipath *mp)
 {
 	char *origin, buff[12];
 
@@ -523,8 +507,7 @@ out:
 	return 0;
 }
 
-extern int
-select_dev_loss(struct config *conf, struct multipath *mp)
+int select_dev_loss(struct config *conf, struct multipath *mp)
 {
 	char *origin, buff[12];
 
@@ -539,8 +522,7 @@ out:
 	return 0;
 }
 
-extern int
-select_flush_on_last_del(struct config *conf, struct multipath *mp)
+int select_flush_on_last_del(struct config *conf, struct multipath *mp)
 {
 	char *origin;
 
@@ -557,8 +539,7 @@ out:
 	return 0;
 }
 
-extern int
-select_reservation_key (struct config *conf, struct multipath * mp)
+int select_reservation_key(struct config *conf, struct multipath *mp)
 {
 	char *origin, buff[12];
 
@@ -572,8 +553,7 @@ out:
 	return 0;
 }
 
-extern int
-select_retain_hwhandler (struct config *conf, struct multipath * mp)
+int select_retain_hwhandler(struct config *conf, struct multipath *mp)
 {
 	char *origin;
 	unsigned int minv_dm_retain[3] = {1, 5, 0};
@@ -594,8 +574,7 @@ out:
 	return 0;
 }
 
-extern int
-select_detect_prio (struct config *conf, struct path * pp)
+int select_detect_prio(struct config *conf, struct path *pp)
 {
 	char *origin;
 
@@ -609,8 +588,7 @@ out:
 	return 0;
 }
 
-extern int
-select_deferred_remove (struct config *conf, struct multipath *mp)
+int select_deferred_remove(struct config *conf, struct multipath *mp)
 {
 	char *origin;
 
@@ -635,8 +613,7 @@ out:
 	return 0;
 }
 
-extern int
-select_delay_watch_checks(struct config *conf, struct multipath *mp)
+int select_delay_watch_checks(struct config *conf, struct multipath *mp)
 {
 	char *origin, buff[12];
 
@@ -651,8 +628,7 @@ out:
 	return 0;
 }
 
-extern int
-select_delay_wait_checks(struct config *conf, struct multipath *mp)
+int select_delay_wait_checks(struct config *conf, struct multipath *mp)
 {
 	char *origin, buff[12];
 
@@ -668,8 +644,7 @@ out:
 
 }
 
-extern int
-select_skip_kpartx (struct config *conf, struct multipath * mp)
+int select_skip_kpartx (struct config *conf, struct multipath * mp)
 {
 	char *origin;
 

@@ -145,8 +145,7 @@ size_t strlcat(char *dst, const char *src, size_t size)
 	return bytes;
 }
 
-extern int
-devt2devname (char *devname, int devname_len, char *devt)
+int devt2devname(char *devname, int devname_len, char *devt)
 {
 	FILE *fd;
 	unsigned int tmpmaj, tmpmin, major, minor;

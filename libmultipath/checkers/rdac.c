@@ -262,8 +262,7 @@ const char
 	}
 }
 
-extern int
-libcheck_check (struct checker * c)
+int libcheck_check(struct checker * c)
 {
 	struct volume_access_inq inq;
 	int ret, inqfail;

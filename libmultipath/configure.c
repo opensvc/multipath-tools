@@ -253,8 +253,7 @@ int rr_optimize_path_order(struct pathgroup *pgp)
 	return 0;
 }
 
-extern int
-setup_map (struct multipath * mpp, char * params, int params_size)
+int setup_map(struct multipath *mpp, char *params, int params_size)
 {
 	struct pathgroup * pgp;
 	struct config *conf;
@@ -507,8 +506,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 	return;
 }
 
-extern int
-reinstate_paths (struct multipath * mpp)
+int reinstate_paths(struct multipath *mpp)
 {
 	int i, j;
 	struct pathgroup * pgp;
@@ -584,8 +582,7 @@ fail:
 #define DOMAP_EXIST	2
 #define DOMAP_DRY	3
 
-extern int
-domap (struct multipath * mpp, char * params, int is_daemon)
+int domap(struct multipath *mpp, char *params, int is_daemon)
 {
 	int r = DOMAP_FAIL;
 	struct config *conf;
@@ -750,8 +747,8 @@ out:
 	return ret;
 }
 
-extern int
-coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_reload, enum mpath_cmds cmd)
+int coalesce_paths(struct vectors *vecs, vector newmp, char *refwwid,
+		   int force_reload, enum mpath_cmds cmd)
 {
 	int r = 1;
 	int k, i;
@@ -955,9 +952,8 @@ coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid, int force_r
  * 1 - failure
  * 2 - blacklist
  */
-extern int
-get_refwwid (enum mpath_cmds cmd, char * dev, enum devtypes dev_type,
-	     vector pathvec, char **wwid)
+int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
+		vector pathvec, char **wwid)
 {
 	int ret = 1;
 	struct path * pp;
@@ -1128,7 +1124,8 @@ out:
 	return 1;
 }
 
-extern int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh, int is_daemon)
+int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
+	       int is_daemon)
 {
 	char params[PARAMS_SIZE] = {0};
 	struct path *pp;

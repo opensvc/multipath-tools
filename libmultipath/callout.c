@@ -137,8 +137,7 @@ int execute_program(char *path, char *value, int len)
 	return retval;
 }
 
-extern int
-apply_format (char * string, char * cmd, struct path * pp)
+int apply_format(char * string, char * cmd, struct path * pp)
 {
 	char * pos;
 	char * dst;

@@ -1104,8 +1104,7 @@ static struct hwentry default_hw[] = {
 	},
 };
 
-extern int
-setup_default_hwtable (vector hw)
+int setup_default_hwtable(vector hw)
 {
 	int r = 0;
 	struct hwentry * hwe = default_hw;

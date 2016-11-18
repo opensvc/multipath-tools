@@ -942,8 +942,7 @@ snprint_pathgroup (char * line, int len, char * format,
 	return (c - line);
 }
 
-extern void
-print_multipath_topology (struct multipath * mpp, int verbosity)
+void print_multipath_topology(struct multipath *mpp, int verbosity)
 {
 	int resize;
 	char *buff = NULL;
@@ -973,9 +972,8 @@ print_multipath_topology (struct multipath * mpp, int verbosity)
 	FREE(buff);
 }
 
-extern int
-snprint_multipath_topology (char * buff, int len, struct multipath * mpp,
-			    int verbosity)
+int snprint_multipath_topology(char *buff, int len, struct multipath *mpp,
+			       int verbosity)
 {
 	int j, i, fwd = 0;
 	struct path * pp = NULL;
@@ -1247,8 +1245,7 @@ snprint_hwentry (struct config *conf, char * buff, int len, struct hwentry * hwe
 	return fwd;
 }
 
-extern int
-snprint_hwtable (struct config *conf, char * buff, int len, vector hwtable)
+int snprint_hwtable(struct config *conf, char *buff, int len, vector hwtable)
 {
 	int fwd = 0;
 	int i;
@@ -1300,8 +1297,7 @@ snprint_mpentry (struct config *conf, char * buff, int len, struct mpentry * mpe
 	return fwd;
 }
 
-extern int
-snprint_mptable (struct config *conf, char * buff, int len, vector mptable)
+int snprint_mptable(struct config *conf, char *buff, int len, vector mptable)
 {
 	int fwd = 0;
 	int i;
@@ -1326,8 +1322,8 @@ snprint_mptable (struct config *conf, char * buff, int len, vector mptable)
 	return fwd;
 }
 
-extern int
-snprint_overrides (struct config *conf, char * buff, int len, struct hwentry *overrides)
+int snprint_overrides(struct config *conf, char * buff, int len,
+		      struct hwentry *overrides)
 {
 	int fwd = 0;
 	int i;
@@ -1356,8 +1352,7 @@ out:
 	return fwd;
 }
 
-extern int
-snprint_defaults (struct config *conf, char * buff, int len)
+int snprint_defaults(struct config *conf, char *buff, int len)
 {
 	int fwd = 0;
 	int i;
@@ -1438,8 +1433,7 @@ snprint_blacklist_devgroup (char *buff, int len, int *fwd, vector *vec)
 	return pos;
 }
 
-extern int
-snprint_blacklist_report (struct config *conf, char * buff, int len)
+int snprint_blacklist_report(struct config *conf, char *buff, int len)
 {
 	int threshold = MAX_LINE_LEN;
 	int fwd = 0;
@@ -1501,8 +1495,7 @@ snprint_blacklist_report (struct config *conf, char * buff, int len)
 	return fwd;
 }
 
-extern int
-snprint_blacklist (struct config *conf, char * buff, int len)
+int snprint_blacklist(struct config *conf, char *buff, int len)
 {
 	int i;
 	struct blentry * ble;
@@ -1578,8 +1571,7 @@ snprint_blacklist (struct config *conf, char * buff, int len)
 	return fwd;
 }
 
-extern int
-snprint_blacklist_except (struct config *conf, char * buff, int len)
+int snprint_blacklist_except(struct config *conf, char *buff, int len)
 {
 	int i;
 	struct blentry * ele;
@@ -1655,8 +1647,7 @@ snprint_blacklist_except (struct config *conf, char * buff, int len)
 	return fwd;
 }
 
-extern int
-snprint_status (char * buff, int len, struct vectors *vecs)
+int snprint_status(char *buff, int len, struct vectors *vecs)
 {
 	int fwd = 0;
 	int i;
@@ -1687,8 +1678,8 @@ snprint_status (char * buff, int len, struct vectors *vecs)
 	return fwd;
 }
 
-extern int
-snprint_devices (struct config *conf, char * buff, int len, struct vectors *vecs)
+int snprint_devices(struct config *conf, char * buff, int len,
+		    struct vectors *vecs)
 {
 	DIR *blkdir;
 	struct dirent *blkdev;
@@ -1756,8 +1747,7 @@ snprint_devices (struct config *conf, char * buff, int len, struct vectors *vecs
 /*
  * stdout printing helpers
  */
-extern void
-print_path (struct path * pp, char * style)
+void print_path(struct path *pp, char *style)
 {
 	char line[MAX_LINE_LEN];
 
@@ -1766,8 +1756,7 @@ print_path (struct path * pp, char * style)
 	printf("%s", line);
 }
 
-extern void
-print_multipath (struct multipath * mpp, char * style)
+void print_multipath(struct multipath *mpp, char *style)
 {
 	char line[MAX_LINE_LEN];
 
@@ -1776,8 +1765,7 @@ print_multipath (struct multipath * mpp, char * style)
 	printf("%s", line);
 }
 
-extern void
-print_pathgroup (struct pathgroup * pgp, char * style)
+void print_pathgroup(struct pathgroup *pgp, char *style)
 {
 	char line[MAX_LINE_LEN];
 
@@ -1786,8 +1774,7 @@ print_pathgroup (struct pathgroup * pgp, char * style)
 	printf("%s", line);
 }
 
-extern void
-print_map (struct multipath * mpp, char * params)
+void print_map(struct multipath *mpp, char *params)
 {
 	if (mpp->size && params)
 		printf("0 %llu %s %s\n",
@@ -1795,14 +1782,12 @@ print_map (struct multipath * mpp, char * params)
 	return;
 }
 
-extern void
-print_all_paths (vector pathvec, int banner)
+void print_all_paths(vector pathvec, int banner)
 {
 	print_all_paths_custo(pathvec, banner, PRINT_PATH_LONG);
 }
 
-extern void
-print_all_paths_custo (vector pathvec, int banner, char *fmt)
+void print_all_paths_custo(vector pathvec, int banner, char *fmt)
 {
 	int i;
 	struct path * pp;

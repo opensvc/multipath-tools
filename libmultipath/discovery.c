@@ -177,7 +177,7 @@ path_discovery (vector pathvec, int flag)
 }
 
 #define declare_sysfs_get_str(fname)					\
-extern ssize_t								\
+ssize_t									\
 sysfs_get_##fname (struct udev_device * udev, char * buff, size_t len)	\
 {									\
 	int l;							\
@@ -1737,8 +1737,7 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev)
 	return 0;
 }
 
-extern int
-pathinfo (struct path *pp, struct config *conf, int mask)
+int pathinfo(struct path *pp, struct config *conf, int mask)
 {
 	int path_state;
 

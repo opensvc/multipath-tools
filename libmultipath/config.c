@@ -125,8 +125,7 @@ find_hwe (vector hwtable, char * vendor, char * product, char * revision)
 	return ret;
 }
 
-extern struct mpentry *
-find_mpe (vector mptable, char * wwid)
+struct mpentry *find_mpe(vector mptable, char *wwid)
 {
 	int i;
 	struct mpentry * mpe;
@@ -141,8 +140,7 @@ find_mpe (vector mptable, char * wwid)
 	return NULL;
 }
 
-extern char *
-get_mpe_wwid (vector mptable, char * alias)
+char *get_mpe_wwid(vector mptable, char *alias)
 {
 	int i;
 	struct mpentry * mpe;

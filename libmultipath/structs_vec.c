@@ -20,8 +20,7 @@
 /*
  * creates or updates mpp->paths reading mpp->pg
  */
-extern int
-update_mpp_paths(struct multipath * mpp, vector pathvec)
+int update_mpp_paths(struct multipath *mpp, vector pathvec)
 {
 	struct pathgroup * pgp;
 	struct path * pp;
@@ -45,8 +44,7 @@ update_mpp_paths(struct multipath * mpp, vector pathvec)
 	return 0;
 }
 
-extern int
-adopt_paths (vector pathvec, struct multipath * mpp)
+int adopt_paths(vector pathvec, struct multipath *mpp)
 {
 	int i, ret;
 	struct path * pp;
@@ -81,8 +79,7 @@ adopt_paths (vector pathvec, struct multipath * mpp)
 	return 0;
 }
 
-extern void
-orphan_path (struct path * pp, const char *reason)
+void orphan_path(struct path *pp, const char *reason)
 {
 	condlog(3, "%s: orphan path, %s", pp->dev, reason);
 	pp->mpp = NULL;
@@ -96,8 +93,7 @@ orphan_path (struct path * pp, const char *reason)
 	pp->fd = -1;
 }
 
-extern void
-orphan_paths (vector pathvec, struct multipath * mpp)
+void orphan_paths(vector pathvec, struct multipath *mpp)
 {
 	int i;
 	struct path * pp;
@@ -151,15 +147,13 @@ _remove_map (struct multipath * mpp, struct vectors * vecs,
 	free_multipath(mpp, KEEP_PATHS);
 }
 
-extern void
-remove_map (struct multipath * mpp, struct vectors * vecs, int purge_vec)
+void remove_map(struct multipath *mpp, struct vectors *vecs, int purge_vec)
 {
 	_remove_map(mpp, vecs, KEEP_WAITER, purge_vec);
 }
 
-extern void
-remove_map_and_stop_waiter (struct multipath * mpp, struct vectors * vecs,
-			    int purge_vec)
+void remove_map_and_stop_waiter(struct multipath *mpp, struct vectors *vecs,
+				int purge_vec)
 {
 	_remove_map(mpp, vecs, STOP_WAITER, purge_vec);
 }
@@ -182,14 +176,12 @@ _remove_maps (struct vectors * vecs, int stop_waiter)
 	vecs->mpvec = NULL;
 }
 
-extern void
-remove_maps (struct vectors * vecs)
+void remove_maps(struct vectors *vecs)
 {
 	_remove_maps(vecs, KEEP_WAITER);
 }
 
-extern void
-remove_maps_and_stop_waiters (struct vectors * vecs)
+void remove_maps_and_stop_waiters(struct vectors *vecs)
 {
 	_remove_maps(vecs, STOP_WAITER);
 }
@@ -320,8 +312,8 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 		pp->mpp = mpp;
 }
 
-extern int
-update_multipath_strings (struct multipath *mpp, vector pathvec, int is_daemon)
+int
+update_multipath_strings(struct multipath *mpp, vector pathvec, int is_daemon)
 {
 	if (!mpp)
 		return 1;
@@ -343,8 +335,7 @@ update_multipath_strings (struct multipath *mpp, vector pathvec, int is_daemon)
 	return 0;
 }
 
-extern void
-set_no_path_retry(struct config *conf, struct multipath *mpp)
+void set_no_path_retry(struct config *conf, struct multipath *mpp)
 {
 	mpp->retry_tick = 0;
 	mpp->nr_active = pathcount(mpp, PATH_UP) + pathcount(mpp, PATH_GHOST);
@@ -373,9 +364,8 @@ set_no_path_retry(struct config *conf, struct multipath *mpp)
 	}
 }
 
-extern int
-__setup_multipath (struct vectors * vecs, struct multipath * mpp,
-		   int reset, int is_daemon)
+int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
+		      int reset, int is_daemon)
 {
 	struct config *conf;
 
@@ -425,8 +415,7 @@ out:
 	return 1;
 }
 
-extern struct multipath *
-add_map_without_path (struct vectors * vecs, char * alias)
+struct multipath *add_map_without_path (struct vectors *vecs, char *alias)
 {
 	struct multipath * mpp = alloc_multipath();
 
@@ -473,9 +462,8 @@ find_existing_alias (struct multipath * mpp,
 		}
 }
 
-extern struct multipath *
-add_map_with_path (struct vectors * vecs,
-		   struct path * pp, int add_vec)
+struct multipath *add_map_with_path(struct vectors *vecs, struct path *pp,
+				    int add_vec)
 {
 	struct multipath * mpp;
 	struct config *conf = NULL;
@@ -514,8 +502,7 @@ out:
 	return NULL;
 }
 
-extern int
-verify_paths(struct multipath * mpp, struct vectors * vecs)
+int verify_paths(struct multipath *mpp, struct vectors *vecs)
 {
 	struct path * pp;
 	int count = 0;

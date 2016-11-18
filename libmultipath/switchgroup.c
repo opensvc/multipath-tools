@@ -7,8 +7,7 @@
 #include "structs.h"
 #include "switchgroup.h"
 
-extern void
-path_group_prio_update (struct pathgroup * pgp)
+void path_group_prio_update(struct pathgroup *pgp)
 {
 	int i;
 	int priority = 0;
@@ -32,8 +31,7 @@ path_group_prio_update (struct pathgroup * pgp)
 		pgp->priority = 0;
 }
 
-extern int
-select_path_group (struct multipath * mpp)
+int select_path_group(struct multipath *mpp)
 {
 	int i;
 	int max_priority = 0;
