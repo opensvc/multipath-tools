@@ -20,27 +20,19 @@ ifdef SYSTEMD
 	endif
 endif
 
-LIBDM_API_FLUSH = $(shell grep -Ecs '^[a-z]*[[:space:]]+dm_task_no_flush' /usr/include/libdevmapper.h)
-
-ifneq ($(strip $(LIBDM_API_FLUSH)),0)
+ifneq ($(call check_func,dm_task_no_flush,/usr/include/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_FLUSH -D_GNU_SOURCE
 endif
 
-LIBDM_API_COOKIE = $(shell grep -Ecs '^[a-z]*[[:space:]]+dm_task_set_cookie' /usr/include/libdevmapper.h)
-
-ifneq ($(strip $(LIBDM_API_COOKIE)),0)
+ifneq ($(call check_func,dm_task_set_cookie,/usr/include/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_COOKIE
 endif
 
-LIBUDEV_API_RECVBUF = $(shell grep -Ecs '^[a-z]*[[:space:]]+udev_monitor_set_receive_buffer_size' /usr/include/libudev.h)
-
-ifneq ($(strip $(LIBUDEV_API_RECVBUF)),0)
+ifneq ($(call check_func,udev_monitor_set_receive_buffer_size,/usr/include/libudev.h),0)
 	CFLAGS += -DLIBUDEV_API_RECVBUF
 endif
 
-LIBDM_API_DEFERRED = $(shell grep -Ecs '^[a-z]*[[:space:]]+dm_task_deferred_remove' /usr/include/libdevmapper.h)
-
-ifneq ($(strip $(LIBDM_API_DEFERRED)),0)
+ifneq ($(call check_func,dm_task_deferred_remove,/usr/include/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_DEFERRED
 endif
 

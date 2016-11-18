@@ -69,5 +69,19 @@ OPTFLAGS	= -O2 -g -pipe -Wall -Wextra -Wformat=2 \
 CFLAGS		= $(OPTFLAGS) -fPIC -DLIB_STRING=\"${LIB}\" -DRUN_DIR=\"${RUN}\"
 SHARED_FLAGS	= -shared
 
+# Check whether a function with name $1 has been declared in header file $2.
+check_func =								       \
+    $(shell								       \
+	if grep -Eq "^[^[:blank:]]+[[:blank:]]+$1[[:blank:]]*(.*)*" "$2"; then \
+	   found=1;							       \
+	   status="yes";						       \
+	else								       \
+	   found=0;							       \
+	   status="no";							       \
+	fi;								       \
+	echo 1>&2 "Checking for $1 in $2 ... $$status";			       \
+	echo "$$found"							       \
+    )
+
 %.o:	%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
