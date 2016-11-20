@@ -835,8 +835,7 @@ dm_flush_map_nopaths(const char * mapname, int deferred_remove)
 
 #endif
 
-extern int
-dm_suspend_and_flush_map (const char * mapname, int retries)
+int dm_suspend_and_flush_map (const char * mapname, int retries)
 {
 	int need_reset = 0, queue_if_no_path = 0;
 	unsigned long long mapsize;
@@ -877,8 +876,7 @@ dm_suspend_and_flush_map (const char * mapname, int retries)
 	return 1;
 }
 
-extern int
-dm_flush_maps (int retries)
+int dm_flush_maps (int retries)
 {
 	int r = 0;
 	struct dm_task *dmt;
