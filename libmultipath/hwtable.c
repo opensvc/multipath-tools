@@ -1034,7 +1034,10 @@ static struct hwentry default_hw[] = {
 		.vendor        = "Promise",
 		.product       = "VTrak",
 		.bl_product    = "VTrak V-LUN",
-		.pgpolicy      = MULTIBUS,
+		.hwhandler     = "1 alua",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
 		.no_path_retry = 30,
 	},
 	{
