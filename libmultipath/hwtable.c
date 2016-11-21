@@ -544,7 +544,6 @@ static struct hwentry default_hw[] = {
 		/* FlashSystem 710/720/810/820/840/900 */
 		.vendor        = "IBM",
 		.product       = "FlashSystem",
-		.no_path_retry = NO_PATH_RETRY_FAIL,
 		.pgpolicy      = MULTIBUS,
 	},
 	{
@@ -918,7 +917,6 @@ static struct hwentry default_hw[] = {
 	{
 		.vendor        = "Ceph",
 		.product       = "RBD",
-		.no_path_retry = NO_PATH_RETRY_FAIL,
 		.checker_name  = RBD,
 		.deferred_remove = DEFERRED_REMOVE_ON,
 	},
