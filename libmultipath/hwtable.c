@@ -884,6 +884,7 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 	},
 	{
+		/* SANsymphony */
 		.vendor	       = "DataCore",
 		.product       = "Virtual Disk",
 		.pgpolicy      = GROUP_BY_PRIO,
