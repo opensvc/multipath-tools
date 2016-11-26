@@ -13,7 +13,7 @@ extern "C" {
 #define MPATH_MAX_PARAM_LEN	8192
 
 #define MPATH_MX_TIDS		32	  /* Max number of transport ids"*/
-#define MPATH_MX_TID_LEN	256	  /* Max lenght of transport id */
+#define MPATH_MX_TID_LEN	256	  /* Max length of transport id */
 
 /* PRIN Service Actions */
 #define MPATH_PRIN_RKEY_SA	0x00	   /* READ KEYS SA*/

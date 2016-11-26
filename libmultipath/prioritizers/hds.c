@@ -7,12 +7,12 @@
  * Prioritizer for Device Mapper Multipath and HDS Storage
  *
  * Hitachis Modular Storage contains two controllers for redundancy. The
- * Storage internal LUN (LDEV) will normally allocated via two pathes to the
+ * Storage internal LUN (LDEV) will normally allocated via two paths to the
  * server (one path per controller). For performance reasons should the server
  * access to a LDEV only via one controller. The other path to the other
  * controller is stand-by. It is also possible to allocate more as one path
  * for a LDEV per controller. Here is active/active access allowed. The other
- * pathes via the other controller are stand-by.
+ * paths via the other controller are stand-by.
  *
  * This prioritizer checks with inquiry command the represented LDEV and
  * Controller number and gives back a priority followed by this scheme:

@@ -148,7 +148,7 @@ dbg_strdup(char *str, char *file, char *function, int line)
 
 
 
-/* Display a buffer into a HEXA formated output */
+/* Display a buffer into a HEXA formatted output */
 static void
 dump_buffer(char *buff, int count)
 {

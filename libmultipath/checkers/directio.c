@@ -82,7 +82,7 @@ int libcheck_init (struct checker * c)
 	ct->ptr = (unsigned char *) (((unsigned long)ct->buf + pgsize - 1) &
 		  (~(pgsize - 1)));
 
-	/* Sucessfully initialized, return the context. */
+	/* Successfully initialized, return the context. */
 	c->context = (void *) ct;
 	return 0;
 

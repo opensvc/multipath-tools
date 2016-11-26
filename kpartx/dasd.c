@@ -261,7 +261,7 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 				fmt_size = sectors512(vlabel.formatted_blocks,
 						      blocksize);
 			} else if (!strcmp(info.type, "ECKD")) {
-				/* formated w/o large volume support */
+				/* formatted w/o large volume support */
 				fmt_size = geo.cylinders * geo.heads
 					* geo.sectors * (blocksize >> 9);
 			} else {

@@ -9,7 +9,7 @@ cp /sbin/kpartx $INITRDDIR/sbin
 
 #
 # feed the dependencies too
-# scsi_id is dynamicaly linked, so store the libs too
+# scsi_id is dynamically linked, so store the libs too
 #
 cp /lib/udev/scsi_id $INITRDDIR/lib/udev/
 cp /bin/mountpoint $INITRDDIR/bin

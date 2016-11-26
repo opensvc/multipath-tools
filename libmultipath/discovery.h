@@ -18,7 +18,7 @@
 #endif
 
 /*
- * exerpt from sg_err.h
+ * excerpt from sg_err.h
  */
 #define SCSI_CHECK_CONDITION    0x2
 #define SCSI_COMMAND_TERMINATED 0x22

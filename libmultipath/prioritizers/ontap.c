@@ -117,7 +117,7 @@ out:
 }
 
 /*
- * Retuns:
+ * Returns:
  * -1: Unable to obtain proxy info
  *  0: Device _not_ proxy path
  *  1: Device _is_ proxy path

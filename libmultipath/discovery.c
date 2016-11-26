@@ -1807,7 +1807,7 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 				pp->state = PATH_DOWN;
 			if (pp->state == PATH_UP && !pp->size) {
 				condlog(3, "%s: device size is 0, "
-					"path unuseable", pp->dev);
+					"path unusable", pp->dev);
 				pp->state = PATH_GHOST;
 			}
 		} else {
