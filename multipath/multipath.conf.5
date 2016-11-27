@@ -7,7 +7,7 @@
 .\"
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATH.CONF 5 2016-10-18 "Linux"
+.TH MULTIPATH.CONF 5 2016-11-27 "Linux"
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -318,6 +318,10 @@ these values can be looked up through sysfs or by running \fImultipathd show pat
 .RE
 .TP 12
 .I alua
+If \fIexclusive_pref_bit\fR is set, paths with the \fIpreferred path\fR bit
+set will always be in their own path group.
+.TP
+.I sysfs
 If \fIexclusive_pref_bit\fR is set, paths with the \fIpreferred path\fR bit
 set will always be in their own path group.
 .TP
