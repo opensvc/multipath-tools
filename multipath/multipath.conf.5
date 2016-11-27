@@ -147,11 +147,11 @@ The default is: \fBno\fR
 .
 .TP
 .B multipath_dir
-Directory where the dynamic shared objects are stored.
+Directory where the dynamic shared objects are stored. Defined at compile time,
+commonly \fI/lib64/multipath/\fR or \fI/lib/multipath/\fR.
 .RS
 .TP
-The default is: \fB<system dependent>\fR. Defined at compile time, commonly
-\fI/lib64/multipath/\fR.
+The default is: \fB<system dependent>\fR
 .RE
 .
 .
@@ -884,7 +884,7 @@ Sets the max_sectors_kb device parameter on all path devices and the multipath
 device to the specified value.
 .RS
 .TP
-Default is device dependent.
+The default is: \fB<device dependent>\fR
 .RE
 .
 .
