@@ -61,7 +61,8 @@ RM		= rm -f
 LN		= ln -sf
 INSTALL_PROGRAM	= install
 
-OPTFLAGS	= -O2 -g -pipe -Wall -Wextra -Wformat=2 \
+OPTFLAGS	= -O2 -g -pipe -Wall -Wextra -Wformat=2 -Werror=implicit-int \
+		  -Werror=implicit-function-declaration -Werror=format-security \
 		  -Wno-sign-compare -Wno-unused-parameter -Wno-clobbered \
 		  -Wp,-D_FORTIFY_SOURCE=2 -fstack-protector-strong \
 		  --param=ssp-buffer-size=4
