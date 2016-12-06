@@ -63,7 +63,7 @@ INSTALL_PROGRAM	= install
 
 OPTFLAGS	= -O2 -g -pipe -Wall -Wextra -Wformat=2 \
 		  -Wno-sign-compare -Wno-unused-parameter -Wno-clobbered \
-		  -Wp,-D_FORTIFY_SOURCE=2 -fstack-protector \
+		  -Wp,-D_FORTIFY_SOURCE=2 -fstack-protector-strong \
 		  --param=ssp-buffer-size=4
 
 CFLAGS		= $(OPTFLAGS) -fPIC -DLIB_STRING=\"${LIB}\" -DRUN_DIR=\"${RUN}\"
