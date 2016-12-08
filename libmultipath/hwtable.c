@@ -1115,6 +1115,8 @@ static struct hwentry default_hw[] = {
 		.deferred_remove = DEFERRED_REMOVE_OFF,
 		.delay_watch_checks = DELAY_CHECKS_OFF,
 		.delay_wait_checks = DELAY_CHECKS_OFF,
+		.skip_kpartx = SKIP_KPARTX_OFF,
+		.max_sectors_kb = MAX_SECTORS_KB_UNDEF,
 	},
 #endif
 	/*
