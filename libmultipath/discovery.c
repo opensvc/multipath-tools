@@ -58,7 +58,7 @@ alloc_path_with_pathinfo (struct config *conf, struct udev_device *udevice,
 		err = pathinfo(pp, conf, flag | DI_BLACKLIST);
 	}
 
-	if (err)
+	if (err || !pp_ptr)
 		free_path(pp);
 	else if (pp_ptr)
 		*pp_ptr = pp;
