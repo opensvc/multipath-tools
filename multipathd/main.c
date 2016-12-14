@@ -1010,8 +1010,23 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 	}
 out:
 	lock_cleanup_pop(vecs->lock);
-	if (!pp)
+	if (!pp) {
+		/* If the path is blacklisted, print a debug/non-default verbosity message. */
+		if (uev->udev) {
+			int flag = DI_SYSFS | DI_WWID;
+
+			conf = get_multipath_config();
+			retval = alloc_path_with_pathinfo(conf, uev->udev, flag, NULL);
+			put_multipath_config(conf);
+
+			if (retval == PATHINFO_SKIPPED) {
+				condlog(3, "%s: spurious uevent, path is blacklisted", uev->kernel);
+				return 0;
+			}
+		}
+
 		condlog(0, "%s: spurious uevent, path not found", uev->kernel);
+	}
 
 	return retval;
 }
