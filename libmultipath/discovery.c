@@ -117,13 +117,6 @@ path_discover (vector pathvec, struct config * conf,
 	if (!devname)
 		return PATHINFO_FAILED;
 
-	if (filter_property(conf, udevice) > 0)
-		return PATHINFO_SKIPPED;
-
-	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
-			   (char *)devname) > 0)
-		return PATHINFO_SKIPPED;
-
 	pp = find_path_by_dev(pathvec, (char *)devname);
 	if (!pp) {
 		return store_pathinfo(pathvec, conf,
@@ -1744,6 +1737,20 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 
 	if (!pp)
 		return PATHINFO_FAILED;
+
+	/*
+	 * For behavior backward-compatibility with multipathd,
+	 * the blacklisting by filter_property|devnode() is not
+	 * limited by DI_BLACKLIST and occurs before this debug
+	 * message with the mask value.
+	 */
+	if (pp->udev && filter_property(conf, pp->udev) > 0)
+		return PATHINFO_SKIPPED;
+
+	if (filter_devnode(conf->blist_devnode,
+			   conf->elist_devnode,
+			   pp->dev) > 0)
+		return PATHINFO_SKIPPED;
 
 	condlog(3, "%s: mask = 0x%x", pp->dev, mask);
 

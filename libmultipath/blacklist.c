@@ -327,6 +327,10 @@ _filter_path (struct config * conf, struct path * pp)
 {
 	int r;
 
+	r = filter_property(conf, pp->udev);
+	if (r > 0)
+		return r;
+
 	r = _filter_devnode(conf->blist_devnode, conf->elist_devnode,pp->dev);
 	if (r > 0)
 		return r;
