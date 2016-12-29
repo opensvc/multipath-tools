@@ -2257,6 +2257,12 @@ sigusr2 (int sig)
 static void
 signal_init(void)
 {
+	sigset_t set;
+
+	sigemptyset(&set);
+	sigaddset(&set, SIGUSR2);
+	pthread_sigmask(SIG_SETMASK, &set, NULL);
+
 	signal_set(SIGHUP, sighup);
 	signal_set(SIGUSR1, sigusr1);
 	signal_set(SIGUSR2, sigusr2);
