@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/sysmacros.h>
 #include <errno.h>
 #include <sys/time.h>
 #include <pthread.h>

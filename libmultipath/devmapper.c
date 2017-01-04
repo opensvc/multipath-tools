@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/sysmacros.h>
 
 #include "checkers.h"
 #include "vector.h"
