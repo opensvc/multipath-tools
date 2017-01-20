@@ -74,66 +74,6 @@ int ux_socket_listen(const char *name)
 }
 
 /*
- * keep writing until it's all sent
- */
-size_t write_all(int fd, const void *buf, size_t len)
-{
-	size_t total = 0;
-
-	while (len) {
-		ssize_t n = send(fd, buf, len, MSG_NOSIGNAL);
-		if (n < 0) {
-			if ((errno == EINTR) || (errno == EAGAIN))
-				continue;
-			return total;
-		}
-		if (!n)
-			return total;
-		buf = n + (char *)buf;
-		len -= n;
-		total += n;
-	}
-	return total;
-}
-
-/*
- * keep reading until its all read
- */
-ssize_t read_all(int fd, void *buf, size_t len, unsigned int timeout)
-{
-	size_t total = 0;
-	ssize_t n;
-	int ret;
-	struct pollfd pfd;
-
-	while (len) {
-		pfd.fd = fd;
-		pfd.events = POLLIN;
-		ret = poll(&pfd, 1, timeout);
-		if (!ret) {
-			return -ETIMEDOUT;
-		} else if (ret < 0) {
-			if (errno == EINTR)
-				continue;
-			return -errno;
-		} else if (!(pfd.revents & POLLIN))
-			continue;
-		n = read(fd, buf, len);
-		if (n < 0) {
-			if ((errno == EINTR) || (errno == EAGAIN))
-				continue;
-			return -errno;
-		}
-		if (!n)
-			return total;
-		buf = n + (char *)buf;
-		len -= n;
-		total += n;
-	}
-	return total;
-}
-
-/*
  * send a packet in length prefix format
  */
 int send_packet(int fd, const char *buf)
