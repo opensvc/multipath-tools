@@ -22,6 +22,7 @@
 #include <poll.h>
 #include <sys/time.h>
 #include <signal.h>
+#include <stdbool.h>
 #include "checkers.h"
 #include "memory.h"
 #include "debug.h"
@@ -50,6 +51,23 @@ struct client {
 LIST_HEAD(clients);
 pthread_mutex_t client_lock = PTHREAD_MUTEX_INITIALIZER;
 struct pollfd *polls;
+
+static bool _socket_client_is_root(int fd);
+
+static bool _socket_client_is_root(int fd)
+{
+	socklen_t len = 0;
+	struct ucred uc;
+
+	len = sizeof(struct ucred);
+	if ((fd >= 0) &&
+	    (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &uc, &len) == 0) &&
+	    (uc.uid == 0))
+			return true;
+
+	/* Treat error as not root client */
+	return false;
+}
 
 /*
  * handle a new client joining
@@ -255,6 +273,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 				condlog(4, "cli[%d]: Got request [%s]",
 					i, inbuf);
 				uxsock_trigger(inbuf, &reply, &rlen,
+					       _socket_client_is_root(c->fd),
 					       trigger_data);
 				if (reply) {
 					if (send_packet(c->fd,

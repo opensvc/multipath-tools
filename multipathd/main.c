@@ -23,6 +23,7 @@
 #endif
 #include <semaphore.h>
 #include <time.h>
+#include <stdbool.h>
 
 /*
  * libmultipath
@@ -1048,7 +1049,8 @@ map_discovery (struct vectors * vecs)
 }
 
 int
-uxsock_trigger (char * str, char ** reply, int * len, void * trigger_data)
+uxsock_trigger (char * str, char ** reply, int * len, bool is_root,
+		void * trigger_data)
 {
 	struct vectors * vecs;
 	int r;
@@ -1056,6 +1058,14 @@ uxsock_trigger (char * str, char ** reply, int * len, void * trigger_data)
 	*reply = NULL;
 	*len = 0;
 	vecs = (struct vectors *)trigger_data;
+
+	if ((str != NULL) && (is_root == false) &&
+	    (strncmp(str, "list", strlen("list")) != 0) &&
+	    (strncmp(str, "show", strlen("show")) != 0)) {
+		*reply = STRDUP("permission deny: need to be root");
+		*len = strlen(*reply) + 1;
+		return 1;
+	}
 
 	r = parse_cmd(str, reply, len, vecs, uxsock_timeout / 1000);
 
