@@ -241,13 +241,15 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 				if (clock_gettime(CLOCK_MONOTONIC, &start_time)
 				    != 0)
 					start_time.tv_sec = 0;
-				if (recv_packet(c->fd, &inbuf,
-						uxsock_timeout) != 0) {
+				if (recv_packet_from_client(c->fd, &inbuf,
+							    uxsock_timeout)
+				    != 0) {
 					dead_client(c);
 					continue;
 				}
 				if (!inbuf) {
-					condlog(4, "recv_packet get null request");
+					condlog(4, "recv_packet_from_client "
+						"get null request");
 					continue;
 				}
 				condlog(4, "cli[%d]: Got request [%s]",

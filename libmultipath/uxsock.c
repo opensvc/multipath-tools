@@ -24,6 +24,16 @@
 #include "memory.h"
 #include "uxsock.h"
 #include "debug.h"
+
+/*
+ * Code is similar with mpath_recv_reply() with data size limitation
+ * and debug-able malloc.
+ * When limit == 0, it means no limit on data size, used for socket client
+ * to receiving data from multipathd.
+ */
+static int _recv_packet(int fd, char **buf, unsigned int timeout,
+			ssize_t limit);
+
 /*
  * create a unix domain socket and start listening on it
  * return a file descriptor open on the socket
@@ -81,26 +91,37 @@ int send_packet(int fd, const char *buf)
 	return mpath_send_cmd(fd, buf);
 }
 
-/*
- * receive a packet in length prefix format
- */
-int recv_packet(int fd, char **buf, unsigned int timeout)
+static int _recv_packet(int fd, char **buf, unsigned int timeout, ssize_t limit)
 {
-	int err;
-	ssize_t len;
+	int err = 0;
+	ssize_t len = 0;
 
 	*buf = NULL;
 	len = mpath_recv_reply_len(fd, timeout);
 	if (len <= 0)
 		return len;
+	if ((limit > 0) && (len > limit))
+		return -EINVAL;
 	(*buf) = MALLOC(len);
 	if (!*buf)
 		return -ENOMEM;
 	err = mpath_recv_reply_data(fd, *buf, len, timeout);
-	if (err) {
+	if (err != 0) {
 		FREE(*buf);
 		(*buf) = NULL;
-		return err;
 	}
-	return 0;
+	return err;
+}
+
+/*
+ * receive a packet in length prefix format
+ */
+int recv_packet(int fd, char **buf, unsigned int timeout)
+{
+	return _recv_packet(fd, buf, timeout, 0 /* no limit */);
+}
+
+int recv_packet_from_client(int fd, char **buf, unsigned int timeout)
+{
+	return _recv_packet(fd, buf, timeout, _MAX_CMD_LEN);
 }
