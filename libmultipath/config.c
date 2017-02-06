@@ -348,6 +348,9 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(delay_wait_checks);
 	merge_num(skip_kpartx);
 	merge_num(max_sectors_kb);
+	merge_num(san_path_err_threshold);
+	merge_num(san_path_err_forget_rate);
+	merge_num(san_path_err_recovery_time);
 
 	/*
 	 * Make sure features is consistent with
@@ -621,6 +624,9 @@ load_config (char * file)
 	conf->disable_changed_wwids = DEFAULT_DISABLE_CHANGED_WWIDS;
 	conf->remove_retries = 0;
 	conf->max_sectors_kb = DEFAULT_MAX_SECTORS_KB;
+	conf->san_path_err_threshold = DEFAULT_ERR_CHECKS;
+	conf->san_path_err_forget_rate = DEFAULT_ERR_CHECKS;
+	conf->san_path_err_recovery_time = DEFAULT_ERR_CHECKS;
 
 	/*
 	 * preload default hwtable

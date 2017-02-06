@@ -152,9 +152,9 @@ enum scsi_protocol {
 	SCSI_PROTOCOL_UNSPEC = 0xf, /* No specific protocol */
 };
 
-enum delay_checks_states {
-	DELAY_CHECKS_OFF = -1,
-	DELAY_CHECKS_UNDEF = 0,
+enum no_undef_states {
+	NU_NO = -1,
+	NU_UNDEF = 0,
 };
 
 enum initialized_states {
@@ -223,7 +223,10 @@ struct path {
 	int initialized;
 	int retriggers;
 	int wwid_changed;
-
+	unsigned int path_failures;
+	time_t dis_reinstate_time;
+	int disable_reinstate;
+	int san_path_err_forget_rate;
 	/* configlet pointers */
 	struct hwentry * hwe;
 };
@@ -255,6 +258,9 @@ struct multipath {
 	int deferred_remove;
 	int delay_watch_checks;
 	int delay_wait_checks;
+	int san_path_err_threshold;
+	int san_path_err_forget_rate;
+	int san_path_err_recovery_time;
 	int skip_kpartx;
 	int max_sectors_kb;
 	unsigned int dev_loss;

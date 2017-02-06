@@ -623,7 +623,7 @@ int select_delay_watch_checks(struct config *conf, struct multipath *mp)
 	mp_set_conf(delay_watch_checks);
 	mp_set_default(delay_watch_checks, DEFAULT_DELAY_CHECKS);
 out:
-	print_delay_checks(buff, 12, &mp->delay_watch_checks);
+	print_off_int_undef(buff, 12, &mp->delay_watch_checks);
 	condlog(3, "%s: delay_watch_checks = %s %s", mp->alias, buff, origin);
 	return 0;
 }
@@ -638,12 +638,56 @@ int select_delay_wait_checks(struct config *conf, struct multipath *mp)
 	mp_set_conf(delay_wait_checks);
 	mp_set_default(delay_wait_checks, DEFAULT_DELAY_CHECKS);
 out:
-	print_delay_checks(buff, 12, &mp->delay_wait_checks);
+	print_off_int_undef(buff, 12, &mp->delay_wait_checks);
 	condlog(3, "%s: delay_wait_checks = %s %s", mp->alias, buff, origin);
 	return 0;
 
 }
+int select_san_path_err_threshold(struct config *conf, struct multipath *mp)
+{
+        char *origin, buff[12];
 
+        mp_set_mpe(san_path_err_threshold);
+        mp_set_ovr(san_path_err_threshold);
+        mp_set_hwe(san_path_err_threshold);
+        mp_set_conf(san_path_err_threshold);
+        mp_set_default(san_path_err_threshold, DEFAULT_ERR_CHECKS);
+out:
+        print_off_int_undef(buff, 12, &mp->san_path_err_threshold);
+        condlog(3, "%s: san_path_err_threshold = %s %s", mp->alias, buff, origin);
+        return 0;
+}
+
+int select_san_path_err_forget_rate(struct config *conf, struct multipath *mp)
+{
+        char *origin, buff[12];
+
+        mp_set_mpe(san_path_err_forget_rate);
+        mp_set_ovr(san_path_err_forget_rate);
+        mp_set_hwe(san_path_err_forget_rate);
+        mp_set_conf(san_path_err_forget_rate);
+        mp_set_default(san_path_err_forget_rate, DEFAULT_ERR_CHECKS);
+out:
+        print_off_int_undef(buff, 12, &mp->san_path_err_forget_rate);
+        condlog(3, "%s: san_path_err_forget_rate = %s %s", mp->alias, buff, origin);
+        return 0;
+
+}
+int select_san_path_err_recovery_time(struct config *conf, struct multipath *mp)
+{
+        char *origin, buff[12];
+
+        mp_set_mpe(san_path_err_recovery_time);
+        mp_set_ovr(san_path_err_recovery_time);
+        mp_set_hwe(san_path_err_recovery_time);
+        mp_set_conf(san_path_err_recovery_time);
+        mp_set_default(san_path_err_recovery_time, DEFAULT_ERR_CHECKS);
+out:
+        print_off_int_undef(buff, 12, &mp->san_path_err_recovery_time);
+        condlog(3, "%s: san_path_err_recovery_time = %s %s", mp->alias, buff, origin);
+        return 0;
+
+}
 int select_skip_kpartx (struct config *conf, struct multipath * mp)
 {
 	char *origin;

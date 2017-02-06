@@ -1023,7 +1023,7 @@ declare_mp_handler(reservation_key, set_reservation_key)
 declare_mp_snprint(reservation_key, print_reservation_key)
 
 static int
-set_delay_checks(vector strvec, void *ptr)
+set_off_int_undef(vector strvec, void *ptr)
 {
 	int *int_ptr = (int *)ptr;
 	char * buff;
@@ -1033,47 +1033,69 @@ set_delay_checks(vector strvec, void *ptr)
 		return 1;
 
 	if (!strcmp(buff, "no") || !strcmp(buff, "0"))
-		*int_ptr = DELAY_CHECKS_OFF;
+		*int_ptr = NU_NO;
 	else if ((*int_ptr = atoi(buff)) < 1)
-		*int_ptr = DELAY_CHECKS_UNDEF;
+		*int_ptr = NU_UNDEF;
 
 	FREE(buff);
 	return 0;
 }
 
 int
-print_delay_checks(char * buff, int len, void *ptr)
+print_off_int_undef(char * buff, int len, void *ptr)
 {
 	int *int_ptr = (int *)ptr;
 
 	switch(*int_ptr) {
-	case DELAY_CHECKS_UNDEF:
+	case NU_UNDEF:
 		return 0;
-	case DELAY_CHECKS_OFF:
-		return snprintf(buff, len, "\"off\"");
+	case NU_NO:
+		return snprintf(buff, len, "\"no\"");
 	default:
 		return snprintf(buff, len, "%i", *int_ptr);
 	}
 }
 
-declare_def_handler(delay_watch_checks, set_delay_checks)
-declare_def_snprint(delay_watch_checks, print_delay_checks)
-declare_ovr_handler(delay_watch_checks, set_delay_checks)
-declare_ovr_snprint(delay_watch_checks, print_delay_checks)
-declare_hw_handler(delay_watch_checks, set_delay_checks)
-declare_hw_snprint(delay_watch_checks, print_delay_checks)
-declare_mp_handler(delay_watch_checks, set_delay_checks)
-declare_mp_snprint(delay_watch_checks, print_delay_checks)
-
-declare_def_handler(delay_wait_checks, set_delay_checks)
-declare_def_snprint(delay_wait_checks, print_delay_checks)
-declare_ovr_handler(delay_wait_checks, set_delay_checks)
-declare_ovr_snprint(delay_wait_checks, print_delay_checks)
-declare_hw_handler(delay_wait_checks, set_delay_checks)
-declare_hw_snprint(delay_wait_checks, print_delay_checks)
-declare_mp_handler(delay_wait_checks, set_delay_checks)
-declare_mp_snprint(delay_wait_checks, print_delay_checks)
-
+declare_def_handler(delay_watch_checks, set_off_int_undef)
+declare_def_snprint(delay_watch_checks, print_off_int_undef)
+declare_ovr_handler(delay_watch_checks, set_off_int_undef)
+declare_ovr_snprint(delay_watch_checks, print_off_int_undef)
+declare_hw_handler(delay_watch_checks, set_off_int_undef)
+declare_hw_snprint(delay_watch_checks, print_off_int_undef)
+declare_mp_handler(delay_watch_checks, set_off_int_undef)
+declare_mp_snprint(delay_watch_checks, print_off_int_undef)
+declare_def_handler(delay_wait_checks, set_off_int_undef)
+declare_def_snprint(delay_wait_checks, print_off_int_undef)
+declare_ovr_handler(delay_wait_checks, set_off_int_undef)
+declare_ovr_snprint(delay_wait_checks, print_off_int_undef)
+declare_hw_handler(delay_wait_checks, set_off_int_undef)
+declare_hw_snprint(delay_wait_checks, print_off_int_undef)
+declare_mp_handler(delay_wait_checks, set_off_int_undef)
+declare_mp_snprint(delay_wait_checks, print_off_int_undef)
+declare_def_handler(san_path_err_threshold, set_off_int_undef)
+declare_def_snprint(san_path_err_threshold, print_off_int_undef)
+declare_ovr_handler(san_path_err_threshold, set_off_int_undef)
+declare_ovr_snprint(san_path_err_threshold, print_off_int_undef)
+declare_hw_handler(san_path_err_threshold, set_off_int_undef)
+declare_hw_snprint(san_path_err_threshold, print_off_int_undef)
+declare_mp_handler(san_path_err_threshold, set_off_int_undef)
+declare_mp_snprint(san_path_err_threshold, print_off_int_undef)
+declare_def_handler(san_path_err_forget_rate, set_off_int_undef)
+declare_def_snprint(san_path_err_forget_rate, print_off_int_undef)
+declare_ovr_handler(san_path_err_forget_rate, set_off_int_undef)
+declare_ovr_snprint(san_path_err_forget_rate, print_off_int_undef)
+declare_hw_handler(san_path_err_forget_rate, set_off_int_undef)
+declare_hw_snprint(san_path_err_forget_rate, print_off_int_undef)
+declare_mp_handler(san_path_err_forget_rate, set_off_int_undef)
+declare_mp_snprint(san_path_err_forget_rate, print_off_int_undef)
+declare_def_handler(san_path_err_recovery_time, set_off_int_undef)
+declare_def_snprint(san_path_err_recovery_time, print_off_int_undef)
+declare_ovr_handler(san_path_err_recovery_time, set_off_int_undef)
+declare_ovr_snprint(san_path_err_recovery_time, print_off_int_undef)
+declare_hw_handler(san_path_err_recovery_time, set_off_int_undef)
+declare_hw_snprint(san_path_err_recovery_time, print_off_int_undef)
+declare_mp_handler(san_path_err_recovery_time, set_off_int_undef)
+declare_mp_snprint(san_path_err_recovery_time, print_off_int_undef)
 static int
 def_uxsock_timeout_handler(struct config *conf, vector strvec)
 {
@@ -1404,6 +1426,10 @@ init_keywords(vector keywords)
 	install_keyword("config_dir", &def_config_dir_handler, &snprint_def_config_dir);
 	install_keyword("delay_watch_checks", &def_delay_watch_checks_handler, &snprint_def_delay_watch_checks);
 	install_keyword("delay_wait_checks", &def_delay_wait_checks_handler, &snprint_def_delay_wait_checks);
+        install_keyword("san_path_err_threshold", &def_san_path_err_threshold_handler, &snprint_def_san_path_err_threshold);
+        install_keyword("san_path_err_forget_rate", &def_san_path_err_forget_rate_handler, &snprint_def_san_path_err_forget_rate);
+        install_keyword("san_path_err_recovery_time", &def_san_path_err_recovery_time_handler, &snprint_def_san_path_err_recovery_time);
+
 	install_keyword("find_multipaths", &def_find_multipaths_handler, &snprint_def_find_multipaths);
 	install_keyword("uxsock_timeout", &def_uxsock_timeout_handler, &snprint_def_uxsock_timeout);
 	install_keyword("retrigger_tries", &def_retrigger_tries_handler, &snprint_def_retrigger_tries);
@@ -1486,6 +1512,9 @@ init_keywords(vector keywords)
 	install_keyword("deferred_remove", &hw_deferred_remove_handler, &snprint_hw_deferred_remove);
 	install_keyword("delay_watch_checks", &hw_delay_watch_checks_handler, &snprint_hw_delay_watch_checks);
 	install_keyword("delay_wait_checks", &hw_delay_wait_checks_handler, &snprint_hw_delay_wait_checks);
+        install_keyword("san_path_err_threshold", &hw_san_path_err_threshold_handler, &snprint_hw_san_path_err_threshold);
+        install_keyword("san_path_err_forget_rate", &hw_san_path_err_forget_rate_handler, &snprint_hw_san_path_err_forget_rate);
+        install_keyword("san_path_err_recovery_time", &hw_san_path_err_recovery_time_handler, &snprint_hw_san_path_err_recovery_time);
 	install_keyword("skip_kpartx", &hw_skip_kpartx_handler, &snprint_hw_skip_kpartx);
 	install_keyword("max_sectors_kb", &hw_max_sectors_kb_handler, &snprint_hw_max_sectors_kb);
 	install_sublevel_end();
@@ -1515,6 +1544,10 @@ init_keywords(vector keywords)
 	install_keyword("deferred_remove", &ovr_deferred_remove_handler, &snprint_ovr_deferred_remove);
 	install_keyword("delay_watch_checks", &ovr_delay_watch_checks_handler, &snprint_ovr_delay_watch_checks);
 	install_keyword("delay_wait_checks", &ovr_delay_wait_checks_handler, &snprint_ovr_delay_wait_checks);
+        install_keyword("san_path_err_threshold", &ovr_san_path_err_threshold_handler, &snprint_ovr_san_path_err_threshold);
+        install_keyword("san_path_err_forget_rate", &ovr_san_path_err_forget_rate_handler, &snprint_ovr_san_path_err_forget_rate);
+        install_keyword("san_path_err_recovery_time", &ovr_san_path_err_recovery_time_handler, &snprint_ovr_san_path_err_recovery_time);
+
 	install_keyword("skip_kpartx", &ovr_skip_kpartx_handler, &snprint_ovr_skip_kpartx);
 	install_keyword("max_sectors_kb", &ovr_max_sectors_kb_handler, &snprint_ovr_max_sectors_kb);
 
@@ -1543,6 +1576,9 @@ init_keywords(vector keywords)
 	install_keyword("deferred_remove", &mp_deferred_remove_handler, &snprint_mp_deferred_remove);
 	install_keyword("delay_watch_checks", &mp_delay_watch_checks_handler, &snprint_mp_delay_watch_checks);
 	install_keyword("delay_wait_checks", &mp_delay_wait_checks_handler, &snprint_mp_delay_wait_checks);
+	install_keyword("san_path_err_threshold", &mp_san_path_err_threshold_handler, &snprint_mp_san_path_err_threshold);
+	install_keyword("san_path_err_forget_rate", &mp_san_path_err_forget_rate_handler, &snprint_mp_san_path_err_forget_rate);
+	install_keyword("san_path_err_recovery_time", &mp_san_path_err_recovery_time_handler, &snprint_mp_san_path_err_recovery_time);
 	install_keyword("skip_kpartx", &mp_skip_kpartx_handler, &snprint_mp_skip_kpartx);
 	install_keyword("max_sectors_kb", &mp_max_sectors_kb_handler, &snprint_mp_max_sectors_kb);
 	install_sublevel_end();

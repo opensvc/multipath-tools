@@ -24,3 +24,6 @@ int select_delay_watch_checks (struct config *conf, struct multipath * mp);
 int select_delay_wait_checks (struct config *conf, struct multipath * mp);
 int select_skip_kpartx (struct config *conf, struct multipath * mp);
 int select_max_sectors_kb (struct config *conf, struct multipath * mp);
+int select_san_path_err_forget_rate(struct config *conf, struct multipath *mp);
+int select_san_path_err_threshold(struct config *conf, struct multipath *mp);
+int select_san_path_err_recovery_time(struct config *conf, struct multipath *mp);

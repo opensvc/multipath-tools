@@ -65,6 +65,9 @@ struct hwentry {
 	int deferred_remove;
 	int delay_watch_checks;
 	int delay_wait_checks;
+	int san_path_err_threshold;
+	int san_path_err_forget_rate;
+	int san_path_err_recovery_time;
 	int skip_kpartx;
 	int max_sectors_kb;
 	char * bl_product;
@@ -93,6 +96,9 @@ struct mpentry {
 	int deferred_remove;
 	int delay_watch_checks;
 	int delay_wait_checks;
+	int san_path_err_threshold;
+	int san_path_err_forget_rate;
+	int san_path_err_recovery_time;
 	int skip_kpartx;
 	int max_sectors_kb;
 	uid_t uid;
@@ -138,6 +144,9 @@ struct config {
 	int processed_main_config;
 	int delay_watch_checks;
 	int delay_wait_checks;
+	int san_path_err_threshold;
+	int san_path_err_forget_rate;
+	int san_path_err_recovery_time;
 	int uxsock_timeout;
 	int strict_timing;
 	int retrigger_tries;

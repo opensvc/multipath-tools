@@ -751,6 +751,45 @@ The default is: \fB/etc/multipath/conf.d/\fR
 .
 .
 .TP
+.B san_path_err_threshold
+If set to a value greater than 0, multipathd will watch paths and check how many
+times a path has been failed due to errors.If the number of failures on a particular
+path is greater then the san_path_err_threshold then the path will not  reinstante
+till san_path_err_recovery_time.These path failures should occur within a 
+san_path_err_forget_rate checks, if not we will consider the path is good enough
+to reinstantate.
+.RS
+.TP
+The default is: \fBno\fR
+.RE
+.
+.
+.TP
+.B san_path_err_forget_rate
+If set to a value greater than 0, multipathd will check whether the path failures
+has exceeded  the san_path_err_threshold within this many checks i.e 
+san_path_err_forget_rate . If so we will not reinstante the path till
+san_path_err_recovery_time.
+.RS
+.TP
+The default is: \fBno\fR
+.RE
+.
+.
+.TP
+.B san_path_err_recovery_time
+If set to a value greater than 0, multipathd will make sure that when path failures
+has exceeded the san_path_err_threshold within san_path_err_forget_rate then the path
+will be placed in failed state for san_path_err_recovery_time duration.Once san_path_err_recovery_time
+has timeout  we will reinstante the failed path .
+san_path_err_recovery_time value should be in secs.
+.RS
+.TP
+The default is: \fBno\fR
+.RE
+.
+.
+.TP
 .B delay_watch_checks
 If set to a value greater than 0, multipathd will watch paths that have
 recently become valid for this many checks. If they fail again while they are
@@ -1015,6 +1054,12 @@ are taken from the \fIdefaults\fR or \fIdevices\fR section:
 .TP
 .B deferred_remove
 .TP
+.B san_path_err_threshold
+.TP
+.B san_path_err_forget_rate
+.TP
+.B san_path_err_recovery_time
+.TP
 .B delay_watch_checks
 .TP
 .B delay_wait_checks
@@ -1128,6 +1173,12 @@ section:
 .TP
 .B deferred_remove
 .TP
+.B san_path_err_threshold
+.TP
+.B san_path_err_forget_rate
+.TP
+.B san_path_err_recovery_time
+.TP
 .B delay_watch_checks
 .TP
 .B delay_wait_checks
@@ -1191,6 +1242,12 @@ the values are taken from the \fIdevices\fR or \fIdefaults\fR sections:
 .B detect_prio
 .TP
 .B deferred_remove
+.TP
+.B san_path_err_threshold
+.TP
+.B san_path_err_forget_rate
+.TP
+.B san_path_err_recovery_time
 .TP
 .B delay_watch_checks
 .TP
