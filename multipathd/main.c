@@ -1498,7 +1498,7 @@ static int check_path_reinstate_state(struct path * pp) {
 	if (pp->disable_reinstate) {
 		/* If we don't know how much time has passed, automatically
 		 * reinstate the path, just to be safe. Also, if there are
-		 * no other usable paths, reinstate the path 
+		 * no other usable paths, reinstate the path
 		 */
 		if (clock_gettime(CLOCK_MONOTONIC, &curr_time) != 0 ||
 				pp->mpp->nr_active == 0) {
@@ -1517,7 +1517,7 @@ static int check_path_reinstate_state(struct path * pp) {
 		if (pp->san_path_err_forget_rate > 0){
 			pp->san_path_err_forget_rate--;
 		} else {
-			/* for every san_path_err_forget_rate number of 
+			/* for every san_path_err_forget_rate number of
 			 * successful path checks decrement path_failures by 1
 			 */
 			pp->path_failures--;
@@ -1537,7 +1537,7 @@ static int check_path_reinstate_state(struct path * pp) {
 	pp->path_failures++;
 
 	/* if we don't know the currently time, we don't know how long to
-	 * delay the path, so there's no point in checking if we should 
+	 * delay the path, so there's no point in checking if we should
 	 */
 
 	if (clock_gettime(CLOCK_MONOTONIC, &curr_time) != 0)
@@ -1546,7 +1546,7 @@ static int check_path_reinstate_state(struct path * pp) {
 	 * place the path in delayed state till san_path_err_recovery_time
 	 * so that the cutomer can rectify the issue within this time. After
 	 * the completion of san_path_err_recovery_time it should
-	 * automatically reinstate the path 
+	 * automatically reinstate the path
 	 */
 	if (pp->path_failures > pp->mpp->san_path_err_threshold) {
 		condlog(2, "%s : hit error threshold. Delaying path reinstatement", pp->dev);
