@@ -1504,7 +1504,7 @@ static int check_path_reinstate_state(struct path * pp) {
 				(pp->mpp->san_path_err_recovery_time >0))) {
 		return 0;
 	}
-	
+
 	if (pp->disable_reinstate) {
 		/* If we don't know how much time has passed, automatically
 		 * reinstate the path, just to be safe. Also, if there are
