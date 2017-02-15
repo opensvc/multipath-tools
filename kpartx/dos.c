@@ -46,7 +46,7 @@ read_extended_partition(int fd, struct partition *ep, int en,
 		for (i=0; i<2; i++) {
 			memcpy(&p, bp + 0x1be + i * sizeof (p), sizeof (p));
 			if (is_extended(p.sys_type)) {
-				if (p.nr_sects && !moretodo) {
+				if (p.start_sect && p.nr_sects && !moretodo) {
 					next = start + sector_size_mul * le32_to_cpu(p.start_sect);
 					moretodo = 1;
 				}
