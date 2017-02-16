@@ -1,7 +1,7 @@
 include ../Makefile.inc
 
 #
-# debuging stuff
+# debugging stuff
 #
 #CFLAGS += -DLCKDBG
 #CFLAGS += -D_DEBUG_
