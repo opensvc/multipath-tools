@@ -12,3 +12,5 @@ mpathpersist/mpathpersist
 .nfs*
 *.swp
 *.patch
+*.rej
+*.orig
