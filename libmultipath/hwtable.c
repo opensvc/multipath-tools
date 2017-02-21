@@ -1073,6 +1073,16 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.no_path_retry = 30,
 	},
+	/*
+	 * Generic NVMe devices
+	 */
+	{
+		.vendor	       = "NVME",
+		.product       = ".*",
+		.uid_attribute = "ID_WWN",
+		.checker_name  = DIRECTIO,
+		.retain_hwhandler = RETAIN_HWHANDLER_OFF,
+	},
 #if 0
 	/*
 	 * Copy this TEMPLATE to add new hardware.

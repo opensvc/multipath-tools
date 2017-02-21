@@ -1187,6 +1187,36 @@ scsi_sysfs_pathinfo (struct path * pp, vector hwtable)
 }
 
 static int
+nvme_sysfs_pathinfo (struct path * pp, vector hwtable)
+{
+	struct udev_device *parent, *nvme = NULL;
+
+	parent = pp->udev;
+	while (parent) {
+		const char *subsys = udev_device_get_subsystem(parent);
+
+		if (subsys && !strncmp(subsys, "nvme", 4)) {
+			nvme = parent;
+			break;
+		}
+		parent = udev_device_get_parent(parent);
+	}
+	if (!nvme)
+		return 1;
+
+	snprintf(pp->vendor_id, SCSI_VENDOR_SIZE, "NVME");
+	snprintf(pp->product_id, SCSI_PRODUCT_SIZE, "%s", udev_device_get_sysattr_value(nvme, "model"));
+	snprintf(pp->serial, SERIAL_SIZE, "%s", udev_device_get_sysattr_value(nvme, "serial"));
+	snprintf(pp->rev, SCSI_REV_SIZE, "%s", udev_device_get_sysattr_value(nvme, "firmware_rev"));
+
+	condlog(3, "%s: vendor:%s product:%s serial:%s rev:%s", pp->dev,
+		pp->vendor_id, pp->product_id, pp->serial, pp->rev);
+	pp->hwe = find_hwe(hwtable, pp->vendor_id, pp->product_id, NULL);
+
+	return 0;
+}
+
+static int
 rbd_sysfs_pathinfo (struct path * pp, vector hwtable)
 {
 	sprintf(pp->vendor_id, "Ceph");
@@ -1405,6 +1435,8 @@ sysfs_pathinfo(struct path * pp, vector hwtable)
 		pp->bus = SYSFS_BUS_SCSI;
 	if (!strncmp(pp->dev,"rbd", 3))
 		pp->bus = SYSFS_BUS_RBD;
+	if (!strncmp(pp->dev,"nvme", 4))
+		pp->bus = SYSFS_BUS_NVME;
 
 	if (pp->bus == SYSFS_BUS_UNDEF)
 		return 0;
@@ -1419,6 +1451,9 @@ sysfs_pathinfo(struct path * pp, vector hwtable)
 			return 1;
 	} else if (pp->bus == SYSFS_BUS_RBD) {
 		if (rbd_sysfs_pathinfo(pp, hwtable))
+			return 1;
+	} else if (pp->bus == SYSFS_BUS_NVME) {
+		if (nvme_sysfs_pathinfo(pp, hwtable))
 			return 1;
 	}
 	return 0;
