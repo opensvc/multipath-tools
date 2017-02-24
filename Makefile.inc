@@ -55,6 +55,9 @@ unitdir		= $(prefix)/$(SYSTEMDPATH)/systemd/system
 mpathpersistdir	= $(TOPDIR)/libmpathpersist
 mpathcmddir	= $(TOPDIR)/libmpathcmd
 thirdpartydir	= $(TOPDIR)/third-party
+libdmmpdir	= $(TOPDIR)/libdmmp
+includedir	= $(prefix)/usr/include
+pkgconfdir	= $(prefix)/usr/share/pkgconfig
 
 GZIP		= gzip -9 -c
 RM		= rm -f

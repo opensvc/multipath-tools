@@ -1,0 +1,9 @@
+includedir=__INCLUDEDIR__
+libdir=__LIBDIR__
+
+Name: libdmmp
+Version: __VERSION__
+Description: Device mapper multipath management library
+Requires:
+Libs: -L${libdir} -ldmmp
+Cflags: -I${includedir}

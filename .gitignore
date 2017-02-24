@@ -14,3 +14,7 @@ mpathpersist/mpathpersist
 *.patch
 *.rej
 *.orig
+libdmmp/docs/man/*.3.gz
+libdmmp/*.so.*
+libdmmp/test/libdmmp_test
+libdmmp/test/libdmmp_speed_test

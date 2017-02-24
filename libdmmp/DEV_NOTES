@@ -1,0 +1,41 @@
+== Planed features ==
+ * Expose all properties used by /usr/bin/multipath
+
+== Code style ==
+ * Keep things as simple as possible.
+ * Linux Kernel code style.
+ * Don't use typedef.
+ * Don't use enum.
+ * We are not smarter than API user, so don't create wrapping function like:
+
+    ```
+    dmmp_mpath_search_by_id(struct dmmp_context *ctx,
+                            struct dmmp_mpath **dmmp_mp,
+                            uint32_t dmmp_mp_count, const char *id)
+
+    dmmp_path_group_id_search(struct dmmp_mpath *dmmp_mp,
+                              const char *blk_name)
+    ```
+ * The performance is the same for query single mpath and query all mpaths,
+   so no `dmmp_mpath_of_wwid(struct dmmp_context *ctx, const char *wwid)` yet.
+
+== Naming scheme ==
+ * Public constants should be named as `DMMP_XXX_YYY`.
+ * Public functions should be named as `dmmp_<noun>_<verb>`.
+ * Private constants should be named as `_DMMP_XXX_YYY`.
+ * Private functions should be named as `_dmmp_<noun>_<verb>`.
+
+== Code Layout ==
+ * libdmmp_private.h
+    Internal functions or macros.
+ * libdmmp.c
+    Handling multipathd IPC and generate dmmp_context and
+    dmmp_mpath_array_get().
+ * libdmmp_mp.c
+    For `struct dmmp_mpath`
+ * libdmmp_pg.c
+    For `struct dmmp_path_group`
+ * libdmmp_path.c
+    For `struct dmmp_path`
+ * libdmmp_misc.c
+    Misc functions.
