@@ -18,6 +18,12 @@
 #define MPATH_UDEV_NO_KPARTX_FLAG 0
 #endif
 
+#ifdef DM_SUBSYSTEM_UDEV_FLAG2
+#define MPATH_UDEV_NO_PATHS_FLAG DM_SUBSYSTEM_UDEV_FLAG2
+#else
+#define MPATH_UDEV_NO_PATHS_FLAG 0
+#endif
+
 void dm_init(int verbosity);
 int dm_prereq (void);
 int dm_drv_version (unsigned int * version, char * str);
