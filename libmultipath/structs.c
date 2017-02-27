@@ -17,6 +17,7 @@
 #include "structs_vec.h"
 #include "blacklist.h"
 #include "prio.h"
+#include "prioritizers/alua_spc3.h"
 
 struct adapter_group *
 alloc_adaptergroup(void)
@@ -96,6 +97,7 @@ alloc_path (void)
 		pp->sg_id.lun = -1;
 		pp->sg_id.proto_id = SCSI_PROTOCOL_UNSPEC;
 		pp->fd = -1;
+		pp->tpgs = TPGS_UNDEF;
 		pp->priority = PRIO_UNDEF;
 	}
 	return pp;

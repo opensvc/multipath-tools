@@ -109,6 +109,7 @@ inquiry_command_set_evpd(struct inquiry_command *ic)
 #define VERSION_SPC3					0x05
 
 /* Defined TPGS field values. */
+#define TPGS_UNDEF					 -1
 #define TPGS_NONE					0x0
 #define TPGS_IMPLICIT					0x1
 #define TPGS_EXPLICIT					0x2

@@ -122,6 +122,12 @@ enum detect_prio_states {
 	DETECT_PRIO_ON = YNU_YES,
 };
 
+enum detect_checker_states {
+	DETECT_CHECKER_UNDEF = YNU_UNDEF,
+	DETECT_CHECKER_OFF = YNU_NO,
+	DETECT_CHECKER_ON = YNU_YES,
+};
+
 enum deferred_remove_states {
 	DEFERRED_REMOVE_UNDEF = YNU_UNDEF,
 	DEFERRED_REMOVE_OFF = YNU_NO,
@@ -211,6 +217,7 @@ struct path {
 	int priority;
 	int pgindex;
 	int detect_prio;
+	int detect_checker;
 	int watch_checks;
 	int wait_checks;
 	int tpgs;

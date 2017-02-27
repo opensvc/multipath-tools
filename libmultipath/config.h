@@ -62,6 +62,7 @@ struct hwentry {
 	int user_friendly_names;
 	int retain_hwhandler;
 	int detect_prio;
+	int detect_checker;
 	int deferred_remove;
 	int delay_watch_checks;
 	int delay_wait_checks;
@@ -139,6 +140,7 @@ struct config {
 	int reassign_maps;
 	int retain_hwhandler;
 	int detect_prio;
+	int detect_checker;
 	int force_sync;
 	int deferred_remove;
 	int processed_main_config;

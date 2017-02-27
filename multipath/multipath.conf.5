@@ -681,6 +681,20 @@ The default is: \fByes\fR
 .
 .
 .TP
+.B detect_checker
+if set to
+.I yes
+, multipath will try to detect if the device supports SCSI-3 ALUA. If so, the
+device will automatically use the \fItur\fR checker. If set to
+.I no
+, the checker will be selected as usual.
+.RS
+.TP
+The default is: \fByes\fR
+.RE
+.
+.
+.TP
 .B force_sync
 If set to
 .I yes
@@ -1169,6 +1183,8 @@ section:
 .TP
 .B detect_prio
 .TP
+.B detect_checker
+.TP
 .B deferred_remove
 .TP
 .B san_path_err_threshold
@@ -1238,6 +1254,8 @@ the values are taken from the \fIdevices\fR or \fIdefaults\fR sections:
 .B retain_attached_hw_handler
 .TP
 .B detect_prio
+.TP
+.B detect_checker
 .TP
 .B deferred_remove
 .TP

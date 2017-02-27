@@ -312,6 +312,11 @@ int select_checker(struct config *conf, struct path *pp)
 	char *origin, *checker_name;
 	struct checker * c = &pp->checker;
 
+	if (pp->detect_checker == DETECT_CHECKER_ON && pp->tpgs > 0) {
+		checker_name = TUR;
+		origin = "(setting: array autodetected)";
+		goto out;
+	}
 	do_set(checker_name, conf->overrides, checker_name, "(setting: multipath.conf overrides section)");
 	do_set(checker_name, pp->hwe, checker_name, "(setting: array configuration)");
 	do_set(checker_name, conf, checker_name, "(setting: multipath.conf defaults/devices section)");
@@ -359,20 +364,11 @@ out:
 void
 detect_prio(struct config *conf, struct path * pp)
 {
-	int ret;
 	struct prio *p = &pp->prio;
-	int tpgs = 0;
-	unsigned int timeout = conf->checker_timeout;
 	char buff[512];
 	char *default_prio = PRIO_ALUA;
 
-	if ((tpgs = get_target_port_group_support(pp->fd, timeout)) <= 0)
-		return;
-	pp->tpgs = tpgs;
-	ret = get_target_port_group(pp, timeout);
-	if (ret < 0)
-		return;
-	if (get_asymmetric_access_state(pp->fd, ret, timeout) < 0)
+	if (pp->tpgs <= 0)
 		return;
 	if (sysfs_get_asymmetric_access_state(pp, buff, 512) >= 0)
 		default_prio = PRIO_SYSFS;
@@ -585,6 +581,21 @@ int select_detect_prio(struct config *conf, struct path *pp)
 out:
 	condlog(3, "%s: detect_prio = %s %s", pp->dev,
 		(pp->detect_prio == DETECT_PRIO_ON)? "yes" : "no", origin);
+	return 0;
+}
+
+int select_detect_checker(struct config *conf, struct path *pp)
+{
+	char *origin;
+
+	pp_set_ovr(detect_checker);
+	pp_set_hwe(detect_checker);
+	pp_set_conf(detect_checker);
+	pp_set_default(detect_checker, DEFAULT_DETECT_CHECKER);
+out:
+	condlog(3, "%s: detect_checker = %s %s", pp->dev,
+		(pp->detect_checker == DETECT_CHECKER_ON)? "yes" : "no",
+		origin);
 	return 0;
 }
 

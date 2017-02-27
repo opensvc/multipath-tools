@@ -30,6 +30,7 @@
 #include "discovery.h"
 #include "prio.h"
 #include "defaults.h"
+#include "prioritizers/alua_rtpg.h"
 
 int
 alloc_path_with_pathinfo (struct config *conf, struct udev_device *udevice,
@@ -829,6 +830,25 @@ get_serial (char * str, int maxlen, int fd)
 	return 1;
 }
 
+static void
+detect_alua(struct path * pp, struct config *conf)
+{
+	int ret;
+	int tpgs;
+	unsigned int timeout = conf->checker_timeout;
+
+	if ((tpgs = get_target_port_group_support(pp->fd, timeout)) <= 0) {
+		pp->tpgs = TPGS_NONE;
+		return;
+	}
+	ret = get_target_port_group(pp, timeout);
+	if (ret < 0 || get_asymmetric_access_state(pp->fd, ret, timeout) < 0) {
+		pp->tpgs = TPGS_NONE;
+		return;
+	}
+	pp->tpgs = tpgs;
+}
+
 #define DEFAULT_SGIO_LEN 254
 
 static int
@@ -1460,10 +1480,13 @@ sysfs_pathinfo(struct path * pp, vector hwtable)
 }
 
 static int
-scsi_ioctl_pathinfo (struct path * pp, int mask)
+scsi_ioctl_pathinfo (struct path * pp, struct config *conf, int mask)
 {
 	struct udev_device *parent;
 	const char *attr_path = NULL;
+
+	if (pp->tpgs == TPGS_UNDEF)
+		detect_alua(pp, conf);
 
 	if (!(mask & DI_SERIAL))
 		return 0;
@@ -1524,6 +1547,7 @@ get_state (struct path * pp, struct config *conf, int daemon)
 				return PATH_UNCHECKED;
 			}
 		}
+		select_detect_checker(conf, pp);
 		select_checker(conf, pp);
 		if (!checker_selected(c)) {
 			condlog(3, "%s: No checker selected", pp->dev);
@@ -1832,7 +1856,7 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 		get_geometry(pp);
 
 	if (path_state == PATH_UP && pp->bus == SYSFS_BUS_SCSI &&
-	    scsi_ioctl_pathinfo(pp, mask))
+	    scsi_ioctl_pathinfo(pp, conf, mask))
 		goto blank;
 
 	if (pp->bus == SYSFS_BUS_CCISS &&
