@@ -486,6 +486,8 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 
 	if (mpp) {
 		if (mpp->wait_for_udev > 1) {
+			condlog(2, "%s: performing delayed actions",
+				mpp->alias);
 			if (update_map(mpp, vecs))
 				/* setup multipathd removed the map */
 				return 1;
@@ -720,6 +722,7 @@ ev_add_path (struct path * pp, struct vectors * vecs)
 	    (pathcount(mpp, PATH_UP) > 0 ||
 	     (pathcount(mpp, PATH_GHOST) > 0 && pp->tpgs != TPGS_IMPLICIT))) {
 		/* if wait_for_udev is set and valid paths exist */
+		condlog(2, "%s: delaying path addition until %s is fully initialized", pp->dev, mpp->alias);
 		mpp->wait_for_udev = 2;
 		orphan_path(pp, "waiting for create to complete");
 		return 0;
