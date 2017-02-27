@@ -1238,6 +1238,8 @@ uxlsnrloop (void * ap)
 	set_handler_callback(LIST+BLACKLIST, cli_list_blacklist);
 	set_handler_callback(LIST+DEVICES, cli_list_devices);
 	set_handler_callback(LIST+WILDCARDS, cli_list_wildcards);
+	set_handler_callback(RESET+MAPS+STATS, cli_reset_maps_stats);
+	set_handler_callback(RESET+MAP+STATS, cli_reset_map_stats);
 	set_handler_callback(ADD+PATH, cli_add_path);
 	set_handler_callback(DEL+PATH, cli_del_path);
 	set_handler_callback(ADD+MAP, cli_add_map);

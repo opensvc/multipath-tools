@@ -547,6 +547,8 @@ cli_init (void) {
 	add_handler(LIST+BLACKLIST, NULL);
 	add_handler(LIST+DEVICES, NULL);
 	add_handler(LIST+WILDCARDS, NULL);
+	add_handler(RESET+MAPS+STATS, NULL);
+	add_handler(RESET+MAP+STATS, NULL);
 	add_handler(ADD+PATH, NULL);
 	add_handler(DEL+PATH, NULL);
 	add_handler(ADD+MAP, NULL);

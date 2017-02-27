@@ -277,6 +277,17 @@ show_config (char ** r, int * len)
 	return 0;
 }
 
+void
+reset_stats(struct multipath * mpp)
+{
+	mpp->stat_switchgroup = 0;
+	mpp->stat_path_failures = 0;
+	mpp->stat_map_loads = 0;
+	mpp->stat_total_queueing_time = 0;
+	mpp->stat_queueing_timeouts = 0;
+	mpp->stat_map_failures = 0;
+}
+
 int
 cli_list_config (void * v, char ** reply, int * len, void * data)
 {
@@ -624,6 +635,39 @@ cli_list_daemon (void * v, char ** reply, int * len, void * data)
 	condlog(3, "list daemon (operator)");
 
 	return show_daemon(reply, len);
+}
+
+int
+cli_reset_maps_stats (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	int i;
+	struct multipath * mpp;
+
+	condlog(3, "reset multipaths stats (operator)");
+
+	vector_foreach_slot(vecs->mpvec, mpp, i) {
+		reset_stats(mpp);
+	}
+	return 0;
+}
+
+int
+cli_reset_map_stats (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	struct multipath * mpp;
+	char * param = get_keyparam(v, MAP);
+
+	param = convert_dev(param, 0);
+	mpp = find_mp_by_str(vecs->mpvec, param);
+
+	if (!mpp)
+		return 1;
+
+	condlog(3, "reset multipath %s stats (operator)", param);
+	reset_stats(mpp);
+	return 0;
 }
 
 int

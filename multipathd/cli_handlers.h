@@ -19,6 +19,8 @@ int cli_list_config (void * v, char ** reply, int * len, void * data);
 int cli_list_blacklist (void * v, char ** reply, int * len, void * data);
 int cli_list_devices (void * v, char ** reply, int * len, void * data);
 int cli_list_wildcards (void * v, char ** reply, int * len, void * data);
+int cli_reset_maps_stats (void * v, char ** reply, int * len, void * data);
+int cli_reset_map_stats (void * v, char ** reply, int * len, void * data);
 int cli_add_path (void * v, char ** reply, int * len, void * data);
 int cli_del_path (void * v, char ** reply, int * len, void * data);
 int cli_add_map (void * v, char ** reply, int * len, void * data);
