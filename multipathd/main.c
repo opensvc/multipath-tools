@@ -1467,7 +1467,8 @@ int update_prio(struct path *pp, int refresh_all)
 	}
 	oldpriority = pp->priority;
 	conf = get_multipath_config();
-	pathinfo(pp, conf, DI_PRIO);
+	if (pp->state != PATH_DOWN)
+		pathinfo(pp, conf, DI_PRIO);
 	put_multipath_config(conf);
 
 	if (pp->priority == oldpriority)
