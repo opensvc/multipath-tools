@@ -392,7 +392,7 @@ snprint_dev_t (char * buff, size_t len, struct path * pp)
 static int
 snprint_offline (char * buff, size_t len, struct path * pp)
 {
-	if (!pp)
+	if (!pp || !pp->mpp)
 		return snprintf(buff, len, "unknown");
 	else if (pp->offline)
 		return snprintf(buff, len, "offline");
@@ -403,7 +403,7 @@ snprint_offline (char * buff, size_t len, struct path * pp)
 static int
 snprint_chk_state (char * buff, size_t len, struct path * pp)
 {
-	if (!pp)
+	if (!pp || !pp->mpp)
 		return snprintf(buff, len, "undef");
 
 	switch (pp->state) {
