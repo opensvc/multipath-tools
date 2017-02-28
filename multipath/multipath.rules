@@ -3,6 +3,11 @@ SUBSYSTEM!="block", GOTO="end_mpath"
 ACTION!="add|change", GOTO="end_mpath"
 KERNEL!="sd*|dasd*", GOTO="end_mpath"
 
+IMPORT{cmdline}="nompath"
+ENV{nompath}=="?*", GOTO="end_mpath"
+IMPORT{cmdline}="multipath"
+ENV{multipath}=="off", GOTO="end_mpath"
+
 ENV{DEVTYPE}!="partition", GOTO="test_dev"
 IMPORT{parent}="DM_MULTIPATH_DEVICE_PATH"
 ENV{DM_MULTIPATH_DEVICE_PATH}=="1", ENV{ID_FS_TYPE}="none", \

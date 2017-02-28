@@ -6,6 +6,8 @@ Before=local-fs-pre.target blk-availability.service
 After=multipathd.socket systemd-udev-trigger.service systemd-udev-settle.service
 DefaultDependencies=no
 Conflicts=shutdown.target
+ConditionKernelCommandLine=!nompath
+ConditionKernelCommandLine=!multipath=off
 
 [Service]
 Type=notify
