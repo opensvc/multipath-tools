@@ -2160,6 +2160,10 @@ reconfigure (struct vectors * vecs)
 		conf->verbosity = verbosity;
 	if (bindings_read_only)
 		conf->bindings_read_only = bindings_read_only;
+	if (conf->find_multipaths) {
+		condlog(2, "find_multipaths is set: -n is implied");
+		ignore_new_devs = 1;
+	}
 	if (ignore_new_devs)
 		conf->ignore_new_devs = ignore_new_devs;
 	uxsock_timeout = conf->uxsock_timeout;
