@@ -154,7 +154,7 @@ ssize_t sysfs_bin_attr_get_value(struct udev_device *dev, const char *attr_name,
 }
 
 ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
-			     char * value, size_t value_len)
+			     const char * value, size_t value_len)
 {
 	char devpath[PATH_SIZE];
 	struct stat statbuf;
