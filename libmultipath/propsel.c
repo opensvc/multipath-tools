@@ -289,7 +289,9 @@ out:
 			condlog(1, "%s: config error, overriding 'no_path_retry' value",
 				mp->alias);
 			mp->no_path_retry = NO_PATH_RETRY_QUEUE;
-		}
+		} else if (mp->no_path_retry != NO_PATH_RETRY_QUEUE)
+			condlog(1, "%s: config error, ignoring 'queue_if_no_path' because no_path_retry=%d",
+				mp->alias, mp->no_path_retry);
 	}
 	return 0;
 }
