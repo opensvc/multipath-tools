@@ -183,10 +183,7 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 			FREE(word);
 			return 1;
 		}
-		if ((mpp->no_path_retry == NO_PATH_RETRY_UNDEF) ||
-			(mpp->no_path_retry == NO_PATH_RETRY_FAIL) ||
-			(mpp->no_path_retry == NO_PATH_RETRY_QUEUE))
-			setup_feature(mpp, word);
+		setup_feature(mpp, word);
 
 		FREE(word);
 	}
