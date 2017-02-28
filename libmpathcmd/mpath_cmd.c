@@ -141,7 +141,11 @@ int mpath_recv_reply(int fd, char **reply, unsigned int timeout)
 	*reply = NULL;
 	len = mpath_recv_reply_len(fd, timeout);
 	if (len <= 0)
+		return len;
+	if (len > MAX_REPLY_LEN) {
+		errno = EINVAL;
 		return -1;
+	}
 	*reply = malloc(len);
 	if (!*reply)
 		return -1;

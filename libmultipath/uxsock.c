@@ -88,7 +88,9 @@ int ux_socket_listen(const char *name)
  */
 int send_packet(int fd, const char *buf)
 {
-	return mpath_send_cmd(fd, buf);
+	if (mpath_send_cmd(fd, buf) < 0)
+		return -errno;
+	return 0;
 }
 
 static int _recv_packet(int fd, char **buf, unsigned int timeout, ssize_t limit)
@@ -98,8 +100,10 @@ static int _recv_packet(int fd, char **buf, unsigned int timeout, ssize_t limit)
 
 	*buf = NULL;
 	len = mpath_recv_reply_len(fd, timeout);
-	if (len <= 0)
+	if (len == 0)
 		return len;
+	if (len < 0)
+		return -errno;
 	if ((limit > 0) && (len > limit))
 		return -EINVAL;
 	(*buf) = MALLOC(len);
@@ -109,6 +113,7 @@ static int _recv_packet(int fd, char **buf, unsigned int timeout, ssize_t limit)
 	if (err != 0) {
 		FREE(*buf);
 		(*buf) = NULL;
+		return -errno;
 	}
 	return err;
 }
