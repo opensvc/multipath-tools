@@ -107,6 +107,7 @@ lookup_binding(FILE *f, char *map_wwid, char **map_alias, char *prefix)
 
 	*map_alias = NULL;
 
+	rewind(f);
 	while (fgets(buf, LINE_MAX, f)) {
 		char *c, *alias, *wwid;
 		int curr_id;
@@ -277,6 +278,13 @@ use_existing_alias (char *wwid, char *file, char *alias_old,
 			condlog(0, "alias %s already bound to wwid %s, cannot reuse",
 				alias_old, buff);
 		}
+		goto out;
+	}
+
+	id = lookup_binding(f, wwid, &alias, NULL);
+	if (alias) {
+		condlog(3, "Use existing binding [%s] for WWID [%s]",
+			alias, wwid);
 		goto out;
 	}
 
