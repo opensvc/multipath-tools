@@ -24,6 +24,7 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -38,6 +39,7 @@
 #include <linux/netlink.h>
 #include <pthread.h>
 #include <sys/mman.h>
+#include <sys/time.h>
 #include <libudev.h>
 #include <errno.h>
 
@@ -46,6 +48,14 @@
 #include "list.h"
 #include "uevent.h"
 #include "vector.h"
+#include "structs.h"
+#include "util.h"
+#include "config.h"
+#include "blacklist.h"
+
+#define MAX_ACCUMULATION_COUNT 2048
+#define MAX_ACCUMULATION_TIME 30*1000
+#define MIN_BURST_SPEED 10
 
 typedef int (uev_trigger)(struct uevent *, void * trigger_data);
 
@@ -72,10 +82,272 @@ struct uevent * alloc_uevent (void)
 {
 	struct uevent *uev = MALLOC(sizeof(struct uevent));
 
-	if (uev)
+	if (uev) {
 		INIT_LIST_HEAD(&uev->node);
+		INIT_LIST_HEAD(&uev->merge_node);
+	}
 
 	return uev;
+}
+
+void
+uevq_cleanup(struct list_head *tmpq)
+{
+	struct uevent *uev, *tmp;
+
+	list_for_each_entry_safe(uev, tmp, tmpq, node) {
+		list_del_init(&uev->node);
+
+		if (uev->udev)
+			udev_device_unref(uev->udev);
+		FREE(uev);
+	}
+}
+
+void
+uevent_get_wwid(struct uevent *uev)
+{
+	int i;
+	char *uid_attribute;
+	struct config * conf;
+
+	conf = get_multipath_config();
+	uid_attribute = parse_uid_attribute_by_attrs(conf->uid_attrs, uev->kernel);
+	put_multipath_config(conf);	
+
+	if (!uid_attribute)
+		return;
+
+	for (i = 0; uev->envp[i] != NULL; i++) {
+		if (!strncmp(uev->envp[i], uid_attribute, strlen(uid_attribute)) &&
+		    strlen(uev->envp[i]) > strlen(uid_attribute) &&
+		    uev->envp[i][strlen(uid_attribute)] == '=') {
+			uev->wwid = uev->envp[i] + strlen(uid_attribute) + 1;
+			break;
+		}
+	}
+	free(uid_attribute);
+}
+
+bool
+uevent_need_merge(void)
+{
+	struct config * conf;
+	bool need_merge = false;
+
+	conf = get_multipath_config();
+	if (conf->uid_attrs)
+		need_merge = true;
+	put_multipath_config(conf);	
+
+	return need_merge;
+}
+
+bool
+uevent_can_discard(struct uevent *uev)
+{
+	char *tmp;
+	char a[11], b[11];
+	struct config * conf;
+
+	/*
+	 * keep only block devices, discard partitions
+	 */
+	tmp = strstr(uev->devpath, "/block/");
+	if (tmp == NULL){
+		condlog(4, "no /block/ in '%s'", uev->devpath);
+		return true;
+	}
+	if (sscanf(tmp, "/block/%10s", a) != 1 ||
+	    sscanf(tmp, "/block/%10[^/]/%10s", a, b) == 2) {
+		condlog(4, "discard event on %s", uev->devpath);
+		return true;
+	}
+
+	/* 
+	 * do not filter dm devices by devnode
+	 */
+	if (!strncmp(uev->kernel, "dm-", 3))
+		return false;
+	/* 
+	 * filter paths devices by devnode
+	 */
+	conf = get_multipath_config();
+	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
+			   uev->kernel) > 0) {
+		put_multipath_config(conf);
+		return true;
+	}
+	put_multipath_config(conf);
+
+	return false;
+}
+
+bool
+uevent_can_filter(struct uevent *earlier, struct uevent *later)
+{
+
+	/*
+	 * filter earlier uvents if path has removed later. Eg:
+	 * "add path1 |chang path1 |add path2 |remove path1"
+	 * can filter as:
+	 * "add path2 |remove path1"
+	 * uevents "add path1" and "chang path1" are filtered out
+	 */
+	if (!strcmp(earlier->kernel, later->kernel) &&
+		!strcmp(later->action, "remove") &&
+		strncmp(later->kernel, "dm-", 3)) {
+		return true;
+	}
+
+	/*
+	 * filter change uvents if add uevents exist. Eg:
+	 * "change path1| add path1 |add path2"
+	 * can filter as:
+	 * "add path1 |add path2"
+	 * uevent "chang path1" is filtered out
+	 */
+	if (!strcmp(earlier->kernel, later->kernel) &&
+		!strcmp(earlier->action, "change") &&
+		!strcmp(later->action, "add") &&
+		strncmp(later->kernel, "dm-", 3)) {
+		return true;
+	}
+
+	return false;
+}
+
+bool
+merge_need_stop(struct uevent *earlier, struct uevent *later)
+{
+	/*
+	 * dm uevent do not try to merge with left uevents
+	 */
+	if (!strncmp(later->kernel, "dm-", 3))
+		return true;
+
+	/*
+	 * we can not make a jugement without wwid,
+	 * so it is sensible to stop merging
+	 */
+	if (!earlier->wwid || !later->wwid)
+		return true;
+	/*
+	 * uevents merging stoped
+	 * when we meet an opposite action uevent from the same LUN to AVOID
+	 * "add path1 |remove path1 |add path2 |remove path2 |add path3"
+	 * to merge as "remove path1, path2" and "add path1, path2, path3"
+	 * OR
+	 * "remove path1 |add path1 |remove path2 |add path2 |remove path3"
+	 * to merge as "add path1, path2" and "remove path1, path2, path3"
+	 * SO
+	 * when we meet a non-change uevent from the same LUN
+	 * with the same wwid and different action
+	 * it would be better to stop merging.
+	 */
+	if (!strcmp(earlier->wwid, later->wwid) &&
+	    strcmp(earlier->action, later->action) &&
+	    strcmp(earlier->action, "change") &&
+	    strcmp(later->action, "change"))
+		return true;
+
+	return false;
+}
+
+bool
+uevent_can_merge(struct uevent *earlier, struct uevent *later)
+{
+	/* merge paths uevents
+	 * whose wwids exsit and are same
+	 * and actions are same,
+	 * and actions are addition or deletion
+	 */
+	if (earlier->wwid && later->wwid &&
+	    !strcmp(earlier->wwid, later->wwid) &&
+	    !strcmp(earlier->action, later->action) &&
+	    strncmp(earlier->action, "change", 6) &&
+	    strncmp(earlier->kernel, "dm-", 3)) {
+		return true;
+	}
+
+	return false;
+}
+
+void
+uevent_prepare(struct list_head *tmpq)
+{
+	struct uevent *uev, *tmp;
+
+	list_for_each_entry_reverse_safe(uev, tmp, tmpq, node) {
+		if (uevent_can_discard(uev)) {
+			list_del_init(&uev->node);
+			if (uev->udev)
+				udev_device_unref(uev->udev);
+			FREE(uev);
+			continue;
+		}
+
+		if (strncmp(uev->kernel, "dm-", 3) &&
+		    uevent_need_merge())
+			uevent_get_wwid(uev);
+	}
+}
+
+void
+uevent_filter(struct uevent *later, struct list_head *tmpq)
+{
+	struct uevent *earlier, *tmp;
+
+	list_for_some_entry_reverse_safe(earlier, tmp, &later->node, tmpq, node) {
+		/*
+		 * filter unnessary earlier uevents 
+		 * by the later uevent
+		 */
+		if (uevent_can_filter(earlier, later)) {
+			condlog(2, "uevent: %s-%s has filtered by uevent: %s-%s",
+				earlier->kernel, earlier->action, 
+				later->kernel, later->action);
+
+			list_del_init(&earlier->node);
+			if (earlier->udev)
+				udev_device_unref(earlier->udev);
+			FREE(earlier);
+		}
+	}
+}
+
+void
+uevent_merge(struct uevent *later, struct list_head *tmpq)
+{
+	struct uevent *earlier, *tmp;
+
+	list_for_some_entry_reverse_safe(earlier, tmp, &later->node, tmpq, node) {
+		if (merge_need_stop(earlier, later))
+			break;
+		/*
+		 * merge earlier uevents to the later uevent
+		 */
+		if (uevent_can_merge(earlier, later)) {
+			condlog(2, "merged uevent: %s-%s-%s with uevent: %s-%s-%s",
+				earlier->action, earlier->kernel, earlier->wwid,
+				later->action, later->kernel, later->wwid);
+
+			list_move(&earlier->node, &later->merge_node);
+		}
+	}
+}
+
+void
+merge_uevq(struct list_head *tmpq)
+{
+	struct uevent *later;
+
+	uevent_prepare(tmpq);
+	list_for_each_entry_reverse(later, tmpq, node) {
+		uevent_filter(later, tmpq);
+		if(uevent_need_merge())
+			uevent_merge(later, tmpq);
+	}
 }
 
 void
@@ -89,6 +361,8 @@ service_uevq(struct list_head *tmpq)
 		if (my_uev_trigger && my_uev_trigger(uev, my_trigger_data))
 			condlog(0, "uevent trigger error");
 
+		uevq_cleanup(&uev->merge_node);
+
 		if (uev->udev)
 			udev_device_unref(uev->udev);
 		FREE(uev);
@@ -101,17 +375,6 @@ static void uevent_cleanup(void *arg)
 
 	condlog(3, "Releasing uevent_listen() resources");
 	udev_unref(udev);
-}
-
-void
-uevq_cleanup(struct list_head *tmpq)
-{
-	struct uevent *uev, *tmp;
-
-	list_for_each_entry_safe(uev, tmp, tmpq, node) {
-		list_del_init(&uev->node);
-		FREE(uev);
-	}
 }
 
 /*
@@ -142,6 +405,7 @@ int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		pthread_mutex_unlock(uevq_lockp);
 		if (!my_uev_trigger)
 			break;
+		merge_uevq(&uevq_tmp);
 		service_uevq(&uevq_tmp);
 	}
 	condlog(3, "Terminating uev service queue");
@@ -442,11 +706,43 @@ struct uevent *uevent_from_udev_device(struct udev_device *dev)
 	return uev;
 }
 
+bool uevent_burst(struct timeval *start_time, int events)
+{
+	struct timeval diff_time, end_time;
+	unsigned long speed;
+	unsigned long eclipse_ms;
+
+	if(events > MAX_ACCUMULATION_COUNT) {
+		condlog(2, "burst got %u uevents, too much uevents, stopped", events);
+		return false;
+	}
+
+	gettimeofday(&end_time, NULL);
+	timersub(&end_time, start_time, &diff_time);
+
+	eclipse_ms = diff_time.tv_sec * 1000 + diff_time.tv_usec / 1000;
+
+	if (eclipse_ms == 0)
+		return true;
+
+	if (eclipse_ms > MAX_ACCUMULATION_TIME) {
+		condlog(2, "burst continued %lu ms, too long time, stopped", eclipse_ms);
+		return false;
+	}
+
+	speed = (events * 1000) / eclipse_ms;
+	if (speed > MIN_BURST_SPEED)
+		return true;
+
+	return false;
+}
+
 int uevent_listen(struct udev *udev)
 {
 	int err = 2;
 	struct udev_monitor *monitor = NULL;
 	int fd, socket_flags, events;
+	struct timeval start_time;
 	int need_failback = 1;
 	int timeout = 30;
 	LIST_HEAD(uevlisten_tmp);
@@ -500,6 +796,7 @@ int uevent_listen(struct udev *udev)
 	}
 
 	events = 0;
+	gettimeofday(&start_time, NULL);
 	while (1) {
 		struct uevent *uev;
 		struct udev_device *dev;
@@ -514,7 +811,7 @@ int uevent_listen(struct udev *udev)
 		errno = 0;
 		fdcount = poll(&ev_poll, 1, poll_timeout);
 		if (fdcount && ev_poll.revents & POLLIN) {
-			timeout = 0;
+			timeout = uevent_burst(&start_time, events + 1) ? 1 : 0;
 			dev = udev_monitor_receive_device(monitor);
 			if (!dev) {
 				condlog(0, "failed getting udev device");
@@ -547,6 +844,7 @@ int uevent_listen(struct udev *udev)
 			pthread_mutex_unlock(uevq_lockp);
 			events = 0;
 		}
+		gettimeofday(&start_time, NULL);
 		timeout = 30;
 	}
 	need_failback = 0;

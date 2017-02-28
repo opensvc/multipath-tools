@@ -493,6 +493,9 @@ free_config (struct config * conf)
 	if (conf->uid_attribute)
 		FREE(conf->uid_attribute);
 
+	if (conf->uid_attrs)
+		FREE(conf->uid_attrs);
+
 	if (conf->getuid)
 		FREE(conf->getuid);
 

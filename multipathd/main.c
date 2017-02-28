@@ -611,7 +611,7 @@ ev_remove_map (char * devname, char * alias, int minor, struct vectors * vecs)
 }
 
 static int
-uev_add_path (struct uevent *uev, struct vectors * vecs)
+uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 {
 	struct path *pp;
 	int ret = 0, i;
@@ -644,7 +644,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 				     DI_ALL | DI_BLACKLIST);
 			put_multipath_config(conf);
 			if (r == PATHINFO_OK)
-				ret = ev_add_path(pp, vecs);
+				ret = ev_add_path(pp, vecs, need_do_map);
 			else if (r == PATHINFO_SKIPPED) {
 				condlog(3, "%s: remove blacklisted path",
 					uev->kernel);
@@ -668,7 +668,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 	 */
 	conf = get_multipath_config();
 	ret = alloc_path_with_pathinfo(conf, uev->udev,
-				       DI_ALL, &pp);
+				       uev->wwid, DI_ALL, &pp);
 	put_multipath_config(conf);
 	if (!pp) {
 		if (ret == PATHINFO_SKIPPED)
@@ -684,7 +684,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
 		conf = get_multipath_config();
 		pp->checkint = conf->checkint;
 		put_multipath_config(conf);
-		ret = ev_add_path(pp, vecs);
+		ret = ev_add_path(pp, vecs, need_do_map);
 	} else {
 		condlog(0, "%s: failed to store path info, "
 			"dropping event",
@@ -702,7 +702,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs)
  * 1: error
  */
 int
-ev_add_path (struct path * pp, struct vectors * vecs)
+ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 {
 	struct multipath * mpp;
 	char params[PARAMS_SIZE] = {0};
@@ -771,6 +771,13 @@ rescan:
 	/* persistent reservation check*/
 	mpath_pr_event_handle(pp);
 
+	if (!need_do_map)
+		return 0;
+
+	if (!dm_map_present(mpp->alias)) {
+		mpp->action = ACT_CREATE;
+		start_waiter = 1;
+	}
 	/*
 	 * push the map to the device-mapper
 	 */
@@ -837,7 +844,7 @@ fail:
 }
 
 static int
-uev_remove_path (struct uevent *uev, struct vectors * vecs)
+uev_remove_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 {
 	struct path *pp;
 	int ret;
@@ -848,7 +855,7 @@ uev_remove_path (struct uevent *uev, struct vectors * vecs)
 	pthread_testcancel();
 	pp = find_path_by_dev(vecs->pathvec, uev->kernel);
 	if (pp)
-		ret = ev_remove_path(pp, vecs);
+		ret = ev_remove_path(pp, vecs, need_do_map);
 	lock_cleanup_pop(vecs->lock);
 	if (!pp) {
 		/* Not an error; path might have been purged earlier */
@@ -859,7 +866,7 @@ uev_remove_path (struct uevent *uev, struct vectors * vecs)
 }
 
 int
-ev_remove_path (struct path *pp, struct vectors * vecs)
+ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 {
 	struct multipath * mpp;
 	int i, retval = 0;
@@ -922,6 +929,8 @@ ev_remove_path (struct path *pp, struct vectors * vecs)
 			goto out;
 		}
 
+		if (!need_do_map)
+			goto out;
 		/*
 		 * reload the map
 		 */
@@ -999,7 +1008,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 		}
 
 		if (pp->initialized == INIT_REQUESTED_UDEV)
-			retval = uev_add_path(uev, vecs);
+			retval = uev_add_path(uev, vecs, 1);
 		else if (mpp && ro >= 0) {
 			condlog(2, "%s: update path write_protect to '%d' (uevent)", uev->kernel, ro);
 
@@ -1020,7 +1029,7 @@ out:
 			int flag = DI_SYSFS | DI_WWID;
 
 			conf = get_multipath_config();
-			retval = alloc_path_with_pathinfo(conf, uev->udev, flag, NULL);
+			retval = alloc_path_with_pathinfo(conf, uev->udev, uev->wwid, flag, NULL);
 			put_multipath_config(conf);
 
 			if (retval == PATHINFO_SKIPPED) {
@@ -1090,39 +1099,14 @@ uxsock_trigger (char * str, char ** reply, int * len, bool is_root,
 	return r;
 }
 
-static int
-uev_discard(char * devpath)
-{
-	char *tmp;
-	char a[11], b[11];
-
-	/*
-	 * keep only block devices, discard partitions
-	 */
-	tmp = strstr(devpath, "/block/");
-	if (tmp == NULL){
-		condlog(4, "no /block/ in '%s'", devpath);
-		return 1;
-	}
-	if (sscanf(tmp, "/block/%10s", a) != 1 ||
-	    sscanf(tmp, "/block/%10[^/]/%10s", a, b) == 2) {
-		condlog(4, "discard event on %s", devpath);
-		return 1;
-	}
-	return 0;
-}
-
 int
 uev_trigger (struct uevent * uev, void * trigger_data)
 {
 	int r = 0;
 	struct vectors * vecs;
-	struct config *conf;
+	struct uevent *merge_uev, *tmp;
 
 	vecs = (struct vectors *)trigger_data;
-
-	if (uev_discard(uev->devpath))
-		return 0;
 
 	pthread_cleanup_push(config_cleanup, NULL);
 	pthread_mutex_lock(&config_lock);
@@ -1152,28 +1136,21 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	}
 
 	/*
-	 * path add/remove event
+	 * path add/remove/change event, add/remove maybe merged
 	 */
-	conf = get_multipath_config();
-	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
-			   uev->kernel) > 0) {
-		put_multipath_config(conf);
-		goto out;
+	list_for_each_entry_safe(merge_uev, tmp, &uev->merge_node, node) {
+		if (!strncmp(merge_uev->action, "add", 3))
+			r += uev_add_path(merge_uev, vecs, 0);
+		if (!strncmp(merge_uev->action, "remove", 6))
+			r += uev_remove_path(merge_uev, vecs, 0);
 	}
-	put_multipath_config(conf);
 
-	if (!strncmp(uev->action, "add", 3)) {
-		r = uev_add_path(uev, vecs);
-		goto out;
-	}
-	if (!strncmp(uev->action, "remove", 6)) {
-		r = uev_remove_path(uev, vecs);
-		goto out;
-	}
-	if (!strncmp(uev->action, "change", 6)) {
-		r = uev_update_path(uev, vecs);
-		goto out;
-	}
+	if (!strncmp(uev->action, "add", 3))
+		r += uev_add_path(uev, vecs, 1);
+	if (!strncmp(uev->action, "remove", 6))
+		r += uev_remove_path(uev, vecs, 1);
+	if (!strncmp(uev->action, "change", 6))
+		r += uev_update_path(uev, vecs);
 
 out:
 	return r;
@@ -1663,7 +1640,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 			conf = get_multipath_config();
 			ret = pathinfo(pp, conf, DI_ALL | DI_BLACKLIST);
 			if (ret == PATHINFO_OK) {
-				ev_add_path(pp, vecs);
+				ev_add_path(pp, vecs, 1);
 				pp->tick = 1;
 			} else if (ret == PATHINFO_SKIPPED) {
 				put_multipath_config(conf);
@@ -1785,7 +1762,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 		}
 		if (!disable_reinstate && reinstate_path(pp, add_active)) {
 			condlog(3, "%s: reload map", pp->dev);
-			ev_add_path(pp, vecs);
+			ev_add_path(pp, vecs, 1);
 			pp->tick = 1;
 			return 0;
 		}
@@ -1808,7 +1785,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 			/* Clear IO errors */
 			if (reinstate_path(pp, 0)) {
 				condlog(3, "%s: reload map", pp->dev);
-				ev_add_path(pp, vecs);
+				ev_add_path(pp, vecs, 1);
 				pp->tick = 1;
 				return 0;
 			}

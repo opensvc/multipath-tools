@@ -164,6 +164,7 @@ struct config {
 
 	char * multipath_dir;
 	char * selector;
+	char * uid_attrs;
 	char * uid_attribute;
 	char * getuid;
 	char * features;

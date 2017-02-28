@@ -714,7 +714,7 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 		pp->checkint = conf->checkint;
 	}
 	put_multipath_config(conf);
-	return ev_add_path(pp, vecs);
+	return ev_add_path(pp, vecs, 1);
 blacklisted:
 	*reply = strdup("blacklisted\n");
 	*len = strlen(*reply) + 1;
@@ -736,7 +736,7 @@ cli_del_path (void * v, char ** reply, int * len, void * data)
 		condlog(0, "%s: path already removed", param);
 		return 1;
 	}
-	return ev_remove_path(pp, vecs);
+	return ev_remove_path(pp, vecs, 1);
 }
 
 int

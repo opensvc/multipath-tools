@@ -17,11 +17,13 @@ struct udev;
 
 struct uevent {
 	struct list_head node;
+	struct list_head merge_node;
 	struct udev_device *udev;
 	char buffer[HOTPLUG_BUFFER_SIZE + OBJECT_SIZE];
 	char *devpath;
 	char *action;
 	char *kernel;
+	char *wwid;
 	unsigned long seqnum;
 	char *envp[HOTPLUG_NUM_ENVP];
 };

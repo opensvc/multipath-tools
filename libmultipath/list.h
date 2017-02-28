@@ -317,4 +317,45 @@ static inline void list_splice_tail_init(struct list_head *list,
 	     &pos->member != (head);					\
 	     pos = n, n = list_entry(n->member.next, typeof(*n), member))
 
+/**
+ * list_for_each_entry_reverse_safe - iterate backwards over list of given type safe against removal of list entry
+ * @pos:	the type * to use as a loop counter.
+ * @n:		another type * to use as temporary storage
+ * @head:	the head for your list.
+ * @member:	the name of the list_struct within the struct.
+ */
+#define list_for_each_entry_reverse_safe(pos, n, head, member)          \
+	for (pos = list_entry((head)->prev, typeof(*pos), member),      \
+		 n = list_entry(pos->member.prev, typeof(*pos), member);\
+	     &pos->member != (head);                                    \
+	     pos = n, n = list_entry(n->member.prev, typeof(*n), member))
+
+/**
+ * list_for_some_entry_safe - iterate list from the given begin node to the given end node safe against removal of list entry
+ * @pos:	the type * to use as a loop counter.
+ * @n:		another type * to use as temporary storage
+ * @from:	the begin node of the iteration.
+ * @to:		the end node of the iteration.
+ * @member:	the name of the list_struct within the struct.
+ */
+#define list_for_some_entry_safe(pos, n, from, to, member)              \
+	for (pos = list_entry((from)->next, typeof(*pos), member),      \
+	     n = list_entry(pos->member.next, typeof(*pos), member);    \
+	     &pos->member != (to);                                      \
+	     pos = n, n = list_entry(n->member.next, typeof(*n), member))
+
+/**
+ * list_for_some_entry_reverse_safe - iterate backwards list from the given begin node to the given end node safe against removal of list entry
+ * @pos:	the type * to use as a loop counter.
+ * @n:		another type * to use as temporary storage
+ * @from:	the begin node of the iteration.
+ * @to:		the end node of the iteration.
+ * @member:	the name of the list_struct within the struct.
+ */
+#define list_for_some_entry_reverse_safe(pos, n, from, to, member)      \
+	for (pos = list_entry((from)->prev, typeof(*pos), member),      \
+	     n = list_entry(pos->member.prev, typeof(*pos), member);    \
+	     &pos->member != (to);                                      \
+	     pos = n, n = list_entry(n->member.prev, typeof(*n), member))
+
 #endif /* _LIST_H */

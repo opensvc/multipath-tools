@@ -18,6 +18,7 @@
 #include "prio.h"
 #include "discovery.h"
 #include "dict.h"
+#include "util.h"
 #include "prioritizers/alua_rtpg.h"
 #include <inttypes.h>
 
@@ -343,6 +344,12 @@ out:
 int select_getuid(struct config *conf, struct path *pp)
 {
 	char *origin;
+
+	pp->uid_attribute = parse_uid_attribute_by_attrs(conf->uid_attrs, pp->dev);
+	if (pp->uid_attribute) {
+		origin = "(setting: multipath.conf defaults section)";
+		goto out;
+	}
 
 	pp_set_ovr(getuid);
 	pp_set_ovr(uid_attribute);
