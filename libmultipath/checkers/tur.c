@@ -268,6 +268,7 @@ static void *tur_thread(void *ctx)
 	pthread_mutex_unlock(&ct->lock);
 
 	state = tur_check(ct->fd, ct->timeout, copy_msg_to_tcc, ct->message);
+	pthread_testcancel();
 
 	/* TUR checker done */
 	pthread_mutex_lock(&ct->lock);
