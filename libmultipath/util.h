@@ -14,6 +14,7 @@ dev_t parse_devt(const char *dev_t);
 char *convert_dev(char *dev, int is_path_device);
 char *parse_uid_attribute_by_attrs(char *uid_attrs, char *path_dev);
 void setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached);
+int systemd_service_enabled(const char *dev);
 
 #define safe_sprintf(var, format, args...)	\
 	snprintf(var, sizeof(var), format, ##args) >= sizeof(var)

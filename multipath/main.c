@@ -682,11 +682,14 @@ main (int argc, char *argv[])
 
 		fd = mpath_connect();
 		if (fd == -1) {
-			printf("%s is not a valid multipath device path\n",
-				dev);
-			goto out;
-		}
-		mpath_disconnect(fd);
+			condlog(3, "%s: daemon is not running", dev);
+			if (!systemd_service_enabled(dev)) {
+				printf("%s is not a valid "
+				       "multipath device path\n", dev);
+				goto out;
+			}
+		} else
+			mpath_disconnect(fd);
 	}
 	if (cmd == CMD_REMOVE_WWID && !dev) {
 		condlog(0, "the -w option requires a device");

@@ -6,13 +6,16 @@
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <sys/types.h>
+#include <dirent.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "debug.h"
 #include "memory.h"
 #include "checkers.h"
 #include "vector.h"
 #include "structs.h"
+#include "log.h"
 
 size_t
 strchop(char *str)
@@ -320,4 +323,60 @@ setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
 						  PTHREAD_CREATE_DETACHED);
 		assert(ret == 0);
 	}
+}
+
+int systemd_service_enabled_in(const char *dev, const char *prefix)
+{
+	char path[PATH_SIZE], file[PATH_SIZE], service[PATH_SIZE];
+	DIR *dirfd;
+	struct dirent *d;
+	int found = 0;
+
+	snprintf(service, PATH_SIZE, "multipathd.service");
+	snprintf(path, PATH_SIZE, "%s/systemd/system", prefix);
+	condlog(3, "%s: checking for %s in %s", dev, service, path);
+
+	dirfd = opendir(path);
+	if (dirfd == NULL)
+		return 0;
+
+	while ((d = readdir(dirfd)) != NULL) {
+		char *p;
+		struct stat stbuf;
+
+		if ((strcmp(d->d_name,".") == 0) ||
+		    (strcmp(d->d_name,"..") == 0))
+			continue;
+
+		if (strlen(d->d_name) < 6)
+			continue;
+
+		p = d->d_name + strlen(d->d_name) - 6;
+		if (strcmp(p, ".wants"))
+			continue;
+		snprintf(file, PATH_SIZE, "%s/%s/%s",
+			 path, d->d_name, service);
+		if (stat(file, &stbuf) == 0) {
+			condlog(3, "%s: found %s", dev, file);
+			found++;
+			break;
+		}
+	}
+	closedir(dirfd);
+
+	return found;
+}
+
+int systemd_service_enabled(const char *dev)
+{
+	int found = 0;
+
+	found = systemd_service_enabled_in(dev, "/etc");
+	if (!found)
+		found = systemd_service_enabled_in(dev, "/usr/lib");
+	if (!found)
+		found = systemd_service_enabled_in(dev, "/lib");
+	if (!found)
+		found = systemd_service_enabled_in(dev, "/run");
+	return found;
 }
