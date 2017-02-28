@@ -330,12 +330,15 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 			if (devt2devname(devname, FILE_NAME_SIZE, word)) {
 				condlog(2, "%s: cannot find block device",
 					word);
-				FREE(word);
-				continue;
+				devname[0] = '\0';
 			}
 
-			if (pathvec)
-				pp = find_path_by_dev(pathvec, devname);
+			if (pathvec) {
+				if (strlen(devname))
+					pp = find_path_by_dev(pathvec, devname);
+				else
+					pp = find_path_by_devt(pathvec, word);
+			}
 
 			if (!pp) {
 				pp = alloc_path();

@@ -123,8 +123,15 @@ path_discover (vector pathvec, struct config * conf,
 
 	pp = find_path_by_dev(pathvec, (char *)devname);
 	if (!pp) {
-		return store_pathinfo(pathvec, conf,
-				      udevice, flag, NULL);
+		char devt[BLK_DEV_SIZE];
+		dev_t devnum = udev_device_get_devnum(udevice);
+
+		snprintf(devt, BLK_DEV_SIZE, "%d:%d",
+			 major(devnum), minor(devnum));
+		pp = find_path_by_devt(pathvec, devt);
+		if (!pp)
+			return store_pathinfo(pathvec, conf,
+					      udevice, flag, NULL);
 	}
 	return pathinfo(pp, conf, flag);
 }
