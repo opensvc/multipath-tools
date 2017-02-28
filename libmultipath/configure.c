@@ -411,6 +411,18 @@ get_udev_for_mpp(const struct multipath *mpp)
 	return udd;
 }
 
+static void
+trigger_udev_change(const struct multipath *mpp)
+{
+	static const char change[] = "change";
+	struct udev_device *udd = get_udev_for_mpp(mpp);
+	if (!udd)
+		return;
+	condlog(3, "triggering %s uevent for %s", change, mpp->alias);
+	sysfs_attr_set_value(udd, "uevent", change, sizeof(change)-1);
+	udev_device_unref(udd);
+}
+
 static int
 is_mpp_known_to_udev(const struct multipath *mpp)
 {
@@ -948,6 +960,18 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 		}
 		if (r == DOMAP_DRY)
 			continue;
+
+		if (r == DOMAP_EXIST && mpp->action == ACT_NOTHING &&
+		    force_reload == FORCE_RELOAD_WEAK)
+			/*
+			 * First time we're called, and no changes applied.
+			 * domap() was a noop. But we can't be sure that
+			 * udev has already finished setting up this device
+			 * (udev in initrd may have been shut down while
+			 * processing this device or its children).
+			 * Trigger a change event, just in case.
+			 */
+			trigger_udev_change(find_mp_by_wwid(curmp, mpp->wwid));
 
 		conf = get_multipath_config();
 		allow_queueing = conf->allow_queueing;
