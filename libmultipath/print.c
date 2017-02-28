@@ -996,7 +996,7 @@ int snprint_multipath_topology(char *buff, int len, struct multipath *mpp,
 
 	if (verbosity > 1 &&
 	    mpp->action != ACT_NOTHING &&
-	    mpp->action != ACT_UNDEF)
+	    mpp->action != ACT_UNDEF && mpp->action != ACT_IMPOSSIBLE)
 			c += sprintf(c, "%%A: ");
 
 	c += sprintf(c, "%%n");

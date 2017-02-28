@@ -464,13 +464,13 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 		/* reset alias to existing alias */
 		FREE(mpp->alias);
 		mpp->alias = STRDUP(cmpp->alias);
-		mpp->action = ACT_NOTHING;
+		mpp->action = ACT_IMPOSSIBLE;
 		return;
 	}
 
 	if (pathcount(mpp, PATH_UP) == 0) {
-		mpp->action = ACT_NOTHING;
-		condlog(3, "%s: set ACT_NOTHING (no usable path)",
+		mpp->action = ACT_IMPOSSIBLE;
+		condlog(3, "%s: set ACT_IMPOSSIBLE (no usable path)",
 			mpp->alias);
 		return;
 	}
@@ -671,6 +671,7 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 	switch (mpp->action) {
 	case ACT_REJECT:
 	case ACT_NOTHING:
+	case ACT_IMPOSSIBLE:
 		return DOMAP_EXIST;
 
 	case ACT_SWITCHPG:

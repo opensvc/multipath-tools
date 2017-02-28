@@ -20,6 +20,7 @@ enum actions {
 	ACT_RESIZE,
 	ACT_FORCERENAME,
 	ACT_DRY_RUN,
+	ACT_IMPOSSIBLE,
 };
 
 #define FLUSH_ONE 1
