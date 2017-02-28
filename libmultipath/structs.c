@@ -501,6 +501,9 @@ void setup_feature(struct multipath *mpp, char *feature)
 	if (!strncmp(feature, "queue_if_no_path", 16)) {
 		if (mpp->no_path_retry <= NO_PATH_RETRY_UNDEF)
 			mpp->no_path_retry = NO_PATH_RETRY_QUEUE;
+		else
+			condlog(1, "%s: ignoring feature queue_if_no_path because no_path_retry = %d",
+				mpp->alias, mpp->no_path_retry);
 	}
 }
 
