@@ -36,6 +36,12 @@ enum mpath_cmds {
 	CMD_ADD_WWID,
 };
 
+enum force_reload_types {
+	FORCE_RELOAD_NONE,
+	FORCE_RELOAD_YES,
+	FORCE_RELOAD_WEAK,
+};
+
 struct hwentry {
 	char * vendor;
 	char * product;

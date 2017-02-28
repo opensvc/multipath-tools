@@ -578,7 +578,7 @@ main (int argc, char *argv[])
 			}
 			break;
 		case 'r':
-			conf->force_reload = 1;
+			conf->force_reload = FORCE_RELOAD_YES;
 			break;
 		case 'i':
 			conf->ignore_wwids = 1;

@@ -778,7 +778,8 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 			rc = get_refwwid(CMD_NONE, param, DEV_DEVMAP,
 					 vecs->pathvec, &refwwid);
 			if (refwwid) {
-				if (coalesce_paths(vecs, NULL, refwwid, 0, 1))
+				if (coalesce_paths(vecs, NULL, refwwid,
+						   FORCE_RELOAD_NONE, 1))
 					condlog(2, "%s: coalesce_paths failed",
 									param);
 				dm_lib_release();

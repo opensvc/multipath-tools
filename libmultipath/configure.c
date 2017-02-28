@@ -750,8 +750,15 @@ out:
 	return ret;
 }
 
-int coalesce_paths(struct vectors *vecs, vector newmp, char *refwwid,
-		   int force_reload, enum mpath_cmds cmd)
+/*
+ * The force_reload parameter determines how coalesce_paths treats existing maps.
+ * FORCE_RELOAD_NONE: existing maps aren't touched at all
+ * FORCE_RELOAD_YES: all maps are rebuilt from scratch and (re)loaded in DM
+ * FORCE_RELOAD_WEAK: existing maps are compared to the current conf and only
+ * reloaded in DM if there's a difference. This is useful during startup.
+ */
+int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
+		    int force_reload, enum mpath_cmds cmd)
 {
 	int r = 1;
 	int k, i;
@@ -769,7 +776,7 @@ int coalesce_paths(struct vectors *vecs, vector newmp, char *refwwid,
 	if (refwwid && !strlen(refwwid))
 		refwwid = NULL;
 
-	if (force_reload) {
+	if (force_reload != FORCE_RELOAD_NONE) {
 		vector_foreach_slot (pathvec, pp1, k) {
 			pp1->mpp = NULL;
 		}
@@ -858,7 +865,8 @@ int coalesce_paths(struct vectors *vecs, vector newmp, char *refwwid,
 		if (cmd == CMD_DRY_RUN)
 			mpp->action = ACT_DRY_RUN;
 		if (mpp->action == ACT_UNDEF)
-			select_action(mpp, curmp, force_reload);
+			select_action(mpp, curmp,
+				      force_reload == FORCE_RELOAD_YES ? 1 : 0);
 
 		r = domap(mpp, params, is_daemon);
 

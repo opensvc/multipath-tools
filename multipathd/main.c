@@ -535,7 +535,8 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 	r = get_refwwid(CMD_NONE, dev, DEV_DEVMAP, vecs->pathvec, &refwwid);
 
 	if (refwwid) {
-		r = coalesce_paths(vecs, NULL, refwwid, 0, CMD_NONE);
+		r = coalesce_paths(vecs, NULL, refwwid, FORCE_RELOAD_NONE,
+				   CMD_NONE);
 		dm_lib_release();
 	}
 
@@ -2016,6 +2017,7 @@ configure (struct vectors * vecs, int start_waiters)
 	vector mpvec;
 	int i, ret;
 	struct config *conf;
+	static int force_reload = FORCE_RELOAD_WEAK;
 
 	if (!vecs->pathvec && !(vecs->pathvec = vector_alloc())) {
 		condlog(0, "couldn't allocate path vec in configure");
@@ -2059,8 +2061,14 @@ configure (struct vectors * vecs, int start_waiters)
 
 	/*
 	 * create new set of maps & push changed ones into dm
+	 * In the first call, use FORCE_RELOAD_WEAK to avoid making
+	 * superfluous ACT_RELOAD ioctls. Later calls are done
+	 * with FORCE_RELOAD_YES.
 	 */
-	if (coalesce_paths(vecs, mpvec, NULL, 1, CMD_NONE)) {
+	ret = coalesce_paths(vecs, mpvec, NULL, force_reload, CMD_NONE);
+	if (force_reload == FORCE_RELOAD_WEAK)
+		force_reload = FORCE_RELOAD_YES;
+	if (ret) {
 		condlog(0, "configure failed while coalescing paths");
 		return 1;
 	}
