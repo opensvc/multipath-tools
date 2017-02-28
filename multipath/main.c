@@ -619,6 +619,16 @@ main (int argc, char *argv[])
 		}
 	}
 
+	/*
+	 * FIXME: new device detection with find_multipaths currently
+	 * doesn't work reliably.
+	 */
+	if (cmd ==  CMD_VALID_PATH &&
+	    conf->find_multipaths && conf->ignore_wwids) {
+		condlog(2, "ignoring -i flag because find_multipath is set in multipath.conf");
+		conf->ignore_wwids = 0;
+	}
+
 	if (getuid() != 0) {
 		fprintf(stderr, "need to be root\n");
 		exit(1);
