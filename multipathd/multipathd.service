@@ -1,10 +1,9 @@
 [Unit]
 Description=Device-Mapper Multipath Device Controller
-Before=iscsi.service iscsid.service lvm2-activation-early.service
-Before=local-fs-pre.target systemd-udev-trigger.service
+Before=iscsi.service iscsid.service lvm2-lvmetad.service lvm2-activation-early.service
+Before=local-fs-pre.target systemd-udev-trigger.service blk-availability.service
 After=multipathd.socket systemd-udevd.service
 DefaultDependencies=no
-Wants=local-fs-pre.target multipathd.socket blk-availability.service
 Conflicts=shutdown.target
 
 [Service]
