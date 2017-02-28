@@ -39,6 +39,7 @@
 #include "util.h"
 #include "uxsock.h"
 #include "wwids.h"
+#include "sysfs.h"
 
 /* group paths in pg by host adapter
  */
@@ -390,6 +391,35 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 	return r;
 }
 
+static struct udev_device *
+get_udev_for_mpp(const struct multipath *mpp)
+{
+	dev_t devnum;
+	struct udev_device *udd;
+
+	if (!mpp || !mpp->dmi) {
+		condlog(1, "%s called with empty mpp", __func__);
+		return NULL;
+	}
+
+	devnum = makedev(mpp->dmi->major, mpp->dmi->minor);
+	udd = udev_device_new_from_devnum(udev, 'b', devnum);
+	if (!udd) {
+		condlog(1, "failed to get udev device for %s", mpp->alias);
+		return NULL;
+	}
+	return udd;
+}
+
+static int
+is_mpp_known_to_udev(const struct multipath *mpp)
+{
+	struct udev_device *udd = get_udev_for_mpp(mpp);
+	int ret = (udd != NULL);
+	udev_device_unref(udd);
+	return ret;
+}
+
 static void
 select_action (struct multipath * mpp, vector curmp, int force_reload)
 {
@@ -526,6 +556,12 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 	if (cmpp->nextpg != mpp->bestpg) {
 		mpp->action = ACT_SWITCHPG;
 		condlog(3, "%s: set ACT_SWITCHPG (next path group change)",
+			mpp->alias);
+		return;
+	}
+	if (!is_mpp_known_to_udev(cmpp)) {
+		mpp->action = ACT_RELOAD;
+		condlog(3, "%s: set ACT_RELOAD (udev device not initialized)",
 			mpp->alias);
 		return;
 	}
