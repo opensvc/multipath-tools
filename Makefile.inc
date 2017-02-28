@@ -11,6 +11,9 @@
 #
 # Uncomment to disable RADOS support (e.g. if rados headers are missing).
 # ENABLE_RADOS = 0
+#
+# Uncomment to disable libdmmp support
+# ENABLE_LIBDMMP = 0
 
 ifeq ($(TOPDIR),)
 	TOPDIR	= ..

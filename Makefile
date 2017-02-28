@@ -30,11 +30,15 @@ BUILDDIRS = \
 	libmultipath/prioritizers \
 	libmultipath/checkers \
 	libmpathpersist \
-	libdmmp \
 	multipath \
 	multipathd \
 	mpathpersist \
 	kpartx
+
+ifneq ($(ENABLE_LIBDMMP),0)
+BUILDDIRS += \
+	libdmmp
+endif
 
 all: recurse
 
