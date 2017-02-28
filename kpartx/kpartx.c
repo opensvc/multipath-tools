@@ -355,17 +355,15 @@ main(int argc, char **argv){
 	off = find_devname_offset(device);
 
 	if (!loopdev) {
-		uuid = dm_mapuuid(major(buf.st_rdev), minor(buf.st_rdev));
 		mapname = dm_mapname(major(buf.st_rdev), minor(buf.st_rdev));
+		if (mapname)
+			uuid = dm_mapuuid(mapname);
 	}
-
-	if (!uuid)
-		uuid = device + off;
 
 	if (!mapname)
 		mapname = device + off;
-	else if (!force_devmap &&
-		 dm_no_partitions(major(buf.st_rdev), minor(buf.st_rdev))) {
+	if (!force_devmap &&
+		 dm_no_partitions(mapname)) {
 		/* Feature 'no_partitions' is set, return */
 		return 0;
 	}
@@ -453,42 +451,12 @@ main(int argc, char **argv){
 			break;
 
 		case DELETE:
-			for (j = MAXSLICES-1; j >= 0; j--) {
-				char *part_uuid, *reason;
-
-				if (safe_sprintf(partname, "%s%s%d",
-					     mapname, delim, j+1)) {
-					fprintf(stderr, "partname too small\n");
-					exit(1);
-				}
-				strip_slash(partname);
-
-				if (!dm_map_present(partname, &part_uuid))
-					continue;
-
-				if (part_uuid && uuid) {
-					if (check_uuid(uuid, part_uuid, &reason) != 0) {
-						fprintf(stderr, "%s is %s. Not removing\n", partname, reason);
-						free(part_uuid);
-						continue;
-					}
-					free(part_uuid);
-				}
-
-				if (!dm_simplecmd(DM_DEVICE_REMOVE, partname,
-						  0, 0)) {
-					r++;
-					continue;
-				}
-				if (verbose)
-					printf("del devmap : %s\n", partname);
-			}
-
+			r = dm_remove_partmaps(mapname, uuid, verbose);
 			if (loopdev) {
 				if (del_loop(loopdev)) {
 					if (verbose)
 						printf("can't del loop : %s\n",
-							loopdev);
+						       loopdev);
 					exit(1);
 				}
 				printf("loop deleted : %s\n", loopdev);
