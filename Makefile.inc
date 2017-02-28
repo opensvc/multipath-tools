@@ -8,6 +8,9 @@
 #
 # WITH_LOCAL_LIBDM	= 1
 # WITH_LOCAL_LIBSYSFS	= 1
+#
+# Uncomment to disable RADOS support (e.g. if rados headers are missing).
+# ENABLE_RADOS = 0
 
 ifeq ($(TOPDIR),)
 	TOPDIR	= ..

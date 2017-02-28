@@ -13,8 +13,10 @@ LIBS= \
 	libcheckdirectio.so \
 	libcheckemc_clariion.so \
 	libcheckhp_sw.so \
-	libcheckrdac.so \
-	libcheckrbd.so
+	libcheckrdac.so
+ifneq ($(ENABLE_RADOS),0)
+LIBS += libcheckrbd.so
+endif
 
 all: $(LIBS)
 
