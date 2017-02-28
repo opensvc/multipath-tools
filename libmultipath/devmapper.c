@@ -760,12 +760,6 @@ out:
 }
 
 static int
-has_partmap(const char *name, void *data)
-{
-	return 1;
-}
-
-static int
 partmap_in_use(const char *name, void *data)
 {
 	int part_count, *ret_count = (int *)data;
@@ -785,9 +779,13 @@ partmap_in_use(const char *name, void *data)
 	return 0;
 }
 
-int _dm_flush_map(const char *mapname, int need_sync, int deferred_remove)
+int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
+		   int need_suspend, int retries)
 {
 	int r;
+	int queue_if_no_path = 0;
+	unsigned long long mapsize;
+	char params[PARAMS_SIZE] = {0};
 
 	if (!dm_is_mpath(mapname))
 		return 0; /* nothing to do */
@@ -797,6 +795,16 @@ int _dm_flush_map(const char *mapname, int need_sync, int deferred_remove)
 	if (!do_deferred(deferred_remove) && partmap_in_use(mapname, NULL))
 			return 1;
 
+	if (need_suspend &&
+	    !dm_get_map(mapname, &mapsize, params) &&
+	    strstr(params, "queue_if_no_path")) {
+		if (!dm_queue_if_no_path((char *)mapname, 0))
+			queue_if_no_path = 1;
+		else
+			/* Leave queue_if_no_path alone if unset failed */
+			queue_if_no_path = -1;
+	}
+
 	if (dm_remove_partmaps(mapname, need_sync, deferred_remove))
 		return 1;
 
@@ -805,17 +813,36 @@ int _dm_flush_map(const char *mapname, int need_sync, int deferred_remove)
 		return 1;
 	}
 
-	r = dm_device_remove(mapname, need_sync, deferred_remove);
+	do {
+		if (need_suspend && queue_if_no_path != -1)
+			dm_simplecmd_flush(DM_DEVICE_SUSPEND, mapname, 0);
 
-	if (r) {
-		if (do_deferred(deferred_remove) && dm_map_present(mapname)) {
-			condlog(4, "multipath map %s remove deferred",
+		r = dm_device_remove(mapname, need_sync, deferred_remove);
+
+		if (r) {
+			if (do_deferred(deferred_remove)
+			    && dm_map_present(mapname)) {
+				condlog(4, "multipath map %s remove deferred",
+					mapname);
+				return 2;
+			}
+			condlog(4, "multipath map %s removed", mapname);
+			return 0;
+		} else {
+			condlog(2, "failed to remove multipath map %s",
 				mapname);
-			return 2;
+			if (need_suspend && queue_if_no_path != -1) {
+				dm_simplecmd_noflush(DM_DEVICE_RESUME,
+						     mapname, 0);
+			}
 		}
-		condlog(4, "multipath map %s removed", mapname);
-		return 0;
-	}
+		if (retries)
+			sleep(1);
+	} while (retries-- > 0);
+
+	if (queue_if_no_path == 1)
+		dm_queue_if_no_path((char *)mapname, 1);
+
 	return 1;
 }
 
@@ -824,7 +851,7 @@ int _dm_flush_map(const char *mapname, int need_sync, int deferred_remove)
 int
 dm_flush_map_nopaths(const char * mapname, int deferred_remove)
 {
-	return _dm_flush_map(mapname, 1, deferred_remove);
+	return _dm_flush_map(mapname, 1, deferred_remove, 0, 0);
 }
 
 #else
@@ -832,51 +859,10 @@ dm_flush_map_nopaths(const char * mapname, int deferred_remove)
 int
 dm_flush_map_nopaths(const char * mapname, int deferred_remove)
 {
-	return _dm_flush_map(mapname, 1, 0);
+	return _dm_flush_map(mapname, 1, 0, 0, 0);
 }
 
 #endif
-
-int dm_suspend_and_flush_map (const char * mapname, int retries)
-{
-	int need_reset = 0, queue_if_no_path = 0;
-	unsigned long long mapsize;
-	char params[PARAMS_SIZE] = {0};
-	int udev_flags = 0;
-
-	if (!dm_is_mpath(mapname))
-		return 0; /* nothing to do */
-
-	/* if the device currently has no partitions, do not
-	   run kpartx on it if you fail to delete it */
-	if (do_foreach_partmaps(mapname, has_partmap, NULL) == 0)
-		udev_flags |= MPATH_UDEV_NO_KPARTX_FLAG;
-
-	if (!dm_get_map(mapname, &mapsize, params)) {
-		if (strstr(params, "queue_if_no_path"))
-			queue_if_no_path = 1;
-	}
-
-	if (queue_if_no_path && dm_queue_if_no_path((char *)mapname, 0) == 0)
-		need_reset = 1;
-
-	do {
-		if (!queue_if_no_path || need_reset)
-			dm_simplecmd_flush(DM_DEVICE_SUSPEND, mapname, 0);
-
-		if (!dm_flush_map(mapname)) {
-			condlog(4, "multipath map %s removed", mapname);
-			return 0;
-		}
-		dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname, udev_flags);
-		if (retries)
-			sleep(1);
-	} while (retries-- > 0);
-	condlog(2, "failed to remove multipath map %s", mapname);
-	if (need_reset)
-		dm_queue_if_no_path((char *)mapname, 1);
-	return 1;
-}
 
 int dm_flush_maps (int retries)
 {
