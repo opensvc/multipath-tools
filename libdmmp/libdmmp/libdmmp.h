@@ -73,18 +73,18 @@ extern "C" {
  */
 DMMP_DLL_EXPORT const char *dmmp_log_priority_str(int priority);
 
-DMMP_DLL_EXPORT struct dmmp_context;
+struct DMMP_DLL_EXPORT dmmp_context;
 
-DMMP_DLL_EXPORT struct dmmp_mpath;
+struct DMMP_DLL_EXPORT dmmp_mpath;
 
-DMMP_DLL_EXPORT struct dmmp_path_group;
+struct DMMP_DLL_EXPORT dmmp_path_group;
 
 #define DMMP_PATH_GROUP_STATUS_UNKNOWN	0
 #define DMMP_PATH_GROUP_STATUS_ENABLED	1
 #define DMMP_PATH_GROUP_STATUS_DISABLED	2
 #define DMMP_PATH_GROUP_STATUS_ACTIVE	3
 
-DMMP_DLL_EXPORT struct dmmp_path;
+struct DMMP_DLL_EXPORT dmmp_path;
 
 #define DMMP_PATH_STATUS_UNKNOWN	0
 //#define DMMP_PATH_STATUS_UNCHECKED	1

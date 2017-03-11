@@ -47,7 +47,8 @@ extern "C" {
 
 #define _DMMP_PATH_GROUP_ID_UNKNOWN	0
 
-DMMP_DLL_LOCAL struct _num_str_conv {
+struct DMMP_DLL_LOCAL _num_str_conv;
+struct _num_str_conv {
 	const uint32_t value;
 	const char *str;
 };
