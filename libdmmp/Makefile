@@ -9,21 +9,22 @@ LIBDMMP_VERSION=0.1.0
 SONAME=$(LIBDMMP_VERSION)
 DEVLIB = libdmmp.so
 LIBS = $(DEVLIB).$(SONAME)
-LIBDEPS = -pthread
 PKGFILE = libdmmp.pc
 EXTRA_MAN_FILES = libdmmp.h.3
 HEADERS = libdmmp/libdmmp.h
+
 OBJS = libdmmp.o libdmmp_mp.o libdmmp_pg.o libdmmp_path.o libdmmp_misc.o
 
 CFLAGS += -fvisibility=hidden -I$(libdmmpdir) -I$(mpathcmddir) \
 	  $(shell pkg-config --cflags json-c)
-LDFLAGS += $(shell pkg-config --libs json-c) -L$(mpathcmddir) -lmpathcmd
+
+LIBDEPS += $(shell pkg-config --libs json-c) -L$(mpathcmddir) -lmpathcmd -pthread
 
 all: $(LIBS) doc
 
-$(LIBS): $(OBJS)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) \
-	-Wl,-soname=$@ $(CFLAGS) -o $@ $(OBJS) $(LIBDEPS)
+$(LIBS):
+	$(CC) -c $(CFLAGS) *.c
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS)
 	$(LN) $@ $(DEVLIB)
 
 install:
