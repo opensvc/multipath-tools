@@ -113,7 +113,7 @@ uevent_get_wwid(struct uevent *uev)
 
 	conf = get_multipath_config();
 	uid_attribute = parse_uid_attribute_by_attrs(conf->uid_attrs, uev->kernel);
-	put_multipath_config(conf);	
+	put_multipath_config(conf);
 
 	if (!uid_attribute)
 		return;
@@ -138,7 +138,7 @@ uevent_need_merge(void)
 	conf = get_multipath_config();
 	if (conf->uid_attrs)
 		need_merge = true;
-	put_multipath_config(conf);	
+	put_multipath_config(conf);
 
 	return need_merge;
 }
@@ -173,12 +173,12 @@ uevent_can_discard(struct uevent *uev)
 	if (uevent_can_discard_by_devpath(uev->devpath))
 		return true;
 
-	/* 
+	/*
 	 * do not filter dm devices by devnode
 	 */
 	if (!strncmp(uev->kernel, "dm-", 3))
 		return false;
-	/* 
+	/*
 	 * filter paths devices by devnode
 	 */
 	conf = get_multipath_config();
@@ -309,12 +309,12 @@ uevent_filter(struct uevent *later, struct list_head *tmpq)
 
 	list_for_some_entry_reverse_safe(earlier, tmp, &later->node, tmpq, node) {
 		/*
-		 * filter unnessary earlier uevents 
+		 * filter unnessary earlier uevents
 		 * by the later uevent
 		 */
 		if (uevent_can_filter(earlier, later)) {
 			condlog(2, "uevent: %s-%s has filtered by uevent: %s-%s",
-				earlier->kernel, earlier->action, 
+				earlier->kernel, earlier->action,
 				later->kernel, later->action);
 
 			list_del_init(&earlier->node);
