@@ -13,8 +13,7 @@ OBJS = mpath_persist.o mpath_updatepr.o mpath_pr_ioctl.o
 
 all: $(LIBS)
 
-$(LIBS):
-	$(CC) -c $(CFLAGS) *.c
+$(LIBS): $(OBJS)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) $(LIBDEPS) -Wl,-soname=$@ -o $@ $(OBJS)
 	$(LN) $(LIBS) $(DEVLIB)
 	$(GZIP) mpath_persistent_reserve_in.3 > mpath_persistent_reserve_in.3.gz

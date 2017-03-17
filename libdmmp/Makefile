@@ -22,8 +22,7 @@ LIBDEPS += $(shell pkg-config --libs json-c) -L$(mpathcmddir) -lmpathcmd -lpthre
 
 all: $(LIBS) doc
 
-$(LIBS):
-	$(CC) -c $(CFLAGS) *.c
+$(LIBS): $(OBJS)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS)
 	$(LN) $@ $(DEVLIB)
 
