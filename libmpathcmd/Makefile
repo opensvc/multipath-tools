@@ -9,7 +9,7 @@ OBJS = mpath_cmd.o
 all: $(LIBS)
 
 $(LIBS): $(OBJS)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS)
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) $(LIBDEPS) -Wl,-soname=$@ $(OBJS) -o $@
 	$(LN) $@ $(DEVLIB)
 
 install: $(LIBS)

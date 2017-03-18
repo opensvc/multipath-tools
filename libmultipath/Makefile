@@ -47,7 +47,7 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
 all: $(LIBS)
 
 $(LIBS): $(OBJS)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS)
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) $(LIBDEPS) -Wl,-soname=$@ $(OBJS) -o $@
 	$(LN) $@ $(DEVLIB)
 
 install:

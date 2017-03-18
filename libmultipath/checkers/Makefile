@@ -21,13 +21,13 @@ endif
 all: $(LIBS)
 
 libcheckrbd.so: rbd.o
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ -lrados -ludev
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ -lrados -ludev
 
 libcheckdirectio.so: libsg.o directio.o
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ -laio
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^ -laio
 
 libcheck%.so: libsg.o %.o
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
+	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^
 
 install:
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(libdir)
