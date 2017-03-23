@@ -23,10 +23,10 @@ LIBS = \
 all: $(LIBS)
 
 libprioalua.so: alua.o alua_rtpg.o
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
 
 libprio%.so: %.o
-	$(CC) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
 
 install: $(LIBS)
 	$(INSTALL_PROGRAM) -m 755 libprio*.so $(DESTDIR)$(libdir)
