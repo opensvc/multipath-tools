@@ -179,7 +179,7 @@ struct prout_param_descriptor {		/* PROUT parameter descriptor */
  *
  * RETURNS: struct config ->Success, NULL->Failed.
  */
-extern struct config * mpath_lib_init (struct udev *udev);
+extern struct config * mpath_lib_init (void);
 
 
 /*
