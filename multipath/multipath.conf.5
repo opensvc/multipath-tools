@@ -213,9 +213,9 @@ type of path devices. If this field is configured and matched with type
 of device, it would override any other methods providing for device
 unique identifier in config file, and it would activate merging uevents
 according to the identifier to promote effiecncy in processing uevents.
-Tt has no default value, if you want to identify path by udev attribute
-and to activate merging uevents for SCSI and DAS device, you can set
-it's value as:
+It has no default value, if you want to identify path by udev attribute
+and to activate merging uevents for SCSI and DASD devices, you can set
+its value as:
 .RS
 .TP
 \fBuid_attrs "sd:ID_SERIAL dasd:ID_UID"\fR
