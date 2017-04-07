@@ -1017,7 +1017,10 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			if (mpp->wait_for_udev)
 				mpp->wait_for_udev = 2;
 			else {
+				if (ro == 1)
+					pp->mpp->force_readonly = 1;
 				retval = reload_map(vecs, mpp, 0, 1);
+				pp->mpp->force_readonly = 0;
 				condlog(2, "%s: map %s reloaded (retval %d)",
 					uev->kernel, mpp->alias, retval);
 			}

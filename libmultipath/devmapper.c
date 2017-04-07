@@ -371,7 +371,7 @@ int dm_addmap_create (struct multipath *mpp, char * params)
 
 int dm_addmap_reload(struct multipath *mpp, char *params, int flush)
 {
-	int r;
+	int r = 0;
 	uint16_t udev_flags = (flush ? 0 : MPATH_UDEV_RELOAD_FLAG) |
 			      ((mpp->skip_kpartx == SKIP_KPARTX_ON)?
 			       MPATH_UDEV_NO_KPARTX_FLAG : 0) |
@@ -383,10 +383,11 @@ int dm_addmap_reload(struct multipath *mpp, char *params, int flush)
 	 * DM_DEVICE_RESUME. So call DM_DEVICE_RESUME
 	 * after each successful call to DM_DEVICE_RELOAD.
 	 */
-	r = dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, params, ADDMAP_RW,
-		      SKIP_KPARTX_OFF);
+	if (!mpp->force_readonly)
+		r = dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp, params,
+			      ADDMAP_RW, SKIP_KPARTX_OFF);
 	if (!r) {
-		if (errno != EROFS)
+		if (!mpp->force_readonly && errno != EROFS)
 			return 0;
 		r = dm_addmap(DM_DEVICE_RELOAD, TGT_MPATH, mpp,
 			      params, ADDMAP_RO, SKIP_KPARTX_OFF);

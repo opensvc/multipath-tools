@@ -271,6 +271,7 @@ struct multipath {
 	int san_path_err_recovery_time;
 	int skip_kpartx;
 	int max_sectors_kb;
+	int force_readonly;
 	unsigned int dev_loss;
 	uid_t uid;
 	gid_t gid;
