@@ -174,7 +174,6 @@ int dmmp_mpath_array_get(struct dmmp_context *ctx,
 		errno_save = errno;
 		memset(errno_str_buff, 0, _ERRNO_STR_BUFF_SIZE);
 		strerror_r(errno_save, errno_str_buff, _ERRNO_STR_BUFF_SIZE);
-		mpath_disconnect(socket_fd);
 		if (errno_save == ETIMEDOUT) {
 			rc = DMMP_ERR_IPC_TIMEOUT;
 			_error(ctx, "IPC communication timeout, try to "
