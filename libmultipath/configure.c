@@ -302,7 +302,6 @@ int setup_map(struct multipath *mpp, char *params, int params_size)
 	select_max_sectors_kb(conf, mpp);
 
 	sysfs_set_scsi_tmo(mpp, conf->checkint);
-	sysfs_set_max_sectors_kb(mpp);
 	put_multipath_config(conf);
 	/*
 	 * assign paths to path groups -- start with no groups and all paths
@@ -430,6 +429,58 @@ is_mpp_known_to_udev(const struct multipath *mpp)
 	int ret = (udd != NULL);
 	udev_device_unref(udd);
 	return ret;
+}
+
+static int
+sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
+{
+	struct pathgroup * pgp;
+	struct path *pp;
+	char buff[11];
+	int i, j, ret, err = 0;
+	struct udev_device *udd;
+	int max_sectors_kb;
+
+	if (mpp->max_sectors_kb == MAX_SECTORS_KB_UNDEF)
+		return 0;
+	max_sectors_kb = mpp->max_sectors_kb;
+	if (is_reload) {
+		if (!mpp->dmi && dm_get_info(mpp->alias, &mpp->dmi) != 0) {
+			condlog(1, "failed to get dm info for %s", mpp->alias);
+			return 1;
+		}
+		udd = get_udev_for_mpp(mpp);
+		if (!udd) {
+			condlog(1, "failed to get udev device to set max_sectors_kb for %s", mpp->alias);
+			return 1;
+		}
+		ret = sysfs_attr_get_value(udd, "queue/max_sectors_kb", buff,
+					   sizeof(buff));
+		udev_device_unref(udd);
+		if (ret <= 0) {
+			condlog(1, "failed to get current max_sectors_kb from %s", mpp->alias);
+			return 1;
+		}
+		if (sscanf(buff, "%u\n", &max_sectors_kb) != 1) {
+			condlog(1, "can't parse current max_sectors_kb from %s",
+				mpp->alias);
+			return 1;
+		}
+	}
+	snprintf(buff, 11, "%d", max_sectors_kb);
+
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		vector_foreach_slot(pgp->paths, pp, j) {
+			ret = sysfs_attr_set_value(pp->udev,
+						   "queue/max_sectors_kb",
+						   buff, strlen(buff));
+			if (ret < 0) {
+				condlog(1, "failed setting max_sectors_kb on %s : %s", pp->dev, strerror(-ret));
+				err = 1;
+			}
+		}
+	}	
+	return err;
 }
 
 static void
@@ -703,16 +754,19 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 			return DOMAP_RETRY;
 		}
 
+		sysfs_set_max_sectors_kb(mpp, 0);
 		r = dm_addmap_create(mpp, params);
 
 		lock_multipath(mpp, 0);
 		break;
 
 	case ACT_RELOAD:
+		sysfs_set_max_sectors_kb(mpp, 1);
 		r = dm_addmap_reload(mpp, params, 0);
 		break;
 
 	case ACT_RESIZE:
+		sysfs_set_max_sectors_kb(mpp, 1);
 		r = dm_addmap_reload(mpp, params, 1);
 		break;
 
@@ -728,8 +782,10 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		r = dm_rename(mpp->alias_old, mpp->alias,
 			      conf->partition_delim, mpp->skip_kpartx);
 		put_multipath_config(conf);
-		if (r)
+		if (r) {
+			sysfs_set_max_sectors_kb(mpp, 1);
 			r = dm_addmap_reload(mpp, params, 0);
+		}
 		break;
 
 	default:
