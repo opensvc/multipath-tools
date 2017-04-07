@@ -24,17 +24,17 @@ install: $(LIBS)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(syslibdir)
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(man3dir)
-	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(incdir)
+	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(includedir)
 	$(LN) $(LIBS) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 	$(INSTALL_PROGRAM) -m 644 mpath_persistent_reserve_in.3.gz $(DESTDIR)$(man3dir)
 	$(INSTALL_PROGRAM) -m 644 mpath_persistent_reserve_out.3.gz $(DESTDIR)$(man3dir)
-	$(INSTALL_PROGRAM) -m 644 mpath_persist.h $(DESTDIR)$(incdir)
+	$(INSTALL_PROGRAM) -m 644 mpath_persist.h $(DESTDIR)$(includedir)
 
 uninstall:
 	$(RM) $(DESTDIR)$(syslibdir)/$(LIBS)
 	$(RM) $(DESTDIR)$(man3dir)/mpath_persistent_reserve_in.3.gz
 	$(RM) $(DESTDIR)$(man3dir)/mpath_persistent_reserve_out.3.gz
-	$(RM) $(DESTDIR)$(incdir)/mpath_persist.h
+	$(RM) $(DESTDIR)$(includedir)/mpath_persist.h
 	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 clean:

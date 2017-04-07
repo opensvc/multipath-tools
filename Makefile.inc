@@ -55,7 +55,6 @@ man8dir		= $(prefix)/usr/share/man/man8
 man5dir		= $(prefix)/usr/share/man/man5
 man3dir		= $(prefix)/usr/share/man/man3
 syslibdir	= $(prefix)/$(LIB)
-incdir		= $(prefix)/usr/include
 libdir		= $(prefix)/$(LIB)/multipath
 unitdir		= $(prefix)/$(SYSTEMDPATH)/systemd/system
 mpathpersistdir	= $(TOPDIR)/libmpathpersist

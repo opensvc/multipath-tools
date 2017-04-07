@@ -16,13 +16,13 @@ install: $(LIBS)
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
 	$(LN) $(LIBS) $(DESTDIR)$(syslibdir)/$(DEVLIB)
-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(incdir)
-	$(INSTALL_PROGRAM) -m 644 mpath_cmd.h $(DESTDIR)$(incdir)
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(includedir)
+	$(INSTALL_PROGRAM) -m 644 mpath_cmd.h $(DESTDIR)$(includedir)
 
 uninstall:
 	$(RM) $(DESTDIR)$(syslibdir)/$(LIBS)
 	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
-	$(RM) $(DESTDIR)$(incdir)/mpath_cmd.h
+	$(RM) $(DESTDIR)$(includedir)/mpath_cmd.h
 
 clean:
 	$(RM) core *.a *.o *.so *.so.* *.gz
