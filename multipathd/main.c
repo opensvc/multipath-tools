@@ -1076,7 +1076,8 @@ uxsock_trigger (char * str, char ** reply, int * len, bool is_root,
 	    (strncmp(str, "list", strlen("list")) != 0) &&
 	    (strncmp(str, "show", strlen("show")) != 0)) {
 		*reply = STRDUP("permission deny: need to be root");
-		*len = strlen(*reply) + 1;
+		if (*reply)
+			*len = strlen(*reply) + 1;
 		return 1;
 	}
 
@@ -1087,12 +1088,14 @@ uxsock_trigger (char * str, char ** reply, int * len, bool is_root,
 			*reply = STRDUP("timeout\n");
 		else
 			*reply = STRDUP("fail\n");
-		*len = strlen(*reply) + 1;
+		if (*reply)
+			*len = strlen(*reply) + 1;
 		r = 1;
 	}
 	else if (!r && *len == 0) {
 		*reply = STRDUP("ok\n");
-		*len = strlen(*reply) + 1;
+		if (*reply)
+			*len = strlen(*reply) + 1;
 		r = 0;
 	}
 	/* else if (r < 0) leave *reply alone */
