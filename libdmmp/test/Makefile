@@ -27,4 +27,4 @@ speed_test: $(SPD_TEST_EXEC)
 		time -p ./$(SPD_TEST_EXEC)
 
 clean:
-	rm -f $(TEST_EXEC)
+	rm -f $(TEST_EXEC) $(SPD_TEST_EXEC)

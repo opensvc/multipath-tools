@@ -29,27 +29,27 @@ $(LIBS): $(OBJS)
 install:
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
 	$(INSTALL_PROGRAM) -m 644 -D \
-		$(HEADERS) $(DESTDIR)/$(includedir)/$(HEADERS)
-	$(LN) $(LIBS) $(DESTDIR)/$(syslibdir)/$(DEVLIB)
+		$(HEADERS) $(DESTDIR)$(includedir)/$(HEADERS)
+	$(LN) $(LIBS) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 	$(INSTALL_PROGRAM) -m 644 -D \
-		$(PKGFILE).in $(DESTDIR)/$(pkgconfdir)/$(PKGFILE)
+		$(PKGFILE).in $(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 	perl -i -pe 's|__VERSION__|$(LIBDMMP_VERSION)|g' \
-		$(DESTDIR)/$(pkgconfdir)/$(PKGFILE)
+		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 	perl -i -pe 's|__LIBDIR__|$(syslibdir)|g' \
-		$(DESTDIR)/$(pkgconfdir)/$(PKGFILE)
+		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 	perl -i -pe 's|__INCLUDEDIR__|$(includedir)|g' \
-		$(DESTDIR)/$(pkgconfdir)/$(PKGFILE)
+		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 	@for file in docs/man/*.3.gz; do \
 		$(INSTALL_PROGRAM) -m 644 -D \
 			$$file \
-			$(DESTDIR)/$(man3dir)/ || exit $?; \
+			$(DESTDIR)$(man3dir)/ || exit $?; \
 	done
 
 uninstall:
 	$(RM) $(DESTDIR)$(syslibdir)/$(LIBS)
 	$(RM) $(DESTDIR)$(includedir)/$(HEADERS)
-	$(RM) $(DESTDIR)/$(syslibdir)/$(DEVLIB)
-	@for file in $(DESTDIR)/$(man3dir)/dmmp_*; do \
+	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
+	@for file in $(DESTDIR)$(man3dir)/dmmp_*; do \
 		$(RM) $$file; \
 	done
 	$(RM) $(DESTDIR)$(man3dir)/libdmmp.h*
