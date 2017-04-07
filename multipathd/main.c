@@ -974,6 +974,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 	struct path * pp;
 	struct config *conf;
 	int disable_changed_wwids;
+	int needs_reinit = 0;
 
 	conf = get_multipath_config();
 	disable_changed_wwids = conf->disable_changed_wwids;
@@ -1009,7 +1010,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 		}
 
 		if (pp->initialized == INIT_REQUESTED_UDEV)
-			retval = uev_add_path(uev, vecs, 1);
+			needs_reinit = 1;
 		else if (mpp && ro >= 0) {
 			condlog(2, "%s: update path write_protect to '%d' (uevent)", uev->kernel, ro);
 
@@ -1041,7 +1042,8 @@ out:
 
 		condlog(0, "%s: spurious uevent, path not found", uev->kernel);
 	}
-
+	if (needs_reinit)
+		retval = uev_add_path(uev, vecs, 1);
 	return retval;
 }
 
