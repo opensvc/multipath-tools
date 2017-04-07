@@ -1002,7 +1002,8 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 				if (!pp->wwid_changed) {
 					pp->wwid_changed = 1;
 					pp->tick = 1;
-					dm_fail_path(pp->mpp->alias, pp->dev_t);
+					if (pp->mpp)
+						dm_fail_path(pp->mpp->alias, pp->dev_t);
 				}
 				goto out;
 			} else
