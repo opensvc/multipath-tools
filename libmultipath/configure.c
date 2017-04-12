@@ -479,7 +479,7 @@ sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 				err = 1;
 			}
 		}
-	}	
+	}
 	return err;
 }
 
