@@ -370,6 +370,24 @@ out:
 	return 0;
 }
 
+/*
+ * Current RDAC (NetApp E-Series) firmware relies
+ * on periodic REPORT TARGET PORT GROUPS for
+ * internal load balancing.
+ * Using the sysfs priority checker defeats this purpose.
+ */
+static int
+check_rdac(struct path * pp)
+{
+	int len;
+	char buff[44];
+
+	len = get_vpd_sgio(pp->fd, 0xC9, buff, 44);
+	if (len <= 0)
+		return 0;
+	return !(memcmp(buff + 4, "vac1", 4));
+}
+
 void
 detect_prio(struct config *conf, struct path * pp)
 {
@@ -379,8 +397,10 @@ detect_prio(struct config *conf, struct path * pp)
 
 	if (pp->tpgs <= 0)
 		return;
-	if (sysfs_get_asymmetric_access_state(pp, buff, 512) >= 0)
-		default_prio = PRIO_SYSFS;
+	if (pp->tpgs == 2 && !check_rdac(pp)) {
+		if (sysfs_get_asymmetric_access_state(pp, buff, 512) >= 0)
+			default_prio = PRIO_SYSFS;
+	}
 	prio_get(conf->multipath_dir, p, default_prio, DEFAULT_PRIO_ARGS);
 }
 

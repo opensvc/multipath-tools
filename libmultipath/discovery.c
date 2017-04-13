@@ -1092,7 +1092,7 @@ get_vpd_sysfs (struct udev_device *parent, int pg, char * str, int maxlen)
 	return len;
 }
 
-static int
+int
 get_vpd_sgio (int fd, int pg, char * str, int maxlen)
 {
 	int len, buff_len;
