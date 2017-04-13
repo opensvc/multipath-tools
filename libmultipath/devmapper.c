@@ -761,6 +761,12 @@ out:
 }
 
 static int
+has_partmap(const char *name, void *data)
+{
+	return 1;
+}
+
+static int
 partmap_in_use(const char *name, void *data)
 {
 	int part_count, *ret_count = (int *)data;
@@ -785,11 +791,17 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 {
 	int r;
 	int queue_if_no_path = 0;
+	int udev_flags = 0;
 	unsigned long long mapsize;
 	char params[PARAMS_SIZE] = {0};
 
 	if (!dm_is_mpath(mapname))
 		return 0; /* nothing to do */
+
+	/* if the device currently has no partitions, do not
+	   run kpartx on it if you fail to delete it */
+	if (do_foreach_partmaps(mapname, has_partmap, NULL) == 0)
+		udev_flags |= MPATH_UDEV_NO_KPARTX_FLAG;
 
 	/* If you aren't doing a deferred remove, make sure that no
 	 * devices are in use */
@@ -834,7 +846,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 				mapname);
 			if (need_suspend && queue_if_no_path != -1) {
 				dm_simplecmd_noflush(DM_DEVICE_RESUME,
-						     mapname, 0);
+						     mapname, udev_flags);
 			}
 		}
 		if (retries)
