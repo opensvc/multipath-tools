@@ -1087,7 +1087,7 @@ uxsock_trigger (char * str, char ** reply, int * len, bool is_root,
 		return 1;
 	}
 
-	r = parse_cmd(str, reply, len, vecs, uxsock_timeout);
+	r = parse_cmd(str, reply, len, vecs, uxsock_timeout / 1000);
 
 	if (r > 0) {
 		if (r == ETIMEDOUT)
