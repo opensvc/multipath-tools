@@ -286,11 +286,11 @@ out:
 		if (mp->no_path_retry == NO_PATH_RETRY_UNDEF)
 			mp->no_path_retry = NO_PATH_RETRY_QUEUE;
 		else if (mp->no_path_retry == NO_PATH_RETRY_FAIL) {
-			condlog(1, "%s: config error, overriding 'no_path_retry' value",
+			condlog(1, "%s: config ERROR (setting: overriding 'no_path_retry' value)",
 				mp->alias);
 			mp->no_path_retry = NO_PATH_RETRY_QUEUE;
 		} else if (mp->no_path_retry != NO_PATH_RETRY_QUEUE)
-			condlog(1, "%s: config error, ignoring 'queue_if_no_path' because no_path_retry=%d",
+			condlog(1, "%s: config ERROR (setting: ignoring 'queue_if_no_path' because no_path_retry = %d)",
 				mp->alias, mp->no_path_retry);
 	}
 	return 0;
@@ -470,7 +470,7 @@ out:
 		condlog(3, "%s: no_path_retry = %s %s", mp->alias, buff,
 			origin);
 	else if (mp->no_path_retry != NO_PATH_RETRY_UNDEF)
-		condlog(3, "%s: no_path_retry = %s (inherited setting)",
+		condlog(3, "%s: no_path_retry = %s (setting: inherited value)",
 			mp->alias, buff);
 	else
 		condlog(3, "%s: no_path_retry = undef (setting: multipath internal)",
