@@ -499,8 +499,10 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 				cmpp->alias, mpp->alias);
 			strncpy(mpp->alias_old, cmpp->alias, WWID_SIZE - 1);
 			mpp->action = ACT_RENAME;
-			if (force_reload)
+			if (force_reload) {
+				mpp->force_udev_reload = 1;
 				mpp->action = ACT_FORCERENAME;
+			}
 			return;
 		}
 		mpp->action = ACT_CREATE;
@@ -538,12 +540,14 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 		return;
 	}
 	if (force_reload) {
+		mpp->force_udev_reload = 1;
 		mpp->action = ACT_RELOAD;
 		condlog(3, "%s: set ACT_RELOAD (forced by user)",
 			mpp->alias);
 		return;
 	}
 	if (cmpp->size != mpp->size) {
+		mpp->force_udev_reload = 1;
 		mpp->action = ACT_RESIZE;
 		condlog(3, "%s: set ACT_RESIZE (size change)",
 			mpp->alias);
@@ -797,6 +801,7 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		 * DM_DEVICE_CREATE, DM_DEVICE_RENAME, or DM_DEVICE_RELOAD
 		 * succeeded
 		 */
+		mpp->force_udev_reload = 0;
 		if (mpp->action == ACT_CREATE)
 			remember_wwid(mpp->wwid);
 		if (!is_daemon) {

@@ -272,6 +272,7 @@ struct multipath {
 	int skip_kpartx;
 	int max_sectors_kb;
 	int force_readonly;
+	int force_udev_reload;
 	unsigned int dev_loss;
 	uid_t uid;
 	gid_t gid;
