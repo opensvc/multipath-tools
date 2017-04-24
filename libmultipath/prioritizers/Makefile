@@ -3,7 +3,7 @@
 #
 include ../../Makefile.inc
 
-CFLAGS += -I..
+CFLAGS += $(LIB_CFLAGS) -I..
 
 # If you add or remove a prioritizer also update multipath/multipath.conf.5
 LIBS = \

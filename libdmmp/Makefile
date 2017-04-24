@@ -15,7 +15,7 @@ HEADERS = libdmmp/libdmmp.h
 
 OBJS = libdmmp.o libdmmp_mp.o libdmmp_pg.o libdmmp_path.o libdmmp_misc.o
 
-CFLAGS += -fvisibility=hidden -I$(libdmmpdir) -I$(mpathcmddir) \
+CFLAGS += $(LIB_CFLAGS) -fvisibility=hidden -I$(libdmmpdir) -I$(mpathcmddir) \
 	  $(shell pkg-config --cflags json-c)
 
 LIBDEPS += $(shell pkg-config --libs json-c) -L$(mpathcmddir) -lmpathcmd -lpthread

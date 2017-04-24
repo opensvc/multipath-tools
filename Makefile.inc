@@ -75,8 +75,12 @@ OPTFLAGS	= -O2 -g -pipe -Wall -Wextra -Wformat=2 -Werror=implicit-int \
 		  -Wp,-D_FORTIFY_SOURCE=2 -fstack-protector-strong \
 		  --param=ssp-buffer-size=4
 
-CFLAGS		= $(OPTFLAGS) -fPIC -DLIB_STRING=\"${LIB}\" -DRUN_DIR=\"${RUN}\"
+CFLAGS		= $(OPTFLAGS) -DLIB_STRING=\"${LIB}\" -DRUN_DIR=\"${RUN}\"
+BIN_CFLAGS	= -fPIE -DPIE
+LIB_CFLAGS	= -fPIC
 SHARED_FLAGS	= -shared
+LDFLAGS		= -Wl,-z,relro -Wl,-z,now
+BIN_LDFLAGS	= -pie
 
 # Check whether a function with name $1 has been declared in header file $2.
 check_func =								       \

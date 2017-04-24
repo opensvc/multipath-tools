@@ -3,8 +3,8 @@
 #
 include ../Makefile.inc
 
-CFLAGS += -I$(multipathdir) -I$(mpathcmddir)
-
+CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathcmddir)
+LDFLAGS += $(BIN_LDFLAGS)
 LIBDEPS += -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath -ludev \
 	   -L$(mpathcmddir) -lmpathcmd
 

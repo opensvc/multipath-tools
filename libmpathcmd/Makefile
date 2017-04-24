@@ -4,6 +4,8 @@ SONAME = 0
 DEVLIB = libmpathcmd.so
 LIBS = $(DEVLIB).$(SONAME)
 
+CFLAGS += $(LIB_CFLAGS)
+
 OBJS = mpath_cmd.o
 
 all: $(LIBS)
