@@ -40,6 +40,6 @@ ENV{DM_NR_VALID_PATHS}=="0", GOTO="kpartx_end"
 ENV{ENV{DM_UDEV_PRIMARY_SOURCE_FLAG}!="1", IMPORT{db}="DM_SUBSYSTEM_UDEV_FLAG1"
 ENV{DM_SUBSYSTEM_UDEV_FLAG1}=="1", GOTO="kpartx_end"
 ENV{DM_STATE}!="SUSPENDED", ENV{DM_UUID}=="mpath-*", \
-	RUN+="/sbin/kpartx -u -p -part /dev/$name"
+	RUN+="/sbin/kpartx -un -p -part /dev/$name"
 
 LABEL="kpartx_end"

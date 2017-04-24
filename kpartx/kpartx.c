@@ -58,7 +58,7 @@ struct pt {
 } pts[MAXTYPES];
 
 int ptct = 0;
-int udev_sync = 0;
+int udev_sync = 1;
 
 static void
 addpts(char *t, ptreader f)
@@ -86,7 +86,7 @@ initpts(void)
 	addpts("ps3", read_ps3_pt);
 }
 
-static char short_opts[] = "rladfgvp:t:su";
+static char short_opts[] = "rladfgvp:t:snu";
 
 /* Used in gpt.c */
 int force_gpt=0;
@@ -105,7 +105,8 @@ usage(void) {
 	printf("\t-g force GUID partition table (GPT)\n");
 	printf("\t-f force devmap create\n");
 	printf("\t-v verbose\n");
-	printf("\t-s sync mode. Don't return until the partitions are created\n");
+	printf("\t-n nosync mode. Return before the partitions are created\n");
+	printf("\t-s sync mode. Don't return until the partitions are created. Default.\n");
 	return 1;
 }
 
@@ -290,6 +291,9 @@ main(int argc, char **argv){
 			break;
 		case 's':
 			udev_sync = 1;
+			break;
+		case 'n':
+			udev_sync = 0;
 			break;
 		case 'u':
 			what = UPDATE;
