@@ -140,10 +140,13 @@ set_delimiter (char * device, char * delimiter)
 {
 	char * p = device;
 
-	while (*(p++) != 0x0)
+	if (*p == 0x0)
+		return;
+
+	while (*(++p) != 0x0)
 		continue;
 
-	if (isdigit(*(p - 2)))
+	if (isdigit(*(p - 1)))
 		*delimiter = 'p';
 }
 
@@ -162,15 +165,17 @@ strip_slash (char * device)
 static int
 find_devname_offset (char * device)
 {
-	char *p, *q = NULL;
+	char *p, *q;
 
-	p = device;
+	q = p = device;
 
-	while (*p++)
+	while (*p) {
 		if (*p == '/')
-			q = p;
+			q = p + 1;
+		p++;
+	}
 
-	return (int)(q - device) + 1;
+	return (int)(q - device);
 }
 
 static char *
@@ -385,6 +390,10 @@ main(int argc, char **argv){
 			printf("failed to stat() %s\n", device);
 			exit (1);
 		}
+	}
+	else if (!S_ISBLK(buf.st_mode)) {
+		fprintf(stderr, "invalid device: %s\n", device);
+		exit(1);
 	}
 
 	off = find_devname_offset(device);
