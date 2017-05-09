@@ -456,7 +456,7 @@ int select_no_path_retry(struct config *conf, struct multipath *mp)
 	char buff[12];
 
 	if (mp->flush_on_last_del == FLUSH_IN_PROGRESS) {
-		condlog(0, "flush_on_last_del in progress");
+		condlog(0, "%s: flush_on_last_del in progress", mp->alias);
 		mp->no_path_retry = NO_PATH_RETRY_FAIL;
 		return 0;
 	}
