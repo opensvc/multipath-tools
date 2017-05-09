@@ -396,7 +396,13 @@ int dm_addmap_reload(struct multipath *mpp, char *params, int flush)
 	if (r)
 		r = dm_simplecmd(DM_DEVICE_RESUME, mpp->alias, !flush,
 				 1, udev_flags, 0);
-	return r;
+	if (r)
+		return r;
+
+	if (dm_is_suspended(mpp->alias))
+		dm_simplecmd(DM_DEVICE_RESUME, mpp->alias, !flush, 1,
+			     udev_flags, 0);
+	return 0;
 }
 
 static int
@@ -1028,6 +1034,17 @@ dm_geteventnr (char *name)
 		return -1;
 
 	return info.event_nr;
+}
+
+int
+dm_is_suspended(const char *name)
+{
+	struct dm_info info;
+
+	if (do_get_info(name, &info) != 0)
+		return -1;
+
+	return info.suspended;
 }
 
 char *
