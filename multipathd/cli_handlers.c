@@ -746,7 +746,7 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 	char * param = get_keyparam(v, MAP);
 	int major, minor;
 	char dev_path[PATH_SIZE];
-	char *alias, *refwwid;
+	char *refwwid, *alias = NULL;
 	int rc, count = 0;
 	struct config *conf;
 
@@ -763,14 +763,12 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 	}
 	put_multipath_config(conf);
 	do {
-		minor = dm_get_minor(param);
-		if (minor < 0)
+		if (dm_get_major_minor(param, &major, &minor) < 0)
 			condlog(2, "%s: not a device mapper table", param);
-		major = dm_get_major(param);
-		if (major < 0)
-			condlog(2, "%s: not a device mapper table", param);
-		sprintf(dev_path, "dm-%d", minor);
-		alias = dm_mapname(major, minor);
+		else {
+			sprintf(dev_path, "dm-%d", minor);
+			alias = dm_mapname(major, minor);
+		}
 		/*if there is no mapname found, we first create the device*/
 		if (!alias && !count) {
 			condlog(2, "%s: mapname not found for %d:%d",
@@ -804,23 +802,15 @@ cli_del_map (void * v, char ** reply, int * len, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
 	int major, minor;
-	char dev_path[PATH_SIZE];
 	char *alias;
 	int rc;
 
 	param = convert_dev(param, 0);
 	condlog(2, "%s: remove map (operator)", param);
-	minor = dm_get_minor(param);
-	if (minor < 0) {
+	if (dm_get_major_minor(param, &major, &minor) < 0) {
 		condlog(2, "%s: not a device mapper table", param);
 		return 1;
 	}
-	major = dm_get_major(param);
-	if (major < 0) {
-		condlog(2, "%s: not a device mapper table", param);
-		return 1;
-	}
-	sprintf(dev_path,"dm-%d", minor);
 	alias = dm_mapname(major, minor);
 	if (!alias) {
 		condlog(2, "%s: mapname not found for %d:%d",
