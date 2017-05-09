@@ -519,14 +519,17 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 			rc = pthread_create(&thread[count].id, &attr, mpath_prout_pthread_fn, (void *)(&thread[count].param));
 			if (rc){
 				condlog (0, "%s: failed to create thread %d", mpp->wwid, rc);
+				thread[count].param.status = MPATH_PR_THREAD_ERROR;
 			}
 			count = count + 1;
 		}
 	}
 	for( i=0; i < active_pathcount ; i++){
-		rc = pthread_join(thread[i].id, NULL);
-		if (rc){
-			condlog (0, "%s: Thread[%d] failed to join thread %d", mpp->wwid, i, rc);
+		if (thread[i].param.status != MPATH_PR_THREAD_ERROR) {
+			rc = pthread_join(thread[i].id, NULL);
+			if (rc){
+				condlog (0, "%s: Thread[%d] failed to join thread %d", mpp->wwid, i, rc);
+			}
 		}
 		if (!rollback && (thread[i].param.status == MPATH_PR_RESERV_CONFLICT)){
 			rollback = 1;
@@ -554,14 +557,17 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 						(void *)(&thread[i].param));
 				if (rc){
 					condlog (0, "%s: failed to create thread for rollback. %d",  mpp->wwid, rc);
+					thread[i].param.status = MPATH_PR_THREAD_ERROR;
 				}
 			}
 		}
 		for(i=0; i < active_pathcount ; i++){
-			rc = pthread_join(thread[i].id, NULL);
-			if (rc){
-				condlog (3, "%s: failed to join thread while rolling back %d",
-						mpp->wwid, i);
+			if (thread[i].param.status != MPATH_PR_THREAD_ERROR) {
+				rc = pthread_join(thread[i].id, NULL);
+				if (rc){
+					condlog (3, "%s: failed to join thread while rolling back %d",
+						 mpp->wwid, i);
+				}
 			}
 		}
 	}
@@ -630,7 +636,7 @@ int send_prout_activepath(char * dev, int rq_servact, int rq_scope,
 	rc = pthread_create(&thread, &attr, mpath_prout_pthread_fn, (void *)(&param));
 	if (rc){
 		condlog (3, "%s: failed to create thread %d", dev, rc);
-		return MPATH_PR_OTHER;
+		return MPATH_PR_THREAD_ERROR;
 	}
 	/* Free attribute and wait for the other threads */
 	pthread_attr_destroy(&attr);
@@ -695,16 +701,20 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 			condlog (3, "%s: sending pr out command to %s", mpp->wwid, pp->dev);
 			rc = pthread_create (&thread[count].id, &attr, mpath_prout_pthread_fn,
 					(void *) (&thread[count].param));
-			if (rc)
+			if (rc) {
 				condlog (0, "%s: failed to create thread. %d",  mpp->wwid, rc);
+				thread[count].param.status = MPATH_PR_THREAD_ERROR;
+			}
 			count = count + 1;
 		}
 	}
 	pthread_attr_destroy (&attr);
 	for (i = 0; i < active_pathcount; i++){
-		rc = pthread_join (thread[i].id, NULL);
-		if (rc){
-			condlog (1, "%s: failed to join thread.  %d",  mpp->wwid,  rc);
+		if (thread[i].param.status != MPATH_PR_THREAD_ERROR) {
+			rc = pthread_join (thread[i].id, NULL);
+			if (rc){
+				condlog (1, "%s: failed to join thread.  %d",  mpp->wwid,  rc);
+			}
 		}
 	}
 
