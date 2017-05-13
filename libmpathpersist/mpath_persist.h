@@ -43,6 +43,7 @@ extern "C" {
 
 
 /* PR RETURN_STATUS */
+#define MPATH_PR_SKIP			-1  /* skipping this path */
 #define MPATH_PR_SUCCESS		0
 #define MPATH_PR_SYNTAX_ERROR		1   /*  syntax error or invalid parameter */
 					    /* status for check condition */

@@ -481,7 +481,7 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 		thread[i].param.rq_type = rq_type;
 		thread[i].param.paramp = paramp;
 		thread[i].param.noisy = noisy;
-		thread[i].param.status = -1;
+		thread[i].param.status = MPATH_PR_SKIP;
 
 		condlog (3, "THRED ID [%d] INFO]", i);
 		condlog (3, "rq_servact=%d ", thread[i].param.rq_servact);
@@ -548,8 +548,7 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	if (rollback && ((rq_servact == MPATH_PROUT_REG_SA) && sa_key != 0 )){
 		condlog (3, "%s: ERROR: initiating pr out rollback", mpp->wwid);
 		for( i=0 ; i < active_pathcount ; i++){
-			if((thread[i].param.status == MPATH_PR_SUCCESS) &&
-					((pp->state == PATH_UP) || (pp->state == PATH_GHOST))){
+			if(thread[i].param.status == MPATH_PR_SUCCESS) {
 				memcpy(&thread[i].param.paramp->key, &thread[i].param.paramp->sa_key, 8);
 				memset(&thread[i].param.paramp->sa_key, 0, 8);
 				thread[i].param.status = MPATH_PR_SUCCESS;
@@ -559,10 +558,12 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 					condlog (0, "%s: failed to create thread for rollback. %d",  mpp->wwid, rc);
 					thread[i].param.status = MPATH_PR_THREAD_ERROR;
 				}
-			}
+			} else
+				thread[i].param.status = MPATH_PR_SKIP;
 		}
 		for(i=0; i < active_pathcount ; i++){
-			if (thread[i].param.status != MPATH_PR_THREAD_ERROR) {
+			if (thread[i].param.status != MPATH_PR_SKIP &&
+			    thread[i].param.status != MPATH_PR_THREAD_ERROR) {
 				rc = pthread_join(thread[i].id, NULL);
 				if (rc){
 					condlog (3, "%s: failed to join thread while rolling back %d",
@@ -676,7 +677,7 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		thread[i].param.rq_type = rq_type;
 		thread[i].param.paramp = paramp;
 		thread[i].param.noisy = noisy;
-		thread[i].param.status = -1;
+		thread[i].param.status = MPATH_PR_SKIP;
 
 		condlog (3, " path count = %d", i);
 		condlog (3, "rq_servact=%d ", thread[i].param.rq_servact);
