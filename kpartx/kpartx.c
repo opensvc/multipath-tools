@@ -450,7 +450,8 @@ main(int argc, char **argv){
 			break;
 
 		case DELETE:
-			r = dm_remove_partmaps(mapname, uuid, verbose);
+			r = dm_remove_partmaps(mapname, uuid, buf.st_rdev,
+					       verbose);
 			if (loopdev) {
 				if (del_loop(loopdev)) {
 					if (verbose)
