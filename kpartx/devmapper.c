@@ -295,7 +295,7 @@ dm_devn (const char * mapname, int *major, int *minor)
 	if (!dm_task_run(dmt))
 		goto out;
 
-	if (!dm_task_get_info(dmt, &info))
+	if (!dm_task_get_info(dmt, &info) || info.exists == 0)
 		goto out;
 
 	*major = info.major;
