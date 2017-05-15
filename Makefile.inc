@@ -47,6 +47,7 @@ endif
 
 prefix		=
 exec_prefix	= $(prefix)
+usr_prefix	= $(prefix)
 bindir		= $(exec_prefix)/sbin
 libudevdir	= $(prefix)/$(SYSTEMDPATH)/udev
 udevrulesdir	= $(libudevdir)/rules.d
@@ -55,6 +56,7 @@ man8dir		= $(prefix)/usr/share/man/man8
 man5dir		= $(prefix)/usr/share/man/man5
 man3dir		= $(prefix)/usr/share/man/man3
 syslibdir	= $(prefix)/$(LIB)
+usrlibdir	= $(usr_prefix)/$(LIB)
 libdir		= $(prefix)/$(LIB)/multipath
 unitdir		= $(prefix)/$(SYSTEMDPATH)/systemd/system
 mpathpersistdir	= $(TOPDIR)/libmpathpersist
@@ -62,7 +64,7 @@ mpathcmddir	= $(TOPDIR)/libmpathcmd
 thirdpartydir	= $(TOPDIR)/third-party
 libdmmpdir	= $(TOPDIR)/libdmmp
 includedir	= $(prefix)/usr/include
-pkgconfdir	= $(prefix)/$(LIB)/pkgconfig
+pkgconfdir	= $(usrlibdir)/pkgconfig
 
 GZIP		= gzip -9 -c
 RM		= rm -f
