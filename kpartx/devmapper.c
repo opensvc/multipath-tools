@@ -10,8 +10,10 @@
 #include <errno.h>
 #include "devmapper.h"
 
-#define UUID_PREFIX "part%d-"
-#define MAX_PREFIX_LEN 8
+#define _UUID_PREFIX "part"
+#define UUID_PREFIX _UUID_PREFIX "%d-"
+#define _UUID_PREFIX_LEN (sizeof(_UUID_PREFIX) - 1)
+#define MAX_PREFIX_LEN (_UUID_PREFIX_LEN + 4)
 #define PARAMS_SIZE 1024
 
 int dm_prereq(char * str, int x, int y, int z)
@@ -417,9 +419,13 @@ dm_compare_uuid(const char *mapuuid, const char *partname)
 	if (!partuuid)
 		return 1;
 
-	if (!strncmp(partuuid, "part", 4)) {
-		char *p = strstr(partuuid, "mpath-");
-		if (p && !strcmp(mapuuid, p))
+	if (!strncmp(partuuid, _UUID_PREFIX, _UUID_PREFIX_LEN)) {
+		char *p = partuuid + _UUID_PREFIX_LEN;
+		/* skip partition number */
+		while (isdigit(*p))
+			p++;
+		if (p != partuuid + _UUID_PREFIX_LEN && *p == '-' &&
+		    !strcmp(mapuuid, p + 1))
 			r = 0;
 	}
 	free(partuuid);
