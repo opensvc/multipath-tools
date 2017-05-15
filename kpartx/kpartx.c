@@ -60,6 +60,31 @@ struct pt {
 int ptct = 0;
 int udev_sync = 1;
 
+/*
+ * UUID format for partitions created on non-DM devices
+ * ${UUID_PREFIX}devnode_${MAJOR}:${MINOR}_${NONDM_UUID_SUFFIX}"
+ * where ${UUID_PREFIX} is "part${PARTNO}-" (see devmapper.c).
+ *
+ * The suffix should be sufficiently unique to avoid incidental conflicts;
+ * the value below is a base64-encoded random number.
+ * The UUID format shouldn't be changed between kpartx releases.
+ */
+#define NONDM_UUID_PREFIX "devnode"
+#define NONDM_UUID_SUFFIX "Wh5pYvM"
+
+static char *
+nondm_create_uuid(dev_t devt)
+{
+#define NONDM_UUID_BUFLEN (34 + sizeof(NONDM_UUID_PREFIX) + \
+			   sizeof(NONDM_UUID_SUFFIX))
+	static char uuid_buf[NONDM_UUID_BUFLEN];
+	snprintf(uuid_buf, sizeof(uuid_buf), "%s_%u:%u_%s",
+		 NONDM_UUID_PREFIX, major(devt), minor(devt),
+		 NONDM_UUID_SUFFIX);
+	uuid_buf[NONDM_UUID_BUFLEN-1] = '\0';
+	return uuid_buf;
+}
+
 static void
 addpts(char *t, ptreader f)
 {
@@ -363,6 +388,15 @@ main(int argc, char **argv){
 		if (mapname)
 			uuid = dm_mapuuid(mapname);
 	}
+
+	/*
+	 * We are called for a non-DM device.
+	 * Make up a fake UUID for the device, unless "-d -f" is given.
+	 * This allows deletion of partitions created with older kpartx
+	 * versions which didn't use the fake UUID during creation.
+	 */
+	if (!uuid && !(what == DELETE && force_devmap))
+		uuid = nondm_create_uuid(buf.st_rdev);
 
 	if (!mapname)
 		mapname = device + off;
