@@ -392,10 +392,11 @@ dm_type(const char * name, char * type)
 		goto out;
 
 	/* Fetch 1st target */
-	dm_get_next_target(dmt, NULL, &start, &length,
-			   &target_type, &params);
-
-	if (!target_type)
+	if (dm_get_next_target(dmt, NULL, &start, &length,
+			       &target_type, &params) != NULL)
+		/* more than one target */
+		r = -1;
+	else if (!target_type)
 		r = -1;
 	else if (!strcmp(target_type, type))
 		r = 1;
@@ -500,7 +501,7 @@ do_foreach_partmaps (const char * mapname, const char *uuid,
 		/*
 		 * skip if devmap target is not "linear"
 		 */
-		if (!dm_type(names->name, "linear")) {
+		if (dm_type(names->name, "linear") != 1) {
 			if (rd->verbose)
 				printf("%s: is not a linear target. Not removing\n",
 				       names->name);
