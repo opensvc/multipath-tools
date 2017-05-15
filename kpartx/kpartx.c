@@ -359,7 +359,13 @@ main(int argc, char **argv){
 
 	if (S_ISREG (buf.st_mode)) {
 		/* already looped file ? */
-		loopdev = find_loop_by_file(device);
+		char rpath[PATH_MAX];
+		if (realpath(device, rpath) == NULL) {
+			fprintf(stderr, "Error: %s: %s\n", device,
+				strerror(errno));
+			exit (1);
+		}
+		loopdev = find_loop_by_file(rpath);
 
 		if (!loopdev && what == DELETE)
 			exit (0);
