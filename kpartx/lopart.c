@@ -30,6 +30,7 @@
 #include <dirent.h>
 #include <sys/sysmacros.h>
 #include <linux/loop.h>
+#include <limits.h>
 
 #include "lopart.h"
 #include "xstrncpy.h"
