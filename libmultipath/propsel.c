@@ -744,8 +744,7 @@ out:
 	return 0;
 }
 
-extern int
-select_max_sectors_kb (struct config *conf, struct multipath * mp)
+int select_max_sectors_kb(struct config *conf, struct multipath * mp)
 {
 	char *origin;
 
