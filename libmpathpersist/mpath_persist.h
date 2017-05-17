@@ -82,6 +82,9 @@ extern "C" {
 
 
 
+extern unsigned int mpath_mx_alloc_len;
+
+
 
 struct prin_readdescr
 {

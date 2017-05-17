@@ -104,8 +104,6 @@ struct mpath_event_param
 	struct multipath *mpp;
 };
 
-unsigned int mpath_mx_alloc_len;
-
 int logsink;
 int verbosity;
 int bindings_read_only;

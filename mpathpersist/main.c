@@ -40,7 +40,6 @@ void mpath_print_transport_id(struct prin_fulldescr *fdesc);
 int construct_transportid(const char * inp, struct transportid transid[], int num_transportids);
 
 int logsink;
-unsigned int mpath_mx_alloc_len;
 struct config *multipath_conf;
 
 struct config *get_multipath_config(void)
