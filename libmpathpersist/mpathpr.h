@@ -1,6 +1,8 @@
 #ifndef MPATHPR_H
 #define MPATHPR_H
 
+#include "structs.h" /* FILE_NAME_SIZE */
+
 struct prin_param {
 	char dev[FILE_NAME_SIZE];
 	int rq_servact;

@@ -15,6 +15,7 @@
 #include "mpath_cmd.h"
 #include "uxsock.h"
 #include "memory.h"
+#include "mpathpr.h"
 
 
 int update_prflag(char * arg1, char * arg2, int noisy)
