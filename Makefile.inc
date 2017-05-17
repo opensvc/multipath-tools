@@ -69,10 +69,23 @@ RM		= rm -f
 LN		= ln -sf
 INSTALL_PROGRAM	= install
 
+# $(call TEST_CC_OPTION,option,fallback)
+# Test if the C compiler supports the option.
+# Evaluates to "option" if yes, and "fallback" otherwise.
+TEST_CC_OPTION = $(shell \
+	if echo 'int main(void){return 0;}' | $(CC) -o /dev/null -c "$(1)" -xc - &>/dev/null; \
+	then \
+		echo "$(1)"; \
+	else \
+		echo "$(2)"; \
+	fi)
+
+STACKPROT := $(call TEST_CC_OPTION,-fstack-protector-strong,-fstack-protector)
+
 OPTFLAGS	= -O2 -g -pipe -Wall -Wextra -Wformat=2 -Werror=implicit-int \
 		  -Werror=implicit-function-declaration -Werror=format-security \
 		  -Wno-sign-compare -Wno-unused-parameter -Wno-clobbered \
-		  -Wp,-D_FORTIFY_SOURCE=2 -fstack-protector-strong \
+		  -Wp,-D_FORTIFY_SOURCE=2 $(STACKPROT) \
 		  --param=ssp-buffer-size=4
 
 CFLAGS		= $(OPTFLAGS) -DLIB_STRING=\"${LIB}\" -DRUN_DIR=\"${RUN}\"
