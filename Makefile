@@ -2,28 +2,6 @@
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
 
-#
-# Try to supply the linux kernel headers.
-#
-ifeq ($(KRNLSRC),)
-	KRNLLIB = /lib/modules/$(shell uname -r)
-	ifeq ($(shell test -r $(KRNLLIB)/source && echo 1),1)
-		KRNLSRC = $(KRNLLIB)/source
-		KRNLOBJ = $(KRNLLIB)/build
-	else
-		KRNLSRC = $(KRNLLIB)/build
-		KRNLOBJ = $(KRNLLIB)/build
-	endif
-	export KRNLSRC
-	export KRNLOBJ
-endif
-
-ifeq ($(MULTIPATH_VERSION),)
-	VERSION = $(shell basename ${PWD} | cut -d'-' -f3)
-else
-	VERSION = $(MULTIPATH_VERSION)
-endif
-
 BUILDDIRS = \
 	libmpathcmd \
 	libmultipath \
@@ -43,10 +21,7 @@ endif
 all: recurse
 
 recurse:
-	@for dir in $(BUILDDIRS); do \
-	$(MAKE) -C $$dir VERSION=$(VERSION) \
-		KRNLSRC=$(KRNLSRC) KRNLOBJ=$(KRNLOBJ) || exit $?; \
-	done
+	@for dir in $(BUILDDIRS); do $(MAKE) -C $$dir || exit $?; done
 
 recurse_clean:
 	@for dir in $(BUILDDIRS); do \
