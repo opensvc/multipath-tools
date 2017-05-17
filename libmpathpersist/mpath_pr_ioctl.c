@@ -502,21 +502,6 @@ void mpath_reverse_uint32_byteorder(uint32_t *num)
 	*num = ((byte0 << 24) | (byte1 << 16) | (byte2 << 8) | (byte3 << 0));
 }
 
-void mpath_reverse_8bytes_order(char * var)
-{
-	char byte[8];
-
-	int i;
-	for(i=0 ; i < 8 ; i++ )
-	{
-		byte[i] = var[i];
-	}
-	for(i=0 ; i < 8 ; i++ )
-	{
-		var[7 - i] = byte[i];
-	}
-}
-
 void
 dumpHex(const char* str, int len, int log)
 {
