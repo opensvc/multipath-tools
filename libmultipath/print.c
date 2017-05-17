@@ -39,9 +39,18 @@ do { \
 	s = c; \
 } while (0)
 
-#define ENDLINE \
-		if (c > line) \
-			line[c - line - 1] = '\n'
+static char *
+__endline(char *line, size_t len, char *c)
+{
+	if (c > line) {
+		if (c >= line + len)
+			c = line + len - 1;
+		*(c - 1) = '\n';
+		*c = '\0';
+	}
+	return c;
+}
+
 #define PRINT(var, size, format, args...) \
 do { \
 	fwd = snprintf(var, size, format, ##args); \
@@ -802,7 +811,7 @@ snprint_multipath_header (char * line, int len, char * format)
 		PAD(data->width);
 	} while (*f++);
 
-	ENDLINE;
+	__endline(line, len, c);
 	return (c - line);
 }
 
@@ -838,7 +847,7 @@ snprint_multipath (char * line, int len, char * format,
 		buff[0] = '\0';
 	} while (*f++);
 
-	ENDLINE;
+	__endline(line, len, c);
 	return (c - line);
 }
 
@@ -869,7 +878,7 @@ snprint_path_header (char * line, int len, char * format)
 		PAD(data->width);
 	} while (*f++);
 
-	ENDLINE;
+	__endline(line, len, c);
 	return (c - line);
 }
 
@@ -904,7 +913,7 @@ snprint_path (char * line, int len, char * format,
 			PAD(data->width);
 	} while (*f++);
 
-	ENDLINE;
+	__endline(line, len, c);
 	return (c - line);
 }
 
@@ -938,7 +947,7 @@ snprint_pathgroup (char * line, int len, char * format,
 		PAD(data->width);
 	} while (*f++);
 
-	ENDLINE;
+	__endline(line, len, c);
 	return (c - line);
 }
 
