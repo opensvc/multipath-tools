@@ -881,7 +881,7 @@ static struct hwentry default_hw[] = {
 	 */
 	{
 		/* OceanStor V3 */
-		.vendor        = "(HUAWEI|HUASY)",
+		.vendor        = "HUAWEI",
 		.product       = "XSG1",
 		.pgpolicy      = MULTIBUS,
 	},
