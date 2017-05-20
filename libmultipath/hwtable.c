@@ -827,7 +827,7 @@ static struct hwentry default_hw[] = {
 	 * Intel
 	 */
 	{
-		.vendor	       = "(Intel|INTEL)",
+		.vendor        = "(Intel|INTEL)",
 		.product       = "Multi-Flex",
 		.bl_product    = "VTrak V-LUN",
 		.hwhandler     = "1 alua",
@@ -840,7 +840,7 @@ static struct hwentry default_hw[] = {
 	 * Linux-IO Target
 	 */
 	{
-		.vendor	       = "(LIO-ORG|SUSE)",
+		.vendor        = "(LIO-ORG|SUSE)",
 		.product       = "RBD",
 		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
@@ -852,7 +852,7 @@ static struct hwentry default_hw[] = {
 	 * DataCore
 	 */
 	{
-		.vendor	       = "DataCore",
+		.vendor        = "DataCore",
 		.product       = "SANmelody",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
@@ -861,7 +861,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* SANsymphony */
-		.vendor	       = "DataCore",
+		.vendor        = "DataCore",
 		.product       = "Virtual Disk",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
@@ -1053,7 +1053,7 @@ static struct hwentry default_hw[] = {
 	 * Generic NVMe devices
 	 */
 	{
-		.vendor	       = "NVME",
+		.vendor        = "NVME",
 		.product       = ".*",
 		.uid_attribute = "ID_WWN",
 		.checker_name  = DIRECTIO,
