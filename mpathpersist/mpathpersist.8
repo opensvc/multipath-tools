@@ -34,6 +34,12 @@ attribute must be defined in the \fI/etc/multipath.conf\fR file. Otherwise the
 \fBmultipathd\fR daemon will not check for persistent reservation for newly
 discovered paths or reinstated paths.
 .
+.LP
+\fBmpathpersist\fR supports the same command-line options as the
+\fBsg_persist\fR utility.
+.
+Consult the \fBsg_persist (8)\fR manual page for an in-depth discussion of the
+various options.
 .
 .\" ----------------------------------------------------------------------------
 .SH OPTIONS
@@ -89,12 +95,20 @@ PR Out parameter 'APTPL'.
 PR In: Read Keys.
 .
 .TP
+.BI \--param-rk=\fIRK\fB|\-K " RK"
+PR Out parameter reservation key (RK is in hex, up to 8 bytes).
+.
+.TP
 .BI \--param-sark=\fISARK\fB|\-S " SARK"
 PR Out parameter service action reservation key (SARK is in hex).
 .
 .TP
 .B \--preempt|\-P
 PR Out: Preempt.
+.
+.TP
+.B \--clear|\-C
+PR Out: Clear registrations.
 .
 .TP
 .B \--preempt-abort|\-A
@@ -140,6 +154,10 @@ PR Out: Reserve.
 .BI \--transport-id=\fITIDS\fB|\-X " TIDS"
 TransportIDs can be mentioned in several forms.
 .
+.TP
+.BI \--alloc-length=\fILEN\fB|\-l " LEN"
+PR In: maximum allocation length. LEN is a decimal number between 0 and 8192.
+.
 .
 .\" ----------------------------------------------------------------------------
 .SH EXAMPLE
@@ -164,7 +182,8 @@ Read the reservation status of the /dev/mapper/mpath9 device:
 .\" ----------------------------------------------------------------------------
 .
 .BR multipath (8),
-.BR multipathd (8).
+.BR multipathd (8),
+.BR sg_persist (8).
 .
 .
 .\" ----------------------------------------------------------------------------
