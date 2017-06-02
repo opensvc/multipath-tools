@@ -109,5 +109,18 @@ check_func =								       \
 	echo "$$found"							       \
     )
 
+# Checker whether a file with name $1 exists
+check_file = $(shell	\
+	if [ -f "$1" ]; then \
+		found=1; \
+		status="yes"; \
+	else \
+		found=0; \
+		status="no"; \
+	fi; \
+	echo 1>&2 "Checking if $1 exists ... $$status"; \
+	echo "$$found" \
+	)
+
 %.o:	%.c
 	$(CC) $(CFLAGS) -c -o $@ $<

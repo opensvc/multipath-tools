@@ -14,7 +14,8 @@ LIBS= \
 	libcheckemc_clariion.so \
 	libcheckhp_sw.so \
 	libcheckrdac.so
-ifneq ($(ENABLE_RADOS),0)
+
+ifneq ($(call check_file,/usr/include/rados/librados.h),0)
 LIBS += libcheckrbd.so
 endif
 
