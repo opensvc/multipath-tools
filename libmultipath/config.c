@@ -451,6 +451,13 @@ restart:
 			break;
 		j = n;
 		vector_foreach_slot_after(hw, hwe2, j) {
+			/* drop invalid device configs */
+			if (!hwe2->vendor || !hwe2->product) {
+				condlog(0, "device config missing vendor or product parameter");
+				vector_del_slot(hw, j--);
+				free_hwe(hwe2);
+				continue;
+			}
 			if (hwe_regmatch(hwe1, hwe2))
 				continue;
 			/* dup */
