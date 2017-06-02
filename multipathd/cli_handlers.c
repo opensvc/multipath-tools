@@ -162,9 +162,11 @@ show_maps_json (char ** r, int * len, struct vectors * vecs)
 	struct multipath * mpp;
 	char * c;
 	char * reply;
-	unsigned int maxlen = INITIAL_REPLY_LEN *
-			PRINT_JSON_MULTIPLIER * VECTOR_SIZE(vecs->mpvec);
+	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
+
+	if (VECTOR_SIZE(vecs->mpvec) > 0)
+		maxlen *= PRINT_JSON_MULTIPLIER * VECTOR_SIZE(vecs->mpvec);
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
 		if (update_multipath(vecs, mpp->alias, 0)) {
