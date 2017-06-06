@@ -76,7 +76,7 @@ static int waiteventloop (struct event_thread *waiter)
 	if (!waiter->event_nr)
 		waiter->event_nr = dm_geteventnr(waiter->mapname);
 
-	if (!(waiter->dmt = dm_task_create(DM_DEVICE_WAITEVENT))) {
+	if (!(waiter->dmt = libmp_dm_task_create(DM_DEVICE_WAITEVENT))) {
 		condlog(0, "%s: devmap event #%i dm_task_create error",
 				waiter->mapname, waiter->event_nr);
 		return 1;

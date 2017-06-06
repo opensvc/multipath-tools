@@ -634,12 +634,6 @@ main (int argc, char *argv[])
 		exit(1);
 	}
 
-	dm_init(conf->verbosity);
-	if (dm_prereq())
-		exit(1);
-	dm_drv_version(conf->version, TGT_MPATH);
-	dm_udev_set_sync_support(1);
-
 	if (optind < argc) {
 		dev = MALLOC(FILE_NAME_SIZE);
 
@@ -669,6 +663,8 @@ main (int argc, char *argv[])
 			condlog(0, "can't set open fds limit to %d : %s",
 				conf->max_fds, strerror(errno));
 	}
+
+	libmp_udev_set_sync_support(1);
 
 	if (init_checkers(conf->multipath_dir)) {
 		condlog(0, "failed to initialize checkers");

@@ -2408,8 +2408,6 @@ child (void * param)
 		conf->ignore_new_devs = ignore_new_devs;
 	uxsock_timeout = conf->uxsock_timeout;
 	rcu_assign_pointer(multipath_conf, conf);
-	dm_init(conf->verbosity);
-	dm_drv_version(conf->version, TGT_MPATH);
 	if (init_checkers(conf->multipath_dir)) {
 		condlog(0, "failed to initialize checkers");
 		goto failed;
@@ -2458,7 +2456,6 @@ child (void * param)
 	setscheduler();
 	set_oom_adj();
 
-	dm_udev_set_sync_support(0);
 #ifdef USE_SYSTEMD
 	envp = getenv("WATCHDOG_USEC");
 	if (envp && sscanf(envp, "%lu", &checkint) == 1) {
@@ -2700,6 +2697,7 @@ main (int argc, char *argv[])
 	pthread_cond_init_mono(&config_cond);
 
 	udev = udev_new();
+	libmp_udev_set_sync_support(0);
 
 	while ((arg = getopt(argc, argv, ":dsv:k::Bn")) != EOF ) {
 		switch(arg) {

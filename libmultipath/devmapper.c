@@ -21,6 +21,7 @@
 #include "memory.h"
 #include "devmapper.h"
 #include "sysfs.h"
+#include "config.h"
 
 #include "log_pthread.h"
 #include <sys/types.h>
@@ -178,7 +179,7 @@ out:
 }
 
 static int
-dm_drv_prereq (void)
+dm_drv_prereq (unsigned int *ver)
 {
 	unsigned int minv[3] = {1, 0, 3};
 	unsigned int version[3] = {0, 0, 0};
@@ -193,19 +194,51 @@ dm_drv_prereq (void)
 	condlog(3, "DM multipath kernel driver v%u.%u.%u",
 		v[0], v[1], v[2]);
 
-	if VERSION_GE(v, minv)
+	if (VERSION_GE(v, minv)) {
+		ver[0] = v[0];
+		ver[1] = v[1];
+		ver[2] = v[2];
 		return 0;
+	}
 
 	condlog(0, "DM multipath kernel driver must be >= v%u.%u.%u",
 		minv[0], minv[1], minv[2]);
 	return 1;
 }
 
-int dm_prereq(void)
+static int dm_prereq(unsigned int *v)
 {
 	if (dm_lib_prereq())
 		return 1;
-	return dm_drv_prereq();
+	return dm_drv_prereq(v);
+}
+
+static int libmp_dm_udev_sync = 0;
+
+void libmp_udev_set_sync_support(int on)
+{
+	libmp_dm_udev_sync = !!on;
+}
+
+void libmp_dm_init(void)
+{
+	struct config *conf;
+
+	conf = get_multipath_config();
+	dm_init(conf->verbosity);
+	if (dm_prereq(conf->version))
+		exit(1);
+	put_multipath_config(conf);
+	dm_udev_set_sync_support(libmp_dm_udev_sync);
+}
+
+struct dm_task*
+libmp_dm_task_create(int task)
+{
+	static pthread_once_t dm_initialized = PTHREAD_ONCE_INIT;
+
+	pthread_once(&dm_initialized, libmp_dm_init);
+	return dm_task_create(task);
 }
 
 #define do_deferred(x) ((x) == DEFERRED_REMOVE_ON || (x) == DEFERRED_REMOVE_IN_PROGRESS)
@@ -219,7 +252,7 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t 
 	uint32_t cookie = 0;
 	struct dm_task *dmt;
 
-	if (!(dmt = dm_task_create (task)))
+	if (!(dmt = libmp_dm_task_create (task)))
 		return 0;
 
 	if (!dm_task_set_name (dmt, name))
@@ -274,7 +307,7 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 	uint32_t cookie = 0;
 	uint16_t udev_flags = DM_UDEV_DISABLE_LIBRARY_FALLBACK | ((skip_kpartx == SKIP_KPARTX_ON)? MPATH_UDEV_NO_KPARTX_FLAG : 0);
 
-	if (!(dmt = dm_task_create (task)))
+	if (!(dmt = libmp_dm_task_create (task)))
 		return 0;
 
 	if (!dm_task_set_name (dmt, mpp->alias))
@@ -414,7 +447,7 @@ do_get_info(const char *name, struct dm_info *info)
 	int r = -1;
 	struct dm_task *dmt;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_INFO)))
 		return r;
 
 	if (!dm_task_set_name(dmt, name))
@@ -452,7 +485,7 @@ int dm_get_map(const char *name, unsigned long long *size, char *outparams)
 	char *target_type = NULL;
 	char *params = NULL;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_TABLE)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
 		return 1;
 
 	if (!dm_task_set_name(dmt, name))
@@ -488,7 +521,7 @@ dm_get_prefixed_uuid(const char *name, char *uuid)
 	const char *uuidtmp;
 	int r = 1;
 
-	dmt = dm_task_create(DM_DEVICE_INFO);
+	dmt = libmp_dm_task_create(DM_DEVICE_INFO);
 	if (!dmt)
 		return 1;
 
@@ -551,7 +584,7 @@ int dm_get_status(char *name, char *outstatus)
 	char *target_type = NULL;
 	char *status = NULL;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_STATUS)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_STATUS)))
 		return 1;
 
 	if (!dm_task_set_name(dmt, name))
@@ -594,7 +627,7 @@ int dm_type(const char *name, char *type)
 	char *target_type = NULL;
 	char *params;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_TABLE)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
 		return 0;
 
 	if (!dm_task_set_name(dmt, name))
@@ -630,7 +663,7 @@ int dm_is_mpath(const char *name)
 	char *params;
 	const char *uuid;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_TABLE)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
 		return 0;
 
 	if (!dm_task_set_name(dmt, name))
@@ -682,7 +715,7 @@ dm_get_opencount (const char * mapname)
 	struct dm_task *dmt;
 	struct dm_info info;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_INFO)))
 		return 0;
 
 	if (!dm_task_set_name(dmt, mapname))
@@ -840,7 +873,7 @@ int dm_flush_maps (int retries)
 	struct dm_names *names;
 	unsigned next = 0;
 
-	if (!(dmt = dm_task_create (DM_DEVICE_LIST)))
+	if (!(dmt = libmp_dm_task_create (DM_DEVICE_LIST)))
 		return 0;
 
 	dm_task_no_open_count(dmt);
@@ -871,7 +904,7 @@ dm_message(const char * mapname, char * message)
 	int r = 1;
 	struct dm_task *dmt;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_TARGET_MSG)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TARGET_MSG)))
 		return 1;
 
 	if (!dm_task_set_name(dmt, mapname))
@@ -973,7 +1006,7 @@ dm_get_maps (vector mp)
 	if (!mp)
 		return 1;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_LIST)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_LIST)))
 		return 1;
 
 	dm_task_no_open_count(dmt);
@@ -1059,7 +1092,7 @@ dm_mapname(int major, int minor)
 	int r;
 	int loop = MAX_WAIT * LOOPS_PER_SEC;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_STATUS)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_STATUS)))
 		return NULL;
 
 	if (!dm_task_set_major(dmt, major) ||
@@ -1112,7 +1145,7 @@ do_foreach_partmaps (const char * mapname,
 	int r = 1;
 	char *p;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_LIST)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_LIST)))
 		return 1;
 
 	dm_task_no_open_count(dmt);
@@ -1336,7 +1369,7 @@ dm_rename (const char * old, char * new, char *delim, int skip_kpartx)
 	if (dm_rename_partmaps(old, new, delim))
 		return r;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_RENAME)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_RENAME)))
 		return r;
 
 	if (!dm_task_set_name(dmt, old))
@@ -1385,7 +1418,7 @@ int dm_reassign_table(const char *name, char *old, char *new)
 	char *buff;
 	void *next = NULL;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_TABLE)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
 		return 0;
 
 	if (!dm_task_set_name(dmt, name))
@@ -1395,7 +1428,7 @@ int dm_reassign_table(const char *name, char *old, char *new)
 
 	if (!dm_task_run(dmt))
 		goto out;
-	if (!(reload_dmt = dm_task_create(DM_DEVICE_RELOAD)))
+	if (!(reload_dmt = libmp_dm_task_create(DM_DEVICE_RELOAD)))
 		goto out;
 	if (!dm_task_set_name(reload_dmt, name))
 		goto out_reload;
@@ -1459,7 +1492,7 @@ int dm_reassign(const char *mapname)
 		return 1;
 	}
 
-	if (!(dmt = dm_task_create(DM_DEVICE_DEPS))) {
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_DEPS))) {
 		condlog(3, "%s: couldn't make dm task", mapname);
 		return 0;
 	}
@@ -1517,7 +1550,7 @@ int dm_setgeometry(struct multipath *mpp)
 		return 1;
 	}
 
-	if (!(dmt = dm_task_create(DM_DEVICE_SET_GEOMETRY)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_SET_GEOMETRY)))
 		return 0;
 
 	if (!dm_task_set_name(dmt, mpp->alias))
