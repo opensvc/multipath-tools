@@ -45,6 +45,22 @@ merge_words (char ** dst, char * word, int space)
 	return 0;
 }
 
+#define APPEND(p, end, args...)						\
+({									\
+	int ret;							\
+									\
+	ret = snprintf(p, end - p, ##args);				\
+	if (ret < 0) {							\
+		condlog(0, "%s: conversion error", mp->alias);		\
+		goto err;						\
+	}								\
+	p += ret;							\
+	if (p >= end) {							\
+		condlog(0, "%s: params too small", mp->alias);		\
+		goto err;						\
+	}								\
+})
+
 /*
  * Transforms the path group vector into a proper device map string
  */
@@ -52,10 +68,10 @@ int
 assemble_map (struct multipath * mp, char * params, int len)
 {
 	int i, j;
-	int shift, freechar;
 	int minio;
 	int nr_priority_groups, initial_pg_nr;
 	char * p, * f;
+	const char *const end = params + len;
 	char no_path_retry[] = "queue_if_no_path";
 	char retain_hwhandler[] = "retain_attached_hw_handler";
 	struct pathgroup * pgp;
@@ -63,7 +79,6 @@ assemble_map (struct multipath * mp, char * params, int len)
 
 	minio = mp->minio;
 	p = params;
-	freechar = len;
 
 	nr_priority_groups = VECTOR_SIZE(mp->pg);
 	initial_pg_nr = (nr_priority_groups ? mp->bestpg : 0);
@@ -86,29 +101,13 @@ assemble_map (struct multipath * mp, char * params, int len)
 	if (mp->retain_hwhandler == RETAIN_HWHANDLER_ON)
 		add_feature(&f, retain_hwhandler);
 
-	shift = snprintf(p, freechar, "%s %s %i %i",
-			 f, mp->hwhandler,
-			 nr_priority_groups, initial_pg_nr);
-
-	FREE(f);
-
-	if (shift >= freechar) {
-		condlog(0, "%s: params too small", mp->alias);
-		return 1;
-	}
-	p += shift;
-	freechar -= shift;
+	APPEND(p, end, "%s %s %i %i", f, mp->hwhandler, nr_priority_groups,
+	       initial_pg_nr);
 
 	vector_foreach_slot (mp->pg, pgp, i) {
 		pgp = VECTOR_SLOT(mp->pg, i);
-		shift = snprintf(p, freechar, " %s %i 1", mp->selector,
-				 VECTOR_SIZE(pgp->paths));
-		if (shift >= freechar) {
-			condlog(0, "%s: params too small", mp->alias);
-			return 1;
-		}
-		p += shift;
-		freechar -= shift;
+		APPEND(p, end, " %s %i 1", mp->selector,
+		       VECTOR_SIZE(pgp->paths));
 
 		vector_foreach_slot (pgp->paths, pp, j) {
 			int tmp_minio = minio;
@@ -118,27 +117,23 @@ assemble_map (struct multipath * mp, char * params, int len)
 				tmp_minio = minio * pp->priority;
 			if (!strlen(pp->dev_t) ) {
 				condlog(0, "dev_t not set for '%s'", pp->dev);
-				return 1;
+				goto err;
 			}
-			shift = snprintf(p, freechar, " %s %d",
-					 pp->dev_t, tmp_minio);
-			if (shift >= freechar) {
-				condlog(0, "%s: params too small", mp->alias);
-				return 1;
-			}
-			p += shift;
-			freechar -= shift;
+			APPEND(p, end, " %s %d", pp->dev_t, tmp_minio);
 		}
 	}
-	if (freechar < 1) {
-		condlog(0, "%s: params too small", mp->alias);
-		return 1;
-	}
-	snprintf(p, 1, "\n");
+	APPEND(p, end, "\n");
 
+	FREE(f);
 	condlog(3, "%s: assembled map [%s]", mp->alias, params);
 	return 0;
+
+err:
+	FREE(f);
+	return 1;
 }
+
+#undef APPEND
 
 int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 		    int is_daemon)
