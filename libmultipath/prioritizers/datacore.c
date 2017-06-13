@@ -35,10 +35,6 @@
 int datacore_prio (const char *dev, int sg_fd, char * args)
 {
 	int k;
-	char vendor[8];
-	char product[32];
-	char luname[32];
-	char wwpn[32];
 	char sdsname[32];
 	unsigned char inqCmdBlk[INQ_CMD_LEN] = { INQ_CMD_CODE, 0, 0, 0, INQ_REPLY_LEN, 0 };
 	unsigned char inqBuff[INQ_REPLY_LEN];
@@ -95,11 +91,7 @@ int datacore_prio (const char *dev, int sg_fd, char * args)
 	if ((io_hdr.info & SG_INFO_OK_MASK) != SG_INFO_OK)
 		return 0;
 
-	snprintf(vendor, 8, "%.8s\n", inqBuffp + 8);
-	snprintf(product, 17, "%.16s", inqBuffp + 16);
-	snprintf(luname, 21, "%.19s", inqBuffp + 36);
-	snprintf(wwpn, 17, "%.16s", inqBuffp + 96);
-	snprintf(sdsname, 17, "%.16s", inqBuffp + 112);
+	snprintf(sdsname, sizeof(sdsname), "%.16s", inqBuffp + 112);
 
 	if (strstr(sdsname , preferredsds))
 		return 1;
