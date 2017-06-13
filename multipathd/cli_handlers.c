@@ -1,6 +1,9 @@
 /*
  * Copyright (c) 2005 Christophe Varoqui
  */
+
+#define _GNU_SOURCE
+
 #include "checkers.h"
 #include "memory.h"
 #include "vector.h"
@@ -1334,14 +1337,9 @@ cli_getprstatus (void * v, char ** reply, int * len, void * data)
 
 	condlog(3, "%s: prflag = %u", param, (unsigned int)mpp->prflag);
 
-	*reply =(char *)malloc(2);
-	*len = 2;
-	memset(*reply,0,2);
-
-
-	sprintf(*reply,"%d",mpp->prflag);
-	(*reply)[1]='\0';
-
+	*len = asprintf(reply, "%d", mpp->prflag);
+	if (*len < 0)
+		return 1;
 
 	condlog(3, "%s: reply = %s", param, *reply);
 
