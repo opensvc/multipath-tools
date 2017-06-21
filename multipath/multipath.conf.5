@@ -295,6 +295,10 @@ Generate a random priority between 1 and 10.
 Generate the path priority based on the regular expression and the
 priority provided as argument. Requires prio_args keyword.
 .TP
+.I path_latency
+Generate the path priority based on a latency algorithm.
+Requires prio_args keyword.
+.TP
 .I datacore
 .\" XXX
 ???. Requires prio_args keyword.
@@ -333,6 +337,22 @@ example: 0395J1FR904324
 regex can be of the form \fI"host_wwnn:host_wwpn:target_wwnn:target_wwpn"\fR
 these values can be looked up through sysfs or by running \fImultipathd show paths format
 "%N:%R:%n:%r"\fR. For example: 0x200100e08ba0aea0:0x210100e08ba0aea0:.*:.* , .*:.*:iqn.2009-10.com.redhat.msp.lab.ask-06:.*
+.RE
+.TP 12
+.I path_latency
+Needs a value of the form
+\fI"<io_num>|<base_num>"\fR
+.RS
+.TP 8
+.I io_num
+The number of read IOs sent to the current path continuously, used to calculate the average path latency.
+Valid Values: Integer, [2, 200].
+.TP
+.I base_num
+The base number value of logarithmic scale, used to partition different priority ranks. Valid Values: Integer,
+[2, 10]. And Max average latency value is 100s, min average latency value is 1us.
+For example: If base_num=10, the paths will be grouped in priority groups with path latency <=1us, (1us, 10us],
+(10us, 100us], (100us, 1ms], (1ms, 10ms], (10ms, 100ms], (100ms, 1s], (1s, 10s], (10s, 100s], >100s.
 .RE
 .TP 12
 .I alua

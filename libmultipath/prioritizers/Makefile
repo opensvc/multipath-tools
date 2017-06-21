@@ -18,12 +18,16 @@ LIBS = \
 	libpriorandom.so \
 	libpriordac.so \
 	libprioweightedpath.so \
+	libpriopath_latency.so \
 	libpriosysfs.so
 
 all: $(LIBS)
 
 libprioalua.so: alua.o alua_rtpg.o
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
+
+libpriopath_latency.so: path_latency.o  ../checkers/libsg.o
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ -lm
 
 libprio%.so: %.o
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
