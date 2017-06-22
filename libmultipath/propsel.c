@@ -290,6 +290,9 @@ void reconcile_features_with_options(const char *id, char **features, int* no_pa
 	 * it's translated into "no_path_retry queue" here.
 	 */
 	if (strstr(*features, q_i_n_p)) {
+		condlog(0, "%s: option 'features \"1 %s\"' is deprecated, "
+			"please use 'no_path_retry queue' instead",
+			id, q_i_n_p);
 		if (*no_path_retry == NO_PATH_RETRY_UNDEF) {
 			*no_path_retry = NO_PATH_RETRY_QUEUE;
 			print_no_path_retry(buff, sizeof(buff),
@@ -307,6 +310,8 @@ void reconcile_features_with_options(const char *id, char **features, int* no_pa
 		remove_feature(features, q_i_n_p);
 	}
 	if (strstr(*features, r_a_h_h)) {
+		condlog(0, "%s: option 'features \"1 %s\"' is deprecated",
+			id, r_a_h_h);
 		if (*retain_hwhandler == RETAIN_HWHANDLER_UNDEF) {
 			condlog(3, "%s: %s = on (inherited setting from feature '%s')",
 				id, r_a_h_h, r_a_h_h);
