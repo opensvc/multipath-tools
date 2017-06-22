@@ -385,7 +385,9 @@ Possible values for the feature list are:
 .\" XXX
 .I queue_if_no_path
 (Superseded by \fIno_path_retry\fR) (Since ??? kernel) Queue I/O if no path is active.
-Identical to the \fIno_path_retry\fR with \fIqueue\fR value. See KNOWN ISSUES.
+Identical to the \fIno_path_retry\fR with \fIqueue\fR value. If both this
+feature and \fIno_path_retry\fR are set, the latter value takes
+precedence. See KNOWN ISSUES.
 .TP
 .I no_partitions
 Disable automatic partitions generation via kpartx.
