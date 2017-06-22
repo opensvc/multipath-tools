@@ -513,10 +513,11 @@ void setup_feature(struct multipath *mpp, char *feature)
 	}
 }
 
-int add_feature(char **f, char *n)
+int add_feature(char **f, const char *n)
 {
 	int c = 0, d, l = 0;
 	char *e, *p, *t;
+	const char *q;
 
 	if (!f)
 		return 1;
@@ -554,14 +555,14 @@ int add_feature(char **f, char *n)
 	if ((c % 10) == 9)
 		l++;
 	c++;
-	p = n;
-	while (*p != '\0') {
-		if (*p == ' ' && p[1] != '\0' && p[1] != ' ') {
+	q = n;
+	while (*q != '\0') {
+		if (*q == ' ' && q[1] != '\0' && q[1] != ' ') {
 			if ((c % 10) == 9)
 				l++;
 			c++;
 		}
-		p++;
+		q++;
 	}
 
 	t = MALLOC(l + 1);
@@ -601,10 +602,11 @@ int add_feature(char **f, char *n)
 	return 0;
 }
 
-int remove_feature(char **f, char *o)
+int remove_feature(char **f, const char *o)
 {
 	int c = 0, d, l;
 	char *e, *p, *n;
+	const char *q;
 
 	if (!f || !*f)
 		return 1;
@@ -630,18 +632,18 @@ int remove_feature(char **f, char *o)
 	/* Just spaces, return */
 	if (*o == '\0')
 		return 0;
-	e = o + strlen(o);
-	while (*e == ' ')
-		e--;
-	d = (int)(e - o);
+	q = o + strlen(o);
+	while (*q == ' ')
+		q--;
+	d = (int)(q - o);
 
 	/* Update feature count */
 	c--;
-	p = o;
-	while (p[0] != '\0') {
-		if (p[0] == ' ' && p[1] != ' ' && p[1] != '\0')
+	q = o;
+	while (q[0] != '\0') {
+		if (q[0] == ' ' && q[1] != ' ' && q[1] != '\0')
 			c--;
-		p++;
+		q++;
 	}
 
 	/* Quick exit if all features have been removed */

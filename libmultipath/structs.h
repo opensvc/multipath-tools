@@ -369,8 +369,8 @@ int pathcountgr (struct pathgroup *, int);
 int pathcount (struct multipath *, int);
 int pathcmp (struct pathgroup *, struct pathgroup *);
 void setup_feature(struct multipath *, char *);
-int add_feature (char **, char *);
-int remove_feature (char **, char *);
+int add_feature (char **, const char *);
+int remove_feature (char **, const char *);
 
 extern char sysfs_path[PATH_SIZE];
 
