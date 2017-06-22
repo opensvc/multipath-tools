@@ -752,6 +752,12 @@ int select_max_sectors_kb(struct config *conf, struct multipath * mp)
 	mp_set_ovr(max_sectors_kb);
 	mp_set_hwe(max_sectors_kb);
 	mp_set_conf(max_sectors_kb);
+	mp_set_default(max_sectors_kb, DEFAULT_MAX_SECTORS_KB);
+	/*
+	 * In the default case, we will not modify max_sectors_kb in sysfs
+	 * (see sysfs_set_max_sectors_kb()).
+	 * Don't print a log message here to avoid user confusion.
+	 */
 	return 0;
 out:
 	condlog(3, "%s: max_sectors_kb = %i %s", mp->alias, mp->max_sectors_kb,
