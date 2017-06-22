@@ -28,3 +28,6 @@ int select_max_sectors_kb (struct config *conf, struct multipath * mp);
 int select_san_path_err_forget_rate(struct config *conf, struct multipath *mp);
 int select_san_path_err_threshold(struct config *conf, struct multipath *mp);
 int select_san_path_err_recovery_time(struct config *conf, struct multipath *mp);
+void reconcile_features_with_options(const char *id, char **features,
+				     int* no_path_retry,
+				     int *retain_hwhandler);

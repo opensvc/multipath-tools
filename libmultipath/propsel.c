@@ -269,6 +269,55 @@ out:
 	return mp->alias ? 0 : 1;
 }
 
+void reconcile_features_with_options(const char *id, char **features, int* no_path_retry,
+		  int *retain_hwhandler)
+{
+	static const char q_i_n_p[] = "queue_if_no_path";
+	static const char r_a_h_h[] = "retain_attached_hw_handler";
+	char buff[12];
+
+	if (*features == NULL)
+		return;
+	if (id == NULL)
+		id = "UNKNOWN";
+
+	/*
+	 * We only use no_path_retry internally. The "queue_if_no_path"
+	 * device-mapper feature is derived from it when the map is loaded.
+	 * For consistency, "queue_if_no_path" is removed from the
+	 * internal libmultipath features string.
+	 * For backward compatibility we allow 'features "1 queue_if_no_path"';
+	 * it's translated into "no_path_retry queue" here.
+	 */
+	if (strstr(*features, q_i_n_p)) {
+		if (*no_path_retry == NO_PATH_RETRY_UNDEF) {
+			*no_path_retry = NO_PATH_RETRY_QUEUE;
+			print_no_path_retry(buff, sizeof(buff),
+					    no_path_retry);
+			condlog(3, "%s: no_path_retry = %s (inherited setting from feature '%s')",
+				id, buff, q_i_n_p);
+		};
+		/* Warn only if features string is overridden */
+		if (*no_path_retry != NO_PATH_RETRY_QUEUE) {
+			print_no_path_retry(buff, sizeof(buff),
+					    no_path_retry);
+			condlog(2, "%s: ignoring feature '%s' because no_path_retry is set to '%s'",
+				id, q_i_n_p, buff);
+		}
+		remove_feature(features, q_i_n_p);
+	}
+	if (strstr(*features, r_a_h_h)) {
+		if (*retain_hwhandler == RETAIN_HWHANDLER_UNDEF) {
+			condlog(3, "%s: %s = on (inherited setting from feature '%s')",
+				id, r_a_h_h, r_a_h_h);
+			*retain_hwhandler = RETAIN_HWHANDLER_ON;
+		} else if (*retain_hwhandler == RETAIN_HWHANDLER_OFF)
+			condlog(2, "%s: ignoring feature '%s' because %s is set to 'off'",
+				id, r_a_h_h, r_a_h_h);
+		remove_feature(features, r_a_h_h);
+	}
+}
+
 int select_features(struct config *conf, struct multipath *mp)
 {
 	char *origin;
@@ -280,19 +329,11 @@ int select_features(struct config *conf, struct multipath *mp)
 	mp_set_default(features, DEFAULT_FEATURES);
 out:
 	mp->features = STRDUP(mp->features);
-	condlog(3, "%s: features = \"%s\" %s", mp->alias, mp->features, origin);
 
-	if (strstr(mp->features, "queue_if_no_path")) {
-		if (mp->no_path_retry == NO_PATH_RETRY_UNDEF)
-			mp->no_path_retry = NO_PATH_RETRY_QUEUE;
-		else if (mp->no_path_retry == NO_PATH_RETRY_FAIL) {
-			condlog(1, "%s: config ERROR (setting: overriding 'no_path_retry' value)",
-				mp->alias);
-			mp->no_path_retry = NO_PATH_RETRY_QUEUE;
-		} else if (mp->no_path_retry != NO_PATH_RETRY_QUEUE)
-			condlog(1, "%s: config ERROR (setting: ignoring 'queue_if_no_path' because no_path_retry = %d)",
-				mp->alias, mp->no_path_retry);
-	}
+	reconcile_features_with_options(mp->alias, &mp->features,
+					&mp->no_path_retry,
+					&mp->retain_hwhandler);
+	condlog(3, "%s: features = \"%s\" %s", mp->alias, mp->features, origin);
 	return 0;
 }
 
@@ -469,9 +510,6 @@ out:
 	if (origin)
 		condlog(3, "%s: no_path_retry = %s %s", mp->alias, buff,
 			origin);
-	else if (mp->no_path_retry != NO_PATH_RETRY_UNDEF)
-		condlog(3, "%s: no_path_retry = %s (setting: inherited value)",
-			mp->alias, buff);
 	else
 		condlog(3, "%s: no_path_retry = undef (setting: multipath internal)",
 			mp->alias);
