@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <sys/types.h>
+#include <sys/utsname.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
@@ -379,4 +380,39 @@ int systemd_service_enabled(const char *dev)
 	if (!found)
 		found = systemd_service_enabled_in(dev, "/run");
 	return found;
+}
+
+static int _linux_version_code;
+static pthread_once_t _lvc_initialized = PTHREAD_ONCE_INIT;
+
+/* Returns current kernel version encoded as major*65536 + minor*256 + patch,
+ * so, for example,  to check if the kernel is greater than 2.2.11:
+ *
+ *     if (get_linux_version_code() > KERNEL_VERSION(2,2,11)) { <stuff> }
+ *
+ * Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
+ * Code copied from busybox (GPLv2 or later)
+ */
+static void
+_set_linux_version_code(void)
+{
+	struct utsname name;
+	char *t;
+	int i, r;
+
+	uname(&name); /* never fails */
+	t = name.release;
+	r = 0;
+	for (i = 0; i < 3; i++) {
+		t = strtok(t, ".");
+		r = r * 256 + (t ? atoi(t) : 0);
+		t = NULL;
+	}
+	_linux_version_code = r;
+}
+
+int get_linux_version_code(void)
+{
+	pthread_once(&_lvc_initialized, _set_linux_version_code);
+	return _linux_version_code;
 }

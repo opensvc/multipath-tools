@@ -628,7 +628,12 @@ int select_retain_hwhandler(struct config *conf, struct multipath *mp)
 
 	if (!VERSION_GE(conf->version, minv_dm_retain)) {
 		mp->retain_hwhandler = RETAIN_HWHANDLER_OFF;
-		origin = "(setting: WARNING, requires kernel version >= 1.5.0)";
+		origin = "(setting: WARNING, requires kernel dm-mpath version >= 1.5.0)";
+		goto out;
+	}
+	if (get_linux_version_code() >= KERNEL_VERSION(4, 3, 0)) {
+		mp->retain_hwhandler = RETAIN_HWHANDLER_ON;
+		origin = "(setting: implied in kernel >= 4.3.0)";
 		goto out;
 	}
 	mp_set_ovr(retain_hwhandler);

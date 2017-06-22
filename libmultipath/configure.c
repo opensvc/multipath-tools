@@ -572,7 +572,8 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 	}
 
 	if (mpp->retain_hwhandler != RETAIN_HWHANDLER_UNDEF &&
-	    mpp->retain_hwhandler != cmpp->retain_hwhandler) {
+	    mpp->retain_hwhandler != cmpp->retain_hwhandler &&
+	    get_linux_version_code() < KERNEL_VERSION(4, 3, 0)) {
 		mpp->action = ACT_RELOAD;
 		condlog(3, "%s: set ACT_RELOAD (retain_hwhandler change)",
 			mpp->alias);

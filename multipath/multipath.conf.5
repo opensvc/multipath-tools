@@ -698,15 +698,16 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B retain_attached_hw_handler
-If set to
+(Obsolete for kernels >= 4.3) If set to
 .I yes
 and the SCSI layer has already attached a hardware_handler to the device,
 multipath will not force the device to use the hardware_handler specified by
 mutipath.conf. If the SCSI layer has not attached a hardware handler,
 multipath will continue to use its configured hardware handler.
 .RS
-.TP
-The default is: \fByes\fR
+.PP
+The default is: \fByes\fR. Linux kernel 4.3 or newer always behaves as if
+\fB"retain_attached_hw_handler yes"\fR was set.
 .RE
 .
 .
@@ -1182,8 +1183,14 @@ Active/Standby mode exclusively.
 .I 1 alua
 (Hardware-dependent)
 Hardware handler for SCSI-3 ALUA compatible arrays.
-.TP
+.PP
 The default is: \fB<unset>\fR
+.PP
+\fBImportant Note:\fR Linux kernels 4.3 and newer automatically attach a device
+handler to known devices (which includes all devices supporting SCSI-3 ALUA)
+and disallow changing the handler
+afterwards. Setting \fBhardware_handler\fR for such devices on these kernels
+has no effect.
 .RE
 .
 .

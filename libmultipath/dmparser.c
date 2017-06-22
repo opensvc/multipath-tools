@@ -97,7 +97,8 @@ assemble_map (struct multipath * mp, char * params, int len)
 	} else if (mp->no_path_retry != NO_PATH_RETRY_UNDEF) {
 		add_feature(&f, no_path_retry);
 	}
-	if (mp->retain_hwhandler == RETAIN_HWHANDLER_ON)
+	if (mp->retain_hwhandler == RETAIN_HWHANDLER_ON &&
+	    get_linux_version_code() < KERNEL_VERSION(4, 3, 0))
 		add_feature(&f, retain_hwhandler);
 
 	APPEND(p, end, "%s %s %i %i", f, mp->hwhandler, nr_priority_groups,
