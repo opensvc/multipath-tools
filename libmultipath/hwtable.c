@@ -26,6 +26,55 @@
  * Moreover, if a device needs a special treatment by the SCSI
  * subsystem it should be included in drivers/scsi/scsi_devinfo.c
  */
+
+#if 0
+	/*
+	 * Copy this TEMPLATE to add new hardware.
+	 *
+	 * Keep only mandatory(.vendor and .product) and modified attributes.
+	 * Attributes with default values must be removed.
+	 * .vendor, .product, .revision and .bl_product are POSIX Extended regex.
+	 *
+	 * COMPANY_NAME
+	 *
+	 * Maintainer : XXX
+	 * Mail : XXX
+	 */
+	{
+		/* If product-ID is different from marketing name add a comment */
+		.vendor        = "VENDOR",
+		.product       = "PRODUCT",
+		.revision      = "REVISION",
+		.bl_product    = "BL_PRODUCT",
+		.pgpolicy      = FAILOVER,
+		.uid_attribute = "ID_SERIAL",
+		.selector      = "service-time 0",
+		.checker_name  = TUR,
+		.alias_prefix  = "mpath",
+		.features      = "0",
+		.hwhandler     = "0",
+		.prio_name     = PRIO_CONST,
+		.prio_args     = "",
+		.pgfailback    = -FAILBACK_MANUAL,
+		.rr_weight     = RR_WEIGHT_NONE,
+		.no_path_retry = NO_PATH_RETRY_UNDEF,
+		.minio         = 1000,
+		.minio_rq      = 1,
+		.flush_on_last_del = FLUSH_DISABLED,
+		.user_friendly_names = USER_FRIENDLY_NAMES_OFF,
+		.fast_io_fail  = 5,
+		.dev_loss      = 600,
+		.retain_hwhandler = RETAIN_HWHANDLER_ON,
+		.detect_prio   = DETECT_PRIO_ON,
+		.detect_checker = DETECT_CHECKER_ON,
+		.deferred_remove = DEFERRED_REMOVE_OFF,
+		.delay_watch_checks = DELAY_CHECKS_OFF,
+		.delay_wait_checks = DELAY_CHECKS_OFF,
+		.skip_kpartx   = SKIP_KPARTX_OFF,
+		.max_sectors_kb = MAX_SECTORS_KB_UNDEF,
+	},
+#endif
+
 static struct hwentry default_hw[] = {
 	/*
 	 * Apple
@@ -224,8 +273,8 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
-		/* MD Series */
 	{
+		/* MD Series */
 		.vendor        = "DELL",
 		.product       = "^MD3",
 		.bl_product    = "Universal Xport",
@@ -1059,53 +1108,6 @@ static struct hwentry default_hw[] = {
 		.checker_name  = DIRECTIO,
 		.retain_hwhandler = RETAIN_HWHANDLER_OFF,
 	},
-#if 0
-	/*
-	 * Copy this TEMPLATE to add new hardware.
-	 *
-	 * Keep only mandatory(.vendor and .product) and modified attributes.
-	 * Attributes with default values must be removed.
-	 * .vendor, .product, .revision and .bl_product are POSIX Extended regex.
-	 *
-	 * COMPANY_NAME
-	 *
-	 * Maintainer : XXX
-	 * Mail : XXX
-	 */
-	{
-		/* If product-ID is different from marketing name add a comment */
-		.vendor        = "VENDOR",
-		.product       = "PRODUCT",
-		.revision      = "REVISION",
-		.bl_product    = "BL_PRODUCT",
-		.pgpolicy      = FAILOVER,
-		.uid_attribute = "ID_SERIAL",
-		.selector      = "service-time 0",
-		.checker_name  = TUR,
-		.alias_prefix  = "mpath",
-		.features      = "0",
-		.hwhandler     = "0",
-		.prio_name     = PRIO_CONST,
-		.prio_args     = "",
-		.pgfailback    = -FAILBACK_MANUAL,
-		.rr_weight     = RR_WEIGHT_NONE,
-		.no_path_retry = NO_PATH_RETRY_UNDEF,
-		.minio         = 1000,
-		.minio_rq      = 1,
-		.flush_on_last_del = FLUSH_DISABLED,
-		.user_friendly_names = USER_FRIENDLY_NAMES_OFF,
-		.fast_io_fail  = 5,
-		.dev_loss      = 600,
-		.retain_hwhandler = RETAIN_HWHANDLER_ON,
-		.detect_prio   = DETECT_PRIO_ON,
-		.detect_checker = DETECT_CHECKER_ON,
-		.deferred_remove = DEFERRED_REMOVE_OFF,
-		.delay_watch_checks = DELAY_CHECKS_OFF,
-		.delay_wait_checks = DELAY_CHECKS_OFF,
-		.skip_kpartx = SKIP_KPARTX_OFF,
-		.max_sectors_kb = MAX_SECTORS_KB_UNDEF,
-	},
-#endif
 	/*
 	 * EOL
 	 */
