@@ -57,7 +57,7 @@ uninstall:
 
 clean:
 	$(RM) core *.a *.o *.gz *.so *.so.*
-	$(RM) docs/man/*.3.gz
+	$(RM) -r docs/man
 	$(MAKE) -C test clean
 
 check: all
