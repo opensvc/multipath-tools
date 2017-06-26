@@ -98,6 +98,8 @@ static struct hwentry default_hw[] = {
 		.hwhandler     = "1 alua",
 		.prio_name     = PRIO_ALUA,
 		.no_path_retry = 18,
+		.fast_io_fail  = 10,
+		.dev_loss      = MAX_DEV_LOSS_TMO,
 	},
 	{
 		/* RA8000 / ESA12000 */
