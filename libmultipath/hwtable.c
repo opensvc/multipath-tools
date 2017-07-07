@@ -196,9 +196,9 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 	},
 	{
-		/* StoreVirtual 4000 family */
+		/* StoreVirtual 4000 and 3200 families */
 		.vendor        = "LEFTHAND",
-		.product       = "^(P4000|iSCSIDisk)",
+		.product       = "(P4000|iSCSIDisk|FCDISK)",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 18,
