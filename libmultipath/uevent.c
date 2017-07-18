@@ -770,7 +770,7 @@ int uevent_listen(struct udev *udev)
 		goto out;
 	}
 	err = udev_monitor_filter_add_match_subsystem_devtype(monitor, "block",
-							      NULL);
+							      "disk");
 	if (err)
 		condlog(2, "failed to create filter : %s", strerror(-err));
 	err = udev_monitor_enable_receiving(monitor);
