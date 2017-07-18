@@ -1608,13 +1608,11 @@ get_udev_uid(struct path * pp, char *uid_attribute, struct udev_device *udev)
 	if (!value || strlen(value) == 0)
 		value = getenv(uid_attribute);
 	if (value && strlen(value)) {
-		if (strlen(value) + 1 > WWID_SIZE) {
+		len = strlcpy(pp->wwid, value, WWID_SIZE);
+		if (len >= WWID_SIZE) {
 			condlog(0, "%s: wwid overflow", pp->dev);
 			len = WWID_SIZE;
-		} else {
-			len = strlen(value);
 		}
-		strncpy(pp->wwid, value, len);
 	} else {
 		condlog(3, "%s: no %s attribute", pp->dev,
 			uid_attribute);
