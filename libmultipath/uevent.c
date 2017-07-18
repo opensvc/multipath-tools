@@ -143,35 +143,10 @@ uevent_need_merge(void)
 	return need_merge;
 }
 
-static bool
-uevent_can_discard_by_devpath(const char *devpath)
-{
-	static const char BLOCK[] = "/block/";
-	const char *tmp = strstr(devpath, BLOCK);
-
-	if (tmp == NULL) {
-		condlog(4, "no /block/ in '%s'", devpath);
-		return true;
-	}
-	tmp += sizeof(BLOCK) - 1;
-	if (*tmp == '\0')
-		/* just ".../block/" - discard */
-		return true;
-	/*
-	 * If there are more path elements after ".../block/xyz",
-	 * it's a partition - discard it; but don't discard ".../block/sda/".
-	 */
-	tmp = strchr(tmp, '/');
-	return tmp != NULL && *(tmp + 1) != '\0';
-}
-
 bool
 uevent_can_discard(struct uevent *uev)
 {
 	struct config * conf;
-
-	if (uevent_can_discard_by_devpath(uev->devpath))
-		return true;
 
 	/*
 	 * do not filter dm devices by devnode
