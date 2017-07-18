@@ -1598,6 +1598,82 @@ get_prio (struct path * pp)
 	return 0;
 }
 
+/*
+ * Mangle string of length *len starting at start
+ * by removing character sequence "00" (hex for a 0 byte),
+ * starting at end, backwards.
+ * Changes the value of *len if characters were removed.
+ * Returns a pointer to the position where "end" was moved to.
+ */
+static char
+*skip_zeroes_backward(char* start, int *len, char *end)
+{
+	char *p = end;
+
+	while (p >= start + 2 && *(p - 1) == '0' && *(p - 2) == '0')
+		p -= 2;
+
+	if (p == end)
+		return p;
+
+	memmove(p, end, start + *len + 1 - end);
+	*len -= end - p;
+
+	return p;
+}
+
+/*
+ * Fix for NVME wwids looking like this:
+ * nvme.0000-3163653363666438366239656630386200-4c696e75780000000000000000000000000000000000000000000000000000000000000000000000-00000002
+ * which are encountered in some combinations of Linux NVME host and target.
+ * The '00' are hex-encoded 0-bytes which are forbidden in the serial (SN)
+ * and model (MN) fields. Discard them.
+ * If a WWID of the above type is found, sets pp->wwid and returns a value > 0.
+ * Otherwise, returns 0.
+ */
+static int
+fix_broken_nvme_wwid(struct path *pp, const char *value, int size)
+{
+	static const char _nvme[] = "nvme.";
+	int len, i;
+	char mangled[256];
+	char *p;
+
+	len = strlen(value);
+	if (len >= sizeof(mangled))
+		return 0;
+
+	/* Check that value starts with "nvme.%04x-" */
+	if (memcmp(value, _nvme, sizeof(_nvme) - 1) || value[9] != '-')
+		return 0;
+	for (i = 5; i < 9; i++)
+		if (!isxdigit(value[i]))
+			return 0;
+
+	memcpy(mangled, value, len + 1);
+
+	/* search end of "model" part and strip trailing '00' */
+	p = memrchr(mangled, '-', len);
+	if (p == NULL)
+		return 0;
+
+	p = skip_zeroes_backward(mangled, &len, p);
+
+	/* search end of "serial" part */
+	p = memrchr(mangled, '-', p - mangled);
+	if (p == NULL || memrchr(mangled, '-', p - mangled) != mangled + 9)
+	    /* We expect exactly 3 '-' in the value */
+		return 0;
+
+	p = skip_zeroes_backward(mangled, &len, p);
+	if (len >= size)
+		return 0;
+
+	memcpy(pp->wwid, mangled, len + 1);
+	condlog(2, "%s: over-long WWID shortened to %s", pp->dev, pp->wwid);
+	return len;
+}
+
 static int
 get_udev_uid(struct path * pp, char *uid_attribute, struct udev_device *udev)
 {
@@ -1610,6 +1686,9 @@ get_udev_uid(struct path * pp, char *uid_attribute, struct udev_device *udev)
 	if (value && strlen(value)) {
 		len = strlcpy(pp->wwid, value, WWID_SIZE);
 		if (len >= WWID_SIZE) {
+			len = fix_broken_nvme_wwid(pp, value, WWID_SIZE);
+			if (len > 0)
+				return len;
 			condlog(0, "%s: wwid overflow", pp->dev);
 			len = WWID_SIZE;
 		}
