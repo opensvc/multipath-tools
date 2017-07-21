@@ -310,11 +310,17 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		.vendor        = "FUJITSU",
-		.product       = "E[248]000",
+		.product       = "E[234]000",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 10,
 		.prio_name     = PRIO_ALUA,
+	},
+	{
+		.vendor        = "FUJITSU",
+		.product       = "E[68]000",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 10,
 	},
 	/*
 	 * Hitachi
