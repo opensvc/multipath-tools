@@ -337,11 +337,12 @@ out:
 }
 
 void reconcile_features_with_options(const char *id, char **features, int* no_path_retry,
-		  int *retain_hwhandler)
+				     int *retain_hwhandler, int *skip_kpartx)
 {
 	static const char q_i_n_p[] = "queue_if_no_path";
 	static const char r_a_h_h[] = "retain_attached_hw_handler";
 	STRBUF_ON_STACK(buff);
+	static const char no_parts[] = "no_partitions";
 
 	if (*features == NULL)
 		return;
@@ -386,6 +387,19 @@ void reconcile_features_with_options(const char *id, char **features, int* no_pa
 				id, r_a_h_h, r_a_h_h);
 		remove_feature(features, r_a_h_h);
 	}
+	if (strstr(*features, no_parts)) {
+		condlog(0, "%s: option 'features \"1 %s\"' is deprecated, "
+			"please use \"skip_kpartx\" instead",
+			id, no_parts);
+		if (*skip_kpartx == SKIP_KPARTX_UNDEF) {
+			condlog(3, "%s: skip_kpartx = on (inherited setting from feature '%s')",
+				id, no_parts);
+			*skip_kpartx = SKIP_KPARTX_ON;
+		} else if (*skip_kpartx == SKIP_KPARTX_OFF)
+			condlog(2, "%s: ignoring feature '%s' because skip_kpartx is set to 'off'",
+				id, no_parts);
+		remove_feature(features, no_parts);
+	}
 }
 
 int select_features(struct config *conf, struct multipath *mp)
@@ -402,7 +416,8 @@ out:
 
 	reconcile_features_with_options(mp->alias, &mp->features,
 					&mp->no_path_retry,
-					&mp->retain_hwhandler);
+					&mp->retain_hwhandler,
+					&mp->skip_kpartx);
 	condlog(3, "%s: features = \"%s\" %s", mp->alias, mp->features, origin);
 	return 0;
 }

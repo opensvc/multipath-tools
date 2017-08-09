@@ -1119,7 +1119,7 @@ cli_resume(void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return 1;
 
-	udev_flags = (mpp->skip_kpartx)? MPATH_UDEV_NO_KPARTX_FLAG : 0;
+	udev_flags = (mpp->skip_kpartx == SKIP_KPARTX_ON)? MPATH_UDEV_NO_KPARTX_FLAG : 0;
 	if (mpp->wait_for_udev) {
 		condlog(2, "%s: device not fully created, failing resume",
 			mpp->alias);

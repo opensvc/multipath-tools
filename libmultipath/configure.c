@@ -309,6 +309,7 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 
 	select_no_path_retry(conf, mpp);
 	select_retain_hwhandler(conf, mpp);
+	select_skip_kpartx(conf, mpp);
 
 	save_attr = steal_ptr(mpp->features);
 	select_features(conf, mpp);

@@ -448,7 +448,8 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	snprintf(id, sizeof(id), "%s/%s", dst->vendor, dst->product);
 	reconcile_features_with_options(id, &dst->features,
 					&dst->no_path_retry,
-					&dst->retain_hwhandler);
+					&dst->retain_hwhandler,
+					&dst->skip_kpartx);
 	return 0;
 }
 
