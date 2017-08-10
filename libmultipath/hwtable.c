@@ -796,9 +796,9 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	{
-		/* 3510 */
+		/* (Dot Hill) 3310, 3320, 3510 and 3511 */
 		.vendor        = "SUN",
-		.product       = "StorEdge 3510",
+		.product       = "StorEdge 3",
 		.pgpolicy      = MULTIBUS,
 	},
 	{
