@@ -471,7 +471,14 @@ respectively.
 The default depends on the kernel parameter \fBdm_mod.use_blk_mq\fR. It is
 \fImq\fR if the latter is set, and \fIrq\fR otherwise.
 .TP
+.I no_partitions
+(Deprecated, superseded by \fIskip_kpartx\fR)
+Disable automatic partitions generation via kpartx. This is supported for compatibility
+with earlier SUSE releases. If \fIskip_kpartx\fR is set, it takes precedence over this
+feature.
+.TP
 The default is: \fB<unset>\fR
+.\" XXX
 .RE
 .
 .
