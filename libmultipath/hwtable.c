@@ -1124,6 +1124,34 @@ static struct hwentry default_hw[] = {
 		.retain_hwhandler = RETAIN_HWHANDLER_OFF,
 	},
 	/*
+	 * Dot Hill Systems - Seagate Technology
+	 */
+	{
+		/* SANnet family */
+		.vendor        = "DotHill",
+		.product       = "SANnet",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 30,
+	},
+	{
+		/* R/Evolution family */
+		.vendor        = "DotHill",
+		.product       = "R/Evo",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 30,
+	},
+	{
+		/* AssuredSAN family */
+		.vendor        = "DotHill",
+		.product       = "^DH",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 30,
+	},
+	/*
 	 * EOL
 	 */
 	{
