@@ -3,8 +3,8 @@ include ../Makefile.inc
 CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathpersistdir)
 LDFLAGS += $(BIN_LDFLAGS)
 
-LIBDEPS += -lpthread -ldevmapper -L$(mpathpersistdir) -lmpathpersist \
-	   -L$(multipathdir) -L$(mpathcmddir) -lmpathcmd -lmultipath -ludev
+LIBDEPS += -L$(mpathpersistdir) -lmpathpersist -L$(multipathdir) -lmultipath \
+	-L$(mpathcmddir) -lmpathcmd -lpthread -ldevmapper -ludev
 
 EXEC = mpathpersist
 

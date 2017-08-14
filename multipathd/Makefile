@@ -9,8 +9,8 @@ include ../Makefile.inc
 CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathpersistdir) \
 	  -I$(mpathcmddir) -I$(thirdpartydir)
 LDFLAGS += $(BIN_LDFLAGS)
-LIBDEPS += -ludev -ldl -L$(multipathdir) -lmultipath -L$(mpathpersistdir) \
-	   -lmpathpersist -L$(mpathcmddir) -lmpathcmd -lurcu -lpthread \
+LIBDEPS += -L$(multipathdir) -lmultipath -L$(mpathpersistdir) -lmpathpersist \
+	   -L$(mpathcmddir) -lmpathcmd -ludev -ldl -lurcu -lpthread \
 	   -ldevmapper -lreadline
 
 ifdef SYSTEMD
