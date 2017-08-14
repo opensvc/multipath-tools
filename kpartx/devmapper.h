@@ -19,6 +19,5 @@ dev_t dm_get_first_dep(char *devname);
 char * dm_mapuuid(const char *mapname);
 int dm_devn (const char * mapname, int *major, int *minor);
 int dm_remove_partmaps (char * mapname, char *uuid, dev_t devt, int verbose);
-int dm_no_partitions(char * mapname);
 
 #endif /* _KPARTX_DEVMAPPER_H */
