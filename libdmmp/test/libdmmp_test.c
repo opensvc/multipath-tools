@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016 Red Hat, Inc.
+ * Copyright (C) 2015-2017 Red Hat, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #include <libdmmp/libdmmp.h>
 
@@ -106,11 +107,14 @@ int main(int argc, char *argv[])
 	struct dmmp_context *ctx = NULL;
 	struct dmmp_mpath **dmmp_mps = NULL;
 	uint32_t dmmp_mp_count = 0;
+	uint32_t old_dmmp_mp_count = 0;
 	const char *name = NULL;
 	const char *wwid = NULL;
 	const char *kdev = NULL;
 	uint32_t i = 0;
 	int rc = EXIT_SUCCESS;
+	const char *old_name = NULL;
+	bool found = false;
 
 	ctx = dmmp_context_new();
 	dmmp_context_log_priority_set(ctx, DMMP_LOG_PRIORITY_DEBUG);
@@ -119,7 +123,7 @@ int main(int argc, char *argv[])
 	dmmp_context_timeout_set(ctx, TMO);
 	if (dmmp_context_timeout_get(ctx) != TMO)
 		FAIL(rc, out, "dmmp_context_timeout_set(): Failed to set "
-		     "timeout to %u", TMO);
+		     "timeout to %u\n", TMO);
 
 	if (dmmp_mpath_array_get(ctx, &dmmp_mps, &dmmp_mp_count) != 0)
 		FAIL(rc, out, "dmmp_mpath_array_get(): rc != 0\n");
@@ -140,7 +144,46 @@ int main(int argc, char *argv[])
 		if (rc != 0)
 			goto out;
 	}
+
+	old_name = strdup(name);
+	if (old_name == NULL)
+		FAIL(rc, out, "strdup(): no memory\n");
+
+	old_dmmp_mp_count = dmmp_mp_count;
+
 	dmmp_mpath_array_free(dmmp_mps, dmmp_mp_count);
+
+	if (dmmp_flush_mpath(ctx, old_name) != DMMP_OK)
+		FAIL(rc, out, "dmmp_flush_mpath(): Failed\n");
+
+	PASS("dmmp_flush_mpath(): OK\n");
+
+	if (dmmp_reconfig(ctx) != DMMP_OK)
+		FAIL(rc, out, "dmmp_reconfig(): Failed\n");
+
+	PASS("dmmp_reconfig(): OK\n");
+
+	if (dmmp_mpath_array_get(ctx, &dmmp_mps, &dmmp_mp_count) != 0)
+		FAIL(rc, out, "dmmp_mpath_array_get(): rc != 0\n");
+	if (dmmp_mp_count == 0)
+		FAIL(rc, out, "dmmp_mpath_array_get(): "
+		     "Got no multipath devices\n");
+
+	if (dmmp_mp_count != old_dmmp_mp_count)
+		FAIL(rc, out, "Got different mpath count after reconfig: "
+		     "old %" PRIu32 ", new %" PRIu32 "\n", old_dmmp_mp_count,
+		     dmmp_mp_count);
+
+	for (i = 0; i < dmmp_mp_count; ++i) {
+		if (strcmp(old_name, dmmp_mpath_name_get(dmmp_mps[i])) == 0) {
+			found = true;
+			break;
+		}
+	}
+	if (found == false)
+		FAIL(rc, out, "dmmp_reconfig() does not recreate deleted "
+		     "mpath %s\n", old_name);
+
 out:
 	dmmp_context_free(ctx);
 	exit(rc);

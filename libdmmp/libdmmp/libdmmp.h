@@ -39,6 +39,9 @@ extern "C" {
 #define DMMP_ERR_IPC_ERROR		4
 #define DMMP_ERR_NO_DAEMON		5
 #define DMMP_ERR_INCOMPATIBLE		6
+#define DMMP_ERR_MPATH_BUSY		7
+#define DMMP_ERR_MPATH_NOT_FOUND	8
+#define DMMP_ERR_INVALID_ARGUMENT	9
 
 /*
  * Use the syslog severity level as log priority
@@ -646,6 +649,63 @@ DMMP_DLL_EXPORT uint32_t dmmp_path_status_get(struct dmmp_path *dmmp_p);
  *	const char *. The meaning of status value.
  */
 DMMP_DLL_EXPORT const char *dmmp_path_status_str(uint32_t path_status);
+
+/**
+ * dmmp_flush_mpath() - Flush specified multipath device map if unused.
+ *
+ * Flush a multipath device map specified as parameter, if unused.
+ *
+ * @ctx:
+ *	Pointer of 'struct dmmp_context'.
+ *	If this pointer is NULL, your program will be terminated by assert.
+ * @mpath_name:
+ *	const char *. The name of multipath device map.
+ *
+ * Return:
+ *	int. Valid error codes are:
+ *
+ *	* DMMP_OK
+ *
+ *	* DMMP_ERR_BUG
+ *
+ *	* DMMP_ERR_NO_MEMORY
+ *
+ *	* DMMP_ERR_NO_DAEMON
+ *
+ *	* DMMP_ERR_MPATH_BUSY
+ *
+ *	* DMMP_ERR_MPATH_NOT_FOUND
+ *
+ *	* DMMP_ERR_INVALID_ARGUMENT
+ *
+ *	Error number could be converted to string by dmmp_strerror().
+ */
+DMMP_DLL_EXPORT int dmmp_flush_mpath(struct dmmp_context *ctx,
+				     const char *mpath_name);
+
+/**
+ * dmmp_reconfig() - Instruct multipathd daemon to do reconfiguration.
+ *
+ * Instruct multipathd daemon to do reconfiguration.
+ *
+ * @ctx:
+ *	Pointer of 'struct dmmp_context'.
+ *	If this pointer is NULL, your program will be terminated by assert.
+ *
+ * Return:
+ *	int. Valid error codes are:
+ *
+ *	* DMMP_OK
+ *
+ *	* DMMP_ERR_BUG
+ *
+ *	* DMMP_ERR_NO_MEMORY
+ *
+ *	* DMMP_ERR_NO_DAEMON
+ *
+ *	Error number could be converted to string by dmmp_strerror().
+ */
+DMMP_DLL_EXPORT int dmmp_reconfig(struct dmmp_context *ctx);
 
 #ifdef __cplusplus
 } /* End of extern "C" */

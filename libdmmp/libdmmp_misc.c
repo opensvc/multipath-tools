@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 - 2016 Red Hat, Inc.
+ * Copyright (C) 2015 - 2017 Red Hat, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,6 +46,9 @@ static const struct _num_str_conv _DMMP_RC_MSG_CONV[] = {
 	{DMMP_ERR_IPC_ERROR, "Error when communicate with multipathd daemon"},
 	{DMMP_ERR_NO_DAEMON, "The multipathd daemon not started"},
 	{DMMP_ERR_INCOMPATIBLE, "Incompatible multipathd daemon version"},
+	{DMMP_ERR_MPATH_BUSY, "Specified multipath device map is in use"},
+	{DMMP_ERR_MPATH_NOT_FOUND, "Specified multipath not found"},
+	{DMMP_ERR_INVALID_ARGUMENT, "Invalid argument"},
 };
 
 _dmmp_str_func_gen(dmmp_strerror, int, rc, _DMMP_RC_MSG_CONV);

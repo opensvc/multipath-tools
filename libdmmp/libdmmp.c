@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 - 2016 Red Hat, Inc.
+ * Copyright (C) 2015 - 2017 Red Hat, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -45,6 +46,8 @@
 #define _DMMP_JSON_MAJOR_VERSION		0
 #define _DMMP_JSON_MAPS_KEY			"maps"
 #define _ERRNO_STR_BUFF_SIZE			256
+#define _IPC_MAX_CMD_LEN			512
+/* ^ Was _MAX_CMD_LEN in ./libmultipath/uxsock.h */
 
 struct dmmp_context {
 	void (*log_func)(struct dmmp_context *ctx, int priority,
@@ -65,6 +68,8 @@ struct dmmp_context {
  */
 static int _process_cmd(struct dmmp_context *ctx, int fd, const char *cmd,
 			char **output);
+
+static int _ipc_connect(struct dmmp_context *ctx, int *fd);
 
 _dmmp_getter_func_gen(dmmp_context_log_priority_get,
 		      struct dmmp_context, ctx, log_priority,
@@ -153,9 +158,7 @@ int dmmp_mpath_array_get(struct dmmp_context *ctx,
 	uint32_t i = 0;
 	int cur_json_major_version = -1;
 	int ar_maps_len = -1;
-	int socket_fd = -1;
-	int errno_save = 0;
-	char errno_str_buff[_ERRNO_STR_BUFF_SIZE];
+	int ipc_fd = -1;
 
 	assert(ctx != NULL);
 	assert(dmmp_mps != NULL);
@@ -164,24 +167,9 @@ int dmmp_mpath_array_get(struct dmmp_context *ctx,
 	*dmmp_mps = NULL;
 	*dmmp_mp_count = 0;
 
-	socket_fd = mpath_connect();
-	if (socket_fd == -1) {
-		errno_save = errno;
-		memset(errno_str_buff, 0, _ERRNO_STR_BUFF_SIZE);
-		strerror_r(errno_save, errno_str_buff, _ERRNO_STR_BUFF_SIZE);
-		if (errno_save == ECONNREFUSED) {
-			rc = DMMP_ERR_NO_DAEMON;
-			_error(ctx, "Socket connection refuse. "
-			       "Maybe multipathd daemon is not running");
-		} else {
-			_error(ctx, "IPC failed with error %d(%s)", errno_save,
-			       errno_str_buff);
-			rc = DMMP_ERR_IPC_ERROR;
-		}
-		goto out;
-	}
+	_good(_ipc_connect(ctx, &ipc_fd), rc, out);
 
-	_good(_process_cmd(ctx, socket_fd, _DMMP_IPC_SHOW_JSON_CMD, &j_str),
+	_good(_process_cmd(ctx, ipc_fd, _DMMP_IPC_SHOW_JSON_CMD, &j_str),
 	      rc, out);
 
 	_debug(ctx, "Got json output from multipathd: '%s'", j_str);
@@ -258,8 +246,8 @@ int dmmp_mpath_array_get(struct dmmp_context *ctx,
 	}
 
 out:
-	if (socket_fd >= 0)
-		mpath_disconnect(socket_fd);
+	if (ipc_fd >= 0)
+		mpath_disconnect(ipc_fd);
 	free(j_str);
 	if (j_token != NULL)
 		json_tokener_free(j_token);
@@ -369,5 +357,114 @@ out:
 		free(*output);
 		*output = NULL;
 	}
+	return rc;
+}
+
+static int _ipc_connect(struct dmmp_context *ctx, int *fd)
+{
+	int rc = DMMP_OK;
+	int errno_save = 0;
+	char errno_str_buff[_ERRNO_STR_BUFF_SIZE];
+
+	assert(ctx != NULL);
+	assert(fd != NULL);
+
+	*fd = -1;
+
+	*fd = mpath_connect();
+	if (*fd == -1) {
+		errno_save = errno;
+		memset(errno_str_buff, 0, _ERRNO_STR_BUFF_SIZE);
+		strerror_r(errno_save, errno_str_buff, _ERRNO_STR_BUFF_SIZE);
+		if (errno_save == ECONNREFUSED) {
+			rc = DMMP_ERR_NO_DAEMON;
+			_error(ctx, "Socket connection refuse. "
+			       "Maybe multipathd daemon is not running");
+		} else {
+			_error(ctx, "IPC failed with error %d(%s)", errno_save,
+			       errno_str_buff);
+			rc = DMMP_ERR_IPC_ERROR;
+		}
+	}
+	return rc;
+}
+
+int dmmp_flush_mpath(struct dmmp_context *ctx, const char *mpath_name)
+{
+	int rc = DMMP_OK;
+	struct dmmp_mpath **dmmp_mps = NULL;
+	uint32_t dmmp_mp_count = 0;
+	uint32_t i = 0;
+	bool found = false;
+	int ipc_fd = -1;
+	char cmd[_IPC_MAX_CMD_LEN];
+	char *output = NULL;
+
+	assert(ctx != NULL);
+	assert(mpath_name != NULL);
+
+	snprintf(cmd, _IPC_MAX_CMD_LEN, "del map %s", mpath_name);
+	if (strlen(cmd) == _IPC_MAX_CMD_LEN - 1) {
+		rc = DMMP_ERR_INVALID_ARGUMENT;
+		_error(ctx, "Invalid mpath name %s", mpath_name);
+		goto out;
+	}
+
+	_good(_ipc_connect(ctx, &ipc_fd), rc, out);
+	_good(_process_cmd(ctx, ipc_fd, cmd, &output), rc, out);
+
+	/* _process_cmd() already make sure output is not NULL */
+
+	if (strncmp(output, "fail", strlen("fail")) == 0) {
+		/* Check whether specified mpath exits */
+		_good(dmmp_mpath_array_get(ctx, &dmmp_mps, &dmmp_mp_count),
+		      rc, out);
+
+		for (i = 0; i < dmmp_mp_count; ++i) {
+			if (strcmp(dmmp_mpath_name_get(dmmp_mps[i]),
+				   mpath_name) == 0) {
+				found = true;
+				break;
+			}
+		}
+
+		if (found == false) {
+			rc = DMMP_ERR_MPATH_NOT_FOUND;
+			_error(ctx, "Specified mpath %s not found", mpath_name);
+			goto out;
+		}
+
+		rc = DMMP_ERR_MPATH_BUSY;
+		_error(ctx, "Specified mpath is in use");
+	} else if (strncmp(output, "ok", strlen("ok")) != 0) {
+		rc = DMMP_ERR_BUG;
+		_error(ctx, "Got unexpected output for cmd '%s': '%s'",
+		       cmd, output);
+	}
+
+out:
+	if (ipc_fd >= 0)
+		mpath_disconnect(ipc_fd);
+	dmmp_mpath_array_free(dmmp_mps, dmmp_mp_count);
+	free(output);
+	return rc;
+}
+
+int dmmp_reconfig(struct dmmp_context *ctx)
+{
+	int rc = DMMP_OK;
+	int ipc_fd = -1;
+	char *output = NULL;
+	char cmd[_IPC_MAX_CMD_LEN];
+
+	snprintf(cmd, _IPC_MAX_CMD_LEN, "%s", "reconfigure");
+
+	_good(_ipc_connect(ctx, &ipc_fd), rc, out);
+	_good(_process_cmd(ctx, ipc_fd, cmd, &output), rc, out);
+
+out:
+	if (ipc_fd >= 0)
+		mpath_disconnect(ipc_fd);
+	free(output);
 	return rc;
 }
