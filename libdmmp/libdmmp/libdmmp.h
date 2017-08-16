@@ -171,6 +171,7 @@ DMMP_DLL_EXPORT void dmmp_context_free(struct dmmp_context *ctx);
  *
  * @tmo:
  *	Timeout in milliseconds(1 seconds equal 1000 milliseconds).
+ *	0 means infinite, function only return when error or pass.
  *
  * Return:
  *	void

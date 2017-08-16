@@ -35,7 +35,7 @@
 	} while(0)
 #define PASS(...) fprintf(stdout, "PASS: "__VA_ARGS__ );
 #define FILE_NAME_SIZE 256
-#define TMO 10000	/* Forcing timeout to 10 seconds */
+#define TMO 60000		/* Forcing timeout to 60 seconds */
 
 int test_paths(struct dmmp_path_group *mp_pg)
 {
