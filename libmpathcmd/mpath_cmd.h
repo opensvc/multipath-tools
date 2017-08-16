@@ -26,7 +26,6 @@ extern "C" {
 
 #define DEFAULT_SOCKET		"/org/kernel/linux/storage/multipathd"
 #define DEFAULT_REPLY_TIMEOUT	4000
-#define MAX_REPLY_LEN		65536
 
 
 /*
