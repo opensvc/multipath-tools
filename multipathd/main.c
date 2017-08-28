@@ -161,13 +161,25 @@ sd_notify_status(void)
 	case DAEMON_CONFIGURE:
 		return "STATUS=configure";
 	case DAEMON_IDLE:
-		return "STATUS=idle";
 	case DAEMON_RUNNING:
-		return "STATUS=running";
+		return "STATUS=up";
 	case DAEMON_SHUTDOWN:
 		return "STATUS=shutdown";
 	}
 	return NULL;
+}
+
+static void do_sd_notify(enum daemon_status old_state)
+{
+	/*
+	 * Checkerloop switches back and forth between idle and running state.
+	 * No need to tell systemd each time.
+	 * These notifications cause a lot of overhead on dbus.
+	 */
+	if ((running_state == DAEMON_IDLE || running_state == DAEMON_RUNNING) &&
+	    (old_state == DAEMON_IDLE || old_state == DAEMON_RUNNING))
+		return;
+	sd_notify(0, sd_notify_status());
 }
 
 static void config_cleanup(void *arg)
@@ -179,10 +191,12 @@ void post_config_state(enum daemon_status state)
 {
 	pthread_mutex_lock(&config_lock);
 	if (state != running_state) {
+		enum daemon_status old_state = running_state;
+
 		running_state = state;
 		pthread_cond_broadcast(&config_cond);
 #ifdef USE_SYSTEMD
-		sd_notify(0, sd_notify_status());
+		do_sd_notify(old_state);
 #endif
 	}
 	pthread_mutex_unlock(&config_lock);
@@ -195,6 +209,8 @@ int set_config_state(enum daemon_status state)
 	pthread_cleanup_push(config_cleanup, NULL);
 	pthread_mutex_lock(&config_lock);
 	if (running_state != state) {
+		enum daemon_status old_state = running_state;
+
 		if (running_state != DAEMON_IDLE) {
 			struct timespec ts;
 
@@ -207,7 +223,7 @@ int set_config_state(enum daemon_status state)
 			running_state = state;
 			pthread_cond_broadcast(&config_cond);
 #ifdef USE_SYSTEMD
-			sd_notify(0, sd_notify_status());
+			do_sd_notify(old_state);
 #endif
 		}
 	}
