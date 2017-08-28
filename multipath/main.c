@@ -119,7 +119,7 @@ usage (char * progname)
 		"  -c      check if a device should be a path in a multipath device\n"
 		"  -q      allow queue_if_no_path when multipathd is not running\n"
 		"  -d      dry run, do not create or update devmaps\n"
-		"  -t      dump internal hardware table\n"
+		"  -t      display the currently used multipathd configuration\n"
 		"  -r      force devmap reload\n"
 		"  -i      ignore wwids file\n"
 		"  -B      treat the bindings file as read only\n"
