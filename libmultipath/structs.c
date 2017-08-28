@@ -516,8 +516,7 @@ void setup_feature(struct multipath *mpp, char *feature)
 int add_feature(char **f, const char *n)
 {
 	int c = 0, d, l;
-	char *e, *p, *t;
-	const char *q;
+	char *e, *t;
 
 	if (!f)
 		return 1;
@@ -525,6 +524,11 @@ int add_feature(char **f, const char *n)
 	/* Nothing to do */
 	if (!n || *n == '0')
 		return 0;
+
+	if (strchr(n, ' ') != NULL) {
+		condlog(0, "internal error: feature \"%s\" contains spaces", n);
+		return 1;
+	}
 
 	/* default feature is null */
 	if(!*f)
@@ -543,55 +547,29 @@ int add_feature(char **f, const char *n)
 
 	/* Get feature count */
 	c = strtoul(*f, &e, 10);
-	if (*f == e)
-		/* parse error */
+	if (*f == e || (*e != ' ' && *e != '\0')) {
+		condlog(0, "parse error in feature string \"%s\"", *f);
 		return 1;
-
-	/* Check if we need to increase feature count space */
-	l = strlen(*f) + strlen(n) + 1;
-
-	/* Count new features */
-	if ((c % 10) == 9)
-		l++;
-	c++;
-	q = n;
-	while (*q != '\0') {
-		if (*q == ' ' && q[1] != '\0' && q[1] != ' ') {
-			if ((c % 10) == 9)
-				l++;
-			c++;
-		}
-		q++;
 	}
+
+	/* Add 1 digit and 1 space */
+	l = strlen(e) + strlen(n) + 2;
+
+	c++;
+	/* Check if we need more digits for feature count */
+	for (d = c; d >= 10; d /= 10)
+		l++;
 
 	t = MALLOC(l + 1);
 	if (!t)
 		return 1;
 
-	memset(t, 0, l + 1);
+	/* e: old feature string with leading space, or "" */
+	if (*e == ' ')
+		while (*(e + 1) == ' ')
+			e++;
 
-	/* Update feature count */
-	d = c;
-	l = 1;
-	while (d > 9) {
-		d /= 10;
-		l++;
-	}
-	p = t;
-	snprintf(p, l + 2, "%0d ", c);
-
-	/* Copy the feature string */
-	p = strchr(*f, ' ');
-
-	if (p) {
-		while (*p == ' ')
-			p++;
-		strcat(t, p);
-		strcat(t, " ");
-	} else {
-		p = t + strlen(t);
-	}
-	strcat(t, n);
+	snprintf(t, l + 1, "%0d%s %s", c, e, n);
 
 	FREE(*f);
 	*f = t;
