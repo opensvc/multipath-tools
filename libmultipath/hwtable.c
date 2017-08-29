@@ -964,13 +964,24 @@ static struct hwentry default_hw[] = {
 	},
 	/*
 	 * Infinidat
+	 *
+	 * Maintainer: Arnon Yaari
+	 * Mail: arnony@infinidat.com
 	 */
 	{
 		.vendor        = "NFINIDAT",
 		.product       = "InfiniBox",
 		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.pgfailback    = 30,
 		.prio_name     = PRIO_ALUA,
+		.selector      = "round-robin 0",
+		.rr_weight     = RR_WEIGHT_PRIO,
+		.no_path_retry = NO_PATH_RETRY_FAIL,
+		.minio         = 1,
+		.minio_rq      = 1,
+		.flush_on_last_del = FLUSH_ENABLED,
+		.fast_io_fail  = 15,
+		.dev_loss      = 15,
 	},
 	/*
 	 * Nimble Storage
