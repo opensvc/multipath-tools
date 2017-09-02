@@ -25,14 +25,26 @@ ENV{DM_WWN}=="?*", ENV{DM_PART}!="?*", \
 ENV{DM_WWN}=="?*", ENV{DM_PART}=="?*", \
 	SYMLINK+="disk/by-id/wwn-$env{DM_WWN}-part$env{DM_PART}"
 
-# Create persistent by-label/by-uuid links
-ENV{ID_FS_USAGE}=="?*", IMPORT{db}="ID_FS_USAGE"
-ENV{ID_FS_UUID_ENC}=="?*", IMPORT{db}="ID_FS_UUID_ENC"
+# Create persistent by-label/by-uuid links.
+# multipath maps with DM_NOSCAN!=1 are handled in 13-dm-disk.rules.
+DM_UUID=="mpath-*", ENV{DM_NOSCAN}!="1", GOTO="symlink_end"
+
+# For partitions, we don't have DM_NOSCAN.
+# Simply load variables from db if they aren't set.
+# 11-dm-mpath.rules does this for mpath maps.
+# Fixme: we have currently no way to avoid calling blkid on
+# partitions of broken mpath maps.
+ENV{DM_UUID}!="part*-*-*", GOTO="import_end"
+ENV{ID_FS_USAGE}!="?*", IMPORT{db}="ID_FS_USAGE"
+ENV{ID_FS_UUID_ENC}!="?*", IMPORT{db}="ID_FS_UUID_ENC"
+ENV{ID_FS_LABEL_ENC}!="?*", IMPORT{db}="ID_FS_LABEL_ENC"
+LABEL="import_end"
+
 ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{ID_FS_UUID_ENC}=="?*", \
-	SYMLINK+="disk/by-uuid/$env{ID_FS_UUID_ENC}"
-ENV{ID_FS_LABEL_ENC}=="?*", IMPORT{db}="ID_FS_LABEL_ENC"
+       SYMLINK+="disk/by-uuid/$env{ID_FS_UUID_ENC}"
 ENV{ID_FS_USAGE}=="filesystem|other", ENV{ID_FS_LABEL_ENC}=="?*", \
-	SYMLINK+="disk/by-label/$env{ID_FS_LABEL_ENC}"
+       SYMLINK+="disk/by-label/$env{ID_FS_LABEL_ENC}"
+LABEL="symlink_end"
 
 # Create dm tables for partitions
 ENV{DM_ACTION}=="PATH_FAILED|PATH_REINSTATED", GOTO="kpartx_end"
