@@ -39,7 +39,7 @@ ENV{DM_ACTION}=="PATH_FAILED", GOTO="mpath_action"
 
 # This event is either a PATH_REINSTATED or a table reload where
 # there are active paths. Mark the device ready
-ENV{MPATH_DEVICE_READY}=""
+ENV{MPATH_DEVICE_READY}="1"
 
 LABEL="mpath_action"
 # DM_SUBSYSTEM_UDEV_FLAG0 is the "RELOAD" flag for multipath subsystem.
@@ -58,10 +58,10 @@ ENV{MPATH_DEVICE_READY}=="0", ENV{DM_NOSCAN}="1"
 # Also skip all foreign rules if no path is available.
 # Remember the original value of DM_DISABLE_OTHER_RULES_FLAG
 # and restore it back once we have at least one path available.
-ENV{MPATH_DEVICE_READY}=="0", ENV{.MPATH_DEVICE_READY_OLD}!="0",\
+ENV{MPATH_DEVICE_READY}=="0", ENV{.MPATH_DEVICE_READY_OLD}=="1",\
 	ENV{DM_DISABLE_OTHER_RULES_FLAG_OLD}=="",\
-	ENV{DM_DISABLE_OTHER_RULES_FLAG_OLD}="$env{DM_UDEV_DISABLE_OTHER_RULES_FLAG}",\
-	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="1"
+	ENV{DM_DISABLE_OTHER_RULES_FLAG_OLD}="$env{DM_UDEV_DISABLE_OTHER_RULES_FLAG}"
+ENV{MPATH_DEVICE_READY}=="0", ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="1"
 ENV{MPATH_DEVICE_READY}!="0", ENV{.MPATH_DEVICE_READY_OLD}=="0",\
 	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="$env{DM_DISABLE_OTHER_RULES_FLAG_OLD}",\
 	ENV{DM_DISABLE_OTHER_RULES_FLAG_OLD}="",\
