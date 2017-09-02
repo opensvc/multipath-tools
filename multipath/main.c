@@ -117,6 +117,7 @@ usage (char * progname)
 		"  -F      flush all multipath device maps\n"
 		"  -a      add a device wwid to the wwids file\n"
 		"  -c      check if a device should be a path in a multipath device\n"
+		"  -C      check if a multipath device has usable paths\n"
 		"  -q      allow queue_if_no_path when multipathd is not running\n"
 		"  -d      dry run, do not create or update devmaps\n"
 		"  -t      display the currently used multipathd configuration\n"
@@ -258,6 +259,81 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 	return 0;
 }
 
+static int check_usable_paths(struct config *conf,
+			      const char *devpath, enum devtypes dev_type)
+{
+	struct udev_device *ud = NULL;
+	struct multipath *mpp = NULL;
+	struct pathgroup *pg;
+	struct path *pp;
+	char *mapname;
+	vector pathvec = NULL;
+	char params[PARAMS_SIZE], status[PARAMS_SIZE];
+	dev_t devt;
+	int r = 1, i, j;
+
+	ud = get_udev_device(devpath, dev_type);
+	if (ud == NULL)
+		return r;
+
+	devt = udev_device_get_devnum(ud);
+	if (!dm_is_dm_major(major(devt))) {
+		condlog(1, "%s is not a dm device", devpath);
+		goto out;
+	}
+
+	mapname = dm_mapname(major(devt), minor(devt));
+	if (mapname == NULL) {
+		condlog(1, "dm device not found: %s", devpath);
+		goto out;
+	}
+
+	if (!dm_is_mpath(mapname)) {
+		condlog(1, "%s is not a multipath map", devpath);
+		goto free;
+	}
+
+	/* pathvec is needed for disassemble_map */
+	pathvec = vector_alloc();
+	if (pathvec == NULL)
+		goto free;
+
+	mpp = dm_get_multipath(mapname);
+	if (mpp == NULL)
+		goto free;
+
+	dm_get_map(mpp->alias, &mpp->size, params);
+	dm_get_status(mpp->alias, status);
+	disassemble_map(pathvec, params, mpp, 0);
+	disassemble_status(status, mpp);
+
+	vector_foreach_slot (mpp->pg, pg, i) {
+		vector_foreach_slot (pg->paths, pp, j) {
+			pp->udev = get_udev_device(pp->dev_t, DEV_DEVT);
+			if (pp->udev == NULL)
+				continue;
+			if (pathinfo(pp, conf, DI_SYSFS|DI_NOIO) != PATHINFO_OK)
+				continue;
+
+			if (pp->state == PATH_UP &&
+			    pp->dmstate == PSTATE_ACTIVE) {
+				condlog(3, "%s: path %s is usable",
+					devpath, pp->dev);
+				r = 0;
+				goto found;
+			}
+		}
+	}
+found:
+	condlog(2, "%s:%s usable paths found", devpath, r == 0 ? "" : " no");
+free:
+	FREE(mapname);
+	free_multipath(mpp, FREE_PATHS);
+	vector_free(pathvec);
+out:
+	udev_device_unref(ud);
+	return r;
+}
 
 /*
  * Return value:
@@ -522,7 +598,7 @@ main (int argc, char *argv[])
 		exit(1);
 	multipath_conf = conf;
 	conf->retrigger_tries = 0;
-	while ((arg = getopt(argc, argv, ":adchl::FfM:v:p:b:BrR:itquwW")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":adcChl::FfM:v:p:b:BrR:itquUwW")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
 			break;
@@ -546,6 +622,9 @@ main (int argc, char *argv[])
 			break;
 		case 'c':
 			cmd = CMD_VALID_PATH;
+			break;
+		case 'C':
+			cmd = CMD_USABLE_PATHS;
 			break;
 		case 'd':
 			if (cmd == CMD_CREATE)
@@ -591,6 +670,10 @@ main (int argc, char *argv[])
 			exit(0);
 		case 'u':
 			cmd = CMD_VALID_PATH;
+			dev_type = DEV_UEVENT;
+			break;
+		case 'U':
+			cmd = CMD_USABLE_PATHS;
 			dev_type = DEV_UEVENT;
 			break;
 		case 'w':
@@ -674,7 +757,10 @@ main (int argc, char *argv[])
 		condlog(0, "failed to initialize prioritizers");
 		goto out;
 	}
-
+	if (cmd == CMD_USABLE_PATHS) {
+		r = check_usable_paths(conf, dev, dev_type);
+		goto out;
+	}
 	if (cmd == CMD_VALID_PATH &&
 	    (!dev || dev_type == DEV_DEVMAP)) {
 		condlog(0, "the -c option requires a path to check");

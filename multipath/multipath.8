@@ -25,7 +25,7 @@ multipath \- Device mapper target autoconfig.
 .RB [\| \-b\ \c
 .IR bindings_file \|]
 .RB [\| \-d \|]
-.RB [\| \-h | \-l | \-ll | \-f | \-t | \-F | \-B | \-c | \-q | \|-r | \|-i | \-a | \|-u | \-w | \-W \|]
+.RB [\| \-h | \-l | \-ll | \-f | \-t | \-F | \-B | \-c | \-C | \-q | \-r | \-i | \-a | \-u | \-U | \-w | \-W \|]
 .RB [\| \-p\ \c
 .IR failover | multibus | group_by_serial | group_by_prio | group_by_node_name \|]
 .RB [\| \-R\ \c
@@ -110,6 +110,12 @@ Set user_friendly_names bindings file location.  The default is
 Check if a block device should be a path in a multipath device.
 .
 .TP
+.B \-C
+Check if a multipath device has usable paths. This can be used to
+test whether or not I/O on this device is likely to succeed. The command
+itself doesn't attempt to do I/O on the device.
+.
+.TP
 .B \-q
 Allow device tables with \fIqueue_if_no_path\fR when multipathd is not running.
 .
@@ -121,6 +127,11 @@ Add the WWID for the specified device to the WWIDs file.
 .B \-u
 Check if the device specified in the program environment should be
 a path in a multipath device.
+.
+.TP
+.B \-U
+Check if the device specified in the program environment is a multipath device
+with usable paths. See \fB-C\fB.
 .
 .TP
 .B \-w
