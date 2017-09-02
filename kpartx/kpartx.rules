@@ -38,12 +38,18 @@ ENV{DM_UUID}!="part*-*-*", GOTO="import_end"
 ENV{ID_FS_USAGE}!="?*", IMPORT{db}="ID_FS_USAGE"
 ENV{ID_FS_UUID_ENC}!="?*", IMPORT{db}="ID_FS_UUID_ENC"
 ENV{ID_FS_LABEL_ENC}!="?*", IMPORT{db}="ID_FS_LABEL_ENC"
+ENV{ID_PART_ENTRY_NAME}!="?*", IMPORT{db}="ID_PART_ENTRY_NAME"
+ENV{ID_PART_ENTRY_UUID}!="?*", IMPORT{db}="ID_PART_ENTRY_UUID"
+ENV{ID_PART_ENTRY_SCHEME}!="?*", IMPORT{db}="ID_PART_ENTRY_SCHEME"
 LABEL="import_end"
 
 ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{ID_FS_UUID_ENC}=="?*", \
        SYMLINK+="disk/by-uuid/$env{ID_FS_UUID_ENC}"
 ENV{ID_FS_USAGE}=="filesystem|other", ENV{ID_FS_LABEL_ENC}=="?*", \
        SYMLINK+="disk/by-label/$env{ID_FS_LABEL_ENC}"
+ENV{ID_PART_ENTRY_UUID}=="?*", SYMLINK+="disk/by-partuuid/$env{ID_PART_ENTRY_UUID}"
+ENV{ID_PART_ENTRY_SCHEME}=="gpt", ENV{ID_PART_ENTRY_NAME}=="?*", \
+       SYMLINK+="disk/by-partlabel/$env{ID_PART_ENTRY_NAME}"
 LABEL="symlink_end"
 
 # Create dm tables for partitions
