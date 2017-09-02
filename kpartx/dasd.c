@@ -133,6 +133,9 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 			/* Couldn't open the device */
 			return -1;
 		}
+	} else if ((unsigned int)major(sbuf.st_rdev) != 94) {
+			/* Not a DASD */
+			return -1;
 	} else {
 		fd_dasd = fd;
 	}
