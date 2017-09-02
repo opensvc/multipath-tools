@@ -18,8 +18,19 @@ ENV{DM_SUBSYSTEM_UDEV_FLAG2}=="1", ENV{MPATH_DEVICE_READY}="0",\
 	GOTO="mpath_action"
 
 # If the last path has failed mark the device not ready
-ENV{DM_ACTION}=="PATH_FAILED", ENV{DM_NR_VALID_PATHS}=="0",\
-	ENV{MPATH_DEVICE_READY}="0", GOTO="mpath_action"
+# Note that DM_NR_VALID_PATHS is only set for PATH_FAILED|PATH_REINSTATED
+# events.
+# This may not be reliable, as events aren't necessarily received in order.
+ENV{DM_NR_VALID_PATHS}=="0", ENV{MPATH_DEVICE_READY}="0", GOTO="mpath_action"
+
+ENV{MPATH_SBIN_PATH}="/sbin"
+TEST!="$env{MPATH_SBIN_PATH}/multipath", ENV{MPATH_SBIN_PATH}="/usr/sbin"
+
+# Check the map state directly with multipath -U.
+# This doesn't attempt I/O on the device.
+PROGRAM=="$env{MPATH_SBIN_PATH}/multipath -U %k", GOTO="paths_ok"
+ENV{MPATH_DEVICE_READY}="0", GOTO="mpath_action"
+LABEL="paths_ok"
 
 # Don't mark a device ready on a PATH_FAILED event. even if
 # DM_NR_VALID_PATHS is greater than 0. Just keep the existing
