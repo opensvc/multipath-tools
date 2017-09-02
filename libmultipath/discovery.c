@@ -1935,6 +1935,14 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	path_state = path_offline(pp);
 	if (path_state == PATH_REMOVED)
 		goto blank;
+	else if (mask & DI_NOIO) {
+		/*
+		 * Avoid any IO on the device itself.
+		 * Behave like DI_CHECKER in the "path unavailable" case.
+		 */
+		pp->chkrstate = pp->state = path_state;
+		return PATHINFO_OK;
+	}
 
 	/*
 	 * fetch info not available through sysfs
