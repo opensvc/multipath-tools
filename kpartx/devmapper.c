@@ -92,6 +92,42 @@ out:
 	return r;
 }
 
+static void
+strip_slash (char * device)
+{
+	char * p = device;
+
+	while (*(p++) != 0x0) {
+
+		if (*p == '/')
+			*p = '!';
+	}
+}
+
+static int format_partname(char *buf, size_t bufsiz,
+			   const char *mapname, const char *delim, int part)
+{
+	if (snprintf(buf, bufsiz, "%s%s%d", mapname, delim, part) >= bufsiz)
+		return 0;
+	strip_slash(buf);
+	return 1;
+}
+
+static char *make_prefixed_uuid(int part, const char *uuid)
+{
+	char *prefixed_uuid;
+	int len = MAX_PREFIX_LEN + strlen(uuid) + 1;
+
+	prefixed_uuid = malloc(len);
+	if (!prefixed_uuid) {
+		fprintf(stderr, "cannot create prefixed uuid : %s\n",
+			strerror(errno));
+		return NULL;
+	}
+	snprintf(prefixed_uuid, len, UUID_PREFIX "%s", part, uuid);
+	return prefixed_uuid;
+}
+
 int dm_addmap(int task, const char *name, const char *target,
 	      const char *params, uint64_t size, int ro, const char *uuid,
 	      int part, mode_t mode, uid_t uid, gid_t gid)
@@ -117,13 +153,9 @@ int dm_addmap(int task, const char *name, const char *target,
 			goto addout;
 
 	if (task == DM_DEVICE_CREATE && uuid) {
-		prefixed_uuid = malloc(MAX_PREFIX_LEN + strlen(uuid) + 1);
-		if (!prefixed_uuid) {
-			fprintf(stderr, "cannot create prefixed uuid : %s\n",
-				strerror(errno));
+		prefixed_uuid = make_prefixed_uuid(part, uuid);
+		if (prefixed_uuid == NULL)
 			goto addout;
-		}
-		sprintf(prefixed_uuid, UUID_PREFIX "%s", part, uuid);
 		if (!dm_task_set_uuid(dmt, prefixed_uuid))
 			goto addout;
 	}
