@@ -68,6 +68,10 @@ mk_partitions() {
     parted -s -- $1 mkpart prim ext2 1MiB -1s
 }
 
+wipe_ptable() {
+    dd if=/dev/zero of=$1 bs=1b count=1
+}
+
 step preparation
 
 [[ $UID -eq 0 ]]
@@ -165,7 +169,17 @@ mk_partitions $LO2
 # Test invocation of kpartx with regular file here
 LO2P1=/dev/mapper/$(basename $LO2)-foo1
 $KPARTX $KPARTX_OPTS -a -p -foo $FILE2
+[[ -b $LO2P1 ]]
 push_cleanup 'dmsetup remove -f $(basename $LO2P1)'
+
+step "remove partitions with deleted ptable"
+wipe_ptable $LO2
+$KPARTX $KPARTX_OPTS -d $LO2
+[[ ! -b $LO2P1 ]]
+
+mk_partitions $LO2
+$KPARTX $KPARTX_OPTS -a -p -foo $FILE2
+[[ -b $LO2P1 ]]
 
 LO1P1=/dev/mapper/$(basename $LO1)-eggs1
 $KPARTX $KPARTX_OPTS -a -p -eggs $LO1
