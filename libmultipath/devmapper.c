@@ -553,7 +553,7 @@ uuidout:
 	return r;
 }
 
-int dm_get_uuid(char *name, char *uuid)
+int dm_get_uuid(const char *name, char *uuid)
 {
 	if (dm_get_prefixed_uuid(name, uuid))
 		return 1;
@@ -1308,7 +1308,7 @@ alloc_dminfo (void)
 }
 
 int
-dm_get_info (char * mapname, struct dm_info ** dmi)
+dm_get_info (const char * mapname, struct dm_info ** dmi)
 {
 	if (!mapname)
 		return 1;
