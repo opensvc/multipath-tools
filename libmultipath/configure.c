@@ -1106,6 +1106,41 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 	return 0;
 }
 
+struct udev_device *get_udev_device(const char *dev, enum devtypes dev_type)
+{
+	struct udev_device *ud = NULL;
+	const char *base;
+
+	if (dev == NULL || *dev == '\0')
+		return NULL;
+
+	switch (dev_type) {
+	case DEV_DEVNODE:
+	case DEV_DEVMAP:
+		/* This should be GNU basename, compiler will warn if not */
+		base = basename(dev);
+		if (*base == '\0')
+			break;
+		ud = udev_device_new_from_subsystem_sysname(udev, "block",
+							    base);
+		break;
+	case DEV_DEVT:
+		ud = udev_device_new_from_devnum(udev, 'b', parse_devt(dev));
+		break;
+	case DEV_UEVENT:
+		ud = udev_device_new_from_environment(udev);
+		break;
+	default:
+		condlog(0, "Internal error: get_udev_device called with invalid type %d\n",
+			dev_type);
+		break;
+	}
+	if (ud == NULL)
+		condlog(2, "get_udev_device: failed to look up %s with type %d",
+			dev, dev_type);
+	return ud;
+}
+
 /*
  * returns:
  * 0 - success
