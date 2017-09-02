@@ -12,7 +12,7 @@ ENV{DM_UUID}!="?*", GOTO="kpartx_end"
 # with 0 dependencies
 IMPORT{program}=="kpartx_id %M %m $env{DM_UUID}"
 
-OPTIONS="link_priority=50"
+ENV{DM_UDEV_LOW_PRIORITY_FLAG}!="1", OPTIONS+="link_priority=50"
 
 ENV{DM_UUID}=="?*", ENV{DM_TYPE}=="?*" \
 	SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}"
