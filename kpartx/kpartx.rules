@@ -60,6 +60,9 @@ ENV{DM_UUID}!="mpath-?*", GOTO="mpath_kpartx_end"
 ENV{DM_UDEV_PRIMARY_SOURCE_FLAG}!="1", IMPORT{db}="DM_SUBSYSTEM_UDEV_FLAG1"
 ENV{DM_SUBSYSTEM_UDEV_FLAG1}=="1", GOTO="mpath_kpartx_end"
 
+# 11-dm-mpath.rules sets MPATH_UNCHANGED for events that can be ignored.
+ENV{MPATH_UNCHANGED}=="1", GOTO="mpath_kpartx_end"
+
 # Don't run kpartx now if we know it will fail or hang.
 ENV{DM_SUSPENDED}=="1", GOTO="mpath_kpartx_end"
 ENV{DM_NOSCAN}=="1", GOTO="mpath_kpartx_end"

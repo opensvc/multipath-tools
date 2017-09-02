@@ -48,7 +48,13 @@ LABEL="mpath_action"
 # something that should be reacted upon since it would be useless extra work.
 # It's exactly mpath's job to provide *seamless* device access to any of the
 # paths that are available underneath.
-ENV{DM_SUBSYSTEM_UDEV_FLAG0}=="1", ENV{DM_ACTIVATION}="0"
+ENV{DM_SUBSYSTEM_UDEV_FLAG0}=="1", \
+	ENV{DM_ACTIVATION}="0", ENV{MPATH_UNCHANGED}="1"
+
+# For path failed or reinstated events, unset DM_ACTIVATION.
+# This is similar to the DM_SUBSYSTEM_UDEV_FLAG0 case above.
+ENV{DM_ACTION}=="PATH_FAILED|PATH_REINSTATED", \
+	ENV{DM_ACTIVATION}="0", ENV{MPATH_UNCHANGED}="1"
 
 # Do not initiate scanning if no path is available,
 # otherwise there would be a hang or IO error on access.
