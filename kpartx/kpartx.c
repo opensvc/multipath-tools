@@ -394,6 +394,22 @@ main(int argc, char **argv){
 
 	/* add/remove partitions to the kernel devmapper tables */
 	int r = 0;
+
+	if (what == DELETE) {
+		r = dm_remove_partmaps(mapname, uuid, buf.st_rdev,
+				       verbose);
+		if (loopdev) {
+			if (del_loop(loopdev)) {
+				if (verbose)
+					fprintf(stderr, "can't del loop : %s\n",
+					       loopdev);
+				r = 1;
+			} else
+				fprintf(stderr, "loop deleted : %s\n", loopdev);
+		}
+		goto end;
+	}
+
 	for (i = 0; i < ptct; i++) {
 		ptp = &pts[i];
 
@@ -459,20 +475,6 @@ main(int argc, char **argv){
 					break;
 			}
 
-			break;
-
-		case DELETE:
-			r = dm_remove_partmaps(mapname, uuid, buf.st_rdev,
-					       verbose);
-			if (loopdev) {
-				if (del_loop(loopdev)) {
-					if (verbose)
-						printf("can't del loop : %s\n",
-						       loopdev);
-					exit(1);
-				}
-				printf("loop deleted : %s\n", loopdev);
-			}
 			break;
 
 		case ADD:
@@ -656,6 +658,7 @@ main(int argc, char **argv){
 		printf("loop deleted : %s\n", device);
 	}
 
+end:
 	dm_lib_release();
 	dm_lib_exit();
 
