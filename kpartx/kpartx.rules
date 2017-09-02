@@ -5,12 +5,12 @@
 #
 
 KERNEL!="dm-*", GOTO="kpartx_end"
-ACTION=="remove", GOTO="kpartx_end"
+ACTION!="add|change", GOTO="kpartx_end"
+ENV{DM_UUID}!="?*", GOTO="kpartx_end"
 
-ENV{DM_TABLE_STATE}!="LIVE", GOTO="kpartx_end"
-ENV{DM_DEPS}=="0", GOTO="kpartx_end"
-
-ENV{DM_UUID}=="?*", IMPORT{program}=="kpartx_id %M %m $env{DM_UUID}"
+# kpartx_id is very robust, it works for suspended maps and maps
+# with 0 dependencies
+IMPORT{program}=="kpartx_id %M %m $env{DM_UUID}"
 
 OPTIONS="link_priority=50"
 
