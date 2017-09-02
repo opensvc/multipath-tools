@@ -1351,10 +1351,12 @@ dm_rename_partmaps (const char * old, char * new, char *delim)
 
 	if (delim)
 		rd.delim = delim;
-	if (isdigit(new[strlen(new)-1]))
-		rd.delim = "p";
-	else
-		rd.delim = "";
+	else {
+		if (isdigit(new[strlen(new)-1]))
+			rd.delim = "p";
+		else
+			rd.delim = "";
+	}
 	return do_foreach_partmaps(old, rename_partmap, &rd);
 }
 
