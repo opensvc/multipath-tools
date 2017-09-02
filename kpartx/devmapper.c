@@ -188,7 +188,7 @@ addout:
 	return r;
 }
 
-int dm_map_present(char * str, char **uuid)
+static int dm_map_present(char *str, char **uuid)
 {
 	int r = 0;
 	struct dm_task *dmt;
@@ -226,6 +226,51 @@ out:
 	return r;
 }
 
+static int dm_rename (const char *old, const char *new)
+{
+	int r = 0;
+	struct dm_task *dmt;
+	uint16_t udev_flags = DM_UDEV_DISABLE_LIBRARY_FALLBACK;
+	uint32_t cookie = 0;
+
+	dmt = dm_task_create(DM_DEVICE_RENAME);
+	if (!dmt)
+		return r;
+
+	if (!dm_task_set_name(dmt, old) ||
+	    !dm_task_set_newname(dmt, new) ||
+	    !dm_task_no_open_count(dmt) ||
+	    !dm_task_set_cookie(dmt, &cookie, udev_flags))
+		goto out;
+
+	r = dm_task_run(dmt);
+	dm_udev_wait(cookie);
+
+out:
+	dm_task_destroy(dmt);
+	return r;
+}
+
+static const char *dm_find_uuid(const char *uuid)
+{
+	struct dm_task *dmt;
+	const char *name = NULL, *tmp;
+
+	if ((dmt = dm_task_create(DM_DEVICE_INFO)) == NULL)
+		return NULL;
+
+	if (!dm_task_set_uuid(dmt, uuid) ||
+	    !dm_task_run(dmt))
+		goto out;
+
+	tmp = dm_task_get_name(dmt);
+	if (tmp != NULL && *tmp != '\0')
+		name = strdup(tmp);
+
+out:
+	dm_task_destroy(dmt);
+	return name;
+}
 
 char *
 dm_mapname(int major, int minor)
@@ -340,7 +385,7 @@ out:
 }
 
 static int
-dm_get_map(char *mapname, char * outparams)
+dm_get_map(const char *mapname, char * outparams)
 {
 	int r = 1;
 	struct dm_task *dmt;
@@ -588,4 +633,63 @@ dm_remove_partmaps (char * mapname, char *uuid, dev_t devt, int verbose)
 {
 	struct remove_data rd = { verbose };
 	return do_foreach_partmaps(mapname, uuid, devt, remove_partmap, &rd);
+}
+
+int dm_find_part(const char *parent, const char *delim, int part,
+		 const char *parent_uuid,
+		 char *name, size_t namesiz, char **part_uuid, int verbose)
+{
+	int r;
+	char params[PARAMS_SIZE];
+	const char *tmp;
+	char *uuid;
+	int major, minor;
+	char dev_t[32];
+
+	if (!format_partname(name, namesiz, parent, delim, part)) {
+		if (verbose)
+			fprintf(stderr, "partname too small\n");
+		return 0;
+	}
+
+	r = dm_map_present(name, part_uuid);
+	if (r == 1 || parent_uuid == NULL || *parent_uuid == '\0')
+		return r;
+
+	uuid = make_prefixed_uuid(part, parent_uuid);
+	if (!uuid)
+		return 0;
+
+	tmp = dm_find_uuid(uuid);
+	if (tmp == NULL)
+		return r;
+
+	/* Sanity check on partition, see dm_foreach_partmaps */
+	if (dm_type(tmp, "linear") != 1)
+		goto out;
+
+	if (dm_devn(parent, &major, &minor))
+		goto out;
+	snprintf(dev_t, sizeof(dev_t), "%d:%d", major, minor);
+
+	if (dm_get_map(tmp, params))
+		goto out;
+
+	if (!strstr(params, dev_t))
+		goto out;
+
+	if (verbose)
+		fprintf(stderr, "found map %s for uuid %s, renaming to %s\n",
+		       tmp, uuid, name);
+
+	r = dm_rename(tmp, name);
+	if (r == 0) {
+		free(uuid);
+		if (verbose)
+			fprintf(stderr, "renaming %s->%s failed\n", tmp, name);
+	} else
+		*part_uuid = uuid;
+out:
+	free((void*)tmp);
+	return r;
 }

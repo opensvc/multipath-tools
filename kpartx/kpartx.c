@@ -150,18 +150,6 @@ set_delimiter (char * device, char * delimiter)
 		*delimiter = 'p';
 }
 
-static void
-strip_slash (char * device)
-{
-	char * p = device;
-
-	while (*(p++) != 0x0) {
-
-		if (*p == '/')
-			*p = '!';
-	}
-}
-
 static int
 find_devname_offset (char * device)
 {
@@ -527,21 +515,16 @@ main(int argc, char **argv){
 					continue;
 				}
 
-				if (safe_sprintf(partname, "%s%s%d",
-					     mapname, delim, j+1)) {
-					fprintf(stderr, "partname too small\n");
-					exit(1);
-				}
-				strip_slash(partname);
-
 				if (safe_sprintf(params, "%d:%d %" PRIu64 ,
 						 major(buf.st_rdev), minor(buf.st_rdev), slices[j].start)) {
 					fprintf(stderr, "params too small\n");
 					exit(1);
 				}
 
-				op = (dm_map_present(partname, &part_uuid) ?
-					DM_DEVICE_RELOAD : DM_DEVICE_CREATE);
+				op = (dm_find_part(mapname, delim, j + 1, uuid,
+						   partname, sizeof(partname),
+						   &part_uuid, verbose) ?
+				      DM_DEVICE_RELOAD : DM_DEVICE_CREATE);
 
 				if (part_uuid && uuid) {
 					if (check_uuid(uuid, part_uuid, &reason) != 0) {
@@ -603,13 +586,6 @@ main(int argc, char **argv){
 						fprintf(stderr, "Invalid slice %d\n",
 							k);
 
-					if (safe_sprintf(partname, "%s%s%d",
-							 mapname, delim, j+1)) {
-						fprintf(stderr, "partname too small\n");
-						exit(1);
-					}
-					strip_slash(partname);
-
 					if (safe_sprintf(params, "%d:%d %" PRIu64,
 							 major(buf.st_rdev), minor(buf.st_rdev),
 							 slices[j].start)) {
@@ -617,8 +593,10 @@ main(int argc, char **argv){
 						exit(1);
 					}
 
-					op = (dm_map_present(partname,
-							     &part_uuid) ?
+					op = (dm_find_part(mapname, delim, j + 1, uuid,
+							   partname,
+							   sizeof(partname),
+							   &part_uuid, verbose) ?
 					      DM_DEVICE_RELOAD : DM_DEVICE_CREATE);
 
 					if (part_uuid && uuid) {
@@ -660,15 +638,10 @@ main(int argc, char **argv){
 
 			for (j = MAXSLICES-1; j >= 0; j--) {
 				char *part_uuid, *reason;
-				if (safe_sprintf(partname, "%s%s%d",
-					     mapname, delim, j+1)) {
-					fprintf(stderr, "partname too small\n");
-					exit(1);
-				}
-				strip_slash(partname);
-
 				if (slices[j].size ||
-				    !dm_map_present(partname, &part_uuid))
+				    !dm_find_part(mapname, delim, j + 1, uuid,
+						  partname, sizeof(partname),
+						  &part_uuid, verbose))
 					continue;
 
 				if (part_uuid && uuid) {
