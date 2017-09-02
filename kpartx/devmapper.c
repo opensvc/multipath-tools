@@ -668,7 +668,12 @@ int dm_find_part(const char *parent, const char *delim, int part,
 	if (dm_type(tmp, "linear") != 1)
 		goto out;
 
-	if (dm_devn(parent, &major, &minor))
+	/*
+	 * Try nondm uuid first. That way we avoid confusing
+	 * a device name with a device mapper name.
+	 */
+	if (!nondm_parse_uuid(parent_uuid, &major, &minor) &&
+	    dm_devn(parent, &major, &minor))
 		goto out;
 	snprintf(dev_t, sizeof(dev_t), "%d:%d", major, minor);
 
@@ -692,4 +697,41 @@ int dm_find_part(const char *parent, const char *delim, int part,
 out:
 	free((void*)tmp);
 	return r;
+}
+
+char *nondm_create_uuid(dev_t devt)
+{
+#define NONDM_UUID_BUFLEN (34 + sizeof(NONDM_UUID_PREFIX) + \
+			   sizeof(NONDM_UUID_SUFFIX))
+	static char uuid_buf[NONDM_UUID_BUFLEN];
+	snprintf(uuid_buf, sizeof(uuid_buf), "%s_%u:%u_%s",
+		 NONDM_UUID_PREFIX, major(devt), minor(devt),
+		 NONDM_UUID_SUFFIX);
+	uuid_buf[NONDM_UUID_BUFLEN-1] = '\0';
+	return uuid_buf;
+}
+
+int nondm_parse_uuid(const char *uuid, int *major, int *minor)
+{
+	const char *p;
+	char *e;
+	int ma, mi;
+
+	if (strncmp(uuid, NONDM_UUID_PREFIX "_", sizeof(NONDM_UUID_PREFIX)))
+		return 0;
+	p = uuid + sizeof(NONDM_UUID_PREFIX);
+	ma = strtoul(p, &e, 10);
+	if (e == p || *e != ':')
+		return 0;
+	p = e + 1;
+	mi = strtoul(p, &e, 10);
+	if (e == p || *e != '_')
+		return 0;
+	p = e + 1;
+	if (strcmp(p, NONDM_UUID_SUFFIX))
+		return 0;
+
+	*major = ma;
+	*minor = mi;
+	return 1;
 }
