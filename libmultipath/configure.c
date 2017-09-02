@@ -1176,12 +1176,12 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 
 		pp = find_path_by_dev(pathvec, buff);
 		if (!pp) {
-			struct udev_device *udevice = udev_device_new_from_subsystem_sysname(udev, "block", buff);
+			struct udev_device *udevice =
+				get_udev_device(buff, dev_type);
 
-			if (!udevice) {
-				condlog(2, "%s: can't get udev device", buff);
+			if (!udevice)
 				return 1;
-			}
+
 			conf = get_multipath_config();
 			ret = store_pathinfo(pathvec, conf, udevice,
 					     flags, &pp);
@@ -1214,12 +1214,12 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 		}
 		pp = find_path_by_dev(pathvec, buff);
 		if (!pp) {
-			struct udev_device *udevice = udev_device_new_from_devnum(udev, 'b', parse_devt(dev));
+			struct udev_device *udevice =
+				get_udev_device(dev, dev_type);
 
-			if (!udevice) {
-				condlog(2, "%s: can't get udev device", dev);
+			if (!udevice)
 				return 1;
-			}
+
 			conf = get_multipath_config();
 			ret = store_pathinfo(pathvec, conf, udevice,
 					     flags, &pp);
@@ -1244,12 +1244,11 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 	}
 
 	if (dev_type == DEV_UEVENT) {
-		struct udev_device *udevice = udev_device_new_from_environment(udev);
+		struct udev_device *udevice = get_udev_device(dev, dev_type);
 
-		if (!udevice) {
-			condlog(2, "%s: can't get udev device", dev);
+		if (!udevice)
 			return 1;
-		}
+
 		conf = get_multipath_config();
 		ret = store_pathinfo(pathvec, conf, udevice,
 				     flags, &pp);
