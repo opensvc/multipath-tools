@@ -1004,6 +1004,31 @@ dm_disablegroup(char * mapname, int index)
 	return dm_groupmsg("disable", mapname, index);
 }
 
+struct multipath *dm_get_multipath(const char *name)
+{
+	struct multipath *mpp = NULL;
+
+	mpp = alloc_multipath();
+	if (!mpp)
+		return NULL;
+
+	mpp->alias = STRDUP(name);
+
+	if (!mpp->alias)
+		goto out;
+
+	if (dm_get_map(name, &mpp->size, NULL))
+		goto out;
+
+	dm_get_uuid(name, mpp->wwid);
+	dm_get_info(name, &mpp->dmi);
+
+	return mpp;
+out:
+	free_multipath(mpp, KEEP_PATHS);
+	return NULL;
+}
+
 int
 dm_get_maps (vector mp)
 {
@@ -1036,24 +1061,12 @@ dm_get_maps (vector mp)
 		if (!dm_is_mpath(names->name))
 			goto next;
 
-		mpp = alloc_multipath();
-
+		mpp = dm_get_multipath(names->name);
 		if (!mpp)
 			goto out;
 
-		mpp->alias = STRDUP(names->name);
-
-		if (!mpp->alias)
-			goto out1;
-
-		if (dm_get_map(names->name, &mpp->size, NULL))
-			goto out1;
-
-		dm_get_uuid(names->name, mpp->wwid);
-		dm_get_info(names->name, &mpp->dmi);
-
 		if (!vector_alloc_slot(mp))
-			goto out1;
+			goto out;
 
 		vector_set_slot(mp, mpp);
 		mpp = NULL;
@@ -1064,8 +1077,6 @@ next:
 
 	r = 0;
 	goto out;
-out1:
-	free_multipath(mpp, KEEP_PATHS);
 out:
 	dm_task_destroy (dmt);
 	return r;
