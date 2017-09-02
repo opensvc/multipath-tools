@@ -207,6 +207,17 @@ usleep $WAIT_US
 [[ -b $SPAN2P1 ]]
 [[ -b $SPAN1P1 ]]
 
+step "rename partitions on DM device to default"
+$KPARTX $KPARTX_OPTS -u /dev/mapper/$SPAN1
+[[ ! -b ${SPAN1P1} ]]
+# This assumes that $SPAN1 ends in a non-digit
+[[ -b ${SPAN1P1//-spam/} ]]
+
+step "rename partitions on DM device back from default"
+$KPARTX $KPARTX_OPTS -u -p -spam /dev/mapper/$SPAN1
+[[ -b ${SPAN1P1} ]]
+[[ ! -b ${SPANP1//-foo/} ]]
+
 step "delete partitions on DM devices"
 $KPARTX $KPARTX_OPTS -d /dev/mapper/$SPAN1 >&2
 usleep $WAIT_US
@@ -222,6 +233,31 @@ usleep $WAIT_US
 [[ -b $LO1P1 ]]
 [[ -b $LO2P1 ]]
 [[ ! -b $SPAN2P1 ]]
+
+step "rename partitions on loop device"
+$KPARTX $KPARTX_OPTS -u -p -spam $LO2
+[[ ! -b ${LO2P1} ]]
+[[ -b ${LO2P1//-foo/-spam} ]]
+
+step "rename partitions on loop device back"
+$KPARTX $KPARTX_OPTS -u -p -foo $LO2
+[[ -b ${LO2P1} ]]
+[[ ! -b ${LO2P1//-foo/-spam} ]]
+
+step "rename partitions on loop device to default"
+$KPARTX $KPARTX_OPTS -u $LO2
+#read a
+[[ ! -b ${LO2P1} ]]
+# $LO1 ends in a digit
+[[ -b ${LO2P1//-foo/p} ]]
+
+step "rename partitions on loop device back from default"
+$KPARTX $KPARTX_OPTS -u -p -foo $LO2
+[[ -b ${LO2P1} ]]
+[[ ! -b ${LO2P1//-foo/p} ]]
+
+step "rename partitions on loop devices"
+$KPARTX $KPARTX_OPTS -u -p spam $LO2
 
 step "delete partitions on loop devices"
 
