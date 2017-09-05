@@ -894,7 +894,7 @@ int uevent_get_disk_ro(struct uevent *uev)
 	int i, ro = -1;
 
 	for (i = 0; uev->envp[i] != NULL; i++) {
-		if (!strncmp(uev->envp[i], "DISK_RO", 6) && strlen(uev->envp[i]) > 7) {
+		if (!strncmp(uev->envp[i], "DISK_RO", 7) && strlen(uev->envp[i]) > 8) {
 			p = uev->envp[i] + 8;
 			ro = strtoul(p, &q, 10);
 			if (p == q) {
@@ -913,8 +913,8 @@ char *uevent_get_dm_name(struct uevent *uev)
 	int i;
 
 	for (i = 0; uev->envp[i] != NULL; i++) {
-		if (!strncmp(uev->envp[i], "DM_NAME", 6) &&
-		    strlen(uev->envp[i]) > 7) {
+		if (!strncmp(uev->envp[i], "DM_NAME", 7) &&
+		    strlen(uev->envp[i]) > 8) {
 			p = MALLOC(strlen(uev->envp[i] + 8) + 1);
 			strcpy(p, uev->envp[i] + 8);
 			break;
