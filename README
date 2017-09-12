@@ -29,6 +29,11 @@ To get latest devel code: git clone https://git.opensvc.com/multipath-tools/.git
 Gitweb: https://git.opensvc.com/?p=multipath-tools/.git
 
 
+Add storage devices
+===================
+Follow the instructions in the libmultipath/hwtable.c header.
+
+
 Mailing list (subscribers-only)
 ============
 To subscribe and archives: https://www.redhat.com/mailman/listinfo/dm-devel
