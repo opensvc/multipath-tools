@@ -1,0 +1,39 @@
+# Rules for partitions created by kpartx
+
+KERNEL!="dm-*", GOTO="dm_parts_end"
+ACTION!="add|change", GOTO="dm_parts_end"
+ENV{DM_UUID}!="part[0-9]*", GOTO="dm_parts_end"
+
+# We must take care that symlinks don't get lost,
+# even if blkid fails in 13-dm-disk.rules later.
+#
+# Fixme: we have currently no way to avoid calling blkid on
+# partitions of broken mpath maps such as DM_NOSCAN.
+# But when partition devices appear, kpartx has likely read
+# the partition table shortly before, so odds are not bad
+# that blkid will also succeed.
+
+IMPORT{db}="ID_FS_USAGE"
+IMPORT{db}="ID_FS_UUID_ENC"
+IMPORT{db}="ID_FS_LABEL_ENC"
+IMPORT{db}="ID_PART_ENTRY_NAME"
+IMPORT{db}="ID_PART_ENTRY_UUID"
+IMPORT{db}="ID_PART_ENTRY_SCHEME"
+
+# Maps should take precedence over their members.
+ENV{DM_UDEV_LOW_PRIORITY_FLAG}!="1", OPTIONS+="link_priority=50"
+
+# Set some additional symlinks that typically exist for mpath
+# path members, too, and should be overridden.
+#
+# kpartx_id is very robust, it works for suspended maps and maps
+# with 0 dependencies. It sets DM_TYPE, DM_PART, DM_WWN
+IMPORT{program}=="kpartx_id %M %m $env{DM_UUID}"
+
+# DM_TYPE only has a reasonable value for partitions on multipath.
+ENV{DM_UUID}=="*-mpath-*", ENV{DM_TYPE}=="?*" \
+	SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}"
+ENV{DM_WWN}=="?*", ENV{DM_PART}=="?*", \
+	SYMLINK+="disk/by-id/wwn-$env{DM_WWN}-part$env{DM_PART}"
+
+LABEL="dm_parts_end"

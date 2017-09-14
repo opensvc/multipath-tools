@@ -73,8 +73,12 @@ ENV{MPATH_DEVICE_READY}!="0", ENV{.MPATH_DEVICE_READY_OLD}=="0",\
 	ENV{DM_DISABLE_OTHER_RULES_FLAG_OLD}="",\
 	ENV{DM_ACTIVATION}="1"
 
+# The code to check multipath state ends here. We need to set
+# properties and symlinks regardless whether the map is usable or
+# not. If symlinks get lost, systemd may auto-unmount file systems.
+
 LABEL="scan_import"
-ENV{DM_NOSCAN}!="1", GOTO="mpath_end"
+ENV{DM_NOSCAN}!="1", GOTO="import_end"
 IMPORT{db}="ID_FS_TYPE"
 IMPORT{db}="ID_FS_USAGE"
 IMPORT{db}="ID_FS_UUID"
@@ -82,5 +86,21 @@ IMPORT{db}="ID_FS_UUID_ENC"
 IMPORT{db}="ID_FS_LABEL"
 IMPORT{db}="ID_FS_LABEL_ENC"
 IMPORT{db}="ID_FS_VERSION"
+
+LABEL="import_end"
+
+# Multipath maps should take precedence over their members.
+ENV{DM_UDEV_LOW_PRIORITY_FLAG}!="1", OPTIONS+="link_priority=50"
+
+# Set some additional symlinks that typically exist for mpath
+# path members, too, and should be overridden.
+
+# kpartx_id is very robust, it works for suspended maps and maps
+# with 0 dependencies. It sets DM_TYPE, DM_PART, DM_WWN
+TEST=="/usr/lib/udev/kpartx_id", \
+	IMPORT{program}=="kpartx_id %M %m $env{DM_UUID}"
+
+ENV{DM_TYPE}=="?*", SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}"
+ENV{DM_WWN}=="?*", SYMLINK+="disk/by-id/wwn-$env{DM_WWN}"
 
 LABEL="mpath_end"
