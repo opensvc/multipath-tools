@@ -1,0 +1,32 @@
+# These rules can delete partitions devnodes for slave devices
+# for certain aggregate devices such as multipath.
+# This is desirable to avoid confusion and keep the number
+# of device nodes and symlinks within limits.
+#
+# This is done only once on the first "add" or "change" event for
+# any given device.
+#
+# To suppress this, use the kernel parameter "dont_del_part_nodes",
+# or create an udev rule file that sets ENV{DONT_DEL_PART_NODES}="1".
+
+SUBSYSTEM!="block", GOTO="end_del_part_nodes"
+KERNEL!="sd*|dasd*|rbd*", GOTO="end_del_part_nodes"
+ACTION!="add|change", GOTO="end_del_part_nodes"
+
+IMPORT{cmdline}="dont_del_part_nodes"
+ENV{dont_del_part_nodes}=="1", GOTO="end_del_part_nodes"
+ENV{DONT_DEL_PART_NODES}=="1", GOTO="end_del_part_nodes"
+
+# dm-multipath
+ENV{DM_MULTIPATH_DEVICE_PATH}=="1", GOTO="del_part_nodes"
+
+# Other aggregate device types can be added here.
+
+GOTO="end_del_part_nodes"
+
+LABEL="del_part_nodes"
+IMPORT{db}="DM_DEL_PART_NODES"
+ENV{DM_DEL_PART_NODES}!="1", ENV{DM_DEL_PART_NODES}="1", \
+	RUN+="/usr/sbin/partx -d --nr 1-1024 $env{DEVNAME}"
+
+LABEL="end_del_part_nodes"
