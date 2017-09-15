@@ -1449,8 +1449,7 @@ path_offline (struct path * pp)
 		}
 		pp->offline = 0;
 		if (!strncmp(buff, "new", 3) ||
-		    !strncmp(buff, "reconnecting", 12) ||
-		    !strncmp(buff, "resetting", 9))
+		    !strncmp(buff, "deleting", 8))
 			return PATH_PENDING;
 		else if (!strncmp(buff, "live", 4))
 			return PATH_UP;
