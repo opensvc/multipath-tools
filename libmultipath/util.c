@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "util.h"
 #include "debug.h"
 #include "memory.h"
 #include "checkers.h"
@@ -415,4 +416,36 @@ int get_linux_version_code(void)
 {
 	pthread_once(&_lvc_initialized, _set_linux_version_code);
 	return _linux_version_code;
+}
+
+int parse_prkey(char *ptr, uint64_t *prkey)
+{
+	if (!ptr)
+		return 1;
+	if (*ptr == '0')
+		ptr++;
+	if (*ptr == 'x' || *ptr == 'X')
+		ptr++;
+	if (*ptr == '\0' || strlen(ptr) > 16)
+		return 1;
+	if (strlen(ptr) != strspn(ptr, "0123456789aAbBcCdDeEfF"))
+		return 1;
+	if (sscanf(ptr, "%" SCNx64 "", prkey) != 1)
+		return 1;
+	return 0;
+}
+
+int safe_write(int fd, const void *buf, size_t count)
+{
+	while (count > 0) {
+		ssize_t r = write(fd, buf, count);
+		if (r < 0) {
+			if (errno == EINTR)
+				continue;
+			return -errno;
+		}
+		count -= r;
+		buf = (char *)buf + r;
+	}
+	return 0;
 }

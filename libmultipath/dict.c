@@ -19,6 +19,7 @@
 #include "blacklist.h"
 #include "defaults.h"
 #include "prio.h"
+#include "util.h"
 #include <errno.h>
 #include <inttypes.h>
 #include "mpath_cmd.h"
@@ -963,32 +964,15 @@ set_reservation_key(vector strvec, void *ptr)
 {
 	unsigned char **uchar_ptr = (unsigned char **)ptr;
 	char *buff;
-	char *tbuff;
-	int j, k;
-	int len;
+	int j;
 	uint64_t prkey;
 
 	buff = set_value(strvec);
 	if (!buff)
 		return 1;
 
-	tbuff = buff;
-
-	if (!memcmp("0x",buff, 2))
-		buff = buff + 2;
-
-	len = strlen(buff);
-
-	k = strspn(buff, "0123456789aAbBcCdDeEfF");
-
-	if (len != k) {
-		FREE(tbuff);
-		return 1;
-	}
-
-	if (1 != sscanf (buff, "%" SCNx64 "", &prkey))
-	{
-		FREE(tbuff);
+	if (parse_prkey(buff, &prkey) != 0) {
+		FREE(buff);
 		return 1;
 	}
 
@@ -1002,7 +986,7 @@ set_reservation_key(vector strvec, void *ptr)
 		prkey >>= 8;
 	}
 
-	FREE(tbuff);
+	FREE(buff);
 	return 0;
 }
 

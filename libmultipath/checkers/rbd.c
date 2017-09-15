@@ -28,6 +28,7 @@
 #include "../libmultipath/debug.h"
 #include "../libmultipath/util.h"
 #include "../libmultipath/time-util.h"
+#include "../libmultipath/util.h"
 
 struct rbd_checker_context;
 typedef int (thread_fn)(struct rbd_checker_context *ct, char *msg);
@@ -354,21 +355,6 @@ static int rbd_check(struct rbd_checker_context *ct, char *msg)
 	 * verify OSDs and networks.
 	 */
 	return PATH_UP;
-}
-
-static int safe_write(int fd, const void *buf, size_t count)
-{
-	while (count > 0) {
-		ssize_t r = write(fd, buf, count);
-		if (r < 0) {
-			if (errno == EINTR)
-				continue;
-			return -errno;
-		}
-		count -= r;
-		buf = (char *)buf + r;
-	}
-	return 0;
 }
 
 static int sysfs_write_rbd_bus(const char *which, const char *buf,
