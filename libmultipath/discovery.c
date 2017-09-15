@@ -1550,7 +1550,7 @@ cciss_ioctl_pathinfo (struct path * pp, int mask)
 }
 
 int
-get_state (struct path * pp, struct config *conf, int daemon)
+get_state (struct path * pp, struct config *conf, int daemon, int oldstate)
 {
 	struct checker * c = &pp->checker;
 	int state;
@@ -1588,8 +1588,9 @@ get_state (struct path * pp, struct config *conf, int daemon)
 	if (!conf->checker_timeout &&
 	    sysfs_get_timeout(pp, &(c->timeout)) <= 0)
 		c->timeout = DEF_TIMEOUT;
-	state = checker_check(c);
-	condlog(3, "%s: state = %s", pp->dev, checker_state_name(state));
+	state = checker_check(c, oldstate);
+	condlog(3, "%s: %s state = %s", pp->dev,
+		checker_name(c), checker_state_name(state));
 	if (state != PATH_UP && state != PATH_GHOST &&
 	    strlen(checker_message(c)))
 		condlog(3, "%s: checker msg is \"%s\"",
@@ -1960,7 +1961,8 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 
 	if (mask & DI_CHECKER) {
 		if (path_state == PATH_UP) {
-			pp->chkrstate = pp->state = get_state(pp, conf, 0);
+			pp->chkrstate = pp->state = get_state(pp, conf, 0,
+							      path_state);
 			if (pp->state == PATH_UNCHECKED ||
 			    pp->state == PATH_WILD)
 				goto blank;

@@ -1642,7 +1642,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 
 	if (newstate == PATH_UP) {
 		conf = get_multipath_config();
-		newstate = get_state(pp, conf, 1);
+		newstate = get_state(pp, conf, 1, newstate);
 		put_multipath_config(conf);
 	} else
 		checker_clear_message(&pp->checker);

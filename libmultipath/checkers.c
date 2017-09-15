@@ -19,6 +19,7 @@ char *checker_state_names[] = {
 	"timeout",
 	"removed",
 	"delayed",
+	"none",
 };
 
 static LIST_HEAD(checkers);
@@ -102,6 +103,8 @@ struct checker * add_checker (char *multipath_dir, char * name)
 	if (!c)
 		return NULL;
 	snprintf(c->name, CHECKER_NAME_LEN, "%s", name);
+	if (!strncmp(c->name, NONE, 4))
+		goto done;
 	snprintf(libname, LIB_CHECKER_NAMELEN, "%s/libcheck%s.so",
 		 multipath_dir, name);
 	if (stat(libname,&stbuf) < 0) {
@@ -145,7 +148,7 @@ struct checker * add_checker (char *multipath_dir, char * name)
 		condlog(0, "A dynamic linking error occurred: (%s)", errstr);
 	if (!c->repair)
 		goto out;
-
+done:
 	c->fd = -1;
 	c->sync = 1;
 	list_add(&c->node, &checkers);
@@ -195,14 +198,16 @@ int checker_init (struct checker * c, void ** mpctxt_addr)
 	if (!c)
 		return 1;
 	c->mpcontext = mpctxt_addr;
-	return c->init(c);
+	if (c->init)
+		return c->init(c);
+	return 0;
 }
 
 void checker_put (struct checker * dst)
 {
 	struct checker * src;
 
-	if (!dst || !dst->check)
+	if (!dst || !strlen(dst->name))
 		return;
 	src = checker_lookup(dst->name);
 	if (dst->free)
@@ -221,11 +226,11 @@ void checker_repair (struct checker * c)
 		MSG(c, "checker disabled");
 		return;
 	}
-
-	c->repair(c);
+	if (c->repair)
+		c->repair(c);
 }
 
-int checker_check (struct checker * c)
+int checker_check (struct checker * c, int path_state)
 {
 	int r;
 
@@ -237,6 +242,9 @@ int checker_check (struct checker * c)
 		MSG(c, "checker disabled");
 		return PATH_UNCHECKED;
 	}
+	if (!strncmp(c->name, NONE, 4))
+		return path_state;
+
 	if (c->fd < 0) {
 		MSG(c, "no usable fd");
 		return PATH_WILD;
@@ -250,6 +258,8 @@ int checker_selected (struct checker * c)
 {
 	if (!c)
 		return 0;
+	if (!strncmp(c->name, NONE, 4))
+		return 1;
 	return (c->check) ? 1 : 0;
 }
 

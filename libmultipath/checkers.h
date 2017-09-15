@@ -85,6 +85,7 @@ enum path_check_state {
 #define EMC_CLARIION "emc_clariion"
 #define READSECTOR0  "readsector0"
 #define CCISS_TUR    "cciss_tur"
+#define NONE         "none"
 #define RBD          "rbd"
 
 #define ASYNC_TIMEOUT_SEC	30
@@ -135,7 +136,7 @@ void checker_set_fd (struct checker *, int);
 void checker_enable (struct checker *);
 void checker_disable (struct checker *);
 void checker_repair (struct checker *);
-int checker_check (struct checker *);
+int checker_check (struct checker *, int);
 int checker_selected (struct checker *);
 char * checker_name (struct checker *);
 char * checker_message (struct checker *);
