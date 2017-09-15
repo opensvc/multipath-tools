@@ -20,6 +20,7 @@
 #include "dict.h"
 #include "util.h"
 #include "prioritizers/alua_rtpg.h"
+#include "prkey.h"
 #include <inttypes.h>
 
 pgpolicyfn *pgpolicies[] = {
@@ -81,6 +82,16 @@ do {									\
 do_attr_set(var, mp->mpe, shift, "(setting: multipath.conf multipaths section)")
 #define set_attr_conf(var, shift)					\
 do_attr_set(var, conf, shift, "(setting: multipath.conf defaults/devices section)")
+
+#define do_prkey_set(src, msg)						\
+do {									\
+	if (src && src->prkey_source != PRKEY_SOURCE_NONE) {		\
+		mp->prkey_source = src->prkey_source;			\
+		mp->reservation_key = src->reservation_key;		\
+		origin = msg;						\
+		goto out;						\
+	}								\
+} while (0)
 
 int select_mode(struct config *conf, struct multipath *mp)
 {
@@ -610,14 +621,26 @@ out:
 int select_reservation_key(struct config *conf, struct multipath *mp)
 {
 	char *origin, buff[PRKEY_SIZE];
+	char *from_file = "";
+	uint64_t prkey = 0;
 
-	mp_set_mpe(reservation_key._v);
-	mp_set_conf(reservation_key._v);
+	do_prkey_set(mp->mpe, "(setting: multipath.conf multipaths section)");
+	do_prkey_set(conf, "(setting: multipath.conf defaults/devices section)");
 	put_be64(mp->reservation_key, 0);
+	mp->prkey_source = PRKEY_SOURCE_NONE;
 	return 0;
 out:
-	print_reservation_key(buff, PRKEY_SIZE, &mp->reservation_key);
-	condlog(3, "%s: reservation_key = %s %s", mp->alias, buff, origin);
+	if (mp->prkey_source == PRKEY_SOURCE_FILE) {
+		from_file = " (from prkeys file)";
+		if (get_prkey(conf, mp, &prkey) != 0)
+			put_be64(mp->reservation_key, 0);
+		else
+			put_be64(mp->reservation_key, prkey);
+	}
+	print_reservation_key(buff, PRKEY_SIZE, mp->reservation_key,
+			      mp->prkey_source);
+	condlog(3, "%s: reservation_key = %s %s%s", mp->alias, buff, origin,
+		from_file);
 	return 0;
 }
 

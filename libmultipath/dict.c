@@ -368,6 +368,9 @@ declare_def_snprint(bindings_file, print_str)
 declare_def_handler(wwids_file, set_str)
 declare_def_snprint(wwids_file, print_str)
 
+declare_def_handler(prkeys_file, set_str)
+declare_def_snprint(prkeys_file, print_str)
+
 declare_def_handler(retain_hwhandler, set_yes_no_undef)
 declare_def_snprint_defint(retain_hwhandler, print_yes_no_undef, YNU_NO)
 declare_ovr_handler(retain_hwhandler, set_yes_no_undef)
@@ -960,9 +963,8 @@ snprint_def_log_checker_err (struct config *conf, char * buff, int len, void * d
 }
 
 static int
-set_reservation_key(vector strvec, void *ptr)
+set_reservation_key(vector strvec, struct be64 *be64_ptr, int *source_ptr)
 {
-	struct be64 *be64_ptr = (struct be64 *)ptr;
 	char *buff;
 	uint64_t prkey;
 
@@ -970,27 +972,66 @@ set_reservation_key(vector strvec, void *ptr)
 	if (!buff)
 		return 1;
 
+	if (strcmp(buff, "file") == 0) {
+		*source_ptr = PRKEY_SOURCE_FILE;
+		put_be64(*be64_ptr, 0);
+		FREE(buff);
+		return 0;
+	}
+
 	if (parse_prkey(buff, &prkey) != 0) {
 		FREE(buff);
 		return 1;
 	}
-
+	*source_ptr = PRKEY_SOURCE_CONF;
 	put_be64(*be64_ptr, prkey);
 	FREE(buff);
 	return 0;
 }
 
 int
-print_reservation_key(char * buff, int len, void * ptr)
+print_reservation_key(char * buff, int len, struct be64 key, int source)
 {
-	struct be64 *be64_ptr = (struct be64 *)ptr;
-	return snprintf(buff, len, "0x%" PRIx64, get_be64(*be64_ptr));
+	if (source == PRKEY_SOURCE_NONE)
+		return 0;
+	if (source == PRKEY_SOURCE_FILE)
+		return snprintf(buff, len, "file");
+	return snprintf(buff, len, "0x%" PRIx64, get_be64(key));
 }
 
-declare_def_handler(reservation_key, set_reservation_key)
-declare_def_snprint(reservation_key, print_reservation_key)
-declare_mp_handler(reservation_key, set_reservation_key)
-declare_mp_snprint(reservation_key, print_reservation_key)
+static int
+def_reservation_key_handler(struct config *conf, vector strvec)
+{
+	return set_reservation_key(strvec, &conf->reservation_key,
+				   &conf->prkey_source);
+}
+
+static int
+snprint_def_reservation_key (struct config *conf, char * buff, int len,
+			     void * data)
+{
+	return print_reservation_key(buff, len, conf->reservation_key,
+				     conf->prkey_source);
+}
+
+static int
+mp_reservation_key_handler(struct config *conf, vector strvec)
+{
+	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);
+	if (!mpe)
+		return 1;
+	return set_reservation_key(strvec, &mpe->reservation_key,
+				   &mpe->prkey_source);
+}
+
+static int
+snprint_mp_reservation_key (struct config *conf, char * buff, int len,
+			     void * data)
+{
+	struct mpentry * mpe = (struct mpentry *)data;
+	return print_reservation_key(buff, len, mpe->reservation_key,
+				     mpe->prkey_source);
+}
 
 static int
 set_off_int_undef(vector strvec, void *ptr)
@@ -1389,6 +1430,7 @@ init_keywords(vector keywords)
 	install_keyword("dev_loss_tmo", &def_dev_loss_handler, &snprint_def_dev_loss);
 	install_keyword("bindings_file", &def_bindings_file_handler, &snprint_def_bindings_file);
 	install_keyword("wwids_file", &def_wwids_file_handler, &snprint_def_wwids_file);
+	install_keyword("prkeys_file", &def_prkeys_file_handler, &snprint_def_prkeys_file);
 	install_keyword("log_checker_err", &def_log_checker_err_handler, &snprint_def_log_checker_err);
 	install_keyword("reservation_key", &def_reservation_key_handler, &snprint_def_reservation_key);
 	install_keyword("retain_attached_hw_handler", &def_retain_hwhandler_handler, &snprint_def_retain_hwhandler);

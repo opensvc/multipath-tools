@@ -37,6 +37,10 @@ enum {
 	__UNSETPRSTATUS,
 	__FMT,
 	__JSON,
+	__GETPRKEY,
+	__SETPRKEY,
+	__UNSETPRKEY,
+	__KEY,
 };
 
 #define LIST		(1 << __LIST)
@@ -76,6 +80,10 @@ enum {
 #define UNSETPRSTATUS	(1ULL << __UNSETPRSTATUS)
 #define FMT		(1ULL << __FMT)
 #define JSON		(1ULL << __JSON)
+#define GETPRKEY	(1ULL << __GETPRKEY)
+#define SETPRKEY	(1ULL << __SETPRKEY)
+#define UNSETPRKEY	(1ULL << __UNSETPRKEY)
+#define KEY		(1ULL << __KEY)
 
 #define INITIAL_REPLY_LEN	1200
 

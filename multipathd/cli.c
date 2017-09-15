@@ -208,6 +208,11 @@ load_keys (void)
 	r += add_key(keys, "unsetprstatus", UNSETPRSTATUS, 0);
 	r += add_key(keys, "format", FMT, 1);
 	r += add_key(keys, "json", JSON, 0);
+	r += add_key(keys, "getprkey", GETPRKEY, 0);
+	r += add_key(keys, "setprkey", SETPRKEY, 0);
+	r += add_key(keys, "unsetprkey", UNSETPRKEY, 0);
+	r += add_key(keys, "key", KEY, 1);
+
 
 	if (r) {
 		free_keys(keys);
@@ -571,6 +576,9 @@ cli_init (void) {
 	add_handler(GETPRSTATUS+MAP, NULL);
 	add_handler(SETPRSTATUS+MAP, NULL);
 	add_handler(UNSETPRSTATUS+MAP, NULL);
+	add_handler(GETPRKEY+MAP, NULL);
+	add_handler(SETPRKEY+MAP+KEY, NULL);
+	add_handler(UNSETPRKEY+MAP, NULL);
 	add_handler(FORCEQ+DAEMON, NULL);
 	add_handler(RESTOREQ+DAEMON, NULL);
 

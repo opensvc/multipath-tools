@@ -92,7 +92,8 @@ struct mpentry {
 
 	char * prio_name;
 	char * prio_args;
-	struct be64  reservation_key;
+	int prkey_source;
+	struct be64 reservation_key;
 	int pgpolicy;
 	int pgfailback;
 	int rr_weight;
@@ -179,13 +180,15 @@ struct config {
 	char * hwhandler;
 	char * bindings_file;
 	char * wwids_file;
+	char * prkeys_file;
 	char * prio_name;
 	char * prio_args;
 	char * checker_name;
 	char * alias_prefix;
 	char * partition_delim;
 	char * config_dir;
-	struct be64  reservation_key;
+	int prkey_source;
+	struct be64 reservation_key;
 
 	vector keywords;
 	vector mptable;

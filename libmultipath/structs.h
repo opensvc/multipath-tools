@@ -174,6 +174,12 @@ enum initialized_states {
 	INIT_OK,
 };
 
+enum prkey_sources {
+	PRKEY_SOURCE_NONE,
+	PRKEY_SOURCE_CONF,
+	PRKEY_SOURCE_FILE,
+};
+
 struct sg_id {
 	int host_no;
 	int channel;
@@ -309,7 +315,8 @@ struct multipath {
 	void * mpcontext;
 
 	/* persistent management data*/
-	struct be64  reservation_key;
+	int prkey_source;
+	struct be64 reservation_key;
 	unsigned char prflag;
 };
 

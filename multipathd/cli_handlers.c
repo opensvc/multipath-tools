@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <libudev.h>
 #include "util.h"
+#include "prkey.h"
 
 #include "main.h"
 #include "cli.h"
@@ -1389,4 +1390,85 @@ cli_unsetprstatus(void * v, char ** reply, int * len, void * data)
 	}
 
 	return 0;
+}
+
+int
+cli_getprkey(void * v, char ** reply, int * len, void * data)
+{
+	struct multipath * mpp;
+	struct vectors * vecs = (struct vectors *)data;
+	char *mapname = get_keyparam(v, MAP);
+
+	mapname = convert_dev(mapname, 0);
+	condlog(3, "%s: get persistent reservation key (operator)", mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
+
+	if (!mpp)
+		return 1;
+
+	*reply = malloc(20);
+
+	if (!get_be64(mpp->reservation_key)) {
+		sprintf(*reply, "none\n");
+		*len = strlen(*reply) + 1;
+		return 0;
+	}
+	snprintf(*reply, 20, "0x%" PRIx64 "\n",
+		 get_be64(mpp->reservation_key));
+	(*reply)[19] = '\0';
+	*len = strlen(*reply) + 1;
+	return 0;
+}
+
+int
+cli_unsetprkey(void * v, char ** reply, int * len, void * data)
+{
+	struct multipath * mpp;
+	struct vectors * vecs = (struct vectors *)data;
+	char *mapname = get_keyparam(v, MAP);
+	int ret;
+	struct config *conf;
+
+	mapname = convert_dev(mapname, 0);
+	condlog(3, "%s: unset persistent reservation key (operator)", mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
+
+	if (!mpp)
+		return 1;
+
+	conf = get_multipath_config();
+	ret = set_prkey(conf, mpp, 0);
+	put_multipath_config(conf);
+
+	return ret;
+}
+
+int
+cli_setprkey(void * v, char ** reply, int * len, void * data)
+{
+	struct multipath * mpp;
+	struct vectors * vecs = (struct vectors *)data;
+	char *mapname = get_keyparam(v, MAP);
+	char *keyparam = get_keyparam(v, KEY);
+	uint64_t prkey;
+	int ret;
+	struct config *conf;
+
+	mapname = convert_dev(mapname, 0);
+	condlog(3, "%s: set persistent reservation key (operator)", mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
+
+	if (!mpp)
+		return 1;
+
+	if (parse_prkey(keyparam, &prkey) != 0) {
+		condlog(0, "%s: invalid prkey : '%s'", mapname, keyparam);
+		return 1;
+	}
+
+	conf = get_multipath_config();
+	ret = set_prkey(conf, mpp, prkey);
+	put_multipath_config(conf);
+
+	return ret;
 }
