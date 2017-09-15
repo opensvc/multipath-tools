@@ -46,6 +46,7 @@ int send_prout_activepath(char * dev, int rq_servact, int rq_scope,
 	unsigned int rq_type,   struct prout_param_descriptor * paramp, int noisy);
 
 int update_prflag(char *mapname, int set);
+int update_prkey(char *mapname, uint64_t prkey);
 void * mpath_alloc_prin_response(int prin_sa);
 int update_map_pr(struct multipath *mpp);
 

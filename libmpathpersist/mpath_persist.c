@@ -261,8 +261,6 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	int map_present;
 	int major, minor;
 	int ret;
-	int j;
-	unsigned char *keyp;
 	uint64_t prkey;
 	struct config *conf;
 
@@ -339,6 +337,26 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	select_reservation_key(conf, mpp);
 	put_multipath_config(conf);
 
+	memcpy(&prkey, paramp->sa_key, 8);
+	if (mpp->prkey_source == PRKEY_SOURCE_FILE && prkey &&
+	    ((!get_be64(mpp->reservation_key) && MPATH_PROUT_REG_SA) ||
+	     MPATH_PROUT_REG_IGN_SA)) {
+		memcpy(&mpp->reservation_key, paramp->sa_key, 8);
+		if (update_prkey(alias, get_be64(mpp->reservation_key))) {
+			condlog(0, "%s: failed to set prkey for multipathd.",
+				alias);
+			ret = MPATH_PR_DMMP_ERROR;
+			goto out1;
+		}
+	}
+
+	if (memcmp(paramp->key, &mpp->reservation_key, 8) &&
+	    memcmp(paramp->sa_key, &mpp->reservation_key, 8)) {
+		condlog(0, "%s: configured reservation key doesn't match: 0x%" PRIx64, alias, get_be64(mpp->reservation_key));
+		ret = MPATH_PR_SYNTAX_ERROR;
+		goto out1;
+	}
+
 	switch(rq_servact)
 	{
 	case MPATH_PROUT_REG_SA:
@@ -362,22 +380,14 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	if ((ret == MPATH_PR_SUCCESS) && ((rq_servact == MPATH_PROUT_REG_SA) ||
 				(rq_servact ==  MPATH_PROUT_REG_IGN_SA)))
 	{
-		keyp=paramp->sa_key;
-		prkey = 0;
-		for (j = 0; j < 8; ++j) {
-			if (j > 0)
-				prkey <<= 8;
-			prkey |= *keyp;
-			++keyp;
-		}
-		if (prkey == 0)
+		if (prkey == 0) {
 			update_prflag(alias, 0);
-		else
+			update_prkey(alias, 0);
+		} else
 			update_prflag(alias, 1);
-	} else {
-		if ((ret == MPATH_PR_SUCCESS) && (rq_servact == MPATH_PROUT_CLEAR_SA)) {
-			update_prflag(alias, 0);
-		}
+	} else if ((ret == MPATH_PR_SUCCESS) && (rq_servact == MPATH_PROUT_CLEAR_SA)) {
+		update_prflag(alias, 0);
+		update_prkey(alias, 0);
 	}
 out1:
 	free_multipathvec(curmp, KEEP_PATHS);

@@ -58,3 +58,13 @@ static int do_update_pr(char *alias, char *arg)
 int update_prflag(char *mapname, int set) {
 	return do_update_pr(mapname, (set)? "setprstatus" : "unsetprstatus");
 }
+
+int update_prkey(char *mapname, uint64_t prkey) {
+	char str[256];
+
+	if (prkey)
+		sprintf(str, "setprkey key %" PRIx64, prkey);
+	else
+		sprintf(str, "unsetprkey");
+	return do_update_pr(mapname, str);
+}
