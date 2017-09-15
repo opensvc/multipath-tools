@@ -371,13 +371,12 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 			++keyp;
 		}
 		if (prkey == 0)
-			update_prflag(alias, "unset", noisy);
+			update_prflag(alias, 0);
 		else
-			update_prflag(alias, "set", noisy);
+			update_prflag(alias, 1);
 	} else {
-		if ((ret == MPATH_PR_SUCCESS) && ((rq_servact == MPATH_PROUT_CLEAR_SA) ||
-					(rq_servact == MPATH_PROUT_PREE_AB_SA ))){
-			update_prflag(alias, "unset", noisy);
+		if ((ret == MPATH_PR_SUCCESS) && (rq_servact == MPATH_PROUT_CLEAR_SA)) {
+			update_prflag(alias, 0);
 		}
 	}
 out1:

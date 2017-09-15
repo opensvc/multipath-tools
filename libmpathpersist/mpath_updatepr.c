@@ -18,42 +18,43 @@
 #include "mpathpr.h"
 
 
-int update_prflag(char * arg1, char * arg2, int noisy)
+static int do_update_pr(char *alias, char *arg)
 {
 	int fd;
-	char str[64];
+	char str[256];
 	char *reply;
 	int ret = 0;
 
 	fd = mpath_connect();
 	if (fd == -1) {
 		condlog (0, "ux socket connect error");
-		return 1 ;
+		return -1;
 	}
 
-	snprintf(str,sizeof(str),"map %s %s", arg1, arg2);
-	condlog (2, "%s: pr flag message=%s", arg1, str);
+	snprintf(str,sizeof(str),"map %s %s", alias, arg);
+	condlog (2, "%s: pr message=%s", alias, str);
 	if (send_packet(fd, str) != 0) {
-		condlog(2, "%s: message=%s send error=%d", arg1, str, errno);
+		condlog(2, "%s: message=%s send error=%d", alias, str, errno);
 		mpath_disconnect(fd);
-		return -2;
+		return -1;
 	}
 	ret = recv_packet(fd, &reply, DEFAULT_REPLY_TIMEOUT);
 	if (ret < 0) {
-		condlog(2, "%s: message=%s recv error=%d", arg1, str, errno);
-		ret = -2;
+		condlog(2, "%s: message=%s recv error=%d", alias, str, errno);
+		ret = -1;
 	} else {
-		condlog (2, "%s: message=%s reply=%s", arg1, str, reply);
-		if (!reply || strncmp(reply,"ok", 2) == 0)
+		condlog (2, "%s: message=%s reply=%s", alias, str, reply);
+		if (reply && strncmp(reply,"ok", 2) == 0)
+			ret = 0;
+		else
 			ret = -1;
-		else if (strncmp(reply, "fail", 4) == 0)
-			ret = -2;
-		else{
-			ret = atoi(reply);
-		}
 	}
 
 	free(reply);
 	mpath_disconnect(fd);
 	return ret;
+}
+
+int update_prflag(char *mapname, int set) {
+	return do_update_pr(mapname, (set)? "setprstatus" : "unsetprstatus");
 }
