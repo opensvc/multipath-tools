@@ -146,7 +146,7 @@ struct checker * add_checker (char *multipath_dir, char * name)
 	if (!c->repair)
 		goto out;
 
-	c->fd = 0;
+	c->fd = -1;
 	c->sync = 1;
 	list_add(&c->node, &checkers);
 	return c;
@@ -237,7 +237,7 @@ int checker_check (struct checker * c)
 		MSG(c, "checker disabled");
 		return PATH_UNCHECKED;
 	}
-	if (c->fd <= 0) {
+	if (c->fd < 0) {
 		MSG(c, "no usable fd");
 		return PATH_WILD;
 	}
