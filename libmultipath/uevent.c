@@ -361,6 +361,14 @@ static void uevent_cleanup(void *arg)
 	udev_unref(udev);
 }
 
+static void monitor_cleanup(void *arg)
+{
+	struct udev_monitor *monitor = arg;
+
+	condlog(3, "Releasing uevent_monitor() resources");
+	udev_monitor_unref(monitor);
+}
+
 /*
  * Service the uevent queue.
  */
@@ -749,6 +757,7 @@ int uevent_listen(struct udev *udev)
 		condlog(2, "failed to create udev monitor");
 		goto out;
 	}
+	pthread_cleanup_push(monitor_cleanup, monitor);
 #ifdef LIBUDEV_API_RECVBUF
 	if (udev_monitor_set_receive_buffer_size(monitor, 128 * 1024 * 1024))
 		condlog(2, "failed to increase buffer size");
@@ -834,7 +843,7 @@ int uevent_listen(struct udev *udev)
 	need_failback = 0;
 out:
 	if (monitor)
-		udev_monitor_unref(monitor);
+		pthread_cleanup_pop(1);
 	if (need_failback)
 		err = failback_listen();
 	pthread_cleanup_pop(1);
