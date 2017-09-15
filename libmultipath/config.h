@@ -4,6 +4,8 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <urcu.h>
+#include <inttypes.h>
+#include "byteorder.h"
 
 #define ORIGIN_DEFAULT 0
 #define ORIGIN_CONFIG  1
@@ -90,7 +92,7 @@ struct mpentry {
 
 	char * prio_name;
 	char * prio_args;
-	unsigned char * reservation_key;
+	struct be64  reservation_key;
 	int pgpolicy;
 	int pgfailback;
 	int rr_weight;
@@ -183,7 +185,7 @@ struct config {
 	char * alias_prefix;
 	char * partition_delim;
 	char * config_dir;
-	unsigned char * reservation_key;
+	struct be64  reservation_key;
 
 	vector keywords;
 	vector mptable;

@@ -2786,10 +2786,8 @@ main (int argc, char *argv[])
 void *  mpath_pr_event_handler_fn (void * pathp )
 {
 	struct multipath * mpp;
-	int i,j, ret, isFound;
+	int i, ret, isFound;
 	struct path * pp = (struct path *)pathp;
-	unsigned char *keyp;
-	uint64_t prkey;
 	struct prout_param_descriptor *param;
 	struct prin_resp *resp;
 
@@ -2817,22 +2815,15 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 		ret = MPATH_PR_SUCCESS;
 		goto out;
 	}
-	prkey = 0;
-	keyp = (unsigned char *)mpp->reservation_key;
-	for (j = 0; j < 8; ++j) {
-		if (j > 0)
-			prkey <<= 8;
-		prkey |= *keyp;
-		++keyp;
-	}
-	condlog(2, "Multipath  reservation_key: 0x%" PRIx64 " ", prkey);
+	condlog(2, "Multipath  reservation_key: 0x%" PRIx64 " ",
+		get_be64(mpp->reservation_key));
 
 	isFound =0;
 	for (i = 0; i < resp->prin_descriptor.prin_readkeys.additional_length/8; i++ )
 	{
 		condlog(2, "PR IN READKEYS[%d]  reservation key:",i);
 		dumpHex((char *)&resp->prin_descriptor.prin_readkeys.key_list[i*8], 8 , -1);
-		if (!memcmp(mpp->reservation_key, &resp->prin_descriptor.prin_readkeys.key_list[i*8], 8))
+		if (!memcmp(&mpp->reservation_key, &resp->prin_descriptor.prin_readkeys.key_list[i*8], 8))
 		{
 			condlog(2, "%s: pr key found in prin readkeys response", mpp->alias);
 			isFound =1;
@@ -2849,11 +2840,7 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 
 	param= malloc(sizeof(struct prout_param_descriptor));
 	memset(param, 0 , sizeof(struct prout_param_descriptor));
-
-	for (j = 7; j >= 0; --j) {
-		param->sa_key[j] = (prkey & 0xff);
-		prkey >>= 8;
-	}
+	memcpy(param->sa_key, &mpp->reservation_key, 8);
 	param->num_transportid = 0;
 
 	condlog(3, "device %s:%s", pp->dev, pp->mpp->wwid);
@@ -2880,7 +2867,7 @@ int mpath_pr_event_handle(struct path *pp)
 
 	mpp = pp->mpp;
 
-	if (!mpp->reservation_key)
+	if (get_be64(mpp->reservation_key))
 		return -1;
 
 	pthread_attr_init(&attr);

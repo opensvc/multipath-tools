@@ -2,8 +2,10 @@
 #define _STRUCTS_H
 
 #include <sys/types.h>
+#include <inttypes.h>
 
 #include "prio.h"
+#include "byteorder.h"
 
 #define WWID_SIZE		128
 #define SERIAL_SIZE		65
@@ -17,6 +19,7 @@
 #define NAME_SIZE		512
 #define HOST_NAME_LEN		16
 #define SLOT_NAME_SIZE		40
+#define PRKEY_SIZE		19
 
 #define SCSI_VENDOR_SIZE	9
 #define SCSI_PRODUCT_SIZE	17
@@ -306,7 +309,7 @@ struct multipath {
 	void * mpcontext;
 
 	/* persistent management data*/
-	unsigned char * reservation_key;
+	struct be64  reservation_key;
 	unsigned char prflag;
 };
 

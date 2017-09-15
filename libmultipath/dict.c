@@ -962,9 +962,8 @@ snprint_def_log_checker_err (struct config *conf, char * buff, int len, void * d
 static int
 set_reservation_key(vector strvec, void *ptr)
 {
-	unsigned char **uchar_ptr = (unsigned char **)ptr;
+	struct be64 *be64_ptr = (struct be64 *)ptr;
 	char *buff;
-	int j;
 	uint64_t prkey;
 
 	buff = set_value(strvec);
@@ -976,16 +975,7 @@ set_reservation_key(vector strvec, void *ptr)
 		return 1;
 	}
 
-	if (!*uchar_ptr)
-		*uchar_ptr = (unsigned char *) malloc(8);
-
-	memset(*uchar_ptr, 0, 8);
-
-	for (j = 7; j >= 0; --j) {
-		(*uchar_ptr)[j] = (prkey & 0xff);
-		prkey >>= 8;
-	}
-
+	put_be64(*be64_ptr, prkey);
 	FREE(buff);
 	return 0;
 }
@@ -993,21 +983,8 @@ set_reservation_key(vector strvec, void *ptr)
 int
 print_reservation_key(char * buff, int len, void * ptr)
 {
-	unsigned char **uchar_ptr = (unsigned char **)ptr;
-	int i;
-	unsigned char *keyp;
-	uint64_t prkey = 0;
-
-	if (!*uchar_ptr)
-		return 0;
-	keyp = (unsigned char *)(*uchar_ptr);
-	for (i = 0; i < 8; i++) {
-		if (i > 0)
-			prkey <<= 8;
-		prkey |= *keyp;
-		keyp++;
-	}
-	return snprintf(buff, len, "0x%" PRIx64, prkey);
+	struct be64 *be64_ptr = (struct be64 *)ptr;
+	return snprintf(buff, len, "0x%" PRIx64, get_be64(*be64_ptr));
 }
 
 declare_def_handler(reservation_key, set_reservation_key)

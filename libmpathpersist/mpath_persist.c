@@ -775,8 +775,8 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		goto out1;
 	}
 
-	if (mpp->reservation_key ){
-		memcpy (pamp->key, mpp->reservation_key, 8);
+	if (get_be64(mpp->reservation_key)){
+		memcpy (pamp->key, &mpp->reservation_key, 8);
 		condlog (3, "%s: reservation key set.", mpp->wwid);
 	}
 
@@ -792,9 +792,9 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	pptr=pamp->trnptid_list[0];
 
 	for (i = 0; i < num; i++){
-		if (mpp->reservation_key &&
+		if (get_be64(mpp->reservation_key) &&
 			memcmp(pr_buff->prin_descriptor.prin_readfd.descriptors[i]->key,
-			       mpp->reservation_key, 8)){
+			       &mpp->reservation_key, 8)){
 			/*register with tarnsport id*/
 			memset(pamp, 0, length);
 			pamp->trnptid_list[0] = pptr;
@@ -819,7 +819,7 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		}
 		else
 		{
-			if (mpp->reservation_key)
+			if (get_be64(mpp->reservation_key))
 				found = 1;
 		}
 
@@ -828,7 +828,7 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 
 	if (found){
 		memset (pamp, 0, length);
-		memcpy (pamp->sa_key, mpp->reservation_key, 8);
+		memcpy (pamp->sa_key, &mpp->reservation_key, 8);
 		memset (pamp->key, 0, 8);
 		status = mpath_prout_reg(mpp, MPATH_PROUT_REG_SA, rq_scope, rq_type, pamp, noisy);
 	}
@@ -873,11 +873,9 @@ int update_map_pr(struct multipath *mpp)
 {
 	int noisy=0;
 	struct prin_resp *resp;
-	int i,j, ret, isFound;
-	unsigned char *keyp;
-	uint64_t prkey;
+	int i, ret, isFound;
 
-	if (!mpp->reservation_key)
+	if (!get_be64(mpp->reservation_key))
 	{
 		/* Nothing to do. Assuming pr mgmt feature is disabled*/
 		condlog(3, "%s: reservation_key not set in multipath.conf", mpp->alias);
@@ -906,15 +904,8 @@ int update_map_pr(struct multipath *mpp)
 		return MPATH_PR_SUCCESS;
 	}
 
-	prkey = 0;
-	keyp = mpp->reservation_key;
-	for (j = 0; j < 8; ++j) {
-		if (j > 0)
-			prkey <<= 8;
-		prkey |= *keyp;
-		++keyp;
-	}
-	condlog(2, "%s: Multipath  reservation_key: 0x%" PRIx64 " ", mpp->alias, prkey);
+	condlog(2, "%s: Multipath  reservation_key: 0x%" PRIx64 " ", mpp->alias,
+		get_be64(mpp->reservation_key));
 
 	isFound =0;
 	for (i = 0; i < resp->prin_descriptor.prin_readkeys.additional_length/8; i++ )
@@ -922,7 +913,7 @@ int update_map_pr(struct multipath *mpp)
 		condlog(2, "%s: PR IN READKEYS[%d]  reservation key:", mpp->alias, i);
 		dumpHex((char *)&resp->prin_descriptor.prin_readkeys.key_list[i*8], 8 , 1);
 
-		if (!memcmp(mpp->reservation_key, &resp->prin_descriptor.prin_readkeys.key_list[i*8], 8))
+		if (!memcmp(&mpp->reservation_key, &resp->prin_descriptor.prin_readkeys.key_list[i*8], 8))
 		{
 			condlog(2, "%s: reservation key found in pr in readkeys response", mpp->alias);
 			isFound =1;

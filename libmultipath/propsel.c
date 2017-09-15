@@ -609,14 +609,14 @@ out:
 
 int select_reservation_key(struct config *conf, struct multipath *mp)
 {
-	char *origin, buff[12];
+	char *origin, buff[PRKEY_SIZE];
 
-	mp_set_mpe(reservation_key);
-	mp_set_conf(reservation_key);
-	mp->reservation_key = NULL;
+	mp_set_mpe(reservation_key._v);
+	mp_set_conf(reservation_key._v);
+	put_be64(mp->reservation_key, 0);
 	return 0;
 out:
-	print_reservation_key(buff, 12, &mp->reservation_key);
+	print_reservation_key(buff, PRKEY_SIZE, &mp->reservation_key);
 	condlog(3, "%s: reservation_key = %s %s", mp->alias, buff, origin);
 	return 0;
 }
