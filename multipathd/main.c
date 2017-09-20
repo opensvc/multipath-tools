@@ -170,6 +170,7 @@ sd_notify_status(void)
 	return NULL;
 }
 
+#ifdef USE_SYSTEMD
 static void do_sd_notify(enum daemon_status old_state)
 {
 	/*
@@ -182,6 +183,7 @@ static void do_sd_notify(enum daemon_status old_state)
 		return;
 	sd_notify(0, sd_notify_status());
 }
+#endif
 
 static void config_cleanup(void *arg)
 {
