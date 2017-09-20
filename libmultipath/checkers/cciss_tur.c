@@ -73,7 +73,7 @@ int libcheck_check(struct checker * c)
 	LogvolInfo_struct    lvi;       // logical "volume" info
 	IOCTL_Command_struct cic;       // cciss ioctl command
 
-	if ((c->fd) <= 0) {
+	if ((c->fd) < 0) {
 		MSG(c,"no usable fd");
 		ret = -1;
 		goto out;

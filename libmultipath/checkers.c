@@ -44,6 +44,7 @@ struct checker * alloc_checker (void)
 	if (c) {
 		INIT_LIST_HEAD(&c->node);
 		c->refcount = 1;
+		c->fd = -1;
 	}
 	return c;
 }
@@ -203,6 +204,12 @@ int checker_init (struct checker * c, void ** mpctxt_addr)
 	return 0;
 }
 
+void checker_clear (struct checker *c)
+{
+	memset(c, 0x0, sizeof(struct checker));
+	c->fd = -1;
+}
+
 void checker_put (struct checker * dst)
 {
 	struct checker * src;
@@ -212,7 +219,7 @@ void checker_put (struct checker * dst)
 	src = checker_lookup(dst->name);
 	if (dst->free)
 		dst->free(dst);
-	memset(dst, 0x0, sizeof(struct checker));
+	checker_clear(dst);
 	free_checker(src);
 }
 

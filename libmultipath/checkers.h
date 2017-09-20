@@ -11,7 +11,7 @@
  *
  * PATH_WILD:
  * - Use: None of the checkers (returned if we don't have an fd)
- * - Description: Corner case where "fd <= 0" for path fd (see checker_check())
+ * - Description: Corner case where "fd < 0" for path fd (see checker_check())
  *
  * PATH_UNCHECKED:
  * - Use: Only in directio checker
@@ -128,6 +128,7 @@ void cleanup_checkers (void);
 struct checker * add_checker (char *, char *);
 struct checker * checker_lookup (char *);
 int checker_init (struct checker *, void **);
+void checker_clear (struct checker *);
 void checker_put (struct checker *);
 void checker_reset (struct checker *);
 void checker_set_sync (struct checker *);

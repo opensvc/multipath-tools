@@ -1573,7 +1573,7 @@ get_state (struct path * pp, struct config *conf, int daemon, int oldstate)
 		}
 		checker_set_fd(c, pp->fd);
 		if (checker_init(c, pp->mpp?&pp->mpp->mpcontext:NULL)) {
-			memset(c, 0x0, sizeof(struct checker));
+			checker_clear(c);
 			condlog(3, "%s: checker init failed", pp->dev);
 			return PATH_UNCHECKED;
 		}

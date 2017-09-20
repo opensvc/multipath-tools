@@ -99,6 +99,7 @@ alloc_path (void)
 		pp->fd = -1;
 		pp->tpgs = TPGS_UNDEF;
 		pp->priority = PRIO_UNDEF;
+		checker_clear(&pp->checker);
 	}
 	return pp;
 }
