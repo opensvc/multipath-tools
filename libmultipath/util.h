@@ -7,6 +7,7 @@
 size_t strchop(char *);
 int basenamecpy (const char * src, char * dst, int);
 int filepresent (char * run);
+char *get_next_string(char **temp, char *split_char);
 int get_word (char * sentence, char ** word);
 size_t strlcpy(char *dst, const char *src, size_t size);
 size_t strlcat(char *dst, const char *src, size_t size);

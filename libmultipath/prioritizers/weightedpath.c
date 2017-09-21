@@ -34,15 +34,7 @@
 #include <regex.h>
 #include "structs_vec.h"
 #include "print.h"
-
-char *get_next_string(char **temp, char *split_char)
-{
-	char *token = NULL;
-	token = strsep(temp, split_char);
-	while (token != NULL && !strcmp(token, ""))
-		token = strsep(temp, split_char);
-	return token;
-}
+#include "util.h"
 
 #define CHECK_LEN \
 do { \

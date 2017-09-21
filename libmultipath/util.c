@@ -65,6 +65,15 @@ filepresent (char * run) {
 	return 0;
 }
 
+char *get_next_string(char **temp, char *split_char)
+{
+	char *token = NULL;
+	token = strsep(temp, split_char);
+	while (token != NULL && !strcmp(token, ""))
+		token = strsep(temp, split_char);
+	return token;
+}
+
 int
 get_word (char * sentence, char ** word)
 {
