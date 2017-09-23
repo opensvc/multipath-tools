@@ -568,8 +568,8 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* XIV Storage System / FlashSystem A9000/A9000R */
-		.vendor        = "IBM",
-		.product       = "2810XIV",
+		.vendor        = "(XIV|IBM)",
+		.product       = "(NEXTRA|2810XIV)",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
 	},
