@@ -574,9 +574,9 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 	},
 	{
-		/* FlashSystem 710/720/810/820/840/900 */
-		.vendor        = "IBM",
-		.product       = "FlashSystem",
+		/* TMS RamSan / FlashSystem 710/720/810/820/840/900 */
+		.vendor        = "(TMS|IBM)",
+		.product       = "(RamSan|FlashSystem)",
 		.pgpolicy      = MULTIBUS,
 	},
 	{
