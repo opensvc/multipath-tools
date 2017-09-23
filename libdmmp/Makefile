@@ -54,6 +54,7 @@ uninstall:
 		$(RM) $$file; \
 	done
 	$(RM) $(DESTDIR)$(man3dir)/libdmmp.h*
+	$(RM) $(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 
 clean:
 	$(RM) core *.a *.o *.gz *.so *.so.*
