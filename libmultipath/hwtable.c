@@ -1170,6 +1170,16 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	/*
+	 * AccelStor
+	 */
+	{
+		/* NeoSapphire */
+		.vendor        = "AStor",
+		.product       = "NeoSapphire",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 30,
+	},
+	/*
 	 * EOL
 	 */
 	{
