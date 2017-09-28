@@ -639,8 +639,8 @@ static struct hwentry default_hw[] = {
 		/*
 		 * SANtricity(RDAC) family
 		 *
-		 * Maintainer : Sean Stewart
-		 * Mail : sean.stewart@netapp.com
+		 * Maintainer : NetApp RDAC team
+		 * Mail : ng-eseries-upstream-maintainers@netapp.com
 		 */
 		.vendor        = "(NETAPP|LSI|ENGENIO)",
 		.product       = "INF-01-00",
