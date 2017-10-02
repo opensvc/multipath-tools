@@ -76,10 +76,10 @@ docs/man/$(EXTRA_MAN_FILES).gz: $(HEADERS)
 		$(INSTALL_PROGRAM) -v -m 644 -D docs/$$file docs/man/$$file; \
 	done
 	cat $(HEADERS) | \
-	    perl docs/doc-preclean.pl > $(TEMPFILE)
-	perl docs/kernel-doc -man $(TEMPFILE) | \
+	    perl docs/doc-preclean.pl > "$(TEMPFILE)"
+	perl docs/kernel-doc -man "$(TEMPFILE)" | \
 	    perl docs/split-man.pl docs/man
-	-rm -f $(TEMPFILE)
+	-rm -f "$(TEMPFILE)"
 	@for file in docs/man/*.3; do \
 		gzip -f $$file; \
 	done
