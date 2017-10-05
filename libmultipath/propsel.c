@@ -367,16 +367,42 @@ out:
 	return 0;
 }
 
+/*
+ * Current RDAC (NetApp E-Series) firmware relies
+ * on periodic REPORT TARGET PORT GROUPS for
+ * internal load balancing.
+ * Using the sysfs priority checker defeats this purpose.
+ *
+ * Moreover, NetApp would also prefer the RDAC checker over ALUA.
+ * (https://www.redhat.com/archives/dm-devel/2017-September/msg00326.html)
+ */
+static int
+check_rdac(struct path * pp)
+{
+	int len;
+	char buff[44];
+
+	len = get_vpd_sgio(pp->fd, 0xC9, buff, 44);
+	if (len <= 0)
+		return 0;
+	return !(memcmp(buff + 4, "vac1", 4));
+}
+
 int select_checker(struct config *conf, struct path *pp)
 {
 	char *origin, *checker_name;
 	struct checker * c = &pp->checker;
 
-	if (pp->detect_checker == DETECT_CHECKER_ON && pp->tpgs > 0) {
-		checker_name = TUR;
+	if (pp->detect_checker == DETECT_CHECKER_ON) {
 		origin = "(setting: storage device autodetected)";
-		goto out;
-	}
+		if (check_rdac(pp)) {
+			checker_name = RDAC;
+			goto out;
+		} else if (pp->tpgs > 0) {
+			checker_name = TUR;
+			goto out;
+		}
+ 	}
 	do_set(checker_name, conf->overrides, checker_name, "(setting: multipath.conf overrides section)");
 	do_set(checker_name, pp->hwe, checker_name, "(setting: storage device configuration)");
 	do_set(checker_name, conf, checker_name, "(setting: multipath.conf defaults/devices section)");
@@ -425,24 +451,6 @@ out:
 		condlog(3, "%s: getuid = \"%s\" %s", pp->dev, pp->getuid,
 			origin);
 	return 0;
-}
-
-/*
- * Current RDAC (NetApp E-Series) firmware relies
- * on periodic REPORT TARGET PORT GROUPS for
- * internal load balancing.
- * Using the sysfs priority checker defeats this purpose.
- */
-static int
-check_rdac(struct path * pp)
-{
-	int len;
-	char buff[44];
-
-	len = get_vpd_sgio(pp->fd, 0xC9, buff, 44);
-	if (len <= 0)
-		return 0;
-	return !(memcmp(buff + 4, "vac1", 4));
 }
 
 void
