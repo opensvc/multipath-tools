@@ -84,6 +84,7 @@ int uxsock_timeout;
 #include "cli_handlers.h"
 #include "lock.h"
 #include "waiter.h"
+#include "io_err_stat.h"
 #include "wwids.h"
 #include "../third-party/valgrind/drd.h"
 
@@ -1066,6 +1067,42 @@ out:
 }
 
 static int
+uev_pathfail_check(struct uevent *uev, struct vectors *vecs)
+{
+	char *action = NULL, *devt = NULL;
+	struct path *pp;
+	int r;
+
+	action = uevent_get_dm_action(uev);
+	if (!action)
+		return 1;
+	if (strncmp(action, "PATH_FAILED", 11))
+		goto out;
+	devt = uevent_get_dm_path(uev);
+	if (!devt) {
+		condlog(3, "%s: No DM_PATH in uevent", uev->kernel);
+		goto out;
+	}
+
+	pthread_cleanup_push(cleanup_lock, &vecs->lock);
+	lock(&vecs->lock);
+	pthread_testcancel();
+	pp = find_path_by_devt(vecs->pathvec, devt);
+	r = io_err_stat_handle_pathfail(pp);
+	lock_cleanup_pop(vecs->lock);
+
+	if (r)
+		condlog(3, "io_err_stat: %s: cannot handle pathfail uevent",
+				pp->dev);
+	FREE(devt);
+	FREE(action);
+	return 0;
+out:
+	FREE(action);
+	return 1;
+}
+
+static int
 map_discovery (struct vectors * vecs)
 {
 	struct multipath * mpp;
@@ -1150,6 +1187,14 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	if (!strncmp(uev->kernel, "dm-", 3)) {
 		if (!strncmp(uev->action, "change", 6)) {
 			r = uev_add_map(uev, vecs);
+
+			/*
+			 * the kernel-side dm-mpath issues a PATH_FAILED event
+			 * when it encounters a path IO error. It is reason-
+			 * able be the entry of path IO error accounting pro-
+			 * cess.
+			 */
+			uev_pathfail_check(uev, vecs);
 			goto out;
 		}
 		if (!strncmp(uev->action, "remove", 6)) {
@@ -1572,6 +1617,7 @@ static int check_path_reinstate_state(struct path * pp) {
 		condlog(2, "%s : hit error threshold. Delaying path reinstatement", pp->dev);
 		pp->dis_reinstate_time = curr_time.tv_sec;
 		pp->disable_reinstate = 1;
+
 		return 1;
 	} else {
 		return 0;
@@ -1700,6 +1746,16 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	if ((newstate == PATH_UP || newstate == PATH_GHOST) &&
 			check_path_reinstate_state(pp)) {
 		pp->state = PATH_DELAYED;
+		return 1;
+	}
+
+	if (pp->io_err_disable_reinstate && hit_io_err_recheck_time(pp)) {
+		pp->state = PATH_SHAKY;
+		/*
+		 * to reschedule as soon as possible,so that this path can
+		 * be recoverd in time
+		 */
+		pp->tick = 1;
 		return 1;
 	}
 
@@ -2396,6 +2452,7 @@ child (void * param)
 	setup_thread_attr(&misc_attr, 64 * 1024, 0);
 	setup_thread_attr(&uevent_attr, DEFAULT_UEVENT_STACKSIZE * 1024, 0);
 	setup_thread_attr(&waiter_attr, 32 * 1024, 1);
+	setup_thread_attr(&io_err_stat_attr, 32 * 1024, 1);
 
 	if (logsink == 1) {
 		setup_thread_attr(&log_attr, 64 * 1024, 0);
@@ -2518,6 +2575,10 @@ child (void * param)
 	/*
 	 * start threads
 	 */
+	rc = start_io_err_stat_thread(vecs);
+	if (rc)
+		goto failed;
+
 	if ((rc = pthread_create(&check_thr, &misc_attr, checkerloop, vecs))) {
 		condlog(0,"failed to create checker loop thread: %d", rc);
 		goto failed;
@@ -2567,6 +2628,8 @@ child (void * param)
 	remove_maps_and_stop_waiters(vecs);
 	unlock(&vecs->lock);
 
+	stop_io_err_stat_thread();
+
 	pthread_cancel(check_thr);
 	pthread_cancel(uevent_thr);
 	pthread_cancel(uxlsnr_thr);
@@ -2612,6 +2675,7 @@ child (void * param)
 	udev_unref(udev);
 	udev = NULL;
 	pthread_attr_destroy(&waiter_attr);
+	pthread_attr_destroy(&io_err_stat_attr);
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
 #endif

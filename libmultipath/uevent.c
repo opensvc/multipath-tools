@@ -922,3 +922,35 @@ char *uevent_get_dm_name(struct uevent *uev)
 	}
 	return p;
 }
+
+char *uevent_get_dm_path(struct uevent *uev)
+{
+	char *p = NULL;
+	int i;
+
+	for (i = 0; uev->envp[i] != NULL; i++) {
+		if (!strncmp(uev->envp[i], "DM_PATH", 7) &&
+		    strlen(uev->envp[i]) > 8) {
+			p = MALLOC(strlen(uev->envp[i] + 8) + 1);
+			strcpy(p, uev->envp[i] + 8);
+			break;
+		}
+	}
+	return p;
+}
+
+char *uevent_get_dm_action(struct uevent *uev)
+{
+	char *p = NULL;
+	int i;
+
+	for (i = 0; uev->envp[i] != NULL; i++) {
+		if (!strncmp(uev->envp[i], "DM_ACTION", 9) &&
+		    strlen(uev->envp[i]) > 10) {
+			p = MALLOC(strlen(uev->envp[i] + 10) + 1);
+			strcpy(p, uev->envp[i] + 10);
+			break;
+		}
+	}
+	return p;
+}

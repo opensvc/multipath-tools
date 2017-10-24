@@ -754,6 +754,7 @@ out:
 	return 0;
 
 }
+
 int select_san_path_err_threshold(struct config *conf, struct multipath *mp)
 {
 	char *origin, buff[12];
@@ -784,6 +785,7 @@ out:
 	return 0;
 
 }
+
 int select_san_path_err_recovery_time(struct config *conf, struct multipath *mp)
 {
 	char *origin, buff[12];
@@ -799,6 +801,71 @@ out:
 	return 0;
 
 }
+
+int select_marginal_path_err_sample_time(struct config *conf, struct multipath *mp)
+{
+	char *origin, buff[12];
+
+	mp_set_mpe(marginal_path_err_sample_time);
+	mp_set_ovr(marginal_path_err_sample_time);
+	mp_set_hwe(marginal_path_err_sample_time);
+	mp_set_conf(marginal_path_err_sample_time);
+	mp_set_default(marginal_path_err_sample_time, DEFAULT_ERR_CHECKS);
+out:
+	print_off_int_undef(buff, 12, &mp->marginal_path_err_sample_time);
+	condlog(3, "%s: marginal_path_err_sample_time = %s %s", mp->alias, buff,
+			origin);
+	return 0;
+}
+
+int select_marginal_path_err_rate_threshold(struct config *conf, struct multipath *mp)
+{
+	char *origin, buff[12];
+
+	mp_set_mpe(marginal_path_err_rate_threshold);
+	mp_set_ovr(marginal_path_err_rate_threshold);
+	mp_set_hwe(marginal_path_err_rate_threshold);
+	mp_set_conf(marginal_path_err_rate_threshold);
+	mp_set_default(marginal_path_err_rate_threshold, DEFAULT_ERR_CHECKS);
+out:
+	print_off_int_undef(buff, 12, &mp->marginal_path_err_rate_threshold);
+	condlog(3, "%s: marginal_path_err_rate_threshold = %s %s", mp->alias, buff,
+			origin);
+	return 0;
+}
+
+int select_marginal_path_err_recheck_gap_time(struct config *conf, struct multipath *mp)
+{
+	char *origin, buff[12];
+
+	mp_set_mpe(marginal_path_err_recheck_gap_time);
+	mp_set_ovr(marginal_path_err_recheck_gap_time);
+	mp_set_hwe(marginal_path_err_recheck_gap_time);
+	mp_set_conf(marginal_path_err_recheck_gap_time);
+	mp_set_default(marginal_path_err_recheck_gap_time, DEFAULT_ERR_CHECKS);
+out:
+	print_off_int_undef(buff, 12, &mp->marginal_path_err_recheck_gap_time);
+	condlog(3, "%s: marginal_path_err_recheck_gap_time = %s %s", mp->alias, buff,
+			origin);
+	return 0;
+}
+
+int select_marginal_path_double_failed_time(struct config *conf, struct multipath *mp)
+{
+	char *origin, buff[12];
+
+	mp_set_mpe(marginal_path_double_failed_time);
+	mp_set_ovr(marginal_path_double_failed_time);
+	mp_set_hwe(marginal_path_double_failed_time);
+	mp_set_conf(marginal_path_double_failed_time);
+	mp_set_default(marginal_path_double_failed_time, DEFAULT_ERR_CHECKS);
+out:
+	print_off_int_undef(buff, 12, &mp->marginal_path_double_failed_time);
+	condlog(3, "%s: marginal_path_double_failed_time = %s %s", mp->alias, buff,
+			origin);
+	return 0;
+}
+
 int select_skip_kpartx (struct config *conf, struct multipath * mp)
 {
 	char *origin;

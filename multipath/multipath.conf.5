@@ -863,6 +863,74 @@ The default is: \fBno\fR
 .
 .
 .TP
+.B marginal_path_double_failed_time
+One of the four parameters of supporting path check based on accounting IO
+error such as intermittent error. When a path failed event occurs twice in
+\fImarginal_path_double_failed_time\fR seconds due to an IO error and all the
+other three parameters are set, multipathd will fail the path and enqueue
+this path into a queue of which members are sent a couple of continuous
+direct reading asynchronous IOs at a fixed sample rate of 10HZ to start IO
+error accounting process.
+.RS
+.TP
+The default is: \fBno\fR
+.RE
+.
+.
+.TP
+.B marginal_path_err_sample_time
+One of the four parameters of supporting path check based on accounting IO
+error such as intermittent error. If it is set to a value no less than 120,
+when a path fail event occurs twice in \fImarginal_path_double_failed_time\fR
+second due to an IO error, multipathd will fail the path and enqueue this
+path into a queue of which members are sent a couple of continuous direct
+reading asynchronous IOs at a fixed sample rate of 10HZ to start the IO
+accounting process for the path will last for
+\fImarginal_path_err_sample_time\fR.
+If the rate of IO error on a particular path is greater than the
+\fImarginal_path_err_rate_threshold\fR, then the path will not reinstate for
+\fImarginal_path_err_rate_threshold\fR seconds unless there is only one
+active path. After \fImarginal_path_err_recheck_gap_time\fR expires, the path
+will be requeueed for rechecking. If checking result is good enough, the
+path will be reinstated.
+.RS
+.TP
+The default is: \fBno\fR
+.RE
+.
+.
+.TP
+.B marginal_path_err_rate_threshold
+The error rate threshold as a permillage (1/1000). One of the four parameters
+of supporting path check based on accounting IO error such as intermittent
+error. Refer to \fImarginal_path_err_sample_time\fR. If the rate of IO errors
+on a particular path is greater than this parameter, then the path will not
+reinstate for \fImarginal_path_err_rate_threshold\fR seconds unless there is
+only one active path.
+.RS
+.TP
+The default is: \fBno\fR
+.RE
+.
+.
+.TP
+.B marginal_path_err_recheck_gap_time
+One of the four parameters of supporting path check based on accounting IO
+error such as intermittent error. Refer to
+\fImarginal_path_err_sample_time\fR. If this parameter is set to a positive
+value, the failed path of  which the IO error rate is larger than
+\fImarginal_path_err_rate_threshold\fR will be kept in failed state for
+\fImarginal_path_err_recheck_gap_time\fR seconds. When
+\fImarginal_path_err_recheck_gap_time\fR seconds expires, the path will be
+requeueed for checking. If checking result is good enough, the path will be
+reinstated, or else it will keep failed.
+.RS
+.TP
+The default is: \fBno\fR
+.RE
+.
+.
+.TP
 .B delay_watch_checks
 If set to a value greater than 0, multipathd will watch paths that have
 recently become valid for this many checks. If they fail again while they are
@@ -1133,6 +1201,14 @@ are taken from the \fIdefaults\fR or \fIdevices\fR section:
 .TP
 .B san_path_err_recovery_time
 .TP
+.B marginal_path_err_sample_time
+.TP
+.B marginal_path_err_rate_threshold
+.TP
+.B marginal_path_err_recheck_gap_time
+.TP
+.B marginal_path_double_failed_time
+.TP
 .B delay_watch_checks
 .TP
 .B delay_wait_checks
@@ -1260,6 +1336,14 @@ section:
 .TP
 .B san_path_err_recovery_time
 .TP
+.B marginal_path_err_sample_time
+.TP
+.B marginal_path_err_rate_threshold
+.TP
+.B marginal_path_err_recheck_gap_time
+.TP
+.B marginal_path_double_failed_time
+.TP
 .B delay_watch_checks
 .TP
 .B delay_wait_checks
@@ -1331,6 +1415,14 @@ the values are taken from the \fIdevices\fR or \fIdefaults\fR sections:
 .B san_path_err_forget_rate
 .TP
 .B san_path_err_recovery_time
+.TP
+.B marginal_path_err_sample_time
+.TP
+.B marginal_path_err_rate_threshold
+.TP
+.B marginal_path_err_recheck_gap_time
+.TP
+.B marginal_path_double_failed_time
 .TP
 .B delay_watch_checks
 .TP

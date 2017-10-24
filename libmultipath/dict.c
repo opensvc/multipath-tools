@@ -1110,6 +1110,45 @@ declare_hw_handler(san_path_err_recovery_time, set_off_int_undef)
 declare_hw_snprint(san_path_err_recovery_time, print_off_int_undef)
 declare_mp_handler(san_path_err_recovery_time, set_off_int_undef)
 declare_mp_snprint(san_path_err_recovery_time, print_off_int_undef)
+declare_def_handler(marginal_path_err_sample_time, set_off_int_undef)
+declare_def_snprint_defint(marginal_path_err_sample_time, print_off_int_undef,
+			   DEFAULT_ERR_CHECKS)
+declare_ovr_handler(marginal_path_err_sample_time, set_off_int_undef)
+declare_ovr_snprint(marginal_path_err_sample_time, print_off_int_undef)
+declare_hw_handler(marginal_path_err_sample_time, set_off_int_undef)
+declare_hw_snprint(marginal_path_err_sample_time, print_off_int_undef)
+declare_mp_handler(marginal_path_err_sample_time, set_off_int_undef)
+declare_mp_snprint(marginal_path_err_sample_time, print_off_int_undef)
+declare_def_handler(marginal_path_err_rate_threshold, set_off_int_undef)
+declare_def_snprint_defint(marginal_path_err_rate_threshold, print_off_int_undef,
+			   DEFAULT_ERR_CHECKS)
+declare_ovr_handler(marginal_path_err_rate_threshold, set_off_int_undef)
+declare_ovr_snprint(marginal_path_err_rate_threshold, print_off_int_undef)
+declare_hw_handler(marginal_path_err_rate_threshold, set_off_int_undef)
+declare_hw_snprint(marginal_path_err_rate_threshold, print_off_int_undef)
+declare_mp_handler(marginal_path_err_rate_threshold, set_off_int_undef)
+declare_mp_snprint(marginal_path_err_rate_threshold, print_off_int_undef)
+declare_def_handler(marginal_path_err_recheck_gap_time, set_off_int_undef)
+declare_def_snprint_defint(marginal_path_err_recheck_gap_time, print_off_int_undef,
+			   DEFAULT_ERR_CHECKS)
+declare_ovr_handler(marginal_path_err_recheck_gap_time, set_off_int_undef)
+declare_ovr_snprint(marginal_path_err_recheck_gap_time, print_off_int_undef)
+declare_hw_handler(marginal_path_err_recheck_gap_time, set_off_int_undef)
+declare_hw_snprint(marginal_path_err_recheck_gap_time, print_off_int_undef)
+declare_mp_handler(marginal_path_err_recheck_gap_time, set_off_int_undef)
+declare_mp_snprint(marginal_path_err_recheck_gap_time, print_off_int_undef)
+declare_def_handler(marginal_path_double_failed_time, set_off_int_undef)
+declare_def_snprint_defint(marginal_path_double_failed_time, print_off_int_undef,
+			   DEFAULT_ERR_CHECKS)
+declare_ovr_handler(marginal_path_double_failed_time, set_off_int_undef)
+declare_ovr_snprint(marginal_path_double_failed_time, print_off_int_undef)
+declare_hw_handler(marginal_path_double_failed_time, set_off_int_undef)
+declare_hw_snprint(marginal_path_double_failed_time, print_off_int_undef)
+declare_mp_handler(marginal_path_double_failed_time, set_off_int_undef)
+declare_mp_snprint(marginal_path_double_failed_time, print_off_int_undef)
+
+
+
 static int
 def_uxsock_timeout_handler(struct config *conf, vector strvec)
 {
@@ -1446,6 +1485,10 @@ init_keywords(vector keywords)
 	install_keyword("san_path_err_threshold", &def_san_path_err_threshold_handler, &snprint_def_san_path_err_threshold);
 	install_keyword("san_path_err_forget_rate", &def_san_path_err_forget_rate_handler, &snprint_def_san_path_err_forget_rate);
 	install_keyword("san_path_err_recovery_time", &def_san_path_err_recovery_time_handler, &snprint_def_san_path_err_recovery_time);
+	install_keyword("marginal_path_err_sample_time", &def_marginal_path_err_sample_time_handler, &snprint_def_marginal_path_err_sample_time);
+	install_keyword("marginal_path_err_rate_threshold", &def_marginal_path_err_rate_threshold_handler, &snprint_def_marginal_path_err_rate_threshold);
+	install_keyword("marginal_path_err_recheck_gap_time", &def_marginal_path_err_recheck_gap_time_handler, &snprint_def_marginal_path_err_recheck_gap_time);
+	install_keyword("marginal_path_double_failed_time", &def_marginal_path_double_failed_time_handler, &snprint_def_marginal_path_double_failed_time);
 
 	install_keyword("find_multipaths", &def_find_multipaths_handler, &snprint_def_find_multipaths);
 	install_keyword("uxsock_timeout", &def_uxsock_timeout_handler, &snprint_def_uxsock_timeout);
@@ -1533,6 +1576,10 @@ init_keywords(vector keywords)
 	install_keyword("san_path_err_threshold", &hw_san_path_err_threshold_handler, &snprint_hw_san_path_err_threshold);
 	install_keyword("san_path_err_forget_rate", &hw_san_path_err_forget_rate_handler, &snprint_hw_san_path_err_forget_rate);
 	install_keyword("san_path_err_recovery_time", &hw_san_path_err_recovery_time_handler, &snprint_hw_san_path_err_recovery_time);
+	install_keyword("marginal_path_err_sample_time", &hw_marginal_path_err_sample_time_handler, &snprint_hw_marginal_path_err_sample_time);
+	install_keyword("marginal_path_err_rate_threshold", &hw_marginal_path_err_rate_threshold_handler, &snprint_hw_marginal_path_err_rate_threshold);
+	install_keyword("marginal_path_err_recheck_gap_time", &hw_marginal_path_err_recheck_gap_time_handler, &snprint_hw_marginal_path_err_recheck_gap_time);
+	install_keyword("marginal_path_double_failed_time", &hw_marginal_path_double_failed_time_handler, &snprint_hw_marginal_path_double_failed_time);
 	install_keyword("skip_kpartx", &hw_skip_kpartx_handler, &snprint_hw_skip_kpartx);
 	install_keyword("max_sectors_kb", &hw_max_sectors_kb_handler, &snprint_hw_max_sectors_kb);
 	install_sublevel_end();
@@ -1566,6 +1613,10 @@ init_keywords(vector keywords)
 	install_keyword("san_path_err_threshold", &ovr_san_path_err_threshold_handler, &snprint_ovr_san_path_err_threshold);
 	install_keyword("san_path_err_forget_rate", &ovr_san_path_err_forget_rate_handler, &snprint_ovr_san_path_err_forget_rate);
 	install_keyword("san_path_err_recovery_time", &ovr_san_path_err_recovery_time_handler, &snprint_ovr_san_path_err_recovery_time);
+	install_keyword("marginal_path_err_sample_time", &ovr_marginal_path_err_sample_time_handler, &snprint_ovr_marginal_path_err_sample_time);
+	install_keyword("marginal_path_err_rate_threshold", &ovr_marginal_path_err_rate_threshold_handler, &snprint_ovr_marginal_path_err_rate_threshold);
+	install_keyword("marginal_path_err_recheck_gap_time", &ovr_marginal_path_err_recheck_gap_time_handler, &snprint_ovr_marginal_path_err_recheck_gap_time);
+	install_keyword("marginal_path_double_failed_time", &ovr_marginal_path_double_failed_time_handler, &snprint_ovr_marginal_path_double_failed_time);
 
 	install_keyword("skip_kpartx", &ovr_skip_kpartx_handler, &snprint_ovr_skip_kpartx);
 	install_keyword("max_sectors_kb", &ovr_max_sectors_kb_handler, &snprint_ovr_max_sectors_kb);
@@ -1598,6 +1649,10 @@ init_keywords(vector keywords)
 	install_keyword("san_path_err_threshold", &mp_san_path_err_threshold_handler, &snprint_mp_san_path_err_threshold);
 	install_keyword("san_path_err_forget_rate", &mp_san_path_err_forget_rate_handler, &snprint_mp_san_path_err_forget_rate);
 	install_keyword("san_path_err_recovery_time", &mp_san_path_err_recovery_time_handler, &snprint_mp_san_path_err_recovery_time);
+	install_keyword("marginal_path_err_sample_time", &mp_marginal_path_err_sample_time_handler, &snprint_mp_marginal_path_err_sample_time);
+	install_keyword("marginal_path_err_rate_threshold", &mp_marginal_path_err_rate_threshold_handler, &snprint_mp_marginal_path_err_rate_threshold);
+	install_keyword("marginal_path_err_recheck_gap_time", &mp_marginal_path_err_recheck_gap_time_handler, &snprint_mp_marginal_path_err_recheck_gap_time);
+	install_keyword("marginal_path_double_failed_time", &mp_marginal_path_double_failed_time_handler, &snprint_mp_marginal_path_double_failed_time);
 	install_keyword("skip_kpartx", &mp_skip_kpartx_handler, &snprint_mp_skip_kpartx);
 	install_keyword("max_sectors_kb", &mp_max_sectors_kb_handler, &snprint_mp_max_sectors_kb);
 	install_sublevel_end();

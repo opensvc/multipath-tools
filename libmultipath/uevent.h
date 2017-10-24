@@ -37,5 +37,7 @@ int uevent_get_major(struct uevent *uev);
 int uevent_get_minor(struct uevent *uev);
 int uevent_get_disk_ro(struct uevent *uev);
 char *uevent_get_dm_name(struct uevent *uev);
+char *uevent_get_dm_path(struct uevent *uev);
+char *uevent_get_dm_action(struct uevent *uev);
 
 #endif /* _UEVENT_H */

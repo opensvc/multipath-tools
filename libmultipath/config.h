@@ -78,6 +78,10 @@ struct hwentry {
 	int san_path_err_threshold;
 	int san_path_err_forget_rate;
 	int san_path_err_recovery_time;
+	int marginal_path_err_sample_time;
+	int marginal_path_err_rate_threshold;
+	int marginal_path_err_recheck_gap_time;
+	int marginal_path_double_failed_time;
 	int skip_kpartx;
 	int max_sectors_kb;
 	char * bl_product;
@@ -110,6 +114,10 @@ struct mpentry {
 	int san_path_err_threshold;
 	int san_path_err_forget_rate;
 	int san_path_err_recovery_time;
+	int marginal_path_err_sample_time;
+	int marginal_path_err_rate_threshold;
+	int marginal_path_err_recheck_gap_time;
+	int marginal_path_double_failed_time;
 	int skip_kpartx;
 	int max_sectors_kb;
 	uid_t uid;
@@ -159,6 +167,10 @@ struct config {
 	int san_path_err_threshold;
 	int san_path_err_forget_rate;
 	int san_path_err_recovery_time;
+	int marginal_path_err_sample_time;
+	int marginal_path_err_rate_threshold;
+	int marginal_path_err_recheck_gap_time;
+	int marginal_path_double_failed_time;
 	int uxsock_timeout;
 	int strict_timing;
 	int retrigger_tries;

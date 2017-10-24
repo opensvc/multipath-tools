@@ -244,6 +244,10 @@ struct path {
 	time_t dis_reinstate_time;
 	int disable_reinstate;
 	int san_path_err_forget_rate;
+	time_t io_err_dis_reinstate_time;
+	int io_err_disable_reinstate;
+	int io_err_pathfail_cnt;
+	int io_err_pathfail_starttime;
 	/* configlet pointers */
 	struct hwentry * hwe;
 };
@@ -278,6 +282,10 @@ struct multipath {
 	int san_path_err_threshold;
 	int san_path_err_forget_rate;
 	int san_path_err_recovery_time;
+	int marginal_path_err_sample_time;
+	int marginal_path_err_rate_threshold;
+	int marginal_path_err_recheck_gap_time;
+	int marginal_path_double_failed_time;
 	int skip_kpartx;
 	int max_sectors_kb;
 	int force_readonly;
