@@ -240,10 +240,6 @@ struct path {
 	int initialized;
 	int retriggers;
 	int wwid_changed;
-	unsigned int path_failures;
-	time_t dis_reinstate_time;
-	int disable_reinstate;
-	int san_path_err_forget_rate;
 	time_t io_err_dis_reinstate_time;
 	int io_err_disable_reinstate;
 	int io_err_pathfail_cnt;
@@ -279,9 +275,6 @@ struct multipath {
 	int deferred_remove;
 	int delay_watch_checks;
 	int delay_wait_checks;
-	int san_path_err_threshold;
-	int san_path_err_forget_rate;
-	int san_path_err_recovery_time;
 	int marginal_path_err_sample_time;
 	int marginal_path_err_rate_threshold;
 	int marginal_path_err_recheck_gap_time;

@@ -1083,33 +1083,6 @@ declare_hw_handler(delay_wait_checks, set_off_int_undef)
 declare_hw_snprint(delay_wait_checks, print_off_int_undef)
 declare_mp_handler(delay_wait_checks, set_off_int_undef)
 declare_mp_snprint(delay_wait_checks, print_off_int_undef)
-declare_def_handler(san_path_err_threshold, set_off_int_undef)
-declare_def_snprint_defint(san_path_err_threshold, print_off_int_undef,
-			   DEFAULT_ERR_CHECKS)
-declare_ovr_handler(san_path_err_threshold, set_off_int_undef)
-declare_ovr_snprint(san_path_err_threshold, print_off_int_undef)
-declare_hw_handler(san_path_err_threshold, set_off_int_undef)
-declare_hw_snprint(san_path_err_threshold, print_off_int_undef)
-declare_mp_handler(san_path_err_threshold, set_off_int_undef)
-declare_mp_snprint(san_path_err_threshold, print_off_int_undef)
-declare_def_handler(san_path_err_forget_rate, set_off_int_undef)
-declare_def_snprint_defint(san_path_err_forget_rate, print_off_int_undef,
-			   DEFAULT_ERR_CHECKS)
-declare_ovr_handler(san_path_err_forget_rate, set_off_int_undef)
-declare_ovr_snprint(san_path_err_forget_rate, print_off_int_undef)
-declare_hw_handler(san_path_err_forget_rate, set_off_int_undef)
-declare_hw_snprint(san_path_err_forget_rate, print_off_int_undef)
-declare_mp_handler(san_path_err_forget_rate, set_off_int_undef)
-declare_mp_snprint(san_path_err_forget_rate, print_off_int_undef)
-declare_def_handler(san_path_err_recovery_time, set_off_int_undef)
-declare_def_snprint_defint(san_path_err_recovery_time, print_off_int_undef,
-			   DEFAULT_ERR_CHECKS)
-declare_ovr_handler(san_path_err_recovery_time, set_off_int_undef)
-declare_ovr_snprint(san_path_err_recovery_time, print_off_int_undef)
-declare_hw_handler(san_path_err_recovery_time, set_off_int_undef)
-declare_hw_snprint(san_path_err_recovery_time, print_off_int_undef)
-declare_mp_handler(san_path_err_recovery_time, set_off_int_undef)
-declare_mp_snprint(san_path_err_recovery_time, print_off_int_undef)
 declare_def_handler(marginal_path_err_sample_time, set_off_int_undef)
 declare_def_snprint_defint(marginal_path_err_sample_time, print_off_int_undef,
 			   DEFAULT_ERR_CHECKS)
@@ -1482,9 +1455,6 @@ init_keywords(vector keywords)
 	install_keyword("config_dir", &def_config_dir_handler, &snprint_def_config_dir);
 	install_keyword("delay_watch_checks", &def_delay_watch_checks_handler, &snprint_def_delay_watch_checks);
 	install_keyword("delay_wait_checks", &def_delay_wait_checks_handler, &snprint_def_delay_wait_checks);
-	install_keyword("san_path_err_threshold", &def_san_path_err_threshold_handler, &snprint_def_san_path_err_threshold);
-	install_keyword("san_path_err_forget_rate", &def_san_path_err_forget_rate_handler, &snprint_def_san_path_err_forget_rate);
-	install_keyword("san_path_err_recovery_time", &def_san_path_err_recovery_time_handler, &snprint_def_san_path_err_recovery_time);
 	install_keyword("marginal_path_err_sample_time", &def_marginal_path_err_sample_time_handler, &snprint_def_marginal_path_err_sample_time);
 	install_keyword("marginal_path_err_rate_threshold", &def_marginal_path_err_rate_threshold_handler, &snprint_def_marginal_path_err_rate_threshold);
 	install_keyword("marginal_path_err_recheck_gap_time", &def_marginal_path_err_recheck_gap_time_handler, &snprint_def_marginal_path_err_recheck_gap_time);
@@ -1573,9 +1543,6 @@ init_keywords(vector keywords)
 	install_keyword("deferred_remove", &hw_deferred_remove_handler, &snprint_hw_deferred_remove);
 	install_keyword("delay_watch_checks", &hw_delay_watch_checks_handler, &snprint_hw_delay_watch_checks);
 	install_keyword("delay_wait_checks", &hw_delay_wait_checks_handler, &snprint_hw_delay_wait_checks);
-	install_keyword("san_path_err_threshold", &hw_san_path_err_threshold_handler, &snprint_hw_san_path_err_threshold);
-	install_keyword("san_path_err_forget_rate", &hw_san_path_err_forget_rate_handler, &snprint_hw_san_path_err_forget_rate);
-	install_keyword("san_path_err_recovery_time", &hw_san_path_err_recovery_time_handler, &snprint_hw_san_path_err_recovery_time);
 	install_keyword("marginal_path_err_sample_time", &hw_marginal_path_err_sample_time_handler, &snprint_hw_marginal_path_err_sample_time);
 	install_keyword("marginal_path_err_rate_threshold", &hw_marginal_path_err_rate_threshold_handler, &snprint_hw_marginal_path_err_rate_threshold);
 	install_keyword("marginal_path_err_recheck_gap_time", &hw_marginal_path_err_recheck_gap_time_handler, &snprint_hw_marginal_path_err_recheck_gap_time);
@@ -1610,9 +1577,6 @@ init_keywords(vector keywords)
 	install_keyword("deferred_remove", &ovr_deferred_remove_handler, &snprint_ovr_deferred_remove);
 	install_keyword("delay_watch_checks", &ovr_delay_watch_checks_handler, &snprint_ovr_delay_watch_checks);
 	install_keyword("delay_wait_checks", &ovr_delay_wait_checks_handler, &snprint_ovr_delay_wait_checks);
-	install_keyword("san_path_err_threshold", &ovr_san_path_err_threshold_handler, &snprint_ovr_san_path_err_threshold);
-	install_keyword("san_path_err_forget_rate", &ovr_san_path_err_forget_rate_handler, &snprint_ovr_san_path_err_forget_rate);
-	install_keyword("san_path_err_recovery_time", &ovr_san_path_err_recovery_time_handler, &snprint_ovr_san_path_err_recovery_time);
 	install_keyword("marginal_path_err_sample_time", &ovr_marginal_path_err_sample_time_handler, &snprint_ovr_marginal_path_err_sample_time);
 	install_keyword("marginal_path_err_rate_threshold", &ovr_marginal_path_err_rate_threshold_handler, &snprint_ovr_marginal_path_err_rate_threshold);
 	install_keyword("marginal_path_err_recheck_gap_time", &ovr_marginal_path_err_recheck_gap_time_handler, &snprint_ovr_marginal_path_err_recheck_gap_time);
@@ -1646,9 +1610,6 @@ init_keywords(vector keywords)
 	install_keyword("deferred_remove", &mp_deferred_remove_handler, &snprint_mp_deferred_remove);
 	install_keyword("delay_watch_checks", &mp_delay_watch_checks_handler, &snprint_mp_delay_watch_checks);
 	install_keyword("delay_wait_checks", &mp_delay_wait_checks_handler, &snprint_mp_delay_wait_checks);
-	install_keyword("san_path_err_threshold", &mp_san_path_err_threshold_handler, &snprint_mp_san_path_err_threshold);
-	install_keyword("san_path_err_forget_rate", &mp_san_path_err_forget_rate_handler, &snprint_mp_san_path_err_forget_rate);
-	install_keyword("san_path_err_recovery_time", &mp_san_path_err_recovery_time_handler, &snprint_mp_san_path_err_recovery_time);
 	install_keyword("marginal_path_err_sample_time", &mp_marginal_path_err_sample_time_handler, &snprint_mp_marginal_path_err_sample_time);
 	install_keyword("marginal_path_err_rate_threshold", &mp_marginal_path_err_rate_threshold_handler, &snprint_mp_marginal_path_err_rate_threshold);
 	install_keyword("marginal_path_err_recheck_gap_time", &mp_marginal_path_err_recheck_gap_time_handler, &snprint_mp_marginal_path_err_recheck_gap_time);

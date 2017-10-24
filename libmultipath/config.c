@@ -351,9 +351,6 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(delay_wait_checks);
 	merge_num(skip_kpartx);
 	merge_num(max_sectors_kb);
-	merge_num(san_path_err_threshold);
-	merge_num(san_path_err_forget_rate);
-	merge_num(san_path_err_recovery_time);
 
 	snprintf(id, sizeof(id), "%s/%s", dst->vendor, dst->product);
 	reconcile_features_with_options(id, &dst->features,
