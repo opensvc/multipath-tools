@@ -19,7 +19,6 @@ char *checker_state_names[] = {
 	"timeout",
 	"removed",
 	"delayed",
-	"none",
 };
 
 static LIST_HEAD(checkers);
