@@ -247,6 +247,22 @@ Disable persistent reservation management on $map.
 Get the current persistent reservation management status of $map.
 .
 .TP
+.B map|multipath $map getprkey
+Get the current persistent reservation key associated with $map.
+.
+.TP
+.B map|multipath $map setprkey key $key
+Set the persistent reservation key associated with $map to $key in the
+\fIprkeys_file\fR. This key will only be used by multipathd if
+\fIreservation_key\fR is set to \fBfile\fR in \fI/etc/multipath.conf\fR.
+.
+.TP
+.B map|multipath $map unsetprkey
+Remove the persistent reservation key associated with $map from the
+\fIprkeys_file\fR. This will only unset the key used by multipathd if
+\fIreservation_key\fR is set to \fBfile\fR in \fI/etc/multipath.conf\fR.
+.
+.TP
 .B quit|exit
 End interactive session.
 .

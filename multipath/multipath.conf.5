@@ -682,6 +682,17 @@ The default is: \fB/etc/multipath/wwids\fR
 .
 .
 .TP
+.B prkeys_file
+The full pathname of the prkeys file, which is used by multipathd to keep
+track of the persistent reservation key used for a specific WWID, when
+\fIreservation_key\fR is set to \fBfile\fR.
+.RS
+.TP
+The default is \fB/etc/multipath/prkeys\fR
+.RE
+.
+.
+.TP
 .B log_checker_err
 If set to
 .I once
@@ -703,6 +714,12 @@ the same as the RESERVATION KEY field of the PERSISTENT RESERVE OUT parameter
 list which contains an 8-byte value provided by the application client to the
 device server to identify the I_T nexus.
 .RS
+.PP
+Alternatively, this can be set to \fBfile\fR, which will store the RESERVATION
+KEY registered by mpathpersist in the \fIprkeys_file\fR. multipathd will then
+use this key to register additional paths as they appear.  When the
+registration is removed, the RESERVATION KEY is removed from the
+\fIprkeys_file\fR.
 .TP
 The default is: \fB<unset>\fR
 .RE
