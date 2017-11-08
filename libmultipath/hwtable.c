@@ -940,7 +940,8 @@ static struct hwentry default_hw[] = {
 		/* OceanStor V3 */
 		.vendor        = "HUAWEI",
 		.product       = "XSG1",
-		.pgpolicy      = MULTIBUS,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.prio_name     = PRIO_ALUA,
 	},
 	/*
 	 * Red Hat
