@@ -339,8 +339,9 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 
 	memcpy(&prkey, paramp->sa_key, 8);
 	if (mpp->prkey_source == PRKEY_SOURCE_FILE && prkey &&
-	    ((!get_be64(mpp->reservation_key) && MPATH_PROUT_REG_SA) ||
-	     MPATH_PROUT_REG_IGN_SA)) {
+	    ((!get_be64(mpp->reservation_key) &&
+	      rq_servact == MPATH_PROUT_REG_SA) ||
+	     rq_servact == MPATH_PROUT_REG_IGN_SA)) {
 		memcpy(&mpp->reservation_key, paramp->sa_key, 8);
 		if (update_prkey(alias, get_be64(mpp->reservation_key))) {
 			condlog(0, "%s: failed to set prkey for multipathd.",
