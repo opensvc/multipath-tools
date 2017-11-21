@@ -258,7 +258,8 @@ DMMP_DLL_EXPORT int dmmp_context_log_priority_get(struct dmmp_context *ctx);
  *	Pointer of 'struct dmmp_context'.
  *	If this pointer is NULL, your program will be terminated by assert.
  * @log_func:
- *	Pointer of log handler function.
+ *	Pointer of log handler function. If set to NULL, all log will be
+ *	ignored.
  *
  * Return:
  *	void

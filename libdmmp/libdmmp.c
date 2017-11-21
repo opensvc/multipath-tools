@@ -89,6 +89,9 @@ void _dmmp_log(struct dmmp_context *ctx, int priority, const char *file,
 {
 	va_list args;
 
+	if (ctx->log_func == NULL)
+		return;
+
 	va_start(args, format);
 	ctx->log_func(ctx, priority, file, line, func_name, format, args);
 	va_end(args);
