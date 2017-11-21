@@ -49,6 +49,7 @@ static const struct _num_str_conv _DMMP_RC_MSG_CONV[] = {
 	{DMMP_ERR_MPATH_BUSY, "Specified multipath device map is in use"},
 	{DMMP_ERR_MPATH_NOT_FOUND, "Specified multipath not found"},
 	{DMMP_ERR_INVALID_ARGUMENT, "Invalid argument"},
+	{DMMP_ERR_PERMISSION_DENY, "Permission deny"},
 };
 
 _dmmp_str_func_gen(dmmp_strerror, int, rc, _DMMP_RC_MSG_CONV);

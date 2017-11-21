@@ -5,7 +5,7 @@
 #
 include ../Makefile.inc
 
-LIBDMMP_VERSION=0.1.0
+LIBDMMP_VERSION=0.2.0
 SONAME=$(LIBDMMP_VERSION)
 DEVLIB = libdmmp.so
 LIBS = $(DEVLIB).$(SONAME)

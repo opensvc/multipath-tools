@@ -42,6 +42,7 @@ extern "C" {
 #define DMMP_ERR_MPATH_BUSY		7
 #define DMMP_ERR_MPATH_NOT_FOUND	8
 #define DMMP_ERR_INVALID_ARGUMENT	9
+#define DMMP_ERR_PERMISSION_DENY	10
 
 /*
  * Use the syslog severity level as log priority
@@ -679,6 +680,8 @@ DMMP_DLL_EXPORT const char *dmmp_path_status_str(uint32_t path_status);
  *
  *	* DMMP_ERR_INVALID_ARGUMENT
  *
+ *	* DMMP_ERR_PERMISSION_DENY
+ *
  *	Error number could be converted to string by dmmp_strerror().
  */
 DMMP_DLL_EXPORT int dmmp_flush_mpath(struct dmmp_context *ctx,
@@ -703,6 +706,8 @@ DMMP_DLL_EXPORT int dmmp_flush_mpath(struct dmmp_context *ctx,
  *	* DMMP_ERR_NO_MEMORY
  *
  *	* DMMP_ERR_NO_DAEMON
+ *
+ *	* DMMP_ERR_PERMISSION_DENY
  *
  *	Error number could be converted to string by dmmp_strerror().
  */

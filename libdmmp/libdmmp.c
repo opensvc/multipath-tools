@@ -364,6 +364,14 @@ invoke:
 		}
 	}
 
+	if ((*output != NULL) &&
+	    strncmp(*output, "permission deny",
+		    strlen("permission deny")) == 0) {
+		_error(ctx, "Permission deny, need to be root");
+		rc = DMMP_ERR_PERMISSION_DENY;
+		goto out;
+	}
+
 out:
 	if (rc != DMMP_OK) {
 		free(*output);
