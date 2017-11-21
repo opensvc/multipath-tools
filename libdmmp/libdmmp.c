@@ -48,6 +48,7 @@
 #define _ERRNO_STR_BUFF_SIZE			256
 #define _IPC_MAX_CMD_LEN			512
 /* ^ Was _MAX_CMD_LEN in ./libmultipath/uxsock.h */
+#define _LAST_ERR_MSG_BUFF_SIZE			1024
 
 struct dmmp_context {
 	void (*log_func)(struct dmmp_context *ctx, int priority,
@@ -56,6 +57,7 @@ struct dmmp_context {
 	int log_priority;
 	void *userdata;
 	unsigned int tmo;
+	char last_err_msg[_LAST_ERR_MSG_BUFF_SIZE];
 };
 
 /*
@@ -81,6 +83,9 @@ _dmmp_getter_func_gen(dmmp_context_userdata_get, struct dmmp_context, ctx,
 _dmmp_getter_func_gen(dmmp_context_timeout_get, struct dmmp_context, ctx, tmo,
 		      unsigned int);
 
+_dmmp_getter_func_gen(dmmp_last_error_msg, struct dmmp_context, ctx,
+		      last_err_msg, const char *);
+
 _dmmp_array_free_func_gen(dmmp_mpath_array_free, struct dmmp_mpath,
 			  _dmmp_mpath_free);
 
@@ -94,6 +99,9 @@ void _dmmp_log(struct dmmp_context *ctx, int priority, const char *file,
 
 	va_start(args, format);
 	ctx->log_func(ctx, priority, file, line, func_name, format, args);
+	if (priority == DMMP_LOG_PRIORITY_ERROR)
+		vsnprintf(ctx->last_err_msg, _LAST_ERR_MSG_BUFF_SIZE,
+			  format, args);
 	va_end(args);
 }
 
@@ -110,6 +118,7 @@ struct dmmp_context *dmmp_context_new(void)
 	ctx->log_priority = DMMP_LOG_PRIORITY_DEFAULT;
 	ctx->userdata = NULL;
 	ctx->tmo = _DEFAULT_UXSOCK_TIMEOUT;
+	memset(ctx->last_err_msg, 0, _LAST_ERR_MSG_BUFF_SIZE);
 
 	return ctx;
 }

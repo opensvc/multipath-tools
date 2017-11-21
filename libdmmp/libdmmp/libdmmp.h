@@ -708,6 +708,21 @@ DMMP_DLL_EXPORT int dmmp_flush_mpath(struct dmmp_context *ctx,
  */
 DMMP_DLL_EXPORT int dmmp_reconfig(struct dmmp_context *ctx);
 
+/**
+ * dmmp_last_error_msg() - Retrieves the last error message.
+ *
+ * Retrieves the last error message.
+ *
+ * @ctx:
+ *	Pointer of 'struct dmmp_context'.
+ *	If this pointer is NULL, your program will be terminated by assert.
+ *
+ * Return:
+ *	const char *. No need to free this memory, the resources will get
+ *	freed when dmmp_context_free().
+ */
+DMMP_DLL_EXPORT const char *dmmp_last_error_msg(struct dmmp_context *ctx);
+
 #ifdef __cplusplus
 } /* End of extern "C" */
 #endif

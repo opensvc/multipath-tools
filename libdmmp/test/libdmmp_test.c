@@ -126,7 +126,8 @@ int main(int argc, char *argv[])
 		     "timeout to %u\n", TMO);
 
 	if (dmmp_mpath_array_get(ctx, &dmmp_mps, &dmmp_mp_count) != 0)
-		FAIL(rc, out, "dmmp_mpath_array_get(): rc != 0\n");
+		FAIL(rc, out, "dmmp_mpath_array_get() failed: %s\n",
+		     dmmp_last_error_msg(ctx));
 	if (dmmp_mp_count == 0)
 		FAIL(rc, out, "dmmp_mpath_array_get(): "
 		     "Got no multipath devices\n");
@@ -154,17 +155,20 @@ int main(int argc, char *argv[])
 	dmmp_mpath_array_free(dmmp_mps, dmmp_mp_count);
 
 	if (dmmp_flush_mpath(ctx, old_name) != DMMP_OK)
-		FAIL(rc, out, "dmmp_flush_mpath(): Failed\n");
+		FAIL(rc, out, "dmmp_flush_mpath(): failed %s\n",
+		     dmmp_last_error_msg(ctx));
 
 	PASS("dmmp_flush_mpath(): OK\n");
 
 	if (dmmp_reconfig(ctx) != DMMP_OK)
-		FAIL(rc, out, "dmmp_reconfig(): Failed\n");
+		FAIL(rc, out, "dmmp_reconfig() failed: %s\n",
+		     dmmp_last_error_msg(ctx));
 
 	PASS("dmmp_reconfig(): OK\n");
 
 	if (dmmp_mpath_array_get(ctx, &dmmp_mps, &dmmp_mp_count) != 0)
-		FAIL(rc, out, "dmmp_mpath_array_get(): rc != 0\n");
+		FAIL(rc, out, "dmmp_mpath_array_get() failed: %s\n",
+		     dmmp_last_error_msg(ctx));
 	if (dmmp_mp_count == 0)
 		FAIL(rc, out, "dmmp_mpath_array_get(): "
 		     "Got no multipath devices\n");
