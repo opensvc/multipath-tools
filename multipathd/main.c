@@ -1072,7 +1072,7 @@ uev_pathfail_check(struct uevent *uev, struct vectors *vecs)
 {
 	char *action = NULL, *devt = NULL;
 	struct path *pp;
-	int r;
+	int r = 1;
 
 	action = uevent_get_dm_action(uev);
 	if (!action)
@@ -1089,15 +1089,17 @@ uev_pathfail_check(struct uevent *uev, struct vectors *vecs)
 	lock(&vecs->lock);
 	pthread_testcancel();
 	pp = find_path_by_devt(vecs->pathvec, devt);
+    if (!pp)
+        goto out_lock;
 	r = io_err_stat_handle_pathfail(pp);
-	lock_cleanup_pop(vecs->lock);
-
 	if (r)
 		condlog(3, "io_err_stat: %s: cannot handle pathfail uevent",
 				pp->dev);
+out_lock:
+	lock_cleanup_pop(vecs->lock);
 	FREE(devt);
 	FREE(action);
-	return 0;
+	return r;
 out:
 	FREE(action);
 	return 1;
