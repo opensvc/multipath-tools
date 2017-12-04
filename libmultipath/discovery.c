@@ -1206,11 +1206,13 @@ nvme_sysfs_pathinfo (struct path * pp, vector hwtable)
 		   &pp->sg_id.scsi_id) != 2)
 		return 1;
 	pp->sg_id.channel = 0;
-	pp->sg_id.lun = 0;
+	pp->sg_id.lun = atoi(udev_device_get_sysattr_value(pp->udev, "nsid"));
 
 	parent = udev_device_get_parent(pp->udev);
 	if (!parent)
 		return 1;
+
+	pp->sg_id.channel = atoi(udev_device_get_sysattr_value(parent, "cntlid"));
 
 	snprintf(pp->vendor_id, SCSI_VENDOR_SIZE, "NVME");
 	snprintf(pp->product_id, SCSI_PRODUCT_SIZE, "%s",
