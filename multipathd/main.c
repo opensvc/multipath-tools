@@ -1771,16 +1771,21 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 			pp->tick = pp->checkint;
 		}
 	}
-	else if (newstate == PATH_DOWN) {
-		int log_checker_err;
+	else if (newstate != PATH_UP && newstate != PATH_GHOST) {
+		if (pp->dmstate == PSTATE_ACTIVE ||
+		    pp->dmstate == PSTATE_UNDEF)
+			fail_path(pp, 0);
+		if (newstate == PATH_DOWN) {
+			int log_checker_err;
 
-		conf = get_multipath_config();
-		log_checker_err = conf->log_checker_err;
-		put_multipath_config(conf);
-		if (log_checker_err == LOG_CHKR_ERR_ONCE)
-			LOG_MSG(3, checker_message(&pp->checker));
-		else
-			LOG_MSG(2, checker_message(&pp->checker));
+			conf = get_multipath_config();
+			log_checker_err = conf->log_checker_err;
+			put_multipath_config(conf);
+			if (log_checker_err == LOG_CHKR_ERR_ONCE)
+				LOG_MSG(3, checker_message(&pp->checker));
+			else
+				LOG_MSG(2, checker_message(&pp->checker));
+		}
 	}
 
 	pp->state = newstate;
