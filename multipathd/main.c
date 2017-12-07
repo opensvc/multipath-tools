@@ -698,6 +698,7 @@ rescan:
 		verify_paths(mpp, vecs);
 		mpp->flush_on_last_del = FLUSH_UNDEF;
 		mpp->action = ACT_RELOAD;
+		extract_hwe_from_path(mpp);
 	} else {
 		if (!should_multipath(pp, vecs->pathvec)) {
 			orphan_path(pp, "only one path");
@@ -1046,8 +1047,11 @@ map_discovery (struct vectors * vecs)
 		return 1;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i)
-		if (setup_multipath(vecs, mpp))
+		if (update_multipath_table(mpp, vecs->pathvec, 1) ||
+		    update_multipath_status(mpp)) {
+			remove_map(mpp, vecs, 1);
 			i--;
+		}
 
 	return 0;
 }

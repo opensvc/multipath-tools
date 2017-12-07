@@ -188,66 +188,36 @@ void remove_maps_and_stop_waiters(struct vectors *vecs)
 	_remove_maps(vecs, STOP_WAITER);
 }
 
-static struct hwentry *
+void
 extract_hwe_from_path(struct multipath * mpp)
 {
 	struct path * pp = NULL;
-	int pg_num = -1, p_num = -1, i;
-	struct pathgroup * pgp = NULL;
+	int i;
+
+	if (mpp->hwe || !mpp->paths)
+		return;
 
 	condlog(3, "%s: searching paths for valid hwe", mpp->alias);
-
-	if (mpp && mpp->pg) {
-		vector_foreach_slot(mpp->pg, pgp, i) {
-			if (pgp->status == PGSTATE_ACTIVE ||
-			    pgp->status == PGSTATE_ENABLED) {
-				pg_num = i;
-				break;
-			}
-		}
-		if (pg_num >= 0)
-			pgp = VECTOR_SLOT(mpp->pg, pg_num);
-	}
-
-	if (pgp && pgp->paths) {
-		vector_foreach_slot(pgp->paths, pp, i) {
-			if (pp->dmstate == PSTATE_FAILED)
-				continue;
-			if (strlen(pp->vendor_id) > 0 &&
-			    strlen(pp->product_id) > 0 &&
-			    strlen(pp->rev) > 0) {
-				p_num = i;
-				break;
-			}
-		}
-		if (p_num >= 0)
-			pp = VECTOR_SLOT(pgp->paths, i);
-	}
-
-	if (pp) {
-		if (!strlen(pp->vendor_id) ||
-		    !strlen(pp->product_id) ||
-		    !strlen(pp->rev)) {
-			condlog(3, "%s: no device details available", pp->dev);
-			return NULL;
-		}
-		condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
-		condlog(3, "%s: product = %s", pp->dev, pp->product_id);
-		condlog(3, "%s: rev = %s", pp->dev, pp->rev);
-		if (!pp->hwe) {
-			struct config *conf = get_multipath_config();
-
-			condlog(3, "searching hwtable");
-			pp->hwe = find_hwe(conf->hwtable, pp->vendor_id,
-					   pp->product_id, pp->rev);
-			put_multipath_config(conf);
+	/* doing this in two passes seems like paranoia to me */
+	vector_foreach_slot(mpp->paths, pp, i) {
+		if (pp->state != PATH_UP)
+			continue;
+		if (pp->hwe) {
+			mpp->hwe = pp->hwe;
+			return;
 		}
 	}
-
-	return pp?pp->hwe:NULL;
+	vector_foreach_slot(mpp->paths, pp, i) {
+		if (pp->state == PATH_UP)
+			continue;
+		if (pp->hwe) {
+			mpp->hwe = pp->hwe;
+			return;
+		}
+	}
 }
 
-static int
+int
 update_multipath_table (struct multipath *mpp, vector pathvec, int is_daemon)
 {
 	char params[PARAMS_SIZE] = {0};
@@ -268,7 +238,7 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int is_daemon)
 	return 0;
 }
 
-static int
+int
 update_multipath_status (struct multipath *mpp)
 {
 	char status[PARAMS_SIZE] = {0};
@@ -388,18 +358,6 @@ int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
 		goto out;
 	}
 
-	set_multipath_wwid(mpp);
-	conf = get_multipath_config();
-	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
-	put_multipath_config(conf);
-	condlog(3, "%s: discover", mpp->alias);
-
-	if (!mpp->hwe)
-		mpp->hwe = extract_hwe_from_path(mpp);
-	if (!mpp->hwe) {
-		condlog(3, "%s: no hardware entry found, using defaults",
-			mpp->alias);
-	}
 	if (reset) {
 		conf = get_multipath_config();
 		select_rr_weight(conf, mpp);
@@ -466,6 +424,7 @@ retry:
 	mpp->flush_on_last_del = FLUSH_UNDEF;
 	mpp->action = ACT_RELOAD;
 
+	extract_hwe_from_path(mpp);
 	if (setup_map(mpp, params, PARAMS_SIZE)) {
 		condlog(0, "%s: failed to setup new map in update", mpp->alias);
 		retries = -1;
@@ -492,6 +451,7 @@ fail:
 struct multipath *add_map_without_path (struct vectors *vecs, char *alias)
 {
 	struct multipath * mpp = alloc_multipath();
+	struct config *conf;
 
 	if (!mpp)
 		return NULL;
@@ -502,16 +462,27 @@ struct multipath *add_map_without_path (struct vectors *vecs, char *alias)
 
 	mpp->alias = STRDUP(alias);
 
-	if (setup_multipath(vecs, mpp))
-		return NULL; /* mpp freed in setup_multipath */
+	if (dm_get_info(mpp->alias, &mpp->dmi)) {
+		condlog(3, "%s: cannot access table", mpp->alias);
+		goto out;
+	}
+	set_multipath_wwid(mpp);
+	conf = get_multipath_config();
+	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
+	put_multipath_config(conf);
 
-	if (adopt_paths(vecs->pathvec, mpp))
+	if (update_multipath_table(mpp, vecs->pathvec, 1))
+		goto out;
+	if (update_multipath_status(mpp))
 		goto out;
 
 	if (!vector_alloc_slot(vecs->mpvec))
 		goto out;
 
 	vector_set_slot(vecs->mpvec, mpp);
+
+	if (update_map(mpp, vecs) != 0) /* map removed */
+		return NULL;
 
 	if (start_waiter_thread(mpp, vecs))
 		goto out;
