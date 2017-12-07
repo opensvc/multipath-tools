@@ -337,37 +337,6 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 	return 0;
 }
 
-void
-sync_map_state(struct multipath *mpp)
-{
-	struct pathgroup *pgp;
-	struct path *pp;
-	unsigned int i, j;
-
-	if (!mpp->pg)
-		return;
-
-	vector_foreach_slot (mpp->pg, pgp, i){
-		vector_foreach_slot (pgp->paths, pp, j){
-			if (pp->state == PATH_UNCHECKED ||
-			    pp->state == PATH_WILD ||
-			    pp->state == PATH_DELAYED)
-				continue;
-			if (mpp->ghost_delay_tick > 0)
-				continue;
-			if ((pp->dmstate == PSTATE_FAILED ||
-			     pp->dmstate == PSTATE_UNDEF) &&
-			    (pp->state == PATH_UP || pp->state == PATH_GHOST))
-				dm_reinstate_path(mpp->alias, pp->dev_t);
-			else if ((pp->dmstate == PSTATE_ACTIVE ||
-				  pp->dmstate == PSTATE_UNDEF) &&
-				 (pp->state == PATH_DOWN ||
-				  pp->state == PATH_SHAKY))
-				dm_fail_path(mpp->alias, pp->dev_t);
-		}
-	}
-}
-
 static void
 sync_maps_state(vector mpvec)
 {
@@ -412,47 +381,6 @@ flush_map(struct multipath * mpp, struct vectors * vecs, int nopaths)
 	orphan_paths(vecs->pathvec, mpp);
 	remove_map_and_stop_waiter(mpp, vecs, 1);
 
-	return 0;
-}
-
-int
-update_map (struct multipath *mpp, struct vectors *vecs)
-{
-	int retries = 3;
-	char params[PARAMS_SIZE] = {0};
-
-retry:
-	condlog(4, "%s: updating new map", mpp->alias);
-	if (adopt_paths(vecs->pathvec, mpp)) {
-		condlog(0, "%s: failed to adopt paths for new map update",
-			mpp->alias);
-		retries = -1;
-		goto fail;
-	}
-	verify_paths(mpp, vecs);
-	mpp->flush_on_last_del = FLUSH_UNDEF;
-	mpp->action = ACT_RELOAD;
-
-	if (setup_map(mpp, params, PARAMS_SIZE)) {
-		condlog(0, "%s: failed to setup new map in update", mpp->alias);
-		retries = -1;
-		goto fail;
-	}
-	if (domap(mpp, params, 1) <= 0 && retries-- > 0) {
-		condlog(0, "%s: map_udate sleep", mpp->alias);
-		sleep(1);
-		goto retry;
-	}
-	dm_lib_release();
-
-fail:
-	if (setup_multipath(vecs, mpp))
-		return 1;
-
-	sync_map_state(mpp);
-
-	if (retries < 0)
-		condlog(0, "%s: failed reload in new map update", mpp->alias);
 	return 0;
 }
 
