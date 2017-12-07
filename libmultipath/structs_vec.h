@@ -11,7 +11,7 @@ struct vectors {
 	vector mpvec;
 };
 
-void set_no_path_retry(struct config *conf, struct multipath *mpp);
+void enter_recovery_mode(struct multipath *mpp);
 
 int adopt_paths (vector pathvec, struct multipath * mpp);
 void orphan_paths (vector pathvec, struct multipath * mpp);

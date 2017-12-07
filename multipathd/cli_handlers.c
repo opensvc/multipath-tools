@@ -997,11 +997,8 @@ cli_restore_queueing(void *v, char **reply, int *len, void *data)
 		dm_queue_if_no_path(mpp->alias, 1);
 		if (mpp->nr_active > 0)
 			mpp->retry_tick = 0;
-		else {
-			struct config *conf = get_multipath_config();
-			mpp->retry_tick = mpp->no_path_retry * conf->checkint;
-			put_multipath_config(conf);
-		}
+		else
+			enter_recovery_mode(mpp);
 	}
 	return 0;
 }
@@ -1024,11 +1021,8 @@ cli_restore_all_queueing(void *v, char **reply, int *len, void *data)
 			dm_queue_if_no_path(mpp->alias, 1);
 			if (mpp->nr_active > 0)
 				mpp->retry_tick = 0;
-			else {
-				conf = get_multipath_config();
-				mpp->retry_tick = mpp->no_path_retry * conf->checkint;
-				put_multipath_config(conf);
-			}
+			else
+				enter_recovery_mode(mpp);
 		}
 	}
 	return 0;
