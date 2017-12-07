@@ -867,7 +867,7 @@ accounting process for the path will last for
 \fImarginal_path_err_sample_time\fR.
 If the rate of IO error on a particular path is greater than the
 \fImarginal_path_err_rate_threshold\fR, then the path will not reinstate for
-\fImarginal_path_err_rate_threshold\fR seconds unless there is only one
+\fImarginal_path_err_recheck_gap_time\fR seconds unless there is only one
 active path. After \fImarginal_path_err_recheck_gap_time\fR expires, the path
 will be requeueed for rechecking. If checking result is good enough, the
 path will be reinstated.

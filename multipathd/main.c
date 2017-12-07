@@ -2333,7 +2333,7 @@ child (void * param)
 	setup_thread_attr(&misc_attr, 64 * 1024, 0);
 	setup_thread_attr(&uevent_attr, DEFAULT_UEVENT_STACKSIZE * 1024, 0);
 	setup_thread_attr(&waiter_attr, 32 * 1024, 1);
-	setup_thread_attr(&io_err_stat_attr, 32 * 1024, 1);
+	setup_thread_attr(&io_err_stat_attr, 32 * 1024, 0);
 
 	if (logsink == 1) {
 		setup_thread_attr(&log_attr, 64 * 1024, 0);
@@ -2509,8 +2509,6 @@ child (void * param)
 	remove_maps_and_stop_waiters(vecs);
 	unlock(&vecs->lock);
 
-	stop_io_err_stat_thread();
-
 	pthread_cancel(check_thr);
 	pthread_cancel(uevent_thr);
 	pthread_cancel(uxlsnr_thr);
@@ -2520,6 +2518,8 @@ child (void * param)
 	pthread_join(uevent_thr, NULL);
 	pthread_join(uxlsnr_thr, NULL);
 	pthread_join(uevq_thr, NULL);
+
+	stop_io_err_stat_thread();
 
 	lock(&vecs->lock);
 	free_pathvec(vecs->pathvec, FREE_PATHS);

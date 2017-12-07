@@ -379,17 +379,14 @@ int hit_io_err_recheck_time(struct path *pp)
 	struct timespec curr_time;
 	int r;
 
-	if (pp->io_err_disable_reinstate == 0)
-		return 1;
-	if (clock_gettime(CLOCK_MONOTONIC, &curr_time) != 0)
-		return 1;
-	if (pp->io_err_pathfail_cnt != PATH_IO_ERR_IN_POLLING_RECHECK)
-		return 1;
 	if (pp->mpp->nr_active <= 0) {
 		io_err_stat_log(2, "%s: recover path early", pp->dev);
 		goto recover;
 	}
-	if ((curr_time.tv_sec - pp->io_err_dis_reinstate_time) >
+	if (pp->io_err_pathfail_cnt != PATH_IO_ERR_IN_POLLING_RECHECK)
+		return 1;
+	if (clock_gettime(CLOCK_MONOTONIC, &curr_time) != 0 ||
+	    (curr_time.tv_sec - pp->io_err_dis_reinstate_time) >
 			pp->mpp->marginal_path_err_recheck_gap_time) {
 		io_err_stat_log(4, "%s: reschedule checking after %d seconds",
 				pp->dev,
@@ -738,6 +735,7 @@ void stop_io_err_stat_thread(void)
 {
 	pthread_cancel(io_err_stat_thr);
 	pthread_kill(io_err_stat_thr, SIGUSR2);
+	pthread_join(io_err_stat_thr, NULL);
 	free_io_err_pathvec(paths);
 	io_destroy(ioctx);
 }
