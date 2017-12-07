@@ -325,21 +325,27 @@ void enter_recovery_mode(struct multipath *mpp)
 
 static void set_no_path_retry(struct multipath *mpp)
 {
-	mpp->retry_tick = 0;
+	char is_queueing = 0;
+
 	mpp->nr_active = pathcount(mpp, PATH_UP) + pathcount(mpp, PATH_GHOST);
+	if (mpp->features && strstr(mpp->features, "queue_if_no_path"))
+		is_queueing = 1;
 
 	switch (mpp->no_path_retry) {
 	case NO_PATH_RETRY_UNDEF:
 		break;
 	case NO_PATH_RETRY_FAIL:
-		dm_queue_if_no_path(mpp->alias, 0);
+		if (is_queueing)
+			dm_queue_if_no_path(mpp->alias, 0);
 		break;
 	case NO_PATH_RETRY_QUEUE:
-		dm_queue_if_no_path(mpp->alias, 1);
+		if (!is_queueing)
+			dm_queue_if_no_path(mpp->alias, 1);
 		break;
 	default:
-		dm_queue_if_no_path(mpp->alias, 1);
-		if (mpp->nr_active == 0)
+		if (mpp->nr_active > 0)
+			dm_queue_if_no_path(mpp->alias, 1);
+		else if (is_queueing && mpp->retry_tick == 0)
 			enter_recovery_mode(mpp);
 		break;
 	}
@@ -351,12 +357,6 @@ int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
 	if (dm_get_info(mpp->alias, &mpp->dmi)) {
 		/* Error accessing table */
 		condlog(3, "%s: cannot access table", mpp->alias);
-		goto out;
-	}
-
-	if (!dm_map_present(mpp->alias)) {
-		/* Table has been removed */
-		condlog(3, "%s: table does not exist", mpp->alias);
 		goto out;
 	}
 
