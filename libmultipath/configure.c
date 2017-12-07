@@ -557,7 +557,8 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 	}
 
 	if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
-	    mpp->no_path_retry != cmpp->no_path_retry) {
+	    !!strstr(mpp->features, "queue_if_no_path") !=
+	    !!strstr(cmpp->features, "queue_if_no_path")) {
 		mpp->action =  ACT_RELOAD;
 		condlog(3, "%s: set ACT_RELOAD (no_path_retry change)",
 			mpp->alias);
@@ -575,7 +576,8 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 	}
 
 	if (mpp->retain_hwhandler != RETAIN_HWHANDLER_UNDEF &&
-	    mpp->retain_hwhandler != cmpp->retain_hwhandler &&
+	    !!strstr(mpp->features, "retain_attached_hw_handler") !=
+	    !!strstr(cmpp->features, "retain_attached_hw_handler") &&
 	    get_linux_version_code() < KERNEL_VERSION(4, 3, 0)) {
 		mpp->action = ACT_RELOAD;
 		condlog(3, "%s: set ACT_RELOAD (retain_hwhandler change)",
@@ -1059,21 +1061,6 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 			if (!dm_queue_if_no_path(mpp->alias, 0))
 				remove_feature(&mpp->features,
 					       "queue_if_no_path");
-		}
-		else if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
-			if (mpp->no_path_retry == NO_PATH_RETRY_FAIL) {
-				condlog(3, "%s: unset queue_if_no_path feature",
-					mpp->alias);
-				if (!dm_queue_if_no_path(mpp->alias, 0))
-					remove_feature(&mpp->features,
-						       "queue_if_no_path");
-			} else {
-				condlog(3, "%s: set queue_if_no_path feature",
-					mpp->alias);
-				if (!dm_queue_if_no_path(mpp->alias, 1))
-					add_feature(&mpp->features,
-						    "queue_if_no_path");
-			}
 		}
 
 		if (!is_daemon && mpp->action != ACT_NOTHING) {

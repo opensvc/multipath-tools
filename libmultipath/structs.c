@@ -497,23 +497,6 @@ first_path (struct multipath * mpp)
 	return pgp?VECTOR_SLOT(pgp->paths, 0):NULL;
 }
 
-void setup_feature(struct multipath *mpp, char *feature)
-{
-	if (!strncmp(feature, "queue_if_no_path", 16)) {
-		if (mpp->no_path_retry <= NO_PATH_RETRY_UNDEF)
-			mpp->no_path_retry = NO_PATH_RETRY_QUEUE;
-		else
-			condlog(1, "%s: ignoring feature queue_if_no_path because no_path_retry = %d",
-				mpp->alias, mpp->no_path_retry);
-	} else if (!strcmp(feature, "retain_attached_hw_handler")) {
-		if (mpp->retain_hwhandler != RETAIN_HWHANDLER_OFF)
-			mpp->retain_hwhandler = RETAIN_HWHANDLER_ON;
-		else
-			condlog(1, "%s: ignoring feature 'retain_attached_hw_handler'",
-				mpp->alias);
-	}
-}
-
 int add_feature(char **f, const char *n)
 {
 	int c = 0, d, l;
