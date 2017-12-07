@@ -12,6 +12,7 @@
 SUBSYSTEM!="block", GOTO="end_del_part_nodes"
 KERNEL!="sd*|dasd*|rbd*", GOTO="end_del_part_nodes"
 ACTION!="add|change", GOTO="end_del_part_nodes"
+ENV{DEVTYPE}=="partition", GOTO="end_del_part_nodes"
 
 IMPORT{cmdline}="dont_del_part_nodes"
 ENV{dont_del_part_nodes}=="1", GOTO="end_del_part_nodes"
