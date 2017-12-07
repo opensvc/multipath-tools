@@ -353,6 +353,8 @@ sync_map_state(struct multipath *mpp)
 			    pp->state == PATH_WILD ||
 			    pp->state == PATH_DELAYED)
 				continue;
+			if (mpp->ghost_delay_tick > 0)
+				continue;
 			if ((pp->dmstate == PSTATE_FAILED ||
 			     pp->dmstate == PSTATE_UNDEF) &&
 			    (pp->state == PATH_UP || pp->state == PATH_GHOST))
@@ -737,7 +739,8 @@ ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 	mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
 	if (mpp && mpp->wait_for_udev &&
 	    (pathcount(mpp, PATH_UP) > 0 ||
-	     (pathcount(mpp, PATH_GHOST) > 0 && pp->tpgs != TPGS_IMPLICIT))) {
+	     (pathcount(mpp, PATH_GHOST) > 0 && pp->tpgs != TPGS_IMPLICIT &&
+	      mpp->ghost_delay_tick <= 0))) {
 		/* if wait_for_udev is set and valid paths exist */
 		condlog(2, "%s: delaying path addition until %s is fully initialized", pp->dev, mpp->alias);
 		mpp->wait_for_udev = 2;
@@ -1464,6 +1467,28 @@ missing_uev_wait_tick(struct vectors *vecs)
 }
 
 static void
+ghost_delay_tick(struct vectors *vecs)
+{
+	struct multipath * mpp;
+	unsigned int i;
+
+	vector_foreach_slot (vecs->mpvec, mpp, i) {
+		if (mpp->ghost_delay_tick <= 0)
+			continue;
+		if (--mpp->ghost_delay_tick <= 0) {
+			condlog(0, "%s: timed out waiting for active path",
+				mpp->alias);
+			mpp->force_udev_reload = 1;
+			if (update_map(mpp, vecs) != 0) {
+				/* update_map removed map */
+				i--;
+				continue;
+			}
+		}
+	}
+}
+
+static void
 defered_failback_tick (vector mpvec)
 {
 	struct multipath * mpp;
@@ -1936,6 +1961,7 @@ checkerloop (void *ap)
 		defered_failback_tick(vecs->mpvec);
 		retry_count_tick(vecs->mpvec);
 		missing_uev_wait_tick(vecs);
+		ghost_delay_tick(vecs);
 		lock_cleanup_pop(vecs->lock);
 
 		if (count)

@@ -167,6 +167,11 @@ enum no_undef_states {
 	NU_UNDEF = 0,
 };
 
+enum ghost_delay_states {
+	GHOST_DELAY_OFF = NU_NO,
+	GHOST_DELAY_UNDEF = NU_UNDEF,
+};
+
 enum initialized_states {
 	INIT_FAILED,
 	INIT_MISSING_UDEV,
@@ -283,6 +288,8 @@ struct multipath {
 	int max_sectors_kb;
 	int force_readonly;
 	int force_udev_reload;
+	int ghost_delay;
+	int ghost_delay_tick;
 	unsigned int dev_loss;
 	uid_t uid;
 	gid_t gid;

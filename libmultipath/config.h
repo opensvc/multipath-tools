@@ -81,6 +81,7 @@ struct hwentry {
 	int marginal_path_double_failed_time;
 	int skip_kpartx;
 	int max_sectors_kb;
+	int ghost_delay;
 	char * bl_product;
 };
 
@@ -114,6 +115,7 @@ struct mpentry {
 	int marginal_path_double_failed_time;
 	int skip_kpartx;
 	int max_sectors_kb;
+	int ghost_delay;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;
@@ -173,6 +175,7 @@ struct config {
 	int disable_changed_wwids;
 	int remove_retries;
 	int max_sectors_kb;
+	int ghost_delay;
 	unsigned int version[3];
 
 	char * multipath_dir;

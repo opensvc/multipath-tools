@@ -1046,6 +1046,19 @@ The default is: \fB<device dependent>\fR
 .RE
 .
 .
+.TP
+.B ghost_delay
+Sets the number of seconds that multipath will wait after creating a device
+with only ghost paths before marking it ready for use in systemd. This gives
+the active paths time to appear before the multipath runs the hardware handler
+to switch the ghost paths to active ones. Setting this to \fI0\fR or \fIon\fR
+makes multipath immediately mark a device with only ghost paths as ready.
+.RS
+.TP
+The default is \fBno\fR
+.RE
+.
+.
 .\" ----------------------------------------------------------------------------
 .SH "blacklist section"
 .\" ----------------------------------------------------------------------------
@@ -1188,6 +1201,8 @@ are taken from the \fIdefaults\fR or \fIdevices\fR section:
 .B skip_kpartx
 .TP
 .B max_sectors_kb
+.TP
+.B ghost_delay
 .RE
 .PD
 .LP
@@ -1317,6 +1332,8 @@ section:
 .B skip_kpartx
 .TP
 .B max_sectors_kb
+.TP
+.B ghost_delay
 .RE
 .PD
 .LP
@@ -1389,6 +1406,8 @@ the values are taken from the \fIdevices\fR or \fIdefaults\fR sections:
 .B delay_wait_checks
 .TP
 .B skip_kpartx
+.TP
+.B ghost_delay
 .RE
 .PD
 .LP

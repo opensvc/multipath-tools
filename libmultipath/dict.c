@@ -1120,6 +1120,14 @@ declare_hw_snprint(marginal_path_double_failed_time, print_off_int_undef)
 declare_mp_handler(marginal_path_double_failed_time, set_off_int_undef)
 declare_mp_snprint(marginal_path_double_failed_time, print_off_int_undef)
 
+declare_def_handler(ghost_delay, set_off_int_undef)
+declare_def_snprint(ghost_delay, print_off_int_undef)
+declare_ovr_handler(ghost_delay, set_off_int_undef)
+declare_ovr_snprint(ghost_delay, print_off_int_undef)
+declare_hw_handler(ghost_delay, set_off_int_undef)
+declare_hw_snprint(ghost_delay, print_off_int_undef)
+declare_mp_handler(ghost_delay, set_off_int_undef)
+declare_mp_snprint(ghost_delay, print_off_int_undef)
 
 
 static int
@@ -1469,6 +1477,7 @@ init_keywords(vector keywords)
 	install_keyword("disable_changed_wwids", &def_disable_changed_wwids_handler, &snprint_def_disable_changed_wwids);
 	install_keyword("remove_retries", &def_remove_retries_handler, &snprint_def_remove_retries);
 	install_keyword("max_sectors_kb", &def_max_sectors_kb_handler, &snprint_def_max_sectors_kb);
+	install_keyword("ghost_delay", &def_ghost_delay_handler, &snprint_def_ghost_delay);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);
@@ -1549,6 +1558,7 @@ init_keywords(vector keywords)
 	install_keyword("marginal_path_double_failed_time", &hw_marginal_path_double_failed_time_handler, &snprint_hw_marginal_path_double_failed_time);
 	install_keyword("skip_kpartx", &hw_skip_kpartx_handler, &snprint_hw_skip_kpartx);
 	install_keyword("max_sectors_kb", &hw_max_sectors_kb_handler, &snprint_hw_max_sectors_kb);
+	install_keyword("ghost_delay", &hw_ghost_delay_handler, &snprint_hw_ghost_delay);
 	install_sublevel_end();
 
 	install_keyword_root("overrides", &overrides_handler);
@@ -1584,6 +1594,7 @@ init_keywords(vector keywords)
 
 	install_keyword("skip_kpartx", &ovr_skip_kpartx_handler, &snprint_ovr_skip_kpartx);
 	install_keyword("max_sectors_kb", &ovr_max_sectors_kb_handler, &snprint_ovr_max_sectors_kb);
+	install_keyword("ghost_delay", &ovr_ghost_delay_handler, &snprint_ovr_ghost_delay);
 
 	install_keyword_root("multipaths", &multipaths_handler);
 	install_keyword_multi("multipath", &multipath_handler, NULL);
@@ -1616,5 +1627,6 @@ init_keywords(vector keywords)
 	install_keyword("marginal_path_double_failed_time", &mp_marginal_path_double_failed_time_handler, &snprint_mp_marginal_path_double_failed_time);
 	install_keyword("skip_kpartx", &mp_skip_kpartx_handler, &snprint_mp_skip_kpartx);
 	install_keyword("max_sectors_kb", &mp_max_sectors_kb_handler, &snprint_mp_max_sectors_kb);
+	install_keyword("ghost_delay", &mp_ghost_delay_handler, &snprint_mp_ghost_delay);
 	install_sublevel_end();
 }

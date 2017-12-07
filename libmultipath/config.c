@@ -351,6 +351,7 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(delay_wait_checks);
 	merge_num(skip_kpartx);
 	merge_num(max_sectors_kb);
+	merge_num(ghost_delay);
 
 	snprintf(id, sizeof(id), "%s/%s", dst->vendor, dst->product);
 	reconcile_features_with_options(id, &dst->features,
@@ -419,6 +420,7 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->retain_hwhandler = dhwe->retain_hwhandler;
 	hwe->detect_prio = dhwe->detect_prio;
 	hwe->detect_checker = dhwe->detect_checker;
+	hwe->ghost_delay = dhwe->ghost_delay;
 
 	if (dhwe->bl_product && !(hwe->bl_product = set_param_str(dhwe->bl_product)))
 		goto out;
@@ -619,6 +621,7 @@ load_config (char * file)
 	conf->uev_wait_timeout = DEFAULT_UEV_WAIT_TIMEOUT;
 	conf->disable_changed_wwids = DEFAULT_DISABLE_CHANGED_WWIDS;
 	conf->remove_retries = 0;
+	conf->ghost_delay = DEFAULT_GHOST_DELAY;
 
 	/*
 	 * preload default hwtable

@@ -863,3 +863,18 @@ out:
 		origin);
 	return 0;
 }
+
+int select_ghost_delay (struct config *conf, struct multipath * mp)
+{
+	char *origin, buff[12];
+
+	mp_set_mpe(ghost_delay);
+	mp_set_ovr(ghost_delay);
+	mp_set_hwe(ghost_delay);
+	mp_set_conf(ghost_delay);
+	mp_set_default(ghost_delay, DEFAULT_GHOST_DELAY);
+out:
+	print_off_int_undef(buff, 12, &mp->ghost_delay);
+	condlog(3, "%s: ghost_delay = %s %s", mp->alias, buff, origin);
+	return 0;
+}

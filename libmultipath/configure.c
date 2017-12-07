@@ -301,6 +301,7 @@ int setup_map(struct multipath *mpp, char *params, int params_size)
 	select_marginal_path_double_failed_time(conf, mpp);
 	select_skip_kpartx(conf, mpp);
 	select_max_sectors_kb(conf, mpp);
+	select_ghost_delay(conf, mpp);
 
 	sysfs_set_scsi_tmo(mpp, conf->checkint);
 	put_multipath_config(conf);
@@ -761,6 +762,9 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		}
 
 		sysfs_set_max_sectors_kb(mpp, 0);
+		if (is_daemon && mpp->ghost_delay > 0 && mpp->nr_active &&
+		    pathcount(mpp, PATH_GHOST) == mpp->nr_active)
+			mpp->ghost_delay_tick = mpp->ghost_delay;
 		r = dm_addmap_create(mpp, params);
 
 		lock_multipath(mpp, 0);
@@ -768,11 +772,15 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 
 	case ACT_RELOAD:
 		sysfs_set_max_sectors_kb(mpp, 1);
+		if (mpp->ghost_delay_tick > 0 && pathcount(mpp, PATH_UP))
+			mpp->ghost_delay_tick = 0;
 		r = dm_addmap_reload(mpp, params, 0);
 		break;
 
 	case ACT_RESIZE:
 		sysfs_set_max_sectors_kb(mpp, 1);
+		if (mpp->ghost_delay_tick > 0 && pathcount(mpp, PATH_UP))
+			mpp->ghost_delay_tick = 0;
 		r = dm_addmap_reload(mpp, params, 1);
 		break;
 
@@ -790,6 +798,9 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		put_multipath_config(conf);
 		if (r) {
 			sysfs_set_max_sectors_kb(mpp, 1);
+			if (mpp->ghost_delay_tick > 0 &&
+			    pathcount(mpp, PATH_UP))
+				mpp->ghost_delay_tick = 0;
 			r = dm_addmap_reload(mpp, params, 0);
 		}
 		break;
