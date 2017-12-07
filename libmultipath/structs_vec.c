@@ -336,7 +336,7 @@ void set_no_path_retry(struct config *conf, struct multipath *mpp)
 }
 
 int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
-		      int reset, int is_daemon)
+		      int reset)
 {
 	struct config *conf;
 
@@ -352,7 +352,7 @@ int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
 		goto out;
 	}
 
-	if (update_multipath_strings(mpp, vecs->pathvec, is_daemon)) {
+	if (update_multipath_strings(mpp, vecs->pathvec, 1)) {
 		condlog(0, "%s: failed to setup multipath", mpp->alias);
 		goto out;
 	}
@@ -594,7 +594,7 @@ int update_multipath (struct vectors *vecs, char *mapname, int reset)
 		return 2;
 	}
 
-	if (__setup_multipath(vecs, mpp, reset, 1))
+	if (__setup_multipath(vecs, mpp, reset))
 		return 1; /* mpp freed in setup_multipath */
 
 	/*

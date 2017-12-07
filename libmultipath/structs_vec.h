@@ -20,8 +20,8 @@ void orphan_path (struct path * pp, const char *reason);
 int verify_paths(struct multipath * mpp, struct vectors * vecs);
 int update_mpp_paths(struct multipath * mpp, vector pathvec);
 int __setup_multipath (struct vectors * vecs, struct multipath * mpp,
-		       int reset, int is_daemon);
-#define setup_multipath(vecs, mpp) __setup_multipath(vecs, mpp, 1, 1)
+		       int reset);
+#define setup_multipath(vecs, mpp) __setup_multipath(vecs, mpp, 1)
 int update_multipath_strings (struct multipath *mpp, vector pathvec,
 			      int is_daemon);
 void extract_hwe_from_path(struct multipath * mpp);
