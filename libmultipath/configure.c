@@ -272,6 +272,8 @@ int setup_map(struct multipath *mpp, char *params, int params_size)
 	 * free features, selector, and hwhandler properties if they are being reused
 	 */
 	free_multipath_attributes(mpp);
+	if (mpp->disable_queueing && VECTOR_SIZE(mpp->paths) != 0)
+		mpp->disable_queueing = 0;
 
 	/*
 	 * properties selectors
@@ -302,6 +304,7 @@ int setup_map(struct multipath *mpp, char *params, int params_size)
 	select_skip_kpartx(conf, mpp);
 	select_max_sectors_kb(conf, mpp);
 	select_ghost_delay(conf, mpp);
+	select_flush_on_last_del(conf, mpp);
 
 	sysfs_set_scsi_tmo(mpp, conf->checkint);
 	put_multipath_config(conf);

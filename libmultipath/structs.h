@@ -99,7 +99,6 @@ enum flush_states {
 	FLUSH_UNDEF = YNU_UNDEF,
 	FLUSH_DISABLED = YNU_NO,
 	FLUSH_ENABLED = YNU_YES,
-	FLUSH_IN_PROGRESS,
 };
 
 enum log_checker_err_states {
@@ -272,6 +271,7 @@ struct multipath {
 	int nr_active;     /* current available(= not known as failed) paths */
 	int no_path_retry; /* number of retries after all paths are down */
 	int retry_tick;    /* remaining times for retries */
+	int disable_queueing;
 	int minio;
 	int flush_on_last_del;
 	int attribute_flags;

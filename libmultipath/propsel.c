@@ -520,8 +520,8 @@ int select_no_path_retry(struct config *conf, struct multipath *mp)
 	char *origin = NULL;
 	char buff[12];
 
-	if (mp->flush_on_last_del == FLUSH_IN_PROGRESS) {
-		condlog(0, "%s: flush_on_last_del in progress", mp->alias);
+	if (mp->disable_queueing) {
+		condlog(0, "%s: queueing disabled", mp->alias);
 		mp->no_path_retry = NO_PATH_RETRY_FAIL;
 		return 0;
 	}
@@ -613,8 +613,6 @@ int select_flush_on_last_del(struct config *conf, struct multipath *mp)
 {
 	char *origin;
 
-	if (mp->flush_on_last_del == FLUSH_IN_PROGRESS)
-		return 0;
 	mp_set_mpe(flush_on_last_del);
 	mp_set_ovr(flush_on_last_del);
 	mp_set_hwe(flush_on_last_del);

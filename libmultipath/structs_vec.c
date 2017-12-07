@@ -311,7 +311,6 @@ void set_no_path_retry(struct config *conf, struct multipath *mpp)
 {
 	mpp->retry_tick = 0;
 	mpp->nr_active = pathcount(mpp, PATH_UP) + pathcount(mpp, PATH_GHOST);
-	select_no_path_retry(conf, mpp);
 
 	switch (mpp->no_path_retry) {
 	case NO_PATH_RETRY_UNDEF:
@@ -360,10 +359,7 @@ int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
 
 	if (reset) {
 		conf = get_multipath_config();
-		select_rr_weight(conf, mpp);
-		select_pgfailback(conf, mpp);
 		set_no_path_retry(conf, mpp);
-		select_flush_on_last_del(conf, mpp);
 		put_multipath_config(conf);
 		if (VECTOR_SIZE(mpp->paths) != 0)
 			dm_cancel_deferred_remove(mpp);
@@ -421,7 +417,6 @@ retry:
 		goto fail;
 	}
 	verify_paths(mpp, vecs);
-	mpp->flush_on_last_del = FLUSH_UNDEF;
 	mpp->action = ACT_RELOAD;
 
 	extract_hwe_from_path(mpp);

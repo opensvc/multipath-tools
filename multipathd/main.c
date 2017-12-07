@@ -696,7 +696,6 @@ rescan:
 			goto fail; /* leave path added to pathvec */
 
 		verify_paths(mpp, vecs);
-		mpp->flush_on_last_del = FLUSH_UNDEF;
 		mpp->action = ACT_RELOAD;
 		extract_hwe_from_path(mpp);
 	} else {
@@ -851,7 +850,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 				condlog(2, "%s Last path deleted, disabling queueing", mpp->alias);
 				mpp->retry_tick = 0;
 				mpp->no_path_retry = NO_PATH_RETRY_FAIL;
-				mpp->flush_on_last_del = FLUSH_IN_PROGRESS;
+				mpp->disable_queueing = 1;
 				mpp->stat_map_failures++;
 				dm_queue_if_no_path(mpp->alias, 0);
 			}

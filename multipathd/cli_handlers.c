@@ -22,7 +22,7 @@
 #include <libudev.h>
 #include "util.h"
 #include "prkey.h"
-
+#include "propsel.h"
 #include "main.h"
 #include "cli.h"
 #include "uevent.h"
@@ -973,6 +973,7 @@ cli_restore_queueing(void *v, char **reply, int *len, void *data)
 	char * mapname = get_keyparam(v, MAP);
 	struct multipath *mpp;
 	int minor;
+	struct config *conf;
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: restore map queueing (operator)", mapname);
@@ -985,6 +986,11 @@ cli_restore_queueing(void *v, char **reply, int *len, void *data)
 		condlog(0, "%s: invalid map name, cannot restore queueing", mapname);
 		return 1;
 	}
+
+	conf = get_multipath_config();
+	mpp->disable_queueing = 0;
+	select_no_path_retry(conf, mpp);
+	put_multipath_config(conf);
 
 	if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
 			mpp->no_path_retry != NO_PATH_RETRY_FAIL) {
@@ -1009,13 +1015,17 @@ cli_restore_all_queueing(void *v, char **reply, int *len, void *data)
 
 	condlog(2, "restore queueing (operator)");
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
+		struct config *conf = get_multipath_config();
+		mpp->disable_queueing = 0;
+		select_no_path_retry(conf, mpp);
+		put_multipath_config(conf);
 		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
 		    mpp->no_path_retry != NO_PATH_RETRY_FAIL) {
 			dm_queue_if_no_path(mpp->alias, 1);
 			if (mpp->nr_active > 0)
 				mpp->retry_tick = 0;
 			else {
-				struct config *conf = get_multipath_config();
+				conf = get_multipath_config();
 				mpp->retry_tick = mpp->no_path_retry * conf->checkint;
 				put_multipath_config(conf);
 			}
@@ -1046,7 +1056,9 @@ cli_disable_queueing(void *v, char **reply, int *len, void *data)
 
 	if (mpp->nr_active == 0)
 		mpp->stat_map_failures++;
-	mpp->retry_tick = -1;
+	mpp->retry_tick = 0;
+	mpp->no_path_retry = NO_PATH_RETRY_FAIL;
+	mpp->disable_queueing = 1;
 	dm_queue_if_no_path(mpp->alias, 0);
 	return 0;
 }
@@ -1062,7 +1074,9 @@ cli_disable_all_queueing(void *v, char **reply, int *len, void *data)
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
 		if (mpp->nr_active == 0)
 			mpp->stat_map_failures++;
-		mpp->retry_tick = -1;
+		mpp->retry_tick = 0;
+		mpp->no_path_retry = NO_PATH_RETRY_FAIL;
+		mpp->disable_queueing = 1;
 		dm_queue_if_no_path(mpp->alias, 0);
 	}
 	return 0;
