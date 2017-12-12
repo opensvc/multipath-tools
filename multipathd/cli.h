@@ -1,3 +1,6 @@
+#ifndef _CLI_H_
+#define _CLI_H_
+
 #include <stdint.h>
 
 enum {
@@ -126,3 +129,5 @@ void free_handlers (void);
 int cli_init (void);
 void cli_exit(void);
 char * key_generator (const char * str, int state);
+
+#endif /* _CLI_H_ */
