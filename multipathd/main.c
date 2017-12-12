@@ -39,8 +39,6 @@
 static int use_watchdog;
 #endif
 
-int uxsock_timeout;
-
 /*
  * libmultipath
  */
@@ -106,6 +104,7 @@ struct mpath_event_param
 };
 
 int logsink;
+int uxsock_timeout;
 int verbosity;
 int bindings_read_only;
 int ignore_new_devs;
