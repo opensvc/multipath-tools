@@ -1353,12 +1353,6 @@ int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
 			"for reload map", mpp->alias, r);
 		return 1;
 	}
-	if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF) {
-		if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
-			dm_queue_if_no_path(mpp->alias, 0);
-		else
-			dm_queue_if_no_path(mpp->alias, 1);
-	}
 
 	return 0;
 }
