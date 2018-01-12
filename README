@@ -20,7 +20,8 @@ git archive --format=tar.gz --prefix=multipath-tools-X.Y.Z/ X.Y.Z > ../multipath
 
 Alternatively it may be obtained from gitweb, go to:
 https://git.opensvc.com/?p=multipath-tools/.git;a=tags
-select a release-tag and then click on "snapshot".
+select a release-tag and then click on "snapshot". Or get it with
+wget "https://git.opensvc.com/?p=multipath-tools/.git;a=snapshot;sf=tgz;h=refs/tags/X.Y.Z" -O multipath-tools-X.Y.Z.tar.gz
 
 
 Source code
