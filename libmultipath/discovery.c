@@ -1118,7 +1118,11 @@ get_vpd_sgio (int fd, int pg, char * str, int maxlen)
 		len = parse_vpd_pg80(buff, str, maxlen);
 	else if (pg == 0x83)
 		len = parse_vpd_pg83(buff, buff_len, str, maxlen);
-	else
+	else if (pg == 0xc9 && maxlen >= 8) {
+		len = buff_len < 8 ? -ENODATA :
+			(buff_len <= maxlen ? buff_len : maxlen);
+		memcpy (str, buff, len);
+	} else
 		len = -ENOSYS;
 
 	return len;
