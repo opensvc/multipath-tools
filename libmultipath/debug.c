@@ -37,9 +37,9 @@ void dlog (int sink, int prio, const char * fmt, ...)
 					 "%b %d %H:%M:%S", tb);
 				buff[sizeof(buff)-1] = '\0';
 
-				fprintf(stdout, "%s | ", buff);
+				fprintf(stderr, "%s | ", buff);
 			}
-			vfprintf(stdout, fmt, ap);
+			vfprintf(stderr, fmt, ap);
 		}
 		else
 			log_safe(prio + 3, fmt, ap);
