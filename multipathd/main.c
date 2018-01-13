@@ -1020,8 +1020,8 @@ uev_pathfail_check(struct uevent *uev, struct vectors *vecs)
 	lock(&vecs->lock);
 	pthread_testcancel();
 	pp = find_path_by_devt(vecs->pathvec, devt);
-    if (!pp)
-        goto out_lock;
+	if (!pp)
+		goto out_lock;
 	r = io_err_stat_handle_pathfail(pp);
 	if (r)
 		condlog(3, "io_err_stat: %s: cannot handle pathfail uevent",
