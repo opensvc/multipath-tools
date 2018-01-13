@@ -497,7 +497,7 @@ detect_prio(struct config *conf, struct path * pp)
 
 	if (pp->tpgs <= 0)
 		return;
-	if (pp->tpgs == 2 && !check_rdac(pp)) {
+	if (pp->tpgs == 2 || !check_rdac(pp)) {
 		if (sysfs_get_asymmetric_access_state(pp, buff, 512) >= 0)
 			default_prio = PRIO_SYSFS;
 	}
