@@ -852,7 +852,7 @@ retry:
 			return len;
 		if (len > DEFAULT_SGIO_LEN)
 			goto retry;
-		return 0;
+		return len;
 	}
 	return -1;
 }
