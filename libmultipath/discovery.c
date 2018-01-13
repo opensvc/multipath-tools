@@ -837,7 +837,7 @@ detect_alua(struct path * pp, struct config *conf)
 #define DEFAULT_SGIO_LEN 254
 
 static int
-sgio_get_vpd (unsigned char * buff, int maxlen, int fd)
+sgio_get_vpd (unsigned char * buff, int maxlen, int fd, int pg)
 {
 	int len = DEFAULT_SGIO_LEN;
 
@@ -846,7 +846,7 @@ sgio_get_vpd (unsigned char * buff, int maxlen, int fd)
 		return -1;
 	}
 retry:
-	if (0 == do_inq(fd, 0, 1, 0x83, buff, len)) {
+	if (0 == do_inq(fd, 0, 1, pg, buff, len)) {
 		len = buff[3] + (buff[2] << 8);
 		if (len >= maxlen)
 			return len;
@@ -1099,7 +1099,7 @@ get_vpd_sgio (int fd, int pg, char * str, int maxlen)
 	unsigned char buff[4096];
 
 	memset(buff, 0x0, 4096);
-	if (sgio_get_vpd(buff, 4096, fd) <= 0) {
+	if (sgio_get_vpd(buff, 4096, fd, pg) <= 0) {
 		condlog(3, "failed to issue vpd inquiry for pg%02x",
 			pg);
 		return -errno;
