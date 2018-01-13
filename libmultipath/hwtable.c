@@ -77,6 +77,20 @@
 #endif
 
 static struct hwentry default_hw[] = {
+       /*
+	* Generic NVMe devices
+	*
+	* Due to the parsing logic in find_hwe(), generic entries
+	* have to be put on top of this list, and more specific ones
+	* below.
+	*/
+	{
+		.vendor        = "NVME",
+		.product       = ".*",
+		.uid_attribute = "ID_WWN",
+		.checker_name  = NONE,
+		.retain_hwhandler = RETAIN_HWHANDLER_OFF,
+	},
 	/*
 	 * Apple
 	 *
@@ -667,6 +681,19 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 24,
 	},
 	/*
+	 * NetApp NVMe-FC namespace devices: MULTIBUS preferred
+	 *
+	 * The table is searched backwards, so place this after generic NVMe
+	 */
+	{
+		.vendor	       = "NVME",
+		.product       = "(NetApp |)ONTAP Controller)",
+		.uid_attribute = "ID_WWN",
+		.checker_name  = NONE,
+		.pgpolicy      = MULTIBUS,
+		.retain_hwhandler = RETAIN_HWHANDLER_OFF,
+	},
+	/*
 	 * Nexenta
 	 *
 	 * Maintainer : Yacine Kheddache
@@ -1132,16 +1159,6 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
 		.no_path_retry = 30,
-	},
-	/*
-	 * Generic NVMe devices
-	 */
-	{
-		.vendor        = "NVME",
-		.product       = ".*",
-		.uid_attribute = "ID_WWN",
-		.checker_name  = NONE,
-		.retain_hwhandler = RETAIN_HWHANDLER_OFF,
 	},
 	/*
 	 * Dot Hill Systems - Seagate Technology
