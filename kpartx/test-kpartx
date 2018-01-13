@@ -131,7 +131,7 @@ step "create DM devices (spans)"
 # They also serve as DM devices to test partition removal on those.
 
 TABLE="\
-0 $((SIZE/SECTSIZ-OFFS)) linear $DEV1 $OFFS
+0 $((SIZE/SECTSIZ-OFFS)) linear $DEV1 $OFFS 
 $((SIZE/SECTSIZ-OFFS)) $((SIZE/SECTSIZ-OFFS)) linear $DEV2 $OFFS"
 
 SPAN1=kpt
@@ -142,9 +142,17 @@ push_cleanup 'dmsetup remove -f $SPAN1'
 dmsetup create $SPAN2 <<<"$TABLE"
 push_cleanup 'dmsetup remove -f $SPAN2'
 
+# This is a non-kpartx pseudo "partition" mapping
+USER1=user1
+push_cleanup 'dmsetup remove -f $USER1'
+dmsetup create $USER1 <<EOF
+0 $((SIZE/SECTSIZ-OFFS)) linear $DEV1 $OFFS
+EOF
+
 usleep $WAIT_US
 [[ -b /dev/mapper/$SPAN1 ]]
 [[ -b /dev/mapper/$SPAN2 ]]
+[[ -b /dev/mapper/$USER1 ]]
 
 step "create vg on $LO3"
 # On the 3rd loop device, we create a VG and an LV
@@ -290,6 +298,7 @@ pop_cleanup
 # spans should not have been removed
 [[ -b /dev/mapper/$SPAN1 ]]
 [[ -b /dev/mapper/$SPAN2 ]]
+[[ -b /dev/mapper/$USER1 ]]
 # LVs neither
 [[ -b /dev/mapper/$VG-$LV ]]
 
