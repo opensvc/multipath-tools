@@ -19,9 +19,11 @@
 #include "discovery.h"
 #include "dict.h"
 #include "util.h"
+#include "sysfs.h"
 #include "prioritizers/alua_rtpg.h"
 #include "prkey.h"
 #include <inttypes.h>
+#include <libudev.h>
 
 pgpolicyfn *pgpolicies[] = {
 	NULL,
@@ -353,9 +355,42 @@ out:
 	return 0;
 }
 
+static int get_dh_state(struct path *pp, char *value, size_t value_len)
+{
+	struct udev_device *ud;
+
+	if (pp->udev == NULL)
+		return -1;
+
+	ud = udev_device_get_parent_with_subsystem_devtype(
+		pp->udev, "scsi", "scsi_device");
+	if (ud == NULL)
+		return -1;
+
+	return sysfs_attr_get_value(ud, "dh_state", value, value_len);
+}
+
 int select_hwhandler(struct config *conf, struct multipath *mp)
 {
 	char *origin;
+	struct path *pp;
+	/* dh_state is no longer than "detached" */
+	char handler[12];
+	char *dh_state;
+	int i;
+
+	dh_state = &handler[2];
+	if (mp->retain_hwhandler != RETAIN_HWHANDLER_OFF) {
+		vector_foreach_slot(mp->paths, pp, i) {
+			if (get_dh_state(pp, dh_state, sizeof(handler) - 2) > 0
+			    && strcmp(dh_state, "detached")) {
+				memcpy(handler, "1 ", 2);
+				mp->hwhandler = handler;
+				origin = "(setting: retained by kernel driver)";
+				goto out;
+			}
+		}
+	}
 
 	mp_set_hwe(hwhandler);
 	mp_set_conf(hwhandler);

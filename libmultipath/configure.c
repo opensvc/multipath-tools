@@ -277,15 +277,21 @@ int setup_map(struct multipath *mpp, char *params, int params_size)
 
 	/*
 	 * properties selectors
+	 *
+	 * Ordering matters for some properties:
+	 * - features after no_path_retry and retain_hwhandler
+	 * - hwhandler after retain_hwhandler
+	 * No guarantee that this list is complete, check code in
+	 * propsel.c if in doubt.
 	 */
 	conf = get_multipath_config();
 	select_pgfailback(conf, mpp);
 	select_pgpolicy(conf, mpp);
 	select_selector(conf, mpp);
-	select_hwhandler(conf, mpp);
 	select_no_path_retry(conf, mpp);
 	select_retain_hwhandler(conf, mpp);
 	select_features(conf, mpp);
+	select_hwhandler(conf, mpp);
 	select_rr_weight(conf, mpp);
 	select_minio(conf, mpp);
 	select_mode(conf, mpp);
