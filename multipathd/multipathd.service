@@ -16,6 +16,7 @@ LimitCORE=infinity
 ExecStartPre=-/sbin/modprobe -a scsi_dh_alua scsi_dh_emc scsi_dh_rdac dm-multipath
 ExecStart=/sbin/multipathd -d -s
 ExecReload=/sbin/multipathd reconfigure
+TasksMax=infinity
 
 [Install]
 WantedBy=sysinit.target
