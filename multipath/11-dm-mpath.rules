@@ -100,7 +100,8 @@ ENV{DM_UDEV_LOW_PRIORITY_FLAG}!="1", OPTIONS+="link_priority=50"
 TEST=="/usr/lib/udev/kpartx_id", \
 	IMPORT{program}=="kpartx_id %M %m $env{DM_UUID}"
 
-ENV{DM_TYPE}=="?*", SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}"
+ENV{DM_TYPE}=="?*", ENV{DM_SERIAL}=="?*", \
+	SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_SERIAL}"
 ENV{DM_WWN}=="?*", SYMLINK+="disk/by-id/wwn-$env{DM_WWN}"
 
 LABEL="mpath_end"

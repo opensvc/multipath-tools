@@ -42,6 +42,7 @@ fi
 dmuuid=${UUID#*-}
 dmtbl=${UUID%%-*}
 dmpart=${dmtbl#part}
+dmserial=
 # kpartx types are 'part<num>'
 if [ "$dmpart" = "$dmtbl" ] ; then
     dmpart=
@@ -59,10 +60,12 @@ if [ "$dmtbl" = "part" ] ; then
     case "$dmuuid" in
 	mpath-*)
 	    dmdeps=$($DMSETUP deps -u $dmuuid)
+	    dmserial=${dmuuid#mpath-}
 	    ;;
     esac
 elif [ "$dmtbl" = "mpath" ] ; then
     dmname="$dmuuid"
+    dmserial="$dmuuid"
     # We need the dependencies of the table to figure out the type
     dmdeps=$($DMSETUP deps -u $UUID)
 fi
@@ -84,11 +87,14 @@ if [ -n "$dmdeps" ] ; then
 	    ;;
 	*)
 	    echo "DM_TYPE=scsi"
-	    echo "DM_WWN=0x${dmname#?}"
+	    echo "DM_WWN=0x${dmserial#?}"
 	    ;;
     esac
 else
     echo "DM_TYPE=raid"
+fi
+if [[ $dmserial ]]; then
+    echo "DM_SERIAL=$dmserial"
 fi
 
 exit 0

@@ -31,8 +31,8 @@ ENV{DM_UDEV_LOW_PRIORITY_FLAG}!="1", OPTIONS+="link_priority=50"
 IMPORT{program}=="kpartx_id %M %m $env{DM_UUID}"
 
 # DM_TYPE only has a reasonable value for partitions on multipath.
-ENV{DM_UUID}=="*-mpath-*", ENV{DM_TYPE}=="?*" \
-	SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_NAME}"
+ENV{DM_UUID}=="*-mpath-*", ENV{DM_TYPE}=="?*", ENV{DM_SERIAL}=="?*" \
+	SYMLINK+="disk/by-id/$env{DM_TYPE}-$env{DM_SERIAL}-part$env{DM_PART}"
 ENV{DM_WWN}=="?*", ENV{DM_PART}=="?*", \
 	SYMLINK+="disk/by-id/wwn-$env{DM_WWN}-part$env{DM_PART}"
 
