@@ -578,6 +578,64 @@ get_dev_type(char *dev) {
 	return DEV_NONE;
 }
 
+/*
+ * Some multipath commands are dangerous to run while multipathd is running.
+ * For example, "multipath -r" may apply a modified configuration to the kernel,
+ * while multipathd is still using the old configuration, leading to
+ * inconsistent state.
+ *
+ * It is safer to use equivalent multipathd client commands instead.
+ */
+int delegate_to_multipathd(enum mpath_cmds cmd, const char *dev,
+			   enum devtypes dev_type, const struct config *conf)
+{
+	int fd;
+	char command[1024], *p, *reply;
+	int n, r = 0;
+
+	fd = mpath_connect();
+	if (fd == -1)
+		return 0;
+
+	p = command;
+	*p = '\0';
+	n = sizeof(command);
+
+	if (cmd == CMD_CREATE && conf->force_reload == FORCE_RELOAD_YES) {
+		p += snprintf(p, n, "reconfigure");
+	}
+	/* Add other translations here */
+
+	if (strlen(command) == 0)
+		/* No command found, no need to delegate */
+		return 0;
+	else if (p >= command + sizeof(command)) {
+		condlog(0, "internal error - command buffer overflow");
+		r = -1;
+		goto out;
+	}
+
+	condlog(3, "delegating command to multipathd");
+	r = mpath_process_cmd(fd, command, &reply, conf->uxsock_timeout);
+
+	if (r == -1) {
+		condlog(1, "error in multipath command %s: %s",
+			command, strerror(errno));
+		goto out;
+	}
+
+	if (reply != NULL && *reply != '\0' && strcmp(reply, "ok\n"))
+		printf("%s", reply);
+	r = 1;
+
+out:
+	FREE(reply);
+	close(fd);
+	if (r < 0)
+		exit(1);
+	return r;
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -781,10 +839,15 @@ main (int argc, char *argv[])
 		} else
 			mpath_disconnect(fd);
 	}
+
 	if (cmd == CMD_REMOVE_WWID && !dev) {
 		condlog(0, "the -w option requires a device");
 		goto out;
 	}
+
+	if (delegate_to_multipathd(cmd, dev, dev_type, conf))
+		exit(0);
+
 	if (cmd == CMD_RESET_WWIDS) {
 		struct multipath * mpp;
 		int i;
