@@ -289,40 +289,6 @@ int getprio(struct path *pp, char *args, unsigned int timeout)
 		return DEFAULT_PRIORITY;
 	}
 
-	standard_deviation = calc_standard_deviation(lg_path_latency,
-			index, lg_avglatency);
-	/*
-	 * In calPrio(), we let prio y = f(x) = log(max, base) - log (x, base);
-	 * So if we want to let the priority of the latency outside 2 standard
-	 * deviations can be distinguished from the latency inside 2 standard
-	 * deviation, in others words at most 95% are the same and at least 5%
-	 * are different according interval estimation of normal distribution,
-	 * we should warn the user to set the base_num to be smaller if the
-	 * log(x_threshold, base) is small than 2 standard deviation.
-	 * x_threshold is derived from:
-	 * y + 1 = f(x) + 1 = f(x) + log(base, base), so x_threadshold =
-	 * base_num; Note that we only can compare the logarithm of x_threshold
-	 * with the standard deviation because the standard deviation is derived
-	 * from logarithm of latency.
-	 *
-	 * therefore , we recommend the base_num to meet the condition :
-	 * 1 <= 2 * standard_deviation
-	 */
-	pp_pl_log(5, "%s: standard deviation for logarithm of latency = %.6f",
-			pp->dev, standard_deviation);
-	if (standard_deviation <= 0.5)
-		pp_pl_log(3, "%s: the base_num(%.3lf) is too big to distinguish different priority "
-			  "of two far-away latency. It is recommend to be set smaller",
-			  pp->dev, base_num);
-	/*
-	 * If the standard deviation is too large , we should also warn the user
-	 */
-
-	if (standard_deviation > 4)
-		pp_pl_log(3, "%s: the base_num(%.3lf) is too small to avoid noise disturbance "
-			  ".It is recommend to be set larger",
-			  pp->dev, base_num);
-
 	standard_deviation = sqrt((sum_squares - lg_toldelay * lg_avglatency)
 				  / (io_num - 1));
 
