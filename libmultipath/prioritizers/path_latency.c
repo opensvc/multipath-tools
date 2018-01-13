@@ -42,8 +42,9 @@
 #define DEF_IO_NUM		100
 
 #define MAX_BASE_NUM		10
-#define MIN_BASE_NUM		1.01
-#define DEF_BASE_NUM		1.5
+#define MIN_BASE_NUM		1.1
+// This is 10**(1/4). 4 prio steps correspond to a factor of 10.
+#define DEF_BASE_NUM		1.77827941004
 
 #define MAX_AVG_LATENCY		100000000.	/* Unit: us */
 #define MIN_AVG_LATENCY		1.		/* Unit: us */
