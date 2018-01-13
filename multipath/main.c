@@ -325,7 +325,8 @@ static int check_usable_paths(struct config *conf,
 		}
 	}
 found:
-	condlog(2, "%s:%s usable paths found", devpath, r == 0 ? "" : " no");
+	condlog(r == 0 ? 3 : 2, "%s:%s usable paths found",
+		devpath, r == 0 ? "" : " no");
 free:
 	FREE(mapname);
 	free_multipath(mpp, FREE_PATHS);
