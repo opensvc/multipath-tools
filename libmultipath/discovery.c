@@ -34,7 +34,7 @@
 
 int
 alloc_path_with_pathinfo (struct config *conf, struct udev_device *udevice,
-			  char *wwid, int flag, struct path **pp_ptr)
+			  const char *wwid, int flag, struct path **pp_ptr)
 {
 	int err = PATHINFO_FAILED;
 	struct path * pp;

@@ -38,7 +38,7 @@ int get_state (struct path * pp, struct config * conf, int daemon, int state);
 int get_vpd_sgio (int fd, int pg, char * str, int maxlen);
 int pathinfo (struct path * pp, struct config * conf, int mask);
 int alloc_path_with_pathinfo (struct config *conf, struct udev_device *udevice,
-			      char *wwid, int flag, struct path **pp_ptr);
+			      const char *wwid, int flag, struct path **pp_ptr);
 int store_pathinfo (vector pathvec, struct config *conf,
 		    struct udev_device *udevice, int flag,
 		    struct path **pp_ptr);

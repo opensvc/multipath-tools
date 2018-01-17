@@ -23,7 +23,7 @@ struct uevent {
 	char *devpath;
 	char *action;
 	char *kernel;
-	char *wwid;
+	const char *wwid;
 	unsigned long seqnum;
 	char *envp[HOTPLUG_NUM_ENVP];
 };
@@ -33,11 +33,11 @@ int is_uevent_busy(void);
 int uevent_listen(struct udev *udev);
 int uevent_dispatch(int (*store_uev)(struct uevent *, void * trigger_data),
 		    void * trigger_data);
-int uevent_get_major(struct uevent *uev);
-int uevent_get_minor(struct uevent *uev);
-int uevent_get_disk_ro(struct uevent *uev);
-char *uevent_get_dm_name(struct uevent *uev);
-char *uevent_get_dm_path(struct uevent *uev);
-char *uevent_get_dm_action(struct uevent *uev);
+int uevent_get_major(const struct uevent *uev);
+int uevent_get_minor(const struct uevent *uev);
+int uevent_get_disk_ro(const struct uevent *uev);
+const char *uevent_get_dm_name(const struct uevent *uev);
+const char *uevent_get_dm_path(const struct uevent *uev);
+const char *uevent_get_dm_action(const struct uevent *uev);
 
 #endif /* _UEVENT_H */

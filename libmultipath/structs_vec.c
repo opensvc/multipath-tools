@@ -449,7 +449,7 @@ fail:
 	return 0;
 }
 
-struct multipath *add_map_without_path (struct vectors *vecs, char *alias)
+struct multipath *add_map_without_path (struct vectors *vecs, const char *alias)
 {
 	struct multipath * mpp = alloc_multipath();
 	struct config *conf;

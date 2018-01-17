@@ -374,12 +374,12 @@ int store_hostgroup(vector hostgroupvec, struct host_group *hgp);
 int store_path (vector pathvec, struct path * pp);
 int store_pathgroup (vector pgvec, struct pathgroup * pgp);
 
-struct multipath * find_mp_by_alias (vector mp, char * alias);
+struct multipath * find_mp_by_alias (vector mp, const char * alias);
 struct multipath * find_mp_by_wwid (vector mp, char * wwid);
 struct multipath * find_mp_by_str (vector mp, char * wwid);
 struct multipath * find_mp_by_minor (vector mp, int minor);
 
-struct path * find_path_by_devt (vector pathvec, char * devt);
+struct path * find_path_by_devt (vector pathvec, const char * devt);
 struct path * find_path_by_dev (vector pathvec, char * dev);
 struct path * first_path (struct multipath * mpp);
 

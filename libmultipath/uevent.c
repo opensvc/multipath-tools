@@ -891,41 +891,41 @@ out:
 	return err;
 }
 
-int uevent_get_major(struct uevent *uev)
+int uevent_get_major(const struct uevent *uev)
 {
 	return uevent_get_env_positive_int(uev, "MAJOR");
 }
 
-int uevent_get_minor(struct uevent *uev)
+int uevent_get_minor(const struct uevent *uev)
 {
 	return uevent_get_env_positive_int(uev, "MINOR");
 }
 
-int uevent_get_disk_ro(struct uevent *uev)
+int uevent_get_disk_ro(const struct uevent *uev)
 {
 	return uevent_get_env_positive_int(uev, "DISK_RO");
 }
 
-static char *uevent_get_dm_str(const struct uevent *uev, char *attr)
+static const char *uevent_get_dm_str(const struct uevent *uev, char *attr)
 {
-	char *tmp = uevent_get_env_var(uev, attr);
+	const char *tmp = uevent_get_env_var(uev, attr);
 
 	if (tmp == NULL)
 		return NULL;
 	return strdup(tmp);
 }
 
-char *uevent_get_dm_name(struct uevent *uev)
+const char *uevent_get_dm_name(const struct uevent *uev)
 {
 	return uevent_get_dm_str(uev, "DM_NAME");
 }
 
-char *uevent_get_dm_path(struct uevent *uev)
+const char *uevent_get_dm_path(const struct uevent *uev)
 {
 	return uevent_get_dm_str(uev, "DM_PATH");
 }
 
-char *uevent_get_dm_action(struct uevent *uev)
+const char *uevent_get_dm_action(const struct uevent *uev)
 {
 	return uevent_get_dm_str(uev, "DM_ACTION");
 }

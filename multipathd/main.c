@@ -387,7 +387,7 @@ flush_map(struct multipath * mpp, struct vectors * vecs, int nopaths)
 static int
 uev_add_map (struct uevent * uev, struct vectors * vecs)
 {
-	char *alias;
+	const char *alias;
 	int major = -1, minor = -1, rc;
 
 	condlog(3, "%s: add map (uevent)", uev->kernel);
@@ -413,7 +413,7 @@ uev_add_map (struct uevent * uev, struct vectors * vecs)
 }
 
 int
-ev_add_map (char * dev, char * alias, struct vectors * vecs)
+ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 {
 	char * refwwid;
 	struct multipath * mpp;
@@ -500,7 +500,7 @@ ev_add_map (char * dev, char * alias, struct vectors * vecs)
 static int
 uev_remove_map (struct uevent * uev, struct vectors * vecs)
 {
-	char *alias;
+	const char *alias;
 	int minor;
 	struct multipath *mpp;
 
@@ -1001,7 +1001,7 @@ out:
 static int
 uev_pathfail_check(struct uevent *uev, struct vectors *vecs)
 {
-	char *action = NULL, *devt = NULL;
+	const char *action = NULL, *devt = NULL;
 	struct path *pp;
 	int r = 1;
 
