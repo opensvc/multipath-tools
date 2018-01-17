@@ -27,6 +27,7 @@ recurse_clean:
 	@for dir in $(BUILDDIRS); do \
 	$(MAKE) -C $$dir clean || exit $?; \
 	done
+	$(MAKE) -C tests clean
 
 recurse_install:
 	@for dir in $(BUILDDIRS); do \
@@ -43,6 +44,9 @@ clean: recurse_clean
 install: recurse_install
 
 uninstall: recurse_uninstall
+
+test:	all
+	$(MAKE) -C tests
 
 .PHONY:	TAGS
 TAGS:
