@@ -52,6 +52,7 @@
 #include "util.h"
 #include "config.h"
 #include "blacklist.h"
+#include "devmapper.h"
 
 #define MAX_ACCUMULATION_COUNT 2048
 #define MAX_ACCUMULATION_TIME 30*1000
@@ -928,4 +929,15 @@ const char *uevent_get_dm_path(const struct uevent *uev)
 const char *uevent_get_dm_action(const struct uevent *uev)
 {
 	return uevent_get_dm_str(uev, "DM_ACTION");
+}
+
+bool uevent_is_mpath(const struct uevent *uev)
+{
+	const char *uuid = uevent_get_env_var(uev, "DM_UUID");
+
+	if (uuid == NULL)
+		return false;
+	if (strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN))
+		return false;
+	return uuid[UUID_PREFIX_LEN] != '\0';
 }

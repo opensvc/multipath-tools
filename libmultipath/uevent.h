@@ -39,5 +39,6 @@ int uevent_get_disk_ro(const struct uevent *uev);
 const char *uevent_get_dm_name(const struct uevent *uev);
 const char *uevent_get_dm_path(const struct uevent *uev);
 const char *uevent_get_dm_action(const struct uevent *uev);
+bool uevent_is_mpath(const struct uevent *uev);
 
 #endif /* _UEVENT_H */

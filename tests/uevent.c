@@ -16,6 +16,7 @@
  *
  */
 
+#include <stdbool.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
@@ -208,6 +209,61 @@ static void test_dm_name_good_1(void **state)
 	free((void*)name);
 }
 
+static void test_dm_uuid_false_0(void **state)
+{
+	struct uevent *uev = *state;
+
+	assert_false(uevent_is_mpath(uev));
+}
+
+static void test_dm_uuid_true_0(void **state)
+{
+	struct uevent *uev = *state;
+
+	uev->envp[3] = "DM_UUID=mpath-foo";
+	assert_true(uevent_is_mpath(uev));
+}
+
+static void test_dm_uuid_false_1(void **state)
+{
+	struct uevent *uev = *state;
+
+	uev->envp[3] = "DM_UUID.mpath-foo";
+	assert_false(uevent_is_mpath(uev));
+}
+
+static void test_dm_uuid_false_2(void **state)
+{
+	struct uevent *uev = *state;
+
+	uev->envp[3] = "DM_UUID=mpath-";
+	assert_false(uevent_is_mpath(uev));
+}
+
+static void test_dm_uuid_false_3(void **state)
+{
+	struct uevent *uev = *state;
+
+	uev->envp[3] = "DM_UU=mpath-foo";
+	assert_false(uevent_is_mpath(uev));
+}
+
+static void test_dm_uuid_false_4(void **state)
+{
+	struct uevent *uev = *state;
+
+	uev->envp[3] = "DM_UUID=mpathfoo";
+	assert_false(uevent_is_mpath(uev));
+}
+
+static void test_dm_uuid_false_5(void **state)
+{
+	struct uevent *uev = *state;
+
+	uev->envp[3] = "DM_UUID=";
+	assert_false(uevent_is_mpath(uev));
+}
+
 int test_uevent_get_XXX(void)
 {
 	const struct CMUnitTest tests[] = {
@@ -228,6 +284,13 @@ int test_uevent_get_XXX(void)
 		cmocka_unit_test(test_dm_name_bad_0),
 		cmocka_unit_test(test_dm_name_bad_1),
 		cmocka_unit_test(test_dm_name_good_1),
+		cmocka_unit_test(test_dm_uuid_false_0),
+		cmocka_unit_test(test_dm_uuid_true_0),
+		cmocka_unit_test(test_dm_uuid_false_1),
+		cmocka_unit_test(test_dm_uuid_false_2),
+		cmocka_unit_test(test_dm_uuid_false_3),
+		cmocka_unit_test(test_dm_uuid_false_4),
+		cmocka_unit_test(test_dm_uuid_false_5),
 	};
 	return cmocka_run_group_tests(tests, setup_uev, teardown);
 }
