@@ -114,7 +114,6 @@ assemble_map (struct multipath * mp, char * params, int len)
 			APPEND(p, end, " %s %d", pp->dev_t, tmp_minio);
 		}
 	}
-	APPEND(p, end, "\n");
 
 	FREE(f);
 	condlog(3, "%s: assembled map [%s]", mp->alias, params);
