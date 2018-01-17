@@ -102,14 +102,21 @@ static void new_client(int ux_sock)
 /*
  * kill off a dead client
  */
-static void dead_client(struct client *c)
+static void _dead_client(struct client *c)
 {
-	pthread_mutex_lock(&client_lock);
+	int fd = c->fd;
 	list_del_init(&c->node);
-	pthread_mutex_unlock(&client_lock);
-	close(c->fd);
 	c->fd = -1;
 	FREE(c);
+	close(fd);
+}
+
+static void dead_client(struct client *c)
+{
+	pthread_cleanup_push(cleanup_lock, &client_lock);
+	pthread_mutex_lock(&client_lock);
+	_dead_client(c);
+	pthread_cleanup_pop(1);
 }
 
 void free_polls (void)
@@ -139,6 +146,18 @@ void check_timeout(struct timespec start_time, char *inbuf,
 
 void uxsock_cleanup(void *arg)
 {
+	struct client *client_loop;
+	struct client *client_tmp;
+	int ux_sock = (int)arg;
+
+	close(ux_sock);
+
+	pthread_mutex_lock(&client_lock);
+	list_for_each_entry_safe(client_loop, client_tmp, &clients, node) {
+		_dead_client(client_loop);
+	}
+	pthread_mutex_unlock(&client_lock);
+
 	cli_exit();
 	free_polls();
 }
@@ -162,7 +181,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 		return NULL;
 	}
 
-	pthread_cleanup_push(uxsock_cleanup, NULL);
+	pthread_cleanup_push(uxsock_cleanup, (void *)ux_sock);
 
 	condlog(3, "uxsock: startup listener");
 	polls = (struct pollfd *)MALLOC((MIN_POLLS + 1) * sizeof(struct pollfd));
@@ -300,6 +319,5 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 	}
 
 	pthread_cleanup_pop(1);
-	close(ux_sock);
 	return NULL;
 }
