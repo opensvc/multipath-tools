@@ -30,9 +30,6 @@
 #define MAX_WAIT 5
 #define LOOPS_PER_SEC 5
 
-#define UUID_PREFIX "mpath-"
-#define UUID_PREFIX_LEN 6
-
 static int dm_conf_verbosity;
 
 #ifdef LIBDM_API_DEFERRED
