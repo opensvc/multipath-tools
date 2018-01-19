@@ -26,5 +26,12 @@ speed_test: $(SPD_TEST_EXEC)
 	sudo env LD_LIBRARY_PATH=$(_libdmmpdir):$(_mpathcmddir) \
 		time -p ./$(SPD_TEST_EXEC)
 
-clean:
+clean: dep_clean
 	rm -f $(TEST_EXEC) $(SPD_TEST_EXEC)
+
+OBJS = $(TEST_EXEC).o $(SPD_TEST_EXEC).o
+include $(wildcard $(OBJS:.o=.d))
+
+
+dep_clean:
+	$(RM) $(OBJS:.o=.d)

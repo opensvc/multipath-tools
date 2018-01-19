@@ -38,5 +38,11 @@ install: $(LIBS)
 uninstall:
 	for file in $(LIBS); do $(RM) $(DESTDIR)$(libdir)/$$file; done
 
-clean:
+clean: dep_clean
 	$(RM) core *.a *.o *.gz *.so
+
+OBJS = $(LIBS:libprio%.so=%.o) alua_rtpg.o
+include $(wildcard $(OBJS:.o=.d))
+
+dep_clean:
+	$(RM) $(OBJS:.o=.d)

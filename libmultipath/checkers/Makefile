@@ -36,5 +36,11 @@ install:
 uninstall:
 	for file in $(LIBS); do $(RM) $(DESTDIR)$(libdir)/$$file; done
 
-clean:
+clean: dep_clean
 	$(RM) core *.a *.o *.gz *.so
+
+OBJS := $(LIBS:libcheck%.so=%.o) libsg.o directio.o
+include $(wildcard $(OBJS:.o=.d))
+
+dep_clean:
+	$(RM) $(OBJS:.o=.d)

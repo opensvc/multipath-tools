@@ -44,5 +44,10 @@ uninstall:
 	$(RM) $(DESTDIR)$(libudevdir)/rules.d/67-kpartx-compat.rules
 	$(RM) $(DESTDIR)$(libudevdir)/rules.d/68-del-part-nodes.rules
 
-clean:
+clean: dep_clean
 	$(RM) core *.o $(EXEC) *.gz
+
+include $(wildcard $(OBJS:.o=.d))
+
+dep_clean:
+	$(RM) $(OBJS:.o=.d)

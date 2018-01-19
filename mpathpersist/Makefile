@@ -22,9 +22,14 @@ install:
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(man8dir)
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(man8dir)
 
-clean:
+clean: dep_clean
 	$(RM) core *.o $(EXEC) *.gz
+
+include $(wildcard $(OBJS:.o=.d))
 
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
 	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8.gz
+
+dep_clean:
+	$(RM) $(OBJS:.o=.d)

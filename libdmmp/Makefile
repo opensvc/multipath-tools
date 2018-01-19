@@ -56,10 +56,12 @@ uninstall:
 	$(RM) $(DESTDIR)$(man3dir)/libdmmp.h*
 	$(RM) $(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 
-clean:
+clean: dep_clean
 	$(RM) core *.a *.o *.gz *.so *.so.*
 	$(RM) -r docs/man
 	$(MAKE) -C test clean
+
+include $(wildcard $(OBJS:.o=.d))
 
 check: all
 	$(MAKE) -C test check
@@ -84,3 +86,6 @@ docs/man/$(EXTRA_MAN_FILES).gz: $(HEADERS)
 		gzip -f $$file; \
 	done
 	find docs/man -type f -name \*[0-9].gz
+
+dep_clean:
+	$(RM) $(OBJS:.o=.d)

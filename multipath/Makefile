@@ -37,5 +37,10 @@ uninstall:
 	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8.gz
 	$(RM) $(DESTDIR)$(man5dir)/$(EXEC).conf.5.gz
 
-clean:
+clean: dep_clean
 	$(RM) core *.o $(EXEC) *.gz
+
+include $(wildcard $(OBJS:.o=.d))
+
+dep_clean:
+	$(RM) $(OBJS:.o=.d)

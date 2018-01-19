@@ -26,5 +26,11 @@ uninstall:
 	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 	$(RM) $(DESTDIR)$(includedir)/mpath_cmd.h
 
-clean:
-	$(RM) core *.a *.o *.so *.so.* *.gz
+clean: dep_clean
+	$(RM) core *.a *.o *.so *.so.* *.gz 
+
+include $(wildcard $(OBJS:.o=.d))
+
+
+dep_clean:
+	$(RM) $(OBJS:.o=.d)
