@@ -1158,12 +1158,12 @@ scsi_sysfs_pathinfo (struct path * pp, vector hwtable)
 
 	condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
 
-	if (sysfs_get_model(parent, pp->product_id, SCSI_PRODUCT_SIZE) <= 0)
+	if (sysfs_get_model(parent, pp->product_id, PATH_PRODUCT_SIZE) <= 0)
 		return 1;
 
 	condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 
-	if (sysfs_get_rev(parent, pp->rev, SCSI_REV_SIZE) < 0)
+	if (sysfs_get_rev(parent, pp->rev, PATH_REV_SIZE) < 0)
 		return 1;
 
 	condlog(3, "%s: rev = %s", pp->dev, pp->rev);
@@ -1223,11 +1223,11 @@ nvme_sysfs_pathinfo (struct path * pp, vector hwtable)
 	pp->sg_id.channel = attr ? atoi(attr) : 0;
 
 	snprintf(pp->vendor_id, SCSI_VENDOR_SIZE, "NVME");
-	snprintf(pp->product_id, SCSI_PRODUCT_SIZE, "%s",
+	snprintf(pp->product_id, PATH_PRODUCT_SIZE, "%s",
 		 udev_device_get_sysattr_value(parent, "model"));
 	snprintf(pp->serial, SERIAL_SIZE, "%s",
 		 udev_device_get_sysattr_value(parent, "serial"));
-	snprintf(pp->rev, SCSI_REV_SIZE, "%s",
+	snprintf(pp->rev, PATH_REV_SIZE, "%s",
 		 udev_device_get_sysattr_value(parent, "firmware_rev"));
 
 	condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
@@ -1342,12 +1342,12 @@ cciss_sysfs_pathinfo (struct path * pp, vector hwtable)
 
 	condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
 
-	if (sysfs_get_model(parent, pp->product_id, SCSI_PRODUCT_SIZE) <= 0)
+	if (sysfs_get_model(parent, pp->product_id, PATH_PRODUCT_SIZE) <= 0)
 		return 1;
 
 	condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 
-	if (sysfs_get_rev(parent, pp->rev, SCSI_REV_SIZE) <= 0)
+	if (sysfs_get_rev(parent, pp->rev, PATH_REV_SIZE) <= 0)
 		return 1;
 
 	condlog(3, "%s: rev = %s", pp->dev, pp->rev);

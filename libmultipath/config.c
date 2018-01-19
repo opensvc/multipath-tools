@@ -319,7 +319,7 @@ set_param_str(char * str)
 static int
 merge_hwe (struct hwentry * dst, struct hwentry * src)
 {
-	char id[SCSI_VENDOR_SIZE+SCSI_PRODUCT_SIZE];
+	char id[SCSI_VENDOR_SIZE+PATH_PRODUCT_SIZE];
 	merge_str(vendor);
 	merge_str(product);
 	merge_str(revision);

@@ -25,6 +25,12 @@
 #define SCSI_PRODUCT_SIZE	17
 #define SCSI_REV_SIZE		5
 #define SCSI_STATE_SIZE		19
+#define NVME_MODEL_SIZE         41
+#define NVME_REV_SIZE           9
+
+/* This must be the maximum of SCSI and NVME sizes */
+#define PATH_PRODUCT_SIZE NVME_MODEL_SIZE
+#define PATH_REV_SIZE NVME_REV_SIZE
 
 #define NO_PATH_RETRY_UNDEF	0
 #define NO_PATH_RETRY_FAIL	-1
@@ -214,8 +220,8 @@ struct path {
 	struct hd_geometry geom;
 	char wwid[WWID_SIZE];
 	char vendor_id[SCSI_VENDOR_SIZE];
-	char product_id[SCSI_PRODUCT_SIZE];
-	char rev[SCSI_REV_SIZE];
+	char product_id[PATH_PRODUCT_SIZE];
+	char rev[PATH_REV_SIZE];
 	char serial[SERIAL_SIZE];
 	char tgt_node_name[NODE_NAME_SIZE];
 	unsigned long long size;
