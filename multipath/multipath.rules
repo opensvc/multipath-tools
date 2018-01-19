@@ -1,7 +1,7 @@
 # Set DM_MULTIPATH_DEVICE_PATH if the device should be handled by multipath
 SUBSYSTEM!="block", GOTO="end_mpath"
 ACTION!="add|change", GOTO="end_mpath"
-KERNEL!="sd*|dasd*", GOTO="end_mpath"
+KERNEL!="sd*|dasd*|nvme*", GOTO="end_mpath"
 
 IMPORT{cmdline}="nompath"
 ENV{nompath}=="?*", GOTO="end_mpath"
