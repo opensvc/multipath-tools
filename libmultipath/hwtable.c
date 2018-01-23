@@ -681,16 +681,17 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 24,
 	},
 	/*
-	 * NetApp NVMe-FC namespace devices: MULTIBUS preferred
+	 * NetApp NVMe-FC namespace devices: MULTIBUS, queueing preferred
 	 *
 	 * The table is searched backwards, so place this after generic NVMe
 	 */
 	{
 		.vendor	       = "NVME",
-		.product       = "(NetApp |)ONTAP Controller)",
+		.product       = "^NetApp ONTAP Controller",
 		.uid_attribute = "ID_WWN",
 		.checker_name  = NONE,
 		.pgpolicy      = MULTIBUS,
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.retain_hwhandler = RETAIN_HWHANDLER_OFF,
 	},
 	/*
