@@ -1200,6 +1200,17 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	/*
+	 * INSPUR
+	 */
+	{
+		/* AS5300/AS5500 G2 */
+		.vendor        = "INSPUR",
+		.product       = "MCS",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+	},
+	/*
 	 * EOL
 	 */
 	{
