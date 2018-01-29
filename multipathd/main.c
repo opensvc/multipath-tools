@@ -1122,6 +1122,8 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 	 * are not fully initialised then.
 	 */
 	if (!strncmp(uev->kernel, "dm-", 3)) {
+		if (!uevent_is_mpath(uev))
+			goto out;
 		if (!strncmp(uev->action, "change", 6)) {
 			r = uev_add_map(uev, vecs);
 
@@ -1132,11 +1134,8 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 			 * cess.
 			 */
 			uev_pathfail_check(uev, vecs);
-			goto out;
-		}
-		if (!strncmp(uev->action, "remove", 6)) {
+		} else if (!strncmp(uev->action, "remove", 6)) {
 			r = uev_remove_map(uev, vecs);
-			goto out;
 		}
 		goto out;
 	}
