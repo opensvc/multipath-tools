@@ -38,6 +38,6 @@ int mpath_pr_event_handle(struct path *pp);
 void * mpath_pr_event_handler_fn (void * );
 int update_map_pr(struct multipath *mpp);
 void * mpath_pr_event_handler_fn (void * pathp );
-void handle_signals(void);
+void handle_signals(bool);
 
 #endif /* MAIN_H */

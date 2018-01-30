@@ -240,9 +240,10 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 		/* most of our life is spent in this call */
 		poll_count = ppoll(polls, i, &sleep_time, &mask);
 
+		handle_signals(false);
 		if (poll_count == -1) {
 			if (errno == EINTR) {
-				handle_signals();
+				handle_signals(true);
 				continue;
 			}
 
@@ -252,7 +253,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 		}
 
 		if (poll_count == 0) {
-			handle_signals();
+			handle_signals(true);
 			continue;
 		}
 
@@ -311,6 +312,8 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 				FREE(inbuf);
 			}
 		}
+		/* see if we got a non-fatal signal */
+		handle_signals(true);
 
 		/* see if we got a new client */
 		if (polls[0].revents & POLLIN) {

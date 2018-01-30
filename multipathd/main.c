@@ -2183,12 +2183,15 @@ signal_set(int signo, void (*func) (int))
 }
 
 void
-handle_signals(void)
+handle_signals(bool nonfatal)
 {
 	if (exit_sig) {
 		condlog(2, "exit (signal)");
+		exit_sig = 0;
 		exit_daemon();
 	}
+	if (!nonfatal)
+		return;
 	if (reconfig_sig) {
 		condlog(2, "reconfigure (signal)");
 		set_config_state(DAEMON_CONFIGURE);
@@ -2199,7 +2202,6 @@ handle_signals(void)
 		log_reset("multipathd");
 		pthread_mutex_unlock(&logq_lock);
 	}
-	exit_sig = 0;
 	reconfig_sig = 0;
 	log_reset_sig = 0;
 }
