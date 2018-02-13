@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <urcu/uatomic.h>
 
 #include "checkers.h"
 
@@ -44,7 +45,6 @@ struct tur_checker_context {
 	pthread_t thread;
 	pthread_mutex_t lock;
 	pthread_cond_t active;
-	pthread_spinlock_t hldr_lock;
 	int holders;
 	char message[CHECKER_MSG_LEN];
 };
@@ -74,13 +74,12 @@ int libcheck_init (struct checker * c)
 
 	ct->state = PATH_UNCHECKED;
 	ct->fd = -1;
-	ct->holders = 1;
+	uatomic_set(&ct->holders, 1);
 	pthread_cond_init_mono(&ct->active);
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&ct->lock, &attr);
 	pthread_mutexattr_destroy(&attr);
-	pthread_spin_init(&ct->hldr_lock, PTHREAD_PROCESS_PRIVATE);
 	c->context = ct;
 
 	return 0;
@@ -90,7 +89,6 @@ static void cleanup_context(struct tur_checker_context *ct)
 {
 	pthread_mutex_destroy(&ct->lock);
 	pthread_cond_destroy(&ct->active);
-	pthread_spin_destroy(&ct->hldr_lock);
 	free(ct);
 }
 
@@ -99,16 +97,14 @@ void libcheck_free (struct checker * c)
 	if (c->context) {
 		struct tur_checker_context *ct = c->context;
 		int holders;
-		pthread_t thread;
+		int running;
 
-		pthread_spin_lock(&ct->hldr_lock);
-		ct->holders--;
-		holders = ct->holders;
-		thread = ct->thread;
-		pthread_spin_unlock(&ct->hldr_lock);
-		if (holders)
-			pthread_cancel(thread);
-		else
+		running = uatomic_xchg(&ct->running, 0);
+		if (running)
+			pthread_cancel(ct->thread);
+		ct->thread = 0;
+		holders = uatomic_sub_return(&ct->holders, 1);
+		if (!holders)
 			cleanup_context(ct);
 		c->context = NULL;
 	}
@@ -220,24 +216,10 @@ static void cleanup_func(void *data)
 {
 	int holders;
 	struct tur_checker_context *ct = data;
-	pthread_spin_lock(&ct->hldr_lock);
-	ct->holders--;
-	holders = ct->holders;
-	ct->thread = 0;
-	pthread_spin_unlock(&ct->hldr_lock);
+
+	holders = uatomic_sub_return(&ct->holders, 1);
 	if (!holders)
 		cleanup_context(ct);
-}
-
-static int tur_running(struct tur_checker_context *ct)
-{
-	pthread_t thread;
-
-	pthread_spin_lock(&ct->hldr_lock);
-	thread = ct->thread;
-	pthread_spin_unlock(&ct->hldr_lock);
-
-	return thread != 0;
 }
 
 static void copy_msg_to_tcc(void *ct_p, const char *msg)
@@ -252,7 +234,7 @@ static void copy_msg_to_tcc(void *ct_p, const char *msg)
 static void *tur_thread(void *ctx)
 {
 	struct tur_checker_context *ct = ctx;
-	int state;
+	int state, running;
 	char devt[32];
 
 	condlog(3, "%s: tur checker starting up",
@@ -278,6 +260,11 @@ static void *tur_thread(void *ctx)
 
 	condlog(3, "%s: tur checker finished, state %s",
 		tur_devt(devt, sizeof(devt), ct), checker_state_name(state));
+
+	running = uatomic_xchg(&ct->running, 0);
+	if (!running)
+		pause();
+
 	tur_thread_cleanup_pop(ct);
 
 	return ((void *)0);
@@ -325,7 +312,6 @@ int libcheck_check(struct checker * c)
 	int tur_status, r;
 	char devt[32];
 
-
 	if (!ct)
 		return PATH_UNCHECKED;
 
@@ -349,38 +335,29 @@ int libcheck_check(struct checker * c)
 		return PATH_WILD;
 	}
 
-	if (ct->running) {
-		/*
-		 * Check if TUR checker is still running. Hold hldr_lock
-		 * around the pthread_cancel() call to avoid that
-		 * pthread_cancel() gets called after the (detached) TUR
-		 * thread has exited.
-		 */
-		pthread_spin_lock(&ct->hldr_lock);
-		if (ct->thread) {
-			if (tur_check_async_timeout(c)) {
-				condlog(3, "%s: tur checker timeout",
-					tur_devt(devt, sizeof(devt), ct));
+	if (ct->thread) {
+		if (tur_check_async_timeout(c)) {
+			int running = uatomic_xchg(&ct->running, 0);
+			if (running)
 				pthread_cancel(ct->thread);
-				ct->running = 0;
-				MSG(c, MSG_TUR_TIMEOUT);
-				tur_status = PATH_TIMEOUT;
-			} else {
-				condlog(3, "%s: tur checker not finished",
+			condlog(3, "%s: tur checker timeout",
+				tur_devt(devt, sizeof(devt), ct));
+			ct->thread = 0;
+			MSG(c, MSG_TUR_TIMEOUT);
+			tur_status = PATH_TIMEOUT;
+		} else if (uatomic_read(&ct->running) != 0) {
+			condlog(3, "%s: tur checker not finished",
 					tur_devt(devt, sizeof(devt), ct));
-				ct->running++;
-				tur_status = PATH_PENDING;
-			}
+			tur_status = PATH_PENDING;
 		} else {
 			/* TUR checker done */
-			ct->running = 0;
+			ct->thread = 0;
 			tur_status = ct->state;
 			strlcpy(c->message, ct->message, sizeof(c->message));
 		}
-		pthread_spin_unlock(&ct->hldr_lock);
 		pthread_mutex_unlock(&ct->lock);
 	} else {
-		if (tur_running(ct)) {
+		if (uatomic_read(&ct->running) != 0) {
 			/* pthread cancel failed. continue in sync mode */
 			pthread_mutex_unlock(&ct->lock);
 			condlog(3, "%s: tur thread not responding",
@@ -391,19 +368,17 @@ int libcheck_check(struct checker * c)
 		ct->state = PATH_UNCHECKED;
 		ct->fd = c->fd;
 		ct->timeout = c->timeout;
-		pthread_spin_lock(&ct->hldr_lock);
-		ct->holders++;
-		pthread_spin_unlock(&ct->hldr_lock);
+		uatomic_add(&ct->holders, 1);
+		uatomic_set(&ct->running, 1);
 		tur_set_async_timeout(c);
 		setup_thread_attr(&attr, 32 * 1024, 1);
 		r = pthread_create(&ct->thread, &attr, tur_thread, ct);
 		pthread_attr_destroy(&attr);
 		if (r) {
-			pthread_spin_lock(&ct->hldr_lock);
-			ct->holders--;
-			pthread_spin_unlock(&ct->hldr_lock);
-			pthread_mutex_unlock(&ct->lock);
+			uatomic_sub(&ct->holders, 1);
+			uatomic_set(&ct->running, 0);
 			ct->thread = 0;
+			pthread_mutex_unlock(&ct->lock);
 			condlog(3, "%s: failed to start tur thread, using"
 				" sync mode", tur_devt(devt, sizeof(devt), ct));
 			return tur_check(c->fd, c->timeout,
@@ -414,12 +389,16 @@ int libcheck_check(struct checker * c)
 		tur_status = ct->state;
 		strlcpy(c->message, ct->message, sizeof(c->message));
 		pthread_mutex_unlock(&ct->lock);
-		if (tur_running(ct) &&
+		if (uatomic_read(&ct->running) != 0 &&
 		    (tur_status == PATH_PENDING || tur_status == PATH_UNCHECKED)) {
 			condlog(3, "%s: tur checker still running",
 				tur_devt(devt, sizeof(devt), ct));
-			ct->running = 1;
 			tur_status = PATH_PENDING;
+		} else {
+			int running = uatomic_xchg(&ct->running, 0);
+			if (running)
+				pthread_cancel(ct->thread);
+			ct->thread = 0;
 		}
 	}
 
