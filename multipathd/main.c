@@ -412,18 +412,19 @@ uev_add_map (struct uevent * uev, struct vectors * vecs)
 	return rc;
 }
 
+/*
+ * ev_add_map expects that the multipath device already exists in kernel
+ * before it is called. It just adds a device to multipathd or updates an
+ * existing device.
+ */
 int
 ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 {
-	char * refwwid;
 	struct multipath * mpp;
-	int map_present;
-	int r = 1, delayed_reconfig, reassign_maps;
+	int delayed_reconfig, reassign_maps;
 	struct config *conf;
 
-	map_present = dm_map_present(alias);
-
-	if (map_present && !dm_is_mpath(alias)) {
+	if (!dm_is_mpath(alias)) {
 		condlog(4, "%s: not a multipath map", alias);
 		return 0;
 	}
@@ -468,33 +469,14 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 	/*
 	 * now we can register the map
 	 */
-	if (map_present) {
-		if ((mpp = add_map_without_path(vecs, alias))) {
-			sync_map_state(mpp);
-			condlog(2, "%s: devmap %s registered", alias, dev);
-			return 0;
-		} else {
-			condlog(2, "%s: uev_add_map failed", dev);
-			return 1;
-		}
+	if ((mpp = add_map_without_path(vecs, alias))) {
+		sync_map_state(mpp);
+		condlog(2, "%s: devmap %s registered", alias, dev);
+		return 0;
+	} else {
+		condlog(2, "%s: ev_add_map failed", dev);
+		return 1;
 	}
-	r = get_refwwid(CMD_NONE, dev, DEV_DEVMAP, vecs->pathvec, &refwwid);
-
-	if (refwwid) {
-		r = coalesce_paths(vecs, NULL, refwwid, FORCE_RELOAD_NONE,
-				   CMD_NONE);
-		dm_lib_release();
-	}
-
-	if (!r)
-		condlog(2, "%s: devmap %s added", alias, dev);
-	else if (r == 2)
-		condlog(2, "%s: uev_add_map %s blacklisted", alias, dev);
-	else
-		condlog(0, "%s: uev_add_map %s failed", alias, dev);
-
-	FREE(refwwid);
-	return r;
 }
 
 static int
