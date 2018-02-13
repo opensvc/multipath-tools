@@ -766,7 +766,7 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
 	io_hdr.dxferp = resp;
 	io_hdr.cmdp = inqCmdBlk;
 	io_hdr.sbp = sense_b;
-	io_hdr.timeout = DEF_TIMEOUT;
+	io_hdr.timeout = DEF_TIMEOUT * 1000;
 
 	if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
 		return -1;
