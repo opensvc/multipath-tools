@@ -1954,7 +1954,7 @@ checkerloop (void *ap)
 }
 
 int
-configure (struct vectors * vecs, int start_waiters)
+configure (struct vectors * vecs)
 {
 	struct multipath * mpp;
 	struct path * pp;
@@ -2053,11 +2053,9 @@ configure (struct vectors * vecs, int start_waiters)
 			i--;
 			continue;
 		}
-		if (start_waiters) {
-			if (start_waiter_thread(mpp, vecs)) {
-				remove_map(mpp, vecs, 1);
-				i--;
-			}
+		if (start_waiter_thread(mpp, vecs)) {
+			remove_map(mpp, vecs, 1);
+			i--;
 		}
 	}
 	return 0;
@@ -2124,7 +2122,7 @@ reconfigure (struct vectors * vecs)
 	rcu_assign_pointer(multipath_conf, conf);
 	call_rcu(&old->rcu, rcu_free_config);
 
-	configure(vecs, 1);
+	configure(vecs);
 
 
 	return 0;
