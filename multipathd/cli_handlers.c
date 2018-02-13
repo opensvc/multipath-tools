@@ -995,10 +995,12 @@ cli_restore_queueing(void *v, char **reply, int *len, void *data)
 	if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
 			mpp->no_path_retry != NO_PATH_RETRY_FAIL) {
 		dm_queue_if_no_path(mpp->alias, 1);
-		if (mpp->nr_active > 0)
-			mpp->retry_tick = 0;
-		else
-			enter_recovery_mode(mpp);
+		if (mpp->no_path_retry > 0) {
+			if (mpp->nr_active > 0)
+				mpp->retry_tick = 0;
+			else
+				enter_recovery_mode(mpp);
+		}
 	}
 	return 0;
 }
@@ -1019,10 +1021,12 @@ cli_restore_all_queueing(void *v, char **reply, int *len, void *data)
 		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
 		    mpp->no_path_retry != NO_PATH_RETRY_FAIL) {
 			dm_queue_if_no_path(mpp->alias, 1);
-			if (mpp->nr_active > 0)
-				mpp->retry_tick = 0;
-			else
-				enter_recovery_mode(mpp);
+			if (mpp->no_path_retry > 0) {
+				if (mpp->nr_active > 0)
+					mpp->retry_tick = 0;
+				else
+					enter_recovery_mode(mpp);
+			}
 		}
 	}
 	return 0;
