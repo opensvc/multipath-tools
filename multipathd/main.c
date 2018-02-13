@@ -562,7 +562,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 	if (pp) {
 		int r;
 
-		condlog(0, "%s: spurious uevent, path already in pathvec",
+		condlog(2, "%s: spurious uevent, path already in pathvec",
 			uev->kernel);
 		if (!pp->mpp && !strlen(pp->wwid)) {
 			condlog(3, "%s: reinitialize path", uev->kernel);
