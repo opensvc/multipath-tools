@@ -18,6 +18,7 @@
 #include "blacklist.h"
 #include "prio.h"
 #include "prioritizers/alua_spc3.h"
+#include "dm-generic.h"
 
 struct adapter_group *
 alloc_adaptergroup(void)
@@ -100,6 +101,7 @@ alloc_path (void)
 		pp->tpgs = TPGS_UNDEF;
 		pp->priority = PRIO_UNDEF;
 		checker_clear(&pp->checker);
+		dm_path_to_gen(pp)->ops = &dm_gen_path_ops;
 	}
 	return pp;
 }
@@ -160,6 +162,7 @@ alloc_pathgroup (void)
 		pgp = NULL;
 	}
 
+	dm_pathgroup_to_gen(pgp)->ops = &dm_gen_pathgroup_ops;
 	return pgp;
 }
 
@@ -200,6 +203,7 @@ alloc_multipath (void)
 		mpp->mpcontext = NULL;
 		mpp->no_path_retry = NO_PATH_RETRY_UNDEF;
 		mpp->fast_io_fail = MP_FAST_IO_FAIL_UNSET;
+		dm_multipath_to_gen(mpp)->ops = &dm_gen_multipath_ops;
 	}
 	return mpp;
 }

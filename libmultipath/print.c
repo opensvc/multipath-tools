@@ -756,6 +756,17 @@ mpd_lookup(char wildcard)
 	return NULL;
 }
 
+int snprint_multipath_attr(const struct gen_multipath* gm,
+			   char *buf, int len, char wildcard)
+{
+	const struct multipath *mpp = gen_multipath_to_dm(gm);
+	struct multipath_data *mpd = mpd_lookup(wildcard);
+
+	if (mpd == NULL)
+		return 0;
+	return mpd->snprint(buf, len, mpp);
+}
+
 static struct path_data *
 pd_lookup(char wildcard)
 {
@@ -768,6 +779,17 @@ pd_lookup(char wildcard)
 	return NULL;
 }
 
+int snprint_path_attr(const struct gen_path* gp,
+		      char *buf, int len, char wildcard)
+{
+	const struct path *pp = gen_path_to_dm(gp);
+	struct path_data *pd = pd_lookup(wildcard);
+
+	if (pd == NULL)
+		return 0;
+	return pd->snprint(buf, len, pp);
+}
+
 static struct pathgroup_data *
 pgd_lookup(char wildcard)
 {
@@ -778,6 +800,17 @@ pgd_lookup(char wildcard)
 			return &pgd[i];
 
 	return NULL;
+}
+
+int snprint_pathgroup_attr(const struct gen_pathgroup* gpg,
+			   char *buf, int len, char wildcard)
+{
+	const struct pathgroup *pg = gen_pathgroup_to_dm(gpg);
+	struct pathgroup_data *pdg = pgd_lookup(wildcard);
+
+	if (pdg == NULL)
+		return 0;
+	return pdg->snprint(buf, len, pg);
 }
 
 int
