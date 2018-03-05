@@ -27,6 +27,7 @@
 #include "main.h"
 #include "cli.h"
 #include "uevent.h"
+#include "foreign.h"
 
 int
 show_paths (char ** r, int * len, struct vectors * vecs, char * style,
@@ -35,11 +36,13 @@ show_paths (char ** r, int * len, struct vectors * vecs, char * style,
 	int i;
 	struct path * pp;
 	char * c;
-	char * reply;
+	char * reply, * header;
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
 	get_path_layout(vecs->pathvec, 1);
+	foreign_path_layout();
+
 	reply = MALLOC(maxlen);
 
 	while (again) {
@@ -48,18 +51,29 @@ show_paths (char ** r, int * len, struct vectors * vecs, char * style,
 
 		c = reply;
 
-		if (pretty && VECTOR_SIZE(vecs->pathvec) > 0)
+		if (pretty)
 			c += snprint_path_header(c, reply + maxlen - c,
 						 style);
+		header = c;
 
 		vector_foreach_slot(vecs->pathvec, pp, i)
 			c += snprint_path(c, reply + maxlen - c,
 					  style, pp, pretty);
 
+		c += snprint_foreign_paths(c, reply + maxlen - c,
+					   style, pretty);
+
 		again = ((c - reply) == (maxlen - 1));
 
 		REALLOC_REPLY(reply, again, maxlen);
 	}
+
+	if (pretty && c == header) {
+		/* No output - clear header */
+		*reply = '\0';
+		c = reply;
+	}
+
 	*r = reply;
 	*len = (int)(c - reply + 1);
 	return 0;
@@ -134,6 +148,8 @@ show_maps_topology (char ** r, int * len, struct vectors * vecs)
 	int again = 1;
 
 	get_path_layout(vecs->pathvec, 0);
+	foreign_path_layout();
+
 	reply = MALLOC(maxlen);
 
 	while (again) {
@@ -150,11 +166,13 @@ show_maps_topology (char ** r, int * len, struct vectors * vecs)
 			c += snprint_multipath_topology(c, reply + maxlen - c,
 							mpp, 2);
 		}
+		c += snprint_foreign_topology(c, reply + maxlen - c, 2);
 
 		again = ((c - reply) == (maxlen - 1));
 
 		REALLOC_REPLY(reply, again, maxlen);
 	}
+
 	*r = reply;
 	*len = (int)(c - reply + 1);
 	return 0;
@@ -499,12 +517,14 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style,
 {
 	int i;
 	struct multipath * mpp;
-	char * c;
+	char * c, *header;
 	char * reply;
 	unsigned int maxlen = INITIAL_REPLY_LEN;
 	int again = 1;
 
 	get_multipath_layout(vecs->mpvec, 1);
+	foreign_multipath_layout();
+
 	reply = MALLOC(maxlen);
 
 	while (again) {
@@ -512,9 +532,10 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style,
 			return 1;
 
 		c = reply;
-		if (pretty && VECTOR_SIZE(vecs->mpvec) > 0)
+		if (pretty)
 			c += snprint_multipath_header(c, reply + maxlen - c,
 						      style);
+		header = c;
 
 		vector_foreach_slot(vecs->mpvec, mpp, i) {
 			if (update_multipath(vecs, mpp->alias, 0)) {
@@ -523,11 +544,19 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style,
 			}
 			c += snprint_multipath(c, reply + maxlen - c,
 					       style, mpp, pretty);
-		}
 
+		}
+		c += snprint_foreign_multipaths(c, reply + maxlen - c,
+						style, pretty);
 		again = ((c - reply) == (maxlen - 1));
 
 		REALLOC_REPLY(reply, again, maxlen);
+	}
+
+	if (pretty && c == header) {
+		/* No output - clear header */
+		*reply = '\0';
+		c = reply;
 	}
 	*r = reply;
 	*len = (int)(c - reply + 1);
