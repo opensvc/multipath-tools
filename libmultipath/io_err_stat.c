@@ -21,6 +21,7 @@
 #include <libaio.h>
 #include <errno.h>
 #include <sys/mman.h>
+#include <sys/select.h>
 
 #include "vector.h"
 #include "memory.h"
@@ -691,14 +692,28 @@ static void service_paths(void)
 
 static void *io_err_stat_loop(void *data)
 {
+	sigset_t set;
+
 	vecs = (struct vectors *)data;
 	pthread_cleanup_push(rcu_unregister, NULL);
 	rcu_register_thread();
 
+	sigfillset(&set);
+	sigdelset(&set, SIGUSR2);
+
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	while (1) {
+		struct timespec ts;
+
 		service_paths();
-		usleep(100000);
+
+		ts.tv_sec = 0;
+		ts.tv_nsec = 100 * 1000 * 1000;
+		/*
+		 * pselect() with no fds, a timeout, and a sigmask:
+		 * sleep for 100ms and react on SIGUSR2.
+		 */
+		pselect(1, NULL, NULL, NULL, &ts, &set);
 	}
 
 	pthread_cleanup_pop(1);

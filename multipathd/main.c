@@ -2243,10 +2243,13 @@ signal_init(void)
 {
 	sigset_t set;
 
-	sigemptyset(&set);
-	sigaddset(&set, SIGUSR2);
+	/* block all signals */
+	sigfillset(&set);
+	/* SIGPIPE occurs if logging fails */
+	sigdelset(&set, SIGPIPE);
 	pthread_sigmask(SIG_SETMASK, &set, NULL);
 
+	/* Other signals will be unblocked in the uxlsnr thread */
 	signal_set(SIGHUP, sighup);
 	signal_set(SIGUSR1, sigusr1);
 	signal_set(SIGUSR2, sigusr2);

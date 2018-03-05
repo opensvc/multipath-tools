@@ -189,11 +189,11 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 		condlog(0, "uxsock: failed to allocate poll fds");
 		return NULL;
 	}
-	sigemptyset(&mask);
-	sigaddset(&mask, SIGINT);
-	sigaddset(&mask, SIGTERM);
-	sigaddset(&mask, SIGHUP);
-	sigaddset(&mask, SIGUSR1);
+	sigfillset(&mask);
+	sigdelset(&mask, SIGINT);
+	sigdelset(&mask, SIGTERM);
+	sigdelset(&mask, SIGHUP);
+	sigdelset(&mask, SIGUSR1);
 	while (1) {
 		struct client *c, *tmp;
 		int i, poll_count, num_clients;
