@@ -252,8 +252,9 @@ need_switch_pathgroup (struct multipath * mpp, int refresh)
 	struct path * pp;
 	unsigned int i, j;
 	struct config *conf;
+	int bestpg;
 
-	if (!mpp || mpp->pgfailback == -FAILBACK_MANUAL)
+	if (!mpp)
 		return 0;
 
 	/*
@@ -272,8 +273,11 @@ need_switch_pathgroup (struct multipath * mpp, int refresh)
 	if (!mpp->pg || VECTOR_SIZE(mpp->paths) == 0)
 		return 0;
 
-	mpp->bestpg = select_path_group(mpp);
+	bestpg = select_path_group(mpp);
+	if (mpp->pgfailback == -FAILBACK_MANUAL)
+		return 0;
 
+	mpp->bestpg = bestpg;
 	if (mpp->bestpg != mpp->nextpg)
 		return 1;
 
