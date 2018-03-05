@@ -7,6 +7,7 @@ BUILDDIRS = \
 	libmultipath \
 	libmultipath/prioritizers \
 	libmultipath/checkers \
+	libmultipath/foreign \
 	libmpathpersist \
 	multipath \
 	multipathd \
