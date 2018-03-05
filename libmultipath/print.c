@@ -476,7 +476,9 @@ snprint_pri (char * buff, size_t len, struct path * pp)
 static int
 snprint_pg_selector (char * buff, size_t len, struct pathgroup * pgp)
 {
-	return snprint_str(buff, len, pgp->selector);
+	const char *s = pgp->mpp->selector;
+
+	return snprint_str(buff, len, s ? s : "");
 }
 
 static int
@@ -1030,7 +1032,6 @@ int snprint_multipath_topology(char *buff, int len, struct multipath *mpp,
 
 	vector_foreach_slot (mpp->pg, pgp, j) {
 		f=fmt;
-		pgp->selector = mpp->selector; /* hack */
 		if (j + 1 < VECTOR_SIZE(mpp->pg)) {
 			strcpy(f, "|-+- " PRINT_PG_INDENT);
 		} else
@@ -1122,7 +1123,6 @@ snprint_multipath_fields_json (char * buff, int len,
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
 
-		pgp->selector = mpp->selector;
 		fwd += snprint_pathgroup(buff + fwd, len - fwd, PRINT_JSON_GROUP, pgp);
 		if (fwd >= len)
 			return fwd;

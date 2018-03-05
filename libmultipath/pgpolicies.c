@@ -120,7 +120,7 @@ int group_by_node_name(struct multipath * mp)
 		if (!pgp)
 			goto out1;
 
-		if (store_pathgroup(mp->pg, pgp))
+		if (add_pathgroup(mp, pgp))
 			goto out2;
 
 		/* feed the first path */
@@ -196,7 +196,7 @@ int group_by_serial(struct multipath * mp)
 		if (!pgp)
 			goto out1;
 
-		if (store_pathgroup(mp->pg, pgp))
+		if (add_pathgroup(mp, pgp))
 			goto out2;
 
 		/* feed the first path */
@@ -254,7 +254,7 @@ int one_path_per_group(struct multipath *mp)
 		if (!pgp)
 			goto out;
 
-		if (store_pathgroup(mp->pg, pgp))
+		if (add_pathgroup(mp, pgp))
 			goto out1;
 
 		if (store_path(pgp->paths, pp))
@@ -293,7 +293,7 @@ int one_group(struct multipath *mp)	/* aka multibus */
 
 		vector_free(pgp->paths);
 
-		if (store_pathgroup(mp->pg, pgp))
+		if (add_pathgroup(mp, pgp))
 			goto out1;
 
 		pgp->paths = mp->paths;
@@ -367,8 +367,9 @@ int group_by_prio(struct multipath *mp)
 		if (i < VECTOR_SIZE(mp->pg)) {
 			if (!vector_insert_slot(mp->pg, i, pgp))
 				goto out2;
+			pgp->mpp = mp;
 		} else {
-			if (store_pathgroup(mp->pg, pgp))
+			if (add_pathgroup(mp, pgp))
 				goto out2;
 		}
 

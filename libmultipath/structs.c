@@ -318,6 +318,16 @@ store_pathgroup (vector pgvec, struct pathgroup * pgp)
 	return 0;
 }
 
+int add_pathgroup(struct multipath *mpp, struct pathgroup *pgp)
+{
+	int ret = store_pathgroup(mpp->pg, pgp);
+
+	if (ret)
+		return ret;
+	pgp->mpp = mpp;
+	return 0;
+}
+
 int
 store_hostgroup(vector hostgroupvec, struct host_group * hgp)
 {
