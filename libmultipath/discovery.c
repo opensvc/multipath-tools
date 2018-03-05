@@ -31,6 +31,7 @@
 #include "prio.h"
 #include "defaults.h"
 #include "prioritizers/alua_rtpg.h"
+#include "foreign.h"
 
 int
 alloc_path_with_pathinfo (struct config *conf, struct udev_device *udevice,
@@ -1909,7 +1910,8 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	 * limited by DI_BLACKLIST and occurs before this debug
 	 * message with the mask value.
 	 */
-	if (pp->udev && filter_property(conf, pp->udev) > 0)
+	if (pp->udev && (is_claimed_by_foreign(pp->udev) ||
+			 filter_property(conf, pp->udev) > 0))
 		return PATHINFO_SKIPPED;
 
 	if (filter_devnode(conf->blist_devnode,
