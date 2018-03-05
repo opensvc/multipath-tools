@@ -59,6 +59,7 @@
 #include "wwids.h"
 #include "uxsock.h"
 #include "mpath_cmd.h"
+#include "foreign.h"
 
 int logsink;
 struct udev *udev;
@@ -261,6 +262,14 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 		if (cmd == CMD_CREATE)
 			reinstate_paths(mpp);
 	}
+
+	if (cmd == CMD_LIST_SHORT || cmd == CMD_LIST_LONG) {
+		struct config *conf = get_multipath_config();
+
+		print_foreign_topology(conf->verbosity);
+		put_multipath_config(conf);
+	}
+
 	return 0;
 }
 
@@ -464,6 +473,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 		print_all_paths(pathvec, 1);
 
 	get_path_layout(pathvec, 0);
+	foreign_path_layout();
 
 	if (get_dm_mpvec(cmd, curmp, pathvec, refwwid))
 		goto out;
@@ -821,6 +831,8 @@ main (int argc, char *argv[])
 		condlog(0, "failed to initialize prioritizers");
 		goto out;
 	}
+	/* Failing here is non-fatal */
+	init_foreign(conf->multipath_dir);
 	if (cmd == CMD_USABLE_PATHS) {
 		r = check_usable_paths(conf, dev, dev_type);
 		goto out;
@@ -896,6 +908,7 @@ out:
 	dm_lib_release();
 	dm_lib_exit();
 
+	cleanup_foreign();
 	cleanup_prio();
 	cleanup_checkers();
 
