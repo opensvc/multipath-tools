@@ -46,6 +46,7 @@ typedef struct _vector *vector;
 extern vector vector_alloc(void);
 extern void *vector_alloc_slot(vector v);
 extern void vector_free(vector v);
+#define vector_free_const(x) vector_free((vector)(long)(x))
 extern void free_strvec(vector strvec);
 extern void vector_set_slot(vector v, void *value);
 extern void vector_del_slot(vector v, int slot);
