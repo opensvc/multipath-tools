@@ -1765,32 +1765,6 @@ void print_path(struct path *pp, char *style)
 	printf("%s", line);
 }
 
-void print_multipath(struct multipath *mpp, char *style)
-{
-	char line[MAX_LINE_LEN];
-
-	memset(&line[0], 0, MAX_LINE_LEN);
-	snprint_multipath(&line[0], MAX_LINE_LEN, style, mpp, 1);
-	printf("%s", line);
-}
-
-void print_pathgroup(struct pathgroup *pgp, char *style)
-{
-	char line[MAX_LINE_LEN];
-
-	memset(&line[0], 0, MAX_LINE_LEN);
-	snprint_pathgroup(&line[0], MAX_LINE_LEN, style, pgp);
-	printf("%s", line);
-}
-
-void print_map(struct multipath *mpp, char *params)
-{
-	if (mpp->size && params)
-		printf("0 %llu %s %s\n",
-			 mpp->size, TGT_MPATH, params);
-	return;
-}
-
 void print_all_paths(vector pathvec, int banner)
 {
 	print_all_paths_custo(pathvec, banner, PRINT_PATH_LONG);
