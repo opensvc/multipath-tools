@@ -401,7 +401,7 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 	return 0;
 }
 
-int sysfs_get_host_adapter_name(struct path *pp, char *adapter_name)
+int sysfs_get_host_adapter_name(const struct path *pp, char *adapter_name)
 {
 	int proto_id;
 
@@ -427,7 +427,7 @@ int sysfs_get_host_adapter_name(struct path *pp, char *adapter_name)
 	return sysfs_get_host_pci_name(pp, adapter_name);
 }
 
-int sysfs_get_host_pci_name(struct path *pp, char *pci_name)
+int sysfs_get_host_pci_name(const struct path *pp, char *pci_name)
 {
 	struct udev_device *hostdev, *parent;
 	char host_name[HOST_NAME_LEN];
@@ -466,7 +466,7 @@ int sysfs_get_host_pci_name(struct path *pp, char *pci_name)
 	return 1;
 }
 
-int sysfs_get_iscsi_ip_address(struct path *pp, char *ip_address)
+int sysfs_get_iscsi_ip_address(const struct path *pp, char *ip_address)
 {
 	struct udev_device *hostdev;
 	char host_name[HOST_NAME_LEN];

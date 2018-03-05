@@ -73,50 +73,51 @@ struct path_data {
 	char wildcard;
 	char * header;
 	int width;
-	int (*snprint)(char * buff, size_t len, struct path * pp);
+	int (*snprint)(char * buff, size_t len, const struct path * pp);
 };
 
 struct multipath_data {
 	char wildcard;
 	char * header;
 	int width;
-	int (*snprint)(char * buff, size_t len, struct multipath * mpp);
+	int (*snprint)(char * buff, size_t len, const struct multipath * mpp);
 };
 
 struct pathgroup_data {
 	char wildcard;
 	char * header;
 	int width;
-	int (*snprint)(char * buff, size_t len, struct pathgroup * pgp);
+	int (*snprint)(char * buff, size_t len, const struct pathgroup * pgp);
 };
 
 void get_path_layout (vector pathvec, int header);
 void get_multipath_layout (vector mpvec, int header);
-int snprint_path_header (char *, int, char *);
-int snprint_multipath_header (char *, int, char *);
-int snprint_path (char *, int, char *, struct path *, int);
-int snprint_multipath (char *, int, char *, struct multipath *, int);
-int snprint_multipath_topology (char *, int, struct multipath * mpp,
+int snprint_path_header (char *, int, const char *);
+int snprint_multipath_header (char *, int, const char *);
+int snprint_path (char *, int, const char *, const struct path *, int);
+int snprint_multipath (char *, int, const char *,
+		       const struct multipath *, int);
+int snprint_multipath_topology (char *, int, const struct multipath * mpp,
 				int verbosity);
 int snprint_multipath_topology_json (char * buff, int len,
-				struct vectors * vecs);
+				const struct vectors * vecs);
 int snprint_multipath_map_json (char * buff, int len,
-				struct multipath * mpp, int last);
+				const struct multipath * mpp, int last);
 int snprint_defaults (struct config *, char *, int);
 int snprint_blacklist (struct config *, char *, int);
 int snprint_blacklist_except (struct config *, char *, int);
 int snprint_blacklist_report (struct config *, char *, int);
 int snprint_wildcards (char *, int);
-int snprint_status (char *, int, struct vectors *);
-int snprint_devices (struct config *, char *, int, struct vectors *);
-int snprint_hwtable (struct config *, char *, int, vector);
-int snprint_mptable (struct config *, char *, int, vector);
-int snprint_overrides (struct config *, char *, int, struct hwentry *);
-int snprint_path_serial (char *, size_t, struct path *);
-int snprint_host_wwnn (char *, size_t, struct path *);
-int snprint_host_wwpn (char *, size_t, struct path *);
-int snprint_tgt_wwnn (char *, size_t, struct path *);
-int snprint_tgt_wwpn (char *, size_t, struct path *);
+int snprint_status (char *, int, const struct vectors *);
+int snprint_devices (struct config *, char *, int, const struct vectors *);
+int snprint_hwtable (struct config *, char *, int, const vector);
+int snprint_mptable (struct config *, char *, int, const vector);
+int snprint_overrides (struct config *, char *, int, const struct hwentry *);
+int snprint_path_serial (char *, size_t, const struct path *);
+int snprint_host_wwnn (char *, size_t, const struct path *);
+int snprint_host_wwpn (char *, size_t, const struct path *);
+int snprint_tgt_wwnn (char *, size_t, const struct path *);
+int snprint_tgt_wwpn (char *, size_t, const struct path *);
 
 void print_multipath_topology (struct multipath * mpp, int verbosity);
 void print_all_paths (vector pathvec, int banner);

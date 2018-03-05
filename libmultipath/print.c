@@ -28,6 +28,7 @@
 #include "devmapper.h"
 #include "uevent.h"
 #include "debug.h"
+#include "discovery.h"
 
 #define MAX(x,y) (x > y) ? x : y
 #define TAIL     (line + len - 1 - c)
@@ -97,7 +98,7 @@ snprint_size (char * buff, size_t len, unsigned long long size)
  * multipath info printing functions
  */
 static int
-snprint_name (char * buff, size_t len, struct multipath * mpp)
+snprint_name (char * buff, size_t len, const struct multipath * mpp)
 {
 	if (mpp->alias)
 		return snprintf(buff, len, "%s", mpp->alias);
@@ -106,7 +107,7 @@ snprint_name (char * buff, size_t len, struct multipath * mpp)
 }
 
 static int
-snprint_sysfs (char * buff, size_t len, struct multipath * mpp)
+snprint_sysfs (char * buff, size_t len, const struct multipath * mpp)
 {
 	if (mpp->dmi)
 		return snprintf(buff, len, "dm-%i", mpp->dmi->minor);
@@ -115,7 +116,7 @@ snprint_sysfs (char * buff, size_t len, struct multipath * mpp)
 }
 
 static int
-snprint_ro (char * buff, size_t len, struct multipath * mpp)
+snprint_ro (char * buff, size_t len, const struct multipath * mpp)
 {
 	if (!mpp->dmi)
 		return snprintf(buff, len, "undef");
@@ -154,7 +155,7 @@ out:
 }
 
 static int
-snprint_failback (char * buff, size_t len, struct multipath * mpp)
+snprint_failback (char * buff, size_t len, const struct multipath * mpp)
 {
 	if (mpp->pgfailback == -FAILBACK_IMMEDIATE)
 		return snprintf(buff, len, "immediate");
@@ -169,7 +170,7 @@ snprint_failback (char * buff, size_t len, struct multipath * mpp)
 }
 
 static int
-snprint_queueing (char * buff, size_t len, struct multipath * mpp)
+snprint_queueing (char * buff, size_t len, const struct multipath * mpp)
 {
 	if (mpp->no_path_retry == NO_PATH_RETRY_FAIL)
 		return snprintf(buff, len, "off");
@@ -191,13 +192,13 @@ snprint_queueing (char * buff, size_t len, struct multipath * mpp)
 }
 
 static int
-snprint_nb_paths (char * buff, size_t len, struct multipath * mpp)
+snprint_nb_paths (char * buff, size_t len, const struct multipath * mpp)
 {
 	return snprint_int(buff, len, mpp->nr_active);
 }
 
 static int
-snprint_dm_map_state (char * buff, size_t len, struct multipath * mpp)
+snprint_dm_map_state (char * buff, size_t len, const struct multipath * mpp)
 {
 	if (mpp->dmi && mpp->dmi->suspended)
 		return snprintf(buff, len, "suspend");
@@ -206,67 +207,67 @@ snprint_dm_map_state (char * buff, size_t len, struct multipath * mpp)
 }
 
 static int
-snprint_multipath_size (char * buff, size_t len, struct multipath * mpp)
+snprint_multipath_size (char * buff, size_t len, const struct multipath * mpp)
 {
 	return snprint_size(buff, len, mpp->size);
 }
 
 static int
-snprint_features (char * buff, size_t len, struct multipath * mpp)
+snprint_features (char * buff, size_t len, const struct multipath * mpp)
 {
 	return snprint_str(buff, len, mpp->features);
 }
 
 static int
-snprint_hwhandler (char * buff, size_t len, struct multipath * mpp)
+snprint_hwhandler (char * buff, size_t len, const struct multipath * mpp)
 {
 	return snprint_str(buff, len, mpp->hwhandler);
 }
 
 static int
-snprint_path_faults (char * buff, size_t len, struct multipath * mpp)
+snprint_path_faults (char * buff, size_t len, const struct multipath * mpp)
 {
 	return snprint_uint(buff, len, mpp->stat_path_failures);
 }
 
 static int
-snprint_switch_grp (char * buff, size_t len, struct multipath * mpp)
+snprint_switch_grp (char * buff, size_t len, const struct multipath * mpp)
 {
 	return snprint_uint(buff, len, mpp->stat_switchgroup);
 }
 
 static int
-snprint_map_loads (char * buff, size_t len, struct multipath * mpp)
+snprint_map_loads (char * buff, size_t len, const struct multipath * mpp)
 {
 	return snprint_uint(buff, len, mpp->stat_map_loads);
 }
 
 static int
-snprint_total_q_time (char * buff, size_t len, struct multipath * mpp)
+snprint_total_q_time (char * buff, size_t len, const struct multipath * mpp)
 {
 	return snprint_uint(buff, len, mpp->stat_total_queueing_time);
 }
 
 static int
-snprint_q_timeouts (char * buff, size_t len, struct multipath * mpp)
+snprint_q_timeouts (char * buff, size_t len, const struct multipath * mpp)
 {
 	return snprint_uint(buff, len, mpp->stat_queueing_timeouts);
 }
 
 static int
-snprint_map_failures (char * buff, size_t len, struct multipath * mpp)
+snprint_map_failures (char * buff, size_t len, const struct multipath * mpp)
 {
 	return snprint_uint(buff, len, mpp->stat_map_failures);
 }
 
 static int
-snprint_multipath_uuid (char * buff, size_t len, struct multipath * mpp)
+snprint_multipath_uuid (char * buff, size_t len, const struct multipath * mpp)
 {
 	return snprint_str(buff, len, mpp->wwid);
 }
 
 static int
-snprint_multipath_vpr (char * buff, size_t len, struct multipath * mpp)
+snprint_multipath_vpr (char * buff, size_t len, const struct multipath * mpp)
 {
 	struct pathgroup * pgp;
 	struct path * pp;
@@ -286,7 +287,7 @@ snprint_multipath_vpr (char * buff, size_t len, struct multipath * mpp)
 
 
 static int
-snprint_multipath_vend (char * buff, size_t len, struct multipath * mpp)
+snprint_multipath_vend (char * buff, size_t len, const struct multipath * mpp)
 {
 	struct pathgroup * pgp;
 	struct path * pp;
@@ -304,7 +305,7 @@ snprint_multipath_vend (char * buff, size_t len, struct multipath * mpp)
 }
 
 static int
-snprint_multipath_prod (char * buff, size_t len, struct multipath * mpp)
+snprint_multipath_prod (char * buff, size_t len, const struct multipath * mpp)
 {
 	struct pathgroup * pgp;
 	struct path * pp;
@@ -322,7 +323,7 @@ snprint_multipath_prod (char * buff, size_t len, struct multipath * mpp)
 }
 
 static int
-snprint_multipath_rev (char * buff, size_t len, struct multipath * mpp)
+snprint_multipath_rev (char * buff, size_t len, const struct multipath * mpp)
 {
 	struct pathgroup * pgp;
 	struct path * pp;
@@ -340,7 +341,7 @@ snprint_multipath_rev (char * buff, size_t len, struct multipath * mpp)
 }
 
 static int
-snprint_action (char * buff, size_t len, struct multipath * mpp)
+snprint_action (char * buff, size_t len, const struct multipath * mpp)
 {
 	switch (mpp->action) {
 	case ACT_REJECT:
@@ -362,13 +363,13 @@ snprint_action (char * buff, size_t len, struct multipath * mpp)
  * path info printing functions
  */
 static int
-snprint_path_uuid (char * buff, size_t len, struct path * pp)
+snprint_path_uuid (char * buff, size_t len, const struct path * pp)
 {
 	return snprint_str(buff, len, pp->wwid);
 }
 
 static int
-snprint_hcil (char * buff, size_t len, struct path * pp)
+snprint_hcil (char * buff, size_t len, const struct path * pp)
 {
 	if (!pp || pp->sg_id.host_no < 0)
 		return snprintf(buff, len, "#:#:#:#");
@@ -381,7 +382,7 @@ snprint_hcil (char * buff, size_t len, struct path * pp)
 }
 
 static int
-snprint_dev (char * buff, size_t len, struct path * pp)
+snprint_dev (char * buff, size_t len, const struct path * pp)
 {
 	if (!pp || !strlen(pp->dev))
 		return snprintf(buff, len, "-");
@@ -390,7 +391,7 @@ snprint_dev (char * buff, size_t len, struct path * pp)
 }
 
 static int
-snprint_dev_t (char * buff, size_t len, struct path * pp)
+snprint_dev_t (char * buff, size_t len, const struct path * pp)
 {
 	if (!pp || !strlen(pp->dev))
 		return snprintf(buff, len, "#:#");
@@ -399,7 +400,7 @@ snprint_dev_t (char * buff, size_t len, struct path * pp)
 }
 
 static int
-snprint_offline (char * buff, size_t len, struct path * pp)
+snprint_offline (char * buff, size_t len, const struct path * pp)
 {
 	if (!pp || !pp->mpp)
 		return snprintf(buff, len, "unknown");
@@ -410,7 +411,7 @@ snprint_offline (char * buff, size_t len, struct path * pp)
 }
 
 static int
-snprint_chk_state (char * buff, size_t len, struct path * pp)
+snprint_chk_state (char * buff, size_t len, const struct path * pp)
 {
 	if (!pp || !pp->mpp)
 		return snprintf(buff, len, "undef");
@@ -436,7 +437,7 @@ snprint_chk_state (char * buff, size_t len, struct path * pp)
 }
 
 static int
-snprint_dm_path_state (char * buff, size_t len, struct path * pp)
+snprint_dm_path_state (char * buff, size_t len, const struct path * pp)
 {
 	if (!pp)
 		return snprintf(buff, len, "undef");
@@ -452,14 +453,14 @@ snprint_dm_path_state (char * buff, size_t len, struct path * pp)
 }
 
 static int
-snprint_vpr (char * buff, size_t len, struct path * pp)
+snprint_vpr (char * buff, size_t len, const struct path * pp)
 {
 	return snprintf(buff, len, "%s,%s",
 			pp->vendor_id, pp->product_id);
 }
 
 static int
-snprint_next_check (char * buff, size_t len, struct path * pp)
+snprint_next_check (char * buff, size_t len, const struct path * pp)
 {
 	if (!pp || !pp->mpp)
 		return snprintf(buff, len, "orphan");
@@ -468,13 +469,13 @@ snprint_next_check (char * buff, size_t len, struct path * pp)
 }
 
 static int
-snprint_pri (char * buff, size_t len, struct path * pp)
+snprint_pri (char * buff, size_t len, const struct path * pp)
 {
 	return snprint_int(buff, len, pp ? pp->priority : -1);
 }
 
 static int
-snprint_pg_selector (char * buff, size_t len, struct pathgroup * pgp)
+snprint_pg_selector (char * buff, size_t len, const struct pathgroup * pgp)
 {
 	const char *s = pgp->mpp->selector;
 
@@ -482,13 +483,13 @@ snprint_pg_selector (char * buff, size_t len, struct pathgroup * pgp)
 }
 
 static int
-snprint_pg_pri (char * buff, size_t len, struct pathgroup * pgp)
+snprint_pg_pri (char * buff, size_t len, const struct pathgroup * pgp)
 {
 	return snprint_int(buff, len, pgp->priority);
 }
 
 static int
-snprint_pg_state (char * buff, size_t len, struct pathgroup * pgp)
+snprint_pg_state (char * buff, size_t len, const struct pathgroup * pgp)
 {
 	switch (pgp->status) {
 	case PGSTATE_ENABLED:
@@ -503,19 +504,19 @@ snprint_pg_state (char * buff, size_t len, struct pathgroup * pgp)
 }
 
 static int
-snprint_path_size (char * buff, size_t len, struct path * pp)
+snprint_path_size (char * buff, size_t len, const struct path * pp)
 {
 	return snprint_size(buff, len, pp->size);
 }
 
 int
-snprint_path_serial (char * buff, size_t len, struct path * pp)
+snprint_path_serial (char * buff, size_t len, const struct path * pp)
 {
 	return snprint_str(buff, len, pp->serial);
 }
 
 static int
-snprint_path_mpp (char * buff, size_t len, struct path * pp)
+snprint_path_mpp (char * buff, size_t len, const struct path * pp)
 {
 	if (!pp->mpp)
 		return snprintf(buff, len, "[orphan]");
@@ -525,7 +526,7 @@ snprint_path_mpp (char * buff, size_t len, struct path * pp)
 }
 
 static int
-snprint_host_attr (char * buff, size_t len, struct path * pp, char *attr)
+snprint_host_attr (char * buff, size_t len, const struct path * pp, char *attr)
 {
 	struct udev_device *host_dev = NULL;
 	char host_id[32];
@@ -552,19 +553,19 @@ out:
 }
 
 int
-snprint_host_wwnn (char * buff, size_t len, struct path * pp)
+snprint_host_wwnn (char * buff, size_t len, const struct path * pp)
 {
 	return snprint_host_attr(buff, len, pp, "node_name");
 }
 
 int
-snprint_host_wwpn (char * buff, size_t len, struct path * pp)
+snprint_host_wwpn (char * buff, size_t len, const struct path * pp)
 {
 	return snprint_host_attr(buff, len, pp, "port_name");
 }
 
 int
-snprint_tgt_wwpn (char * buff, size_t len, struct path * pp)
+snprint_tgt_wwpn (char * buff, size_t len, const struct path * pp)
 {
 	struct udev_device *rport_dev = NULL;
 	char rport_id[32];
@@ -594,7 +595,7 @@ out:
 
 
 int
-snprint_tgt_wwnn (char * buff, size_t len, struct path * pp)
+snprint_tgt_wwnn (char * buff, size_t len, const struct path * pp)
 {
 	if (pp->tgt_node_name[0] == '\0')
 		return snprintf(buff, len, "[undef]");
@@ -602,7 +603,7 @@ snprint_tgt_wwnn (char * buff, size_t len, struct path * pp)
 }
 
 static int
-snprint_host_adapter (char * buff, size_t len, struct path * pp)
+snprint_host_adapter (char * buff, size_t len, const struct path * pp)
 {
 	char adapter[SLOT_NAME_SIZE];
 
@@ -612,9 +613,9 @@ snprint_host_adapter (char * buff, size_t len, struct path * pp)
 }
 
 static int
-snprint_path_checker (char * buff, size_t len, struct path * pp)
+snprint_path_checker (char * buff, size_t len, const struct path * pp)
 {
-	struct checker * c = &pp->checker;
+	const struct checker * c = &pp->checker;
 	return snprint_str(buff, len, c->name);
 }
 
@@ -780,11 +781,11 @@ pgd_lookup(char wildcard)
 }
 
 int
-snprint_multipath_header (char * line, int len, char * format)
+snprint_multipath_header (char * line, int len, const char * format)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
-	char * f = format; /* format string cursor */
+	const char * f = format; /* format string cursor */
 	int fwd;
 	struct multipath_data * data;
 
@@ -811,12 +812,12 @@ snprint_multipath_header (char * line, int len, char * format)
 }
 
 int
-snprint_multipath (char * line, int len, char * format,
-	     struct multipath * mpp, int pad)
+snprint_multipath (char * line, int len, const char * format,
+	     const struct multipath * mpp, int pad)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
-	char * f = format; /* format string cursor */
+	const char * f = format; /* format string cursor */
 	int fwd;
 	struct multipath_data * data;
 	char buff[MAX_FIELD_LEN] = {};
@@ -847,11 +848,11 @@ snprint_multipath (char * line, int len, char * format,
 }
 
 int
-snprint_path_header (char * line, int len, char * format)
+snprint_path_header (char * line, int len, const char * format)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
-	char * f = format; /* format string cursor */
+	const char * f = format; /* format string cursor */
 	int fwd;
 	struct path_data * data;
 
@@ -878,12 +879,12 @@ snprint_path_header (char * line, int len, char * format)
 }
 
 int
-snprint_path (char * line, int len, char * format,
-	     struct path * pp, int pad)
+snprint_path (char * line, int len, const char * format,
+	     const struct path * pp, int pad)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
-	char * f = format; /* format string cursor */
+	const char * f = format; /* format string cursor */
 	int fwd;
 	struct path_data * data;
 	char buff[MAX_FIELD_LEN];
@@ -914,7 +915,7 @@ snprint_path (char * line, int len, char * format,
 
 int
 snprint_pathgroup (char * line, int len, char * format,
-		   struct pathgroup * pgp)
+		   const struct pathgroup * pgp)
 {
 	char * c = line;   /* line cursor */
 	char * s = line;   /* for padding */
@@ -976,7 +977,7 @@ void print_multipath_topology(struct multipath *mpp, int verbosity)
 	FREE(buff);
 }
 
-int snprint_multipath_topology(char *buff, int len, struct multipath *mpp,
+int snprint_multipath_topology(char *buff, int len, const struct multipath *mpp,
 			       int verbosity)
 {
 	int j, i, fwd = 0;
@@ -1100,7 +1101,7 @@ snprint_json_elem_footer (char * buff, int len, int indent, int last)
 
 static int
 snprint_multipath_fields_json (char * buff, int len,
-		struct multipath * mpp, int last)
+		const struct multipath * mpp, int last)
 {
 	int i, j, fwd = 0;
 	struct path *pp;
@@ -1158,7 +1159,7 @@ snprint_multipath_fields_json (char * buff, int len,
 
 int
 snprint_multipath_map_json (char * buff, int len,
-		struct multipath * mpp, int last){
+		const struct multipath * mpp, int last){
 	int fwd = 0;
 
 	fwd +=  snprint_json_header(buff, len);
@@ -1184,7 +1185,7 @@ snprint_multipath_map_json (char * buff, int len,
 }
 
 int
-snprint_multipath_topology_json (char * buff, int len, struct vectors * vecs)
+snprint_multipath_topology_json (char * buff, int len, const struct vectors * vecs)
 {
 	int i, fwd = 0;
 	struct multipath * mpp;
@@ -1215,7 +1216,7 @@ snprint_multipath_topology_json (char * buff, int len, struct vectors * vecs)
 }
 
 static int
-snprint_hwentry (struct config *conf, char * buff, int len, struct hwentry * hwe)
+snprint_hwentry (struct config *conf, char * buff, int len, const struct hwentry * hwe)
 {
 	int i;
 	int fwd = 0;
@@ -1273,7 +1274,7 @@ int snprint_hwtable(struct config *conf, char *buff, int len, vector hwtable)
 }
 
 static int
-snprint_mpentry (struct config *conf, char * buff, int len, struct mpentry * mpe)
+snprint_mpentry (struct config *conf, char * buff, int len, const struct mpentry * mpe)
 {
 	int i;
 	int fwd = 0;
@@ -1325,7 +1326,7 @@ int snprint_mptable(struct config *conf, char *buff, int len, vector mptable)
 }
 
 int snprint_overrides(struct config *conf, char * buff, int len,
-		      struct hwentry *overrides)
+		      const struct hwentry *overrides)
 {
 	int fwd = 0;
 	int i;
@@ -1649,7 +1650,7 @@ int snprint_blacklist_except(struct config *conf, char *buff, int len)
 	return fwd;
 }
 
-int snprint_status(char *buff, int len, struct vectors *vecs)
+int snprint_status(char *buff, int len, const struct vectors *vecs)
 {
 	int fwd = 0;
 	int i;
@@ -1681,7 +1682,7 @@ int snprint_status(char *buff, int len, struct vectors *vecs)
 }
 
 int snprint_devices(struct config *conf, char * buff, int len,
-		    struct vectors *vecs)
+		    const struct vectors *vecs)
 {
 	DIR *blkdir;
 	struct dirent *blkdev;
