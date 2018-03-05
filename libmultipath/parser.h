@@ -43,7 +43,7 @@
 struct keyword {
 	char *string;
 	int (*handler) (struct config *, vector);
-	int (*print) (struct config *, char *, int, void *);
+	int (*print) (struct config *, char *, int, const void *);
 	vector sub;
 	int unique;
 };
@@ -60,13 +60,17 @@ struct keyword {
 /* Prototypes */
 extern int keyword_alloc(vector keywords, char *string,
 			 int (*handler) (struct config *, vector),
-			 int (*print) (struct config *, char *, int, void *), int unique);
+			 int (*print) (struct config *, char *, int,
+				       const void *),
+			 int unique);
 #define install_keyword_root(str, h) keyword_alloc(keywords, str, h, NULL, 1)
 extern void install_sublevel(void);
 extern void install_sublevel_end(void);
 extern int _install_keyword(vector keywords, char *string,
 			    int (*handler) (struct config *, vector),
-			    int (*print) (struct config *, char *, int, void *), int unique);
+			    int (*print) (struct config *, char *, int,
+					  const void *),
+			    int unique);
 #define install_keyword(str, vec, pri) _install_keyword(keywords, str, vec, pri, 1)
 #define install_keyword_multi(str, vec, pri) _install_keyword(keywords, str, vec, pri, 0)
 extern void dump_keywords(vector keydump, int level);
@@ -76,6 +80,6 @@ extern void *set_value(vector strvec);
 extern int process_file(struct config *conf, char *conf_file);
 extern struct keyword * find_keyword(vector keywords, vector v, char * name);
 int snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw,
-		    void *data);
+		    const void *data);
 
 #endif

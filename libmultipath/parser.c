@@ -33,7 +33,8 @@ static int line_nr;
 int
 keyword_alloc(vector keywords, char *string,
 	      int (*handler) (struct config *, vector),
-	      int (*print) (struct config *, char *, int, void *), int unique)
+	      int (*print) (struct config *, char *, int, const void*),
+	      int unique)
 {
 	struct keyword *keyword;
 
@@ -71,7 +72,8 @@ install_sublevel_end(void)
 int
 _install_keyword(vector keywords, char *string,
 		 int (*handler) (struct config *, vector),
-		 int (*print) (struct config *, char *, int, void *), int unique)
+		 int (*print) (struct config *, char *, int, const void*),
+		 int unique)
 {
 	int i = 0;
 	struct keyword *keyword;
@@ -143,7 +145,8 @@ find_keyword(vector keywords, vector v, char * name)
 }
 
 int
-snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw, void *data)
+snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw,
+		const void *data)
 {
 	int r;
 	int fwd = 0;
