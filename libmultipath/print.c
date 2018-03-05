@@ -697,20 +697,48 @@ snprint_wildcards (char * buff, int len)
 }
 
 void
-get_path_layout (vector pathvec, int header)
+get_path_layout(vector pathvec, int header)
+{
+	vector gpvec = vector_convert(NULL, pathvec, struct path,
+				      dm_path_to_gen);
+	_get_path_layout(gpvec,
+			 header ? LAYOUT_RESET_HEADER : LAYOUT_RESET_ZERO);
+	vector_free(gpvec);
+}
+
+static void
+reset_width(int *width, enum layout_reset reset, const char *header)
+{
+	switch (reset) {
+	case LAYOUT_RESET_HEADER:
+		*width = strlen(header);
+		break;
+	case LAYOUT_RESET_ZERO:
+		*width = 0;
+		break;
+	default:
+		/* don't reset */
+		break;
+	}
+}
+
+void
+_get_path_layout (const struct _vector *gpvec, enum layout_reset reset)
 {
 	int i, j;
 	char buff[MAX_FIELD_LEN];
-	struct path * pp;
+	const struct gen_path *gp;
 
 	for (j = 0; pd[j].header; j++) {
-		if (header)
-			pd[j].width = strlen(pd[j].header);
-		else
-			pd[j].width = 0;
 
-		vector_foreach_slot (pathvec, pp, i) {
-			pd[j].snprint(buff, MAX_FIELD_LEN, pp);
+		reset_width(&pd[j].width, reset, pd[j].header);
+
+		if (gpvec == NULL)
+			continue;
+
+		vector_foreach_slot (gpvec, gp, i) {
+			gp->ops->snprint(gp, buff, MAX_FIELD_LEN,
+					 pd[j].wildcard);
 			pd[j].width = MAX(pd[j].width, strlen(buff));
 		}
 	}
@@ -726,22 +754,35 @@ reset_multipath_layout (void)
 }
 
 void
-get_multipath_layout (vector mpvec, int header)
+get_multipath_layout (vector mpvec, int header) {
+	vector gmvec = vector_convert(NULL, mpvec, struct multipath,
+				      dm_multipath_to_gen);
+	_get_multipath_layout(gmvec,
+			 header ? LAYOUT_RESET_HEADER : LAYOUT_RESET_ZERO);
+	vector_free(gmvec);
+}
+
+void
+_get_multipath_layout (const struct _vector *gmvec,
+			    enum layout_reset reset)
 {
 	int i, j;
 	char buff[MAX_FIELD_LEN];
-	struct multipath * mpp;
+	const struct gen_multipath * gm;
 
 	for (j = 0; mpd[j].header; j++) {
-		if (header)
-			mpd[j].width = strlen(mpd[j].header);
-		else
-			mpd[j].width = 0;
 
-		vector_foreach_slot (mpvec, mpp, i) {
-			mpd[j].snprint(buff, MAX_FIELD_LEN, mpp);
+		reset_width(&mpd[j].width, reset, mpd[j].header);
+
+		if (gmvec == NULL)
+			continue;
+
+		vector_foreach_slot (gmvec, gm, i) {
+			gm->ops->snprint(gm, buff, MAX_FIELD_LEN,
+					 mpd[j].wildcard);
 			mpd[j].width = MAX(mpd[j].width, strlen(buff));
 		}
+		condlog(4, "%s: width %d", mpd[j].header, mpd[j].width);
 	}
 }
 

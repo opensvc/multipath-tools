@@ -94,7 +94,15 @@ struct pathgroup_data {
 	int (*snprint)(char * buff, size_t len, const struct pathgroup * pgp);
 };
 
+enum layout_reset {
+	LAYOUT_RESET_NOT,
+	LAYOUT_RESET_ZERO,
+	LAYOUT_RESET_HEADER,
+};
+
+void _get_path_layout (const struct _vector *gpvec, enum layout_reset);
 void get_path_layout (vector pathvec, int header);
+void _get_multipath_layout (const struct _vector *gmvec, enum layout_reset);
 void get_multipath_layout (vector mpvec, int header);
 int snprint_path_header (char *, int, const char *);
 int snprint_multipath_header (char *, int, const char *);
