@@ -11,6 +11,7 @@
 #include <sys/sysmacros.h>
 #include "devmapper.h"
 
+#define FREE_CONST(p) do { free((void*)(long)p); p = NULL; } while(0)
 #define _UUID_PREFIX "part"
 #define UUID_PREFIX _UUID_PREFIX "%d-"
 #define _UUID_PREFIX_LEN (sizeof(_UUID_PREFIX) - 1)
@@ -695,7 +696,7 @@ int dm_find_part(const char *parent, const char *delim, int part,
 	} else
 		*part_uuid = uuid;
 out:
-	free((void*)tmp);
+	FREE_CONST(tmp);
 	return r;
 }
 

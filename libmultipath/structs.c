@@ -418,7 +418,7 @@ find_mp_by_str (vector mpvec, char * str)
 }
 
 struct path *
-find_path_by_dev (vector pathvec, char * dev)
+find_path_by_dev (vector pathvec, const char * dev)
 {
 	int i;
 	struct path * pp;

@@ -64,7 +64,7 @@ static size_t write_all(int fd, const void *buf, size_t len)
 		}
 		if (!n)
 			return total;
-		buf = n + (char *)buf;
+		buf = n + (const char *)buf;
 		len -= n;
 		total += n;
 	}

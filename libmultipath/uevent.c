@@ -157,7 +157,7 @@ static int uevent_get_env_positive_int(const struct uevent *uev,
 void
 uevent_get_wwid(struct uevent *uev)
 {
-	char *uid_attribute;
+	const char *uid_attribute;
 	const char *val;
 	struct config * conf;
 
@@ -167,8 +167,8 @@ uevent_get_wwid(struct uevent *uev)
 
 	val = uevent_get_env_var(uev, uid_attribute);
 	if (val)
-		uev->wwid = (char*)val;
-	free(uid_attribute);
+		uev->wwid = val;
+	FREE_CONST(uid_attribute);
 }
 
 bool

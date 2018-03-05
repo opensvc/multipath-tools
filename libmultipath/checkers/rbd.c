@@ -288,7 +288,7 @@ void libcheck_free(struct checker * c)
 static int rbd_is_blacklisted(struct rbd_checker_context *ct, char *msg)
 {
 	char *addr_tok, *start, *save;
-	char *cmd[2];
+	const char *cmd[2];
 	char *blklist, *stat;
 	size_t blklist_len, stat_len;
 	int ret;
@@ -436,7 +436,7 @@ static int sysfs_write_rbd_remove(const char *buf, int buf_len)
 
 static int rbd_rm_blacklist(struct rbd_checker_context *ct)
 {
-	char *cmd[2];
+	const char *cmd[2];
 	char *stat, *cmd_str;
 	size_t stat_len;
 	int ret;

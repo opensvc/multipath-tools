@@ -408,7 +408,7 @@ uev_add_map (struct uevent * uev, struct vectors * vecs)
 	pthread_testcancel();
 	rc = ev_add_map(uev->kernel, alias, vecs);
 	lock_cleanup_pop(vecs->lock);
-	FREE(alias);
+	FREE_CONST(alias);
 	return rc;
 }
 
@@ -514,7 +514,7 @@ uev_remove_map (struct uevent * uev, struct vectors * vecs)
 	remove_map_and_stop_waiter(mpp, vecs, 1);
 out:
 	lock_cleanup_pop(vecs->lock);
-	FREE(alias);
+	FREE_CONST(alias);
 	return 0;
 }
 
@@ -1010,11 +1010,11 @@ uev_pathfail_check(struct uevent *uev, struct vectors *vecs)
 				pp->dev);
 out_lock:
 	lock_cleanup_pop(vecs->lock);
-	FREE(devt);
-	FREE(action);
+	FREE_CONST(devt);
+	FREE_CONST(action);
 	return r;
 out:
-	FREE(action);
+	FREE_CONST(action);
 	return 1;
 }
 

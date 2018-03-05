@@ -121,7 +121,7 @@ path_discover (vector pathvec, struct config * conf,
 	if (!devname)
 		return PATHINFO_FAILED;
 
-	pp = find_path_by_dev(pathvec, (char *)devname);
+	pp = find_path_by_dev(pathvec, devname);
 	if (!pp) {
 		char devt[BLK_DEV_SIZE];
 		dev_t devnum = udev_device_get_devnum(udevice);
@@ -905,12 +905,12 @@ static int
 parse_vpd_pg83(const unsigned char *in, size_t in_len,
 	       char *out, size_t out_len)
 {
-	unsigned char *d;
-	unsigned char *vpd = NULL;
+	const unsigned char *d;
+	const unsigned char *vpd = NULL;
 	int len = -ENODATA, vpd_type, vpd_len, prio = -1, i, naa_prio;
 
-	d = (unsigned char *)in + 4;
-	while (d < (unsigned char *)in + in_len) {
+	d = in + 4;
+	while (d < in + in_len) {
 		/* Select 'association: LUN' */
 		if ((d[1] & 0x30) != 0) {
 			d += d[3] + 4;
@@ -1027,7 +1027,7 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 				out[len] = '\0';
 			}
 		} else if (vpd_type == 0x1) {
-			unsigned char *p;
+			const unsigned char *p;
 			int p_len;
 
 			out[0] = '1';

@@ -32,7 +32,7 @@ strchop(char *str)
 int
 basenamecpy (const char * str1, char * str2, int str2len)
 {
-	char *p;
+	const char *p;
 
 	if (!str1 || !strlen(str1))
 		return 0;
@@ -43,7 +43,7 @@ basenamecpy (const char * str1, char * str2, int str2len)
 	if (!str2)
 		return 0;
 
-	p = (char *)str1 + (strlen(str1) - 1);
+	p = str1 + (strlen(str1) - 1);
 
 	while (*--p != '/' && p != str1)
 		continue;
@@ -454,7 +454,7 @@ int safe_write(int fd, const void *buf, size_t count)
 			return -errno;
 		}
 		count -= r;
-		buf = (char *)buf + r;
+		buf = (const char *)buf + r;
 	}
 	return 0;
 }

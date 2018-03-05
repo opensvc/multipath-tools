@@ -387,7 +387,7 @@ struct multipath * find_mp_by_str (vector mp, char * wwid);
 struct multipath * find_mp_by_minor (vector mp, int minor);
 
 struct path * find_path_by_devt (vector pathvec, const char * devt);
-struct path * find_path_by_dev (vector pathvec, char * dev);
+struct path * find_path_by_dev (vector pathvec, const char * dev);
 struct path * first_path (struct multipath * mpp);
 
 int pathcountgr (struct pathgroup *, int);
