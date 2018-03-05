@@ -16,6 +16,7 @@
 #include "configure.h"
 #include "blacklist.h"
 #include "debug.h"
+#include "dm-generic.h"
 #include "print.h"
 #include "sysfs.h"
 #include <errno.h>

@@ -47,6 +47,7 @@
 #include "discovery.h"
 #include "debug.h"
 #include "switchgroup.h"
+#include "dm-generic.h"
 #include "print.h"
 #include "alias.h"
 #include "configure.h"

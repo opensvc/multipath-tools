@@ -30,6 +30,7 @@
 #include "discovery.h"
 #include "debug.h"
 #include "switchgroup.h"
+#include "dm-generic.h"
 #include "print.h"
 #include "configure.h"
 #include "pgpolicies.h"
