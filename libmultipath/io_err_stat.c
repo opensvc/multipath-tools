@@ -749,7 +749,6 @@ destroy_ctx:
 void stop_io_err_stat_thread(void)
 {
 	pthread_cancel(io_err_stat_thr);
-	pthread_kill(io_err_stat_thr, SIGUSR2);
 	pthread_join(io_err_stat_thr, NULL);
 	free_io_err_pathvec(paths);
 	io_destroy(ioctx);
