@@ -716,7 +716,7 @@ rescan:
 	/*
 	 * push the map to the device-mapper
 	 */
-	if (setup_map(mpp, params, PARAMS_SIZE)) {
+	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
 		condlog(0, "%s: failed to setup map for addition of new "
 			"path %s", mpp->alias, pp->dev);
 		goto fail_map;
@@ -855,7 +855,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 			 */
 		}
 
-		if (setup_map(mpp, params, PARAMS_SIZE)) {
+		if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
 			condlog(0, "%s: failed to setup map for"
 				" removal of path %s", mpp->alias, pp->dev);
 			goto fail;
@@ -2471,10 +2471,6 @@ child (void * param)
 	/*
 	 * start threads
 	 */
-	rc = start_io_err_stat_thread(vecs);
-	if (rc)
-		goto failed;
-
 	if ((rc = pthread_create(&check_thr, &misc_attr, checkerloop, vecs))) {
 		condlog(0,"failed to create checker loop thread: %d", rc);
 		goto failed;

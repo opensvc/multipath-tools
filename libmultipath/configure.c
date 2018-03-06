@@ -41,6 +41,7 @@
 #include "uxsock.h"
 #include "wwids.h"
 #include "sysfs.h"
+#include "io_err_stat.h"
 
 /* group paths in pg by host adapter
  */
@@ -255,7 +256,8 @@ int rr_optimize_path_order(struct pathgroup *pgp)
 	return 0;
 }
 
-int setup_map(struct multipath *mpp, char *params, int params_size)
+int setup_map(struct multipath *mpp, char *params, int params_size,
+	      struct vectors *vecs)
 {
 	struct pathgroup * pgp;
 	struct config *conf;
@@ -315,6 +317,12 @@ int setup_map(struct multipath *mpp, char *params, int params_size)
 
 	sysfs_set_scsi_tmo(mpp, conf->checkint);
 	put_multipath_config(conf);
+
+	if (mpp->marginal_path_double_failed_time > 0 &&
+	    mpp->marginal_path_err_sample_time > 0 &&
+	    mpp->marginal_path_err_recheck_gap_time > 0 &&
+	    mpp->marginal_path_err_rate_threshold >= 0)
+		start_io_err_stat_thread(vecs);
 	/*
 	 * assign paths to path groups -- start with no groups and all paths
 	 * in mpp->paths
@@ -1019,7 +1027,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 		verify_paths(mpp, vecs);
 
 		params[0] = '\0';
-		if (setup_map(mpp, params, PARAMS_SIZE)) {
+		if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
 			remove_map(mpp, vecs, 0);
 			continue;
 		}
@@ -1348,7 +1356,7 @@ int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
 			}
 		}
 	}
-	if (setup_map(mpp, params, PARAMS_SIZE)) {
+	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
 		condlog(0, "%s: failed to setup map", mpp->alias);
 		return 1;
 	}

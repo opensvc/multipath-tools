@@ -28,7 +28,8 @@ enum actions {
 
 struct vectors;
 
-int setup_map (struct multipath * mpp, char * params, int params_size );
+int setup_map (struct multipath * mpp, char * params, int params_size,
+	       struct vectors *vecs );
 int domap (struct multipath * mpp, char * params, int is_daemon);
 int reinstate_paths (struct multipath *mpp);
 int coalesce_paths (struct vectors *vecs, vector curmp, char * refwwid, int force_reload, enum mpath_cmds cmd);

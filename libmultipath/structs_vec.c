@@ -18,6 +18,7 @@
 #include "prio.h"
 #include "configure.h"
 #include "libdevmapper.h"
+#include "io_err_stat.h"
 
 /*
  * creates or updates mpp->paths reading mpp->pg
@@ -427,7 +428,7 @@ retry:
 	mpp->action = ACT_RELOAD;
 
 	extract_hwe_from_path(mpp);
-	if (setup_map(mpp, params, PARAMS_SIZE)) {
+	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
 		condlog(0, "%s: failed to setup new map in update", mpp->alias);
 		retries = -1;
 		goto fail;

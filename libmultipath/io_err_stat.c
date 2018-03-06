@@ -74,6 +74,10 @@ struct io_err_stat_path {
 pthread_t		io_err_stat_thr;
 pthread_attr_t		io_err_stat_attr;
 
+static pthread_mutex_t io_err_thread_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t io_err_thread_cond = PTHREAD_COND_INITIALIZER;
+static int io_err_thread_running = 0;
+
 static struct io_err_stat_pathvec *paths;
 struct vectors *vecs;
 io_context_t	ioctx;
@@ -316,6 +320,9 @@ int io_err_stat_handle_pathfail(struct path *path)
 	struct timespec curr_time;
 	int res;
 
+	if (uatomic_read(&io_err_thread_running) == 0)
+		return 1;
+
 	if (path->io_err_disable_reinstate) {
 		io_err_stat_log(3, "%s: reinstate is already disabled",
 				path->dev);
@@ -380,6 +387,8 @@ int hit_io_err_recheck_time(struct path *pp)
 	struct timespec curr_time;
 	int r;
 
+	if (uatomic_read(&io_err_thread_running) == 0)
+		return 0;
 	if (pp->mpp->nr_active <= 0) {
 		io_err_stat_log(2, "%s: recover path early", pp->dev);
 		goto recover;
@@ -690,6 +699,16 @@ static void service_paths(void)
 	pthread_mutex_unlock(&paths->mutex);
 }
 
+static void cleanup_unlock(void *arg)
+{
+	pthread_mutex_unlock((pthread_mutex_t*) arg);
+}
+
+static void cleanup_exited(void *arg)
+{
+	uatomic_set(&io_err_thread_running, 0);
+}
+
 static void *io_err_stat_loop(void *data)
 {
 	sigset_t set;
@@ -698,10 +717,18 @@ static void *io_err_stat_loop(void *data)
 	pthread_cleanup_push(rcu_unregister, NULL);
 	rcu_register_thread();
 
+	pthread_cleanup_push(cleanup_exited, NULL);
+
 	sigfillset(&set);
 	sigdelset(&set, SIGUSR2);
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
+
+	pthread_mutex_lock(&io_err_thread_lock);
+	uatomic_set(&io_err_thread_running, 1);
+	pthread_cond_broadcast(&io_err_thread_cond);
+	pthread_mutex_unlock(&io_err_thread_lock);
+
 	while (1) {
 		struct timespec ts;
 
@@ -717,11 +744,17 @@ static void *io_err_stat_loop(void *data)
 	}
 
 	pthread_cleanup_pop(1);
+	pthread_cleanup_pop(1);
 	return NULL;
 }
 
 int start_io_err_stat_thread(void *data)
 {
+	int ret;
+
+	if (uatomic_read(&io_err_thread_running) == 1)
+		return 0;
+
 	if (io_setup(CONCUR_NR_EVENT, &ioctx) != 0) {
 		io_err_stat_log(4, "io_setup failed");
 		return 1;
@@ -730,12 +763,24 @@ int start_io_err_stat_thread(void *data)
 	if (!paths)
 		goto destroy_ctx;
 
-	if (pthread_create(&io_err_stat_thr, &io_err_stat_attr,
-				io_err_stat_loop, data)) {
+	pthread_mutex_lock(&io_err_thread_lock);
+	pthread_cleanup_push(cleanup_unlock, &io_err_thread_lock);
+
+	ret = pthread_create(&io_err_stat_thr, &io_err_stat_attr,
+			     io_err_stat_loop, data);
+
+	while (!ret && !uatomic_read(&io_err_thread_running) &&
+	       pthread_cond_wait(&io_err_thread_cond,
+				 &io_err_thread_lock) == 0);
+
+	pthread_cleanup_pop(1);
+
+	if (ret) {
 		io_err_stat_log(0, "cannot create io_error statistic thread");
 		goto out_free;
 	}
-	io_err_stat_log(3, "thread started");
+
+	io_err_stat_log(2, "io_error statistic thread started");
 	return 0;
 
 out_free:
@@ -748,7 +793,9 @@ destroy_ctx:
 
 void stop_io_err_stat_thread(void)
 {
-	pthread_cancel(io_err_stat_thr);
+	if (uatomic_read(&io_err_thread_running) == 1)
+		pthread_cancel(io_err_stat_thr);
+
 	pthread_join(io_err_stat_thr, NULL);
 	free_io_err_pathvec(paths);
 	io_destroy(ioctx);
