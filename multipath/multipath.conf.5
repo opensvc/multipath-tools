@@ -67,6 +67,23 @@ recognized keywords for attributes or subsections depend on the
 section in which they occur.
 .LP
 .
+\fB<attribute>\fR and \fB<value>\fR must be on a single line.
+\fB<attribute>\fR is one of the keywords listed in this man page.
+\fB<value>\fR is either a simple word (containing no whitespace and none of the
+characters '\(dq', '#', and '!') or \fIone\fR string enclosed in double
+quotes ("..."). Outside a quoted string, text starting with '#', and '!' is
+regarded as a comment and ignored until the end of the line. Inside a quoted
+string, '#' and '!' are normal characters, and whitespace is preserved.
+To represent a double quote character inside a double quoted string, use two
+consecutive double quotes ('""'). Thus '2.5\(dq SSD' can be written as "2.5"" SSD".
+.LP
+.
+Opening braces ('{') must follow the (sub)section name on the same line. Closing
+braces ('}') that mark the end of a (sub)section must be the only non-whitespace
+character on the line. Whitespace is ignored except inside double quotes, thus
+the indentation shown in the above example is helpful for human readers but
+not mandatory.
+.LP
 .
 The following \fIsection\fP keywords are recognized:
 .TP 17
