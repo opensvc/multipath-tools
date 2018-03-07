@@ -148,7 +148,7 @@ void uxsock_cleanup(void *arg)
 {
 	struct client *client_loop;
 	struct client *client_tmp;
-	int ux_sock = (int)arg;
+	long ux_sock = (long)arg;
 
 	close(ux_sock);
 
@@ -167,7 +167,7 @@ void uxsock_cleanup(void *arg)
  */
 void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 {
-	int ux_sock;
+	long ux_sock;
 	int rlen;
 	char *inbuf;
 	char *reply;
