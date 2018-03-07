@@ -392,7 +392,7 @@ flush_map(struct multipath * mpp, struct vectors * vecs, int nopaths)
 static int
 uev_add_map (struct uevent * uev, struct vectors * vecs)
 {
-	const char *alias;
+	char *alias;
 	int major = -1, minor = -1, rc;
 
 	condlog(3, "%s: add map (uevent)", uev->kernel);
@@ -413,7 +413,7 @@ uev_add_map (struct uevent * uev, struct vectors * vecs)
 	pthread_testcancel();
 	rc = ev_add_map(uev->kernel, alias, vecs);
 	lock_cleanup_pop(vecs->lock);
-	FREE_CONST(alias);
+	FREE(alias);
 	return rc;
 }
 
@@ -487,7 +487,7 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 static int
 uev_remove_map (struct uevent * uev, struct vectors * vecs)
 {
-	const char *alias;
+	char *alias;
 	int minor;
 	struct multipath *mpp;
 
@@ -519,7 +519,7 @@ uev_remove_map (struct uevent * uev, struct vectors * vecs)
 	remove_map_and_stop_waiter(mpp, vecs, 1);
 out:
 	lock_cleanup_pop(vecs->lock);
-	FREE_CONST(alias);
+	FREE(alias);
 	return 0;
 }
 
@@ -1005,7 +1005,7 @@ out:
 static int
 uev_pathfail_check(struct uevent *uev, struct vectors *vecs)
 {
-	const char *action = NULL, *devt = NULL;
+	char *action = NULL, *devt = NULL;
 	struct path *pp;
 	int r = 1;
 
@@ -1032,11 +1032,11 @@ uev_pathfail_check(struct uevent *uev, struct vectors *vecs)
 				pp->dev);
 out_lock:
 	lock_cleanup_pop(vecs->lock);
-	FREE_CONST(devt);
-	FREE_CONST(action);
+	FREE(devt);
+	FREE(action);
 	return r;
 out:
-	FREE_CONST(action);
+	FREE(action);
 	return 1;
 }
 

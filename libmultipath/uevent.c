@@ -157,7 +157,7 @@ static int uevent_get_env_positive_int(const struct uevent *uev,
 void
 uevent_get_wwid(struct uevent *uev)
 {
-	const char *uid_attribute;
+	char *uid_attribute;
 	const char *val;
 	struct config * conf;
 
@@ -168,7 +168,7 @@ uevent_get_wwid(struct uevent *uev)
 	val = uevent_get_env_var(uev, uid_attribute);
 	if (val)
 		uev->wwid = val;
-	FREE_CONST(uid_attribute);
+	FREE(uid_attribute);
 }
 
 bool
@@ -907,7 +907,7 @@ int uevent_get_disk_ro(const struct uevent *uev)
 	return uevent_get_env_positive_int(uev, "DISK_RO");
 }
 
-static const char *uevent_get_dm_str(const struct uevent *uev, char *attr)
+static char *uevent_get_dm_str(const struct uevent *uev, char *attr)
 {
 	const char *tmp = uevent_get_env_var(uev, attr);
 
@@ -916,17 +916,17 @@ static const char *uevent_get_dm_str(const struct uevent *uev, char *attr)
 	return strdup(tmp);
 }
 
-const char *uevent_get_dm_name(const struct uevent *uev)
+char *uevent_get_dm_name(const struct uevent *uev)
 {
 	return uevent_get_dm_str(uev, "DM_NAME");
 }
 
-const char *uevent_get_dm_path(const struct uevent *uev)
+char *uevent_get_dm_path(const struct uevent *uev)
 {
 	return uevent_get_dm_str(uev, "DM_PATH");
 }
 
-const char *uevent_get_dm_action(const struct uevent *uev)
+char *uevent_get_dm_action(const struct uevent *uev)
 {
 	return uevent_get_dm_str(uev, "DM_ACTION");
 }

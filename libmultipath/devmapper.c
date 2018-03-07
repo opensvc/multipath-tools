@@ -27,7 +27,6 @@
 #include <sys/types.h>
 #include <time.h>
 
-#define FREE_CONST(p) do { free((void*)(unsigned long)p); p = NULL; } while(0)
 #define MAX_WAIT 5
 #define LOOPS_PER_SEC 5
 
@@ -1415,8 +1414,8 @@ out:
 
 void dm_reassign_deps(char *table, const char *dep, const char *newdep)
 {
-	char *n;
-	const char *p, *newtable;
+	char *n, *newtable;
+	const char *p;
 
 	newtable = strdup(table);
 	if (!newtable)
@@ -1427,7 +1426,7 @@ void dm_reassign_deps(char *table, const char *dep, const char *newdep)
 	n += strlen(newdep);
 	p += strlen(dep);
 	strcat(n, p);
-	FREE_CONST(newtable);
+	FREE(newtable);
 }
 
 int dm_reassign_table(const char *name, char *old, char *new)

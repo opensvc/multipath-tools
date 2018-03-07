@@ -43,7 +43,6 @@ int debug;
 		      (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
 #define STRDUP(n)    ( dbg_strdup((n), \
 		      (__FILE__), (char *)(__FUNCTION__), (__LINE__)) )
-#define FREE_CONST(p) do { FREE((void*)(unsigned long)p); } while(0)
 
 /* Memory debug prototypes defs */
 extern void *dbg_malloc(unsigned long, char *, char *, int);
@@ -56,11 +55,6 @@ extern void dbg_free_final(char *);
 
 #define MALLOC(n)    (calloc(1,(n)))
 #define FREE(p)      do { free(p); p = NULL; } while(0)
-/*
- * Double cast to avoid warnings with -Wcast-qual
- * use this for valid free() operations on const pointers
- */
-#define FREE_CONST(p) do { free((void*)(unsigned long)p); p = NULL; } while(0)
 #define REALLOC(p,n) (realloc((p),(n)))
 #define STRDUP(n)    (strdup(n))
 
