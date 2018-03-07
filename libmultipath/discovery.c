@@ -1807,7 +1807,36 @@ get_vpd_uid(struct path * pp)
 		parent = udev_device_get_parent(parent);
 	}
 
+	if (!parent)
+		return -EINVAL;
+
 	return get_vpd_sysfs(parent, 0x83, pp->wwid, WWID_SIZE);
+}
+
+static ssize_t scsi_uid_fallback(struct path *pp, int path_state,
+			     const char **origin)
+{
+	ssize_t len = 0;
+	int retrigger;
+	struct config *conf;
+
+	conf = get_multipath_config();
+	retrigger = conf->retrigger_tries;
+	put_multipath_config(conf);
+	if (pp->retriggers >= retrigger &&
+	    !strcmp(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE)) {
+		len = get_vpd_uid(pp);
+		*origin = "sysfs";
+		pp->uid_attribute = NULL;
+		if (len < 0 && path_state == PATH_UP) {
+			condlog(1, "%s: failed to get sysfs uid: %s",
+				pp->dev, strerror(-len));
+			len = get_vpd_sgio(pp->fd, 0x83, pp->wwid,
+					   WWID_SIZE);
+			*origin = "sgio";
+		}
+	}
+	return len;
 }
 
 int
@@ -1851,7 +1880,6 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev)
 		len = get_rbd_uid(pp);
 		origin = "sysfs";
 	} else {
-		int retrigger;
 
 		if (pp->uid_attribute) {
 			len = get_udev_uid(pp, pp->uid_attribute, udev);
@@ -1861,26 +1889,12 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev)
 					"%s: failed to get udev uid: %s",
 					pp->dev, strerror(-len));
 
-		} else {
+		} else if (pp->bus == SYSFS_BUS_SCSI) {
 			len = get_vpd_uid(pp);
 			origin = "sysfs";
 		}
-		conf = get_multipath_config();
-		retrigger = conf->retrigger_tries;
-		put_multipath_config(conf);
-		if (len <= 0 && pp->retriggers >= retrigger &&
-		    !strcmp(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE)) {
-			len = get_vpd_uid(pp);
-			origin = "sysfs";
-			pp->uid_attribute = NULL;
-			if (len < 0 && path_state == PATH_UP) {
-				condlog(1, "%s: failed to get sysfs uid: %s",
-					pp->dev, strerror(-len));
-				len = get_vpd_sgio(pp->fd, 0x83, pp->wwid,
-						   WWID_SIZE);
-				origin = "sgio";
-			}
-		}
+		if (len <= 0 && pp->bus == SYSFS_BUS_SCSI)
+			len = scsi_uid_fallback(pp, path_state, &origin);
 	}
 	if ( len < 0 ) {
 		condlog(1, "%s: failed to get %s uid: %s",
