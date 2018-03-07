@@ -40,6 +40,8 @@ clean: dep_clean
 	$(RM) core *.a *.o *.gz *.so
 
 OBJS := $(LIBS:libcheck%.so=%.o) libsg.o directio.o
+.SECONDARY: $(OBJS)
+
 include $(wildcard $(OBJS:.o=.d))
 
 dep_clean:

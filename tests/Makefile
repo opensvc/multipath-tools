@@ -21,10 +21,9 @@ clean: dep_clean
 	rm -f $(TESTS:%=%-test) $(TESTS:%=%.out) $(TESTS:%=%.o)
 
 OBJS = $(TESTS:%=%.o)
+.SECONDARY: $(OBJS)
+
 include $(wildcard $(OBJS:.o=.d))
-
-
-
 
 dep_clean:
 	$(RM) $(OBJS:.o=.d)

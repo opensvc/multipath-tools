@@ -42,6 +42,8 @@ clean: dep_clean
 	$(RM) core *.a *.o *.gz *.so
 
 OBJS = $(LIBS:libprio%.so=%.o) alua_rtpg.o
+.SECONDARY: $(OBJS)
+
 include $(wildcard $(OBJS:.o=.d))
 
 dep_clean:

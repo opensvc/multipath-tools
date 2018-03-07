@@ -127,4 +127,5 @@ check_file = $(shell	\
 	)
 
 %.o:	%.c
+	@echo building $@ because of $?
 	$(CC) $(CFLAGS) -c -o $@ $<

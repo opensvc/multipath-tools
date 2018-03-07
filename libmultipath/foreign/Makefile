@@ -24,6 +24,8 @@ clean: dep_clean
 	$(RM) core *.a *.o *.gz *.so
 
 OBJS := $(LIBS:libforeign-%.so=%.o)
+.SECONDARY: $(OBJS)
+
 include $(wildcard $(OBJS:.o=.d))
 
 dep_clean:
