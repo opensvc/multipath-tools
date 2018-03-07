@@ -6,6 +6,7 @@ struct udev *udev;
 int logsink = 0;
 struct config conf = {
 	.uid_attrs = "sd:ID_BOGUS",
+	.verbosity = 4,
 };
 
 struct config *get_multipath_config(void)
