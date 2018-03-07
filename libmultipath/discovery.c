@@ -837,6 +837,8 @@ detect_alua(struct path * pp, struct config *conf)
 
 #define DEFAULT_SGIO_LEN 254
 
+/* Query VPD page @pg. Returns number of INQUIRY bytes
+   upon success and -1 upon failure. */
 static int
 sgio_get_vpd (unsigned char * buff, int maxlen, int fd, int pg)
 {
@@ -848,7 +850,7 @@ sgio_get_vpd (unsigned char * buff, int maxlen, int fd, int pg)
 	}
 retry:
 	if (0 == do_inq(fd, 0, 1, pg, buff, len)) {
-		len = buff[3] + (buff[2] << 8);
+		len = buff[3] + (buff[2] << 8) + 4;
 		if (len >= maxlen)
 			return len;
 		if (len > DEFAULT_SGIO_LEN)
@@ -1100,7 +1102,7 @@ get_vpd_sgio (int fd, int pg, char * str, int maxlen)
 	unsigned char buff[4096];
 
 	memset(buff, 0x0, 4096);
-	if (sgio_get_vpd(buff, 4096, fd, pg) <= 0) {
+	if (sgio_get_vpd(buff, 4096, fd, pg) < 0) {
 		condlog(3, "failed to issue vpd inquiry for pg%02x",
 			pg);
 		return -errno;
