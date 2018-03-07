@@ -606,7 +606,7 @@ int delegate_to_multipathd(enum mpath_cmds cmd, const char *dev,
 			   enum devtypes dev_type, const struct config *conf)
 {
 	int fd;
-	char command[1024], *p, *reply;
+	char command[1024], *p, *reply = NULL;
 	int n, r = 0;
 
 	fd = mpath_connect();
