@@ -340,7 +340,7 @@ declare_def_handler(checker_timeout, set_int)
 declare_def_snprint(checker_timeout, print_nonzero)
 
 declare_def_handler(flush_on_last_del, set_yes_no_undef)
-declare_def_snprint_defint(flush_on_last_del, print_yes_no_undef, YNU_NO)
+declare_def_snprint_defint(flush_on_last_del, print_yes_no_undef, DEFAULT_FLUSH)
 declare_ovr_handler(flush_on_last_del, set_yes_no_undef)
 declare_ovr_snprint(flush_on_last_del, print_yes_no_undef)
 declare_hw_handler(flush_on_last_del, set_yes_no_undef)
@@ -349,7 +349,8 @@ declare_mp_handler(flush_on_last_del, set_yes_no_undef)
 declare_mp_snprint(flush_on_last_del, print_yes_no_undef)
 
 declare_def_handler(user_friendly_names, set_yes_no_undef)
-declare_def_snprint_defint(user_friendly_names, print_yes_no_undef, YNU_NO)
+declare_def_snprint_defint(user_friendly_names, print_yes_no_undef,
+			   DEFAULT_USER_FRIENDLY_NAMES)
 declare_ovr_handler(user_friendly_names, set_yes_no_undef)
 declare_ovr_snprint(user_friendly_names, print_yes_no_undef)
 declare_hw_handler(user_friendly_names, set_yes_no_undef)
@@ -367,21 +368,24 @@ declare_def_handler(prkeys_file, set_str)
 declare_def_snprint(prkeys_file, print_str)
 
 declare_def_handler(retain_hwhandler, set_yes_no_undef)
-declare_def_snprint_defint(retain_hwhandler, print_yes_no_undef, YNU_NO)
+declare_def_snprint_defint(retain_hwhandler, print_yes_no_undef,
+			   DEFAULT_RETAIN_HWHANDLER)
 declare_ovr_handler(retain_hwhandler, set_yes_no_undef)
 declare_ovr_snprint(retain_hwhandler, print_yes_no_undef)
 declare_hw_handler(retain_hwhandler, set_yes_no_undef)
 declare_hw_snprint(retain_hwhandler, print_yes_no_undef)
 
 declare_def_handler(detect_prio, set_yes_no_undef)
-declare_def_snprint_defint(detect_prio, print_yes_no_undef, YNU_NO)
+declare_def_snprint_defint(detect_prio, print_yes_no_undef,
+			   DEFAULT_DETECT_PRIO)
 declare_ovr_handler(detect_prio, set_yes_no_undef)
 declare_ovr_snprint(detect_prio, print_yes_no_undef)
 declare_hw_handler(detect_prio, set_yes_no_undef)
 declare_hw_snprint(detect_prio, print_yes_no_undef)
 
 declare_def_handler(detect_checker, set_yes_no_undef)
-declare_def_snprint_defint(detect_checker, print_yes_no_undef, YNU_NO)
+declare_def_snprint_defint(detect_checker, print_yes_no_undef,
+			   DEFAULT_DETECT_CHECKER)
 declare_ovr_handler(detect_checker, set_yes_no_undef)
 declare_ovr_snprint(detect_checker, print_yes_no_undef)
 declare_hw_handler(detect_checker, set_yes_no_undef)
@@ -391,7 +395,8 @@ declare_def_handler(force_sync, set_yes_no)
 declare_def_snprint(force_sync, print_yes_no)
 
 declare_def_handler(deferred_remove, set_yes_no_undef)
-declare_def_snprint_defint(deferred_remove, print_yes_no_undef, YNU_NO)
+declare_def_snprint_defint(deferred_remove, print_yes_no_undef,
+			   DEFAULT_DEFERRED_REMOVE)
 declare_ovr_handler(deferred_remove, set_yes_no_undef)
 declare_ovr_snprint(deferred_remove, print_yes_no_undef)
 declare_hw_handler(deferred_remove, set_yes_no_undef)
@@ -412,7 +417,8 @@ declare_def_handler(strict_timing, set_yes_no)
 declare_def_snprint(strict_timing, print_yes_no)
 
 declare_def_handler(skip_kpartx, set_yes_no_undef)
-declare_def_snprint_defint(skip_kpartx, print_yes_no_undef, YNU_NO)
+declare_def_snprint_defint(skip_kpartx, print_yes_no_undef,
+			   DEFAULT_SKIP_KPARTX)
 declare_ovr_handler(skip_kpartx, set_yes_no_undef)
 declare_ovr_snprint(skip_kpartx, print_yes_no_undef)
 declare_hw_handler(skip_kpartx, set_yes_no_undef)
@@ -629,7 +635,8 @@ print_fast_io_fail(char * buff, int len, long v)
 }
 
 declare_def_handler(fast_io_fail, set_fast_io_fail)
-declare_def_snprint_defint(fast_io_fail, print_fast_io_fail, DEFAULT_FAST_IO_FAIL)
+declare_def_snprint_defint(fast_io_fail, print_fast_io_fail,
+			   DEFAULT_FAST_IO_FAIL)
 declare_ovr_handler(fast_io_fail, set_fast_io_fail)
 declare_ovr_snprint(fast_io_fail, print_fast_io_fail)
 declare_hw_handler(fast_io_fail, set_fast_io_fail)
@@ -816,7 +823,7 @@ print_rr_weight (char * buff, int len, long v)
 }
 
 declare_def_handler(rr_weight, set_rr_weight)
-declare_def_snprint_defint(rr_weight, print_rr_weight, RR_WEIGHT_NONE)
+declare_def_snprint_defint(rr_weight, print_rr_weight, DEFAULT_RR_WEIGHT)
 declare_ovr_handler(rr_weight, set_rr_weight)
 declare_ovr_snprint(rr_weight, print_rr_weight)
 declare_hw_handler(rr_weight, set_rr_weight)
