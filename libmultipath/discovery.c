@@ -1853,11 +1853,6 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev)
 		put_multipath_config(conf);
 	}
 
-	if (!udev) {
-		condlog(1, "%s: no udev information", pp->dev);
-		return 1;
-	}
-
 	memset(pp->wwid, 0, WWID_SIZE);
 	if (pp->getuid) {
 		char buff[CALLOUT_MAX_SIZE];
@@ -1881,7 +1876,7 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev)
 		origin = "sysfs";
 	} else {
 
-		if (pp->uid_attribute) {
+		if (udev && pp->uid_attribute) {
 			len = get_udev_uid(pp, pp->uid_attribute, udev);
 			origin = "udev";
 			if (len <= 0)
@@ -1900,6 +1895,7 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev)
 		condlog(1, "%s: failed to get %s uid: %s",
 			pp->dev, origin, strerror(-len));
 		memset(pp->wwid, 0x0, WWID_SIZE);
+		return 1;
 	} else {
 		/* Strip any trailing blanks */
 		c = strchr(pp->wwid, '\0');
