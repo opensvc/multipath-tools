@@ -64,7 +64,7 @@ char *find_loop_by_file(const char *filename)
 	DIR *dir;
 	struct dirent *dent;
 	char dev[64], *found = NULL, *p;
-	int fd;
+	int fd, bytes_read;
 	struct stat statbuf;
 	struct loop_info loopinfo;
 	const char VIRT_BLOCK[] = "/sys/devices/virtual/block";
@@ -86,14 +86,15 @@ char *find_loop_by_file(const char *filename)
 		if (fd < 0)
 			continue;
 
-		if (read(fd, dev, sizeof(dev)) <= 0) {
+		bytes_read = read(fd, dev, sizeof(dev) - 1);
+		if (bytes_read <= 0) {
 			close(fd);
 			continue;
 		}
 
 		close(fd);
 
-		dev[sizeof(dev)-1] = '\0';
+		dev[bytes_read] = '\0';
 		p = strchr(dev, '\n');
 		if (p != NULL)
 			*p = '\0';
