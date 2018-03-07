@@ -793,6 +793,9 @@ destroy_ctx:
 
 void stop_io_err_stat_thread(void)
 {
+	if (io_err_stat_thr == (pthread_t)0)
+		return;
+
 	if (uatomic_read(&io_err_thread_running) == 1)
 		pthread_cancel(io_err_stat_thr);
 
