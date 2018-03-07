@@ -13,6 +13,7 @@
 #include <libudev.h>
 #include "mpath_pr_ioctl.h"
 #include "mpath_persist.h"
+#include "unaligned.h"
 
 #include "debug.h"
 
@@ -243,10 +244,9 @@ void mpath_format_readfullstatus(struct prin_resp *pr_buff, int len, int noisy)
 		memcpy(&fdesc.key, p, 8 );
 		fdesc.flag = p[12];
 		fdesc.scope_type =  p[13];
-		fdesc.rtpi = ((p[18] << 8) | p[19]);
+		fdesc.rtpi = get_unaligned_be16(&p[18]);
 
-		tid_len_len = ((p[20] << 24) | (p[21] << 16) |
-				(p[22] << 8) | p[23]);
+		tid_len_len = get_unaligned_be32(&p[20]);
 
 		if (tid_len_len > 0)
 			decode_transport_id( &fdesc, &p[24], tid_len_len);
@@ -277,7 +277,7 @@ decode_transport_id(struct prin_fulldescr *fdesc, unsigned char * p, int length)
 			jump = 24;
 			break;
 		case MPATH_PROTOCOL_ID_ISCSI:
-			num = ((p[2] << 8) | p[3]);
+			num = get_unaligned_be16(&p[2]);
 			memcpy(&fdesc->trnptid.iscsi_name, &p[4], num);
 			jump = (((num + 4) < 24) ? 24 : num + 4);
 			break;

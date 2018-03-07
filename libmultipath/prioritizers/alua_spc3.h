@@ -14,37 +14,6 @@
  */
 #ifndef __SPC3_H__
 #define __SPC3_H__
-/*=============================================================================
- * Some helper functions for getting and setting 16 and 32 bit values.
- *=============================================================================
- */
-static inline unsigned short
-get_uint16(unsigned char *p)
-{
-	return (p[0] << 8) + p[1];
-}
-
-static inline void
-set_uint16(unsigned char *p, unsigned short v)
-{
-	p[0] = (v >> 8) & 0xff;
-	p[1] = v & 0xff;
-}
-
-static inline unsigned int
-get_uint32(unsigned char *p)
-{
-	return (p[0] << 24) + (p[1] << 16) + (p[2] << 8) + p[3];
-}
-
-static inline void
-set_uint32(unsigned char *p, unsigned int v)
-{
-	p[0] = (v >> 24) & 0xff;
-	p[1] = (v >> 16) & 0xff;
-	p[2] = (v >>  8) & 0xff;
-	p[3] = v & 0xff;
-}
 
 /*=============================================================================
  * Definitions to support the standard inquiry command as defined in SPC-3.
@@ -232,7 +201,7 @@ struct vpd83_data {
 		for( \
 			d = p->data; \
 			(((char *) d) - ((char *) p)) < \
-			get_uint16(p->length); \
+			get_unaligned_be16(p->length); \
 			d = (struct vpd83_dscr *) \
 				((char *) d + d->length + 4) \
 		)
@@ -315,7 +284,7 @@ struct rtpg_data {
 #define RTPG_FOR_EACH_PORT_GROUP(p, g) \
 		for( \
 			g = &(p->data[0]); \
-			(((char *) g) - ((char *) p)) < get_uint32(p->length); \
+			(((char *) g) - ((char *) p)) < get_unaligned_be32(p->length); \
 			g = (struct rtpg_tpg_dscr *) ( \
 				((char *) g) + \
 				sizeof(struct rtpg_tpg_dscr) + \

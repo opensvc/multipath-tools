@@ -30,6 +30,7 @@
 #include "discovery.h"
 #include "prio.h"
 #include "defaults.h"
+#include "unaligned.h"
 #include "prioritizers/alua_rtpg.h"
 #include "foreign.h"
 
@@ -850,7 +851,7 @@ sgio_get_vpd (unsigned char * buff, int maxlen, int fd, int pg)
 	}
 retry:
 	if (0 == do_inq(fd, 0, 1, pg, buff, len)) {
-		len = buff[3] + (buff[2] << 8) + 4;
+		len = get_unaligned_be16(&buff[2]) + 4;
 		if (len >= maxlen)
 			return len;
 		if (len > DEFAULT_SGIO_LEN)
@@ -881,7 +882,7 @@ static int
 parse_vpd_pg80(const unsigned char *in, char *out, size_t out_len)
 {
 	char *p = NULL;
-	int len = in[3] + (in[2] << 8);
+	int len = get_unaligned_be16(&in[2]);
 
 	if (len >= out_len) {
 		condlog(2, "vpd pg80 overflow, %d/%d bytes required",
@@ -1081,7 +1082,7 @@ get_vpd_sysfs (struct udev_device *parent, int pg, char * str, int maxlen)
 			pg, buff[1]);
 		return -ENODATA;
 	}
-	buff_len = (buff[2] << 8) + buff[3] + 4;
+	buff_len = get_unaligned_be16(&buff[2]) + 4;
 	if (buff_len > 4096)
 		condlog(3, "vpd pg%02x page truncated", pg);
 
@@ -1113,7 +1114,7 @@ get_vpd_sgio (int fd, int pg, char * str, int maxlen)
 			pg, buff[1]);
 		return -ENODATA;
 	}
-	buff_len = (buff[2] << 8) + buff[3] + 4;
+	buff_len = get_unaligned_be16(&buff[2]) + 4;
 	if (buff_len > 4096)
 		condlog(3, "vpd pg%02x page truncated", pg);
 

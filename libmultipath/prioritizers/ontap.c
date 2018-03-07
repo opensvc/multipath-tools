@@ -22,6 +22,7 @@
 #include "debug.h"
 #include "prio.h"
 #include "structs.h"
+#include "unaligned.h"
 
 #define INQUIRY_CMD	0x12
 #define INQUIRY_CMDLEN	6
@@ -197,8 +198,7 @@ static int ontap_prio(const char *dev, int fd, unsigned int timeout)
 	memset(&results, 0, sizeof (results));
 	rc = send_gva(dev, fd, 0x41, results, &results_size, timeout);
 	if (rc >= 0) {
-		tot_len = results[0] << 24 | results[1] << 16 |
-			  results[2] << 8 | results[3];
+		tot_len = get_unaligned_be32(&results[0]);
 		if (tot_len <= 8) {
 			goto try_fcp_proxy;
 		}

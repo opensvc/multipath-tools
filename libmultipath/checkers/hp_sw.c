@@ -14,6 +14,7 @@
 #include "checkers.h"
 
 #include "../libmultipath/sg_include.h"
+#include "../libmultipath/unaligned.h"
 
 #define TUR_CMD_LEN		6
 #define INQUIRY_CMDLEN		6
@@ -63,8 +64,7 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
 	if (evpd)
 		inqCmdBlk[1] |= 1;
 	inqCmdBlk[2] = (unsigned char) pg_op;
-	inqCmdBlk[3] = (unsigned char)((mx_resp_len >> 8) & 0xff);
-	inqCmdBlk[4] = (unsigned char) (mx_resp_len & 0xff);
+	put_unaligned_be16(mx_resp_len, &inqCmdBlk[3]);
 	memset(&io_hdr, 0, sizeof (struct sg_io_hdr));
 	memset(sense_b, 0, SENSE_BUFF_LEN);
 	io_hdr.interface_id = 'S';

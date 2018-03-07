@@ -26,6 +26,7 @@
 #include "../structs.h"
 #include "../prio.h"
 #include "../discovery.h"
+#include "../unaligned.h"
 #include "alua_rtpg.h"
 
 #define SENSE_BUFF_LEN  32
@@ -128,7 +129,7 @@ do_inquiry(int fd, int evpd, unsigned int codepage,
 		inquiry_command_set_evpd(&cmd);
 		cmd.page = codepage;
 	}
-	set_uint16(cmd.length, resplen);
+	put_unaligned_be16(resplen, cmd.length);
 	PRINT_HEX((unsigned char *) &cmd, sizeof(cmd));
 
 	memset(&hdr, 0, sizeof(hdr));
@@ -220,7 +221,7 @@ get_target_port_group(struct path * pp, unsigned int timeout)
 		if (rc < 0)
 			goto out;
 
-		scsi_buflen = (buf[2] << 8 | buf[3]) + 4;
+		scsi_buflen = get_unaligned_be16(&buf[2]) + 4;
 		/* Paranoia */
 		if (scsi_buflen >= USHRT_MAX)
 			scsi_buflen = USHRT_MAX;
@@ -251,7 +252,7 @@ get_target_port_group(struct path * pp, unsigned int timeout)
 				continue;
 			}
 			p  = (struct vpd83_tpg_dscr *)dscr->data;
-			rc = get_uint16(p->tpg);
+			rc = get_unaligned_be16(p->tpg);
 		}
 	}
 
@@ -274,7 +275,7 @@ do_rtpg(int fd, void* resp, long resplen, unsigned int timeout)
 	memset(&cmd, 0, sizeof(cmd));
 	cmd.op			= OPERATION_CODE_RTPG;
 	rtpg_command_set_service_action(&cmd);
-	set_uint32(cmd.length, resplen);
+	put_unaligned_be32(resplen, cmd.length);
 	PRINT_HEX((unsigned char *) &cmd, sizeof(cmd));
 
 	memset(&hdr, 0, sizeof(hdr));
@@ -321,7 +322,7 @@ get_asymmetric_access_state(int fd, unsigned int tpg, unsigned int timeout)
 	rc = do_rtpg(fd, buf, buflen, timeout);
 	if (rc < 0)
 		goto out;
-	scsi_buflen = (buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3]) + 4;
+	scsi_buflen = get_unaligned_be32(&buf[0]) + 4;
 	if (scsi_buflen > UINT_MAX)
 		scsi_buflen = UINT_MAX;
 	if (buflen < scsi_buflen) {
@@ -342,7 +343,7 @@ get_asymmetric_access_state(int fd, unsigned int tpg, unsigned int timeout)
 	tpgd = (struct rtpg_data *) buf;
 	rc   = -RTPG_TPG_NOT_FOUND;
 	RTPG_FOR_EACH_PORT_GROUP(tpgd, dscr) {
-		if (get_uint16(dscr->tpg) == tpg) {
+		if (get_unaligned_be16(dscr->tpg) == tpg) {
 			if (rc != -RTPG_TPG_NOT_FOUND) {
 				PRINT_DEBUG("get_asymmetric_access_state: "
 					"more than one entry with same port "
