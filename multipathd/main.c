@@ -964,6 +964,14 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 				strcpy(pp->wwid, wwid);
 			else
 				pp->wwid_changed = 0;
+		} else {
+			udev_device_unref(pp->udev);
+			pp->udev = udev_device_ref(uev->udev);
+			conf = get_multipath_config();
+			if (pathinfo(pp, conf, DI_SYSFS|DI_NOIO) != PATHINFO_OK)
+				condlog(1, "%s: pathinfo failed after change uevent",
+					uev->kernel);
+			put_multipath_config(conf);
 		}
 
 		if (pp->initialized == INIT_REQUESTED_UDEV)
