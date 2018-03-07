@@ -81,5 +81,6 @@ extern int process_file(struct config *conf, char *conf_file);
 extern struct keyword * find_keyword(vector keywords, vector v, char * name);
 int snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw,
 		    const void *data);
+bool is_quote(const char* token);
 
 #endif

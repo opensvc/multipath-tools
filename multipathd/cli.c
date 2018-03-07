@@ -279,7 +279,7 @@ get_cmdvec (char * cmd, vector *v)
 	}
 
 	vector_foreach_slot(strvec, buff, i) {
-		if (*buff == '"')
+		if (is_quote(buff))
 			continue;
 		if (get_param) {
 			get_param = 0;

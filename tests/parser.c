@@ -34,11 +34,6 @@
 /* Stop parsing at 2nd quote */
 #define TWO_QUOTES_ONLY 0
 
-static bool is_quote(const char *s)
-{
-	return *s == '"';
-}
-
 static char *test_file = "test.conf";
 
 /* Missing declaration */
