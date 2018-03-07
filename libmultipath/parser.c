@@ -262,7 +262,8 @@ alloc_strvec(char *string)
 		}
 		vector_set_slot(strvec, token);
 
-		while ((isspace((int) *cp) || !isascii((int) *cp))
+		while ((!in_string &&
+			(isspace((int) *cp) || !isascii((int) *cp)))
 		       && *cp != '\0')
 			cp++;
 		if (*cp == '\0' || *cp == '!' || *cp == '#')
