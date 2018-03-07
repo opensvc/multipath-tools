@@ -53,8 +53,8 @@ alloc_path_with_pathinfo (struct config *conf, struct udev_device *udevice,
 	if (!pp)
 		return PATHINFO_FAILED;
 
-	if(wwid)
-		strncpy(pp->wwid, wwid, sizeof(pp->wwid));
+	if (wwid)
+		strlcpy(pp->wwid, wwid, sizeof(pp->wwid));
 
 	if (safe_sprintf(pp->dev, "%s", devname)) {
 		condlog(0, "pp->dev too small");
