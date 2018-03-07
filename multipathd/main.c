@@ -1212,7 +1212,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(LIST+PATHS+RAW+FMT, cli_list_paths_raw);
 	set_handler_callback(LIST+PATH, cli_list_path);
 	set_handler_callback(LIST+MAPS, cli_list_maps);
-	set_unlocked_handler_callback(LIST+STATUS, cli_list_status);
+	set_handler_callback(LIST+STATUS, cli_list_status);
 	set_unlocked_handler_callback(LIST+DAEMON, cli_list_daemon);
 	set_handler_callback(LIST+MAPS+STATUS, cli_list_maps_status);
 	set_handler_callback(LIST+MAPS+STATS, cli_list_maps_stats);
