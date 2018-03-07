@@ -221,6 +221,57 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 18,
 		.prio_name     = PRIO_ALUA,
 	},
+	{
+		/* Nimble Storage */
+		.vendor        = "Nimble",
+		.product       = "Server",
+		.hwhandler     = "1 alua",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+	},
+		/* SGI */
+	{
+		.vendor        = "SGI",
+		.product       = "TP9100",
+		.pgpolicy      = MULTIBUS,
+	},
+	{
+		/* Total Performance family */
+		.vendor        = "SGI",
+		.product       = "TP9[3457]00",
+		.bl_product    = "Universal Xport",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.checker_name  = RDAC,
+		.features      = "2 pg_init_retries 50",
+		.hwhandler     = "1 rdac",
+		.prio_name     = PRIO_RDAC,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 30,
+	},
+	{
+		/* InfiniteStorage family */
+		.vendor        = "SGI",
+		.product       = "IS",
+		.bl_product    = "Universal Xport",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.checker_name  = RDAC,
+		.features      = "2 pg_init_retries 50",
+		.hwhandler     = "1 rdac",
+		.prio_name     = PRIO_RDAC,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 30,
+	},
+	{
+		/* DDN */
+		.vendor        = "SGI",
+		.product       = "^DD[46]A-",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 30,
+	},
 	/*
 	 * DataDirect Networks
 	 */
@@ -707,49 +758,6 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	/*
-	 * SGI
-	 */
-	{
-		.vendor        = "SGI",
-		.product       = "TP9100",
-		.pgpolicy      = MULTIBUS,
-	},
-	{
-		/* Total Performance family */
-		.vendor        = "SGI",
-		.product       = "TP9[3457]00",
-		.bl_product    = "Universal Xport",
-		.pgpolicy      = GROUP_BY_PRIO,
-		.checker_name  = RDAC,
-		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
-		.prio_name     = PRIO_RDAC,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.no_path_retry = 30,
-	},
-	{
-		/* InfiniteStorage family */
-		.vendor        = "SGI",
-		.product       = "IS",
-		.bl_product    = "Universal Xport",
-		.pgpolicy      = GROUP_BY_PRIO,
-		.checker_name  = RDAC,
-		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
-		.prio_name     = PRIO_RDAC,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.no_path_retry = 30,
-	},
-	{
-		/* DDN */
-		.vendor        = "SGI",
-		.product       = "^DD[46]A-",
-		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.prio_name     = PRIO_ALUA,
-		.no_path_retry = 30,
-	},
-	/*
 	 * NEC
 	 */
 	{
@@ -1012,18 +1020,6 @@ static struct hwentry default_hw[] = {
 		.flush_on_last_del = FLUSH_ENABLED,
 		.fast_io_fail  = 15,
 		.dev_loss      = 15,
-	},
-	/*
-	 * Nimble Storage
-	 */
-	{
-		.vendor        = "Nimble",
-		.product       = "Server",
-		.hwhandler     = "1 alua",
-		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.prio_name     = PRIO_ALUA,
-		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
 	/*
 	 * Kaminario
