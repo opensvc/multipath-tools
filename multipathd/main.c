@@ -940,15 +940,18 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 	pp = find_path_by_dev(vecs->pathvec, uev->kernel);
 	if (pp) {
 		struct multipath *mpp = pp->mpp;
+		char wwid[WWID_SIZE];
 
-		if (disable_changed_wwids &&
-		    (strlen(pp->wwid) || pp->wwid_changed)) {
-			char wwid[WWID_SIZE];
+		strcpy(wwid, pp->wwid);
+		get_uid(pp, pp->state, uev->udev);
 
-			strcpy(wwid, pp->wwid);
-			get_uid(pp, pp->state, uev->udev);
-			if (strcmp(wwid, pp->wwid) != 0) {
-				condlog(0, "%s: path wwid changed from '%s' to '%s'. disallowing", uev->kernel, wwid, pp->wwid);
+		if (strncmp(wwid, pp->wwid, WWID_SIZE) != 0) {
+			condlog(0, "%s: path wwid changed from '%s' to '%s'. %s",
+				uev->kernel, wwid, pp->wwid,
+				(disable_changed_wwids ? "disallowing" :
+				 "continuing"));
+			if (disable_changed_wwids &&
+			    (strlen(wwid) || pp->wwid_changed)) {
 				strcpy(pp->wwid, wwid);
 				if (!pp->wwid_changed) {
 					pp->wwid_changed = 1;
@@ -957,7 +960,9 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 						dm_fail_path(pp->mpp->alias, pp->dev_t);
 				}
 				goto out;
-			} else
+			} else if (!disable_changed_wwids)
+				strcpy(pp->wwid, wwid);
+			else
 				pp->wwid_changed = 0;
 		}
 
