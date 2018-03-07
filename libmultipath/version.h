@@ -20,8 +20,8 @@
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define VERSION_CODE 0x000704
-#define DATE_CODE    0x0b0f11
+#define VERSION_CODE 0x000705
+#define DATE_CODE    0x030712
 
 #define PROG    "multipath-tools"
 
