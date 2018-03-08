@@ -826,7 +826,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 			vector_del_slot(mpp->paths, i);
 
 		/*
-		 * remove the map IFF removing the last path
+		 * remove the map IF removing the last path
 		 */
 		if (VECTOR_SIZE(mpp->paths) == 0) {
 			char alias[WWID_SIZE];
@@ -1448,7 +1448,7 @@ defered_failback_tick (vector mpvec)
 
 	vector_foreach_slot (mpvec, mpp, i) {
 		/*
-		 * defered failback getting sooner
+		 * deferred failback getting sooner
 		 */
 		if (mpp->pgfailback > 0 && mpp->failback_tick > 0) {
 			mpp->failback_tick--;

@@ -580,7 +580,7 @@ process_file(struct config *conf, char *file)
 	FILE *stream;
 
 	if (!conf->keywords) {
-		condlog(0, "No keywords alocated");
+		condlog(0, "No keywords allocated");
 		return 1;
 	}
 	stream = fopen(file, "r");

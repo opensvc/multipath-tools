@@ -493,7 +493,7 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 		thread[i].param.noisy = noisy;
 		thread[i].param.status = MPATH_PR_SKIP;
 
-		condlog (3, "THRED ID [%d] INFO]", i);
+		condlog (3, "THREAD ID [%d] INFO]", i);
 		condlog (3, "rq_servact=%d ", thread[i].param.rq_servact);
 		condlog (3, "rq_scope=%d ", thread[i].param.rq_scope);
 		condlog (3, "rq_type=%d ", thread[i].param.rq_type);

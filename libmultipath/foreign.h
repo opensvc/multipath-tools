@@ -74,7 +74,7 @@ struct foreign {
 	 * @retval FOREIGN_CLAIMED: device newly claimed
 	 * @retval FOREIGN_OK: device already registered, no action taken
 	 * @retval FOREIGN_IGNORED: device is ignored, no action taken
-	 * @retval FOREIGN_ERR: an error occured (e.g. out-of-memory)
+	 * @retval FOREIGN_ERR: an error occurred (e.g. out-of-memory)
 	 */
 	int (*add)(struct context *, struct udev_device *);
 
@@ -87,7 +87,7 @@ struct foreign {
 	 * @returns status code
 	 * @retval FOREIGN_OK: event processed
 	 * @retval FOREIGN_IGNORED: the device is ignored
-	 * @retval FOREIGN_ERR: an error occured (e.g. out-of-memory)
+	 * @retval FOREIGN_ERR: an error occurred (e.g. out-of-memory)
 	 *
 	 * Note: theoretically it can happen that the status of a foreign device
 	 * (claimed vs. not claimed) changes in a change event.
@@ -107,7 +107,7 @@ struct foreign {
 	 * @returns status code
 	 * @retval FOREIGN_OK: processed correctly (device deleted)
 	 * @retval FOREIGN_IGNORED: device wasn't registered internally
-	 * @retval FOREIGN_ERR: error occured.
+	 * @retval FOREIGN_ERR: error occurred.
 	 */
 	int (*delete)(struct context *, struct udev_device *);
 
@@ -120,7 +120,7 @@ struct foreign {
 	 * @returns status code
 	 * @retval FOREIGN_OK: processed correctly
 	 * @retval FOREIGN_IGNORED: nothing to delete
-	 * @retval FOREIGN_ERR: error occured
+	 * @retval FOREIGN_ERR: error occurred
 	 */
 	int (*delete_all)(struct context*);
 
@@ -135,13 +135,13 @@ struct foreign {
 	void (*check)(struct context *);
 
 	/**
-	 * lock internal data stuctures.
+	 * lock internal data structures.
 	 * @param[in] ctx: foreign context
 	 */
 	void (*lock)(struct context *ctx);
 
 	/**
-	 * unlock internal data stuctures.
+	 * unlock internal data structures.
 	 * @param[in] ctx: foreign context (void* in order to use the function
 	 *	as argument to pthread_cleanup_push())
 	 */
@@ -217,7 +217,7 @@ void cleanup_foreign(void);
  * @retval FOREIGN_CLAIMED: newly claimed by a foreign lib
  * @retval FOREIGN_OK: already claimed by a foreign lib
  * @retval FOREIGN_IGNORED: ignored by all foreign libs
- * @retval FOREIGN_ERR: an error occured
+ * @retval FOREIGN_ERR: an error occurred
  */
 int add_foreign(struct udev_device *);
 
@@ -309,7 +309,7 @@ void print_foreign_topology(int verbosity);
 /**
  * is_claimed_by_foreign(ud)
  * @param udev: udev device
- * @returns: true iff device is (newly or already) claimed by a foreign lib
+ * @returns: true if device is (newly or already) claimed by a foreign lib
  */
 static inline bool
 is_claimed_by_foreign(struct udev_device *ud)

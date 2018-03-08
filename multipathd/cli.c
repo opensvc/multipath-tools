@@ -621,7 +621,7 @@ key_generator (const char * str, int state)
 		len = strlen(str);
 		int r = get_cmdvec(rl_line_buffer, &v);
 		/*
-		 * If a word completion is in progess, we don't want
+		 * If a word completion is in progress, we don't want
 		 * to take an exact keyword match in the fingerprint.
 		 * For ex "show map[tab]" would validate "map" and discard
 		 * "maps" as a valid candidate.

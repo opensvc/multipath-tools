@@ -88,7 +88,7 @@ struct inquiry_data {
 	unsigned char	b0;		/* xxx..... = peripheral_qualifier   */
 					/* ...xxxxx = peripheral_device_type */
 	unsigned char	b1;             /* x....... = removable medium       */
-					/* .xxxxxxx = reserverd              */
+					/* .xxxxxxx = reserved              */
 	unsigned char	version;
 	unsigned char	b3;		/* xx...... = obsolete               */
 					/* ..x..... = normal aca supported   */
@@ -207,7 +207,7 @@ struct vpd83_data {
 		)
 
 /*=============================================================================
- * The following stuctures and macros are used to call the report target port
+ * The following structures and macros are used to call the report target port
  * groups command defined in SPC-3.
  * This command is used to get information about the target port groups (which
  * states are supported, which ports belong to this group, and so on) and the

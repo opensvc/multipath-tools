@@ -38,7 +38,7 @@
  * ! 9  ! Allocated             !
  * +----+-----------------------+
  *
- * global variabel debug bit 9 ( 512 ) used to
+ * global variable debug bit 9 ( 512 ) used to
  * flag some memory error.
  *
  */

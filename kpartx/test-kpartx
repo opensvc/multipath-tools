@@ -22,7 +22,7 @@
 # stale DM or loop devices may keep lurking around.
 
 # Set WORKDIR in environment to existing dir to for persistence
-# WARNING:  exisiting files will be truncated.
+# WARNING:  existing files will be truncated.
 # If empty, test will be done in temporary dir
 : ${WORKDIR:=}
 # Set this environment variable to test an alternative kpartx executable

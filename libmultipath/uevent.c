@@ -259,7 +259,7 @@ merge_need_stop(struct uevent *earlier, struct uevent *later)
 	if (!earlier->wwid || !later->wwid)
 		return true;
 	/*
-	 * uevents merging stoped
+	 * uevents merging stopped
 	 * when we meet an opposite action uevent from the same LUN to AVOID
 	 * "add path1 |remove path1 |add path2 |remove path2 |add path3"
 	 * to merge as "remove path1, path2" and "add path1, path2, path3"

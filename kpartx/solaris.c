@@ -10,7 +10,7 @@
 
 struct solaris_x86_slice {
 	unsigned short	s_tag;		/* ID tag of partition */
-	unsigned short	s_flag;		/* permision flags */
+	unsigned short	s_flag;		/* permission flags */
 	long		s_start;	/* start sector no of partition */
 	long		s_size;		/* # of blocks in partition */
 };

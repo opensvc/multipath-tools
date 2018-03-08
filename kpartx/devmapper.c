@@ -302,7 +302,7 @@ out:
 /*
  * dm_get_first_dep
  *
- * Return the device number of the first dependend device
+ * Return the device number of the first dependent device
  * for a given target.
  */
 dev_t dm_get_first_dep(char *devname)

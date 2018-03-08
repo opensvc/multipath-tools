@@ -304,7 +304,7 @@ static int _process_cmd(struct dmmp_context *ctx, int fd, const char *cmd,
 		ipc_tmo = _DEFAULT_UXSOCK_TIMEOUT;
 
 invoke:
-	_debug(ctx, "Invoking IPC command '%s' with IPC tmo %u miliseconds",
+	_debug(ctx, "Invoking IPC command '%s' with IPC tmo %u milliseconds",
 	       cmd, ipc_tmo);
 	flag_check_tmo = false;
 	if (mpath_process_cmd(fd, cmd, output, ipc_tmo) != 0) {
