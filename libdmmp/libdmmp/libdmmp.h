@@ -389,7 +389,7 @@ DMMP_DLL_EXPORT const char *dmmp_mpath_name_get(struct dmmp_mpath *dmmp_mp);
  * dmmp_mpath_kdev_name_get() - Retrieve kernel DEVNAME of certain mpath.
  *
  * Retrieve DEVNAME name used by kernel uevent of specified mpath.
- * Example: 'dm-1'.
+ * For example: 'dm-1'.
  *
  * @dmmp_mp:
  *	Pointer of 'struct dmmp_mpath'.
@@ -553,8 +553,8 @@ DMMP_DLL_EXPORT void dmmp_path_array_get(struct dmmp_path_group *dmmp_pg,
 /**
  * dmmp_path_blk_name_get() - Retrieve block name.
  *
- * Retrieve block name of certain path. The example of block names are 'sda',
- * 'nvme0n1'.
+ * Retrieve block name of certain path. The example of block names are "sda",
+ * "nvme0n1".
  *
  * @dmmp_p:
  *	Pointer of 'struct dmmp_path'.
