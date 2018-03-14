@@ -130,7 +130,27 @@ dm_lib_prereq (void)
 }
 
 int
-dm_drv_version (unsigned int * version, char * str)
+dm_drv_version(unsigned int *v)
+{
+	char buff[64];
+
+	v[0] = 0;
+	v[1] = 0;
+	v[2] = 0;
+
+	if (!dm_driver_version(buff, sizeof(buff))) {
+		condlog(0, "cannot get kernel dm version");
+		return 1;
+	}
+	if (sscanf(buff, "%u.%u.%u ", &v[0], &v[1], &v[2]) != 3) {
+		condlog(0, "invalid kernel dm version '%s'", buff);
+		return 1;
+	}
+	return 0;
+}
+
+int
+dm_tgt_version (unsigned int * version, char * str)
 {
 	int r = 2;
 	struct dm_task *dmt;
@@ -177,13 +197,13 @@ out:
 }
 
 static int
-dm_drv_prereq (unsigned int *ver)
+dm_tgt_prereq (unsigned int *ver)
 {
 	unsigned int minv[3] = {1, 0, 3};
 	unsigned int version[3] = {0, 0, 0};
 	unsigned int * v = version;
 
-	if (dm_drv_version(v, TGT_MPATH)) {
+	if (dm_tgt_version(v, TGT_MPATH)) {
 		/* in doubt return not capable */
 		return 1;
 	}
@@ -208,7 +228,7 @@ static int dm_prereq(unsigned int *v)
 {
 	if (dm_lib_prereq())
 		return 1;
-	return dm_drv_prereq(v);
+	return dm_tgt_prereq(v);
 }
 
 static int libmp_dm_udev_sync = 0;

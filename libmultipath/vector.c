@@ -145,18 +145,26 @@ vector_repack(vector v)
 			vector_del_slot(v, i--);
 }
 
-/* Free memory vector allocation */
-void
-vector_free(vector v)
+vector
+vector_reset(vector v)
 {
 	if (!v)
-		return;
+		return NULL;
 
 	if (v->slot)
 		FREE(v->slot);
 
 	v->allocated = 0;
 	v->slot = NULL;
+	return v;
+}
+
+/* Free memory vector allocation */
+void
+vector_free(vector v)
+{
+	if (!vector_reset(v))
+		return;
 	FREE(v);
 }
 
