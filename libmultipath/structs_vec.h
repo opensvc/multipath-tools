@@ -29,6 +29,8 @@ void extract_hwe_from_path(struct multipath * mpp);
 #define PURGE_VEC 1
 
 void remove_map (struct multipath * mpp, struct vectors * vecs, int purge_vec);
+void remove_map_by_alias(const char *alias, struct vectors * vecs,
+			 int purge_vec);
 void remove_maps (struct vectors * vecs);
 
 void sync_map_state (struct multipath *);

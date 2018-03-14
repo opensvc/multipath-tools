@@ -130,6 +130,14 @@ remove_map(struct multipath * mpp, struct vectors * vecs, int purge_vec)
 }
 
 void
+remove_map_by_alias(const char *alias, struct vectors * vecs, int purge_vec)
+{
+	struct multipath * mpp = find_mp_by_alias(vecs->mpvec, alias);
+	if (mpp)
+		remove_map(mpp, vecs, purge_vec);
+}
+
+void
 remove_maps(struct vectors * vecs)
 {
 	int i;

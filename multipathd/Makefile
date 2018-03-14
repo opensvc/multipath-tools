@@ -21,8 +21,12 @@ ifdef SYSTEMD
 		LIBDEPS += -lsystemd-daemon
 	endif
 endif
+ifeq ($(ENABLE_DMEVENTS_POLL),0)
+	CFLAGS += -DNO_DMEVENTS_POLL
+endif
 
-OBJS = main.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o waiter.o
+OBJS = main.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o waiter.o \
+       dmevents.o
 
 EXEC = multipathd
 

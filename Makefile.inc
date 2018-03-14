@@ -14,6 +14,9 @@
 #
 # Uncomment to disable libdmmp support
 # ENABLE_LIBDMMP = 0
+#
+# Uncomment to disable dmevents polling support
+# ENABLE_DMEVENTS_POLL = 0
 
 ifeq ($(TOPDIR),)
 	TOPDIR	= ..
