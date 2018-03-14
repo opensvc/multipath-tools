@@ -2219,9 +2219,8 @@ handle_signals(bool nonfatal)
 	}
 	if (log_reset_sig) {
 		condlog(2, "reset log (signal)");
-		pthread_mutex_lock(&logq_lock);
-		log_reset("multipathd");
-		pthread_mutex_unlock(&logq_lock);
+		if (logsink == 1)
+			log_thread_reset();
 	}
 	reconfig_sig = 0;
 	log_reset_sig = 0;

@@ -14,13 +14,13 @@
 #include "log.h"
 #include "lock.h"
 
-pthread_t log_thr;
+static pthread_t log_thr;
 
-pthread_mutex_t logq_lock;
-pthread_mutex_t logev_lock;
-pthread_cond_t logev_cond;
+static pthread_mutex_t logq_lock;
+static pthread_mutex_t logev_lock;
+static pthread_cond_t logev_cond;
 
-int logq_running;
+static int logq_running;
 
 void log_safe (int prio, const char * fmt, va_list ap)
 {
@@ -36,19 +36,6 @@ void log_safe (int prio, const char * fmt, va_list ap)
 	pthread_mutex_lock(&logev_lock);
 	pthread_cond_signal(&logev_cond);
 	pthread_mutex_unlock(&logev_lock);
-}
-
-void log_thread_flush (void)
-{
-	int empty;
-
-	do {
-		pthread_mutex_lock(&logq_lock);
-		empty = log_dequeue(la->buff);
-		pthread_mutex_unlock(&logq_lock);
-		if (!empty)
-			log_syslog(la->buff);
-	} while (empty == 0);
 }
 
 static void flush_logqueue (void)
@@ -82,7 +69,7 @@ static void * log_thread (void * et)
 		pthread_mutex_unlock(&logev_lock);
 		if (!running)
 			break;
-		log_thread_flush();
+		flush_logqueue();
 	}
 	return NULL;
 }
@@ -105,6 +92,15 @@ void log_thread_start (pthread_attr_t *attr)
 	}
 
 	return;
+}
+
+void log_thread_reset (void)
+{
+	logdbg(stderr,"resetting log\n");
+
+	pthread_mutex_lock(&logq_lock);
+	log_reset("multipathd");
+	pthread_mutex_unlock(&logq_lock);
 }
 
 void log_thread_stop (void)
