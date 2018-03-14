@@ -5,7 +5,7 @@
 #include <inttypes.h>
 
 size_t strchop(char *);
-int basenamecpy (const char * src, char * dst, int);
+int basenamecpy (const char *src, char *dst, size_t size);
 int filepresent (char * run);
 char *get_next_string(char **temp, char *split_char);
 int get_word (char * sentence, char ** word);

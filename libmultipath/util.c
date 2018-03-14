@@ -30,30 +30,21 @@ strchop(char *str)
 }
 
 int
-basenamecpy (const char * str1, char * str2, int str2len)
+basenamecpy (const char *src, char *dst, size_t size)
 {
-	const char *p;
+	const char *p, *e;
 
-	if (!str1 || !strlen(str1))
+	if (!src || !dst || !strlen(src))
 		return 0;
 
-	if (strlen(str1) >= str2len)
+	p = basename(src);
+
+	for (e = p + strlen(p) - 1; e >= p && isspace(*e); --e) ;
+	if (e < p || e - p > size - 2)
 		return 0;
 
-	if (!str2)
-		return 0;
-
-	p = str1 + (strlen(str1) - 1);
-
-	while (*--p != '/' && p != str1)
-		continue;
-
-	if (p != str1)
-		p++;
-
-	strncpy(str2, p, str2len);
-	str2[str2len - 1] = '\0';
-	return strchop(str2);
+	strlcpy(dst, p, e - p + 2);
+	return strlen(dst);
 }
 
 int
