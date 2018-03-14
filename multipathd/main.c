@@ -326,7 +326,7 @@ set_multipath_wwid (struct multipath * mpp)
 }
 
 static int
-update_map (struct multipath *mpp, struct vectors *vecs)
+update_map (struct multipath *mpp, struct vectors *vecs, int new_map)
 {
 	int retries = 3;
 	char params[PARAMS_SIZE] = {0};
@@ -356,6 +356,12 @@ retry:
 	dm_lib_release();
 
 fail:
+	if (new_map && (retries < 0 || start_waiter_thread(mpp, vecs))) {
+		condlog(0, "%s: failed to create new map", mpp->alias);
+		remove_map(mpp, vecs, 1);
+		return 1;
+	}
+
 	if (setup_multipath(vecs, mpp))
 		return 1;
 
@@ -400,11 +406,8 @@ add_map_without_path (struct vectors *vecs, const char *alias)
 
 	vector_set_slot(vecs->mpvec, mpp);
 
-	if (update_map(mpp, vecs) != 0) /* map removed */
+	if (update_map(mpp, vecs, 1) != 0) /* map removed */
 		return NULL;
-
-	if (start_waiter_thread(mpp, vecs))
-		goto out;
 
 	return mpp;
 out:
@@ -559,7 +562,7 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 		if (mpp->wait_for_udev > 1) {
 			condlog(2, "%s: performing delayed actions",
 				mpp->alias);
-			if (update_map(mpp, vecs))
+			if (update_map(mpp, vecs, 0))
 				/* setup multipathd removed the map */
 				return 1;
 		}
@@ -870,6 +873,11 @@ retry:
 	}
 	dm_lib_release();
 
+	if ((mpp->action == ACT_CREATE ||
+	     (mpp->action == ACT_NOTHING && start_waiter && !mpp->waiter)) &&
+	    start_waiter_thread(mpp, vecs))
+			goto fail_map;
+
 	/*
 	 * update our state from kernel regardless of create or reload
 	 */
@@ -877,11 +885,6 @@ retry:
 		goto fail; /* if setup_multipath fails, it removes the map */
 
 	sync_map_state(mpp);
-
-	if ((mpp->action == ACT_CREATE ||
-	     (mpp->action == ACT_NOTHING && start_waiter && !mpp->waiter)) &&
-	    start_waiter_thread(mpp, vecs))
-			goto fail_map;
 
 	if (retries >= 0) {
 		condlog(2, "%s [%s]: path added to devmap %s",
@@ -1518,7 +1521,8 @@ missing_uev_wait_tick(struct vectors *vecs)
 		if (mpp->wait_for_udev && --mpp->uev_wait_tick <= 0) {
 			timed_out = 1;
 			condlog(0, "%s: timeout waiting on creation uevent. enabling reloads", mpp->alias);
-			if (mpp->wait_for_udev > 1 && update_map(mpp, vecs)) {
+			if (mpp->wait_for_udev > 1 &&
+			    update_map(mpp, vecs, 0)) {
 				/* update_map removed map */
 				i--;
 				continue;
@@ -1550,7 +1554,7 @@ ghost_delay_tick(struct vectors *vecs)
 			condlog(0, "%s: timed out waiting for active path",
 				mpp->alias);
 			mpp->force_udev_reload = 1;
-			if (update_map(mpp, vecs) != 0) {
+			if (update_map(mpp, vecs, 0) != 0) {
 				/* update_map removed map */
 				i--;
 				continue;
@@ -2199,14 +2203,13 @@ configure (struct vectors * vecs)
 	 * start dm event waiter threads for these new maps
 	 */
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (setup_multipath(vecs, mpp)) {
-			i--;
-			continue;
-		}
 		if (start_waiter_thread(mpp, vecs)) {
 			remove_map(mpp, vecs, 1);
 			i--;
+			continue;
 		}
+		if (setup_multipath(vecs, mpp))
+			i--;
 	}
 	return 0;
 }
