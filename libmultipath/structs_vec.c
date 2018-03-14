@@ -10,7 +10,6 @@
 #include "structs.h"
 #include "structs_vec.h"
 #include "sysfs.h"
-#include "waiter.h"
 #include "devmapper.h"
 #include "dmparser.h"
 #include "propsel.h"
@@ -107,17 +106,6 @@ void orphan_paths(vector pathvec, struct multipath *mpp)
 		}
 	}
 }
-
-static void
-set_multipath_wwid (struct multipath * mpp)
-{
-	if (strlen(mpp->wwid))
-		return;
-
-	dm_get_uuid(mpp->alias, mpp->wwid);
-}
-
-#define PURGE_VEC 1
 
 void
 remove_map(struct multipath * mpp, struct vectors * vecs, int purge_vec)
@@ -378,92 +366,6 @@ sync_map_state(struct multipath *mpp)
 				dm_fail_path(mpp->alias, pp->dev_t);
 		}
 	}
-}
-
-int
-update_map (struct multipath *mpp, struct vectors *vecs)
-{
-	int retries = 3;
-	char params[PARAMS_SIZE] = {0};
-
-retry:
-	condlog(4, "%s: updating new map", mpp->alias);
-	if (adopt_paths(vecs->pathvec, mpp)) {
-		condlog(0, "%s: failed to adopt paths for new map update",
-			mpp->alias);
-		retries = -1;
-		goto fail;
-	}
-	verify_paths(mpp, vecs);
-	mpp->action = ACT_RELOAD;
-
-	extract_hwe_from_path(mpp);
-	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
-		condlog(0, "%s: failed to setup new map in update", mpp->alias);
-		retries = -1;
-		goto fail;
-	}
-	if (domap(mpp, params, 1) <= 0 && retries-- > 0) {
-		condlog(0, "%s: map_udate sleep", mpp->alias);
-		sleep(1);
-		goto retry;
-	}
-	dm_lib_release();
-
-fail:
-	if (setup_multipath(vecs, mpp))
-		return 1;
-
-	sync_map_state(mpp);
-
-	if (retries < 0)
-		condlog(0, "%s: failed reload in new map update", mpp->alias);
-	return 0;
-}
-
-struct multipath *add_map_without_path (struct vectors *vecs, const char *alias)
-{
-	struct multipath * mpp = alloc_multipath();
-	struct config *conf;
-
-	if (!mpp)
-		return NULL;
-	if (!alias) {
-		FREE(mpp);
-		return NULL;
-	}
-
-	mpp->alias = STRDUP(alias);
-
-	if (dm_get_info(mpp->alias, &mpp->dmi)) {
-		condlog(3, "%s: cannot access table", mpp->alias);
-		goto out;
-	}
-	set_multipath_wwid(mpp);
-	conf = get_multipath_config();
-	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
-	put_multipath_config(conf);
-
-	if (update_multipath_table(mpp, vecs->pathvec, 1))
-		goto out;
-	if (update_multipath_status(mpp))
-		goto out;
-
-	if (!vector_alloc_slot(vecs->mpvec))
-		goto out;
-
-	vector_set_slot(vecs->mpvec, mpp);
-
-	if (update_map(mpp, vecs) != 0) /* map removed */
-		return NULL;
-
-	if (start_waiter_thread(mpp, vecs))
-		goto out;
-
-	return mpp;
-out:
-	remove_map(mpp, vecs, PURGE_VEC);
-	return NULL;
 }
 
 static void

@@ -26,12 +26,12 @@ int update_multipath_strings (struct multipath *mpp, vector pathvec,
 			      int is_daemon);
 void extract_hwe_from_path(struct multipath * mpp);
 
+#define PURGE_VEC 1
+
 void remove_map (struct multipath * mpp, struct vectors * vecs, int purge_vec);
 void remove_maps (struct vectors * vecs);
 
 void sync_map_state (struct multipath *);
-int update_map (struct multipath *mpp, struct vectors *vecs);
-struct multipath * add_map_without_path (struct vectors * vecs, const char * alias);
 struct multipath * add_map_with_path (struct vectors * vecs,
 				struct path * pp, int add_vec);
 int update_multipath (struct vectors *vecs, char *mapname, int reset);
