@@ -21,6 +21,7 @@ static pthread_mutex_t logev_lock;
 static pthread_cond_t logev_cond;
 
 static int logq_running;
+static int log_messages_pending;
 
 void log_safe (int prio, const char * fmt, va_list ap)
 {
@@ -34,6 +35,7 @@ void log_safe (int prio, const char * fmt, va_list ap)
 	pthread_mutex_unlock(&logq_lock);
 
 	pthread_mutex_lock(&logev_lock);
+	log_messages_pending = 1;
 	pthread_cond_signal(&logev_cond);
 	pthread_mutex_unlock(&logev_lock);
 }
@@ -64,7 +66,9 @@ static void * log_thread (void * et)
 
 	while (1) {
 		pthread_mutex_lock(&logev_lock);
-		pthread_cond_wait(&logev_cond, &logev_lock);
+		if (logq_running && !log_messages_pending)
+			pthread_cond_wait(&logev_cond, &logev_lock);
+		log_messages_pending = 0;
 		running = logq_running;
 		pthread_mutex_unlock(&logev_lock);
 		if (!running)
