@@ -1855,7 +1855,6 @@ checkerloop (void *ap)
 	struct path *pp;
 	int count = 0;
 	unsigned int i;
-	struct itimerval timer_tick_it;
 	struct timespec last_time;
 	struct config *conf;
 
@@ -1873,8 +1872,7 @@ checkerloop (void *ap)
 
 	while (1) {
 		struct timespec diff_time, start_time, end_time;
-		int num_paths = 0, ticks = 0, signo, strict_timing, rc = 0;
-		sigset_t mask;
+		int num_paths = 0, ticks = 0, strict_timing, rc = 0;
 
 		if (clock_gettime(CLOCK_MONOTONIC, &start_time) != 0)
 			start_time.tv_sec = 0;
@@ -1962,25 +1960,18 @@ checkerloop (void *ap)
 		if (!strict_timing)
 			sleep(1);
 		else {
-			timer_tick_it.it_interval.tv_sec = 0;
-			timer_tick_it.it_interval.tv_usec = 0;
 			if (diff_time.tv_nsec) {
-				timer_tick_it.it_value.tv_sec = 0;
-				timer_tick_it.it_value.tv_usec =
+				diff_time.tv_sec = 0;
+				diff_time.tv_nsec =
 				     1000UL * 1000 * 1000 - diff_time.tv_nsec;
-			} else {
-				timer_tick_it.it_value.tv_sec = 1;
-				timer_tick_it.it_value.tv_usec = 0;
-			}
-			setitimer(ITIMER_REAL, &timer_tick_it, NULL);
+			} else
+				diff_time.tv_sec = 1;
 
-			sigemptyset(&mask);
-			sigaddset(&mask, SIGALRM);
 			condlog(3, "waiting for %lu.%06lu secs",
-				timer_tick_it.it_value.tv_sec,
-				timer_tick_it.it_value.tv_usec);
-			if (sigwait(&mask, &signo) != 0) {
-				condlog(3, "sigwait failed with error %d",
+				diff_time.tv_sec,
+				diff_time.tv_nsec / 1000);
+			if (nanosleep(&diff_time, NULL) != 0) {
+				condlog(3, "nanosleep failed with error %d",
 					errno);
 				conf = get_multipath_config();
 				conf->strict_timing = 0;
