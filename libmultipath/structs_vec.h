@@ -27,9 +27,7 @@ int update_multipath_strings (struct multipath *mpp, vector pathvec,
 void extract_hwe_from_path(struct multipath * mpp);
 
 void remove_map (struct multipath * mpp, struct vectors * vecs, int purge_vec);
-void remove_map_and_stop_waiter (struct multipath * mpp, struct vectors * vecs, int purge_vec);
 void remove_maps (struct vectors * vecs);
-void remove_maps_and_stop_waiters (struct vectors * vecs);
 
 void sync_map_state (struct multipath *);
 int update_map (struct multipath *mpp, struct vectors *vecs);

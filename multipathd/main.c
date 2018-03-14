@@ -293,6 +293,29 @@ switch_pathgroup (struct multipath * mpp)
 		 mpp->alias, mpp->bestpg);
 }
 
+static void
+remove_map_and_stop_waiter(struct multipath *mpp, struct vectors *vecs,
+			   int purge_vec)
+{
+	stop_waiter_thread(mpp, vecs);
+	remove_map(mpp, vecs, purge_vec);
+}
+
+static void
+remove_maps_and_stop_waiters(struct vectors *vecs)
+{
+	int i;
+	struct multipath * mpp;
+
+	if (!vecs)
+		return;
+
+	vector_foreach_slot(vecs->mpvec, mpp, i)
+		stop_waiter_thread(mpp, vecs);
+
+	remove_maps(vecs);
+}
+
 static int
 coalesce_maps(struct vectors *vecs, vector nmpv)
 {

@@ -117,23 +117,14 @@ set_multipath_wwid (struct multipath * mpp)
 	dm_get_uuid(mpp->alias, mpp->wwid);
 }
 
-#define KEEP_WAITER 0
-#define STOP_WAITER 1
 #define PURGE_VEC 1
 
-static void
-_remove_map (struct multipath * mpp, struct vectors * vecs,
-	    int stop_waiter, int purge_vec)
+void
+remove_map(struct multipath * mpp, struct vectors * vecs, int purge_vec)
 {
 	int i;
 
 	condlog(4, "%s: remove multipath map", mpp->alias);
-
-	/*
-	 * stop the DM event waiter thread
-	 */
-	if (stop_waiter)
-		stop_waiter_thread(mpp, vecs);
 
 	/*
 	 * clear references to this map
@@ -150,19 +141,8 @@ _remove_map (struct multipath * mpp, struct vectors * vecs,
 	free_multipath(mpp, KEEP_PATHS);
 }
 
-void remove_map(struct multipath *mpp, struct vectors *vecs, int purge_vec)
-{
-	_remove_map(mpp, vecs, KEEP_WAITER, purge_vec);
-}
-
-void remove_map_and_stop_waiter(struct multipath *mpp, struct vectors *vecs,
-				int purge_vec)
-{
-	_remove_map(mpp, vecs, STOP_WAITER, purge_vec);
-}
-
-static void
-_remove_maps (struct vectors * vecs, int stop_waiter)
+void
+remove_maps(struct vectors * vecs)
 {
 	int i;
 	struct multipath * mpp;
@@ -171,22 +151,12 @@ _remove_maps (struct vectors * vecs, int stop_waiter)
 		return;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
-		_remove_map(mpp, vecs, stop_waiter, 1);
+		remove_map(mpp, vecs, 1);
 		i--;
 	}
 
 	vector_free(vecs->mpvec);
 	vecs->mpvec = NULL;
-}
-
-void remove_maps(struct vectors *vecs)
-{
-	_remove_maps(vecs, KEEP_WAITER);
-}
-
-void remove_maps_and_stop_waiters(struct vectors *vecs)
-{
-	_remove_maps(vecs, STOP_WAITER);
 }
 
 void
