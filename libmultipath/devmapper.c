@@ -95,6 +95,7 @@ dm_write_log (int level, const char *file, int line, const char *f, ...)
 
 void dm_init(int v)
 {
+	dm_conf_verbosity = v;
 	dm_log_init(&dm_write_log);
 	dm_log_init_verbose(v + 3);
 }
