@@ -398,7 +398,7 @@ int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
 
 	return 0;
 out:
-	remove_map(mpp, vecs, PURGE_VEC);
+	remove_map_and_stop_waiter(mpp, vecs, PURGE_VEC);
 	return 1;
 }
 
