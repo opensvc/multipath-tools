@@ -22,6 +22,7 @@
 #include "structs_vec.h"
 #include "devmapper.h"
 #include "debug.h"
+#include "main.h"
 #include "dmevents.h"
 
 #ifndef DM_DEV_ARM_POLL

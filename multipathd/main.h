@@ -39,5 +39,9 @@ void * mpath_pr_event_handler_fn (void * );
 int update_map_pr(struct multipath *mpp);
 void * mpath_pr_event_handler_fn (void * pathp );
 void handle_signals(bool);
+int __setup_multipath (struct vectors * vecs, struct multipath * mpp,
+		       int reset);
+#define setup_multipath(vecs, mpp) __setup_multipath(vecs, mpp, 1)
+int update_multipath (struct vectors *vecs, char *mapname, int reset);
 
 #endif /* MAIN_H */

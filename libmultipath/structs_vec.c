@@ -290,61 +290,6 @@ void enter_recovery_mode(struct multipath *mpp)
 	put_multipath_config(conf);
 }
 
-static void set_no_path_retry(struct multipath *mpp)
-{
-	char is_queueing = 0;
-
-	mpp->nr_active = pathcount(mpp, PATH_UP) + pathcount(mpp, PATH_GHOST);
-	if (mpp->features && strstr(mpp->features, "queue_if_no_path"))
-		is_queueing = 1;
-
-	switch (mpp->no_path_retry) {
-	case NO_PATH_RETRY_UNDEF:
-		break;
-	case NO_PATH_RETRY_FAIL:
-		if (is_queueing)
-			dm_queue_if_no_path(mpp->alias, 0);
-		break;
-	case NO_PATH_RETRY_QUEUE:
-		if (!is_queueing)
-			dm_queue_if_no_path(mpp->alias, 1);
-		break;
-	default:
-		if (mpp->nr_active > 0) {
-			mpp->retry_tick = 0;
-			dm_queue_if_no_path(mpp->alias, 1);
-		} else if (is_queueing && mpp->retry_tick == 0)
-			enter_recovery_mode(mpp);
-		break;
-	}
-}
-
-int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
-		      int reset)
-{
-	if (dm_get_info(mpp->alias, &mpp->dmi)) {
-		/* Error accessing table */
-		condlog(3, "%s: cannot access table", mpp->alias);
-		goto out;
-	}
-
-	if (update_multipath_strings(mpp, vecs->pathvec, 1)) {
-		condlog(0, "%s: failed to setup multipath", mpp->alias);
-		goto out;
-	}
-
-	if (reset) {
-		set_no_path_retry(mpp);
-		if (VECTOR_SIZE(mpp->paths) != 0)
-			dm_cancel_deferred_remove(mpp);
-	}
-
-	return 0;
-out:
-	remove_map(mpp, vecs, PURGE_VEC);
-	return 1;
-}
-
 void
 sync_map_state(struct multipath *mpp)
 {
@@ -466,54 +411,6 @@ int verify_paths(struct multipath *mpp, struct vectors *vecs)
 		}
 	}
 	return count;
-}
-
-int update_multipath (struct vectors *vecs, char *mapname, int reset)
-{
-	struct multipath *mpp;
-	struct pathgroup  *pgp;
-	struct path *pp;
-	int i, j;
-
-	mpp = find_mp_by_alias(vecs->mpvec, mapname);
-
-	if (!mpp) {
-		condlog(3, "%s: multipath map not found", mapname);
-		return 2;
-	}
-
-	if (__setup_multipath(vecs, mpp, reset))
-		return 1; /* mpp freed in setup_multipath */
-
-	/*
-	 * compare checkers states with DM states
-	 */
-	vector_foreach_slot (mpp->pg, pgp, i) {
-		vector_foreach_slot (pgp->paths, pp, j) {
-			if (pp->dmstate != PSTATE_FAILED)
-				continue;
-
-			if (pp->state != PATH_DOWN) {
-				struct config *conf = get_multipath_config();
-				int oldstate = pp->state;
-				condlog(2, "%s: mark as failed", pp->dev);
-				mpp->stat_path_failures++;
-				pp->state = PATH_DOWN;
-				if (oldstate == PATH_UP ||
-				    oldstate == PATH_GHOST)
-					update_queue_mode_del_path(mpp);
-
-				/*
-				 * if opportune,
-				 * schedule the next check earlier
-				 */
-				if (pp->tick > conf->checkint)
-					pp->tick = conf->checkint;
-				put_multipath_config(conf);
-			}
-		}
-	}
-	return 0;
 }
 
 /*

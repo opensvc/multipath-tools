@@ -21,6 +21,7 @@
 #include "debug.h"
 #include "lock.h"
 #include "waiter.h"
+#include "main.h"
 
 pthread_attr_t waiter_attr;
 struct mutex_lock waiter_lock = { .mutex = PTHREAD_MUTEX_INITIALIZER };
