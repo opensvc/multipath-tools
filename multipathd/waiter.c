@@ -23,6 +23,7 @@
 #include "waiter.h"
 
 pthread_attr_t waiter_attr;
+struct mutex_lock waiter_lock = { .mutex = PTHREAD_MUTEX_INITIALIZER };
 
 static struct event_thread *alloc_waiter (void)
 {
@@ -59,8 +60,12 @@ void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 		mpp->waiter);
 	thread = mpp->waiter;
 	mpp->waiter = (pthread_t)0;
-	pthread_cancel(thread);
+	pthread_cleanup_push(cleanup_lock, &waiter_lock);
+	lock(&waiter_lock);
+	pthread_testcancel();
 	pthread_kill(thread, SIGUSR2);
+	pthread_cancel(thread);
+	lock_cleanup_pop(&waiter_lock);
 }
 
 /*
@@ -114,8 +119,13 @@ static int waiteventloop (struct event_thread *waiter)
 	dm_task_destroy(waiter->dmt);
 	waiter->dmt = NULL;
 
-	if (!r)	/* wait interrupted by signal */
-		return -1;
+	if (!r)	{ /* wait interrupted by signal. check for cancellation */
+		pthread_cleanup_push(cleanup_lock, &waiter_lock);
+		lock(&waiter_lock);
+		pthread_testcancel();
+		lock_cleanup_pop(&waiter_lock);
+		return 1; /* If we weren't cancelled, just reschedule */
+	}
 
 	waiter->event_nr++;
 
