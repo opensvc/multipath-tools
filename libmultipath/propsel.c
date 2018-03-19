@@ -150,7 +150,7 @@ int select_rr_weight(struct config *conf, struct multipath * mp)
 	mp_set_conf(rr_weight);
 	mp_set_default(rr_weight, DEFAULT_RR_WEIGHT);
 out:
-	print_rr_weight(buff, 13, &mp->rr_weight);
+	print_rr_weight(buff, 13, mp->rr_weight);
 	condlog(3, "%s: rr_weight = %s %s", mp->alias, buff, origin);
 	return 0;
 }
@@ -165,7 +165,7 @@ int select_pgfailback(struct config *conf, struct multipath * mp)
 	mp_set_conf(pgfailback);
 	mp_set_default(pgfailback, DEFAULT_FAILBACK);
 out:
-	print_pgfailback(buff, 13, &mp->pgfailback);
+	print_pgfailback(buff, 13, mp->pgfailback);
 	condlog(3, "%s: failback = %s %s", mp->alias, buff, origin);
 	return 0;
 }
@@ -310,14 +310,14 @@ void reconcile_features_with_options(const char *id, char **features, int* no_pa
 		if (*no_path_retry == NO_PATH_RETRY_UNDEF) {
 			*no_path_retry = NO_PATH_RETRY_QUEUE;
 			print_no_path_retry(buff, sizeof(buff),
-					    no_path_retry);
+					    *no_path_retry);
 			condlog(3, "%s: no_path_retry = %s (inherited setting from feature '%s')",
 				id, buff, q_i_n_p);
 		};
 		/* Warn only if features string is overridden */
 		if (*no_path_retry != NO_PATH_RETRY_QUEUE) {
 			print_no_path_retry(buff, sizeof(buff),
-					    no_path_retry);
+					    *no_path_retry);
 			condlog(2, "%s: ignoring feature '%s' because no_path_retry is set to '%s'",
 				id, q_i_n_p, buff);
 		}
@@ -566,7 +566,7 @@ int select_no_path_retry(struct config *conf, struct multipath *mp)
 	mp_set_hwe(no_path_retry);
 	mp_set_conf(no_path_retry);
 out:
-	print_no_path_retry(buff, 12, &mp->no_path_retry);
+	print_no_path_retry(buff, 12, mp->no_path_retry);
 	if (origin)
 		condlog(3, "%s: no_path_retry = %s %s", mp->alias, buff,
 			origin);
@@ -625,7 +625,7 @@ int select_fast_io_fail(struct config *conf, struct multipath *mp)
 	mp_set_conf(fast_io_fail);
 	mp_set_default(fast_io_fail, DEFAULT_FAST_IO_FAIL);
 out:
-	print_fast_io_fail(buff, 12, &mp->fast_io_fail);
+	print_fast_io_fail(buff, 12, mp->fast_io_fail);
 	condlog(3, "%s: fast_io_fail_tmo = %s %s", mp->alias, buff, origin);
 	return 0;
 }
@@ -640,7 +640,7 @@ int select_dev_loss(struct config *conf, struct multipath *mp)
 	mp->dev_loss = 0;
 	return 0;
 out:
-	print_dev_loss(buff, 12, &mp->dev_loss);
+	print_dev_loss(buff, 12, mp->dev_loss);
 	condlog(3, "%s: dev_loss_tmo = %s %s", mp->alias, buff, origin);
 	return 0;
 }
@@ -776,7 +776,7 @@ int select_delay_watch_checks(struct config *conf, struct multipath *mp)
 	mp_set_conf(delay_watch_checks);
 	mp_set_default(delay_watch_checks, DEFAULT_DELAY_CHECKS);
 out:
-	print_off_int_undef(buff, 12, &mp->delay_watch_checks);
+	print_off_int_undef(buff, 12, mp->delay_watch_checks);
 	condlog(3, "%s: delay_watch_checks = %s %s", mp->alias, buff, origin);
 	return 0;
 }
@@ -791,7 +791,7 @@ int select_delay_wait_checks(struct config *conf, struct multipath *mp)
 	mp_set_conf(delay_wait_checks);
 	mp_set_default(delay_wait_checks, DEFAULT_DELAY_CHECKS);
 out:
-	print_off_int_undef(buff, 12, &mp->delay_wait_checks);
+	print_off_int_undef(buff, 12, mp->delay_wait_checks);
 	condlog(3, "%s: delay_wait_checks = %s %s", mp->alias, buff, origin);
 	return 0;
 
@@ -807,7 +807,7 @@ int select_marginal_path_err_sample_time(struct config *conf, struct multipath *
 	mp_set_conf(marginal_path_err_sample_time);
 	mp_set_default(marginal_path_err_sample_time, DEFAULT_ERR_CHECKS);
 out:
-	print_off_int_undef(buff, 12, &mp->marginal_path_err_sample_time);
+	print_off_int_undef(buff, 12, mp->marginal_path_err_sample_time);
 	condlog(3, "%s: marginal_path_err_sample_time = %s %s", mp->alias, buff,
 			origin);
 	return 0;
@@ -823,7 +823,7 @@ int select_marginal_path_err_rate_threshold(struct config *conf, struct multipat
 	mp_set_conf(marginal_path_err_rate_threshold);
 	mp_set_default(marginal_path_err_rate_threshold, DEFAULT_ERR_CHECKS);
 out:
-	print_off_int_undef(buff, 12, &mp->marginal_path_err_rate_threshold);
+	print_off_int_undef(buff, 12, mp->marginal_path_err_rate_threshold);
 	condlog(3, "%s: marginal_path_err_rate_threshold = %s %s", mp->alias, buff,
 			origin);
 	return 0;
@@ -839,7 +839,7 @@ int select_marginal_path_err_recheck_gap_time(struct config *conf, struct multip
 	mp_set_conf(marginal_path_err_recheck_gap_time);
 	mp_set_default(marginal_path_err_recheck_gap_time, DEFAULT_ERR_CHECKS);
 out:
-	print_off_int_undef(buff, 12, &mp->marginal_path_err_recheck_gap_time);
+	print_off_int_undef(buff, 12, mp->marginal_path_err_recheck_gap_time);
 	condlog(3, "%s: marginal_path_err_recheck_gap_time = %s %s", mp->alias, buff,
 			origin);
 	return 0;
@@ -855,7 +855,7 @@ int select_marginal_path_double_failed_time(struct config *conf, struct multipat
 	mp_set_conf(marginal_path_double_failed_time);
 	mp_set_default(marginal_path_double_failed_time, DEFAULT_ERR_CHECKS);
 out:
-	print_off_int_undef(buff, 12, &mp->marginal_path_double_failed_time);
+	print_off_int_undef(buff, 12, mp->marginal_path_double_failed_time);
 	condlog(3, "%s: marginal_path_double_failed_time = %s %s", mp->alias, buff,
 			origin);
 	return 0;
@@ -908,7 +908,7 @@ int select_ghost_delay (struct config *conf, struct multipath * mp)
 	mp_set_conf(ghost_delay);
 	mp_set_default(ghost_delay, DEFAULT_GHOST_DELAY);
 out:
-	print_off_int_undef(buff, 12, &mp->ghost_delay);
+	print_off_int_undef(buff, 12, mp->ghost_delay);
 	condlog(3, "%s: ghost_delay = %s %s", mp->alias, buff, origin);
 	return 0;
 }
