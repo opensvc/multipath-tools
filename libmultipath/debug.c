@@ -12,6 +12,7 @@
 #include "vector.h"
 #include "config.h"
 #include "defaults.h"
+#include "debug.h"
 
 void dlog (int sink, int prio, const char * fmt, ...)
 {

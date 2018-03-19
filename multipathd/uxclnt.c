@@ -25,6 +25,7 @@
 
 #include "vector.h"
 #include "cli.h"
+#include "uxclnt.h"
 
 static void print_reply(char *s)
 {

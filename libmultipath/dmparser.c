@@ -13,6 +13,7 @@
 #include "structs.h"
 #include "util.h"
 #include "debug.h"
+#include "dmparser.h"
 
 #define WORD_SIZE 64
 

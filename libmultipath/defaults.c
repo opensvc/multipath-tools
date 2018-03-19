@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "defaults.h"
 #include "memory.h"
 
 char *

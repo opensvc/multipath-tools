@@ -22,6 +22,7 @@
 #include "sysfs.h"
 #include "prioritizers/alua_rtpg.h"
 #include "prkey.h"
+#include "propsel.h"
 #include <inttypes.h>
 #include <libudev.h>
 

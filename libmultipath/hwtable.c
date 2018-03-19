@@ -7,6 +7,7 @@
 #include "config.h"
 #include "pgpolicies.h"
 #include "prio.h"
+#include "hwtable.h"
 
 /*
  * Tuning suggestions on these parameters should go to

@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include "mpath_cmd.h"
+#include "dict.h"
 
 static int
 set_int(vector strvec, void *ptr)

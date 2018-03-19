@@ -11,6 +11,7 @@
 #include <libudev.h>
 #include "mpath_persist.h"
 #include "main.h"
+#include "debug.h"
 #include <pthread.h>
 #include <ctype.h>
 #include <string.h>

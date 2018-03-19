@@ -18,6 +18,7 @@
 #include "vector.h"
 #include "structs.h"
 #include "util.h"
+#include "callout.h"
 #include "debug.h"
 
 int execute_program(char *path, char *value, int len)

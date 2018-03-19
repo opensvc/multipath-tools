@@ -28,6 +28,7 @@
 #include "cli.h"
 #include "uevent.h"
 #include "foreign.h"
+#include "cli_handlers.h"
 
 int
 show_paths (char ** r, int * len, struct vectors * vecs, char * style,
