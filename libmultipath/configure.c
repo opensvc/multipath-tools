@@ -1063,9 +1063,6 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 			continue;
 		}
 
-		if (pp1->priority == PRIO_UNDEF)
-			mpp->action = ACT_REJECT;
-
 		if (!mpp->paths) {
 			condlog(0, "%s: skip coalesce (no paths)", mpp->alias);
 			remove_map(mpp, vecs, 0);
@@ -1091,8 +1088,6 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 					mpp->size);
 				mpp->action = ACT_REJECT;
 			}
-			if (pp2->priority == PRIO_UNDEF)
-				mpp->action = ACT_REJECT;
 		}
 		verify_paths(mpp, vecs);
 
