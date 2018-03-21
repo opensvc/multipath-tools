@@ -178,7 +178,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 
 	if (ux_sock == -1) {
 		condlog(1, "could not create uxsock: %d", errno);
-		return NULL;
+		exit_daemon();
 	}
 
 	pthread_cleanup_push(uxsock_cleanup, (void *)ux_sock);
@@ -187,7 +187,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 	polls = (struct pollfd *)MALLOC((MIN_POLLS + 1) * sizeof(struct pollfd));
 	if (!polls) {
 		condlog(0, "uxsock: failed to allocate poll fds");
-		return NULL;
+		exit_daemon();
 	}
 	sigfillset(&mask);
 	sigdelset(&mask, SIGINT);
@@ -249,6 +249,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 
 			/* something went badly wrong! */
 			condlog(0, "uxsock: poll failed with %d", errno);
+			exit_daemon();
 			break;
 		}
 
