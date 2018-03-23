@@ -19,6 +19,7 @@
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/wait.h>
+#include <urcu.h>
 
 #include "rados/librados.h"
 
@@ -517,6 +518,7 @@ static void cleanup_func(void *data)
 	pthread_spin_unlock(&ct->hldr_lock);
 	if (!holders)
 		cleanup_context(ct);
+	rcu_unregister_thread();
 }
 
 static void *rbd_thread(void *ctx)
@@ -524,11 +526,12 @@ static void *rbd_thread(void *ctx)
 	struct rbd_checker_context *ct = ctx;
 	int state;
 
+	/* This thread can be canceled, so setup clean up */
+	rbd_thread_cleanup_push(ct)
+	rcu_register_thread();
 	condlog(3, "rbd%d: thread starting up", ct->rbd_bus_id);
 
 	ct->message[0] = '\0';
-	/* This thread can be canceled, so setup clean up */
-	rbd_thread_cleanup_push(ct)
 
 	/* checker start up */
 	pthread_mutex_lock(&ct->lock);

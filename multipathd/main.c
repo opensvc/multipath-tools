@@ -3041,12 +3041,13 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 	struct prout_param_descriptor *param;
 	struct prin_resp *resp;
 
+	rcu_register_thread();
 	mpp = pp->mpp;
 
 	resp = mpath_alloc_prin_response(MPATH_PRIN_RKEY_SA);
 	if (!resp){
 		condlog(0,"%s Alloc failed for prin response", pp->dev);
-		return NULL;
+		goto out;
 	}
 
 	ret = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RKEY_SA, resp, 0);
@@ -3104,7 +3105,9 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 
 	free(param);
 out:
-	free(resp);
+	if (resp)
+		free(resp);
+	rcu_unregister_thread();
 	return NULL;
 }
 
