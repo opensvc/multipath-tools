@@ -171,8 +171,9 @@ snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw,
 			break;
 		case 'v':
 			conf = get_multipath_config();
+			pthread_cleanup_push(put_multipath_config, conf);
 			r = kw->print(conf, buff + fwd, len - fwd, data);
-			put_multipath_config(conf);
+			pthread_cleanup_pop(1);
 			if (!r) { /* no output if no value */
 				buff[0] = '\0';
 				return 0;

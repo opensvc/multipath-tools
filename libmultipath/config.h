@@ -232,6 +232,6 @@ struct config *load_config (char * file);
 struct config * alloc_config (void);
 void free_config (struct config * conf);
 extern struct config *get_multipath_config(void);
-extern void put_multipath_config(struct config *);
+extern void put_multipath_config(void *);
 
 #endif

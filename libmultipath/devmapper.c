@@ -241,12 +241,16 @@ void libmp_udev_set_sync_support(int on)
 void libmp_dm_init(void)
 {
 	struct config *conf;
+	int verbosity;
+	unsigned int version[3];
 
 	conf = get_multipath_config();
-	dm_init(conf->verbosity);
-	if (dm_prereq(conf->version))
-		exit(1);
+	verbosity = conf->verbosity;
+	memcpy(version, conf->version, sizeof(version));
 	put_multipath_config(conf);
+	dm_init(verbosity);
+	if (dm_prereq(version))
+		exit(1);
 	dm_udev_set_sync_support(libmp_dm_udev_sync);
 }
 

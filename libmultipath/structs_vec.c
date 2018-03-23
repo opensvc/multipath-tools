@@ -71,9 +71,10 @@ int adopt_paths(vector pathvec, struct multipath *mpp)
 			    store_path(mpp->paths, pp))
 					return 1;
 			conf = get_multipath_config();
+			pthread_cleanup_push(put_multipath_config, conf);
 			ret = pathinfo(pp, conf,
 				       DI_PRIO | DI_CHECKER);
-			put_multipath_config(conf);
+			pthread_cleanup_pop(1);
 			if (ret)
 				return 1;
 		}
@@ -276,7 +277,10 @@ update_multipath_strings(struct multipath *mpp, vector pathvec, int is_daemon)
 
 void enter_recovery_mode(struct multipath *mpp)
 {
+	int checkint;
 	struct config *conf = get_multipath_config();
+	checkint = conf->checkint;
+	put_multipath_config(conf);
 
 	/*
 	 * Enter retry mode.
@@ -284,10 +288,9 @@ void enter_recovery_mode(struct multipath *mpp)
 	 * starting retry.
 	 */
 	mpp->stat_queueing_timeouts++;
-	mpp->retry_tick = mpp->no_path_retry * conf->checkint + 1;
+	mpp->retry_tick = mpp->no_path_retry * checkint + 1;
 	condlog(1, "%s: Entering recovery mode: max_retries=%d",
 		mpp->alias, mpp->no_path_retry);
-	put_multipath_config(conf);
 }
 
 void

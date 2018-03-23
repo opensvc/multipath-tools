@@ -170,10 +170,11 @@ path_discovery (vector pathvec, int flag)
 		if(devtype && !strncmp(devtype, "disk", 4)) {
 			total_paths++;
 			conf = get_multipath_config();
+			pthread_cleanup_push(put_multipath_config, conf);
 			if (path_discover(pathvec, conf,
 					  udevice, flag) == PATHINFO_OK)
 				num_paths++;
-			put_multipath_config(conf);
+			pthread_cleanup_pop(1);
 		}
 		udev_device_unref(udevice);
 	}
@@ -1617,6 +1618,7 @@ get_prio (struct path * pp)
 {
 	struct prio * p;
 	struct config *conf;
+	int checker_timeout;
 
 	if (!pp)
 		return 0;
@@ -1624,9 +1626,10 @@ get_prio (struct path * pp)
 	p = &pp->prio;
 	if (!prio_selected(p)) {
 		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
 		select_detect_prio(conf, pp);
 		select_prio(conf, pp);
-		put_multipath_config(conf);
+		pthread_cleanup_pop(1);
 		if (!prio_selected(p)) {
 			condlog(3, "%s: no prio selected", pp->dev);
 			pp->priority = PRIO_UNDEF;
@@ -1634,8 +1637,9 @@ get_prio (struct path * pp)
 		}
 	}
 	conf = get_multipath_config();
-	pp->priority = prio_getprio(p, pp, conf->checker_timeout);
+	checker_timeout = conf->checker_timeout;
 	put_multipath_config(conf);
+	pp->priority = prio_getprio(p, pp, checker_timeout);
 	if (pp->priority < 0) {
 		condlog(3, "%s: %s prio error", pp->dev, prio_name(p));
 		pp->priority = PRIO_UNDEF;
@@ -1849,8 +1853,9 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev)
 
 	if (!pp->uid_attribute && !pp->getuid) {
 		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
 		select_getuid(conf, pp);
-		put_multipath_config(conf);
+		pthread_cleanup_pop(1);
 	}
 
 	memset(pp->wwid, 0, WWID_SIZE);

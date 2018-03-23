@@ -288,6 +288,8 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 	 * propsel.c if in doubt.
 	 */
 	conf = get_multipath_config();
+	pthread_cleanup_push(put_multipath_config, conf);
+
 	select_pgfailback(conf, mpp);
 	select_pgpolicy(conf, mpp);
 	select_selector(conf, mpp);
@@ -316,7 +318,7 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 	select_flush_on_last_del(conf, mpp);
 
 	sysfs_set_scsi_tmo(mpp, conf->checkint);
-	put_multipath_config(conf);
+	pthread_cleanup_pop(1);
 
 	if (mpp->marginal_path_double_failed_time > 0 &&
 	    mpp->marginal_path_err_sample_time > 0 &&
@@ -742,14 +744,16 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 {
 	int r = DOMAP_FAIL;
 	struct config *conf;
+	int verbosity;
 
 	/*
 	 * last chance to quit before touching the devmaps
 	 */
 	if (mpp->action == ACT_DRY_RUN) {
 		conf = get_multipath_config();
-		print_multipath_topology(mpp, conf->verbosity);
+		verbosity = conf->verbosity;
 		put_multipath_config(conf);
+		print_multipath_topology(mpp, verbosity);
 		return DOMAP_DRY;
 	}
 
@@ -807,16 +811,18 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 
 	case ACT_RENAME:
 		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
 		r = dm_rename(mpp->alias_old, mpp->alias,
 			      conf->partition_delim, mpp->skip_kpartx);
-		put_multipath_config(conf);
+		pthread_cleanup_pop(1);
 		break;
 
 	case ACT_FORCERENAME:
 		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
 		r = dm_rename(mpp->alias_old, mpp->alias,
 			      conf->partition_delim, mpp->skip_kpartx);
-		put_multipath_config(conf);
+		pthread_cleanup_pop(1);
 		if (r) {
 			sysfs_set_max_sectors_kb(mpp, 1);
 			if (mpp->ghost_delay_tick > 0 &&
@@ -952,17 +958,19 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 		}
 	}
 	vector_foreach_slot (pathvec, pp1, k) {
+		int invalid = 0;
 		/* skip this path for some reason */
 
 		/* 1. if path has no unique id or wwid blacklisted */
 		conf = get_multipath_config();
-		if (strlen(pp1->wwid) == 0 ||
-		    filter_path(conf, pp1) > 0) {
-			put_multipath_config(conf);
+		pthread_cleanup_push(put_multipath_config, conf);
+		if (strlen(pp1->wwid) == 0 || filter_path(conf, pp1) > 0)
+			invalid = 1;
+		pthread_cleanup_pop(1);
+		if (invalid) {
 			orphan_path(pp1, "wwid blacklisted");
 			continue;
 		}
-		put_multipath_config(conf);
 
 		/* 2. if path already coalesced */
 		if (pp1->mpp)
@@ -1082,9 +1090,12 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 		}
 
 		if (!is_daemon && mpp->action != ACT_NOTHING) {
+			int verbosity;
+
 			conf = get_multipath_config();
-			print_multipath_topology(mpp, conf->verbosity);
+			verbosity = conf->verbosity;
 			put_multipath_config(conf);
+			print_multipath_topology(mpp, verbosity);
 		}
 
 		if (newmp) {
@@ -1174,6 +1185,7 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 	char * refwwid = NULL, tmpwwid[WWID_SIZE];
 	int flags = DI_SYSFS | DI_WWID;
 	struct config *conf;
+	int invalid = 0;
 
 	if (!wwid)
 		return 1;
@@ -1201,9 +1213,10 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 				return 1;
 
 			conf = get_multipath_config();
+			pthread_cleanup_push(put_multipath_config, conf);
 			ret = store_pathinfo(pathvec, conf, udevice,
 					     flags, &pp);
-			put_multipath_config(conf);
+			pthread_cleanup_pop(1);
 			udev_device_unref(udevice);
 			if (!pp) {
 				if (ret == 1)
@@ -1213,12 +1226,13 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 			}
 		}
 		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
 		if (pp->udev && pp->uid_attribute &&
-		    filter_property(conf, pp->udev) > 0) {
-			put_multipath_config(conf);
+		    filter_property(conf, pp->udev) > 0)
+			invalid = 1;
+		pthread_cleanup_pop(1);
+		if (invalid)
 			return 2;
-		}
-		put_multipath_config(conf);
 
 		refwwid = pp->wwid;
 		goto out;
@@ -1239,9 +1253,10 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 				return 1;
 
 			conf = get_multipath_config();
+			pthread_cleanup_push(put_multipath_config, conf);
 			ret = store_pathinfo(pathvec, conf, udevice,
 					     flags, &pp);
-			put_multipath_config(conf);
+			pthread_cleanup_pop(1);
 			udev_device_unref(udevice);
 			if (!pp) {
 				if (ret == 1)
@@ -1251,12 +1266,13 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 			}
 		}
 		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
 		if (pp->udev && pp->uid_attribute &&
-		    filter_property(conf, pp->udev) > 0) {
-			put_multipath_config(conf);
+		    filter_property(conf, pp->udev) > 0)
+			invalid = 1;
+		pthread_cleanup_pop(1);
+		if (invalid)
 			return 2;
-		}
-		put_multipath_config(conf);
 		refwwid = pp->wwid;
 		goto out;
 	}
@@ -1268,22 +1284,24 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 			return 1;
 
 		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
 		ret = store_pathinfo(pathvec, conf, udevice,
 				     flags, &pp);
+		pthread_cleanup_pop(1);
 		udev_device_unref(udevice);
 		if (!pp) {
 			if (ret == 1)
-				condlog(0, "%s: can't store path info",
-					dev);
-			put_multipath_config(conf);
+				condlog(0, "%s: can't store path info", dev);
 			return ret;
 		}
+		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
 		if (pp->udev && pp->uid_attribute &&
-		    filter_property(conf, pp->udev) > 0) {
-			put_multipath_config(conf);
+		    filter_property(conf, pp->udev) > 0)
+			invalid = 1;
+		pthread_cleanup_pop(1);
+		if (invalid)
 			return 2;
-		}
-		put_multipath_config(conf);
 		refwwid = pp->wwid;
 		goto out;
 	}
@@ -1291,6 +1309,7 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 	if (dev_type == DEV_DEVMAP) {
 
 		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
 		if (((dm_get_uuid(dev, tmpwwid)) == 0) && (strlen(tmpwwid))) {
 			refwwid = tmpwwid;
 			goto check;
@@ -1302,7 +1321,6 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 		if (get_user_friendly_wwid(dev, tmpwwid,
 					   conf->bindings_file) == 0) {
 			refwwid = tmpwwid;
-			put_multipath_config(conf);
 			goto check;
 		}
 
@@ -1318,14 +1336,13 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 			refwwid = dev;
 
 check:
-		if (refwwid && strlen(refwwid)) {
-			if (filter_wwid(conf->blist_wwid, conf->elist_wwid,
-					refwwid, NULL) > 0) {
-				put_multipath_config(conf);
-				return 2;
-			}
-		}
-		put_multipath_config(conf);
+		if (refwwid && strlen(refwwid) &&
+		    filter_wwid(conf->blist_wwid, conf->elist_wwid, refwwid,
+				NULL) > 0)
+			invalid = 1;
+		pthread_cleanup_pop(1);
+		if (invalid)
+			return 2;
 	}
 out:
 	if (refwwid && strlen(refwwid)) {
@@ -1347,8 +1364,9 @@ int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
 	if (refresh) {
 		vector_foreach_slot (mpp->paths, pp, i) {
 			struct config *conf = get_multipath_config();
+			pthread_cleanup_push(put_multipath_config, conf);
 			r = pathinfo(pp, conf, DI_PRIO);
-			put_multipath_config(conf);
+			pthread_cleanup_pop(1);
 			if (r) {
 				condlog(2, "%s: failed to refresh pathinfo",
 					mpp->alias);

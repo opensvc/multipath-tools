@@ -92,8 +92,9 @@ replace_wwids(vector mp)
 	struct config *conf;
 
 	conf = get_multipath_config();
+	pthread_cleanup_push(put_multipath_config, conf);
 	fd = open_file(conf->wwids_file, &can_write, WWIDS_FILE_HEADER);
-	put_multipath_config(conf);
+	pthread_cleanup_pop(1);
 	if (fd < 0)
 		goto out;
 	if (!can_write) {
@@ -206,8 +207,9 @@ remove_wwid(char *wwid) {
 	}
 	condlog(3, "removing line '%s' from wwids file", str);
 	conf = get_multipath_config();
+	pthread_cleanup_push(put_multipath_config, conf);
 	fd = open_file(conf->wwids_file, &can_write, WWIDS_FILE_HEADER);
-	put_multipath_config(conf);
+	pthread_cleanup_pop(1);
 	if (fd < 0)
 		goto out;
 	if (!can_write) {
@@ -231,8 +233,9 @@ check_wwids_file(char *wwid, int write_wwid)
 	struct config *conf;
 
 	conf = get_multipath_config();
+	pthread_cleanup_push(put_multipath_config, conf);
 	fd = open_file(conf->wwids_file, &can_write, WWIDS_FILE_HEADER);
-	put_multipath_config(conf);
+	pthread_cleanup_pop(1);
 	if (fd < 0)
 		return -1;
 
@@ -273,17 +276,16 @@ out:
 int
 should_multipath(struct path *pp1, vector pathvec)
 {
-	int i, ignore_new_devs;
+	int i, ignore_new_devs, find_multipaths;
 	struct path *pp2;
 	struct config *conf;
 
 	conf = get_multipath_config();
 	ignore_new_devs = conf->ignore_new_devs;
-	if (!conf->find_multipaths && !ignore_new_devs) {
-		put_multipath_config(conf);
-		return 1;
-	}
+	find_multipaths = conf->find_multipaths;
 	put_multipath_config(conf);
+	if (find_multipaths && !ignore_new_devs)
+		return 1;
 
 	condlog(4, "checking if %s should be multipathed", pp1->dev);
 	if (!ignore_new_devs) {

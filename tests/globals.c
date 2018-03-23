@@ -14,5 +14,5 @@ struct config *get_multipath_config(void)
 	return &conf;
 }
 
-void put_multipath_config(struct config* c)
+void put_multipath_config(void *arg)
 {}

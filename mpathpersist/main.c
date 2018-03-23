@@ -48,7 +48,7 @@ struct config *get_multipath_config(void)
 	return multipath_conf;
 }
 
-void put_multipath_config(struct config *conf)
+void put_multipath_config(void * arg)
 {
 	/* Noop for now */
 }
