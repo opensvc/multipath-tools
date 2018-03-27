@@ -43,10 +43,13 @@ do {									\
 		goto out;						\
 	}								\
 } while(0)
+
+static char default_origin[] = "(setting: multipath internal)";
+
 #define do_default(dest, value)						\
 do {									\
 	dest = value;							\
-	origin = "(setting: multipath internal)";			\
+	origin = default_origin;					\
 } while(0)
 
 #define mp_set_mpe(var)							\
@@ -373,16 +376,20 @@ static int get_dh_state(struct path *pp, char *value, size_t value_len)
 
 int select_hwhandler(struct config *conf, struct multipath *mp)
 {
-	char *origin;
+	const char *origin;
 	struct path *pp;
 	/* dh_state is no longer than "detached" */
 	char handler[12];
+	static char alua_name[] = "1 alua";
+	static const char tpgs_origin[]= "(setting: autodetected from TPGS)";
 	char *dh_state;
 	int i;
+	bool all_tpgs = true;
 
 	dh_state = &handler[2];
 	if (mp->retain_hwhandler != RETAIN_HWHANDLER_OFF) {
 		vector_foreach_slot(mp->paths, pp, i) {
+			all_tpgs = all_tpgs && (pp->tpgs > 0);
 			if (get_dh_state(pp, dh_state, sizeof(handler) - 2) > 0
 			    && strcmp(dh_state, "detached")) {
 				memcpy(handler, "1 ", 2);
@@ -397,6 +404,14 @@ int select_hwhandler(struct config *conf, struct multipath *mp)
 	mp_set_conf(hwhandler);
 	mp_set_default(hwhandler, DEFAULT_HWHANDLER);
 out:
+	if (all_tpgs && !strcmp(mp->hwhandler, DEFAULT_HWHANDLER) &&
+		origin == default_origin) {
+		mp->hwhandler = alua_name;
+		origin = tpgs_origin;
+	} else if (!all_tpgs && !strcmp(mp->hwhandler, alua_name)) {
+		mp->hwhandler = DEFAULT_HWHANDLER;
+		origin = tpgs_origin;
+	}
 	mp->hwhandler = STRDUP(mp->hwhandler);
 	condlog(3, "%s: hardware_handler = \"%s\" %s", mp->alias, mp->hwhandler,
 		origin);
