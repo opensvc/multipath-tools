@@ -68,7 +68,6 @@ void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 	mpp->waiter = (pthread_t)0;
 	pthread_cleanup_push(cleanup_lock, &waiter_lock);
 	lock(&waiter_lock);
-	pthread_testcancel();
 	pthread_kill(thread, SIGUSR2);
 	pthread_cancel(thread);
 	lock_cleanup_pop(&waiter_lock);
