@@ -101,12 +101,16 @@ print_int (char *buff, int len, long v)
 static int
 print_nonzero (char *buff, int len, long v)
 {
+	if (!v)
+		return 0;
 	return snprintf(buff, len, "%li", v);
 }
 
 static int
 print_str (char *buff, int len, const char *ptr)
 {
+	if (!ptr)
+		return 0;
 	return snprintf(buff, len, "\"%s\"", ptr);
 }
 
@@ -120,6 +124,8 @@ print_yes_no (char *buff, int len, long v)
 static int
 print_yes_no_undef (char *buff, int len, long v)
 {
+	if (!v)
+		return 0;
 	return snprintf(buff, len, "\"%s\"",
 			(v == YNU_NO)? "no" : "yes");
 }
@@ -665,6 +671,8 @@ set_dev_loss(vector strvec, void *ptr)
 int
 print_dev_loss(char * buff, int len, unsigned long v)
 {
+	if (!v)
+		return 0;
 	if (v >= MAX_DEV_LOSS_TMO)
 		return snprintf(buff, len, "\"infinity\"");
 	return snprintf(buff, len, "%lu", v);
