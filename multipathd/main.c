@@ -311,14 +311,13 @@ wait_for_events(struct multipath *mpp, struct vectors *vecs)
 }
 
 static void
-remove_map_and_stop_waiter(struct multipath *mpp, struct vectors *vecs,
-			   int purge_vec)
+remove_map_and_stop_waiter(struct multipath *mpp, struct vectors *vecs)
 {
 	/* devices are automatically removed by the dmevent polling code,
 	 * so they don't need to be manually removed here */
 	if (!poll_dmevents)
 		stop_waiter_thread(mpp, vecs);
-	remove_map(mpp, vecs, purge_vec);
+	remove_map(mpp, vecs, PURGE_VEC);
 }
 
 static void
@@ -400,7 +399,7 @@ int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
 
 	return 0;
 out:
-	remove_map_and_stop_waiter(mpp, vecs, PURGE_VEC);
+	remove_map_and_stop_waiter(mpp, vecs);
 	return 1;
 }
 
@@ -637,7 +636,7 @@ flush_map(struct multipath * mpp, struct vectors * vecs, int nopaths)
 	}
 
 	orphan_paths(vecs->pathvec, mpp);
-	remove_map_and_stop_waiter(mpp, vecs, 1);
+	remove_map_and_stop_waiter(mpp, vecs);
 
 	return 0;
 }
@@ -769,7 +768,7 @@ uev_remove_map (struct uevent * uev, struct vectors * vecs)
 	}
 
 	orphan_paths(vecs->pathvec, mpp);
-	remove_map_and_stop_waiter(mpp, vecs, 1);
+	remove_map_and_stop_waiter(mpp, vecs);
 out:
 	lock_cleanup_pop(vecs->lock);
 	FREE(alias);
@@ -1154,7 +1153,7 @@ out:
 	return retval;
 
 fail:
-	remove_map_and_stop_waiter(mpp, vecs, 1);
+	remove_map_and_stop_waiter(mpp, vecs);
 	return 1;
 }
 
@@ -1612,7 +1611,7 @@ mpvec_garbage_collector (struct vectors * vecs)
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		if (mpp && mpp->alias && !dm_map_present(mpp->alias)) {
 			condlog(2, "%s: remove dead map", mpp->alias);
-			remove_map_and_stop_waiter(mpp, vecs, 1);
+			remove_map_and_stop_waiter(mpp, vecs);
 			i--;
 		}
 	}
