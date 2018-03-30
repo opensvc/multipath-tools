@@ -122,6 +122,8 @@ static int arm_dm_event_poll(int fd)
 	dmi.version[0] = DM_VERSION_MAJOR;
 	dmi.version[1] = DM_VERSION_MINOR;
 	dmi.version[2] = DM_VERSION_PATCHLEVEL;
+	/* This flag currently does nothing. It simply exists to
+	 * duplicate the behavior of libdevmapper */
 	dmi.flags = 0x4;
 	dmi.data_start = offsetof(struct dm_ioctl, data);
 	dmi.data_size = sizeof(dmi);
@@ -189,7 +191,7 @@ fail:
 	return -1;
 }
 
-/* You must call update_multipath() after calling this function, to
+/* You must call __setup_multipath() after calling this function, to
  * deal with any events that came in before the device was added */
 int watch_dmevents(char *name)
 {

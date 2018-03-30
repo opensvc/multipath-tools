@@ -74,6 +74,8 @@ static void test_basenamecpy_good5(void **state)
 	assert_string_equal(dst, "bar");
 }
 
+/* multipath expects any trailing whitespace to be stripped off the basename,
+ * so that it will match pp->dev */
 static void test_basenamecpy_good6(void **state)
 {
         char dst[6];
