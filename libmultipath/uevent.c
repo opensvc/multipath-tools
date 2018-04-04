@@ -333,7 +333,7 @@ uevent_filter(struct uevent *later, struct list_head *tmpq)
 		 * by the later uevent
 		 */
 		if (uevent_can_filter(earlier, later)) {
-			condlog(2, "uevent: %s-%s has filtered by uevent: %s-%s",
+			condlog(3, "uevent: %s-%s has filtered by uevent: %s-%s",
 				earlier->kernel, earlier->action,
 				later->kernel, later->action);
 
@@ -357,7 +357,7 @@ uevent_merge(struct uevent *later, struct list_head *tmpq)
 		 * merge earlier uevents to the later uevent
 		 */
 		if (uevent_can_merge(earlier, later)) {
-			condlog(2, "merged uevent: %s-%s-%s with uevent: %s-%s-%s",
+			condlog(3, "merged uevent: %s-%s-%s with uevent: %s-%s-%s",
 				earlier->action, earlier->kernel, earlier->wwid,
 				later->action, later->kernel, later->wwid);
 
