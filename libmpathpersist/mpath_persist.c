@@ -909,7 +909,7 @@ int update_map_pr(struct multipath *mpp)
 
 	if (resp->prin_descriptor.prin_readkeys.additional_length == 0 )
 	{
-		condlog(0,"%s: No key found. Device may not be registered. ", mpp->alias);
+		condlog(3,"%s: No key found. Device may not be registered. ", mpp->alias);
 		free(resp);
 		return MPATH_PR_SUCCESS;
 	}
