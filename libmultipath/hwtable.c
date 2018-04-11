@@ -890,6 +890,18 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	{
+		.vendor        = "SUN",
+		.product       = "ArrayStorage",
+		.bl_product    = "Universal Xport",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.checker_name  = RDAC,
+		.features      = "2 pg_init_retries 50",
+		.hwhandler     = "1 rdac",
+		.prio_name     = PRIO_RDAC,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 30,
+	},
+	{
 		/* ZFS Storage Appliances */
 		.vendor        = "SUN",
 		.product       = "(Sun Storage|ZFS Storage|COMSTAR)",
