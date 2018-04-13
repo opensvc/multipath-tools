@@ -1,7 +1,9 @@
 # Set DM_MULTIPATH_DEVICE_PATH if the device should be handled by multipath
 SUBSYSTEM!="block", GOTO="end_mpath"
-ACTION!="add|change", GOTO="end_mpath"
 KERNEL!="sd*|dasd*|nvme*", GOTO="end_mpath"
+ACTION=="remove", TEST=="/dev/shm/multipath/find_multipaths/$major:$minor", \
+	RUN+="/usr/bin/rm -f /dev/shm/multipath/find_multipaths/$major:$minor"
+ACTION!="add|change", GOTO="end_mpath"
 
 IMPORT{cmdline}="nompath"
 ENV{nompath}=="?*", GOTO="end_mpath"

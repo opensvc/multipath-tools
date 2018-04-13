@@ -36,7 +36,7 @@
  * See the file COPYING included with this distribution for more details.
  */
 
-static int
+int
 ensure_directories_exist(const char *str, mode_t dir_mode)
 {
 	char *pathname;

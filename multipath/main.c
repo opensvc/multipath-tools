@@ -29,6 +29,7 @@
 #include <ctype.h>
 #include <libudev.h>
 #include <syslog.h>
+#include <fcntl.h>
 
 #include "checkers.h"
 #include "prio.h"
@@ -60,6 +61,9 @@
 #include "uxsock.h"
 #include "mpath_cmd.h"
 #include "foreign.h"
+#include "propsel.h"
+#include "time-util.h"
+#include "file.h"
 
 int logsink;
 struct udev *udev;
@@ -350,14 +354,142 @@ out:
 	return r;
 }
 
+enum {
+	FIND_MULTIPATHS_WAIT_DONE = 0,
+	FIND_MULTIPATHS_WAITING = 1,
+	FIND_MULTIPATHS_ERROR = -1,
+	FIND_MULTIPATHS_NEVER = -2,
+};
+
+static const char shm_find_mp_dir[] = MULTIPATH_SHM_BASE "find_multipaths";
+static void close_fd(void *arg)
+{
+	close((long)arg);
+}
+
+/**
+ * find_multipaths_check_timeout(wwid, tmo)
+ * Helper for "find_multipaths smart"
+ *
+ * @param[in] pp: path to check / record
+ * @param[in] tmo: configured timeout for this WWID, or value <= 0 for checking
+ * @param[out] until: timestamp until we must wait, CLOCK_REALTIME, if return
+ *             value is FIND_MULTIPATHS_WAITING
+ * @returns: FIND_MULTIPATHS_WAIT_DONE, if waiting has finished
+ * @returns: FIND_MULTIPATHS_ERROR, if internal error occurred
+ * @returns: FIND_MULTIPATHS_NEVER, if tmo is 0 and we didn't wait for this
+ *           device
+ * @returns: FIND_MULTIPATHS_WAITING, if timeout hasn't expired
+ */
+static int find_multipaths_check_timeout(const struct path *pp, long tmo,
+					 struct timespec *until)
+{
+	char path[PATH_MAX];
+	struct timespec now, ftimes[2], tdiff;
+	struct stat st;
+	long fd;
+	int r, err, retries = 0;
+
+	clock_gettime(CLOCK_REALTIME, &now);
+
+	if (snprintf(path, sizeof(path), "%s/%s", shm_find_mp_dir, pp->dev_t)
+	    >= sizeof(path)) {
+		condlog(1, "%s: path name overflow", __func__);
+		return FIND_MULTIPATHS_ERROR;
+	}
+
+	if (ensure_directories_exist(path, 0700)) {
+		condlog(1, "%s: error creating directories", __func__);
+		return FIND_MULTIPATHS_ERROR;
+	}
+
+retry:
+	fd = open(path, O_RDONLY);
+	if (fd != -1) {
+		pthread_cleanup_push(close_fd, (void *)fd);
+		r = fstat(fd, &st);
+		if (r != 0)
+			err = errno;
+		pthread_cleanup_pop(1);
+
+	} else if (tmo > 0) {
+		if (errno == ENOENT)
+			fd = open(path, O_RDWR|O_EXCL|O_CREAT, 0644);
+		if (fd == -1) {
+			if (errno == EEXIST && !retries++)
+				/* We could have raced with another process */
+				goto retry;
+			condlog(1, "%s: error opening %s: %s",
+				__func__, path, strerror(errno));
+			return FIND_MULTIPATHS_ERROR;
+		};
+
+		pthread_cleanup_push(close_fd, (void *)fd);
+		/*
+		 * We just created the file. Set st_mtim to our desired
+		 * expiry time.
+		 */
+		ftimes[0].tv_sec = 0;
+		ftimes[0].tv_nsec = UTIME_OMIT;
+		ftimes[1].tv_sec = now.tv_sec + tmo;
+		ftimes[1].tv_nsec = now.tv_nsec;
+		if (futimens(fd, ftimes) != 0) {
+			condlog(1, "%s: error in futimens(%s): %s", __func__,
+				path, strerror(errno));
+		}
+		r = fstat(fd, &st);
+		if (r != 0)
+			err = errno;
+		pthread_cleanup_pop(1);
+	} else
+		return FIND_MULTIPATHS_NEVER;
+
+	if (r != 0) {
+		condlog(1, "%s: error in fstat for %s: %s", __func__,
+			path, strerror(err));
+		return FIND_MULTIPATHS_ERROR;
+	}
+
+	timespecsub(&st.st_mtim, &now, &tdiff);
+
+	if (tdiff.tv_sec <= 0)
+		return FIND_MULTIPATHS_WAIT_DONE;
+
+	*until = tdiff;
+	return FIND_MULTIPATHS_WAITING;
+}
+
 static int print_cmd_valid(int k, const vector pathvec,
 			   struct config *conf)
 {
 	static const int vals[] = { 1, 0, 2 };
+	int wait = FIND_MULTIPATHS_NEVER;
+	struct timespec until;
+	struct path *pp;
 
 	if (k < 0 || k >= sizeof(vals))
 		return 1;
 
+	if (k == 2) {
+		/*
+		 * Caller ensures that pathvec[0] is the path to
+		 * examine.
+		 */
+		pp = VECTOR_SLOT(pathvec, 0);
+		select_find_multipaths_timeout(conf, pp);
+		wait = find_multipaths_check_timeout(
+			pp, pp->find_multipaths_timeout, &until);
+		if (wait != FIND_MULTIPATHS_WAITING)
+			k = 1;
+	} else if (pathvec != NULL) {
+		pp = VECTOR_SLOT(pathvec, 0);
+		wait = find_multipaths_check_timeout(pp, 0, &until);
+	}
+	if (wait == FIND_MULTIPATHS_WAITING)
+		printf("FIND_MULTIPATHS_WAIT_UNTIL=\"%ld.%06ld\"\n",
+			       until.tv_sec, until.tv_nsec/1000);
+	else if (wait == FIND_MULTIPATHS_WAIT_DONE)
+		printf("FIND_MULTIPATHS_WAIT_UNTIL=\"0\"\n");
 	printf("DM_MULTIPATH_DEVICE_PATH=\"%d\"\n", vals[k]);
 	return k == 1;
 }
