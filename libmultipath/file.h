@@ -6,6 +6,6 @@
 #define _FILE_H
 
 #define FILE_TIMEOUT 30
-int open_file(char *file, int *can_write, char *header);
+int open_file(const char *file, int *can_write, const char *header);
 
 #endif /* _FILE_H */

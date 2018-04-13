@@ -37,7 +37,7 @@
  */
 
 static int
-ensure_directories_exist(char *str, mode_t dir_mode)
+ensure_directories_exist(const char *str, mode_t dir_mode)
 {
 	char *pathname;
 	char *end;
@@ -80,7 +80,7 @@ sigalrm(int sig)
 }
 
 static int
-lock_file(int fd, char *file_name)
+lock_file(int fd, const char *file_name)
 {
 	struct sigaction act, oldact;
 	sigset_t set, oldset;
@@ -118,7 +118,7 @@ lock_file(int fd, char *file_name)
 }
 
 int
-open_file(char *file, int *can_write, char *header)
+open_file(const char *file, int *can_write, const char *header)
 {
 	int fd;
 	struct stat s;
