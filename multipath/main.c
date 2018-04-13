@@ -675,6 +675,9 @@ configure (struct config *conf, enum mpath_cmds cmd,
 
 
 	if (cmd == CMD_VALID_PATH) {
+		struct path *pp;
+		int fd;
+
 		/* This only happens if find_multipaths and
 		 * ignore_wwids is set, and the path is not in WWIDs
 		 * file, not currently multipathed, and has
@@ -682,11 +685,45 @@ configure (struct config *conf, enum mpath_cmds cmd,
 		 * If there is currently a multipath device matching
 		 * the refwwid, or there is more than one path matching
 		 * the refwwid, then the path is valid */
-		if (VECTOR_SIZE(curmp) != 0 || VECTOR_SIZE(pathvec) > 1)
+		if (VECTOR_SIZE(curmp) != 0) {
+			r = 0;
+			goto print_valid;
+		} else if (VECTOR_SIZE(pathvec) > 1)
 			r = 0;
 		else
 			/* Use r=2 as an indication for "maybe" */
 			r = 2;
+
+		/*
+		 * If opening the path with O_EXCL fails, the path
+		 * is in use (e.g. mounted during initramfs processing).
+		 * We know that it's not used by dm-multipath.
+		 * We may not set SYSTEMD_READY=0 on such devices, it
+		 * might cause systemd to umount the device.
+		 * Use O_RDONLY, because udevd would trigger another
+		 * uevent for close-after-write.
+		 *
+		 * The O_EXCL check is potentially dangerous, because it may
+		 * race with other tasks trying to access the device. Therefore
+		 * this code is only executed if the path hasn't been released
+		 * to systemd earlier (see above).
+		 *
+		 * get_refwwid() above stores the path we examine in slot 0.
+		 */
+		pp = VECTOR_SLOT(pathvec, 0);
+		fd = open(udev_device_get_devnode(pp->udev),
+			  O_RDONLY|O_EXCL);
+		if (fd >= 0)
+			close(fd);
+		else {
+			condlog(3, "%s: path %s is in use: %s",
+				__func__, pp->dev,
+				strerror(errno));
+			/*
+			 * Check if we raced with multipathd
+			 */
+			r = !sysfs_is_multipathed(VECTOR_SLOT(pathvec, 0));
+		}
 		goto print_valid;
 	}
 
