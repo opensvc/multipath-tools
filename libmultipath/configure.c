@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/file.h>
 #include <errno.h>
+#include <ctype.h>
 #include <libdevmapper.h>
 #include <libudev.h>
 #include "mpath_cmd.h"
@@ -476,9 +477,17 @@ trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
 			env = udev_device_get_property_value(
 				pp->udev, "DM_MULTIPATH_DEVICE_PATH");
 
-			if (is_mpath && env != NULL && !strcmp(env, "1"))
-				continue;
-			else if (!is_mpath &&
+			if (is_mpath && env != NULL && !strcmp(env, "1")) {
+				/*
+				 * If FIND_MULTIPATHS_WAIT_UNTIL is not "0",
+				 * path is in "maybe" state and timer is running
+				 * Send uevent now (see multipath.rules).
+				 */
+				env = udev_device_get_property_value(
+					pp->udev, "FIND_MULTIPATHS_WAIT_UNTIL");
+				if (env == NULL || !strcmp(env, "0"))
+					continue;
+			} else if (!is_mpath &&
 				   (env == NULL || !strcmp(env, "0")))
 				continue;
 

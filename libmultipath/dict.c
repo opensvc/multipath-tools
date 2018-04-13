@@ -245,6 +245,7 @@ static const char * const find_multipaths_optvals[] = {
 	[FIND_MULTIPATHS_ON] = "on",
 	[FIND_MULTIPATHS_STRICT] = "strict",
 	[FIND_MULTIPATHS_GREEDY] = "greedy",
+	[FIND_MULTIPATHS_SMART] = "smart",
 };
 
 static int

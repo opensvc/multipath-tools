@@ -978,6 +978,19 @@ with the same WWID have been detected.
 Both multipathd and multipath treat every non-blacklisted device as multipath
 device path.
 .TP
+.I smart
+This differs from \fIfind_multipaths yes\fR only in
+the way it treats new devices for which only one path has been
+detected yet. When such a device is first encounted in udev rules, it is
+treated as a multipath device. multipathd waits whether additional paths with
+the same WWID appears. If that happens, it sets up a multipath map. If it
+doesn\'t happen until a
+timeout expires, or if setting up the map fails, a new uevent is triggered for
+the device; at second encounter in the udev rules, the device will be treated
+as non-multipath and passed on to upper layers.
+\fBNote:\fR this may cause delays during device detection if
+there are single-path devices which aren\'t blacklisted.
+.TP
 The default is: \fBstrict\fR
 .RE
 .
