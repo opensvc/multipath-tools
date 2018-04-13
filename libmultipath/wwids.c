@@ -282,8 +282,8 @@ should_multipath(struct path *pp1, vector pathvec, vector mpvec)
 	struct config *conf;
 
 	conf = get_multipath_config();
-	ignore_new_devs = conf->ignore_new_devs;
-	find_multipaths = conf->find_multipaths;
+	ignore_new_devs = ignore_new_devs_on(conf);
+	find_multipaths = find_multipaths_on(conf);
 	put_multipath_config(conf);
 	if (!find_multipaths && !ignore_new_devs)
 		return 1;

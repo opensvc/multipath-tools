@@ -2404,8 +2404,6 @@ reconfigure (struct vectors * vecs)
 		conf->verbosity = verbosity;
 	if (bindings_read_only)
 		conf->bindings_read_only = bindings_read_only;
-	if (ignore_new_devs)
-		conf->ignore_new_devs = ignore_new_devs;
 	uxsock_timeout = conf->uxsock_timeout;
 
 	old = rcu_dereference(multipath_conf);
@@ -2635,8 +2633,6 @@ child (void * param)
 		conf->verbosity = verbosity;
 	if (bindings_read_only)
 		conf->bindings_read_only = bindings_read_only;
-	if (ignore_new_devs)
-		conf->ignore_new_devs = ignore_new_devs;
 	uxsock_timeout = conf->uxsock_timeout;
 	rcu_assign_pointer(multipath_conf, conf);
 	if (init_checkers(conf->multipath_dir)) {
@@ -2991,7 +2987,7 @@ main (int argc, char *argv[])
 			bindings_read_only = 1;
 			break;
 		case 'n':
-			ignore_new_devs = 1;
+			condlog(0, "WARNING: ignoring deprecated option -n, use 'ignore_wwids = no' instead");
 			break;
 		case 'w':
 			poll_dmevents = 0;

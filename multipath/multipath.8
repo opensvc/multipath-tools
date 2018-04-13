@@ -94,7 +94,14 @@ Force devmap reload.
 .
 .TP
 .B \-i
-Ignore WWIDs file when processing devices.
+Ignore WWIDs file when processing devices. If
+\fIfind_multipaths strict\fR or \fIfind_multipaths no\fR is set in
+\fImultipath.conf\fR, multipath only considers devices that are
+listed in the WWIDs file. This option overrides that behavior. For other values
+of \fIfind_multipaths\fR, this option has no effect. See the description of
+\fIfind_multipaths\fR in
+.BR multipath.conf (5).
+This option should only be used in rare circumstances.
 .
 .TP
 .B \-B

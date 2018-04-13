@@ -240,8 +240,51 @@ declare_def_snprint(multipath_dir, print_str)
 declare_def_handler(partition_delim, set_str)
 declare_def_snprint(partition_delim, print_str)
 
-declare_def_handler(find_multipaths, set_yes_no)
-declare_def_snprint(find_multipaths, print_yes_no)
+static const char * const find_multipaths_optvals[] = {
+	[FIND_MULTIPATHS_OFF] = "off",
+	[FIND_MULTIPATHS_ON] = "on",
+	[FIND_MULTIPATHS_STRICT] = "strict",
+	[FIND_MULTIPATHS_GREEDY] = "greedy",
+};
+
+static int
+def_find_multipaths_handler(struct config *conf, vector strvec)
+{
+	char *buff;
+	int i;
+
+	if (set_yes_no_undef(strvec, &conf->find_multipaths) == 0 &&
+	    conf->find_multipaths != YNU_UNDEF)
+		return 0;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	for (i = FIND_MULTIPATHS_OFF; i < __FIND_MULTIPATHS_LAST; i++) {
+		if (find_multipaths_optvals[i] != NULL &&
+		    !strcmp(buff, find_multipaths_optvals[i])) {
+			conf->find_multipaths = i;
+			break;
+		}
+	}
+
+	if (conf->find_multipaths == YNU_UNDEF) {
+		condlog(0, "illegal value for find_multipaths: %s", buff);
+		conf->find_multipaths = DEFAULT_FIND_MULTIPATHS;
+	}
+
+	FREE(buff);
+	return 0;
+}
+
+static int
+snprint_def_find_multipaths(struct config *conf, char *buff, int len,
+			    const void *data)
+{
+	return print_str(buff, len,
+			 find_multipaths_optvals[conf->find_multipaths]);
+}
 
 declare_def_handler(selector, set_str)
 declare_def_snprint_defstr(selector, print_str, DEFAULT_SELECTOR)

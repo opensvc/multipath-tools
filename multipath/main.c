@@ -441,11 +441,12 @@ configure (struct config *conf, enum mpath_cmds cmd,
 		 * Paths listed in the wwids file are always considered valid.
 		 */
 		if (cmd == CMD_VALID_PATH) {
-			if ((!conf->find_multipaths && conf->ignore_wwids) ||
-			    check_wwids_file(refwwid, 0) == 0)
+			if ((!find_multipaths_on(conf) && ignore_wwids_on(conf))
+			    || check_wwids_file(refwwid, 0) == 0)
 				r = 0;
 			if (r == 0 ||
-			    !conf->find_multipaths || !conf->ignore_wwids) {
+			    !find_multipaths_on(conf) ||
+			    !ignore_wwids_on(conf)) {
 				printf("%s %s a valid multipath device path\n",
 				       devpath, r == 0 ? "is" : "is not");
 				goto out;
@@ -737,7 +738,7 @@ main (int argc, char *argv[])
 			conf->force_reload = FORCE_RELOAD_YES;
 			break;
 		case 'i':
-			conf->ignore_wwids = 1;
+			conf->find_multipaths |= _FIND_MULTIPATHS_I;
 			break;
 		case 't':
 			r = dump_config(conf);

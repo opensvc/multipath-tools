@@ -951,28 +951,34 @@ The default is: \fBno\fR
 .
 .TP
 .B find_multipaths
-If set to
-.I yes
-, instead of trying to create a multipath device for every non-blacklisted
-path, multipath will only create a device if one of three condidions are
-met.
-.I 1
-There are at least two non-blacklisted paths with the same WWID,
-.I 2
-the user manually forces the creation, by specifying a device with the multipath
-command, or
-.I 3
-a path has the same WWID as a multipath device that was previously created
-while find_multipaths was set (even if that multipath device doesn't currently
-exist).
-Whenever a multipath device is created with find_multipaths set, multipath will
-remember the WWID of the device, so that it will automatically create the
-device again, as soon as it sees a path with that WWID. This should allow most
-users to have multipath automatically choose the correct paths to make into
-multipath devices, without having to edit the blacklist.
+This option controls whether multipath and multipathd try to create multipath
+maps over non-blacklisted devices they encounter. This matters a) when a device is
+encountered by \fBmultipath -u\fR during udev rule processing (a device is
+blocked from further processing by higher layers - such as LVM - if and only
+if it\'s considered a valid multipath device path), and b) when multipathd
+detects a new device. The following values are possible:
 .RS
+.TP 10
+.I strict
+Both multipath and multipathd treat only such devices as multipath devices
+which have been part of a multipath map previously, and which are therefore
+listed in the \fBwwids_file\fR. Users can manually set up multipath maps using the
+\fBmultipathd add map\fR command. Once set up manually, the map is
+remembered in the wwids file and will be set up automatically in the future.
 .TP
-The default is: \fBno\fR
+.I no
+Multipath behaves like \fBstrict\fR. Multipathd behaves like \fBgreedy\fR.
+.TP
+.I yes
+Both multipathd and multipath treat a device as multipath device if the
+conditions for \fBstrict\fR are met, or if at least two non-blacklisted paths
+with the same WWID have been detected.
+.TP
+.I greedy
+Both multipathd and multipath treat every non-blacklisted device as multipath
+device path.
+.TP
+The default is: \fBstrict\fR
 .RE
 .
 .

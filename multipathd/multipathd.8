@@ -25,7 +25,6 @@ multipathd \- Multipath daemon.
 .RB [\| \-v\ \c
 .IR verbosity \|]
 .RB [\| \-B \|]
-.RB [\| \-n \|]
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -73,8 +72,11 @@ be viewed by entering '\fIhelp\fR'. When you are finished entering commands, pre
 .
 .TP
 .B \-n
-Ignore new devices. multipathd will not create a multipath device unless the
-WWID for the device is already listed in the WWIDs file.
+\fBIGNORED\fR. Use the option
+\fIfind_multipaths\fR to control the treatment of newly detected devices by
+multipathd. See
+.BR multipath.conf(5).
+.
 .
 .
 .\" ----------------------------------------------------------------------------

@@ -139,7 +139,6 @@ struct config {
 	int max_fds;
 	int force_reload;
 	int queue_without_daemon;
-	int ignore_wwids;
 	int checker_timeout;
 	int flush_on_last_del;
 	int attribute_flags;
@@ -168,7 +167,6 @@ struct config {
 	int strict_timing;
 	int retrigger_tries;
 	int retrigger_delay;
-	int ignore_new_devs;
 	int delayed_reconfig;
 	int uev_wait_timeout;
 	int skip_kpartx;
