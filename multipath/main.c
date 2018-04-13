@@ -450,8 +450,12 @@ configure (struct config *conf, enum mpath_cmds cmd,
 		 * Paths listed in the wwids file are always considered valid.
 		 */
 		if (cmd == CMD_VALID_PATH) {
-			if ((!find_multipaths_on(conf) && ignore_wwids_on(conf))
-			    || check_wwids_file(refwwid, 0) == 0)
+			if (is_failed_wwid(refwwid) == WWID_IS_FAILED) {
+				r = 1;
+				goto print_valid;
+			} else if ((!find_multipaths_on(conf) &&
+				    ignore_wwids_on(conf)) ||
+				   check_wwids_file(refwwid, 0) == 0)
 				r = 0;
 			if (r == 0 ||
 			    !find_multipaths_on(conf) ||
