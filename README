@@ -51,3 +51,10 @@ Maintainer
 ==========
 Christophe Varoqui <christophe.varoqui@opensvc.com>
 Device-mapper development mailing list <dm-devel@redhat.com>
+
+Licence
+=======
+The multipath-tools source code is covered by several different
+licences. Refer to the individual source files for details.
+Source files which do not specify a licence are shipped under
+LGPL-2.0 (see LICENSES/LGPL-2.0).
