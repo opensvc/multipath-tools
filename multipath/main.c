@@ -585,15 +585,17 @@ configure (struct config *conf, enum mpath_cmds cmd,
 			if (is_failed_wwid(refwwid) == WWID_IS_FAILED) {
 				r = 1;
 				goto print_valid;
-			} else if ((!find_multipaths_on(conf) &&
+			}
+			if ((!find_multipaths_on(conf) &&
 				    ignore_wwids_on(conf)) ||
 				   check_wwids_file(refwwid, 0) == 0)
 				r = 0;
-			if (r == 0 ||
-			    !find_multipaths_on(conf) ||
-			    !ignore_wwids_on(conf)) {
+			if (!ignore_wwids_on(conf))
 				goto print_valid;
-			}
+			/* At this point, either r==0 or find_multipaths_on. */
+			if (r == 0)
+				goto print_valid;
+			/* find_multipaths_on: Fall through to path detection */
 		}
 	}
 
