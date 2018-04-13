@@ -18,4 +18,15 @@ int check_wwids_file(char *wwid, int write_wwid);
 int remove_wwid(char *wwid);
 int replace_wwids(vector mp);
 
+enum {
+	WWID_IS_NOT_FAILED = 0,
+	WWID_IS_FAILED,
+	WWID_FAILED_UNCHANGED,
+	WWID_FAILED_CHANGED,
+	WWID_FAILED_ERROR = -1,
+};
+
+int is_failed_wwid(const char *wwid);
+int mark_failed_wwid(const char *wwid);
+int unmark_failed_wwid(const char *wwid);
 #endif /* _WWIDS_H */
