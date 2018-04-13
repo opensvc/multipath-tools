@@ -2324,7 +2324,7 @@ configure (struct vectors * vecs)
 	sync_maps_state(mpvec);
 	vector_foreach_slot(mpvec, mpp, i){
 		if (remember_wwid(mpp->wwid) == 1)
-			trigger_paths_udev_change(mpp);
+			trigger_paths_udev_change(mpp, true);
 		update_map_pr(mpp);
 	}
 

@@ -445,11 +445,18 @@ trigger_udev_change(const struct multipath *mpp)
 }
 
 void
-trigger_paths_udev_change(const struct multipath *mpp)
+trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
 {
 	struct pathgroup *pgp;
 	struct path *pp;
 	int i, j;
+	/*
+	 * If a path changes from multipath to non-multipath, we must
+	 * synthesize an artificial "add" event, otherwise the LVM2 rules
+	 * (69-lvm2-lvmetad.rules) won't pick it up. Otherwise, we'd just
+	 * irritate ourselves with an "add", so use "change".
+	 */
+	const char *action = is_mpath ? "change" : "add";
 
 	if (!mpp || !mpp->pg)
 		return;
@@ -468,14 +475,21 @@ trigger_paths_udev_change(const struct multipath *mpp)
 			 */
 			env = udev_device_get_property_value(
 				pp->udev, "DM_MULTIPATH_DEVICE_PATH");
-			if (env != NULL && !strcmp(env, "1"))
+
+			if (is_mpath && env != NULL && !strcmp(env, "1"))
+				continue;
+			else if (!is_mpath &&
+				   (env == NULL || !strcmp(env, "0")))
 				continue;
 
-			condlog(4, "triggering change uevent for %s", pp->dev);
-			sysfs_attr_set_value(pp->udev, "uevent", "change",
-					     strlen("change"));
+			condlog(3, "triggering %s uevent for %s (is %smultipath member)",
+				action, pp->dev, is_mpath ? "" : "no ");
+			sysfs_attr_set_value(pp->udev, "uevent",
+					     action, strlen(action));
 		}
 	}
+
+	mpp->needs_paths_uevent = 0;
 }
 
 static int
@@ -876,8 +890,10 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		 * succeeded
 		 */
 		mpp->force_udev_reload = 0;
-		if (mpp->action == ACT_CREATE && remember_wwid(mpp->wwid) == 1)
-			trigger_paths_udev_change(mpp);
+		if (mpp->action == ACT_CREATE &&
+		    (remember_wwid(mpp->wwid) == 1 ||
+		     mpp->needs_paths_uevent))
+			trigger_paths_udev_change(mpp, true);
 		if (!is_daemon) {
 			/* multipath client mode */
 			dm_switchgroup(mpp->alias, mpp->bestpg);
@@ -902,7 +918,10 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		}
 		dm_setgeometry(mpp);
 		return DOMAP_OK;
-	}
+	} else if (r == DOMAP_FAIL && mpp->action == ACT_CREATE &&
+		   mpp->needs_paths_uevent)
+		trigger_paths_udev_change(mpp, false);
+
 	return DOMAP_FAIL;
 }
 
