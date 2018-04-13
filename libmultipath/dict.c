@@ -491,6 +491,10 @@ declare_hw_snprint(max_sectors_kb, print_nonzero)
 declare_mp_handler(max_sectors_kb, set_int)
 declare_mp_snprint(max_sectors_kb, print_nonzero)
 
+declare_def_handler(find_multipaths_timeout, set_int)
+declare_def_snprint_defint(find_multipaths_timeout, print_int,
+			   DEFAULT_FIND_MULTIPATHS_TIMEOUT)
+
 static int
 def_config_dir_handler(struct config *conf, vector strvec)
 {
@@ -1527,6 +1531,9 @@ init_keywords(vector keywords)
 	install_keyword("remove_retries", &def_remove_retries_handler, &snprint_def_remove_retries);
 	install_keyword("max_sectors_kb", &def_max_sectors_kb_handler, &snprint_def_max_sectors_kb);
 	install_keyword("ghost_delay", &def_ghost_delay_handler, &snprint_def_ghost_delay);
+	install_keyword("find_multipaths_timeout",
+			&def_find_multipaths_timeout_handler,
+			&snprint_def_find_multipaths_timeout);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);

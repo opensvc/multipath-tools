@@ -983,6 +983,24 @@ The default is: \fBstrict\fR
 .
 .
 .TP
+.B find_multipaths_timeout
+Timeout, in seconds, to wait for additional paths after detecting the first
+one, if \fIfind_multipaths
+"smart"\fR (see above) is set. If the value is \fBpositive\fR, this timeout is used for all
+unknown, non-blacklisted devices encountered. If the value is \fBnegative\fR
+(recommended), it's only
+applied to "known" devices that have an entry in multipath's hardware table,
+either in the built-in table or in a \fIdevice\fR section; other ("unknown") devices will
+use a timeout of only 1 second to avoid booting delays. The value 0 means
+"use the built-in default". If \fIfind_multipath\fR has a value
+other than \fIsmart\fR, this option has no effect.
+.RS
+.TP
+The default is: \fB-10\fR (10s for known and 1s for unknown hardware)
+.RE
+.
+.
+.TP
 .B uxsock_timeout
 CLI receive timeout in milliseconds. For larger systems CLI commands
 might timeout before the multipathd lock is released and the CLI command

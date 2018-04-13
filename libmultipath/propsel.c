@@ -953,3 +953,28 @@ out:
 	condlog(3, "%s: ghost_delay = %s %s", mp->alias, buff, origin);
 	return 0;
 }
+
+int select_find_multipaths_timeout(struct config *conf, struct path *pp)
+{
+	const char *origin;
+
+	pp_set_conf(find_multipaths_timeout);
+	pp_set_default(find_multipaths_timeout,
+		       DEFAULT_FIND_MULTIPATHS_TIMEOUT);
+out:
+	/*
+	 * If configured value is negative, and this "unknown" hardware
+	 * (no hwentry), use very small timeout to avoid delays.
+	 */
+	if (pp->find_multipaths_timeout < 0) {
+		pp->find_multipaths_timeout = -pp->find_multipaths_timeout;
+		if (!pp->hwe) {
+			pp->find_multipaths_timeout =
+				DEFAULT_UNKNOWN_FIND_MULTIPATHS_TIMEOUT;
+			origin = "(default for unknown hardware)";
+		}
+	}
+	condlog(3, "%s: timeout for find_multipaths \"smart\" = %ds %s",
+		pp->dev, pp->find_multipaths_timeout, origin);
+	return 0;
+}

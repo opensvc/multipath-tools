@@ -281,6 +281,7 @@ struct path {
 	int io_err_disable_reinstate;
 	int io_err_pathfail_cnt;
 	int io_err_pathfail_starttime;
+	int find_multipaths_timeout;
 	/* configlet pointers */
 	struct hwentry * hwe;
 	struct gen_path generic_path;
