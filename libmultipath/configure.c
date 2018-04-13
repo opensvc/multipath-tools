@@ -987,7 +987,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 			continue;
 
 		/* If find_multipaths was selected check if the path is valid */
-		if (!refwwid && !should_multipath(pp1, pathvec)) {
+		if (!refwwid && !should_multipath(pp1, pathvec, curmp)) {
 			orphan_path(pp1, "only one path");
 			continue;
 		}
