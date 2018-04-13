@@ -353,7 +353,7 @@ out:
 static int print_cmd_valid(int k, const vector pathvec,
 			   struct config *conf)
 {
-	static const int vals[] = { 1, 0 };
+	static const int vals[] = { 1, 0, 2 };
 
 	if (k < 0 || k >= sizeof(vals))
 		return 1;
@@ -504,6 +504,9 @@ configure (struct config *conf, enum mpath_cmds cmd,
 		 * the refwwid, then the path is valid */
 		if (VECTOR_SIZE(curmp) != 0 || VECTOR_SIZE(pathvec) > 1)
 			r = 0;
+		else
+			/* Use r=2 as an indication for "maybe" */
+			r = 2;
 		goto print_valid;
 	}
 
