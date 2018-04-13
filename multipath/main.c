@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <libudev.h>
@@ -495,6 +496,25 @@ static int print_cmd_valid(int k, const vector pathvec,
 }
 
 /*
+ * Returns true if this device has been handled before,
+ * and released to systemd.
+ *
+ * This must be called before get_refwwid(),
+ * otherwise udev_device_new_from_environment() will have
+ * destroyed environ(7).
+ */
+static bool released_to_systemd(void)
+{
+	static const char dmdp[] = "DM_MULTIPATH_DEVICE_PATH";
+	const char *dm_mp_dev_path = getenv(dmdp);
+	bool ret;
+
+	ret = dm_mp_dev_path != NULL && !strcmp(dm_mp_dev_path, "0");
+	condlog(4, "%s: %s=%s -> %d", __func__, dmdp, dm_mp_dev_path, ret);
+	return ret;
+}
+
+/*
  * Return value:
  *  -1: Retry
  *   0: Success
@@ -511,6 +531,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	int di_flag = 0;
 	char * refwwid = NULL;
 	char * dev = NULL;
+	bool released = released_to_systemd();
 
 	/*
 	 * allocate core vectors to store paths and multipaths
@@ -602,6 +623,20 @@ configure (struct config *conf, enum mpath_cmds cmd,
 				r = 0;
 				goto print_valid;
 			}
+
+			/*
+			 * DM_MULTIPATH_DEVICE_PATH=="0" means that we have
+			 * been called for this device already, and have
+			 * released it to systemd. Unless the device is now
+			 * already multipathed (see above), we can't try to
+			 * grab it, because setting SYSTEMD_READY=0 would
+			 * cause file systems to be unmounted.
+			 * Leave DM_MULTIPATH_DEVICE_PATH="0".
+			 */
+			if (released) {
+				r = 1;
+				goto print_valid;
+			}
 			if (r == 0)
 				goto print_valid;
 			/* find_multipaths_on: Fall through to path detection */
@@ -641,7 +676,9 @@ configure (struct config *conf, enum mpath_cmds cmd,
 
 	if (cmd == CMD_VALID_PATH) {
 		/* This only happens if find_multipaths and
-		 * ignore_wwids is set.
+		 * ignore_wwids is set, and the path is not in WWIDs
+		 * file, not currently multipathed, and has
+		 * never been released to systemd.
 		 * If there is currently a multipath device matching
 		 * the refwwid, or there is more than one path matching
 		 * the refwwid, then the path is valid */
@@ -1063,6 +1100,13 @@ out:
 	cleanup_foreign();
 	cleanup_prio();
 	cleanup_checkers();
+
+	/*
+	 * multipath -u must exit with status 0, otherwise udev won't
+	 * import its output.
+	 */
+	if (cmd == CMD_VALID_PATH && dev_type == DEV_UEVENT && r == 1)
+		r = 0;
 
 	if (dev_type == DEV_UEVENT)
 		closelog();

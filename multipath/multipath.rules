@@ -21,8 +21,11 @@ LABEL="test_dev"
 ENV{MPATH_SBIN_PATH}="/sbin"
 TEST!="$env{MPATH_SBIN_PATH}/multipath", ENV{MPATH_SBIN_PATH}="/usr/sbin"
 
+# multipath -u needs to know if this device has ever been exported
+IMPORT{db}="DM_MULTIPATH_DEVICE_PATH"
+
 # multipath -u sets DM_MULTIPATH_DEVICE_PATH
-ENV{DM_MULTIPATH_DEVICE_PATH}!="1", IMPORT{program}="$env{MPATH_SBIN_PATH}/multipath -u %k"
+IMPORT{program}="$env{MPATH_SBIN_PATH}/multipath -u %k"
 ENV{DM_MULTIPATH_DEVICE_PATH}=="1", ENV{ID_FS_TYPE}="mpath_member", \
 	ENV{SYSTEMD_READY}="0"
 
