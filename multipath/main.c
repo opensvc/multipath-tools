@@ -350,6 +350,16 @@ out:
 	return r;
 }
 
+static int print_cmd_valid(const char *devpath, int k)
+{
+	if (k < 0 || k > 1)
+		return 1;
+
+	printf("%s is%s a valid multipath device path\n",
+	       devpath, k ? "" : " not");
+	return k == 1;
+}
+
 /*
  * Return value:
  *  -1: Retry
@@ -391,10 +401,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	    cmd != CMD_REMOVE_WWID &&
 	    (filter_devnode(conf->blist_devnode,
 			    conf->elist_devnode, dev) > 0)) {
-		if (cmd == CMD_VALID_PATH)
-			printf("%s is not a valid multipath device path\n",
-			       devpath);
-		goto out;
+		goto print_valid;
 	}
 
 	/*
@@ -407,7 +414,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 		if (!refwwid) {
 			condlog(4, "%s: failed to get wwid", devpath);
 			if (failed == 2 && cmd == CMD_VALID_PATH)
-				printf("%s is not a valid multipath device path\n", devpath);
+				goto print_valid;
 			else
 				condlog(3, "scope is null");
 			goto out;
@@ -447,9 +454,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 			if (r == 0 ||
 			    !find_multipaths_on(conf) ||
 			    !ignore_wwids_on(conf)) {
-				printf("%s %s a valid multipath device path\n",
-				       devpath, r == 0 ? "is" : "is not");
-				goto out;
+				goto print_valid;
 			}
 		}
 	}
@@ -493,9 +498,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 		 * the refwwid, then the path is valid */
 		if (VECTOR_SIZE(curmp) != 0 || VECTOR_SIZE(pathvec) > 1)
 			r = 0;
-		printf("%s %s a valid multipath device path\n",
-		       devpath, r == 0 ? "is" : "is not");
-		goto out;
+		goto print_valid;
 	}
 
 	if (cmd != CMD_CREATE && cmd != CMD_DRY_RUN) {
@@ -508,6 +511,10 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	 */
 	r = coalesce_paths(&vecs, NULL, refwwid,
 			   conf->force_reload, cmd);
+
+print_valid:
+	if (cmd == CMD_VALID_PATH)
+		r = print_cmd_valid(devpath, r);
 
 out:
 	if (refwwid)
@@ -844,8 +851,7 @@ main (int argc, char *argv[])
 		if (fd == -1) {
 			condlog(3, "%s: daemon is not running", dev);
 			if (!systemd_service_enabled(dev)) {
-				printf("%s is not a valid "
-				       "multipath device path\n", dev);
+				r = print_cmd_valid(dev, 1);
 				goto out;
 			}
 		} else
