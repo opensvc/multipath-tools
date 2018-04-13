@@ -458,8 +458,20 @@ trigger_paths_udev_change(const struct multipath *mpp)
 		if (!pgp->paths)
 			continue;
 		vector_foreach_slot(pgp->paths, pp, j) {
+			const char *env;
+
 			if (!pp->udev)
 				continue;
+			/*
+			 * Paths that are already classified as multipath
+			 * members don't need another uevent.
+			 */
+			env = udev_device_get_property_value(
+				pp->udev, "DM_MULTIPATH_DEVICE_PATH");
+			if (env != NULL && !strcmp(env, "1"))
+				continue;
+
+			condlog(4, "triggering change uevent for %s", pp->dev);
 			sysfs_attr_set_value(pp->udev, "uevent", "change",
 					     strlen("change"));
 		}
