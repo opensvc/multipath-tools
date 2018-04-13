@@ -27,6 +27,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <libudev.h>
+#include <fnmatch.h>
 
 #include "checkers.h"
 #include "vector.h"
@@ -286,4 +287,69 @@ int sysfs_check_holders(char * check_devt, char * new_devt)
 	closedir(dirfd);
 
 	return 0;
+}
+
+static int select_dm_devs(const struct dirent *di)
+{
+	return fnmatch("dm-*", di->d_name, FNM_FILE_NAME) == 0;
+}
+
+static void close_fd(void *arg)
+{
+	close((long)arg);
+}
+
+bool sysfs_is_multipathed(const struct path *pp)
+{
+	char pathbuf[PATH_MAX];
+	struct dirent **di;
+	int n, r, i;
+	bool found = false;
+
+	n = snprintf(pathbuf, sizeof(pathbuf), "/sys/block/%s/holders",
+		     pp->dev);
+
+	if (n >= sizeof(pathbuf)) {
+		condlog(1, "%s: pathname overflow", __func__);
+		return false;
+	}
+
+	r = scandir(pathbuf, &di, select_dm_devs, alphasort);
+	if (r == 0)
+		return false;
+	else if (r < 0) {
+		condlog(1, "%s: error scanning %s", __func__, pathbuf);
+		return false;
+	}
+
+	pthread_cleanup_push(free, di);
+	for (i = 0; i < r && !found; i++) {
+		long fd;
+		int nr;
+		char uuid[6];
+
+		if (snprintf(pathbuf + n, sizeof(pathbuf) - n,
+			     "/%s/dm/uuid", di[i]->d_name)
+		    >= sizeof(pathbuf) - n)
+			continue;
+
+		fd = open(pathbuf, O_RDONLY);
+		if (fd == -1) {
+			condlog(1, "%s: error opening %s", __func__, pathbuf);
+			continue;
+		}
+
+		pthread_cleanup_push(close_fd, (void *)fd);
+		nr = read(fd, uuid, sizeof(uuid));
+		if (nr == sizeof(uuid) && !memcmp(uuid, "mpath-", sizeof(uuid)))
+			found = true;
+		else if (nr < 0) {
+			condlog(1, "%s: error reading from %s: %s",
+				__func__, pathbuf, strerror(errno));
+		}
+		pthread_cleanup_pop(1);
+	}
+	pthread_cleanup_pop(1);
+
+	return found;
 }

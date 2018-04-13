@@ -593,6 +593,15 @@ configure (struct config *conf, enum mpath_cmds cmd,
 			if (!ignore_wwids_on(conf))
 				goto print_valid;
 			/* At this point, either r==0 or find_multipaths_on. */
+
+			/*
+			 * Shortcut for find_multipaths smart:
+			 * Quick check if path is already multipathed.
+			 */
+			if (sysfs_is_multipathed(VECTOR_SLOT(pathvec, 0))) {
+				r = 0;
+				goto print_valid;
+			}
 			if (r == 0)
 				goto print_valid;
 			/* find_multipaths_on: Fall through to path detection */
