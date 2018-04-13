@@ -284,7 +284,7 @@ should_multipath(struct path *pp1, vector pathvec)
 	ignore_new_devs = conf->ignore_new_devs;
 	find_multipaths = conf->find_multipaths;
 	put_multipath_config(conf);
-	if (find_multipaths && !ignore_new_devs)
+	if (!find_multipaths && !ignore_new_devs)
 		return 1;
 
 	condlog(4, "checking if %s should be multipathed", pp1->dev);
