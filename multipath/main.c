@@ -425,7 +425,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 		}
 		if (cmd == CMD_ADD_WWID) {
 			r = remember_wwid(refwwid);
-			if (r == 0)
+			if (r >= 0)
 				printf("wwid '%s' added\n", refwwid);
 			else
 				printf("failed adding '%s' to wwids file\n",

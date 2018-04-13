@@ -444,6 +444,28 @@ trigger_udev_change(const struct multipath *mpp)
 	udev_device_unref(udd);
 }
 
+void
+trigger_paths_udev_change(const struct multipath *mpp)
+{
+	struct pathgroup *pgp;
+	struct path *pp;
+	int i, j;
+
+	if (!mpp || !mpp->pg)
+		return;
+
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		if (!pgp->paths)
+			continue;
+		vector_foreach_slot(pgp->paths, pp, j) {
+			if (!pp->udev)
+				continue;
+			sysfs_attr_set_value(pp->udev, "uevent", "change",
+					     strlen("change"));
+		}
+	}
+}
+
 static int
 is_mpp_known_to_udev(const struct multipath *mpp)
 {
@@ -842,8 +864,8 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		 * succeeded
 		 */
 		mpp->force_udev_reload = 0;
-		if (mpp->action == ACT_CREATE)
-			remember_wwid(mpp->wwid);
+		if (mpp->action == ACT_CREATE && remember_wwid(mpp->wwid) == 1)
+			trigger_paths_udev_change(mpp);
 		if (!is_daemon) {
 			/* multipath client mode */
 			dm_switchgroup(mpp->alias, mpp->bestpg);

@@ -2323,7 +2323,8 @@ configure (struct vectors * vecs)
 
 	sync_maps_state(mpvec);
 	vector_foreach_slot(mpvec, mpp, i){
-		remember_wwid(mpp->wwid);
+		if (remember_wwid(mpp->wwid) == 1)
+			trigger_paths_udev_change(mpp);
 		update_map_pr(mpp);
 	}
 

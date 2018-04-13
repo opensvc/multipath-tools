@@ -331,5 +331,5 @@ remember_wwid(char *wwid)
 		condlog(3, "wrote wwid %s to wwids file", wwid);
 	else
 		condlog(4, "wwid %s already in wwids file", wwid);
-	return 0;
+	return ret;
 }
