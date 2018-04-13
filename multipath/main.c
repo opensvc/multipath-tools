@@ -350,13 +350,15 @@ out:
 	return r;
 }
 
-static int print_cmd_valid(const char *devpath, int k)
+static int print_cmd_valid(int k, const vector pathvec,
+			   struct config *conf)
 {
-	if (k < 0 || k > 1)
+	static const int vals[] = { 1, 0 };
+
+	if (k < 0 || k >= sizeof(vals))
 		return 1;
 
-	printf("%s is%s a valid multipath device path\n",
-	       devpath, k ? "" : " not");
+	printf("DM_MULTIPATH_DEVICE_PATH=\"%d\"\n", vals[k]);
 	return k == 1;
 }
 
@@ -514,7 +516,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 
 print_valid:
 	if (cmd == CMD_VALID_PATH)
-		r = print_cmd_valid(devpath, r);
+		r = print_cmd_valid(r, pathvec, conf);
 
 out:
 	if (refwwid)
@@ -851,7 +853,7 @@ main (int argc, char *argv[])
 		if (fd == -1) {
 			condlog(3, "%s: daemon is not running", dev);
 			if (!systemd_service_enabled(dev)) {
-				r = print_cmd_valid(dev, 1);
+				r = print_cmd_valid(1, NULL, conf);
 				goto out;
 			}
 		} else
