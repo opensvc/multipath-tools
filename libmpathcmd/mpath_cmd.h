@@ -20,7 +20,7 @@
 #ifndef LIB_MPATH_CMD_H
 #define LIB_MPATH_CMD_H
 
-#ifdef __cpluscplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
