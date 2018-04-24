@@ -632,6 +632,12 @@ snprint_path_foreign (char * buff, size_t len, const struct path * pp)
 	return snprintf(buff, len, "%s", "--");
 }
 
+static int
+snprint_path_failures(char * buff, size_t len, const struct path * pp)
+{
+	return snprint_int(buff, len, pp->failcount);
+}
+
 struct multipath_data mpd[] = {
 	{'n', "name",          0, snprint_name},
 	{'w', "uuid",          0, snprint_multipath_uuid},
@@ -680,6 +686,7 @@ struct path_data pd[] = {
 	{'r', "target WWPN",   0, snprint_tgt_wwpn},
 	{'a', "host adapter",  0, snprint_host_adapter},
 	{'G', "foreign",       0, snprint_path_foreign},
+	{'0', "failures",      0, snprint_path_failures},
 	{0, NULL, 0 , NULL}
 };
 
