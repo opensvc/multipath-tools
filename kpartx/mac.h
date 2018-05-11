@@ -24,7 +24,7 @@ struct mac_driver_desc {
 	uint16_t  signature;      /* expected to be MAC_DRIVER_MAGIC */
 	uint16_t  block_size;
 	uint32_t  block_count;
-    /* ... more stuff */
+	/* ... more stuff */
 };
 
 #endif

@@ -103,21 +103,20 @@ LDFLAGS		= -Wl,-z,relro -Wl,-z,now
 BIN_LDFLAGS	= -pie
 
 # Check whether a function with name $1 has been declared in header file $2.
-check_func =								       \
-    $(shell								       \
+check_func = $(shell \
 	if grep -Eq "^[^[:blank:]]+[[:blank:]]+$1[[:blank:]]*(.*)*" "$2"; then \
-	   found=1;							       \
-	   status="yes";						       \
-	else								       \
-	   found=0;							       \
-	   status="no";							       \
-	fi;								       \
-	echo 1>&2 "Checking for $1 in $2 ... $$status";			       \
-	echo "$$found"							       \
-    )
+		found=1; \
+		status="yes"; \
+	else \
+		found=0; \
+		status="no"; \
+	fi; \
+	echo 1>&2 "Checking for $1 in $2 ... $$status"; \
+	echo "$$found" \
+	)
 
 # Checker whether a file with name $1 exists
-check_file = $(shell	\
+check_file = $(shell \
 	if [ -f "$1" ]; then \
 		found=1; \
 		status="yes"; \

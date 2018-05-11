@@ -113,7 +113,7 @@ int _snprint_multipath (const struct gen_multipath *, char *, int,
 			const char *, int);
 #define snprint_multipath(buf, len, fmt, mp, v)				\
 	_snprint_multipath(dm_multipath_to_gen(mp), buf, len, fmt,  v)
-int _snprint_multipath_topology (const struct gen_multipath *, char *, int, 
+int _snprint_multipath_topology (const struct gen_multipath *, char *, int,
 				 int verbosity);
 #define snprint_multipath_topology(buf, len, mpp, v) \
 	_snprint_multipath_topology (dm_multipath_to_gen(mpp), buf, len, v)

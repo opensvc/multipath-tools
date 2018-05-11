@@ -78,13 +78,13 @@
 #endif
 
 static struct hwentry default_hw[] = {
-       /*
-	* Generic NVMe
-	*
-	* Due to the parsing logic in find_hwe(), generic entries
-	* have to be put on top of this list, and more specific ones
-	* below.
-	*/
+	/*
+	 * Generic NVMe devices
+	 *
+	 * Due to the parsing logic in find_hwe(), generic entries
+	 * have to be put on top of this list, and more specific ones
+	 * below.
+	 */
 	{
 		.vendor        = "NVME",
 		.product       = ".*",

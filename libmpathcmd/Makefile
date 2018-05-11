@@ -27,7 +27,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(includedir)/mpath_cmd.h
 
 clean: dep_clean
-	$(RM) core *.a *.o *.so *.so.* *.gz 
+	$(RM) core *.a *.o *.so *.so.* *.gz
 
 include $(wildcard $(OBJS:.o=.d))
 

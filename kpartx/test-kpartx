@@ -131,7 +131,7 @@ step "create DM devices (spans)"
 # They also serve as DM devices to test partition removal on those.
 
 TABLE="\
-0 $((SIZE/SECTSIZ-OFFS)) linear $DEV1 $OFFS 
+0 $((SIZE/SECTSIZ-OFFS)) linear $DEV1 $OFFS
 $((SIZE/SECTSIZ-OFFS)) $((SIZE/SECTSIZ-OFFS)) linear $DEV2 $OFFS"
 
 SPAN1=kpt
