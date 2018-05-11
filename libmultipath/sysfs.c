@@ -28,6 +28,7 @@
 #include <dirent.h>
 #include <libudev.h>
 #include <fnmatch.h>
+#include <limits.h>
 
 #include "checkers.h"
 #include "vector.h"
