@@ -398,19 +398,25 @@ static struct hwentry default_hw[] = {
 	 * Mail : matthias.rudolph@hds.com
 	 */
 	{
-		/* USP-V, HUS VM, VSP, VSP G1X00 and VSP GX00 families */
+		/* USP-V, HUS VM, VSP, VSP G1X00 and VSP GX00 families / HP XP */
 		.vendor        = "(HITACHI|HP)",
 		.product       = "^OPEN-",
 		.pgpolicy      = MULTIBUS,
 	},
 	{
-		/* AMS 2000 and HUS 100 families */
+		/* AMS other than AMS 2000 */
 		.vendor        = "HITACHI",
 		.product       = "^DF",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_HDS,
+	},
+	{
+		/* AMS 2000 and HUS 100 families */
+		.vendor        = "HITACHI",
+		.product       = "^DF600F",
+		.pgpolicy      = MULTIBUS,
 	},
 	/*
 	 * IBM
