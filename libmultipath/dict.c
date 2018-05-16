@@ -1166,7 +1166,8 @@ print_off_int_undef(char * buff, int len, long v)
 }
 
 declare_def_handler(delay_watch_checks, set_off_int_undef)
-declare_def_snprint(delay_watch_checks, print_off_int_undef)
+declare_def_snprint_defint(delay_watch_checks, print_off_int_undef,
+			   DEFAULT_DELAY_CHECKS)
 declare_ovr_handler(delay_watch_checks, set_off_int_undef)
 declare_ovr_snprint(delay_watch_checks, print_off_int_undef)
 declare_hw_handler(delay_watch_checks, set_off_int_undef)
@@ -1174,7 +1175,8 @@ declare_hw_snprint(delay_watch_checks, print_off_int_undef)
 declare_mp_handler(delay_watch_checks, set_off_int_undef)
 declare_mp_snprint(delay_watch_checks, print_off_int_undef)
 declare_def_handler(delay_wait_checks, set_off_int_undef)
-declare_def_snprint(delay_wait_checks, print_off_int_undef)
+declare_def_snprint_defint(delay_wait_checks, print_off_int_undef,
+			   DEFAULT_DELAY_CHECKS)
 declare_ovr_handler(delay_wait_checks, set_off_int_undef)
 declare_ovr_snprint(delay_wait_checks, print_off_int_undef)
 declare_hw_handler(delay_wait_checks, set_off_int_undef)
