@@ -139,11 +139,6 @@ void libcheck_free (struct checker * c)
 	return;
 }
 
-void libcheck_repair (struct checker * c)
-{
-	return;
-}
-
 static int
 do_inq(int sg_fd, unsigned int pg_op, void *resp, int mx_resp_len,
        unsigned int timeout)

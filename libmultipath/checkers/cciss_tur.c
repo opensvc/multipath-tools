@@ -59,11 +59,6 @@ void libcheck_free (struct checker * c)
 	return;
 }
 
-void libcheck_repair (struct checker * c)
-{
-	return;
-}
-
 int libcheck_check(struct checker * c)
 {
 	int rc;

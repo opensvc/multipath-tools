@@ -1000,18 +1000,6 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 	},
 	/*
-	 * Red Hat
-	 *
-	 * Maintainer: Mike Christie
-	 * Mail: mchristi@redhat.com
-	 */
-	{
-		.vendor        = "Ceph",
-		.product       = "RBD",
-		.checker_name  = RBD,
-		.deferred_remove = DEFERRED_REMOVE_ON,
-	},
-	/*
 	 * Kove
 	 */
 	{

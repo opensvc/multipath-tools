@@ -118,11 +118,6 @@ void libcheck_free (struct checker * c)
 	free(ct);
 }
 
-void libcheck_repair (struct checker * c)
-{
-	return;
-}
-
 static int
 check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 {

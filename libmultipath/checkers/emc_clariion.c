@@ -90,11 +90,6 @@ void libcheck_free (struct checker * c)
 	free(c->context);
 }
 
-void libcheck_repair (struct checker * c)
-{
-	return;
-}
-
 int libcheck_check (struct checker * c)
 {
 	unsigned char sense_buffer[128] = { 0, };

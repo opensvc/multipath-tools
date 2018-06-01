@@ -1783,15 +1783,6 @@ int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
 	return 0;
 }
 
-void repair_path(struct path * pp)
-{
-	if (pp->state != PATH_DOWN)
-		return;
-
-	checker_repair(&pp->checker);
-	LOG_MSG(1, checker_message(&pp->checker));
-}
-
 /*
  * Returns '1' if the path has been checked, '-1' if it was blacklisted
  * and '0' otherwise
@@ -1972,7 +1963,6 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 			pp->mpp->failback_tick = 0;
 
 			pp->mpp->stat_path_failures++;
-			repair_path(pp);
 			return 1;
 		}
 
@@ -2071,7 +2061,6 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	}
 
 	pp->state = newstate;
-	repair_path(pp);
 
 	if (pp->mpp->wait_for_udev)
 		return 1;

@@ -1246,21 +1246,6 @@ nvme_sysfs_pathinfo (struct path * pp, vector hwtable)
 }
 
 static int
-rbd_sysfs_pathinfo (struct path * pp, vector hwtable)
-{
-	sprintf(pp->vendor_id, "Ceph");
-	sprintf(pp->product_id, "RBD");
-
-	condlog(3, "%s: vendor = %s product = %s", pp->dev, pp->vendor_id,
-		pp->product_id);
-	/*
-	 * set the hwe configlet pointer
-	 */
-	pp->hwe = find_hwe(hwtable, pp->vendor_id, pp->product_id, NULL);
-	return 0;
-}
-
-static int
 ccw_sysfs_pathinfo (struct path * pp, vector hwtable)
 {
 	struct udev_device *parent;
@@ -1486,8 +1471,6 @@ sysfs_pathinfo(struct path * pp, vector hwtable)
 		pp->bus = SYSFS_BUS_CCW;
 	if (!strncmp(pp->dev,"sd", 2))
 		pp->bus = SYSFS_BUS_SCSI;
-	if (!strncmp(pp->dev,"rbd", 3))
-		pp->bus = SYSFS_BUS_RBD;
 	if (!strncmp(pp->dev,"nvme", 4))
 		pp->bus = SYSFS_BUS_NVME;
 
@@ -1501,9 +1484,6 @@ sysfs_pathinfo(struct path * pp, vector hwtable)
 			return 1;
 	} else if (pp->bus == SYSFS_BUS_CCISS) {
 		if (cciss_sysfs_pathinfo(pp, hwtable))
-			return 1;
-	} else if (pp->bus == SYSFS_BUS_RBD) {
-		if (rbd_sysfs_pathinfo(pp, hwtable))
 			return 1;
 	} else if (pp->bus == SYSFS_BUS_NVME) {
 		if (nvme_sysfs_pathinfo(pp, hwtable))
@@ -1753,53 +1733,6 @@ get_udev_uid(struct path * pp, char *uid_attribute, struct udev_device *udev)
 }
 
 static int
-get_rbd_uid(struct path * pp)
-{
-	struct udev_device *rbd_bus_dev;
-	int ret, rbd_bus_id;
-	const char *pool, *image, *snap;
-	char sysfs_path[PATH_SIZE];
-	uint64_t snap_id, max_snap_id = -3;
-
-	ret = sscanf(pp->dev, "rbd%d", &rbd_bus_id);
-	if (ret != 1)
-		return -EINVAL;
-
-	snprintf(sysfs_path, sizeof(sysfs_path), "/sys/bus/rbd/devices/%d",
-		 rbd_bus_id);
-	rbd_bus_dev = udev_device_new_from_syspath(udev, sysfs_path);
-	if (!rbd_bus_dev)
-		return -ENODEV;
-
-	ret = -EINVAL;
-	pool = udev_device_get_sysattr_value(rbd_bus_dev, "pool_id");
-	if (!pool)
-		goto free_dev;
-
-	image = udev_device_get_sysattr_value(rbd_bus_dev, "image_id");
-	if (!image)
-		goto free_dev;
-
-	snap = udev_device_get_sysattr_value(rbd_bus_dev, "snap_id");
-	if (!snap)
-		goto free_dev;
-	snap_id = strtoull(snap, NULL, 19);
-	if (snap_id >= max_snap_id)
-		ret = snprintf(pp->wwid, WWID_SIZE, "%s-%s", pool, image);
-	else
-		ret = snprintf(pp->wwid, WWID_SIZE, "%s-%s-%s", pool,
-			       image, snap);
-	if (ret >= WWID_SIZE) {
-		condlog(0, "%s: wwid overflow", pp->dev);
-		ret = -EOVERFLOW;
-	}
-
-free_dev:
-	udev_device_unref(rbd_bus_dev);
-	return ret;
-}
-
-static int
 get_vpd_uid(struct path * pp)
 {
 	struct udev_device *parent = pp->udev;
@@ -1876,9 +1809,6 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev)
 		} else
 			len = strlen(pp->wwid);
 		origin = "callout";
-	} else if (pp->bus == SYSFS_BUS_RBD) {
-		len = get_rbd_uid(pp);
-		origin = "sysfs";
 	} else {
 
 		if (udev && pp->uid_attribute) {

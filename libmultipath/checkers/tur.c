@@ -112,11 +112,6 @@ void libcheck_free (struct checker * c)
 	return;
 }
 
-void libcheck_repair (struct checker * c)
-{
-	return;
-}
-
 #define TUR_MSG(fmt, args...)					\
 	do {							\
 		char msg[CHECKER_MSG_LEN];			\

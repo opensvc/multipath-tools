@@ -86,7 +86,6 @@ enum path_check_state {
 #define READSECTOR0  "readsector0"
 #define CCISS_TUR    "cciss_tur"
 #define NONE         "none"
-#define RBD          "rbd"
 
 #define ASYNC_TIMEOUT_SEC	30
 
@@ -113,9 +112,6 @@ struct checker {
 						multipath-wide. Use MALLOC if
 						you want to stuff data in. */
 	int (*check)(struct checker *);
-	void (*repair)(struct checker *);    /* called if check returns
-						PATH_DOWN to bring path into
-						usable state */
 	int (*init)(struct checker *);       /* to allocate the context */
 	void (*free)(struct checker *);      /* to free the context */
 };
@@ -136,7 +132,6 @@ void checker_set_async (struct checker *);
 void checker_set_fd (struct checker *, int);
 void checker_enable (struct checker *);
 void checker_disable (struct checker *);
-void checker_repair (struct checker *);
 int checker_check (struct checker *, int);
 int checker_selected (struct checker *);
 char * checker_name (struct checker *);
@@ -148,6 +143,5 @@ void checker_get (char *, struct checker *, char *);
 int libcheck_check(struct checker *);
 int libcheck_init(struct checker *);
 void libcheck_free(struct checker *);
-void libcheck_repair(struct checker *);
 
 #endif /* _CHECKERS_H */
