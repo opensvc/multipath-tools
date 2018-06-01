@@ -82,6 +82,7 @@ struct hwentry {
 	int skip_kpartx;
 	int max_sectors_kb;
 	int ghost_delay;
+	int all_tg_pt;
 	char * bl_product;
 };
 
@@ -194,6 +195,7 @@ struct config {
 	char * partition_delim;
 	char * config_dir;
 	int prkey_source;
+	int all_tg_pt;
 	struct be64 reservation_key;
 
 	vector keywords;

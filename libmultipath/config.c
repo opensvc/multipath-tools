@@ -352,6 +352,7 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(skip_kpartx);
 	merge_num(max_sectors_kb);
 	merge_num(ghost_delay);
+	merge_num(all_tg_pt);
 
 	snprintf(id, sizeof(id), "%s/%s", dst->vendor, dst->product);
 	reconcile_features_with_options(id, &dst->features,
@@ -622,6 +623,7 @@ load_config (char * file)
 	conf->disable_changed_wwids = DEFAULT_DISABLE_CHANGED_WWIDS;
 	conf->remove_retries = 0;
 	conf->ghost_delay = DEFAULT_GHOST_DELAY;
+	conf->all_tg_pt = DEFAULT_ALL_TG_PT;
 
 	/*
 	 * preload default hwtable

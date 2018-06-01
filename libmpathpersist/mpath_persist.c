@@ -335,6 +335,7 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 
 	conf = get_multipath_config();
 	select_reservation_key(conf, mpp);
+	select_all_tg_pt(conf, mpp);
 	put_multipath_config(conf);
 
 	memcpy(&prkey, paramp->sa_key, 8);
@@ -456,7 +457,7 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	unsigned int rq_type, struct prout_param_descriptor * paramp, int noisy)
 {
 
-	int i, j;
+	int i, j, k;
 	struct pathgroup *pgp = NULL;
 	struct path *pp = NULL;
 	int rollback = 0;
@@ -481,11 +482,13 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	}
 
 	struct threadinfo thread[active_pathcount];
+	int hosts[active_pathcount];
 
 	memset(thread, 0, sizeof(thread));
 
 	/* init thread parameter */
 	for (i =0; i< active_pathcount; i++){
+		hosts[i] = -1;
 		thread[i].param.rq_servact = rq_servact;
 		thread[i].param.rq_scope = rq_scope;
 		thread[i].param.rq_type = rq_type;
@@ -514,6 +517,17 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 				condlog (1, "%s: %s path not up. Skip.", mpp->wwid, pp->dev);
 				continue;
 			}
+			if (mpp->all_tg_pt == ALL_TG_PT_ON &&
+			    pp->sg_id.host_no != -1) {
+				for (k = 0; k < count; k++) {
+					if (pp->sg_id.host_no == hosts[k]) {
+						condlog(3, "%s: %s host %d matches skip.", pp->wwid, pp->dev, pp->sg_id.host_no);
+						break;
+					}
+				}
+				if (k < count)
+					continue;
+			}
 			strncpy(thread[count].param.dev, pp->dev,
 				FILE_NAME_SIZE - 1);
 
@@ -531,10 +545,12 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 				condlog (0, "%s: failed to create thread %d", mpp->wwid, rc);
 				thread[count].param.status = MPATH_PR_THREAD_ERROR;
 			}
+			else
+				hosts[count] = pp->sg_id.host_no;
 			count = count + 1;
 		}
 	}
-	for( i=0; i < active_pathcount ; i++){
+	for( i=0; i < count ; i++){
 		if (thread[i].param.status != MPATH_PR_THREAD_ERROR) {
 			rc = pthread_join(thread[i].id, NULL);
 			if (rc){
@@ -557,7 +573,7 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	}
 	if (rollback && ((rq_servact == MPATH_PROUT_REG_SA) && sa_key != 0 )){
 		condlog (3, "%s: ERROR: initiating pr out rollback", mpp->wwid);
-		for( i=0 ; i < active_pathcount ; i++){
+		for( i=0 ; i < count ; i++){
 			if(thread[i].param.status == MPATH_PR_SUCCESS) {
 				memcpy(&thread[i].param.paramp->key, &thread[i].param.paramp->sa_key, 8);
 				memset(&thread[i].param.paramp->sa_key, 0, 8);
@@ -571,7 +587,7 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 			} else
 				thread[i].param.status = MPATH_PR_SKIP;
 		}
-		for(i=0; i < active_pathcount ; i++){
+		for(i=0; i < count ; i++){
 			if (thread[i].param.status != MPATH_PR_SKIP &&
 			    thread[i].param.status != MPATH_PR_THREAD_ERROR) {
 				rc = pthread_join(thread[i].id, NULL);
@@ -720,7 +736,7 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		}
 	}
 	pthread_attr_destroy (&attr);
-	for (i = 0; i < active_pathcount; i++){
+	for (i = 0; i < count; i++){
 		if (thread[i].param.status != MPATH_PR_THREAD_ERROR) {
 			rc = pthread_join (thread[i].id, NULL);
 			if (rc){
@@ -729,7 +745,7 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		}
 	}
 
-	for (i = 0; i < active_pathcount; i++){
+	for (i = 0; i < count; i++){
 		/*  check thread status here and return the status */
 
 		if (thread[i].param.status == MPATH_PR_RESERV_CONFLICT)

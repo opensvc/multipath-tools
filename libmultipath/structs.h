@@ -217,6 +217,12 @@ enum prkey_sources {
 	PRKEY_SOURCE_FILE,
 };
 
+enum all_tg_pt_states {
+	ALL_TG_PT_UNDEF = YNU_UNDEF,
+	ALL_TG_PT_OFF = YNU_NO,
+	ALL_TG_PT_ON = YNU_YES,
+};
+
 struct sg_id {
 	int host_no;
 	int channel;
@@ -362,6 +368,7 @@ struct multipath {
 	int prkey_source;
 	struct be64 reservation_key;
 	unsigned char prflag;
+	int all_tg_pt;
 	struct gen_multipath generic_mp;
 };
 

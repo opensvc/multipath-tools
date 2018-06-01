@@ -34,3 +34,4 @@ int select_ghost_delay(struct config *conf, struct multipath * mp);
 void reconcile_features_with_options(const char *id, char **features,
 				     int* no_path_retry,
 				     int *retain_hwhandler);
+int select_all_tg_pt (struct config *conf, struct multipath * mp);

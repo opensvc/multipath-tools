@@ -978,3 +978,18 @@ out:
 		pp->dev, pp->find_multipaths_timeout, origin);
 	return 0;
 }
+
+int select_all_tg_pt (struct config *conf, struct multipath * mp)
+{
+	const char *origin;
+
+	mp_set_ovr(all_tg_pt);
+	mp_set_hwe(all_tg_pt);
+	mp_set_conf(all_tg_pt);
+	mp_set_default(all_tg_pt, DEFAULT_ALL_TG_PT);
+out:
+	condlog(3, "%s: all_tg_pt = %s %s", mp->alias,
+		(mp->all_tg_pt == ALL_TG_PT_ON)? "yes" : "no",
+		origin);
+	return 0;
+}
