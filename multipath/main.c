@@ -482,10 +482,8 @@ static int print_cmd_valid(int k, const vector pathvec,
 			pp, pp->find_multipaths_timeout, &until);
 		if (wait != FIND_MULTIPATHS_WAITING)
 			k = 1;
-	} else if (pathvec != NULL) {
-		pp = VECTOR_SLOT(pathvec, 0);
+	} else if (pathvec != NULL && (pp = VECTOR_SLOT(pathvec, 0)))
 		wait = find_multipaths_check_timeout(pp, 0, &until);
-	}
 	if (wait == FIND_MULTIPATHS_WAITING)
 		printf("FIND_MULTIPATHS_WAIT_UNTIL=\"%ld.%06ld\"\n",
 			       until.tv_sec, until.tv_nsec/1000);
