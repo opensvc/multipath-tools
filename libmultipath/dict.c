@@ -22,6 +22,8 @@
 #include "util.h"
 #include <errno.h>
 #include <inttypes.h>
+#include <libudev.h>
+#include <mpath_persist.h>
 #include "mpath_cmd.h"
 #include "dict.h"
 
@@ -1012,10 +1014,12 @@ snprint_def_log_checker_err (struct config *conf, char * buff, int len,
 }
 
 static int
-set_reservation_key(vector strvec, struct be64 *be64_ptr, int *source_ptr)
+set_reservation_key(vector strvec, struct be64 *be64_ptr, uint8_t *flags_ptr,
+		    int *source_ptr)
 {
 	char *buff;
 	uint64_t prkey;
+	uint8_t sa_flags;
 
 	buff = set_value(strvec);
 	if (!buff)
@@ -1023,35 +1027,43 @@ set_reservation_key(vector strvec, struct be64 *be64_ptr, int *source_ptr)
 
 	if (strcmp(buff, "file") == 0) {
 		*source_ptr = PRKEY_SOURCE_FILE;
+		*flags_ptr = 0;
 		put_be64(*be64_ptr, 0);
 		FREE(buff);
 		return 0;
 	}
 
-	if (parse_prkey(buff, &prkey) != 0) {
+	if (parse_prkey_flags(buff, &prkey, &sa_flags) != 0) {
 		FREE(buff);
 		return 1;
 	}
 	*source_ptr = PRKEY_SOURCE_CONF;
+	*flags_ptr = sa_flags;
 	put_be64(*be64_ptr, prkey);
 	FREE(buff);
 	return 0;
 }
 
 int
-print_reservation_key(char * buff, int len, struct be64 key, int source)
+print_reservation_key(char * buff, int len, struct be64 key, uint8_t flags,
+		      int source)
 {
+	char *flagstr = "";
 	if (source == PRKEY_SOURCE_NONE)
 		return 0;
 	if (source == PRKEY_SOURCE_FILE)
 		return snprintf(buff, len, "file");
-	return snprintf(buff, len, "0x%" PRIx64, get_be64(key));
+	if (flags & MPATH_F_APTPL_MASK)
+		flagstr = ":aptpl";
+	return snprintf(buff, len, "0x%" PRIx64 "%s", get_be64(key),
+			flagstr);
 }
 
 static int
 def_reservation_key_handler(struct config *conf, vector strvec)
 {
 	return set_reservation_key(strvec, &conf->reservation_key,
+				   &conf->sa_flags,
 				   &conf->prkey_source);
 }
 
@@ -1060,6 +1072,7 @@ snprint_def_reservation_key (struct config *conf, char * buff, int len,
 			     const void * data)
 {
 	return print_reservation_key(buff, len, conf->reservation_key,
+				     conf->sa_flags,
 				     conf->prkey_source);
 }
 
@@ -1070,6 +1083,7 @@ mp_reservation_key_handler(struct config *conf, vector strvec)
 	if (!mpe)
 		return 1;
 	return set_reservation_key(strvec, &mpe->reservation_key,
+				   &mpe->sa_flags,
 				   &mpe->prkey_source);
 }
 
@@ -1079,6 +1093,7 @@ snprint_mp_reservation_key (struct config *conf, char * buff, int len,
 {
 	const struct mpentry * mpe = (const struct mpentry *)data;
 	return print_reservation_key(buff, len, mpe->reservation_key,
+				     mpe->sa_flags,
 				     mpe->prkey_source);
 }
 

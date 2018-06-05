@@ -13,7 +13,9 @@
 "# prkey wwid\n" \
 "#\n"
 
-int set_prkey(struct config *conf, struct multipath *mpp, uint64_t prkey);
-int get_prkey(struct config *conf, struct multipath *mpp, uint64_t *prkey);
+int set_prkey(struct config *conf, struct multipath *mpp, uint64_t prkey,
+	      uint8_t sa_flags);
+int get_prkey(struct config *conf, struct multipath *mpp, uint64_t *prkey,
+	      uint8_t *sa_flags);
 
 #endif /* _PRKEY_H */

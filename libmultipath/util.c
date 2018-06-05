@@ -10,6 +10,8 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
+#include <libudev.h>
+#include <mpath_persist.h>
 
 #include "util.h"
 #include "debug.h"
@@ -433,6 +435,20 @@ int parse_prkey(char *ptr, uint64_t *prkey)
 	if (sscanf(ptr, "%" SCNx64 "", prkey) != 1)
 		return 1;
 	return 0;
+}
+
+int parse_prkey_flags(char *ptr, uint64_t *prkey, uint8_t *flags)
+{
+	char *flagstr;
+
+	flagstr = strchr(ptr, ':');
+	*flags = 0;
+	if (flagstr) {
+		*flagstr++ = '\0';
+		if (strlen(flagstr) == 5 && strcmp(flagstr, "aptpl") == 0)
+			*flags = MPATH_F_APTPL_MASK;
+	}
+	return parse_prkey(ptr, prkey);
 }
 
 int safe_write(int fd, const void *buf, size_t count)

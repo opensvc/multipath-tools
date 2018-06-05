@@ -726,14 +726,17 @@ This is the service action reservation key used by mpathpersist. It must be
 set for all multipath devices using persistent reservations, and it must be
 the same as the RESERVATION KEY field of the PERSISTENT RESERVE OUT parameter
 list which contains an 8-byte value provided by the application client to the
-device server to identify the I_T nexus.
+device server to identify the I_T nexus. If the \fI--param-aptpl\fR option is
+used when registering the key with mpathpersist, \fB:aptpl\fR must be appended
+to the end of the reservation key.
 .RS
 .PP
 Alternatively, this can be set to \fBfile\fR, which will store the RESERVATION
 KEY registered by mpathpersist in the \fIprkeys_file\fR. multipathd will then
 use this key to register additional paths as they appear.  When the
 registration is removed, the RESERVATION KEY is removed from the
-\fIprkeys_file\fR.
+\fIprkeys_file\fR. The prkeys file will automatically keep track of whether
+the key was registered with \fI--param-aptpl\fR.
 .TP
 The default is: \fB<unset>\fR
 .RE

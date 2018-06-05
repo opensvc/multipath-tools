@@ -106,6 +106,7 @@ do {									\
 	if (src && src->prkey_source != PRKEY_SOURCE_NONE) {		\
 		mp->prkey_source = src->prkey_source;			\
 		mp->reservation_key = src->reservation_key;		\
+		mp->sa_flags = src->sa_flags;				\
 		origin = msg;						\
 		goto out;						\
 	}								\
@@ -703,18 +704,19 @@ int select_reservation_key(struct config *conf, struct multipath *mp)
 	do_prkey_set(mp->mpe, multipaths_origin);
 	do_prkey_set(conf, conf_origin);
 	put_be64(mp->reservation_key, 0);
+	mp->sa_flags = 0;
 	mp->prkey_source = PRKEY_SOURCE_NONE;
 	return 0;
 out:
 	if (mp->prkey_source == PRKEY_SOURCE_FILE) {
 		from_file = " (from prkeys file)";
-		if (get_prkey(conf, mp, &prkey) != 0)
+		if (get_prkey(conf, mp, &prkey, &mp->sa_flags) != 0)
 			put_be64(mp->reservation_key, 0);
 		else
 			put_be64(mp->reservation_key, prkey);
 	}
 	print_reservation_key(buff, PRKEY_SIZE, mp->reservation_key,
-			      mp->prkey_source);
+			      mp->sa_flags, mp->prkey_source);
 	condlog(3, "%s: reservation_key = %s %s%s", mp->alias, buff, origin,
 		from_file);
 	return 0;

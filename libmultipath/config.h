@@ -98,6 +98,7 @@ struct mpentry {
 	char * prio_args;
 	int prkey_source;
 	struct be64 reservation_key;
+	uint8_t sa_flags;
 	int pgpolicy;
 	int pgfailback;
 	int rr_weight;
@@ -197,6 +198,7 @@ struct config {
 	int prkey_source;
 	int all_tg_pt;
 	struct be64 reservation_key;
+	uint8_t sa_flags;
 
 	vector keywords;
 	vector mptable;

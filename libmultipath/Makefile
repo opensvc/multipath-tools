@@ -7,7 +7,7 @@ SONAME = 0
 DEVLIB = libmultipath.so
 LIBS = $(DEVLIB).$(SONAME)
 
-CFLAGS += $(LIB_CFLAGS) -I$(mpathcmddir)
+CFLAGS += $(LIB_CFLAGS) -I$(mpathcmddir) -I$(mpathpersistdir)
 
 LIBDEPS += -lpthread -ldl -ldevmapper -ludev -L$(mpathcmddir) -lmpathcmd -lurcu -laio
 

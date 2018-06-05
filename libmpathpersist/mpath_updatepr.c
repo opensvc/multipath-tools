@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <unistd.h>
-#include <errno.h>
-
 #include <stdlib.h>
 #include <stdarg.h>
 #include <fcntl.h>
@@ -11,6 +9,8 @@
 #include <sys/un.h>
 #include <poll.h>
 #include <errno.h>
+#include <libudev.h>
+#include <mpath_persist.h>
 #include "debug.h"
 #include "mpath_cmd.h"
 #include "uxsock.h"
@@ -59,11 +59,14 @@ int update_prflag(char *mapname, int set) {
 	return do_update_pr(mapname, (set)? "setprstatus" : "unsetprstatus");
 }
 
-int update_prkey(char *mapname, uint64_t prkey) {
+int update_prkey_flags(char *mapname, uint64_t prkey, uint8_t sa_flags) {
 	char str[256];
+	char *flagstr = "";
 
+	if (sa_flags & MPATH_F_APTPL_MASK)
+		flagstr = ":aptpl";
 	if (prkey)
-		sprintf(str, "setprkey key %" PRIx64, prkey);
+		sprintf(str, "setprkey key %" PRIx64 "%s", prkey, flagstr);
 	else
 		sprintf(str, "unsetprkey");
 	return do_update_pr(mapname, str);

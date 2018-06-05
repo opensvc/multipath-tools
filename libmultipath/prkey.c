@@ -11,6 +11,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include <errno.h>
+#include <libudev.h>
+#include <mpath_persist.h>
 
 #define PRKEY_READ 0
 #define PRKEY_WRITE 1
@@ -108,7 +110,8 @@ static int do_prkey(int fd, char *wwid, char *keystr, int cmd)
 	return 0;
 }
 
-int get_prkey(struct config *conf, struct multipath *mpp, uint64_t *prkey)
+int get_prkey(struct config *conf, struct multipath *mpp, uint64_t *prkey,
+	      uint8_t *sa_flags)
 {
 	int fd;
 	int unused;
@@ -124,6 +127,9 @@ int get_prkey(struct config *conf, struct multipath *mpp, uint64_t *prkey)
 	ret = do_prkey(fd, mpp->wwid, keystr, PRKEY_READ);
 	if (ret)
 		goto out_file;
+	*sa_flags = 0;
+	if (strchr(keystr, 'X'))
+		*sa_flags = MPATH_F_APTPL_MASK;
 	ret = !!parse_prkey(keystr, prkey);
 out_file:
 	close(fd);
@@ -131,7 +137,8 @@ out:
 	return ret;
 }
 
-int set_prkey(struct config *conf, struct multipath *mpp, uint64_t prkey)
+int set_prkey(struct config *conf, struct multipath *mpp, uint64_t prkey,
+	      uint8_t sa_flags)
 {
 	int fd;
 	int can_write = 1;
@@ -141,6 +148,12 @@ int set_prkey(struct config *conf, struct multipath *mpp, uint64_t prkey)
 	if (!strlen(mpp->wwid))
 		goto out;
 
+	if (sa_flags & ~MPATH_F_APTPL_MASK) {
+		condlog(0, "unsupported pr flags, 0x%x",
+			sa_flags & ~MPATH_F_APTPL_MASK);
+		sa_flags &= MPATH_F_APTPL_MASK;
+	}
+
 	fd = open_file(conf->prkeys_file, &can_write, PRKEYS_FILE_HEADER);
 	if (fd < 0)
 		goto out;
@@ -149,7 +162,15 @@ int set_prkey(struct config *conf, struct multipath *mpp, uint64_t prkey)
 		goto out_file;
 	}
 	if (prkey) {
-		snprintf(keystr, PRKEY_SIZE, "0x%016" PRIx64, prkey);
+		/* using the capitalization of the 'x' is a hack, but
+		 * it's unlikely that mpath_persist will support more options
+		 * since sg_persist doesn't, and this lets us keep the
+		 * same file format as before instead of needing to change
+		 * the format of the prkeys file */
+		if (sa_flags)
+			snprintf(keystr, PRKEY_SIZE, "0X%016" PRIx64, prkey);
+		else
+			snprintf(keystr, PRKEY_SIZE, "0x%016" PRIx64, prkey);
 		keystr[PRKEY_SIZE - 1] = '\0';
 		ret = do_prkey(fd, mpp->wwid, keystr, PRKEY_WRITE);
 	}

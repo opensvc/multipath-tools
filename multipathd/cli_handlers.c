@@ -21,6 +21,7 @@
 #include "sysfs.h"
 #include <errno.h>
 #include <libudev.h>
+#include <mpath_persist.h>
 #include "util.h"
 #include "prkey.h"
 #include "propsel.h"
@@ -1463,6 +1464,7 @@ cli_getprkey(void * v, char ** reply, int * len, void * data)
 	struct multipath * mpp;
 	struct vectors * vecs = (struct vectors *)data;
 	char *mapname = get_keyparam(v, MAP);
+	char *flagstr = "";
 
 	mapname = convert_dev(mapname, 0);
 	condlog(3, "%s: get persistent reservation key (operator)", mapname);
@@ -1478,8 +1480,10 @@ cli_getprkey(void * v, char ** reply, int * len, void * data)
 		*len = strlen(*reply) + 1;
 		return 0;
 	}
-	snprintf(*reply, 20, "0x%" PRIx64 "\n",
-		 get_be64(mpp->reservation_key));
+	if (mpp->sa_flags & MPATH_F_APTPL_MASK)
+		flagstr = ":aptpl";
+	snprintf(*reply, 20, "0x%" PRIx64 "%s\n",
+		 get_be64(mpp->reservation_key), flagstr);
 	(*reply)[19] = '\0';
 	*len = strlen(*reply) + 1;
 	return 0;
@@ -1503,7 +1507,7 @@ cli_unsetprkey(void * v, char ** reply, int * len, void * data)
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
-	ret = set_prkey(conf, mpp, 0);
+	ret = set_prkey(conf, mpp, 0, 0);
 	pthread_cleanup_pop(1);
 
 	return ret;
@@ -1517,6 +1521,7 @@ cli_setprkey(void * v, char ** reply, int * len, void * data)
 	char *mapname = get_keyparam(v, MAP);
 	char *keyparam = get_keyparam(v, KEY);
 	uint64_t prkey;
+	uint8_t flags;
 	int ret;
 	struct config *conf;
 
@@ -1527,14 +1532,14 @@ cli_setprkey(void * v, char ** reply, int * len, void * data)
 	if (!mpp)
 		return 1;
 
-	if (parse_prkey(keyparam, &prkey) != 0) {
+	if (parse_prkey_flags(keyparam, &prkey, &flags) != 0) {
 		condlog(0, "%s: invalid prkey : '%s'", mapname, keyparam);
 		return 1;
 	}
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
-	ret = set_prkey(conf, mpp, prkey);
+	ret = set_prkey(conf, mpp, prkey, flags);
 	pthread_cleanup_pop(1);
 
 	return ret;

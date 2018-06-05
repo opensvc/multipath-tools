@@ -3089,6 +3089,7 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 
 	param= malloc(sizeof(struct prout_param_descriptor));
 	memset(param, 0 , sizeof(struct prout_param_descriptor));
+	param->sa_flags = mpp->sa_flags;
 	memcpy(param->sa_key, &mpp->reservation_key, 8);
 	param->num_transportid = 0;
 
