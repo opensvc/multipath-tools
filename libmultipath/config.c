@@ -552,6 +552,11 @@ free_config (struct config * conf)
 	FREE(conf);
 }
 
+static void free_namelist(void *nl)
+{
+	free(nl);
+}
+
 /* if multipath fails to process the config directory, it should continue,
  * with just a warning message */
 static void
@@ -575,7 +580,9 @@ process_config_dir(struct config *conf, vector keywords, char *dir)
 			condlog(0, "couldn't open configuration dir '%s': %s",
 				dir, strerror(errno));
 		return;
-	}
+	} else if (n == 0)
+		return;
+	pthread_cleanup_push(free_namelist, namelist);
 	for (i = 0; i < n; i++) {
 		if (!strstr(namelist[i]->d_name, ".conf"))
 			continue;
@@ -587,6 +594,7 @@ process_config_dir(struct config *conf, vector keywords, char *dir)
 			factorize_hwtable(conf->hwtable, old_hwtable_size);
 
 	}
+	pthread_cleanup_pop(1);
 }
 
 struct config *
