@@ -11,7 +11,6 @@
 #include <sys/sysmacros.h>
 #include "devmapper.h"
 
-#define FREE_CONST(p) do { free((void*)(long)p); p = NULL; } while(0)
 #define _UUID_PREFIX "part"
 #define UUID_PREFIX _UUID_PREFIX "%d-"
 #define _UUID_PREFIX_LEN (sizeof(_UUID_PREFIX) - 1)
@@ -252,10 +251,11 @@ out:
 	return r;
 }
 
-static const char *dm_find_uuid(const char *uuid)
+static char *dm_find_uuid(const char *uuid)
 {
 	struct dm_task *dmt;
-	const char *name = NULL, *tmp;
+	char *name = NULL;
+	const char *tmp;
 
 	if ((dmt = dm_task_create(DM_DEVICE_INFO)) == NULL)
 		return NULL;
@@ -642,7 +642,7 @@ int dm_find_part(const char *parent, const char *delim, int part,
 {
 	int r;
 	char params[PARAMS_SIZE];
-	const char *tmp;
+	char *tmp;
 	char *uuid;
 	int major, minor;
 	char dev_t[32];
@@ -696,7 +696,7 @@ int dm_find_part(const char *parent, const char *delim, int part,
 	} else
 		*part_uuid = uuid;
 out:
-	FREE_CONST(tmp);
+	free(tmp);
 	return r;
 }
 
