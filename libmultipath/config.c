@@ -608,8 +608,7 @@ load_config (char * file)
 	/*
 	 * internal defaults
 	 */
-	if (!conf->verbosity)
-		conf->verbosity = DEFAULT_VERBOSITY;
+	conf->verbosity = DEFAULT_VERBOSITY;
 
 	get_sys_max_fds(&conf->max_fds);
 	conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
@@ -636,12 +635,9 @@ load_config (char * file)
 	/*
 	 * preload default hwtable
 	 */
-	if (conf->hwtable == NULL) {
-		conf->hwtable = vector_alloc();
-
-		if (!conf->hwtable)
+	conf->hwtable = vector_alloc();
+	if (!conf->hwtable)
 			goto out;
-	}
 	if (setup_default_hwtable(conf->hwtable))
 		goto out;
 
