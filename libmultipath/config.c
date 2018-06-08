@@ -471,18 +471,12 @@ restart:
 				free_hwe(hwe2);
 				continue;
 			}
-			if (hwe_regmatch(hwe1, hwe2->vendor,
-					 hwe2->product, hwe2->revision))
-				continue;
-			/* dup */
-			log_match(hwe1, hwe2->vendor,
-				  hwe2->product, hwe2->revision);
-			merge_hwe(hwe2, hwe1);
 			if (hwe_strmatch(hwe2, hwe1) == 0) {
 				condlog(4, "%s: removing hwentry %s:%s:%s",
 					__func__, hwe1->vendor, hwe1->product,
 					hwe1->revision);
 				vector_del_slot(hw, i);
+				merge_hwe(hwe2, hwe1);
 				free_hwe(hwe1);
 				n -= 1;
 				/*
