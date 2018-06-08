@@ -212,6 +212,7 @@ load_keys (void)
 	r += add_key(keys, "setprkey", SETPRKEY, 0);
 	r += add_key(keys, "unsetprkey", UNSETPRKEY, 0);
 	r += add_key(keys, "key", KEY, 1);
+	r += add_key(keys, "local", LOCAL, 0);
 
 
 	if (r) {
@@ -549,6 +550,7 @@ cli_init (void) {
 	add_handler(LIST+MAP+FMT, NULL);
 	add_handler(LIST+MAP+RAW+FMT, NULL);
 	add_handler(LIST+CONFIG, NULL);
+	add_handler(LIST+CONFIG+LOCAL, NULL);
 	add_handler(LIST+BLACKLIST, NULL);
 	add_handler(LIST+DEVICES, NULL);
 	add_handler(LIST+WILDCARDS, NULL);

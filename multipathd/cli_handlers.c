@@ -247,14 +247,15 @@ show_map_json (char ** r, int * len, struct multipath * mpp,
 }
 
 static int
-show_config (char ** r, int * len, const struct _vector *hwtable)
+show_config (char ** r, int * len, const struct _vector *hwtable,
+	     const struct _vector *mpvec)
 {
 	struct config *conf;
 	char *reply;
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
-	reply = snprint_config(conf, len, hwtable, NULL);
+	reply = snprint_config(conf, len, hwtable, mpvec);
 	pthread_cleanup_pop(1);
 	if (reply == NULL)
 		return 1;
@@ -278,7 +279,28 @@ cli_list_config (void * v, char ** reply, int * len, void * data)
 {
 	condlog(3, "list config (operator)");
 
-	return show_config(reply, len, NULL);
+	return show_config(reply, len, NULL, NULL);
+}
+
+static void v_free(void *x)
+{
+	vector_free(x);
+}
+
+int
+cli_list_config_local (void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	vector hwes;
+	int ret;
+
+	condlog(3, "list config local (operator)");
+
+	hwes = get_used_hwes(vecs->pathvec);
+	pthread_cleanup_push(v_free, hwes);
+	ret = show_config(reply, len, hwes, vecs->mpvec);
+	pthread_cleanup_pop(1);
+	return ret;
 }
 
 int

@@ -1494,6 +1494,7 @@ uxlsnrloop (void * ap)
 	set_handler_callback(LIST+MAP+FMT, cli_list_map_fmt);
 	set_handler_callback(LIST+MAP+RAW+FMT, cli_list_map_fmt);
 	set_handler_callback(LIST+MAP+JSON, cli_list_map_json);
+	set_handler_callback(LIST+CONFIG+LOCAL, cli_list_config_local);
 	set_handler_callback(LIST+CONFIG, cli_list_config);
 	set_handler_callback(LIST+BLACKLIST, cli_list_blacklist);
 	set_handler_callback(LIST+DEVICES, cli_list_devices);

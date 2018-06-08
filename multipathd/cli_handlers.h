@@ -16,6 +16,7 @@ int cli_list_maps_topology (void * v, char ** reply, int * len, void * data);
 int cli_list_map_json (void * v, char ** reply, int * len, void * data);
 int cli_list_maps_json (void * v, char ** reply, int * len, void * data);
 int cli_list_config (void * v, char ** reply, int * len, void * data);
+int cli_list_config_local (void * v, char ** reply, int * len, void * data);
 int cli_list_blacklist (void * v, char ** reply, int * len, void * data);
 int cli_list_devices (void * v, char ** reply, int * len, void * data);
 int cli_list_wildcards (void * v, char ** reply, int * len, void * data);
