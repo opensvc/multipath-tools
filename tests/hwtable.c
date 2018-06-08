@@ -1567,8 +1567,6 @@ static int setup_multipath_config(void **state)
  *
  * Expected: properties are taken from both multipath sections, later taking
  * precedence
- *
- * Current: gets properties from first entry only.
  */
 static void test_multipath_config_2(const struct hwt_state *hwt)
 {
@@ -1580,15 +1578,8 @@ static void test_multipath_config_2(const struct hwt_state *hwt)
 	assert_ptr_not_equal(mp, NULL);
 	assert_ptr_not_equal(mp->mpe, NULL);
 	TEST_PROP(prio_name(&pp->prio), prio_rdac.value);
-#if BROKEN
-	condlog(1, "%s: WARNING: broken test on %d", __func__, __LINE__ + 1);
-	assert_int_equal(mp->minio, DEFAULT_MINIO_RQ);
-	condlog(1, "%s: WARNING: broken test on %d", __func__, __LINE__ + 1);
-	assert_int_equal(mp->no_path_retry, NO_PATH_RETRY_QUEUE);
-#else
 	assert_int_equal(mp->minio, atoi(minio_99.value));
 	assert_int_equal(mp->no_path_retry, atoi(npr_37.value));
-#endif
 }
 
 static int setup_multipath_config_2(void **state)
@@ -1622,15 +1613,8 @@ static void test_multipath_config_3(const struct hwt_state *hwt)
 	assert_ptr_not_equal(mp, NULL);
 	assert_ptr_not_equal(mp->mpe, NULL);
 	TEST_PROP(prio_name(&pp->prio), prio_rdac.value);
-#if BROKEN
-	condlog(1, "%s: WARNING: broken test on %d", __func__, __LINE__ + 1);
-	assert_int_equal(mp->minio, DEFAULT_MINIO_RQ);
-	condlog(1, "%s: WARNING: broken test on %d", __func__, __LINE__ + 1);
-	assert_int_equal(mp->no_path_retry, NO_PATH_RETRY_QUEUE);
-#else
 	assert_int_equal(mp->minio, atoi(minio_99.value));
 	assert_int_equal(mp->no_path_retry, atoi(npr_37.value));
-#endif
 }
 
 static int setup_multipath_config_3(void **state)

@@ -377,6 +377,74 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	return 0;
 }
 
+static int
+merge_mpe(struct mpentry *dst, struct mpentry *src)
+{
+	if (!dst || !src)
+		return 1;
+
+	merge_str(alias);
+	merge_str(uid_attribute);
+	merge_str(getuid);
+	merge_str(selector);
+	merge_str(features);
+	merge_str(prio_name);
+	merge_str(prio_args);
+
+	if (dst->prkey_source == PRKEY_SOURCE_NONE &&
+	    src->prkey_source != PRKEY_SOURCE_NONE) {
+		dst->prkey_source = src->prkey_source;
+		memcpy(&dst->reservation_key, &src->reservation_key,
+		       sizeof(dst->reservation_key));
+	}
+
+	merge_num(pgpolicy);
+	merge_num(pgfailback);
+	merge_num(rr_weight);
+	merge_num(no_path_retry);
+	merge_num(minio);
+	merge_num(minio_rq);
+	merge_num(flush_on_last_del);
+	merge_num(attribute_flags);
+	merge_num(user_friendly_names);
+	merge_num(deferred_remove);
+	merge_num(delay_watch_checks);
+	merge_num(delay_wait_checks);
+	merge_num(marginal_path_err_sample_time);
+	merge_num(marginal_path_err_rate_threshold);
+	merge_num(marginal_path_err_recheck_gap_time);
+	merge_num(marginal_path_double_failed_time);
+	merge_num(skip_kpartx);
+	merge_num(max_sectors_kb);
+	merge_num(ghost_delay);
+	merge_num(uid);
+	merge_num(gid);
+	merge_num(mode);
+
+	return 0;
+}
+
+void merge_mptable(vector mptable)
+{
+	struct mpentry *mp1, *mp2;
+	int i, j;
+
+	vector_foreach_slot(mptable, mp1, i) {
+		j = i + 1;
+		vector_foreach_slot_after(mptable, mp2, j) {
+			if (strcmp(mp1->wwid, mp2->wwid))
+				continue;
+			condlog(1, "%s: duplicate multipath config section for %s",
+				__func__, mp1->wwid);
+			merge_mpe(mp2, mp1);
+			free_mpe(mp1);
+			vector_del_slot(mptable, i);
+			i--;
+			break;
+		}
+	}
+}
+
 int
 store_hwe (vector hwtable, struct hwentry * dhwe)
 {
@@ -749,6 +817,8 @@ load_config (char * file)
 		if (!conf->mptable)
 			goto out;
 	}
+
+	merge_mptable(conf->mptable);
 	if (conf->bindings_file == NULL)
 		conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 
