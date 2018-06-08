@@ -446,20 +446,41 @@ static const struct key_value npr_queue = { _no_path_retry, "queue" };
  * Dump the configuration, subistitute the dumped configuration
  * for the current one, and verify that the result is identical.
  */
-static void replicate_config(const struct hwt_state *hwt)
+static void replicate_config(const struct hwt_state *hwt, bool local)
 {
 	char *cfg1, *cfg2;
+	vector hwtable;
 	struct config *conf;
 
-	condlog(1, "--- %s: replicating configuration", __func__);
+	condlog(1, "--- %s: replicating %s configuration", __func__,
+		local ? "local" : "full");
 
 	conf = get_multipath_config();
-	cfg1 = snprint_config(conf, NULL, NULL);
+	if (!local)
+		/* "full" configuration */
+		cfg1 = snprint_config(conf, NULL, NULL);
+	else {
+		/* "local" configuration */
+		hwtable = get_used_hwes(hwt->vecs->pathvec);
+		cfg1 = snprint_config(conf, NULL, hwtable);
+	}
 
 	assert_non_null(cfg1);
 	put_multipath_config(conf);
 
 	replace_config(hwt, cfg1);
+
+	/*
+	 * The local configuration adds multipath entries, and may move device
+	 * entries for local devices to the end of the list. Identical config
+	 * strings therefore can't be expected in the "local" case.
+	 * That doesn't matter. The important thing is that, with the reloaded
+	 * configuration, the test case still passes.
+	 */
+	if (local) {
+		free(cfg1);
+		return;
+	}
 
 	conf = get_multipath_config();
 	cfg2 = snprint_config(conf, NULL, NULL);
@@ -504,7 +525,11 @@ static void test_driver(void **state)
 	_conf = LOAD_CONFIG(hwt);
 	hwt->test(hwt);
 
-	replicate_config(hwt);
+	replicate_config(hwt, false);
+	reset_vecs(hwt->vecs);
+	hwt->test(hwt);
+
+	replicate_config(hwt, true);
 	reset_vecs(hwt->vecs);
 	hwt->test(hwt);
 
