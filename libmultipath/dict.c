@@ -111,9 +111,45 @@ print_nonzero (char *buff, int len, long v)
 static int
 print_str (char *buff, int len, const char *ptr)
 {
-	if (!ptr)
+	char *p;
+	char *last;
+	const char *q;
+
+	if (!ptr || len <= 0)
 		return 0;
-	return snprintf(buff, len, "\"%s\"", ptr);
+
+	q = strchr(ptr, '"');
+	if (q == NULL)
+		return snprintf(buff, len, "\"%s\"", ptr);
+
+	last = buff + len - 1;
+	p = buff;
+	if (p >= last)
+		goto out;
+	*p++ = '"';
+	if (p >= last)
+		goto out;
+	for (; q; q = strchr(ptr, '"')) {
+		if (q + 1 - ptr < last - p)
+			p = mempcpy(p, ptr, q + 1 - ptr);
+		else {
+			p = mempcpy(p, ptr, last - p);
+			goto out;
+		}
+		*p++ = '"';
+		if (p >= last)
+			goto out;
+		ptr = q + 1;
+	}
+	p += strlcpy(p, ptr, last - p);
+	if (p >= last)
+		goto out;
+	*p++ = '"';
+	*p = '\0';
+	return p - buff;
+out:
+	*p = '\0';
+	return len;
 }
 
 static int

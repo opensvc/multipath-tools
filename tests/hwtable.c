@@ -598,18 +598,10 @@ static int setup_internal_nvme(void **state)
 /*
  * Device section with a simple entry qith double quotes ('foo:"bar"')
  */
-#if BROKEN
-static void test_quoted_hwe(void **state)
-#else
 static void test_quoted_hwe(const struct hwt_state *hwt)
-#endif
 {
 	struct path *pp;
-#if BROKEN
-       struct hwt_state *hwt = CHECK_STATE(state);
 
-       _conf = LOAD_CONFIG(hwt);
-#endif
 	/* foo:"bar" matches */
 	pp = mock_path(vnd_foo.value, prd_baq.value);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
@@ -625,11 +617,7 @@ static int setup_quoted_hwe(void **state)
 	const struct key_value kv[] = { vnd_foo, prd_baqq, prio_emc };
 
 	WRITE_ONE_DEVICE(hwt, kv);
-#if BROKEN
-       condlog(0, "%s: WARNING: skipping conf reload test", __func__);
-#else
 	SET_TEST_FUNC(hwt, test_quoted_hwe);
-#endif
 	return 0;
 }
 
@@ -1640,9 +1628,7 @@ static int setup_multipath_config_3(void **state)
 	}
 
 define_test(string_hwe)
-#if !BROKEN
 define_test(quoted_hwe)
-#endif
 define_test(internal_nvme)
 define_test(regex_hwe)
 define_test(regex_string_hwe)
@@ -1680,11 +1666,7 @@ static int test_hwtable(void)
 		cmocka_unit_test(test_sanity_globals),
 		test_entry(internal_nvme),
 		test_entry(string_hwe),
-#if BROKEN
-		cmocka_unit_test_setup(test_quoted_hwe, setup_quoted_hwe),
-#else
 		test_entry(quoted_hwe),
-#endif
 		test_entry(regex_hwe),
 		test_entry(regex_string_hwe),
 		test_entry(regex_string_hwe_dir),
