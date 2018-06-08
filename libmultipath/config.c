@@ -64,7 +64,8 @@ find_hwe_strmatch (const struct _vector *hwtable, const struct hwentry *hwe)
 }
 
 static int
-hwe_regmatch (const struct hwentry *hwe1, const struct hwentry *hwe2)
+hwe_regmatch (const struct hwentry *hwe1, const char *vendor,
+	      const char *product, const char *revision)
 {
 	regex_t vre, pre, rre;
 	int retval = 1;
@@ -81,13 +82,13 @@ hwe_regmatch (const struct hwentry *hwe1, const struct hwentry *hwe2)
 	    regcomp(&rre, hwe1->revision, REG_EXTENDED|REG_NOSUB))
 		goto out_pre;
 
-	if ((hwe2->vendor || hwe2->product || hwe2->revision) &&
-	    (!hwe1->vendor || !hwe2->vendor ||
-	     !regexec(&vre, hwe2->vendor, 0, NULL, 0)) &&
-	    (!hwe1->product || !hwe2->product ||
-	     !regexec(&pre, hwe2->product, 0, NULL, 0)) &&
-	    (!hwe1->revision || !hwe2->revision ||
-	     !regexec(&rre, hwe2->revision, 0, NULL, 0)))
+	if ((vendor || product || revision) &&
+	    (!hwe1->vendor || !vendor ||
+	     !regexec(&vre, vendor, 0, NULL, 0)) &&
+	    (!hwe1->product || !product ||
+	     !regexec(&pre, product, 0, NULL, 0)) &&
+	    (!hwe1->revision || !revision ||
+	     !regexec(&rre, revision, 0, NULL, 0)))
 		retval = 0;
 
 	if (hwe1->revision)
@@ -103,14 +104,12 @@ out:
 }
 
 struct hwentry *
-find_hwe (vector hwtable, char * vendor, char * product, char * revision)
+find_hwe (const struct _vector *hwtable,
+	  const char * vendor, const char * product, const char * revision)
 {
 	int i;
-	struct hwentry hwe, *tmp, *ret = NULL;
+	struct hwentry *tmp, *ret = NULL;
 
-	hwe.vendor = vendor;
-	hwe.product = product;
-	hwe.revision = revision;
 	/*
 	 * Search backwards here.
 	 * User modified entries are attached at the end of
@@ -118,7 +117,7 @@ find_hwe (vector hwtable, char * vendor, char * product, char * revision)
 	 * continuing to the generic entries
 	 */
 	vector_foreach_slot_backwards (hwtable, tmp, i) {
-		if (hwe_regmatch(tmp, &hwe))
+		if (hwe_regmatch(tmp, vendor, product, revision))
 			continue;
 		ret = tmp;
 		break;
@@ -455,7 +454,8 @@ restart:
 				free_hwe(hwe2);
 				continue;
 			}
-			if (hwe_regmatch(hwe1, hwe2))
+			if (hwe_regmatch(hwe1, hwe2->vendor,
+					 hwe2->product, hwe2->revision))
 				continue;
 			/* dup */
 			merge_hwe(hwe2, hwe1);

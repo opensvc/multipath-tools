@@ -217,7 +217,9 @@ struct config {
 
 extern struct udev * udev;
 
-struct hwentry * find_hwe (vector hwtable, char * vendor, char * product, char *revision);
+struct hwentry * find_hwe (const struct _vector *hwtable,
+			   const char * vendor, const char * product,
+			   const char *revision);
 struct mpentry * find_mpe (vector mptable, char * wwid);
 char * get_mpe_wwid (vector mptable, char * alias);
 
