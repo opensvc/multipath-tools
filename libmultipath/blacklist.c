@@ -416,6 +416,15 @@ filter_property(struct config * conf, struct udev_device * udev)
 	return MATCH_PROPERTY_BLIST_MISSING;
 }
 
+static void free_ble(struct blentry *ble)
+{
+	if (!ble)
+		return;
+	regfree(&ble->regex);
+	FREE(ble->str);
+	FREE(ble);
+}
+
 void
 free_blacklist (vector blist)
 {
@@ -426,13 +435,43 @@ free_blacklist (vector blist)
 		return;
 
 	vector_foreach_slot (blist, ble, i) {
-		if (ble) {
-			regfree(&ble->regex);
-			FREE(ble->str);
-			FREE(ble);
-		}
+		free_ble(ble);
 	}
 	vector_free(blist);
+}
+
+void merge_blacklist(vector blist)
+{
+	struct blentry *bl1, *bl2;
+	int i, j;
+
+	vector_foreach_slot(blist, bl1, i) {
+		j = i + 1;
+		vector_foreach_slot_after(blist, bl2, j) {
+			if (!bl1->str || !bl2->str || strcmp(bl1->str, bl2->str))
+				continue;
+			condlog(3, "%s: duplicate blist entry section for %s",
+				__func__, bl1->str);
+			free_ble(bl2);
+			vector_del_slot(blist, j);
+			j--;
+		}
+	}
+}
+
+static void free_ble_device(struct blentry_device *ble)
+{
+	if (ble) {
+		if (ble->vendor) {
+			regfree(&ble->vendor_reg);
+			FREE(ble->vendor);
+		}
+		if (ble->product) {
+			regfree(&ble->product_reg);
+			FREE(ble->product);
+		}
+		FREE(ble);
+	}
 }
 
 void
@@ -445,17 +484,42 @@ free_blacklist_device (vector blist)
 		return;
 
 	vector_foreach_slot (blist, ble, i) {
-		if (ble) {
-			if (ble->vendor) {
-				regfree(&ble->vendor_reg);
-				FREE(ble->vendor);
-			}
-			if (ble->product) {
-				regfree(&ble->product_reg);
-				FREE(ble->product);
-			}
-			FREE(ble);
-		}
+		free_ble_device(ble);
 	}
 	vector_free(blist);
+}
+
+void merge_blacklist_device(vector blist)
+{
+	struct blentry_device *bl1, *bl2;
+	int i, j;
+
+	vector_foreach_slot(blist, bl1, i) {
+		if (!bl1->vendor && !bl1->product) {
+			free_ble_device(bl1);
+			vector_del_slot(blist, i);
+			i--;
+		}
+	}
+
+	vector_foreach_slot(blist, bl1, i) {
+		j = i + 1;
+		vector_foreach_slot_after(blist, bl2, j) {
+			if ((!bl1->vendor && bl2->vendor) ||
+			    (bl1->vendor && !bl2->vendor) ||
+			    (bl1->vendor && bl2->vendor &&
+			     strcmp(bl1->vendor, bl2->vendor)))
+				continue;
+			if ((!bl1->product && bl2->product) ||
+			    (bl1->product && !bl2->product) ||
+			    (bl1->product && bl2->product &&
+			     strcmp(bl1->product, bl2->product)))
+				continue;
+			condlog(3, "%s: duplicate blist entry section for %s:%s",
+				__func__, bl1->vendor, bl1->product);
+			free_ble_device(bl2);
+			vector_del_slot(blist, j);
+			j--;
+		}
+	}
 }

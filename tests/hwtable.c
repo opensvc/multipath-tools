@@ -499,13 +499,8 @@ static void replicate_config(const struct hwt_state *hwt, bool local)
 	DUMP_CFG_STR(cfg2);
 #endif
 
-#if BROKEN
-	condlog(1, "%s: WARNING: skipping tests for same configuration after dump/reload on %d",
-		__func__, __LINE__);
-#else
 	assert_int_equal(strlen(cfg2), strlen(cfg1));
 	assert_string_equal(cfg2, cfg1);
-#endif
 	free(cfg1);
 	free(cfg2);
 }

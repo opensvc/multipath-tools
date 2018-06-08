@@ -819,6 +819,15 @@ load_config (char * file)
 	}
 
 	merge_mptable(conf->mptable);
+	merge_blacklist(conf->blist_devnode);
+	merge_blacklist(conf->blist_property);
+	merge_blacklist(conf->blist_wwid);
+	merge_blacklist_device(conf->blist_device);
+	merge_blacklist(conf->elist_devnode);
+	merge_blacklist(conf->elist_property);
+	merge_blacklist(conf->elist_wwid);
+	merge_blacklist_device(conf->elist_device);
+
 	if (conf->bindings_file == NULL)
 		conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 

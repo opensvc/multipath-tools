@@ -40,5 +40,7 @@ int store_ble (vector, char *, int);
 int set_ble_device (vector, char *, char *, int);
 void free_blacklist (vector);
 void free_blacklist_device (vector);
+void merge_blacklist(vector);
+void merge_blacklist_device(vector);
 
 #endif /* _BLACKLIST_H */
