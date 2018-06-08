@@ -136,7 +136,6 @@ find_hwe (const struct _vector *hwtable,
 			n++;
 		}
 		log_match(tmp, vendor, product, revision);
-		break;
 	}
 	condlog(n > 1 ? 3 : 4, "%s: found %d hwtable matches for %s:%s:%s",
 		__func__, n, vendor, product, revision);
