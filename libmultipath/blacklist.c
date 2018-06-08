@@ -163,6 +163,25 @@ _blacklist_device (const struct _vector *blist, const char * vendor,
 	return 0;
 }
 
+static int
+find_blacklist_device (const struct _vector *blist, const char * vendor,
+		       const char * product)
+{
+	int i;
+	struct blentry_device * ble;
+
+	vector_foreach_slot (blist, ble, i) {
+		if (((!vendor && !ble->vendor) ||
+		     (vendor && ble->vendor &&
+		      !strcmp(vendor, ble->vendor))) &&
+		    ((!product && !ble->product) ||
+		     (product && ble->product &&
+		      !strcmp(product, ble->product))))
+			return 1;
+	}
+	return 0;
+}
+
 int
 setup_default_blist (struct config * conf)
 {
@@ -191,8 +210,8 @@ setup_default_blist (struct config * conf)
 
 	vector_foreach_slot (conf->hwtable, hwe, i) {
 		if (hwe->bl_product) {
-			if (_blacklist_device(conf->blist_device, hwe->vendor,
-					      hwe->bl_product))
+			if (find_blacklist_device(conf->blist_device,
+						  hwe->vendor, hwe->bl_product))
 				continue;
 			if (alloc_ble_device(conf->blist_device))
 				return 1;

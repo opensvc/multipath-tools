@@ -1399,13 +1399,7 @@ static int setup_product_blacklist(void **state)
 static void test_product_blacklist_matching(const struct hwt_state *hwt)
 {
 	mock_path_flags(vnd_foo.value, prd_bar.value, BL_BY_DEVICE);
-#if BROKEN == 1
-	condlog(1, "%s: WARNING: broken blacklist test on line %d",
-		__func__, __LINE__ + 1);
-	mock_path(vnd_foo.value, prd_baz.value);
-#else
-	mock_path_blacklisted(vnd_foo.value, prd_baz.value);
-#endif
+	mock_path_flags(vnd_foo.value, prd_baz.value, BL_BY_DEVICE);
 	mock_path(vnd_foo.value, prd_bam.value);
 }
 
