@@ -126,7 +126,8 @@ _blacklist (vector blist, const char * str)
 }
 
 int
-_blacklist_exceptions_device(vector elist, char * vendor, char * product)
+_blacklist_exceptions_device(const struct _vector *elist, const char * vendor,
+			     const char * product)
 {
 	int i;
 	struct blentry_device * ble;
@@ -144,7 +145,8 @@ _blacklist_exceptions_device(vector elist, char * vendor, char * product)
 }
 
 int
-_blacklist_device (vector blist, char * vendor, char * product)
+_blacklist_device (const struct _vector *blist, const char * vendor,
+		   const char * product)
 {
 	int i;
 	struct blentry_device * ble;

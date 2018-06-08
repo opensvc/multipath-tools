@@ -28,7 +28,7 @@
 #include "propsel.h"
 
 static int
-hwe_strmatch (struct hwentry *hwe1, struct hwentry *hwe2)
+hwe_strmatch (const struct hwentry *hwe1, const struct hwentry *hwe2)
 {
 	if ((hwe2->vendor && !hwe1->vendor) ||
 	    (hwe1->vendor && (!hwe2->vendor ||
@@ -49,7 +49,7 @@ hwe_strmatch (struct hwentry *hwe1, struct hwentry *hwe2)
 }
 
 static struct hwentry *
-find_hwe_strmatch (vector hwtable, struct hwentry *hwe)
+find_hwe_strmatch (const struct _vector *hwtable, const struct hwentry *hwe)
 {
 	int i;
 	struct hwentry *tmp, *ret = NULL;
@@ -64,7 +64,7 @@ find_hwe_strmatch (vector hwtable, struct hwentry *hwe)
 }
 
 static int
-hwe_regmatch (struct hwentry *hwe1, struct hwentry *hwe2)
+hwe_regmatch (const struct hwentry *hwe1, const struct hwentry *hwe2)
 {
 	regex_t vre, pre, rre;
 	int retval = 1;
@@ -283,7 +283,7 @@ alloc_hwe (void)
 }
 
 static char *
-set_param_str(char * str)
+set_param_str(const char * str)
 {
 	char * dst;
 	int len;
