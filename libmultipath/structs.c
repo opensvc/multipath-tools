@@ -102,6 +102,11 @@ alloc_path (void)
 		pp->priority = PRIO_UNDEF;
 		checker_clear(&pp->checker);
 		dm_path_to_gen(pp)->ops = &dm_gen_path_ops;
+		pp->hwe = vector_alloc();
+		if (pp->hwe == NULL) {
+			free(pp);
+			return NULL;
+		}
 	}
 	return pp;
 }
@@ -125,6 +130,7 @@ free_path (struct path * pp)
 		udev_device_unref(pp->udev);
 		pp->udev = NULL;
 	}
+	vector_free(pp->hwe);
 
 	FREE(pp);
 }

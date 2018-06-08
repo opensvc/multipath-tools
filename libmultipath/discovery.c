@@ -1176,7 +1176,7 @@ scsi_sysfs_pathinfo (struct path * pp, vector hwtable)
 	/*
 	 * set the hwe configlet pointer
 	 */
-	pp->hwe = find_hwe(hwtable, pp->vendor_id, pp->product_id, pp->rev);
+	find_hwe(hwtable, pp->vendor_id, pp->product_id, pp->rev, pp->hwe);
 
 	/*
 	 * host / bus / target / lun
@@ -1240,7 +1240,7 @@ nvme_sysfs_pathinfo (struct path * pp, vector hwtable)
 	condlog(3, "%s: serial = %s", pp->dev, pp->serial);
 	condlog(3, "%s: rev = %s", pp->dev, pp->rev);
 
-	pp->hwe = find_hwe(hwtable, pp->vendor_id, pp->product_id, NULL);
+	find_hwe(hwtable, pp->vendor_id, pp->product_id, NULL, pp->hwe);
 
 	return 0;
 }
@@ -1282,7 +1282,7 @@ ccw_sysfs_pathinfo (struct path * pp, vector hwtable)
 	/*
 	 * set the hwe configlet pointer
 	 */
-	pp->hwe = find_hwe(hwtable, pp->vendor_id, pp->product_id, NULL);
+	find_hwe(hwtable, pp->vendor_id, pp->product_id, NULL, pp->hwe);
 
 	/*
 	 * host / bus / target / lun
@@ -1345,7 +1345,7 @@ cciss_sysfs_pathinfo (struct path * pp, vector hwtable)
 	/*
 	 * set the hwe configlet pointer
 	 */
-	pp->hwe = find_hwe(hwtable, pp->vendor_id, pp->product_id, pp->rev);
+	find_hwe(hwtable, pp->vendor_id, pp->product_id, pp->rev, pp->hwe);
 
 	/*
 	 * host / bus / target / lun

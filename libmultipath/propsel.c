@@ -44,6 +44,23 @@ do {									\
 	}								\
 } while(0)
 
+#define do_set_from_vec(type, var, src, dest, msg)			\
+do {									\
+	type *_p;							\
+	int i;								\
+									\
+	vector_foreach_slot(src, _p, i) {				\
+		if (_p->var) {						\
+			dest = _p->var;					\
+			origin = msg;					\
+			goto out;					\
+		}							\
+	}								\
+} while (0)
+
+#define do_set_from_hwe(var, src, dest, msg) \
+	do_set_from_vec(struct hwentry, var, src->hwe, dest, msg)
+
 static const char default_origin[] = "(setting: multipath internal)";
 static const char hwe_origin[] =
 	"(setting: storage device configuration)";
@@ -67,7 +84,7 @@ do {									\
 #define mp_set_mpe(var)							\
 do_set(var, mp->mpe, mp->var, multipaths_origin)
 #define mp_set_hwe(var)							\
-do_set(var, mp->hwe, mp->var, hwe_origin)
+do_set_from_hwe(var, mp, mp->var, hwe_origin)
 #define mp_set_ovr(var)							\
 do_set(var, conf->overrides, mp->var, overrides_origin)
 #define mp_set_conf(var)						\
@@ -78,7 +95,7 @@ do_default(mp->var, value)
 #define pp_set_mpe(var)							\
 do_set(var, mpe, pp->var, multipaths_origin)
 #define pp_set_hwe(var)							\
-do_set(var, pp->hwe, pp->var, hwe_origin)
+do_set_from_hwe(var, pp, pp->var, hwe_origin)
 #define pp_set_conf(var)						\
 do_set(var, conf, pp->var, conf_origin)
 #define pp_set_ovr(var)							\
@@ -251,8 +268,8 @@ want_user_friendly_names(struct config *conf, struct multipath * mp)
 	       multipaths_origin);
 	do_set(user_friendly_names, conf->overrides, user_friendly_names,
 	       overrides_origin);
-	do_set(user_friendly_names, mp->hwe, user_friendly_names,
-	       hwe_origin);
+	do_set_from_hwe(user_friendly_names, mp, user_friendly_names,
+			hwe_origin);
 	do_set(user_friendly_names, conf, user_friendly_names,
 	       conf_origin);
 	do_default(user_friendly_names, DEFAULT_USER_FRIENDLY_NAMES);
@@ -470,9 +487,9 @@ int select_checker(struct config *conf, struct path *pp)
 			checker_name = TUR;
 			goto out;
 		}
- 	}
+	}
 	do_set(checker_name, conf->overrides, checker_name, overrides_origin);
-	do_set(checker_name, pp->hwe, checker_name, hwe_origin);
+	do_set_from_hwe(checker_name, pp, checker_name, hwe_origin);
 	do_set(checker_name, conf, checker_name, conf_origin);
 	do_default(checker_name, DEFAULT_CHECKER);
 out:
@@ -546,6 +563,25 @@ do {									\
 	}								\
 } while(0)
 
+#define set_prio_from_vec(type, dir, src, msg, p)			\
+do {									\
+	type *_p;							\
+	int i;								\
+	char *prio_name = NULL, *prio_args = NULL;			\
+									\
+	vector_foreach_slot(src, _p, i) {				\
+		if (prio_name == NULL && _p->prio_name)		\
+			prio_name = _p->prio_name;			\
+		if (prio_args == NULL && _p->prio_args)		\
+			prio_args = _p->prio_args;			\
+	}								\
+	if (prio_name != NULL) {					\
+		prio_get(dir, p, prio_name, prio_args);			\
+		origin = msg;						\
+		goto out;						\
+	}								\
+} while (0)
+
 int select_prio(struct config *conf, struct path *pp)
 {
 	const char *origin;
@@ -562,7 +598,8 @@ int select_prio(struct config *conf, struct path *pp)
 	mpe = find_mpe(conf->mptable, pp->wwid);
 	set_prio(conf->multipath_dir, mpe, multipaths_origin);
 	set_prio(conf->multipath_dir, conf->overrides, overrides_origin);
-	set_prio(conf->multipath_dir, pp->hwe, hwe_origin);
+	set_prio_from_vec(struct hwentry, conf->multipath_dir,
+			  pp->hwe, hwe_origin, p);
 	set_prio(conf->multipath_dir, conf, conf_origin);
 	prio_get(conf->multipath_dir, p, DEFAULT_PRIO, DEFAULT_PRIO_ARGS);
 	origin = default_origin;
@@ -615,7 +652,7 @@ select_minio_rq (struct config *conf, struct multipath * mp)
 
 	do_set(minio_rq, mp->mpe, mp->minio, multipaths_origin);
 	do_set(minio_rq, conf->overrides, mp->minio, overrides_origin);
-	do_set(minio_rq, mp->hwe, mp->minio, hwe_origin);
+	do_set_from_hwe(minio_rq, mp, mp->minio, hwe_origin);
 	do_set(minio_rq, conf, mp->minio, conf_origin);
 	do_default(mp->minio, DEFAULT_MINIO_RQ);
 out:
