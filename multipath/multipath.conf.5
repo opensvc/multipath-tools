@@ -911,7 +911,7 @@ The error rate threshold as a permillage (1/1000). One of the four parameters
 of supporting path check based on accounting IO error such as intermittent
 error. Refer to \fImarginal_path_err_sample_time\fR. If the rate of IO errors
 on a particular path is greater than this parameter, then the path will not
-reinstate for \fImarginal_path_err_rate_threshold\fR seconds unless there is
+reinstate for \fImarginal_path_err_recheck_gap_time\fR seconds unless there is
 only one active path.
 .RS
 .TP
