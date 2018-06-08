@@ -421,18 +421,18 @@ int store_path (vector pathvec, struct path * pp);
 int store_pathgroup (vector pgvec, struct pathgroup * pgp);
 int add_pathgroup(struct multipath*, struct pathgroup *);
 
-struct multipath * find_mp_by_alias (vector mp, const char * alias);
-struct multipath * find_mp_by_wwid (vector mp, char * wwid);
-struct multipath * find_mp_by_str (vector mp, char * wwid);
-struct multipath * find_mp_by_minor (vector mp, int minor);
+struct multipath * find_mp_by_alias (const struct _vector *mp, const char *alias);
+struct multipath * find_mp_by_wwid (const struct _vector *mp, const char *wwid);
+struct multipath * find_mp_by_str (const struct _vector *mp, const char *wwid);
+struct multipath * find_mp_by_minor (const struct _vector *mp, int minor);
 
-struct path * find_path_by_devt (vector pathvec, const char * devt);
-struct path * find_path_by_dev (vector pathvec, const char * dev);
-struct path * first_path (struct multipath * mpp);
+struct path * find_path_by_devt (const struct _vector *pathvec, const char *devt);
+struct path * find_path_by_dev (const struct _vector *pathvec, const char *dev);
+struct path * first_path (const struct multipath *mpp);
 
-int pathcountgr (struct pathgroup *, int);
-int pathcount (struct multipath *, int);
-int pathcmp (struct pathgroup *, struct pathgroup *);
+int pathcountgr (const struct pathgroup *, int);
+int pathcount (const struct multipath *, int);
+int pathcmp (const struct pathgroup *, const struct pathgroup *);
 int add_feature (char **, const char *);
 int remove_feature (char **, const char *);
 
