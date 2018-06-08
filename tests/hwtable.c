@@ -454,7 +454,7 @@ static void replicate_config(const struct hwt_state *hwt)
 	condlog(1, "--- %s: replicating configuration", __func__);
 
 	conf = get_multipath_config();
-	cfg1 = snprint_config(conf, NULL);
+	cfg1 = snprint_config(conf, NULL, NULL);
 
 	assert_non_null(cfg1);
 	put_multipath_config(conf);
@@ -462,7 +462,7 @@ static void replicate_config(const struct hwt_state *hwt)
 	replace_config(hwt, cfg1);
 
 	conf = get_multipath_config();
-	cfg2 = snprint_config(conf, NULL);
+	cfg2 = snprint_config(conf, NULL, NULL);
 	assert_non_null(cfg2);
 	put_multipath_config(conf);
 

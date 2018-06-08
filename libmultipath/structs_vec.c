@@ -445,3 +445,22 @@ void update_queue_mode_add_path(struct multipath *mpp)
 	}
 	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
 }
+
+vector get_used_hwes(const struct _vector *pathvec)
+{
+	int i, j;
+	struct path *pp;
+	struct hwentry *hwe;
+	vector v = vector_alloc();
+
+	if (v == NULL)
+		return NULL;
+
+	vector_foreach_slot(pathvec, pp, i) {
+		vector_foreach_slot_backwards(pp->hwe, hwe, j) {
+			vector_find_or_add_slot(v, hwe);
+		}
+	}
+
+	return v;
+}

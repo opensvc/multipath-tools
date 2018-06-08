@@ -246,15 +246,15 @@ show_map_json (char ** r, int * len, struct multipath * mpp,
 	return 0;
 }
 
-int
-show_config (char ** r, int * len)
+static int
+show_config (char ** r, int * len, const struct _vector *hwtable)
 {
 	struct config *conf;
 	char *reply;
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
-	reply = snprint_config(conf, len);
+	reply = snprint_config(conf, len, hwtable);
 	pthread_cleanup_pop(1);
 	if (reply == NULL)
 		return 1;
@@ -278,7 +278,7 @@ cli_list_config (void * v, char ** reply, int * len, void * data)
 {
 	condlog(3, "list config (operator)");
 
-	return show_config(reply, len);
+	return show_config(reply, len, NULL);
 }
 
 int

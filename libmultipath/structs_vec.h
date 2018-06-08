@@ -38,5 +38,6 @@ void update_queue_mode_add_path(struct multipath *mpp);
 int update_multipath_table (struct multipath *mpp, vector pathvec,
 			    int is_daemon);
 int update_multipath_status (struct multipath *mpp);
+vector get_used_hwes(const struct _vector *pathvec);
 
 #endif /* _STRUCTS_VEC_H */

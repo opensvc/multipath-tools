@@ -1376,7 +1376,8 @@ snprint_hwentry (const struct config *conf,
 }
 
 static int snprint_hwtable(const struct config *conf,
-			   char *buff, int len, vector hwtable)
+			   char *buff, int len,
+			   const struct _vector *hwtable)
 {
 	int fwd = 0;
 	int i;
@@ -1781,7 +1782,8 @@ static int snprint_blacklist_except(const struct config *conf,
 	return fwd;
 }
 
-char *snprint_config(const struct config *conf, int *len)
+char *snprint_config(const struct config *conf, int *len,
+		     const struct _vector *hwtable)
 {
 	char *reply;
 	/* built-in config is >20kB already */
@@ -1810,7 +1812,7 @@ char *snprint_config(const struct config *conf, int *len)
 			continue;
 
 		c += snprint_hwtable(conf, c, reply + maxlen - c,
-				     conf->hwtable);
+				     hwtable ? hwtable : conf->hwtable);
 		if ((c - reply) == maxlen)
 			continue;
 

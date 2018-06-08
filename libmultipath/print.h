@@ -119,7 +119,8 @@ int _snprint_multipath_topology (const struct gen_multipath *, char *, int,
 	_snprint_multipath_topology (dm_multipath_to_gen(mpp), buf, len, v)
 int snprint_multipath_topology_json (char * buff, int len,
 				const struct vectors * vecs);
-char *snprint_config(const struct config *conf, int *len);
+char *snprint_config(const struct config *conf, int *len,
+		     const struct _vector *hwtable);
 int snprint_multipath_map_json (char * buff, int len,
 				const struct multipath * mpp, int last);
 int snprint_blacklist_report (struct config *, char *, int);

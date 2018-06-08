@@ -82,6 +82,7 @@ extern void vector_set_slot(vector v, void *value);
 extern void vector_del_slot(vector v, int slot);
 extern void *vector_insert_slot(vector v, int slot, void *value);
 int find_slot(vector v, void * addr);
+int vector_find_or_add_slot(vector v, void *value);
 extern void vector_repack(vector v);
 extern void vector_dump(vector v);
 extern void dump_strvec(vector strvec);
