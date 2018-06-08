@@ -81,7 +81,7 @@ static struct prio * prio_lookup (char * name)
 	return NULL;
 }
 
-int prio_set_args (struct prio * p, char * args)
+int prio_set_args (struct prio * p, const char * args)
 {
 	return snprintf(p->args, PRIO_ARGS_LEN, "%s", args);
 }
@@ -130,19 +130,19 @@ int prio_getprio (struct prio * p, struct path * pp, unsigned int timeout)
 	return p->getprio(pp, p->args, timeout);
 }
 
-int prio_selected (struct prio * p)
+int prio_selected (const struct prio * p)
 {
 	if (!p)
 		return 0;
 	return (p->getprio) ? 1 : 0;
 }
 
-char * prio_name (struct prio * p)
+const char * prio_name (const struct prio * p)
 {
 	return p->name;
 }
 
-char * prio_args (struct prio * p)
+const char * prio_args (const struct prio * p)
 {
 	return p->args;
 }

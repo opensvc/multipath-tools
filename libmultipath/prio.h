@@ -60,10 +60,10 @@ struct prio * add_prio (char *, char *);
 int prio_getprio (struct prio *, struct path *, unsigned int);
 void prio_get (char *, struct prio *, char *, char *);
 void prio_put (struct prio *);
-int prio_selected (struct prio *);
-char * prio_name (struct prio *);
-char * prio_args (struct prio *);
-int prio_set_args (struct prio *, char *);
+int prio_selected (const struct prio *);
+const char * prio_name (const struct prio *);
+const char * prio_args (const struct prio *);
+int prio_set_args (struct prio *, const char *);
 
 /* The only function exported by prioritizer dynamic libraries (.so) */
 int getprio(struct path *, char *, unsigned int);
