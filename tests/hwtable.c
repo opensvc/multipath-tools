@@ -458,11 +458,11 @@ static void replicate_config(const struct hwt_state *hwt, bool local)
 	conf = get_multipath_config();
 	if (!local)
 		/* "full" configuration */
-		cfg1 = snprint_config(conf, NULL, NULL);
+		cfg1 = snprint_config(conf, NULL, NULL, NULL);
 	else {
 		/* "local" configuration */
 		hwtable = get_used_hwes(hwt->vecs->pathvec);
-		cfg1 = snprint_config(conf, NULL, hwtable);
+		cfg1 = snprint_config(conf, NULL, hwtable, hwt->vecs->mpvec);
 	}
 
 	assert_non_null(cfg1);
@@ -483,7 +483,7 @@ static void replicate_config(const struct hwt_state *hwt, bool local)
 	}
 
 	conf = get_multipath_config();
-	cfg2 = snprint_config(conf, NULL, NULL);
+	cfg2 = snprint_config(conf, NULL, NULL, NULL);
 	assert_non_null(cfg2);
 	put_multipath_config(conf);
 

@@ -254,7 +254,7 @@ show_config (char ** r, int * len, const struct _vector *hwtable)
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
-	reply = snprint_config(conf, len, hwtable);
+	reply = snprint_config(conf, len, hwtable, NULL);
 	pthread_cleanup_pop(1);
 	if (reply == NULL)
 		return 1;
