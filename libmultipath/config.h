@@ -37,6 +37,7 @@ enum mpath_cmds {
 	CMD_RESET_WWIDS,
 	CMD_ADD_WWID,
 	CMD_USABLE_PATHS,
+	CMD_DUMP_CONFIG,
 };
 
 enum force_reload_types {

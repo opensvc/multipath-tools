@@ -80,6 +80,19 @@ void put_multipath_config(void *arg)
 	/* Noop for now */
 }
 
+static int
+dump_config (struct config *conf, vector hwes, vector mpvec)
+{
+	char * reply = snprint_config(conf, NULL, hwes, mpvec);
+
+	if (reply != NULL) {
+		printf("%s", reply);
+		FREE(reply);
+		return 0;
+	} else
+		return 1;
+}
+
 void rcu_register_thread_memb(void) {}
 
 void rcu_unregister_thread_memb(void) {}
@@ -112,7 +125,7 @@ usage (char * progname)
 	fprintf (stderr, "  %s [-a|-c|-w|-W] [-d] [-r] [-i] [-v lvl] [-p pol] [-b fil] [-q] [dev]\n", progname);
 	fprintf (stderr, "  %s -l|-ll|-f [-v lvl] [-b fil] [-R num] [dev]\n", progname);
 	fprintf (stderr, "  %s -F [-v lvl] [-R num]\n", progname);
-	fprintf (stderr, "  %s -t\n", progname);
+	fprintf (stderr, "  %s [-t|-T]\n", progname);
 	fprintf (stderr, "  %s -h\n", progname);
 	fprintf (stderr,
 		"\n"
@@ -128,6 +141,7 @@ usage (char * progname)
 		"  -q      allow queue_if_no_path when multipathd is not running\n"
 		"  -d      dry run, do not create or update devmaps\n"
 		"  -t      display the currently used multipathd configuration\n"
+		"  -T      display the multipathd configuration without builtin defaults\n"
 		"  -r      force devmap reload\n"
 		"  -i      ignore wwids file\n"
 		"  -B      treat the bindings file as read only\n"
@@ -671,6 +685,13 @@ configure (struct config *conf, enum mpath_cmds cmd,
 
 	filter_pathvec(pathvec, refwwid);
 
+	if (cmd == CMD_DUMP_CONFIG) {
+		vector hwes = get_used_hwes(pathvec);
+
+		dump_config(conf, hwes, curmp);
+		vector_free(hwes);
+		goto out;
+	}
 
 	if (cmd == CMD_VALID_PATH) {
 		struct path *pp;
@@ -748,19 +769,6 @@ out:
 	free_pathvec(pathvec, FREE_PATHS);
 
 	return r;
-}
-
-static int
-dump_config (struct config *conf)
-{
-	char * reply = snprint_config(conf, NULL, NULL, NULL);
-
-	if (reply != NULL) {
-		printf("%s", reply);
-		FREE(reply);
-		return 0;
-	} else
-		return 1;
 }
 
 static int
@@ -858,7 +866,7 @@ main (int argc, char *argv[])
 		exit(1);
 	multipath_conf = conf;
 	conf->retrigger_tries = 0;
-	while ((arg = getopt(argc, argv, ":adcChl::FfM:v:p:b:BrR:itquUwW")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":adcChl::FfM:v:p:b:BrR:itTquUwW")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
 			break;
@@ -923,8 +931,11 @@ main (int argc, char *argv[])
 			conf->find_multipaths |= _FIND_MULTIPATHS_I;
 			break;
 		case 't':
-			r = dump_config(conf);
+			r = dump_config(conf, NULL, NULL);
 			goto out_free_config;
+		case 'T':
+			cmd = CMD_DUMP_CONFIG;
+			break;
 		case 'h':
 			usage(argv[0]);
 			exit(0);

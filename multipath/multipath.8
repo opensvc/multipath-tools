@@ -25,7 +25,7 @@ multipath \- Device mapper target autoconfig.
 .RB [\| \-b\ \c
 .IR bindings_file \|]
 .RB [\| \-d \|]
-.RB [\| \-h | \-l | \-ll | \-f | \-t | \-F | \-B | \-c | \-C | \-q | \-r | \-i | \-a | \-u | \-U | \-w | \-W \|]
+.RB [\| \-h | \-l | \-ll | \-f | \-t | \-T | \-F | \-B | \-c | \-C | \-q | \-r | \-i | \-a | \-u | \-U | \-w | \-W \|]
 .RB [\| \-p\ \c
 .IR failover | multibus | group_by_serial | group_by_prio | group_by_node_name \|]
 .RB [\| \-R\ \c
@@ -87,6 +87,12 @@ Flush all unused multipath device maps.
 .TP
 .B \-t
 Display the currently used multipathd configuration.
+.
+.TP
+.B \-T
+Display the currently used multipathd configuration, limiting the output to
+those devices actually present in the system. This can be used a template for
+creating \fImultipath.conf\fR.
 .
 .TP
 .B \-r
