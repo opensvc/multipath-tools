@@ -10,23 +10,39 @@ TESTS := uevent parser util dmevents
 
 all:	$(TESTS:%=%.out)
 
-dmevents-test: dmevents.o ../multipathd/dmevents.c globals.c $(multipathdir)/libmultipath.so
-	@$(CC) -o $@ $< $(LDFLAGS) $(LIBDEPS) -lpthread -ldevmapper -lurcu -Wl,--wrap=open -Wl,--wrap=close -Wl,--wrap=dm_is_mpath -Wl,--wrap=dm_geteventnr -Wl,--wrap=ioctl -Wl,--wrap=libmp_dm_task_create -Wl,--wrap=dm_task_no_open_count -Wl,--wrap=dm_task_run -Wl,--wrap=dm_task_get_names -Wl,--wrap=dm_task_destroy -Wl,--wrap=poll -Wl,--wrap=remove_map_by_alias -Wl,--wrap=update_multipath
+# test-specific linker flags
+# XYZ-test-TESTDEPS: test libraries containing __wrap_xyz functions
+# XYZ-test_OBJDEPS: object files from libraries to link in explicitly
+#    That may be necessary if functions called from the object file are wrapped
+#    (wrapping works only for symbols which are undefined after processing a
+#    linker input file).
+# XYZ-test_LIBDEPS: Additional libs to link for this test
 
-%-test:	%.o globals.c $(multipathdir)/libmultipath.so
-	@$(CC) -o $@ $< $(LDFLAGS) $(LIBDEPS)
+dmevents-test_LIBDEPS = -lpthread -ldevmapper -lurcu
 
 %.out:	%-test
 	@echo == running $< ==
 	@LD_LIBRARY_PATH=$(multipathdir):$(mpathcmddir) ./$< >$@
 
 clean: dep_clean
-	rm -f $(TESTS:%=%-test) $(TESTS:%=%.out) $(TESTS:%=%.o)
+	$(RM) $(TESTS:%=%-test) $(TESTS:%=%.out) $(OBJS)
 
-OBJS = $(TESTS:%=%.o)
 .SECONDARY: $(OBJS)
 
 include $(wildcard $(OBJS:.o=.d))
 
 dep_clean:
 	$(RM) $(OBJS:.o=.d)
+
+%.o.wrap:	%.c
+	@sed -n 's/^.*__wrap_\([a-zA-Z0-9_]*\).*$$/-Wl,--wrap=\1/p' $< | \
+		sort -u | tr '\n' ' ' >$@
+
+# COLON will get expanded during second expansion below
+COLON:=:
+.SECONDEXPANSION:
+%-test:	%.o %.o.wrap $$($$@_OBJDEPS) $$($$@_TESTDEPS) $$($$@_TESTDEPS$$(COLON).o=.o.wrap) \
+		$(multipathdir)/libmultipath.so Makefile
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $< $($@_TESTDEPS) $($@_OBJDEPS) \
+		$(LIBDEPS) $($@_LIBDEPS) \
+		$(file <$<.wrap) $(foreach dep,$($@_TESTDEPS),$(file <$(dep).wrap))
