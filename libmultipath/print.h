@@ -119,18 +119,13 @@ int _snprint_multipath_topology (const struct gen_multipath *, char *, int,
 	_snprint_multipath_topology (dm_multipath_to_gen(mpp), buf, len, v)
 int snprint_multipath_topology_json (char * buff, int len,
 				const struct vectors * vecs);
+char *snprint_config(const struct config *conf, int *len);
 int snprint_multipath_map_json (char * buff, int len,
 				const struct multipath * mpp, int last);
-int snprint_defaults (struct config *, char *, int);
-int snprint_blacklist (struct config *, char *, int);
-int snprint_blacklist_except (struct config *, char *, int);
 int snprint_blacklist_report (struct config *, char *, int);
 int snprint_wildcards (char *, int);
 int snprint_status (char *, int, const struct vectors *);
 int snprint_devices (struct config *, char *, int, const struct vectors *);
-int snprint_hwtable (struct config *, char *, int, const vector);
-int snprint_mptable (struct config *, char *, int, const vector);
-int snprint_overrides (struct config *, char *, int, const struct hwentry *);
 int snprint_path_serial (char *, size_t, const struct path *);
 int snprint_host_wwnn (char *, size_t, const struct path *);
 int snprint_host_wwpn (char *, size_t, const struct path *);

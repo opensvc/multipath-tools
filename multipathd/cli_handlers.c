@@ -249,62 +249,16 @@ show_map_json (char ** r, int * len, struct multipath * mpp,
 int
 show_config (char ** r, int * len)
 {
-	char * c;
-	char * reply;
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	int again = 1;
 	struct config *conf;
-	int fail = 0;
-
-	c = reply = MALLOC(maxlen);
+	char *reply;
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
-	while (again) {
-		if (!reply) {
-			fail = 1;
-			break;
-		}
-		c = reply;
-		c += snprint_defaults(conf, c, reply + maxlen - c);
-		again = ((c - reply) == maxlen);
-		REALLOC_REPLY(reply, again, maxlen);
-		if (again)
-			continue;
-		c += snprint_blacklist(conf, c, reply + maxlen - c);
-		again = ((c - reply) == maxlen);
-		REALLOC_REPLY(reply, again, maxlen);
-		if (again)
-			continue;
-		c += snprint_blacklist_except(conf, c, reply + maxlen - c);
-		again = ((c - reply) == maxlen);
-		REALLOC_REPLY(reply, again, maxlen);
-		if (again)
-			continue;
-		c += snprint_hwtable(conf, c, reply + maxlen - c,
-				     conf->hwtable);
-		again = ((c - reply) == maxlen);
-		REALLOC_REPLY(reply, again, maxlen);
-		if (again)
-			continue;
-		c += snprint_overrides(conf, c, reply + maxlen - c,
-				       conf->overrides);
-		again = ((c - reply) == maxlen);
-		REALLOC_REPLY(reply, again, maxlen);
-		if (again)
-			continue;
-		if (VECTOR_SIZE(conf->mptable) > 0) {
-			c += snprint_mptable(conf, c, reply + maxlen - c,
-					     conf->mptable);
-			again = ((c - reply) == maxlen);
-			REALLOC_REPLY(reply, again, maxlen);
-		}
-	}
+	reply = snprint_config(conf, len);
 	pthread_cleanup_pop(1);
-	if (fail)
+	if (reply == NULL)
 		return 1;
 	*r = reply;
-	*len = (int)(c - reply + 1);
 	return 0;
 }
 

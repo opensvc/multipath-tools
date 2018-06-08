@@ -753,63 +753,14 @@ out:
 static int
 dump_config (struct config *conf)
 {
-	char * c, * tmp = NULL;
-	char * reply;
-	unsigned int maxlen = 256;
-	int again = 1;
+	char * reply = snprint_config(conf, NULL);
 
-	reply = MALLOC(maxlen);
-
-	while (again) {
-		if (!reply) {
-			if (tmp)
-				free(tmp);
-			return 1;
-		}
-		c = tmp = reply;
-		c += snprint_defaults(conf, c, reply + maxlen - c);
-		again = ((c - reply) == maxlen);
-		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
-			continue;
-		}
-		c += snprint_blacklist(conf, c, reply + maxlen - c);
-		again = ((c - reply) == maxlen);
-		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
-			continue;
-		}
-		c += snprint_blacklist_except(conf, c, reply + maxlen - c);
-		again = ((c - reply) == maxlen);
-		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
-			continue;
-		}
-		c += snprint_hwtable(conf, c, reply + maxlen - c, conf->hwtable);
-		again = ((c - reply) == maxlen);
-		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
-			continue;
-		}
-		c += snprint_overrides(conf, c, reply + maxlen - c,
-				       conf->overrides);
-		again = ((c - reply) == maxlen);
-		if (again) {
-			reply = REALLOC(reply, maxlen *= 2);
-			continue;
-		}
-		if (VECTOR_SIZE(conf->mptable) > 0) {
-			c += snprint_mptable(conf, c, reply + maxlen - c,
-					     conf->mptable);
-			again = ((c - reply) == maxlen);
-			if (again)
-				reply = REALLOC(reply, maxlen *= 2);
-		}
-	}
-
-	printf("%s", reply);
-	FREE(reply);
-	return 0;
+	if (reply != NULL) {
+		printf("%s", reply);
+		FREE(reply);
+		return 0;
+	} else
+		return 1;
 }
 
 static int
