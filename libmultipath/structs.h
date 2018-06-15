@@ -24,7 +24,6 @@
 
 #define SCSI_VENDOR_SIZE	9
 #define SCSI_PRODUCT_SIZE	17
-#define SCSI_REV_SIZE		5
 #define SCSI_STATE_SIZE		19
 #define NVME_MODEL_SIZE         41
 #define NVME_REV_SIZE           9
