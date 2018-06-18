@@ -652,6 +652,52 @@ static int setup_string_hwe(void **state)
 }
 
 /*
+ * Device section with a broken entry (no product)
+ * It should be ignored.
+ */
+static void test_broken_hwe(const struct hwt_state *hwt)
+{
+	struct path *pp;
+
+	/* foo:bar doesn't match, as hwentry is ignored */
+	pp = mock_path(vnd_foo.value, prd_bar.value);
+	TEST_PROP_BROKEN("prio", prio_name(&pp->prio), prio_emc.value,
+			 DEFAULT_PRIO);
+
+	/* boo:bar doesn't match */
+	pp = mock_path(vnd_boo.value, prd_bar.value);
+	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
+}
+
+static int setup_broken_hwe(void **state)
+{
+	struct hwt_state *hwt = CHECK_STATE(state);
+	const struct key_value kv[] = { vnd_foo, prio_emc };
+
+	WRITE_ONE_DEVICE(hwt, kv);
+	SET_TEST_FUNC(hwt, test_broken_hwe);
+	return 0;
+}
+
+/*
+ * Like test_broken_hwe, but in config_dir file.
+ */
+static int setup_broken_hwe_dir(void **state)
+{
+	struct hwt_state *hwt = CHECK_STATE(state);
+	const struct key_value kv[] = { vnd_foo, prio_emc };
+
+	begin_config(hwt);
+	begin_section_all(hwt, "devices");
+	write_device(hwt->conf_dir_file[0], ARRAY_SIZE(kv), kv);
+	end_section_all(hwt);
+	finish_config(hwt);
+	hwt->test = test_broken_hwe;
+	hwt->test_name = "test_broken_hwe_dir";
+	return 0;
+}
+
+/*
  * Device section with a single regex entry ("^.foo:(bar|baz|ba\.)$")
  */
 static void test_regex_hwe(const struct hwt_state *hwt)
@@ -1628,6 +1674,8 @@ static int setup_multipath_config_3(void **state)
 	}
 
 define_test(string_hwe)
+define_test(broken_hwe)
+define_test(broken_hwe_dir)
 define_test(quoted_hwe)
 define_test(internal_nvme)
 define_test(regex_hwe)
@@ -1666,6 +1714,8 @@ static int test_hwtable(void)
 		cmocka_unit_test(test_sanity_globals),
 		test_entry(internal_nvme),
 		test_entry(string_hwe),
+		test_entry(broken_hwe),
+		test_entry(broken_hwe_dir),
 		test_entry(quoted_hwe),
 		test_entry(regex_hwe),
 		test_entry(regex_string_hwe),
