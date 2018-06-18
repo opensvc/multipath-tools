@@ -528,9 +528,6 @@ factorize_hwtable (vector hw, int n, const char *table_desc)
 
 restart:
 	vector_foreach_slot(hw, hwe1, i) {
-		if (i == n)
-			break;
-		j = n;
 		/* drop invalid device configs */
 		if (i >= n && (!hwe1->vendor || !hwe1->product)) {
 			condlog(0, "device config in %s missing vendor or product parameter",

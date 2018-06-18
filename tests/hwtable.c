@@ -661,8 +661,7 @@ static void test_broken_hwe(const struct hwt_state *hwt)
 
 	/* foo:bar doesn't match, as hwentry is ignored */
 	pp = mock_path(vnd_foo.value, prd_bar.value);
-	TEST_PROP_BROKEN("prio", prio_name(&pp->prio), prio_emc.value,
-			 DEFAULT_PRIO);
+	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
 
 	/* boo:bar doesn't match */
 	pp = mock_path(vnd_boo.value, prd_bar.value);
