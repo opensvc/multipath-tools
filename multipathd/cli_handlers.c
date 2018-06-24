@@ -1449,7 +1449,7 @@ cli_getprkey(void * v, char ** reply, int * len, void * data)
 	if (!mpp)
 		return 1;
 
-	*reply = malloc(20);
+	*reply = malloc(26);
 
 	if (!get_be64(mpp->reservation_key)) {
 		sprintf(*reply, "none\n");
@@ -1458,7 +1458,7 @@ cli_getprkey(void * v, char ** reply, int * len, void * data)
 	}
 	if (mpp->sa_flags & MPATH_F_APTPL_MASK)
 		flagstr = ":aptpl";
-	snprintf(*reply, 20, "0x%" PRIx64 "%s\n",
+	snprintf(*reply, 26, "0x%" PRIx64 "%s\n",
 		 get_be64(mpp->reservation_key), flagstr);
 	(*reply)[19] = '\0';
 	*len = strlen(*reply) + 1;
