@@ -704,7 +704,8 @@ load_config (char * file)
 	conf->checkint = DEFAULT_CHECKINT;
 	conf->max_checkint = 0;
 	conf->force_sync = DEFAULT_FORCE_SYNC;
-	conf->partition_delim = DEFAULT_PARTITION_DELIM;
+	conf->partition_delim = (default_partition_delim != NULL ?
+				 strdup(default_partition_delim) : NULL);
 	conf->processed_main_config = 0;
 	conf->find_multipaths = DEFAULT_FIND_MULTIPATHS;
 	conf->uxsock_timeout = DEFAULT_REPLY_TIMEOUT;

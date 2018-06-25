@@ -36,6 +36,7 @@
 #define DEFAULT_FLUSH		FLUSH_DISABLED
 #define DEFAULT_USER_FRIENDLY_NAMES USER_FRIENDLY_NAMES_OFF
 #define DEFAULT_FORCE_SYNC	0
+#define UNSET_PARTITION_DELIM "/UNSET/"
 #define DEFAULT_PARTITION_DELIM	NULL
 #define DEFAULT_SKIP_KPARTX SKIP_KPARTX_OFF
 #define DEFAULT_DISABLE_CHANGED_WWIDS 1
@@ -59,3 +60,4 @@
 #define MULTIPATH_SHM_BASE	"/dev/shm/multipath/"
 
 char * set_default (char * str);
+extern const char *const default_partition_delim;

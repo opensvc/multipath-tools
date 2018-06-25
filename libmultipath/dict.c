@@ -275,8 +275,28 @@ declare_def_snprint(reassign_maps, print_yes_no)
 declare_def_handler(multipath_dir, set_str)
 declare_def_snprint(multipath_dir, print_str)
 
-declare_def_handler(partition_delim, set_str)
-declare_def_snprint(partition_delim, print_str)
+static int def_partition_delim_handler(struct config *conf, vector strvec)
+{
+	int rc = set_str(strvec, &conf->partition_delim);
+
+	if (rc != 0)
+		return rc;
+
+	if (!strcmp(conf->partition_delim, UNSET_PARTITION_DELIM)) {
+		FREE(conf->partition_delim);
+		conf->partition_delim = NULL;
+	}
+	return 0;
+}
+
+static int snprint_def_partition_delim(struct config *conf, char *buff,
+				       int len, const void *data)
+{
+	if (default_partition_delim == NULL || conf->partition_delim != NULL)
+		return print_str(buff, len, conf->partition_delim);
+	else
+		return print_str(buff, len, UNSET_PARTITION_DELIM);
+}
 
 static const char * const find_multipaths_optvals[] = {
 	[FIND_MULTIPATHS_OFF] = "off",

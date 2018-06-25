@@ -6,6 +6,8 @@
 #include "defaults.h"
 #include "memory.h"
 
+const char * const default_partition_delim = DEFAULT_PARTITION_DELIM;
+
 char *
 set_default (char * str)
 {

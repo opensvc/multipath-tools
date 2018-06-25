@@ -858,10 +858,18 @@ The default is: \fBno\fR
 .
 .TP
 .B partition_delimiter
-If this value is not set, when multipath renames a device, it will act just
-like the kpartx default does, only adding a \fI"p"\fR to names ending in a
-number. If this parameter is set, multipath will act like kpartx does with
-the \fI-p\fR option is used, and always add delimiter.
+This parameter controls how multipath chooses the names of partition devices
+of multipath maps if a multipath map is renamed (e.g. if a map alias is added
+or changed). If this parameter is set to a string other than "/UNSET/" (even
+the empty string), multipath inserts that string between device name and
+partition number to construct the partition device name.
+Otherwise (i.e. if this parameter is unset or has the value "/UNSET/"),
+the behavior depends on the map name: if it ends in a digit, a \fI"p"\fR is
+inserted between name and partition number; otherwise, the partition number is
+simply appended.
+Distributions may use a non-null default value for this option; in this case,
+the user must set it to "/UNSET/" to obtain the original \fB<unset>\fR
+behavior. Use \fImultipath -T\fR to check the current settings.
 .RS
 .TP
 The default is: \fB<unset>\fR
