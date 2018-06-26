@@ -404,10 +404,10 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 10,
 	},
 	/*
-	 * Hitachi
+	 * Hitachi Vantara
 	 *
 	 * Maintainer : Matthias Rudolph
-	 * Mail : matthias.rudolph@hds.com
+	 * Mail : Matthias.Rudolph@hitachivantara.com
 	 */
 	{
 		/* USP-V, HUS VM, VSP, VSP G1X00 and VSP GX00 families / HP XP */
