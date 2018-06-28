@@ -803,10 +803,6 @@ int delegate_to_multipathd(enum mpath_cmds cmd, const char *dev,
 	char command[1024], *p, *reply = NULL;
 	int n, r = 0;
 
-	fd = mpath_connect();
-	if (fd == -1)
-		return 0;
-
 	p = command;
 	*p = '\0';
 	n = sizeof(command);
@@ -819,7 +815,12 @@ int delegate_to_multipathd(enum mpath_cmds cmd, const char *dev,
 	if (strlen(command) == 0)
 		/* No command found, no need to delegate */
 		return 0;
-	else if (p >= command + sizeof(command)) {
+
+	fd = mpath_connect();
+	if (fd == -1)
+		return 0;
+
+	if (p >= command + sizeof(command)) {
 		condlog(0, "internal error - command buffer overflow");
 		r = -1;
 		goto out;
