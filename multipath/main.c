@@ -796,12 +796,18 @@ get_dev_type(char *dev) {
  *
  * It is safer to use equivalent multipathd client commands instead.
  */
+enum {
+	DELEGATE_OK = 0,
+	DELEGATE_ERROR = -1,
+	NOT_DELEGATED = 1,
+};
+
 int delegate_to_multipathd(enum mpath_cmds cmd, const char *dev,
 			   enum devtypes dev_type, const struct config *conf)
 {
 	int fd;
 	char command[1024], *p, *reply = NULL;
-	int n, r = 0;
+	int n, r = DELEGATE_ERROR;
 
 	p = command;
 	*p = '\0';
@@ -814,22 +820,21 @@ int delegate_to_multipathd(enum mpath_cmds cmd, const char *dev,
 
 	if (strlen(command) == 0)
 		/* No command found, no need to delegate */
-		return 0;
+		return NOT_DELEGATED;
 
 	fd = mpath_connect();
 	if (fd == -1)
-		return 0;
+		return NOT_DELEGATED;
 
 	if (p >= command + sizeof(command)) {
 		condlog(0, "internal error - command buffer overflow");
-		r = -1;
 		goto out;
 	}
 
 	condlog(3, "delegating command to multipathd");
-	r = mpath_process_cmd(fd, command, &reply, conf->uxsock_timeout);
 
-	if (r == -1) {
+	if (mpath_process_cmd(fd, command, &reply, conf->uxsock_timeout)
+	    == -1) {
 		condlog(1, "error in multipath command %s: %s",
 			command, strerror(errno));
 		goto out;
@@ -837,13 +842,11 @@ int delegate_to_multipathd(enum mpath_cmds cmd, const char *dev,
 
 	if (reply != NULL && *reply != '\0' && strcmp(reply, "ok\n"))
 		printf("%s", reply);
-	r = 1;
+	r = DELEGATE_OK;
 
 out:
 	FREE(reply);
 	close(fd);
-	if (r < 0)
-		exit(1);
 	return r;
 }
 
@@ -1050,8 +1053,14 @@ main (int argc, char *argv[])
 		goto out;
 	}
 
-	if (delegate_to_multipathd(cmd, dev, dev_type, conf))
+	switch(delegate_to_multipathd(cmd, dev, dev_type, conf)) {
+	case DELEGATE_OK:
 		exit(0);
+	case DELEGATE_ERROR:
+		exit(1);
+	case NOT_DELEGATED:
+		break;
+	}
 
 	if (cmd == CMD_RESET_WWIDS) {
 		struct multipath * mpp;
