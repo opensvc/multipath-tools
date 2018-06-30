@@ -625,6 +625,7 @@ static struct hwentry default_hw[] = {
 		.uid_attribute = "ID_UID",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
+		.checker_name  = DIRECTIO,
 	},
 	{
 		/* DS6000/DS8000 DASD FBA */
@@ -634,6 +635,7 @@ static struct hwentry default_hw[] = {
 		.uid_attribute = "ID_UID",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
+		.checker_name  = DIRECTIO,
 	},
 	{
 		/* Power RAID */
