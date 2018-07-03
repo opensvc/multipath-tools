@@ -19,6 +19,7 @@
 #include <sys/ioctl.h>
 #include <inttypes.h>
 #include <libudev.h>
+#include <errno.h>
 
 #define __user
 #include <scsi/sg.h>
@@ -318,8 +319,11 @@ retry:
 	hdr.sbp			= sense;
 	hdr.timeout		= get_prio_timeout(timeout, SGIO_TIMEOUT);
 
-	if (ioctl(fd, SG_IO, &hdr) < 0)
+	if (ioctl(fd, SG_IO, &hdr) < 0) {
+		condlog(2, "%s: sg ioctl failed: %s",
+			__func__, strerror(errno));
 		return -RTPG_RTPG_FAILED;
+	}
 
 	rc = scsi_error(&hdr, OPERATION_CODE_RTPG);
 	if (rc == SCSI_ERROR) {
@@ -355,8 +359,10 @@ get_asymmetric_access_state(int fd, unsigned int tpg, unsigned int timeout)
 	}
 	memset(buf, 0, buflen);
 	rc = do_rtpg(fd, buf, buflen, timeout);
-	if (rc < 0)
+	if (rc < 0) {
+		PRINT_DEBUG("%s: do_rtpg returned %d", __func__, rc);
 		goto out;
+	}
 	scsi_buflen = get_unaligned_be32(&buf[0]) + 4;
 	if (scsi_buflen > UINT_MAX)
 		scsi_buflen = UINT_MAX;
@@ -364,8 +370,8 @@ get_asymmetric_access_state(int fd, unsigned int tpg, unsigned int timeout)
 		free(buf);
 		buf = (unsigned char *)malloc(scsi_buflen);
 		if (!buf) {
-			PRINT_DEBUG ("malloc failed: could not allocate"
-				"%u bytes", scsi_buflen);
+			PRINT_DEBUG("malloc failed: could not allocate %"
+				    PRIu64 " bytes", scsi_buflen);
 			return -RTPG_RTPG_FAILED;
 		}
 		buflen = scsi_buflen;
@@ -389,6 +395,8 @@ get_asymmetric_access_state(int fd, unsigned int tpg, unsigned int timeout)
 			}
 		}
 	}
+	if (rc == -RTPG_TPG_NOT_FOUND)
+		condlog(2, "%s: port group %d not found", __func__, tpg);
 out:
 	free(buf);
 	return rc;

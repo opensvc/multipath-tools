@@ -67,8 +67,11 @@ get_alua_info(struct path * pp, unsigned int timeout)
 	}
 	condlog(3, "%s: reported target port group is %i", pp->dev, tpg);
 	rc = get_asymmetric_access_state(pp->fd, tpg, timeout);
-	if (rc < 0)
+	if (rc < 0) {
+		condlog(2, "%s: get_asymmetric_access_state returned %d",
+			__func__, rc);
 		return -ALUA_PRIO_GETAAS_FAILED;
+	}
 
 	condlog(3, "%s: aas = %02x [%s]%s", pp->dev, rc, aas_print_string(rc),
 		(rc & 0x80) ? " [preferred]" : "");
