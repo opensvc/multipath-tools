@@ -586,7 +586,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	{
-		/* Enterprise Storage Server / Shark family */
+		/* Enterprise Storage Server(ESS) / Shark family */
 		.vendor        = "IBM",
 		.product       = "^2105",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
@@ -618,7 +618,7 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 	},
 	{
-		/* DS6000/DS8000 DASD ECKD */
+		/* PAV DASD ECKD */
 		.vendor        = "IBM",
 		.product       = "S/390 DASD ECKD",
 		.bl_product    = "S/390",
@@ -628,7 +628,7 @@ static struct hwentry default_hw[] = {
 		.checker_name  = DIRECTIO,
 	},
 	{
-		/* DS6000/DS8000 DASD FBA */
+		/* PAV DASD FBA */
 		.vendor        = "IBM",
 		.product       = "S/390 DASD FBA",
 		.bl_product    = "S/390",
