@@ -69,6 +69,8 @@ char *find_loop_by_file(const char *filename)
 	struct loop_info loopinfo;
 	const char VIRT_BLOCK[] = "/sys/devices/virtual/block";
 	char path[PATH_MAX];
+	char bf_path[PATH_MAX];
+	char backing_file[PATH_MAX];
 
 	dir = opendir(VIRT_BLOCK);
 	if (!dir)
@@ -119,6 +121,34 @@ char *find_loop_by_file(const char *filename)
 		close (fd);
 
 		if (0 == strcmp(filename, loopinfo.lo_name)) {
+			found = realpath(path, NULL);
+			break;
+		}
+
+		/*
+		 * filename is a realpath, while loopinfo.lo_name may hold just the
+		 * basename.  If that's the case, try to match filename against the
+		 * backing_file entry for this loop entry
+		 */
+		if (snprintf(bf_path, PATH_MAX, "%s/%s/loop/backing_file", VIRT_BLOCK,
+					 dent->d_name) >= PATH_MAX)
+			continue;
+
+		fd = open(bf_path, O_RDONLY);
+		if (fd < 0)
+			continue;
+
+		bytes_read = read(fd, backing_file, sizeof(backing_file) - 1);
+		if (bytes_read <= 0) {
+			close(fd);
+			continue;
+		}
+
+		close(fd);
+
+		backing_file[bytes_read-1] = '\0';
+
+		if (0 == strcmp(filename, backing_file)) {
 			found = realpath(path, NULL);
 			break;
 		}
