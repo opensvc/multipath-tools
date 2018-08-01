@@ -705,6 +705,7 @@ static void usage(void)
 			"    --param-alltgpt|-Y         PR Out parameter 'ALL_TG_PT\n"
 			"    --param-aptpl|-Z           PR Out parameter 'APTPL'\n"
 			"    --read-keys|-k             PR In: Read Keys\n"
+			"    --param-rk=RK|-K RK        PR Out parameter reservation key\n"
 			"    --param-sark=SARK|-S SARK  PR Out parameter service "
 			"action\n"
 			"                               reservation key (SARK is in "
