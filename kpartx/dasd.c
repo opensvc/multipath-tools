@@ -129,7 +129,7 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 			 */
 			unlink(pathname);
 		}
-		if (!fd_dasd) {
+		if (fd_dasd < 0) {
 			/* Couldn't open the device */
 			return -1;
 		}
@@ -157,7 +157,8 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 
 		geo.heads = 15;
 		geo.sectors = recs_per_track(blocksize);
-		cyl = disksize / (blocksize * geo.heads * geo.sectors);
+		cyl = disksize / ((uint64_t)blocksize * geo.heads *
+				  geo.sectors);
 		if (cyl < LV_COMPAT_CYL)
 			geo.cylinders = cyl;
 		else
