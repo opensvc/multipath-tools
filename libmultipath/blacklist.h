@@ -35,7 +35,7 @@ int setup_default_blist (struct config *);
 int alloc_ble_device (vector);
 int filter_devnode (vector, vector, char *);
 int filter_wwid (vector, vector, char *, char *);
-int filter_device (vector, vector, char *, char *);
+int filter_device (vector, vector, char *, char *, char *);
 int filter_path (struct config *, struct path *);
 int filter_property(struct config *, struct udev_device *);
 int filter_protocol(vector, vector, struct path *);

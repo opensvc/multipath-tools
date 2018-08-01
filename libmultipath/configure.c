@@ -1030,7 +1030,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 			invalid = 1;
 		pthread_cleanup_pop(1);
 		if (invalid) {
-			orphan_path(pp1, "wwid blacklisted");
+			orphan_path(pp1, "blacklisted");
 			continue;
 		}
 
