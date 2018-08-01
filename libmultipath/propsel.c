@@ -420,9 +420,11 @@ int select_hwhandler(struct config *conf, struct multipath *mp)
 	bool all_tpgs = true;
 
 	dh_state = &handler[2];
+
+	vector_foreach_slot(mp->paths, pp, i)
+		all_tpgs = all_tpgs && (pp->tpgs > 0);
 	if (mp->retain_hwhandler != RETAIN_HWHANDLER_OFF) {
 		vector_foreach_slot(mp->paths, pp, i) {
-			all_tpgs = all_tpgs && (pp->tpgs > 0);
 			if (get_dh_state(pp, dh_state, sizeof(handler) - 2) > 0
 			    && strcmp(dh_state, "detached")) {
 				memcpy(handler, "1 ", 2);
