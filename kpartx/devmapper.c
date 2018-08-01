@@ -663,7 +663,7 @@ int dm_find_part(const char *parent, const char *delim, int part,
 
 	tmp = dm_find_uuid(uuid);
 	if (tmp == NULL)
-		return r;
+		goto out;
 
 	/* Sanity check on partition, see dm_foreach_partmaps */
 	if (dm_type(tmp, "linear") != 1)
@@ -689,13 +689,14 @@ int dm_find_part(const char *parent, const char *delim, int part,
 		       tmp, uuid, name);
 
 	r = dm_rename(tmp, name);
-	if (r == 0) {
-		free(uuid);
-		if (verbose)
-			fprintf(stderr, "renaming %s->%s failed\n", tmp, name);
-	} else
+	if (r == 1) {
 		*part_uuid = uuid;
+		return 1;
+	}
+	if (verbose)
+		fprintf(stderr, "renaming %s->%s failed\n", tmp, name);
 out:
+	free(uuid);
 	free(tmp);
 	return r;
 }
