@@ -466,20 +466,19 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	int rc;
 	int count=0;
 	int status = MPATH_PR_SUCCESS;
+	int all_tg_pt;
 	uint64_t sa_key = 0;
 
 	if (!mpp)
 		return MPATH_PR_DMMP_ERROR;
 
+	all_tg_pt = (mpp->all_tg_pt == ALL_TG_PT_ON ||
+		     paramp->sa_flags & MPATH_F_ALL_TG_PT_MASK);
 	active_pathcount = pathcount(mpp, PATH_UP) + pathcount(mpp, PATH_GHOST);
 
 	if (active_pathcount == 0) {
 		condlog (0, "%s: no path available", mpp->wwid);
 		return MPATH_PR_DMMP_ERROR;
-	}
-
-	if ( paramp->sa_flags & MPATH_F_ALL_TG_PT_MASK ) {
-		condlog (1, "Warning: ALL_TG_PT is set. Configuration not supported");
 	}
 
 	struct threadinfo thread[active_pathcount];
@@ -518,8 +517,7 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 				condlog (1, "%s: %s path not up. Skip.", mpp->wwid, pp->dev);
 				continue;
 			}
-			if (mpp->all_tg_pt == ALL_TG_PT_ON &&
-			    pp->sg_id.host_no != -1) {
+			if (all_tg_pt && pp->sg_id.host_no != -1) {
 				for (k = 0; k < count; k++) {
 					if (pp->sg_id.host_no == hosts[k]) {
 						condlog(3, "%s: %s host %d matches skip.", pp->wwid, pp->dev, pp->sg_id.host_no);

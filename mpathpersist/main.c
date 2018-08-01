@@ -118,7 +118,7 @@ int main (int argc, char * argv[])
 	{
 		int option_index = 0;
 
-		c = getopt_long (argc, argv, "v:Cd:hHioZK:S:PAT:skrGILcRX:l:",
+		c = getopt_long (argc, argv, "v:Cd:hHioYZK:S:PAT:skrGILcRX:l:",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -158,6 +158,10 @@ int main (int argc, char * argv[])
 				prout_flag = 1;
 				break;
 
+			case 'Y':
+				param_alltgpt = 1;
+				++num_prout_param;
+				break;
 			case 'Z':
 				param_aptpl = 1;
 				++num_prout_param;
@@ -443,9 +447,9 @@ int main (int argc, char * argv[])
 		}
 
 		if (param_alltgpt)
-			paramp->sa_flags |= 0x4;
+			paramp->sa_flags |= MPATH_F_ALL_TG_PT_MASK;
 		if (param_aptpl)
-			paramp->sa_flags |= 0x1;
+			paramp->sa_flags |= MPATH_F_APTPL_MASK;
 
 		if (num_transport)
 		{
@@ -698,6 +702,7 @@ static void usage(void)
 			"    --hex|-H                   output response in hex\n"
 			"    --in|-i                    request PR In command \n"
 			"    --out|-o                   request PR Out command\n"
+			"    --param-alltgpt|-Y         PR Out parameter 'ALL_TG_PT\n"
 			"    --param-aptpl|-Z           PR Out parameter 'APTPL'\n"
 			"    --read-keys|-k             PR In: Read Keys\n"
 			"    --param-sark=SARK|-S SARK  PR Out parameter service "

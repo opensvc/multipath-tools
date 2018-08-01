@@ -6,6 +6,7 @@ static struct option long_options[] = {
 	{"hex", 0, NULL, 'H'},
 	{"in", 0, NULL, 'i'},
 	{"out", 0, NULL, 'o'},
+	{"param-alltgpt", 0, NULL, 'Y'},
 	{"param-aptpl", 0, NULL, 'Z'},
 	{"param-rk", 1, NULL, 'K'},
 	{"param-sark", 1, NULL, 'S'},

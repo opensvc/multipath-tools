@@ -756,9 +756,11 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B all_tg_pt
-This must be set to \fByes\fR to successfully use mpathpersist on arrays that
-automatically set and clear registration keys on all target ports from a
-host, instead of per target port per host.
+Set the 'all targets ports' flag when registering keys with mpathpersist. Some
+arrays automatically set and clear registration keys on all target ports from a
+host, instead of per target port per host. The ALL_TG_PT flag must be set to
+successfully use mpathpersist on these arrays. Setting this option is identical
+to calling mpathpersist with \fI--param-alltgpt\fR
 .RS
 .TP
 The default is: \fBno\fR
