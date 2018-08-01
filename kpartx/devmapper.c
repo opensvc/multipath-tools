@@ -365,7 +365,7 @@ dm_devn (const char * mapname, int *major, int *minor)
 	struct dm_info info;
 
 	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
-		return 0;
+		return 1;
 
 	if (!dm_task_set_name(dmt, mapname))
 		goto out;
