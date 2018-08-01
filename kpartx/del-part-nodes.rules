@@ -10,7 +10,7 @@
 # or create an udev rule file that sets ENV{DONT_DEL_PART_NODES}="1".
 
 SUBSYSTEM!="block", GOTO="end_del_part_nodes"
-KERNEL!="sd*|dasd*|rbd*", GOTO="end_del_part_nodes"
+KERNEL!="sd*|dasd*", GOTO="end_del_part_nodes"
 ACTION!="add|change", GOTO="end_del_part_nodes"
 ENV{DEVTYPE}=="partition", GOTO="end_del_part_nodes"
 
