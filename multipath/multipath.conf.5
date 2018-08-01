@@ -1205,9 +1205,21 @@ The default \fIblacklist exception\fR is: \fB(SCSI_IDENT_|ID_WWN)\fR, causing
 well-behaved SCSI devices and devices that provide a WWN (World Wide Number)
 to be included, and all others to be excluded.
 .RE
+.TP
+.B protocol
+Regular expression for the protocol of a device to be excluded/included.
+.RS
+.PP
+The protocol strings that multipath recognizes are \fIscsi:fcp\fR,
+\fIscsi:spi\fR, \fIscsi:ssa\fR, \fIscsi:sbp\fR, \fIscsi:srp\fR,
+\fIscsi:iscsi\fR, \fIscsi:sas\fR, \fIscsi:adt\fR, \fIscsi:ata\fR,
+\fIscsi:unspec\fR, \fIccw\fR, \fIcciss\fR, \fInvme\fR, and \fIundef\fR.
+The protocol that a path is using can be viewed by running
+\fBmultipathd show paths format "%d %P"\fR
+.RE
 .LP
-For every device, these 4 blacklist criteria are evaluated in the the order
-"property, dev\%node, device, wwid". If a device turns out to be
+For every device, these 5 blacklist criteria are evaluated in the the order
+"property, dev\%node, device, protocol, wwid". If a device turns out to be
 blacklisted by any criterion, it's excluded from handling by multipathd, and
 the later criteria aren't evaluated any more. For each
 criterion, the whitelist takes precedence over the blacklist if a device

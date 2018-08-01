@@ -1291,9 +1291,12 @@ blacklist_handler(struct config *conf, vector strvec)
 		conf->blist_device = vector_alloc();
 	if (!conf->blist_property)
 		conf->blist_property = vector_alloc();
+	if (!conf->blist_protocol)
+		conf->blist_protocol = vector_alloc();
 
 	if (!conf->blist_devnode || !conf->blist_wwid ||
-	    !conf->blist_device || !conf->blist_property)
+	    !conf->blist_device || !conf->blist_property ||
+	    !conf->blist_protocol)
 		return 1;
 
 	return 0;
@@ -1310,9 +1313,12 @@ blacklist_exceptions_handler(struct config *conf, vector strvec)
 		conf->elist_device = vector_alloc();
 	if (!conf->elist_property)
 		conf->elist_property = vector_alloc();
+	if (!conf->elist_protocol)
+		conf->elist_protocol = vector_alloc();
 
 	if (!conf->elist_devnode || !conf->elist_wwid ||
-	    !conf->elist_device || !conf->elist_property)
+	    !conf->elist_device || !conf->elist_property ||
+	    !conf->elist_protocol)
 		return 1;
 
 	return 0;
@@ -1356,6 +1362,8 @@ declare_ble_handler(blist_wwid)
 declare_ble_handler(elist_wwid)
 declare_ble_handler(blist_property)
 declare_ble_handler(elist_property)
+declare_ble_handler(blist_protocol)
+declare_ble_handler(elist_protocol)
 
 static int
 snprint_def_uxsock_timeout(struct config *conf, char * buff, int len,
@@ -1627,6 +1635,7 @@ init_keywords(vector keywords)
 	install_keyword_multi("devnode", &ble_blist_devnode_handler, &snprint_ble_simple);
 	install_keyword_multi("wwid", &ble_blist_wwid_handler, &snprint_ble_simple);
 	install_keyword_multi("property", &ble_blist_property_handler, &snprint_ble_simple);
+	install_keyword_multi("protocol", &ble_blist_protocol_handler, &snprint_ble_simple);
 	install_keyword_multi("device", &ble_device_handler, NULL);
 	install_sublevel();
 	install_keyword("vendor", &ble_blist_device_vendor_handler, &snprint_bled_vendor);
@@ -1636,6 +1645,7 @@ init_keywords(vector keywords)
 	install_keyword_multi("devnode", &ble_elist_devnode_handler, &snprint_ble_simple);
 	install_keyword_multi("wwid", &ble_elist_wwid_handler, &snprint_ble_simple);
 	install_keyword_multi("property", &ble_elist_property_handler, &snprint_ble_simple);
+	install_keyword_multi("protocol", &ble_elist_protocol_handler, &snprint_ble_simple);
 	install_keyword_multi("device", &ble_except_device_handler, NULL);
 	install_sublevel();
 	install_keyword("vendor", &ble_elist_device_vendor_handler, &snprint_bled_vendor);

@@ -210,10 +210,12 @@ struct config {
 	vector blist_wwid;
 	vector blist_device;
 	vector blist_property;
+	vector blist_protocol;
 	vector elist_devnode;
 	vector elist_wwid;
 	vector elist_device;
 	vector elist_property;
+	vector elist_protocol;
 };
 
 extern struct udev * udev;

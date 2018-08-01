@@ -1887,9 +1887,10 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 
 	if (mask & DI_BLACKLIST && mask & DI_SYSFS) {
 		if (filter_device(conf->blist_device, conf->elist_device,
-				  pp->vendor_id, pp->product_id) > 0) {
+				  pp->vendor_id, pp->product_id) > 0 ||
+		    filter_protocol(conf->blist_protocol, conf->elist_protocol,
+				    pp) > 0)
 			return PATHINFO_SKIPPED;
-		}
 	}
 
 	path_state = path_offline(pp);

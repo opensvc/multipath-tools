@@ -12,6 +12,8 @@
 #include "structs.h"
 #include "config.h"
 #include "blacklist.h"
+#include "structs_vec.h"
+#include "print.h"
 
 int store_ble(vector blist, char * str, int origin)
 {
@@ -240,12 +242,14 @@ setup_default_blist (struct config * conf)
 		condlog(3, "%s: %s %s %s", dev, (M), wwid, (S));	\
 	else if (env)							\
 		condlog(3, "%s: %s %s %s", dev, (M), env, (S));		\
+	else if (protocol)						\
+		condlog(3, "%s: %s %s %s", dev, (M), protocol, (S));	\
 	else								\
 		condlog(3, "%s: %s %s", dev, (M), (S))
 
 void
 log_filter (const char *dev, char *vendor, char *product, char *wwid,
-	    const char *env, int r)
+	    const char *env, const char *protocol, int r)
 {
 	/*
 	 * Try to sort from most likely to least.
@@ -265,6 +269,9 @@ log_filter (const char *dev, char *vendor, char *product, char *wwid,
 	case MATCH_PROPERTY_BLIST:
 		LOG_BLIST("udev property", "blacklisted");
 		break;
+	case MATCH_PROTOCOL_BLIST:
+		LOG_BLIST("protocol", "blacklisted");
+		break;
 	case MATCH_DEVICE_BLIST_EXCEPT:
 		LOG_BLIST("vendor/product", "whitelisted");
 		break;
@@ -279,6 +286,9 @@ log_filter (const char *dev, char *vendor, char *product, char *wwid,
 		break;
 	case MATCH_PROPERTY_BLIST_MISSING:
 		LOG_BLIST("blacklisted,", "udev property missing");
+		break;
+	case MATCH_PROTOCOL_BLIST_EXCEPT:
+		LOG_BLIST("protocol", "whitelisted");
 		break;
 	}
 }
@@ -299,7 +309,7 @@ int
 filter_device (vector blist, vector elist, char * vendor, char * product)
 {
 	int r = _filter_device(blist, elist, vendor, product);
-	log_filter(NULL, vendor, product, NULL, NULL, r);
+	log_filter(NULL, vendor, product, NULL, NULL, NULL, r);
 	return r;
 }
 
@@ -319,7 +329,7 @@ int
 filter_devnode (vector blist, vector elist, char * dev)
 {
 	int r = _filter_devnode(blist, elist, dev);
-	log_filter(dev, NULL, NULL, NULL, NULL, r);
+	log_filter(dev, NULL, NULL, NULL, NULL, NULL, r);
 	return r;
 }
 
@@ -339,7 +349,29 @@ int
 filter_wwid (vector blist, vector elist, char * wwid, char * dev)
 {
 	int r = _filter_wwid(blist, elist, wwid);
-	log_filter(dev, NULL, NULL, wwid, NULL, r);
+	log_filter(dev, NULL, NULL, wwid, NULL, NULL, r);
+	return r;
+}
+
+static int
+_filter_protocol (vector blist, vector elist, const char * protocol_str)
+{
+	if (_blacklist_exceptions(elist, protocol_str))
+		return MATCH_PROTOCOL_BLIST_EXCEPT;
+	if (_blacklist(blist, protocol_str))
+		return MATCH_PROTOCOL_BLIST;
+	return 0;
+}
+
+int
+filter_protocol(vector blist, vector elist, struct path * pp)
+{
+	char buf[PROTOCOL_BUF_SIZE];
+	int r;
+
+	snprint_path_protocol(buf, sizeof(buf), pp);
+	r = _filter_protocol(blist, elist, buf);
+	log_filter(pp->dev, NULL, NULL, NULL, NULL, buf, r);
 	return r;
 }
 
@@ -351,12 +383,14 @@ _filter_path (struct config * conf, struct path * pp)
 	r = filter_property(conf, pp->udev);
 	if (r > 0)
 		return r;
-
 	r = _filter_devnode(conf->blist_devnode, conf->elist_devnode,pp->dev);
 	if (r > 0)
 		return r;
 	r = _filter_device(conf->blist_device, conf->elist_device,
 			   pp->vendor_id, pp->product_id);
+	if (r > 0)
+		return r;
+	r = filter_protocol(conf->blist_protocol, conf->elist_protocol, pp);
 	if (r > 0)
 		return r;
 	r = _filter_wwid(conf->blist_wwid, conf->elist_wwid, pp->wwid);
@@ -367,7 +401,8 @@ int
 filter_path (struct config * conf, struct path * pp)
 {
 	int r=_filter_path(conf, pp);
-	log_filter(pp->dev, pp->vendor_id, pp->product_id, pp->wwid, NULL, r);
+	log_filter(pp->dev, pp->vendor_id, pp->product_id, pp->wwid, NULL,
+		   NULL, r);
 	return r;
 }
 
@@ -402,7 +437,7 @@ filter_property(struct config * conf, struct udev_device * udev)
 
 		r = _filter_property(conf, env);
 		if (r) {
-			log_filter(devname, NULL, NULL, NULL, env, r);
+			log_filter(devname, NULL, NULL, NULL, env, NULL, r);
 			return r;
 		}
 	}
@@ -411,7 +446,7 @@ filter_property(struct config * conf, struct udev_device * udev)
 	 * This is the inverse of the 'normal' matching;
 	 * the environment variable _has_ to match.
 	 */
-	log_filter(devname, NULL, NULL, NULL, NULL,
+	log_filter(devname, NULL, NULL, NULL, NULL, NULL,
 		   MATCH_PROPERTY_BLIST_MISSING);
 	return MATCH_PROPERTY_BLIST_MISSING;
 }
