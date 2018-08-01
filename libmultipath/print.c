@@ -638,6 +638,48 @@ snprint_path_failures(char * buff, size_t len, const struct path * pp)
 	return snprint_int(buff, len, pp->failcount);
 }
 
+/* if you add a protocol string bigger than "scsi:unspec" you must
+ * also change PROTOCOL_BUF_SIZE */
+int
+snprint_path_protocol(char * buff, size_t len, const struct path * pp)
+{
+	switch (pp->bus) {
+	case SYSFS_BUS_SCSI:
+		switch (pp->sg_id.proto_id) {
+		case SCSI_PROTOCOL_FCP:
+			return snprintf(buff, len, "scsi:fcp");
+		case SCSI_PROTOCOL_SPI:
+			return snprintf(buff, len, "scsi:spi");
+		case SCSI_PROTOCOL_SSA:
+			return snprintf(buff, len, "scsi:ssa");
+		case SCSI_PROTOCOL_SBP:
+			return snprintf(buff, len, "scsi:sbp");
+		case SCSI_PROTOCOL_SRP:
+			return snprintf(buff, len, "scsi:srp");
+		case SCSI_PROTOCOL_ISCSI:
+			return snprintf(buff, len, "scsi:iscsi");
+		case SCSI_PROTOCOL_SAS:
+			return snprintf(buff, len, "scsi:sas");
+		case SCSI_PROTOCOL_ADT:
+			return snprintf(buff, len, "scsi:adt");
+		case SCSI_PROTOCOL_ATA:
+			return snprintf(buff, len, "scsi:ata");
+		case SCSI_PROTOCOL_UNSPEC:
+		default:
+			return snprintf(buff, len, "scsi:unspec");
+		}
+	case SYSFS_BUS_CCW:
+		return snprintf(buff, len, "ccw");
+	case SYSFS_BUS_CCISS:
+		return snprintf(buff, len, "cciss");
+	case SYSFS_BUS_NVME:
+		return snprintf(buff, len, "nvme");
+	case SYSFS_BUS_UNDEF:
+	default:
+		return snprintf(buff, len, "undef");
+	}
+}
+
 struct multipath_data mpd[] = {
 	{'n', "name",          0, snprint_name},
 	{'w', "uuid",          0, snprint_multipath_uuid},
@@ -687,6 +729,7 @@ struct path_data pd[] = {
 	{'a', "host adapter",  0, snprint_host_adapter},
 	{'G', "foreign",       0, snprint_path_foreign},
 	{'0', "failures",      0, snprint_path_failures},
+	{'P', "protocol",      0, snprint_path_protocol},
 	{0, NULL, 0 , NULL}
 };
 
