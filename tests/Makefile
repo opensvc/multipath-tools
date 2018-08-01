@@ -51,4 +51,4 @@ COLON:=:
 		$(multipathdir)/libmultipath.so Makefile
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $< $($@_TESTDEPS) $($@_OBJDEPS) \
 		$(LIBDEPS) $($@_LIBDEPS) \
-		$(file <$<.wrap) $(foreach dep,$($@_TESTDEPS),$(file <$(dep).wrap))
+		$(shell cat $<.wrap) $(foreach dep,$($@_TESTDEPS),$(shell cat $(dep).wrap))
