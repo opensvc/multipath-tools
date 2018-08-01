@@ -3,7 +3,7 @@ include ../Makefile.inc
 CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathcmddir)
 LIBDEPS += -L$(multipathdir) -lmultipath -lcmocka
 
-TESTS := uevent parser util dmevents hwtable
+TESTS := uevent parser util dmevents hwtable blacklist
 
 .SILENT: $(TESTS:%=%.o)
 .PRECIOUS: $(TESTS:%=%-test)
@@ -23,6 +23,8 @@ hwtable-test_TESTDEPS := test-lib.o
 hwtable-test_OBJDEPS := ../libmultipath/discovery.o ../libmultipath/blacklist.o \
 	../libmultipath/prio.o ../libmultipath/callout.o ../libmultipath/structs.o
 hwtable-test_LIBDEPS := -ludev -lpthread -ldl
+blacklist-test_OBJDEPS := ../libmultipath/blacklist.o
+blacklist-test_LIBDEPS := -ludev
 
 %.out:	%-test
 	@echo == running $< ==
