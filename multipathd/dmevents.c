@@ -50,16 +50,20 @@ struct dmevent_waiter {
 };
 
 static struct dmevent_waiter *waiter;
+/*
+ * DM_VERSION_MINOR hasn't been updated when DM_DEV_ARM_POLL
+ * was added in kernel 4.13. 4.37.0 (4.14) has it, safely.
+ */
+static const unsigned int DM_VERSION_FOR_ARM_POLL[] = {4, 37, 0};
 
 int dmevent_poll_supported(void)
 {
-	unsigned int minv[3] = {4, 37, 0};
 	unsigned int v[3];
 
 	if (dm_drv_version(v))
 		return 0;
 
-	if (VERSION_GE(v, minv))
+	if (VERSION_GE(v, DM_VERSION_FOR_ARM_POLL))
 		return 1;
 	return 0;
 }
@@ -120,9 +124,9 @@ static int arm_dm_event_poll(int fd)
 {
 	struct dm_ioctl dmi;
 	memset(&dmi, 0, sizeof(dmi));
-	dmi.version[0] = DM_VERSION_MAJOR;
-	dmi.version[1] = DM_VERSION_MINOR;
-	dmi.version[2] = DM_VERSION_PATCHLEVEL;
+	dmi.version[0] = DM_VERSION_FOR_ARM_POLL[0];
+	dmi.version[1] = DM_VERSION_FOR_ARM_POLL[1];
+	dmi.version[2] = DM_VERSION_FOR_ARM_POLL[2];
 	/* This flag currently does nothing. It simply exists to
 	 * duplicate the behavior of libdevmapper */
 	dmi.flags = 0x4;
