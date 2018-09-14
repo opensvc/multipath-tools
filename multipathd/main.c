@@ -743,7 +743,7 @@ uev_remove_map (struct uevent * uev, struct vectors * vecs)
 	int minor;
 	struct multipath *mpp;
 
-	condlog(2, "%s: remove map (uevent)", uev->kernel);
+	condlog(3, "%s: remove map (uevent)", uev->kernel);
 	alias = uevent_get_dm_name(uev);
 	if (!alias) {
 		condlog(3, "%s: No DM_NAME in uevent, ignoring", uev->kernel);
@@ -803,7 +803,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 	int ret = 0, i;
 	struct config *conf;
 
-	condlog(2, "%s: add path (uevent)", uev->kernel);
+	condlog(3, "%s: add path (uevent)", uev->kernel);
 	if (strstr(uev->kernel, "..") != NULL) {
 		/*
 		 * Don't allow relative device names in the pathvec
@@ -911,7 +911,8 @@ ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 	     (pathcount(mpp, PATH_GHOST) > 0 && pp->tpgs != TPGS_IMPLICIT &&
 	      mpp->ghost_delay_tick <= 0))) {
 		/* if wait_for_udev is set and valid paths exist */
-		condlog(2, "%s: delaying path addition until %s is fully initialized", pp->dev, mpp->alias);
+		condlog(3, "%s: delaying path addition until %s is fully initialized",
+			pp->dev, mpp->alias);
 		mpp->wait_for_udev = 2;
 		orphan_path(pp, "waiting for create to complete");
 		return 0;
@@ -1038,7 +1039,7 @@ uev_remove_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 	struct path *pp;
 	int ret;
 
-	condlog(2, "%s: remove path (uevent)", uev->kernel);
+	condlog(3, "%s: remove path (uevent)", uev->kernel);
 	delete_foreign(uev->udev);
 
 	pthread_cleanup_push(cleanup_lock, &vecs->lock);
