@@ -286,10 +286,18 @@ static int snprint_nvme_path(const struct gen_path *gp,
 	return 0;
 }
 
+static int nvme_style(const struct gen_multipath* gm,
+		      char *buf, int len, int verbosity)
+{
+	int n = snprintf(buf, len, "%%w [%%G]:%%d %%s");
+
+	return (n < len ? n : len - 1);
+}
+
 static const struct gen_multipath_ops nvme_map_ops = {
 	.get_pathgroups = nvme_mp_get_pgs,
 	.rel_pathgroups = nvme_mp_rel_pgs,
-	.style = generic_style,
+	.style = nvme_style,
 	.snprint = snprint_nvme_map,
 };
 
