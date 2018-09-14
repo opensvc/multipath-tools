@@ -1858,9 +1858,18 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	 * limited by DI_BLACKLIST and occurs before this debug
 	 * message with the mask value.
 	 */
-	if (pp->udev && (is_claimed_by_foreign(pp->udev) ||
-			 filter_property(conf, pp->udev) > 0))
-		return PATHINFO_SKIPPED;
+	if (pp->udev) {
+		const char *hidden =
+			udev_device_get_sysattr_value(pp->udev, "hidden");
+
+		if (hidden && !strcmp(hidden, "1")) {
+			condlog(3, "%s: hidden", pp->dev);
+			return PATHINFO_SKIPPED;
+		}
+		if (is_claimed_by_foreign(pp->udev) ||
+			 filter_property(conf, pp->udev) > 0)
+			return PATHINFO_SKIPPED;
+	}
 
 	if (filter_devnode(conf->blist_devnode,
 			   conf->elist_devnode,
