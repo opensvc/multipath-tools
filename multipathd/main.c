@@ -3130,6 +3130,9 @@ int mpath_pr_event_handle(struct path *pp)
 	pthread_attr_t attr;
 	struct multipath * mpp;
 
+	if (pp->bus != SYSFS_BUS_SCSI)
+		return 0;
+
 	mpp = pp->mpp;
 
 	if (!get_be64(mpp->reservation_key))
