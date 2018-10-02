@@ -248,6 +248,12 @@ static void mock_sysfs_pathinfo(const struct mocked_path *mp)
  */
 void mock_pathinfo(int mask, const struct mocked_path *mp)
 {
+	if (mp->flags & DEV_HIDDEN) {
+		will_return(__wrap_udev_device_get_sysattr_value, "1");
+		return;
+	} else
+		will_return(__wrap_udev_device_get_sysattr_value, "0");
+
 	/* filter_property */
 	will_return(__wrap_udev_device_get_sysname, mp->devnode);
 	if (mp->flags & BL_BY_PROPERTY) {
