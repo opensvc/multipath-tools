@@ -1662,6 +1662,24 @@ static int setup_multipath_config_3(void **state)
 }
 
 /*
+ * Test for device with "hidden" attribute
+ */
+static void test_hidden(const struct hwt_state *hwt)
+{
+	mock_path_flags("NVME", "NoName", DEV_HIDDEN|BL_MASK);
+}
+
+static int setup_hidden(void **state)
+{
+	struct hwt_state *hwt = CHECK_STATE(state);
+
+	WRITE_EMPTY_CONF(hwt);
+	SET_TEST_FUNC(hwt, test_hidden);
+
+	return 0;
+}
+
+/*
  * Create wrapper functions around test_driver() to avoid that cmocka
  * always uses the same test name. That makes it easier to read test results.
  */
@@ -1703,6 +1721,7 @@ define_test(product_blacklist_matching)
 define_test(multipath_config)
 define_test(multipath_config_2)
 define_test(multipath_config_3)
+define_test(hidden)
 
 #define test_entry(x) \
 	cmocka_unit_test_setup(run_##x, setup_##x)
@@ -1742,6 +1761,7 @@ static int test_hwtable(void)
 		test_entry(multipath_config),
 		test_entry(multipath_config_2),
 		test_entry(multipath_config_3),
+		test_entry(hidden),
 	};
 
 	return cmocka_run_group_tests(tests, setup, teardown);
