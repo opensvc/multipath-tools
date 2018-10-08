@@ -331,7 +331,7 @@ setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
 
 int systemd_service_enabled_in(const char *dev, const char *prefix)
 {
-	char path[PATH_SIZE], file[PATH_SIZE], service[PATH_SIZE];
+	char path[PATH_SIZE], file[PATH_MAX], service[PATH_SIZE];
 	DIR *dirfd;
 	struct dirent *d;
 	int found = 0;
@@ -358,7 +358,7 @@ int systemd_service_enabled_in(const char *dev, const char *prefix)
 		p = d->d_name + strlen(d->d_name) - 6;
 		if (strcmp(p, ".wants"))
 			continue;
-		snprintf(file, PATH_SIZE, "%s/%s/%s",
+		snprintf(file, sizeof(file), "%s/%s/%s",
 			 path, d->d_name, service);
 		if (stat(file, &stbuf) == 0) {
 			condlog(3, "%s: found %s", dev, file);

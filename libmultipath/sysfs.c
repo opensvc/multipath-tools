@@ -239,7 +239,7 @@ sysfs_get_size (struct path *pp, unsigned long long * size)
 int sysfs_check_holders(char * check_devt, char * new_devt)
 {
 	unsigned int major, new_minor, table_minor;
-	char path[PATH_SIZE], check_dev[PATH_SIZE];
+	char path[PATH_MAX], check_dev[PATH_SIZE];
 	char * table_name;
 	DIR *dirfd;
 	struct dirent *holder;
@@ -256,7 +256,7 @@ int sysfs_check_holders(char * check_devt, char * new_devt)
 
 	condlog(3, "%s: checking holder", check_dev);
 
-	snprintf(path, PATH_SIZE, "/sys/block/%s/holders", check_dev);
+	snprintf(path, sizeof(path), "/sys/block/%s/holders", check_dev);
 	dirfd = opendir(path);
 	if (dirfd == NULL) {
 		condlog(3, "%s: failed to open directory %s (%d)",
