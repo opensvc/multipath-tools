@@ -218,7 +218,7 @@ void mpath_format_readfullstatus(struct prin_resp *pr_buff, int len, int noisy)
 
 	if (pr_buff->prin_descriptor.prin_readfd.number_of_descriptor == 0)
 	{
-		condlog(3, "No registration or resrvation found.");
+		condlog(3, "No registration or reservation found.");
 		return;
 	}
 
