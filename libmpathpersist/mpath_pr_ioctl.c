@@ -216,12 +216,6 @@ void mpath_format_readfullstatus(struct prin_resp *pr_buff, int len, int noisy)
 	mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readfd.prgeneration);
 	mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readfd.number_of_descriptor);
 
-	if (0 == pr_buff->prin_descriptor.prin_readfd.number_of_descriptor)
-	{
-		return ;
-	}
-
-
 	if (pr_buff->prin_descriptor.prin_readfd.number_of_descriptor == 0)
 	{
 		condlog(3, "No registration or resrvation found.");
