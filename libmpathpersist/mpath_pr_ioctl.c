@@ -31,8 +31,8 @@ void dumpHex(const char* str, int len, int no_ascii);
 int prout_do_scsi_ioctl( char * dev, int rq_servact, int rq_scope,
 		unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy);
 uint32_t  format_transportids(struct prout_param_descriptor *paramp);
-void mpath_reverse_uint32_byteorder(uint32_t *num);
-void mpath_reverse_uint16_byteorder(uint16_t *num);
+void convert_be32_to_cpu(uint32_t *num);
+void convert_be16_to_cpu(uint16_t *num);
 void decode_transport_id(struct prin_fulldescr *fdesc, unsigned char * p, int length);
 int get_prin_length(int rq_servact);
 int mpath_isLittleEndian(void);
@@ -183,23 +183,23 @@ uint32_t  format_transportids(struct prout_param_descriptor *paramp)
 
 void mpath_format_readkeys( struct prin_resp *pr_buff, int len, int noisy)
 {
-	mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readkeys.prgeneration);
-	mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readkeys.additional_length);
+	convert_be32_to_cpu(&pr_buff->prin_descriptor.prin_readkeys.prgeneration);
+	convert_be32_to_cpu(&pr_buff->prin_descriptor.prin_readkeys.additional_length);
 }
 
 void mpath_format_readresv(struct prin_resp *pr_buff, int len, int noisy)
 {
 
-	mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readkeys.prgeneration);
-	mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readkeys.additional_length);
+	convert_be32_to_cpu(&pr_buff->prin_descriptor.prin_readkeys.prgeneration);
+	convert_be32_to_cpu(&pr_buff->prin_descriptor.prin_readkeys.additional_length);
 
 	return;
 }
 
 void mpath_format_reportcapabilities(struct prin_resp *pr_buff, int len, int noisy)
 {
-	mpath_reverse_uint16_byteorder(&pr_buff->prin_descriptor.prin_readcap.length);
-	mpath_reverse_uint16_byteorder(&pr_buff->prin_descriptor.prin_readcap.pr_type_mask);
+	convert_be16_to_cpu(&pr_buff->prin_descriptor.prin_readcap.length);
+	convert_be16_to_cpu(&pr_buff->prin_descriptor.prin_readcap.pr_type_mask);
 
 	return;
 }
@@ -213,8 +213,8 @@ void mpath_format_readfullstatus(struct prin_resp *pr_buff, int len, int noisy)
 	uint32_t additional_length;
 
 
-	mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readfd.prgeneration);
-	mpath_reverse_uint32_byteorder(&pr_buff->prin_descriptor.prin_readfd.number_of_descriptor);
+	convert_be32_to_cpu(&pr_buff->prin_descriptor.prin_readfd.prgeneration);
+	convert_be32_to_cpu(&pr_buff->prin_descriptor.prin_readfd.number_of_descriptor);
 
 	if (pr_buff->prin_descriptor.prin_readfd.number_of_descriptor == 0)
 	{
@@ -469,40 +469,14 @@ int mpath_translate_response (char * dev, struct sg_io_hdr io_hdr,
 	return MPATH_PR_SUCCESS;
 }
 
-int mpath_isLittleEndian(void)
+void convert_be16_to_cpu(uint16_t *num)
 {
-	int num = 1;
-	if(*(char *)&num == 1)
-	{
-		condlog(4, "Little-Endian");
-	}
-	else
-	{
-		condlog(4, "Big-Endian");
-	}
-	return 0;
+	*num = get_unaligned_be16(num);
 }
 
-void mpath_reverse_uint16_byteorder(uint16_t *num)
+void convert_be32_to_cpu(uint32_t *num)
 {
-	uint16_t byte0, byte1;
-
-	byte0 = (*num & 0x000000FF) >>  0 ;
-	byte1 = (*num & 0x0000FF00) >>  8 ;
-
-	*num = ((byte0 << 8) | (byte1 << 0));
-}
-
-void mpath_reverse_uint32_byteorder(uint32_t *num)
-{
-	uint32_t byte0, byte1, byte2, byte3;
-
-	byte0 = (*num & 0x000000FF) >>  0 ;
-	byte1 = (*num & 0x0000FF00) >>  8 ;
-	byte2 = (*num & 0x00FF0000) >> 16 ;
-	byte3 = (*num & 0xFF000000) >> 24 ;
-
-	*num = ((byte0 << 24) | (byte1 << 16) | (byte2 << 8) | (byte3 << 0));
+	*num = get_unaligned_be32(num);
 }
 
 void

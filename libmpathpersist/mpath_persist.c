@@ -20,6 +20,7 @@
 #include <ctype.h>
 #include "propsel.h"
 #include "util.h"
+#include "unaligned.h"
 
 #include "mpath_persist.h"
 #include "mpathpr.h"
@@ -558,12 +559,7 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 		}
 		if (!rollback && (thread[i].param.status == MPATH_PR_RESERV_CONFLICT)){
 			rollback = 1;
-			sa_key = 0;
-			for (i = 0; i < 8; ++i){
-				if (i > 0)
-					sa_key <<= 8;
-				sa_key |= paramp->sa_key[i];
-			}
+			sa_key = get_unaligned_be64(&paramp->sa_key[0]);
 			status = MPATH_PR_RESERV_CONFLICT ;
 		}
 		if (!rollback && (status == MPATH_PR_SUCCESS)){
