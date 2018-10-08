@@ -241,6 +241,13 @@ void mpath_format_readfullstatus(struct prin_resp *pr_buff, int len, int noisy)
 		fdesc.rtpi = get_unaligned_be16(&p[18]);
 
 		tid_len_len = get_unaligned_be32(&p[20]);
+		if (tid_len_len + 24 + k >= additional_length) {
+			condlog(0,
+				"%s: corrupt PRIN response: status descriptor end %d exceeds length %d",
+				__func__, tid_len_len + k + 24,
+				additional_length);
+			tid_len_len = additional_length - k - 24;
+		}
 
 		if (tid_len_len > 0)
 			decode_transport_id( &fdesc, &p[24], tid_len_len);
@@ -272,6 +279,8 @@ decode_transport_id(struct prin_fulldescr *fdesc, unsigned char * p, int length)
 			break;
 		case MPATH_PROTOCOL_ID_ISCSI:
 			num = get_unaligned_be16(&p[2]);
+			if (num >= sizeof(fdesc->trnptid.iscsi_name))
+				num = sizeof(fdesc->trnptid.iscsi_name);
 			memcpy(&fdesc->trnptid.iscsi_name, &p[4], num);
 			jump = (((num + 4) < 24) ? 24 : num + 4);
 			break;
