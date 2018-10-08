@@ -384,7 +384,7 @@ int main (int argc, char * argv[])
 	}
 
 	/* open device */
-	if ((fd = open (device_name, O_WRONLY)) < 0)
+	if ((fd = open (device_name, O_RDONLY)) < 0)
 	{
 		fprintf (stderr, "%s: error opening file (rw) fd=%d\n",
 				device_name, fd);

@@ -52,7 +52,7 @@ int prout_do_scsi_ioctl(char * dev, int rq_servact, int rq_scope,
 	int fd = -1;
 
 	snprintf(devname, FILE_NAME_SIZE, "/dev/%s",dev);
-	fd = open(devname, O_WRONLY);
+	fd = open(devname, O_RDONLY);
 	if(fd < 0){
 		condlog (1, "%s: unable to open device.", dev);
 		return MPATH_PR_FILE_ERROR;
@@ -308,7 +308,7 @@ int prin_do_scsi_ioctl(char * dev, int rq_servact, struct prin_resp * resp, int 
 	{MPATH_PRIN_CMD, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 	snprintf(devname, FILE_NAME_SIZE, "/dev/%s",dev);
-	fd = open(devname, O_WRONLY);
+	fd = open(devname, O_RDONLY);
 	if(fd < 0){
 		condlog(0, "%s: Unable to open device ", dev);
 		return MPATH_PR_FILE_ERROR;
