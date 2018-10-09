@@ -2278,7 +2278,7 @@ configure (struct vectors * vecs)
 	ret = path_discovery(vecs->pathvec, DI_ALL);
 	if (ret < 0) {
 		condlog(0, "configure failed at path discovery");
-		return 1;
+		goto fail;
 	}
 
 	vector_foreach_slot (vecs->pathvec, pp, i){
@@ -2295,7 +2295,7 @@ configure (struct vectors * vecs)
 	}
 	if (map_discovery(vecs)) {
 		condlog(0, "configure failed at map discovery");
-		return 1;
+		goto fail;
 	}
 
 	/*
@@ -2309,7 +2309,7 @@ configure (struct vectors * vecs)
 		force_reload = FORCE_RELOAD_YES;
 	if (ret) {
 		condlog(0, "configure failed while coalescing paths");
-		return 1;
+		goto fail;
 	}
 
 	/*
@@ -2318,7 +2318,7 @@ configure (struct vectors * vecs)
 	 */
 	if (coalesce_maps(vecs, mpvec)) {
 		condlog(0, "configure failed while coalescing maps");
-		return 1;
+		goto fail;
 	}
 
 	dm_lib_release();
@@ -2354,6 +2354,10 @@ configure (struct vectors * vecs)
 			i--;
 	}
 	return 0;
+
+fail:
+	vector_free(mpvec);
+	return 1;
 }
 
 int
