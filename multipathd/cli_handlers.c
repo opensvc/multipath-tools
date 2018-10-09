@@ -796,8 +796,8 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 		if (!alias && !count) {
 			condlog(2, "%s: mapname not found for %d:%d",
 				param, major, minor);
-			rc = get_refwwid(CMD_NONE, param, DEV_DEVMAP,
-					 vecs->pathvec, &refwwid);
+			get_refwwid(CMD_NONE, param, DEV_DEVMAP,
+				    vecs->pathvec, &refwwid);
 			if (refwwid) {
 				if (coalesce_paths(vecs, NULL, refwwid,
 						   FORCE_RELOAD_NONE, CMD_NONE))
@@ -881,7 +881,12 @@ int resize_map(struct multipath *mpp, unsigned long long size,
 
 	mpp->size = size;
 	update_mpp_paths(mpp, vecs->pathvec);
-	setup_map(mpp, params, PARAMS_SIZE, vecs);
+	if (setup_map(mpp, params, PARAMS_SIZE, vecs) != 0) {
+		condlog(0, "%s: failed to setup map for resize : %s",
+			mpp->alias, strerror(errno));
+		mpp->size = orig_size;
+		return 1;
+	}
 	mpp->action = ACT_RESIZE;
 	mpp->force_udev_reload = 1;
 	if (domap(mpp, params, 1) <= 0) {
