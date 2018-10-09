@@ -482,7 +482,7 @@ static int print_cmd_valid(int k, const vector pathvec,
 	struct timespec until;
 	struct path *pp;
 
-	if (k < 0 || k >= sizeof(vals))
+	if (k < 0 || k >= (sizeof(vals) / sizeof(int)))
 		return 1;
 
 	if (k == 2) {
