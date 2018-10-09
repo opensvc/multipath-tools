@@ -237,7 +237,8 @@ int getprio(struct path *pp, char *args, unsigned int timeout)
 	lg_maxavglatency = log(MAX_AVG_LATENCY) / lg_base;
 	lg_minavglatency = log(MIN_AVG_LATENCY) / lg_base;
 
-	prepare_directio_read(pp->fd, &blksize, &buf, &restore_flags);
+	if (prepare_directio_read(pp->fd, &blksize, &buf, &restore_flags) < 0)
+		return PRIO_UNDEF;
 
 	temp = io_num;
 	while (temp-- > 0) {
