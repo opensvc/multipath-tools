@@ -1979,14 +1979,14 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 			return 1;
 		}
 
-		if(newstate == PATH_UP || newstate == PATH_GHOST){
-			if ( pp->mpp && pp->mpp->prflag ){
+		if (newstate == PATH_UP || newstate == PATH_GHOST) {
+			if (pp->mpp->prflag) {
 				/*
 				 * Check Persistent Reservation.
 				 */
-			condlog(2, "%s: checking persistent reservation "
-				"registration", pp->dev);
-			mpath_pr_event_handle(pp);
+				condlog(2, "%s: checking persistent "
+					"reservation registration", pp->dev);
+				mpath_pr_event_handle(pp);
 			}
 		}
 
