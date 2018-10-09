@@ -1208,6 +1208,15 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 		struct multipath *mpp = pp->mpp;
 		char wwid[WWID_SIZE];
 
+		if (pp->initialized == INIT_REQUESTED_UDEV) {
+			needs_reinit = 1;
+			goto out;
+		}
+		/* Don't deal with other types of failed initialization
+		 * now. check_path will handle it */
+		if (!strlen(pp->wwid))
+			goto out;
+
 		strcpy(wwid, pp->wwid);
 		get_uid(pp, pp->state, uev->udev);
 
@@ -1216,9 +1225,8 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 				uev->kernel, wwid, pp->wwid,
 				(disable_changed_wwids ? "disallowing" :
 				 "continuing"));
-			if (disable_changed_wwids &&
-			    (strlen(wwid) || pp->wwid_changed)) {
-				strcpy(pp->wwid, wwid);
+			strcpy(pp->wwid, wwid);
+			if (disable_changed_wwids) {
 				if (!pp->wwid_changed) {
 					pp->wwid_changed = 1;
 					pp->tick = 1;
@@ -1226,11 +1234,9 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 						dm_fail_path(pp->mpp->alias, pp->dev_t);
 				}
 				goto out;
-			} else if (!disable_changed_wwids)
-				strcpy(pp->wwid, wwid);
-			else
-				pp->wwid_changed = 0;
+			}
 		} else {
+			pp->wwid_changed = 0;
 			udev_device_unref(pp->udev);
 			pp->udev = udev_device_ref(uev->udev);
 			conf = get_multipath_config();
@@ -1241,9 +1247,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			pthread_cleanup_pop(1);
 		}
 
-		if (pp->initialized == INIT_REQUESTED_UDEV)
-			needs_reinit = 1;
-		else if (mpp && ro >= 0) {
+		if (mpp && ro >= 0) {
 			condlog(2, "%s: update path write_protect to '%d' (uevent)", uev->kernel, ro);
 
 			if (mpp->wait_for_udev)
