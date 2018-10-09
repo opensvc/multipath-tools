@@ -79,12 +79,16 @@ _install_keyword(vector keywords, char *string,
 	struct keyword *keyword;
 
 	/* fetch last keyword */
-	keyword = VECTOR_SLOT(keywords, VECTOR_SIZE(keywords) - 1);
+	keyword = VECTOR_LAST_SLOT(keywords);
+	if (!keyword)
+		return 1;
 
 	/* position to last sub level */
-	for (i = 0; i < sublevel; i++)
-		keyword =
-		    VECTOR_SLOT(keyword->sub, VECTOR_SIZE(keyword->sub) - 1);
+	for (i = 0; i < sublevel; i++) {
+		keyword = VECTOR_LAST_SLOT(keyword->sub);
+		if (!keyword)
+			return 1;
+	}
 
 	/* First sub level allocation */
 	if (!keyword->sub)
