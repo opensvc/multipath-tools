@@ -2004,9 +2004,9 @@ blank:
 	/*
 	 * Recoverable error, for example faulty or offline path
 	 */
-	memset(pp->wwid, 0, WWID_SIZE);
 	pp->chkrstate = pp->state = PATH_DOWN;
-	pp->initialized = INIT_FAILED;
+	if (pp->initialized == INIT_FAILED)
+		memset(pp->wwid, 0, WWID_SIZE);
 
 	return PATHINFO_OK;
 }
