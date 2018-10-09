@@ -1116,17 +1116,21 @@ get_vpd_sgio (int fd, int pg, char * str, int maxlen)
 		return -ENODATA;
 	}
 	buff_len = get_unaligned_be16(&buff[2]) + 4;
-	if (buff_len > 4096)
+	if (buff_len > 4096) {
 		condlog(3, "vpd pg%02x page truncated", pg);
-
+		buff_len = 4096;
+	}
 	if (pg == 0x80)
 		len = parse_vpd_pg80(buff, str, maxlen);
 	else if (pg == 0x83)
 		len = parse_vpd_pg83(buff, buff_len, str, maxlen);
 	else if (pg == 0xc9 && maxlen >= 8) {
-		len = buff_len < 8 ? -ENODATA :
-			(buff_len <= maxlen ? buff_len : maxlen);
-		memcpy (str, buff, len);
+		if (buff_len < 8)
+			len = -ENODATA;
+		else {
+			len = (buff_len <= maxlen)? buff_len : maxlen;
+			memcpy (str, buff, len);
+		}
 	} else
 		len = -ENOSYS;
 
