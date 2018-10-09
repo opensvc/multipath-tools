@@ -165,7 +165,7 @@ alloc_pathgroup (void)
 
 	if (!pgp->paths) {
 		FREE(pgp);
-		pgp = NULL;
+		return NULL;
 	}
 
 	dm_pathgroup_to_gen(pgp)->ops = &dm_gen_pathgroup_ops;
