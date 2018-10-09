@@ -33,7 +33,10 @@ set_int(vector strvec, void *ptr)
 	int *int_ptr = (int *)ptr;
 	char * buff;
 
-	buff = VECTOR_SLOT(strvec, 1);
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
 	*int_ptr = atoi(buff);
 
 	return 0;
