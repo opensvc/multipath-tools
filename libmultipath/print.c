@@ -275,8 +275,6 @@ snprint_multipath_vpr (char * buff, size_t len, const struct multipath * mpp)
 	int i, j;
 
 	vector_foreach_slot(mpp->pg, pgp, i) {
-		if (!pgp)
-			continue;
 		vector_foreach_slot(pgp->paths, pp, j) {
 			if (strlen(pp->vendor_id) && strlen(pp->product_id))
 				return snprintf(buff, len, "%s,%s",
@@ -295,8 +293,6 @@ snprint_multipath_vend (char * buff, size_t len, const struct multipath * mpp)
 	int i, j;
 
 	vector_foreach_slot(mpp->pg, pgp, i) {
-		if (!pgp)
-			continue;
 		vector_foreach_slot(pgp->paths, pp, j) {
 			if (strlen(pp->vendor_id))
 				return snprintf(buff, len, "%s", pp->vendor_id);
@@ -313,8 +309,6 @@ snprint_multipath_prod (char * buff, size_t len, const struct multipath * mpp)
 	int i, j;
 
 	vector_foreach_slot(mpp->pg, pgp, i) {
-		if (!pgp)
-			continue;
 		vector_foreach_slot(pgp->paths, pp, j) {
 			if (strlen(pp->product_id))
 				return snprintf(buff, len, "%s", pp->product_id);
@@ -331,8 +325,6 @@ snprint_multipath_rev (char * buff, size_t len, const struct multipath * mpp)
 	int i, j;
 
 	vector_foreach_slot(mpp->pg, pgp, i) {
-		if (!pgp)
-			continue;
 		vector_foreach_slot(pgp->paths, pp, j) {
 			if (strlen(pp->rev))
 				return snprintf(buff, len, "%s", pp->rev);
