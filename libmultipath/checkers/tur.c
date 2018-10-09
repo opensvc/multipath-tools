@@ -53,7 +53,6 @@ struct tur_checker_context {
 int libcheck_init (struct checker * c)
 {
 	struct tur_checker_context *ct;
-	pthread_mutexattr_t attr;
 	struct stat sb;
 
 	ct = malloc(sizeof(struct tur_checker_context));
@@ -65,10 +64,7 @@ int libcheck_init (struct checker * c)
 	ct->fd = -1;
 	uatomic_set(&ct->holders, 1);
 	pthread_cond_init_mono(&ct->active);
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-	pthread_mutex_init(&ct->lock, &attr);
-	pthread_mutexattr_destroy(&attr);
+	pthread_mutex_init(&ct->lock, NULL);
 	if (fstat(c->fd, &sb) == 0)
 		ct->devt = sb.st_rdev;
 	c->context = ct;
@@ -213,12 +209,6 @@ static void *tur_thread(void *ctx)
 	condlog(3, "%d:%d : tur checker starting up", major(ct->devt),
 		minor(ct->devt));
 
-	/* TUR checker start up */
-	pthread_mutex_lock(&ct->lock);
-	ct->state = PATH_PENDING;
-	ct->message[0] = '\0';
-	pthread_mutex_unlock(&ct->lock);
-
 	state = tur_check(ct->fd, ct->timeout, msg);
 	pthread_testcancel();
 
@@ -283,13 +273,6 @@ int libcheck_check(struct checker * c)
 	/*
 	 * Async mode
 	 */
-	r = pthread_mutex_lock(&ct->lock);
-	if (r != 0) {
-		condlog(2, "%s: tur mutex lock failed with %d", ct->devt, r);
-		MSG(c, MSG_TUR_FAILED);
-		return PATH_WILD;
-	}
-
 	if (ct->thread) {
 		if (tur_check_async_timeout(c)) {
 			int running = uatomic_xchg(&ct->running, 0);
@@ -307,21 +290,24 @@ int libcheck_check(struct checker * c)
 		} else {
 			/* TUR checker done */
 			ct->thread = 0;
+			pthread_mutex_lock(&ct->lock);
 			tur_status = ct->state;
 			strlcpy(c->message, ct->message, sizeof(c->message));
+			pthread_mutex_unlock(&ct->lock);
 		}
-		pthread_mutex_unlock(&ct->lock);
 	} else {
 		if (uatomic_read(&ct->holders) > 1) {
 			/* The thread has been cancelled but hasn't
 			 * quilt. Fail back to synchronous mode */
-			pthread_mutex_unlock(&ct->lock);
 			condlog(3, "%d:%d : tur checker failing back to sync",
 				major(ct->devt), minor(ct->devt));
 			return tur_check(c->fd, c->timeout, c->message);
 		}
 		/* Start new TUR checker */
-		ct->state = PATH_UNCHECKED;
+		pthread_mutex_lock(&ct->lock);
+		tur_status = ct->state = PATH_PENDING;
+		ct->message[0] = '\0';
+		pthread_mutex_unlock(&ct->lock);
 		ct->fd = c->fd;
 		ct->timeout = c->timeout;
 		uatomic_add(&ct->holders, 1);
@@ -334,21 +320,23 @@ int libcheck_check(struct checker * c)
 			uatomic_sub(&ct->holders, 1);
 			uatomic_set(&ct->running, 0);
 			ct->thread = 0;
-			pthread_mutex_unlock(&ct->lock);
 			condlog(3, "%d:%d : failed to start tur thread, using"
 				" sync mode", major(ct->devt), minor(ct->devt));
 			return tur_check(c->fd, c->timeout, c->message);
 		}
 		tur_timeout(&tsp);
-		r = pthread_cond_timedwait(&ct->active, &ct->lock, &tsp);
-		tur_status = ct->state;
-		strlcpy(c->message, ct->message, sizeof(c->message));
+		pthread_mutex_lock(&ct->lock);
+		if (ct->state == PATH_PENDING)
+			r = pthread_cond_timedwait(&ct->active, &ct->lock, 
+						   &tsp);
+		if (!r) {
+			tur_status = ct->state;
+			strlcpy(c->message, ct->message, sizeof(c->message));
+		}
 		pthread_mutex_unlock(&ct->lock);
-		if (uatomic_read(&ct->running) != 0 &&
-		    (tur_status == PATH_PENDING || tur_status == PATH_UNCHECKED)) {
+		if (tur_status == PATH_PENDING) {
 			condlog(3, "%d:%d : tur checker still running",
 				major(ct->devt), minor(ct->devt));
-			tur_status = PATH_PENDING;
 		} else {
 			int running = uatomic_xchg(&ct->running, 0);
 			if (running)
