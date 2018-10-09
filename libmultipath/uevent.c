@@ -729,6 +729,12 @@ struct uevent *uevent_from_udev_device(struct udev_device *dev)
 		if (i == HOTPLUG_NUM_ENVP - 1)
 			break;
 	}
+	if (!uev->devpath || ! uev->action) {
+		udev_device_unref(dev);
+		condlog(1, "uevent missing necessary fields");
+		FREE(uev);
+		return NULL;
+	}
 	uev->udev = dev;
 	uev->envp[i] = NULL;
 
