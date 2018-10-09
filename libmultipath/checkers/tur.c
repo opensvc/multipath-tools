@@ -276,13 +276,20 @@ int libcheck_check(struct checker * c)
 	if (ct->thread) {
 		if (tur_check_async_timeout(c)) {
 			int running = uatomic_xchg(&ct->running, 0);
-			if (running)
+			if (running) {
 				pthread_cancel(ct->thread);
-			condlog(3, "%d:%d : tur checker timeout",
-				major(ct->devt), minor(ct->devt));
+				condlog(3, "%d:%d : tur checker timeout",
+					major(ct->devt), minor(ct->devt));
+				MSG(c, MSG_TUR_TIMEOUT);
+				tur_status = PATH_TIMEOUT;
+			} else {
+				pthread_mutex_lock(&ct->lock);
+				tur_status = ct->state;
+				strlcpy(c->message, ct->message,
+					sizeof(c->message));
+				pthread_mutex_unlock(&ct->lock);
+			}
 			ct->thread = 0;
-			MSG(c, MSG_TUR_TIMEOUT);
-			tur_status = PATH_TIMEOUT;
 		} else if (uatomic_read(&ct->running) != 0) {
 			condlog(3, "%d:%d : tur checker not finished",
 				major(ct->devt), minor(ct->devt));
