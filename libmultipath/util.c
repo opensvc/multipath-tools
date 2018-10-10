@@ -7,6 +7,8 @@
 #include <sys/sysmacros.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
@@ -464,4 +466,33 @@ int safe_write(int fd, const void *buf, size_t count)
 		buf = (const char *)buf + r;
 	}
 	return 0;
+}
+
+void set_max_fds(int max_fds)
+{
+	struct rlimit fd_limit;
+
+	if (!max_fds)
+		return;
+
+	if (getrlimit(RLIMIT_NOFILE, &fd_limit) < 0) {
+		condlog(0, "can't get open fds limit: %s",
+			strerror(errno));
+		fd_limit.rlim_cur = 0;
+		fd_limit.rlim_max = 0;
+	}
+	if (fd_limit.rlim_cur < max_fds) {
+		fd_limit.rlim_cur = max_fds;
+		if (fd_limit.rlim_max < max_fds)
+			fd_limit.rlim_max = max_fds;
+		if (setrlimit(RLIMIT_NOFILE, &fd_limit) < 0) {
+			condlog(0, "can't set open fds limit to "
+				"%lu/%lu : %s",
+				fd_limit.rlim_cur, fd_limit.rlim_max,
+				strerror(errno));
+		} else {
+			condlog(3, "set open fds limit to %lu/%lu",
+				fd_limit.rlim_cur, fd_limit.rlim_max);
+		}
+	}
 }

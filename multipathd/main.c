@@ -12,8 +12,6 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <sys/time.h>
-#include <sys/resource.h>
 #include <limits.h>
 #include <linux/oom.h>
 #include <libudev.h>
@@ -2663,33 +2661,10 @@ child (void * param)
 
 	envp = getenv("LimitNOFILE");
 
-	if (envp) {
+	if (envp)
 		condlog(2,"Using systemd provided open fds limit of %s", envp);
-	} else if (conf->max_fds) {
-		struct rlimit fd_limit;
-
-		if (getrlimit(RLIMIT_NOFILE, &fd_limit) < 0) {
-			condlog(0, "can't get open fds limit: %s",
-				strerror(errno));
-			fd_limit.rlim_cur = 0;
-			fd_limit.rlim_max = 0;
-		}
-		if (fd_limit.rlim_cur < conf->max_fds) {
-			fd_limit.rlim_cur = conf->max_fds;
-			if (fd_limit.rlim_max < conf->max_fds)
-				fd_limit.rlim_max = conf->max_fds;
-			if (setrlimit(RLIMIT_NOFILE, &fd_limit) < 0) {
-				condlog(0, "can't set open fds limit to "
-					"%lu/%lu : %s",
-					fd_limit.rlim_cur, fd_limit.rlim_max,
-					strerror(errno));
-			} else {
-				condlog(3, "set open fds limit to %lu/%lu",
-					fd_limit.rlim_cur, fd_limit.rlim_max);
-			}
-		}
-
-	}
+	else
+		set_max_fds(conf->max_fds);
 
 	vecs = gvecs = init_vecs();
 	if (!vecs)

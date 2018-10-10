@@ -56,8 +56,6 @@
 #include "pgpolicies.h"
 #include "version.h"
 #include <errno.h>
-#include <sys/time.h>
-#include <sys/resource.h>
 #include "wwids.h"
 #include "uxsock.h"
 #include "mpath_cmd.h"
@@ -1002,15 +1000,7 @@ main (int argc, char *argv[])
 		logsink = 1;
 	}
 
-	if (conf->max_fds) {
-		struct rlimit fd_limit;
-
-		fd_limit.rlim_cur = conf->max_fds;
-		fd_limit.rlim_max = conf->max_fds;
-		if (setrlimit(RLIMIT_NOFILE, &fd_limit) < 0)
-			condlog(0, "can't set open fds limit to %d : %s",
-				conf->max_fds, strerror(errno));
-	}
+	set_max_fds(conf->max_fds);
 
 	libmp_udev_set_sync_support(1);
 
