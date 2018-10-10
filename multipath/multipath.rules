@@ -45,6 +45,10 @@ ENV{DM_MULTIPATH_DEVICE_PATH}!="2", \
 # Code below here is only run in "smart" mode.
 # multipath -u has indicated this is "maybe" multipath.
 
+# Note that DM_MULTIPATH_DEVICE_PATH has the value 2 at this point.
+# This value will never propagate to other rules files, because
+# it will be reset to 1 in the "pretend_multipath" section below.
+
 # This shouldn't happen, just in case.
 ENV{FIND_MULTIPATHS_WAIT_UNTIL}!="?*", GOTO="end_mpath"
 
