@@ -334,7 +334,7 @@ int libcheck_check(struct checker * c)
 		tur_timeout(&tsp);
 		pthread_mutex_lock(&ct->lock);
 		if (ct->state == PATH_PENDING)
-			r = pthread_cond_timedwait(&ct->active, &ct->lock, 
+			r = pthread_cond_timedwait(&ct->active, &ct->lock,
 						   &tsp);
 		if (!r) {
 			tur_status = ct->state;

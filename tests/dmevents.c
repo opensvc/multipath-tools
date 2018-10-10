@@ -465,7 +465,7 @@ static void test_watch_dmevents_good1(void **state)
 		skip();
 
 	remove_all_dm_device_events();
-	assert_int_equal(add_dm_device_event("foo", 1, 5), 0);	
+	assert_int_equal(add_dm_device_event("foo", 1, 5), 0);
 	will_return(__wrap_dm_geteventnr, 0);
 	assert_int_equal(watch_dmevents("foo"), 0);
 	dev_evt = find_dmevents("foo");
