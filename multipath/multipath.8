@@ -5,7 +5,7 @@
 .\"
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATH 8 2016-10-26 "Linux"
+.TH MULTIPATH 8 2018-10-10 "Linux"
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -21,17 +21,68 @@ multipath \- Device mapper target autoconfig.
 .
 .B multipath
 .RB [\| \-v\ \c
-.IR verbosity \|]
+.IR level \|]
+.RB [\| \-B | \-d | \-i | \-q | \-r \|]
 .RB [\| \-b\ \c
-.IR bindings_file \|]
-.RB [\| \-d \|]
-.RB [\| \-h | \-l | \-ll | \-f | \-t | \-T | \-F | \-B | \-c | \-C | \-q | \-r | \-i | \-a | \-u | \-U | \-w | \-W \|]
+.IR file \|]
 .RB [\| \-p\ \c
-.IR failover | multibus | group_by_serial | group_by_prio | group_by_node_name \|]
-.RB [\| \-R\ \c
-.IR retries \|]
+.IR policy \|]
 .RB [\| device \|]
 .
+.LP
+.B multipath
+.RB [\| \-v\ \c
+.IR level \|]
+.RB [\| \-R\ \c
+.IR retries \|]
+.B \-f device
+.
+.LP
+.B multipath
+.RB [\| \-v\ \c
+.IR level \|]
+.RB [\| \-R\ \c
+.IR retries \|]
+.B \-F
+.
+.LP
+.B multipath
+.RB [\| \-v\ \c
+.IR level \|]
+.RB [\| \-l | \-ll \|]
+.RB [\| device \|]
+.
+.LP
+.B multipath
+.RB [\| \-v\ \c
+.IR level \|]
+.RB [\| \-a | \-w \|]
+.B device
+.
+.LP
+.B multipath
+.RB [\| \-v\ \c
+.IR level \|]
+.B -W
+.
+.LP
+.B multipath
+.RB [\| \-v\ \c
+.IR level \|]
+.RB [\| \-i \|]
+.RB [\| \-c | \-C \|]
+.B device
+.
+.LP
+.B multipath
+.RB [\| \-v\ \c
+.IR level \|]
+.RB [\| \-i \|]
+.RB [\| \-u | \-U \|]
+.
+.LP
+.B multipath
+.RB [\| \-h | \-t | \-T \|]
 .
 .\" ----------------------------------------------------------------------------
 .SH DESCRIPTION
@@ -40,49 +91,86 @@ multipath \- Device mapper target autoconfig.
 .B multipath
 is used to detect and coalesce multiple paths to devices, for fail-over or performance reasons.
 .
-.
 .\" ----------------------------------------------------------------------------
-.SH OPTIONS
+.SH ARGUMENTS
 .\" ----------------------------------------------------------------------------
 .
 .TP
-.BI \-v " level"
-Verbosity, print all paths and multipaths:
+.BI device
+Act only on the multipath map specified by
+.IR device ,
+which is either:
 .RS 1.2i
-.TP 1.2i
-.I 0
-No output.
+.IP \[bu]
+A multipath map name.
+.IP \[bu]
+A path (low-level device) associated with the desired multipath map; the path may be in one of the following formats:
+.RS 1.2i
+.IP \[bu]
+.B /dev/sdX
+.IP \[bu]
+.B major:minor
+.
+.\" ----------------------------------------------------------------------------
+.SH OPERATION MODES
+.\" ----------------------------------------------------------------------------
+.
+The default operation mode is to detect and set up multipath maps from the devices found in
+the system.
+.
+Other operation modes are chosen by using one of the following command line switches:
 .TP
-.I 1
-Print the created or updated multipath names only, for use to feed other tools like kpartx.
+.B \-f
+Flush (remove) a multipath device map specified as parameter, if unused.
+.
 .TP
-.I 2 +
-Print all info: detected paths, coalesced paths (ie multipaths) and device maps.
-.RE
+.B \-F
+Flush (remove) all unused multipath device maps.
+.
+.TP
+.B \-l
+Show ("list") the current multipath topology from information fetched in sysfs and the device mapper.
+.
+.TP
+.B \-ll
+Show ("list") the current multipath topology from all available information (sysfs, the
+device mapper, path checkers ...).
+.
+.TP
+.B \-a
+Add the WWID for the specified device to the WWIDs file.
+.
+.TP
+.B \-w
+Remove the WWID for the specified device from the WWIDs file.
+.
+.TP
+.B \-W
+Reset the WWIDs file to only include the current multipath devices.
+.
+.TP
+.B \-c
+Check if a block device should be a path in a multipath device.
+.
+.TP
+.B \-C
+Check if a multipath device has usable paths. This can be used to
+test whether or not I/O on this device is likely to succeed. The command
+itself doesn't attempt to do I/O on the device.
+.
+.TP
+.B \-u
+Check if the device specified in the program environment should be
+a path in a multipath device.
+.
+.TP
+.B \-U
+Check if the device specified in the program environment is a multipath device
+with usable paths. See \fB-C\fB.
 .
 .TP
 .B \-h
 Print usage text.
-.
-.TP
-.B \-d
-Dry run, do not create or update devmaps.
-.
-.TP
-.B \-l
-Show the current multipath topology from information fetched in sysfs and the device mapper.
-.
-.TP
-.B \-ll
-Show the current multipath topology from all available information (sysfs, the device mapper, path checkers ...).
-.
-.TP
-.B \-f
-Flush a multipath device map specified as parameter, if unused.
-.
-.TP
-.B \-F
-Flush all unused multipath device maps.
 .
 .TP
 .B \-t
@@ -94,9 +182,41 @@ Display the currently used multipathd configuration, limiting the output to
 those devices actually present in the system. This can be used a template for
 creating \fImultipath.conf\fR.
 .
+.\" ----------------------------------------------------------------------------
+.SH OPTIONS
+.\" ----------------------------------------------------------------------------
+.
 .TP
-.B \-r
-Force devmap reload.
+.BI \-v " level"
+Verbosity of information printed to stdout in default and "list" operation
+modes. The default level is \fI-v 2\fR.
+.RS 1.2i
+.TP 1.2i
+.I 0
+Nothing is printed.
+.TP
+.I 1
+In default mode, Names/WWIDs of created or modified multipath maps are
+printed. In list mode, WWIDs of all multipath maps are printed.
+.TP
+.I 2
+In default mode,
+Topology of created or modified multipath maps is printed.
+In list mode, topology of all multipath maps is printed.
+.TP
+.I 3
+All detected paths and the topology of all multipath maps are printed.
+.
+.LP
+.
+The verbosity level also controls the level of log and debug messages printed to
+\fIstderr\fR. The default level corresponds to \fILOG_NOTICE\fR
+(important messages that shouldn't be missed in normal operation).
+.
+.RE
+.TP
+.B \-d
+Dry run, do not create or update devmaps.
 .
 .TP
 .B \-i
@@ -114,93 +234,34 @@ This option should only be used in rare circumstances.
 Treat the bindings file as read only.
 .
 .TP
-.BI \-b " bindings_file"
-Set user_friendly_names bindings file location.  The default is
+.BI \-b " file"
+Set \fIuser_friendly_names\fR bindings file location.  The default is
 \fI/etc/multipath/bindings\fR.
 .
 .TP
-.B \-c
-Check if a block device should be a path in a multipath device.
-.
-.TP
-.B \-C
-Check if a multipath device has usable paths. This can be used to
-test whether or not I/O on this device is likely to succeed. The command
-itself doesn't attempt to do I/O on the device.
-.
-.TP
 .B \-q
-Allow device tables with \fIqueue_if_no_path\fR when multipathd is not running.
-.
-.TP
-.B \-a
-Add the WWID for the specified device to the WWIDs file.
-.
-.TP
-.B \-u
-Check if the device specified in the program environment should be
-a path in a multipath device.
-.
-.TP
-.B \-U
-Check if the device specified in the program environment is a multipath device
-with usable paths. See \fB-C\fB.
-.
-.TP
-.B \-w
-Remove the WWID for the specified device from the WWIDs file.
-.
-.TP
-.B \-W
-Reset the WWIDs file to only include the current multipath devices.
+Don't unset the device mapper feature \fIqueue_if_no_path\fR for multipath
+maps. Normally, \fBmultipath\fR would do so if \fBmultipathd\fR is not
+running, because only a running multipath daemon guarantees that unusable
+paths are reinstated when they become usable again.
 .
 .TP
 .BI \-p " policy"
-Force new maps to use the specified policy:
-.RS 1.2i
-.TP 1.2i
-.I failover
-One path per priority group.
+Force new maps to use the specified policy, overriding the configuration in
+\fBmultipath.conf(5)\fR. The possible values for
+\fIpolicy\fR are the same as the values for \fIpath_grouping_policy\fR in
+\fBmultipath.conf(5)\fR. Existing maps are not modified.
+.
 .TP
-.I multibus
-All paths in one priority group.
-.TP
-.I group_by_serial
-One priority group per serial number.
-.TP
-.I group_by_prio
-One priority group per priority value. Priorities are determined by
-callout programs specified as a global, per-controller or
-per-multipath option in the configuration file.
-.TP
-.I group_by_node_name
-One priority group per target node name. Target node names are fetched
-in \fI/sys/class/fc_transport/target*/node_name\fR.
-.TP
-.RE
-Existing maps are not modified.
+.B \-r
+Force a reload of all existing multipath maps. This command is delegated to
+the multipathd daemon if it's running. In this case, other command line
+switches of the \fImultipath\fR command have no effect.
 .
 .TP
 .BI \-R " retries"
-Number of times to retry flushing multipath devices that are in-use. The default
+Number of times to retry flushing multipath devices that are in use. The default
 is \fI0\fR.
-.
-.TP
-.BI device
-Update only the devmap specified by
-.IR device ,
-which is either:
-.RS 1.2i
-.IP \[bu]
-A devmap name.
-.IP \[bu]
-A path associated with the desired devmap; the path may be in one of the following formats:
-.RS 1.2i
-.IP \[bu]
-.B /dev/sdX
-.IP \[bu]
-.B major:minor
-.
 .
 .\" ----------------------------------------------------------------------------
 .SH "SEE ALSO"
