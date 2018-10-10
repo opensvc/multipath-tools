@@ -196,6 +196,50 @@ static void cleanup_func(void *data)
 	rcu_unregister_thread();
 }
 
+/*
+ * Test code for "zombie tur thread" handling.
+ * Compile e.g. with CFLAGS=-DTUR_TEST_MAJOR=8
+ * Additional parameters can be configure with the macros below.
+ *
+ * Everty nth started TUR thread will hang in non-cancellable state
+ * for given number of seconds, for device given by major/minor.
+ */
+#ifdef TUR_TEST_MAJOR
+
+#ifndef TUR_TEST_MINOR
+#define TUR_TEST_MINOR 0
+#endif
+#ifndef TUR_SLEEP_INTERVAL
+#define TUR_SLEEP_INTERVAL 3
+#endif
+#ifndef TUR_SLEEP_SECS
+#define TUR_SLEEP_SECS 60
+#endif
+
+static void tur_deep_sleep(const struct tur_checker_context *ct)
+{
+	static int sleep_cnt;
+	const struct timespec ts = { .tv_sec = TUR_SLEEP_SECS, .tv_nsec = 0 };
+	int oldstate;
+
+	if (ct->devt != makedev(TUR_TEST_MAJOR, TUR_TEST_MINOR) ||
+	    ++sleep_cnt % TUR_SLEEP_INTERVAL != 0)
+		return;
+
+	condlog(1, "tur thread going to sleep for %ld seconds", ts.tv_sec);
+	if (pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate) != 0)
+		condlog(0, "pthread_setcancelstate: %m");
+	if (nanosleep(&ts, NULL) != 0)
+		condlog(0, "nanosleep: %m");
+	condlog(1, "tur zombie thread woke up");
+	if (pthread_setcancelstate(oldstate, NULL) != 0)
+		condlog(0, "pthread_setcancelstate (2): %m");
+	pthread_testcancel();
+}
+#else
+#define tur_deep_sleep(x) do {} while (0)
+#endif /* TUR_TEST_MAJOR */
+
 static void *tur_thread(void *ctx)
 {
 	struct tur_checker_context *ct = ctx;
@@ -209,6 +253,7 @@ static void *tur_thread(void *ctx)
 	condlog(3, "%d:%d : tur checker starting up", major(ct->devt),
 		minor(ct->devt));
 
+	tur_deep_sleep(ct);
 	state = tur_check(ct->fd, ct->timeout, msg);
 	pthread_testcancel();
 
