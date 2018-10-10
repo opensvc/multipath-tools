@@ -305,10 +305,10 @@ int libcheck_check(struct checker * c)
 	} else {
 		if (uatomic_read(&ct->holders) > 1) {
 			/* The thread has been cancelled but hasn't
-			 * quilt. Fail back to synchronous mode */
-			condlog(3, "%d:%d : tur checker failing back to sync",
+			 * quit. exit with timeout. */
+			condlog(3, "%d:%d : tur thread not responding",
 				major(ct->devt), minor(ct->devt));
-			return tur_check(c->fd, c->timeout, c->message);
+			return PATH_TIMEOUT;
 		}
 		/* Start new TUR checker */
 		pthread_mutex_lock(&ct->lock);
