@@ -2966,9 +2966,9 @@ main (int argc, char *argv[])
 			if (verbosity)
 				conf->verbosity = verbosity;
 			uxsock_timeout = conf->uxsock_timeout;
-			uxclnt(optarg, uxsock_timeout + 100);
+			err = uxclnt(optarg, uxsock_timeout + 100);
 			free_config(conf);
-			exit(0);
+			return err;
 		case 'B':
 			bindings_read_only = 1;
 			break;
@@ -3005,9 +3005,9 @@ main (int argc, char *argv[])
 			optind++;
 		}
 		c += snprintf(c, s + CMDSIZE - c, "\n");
-		uxclnt(s, uxsock_timeout + 100);
+		err = uxclnt(s, uxsock_timeout + 100);
 		free_config(conf);
-		exit(0);
+		return err;
 	}
 
 	if (foreground) {
