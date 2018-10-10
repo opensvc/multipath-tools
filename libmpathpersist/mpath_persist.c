@@ -559,11 +559,10 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	}
 	if (rollback && ((rq_servact == MPATH_PROUT_REG_SA) && sa_key != 0 )){
 		condlog (3, "%s: ERROR: initiating pr out rollback", mpp->wwid);
+		memcpy(&paramp->key, &paramp->sa_key, 8);
+		memset(&paramp->sa_key, 0, 8);
 		for( i=0 ; i < count ; i++){
 			if(thread[i].param.status == MPATH_PR_SUCCESS) {
-				memcpy(&thread[i].param.paramp->key, &thread[i].param.paramp->sa_key, 8);
-				memset(&thread[i].param.paramp->sa_key, 0, 8);
-				thread[i].param.status = MPATH_PR_SUCCESS;
 				rc = pthread_create(&thread[i].id, &attr, mpath_prout_pthread_fn,
 						(void *)(&thread[i].param));
 				if (rc){
