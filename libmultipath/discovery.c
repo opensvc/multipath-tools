@@ -1496,7 +1496,7 @@ sysfs_pathinfo(struct path * pp, vector hwtable)
 	}
 }
 
-static int
+static void
 scsi_ioctl_pathinfo (struct path * pp, struct config *conf, int mask)
 {
 	struct udev_device *parent;
@@ -1506,7 +1506,7 @@ scsi_ioctl_pathinfo (struct path * pp, struct config *conf, int mask)
 		detect_alua(pp, conf);
 
 	if (!(mask & DI_SERIAL))
-		return 0;
+		return;
 
 	parent = pp->udev;
 	while (parent) {
@@ -1525,17 +1525,17 @@ scsi_ioctl_pathinfo (struct path * pp, struct config *conf, int mask)
 		parent = udev_device_get_parent(parent);
 	}
 	if (!attr_path || pp->sg_id.host_no == -1)
-		return 0;
+		return;
 
 	if (get_vpd_sysfs(parent, 0x80, pp->serial, SERIAL_SIZE) <= 0) {
 		if (get_serial(pp->serial, SERIAL_SIZE, pp->fd)) {
-			condlog(2, "%s: fail to get serial", pp->dev);
-			return 0;
+			condlog(3, "%s: fail to get serial", pp->dev);
+			return;
 		}
 	}
 
 	condlog(3, "%s: serial = %s", pp->dev, pp->serial);
-	return 0;
+	return;
 }
 
 static int
@@ -1937,9 +1937,8 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	if (mask & DI_SERIAL)
 		get_geometry(pp);
 
-	if (path_state == PATH_UP && pp->bus == SYSFS_BUS_SCSI &&
-	    scsi_ioctl_pathinfo(pp, conf, mask))
-		goto blank;
+	if (path_state == PATH_UP && pp->bus == SYSFS_BUS_SCSI)
+		scsi_ioctl_pathinfo(pp, conf, mask);
 
 	if (pp->bus == SYSFS_BUS_CCISS &&
 	    cciss_ioctl_pathinfo(pp, mask))
