@@ -80,11 +80,11 @@ dm_write_log (int level, const char *file, int line, const char *f, ...)
 			strftime(buff, sizeof(buff), "%b %d %H:%M:%S", tb);
 			buff[sizeof(buff)-1] = '\0';
 
-			fprintf(stdout, "%s | ", buff);
+			fprintf(stderr, "%s | ", buff);
 		}
-		fprintf(stdout, "libdevmapper: %s(%i): ", file, line);
-		vfprintf(stdout, f, ap);
-		fprintf(stdout, "\n");
+		fprintf(stderr, "libdevmapper: %s(%i): ", file, line);
+		vfprintf(stderr, f, ap);
+		fprintf(stderr, "\n");
 	} else {
 		condlog(level, "libdevmapper: %s(%i): ", file, line);
 		log_safe(level + 3, f, ap);
