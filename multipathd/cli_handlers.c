@@ -720,6 +720,10 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 		udevice = udev_device_new_from_subsystem_sysname(udev,
 								 "block",
 								 param);
+		if (!udevice) {
+			condlog(0, "%s: can't find path", param);
+			return 1;
+		}
 		conf = get_multipath_config();
 		pthread_cleanup_push(put_multipath_config, conf);
 		r = store_pathinfo(vecs->pathvec, conf,
