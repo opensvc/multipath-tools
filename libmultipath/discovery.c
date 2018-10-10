@@ -1538,14 +1538,11 @@ scsi_ioctl_pathinfo (struct path * pp, struct config *conf, int mask)
 	return;
 }
 
-static int
-cciss_ioctl_pathinfo (struct path * pp, int mask)
+static void
+cciss_ioctl_pathinfo(struct path *pp)
 {
-	if (mask & DI_SERIAL) {
-		get_serial(pp->serial, SERIAL_SIZE, pp->fd);
-		condlog(3, "%s: serial = %s", pp->dev, pp->serial);
-	}
-	return 0;
+	get_serial(pp->serial, SERIAL_SIZE, pp->fd);
+	condlog(3, "%s: serial = %s", pp->dev, pp->serial);
 }
 
 int
@@ -1940,9 +1937,8 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	if (path_state == PATH_UP && pp->bus == SYSFS_BUS_SCSI)
 		scsi_ioctl_pathinfo(pp, conf, mask);
 
-	if (pp->bus == SYSFS_BUS_CCISS &&
-	    cciss_ioctl_pathinfo(pp, mask))
-		goto blank;
+	if (pp->bus == SYSFS_BUS_CCISS && mask & DI_SERIAL)
+		cciss_ioctl_pathinfo(pp);
 
 	if (mask & DI_CHECKER) {
 		if (path_state == PATH_UP) {
