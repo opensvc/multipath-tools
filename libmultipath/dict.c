@@ -39,6 +39,7 @@ set_int(vector strvec, void *ptr)
 
 	*int_ptr = atoi(buff);
 
+	FREE(buff);
 	return 0;
 }
 
