@@ -690,6 +690,7 @@ int dm_find_part(const char *parent, const char *delim, int part,
 
 	r = dm_rename(tmp, name);
 	if (r == 1) {
+		free(tmp);
 		*part_uuid = uuid;
 		return 1;
 	}
