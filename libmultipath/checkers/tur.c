@@ -349,11 +349,29 @@ int libcheck_check(struct checker * c)
 		}
 	} else {
 		if (uatomic_read(&ct->holders) > 1) {
-			/* The thread has been cancelled but hasn't
-			 * quit. exit with timeout. */
+			/*
+			 * The thread has been cancelled but hasn't quit.
+			 * We have to prevent it from interfering with the new
+			 * thread. We create a new context and leave the old
+			 * one with the stale thread, hoping it will clean up
+			 * eventually.
+			 */
 			condlog(3, "%d:%d : tur thread not responding",
 				major(ct->devt), minor(ct->devt));
-			return PATH_TIMEOUT;
+
+			/*
+			 * libcheck_init will replace c->context.
+			 * It fails only in OOM situations. In this case, return
+			 * PATH_UNCHECKED to avoid prematurely failing the path.
+			 */
+			if (libcheck_init(c) != 0)
+				return PATH_UNCHECKED;
+
+			if (!uatomic_sub_return(&ct->holders, 1))
+				/* It did terminate, eventually */
+				cleanup_context(ct);
+
+			ct = c->context;
 		}
 		/* Start new TUR checker */
 		pthread_mutex_lock(&ct->lock);
