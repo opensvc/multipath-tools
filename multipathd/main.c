@@ -1828,15 +1828,29 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	retrigger_tries = conf->retrigger_tries;
 	checkint = conf->checkint;
 	put_multipath_config(conf);
-	if (!pp->mpp && pp->initialized == INIT_MISSING_UDEV &&
-	    pp->retriggers < retrigger_tries) {
-		condlog(2, "%s: triggering change event to reinitialize",
-			pp->dev);
-		pp->initialized = INIT_REQUESTED_UDEV;
-		pp->retriggers++;
-		sysfs_attr_set_value(pp->udev, "uevent", "change",
-				     strlen("change"));
-		return 0;
+	if (!pp->mpp && pp->initialized == INIT_MISSING_UDEV) {
+		if (pp->retriggers < retrigger_tries) {
+			condlog(2, "%s: triggering change event to reinitialize",
+				pp->dev);
+			pp->initialized = INIT_REQUESTED_UDEV;
+			pp->retriggers++;
+			sysfs_attr_set_value(pp->udev, "uevent", "change",
+					     strlen("change"));
+			return 0;
+		} else {
+			condlog(1, "%s: not initialized after %d udev retriggers",
+				pp->dev, retrigger_tries);
+			/*
+			 * Make sure that the "add missing path" code path
+			 * below may reinstate the path later, if it ever
+			 * comes up again.
+			 * The WWID needs not be cleared; if it was set, the
+			 * state hadn't been INIT_MISSING_UDEV in the first
+			 * place.
+			 */
+			pp->initialized = INIT_FAILED;
+			return 0;
+		}
 	}
 
 	/*
