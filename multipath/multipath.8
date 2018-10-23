@@ -95,21 +95,25 @@ is used to detect and coalesce multiple paths to devices, for fail-over or perfo
 .SH ARGUMENTS
 .\" ----------------------------------------------------------------------------
 .
+The \fBdevice\fR argument restricts \fBmultipath\fR's operation to devices matching the given
+expression. The argument may refer either to a multipath map or to
+its components ("paths"). The expression may be in one of the following formats:
+.
+.TP 1.4i
+.B device node
+file name of a device node, e.g. \fI/dev/dm-10\fR or \fI/dev/sda\fR. If the node refers
+to an existing device mapper device representing a multipath map, this selects
+the map or its paths, depending on the operation mode. Otherwise, it selects a path device.
+.
 .TP
-.BI device
-Act only on the multipath map specified by
-.IR device ,
-which is either:
-.RS 1.2i
-.IP \[bu]
-A multipath map name.
-.IP \[bu]
-A path (low-level device) associated with the desired multipath map; the path may be in one of the following formats:
-.RS 1.2i
-.IP \[bu]
-.B /dev/sdX
-.IP \[bu]
-.B major:minor
+.B device ID
+kernel device number specified by major:minor numbers, e.g. \fI65:16\fR. This
+format can only be used for path devices.
+.
+.TP
+.B WWID
+a World Wide Identifier matching a multipath map or its paths. To list WWIDs of devices
+present in the system, use e.g. the command "\fImultipath -d -v3 2>/dev/null\fR".
 .
 .\" ----------------------------------------------------------------------------
 .SH OPERATION MODES
