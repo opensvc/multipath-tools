@@ -1811,7 +1811,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	int add_active;
 	int disable_reinstate = 0;
 	int oldchkrstate = pp->chkrstate;
-	int retrigger_tries, checkint;
+	int retrigger_tries, checkint, max_checkint;
 	struct config *conf;
 	int ret;
 
@@ -1827,6 +1827,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	conf = get_multipath_config();
 	retrigger_tries = conf->retrigger_tries;
 	checkint = conf->checkint;
+	max_checkint = conf->max_checkint;
 	put_multipath_config(conf);
 	if (!pp->mpp && pp->initialized == INIT_MISSING_UDEV) {
 		if (pp->retriggers < retrigger_tries) {
@@ -1891,18 +1892,26 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 		return 1;
 	}
 	if (!pp->mpp) {
-		if (!strlen(pp->wwid) && pp->initialized != INIT_MISSING_UDEV &&
+		if (!strlen(pp->wwid) && pp->initialized == INIT_FAILED &&
 		    (newstate == PATH_UP || newstate == PATH_GHOST)) {
 			condlog(2, "%s: add missing path", pp->dev);
 			conf = get_multipath_config();
 			pthread_cleanup_push(put_multipath_config, conf);
 			ret = pathinfo(pp, conf, DI_ALL | DI_BLACKLIST);
 			pthread_cleanup_pop(1);
-			if (ret == PATHINFO_OK) {
+			/* INIT_OK implies ret == PATHINFO_OK */
+			if (pp->initialized == INIT_OK) {
 				ev_add_path(pp, vecs, 1);
 				pp->tick = 1;
-			} else if (ret == PATHINFO_SKIPPED)
-				return -1;
+			} else {
+				/*
+				 * We failed multiple times to initialize this
+				 * path properly. Don't re-check too often.
+				 */
+				pp->checkint = max_checkint;
+				if (ret == PATHINFO_SKIPPED)
+					return -1;
+			}
 		}
 		return 0;
 	}
@@ -2049,11 +2058,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 				return 0;
 			}
 		} else {
-			unsigned int max_checkint;
 			LOG_MSG(4, checker_message(&pp->checker));
-			conf = get_multipath_config();
-			max_checkint = conf->max_checkint;
-			put_multipath_config(conf);
 			if (pp->checkint != max_checkint) {
 				/*
 				 * double the next check delay.
