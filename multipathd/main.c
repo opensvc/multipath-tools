@@ -1842,6 +1842,12 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	max_checkint = conf->max_checkint;
 	verbosity = conf->verbosity;
 	put_multipath_config(conf);
+
+	if (pp->checkint == CHECKINT_UNDEF) {
+		condlog(0, "%s: BUG: checkint is not set", pp->dev);
+		pp->checkint = checkint;
+	};
+
 	if (!pp->mpp && pp->initialized == INIT_MISSING_UDEV) {
 		if (pp->retriggers < retrigger_tries) {
 			condlog(2, "%s: triggering change event to reinitialize",

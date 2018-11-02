@@ -264,7 +264,17 @@ snprint_mp_ ## option (struct config *conf, char * buff, int len,	\
 	return function (buff, len, mpe->option);			\
 }
 
-declare_def_handler(checkint, set_int)
+static int checkint_handler(struct config *conf, vector strvec)
+{
+	int rc = set_int(strvec, &conf->checkint);
+
+	if (rc)
+		return rc;
+	if (conf->checkint == CHECKINT_UNDEF)
+		conf->checkint--;
+	return 0;
+}
+
 declare_def_snprint(checkint, print_int)
 
 declare_def_handler(max_checkint, set_int)
@@ -1563,7 +1573,7 @@ init_keywords(vector keywords)
 {
 	install_keyword_root("defaults", NULL);
 	install_keyword("verbosity", &def_verbosity_handler, &snprint_def_verbosity);
-	install_keyword("polling_interval", &def_checkint_handler, &snprint_def_checkint);
+	install_keyword("polling_interval", &checkint_handler, &snprint_def_checkint);
 	install_keyword("max_polling_interval", &def_max_checkint_handler, &snprint_def_max_checkint);
 	install_keyword("reassign_maps", &def_reassign_maps_handler, &snprint_def_reassign_maps);
 	install_keyword("multipath_dir", &def_multipath_dir_handler, &snprint_def_multipath_dir);

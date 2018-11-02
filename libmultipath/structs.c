@@ -100,6 +100,7 @@ alloc_path (void)
 		pp->fd = -1;
 		pp->tpgs = TPGS_UNDEF;
 		pp->priority = PRIO_UNDEF;
+		pp->checkint = CHECKINT_UNDEF;
 		checker_clear(&pp->checker);
 		dm_path_to_gen(pp)->ops = &dm_gen_path_ops;
 		pp->hwe = vector_alloc();
