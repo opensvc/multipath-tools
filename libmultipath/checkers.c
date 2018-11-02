@@ -279,6 +279,7 @@ static const char *generic_msg[CHECKER_GENERIC_MSGTABLE_SIZE] = {
 	[CHECKER_MSGID_UP] = " reports path is up",
 	[CHECKER_MSGID_DOWN] = " reports path is down",
 	[CHECKER_MSGID_GHOST] = " reports path is ghost",
+	[CHECKER_MSGID_UNSUPPORTED] = " doesn't support this device",
 };
 
 const char *checker_message(const struct checker *c)

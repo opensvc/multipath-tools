@@ -10,8 +10,10 @@
  * Userspace (multipath/multipathd) path states
  *
  * PATH_WILD:
- * - Use: None of the checkers (returned if we don't have an fd)
- * - Description: Corner case where "fd < 0" for path fd (see checker_check())
+ * - Use: Any checker
+ * - Description: Corner case where "fd < 0" for path fd (see checker_check()),
+ *   or where a checker detects an unsupported device
+ *   (e.g. wrong checker configured for a given device).
  *
  * PATH_UNCHECKED:
  * - Use: Only in directio checker
@@ -108,6 +110,7 @@ enum {
 	CHECKER_MSGID_UP,
 	CHECKER_MSGID_DOWN,
 	CHECKER_MSGID_GHOST,
+	CHECKER_MSGID_UNSUPPORTED,
 	CHECKER_GENERIC_MSGTABLE_SIZE,
 	CHECKER_FIRST_MSGID = 100,	/* lowest msgid for checkers */
 	CHECKER_MSGTABLE_SIZE = 100,	/* max msg table size for checkers */
