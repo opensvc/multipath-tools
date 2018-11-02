@@ -318,8 +318,11 @@ sync_map_state(struct multipath *mpp)
 			else if ((pp->dmstate == PSTATE_ACTIVE ||
 				  pp->dmstate == PSTATE_UNDEF) &&
 				 (pp->state == PATH_DOWN ||
-				  pp->state == PATH_SHAKY))
+				  pp->state == PATH_SHAKY)) {
+				condlog(2, "sync_map_state: failing %s state %d dmstate %d",
+					pp->dev, pp->state, pp->dmstate);
 				dm_fail_path(mpp->alias, pp->dev_t);
+			}
 		}
 	}
 }
