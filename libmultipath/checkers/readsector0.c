@@ -6,9 +6,6 @@
 #include "checkers.h"
 #include "libsg.h"
 
-#define MSG_READSECTOR0_UP	"readsector0 checker reports path is up"
-#define MSG_READSECTOR0_DOWN	"readsector0 checker reports path is down"
-
 struct readsector0_checker_context {
 	void * dummy;
 };
@@ -35,10 +32,10 @@ int libcheck_check (struct checker * c)
 	switch (ret)
 	{
 	case PATH_DOWN:
-		MSG(c, MSG_READSECTOR0_DOWN);
+		c->msgid = CHECKER_MSGID_DOWN;
 		break;
 	case PATH_UP:
-		MSG(c, MSG_READSECTOR0_UP);
+		c->msgid = CHECKER_MSGID_UP;
 		break;
 	default:
 		break;
