@@ -496,3 +496,12 @@ void set_max_fds(int max_fds)
 		}
 	}
 }
+
+void free_scandir_result(struct scandir_result *res)
+{
+	int i;
+
+	for (i = 0; i < res->n; i++)
+		FREE(res->di[i]);
+	FREE(res->di);
+}

@@ -303,6 +303,7 @@ static void close_fd(void *arg)
 bool sysfs_is_multipathed(const struct path *pp)
 {
 	char pathbuf[PATH_MAX];
+	struct scandir_result sr;
 	struct dirent **di;
 	int n, r, i;
 	bool found = false;
@@ -323,7 +324,9 @@ bool sysfs_is_multipathed(const struct path *pp)
 		return false;
 	}
 
-	pthread_cleanup_push(free, di);
+	sr.di = di;
+	sr.n = r;
+	pthread_cleanup_push_cast(free_scandir_result, &sr);
 	for (i = 0; i < r && !found; i++) {
 		long fd;
 		int nr;

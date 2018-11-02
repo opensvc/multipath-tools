@@ -30,4 +30,13 @@ void set_max_fds(int max_fds);
 #define safe_snprintf(var, size, format, args...)      \
 	snprintf(var, size, format, ##args) >= size
 
+#define pthread_cleanup_push_cast(f, arg)		\
+	pthread_cleanup_push(((void (*)(void *))&f), (arg))
+
+struct scandir_result {
+	struct dirent **di;
+	int n;
+};
+void free_scandir_result(struct scandir_result *);
+
 #endif /* _UTIL_H */

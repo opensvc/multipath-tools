@@ -639,17 +639,13 @@ free_config (struct config * conf)
 	FREE(conf);
 }
 
-static void free_namelist(void *nl)
-{
-	free(nl);
-}
-
 /* if multipath fails to process the config directory, it should continue,
  * with just a warning message */
 static void
 process_config_dir(struct config *conf, vector keywords, char *dir)
 {
 	struct dirent **namelist;
+	struct scandir_result sr;
 	int i, n;
 	char path[LINE_MAX];
 	int old_hwtable_size;
@@ -669,7 +665,9 @@ process_config_dir(struct config *conf, vector keywords, char *dir)
 		return;
 	} else if (n == 0)
 		return;
-	pthread_cleanup_push(free_namelist, namelist);
+	sr.di = namelist;
+	sr.n = n;
+	pthread_cleanup_push_cast(free_scandir_result, &sr);
 	for (i = 0; i < n; i++) {
 		if (!strstr(namelist[i]->d_name, ".conf"))
 			continue;

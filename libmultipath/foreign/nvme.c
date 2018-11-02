@@ -27,6 +27,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <ctype.h>
+#include "util.h"
 #include "vector.h"
 #include "generic.h"
 #include "foreign.h"
@@ -534,6 +535,7 @@ static void _find_controllers(struct context *ctx, struct nvme_map *map)
 {
 	char pathbuf[PATH_MAX], realbuf[PATH_MAX];
 	struct dirent **di = NULL;
+	struct scandir_result sr;
 	struct udev_device *subsys;
 	struct nvme_path *path;
 	int r, i, n;
@@ -568,7 +570,9 @@ static void _find_controllers(struct context *ctx, struct nvme_map *map)
 		return;
 	}
 
-	pthread_cleanup_push(free, di);
+	sr.di = di;
+	sr.n = r;
+	pthread_cleanup_push_cast(free_scandir_result, &sr);
 	for (i = 0; i < r; i++) {
 		char *fn = di[i]->d_name;
 		struct udev_device *ctrl, *udev;

@@ -115,6 +115,7 @@ static int _init_foreign(const char *multipath_dir)
 {
 	char pathbuf[PATH_MAX];
 	struct dirent **di;
+	struct scandir_result sr;
 	int r, i;
 
 	foreigns = vector_alloc();
@@ -135,7 +136,9 @@ static int _init_foreign(const char *multipath_dir)
 		return -r;
 	}
 
-	pthread_cleanup_push(free, di);
+	sr.di = di;
+	sr.n = r;
+	pthread_cleanup_push_cast(free_scandir_result, &sr);
 	for (i = 0; i < r; i++) {
 		const char *msg, *fn, *c;
 		struct foreign *fgn;
