@@ -661,7 +661,7 @@ sysfs_set_session_tmo(struct multipath *mpp, struct path *pp)
 		} else {
 			snprintf(value, 11, "%u", mpp->fast_io_fail);
 			if (sysfs_attr_set_value(session_dev, "recovery_tmo",
-						 value, 11) <= 0) {
+						 value, strlen(value)) <= 0) {
 				condlog(3, "%s: Failed to set recovery_tmo, "
 					" error %d", pp->dev, errno);
 			}
@@ -693,7 +693,7 @@ sysfs_set_nexus_loss_tmo(struct multipath *mpp, struct path *pp)
 	if (mpp->dev_loss) {
 		snprintf(value, 11, "%u", mpp->dev_loss);
 		if (sysfs_attr_set_value(sas_dev, "I_T_nexus_loss_timeout",
-					 value, 11) <= 0)
+					 value, strlen(value)) <= 0)
 			condlog(3, "%s: failed to update "
 				"I_T Nexus loss timeout, error %d",
 				pp->dev, errno);
