@@ -209,7 +209,7 @@ static void config_cleanup(void *arg)
 
 static void __post_config_state(enum daemon_status state)
 {
-	if (state != running_state) {
+	if (state != running_state && running_state != DAEMON_SHUTDOWN) {
 		enum daemon_status old_state = running_state;
 
 		running_state = state;
@@ -237,7 +237,9 @@ int set_config_state(enum daemon_status state)
 	if (running_state != state) {
 		enum daemon_status old_state = running_state;
 
-		if (running_state != DAEMON_IDLE) {
+		if (running_state == DAEMON_SHUTDOWN)
+			rc = EINVAL;
+		else if (running_state != DAEMON_IDLE) {
 			struct timespec ts;
 
 			clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -2212,7 +2214,9 @@ checkerloop (void *ap)
 		if (rc == ETIMEDOUT) {
 			condlog(4, "timeout waiting for DAEMON_IDLE");
 			continue;
-		}
+		} else if (rc == EINVAL)
+			/* daemon shutdown */
+			break;
 
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(&vecs->lock);

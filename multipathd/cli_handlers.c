@@ -1124,12 +1124,17 @@ cli_switch_group(void * v, char ** reply, int * len, void * data)
 int
 cli_reconfigure(void * v, char ** reply, int * len, void * data)
 {
+	int rc;
+
 	condlog(2, "reconfigure (operator)");
 
-	if (set_config_state(DAEMON_CONFIGURE) == ETIMEDOUT) {
+	rc = set_config_state(DAEMON_CONFIGURE); 
+	if (rc == ETIMEDOUT) {
 		condlog(2, "timeout starting reconfiguration");
 		return 1;
-	}
+	} else if (rc == EINVAL)
+		/* daemon shutting down */
+		return 1;
 	return 0;
 }
 
