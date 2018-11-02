@@ -27,10 +27,6 @@
 #define MX_ALLOC_LEN		255
 #define HEAVY_CHECK_COUNT       10
 
-#define MSG_HP_SW_UP	"hp_sw checker reports path is up"
-#define MSG_HP_SW_DOWN	"hp_sw checker reports path is down"
-#define MSG_HP_SW_GHOST	"hp_sw checker reports path is ghost"
-
 struct sw_checker_context {
 	void * dummy;
 };
@@ -128,14 +124,14 @@ int libcheck_check(struct checker * c)
 	char buff[MX_ALLOC_LEN];
 
 	if (0 != do_inq(c->fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0, c->timeout)) {
-		MSG(c, MSG_HP_SW_DOWN);
+		c->msgid = CHECKER_MSGID_DOWN;
 		return PATH_DOWN;
-	}
+	};
 
 	if (do_tur(c->fd, c->timeout)) {
-		MSG(c, MSG_HP_SW_GHOST);
+		c->msgid = CHECKER_MSGID_GHOST;
 		return PATH_GHOST;
 	}
-	MSG(c, MSG_HP_SW_UP);
+	c->msgid = CHECKER_MSGID_UP;
 	return PATH_UP;
 }
