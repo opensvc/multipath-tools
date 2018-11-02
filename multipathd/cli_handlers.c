@@ -736,7 +736,6 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 			condlog(0, "%s: failed to store path info", param);
 			return 1;
 		}
-		pp->checkint = conf->checkint;
 	}
 	return ev_add_path(pp, vecs, 1);
 blacklisted:

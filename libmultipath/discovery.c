@@ -103,6 +103,7 @@ store_pathinfo (vector pathvec, struct config *conf,
 	err = store_path(pathvec, pp);
 	if (err)
 		goto out;
+	pp->checkint = conf->checkint;
 
 out:
 	if (err)

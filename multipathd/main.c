@@ -2324,8 +2324,6 @@ configure (struct vectors * vecs)
 			free_path(pp);
 			i--;
 		}
-		else
-			pp->checkint = conf->checkint;
 		pthread_cleanup_pop(1);
 	}
 	if (map_discovery(vecs)) {
