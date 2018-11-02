@@ -97,6 +97,22 @@ enum path_check_state {
 #define CHECKER_DEV_LEN 256
 #define LIB_CHECKER_NAMELEN 256
 
+/*
+ * Generic message IDs for use in checkers.
+ */
+enum {
+	CHECKER_MSGID_NONE = 0,
+	CHECKER_MSGID_DISABLED,
+	CHECKER_MSGID_NO_FD,
+	CHECKER_MSGID_INVALID,
+	CHECKER_MSGID_UP,
+	CHECKER_MSGID_DOWN,
+	CHECKER_MSGID_GHOST,
+	CHECKER_GENERIC_MSGTABLE_SIZE,
+	CHECKER_FIRST_MSGID = 100,	/* lowest msgid for checkers */
+	CHECKER_MSGTABLE_SIZE = 100,	/* max msg table size for checkers */
+};
+
 struct checker {
 	struct list_head node;
 	void *handle;
@@ -106,7 +122,7 @@ struct checker {
 	unsigned int timeout;
 	int disable;
 	char name[CHECKER_NAME_LEN];
-	char message[CHECKER_MSG_LEN];       /* comm with callers */
+	short msgid;		             /* checker-internal extra status */
 	void * context;                      /* store for persistent data */
 	void ** mpcontext;                   /* store for persistent data shared
 						multipath-wide. Use MALLOC if
@@ -114,9 +130,9 @@ struct checker {
 	int (*check)(struct checker *);
 	int (*init)(struct checker *);       /* to allocate the context */
 	void (*free)(struct checker *);      /* to free the context */
+	const char**msgtable;
+	short msgtable_size;
 };
-
-#define MSG(c, fmt, args...) snprintf((c)->message, CHECKER_MSG_LEN, fmt, ##args);
 
 char * checker_state_name (int);
 int init_checkers (char *);
@@ -134,14 +150,29 @@ void checker_enable (struct checker *);
 void checker_disable (struct checker *);
 int checker_check (struct checker *, int);
 int checker_selected (struct checker *);
-char * checker_name (struct checker *);
-char * checker_message (struct checker *);
+const char *checker_name (const struct checker *);
+/*
+ * This returns a string that's best prepended with "$NAME checker",
+ * where $NAME is the return value of checker_name().
+ */
+const char *checker_message(const struct checker *);
 void checker_clear_message (struct checker *c);
 void checker_get (char *, struct checker *, char *);
 
-/* Functions exported by path checker dynamic libraries (.so) */
+/* Prototypes for symbols exported by path checker dynamic libraries (.so) */
 int libcheck_check(struct checker *);
 int libcheck_init(struct checker *);
 void libcheck_free(struct checker *);
+/*
+ * msgid => message map.
+ *
+ * It only needs to be provided if the checker defines specific
+ * message IDs.
+ * Message IDs available to checkers start at CHECKER_FIRST_MSG.
+ * The msgtable array is 0-based, i.e. msgtable[0] is the message
+ * for msgid == __CHECKER_FIRST_MSG.
+ * The table ends with a NULL element.
+ */
+extern const char *libcheck_msgtable[];
 
 #endif /* _CHECKERS_H */

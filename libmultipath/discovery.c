@@ -1589,8 +1589,8 @@ get_state (struct path * pp, struct config *conf, int daemon, int oldstate)
 		checker_name(c), checker_state_name(state));
 	if (state != PATH_UP && state != PATH_GHOST &&
 	    strlen(checker_message(c)))
-		condlog(3, "%s: checker msg is \"%s\"",
-			pp->dev, checker_message(c));
+		condlog(3, "%s: %s checker%s",
+			pp->dev, checker_name(c), checker_message(c));
 	return state;
 }
 

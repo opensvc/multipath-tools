@@ -141,6 +141,22 @@ struct checker * add_checker (char *multipath_dir, char * name)
 	if (!c->free)
 		goto out;
 
+	c->msgtable_size = 0;
+	c->msgtable = dlsym(c->handle, "libcheck_msgtable");
+
+	if (c->msgtable != NULL) {
+		const char **p;
+
+		for (p = c->msgtable;
+		     *p && (p - c->msgtable) < CHECKER_MSGTABLE_SIZE; p++)
+			/* nothing */;
+
+		c->msgtable_size = p - c->msgtable;
+	} else
+		c->msgtable_size = 0;
+	condlog(3, "checker %s: message table size = %d",
+		c->name, c->msgtable_size);
+
 done:
 	c->fd = -1;
 	c->sync = 1;
@@ -222,16 +238,16 @@ int checker_check (struct checker * c, int path_state)
 	if (!c)
 		return PATH_WILD;
 
-	c->message[0] = '\0';
+	c->msgid = CHECKER_MSGID_NONE;
 	if (c->disable) {
-		MSG(c, "checker disabled");
+		c->msgid = CHECKER_MSGID_DISABLED;
 		return PATH_UNCHECKED;
 	}
 	if (!strncmp(c->name, NONE, 4))
 		return path_state;
 
 	if (c->fd < 0) {
-		MSG(c, "no usable fd");
+		c->msgid = CHECKER_MSGID_NO_FD;
 		return PATH_WILD;
 	}
 	r = c->check(c);
@@ -248,25 +264,48 @@ int checker_selected (struct checker * c)
 	return (c->check) ? 1 : 0;
 }
 
-char * checker_name (struct checker * c)
+const char *checker_name(const struct checker *c)
 {
 	if (!c)
 		return NULL;
 	return c->name;
 }
 
-char * checker_message (struct checker * c)
+static const char *generic_msg[CHECKER_GENERIC_MSGTABLE_SIZE] = {
+	[CHECKER_MSGID_NONE] = "",
+	[CHECKER_MSGID_DISABLED] = " is disabled",
+	[CHECKER_MSGID_NO_FD] = " has no usable fd",
+	[CHECKER_MSGID_INVALID] = " provided invalid message id",
+	[CHECKER_MSGID_UP] = " reports path is up",
+	[CHECKER_MSGID_DOWN] = " reports path is down",
+	[CHECKER_MSGID_GHOST] = " reports path is ghost",
+};
+
+const char *checker_message(const struct checker *c)
 {
-	if (!c)
-		return NULL;
-	return c->message;
+	int id;
+
+	if (!c || c->msgid < 0 ||
+	    (c->msgid >= CHECKER_GENERIC_MSGTABLE_SIZE &&
+	     c->msgid < CHECKER_FIRST_MSGID))
+		goto bad_id;
+
+	if (c->msgid < CHECKER_GENERIC_MSGTABLE_SIZE)
+		return generic_msg[c->msgid];
+
+	id = c->msgid - CHECKER_FIRST_MSGID;
+	if (id < c->cls->msgtable_size)
+		return c->cls->msgtable[id];
+
+bad_id:
+	return generic_msg[CHECKER_MSGID_NONE];
 }
 
 void checker_clear_message (struct checker *c)
 {
 	if (!c)
 		return;
-	c->message[0] = '\0';
+	c->msgid = CHECKER_MSGID_NONE;
 }
 
 void checker_get (char *multipath_dir, struct checker * dst, char * name)
@@ -288,10 +327,12 @@ void checker_get (char *multipath_dir, struct checker * dst, char * name)
 	dst->fd = src->fd;
 	dst->sync = src->sync;
 	strncpy(dst->name, src->name, CHECKER_NAME_LEN);
-	strncpy(dst->message, src->message, CHECKER_MSG_LEN);
+	dst->msgid = CHECKER_MSGID_NONE;
 	dst->check = src->check;
 	dst->init = src->init;
 	dst->free = src->free;
+	dst->msgtable = src->msgtable;
+	dst->msgtable_size = src->msgtable_size;
 	dst->handle = NULL;
 	src->refcount++;
 }
