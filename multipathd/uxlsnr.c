@@ -165,23 +165,14 @@ void uxsock_cleanup(void *arg)
 /*
  * entry point
  */
-void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
+void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
+		     void * trigger_data)
 {
-	long ux_sock;
 	int rlen;
 	char *inbuf;
 	char *reply;
 	sigset_t mask;
 	int old_clients = MIN_POLLS;
-
-	ux_sock = ux_socket_listen(DEFAULT_SOCKET);
-
-	if (ux_sock == -1) {
-		condlog(1, "could not create uxsock: %d", errno);
-		exit_daemon();
-	}
-
-	pthread_cleanup_push(uxsock_cleanup, (void *)ux_sock);
 
 	condlog(3, "uxsock: startup listener");
 	polls = (struct pollfd *)MALLOC((MIN_POLLS + 1) * sizeof(struct pollfd));
@@ -322,6 +313,5 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, void * trigger_data)
 		}
 	}
 
-	pthread_cleanup_pop(1);
 	return NULL;
 }

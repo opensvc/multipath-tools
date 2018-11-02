@@ -66,6 +66,7 @@ static int use_watchdog;
 #include "pgpolicies.h"
 #include "uevent.h"
 #include "log.h"
+#include "uxsock.h"
 
 #include "mpath_cmd.h"
 #include "mpath_persist.h"
@@ -1496,12 +1497,24 @@ uevqloop (void * ap)
 static void *
 uxlsnrloop (void * ap)
 {
-	if (cli_init()) {
-		condlog(1, "Failed to init uxsock listener");
-		return NULL;
-	}
+	long ux_sock;
+
 	pthread_cleanup_push(rcu_unregister, NULL);
 	rcu_register_thread();
+
+	ux_sock = ux_socket_listen(DEFAULT_SOCKET);
+	if (ux_sock == -1) {
+		condlog(1, "could not create uxsock: %d", errno);
+		exit_daemon();
+		goto out;
+	}
+	pthread_cleanup_push(uxsock_cleanup, (void *)ux_sock);
+
+	if (cli_init()) {
+		condlog(1, "Failed to init uxsock listener");
+		exit_daemon();
+		goto out_sock;
+	}
 	set_handler_callback(LIST+PATHS, cli_list_paths);
 	set_handler_callback(LIST+PATHS+FMT, cli_list_paths_fmt);
 	set_handler_callback(LIST+PATHS+RAW+FMT, cli_list_paths_raw);
@@ -1556,8 +1569,12 @@ uxlsnrloop (void * ap)
 	set_handler_callback(UNSETPRKEY+MAP, cli_unsetprkey);
 
 	umask(077);
-	uxsock_listen(&uxsock_trigger, ap);
-	pthread_cleanup_pop(1);
+	uxsock_listen(&uxsock_trigger, ux_sock, ap);
+
+out_sock:
+	pthread_cleanup_pop(1); /* uxsock_cleanup */
+out:
+	pthread_cleanup_pop(1); /* rcu_unregister */
 	return NULL;
 }
 
