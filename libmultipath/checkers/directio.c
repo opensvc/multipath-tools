@@ -18,10 +18,19 @@
 #include "checkers.h"
 #include "../libmultipath/debug.h"
 
-#define MSG_DIRECTIO_UNKNOWN	"directio checker is not available"
-#define MSG_DIRECTIO_UP		"directio checker reports path is up"
-#define MSG_DIRECTIO_DOWN	"directio checker reports path is down"
-#define MSG_DIRECTIO_PENDING	"directio checker is waiting on aio"
+enum {
+	MSG_DIRECTIO_UNKNOWN = CHECKER_FIRST_MSGID,
+	MSG_DIRECTIO_PENDING,
+	MSG_DIRECTIO_BLOCKSIZE,
+};
+
+#define _IDX(x) (MSG_DIRECTIO_##x - CHECKER_FIRST_MSGID)
+const char *libcheck_msgtable[] = {
+	[_IDX(UNKNOWN)] = " is not available",
+	[_IDX(PENDING)] = " is waiting on aio",
+	[_IDX(BLOCKSIZE)] = " cannot get blocksize, set default",
+	NULL,
+};
 
 #define LOG(prio, fmt, args...) condlog(prio, "directio: " fmt, ##args)
 
@@ -54,7 +63,7 @@ int libcheck_init (struct checker * c)
 	}
 
 	if (ioctl(c->fd, BLKBSZGET, &ct->blksize) < 0) {
-		MSG(c, "cannot get blocksize, set default");
+		c->msgid = MSG_DIRECTIO_BLOCKSIZE;
 		ct->blksize = 512;
 	}
 	if (ct->blksize > 4096) {
@@ -198,16 +207,16 @@ int libcheck_check (struct checker * c)
 	switch (ret)
 	{
 	case PATH_UNCHECKED:
-		MSG(c, MSG_DIRECTIO_UNKNOWN);
+		c->msgid = MSG_DIRECTIO_UNKNOWN;
 		break;
 	case PATH_DOWN:
-		MSG(c, MSG_DIRECTIO_DOWN);
+		c->msgid = CHECKER_MSGID_DOWN;
 		break;
 	case PATH_UP:
-		MSG(c, MSG_DIRECTIO_UP);
+		c->msgid = CHECKER_MSGID_UP;
 		break;
 	case PATH_PENDING:
-		MSG(c, MSG_DIRECTIO_PENDING);
+		c->msgid = MSG_DIRECTIO_PENDING;
 		break;
 	default:
 		break;
