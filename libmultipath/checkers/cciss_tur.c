@@ -42,9 +42,6 @@
 #define TUR_CMD_LEN 6
 #define HEAVY_CHECK_COUNT       10
 
-#define MSG_CCISS_TUR_UP	"cciss_tur checker reports path is up"
-#define MSG_CCISS_TUR_DOWN	"cciss_tur checker reports path is down"
-
 struct cciss_tur_checker_context {
 	void * dummy;
 };
@@ -69,7 +66,7 @@ int libcheck_check(struct checker * c)
 	IOCTL_Command_struct cic;       // cciss ioctl command
 
 	if ((c->fd) < 0) {
-		MSG(c,"no usable fd");
+		c->msgid = CHECKER_MSGID_NO_FD;
 		ret = -1;
 		goto out;
 	}
@@ -79,7 +76,7 @@ int libcheck_check(struct checker * c)
 		perror("Error: ");
 		fprintf(stderr, "cciss TUR  failed in CCISS_GETLUNINFO: %s\n",
 			strerror(errno));
-		MSG(c,MSG_CCISS_TUR_DOWN);
+		c->msgid = CHECKER_MSGID_DOWN;
 		ret = PATH_DOWN;
 		goto out;
 	} else {
@@ -106,18 +103,18 @@ int libcheck_check(struct checker * c)
 	if (rc < 0) {
 		fprintf(stderr, "cciss TUR  failed: %s\n",
 			strerror(errno));
-		MSG(c,MSG_CCISS_TUR_DOWN);
+		c->msgid = CHECKER_MSGID_DOWN;
 		ret = PATH_DOWN;
 		goto out;
 	}
 
 	if ((cic.error_info.CommandStatus | cic.error_info.ScsiStatus )) {
-		MSG(c,MSG_CCISS_TUR_DOWN);
+		c->msgid = CHECKER_MSGID_DOWN;
 		ret = PATH_DOWN;
 		goto out;
 	}
 
-	MSG(c,MSG_CCISS_TUR_UP);
+	c->msgid = CHECKER_MSGID_UP;
 
 	ret = PATH_UP;
 out:
