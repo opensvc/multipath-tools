@@ -1020,14 +1020,18 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 		}
 	}
 	vector_foreach_slot (pathvec, pp1, k) {
-		int invalid = 0;
+		int invalid;
 		/* skip this path for some reason */
 
 		/* 1. if path has no unique id or wwid blacklisted */
+		if (strlen(pp1->wwid) == 0) {
+			orphan_path(pp1, "no WWID");
+			continue;
+		}
+
 		conf = get_multipath_config();
 		pthread_cleanup_push(put_multipath_config, conf);
-		if (strlen(pp1->wwid) == 0 || filter_path(conf, pp1) > 0)
-			invalid = 1;
+		invalid = (filter_path(conf, pp1) > 0);
 		pthread_cleanup_pop(1);
 		if (invalid) {
 			orphan_path(pp1, "blacklisted");
