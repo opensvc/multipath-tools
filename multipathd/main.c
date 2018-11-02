@@ -2340,16 +2340,17 @@ configure (struct vectors * vecs)
 		goto fail;
 	}
 
+	conf = get_multipath_config();
+	pthread_cleanup_push(put_multipath_config, conf);
 	vector_foreach_slot (vecs->pathvec, pp, i){
-		conf = get_multipath_config();
-		pthread_cleanup_push(put_multipath_config, conf);
 		if (filter_path(conf, pp) > 0){
 			vector_del_slot(vecs->pathvec, i);
 			free_path(pp);
 			i--;
 		}
-		pthread_cleanup_pop(1);
 	}
+	pthread_cleanup_pop(1);
+
 	if (map_discovery(vecs)) {
 		condlog(0, "configure failed at map discovery");
 		goto fail;
