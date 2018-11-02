@@ -24,6 +24,7 @@
 #define SCSI_COMMAND_TERMINATED	0x22
 #define SG_ERR_DRIVER_SENSE	0x08
 #define RECOVERED_ERROR		0x01
+#define ILLEGAL_REQUEST		0x05
 #define MX_ALLOC_LEN		255
 #define HEAVY_CHECK_COUNT       10
 
@@ -68,14 +69,19 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
 	io_hdr.sbp = sense_b;
 	io_hdr.timeout = timeout * 1000;
 
-	if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
-		return 1;
+	if (ioctl(sg_fd, SG_IO, &io_hdr) < 0) {
+		if (errno == ENOTTY)
+			return PATH_WILD;
+		else
+			return PATH_DOWN;
+	}
 
 	/* treat SG_ERR here to get rid of sg_err.[ch] */
 	io_hdr.status &= 0x7e;
 	if ((0 == io_hdr.status) && (0 == io_hdr.host_status) &&
 	    (0 == io_hdr.driver_status))
-		return 0;
+		return PATH_UP;
+
 	if ((SCSI_CHECK_CONDITION == io_hdr.status) ||
 	    (SCSI_COMMAND_TERMINATED == io_hdr.status) ||
 	    (SG_ERR_DRIVER_SENSE == (0xf & io_hdr.driver_status))) {
@@ -86,11 +92,13 @@ do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
 				sense_key = sense_buffer[1] & 0xf;
 			else
 				sense_key = sense_buffer[2] & 0xf;
-			if(RECOVERED_ERROR == sense_key)
-				return 0;
+			if (RECOVERED_ERROR == sense_key)
+				return PATH_UP;
+			else if (ILLEGAL_REQUEST == sense_key)
+				return PATH_WILD;
 		}
 	}
-	return 1;
+	return PATH_DOWN;
 }
 
 static int
@@ -122,10 +130,15 @@ do_tur (int fd, unsigned int timeout)
 int libcheck_check(struct checker * c)
 {
 	char buff[MX_ALLOC_LEN];
+	int ret = do_inq(c->fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0, c->timeout);
 
-	if (0 != do_inq(c->fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0, c->timeout)) {
+	if (ret == PATH_WILD) {
+		c->msgid = CHECKER_MSGID_UNSUPPORTED;
+		return ret;
+	}
+	if (ret != PATH_UP) {
 		c->msgid = CHECKER_MSGID_DOWN;
-		return PATH_DOWN;
+		return ret;
 	};
 
 	if (do_tur(c->fd, c->timeout)) {
