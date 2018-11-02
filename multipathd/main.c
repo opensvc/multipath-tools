@@ -2133,19 +2133,6 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	return 1;
 }
 
-static void init_path_check_interval(struct vectors *vecs)
-{
-	struct config *conf;
-	struct path *pp;
-	unsigned int i;
-
-	vector_foreach_slot (vecs->pathvec, pp, i) {
-		conf = get_multipath_config();
-		pp->checkint = conf->checkint;
-		put_multipath_config(conf);
-	}
-}
-
 static void *
 checkerloop (void *ap)
 {
@@ -2729,7 +2716,6 @@ child (void * param)
 	 */
 	post_config_state(DAEMON_CONFIGURE);
 
-	init_path_check_interval(vecs);
 
 	if (poll_dmevents) {
 		if (init_dmevent_waiter(vecs)) {
