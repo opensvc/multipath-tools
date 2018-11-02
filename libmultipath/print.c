@@ -615,7 +615,7 @@ static int
 snprint_path_checker (char * buff, size_t len, const struct path * pp)
 {
 	const struct checker * c = &pp->checker;
-	return snprint_str(buff, len, c->name);
+	return snprint_str(buff, len, checker_name(c));
 }
 
 static int

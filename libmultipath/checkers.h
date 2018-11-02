@@ -116,32 +116,22 @@ enum {
 	CHECKER_MSGTABLE_SIZE = 100,	/* max msg table size for checkers */
 };
 
+struct checker_class;
 struct checker {
-	struct list_head node;
-	void *handle;
-	int refcount;
+	struct checker_class *cls;
 	int fd;
-	int sync;
 	unsigned int timeout;
 	int disable;
-	char name[CHECKER_NAME_LEN];
 	short msgid;		             /* checker-internal extra status */
 	void * context;                      /* store for persistent data */
 	void ** mpcontext;                   /* store for persistent data shared
 						multipath-wide. Use MALLOC if
 						you want to stuff data in. */
-	int (*check)(struct checker *);
-	int (*init)(struct checker *);       /* to allocate the context */
-	void (*free)(struct checker *);      /* to free the context */
-	const char**msgtable;
-	short msgtable_size;
 };
 
-char * checker_state_name (int);
-int init_checkers (char *);
+const char *checker_state_name(int);
+int init_checkers(const char *);
 void cleanup_checkers (void);
-struct checker * add_checker (char *, char *);
-struct checker * checker_lookup (char *);
 int checker_init (struct checker *, void **);
 void checker_clear (struct checker *);
 void checker_put (struct checker *);
@@ -152,7 +142,8 @@ void checker_set_fd (struct checker *, int);
 void checker_enable (struct checker *);
 void checker_disable (struct checker *);
 int checker_check (struct checker *, int);
-int checker_selected (struct checker *);
+int checker_selected(const struct checker *);
+int checker_is_sync(const struct checker *);
 const char *checker_name (const struct checker *);
 /*
  * This returns a string that's best prepended with "$NAME checker",
@@ -160,7 +151,7 @@ const char *checker_name (const struct checker *);
  */
 const char *checker_message(const struct checker *);
 void checker_clear_message (struct checker *c);
-void checker_get (char *, struct checker *, char *);
+void checker_get(const char *, struct checker *, const char *);
 
 /* Prototypes for symbols exported by path checker dynamic libraries (.so) */
 int libcheck_check(struct checker *);

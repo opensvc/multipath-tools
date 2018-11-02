@@ -323,7 +323,7 @@ int libcheck_check(struct checker * c)
 	if (!ct)
 		return PATH_UNCHECKED;
 
-	if (c->sync)
+	if (checker_is_sync(c))
 		return tur_check(c->fd, c->timeout, &c->msgid);
 
 	/*

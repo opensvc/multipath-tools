@@ -202,7 +202,7 @@ int libcheck_check (struct checker * c)
 	if (!ct)
 		return PATH_UNCHECKED;
 
-	ret = check_state(c->fd, ct, c->sync, c->timeout);
+	ret = check_state(c->fd, ct, checker_is_sync(c), c->timeout);
 
 	switch (ret)
 	{

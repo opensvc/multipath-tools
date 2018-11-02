@@ -479,26 +479,27 @@ check_rdac(struct path * pp)
 int select_checker(struct config *conf, struct path *pp)
 {
 	const char *origin;
-	char *checker_name;
+	char *ckr_name;
 	struct checker * c = &pp->checker;
 
 	if (pp->detect_checker == DETECT_CHECKER_ON) {
 		origin = autodetect_origin;
 		if (check_rdac(pp)) {
-			checker_name = RDAC;
+			ckr_name = RDAC;
 			goto out;
 		} else if (pp->tpgs > 0) {
-			checker_name = TUR;
+			ckr_name = TUR;
 			goto out;
 		}
 	}
-	do_set(checker_name, conf->overrides, checker_name, overrides_origin);
-	do_set_from_hwe(checker_name, pp, checker_name, hwe_origin);
-	do_set(checker_name, conf, checker_name, conf_origin);
-	do_default(checker_name, DEFAULT_CHECKER);
+	do_set(checker_name, conf->overrides, ckr_name, overrides_origin);
+	do_set_from_hwe(checker_name, pp, ckr_name, hwe_origin);
+	do_set(checker_name, conf, ckr_name, conf_origin);
+	do_default(ckr_name, DEFAULT_CHECKER);
 out:
-	checker_get(conf->multipath_dir, c, checker_name);
-	condlog(3, "%s: path_checker = %s %s", pp->dev, c->name, origin);
+	checker_get(conf->multipath_dir, c, ckr_name);
+	condlog(3, "%s: path_checker = %s %s", pp->dev,
+		checker_name(c), origin);
 	if (conf->checker_timeout) {
 		c->timeout = conf->checker_timeout;
 		condlog(3, "%s: checker timeout = %u s %s",
