@@ -125,6 +125,10 @@ retry:
 	io_hdr.timeout = timeout * 1000;
 	io_hdr.pack_id = 0;
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
+		if (errno == ENOTTY) {
+			*msgid = CHECKER_MSGID_UNSUPPORTED;
+			return PATH_WILD;
+		}
 		*msgid = CHECKER_MSGID_DOWN;
 		return PATH_DOWN;
 	}
