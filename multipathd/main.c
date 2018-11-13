@@ -781,8 +781,8 @@ uev_remove_map (struct uevent * uev, struct vectors * vecs)
 		goto out;
 	}
 	if (strcmp(mpp->alias, alias)) {
-		condlog(2, "%s: minor number mismatch (map %d, event %d)",
-			mpp->alias, mpp->dmi->minor, minor);
+		condlog(2, "%s: map alias mismatch: have \"%s\", got \"%s\")",
+			uev->kernel, mpp->alias, alias);
 		goto out;
 	}
 
