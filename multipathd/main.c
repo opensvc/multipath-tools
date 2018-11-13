@@ -2041,8 +2041,12 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 					pp->wait_checks = pp->mpp->delay_wait_checks;
 					pp->watch_checks = 0;
 				}
-			}else
+			} else {
 				fail_path(pp, 0);
+				if (pp->wait_checks > 0)
+					pp->wait_checks =
+						pp->mpp->delay_wait_checks;
+			}
 
 			/*
 			 * cancel scheduled failback
