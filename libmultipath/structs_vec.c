@@ -407,6 +407,12 @@ int verify_paths(struct multipath *mpp, struct vectors *vecs)
 			vector_del_slot(mpp->paths, i);
 			i--;
 
+			/* Make sure mpp->hwe doesn't point to freed memory.
+			 * We call extract_hwe_from_path() below to restore
+			 * mpp->hwe
+			 */
+			if (mpp->hwe == pp->hwe)
+				mpp->hwe = NULL;
 			if ((j = find_slot(vecs->pathvec,
 					   (void *)pp)) != -1)
 				vector_del_slot(vecs->pathvec, j);
@@ -416,6 +422,7 @@ int verify_paths(struct multipath *mpp, struct vectors *vecs)
 				mpp->alias, pp->dev, pp->dev_t);
 		}
 	}
+	extract_hwe_from_path(mpp);
 	return count;
 }
 

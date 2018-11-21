@@ -491,7 +491,6 @@ retry:
 	verify_paths(mpp, vecs);
 	mpp->action = ACT_RELOAD;
 
-	extract_hwe_from_path(mpp);
 	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
 		condlog(0, "%s: failed to setup new map in update", mpp->alias);
 		retries = -1;
@@ -925,6 +924,14 @@ ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 		goto fail; /* leave path added to pathvec */
 	}
 	mpp = find_mp_by_wwid(vecs->mpvec, pp->wwid);
+	if (mpp && pp->size && mpp->size != pp->size) {
+		condlog(0, "%s: failed to add new path %s, device size mismatch", mpp->alias, pp->dev);
+		int i = find_slot(vecs->pathvec, (void *)pp);
+		if (i != -1)
+			vector_del_slot(vecs->pathvec, i);
+		free_path(pp);
+		return 1;
+	}
 	if (mpp && mpp->wait_for_udev &&
 	    (pathcount(mpp, PATH_UP) > 0 ||
 	     (pathcount(mpp, PATH_GHOST) > 0 && pp->tpgs != TPGS_IMPLICIT &&
@@ -940,17 +947,6 @@ ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 	pp->mpp = mpp;
 rescan:
 	if (mpp) {
-		if (pp->size && mpp->size != pp->size) {
-			condlog(0, "%s: failed to add new path %s, "
-				"device size mismatch",
-				mpp->alias, pp->dev);
-			int i = find_slot(vecs->pathvec, (void *)pp);
-			if (i != -1)
-				vector_del_slot(vecs->pathvec, i);
-			free_path(pp);
-			return 1;
-		}
-
 		condlog(4,"%s: adopting all paths for path %s",
 			mpp->alias, pp->dev);
 		if (adopt_paths(vecs->pathvec, mpp))
@@ -958,7 +954,6 @@ rescan:
 
 		verify_paths(mpp, vecs);
 		mpp->action = ACT_RELOAD;
-		extract_hwe_from_path(mpp);
 	} else {
 		if (!should_multipath(pp, vecs->pathvec, vecs->mpvec)) {
 			orphan_path(pp, "only one path");
