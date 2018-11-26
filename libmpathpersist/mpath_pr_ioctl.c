@@ -241,7 +241,7 @@ void mpath_format_readfullstatus(struct prin_resp *pr_buff, int len, int noisy)
 		fdesc.rtpi = get_unaligned_be16(&p[18]);
 
 		tid_len_len = get_unaligned_be32(&p[20]);
-		if (tid_len_len + 24 + k >= additional_length) {
+		if (tid_len_len + 24 + k > additional_length) {
 			condlog(0,
 				"%s: corrupt PRIN response: status descriptor end %d exceeds length %d",
 				__func__, tid_len_len + k + 24,
