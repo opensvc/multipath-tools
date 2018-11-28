@@ -168,7 +168,9 @@ static int dm_get_events(void)
 	while (names->dev) {
 		uint32_t event_nr;
 
-		if (!dm_is_mpath(names->name))
+		/* Don't delete device if dm_is_mpath() fails without
+		 * checking the device type */
+		if (dm_is_mpath(names->name) == 0)
 			goto next;
 
 		event_nr = dm_event_nr(names);

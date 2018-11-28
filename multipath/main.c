@@ -319,7 +319,7 @@ static int check_usable_paths(struct config *conf,
 		goto out;
 	}
 
-	if (!dm_is_mpath(mapname)) {
+	if (dm_is_mpath(mapname) != 1) {
 		condlog(1, "%s is not a multipath map", devpath);
 		goto free;
 	}

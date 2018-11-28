@@ -692,9 +692,15 @@ out:
 	return r;
 }
 
+/*
+ * returns:
+ * 1  : is multipath device
+ * 0  : is not multipath device
+ * -1 : error
+ */
 int dm_is_mpath(const char *name)
 {
-	int r = 0;
+	int r = -1;
 	struct dm_task *dmt;
 	struct dm_info info;
 	uint64_t start, length;
@@ -703,7 +709,7 @@ int dm_is_mpath(const char *name)
 	const char *uuid;
 
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
-		return 0;
+		return -1;
 
 	if (!dm_task_set_name(dmt, name))
 		goto out;
@@ -713,7 +719,12 @@ int dm_is_mpath(const char *name)
 	if (!dm_task_run(dmt))
 		goto out;
 
-	if (!dm_task_get_info(dmt, &info) || !info.exists)
+	if (!dm_task_get_info(dmt, &info))
+		goto out;
+
+	r = 0;
+
+	if (!info.exists)
 		goto out;
 
 	uuid = dm_task_get_uuid(dmt);
@@ -722,7 +733,10 @@ int dm_is_mpath(const char *name)
 		goto out;
 
 	/* Fetch 1st target */
-	dm_get_next_target(dmt, NULL, &start, &length, &target_type, &params);
+	if (dm_get_next_target(dmt, NULL, &start, &length, &target_type,
+			       &params) != NULL)
+		/* multiple targets */
+		goto out;
 
 	if (!target_type || strcmp(target_type, TGT_MPATH) != 0)
 		goto out;
@@ -823,7 +837,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	unsigned long long mapsize;
 	char params[PARAMS_SIZE] = {0};
 
-	if (!dm_is_mpath(mapname))
+	if (dm_is_mpath(mapname) != 1)
 		return 0; /* nothing to do */
 
 	/* if the device currently has no partitions, do not
@@ -1087,7 +1101,7 @@ dm_get_maps (vector mp)
 	}
 
 	do {
-		if (!dm_is_mpath(names->name))
+		if (dm_is_mpath(names->name) != 1)
 			goto next;
 
 		mpp = dm_get_multipath(names->name);
