@@ -806,7 +806,7 @@ int uevent_listen(struct udev *udev)
 	monitor = udev_monitor_new_from_netlink(udev, "udev");
 	if (!monitor) {
 		condlog(2, "failed to create udev monitor");
-		goto out;
+		goto failback;
 	}
 	pthread_cleanup_push(monitor_cleanup, monitor);
 #ifdef LIBUDEV_API_RECVBUF
@@ -893,8 +893,8 @@ int uevent_listen(struct udev *udev)
 	}
 	need_failback = 0;
 out:
-	if (monitor)
-		pthread_cleanup_pop(1);
+	pthread_cleanup_pop(1);
+failback:
 	if (need_failback)
 		err = failback_listen();
 	pthread_cleanup_pop(1);
