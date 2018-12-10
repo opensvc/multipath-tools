@@ -42,7 +42,7 @@ void free_prio (struct prio * p)
 		return;
 	p->refcount--;
 	if (p->refcount) {
-		condlog(3, "%s prioritizer refcount %d",
+		condlog(4, "%s prioritizer refcount %d",
 			p->name, p->refcount);
 		return;
 	}
