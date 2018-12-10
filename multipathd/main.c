@@ -334,6 +334,7 @@ remove_map_and_stop_waiter(struct multipath *mpp, struct vectors *vecs)
 {
 	/* devices are automatically removed by the dmevent polling code,
 	 * so they don't need to be manually removed here */
+	condlog(3, "%s: removing map from internal tables", mpp->alias);
 	if (!poll_dmevents)
 		stop_waiter_thread(mpp, vecs);
 	remove_map(mpp, vecs, PURGE_VEC);
