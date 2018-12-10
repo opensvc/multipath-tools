@@ -14,7 +14,8 @@ struct vectors {
 void enter_recovery_mode(struct multipath *mpp);
 
 int adopt_paths (vector pathvec, struct multipath * mpp);
-void orphan_paths (vector pathvec, struct multipath * mpp);
+void orphan_paths(vector pathvec, struct multipath *mpp,
+		  const char *reason);
 void orphan_path (struct path * pp, const char *reason);
 
 int verify_paths(struct multipath * mpp, struct vectors * vecs);

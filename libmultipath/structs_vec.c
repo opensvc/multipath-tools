@@ -102,14 +102,14 @@ void orphan_path(struct path *pp, const char *reason)
 	pp->fd = -1;
 }
 
-void orphan_paths(vector pathvec, struct multipath *mpp)
+void orphan_paths(vector pathvec, struct multipath *mpp, const char *reason)
 {
 	int i;
 	struct path * pp;
 
 	vector_foreach_slot (pathvec, pp, i) {
 		if (pp->mpp == mpp) {
-			orphan_path(pp, "map flushed");
+			orphan_path(pp, reason);
 		}
 	}
 }
@@ -122,7 +122,7 @@ remove_map(struct multipath * mpp, struct vectors * vecs, int purge_vec)
 	/*
 	 * clear references to this map
 	 */
-	orphan_paths(vecs->pathvec, mpp);
+	orphan_paths(vecs->pathvec, mpp, "map removed internally");
 
 	if (purge_vec &&
 	    (i = find_slot(vecs->mpvec, (void *)mpp)) != -1)
