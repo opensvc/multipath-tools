@@ -267,7 +267,8 @@ static void test_property_blacklist(void **state)
 	static struct udev_device udev = { "sdb", { "ID_FOO", "ID_WWN", "ID_BAR", NULL } };
 	conf.blist_property = blist_property_wwn;
 	expect_condlog(3, "sdb: udev property ID_WWN blacklisted\n");
-	assert_int_equal(filter_property(&conf, &udev), MATCH_PROPERTY_BLIST);
+	assert_int_equal(filter_property(&conf, &udev, 3),
+			 MATCH_PROPERTY_BLIST);
 }
 
 /* the property check works different in that you check all the property
@@ -280,7 +281,7 @@ static void test_property_whitelist(void **state)
 	static struct udev_device udev = { "sdb", { "ID_FOO", "ID_WWN", "ID_BAR", NULL } };
 	conf.elist_property = blist_property_wwn;
 	expect_condlog(3, "sdb: udev property ID_WWN whitelisted\n");
-	assert_int_equal(filter_property(&conf, &udev),
+	assert_int_equal(filter_property(&conf, &udev, 3),
 			 MATCH_PROPERTY_BLIST_EXCEPT);
 }
 
@@ -289,7 +290,7 @@ static void test_property_missing(void **state)
 	static struct udev_device udev = { "sdb", { "ID_FOO", "ID_BAZ", "ID_BAR", NULL } };
 	conf.blist_property = blist_property_wwn;
 	expect_condlog(3, "sdb: blacklisted, udev property missing\n");
-	assert_int_equal(filter_property(&conf, &udev),
+	assert_int_equal(filter_property(&conf, &udev, 3),
 			 MATCH_PROPERTY_BLIST_MISSING);
 }
 

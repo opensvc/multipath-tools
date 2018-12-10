@@ -232,24 +232,24 @@ setup_default_blist (struct config * conf)
 	return 0;
 }
 
-#define LOG_BLIST(M,S)							\
+#define LOG_BLIST(M, S, lvl)						\
 	if (vendor && product)						\
-		condlog(3, "%s: (%s:%s) %s %s",				\
+		condlog(lvl, "%s: (%s:%s) %s %s",			\
 			dev, vendor, product, (M), (S));		\
 	else if (wwid && !dev)						\
-		condlog(3, "%s: %s %s", wwid, (M), (S));		\
+		condlog(lvl, "%s: %s %s", wwid, (M), (S));		\
 	else if (wwid)							\
-		condlog(3, "%s: %s %s %s", dev, (M), wwid, (S));	\
+		condlog(lvl, "%s: %s %s %s", dev, (M), wwid, (S));	\
 	else if (env)							\
-		condlog(3, "%s: %s %s %s", dev, (M), env, (S));		\
+		condlog(lvl, "%s: %s %s %s", dev, (M), env, (S));	\
 	else if (protocol)						\
-		condlog(3, "%s: %s %s %s", dev, (M), protocol, (S));	\
+		condlog(lvl, "%s: %s %s %s", dev, (M), protocol, (S));	\
 	else								\
-		condlog(3, "%s: %s %s", dev, (M), (S))
+		condlog(lvl, "%s: %s %s", dev, (M), (S))
 
-void
+static void
 log_filter (const char *dev, char *vendor, char *product, char *wwid,
-	    const char *env, const char *protocol, int r)
+	    const char *env, const char *protocol, int r, int lvl)
 {
 	/*
 	 * Try to sort from most likely to least.
@@ -258,37 +258,37 @@ log_filter (const char *dev, char *vendor, char *product, char *wwid,
 	case MATCH_NOTHING:
 		break;
 	case MATCH_DEVICE_BLIST:
-		LOG_BLIST("vendor/product", "blacklisted");
+		LOG_BLIST("vendor/product", "blacklisted", lvl);
 		break;
 	case MATCH_WWID_BLIST:
-		LOG_BLIST("wwid", "blacklisted");
+		LOG_BLIST("wwid", "blacklisted", lvl);
 		break;
 	case MATCH_DEVNODE_BLIST:
-		LOG_BLIST("device node name", "blacklisted");
+		LOG_BLIST("device node name", "blacklisted", lvl);
 		break;
 	case MATCH_PROPERTY_BLIST:
-		LOG_BLIST("udev property", "blacklisted");
+		LOG_BLIST("udev property", "blacklisted", lvl);
 		break;
 	case MATCH_PROTOCOL_BLIST:
-		LOG_BLIST("protocol", "blacklisted");
+		LOG_BLIST("protocol", "blacklisted", lvl);
 		break;
 	case MATCH_DEVICE_BLIST_EXCEPT:
-		LOG_BLIST("vendor/product", "whitelisted");
+		LOG_BLIST("vendor/product", "whitelisted", lvl);
 		break;
 	case MATCH_WWID_BLIST_EXCEPT:
-		LOG_BLIST("wwid", "whitelisted");
+		LOG_BLIST("wwid", "whitelisted", lvl);
 		break;
 	case MATCH_DEVNODE_BLIST_EXCEPT:
-		LOG_BLIST("device node name", "whitelisted");
+		LOG_BLIST("device node name", "whitelisted", lvl);
 		break;
 	case MATCH_PROPERTY_BLIST_EXCEPT:
-		LOG_BLIST("udev property", "whitelisted");
+		LOG_BLIST("udev property", "whitelisted", lvl);
 		break;
 	case MATCH_PROPERTY_BLIST_MISSING:
-		LOG_BLIST("blacklisted,", "udev property missing");
+		LOG_BLIST("blacklisted,", "udev property missing", lvl);
 		break;
 	case MATCH_PROTOCOL_BLIST_EXCEPT:
-		LOG_BLIST("protocol", "whitelisted");
+		LOG_BLIST("protocol", "whitelisted", lvl);
 		break;
 	}
 }
@@ -306,7 +306,7 @@ filter_device (vector blist, vector elist, char * vendor, char * product,
 			r = MATCH_DEVICE_BLIST;
 	}
 
-	log_filter(dev, vendor, product, NULL, NULL, NULL, r);
+	log_filter(dev, vendor, product, NULL, NULL, NULL, r, 3);
 	return r;
 }
 
@@ -322,7 +322,7 @@ filter_devnode (vector blist, vector elist, char * dev)
 			r = MATCH_DEVNODE_BLIST;
 	}
 
-	log_filter(dev, NULL, NULL, NULL, NULL, NULL, r);
+	log_filter(dev, NULL, NULL, NULL, NULL, NULL, r, 3);
 	return r;
 }
 
@@ -338,7 +338,7 @@ filter_wwid (vector blist, vector elist, char * wwid, char * dev)
 			r = MATCH_WWID_BLIST;
 	}
 
-	log_filter(dev, NULL, NULL, wwid, NULL, NULL, r);
+	log_filter(dev, NULL, NULL, wwid, NULL, NULL, r, 3);
 	return r;
 }
 
@@ -357,7 +357,7 @@ filter_protocol(vector blist, vector elist, struct path * pp)
 			r = MATCH_PROTOCOL_BLIST;
 	}
 
-	log_filter(pp->dev, NULL, NULL, NULL, NULL, buf, r);
+	log_filter(pp->dev, NULL, NULL, NULL, NULL, buf, r, 3);
 	return r;
 }
 
@@ -366,7 +366,7 @@ filter_path (struct config * conf, struct path * pp)
 {
 	int r;
 
-	r = filter_property(conf, pp->udev);
+	r = filter_property(conf, pp->udev, 3);
 	if (r > 0)
 		return r;
 	r = filter_devnode(conf->blist_devnode, conf->elist_devnode, pp->dev);
@@ -384,7 +384,7 @@ filter_path (struct config * conf, struct path * pp)
 }
 
 int
-filter_property(struct config * conf, struct udev_device * udev)
+filter_property(struct config *conf, struct udev_device *udev, int lvl)
 {
 	const char *devname = udev_device_get_sysname(udev);
 	struct udev_list_entry *list_entry;
@@ -415,7 +415,7 @@ filter_property(struct config * conf, struct udev_device * udev)
 		}
 	}
 
-	log_filter(devname, NULL, NULL, NULL, env, NULL, r);
+	log_filter(devname, NULL, NULL, NULL, env, NULL, r, lvl);
 	return r;
 }
 
