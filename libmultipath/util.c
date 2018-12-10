@@ -191,7 +191,8 @@ int devt2devname(char *devname, int devname_len, char *devt)
 				return 0;
 			}
 		}
-		goto skip_proc;
+		condlog(4, "%s is invalid", block_path);
+		return 1;
 	}
 	memset(block_path, 0, sizeof(block_path));
 
@@ -220,7 +221,7 @@ int devt2devname(char *devname, int devname_len, char *devt)
 		}
 	}
 	fclose(fd);
-skip_proc:
+
 	if (strncmp(block_path,"/sys/block", 10)) {
 		condlog(3, "No device found for %u:%u", major, minor);
 		return 1;
