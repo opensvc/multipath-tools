@@ -889,7 +889,8 @@ int update_map_pr(struct multipath *mpp)
 	if (!get_be64(mpp->reservation_key))
 	{
 		/* Nothing to do. Assuming pr mgmt feature is disabled*/
-		condlog(3, "%s: reservation_key not set in multipath.conf", mpp->alias);
+		condlog(4, "%s: reservation_key not set in multipath.conf",
+			mpp->alias);
 		return MPATH_PR_SUCCESS;
 	}
 
