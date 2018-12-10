@@ -261,7 +261,7 @@ static void *tur_thread(void *ctx)
 	tur_thread_cleanup_push(ct);
 	rcu_register_thread();
 
-	condlog(3, "%d:%d : tur checker starting up", major(ct->devt),
+	condlog(4, "%d:%d : tur checker starting up", major(ct->devt),
 		minor(ct->devt));
 
 	tur_deep_sleep(ct);
@@ -275,7 +275,7 @@ static void *tur_thread(void *ctx)
 	pthread_cond_signal(&ct->active);
 	pthread_mutex_unlock(&ct->lock);
 
-	condlog(3, "%d:%d : tur checker finished, state %s", major(ct->devt),
+	condlog(4, "%d:%d : tur checker finished, state %s", major(ct->devt),
 		minor(ct->devt), checker_state_name(state));
 
 	running = uatomic_xchg(&ct->running, 0);
@@ -415,7 +415,7 @@ int libcheck_check(struct checker * c)
 		}
 		pthread_mutex_unlock(&ct->lock);
 		if (tur_status == PATH_PENDING) {
-			condlog(3, "%d:%d : tur checker still running",
+			condlog(4, "%d:%d : tur checker still running",
 				major(ct->devt), minor(ct->devt));
 		} else {
 			int running = uatomic_xchg(&ct->running, 0);
