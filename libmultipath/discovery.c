@@ -1433,7 +1433,7 @@ path_offline (struct path * pp)
 	}
 
 
-	condlog(3, "%s: path state = %s", pp->dev, buff);
+	condlog(4, "%s: path state = %s", pp->dev, buff);
 
 	if (pp->bus == SYSFS_BUS_SCSI) {
 		if (!strncmp(buff, "offline", 7)) {
@@ -1551,8 +1551,6 @@ get_state (struct path * pp, struct config *conf, int daemon, int oldstate)
 {
 	struct checker * c = &pp->checker;
 	int state;
-
-	condlog(3, "%s: get_state", pp->dev);
 
 	if (!checker_selected(c)) {
 		if (daemon) {

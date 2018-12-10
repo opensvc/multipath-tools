@@ -1904,6 +1904,16 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	pp->tick = checkint;
 
 	newstate = path_offline(pp);
+	if (newstate == PATH_UP) {
+		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
+		newstate = get_state(pp, conf, 1, newstate);
+		pthread_cleanup_pop(1);
+	} else {
+		checker_clear_message(&pp->checker);
+		condlog(3, "%s: state %s, checker not called",
+			pp->dev, checker_state_name(newstate));
+	}
 	/*
 	 * Wait for uevent for removed paths;
 	 * some LLDDs like zfcp keep paths unavailable
@@ -1911,14 +1921,6 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	 */
 	if (newstate == PATH_REMOVED)
 		newstate = PATH_DOWN;
-
-	if (newstate == PATH_UP) {
-		conf = get_multipath_config();
-		pthread_cleanup_push(put_multipath_config, conf);
-		newstate = get_state(pp, conf, 1, newstate);
-		pthread_cleanup_pop(1);
-	} else
-		checker_clear_message(&pp->checker);
 
 	if (pp->wwid_changed) {
 		condlog(2, "%s: path wwid has changed. Refusing to use",
