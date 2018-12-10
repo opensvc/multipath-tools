@@ -2262,7 +2262,7 @@ checkerloop (void *ap)
 			if (num_paths) {
 				unsigned int max_checkint;
 
-				condlog(3, "checked %d path%s in %lu.%06lu secs",
+				condlog(4, "checked %d path%s in %lu.%06lu secs",
 					num_paths, num_paths > 1 ? "s" : "",
 					diff_time.tv_sec,
 					diff_time.tv_nsec / 1000);
