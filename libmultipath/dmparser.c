@@ -117,7 +117,7 @@ assemble_map (struct multipath * mp, char * params, int len)
 	}
 
 	FREE(f);
-	condlog(3, "%s: assembled map [%s]", mp->alias, params);
+	condlog(4, "%s: assembled map [%s]", mp->alias, params);
 	return 0;
 
 err:
@@ -145,7 +145,7 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 
 	p = params;
 
-	condlog(3, "%s: disassemble map [%s]", mpp->alias, params);
+	condlog(4, "%s: disassemble map [%s]", mpp->alias, params);
 
 	/*
 	 * features
@@ -410,7 +410,7 @@ int disassemble_status(char *params, struct multipath *mpp)
 
 	p = params;
 
-	condlog(3, "%s: disassemble status [%s]", mpp->alias, params);
+	condlog(4, "%s: disassemble status [%s]", mpp->alias, params);
 
 	/*
 	 * features
