@@ -25,6 +25,9 @@ static int log_messages_pending;
 
 void log_safe (int prio, const char * fmt, va_list ap)
 {
+	if (prio > LOG_DEBUG)
+		prio = LOG_DEBUG;
+
 	if (log_thr == (pthread_t)0) {
 		vsyslog(prio, fmt, ap);
 		return;
