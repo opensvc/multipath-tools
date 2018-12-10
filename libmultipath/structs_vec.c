@@ -60,6 +60,12 @@ int adopt_paths(vector pathvec, struct multipath *mpp)
 
 	vector_foreach_slot (pathvec, pp, i) {
 		if (!strncmp(mpp->wwid, pp->wwid, WWID_SIZE)) {
+			if (pp->size != 0 && mpp->size != 0 &&
+			    pp->size != mpp->size) {
+				condlog(3, "%s: size mismatch for %s, not adding path",
+					pp->dev, mpp->alias);
+				continue;
+			}
 			condlog(3, "%s: ownership set to %s",
 				pp->dev, mpp->alias);
 			pp->mpp = mpp;
