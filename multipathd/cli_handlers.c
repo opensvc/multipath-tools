@@ -803,7 +803,8 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 				    vecs->pathvec, &refwwid);
 			if (refwwid) {
 				if (coalesce_paths(vecs, NULL, refwwid,
-						   FORCE_RELOAD_NONE, CMD_NONE))
+						   FORCE_RELOAD_NONE, CMD_NONE)
+				    != CP_OK)
 					condlog(2, "%s: coalesce_paths failed",
 									param);
 				dm_lib_release();

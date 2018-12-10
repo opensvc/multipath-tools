@@ -2366,7 +2366,7 @@ configure (struct vectors * vecs)
 	ret = coalesce_paths(vecs, mpvec, NULL, force_reload, CMD_NONE);
 	if (force_reload == FORCE_RELOAD_WEAK)
 		force_reload = FORCE_RELOAD_YES;
-	if (ret) {
+	if (ret != CP_OK) {
 		condlog(0, "configure failed while coalescing paths");
 		goto fail;
 	}

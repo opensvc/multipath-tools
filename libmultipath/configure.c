@@ -998,8 +998,8 @@ out:
 int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 		    int force_reload, enum mpath_cmds cmd)
 {
-	int r = 1;
-	int k, i;
+	int ret = CP_FAIL;
+	int k, i, r;
 	int is_daemon = (cmd == CMD_NONE) ? 1 : 0;
 	char params[PARAMS_SIZE];
 	struct multipath * mpp;
@@ -1022,11 +1022,11 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 	}
 
 	if (VECTOR_SIZE(pathvec) == 0)
-		return 0;
+		return CP_OK;
 	size_mismatch_seen = calloc((VECTOR_SIZE(pathvec) - 1) / 64 + 1,
 				    sizeof(uint64_t));
 	if (size_mismatch_seen == NULL)
-		return 1;
+		return CP_FAIL;
 
 	vector_foreach_slot (pathvec, pp1, k) {
 		int invalid;
@@ -1130,6 +1130,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 				remove_map(mpp, vecs, 0);
 				continue;
 			} else /* if (r == DOMAP_RETRY && !is_daemon) */ {
+				ret = CP_RETRY;
 				goto out;
 			}
 		}
@@ -1172,10 +1173,8 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 
 		if (newmp) {
 			if (mpp->action != ACT_REJECT) {
-				if (!vector_alloc_slot(newmp)) {
-					r = 1;
+				if (!vector_alloc_slot(newmp))
 					goto out;
-				}
 				vector_set_slot(newmp, mpp);
 			}
 			else
@@ -1206,10 +1205,10 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 				condlog(2, "%s: remove (dead)", alias);
 		}
 	}
-	r = 0;
+	ret = CP_OK;
 out:
 	free(size_mismatch_seen);
-	return r;
+	return ret;
 }
 
 struct udev_device *get_udev_device(const char *dev, enum devtypes dev_type)

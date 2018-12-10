@@ -537,7 +537,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	vector curmp = NULL;
 	vector pathvec = NULL;
 	struct vectors vecs;
-	int r = 1;
+	int r = 1, rc;
 	int di_flag = 0;
 	char * refwwid = NULL;
 	char * dev = NULL;
@@ -752,8 +752,9 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	/*
 	 * core logic entry point
 	 */
-	r = coalesce_paths(&vecs, NULL, refwwid,
+	rc = coalesce_paths(&vecs, NULL, refwwid,
 			   conf->force_reload, cmd);
+	r = rc == CP_RETRY ? -1 : rc == CP_OK ? 0 : 1;
 
 print_valid:
 	if (cmd == CMD_VALID_PATH)
