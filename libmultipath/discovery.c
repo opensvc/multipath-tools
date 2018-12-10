@@ -1382,7 +1382,7 @@ common_sysfs_pathinfo (struct path * pp)
 	devt = udev_device_get_devnum(pp->udev);
 	snprintf(pp->dev_t, BLK_DEV_SIZE, "%d:%d", major(devt), minor(devt));
 
-	condlog(3, "%s: dev_t = %s", pp->dev, pp->dev_t);
+	condlog(4, "%s: dev_t = %s", pp->dev, pp->dev_t);
 
 	if (sysfs_get_size(pp, &pp->size))
 		return PATHINFO_FAILED;
@@ -1599,6 +1599,7 @@ get_prio (struct path * pp)
 	struct prio * p;
 	struct config *conf;
 	int checker_timeout;
+	int old_prio;
 
 	if (!pp)
 		return 0;
@@ -1619,13 +1620,14 @@ get_prio (struct path * pp)
 	conf = get_multipath_config();
 	checker_timeout = conf->checker_timeout;
 	put_multipath_config(conf);
+	old_prio = pp->priority;
 	pp->priority = prio_getprio(p, pp, checker_timeout);
 	if (pp->priority < 0) {
 		condlog(3, "%s: %s prio error", pp->dev, prio_name(p));
 		pp->priority = PRIO_UNDEF;
 		return 1;
 	}
-	condlog(3, "%s: %s prio = %u",
+	condlog((old_prio == pp->priority ? 4 : 3), "%s: %s prio = %u",
 		pp->dev, prio_name(p), pp->priority);
 	return 0;
 }
@@ -1863,7 +1865,7 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			udev_device_get_sysattr_value(pp->udev, "hidden");
 
 		if (hidden && !strcmp(hidden, "1")) {
-			condlog(3, "%s: hidden", pp->dev);
+			condlog(4, "%s: hidden", pp->dev);
 			return PATHINFO_SKIPPED;
 		}
 		if (is_claimed_by_foreign(pp->udev) ||
@@ -1876,7 +1878,7 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			   pp->dev) > 0)
 		return PATHINFO_SKIPPED;
 
-	condlog(3, "%s: mask = 0x%x", pp->dev, mask);
+	condlog(4, "%s: mask = 0x%x", pp->dev, mask);
 
 	/*
 	 * Sanity check: we need the device number to
