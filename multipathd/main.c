@@ -993,15 +993,14 @@ rescan:
 	/*
 	 * reload the map for the multipath mapped device
 	 */
-retry:
 	ret = domap(mpp, params, 1);
+	while (ret == DOMAP_RETRY && retries-- > 0) {
+		condlog(0, "%s: retry domap for addition of new "
+			"path %s", mpp->alias, pp->dev);
+		sleep(1);
+		ret = domap(mpp, params, 1);
+	}
 	if (ret == DOMAP_FAIL || ret == DOMAP_RETRY) {
-		if (ret == DOMAP_RETRY && retries-- > 0) {
-			condlog(0, "%s: retry domap for addition of new "
-				"path %s", mpp->alias, pp->dev);
-			sleep(1);
-			goto retry;
-		}
 		condlog(0, "%s: failed in domap for addition of new "
 			"path %s", mpp->alias, pp->dev);
 		/*
