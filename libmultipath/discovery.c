@@ -1106,7 +1106,9 @@ get_vpd_sgio (int fd, int pg, char * str, int maxlen)
 
 	memset(buff, 0x0, 4096);
 	if (sgio_get_vpd(buff, 4096, fd, pg) < 0) {
-		condlog(3, "failed to issue vpd inquiry for pg%02x",
+		int lvl = pg == 0x80 || pg == 0x83 ? 3 : 4;
+
+		condlog(lvl, "failed to issue vpd inquiry for pg%02x",
 			pg);
 		return -errno;
 	}
