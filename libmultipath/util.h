@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <inttypes.h>
+#include <stdbool.h>
 
 size_t strchop(char *);
 int basenamecpy (const char *src, char *dst, size_t size);
@@ -38,5 +39,20 @@ struct scandir_result {
 	int n;
 };
 void free_scandir_result(struct scandir_result *);
+
+static inline bool is_bit_set_in_array(unsigned int bit, const uint64_t *arr)
+{
+	return arr[bit / 64] & (1ULL << (bit % 64)) ? 1 : 0;
+}
+
+static inline void set_bit_in_array(unsigned int bit, uint64_t *arr)
+{
+	arr[bit / 64] |= (1ULL << (bit % 64));
+}
+
+static inline void clear_bit_in_array(unsigned int bit, uint64_t *arr)
+{
+	arr[bit / 64] &= ~(1ULL << (bit % 64));
+}
 
 #endif /* _UTIL_H */

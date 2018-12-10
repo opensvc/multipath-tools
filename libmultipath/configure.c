@@ -1009,6 +1009,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 	vector pathvec = vecs->pathvec;
 	struct config *conf;
 	int allow_queueing;
+	uint64_t *size_mismatch_seen;
 
 	/* ignore refwwid if it's empty */
 	if (refwwid && !strlen(refwwid))
@@ -1019,6 +1020,14 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 			pp1->mpp = NULL;
 		}
 	}
+
+	if (VECTOR_SIZE(pathvec) == 0)
+		return 0;
+	size_mismatch_seen = calloc((VECTOR_SIZE(pathvec) - 1) / 64 + 1,
+				    sizeof(uint64_t));
+	if (size_mismatch_seen == NULL)
+		return 1;
+
 	vector_foreach_slot (pathvec, pp1, k) {
 		int invalid;
 		/* skip this path for some reason */
@@ -1038,8 +1047,8 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 			continue;
 		}
 
-		/* 2. if path already coalesced */
-		if (pp1->mpp)
+		/* 2. if path already coalesced, or seen and discarded */
+		if (pp1->mpp || is_bit_set_in_array(k, size_mismatch_seen))
 			continue;
 
 		/* 3. if path has disappeared */
@@ -1088,9 +1097,10 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 				 * ouch, avoid feeding that to the DM
 				 */
 				condlog(0, "%s: size %llu, expected %llu. "
-					"Discard", pp2->dev_t, pp2->size,
+					"Discard", pp2->dev, pp2->size,
 					mpp->size);
 				mpp->action = ACT_REJECT;
+				set_bit_in_array(i, size_mismatch_seen);
 			}
 		}
 		verify_paths(mpp, vecs);
@@ -1119,8 +1129,9 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 					"ignoring" : "removing");
 				remove_map(mpp, vecs, 0);
 				continue;
-			} else /* if (r == DOMAP_RETRY) */
-				return r;
+			} else /* if (r == DOMAP_RETRY && !is_daemon) */ {
+				goto out;
+			}
 		}
 		if (r == DOMAP_DRY)
 			continue;
@@ -1161,8 +1172,10 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 
 		if (newmp) {
 			if (mpp->action != ACT_REJECT) {
-				if (!vector_alloc_slot(newmp))
-					return 1;
+				if (!vector_alloc_slot(newmp)) {
+					r = 1;
+					goto out;
+				}
 				vector_set_slot(newmp, mpp);
 			}
 			else
@@ -1193,7 +1206,10 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 				condlog(2, "%s: remove (dead)", alias);
 		}
 	}
-	return 0;
+	r = 0;
+out:
+	free(size_mismatch_seen);
+	return r;
 }
 
 struct udev_device *get_udev_device(const char *dev, enum devtypes dev_type)
