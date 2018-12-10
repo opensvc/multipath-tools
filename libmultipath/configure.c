@@ -788,15 +788,6 @@ fail:
 	return 1;
 }
 
-/*
- * Return value:
- */
-#define DOMAP_RETRY	-1
-#define DOMAP_FAIL	0
-#define DOMAP_OK	1
-#define DOMAP_EXIST	2
-#define DOMAP_DRY	3
-
 int domap(struct multipath *mpp, char *params, int is_daemon)
 {
 	int r = DOMAP_FAIL;

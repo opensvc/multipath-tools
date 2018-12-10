@@ -893,7 +893,7 @@ int resize_map(struct multipath *mpp, unsigned long long size,
 	}
 	mpp->action = ACT_RESIZE;
 	mpp->force_udev_reload = 1;
-	if (domap(mpp, params, 1) <= 0) {
+	if (domap(mpp, params, 1) == DOMAP_FAIL) {
 		condlog(0, "%s: failed to resize map : %s", mpp->alias,
 			strerror(errno));
 		mpp->size = orig_size;

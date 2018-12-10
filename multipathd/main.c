@@ -497,7 +497,7 @@ retry:
 		retries = -1;
 		goto fail;
 	}
-	if (domap(mpp, params, 1) <= 0 && retries-- > 0) {
+	if (domap(mpp, params, 1) == DOMAP_FAIL && retries-- > 0) {
 		condlog(0, "%s: map_udate sleep", mpp->alias);
 		sleep(1);
 		goto retry;
@@ -995,8 +995,8 @@ rescan:
 	 */
 retry:
 	ret = domap(mpp, params, 1);
-	if (ret <= 0) {
-		if (ret < 0 && retries-- > 0) {
+	if (ret == DOMAP_FAIL || ret == DOMAP_RETRY) {
+		if (ret == DOMAP_RETRY && retries-- > 0) {
 			condlog(0, "%s: retry domap for addition of new "
 				"path %s", mpp->alias, pp->dev);
 			sleep(1);
@@ -1152,7 +1152,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 		 * reload the map
 		 */
 		mpp->action = ACT_RELOAD;
-		if (domap(mpp, params, 1) <= 0) {
+		if (domap(mpp, params, 1) == DOMAP_FAIL) {
 			condlog(0, "%s: failed in domap for "
 				"removal of path %s",
 				mpp->alias, pp->dev);
