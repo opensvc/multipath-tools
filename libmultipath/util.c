@@ -104,7 +104,7 @@ get_word (char * sentence, char ** word)
 	}
 	strncpy(*word, sentence, len);
 	strchop(*word);
-	condlog(4, "*word = %s, len = %i", *word, len);
+	condlog(5, "*word = %s, len = %i", *word, len);
 
 	if (*p == '\0')
 		return 0;
