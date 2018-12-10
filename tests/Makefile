@@ -26,7 +26,11 @@ hwtable-test_LIBDEPS := -ludev -lpthread -ldl
 blacklist-test_OBJDEPS := ../libmultipath/blacklist.o
 blacklist-test_LIBDEPS := -ludev
 
-%.out:	%-test
+lib/libchecktur.so:
+	mkdir lib
+	ln -t lib ../libmultipath/{checkers,prioritizers,foreign}/*.so
+
+%.out:	%-test lib/libchecktur.so
 	@echo == running $< ==
 	@LD_LIBRARY_PATH=$(multipathdir):$(mpathcmddir) ./$< >$@
 
@@ -34,6 +38,7 @@ OBJS = $(TESTS:%=%.o) test-lib.o
 
 clean: dep_clean
 	$(RM) $(TESTS:%=%-test) $(TESTS:%=%.out) $(OBJS)
+	$(RM) -rf lib
 
 .SECONDARY: $(OBJS)
 
