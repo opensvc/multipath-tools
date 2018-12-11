@@ -709,41 +709,44 @@ int dm_is_mpath(const char *name)
 	const char *uuid;
 
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
-		return -1;
+		goto out;
 
 	if (!dm_task_set_name(dmt, name))
-		goto out;
+		goto out_task;
 
 	dm_task_no_open_count(dmt);
 
 	if (!dm_task_run(dmt))
-		goto out;
+		goto out_task;
 
 	if (!dm_task_get_info(dmt, &info))
-		goto out;
+		goto out_task;
 
 	r = 0;
 
 	if (!info.exists)
-		goto out;
+		goto out_task;
 
 	uuid = dm_task_get_uuid(dmt);
 
 	if (!uuid || strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN) != 0)
-		goto out;
+		goto out_task;
 
 	/* Fetch 1st target */
 	if (dm_get_next_target(dmt, NULL, &start, &length, &target_type,
 			       &params) != NULL)
 		/* multiple targets */
-		goto out;
+		goto out_task;
 
 	if (!target_type || strcmp(target_type, TGT_MPATH) != 0)
-		goto out;
+		goto out_task;
 
 	r = 1;
-out:
+out_task:
 	dm_task_destroy(dmt);
+out:
+	if (r < 0)
+		condlog(2, "%s: dm command failed in %s", name, __FUNCTION__);
 	return r;
 }
 

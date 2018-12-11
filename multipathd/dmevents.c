@@ -206,7 +206,9 @@ int watch_dmevents(char *name)
 	struct dev_event *dev_evt, *old_dev_evt;
 	int i;
 
-	if (!dm_is_mpath(name)) {
+	/* We know that this is a multipath device, so only fail if
+	 * device-mapper tells us that we're wrong */
+	if (dm_is_mpath(name) == 0) {
 		condlog(0, "%s: not a multipath device. can't watch events",
 			name);
 		return -1;
