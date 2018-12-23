@@ -2271,6 +2271,7 @@ checkerloop (void *ap)
 	unsigned int i;
 	struct timespec last_time;
 	struct config *conf;
+	int foreign_tick = 0;
 
 	pthread_cleanup_push(rcu_unregister, NULL);
 	rcu_register_thread();
@@ -2368,7 +2369,15 @@ checkerloop (void *ap)
 						diff_time.tv_sec);
 			}
 		}
-		check_foreign();
+
+		if (foreign_tick == 0) {
+			conf = get_multipath_config();
+			foreign_tick = conf->max_checkint;
+			put_multipath_config(conf);
+		}
+		if (--foreign_tick == 0)
+			check_foreign();
+
 		post_config_state(DAEMON_IDLE);
 		conf = get_multipath_config();
 		strict_timing = conf->strict_timing;
