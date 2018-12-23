@@ -18,6 +18,7 @@
 #include "configure.h"
 #include "libdevmapper.h"
 #include "io_err_stat.h"
+#include "switchgroup.h"
 
 /*
  * creates or updates mpp->paths reading mpp->pg
@@ -261,6 +262,9 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 int
 update_multipath_strings(struct multipath *mpp, vector pathvec, int is_daemon)
 {
+	struct pathgroup *pgp;
+	int i;
+
 	if (!mpp)
 		return 1;
 
@@ -277,6 +281,10 @@ update_multipath_strings(struct multipath *mpp, vector pathvec, int is_daemon)
 
 	if (update_multipath_status(mpp))
 		return 1;
+
+	vector_foreach_slot(mpp->pg, pgp, i)
+		if (pgp->paths)
+			path_group_prio_update(pgp);
 
 	return 0;
 }
