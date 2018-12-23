@@ -204,12 +204,6 @@ nvme_pg_rel_paths(const struct gen_pathgroup *gpg, const struct _vector *v)
 	/* empty */
 }
 
-static int snprint_nvme_pg(const struct gen_pathgroup *gmp,
-			   char *buff, int len, char wildcard)
-{
-	return snprintf(buff, len, N_A);
-}
-
 static int snprint_hcil(const struct nvme_path *np, char *buf, int len)
 {
 	unsigned int nvmeid, ctlid, nsid;
@@ -249,6 +243,23 @@ static int snprint_nvme_path(const struct gen_path *gp,
 	case 'o':
 		sysfs_attr_get_value(np->ctl, "state", fld, sizeof(fld));
 		return snprintf(buff, len, "%s", fld);
+	case 'T':
+		if (sysfs_attr_get_value(np->udev, "ana_state", fld,
+					 sizeof(fld)) > 0)
+			return snprintf(buff, len, "%s", fld);
+		break;
+	case 'p':
+		if (sysfs_attr_get_value(np->udev, "ana_state", fld,
+					 sizeof(fld)) > 0) {
+			rstrip(fld);
+			if (!strcmp(fld, "optimized"))
+				return snprintf(buff, len, "%d", 50);
+			else if (!strcmp(fld, "non-optimized"))
+				return snprintf(buff, len, "%d", 10);
+			else
+				return snprintf(buff, len, "%d", 0);
+		}
+		break;
 	case 's':
 		snprintf(fld, sizeof(fld), "%s",
 			 udev_device_get_sysattr_value(np->ctl,
@@ -286,10 +297,28 @@ static int snprint_nvme_path(const struct gen_path *gp,
 					udev_device_get_sysname(pci));
 		/* fall through */
 	default:
-		return snprintf(buff, len, "%s", N_A);
 		break;
 	}
+	return snprintf(buff, len, "%s", N_A);
 	return 0;
+}
+
+static int snprint_nvme_pg(const struct gen_pathgroup *gmp,
+			   char *buff, int len, char wildcard)
+{
+	const struct nvme_pathgroup *pg = const_gen_pg_to_nvme(gmp);
+	const struct nvme_path *path = nvme_pg_to_path(pg);
+
+	switch (wildcard) {
+	case 't':
+		return snprint_nvme_path(nvme_path_to_gen(path),
+					 buff, len, 'T');
+	case 'p':
+		return snprint_nvme_path(nvme_path_to_gen(path),
+					 buff, len, 'p');
+	default:
+		return snprintf(buff, len, N_A);
+	}
 }
 
 static int nvme_style(const struct gen_multipath* gm,
