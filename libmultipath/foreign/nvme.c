@@ -148,10 +148,11 @@ static int snprint_nvme_map(const struct gen_multipath *gmp,
 		return snprintf(buff, len, "%s",
 				udev_device_get_sysname(nvm->udev));
 	case 'n':
-		return snprintf(buff, len, "%s:NQN:%s",
-				udev_device_get_sysname(nvm->subsys),
+		return snprintf(buff, len, "%s:nsid.%s",
 				udev_device_get_sysattr_value(nvm->subsys,
-							      "subsysnqn"));
+							      "subsysnqn"),
+				udev_device_get_sysattr_value(nvm->udev,
+							      "nsid"));
 	case 'w':
 		return snprintf(buff, len, "%s",
 				udev_device_get_sysattr_value(nvm->udev,
