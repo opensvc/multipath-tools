@@ -25,6 +25,7 @@ int safe_write(int fd, const void *buf, size_t count);
 void set_max_fds(int max_fds);
 
 #define KERNEL_VERSION(maj, min, ptc) ((((maj) * 256) + (min)) * 256 + (ptc))
+#define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
 
 #define safe_sprintf(var, format, args...)	\
 	snprintf(var, sizeof(var), format, ##args) >= sizeof(var)

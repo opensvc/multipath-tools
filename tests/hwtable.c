@@ -24,8 +24,8 @@
 #include "pgpolicies.h"
 #include "test-lib.h"
 #include "print.h"
+#include "util.h"
 
-#define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
 #define N_CONF_FILES 2
 
 static const char tmplate[] = "/tmp/hwtable-XXXXXX";
