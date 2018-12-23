@@ -1833,6 +1833,84 @@ int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
 	return 0;
 }
 
+static int check_path_reinstate_state(struct path * pp) {
+	struct timespec curr_time;
+	if (!((pp->mpp->san_path_err_threshold > 0) &&
+				(pp->mpp->san_path_err_forget_rate > 0) &&
+				(pp->mpp->san_path_err_recovery_time >0))) {
+		return 0;
+	}
+
+	if (pp->disable_reinstate) {
+		/* If we don't know how much time has passed, automatically
+		 * reinstate the path, just to be safe. Also, if there are
+		 * no other usable paths, reinstate the path
+		 */
+		if (clock_gettime(CLOCK_MONOTONIC, &curr_time) != 0 ||
+				pp->mpp->nr_active == 0) {
+			condlog(2, "%s : reinstating path early", pp->dev);
+			goto reinstate_path;
+		}
+		if ((curr_time.tv_sec - pp->dis_reinstate_time ) > pp->mpp->san_path_err_recovery_time) {
+			condlog(2,"%s : reinstate the path after err recovery time", pp->dev);
+			goto reinstate_path;
+		}
+		return 1;
+	}
+	/* forget errors on a working path */
+	if ((pp->state == PATH_UP || pp->state == PATH_GHOST) &&
+			pp->path_failures > 0) {
+		if (pp->san_path_err_forget_rate > 0){
+			pp->san_path_err_forget_rate--;
+		} else {
+			/* for every san_path_err_forget_rate number of
+			 * successful path checks decrement path_failures by 1
+			 */
+			pp->path_failures--;
+			pp->san_path_err_forget_rate = pp->mpp->san_path_err_forget_rate;
+		}
+		return 0;
+	}
+
+	/* If the path isn't recovering from a failed state, do nothing */
+	if (pp->state != PATH_DOWN && pp->state != PATH_SHAKY &&
+			pp->state != PATH_TIMEOUT)
+		return 0;
+
+	if (pp->path_failures == 0)
+		pp->san_path_err_forget_rate = pp->mpp->san_path_err_forget_rate;
+
+	pp->path_failures++;
+
+	/* if we don't know the currently time, we don't know how long to
+	 * delay the path, so there's no point in checking if we should
+	 */
+
+	if (clock_gettime(CLOCK_MONOTONIC, &curr_time) != 0)
+		return 0;
+	/* when path failures has exceeded the san_path_err_threshold
+	 * place the path in delayed state till san_path_err_recovery_time
+	 * so that the cutomer can rectify the issue within this time. After
+	 * the completion of san_path_err_recovery_time it should
+	 * automatically reinstate the path
+	 */
+	if (pp->path_failures > pp->mpp->san_path_err_threshold) {
+		condlog(2, "%s : hit error threshold. Delaying path reinstatement", pp->dev);
+		pp->dis_reinstate_time = curr_time.tv_sec;
+		pp->disable_reinstate = 1;
+
+		return 1;
+	} else {
+		return 0;
+	}
+
+reinstate_path:
+	pp->path_failures = 0;
+	pp->disable_reinstate = 0;
+	pp->san_path_err_forget_rate = 0;
+	return 0;
+}
+
 /*
  * Returns '1' if the path has been checked, '-1' if it was blacklisted
  * and '0' otherwise
@@ -1979,6 +2057,12 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	/* if update_multipath_strings orphaned the path, quit early */
 	if (!pp->mpp)
 		return 0;
+
+	if ((newstate == PATH_UP || newstate == PATH_GHOST) &&
+			check_path_reinstate_state(pp)) {
+		pp->state = PATH_DELAYED;
+		return 1;
+	}
 
 	if (pp->io_err_disable_reinstate && hit_io_err_recheck_time(pp)) {
 		pp->state = PATH_SHAKY;

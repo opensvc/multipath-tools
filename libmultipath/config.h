@@ -76,6 +76,9 @@ struct hwentry {
 	int deferred_remove;
 	int delay_watch_checks;
 	int delay_wait_checks;
+	int san_path_err_threshold;
+	int san_path_err_forget_rate;
+	int san_path_err_recovery_time;
 	int marginal_path_err_sample_time;
 	int marginal_path_err_rate_threshold;
 	int marginal_path_err_recheck_gap_time;
@@ -112,6 +115,9 @@ struct mpentry {
 	int deferred_remove;
 	int delay_watch_checks;
 	int delay_wait_checks;
+	int san_path_err_threshold;
+	int san_path_err_forget_rate;
+	int san_path_err_recovery_time;
 	int marginal_path_err_sample_time;
 	int marginal_path_err_rate_threshold;
 	int marginal_path_err_recheck_gap_time;
@@ -162,6 +168,9 @@ struct config {
 	int processed_main_config;
 	int delay_watch_checks;
 	int delay_wait_checks;
+	int san_path_err_threshold;
+	int san_path_err_forget_rate;
+	int san_path_err_recovery_time;
 	int marginal_path_err_sample_time;
 	int marginal_path_err_rate_threshold;
 	int marginal_path_err_recheck_gap_time;
