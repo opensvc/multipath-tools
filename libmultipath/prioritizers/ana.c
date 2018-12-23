@@ -17,155 +17,82 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <stdbool.h>
+#include <libudev.h>
 
 #include "debug.h"
+#include "nvme-lib.h"
 #include "prio.h"
+#include "util.h"
 #include "structs.h"
-#include "ana.h"
 
 enum {
-	ANA_PRIO_OPTIMIZED		= 50,
-	ANA_PRIO_NONOPTIMIZED		= 10,
-	ANA_PRIO_INACCESSIBLE		= 5,
-	ANA_PRIO_PERSISTENT_LOSS	= 1,
-	ANA_PRIO_CHANGE			= 0,
-	ANA_PRIO_RESERVED		= 0,
-	ANA_PRIO_GETCTRL_FAILED		= -1,
-	ANA_PRIO_NOT_SUPPORTED		= -2,
-	ANA_PRIO_GETANAS_FAILED		= -3,
-	ANA_PRIO_GETANALOG_FAILED	= -4,
-	ANA_PRIO_GETNSID_FAILED		= -5,
-	ANA_PRIO_GETNS_FAILED		= -6,
-	ANA_PRIO_NO_MEMORY		= -7,
-	ANA_PRIO_NO_INFORMATION		= -8,
+	ANA_ERR_GETCTRL_FAILED		= 1,
+	ANA_ERR_NOT_NVME,
+	ANA_ERR_NOT_SUPPORTED,
+	ANA_ERR_GETANAS_OVERFLOW,
+	ANA_ERR_GETANAS_NOTFOUND,
+	ANA_ERR_GETANALOG_FAILED,
+	ANA_ERR_GETNSID_FAILED,
+	ANA_ERR_GETNS_FAILED,
+	ANA_ERR_NO_MEMORY,
+	ANA_ERR_NO_INFORMATION,
 };
 
-static const char * anas_string[] = {
+static const char *ana_errmsg[] = {
+	[ANA_ERR_GETCTRL_FAILED]	= "couldn't get ctrl info",
+	[ANA_ERR_NOT_NVME]		= "not an NVMe device",
+	[ANA_ERR_NOT_SUPPORTED]		= "ANA not supported",
+	[ANA_ERR_GETANAS_OVERFLOW]	= "buffer overflow in ANA log",
+	[ANA_ERR_GETANAS_NOTFOUND]	= "NSID or ANAGRPID not found",
+	[ANA_ERR_GETANALOG_FAILED]	= "couldn't get ana log",
+	[ANA_ERR_GETNSID_FAILED]	= "couldn't get NSID",
+	[ANA_ERR_GETNS_FAILED]		= "couldn't get namespace info",
+	[ANA_ERR_NO_MEMORY]		= "out of memory",
+	[ANA_ERR_NO_INFORMATION]	= "invalid fd",
+};
+
+static const char *anas_string[] = {
 	[NVME_ANA_OPTIMIZED]			= "ANA Optimized State",
 	[NVME_ANA_NONOPTIMIZED]			= "ANA Non-Optimized State",
 	[NVME_ANA_INACCESSIBLE]			= "ANA Inaccessible State",
 	[NVME_ANA_PERSISTENT_LOSS]		= "ANA Persistent Loss State",
 	[NVME_ANA_CHANGE]			= "ANA Change state",
-	[NVME_ANA_RESERVED]			= "Invalid namespace group state!",
 };
 
 static const char *aas_print_string(int rc)
 {
 	rc &= 0xff;
-
-	switch(rc) {
-	case NVME_ANA_OPTIMIZED:
-	case NVME_ANA_NONOPTIMIZED:
-	case NVME_ANA_INACCESSIBLE:
-	case NVME_ANA_PERSISTENT_LOSS:
-	case NVME_ANA_CHANGE:
+	if (rc >= 0 && rc < ARRAY_SIZE(anas_string) &&
+	    anas_string[rc] != NULL)
 		return anas_string[rc];
-	default:
-		return anas_string[NVME_ANA_RESERVED];
-	}
 
-	return anas_string[NVME_ANA_RESERVED];
+	return "invalid ANA state";
 }
 
-static int nvme_get_nsid(int fd, unsigned *nsid)
+static int get_ana_state(__u32 nsid, __u32 anagrpid, void *ana_log,
+			 size_t ana_log_len)
 {
-	static struct stat nvme_stat;
-	int err = fstat(fd, &nvme_stat);
-	if (err < 0)
-		return 1;
-
-	if (!S_ISBLK(nvme_stat.st_mode)) {
-		condlog(0, "Error: requesting namespace-id from non-block device\n");
-		return 1;
-	}
-
-	*nsid = ioctl(fd, NVME_IOCTL_ID);
-	return 0;
-}
-
-static int nvme_submit_admin_passthru(int fd, struct nvme_passthru_cmd *cmd)
-{
-	return ioctl(fd, NVME_IOCTL_ADMIN_CMD, cmd);
-}
-
-int nvme_get_log13(int fd, __u32 nsid, __u8 log_id, __u8 lsp, __u64 lpo,
-                 __u16 lsi, bool rae, __u32 data_len, void *data)
-{
-	struct nvme_admin_cmd cmd = {
-		.opcode		= nvme_admin_get_log_page,
-		.nsid		= nsid,
-		.addr		= (__u64)(uintptr_t) data,
-		.data_len	= data_len,
-	};
-	__u32 numd = (data_len >> 2) - 1;
-	__u16 numdu = numd >> 16, numdl = numd & 0xffff;
-
-	cmd.cdw10 = log_id | (numdl << 16) | (rae ? 1 << 15 : 0);
-	if (lsp)
-		cmd.cdw10 |= lsp << 8;
-
-	cmd.cdw11 = numdu | (lsi << 16);
-	cmd.cdw12 = lpo;
-	cmd.cdw13 = (lpo >> 32);
-
-	return nvme_submit_admin_passthru(fd, &cmd);
-
-}
-
-int nvme_identify13(int fd, __u32 nsid, __u32 cdw10, __u32 cdw11, void *data)
-{
-	struct nvme_admin_cmd cmd = {
-		.opcode		= nvme_admin_identify,
-		.nsid		= nsid,
-		.addr		= (__u64)(uintptr_t) data,
-		.data_len	= NVME_IDENTIFY_DATA_SIZE,
-		.cdw10		= cdw10,
-		.cdw11		= cdw11,
-	};
-
-	return nvme_submit_admin_passthru(fd, &cmd);
-}
-
-int nvme_identify(int fd, __u32 nsid, __u32 cdw10, void *data)
-{
-	return nvme_identify13(fd, nsid, cdw10, 0, data);
-}
-
-int nvme_identify_ctrl(int fd, void *data)
-{
-	return nvme_identify(fd, 0, NVME_ID_CNS_CTRL, data);
-}
-
-int nvme_identify_ns(int fd, __u32 nsid, void *data)
-{
-	return nvme_identify(fd, nsid, NVME_ID_CNS_NS, data);
-}
-
-int nvme_ana_log(int fd, void *ana_log, size_t ana_log_len, int rgo)
-{
-	__u64 lpo = 0;
-
-	return nvme_get_log13(fd, NVME_NSID_ALL, NVME_LOG_ANA, rgo, lpo, 0,
-			true, ana_log_len, ana_log);
-}
-
-static int get_ana_state(__u32 nsid, __u32 anagrpid, void *ana_log)
-{
-	int	rc = ANA_PRIO_GETANAS_FAILED;
 	void *base = ana_log;
 	struct nvme_ana_rsp_hdr *hdr = base;
 	struct nvme_ana_group_desc *ana_desc;
-	int offset = sizeof(struct nvme_ana_rsp_hdr);
+	size_t offset = sizeof(struct nvme_ana_rsp_hdr);
 	__u32 nr_nsids;
 	size_t nsid_buf_size;
 	int i, j;
 
 	for (i = 0; i < le16_to_cpu(hdr->ngrps); i++) {
 		ana_desc = base + offset;
+
+		offset += sizeof(*ana_desc);
+		if (offset > ana_log_len)
+			return -ANA_ERR_GETANAS_OVERFLOW;
+
 		nr_nsids = le32_to_cpu(ana_desc->nnsids);
 		nsid_buf_size = nr_nsids * sizeof(__le32);
 
-		offset += sizeof(*ana_desc);
+		offset += nsid_buf_size;
+		if (offset > ana_log_len)
+			return -ANA_ERR_GETANAS_OVERFLOW;
 
 		for (j = 0; j < nr_nsids; j++) {
 			if (nsid == le32_to_cpu(ana_desc->nsids[j]))
@@ -173,12 +100,10 @@ static int get_ana_state(__u32 nsid, __u32 anagrpid, void *ana_log)
 		}
 
 		if (anagrpid != 0 && anagrpid == le32_to_cpu(ana_desc->grpid))
-			rc = ana_desc->state;
+			return ana_desc->state;
 
-		offset += nsid_buf_size;
 	}
-
-	return rc;
+	return -ANA_ERR_GETANAS_NOTFOUND;
 }
 
 int get_ana_info(struct path * pp, unsigned int timeout)
@@ -189,104 +114,121 @@ int get_ana_info(struct path * pp, unsigned int timeout)
 	struct nvme_id_ns ns;
 	void *ana_log;
 	size_t ana_log_len;
+	bool is_anagrpid_const;
 
 	rc = nvme_identify_ctrl(pp->fd, &ctrl);
-	if (rc)
-		return ANA_PRIO_GETCTRL_FAILED;
+	if (rc < 0) {
+		log_nvme_errcode(rc, pp->dev, "nvme_identify_ctrl");
+		return -ANA_ERR_GETCTRL_FAILED;
+	}
 
 	if(!(ctrl.cmic & (1 << 3)))
-		return ANA_PRIO_NOT_SUPPORTED;
+		return -ANA_ERR_NOT_SUPPORTED;
 
-	rc = nvme_get_nsid(pp->fd, &nsid);
-	if (rc)
-		return ANA_PRIO_GETNSID_FAILED;
+	nsid = nvme_get_nsid(pp->fd);
+	if (nsid <= 0) {
+		log_nvme_errcode(rc, pp->dev, "nvme_get_nsid");
+		return -ANA_ERR_GETNSID_FAILED;
+	}
+	is_anagrpid_const = ctrl.anacap & (1 << 6);
 
-	rc = nvme_identify_ns(pp->fd, nsid, &ns);
-	if (rc)
-		return ANA_PRIO_GETNS_FAILED;
-
+	/*
+	 * Code copied from nvme-cli/nvme.c. We don't need to allocate an
+	 * [nanagrpid*mnan] array of NSIDs because each NSID can occur at most
+	 * in one ANA group.
+	 */
 	ana_log_len = sizeof(struct nvme_ana_rsp_hdr) +
-		le32_to_cpu(ctrl.nanagrpid) * sizeof(struct nvme_ana_group_desc);
-	if (!(ctrl.anacap & (1 << 6)))
+		le32_to_cpu(ctrl.nanagrpid)
+		* sizeof(struct nvme_ana_group_desc);
+
+	if (is_anagrpid_const) {
+		rc = nvme_identify_ns(pp->fd, nsid, 0, &ns);
+		if (rc) {
+			log_nvme_errcode(rc, pp->dev, "nvme_identify_ns");
+			return -ANA_ERR_GETNS_FAILED;
+		}
+	} else
 		ana_log_len += le32_to_cpu(ctrl.mnan) * sizeof(__le32);
 
 	ana_log = malloc(ana_log_len);
 	if (!ana_log)
-		return ANA_PRIO_NO_MEMORY;
-
+		return -ANA_ERR_NO_MEMORY;
+	pthread_cleanup_push(free, ana_log);
 	rc = nvme_ana_log(pp->fd, ana_log, ana_log_len,
-		(ctrl.anacap & (1 << 6)) ? NVME_ANA_LOG_RGO : 0);
+			  is_anagrpid_const ? NVME_ANA_LOG_RGO : 0);
 	if (rc) {
-		free(ana_log);
-		return ANA_PRIO_GETANALOG_FAILED;
-	}
-
-	rc = get_ana_state(nsid, le32_to_cpu(ns.anagrpid), ana_log);
-	if (rc < 0){
-		free(ana_log);
-		return ANA_PRIO_GETANAS_FAILED;
-	}
-
-	free(ana_log);
-	condlog(3, "%s: ana state = %02x [%s]", pp->dev, rc, aas_print_string(rc));
-
+		log_nvme_errcode(rc, pp->dev, "nvme_ana_log");
+		rc = -ANA_ERR_GETANALOG_FAILED;
+	} else
+		rc = get_ana_state(nsid,
+				   is_anagrpid_const ?
+				   le32_to_cpu(ns.anagrpid) : 0,
+				   ana_log, ana_log_len);
+	pthread_cleanup_pop(1);
+	if (rc >= 0)
+		condlog(3, "%s: ana state = %02x [%s]", pp->dev, rc,
+			aas_print_string(rc));
 	return rc;
 }
 
-int getprio(struct path * pp, char * args, unsigned int timeout)
+/*
+ * Priorities modeled roughly after the ALUA model (alua.c/sysfs.c)
+ * Reference: ANA Base Protocol (NVMe TP 4004a, 11/13/2018).
+ *
+ * Differences:
+ *
+ * - The ANA base spec defines no implicit or explicit (STPG) state management.
+ *   If a state is encountered that doesn't allow normal I/O (all except
+ *   OPTIMIZED and NON_OPTIMIZED), we can't do anything but either wait for a
+ *   Access State Change Notice (can't do that in multipathd as we don't receive
+ *   those), or retry commands in regular time intervals until ANATT is expired
+ *   (not implemented). Mapping UNAVAILABLE state to ALUA STANDBY is the best we
+ *   can currently do.
+ *
+ *   FIXME: Waiting for ANATT could be implemented with a "delayed failback"
+ *   mechanism. The current "failback" method can't be used, as it would
+ *   affect failback to every state, and here only failback to UNAVAILABLE
+ *   should be delayed.
+ *
+ * - PERSISTENT_LOSS state is even below ALUA's UNAVAILABLE state.
+ *   FIXME: According to the ANA TP, accessing paths in PERSISTENT_LOSS state
+ *   in any way makes no sense (e.g. §8.19.6 - paths in this state shouldn't
+ *   even be checked under "all paths down" conditions). Device mapper can,
+ *   and will, select a PG for IO if it has non-failed paths, even if the
+ *   PG has priority 0. We could avoid that only with an "ANA path checker".
+ *
+ * - ALUA has no CHANGE state. The ANA TP §8.18.3 / §8.19.4 suggests
+ *   that CHANGE state should be treated in roughly the same way as
+ *   INACCESSIBLE. Therefore we assign the same prio to it.
+ *
+ * - ALUA's LBA-dependent state has no ANA equivalent.
+ */
+
+int getprio(struct path *pp, char *args, unsigned int timeout)
 {
 	int rc;
 
 	if (pp->fd < 0)
-		return ANA_PRIO_NO_INFORMATION;
+		rc = -ANA_ERR_NO_INFORMATION;
+	else
+		rc = get_ana_info(pp, timeout);
 
-	rc = get_ana_info(pp, timeout);
-	if (rc >= 0) {
-		rc &= 0x0f;
-		switch(rc) {
-		case NVME_ANA_OPTIMIZED:
-			rc = ANA_PRIO_OPTIMIZED;
-			break;
-		case NVME_ANA_NONOPTIMIZED:
-			rc = ANA_PRIO_NONOPTIMIZED;
-			break;
-		case NVME_ANA_INACCESSIBLE:
-			rc = ANA_PRIO_INACCESSIBLE;
-			break;
-		case NVME_ANA_PERSISTENT_LOSS:
-			rc = ANA_PRIO_PERSISTENT_LOSS;
-			break;
-		case NVME_ANA_CHANGE:
-			rc = ANA_PRIO_CHANGE;
-			break;
-		default:
-			rc = ANA_PRIO_RESERVED;
-		}
-	} else {
-		switch(rc) {
-		case ANA_PRIO_GETCTRL_FAILED:
-			condlog(0, "%s: couldn't get ctrl info", pp->dev);
-			break;
-		case ANA_PRIO_NOT_SUPPORTED:
-			condlog(0, "%s: ana not supported", pp->dev);
-			break;
-		case ANA_PRIO_GETANAS_FAILED:
-			condlog(0, "%s: couldn't get ana state", pp->dev);
-			break;
-		case ANA_PRIO_GETANALOG_FAILED:
-			condlog(0, "%s: couldn't get ana log", pp->dev);
-			break;
-		case ANA_PRIO_GETNS_FAILED:
-			condlog(0, "%s: couldn't get namespace", pp->dev);
-			break;
-		case ANA_PRIO_GETNSID_FAILED:
-			condlog(0, "%s: couldn't get namespace id", pp->dev);
-			break;
-		case ANA_PRIO_NO_MEMORY:
-			condlog(0, "%s: couldn't alloc memory", pp->dev);
-			break;
-		}
+	switch (rc) {
+	case NVME_ANA_OPTIMIZED:
+		return 50;
+	case NVME_ANA_NONOPTIMIZED:
+		return 10;
+	case NVME_ANA_INACCESSIBLE:
+	case NVME_ANA_CHANGE:
+		return 1;
+	case NVME_ANA_PERSISTENT_LOSS:
+		return 0;
+	default:
+		break;
 	}
-	return rc;
+	if (rc < 0 && -rc < ARRAY_SIZE(ana_errmsg))
+		condlog(2, "%s: ANA error: %s", pp->dev, ana_errmsg[-rc]);
+	else
+		condlog(1, "%s: invalid ANA rc code %d", pp->dev, rc);
+	return -1;
 }
-
