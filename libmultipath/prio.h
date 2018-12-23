@@ -30,6 +30,7 @@ struct path;
 #define PRIO_WEIGHTED_PATH	"weightedpath"
 #define PRIO_SYSFS		"sysfs"
 #define PRIO_PATH_LATENCY	"path_latency"
+#define PRIO_ANA		"ana"
 
 /*
  * Value used to mark the fact prio was not defined
