@@ -309,13 +309,13 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 	select_deferred_remove(conf, mpp);
 	select_delay_watch_checks(conf, mpp);
 	select_delay_wait_checks(conf, mpp);
-	select_san_path_err_threshold(conf, mpp);
-	select_san_path_err_forget_rate(conf, mpp);
-	select_san_path_err_recovery_time(conf, mpp);
 	select_marginal_path_err_sample_time(conf, mpp);
 	select_marginal_path_err_rate_threshold(conf, mpp);
 	select_marginal_path_err_recheck_gap_time(conf, mpp);
 	select_marginal_path_double_failed_time(conf, mpp);
+	select_san_path_err_threshold(conf, mpp);
+	select_san_path_err_forget_rate(conf, mpp);
+	select_san_path_err_recovery_time(conf, mpp);
 	select_skip_kpartx(conf, mpp);
 	select_max_sectors_kb(conf, mpp);
 	select_ghost_delay(conf, mpp);
@@ -324,11 +324,21 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 	sysfs_set_scsi_tmo(mpp, conf->checkint);
 	pthread_cleanup_pop(1);
 
-	if (mpp->marginal_path_double_failed_time > 0 &&
-	    mpp->marginal_path_err_sample_time > 0 &&
-	    mpp->marginal_path_err_recheck_gap_time > 0 &&
-	    mpp->marginal_path_err_rate_threshold >= 0)
+	if (marginal_path_check_enabled(mpp)) {
+		if (delay_check_enabled(mpp)) {
+			condlog(1, "%s: WARNING: both marginal_path and delay_checks error detection selected",
+				mpp->alias);
+			condlog(0, "%s: unexpected behavior may occur!",
+				mpp->alias);
+		}
 		start_io_err_stat_thread(vecs);
+	}
+	if (san_path_check_enabled(mpp) && delay_check_enabled(mpp)) {
+		condlog(1, "%s: WARNING: both san_path_err and delay_checks error detection selected",
+			mpp->alias);
+		condlog(0, "%s: unexpected behavior may occur!",
+			mpp->alias);
+	}
 	/*
 	 * assign paths to path groups -- start with no groups and all paths
 	 * in mpp->paths

@@ -74,6 +74,8 @@ static const char cmdline_origin[] =
 	"(setting: multipath command line [-p] flag)";
 static const char autodetect_origin[] =
 	"(setting: storage device autodetected)";
+static const char marginal_path_origin[] =
+	"(setting: implied by marginal_path check)";
 
 #define do_default(dest, value)						\
 do {									\
@@ -879,20 +881,37 @@ out:
 
 }
 
+static int san_path_deprecated_warned;
+#define warn_san_path_deprecated(v, x)					\
+	do {								\
+		if (v->x > 0 && !san_path_deprecated_warned) {		\
+		san_path_deprecated_warned = 1;				\
+		condlog(1, "WARNING: option %s is deprecated, "		\
+			"please use marginal_path options instead",	\
+			#x);						\
+		}							\
+	} while(0)
+
 int select_san_path_err_threshold(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
 	char buff[12];
 
+	if (marginal_path_check_enabled(mp)) {
+		mp->san_path_err_threshold = NU_NO;
+		origin = marginal_path_origin;
+		goto out;
+	}
 	mp_set_mpe(san_path_err_threshold);
 	mp_set_ovr(san_path_err_threshold);
 	mp_set_hwe(san_path_err_threshold);
 	mp_set_conf(san_path_err_threshold);
 	mp_set_default(san_path_err_threshold, DEFAULT_ERR_CHECKS);
 out:
-	print_off_int_undef(buff, 12, mp->san_path_err_threshold);
-	condlog(3, "%s: san_path_err_threshold = %s %s", mp->alias, buff,
-		origin);
+	if (print_off_int_undef(buff, 12, mp->san_path_err_threshold) != 0)
+		condlog(3, "%s: san_path_err_threshold = %s %s",
+			mp->alias, buff, origin);
+	warn_san_path_deprecated(mp, san_path_err_threshold);
 	return 0;
 }
 
@@ -901,15 +920,21 @@ int select_san_path_err_forget_rate(struct config *conf, struct multipath *mp)
 	const char *origin;
 	char buff[12];
 
+	if (marginal_path_check_enabled(mp)) {
+		mp->san_path_err_forget_rate = NU_NO;
+		origin = marginal_path_origin;
+		goto out;
+	}
 	mp_set_mpe(san_path_err_forget_rate);
 	mp_set_ovr(san_path_err_forget_rate);
 	mp_set_hwe(san_path_err_forget_rate);
 	mp_set_conf(san_path_err_forget_rate);
 	mp_set_default(san_path_err_forget_rate, DEFAULT_ERR_CHECKS);
 out:
-	print_off_int_undef(buff, 12, mp->san_path_err_forget_rate);
-	condlog(3, "%s: san_path_err_forget_rate = %s %s", mp->alias,
-		buff, origin);
+	if (print_off_int_undef(buff, 12, mp->san_path_err_forget_rate) != 0)
+		condlog(3, "%s: san_path_err_forget_rate = %s %s", mp->alias,
+			buff, origin);
+	warn_san_path_deprecated(mp, san_path_err_forget_rate);
 	return 0;
 
 }
@@ -919,15 +944,21 @@ int select_san_path_err_recovery_time(struct config *conf, struct multipath *mp)
 	const char *origin;
 	char buff[12];
 
+	if (marginal_path_check_enabled(mp)) {
+		mp->san_path_err_recovery_time = NU_NO;
+		origin = marginal_path_origin;
+		goto out;
+	}
 	mp_set_mpe(san_path_err_recovery_time);
 	mp_set_ovr(san_path_err_recovery_time);
 	mp_set_hwe(san_path_err_recovery_time);
 	mp_set_conf(san_path_err_recovery_time);
 	mp_set_default(san_path_err_recovery_time, DEFAULT_ERR_CHECKS);
 out:
-	print_off_int_undef(buff, 12, mp->san_path_err_recovery_time);
-	condlog(3, "%s: san_path_err_recovery_time = %s %s", mp->alias,
-		buff, origin);
+	if (print_off_int_undef(buff, 12, mp->san_path_err_recovery_time) != 0)
+		condlog(3, "%s: san_path_err_recovery_time = %s %s", mp->alias,
+			buff, origin);
+	warn_san_path_deprecated(mp, san_path_err_recovery_time);
 	return 0;
 
 }

@@ -377,6 +377,27 @@ struct multipath {
 	struct gen_multipath generic_mp;
 };
 
+static inline int marginal_path_check_enabled(const struct multipath *mpp)
+{
+	return mpp->marginal_path_double_failed_time > 0 &&
+		mpp->marginal_path_err_sample_time > 0 &&
+		mpp->marginal_path_err_recheck_gap_time > 0 &&
+		mpp->marginal_path_err_rate_threshold >= 0;
+}
+
+static inline int san_path_check_enabled(const struct multipath *mpp)
+{
+	return mpp->san_path_err_threshold > 0 &&
+		mpp->san_path_err_forget_rate > 0 &&
+		mpp->san_path_err_recovery_time > 0;
+}
+
+static inline int delay_check_enabled(const struct multipath *mpp)
+{
+	return mpp->delay_watch_checks != NU_NO ||
+		mpp->delay_wait_checks != NU_NO;
+}
+
 struct pathgroup {
 	long id;
 	int status;
