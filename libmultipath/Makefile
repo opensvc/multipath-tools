@@ -45,7 +45,22 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
 	lock.o file.o wwids.o prioritizers/alua_rtpg.o prkey.o \
 	io_err_stat.o dm-generic.o generic.o foreign.o
 
+ifneq ($(call check_file,/usr/include/linux/nvme_ioctl.h),0)
+	OBJS += nvme-lib.o
+endif
+
 all: $(LIBS)
+
+nvme-lib.o: nvme-lib.c nvme-ioctl.c nvme-ioctl.h
+	$(CC) $(CFLAGS) -Wno-unused-function -I. -Invme -c -o $@ $<
+
+make_static = $(shell sed '/^static/!s/^\([a-z]\{1,\} \)/static \1/' <$1 >$2)
+
+nvme-ioctl.c: nvme/nvme-ioctl.c
+	$(call make_static,$<,$@)
+
+nvme-ioctl.h: nvme/nvme-ioctl.h
+	$(call make_static,$<,$@)
 
 $(LIBS): $(OBJS)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS)
@@ -62,7 +77,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 clean: dep_clean
-	$(RM) core *.a *.o *.so *.so.* *.gz
+	$(RM) core *.a *.o *.so *.so.* *.gz nvme-ioctl.c nvme-ioctl.h
 
 include $(wildcard $(OBJS:.o=.d))
 
