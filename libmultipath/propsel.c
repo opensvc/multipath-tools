@@ -855,8 +855,9 @@ int select_delay_watch_checks(struct config *conf, struct multipath *mp)
 	mp_set_conf(delay_watch_checks);
 	mp_set_default(delay_watch_checks, DEFAULT_DELAY_CHECKS);
 out:
-	print_off_int_undef(buff, 12, mp->delay_watch_checks);
-	condlog(3, "%s: delay_watch_checks = %s %s", mp->alias, buff, origin);
+	if (print_off_int_undef(buff, 12, mp->delay_watch_checks) != 0)
+		condlog(3, "%s: delay_watch_checks = %s %s",
+			mp->alias, buff, origin);
 	return 0;
 }
 
@@ -871,8 +872,9 @@ int select_delay_wait_checks(struct config *conf, struct multipath *mp)
 	mp_set_conf(delay_wait_checks);
 	mp_set_default(delay_wait_checks, DEFAULT_DELAY_CHECKS);
 out:
-	print_off_int_undef(buff, 12, mp->delay_wait_checks);
-	condlog(3, "%s: delay_wait_checks = %s %s", mp->alias, buff, origin);
+	if (print_off_int_undef(buff, 12, mp->delay_wait_checks) != 0)
+		condlog(3, "%s: delay_wait_checks = %s %s",
+			mp->alias, buff, origin);
 	return 0;
 
 }
@@ -888,9 +890,10 @@ int select_marginal_path_err_sample_time(struct config *conf, struct multipath *
 	mp_set_conf(marginal_path_err_sample_time);
 	mp_set_default(marginal_path_err_sample_time, DEFAULT_ERR_CHECKS);
 out:
-	print_off_int_undef(buff, 12, mp->marginal_path_err_sample_time);
-	condlog(3, "%s: marginal_path_err_sample_time = %s %s", mp->alias, buff,
-			origin);
+	if (print_off_int_undef(buff, 12, mp->marginal_path_err_sample_time)
+	    != 0)
+		condlog(3, "%s: marginal_path_err_sample_time = %s %s",
+			mp->alias, buff, origin);
 	return 0;
 }
 
@@ -905,9 +908,10 @@ int select_marginal_path_err_rate_threshold(struct config *conf, struct multipat
 	mp_set_conf(marginal_path_err_rate_threshold);
 	mp_set_default(marginal_path_err_rate_threshold, DEFAULT_ERR_CHECKS);
 out:
-	print_off_int_undef(buff, 12, mp->marginal_path_err_rate_threshold);
-	condlog(3, "%s: marginal_path_err_rate_threshold = %s %s", mp->alias, buff,
-			origin);
+	if (print_off_int_undef(buff, 12, mp->marginal_path_err_rate_threshold)
+	    != 0)
+		condlog(3, "%s: marginal_path_err_rate_threshold = %s %s",
+			mp->alias, buff, origin);
 	return 0;
 }
 
@@ -922,9 +926,10 @@ int select_marginal_path_err_recheck_gap_time(struct config *conf, struct multip
 	mp_set_conf(marginal_path_err_recheck_gap_time);
 	mp_set_default(marginal_path_err_recheck_gap_time, DEFAULT_ERR_CHECKS);
 out:
-	print_off_int_undef(buff, 12, mp->marginal_path_err_recheck_gap_time);
-	condlog(3, "%s: marginal_path_err_recheck_gap_time = %s %s", mp->alias, buff,
-			origin);
+	if (print_off_int_undef(buff, 12,
+				mp->marginal_path_err_recheck_gap_time) != 0)
+		condlog(3, "%s: marginal_path_err_recheck_gap_time = %s %s",
+			mp->alias, buff, origin);
 	return 0;
 }
 
@@ -939,9 +944,10 @@ int select_marginal_path_double_failed_time(struct config *conf, struct multipat
 	mp_set_conf(marginal_path_double_failed_time);
 	mp_set_default(marginal_path_double_failed_time, DEFAULT_ERR_CHECKS);
 out:
-	print_off_int_undef(buff, 12, mp->marginal_path_double_failed_time);
-	condlog(3, "%s: marginal_path_double_failed_time = %s %s", mp->alias, buff,
-			origin);
+	if (print_off_int_undef(buff, 12, mp->marginal_path_double_failed_time)
+	    != 0)
+		condlog(3, "%s: marginal_path_double_failed_time = %s %s",
+			mp->alias, buff, origin);
 	return 0;
 }
 
@@ -993,8 +999,8 @@ int select_ghost_delay (struct config *conf, struct multipath * mp)
 	mp_set_conf(ghost_delay);
 	mp_set_default(ghost_delay, DEFAULT_GHOST_DELAY);
 out:
-	print_off_int_undef(buff, 12, mp->ghost_delay);
-	condlog(3, "%s: ghost_delay = %s %s", mp->alias, buff, origin);
+	if (print_off_int_undef(buff, 12, mp->ghost_delay) != 0)
+		condlog(3, "%s: ghost_delay = %s %s", mp->alias, buff, origin);
 	return 0;
 }
 
