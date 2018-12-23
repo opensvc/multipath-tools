@@ -15,6 +15,8 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "nvme-lib.h"
+#include <sys/types.h>
 #include <sys/sysmacros.h>
 #include <libudev.h>
 #include <stdio.h>
@@ -27,6 +29,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include "util.h"
 #include "vector.h"
 #include "generic.h"
@@ -65,6 +68,7 @@ struct nvme_map {
 	dev_t devt;
 	struct _vector pgvec;
 	int nr_live;
+	int ana_supported;
 };
 
 #define NAME_LEN 64 /* buffer length for temp attributes */
@@ -183,11 +187,14 @@ static int snprint_nvme_map(const struct gen_multipath *gmp,
 			return snprintf(buff, len, "%s", "rw");
 	case 'G':
 		return snprintf(buff, len, "%s", THIS);
+	case 'h':
+		if (nvm->ana_supported == YNU_YES)
+			return snprintf(buff, len, "ANA");
 	default:
-		return snprintf(buff, len, N_A);
 		break;
 	}
-	return 0;
+
+	return snprintf(buff, len, N_A);
 }
 
 static const struct _vector*
@@ -567,6 +574,40 @@ out:
 	return blkdev;
 }
 
+static void test_ana_support(struct nvme_map *map, struct udev_device *ctl)
+{
+	const char *dev_t;
+	char sys_path[64];
+	long fd;
+	int rc;
+
+	if (map->ana_supported != YNU_UNDEF)
+		return;
+
+	dev_t = udev_device_get_sysattr_value(ctl, "dev");
+	if (snprintf(sys_path, sizeof(sys_path), "/dev/char/%s", dev_t)
+	    >= sizeof(sys_path))
+		return;
+
+	fd = open(sys_path, O_RDONLY);
+	if (fd == -1) {
+		condlog(2, "%s: error opening %s", __func__, sys_path);
+		return;
+	}
+
+	pthread_cleanup_push(close_fd, (void *)fd);
+	rc = nvme_id_ctrl_ana(fd, NULL);
+	if (rc < 0)
+		condlog(2, "%s: error in nvme_id_ctrl: %s", __func__,
+			strerror(errno));
+	else {
+		map->ana_supported = (rc == 1 ? YNU_YES : YNU_NO);
+		condlog(3, "%s: NVMe ctrl %s: ANA %s supported", __func__, dev_t,
+			rc == 1 ? "is" : "is not");
+	}
+	pthread_cleanup_pop(1);
+}
+
 static void _find_controllers(struct context *ctx, struct nvme_map *map)
 {
 	char pathbuf[PATH_MAX], realbuf[PATH_MAX];
@@ -670,6 +711,8 @@ static void _find_controllers(struct context *ctx, struct nvme_map *map)
 			cleanup_nvme_path(path);
 			continue;
 		}
+		test_ana_support(map, path->ctl);
+
 		path->pg.gen.ops = &nvme_pg_ops;
 		if (vector_alloc_slot(&path->pg.pathvec) == NULL) {
 			cleanup_nvme_path(path);
