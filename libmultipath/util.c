@@ -506,3 +506,8 @@ void free_scandir_result(struct scandir_result *res)
 		FREE(res->di[i]);
 	FREE(res->di);
 }
+
+void close_fd(void *arg)
+{
+	close((long)arg);
+}

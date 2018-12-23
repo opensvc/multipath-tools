@@ -35,6 +35,8 @@ void set_max_fds(int max_fds);
 #define pthread_cleanup_push_cast(f, arg)		\
 	pthread_cleanup_push(((void (*)(void *))&f), (arg))
 
+void close_fd(void *arg);
+
 struct scandir_result {
 	struct dirent **di;
 	int n;

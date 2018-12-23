@@ -388,10 +388,6 @@ enum {
 };
 
 static const char shm_find_mp_dir[] = MULTIPATH_SHM_BASE "find_multipaths";
-static void close_fd(void *arg)
-{
-	close((long)arg);
-}
 
 /**
  * find_multipaths_check_timeout(wwid, tmo)
