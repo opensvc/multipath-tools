@@ -34,3 +34,16 @@ int libmp_nvme_ana_log(int fd, void *ana_log, size_t ana_log_len, int rgo)
 {
 	return nvme_ana_log(fd, ana_log, ana_log_len, rgo);
 }
+
+int nvme_id_ctrl_ana(int fd, struct nvme_id_ctrl *ctrl)
+{
+	int rc;
+	struct nvme_id_ctrl c;
+
+	rc = nvme_identify_ctrl(fd, &c);
+	if (rc < 0)
+		return rc;
+	if (ctrl)
+		*ctrl = c;
+	return c.cmic & (1 << 3) ? 1 : 0;
+}

@@ -47,6 +47,7 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
 
 ifneq ($(call check_file,/usr/include/linux/nvme_ioctl.h),0)
 	OBJS += nvme-lib.o
+	CFLAGS += -Invme
 endif
 
 all: $(LIBS)

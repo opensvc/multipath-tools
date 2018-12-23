@@ -9,6 +9,12 @@ int libmp_nvme_identify_ctrl(int fd, struct nvme_id_ctrl *ctrl);
 int libmp_nvme_identify_ns(int fd, __u32 nsid, bool present,
 			   struct nvme_id_ns *ns);
 int libmp_nvme_ana_log(int fd, void *ana_log, size_t ana_log_len, int rgo);
+/*
+ * Identify controller, and return true if ANA is supported
+ * ctrl will be filled in if controller is identified, even w/o ANA
+ * ctrl may be NULL
+ */
+int nvme_id_ctrl_ana(int fd, struct nvme_id_ctrl *ctrl);
 
 #ifndef _NVME_LIB_C
 /*

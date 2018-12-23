@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 
+#include "nvme-lib.h"
 #include "checkers.h"
 #include "memory.h"
 #include "vector.h"
@@ -550,13 +551,25 @@ detect_prio(struct config *conf, struct path * pp)
 {
 	struct prio *p = &pp->prio;
 	char buff[512];
-	char *default_prio = PRIO_ALUA;
+	char *default_prio;
 
-	if (pp->tpgs <= 0)
-		return;
-	if (pp->tpgs == 2 || !check_rdac(pp)) {
-		if (sysfs_get_asymmetric_access_state(pp, buff, 512) >= 0)
+	switch(pp->bus) {
+	case SYSFS_BUS_NVME:
+		if (nvme_id_ctrl_ana(pp->fd, NULL) == 0)
+			return;
+		default_prio = PRIO_ANA;
+		break;
+	case SYSFS_BUS_SCSI:
+		if (pp->tpgs <= 0)
+			return;
+		if ((pp->tpgs == 2 || !check_rdac(pp)) &&
+		    sysfs_get_asymmetric_access_state(pp, buff, 512) >= 0)
 			default_prio = PRIO_SYSFS;
+		else
+			default_prio = PRIO_ALUA;
+		break;
+	default:
+		return;
 	}
 	prio_get(conf->multipath_dir, p, default_prio, DEFAULT_PRIO_ARGS);
 }

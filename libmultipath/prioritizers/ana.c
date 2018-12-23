@@ -116,13 +116,11 @@ int get_ana_info(struct path * pp, unsigned int timeout)
 	size_t ana_log_len;
 	bool is_anagrpid_const;
 
-	rc = nvme_identify_ctrl(pp->fd, &ctrl);
+	rc = nvme_id_ctrl_ana(pp->fd, &ctrl);
 	if (rc < 0) {
 		log_nvme_errcode(rc, pp->dev, "nvme_identify_ctrl");
 		return -ANA_ERR_GETCTRL_FAILED;
-	}
-
-	if(!(ctrl.cmic & (1 << 3)))
+	} else if (rc == 0)
 		return -ANA_ERR_NOT_SUPPORTED;
 
 	nsid = nvme_get_nsid(pp->fd);
