@@ -3073,22 +3073,23 @@ child (__attribute__((unused)) void *param)
 		}
 	}
 
-	lock(&vecs->lock);
-	conf = get_multipath_config();
-	queue_without_daemon = conf->queue_without_daemon;
-	put_multipath_config(conf);
-	if (queue_without_daemon == QUE_NO_DAEMON_OFF)
-		vector_foreach_slot(vecs->mpvec, mpp, i)
-			dm_queue_if_no_path(mpp->alias, 0);
-	remove_maps_and_stop_waiters(vecs);
-	unlock(&vecs->lock);
-
 	pthread_cancel(check_thr);
 	pthread_cancel(uevent_thr);
 	pthread_cancel(uxlsnr_thr);
 	pthread_cancel(uevq_thr);
 	if (poll_dmevents)
 		pthread_cancel(dmevent_thr);
+
+	conf = get_multipath_config();
+	queue_without_daemon = conf->queue_without_daemon;
+	put_multipath_config(conf);
+
+	lock(&vecs->lock);
+	if (queue_without_daemon == QUE_NO_DAEMON_OFF)
+		vector_foreach_slot(vecs->mpvec, mpp, i)
+			dm_queue_if_no_path(mpp->alias, 0);
+	remove_maps_and_stop_waiters(vecs);
+	unlock(&vecs->lock);
 
 	pthread_join(check_thr, NULL);
 	pthread_join(uevent_thr, NULL);
