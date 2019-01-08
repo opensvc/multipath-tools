@@ -190,7 +190,7 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 		memcpy (&vlabel, data, sizeof(vlabel));
 	else {
 		bzero(&vlabel,4);
-		memcpy (&vlabel.vollbl, data, sizeof(vlabel) - 4);
+		memcpy ((char *)&vlabel + 4, data, sizeof(vlabel) - 4);
 	}
 	vtoc_ebcdic_dec(vlabel.vollbl, type, 4);
 
