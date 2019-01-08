@@ -520,7 +520,7 @@ sysfs_get_asymmetric_access_state(struct path *pp, char *buff, int buflen)
 		/* Parse error, ignore */
 		return 0;
 	}
-	return  preferred;
+	return !!preferred;
 }
 
 static void
