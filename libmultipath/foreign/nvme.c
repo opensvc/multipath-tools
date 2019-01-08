@@ -249,8 +249,10 @@ static int snprint_nvme_path(const struct gen_path *gp,
 		devt = udev_device_get_devnum(np->udev);
 		return snprintf(buff, len, "%u:%u", major(devt), minor(devt));
 	case 'o':
-		sysfs_attr_get_value(np->ctl, "state", fld, sizeof(fld));
-		return snprintf(buff, len, "%s", fld);
+		if (sysfs_attr_get_value(np->ctl, "state",
+					 fld, sizeof(fld)) > 0)
+			return snprintf(buff, len, "%s", fld);
+		break;
 	case 'T':
 		if (sysfs_attr_get_value(np->udev, "ana_state", fld,
 					 sizeof(fld)) > 0)
