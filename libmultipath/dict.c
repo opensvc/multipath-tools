@@ -327,7 +327,7 @@ def_find_multipaths_handler(struct config *conf, vector strvec)
 	int i;
 
 	if (set_yes_no_undef(strvec, &conf->find_multipaths) == 0 &&
-	    conf->find_multipaths != YNU_UNDEF)
+	    conf->find_multipaths != FIND_MULTIPATHS_UNDEF)
 		return 0;
 
 	buff = set_value(strvec);
