@@ -346,6 +346,8 @@ cli_list_path (void * v, char ** reply, int * len, void * data)
 	condlog(3, "%s: list path (operator)", param);
 
 	pp = find_path_by_dev(vecs->pathvec, param);
+	if (!pp)
+		return 1;
 
 	return show_path(reply, len, vecs, pp, "%o");
 }
