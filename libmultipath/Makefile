@@ -7,7 +7,7 @@ SONAME = 0
 DEVLIB = libmultipath.so
 LIBS = $(DEVLIB).$(SONAME)
 
-CFLAGS += $(LIB_CFLAGS) -I$(mpathcmddir) -I$(mpathpersistdir)
+CFLAGS += $(LIB_CFLAGS) -I$(mpathcmddir) -I$(mpathpersistdir) -I$(nvmedir)
 
 LIBDEPS += -lpthread -ldl -ldevmapper -ludev -L$(mpathcmddir) -lmpathcmd -lurcu -laio
 
@@ -43,17 +43,12 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
 	switchgroup.o uxsock.o print.o alias.o log_pthread.o \
 	log.o configure.o structs_vec.o sysfs.o prio.o checkers.o \
 	lock.o file.o wwids.o prioritizers/alua_rtpg.o prkey.o \
-	io_err_stat.o dm-generic.o generic.o foreign.o
-
-ifneq ($(call check_file,/usr/include/linux/nvme_ioctl.h),0)
-	OBJS += nvme-lib.o
-	CFLAGS += -Invme
-endif
+	io_err_stat.o dm-generic.o generic.o foreign.o nvme-lib.o
 
 all: $(LIBS)
 
 nvme-lib.o: nvme-lib.c nvme-ioctl.c nvme-ioctl.h
-	$(CC) $(CFLAGS) -Wno-unused-function -I. -Invme -c -o $@ $<
+	$(CC) $(CFLAGS) -Wno-unused-function -c -o $@ $<
 
 make_static = $(shell sed '/^static/!s/^\([a-z]\{1,\} \)/static \1/' <$1 >$2)
 

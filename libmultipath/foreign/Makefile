@@ -1,13 +1,12 @@
 #
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
+TOPDIR=../..
 include ../../Makefile.inc
 
-CFLAGS += $(LIB_CFLAGS) -I.. -I../nvme
+CFLAGS += $(LIB_CFLAGS) -I.. -I$(nvmedir)
 
-# If you add or remove a checker also update multipath/multipath.conf.5
-LIBS= \
-	libforeign-nvme.so
+LIBS = libforeign-nvme.so
 
 all: $(LIBS)
 
