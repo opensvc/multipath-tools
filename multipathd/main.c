@@ -242,10 +242,11 @@ int set_config_state(enum daemon_status state)
 		else if (running_state != DAEMON_IDLE) {
 			struct timespec ts;
 
-			clock_gettime(CLOCK_MONOTONIC, &ts);
-			ts.tv_sec += 1;
-			rc = pthread_cond_timedwait(&config_cond,
-						    &config_lock, &ts);
+			if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+				ts.tv_sec += 1;
+				rc = pthread_cond_timedwait(&config_cond,
+							    &config_lock, &ts);
+			}
 		}
 		if (!rc) {
 			running_state = state;
