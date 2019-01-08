@@ -410,7 +410,7 @@ static int find_multipaths_check_timeout(const struct path *pp, long tmo,
 	struct timespec now, ftimes[2], tdiff;
 	struct stat st;
 	long fd;
-	int r, err, retries = 0;
+	int r, retries = 0;
 
 	clock_gettime(CLOCK_REALTIME, &now);
 
@@ -430,8 +430,6 @@ retry:
 	if (fd != -1) {
 		pthread_cleanup_push(close_fd, (void *)fd);
 		r = fstat(fd, &st);
-		if (r != 0)
-			err = errno;
 		pthread_cleanup_pop(1);
 
 	} else if (tmo > 0) {
@@ -460,15 +458,12 @@ retry:
 				path, strerror(errno));
 		}
 		r = fstat(fd, &st);
-		if (r != 0)
-			err = errno;
 		pthread_cleanup_pop(1);
 	} else
 		return FIND_MULTIPATHS_NEVER;
 
 	if (r != 0) {
-		condlog(1, "%s: error in fstat for %s: %s", __func__,
-			path, strerror(err));
+		condlog(1, "%s: error in fstat for %s: %m", __func__, path);
 		return FIND_MULTIPATHS_ERROR;
 	}
 
