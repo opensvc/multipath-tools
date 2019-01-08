@@ -68,19 +68,20 @@ int execute_program(char *path, char *value, int len)
 	switch(pid) {
 	case 0:
 		/* child */
-		close(STDOUT_FILENO);
 
 		/* dup write side of pipe to STDOUT */
-		if (dup(fds[1]) < 0)
+		if (dup2(fds[1], STDOUT_FILENO) < 0) {
+			condlog(1, "failed to dup2 stdout: %m");
 			return -1;
+		}
+		close(fds[0]);
+		close(fds[1]);
 
 		/* Ignore writes to stderr */
 		null_fd = open("/dev/null", O_WRONLY);
 		if (null_fd > 0) {
-			int err_fd __attribute__ ((unused));
-
-			close(STDERR_FILENO);
-			err_fd = dup(null_fd);
+			if (dup2(null_fd, STDERR_FILENO) < 0)
+				condlog(1, "failed to dup2 stderr: %m");
 			close(null_fd);
 		}
 
