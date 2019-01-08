@@ -20,6 +20,12 @@
 #ifndef LIB_MPATH_CMD_H
 #define LIB_MPATH_CMD_H
 
+/*
+ * This should be sufficient for json output for >10000 maps,
+ * and >60000 paths.
+ */
+#define MAX_REPLY_LEN (32 * 1024 * 1024)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -13,7 +13,9 @@
 #include "version.h"
 #include <readline/readline.h>
 
+#include "mpath_cmd.h"
 #include "cli.h"
+#include "debug.h"
 
 static vector keys;
 static vector handlers;

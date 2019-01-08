@@ -26,6 +26,7 @@
 #include "prkey.h"
 #include "propsel.h"
 #include "main.h"
+#include "mpath_cmd.h"
 #include "cli.h"
 #include "uevent.h"
 #include "foreign.h"

@@ -133,6 +133,10 @@ ssize_t mpath_recv_reply_len(int fd, unsigned int timeout)
 		errno = EIO;
 		return -1;
 	}
+	if (len <= 0 || len >= MAX_REPLY_LEN) {
+		errno = ERANGE;
+		return -1;
+	}
 	return len;
 }
 

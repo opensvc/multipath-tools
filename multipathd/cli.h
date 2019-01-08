@@ -96,6 +96,12 @@ enum {
 	do {							\
 		if ((a)) {					\
 			char *tmp = (r);			\
+								\
+			if (m >= MAX_REPLY_LEN) {		\
+				condlog(1, "Warning: max reply length exceeded"); \
+				free(tmp);			\
+				r = NULL;			\
+			}					\
 			(r) = REALLOC((r), (m) * 2);		\
 			if ((r)) {				\
 				memset((r) + (m), 0, (m));	\
