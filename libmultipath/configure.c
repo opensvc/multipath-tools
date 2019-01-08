@@ -1041,7 +1041,7 @@ int check_daemon(void)
 	if (recv_packet(fd, &reply, timeout) != 0)
 		goto out;
 
-	if (strstr(reply, "shutdown"))
+	if (reply && strstr(reply, "shutdown"))
 		goto out_free;
 
 	ret = 1;
