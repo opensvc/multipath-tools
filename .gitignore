@@ -21,4 +21,5 @@ libdmmp/test/libdmmp_test
 libdmmp/test/libdmmp_speed_test
 tests/*-test
 tests/*.out
-
+libmultipath/nvme-ioctl.c
+libmultipath/nvme-ioctl.h
