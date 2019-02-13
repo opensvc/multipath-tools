@@ -1966,6 +1966,8 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	if ((mask & DI_WWID) && !strlen(pp->wwid)) {
 		get_uid(pp, path_state, pp->udev);
 		if (!strlen(pp->wwid)) {
+			if (pp->bus == SYSFS_BUS_UNDEF)
+				return PATHINFO_SKIPPED;
 			if (pp->initialized != INIT_FAILED) {
 				pp->initialized = INIT_MISSING_UDEV;
 				pp->tick = conf->retrigger_delay;
