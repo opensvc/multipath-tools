@@ -2028,7 +2028,9 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 		return 1;
 	}
 	if (!pp->mpp) {
-		if (!strlen(pp->wwid) && pp->initialized == INIT_FAILED &&
+		if (!strlen(pp->wwid) &&
+		    (pp->initialized == INIT_FAILED ||
+		     pp->initialized == INIT_NEW) &&
 		    (newstate == PATH_UP || newstate == PATH_GHOST)) {
 			condlog(2, "%s: add missing path", pp->dev);
 			conf = get_multipath_config();

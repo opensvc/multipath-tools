@@ -202,6 +202,7 @@ enum ghost_delay_states {
 };
 
 enum initialized_states {
+	INIT_NEW,
 	INIT_FAILED,
 	INIT_MISSING_UDEV,
 	INIT_REQUESTED_UDEV,

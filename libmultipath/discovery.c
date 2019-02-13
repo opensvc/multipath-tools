@@ -1966,8 +1966,10 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	if ((mask & DI_WWID) && !strlen(pp->wwid)) {
 		get_uid(pp, path_state, pp->udev);
 		if (!strlen(pp->wwid)) {
-			pp->initialized = INIT_MISSING_UDEV;
-			pp->tick = conf->retrigger_delay;
+			if (pp->initialized != INIT_FAILED) {
+				pp->initialized = INIT_MISSING_UDEV;
+				pp->tick = conf->retrigger_delay;
+			}
 			return PATHINFO_OK;
 		}
 		else
@@ -2000,7 +2002,7 @@ blank:
 	 * Recoverable error, for example faulty or offline path
 	 */
 	pp->chkrstate = pp->state = PATH_DOWN;
-	if (pp->initialized == INIT_FAILED)
+	if (pp->initialized == INIT_NEW || pp->initialized == INIT_FAILED)
 		memset(pp->wwid, 0, WWID_SIZE);
 
 	return PATHINFO_OK;
