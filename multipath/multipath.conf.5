@@ -1218,7 +1218,7 @@ Regular expression matching the device nodes to be excluded/included.
 .RS
 .PP
 The default \fIblacklist\fR consists of the regular expressions
-"^(ram|raw|loop|fd|md|dm-|sr|scd|st|dcssblk)[0-9]" and
+"^(ram|zram|raw|loop|fd|md|dm-|sr|scd|st|dcssblk)[0-9]" and
 "^(td|hd|vd)[a-z]". This causes virtual devices, non-disk devices, and some other
 device types to be excluded from multipath handling by default.
 .RE
