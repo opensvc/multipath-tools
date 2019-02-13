@@ -129,6 +129,11 @@ struct checker {
 						you want to stuff data in. */
 };
 
+static inline int checker_selected(const struct checker *c)
+{
+	return c != NULL && c->cls != NULL;
+}
+
 const char *checker_state_name(int);
 int init_checkers(const char *);
 void cleanup_checkers (void);
@@ -142,7 +147,6 @@ void checker_set_fd (struct checker *, int);
 void checker_enable (struct checker *);
 void checker_disable (struct checker *);
 int checker_check (struct checker *, int);
-int checker_selected(const struct checker *);
 int checker_is_sync(const struct checker *);
 const char *checker_name (const struct checker *);
 /*

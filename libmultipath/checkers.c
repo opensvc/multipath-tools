@@ -261,13 +261,6 @@ int checker_check (struct checker * c, int path_state)
 	return r;
 }
 
-int checker_selected(const struct checker *c)
-{
-	if (!c)
-		return 0;
-	return c->cls != NULL;
-}
-
 const char *checker_name(const struct checker *c)
 {
 	if (!c || !c->cls)
@@ -295,7 +288,7 @@ const char *checker_message(const struct checker *c)
 {
 	int id;
 
-	if (!c || c->msgid < 0 ||
+	if (!c || !c->cls || c->msgid < 0 ||
 	    (c->msgid >= CHECKER_GENERIC_MSGTABLE_SIZE &&
 	     c->msgid < CHECKER_FIRST_MSGID))
 		goto bad_id;
