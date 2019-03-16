@@ -260,11 +260,11 @@ The default is: \fB<unset>\fR
 The udev attribute providing a unique path identifier.
 .RS
 .TP
-The default is: for SCSI devices \fBID_SERIAL\fR
+The default is: \fBID_SERIAL\fR, for SCSI devices
 .TP
-The default is: for DASD devices \fBID_UID\fR
+The default is: \fBID_UID\fR, for DASD devices
 .TP
-The default is: for NVME devices \fBID_WWN\fR
+The default is: \fBID_WWN\fR, for NVMe devices
 .RE
 .
 .
@@ -670,7 +670,7 @@ This should be smaller than dev_loss_tmo. Setting this to
 will disable the timeout.
 .RS
 .TP
-The default is: in \fB5\fR
+The default is: \fB5\fR
 .RE
 .
 .
@@ -718,7 +718,7 @@ track of the persistent reservation key used for a specific WWID, when
 \fIreservation_key\fR is set to \fBfile\fR.
 .RS
 .TP
-The default is \fB/etc/multipath/prkeys\fR
+The default is: \fB/etc/multipath/prkeys\fR
 .RE
 .
 .
@@ -1182,7 +1182,7 @@ to switch the ghost paths to active ones. Setting this to \fI0\fR or \fIon\fR
 makes multipath immediately mark a device with only ghost paths as ready.
 .RS
 .TP
-The default is \fBno\fR
+The default is: \fBno\fR
 .RE
 .
 .
