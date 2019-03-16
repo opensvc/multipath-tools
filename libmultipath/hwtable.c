@@ -604,7 +604,7 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 	},
 	{
-		/* Storwize family / SAN Volume Controller / Flex System V7000 / FlashSystem V840/V9000 */
+		/* Storwize family / SAN Volume Controller / Flex System V7000 / FlashSystem V840/V9000/9100 */
 		.vendor        = "IBM",
 		.product       = "^2145",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
@@ -1120,31 +1120,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	/*
-	 * Xiotech
-	 */
-	{
-		/* Intelligent Storage Elements family */
-		.vendor        = "(XIOTECH|XIOtech)",
-		.product       = "ISE",
-		.pgpolicy      = MULTIBUS,
-		.no_path_retry = 12,
-	},
-	{
-		/* iglu blaze family */
-		.vendor        = "(XIOTECH|XIOtech)",
-		.product       = "IGLU DISK",
-		.pgpolicy      = MULTIBUS,
-		.no_path_retry = 30,
-	},
-	{
-		/* Magnitude family */
-		.vendor        = "(XIOTECH|XIOtech)",
-		.product       = "Magnitude",
-		.pgpolicy      = MULTIBUS,
-		.no_path_retry = 30,
-	},
-	/*
-	 * Violin Memory
+	 * Violin Systems
 	 */
 	{
 		/* 3000 / 6000 Series */
@@ -1167,6 +1143,28 @@ static struct hwentry default_hw[] = {
 		/* FSP 7000 family */
 		.vendor        = "VIOLIN",
 		.product       = "CONCERTO ARRAY",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 30,
+	},
+		/* Xiotech */
+	{
+		/* Intelligent Storage Elements family */
+		.vendor        = "(XIOTECH|XIOtech)",
+		.product       = "ISE",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 12,
+	},
+	{
+		/* iglu blaze family */
+		.vendor        = "(XIOTECH|XIOtech)",
+		.product       = "IGLU DISK",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 30,
+	},
+	{
+		/* Magnitude family */
+		.vendor        = "(XIOTECH|XIOtech)",
+		.product       = "Magnitude",
 		.pgpolicy      = MULTIBUS,
 		.no_path_retry = 30,
 	},
