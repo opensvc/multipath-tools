@@ -950,7 +950,8 @@ ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 	}
 	if (mpp && mpp->wait_for_udev &&
 	    (pathcount(mpp, PATH_UP) > 0 ||
-	     (pathcount(mpp, PATH_GHOST) > 0 && pp->tpgs != TPGS_IMPLICIT &&
+	     (pathcount(mpp, PATH_GHOST) > 0 &&
+	      path_get_tpgs(pp) != TPGS_IMPLICIT &&
 	      mpp->ghost_delay_tick <= 0))) {
 		/* if wait_for_udev is set and valid paths exist */
 		condlog(3, "%s: delaying path addition until %s is fully initialized",
@@ -2108,8 +2109,8 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	 * paths if there are no other active paths in map.
 	 */
 	disable_reinstate = (newstate == PATH_GHOST &&
-			    pp->mpp->nr_active == 0 &&
-			    pp->tpgs == TPGS_IMPLICIT) ? 1 : 0;
+			     pp->mpp->nr_active == 0 &&
+			     path_get_tpgs(pp) == TPGS_IMPLICIT) ? 1 : 0;
 
 	pp->chkrstate = newstate;
 	if (newstate != pp->state) {

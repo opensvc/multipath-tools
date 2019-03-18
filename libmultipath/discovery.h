@@ -31,7 +31,7 @@
 struct config;
 
 int path_discovery (vector pathvec, int flag);
-
+int path_get_tpgs(struct path *pp); /* This function never returns TPGS_UNDEF */
 int do_tur (char *);
 int path_offline (struct path *);
 int get_state (struct path * pp, struct config * conf, int daemon, int state);
