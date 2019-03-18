@@ -256,7 +256,7 @@ ssize_t sysfs_get_inquiry(struct udev_device * udev,
 }
 
 int
-sysfs_get_timeout(struct path *pp, unsigned int *timeout)
+sysfs_get_timeout(const struct path *pp, unsigned int *timeout)
 {
 	const char *attr = NULL;
 	const char *subsys;
