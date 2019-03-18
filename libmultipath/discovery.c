@@ -833,11 +833,14 @@ get_serial (char * str, int maxlen, int fd)
 }
 
 static void
-detect_alua(struct path * pp, struct config *conf)
+detect_alua(struct path * pp)
 {
 	int ret;
 	int tpgs;
-	unsigned int timeout = conf->checker_timeout;
+	unsigned int timeout;
+
+	if (sysfs_get_timeout(pp, &timeout) <= 0)
+		timeout = DEF_TIMEOUT;
 
 	if ((tpgs = get_target_port_group_support(pp, timeout)) <= 0) {
 		pp->tpgs = TPGS_NONE;
@@ -1519,7 +1522,7 @@ scsi_ioctl_pathinfo (struct path * pp, struct config *conf, int mask)
 	const char *attr_path = NULL;
 
 	if (pp->tpgs == TPGS_UNDEF)
-		detect_alua(pp, conf);
+		detect_alua(pp);
 
 	if (!(mask & DI_SERIAL))
 		return;
