@@ -58,7 +58,7 @@ get_alua_info(struct path * pp, unsigned int timeout)
 
 	tpg = get_target_port_group(pp, timeout);
 	if (tpg < 0) {
-		rc = get_target_port_group_support(pp->fd, timeout);
+		rc = get_target_port_group_support(pp, timeout);
 		if (rc < 0)
 			return -ALUA_PRIO_TPGS_FAILED;
 		if (rc == TPGS_NONE)
@@ -66,7 +66,7 @@ get_alua_info(struct path * pp, unsigned int timeout)
 		return -ALUA_PRIO_RTPG_FAILED;
 	}
 	condlog(3, "%s: reported target port group is %i", pp->dev, tpg);
-	rc = get_asymmetric_access_state(pp->fd, tpg, timeout);
+	rc = get_asymmetric_access_state(pp, tpg, timeout);
 	if (rc < 0) {
 		condlog(2, "%s: get_asymmetric_access_state returned %d",
 			__func__, rc);

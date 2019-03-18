@@ -22,8 +22,9 @@
 #define RTPG_RTPG_FAILED			3
 #define RTPG_TPG_NOT_FOUND			4
 
-int get_target_port_group_support(int fd, unsigned int timeout);
-int get_target_port_group(struct path * pp, unsigned int timeout);
-int get_asymmetric_access_state(int fd, unsigned int tpg, unsigned int timeout);
+int get_target_port_group_support(const struct path *pp, unsigned int timeout);
+int get_target_port_group(const struct path *pp, unsigned int timeout);
+int get_asymmetric_access_state(const struct path *pp,
+				unsigned int tpg, unsigned int timeout);
 
 #endif /* __RTPG_H__ */

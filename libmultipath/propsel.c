@@ -632,7 +632,7 @@ out:
 		unsigned int timeout = conf->checker_timeout;
 
 		if(!pp->tpgs &&
-		   (tpgs = get_target_port_group_support(pp->fd, timeout)) >= 0)
+		   (tpgs = get_target_port_group_support(pp, timeout)) >= 0)
 			pp->tpgs = tpgs;
 	}
 	condlog(3, "%s: prio = %s %s", pp->dev, prio_name(p), origin);

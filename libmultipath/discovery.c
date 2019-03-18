@@ -839,12 +839,12 @@ detect_alua(struct path * pp, struct config *conf)
 	int tpgs;
 	unsigned int timeout = conf->checker_timeout;
 
-	if ((tpgs = get_target_port_group_support(pp->fd, timeout)) <= 0) {
+	if ((tpgs = get_target_port_group_support(pp, timeout)) <= 0) {
 		pp->tpgs = TPGS_NONE;
 		return;
 	}
 	ret = get_target_port_group(pp, timeout);
-	if (ret < 0 || get_asymmetric_access_state(pp->fd, ret, timeout) < 0) {
+	if (ret < 0 || get_asymmetric_access_state(pp, ret, timeout) < 0) {
 		pp->tpgs = TPGS_NONE;
 		return;
 	}

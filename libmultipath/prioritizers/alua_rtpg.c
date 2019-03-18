@@ -135,9 +135,9 @@ scsi_error(struct sg_io_hdr *hdr, int opcode)
 /*
  * Helper function to setup and run a SCSI inquiry command.
  */
-int
-do_inquiry(int fd, int evpd, unsigned int codepage,
-	   void *resp, int resplen, unsigned int timeout)
+static int
+do_inquiry_sg(int fd, int evpd, unsigned int codepage,
+	      void *resp, int resplen, unsigned int timeout)
 {
 	struct inquiry_command	cmd;
 	struct sg_io_hdr	hdr;
@@ -185,18 +185,24 @@ retry:
 	return 0;
 }
 
+int do_inquiry(const struct path *pp, int evpd, unsigned int codepage,
+	       void *resp, int resplen, unsigned int timeout)
+{
+	return do_inquiry_sg(pp->fd, evpd, codepage, resp, resplen, timeout);
+}
+
 /*
  * This function returns the support for target port groups by evaluating the
  * data returned by the standard inquiry command.
  */
 int
-get_target_port_group_support(int fd, unsigned int timeout)
+get_target_port_group_support(const struct path *pp, unsigned int timeout)
 {
 	struct inquiry_data	inq;
 	int			rc;
 
 	memset((unsigned char *)&inq, 0, sizeof(inq));
-	rc = do_inquiry(fd, 0, 0x00, &inq, sizeof(inq), timeout);
+	rc = do_inquiry(pp, 0, 0x00, &inq, sizeof(inq), timeout);
 	if (!rc) {
 		rc = inquiry_data_get_tpgs(&inq);
 	}
@@ -205,7 +211,7 @@ get_target_port_group_support(int fd, unsigned int timeout)
 }
 
 static int
-get_sysfs_pg83(struct path *pp, unsigned char *buff, int buflen)
+get_sysfs_pg83(const struct path *pp, unsigned char *buff, int buflen)
 {
 	struct udev_device *parent = pp->udev;
 
@@ -224,7 +230,7 @@ get_sysfs_pg83(struct path *pp, unsigned char *buff, int buflen)
 }
 
 int
-get_target_port_group(struct path * pp, unsigned int timeout)
+get_target_port_group(const struct path * pp, unsigned int timeout)
 {
 	unsigned char		*buf;
 	struct vpd83_data *	vpd83;
@@ -245,7 +251,7 @@ get_target_port_group(struct path * pp, unsigned int timeout)
 	rc = get_sysfs_pg83(pp, buf, buflen);
 
 	if (rc < 0) {
-		rc = do_inquiry(pp->fd, 1, 0x83, buf, buflen, timeout);
+		rc = do_inquiry(pp, 1, 0x83, buf, buflen, timeout);
 		if (rc < 0)
 			goto out;
 
@@ -263,7 +269,7 @@ get_target_port_group(struct path * pp, unsigned int timeout)
 			}
 			buflen = scsi_buflen;
 			memset(buf, 0, buflen);
-			rc = do_inquiry(pp->fd, 1, 0x83, buf, buflen, timeout);
+			rc = do_inquiry(pp, 1, 0x83, buf, buflen, timeout);
 			if (rc < 0)
 				goto out;
 		}
@@ -341,7 +347,8 @@ retry:
 }
 
 int
-get_asymmetric_access_state(int fd, unsigned int tpg, unsigned int timeout)
+get_asymmetric_access_state(const struct path *pp, unsigned int tpg,
+			    unsigned int timeout)
 {
 	unsigned char		*buf;
 	struct rtpg_data *	tpgd;
@@ -349,6 +356,7 @@ get_asymmetric_access_state(int fd, unsigned int tpg, unsigned int timeout)
 	int			rc;
 	int			buflen;
 	uint64_t		scsi_buflen;
+	int fd = pp->fd;
 
 	buflen = 4096;
 	buf = (unsigned char *)malloc(buflen);
