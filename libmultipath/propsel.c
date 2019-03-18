@@ -45,22 +45,30 @@ do {									\
 	}								\
 } while(0)
 
-#define do_set_from_vec(type, var, src, dest, msg)			\
-do {									\
+#define __do_set_from_vec(type, var, src, dest)				\
+({									\
 	type *_p;							\
+	bool _found = false;						\
 	int i;								\
 									\
 	vector_foreach_slot(src, _p, i) {				\
 		if (_p->var) {						\
 			dest = _p->var;					\
-			origin = msg;					\
-			goto out;					\
+			_found = true;					\
+			break;						\
 		}							\
 	}								\
-} while (0)
+	_found;								\
+})
 
-#define do_set_from_hwe(var, src, dest, msg) \
-	do_set_from_vec(struct hwentry, var, src->hwe, dest, msg)
+#define __do_set_from_hwe(var, src, dest) \
+	__do_set_from_vec(struct hwentry, var, (src)->hwe, dest)
+
+#define do_set_from_hwe(var, src, dest, msg)				\
+	if (__do_set_from_hwe(var, src, dest)) {			\
+		origin = msg;						\
+		goto out;						\
+	}
 
 static const char default_origin[] = "(setting: multipath internal)";
 static const char hwe_origin[] =
