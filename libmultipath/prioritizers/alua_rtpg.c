@@ -188,6 +188,23 @@ retry:
 int do_inquiry(const struct path *pp, int evpd, unsigned int codepage,
 	       void *resp, int resplen, unsigned int timeout)
 {
+	struct udev_device *ud;
+
+	ud = udev_device_get_parent_with_subsystem_devtype(pp->udev, "scsi",
+							   "scsi_device");
+	if (ud != NULL) {
+		int rc;
+
+		if (!evpd)
+			rc = sysfs_get_inquiry(ud, resp, resplen);
+		else
+			rc = sysfs_get_vpd(ud, codepage, resp, resplen);
+
+		if (rc >= 0) {
+			PRINT_HEX((unsigned char *) resp, resplen);
+			return 0;
+		}
+	}
 	return do_inquiry_sg(pp->fd, evpd, codepage, resp, resplen, timeout);
 }
 
