@@ -1191,7 +1191,6 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 	int ro, retval = 0, rc;
 	struct path * pp;
 	struct config *conf;
-	int disable_changed_wwids;
 	int needs_reinit = 0;
 
 	switch ((rc = change_foreign(uev->udev))) {
@@ -1208,12 +1207,6 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			__func__, rc);
 		break;
 	}
-
-	conf = get_multipath_config();
-	disable_changed_wwids = conf->disable_changed_wwids;
-	put_multipath_config(conf);
-
-	ro = uevent_get_disk_ro(uev);
 
 	pthread_cleanup_push(cleanup_lock, &vecs->lock);
 	lock(&vecs->lock);
@@ -1239,22 +1232,12 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 		if (rc != 0)
 			strcpy(pp->wwid, wwid);
 		else if (strncmp(wwid, pp->wwid, WWID_SIZE) != 0) {
-			condlog(0, "%s: path wwid changed from '%s' to '%s'. %s",
-				uev->kernel, wwid, pp->wwid,
-				(disable_changed_wwids ? "disallowing" :
-				 "continuing"));
-			strcpy(pp->wwid, wwid);
-			if (disable_changed_wwids) {
-				if (!pp->wwid_changed) {
-					pp->wwid_changed = 1;
-					pp->tick = 1;
-					if (pp->mpp)
-						dm_fail_path(pp->mpp->alias, pp->dev_t);
-				}
-				goto out;
-			}
+			condlog(0, "%s: path wwid changed from '%s' to '%s'",
+				uev->kernel, wwid, pp->wwid);
+			ev_remove_path(pp, vecs, 1);
+			needs_reinit = 1;
+			goto out;
 		} else {
-			pp->wwid_changed = 0;
 			udev_device_unref(pp->udev);
 			pp->udev = udev_device_ref(uev->udev);
 			conf = get_multipath_config();
@@ -1265,6 +1248,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			pthread_cleanup_pop(1);
 		}
 
+		ro = uevent_get_disk_ro(uev);
 		if (mpp && ro >= 0) {
 			condlog(2, "%s: update path write_protect to '%d' (uevent)", uev->kernel, ro);
 
