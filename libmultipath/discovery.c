@@ -1755,48 +1755,48 @@ get_vpd_uid(struct path * pp)
 }
 
 static ssize_t uid_fallback(struct path *pp, int path_state,
-			    const char **origin, ssize_t old_len)
+			    const char **origin)
 {
-	ssize_t len = old_len;
-	int retrigger;
-	struct config *conf;
+	ssize_t len = -1;
 
-	conf = get_multipath_config();
-	retrigger = conf->retrigger_tries;
-	put_multipath_config(conf);
-	if (pp->retriggers >= retrigger) {
-		if (pp->bus == SYSFS_BUS_SCSI &&
-		    !strcmp(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE)) {
-			len = get_vpd_uid(pp);
-			*origin = "sysfs";
-			pp->uid_attribute = NULL;
-			if (len < 0 && path_state == PATH_UP) {
-				condlog(1, "%s: failed to get sysfs uid: %s",
-					pp->dev, strerror(-len));
-				len = get_vpd_sgio(pp->fd, 0x83, pp->wwid,
-						   WWID_SIZE);
-				*origin = "sgio";
-			}
-		} else if (pp->bus == SYSFS_BUS_NVME) {
-			char value[256];
-			len = sysfs_attr_get_value(pp->udev, "wwid", value,
-						   sizeof(value));
-			if (len <= 0)
-				return -1;
-			len = strlcpy(pp->wwid, value, WWID_SIZE);
-			if (len >= WWID_SIZE) {
-				len = fix_broken_nvme_wwid(pp, value,
-							   WWID_SIZE);
-				if (len > 0)
-					return len;
-				condlog(0, "%s: wwid overflow", pp->dev);
-				len = WWID_SIZE;
-			}
-			*origin = "sysfs";
-			pp->uid_attribute = NULL;
+	if (pp->bus == SYSFS_BUS_SCSI &&
+	    !strcmp(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE)) {
+		len = get_vpd_uid(pp);
+		*origin = "sysfs";
+		pp->uid_attribute = NULL;
+		if (len < 0 && path_state == PATH_UP) {
+			condlog(1, "%s: failed to get sysfs uid: %s",
+				pp->dev, strerror(-len));
+			len = get_vpd_sgio(pp->fd, 0x83, pp->wwid,
+					   WWID_SIZE);
+			*origin = "sgio";
 		}
+	} else if (pp->bus == SYSFS_BUS_NVME) {
+		char value[256];
+		len = sysfs_attr_get_value(pp->udev, "wwid", value,
+					   sizeof(value));
+		if (len <= 0)
+			return -1;
+		len = strlcpy(pp->wwid, value, WWID_SIZE);
+		if (len >= WWID_SIZE) {
+			len = fix_broken_nvme_wwid(pp, value,
+						   WWID_SIZE);
+			if (len > 0)
+				return len;
+			condlog(0, "%s: wwid overflow", pp->dev);
+			len = WWID_SIZE;
+		}
+		*origin = "sysfs";
+		pp->uid_attribute = NULL;
 	}
 	return len;
+}
+
+static int has_uid_fallback(struct path *pp)
+{
+	return ((pp->bus == SYSFS_BUS_SCSI &&
+		 !strcmp(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE)) ||
+		pp->bus == SYSFS_BUS_NVME);
 }
 
 int
@@ -1846,8 +1846,15 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev)
 			len = get_vpd_uid(pp);
 			origin = "sysfs";
 		}
-		if (len <= 0)
-			len = uid_fallback(pp, path_state, &origin, len);
+		if (len <= 0 && has_uid_fallback(pp)) {
+			int retrigger_tries;
+
+			conf = get_multipath_config();
+			retrigger_tries = conf->retrigger_tries;
+			put_multipath_config(conf);
+			if (pp->retriggers >= retrigger_tries)
+				len = uid_fallback(pp, path_state, &origin);
+		}
 	}
 	if ( len < 0 ) {
 		condlog(1, "%s: failed to get %s uid: %s",
