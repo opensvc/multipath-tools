@@ -1227,7 +1227,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			goto out;
 
 		strcpy(wwid, pp->wwid);
-		rc = get_uid(pp, pp->state, uev->udev);
+		rc = get_uid(pp, pp->state, uev->udev, 0);
 
 		if (rc != 0)
 			strcpy(pp->wwid, wwid);

@@ -1763,7 +1763,6 @@ static ssize_t uid_fallback(struct path *pp, int path_state,
 	    !strcmp(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE)) {
 		len = get_vpd_uid(pp);
 		*origin = "sysfs";
-		pp->uid_attribute = NULL;
 		if (len < 0 && path_state == PATH_UP) {
 			condlog(1, "%s: failed to get sysfs uid: %s",
 				pp->dev, strerror(-len));
@@ -1787,7 +1786,6 @@ static ssize_t uid_fallback(struct path *pp, int path_state,
 			len = WWID_SIZE;
 		}
 		*origin = "sysfs";
-		pp->uid_attribute = NULL;
 	}
 	return len;
 }
@@ -1800,12 +1798,14 @@ static int has_uid_fallback(struct path *pp)
 }
 
 int
-get_uid (struct path * pp, int path_state, struct udev_device *udev)
+get_uid (struct path * pp, int path_state, struct udev_device *udev,
+	 int allow_fallback)
 {
 	char *c;
 	const char *origin = "unknown";
 	ssize_t len = 0;
 	struct config *conf;
+	int used_fallback = 0;
 
 	if (!pp->uid_attribute && !pp->getuid) {
 		conf = get_multipath_config();
@@ -1846,14 +1846,9 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev)
 			len = get_vpd_uid(pp);
 			origin = "sysfs";
 		}
-		if (len <= 0 && has_uid_fallback(pp)) {
-			int retrigger_tries;
-
-			conf = get_multipath_config();
-			retrigger_tries = conf->retrigger_tries;
-			put_multipath_config(conf);
-			if (pp->retriggers >= retrigger_tries)
-				len = uid_fallback(pp, path_state, &origin);
+		if (len <= 0 && allow_fallback && has_uid_fallback(pp)) {
+			used_fallback = 1;
+			len = uid_fallback(pp, path_state, &origin);
 		}
 	}
 	if ( len < 0 ) {
@@ -1870,7 +1865,7 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev)
 			c--;
 		}
 	}
-	condlog(3, "%s: uid = %s (%s)", pp->dev,
+	condlog((used_fallback)? 1 : 3, "%s: uid = %s (%s)", pp->dev,
 		*pp->wwid == '\0' ? "<empty>" : pp->wwid, origin);
 	return 0;
 }
@@ -1994,7 +1989,8 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	}
 
 	if ((mask & DI_WWID) && !strlen(pp->wwid)) {
-		get_uid(pp, path_state, pp->udev);
+		get_uid(pp, path_state, pp->udev,
+			(pp->retriggers >= conf->retrigger_tries));
 		if (!strlen(pp->wwid)) {
 			if (pp->bus == SYSFS_BUS_UNDEF)
 				return PATHINFO_SKIPPED;
