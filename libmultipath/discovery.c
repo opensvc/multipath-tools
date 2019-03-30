@@ -1946,8 +1946,11 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 
 	if (mask & DI_CHECKER) {
 		if (path_state == PATH_UP) {
-			pp->chkrstate = pp->state = get_state(pp, conf, 0,
-							      path_state);
+			int newstate = get_state(pp, conf, 0, path_state);
+			if (newstate != PATH_PENDING ||
+			    pp->state == PATH_UNCHECKED ||
+			    pp->state == PATH_WILD)
+				pp->chkrstate = pp->state = newstate;
 			if (pp->state == PATH_TIMEOUT)
 				pp->state = PATH_DOWN;
 			if (pp->state == PATH_UP && !pp->size) {
