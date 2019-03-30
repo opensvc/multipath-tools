@@ -1755,9 +1755,9 @@ get_vpd_uid(struct path * pp)
 }
 
 static ssize_t scsi_uid_fallback(struct path *pp, int path_state,
-			     const char **origin)
+			     const char **origin, ssize_t old_len)
 {
-	ssize_t len = 0;
+	ssize_t len = old_len;
 	int retrigger;
 	struct config *conf;
 
@@ -1828,7 +1828,7 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev)
 			origin = "sysfs";
 		}
 		if (len <= 0 && pp->bus == SYSFS_BUS_SCSI)
-			len = scsi_uid_fallback(pp, path_state, &origin);
+			len = scsi_uid_fallback(pp, path_state, &origin, len);
 	}
 	if ( len < 0 ) {
 		condlog(1, "%s: failed to get %s uid: %s",

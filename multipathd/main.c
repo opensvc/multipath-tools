@@ -1234,9 +1234,11 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			goto out;
 
 		strcpy(wwid, pp->wwid);
-		get_uid(pp, pp->state, uev->udev);
+		rc = get_uid(pp, pp->state, uev->udev);
 
-		if (strncmp(wwid, pp->wwid, WWID_SIZE) != 0) {
+		if (rc != 0)
+			strcpy(pp->wwid, wwid);
+		else if (strncmp(wwid, pp->wwid, WWID_SIZE) != 0) {
 			condlog(0, "%s: path wwid changed from '%s' to '%s'. %s",
 				uev->kernel, wwid, pp->wwid,
 				(disable_changed_wwids ? "disallowing" :
