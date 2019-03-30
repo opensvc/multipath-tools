@@ -877,7 +877,7 @@ cli_reload(void *v, char **reply, int *len, void *data)
 		return 1;
 	}
 
-	return reload_map(vecs, mpp, 0, 1);
+	return update_path_groups(mpp, vecs, 0);
 }
 
 int resize_map(struct multipath *mpp, unsigned long long size,

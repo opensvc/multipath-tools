@@ -1273,10 +1273,13 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			else {
 				if (ro == 1)
 					pp->mpp->force_readonly = 1;
-				retval = reload_map(vecs, mpp, 0, 1);
-				pp->mpp->force_readonly = 0;
-				condlog(2, "%s: map %s reloaded (retval %d)",
-					uev->kernel, mpp->alias, retval);
+				retval = update_path_groups(mpp, vecs, 0);
+				if (retval == 2)
+					condlog(2, "%s: map removed during reload", pp->dev);
+				else {
+					pp->mpp->force_readonly = 0;
+					condlog(2, "%s: map %s reloaded (retval %d)", uev->kernel, mpp->alias, retval);
+				}
 			}
 		}
 	}
@@ -1832,7 +1835,7 @@ int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
 
 	dm_lib_release();
 	if (setup_multipath(vecs, mpp) != 0)
-		return 1;
+		return 2;
 	sync_map_state(mpp);
 
 	return 0;
