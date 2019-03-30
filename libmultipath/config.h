@@ -182,7 +182,6 @@ struct config {
 	int delayed_reconfig;
 	int uev_wait_timeout;
 	int skip_kpartx;
-	int disable_changed_wwids;
 	int remove_retries;
 	int max_sectors_kb;
 	int ghost_delay;

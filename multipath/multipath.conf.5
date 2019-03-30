@@ -1148,12 +1148,8 @@ The default is: \fBno\fR
 .
 .TP
 .B disable_changed_wwids
-If set to \fIyes\fR, multipathd will check the path wwid on change events, and
-if it has changed from the wwid of the multipath device, multipathd will
-disable access to the path until the wwid changes back.
-.RS
-.TP
-The default is: \fBno\fR
+This option is deprecated and ignored. If the WWID of a path suddenly changes,
+multipathd handles it as if it was removed and then added again.
 .RE
 .
 .

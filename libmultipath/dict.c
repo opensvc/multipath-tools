@@ -157,6 +157,12 @@ out:
 }
 
 static int
+print_ignored (char *buff, int len)
+{
+	return snprintf(buff, len, "ignored");
+}
+
+static int
 print_yes_no (char *buff, int len, long v)
 {
 	return snprintf(buff, len, "\"%s\"",
@@ -548,9 +554,15 @@ declare_hw_handler(skip_kpartx, set_yes_no_undef)
 declare_hw_snprint(skip_kpartx, print_yes_no_undef)
 declare_mp_handler(skip_kpartx, set_yes_no_undef)
 declare_mp_snprint(skip_kpartx, print_yes_no_undef)
-
-declare_def_handler(disable_changed_wwids, set_yes_no)
-declare_def_snprint(disable_changed_wwids, print_yes_no)
+static int def_disable_changed_wwids_handler(struct config *conf, vector strvec)
+{
+	return 0;
+}
+static int snprint_def_disable_changed_wwids(struct config *conf, char *buff,
+					     int len, const void *data)
+{
+	return print_ignored(buff, len);
+}
 
 declare_def_handler(remove_retries, set_int)
 declare_def_snprint(remove_retries, print_int)
