@@ -481,7 +481,7 @@ static int poll_io_err_stat(struct vectors *vecs, struct io_err_stat_path *pp)
 		 */
 		path->tick = 1;
 
-	} else if (path->mpp && path->mpp->nr_active > 1) {
+	} else if (path->mpp && path->mpp->nr_active > 0) {
 		io_err_stat_log(3, "%s: keep failing the dm path %s",
 				path->mpp->alias, path->dev);
 		path->io_err_pathfail_cnt = PATH_IO_ERR_WAITING_TO_CHECK;
