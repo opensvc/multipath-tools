@@ -1914,11 +1914,12 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	if (path_state == PATH_REMOVED)
 		goto blank;
 	else if (mask & DI_NOIO) {
-		/*
-		 * Avoid any IO on the device itself.
-		 * Behave like DI_CHECKER in the "path unavailable" case.
-		 */
-		pp->chkrstate = pp->state = path_state;
+		if (mask & DI_CHECKER)
+			/*
+			 * Avoid any IO on the device itself.
+			 * simply use the path_offline() return as its state
+			 */
+			pp->chkrstate = pp->state = path_state;
 		return PATHINFO_OK;
 	}
 

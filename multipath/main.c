@@ -356,7 +356,7 @@ static int check_usable_paths(struct config *conf,
 			pp->udev = get_udev_device(pp->dev_t, DEV_DEVT);
 			if (pp->udev == NULL)
 				continue;
-			if (pathinfo(pp, conf, DI_SYSFS|DI_NOIO) != PATHINFO_OK)
+			if (pathinfo(pp, conf, DI_SYSFS|DI_NOIO|DI_CHECKER) != PATHINFO_OK)
 				continue;
 
 			if (pp->state == PATH_UP &&

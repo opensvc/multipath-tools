@@ -392,7 +392,8 @@ static void set_no_path_retry(struct multipath *mpp)
 	default:
 		if (mpp->nr_active > 0) {
 			mpp->retry_tick = 0;
-			dm_queue_if_no_path(mpp->alias, 1);
+			if (!is_queueing)
+				dm_queue_if_no_path(mpp->alias, 1);
 		} else if (is_queueing && mpp->retry_tick == 0)
 			enter_recovery_mode(mpp);
 		break;
@@ -2072,6 +2073,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	/* if update_multipath_strings orphaned the path, quit early */
 	if (!pp->mpp)
 		return 0;
+	set_no_path_retry(pp->mpp);
 
 	if ((newstate == PATH_UP || newstate == PATH_GHOST) &&
 			check_path_reinstate_state(pp)) {
