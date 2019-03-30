@@ -400,13 +400,6 @@ int hit_io_err_recheck_time(struct path *pp)
 		io_err_stat_log(4, "%s: reschedule checking after %d seconds",
 				pp->dev,
 				pp->mpp->marginal_path_err_recheck_gap_time);
-		/*
-		 * to reschedule io error checking again
-		 * if the path is good enough, we claim it is good
-		 * and can be reinsated as soon as possible in the
-		 * check_path routine.
-		 */
-		pp->io_err_dis_reinstate_time = curr_time.tv_sec;
 		r = enqueue_io_err_stat_by_path(pp);
 		/*
 		 * Enqueue fails because of internal error.
@@ -426,7 +419,6 @@ int hit_io_err_recheck_time(struct path *pp)
 recover:
 	pp->io_err_pathfail_cnt = 0;
 	pp->io_err_disable_reinstate = 0;
-	pp->tick = 1;
 	return 0;
 }
 
