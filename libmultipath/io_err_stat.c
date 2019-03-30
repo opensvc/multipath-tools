@@ -254,7 +254,6 @@ static void free_io_err_pathvec(struct io_err_stat_pathvec *p)
  * return value
  * 0: enqueue OK
  * 1: fails because of internal error
- * 2: fails because of existing already
  */
 static int enqueue_io_err_stat_by_path(struct path *path)
 {
@@ -264,7 +263,7 @@ static int enqueue_io_err_stat_by_path(struct path *path)
 	p = find_err_path_by_dev(paths->pathvec, path->dev);
 	if (p) {
 		pthread_mutex_unlock(&paths->mutex);
-		return 2;
+		return 0;
 	}
 	pthread_mutex_unlock(&paths->mutex);
 
@@ -418,9 +417,8 @@ int hit_io_err_recheck_time(struct path *pp)
 			io_err_stat_log(3, "%s: enqueue fails, to recover",
 					pp->dev);
 			goto recover;
-		} else if (!r) {
+		} else
 			pp->io_err_pathfail_cnt = PATH_IO_ERR_IN_CHECKING;
-		}
 	}
 
 	return 1;
