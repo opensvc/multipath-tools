@@ -1468,6 +1468,8 @@ section:
 .TP
 .B uid_attribute
 .TP
+.B getuid_callout
+.TP
 .B path_selector
 .TP
 .B path_checker
@@ -1493,6 +1495,8 @@ section:
 .B dev_loss_tmo
 .TP
 .B flush_on_last_del
+.TP
+.B user_friendly_names
 .TP
 .B retain_attached_hw_handler
 .TP
@@ -1525,6 +1529,8 @@ section:
 .B max_sectors_kb
 .TP
 .B ghost_delay
+.TP
+.B all_tg_pt
 .RE
 .PD
 .LP
@@ -1604,7 +1610,11 @@ the values are taken from the \fIdevices\fR or \fIdefaults\fR sections:
 .TP
 .B skip_kpartx
 .TP
+.B max_sectors_kb
+.TP
 .B ghost_delay
+.TP
+.B all_tg_pt
 .RE
 .PD
 .LP
