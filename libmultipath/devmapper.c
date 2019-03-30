@@ -746,7 +746,7 @@ out_task:
 	dm_task_destroy(dmt);
 out:
 	if (r < 0)
-		condlog(2, "%s: dm command failed in %s", name, __FUNCTION__);
+		condlog(3, "%s: dm command failed in %s: %s", name, __FUNCTION__, strerror(errno));
 	return r;
 }
 
