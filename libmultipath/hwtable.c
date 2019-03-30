@@ -719,6 +719,7 @@ static struct hwentry default_hw[] = {
 		.flush_on_last_del = FLUSH_ENABLED,
 		.dev_loss      = MAX_DEV_LOSS_TMO,
 		.prio_name     = PRIO_ONTAP,
+		.user_friendly_names = USER_FRIENDLY_NAMES_OFF,
 	},
 	{
 		/*
