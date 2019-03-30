@@ -2001,12 +2001,6 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	if (newstate == PATH_REMOVED)
 		newstate = PATH_DOWN;
 
-	if (pp->wwid_changed) {
-		condlog(2, "%s: path wwid has changed. Refusing to use",
-			pp->dev);
-		newstate = PATH_DOWN;
-	}
-
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
 		condlog(2, "%s: unusable path (%s) - checker failed",
 			pp->dev, checker_state_name(newstate));

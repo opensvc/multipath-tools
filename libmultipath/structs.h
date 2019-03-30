@@ -280,7 +280,6 @@ struct path {
 	int fd;
 	int initialized;
 	int retriggers;
-	int wwid_changed;
 	unsigned int path_failures;
 	time_t dis_reinstate_time;
 	int disable_reinstate;
