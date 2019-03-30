@@ -2080,7 +2080,7 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 	}
 
 	if ((newstate == PATH_UP || newstate == PATH_GHOST) &&
-	    pp->io_err_disable_reinstate && hit_io_err_recheck_time(pp)) {
+	    pp->io_err_disable_reinstate && need_io_err_check(pp)) {
 		pp->state = PATH_SHAKY;
 		/*
 		 * to reschedule as soon as possible,so that this path can

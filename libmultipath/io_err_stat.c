@@ -41,7 +41,7 @@
 #define CONCUR_NR_EVENT			32
 
 #define PATH_IO_ERR_IN_CHECKING		-1
-#define PATH_IO_ERR_IN_POLLING_RECHECK	-2
+#define PATH_IO_ERR_WAITING_TO_CHECK	-2
 
 #define io_err_stat_log(prio, fmt, args...) \
 	condlog(prio, "io error statistic: " fmt, ##args)
@@ -283,24 +283,6 @@ static int enqueue_io_err_stat_by_path(struct path *path)
 	vector_set_slot(paths->pathvec, p);
 	pthread_mutex_unlock(&paths->mutex);
 
-	if (!path->io_err_disable_reinstate) {
-		/*
-		 *fail the path in the kernel for the time of the to make
-		 *the test more reliable
-		 */
-		io_err_stat_log(3, "%s: fail dm path %s before checking",
-				path->mpp->alias, path->dev);
-		path->io_err_disable_reinstate = 1;
-		dm_fail_path(path->mpp->alias, path->dev_t);
-		update_queue_mode_del_path(path->mpp);
-
-		/*
-		 * schedule path check as soon as possible to
-		 * update path state to delayed state
-		 */
-		path->tick = 1;
-
-	}
 	io_err_stat_log(2, "%s: enqueue path %s to check",
 			path->mpp->alias, path->dev);
 	return 0;
@@ -317,7 +299,6 @@ free_ioerr_path:
 int io_err_stat_handle_pathfail(struct path *path)
 {
 	struct timespec curr_time;
-	int res;
 
 	if (uatomic_read(&io_err_thread_running) == 0)
 		return 1;
@@ -331,8 +312,6 @@ int io_err_stat_handle_pathfail(struct path *path)
 		return 1;
 
 	if (!path->mpp)
-		return 1;
-	if (path->mpp->nr_active <= 1)
 		return 1;
 	if (path->mpp->marginal_path_double_failed_time <= 0 ||
 		path->mpp->marginal_path_err_sample_time <= 0 ||
@@ -371,17 +350,33 @@ int io_err_stat_handle_pathfail(struct path *path)
 	}
 	path->io_err_pathfail_cnt++;
 	if (path->io_err_pathfail_cnt >= FLAKY_PATHFAIL_THRESHOLD) {
-		res = enqueue_io_err_stat_by_path(path);
-		if (!res)
-			path->io_err_pathfail_cnt = PATH_IO_ERR_IN_CHECKING;
-		else
-			path->io_err_pathfail_cnt = 0;
+		path->io_err_disable_reinstate = 1;
+		path->io_err_pathfail_cnt = PATH_IO_ERR_WAITING_TO_CHECK;
+		/* enqueue path as soon as it comes up */
+		path->io_err_dis_reinstate_time = 0;
+		if (path->state != PATH_DOWN) {
+			struct config *conf;
+			int oldstate = path->state;
+			int checkint;
+
+			conf = get_multipath_config();
+			checkint = conf->checkint;
+			put_multipath_config(conf);
+			io_err_stat_log(2, "%s: mark as failed", path->dev);
+			path->mpp->stat_path_failures++;
+			path->state = PATH_DOWN;
+			path->dmstate = PSTATE_FAILED;
+			if (oldstate == PATH_UP || oldstate == PATH_GHOST)
+				update_queue_mode_del_path(path->mpp);
+			if (path->tick > checkint)
+				path->tick = checkint;
+		}
 	}
 
 	return 0;
 }
 
-int hit_io_err_recheck_time(struct path *pp)
+int need_io_err_check(struct path *pp)
 {
 	struct timespec curr_time;
 	int r;
@@ -392,7 +387,7 @@ int hit_io_err_recheck_time(struct path *pp)
 		io_err_stat_log(2, "%s: recover path early", pp->dev);
 		goto recover;
 	}
-	if (pp->io_err_pathfail_cnt != PATH_IO_ERR_IN_POLLING_RECHECK)
+	if (pp->io_err_pathfail_cnt != PATH_IO_ERR_WAITING_TO_CHECK)
 		return 1;
 	if (clock_gettime(CLOCK_MONOTONIC, &curr_time) != 0 ||
 	    (curr_time.tv_sec - pp->io_err_dis_reinstate_time) >
@@ -489,7 +484,7 @@ static int poll_io_err_stat(struct vectors *vecs, struct io_err_stat_path *pp)
 	} else if (path->mpp && path->mpp->nr_active > 1) {
 		io_err_stat_log(3, "%s: keep failing the dm path %s",
 				path->mpp->alias, path->dev);
-		path->io_err_pathfail_cnt = PATH_IO_ERR_IN_POLLING_RECHECK;
+		path->io_err_pathfail_cnt = PATH_IO_ERR_WAITING_TO_CHECK;
 		path->io_err_disable_reinstate = 1;
 		path->io_err_dis_reinstate_time = currtime.tv_sec;
 		io_err_stat_log(3, "%s: disable reinstating of %s",
