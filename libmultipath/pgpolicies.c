@@ -312,7 +312,7 @@ out:
 int group_by_prio(struct multipath *mp)
 {
 	int i;
-	unsigned int prio;
+	int prio;
 	struct path * pp;
 	struct pathgroup * pgp;
 	vector pathvec = NULL;
