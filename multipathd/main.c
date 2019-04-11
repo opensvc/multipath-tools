@@ -249,7 +249,7 @@ int set_config_state(enum daemon_status state)
 							    &config_lock, &ts);
 			}
 		}
-		if (!rc) {
+		if (!rc && (running_state != DAEMON_SHUTDOWN)) {
 			running_state = state;
 			pthread_cond_broadcast(&config_cond);
 #ifdef USE_SYSTEMD
