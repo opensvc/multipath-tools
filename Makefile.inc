@@ -36,8 +36,13 @@ ifndef RUN
 endif
 
 ifndef SYSTEMD
-	ifeq ($(shell systemctl --version > /dev/null 2>&1 && echo 1), 1)
-		SYSTEMD = $(shell systemctl --version 2> /dev/null |  sed -n 's/systemd \([0-9]*\)/\1/p')
+	ifeq ($(shell pkg-config --modversion libsystemd >/dev/null 2>&1 && echo 1), 1)
+		SYSTEMD = $(shell pkg-config --modversion libsystemd)
+	else
+		ifeq ($(shell systemctl --version >/dev/null 2>&1 && echo 1), 1)
+			SYSTEMD = $(shell systemctl --version 2> /dev/null | \
+				sed -n 's/systemd \([0-9]*\).*/\1/p')
+		endif
 	endif
 endif
 
