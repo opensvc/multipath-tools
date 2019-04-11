@@ -164,7 +164,7 @@ int get_ana_info(struct path * pp, unsigned int timeout)
 				   ana_log, ana_log_len);
 	pthread_cleanup_pop(1);
 	if (rc >= 0)
-		condlog(3, "%s: ana state = %02x [%s]", pp->dev, rc,
+		condlog(4, "%s: ana state = %02x [%s]", pp->dev, rc,
 			aas_print_string(rc));
 	return rc;
 }
