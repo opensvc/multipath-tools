@@ -1645,8 +1645,17 @@ get_prio (struct path * pp)
 	old_prio = pp->priority;
 	pp->priority = prio_getprio(p, pp, checker_timeout);
 	if (pp->priority < 0) {
-		condlog(3, "%s: %s prio error", pp->dev, prio_name(p));
-		pp->priority = PRIO_UNDEF;
+		/* this changes pp->offline, but why not */
+		int state = path_offline(pp);
+
+		if (state == PATH_DOWN || state == PATH_PENDING)
+			condlog(3, "%s: %s prio error in state %d, keeping prio = %d",
+				pp->dev, prio_name(p), state, pp->priority);
+		else {
+			condlog(3, "%s: %s prio error in state %d",
+				pp->dev, prio_name(p), state);
+			pp->priority = PRIO_UNDEF;
+		}
 		return 1;
 	}
 	condlog((old_prio == pp->priority ? 4 : 3), "%s: %s prio = %u",
