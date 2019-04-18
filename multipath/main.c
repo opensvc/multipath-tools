@@ -850,6 +850,58 @@ out:
 	return r;
 }
 
+int is_multipathd_running(void)
+{
+	FILE *f = NULL;
+	char buf[16];
+	char path[PATH_MAX];
+	int pid;
+	char *end;
+
+	f = fopen(DEFAULT_PIDFILE, "r");
+	if (!f) {
+		if (errno != ENOENT)
+			condlog(4, "can't open " DEFAULT_PIDFILE ": %s",
+				strerror(errno));
+		return 0;
+	}
+	if (!fgets(buf, sizeof(buf), f)) {
+		if (ferror(f))
+			condlog(4, "read of " DEFAULT_PIDFILE " failed: %s",
+				strerror(errno));
+		fclose(f);
+		return 0;
+	}
+	fclose(f);
+	errno = 0;
+	strchop(buf);
+	pid = strtol(buf, &end, 10);
+	if (errno != 0 || pid <= 0 || *end != '\0') {
+		condlog(4, "invalid contents in " DEFAULT_PIDFILE ": '%s'",
+			buf);
+		return 0;
+	}
+	snprintf(path, sizeof(path), "/proc/%d/comm", pid);
+	f = fopen(path, "r");
+	if (!f) {
+		if (errno != ENOENT)
+			condlog(4, "can't open %s: %s", path, strerror(errno));
+		return 0;
+	}
+	if (!fgets(buf, sizeof(buf), f)) {
+		if (ferror(f))
+			condlog(4, "read of %s failed: %s", path,
+				strerror(errno));
+		fclose(f);
+		return 0;
+	}
+	fclose(f);
+	strchop(buf);
+	if (strcmp(buf, "multipathd") != 0)
+		return 0;
+	return 1;
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -1028,17 +1080,13 @@ main (int argc, char *argv[])
 	}
 	if (cmd == CMD_VALID_PATH &&
 	    dev_type == DEV_UEVENT) {
-		int fd;
-
-		fd = mpath_connect();
-		if (fd == -1) {
+		if (!is_multipathd_running()) {
 			condlog(3, "%s: daemon is not running", dev);
 			if (!systemd_service_enabled(dev)) {
 				r = print_cmd_valid(RTVL_NO, NULL, conf);
 				goto out;
 			}
-		} else
-			mpath_disconnect(fd);
+		}
 	}
 
 	if (cmd == CMD_REMOVE_WWID && !dev) {
