@@ -850,55 +850,29 @@ out:
 	return r;
 }
 
-int is_multipathd_running(void)
+static int test_multipathd_socket(void)
 {
-	FILE *f = NULL;
-	char buf[16];
-	char path[PATH_MAX];
-	int pid;
-	char *end;
+	int fd;
+	/*
+	 * "multipath -u" may be run before the daemon is started. In this
+	 * case, systemd might own the socket but might delay multipathd
+	 * startup until some other unit (udev settle!)  has finished
+	 * starting. With many LUNs, the listen backlog may be exceeded, which
+	 * would cause connect() to block. This causes udev workers calling
+	 * "multipath -u" to hang, and thus creates a deadlock, until "udev
+	 * settle" times out.  To avoid this, call connect() in non-blocking
+	 * mode here, and take EAGAIN as indication for a filled-up systemd
+	 * backlog.
+	 */
 
-	f = fopen(DEFAULT_PIDFILE, "r");
-	if (!f) {
-		if (errno != ENOENT)
-			condlog(4, "can't open " DEFAULT_PIDFILE ": %s",
-				strerror(errno));
-		return 0;
-	}
-	if (!fgets(buf, sizeof(buf), f)) {
-		if (ferror(f))
-			condlog(4, "read of " DEFAULT_PIDFILE " failed: %s",
-				strerror(errno));
-		fclose(f);
-		return 0;
-	}
-	fclose(f);
-	errno = 0;
-	strchop(buf);
-	pid = strtol(buf, &end, 10);
-	if (errno != 0 || pid <= 0 || *end != '\0') {
-		condlog(4, "invalid contents in " DEFAULT_PIDFILE ": '%s'",
-			buf);
-		return 0;
-	}
-	snprintf(path, sizeof(path), "/proc/%d/comm", pid);
-	f = fopen(path, "r");
-	if (!f) {
-		if (errno != ENOENT)
-			condlog(4, "can't open %s: %s", path, strerror(errno));
-		return 0;
-	}
-	if (!fgets(buf, sizeof(buf), f)) {
-		if (ferror(f))
-			condlog(4, "read of %s failed: %s", path,
-				strerror(errno));
-		fclose(f);
-		return 0;
-	}
-	fclose(f);
-	strchop(buf);
-	if (strcmp(buf, "multipathd") != 0)
-		return 0;
+	fd = __mpath_connect(1);
+	if (fd == -1) {
+		if (errno == EAGAIN)
+			condlog(3, "daemon backlog exceeded");
+		else
+			return 0;
+	} else
+		close(fd);
 	return 1;
 }
 
@@ -1080,7 +1054,7 @@ main (int argc, char *argv[])
 	}
 	if (cmd == CMD_VALID_PATH &&
 	    dev_type == DEV_UEVENT) {
-		if (!is_multipathd_running()) {
+		if (!test_multipathd_socket()) {
 			condlog(3, "%s: daemon is not running", dev);
 			if (!systemd_service_enabled(dev)) {
 				r = print_cmd_valid(RTVL_NO, NULL, conf);
