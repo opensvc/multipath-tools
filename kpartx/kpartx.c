@@ -37,6 +37,7 @@
 #include "crc32.h"
 #include "lopart.h"
 #include "kpartx.h"
+#include "version.h"
 
 #define SIZE(a) (sizeof(a)/sizeof((a)[0]))
 
@@ -95,7 +96,9 @@ int force_devmap=0;
 
 static int
 usage(void) {
-	printf("usage : kpartx [-a|-d|-l] [-f] [-v] wholedisk\n");
+	printf(VERSION_STRING);
+	printf("Usage:\n");
+	printf("  kpartx [-a|-d|-u|-l] [-r] [-p] [-f] [-g] [-s|-n] [-v] wholedisk\n");
 	printf("\t-a add partition devmappings\n");
 	printf("\t-r devmappings will be readonly\n");
 	printf("\t-d del partition devmappings\n");
@@ -106,7 +109,7 @@ usage(void) {
 	printf("\t-f force devmap create\n");
 	printf("\t-v verbose\n");
 	printf("\t-n nosync mode. Return before the partitions are created\n");
-	printf("\t-s sync mode. Don't return until the partitions are created. Default.\n");
+	printf("\t-s sync mode (Default). Don't return until the partitions are created\n");
 	return 1;
 }
 

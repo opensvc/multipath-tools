@@ -3,7 +3,7 @@
 #
 include ../Makefile.inc
 
-CFLAGS += $(BIN_CFLAGS) -I. -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+CFLAGS += $(BIN_CFLAGS) -I. -I$(multipathdir) -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 LDFLAGS += $(BIN_LDFLAGS)
 
 LIBDEPS += -ldevmapper

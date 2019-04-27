@@ -25,7 +25,7 @@ kpartx \- Create device maps from partition tables.
 .RB [\| \-p \|]
 .RB [\| \-f \|]
 .RB [\| \-g \|]
-.RB [\| \-s \|]
+.RB [\| \-s | \-n \|]
 .RB [\| \-v \|]
 .B wholedisk
 .
@@ -77,7 +77,11 @@ Force GUID partition table (GPT).
 .
 .TP
 .B \-s
-Sync mode. Don't return until the partitions are created.
+Sync mode (Default). Don't return until the partitions are created.
+.
+.TP
+.B \-n
+Nosync mode. Return before the partitions are created.
 .
 .TP
 .B \-v
