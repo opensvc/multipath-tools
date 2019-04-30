@@ -20,6 +20,8 @@ extern int uxsock_timeout;
 
 void exit_daemon(void);
 const char * daemon_status(void);
+enum daemon_status wait_for_state_change_if(enum daemon_status oldstate,
+					    unsigned long ms);
 int need_to_delay_reconfig (struct vectors *);
 int reconfigure (struct vectors *);
 int ev_add_path (struct path *, struct vectors *, int);

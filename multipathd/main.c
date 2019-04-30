@@ -220,6 +220,33 @@ static void config_cleanup(void *arg)
 	pthread_mutex_unlock(&config_lock);
 }
 
+/*
+ * If the current status is @oldstate, wait for at most @ms milliseconds
+ * for the state to change, and return the new state, which may still be
+ * @oldstate.
+ */
+enum daemon_status wait_for_state_change_if(enum daemon_status oldstate,
+					    unsigned long ms)
+{
+	enum daemon_status st;
+	struct timespec tmo;
+
+	if (oldstate == DAEMON_SHUTDOWN)
+		return DAEMON_SHUTDOWN;
+
+	pthread_mutex_lock(&config_lock);
+	pthread_cleanup_push(config_cleanup, NULL);
+	st = running_state;
+	if (st == oldstate && clock_gettime(CLOCK_MONOTONIC, &tmo) == 0) {
+		tmo.tv_nsec += ms * 1000 * 1000;
+		normalize_timespec(&tmo);
+		(void)pthread_cond_timedwait(&config_cond, &config_lock, &tmo);
+		st = running_state;
+	}
+	pthread_cleanup_pop(1);
+	return st;
+}
+
 /* must be called with config_lock held */
 static void __post_config_state(enum daemon_status state)
 {
