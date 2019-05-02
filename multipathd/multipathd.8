@@ -25,6 +25,7 @@ multipathd \- Multipath daemon.
 .RB [\| \-v\ \c
 .IR verbosity \|]
 .RB [\| \-B \|]
+.RB [\| \-w \|]
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -76,6 +77,12 @@ be viewed by entering '\fIhelp\fR'. When you are finished entering commands, pre
 \fIfind_multipaths\fR to control the treatment of newly detected devices by
 multipathd. See
 .BR multipath.conf(5).
+.
+.TP
+.B \-w
+Since kernel 4.14 a new device-mapper event polling interface is used for updating
+multipath devices on dmevents. Use this flag to force it to use the old event
+waiting method, based on creating a seperate thread for each device.
 .
 .
 .
