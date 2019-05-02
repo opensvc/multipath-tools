@@ -15,6 +15,7 @@
 #include <pthread.h>
 #include <ctype.h>
 #include <string.h>
+#include "version.h"
 
 static const char * pr_type_strs[] = {
 	"obsolete [0]",
@@ -687,6 +688,7 @@ void mpath_print_buf_readfullstat( struct prin_resp *pr_buff)
 
 static void usage(void)
 {
+	fprintf(stderr, VERSION_STRING);
 	fprintf(stderr,
 			"Usage: mpathpersist [OPTIONS] [DEVICE]\n"
 			" Options:\n"
@@ -706,10 +708,8 @@ static void usage(void)
 			"    --param-aptpl|-Z           PR Out parameter 'APTPL'\n"
 			"    --read-keys|-k             PR In: Read Keys\n"
 			"    --param-rk=RK|-K RK        PR Out parameter reservation key\n"
-			"    --param-sark=SARK|-S SARK  PR Out parameter service "
-			"action\n"
-			"                               reservation key (SARK is in "
-			"hex)\n"
+			"    --param-sark=SARK|-S SARK  PR Out parameter service action\n"
+			"                               reservation key (SARK is in hex)\n"
 			"    --preempt|-P               PR Out: Preempt\n"
 			"    --preempt-abort|-A         PR Out: Preempt and Abort\n"
 			"    --prout-type=TYPE|-T TYPE  PR Out command type\n"
@@ -721,11 +721,14 @@ static void usage(void)
 			"    --release|-L               PR Out: Release\n"
 			"    --report-capabilities|-c   PR In: Report Capabilities\n"
 			"    --reserve|-R               PR Out: Reserve\n"
-			"    --transport-id=TIDS|-X TIDS  TransportIDs can be mentioned \n"
-			"                               in several forms\n"
+			"    --transport-id=TIDS|-X TIDS  TransportIDs can be mentioned\n"
+			"                                 in several forms\n"
+			"    --alloc-length=LEN|-l LEN  PR In: maximum allocation length\n"
 			" Examples:\n"
 			"     mpathpersist --out --register --param-sark=123abc --prout-type=5 /dev/mapper/mpath9\n"
-			"     mpathpersist -i -k /dev/mapper/mpath9\n"	);
+			"     mpathpersist -i -k /dev/mapper/mpath9\n"
+			"     mpathpersist --out --reserve --param-sark=123abc --prout-type=8 -d /dev/mapper/mpath9\n"
+			"     mpathpersist -i -s -d /dev/mapper/mpath9\n");
 }
 
 void
