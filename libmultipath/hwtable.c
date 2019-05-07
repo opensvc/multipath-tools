@@ -38,7 +38,7 @@
 	 *
 	 * COMPANY_NAME
 	 *
-	 * Maintainer: XXX <email>
+	 * Maintainer: NAME <email>
 	 */
 	{
 		/* Product Name */
@@ -708,7 +708,7 @@ static struct hwentry default_hw[] = {
                 /*
 		 * DE Series
 		 *
-		 * Maintainer: ng-eseries-upstream-maintainers@netapp.com
+		 * Maintainer: NetApp RDAC team <ng-eseries-upstream-maintainers@netapp.com>
 		 */
                 .vendor        = "LENOVO",
                 .product       = "DE_Series",
