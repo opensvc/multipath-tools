@@ -100,15 +100,16 @@ enum {
 			if (m >= MAX_REPLY_LEN) {		\
 				condlog(1, "Warning: max reply length exceeded"); \
 				free(tmp);			\
-				r = NULL;			\
+				(r) = NULL;			\
+			} else {				\
+				(r) = REALLOC((r), (m) * 2);	\
+				if ((r)) {			\
+					memset((r) + (m), 0, (m)); \
+					(m) *= 2;		\
+				}				\
+				else				\
+					free(tmp);		\
 			}					\
-			(r) = REALLOC((r), (m) * 2);		\
-			if ((r)) {				\
-				memset((r) + (m), 0, (m));	\
-				(m) *= 2;			\
-			}					\
-			else					\
-				free(tmp);			\
 		}						\
 	} while (0)
 
