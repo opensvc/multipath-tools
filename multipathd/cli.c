@@ -467,6 +467,8 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data, int timeout )
 
 	if (r) {
 		*reply = genhelp_handler(cmd, r);
+		if (*reply == NULL)
+			return EINVAL;
 		*len = strlen(*reply) + 1;
 		return 0;
 	}
@@ -474,9 +476,11 @@ parse_cmd (char * cmd, char ** reply, int * len, void * data, int timeout )
 	h = find_handler(fingerprint(cmdvec));
 
 	if (!h || !h->fn) {
-		*reply = genhelp_handler(cmd, EINVAL);
-		*len = strlen(*reply) + 1;
 		free_keys(cmdvec);
+		*reply = genhelp_handler(cmd, EINVAL);
+		if (*reply == NULL)
+			return EINVAL;
+		*len = strlen(*reply) + 1;
 		return 0;
 	}
 
