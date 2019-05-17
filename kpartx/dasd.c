@@ -138,6 +138,8 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 			return -1;
 	} else {
 		fd_dasd = dup(fd);
+		if (fd_dasd < 0)
+			return -1;
 	}
 
 	if (ioctl(fd_dasd, BIODASDINFO, (unsigned long)&info) != 0) {
