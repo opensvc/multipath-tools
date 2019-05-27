@@ -167,18 +167,43 @@ PR In: maximum allocation length. LEN is a decimal number between 0 and 8192.
 .SH EXAMPLE
 .\" ----------------------------------------------------------------------------
 .
-.TP
-Register the Service Action Reservation Key for the /dev/mapper/mpath9 device:
-\fBmpathpersist --out --register --param-sark=\fI123abc \fB--prout-type=\fI5 /dev/mapper/mpath9\fR
-.TP
-Read the Service Action Reservation Key for the /dev/mapper/mpath9 device:
+.PP
+Register the key \(dq123abc\(dq for the /dev/mapper/mpath9 device:
+.RS
+\fBmpathpersist --out --register --param-sark=\fI123abc /dev/mapper/mpath9\fR
+.RE
+.PP
+Read registered reservation keys for the /dev/mapper/mpath9 device:
+.RS
 \fBmpathpersist -i -k \fI/dev/mapper/mpath9\fR
-.TP
-Reserve the Service Action Reservation Key for the /dev/mapper/mpath9 device:
-\fBmpathpersist --out --reserve --param-sark=\fI123abc \fB--prout-type=\fI8 \fB-d \fI/dev/mapper/mpath9\fR
-.TP
+.RE
+.PP
+Create a reservation for the /dev/mapper/mpath9 device with the given
+reservation key:
+.RS
+\fBmpathpersist --out --reserve --param-rk=\fI123abc \fB--prout-type=\fI8 \fB-d \fI/dev/mapper/mpath9\fR
+.RE
+.PP
 Read the reservation status of the /dev/mapper/mpath9 device:
+.RS
 \fBmpathpersist -i -s -d \fI/dev/mapper/mpath9\fR
+.RE
+.PP
+Release the previously created reservation (note that the prout-type needs to
+be the same as above):
+.RS
+\fBmpathpersist --out --release --param-rk=\fI123abc \fB--prout-type=\fI8 \fB-d \fI/dev/mapper/mpath9\fR
+.RE
+.PP
+Remove the current key registered for this host (i.e. reset it to 0):
+.RS
+\fBmpathpersist --out --register-ignore -K \fI123abc\fB -S \fI0\fB \fI/dev/mapper/mpath9\fR
+.RE
+.PP
+Remove current reservation, and unregister all registered keys from all I_T nexuses:
+.RS
+\fBmpathpersist -oCK \fI123abc \fI/dev/mapper/mpath9\fR
+.RE
 .
 .
 .\" ----------------------------------------------------------------------------
