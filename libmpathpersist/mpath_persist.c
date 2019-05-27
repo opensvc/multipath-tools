@@ -16,6 +16,7 @@
 #include "config.h"
 #include "switchgroup.h"
 #include "discovery.h"
+#include "configure.h"
 #include "dmparser.h"
 #include <ctype.h>
 #include "propsel.h"
@@ -96,6 +97,17 @@ updatepaths (struct multipath * mpp)
 				continue;
 			}
 			pp->mpp = mpp;
+			if (pp->udev == NULL) {
+				pp->udev = get_udev_device(pp->dev_t, DEV_DEVT);
+				if (pp->udev == NULL) {
+					pp->state = PATH_DOWN;
+					continue;
+				}
+				conf = get_multipath_config();
+				pathinfo(pp, conf, DI_SYSFS|DI_CHECKER);
+				put_multipath_config(conf);
+				continue;
+			}
 			if (pp->state == PATH_UNCHECKED ||
 					pp->state == PATH_WILD) {
 				conf = get_multipath_config();
