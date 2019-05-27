@@ -266,7 +266,6 @@ int main (int argc, char * argv[])
 
 			default:
 				fprintf(stderr, "unrecognised switch " "code 0x%x ??\n", c);
-				usage ();
 				ret = MPATH_PR_SYNTAX_ERROR;
 				goto out;
 		}
@@ -284,7 +283,6 @@ int main (int argc, char * argv[])
 		{
 			for (; optind < argc; ++optind)
 				fprintf (stderr, "Unexpected extra argument: %s\n", argv[optind]);
-			usage ();
 			ret = MPATH_PR_SYNTAX_ERROR;
 			goto out;
 		}
@@ -297,14 +295,12 @@ int main (int argc, char * argv[])
 	if ((prout_flag + prin_flag) == 0)
 	{
 		fprintf (stderr, "choose either '--in' or '--out' \n");
-		usage ();
 		ret = MPATH_PR_SYNTAX_ERROR;
 		goto out;
 	}
 	if ((prout_flag + prin_flag) > 1)
 	{
 		fprintf (stderr, "choose either '--in' or '--out' \n");
-		usage ();
 		ret = MPATH_PR_SYNTAX_ERROR;
 		goto out;
 	}
@@ -335,20 +331,17 @@ int main (int argc, char * argv[])
 		{
 			fprintf (stderr,
 					" No service action given for Persistent Reserve IN\n");
-			usage();
 			ret = MPATH_PR_SYNTAX_ERROR;
 		}
 		else if (num_prin_sa > 1)
 		{
 			fprintf (stderr, " Too many service actions given; choose "
 					"one only\n");
-			usage();
 			ret = MPATH_PR_SYNTAX_ERROR;
 		}
 	}
 	else
 	{
-		usage ();
 		ret = MPATH_PR_SYNTAX_ERROR;
 		goto out;
 	}
@@ -357,7 +350,6 @@ int main (int argc, char * argv[])
 	{
 		fprintf (stderr, " --relative-target-port"
 				" only useful with --register-move\n");
-		usage ();
 		ret = MPATH_PR_SYNTAX_ERROR;
 		goto out;
 	}
@@ -379,7 +371,6 @@ int main (int argc, char * argv[])
 	if (device_name == NULL)
 	{
 		fprintf (stderr, "No device name given \n");
-		usage ();
 		ret = MPATH_PR_SYNTAX_ERROR;
 		goto out;
 	}
@@ -497,6 +488,8 @@ int main (int argc, char * argv[])
 	}
 
 out :
+	if (ret == MPATH_PR_SYNTAX_ERROR)
+		usage();
 	mpath_lib_exit(conf);
 	udev_unref(udev);
 	return (ret >= 0) ? ret : MPATH_PR_OTHER;
