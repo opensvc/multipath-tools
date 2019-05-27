@@ -2,6 +2,7 @@ static struct option long_options[] = {
 	{"verbose", 1, NULL, 'v'},
 	{"clear", 0, NULL, 'C'},
 	{"device", 1, NULL, 'd'},
+	{"batch-file", 1, NULL, 'f' },
 	{"help", 0, NULL, 'h'},
 	{"hex", 0, NULL, 'H'},
 	{"in", 0, NULL, 'i'},
