@@ -375,6 +375,9 @@ static int handle_args(int argc, char * argv[], int nline)
 		/* set verbosity */
 		noisy = (loglevel >= 3) ? 1 : hex;
 		verbose	= (loglevel >= 3)? 3: loglevel;
+		ret = mpath_persistent_reserve_init_vecs(verbose);
+		if (ret != MPATH_PR_SUCCESS)
+			goto out;
 	}
 
 	if ((prout_flag + prin_flag) == 0 && batch_fn == NULL)
@@ -481,7 +484,7 @@ static int handle_args(int argc, char * argv[], int nline)
 			goto out;
 		}
 
-		ret = mpath_persistent_reserve_in (fd, prin_sa, resp, noisy, verbose);
+		ret = __mpath_persistent_reserve_in (fd, prin_sa, resp, noisy);
 		if (ret != MPATH_PR_SUCCESS )
 		{
 			fprintf (stderr, "Persistent Reserve IN command failed\n");
@@ -541,8 +544,8 @@ static int handle_args(int argc, char * argv[], int nline)
 		}
 
 		/* PROUT commands other than 'register and move' */
-		ret = mpath_persistent_reserve_out (fd, prout_sa, 0, prout_type,
-				paramp, noisy, verbose);
+		ret = __mpath_persistent_reserve_out (fd, prout_sa, 0, prout_type,
+				paramp, noisy);
 		for (j = 0 ; j < num_transport; j++)
 		{
 			tmp = paramp->trnptid_list[j];
@@ -581,6 +584,8 @@ out :
 		free(batch_fn);
 		ret = ret == 0 ? rv : ret;
 	}
+	if (nline == 0)
+		mpath_persistent_reserve_free_vecs();
 	return (ret >= 0) ? ret : MPATH_PR_OTHER;
 }
 
