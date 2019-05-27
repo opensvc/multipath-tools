@@ -215,6 +215,15 @@ extern int mpath_persistent_reserve_in (int fd, int rq_servact, struct prin_resp
 
 /*
  * DESCRIPTION :
+ * This function is like mpath_persistent_reserve_in(), except that it doesn't call
+ * mpath_persistent_reserve_init_vecs() and mpath_persistent_reserve_free_vecs()
+ * before and after the actual PR call.
+ */
+extern int __mpath_persistent_reserve_in(int fd, int rq_servact,
+		struct prin_resp *resp, int noisy);
+
+/*
+ * DESCRIPTION :
  * This function sends PROUT command to the DM device and get the response.
  *
  * @fd: The file descriptor of a multipath device. Input argument.
@@ -238,6 +247,37 @@ extern int mpath_persistent_reserve_in (int fd, int rq_servact, struct prin_resp
 extern int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 		unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy,
 		int verbose);
+/*
+ * DESCRIPTION :
+ * This function is like mpath_persistent_reserve_out(), except that it doesn't call
+ * mpath_persistent_reserve_init_vecs() and mpath_persistent_reserve_free_vecs()
+ * before and after the actual PR call.
+ */
+extern int __mpath_persistent_reserve_out( int fd, int rq_servact, int rq_scope,
+		unsigned int rq_type, struct prout_param_descriptor *paramp,
+		int noisy);
+
+/*
+ * DESCRIPTION :
+ * This function allocates data structures and performs basic initialization and
+ * device discovery for later calls of __mpath_persistent_reserve_in() or
+ * __mpath_persistent_reserve_out().
+ * @verbose: Set verbosity level. Input argument. value:0 to 3. 0->disabled, 3->Max verbose
+ *
+ * RESTRICTIONS:
+ *
+ * RETURNS: MPATH_PR_SUCCESS if successful else returns any of the status specified
+ *       above in RETURN_STATUS.
+ */
+int mpath_persistent_reserve_init_vecs(int verbose);
+
+/*
+ * DESCRIPTION :
+ * This function frees data structures allocated by
+ * mpath_persistent_reserve_init_vecs().
+ */
+void mpath_persistent_reserve_free_vecs(void);
+
 
 #ifdef __cplusplus
 }

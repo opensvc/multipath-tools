@@ -164,48 +164,47 @@ mpath_prin_activepath (struct multipath *mpp, int rq_servact,
 int mpath_persistent_reserve_in (int fd, int rq_servact,
 	struct prin_resp *resp, int noisy, int verbose)
 {
-	struct stat info;
-	vector curmp = NULL;
-	vector pathvec = NULL;
-	char * alias;
-	struct multipath * mpp;
-	int map_present;
-	int major, minor;
-	int ret;
-	struct config *conf;
+	int ret = mpath_persistent_reserve_init_vecs(verbose);
 
-	conf = get_multipath_config();
+	if (ret != MPATH_PR_SUCCESS)
+		return ret;
+	ret = __mpath_persistent_reserve_in(fd, rq_servact, resp, noisy);
+	mpath_persistent_reserve_free_vecs();
+	return ret;
+}
+
+int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
+	unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy, int verbose)
+{
+	int ret = mpath_persistent_reserve_init_vecs(verbose);
+
+	if (ret != MPATH_PR_SUCCESS)
+		return ret;
+	ret = __mpath_persistent_reserve_out(fd, rq_servact, rq_scope, rq_type,
+					     paramp, noisy);
+	mpath_persistent_reserve_free_vecs();
+	return ret;
+}
+
+static vector curmp;
+static vector pathvec;
+
+void mpath_persistent_reserve_free_vecs(void)
+{
+	free_multipathvec(curmp, KEEP_PATHS);
+	free_pathvec(pathvec, FREE_PATHS);
+	curmp = pathvec = NULL;
+}
+
+int mpath_persistent_reserve_init_vecs(int verbose)
+{
+	struct config *conf = get_multipath_config();
+
 	conf->verbosity = verbose;
 	put_multipath_config(conf);
 
-	if (fstat( fd, &info) != 0){
-		condlog(0, "stat error %d", fd);
-		return MPATH_PR_FILE_ERROR;
-	}
-	if(!S_ISBLK(info.st_mode)){
-		condlog(0, "Failed to get major:minor. fd = %d", fd);
-		return MPATH_PR_FILE_ERROR;
-	}
-
-	major = major(info.st_rdev);
-	minor = minor(info.st_rdev);
-	condlog(4, "Device %d:%d:  ", major, minor);
-
-	/* get alias from major:minor*/
-	alias = dm_mapname(major, minor);
-	if (!alias){
-		condlog(0, "%d:%d failed to get device alias.", major, minor);
-		return MPATH_PR_DMMP_ERROR;
-	}
-
-	condlog(3, "alias = %s", alias);
-	map_present = dm_map_present(alias);
-	if (map_present && dm_is_mpath(alias) != 1){
-		condlog( 0, "%s: not a multipath device.", alias);
-		ret = MPATH_PR_DMMP_ERROR;
-		goto out;
-	}
-
+	if (curmp)
+		return MPATH_PR_SUCCESS;
 	/*
 	 * allocate core vectors to store paths and multipaths
 	 */
@@ -213,70 +212,32 @@ int mpath_persistent_reserve_in (int fd, int rq_servact,
 	pathvec = vector_alloc ();
 
 	if (!curmp || !pathvec){
-		condlog (0, "%s: vector allocation failed.", alias);
-		ret = MPATH_PR_DMMP_ERROR;
-		if (curmp)
-			vector_free(curmp);
-		if (pathvec)
-			vector_free(pathvec);
-		goto out;
+		condlog (0, "vector allocation failed.");
+		goto err;
 	}
 
-	if (path_discovery(pathvec, DI_SYSFS | DI_CHECKER) < 0) {
-		ret = MPATH_PR_DMMP_ERROR;
-		goto out1;
-	}
+	if (dm_get_maps(curmp))
+		goto err;
 
-	/* get info of all paths from the dm device	*/
-	if (get_mpvec (curmp, pathvec, alias)){
-		condlog(0, "%s: failed to get device info.", alias);
-		ret = MPATH_PR_DMMP_ERROR;
-		goto out1;
-	}
+	return MPATH_PR_SUCCESS;
 
-	mpp = find_mp_by_alias(curmp, alias);
-	if (!mpp){
-		condlog(0, "%s: devmap not registered.", alias);
-		ret = MPATH_PR_DMMP_ERROR;
-		goto out1;
-	}
-
-	ret = mpath_prin_activepath(mpp, rq_servact, resp, noisy);
-
-out1:
-	free_multipathvec(curmp, KEEP_PATHS);
-	free_pathvec(pathvec, FREE_PATHS);
-out:
-	FREE(alias);
-	return ret;
+err:
+	mpath_persistent_reserve_free_vecs();
+	return MPATH_PR_DMMP_ERROR;
 }
 
-int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
-	unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy, int verbose)
+static int mpath_get_map(int fd, char **palias, struct multipath **pmpp)
 {
-
+	int ret = MPATH_PR_DMMP_ERROR;
 	struct stat info;
-
-	vector curmp = NULL;
-	vector pathvec = NULL;
-
-	char * alias;
-	struct multipath * mpp;
-	int map_present;
 	int major, minor;
-	int ret;
-	uint64_t prkey;
-	struct config *conf;
+	char *alias;
+	struct multipath *mpp;
 
-	conf = get_multipath_config();
-	conf->verbosity = verbose;
-	put_multipath_config(conf);
-
-	if (fstat( fd, &info) != 0){
+	if (fstat(fd, &info) != 0){
 		condlog(0, "stat error fd=%d", fd);
 		return MPATH_PR_FILE_ERROR;
 	}
-
 	if(!S_ISBLK(info.st_mode)){
 		condlog(3, "Failed to get major:minor. fd=%d", fd);
 		return MPATH_PR_FILE_ERROR;
@@ -286,56 +247,72 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	minor = minor(info.st_rdev);
 	condlog(4, "Device  %d:%d", major, minor);
 
-	/* get WWN of the device from major:minor*/
+	/* get alias from major:minor*/
 	alias = dm_mapname(major, minor);
 	if (!alias){
+		condlog(0, "%d:%d failed to get device alias.", major, minor);
 		return MPATH_PR_DMMP_ERROR;
 	}
 
 	condlog(3, "alias = %s", alias);
-	map_present = dm_map_present(alias);
 
-	if (map_present && dm_is_mpath(alias) != 1){
+	if (dm_map_present(alias) && dm_is_mpath(alias) != 1){
 		condlog(3, "%s: not a multipath device.", alias);
-		ret = MPATH_PR_DMMP_ERROR;
 		goto out;
-	}
-
-	/*
-	 * allocate core vectors to store paths and multipaths
-	 */
-	curmp = vector_alloc ();
-	pathvec = vector_alloc ();
-
-	if (!curmp || !pathvec){
-		condlog (0, "%s: vector allocation failed.", alias);
-		ret = MPATH_PR_DMMP_ERROR;
-		if (curmp)
-			vector_free(curmp);
-		if (pathvec)
-			vector_free(pathvec);
-		goto out;
-	}
-
-	if (path_discovery(pathvec, DI_SYSFS | DI_CHECKER) < 0) {
-		ret = MPATH_PR_DMMP_ERROR;
-		goto out1;
 	}
 
 	/* get info of all paths from the dm device     */
 	if (get_mpvec(curmp, pathvec, alias)){
 		condlog(0, "%s: failed to get device info.", alias);
-		ret = MPATH_PR_DMMP_ERROR;
-		goto out1;
+		goto out;
 	}
 
 	mpp = find_mp_by_alias(curmp, alias);
 
 	if (!mpp) {
 		condlog(0, "%s: devmap not registered.", alias);
-		ret = MPATH_PR_DMMP_ERROR;
-		goto out1;
+		goto out;
 	}
+
+	ret = MPATH_PR_SUCCESS;
+	if (pmpp)
+		*pmpp = mpp;
+	if (palias) {
+		*palias = alias;
+		alias = NULL;
+	}
+out:
+	FREE(alias);
+	return ret;
+}
+
+int __mpath_persistent_reserve_in (int fd, int rq_servact,
+	struct prin_resp *resp, int noisy)
+{
+	struct multipath *mpp;
+	int ret;
+
+	ret = mpath_get_map(fd, NULL, &mpp);
+	if (ret != MPATH_PR_SUCCESS)
+		return ret;
+
+	ret = mpath_prin_activepath(mpp, rq_servact, resp, noisy);
+
+	return ret;
+}
+
+int __mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
+	unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy)
+{
+	struct multipath *mpp;
+	char *alias;
+	int ret;
+	uint64_t prkey;
+	struct config *conf;
+
+	ret = mpath_get_map(fd, &alias, &mpp);
+	if (ret != MPATH_PR_SUCCESS)
+		return ret;
 
 	conf = get_multipath_config();
 	select_reservation_key(conf, mpp);
@@ -397,10 +374,6 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 		update_prkey(alias, 0);
 	}
 out1:
-	free_multipathvec(curmp, KEEP_PATHS);
-	free_pathvec(pathvec, FREE_PATHS);
-
-out:
 	FREE(alias);
 	return ret;
 }
@@ -412,21 +385,21 @@ get_mpvec (vector curmp, vector pathvec, char * refwwid)
 	struct multipath *mpp;
 	char params[PARAMS_SIZE], status[PARAMS_SIZE];
 
-	if (dm_get_maps (curmp)){
-		return 1;
-	}
-
 	vector_foreach_slot (curmp, mpp, i){
 		/*
 		 * discard out of scope maps
 		 */
-		if (mpp->alias && refwwid &&
-		    strncmp (mpp->alias, refwwid, WWID_SIZE - 1)){
-			free_multipath (mpp, KEEP_PATHS);
-			vector_del_slot (curmp, i);
-			i--;
+		if (!mpp->alias) {
+			condlog(0, "%s: map with empty alias!", __func__);
 			continue;
 		}
+
+		if (mpp->pg != NULL)
+			/* Already seen this one */
+			continue;
+
+		if (refwwid && strncmp (mpp->alias, refwwid, WWID_SIZE - 1))
+			continue;
 
 		dm_get_map(mpp->alias, &mpp->size, params);
 		condlog(3, "params = %s", params);
