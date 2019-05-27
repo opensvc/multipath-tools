@@ -155,7 +155,7 @@ static int do_batch_file(const char *batch_fn)
 
 static int handle_args(int argc, char * argv[], int nline)
 {
-	int fd, c, res;
+	int fd, c;
 	const char *device_name = NULL;
 	int num_prin_sa = 0;
 	int num_prout_sa = 0;
@@ -180,7 +180,6 @@ static int handle_args(int argc, char * argv[], int nline)
 	char *batch_fn = NULL;
 	void *resp = NULL;
 	struct transportid * tmp;
-	struct config *conf = multipath_conf;
 
 	memset(transportids, 0, MPATH_MX_TIDS * sizeof(struct transportid));
 
@@ -566,13 +565,7 @@ static int handle_args(int argc, char * argv[], int nline)
 		printf("PR out: command failed\n");
 	}
 
-	res = close (fd);
-	if (res < 0)
-	{
-		mpath_lib_exit(conf);
-		udev_unref(udev);
-		return MPATH_PR_FILE_ERROR;
-	}
+	close (fd);
 
 out :
 	if (ret == MPATH_PR_SYNTAX_ERROR) {
