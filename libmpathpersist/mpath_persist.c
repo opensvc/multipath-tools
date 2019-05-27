@@ -114,12 +114,6 @@ updatepaths (struct multipath * mpp)
 				pathinfo(pp, conf, DI_CHECKER);
 				put_multipath_config(conf);
 			}
-
-			if (pp->priority == PRIO_UNDEF) {
-				conf = get_multipath_config();
-				pathinfo(pp, conf, DI_PRIO);
-				put_multipath_config(conf);
-			}
 		}
 	}
 	return 0;
@@ -413,7 +407,6 @@ get_mpvec (vector curmp, vector pathvec, char * refwwid)
 		 * about them
 		 */
 		updatepaths(mpp);
-		mpp->bestpg = select_path_group (mpp);
 		disassemble_status (status, mpp);
 
 	}
