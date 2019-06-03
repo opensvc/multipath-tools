@@ -730,7 +730,7 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 		conf = get_multipath_config();
 		pthread_cleanup_push(put_multipath_config, conf);
 		r = store_pathinfo(vecs->pathvec, conf,
-				   udevice, DI_ALL, &pp);
+				   udevice, DI_ALL | DI_BLACKLIST, &pp);
 		pthread_cleanup_pop(1);
 		udev_device_unref(udevice);
 		if (!pp) {

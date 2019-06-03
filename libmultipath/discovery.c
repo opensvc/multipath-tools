@@ -134,7 +134,8 @@ path_discover (vector pathvec, struct config * conf,
 		pp = find_path_by_devt(pathvec, devt);
 		if (!pp)
 			return store_pathinfo(pathvec, conf,
-					      udevice, flag, NULL);
+					      udevice, flag | DI_BLACKLIST,
+					      NULL);
 	}
 	return pathinfo(pp, conf, flag);
 }
