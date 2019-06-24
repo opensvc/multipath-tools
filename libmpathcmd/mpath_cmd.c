@@ -103,8 +103,10 @@ int __mpath_connect(int nonblocking)
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_LOCAL;
 	addr.sun_path[0] = '\0';
+	strncpy(&addr.sun_path[1], DEFAULT_SOCKET, sizeof(addr.sun_path) - 1);
 	len = strlen(DEFAULT_SOCKET) + 1 + sizeof(sa_family_t);
-	strncpy(&addr.sun_path[1], DEFAULT_SOCKET, len);
+	if (len > sizeof(struct sockaddr_un))
+		len = sizeof(struct sockaddr_un);
 
 	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
 	if (fd == -1)

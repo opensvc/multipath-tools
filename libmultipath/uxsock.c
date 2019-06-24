@@ -66,9 +66,12 @@ int ux_socket_listen(const char *name)
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_LOCAL;
 	addr.sun_path[0] = '\0';
-	len = strlen(name) + 1 + sizeof(sa_family_t);
-	strncpy(&addr.sun_path[1], name, len);
+	len = strlen(name) + 1;
+	if (len >= sizeof(addr.sun_path))
+		len = sizeof(addr.sun_path) - 1;
+	memcpy(&addr.sun_path[1], name, len);
 
+	len += sizeof(sa_family_t);
 	if (bind(fd, (struct sockaddr *)&addr, len) == -1) {
 		condlog(3, "Couldn't bind to ux_socket, error %d", errno);
 		close(fd);
