@@ -43,7 +43,11 @@ void uevent_get_wwid(struct uevent *uev);
 
 static int setup_uev(void **state)
 {
+	static char test_uid_attrs[] =
+		"dasd:ID_SPAM   sd:ID_BOGUS nvme:ID_EGGS    ";
+
 	struct uevent *uev = alloc_uevent();
+	struct config *conf;
 
 	if (uev == NULL)
 		return -1;
@@ -51,11 +55,16 @@ static int setup_uev(void **state)
 	*state = uev;
 	uev->kernel = "sdo";
 	uev->envp[0] = "MAJOR=" str(MAJOR);
+	uev->envp[1] = "ID_SPAM=nonsense";
 	uev->envp[1] = "ID_BOGUS=" WWID;
 	uev->envp[2] = "MINOR=" str(MINOR);
 	uev->envp[3] = "DM_NAME=" DM_NAME;
 	uev->envp[4] = "DISK_RO=" str(DISK_RO);
 	uev->envp[5] = NULL;
+
+	conf = get_multipath_config();
+	parse_uid_attrs(test_uid_attrs, conf);
+	put_multipath_config(conf);
 	return 0;
 }
 

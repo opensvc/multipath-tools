@@ -585,8 +585,7 @@ free_config (struct config * conf)
 	if (conf->uid_attribute)
 		FREE(conf->uid_attribute);
 
-	if (conf->uid_attrs)
-		FREE(conf->uid_attrs);
+	vector_reset(&conf->uid_attrs);
 
 	if (conf->getuid)
 		FREE(conf->getuid);
@@ -718,7 +717,6 @@ load_config (char * file)
 	conf->remove_retries = 0;
 	conf->ghost_delay = DEFAULT_GHOST_DELAY;
 	conf->all_tg_pt = DEFAULT_ALL_TG_PT;
-
 	/*
 	 * preload default hwtable
 	 */
@@ -852,4 +850,51 @@ load_config (char * file)
 out:
 	free_config(conf);
 	return NULL;
+}
+
+char *get_uid_attribute_by_attrs(struct config *conf,
+				 const char *path_dev)
+{
+	vector uid_attrs = &conf->uid_attrs;
+	int j;
+	char *att, *col;
+
+	vector_foreach_slot(uid_attrs, att, j) {
+		col = strrchr(att, ':');
+		if (!col)
+			continue;
+		if (!strncmp(path_dev, att, col - att))
+			return col + 1;
+	}
+	return NULL;
+}
+
+int parse_uid_attrs(char *uid_attrs, struct config *conf)
+{
+	vector attrs  = &conf->uid_attrs;
+	char *uid_attr_record, *tmp;
+	int  ret = 0, count;
+
+	if (!uid_attrs)
+		return 1;
+
+	count = get_word(uid_attrs, &uid_attr_record);
+	while (uid_attr_record) {
+		tmp = strchr(uid_attr_record, ':');
+		if (!tmp) {
+			condlog(2, "invalid record in uid_attrs: %s",
+				uid_attr_record);
+			free(uid_attr_record);
+			ret = 1;
+		} else if (!vector_alloc_slot(attrs)) {
+			free(uid_attr_record);
+			ret = 1;
+		} else
+			vector_set_slot(attrs, uid_attr_record);
+		if (!count)
+			break;
+		uid_attrs += count;
+		count = get_word(uid_attrs, &uid_attr_record);
+	}
+	return ret;
 }

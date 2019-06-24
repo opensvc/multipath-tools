@@ -190,7 +190,7 @@ struct config {
 
 	char * multipath_dir;
 	char * selector;
-	char * uid_attrs;
+	struct _vector uid_attrs;
 	char * uid_attribute;
 	char * getuid;
 	char * features;
@@ -249,5 +249,9 @@ struct config * alloc_config (void);
 void free_config (struct config * conf);
 extern struct config *get_multipath_config(void);
 extern void put_multipath_config(void *);
+
+int parse_uid_attrs(char *uid_attrs, struct config *conf);
+char *get_uid_attribute_by_attrs(struct config *conf,
+				 const char *path_dev);
 
 #endif

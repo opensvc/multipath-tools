@@ -374,8 +374,38 @@ declare_ovr_snprint(selector, print_str)
 declare_mp_handler(selector, set_str)
 declare_mp_snprint(selector, print_str)
 
-declare_def_handler(uid_attrs, set_str)
-declare_def_snprint(uid_attrs, print_str)
+static int snprint_uid_attrs(struct config *conf, char *buff, int len,
+			     const void *dummy)
+{
+	char *p = buff;
+	int n, j;
+	const char *att;
+
+	vector_foreach_slot(&conf->uid_attrs, att, j) {
+		n = snprintf(p, len, "%s%s", j == 0 ? "" : " ", att);
+		if (n >= len)
+			return (p - buff) + n;
+		p += n;
+		len -= n;
+	}
+	return p - buff;
+}
+
+static int uid_attrs_handler(struct config *conf, vector strvec)
+{
+	char *val;
+
+	vector_reset(&conf->uid_attrs);
+	val = set_value(strvec);
+	if (!val)
+		return 1;
+	if (parse_uid_attrs(val, conf))
+		condlog(1, "error parsing uid_attrs: \"%s\"", val);
+	condlog(3, "parsed %d uid_attrs", VECTOR_SIZE(&conf->uid_attrs));
+	FREE(val);
+	return 0;
+}
+
 declare_def_handler(uid_attribute, set_str)
 declare_def_snprint_defstr(uid_attribute, print_str, DEFAULT_UID_ATTRIBUTE)
 declare_ovr_handler(uid_attribute, set_str)
@@ -1618,7 +1648,7 @@ init_keywords(vector keywords)
 	install_keyword("multipath_dir", &def_multipath_dir_handler, &snprint_def_multipath_dir);
 	install_keyword("path_selector", &def_selector_handler, &snprint_def_selector);
 	install_keyword("path_grouping_policy", &def_pgpolicy_handler, &snprint_def_pgpolicy);
-	install_keyword("uid_attrs", &def_uid_attrs_handler, &snprint_def_uid_attrs);
+	install_keyword("uid_attrs", &uid_attrs_handler, &snprint_uid_attrs);
 	install_keyword("uid_attribute", &def_uid_attribute_handler, &snprint_def_uid_attribute);
 	install_keyword("getuid_callout", &def_getuid_handler, &snprint_def_getuid);
 	install_keyword("prio", &def_prio_name_handler, &snprint_def_prio_name);

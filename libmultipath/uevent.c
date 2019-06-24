@@ -163,13 +163,12 @@ uevent_get_wwid(struct uevent *uev)
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
-	uid_attribute = parse_uid_attribute_by_attrs(conf->uid_attrs, uev->kernel);
+	uid_attribute = get_uid_attribute_by_attrs(conf, uev->kernel);
 	pthread_cleanup_pop(1);
 
 	val = uevent_get_env_var(uev, uid_attribute);
 	if (val)
 		uev->wwid = val;
-	FREE(uid_attribute);
 }
 
 bool
@@ -179,7 +178,7 @@ uevent_need_merge(void)
 	bool need_merge = false;
 
 	conf = get_multipath_config();
-	if (conf->uid_attrs)
+	if (VECTOR_SIZE(&conf->uid_attrs) > 0)
 		need_merge = true;
 	put_multipath_config(conf);
 

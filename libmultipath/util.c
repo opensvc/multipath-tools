@@ -273,48 +273,6 @@ dev_t parse_devt(const char *dev_t)
 	return makedev(maj, min);
 }
 
-char *parse_uid_attribute_by_attrs(char *uid_attrs, char *path_dev)
-{
-	char *uid_attribute;
-	char *uid_attr_record;
-	char *dev;
-	char *attr;
-	char *tmp;
-	int  count;
-
-	if(!uid_attrs || !path_dev)
-		return NULL;
-
-	count = get_word(uid_attrs, &uid_attr_record);
-	while (uid_attr_record) {
-		tmp = strrchr(uid_attr_record, ':');
-		if (!tmp) {
-			free(uid_attr_record);
-			if (!count)
-				break;
-			uid_attrs += count;
-			count = get_word(uid_attrs, &uid_attr_record);
-			continue;
-		}
-		dev = uid_attr_record;
-		attr = tmp + 1;
-		*tmp = '\0';
-
-		if(!strncmp(path_dev, dev, strlen(dev))) {
-			uid_attribute = STRDUP(attr);
-			free(uid_attr_record);
-			return uid_attribute;
-		}
-
-		free(uid_attr_record);
-		if (!count)
-			break;
-		uid_attrs += count;
-		count = get_word(uid_attrs, &uid_attr_record);
-	}
-	return NULL;
-}
-
 void
 setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
 {

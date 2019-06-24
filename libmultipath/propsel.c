@@ -536,9 +536,9 @@ int select_getuid(struct config *conf, struct path *pp)
 {
 	const char *origin;
 
-	pp->uid_attribute = parse_uid_attribute_by_attrs(conf->uid_attrs, pp->dev);
+	pp->uid_attribute = get_uid_attribute_by_attrs(conf, pp->dev);
 	if (pp->uid_attribute) {
-		origin = "(setting: multipath.conf defaults section)";
+		origin = "(setting: multipath.conf defaults section / uid_attrs)";
 		goto out;
 	}
 
