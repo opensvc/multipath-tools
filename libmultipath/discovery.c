@@ -1023,43 +1023,31 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 				len += sprintf(out + len,
 					       "%02x", vpd[i]);
 		} else if (vpd_type == 0x8) {
-			if (!memcmp("eui.", vpd, 4)) {
+			if (!memcmp("eui.", vpd, 4))
 				out[0] =  '2';
-				vpd += 4;
-				len = vpd_len - 4;
-				if (len > out_len - 1) {
-					condlog(1, "%s: WWID overflow, type 8/%c, %d/%lu bytes required",
-						__func__, out[0], len + 1, out_len);
-					len = out_len - 1;
-				}
-				for (i = 0; i < len; ++i)
-					out[1 + i] = tolower(vpd[i]);
-				/* designator should be 0-terminated, but let's make sure */
-				out[len] = '\0';
-			} else if (!memcmp("naa.", vpd, 4)) {
+			else if (!memcmp("naa.", vpd, 4))
 				out[0] = '3';
-				vpd += 4;
-				len = vpd_len - 4;
-				if (len > out_len - 1) {
-					condlog(1, "%s: WWID overflow, type 8/%c, %d/%lu bytes required",
-						__func__, out[0], len + 1, out_len);
-					len = out_len - 1;
-				}
+			else
+				out[0] = '8';
+
+			vpd += 4;
+			len = vpd_len - 4;
+			if (len > out_len - 1) {
+				condlog(1, "%s: WWID overflow, type 8/%c, %d/%lu bytes required",
+					__func__, out[0], len + 1, out_len);
+				len = out_len - 1;
+			}
+
+			if (out[0] == '8')
+				for (i = 0; i < len; ++i)
+					out[1 + i] = vpd[i];
+			else
 				for (i = 0; i < len; ++i)
 					out[1 + i] = tolower(vpd[i]);
-				out[len] = '\0';
-			} else {
-				out[0] = '8';
-				vpd += 4;
-				len = vpd_len - 4;
-				if (len > out_len - 1) {
-					condlog(1, "%s: WWID overflow, type 8/%c, %d/%lu bytes required",
-						__func__, out[0], len + 1, out_len);
-					len = out_len - 1;
-				}
-				memcpy(out + 1, vpd, len);
-				out[len] = '\0';
-			}
+
+			/* designator should be 0-terminated, but let's make sure */
+			out[len] = '\0';
+
 		} else if (vpd_type == 0x1) {
 			const unsigned char *p;
 			int p_len;
