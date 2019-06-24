@@ -18,12 +18,12 @@
 #define WORD_SIZE 64
 
 static int
-merge_words (char ** dst, char * word, int space)
+merge_words(char **dst, char *word)
 {
 	char * p = *dst;
 	int len;
 
-	len = strlen(*dst) + strlen(word) + space;
+	len = strlen(*dst) + strlen(word) + 1;
 	*dst = REALLOC(*dst, len + 1);
 
 	if (!*dst) {
@@ -36,11 +36,8 @@ merge_words (char ** dst, char * word, int space)
 	while (*p != '\0')
 		p++;
 
-	while (space) {
-		*p = ' ';
-		p++;
-		space--;
-	}
+	*p = ' ';
+	++p;
 	strncpy(p, word, strlen(word) + 1);
 
 	return 0;
@@ -163,7 +160,7 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 		if (!word)
 			return 1;
 
-		if (merge_words(&mpp->features, word, 1)) {
+		if (merge_words(&mpp->features, word)) {
 			FREE(word);
 			return 1;
 		}
@@ -187,7 +184,7 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 		if (!word)
 			return 1;
 
-		if (merge_words(&mpp->hwhandler, word, 1)) {
+		if (merge_words(&mpp->hwhandler, word)) {
 			FREE(word);
 			return 1;
 		}
@@ -248,9 +245,8 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 
 			num_pg_args = atoi(word);
 
-			if (merge_words(&mpp->selector, word, 1)) {
+			if (merge_words(&mpp->selector, word))
 				goto out1;
-			}
 			FREE(word);
 		} else {
 			p += get_word(p, NULL);
