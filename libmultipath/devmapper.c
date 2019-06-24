@@ -13,7 +13,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/sysmacros.h>
+#include <linux/dm-ioctl.h>
 
+#include "util.h"
 #include "checkers.h"
 #include "vector.h"
 #include "structs.h"
@@ -554,7 +556,7 @@ out:
 }
 
 static int
-dm_get_prefixed_uuid(const char *name, char *uuid)
+dm_get_prefixed_uuid(const char *name, char *uuid, int uuid_len)
 {
 	struct dm_task *dmt;
 	const char *uuidtmp;
@@ -572,7 +574,7 @@ dm_get_prefixed_uuid(const char *name, char *uuid)
 
 	uuidtmp = dm_task_get_uuid(dmt);
 	if (uuidtmp)
-		strcpy(uuid, uuidtmp);
+		strlcpy(uuid, uuidtmp, uuid_len);
 	else
 		uuid[0] = '\0';
 
@@ -582,14 +584,18 @@ uuidout:
 	return r;
 }
 
-int dm_get_uuid(const char *name, char *uuid)
+int dm_get_uuid(const char *name, char *uuid, int uuid_len)
 {
-	if (dm_get_prefixed_uuid(name, uuid))
+	char tmp[DM_UUID_LEN];
+
+	if (dm_get_prefixed_uuid(name, tmp, sizeof(tmp)))
 		return 1;
 
-	if (!strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN))
-		memmove(uuid, uuid + UUID_PREFIX_LEN,
-			strlen(uuid + UUID_PREFIX_LEN) + 1);
+	if (!strncmp(tmp, UUID_PREFIX, UUID_PREFIX_LEN))
+		strlcpy(uuid, tmp + UUID_PREFIX_LEN, uuid_len);
+	else
+		uuid[0] = '\0';
+
 	return 0;
 }
 
@@ -597,12 +603,12 @@ static int
 is_mpath_part(const char *part_name, const char *map_name)
 {
 	char *p;
-	char part_uuid[WWID_SIZE], map_uuid[WWID_SIZE];
+	char part_uuid[DM_UUID_LEN], map_uuid[DM_UUID_LEN];
 
-	if (dm_get_prefixed_uuid(part_name, part_uuid))
+	if (dm_get_prefixed_uuid(part_name, part_uuid, sizeof(part_uuid)))
 		return 0;
 
-	if (dm_get_prefixed_uuid(map_name, map_uuid))
+	if (dm_get_prefixed_uuid(map_name, map_uuid, sizeof(map_uuid)))
 		return 0;
 
 	if (strncmp(part_uuid, "part", 4) != 0)
@@ -1066,7 +1072,7 @@ struct multipath *dm_get_multipath(const char *name)
 	if (dm_get_map(name, &mpp->size, NULL))
 		goto out;
 
-	dm_get_uuid(name, mpp->wwid);
+	dm_get_uuid(name, mpp->wwid, WWID_SIZE);
 	dm_get_info(name, &mpp->dmi);
 
 	return mpp;

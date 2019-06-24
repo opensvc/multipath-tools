@@ -407,7 +407,7 @@ set_multipath_wwid (struct multipath * mpp)
 	if (strlen(mpp->wwid))
 		return;
 
-	dm_get_uuid(mpp->alias, mpp->wwid);
+	dm_get_uuid(mpp->alias, mpp->wwid, WWID_SIZE);
 }
 
 static void set_no_path_retry(struct multipath *mpp)

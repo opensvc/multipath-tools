@@ -1451,7 +1451,7 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 
 		conf = get_multipath_config();
 		pthread_cleanup_push(put_multipath_config, conf);
-		if (((dm_get_uuid(dev, tmpwwid)) == 0)
+		if (((dm_get_uuid(dev, tmpwwid, WWID_SIZE)) == 0)
 		    && (strlen(tmpwwid))) {
 			refwwid = tmpwwid;
 			goto check;
