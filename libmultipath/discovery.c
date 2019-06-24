@@ -1876,20 +1876,20 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev,
 			len = strlen(pp->wwid);
 		origin = "callout";
 	} else {
+		bool udev_available = udev && pp->uid_attribute
+			&& *pp->uid_attribute;
 
-		if (udev && pp->uid_attribute) {
+		if (udev_available) {
 			len = get_udev_uid(pp, pp->uid_attribute, udev);
-			origin = "udev";
 			if (len <= 0)
 				condlog(1,
 					"%s: failed to get udev uid: %s",
 					pp->dev, strerror(-len));
-
-		} else if (pp->bus == SYSFS_BUS_SCSI) {
-			len = get_vpd_uid(pp);
-			origin = "sysfs";
+			else
+				origin = "udev";
 		}
-		if (len <= 0 && allow_fallback && has_uid_fallback(pp)) {
+		if ((!udev_available || (len <= 0 && allow_fallback))
+		    && has_uid_fallback(pp)) {
 			used_fallback = 1;
 			len = uid_fallback(pp, path_state, &origin);
 		}
