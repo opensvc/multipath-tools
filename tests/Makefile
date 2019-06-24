@@ -3,7 +3,7 @@ include ../Makefile.inc
 CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathcmddir)
 LIBDEPS += -L$(multipathdir) -lmultipath -lcmocka
 
-TESTS := uevent parser util dmevents hwtable blacklist unaligned
+TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd
 
 .SILENT: $(TESTS:%=%.o)
 .PRECIOUS: $(TESTS:%=%-test)
@@ -25,6 +25,8 @@ hwtable-test_OBJDEPS := ../libmultipath/discovery.o ../libmultipath/blacklist.o 
 hwtable-test_LIBDEPS := -ludev -lpthread -ldl
 blacklist-test_OBJDEPS := ../libmultipath/blacklist.o
 blacklist-test_LIBDEPS := -ludev
+vpd-test_OBJDEPS :=  ../libmultipath/discovery.o
+vpd-test_LIBDEPS := -ludev -lpthread -ldl
 
 lib/libchecktur.so:
 	mkdir lib
