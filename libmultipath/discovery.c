@@ -1037,12 +1037,11 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 				}
 			} else {
 				out[0] = '8';
-				len = 1;
 				vpd += 4;
 				vpd_len -= 4;
 				if (vpd_len > out_len - 2)
 					vpd_len = out_len - 2;
-				memcpy(out, vpd, vpd_len);
+				memcpy(out + 1, vpd, vpd_len);
 				len = vpd_len + 1;
 				out[len] = '\0';
 			}
