@@ -68,7 +68,7 @@ typedef struct volume_label
 	char res3[28];	        /* reserved                                  */
 	uint8_t ldl_version;    /* version number, valid for ldl format      */
 	uint64_t formatted_blocks; /* valid when ldl_version >= f2           */
-} __attribute__ ((packed)) volume_label_t;
+} __attribute__ ((packed, aligned(__alignof__(int)))) volume_label_t;
 
 
 typedef struct extent
