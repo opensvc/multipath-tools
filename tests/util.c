@@ -258,10 +258,152 @@ int test_basenamecpy(void)
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }
 
+static const char src_str[] = "Hello";
+
+/* strlcpy with length 0 */
+static void test_strlcpy_0(void **state)
+{
+	char tst[] = "word";
+	int rc;
+
+	rc = strlcpy(tst, src_str, 0);
+	assert_int_equal(rc, strlen(src_str));
+	assert_string_equal(tst, "word");
+}
+
+/* strlcpy with length 1 */
+static void test_strlcpy_1(void **state)
+{
+	char tst[] = "word";
+	int rc;
+
+	rc = strlcpy(tst, src_str, 1);
+	assert_int_equal(rc, strlen(src_str));
+	assert_int_equal(tst[0], '\0');
+	assert_string_equal(tst + 1, "ord");
+}
+
+/* strlcpy with length 2 */
+static void test_strlcpy_2(void **state)
+{
+	char tst[] = "word";
+	int rc;
+
+	rc = strlcpy(tst, src_str, 2);
+	assert_int_equal(rc, strlen(src_str));
+	assert_int_equal(tst[0], src_str[0]);
+	assert_int_equal(tst[1], '\0');
+	assert_string_equal(tst + 2, "rd");
+}
+
+/* strlcpy with dst length < src length */
+static void test_strlcpy_3(void **state)
+{
+	char tst[] = "word";
+	int rc;
+
+	rc = strlcpy(tst, src_str, sizeof(tst));
+	assert_int_equal(rc, strlen(src_str));
+	assert_int_equal(sizeof(tst) - 1, strlen(tst));
+	assert_true(strncmp(tst, src_str, sizeof(tst) - 1) == 0);
+}
+
+/* strlcpy with dst length > src length */
+static void test_strlcpy_4(void **state)
+{
+	static const char old[] = "0123456789";
+	char *tst;
+	int rc;
+
+	tst = strdup(old);
+	rc = strlcpy(tst, src_str, sizeof(old));
+	assert_int_equal(rc, strlen(src_str));
+	assert_string_equal(src_str, tst);
+	assert_string_equal(tst + sizeof(src_str), old + sizeof(src_str));
+	free(tst);
+}
+
+/* strlcpy with dst length = src length, dst not terminated */
+static void test_strlcpy_5(void **state)
+{
+	char *tst;
+	int rc;
+
+	tst = malloc(sizeof(src_str));
+	memset(tst, 'f', sizeof(src_str));
+
+	rc = strlcpy(tst, src_str, sizeof(src_str));
+	assert_int_equal(rc, strlen(src_str));
+	assert_string_equal(src_str, tst);
+
+	free(tst);
+}
+
+/* strlcpy with dst length > src length, dst not terminated */
+static void test_strlcpy_6(void **state)
+{
+	char *tst;
+	int rc;
+
+	tst = malloc(sizeof(src_str) + 2);
+	memset(tst, 'f', sizeof(src_str) + 2);
+
+	rc = strlcpy(tst, src_str, sizeof(src_str) + 2);
+	assert_int_equal(rc, strlen(src_str));
+	assert_string_equal(src_str, tst);
+	assert_int_equal(tst[sizeof(src_str)], 'f');
+	assert_int_equal(tst[sizeof(src_str) + 1], 'f');
+
+	free(tst);
+}
+
+/* strlcpy with empty src */
+static void test_strlcpy_7(void **state)
+{
+	char tst[] = "word";
+	static const char empty[] = "";
+	int rc;
+
+	rc = strlcpy(tst, empty, sizeof(tst));
+	assert_int_equal(rc, strlen(empty));
+	assert_string_equal(empty, tst);
+	assert_string_equal(tst + 1, "ord");
+}
+
+/* strlcpy with empty src, length 0 */
+static void test_strlcpy_8(void **state)
+{
+	char tst[] = "word";
+	static const char empty[] = "";
+	int rc;
+
+	rc = strlcpy(tst, empty, 0);
+	assert_int_equal(rc, strlen(empty));
+	assert_string_equal("word", tst);
+}
+
+static int test_strlcpy(void)
+{
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_strlcpy_0),
+		cmocka_unit_test(test_strlcpy_1),
+		cmocka_unit_test(test_strlcpy_2),
+		cmocka_unit_test(test_strlcpy_3),
+		cmocka_unit_test(test_strlcpy_4),
+		cmocka_unit_test(test_strlcpy_5),
+		cmocka_unit_test(test_strlcpy_6),
+		cmocka_unit_test(test_strlcpy_7),
+		cmocka_unit_test(test_strlcpy_8),
+	};
+
+	return cmocka_run_group_tests(tests, NULL, NULL);
+}
+
 int main(void)
 {
 	int ret = 0;
 
 	ret += test_basenamecpy();
+	ret += test_strlcpy();
 	return ret;
 }
