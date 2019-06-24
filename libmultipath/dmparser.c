@@ -308,11 +308,11 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 				if (!pp)
 					goto out1;
 
-				strncpy(pp->dev_t, word, BLK_DEV_SIZE - 1);
-				strncpy(pp->dev, devname, FILE_NAME_SIZE - 1);
+				strlcpy(pp->dev_t, word, BLK_DEV_SIZE);
+				strlcpy(pp->dev, devname, FILE_NAME_SIZE);
 				if (strlen(mpp->wwid)) {
-					strncpy(pp->wwid, mpp->wwid,
-						WWID_SIZE - 1);
+					strlcpy(pp->wwid, mpp->wwid,
+						WWID_SIZE);
 				}
 				/* Only call this in multipath client mode */
 				if (!is_daemon && store_path(pathvec, pp))
@@ -320,8 +320,8 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 			} else {
 				if (!strlen(pp->wwid) &&
 				    strlen(mpp->wwid))
-					strncpy(pp->wwid, mpp->wwid,
-						WWID_SIZE - 1);
+					strlcpy(pp->wwid, mpp->wwid,
+						WWID_SIZE);
 			}
 			FREE(word);
 
@@ -333,23 +333,21 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 			 * in the get_dm_mpvec() code path
 			 */
 			if (!strlen(mpp->wwid))
-				strncpy(mpp->wwid, pp->wwid,
-					WWID_SIZE - 1);
+				strlcpy(mpp->wwid, pp->wwid, WWID_SIZE);
 
 			/*
 			 * Update wwid for paths which may not have been
 			 * active at the time the getuid callout was run
 			 */
 			else if (!strlen(pp->wwid))
-				strncpy(pp->wwid, mpp->wwid,
-					WWID_SIZE - 1);
+				strlcpy(pp->wwid, mpp->wwid, WWID_SIZE);
 
 			/*
 			 * Do not allow in-use patch to change wwid
 			 */
 			else if (strcmp(pp->wwid, mpp->wwid) != 0) {
 				condlog(0, "%s: path wwid appears to have changed. Using map wwid.\n", pp->dev_t);
-				strncpy(pp->wwid, mpp->wwid, WWID_SIZE);
+				strlcpy(pp->wwid, mpp->wwid, WWID_SIZE);
 			}
 
 			pgp->id ^= (long)pp;

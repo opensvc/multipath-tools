@@ -497,8 +497,8 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 				if (k < count)
 					continue;
 			}
-			strncpy(thread[count].param.dev, pp->dev,
-				FILE_NAME_SIZE - 1);
+			strlcpy(thread[count].param.dev, pp->dev,
+				FILE_NAME_SIZE);
 
 			if (count && (thread[count].param.paramp->sa_flags & MPATH_F_SPEC_I_PT_MASK)){
 				/*
@@ -686,8 +686,8 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 				continue;
 			}
 
-			strncpy(thread[count].param.dev, pp->dev,
-				FILE_NAME_SIZE - 1);
+			strlcpy(thread[count].param.dev, pp->dev,
+				FILE_NAME_SIZE);
 			condlog (3, "%s: sending pr out command to %s", mpp->wwid, pp->dev);
 			rc = pthread_create (&thread[count].id, &attr, mpath_prout_pthread_fn,
 					(void *) (&thread[count].param));

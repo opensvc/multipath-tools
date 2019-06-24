@@ -73,7 +73,7 @@ int group_by_host_adapter(struct pathgroup *pgp, vector adapters)
 			goto out;
 		agp->pgp = pgp;
 
-		strncpy(agp->adapter_name, adapter_name1, SLOT_NAME_SIZE - 1);
+		strlcpy(agp->adapter_name, adapter_name1, SLOT_NAME_SIZE);
 		store_adaptergroup(adapters, agp);
 
 		/* create a new host port group
@@ -667,7 +667,7 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 	if (!cmpp) {
 		condlog(2, "%s: remove (wwid changed)", mpp->alias);
 		dm_flush_map(mpp->alias);
-		strncpy(cmpp_by_name->wwid, mpp->wwid, WWID_SIZE - 1);
+		strlcpy(cmpp_by_name->wwid, mpp->wwid, WWID_SIZE);
 		drop_multipath(curmp, cmpp_by_name->wwid, KEEP_PATHS);
 		mpp->action = ACT_CREATE;
 		condlog(3, "%s: set ACT_CREATE (map wwid change)",
@@ -1451,7 +1451,8 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 
 		conf = get_multipath_config();
 		pthread_cleanup_push(put_multipath_config, conf);
-		if (((dm_get_uuid(dev, tmpwwid)) == 0) && (strlen(tmpwwid))) {
+		if (((dm_get_uuid(dev, tmpwwid)) == 0)
+		    && (strlen(tmpwwid))) {
 			refwwid = tmpwwid;
 			goto check;
 		}

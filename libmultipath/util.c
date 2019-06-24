@@ -188,7 +188,7 @@ int devt2devname(char *devname, int devname_len, char *devt)
 					return 1;
 				}
 				p++;
-				strncpy(devname, p, devname_len);
+				strlcpy(devname, p, devname_len);
 				return 0;
 			}
 		}

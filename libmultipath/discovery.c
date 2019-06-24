@@ -297,8 +297,8 @@ sysfs_get_timeout(const struct path *pp, unsigned int *timeout)
 	return 1;
 }
 
-int
-sysfs_get_tgt_nodename (struct path *pp, char * node)
+static int
+sysfs_get_tgt_nodename(struct path *pp, char *node)
 {
 	const char *tgtname, *value;
 	struct udev_device *parent, *tgtdev;
@@ -322,7 +322,7 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 		if (tgtid >= 0) {
 			pp->sg_id.proto_id = SCSI_PROTOCOL_SAS;
 			pp->sg_id.transport_id = tgtid;
-			strncpy(node, value, NODE_NAME_SIZE);
+			strlcpy(node, value, NODE_NAME_SIZE);
 			return 0;
 		}
 	}
@@ -334,7 +334,7 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 		if (value && !strcmp(value, "usb")) {
 			pp->sg_id.proto_id = SCSI_PROTOCOL_UNSPEC;
 			tgtname = udev_device_get_sysname(tgtdev);
-			strncpy(node, tgtname, strlen(tgtname));
+			strlcpy(node, tgtname, NODE_NAME_SIZE);
 			condlog(3, "%s: skip USB device %s", pp->dev, node);
 			return 1;
 		}
@@ -361,7 +361,7 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 			if (value) {
 				pp->sg_id.proto_id = SCSI_PROTOCOL_FCP;
 				pp->sg_id.transport_id = tgtid;
-				strncpy(node, value, NODE_NAME_SIZE);
+				strlcpy(node, value, NODE_NAME_SIZE);
 				udev_device_unref(tgtdev);
 				return 0;
 			} else
@@ -390,7 +390,7 @@ sysfs_get_tgt_nodename (struct path *pp, char * node)
 			if (value) {
 				pp->sg_id.proto_id = SCSI_PROTOCOL_ISCSI;
 				pp->sg_id.transport_id = tgtid;
-				strncpy(node, value, NODE_NAME_SIZE);
+				strlcpy(node, value, NODE_NAME_SIZE);
 				udev_device_unref(tgtdev);
 				return 0;
 			}
