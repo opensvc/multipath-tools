@@ -1083,6 +1083,17 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 					vpd_len --;
 				}
 			}
+			p_len = vpd_len;
+			if (p_len > 0 && len < out_len - 1) {
+				if (len + p_len > out_len - 1) {
+					condlog(1, "%s: WWID overflow, type 1, %d/%lu bytes required",
+						__func__, len + p_len + 1, out_len);
+					p_len = out_len - len - 1;
+				}
+				memcpy(out + len, vpd, p_len);
+				len += p_len;
+				out[len] = '\0';
+			}
 			if (len > 1 && out[len - 1] == '_') {
 				out[len - 1] = '\0';
 				len--;
