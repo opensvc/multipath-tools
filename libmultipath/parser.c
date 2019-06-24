@@ -345,17 +345,13 @@ set_value(vector strvec)
 		if (alloc)
 			memcpy(alloc, str, size);
 		else
-			condlog(0, "can't allocate memeory for option '%s'",
-				(char *)VECTOR_SLOT(strvec, 0));
+			goto oom;
 		return alloc;
 	}
 	/* Even empty quotes counts as a value (An empty string) */
 	alloc = (char *) MALLOC(sizeof (char));
-	if (!alloc) {
-		condlog(0, "can't allocate memeory for option '%s'",
-			(char *)VECTOR_SLOT(strvec, 0));
-		return NULL;
-	}
+	if (!alloc)
+		goto oom;
 	for (i = 2; i < VECTOR_SIZE(strvec); i++) {
 		str = VECTOR_SLOT(strvec, i);
 		if (!str) {
@@ -373,15 +369,17 @@ set_value(vector strvec)
 		alloc = REALLOC(alloc, sizeof (char) * len);
 		if (!alloc) {
 			FREE(tmp);
-			condlog(0, "can't allocate memeory for option '%s'",
-				(char *)VECTOR_SLOT(strvec, 0));
-			return NULL;
+			goto oom;
 		}
 		if (*alloc != '\0')
 			strncat(alloc, " ", 1);
-		strncat(alloc, str, strlen(str));
+		strncat(alloc, str, len - strlen(alloc) - 1);
 	}
 	return alloc;
+oom:
+	condlog(0, "can't allocate memory for option '%s'",
+		(char *)VECTOR_SLOT(strvec, 0));
+	return NULL;
 }
 
 /* non-recursive configuration stream handler */
