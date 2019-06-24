@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "util.h"
 #include "checkers.h"
 #include "vector.h"
 #include "defaults.h"
@@ -350,7 +351,7 @@ find_existing_alias (struct multipath * mpp,
 
 	vector_foreach_slot (vecs->mpvec, mp, i)
 		if (strncmp(mp->wwid, mpp->wwid, WWID_SIZE - 1) == 0) {
-			strncpy(mpp->alias_old, mp->alias, WWID_SIZE - 1);
+			strlcpy(mpp->alias_old, mp->alias, WWID_SIZE);
 			return;
 		}
 }

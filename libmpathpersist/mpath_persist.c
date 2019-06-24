@@ -618,7 +618,7 @@ int send_prout_activepath(char * dev, int rq_servact, int rq_scope,
 	int rc;
 
 	memset(&thread, 0, sizeof(thread));
-	strncpy(param.dev, dev, FILE_NAME_SIZE - 1);
+	strlcpy(param.dev, dev, FILE_NAME_SIZE);
 	/* Initialize and set thread joinable attribute */
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);

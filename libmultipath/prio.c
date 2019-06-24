@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 
 #include "debug.h"
+#include "util.h"
 #include "prio.h"
 
 static LIST_HEAD(prioritizers);
@@ -166,7 +167,7 @@ void prio_get (char *multipath_dir, struct prio * dst, char * name, char * args)
 
 	strncpy(dst->name, src->name, PRIO_NAME_LEN);
 	if (args)
-		strncpy(dst->args, args, PRIO_ARGS_LEN - 1);
+		strlcpy(dst->args, args, PRIO_ARGS_LEN);
 	dst->getprio = src->getprio;
 	dst->handle = NULL;
 

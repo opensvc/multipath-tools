@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <urcu.h>
 
+#include "util.h"
 #include "vector.h"
 #include "memory.h"
 #include "checkers.h"
@@ -210,7 +211,7 @@ int start_waiter_thread (struct multipath *mpp, struct vectors *vecs)
 	if (!wp)
 		goto out;
 
-	strncpy(wp->mapname, mpp->alias, WWID_SIZE - 1);
+	strlcpy(wp->mapname, mpp->alias, WWID_SIZE);
 	wp->vecs = vecs;
 
 	if (pthread_create(&wp->thread, &waiter_attr, waitevent, wp)) {
