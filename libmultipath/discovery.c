@@ -1011,38 +1011,53 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 		if (vpd_type == 0x2 || vpd_type == 0x3) {
 			int i;
 
+			assert(out_len >= 2);
 			len = sprintf(out, "%d", vpd_type);
-			for (i = 0; i < vpd_len && len < out_len - 2; i++) {
+			if (2 * vpd_len >= out_len - len) {
+				condlog(1, "%s: WWID overflow, type %d, %d/%lu bytes required",
+					__func__, vpd_type,
+					2 * vpd_len + len + 1, out_len);
+				vpd_len = (out_len - len - 1) / 2;
+			}
+			for (i = 0; i < vpd_len; i++)
 				len += sprintf(out + len,
 					       "%02x", vpd[i]);
-			}
 		} else if (vpd_type == 0x8) {
 			if (!memcmp("eui.", vpd, 4)) {
 				out[0] =  '2';
-				len = 1;
 				vpd += 4;
-				vpd_len -= 4;
-				for (i = 0; i < vpd_len && len < out_len - 1; i++) {
-					len += sprintf(out + len, "%c",
-						       tolower(vpd[i]));
+				len = vpd_len - 4;
+				if (len > out_len - 1) {
+					condlog(1, "%s: WWID overflow, type 8/%c, %d/%lu bytes required",
+						__func__, out[0], len + 1, out_len);
+					len = out_len - 1;
 				}
+				for (i = 0; i < len; ++i)
+					out[1 + i] = tolower(vpd[i]);
+				/* designator should be 0-terminated, but let's make sure */
+				out[len] = '\0';
 			} else if (!memcmp("naa.", vpd, 4)) {
 				out[0] = '3';
-				len = 1;
 				vpd += 4;
-				vpd_len -= 4;
-				for (i = 0; i < vpd_len && len < out_len - 1; i++) {
-					len += sprintf(out + len, "%c",
-						       tolower(vpd[i]));
+				len = vpd_len - 4;
+				if (len > out_len - 1) {
+					condlog(1, "%s: WWID overflow, type 8/%c, %d/%lu bytes required",
+						__func__, out[0], len + 1, out_len);
+					len = out_len - 1;
 				}
+				for (i = 0; i < len; ++i)
+					out[1 + i] = tolower(vpd[i]);
+				out[len] = '\0';
 			} else {
 				out[0] = '8';
 				vpd += 4;
-				vpd_len -= 4;
-				if (vpd_len > out_len - 2)
-					vpd_len = out_len - 2;
-				memcpy(out + 1, vpd, vpd_len);
-				len = vpd_len + 1;
+				len = vpd_len - 4;
+				if (len > out_len - 1) {
+					condlog(1, "%s: WWID overflow, type 8/%c, %d/%lu bytes required",
+						__func__, out[0], len + 1, out_len);
+					len = out_len - 1;
+				}
+				memcpy(out + 1, vpd, len);
 				out[len] = '\0';
 			}
 		} else if (vpd_type == 0x1) {
