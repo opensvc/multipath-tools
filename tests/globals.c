@@ -3,7 +3,7 @@
 
 /* Required globals */
 struct udev *udev;
-int logsink = 0;
+int logsink = -1;
 struct config conf = {
 	.uid_attrs = "sd:ID_BOGUS",
 	.verbosity = 4,
