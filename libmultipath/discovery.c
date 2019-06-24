@@ -1065,8 +1065,11 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 			p = vpd;
 			while ((p = memchr(vpd, ' ', vpd_len))) {
 				p_len = p - vpd;
-				if (len + p_len > out_len - 1)
-					p_len = out_len - len - 2;
+				if (len + p_len > out_len - 1) {
+					condlog(1, "%s: WWID overflow, type 1, %d/%lu bytes required",
+						__func__, len + p_len, out_len);
+					p_len = out_len - len - 1;
+				}
 				memcpy(out + len, vpd, p_len);
 				len += p_len;
 				if (len >= out_len - 1) {
@@ -1075,6 +1078,10 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 				}
 				out[len] = '_';
 				len ++;
+				if (len >= out_len - 1) {
+					out[len] = '\0';
+					break;
+				}
 				vpd = p;
 				vpd_len -= p_len;
 				while (vpd && *vpd == ' ') {
