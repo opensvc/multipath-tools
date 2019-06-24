@@ -913,7 +913,7 @@ parse_vpd_pg80(const unsigned char *in, char *out, size_t out_len)
 	if (len >= out_len) {
 		condlog(2, "vpd pg80 overflow, %d/%d bytes required",
 			len, (int)out_len);
-		len = out_len;
+		len = out_len - 1;
 	}
 	if (len > 0) {
 		memcpy(out, in + 4, len);
