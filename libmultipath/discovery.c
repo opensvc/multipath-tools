@@ -907,8 +907,17 @@ get_geometry(struct path *pp)
 static int
 parse_vpd_pg80(const unsigned char *in, char *out, size_t out_len)
 {
-	char *p = NULL;
 	int len = get_unaligned_be16(&in[2]);
+
+	/*
+	 * Strip leading and trailing whitespace
+	 */
+	while (len > 0 && in[len + 3] == ' ')
+		--len;
+	while (len > 0 && in[4] == ' ') {
+		++in;
+		--len;
+	}
 
 	if (len >= out_len) {
 		condlog(2, "vpd pg80 overflow, %d/%d bytes required",
@@ -918,15 +927,6 @@ parse_vpd_pg80(const unsigned char *in, char *out, size_t out_len)
 	if (len > 0) {
 		memcpy(out, in + 4, len);
 		out[len] = '\0';
-	}
-	/*
-	 * Strip trailing whitspaces
-	 */
-	p = out + len - 1;
-	while (p > out && *p == ' ') {
-		*p = '\0';
-		p--;
-		len --;
 	}
 	return len;
 }
