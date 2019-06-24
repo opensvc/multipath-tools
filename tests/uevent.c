@@ -95,6 +95,23 @@ static void test_ro_good(void **state)
 	assert_int_equal(uevent_get_disk_ro(uev), DISK_RO);
 }
 
+static void test_uid_attrs(void **state)
+{
+	/* see test_uid_attrs above */
+	struct config *conf = get_multipath_config();
+	vector attrs = &conf->uid_attrs;
+
+	assert_int_equal(VECTOR_SIZE(attrs), 3);
+	assert_null(get_uid_attribute_by_attrs(conf, "hda"));
+	assert_string_equal("ID_BOGUS",
+			    get_uid_attribute_by_attrs(conf, "sdaw"));
+	assert_string_equal("ID_SPAM",
+			    get_uid_attribute_by_attrs(conf, "dasdu"));
+	assert_string_equal("ID_EGGS",
+			    get_uid_attribute_by_attrs(conf, "nvme2n4"));
+	put_multipath_config(conf);
+}
+
 static void test_wwid(void **state)
 {
 	struct uevent *uev = *state;
@@ -280,6 +297,7 @@ int test_uevent_get_XXX(void)
 		cmocka_unit_test(test_minor_good),
 		cmocka_unit_test(test_ro_good),
 		cmocka_unit_test(test_dm_name_good),
+		cmocka_unit_test(test_uid_attrs),
 		cmocka_unit_test(test_wwid),
 		cmocka_unit_test(test_major_bad_0),
 		cmocka_unit_test(test_major_bad_1),
