@@ -21,24 +21,21 @@ static int
 merge_words(char **dst, char *word)
 {
 	char * p = *dst;
-	int len;
+	int len, dstlen;
 
-	len = strlen(*dst) + strlen(word) + 1;
-	*dst = REALLOC(*dst, len + 1);
+	dstlen = strlen(*dst);
+	len = dstlen + strlen(word) + 2;
+	*dst = REALLOC(*dst, len);
 
 	if (!*dst) {
 		free(p);
 		return 1;
 	}
 
-	p = *dst;
-
-	while (*p != '\0')
-		p++;
-
+	p = *dst + dstlen;
 	*p = ' ';
 	++p;
-	strncpy(p, word, strlen(word) + 1);
+	strncpy(p, word, len - dstlen - 1);
 
 	return 0;
 }
