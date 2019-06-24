@@ -1241,6 +1241,14 @@ otherwise they're treated as blacklisted, and the message
 .
 .RS
 .PP
+.B Note:
+The behavior of this option has changed in \fBmultipath-tools\fR 0.8.2
+compared to previous versions.
+Blacklisting by missing properties is only applied to devices which do have the
+property specified by \fIuid_attribute\fR (e.g. \fIID_SERIAL\fR)
+set. Previously, it was applied to every device, possibly causing devices to be
+blacklisted because of temporary I/O error conditions.
+.PP
 The default \fIblacklist exception\fR is: \fB(SCSI_IDENT_|ID_WWN)\fR, causing
 well-behaved SCSI devices and devices that provide a WWN (World Wide Number)
 to be included, and all others to be excluded.

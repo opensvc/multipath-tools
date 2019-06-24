@@ -1945,7 +1945,7 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			return PATHINFO_SKIPPED;
 		}
 		if (is_claimed_by_foreign(pp->udev) ||
-		    filter_property(conf, pp->udev, 4) > 0)
+		    filter_property(conf, pp->udev, 4, pp->uid_attribute) > 0)
 			return PATHINFO_SKIPPED;
 	}
 

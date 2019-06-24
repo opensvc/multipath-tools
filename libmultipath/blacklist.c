@@ -366,7 +366,7 @@ filter_path (struct config * conf, struct path * pp)
 {
 	int r;
 
-	r = filter_property(conf, pp->udev, 3);
+	r = filter_property(conf, pp->udev, 3, pp->uid_attribute);
 	if (r > 0)
 		return r;
 	r = filter_devnode(conf->blist_devnode, conf->elist_devnode, pp->dev);
@@ -384,7 +384,8 @@ filter_path (struct config * conf, struct path * pp)
 }
 
 int
-filter_property(struct config *conf, struct udev_device *udev, int lvl)
+filter_property(struct config *conf, struct udev_device *udev, int lvl,
+		const char *uid_attribute)
 {
 	const char *devname = udev_device_get_sysname(udev);
 	struct udev_list_entry *list_entry;
@@ -395,7 +396,21 @@ filter_property(struct config *conf, struct udev_device *udev, int lvl)
 		/*
 		 * This is the inverse of the 'normal' matching;
 		 * the environment variable _has_ to match.
+		 * But only if the uid_attribute used for determining the WWID
+		 * of the path is is present in the environment
+		 * (uid_attr_seen). If this is not the case, udev probably
+		 * just failed to access the device, which should not cause the
+		 * device to be blacklisted (it won't be used by multipath
+		 * anyway without WWID).
+		 * Likewise, if no uid attribute is defined, udev-based WWID
+		 * determination is effectively off, and devices shouldn't be
+		 * blacklisted by missing properties (check_missing_prop).
 		 */
+
+		bool check_missing_prop = uid_attribute != NULL &&
+			*uid_attribute != '\0';
+		bool uid_attr_seen = false;
+
 		r = MATCH_PROPERTY_BLIST_MISSING;
 		udev_list_entry_foreach(list_entry,
 				udev_device_get_properties_list_entry(udev)) {
@@ -403,6 +418,10 @@ filter_property(struct config *conf, struct udev_device *udev, int lvl)
 			env = udev_list_entry_get_name(list_entry);
 			if (!env)
 				continue;
+
+			if (check_missing_prop && !strcmp(env, uid_attribute))
+				uid_attr_seen = true;
+
 			if (_blacklist_exceptions(conf->elist_property, env)) {
 				r = MATCH_PROPERTY_BLIST_EXCEPT;
 				break;
@@ -413,6 +432,9 @@ filter_property(struct config *conf, struct udev_device *udev, int lvl)
 			}
 			env = NULL;
 		}
+		if (r == MATCH_PROPERTY_BLIST_MISSING &&
+		    (!check_missing_prop || !uid_attr_seen))
+			r = MATCH_NOTHING;
 	}
 
 	log_filter(devname, NULL, NULL, NULL, env, NULL, r, lvl);

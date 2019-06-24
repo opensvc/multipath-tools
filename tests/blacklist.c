@@ -267,7 +267,7 @@ static void test_property_blacklist(void **state)
 	static struct udev_device udev = { "sdb", { "ID_FOO", "ID_WWN", "ID_BAR", NULL } };
 	conf.blist_property = blist_property_wwn;
 	expect_condlog(3, "sdb: udev property ID_WWN blacklisted\n");
-	assert_int_equal(filter_property(&conf, &udev, 3),
+	assert_int_equal(filter_property(&conf, &udev, 3, "ID_SERIAL"),
 			 MATCH_PROPERTY_BLIST);
 }
 
@@ -281,17 +281,23 @@ static void test_property_whitelist(void **state)
 	static struct udev_device udev = { "sdb", { "ID_FOO", "ID_WWN", "ID_BAR", NULL } };
 	conf.elist_property = blist_property_wwn;
 	expect_condlog(3, "sdb: udev property ID_WWN whitelisted\n");
-	assert_int_equal(filter_property(&conf, &udev, 3),
+	assert_int_equal(filter_property(&conf, &udev, 3, "ID_SERIAL"),
 			 MATCH_PROPERTY_BLIST_EXCEPT);
 }
 
 static void test_property_missing(void **state)
 {
-	static struct udev_device udev = { "sdb", { "ID_FOO", "ID_BAZ", "ID_BAR", NULL } };
+	static struct udev_device udev = { "sdb", { "ID_FOO", "ID_BAZ", "ID_BAR", "ID_SERIAL", NULL } };
 	conf.blist_property = blist_property_wwn;
 	expect_condlog(3, "sdb: blacklisted, udev property missing\n");
-	assert_int_equal(filter_property(&conf, &udev, 3),
+	assert_int_equal(filter_property(&conf, &udev, 3, "ID_SERIAL"),
 			 MATCH_PROPERTY_BLIST_MISSING);
+	assert_int_equal(filter_property(&conf, &udev, 3, "ID_BLAH"),
+			 MATCH_NOTHING);
+	assert_int_equal(filter_property(&conf, &udev, 3, ""),
+			 MATCH_NOTHING);
+	assert_int_equal(filter_property(&conf, &udev, 3, NULL),
+			 MATCH_NOTHING);
 }
 
 struct udev_device test_udev = { "sdb", { "ID_FOO", "ID_WWN", "ID_BAR", NULL } };
@@ -347,16 +353,25 @@ static void test_filter_path_wwid(void **state)
 	assert_int_equal(filter_path(&conf, &test_pp), MATCH_WWID_BLIST);
 }
 
-struct udev_device miss_udev = { "sdb", { "ID_FOO", "ID_BAZ", "ID_BAR", NULL } };
+struct udev_device miss_udev = { "sdb", { "ID_FOO", "ID_BAZ", "ID_BAR", "ID_SERIAL", NULL } };
 
 struct path miss1_pp = { .dev = "sdc", .bus = SYSFS_BUS_SCSI,
 			.udev = &miss_udev,
+			 .uid_attribute = "ID_SERIAL",
 			.sg_id.proto_id = SCSI_PROTOCOL_ISCSI,
 			.vendor_id = "foo", .product_id = "baz",
 			.wwid = "plugh" };
 
 struct path miss2_pp = { .dev = "sdc", .bus = SYSFS_BUS_SCSI,
 			.udev = &test_udev,
+			 .uid_attribute = "ID_SERIAL",
+			.sg_id.proto_id = SCSI_PROTOCOL_ISCSI,
+			.vendor_id = "foo", .product_id = "baz",
+			.wwid = "plugh" };
+
+struct path miss3_pp = { .dev = "sdc", .bus = SYSFS_BUS_SCSI,
+			.udev = &miss_udev,
+			 .uid_attribute = "ID_EGGS",
 			.sg_id.proto_id = SCSI_PROTOCOL_ISCSI,
 			.vendor_id = "foo", .product_id = "baz",
 			.wwid = "plugh" };
@@ -384,6 +399,19 @@ static void test_filter_path_missing2(void **state)
 	conf.blist_wwid = blist_wwid_xyzzy;
 	expect_condlog(3, "sdb: udev property ID_WWN whitelisted\n");
 	assert_int_equal(filter_path(&conf, &miss2_pp),
+			 MATCH_NOTHING);
+}
+
+/* Here we use a different uid_attribute which is also missing, thus
+   the path is not blacklisted */
+static void test_filter_path_missing3(void **state)
+{
+	conf.blist_property = blist_property_wwn;
+	conf.blist_devnode = blist_devnode_sdb;
+	conf.blist_device = blist_device_foo_bar;
+	conf.blist_protocol = blist_protocol_fcp;
+	conf.blist_wwid = blist_wwid_xyzzy;
+	assert_int_equal(filter_path(&conf, &miss3_pp),
 			 MATCH_NOTHING);
 }
 
@@ -495,6 +523,7 @@ int test_blacklist(void)
 		test_and_reset(test_filter_path_wwid),
 		test_and_reset(test_filter_path_missing1),
 		test_and_reset(test_filter_path_missing2),
+		test_and_reset(test_filter_path_missing3),
 		test_and_reset(test_filter_path_whitelist),
 		test_and_reset(test_filter_path_whitelist_property),
 		test_and_reset(test_filter_path_whitelist_devnode),

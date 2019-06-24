@@ -37,7 +37,7 @@ int filter_devnode (vector, vector, char *);
 int filter_wwid (vector, vector, char *, char *);
 int filter_device (vector, vector, char *, char *, char *);
 int filter_path (struct config *, struct path *);
-int filter_property(struct config *, struct udev_device *, int);
+int filter_property(struct config *, struct udev_device *, int, const char*);
 int filter_protocol(vector, vector, struct path *);
 int store_ble (vector, char *, int);
 int set_ble_device (vector, char *, char *, int);
