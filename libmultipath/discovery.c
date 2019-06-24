@@ -1012,11 +1012,9 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 			int i;
 
 			len = sprintf(out, "%d", vpd_type);
-			for (i = 0; i < vpd_len; i++) {
+			for (i = 0; i < vpd_len && len < out_len - 2; i++) {
 				len += sprintf(out + len,
 					       "%02x", vpd[i]);
-				if (len >= out_len)
-					break;
 			}
 		} else if (vpd_type == 0x8) {
 			if (!memcmp("eui.", vpd, 4)) {
@@ -1024,27 +1022,19 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 				len = 1;
 				vpd += 4;
 				vpd_len -= 4;
-				for (i = 0; i < vpd_len; i++) {
+				for (i = 0; i < vpd_len && len < out_len - 1; i++) {
 					len += sprintf(out + len, "%c",
 						       tolower(vpd[i]));
-					if (len >= out_len)
-						break;
 				}
-				len = vpd_len + 1;
-				out[len] = '\0';
 			} else if (!memcmp("naa.", vpd, 4)) {
 				out[0] = '3';
 				len = 1;
 				vpd += 4;
 				vpd_len -= 4;
-				for (i = 0; i < vpd_len; i++) {
+				for (i = 0; i < vpd_len && len < out_len - 1; i++) {
 					len += sprintf(out + len, "%c",
 						       tolower(vpd[i]));
-					if (len >= out_len)
-						break;
 				}
-				len = vpd_len + 1;
-				out[len] = '\0';
 			} else {
 				out[0] = '8';
 				len = 1;
