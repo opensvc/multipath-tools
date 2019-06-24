@@ -1032,6 +1032,8 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 
 			vpd += 4;
 			len = vpd_len - 4;
+			while (len > 2 && vpd[len - 2] == '\0')
+				--len;
 			if (len > out_len - 1) {
 				condlog(1, "%s: WWID overflow, type 8/%c, %d/%lu bytes required",
 					__func__, out[0], len + 1, out_len);
