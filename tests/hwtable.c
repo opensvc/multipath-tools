@@ -457,7 +457,7 @@ static void replicate_config(const struct hwt_state *hwt, bool local)
 	vector hwtable;
 	struct config *conf;
 
-	condlog(1, "--- %s: replicating %s configuration", __func__,
+	condlog(3, "--- %s: replicating %s configuration", __func__,
 		local ? "local" : "full");
 
 	conf = get_multipath_config();
