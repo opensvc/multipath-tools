@@ -1,3 +1,5 @@
+#ifndef _DEFAULTS_H
+#define _DEFAULTS_H
 /*
  * If you add or modify a value also update multipath/multipath.conf.5
  * and the TEMPLATE in libmultipath/hwtable.c
@@ -60,5 +62,10 @@
 #define DEFAULT_CONFIG_DIR	"/etc/multipath/conf.d"
 #define MULTIPATH_SHM_BASE	"/dev/shm/multipath/"
 
-char * set_default (char * str);
+
+static inline char *set_default(char *str)
+{
+	return strdup(str);
+}
 extern const char *const default_partition_delim;
+#endif /* _DEFAULTS_H */
