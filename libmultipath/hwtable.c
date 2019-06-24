@@ -88,7 +88,7 @@ static struct hwentry default_hw[] = {
 		/* Generic NVMe */
 		.vendor        = "NVME",
 		.product       = ".*",
-		.uid_attribute = "ID_WWN",
+		.uid_attribute = DEFAULT_NVME_UID_ATTRIBUTE,
 		.checker_name  = NONE,
 		.retain_hwhandler = RETAIN_HWHANDLER_OFF,
 	},

@@ -1802,8 +1802,7 @@ static ssize_t uid_fallback(struct path *pp, int path_state,
 {
 	ssize_t len = -1;
 
-	if (pp->bus == SYSFS_BUS_SCSI &&
-	    !strcmp(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE)) {
+	if (pp->bus == SYSFS_BUS_SCSI) {
 		len = get_vpd_uid(pp);
 		*origin = "sysfs";
 		if (len < 0 && path_state == PATH_UP) {
@@ -1833,11 +1832,22 @@ static ssize_t uid_fallback(struct path *pp, int path_state,
 	return len;
 }
 
-static int has_uid_fallback(struct path *pp)
+static bool has_uid_fallback(struct path *pp)
 {
+	/*
+	 * Falling back to direct WWID determination is dangerous
+	 * if uid_attribute is set to something non-standard.
+	 * Allow it only if it's either the default, or if udev
+	 * has been disabled by setting 'uid_attribute ""'.
+	 */
+	if (!pp->uid_attribute)
+		return false;
 	return ((pp->bus == SYSFS_BUS_SCSI &&
-		 !strcmp(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE)) ||
-		pp->bus == SYSFS_BUS_NVME);
+		 (!strcmp(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE) ||
+		  !strcmp(pp->uid_attribute, ""))) ||
+		(pp->bus == SYSFS_BUS_NVME &&
+		 (!strcmp(pp->uid_attribute, DEFAULT_NVME_UID_ATTRIBUTE) ||
+		  !strcmp(pp->uid_attribute, ""))));
 }
 
 int

@@ -5,6 +5,7 @@
  * and the TEMPLATE in libmultipath/hwtable.c
  */
 #define DEFAULT_UID_ATTRIBUTE	"ID_SERIAL"
+#define DEFAULT_NVME_UID_ATTRIBUTE	"ID_WWN"
 #define DEFAULT_UDEVDIR		"/dev"
 #define DEFAULT_MULTIPATHDIR	"/" LIB_STRING "/multipath"
 #define DEFAULT_SELECTOR	"service-time 0"
