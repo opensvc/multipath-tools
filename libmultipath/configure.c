@@ -519,6 +519,42 @@ trigger_udev_change(const struct multipath *mpp)
 	udev_device_unref(udd);
 }
 
+static void trigger_partitions_udev_change(struct udev_device *dev,
+					   const char *action, int len)
+{
+	struct udev_enumerate *part_enum;
+	struct udev_list_entry *item;
+
+	part_enum = udev_enumerate_new(udev);
+	if (!part_enum)
+		return;
+
+	if (udev_enumerate_add_match_parent(part_enum, dev) < 0 ||
+	    udev_enumerate_add_match_subsystem(part_enum, "block") < 0 ||
+	    udev_enumerate_scan_devices(part_enum) < 0)
+		goto unref;
+
+	udev_list_entry_foreach(item,
+				udev_enumerate_get_list_entry(part_enum)) {
+		const char *syspath;
+		struct udev_device *part;
+
+		syspath = udev_list_entry_get_name(item);
+		part = udev_device_new_from_syspath(udev, syspath);
+		if (!part)
+			continue;
+
+		if (!strcmp("partition", udev_device_get_devtype(part))) {
+			condlog(4, "%s: triggering %s event for %s", __func__,
+				action, syspath);
+			sysfs_attr_set_value(part, "uevent", action, len);
+		}
+		udev_device_unref(part);
+	}
+unref:
+	udev_enumerate_unref(part_enum);
+}
+
 void
 trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
 {
@@ -569,6 +605,8 @@ trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
 				action, pp->dev, is_mpath ? "" : "no ");
 			sysfs_attr_set_value(pp->udev, "uevent",
 					     action, strlen(action));
+			trigger_partitions_udev_change(pp->udev, action,
+						       strlen(action));
 		}
 	}
 
