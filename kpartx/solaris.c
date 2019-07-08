@@ -1,17 +1,15 @@
 #include "kpartx.h"
 #include <stdio.h>
-#include <sys/types.h>
+#include <linux/types.h>
 #include <time.h>		/* time_t */
 
 #define SOLARIS_X86_NUMSLICE	8
 #define SOLARIS_X86_VTOC_SANE	(0x600DDEEEUL)
 
-//typedef int daddr_t;		/* or long - check */
-
 struct solaris_x86_slice {
 	unsigned short	s_tag;		/* ID tag of partition */
 	unsigned short	s_flag;		/* permission flags */
-	long		s_start;	/* start sector no of partition */
+	__kernel_daddr_t s_start;	/* start sector no of partition */
 	long		s_size;		/* # of blocks in partition */
 };
 
