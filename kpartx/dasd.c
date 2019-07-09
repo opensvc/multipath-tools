@@ -133,9 +133,6 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 			/* Couldn't open the device */
 			return -1;
 		}
-	} else if ((unsigned int)major(sbuf.st_rdev) != 94) {
-			/* Not a DASD */
-			return -1;
 	} else {
 		fd_dasd = dup(fd);
 		if (fd_dasd < 0)
@@ -279,6 +276,10 @@ read_dasd_pt(int fd, struct slice all, struct slice *sp, int ns)
 			size = disksize;
 			if (fmt_size < size)
 				size = fmt_size;
+		} else if ((unsigned int)major(sbuf.st_rdev) != 94) {
+			/* Not a DASD */
+			retval = -1;
+			goto out;
 		} else
 			size = disksize;
 
