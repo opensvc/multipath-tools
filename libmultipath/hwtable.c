@@ -300,6 +300,17 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.no_path_retry = 30,
 	},
+	{
+		/*
+		 * Nexenta COMSTAR
+		 *
+		 * Maintainer: Yacine Kheddache <yacine@alyseo.com>
+		 */
+		.vendor        = "NEXENTA",
+		.product       = "COMSTAR",
+		.pgpolicy      = GROUP_BY_SERIAL,
+		.no_path_retry = 30,
+	},
 	/*
 	 * Dell EMC
 	 */
@@ -785,18 +796,6 @@ static struct hwentry default_hw[] = {
 		.product       = "^NetApp ONTAP Controller",
 		.pgpolicy      = MULTIBUS,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
-	},
-	/*
-	 * Nexenta
-	 *
-	 * Maintainer: Yacine Kheddache <yacine@alyseo.com>
-	 */
-	{
-		/* COMSTAR */
-		.vendor        = "NEXENTA",
-		.product       = "COMSTAR",
-		.pgpolicy      = GROUP_BY_SERIAL,
-		.no_path_retry = 30,
 	},
 	/*
 	 * NEC
