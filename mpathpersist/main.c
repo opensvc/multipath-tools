@@ -855,12 +855,7 @@ static void usage(void)
 			"    --reserve|-R               PR Out: Reserve\n"
 			"    --transport-id=TIDS|-X TIDS  TransportIDs can be mentioned\n"
 			"                                 in several forms\n"
-			"    --alloc-length=LEN|-l LEN  PR In: maximum allocation length\n"
-			" Examples:\n"
-			"     mpathpersist --out --register --param-sark=123abc --prout-type=5 /dev/mapper/mpath9\n"
-			"     mpathpersist -i -k /dev/mapper/mpath9\n"
-			"     mpathpersist --out --reserve --param-sark=123abc --prout-type=8 -d /dev/mapper/mpath9\n"
-			"     mpathpersist -i -s -d /dev/mapper/mpath9\n");
+			"    --alloc-length=LEN|-l LEN  PR In: maximum allocation length\n");
 }
 
 void
