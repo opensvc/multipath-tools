@@ -1228,10 +1228,11 @@ Enables or disables foreign libraries (see section
 .I FOREIGN MULTIPATH SUPPORT
 below). The value is a regular expression; foreign libraries are loaded
 if their name (e.g. \(dqnvme\(dq) matches the expression. By default,
-all foreign libraries are enabled.
+no foreign libraries are enabled. Set this to \(dqnvme\(dq to enable NVMe native
+multipath support, or \(dq.*\(dq to enable all foreign libraries.
 .RS
 .TP
-The default is: \fB\(dq\(dq\fR (the empty regular expression)
+The default is: \fB\(dqNONE\(dq\fR
 .RE
 .
 .

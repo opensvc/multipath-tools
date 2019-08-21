@@ -50,8 +50,8 @@
 #define DEFAULT_FIND_MULTIPATHS_TIMEOUT -10
 #define DEFAULT_UNKNOWN_FIND_MULTIPATHS_TIMEOUT 1
 #define DEFAULT_ALL_TG_PT ALL_TG_PT_OFF
-/* Enable all foreign libraries by default */
-#define DEFAULT_ENABLE_FOREIGN ""
+/* Enable no foreign libraries by default */
+#define DEFAULT_ENABLE_FOREIGN "NONE"
 
 #define CHECKINT_UNDEF		UINT_MAX
 #define DEFAULT_CHECKINT	5
