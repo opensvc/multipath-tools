@@ -72,9 +72,11 @@ sort_pathgroups (struct multipath *mp) {
 			pgp2 = VECTOR_SLOT(mp->pg, j);
 			if (!pgp2)
 				continue;
-			if (pgp2->priority > pgp1->priority ||
-			    (pgp2->priority == pgp1->priority &&
-			     pgp2->enabled_paths >= pgp1->enabled_paths)) {
+			if (pgp2->marginal < pgp1->marginal ||
+			    (pgp2->marginal == pgp1->marginal &&
+			     (pgp2->priority > pgp1->priority ||
+			      (pgp2->priority == pgp1->priority &&
+			       pgp2->enabled_paths >= pgp1->enabled_paths)))) {
 				vector_move_up(mp->pg, i, j + 1);
 				break;
 			}
@@ -84,25 +86,88 @@ sort_pathgroups (struct multipath *mp) {
 	}
 }
 
+static int
+split_marginal_paths(vector paths, vector *normal_p, vector *marginal_p)
+{
+	int i;
+	int has_marginal = 0;
+	int has_normal = 0;
+	struct path *pp;
+	vector normal = NULL;
+	vector marginal = NULL;
+
+	*normal_p = *marginal_p = NULL;
+	vector_foreach_slot(paths, pp, i) {
+		if (pp->marginal)
+			has_marginal = 1;
+		else
+			has_normal = 1;
+	}
+
+	if (!has_marginal || !has_normal)
+		return -1;
+
+	normal = vector_alloc();
+	marginal = vector_alloc();
+	if (!normal || !marginal)
+		goto fail;
+
+	vector_foreach_slot(paths, pp, i) {
+		if (pp->marginal) {
+			if (store_path(marginal, pp))
+				goto fail;
+		}
+		else {
+			if (store_path(normal, pp))
+				goto fail;
+		}
+	}
+	*normal_p = normal;
+	*marginal_p = marginal;
+	return 0;
+fail:
+	vector_free(normal);
+	vector_free(marginal);
+	return -1;
+}
 
 int group_paths(struct multipath *mp)
 {
+	vector normal, marginal;
+
 	if (!mp->pg)
 		mp->pg = vector_alloc();
 	if (!mp->pg)
 		return 1;
 
-	if (VECTOR_SIZE(mp->paths) > 0 &&
-	    (!mp->pgpolicyfn || mp->pgpolicyfn(mp, mp->paths))) {
-		vector_free(mp->pg);
-		mp->pg = NULL;
-		return 1;
-	}
+	if (VECTOR_SIZE(mp->paths) == 0)
+		goto out;
+	if (!mp->pgpolicyfn)
+		goto fail;
 
+	if (split_marginal_paths(mp->paths, &normal, &marginal) != 0) {
+		if (mp->pgpolicyfn(mp, mp->paths) != 0)
+			goto fail;
+	} else {
+		if (mp->pgpolicyfn(mp, normal) != 0)
+			goto fail_marginal;
+		if (mp->pgpolicyfn(mp, marginal) != 0)
+			goto fail_marginal;
+		vector_free(normal);
+		vector_free(marginal);
+	}
 	sort_pathgroups(mp);
+out:
 	vector_free(mp->paths);
 	mp->paths = NULL;
 	return 0;
+fail_marginal:
+	vector_free(normal);
+	vector_free(marginal);
+fail:
+	vector_free(mp->pg);
+	mp->pg = NULL;
+	return 1;
 }
 
 typedef bool (path_match_fn)(struct path *pp1, struct path *pp2);
