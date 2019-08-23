@@ -445,7 +445,6 @@ int store_adaptergroup(vector adapters, struct adapter_group *agp);
 int store_hostgroup(vector hostgroupvec, struct host_group *hgp);
 
 int store_path (vector pathvec, struct path * pp);
-int store_pathgroup (vector pgvec, struct pathgroup * pgp);
 int add_pathgroup(struct multipath*, struct pathgroup *);
 
 struct multipath * find_mp_by_alias (const struct _vector *mp, const char *alias);

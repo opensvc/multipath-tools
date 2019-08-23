@@ -387,7 +387,7 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 		vector_free(mpp->pg);
 		mpp->pg = NULL;
 	}
-	if (mpp->pgpolicyfn && mpp->pgpolicyfn(mpp))
+	if (group_paths(mpp))
 		return 1;
 
 	/*
