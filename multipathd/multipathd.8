@@ -277,6 +277,25 @@ Remove the persistent reservation key associated with $map from the
 \fIreservation_key\fR is set to \fBfile\fR in \fI/etc/multipath.conf\fR.
 .
 .TP
+.B path $path setmarginal
+move $path to a marginal pathgroup. The path will remain in the marginal
+path group until \fIunsetmarginal\fR is called. This command will only
+work if \fImarginal_pathgroups\fR is enabled and there is no Shaky paths
+detection method configured (see the multipath.conf man page for details).
+.
+.TP
+.B path $path unsetmarginal
+return marginal path $path to its normal pathgroup. This command will only
+work if \fImarginal_pathgroups\fR is enabled and there is no Shaky paths
+detection method configured (see the multipath.conf man page for details).
+.
+.TP
+.B map $map unsetmarginal
+return all marginal paths in $map to their normal pathgroups. This command
+will only work if \fImarginal_pathgroups\fR is enabled and there is no Shaky
+paths detection method configured (see the multipath.conf man page for details).
+.
+.TP
 .B quit|exit
 End interactive session.
 .
