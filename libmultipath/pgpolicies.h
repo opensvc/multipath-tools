@@ -25,10 +25,10 @@ int group_paths(struct multipath *);
 /*
  * policies
  */
-int one_path_per_group(struct multipath *);
-int one_group(struct multipath *);
-int group_by_serial(struct multipath *);
-int group_by_prio(struct multipath *);
-int group_by_node_name(struct multipath *);
+int one_path_per_group(struct multipath *, vector);
+int one_group(struct multipath *, vector);
+int group_by_serial(struct multipath *, vector);
+int group_by_prio(struct multipath *, vector);
+int group_by_node_name(struct multipath *, vector);
 
 #endif

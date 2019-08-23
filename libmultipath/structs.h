@@ -295,7 +295,7 @@ struct path {
 	struct gen_path generic_path;
 };
 
-typedef int (pgpolicyfn) (struct multipath *);
+typedef int (pgpolicyfn) (struct multipath *, vector);
 
 struct multipath {
 	char wwid[WWID_SIZE];

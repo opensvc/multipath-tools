@@ -93,7 +93,7 @@ int group_paths(struct multipath *mp)
 		return 1;
 
 	if (VECTOR_SIZE(mp->paths) > 0 &&
-	    (!mp->pgpolicyfn || mp->pgpolicyfn(mp))) {
+	    (!mp->pgpolicyfn || mp->pgpolicyfn(mp, mp->paths))) {
 		vector_free(mp->pg);
 		mp->pg = NULL;
 		return 1;
@@ -126,7 +126,7 @@ prios_match(struct path *pp1, struct path *pp2)
 	return (pp1->priority == pp2->priority);
 }
 
-int group_by_match(struct multipath * mp,
+int group_by_match(struct multipath * mp, vector paths,
 		   bool (*path_match_fn)(struct path *, struct path *))
 {
 	int i, j;
@@ -136,17 +136,17 @@ int group_by_match(struct multipath * mp,
 	struct path * pp2;
 
 	/* init the bitmap */
-	bitmap = (int *)MALLOC(VECTOR_SIZE(mp->paths) * sizeof (int));
+	bitmap = (int *)MALLOC(VECTOR_SIZE(paths) * sizeof (int));
 
 	if (!bitmap)
 		goto out;
 
-	for (i = 0; i < VECTOR_SIZE(mp->paths); i++) {
+	for (i = 0; i < VECTOR_SIZE(paths); i++) {
 
 		if (bitmap[i])
 			continue;
 
-		pp = VECTOR_SLOT(mp->paths, i);
+		pp = VECTOR_SLOT(paths, i);
 
 		/* here, we really got a new pg */
 		pgp = alloc_pathgroup();
@@ -163,12 +163,12 @@ int group_by_match(struct multipath * mp,
 
 		bitmap[i] = 1;
 
-		for (j = i + 1; j < VECTOR_SIZE(mp->paths); j++) {
+		for (j = i + 1; j < VECTOR_SIZE(paths); j++) {
 
 			if (bitmap[j])
 				continue;
 
-			pp2 = VECTOR_SLOT(mp->paths, j);
+			pp2 = VECTOR_SLOT(paths, j);
 
 			if (path_match_fn(pp, pp2)) {
 				if (store_path(pgp->paths, pp2))
@@ -193,35 +193,35 @@ out:
 /*
  * One path group per unique tgt_node_name present in the path vector
  */
-int group_by_node_name(struct multipath * mp)
+int group_by_node_name(struct multipath * mp, vector paths)
 {
-	return group_by_match(mp, node_names_match);
+	return group_by_match(mp, paths, node_names_match);
 }
 
 /*
  * One path group per unique serial number present in the path vector
  */
-int group_by_serial(struct multipath * mp)
+int group_by_serial(struct multipath * mp, vector paths)
 {
-	return group_by_match(mp, serials_match);
+	return group_by_match(mp, paths, serials_match);
 }
 
 /*
  * One path group per priority present in the path vector
  */
-int group_by_prio(struct multipath *mp)
+int group_by_prio(struct multipath *mp, vector paths)
 {
-	return group_by_match(mp, prios_match);
+	return group_by_match(mp, paths, prios_match);
 }
 
-int one_path_per_group(struct multipath *mp)
+int one_path_per_group(struct multipath *mp, vector paths)
 {
 	int i;
 	struct path * pp;
 	struct pathgroup * pgp;
 
-	for (i = 0; i < VECTOR_SIZE(mp->paths); i++) {
-		pp = VECTOR_SLOT(mp->paths, i);
+	for (i = 0; i < VECTOR_SIZE(paths); i++) {
+		pp = VECTOR_SLOT(paths, i);
 		pgp = alloc_pathgroup();
 
 		if (!pgp)
@@ -242,7 +242,7 @@ out:
 	return 1;
 }
 
-int one_group(struct multipath *mp)	/* aka multibus */
+int one_group(struct multipath *mp, vector paths)	/* aka multibus */
 {
 	int i;
 	struct path * pp;
@@ -256,8 +256,8 @@ int one_group(struct multipath *mp)	/* aka multibus */
 	if (add_pathgroup(mp, pgp))
 		goto out1;
 
-	for (i = 0; i < VECTOR_SIZE(mp->paths); i++) {
-		pp = VECTOR_SLOT(mp->paths, i);
+	for (i = 0; i < VECTOR_SIZE(paths); i++) {
+		pp = VECTOR_SLOT(paths, i);
 
 		if (store_path(pgp->paths, pp))
 			goto out;
