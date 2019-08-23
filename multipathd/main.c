@@ -2122,16 +2122,6 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 		return 1;
 	}
 
-	if ((newstate == PATH_UP || newstate == PATH_GHOST) &&
-	     pp->wait_checks > 0) {
-		if (pp->mpp->nr_active > 0) {
-			pp->state = PATH_DELAYED;
-			pp->wait_checks--;
-			return 1;
-		} else
-			pp->wait_checks = 0;
-	}
-
 	/*
 	 * don't reinstate failed path, if its in stand-by
 	 * and if target supports only implicit tpgs mode.
@@ -2162,19 +2152,10 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 			 * proactively fail path in the DM
 			 */
 			if (oldstate == PATH_UP ||
-			    oldstate == PATH_GHOST) {
+			    oldstate == PATH_GHOST)
 				fail_path(pp, 1);
-				if (pp->mpp->delay_wait_checks > 0 &&
-				    pp->watch_checks > 0) {
-					pp->wait_checks = pp->mpp->delay_wait_checks;
-					pp->watch_checks = 0;
-				}
-			} else {
+			else
 				fail_path(pp, 0);
-				if (pp->wait_checks > 0)
-					pp->wait_checks =
-						pp->mpp->delay_wait_checks;
-			}
 
 			/*
 			 * cancel scheduled failback
@@ -2200,15 +2181,10 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 		 * reinstate this path
 		 */
 		if (oldstate != PATH_UP &&
-		    oldstate != PATH_GHOST) {
-			if (pp->mpp->delay_watch_checks > 0)
-				pp->watch_checks = pp->mpp->delay_watch_checks;
+		    oldstate != PATH_GHOST)
 			add_active = 1;
-		} else {
-			if (pp->watch_checks > 0)
-				pp->watch_checks--;
+		else
 			add_active = 0;
-		}
 		if (!disable_reinstate && reinstate_path(pp, add_active)) {
 			condlog(3, "%s: reload map", pp->dev);
 			ev_add_path(pp, vecs, 1);
@@ -2253,8 +2229,6 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 				condlog(4, "%s: delay next check %is",
 					pp->dev_t, pp->checkint);
 			}
-			if (pp->watch_checks > 0)
-				pp->watch_checks--;
 			pp->tick = pp->checkint;
 		}
 	}

@@ -268,8 +268,6 @@ struct path {
 	int pgindex;
 	int detect_prio;
 	int detect_checker;
-	int watch_checks;
-	int wait_checks;
 	int tpgs;
 	char * uid_attribute;
 	char * getuid;
@@ -321,8 +319,6 @@ struct multipath {
 	int fast_io_fail;
 	int retain_hwhandler;
 	int deferred_remove;
-	int delay_watch_checks;
-	int delay_wait_checks;
 	int san_path_err_threshold;
 	int san_path_err_forget_rate;
 	int san_path_err_recovery_time;
@@ -391,12 +387,6 @@ static inline int san_path_check_enabled(const struct multipath *mpp)
 	return mpp->san_path_err_threshold > 0 &&
 		mpp->san_path_err_forget_rate > 0 &&
 		mpp->san_path_err_recovery_time > 0;
-}
-
-static inline int delay_check_enabled(const struct multipath *mpp)
-{
-	return mpp->delay_watch_checks != NU_NO ||
-		mpp->delay_wait_checks != NU_NO;
 }
 
 struct pathgroup {

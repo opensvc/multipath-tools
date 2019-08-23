@@ -1013,10 +1013,12 @@ The default is: \fBno\fR
 .
 .TP
 .B delay_watch_checks
-If set to a value greater than 0, multipathd will watch paths that have
-recently become valid for this many checks. If they fail again while they are
-being watched, when they next become valid, they will not be used until they
-have stayed up for \fIdelay_wait_checks\fR checks. See "Shaky paths detection" below.
+This option is \fBdeprecated\fR, and mapped to \fIsan_path_err_forget_rate\fR.
+If this is set to a value greater than 0 and no \fIsan_path_err\fR options
+are set, \fIsan_path_err_forget_rate\fR will be set to the value of
+\fIdelay_watch_checks\fR and \fIsan_path_err_threshold\fR will be set to 1.
+See the \fIsan_path_err_forget_rate\fR and \fIsan_path_err_threshold\fR
+options, and "Shaky paths detection" below for more information.
 .RS
 .TP
 The default is: \fBno\fR
@@ -1025,10 +1027,14 @@ The default is: \fBno\fR
 .
 .TP
 .B delay_wait_checks
-If set to a value greater than 0, when a device that has recently come back
-online fails again within \fIdelay_watch_checks\fR checks, the next time it
-comes back online, it will marked and delayed, and not used until it has passed
-\fIdelay_wait_checks\fR checks. See "Shaky paths detection" below.
+This option is \fBdeprecated\fR, and mapped to \fIsan_path_err_recovery_time\fR.
+If this is set to a value greater than 0 and no \fIsan_path_err\fR options
+are set, \fIsan_path_err_recovery_time\fR will be set to the value of
+\fIdelay_wait_checks\fR times \fImax_polling_interval\fR. This will give
+approximately the same wait time as delay_wait_checks previously did.
+Also, \fIsan_path_err_threshold\fR will be set to 1. See the
+\fIsan_path_err_recovery_time\fR and \fIsan_path_err_threshold\fR
+options, and "Shaky paths detection" below for more information.
 .RS
 .TP
 The default is: \fBno\fR
@@ -1689,13 +1695,10 @@ if the healthy state appears to be stable. The logic of determining
 differs between the three methods.
 .TP 8
 .B \(dqdelay_checks\(dq failure tracking
-If a path fails again within a
-\fIdelay_watch_checks\fR interval after a failure, don't
-reinstate it until it passes a \fIdelay_wait_checks\fR interval
-in always good status.
-The intervals are measured in \(dqticks\(dq, i.e. the
-time between path checks by multipathd, which is variable and controlled by the
-\fIpolling_interval\fR and \fImax_polling_interval\fR parameters.
+This method is \fBdeprecated\fR and mapped to the \(dqsan_path_err\(dq method.
+See the \fIdelay_watch_checks\fR and \fIdelay_wait_checks\fR options above
+for more information.
+
 .TP
 .B \(dqmarginal_path\(dq failure tracking
 If a second failure event (good->bad transition) occurs within
@@ -1712,12 +1715,13 @@ in seconds.
 .B \(dqsan_path_err\(dq failure tracking
 multipathd counts path failures for each path. Once the number of failures
 exceeds the value given by \fIsan_path_err_threshold\fR, the path is not
-reinstated for \fIsan_path_err_recovery_time\fR ticks. While counting
+reinstated for \fIsan_path_err_recovery_time\fR seconds. While counting
 failures, multipathd \(dqforgets\(dq one past failure every
 \(dqsan_path_err_forget_rate\(dq ticks; thus if errors don't occur more
 often then once in the forget rate interval, the failure count doesn't
-increase and the threshold is never reached. As for the \fIdelay_xy\fR method,
-intervals are measured in \(dqticks\(dq.
+increase and the threshold is never reached. Ticks are the time between
+path checks by multipathd, which is variable and controlled by the
+\fIpolling_interval\fR and \fImax_polling_interval\fR parameters.
 .
 .RS 8
 .LP

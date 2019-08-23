@@ -85,6 +85,10 @@ static const char autodetect_origin[] =
 	"(setting: storage device autodetected)";
 static const char marginal_path_origin[] =
 	"(setting: implied by marginal_path check)";
+static const char delay_watch_origin[] =
+	"(setting: implied by delay_watch_checks)";
+static const char delay_wait_origin[] =
+	"(setting: implied by delay_wait_checks)";
 
 #define do_default(dest, value)						\
 do {									\
@@ -877,39 +881,80 @@ out:
 	return 0;
 }
 
-int select_delay_watch_checks(struct config *conf, struct multipath *mp)
+static inline int san_path_check_options_set(const struct multipath *mp)
 {
-	const char *origin;
-	char buff[12];
-
-	mp_set_mpe(delay_watch_checks);
-	mp_set_ovr(delay_watch_checks);
-	mp_set_hwe(delay_watch_checks);
-	mp_set_conf(delay_watch_checks);
-	mp_set_default(delay_watch_checks, DEFAULT_DELAY_CHECKS);
-out:
-	if (print_off_int_undef(buff, 12, mp->delay_watch_checks) != 0)
-		condlog(3, "%s: delay_watch_checks = %s %s",
-			mp->alias, buff, origin);
-	return 0;
+	return mp->san_path_err_threshold > 0 ||
+	       mp->san_path_err_forget_rate > 0 ||
+	       mp->san_path_err_recovery_time > 0;
 }
 
-int select_delay_wait_checks(struct config *conf, struct multipath *mp)
+static int
+use_delay_watch_checks(struct config *conf, struct multipath *mp)
 {
-	const char *origin;
+	int value = NU_UNDEF;
+	const char *origin = default_origin;
 	char buff[12];
 
-	mp_set_mpe(delay_wait_checks);
-	mp_set_ovr(delay_wait_checks);
-	mp_set_hwe(delay_wait_checks);
-	mp_set_conf(delay_wait_checks);
-	mp_set_default(delay_wait_checks, DEFAULT_DELAY_CHECKS);
+	do_set(delay_watch_checks, mp->mpe, value, multipaths_origin);
+	do_set(delay_watch_checks, conf->overrides, value, overrides_origin);
+	do_set_from_hwe(delay_watch_checks, mp, value, hwe_origin);
+	do_set(delay_watch_checks, conf, value, conf_origin);
 out:
-	if (print_off_int_undef(buff, 12, mp->delay_wait_checks) != 0)
-		condlog(3, "%s: delay_wait_checks = %s %s",
-			mp->alias, buff, origin);
-	return 0;
+	if (print_off_int_undef(buff, 12, value) != 0)
+		condlog(3, "%s: delay_watch_checks = %s %s", mp->alias, buff,
+			origin);
+	return value;
+}
 
+static int
+use_delay_wait_checks(struct config *conf, struct multipath *mp)
+{
+	int value = NU_UNDEF;
+	const char *origin = default_origin;
+	char buff[12];
+
+	do_set(delay_wait_checks, mp->mpe, value, multipaths_origin);
+	do_set(delay_wait_checks, conf->overrides, value, overrides_origin);
+	do_set_from_hwe(delay_wait_checks, mp, value, hwe_origin);
+	do_set(delay_wait_checks, conf, value, conf_origin);
+out:
+	if (print_off_int_undef(buff, 12, value) != 0)
+		condlog(3, "%s: delay_wait_checks = %s %s", mp->alias, buff,
+			origin);
+	return value;
+}
+
+int select_delay_checks(struct config *conf, struct multipath *mp)
+{
+	int watch_checks, wait_checks;
+	char buff[12];
+
+	watch_checks = use_delay_watch_checks(conf, mp);
+	wait_checks = use_delay_wait_checks(conf, mp);
+	if (watch_checks <= 0 && wait_checks <= 0)
+		return 0;
+	if (san_path_check_options_set(mp)) {
+		condlog(3, "%s: both marginal_path and delay_checks error detection options selected", mp->alias);
+		condlog(3, "%s: ignoring delay_checks options", mp->alias);
+		return 0;
+	}
+	mp->san_path_err_threshold = 1;
+	condlog(3, "%s: san_path_err_threshold = 1 %s", mp->alias,
+		(watch_checks > 0)? delay_watch_origin : delay_wait_origin);
+	if (watch_checks > 0) {
+		mp->san_path_err_forget_rate = watch_checks;
+		print_off_int_undef(buff, 12, mp->san_path_err_forget_rate);
+		condlog(3, "%s: san_path_err_forget_rate = %s %s", mp->alias,
+			buff, delay_watch_origin);
+	}
+	if (wait_checks > 0) {
+		mp->san_path_err_recovery_time = wait_checks *
+						 conf->max_checkint;
+		print_off_int_undef(buff, 12, mp->san_path_err_recovery_time);
+		condlog(3, "%s: san_path_err_recovery_time = %s %s", mp->alias,
+			buff, delay_wait_origin);
+	}
+	return 0;
 }
 
 static int san_path_deprecated_warned;
