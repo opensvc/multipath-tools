@@ -186,6 +186,7 @@ struct config {
 	int max_sectors_kb;
 	int ghost_delay;
 	int find_multipaths_timeout;
+	int marginal_pathgroups;
 	unsigned int version[3];
 
 	char * multipath_dir;

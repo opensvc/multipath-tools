@@ -131,7 +131,7 @@ fail:
 	return -1;
 }
 
-int group_paths(struct multipath *mp)
+int group_paths(struct multipath *mp, int marginal_pathgroups)
 {
 	vector normal, marginal;
 
@@ -145,7 +145,8 @@ int group_paths(struct multipath *mp)
 	if (!mp->pgpolicyfn)
 		goto fail;
 
-	if (split_marginal_paths(mp->paths, &normal, &marginal) != 0) {
+	if (!marginal_pathgroups ||
+	    split_marginal_paths(mp->paths, &normal, &marginal) != 0) {
 		if (mp->pgpolicyfn(mp, mp->paths) != 0)
 			goto fail;
 	} else {

@@ -1339,6 +1339,8 @@ declare_ovr_snprint(all_tg_pt, print_yes_no_undef)
 declare_hw_handler(all_tg_pt, set_yes_no_undef)
 declare_hw_snprint(all_tg_pt, print_yes_no_undef)
 
+declare_def_handler(marginal_pathgroups, set_yes_no)
+declare_def_snprint(marginal_pathgroups, print_yes_no)
 
 static int
 def_uxsock_timeout_handler(struct config *conf, vector strvec)
@@ -1710,6 +1712,7 @@ init_keywords(vector keywords)
 	install_keyword("find_multipaths_timeout",
 			&def_find_multipaths_timeout_handler,
 			&snprint_def_find_multipaths_timeout);
+	install_keyword("marginal_pathgroups", &def_marginal_pathgroups_handler, &snprint_def_marginal_pathgroups);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);

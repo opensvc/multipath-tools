@@ -297,7 +297,7 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 {
 	struct pathgroup * pgp;
 	struct config *conf;
-	int i, n_paths;
+	int i, n_paths, marginal_pathgroups;
 
 	/*
 	 * don't bother if devmap size is unknown
@@ -357,6 +357,7 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 	select_flush_on_last_del(conf, mpp);
 
 	sysfs_set_scsi_tmo(mpp, conf->checkint);
+	marginal_pathgroups = conf->marginal_pathgroups;
 	pthread_cleanup_pop(1);
 
 	if (marginal_path_check_enabled(mpp)) {
@@ -387,7 +388,7 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 		vector_free(mpp->pg);
 		mpp->pg = NULL;
 	}
-	if (group_paths(mpp))
+	if (group_paths(mpp, marginal_pathgroups))
 		return 1;
 
 	/*

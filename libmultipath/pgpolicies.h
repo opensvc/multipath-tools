@@ -21,7 +21,7 @@ enum iopolicies {
 
 int get_pgpolicy_id(char *);
 int get_pgpolicy_name (char *, int, int);
-int group_paths(struct multipath *);
+int group_paths(struct multipath *, int);
 /*
  * policies
  */
