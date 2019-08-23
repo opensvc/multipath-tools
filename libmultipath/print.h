@@ -50,7 +50,8 @@
 #define PRINT_JSON_GROUP     "{\n" \
 			     "         \"selector\" : \"%s\",\n" \
 			     "         \"pri\" : %p,\n" \
-			     "         \"dm_st\" : \"%t\","
+			     "         \"dm_st\" : \"%t\",\n" \
+			     "         \"marginal_st\" : \"%M\","
 
 #define PRINT_JSON_GROUP_NUM "         \"group\" : %d,\n"
 
@@ -66,7 +67,8 @@
 			     "            \"target_wwnn\" : \"%n\",\n" \
 			     "            \"host_wwpn\" : \"%R\",\n" \
 			     "            \"target_wwpn\" : \"%r\",\n" \
-			     "            \"host_adapter\" : \"%a\""
+			     "            \"host_adapter\" : \"%a\",\n" \
+			     "            \"marginal_st\" : \"%M\""
 
 #define MAX_LINE_LEN  80
 #define MAX_LINES     64

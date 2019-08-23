@@ -1609,6 +1609,9 @@ uxlsnrloop (void * ap)
 	set_handler_callback(GETPRKEY+MAP, cli_getprkey);
 	set_handler_callback(SETPRKEY+MAP+KEY, cli_setprkey);
 	set_handler_callback(UNSETPRKEY+MAP, cli_unsetprkey);
+	set_handler_callback(SETMARGINAL+PATH, cli_set_marginal);
+	set_handler_callback(UNSETMARGINAL+PATH, cli_unset_marginal);
+	set_handler_callback(UNSETMARGINAL+MAP, cli_unset_all_marginal);
 
 	umask(077);
 	uxsock_listen(&uxsock_trigger, ux_sock, ap);

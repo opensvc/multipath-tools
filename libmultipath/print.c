@@ -503,6 +503,14 @@ snprint_pg_state (char * buff, size_t len, const struct pathgroup * pgp)
 }
 
 static int
+snprint_pg_marginal (char * buff, size_t len, const struct pathgroup * pgp)
+{
+	if (pgp->marginal)
+		return snprintf(buff, len, "marginal");
+	return snprintf(buff, len, "normal");
+}
+
+static int
 snprint_path_size (char * buff, size_t len, const struct path * pp)
 {
 	return snprint_size(buff, len, pp->size);
@@ -672,6 +680,14 @@ snprint_path_protocol(char * buff, size_t len, const struct path * pp)
 	}
 }
 
+int
+snprint_path_marginal(char * buff, size_t len, const struct path * pp)
+{
+	if (pp->marginal)
+		return snprintf(buff, len, "marginal");
+	return snprintf(buff, len, "normal");
+}
+
 struct multipath_data mpd[] = {
 	{'n', "name",          0, snprint_name},
 	{'w', "uuid",          0, snprint_multipath_uuid},
@@ -713,6 +729,7 @@ struct path_data pd[] = {
 	{'p', "pri",           0, snprint_pri},
 	{'S', "size",          0, snprint_path_size},
 	{'z', "serial",        0, snprint_path_serial},
+	{'M', "marginal_st",   0, snprint_path_marginal},
 	{'m', "multipath",     0, snprint_path_mpp},
 	{'N', "host WWNN",     0, snprint_host_wwnn},
 	{'n', "target WWNN",   0, snprint_tgt_wwnn},
@@ -729,6 +746,7 @@ struct pathgroup_data pgd[] = {
 	{'s', "selector",      0, snprint_pg_selector},
 	{'p', "pri",           0, snprint_pg_pri},
 	{'t', "dm_st",         0, snprint_pg_state},
+	{'M', "marginal_st",   0, snprint_pg_marginal},
 	{0, NULL, 0 , NULL}
 };
 

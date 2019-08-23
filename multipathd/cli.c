@@ -215,6 +215,8 @@ load_keys (void)
 	r += add_key(keys, "unsetprkey", UNSETPRKEY, 0);
 	r += add_key(keys, "key", KEY, 1);
 	r += add_key(keys, "local", LOCAL, 0);
+	r += add_key(keys, "setmarginal", SETMARGINAL, 0);
+	r += add_key(keys, "unsetmarginal", UNSETMARGINAL, 0);
 
 
 	if (r) {
@@ -589,6 +591,9 @@ cli_init (void) {
 	add_handler(UNSETPRKEY+MAP, NULL);
 	add_handler(FORCEQ+DAEMON, NULL);
 	add_handler(RESTOREQ+DAEMON, NULL);
+	add_handler(SETMARGINAL+PATH, NULL);
+	add_handler(UNSETMARGINAL+PATH, NULL);
+	add_handler(UNSETMARGINAL+MAP, NULL);
 
 	return 0;
 }

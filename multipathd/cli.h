@@ -45,6 +45,8 @@ enum {
 	__UNSETPRKEY,
 	__KEY,
 	__LOCAL,
+	__SETMARGINAL,
+	__UNSETMARGINAL,
 };
 
 #define LIST		(1 << __LIST)
@@ -89,6 +91,8 @@ enum {
 #define UNSETPRKEY	(1ULL << __UNSETPRKEY)
 #define KEY		(1ULL << __KEY)
 #define LOCAL		(1ULL << __LOCAL)
+#define SETMARGINAL	(1ULL << __SETMARGINAL)
+#define UNSETMARGINAL	(1ULL << __UNSETMARGINAL)
 
 #define INITIAL_REPLY_LEN	1200
 

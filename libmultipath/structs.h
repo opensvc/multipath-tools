@@ -289,6 +289,7 @@ struct path {
 	int io_err_pathfail_cnt;
 	int io_err_pathfail_starttime;
 	int find_multipaths_timeout;
+	int marginal;
 	/* configlet pointers */
 	vector hwe;
 	struct gen_path generic_path;
@@ -403,6 +404,7 @@ struct pathgroup {
 	int status;
 	int priority;
 	int enabled_paths;
+	int marginal;
 	vector paths;
 	struct multipath *mpp;
 	struct gen_pathgroup generic_pg;

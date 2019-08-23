@@ -49,3 +49,6 @@ int cli_unsetprstatus(void * v, char ** reply, int * len, void * data);
 int cli_getprkey(void * v, char ** reply, int * len, void * data);
 int cli_setprkey(void * v, char ** reply, int * len, void * data);
 int cli_unsetprkey(void * v, char ** reply, int * len, void * data);
+int cli_set_marginal(void * v, char ** reply, int * len, void * data);
+int cli_unset_marginal(void * v, char ** reply, int * len, void * data);
+int cli_unset_all_marginal(void * v, char ** reply, int * len, void * data);

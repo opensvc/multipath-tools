@@ -1537,3 +1537,94 @@ cli_setprkey(void * v, char ** reply, int * len, void * data)
 
 	return ret;
 }
+
+int cli_set_marginal(void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	char * param = get_keyparam(v, PATH);
+	struct path * pp;
+
+	param = convert_dev(param, 1);
+	pp = find_path_by_dev(vecs->pathvec, param);
+
+	if (!pp)
+		pp = find_path_by_devt(vecs->pathvec, param);
+
+	if (!pp || !pp->mpp || !pp->mpp->alias)
+		return 1;
+
+	condlog(2, "%s: set marginal path %s (operator)",
+		pp->mpp->alias, pp->dev_t);
+	if (pp->mpp->wait_for_udev) {
+		condlog(2, "%s: device not fully created, failing set marginal",
+			pp->mpp->alias);
+		return 1;
+	}
+	pp->marginal = 1;
+
+	return update_path_groups(pp->mpp, vecs, 0);
+}
+
+int cli_unset_marginal(void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	char * param = get_keyparam(v, PATH);
+	struct path * pp;
+
+	param = convert_dev(param, 1);
+	pp = find_path_by_dev(vecs->pathvec, param);
+
+	if (!pp)
+		pp = find_path_by_devt(vecs->pathvec, param);
+
+	if (!pp || !pp->mpp || !pp->mpp->alias)
+		return 1;
+
+	condlog(2, "%s: unset marginal path %s (operator)",
+		pp->mpp->alias, pp->dev_t);
+	if (pp->mpp->wait_for_udev) {
+		condlog(2, "%s: device not fully created, "
+			"failing unset marginal", pp->mpp->alias);
+		return 1;
+	}
+	pp->marginal = 0;
+
+	return update_path_groups(pp->mpp, vecs, 0);
+}
+
+int cli_unset_all_marginal(void * v, char ** reply, int * len, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+	char * mapname = get_keyparam(v, MAP);
+	struct multipath *mpp;
+	struct pathgroup * pgp;
+	struct path * pp;
+	unsigned int i, j;
+	int minor;
+
+	mapname = convert_dev(mapname, 0);
+	condlog(2, "%s: unset all marginal paths (operator)",
+		mapname);
+
+	if (sscanf(mapname, "dm-%d", &minor) == 1)
+		mpp = find_mp_by_minor(vecs->mpvec, minor);
+	else
+		mpp = find_mp_by_alias(vecs->mpvec, mapname);
+
+	if (!mpp) {
+		condlog(0, "%s: invalid map name. "
+			"cannot unset marginal paths", mapname);
+		return 1;
+	}
+	if (mpp->wait_for_udev) {
+		condlog(2, "%s: device not fully created, "
+			"failing unset all marginal", mpp->alias);
+		return 1;
+	}
+
+	vector_foreach_slot (mpp->pg, pgp, i)
+		vector_foreach_slot (pgp->paths, pp, j)
+			pp->marginal = 0;
+
+	return update_path_groups(mpp, vecs, 0);
+}
