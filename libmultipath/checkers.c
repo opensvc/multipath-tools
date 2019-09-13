@@ -16,6 +16,7 @@ struct checker_class {
 	char name[CHECKER_NAME_LEN];
 	int (*check)(struct checker *);
 	int (*init)(struct checker *);       /* to allocate the context */
+	int (*mp_init)(struct checker *);    /* to allocate the mpcontext */
 	void (*free)(struct checker *);      /* to free the context */
 	const char **msgtable;
 	short msgtable_size;
@@ -140,6 +141,10 @@ static struct checker_class *add_checker_class(const char *multipath_dir,
 	if (!c->init)
 		goto out;
 
+	c->mp_init = (int (*)(struct checker *)) dlsym(c->handle, "libcheck_mp_init");
+	/* NULL mp_init is o.k. call dlerror() to clear out any error string */
+	dlerror();
+
 	c->free = (void (*)(struct checker *)) dlsym(c->handle, "libcheck_free");
 	errstr = dlerror();
 	if (errstr != NULL)
@@ -212,8 +217,26 @@ int checker_init (struct checker * c, void ** mpctxt_addr)
 	if (!c || !c->cls)
 		return 1;
 	c->mpcontext = mpctxt_addr;
-	if (c->cls->init)
-		return c->cls->init(c);
+	if (c->cls->init && c->cls->init(c) != 0)
+		return 1;
+	if (mpctxt_addr && *mpctxt_addr == NULL && c->cls->mp_init &&
+	    c->cls->mp_init(c) != 0) /* continue even if mp_init fails */
+		c->mpcontext = NULL;
+	return 0;
+}
+
+int checker_mp_init(struct checker * c, void ** mpctxt_addr)
+{
+	if (!c || !c->cls)
+		return 1;
+	if (c->mpcontext || !mpctxt_addr)
+		return 0;
+	c->mpcontext = mpctxt_addr;
+	if (*mpctxt_addr == NULL && c->cls->mp_init &&
+	    c->cls->mp_init(c) != 0) {
+		c->mpcontext = NULL;
+		return 1;
+	}
 	return 0;
 }
 

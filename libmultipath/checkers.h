@@ -138,6 +138,7 @@ const char *checker_state_name(int);
 int init_checkers(const char *);
 void cleanup_checkers (void);
 int checker_init (struct checker *, void **);
+int checker_mp_init(struct checker *, void **);
 void checker_clear (struct checker *);
 void checker_put (struct checker *);
 void checker_reset (struct checker *);

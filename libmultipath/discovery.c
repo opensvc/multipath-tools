@@ -1608,6 +1608,8 @@ get_state (struct path * pp, struct config *conf, int daemon, int oldstate)
 			return PATH_UNCHECKED;
 		}
 	}
+	if (pp->mpp && !c->mpcontext)
+		checker_mp_init(c, &pp->mpp->mpcontext);
 	checker_clear_message(c);
 	if (daemon) {
 		if (conf->force_sync == 0)

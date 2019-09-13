@@ -107,11 +107,18 @@ int libcheck_init (struct checker * c)
 		return 1;
 	((struct emc_clariion_checker_path_context *)c->context)->wwn_set = 0;
 
+	return 0;
+}
+
+int libcheck_mp_init (struct checker * c)
+{
 	/*
 	 * Allocate and initialize the multi-path global context.
 	 */
 	if (c->mpcontext && *c->mpcontext == NULL) {
 		void * mpctxt = malloc(sizeof(int));
+		if (!mpctxt)
+			return 1;
 		*c->mpcontext = mpctxt;
 		CLR_INACTIVE_SNAP(c);
 	}
