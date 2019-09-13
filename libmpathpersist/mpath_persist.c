@@ -82,18 +82,10 @@ updatepaths (struct multipath * mpp)
 
 		vector_foreach_slot (pgp->paths, pp, j){
 			if (!strlen(pp->dev)){
-				if (devt2devname(pp->dev, FILE_NAME_SIZE,
-						 pp->dev_t)){
-					/*
-					 * path is not in sysfs anymore
-					 */
-					pp->state = PATH_DOWN;
-					continue;
-				}
-				pp->mpp = mpp;
-				conf = get_multipath_config();
-				pathinfo(pp, conf, DI_ALL);
-				put_multipath_config(conf);
+				/*
+				 * path is not in sysfs anymore
+				 */
+				pp->state = PATH_DOWN;
 				continue;
 			}
 			pp->mpp = mpp;
