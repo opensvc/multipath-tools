@@ -360,6 +360,12 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
 	},
+	{
+		/* EMC PowerMax NVMe */
+		.vendor        = "NVME",
+		.product       = "^EMC PowerMax_",
+		.pgpolicy      = MULTIBUS,
+	},
 	/*
 	 * Fujitsu
 	 */
