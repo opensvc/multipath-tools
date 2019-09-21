@@ -107,7 +107,7 @@ static struct hwentry default_hw[] = {
 	 * HPE
 	 */
 	{
-		/* 3PAR */
+		/* 3PAR / Primera */
 		.vendor        = "3PARdata",
 		.product       = "VV",
 		.pgpolicy      = GROUP_BY_PRIO,
@@ -310,6 +310,16 @@ static struct hwentry default_hw[] = {
 		.product       = "COMSTAR",
 		.pgpolicy      = GROUP_BY_SERIAL,
 		.no_path_retry = 30,
+	},
+	{
+		/* Tegile IntelliFlash */
+		.vendor        = "TEGILE",
+		.product       = "(ZEBI-(FC|ISCSI)|INTELLIFLASH)",
+		.hwhandler     = "1 alua",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 10,
 	},
 	/*
 	 * Dell EMC
@@ -1079,19 +1089,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "KMNRIO",
 		.product       = "K2",
 		.pgpolicy      = MULTIBUS,
-	},
-	/*
-	 * Western Digital (Tegile Systems)
-	 */
-	{
-		/* IntelliFlash */
-		.vendor        = "TEGILE",
-		.product       = "(ZEBI-(FC|ISCSI)|INTELLIFLASH)",
-		.hwhandler     = "1 alua",
-		.pgpolicy      = GROUP_BY_PRIO,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.prio_name     = PRIO_ALUA,
-		.no_path_retry = 10,
 	},
 	/*
 	 * Imation/Nexsan
