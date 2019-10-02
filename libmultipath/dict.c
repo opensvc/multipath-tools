@@ -610,6 +610,10 @@ declare_def_handler(find_multipaths_timeout, set_int)
 declare_def_snprint_defint(find_multipaths_timeout, print_int,
 			   DEFAULT_FIND_MULTIPATHS_TIMEOUT)
 
+declare_def_handler(enable_foreign, set_str)
+declare_def_snprint_defstr(enable_foreign, print_str,
+			   DEFAULT_ENABLE_FOREIGN)
+
 static int
 def_config_dir_handler(struct config *conf, vector strvec)
 {
@@ -1712,6 +1716,8 @@ init_keywords(vector keywords)
 	install_keyword("find_multipaths_timeout",
 			&def_find_multipaths_timeout_handler,
 			&snprint_def_find_multipaths_timeout);
+	install_keyword("enable_foreign", &def_enable_foreign_handler,
+			&snprint_def_enable_foreign);
 	install_keyword("marginal_pathgroups", &def_marginal_pathgroups_handler, &snprint_def_marginal_pathgroups);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);

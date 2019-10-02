@@ -2840,7 +2840,7 @@ child (void * param)
 	}
 	/* Failing this is non-fatal */
 
-	init_foreign(conf->multipath_dir);
+	init_foreign(conf->multipath_dir, conf->enable_foreign);
 
 	if (poll_dmevents)
 		poll_dmevents = dmevent_poll_supported();

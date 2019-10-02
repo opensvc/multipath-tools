@@ -1050,7 +1050,7 @@ main (int argc, char *argv[])
 		goto out;
 	}
 	/* Failing here is non-fatal */
-	init_foreign(conf->multipath_dir);
+	init_foreign(conf->multipath_dir, conf->enable_foreign);
 	if (cmd == CMD_USABLE_PATHS) {
 		r = check_usable_paths(conf, dev, dev_type) ?
 			RTVL_FAIL : RTVL_OK;

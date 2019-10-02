@@ -195,9 +195,10 @@ struct foreign {
  * init_foreign(dir)
  * load and initialize foreign multipath libraries in dir (libforeign-*.so).
  * @param dir: directory to search
+ * @param enable: regex to match foreign library name ("*" above) against
  * @returns: 0 on success, negative value on failure.
  */
-int init_foreign(const char *multipath_dir);
+int init_foreign(const char *multipath_dir, const char *enable);
 
 /**
  * cleanup_foreign(dir)

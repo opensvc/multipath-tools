@@ -16,6 +16,7 @@
 */
 
 #include <sys/sysmacros.h>
+#include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -25,6 +26,7 @@
 #include <fnmatch.h>
 #include <dlfcn.h>
 #include <libudev.h>
+#include <regex.h>
 #include "vector.h"
 #include "debug.h"
 #include "util.h"
@@ -111,16 +113,44 @@ static int select_foreign_libs(const struct dirent *di)
 	return fnmatch(foreign_pattern, di->d_name, FNM_FILE_NAME) == 0;
 }
 
-static int _init_foreign(const char *multipath_dir)
+static void free_pre(void *arg)
+{
+	regex_t **pre = arg;
+
+	if (pre != NULL && *pre != NULL) {
+		regfree(*pre);
+		free(*pre);
+		*pre = NULL;
+	}
+}
+
+static int _init_foreign(const char *multipath_dir, const char *enable)
 {
 	char pathbuf[PATH_MAX];
 	struct dirent **di;
 	struct scandir_result sr;
 	int r, i;
+	regex_t *enable_re = NULL;
 
 	foreigns = vector_alloc();
 	if (foreigns == NULL)
 		return -ENOMEM;
+
+	pthread_cleanup_push(free_pre, &enable_re);
+	enable_re = calloc(1, sizeof(*enable_re));
+	if (enable_re) {
+		const char *str = enable ? enable : DEFAULT_ENABLE_FOREIGN;
+
+		r = regcomp(enable_re, str, REG_EXTENDED|REG_NOSUB);
+		if (r != 0) {
+			char errbuf[64];
+
+			(void)regerror(r, enable_re, errbuf, sizeof(errbuf));
+			condlog (2, "%s: error compiling enable_foreign = \"%s\": \"%s\"",
+				 __func__, str, errbuf);
+			free_pre(&enable_re);
+		}
+	}
 
 	r = scandir(multipath_dir, &di, select_foreign_libs, alphasort);
 
@@ -162,6 +192,20 @@ static int _init_foreign(const char *multipath_dir)
 			continue;
 		memset(fgn, 0, sizeof(*fgn));
 		strlcpy((char*)fgn + offsetof(struct foreign, name), c, namesz);
+
+		if (enable_re != NULL) {
+			int ret = regexec(enable_re, fgn->name, 0, NULL, 0);
+
+			if (ret == REG_NOMATCH) {
+				condlog(3, "%s: foreign library \"%s\" is not enabled",
+					__func__, fgn->name);
+				free(fgn);
+				continue;
+			} else if (ret != 0)
+				/* assume it matches */
+				condlog(2, "%s: error %d in regexec() for %s",
+					__func__, ret, fgn->name);
+		}
 
 		snprintf(pathbuf, sizeof(pathbuf), "%s/%s", multipath_dir, fn);
 		fgn->handle = dlopen(pathbuf, RTLD_NOW|RTLD_LOCAL);
@@ -205,11 +249,12 @@ static int _init_foreign(const char *multipath_dir)
 	dl_err:
 		free_foreign(fgn);
 	}
-	pthread_cleanup_pop(1);
+	pthread_cleanup_pop(1); /* free_scandir_result */
+	pthread_cleanup_pop(1); /* free_pre */
 	return 0;
 }
 
-int init_foreign(const char *multipath_dir)
+int init_foreign(const char *multipath_dir, const char *enable)
 {
 	int ret;
 
@@ -222,7 +267,7 @@ int init_foreign(const char *multipath_dir)
 	}
 
 	pthread_cleanup_push(unlock_foreigns, NULL);
-	ret = _init_foreign(multipath_dir);
+	ret = _init_foreign(multipath_dir, enable);
 	pthread_cleanup_pop(1);
 
 	return ret;
