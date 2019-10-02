@@ -1896,6 +1896,18 @@ static int check_path_reinstate_state(struct path * pp) {
 			goto reinstate_path;
 		}
 		get_monotonic_time(&curr_time);
+
+		/* If path became failed again or continue failed, should reset
+		 * path san_path_err_forget_rate and path dis_reinstate_time to
+		 * start a new stable check. 
+		 */
+		if ((pp->state != PATH_UP) && (pp->state != PATH_GHOST) &&
+			(pp->state != PATH_DELAYED)) {
+			pp->san_path_err_forget_rate =
+				pp->mpp->san_path_err_forget_rate;
+			pp->dis_reinstate_time = curr_time.tv_sec;
+		}
+
 		if ((curr_time.tv_sec - pp->dis_reinstate_time ) > pp->mpp->san_path_err_recovery_time) {
 			condlog(2,"%s : reinstate the path after err recovery time", pp->dev);
 			goto reinstate_path;
@@ -2065,6 +2077,11 @@ check_path (struct vectors * vecs, struct path * pp, int ticks)
 		pthread_cleanup_push(put_multipath_config, conf);
 		pathinfo(pp, conf, 0);
 		pthread_cleanup_pop(1);
+		return 1;
+	} else if ((newstate != PATH_UP && newstate != PATH_GHOST) &&
+			(pp->state == PATH_DELAYED)) {
+		/* If path state become failed again cancel path delay state */
+		pp->state = newstate;
 		return 1;
 	}
 	if (!pp->mpp) {
