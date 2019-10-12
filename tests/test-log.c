@@ -6,6 +6,7 @@
 #include "log.h"
 #include "test-log.h"
 
+__attribute__((format(printf, 3, 0)))
 void __wrap_dlog (int sink, int prio, const char * fmt, ...)
 {
 	char buff[MAX_MSG_SIZE];
