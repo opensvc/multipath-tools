@@ -812,7 +812,8 @@ dm_get_major_minor(const char *name, int *major, int *minor)
 }
 
 static int
-has_partmap(const char *name, void *data)
+has_partmap(const char *name __attribute__((unused)),
+	    void *data __attribute__((unused)))
 {
 	return 1;
 }
@@ -1308,7 +1309,7 @@ dm_remove_partmaps (const char * mapname, int need_sync, int deferred_remove)
 #ifdef LIBDM_API_DEFERRED
 
 static int
-cancel_remove_partmap (const char *name, void *unused)
+cancel_remove_partmap (const char *name, void *unused __attribute__((unused)))
 {
 	if (dm_get_opencount(name))
 		dm_cancel_remove_partmaps(name);
