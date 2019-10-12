@@ -95,7 +95,8 @@ out:
 	return(ret);
 }
 
-int getprio (struct path * pp, char * args, unsigned int timeout)
+int getprio (struct path *pp, __attribute__((unused)) char *args,
+	     unsigned int timeout)
 {
 	return hp_sw_prio(pp->dev, pp->fd, timeout);
 }

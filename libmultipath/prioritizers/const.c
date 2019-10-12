@@ -2,7 +2,9 @@
 
 #include "prio.h"
 
-int getprio(struct path * pp, char * args, unsigned int timeout)
+int getprio(__attribute__((unused)) struct path * pp,
+	    __attribute__((unused)) char * args,
+	    __attribute__((unused)) unsigned int timeout)
 {
 	return 1;
 }

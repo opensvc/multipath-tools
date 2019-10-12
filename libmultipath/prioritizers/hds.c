@@ -168,7 +168,8 @@ int hds_modular_prio (const char *dev, int fd, unsigned int timeout)
 	return -1;
 }
 
-int getprio (struct path * pp, char * args, unsigned int timeout)
+int getprio (struct path * pp, __attribute__((unused)) char *args,
+	     unsigned int timeout)
 {
 	return hds_modular_prio(pp->dev, pp->fd, timeout);
 }

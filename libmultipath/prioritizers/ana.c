@@ -202,7 +202,8 @@ static int get_ana_info(struct path * pp)
  * - ALUA's LBA-dependent state has no ANA equivalent.
  */
 
-int getprio(struct path *pp, char *args, unsigned int timeout)
+int getprio(struct path *pp, __attribute__((unused)) char *args,
+	    __attribute__((unused)) unsigned int timeout)
 {
 	int rc;
 

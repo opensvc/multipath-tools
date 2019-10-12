@@ -138,7 +138,8 @@ int iet_prio(const char *dev, char * args)
 	return 10;
 }
 
-int getprio(struct path * pp, char * args, unsigned int timeout)
+int getprio(struct path * pp, char * args,
+	    __attribute__((unused)) unsigned int timeout)
 {
 	return iet_prio(pp->dev, args);
 }
