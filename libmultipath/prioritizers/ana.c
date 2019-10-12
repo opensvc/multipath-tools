@@ -106,7 +106,7 @@ static int get_ana_state(__u32 nsid, __u32 anagrpid, void *ana_log,
 	return -ANA_ERR_GETANAS_NOTFOUND;
 }
 
-int get_ana_info(struct path * pp, unsigned int timeout)
+static int get_ana_info(struct path * pp)
 {
 	int	rc;
 	__u32 nsid;
@@ -209,7 +209,7 @@ int getprio(struct path *pp, char *args, unsigned int timeout)
 	if (pp->fd < 0)
 		rc = -ANA_ERR_NO_INFORMATION;
 	else
-		rc = get_ana_info(pp, timeout);
+		rc = get_ana_info(pp);
 
 	switch (rc) {
 	case NVME_ANA_OPTIMIZED:
