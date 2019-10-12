@@ -261,7 +261,7 @@ static void write_defaults(const struct hwt_state *hwt)
 	defaults[0].value = hwt->dirname;
 	defaults[1].value = buf;
 	assert_ptr_not_equal(getcwd(dirbuf, sizeof(dirbuf)), NULL);
-	strncat(dirbuf, "/lib", sizeof(dirbuf));
+	strncat(dirbuf, "/lib", sizeof(dirbuf) - 5);
 	defaults[2].value = dirbuf;
 	write_section(hwt->config_file, "defaults",
 		      ARRAY_SIZE(defaults), defaults);
