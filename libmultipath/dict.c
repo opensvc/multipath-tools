@@ -31,16 +31,58 @@ static int
 set_int(vector strvec, void *ptr)
 {
 	int *int_ptr = (int *)ptr;
-	char * buff;
+	char *buff, *eptr;
+	long res;
+	int rc;
 
 	buff = set_value(strvec);
 	if (!buff)
 		return 1;
 
-	*int_ptr = atoi(buff);
+	res = strtol(buff, &eptr, 10);
+	if (eptr > buff)
+		while (isspace(*eptr))
+			eptr++;
+	if (*buff == '\0' || *eptr != '\0' || res > INT_MAX || res < INT_MIN) {
+		condlog(1, "%s: invalid value for %s: \"%s\"",
+			__func__, (char*)VECTOR_SLOT(strvec, 0), buff);
+		rc = 1;
+	} else {
+		rc = 0;
+		*int_ptr = res;
+	}
 
 	FREE(buff);
-	return 0;
+	return rc;
+}
+
+static int
+set_uint(vector strvec, void *ptr)
+{
+	unsigned int *uint_ptr = (unsigned int *)ptr;
+	char *buff, *eptr;
+	long res;
+	int rc;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	res = strtol(buff, &eptr, 10);
+	if (eptr > buff)
+		while (isspace(*eptr))
+			eptr++;
+	if (*buff == '\0' || *eptr != '\0' || res < 0 || res > UINT_MAX) {
+		condlog(1, "%s: invalid value for %s: \"%s\"",
+			__func__, (char*)VECTOR_SLOT(strvec, 0), buff);
+		rc = 1;
+	} else {
+		rc = 0;
+		*uint_ptr = res;
+	}
+
+	FREE(buff);
+	return rc;
 }
 
 static int
