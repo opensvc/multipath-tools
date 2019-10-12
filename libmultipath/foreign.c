@@ -148,7 +148,7 @@ static int _init_foreign(const char *multipath_dir, const char *enable)
 			(void)regerror(r, enable_re, errbuf, sizeof(errbuf));
 			condlog (2, "%s: error compiling enable_foreign = \"%s\": \"%s\"",
 				 __func__, str, errbuf);
-			free_pre(&enable_re);
+			goto out_free_pre;
 		}
 	}
 
@@ -157,13 +157,13 @@ static int _init_foreign(const char *multipath_dir, const char *enable)
 	if (r == 0) {
 		condlog(3, "%s: no foreign multipath libraries found",
 			__func__);
-		return 0;
+		goto out_free_pre;
 	} else if (r < 0) {
-		r = errno;
-		condlog(1, "%s: error %d scanning foreign multipath libraries",
-			__func__, r);
+		r = -errno;
+		condlog(1, "%s: error scanning foreign multipath libraries: %m",
+			__func__);
 		_cleanup_foreign();
-		return -r;
+		goto out_free_pre;
 	}
 
 	sr.di = di;
@@ -249,9 +249,11 @@ static int _init_foreign(const char *multipath_dir, const char *enable)
 	dl_err:
 		free_foreign(fgn);
 	}
+	r = 0;
 	pthread_cleanup_pop(1); /* free_scandir_result */
+out_free_pre:
 	pthread_cleanup_pop(1); /* free_pre */
-	return 0;
+	return r;
 }
 
 int init_foreign(const char *multipath_dir, const char *enable)
