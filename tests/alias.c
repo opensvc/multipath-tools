@@ -297,6 +297,34 @@ static void sd_max_p1(void **state)
 }
 #endif
 
+static void sd_fd_many(void **state)
+{
+	char buf[32];
+	int rc, i;
+
+	for (i = 1; i < 5000; i++) {
+		rc = format_devname(buf, i, sizeof(buf), "MPATH");
+		assert_in_range(rc, 6, 8);
+		rc = scan_devname(buf, "MPATH");
+		assert_int_equal(rc, i);
+	}
+}
+
+static void sd_fd_random(void **state)
+{
+	char buf[32];
+	int rc, i, n;
+
+	srandom(1);
+	for (i = 1; i < 1000; i++) {
+		n = random() & 0xffff;
+		rc = format_devname(buf, n, sizeof(buf), "MPATH");
+		assert_in_range(rc, 6, 9);
+		rc = scan_devname(buf, "MPATH");
+		assert_int_equal(rc, n);
+	}
+}
+
 static int test_scan_devname(void)
 {
 	const struct CMUnitTest tests[] = {
@@ -314,6 +342,8 @@ static int test_scan_devname(void)
 		cmocka_unit_test(sd_max),
 		cmocka_unit_test(sd_max_p1),
 #endif
+		cmocka_unit_test(sd_fd_many),
+		cmocka_unit_test(sd_fd_random),
 	};
 
 	return cmocka_run_group_tests(tests, NULL, NULL);
