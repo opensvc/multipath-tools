@@ -334,7 +334,8 @@ snprint_multipath_rev (char * buff, size_t len, const struct multipath * mpp)
 }
 
 static int
-snprint_multipath_foreign (char * buff, size_t len, const struct multipath * pp)
+snprint_multipath_foreign (char * buff, size_t len,
+			   __attribute__((unused)) const struct multipath * pp)
 {
 	return snprintf(buff, len, "%s", "--");
 }
@@ -627,7 +628,8 @@ snprint_path_checker (char * buff, size_t len, const struct path * pp)
 }
 
 static int
-snprint_path_foreign (char * buff, size_t len, const struct path * pp)
+snprint_path_foreign (char * buff, size_t len,
+		      __attribute__((unused)) const struct path * pp)
 {
 	return snprintf(buff, len, "%s", "--");
 }

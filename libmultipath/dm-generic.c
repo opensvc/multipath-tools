@@ -31,7 +31,8 @@ dm_mp_get_pgs(const struct gen_multipath *gmp)
 			      struct pathgroup, dm_pathgroup_to_gen);
 }
 
-static void dm_mp_rel_pgs(const struct gen_multipath *gmp,
+static void dm_mp_rel_pgs(__attribute__((unused))
+			  const struct gen_multipath *gmp,
 			  const struct _vector* v)
 {
 	vector_free_const(v);
@@ -44,7 +45,8 @@ dm_pg_get_paths(const struct gen_pathgroup *gpg)
 			      struct path, dm_path_to_gen);
 }
 
-static void dm_mp_rel_paths(const struct gen_pathgroup *gpg,
+static void dm_mp_rel_paths(__attribute__((unused))
+			    const struct gen_pathgroup *gpg,
 			    const struct _vector* v)
 {
 	vector_free_const(v);

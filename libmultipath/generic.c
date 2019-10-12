@@ -21,7 +21,7 @@
 #include "structs.h"
 
 int generic_style(const struct gen_multipath* gm,
-		  char *buf, int len, int verbosity)
+		  char *buf, int len, __attribute__((unused)) int verbosity)
 {
 	char alias_buf[WWID_SIZE];
 	char wwid_buf[WWID_SIZE];
