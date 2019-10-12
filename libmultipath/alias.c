@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include "debug.h"
+#include "util.h"
 #include "uxsock.h"
 #include "alias.h"
 #include "file.h"
@@ -189,8 +190,7 @@ rlookup_binding(FILE *f, char *buff, const char *map_alias, const char *prefix)
 		if (strcmp(alias, map_alias) == 0){
 			condlog(3, "Found matching alias [%s] in bindings file."
 				"\nSetting wwid to %s", alias, wwid);
-			strncpy(buff, wwid, WWID_SIZE);
-			buff[WWID_SIZE - 1] = '\0';
+			strlcpy(buff, wwid, WWID_SIZE);
 			return 0;
 		}
 	}
@@ -214,7 +214,7 @@ allocate_binding(int fd, const char *wwid, int id, const char *prefix)
 
 	i = format_devname(buf, id, LINE_MAX, prefix);
 	c = buf + i;
-	snprintf(c,LINE_MAX - i, " %s\n", wwid);
+	snprintf(c, LINE_MAX - i, " %s\n", wwid);
 	buf[LINE_MAX - 1] = '\0';
 
 	offset = lseek(fd, 0, SEEK_END);
@@ -265,7 +265,7 @@ use_existing_alias (const char *wwid, const char *file, const char *alias_old,
 		close(fd);
 		return NULL;
 	}
-	/* lookup the binding. if it exsists, the wwid will be in buff
+	/* lookup the binding. if it exists, the wwid will be in buff
 	 * either way, id contains the id for the alias
 	 */
 	rlookup_binding(f, buff, alias_old, prefix);
