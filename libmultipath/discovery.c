@@ -148,15 +148,19 @@ path_discovery (vector pathvec, int flag)
 	struct udev_device *udevice;
 	struct config *conf;
 	const char *devpath;
-	int num_paths = 0, total_paths = 0;
+	int num_paths = 0, total_paths = 0, ret;
 
 	udev_iter = udev_enumerate_new(udev);
 	if (!udev_iter)
 		return -ENOMEM;
 
-	udev_enumerate_add_match_subsystem(udev_iter, "block");
-	udev_enumerate_add_match_is_initialized(udev_iter);
-	udev_enumerate_scan_devices(udev_iter);
+	if (udev_enumerate_add_match_subsystem(udev_iter, "block") < 0 ||
+	    udev_enumerate_add_match_is_initialized(udev_iter) < 0 ||
+	    udev_enumerate_scan_devices(udev_iter) < 0) {
+		condlog(1, "%s: error setting up udev_enumerate: %m", __func__);
+		ret = -1;
+		goto out;
+	}
 
 	udev_list_entry_foreach(entry,
 				udev_enumerate_get_list_entry(udev_iter)) {
@@ -180,9 +184,11 @@ path_discovery (vector pathvec, int flag)
 		}
 		udev_device_unref(udevice);
 	}
+	ret = total_paths - num_paths;
+out:
 	udev_enumerate_unref(udev_iter);
 	condlog(4, "Discovered %d/%d paths", num_paths, total_paths);
-	return (total_paths - num_paths);
+	return ret;
 }
 
 #define declare_sysfs_get_str(fname)					\
