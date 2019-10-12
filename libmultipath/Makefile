@@ -50,6 +50,11 @@ all: $(LIBS)
 nvme-lib.o: nvme-lib.c nvme-ioctl.c nvme-ioctl.h
 	$(CC) $(CFLAGS) -Wno-unused-function -c -o $@ $<
 
+# there are lots of "unused parameters" in dict.c
+# because not all handler / snprint methods nees all parameters
+dict.o:	dict.c
+	$(CC) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
+
 make_static = $(shell sed '/^static/!s/^\([a-z]\{1,\} \)/static \1/' <$1 >$2)
 
 nvme-ioctl.c: nvme/nvme-ioctl.c
