@@ -81,7 +81,8 @@ INSTALL_PROGRAM	= install
 # Test if the C compiler supports the option.
 # Evaluates to "option" if yes, and "fallback" otherwise.
 TEST_CC_OPTION = $(shell \
-	if echo 'int main(void){return 0;}' | $(CC) -o /dev/null -c "$(1)" -xc - >/dev/null 2>&1; \
+	if echo 'int main(void){return 0;}' | \
+		$(CC) -o /dev/null -c -Werror "$(1)" -xc - >/dev/null 2>&1; \
 	then \
 		echo "$(1)"; \
 	else \
