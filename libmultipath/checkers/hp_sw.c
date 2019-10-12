@@ -44,7 +44,7 @@ void libcheck_free (struct checker * c)
 
 static int
 do_inq(int sg_fd, int cmddt, int evpd, unsigned int pg_op,
-       void *resp, int mx_resp_len, int noisy, unsigned int timeout)
+       void *resp, int mx_resp_len, unsigned int timeout)
 {
 	unsigned char inqCmdBlk[INQUIRY_CMDLEN] =
 		{ INQUIRY_CMD, 0, 0, 0, 0, 0 };
@@ -130,7 +130,7 @@ do_tur (int fd, unsigned int timeout)
 int libcheck_check(struct checker * c)
 {
 	char buff[MX_ALLOC_LEN];
-	int ret = do_inq(c->fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, 0, c->timeout);
+	int ret = do_inq(c->fd, 0, 1, 0x80, buff, MX_ALLOC_LEN, c->timeout);
 
 	if (ret == PATH_WILD) {
 		c->msgid = CHECKER_MSGID_UNSUPPORTED;
