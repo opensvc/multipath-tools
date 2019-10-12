@@ -853,7 +853,7 @@ int uevent_listen(struct udev *udev)
 		poll_timeout = timeout * 1000;
 		errno = 0;
 		fdcount = poll(&ev_poll, 1, poll_timeout);
-		if (fdcount && ev_poll.revents & POLLIN) {
+		if (fdcount > 0 && ev_poll.revents & POLLIN) {
 			timeout = uevent_burst(&start_time, events + 1) ? 1 : 0;
 			dev = udev_monitor_receive_device(monitor);
 			if (!dev) {
