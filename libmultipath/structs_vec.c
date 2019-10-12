@@ -292,7 +292,7 @@ update_multipath_strings(struct multipath *mpp, vector pathvec, int is_daemon)
 
 void enter_recovery_mode(struct multipath *mpp)
 {
-	int checkint;
+	unsigned int checkint;
 	struct config *conf = get_multipath_config();
 	checkint = conf->checkint;
 	put_multipath_config(conf);

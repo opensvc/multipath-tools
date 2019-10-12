@@ -357,7 +357,7 @@ int io_err_stat_handle_pathfail(struct path *path)
 		if (path->state != PATH_DOWN) {
 			struct config *conf;
 			int oldstate = path->state;
-			int checkint;
+			unsigned int checkint;
 
 			conf = get_multipath_config();
 			checkint = conf->checkint;

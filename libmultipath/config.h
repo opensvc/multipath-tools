@@ -137,8 +137,8 @@ struct config {
 	int pgpolicy;
 	int minio;
 	int minio_rq;
-	int checkint;
-	int max_checkint;
+	unsigned int checkint;
+	unsigned int max_checkint;
 	int pgfailback;
 	int remove;
 	int rr_weight;

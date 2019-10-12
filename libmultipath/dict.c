@@ -314,7 +314,7 @@ snprint_mp_ ## option (struct config *conf, char * buff, int len,	\
 
 static int checkint_handler(struct config *conf, vector strvec)
 {
-	int rc = set_int(strvec, &conf->checkint);
+	int rc = set_uint(strvec, &conf->checkint);
 
 	if (rc)
 		return rc;
@@ -325,7 +325,7 @@ static int checkint_handler(struct config *conf, vector strvec)
 
 declare_def_snprint(checkint, print_int)
 
-declare_def_handler(max_checkint, set_int)
+declare_def_handler(max_checkint, set_uint)
 declare_def_snprint(max_checkint, print_int)
 
 declare_def_handler(verbosity, set_int)

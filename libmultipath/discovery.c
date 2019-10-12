@@ -754,7 +754,7 @@ sysfs_set_nexus_loss_tmo(struct multipath *mpp, struct path *pp)
 }
 
 int
-sysfs_set_scsi_tmo (struct multipath *mpp, int checkint)
+sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint)
 {
 	struct path *pp;
 	int i;
