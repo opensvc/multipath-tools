@@ -42,7 +42,7 @@ lib/libchecktur.so:
 OBJS = $(TESTS:%=%.o) test-lib.o
 
 clean: dep_clean
-	$(RM) $(TESTS:%=%-test) $(TESTS:%=%.out) $(OBJS)
+	$(RM) $(TESTS:%=%-test) $(TESTS:%=%.out) $(OBJS) *.o.wrap
 	$(RM) -rf lib
 
 .SECONDARY: $(OBJS)
