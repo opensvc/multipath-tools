@@ -78,21 +78,21 @@
 struct path_data {
 	char wildcard;
 	char * header;
-	int width;
+	unsigned int width;
 	int (*snprint)(char * buff, size_t len, const struct path * pp);
 };
 
 struct multipath_data {
 	char wildcard;
 	char * header;
-	int width;
+	unsigned int width;
 	int (*snprint)(char * buff, size_t len, const struct multipath * mpp);
 };
 
 struct pathgroup_data {
 	char wildcard;
 	char * header;
-	int width;
+	unsigned int width;
 	int (*snprint)(char * buff, size_t len, const struct pathgroup * pgp);
 };
 

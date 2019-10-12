@@ -36,7 +36,7 @@
 #define NOPAD    s = c
 #define PAD(x) \
 do { \
-	while ((int)(c - s) < (x) && (c < (line + len - 1))) \
+	while (c < (s + x) && (c < (line + len - 1))) \
 		*c++ = ' '; \
 	s = c; \
 } while (0)
@@ -783,7 +783,7 @@ get_path_layout(vector pathvec, int header)
 }
 
 static void
-reset_width(int *width, enum layout_reset reset, const char *header)
+reset_width(unsigned int *width, enum layout_reset reset, const char *header)
 {
 	switch (reset) {
 	case LAYOUT_RESET_HEADER:
