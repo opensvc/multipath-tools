@@ -29,6 +29,7 @@ blacklist-test_LIBDEPS := -ludev
 vpd-test_OBJDEPS :=  ../libmultipath/discovery.o
 vpd-test_LIBDEPS := -ludev -lpthread -ldl
 alias-test_TESTDEPS := test-log.o
+alias-test_LIBDEPS := -lpthread -ldl
 
 lib/libchecktur.so:
 	mkdir lib
