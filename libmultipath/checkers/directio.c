@@ -37,7 +37,7 @@ const char *libcheck_msgtable[] = {
 struct directio_context {
 	int		running;
 	int		reset_flags;
-	int		blksize;
+	unsigned int	blksize;
 	unsigned char *	buf;
 	unsigned char * ptr;
 	io_context_t	ioctx;

@@ -54,7 +54,7 @@ struct io_err_stat_pathvec {
 
 struct dio_ctx {
 	struct timespec	io_starttime;
-	int		blksize;
+	unsigned int	blksize;
 	void		*buf;
 	struct iocb	io;
 };
@@ -128,7 +128,7 @@ static int setup_directio_ctx(struct io_err_stat_path *p)
 {
 	unsigned long pgsize = getpagesize();
 	char fpath[PATH_MAX];
-	int blksize = 0;
+	unsigned int blksize = 0;
 	int i;
 
 	if (snprintf(fpath, PATH_MAX, "/dev/%s", p->devname) >= PATH_MAX)
