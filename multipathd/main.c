@@ -2792,7 +2792,7 @@ set_oom_adj (void)
 }
 
 static int
-child (void * param)
+child (__attribute__((unused)) void *param)
 {
 	pthread_t check_thr, uevent_thr, uxlsnr_thr, uevq_thr, dmevent_thr;
 	pthread_attr_t log_attr, misc_attr, uevent_attr;

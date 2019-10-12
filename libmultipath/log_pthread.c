@@ -56,7 +56,7 @@ static void flush_logqueue (void)
 	} while (empty == 0);
 }
 
-static void * log_thread (void * et)
+static void * log_thread (__attribute__((unused)) void * et)
 {
 	int running;
 
