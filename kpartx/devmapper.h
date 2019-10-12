@@ -9,14 +9,14 @@
 
 extern int udev_sync;
 
-int dm_prereq (char *, int, int, int);
+int dm_prereq (char *, uint32_t, uint32_t, uint32_t);
 int dm_simplecmd (int, const char *, int, uint16_t);
 int dm_addmap (int, const char *, const char *, const char *, uint64_t,
 	       int, const char *, int, mode_t, uid_t, gid_t);
 char * dm_mapname(int major, int minor);
 dev_t dm_get_first_dep(char *devname);
 char * dm_mapuuid(const char *mapname);
-int dm_devn (const char * mapname, int *major, int *minor);
+int dm_devn (const char * mapname, unsigned int *major, unsigned int *minor);
 int dm_remove_partmaps (char * mapname, char *uuid, dev_t devt, int verbose);
 int dm_find_part(const char *parent, const char *delim, int part,
 		 const char *parent_uuid,
@@ -34,5 +34,6 @@ int dm_find_part(const char *parent, const char *delim, int part,
 #define NONDM_UUID_PREFIX "devnode"
 #define NONDM_UUID_SUFFIX "Wh5pYvM"
 char *nondm_create_uuid(dev_t devt);
-int nondm_parse_uuid(const char *uuid, int *major, int *minor);
+int nondm_parse_uuid(const char *uuid,
+		     unsigned int *major, unsigned int *minor);
 #endif /* _KPARTX_DEVMAPPER_H */

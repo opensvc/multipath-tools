@@ -17,7 +17,7 @@
 #define MAX_PREFIX_LEN (_UUID_PREFIX_LEN + 4)
 #define PARAMS_SIZE 1024
 
-int dm_prereq(char * str, int x, int y, int z)
+int dm_prereq(char * str, uint32_t x, uint32_t y, uint32_t z)
 {
 	int r = 1;
 	struct dm_task *dmt;
@@ -358,7 +358,7 @@ out:
 }
 
 int
-dm_devn (const char * mapname, int *major, int *minor)
+dm_devn (const char * mapname, unsigned int *major, unsigned int *minor)
 {
 	int r = 1;
 	struct dm_task *dmt;
@@ -527,7 +527,7 @@ do_foreach_partmaps (const char * mapname, const char *uuid,
 	struct remove_data *rd = data;
 	unsigned next = 0;
 	char params[PARAMS_SIZE];
-	int major, minor;
+	unsigned int major, minor;
 	char dev_t[32];
 	int r = 1;
 	int is_dmdev = 1;
@@ -644,7 +644,7 @@ int dm_find_part(const char *parent, const char *delim, int part,
 	char params[PARAMS_SIZE];
 	char *tmp;
 	char *uuid;
-	int major, minor;
+	unsigned int major, minor;
 	char dev_t[32];
 
 	if (!format_partname(name, namesiz, parent, delim, part)) {
@@ -714,7 +714,7 @@ char *nondm_create_uuid(dev_t devt)
 	return uuid_buf;
 }
 
-int nondm_parse_uuid(const char *uuid, int *major, int *minor)
+int nondm_parse_uuid(const char *uuid, unsigned int *major, unsigned int *minor)
 {
 	const char *p;
 	char *e;

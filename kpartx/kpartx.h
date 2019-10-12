@@ -33,11 +33,12 @@ struct slice {
 	uint64_t start;
 	uint64_t size;
 	int container;
-	int major;
-	int minor;
+	unsigned int major;
+	unsigned int minor;
 };
 
-typedef int (ptreader)(int fd, struct slice all, struct slice *sp, int ns);
+typedef int (ptreader)(int fd, struct slice all, struct slice *sp,
+		       int ns);
 
 extern int force_gpt;
 
