@@ -131,13 +131,15 @@ DMMP_DLL_LOCAL void _dmmp_path_free(struct dmmp_path *dmmp_p);
 DMMP_DLL_LOCAL void _dmmp_log(struct dmmp_context *ctx, int priority,
 			      const char *file, int line,
 			      const char *func_name,
-			      const char *format, ...);
+			      const char *format, ...)
+	__attribute__((format(printf, 6, 7)));
 DMMP_DLL_LOCAL void _dmmp_log_err_str(struct dmmp_context *ctx, int rc);
 
 DMMP_DLL_LOCAL void _dmmp_log_stderr(struct dmmp_context *ctx, int priority,
 				     const char *file, int line,
 				     const char *func_name, const char *format,
-				     va_list args);
+				     va_list args)
+	__attribute__((format(printf, 6, 0)));
 
 
 #define _dmmp_log_cond(ctx, prio, arg...) \
@@ -164,7 +166,7 @@ DMMP_DLL_LOCAL void _dmmp_log_stderr(struct dmmp_context *ctx, int priority,
 	do { \
 		if (ptr == NULL) { \
 			rc = DMMP_ERR_NO_MEMORY; \
-			_error(ctx, dmmp_strerror(rc)); \
+			_error(ctx, "%s", dmmp_strerror(rc));	\
 			goto goto_out; \
 		} \
 	} while(0)
