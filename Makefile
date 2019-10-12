@@ -2,7 +2,7 @@
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
 
-BUILDDIRS = \
+BUILDDIRS := \
 	libmpathcmd \
 	libmultipath \
 	libmultipath/prioritizers \
@@ -19,32 +19,30 @@ BUILDDIRS += \
 	libdmmp
 endif
 
-all: recurse
+BUILDDIRS.clean := $(BUILDDIRS:=.clean) tests.clean
 
-recurse:
-	@for dir in $(BUILDDIRS); do $(MAKE) -C $$dir || exit $?; done
+.PHONY:	$(BUILDDIRS) $(BUILDDIRS:=.uninstall) $(BUILDDIRS:=.install) $(BUILDDIRS.clean)
 
-recurse_clean:
-	@for dir in $(BUILDDIRS); do \
-	$(MAKE) -C $$dir clean || exit $?; \
-	done
-	$(MAKE) -C tests clean
+all:	$(BUILDDIRS)
 
-recurse_install:
-	@for dir in $(BUILDDIRS); do \
-	$(MAKE) -C $$dir install || exit $?; \
-	done
+$(BUILDDIRS):
+	$(MAKE) -C $@
 
-recurse_uninstall:
-	@for dir in $(BUILDDIRS); do \
-	$(MAKE) -C $$dir uninstall || exit $?; \
-	done
+multipath multipathd mpathpersist: libmultipath
+mpathpersist:  libmpathpersist
 
-clean: recurse_clean
+$(BUILDDIRS.clean):
+	$(MAKE) -C ${@:.clean=} clean
 
-install: recurse_install
+$(BUILDDIRS:=.install):
+	$(MAKE) -C ${@:.install=} install
 
-uninstall: recurse_uninstall
+$(BUILDDIRS:=.uninstall):
+	$(MAKE) -C ${@:.uninstall=} uninstall
+
+clean: $(BUILDDIRS.clean)
+install: $(BUILDDIRS:=.install)
+uninstall: $(BUILDDIRS:=.uninstall)
 
 test:	all
 	$(MAKE) -C tests
