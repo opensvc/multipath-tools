@@ -52,18 +52,24 @@ format_devname(char *name, int id, int len, const char *prefix)
 	int pos;
 	int prefix_len = strlen(prefix);
 
-	memset(name,0, len);
+	if (len <= prefix_len + 1 || id <= 0)
+		return -1;
+
+	memset(name, 0, len);
 	strcpy(name, prefix);
-	for (pos = len - 1; pos >= prefix_len; pos--) {
+	name[len - 1] = '\0';
+	for (pos = len - 2; pos >= prefix_len; pos--) {
 		id--;
 		name[pos] = 'a' + id % 26;
 		if (id < 26)
 			break;
 		id /= 26;
 	}
+	if (pos < prefix_len)
+		return -1;
+
 	memmove(name + prefix_len, name + pos, len - pos);
-	name[prefix_len + len - pos] = '\0';
-	return (prefix_len + len - pos);
+	return (prefix_len + len - pos - 1);
 }
 
 static int
@@ -213,6 +219,9 @@ allocate_binding(int fd, const char *wwid, int id, const char *prefix)
 	}
 
 	i = format_devname(buf, id, LINE_MAX, prefix);
+	if (i == -1)
+		return NULL;
+
 	c = buf + i;
 	snprintf(c, LINE_MAX - i, " %s\n", wwid);
 	buf[LINE_MAX - 1] = '\0';
