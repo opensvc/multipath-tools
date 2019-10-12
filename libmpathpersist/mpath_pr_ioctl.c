@@ -188,8 +188,8 @@ static void mpath_format_readkeys(struct prin_resp *pr_buff)
 static void mpath_format_readresv(struct prin_resp *pr_buff)
 {
 
-	convert_be32_to_cpu(&pr_buff->prin_descriptor.prin_readkeys.prgeneration);
-	convert_be32_to_cpu(&pr_buff->prin_descriptor.prin_readkeys.additional_length);
+	convert_be32_to_cpu(&pr_buff->prin_descriptor.prin_readresv.prgeneration);
+	convert_be32_to_cpu(&pr_buff->prin_descriptor.prin_readresv.additional_length);
 
 	return;
 }
