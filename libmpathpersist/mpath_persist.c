@@ -854,7 +854,8 @@ int update_map_pr(struct multipath *mpp)
 {
 	int noisy=0;
 	struct prin_resp *resp;
-	int i, ret, isFound;
+	unsigned int i;
+	int ret, isFound;
 
 	if (!get_be64(mpp->reservation_key))
 	{

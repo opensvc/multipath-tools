@@ -140,7 +140,7 @@ retry :
 
 uint32_t  format_transportids(struct prout_param_descriptor *paramp)
 {
-	int i = 0, len;
+	unsigned int i = 0, len;
 	uint32_t buff_offset = 4;
 	memset(paramp->private_buffer, 0, MPATH_MAX_PARAM_LEN);
 	for (i=0; i < paramp->num_transportid; i++ )
@@ -204,11 +204,11 @@ static void mpath_format_reportcapabilities(struct prin_resp *pr_buff)
 
 static void mpath_format_readfullstatus(struct prin_resp *pr_buff)
 {
-	int num, k, tid_len_len=0;
+	int num;
 	uint32_t fdesc_count=0;
 	unsigned char *p;
 	char  *ppbuff;
-	uint32_t additional_length;
+	uint32_t additional_length, k, tid_len_len = 0;
 	char tempbuff[MPATH_MAX_PARAM_LEN];
 	struct prin_fulldescr fdesc;
 
@@ -269,8 +269,8 @@ static void mpath_format_readfullstatus(struct prin_resp *pr_buff)
 void
 decode_transport_id(struct prin_fulldescr *fdesc, unsigned char * p, int length)
 {
-	int num, k;
-	int jump;
+	unsigned int num;
+	int jump, k;
 	for (k = 0, jump = 24; k < length; k += jump, p += jump) {
 		fdesc->trnptid.format_code = ((p[0] >> 6) & 0x3);
 		fdesc->trnptid.protocol_id = (p[0] & 0xf);
