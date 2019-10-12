@@ -644,7 +644,7 @@ free_config (struct config * conf)
 /* if multipath fails to process the config directory, it should continue,
  * with just a warning message */
 static void
-process_config_dir(struct config *conf, vector keywords, char *dir)
+process_config_dir(struct config *conf, char *dir)
 {
 	struct dirent **namelist;
 	struct scandir_result sr;
@@ -749,7 +749,7 @@ load_config (char * file)
 	if (conf->config_dir == NULL)
 		conf->config_dir = set_default(DEFAULT_CONFIG_DIR);
 	if (conf->config_dir && conf->config_dir[0] != '\0')
-		process_config_dir(conf, conf->keywords, conf->config_dir);
+		process_config_dir(conf, conf->config_dir);
 
 	/*
 	 * fill the voids left in the config file
