@@ -74,7 +74,7 @@ ensure_directories_exist(const char *str, mode_t dir_mode)
 }
 
 static void
-sigalrm(int sig)
+sigalrm(__attribute__((unused)) int sig)
 {
 	/* do nothing */
 }

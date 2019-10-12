@@ -84,7 +84,7 @@ io_context_t	ioctx;
 
 static void cancel_inflight_io(struct io_err_stat_path *pp);
 
-static void rcu_unregister(void *param)
+static void rcu_unregister(__attribute__((unused)) void *param)
 {
 	rcu_unregister_thread();
 }
@@ -689,7 +689,7 @@ static void cleanup_unlock(void *arg)
 	pthread_mutex_unlock((pthread_mutex_t*) arg);
 }
 
-static void cleanup_exited(void *arg)
+static void cleanup_exited(__attribute__((unused)) void *arg)
 {
 	uatomic_set(&io_err_thread_running, 0);
 }

@@ -50,7 +50,7 @@ struct config *get_multipath_config(void)
 	return multipath_conf;
 }
 
-void put_multipath_config(void * arg)
+void put_multipath_config(__attribute__((unused)) void * arg)
 {
 	/* Noop for now */
 }

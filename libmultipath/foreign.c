@@ -50,7 +50,7 @@ static void wrlock_foreigns(void)
 	pthread_rwlock_wrlock(&foreign_lock);
 }
 
-static void unlock_foreigns(void *unused)
+static void unlock_foreigns(__attribute__((unused)) void *unused)
 {
 	pthread_rwlock_unlock(&foreign_lock);
 }

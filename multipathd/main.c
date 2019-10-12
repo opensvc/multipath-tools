@@ -215,7 +215,7 @@ static void do_sd_notify(enum daemon_status old_state,
 }
 #endif
 
-static void config_cleanup(void *arg)
+static void config_cleanup(__attribute__((unused)) void *arg)
 {
 	pthread_mutex_unlock(&config_lock);
 }
@@ -306,7 +306,7 @@ struct config *get_multipath_config(void)
 	return rcu_dereference(multipath_conf);
 }
 
-void put_multipath_config(void *arg)
+void put_multipath_config(__attribute__((unused)) void *arg)
 {
 	rcu_read_unlock();
 }
@@ -1503,7 +1503,7 @@ out:
 	return r;
 }
 
-static void rcu_unregister(void *param)
+static void rcu_unregister(__attribute__((unused)) void *param)
 {
 	rcu_unregister_thread();
 }
@@ -2685,25 +2685,25 @@ handle_signals(bool nonfatal)
 }
 
 static void
-sighup (int sig)
+sighup(__attribute__((unused)) int sig)
 {
 	reconfig_sig = 1;
 }
 
 static void
-sigend (int sig)
+sigend(__attribute__((unused)) int sig)
 {
 	exit_sig = 1;
 }
 
 static void
-sigusr1 (int sig)
+sigusr1(__attribute__((unused)) int sig)
 {
 	log_reset_sig = 1;
 }
 
 static void
-sigusr2 (int sig)
+sigusr2(__attribute__((unused)) int sig)
 {
 	condlog(3, "SIGUSR2 received");
 }

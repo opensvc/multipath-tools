@@ -370,12 +370,12 @@ static int dmevent_loop (void)
 	return -1; /* never reach there */
 }
 
-static void rcu_unregister(void *param)
+static void rcu_unregister(__attribute__((unused)) void *param)
 {
 	rcu_unregister_thread();
 }
 
-void *wait_dmevents (void *unused)
+void *wait_dmevents (__attribute__((unused)) void *unused)
 {
 	int r;
 
