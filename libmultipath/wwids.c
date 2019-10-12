@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "util.h"
 #include "checkers.h"
 #include "vector.h"
 #include "structs.h"
@@ -87,7 +88,8 @@ write_out_wwid(int fd, char *wwid) {
 int
 replace_wwids(vector mp)
 {
-	int i, fd, can_write;
+	int i, can_write;
+	long fd;
 	struct multipath * mpp;
 	size_t len;
 	int ret = -1;
@@ -99,6 +101,8 @@ replace_wwids(vector mp)
 	pthread_cleanup_pop(1);
 	if (fd < 0)
 		goto out;
+
+	pthread_cleanup_push(close_fd, (void*)fd);
 	if (!can_write) {
 		condlog(0, "cannot replace wwids. wwids file is read-only");
 		goto out_file;
@@ -132,7 +136,7 @@ replace_wwids(vector mp)
 	}
 	ret = 0;
 out_file:
-	close(fd);
+	pthread_cleanup_pop(1);
 out:
 	return ret;
 }
