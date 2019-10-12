@@ -77,6 +77,7 @@ scan_devname(const char *alias, const char *prefix)
 {
 	const char *c;
 	int i, n = 0;
+	static const int last_26 = INT_MAX / 26;
 
 	if (!prefix || strncmp(alias, prefix, strlen(prefix)))
 		return -1;
@@ -93,9 +94,9 @@ scan_devname(const char *alias, const char *prefix)
 		if (*c < 'a' || *c > 'z')
 			return -1;
 		i = *c - 'a';
-		n = ( n * 26 ) + i;
-		if (n < 0)
+		if (n > last_26 || (n == last_26 && i >= INT_MAX % 26))
 			return -1;
+		n = n * 26 + i;
 		c++;
 		n++;
 	}
