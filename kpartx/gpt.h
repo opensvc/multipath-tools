@@ -105,7 +105,7 @@ typedef struct _legacy_mbr {
 #define EFI_GPT_PRIMARY_PARTITION_TABLE_LBA 1
 
 /* Functions */
-int read_gpt_pt (int fd, struct slice all, struct slice *sp, int ns);
+int read_gpt_pt (int fd, struct slice all, struct slice *sp, unsigned int ns);
 
 
 #endif

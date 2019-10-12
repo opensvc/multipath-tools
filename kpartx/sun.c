@@ -59,11 +59,11 @@ sun_verify_checksum (struct sun_disk_label *label)
 }
 
 int
-read_sun_pt(int fd, struct slice all, struct slice *sp, int ns) {
+read_sun_pt(int fd, struct slice all, struct slice *sp, unsigned int ns) {
 	struct sun_disk_label *l;
 	struct sun_raw_part *s;
 	unsigned int offset = all.start, end;
-	int i, j, n;
+	unsigned int i, j, n;
 	char *bp;
 
 	bp = getblock(fd, offset);

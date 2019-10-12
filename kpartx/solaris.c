@@ -28,11 +28,11 @@ struct solaris_x86_vtoc {
 };
 
 int
-read_solaris_pt(int fd, struct slice all, struct slice *sp, int ns) {
+read_solaris_pt(int fd, struct slice all, struct slice *sp, unsigned int ns) {
 	struct solaris_x86_vtoc *v;
 	struct solaris_x86_slice *s;
 	unsigned int offset = all.start;
-	int i, n;
+	unsigned int i, n;
 	char *bp;
 
 	bp = getblock(fd, offset+1);	/* 1 sector suffices */

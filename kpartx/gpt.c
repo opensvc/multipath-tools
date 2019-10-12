@@ -602,11 +602,11 @@ fail:
  */
 int
 read_gpt_pt (int fd, __attribute__((unused)) struct slice all,
-	     struct slice *sp, int ns)
+	     struct slice *sp, unsigned int ns)
 {
 	gpt_header *gpt = NULL;
 	gpt_entry *ptes = NULL;
-	uint32_t i;
+	unsigned int i;
 	int n = 0;
 	int last_used_index=-1;
 	int sector_size_mul = get_sector_size(fd)/512;

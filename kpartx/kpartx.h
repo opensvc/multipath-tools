@@ -38,7 +38,7 @@ struct slice {
 };
 
 typedef int (ptreader)(int fd, struct slice all, struct slice *sp,
-		       int ns);
+		       unsigned int ns);
 
 extern int force_gpt;
 
@@ -54,7 +54,7 @@ extern ptreader read_ps3_pt;
 
 char *getblock(int fd, unsigned int secnr);
 
-static inline int
+static inline unsigned int
 four2int(unsigned char *p) {
 	return p[0] + (p[1]<<8) + (p[2]<<16) + (p[3]<<24);
 }

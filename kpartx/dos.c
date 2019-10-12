@@ -74,10 +74,10 @@ is_gpt(int type) {
 }
 
 int
-read_dos_pt(int fd, struct slice all, struct slice *sp, int ns) {
+read_dos_pt(int fd, struct slice all, struct slice *sp, unsigned int ns) {
 	struct partition p;
 	unsigned long offset = all.start;
-	int i, n=4;
+	unsigned int i, n=4;
 	unsigned char *bp;
 	uint64_t  sector_size_mul = get_sector_size(fd)/512;
 

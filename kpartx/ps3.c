@@ -34,7 +34,7 @@ struct disklabel {
 static int
 read_disklabel(int fd, struct disklabel *label) {
 	unsigned char *data;
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < sizeof(struct disklabel) / SECTOR_SIZE; i++) {
 		data = (unsigned char *) getblock(fd, i);
@@ -49,7 +49,7 @@ read_disklabel(int fd, struct disklabel *label) {
 
 int
 read_ps3_pt(int fd, __attribute__((unused)) struct slice all,
-	    struct slice *sp, __attribute__((unused)) int ns) {
+	    struct slice *sp, __attribute__((unused)) unsigned int ns) {
 	struct disklabel label;
 	int n = 0;
 	int i;

@@ -6,12 +6,12 @@
 
 int
 read_mac_pt(int fd, __attribute__((unused)) struct slice all,
-	    struct slice *sp, int ns) {
+	    struct slice *sp, unsigned int ns) {
 	struct mac_driver_desc *md;
 	struct mac_partition *part;
 	unsigned secsize;
 	char *data;
-	int blk, blocks_in_map;
+	unsigned int blk, blocks_in_map;
 	int n = 0;
 
 	md = (struct mac_driver_desc *) getblock(fd, 0);
