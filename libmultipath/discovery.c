@@ -624,9 +624,10 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 	    mpp->fast_io_fail != MP_FAST_IO_FAIL_ZERO &&
 	    mpp->fast_io_fail != MP_FAST_IO_FAIL_OFF) {
 		/* Check if we need to temporarily increase dev_loss_tmo */
-		if (mpp->fast_io_fail >= tmo) {
+		if ((unsigned int)mpp->fast_io_fail >= tmo) {
 			/* Increase dev_loss_tmo temporarily */
-			snprintf(value, 16, "%u", mpp->fast_io_fail + 1);
+			snprintf(value, sizeof(value), "%u",
+				 (unsigned int)mpp->fast_io_fail + 1);
 			ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
 						   value, strlen(value));
 			if (ret <= 0) {
@@ -757,10 +758,11 @@ sysfs_set_scsi_tmo (struct multipath *mpp, int checkint)
 {
 	struct path *pp;
 	int i;
-	int dev_loss_tmo = mpp->dev_loss;
+	unsigned int dev_loss_tmo = mpp->dev_loss;
 
 	if (mpp->no_path_retry > 0) {
-		uint64_t no_path_retry_tmo = (uint64_t)mpp->no_path_retry * checkint;
+		uint64_t no_path_retry_tmo =
+			(uint64_t)mpp->no_path_retry * checkint;
 
 		if (no_path_retry_tmo > MAX_DEV_LOSS_TMO)
 			no_path_retry_tmo = MAX_DEV_LOSS_TMO;
@@ -774,7 +776,8 @@ sysfs_set_scsi_tmo (struct multipath *mpp, int checkint)
 			mpp->alias, dev_loss_tmo);
 	}
 	mpp->dev_loss = dev_loss_tmo;
-	if (mpp->dev_loss && mpp->fast_io_fail >= (int)mpp->dev_loss) {
+	if (mpp->dev_loss && mpp->fast_io_fail > 0 &&
+	    (unsigned int)mpp->fast_io_fail >= mpp->dev_loss) {
 		condlog(3, "%s: turning off fast_io_fail (%d is not smaller than dev_loss_tmo)",
 			mpp->alias, mpp->fast_io_fail);
 		mpp->fast_io_fail = MP_FAST_IO_FAIL_OFF;

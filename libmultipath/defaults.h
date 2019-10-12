@@ -1,5 +1,7 @@
 #ifndef _DEFAULTS_H
 #define _DEFAULTS_H
+#include <limits.h>
+
 /*
  * If you add or modify a value also update multipath/multipath.conf.5
  * and the TEMPLATE in libmultipath/hwtable.c
@@ -55,7 +57,7 @@
 #define DEFAULT_CHECKINT	5
 #define MAX_CHECKINT(a)		(a << 2)
 
-#define MAX_DEV_LOSS_TMO	0x7FFFFFFF
+#define MAX_DEV_LOSS_TMO	UINT_MAX
 #define DEFAULT_PIDFILE		"/" RUN_DIR "/multipathd.pid"
 #define DEFAULT_SOCKET		"/org/kernel/linux/storage/multipathd"
 #define DEFAULT_CONFIGFILE	"/etc/multipath.conf"
