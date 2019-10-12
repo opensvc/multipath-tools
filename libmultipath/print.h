@@ -125,7 +125,7 @@ char *snprint_config(const struct config *conf, int *len,
 		     const struct _vector *hwtable,
 		     const struct _vector *mpvec);
 int snprint_multipath_map_json (char * buff, int len,
-				const struct multipath * mpp, int last);
+				const struct multipath * mpp);
 int snprint_blacklist_report (struct config *, char *, int);
 int snprint_wildcards (char *, int);
 int snprint_status (char *, int, const struct vectors *);

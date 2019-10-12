@@ -1339,8 +1339,8 @@ snprint_multipath_fields_json (char * buff, int len,
 }
 
 int
-snprint_multipath_map_json (char * buff, int len,
-		const struct multipath * mpp, int last){
+snprint_multipath_map_json (char * buff, int len, const struct multipath * mpp)
+{
 	int fwd = 0;
 
 	fwd +=  snprint_json_header(buff, len);

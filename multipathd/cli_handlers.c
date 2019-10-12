@@ -237,7 +237,7 @@ show_map_json (char ** r, int * len, struct multipath * mpp,
 
 		c = reply;
 
-		c += snprint_multipath_map_json(c, maxlen, mpp, 1);
+		c += snprint_multipath_map_json(c, maxlen, mpp);
 		again = ((c - reply) == maxlen);
 
 		REALLOC_REPLY(reply, again, maxlen);
