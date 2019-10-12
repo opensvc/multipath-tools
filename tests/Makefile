@@ -23,6 +23,7 @@ hwtable-test_TESTDEPS := test-lib.o
 hwtable-test_OBJDEPS := ../libmultipath/discovery.o ../libmultipath/blacklist.o \
 	../libmultipath/prio.o ../libmultipath/callout.o ../libmultipath/structs.o
 hwtable-test_LIBDEPS := -ludev -lpthread -ldl
+blacklist-test_TESTDEPS := test-log.o
 blacklist-test_OBJDEPS := ../libmultipath/blacklist.o
 blacklist-test_LIBDEPS := -ludev
 vpd-test_OBJDEPS :=  ../libmultipath/discovery.o
