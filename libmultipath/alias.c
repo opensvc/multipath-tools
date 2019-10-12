@@ -244,7 +244,10 @@ allocate_binding(int fd, const char *wwid, int id, const char *prefix)
 		return NULL;
 
 	c = buf + i;
-	snprintf(c, LINE_MAX - i, " %s\n", wwid);
+	if (snprintf(c, LINE_MAX - i, " %s\n", wwid) >= LINE_MAX - i) {
+		condlog(1, "%s: line too long for %s\n", __func__, wwid);
+		return NULL;
+	}
 	buf[LINE_MAX - 1] = '\0';
 
 	offset = lseek(fd, 0, SEEK_END);
