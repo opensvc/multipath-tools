@@ -88,7 +88,7 @@ ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
 		condlog(4, "read from %s failed: %s", devpath, strerror(errno));
 		size = -errno;
 		value[0] = '\0';
-	} else if (size == value_len) {
+	} else if (size == (ssize_t)value_len) {
 		value[size - 1] = '\0';
 		condlog(4, "overflow while reading from %s", devpath);
 		size = 0;
@@ -146,7 +146,7 @@ ssize_t sysfs_bin_attr_get_value(struct udev_device *dev, const char *attr_name,
 	if (size < 0) {
 		condlog(4, "read from %s failed: %s", devpath, strerror(errno));
 		size = -errno;
-	} else if (size == value_len) {
+	} else if (size == (ssize_t)value_len) {
 		condlog(4, "overflow while reading from %s", devpath);
 		size = 0;
 	}
@@ -200,7 +200,7 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 	if (size < 0) {
 		condlog(4, "write to %s failed: %s", devpath, strerror(errno));
 		size = -errno;
-	} else if (size < value_len) {
+	} else if (size < (ssize_t)value_len) {
 		condlog(4, "tried to write %ld to %s. Wrote %ld",
 			(long)value_len, devpath, (long)size);
 		size = 0;

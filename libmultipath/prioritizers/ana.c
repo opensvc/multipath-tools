@@ -62,7 +62,7 @@ static const char *anas_string[] = {
 static const char *aas_print_string(int rc)
 {
 	rc &= 0xff;
-	if (rc >= 0 && rc < ARRAY_SIZE(anas_string) &&
+	if (rc >= 0 && rc < (int)ARRAY_SIZE(anas_string) &&
 	    anas_string[rc] != NULL)
 		return anas_string[rc];
 
@@ -78,7 +78,8 @@ static int get_ana_state(__u32 nsid, __u32 anagrpid, void *ana_log,
 	size_t offset = sizeof(struct nvme_ana_rsp_hdr);
 	__u32 nr_nsids;
 	size_t nsid_buf_size;
-	int i, j;
+	int i;
+	unsigned int j;
 
 	for (i = 0; i < le16_to_cpu(hdr->ngrps); i++) {
 		ana_desc = base + offset;
@@ -225,7 +226,7 @@ int getprio(struct path *pp, __attribute__((unused)) char *args,
 	default:
 		break;
 	}
-	if (rc < 0 && -rc < ARRAY_SIZE(ana_errmsg))
+	if (rc < 0 && -rc < (int)ARRAY_SIZE(ana_errmsg))
 		condlog(2, "%s: ANA error: %s", pp->dev, ana_errmsg[-rc]);
 	else
 		condlog(1, "%s: invalid ANA rc code %d", pp->dev, rc);

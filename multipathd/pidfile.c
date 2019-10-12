@@ -42,7 +42,7 @@ int pidfile_create(const char *pidFile, pid_t pid)
 	}
 	memset(buf, 0, sizeof(buf));
 	snprintf(buf, sizeof(buf)-1, "%u", pid);
-	if (write(fd, buf, strlen(buf)) != strlen(buf)) {
+	if (write(fd, buf, strlen(buf)) != (ssize_t)strlen(buf)) {
 		condlog(0, "Cannot write pid to pidfile [%s], error was [%s]",
 			pidFile, strerror(errno));
 		goto fail;

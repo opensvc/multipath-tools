@@ -74,7 +74,7 @@ write_out_wwid(int fd, char *wwid) {
 			strerror(errno));
 		return -1;
 	}
-	if (write(fd, buf, strlen(buf)) != strlen(buf)) {
+	if (write(fd, buf, strlen(buf)) != (ssize_t)strlen(buf)) {
 		condlog(0, "cannot write wwid to wwids file : %s",
 			strerror(errno));
 		if (ftruncate(fd, offset))
@@ -117,7 +117,7 @@ replace_wwids(vector mp)
 		goto out_file;
 	}
 	len = strlen(WWIDS_FILE_HEADER);
-	if (write(fd, WWIDS_FILE_HEADER, len) != len) {
+	if (write(fd, WWIDS_FILE_HEADER, len) != (ssize_t)len) {
 		condlog(0, "Can't write wwid file header : %s",
 			strerror(errno));
 		/* cleanup partially written header */

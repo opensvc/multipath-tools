@@ -1949,8 +1949,9 @@ static int check_path_reinstate_state(struct path * pp) {
 	 * so that the cutomer can rectify the issue within this time. After
 	 * the completion of san_path_err_recovery_time it should
 	 * automatically reinstate the path
+	 * (note: we know that san_path_err_threshold > 0 here).
 	 */
-	if (pp->path_failures > pp->mpp->san_path_err_threshold) {
+	if (pp->path_failures > (unsigned int)pp->mpp->san_path_err_threshold) {
 		condlog(2, "%s : hit error threshold. Delaying path reinstatement", pp->dev);
 		pp->dis_reinstate_time = curr_time.tv_sec;
 		pp->disable_reinstate = 1;
@@ -3247,7 +3248,8 @@ main (int argc, char *argv[])
 void *  mpath_pr_event_handler_fn (void * pathp )
 {
 	struct multipath * mpp;
-	int i, ret, isFound;
+	unsigned int i;
+	int ret, isFound;
 	struct path * pp = (struct path *)pathp;
 	struct prout_param_descriptor *param;
 	struct prin_resp *resp;

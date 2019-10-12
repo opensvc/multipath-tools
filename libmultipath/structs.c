@@ -350,7 +350,7 @@ store_adaptergroup(vector adapters, struct adapter_group * agp)
 }
 
 struct multipath *
-find_mp_by_minor (const struct _vector *mpvec, int minor)
+find_mp_by_minor (const struct _vector *mpvec, unsigned int minor)
 {
 	int i;
 	struct multipath * mpp;
@@ -388,7 +388,7 @@ struct multipath *
 find_mp_by_alias (const struct _vector *mpvec, const char * alias)
 {
 	int i;
-	int len;
+	size_t len;
 	struct multipath * mpp;
 
 	if (!mpvec)

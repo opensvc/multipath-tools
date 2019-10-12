@@ -40,7 +40,8 @@ static int _recv_packet(int fd, char **buf, unsigned int timeout,
  */
 int ux_socket_listen(const char *name)
 {
-	int fd, len;
+	int fd;
+	size_t len;
 #ifdef USE_SYSTEMD
 	int num;
 #endif

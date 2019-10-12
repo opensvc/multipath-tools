@@ -108,7 +108,8 @@ uevq_cleanup(struct list_head *tmpq)
 static const char* uevent_get_env_var(const struct uevent *uev,
 				      const char *attr)
 {
-	int i, len;
+	int i;
+	size_t len;
 	const char *p = NULL;
 
 	if (attr == NULL)

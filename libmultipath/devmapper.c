@@ -1561,7 +1561,8 @@ int dm_reassign(const char *mapname)
 	struct dm_task *dmt;
 	struct dm_info info;
 	char dev_t[32], dm_dep[32];
-	int r = 0, i;
+	int r = 0;
+	unsigned int i;
 
 	if (dm_dev_t(mapname, &dev_t[0], 32)) {
 		condlog(3, "%s: failed to get device number", mapname);

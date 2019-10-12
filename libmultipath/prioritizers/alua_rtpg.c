@@ -371,7 +371,7 @@ get_asymmetric_access_state(const struct path *pp, unsigned int tpg,
 	struct rtpg_data *	tpgd;
 	struct rtpg_tpg_dscr *	dscr;
 	int			rc;
-	int			buflen;
+	unsigned int		buflen;
 	uint64_t		scsi_buflen;
 	int fd = pp->fd;
 

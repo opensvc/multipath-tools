@@ -440,7 +440,8 @@ int add_pathgroup(struct multipath*, struct pathgroup *);
 struct multipath * find_mp_by_alias (const struct _vector *mp, const char *alias);
 struct multipath * find_mp_by_wwid (const struct _vector *mp, const char *wwid);
 struct multipath * find_mp_by_str (const struct _vector *mp, const char *wwid);
-struct multipath * find_mp_by_minor (const struct _vector *mp, int minor);
+struct multipath * find_mp_by_minor (const struct _vector *mp,
+				     unsigned int minor);
 
 struct path * find_path_by_devt (const struct _vector *pathvec, const char *devt);
 struct path * find_path_by_dev (const struct _vector *pathvec, const char *dev);

@@ -32,11 +32,11 @@ void pthread_cond_init_mono(pthread_cond_t *cond)
 void normalize_timespec(struct timespec *ts)
 {
 	while (ts->tv_nsec < 0) {
-		ts->tv_nsec += 1000UL * 1000 * 1000;
+		ts->tv_nsec += 1000L * 1000 * 1000;
 		ts->tv_sec--;
 	}
-	while (ts->tv_nsec >= 1000UL * 1000 * 1000) {
-		ts->tv_nsec -= 1000UL * 1000 * 1000;
+	while (ts->tv_nsec >= 1000L * 1000 * 1000) {
+		ts->tv_nsec -= 1000L * 1000 * 1000;
 		ts->tv_sec++;
 	}
 }

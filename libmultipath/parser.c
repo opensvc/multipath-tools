@@ -124,7 +124,7 @@ find_keyword(vector keywords, vector v, char * name)
 {
 	struct keyword *keyword;
 	int i;
-	int len;
+	size_t len;
 
 	if (!name || !keywords)
 		return NULL;

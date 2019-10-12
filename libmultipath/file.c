@@ -157,7 +157,8 @@ open_file(const char *file, int *can_write, const char *header)
 		if (*can_write == 0)
 			goto fail;
 		/* If file is empty, write the header */
-		size_t len = strlen(header);
+		int len = strlen(header);
+
 		if (write(fd, header, len) != len) {
 			condlog(0,
 				"Cannot write header to file %s : %s", file,

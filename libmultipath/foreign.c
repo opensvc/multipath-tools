@@ -172,7 +172,7 @@ static int _init_foreign(const char *multipath_dir, const char *enable)
 	for (i = 0; i < r; i++) {
 		const char *msg, *fn, *c;
 		struct foreign *fgn;
-		int len, namesz;
+		size_t len, namesz;
 
 		fn = di[i]->d_name;
 
