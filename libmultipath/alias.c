@@ -104,6 +104,13 @@ scan_devname(const char *alias, const char *prefix)
 	return n;
 }
 
+/*
+ * Returns: 0   if matching entry in WWIDs file found
+ *         -1   if an error occurs
+ *         >0   a free ID that could be used for the WWID at hand
+ * *map_alias is set to a freshly allocated string with the matching alias if
+ * the function returns 0, or to NULL otherwise.
+ */
 static int
 lookup_binding(FILE *f, const char *map_wwid, char **map_alias,
 	       const char *prefix)
@@ -130,8 +137,14 @@ lookup_binding(FILE *f, const char *map_wwid, char **map_alias,
 		if (!alias) /* blank line */
 			continue;
 		curr_id = scan_devname(alias, prefix);
-		if (curr_id == id)
-			id++;
+		if (curr_id == id) {
+			if (id < INT_MAX)
+				id++;
+			else {
+				id = -1;
+				break;
+			}
+		}
 		if (curr_id > biggest_id)
 			biggest_id = curr_id;
 		if (curr_id > id && curr_id < smallest_bigger_id)
@@ -147,20 +160,26 @@ lookup_binding(FILE *f, const char *map_wwid, char **map_alias,
 			condlog(3, "Found matching wwid [%s] in bindings file."
 				" Setting alias to %s", wwid, alias);
 			*map_alias = strdup(alias);
-			if (*map_alias == NULL)
+			if (*map_alias == NULL) {
 				condlog(0, "Cannot copy alias from bindings "
-					"file : %s", strerror(errno));
+					"file: out of memory");
+				return -1;
+			}
 			return 0;
 		}
 	}
-	condlog(3, "No matching wwid [%s] in bindings file.", map_wwid);
+	if (id >= smallest_bigger_id) {
+		if (biggest_id < INT_MAX)
+			id = biggest_id + 1;
+		else
+			id = -1;
+	}
 	if (id < 0) {
 		condlog(0, "no more available user_friendly_names");
-		return 0;
-	}
-	if (id < smallest_bigger_id)
-		return id;
-	return biggest_id + 1;
+		return -1;
+	} else
+		condlog(3, "No matching wwid [%s] in bindings file.", map_wwid);
+	return id;
 }
 
 static int
@@ -363,7 +382,7 @@ get_user_friendly_alias(const char *wwid, const char *file, const char *prefix,
 		return NULL;
 	}
 
-	if (!alias && can_write && !bindings_read_only && id)
+	if (can_write && !bindings_read_only && !alias)
 		alias = allocate_binding(fd, wwid, id, prefix);
 
 	fclose(f);
