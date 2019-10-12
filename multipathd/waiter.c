@@ -49,7 +49,7 @@ static void free_waiter (void *data)
 	FREE(wp);
 }
 
-void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs)
+void stop_waiter_thread (struct multipath *mpp)
 {
 	pthread_t thread;
 

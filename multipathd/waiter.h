@@ -11,7 +11,7 @@ struct event_thread {
 	struct vectors *vecs;
 };
 
-void stop_waiter_thread (struct multipath *mpp, struct vectors *vecs);
+void stop_waiter_thread (struct multipath *mpp);
 int start_waiter_thread (struct multipath *mpp, struct vectors *vecs);
 
 #endif /* _WAITER_H */

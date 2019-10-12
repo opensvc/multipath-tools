@@ -377,7 +377,7 @@ remove_map_and_stop_waiter(struct multipath *mpp, struct vectors *vecs)
 	 * so they don't need to be manually removed here */
 	condlog(3, "%s: removing map from internal tables", mpp->alias);
 	if (!poll_dmevents)
-		stop_waiter_thread(mpp, vecs);
+		stop_waiter_thread(mpp);
 	remove_map(mpp, vecs, PURGE_VEC);
 }
 
@@ -392,7 +392,7 @@ remove_maps_and_stop_waiters(struct vectors *vecs)
 
 	if (!poll_dmevents) {
 		vector_foreach_slot(vecs->mpvec, mpp, i)
-			stop_waiter_thread(mpp, vecs);
+			stop_waiter_thread(mpp);
 	}
 	else
 		unwatch_all_dmevents();
