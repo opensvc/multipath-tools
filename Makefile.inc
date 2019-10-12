@@ -90,10 +90,11 @@ TEST_CC_OPTION = $(shell \
 
 STACKPROT := $(call TEST_CC_OPTION,-fstack-protector-strong,-fstack-protector)
 ERROR_DISCARDED_QUALIFIERS := $(call TEST_CC_OPTION,-Werror=discarded-qualifiers,)
+WNOCLOBBERED := $(call TEST_CC_OPTION,-Wno-clobbered,)
 
 OPTFLAGS	= -O2 -g -pipe -Werror -Wall -Wextra -Wformat=2 -Werror=implicit-int \
 		  -Werror=implicit-function-declaration -Werror=format-security \
-		  -Wno-clobbered \
+		  $(WNOCLOBBERED) \
 		  -Werror=cast-qual $(ERROR_DISCARDED_QUALIFIERS) \
 		  $(STACKPROT) --param=ssp-buffer-size=4
 CPPFLAGS	:= -Wp,-D_FORTIFY_SOURCE=2 
