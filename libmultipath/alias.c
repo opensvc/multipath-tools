@@ -268,13 +268,12 @@ allocate_binding(int fd, const char *wwid, int id, const char *prefix)
 	c = strchr(buf, ' ');
 	if (c)
 		*c = '\0';
+
+	condlog(3, "Created new binding [%s] for WWID [%s]", buf, wwid);
 	alias = strdup(buf);
 	if (alias == NULL)
-		condlog(0, "cannot copy new alias from bindings file : %s",
-			strerror(errno));
-	else
-		condlog(3, "Created new binding [%s] for WWID [%s]", alias,
-			wwid);
+		condlog(0, "cannot copy new alias from bindings file: out of memory");
+
 	return alias;
 }
 
@@ -342,7 +341,9 @@ use_existing_alias (const char *wwid, const char *file, const char *alias_old,
 	}
 
 out:
+	pthread_cleanup_push(free, alias);
 	fclose(f);
+	pthread_cleanup_pop(0);
 	return alias;
 }
 
@@ -378,18 +379,19 @@ get_user_friendly_alias(const char *wwid, const char *file, const char *prefix,
 		return NULL;
 	}
 
+	pthread_cleanup_push(free, alias);
+
 	if (fflush(f) != 0) {
 		condlog(0, "cannot fflush bindings file stream : %s",
 			strerror(errno));
 		free(alias);
-		fclose(f);
-		return NULL;
-	}
-
-	if (can_write && !bindings_read_only && !alias)
+		alias = NULL;
+	} else if (can_write && !bindings_read_only && !alias)
 		alias = allocate_binding(fd, wwid, id, prefix);
 
 	fclose(f);
+
+	pthread_cleanup_pop(0);
 	return alias;
 }
 
