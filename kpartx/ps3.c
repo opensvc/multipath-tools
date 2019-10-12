@@ -48,7 +48,8 @@ read_disklabel(int fd, struct disklabel *label) {
 }
 
 int
-read_ps3_pt(int fd, struct slice all, struct slice *sp, int ns) {
+read_ps3_pt(int fd, __attribute__((unused)) struct slice all,
+	    struct slice *sp, __attribute__((unused)) int ns) {
 	struct disklabel label;
 	int n = 0;
 	int i;

@@ -5,7 +5,8 @@
 #include "mac.h"
 
 int
-read_mac_pt(int fd, struct slice all, struct slice *sp, int ns) {
+read_mac_pt(int fd, __attribute__((unused)) struct slice all,
+	    struct slice *sp, int ns) {
 	struct mac_driver_desc *md;
 	struct mac_partition *part;
 	unsigned secsize;

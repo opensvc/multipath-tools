@@ -601,7 +601,8 @@ fail:
  *
  */
 int
-read_gpt_pt (int fd, struct slice all, struct slice *sp, int ns)
+read_gpt_pt (int fd, __attribute__((unused)) struct slice all,
+	     struct slice *sp, int ns)
 {
 	gpt_header *gpt = NULL;
 	gpt_entry *ptes = NULL;
