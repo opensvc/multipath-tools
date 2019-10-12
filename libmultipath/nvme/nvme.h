@@ -40,16 +40,16 @@ struct nvme_effects_log_page {
 };
 
 struct nvme_error_log_page {
-	__u64	error_count;
-	__u16	sqid;
-	__u16	cmdid;
-	__u16	status_field;
-	__u16	parm_error_location;
-	__u64	lba;
-	__u32	nsid;
+	__le64	error_count;
+	__le16	sqid;
+	__le16	cmdid;
+	__le16	status_field;
+	__le16	parm_error_location;
+	__le64	lba;
+	__le32	nsid;
 	__u8	vs;
 	__u8	resv[3];
-	__u64	cs;
+	__le64	cs;
 	__u8	resv2[24];
 };
 
@@ -87,13 +87,30 @@ struct nvme_controller_list {
 	__le16 identifier[];
 };
 
+struct nvme_secondary_controller_entry {
+	__le16 scid;	/* Secondary Controller Identifier */
+	__le16 pcid;	/* Primary Controller Identifier */
+	__u8   scs;	/* Secondary Controller State */
+	__u8   rsvd5[3];
+	__le16 vfn;	/* Virtual Function Number */
+	__le16 nvq;	/* Number of VQ Flexible Resources Assigned */
+	__le16 nvi;	/* Number of VI Flexible Resources Assigned */
+	__u8   rsvd14[18];
+};
+
+struct nvme_secondary_controllers_list {
+	__u8   num;
+	__u8   rsvd[31];
+	struct nvme_secondary_controller_entry sc_entry[127];
+};
+
 struct nvme_bar_cap {
 	__u16	mqes;
 	__u8	ams_cqr;
 	__u8	to;
 	__u16	bps_css_nssrs_dstrd;
 	__u8	mpsmax_mpsmin;
-	__u8	reserved;
+	__u8	rsvd_pmrs;
 };
 
 #ifdef __CHECKER__
@@ -102,19 +119,31 @@ struct nvme_bar_cap {
 #define __force
 #endif
 
-#define cpu_to_le16(x) \
-	((__force __le16)htole16(x))
-#define cpu_to_le32(x) \
-	((__force __le32)htole32(x))
-#define cpu_to_le64(x) \
-	((__force __le64)htole64(x))
+static inline __le16 cpu_to_le16(uint16_t x)
+{
+	return (__force __le16)htole16(x);
+}
+static inline __le32 cpu_to_le32(uint32_t x)
+{
+	return (__force __le32)htole32(x);
+}
+static inline __le64 cpu_to_le64(uint64_t x)
+{
+	return (__force __le64)htole64(x);
+}
 
-#define le16_to_cpu(x) \
-	le16toh((__force __u16)(x))
-#define le32_to_cpu(x) \
-	le32toh((__force __u32)(x))
-#define le64_to_cpu(x) \
-	le64toh((__force __u64)(x))
+static inline uint16_t le16_to_cpu(__le16 x)
+{
+	return le16toh((__force __u16)x);
+}
+static inline uint32_t le32_to_cpu(__le32 x)
+{
+	return le32toh((__force __u32)x);
+}
+static inline uint64_t le64_to_cpu(__le64 x)
+{
+	return le64toh((__force __u64)x);
+}
 
 #define MAX_LIST_ITEMS 256
 struct list_item {
@@ -131,6 +160,10 @@ struct ctrl_list_item {
 	char *transport;
 	char *state;
 	char *ana_state;
+	char *subsysnqn;
+	char *traddr;
+	char *trsvcid;
+	char *host_traddr;
 };
 
 struct subsys_list_item {
@@ -146,6 +179,26 @@ enum {
 	BINARY,
 };
 
+struct connect_args {
+	char *subsysnqn;
+	char *transport;
+	char *traddr;
+	char *trsvcid;
+	char *host_traddr;
+};
+
+#define SYS_NVME		"/sys/class/nvme"
+
+bool ctrl_matches_connectargs(char *name, struct connect_args *args);
+char *find_ctrl_with_connectargs(struct connect_args *args);
+char *__parse_connect_arg(char *conargs, const char delim, const char *fieldnm);
+
+extern const char *conarg_nqn;
+extern const char *conarg_transport;
+extern const char *conarg_traddr;
+extern const char *conarg_trsvcid;
+extern const char *conarg_host_traddr;
+
 void register_extension(struct plugin *plugin);
 
 #include "argconfig.h"
@@ -160,4 +213,28 @@ int	validate_output_format(char *format);
 struct subsys_list_item *get_subsys_list(int *subcnt, char *subsysnqn, __u32 nsid);
 void free_subsys_list(struct subsys_list_item *slist, int n);
 char *nvme_char_from_block(char *block);
+
+/*
+ * is_64bit_reg - It checks whether given offset of the controller register is
+ *                64bit or not.
+ * @offset: offset of controller register field in bytes
+ *
+ * It gives true if given offset is 64bit register, otherwise it returns false.
+ *
+ * Notes:  This function does not care about transport so that the offset is
+ * not going to be checked inside of this function for the unsupported fields
+ * in a specific transport.  For example, BPMBL(Boot Partition Memory Buffer
+ * Location) register is not supported by fabrics, but it can be chcked here.
+ */
+static inline bool is_64bit_reg(__u32 offset)
+{
+	if (offset == NVME_REG_CAP ||
+			offset == NVME_REG_ASQ ||
+			offset == NVME_REG_ACQ ||
+			offset == NVME_REG_BPMBL)
+		return true;
+
+	return false;
+}
+
 #endif /* _NVME_H */

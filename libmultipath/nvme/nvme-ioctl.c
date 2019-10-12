@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -175,6 +176,22 @@ int nvme_compare(int fd, __u64 slba, __u16 nblocks, __u16 control, __u32 dsmgmt,
 {
 	return nvme_io(fd, nvme_cmd_compare, slba, nblocks, control, dsmgmt,
 		       reftag, apptag, appmask, data, metadata);
+}
+
+int nvme_verify(int fd, __u32 nsid, __u64 slba, __u16 nblocks,
+		__u16 control, __u32 reftag, __u16 apptag, __u16 appmask)
+{
+	struct nvme_passthru_cmd cmd = {
+		.opcode		= nvme_cmd_verify,
+		.nsid		= nsid,
+		.cdw10		= slba & 0xffffffff,
+		.cdw11		= slba >> 32,
+		.cdw12		= nblocks | (control << 16),
+		.cdw14		= reftag,
+		.cdw15		= apptag | (appmask << 16),
+	};
+
+	return nvme_submit_io_passthru(fd, &cmd);
 }
 
 int nvme_passthru_io(int fd, __u8 opcode, __u8 flags, __u16 rsvd,
@@ -370,6 +387,11 @@ int nvme_identify_ctrl_list(int fd, __u32 nsid, __u16 cntid, void *data)
 	return nvme_identify(fd, nsid, (cntid << 16) | cns, data);
 }
 
+int nvme_identify_secondary_ctrl_list(int fd, __u32 nsid, __u16 cntid, void *data)
+{
+	return nvme_identify(fd, nsid, (cntid << 16) | NVME_ID_CNS_SCNDRY_CTRL_LIST, data);
+}
+
 int nvme_identify_ns_descs(int fd, __u32 nsid, void *data)
 {
 
@@ -381,8 +403,18 @@ int nvme_identify_nvmset(int fd, __u16 nvmset_id, void *data)
 	return nvme_identify13(fd, 0, NVME_ID_CNS_NVMSET_LIST, nvmset_id, data);
 }
 
-int nvme_get_log13(int fd, __u32 nsid, __u8 log_id, __u8 lsp, __u64 lpo,
-                 __u16 lsi, bool rae, __u32 data_len, void *data)
+int nvme_identify_ns_granularity(int fd, void *data)
+{
+	return nvme_identify13(fd, 0, NVME_ID_CNS_NS_GRANULARITY, 0, data);
+}
+
+int nvme_identify_uuid(int fd, void *data)
+{
+	return nvme_identify(fd, 0, NVME_ID_CNS_UUID_LIST, data);
+}
+
+int nvme_get_log14(int fd, __u32 nsid, __u8 log_id, __u8 lsp, __u64 lpo,
+                 __u16 lsi, bool rae, __u8 uuid_ix, __u32 data_len, void *data)
 {
 	struct nvme_admin_cmd cmd = {
 		.opcode		= nvme_admin_get_log_page,
@@ -400,6 +432,7 @@ int nvme_get_log13(int fd, __u32 nsid, __u8 log_id, __u8 lsp, __u64 lpo,
 	cmd.cdw11 = numdu | (lsi << 16);
 	cmd.cdw12 = lpo;
 	cmd.cdw13 = (lpo >> 32);
+	cmd.cdw14 = uuid_ix;
 
 	return nvme_submit_admin_passthru(fd, &cmd);
 
@@ -498,7 +531,7 @@ int nvme_self_test_log(int fd, struct nvme_self_test_log *self_test_log)
 
 int nvme_effects_log(int fd, struct nvme_effects_log_page *effects_log)
 {
-	return nvme_get_log(fd, 0, NVME_LOG_CMD_EFFECTS, false,
+	return nvme_get_log(fd, NVME_NSID_ALL, NVME_LOG_CMD_EFFECTS, false,
 			sizeof(*effects_log), effects_log);
 }
 
@@ -542,77 +575,61 @@ int nvme_set_feature(int fd, __u32 nsid, __u8 fid, __u32 value, __u32 cdw12,
 			    cdw12, data_len, data, result);
 }
 
-static int nvme_property(int fd, __u8 fctype, __le32 off, __le64 *value, __u8 attrib)
+
+/*
+ * Perform the opposite operation of the byte-swapping code at the start of the
+ * kernel function nvme_user_cmd().
+ */
+static void nvme_to_passthru_cmd(struct nvme_passthru_cmd *pcmd,
+				 const struct nvme_command *ncmd)
 {
-	int err;
-	struct nvme_admin_cmd cmd = {
-		.opcode		= nvme_fabrics_command,
-		.cdw10		= attrib,
-		.cdw11		= off,
-	};
-
-	if (!value) {
-		errno = EINVAL;
-		return -errno;
-	}
-
-	if (fctype == nvme_fabrics_type_property_get){
-		cmd.nsid = nvme_fabrics_type_property_get;
-	} else if(fctype == nvme_fabrics_type_property_set) {
-		cmd.nsid = nvme_fabrics_type_property_set;
-		cmd.cdw12 = *value;
-	} else {
-		errno = EINVAL;
-		return -errno;
-	}
-
-	err = nvme_submit_admin_passthru(fd, &cmd);
-	if (!err && fctype == nvme_fabrics_type_property_get)
-		*value = cpu_to_le64(cmd.result);
-	return err;
-}
-
-static int get_property_helper(int fd, int offset, void *value, int *advance)
-{
-	__le64 value64;
-	int err = -EINVAL;
-
-	switch (offset) {
-	case NVME_REG_CAP:
-	case NVME_REG_ASQ:
-	case NVME_REG_ACQ:
-		*advance = 8;
-		break;
-	default:
-		*advance = 4;
-	}
-
-	if (!value)
-		return err;
-
-	err = nvme_property(fd, nvme_fabrics_type_property_get,
-			cpu_to_le32(offset), &value64, (*advance == 8));
-
-	if (!err) {
-		if (*advance == 8)
-			*((uint64_t *)value) = le64_to_cpu(value64);
-		else
-			*((uint32_t *)value) = le32_to_cpu(value64);
-	}
-
-	return err;
+	assert(sizeof(*ncmd) < sizeof(*pcmd));
+	memset(pcmd, 0, sizeof(*pcmd));
+	pcmd->opcode = ncmd->common.opcode;
+	pcmd->flags = ncmd->common.flags;
+	pcmd->rsvd1 = ncmd->common.command_id;
+	pcmd->nsid = le32_to_cpu(ncmd->common.nsid);
+	pcmd->cdw2 = le32_to_cpu(ncmd->common.cdw2[0]);
+	pcmd->cdw3 = le32_to_cpu(ncmd->common.cdw2[1]);
+	/* Skip metadata and addr */
+	pcmd->cdw10 = le32_to_cpu(ncmd->common.cdw10[0]);
+	pcmd->cdw11 = le32_to_cpu(ncmd->common.cdw10[1]);
+	pcmd->cdw12 = le32_to_cpu(ncmd->common.cdw10[2]);
+	pcmd->cdw13 = le32_to_cpu(ncmd->common.cdw10[3]);
+	pcmd->cdw14 = le32_to_cpu(ncmd->common.cdw10[4]);
+	pcmd->cdw15 = le32_to_cpu(ncmd->common.cdw10[5]);
 }
 
 int nvme_get_property(int fd, int offset, uint64_t *value)
 {
-	int advance;
-	return get_property_helper(fd, offset, value, &advance);
+	struct nvme_passthru_cmd pcmd;
+	struct nvmf_property_get_command pg = {
+		.opcode	= nvme_fabrics_command,
+		.fctype	= nvme_fabrics_type_property_get,
+		.offset	= cpu_to_le32(offset),
+		.attrib = is_64bit_reg(offset),
+	};
+	struct nvme_command gcmd;
+	int err;
+
+	gcmd.prop_get = pg;
+	nvme_to_passthru_cmd(&pcmd, &gcmd);
+	err = nvme_submit_admin_passthru(fd, &pcmd);
+	if (!err) {
+		/*
+		 * nvme_submit_admin_passthru() stores the lower 32 bits
+		 * of the property value in pcmd.result using CPU endianness.
+		 */
+		*value = pcmd.result;
+	}
+	return err;
 }
 
 int nvme_get_properties(int fd, void **pbar)
 {
-	int offset, advance;
-	int err, ret = -EINVAL;
+	int offset;
+	uint64_t value;
+	int err;
 	int size = getpagesize();
 
 	*pbar = malloc(size);
@@ -622,33 +639,42 @@ int nvme_get_properties(int fd, void **pbar)
 	}
 
 	memset(*pbar, 0xff, size);
-	for (offset = NVME_REG_CAP; offset <= NVME_REG_CMBSZ; offset += advance) {
-		err = get_property_helper(fd, offset, *pbar + offset, &advance);
-		if (!err)
-			ret = 0;
+	for (offset = NVME_REG_CAP; offset <= NVME_REG_CMBSZ;) {
+		err = nvme_get_property(fd, offset, &value);
+		if (err > 0 && (err & 0xff) == NVME_SC_INVALID_FIELD) {
+			err = 0;
+			value = -1;
+		} else if (err) {
+			free(*pbar);
+			break;
+		}
+		if (is_64bit_reg(offset)) {
+			*(uint64_t *)(*pbar + offset) = value;
+			offset += 8;
+		} else {
+			*(uint32_t *)(*pbar + offset) = value;
+			offset += 4;
+		}
 	}
 
-	return ret;
+	return err;
 }
 
-int nvme_set_property(int fd, int offset, int value)
+int nvme_set_property(int fd, int offset, uint64_t value)
 {
-	__le64 val = cpu_to_le64(value);
-	__le32 off = cpu_to_le32(offset);
-	bool is64bit;
+	struct nvmf_property_set_command ps = {
+		.opcode	= nvme_fabrics_command,
+		.fctype	= nvme_fabrics_type_property_set,
+		.offset	= cpu_to_le32(offset),
+		.value = cpu_to_le64(value),
+		.attrib = is_64bit_reg(offset),
+	};
+	struct nvme_command scmd;
+	struct nvme_passthru_cmd pcmd;
 
-	switch (off) {
-	case NVME_REG_CAP:
-	case NVME_REG_ASQ:
-	case NVME_REG_ACQ:
-		is64bit = true;
-		break;
-	default:
-		is64bit = false;
-	}
-
-	return nvme_property(fd, nvme_fabrics_type_property_set,
-			off, &val, is64bit ? 1: 0);
+	scmd.prop_set = ps;
+	nvme_to_passthru_cmd(&pcmd, &scmd);
+	return nvme_submit_admin_passthru(fd, &pcmd);
 }
 
 int nvme_get_feature(int fd, __u32 nsid, __u8 fid, __u8 sel, __u32 cdw11,
@@ -675,7 +701,7 @@ int nvme_format(int fd, __u32 nsid, __u8 lbaf, __u8 ses, __u8 pi,
 }
 
 int nvme_ns_create(int fd, __u64 nsze, __u64 ncap, __u8 flbas,
-		   __u8 dps, __u8 nmic, __u32 *result)
+		   __u8 dps, __u8 nmic, __u32 timeout, __u32 *result)
 {
 	struct nvme_id_ns ns = {
 		.nsze		= cpu_to_le64(nsze),
@@ -689,6 +715,7 @@ int nvme_ns_create(int fd, __u64 nsze, __u64 ncap, __u8 flbas,
 		.addr		= (__u64)(uintptr_t) ((void *)&ns),
 		.cdw10		= 0,
 		.data_len	= 0x1000,
+		.timeout_ms	= timeout,
 	};
 	int err;
 
@@ -698,12 +725,13 @@ int nvme_ns_create(int fd, __u64 nsze, __u64 ncap, __u8 flbas,
 	return err;
 }
 
-int nvme_ns_delete(int fd, __u32 nsid)
+int nvme_ns_delete(int fd, __u32 nsid, __u32 timeout)
 {
 	struct nvme_admin_cmd cmd = {
 		.opcode		= nvme_admin_ns_mgmt,
 		.nsid		= nsid,
 		.cdw10		= 1,
+		.timeout_ms	= timeout,
 	};
 
 	return nvme_submit_admin_passthru(fd, &cmd);
@@ -803,6 +831,21 @@ int nvme_sec_recv(int fd, __u32 nsid, __u8 nssf, __u16 spsp,
 	return err;
 }
 
+int nvme_get_lba_status(int fd, __u64 slba, __u32 mndw, __u8 atype, __u16 rl,
+		void *data)
+{
+	struct nvme_admin_cmd cmd = {
+		.opcode =  nvme_admin_get_lba_status,
+		.addr = (__u64)(uintptr_t) data,
+		.cdw10 = slba & 0xffffffff,
+		.cdw11 = slba >> 32,
+		.cdw12 = mndw,
+		.cdw13 = (atype << 24) | rl,
+	};
+
+	return nvme_submit_admin_passthru(fd, &cmd);
+}
+
 int nvme_dir_send(int fd, __u32 nsid, __u16 dspec, __u8 dtype, __u8 doper,
                   __u32 data_len, __u32 dw12, void *data, __u32 *result)
 {
@@ -866,4 +909,20 @@ int nvme_self_test_start(int fd, __u32 nsid, __u32 cdw10)
 	};
 
 	return nvme_submit_admin_passthru(fd, &cmd);
+}
+
+int nvme_virtual_mgmt(int fd, __u32 cdw10, __u32 cdw11, __u32 *result)
+{
+	struct nvme_admin_cmd cmd = {
+		.opcode = nvme_admin_virtual_mgmt,
+		.cdw10  = cdw10,
+		.cdw11  = cdw11,
+	};
+	int err;
+
+	err = nvme_submit_admin_passthru(fd, &cmd);
+	if (!err && result)
+		*result = cmd.result;
+
+	return err;
 }
