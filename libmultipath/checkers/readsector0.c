@@ -10,12 +10,12 @@ struct readsector0_checker_context {
 	void * dummy;
 };
 
-int libcheck_init (struct checker * c)
+int libcheck_init (__attribute__((unused)) struct checker * c)
 {
 	return 0;
 }
 
-void libcheck_free (struct checker * c)
+void libcheck_free (__attribute__((unused)) struct checker * c)
 {
 	return;
 }

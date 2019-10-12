@@ -133,7 +133,7 @@ out:
 	return 0;
 }
 
-void libcheck_free (struct checker * c)
+void libcheck_free(__attribute__((unused)) struct checker *c)
 {
 	return;
 }
