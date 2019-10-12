@@ -40,9 +40,9 @@
 #include "kpartx.h"
 
 #if BYTE_ORDER == LITTLE_ENDIAN
-#  define __le16_to_cpu(x) (x)
-#  define __le32_to_cpu(x) (x)
-#  define __le64_to_cpu(x) (x)
+#  define __le16_to_cpu(x) (uint16_t)(x)
+#  define __le32_to_cpu(x) (uint32_t)(x)
+#  define __le64_to_cpu(x) (uint64_t)(x)
 #  define __cpu_to_le32(x) (x)
 #elif BYTE_ORDER == BIG_ENDIAN
 #  define __le16_to_cpu(x) bswap_16(x)
