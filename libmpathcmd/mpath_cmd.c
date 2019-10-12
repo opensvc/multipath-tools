@@ -96,7 +96,8 @@ static size_t write_all(int fd, const void *buf, size_t len)
  */
 int __mpath_connect(int nonblocking)
 {
-	int fd, len;
+	int fd;
+	size_t len;
 	struct sockaddr_un addr;
 	int flags = 0;
 
@@ -172,7 +173,7 @@ int mpath_recv_reply_data(int fd, char *reply, size_t len,
 	ret = read_all(fd, reply, len, timeout);
 	if (ret < 0)
 		return ret;
-	if (ret != len) {
+	if ((size_t)ret != len) {
 		errno = EIO;
 		return -1;
 	}
