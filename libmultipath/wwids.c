@@ -195,7 +195,8 @@ do_remove_wwid(int fd, char *str) {
 
 int
 remove_wwid(char *wwid) {
-	int fd, len, can_write;
+	long fd;
+	int len, can_write;
 	char *str;
 	int ret = -1;
 	struct config *conf;
@@ -207,8 +208,10 @@ remove_wwid(char *wwid) {
 			strerror(errno));
 		return -1;
 	}
+	pthread_cleanup_push(free, str);
 	if (snprintf(str, len, "/%s/\n", wwid) >= len) {
 		condlog(0, "string overflow trying to remove wwid");
+		ret = -1;
 		goto out;
 	}
 	condlog(3, "removing line '%s' from wwids file", str);
@@ -216,18 +219,22 @@ remove_wwid(char *wwid) {
 	pthread_cleanup_push(put_multipath_config, conf);
 	fd = open_file(conf->wwids_file, &can_write, WWIDS_FILE_HEADER);
 	pthread_cleanup_pop(1);
-	if (fd < 0)
-		goto out;
-	if (!can_write) {
-		condlog(0, "cannot remove wwid. wwids file is read-only");
-		goto out_file;
-	}
-	ret = do_remove_wwid(fd, str);
 
-out_file:
-	close(fd);
+	if (fd < 0) {
+		ret = -1;
+		goto out;
+	}
+
+	pthread_cleanup_push(close_fd, (void*)fd);
+	if (!can_write) {
+		ret = -1;
+		condlog(0, "cannot remove wwid. wwids file is read-only");
+	} else
+		ret = do_remove_wwid(fd, str);
+	pthread_cleanup_pop(1);
 out:
-	free(str);
+	/* free(str) */
+	pthread_cleanup_pop(1);
 	return ret;
 }
 
