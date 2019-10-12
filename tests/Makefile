@@ -1,6 +1,15 @@
 include ../Makefile.inc
 
-CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathcmddir) -Wno-unused-parameter
+# Test special behavior of gcc 4.8 with nested initializers
+# gcc 4.8 compiles blacklist.c only with -Wno-missing-field-initializers
+TEST_MISSING_INITIALIZERS = $(shell \
+	echo 'struct A {int a, b;}; struct B {struct A a; int b;} b = {.a.a=1};' | \
+		$(CC) -c -Werror -Wmissing-field-initializers -o /dev/null -xc - >/dev/null 2>&1 \
+	|| echo -Wno-missing-field-initializers)
+W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)
+
+CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathcmddir) \
+	-Wno-unused-parameter $(W_MISSING_INITIALIZERS)
 LIBDEPS += -L$(multipathdir) -lmultipath -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy alias
