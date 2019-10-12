@@ -233,8 +233,9 @@ allocate_binding(int fd, const char *wwid, int id, const char *prefix)
 	char *alias, *c;
 	int i;
 
-	if (id < 0) {
-		condlog(0, "Bindings file full. Cannot allocate new binding");
+	if (id <= 0) {
+		condlog(0, "%s: cannot allocate new binding for id %d",
+			__func__, id);
 		return NULL;
 	}
 
