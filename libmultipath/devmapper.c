@@ -59,7 +59,7 @@ void dm_udev_set_sync_support(int c)
 
 #endif
 
-static void
+__attribute__((format(printf, 4, 5))) static void
 dm_write_log (int level, const char *file, int line, const char *f, ...)
 {
 	va_list ap;
