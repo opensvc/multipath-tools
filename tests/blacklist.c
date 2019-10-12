@@ -40,8 +40,6 @@ struct udev_list_entry *
 __wrap_udev_device_get_properties_list_entry(struct udev_device *udev_device)
 {
 	assert_non_null(udev_device);
-	if (!udev_device->property_list)
-		return NULL;
 	if (!*udev_device->property_list)
 		return NULL;
 	return (struct udev_list_entry *)udev_device->property_list;
