@@ -183,7 +183,7 @@ lookup_binding(FILE *f, const char *map_wwid, char **map_alias,
 }
 
 static int
-rlookup_binding(FILE *f, char *buff, const char *map_alias, const char *prefix)
+rlookup_binding(FILE *f, char *buff, const char *map_alias)
 {
 	char line[LINE_MAX];
 	unsigned int line_nr = 0;
@@ -297,7 +297,7 @@ use_existing_alias (const char *wwid, const char *file, const char *alias_old,
 	/* lookup the binding. if it exists, the wwid will be in buff
 	 * either way, id contains the id for the alias
 	 */
-	rlookup_binding(f, buff, alias_old, prefix);
+	rlookup_binding(f, buff, alias_old);
 
 	if (strlen(buff) > 0) {
 		/* if buff is our wwid, it's already
@@ -412,7 +412,7 @@ get_user_friendly_wwid(const char *alias, char *buff, const char *file)
 		return -1;
 	}
 
-	rlookup_binding(f, buff, alias, NULL);
+	rlookup_binding(f, buff, alias);
 	if (!strlen(buff)) {
 		fclose(f);
 		return -1;
