@@ -328,11 +328,12 @@ static void test_strlcpy_5(void **state)
 {
 	char *tst;
 	int rc;
+	const int sz = sizeof(src_str);
 
-	tst = malloc(sizeof(src_str));
+	tst = malloc(sz);
 	memset(tst, 'f', sizeof(src_str));
 
-	rc = strlcpy(tst, src_str, sizeof(src_str));
+	rc = strlcpy(tst, src_str, sz);
 	assert_int_equal(rc, strlen(src_str));
 	assert_string_equal(src_str, tst);
 
@@ -344,15 +345,16 @@ static void test_strlcpy_6(void **state)
 {
 	char *tst;
 	int rc;
+	const int sz = sizeof(src_str);
 
-	tst = malloc(sizeof(src_str) + 2);
-	memset(tst, 'f', sizeof(src_str) + 2);
+	tst = malloc(sz + 2);
+	memset(tst, 'f', sz + 2);
 
-	rc = strlcpy(tst, src_str, sizeof(src_str) + 2);
+	rc = strlcpy(tst, src_str, sz + 2);
 	assert_int_equal(rc, strlen(src_str));
 	assert_string_equal(src_str, tst);
-	assert_int_equal(tst[sizeof(src_str)], 'f');
-	assert_int_equal(tst[sizeof(src_str) + 1], 'f');
+	assert_int_equal(tst[sz], 'f');
+	assert_int_equal(tst[sz + 1], 'f');
 
 	free(tst);
 }
