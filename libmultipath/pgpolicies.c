@@ -54,7 +54,7 @@ int get_pgpolicy_name(char * buff, int len, int id)
 		s = "undefined";
 		break;
 	}
-	return snprintf(buff, POLICY_NAME_SIZE, "%s", s);
+	return snprintf(buff, len, "%s", s);
 }
 
 
