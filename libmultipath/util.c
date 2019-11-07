@@ -212,8 +212,7 @@ int devt2devname(char *devname, int devname_len, char *devt)
 			continue;
 
 		if ((major == tmpmaj) && (minor == tmpmin)) {
-			if (snprintf(block_path, sizeof(block_path),
-				     "/sys/block/%s", dev) >= sizeof(block_path)) {
+			if (safe_sprintf(block_path, "/sys/block/%s", dev)) {
 				condlog(0, "device name %s is too long", dev);
 				fclose(fd);
 				return 1;

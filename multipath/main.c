@@ -423,8 +423,7 @@ static int find_multipaths_check_timeout(const struct path *pp, long tmo,
 
 	clock_gettime(CLOCK_REALTIME, &now);
 
-	if (snprintf(path, sizeof(path), "%s/%s", shm_find_mp_dir, pp->dev_t)
-	    >= sizeof(path)) {
+	if (safe_sprintf(path, "%s/%s", shm_find_mp_dir, pp->dev_t)) {
 		condlog(1, "%s: path name overflow", __func__);
 		return FIND_MULTIPATHS_ERROR;
 	}

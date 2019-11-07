@@ -306,7 +306,7 @@ bool sysfs_is_multipathed(const struct path *pp)
 	n = snprintf(pathbuf, sizeof(pathbuf), "/sys/block/%s/holders",
 		     pp->dev);
 
-	if (n >= sizeof(pathbuf)) {
+	if (n < 0 || (size_t)n >= sizeof(pathbuf)) {
 		condlog(1, "%s: pathname overflow", __func__);
 		return false;
 	}
@@ -327,9 +327,8 @@ bool sysfs_is_multipathed(const struct path *pp)
 		int nr;
 		char uuid[6];
 
-		if (snprintf(pathbuf + n, sizeof(pathbuf) - n,
-			     "/%s/dm/uuid", di[i]->d_name)
-		    >= sizeof(pathbuf) - n)
+		if (safe_snprintf(pathbuf + n, sizeof(pathbuf) - n,
+				  "/%s/dm/uuid", di[i]->d_name))
 			continue;
 
 		fd = open(pathbuf, O_RDONLY);

@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <sys/sysmacros.h>
 #include "devmapper.h"
+#include "kpartx.h"
 
 #define _UUID_PREFIX "part"
 #define UUID_PREFIX _UUID_PREFIX "%d-"
@@ -107,7 +108,7 @@ strip_slash (char * device)
 static int format_partname(char *buf, size_t bufsiz,
 			   const char *mapname, const char *delim, int part)
 {
-	if (snprintf(buf, bufsiz, "%s%s%d", mapname, delim, part) >= bufsiz)
+	if (safe_snprintf(buf, bufsiz, "%s%s%d", mapname, delim, part))
 		return 0;
 	strip_slash(buf);
 	return 1;

@@ -591,8 +591,7 @@ static void test_ana_support(struct nvme_map *map, struct udev_device *ctl)
 		return;
 
 	dev_t = udev_device_get_sysattr_value(ctl, "dev");
-	if (snprintf(sys_path, sizeof(sys_path), "/dev/char/%s", dev_t)
-	    >= sizeof(sys_path))
+	if (safe_sprintf(sys_path, "/dev/char/%s", dev_t))
 		return;
 
 	fd = open(sys_path, O_RDONLY);
@@ -663,8 +662,7 @@ static void _find_controllers(struct context *ctx, struct nvme_map *map)
 		char *fn = di[i]->d_name;
 		struct udev_device *ctrl, *udev;
 
-		if (snprintf(pathbuf + n, sizeof(pathbuf) - n, "/%s", fn)
-		    >= sizeof(pathbuf) - n)
+		if (safe_snprintf(pathbuf + n, sizeof(pathbuf) - n, "/%s", fn))
 			continue;
 		if (realpath(pathbuf, realbuf) == NULL) {
 			condlog(3, "%s: %s: realpath: %s", __func__, THIS,

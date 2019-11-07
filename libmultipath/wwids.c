@@ -393,8 +393,7 @@ static int _failed_wwid_op(const char *wwid, bool rw,
 	long lockfd;
 	int r = -1;
 
-	if (snprintf(path, sizeof(path), "%s/%s", shm_dir, wwid)
-	    >= sizeof(path)) {
+	if (safe_sprintf(path, "%s/%s", shm_dir, wwid)) {
 		condlog(1, "%s: path name overflow", __func__);
 		return -1;
 	}

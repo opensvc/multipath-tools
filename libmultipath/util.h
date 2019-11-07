@@ -29,9 +29,16 @@ void set_max_fds(rlim_t max_fds);
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
 
 #define safe_sprintf(var, format, args...)	\
-	snprintf(var, sizeof(var), format, ##args) >= sizeof(var)
+	safe_snprintf(var, sizeof(var), format, ##args)
+
 #define safe_snprintf(var, size, format, args...)      \
-	snprintf(var, size, format, ##args) >= size
+	({								\
+		size_t __size = size;					\
+		int __ret;						\
+									\
+		__ret = snprintf(var, __size, format, ##args);		\
+		__ret < 0 || (size_t)__ret >= __size;			\
+	})
 
 #define pthread_cleanup_push_cast(f, arg)		\
 	pthread_cleanup_push(((void (*)(void *))&f), (arg))
