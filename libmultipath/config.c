@@ -693,6 +693,27 @@ process_config_dir(struct config *conf, char *dir)
 	pthread_cleanup_pop(1);
 }
 
+static void set_max_checkint_from_watchdog(struct config *conf)
+{
+#ifdef USE_SYSTEMD
+	char *envp = getenv("WATCHDOG_USEC");
+	unsigned long checkint;
+
+	if (envp && sscanf(envp, "%lu", &checkint) == 1) {
+		/* Value is in microseconds */
+		checkint /= 1000000;
+		if (checkint < 1 || checkint > UINT_MAX) {
+			condlog(1, "invalid value for WatchdogSec: \"%s\"", envp);
+			return;
+		}
+		if (conf->max_checkint == 0 || conf->max_checkint > checkint)
+			conf->max_checkint = checkint;
+		condlog(3, "enabling watchdog, interval %ld", checkint);
+		conf->use_watchdog = true;
+	}
+#endif
+}
+
 struct config *
 load_config (char * file)
 {
@@ -713,7 +734,8 @@ load_config (char * file)
 	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
 	conf->attribute_flags = 0;
 	conf->reassign_maps = DEFAULT_REASSIGN_MAPS;
-	conf->checkint = DEFAULT_CHECKINT;
+	conf->checkint = CHECKINT_UNDEF;
+	conf->use_watchdog = false;
 	conf->max_checkint = 0;
 	conf->force_sync = DEFAULT_FORCE_SYNC;
 	conf->partition_delim = (default_partition_delim != NULL ?
@@ -764,8 +786,20 @@ load_config (char * file)
 	/*
 	 * fill the voids left in the config file
 	 */
-	if (conf->max_checkint == 0)
-		conf->max_checkint = MAX_CHECKINT(conf->checkint);
+	set_max_checkint_from_watchdog(conf);
+	if (conf->max_checkint == 0) {
+		if (conf->checkint == CHECKINT_UNDEF)
+			conf->checkint = DEFAULT_CHECKINT;
+		conf->max_checkint = (conf->checkint < UINT_MAX / 4 ?
+				      conf->checkint * 4 : UINT_MAX);
+	} else if (conf->checkint == CHECKINT_UNDEF)
+		conf->checkint = (conf->max_checkint >= 4 ?
+				  conf->max_checkint / 4 : 1);
+	else if (conf->checkint > conf->max_checkint)
+		conf->checkint = conf->max_checkint;
+	condlog(3, "polling interval: %d, max: %d",
+		conf->checkint, conf->max_checkint);
+
 	if (conf->blist_devnode == NULL) {
 		conf->blist_devnode = vector_alloc();
 

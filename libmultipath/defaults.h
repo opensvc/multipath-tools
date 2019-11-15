@@ -53,9 +53,8 @@
 /* Enable all foreign libraries by default */
 #define DEFAULT_ENABLE_FOREIGN ""
 
-#define CHECKINT_UNDEF		(~0U)
+#define CHECKINT_UNDEF		UINT_MAX
 #define DEFAULT_CHECKINT	5
-#define MAX_CHECKINT(a)		(a << 2)
 
 #define MAX_DEV_LOSS_TMO	UINT_MAX
 #define DEFAULT_PIDFILE		"/" RUN_DIR "/multipathd.pid"
