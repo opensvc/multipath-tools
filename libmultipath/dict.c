@@ -1099,7 +1099,7 @@ declare_mp_handler(pgfailback, set_pgfailback)
 declare_mp_snprint(pgfailback, print_pgfailback)
 
 static int
-set_no_path_retry(vector strvec, void *ptr)
+no_path_retry_helper(vector strvec, void *ptr)
 {
 	int *int_ptr = (int *)ptr;
 	char * buff;
@@ -1134,13 +1134,13 @@ print_no_path_retry(char * buff, int len, long v)
 	}
 }
 
-declare_def_handler(no_path_retry, set_no_path_retry)
+declare_def_handler(no_path_retry, no_path_retry_helper)
 declare_def_snprint(no_path_retry, print_no_path_retry)
-declare_ovr_handler(no_path_retry, set_no_path_retry)
+declare_ovr_handler(no_path_retry, no_path_retry_helper)
 declare_ovr_snprint(no_path_retry, print_no_path_retry)
-declare_hw_handler(no_path_retry, set_no_path_retry)
+declare_hw_handler(no_path_retry, no_path_retry_helper)
 declare_hw_snprint(no_path_retry, print_no_path_retry)
-declare_mp_handler(no_path_retry, set_no_path_retry)
+declare_mp_handler(no_path_retry, no_path_retry_helper)
 declare_mp_snprint(no_path_retry, print_no_path_retry)
 
 static int
