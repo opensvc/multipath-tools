@@ -432,12 +432,26 @@ int select_hwhandler(struct config *conf, struct multipath *mp)
 	static const char tpgs_origin[]= "(setting: autodetected from TPGS)";
 	char *dh_state;
 	int i;
-	bool all_tpgs = true;
+	bool all_tpgs = true, one_tpgs = false;
 
 	dh_state = &handler[2];
 
-	vector_foreach_slot(mp->paths, pp, i)
-		all_tpgs = all_tpgs && (path_get_tpgs(pp) > 0);
+	/*
+	 * TPGS_UNDEF means that ALUA support couldn't determined either way
+	 * yet, probably because the path was always down.
+	 * If at least one path does have TPGS support, and no path has
+	 * TPGS_NONE, assume that TPGS would be supported by all paths if
+	 * all were up.
+	 */
+	vector_foreach_slot(mp->paths, pp, i) {
+		int tpgs = path_get_tpgs(pp);
+
+		all_tpgs = all_tpgs && tpgs != TPGS_NONE;
+		one_tpgs = one_tpgs ||
+			(tpgs != TPGS_NONE && tpgs != TPGS_UNDEF);
+	}
+	all_tpgs = all_tpgs && one_tpgs;
+
 	if (mp->retain_hwhandler != RETAIN_HWHANDLER_OFF) {
 		vector_foreach_slot(mp->paths, pp, i) {
 			if (get_dh_state(pp, dh_state, sizeof(handler) - 2) > 0

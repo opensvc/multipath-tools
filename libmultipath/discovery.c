@@ -876,6 +876,10 @@ get_serial (char * str, int maxlen, int fd)
 	return 1;
 }
 
+/*
+ * Side effect: sets pp->tpgs if it could be determined.
+ * If ALUA calls fail because paths are unreachable, pp->tpgs remains unchanged.
+ */
 static void
 detect_alua(struct path * pp)
 {
@@ -886,12 +890,28 @@ detect_alua(struct path * pp)
 	if (sysfs_get_timeout(pp, &timeout) <= 0)
 		timeout = DEF_TIMEOUT;
 
-	if ((tpgs = get_target_port_group_support(pp, timeout)) <= 0) {
+	tpgs = get_target_port_group_support(pp, timeout);
+	if (tpgs == -RTPG_INQUIRY_FAILED)
+		return;
+	else if (tpgs <= 0) {
 		pp->tpgs = TPGS_NONE;
 		return;
 	}
+
+	if (pp->fd == -1 || pp->offline)
+		return;
+
 	ret = get_target_port_group(pp, timeout);
 	if (ret < 0 || get_asymmetric_access_state(pp, ret, timeout) < 0) {
+		int state;
+
+		if (ret == -RTPG_INQUIRY_FAILED)
+			return;
+
+		state = path_offline(pp);
+		if (state == PATH_DOWN || state == PATH_PENDING)
+			return;
+
 		pp->tpgs = TPGS_NONE;
 		return;
 	}
