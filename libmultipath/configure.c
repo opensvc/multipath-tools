@@ -401,7 +401,6 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 			condlog(2, "%s: setting up map with %d/%d path checkers pending",
 				mpp->alias, n_pending, n_paths);
 	}
-	mpp->nr_active = pathcount(mpp, PATH_UP) + pathcount(mpp, PATH_GHOST);
 
 	/*
 	 * ponders each path group and determine highest prio pg
@@ -934,8 +933,8 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		}
 
 		sysfs_set_max_sectors_kb(mpp, 0);
-		if (is_daemon && mpp->ghost_delay > 0 && mpp->nr_active &&
-		    pathcount(mpp, PATH_GHOST) == mpp->nr_active)
+		if (is_daemon && mpp->ghost_delay > 0 && count_active_paths(mpp) &&
+		    pathcount(mpp, PATH_UP) == 0)
 			mpp->ghost_delay_tick = mpp->ghost_delay;
 		r = dm_addmap_create(mpp, params);
 

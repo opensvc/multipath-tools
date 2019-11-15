@@ -182,9 +182,10 @@ snprint_queueing (char * buff, size_t len, const struct multipath * mpp)
 		return snprintf(buff, len, "-");
 	else if (mpp->no_path_retry > 0) {
 		if (mpp->retry_tick > 0)
+
 			return snprintf(buff, len, "%i sec",
 					mpp->retry_tick);
-		else if (mpp->retry_tick == 0 && mpp->nr_active > 0)
+		else if (mpp->retry_tick == 0 && count_active_paths(mpp) > 0)
 			return snprintf(buff, len, "%i chk",
 					mpp->no_path_retry);
 		else
@@ -196,7 +197,7 @@ snprint_queueing (char * buff, size_t len, const struct multipath * mpp)
 static int
 snprint_nb_paths (char * buff, size_t len, const struct multipath * mpp)
 {
-	return snprint_int(buff, len, mpp->nr_active);
+	return snprint_int(buff, len, count_active_paths(mpp));
 }
 
 static int

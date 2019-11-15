@@ -1024,16 +1024,17 @@ cli_restore_queueing(void *v, char **reply, int *len, void *data)
 	select_no_path_retry(conf, mpp);
 	pthread_cleanup_pop(1);
 
+	/*
+	 * Don't call set_no_path_retry() for the NO_PATH_RETRY_FAIL case.
+	 * That would disable queueing when "restorequeueing" is called,
+	 * and the code never behaved that way. Users might not expect it.
+	 * In almost all cases, queueing will be disabled anyway when we
+	 * are here.
+	 */
 	if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
-			mpp->no_path_retry != NO_PATH_RETRY_FAIL) {
-		dm_queue_if_no_path(mpp->alias, 1);
-		if (mpp->no_path_retry > 0) {
-			if (mpp->nr_active > 0)
-				mpp->retry_tick = 0;
-			else
-				enter_recovery_mode(mpp);
-		}
-	}
+	    mpp->no_path_retry != NO_PATH_RETRY_FAIL)
+		set_no_path_retry(mpp);
+
 	return 0;
 }
 
@@ -1051,16 +1052,10 @@ cli_restore_all_queueing(void *v, char **reply, int *len, void *data)
 		pthread_cleanup_push(put_multipath_config, conf);
 		select_no_path_retry(conf, mpp);
 		pthread_cleanup_pop(1);
+		/* See comment in cli_restore_queueing() */
 		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
-		    mpp->no_path_retry != NO_PATH_RETRY_FAIL) {
-			dm_queue_if_no_path(mpp->alias, 1);
-			if (mpp->no_path_retry > 0) {
-				if (mpp->nr_active > 0)
-					mpp->retry_tick = 0;
-				else
-					enter_recovery_mode(mpp);
-			}
-		}
+		    mpp->no_path_retry != NO_PATH_RETRY_FAIL)
+			set_no_path_retry(mpp);
 	}
 	return 0;
 }
@@ -1085,12 +1080,12 @@ cli_disable_queueing(void *v, char **reply, int *len, void *data)
 		return 1;
 	}
 
-	if (mpp->nr_active == 0)
+	if (count_active_paths(mpp) == 0)
 		mpp->stat_map_failures++;
 	mpp->retry_tick = 0;
 	mpp->no_path_retry = NO_PATH_RETRY_FAIL;
 	mpp->disable_queueing = 1;
-	dm_queue_if_no_path(mpp->alias, 0);
+	set_no_path_retry(mpp);
 	return 0;
 }
 
@@ -1103,12 +1098,12 @@ cli_disable_all_queueing(void *v, char **reply, int *len, void *data)
 
 	condlog(2, "disable queueing (operator)");
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (mpp->nr_active == 0)
+		if (count_active_paths(mpp) == 0)
 			mpp->stat_map_failures++;
 		mpp->retry_tick = 0;
 		mpp->no_path_retry = NO_PATH_RETRY_FAIL;
 		mpp->disable_queueing = 1;
-		dm_queue_if_no_path(mpp->alias, 0);
+		set_no_path_retry(mpp);
 	}
 	return 0;
 }

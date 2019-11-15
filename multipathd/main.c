@@ -1616,7 +1616,7 @@ fail_path (struct path * pp, int del_active)
  * caller must have locked the path list before calling that function
  */
 static int
-reinstate_path (struct path * pp, int add_active)
+reinstate_path (struct path * pp)
 {
 	int ret = 0;
 
@@ -1628,8 +1628,7 @@ reinstate_path (struct path * pp, int add_active)
 		ret = 1;
 	} else {
 		condlog(2, "%s: reinstated", pp->dev_t);
-		if (add_active)
-			update_queue_mode_add_path(pp->mpp);
+		update_queue_mode_add_path(pp->mpp);
 	}
 	return ret;
 }
@@ -1861,7 +1860,7 @@ static int check_path_reinstate_state(struct path * pp) {
 
 	if (pp->disable_reinstate) {
 		/* If there are no other usable paths, reinstate the path */
-		if (pp->mpp->nr_active == 0) {
+		if (count_active_paths(pp->mpp) == 0) {
 			condlog(2, "%s : reinstating path early", pp->dev);
 			goto reinstate_path;
 		}
@@ -1960,7 +1959,6 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	int newstate;
 	int new_path_up = 0;
 	int chkr_new_path_up = 0;
-	int add_active;
 	int disable_reinstate = 0;
 	int oldchkrstate = pp->chkrstate;
 	int retrigger_tries, verbosity;
@@ -2134,7 +2132,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	 * paths if there are no other active paths in map.
 	 */
 	disable_reinstate = (newstate == PATH_GHOST &&
-			     pp->mpp->nr_active == 0 &&
+			     count_active_paths(pp->mpp) == 0 &&
 			     path_get_tpgs(pp) == TPGS_IMPLICIT) ? 1 : 0;
 
 	pp->chkrstate = newstate;
@@ -2185,12 +2183,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		/*
 		 * reinstate this path
 		 */
-		if (oldstate != PATH_UP &&
-		    oldstate != PATH_GHOST)
-			add_active = 1;
-		else
-			add_active = 0;
-		if (!disable_reinstate && reinstate_path(pp, add_active)) {
+		if (!disable_reinstate && reinstate_path(pp)) {
 			condlog(3, "%s: reload map", pp->dev);
 			ev_add_path(pp, vecs, 1);
 			pp->tick = 1;
@@ -2213,7 +2206,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		    pp->dmstate == PSTATE_UNDEF) &&
 		    !disable_reinstate) {
 			/* Clear IO errors */
-			if (reinstate_path(pp, 0)) {
+			if (reinstate_path(pp)) {
 				condlog(3, "%s: reload map", pp->dev);
 				ev_add_path(pp, vecs, 1);
 				pp->tick = 1;

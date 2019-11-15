@@ -481,6 +481,25 @@ int pathcount(const struct multipath *mpp, int state)
 	return count;
 }
 
+int count_active_paths(const struct multipath *mpp)
+{
+	struct pathgroup *pgp;
+	struct path *pp;
+	int count = 0;
+	int i, j;
+
+	if (!mpp->pg)
+		return 0;
+
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp, j) {
+			if (pp->state == PATH_UP || pp->state == PATH_GHOST)
+				count++;
+		}
+	}
+	return count;
+}
+
 int pathcmp(const struct pathgroup *pgp, const struct pathgroup *cpgp)
 {
 	int i, j;

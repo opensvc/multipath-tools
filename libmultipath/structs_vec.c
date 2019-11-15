@@ -290,10 +290,15 @@ update_multipath_strings(struct multipath *mpp, vector pathvec, int is_daemon)
 	return 0;
 }
 
-void enter_recovery_mode(struct multipath *mpp)
+static void enter_recovery_mode(struct multipath *mpp)
 {
 	unsigned int checkint;
-	struct config *conf = get_multipath_config();
+	struct config *conf;
+
+	if (mpp->in_recovery || mpp->no_path_retry <= 0)
+		return;
+
+	conf = get_multipath_config();
 	checkint = conf->checkint;
 	put_multipath_config(conf);
 
@@ -302,17 +307,37 @@ void enter_recovery_mode(struct multipath *mpp)
 	 * meaning of +1: retry_tick may be decremented in checkerloop before
 	 * starting retry.
 	 */
+	mpp->in_recovery = true;
 	mpp->stat_queueing_timeouts++;
 	mpp->retry_tick = mpp->no_path_retry * checkint + 1;
 	condlog(1, "%s: Entering recovery mode: max_retries=%d",
 		mpp->alias, mpp->no_path_retry);
 }
 
+static void leave_recovery_mode(struct multipath *mpp)
+{
+	bool recovery = mpp->in_recovery;
+
+	mpp->in_recovery = false;
+	mpp->retry_tick = 0;
+
+	/*
+	 * in_recovery is only ever set if mpp->no_path_retry > 0
+	 * (see enter_recovery_mode()). But no_path_retry may have been
+	 * changed while the map was recovering, so test it here again.
+	 */
+	if (recovery && (mpp->no_path_retry == NO_PATH_RETRY_QUEUE ||
+			 mpp->no_path_retry > 0)) {
+		dm_queue_if_no_path(mpp->alias, 1);
+		condlog(2, "%s: queue_if_no_path enabled", mpp->alias);
+		condlog(1, "%s: Recovered to normal mode", mpp->alias);
+	}
+}
+
 void set_no_path_retry(struct multipath *mpp)
 {
-	char is_queueing = 0;
+	bool is_queueing = 0;
 
-	mpp->nr_active = pathcount(mpp, PATH_UP) + pathcount(mpp, PATH_GHOST);
 	if (mpp->features && strstr(mpp->features, "queue_if_no_path"))
 		is_queueing = 1;
 
@@ -328,11 +353,15 @@ void set_no_path_retry(struct multipath *mpp)
 			dm_queue_if_no_path(mpp->alias, 1);
 		break;
 	default:
-		if (mpp->nr_active > 0) {
-			mpp->retry_tick = 0;
-			if (!is_queueing)
+		if (count_active_paths(mpp) > 0) {
+			/*
+			 * If in_recovery is set, leave_recovery_mode() takes
+			 * care of dm_queue_if_no_path. Otherwise, do it here.
+			 */
+			if (!is_queueing && !mpp->in_recovery)
 				dm_queue_if_no_path(mpp->alias, 1);
-		} else if (is_queueing && mpp->retry_tick == 0)
+			leave_recovery_mode(mpp);
+		} else
 			enter_recovery_mode(mpp);
 		break;
 	}
@@ -480,25 +509,23 @@ int verify_paths(struct multipath *mpp, struct vectors *vecs)
  */
 void update_queue_mode_del_path(struct multipath *mpp)
 {
-	if (--mpp->nr_active == 0) {
-		if (mpp->no_path_retry > 0)
-			enter_recovery_mode(mpp);
-		else if (mpp->no_path_retry != NO_PATH_RETRY_QUEUE)
+	int active = count_active_paths(mpp);
+
+	if (active == 0) {
+		enter_recovery_mode(mpp);
+		if (mpp->no_path_retry != NO_PATH_RETRY_QUEUE)
 			mpp->stat_map_failures++;
 	}
-	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
+	condlog(2, "%s: remaining active paths: %d", mpp->alias, active);
 }
 
 void update_queue_mode_add_path(struct multipath *mpp)
 {
-	if (mpp->nr_active++ == 0 && mpp->no_path_retry > 0) {
-		/* come back to normal mode from retry mode */
-		mpp->retry_tick = 0;
-		dm_queue_if_no_path(mpp->alias, 1);
-		condlog(2, "%s: queue_if_no_path enabled", mpp->alias);
-		condlog(1, "%s: Recovered to normal mode", mpp->alias);
-	}
-	condlog(2, "%s: remaining active paths: %d", mpp->alias, mpp->nr_active);
+	int active = count_active_paths(mpp);
+
+	if (active > 0)
+		leave_recovery_mode(mpp);
+	condlog(2, "%s: remaining active paths: %d", mpp->alias, active);
 }
 
 vector get_used_hwes(const struct _vector *pathvec)

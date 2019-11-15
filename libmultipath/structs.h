@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <inttypes.h>
+#include <stdbool.h>
 
 #include "prio.h"
 #include "byteorder.h"
@@ -323,7 +324,6 @@ struct multipath {
 	int pgfailback;
 	int failback_tick;
 	int rr_weight;
-	int nr_active;     /* current available(= not known as failed) paths */
 	int no_path_retry; /* number of retries after all paths are down */
 	int retry_tick;    /* remaining times for retries */
 	int disable_queueing;
@@ -333,6 +333,7 @@ struct multipath {
 	int fast_io_fail;
 	int retain_hwhandler;
 	int deferred_remove;
+	bool in_recovery;
 	int san_path_err_threshold;
 	int san_path_err_forget_rate;
 	int san_path_err_recovery_time;
@@ -463,6 +464,7 @@ struct path * first_path (const struct multipath *mpp);
 
 int pathcountgr (const struct pathgroup *, int);
 int pathcount (const struct multipath *, int);
+int count_active_paths(const struct multipath *);
 int pathcmp (const struct pathgroup *, const struct pathgroup *);
 int add_feature (char **, const char *);
 int remove_feature (char **, const char *);
