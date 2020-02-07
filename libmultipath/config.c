@@ -681,8 +681,11 @@ process_config_dir(struct config *conf, char *dir)
 	sr.n = n;
 	pthread_cleanup_push_cast(free_scandir_result, &sr);
 	for (i = 0; i < n; i++) {
-		if (!strstr(namelist[i]->d_name, ".conf"))
+		char *ext = strrchr(namelist[i]->d_name, '.');
+
+		if (!ext || strcmp(ext, ".conf"))
 			continue;
+
 		old_hwtable_size = VECTOR_SIZE(conf->hwtable);
 		snprintf(path, LINE_MAX, "%s/%s", dir, namelist[i]->d_name);
 		path[LINE_MAX-1] = '\0';
