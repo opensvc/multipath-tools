@@ -1203,3 +1203,21 @@ out:
 		origin);
 	return 0;
 }
+
+int select_vpd_vendor_id (struct config *conf, struct path *pp)
+{
+	const char *origin;
+
+	pp_set_hwe(vpd_vendor_id);
+	pp_set_default(vpd_vendor_id, 0);
+out:
+	if (pp->vpd_vendor_id < 0 || pp->vpd_vendor_id >= VPD_VP_ARRAY_SIZE) {
+		condlog(3, "%s: vpd_vendor_id = %d (invalid, setting to 0)",
+			pp->dev, pp->vpd_vendor_id);
+		pp->vpd_vendor_id = 0;
+	}
+	condlog(3, "%s: vpd_vendor_id = %d \"%s\" %s", pp->dev,
+		pp->vpd_vendor_id, vpd_vendor_pages[pp->vpd_vendor_id].name,
+		origin);
+	return 0;
+}

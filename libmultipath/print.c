@@ -359,6 +359,21 @@ snprint_action (char * buff, size_t len, const struct multipath * mpp)
 	}
 }
 
+static int
+snprint_multipath_vpd_data(char * buff, size_t len,
+			   const struct multipath * mpp)
+{
+	struct pathgroup * pgp;
+	struct path * pp;
+	int i, j;
+
+	vector_foreach_slot(mpp->pg, pgp, i)
+		vector_foreach_slot(pgp->paths, pp, j)
+			if (strlen(pp->vpd_data))
+				return snprintf(buff, len, "%s", pp->vpd_data);
+	return snprintf(buff, len, "[undef]");
+}
+
 /*
  * path info printing functions
  */
@@ -690,6 +705,14 @@ snprint_path_marginal(char * buff, size_t len, const struct path * pp)
 	return snprintf(buff, len, "normal");
 }
 
+static int
+snprint_path_vpd_data(char * buff, size_t len, const struct path * pp)
+{
+	if (strlen(pp->vpd_data) > 0)
+		return snprintf(buff, len, "%s", pp->vpd_data);
+	return snprintf(buff, len, "[undef]");
+}
+
 struct multipath_data mpd[] = {
 	{'n', "name",          0, snprint_name},
 	{'w', "uuid",          0, snprint_multipath_uuid},
@@ -714,6 +737,7 @@ struct multipath_data mpd[] = {
 	{'p', "prod",          0, snprint_multipath_prod},
 	{'e', "rev",           0, snprint_multipath_rev},
 	{'G', "foreign",       0, snprint_multipath_foreign},
+	{'g', "vpd page data", 0, snprint_multipath_vpd_data},
 	{0, NULL, 0 , NULL}
 };
 
@@ -739,6 +763,7 @@ struct path_data pd[] = {
 	{'r', "target WWPN",   0, snprint_tgt_wwpn},
 	{'a', "host adapter",  0, snprint_host_adapter},
 	{'G', "foreign",       0, snprint_path_foreign},
+	{'g', "vpd page data", 0, snprint_path_vpd_data},
 	{'0', "failures",      0, snprint_path_failures},
 	{'P', "protocol",      0, snprint_path_protocol},
 	{0, NULL, 0 , NULL}

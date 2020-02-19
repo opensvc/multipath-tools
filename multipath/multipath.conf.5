@@ -1472,6 +1472,14 @@ the \fIproduct\fR attribute set to the value of \fIproduct_blacklist\fR.
 The user_friendly_names prefix to use for this
 device type, instead of the default "mpath".
 .TP
+.B vpd_vendor
+The vendor specific vpd page information, using the vpd page abbreviation.
+The vpd page abbreviation can be found by running \fIsg_vpd -e\fR. multipathd
+will use this information to gather device specific information that can be
+displayed with the \fI%g\fR wilcard for the \fImultipathd show maps format\fR
+and \fImultipathd show paths format\fR commands. Currently only the
+\fBhp3par\fR vpd page is supported.
+.TP
 .B hardware_handler
 The hardware handler to use for this device type.
 The following hardware handler are implemented:

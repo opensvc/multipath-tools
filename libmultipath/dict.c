@@ -1408,6 +1408,43 @@ def_uxsock_timeout_handler(struct config *conf, vector strvec)
 	return 0;
 }
 
+static int
+hw_vpd_vendor_handler(struct config *conf, vector strvec)
+{
+	int i;
+	char *buff;
+
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);
+	if (!hwe)
+		return 1;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+	for (i = 0; i < VPD_VP_ARRAY_SIZE; i++) {
+		if (strcmp(buff, vpd_vendor_pages[i].name) == 0) {
+			hwe->vpd_vendor_id = i;
+			goto out;
+		}
+	}
+	hwe->vpd_vendor_id = 0;
+out:
+	FREE(buff);
+	return 0;
+}
+
+static int
+snprint_hw_vpd_vendor(struct config *conf, char * buff, int len,
+		      const void * data)
+{
+	const struct hwentry * hwe = (const struct hwentry *)data;
+
+	if (hwe->vpd_vendor_id > 0 && hwe->vpd_vendor_id < VPD_VP_ARRAY_SIZE)
+		return snprintf(buff, len, "%s",
+				vpd_vendor_pages[hwe->vpd_vendor_id].name);
+	return 0;
+}
+
 /*
  * blacklist block handlers
  */
@@ -1848,6 +1885,7 @@ init_keywords(vector keywords)
 	install_keyword("max_sectors_kb", &hw_max_sectors_kb_handler, &snprint_hw_max_sectors_kb);
 	install_keyword("ghost_delay", &hw_ghost_delay_handler, &snprint_hw_ghost_delay);
 	install_keyword("all_tg_pt", &hw_all_tg_pt_handler, &snprint_hw_all_tg_pt);
+	install_keyword("vpd_vendor", &hw_vpd_vendor_handler, &snprint_hw_vpd_vendor);
 	install_sublevel_end();
 
 	install_keyword_root("overrides", &overrides_handler);

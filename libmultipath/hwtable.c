@@ -117,6 +117,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 18,
 		.fast_io_fail  = 10,
 		.dev_loss      = MAX_DEV_LOSS_TMO,
+		.vpd_vendor_id = VPD_VP_HP3PAR,
 	},
 	{
 		/* RA8000 / ESA12000 */
