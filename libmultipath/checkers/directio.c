@@ -138,55 +138,16 @@ check_orphaned_group(struct aio_group *aio_grp)
 		return;
 	list_for_each(item, &aio_grp->orphans)
 		count++;
-	if (count >= AIO_GROUP_SIZE) {
+	if (count >= AIO_GROUP_SIZE)
 		remove_aio_group(aio_grp);
-		if (list_empty(&aio_grp_list))
-			add_aio_group();
-	}
 }
 
-int libcheck_load (void)
-{
-	if (add_aio_group() == NULL) {
-		LOG(1, "libcheck_load failed: %s", strerror(errno));
-		return 1;
-	}
-	return 0;
-}
-
-void libcheck_unload (void)
+void libcheck_reset (void)
 {
 	struct aio_group *aio_grp, *tmp;
 
 	list_for_each_entry_safe(aio_grp, tmp, &aio_grp_list, node)
 		remove_aio_group(aio_grp);
-}
-
-int libcheck_reset (void)
-{
-	struct aio_group *aio_grp, *tmp, *reset_grp = NULL;
-
-	/* If a clean existing aio_group exists, use that. Otherwise add a
-	 * new one */
-	list_for_each_entry(aio_grp, &aio_grp_list, node) {
-		if (aio_grp->holders == 0 &&
-		    list_empty(&aio_grp->orphans)) {
-			reset_grp = aio_grp;
-			break;
-		}
-	}
-	if (!reset_grp)
-		reset_grp = add_aio_group();
-	if (!reset_grp) {
-		LOG(1, "checker reset failed");
-		return 1;
-	}
-
-	list_for_each_entry_safe(aio_grp, tmp, &aio_grp_list, node) {
-		if (aio_grp != reset_grp)
-			remove_aio_group(aio_grp);
-	}
-	return 0;
 }
 
 int libcheck_init (struct checker * c)

@@ -18,9 +18,7 @@ struct checker_class {
 	int (*init)(struct checker *);       /* to allocate the context */
 	int (*mp_init)(struct checker *);    /* to allocate the mpcontext */
 	void (*free)(struct checker *);      /* to free the context */
-	int (*load)(void);                   /* to allocate global variables */
-	void (*unload)(void);                /* to free global variables */
-	int (*reset)(void);		     /* to reset the global variables */
+	void (*reset)(void);		     /* to reset the global variables */
 	const char **msgtable;
 	short msgtable_size;
 };
@@ -69,8 +67,8 @@ void free_checker_class(struct checker_class *c)
 	}
 	condlog(3, "unloading %s checker", c->name);
 	list_del(&c->node);
-	if (c->unload)
-		c->unload();
+	if (c->reset)
+		c->reset();
 	if (c->handle) {
 		if (dlclose(c->handle) != 0) {
 			condlog(0, "Cannot unload checker %s: %s",
@@ -103,16 +101,14 @@ static struct checker_class *checker_class_lookup(const char *name)
 	return NULL;
 }
 
-int reset_checker_classes(void)
+void reset_checker_classes(void)
 {
-	int ret = 0;
 	struct checker_class *c;
 
 	list_for_each_entry(c, &checkers, node) {
 		if (c->reset)
-			ret = ret? ret : c->reset();
+			c->reset();
 	}
-	return ret;
 }
 
 static struct checker_class *add_checker_class(const char *multipath_dir,
@@ -159,10 +155,8 @@ static struct checker_class *add_checker_class(const char *multipath_dir,
 		goto out;
 
 	c->mp_init = (int (*)(struct checker *)) dlsym(c->handle, "libcheck_mp_init");
-	c->load = (int (*)(void)) dlsym(c->handle, "libcheck_load");
-	c->unload = (void (*)(void)) dlsym(c->handle, "libcheck_unload");
-	c->reset = (int (*)(void)) dlsym(c->handle, "libcheck_reset");
-	/* These 4 functions can be NULL. call dlerror() to clear out any
+	c->reset = (void (*)(void)) dlsym(c->handle, "libcheck_reset");
+	/* These 2 functions can be NULL. call dlerror() to clear out any
 	 * error string */
 	dlerror();
 
@@ -188,12 +182,6 @@ static struct checker_class *add_checker_class(const char *multipath_dir,
 		c->msgtable_size = 0;
 	condlog(3, "checker %s: message table size = %d",
 		c->name, c->msgtable_size);
-
-	if (c->load && c->load() != 0) {
-		condlog(0, "%s: failed to load checker", c->name);
-		c->unload = NULL;
-		goto out;
-	}
 
 done:
 	c->sync = 1;
