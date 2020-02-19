@@ -18,10 +18,18 @@ TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
 .SILENT: $(TESTS:%=%.o)
 .PRECIOUS: $(TESTS:%=%-test)
 
+DIO_TEST_DEV = $(shell sed -n -e 's/^[[:space:]]*DIO_TEST_DEV[[:space:]]*=[[:space:]]*\([^[:space:]\#]\+\).*/\1/p' < directio_test_dev)
+
 all:	$(TESTS:%=%.out)
 
+# test-specific compiler flags
+# XYZ-test_FLAGS: Additional compiler flags for this test
+ifneq ($(DIO_TEST_DEV),)
+directio-test_FLAGS := -DDIO_TEST_DEV=\"$(DIO_TEST_DEV)\"
+endif
+
 # test-specific linker flags
-# XYZ-test-TESTDEPS: test libraries containing __wrap_xyz functions
+# XYZ-test_TESTDEPS: test libraries containing __wrap_xyz functions
 # XYZ-test_OBJDEPS: object files from libraries to link in explicitly
 #    That may be necessary if functions called from the object file are wrapped
 #    (wrapping works only for symbols which are undefined after processing a
@@ -40,6 +48,12 @@ vpd-test_OBJDEPS :=  ../libmultipath/discovery.o
 vpd-test_LIBDEPS := -ludev -lpthread -ldl
 alias-test_TESTDEPS := test-log.o
 alias-test_LIBDEPS := -lpthread -ldl
+ifneq ($(DIO_TEST_DEV),)
+directio-test_LIBDEPS := -laio
+endif
+
+%.o: %.c
+	$(CC) $(CFLAGS) $($*-test_FLAGS) -c -o $@ $<
 
 lib/libchecktur.so:
 	mkdir lib
