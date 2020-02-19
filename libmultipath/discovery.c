@@ -1185,7 +1185,7 @@ get_vpd_sysfs (struct udev_device *parent, int pg, char * str, int maxlen)
 }
 
 int
-get_vpd_sgio (int fd, int pg, char * str, int maxlen)
+get_vpd_sgio (int fd, int pg, int vend_id, char * str, int maxlen)
 {
 	int len, buff_len;
 	unsigned char buff[4096];
@@ -1860,7 +1860,7 @@ static ssize_t uid_fallback(struct path *pp, int path_state,
 		if (len < 0 && path_state == PATH_UP) {
 			condlog(1, "%s: failed to get sysfs uid: %s",
 				pp->dev, strerror(-len));
-			len = get_vpd_sgio(pp->fd, 0x83, pp->wwid,
+			len = get_vpd_sgio(pp->fd, 0x83, 0, pp->wwid,
 					   WWID_SIZE);
 			*origin = "sgio";
 		}

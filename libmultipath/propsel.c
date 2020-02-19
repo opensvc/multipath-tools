@@ -490,7 +490,7 @@ check_rdac(struct path * pp)
 	if (__do_set_from_hwe(checker_name, pp, checker_name) &&
 	    strcmp(checker_name, RDAC))
 		return 0;
-	len = get_vpd_sgio(pp->fd, 0xC9, buff, 44);
+	len = get_vpd_sgio(pp->fd, 0xC9, 0, buff, 44);
 	if (len <= 0)
 		return 0;
 	return !(memcmp(buff + 4, "vac1", 4));
