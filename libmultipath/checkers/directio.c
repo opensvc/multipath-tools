@@ -262,7 +262,7 @@ get_events(struct aio_group *aio_grp, struct timespec *timeout)
 	struct io_event events[128];
 	int i, nr, got_events = 0;
 	struct timespec zero_timeout = {0};
-	struct timespec *timep = (timeout)? timeout : &zero_timeout;
+	struct timespec *timep = timeout;
 
 	do {
 		errno = 0;
@@ -303,7 +303,6 @@ check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 	int		rc;
 	long		r;
 	struct timespec currtime, endtime;
-	struct timespec *timep = &timeout;
 
 	if (fstat(fd, &sb) == 0) {
 		LOG(4, "called for %x", (unsigned) sb.st_rdev);
@@ -339,18 +338,19 @@ check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 	endtime.tv_nsec += timeout.tv_nsec;
 	normalize_timespec(&endtime);
 	while(1) {
-		r = get_events(ct->aio_grp, timep);
+		r = get_events(ct->aio_grp, &timeout);
 
 		if (ct->req->state != PATH_PENDING) {
 			ct->running = 0;
 			return ct->req->state;
-		} else if (r == 0 || !timep)
+		} else if (r == 0 ||
+			   (timeout.tv_sec == 0 && timeout.tv_nsec == 0))
 			break;
 
 		get_monotonic_time(&currtime);
 		timespecsub(&endtime, &currtime, &timeout);
 		if (timeout.tv_sec < 0)
-			timep = NULL;
+			timeout.tv_sec = timeout.tv_nsec = 0;
 	}
 	if (ct->running > timeout_secs || sync) {
 		struct io_event event;
