@@ -10,11 +10,11 @@
 
 static LIST_HEAD(prioritizers);
 
-unsigned int get_prio_timeout(unsigned int checker_timeout,
+unsigned int get_prio_timeout(unsigned int timeout_ms,
 			      unsigned int default_timeout)
 {
-	if (checker_timeout)
-		return checker_timeout * 1000;
+	if (timeout_ms)
+		return timeout_ms;
 	return default_timeout;
 }
 
