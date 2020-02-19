@@ -36,7 +36,7 @@ struct aio_group {
 
 struct async_req {
 	struct iocb io;
-	int blksize;
+	unsigned int blksize;
 	unsigned char *	buf;
 	unsigned char * ptr;
 	struct list_head node;
