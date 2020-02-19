@@ -38,7 +38,6 @@ struct async_req {
 	struct iocb io;
 	unsigned int blksize;
 	unsigned char *	buf;
-	unsigned char * ptr;
 	struct list_head node;
 	int state; /* PATH_REMOVED means this is an orphan */
 };
@@ -174,7 +173,7 @@ int libcheck_init (struct checker * c)
 
 	if (ioctl(c->fd, BLKBSZGET, &req->blksize) < 0) {
 		c->msgid = MSG_DIRECTIO_BLOCKSIZE;
-		req->blksize = 512;
+		req->blksize = 4096;
 	}
 	if (req->blksize > 4096) {
 		/*
@@ -185,8 +184,7 @@ int libcheck_init (struct checker * c)
 	if (!req->blksize)
 		goto out;
 
-	req->buf = (unsigned char *)malloc(req->blksize + pgsize);
-	if (!req->buf)
+	if (posix_memalign((void **)&req->buf, pgsize, req->blksize) != 0)
 		goto out;
 
 	flags = fcntl(c->fd, F_GETFL);
@@ -198,9 +196,6 @@ int libcheck_init (struct checker * c)
 			goto out;
 		ct->reset_flags = 1;
 	}
-
-	req->ptr = (unsigned char *) (((unsigned long)req->buf + pgsize - 1) &
-		  (~(pgsize - 1)));
 
 	/* Successfully initialized, return the context. */
 	ct->req = req;
@@ -298,7 +293,7 @@ get_events(struct aio_group *aio_grp, struct timespec *timeout)
 static int
 check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 {
-	struct timespec	timeout = { .tv_nsec = 5 };
+	struct timespec	timeout = { .tv_nsec = 1000 };
 	struct stat	sb;
 	int		rc;
 	long		r;
@@ -323,7 +318,7 @@ check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 
 		LOG(3, "starting new request");
 		memset(&ct->req->io, 0, sizeof(struct iocb));
-		io_prep_pread(&ct->req->io, fd, ct->req->ptr,
+		io_prep_pread(&ct->req->io, fd, ct->req->buf,
 			      ct->req->blksize, 0);
 		ct->req->state = PATH_PENDING;
 		if (io_submit(ct->aio_grp->ioctx, 1, ios) != 1) {

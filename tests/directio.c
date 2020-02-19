@@ -23,7 +23,6 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#define UNIT_TESTING /* enable memory testing in directio.c */
 #include <cmocka.h>
 #include "globals.c"
 #include "../libmultipath/checkers/directio.c"
