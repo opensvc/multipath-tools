@@ -12,7 +12,8 @@ CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathcmddir) \
 	-Wno-unused-parameter $(W_MISSING_INITIALIZERS)
 LIBDEPS += -L$(multipathdir) -lmultipath -lcmocka
 
-TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy alias
+TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
+	 alias directio
 
 .SILENT: $(TESTS:%=%.o)
 .PRECIOUS: $(TESTS:%=%-test)
