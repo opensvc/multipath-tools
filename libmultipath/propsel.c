@@ -1204,7 +1204,7 @@ out:
 	return 0;
 }
 
-int select_vpd_vendor_id (struct config *conf, struct path *pp)
+int select_vpd_vendor_id (struct path *pp)
 {
 	const char *origin;
 

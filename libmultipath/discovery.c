@@ -1626,7 +1626,7 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 	if (!(mask & DI_SERIAL))
 		return;
 
-	select_vpd_vendor_id(conf, pp);
+	select_vpd_vendor_id(pp);
 	vpd_id = pp->vpd_vendor_id;
 
 	if (vpd_id != VPD_VP_UNDEF && get_vpd_sgio(pp->fd, vpd_vendor_pages[vpd_id].pg, vpd_id, pp->vpd_data, sizeof(pp->vpd_data)) < 0)
