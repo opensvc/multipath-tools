@@ -494,9 +494,10 @@ Check the path state for LSI/Engenio/NetApp RDAC class as NetApp SANtricity E/EF
 Series, and OEM arrays from IBM DELL SGI STK and SUN.
 .TP
 .I directio
-(Deprecated) Read the first sector with direct I/O. This checker is being
-deprecated, it could cause spurious path failures under high load.
-Please use \fItur\fR instead.
+(Deprecated) Read the first sector with direct I/O. If you have a large number
+of paths, or many AIO users on a system, you may need to use sysctl to
+increase fs.aio-max-nr. This checker is being deprecated, it could cause
+spurious path failures under high load. Please use \fItur\fR instead.
 .TP
 .I cciss_tur
 (Hardware-dependent)
