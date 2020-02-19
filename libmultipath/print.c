@@ -29,6 +29,7 @@
 #include "uevent.h"
 #include "debug.h"
 #include "discovery.h"
+#include "util.h"
 
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
 #define MIN(x,y) (((x) > (y)) ? (y) : (x))
@@ -2031,7 +2032,6 @@ int snprint_devices(struct config *conf, char * buff, int len,
 	struct dirent *blkdev;
 	struct stat statbuf;
 	char devpath[PATH_MAX];
-	char *devptr;
 	int threshold = MAX_LINE_LEN;
 	int fwd = 0;
 	int r;
@@ -2047,15 +2047,14 @@ int snprint_devices(struct config *conf, char * buff, int len,
 	}
 	fwd += snprintf(buff + fwd, len - fwd, "available block devices:\n");
 
-	strcpy(devpath,"/sys/block/");
 	while ((blkdev = readdir(blkdir)) != NULL) {
 		if ((strcmp(blkdev->d_name,".") == 0) ||
 		    (strcmp(blkdev->d_name,"..") == 0))
 			continue;
 
-		devptr = devpath + 11;
-		*devptr = '\0';
-		strncat(devptr, blkdev->d_name, PATH_MAX-12);
+		if (safe_sprintf(devpath, "/sys/block/%s", blkdev->d_name))
+			continue;
+
 		if (stat(devpath, &statbuf) < 0)
 			continue;
 
@@ -2067,11 +2066,12 @@ int snprint_devices(struct config *conf, char * buff, int len,
 			return len;
 		}
 
-		fwd += snprintf(buff + fwd, len - fwd, "    %s", devptr);
-		pp = find_path_by_dev(vecs->pathvec, devptr);
+		fwd += snprintf(buff + fwd, len - fwd, "    %s",
+				blkdev->d_name);
+		pp = find_path_by_dev(vecs->pathvec, blkdev->d_name);
 		if (!pp) {
 			r = filter_devnode(conf->blist_devnode,
-					   conf->elist_devnode, devptr);
+					   conf->elist_devnode, blkdev->d_name);
 			if (r > 0)
 				fwd += snprintf(buff + fwd, len - fwd,
 						" devnode blacklisted, unmonitored");
