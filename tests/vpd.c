@@ -520,8 +520,9 @@ static void test_vpd_eui_ ## len ## _ ## wlen ## _ ## sml(void **state)	\
 	n = create_vpd83(vt->vpdbuf, sizeof(vt->vpdbuf), test_id,	\
 			 2, 0, len);					\
 	if (sml) {							\
-		/* overwrite the page side to DEFAULT_SGIO_LEN + 1 */	\
+		/* overwrite the page size to DEFAULT_SGIO_LEN + 1 */	\
 		put_unaligned_be16(255, vt->vpdbuf + 2);		\
+		/* this causes get_vpd_sgio to do a second ioctl */	\
 		will_return(__wrap_ioctl, n);				\
 		will_return(__wrap_ioctl, vt->vpdbuf);			\
 	}								\

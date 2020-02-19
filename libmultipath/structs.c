@@ -131,6 +131,9 @@ free_path (struct path * pp)
 		udev_device_unref(pp->udev);
 		pp->udev = NULL;
 	}
+	if (pp->vpd_data)
+		free(pp->vpd_data);
+
 	vector_free(pp->hwe);
 
 	FREE(pp);

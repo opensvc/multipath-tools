@@ -1629,8 +1629,21 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 	select_vpd_vendor_id(pp);
 	vpd_id = pp->vpd_vendor_id;
 
-	if (vpd_id != VPD_VP_UNDEF && get_vpd_sgio(pp->fd, vpd_vendor_pages[vpd_id].pg, vpd_id, pp->vpd_data, sizeof(pp->vpd_data)) < 0)
-		condlog(3, "%s: failed to get extra vpd data", pp->dev);
+	if (vpd_id != VPD_VP_UNDEF) {
+		char vpd_data[VPD_DATA_SIZE] = {0};
+
+		if (get_vpd_sgio(pp->fd, vpd_vendor_pages[vpd_id].pg, vpd_id,
+		    vpd_data, sizeof(vpd_data)) < 0)
+			condlog(3, "%s: failed to get extra vpd data", pp->dev);
+		else {
+			vpd_data[VPD_DATA_SIZE - 1] = '\0';
+			if (pp->vpd_data)
+				free(pp->vpd_data);
+			pp->vpd_data = strdup(vpd_data);
+			if (!pp->vpd_data)
+				condlog(0, "%s: failed to allocate space for vpd data", pp->dev);
+		}
+	}
 
 	parent = pp->udev;
 	while (parent) {

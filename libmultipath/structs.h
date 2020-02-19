@@ -268,7 +268,7 @@ struct path {
 	char rev[PATH_REV_SIZE];
 	char serial[SERIAL_SIZE];
 	char tgt_node_name[NODE_NAME_SIZE];
-	char vpd_data[VPD_DATA_SIZE];
+	char *vpd_data;
 	unsigned long long size;
 	unsigned int checkint;
 	unsigned int tick;
