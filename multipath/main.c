@@ -145,6 +145,7 @@ usage (char * progname)
 		"  -h      print this usage text\n"
 		"  -l      show multipath topology (sysfs and DM info)\n"
 		"  -ll     show multipath topology (maximum info)\n"
+		"  -e      enable foreign libraries with -l/-ll\n"
 		"  -f      flush a multipath device map\n"
 		"  -F      flush all multipath device maps\n"
 		"  -a      add a device wwid to the wwids file\n"
@@ -865,6 +866,7 @@ main (int argc, char *argv[])
 	char *dev = NULL;
 	struct config *conf;
 	int retries = -1;
+	bool enable_foreign = false;
 
 	udev = udev_new();
 	logsink = 0;
@@ -874,7 +876,7 @@ main (int argc, char *argv[])
 	multipath_conf = conf;
 	conf->retrigger_tries = 0;
 	conf->force_sync = 1;
-	while ((arg = getopt(argc, argv, ":adcChl::FfM:v:p:b:BrR:itTquUwW")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":adcChl::eFfM:v:p:b:BrR:itTquUwW")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
 			break;
@@ -971,6 +973,9 @@ main (int argc, char *argv[])
 		case 'R':
 			retries = atoi(optarg);
 			break;
+		case 'e':
+			enable_foreign = true;
+			break;
 		case ':':
 			fprintf(stderr, "Missing option argument\n");
 			usage(argv[0]);
@@ -1022,6 +1027,10 @@ main (int argc, char *argv[])
 		condlog(0, "failed to initialize prioritizers");
 		goto out;
 	}
+
+	if ((cmd == CMD_LIST_SHORT || cmd == CMD_LIST_LONG) && enable_foreign)
+		conf->enable_foreign = "";
+
 	/* Failing here is non-fatal */
 	init_foreign(conf->multipath_dir, conf->enable_foreign);
 	if (cmd == CMD_USABLE_PATHS) {
