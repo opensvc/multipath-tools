@@ -67,8 +67,11 @@ lib/libchecktur.so:
 
 OBJS = $(TESTS:%=%.o) test-lib.o
 
-clean: dep_clean
-	$(RM) $(TESTS:%=%-test) $(TESTS:%=%.out) $(OBJS) *.o.wrap
+test_clean:
+	$(RM) $(TESTS:%=%.out)
+
+clean: test_clean dep_clean
+	$(RM) $(TESTS:%=%-test) $(OBJS) *.o.wrap
 	$(RM) -rf lib
 
 .SECONDARY: $(OBJS)
