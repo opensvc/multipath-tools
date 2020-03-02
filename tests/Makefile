@@ -18,12 +18,14 @@ TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
 .SILENT: $(TESTS:%=%.o)
 .PRECIOUS: $(TESTS:%=%-test)
 
-DIO_TEST_DEV = $(shell sed -n -e 's/^[[:space:]]*DIO_TEST_DEV[[:space:]]*=[[:space:]]*\([^[:space:]\#]\+\).*/\1/p' < directio_test_dev)
-
 all:	$(TESTS:%=%.out)
 
 # test-specific compiler flags
 # XYZ-test_FLAGS: Additional compiler flags for this test
+
+ifneq ($(wildcard directio_test_dev),)
+DIO_TEST_DEV = $(shell sed -n -e 's/^[[:space:]]*DIO_TEST_DEV[[:space:]]*=[[:space:]]*\([^[:space:]\#]\+\).*/\1/p' < directio_test_dev)
+endif
 ifneq ($(DIO_TEST_DEV),)
 directio-test_FLAGS := -DDIO_TEST_DEV=\"$(DIO_TEST_DEV)\"
 endif
