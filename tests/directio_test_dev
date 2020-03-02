@@ -1,4 +1,0 @@
-# To run the directio tests on an actual block device, uncomment the line
-# starting with DIO_TES_DEV, and set it to the appropriate device
-
-# DIO_TEST_DEV=/dev/sdb
