@@ -543,5 +543,7 @@ int get_prin_length(int rq_servact)
 			mx_resp_len = 0;
 			break;
 	}
+	if (mx_resp_len > MPATH_MAX_PARAM_LEN)
+		mx_resp_len = MPATH_MAX_PARAM_LEN;
 	return mx_resp_len;
 }
