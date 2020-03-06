@@ -238,6 +238,8 @@ static void mpath_format_readfullstatus(struct prin_resp *pr_buff)
 	uint32_t additional_length, k, tid_len_len = 0;
 	char tempbuff[MPATH_MAX_PARAM_LEN];
 	struct prin_fulldescr fdesc;
+	static const int pbuf_size =
+		sizeof(pr_buff->prin_descriptor.prin_readfd.private_buffer);
 
 	convert_be32_to_cpu(&pr_buff->prin_descriptor.prin_readfd.prgeneration);
 	convert_be32_to_cpu(&pr_buff->prin_descriptor.prin_readfd.number_of_descriptor);
@@ -249,16 +251,18 @@ static void mpath_format_readfullstatus(struct prin_resp *pr_buff)
 	}
 
 	additional_length = pr_buff->prin_descriptor.prin_readfd.number_of_descriptor;
-	if (additional_length > MPATH_MAX_PARAM_LEN) {
+	if (additional_length > pbuf_size) {
 		condlog(3, "PRIN length %u exceeds max length %d", additional_length,
-			MPATH_MAX_PARAM_LEN);
+			pbuf_size);
 		return;
 	}
 
 	memset(&fdesc, 0, sizeof(struct prin_fulldescr));
 
-	memcpy( tempbuff, pr_buff->prin_descriptor.prin_readfd.private_buffer,MPATH_MAX_PARAM_LEN );
-	memset(&pr_buff->prin_descriptor.prin_readfd.private_buffer, 0, MPATH_MAX_PARAM_LEN);
+	memcpy( tempbuff, pr_buff->prin_descriptor.prin_readfd.private_buffer,
+		pbuf_size);
+	memset(&pr_buff->prin_descriptor.prin_readfd.private_buffer, 0,
+	       pbuf_size);
 
 	p =(unsigned char *)tempbuff;
 	ppbuff = (char *)pr_buff->prin_descriptor.prin_readfd.private_buffer;
