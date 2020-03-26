@@ -710,12 +710,6 @@ select_action (struct multipath * mpp, vector curmp, int force_reload)
 		return;
 	}
 
-	if (pathcount(mpp, PATH_UP) == 0) {
-		mpp->action = ACT_IMPOSSIBLE;
-		condlog(3, "%s: set ACT_IMPOSSIBLE (no usable path)",
-			mpp->alias);
-		return;
-	}
 	if (force_reload) {
 		mpp->force_udev_reload = 1;
 		mpp->action = ACT_RELOAD;
