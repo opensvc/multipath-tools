@@ -108,7 +108,9 @@ dm_lib_prereq (void)
 {
 	char version[64];
 	int v[3];
-#if defined(LIBDM_API_DEFERRED)
+#if defined(LIBDM_API_HOLD_CONTROL)
+	int minv[3] = {1, 2, 111};
+#elif defined(LIBDM_API_DEFERRED)
 	int minv[3] = {1, 2, 89};
 #elif defined(DM_SUBSYSTEM_UDEV_FLAG0)
 	int minv[3] = {1, 2, 82};
@@ -254,6 +256,9 @@ void libmp_dm_init(void)
 	memcpy(conf->version, version, sizeof(version));
 	put_multipath_config(conf);
 	dm_init(verbosity);
+#ifdef LIBDM_API_HOLD_CONTROL
+	dm_hold_control_dev(1);
+#endif
 	dm_udev_set_sync_support(libmp_dm_udev_sync);
 }
 

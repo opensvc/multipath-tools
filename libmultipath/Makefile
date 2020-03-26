@@ -36,6 +36,10 @@ ifneq ($(call check_func,dm_task_deferred_remove,/usr/include/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_DEFERRED
 endif
 
+ifneq ($(call check_func,dm_hold_control_dev,/usr/include/libdevmapper.h),0)
+	CFLAGS += -DLIBDM_API_HOLD_CONTROL
+endif
+
 OBJS = memory.o parser.o vector.o devmapper.o callout.o \
 	hwtable.o blacklist.o util.o dmparser.o config.o \
 	structs.o discovery.o propsel.o dict.o \
