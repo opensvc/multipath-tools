@@ -336,7 +336,7 @@ static void leave_recovery_mode(struct multipath *mpp)
 
 void __set_no_path_retry(struct multipath *mpp, bool check_features)
 {
-	bool is_queueing;
+	bool is_queueing = false; /* assign a value to make gcc happy */
 
 	check_features = check_features && mpp->features != NULL;
 	if (check_features)
