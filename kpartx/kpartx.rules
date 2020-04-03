@@ -7,6 +7,7 @@
 KERNEL!="dm-*", GOTO="kpartx_end"
 ACTION!="add|change", GOTO="kpartx_end"
 ENV{DM_UUID}!="?*", GOTO="kpartx_end"
+ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}=="1", GOTO="kpartx_end"
 
 # Create dm tables for partitions on multipath devices.
 ENV{DM_UUID}!="mpath-?*", GOTO="mpath_kpartx_end"
