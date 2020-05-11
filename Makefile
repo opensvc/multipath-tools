@@ -28,8 +28,9 @@ all:	$(BUILDDIRS)
 $(BUILDDIRS):
 	$(MAKE) -C $@
 
-libmpathpersist multipath multipathd mpathpersist: libmultipath
-mpathpersist:  libmpathpersist
+libmultipath libdmmp: libmpathcmd
+libmpathpersist multipath multipathd: libmultipath
+mpathpersist multipathd:  libmpathpersist
 
 $(BUILDDIRS.clean):
 	$(MAKE) -C ${@:.clean=} clean
