@@ -60,19 +60,22 @@ static int
 set_uint(vector strvec, void *ptr)
 {
 	unsigned int *uint_ptr = (unsigned int *)ptr;
-	char *buff, *eptr;
-	long res;
+	char *buff, *eptr, *p;
+	unsigned long res;
 	int rc;
 
 	buff = set_value(strvec);
 	if (!buff)
 		return 1;
 
-	res = strtol(buff, &eptr, 10);
+	p = buff;
+	while (isspace(*p))
+		p++;
+	res = strtoul(p, &eptr, 10);
 	if (eptr > buff)
 		while (isspace(*eptr))
 			eptr++;
-	if (*buff == '\0' || *eptr != '\0' || res < 0 || res > UINT_MAX) {
+	if (*buff == '\0' || *eptr != '\0' || !isdigit(*p) || res > UINT_MAX) {
 		condlog(1, "%s: invalid value for %s: \"%s\"",
 			__func__, (char*)VECTOR_SLOT(strvec, 0), buff);
 		rc = 1;
