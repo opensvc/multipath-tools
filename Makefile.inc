@@ -104,7 +104,7 @@ CFLAGS		:= $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe \
 BIN_CFLAGS	= -fPIE -DPIE
 LIB_CFLAGS	= -fPIC
 SHARED_FLAGS	= -shared
-LDFLAGS		= -Wl,-z,relro -Wl,-z,now
+LDFLAGS		:= $(LDFLAGS) -Wl,-z,relro -Wl,-z,now
 BIN_LDFLAGS	= -pie
 
 # Check whether a function with name $1 has been declared in header file $2.
