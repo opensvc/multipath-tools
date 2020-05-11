@@ -56,12 +56,6 @@ int __wrap_execute_program(char *path, char *value, int len)
 	return 0;
 }
 
-bool __wrap_is_claimed_by_foreign(struct udev_device *ud)
-{
-	condlog(5, "%s: %p", __func__, ud);
-	return false;
-}
-
 struct udev_list_entry
 *__wrap_udev_device_get_properties_list_entry(struct udev_device *ud)
 {
