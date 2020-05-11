@@ -1958,25 +1958,25 @@ char *snprint_config(const struct config *conf, int *len,
 		}
 
 		c = reply + snprint_defaults(conf, reply, maxlen);
-		if ((c - reply) == maxlen)
+		if (c == reply + maxlen)
 			continue;
 
 		c += snprint_blacklist(conf, c, reply + maxlen - c);
-		if ((c - reply) == maxlen)
+		if (c == reply + maxlen)
 			continue;
 
 		c += snprint_blacklist_except(conf, c, reply + maxlen - c);
-		if ((c - reply) == maxlen)
+		if (c == reply + maxlen)
 			continue;
 
 		c += snprint_hwtable(conf, c, reply + maxlen - c,
 				     hwtable ? hwtable : conf->hwtable);
-		if ((c - reply) == maxlen)
+		if (c == reply + maxlen)
 			continue;
 
 		c += snprint_overrides(conf, c, reply + maxlen - c,
 				       conf->overrides);
-		if ((c - reply) == maxlen)
+		if (c == reply + maxlen)
 			continue;
 
 		if (VECTOR_SIZE(conf->mptable) > 0 ||
@@ -1984,7 +1984,7 @@ char *snprint_config(const struct config *conf, int *len,
 			c += snprint_mptable(conf, c, reply + maxlen - c,
 					     mpvec);
 
-		if ((c - reply) < maxlen) {
+		if (c < reply + maxlen) {
 			if (len)
 				*len = c - reply;
 			return reply;

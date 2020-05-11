@@ -66,7 +66,7 @@ show_paths (char ** r, int * len, struct vectors * vecs, char * style,
 		c += snprint_foreign_paths(c, reply + maxlen - c,
 					   style, pretty);
 
-		again = ((c - reply) == (maxlen - 1));
+		again = (c == reply + maxlen - 1);
 
 		REALLOC_REPLY(reply, again, maxlen);
 	}
@@ -102,7 +102,7 @@ show_path (char ** r, int * len, struct vectors * vecs, struct path *pp,
 
 		c += snprint_path(c, reply + maxlen - c, style, pp, 0);
 
-		again = ((c - reply) == (maxlen - 1));
+		again = (c == reply + maxlen - 1);
 
 		REALLOC_REPLY(reply, again, maxlen);
 	}
@@ -131,7 +131,7 @@ show_map_topology (char ** r, int * len, struct multipath * mpp,
 		c = reply;
 
 		c += snprint_multipath_topology(c, reply + maxlen - c, mpp, 2);
-		again = ((c - reply) == (maxlen - 1));
+		again = (c == reply + maxlen - 1);
 
 		REALLOC_REPLY(reply, again, maxlen);
 	}
@@ -171,7 +171,7 @@ show_maps_topology (char ** r, int * len, struct vectors * vecs)
 		}
 		c += snprint_foreign_topology(c, reply + maxlen - c, 2);
 
-		again = ((c - reply) == (maxlen - 1));
+		again = (c == reply + maxlen - 1);
 
 		REALLOC_REPLY(reply, again, maxlen);
 	}
@@ -209,7 +209,7 @@ show_maps_json (char ** r, int * len, struct vectors * vecs)
 		c = reply;
 
 		c += snprint_multipath_topology_json(c, maxlen, vecs);
-		again = ((c - reply) == maxlen);
+		again = (c == reply + maxlen);
 
 		REALLOC_REPLY(reply, again, maxlen);
 	}
@@ -238,7 +238,7 @@ show_map_json (char ** r, int * len, struct multipath * mpp,
 		c = reply;
 
 		c += snprint_multipath_map_json(c, maxlen, mpp);
-		again = ((c - reply) == maxlen);
+		again = (c == reply + maxlen);
 
 		REALLOC_REPLY(reply, again, maxlen);
 	}
@@ -487,7 +487,7 @@ show_map (char ** r, int *len, struct multipath * mpp, char * style,
 		c += snprint_multipath(c, reply + maxlen - c, style,
 				       mpp, pretty);
 
-		again = ((c - reply) == (maxlen - 1));
+		again = (c == reply + maxlen - 1);
 
 		REALLOC_REPLY(reply, again, maxlen);
 	}
@@ -533,7 +533,7 @@ show_maps (char ** r, int *len, struct vectors * vecs, char * style,
 		}
 		c += snprint_foreign_multipaths(c, reply + maxlen - c,
 						style, pretty);
-		again = ((c - reply) == (maxlen - 1));
+		again = (c == reply + maxlen - 1);
 
 		REALLOC_REPLY(reply, again, maxlen);
 	}
@@ -1297,7 +1297,7 @@ show_blacklist (char ** r, int * len)
 
 		c = reply;
 		c += snprint_blacklist_report(conf, c, maxlen);
-		again = ((c - reply) == maxlen);
+		again = (c == reply + maxlen);
 		REALLOC_REPLY(reply, again, maxlen);
 	}
 	pthread_cleanup_pop(1);
@@ -1339,7 +1339,7 @@ show_devices (char ** r, int * len, struct vectors *vecs)
 
 		c = reply;
 		c += snprint_devices(conf, c, maxlen, vecs);
-		again = ((c - reply) == maxlen);
+		again = (c == reply + maxlen);
 		REALLOC_REPLY(reply, again, maxlen);
 	}
 	pthread_cleanup_pop(1);

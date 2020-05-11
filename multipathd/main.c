@@ -2374,7 +2374,7 @@ checkerloop (void *ap)
 				conf = get_multipath_config();
 				max_checkint = conf->max_checkint;
 				put_multipath_config(conf);
-				if (diff_time.tv_sec > max_checkint)
+				if (diff_time.tv_sec > (time_t)max_checkint)
 					condlog(1, "path checkers took longer "
 						"than %lu seconds, consider "
 						"increasing max_polling_interval",

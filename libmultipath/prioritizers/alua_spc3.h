@@ -284,7 +284,7 @@ struct rtpg_data {
 #define RTPG_FOR_EACH_PORT_GROUP(p, g) \
 		for( \
 			g = &(p->data[0]); \
-			(((char *) g) - ((char *) p)) < get_unaligned_be32(p->length); \
+			((char *) g) < ((char *) p) + get_unaligned_be32(p->length); \
 			g = (struct rtpg_tpg_dscr *) ( \
 				((char *) g) + \
 				sizeof(struct rtpg_tpg_dscr) + \
