@@ -316,7 +316,7 @@ static void test_init_free(void **state)
 {
 	int i, count = 0;
 	struct checker c[4096] = {0};
-	struct aio_group *aio_grp;
+	struct aio_group *aio_grp = NULL;
 
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
