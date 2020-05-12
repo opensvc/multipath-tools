@@ -32,6 +32,10 @@ libmultipath libdmmp: libmpathcmd
 libmpathpersist multipath multipathd: libmultipath
 mpathpersist multipathd:  libmpathpersist
 
+libmultipath/checkers.install \
+	libmultipath/prioritizers.install \
+	libmultipath/foreign.install: libmultipath.install
+
 $(BUILDDIRS.clean):
 	$(MAKE) -C ${@:.clean=} clean
 
