@@ -28,7 +28,7 @@ endif
 
 all: $(LIBS)
 
-libpriopath_latency.so: path_latency.o  ../checkers/libsg.o
+libpriopath_latency.so: path_latency.o
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ -lm
 
 libprio%.so: %.o

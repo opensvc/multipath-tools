@@ -17,10 +17,10 @@ LIBS= \
 
 all: $(LIBS)
 
-libcheckdirectio.so: libsg.o directio.o
+libcheckdirectio.so: directio.o
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ -laio
 
-libcheck%.so: libsg.o %.o
+libcheck%.so: %.o
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
 
 install:
@@ -32,7 +32,7 @@ uninstall:
 clean: dep_clean
 	$(RM) core *.a *.o *.gz *.so
 
-OBJS := $(LIBS:libcheck%.so=%.o) libsg.o directio.o
+OBJS := $(LIBS:libcheck%.so=%.o)
 .SECONDARY: $(OBJS)
 
 include $(wildcard $(OBJS:.o=.d))
