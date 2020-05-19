@@ -101,29 +101,13 @@ enum yes_no_undef_states {
 	YNU_YES,
 };
 
-#define _FIND_MULTIPATHS_F (1 << 1)
-#define _FIND_MULTIPATHS_I (1 << 2)
-#define _FIND_MULTIPATHS_N (1 << 3)
-/*
- * _FIND_MULTIPATHS_F must have the same value as YNU_YES.
- * Generate a compile time error if that isn't the case.
- */
-extern char ___error1___[-(_FIND_MULTIPATHS_F != YNU_YES)];
-
-#define find_multipaths_on(conf) \
-	(!!((conf)->find_multipaths & _FIND_MULTIPATHS_F))
-#define ignore_wwids_on(conf) \
-	(!!((conf)->find_multipaths & _FIND_MULTIPATHS_I))
-#define ignore_new_devs_on(conf) \
-	(!!((conf)->find_multipaths & _FIND_MULTIPATHS_N))
-
 enum find_multipaths_states {
 	FIND_MULTIPATHS_UNDEF = YNU_UNDEF,
 	FIND_MULTIPATHS_OFF = YNU_NO,
-	FIND_MULTIPATHS_ON = _FIND_MULTIPATHS_F,
-	FIND_MULTIPATHS_GREEDY = _FIND_MULTIPATHS_I,
-	FIND_MULTIPATHS_SMART = _FIND_MULTIPATHS_F|_FIND_MULTIPATHS_I,
-	FIND_MULTIPATHS_STRICT = _FIND_MULTIPATHS_F|_FIND_MULTIPATHS_N,
+	FIND_MULTIPATHS_ON = YNU_YES,
+	FIND_MULTIPATHS_GREEDY,
+	FIND_MULTIPATHS_SMART,
+	FIND_MULTIPATHS_STRICT,
 	__FIND_MULTIPATHS_LAST,
 };
 

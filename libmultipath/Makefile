@@ -48,7 +48,7 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
 	log.o configure.o structs_vec.o sysfs.o prio.o checkers.o \
 	lock.o file.o wwids.o prioritizers/alua_rtpg.o prkey.o \
 	io_err_stat.o dm-generic.o generic.o foreign.o nvme-lib.o \
-	libsg.o
+	libsg.o valid.o
 
 all: $(LIBS)
 

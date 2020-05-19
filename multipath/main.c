@@ -63,21 +63,18 @@
 #include "propsel.h"
 #include "time-util.h"
 #include "file.h"
+#include "valid.h"
 
 int logsink;
 struct udev *udev;
 struct config *multipath_conf;
 
 /*
- * Return values of configure(), print_cmd_valid(), and main().
- * RTVL_{YES,NO} are synonyms for RTVL_{OK,FAIL} for the CMD_VALID_PATH case.
+ * Return values of configure(), check_path_valid(), and main().
  */
 enum {
 	RTVL_OK = 0,
-	RTVL_YES = RTVL_OK,
 	RTVL_FAIL = 1,
-	RTVL_NO = RTVL_FAIL,
-	RTVL_MAYBE, /* only used internally, never returned */
 	RTVL_RETRY, /* returned by configure(), not by main() */
 };
 
@@ -268,9 +265,6 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 			i--;
 			continue;
 		}
-
-		if (cmd == CMD_VALID_PATH)
-			continue;
 
 		dm_get_map(mpp->alias, &mpp->size, params);
 		condlog(3, "params = %s", params);
@@ -491,10 +485,11 @@ static int print_cmd_valid(int k, const vector pathvec,
 	struct timespec until;
 	struct path *pp;
 
-	if (k != RTVL_YES && k != RTVL_NO && k != RTVL_MAYBE)
-		return RTVL_NO;
+	if (k != PATH_IS_VALID && k != PATH_IS_NOT_VALID &&
+	    k != PATH_IS_MAYBE_VALID)
+		return PATH_IS_NOT_VALID;
 
-	if (k == RTVL_MAYBE) {
+	if (k == PATH_IS_MAYBE_VALID) {
 		/*
 		 * Caller ensures that pathvec[0] is the path to
 		 * examine.
@@ -504,7 +499,7 @@ static int print_cmd_valid(int k, const vector pathvec,
 		wait = find_multipaths_check_timeout(
 			pp, pp->find_multipaths_timeout, &until);
 		if (wait != FIND_MULTIPATHS_WAITING)
-			k = RTVL_NO;
+			k = PATH_IS_NOT_VALID;
 	} else if (pathvec != NULL && (pp = VECTOR_SLOT(pathvec, 0)))
 		wait = find_multipaths_check_timeout(pp, 0, &until);
 	if (wait == FIND_MULTIPATHS_WAITING)
@@ -513,9 +508,9 @@ static int print_cmd_valid(int k, const vector pathvec,
 	else if (wait == FIND_MULTIPATHS_WAIT_DONE)
 		printf("FIND_MULTIPATHS_WAIT_UNTIL=\"0\"\n");
 	printf("DM_MULTIPATH_DEVICE_PATH=\"%d\"\n",
-	       k == RTVL_MAYBE ? 2 : k == RTVL_YES ? 1 : 0);
+	       k == PATH_IS_MAYBE_VALID ? 2 : k == PATH_IS_VALID ? 1 : 0);
 	/* Never return RTVL_MAYBE */
-	return k == RTVL_NO ? RTVL_NO : RTVL_YES;
+	return k == PATH_IS_NOT_VALID ? PATH_IS_NOT_VALID : PATH_IS_VALID;
 }
 
 /*
@@ -548,7 +543,6 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	int di_flag = 0;
 	char * refwwid = NULL;
 	char * dev = NULL;
-	bool released = released_to_systemd();
 
 	/*
 	 * allocate core vectors to store paths and multipaths
@@ -573,7 +567,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	    cmd != CMD_REMOVE_WWID &&
 	    (filter_devnode(conf->blist_devnode,
 			    conf->elist_devnode, dev) > 0)) {
-		goto print_valid;
+		goto out;
 	}
 
 	/*
@@ -581,14 +575,10 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	 * failing the translation is fatal (by policy)
 	 */
 	if (devpath) {
-		int failed = get_refwwid(cmd, devpath, dev_type,
-					 pathvec, &refwwid);
+		get_refwwid(cmd, devpath, dev_type, pathvec, &refwwid);
 		if (!refwwid) {
 			condlog(4, "%s: failed to get wwid", devpath);
-			if (failed == 2 && cmd == CMD_VALID_PATH)
-				goto print_valid;
-			else
-				condlog(3, "scope is null");
+			condlog(3, "scope is null");
 			goto out;
 		}
 		if (cmd == CMD_REMOVE_WWID) {
@@ -614,53 +604,6 @@ configure (struct config *conf, enum mpath_cmds cmd,
 			goto out;
 		}
 		condlog(3, "scope limited to %s", refwwid);
-		/* If you are ignoring the wwids file and find_multipaths is
-		 * set, you need to actually check if there are two available
-		 * paths to determine if this path should be multipathed. To
-		 * do this, we put off the check until after discovering all
-		 * the paths.
-		 * Paths listed in the wwids file are always considered valid.
-		 */
-		if (cmd == CMD_VALID_PATH) {
-			if (is_failed_wwid(refwwid) == WWID_IS_FAILED) {
-				r = RTVL_NO;
-				goto print_valid;
-			}
-			if ((!find_multipaths_on(conf) &&
-				    ignore_wwids_on(conf)) ||
-				   check_wwids_file(refwwid, 0) == 0)
-				r = RTVL_YES;
-			if (!ignore_wwids_on(conf))
-				goto print_valid;
-			/* At this point, either r==0 or find_multipaths_on. */
-
-			/*
-			 * Shortcut for find_multipaths smart:
-			 * Quick check if path is already multipathed.
-			 */
-			if (sysfs_is_multipathed(VECTOR_SLOT(pathvec, 0),
-						 false)) {
-				r = RTVL_YES;
-				goto print_valid;
-			}
-
-			/*
-			 * DM_MULTIPATH_DEVICE_PATH=="0" means that we have
-			 * been called for this device already, and have
-			 * released it to systemd. Unless the device is now
-			 * already multipathed (see above), we can't try to
-			 * grab it, because setting SYSTEMD_READY=0 would
-			 * cause file systems to be unmounted.
-			 * Leave DM_MULTIPATH_DEVICE_PATH="0".
-			 */
-			if (released) {
-				r = RTVL_NO;
-				goto print_valid;
-			}
-			if (r == RTVL_YES)
-				goto print_valid;
-			/* find_multipaths_on: Fall through to path detection */
-		}
 	}
 
 	/*
@@ -701,59 +644,6 @@ configure (struct config *conf, enum mpath_cmds cmd,
 		goto out;
 	}
 
-	if (cmd == CMD_VALID_PATH) {
-		struct path *pp;
-		int fd;
-
-		/* This only happens if find_multipaths and
-		 * ignore_wwids is set, and the path is not in WWIDs
-		 * file, not currently multipathed, and has
-		 * never been released to systemd.
-		 * If there is currently a multipath device matching
-		 * the refwwid, or there is more than one path matching
-		 * the refwwid, then the path is valid */
-		if (VECTOR_SIZE(curmp) != 0) {
-			r = RTVL_YES;
-			goto print_valid;
-		} else if (VECTOR_SIZE(pathvec) > 1)
-			r = RTVL_YES;
-		else
-			r = RTVL_MAYBE;
-
-		/*
-		 * If opening the path with O_EXCL fails, the path
-		 * is in use (e.g. mounted during initramfs processing).
-		 * We know that it's not used by dm-multipath.
-		 * We may not set SYSTEMD_READY=0 on such devices, it
-		 * might cause systemd to umount the device.
-		 * Use O_RDONLY, because udevd would trigger another
-		 * uevent for close-after-write.
-		 *
-		 * The O_EXCL check is potentially dangerous, because it may
-		 * race with other tasks trying to access the device. Therefore
-		 * this code is only executed if the path hasn't been released
-		 * to systemd earlier (see above).
-		 *
-		 * get_refwwid() above stores the path we examine in slot 0.
-		 */
-		pp = VECTOR_SLOT(pathvec, 0);
-		fd = open(udev_device_get_devnode(pp->udev),
-			  O_RDONLY|O_EXCL);
-		if (fd >= 0)
-			close(fd);
-		else {
-			condlog(3, "%s: path %s is in use: %s",
-				__func__, pp->dev,
-				strerror(errno));
-			/*
-			 * Check if we raced with multipathd
-			 */
-			r = sysfs_is_multipathed(VECTOR_SLOT(pathvec, 0),
-						 false) ? RTVL_YES : RTVL_NO;
-		}
-		goto print_valid;
-	}
-
 	if (cmd != CMD_CREATE && cmd != CMD_DRY_RUN) {
 		r = RTVL_OK;
 		goto out;
@@ -766,10 +656,6 @@ configure (struct config *conf, enum mpath_cmds cmd,
 			   conf->force_reload, cmd);
 	r = rc == CP_RETRY ? RTVL_RETRY : rc == CP_OK ? RTVL_OK : RTVL_FAIL;
 
-print_valid:
-	if (cmd == CMD_VALID_PATH)
-		r = print_cmd_valid(r, pathvec, conf);
-
 out:
 	if (refwwid)
 		FREE(refwwid);
@@ -778,6 +664,112 @@ out:
 	free_pathvec(pathvec, FREE_PATHS);
 
 	return r;
+}
+
+static int
+check_path_valid(const char *name, struct config *conf, bool is_uevent)
+{
+	int fd, r = PATH_IS_ERROR;
+	struct path *pp = NULL;
+	vector pathvec = NULL;
+
+	pp = alloc_path();
+	if (!pp)
+		return RTVL_FAIL;
+
+	r = is_path_valid(name, conf, pp, is_uevent);
+	if (r <= PATH_IS_ERROR || r >= PATH_MAX_VALID_RESULT)
+		goto fail;
+
+	/* set path values if is_path_valid() didn't */
+	if (!pp->udev)
+		pp->udev = udev_device_new_from_subsystem_sysname(udev, "block",
+								  name);
+	if (!pp->udev)
+		goto fail;
+
+	if (!strlen(pp->dev_t)) {
+		dev_t devt = udev_device_get_devnum(pp->udev);
+		if (major(devt) == 0 && minor(devt) == 0)
+			goto fail;
+		snprintf(pp->dev_t, BLK_DEV_SIZE, "%d:%d", major(devt),
+			 minor(devt));
+	}
+
+	pathvec = vector_alloc();
+	if (!pathvec)
+		goto fail;
+
+	if (store_path(pathvec, pp) != 0) {
+		free_path(pp);
+		goto fail;
+	}
+
+	if ((r == PATH_IS_VALID || r == PATH_IS_MAYBE_VALID) &&
+	    released_to_systemd())
+		r = PATH_IS_NOT_VALID;
+
+	/* This state is only used to skip the released_to_systemd() check */
+	if (r == PATH_IS_VALID_NO_CHECK)
+		r = PATH_IS_VALID;
+
+	if (r != PATH_IS_MAYBE_VALID)
+		goto out;
+
+	/*
+	 * If opening the path with O_EXCL fails, the path
+	 * is in use (e.g. mounted during initramfs processing).
+	 * We know that it's not used by dm-multipath.
+	 * We may not set SYSTEMD_READY=0 on such devices, it
+	 * might cause systemd to umount the device.
+	 * Use O_RDONLY, because udevd would trigger another
+	 * uevent for close-after-write.
+	 *
+	 * The O_EXCL check is potentially dangerous, because it may
+	 * race with other tasks trying to access the device. Therefore
+	 * this code is only executed if the path hasn't been released
+	 * to systemd earlier (see above).
+	 */
+	fd = open(udev_device_get_devnode(pp->udev), O_RDONLY|O_EXCL);
+	if (fd >= 0)
+		close(fd);
+	else {
+		condlog(3, "%s: path %s is in use: %m", __func__, pp->dev);
+		/* Check if we raced with multipathd */
+		if (sysfs_is_multipathed(pp, false))
+			r = PATH_IS_VALID;
+		else
+			r = PATH_IS_NOT_VALID;
+		goto out;
+	}
+
+	/* For find_multipaths = SMART, if there is more than one path
+	 * matching the refwwid, then the path is valid */
+	if (path_discovery(pathvec, DI_SYSFS | DI_WWID) < 0)
+		goto fail;
+	filter_pathvec(pathvec, pp->wwid);
+	if (VECTOR_SIZE(pathvec) > 1)
+		r = PATH_IS_VALID;
+	else
+		r = PATH_IS_MAYBE_VALID;
+
+out:
+	r = print_cmd_valid(r, pathvec, conf);
+	free_pathvec(pathvec, FREE_PATHS);
+	/*
+	 * multipath -u must exit with status 0, otherwise udev won't
+	 * import its output.
+	 */
+	if (!is_uevent && r == PATH_IS_NOT_VALID)
+		return RTVL_FAIL;
+	return RTVL_OK;
+
+fail:
+	if (pathvec)
+		free_pathvec(pathvec, FREE_PATHS);
+	else
+		free_path(pp);
+	return RTVL_FAIL;
 }
 
 static int
@@ -859,32 +851,6 @@ out:
 	FREE(reply);
 	close(fd);
 	return r;
-}
-
-static int test_multipathd_socket(void)
-{
-	int fd;
-	/*
-	 * "multipath -u" may be run before the daemon is started. In this
-	 * case, systemd might own the socket but might delay multipathd
-	 * startup until some other unit (udev settle!)  has finished
-	 * starting. With many LUNs, the listen backlog may be exceeded, which
-	 * would cause connect() to block. This causes udev workers calling
-	 * "multipath -u" to hang, and thus creates a deadlock, until "udev
-	 * settle" times out.  To avoid this, call connect() in non-blocking
-	 * mode here, and take EAGAIN as indication for a filled-up systemd
-	 * backlog.
-	 */
-
-	fd = __mpath_connect(1);
-	if (fd == -1) {
-		if (errno == EAGAIN)
-			condlog(3, "daemon backlog exceeded");
-		else
-			return 0;
-	} else
-		close(fd);
-	return 1;
 }
 
 int
@@ -970,7 +936,11 @@ main (int argc, char *argv[])
 			conf->force_reload = FORCE_RELOAD_YES;
 			break;
 		case 'i':
-			conf->find_multipaths |= _FIND_MULTIPATHS_I;
+			if (conf->find_multipaths == FIND_MULTIPATHS_ON ||
+			    conf->find_multipaths == FIND_MULTIPATHS_STRICT)
+				conf->find_multipaths = FIND_MULTIPATHS_SMART;
+			else if (conf->find_multipaths == FIND_MULTIPATHS_OFF)
+				conf->find_multipaths = FIND_MULTIPATHS_GREEDY;
 			break;
 		case 't':
 			r = dump_config(conf, NULL, NULL) ? RTVL_FAIL : RTVL_OK;
@@ -1064,15 +1034,10 @@ main (int argc, char *argv[])
 		condlog(0, "the -c option requires a path to check");
 		goto out;
 	}
-	if (cmd == CMD_VALID_PATH &&
-	    dev_type == DEV_UEVENT) {
-		if (!test_multipathd_socket()) {
-			condlog(3, "%s: daemon is not running", dev);
-			if (!systemd_service_enabled(dev)) {
-				r = print_cmd_valid(RTVL_NO, NULL, conf);
-				goto out;
-			}
-		}
+	if (cmd == CMD_VALID_PATH) {
+		char * name = convert_dev(dev, (dev_type == DEV_DEVNODE));
+		r = check_path_valid(name, conf, dev_type == DEV_UEVENT);
+		goto out;
 	}
 
 	if (cmd == CMD_REMOVE_WWID && !dev) {
@@ -1135,13 +1100,6 @@ out:
 	cleanup_foreign();
 	cleanup_prio();
 	cleanup_checkers();
-
-	/*
-	 * multipath -u must exit with status 0, otherwise udev won't
-	 * import its output.
-	 */
-	if (cmd == CMD_VALID_PATH && dev_type == DEV_UEVENT && r == RTVL_NO)
-		r = RTVL_OK;
 
 	if (dev_type == DEV_UEVENT)
 		closelog();

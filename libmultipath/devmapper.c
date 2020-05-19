@@ -770,6 +770,51 @@ out:
 	return r;
 }
 
+/*
+ * Return
+ *   1 : map with uuid exists
+ *   0 : map with uuid doesn't exist
+ *  -1 : error
+ */
+int
+dm_map_present_by_uuid(const char *uuid)
+{
+	struct dm_task *dmt;
+	struct dm_info info;
+	char prefixed_uuid[WWID_SIZE + UUID_PREFIX_LEN];
+	int r = -1;
+
+	if (!uuid || uuid[0] == '\0')
+		return 0;
+
+	if (safe_sprintf(prefixed_uuid, UUID_PREFIX "%s", uuid))
+		goto out;
+
+	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
+		goto out;
+
+	dm_task_no_open_count(dmt);
+
+	if (!dm_task_set_uuid(dmt, prefixed_uuid))
+		goto out_task;
+
+	if (!dm_task_run(dmt))
+		goto out_task;
+
+	if (!dm_task_get_info(dmt, &info))
+		goto out_task;
+
+	r = !!info.exists;
+
+out_task:
+	dm_task_destroy(dmt);
+out:
+	if (r < 0)
+		condlog(3, "%s: dm command failed in %s: %s", uuid,
+			__FUNCTION__, strerror(errno));
+	return r;
+}
+
 static int
 dm_dev_t (const char * mapname, char * dev_t, int len)
 {
