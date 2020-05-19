@@ -295,7 +295,7 @@ static int select_dm_devs(const struct dirent *di)
 	return fnmatch("dm-*", di->d_name, FNM_FILE_NAME) == 0;
 }
 
-bool sysfs_is_multipathed(const struct path *pp)
+bool sysfs_is_multipathed(struct path *pp, bool set_wwid)
 {
 	char pathbuf[PATH_MAX];
 	struct scandir_result sr;
@@ -325,7 +325,7 @@ bool sysfs_is_multipathed(const struct path *pp)
 	for (i = 0; i < r && !found; i++) {
 		long fd;
 		int nr;
-		char uuid[6];
+		char uuid[WWID_SIZE + UUID_PREFIX_LEN];
 
 		if (safe_snprintf(pathbuf + n, sizeof(pathbuf) - n,
 				  "/%s/dm/uuid", di[i]->d_name))
@@ -339,12 +339,26 @@ bool sysfs_is_multipathed(const struct path *pp)
 
 		pthread_cleanup_push(close_fd, (void *)fd);
 		nr = read(fd, uuid, sizeof(uuid));
-		if (nr == sizeof(uuid) && !memcmp(uuid, "mpath-", sizeof(uuid)))
+		if (nr > (int)UUID_PREFIX_LEN &&
+		    !memcmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN))
 			found = true;
 		else if (nr < 0) {
-			condlog(1, "%s: error reading from %s: %s",
-				__func__, pathbuf, strerror(errno));
+			condlog(1, "%s: error reading from %s: %m",
+				__func__, pathbuf);
 		}
+		if (found && set_wwid) {
+			nr -= UUID_PREFIX_LEN;
+			memcpy(pp->wwid, uuid + UUID_PREFIX_LEN, nr);
+			if (nr == WWID_SIZE) {
+				condlog(4, "%s: overflow while reading from %s",
+					__func__, pathbuf);
+				pp->wwid[0] = '\0';
+			} else {
+				pp->wwid[nr] = '\0';
+				strchop(pp->wwid);
+			}
+                }
+
 		pthread_cleanup_pop(1);
 	}
 	pthread_cleanup_pop(1);
