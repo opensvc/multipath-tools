@@ -33,6 +33,8 @@
 #define MAX_WAIT 5
 #define LOOPS_PER_SEC 5
 
+static pthread_once_t dm_initialized = PTHREAD_ONCE_INIT;
+
 static int dm_conf_verbosity;
 
 #ifdef LIBDM_API_DEFERRED
@@ -229,7 +231,7 @@ dm_tgt_prereq (unsigned int *ver)
 	return 1;
 }
 
-static int dm_prereq(unsigned int *v)
+int dm_prereq(unsigned int *v)
 {
 	if (dm_lib_prereq())
 		return 1;
@@ -243,7 +245,7 @@ void libmp_udev_set_sync_support(int on)
 	libmp_dm_udev_sync = !!on;
 }
 
-void libmp_dm_init(void)
+static void libmp_dm_init(void)
 {
 	struct config *conf;
 	int verbosity;
@@ -262,11 +264,18 @@ void libmp_dm_init(void)
 	dm_udev_set_sync_support(libmp_dm_udev_sync);
 }
 
+static void _do_skip_libmp_dm_init(void)
+{
+}
+
+void skip_libmp_dm_init(void)
+{
+	pthread_once(&dm_initialized, _do_skip_libmp_dm_init);
+}
+
 struct dm_task*
 libmp_dm_task_create(int task)
 {
-	static pthread_once_t dm_initialized = PTHREAD_ONCE_INIT;
-
 	pthread_once(&dm_initialized, libmp_dm_init);
 	return dm_task_create(task);
 }
