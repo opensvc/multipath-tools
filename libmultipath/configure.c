@@ -897,10 +897,21 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		return DOMAP_DRY;
 	}
 
-	if (mpp->action == ACT_CREATE &&
-	    dm_map_present(mpp->alias)) {
-		condlog(3, "%s: map already present", mpp->alias);
-		mpp->action = ACT_RELOAD;
+	if (mpp->action == ACT_CREATE && dm_map_present(mpp->alias)) {
+		char wwid[WWID_SIZE];
+
+		if (dm_get_uuid(mpp->alias, wwid, sizeof(wwid)) == 0) {
+			if (!strncmp(mpp->wwid, wwid, sizeof(wwid))) {
+				condlog(3, "%s: map already present",
+					mpp->alias);
+				mpp->action = ACT_RELOAD;
+			} else {
+				condlog(0, "%s: map \"%s\" already present with WWID %s, skipping",
+					mpp->wwid, mpp->alias, wwid);
+				condlog(0, "please check alias settings in config and bindings file");
+				mpp->action = ACT_REJECT;
+			}
+		}
 	}
 
 	switch (mpp->action) {
