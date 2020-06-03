@@ -258,6 +258,21 @@ free_multipath (struct multipath * mpp, enum free_path_mode free_paths)
 		mpp->dmi = NULL;
 	}
 
+	if (!free_paths && mpp->pg) {
+		struct pathgroup *pgp;
+		struct path *pp;
+		int i, j;
+
+		/*
+		 * Make sure paths carry no reference to this mpp any more
+		 */
+		vector_foreach_slot(mpp->pg, pgp, i) {
+			vector_foreach_slot(pgp->paths, pp, j)
+				if (pp->mpp == mpp)
+					pp->mpp = NULL;
+		}
+	}
+
 	free_pathvec(mpp->paths, free_paths);
 	free_pgvec(mpp->pg, free_paths);
 	FREE_PTR(mpp->mpcontext);
