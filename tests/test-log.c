@@ -12,7 +12,7 @@ void __wrap_dlog (int sink, int prio, const char * fmt, ...)
 	char buff[MAX_MSG_SIZE];
 	va_list ap;
 
-	assert_int_equal(prio, mock_type(int));
+	check_expected(prio);
 	va_start(ap, fmt);
 	vsnprintf(buff, MAX_MSG_SIZE, fmt, ap);
 	va_end(ap);
@@ -21,7 +21,6 @@ void __wrap_dlog (int sink, int prio, const char * fmt, ...)
 
 void expect_condlog(int prio, char *string)
 {
-	will_return(__wrap_dlog, prio);
+	expect_value(__wrap_dlog, prio, prio);
 	will_return(__wrap_dlog, string);
 }
-
