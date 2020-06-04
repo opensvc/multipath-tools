@@ -64,6 +64,7 @@ alloc_path_with_pathinfo (struct config *conf, struct udev_device *udevice,
 
 	if (safe_sprintf(pp->dev, "%s", devname)) {
 		condlog(0, "pp->dev too small");
+		err = 1;
 	} else {
 		pp->udev = udev_device_ref(udevice);
 		err = pathinfo(pp, conf, flag | DI_BLACKLIST);
