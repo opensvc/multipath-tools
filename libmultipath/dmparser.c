@@ -297,12 +297,8 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 				devname[0] = '\0';
 			}
 
-			if (pathvec) {
-				if (strlen(devname))
-					pp = find_path_by_dev(pathvec, devname);
-				else
-					pp = find_path_by_devt(pathvec, word);
-			}
+			if (pathvec)
+				pp = find_path_by_devt(pathvec, word);
 
 			if (!pp) {
 				pp = alloc_path();
