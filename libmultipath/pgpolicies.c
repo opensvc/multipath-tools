@@ -196,20 +196,20 @@ int group_by_match(struct multipath * mp, vector paths,
 		   bool (*path_match_fn)(struct path *, struct path *))
 {
 	int i, j;
-	int * bitmap;
+	struct bitfield *bitmap;
 	struct path * pp;
 	struct pathgroup * pgp;
 	struct path * pp2;
 
 	/* init the bitmap */
-	bitmap = (int *)MALLOC(VECTOR_SIZE(paths) * sizeof (int));
+	bitmap = alloc_bitfield(VECTOR_SIZE(paths));
 
 	if (!bitmap)
 		goto out;
 
 	for (i = 0; i < VECTOR_SIZE(paths); i++) {
 
-		if (bitmap[i])
+		if (is_bit_set_in_bitfield(i, bitmap))
 			continue;
 
 		pp = VECTOR_SLOT(paths, i);
@@ -227,11 +227,11 @@ int group_by_match(struct multipath * mp, vector paths,
 		if (store_path(pgp->paths, pp))
 			goto out1;
 
-		bitmap[i] = 1;
+		set_bit_in_bitfield(i, bitmap);
 
 		for (j = i + 1; j < VECTOR_SIZE(paths); j++) {
 
-			if (bitmap[j])
+			if (is_bit_set_in_bitfield(j, bitmap))
 				continue;
 
 			pp2 = VECTOR_SLOT(paths, j);
@@ -240,7 +240,7 @@ int group_by_match(struct multipath * mp, vector paths,
 				if (store_path(pgp->paths, pp2))
 					goto out1;
 
-				bitmap[j] = 1;
+				set_bit_in_bitfield(j, bitmap);
 			}
 		}
 	}
