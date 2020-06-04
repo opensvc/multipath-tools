@@ -141,6 +141,27 @@ static void test_basenamecpy_bad5(void **state)
         assert_int_equal(basenamecpy("baz/qux", NULL, sizeof(dst)), 0);
 }
 
+static int test_basenamecpy(void)
+{
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_basenamecpy_good0),
+		cmocka_unit_test(test_basenamecpy_good1),
+		cmocka_unit_test(test_basenamecpy_good2),
+		cmocka_unit_test(test_basenamecpy_good3),
+		cmocka_unit_test(test_basenamecpy_good4),
+		cmocka_unit_test(test_basenamecpy_good5),
+		cmocka_unit_test(test_basenamecpy_good6),
+		cmocka_unit_test(test_basenamecpy_good7),
+		cmocka_unit_test(test_basenamecpy_bad0),
+		cmocka_unit_test(test_basenamecpy_bad1),
+		cmocka_unit_test(test_basenamecpy_bad2),
+		cmocka_unit_test(test_basenamecpy_bad3),
+		cmocka_unit_test(test_basenamecpy_bad4),
+		cmocka_unit_test(test_basenamecpy_bad5),
+	};
+	return cmocka_run_group_tests(tests, NULL, NULL);
+}
+
 static void test_bitmask_1(void **state)
 {
 	uint64_t arr[BITARR_SZ];
@@ -235,23 +256,9 @@ static void test_bitmask_2(void **state)
 	}
 }
 
-int test_basenamecpy(void)
+static int test_bitmasks(void)
 {
 	const struct CMUnitTest tests[] = {
-		cmocka_unit_test(test_basenamecpy_good0),
-		cmocka_unit_test(test_basenamecpy_good1),
-		cmocka_unit_test(test_basenamecpy_good2),
-		cmocka_unit_test(test_basenamecpy_good3),
-		cmocka_unit_test(test_basenamecpy_good4),
-		cmocka_unit_test(test_basenamecpy_good5),
-		cmocka_unit_test(test_basenamecpy_good6),
-		cmocka_unit_test(test_basenamecpy_good7),
-		cmocka_unit_test(test_basenamecpy_bad0),
-		cmocka_unit_test(test_basenamecpy_bad1),
-		cmocka_unit_test(test_basenamecpy_bad2),
-		cmocka_unit_test(test_basenamecpy_bad3),
-		cmocka_unit_test(test_basenamecpy_bad4),
-		cmocka_unit_test(test_basenamecpy_bad5),
 		cmocka_unit_test(test_bitmask_1),
 		cmocka_unit_test(test_bitmask_2),
 	};
@@ -406,6 +413,7 @@ int main(void)
 	int ret = 0;
 
 	ret += test_basenamecpy();
+	ret += test_bitmasks();
 	ret += test_strlcpy();
 	return ret;
 }
