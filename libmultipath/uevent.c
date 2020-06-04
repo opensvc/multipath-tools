@@ -129,7 +129,7 @@ static const char* uevent_get_env_var(const struct uevent *uev,
 		}
 	}
 
-	condlog(4, "%s: %s -> '%s'", __func__, attr, p);
+	condlog(4, "%s: %s -> '%s'", __func__, attr, p ?: "(null)");
 	return p;
 
 invalid:
