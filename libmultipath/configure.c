@@ -1092,7 +1092,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 	vector pathvec = vecs->pathvec;
 	struct config *conf;
 	int allow_queueing;
-	uint64_t *size_mismatch_seen;
+	struct bitfield *size_mismatch_seen;
 
 	/* ignore refwwid if it's empty */
 	if (refwwid && !strlen(refwwid))
@@ -1106,8 +1106,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 
 	if (VECTOR_SIZE(pathvec) == 0)
 		return CP_OK;
-	size_mismatch_seen = calloc((VECTOR_SIZE(pathvec) - 1) / 64 + 1,
-				    sizeof(uint64_t));
+	size_mismatch_seen = alloc_bitfield(VECTOR_SIZE(pathvec));
 	if (size_mismatch_seen == NULL)
 		return CP_FAIL;
 
@@ -1131,7 +1130,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 		}
 
 		/* 2. if path already coalesced, or seen and discarded */
-		if (pp1->mpp || is_bit_set_in_array(k, size_mismatch_seen))
+		if (pp1->mpp || is_bit_set_in_bitfield(k, size_mismatch_seen))
 			continue;
 
 		/* 3. if path has disappeared */
@@ -1183,7 +1182,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 					"Discard", pp2->dev, pp2->size,
 					mpp->size);
 				mpp->action = ACT_REJECT;
-				set_bit_in_array(i, size_mismatch_seen);
+				set_bit_in_bitfield(i, size_mismatch_seen);
 			}
 		}
 		verify_paths(mpp, vecs);

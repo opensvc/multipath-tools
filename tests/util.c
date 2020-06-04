@@ -164,19 +164,25 @@ static int test_basenamecpy(void)
 
 static void test_bitmask_1(void **state)
 {
-	uint64_t arr[BITARR_SZ];
+	struct bitfield *bf;
+	uint64_t *arr;
 	int i, j, k, m, b;
 
-	memset(arr, 0, sizeof(arr));
+	bf = alloc_bitfield(BITARR_SZ * 64);
+	assert_non_null(bf);
+	assert_int_equal(bf->len, BITARR_SZ * 64);
+	arr = (uint64_t *)bf->bits;
 
 	for (j = 0; j < BITARR_SZ; j++) {
 		for (i = 0; i < 64; i++) {
 			b = 64 * j + i;
-			assert(!is_bit_set_in_array(b, arr));
-			set_bit_in_array(b, arr);
+			assert(!is_bit_set_in_bitfield(b, bf));
+			set_bit_in_bitfield(b, bf);
 			for (k = 0; k < BITARR_SZ; k++) {
+#if 0
 				printf("b = %d j = %d k = %d a = %"PRIx64"\n",
 				       b, j, k, arr[k]);
+#endif
 				if (k == j)
 					assert_int_equal(arr[j], 1ULL << i);
 				else
@@ -184,39 +190,44 @@ static void test_bitmask_1(void **state)
 			}
 			for (m = 0; m < 64; m++)
 				if (i == m)
-					assert(is_bit_set_in_array(64 * j + m,
-								   arr));
+					assert(is_bit_set_in_bitfield(64 * j + m,
+								      bf));
 				else
-					assert(!is_bit_set_in_array(64 * j + m,
-								    arr));
-			clear_bit_in_array(b, arr);
-			assert(!is_bit_set_in_array(b, arr));
+					assert(!is_bit_set_in_bitfield(64 * j + m,
+								       bf));
+			clear_bit_in_bitfield(b, bf);
+			assert(!is_bit_set_in_bitfield(b, bf));
 			for (k = 0; k < BITARR_SZ; k++)
 				assert_int_equal(arr[k], 0ULL);
 		}
 	}
+	free(bf);
 }
 
 static void test_bitmask_2(void **state)
 {
-	uint64_t arr[BITARR_SZ];
+	struct bitfield *bf;
+	uint64_t *arr;
 	int i, j, k, m, b;
 
-	memset(arr, 0, sizeof(arr));
+	bf = alloc_bitfield(BITARR_SZ * 64);
+	assert_non_null(bf);
+	assert_int_equal(bf->len, BITARR_SZ * 64);
+	arr = (uint64_t *)bf->bits;
 
 	for (j = 0; j < BITARR_SZ; j++) {
 		for (i = 0; i < 64; i++) {
 			b = 64 * j + i;
-			assert(!is_bit_set_in_array(b, arr));
-			set_bit_in_array(b, arr);
+			assert(!is_bit_set_in_bitfield(b, bf));
+			set_bit_in_bitfield(b, bf);
 			for (m = 0; m < 64; m++)
 				if (m <= i)
-					assert(is_bit_set_in_array(64 * j + m,
-								   arr));
+					assert(is_bit_set_in_bitfield(64 * j + m,
+								      bf));
 				else
-					assert(!is_bit_set_in_array(64 * j + m,
-								    arr));
-			assert(is_bit_set_in_array(b, arr));
+					assert(!is_bit_set_in_bitfield(64 * j + m,
+								       bf));
+			assert(is_bit_set_in_bitfield(b, bf));
 			for (k = 0; k < BITARR_SZ; k++) {
 				if (k < j || (k == j && i == 63))
 					assert_int_equal(arr[k], ~0ULL);
@@ -232,16 +243,16 @@ static void test_bitmask_2(void **state)
 	for (j = 0; j < BITARR_SZ; j++) {
 		for (i = 0; i < 64; i++) {
 			b = 64 * j + i;
-			assert(is_bit_set_in_array(b, arr));
-			clear_bit_in_array(b, arr);
+			assert(is_bit_set_in_bitfield(b, bf));
+			clear_bit_in_bitfield(b, bf);
 			for (m = 0; m < 64; m++)
 				if (m <= i)
-					assert(!is_bit_set_in_array(64 * j + m,
-								    arr));
+					assert(!is_bit_set_in_bitfield(64 * j + m,
+								       bf));
 				else
-					assert(is_bit_set_in_array(64 * j + m,
-								   arr));
-			assert(!is_bit_set_in_array(b, arr));
+					assert(is_bit_set_in_bitfield(64 * j + m,
+								      bf));
+			assert(!is_bit_set_in_bitfield(b, bf));
 			for (k = 0; k < BITARR_SZ; k++) {
 				if (k < j || (k == j && i == 63))
 					assert_int_equal(arr[k], 0ULL);
@@ -254,13 +265,181 @@ static void test_bitmask_2(void **state)
 			}
 		}
 	}
+	free(bf);
 }
+
+/*
+ *  Test operations on a 0-length bitfield
+ */
+static void test_bitmask_len_0(void **state)
+{
+	struct bitfield *bf;
+
+	bf = alloc_bitfield(0);
+	assert_null(bf);
+}
+
+static void _test_bitmask_small(unsigned int n)
+{
+	struct bitfield *bf;
+	uint64_t *arr;
+
+	assert(n <= 64);
+	assert(n >= 1);
+
+	bf = alloc_bitfield(n);
+	assert_non_null(bf);
+	assert_int_equal(bf->len, n);
+	arr = (uint64_t *)bf->bits;
+
+	assert_int_equal(*arr, 0);
+
+	set_bit_in_bitfield(n + 1, bf);
+	assert_int_equal(*arr, 0);
+
+	set_bit_in_bitfield(n, bf);
+	assert_int_equal(*arr, 0);
+
+	set_bit_in_bitfield(n - 1, bf);
+	assert_int_equal(*arr, 1ULL << (n - 1));
+
+	clear_bit_in_bitfield(n - 1, bf);
+	assert_int_equal(*arr, 0);
+
+	set_bit_in_bitfield(0, bf);
+	assert_int_equal(*arr, 1);
+
+	free(bf);
+}
+
+static void _test_bitmask_small_2(unsigned int n)
+{
+	struct bitfield *bf;
+	uint64_t *arr;
+
+	assert(n <= 128);
+	assert(n >= 65);
+
+	bf = alloc_bitfield(n);
+	assert_non_null(bf);
+	assert_int_equal(bf->len, n);
+	arr = (uint64_t *)bf->bits;
+
+	assert_int_equal(arr[0], 0);
+	assert_int_equal(arr[1], 0);
+
+	set_bit_in_bitfield(n + 1, bf);
+	assert_int_equal(arr[0], 0);
+	assert_int_equal(arr[1], 0);
+
+	set_bit_in_bitfield(n, bf);
+	assert_int_equal(arr[0], 0);
+	assert_int_equal(arr[1], 0);
+
+	set_bit_in_bitfield(n - 1, bf);
+	assert_int_equal(arr[0], 0);
+	assert_int_equal(arr[1], 1ULL << (n - 65));
+
+	set_bit_in_bitfield(0, bf);
+	assert_int_equal(arr[0], 1);
+	assert_int_equal(arr[1], 1ULL << (n - 65));
+
+	set_bit_in_bitfield(64, bf);
+	assert_int_equal(arr[0], 1);
+	assert_int_equal(arr[1], (1ULL << (n - 65)) | 1);
+
+	clear_bit_in_bitfield(0, bf);
+	assert_int_equal(arr[0], 0);
+	assert_int_equal(arr[1], (1ULL << (n - 65)) | 1);
+
+	free(bf);
+}
+
+static void test_bitmask_len_1(void **state)
+{
+	_test_bitmask_small(1);
+}
+
+static void test_bitmask_len_2(void **state)
+{
+	_test_bitmask_small(2);
+}
+
+static void test_bitmask_len_3(void **state)
+{
+	_test_bitmask_small(3);
+}
+
+static void test_bitmask_len_23(void **state)
+{
+	_test_bitmask_small(23);
+}
+
+static void test_bitmask_len_63(void **state)
+{
+	_test_bitmask_small(63);
+}
+
+static void test_bitmask_len_64(void **state)
+{
+	_test_bitmask_small(63);
+}
+
+static void test_bitmask_len_65(void **state)
+{
+	_test_bitmask_small_2(65);
+}
+
+static void test_bitmask_len_66(void **state)
+{
+	_test_bitmask_small_2(66);
+}
+
+static void test_bitmask_len_67(void **state)
+{
+	_test_bitmask_small_2(67);
+}
+
+static void test_bitmask_len_103(void **state)
+{
+	_test_bitmask_small_2(103);
+}
+
+static void test_bitmask_len_126(void **state)
+{
+	_test_bitmask_small_2(126);
+}
+
+static void test_bitmask_len_127(void **state)
+{
+	_test_bitmask_small_2(127);
+}
+
+static void test_bitmask_len_128(void **state)
+{
+	_test_bitmask_small_2(128);
+}
+
 
 static int test_bitmasks(void)
 {
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_bitmask_1),
 		cmocka_unit_test(test_bitmask_2),
+		cmocka_unit_test(test_bitmask_len_0),
+		cmocka_unit_test(test_bitmask_len_1),
+		cmocka_unit_test(test_bitmask_len_2),
+		cmocka_unit_test(test_bitmask_len_3),
+		cmocka_unit_test(test_bitmask_len_23),
+		cmocka_unit_test(test_bitmask_len_63),
+		cmocka_unit_test(test_bitmask_len_64),
+		cmocka_unit_test(test_bitmask_len_65),
+		cmocka_unit_test(test_bitmask_len_66),
+		cmocka_unit_test(test_bitmask_len_67),
+		cmocka_unit_test(test_bitmask_len_103),
+		cmocka_unit_test(test_bitmask_len_126),
+		cmocka_unit_test(test_bitmask_len_127),
+		cmocka_unit_test(test_bitmask_len_128),
 	};
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }

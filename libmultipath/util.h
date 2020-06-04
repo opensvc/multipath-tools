@@ -1,6 +1,9 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
 #include <sys/types.h>
 /* for rlim_t */
 #include <sys/resource.h>
@@ -51,19 +54,60 @@ struct scandir_result {
 };
 void free_scandir_result(struct scandir_result *);
 
-static inline bool is_bit_set_in_array(unsigned int bit, const uint64_t *arr)
+/*
+ * ffsll() is also available on glibc < 2.27 if _GNU_SOURCE is defined.
+ * But relying on that would require that every program using this header file
+ * set _GNU_SOURCE during compilation, because otherwise the library and the
+ * program would use different types for bitfield_t, causing errors.
+ * That's too error prone, so if in doubt, use ffs().
+ */
+#if __GLIBC_PREREQ(2, 27)
+typedef unsigned long long int bitfield_t;
+#define _ffs(x) ffsll(x)
+#else
+typedef unsigned int bitfield_t;
+#define _ffs(x) ffs(x)
+#endif
+#define bits_per_slot (sizeof(bitfield_t) * CHAR_BIT)
+
+struct bitfield {
+	unsigned int len;
+	bitfield_t bits[];
+};
+
+struct bitfield *alloc_bitfield(unsigned int maxbit);
+
+void _log_bitfield_overflow(const char *f, unsigned int bit, unsigned int len);
+#define log_bitfield_overflow(bit, len) \
+	_log_bitfield_overflow(__func__, bit, len)
+
+static inline bool is_bit_set_in_bitfield(unsigned int bit,
+				       const struct bitfield *bf)
 {
-	return arr[bit / 64] & (1ULL << (bit % 64)) ? 1 : 0;
+	if (bit >= bf->len) {
+		log_bitfield_overflow(bit, bf->len);
+		return false;
+	}
+	return !!(bf->bits[bit / bits_per_slot] &
+		  (1ULL << (bit % bits_per_slot)));
 }
 
-static inline void set_bit_in_array(unsigned int bit, uint64_t *arr)
+static inline void set_bit_in_bitfield(unsigned int bit, struct bitfield *bf)
 {
-	arr[bit / 64] |= (1ULL << (bit % 64));
+	if (bit >= bf->len) {
+		log_bitfield_overflow(bit, bf->len);
+		return;
+	}
+	bf->bits[bit / bits_per_slot] |= (1ULL << (bit % bits_per_slot));
 }
 
-static inline void clear_bit_in_array(unsigned int bit, uint64_t *arr)
+static inline void clear_bit_in_bitfield(unsigned int bit, struct bitfield *bf)
 {
-	arr[bit / 64] &= ~(1ULL << (bit % 64));
+	if (bit >= bf->len) {
+		log_bitfield_overflow(bit, bf->len);
+		return;
+	}
+	bf->bits[bit / bits_per_slot] &= ~(1ULL << (bit % bits_per_slot));
 }
 
 #endif /* _UTIL_H */

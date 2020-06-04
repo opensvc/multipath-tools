@@ -404,3 +404,25 @@ void close_fd(void *arg)
 {
 	close((long)arg);
 }
+
+struct bitfield *alloc_bitfield(unsigned int maxbit)
+{
+	unsigned int n;
+	struct bitfield *bf;
+
+	if (maxbit == 0) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	n = (maxbit - 1) / bits_per_slot + 1;
+	bf = calloc(1, sizeof(struct bitfield) + n * sizeof(bitfield_t));
+	if (bf)
+		bf->len = maxbit;
+	return bf;
+}
+
+void _log_bitfield_overflow(const char *f, unsigned int bit, unsigned int len)
+{
+	condlog(0, "%s: bitfield overflow: %u >= %u", f, bit, len);
+}
