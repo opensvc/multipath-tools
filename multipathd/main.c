@@ -1101,14 +1101,23 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 		}
 
 		/*
+		 * Mark the path as removed. In case of success, we
+		 * will delete it for good. Otherwise, it will be deleted
+		 * later, unless all attempts to reload this map fail.
+		 * Note: we have to explicitly remove pp from mpp->paths,
+		 * update_mpp_paths() doesn't do that.
+		 */
+		set_path_removed(pp);
+		i = find_slot(mpp->paths, pp);
+		if (i != -1)
+			vector_del_slot(mpp->paths, i);
+
+		/*
 		 * Make sure mpp->hwe doesn't point to freed memory
 		 * We call extract_hwe_from_path() below to restore mpp->hwe
 		 */
 		if (mpp->hwe == pp->hwe)
 			mpp->hwe = NULL;
-
-		if ((i = find_slot(mpp->paths, (void *)pp)) != -1)
-			vector_del_slot(mpp->paths, i);
 
 		/*
 		 * remove the map IF removing the last path
@@ -1133,6 +1142,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 					" removing all paths",
 					alias);
 				retval = 0;
+				/* flush_map() has freed the path */
 				goto out;
 			}
 			/*
@@ -1169,21 +1179,27 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 			/*
 			 * update our state from kernel
 			 */
+			char devt[BLK_DEV_SIZE];
+
+			strlcpy(devt, pp->dev_t, sizeof(devt));
 			if (setup_multipath(vecs, mpp))
 				return 1;
+			/*
+			 * Successful map reload without this path:
+			 * sync_map_state() will free it.
+			 */
 			sync_map_state(mpp);
 
-			condlog(2, "%s [%s]: path removed from map %s",
-				pp->dev, pp->dev_t, mpp->alias);
+			condlog(2, "%s: path removed from map %s",
+				devt, mpp->alias);
 		}
+	} else {
+		/* mpp == NULL */
+		if ((i = find_slot(vecs->pathvec, (void *)pp)) != -1)
+			vector_del_slot(vecs->pathvec, i);
+		free_path(pp);
 	}
-
 out:
-	if ((i = find_slot(vecs->pathvec, (void *)pp)) != -1)
-		vector_del_slot(vecs->pathvec, i);
-
-	free_path(pp);
-
 	return retval;
 
 fail:
