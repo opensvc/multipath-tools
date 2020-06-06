@@ -124,7 +124,13 @@ void orphan_paths(vector pathvec, struct multipath *mpp, const char *reason)
 
 	vector_foreach_slot (pathvec, pp, i) {
 		if (pp->mpp == mpp) {
-			orphan_path(pp, reason);
+			if (pp->initialized == INIT_REMOVED) {
+				condlog(3, "%s: freeing path in removed state",
+					pp->dev);
+				vector_del_slot(pathvec, i--);
+				free_path(pp);
+			} else
+				orphan_path(pp, reason);
 		}
 	}
 }
