@@ -29,6 +29,7 @@ int update_mpp_paths(struct multipath *mpp, vector pathvec)
 	struct pathgroup * pgp;
 	struct path * pp;
 	int i,j;
+	bool store_failure = false;
 
 	if (!mpp || !mpp->pg)
 		return 0;
@@ -39,13 +40,23 @@ int update_mpp_paths(struct multipath *mpp, vector pathvec)
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		vector_foreach_slot (pgp->paths, pp, j) {
-			if (!find_path_by_devt(mpp->paths, pp->dev_t) &&
-			    (find_path_by_devt(pathvec, pp->dev_t)) &&
-			    store_path(mpp->paths, pp))
-				return 1;
+			if (!find_path_by_devt(mpp->paths, pp->dev_t)) {
+				struct path *pp1;
+
+				/*
+				 * Avoid adding removed paths to the map again
+				 * when we reload it. Such paths may exist if
+				 * domap fails in ev_remove_path().
+				 */
+				pp1 = find_path_by_devt(pathvec, pp->dev_t);
+				if (pp1 && pp->initialized != INIT_REMOVED &&
+				    store_path(mpp->paths, pp))
+					store_failure = true;
+			}
 		}
 	}
-	return 0;
+
+	return store_failure;
 }
 
 int adopt_paths(vector pathvec, struct multipath *mpp)
