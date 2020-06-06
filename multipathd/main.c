@@ -1960,8 +1960,9 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	int marginal_pathgroups, marginal_changed = 0;
 	int ret;
 
-	if ((pp->initialized == INIT_OK ||
-	     pp->initialized == INIT_REQUESTED_UDEV) && !pp->mpp)
+	if (((pp->initialized == INIT_OK ||
+	      pp->initialized == INIT_REQUESTED_UDEV) && !pp->mpp) ||
+	    pp->initialized == INIT_REMOVED)
 		return 0;
 
 	if (pp->tick)

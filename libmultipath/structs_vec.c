@@ -118,6 +118,23 @@ void orphan_paths(vector pathvec, struct multipath *mpp, const char *reason)
 	}
 }
 
+void set_path_removed(struct path *pp)
+{
+	struct multipath *mpp = pp->mpp;
+
+	orphan_path(pp, "removed");
+	/*
+	 * Keep link to mpp. It will be removed when the path
+	 * is successfully removed from the map.
+	 */
+	if (!mpp) {
+		condlog(0, "%s: internal error: mpp == NULL", pp->dev);
+		return;
+	}
+	pp->mpp = mpp;
+	pp->initialized = INIT_REMOVED;
+}
+
 void
 remove_map(struct multipath * mpp, struct vectors * vecs, int purge_vec)
 {

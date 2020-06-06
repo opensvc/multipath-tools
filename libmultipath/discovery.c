@@ -2083,6 +2083,10 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	if (!pp || !conf)
 		return PATHINFO_FAILED;
 
+	/* Treat removed paths as if they didn't exist */
+	if (pp->initialized == INIT_REMOVED)
+		return PATHINFO_FAILED;
+
 	/*
 	 * For behavior backward-compatibility with multipathd,
 	 * the blacklisting by filter_property|devnode() is not

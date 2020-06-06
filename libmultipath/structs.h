@@ -193,6 +193,11 @@ enum initialized_states {
 	INIT_MISSING_UDEV,
 	INIT_REQUESTED_UDEV,
 	INIT_OK,
+	/*
+	 * INIT_REMOVED: supposed to be removed from pathvec, but still
+	 * mapped by some multipath map because of map reload failure.
+	 */
+	INIT_REMOVED,
 };
 
 enum prkey_sources {
