@@ -24,8 +24,7 @@ int verify_paths(struct multipath *mpp);
 bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 			    int pathinfo_flags);
 int update_mpp_paths(struct multipath * mpp, vector pathvec);
-int update_multipath_strings (struct multipath *mpp, vector pathvec,
-			      int is_daemon);
+int update_multipath_strings (struct multipath *mpp, vector pathvec);
 void extract_hwe_from_path(struct multipath * mpp);
 
 #define PURGE_VEC 1
@@ -40,8 +39,7 @@ struct multipath * add_map_with_path (struct vectors * vecs,
 				struct path * pp, int add_vec);
 void update_queue_mode_del_path(struct multipath *mpp);
 void update_queue_mode_add_path(struct multipath *mpp);
-int update_multipath_table (struct multipath *mpp, vector pathvec,
-			    int is_daemon);
+int update_multipath_table (struct multipath *mpp, vector pathvec);
 int update_multipath_status (struct multipath *mpp);
 vector get_used_hwes(const struct _vector *pathvec);
 

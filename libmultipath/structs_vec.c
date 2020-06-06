@@ -403,7 +403,7 @@ extract_hwe_from_path(struct multipath * mpp)
 }
 
 int
-update_multipath_table (struct multipath *mpp, vector pathvec, int is_daemon)
+update_multipath_table (struct multipath *mpp, vector pathvec)
 {
 	int r = DMP_ERR;
 	char params[PARAMS_SIZE] = {0};
@@ -417,7 +417,7 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int is_daemon)
 		return r;
 	}
 
-	if (disassemble_map(pathvec, params, mpp, is_daemon)) {
+	if (disassemble_map(pathvec, params, mpp)) {
 		condlog(3, "%s: cannot disassemble map", mpp->alias);
 		return DMP_ERR;
 	}
@@ -511,7 +511,7 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 }
 
 int
-update_multipath_strings(struct multipath *mpp, vector pathvec, int is_daemon)
+update_multipath_strings(struct multipath *mpp, vector pathvec)
 {
 	struct pathgroup *pgp;
 	int i, r = DMP_ERR;
@@ -526,10 +526,9 @@ update_multipath_strings(struct multipath *mpp, vector pathvec, int is_daemon)
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
 
-	r = update_multipath_table(mpp, pathvec, is_daemon);
+	r = update_multipath_table(mpp, pathvec);
 	if (r != DMP_OK)
 		return r;
-
 	sync_paths(mpp, pathvec);
 
 	r = update_multipath_status(mpp);

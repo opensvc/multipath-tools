@@ -272,7 +272,7 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 		dm_get_status(mpp->alias, status);
 		condlog(3, "status = %s", status);
 
-		disassemble_map(pathvec, params, mpp, 0);
+		disassemble_map(pathvec, params, mpp);
 
 		/*
 		 * disassemble_map() can add new paths to pathvec.
@@ -352,7 +352,7 @@ static int check_usable_paths(struct config *conf,
 
 	dm_get_map(mpp->alias, &mpp->size, params);
 	dm_get_status(mpp->alias, status);
-	disassemble_map(pathvec, params, mpp, 0);
+	disassemble_map(pathvec, params, mpp);
 	disassemble_status(status, mpp);
 
 	vector_foreach_slot (mpp->pg, pg, i) {
