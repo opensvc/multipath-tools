@@ -713,11 +713,61 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 		goto blacklisted;
 
 	pp = find_path_by_dev(vecs->pathvec, param);
-	if (pp) {
+	if (pp && pp->initialized != INIT_REMOVED) {
 		condlog(2, "%s: path already in pathvec", param);
 		if (pp->mpp)
 			return 0;
-	} else {
+	} else if (pp) {
+		/* Trying to add a path in INIT_REMOVED state */
+		struct multipath *prev_mpp;
+
+		prev_mpp = pp->mpp;
+		if (prev_mpp == NULL)
+			condlog(0, "Bug: %s was in INIT_REMOVED state without being a multipath member",
+				pp->dev);
+		pp->mpp = NULL;
+		pp->initialized = INIT_NEW;
+		pp->wwid[0] = '\0';
+		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
+		r = pathinfo(pp, conf, DI_ALL | DI_BLACKLIST);
+		pthread_cleanup_pop(1);
+
+		if (prev_mpp) {
+			/* Similar logic as in uev_add_path() */
+			pp->mpp = prev_mpp;
+			if (r == PATHINFO_OK &&
+			    !strncmp(prev_mpp->wwid, pp->wwid, WWID_SIZE)) {
+				condlog(2, "%s: path re-added to %s", pp->dev,
+					pp->mpp->alias);
+				/* Have the checker reinstate this path asap */
+				pp->tick = 1;
+				return 0;
+			} else if (!ev_remove_path(pp, vecs, true))
+				/* Path removed in ev_remove_path() */
+				pp = NULL;
+			else {
+				/* Init state is now INIT_REMOVED again */
+				pp->dmstate = PSTATE_FAILED;
+				dm_fail_path(pp->mpp->alias, pp->dev_t);
+				condlog(1, "%s: failed to re-add path still mapped in %s",
+					pp->dev, pp->mpp->alias);
+				return 1;
+			}
+		} else {
+			switch (r) {
+			case PATHINFO_SKIPPED:
+				goto blacklisted;
+			case PATHINFO_OK:
+				break;
+			default:
+				condlog(0, "%s: failed to get pathinfo", param);
+				return 1;
+			}
+		}
+	}
+
+	if (!pp) {
 		struct udev_device *udevice;
 
 		udevice = udev_device_new_from_subsystem_sysname(udev,
