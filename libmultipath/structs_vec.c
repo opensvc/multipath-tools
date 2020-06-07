@@ -422,6 +422,9 @@ update_multipath_table (struct multipath *mpp, vector pathvec)
 		return DMP_ERR;
 	}
 
+	/* FIXME: we should deal with the return value here */
+	update_pathvec_from_dm(pathvec, mpp, 0);
+
 	return DMP_OK;
 }
 
