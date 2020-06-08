@@ -400,15 +400,6 @@ remove_maps_and_stop_waiters(struct vectors *vecs)
 	remove_maps(vecs);
 }
 
-static void
-set_multipath_wwid (struct multipath * mpp)
-{
-	if (strlen(mpp->wwid))
-		return;
-
-	dm_get_uuid(mpp->alias, mpp->wwid, WWID_SIZE);
-}
-
 int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
 		      int reset)
 {
@@ -552,7 +543,10 @@ add_map_without_path (struct vectors *vecs, const char *alias)
 		condlog(3, "%s: cannot access table", mpp->alias);
 		goto out;
 	}
-	set_multipath_wwid(mpp);
+	if (!strlen(mpp->wwid))
+		dm_get_uuid(mpp->alias, mpp->wwid, WWID_SIZE);
+	if (!strlen(mpp->wwid))
+		condlog(1, "%s: adding map with empty WWID", mpp->alias);
 	conf = get_multipath_config();
 	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
 	put_multipath_config(conf);
