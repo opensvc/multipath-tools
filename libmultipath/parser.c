@@ -300,8 +300,10 @@ alloc_strvec(char *string)
 			(isspace((int) *cp) || !isascii((int) *cp)))
 		       && *cp != '\0')
 			cp++;
-		if (*cp == '\0' || *cp == '!' || *cp == '#')
+		if (*cp == '\0' ||
+		    (!in_string && (*cp == '!' || *cp == '#'))) {
 			return strvec;
+		}
 	}
 out:
 	vector_free(strvec);

@@ -440,6 +440,46 @@ static void test18(void **state)
 	free_strvec(v);
 }
 
+static void test19(void **state)
+{
+#define QUOTED19 "!value"
+	vector v = alloc_strvec("key \"" QUOTED19 "\"");
+	char *val;
+
+	assert_int_equal(VECTOR_SIZE(v), 4);
+	assert_string_equal(VECTOR_SLOT(v, 0), "key");
+	assert_true(is_quote(VECTOR_SLOT(v, 1)));
+	assert_string_equal(VECTOR_SLOT(v, 2), QUOTED19);
+	assert_true(is_quote(VECTOR_SLOT(v, 3)));
+	assert_int_equal(validate_config_strvec(v, test_file), 0);
+
+	val = set_value(v);
+	assert_string_equal(val, QUOTED19);
+
+	free(val);
+	free_strvec(v);
+}
+
+static void test20(void **state)
+{
+#define QUOTED20 "#value"
+	vector v = alloc_strvec("key \"" QUOTED20 "\"");
+	char *val;
+
+	assert_int_equal(VECTOR_SIZE(v), 4);
+	assert_string_equal(VECTOR_SLOT(v, 0), "key");
+	assert_true(is_quote(VECTOR_SLOT(v, 1)));
+	assert_string_equal(VECTOR_SLOT(v, 2), QUOTED20);
+	assert_true(is_quote(VECTOR_SLOT(v, 3)));
+	assert_int_equal(validate_config_strvec(v, test_file), 0);
+
+	val = set_value(v);
+	assert_string_equal(val, QUOTED20);
+
+	free(val);
+	free_strvec(v);
+}
+
 int test_config_parser(void)
 {
 	const struct CMUnitTest tests[] = {
@@ -461,6 +501,8 @@ int test_config_parser(void)
 		cmocka_unit_test(test16),
 		cmocka_unit_test(test17),
 		cmocka_unit_test(test18),
+		cmocka_unit_test(test19),
+		cmocka_unit_test(test20),
 	};
 	return cmocka_run_group_tests(tests, setup, teardown);
 }
