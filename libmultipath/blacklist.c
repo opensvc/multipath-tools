@@ -15,9 +15,24 @@
 #include "structs_vec.h"
 #include "print.h"
 
+char *check_invert(char *str, bool *invert)
+{
+	if (str[0] == '!') {
+		*invert = true;
+		return str + 1;
+	}
+	if (str[0] == '\\' && str[1] == '!') {
+		*invert = false;
+		return str + 1;
+	}
+	*invert = false;
+	return str;
+}
+
 int store_ble(vector blist, char * str, int origin)
 {
 	struct blentry * ble;
+	char *regex_str;
 
 	if (!str)
 		return 0;
@@ -30,7 +45,8 @@ int store_ble(vector blist, char * str, int origin)
 	if (!ble)
 		goto out;
 
-	if (regcomp(&ble->regex, str, REG_EXTENDED|REG_NOSUB))
+	regex_str = check_invert(str, &ble->invert);
+	if (regcomp(&ble->regex, regex_str, REG_EXTENDED|REG_NOSUB))
 		goto out1;
 
 	if (!vector_alloc_slot(blist))
@@ -66,6 +82,7 @@ int alloc_ble_device(vector blist)
 int set_ble_device(vector blist, char * vendor, char * product, int origin)
 {
 	struct blentry_device * ble;
+	char *regex_str;
 
 	if (!blist)
 		return 1;
@@ -76,7 +93,8 @@ int set_ble_device(vector blist, char * vendor, char * product, int origin)
 		return 1;
 
 	if (vendor) {
-		if (regcomp(&ble->vendor_reg, vendor,
+		regex_str = check_invert(vendor, &ble->vendor_invert);
+		if (regcomp(&ble->vendor_reg, regex_str,
 			    REG_EXTENDED|REG_NOSUB)) {
 			FREE(vendor);
 			if (product)
@@ -86,7 +104,8 @@ int set_ble_device(vector blist, char * vendor, char * product, int origin)
 		ble->vendor = vendor;
 	}
 	if (product) {
-		if (regcomp(&ble->product_reg, product,
+		regex_str = check_invert(product, &ble->product_invert);
+		if (regcomp(&ble->product_reg, regex_str,
 			    REG_EXTENDED|REG_NOSUB)) {
 			FREE(product);
 			if (vendor) {
@@ -108,7 +127,7 @@ match_reglist (vector blist, const char * str)
 	struct blentry * ble;
 
 	vector_foreach_slot (blist, ble, i) {
-		if (!regexec(&ble->regex, str, 0, NULL, 0))
+		if (!!regexec(&ble->regex, str, 0, NULL, 0) == ble->invert)
 			return 1;
 	}
 	return 0;
@@ -125,9 +144,11 @@ match_reglist_device (const struct _vector *blist, const char * vendor,
 		if (!ble->vendor && !ble->product)
 			continue;
 		if ((!ble->vendor ||
-		     !regexec(&ble->vendor_reg, vendor, 0, NULL, 0)) &&
+		     !!regexec(&ble->vendor_reg, vendor, 0, NULL, 0) ==
+		     ble->vendor_invert) &&
 		    (!ble->product ||
-		     !regexec(&ble->product_reg, product, 0, NULL, 0)))
+		     !!regexec(&ble->product_reg, product, 0, NULL, 0) ==
+		     ble->product_invert))
 			return 1;
 	}
 	return 0;
@@ -160,13 +181,7 @@ setup_default_blist (struct config * conf)
 	char * str;
 	int i;
 
-	str = STRDUP("^(ram|zram|raw|loop|fd|md|dm-|sr|scd|st|dcssblk)[0-9]");
-	if (!str)
-		return 1;
-	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
-		return 1;
-
-	str = STRDUP("^(td|hd|vd)[a-z]");
+	str = STRDUP("!^(sd[a-z]|dasd[a-z]|nvme[0-9])");
 	if (!str)
 		return 1;
 	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))

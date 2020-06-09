@@ -1249,6 +1249,16 @@ being handled by multipath-tools.
 .LP
 .
 .
+In the \fIblacklist\fR and \fIblacklist_exceptions\fR sections, starting a
+quoted value with an exclamation mark \fB"!"\fR will invert the matching
+of the rest of the regular expression. For instance, \fB"!^sd[a-z]"\fR will
+match all values that do not start with \fB"sd[a-z]"\fR. The exclamation mark
+can be escaped \fB"\\!"\fR to match a literal \fB!\fR at the start of a
+regular expression. \fBNote:\fR The exclamation mark must be inside quotes,
+otherwise it will be treated as starting a comment.
+.LP
+.
+.
 The \fIblacklist_exceptions\fR section is used to revert the actions of the
 \fIblacklist\fR section. This allows one to selectively include ("whitelist") devices which
 would normally be excluded via the \fIblacklist\fR section. A common usage is
@@ -1265,10 +1275,9 @@ unless explicitly stated.
 Regular expression matching the device nodes to be excluded/included.
 .RS
 .PP
-The default \fIblacklist\fR consists of the regular expressions
-"^(ram|zram|raw|loop|fd|md|dm-|sr|scd|st|dcssblk)[0-9]" and
-"^(td|hd|vd)[a-z]". This causes virtual devices, non-disk devices, and some other
-device types to be excluded from multipath handling by default.
+The default \fIblacklist\fR consists of the regular expression
+\fB"!^(sd[a-z]|dasd[a-z]|nvme[0-9])"\fR. This causes all device types other
+than scsi, dasd, and nvme to be excluded from multipath handling by default.
 .RE
 .TP
 .B wwid

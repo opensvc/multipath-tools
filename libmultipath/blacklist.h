@@ -20,6 +20,7 @@
 struct blentry {
 	char * str;
 	regex_t regex;
+	bool invert;
 	int origin;
 };
 
@@ -28,6 +29,8 @@ struct blentry_device {
 	char * product;
 	regex_t vendor_reg;
 	regex_t product_reg;
+	bool vendor_invert;
+	bool product_invert;
 	int origin;
 };
 

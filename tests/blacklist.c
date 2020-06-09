@@ -60,19 +60,45 @@ __wrap_udev_list_entry_get_name(struct udev_list_entry *list_entry)
 	return *(const char **)list_entry;
 }
 
+vector elist_property_default;
+vector blist_devnode_default;
 vector blist_devnode_sdb;
+vector blist_devnode_sdb_inv;
 vector blist_all;
 vector blist_device_foo_bar;
+vector blist_device_foo_inv_bar;
+vector blist_device_foo_bar_inv;
 vector blist_device_all;
 vector blist_wwid_xyzzy;
+vector blist_wwid_xyzzy_inv;
 vector blist_protocol_fcp;
+vector blist_protocol_fcp_inv;
 vector blist_property_wwn;
+vector blist_property_wwn_inv;
 
 static int setup(void **state)
 {
+	struct config conf;
+
+	memset(&conf, 0, sizeof(conf));
+	conf.blist_devnode = vector_alloc();
+	if (!conf.blist_devnode)
+		return -1;
+	conf.elist_property = vector_alloc();
+	if (!conf.elist_property)
+		return -1;
+	if (setup_default_blist(&conf) != 0)
+		return -1;
+	elist_property_default = conf.elist_property;
+	blist_devnode_default = conf.blist_devnode;
+
 	blist_devnode_sdb = vector_alloc();
 	if (!blist_devnode_sdb ||
 	    store_ble(blist_devnode_sdb, strdup("sdb"), ORIGIN_CONFIG))
+		return -1;
+	blist_devnode_sdb_inv = vector_alloc();
+	if (!blist_devnode_sdb_inv ||
+	    store_ble(blist_devnode_sdb_inv, strdup("!sdb"), ORIGIN_CONFIG))
 		return -1;
 
 	blist_all = vector_alloc();
@@ -83,6 +109,18 @@ static int setup(void **state)
 	if (!blist_device_foo_bar || alloc_ble_device(blist_device_foo_bar) ||
 	    set_ble_device(blist_device_foo_bar, strdup("foo"), strdup("bar"),
 			   ORIGIN_CONFIG))
+		return -1;
+	blist_device_foo_inv_bar = vector_alloc();
+	if (!blist_device_foo_inv_bar ||
+	    alloc_ble_device(blist_device_foo_inv_bar) ||
+	    set_ble_device(blist_device_foo_inv_bar, strdup("!foo"),
+			   strdup("bar"), ORIGIN_CONFIG))
+		return -1;
+	blist_device_foo_bar_inv = vector_alloc();
+	if (!blist_device_foo_bar_inv ||
+	    alloc_ble_device(blist_device_foo_bar_inv) ||
+	    set_ble_device(blist_device_foo_bar_inv, strdup("foo"),
+			   strdup("!bar"), ORIGIN_CONFIG))
 		return -1;
 
 	blist_device_all = vector_alloc();
@@ -95,15 +133,28 @@ static int setup(void **state)
 	if (!blist_wwid_xyzzy ||
 	    store_ble(blist_wwid_xyzzy, strdup("xyzzy"), ORIGIN_CONFIG))
 		return -1;
+	blist_wwid_xyzzy_inv = vector_alloc();
+	if (!blist_wwid_xyzzy_inv ||
+	    store_ble(blist_wwid_xyzzy_inv, strdup("!xyzzy"), ORIGIN_CONFIG))
+		return -1;
 
 	blist_protocol_fcp = vector_alloc();
 	if (!blist_protocol_fcp ||
 	    store_ble(blist_protocol_fcp, strdup("scsi:fcp"), ORIGIN_CONFIG))
 		return -1;
+	blist_protocol_fcp_inv = vector_alloc();
+	if (!blist_protocol_fcp_inv ||
+	    store_ble(blist_protocol_fcp_inv, strdup("!scsi:fcp"),
+		      ORIGIN_CONFIG))
+		return -1;
 
 	blist_property_wwn = vector_alloc();
 	if (!blist_property_wwn ||
 	    store_ble(blist_property_wwn, strdup("ID_WWN"), ORIGIN_CONFIG))
+		return -1;
+	blist_property_wwn_inv = vector_alloc();
+	if (!blist_property_wwn_inv ||
+	    store_ble(blist_property_wwn_inv, strdup("!ID_WWN"), ORIGIN_CONFIG))
 		return -1;
 
 	return 0;
@@ -111,13 +162,21 @@ static int setup(void **state)
 
 static int teardown(void **state)
 {
+	free_blacklist(elist_property_default);
+	free_blacklist(blist_devnode_default);
 	free_blacklist(blist_devnode_sdb);
+	free_blacklist(blist_devnode_sdb_inv);
 	free_blacklist(blist_all);
 	free_blacklist_device(blist_device_foo_bar);
+	free_blacklist_device(blist_device_foo_inv_bar);
+	free_blacklist_device(blist_device_foo_bar_inv);
 	free_blacklist_device(blist_device_all);
 	free_blacklist(blist_wwid_xyzzy);
+	free_blacklist(blist_wwid_xyzzy_inv);
 	free_blacklist(blist_protocol_fcp);
+	free_blacklist(blist_protocol_fcp_inv);
 	free_blacklist(blist_property_wwn);
+	free_blacklist(blist_property_wwn_inv);
 	return 0;
 }
 
@@ -141,6 +200,11 @@ static void test_devnode_blacklist(void **state)
 	expect_condlog(3, "sdb: device node name blacklisted\n");
 	assert_int_equal(filter_devnode(blist_devnode_sdb, NULL, "sdb"),
 			 MATCH_DEVNODE_BLIST);
+	assert_int_equal(filter_devnode(blist_devnode_sdb_inv, NULL, "sdb"),
+			 MATCH_NOTHING);
+	expect_condlog(3, "sdc: device node name blacklisted\n");
+	assert_int_equal(filter_devnode(blist_devnode_sdb_inv, NULL, "sdc"),
+			 MATCH_DEVNODE_BLIST);
 }
 
 static void test_devnode_whitelist(void **state)
@@ -159,11 +223,38 @@ static void test_devnode_missing(void **state)
 			 MATCH_NOTHING);
 }
 
+static void test_devnode_default(void **state)
+{
+	assert_int_equal(filter_devnode(blist_devnode_default, NULL, "sdaa"),
+			 MATCH_NOTHING);
+	assert_int_equal(filter_devnode(blist_devnode_default, NULL, "nvme0n1"),
+			 MATCH_NOTHING);
+	assert_int_equal(filter_devnode(blist_devnode_default, NULL, "dasda"),
+			 MATCH_NOTHING);
+	expect_condlog(3, "hda: device node name blacklisted\n");
+	assert_int_equal(filter_devnode(blist_devnode_default, NULL, "hda"),
+			 MATCH_DEVNODE_BLIST);
+}
+
 static void test_device_blacklist(void **state)
 {
 	expect_condlog(3, "sdb: (foo:bar) vendor/product blacklisted\n");
 	assert_int_equal(filter_device(blist_device_foo_bar, NULL, "foo",
 				       "bar", "sdb"),
+			 MATCH_DEVICE_BLIST);
+	assert_int_equal(filter_device(blist_device_foo_inv_bar, NULL, "foo",
+				        "bar", "sdb"),
+			 MATCH_NOTHING);
+	assert_int_equal(filter_device(blist_device_foo_bar_inv, NULL, "foo",
+				        "bar", "sdb"),
+			 MATCH_NOTHING);
+	expect_condlog(3, "sdb: (baz:bar) vendor/product blacklisted\n");
+	assert_int_equal(filter_device(blist_device_foo_inv_bar, NULL, "baz",
+				        "bar", "sdb"),
+			 MATCH_DEVICE_BLIST);
+	expect_condlog(3, "sdb: (foo:baz) vendor/product blacklisted\n");
+	assert_int_equal(filter_device(blist_device_foo_bar_inv, NULL, "foo",
+				        "baz", "sdb"),
 			 MATCH_DEVICE_BLIST);
 }
 
@@ -191,6 +282,11 @@ static void test_wwid_blacklist(void **state)
 	expect_condlog(3, "sdb: wwid xyzzy blacklisted\n");
 	assert_int_equal(filter_wwid(blist_wwid_xyzzy, NULL, "xyzzy", "sdb"),
 			 MATCH_WWID_BLIST);
+	assert_int_equal(filter_wwid(blist_wwid_xyzzy_inv, NULL, "xyzzy",
+				     "sdb"), MATCH_NOTHING);
+	expect_condlog(3, "sdb: wwid plugh blacklisted\n");
+	assert_int_equal(filter_wwid(blist_wwid_xyzzy_inv, NULL, "plugh",
+				     "sdb"), MATCH_WWID_BLIST);
 }
 
 static void test_wwid_whitelist(void **state)
@@ -217,6 +313,12 @@ static void test_protocol_blacklist(void **state)
 			   .sg_id.proto_id = SCSI_PROTOCOL_FCP };
 	expect_condlog(3, "sdb: protocol scsi:fcp blacklisted\n");
 	assert_int_equal(filter_protocol(blist_protocol_fcp, NULL, &pp),
+			 MATCH_PROTOCOL_BLIST);
+	assert_int_equal(filter_protocol(blist_protocol_fcp_inv, NULL, &pp),
+			 MATCH_NOTHING);
+	pp.sg_id.proto_id = SCSI_PROTOCOL_ATA;
+	expect_condlog(3, "sdb: protocol scsi:ata blacklisted\n");
+	assert_int_equal(filter_protocol(blist_protocol_fcp_inv, NULL, &pp),
 			 MATCH_PROTOCOL_BLIST);
 }
 
@@ -245,10 +347,17 @@ static void test_protocol_missing(void **state)
 static void test_property_blacklist(void **state)
 {
 	static struct udev_device udev = { "sdb", { "ID_FOO", "ID_WWN", "ID_BAR", NULL } };
+	static struct udev_device udev_inv = { "sdb", { "ID_WWN", NULL } };
 	conf.blist_property = blist_property_wwn;
 	expect_condlog(3, "sdb: udev property ID_WWN blacklisted\n");
 	assert_int_equal(filter_property(&conf, &udev, 3, "ID_SERIAL"),
 			 MATCH_PROPERTY_BLIST);
+	conf.blist_property = blist_property_wwn_inv;
+	expect_condlog(3, "sdb: udev property ID_FOO blacklisted\n");
+	assert_int_equal(filter_property(&conf, &udev, 3, "ID_SERIAL"),
+			 MATCH_PROPERTY_BLIST);
+	assert_int_equal(filter_property(&conf, &udev_inv, 3, "ID_SERIAL"),
+			 MATCH_NOTHING);
 }
 
 /* the property check works different in that you check all the property
@@ -484,6 +593,7 @@ int test_blacklist(void)
 		cmocka_unit_test(test_devnode_blacklist),
 		cmocka_unit_test(test_devnode_whitelist),
 		cmocka_unit_test(test_devnode_missing),
+		cmocka_unit_test(test_devnode_default),
 		cmocka_unit_test(test_device_blacklist),
 		cmocka_unit_test(test_device_whitelist),
 		cmocka_unit_test(test_device_missing),
