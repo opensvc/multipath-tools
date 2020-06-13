@@ -129,7 +129,7 @@ int snprint_multipath_map_json (char * buff, int len,
 int snprint_blacklist_report (struct config *, char *, int);
 int snprint_wildcards (char *, int);
 int snprint_status (char *, int, const struct vectors *);
-int snprint_devices (struct config *, char *, int, const struct vectors *);
+int snprint_devices (struct config *, char *, size_t, const struct vectors *);
 int snprint_path_serial (char *, size_t, const struct path *);
 int snprint_host_wwnn (char *, size_t, const struct path *);
 int snprint_host_wwpn (char *, size_t, const struct path *);

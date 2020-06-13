@@ -2026,65 +2026,58 @@ int snprint_status(char *buff, int len, const struct vectors *vecs)
 	return fwd;
 }
 
-int snprint_devices(struct config *conf, char * buff, int len,
+int snprint_devices(struct config *conf, char *buff, size_t len,
 		    const struct vectors *vecs)
 {
-	DIR *blkdir;
-	struct dirent *blkdev;
-	struct stat statbuf;
-	char devpath[PATH_MAX];
-	int threshold = MAX_LINE_LEN;
-	int fwd = 0;
+	size_t fwd = 0;
 	int r;
+	struct udev_enumerate *enm;
+	struct udev_list_entry *item, *first;
 
 	struct path * pp;
 
-	if (!(blkdir = opendir("/sys/block")))
+	enm = udev_enumerate_new(udev);
+	if (!enm)
 		return 1;
+	udev_enumerate_add_match_subsystem(enm, "block");
 
-	if ((len - fwd - threshold) <= 0) {
-		closedir(blkdir);
-		return len;
-	}
 	fwd += snprintf(buff + fwd, len - fwd, "available block devices:\n");
+	r = udev_enumerate_scan_devices(enm);
+	if (r < 0)
+		goto out;
 
-	while ((blkdev = readdir(blkdir)) != NULL) {
-		if ((strcmp(blkdev->d_name,".") == 0) ||
-		    (strcmp(blkdev->d_name,"..") == 0))
-			continue;
+	first = udev_enumerate_get_list_entry(enm);
+	udev_list_entry_foreach(item, first) {
+		const char *path, *devname, *status;
+		struct udev_device *u_dev;
 
-		if (safe_sprintf(devpath, "/sys/block/%s", blkdev->d_name))
-			continue;
+		path = udev_list_entry_get_name(item);
+		u_dev = udev_device_new_from_syspath(udev, path);
+		devname = udev_device_get_sysname(u_dev);
 
-		if (stat(devpath, &statbuf) < 0)
-			continue;
+		fwd += snprintf(buff + fwd, len - fwd, "    %s", devname);
+		if (fwd >= len)
+			break;
 
-		if (S_ISDIR(statbuf.st_mode) == 0)
-			continue;
-
-		if ((len - fwd - threshold)  <= 0) {
-			closedir(blkdir);
-			return len;
-		}
-
-		fwd += snprintf(buff + fwd, len - fwd, "    %s",
-				blkdev->d_name);
-		pp = find_path_by_dev(vecs->pathvec, blkdev->d_name);
+		pp = find_path_by_dev(vecs->pathvec, devname);
 		if (!pp) {
 			r = filter_devnode(conf->blist_devnode,
-					   conf->elist_devnode, blkdev->d_name);
+					   conf->elist_devnode,
+					   devname);
 			if (r > 0)
-				fwd += snprintf(buff + fwd, len - fwd,
-						" devnode blacklisted, unmonitored");
-			else if (r <= 0)
-				fwd += snprintf(buff + fwd, len - fwd,
-						" devnode whitelisted, unmonitored");
+				status = "devnode blacklisted, unmonitored";
+			else
+				status = "devnode whitelisted, unmonitored";
 		} else
-			fwd += snprintf(buff + fwd, len - fwd,
-					" devnode whitelisted, monitored");
-		fwd += snprintf(buff + fwd, len - fwd, "\n");
+			status = " devnode whitelisted, monitored";
+
+		fwd += snprintf(buff + fwd, len - fwd, " %s\n", status);
+		udev_device_unref(u_dev);
+		if (fwd >= len)
+			break;
 	}
-	closedir(blkdir);
+out:
+	udev_enumerate_unref(enm);
 
 	if (fwd >= len)
 		return len;
