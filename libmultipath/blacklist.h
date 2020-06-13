@@ -36,12 +36,17 @@ struct blentry_device {
 
 int setup_default_blist (struct config *);
 int alloc_ble_device (vector);
-int filter_devnode (vector, vector, char *);
-int filter_wwid (vector, vector, char *, char *);
-int filter_device (vector, vector, char *, char *, char *);
-int filter_path (struct config *, struct path *);
-int filter_property(struct config *, struct udev_device *, int, const char*);
-int filter_protocol(vector, vector, struct path *);
+int filter_devnode (const struct _vector *, const struct _vector *,
+		    const char *);
+int filter_wwid (const struct _vector *, const struct _vector *,
+		 const char *, const char *);
+int filter_device (const struct _vector *, const struct _vector *,
+		   const char *, const char *, const char *);
+int filter_path (const struct config *, const struct path *);
+int filter_property(const struct config *, struct udev_device *,
+		    int, const char*);
+int filter_protocol(const struct _vector *, const struct _vector *,
+		    const struct path *);
 int store_ble (vector, const char *, int);
 int set_ble_device (vector, const char *, const char *, int);
 void free_blacklist (vector);
