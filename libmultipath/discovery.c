@@ -137,6 +137,11 @@ path_discover (vector pathvec, struct config * conf,
 				      udevice, flag | DI_BLACKLIST,
 				      NULL);
 	else
+		/*
+		 * Don't use DI_BLACKLIST on paths already in pathvec. We rely
+		 * on the caller to pre-populate the pathvec with valid paths
+		 * only.
+		 */
 		return pathinfo(pp, conf, flag);
 }
 
