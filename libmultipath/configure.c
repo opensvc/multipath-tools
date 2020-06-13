@@ -1409,17 +1409,15 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 
 	if (dev_type == DEV_DEVT) {
 		strchop(dev);
-		if (devt2devname(buff, FILE_NAME_SIZE, dev)) {
-			condlog(0, "%s: cannot find block device\n", dev);
-			return 1;
-		}
-		pp = find_path_by_dev(pathvec, buff);
+		pp = find_path_by_devt(pathvec, dev);
 		if (!pp) {
 			struct udev_device *udevice =
 				get_udev_device(dev, dev_type);
 
-			if (!udevice)
+			if (!udevice) {
+				condlog(0, "%s: cannot find block device", dev);
 				return 1;
+			}
 
 			conf = get_multipath_config();
 			pthread_cleanup_push(put_multipath_config, conf);
