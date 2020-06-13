@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "checkers.h"
 #include "vector.h"
@@ -137,6 +138,7 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 	struct path * pp;
 	struct pathgroup * pgp;
 
+	assert(pathvec != NULL);
 	p = params;
 
 	condlog(4, "%s: disassemble map [%s]", mpp->alias, params);
@@ -297,8 +299,7 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 				devname[0] = '\0';
 			}
 
-			if (pathvec)
-				pp = find_path_by_devt(pathvec, word);
+			pp = find_path_by_devt(pathvec, word);
 
 			if (!pp) {
 				pp = alloc_path();
