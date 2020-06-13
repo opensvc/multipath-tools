@@ -92,7 +92,6 @@ static void test_devt2devname_length_1(void **state)
 {
 	char dummy[] = "";
 
-	skip();
 	assert_int_equal(devt2devname(dummy, sizeof(dummy), *state), 1);
 }
 
@@ -100,7 +99,6 @@ static void test_devt2devname_devt_null(void **state)
 {
 	char dummy[32];
 
-	skip();
 	assert_int_equal(devt2devname(dummy, sizeof(dummy), NULL), 1);
 }
 
