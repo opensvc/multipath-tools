@@ -13,7 +13,7 @@ CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathcmddir) \
 LIBDEPS += -L$(multipathdir) -L$(mpathcmddir) -lmultipath -lmpathcmd -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
-	 alias directio valid
+	 alias directio valid devt
 
 .SILENT: $(TESTS:%=%.o)
 .PRECIOUS: $(TESTS:%=%-test)
@@ -52,6 +52,7 @@ alias-test_TESTDEPS := test-log.o
 alias-test_LIBDEPS := -lpthread -ldl
 valid-test_OBJDEPS := ../libmultipath/valid.o
 valid-test_LIBDEPS := -ludev -lpthread -ldl
+devt-test_LIBDEPS := -ludev
 ifneq ($(DIO_TEST_DEV),)
 directio-test_LIBDEPS := -laio
 endif
