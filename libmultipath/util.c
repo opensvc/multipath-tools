@@ -26,11 +26,11 @@
 size_t
 strchop(char *str)
 {
-	int i;
+	size_t i;
 
-	for (i=strlen(str)-1; i >=0 && isspace(str[i]); --i) ;
+	for (i = strlen(str) - 1; i != (size_t) -1 && isspace(str[i]); i--) ;
 	str[++i] = '\0';
-	return strlen(str);
+	return i;
 }
 
 int
