@@ -1339,7 +1339,8 @@ struct udev_device *get_udev_device(const char *dev, enum devtypes dev_type)
 	return ud;
 }
 
-static int _get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
+static int _get_refwwid(enum mpath_cmds cmd, const char *dev,
+			enum devtypes dev_type,
 			vector pathvec, struct config *conf, char **wwid)
 {
 	int ret = 1;
@@ -1374,7 +1375,6 @@ static int _get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 		goto common;
 
 	case DEV_DEVT:
-		strchop(dev);
 		pp = find_path_by_devt(pathvec, dev);
 		goto common;
 
@@ -1446,7 +1446,7 @@ static int _get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 /*
  * Returns: PATHINFO_OK, PATHINFO_FAILED, or PATHINFO_SKIPPED (see pathinfo())
  */
-int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
+int get_refwwid(enum mpath_cmds cmd, const char *dev, enum devtypes dev_type,
 		vector pathvec, char **wwid)
 
 {
