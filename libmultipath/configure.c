@@ -1339,22 +1339,14 @@ struct udev_device *get_udev_device(const char *dev, enum devtypes dev_type)
 	return ud;
 }
 
-/*
- * returns:
- * 0 - success
- * 1 - failure
- * 2 - blacklist
- */
-int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
-		vector pathvec, char **wwid)
+static int _get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
+			vector pathvec, struct config *conf, char **wwid)
 {
 	int ret = 1;
 	struct path * pp;
 	char buff[FILE_NAME_SIZE];
 	char * refwwid = NULL, tmpwwid[WWID_SIZE];
 	int flags = DI_SYSFS | DI_WWID;
-	struct config *conf;
-	int invalid = 0;
 
 	if (!wwid)
 		return 1;
@@ -1381,11 +1373,8 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 			if (!udevice)
 				return 1;
 
-			conf = get_multipath_config();
-			pthread_cleanup_push(put_multipath_config, conf);
 			ret = store_pathinfo(pathvec, conf, udevice,
 					     flags, &pp);
-			pthread_cleanup_pop(1);
 			udev_device_unref(udevice);
 			if (!pp) {
 				if (ret == 1)
@@ -1394,13 +1383,8 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 				return ret;
 			}
 		}
-		conf = get_multipath_config();
-		pthread_cleanup_push(put_multipath_config, conf);
 		if (pp->udev && pp->uid_attribute &&
 		    filter_property(conf, pp->udev, 3, pp->uid_attribute) > 0)
-			invalid = 1;
-		pthread_cleanup_pop(1);
-		if (invalid)
 			return 2;
 
 		refwwid = pp->wwid;
@@ -1419,11 +1403,8 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 				return 1;
 			}
 
-			conf = get_multipath_config();
-			pthread_cleanup_push(put_multipath_config, conf);
 			ret = store_pathinfo(pathvec, conf, udevice,
 					     flags, &pp);
-			pthread_cleanup_pop(1);
 			udev_device_unref(udevice);
 			if (!pp) {
 				if (ret == 1)
@@ -1432,13 +1413,8 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 				return ret;
 			}
 		}
-		conf = get_multipath_config();
-		pthread_cleanup_push(put_multipath_config, conf);
 		if (pp->udev && pp->uid_attribute &&
 		    filter_property(conf, pp->udev, 3, pp->uid_attribute) > 0)
-			invalid = 1;
-		pthread_cleanup_pop(1);
-		if (invalid)
 			return 2;
 		refwwid = pp->wwid;
 		goto out;
@@ -1450,24 +1426,16 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 		if (!udevice)
 			return 1;
 
-		conf = get_multipath_config();
-		pthread_cleanup_push(put_multipath_config, conf);
 		ret = store_pathinfo(pathvec, conf, udevice,
 				     flags, &pp);
-		pthread_cleanup_pop(1);
 		udev_device_unref(udevice);
 		if (!pp) {
 			if (ret == 1)
 				condlog(0, "%s: can't store path info", dev);
 			return ret;
 		}
-		conf = get_multipath_config();
-		pthread_cleanup_push(put_multipath_config, conf);
 		if (pp->udev && pp->uid_attribute &&
 		    filter_property(conf, pp->udev, 3, pp->uid_attribute) > 0)
-			invalid = 1;
-		pthread_cleanup_pop(1);
-		if (invalid)
 			return 2;
 		refwwid = pp->wwid;
 		goto out;
@@ -1475,8 +1443,6 @@ int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 
 	if (dev_type == DEV_DEVMAP) {
 
-		conf = get_multipath_config();
-		pthread_cleanup_push(put_multipath_config, conf);
 		if (((dm_get_uuid(dev, tmpwwid, WWID_SIZE)) == 0)
 		    && (strlen(tmpwwid))) {
 			refwwid = tmpwwid;
@@ -1507,9 +1473,6 @@ check:
 		if (refwwid && strlen(refwwid) &&
 		    filter_wwid(conf->blist_wwid, conf->elist_wwid, refwwid,
 				NULL) > 0)
-			invalid = 1;
-		pthread_cleanup_pop(1);
-		if (invalid)
 			return 2;
 	}
 out:
@@ -1519,6 +1482,25 @@ out:
 	}
 
 	return 1;
+}
+
+/*
+ * returns:
+ * 0 - success
+ * 1 - failure
+ * 2 - blacklist
+ */
+int get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
+		vector pathvec, char **wwid)
+
+{
+	int ret;
+	struct config *conf = get_multipath_config();
+
+	pthread_cleanup_push(put_multipath_config, conf);
+	ret = _get_refwwid(cmd, dev, dev_type, pathvec, conf, wwid);
+	pthread_cleanup_pop(1);
+	return ret;
 }
 
 int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
