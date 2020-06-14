@@ -157,7 +157,7 @@ struct mpentry *find_mpe(vector mptable, char *wwid)
 	return NULL;
 }
 
-char *get_mpe_wwid(vector mptable, char *alias)
+const char *get_mpe_wwid(const struct _vector *mptable, const char *alias)
 {
 	int i;
 	struct mpentry * mpe;

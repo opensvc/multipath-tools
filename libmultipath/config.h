@@ -239,7 +239,7 @@ int find_hwe (const struct _vector *hwtable,
 	      const char * vendor, const char * product, const char *revision,
 	      vector result);
 struct mpentry * find_mpe (vector mptable, char * wwid);
-char * get_mpe_wwid (vector mptable, char * alias);
+const char *get_mpe_wwid (const struct _vector *mptable, const char *alias);
 
 struct hwentry * alloc_hwe (void);
 struct mpentry * alloc_mpe (void);

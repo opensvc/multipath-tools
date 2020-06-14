@@ -1345,7 +1345,8 @@ static int _get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 	int ret = 1;
 	struct path * pp;
 	char buff[FILE_NAME_SIZE];
-	char * refwwid = NULL, tmpwwid[WWID_SIZE];
+	const char *refwwid = NULL;
+	char tmpwwid[WWID_SIZE];
 	struct udev_device *udevice;
 	int flags = DI_SYSFS | DI_WWID;
 
