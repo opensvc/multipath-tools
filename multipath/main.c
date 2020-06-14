@@ -1031,6 +1031,8 @@ main (int argc, char *argv[])
 			condlog(0, "'%s' is not a valid argument\n", dev);
 			goto out;
 		}
+		if (dev_type == DEV_DEVNODE || dev_type == DEV_DEVT)
+			strchop(dev);
 	}
 	if (dev_type == DEV_UEVENT) {
 		openlog("multipath", 0, LOG_DAEMON);
