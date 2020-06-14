@@ -408,6 +408,68 @@ static int test_strlcpy(void)
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }
 
+static void test_strchop_nochop(void **state)
+{
+	char hello[] = "hello";
+
+	assert_int_equal(strchop(hello), 5);
+	assert_string_equal(hello, "hello");
+}
+
+static void test_strchop_newline(void **state)
+{
+	char hello[] = "hello\n";
+
+	assert_int_equal(strchop(hello), 5);
+	assert_string_equal(hello, "hello");
+}
+
+static void test_strchop_space(void **state)
+{
+	char hello[] = " ello      ";
+
+	assert_int_equal(strchop(hello), 5);
+	assert_string_equal(hello, " ello");
+}
+
+static void test_strchop_mix(void **state)
+{
+	char hello[] = " el\no \t  \n\n \t    \n";
+
+	assert_int_equal(strchop(hello), 5);
+	assert_string_equal(hello, " el\no");
+}
+
+static void test_strchop_blank(void **state)
+{
+	char hello[] = "  \t  \n\n \t    \n";
+
+	assert_int_equal(strchop(hello), 0);
+	assert_string_equal(hello, "");
+}
+
+static void test_strchop_empty(void **state)
+{
+	char hello[] = "";
+
+	assert_int_equal(strchop(hello), 0);
+	assert_string_equal(hello, "");
+}
+
+static int test_strchop(void)
+{
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_strchop_nochop),
+		cmocka_unit_test(test_strchop_newline),
+		cmocka_unit_test(test_strchop_space),
+		cmocka_unit_test(test_strchop_mix),
+		cmocka_unit_test(test_strchop_blank),
+		cmocka_unit_test(test_strchop_empty),
+	};
+
+	return cmocka_run_group_tests(tests, NULL, NULL);
+}
+
 int main(void)
 {
 	int ret = 0;
@@ -415,5 +477,6 @@ int main(void)
 	ret += test_basenamecpy();
 	ret += test_bitmasks();
 	ret += test_strlcpy();
+	ret += test_strchop();
 	return ret;
 }
