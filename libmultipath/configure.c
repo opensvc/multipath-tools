@@ -1444,32 +1444,23 @@ static int _get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 	if (dev_type == DEV_DEVMAP) {
 
 		if (((dm_get_uuid(dev, tmpwwid, WWID_SIZE)) == 0)
-		    && (strlen(tmpwwid))) {
+		    && (strlen(tmpwwid)))
 			refwwid = tmpwwid;
-			goto check;
+
+		/* or may be a binding */
+		else if (get_user_friendly_wwid(dev, tmpwwid,
+						conf->bindings_file) == 0)
+			refwwid = tmpwwid;
+
+		/* or may be an alias */
+		else {
+			refwwid = get_mpe_wwid(conf->mptable, dev);
+
+			/* or directly a wwid */
+			if (!refwwid)
+				refwwid = dev;
 		}
 
-		/*
-		 * may be a binding
-		 */
-		if (get_user_friendly_wwid(dev, tmpwwid,
-					   conf->bindings_file) == 0) {
-			refwwid = tmpwwid;
-			goto check;
-		}
-
-		/*
-		 * or may be an alias
-		 */
-		refwwid = get_mpe_wwid(conf->mptable, dev);
-
-		/*
-		 * or directly a wwid
-		 */
-		if (!refwwid)
-			refwwid = dev;
-
-check:
 		if (refwwid && strlen(refwwid) &&
 		    filter_wwid(conf->blist_wwid, conf->elist_wwid, refwwid,
 				NULL) > 0)
