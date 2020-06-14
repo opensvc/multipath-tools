@@ -1346,6 +1346,7 @@ static int _get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 	struct path * pp;
 	char buff[FILE_NAME_SIZE];
 	char * refwwid = NULL, tmpwwid[WWID_SIZE];
+	struct udev_device *udevice;
 	int flags = DI_SYSFS | DI_WWID;
 
 	if (!wwid)
@@ -1358,20 +1359,36 @@ static int _get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 	if (cmd != CMD_REMOVE_WWID)
 		flags |= DI_BLACKLIST;
 
-	if (dev_type == DEV_DEVNODE) {
+	switch (dev_type) {
+	case DEV_DEVNODE:
 		if (basenamecpy(dev, buff, FILE_NAME_SIZE) == 0) {
 			condlog(1, "basename failed for '%s' (%s)",
 				dev, buff);
 			return PATHINFO_FAILED;
 		}
 
-		pp = find_path_by_dev(pathvec, buff);
-		if (!pp) {
-			struct udev_device *udevice =
-				get_udev_device(buff, dev_type);
+		/* dev is used in common code below */
+		dev = buff;
+		pp = find_path_by_dev(pathvec, dev);
+		goto common;
 
-			if (!udevice)
+	case DEV_DEVT:
+		strchop(dev);
+		pp = find_path_by_devt(pathvec, dev);
+		goto common;
+
+	case DEV_UEVENT:
+		pp = NULL;
+		/* For condlog below, dev is unused in get_udev_device() */
+		dev = "environment";
+	common:
+		if (!pp) {
+			udevice = get_udev_device(dev, dev_type);
+
+			if (!udevice) {
+				condlog(0, "%s: cannot find block device", dev);
 				return PATHINFO_FAILED;
+			}
 
 			ret = store_pathinfo(pathvec, conf, udevice,
 					     flags, &pp);
@@ -1386,63 +1403,10 @@ static int _get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 		if (pp->udev && pp->uid_attribute &&
 		    filter_property(conf, pp->udev, 3, pp->uid_attribute) > 0)
 			return PATHINFO_SKIPPED;
-
 		refwwid = pp->wwid;
-		goto out;
-	}
+		break;
 
-	if (dev_type == DEV_DEVT) {
-		strchop(dev);
-		pp = find_path_by_devt(pathvec, dev);
-		if (!pp) {
-			struct udev_device *udevice =
-				get_udev_device(dev, dev_type);
-
-			if (!udevice) {
-				condlog(0, "%s: cannot find block device", dev);
-				return PATHINFO_FAILED;
-			}
-
-			ret = store_pathinfo(pathvec, conf, udevice,
-					     flags, &pp);
-			udev_device_unref(udevice);
-			if (!pp) {
-				if (ret == PATHINFO_FAILED)
-					condlog(0, "%s can't store path info",
-						buff);
-				return ret;
-			}
-		}
-		if (pp->udev && pp->uid_attribute &&
-		    filter_property(conf, pp->udev, 3, pp->uid_attribute) > 0)
-			return PATHINFO_SKIPPED;
-		refwwid = pp->wwid;
-		goto out;
-	}
-
-	if (dev_type == DEV_UEVENT) {
-		struct udev_device *udevice = get_udev_device(dev, dev_type);
-
-		if (!udevice)
-			return PATHINFO_FAILED;
-
-		ret = store_pathinfo(pathvec, conf, udevice,
-				     flags, &pp);
-		udev_device_unref(udevice);
-		if (!pp) {
-			if (ret == PATHINFO_FAILED)
-				condlog(0, "%s: can't store path info", dev);
-			return ret;
-		}
-		if (pp->udev && pp->uid_attribute &&
-		    filter_property(conf, pp->udev, 3, pp->uid_attribute) > 0)
-			return PATHINFO_SKIPPED;
-		refwwid = pp->wwid;
-		goto out;
-	}
-
-	if (dev_type == DEV_DEVMAP) {
-
+	case DEV_DEVMAP:
 		if (((dm_get_uuid(dev, tmpwwid, WWID_SIZE)) == 0)
 		    && (strlen(tmpwwid)))
 			refwwid = tmpwwid;
@@ -1465,8 +1429,11 @@ static int _get_refwwid(enum mpath_cmds cmd, char *dev, enum devtypes dev_type,
 		    filter_wwid(conf->blist_wwid, conf->elist_wwid, refwwid,
 				NULL) > 0)
 			return PATHINFO_SKIPPED;
+		break;
+	default:
+		break;
 	}
-out:
+
 	if (refwwid && strlen(refwwid)) {
 		*wwid = STRDUP(refwwid);
 		return PATHINFO_OK;
