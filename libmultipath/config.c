@@ -696,9 +696,9 @@ process_config_dir(struct config *conf, char *dir)
 	pthread_cleanup_pop(1);
 }
 
+#ifdef USE_SYSTEMD
 static void set_max_checkint_from_watchdog(struct config *conf)
 {
-#ifdef USE_SYSTEMD
 	char *envp = getenv("WATCHDOG_USEC");
 	unsigned long checkint;
 
@@ -714,8 +714,8 @@ static void set_max_checkint_from_watchdog(struct config *conf)
 		condlog(3, "enabling watchdog, interval %ld", checkint);
 		conf->use_watchdog = true;
 	}
-#endif
 }
+#endif
 
 struct config *
 load_config (char * file)
@@ -789,7 +789,9 @@ load_config (char * file)
 	/*
 	 * fill the voids left in the config file
 	 */
+#ifdef USE_SYSTEMD
 	set_max_checkint_from_watchdog(conf);
+#endif
 	if (conf->max_checkint == 0) {
 		if (conf->checkint == CHECKINT_UNDEF)
 			conf->checkint = DEFAULT_CHECKINT;

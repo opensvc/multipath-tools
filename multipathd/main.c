@@ -176,6 +176,7 @@ daemon_status(void)
 /*
  * I love you too, systemd ...
  */
+#ifdef USE_SYSTEMD
 static const char *
 sd_notify_status(enum daemon_status state)
 {
@@ -195,7 +196,6 @@ sd_notify_status(enum daemon_status state)
 	return NULL;
 }
 
-#ifdef USE_SYSTEMD
 static void do_sd_notify(enum daemon_status old_state,
 			 enum daemon_status new_state)
 {
@@ -247,7 +247,9 @@ enum daemon_status wait_for_state_change_if(enum daemon_status oldstate,
 static void __post_config_state(enum daemon_status state)
 {
 	if (state != running_state && running_state != DAEMON_SHUTDOWN) {
+#ifdef USE_SYSTEMD
 		enum daemon_status old_state = running_state;
+#endif
 
 		running_state = state;
 		pthread_cond_broadcast(&config_cond);
@@ -272,7 +274,9 @@ int set_config_state(enum daemon_status state)
 	pthread_cleanup_push(config_cleanup, NULL);
 	pthread_mutex_lock(&config_lock);
 	if (running_state != state) {
+#ifdef USE_SYSTEMD
 		enum daemon_status old_state = running_state;
+#endif
 
 		if (running_state == DAEMON_SHUTDOWN)
 			rc = EINVAL;
@@ -2280,7 +2284,9 @@ checkerloop (void *ap)
 	struct timespec last_time;
 	struct config *conf;
 	int foreign_tick = 0;
+#ifdef USE_SYSTEMD
 	bool use_watchdog;
+#endif
 
 	pthread_cleanup_push(rcu_unregister, NULL);
 	rcu_register_thread();
@@ -2294,7 +2300,9 @@ checkerloop (void *ap)
 
 	/* use_watchdog is set from process environment and never changes */
 	conf = get_multipath_config();
+#ifdef USE_SYSTEMD
 	use_watchdog = conf->use_watchdog;
+#endif
 	put_multipath_config(conf);
 
 	while (1) {
