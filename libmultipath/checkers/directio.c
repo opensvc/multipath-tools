@@ -256,7 +256,7 @@ get_events(struct aio_group *aio_grp, struct timespec *timeout)
 {
 	struct io_event events[128];
 	int i, nr, got_events = 0;
-	struct timespec zero_timeout = {0};
+	struct timespec zero_timeout = { .tv_sec = 0, };
 	struct timespec *timep = timeout;
 
 	do {
