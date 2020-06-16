@@ -374,7 +374,7 @@ set_value(vector strvec)
 			goto oom;
 		}
 		if (*alloc != '\0')
-			strncat(alloc, " ", 1);
+			strncat(alloc, " ", len - strlen(alloc));
 		strncat(alloc, str, len - strlen(alloc) - 1);
 	}
 	return alloc;
