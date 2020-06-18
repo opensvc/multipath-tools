@@ -774,14 +774,15 @@ sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint)
 			no_path_retry_tmo = MAX_DEV_LOSS_TMO;
 		if (no_path_retry_tmo > dev_loss_tmo)
 			dev_loss_tmo = no_path_retry_tmo;
-		condlog(3, "%s: update dev_loss_tmo to %u",
-			mpp->alias, dev_loss_tmo);
 	} else if (mpp->no_path_retry == NO_PATH_RETRY_QUEUE) {
 		dev_loss_tmo = MAX_DEV_LOSS_TMO;
-		condlog(3, "%s: update dev_loss_tmo to %u",
-			mpp->alias, dev_loss_tmo);
 	}
-	mpp->dev_loss = dev_loss_tmo;
+	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET &&
+	    mpp->dev_loss != dev_loss_tmo) {
+		condlog(2, "%s: Using dev_loss_tmo=%u instead of %u because of no_path_retry setting",
+			mpp->alias, dev_loss_tmo, mpp->dev_loss);
+		mpp->dev_loss = dev_loss_tmo;
+	}
 	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET &&
 	    mpp->fast_io_fail != MP_FAST_IO_FAIL_UNSET &&
 	    (unsigned int)mpp->fast_io_fail >= mpp->dev_loss) {
