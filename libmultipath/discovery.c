@@ -651,7 +651,7 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 		}
 	} else if (mpp->dev_loss > DEFAULT_DEV_LOSS_TMO &&
 		mpp->no_path_retry != NO_PATH_RETRY_QUEUE) {
-		condlog(3, "%s: limiting dev_loss_tmo to %d, since "
+		condlog(2, "%s: limiting dev_loss_tmo to %d, since "
 			"fast_io_fail is not set",
 			rport_id, DEFAULT_DEV_LOSS_TMO);
 		mpp->dev_loss = DEFAULT_DEV_LOSS_TMO;
