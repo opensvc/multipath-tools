@@ -873,7 +873,7 @@ set_dev_loss(vector strvec, void *ptr)
 	if (!strcmp(buff, "infinity"))
 		*uint_ptr = MAX_DEV_LOSS_TMO;
 	else if (sscanf(buff, "%u", uint_ptr) != 1)
-		*uint_ptr = 0;
+		*uint_ptr = DEV_LOSS_TMO_UNSET;
 
 	FREE(buff);
 	return 0;
@@ -882,7 +882,7 @@ set_dev_loss(vector strvec, void *ptr)
 int
 print_dev_loss(char * buff, int len, unsigned long v)
 {
-	if (!v)
+	if (v == DEV_LOSS_TMO_UNSET)
 		return 0;
 	if (v >= MAX_DEV_LOSS_TMO)
 		return snprintf(buff, len, "\"infinity\"");

@@ -768,7 +768,7 @@ int select_dev_loss(struct config *conf, struct multipath *mp)
 	mp_set_ovr(dev_loss);
 	mp_set_hwe(dev_loss);
 	mp_set_conf(dev_loss);
-	mp->dev_loss = 0;
+	mp->dev_loss = DEV_LOSS_TMO_UNSET;
 	return 0;
 out:
 	print_dev_loss(buff, 12, mp->dev_loss);

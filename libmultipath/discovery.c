@@ -671,7 +671,7 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 					rport_id, value, -ret);
 		}
 	}
-	if (mpp->dev_loss > 0) {
+	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET) {
 		snprintf(value, 16, "%u", mpp->dev_loss);
 		ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
 					   value, strlen(value));
@@ -705,7 +705,7 @@ sysfs_set_session_tmo(struct multipath *mpp, struct path *pp)
 	condlog(4, "target%d:%d:%d -> %s", pp->sg_id.host_no,
 		pp->sg_id.channel, pp->sg_id.scsi_id, session_id);
 
-	if (mpp->dev_loss) {
+	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET) {
 		condlog(3, "%s: ignoring dev_loss_tmo on iSCSI", pp->dev);
 	}
 	if (mpp->fast_io_fail != MP_FAST_IO_FAIL_UNSET) {
@@ -747,7 +747,7 @@ sysfs_set_nexus_loss_tmo(struct multipath *mpp, struct path *pp)
 	condlog(4, "target%d:%d:%d -> %s", pp->sg_id.host_no,
 		pp->sg_id.channel, pp->sg_id.scsi_id, end_dev_id);
 
-	if (mpp->dev_loss) {
+	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET) {
 		snprintf(value, 11, "%u", mpp->dev_loss);
 		if (sysfs_attr_set_value(sas_dev, "I_T_nexus_loss_timeout",
 					 value, strlen(value)) <= 0)
@@ -782,13 +782,15 @@ sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint)
 			mpp->alias, dev_loss_tmo);
 	}
 	mpp->dev_loss = dev_loss_tmo;
-	if (mpp->dev_loss && mpp->fast_io_fail > 0 &&
+	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET &&
+	    mpp->fast_io_fail != MP_FAST_IO_FAIL_UNSET &&
 	    (unsigned int)mpp->fast_io_fail >= mpp->dev_loss) {
 		condlog(3, "%s: turning off fast_io_fail (%d is not smaller than dev_loss_tmo)",
 			mpp->alias, mpp->fast_io_fail);
 		mpp->fast_io_fail = MP_FAST_IO_FAIL_OFF;
 	}
-	if (!mpp->dev_loss && mpp->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
+	if (mpp->dev_loss == DEV_LOSS_TMO_UNSET &&
+	    mpp->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
 		return 0;
 
 	vector_foreach_slot(mpp->paths, pp, i) {
