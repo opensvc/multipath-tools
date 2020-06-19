@@ -30,6 +30,7 @@
 #include "debug.h"
 #include "discovery.h"
 #include "util.h"
+#include "foreign.h"
 
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
 #define MIN(x,y) (((x) > (y)) ? (y) : (x))
@@ -2061,13 +2062,23 @@ int snprint_devices(struct config *conf, char *buff, size_t len,
 
 		pp = find_path_by_dev(vecs->pathvec, devname);
 		if (!pp) {
-			r = filter_devnode(conf->blist_devnode,
-					   conf->elist_devnode,
-					   devname);
-			if (r > 0)
-				status = "devnode blacklisted, unmonitored";
-			else
-				status = "devnode whitelisted, unmonitored";
+			const char *hidden;
+
+			hidden = udev_device_get_sysattr_value(u_dev,
+							       "hidden");
+			if (hidden && !strcmp(hidden, "1"))
+				status = "hidden, unmonitored";
+			else if (is_claimed_by_foreign(u_dev))
+				status = "foreign, monitored";
+			else {
+				r = filter_devnode(conf->blist_devnode,
+						   conf->elist_devnode,
+						   devname);
+				if (r > 0)
+					status = "devnode blacklisted, unmonitored";
+				else
+					status = "devnode whitelisted, unmonitored";
+			}
 		} else
 			status = " devnode whitelisted, monitored";
 
