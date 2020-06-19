@@ -215,7 +215,7 @@ rlookup_binding(FILE *f, char *buff, const char *map_alias)
 		}
 		if (strcmp(alias, map_alias) == 0){
 			condlog(3, "Found matching alias [%s] in bindings file."
-				"\nSetting wwid to %s", alias, wwid);
+				" Setting wwid to %s", alias, wwid);
 			strlcpy(buff, wwid, WWID_SIZE);
 			return 0;
 		}
