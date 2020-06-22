@@ -188,9 +188,11 @@ retry:
 int do_inquiry(const struct path *pp, int evpd, unsigned int codepage,
 	       void *resp, int resplen, unsigned int timeout)
 {
-	struct udev_device *ud;
+	struct udev_device *ud = NULL;
 
-	ud = udev_device_get_parent_with_subsystem_devtype(pp->udev, "scsi",
+	if (pp->udev)
+		ud = udev_device_get_parent_with_subsystem_devtype(pp->udev,
+								   "scsi",
 							   "scsi_device");
 	if (ud != NULL) {
 		int rc;

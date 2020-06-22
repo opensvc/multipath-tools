@@ -491,7 +491,7 @@ int verify_paths(struct multipath *mpp, struct vectors *vecs)
 		/*
 		 * see if path is in sysfs
 		 */
-		if (sysfs_attr_get_value(pp->udev, "dev",
+		if (!pp->udev || sysfs_attr_get_value(pp->udev, "dev",
 					 pp->dev_t, BLK_DEV_SIZE) < 0) {
 			if (pp->state != PATH_DOWN) {
 				condlog(1, "%s: removing valid path %s in state %d",

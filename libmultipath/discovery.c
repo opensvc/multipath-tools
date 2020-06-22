@@ -344,7 +344,10 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 	struct udev_device *parent, *tgtdev;
 	int host, channel, tgtid = -1;
 
-	parent = udev_device_get_parent_with_subsystem_devtype(pp->udev, "scsi", "scsi_device");
+	if (!pp->udev)
+		return 1;
+	parent = udev_device_get_parent_with_subsystem_devtype(pp->udev,
+							 "scsi", "scsi_device");
 	if (!parent)
 		return 1;
 	/* Check for SAS */
@@ -1383,7 +1386,8 @@ nvme_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 	const char *attr_path = NULL;
 	const char *attr;
 
-	attr_path = udev_device_get_sysname(pp->udev);
+	if (pp->udev)
+		attr_path = udev_device_get_sysname(pp->udev);
 	if (!attr_path)
 		return PATHINFO_FAILED;
 
@@ -1963,6 +1967,9 @@ static ssize_t uid_fallback(struct path *pp, int path_state,
 		}
 	} else if (pp->bus == SYSFS_BUS_NVME) {
 		char value[256];
+
+		if (!pp->udev)
+			return -1;
 		len = sysfs_attr_get_value(pp->udev, "wwid", value,
 					   sizeof(value));
 		if (len <= 0)
