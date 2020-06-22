@@ -114,10 +114,14 @@ alloc_path (void)
 }
 
 void
-free_path (struct path * pp)
+uninitialize_path(struct path *pp)
 {
 	if (!pp)
 		return;
+
+	pp->dmstate = PSTATE_UNDEF;
+	pp->uid_attribute = NULL;
+	pp->getuid = NULL;
 
 	if (checker_selected(&pp->checker))
 		checker_put(&pp->checker);
@@ -125,8 +129,19 @@ free_path (struct path * pp)
 	if (prio_selected(&pp->prio))
 		prio_put(&pp->prio);
 
-	if (pp->fd >= 0)
+	if (pp->fd >= 0) {
 		close(pp->fd);
+		pp->fd = -1;
+	}
+}
+
+void
+free_path (struct path * pp)
+{
+	if (!pp)
+		return;
+
+	uninitialize_path(pp);
 
 	if (pp->udev) {
 		udev_device_unref(pp->udev);

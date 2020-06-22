@@ -103,14 +103,7 @@ void orphan_path(struct path *pp, const char *reason)
 		pp->mpp->hwe = NULL;
 	}
 	pp->mpp = NULL;
-	pp->dmstate = PSTATE_UNDEF;
-	pp->uid_attribute = NULL;
-	pp->getuid = NULL;
-	prio_put(&pp->prio);
-	checker_put(&pp->checker);
-	if (pp->fd >= 0)
-		close(pp->fd);
-	pp->fd = -1;
+	uninitialize_path(pp);
 }
 
 void orphan_paths(vector pathvec, struct multipath *mpp, const char *reason)
