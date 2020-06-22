@@ -75,7 +75,7 @@ int adopt_paths(vector pathvec, struct multipath *mpp)
 			if (!mpp->paths && !(mpp->paths = vector_alloc()))
 				return 1;
 
-			if (!find_path_by_dev(mpp->paths, pp->dev) &&
+			if (!find_path_by_devt(mpp->paths, pp->dev_t) &&
 			    store_path(mpp->paths, pp))
 					return 1;
 			conf = get_multipath_config();
