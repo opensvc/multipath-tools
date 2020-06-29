@@ -9,10 +9,6 @@
 #define HOTPLUG_NUM_ENVP		32
 #define OBJECT_SIZE			512
 
-#ifndef NETLINK_KOBJECT_UEVENT
-#define NETLINK_KOBJECT_UEVENT		15
-#endif
-
 struct udev;
 
 struct uevent {
