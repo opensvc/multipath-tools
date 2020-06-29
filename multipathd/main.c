@@ -1509,6 +1509,31 @@ uev_trigger (struct uevent * uev, void * trigger_data)
 			uev_pathfail_check(uev, vecs);
 		} else if (!strncmp(uev->action, "remove", 6)) {
 			r = uev_remove_map(uev, vecs);
+		} else if (!strncmp(uev->action, "add", 3)) {
+			const char *ev_name;
+			char *dm_name;
+			int major = -1, minor = -1;
+
+			/*
+			 * If DM_NAME is not set for a valid map, trigger a
+			 * change event. This can happen during coldplug
+			 * if udev was killed between handling the 'add' and
+			 * 'change' events before.
+			 */
+			ev_name = uevent_get_dm_name(uev);
+			if (!ev_name) {
+				major = uevent_get_major(uev);
+				minor = uevent_get_minor(uev);
+				dm_name = dm_mapname(major, minor);
+				if (dm_name && *dm_name) {
+					condlog(2, "%s: received incomplete 'add' uevent, triggering change",
+						dm_name);
+					udev_device_set_sysattr_value(uev->udev,
+								      "uevent",
+								      "change");
+					free(dm_name);
+				}
+			}
 		}
 		goto out;
 	}
