@@ -24,6 +24,7 @@ struct uevent {
 	char *envp[HOTPLUG_NUM_ENVP];
 };
 
+struct uevent *alloc_uevent(void);
 int is_uevent_busy(void);
 
 int uevent_listen(struct udev *udev);
@@ -36,5 +37,6 @@ char *uevent_get_dm_name(const struct uevent *uev);
 char *uevent_get_dm_path(const struct uevent *uev);
 char *uevent_get_dm_action(const struct uevent *uev);
 bool uevent_is_mpath(const struct uevent *uev);
+void uevent_get_wwid(struct uevent *uev);
 
 #endif /* _UEVENT_H */

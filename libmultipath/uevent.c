@@ -60,14 +60,14 @@
 
 typedef int (uev_trigger)(struct uevent *, void * trigger_data);
 
-LIST_HEAD(uevq);
-pthread_mutex_t uevq_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t *uevq_lockp = &uevq_lock;
-pthread_cond_t uev_cond = PTHREAD_COND_INITIALIZER;
-pthread_cond_t *uev_condp = &uev_cond;
-uev_trigger *my_uev_trigger;
-void * my_trigger_data;
-int servicing_uev;
+static LIST_HEAD(uevq);
+static pthread_mutex_t uevq_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t *uevq_lockp = &uevq_lock;
+static pthread_cond_t uev_cond = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t *uev_condp = &uev_cond;
+static uev_trigger *my_uev_trigger;
+static void *my_trigger_data;
+static int servicing_uev;
 
 int is_uevent_busy(void)
 {
@@ -91,8 +91,7 @@ struct uevent * alloc_uevent (void)
 	return uev;
 }
 
-void
-uevq_cleanup(struct list_head *tmpq)
+static void uevq_cleanup(struct list_head *tmpq)
 {
 	struct uevent *uev, *tmp;
 
@@ -172,8 +171,7 @@ uevent_get_wwid(struct uevent *uev)
 		uev->wwid = val;
 }
 
-bool
-uevent_need_merge(void)
+static bool uevent_need_merge(void)
 {
 	struct config * conf;
 	bool need_merge = false;
@@ -186,8 +184,7 @@ uevent_need_merge(void)
 	return need_merge;
 }
 
-bool
-uevent_can_discard(struct uevent *uev)
+static bool uevent_can_discard(struct uevent *uev)
 {
 	int invalid = 0;
 	struct config * conf;
@@ -212,7 +209,7 @@ uevent_can_discard(struct uevent *uev)
 	return false;
 }
 
-bool
+static bool
 uevent_can_filter(struct uevent *earlier, struct uevent *later)
 {
 
@@ -246,7 +243,7 @@ uevent_can_filter(struct uevent *earlier, struct uevent *later)
 	return false;
 }
 
-bool
+static bool
 merge_need_stop(struct uevent *earlier, struct uevent *later)
 {
 	/*
@@ -283,7 +280,7 @@ merge_need_stop(struct uevent *earlier, struct uevent *later)
 	return false;
 }
 
-bool
+static bool
 uevent_can_merge(struct uevent *earlier, struct uevent *later)
 {
 	/* merge paths uevents
@@ -302,7 +299,7 @@ uevent_can_merge(struct uevent *earlier, struct uevent *later)
 	return false;
 }
 
-void
+static void
 uevent_prepare(struct list_head *tmpq)
 {
 	struct uevent *uev, *tmp;
@@ -322,7 +319,7 @@ uevent_prepare(struct list_head *tmpq)
 	}
 }
 
-void
+static void
 uevent_filter(struct uevent *later, struct list_head *tmpq)
 {
 	struct uevent *earlier, *tmp;
@@ -345,7 +342,7 @@ uevent_filter(struct uevent *later, struct list_head *tmpq)
 	}
 }
 
-void
+static void
 uevent_merge(struct uevent *later, struct list_head *tmpq)
 {
 	struct uevent *earlier, *tmp;
@@ -366,7 +363,7 @@ uevent_merge(struct uevent *later, struct list_head *tmpq)
 	}
 }
 
-void
+static void
 merge_uevq(struct list_head *tmpq)
 {
 	struct uevent *later;
@@ -379,7 +376,7 @@ merge_uevq(struct list_head *tmpq)
 	}
 }
 
-void
+static void
 service_uevq(struct list_head *tmpq)
 {
 	struct uevent *uev, *tmp;
@@ -450,7 +447,7 @@ int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
 	return 0;
 }
 
-struct uevent *uevent_from_udev_device(struct udev_device *dev)
+static struct uevent *uevent_from_udev_device(struct udev_device *dev)
 {
 	struct uevent *uev;
 	int i = 0;
@@ -512,7 +509,7 @@ struct uevent *uevent_from_udev_device(struct udev_device *dev)
 	return uev;
 }
 
-bool uevent_burst(struct timeval *start_time, int events)
+static bool uevent_burst(struct timeval *start_time, int events)
 {
 	struct timeval diff_time, end_time;
 	unsigned long speed;

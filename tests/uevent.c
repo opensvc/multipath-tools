@@ -27,10 +27,6 @@
 
 #include "globals.c"
 
-/* Private prototypes missing in uevent.h */
-struct uevent * alloc_uevent(void);
-void uevent_get_wwid(struct uevent *uev);
-
 /* Stringify helpers */
 #define _str_(x) #x
 #define str(x) _str_(x)
