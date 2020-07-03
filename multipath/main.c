@@ -909,10 +909,10 @@ main (int argc, char *argv[])
 				cmd = CMD_DRY_RUN;
 			break;
 		case 'f':
-			conf->remove = FLUSH_ONE;
+			cmd = CMD_FLUSH_ONE;
 			break;
 		case 'F':
-			conf->remove = FLUSH_ALL;
+			cmd = CMD_FLUSH_ALL;
 			break;
 		case 'l':
 			if (optarg && !strncmp(optarg, "l", 1))
@@ -1053,6 +1053,10 @@ main (int argc, char *argv[])
 		condlog(0, "the -w option requires a device");
 		goto out;
 	}
+	if (cmd == CMD_FLUSH_ONE && dev_type != DEV_DEVMAP) {
+		condlog(0, "the -f option requires a map name to remove");
+		goto out;
+	}
 
 	switch(delegate_to_multipathd(cmd, dev, dev_type, conf)) {
 	case DELEGATE_OK:
@@ -1086,16 +1090,12 @@ main (int argc, char *argv[])
 	}
 	if (retries < 0)
 		retries = conf->remove_retries;
-	if (conf->remove == FLUSH_ONE) {
-		if (dev_type == DEV_DEVMAP) {
-			r = dm_suspend_and_flush_map(dev, retries) ?
-				RTVL_FAIL : RTVL_OK;
-		} else
-			condlog(0, "must provide a map name to remove");
-
+	if (cmd == CMD_FLUSH_ONE) {
+		r = dm_suspend_and_flush_map(dev, retries) ?
+		    RTVL_FAIL : RTVL_OK;
 		goto out;
 	}
-	else if (conf->remove == FLUSH_ALL) {
+	else if (cmd == CMD_FLUSH_ALL) {
 		r = dm_flush_maps(1, retries) ? RTVL_FAIL : RTVL_OK;
 		goto out;
 	}

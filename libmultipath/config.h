@@ -38,6 +38,8 @@ enum mpath_cmds {
 	CMD_ADD_WWID,
 	CMD_USABLE_PATHS,
 	CMD_DUMP_CONFIG,
+	CMD_FLUSH_ONE,
+	CMD_FLUSH_ALL,
 };
 
 enum force_reload_types {
@@ -142,7 +144,6 @@ struct config {
 	unsigned int max_checkint;
 	bool use_watchdog;
 	int pgfailback;
-	int remove;
 	int rr_weight;
 	int no_path_retry;
 	int user_friendly_names;

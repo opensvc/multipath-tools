@@ -45,9 +45,6 @@ enum {
 	CP_RETRY,
 };
 
-#define FLUSH_ONE 1
-#define FLUSH_ALL 2
-
 struct vectors;
 
 int setup_map (struct multipath * mpp, char * params, int params_size,
