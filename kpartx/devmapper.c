@@ -618,7 +618,7 @@ remove_partmap(const char *name, void *data)
 
 	if (dm_get_opencount(name)) {
 		if (rd->verbose)
-			printf("%s is in use. Not removing", name);
+			printf("%s is in use. Not removing\n", name);
 		return 1;
 	}
 	if (!dm_simplecmd(DM_DEVICE_REMOVE, name, 0, 0)) {
