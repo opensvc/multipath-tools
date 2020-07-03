@@ -46,7 +46,7 @@ int __setup_multipath (struct vectors * vecs, struct multipath * mpp,
 		       int reset);
 #define setup_multipath(vecs, mpp) __setup_multipath(vecs, mpp, 1)
 int update_multipath (struct vectors *vecs, char *mapname, int reset);
-int update_path_groups(struct multipath *mpp, struct vectors *vecs,
-		       int refresh);
+int reload_and_sync_map(struct multipath *mpp, struct vectors *vecs,
+			int refresh);
 
 #endif /* MAIN_H */

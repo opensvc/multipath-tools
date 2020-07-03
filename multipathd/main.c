@@ -1328,7 +1328,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			else {
 				if (ro == 1)
 					pp->mpp->force_readonly = 1;
-				retval = update_path_groups(mpp, vecs, 0);
+				retval = reload_and_sync_map(mpp, vecs, 0);
 				if (retval == 2)
 					condlog(2, "%s: map removed during reload", pp->dev);
 				else {
@@ -1947,7 +1947,8 @@ static int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
 	return 0;
 }
 
-int update_path_groups(struct multipath *mpp, struct vectors *vecs, int refresh)
+int reload_and_sync_map(struct multipath *mpp,
+			struct vectors *vecs, int refresh)
 {
 	if (reload_map(vecs, mpp, refresh, 1))
 		return 1;
@@ -2378,14 +2379,14 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	if (marginal_changed) {
 		condlog(2, "%s: path is %s marginal", pp->dev,
 			(pp->marginal)? "now" : "no longer");
-		update_path_groups(pp->mpp, vecs, 1);
+		reload_and_sync_map(pp->mpp, vecs, 1);
 	}
 	else if (update_prio(pp, new_path_up) &&
 	    (pp->mpp->pgpolicyfn == (pgpolicyfn *)group_by_prio) &&
 	     pp->mpp->pgfailback == -FAILBACK_IMMEDIATE) {
 		condlog(2, "%s: path priorities changed. reloading",
 			pp->mpp->alias);
-		update_path_groups(pp->mpp, vecs, !new_path_up);
+		reload_and_sync_map(pp->mpp, vecs, !new_path_up);
 	} else if (need_switch_pathgroup(pp->mpp, 0)) {
 		if (pp->mpp->pgfailback > 0 &&
 		    (new_path_up || pp->mpp->failback_tick <= 0))
