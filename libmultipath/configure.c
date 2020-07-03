@@ -687,8 +687,7 @@ select_reload_action(struct multipath *mpp, const struct multipath *cmpp,
 		reason);
 }
 
-static void
-select_action (struct multipath * mpp, vector curmp, int force_reload)
+void select_action (struct multipath *mpp, vector curmp, int force_reload)
 {
 	struct multipath * cmpp;
 	struct multipath * cmpp_by_name;
@@ -1471,41 +1470,4 @@ int get_refwwid(enum mpath_cmds cmd, const char *dev, enum devtypes dev_type,
 	ret = _get_refwwid(cmd, dev, dev_type, pathvec, conf, wwid);
 	pthread_cleanup_pop(1);
 	return ret;
-}
-
-int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
-	       int is_daemon)
-{
-	char params[PARAMS_SIZE] = {0};
-	struct path *pp;
-	int i, r;
-
-	update_mpp_paths(mpp, vecs->pathvec);
-	if (refresh) {
-		vector_foreach_slot (mpp->paths, pp, i) {
-			struct config *conf = get_multipath_config();
-			pthread_cleanup_push(put_multipath_config, conf);
-			r = pathinfo(pp, conf, DI_PRIO);
-			pthread_cleanup_pop(1);
-			if (r) {
-				condlog(2, "%s: failed to refresh pathinfo",
-					mpp->alias);
-				return 1;
-			}
-		}
-	}
-	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
-		condlog(0, "%s: failed to setup map", mpp->alias);
-		return 1;
-	}
-	select_action(mpp, vecs->mpvec, 1);
-
-	r = domap(mpp, params, is_daemon);
-	if (r == DOMAP_FAIL || r == DOMAP_RETRY) {
-		condlog(3, "%s: domap (%u) failure "
-			"for reload map", mpp->alias, r);
-		return 1;
-	}
-
-	return 0;
 }
