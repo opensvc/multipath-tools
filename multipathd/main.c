@@ -418,7 +418,7 @@ int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
 		goto out;
 	}
 
-	if (update_multipath_strings(mpp, vecs->pathvec, 1)) {
+	if (update_multipath_strings(mpp, vecs->pathvec, 1) != DMP_OK) {
 		condlog(0, "%s: failed to setup multipath", mpp->alias);
 		goto out;
 	}
@@ -557,9 +557,9 @@ add_map_without_path (struct vectors *vecs, const char *alias)
 	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
 	put_multipath_config(conf);
 
-	if (update_multipath_table(mpp, vecs->pathvec, 1))
+	if (update_multipath_table(mpp, vecs->pathvec, 1) != DMP_OK)
 		goto out;
-	if (update_multipath_status(mpp))
+	if (update_multipath_status(mpp) != DMP_OK)
 		goto out;
 
 	if (!vector_alloc_slot(vecs->mpvec))
@@ -1350,8 +1350,8 @@ map_discovery (struct vectors * vecs)
 		return 1;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i)
-		if (update_multipath_table(mpp, vecs->pathvec, 1) ||
-		    update_multipath_status(mpp)) {
+		if (update_multipath_table(mpp, vecs->pathvec, 1) != DMP_OK ||
+		    update_multipath_status(mpp) != DMP_OK) {
 			remove_map(mpp, vecs, 1);
 			i--;
 		}
@@ -2091,7 +2091,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	/*
 	 * Synchronize with kernel state
 	 */
-	if (update_multipath_strings(pp->mpp, vecs->pathvec, 1)) {
+	if (update_multipath_strings(pp->mpp, vecs->pathvec, 1) != DMP_OK) {
 		condlog(1, "%s: Could not synchronize with kernel state",
 			pp->dev);
 		pp->dmstate = PSTATE_UNDEF;

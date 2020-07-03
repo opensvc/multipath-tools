@@ -27,6 +27,12 @@
 #define UUID_PREFIX "mpath-"
 #define UUID_PREFIX_LEN (sizeof(UUID_PREFIX) - 1)
 
+enum {
+	DMP_ERR,
+	DMP_OK,
+	DMP_NOT_FOUND,
+};
+
 void dm_init(int verbosity);
 int dm_prereq(unsigned int *v);
 void skip_libmp_dm_init(void);

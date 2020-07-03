@@ -534,36 +534,43 @@ int dm_map_present(const char * str)
 
 int dm_get_map(const char *name, unsigned long long *size, char *outparams)
 {
-	int r = 1;
+	int r = DMP_ERR;
 	struct dm_task *dmt;
 	uint64_t start, length;
 	char *target_type = NULL;
 	char *params = NULL;
 
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
-		return 1;
+		return r;
 
 	if (!dm_task_set_name(dmt, name))
 		goto out;
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt))
+	errno = 0;
+	if (!dm_task_run(dmt)) {
+		if (dm_task_get_errno(dmt) == ENXIO)
+			r = DMP_NOT_FOUND;
 		goto out;
+	}
 
+	r = DMP_NOT_FOUND;
 	/* Fetch 1st target */
-	dm_get_next_target(dmt, NULL, &start, &length,
-			   &target_type, &params);
+	if (dm_get_next_target(dmt, NULL, &start, &length,
+			       &target_type, &params) != NULL)
+		/* more than one target */
+		goto out;
 
 	if (size)
 		*size = length;
 
 	if (!outparams) {
-		r = 0;
+		r = DMP_OK;
 		goto out;
 	}
 	if (snprintf(outparams, PARAMS_SIZE, "%s", params) <= PARAMS_SIZE)
-		r = 0;
+		r = DMP_OK;
 out:
 	dm_task_destroy(dmt);
 	return r;
@@ -637,35 +644,45 @@ is_mpath_part(const char *part_name, const char *map_name)
 
 int dm_get_status(const char *name, char *outstatus)
 {
-	int r = 1;
+	int r = DMP_ERR;
 	struct dm_task *dmt;
 	uint64_t start, length;
 	char *target_type = NULL;
 	char *status = NULL;
 
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_STATUS)))
-		return 1;
+		return r;
 
 	if (!dm_task_set_name(dmt, name))
 		goto out;
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt))
+	errno = 0;
+	if (!dm_task_run(dmt)) {
+		if (dm_task_get_errno(dmt) == ENXIO)
+			r = DMP_NOT_FOUND;
+		goto out;
+	}
+
+	r = DMP_NOT_FOUND;
+	/* Fetch 1st target */
+	if (dm_get_next_target(dmt, NULL, &start, &length,
+			       &target_type, &status) != NULL)
 		goto out;
 
-	/* Fetch 1st target */
-	dm_get_next_target(dmt, NULL, &start, &length,
-			   &target_type, &status);
+	if (!target_type || strcmp(target_type, TGT_MPATH) != 0)
+		goto out;
+
 	if (!status) {
 		condlog(2, "get null status.");
 		goto out;
 	}
 
 	if (snprintf(outstatus, PARAMS_SIZE, "%s", status) <= PARAMS_SIZE)
-		r = 0;
+		r = DMP_OK;
 out:
-	if (r)
+	if (r != DMP_OK)
 		condlog(0, "%s: error getting map status string", name);
 
 	dm_task_destroy(dmt);
@@ -920,7 +937,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 			return 1;
 
 	if (need_suspend &&
-	    !dm_get_map(mapname, &mapsize, params) &&
+	    dm_get_map(mapname, &mapsize, params) == DMP_OK &&
 	    strstr(params, "queue_if_no_path")) {
 		if (!dm_queue_if_no_path(mapname, 0))
 			queue_if_no_path = 1;
@@ -1129,7 +1146,7 @@ struct multipath *dm_get_multipath(const char *name)
 	if (!mpp->alias)
 		goto out;
 
-	if (dm_get_map(name, &mpp->size, NULL))
+	if (dm_get_map(name, &mpp->size, NULL) != DMP_OK)
 		goto out;
 
 	dm_get_uuid(name, mpp->wwid, WWID_SIZE);
@@ -1313,7 +1330,7 @@ do_foreach_partmaps (const char * mapname,
 		    /*
 		     * and we can fetch the map table from the kernel
 		     */
-		    !dm_get_map(names->name, &size, &params[0]) &&
+		    dm_get_map(names->name, &size, &params[0]) == DMP_OK &&
 
 		    /*
 		     * and the table maps over the multipath map

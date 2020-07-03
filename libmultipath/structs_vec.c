@@ -196,43 +196,47 @@ extract_hwe_from_path(struct multipath * mpp)
 int
 update_multipath_table (struct multipath *mpp, vector pathvec, int is_daemon)
 {
+	int r = DMP_ERR;
 	char params[PARAMS_SIZE] = {0};
 
 	if (!mpp)
-		return 1;
+		return r;
 
-	if (dm_get_map(mpp->alias, &mpp->size, params)) {
-		condlog(3, "%s: cannot get map", mpp->alias);
-		return 1;
+	r = dm_get_map(mpp->alias, &mpp->size, params);
+	if (r != DMP_OK) {
+		condlog(3, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting table" : "map not present");
+		return r;
 	}
 
 	if (disassemble_map(pathvec, params, mpp, is_daemon)) {
 		condlog(3, "%s: cannot disassemble map", mpp->alias);
-		return 1;
+		return DMP_ERR;
 	}
 
-	return 0;
+	return DMP_OK;
 }
 
 int
 update_multipath_status (struct multipath *mpp)
 {
+	int r = DMP_ERR;
 	char status[PARAMS_SIZE] = {0};
 
 	if (!mpp)
-		return 1;
+		return r;
 
-	if (dm_get_status(mpp->alias, status)) {
-		condlog(3, "%s: cannot get status", mpp->alias);
-		return 1;
+	r = dm_get_status(mpp->alias, status);
+	if (r != DMP_OK) {
+		condlog(3, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting status" : "map not present");
+		return r;
 	}
 
 	if (disassemble_status(status, mpp)) {
 		condlog(3, "%s: cannot disassemble status", mpp->alias);
-		return 1;
+		return DMP_ERR;
 	}
 
-	return 0;
+	return DMP_OK;
 }
 
 void sync_paths(struct multipath *mpp, vector pathvec)
@@ -264,10 +268,10 @@ int
 update_multipath_strings(struct multipath *mpp, vector pathvec, int is_daemon)
 {
 	struct pathgroup *pgp;
-	int i;
+	int i, r = DMP_ERR;
 
 	if (!mpp)
-		return 1;
+		return r;
 
 	update_mpp_paths(mpp, pathvec);
 	condlog(4, "%s: %s", mpp->alias, __FUNCTION__);
@@ -276,18 +280,21 @@ update_multipath_strings(struct multipath *mpp, vector pathvec, int is_daemon)
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
 
-	if (update_multipath_table(mpp, pathvec, is_daemon))
-		return 1;
+	r = update_multipath_table(mpp, pathvec, is_daemon);
+	if (r != DMP_OK)
+		return r;
+
 	sync_paths(mpp, pathvec);
 
-	if (update_multipath_status(mpp))
-		return 1;
+	r = update_multipath_status(mpp);
+	if (r != DMP_OK)
+		return r;
 
 	vector_foreach_slot(mpp->pg, pgp, i)
 		if (pgp->paths)
 			path_group_prio_update(pgp);
 
-	return 0;
+	return DMP_OK;
 }
 
 static void enter_recovery_mode(struct multipath *mpp)
