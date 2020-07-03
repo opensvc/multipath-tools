@@ -635,6 +635,8 @@ main(int argc, char **argv){
 
 				if (!dm_simplecmd(DM_DEVICE_REMOVE,
 						  partname, 1, 0)) {
+					fprintf(stderr, "failed to remove %s",
+						partname);
 					r++;
 					continue;
 				}
