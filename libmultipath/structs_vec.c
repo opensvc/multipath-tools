@@ -499,11 +499,11 @@ out:
 	return NULL;
 }
 
-int verify_paths(struct multipath *mpp, struct vectors *vecs)
+int verify_paths(struct multipath *mpp)
 {
 	struct path * pp;
 	int count = 0;
-	int i, j;
+	int i;
 
 	if (!mpp)
 		return 0;
@@ -518,7 +518,7 @@ int verify_paths(struct multipath *mpp, struct vectors *vecs)
 				condlog(1, "%s: removing valid path %s in state %d",
 					mpp->alias, pp->dev, pp->state);
 			} else {
-				condlog(3, "%s: failed to access path %s",
+				condlog(2, "%s: failed to access path %s",
 					mpp->alias, pp->dev);
 			}
 			count++;
@@ -531,10 +531,12 @@ int verify_paths(struct multipath *mpp, struct vectors *vecs)
 			 */
 			if (mpp->hwe == pp->hwe)
 				mpp->hwe = NULL;
-			if ((j = find_slot(vecs->pathvec,
-					   (void *)pp)) != -1)
-				vector_del_slot(vecs->pathvec, j);
-			free_path(pp);
+			/*
+			 * Don't delete path from pathvec yet. We'll do this
+			 * after the path has been removed from the map, in
+			 * sync_paths().
+			 */
+			set_path_removed(pp);
 		} else {
 			condlog(4, "%s: verified path %s dev_t %s",
 				mpp->alias, pp->dev, pp->dev_t);

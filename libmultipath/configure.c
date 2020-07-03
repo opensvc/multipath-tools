@@ -1196,7 +1196,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 				set_bit_in_bitfield(i, size_mismatch_seen);
 			}
 		}
-		verify_paths(mpp, vecs);
+		verify_paths(mpp);
 
 		params[0] = '\0';
 		if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {

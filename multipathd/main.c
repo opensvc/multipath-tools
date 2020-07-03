@@ -492,7 +492,7 @@ retry:
 		retries = -1;
 		goto fail;
 	}
-	verify_paths(mpp, vecs);
+	verify_paths(mpp);
 	mpp->action = ACT_RELOAD;
 
 	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
@@ -961,7 +961,7 @@ rescan:
 		    find_slot(vecs->pathvec, pp) == -1)
 			goto fail; /* leave path added to pathvec */
 
-		verify_paths(mpp, vecs);
+		verify_paths(mpp);
 		mpp->action = ACT_RELOAD;
 	} else {
 		if (!should_multipath(pp, vecs->pathvec, vecs->mpvec)) {
