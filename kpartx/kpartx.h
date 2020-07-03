@@ -1,6 +1,7 @@
 #ifndef _KPARTX_H
 #define _KPARTX_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include <sys/ioctl.h>
 
@@ -61,6 +62,7 @@ extern ptreader read_mac_pt;
 extern ptreader read_sun_pt;
 extern ptreader read_ps3_pt;
 
+int aligned_malloc(void **mem_p, size_t align, size_t *size_p);
 char *getblock(int fd, unsigned int secnr);
 
 static inline unsigned int

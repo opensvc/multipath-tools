@@ -19,6 +19,7 @@
  * cva, 2002-10-26
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -41,7 +42,6 @@
 
 #define SIZE(a) (sizeof(a)/sizeof((a)[0]))
 
-#define READ_SIZE	1024
 #define MAXTYPES	64
 #define MAXSLICES	256
 #define DM_TARGET	"linear"
@@ -388,7 +388,7 @@ main(int argc, char **argv){
 		set_delimiter(mapname, delim);
 	}
 
-	fd = open(device, O_RDONLY);
+	fd = open(device, O_RDONLY | O_DIRECT);
 
 	if (fd == -1) {
 		perror(device);
@@ -690,9 +690,9 @@ xmalloc (size_t size) {
  */
 
 static int
-sseek(int fd, unsigned int secnr) {
+sseek(int fd, unsigned int secnr, int secsz) {
 	off64_t in, out;
-	in = ((off64_t) secnr << 9);
+	in = ((off64_t) secnr * secsz);
 	out = 1;
 
 	if ((out = lseek64(fd, in, SEEK_SET)) != in)
@@ -703,6 +703,31 @@ sseek(int fd, unsigned int secnr) {
 	return 0;
 }
 
+int
+aligned_malloc(void **mem_p, size_t align, size_t *size_p)
+{
+	static size_t pgsize = 0;
+	size_t size;
+	int err;
+
+	if (!mem_p || !align || (size_p && !*size_p))
+		return EINVAL;
+
+	if (!pgsize)
+		pgsize = getpagesize();
+
+	if (size_p)
+		size = ((*size_p + align - 1) / align) * align;
+	else
+		size = pgsize;
+
+	err = posix_memalign(mem_p, pgsize, size);
+	if (!err && size_p)
+		*size_p = size;
+	return err;
+}
+
+/* always in sector size blocks */
 static
 struct block {
 	unsigned int secnr;
@@ -710,30 +735,39 @@ struct block {
 	struct block *next;
 } *blockhead;
 
+/* blknr is always in 512 byte blocks */
 char *
-getblock (int fd, unsigned int secnr) {
+getblock (int fd, unsigned int blknr) {
+	unsigned int secsz = get_sector_size(fd);
+	unsigned int blks_per_sec = secsz / 512;
+	unsigned int secnr = blknr / blks_per_sec;
+	unsigned int blk_off = (blknr % blks_per_sec) * 512;
 	struct block *bp;
 
 	for (bp = blockhead; bp; bp = bp->next)
 
 		if (bp->secnr == secnr)
-			return bp->block;
+			return bp->block + blk_off;
 
-	if (sseek(fd, secnr))
+	if (sseek(fd, secnr, secsz))
 		return NULL;
 
 	bp = xmalloc(sizeof(struct block));
 	bp->secnr = secnr;
 	bp->next = blockhead;
 	blockhead = bp;
-	bp->block = (char *) xmalloc(READ_SIZE);
-
-	if (read(fd, bp->block, READ_SIZE) != READ_SIZE) {
-		fprintf(stderr, "read error, sector %d\n", secnr);
-		bp->block = NULL;
+	if (aligned_malloc((void **)&bp->block, secsz, NULL)) {
+		fprintf(stderr, "aligned_malloc failed\n");
+		exit(1);
 	}
 
-	return bp->block;
+	if (read(fd, bp->block, secsz) != secsz) {
+		fprintf(stderr, "read error, sector %d\n", secnr);
+		blockhead = bp->next;
+		return NULL;
+	}
+
+	return bp->block + blk_off;
 }
 
 int

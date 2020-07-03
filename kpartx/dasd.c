@@ -22,6 +22,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -117,13 +118,13 @@ read_dasd_pt(int fd, __attribute__((unused)) struct slice all,
 
 		sprintf(pathname, "/dev/.kpartx-node-%u-%u",
 			(unsigned int)major(dev), (unsigned int)minor(dev));
-		if ((fd_dasd = open(pathname, O_RDONLY)) == -1) {
+		if ((fd_dasd = open(pathname, O_RDONLY | O_DIRECT)) == -1) {
 			/* Devicenode does not exist. Try to create one */
 			if (mknod(pathname, 0600 | S_IFBLK, dev) == -1) {
 				/* Couldn't create a device node */
 				return -1;
 			}
-			fd_dasd = open(pathname, O_RDONLY);
+			fd_dasd = open(pathname, O_RDONLY | O_DIRECT);
 			/*
 			 * The file will vanish when the last process (we)
 			 * has ceased to access it.
@@ -175,7 +176,7 @@ read_dasd_pt(int fd, __attribute__((unused)) struct slice all,
 	 * Get volume label, extract name and type.
 	 */
 
-	if (!(data = (unsigned char *)malloc(blocksize)))
+	if (aligned_malloc((void **)&data, blocksize, NULL))
 		goto out;
 
 

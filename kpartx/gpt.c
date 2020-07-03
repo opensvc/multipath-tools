@@ -243,8 +243,7 @@ alloc_read_gpt_entries(int fd, gpt_header * gpt)
 
 	if (!count) return NULL;
 
-	pte = (gpt_entry *)malloc(count);
-	if (!pte)
+	if (aligned_malloc((void **)&pte, get_sector_size(fd), &count))
 		return NULL;
 	memset(pte, 0, count);
 
@@ -269,12 +268,11 @@ static gpt_header *
 alloc_read_gpt_header(int fd, uint64_t lba)
 {
 	gpt_header *gpt;
-	gpt = (gpt_header *)
-	    malloc(sizeof (gpt_header));
-	if (!gpt)
+	size_t size = sizeof (gpt_header);
+	if (aligned_malloc((void **)&gpt, get_sector_size(fd), &size))
 		return NULL;
-	memset(gpt, 0, sizeof (*gpt));
-	if (!read_lba(fd, lba, gpt, sizeof (gpt_header))) {
+	memset(gpt, 0, size);
+	if (!read_lba(fd, lba, gpt, size)) {
 		free(gpt);
 		return NULL;
 	}
@@ -498,6 +496,7 @@ find_valid_gpt(int fd, gpt_header ** gpt, gpt_entry ** ptes)
 	gpt_header *pgpt = NULL, *agpt = NULL;
 	gpt_entry *pptes = NULL, *aptes = NULL;
 	legacy_mbr *legacymbr = NULL;
+	size_t size = sizeof(legacy_mbr);
 	uint64_t lastlba;
 	if (!gpt || !ptes)
 		return 0;
@@ -526,11 +525,10 @@ find_valid_gpt(int fd, gpt_header ** gpt, gpt_entry ** ptes)
 	}
 
 	/* This will be added to the EFI Spec. per Intel after v1.02. */
-	legacymbr = malloc(sizeof (*legacymbr));
-	if (legacymbr) {
-		memset(legacymbr, 0, sizeof (*legacymbr));
-		read_lba(fd, 0, (uint8_t *) legacymbr,
-			 sizeof (*legacymbr));
+	if (aligned_malloc((void **)&legacymbr, get_sector_size(fd),
+			   &size) == 0) {
+		memset(legacymbr, 0, size);
+		read_lba(fd, 0, (uint8_t *) legacymbr, size);
 		good_pmbr = is_pmbr_valid(legacymbr);
 		free(legacymbr);
 		legacymbr=NULL;
