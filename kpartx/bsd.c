@@ -1,6 +1,7 @@
 #include "kpartx.h"
 #include <stdio.h>
 
+#define BSD_LABEL_OFFSET	64
 #define BSD_DISKMAGIC	(0x82564557UL)	/* The disk magic number */
 #define XBSD_MAXPARTITIONS	16
 #define BSD_FS_UNUSED		0
@@ -60,8 +61,19 @@ read_bsd_pt(int fd, struct slice all, struct slice *sp, unsigned int ns) {
 		return -1;
 
 	l = (struct bsd_disklabel *) bp;
-	if (l->d_magic != BSD_DISKMAGIC)
-		return -1;
+	if (l->d_magic != BSD_DISKMAGIC) {
+		/*
+		 * BSD disklabels can also start 64 bytes offset from the
+		 * start of the first sector
+		 */
+		bp = getblock(fd, offset);
+		if (bp == NULL)
+			return -1;
+
+		l = (struct bsd_disklabel *)(bp + 64);
+		if (l->d_magic != BSD_DISKMAGIC)
+			return -1;
+	}
 
 	max_partitions = 16;
 	if (l->d_npartitions < max_partitions)
