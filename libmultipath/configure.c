@@ -687,7 +687,8 @@ select_reload_action(struct multipath *mpp, const struct multipath *cmpp,
 		reason);
 }
 
-void select_action (struct multipath *mpp, vector curmp, int force_reload)
+void select_action (struct multipath *mpp, const struct _vector *curmp,
+		    int force_reload)
 {
 	struct multipath * cmpp;
 	struct multipath * cmpp_by_name;
@@ -715,12 +716,13 @@ void select_action (struct multipath *mpp, vector curmp, int force_reload)
 	}
 
 	if (!cmpp) {
-		condlog(2, "%s: remove (wwid changed)", mpp->alias);
-		dm_flush_map(mpp->alias);
-		strlcpy(cmpp_by_name->wwid, mpp->wwid, WWID_SIZE);
-		drop_multipath(curmp, cmpp_by_name->wwid, KEEP_PATHS);
+		condlog(1, "%s: can't use alias \"%s\" used by %s, falling back to WWID",
+			mpp->wwid, mpp->alias, cmpp_by_name->wwid);
+		/* We can do this because wwid wasn't found */
+		free(mpp->alias);
+		mpp->alias = strdup(mpp->wwid);
 		mpp->action = ACT_CREATE;
-		condlog(3, "%s: set ACT_CREATE (map wwid change)",
+		condlog(3, "%s: set ACT_CREATE (map does not exist, name changed)",
 			mpp->alias);
 		return;
 	}

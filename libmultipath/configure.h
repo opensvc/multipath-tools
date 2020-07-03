@@ -49,7 +49,8 @@ struct vectors;
 
 int setup_map (struct multipath * mpp, char * params, int params_size,
 	       struct vectors *vecs );
-void select_action (struct multipath *mpp, vector curmp, int force_reload);
+void select_action (struct multipath *mpp, const struct _vector *curmp,
+		    int force_reload);
 int domap (struct multipath * mpp, char * params, int is_daemon);
 int reinstate_paths (struct multipath *mpp);
 int coalesce_paths (struct vectors *vecs, vector curmp, char * refwwid, int force_reload, enum mpath_cmds cmd);
