@@ -2124,7 +2124,7 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 		pp->fd = open(udev_device_get_devnode(pp->udev), O_RDONLY);
 
 	if (pp->fd < 0) {
-		condlog(4, "Couldn't open node for %s: %s",
+		condlog(4, "Couldn't open device node for %s: %s",
 			pp->dev, strerror(errno));
 		goto blank;
 	}
