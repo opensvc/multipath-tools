@@ -269,6 +269,38 @@ update_multipath_status (struct multipath *mpp)
 	return DMP_OK;
 }
 
+static struct path *find_devt_in_pathgroups(const struct multipath *mpp,
+					    const char *dev_t)
+{
+	struct pathgroup  *pgp;
+	struct path *pp;
+	int j;
+
+	vector_foreach_slot(mpp->pg, pgp, j) {
+		pp = find_path_by_devt(pgp->paths, dev_t);
+		if (pp)
+			return pp;
+	}
+	return NULL;
+}
+
+static void check_removed_paths(const struct multipath *mpp, vector pathvec)
+{
+	struct path *pp;
+	int i;
+
+	vector_foreach_slot(pathvec, pp, i) {
+		if (pp->initialized != INIT_REMOVED || pp->mpp != mpp)
+			continue;
+		if (!find_devt_in_pathgroups(mpp, pp->dev_t)) {
+			condlog(2, "%s: %s: freeing path in removed state",
+				__func__, pp->dev);
+			vector_del_slot(pathvec, i--);
+			free_path(pp);
+		}
+	}
+}
+
 void sync_paths(struct multipath *mpp, vector pathvec)
 {
 	struct path *pp;
@@ -291,6 +323,7 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 			orphan_path(pp, "path removed externally");
 		}
 	}
+	check_removed_paths(mpp, pathvec);
 	update_mpp_paths(mpp, pathvec);
 	vector_foreach_slot (mpp->paths, pp, i)
 		pp->mpp = mpp;
