@@ -2069,7 +2069,7 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			return PATHINFO_SKIPPED;
 	}
 
-	if (filter_devnode(conf->blist_devnode,
+	if (strlen(pp->dev) != 0 && filter_devnode(conf->blist_devnode,
 			   conf->elist_devnode,
 			   pp->dev) > 0)
 		return PATHINFO_SKIPPED;
