@@ -75,16 +75,20 @@ int adopt_paths(vector pathvec, struct multipath *mpp)
 			if (!mpp->paths && !(mpp->paths = vector_alloc()))
 				return 1;
 
-			if (!find_path_by_devt(mpp->paths, pp->dev_t) &&
-			    store_path(mpp->paths, pp))
-					return 1;
 			conf = get_multipath_config();
 			pthread_cleanup_push(put_multipath_config, conf);
 			ret = pathinfo(pp, conf,
 				       DI_PRIO | DI_CHECKER);
 			pthread_cleanup_pop(1);
-			if (ret)
-				return 1;
+			if (ret) {
+				condlog(3, "%s: pathinfo failed for %s",
+					__func__, pp->dev);
+				continue;
+			}
+
+			if (!find_path_by_devt(mpp->paths, pp->dev_t) &&
+			    store_path(mpp->paths, pp))
+					return 1;
 		}
 	}
 	return 0;
@@ -456,7 +460,8 @@ struct multipath *add_map_with_path(struct vectors *vecs, struct path *pp,
 		goto out;
 	mpp->size = pp->size;
 
-	if (adopt_paths(vecs->pathvec, mpp))
+	if (adopt_paths(vecs->pathvec, mpp) ||
+	    find_slot(vecs->pathvec, pp) == -1)
 		goto out;
 
 	if (add_vec) {

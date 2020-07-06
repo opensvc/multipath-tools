@@ -957,7 +957,8 @@ rescan:
 	if (mpp) {
 		condlog(4,"%s: adopting all paths for path %s",
 			mpp->alias, pp->dev);
-		if (adopt_paths(vecs->pathvec, mpp))
+		if (adopt_paths(vecs->pathvec, mpp) ||
+		    find_slot(vecs->pathvec, pp) == -1)
 			goto fail; /* leave path added to pathvec */
 
 		verify_paths(mpp, vecs);
