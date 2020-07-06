@@ -992,7 +992,7 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		} else  {
 			/* multipath daemon mode */
 			mpp->stat_map_loads++;
-			condlog(2, "%s: load table [0 %llu %s %s]", mpp->alias,
+			condlog(4, "%s: load table [0 %llu %s %s]", mpp->alias,
 				mpp->size, TGT_MPATH, params);
 			/*
 			 * Required action is over, reset for the stateful daemon.
