@@ -428,6 +428,22 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 		.no_path_retry = 10,
 	},
+	{
+		/*
+		 * ETERNUS AB/HB
+		 * Maintainer: NetApp RDAC team <ng-eseries-upstream-maintainers@netapp.com>
+		 */
+		.vendor        = "FUJITSU",
+		.product       = "ETERNUS_AHB",
+		.bl_product    = "Universal Xport",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.checker_name  = RDAC,
+		.features      = "2 pg_init_retries 50",
+		.hwhandler     = "1 rdac",
+		.prio_name     = PRIO_RDAC,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 30,
+	},
 	/*
 	 * Hitachi Vantara
 	 *
