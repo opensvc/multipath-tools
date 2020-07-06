@@ -79,9 +79,11 @@ int adopt_paths(vector pathvec, struct multipath *mpp)
 					pp->dev, mpp->alias);
 				continue;
 			}
+			pp->mpp = mpp;
+			if (pp->initialized == INIT_REMOVED)
+				continue;
 			condlog(3, "%s: ownership set to %s",
 				pp->dev, mpp->alias);
-			pp->mpp = mpp;
 
 			if (!mpp->paths && !(mpp->paths = vector_alloc()))
 				return 1;
