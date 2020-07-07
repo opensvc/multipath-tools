@@ -2014,12 +2014,9 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev,
 
 		if (udev_available) {
 			len = get_udev_uid(pp, pp->uid_attribute, udev);
-			if (len <= 0)
-				condlog(1,
-					"%s: failed to get udev uid: %s",
-					pp->dev, strerror(-len));
-			else
-				origin = "udev";
+			origin = "udev";
+			if (len == 0)
+				condlog(1, "%s: empty udev uid", pp->dev);
 		}
 		if ((!udev_available || (len <= 0 && allow_fallback))
 		    && has_uid_fallback(pp)) {
