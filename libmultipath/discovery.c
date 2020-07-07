@@ -1897,7 +1897,7 @@ get_udev_uid(struct path * pp, char *uid_attribute, struct udev_device *udev)
 	} else {
 		condlog(3, "%s: no %s attribute", pp->dev,
 			uid_attribute);
-		len = -EINVAL;
+		len = -ENODATA;
 	}
 	return len;
 }
