@@ -59,6 +59,142 @@ int update_mpp_paths(struct multipath *mpp, vector pathvec)
 	return store_failure;
 }
 
+static bool guess_mpp_wwid(struct multipath *mpp)
+{
+	int i, j;
+	struct pathgroup *pgp;
+	struct path *pp;
+
+	if (strlen(mpp->wwid) || !mpp->pg)
+		return true;
+
+	vector_foreach_slot(mpp->pg, pgp, i) {
+		if (!pgp->paths)
+			continue;
+		vector_foreach_slot(pgp->paths, pp, j) {
+			if (pp->initialized == INIT_OK && strlen(pp->wwid)) {
+				strlcpy(mpp->wwid, pp->wwid, sizeof(mpp->wwid));
+				condlog(2, "%s: guessed WWID %s from path %s",
+					mpp->alias, mpp->wwid, pp->dev);
+				return true;
+			}
+		}
+	}
+	condlog(1, "%s: unable to guess WWID", mpp->alias);
+	return false;
+}
+
+/*
+ * update_pathvec_from_dm() - update pathvec after disassemble_map()
+ *
+ * disassemble_map() may return block devices that are members in
+ * multipath maps but haven't been discovered. Check whether they
+ * need to be added to pathvec or discarded.
+ *
+ * Returns: true if immediate map reload is desirable
+ *
+ * Side effects:
+ * - may delete non-existing paths and empty pathgroups from mpp
+ * - may set pp->wwid and / or mpp->wwid
+ * - calls pathinfo() on existing paths is pathinfo_flags is not 0
+ */
+bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
+	int pathinfo_flags)
+{
+	int i, j;
+	struct pathgroup *pgp;
+	struct path *pp;
+	struct config *conf;
+	bool mpp_has_wwid;
+	bool must_reload = false;
+
+	if (!mpp->pg)
+		return false;
+
+	/*
+	 * This will initialize mpp->wwid with an educated guess,
+	 * either from the dm uuid or from a member path with properly
+	 * determined WWID.
+	 */
+	mpp_has_wwid = guess_mpp_wwid(mpp);
+
+	vector_foreach_slot(mpp->pg, pgp, i) {
+		if (!pgp->paths)
+			goto delete_pg;
+
+		vector_foreach_slot(pgp->paths, pp, j) {
+			pp->mpp = mpp;
+
+			/*
+			 * The way disassemble_map() works: If it encounters a
+			 * path device which isn't found in pathvec, it adds an
+			 * uninitialized struct path to pgp->paths, with only
+			 * pp->dev_t filled in. Thus if pp->udev is set here,
+			 * we know that the path is in pathvec already.
+			 */
+			if (pp->udev) {
+				if (pathinfo_flags) {
+					conf = get_multipath_config();
+					pthread_cleanup_push(put_multipath_config,
+							     conf);
+					pathinfo(pp, conf, pathinfo_flags);
+					pthread_cleanup_pop(1);
+				}
+				continue;
+			}
+
+			/* If this fails, the device is not in sysfs */
+			pp->udev = get_udev_device(pp->dev_t, DEV_DEVT);
+			if (!pp->udev) {
+				condlog(2, "%s: discarding non-existing path %s",
+					mpp->alias, pp->dev_t);
+				vector_del_slot(pgp->paths, j--);
+				free_path(pp);
+				must_reload = true;
+			} else {
+				int rc;
+
+				devt2devname(pp->dev, sizeof(pp->dev),
+					     pp->dev_t);
+				conf = get_multipath_config();
+				pthread_cleanup_push(put_multipath_config,
+						     conf);
+				pp->checkint = conf->checkint;
+				rc = pathinfo(pp, conf,
+					      DI_SYSFS|DI_WWID|DI_BLACKLIST|
+					      pathinfo_flags);
+				pthread_cleanup_pop(1);
+				if (rc != PATHINFO_OK) {
+					condlog(1, "%s: error %d in pathinfo, discarding path",
+						pp->dev, rc);
+					vector_del_slot(pgp->paths, j--);
+					free_path(pp);
+					must_reload = true;
+				} else {
+					if (mpp_has_wwid && !strlen(pp->wwid)) {
+						condlog(3, "%s: setting wwid from map: %s",
+							pp->dev, mpp->wwid);
+						strlcpy(pp->wwid, mpp->wwid,
+							sizeof(pp->wwid));
+					}
+					condlog(2, "%s: adding new path %s",
+						mpp->alias, pp->dev);
+					store_path(pathvec, pp);
+					pp->tick = 1;
+				}
+			}
+		}
+		if (VECTOR_SIZE(pgp->paths) != 0)
+			continue;
+	delete_pg:
+		condlog(2, "%s: removing empty pathgroup %d", mpp->alias, i);
+		vector_del_slot(mpp->pg, i--);
+		free_pathgroup(pgp, KEEP_PATHS);
+		must_reload = true;
+	}
+	return must_reload;
+}
+
 int adopt_paths(vector pathvec, struct multipath *mpp)
 {
 	int i, ret;
