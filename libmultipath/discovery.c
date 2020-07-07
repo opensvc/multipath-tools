@@ -391,7 +391,7 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 		tgtdev = udev_device_new_from_subsystem_sysname(udev,
 				"fc_remote_ports", value);
 		if (tgtdev) {
-			condlog(3, "SCSI target %d:%d:%d -> "
+			condlog(4, "SCSI target %d:%d:%d -> "
 				"FC rport %d:%d-%d",
 				pp->sg_id.host_no, pp->sg_id.channel,
 				pp->sg_id.scsi_id, host, channel,
