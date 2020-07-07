@@ -35,7 +35,6 @@
 #include "time-util.h"
 #include "io_err_stat.h"
 
-#define IOTIMEOUT_SEC			60
 #define TIMEOUT_NO_IO_NSEC		10000000 /*10ms = 10000000ns*/
 #define FLAKY_PATHFAIL_THRESHOLD	2
 #define CONCUR_NR_EVENT			32
@@ -301,30 +300,22 @@ int io_err_stat_handle_pathfail(struct path *path)
 	struct timespec curr_time;
 
 	if (uatomic_read(&io_err_thread_running) == 0)
-		return 1;
+		return 0;
 
 	if (path->io_err_disable_reinstate) {
 		io_err_stat_log(3, "%s: reinstate is already disabled",
 				path->dev);
-		return 1;
+		return 0;
 	}
 	if (path->io_err_pathfail_cnt < 0)
-		return 1;
+		return 0;
 
 	if (!path->mpp)
-		return 1;
-	if (path->mpp->marginal_path_double_failed_time <= 0 ||
-		path->mpp->marginal_path_err_sample_time <= 0 ||
-		path->mpp->marginal_path_err_recheck_gap_time <= 0 ||
-		path->mpp->marginal_path_err_rate_threshold < 0) {
-		io_err_stat_log(4, "%s: parameter not set", path->mpp->alias);
-		return 1;
-	}
-	if (path->mpp->marginal_path_err_sample_time < (2 * IOTIMEOUT_SEC)) {
-		io_err_stat_log(2, "%s: marginal_path_err_sample_time should not less than %d",
-				path->mpp->alias, 2 * IOTIMEOUT_SEC);
-		return 1;
-	}
+		return 0;
+
+	if (!marginal_path_check_enabled(path->mpp))
+		return 0;
+
 	/*
 	 * The test should only be started for paths that have failed
 	 * repeatedly in a certain time frame, so that we have reason

@@ -1068,6 +1068,12 @@ int select_marginal_path_err_sample_time(struct config *conf, struct multipath *
 	mp_set_conf(marginal_path_err_sample_time);
 	mp_set_default(marginal_path_err_sample_time, DEFAULT_ERR_CHECKS);
 out:
+	if (mp->marginal_path_err_sample_time > 0 &&
+	    mp->marginal_path_err_sample_time < 2 * IOTIMEOUT_SEC) {
+		condlog(2, "%s: configuration error: marginal_path_err_sample_time must be >= %d",
+			mp->alias, 2 * IOTIMEOUT_SEC);
+			mp->marginal_path_err_sample_time = 2 * IOTIMEOUT_SEC;
+	}
 	if (print_off_int_undef(buff, 12, mp->marginal_path_err_sample_time)
 	    != 0)
 		condlog(3, "%s: marginal_path_err_sample_time = %s %s",
