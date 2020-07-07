@@ -92,6 +92,7 @@ alloc_path (void)
 	pp = (struct path *)MALLOC(sizeof(struct path));
 
 	if (pp) {
+		pp->initialized = INIT_NEW;
 		pp->sg_id.host_no = -1;
 		pp->sg_id.channel = -1;
 		pp->sg_id.scsi_id = -1;
