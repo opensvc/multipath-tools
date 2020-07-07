@@ -65,52 +65,6 @@ mpath_lib_exit (struct config *conf)
 	return 0;
 }
 
-static int
-updatepaths (struct multipath * mpp)
-{
-	int i, j;
-	struct pathgroup * pgp;
-	struct path * pp;
-	struct config *conf;
-
-	if (!mpp->pg)
-		return 0;
-
-	vector_foreach_slot (mpp->pg, pgp, i){
-		if (!pgp->paths)
-			continue;
-
-		vector_foreach_slot (pgp->paths, pp, j){
-			if (!strlen(pp->dev)){
-				/*
-				 * path is not in sysfs anymore
-				 */
-				pp->state = PATH_DOWN;
-				continue;
-			}
-			pp->mpp = mpp;
-			if (pp->udev == NULL) {
-				pp->udev = get_udev_device(pp->dev_t, DEV_DEVT);
-				if (pp->udev == NULL) {
-					pp->state = PATH_DOWN;
-					continue;
-				}
-				conf = get_multipath_config();
-				pathinfo(pp, conf, DI_SYSFS|DI_CHECKER);
-				put_multipath_config(conf);
-				continue;
-			}
-			if (pp->state == PATH_UNCHECKED ||
-					pp->state == PATH_WILD) {
-				conf = get_multipath_config();
-				pathinfo(pp, conf, DI_CHECKER);
-				put_multipath_config(conf);
-			}
-		}
-	}
-	return 0;
-}
-
 int
 mpath_prin_activepath (struct multipath *mpp, int rq_servact,
 	struct prin_resp * resp, int noisy)
@@ -392,13 +346,7 @@ get_mpvec (vector curmp, vector pathvec, char * refwwid)
 		dm_get_status(mpp->alias, status);
 		condlog(3, "status = %s", status);
 		disassemble_map (pathvec, params, mpp);
-
-		/*
-		 * disassemble_map() can add new paths to pathvec.
-		 * If not in "fast list mode", we need to fetch information
-		 * about them
-		 */
-		updatepaths(mpp);
+		update_pathvec_from_dm(pathvec, mpp, DI_CHECKER);
 		disassemble_status (status, mpp);
 
 	}
