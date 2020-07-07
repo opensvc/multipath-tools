@@ -123,6 +123,23 @@ bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 			goto delete_pg;
 
 		vector_foreach_slot(pgp->paths, pp, j) {
+
+			if (pp->mpp && pp->mpp != mpp) {
+				condlog(0, "BUG: %s: found path %s which is already in %s",
+					mpp->alias, pp->dev, pp->mpp->alias);
+
+				/*
+				 * Either we added this path to the other mpp
+				 * explicitly, or we came by here earlier and
+				 * decided it belonged there. In both cases,
+				 * the path should remain in the other map,
+				 * and be deleted here.
+				 */
+				must_reload = true;
+				dm_fail_path(mpp->alias, pp->dev_t);
+				vector_del_slot(pgp->paths, j--);
+				continue;
+			}
 			pp->mpp = mpp;
 
 			/*
@@ -169,6 +186,22 @@ bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 						pp->dev, rc);
 					vector_del_slot(pgp->paths, j--);
 					free_path(pp);
+					must_reload = true;
+				} else if (mpp_has_wwid && pp->wwid[0] != '\0'
+					   && strcmp(mpp->wwid, pp->wwid)) {
+					condlog(0, "%s: path %s WWID %s doesn't match, removing from map",
+						mpp->wwid, pp->dev_t, pp->wwid);
+					/*
+					 * This path exists, but in the wrong map.
+					 * We can't reload the map from here.
+					 * Make sure it isn't used in this map
+					 * any more, and let the checker re-add
+					 * it as it sees fit.
+					 */
+					dm_fail_path(mpp->alias, pp->dev_t);
+					vector_del_slot(pgp->paths, j--);
+					orphan_path(pp, "WWID mismatch");
+					pp->tick = 1;
 					must_reload = true;
 				} else {
 					if (mpp_has_wwid && !strlen(pp->wwid)) {
