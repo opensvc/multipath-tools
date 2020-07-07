@@ -337,7 +337,7 @@ store_path (vector pathvec, struct path * pp)
 		err++;
 	}
 	if (!strlen(pp->dev)) {
-		condlog(2, "%s: Empty device name", pp->dev_t);
+		condlog(3, "%s: Empty device name", pp->dev_t);
 		err++;
 	}
 
