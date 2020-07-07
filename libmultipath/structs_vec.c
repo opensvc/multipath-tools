@@ -150,7 +150,7 @@ bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 			 * we know that the path is in pathvec already.
 			 */
 			if (pp->udev) {
-				if (pathinfo_flags) {
+				if (pathinfo_flags & ~DI_NOIO) {
 					conf = get_multipath_config();
 					pthread_cleanup_push(put_multipath_config,
 							     conf);

@@ -188,63 +188,6 @@ usage (char * progname)
 }
 
 static int
-update_paths (struct multipath * mpp, int quick)
-{
-	int i, j;
-	struct pathgroup * pgp;
-	struct path * pp;
-	struct config *conf;
-
-	if (!mpp->pg)
-		return 0;
-
-	vector_foreach_slot (mpp->pg, pgp, i) {
-		if (!pgp->paths)
-			continue;
-
-		vector_foreach_slot (pgp->paths, pp, j) {
-			if (!strlen(pp->dev)) {
-				if (devt2devname(pp->dev, FILE_NAME_SIZE,
-						 pp->dev_t)) {
-					/*
-					 * path is not in sysfs anymore
-					 */
-					pp->chkrstate = pp->state = PATH_DOWN;
-					pp->offline = 1;
-					continue;
-				}
-				pp->mpp = mpp;
-				if (quick)
-					continue;
-				conf = get_multipath_config();
-				if (pathinfo(pp, conf, DI_ALL))
-					pp->state = PATH_UNCHECKED;
-				put_multipath_config(conf);
-				continue;
-			}
-			pp->mpp = mpp;
-			if (quick)
-				continue;
-			if (pp->state == PATH_UNCHECKED ||
-			    pp->state == PATH_WILD) {
-				conf = get_multipath_config();
-				if (pathinfo(pp, conf, DI_CHECKER))
-					pp->state = PATH_UNCHECKED;
-				put_multipath_config(conf);
-			}
-
-			if (pp->priority == PRIO_UNDEF) {
-				conf = get_multipath_config();
-				if (pathinfo(pp, conf, DI_PRIO))
-					pp->priority = PRIO_UNDEF;
-				put_multipath_config(conf);
-			}
-		}
-	}
-	return 0;
-}
-
-static int
 get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 {
 	int i;
@@ -273,13 +216,9 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 		condlog(3, "status = %s", status);
 
 		disassemble_map(pathvec, params, mpp);
-
-		/*
-		 * disassemble_map() can add new paths to pathvec.
-		 * If not in "fast list mode", we need to fetch information
-		 * about them
-		 */
-		update_paths(mpp, (cmd == CMD_LIST_SHORT));
+		update_pathvec_from_dm(pathvec, mpp,
+				       (cmd == CMD_LIST_SHORT ?
+					DI_NOIO : DI_ALL));
 
 		if (cmd == CMD_LIST_LONG)
 			mpp->bestpg = select_path_group(mpp);
@@ -353,6 +292,7 @@ static int check_usable_paths(struct config *conf,
 	dm_get_map(mpp->alias, &mpp->size, params);
 	dm_get_status(mpp->alias, status);
 	disassemble_map(pathvec, params, mpp);
+	update_pathvec_from_dm(pathvec, mpp, 0);
 	disassemble_status(status, mpp);
 
 	vector_foreach_slot (mpp->pg, pg, i) {
