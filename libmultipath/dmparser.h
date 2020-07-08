@@ -1,3 +1,3 @@
 int assemble_map (struct multipath *, char *, int);
-int disassemble_map (vector, char *, struct multipath *);
-int disassemble_status (char *, struct multipath *);
+int disassemble_map (const struct _vector *, const char *, struct multipath *);
+int disassemble_status (const char *, struct multipath *);

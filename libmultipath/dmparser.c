@@ -128,10 +128,11 @@ err:
  * Call update_pathvec_from_dm() after this function to make sure
  * all data structures are in a sane state.
  */
-int disassemble_map(vector pathvec, char *params, struct multipath *mpp)
+int disassemble_map(const struct _vector *pathvec,
+		    const char *params, struct multipath *mpp)
 {
 	char * word;
-	char * p;
+	const char *p;
 	int i, j, k;
 	int num_features = 0;
 	int num_hwhandler = 0;
@@ -346,10 +347,10 @@ out:
 	return 1;
 }
 
-int disassemble_status(char *params, struct multipath *mpp)
+int disassemble_status(const char *params, struct multipath *mpp)
 {
-	char * word;
-	char * p;
+	char *word;
+	const char *p;
 	int i, j, k;
 	int num_feature_args;
 	int num_hwhandler_args;
