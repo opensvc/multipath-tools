@@ -53,7 +53,7 @@ basenamecpy (const char *src, char *dst, size_t size)
 }
 
 int
-filepresent (char * run) {
+filepresent (const char *run) {
 	struct stat buf;
 
 	if(!stat(run, &buf))
@@ -61,7 +61,7 @@ filepresent (char * run) {
 	return 0;
 }
 
-char *get_next_string(char **temp, char *split_char)
+char *get_next_string(char **temp, const char *split_char)
 {
 	char *token = NULL;
 	token = strsep(temp, split_char);
@@ -71,9 +71,9 @@ char *get_next_string(char **temp, char *split_char)
 }
 
 int
-get_word (char * sentence, char ** word)
+get_word (const char *sentence, char **word)
 {
-	char * p;
+	const char *p;
 	int len;
 	int skip = 0;
 
@@ -316,7 +316,7 @@ int get_linux_version_code(void)
 	return _linux_version_code;
 }
 
-int parse_prkey(char *ptr, uint64_t *prkey)
+int parse_prkey(const char *ptr, uint64_t *prkey)
 {
 	if (!ptr)
 		return 1;
@@ -333,7 +333,7 @@ int parse_prkey(char *ptr, uint64_t *prkey)
 	return 0;
 }
 
-int parse_prkey_flags(char *ptr, uint64_t *prkey, uint8_t *flags)
+int parse_prkey_flags(const char *ptr, uint64_t *prkey, uint8_t *flags)
 {
 	char *flagstr;
 

@@ -18,7 +18,7 @@
 #define WORD_SIZE 64
 
 static int
-merge_words(char **dst, char *word)
+merge_words(char **dst, const char *word)
 {
 	char * p = *dst;
 	int len, dstlen;

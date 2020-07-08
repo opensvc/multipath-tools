@@ -12,9 +12,9 @@
 
 size_t strchop(char *);
 int basenamecpy (const char *src, char *dst, size_t size);
-int filepresent (char * run);
-char *get_next_string(char **temp, char *split_char);
-int get_word (char * sentence, char ** word);
+int filepresent (const char *run);
+char *get_next_string(char **temp, const char *split_char);
+int get_word (const char * sentence, char ** word);
 size_t strlcpy(char *dst, const char *src, size_t size);
 size_t strlcat(char *dst, const char *src, size_t size);
 int devt2devname (char *, int, const char *);
@@ -23,8 +23,8 @@ char *convert_dev(char *dev, int is_path_device);
 void setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached);
 int systemd_service_enabled(const char *dev);
 int get_linux_version_code(void);
-int parse_prkey(char *ptr, uint64_t *prkey);
-int parse_prkey_flags(char *ptr, uint64_t *prkey, uint8_t *flags);
+int parse_prkey(const char *ptr, uint64_t *prkey);
+int parse_prkey_flags(const char *ptr, uint64_t *prkey, uint8_t *flags);
 int safe_write(int fd, const void *buf, size_t count);
 void set_max_fds(rlim_t max_fds);
 
