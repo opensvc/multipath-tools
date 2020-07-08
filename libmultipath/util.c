@@ -113,46 +113,42 @@ get_word (const char *sentence, char **word)
 	return skip + len;
 }
 
-size_t strlcpy(char *dst, const char *src, size_t size)
+size_t strlcpy(char * restrict dst, const char * restrict src, size_t size)
 {
 	size_t bytes = 0;
-	char *q = dst;
-	const char *p = src;
 	char ch;
 
-	while ((ch = *p++)) {
-		if (bytes+1 < size)
-			*q++ = ch;
+	while ((ch = *src++)) {
+		if (bytes + 1 < size)
+			*dst++ = ch;
 		bytes++;
 	}
 
 	/* If size == 0 there is no space for a final null... */
 	if (size)
-		*q = '\0';
+		*dst = '\0';
 	return bytes;
 }
 
-size_t strlcat(char *dst, const char *src, size_t size)
+size_t strlcat(char * restrict dst, const char * restrict src, size_t size)
 {
 	size_t bytes = 0;
-	char *q = dst;
-	const char *p = src;
 	char ch;
 
-	while (bytes < size && *q) {
-		q++;
+	while (bytes < size && *dst) {
+		dst++;
 		bytes++;
 	}
 	if (bytes == size)
 		return (bytes + strlen(src));
 
-	while ((ch = *p++)) {
-		if (bytes+1 < size)
-		*q++ = ch;
+	while ((ch = *src++)) {
+		if (bytes + 1 < size)
+			*dst++ = ch;
 		bytes++;
 	}
 
-	*q = '\0';
+	*dst = '\0';
 	return bytes;
 }
 
