@@ -260,6 +260,8 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 		}
 		if (!found) {
 			condlog(3, "%s dropped path %s", mpp->alias, pp->dev);
+			if (mpp->hwe == pp->hwe)
+				mpp->hwe = NULL;
 			vector_del_slot(mpp->paths, i--);
 			orphan_path(pp, "path removed externally");
 		}
@@ -267,6 +269,8 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 	update_mpp_paths(mpp, pathvec);
 	vector_foreach_slot (mpp->paths, pp, i)
 		pp->mpp = mpp;
+	if (mpp->hwe == NULL)
+		extract_hwe_from_path(mpp);
 }
 
 int
