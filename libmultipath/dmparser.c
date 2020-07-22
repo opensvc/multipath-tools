@@ -261,8 +261,10 @@ int disassemble_map(vector pathvec, char *params, struct multipath *mpp,
 		if (!pgp)
 			goto out;
 
-		if (add_pathgroup(mpp, pgp))
+		if (add_pathgroup(mpp, pgp)) {
+			free_pathgroup(pgp, KEEP_PATHS);
 			goto out;
+		}
 
 		p += get_word(p, &word);
 
