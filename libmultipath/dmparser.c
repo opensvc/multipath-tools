@@ -306,11 +306,15 @@ int disassemble_map(const struct _vector *pathvec,
 					goto out1;
 
 				strlcpy(pp->dev_t, word, BLK_DEV_SIZE);
-			}
-			FREE(word);
 
-			if (store_path(pgp->paths, pp))
-				goto out;
+				if (store_path(pgp->paths, pp)) {
+					free_path(pp);
+					goto out1;
+				}
+			} else if (store_path(pgp->paths, pp))
+				goto out1;
+
+			FREE(word);
 
 			pgp->id ^= (long)pp;
 			pp->pgindex = i + 1;
