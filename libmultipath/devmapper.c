@@ -1198,8 +1198,10 @@ dm_get_maps (vector mp)
 		if (!mpp)
 			goto out;
 
-		if (!vector_alloc_slot(mp))
+		if (!vector_alloc_slot(mp)) {
+			free_multipath(mpp, KEEP_PATHS);
 			goto out;
+		}
 
 		vector_set_slot(mp, mpp);
 		mpp = NULL;
