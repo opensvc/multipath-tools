@@ -1466,7 +1466,6 @@ dm_get_info (const char * mapname, struct dm_info ** dmi)
 		return 1;
 
 	if (do_get_info(mapname, *dmi) != 0) {
-		memset(*dmi, 0, sizeof(struct dm_info));
 		FREE(*dmi);
 		*dmi = NULL;
 		return 1;
