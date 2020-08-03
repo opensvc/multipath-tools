@@ -109,7 +109,7 @@ vector_del_slot(vector v, int slot)
 {
 	int i;
 
-	if (!v || !v->allocated || slot < 0 || slot > VECTOR_SIZE(v))
+	if (!v || !v->allocated || slot < 0 || slot >= VECTOR_SIZE(v))
 		return;
 
 	for (i = slot + 1; i < VECTOR_SIZE(v); i++)
