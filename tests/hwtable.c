@@ -468,6 +468,7 @@ static void replicate_config(const struct hwt_state *hwt, bool local)
 		/* "local" configuration */
 		hwtable = get_used_hwes(hwt->vecs->pathvec);
 		cfg1 = snprint_config(conf, NULL, hwtable, hwt->vecs->mpvec);
+		vector_free(hwtable);
 	}
 
 	assert_non_null(cfg1);
