@@ -793,12 +793,14 @@ int add(struct context *ctx, struct udev_device *ud)
 {
 	struct udev_device *subsys;
 	int rc;
+	const char *devtype;
 
 	condlog(5, "%s called for \"%s\"", __func__, THIS);
 
 	if (ud == NULL)
 		return FOREIGN_ERR;
-	if (strcmp("disk", udev_device_get_devtype(ud)))
+	if ((devtype = udev_device_get_devtype(ud)) == NULL ||
+						strcmp("disk", devtype))
 		return FOREIGN_IGNORED;
 
 	subsys = udev_device_get_parent_with_subsystem_devtype(ud,
