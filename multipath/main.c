@@ -637,15 +637,6 @@ check_path_valid(const char *name, struct config *conf, bool is_uevent)
 			 minor(devt));
 	}
 
-	pathvec = vector_alloc();
-	if (!pathvec)
-		goto fail;
-
-	if (store_path(pathvec, pp) != 0) {
-		free_path(pp);
-		goto fail;
-	}
-
 	if ((r == PATH_IS_VALID || r == PATH_IS_MAYBE_VALID) &&
 	    released_to_systemd())
 		r = PATH_IS_NOT_VALID;
@@ -682,6 +673,15 @@ check_path_valid(const char *name, struct config *conf, bool is_uevent)
 		else
 			r = PATH_IS_NOT_VALID;
 		goto out;
+	}
+
+	pathvec = vector_alloc();
+	if (!pathvec)
+		goto fail;
+
+	if (store_path(pathvec, pp) != 0) {
+		free_path(pp);
+		goto fail;
 	}
 
 	/* For find_multipaths = SMART, if there is more than one path
