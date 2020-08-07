@@ -10,4 +10,7 @@ char *use_existing_alias (const char *wwid, const char *file,
 			  const char *alias_old,
 			  const char *prefix, int bindings_read_only);
 
+struct config;
+int check_alias_settings(const struct config *);
+
 #endif /* _ALIAS_H */
