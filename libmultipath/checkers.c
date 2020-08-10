@@ -23,23 +23,27 @@ struct checker_class {
 	short msgtable_size;
 };
 
-char *checker_state_names[] = {
-	"wild",
-	"unchecked",
-	"down",
-	"up",
-	"shaky",
-	"ghost",
-	"pending",
-	"timeout",
-	"removed",
-	"delayed",
+static const char *checker_state_names[PATH_MAX_STATE] = {
+	[PATH_WILD] = "wild",
+	[PATH_UNCHECKED] = "unchecked",
+	[PATH_DOWN] = "down",
+	[PATH_UP] = "up",
+	[PATH_SHAKY] = "shaky",
+	[PATH_GHOST] = "ghost",
+	[PATH_PENDING] = "pending",
+	[PATH_TIMEOUT] = "timeout",
+	[PATH_REMOVED] = "removed",
+	[PATH_DELAYED] = "delayed",
 };
 
 static LIST_HEAD(checkers);
 
 const char *checker_state_name(int i)
 {
+	if (i < 0 || i >= PATH_MAX_STATE) {
+		condlog (2, "invalid state index = %d", i);
+		return INVALID;
+	}
 	return checker_state_names[i];
 }
 

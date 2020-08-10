@@ -67,7 +67,7 @@
  *   During this time, it is marked as "delayed"
  */
 enum path_check_state {
-	PATH_WILD,
+	PATH_WILD = 0,
 	PATH_UNCHECKED,
 	PATH_DOWN,
 	PATH_UP,
@@ -88,6 +88,7 @@ enum path_check_state {
 #define READSECTOR0  "readsector0"
 #define CCISS_TUR    "cciss_tur"
 #define NONE         "none"
+#define INVALID      "invalid"
 
 #define ASYNC_TIMEOUT_SEC	30
 
