@@ -738,7 +738,7 @@ struct block {
 /* blknr is always in 512 byte blocks */
 char *
 getblock (int fd, unsigned int blknr) {
-	unsigned int secsz = get_sector_size(fd);
+	int secsz = get_sector_size(fd);
 	unsigned int blks_per_sec = secsz / 512;
 	unsigned int secnr = blknr / blks_per_sec;
 	unsigned int blk_off = (blknr % blks_per_sec) * 512;
