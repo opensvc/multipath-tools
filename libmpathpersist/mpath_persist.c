@@ -436,7 +436,7 @@ int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 
 	all_tg_pt = (mpp->all_tg_pt == ALL_TG_PT_ON ||
 		     paramp->sa_flags & MPATH_F_ALL_TG_PT_MASK);
-	active_pathcount = pathcount(mpp, PATH_UP) + pathcount(mpp, PATH_GHOST);
+	active_pathcount = count_active_paths(mpp);
 
 	if (active_pathcount == 0) {
 		condlog (0, "%s: no path available", mpp->wwid);
@@ -648,7 +648,7 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	if (!mpp)
 		return MPATH_PR_DMMP_ERROR;
 
-	active_pathcount = pathcount (mpp, PATH_UP) + pathcount (mpp, PATH_GHOST);
+	active_pathcount = count_active_paths(mpp);
 
 	struct threadinfo thread[active_pathcount];
 	memset(thread, 0, sizeof(thread));

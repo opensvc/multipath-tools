@@ -446,7 +446,6 @@ struct path * find_path_by_devt (const struct _vector *pathvec, const char *devt
 struct path * find_path_by_dev (const struct _vector *pathvec, const char *dev);
 struct path * first_path (const struct multipath *mpp);
 
-int pathcountgr (const struct pathgroup *, int);
 int pathcount (const struct multipath *, int);
 int count_active_paths(const struct multipath *);
 int pathcmp (const struct pathgroup *, const struct pathgroup *);

@@ -455,30 +455,33 @@ find_path_by_devt (const struct _vector *pathvec, const char * dev_t)
 	return NULL;
 }
 
-int pathcountgr(const struct pathgroup *pgp, int state)
+static int do_pathcount(const struct multipath *mpp, const int *states,
+			unsigned int nr_states)
 {
+	struct pathgroup *pgp;
 	struct path *pp;
 	int count = 0;
-	int i;
+	unsigned int i, j, k;
 
-	vector_foreach_slot (pgp->paths, pp, i)
-		if ((pp->state == state) || (state == PATH_WILD))
-			count++;
+	if (!mpp->pg || !nr_states)
+		return count;
 
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp, j) {
+			for (k = 0; k < nr_states; k++) {
+				if (pp->state == states[k]) {
+					count++;
+					break;
+				}
+			}
+		}
+	}
 	return count;
 }
 
 int pathcount(const struct multipath *mpp, int state)
 {
-	struct pathgroup *pgp;
-	int count = 0;
-	int i;
-
-	if (mpp->pg) {
-		vector_foreach_slot (mpp->pg, pgp, i)
-			count += pathcountgr(pgp, state);
-	}
-	return count;
+	return do_pathcount(mpp, &state, 1);
 }
 
 int count_active_paths(const struct multipath *mpp)
