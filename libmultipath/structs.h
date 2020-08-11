@@ -448,6 +448,7 @@ struct path * first_path (const struct multipath *mpp);
 
 int pathcount (const struct multipath *, int);
 int count_active_paths(const struct multipath *);
+int count_active_pending_paths(const struct multipath *);
 int pathcmp (const struct pathgroup *, const struct pathgroup *);
 int add_feature (char **, const char *);
 int remove_feature (char **, const char *);
