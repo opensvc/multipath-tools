@@ -414,7 +414,7 @@ int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
 {
 	if (dm_get_info(mpp->alias, &mpp->dmi)) {
 		/* Error accessing table */
-		condlog(3, "%s: cannot access table", mpp->alias);
+		condlog(2, "%s: cannot access table", mpp->alias);
 		goto out;
 	}
 
@@ -2251,13 +2251,18 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	 */
 	condlog(4, "path prio refresh");
 
-	if (marginal_changed)
+	if (marginal_changed) {
+		condlog(2, "%s: path is %s marginal", pp->dev,
+			(pp->marginal)? "now" : "no longer");
 		update_path_groups(pp->mpp, vecs, 1);
+	}
 	else if (update_prio(pp, new_path_up) &&
 	    (pp->mpp->pgpolicyfn == (pgpolicyfn *)group_by_prio) &&
-	     pp->mpp->pgfailback == -FAILBACK_IMMEDIATE)
+	     pp->mpp->pgfailback == -FAILBACK_IMMEDIATE) {
+		condlog(2, "%s: path priorities changed. reloading",
+			pp->mpp->alias);
 		update_path_groups(pp->mpp, vecs, !new_path_up);
-	else if (need_switch_pathgroup(pp->mpp, 0)) {
+	} else if (need_switch_pathgroup(pp->mpp, 0)) {
 		if (pp->mpp->pgfailback > 0 &&
 		    (new_path_up || pp->mpp->failback_tick <= 0))
 			pp->mpp->failback_tick =
