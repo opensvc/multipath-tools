@@ -1024,10 +1024,10 @@ int dm_flush_maps (int need_suspend, int retries)
 	if (!(names = dm_task_get_names (dmt)))
 		goto out;
 
+	r = 0;
 	if (!names->dev)
 		goto out;
 
-	r = 0;
 	do {
 		if (need_suspend)
 			r |= dm_suspend_and_flush_map(names->name, retries);
