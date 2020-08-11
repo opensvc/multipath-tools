@@ -861,9 +861,12 @@ int delegate_to_multipathd(enum mpath_cmds cmd,
 		goto out;
 	}
 
-	if (reply != NULL && *reply != '\0' && strcmp(reply, "ok\n"))
-		printf("%s", reply);
-	r = DELEGATE_OK;
+	if (reply != NULL && *reply != '\0') {
+		if (strcmp(reply, "fail\n"))
+			r = DELEGATE_OK;
+		if (r != NOT_DELEGATED && strcmp(reply, "ok\n"))
+			printf("%s", reply);
+	}
 
 out:
 	FREE(reply);
