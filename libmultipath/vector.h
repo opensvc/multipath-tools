@@ -23,6 +23,8 @@
 #ifndef _VECTOR_H
 #define _VECTOR_H
 
+#include <stdbool.h>
+
 /* vector definition */
 struct _vector {
 	int allocated;
@@ -60,7 +62,7 @@ typedef struct _vector *vector;
 			__t = vector_alloc();				\
 		if (__t != NULL) {					\
 			vector_foreach_slot(__v, __j, __i) {		\
-				if (vector_alloc_slot(__t) == NULL) {	\
+				if (!vector_alloc_slot(__t)) {	\
 					vector_free(__t);		\
 					__t = NULL;			\
 					break;				\
@@ -73,7 +75,7 @@ typedef struct _vector *vector;
 
 /* Prototypes */
 extern vector vector_alloc(void);
-extern void *vector_alloc_slot(vector v);
+extern bool vector_alloc_slot(vector v);
 vector vector_reset(vector v);
 extern void vector_free(vector v);
 #define vector_free_const(x) vector_free((vector)(long)(x))

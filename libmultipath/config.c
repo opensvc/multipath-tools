@@ -131,7 +131,7 @@ find_hwe (const struct _vector *hwtable,
 	vector_foreach_slot_backwards (hwtable, tmp, i) {
 		if (hwe_regmatch(tmp, vendor, product, revision))
 			continue;
-		if (vector_alloc_slot(result) != NULL) {
+		if (vector_alloc_slot(result)) {
 			vector_set_slot(result, tmp);
 			n++;
 		}

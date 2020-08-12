@@ -236,7 +236,7 @@ static int _init_foreign(const char *multipath_dir, const char *enable)
 			goto dl_err;
 		}
 
-		if (vector_alloc_slot(foreigns) == NULL) {
+		if (!vector_alloc_slot(foreigns)) {
 			goto dl_err;
 		}
 

@@ -718,12 +718,12 @@ static void _find_controllers(struct context *ctx, struct nvme_map *map)
 		test_ana_support(map, path->ctl);
 
 		path->pg.gen.ops = &nvme_pg_ops;
-		if (vector_alloc_slot(&path->pg.pathvec) == NULL) {
+		if (!vector_alloc_slot(&path->pg.pathvec)) {
 			cleanup_nvme_path(path);
 			continue;
 		}
 		vector_set_slot(&path->pg.pathvec, path);
-		if (vector_alloc_slot(&map->pgvec) == NULL) {
+		if (!vector_alloc_slot(&map->pgvec)) {
 			cleanup_nvme_path(path);
 			continue;
 		}
@@ -779,7 +779,7 @@ static int _add_map(struct context *ctx, struct udev_device *ud,
 	map->subsys = subsys;
 	map->gen.ops = &nvme_map_ops;
 
-	if (vector_alloc_slot(ctx->mpvec) == NULL) {
+	if (!vector_alloc_slot(ctx->mpvec)) {
 		cleanup_nvme_map(map);
 		return FOREIGN_ERR;
 	}

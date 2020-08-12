@@ -35,26 +35,27 @@ vector_alloc(void)
 }
 
 /* allocated one slot */
-void *
+bool
 vector_alloc_slot(vector v)
 {
 	void *new_slot = NULL;
+	int new_allocated;
+	int i;
 
 	if (!v)
-		return NULL;
+		return false;
 
-	v->allocated += VECTOR_DEFAULT_SIZE;
-	if (v->slot)
-		new_slot = REALLOC(v->slot, sizeof (void *) * v->allocated);
-	else
-		new_slot = (void *) MALLOC(sizeof (void *) * v->allocated);
-
+	new_allocated = v->allocated + VECTOR_DEFAULT_SIZE;
+	new_slot = REALLOC(v->slot, sizeof (void *) * new_allocated);
 	if (!new_slot)
-		v->allocated -= VECTOR_DEFAULT_SIZE;
-	else
-		v->slot = new_slot;
+		return false;
 
-	return v->slot;
+	v->slot = new_slot;
+	for (i = v->allocated; i < new_allocated; i++)
+		v->slot[i] = NULL;
+
+	v->allocated = new_allocated;
+	return true;
 }
 
 int
@@ -203,7 +204,7 @@ int vector_find_or_add_slot(vector v, void *value)
 
 	if (n >= 0)
 		return n;
-	if (vector_alloc_slot(v) == NULL)
+	if (!vector_alloc_slot(v))
 		return -1;
 	vector_set_slot(v, value);
 	return VECTOR_SIZE(v) - 1;
