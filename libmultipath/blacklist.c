@@ -71,12 +71,16 @@ out:
 
 int alloc_ble_device(vector blist)
 {
-	struct blentry_device * ble = MALLOC(sizeof(struct blentry_device));
+	struct blentry_device *ble;
 
+	if (!blist)
+		return 1;
+
+	ble = MALLOC(sizeof(struct blentry_device));
 	if (!ble)
 		return 1;
 
-	if (!blist || !vector_alloc_slot(blist)) {
+	if (!vector_alloc_slot(blist)) {
 		FREE(ble);
 		return 1;
 	}
