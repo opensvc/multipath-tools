@@ -29,13 +29,18 @@ char *check_invert(char *str, bool *invert)
 	return str;
 }
 
-int store_ble(vector blist, char * str, int origin)
+int store_ble(vector blist, const char *str, int origin)
 {
 	struct blentry * ble;
 	char *regex_str;
+	char *strdup_str = NULL;
 
 	if (!str)
 		return 0;
+
+	strdup_str = strdup(str);
+	if (!strdup_str)
+		return 1;
 
 	if (!blist)
 		goto out;
@@ -45,21 +50,21 @@ int store_ble(vector blist, char * str, int origin)
 	if (!ble)
 		goto out;
 
-	regex_str = check_invert(str, &ble->invert);
+	regex_str = check_invert(strdup_str, &ble->invert);
 	if (regcomp(&ble->regex, regex_str, REG_EXTENDED|REG_NOSUB))
 		goto out1;
 
 	if (!vector_alloc_slot(blist))
 		goto out1;
 
-	ble->str = str;
+	ble->str = strdup_str;
 	ble->origin = origin;
 	vector_set_slot(blist, ble);
 	return 0;
 out1:
 	FREE(ble);
 out:
-	FREE(str);
+	FREE(strdup_str);
 	return 1;
 }
 
@@ -79,10 +84,12 @@ int alloc_ble_device(vector blist)
 	return 0;
 }
 
-int set_ble_device(vector blist, char * vendor, char * product, int origin)
+int set_ble_device(vector blist, const char *vendor, const char *product, int origin)
 {
 	struct blentry_device * ble;
 	char *regex_str;
+	char *vendor_str = NULL;
+	char *product_str = NULL;
 
 	if (!blist)
 		return 1;
@@ -93,31 +100,38 @@ int set_ble_device(vector blist, char * vendor, char * product, int origin)
 		return 1;
 
 	if (vendor) {
-		regex_str = check_invert(vendor, &ble->vendor_invert);
-		if (regcomp(&ble->vendor_reg, regex_str,
-			    REG_EXTENDED|REG_NOSUB)) {
-			FREE(vendor);
-			if (product)
-				FREE(product);
-			return 1;
-		}
-		ble->vendor = vendor;
+		vendor_str = STRDUP(vendor);
+		if (!vendor_str)
+			goto out;
+
+		regex_str = check_invert(vendor_str, &ble->vendor_invert);
+		if (regcomp(&ble->vendor_reg, regex_str, REG_EXTENDED|REG_NOSUB))
+			goto out;
+
+		ble->vendor = vendor_str;
 	}
 	if (product) {
-		regex_str = check_invert(product, &ble->product_invert);
-		if (regcomp(&ble->product_reg, regex_str,
-			    REG_EXTENDED|REG_NOSUB)) {
-			FREE(product);
-			if (vendor) {
-				ble->vendor = NULL;
-				FREE(vendor);
-			}
-			return 1;
-		}
-		ble->product = product;
+		product_str = STRDUP(product);
+		if (!product_str)
+			goto out1;
+
+		regex_str = check_invert(product_str, &ble->product_invert);
+		if (regcomp(&ble->product_reg, regex_str, REG_EXTENDED|REG_NOSUB))
+			goto out1;
+
+		ble->product = product_str;
 	}
 	ble->origin = origin;
 	return 0;
+out1:
+	if (vendor) {
+		regfree(&ble->vendor_reg);
+		ble->vendor = NULL;
+	}
+out:
+	free(vendor_str);
+	free(product_str);
+	return 1;
 }
 
 static int
@@ -178,19 +192,12 @@ setup_default_blist (struct config * conf)
 {
 	struct blentry * ble;
 	struct hwentry *hwe;
-	char * str;
 	int i;
 
-	str = STRDUP("!^(sd[a-z]|dasd[a-z]|nvme[0-9])");
-	if (!str)
-		return 1;
-	if (store_ble(conf->blist_devnode, str, ORIGIN_DEFAULT))
+	if (store_ble(conf->blist_devnode, "!^(sd[a-z]|dasd[a-z]|nvme[0-9])", ORIGIN_DEFAULT))
 		return 1;
 
-	str = STRDUP("(SCSI_IDENT_|ID_WWN)");
-	if (!str)
-		return 1;
-	if (store_ble(conf->elist_property, str, ORIGIN_DEFAULT))
+	if (store_ble(conf->elist_property, "(SCSI_IDENT_|ID_WWN)", ORIGIN_DEFAULT))
 		return 1;
 
 	vector_foreach_slot (conf->hwtable, hwe, i) {
@@ -202,9 +209,7 @@ setup_default_blist (struct config * conf)
 				return 1;
 			ble = VECTOR_SLOT(conf->blist_device,
 					  VECTOR_SIZE(conf->blist_device) - 1);
-			if (set_ble_device(conf->blist_device,
-					   STRDUP(hwe->vendor),
-					   STRDUP(hwe->bl_product),
+			if (set_ble_device(conf->blist_device, hwe->vendor, hwe->bl_product,
 					   ORIGIN_DEFAULT)) {
 				FREE(ble);
 				vector_del_slot(conf->blist_device, VECTOR_SIZE(conf->blist_device) - 1);
