@@ -248,14 +248,10 @@ int adopt_paths(vector pathvec, struct multipath *mpp)
 					pp->dev, mpp->alias);
 				continue;
 			}
-			pp->mpp = mpp;
 			if (pp->initialized == INIT_REMOVED)
 				continue;
-			condlog(3, "%s: ownership set to %s",
-				pp->dev, mpp->alias);
-
 			if (!mpp->paths && !(mpp->paths = vector_alloc()))
-				return 1;
+				goto err;
 
 			conf = get_multipath_config();
 			pthread_cleanup_push(put_multipath_config, conf);
@@ -270,10 +266,17 @@ int adopt_paths(vector pathvec, struct multipath *mpp)
 
 			if (!find_path_by_devt(mpp->paths, pp->dev_t) &&
 			    store_path(mpp->paths, pp))
-					return 1;
+				goto err;
+
+			pp->mpp = mpp;
+			condlog(3, "%s: ownership set to %s",
+				pp->dev, mpp->alias);
 		}
 	}
 	return 0;
+err:
+	condlog(1, "error setting ownership of %s to %s", pp->dev, mpp->alias);
+	return 1;
 }
 
 void orphan_path(struct path *pp, const char *reason)
