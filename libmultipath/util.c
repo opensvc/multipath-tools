@@ -250,9 +250,9 @@ int systemd_service_enabled_in(const char *dev, const char *prefix)
 		p = d->d_name + strlen(d->d_name) - 6;
 		if (strcmp(p, ".wants"))
 			continue;
-		snprintf(file, sizeof(file), "%s/%s/%s",
-			 path, d->d_name, service);
-		if (stat(file, &stbuf) == 0) {
+		if (!safe_sprintf(file, "%s/%s/%s",
+				  path, d->d_name, service)
+		    && stat(file, &stbuf) == 0) {
 			condlog(3, "%s: found %s", dev, file);
 			found++;
 			break;
