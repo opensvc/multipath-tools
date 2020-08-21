@@ -162,6 +162,22 @@ static int test_basenamecpy(void)
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }
 
+/*
+ * On big endian systems, if bitfield_t is 32bit, we need
+ * to swap the two 32 bit parts of a 64bit value to make
+ * the tests below work.
+ */
+static uint64_t maybe_swap(uint64_t v)
+{
+	uint32_t *s = (uint32_t *)&v;
+
+	if (sizeof(bitfield_t) == 4)
+		/* this is identity for little endian */
+		return ((uint64_t)s[1] << 32) | s[0];
+	else
+		return v;
+}
+
 static void test_bitmask_1(void **state)
 {
 	struct bitfield *bf;
@@ -184,7 +200,7 @@ static void test_bitmask_1(void **state)
 				       b, j, k, arr[k]);
 #endif
 				if (k == j)
-					assert_int_equal(arr[j], 1ULL << i);
+					assert_int_equal(maybe_swap(arr[j]), 1ULL << i);
 				else
 					assert_int_equal(arr[k], 0ULL);
 			}
@@ -235,7 +251,7 @@ static void test_bitmask_2(void **state)
 					assert_int_equal(arr[k], 0ULL);
 				else
 					assert_int_equal(
-						arr[k],
+						maybe_swap(arr[k]),
 						(1ULL << (i + 1)) - 1);
 			}
 		}
@@ -260,7 +276,7 @@ static void test_bitmask_2(void **state)
 					assert_int_equal(arr[k], ~0ULL);
 				else
 					assert_int_equal(
-						arr[k],
+						maybe_swap(arr[k]),
 						~((1ULL << (i + 1)) - 1));
 			}
 		}
