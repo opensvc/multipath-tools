@@ -193,7 +193,7 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 {
 	int i;
 	struct multipath * mpp;
-	char params[PARAMS_SIZE], status[PARAMS_SIZE];
+	int flags = (cmd == CMD_LIST_SHORT ? DI_NOIO : DI_ALL);
 
 	if (dm_get_maps(curmp))
 		return 1;
@@ -205,26 +205,21 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 		if (refwwid && strlen(refwwid) &&
 		    strncmp(mpp->wwid, refwwid, WWID_SIZE)) {
 			condlog(3, "skip map %s: out of scope", mpp->alias);
-			free_multipath(mpp, KEEP_PATHS);
-			vector_del_slot(curmp, i);
+			remove_map(mpp, pathvec, curmp, PURGE_VEC);
 			i--;
 			continue;
 		}
 
-		dm_get_map(mpp->alias, &mpp->size, params);
-		condlog(3, "params = %s", params);
-		dm_get_status(mpp->alias, status);
-		condlog(3, "status = %s", status);
-
-		disassemble_map(pathvec, params, mpp);
-		update_pathvec_from_dm(pathvec, mpp,
-				       (cmd == CMD_LIST_SHORT ?
-					DI_NOIO : DI_ALL));
+		if (update_multipath_table(mpp, pathvec, flags) != DMP_OK ||
+		    update_multipath_status(mpp) != DMP_OK) {
+			condlog(1, "error parsing map %s", mpp->wwid);
+			remove_map(mpp, pathvec, curmp, PURGE_VEC);
+			i--;
+			continue;
+		}
 
 		if (cmd == CMD_LIST_LONG)
 			mpp->bestpg = select_path_group(mpp);
-
-		disassemble_status(status, mpp);
 
 		if (cmd == CMD_LIST_SHORT ||
 		    cmd == CMD_LIST_LONG) {
