@@ -282,32 +282,48 @@ static void test_bitmask_len_0(void **state)
 static void _test_bitmask_small(unsigned int n)
 {
 	struct bitfield *bf;
-	uint64_t *arr;
+	uint32_t *arr;
+	unsigned int size = (n - 1) / 32 + 1, i;
 
+	assert(sizeof(bitfield_t) == 4 || sizeof(bitfield_t) == 8);
 	assert(n <= 64);
 	assert(n >= 1);
 
 	bf = alloc_bitfield(n);
 	assert_non_null(bf);
 	assert_int_equal(bf->len, n);
-	arr = (uint64_t *)bf->bits;
+	arr = (uint32_t *)bf->bits;
 
-	assert_int_equal(*arr, 0);
+	for (i = 0; i < size; i++)
+		assert_int_equal(arr[i], 0);
 
 	set_bit_in_bitfield(n + 1, bf);
-	assert_int_equal(*arr, 0);
+	for (i = 0; i < size; i++)
+		assert_int_equal(arr[i], 0);
 
 	set_bit_in_bitfield(n, bf);
-	assert_int_equal(*arr, 0);
+	for (i = 0; i < size; i++)
+		assert_int_equal(arr[i], 0);
 
 	set_bit_in_bitfield(n - 1, bf);
-	assert_int_equal(*arr, 1ULL << (n - 1));
+	for (i = 0; i < size; i++) {
+		unsigned int k = (n - 1) / 32;
+		unsigned int j = (n - 1) - k * 32;
+
+		if (i == k)
+			assert_int_equal(arr[i], 1UL << j);
+		else
+			assert_int_equal(arr[i], 0);
+	}
 
 	clear_bit_in_bitfield(n - 1, bf);
-	assert_int_equal(*arr, 0);
+	for (i = 0; i < size; i++)
+		assert_int_equal(arr[i], 0);
 
 	set_bit_in_bitfield(0, bf);
-	assert_int_equal(*arr, 1);
+	assert_int_equal(arr[0], 1);
+	for (i = 1; i < size; i++)
+		assert_int_equal(arr[i], 0);
 
 	free(bf);
 }
@@ -315,7 +331,8 @@ static void _test_bitmask_small(unsigned int n)
 static void _test_bitmask_small_2(unsigned int n)
 {
 	struct bitfield *bf;
-	uint64_t *arr;
+	uint32_t *arr;
+	unsigned int size = (n - 1) / 32 + 1, i;
 
 	assert(n <= 128);
 	assert(n >= 65);
@@ -323,34 +340,75 @@ static void _test_bitmask_small_2(unsigned int n)
 	bf = alloc_bitfield(n);
 	assert_non_null(bf);
 	assert_int_equal(bf->len, n);
-	arr = (uint64_t *)bf->bits;
+	arr = (uint32_t *)bf->bits;
 
-	assert_int_equal(arr[0], 0);
-	assert_int_equal(arr[1], 0);
+	for (i = 0; i < size; i++)
+		assert_int_equal(arr[i], 0);
 
 	set_bit_in_bitfield(n + 1, bf);
-	assert_int_equal(arr[0], 0);
-	assert_int_equal(arr[1], 0);
+	for (i = 0; i < size; i++)
+		assert_int_equal(arr[i], 0);
 
 	set_bit_in_bitfield(n, bf);
-	assert_int_equal(arr[0], 0);
-	assert_int_equal(arr[1], 0);
+	for (i = 0; i < size; i++)
+		assert_int_equal(arr[i], 0);
 
 	set_bit_in_bitfield(n - 1, bf);
 	assert_int_equal(arr[0], 0);
-	assert_int_equal(arr[1], 1ULL << (n - 65));
+	for (i = 0; i < size; i++) {
+		unsigned int k = (n - 1) / 32;
+		unsigned int j = (n - 1) - k * 32;
+
+		if (i == k)
+			assert_int_equal(arr[i], 1UL << j);
+		else
+			assert_int_equal(arr[i], 0);
+	}
 
 	set_bit_in_bitfield(0, bf);
-	assert_int_equal(arr[0], 1);
-	assert_int_equal(arr[1], 1ULL << (n - 65));
+	for (i = 0; i < size; i++) {
+		unsigned int k = (n - 1) / 32;
+		unsigned int j = (n - 1) - k * 32;
+
+		if (i == k && k == 0)
+			assert_int_equal(arr[i], (1UL << j) | 1);
+		else if (i == k)
+			assert_int_equal(arr[i], 1UL << j);
+		else if (i == 0)
+			assert_int_equal(arr[i], 1);
+		else
+			assert_int_equal(arr[i], 0);
+	}
 
 	set_bit_in_bitfield(64, bf);
-	assert_int_equal(arr[0], 1);
-	assert_int_equal(arr[1], (1ULL << (n - 65)) | 1);
+	for (i = 0; i < size; i++) {
+		unsigned int k = (n - 1) / 32;
+		unsigned int j = (n - 1) - k * 32;
+
+		if (i == k && (k == 0 || k == 2))
+			assert_int_equal(arr[i], (1UL << j) | 1);
+		else if (i == k)
+			assert_int_equal(arr[i], 1UL << j);
+		else if (i == 2 || i == 0)
+			assert_int_equal(arr[i], 1);
+		else
+			assert_int_equal(arr[i], 0);
+	}
 
 	clear_bit_in_bitfield(0, bf);
-	assert_int_equal(arr[0], 0);
-	assert_int_equal(arr[1], (1ULL << (n - 65)) | 1);
+	for (i = 0; i < size; i++) {
+		unsigned int k = (n - 1) / 32;
+		unsigned int j = (n - 1) - k * 32;
+
+		if (i == k && k == 2)
+			assert_int_equal(arr[i], (1UL << j) | 1);
+		else if (i == k)
+			assert_int_equal(arr[i], 1UL << j);
+		else if (i == 2)
+			assert_int_equal(arr[i], 1);
+		else
+			assert_int_equal(arr[i], 0);
+	}
 
 	free(bf);
 }
