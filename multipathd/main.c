@@ -552,7 +552,7 @@ add_map_without_path (struct vectors *vecs, const char *alias)
 	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
 	put_multipath_config(conf);
 
-	if (update_multipath_table(mpp, vecs->pathvec) != DMP_OK)
+	if (update_multipath_table(mpp, vecs->pathvec, 0) != DMP_OK)
 		goto out;
 	if (update_multipath_status(mpp) != DMP_OK)
 		goto out;
@@ -1412,7 +1412,7 @@ map_discovery (struct vectors * vecs)
 		return 1;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i)
-		if (update_multipath_table(mpp, vecs->pathvec) != DMP_OK ||
+		if (update_multipath_table(mpp, vecs->pathvec, 0) != DMP_OK ||
 		    update_multipath_status(mpp) != DMP_OK) {
 			remove_map(mpp, vecs, 1);
 			i--;

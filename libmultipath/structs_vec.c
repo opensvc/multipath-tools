@@ -406,7 +406,7 @@ extract_hwe_from_path(struct multipath * mpp)
 }
 
 int
-update_multipath_table (struct multipath *mpp, vector pathvec)
+update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 {
 	int r = DMP_ERR;
 	char params[PARAMS_SIZE] = {0};
@@ -426,7 +426,7 @@ update_multipath_table (struct multipath *mpp, vector pathvec)
 	}
 
 	/* FIXME: we should deal with the return value here */
-	update_pathvec_from_dm(pathvec, mpp, 0);
+	update_pathvec_from_dm(pathvec, mpp, flags);
 
 	return DMP_OK;
 }
@@ -532,7 +532,7 @@ update_multipath_strings(struct multipath *mpp, vector pathvec)
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
 
-	r = update_multipath_table(mpp, pathvec);
+	r = update_multipath_table(mpp, pathvec, 0);
 	if (r != DMP_OK)
 		return r;
 	sync_paths(mpp, pathvec);
