@@ -1186,7 +1186,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 
 		if (!mpp->paths) {
 			condlog(0, "%s: skip coalesce (no paths)", mpp->alias);
-			remove_map(mpp, vecs, 0);
+			remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
 			continue;
 		}
 
@@ -1215,7 +1215,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 
 		params[0] = '\0';
 		if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
-			remove_map(mpp, vecs, 0);
+			remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
 			continue;
 		}
 
@@ -1235,7 +1235,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 				condlog(2, "%s: %s map",
 					mpp->alias, (mpp->action == ACT_CREATE)?
 					"ignoring" : "removing");
-				remove_map(mpp, vecs, 0);
+				remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
 				continue;
 			} else /* if (r == DOMAP_RETRY && !is_daemon) */ {
 				ret = CP_RETRY;
@@ -1286,7 +1286,8 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 				vector_set_slot(newmp, mpp);
 			}
 			else
-				remove_map(mpp, vecs, 0);
+				remove_map(mpp, vecs->pathvec, vecs->mpvec,
+					   KEEP_VEC);
 		}
 	}
 	/*
@@ -1304,7 +1305,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 
 			vector_del_slot(newmp, i);
 			i--;
-			remove_map(mpp, vecs, 0);
+			remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
 
 			if (dm_flush_map(alias))
 				condlog(2, "%s: remove failed (dead)",
