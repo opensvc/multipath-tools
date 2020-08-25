@@ -25,6 +25,7 @@
 #include "test-lib.h"
 #include "print.h"
 #include "util.h"
+#include "foreign.h"
 
 #define N_CONF_FILES 2
 
@@ -187,6 +188,9 @@ static int teardown(void **state)
 
 	free_hwt(*state);
 	*state = NULL;
+	cleanup_prio();
+	cleanup_checkers();
+	cleanup_foreign();
 
 	return 0;
 }
