@@ -28,13 +28,17 @@ struct vpdtest {
 	char wwid[WWID_SIZE];
 };
 
+static regex_t space_re;
 static int setup(void **state)
 {
 	struct vpdtest *vt = malloc(sizeof(*vt));
+	int rc;
 
 	if (vt == NULL)
 		return -1;
 	*state = vt;
+	rc = regcomp(&space_re, " +", REG_EXTENDED);
+	assert_int_equal(rc, 0);
 	return 0;
 }
 
@@ -44,6 +48,7 @@ static int teardown(void **state)
 
 	free(vt);
 	*state = NULL;
+	regfree(&space_re);
 	return 0;
 }
 
@@ -360,21 +365,14 @@ static char *subst_spaces(const char *src)
 {
 	char *dst = calloc(1, strlen(src) + 1);
 	char *p;
-	static regex_t *re;
 	regmatch_t match;
-	int rc;
+	int rc = 0;
 
 	assert_non_null(dst);
-	if (re == NULL) {
-		re = calloc(1, sizeof(*re));
-		assert_non_null(re);
-		rc = regcomp(re, " +", REG_EXTENDED);
-		assert_int_equal(rc, 0);
-	}
 
-	for (rc = regexec(re, src, 1, &match, 0), p = dst;
+	for (rc = regexec(&space_re, src, 1, &match, 0), p = dst;
 	    rc == 0;
-	    src += match.rm_eo, rc = regexec(re, src, 1, &match, 0)) {
+	    src += match.rm_eo, rc = regexec(&space_re, src, 1, &match, 0)) {
 		memcpy(p, src, match.rm_so);
 		p += match.rm_so;
 		*p = '_';
