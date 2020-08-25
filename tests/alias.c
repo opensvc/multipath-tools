@@ -652,6 +652,7 @@ static void al_a(void **state)
 	alias = allocate_binding(0, "WWIDa", 1, "MPATH");
 	assert_ptr_not_equal(alias, NULL);
 	assert_string_equal(alias, "MPATHa");
+	free(alias);
 }
 
 static void al_zz(void **state)
@@ -668,6 +669,7 @@ static void al_zz(void **state)
 	alias = allocate_binding(0, "WWIDzz", 26*26 + 26, "MPATH");
 	assert_ptr_not_equal(alias, NULL);
 	assert_string_equal(alias, "MPATHzz");
+	free(alias);
 }
 
 static void al_0(void **state)
