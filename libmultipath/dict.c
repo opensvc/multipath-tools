@@ -1499,7 +1499,8 @@ blacklist_exceptions_handler(struct config *conf, vector strvec)
 static int								\
 ble_ ## option ## _handler (struct config *conf, vector strvec)		\
 {									\
-	char * buff;							\
+	char *buff;							\
+	int rc;								\
 									\
 	if (!conf->option)						\
 		return 1;						\
@@ -1508,7 +1509,9 @@ ble_ ## option ## _handler (struct config *conf, vector strvec)		\
 	if (!buff)							\
 		return 1;						\
 									\
-	return store_ble(conf->option, buff, ORIGIN_CONFIG);		\
+	rc = store_ble(conf->option, buff, ORIGIN_CONFIG);		\
+	free(buff);							\
+	return rc;							\
 }
 
 #define declare_ble_device_handler(name, option, vend, prod)		\
@@ -1516,6 +1519,7 @@ static int								\
 ble_ ## option ## _ ## name ## _handler (struct config *conf, vector strvec) \
 {									\
 	char * buff;							\
+	int rc;								\
 									\
 	if (!conf->option)						\
 		return 1;						\
@@ -1524,7 +1528,9 @@ ble_ ## option ## _ ## name ## _handler (struct config *conf, vector strvec) \
 	if (!buff)							\
 		return 1;						\
 									\
-	return set_ble_device(conf->option, vend, prod, ORIGIN_CONFIG);	\
+	rc = set_ble_device(conf->option, vend, prod, ORIGIN_CONFIG);	\
+	free(buff);							\
+	return rc;							\
 }
 
 declare_ble_handler(blist_devnode)
