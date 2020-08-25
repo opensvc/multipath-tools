@@ -997,7 +997,7 @@ main (int argc, char *argv[])
 	}
 
 	if ((cmd == CMD_LIST_SHORT || cmd == CMD_LIST_LONG) && enable_foreign)
-		conf->enable_foreign = "";
+		conf->enable_foreign = strdup("");
 
 	/* Failing here is non-fatal */
 	init_foreign(conf->multipath_dir, conf->enable_foreign);

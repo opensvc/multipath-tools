@@ -631,6 +631,8 @@ free_config (struct config * conf)
 
 	if (conf->config_dir)
 		FREE(conf->config_dir);
+	if (conf->enable_foreign)
+		FREE(conf->enable_foreign);
 
 	free_blacklist(conf->blist_devnode);
 	free_blacklist(conf->blist_wwid);
