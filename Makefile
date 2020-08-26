@@ -52,6 +52,9 @@ uninstall: $(BUILDDIRS:=.uninstall)
 test:	all
 	$(MAKE) -C tests
 
+valgrind-test:	all
+	$(MAKE) -C tests valgrind
+
 .PHONY:	TAGS
 TAGS:
 	etags -a libmultipath/*.c

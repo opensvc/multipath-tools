@@ -5,6 +5,14 @@ or simply `make` in the `tests` subdirectory. The test output is saved as
 `<testname>.out`. The test programs are called `<testname>-test`, and can
 be run standalone e.g. for debugging purposes.
 
+## Running tests under valgrind
+
+The unit tests can be run under the valgrind debugger with `make valgrind`
+in the `tests` directory, or `make valgrind-test` in the top directory.
+If valgrind detects a bad memory access or leak, the test will fail. The
+output of the test run, including valgrind output, is stored as
+`<testname>.vgr`.
+
 ## Notes on individual tests
 
 ### Tests that require root permissions

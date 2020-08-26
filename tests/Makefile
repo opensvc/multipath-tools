@@ -19,6 +19,7 @@ TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
 .PRECIOUS: $(TESTS:%=%-test)
 
 all:	$(TESTS:%=%.out)
+valgrind:	$(TESTS:%=%.vgr)
 
 # test-specific compiler flags
 # XYZ-test_FLAGS: Additional compiler flags for this test
@@ -68,12 +69,20 @@ lib/libchecktur.so:
 	@echo == running $< ==
 	@LD_LIBRARY_PATH=$(multipathdir):$(mpathcmddir) ./$< >$@
 
+%.vgr:  %-test lib/libchecktur.so
+	@echo == running valgrind for $< ==
+	@LD_LIBRARY_PATH=$(multipathdir):$(mpathcmddir) \
+		valgrind --leak-check=full --error-exitcode=128 ./$< >$@ 2>&1
+
 OBJS = $(TESTS:%=%.o) test-lib.o
 
 test_clean:
-	$(RM) $(TESTS:%=%.out)
+	$(RM) $(TESTS:%=%.out) $(TESTS:%=%.vgr)
 
-clean: test_clean dep_clean
+valgrind_clean:
+	$(RM) $(TESTS:%=%.vgr)
+
+clean: test_clean valgrind_clean dep_clean
 	$(RM) $(TESTS:%=%-test) $(OBJS) *.o.wrap
 	$(RM) -rf lib
 
