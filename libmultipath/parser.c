@@ -237,6 +237,7 @@ alloc_strvec(char *string)
 		if (!vector_alloc_slot(strvec))
 			goto out;
 
+		vector_set_slot(strvec, NULL);
 		start = cp;
 		if (*cp == '"' && !(in_string && *(cp + 1) == '"')) {
 			cp++;
