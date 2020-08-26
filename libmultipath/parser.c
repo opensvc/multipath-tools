@@ -436,14 +436,16 @@ is_sublevel_keyword(char *str)
 int
 validate_config_strvec(vector strvec, char *file)
 {
-	char *str;
+	char *str = NULL;
 	int i;
 
-	str = VECTOR_SLOT(strvec, 0);
+	if (strvec && VECTOR_SIZE(strvec) > 0)
+		str = VECTOR_SLOT(strvec, 0);
+
 	if (str == NULL) {
 		condlog(0, "can't parse option on line %d of %s",
 			line_nr, file);
-	return -1;
+		return -1;
 	}
 	if (*str == '}') {
 		if (VECTOR_SIZE(strvec) > 1)
@@ -456,7 +458,7 @@ validate_config_strvec(vector strvec, char *file)
 		return -1;
 	}
 	if (is_sublevel_keyword(str)) {
-		str = VECTOR_SLOT(strvec, 1);
+		str = VECTOR_SIZE(strvec) > 1 ? VECTOR_SLOT(strvec, 1) : NULL;
 		if (str == NULL)
 			condlog(0, "missing '{' on line %d of %s",
 				line_nr, file);
@@ -467,7 +469,7 @@ validate_config_strvec(vector strvec, char *file)
 			condlog(0, "ignoring extra data starting with '%s' on line %d of %s", (char *)VECTOR_SLOT(strvec, 2), line_nr, file);
 		return 0;
 	}
-	str = VECTOR_SLOT(strvec, 1);
+	str = VECTOR_SIZE(strvec) > 1 ? VECTOR_SLOT(strvec, 1) : NULL;
 	if (str == NULL) {
 		condlog(0, "missing value for option '%s' on line %d of %s",
 			(char *)VECTOR_SLOT(strvec, 0), line_nr, file);
