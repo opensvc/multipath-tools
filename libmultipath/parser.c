@@ -194,7 +194,9 @@ snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw,
 static const char quote_marker[] = { '\0', '"', '\0' };
 bool is_quote(const char* token)
 {
-	return !memcmp(token, quote_marker, sizeof(quote_marker));
+	return token[0] == quote_marker[0] &&
+		token[1] == quote_marker[1] &&
+		token[2] == quote_marker[2];
 }
 
 vector
