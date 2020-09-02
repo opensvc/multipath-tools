@@ -278,7 +278,11 @@ int sysfs_check_holders(char * check_devt, char * new_devt)
 			continue;
 		}
 		table_name = dm_mapname(major, table_minor);
-
+		if (!table_name) {
+			condlog(2, "%s: mapname not found for %d:%d", check_dev,
+				major, table_minor);
+			continue;
+		}
 		condlog(0, "%s: reassign table %s old %s new %s", check_dev,
 			table_name, check_devt, new_devt);
 
