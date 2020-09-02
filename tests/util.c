@@ -617,6 +617,7 @@ static void test_strlcpy_5(void **state)
 	const int sz = sizeof(src_str);
 
 	tst = malloc(sz);
+	assert_non_null(tst);
 	memset(tst, 'f', sizeof(src_str));
 
 	rc = strlcpy(tst, src_str, sz);
@@ -634,6 +635,7 @@ static void test_strlcpy_6(void **state)
 	const int sz = sizeof(src_str);
 
 	tst = malloc(sz + 2);
+	assert_non_null(tst);
 	memset(tst, 'f', sz + 2);
 
 	rc = strlcpy(tst, src_str, sz + 2);
