@@ -1315,7 +1315,7 @@ dm_mapname(int major, int minor)
 
 	map = dm_task_get_name(dmt);
 	if (map && strlen(map))
-		response = STRDUP((const char *)dm_task_get_name(dmt));
+		response = STRDUP((const char *)map);
 
 	dm_task_destroy(dmt);
 	return response;
