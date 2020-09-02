@@ -251,7 +251,6 @@ static int check_usable_paths(struct config *conf,
 	struct path *pp;
 	char *mapname;
 	vector pathvec = NULL;
-	char params[PARAMS_SIZE], status[PARAMS_SIZE];
 	dev_t devt;
 	int r = 1, i, j;
 
@@ -285,11 +284,9 @@ static int check_usable_paths(struct config *conf,
 	if (mpp == NULL)
 		goto free;
 
-	dm_get_map(mpp->alias, &mpp->size, params);
-	dm_get_status(mpp->alias, status);
-	disassemble_map(pathvec, params, mpp);
-	update_pathvec_from_dm(pathvec, mpp, 0);
-	disassemble_status(status, mpp);
+	if (update_multipath_table(mpp, pathvec, 0) != DMP_OK ||
+		    update_multipath_status(mpp) != DMP_OK)
+		    goto free;
 
 	vector_foreach_slot (mpp->pg, pg, i) {
 		vector_foreach_slot (pg->paths, pp, j) {
