@@ -298,6 +298,7 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 	struct pathgroup * pgp;
 	struct config *conf;
 	int i, n_paths, marginal_pathgroups;
+	char *save_attr;
 
 	/*
 	 * don't bother if devmap size is unknown
@@ -307,10 +308,6 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 		return 1;
 	}
 
-	/*
-	 * free features, selector, and hwhandler properties if they are being reused
-	 */
-	free_multipath_attributes(mpp);
 	if (mpp->disable_queueing && VECTOR_SIZE(mpp->paths) != 0)
 		mpp->disable_queueing = 0;
 
@@ -328,11 +325,35 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 
 	select_pgfailback(conf, mpp);
 	select_pgpolicy(conf, mpp);
+
+	/*
+	 * If setup_map() is called from e.g. from reload_map() or resize_map(),
+	 * make sure that we don't corrupt attributes.
+	 */
+	save_attr = steal_ptr(mpp->selector);
 	select_selector(conf, mpp);
+	if (!mpp->selector)
+		mpp->selector = save_attr;
+	else
+		free(save_attr);
+
 	select_no_path_retry(conf, mpp);
 	select_retain_hwhandler(conf, mpp);
+
+	save_attr = steal_ptr(mpp->features);
 	select_features(conf, mpp);
+	if (!mpp->features)
+		mpp->features = save_attr;
+	else
+		free(save_attr);
+
+	save_attr = steal_ptr(mpp->hwhandler);
 	select_hwhandler(conf, mpp);
+	if (!mpp->hwhandler)
+		mpp->hwhandler = save_attr;
+	else
+		free(save_attr);
+
 	select_rr_weight(conf, mpp);
 	select_minio(conf, mpp);
 	select_mode(conf, mpp);

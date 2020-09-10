@@ -110,4 +110,11 @@ static inline void clear_bit_in_bitfield(unsigned int bit, struct bitfield *bf)
 	bf->bits[bit / bits_per_slot] &= ~(1ULL << (bit % bits_per_slot));
 }
 
+#define steal_ptr(x)		       \
+	({			       \
+		void *___p = x;	       \
+		x = NULL;	       \
+		___p;		       \
+	})
+
 #endif /* _UTIL_H */
