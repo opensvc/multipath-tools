@@ -820,7 +820,7 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
-	int major, minor;
+	int major = -1, minor = -1;
 	char dev_path[PATH_SIZE];
 	char *refwwid, *alias = NULL;
 	int rc, count = 0;
