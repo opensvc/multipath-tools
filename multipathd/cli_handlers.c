@@ -1531,6 +1531,8 @@ cli_getprkey(void * v, char ** reply, int * len, void * data)
 		return 1;
 
 	*reply = malloc(26);
+	if (!*reply)
+		return 1;
 
 	if (!get_be64(mpp->reservation_key)) {
 		sprintf(*reply, "none\n");
