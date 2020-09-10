@@ -210,7 +210,6 @@ static int handle_args(int argc, char * argv[], int nline)
 	int prout_sa = -1;
 	char *batch_fn = NULL;
 	void *resp = NULL;
-	struct transportid * tmp;
 
 	memset(transportids, 0, MPATH_MX_TIDS * sizeof(struct transportid));
 
