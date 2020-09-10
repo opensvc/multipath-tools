@@ -3356,7 +3356,6 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 	if (resp->prin_descriptor.prin_readkeys.additional_length == 0 )
 	{
 		condlog(1, "%s: No key found. Device may not be registered.", pp->dev);
-		ret = MPATH_PR_SUCCESS;
 		goto out;
 	}
 	condlog(2, "Multipath  reservation_key: 0x%" PRIx64 " ",
@@ -3378,12 +3377,13 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 	{
 		condlog(0, "%s: Either device not registered or ", pp->dev);
 		condlog(0, "host is not authorised for registration. Skip path");
-		ret = MPATH_PR_OTHER;
 		goto out;
 	}
 
-	param= malloc(sizeof(struct prout_param_descriptor));
-	memset(param, 0 , sizeof(struct prout_param_descriptor));
+	param = (struct prout_param_descriptor *)MALLOC(sizeof(struct prout_param_descriptor));
+	if (!param)
+		goto out;
+
 	param->sa_flags = mpp->sa_flags;
 	memcpy(param->sa_key, &mpp->reservation_key, 8);
 	param->num_transportid = 0;
