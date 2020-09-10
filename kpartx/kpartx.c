@@ -209,6 +209,23 @@ check_uuid(char *uuid, char *part_uuid, char **err_msg) {
 	return 0;
 }
 
+static void *
+xmalloc (size_t size) {
+	void *t;
+
+	if (size == 0)
+		return NULL;
+
+	t = malloc (size);
+
+	if (t == NULL) {
+		fprintf(stderr, "Out of memory\n");
+		exit(1);
+	}
+
+	return t;
+}
+
 int
 main(int argc, char **argv){
 	int i, j, m, n, op, off, arg, c, d, ro=0;
@@ -383,7 +400,7 @@ main(int argc, char **argv){
 		mapname = device + off;
 
 	if (delim == NULL) {
-		delim = malloc(DELIM_SIZE);
+		delim = xmalloc(DELIM_SIZE);
 		memset(delim, 0, DELIM_SIZE);
 		set_delimiter(mapname, delim);
 	}
@@ -668,23 +685,6 @@ end:
 	dm_lib_exit();
 
 	return r;
-}
-
-void *
-xmalloc (size_t size) {
-	void *t;
-
-	if (size == 0)
-		return NULL;
-
-	t = malloc (size);
-
-	if (t == NULL) {
-		fprintf(stderr, "Out of memory\n");
-		exit(1);
-	}
-
-	return t;
 }
 
 /*
