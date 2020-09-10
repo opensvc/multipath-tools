@@ -544,8 +544,8 @@ void print_foreign_topology(int verbosity)
 	int buflen = MAX_LINE_LEN * MAX_LINES;
 	char *buf = NULL, *tmp = NULL;
 
-	buf = malloc(buflen);
-	buf[0] = '\0';
+	buf = calloc(1, buflen);
+
 	while (buf != NULL) {
 		char *c = buf;
 
