@@ -66,7 +66,7 @@ assemble_map (struct multipath * mp, char * params, int len)
 	int i, j;
 	int minio;
 	int nr_priority_groups, initial_pg_nr;
-	char * p, * f;
+	char * p;
 	const char *const end = params + len;
 	char no_path_retry[] = "queue_if_no_path";
 	char retain_hwhandler[] = "retain_attached_hw_handler";
@@ -87,10 +87,9 @@ assemble_map (struct multipath * mp, char * params, int len)
 	    get_linux_version_code() < KERNEL_VERSION(4, 3, 0))
 		add_feature(&mp->features, retain_hwhandler);
 
-	f = STRDUP(mp->features);
-
-	APPEND(p, end, "%s %s %i %i", f, mp->hwhandler, nr_priority_groups,
-	       initial_pg_nr);
+	/* mp->features must not be NULL */
+	APPEND(p, end, "%s %s %i %i", mp->features, mp->hwhandler,
+		nr_priority_groups, initial_pg_nr);
 
 	vector_foreach_slot (mp->pg, pgp, i) {
 		pgp = VECTOR_SLOT(mp->pg, i);
@@ -111,12 +110,10 @@ assemble_map (struct multipath * mp, char * params, int len)
 		}
 	}
 
-	FREE(f);
 	condlog(4, "%s: assembled map [%s]", mp->alias, params);
 	return 0;
 
 err:
-	FREE(f);
 	return 1;
 }
 

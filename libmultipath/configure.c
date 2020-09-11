@@ -380,6 +380,11 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 	marginal_pathgroups = conf->marginal_pathgroups;
 	pthread_cleanup_pop(1);
 
+	if (!mpp->features || !mpp->hwhandler || !mpp->selector) {
+		condlog(0, "%s: map select failed", mpp->alias);
+		return 1;
+	}
+
 	if (marginal_path_check_enabled(mpp))
 		start_io_err_stat_thread(vecs);
 
