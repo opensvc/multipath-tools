@@ -93,6 +93,8 @@ enum {
 	MULTIPATH_VERSION
 };
 int libmp_get_version(int which, unsigned int version[3]);
+struct dm_task;
+int libmp_dm_task_run(struct dm_task *dmt);
 
 #define dm_log_error(lvl, cmd, dmt)			      \
 	condlog(lvl, "%s: libdm task=%d error: %s", __func__, \

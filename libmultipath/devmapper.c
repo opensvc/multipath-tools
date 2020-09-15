@@ -42,6 +42,7 @@ static unsigned int dm_mpath_target_version[3] = { INVALID_VERSION, };
 
 static pthread_once_t dm_initialized = PTHREAD_ONCE_INIT;
 static pthread_once_t versions_initialized = PTHREAD_ONCE_INIT;
+static pthread_mutex_t libmp_dm_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static int dm_conf_verbosity;
 
@@ -59,15 +60,33 @@ static inline int dm_task_set_cookie(struct dm_task *dmt, uint32_t *c, int a)
 	return 1;
 }
 
-void dm_udev_wait(unsigned int c)
+static void libmp_udev_wait(unsigned int c)
 {
 }
 
-void dm_udev_set_sync_support(int c)
+static void dm_udev_set_sync_support(int c)
 {
 }
-
+#else
+static void libmp_udev_wait(unsigned int c)
+{
+	pthread_mutex_lock(&libmp_dm_lock);
+	pthread_cleanup_push(cleanup_mutex, &libmp_dm_lock);
+	dm_udev_wait(c);
+	pthread_cleanup_pop(1);
+}
 #endif
+
+int libmp_dm_task_run(struct dm_task *dmt)
+{
+	int r;
+
+	pthread_mutex_lock(&libmp_dm_lock);
+	pthread_cleanup_push(cleanup_mutex, &libmp_dm_lock);
+	r = dm_task_run(dmt);
+	pthread_cleanup_pop(1);
+	return r;
+}
 
 __attribute__((format(printf, 4, 5))) static void
 dm_write_log (int level, const char *file, int line, const char *f, ...)
@@ -198,7 +217,7 @@ static int dm_tgt_version (unsigned int *version, char *str)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(2, DM_DEVICE_LIST_VERSIONS, dmt);
 		condlog(0, "Can not communicate with kernel DM");
 		goto out;
@@ -382,12 +401,12 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t 
 				DM_UDEV_DISABLE_LIBRARY_FALLBACK | udev_flags))
 		goto out;
 
-	r = dm_task_run (dmt);
+	r = libmp_dm_task_run (dmt);
 	if (!r)
 		dm_log_error(2, task, dmt);
 
 	if (udev_wait_flag)
-			dm_udev_wait(cookie);
+			libmp_udev_wait(cookie);
 out:
 	dm_task_destroy (dmt);
 	return r;
@@ -474,12 +493,12 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 	    !dm_task_set_cookie(dmt, &cookie, udev_flags))
 		goto freeout;
 
-	r = dm_task_run (dmt);
+	r = libmp_dm_task_run (dmt);
 	if (!r)
 		dm_log_error(2, task, dmt);
 
 	if (task == DM_DEVICE_CREATE)
-			dm_udev_wait(cookie);
+			libmp_udev_wait(cookie);
 freeout:
 	if (prefixed_uuid)
 		FREE(prefixed_uuid);
@@ -589,7 +608,7 @@ do_get_info(const char *name, struct dm_info *info)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_INFO, dmt);
 		goto out;
 	}
@@ -630,7 +649,7 @@ int dm_get_map(const char *name, unsigned long long *size, char *outparams)
 	dm_task_no_open_count(dmt);
 
 	errno = 0;
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_TABLE, dmt);
 		if (dm_task_get_errno(dmt) == ENXIO)
 			r = DMP_NOT_FOUND;
@@ -672,7 +691,7 @@ dm_get_prefixed_uuid(const char *name, char *uuid, int uuid_len)
 	if (!dm_task_set_name (dmt, name))
 		goto uuidout;
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_INFO, dmt);
 		goto uuidout;
 	}
@@ -743,7 +762,7 @@ int dm_get_status(const char *name, char *outstatus)
 	dm_task_no_open_count(dmt);
 
 	errno = 0;
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_STATUS, dmt);
 		if (dm_task_get_errno(dmt) == ENXIO)
 			r = DMP_NOT_FOUND;
@@ -796,7 +815,7 @@ int dm_type(const char *name, char *type)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_TABLE, dmt);
 		goto out;
 	}
@@ -840,7 +859,7 @@ int dm_is_mpath(const char *name)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_TABLE, dmt);
 		goto out_task;
 	}
@@ -904,7 +923,7 @@ dm_map_present_by_uuid(const char *uuid)
 	if (!dm_task_set_uuid(dmt, prefixed_uuid))
 		goto out_task;
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_INFO, dmt);
 		goto out_task;
 	}
@@ -950,7 +969,7 @@ dm_get_opencount (const char * mapname)
 	if (!dm_task_set_name(dmt, mapname))
 		goto out;
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_INFO, dmt);
 		goto out;
 	}
@@ -1110,7 +1129,7 @@ int dm_flush_maps (int need_suspend, int retries)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run (dmt)) {
+	if (!libmp_dm_task_run (dmt)) {
 		dm_log_error(3, DM_DEVICE_LIST, dmt);
 		goto out;
 	}
@@ -1156,7 +1175,7 @@ dm_message(const char * mapname, char * message)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(2, DM_DEVICE_TARGET_MSG, dmt);
 		goto out;
 	}
@@ -1276,7 +1295,7 @@ dm_get_maps (vector mp)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_LIST, dmt);
 		goto out;
 	}
@@ -1361,7 +1380,7 @@ dm_mapname(int major, int minor)
 	 * daemon uev_trigger -> uev_add_map
 	 */
 	while (--loop) {
-		r = dm_task_run(dmt);
+		r = libmp_dm_task_run(dmt);
 
 		if (r)
 			break;
@@ -1406,7 +1425,7 @@ do_foreach_partmaps (const char * mapname,
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_LIST, dmt);
 		goto out;
 	}
@@ -1641,11 +1660,11 @@ dm_rename (const char * old, char * new, char *delim, int skip_kpartx)
 
 	if (!dm_task_set_cookie(dmt, &cookie, udev_flags))
 		goto out;
-	r = dm_task_run(dmt);
+	r = libmp_dm_task_run(dmt);
 	if (!r)
 		dm_log_error(2, DM_DEVICE_RENAME, dmt);
 
-	dm_udev_wait(cookie);
+	libmp_udev_wait(cookie);
 
 out:
 	dm_task_destroy(dmt);
@@ -1687,7 +1706,7 @@ int dm_reassign_table(const char *name, char *old, char *new)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_TABLE, dmt);
 		goto out;
 	}
@@ -1720,7 +1739,7 @@ int dm_reassign_table(const char *name, char *old, char *new)
 	if (modified) {
 		dm_task_no_open_count(reload_dmt);
 
-		if (!dm_task_run(reload_dmt)) {
+		if (!libmp_dm_task_run(reload_dmt)) {
 			dm_log_error(3, DM_DEVICE_RELOAD, reload_dmt);
 			condlog(3, "%s: failed to reassign targets", name);
 			goto out_reload;
@@ -1767,7 +1786,7 @@ int dm_reassign(const char *mapname)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_DEPS, dmt);
 		goto out;
 	}
@@ -1835,7 +1854,7 @@ int dm_setgeometry(struct multipath *mpp)
 		goto out;
 	}
 
-	r = dm_task_run(dmt);
+	r = libmp_dm_task_run(dmt);
 	if (!r)
 		dm_log_error(3, DM_DEVICE_SET_GEOMETRY, dmt);
 out:

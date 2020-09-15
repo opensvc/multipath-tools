@@ -49,6 +49,7 @@ int should_exit(void);
 
 void close_fd(void *arg);
 void cleanup_free_ptr(void *arg);
+void cleanup_mutex(void *arg);
 
 struct scandir_result {
 	struct dirent **di;

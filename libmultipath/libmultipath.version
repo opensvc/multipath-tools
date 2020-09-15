@@ -245,3 +245,9 @@ global:
 local:
 	*;
 };
+
+LIBMULTIPATH_2.1.0 {
+global:
+	libmp_dm_task_run;
+	cleanup_mutex;
+} LIBMULTIPATH_2.0.0;

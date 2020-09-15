@@ -40,6 +40,7 @@ endif
 #    linker input file).
 # XYZ-test_LIBDEPS: Additional libs to link for this test
 
+dmevents-test_OBJDEPS = ../libmultipath/devmapper.o
 dmevents-test_LIBDEPS = -lpthread -ldevmapper -lurcu
 hwtable-test_TESTDEPS := test-lib.o
 hwtable-test_OBJDEPS := ../libmultipath/discovery.o ../libmultipath/blacklist.o \
