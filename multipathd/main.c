@@ -126,7 +126,7 @@ int poll_dmevents = 0;
 int poll_dmevents = 1;
 #endif
 /* Don't access this variable without holding config_lock */
-enum daemon_status running_state = DAEMON_INIT;
+volatile enum daemon_status running_state = DAEMON_INIT;
 pid_t daemon_pid;
 pthread_mutex_t config_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t config_cond;
