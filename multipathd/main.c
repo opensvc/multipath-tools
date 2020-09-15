@@ -292,27 +292,14 @@ int set_config_state(enum daemon_status state)
 	pthread_cleanup_push(config_cleanup, NULL);
 	pthread_mutex_lock(&config_lock);
 	if (running_state != state) {
-#ifdef USE_SYSTEMD
-		enum daemon_status old_state = running_state;
-#endif
 
 		if (running_state == DAEMON_SHUTDOWN)
 			rc = EINVAL;
-		else if (running_state != DAEMON_IDLE) {
-			struct timespec ts;
-
-			get_monotonic_time(&ts);
-			ts.tv_sec += 1;
-			rc = pthread_cond_timedwait(&config_cond,
-						    &config_lock, &ts);
-		}
-		if (!rc && (running_state != DAEMON_SHUTDOWN)) {
-			running_state = state;
-			pthread_cond_broadcast(&config_cond);
-#ifdef USE_SYSTEMD
-			do_sd_notify(old_state, state);
-#endif
-		}
+		else
+			rc = __wait_for_state_change(
+				running_state != DAEMON_IDLE, 1000);
+		if (!rc)
+			__post_config_state(state);
 	}
 	pthread_cleanup_pop(1);
 	return rc;
