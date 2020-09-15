@@ -208,7 +208,9 @@ static void do_sd_notify(enum daemon_status old_state,
 	if (msg && !safe_sprintf(notify_msg, "STATUS=%s", msg))
 		sd_notify(0, notify_msg);
 
-	if (new_state == DAEMON_IDLE && !startup_done) {
+	if (new_state == DAEMON_SHUTDOWN)
+		sd_notify(0, "STOPPING=1");
+	else if (new_state == DAEMON_IDLE && !startup_done) {
 		sd_notify(0, "READY=1");
 		startup_done = true;
 	}
