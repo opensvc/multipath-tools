@@ -735,9 +735,10 @@ out:
 
 int select_minio(struct config *conf, struct multipath *mp)
 {
-	unsigned int minv_dmrq[3] = {1, 1, 0};
+	unsigned int minv_dmrq[3] = {1, 1, 0}, version[3];
 
-	if (VERSION_GE(conf->version, minv_dmrq))
+	if (!libmp_get_version(DM_MPATH_TARGET_VERSION, version)
+	    && VERSION_GE(version, minv_dmrq))
 		return select_minio_rq(conf, mp);
 	else
 		return select_minio_bio(conf, mp);
@@ -820,9 +821,10 @@ out:
 int select_retain_hwhandler(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	unsigned int minv_dm_retain[3] = {1, 5, 0};
+	unsigned int minv_dm_retain[3] = {1, 5, 0}, version[3];
 
-	if (!VERSION_GE(conf->version, minv_dm_retain)) {
+	if (!libmp_get_version(DM_MPATH_TARGET_VERSION, version) &&
+	    !VERSION_GE(version, minv_dm_retain)) {
 		mp->retain_hwhandler = RETAIN_HWHANDLER_OFF;
 		origin = "(setting: WARNING, requires kernel dm-mpath version >= 1.5.0)";
 		goto out;

@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_1.0.0 {
+LIBMULTIPATH_2.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -65,7 +65,6 @@ global:
 	disassemble_status;
 	dlog;
 	dm_cancel_deferred_remove;
-	dm_drv_version;
 	dm_enablegroup;
 	dm_fail_path;
 	_dm_flush_map;
@@ -87,7 +86,6 @@ global:
 	dm_reinstate_path;
 	dm_simplecmd_noflush;
 	dm_switchgroup;
-	dm_tgt_version;
 	domap;
 	ensure_directories_exist;
 	extract_hwe_from_path;
@@ -128,6 +126,7 @@ global:
 	is_path_valid;
 	is_quote;
 	libmp_dm_task_create;
+	libmp_get_version;
 	libmp_udev_set_sync_support;
 	load_config;
 	log_thread_reset;

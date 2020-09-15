@@ -26,6 +26,7 @@
 #include "sysfs.h"
 #include "config.h"
 #include "wwids.h"
+#include "version.h"
 
 #include "log_pthread.h"
 #include <sys/types.h>
@@ -34,7 +35,13 @@
 #define MAX_WAIT 5
 #define LOOPS_PER_SEC 5
 
+#define INVALID_VERSION ~0U
+static unsigned int dm_library_version[3] = { INVALID_VERSION, };
+static unsigned int dm_kernel_version[3] = { INVALID_VERSION, };
+static unsigned int dm_mpath_target_version[3] = { INVALID_VERSION, };
+
 static pthread_once_t dm_initialized = PTHREAD_ONCE_INIT;
+static pthread_once_t versions_initialized = PTHREAD_ONCE_INIT;
 
 static int dm_conf_verbosity;
 
@@ -102,7 +109,7 @@ dm_write_log (int level, const char *file, int line, const char *f, ...)
 	return;
 }
 
-void dm_init(int v)
+static void dm_init(int v)
 {
 	/*
 	 * This maps libdm's standard loglevel _LOG_WARN (= 4), which is rather
@@ -112,61 +119,68 @@ void dm_init(int v)
 	dm_log_init(&dm_write_log);
 }
 
+static void init_dm_library_version(void)
+{
+	char version[64];
+	unsigned int v[3];
+
+	dm_get_library_version(version, sizeof(version));
+	if (sscanf(version, "%u.%u.%u ", &v[0], &v[1], &v[2]) != 3) {
+		condlog(0, "invalid libdevmapper version %s", version);
+		return;
+	}
+	memcpy(dm_library_version, v, sizeof(dm_library_version));
+	condlog(3, "libdevmapper version %u.%.2u.%.2u",
+		dm_library_version[0], dm_library_version[1],
+		dm_library_version[2]);
+}
+
 static int
 dm_lib_prereq (void)
 {
-	char version[64];
-	int v[3];
+
 #if defined(LIBDM_API_HOLD_CONTROL)
-	int minv[3] = {1, 2, 111};
+	unsigned int minv[3] = {1, 2, 111};
 #elif defined(LIBDM_API_GET_ERRNO)
-	int minv[3] = {1, 2, 99};
+	unsigned int minv[3] = {1, 2, 99};
 #elif defined(LIBDM_API_DEFERRED)
-	int minv[3] = {1, 2, 89};
+	unsigned int minv[3] = {1, 2, 89};
 #elif defined(DM_SUBSYSTEM_UDEV_FLAG0)
-	int minv[3] = {1, 2, 82};
+	unsigned int minv[3] = {1, 2, 82};
 #elif defined(LIBDM_API_COOKIE)
-	int minv[3] = {1, 2, 38};
+	unsigned int minv[3] = {1, 2, 38};
 #else
-	int minv[3] = {1, 2, 8};
+	unsigned int minv[3] = {1, 2, 8};
 #endif
 
-	dm_get_library_version(version, sizeof(version));
-	condlog(3, "libdevmapper version %s", version);
-	if (sscanf(version, "%d.%d.%d ", &v[0], &v[1], &v[2]) != 3) {
-		condlog(0, "invalid libdevmapper version %s", version);
-		return 1;
-	}
-
-	if VERSION_GE(v, minv)
+	if (VERSION_GE(dm_library_version, minv))
 		return 0;
-	condlog(0, "libdevmapper version must be >= %d.%.2d.%.2d",
+	condlog(0, "libdevmapper version must be >= %u.%.2u.%.2u",
 		minv[0], minv[1], minv[2]);
 	return 1;
 }
 
-int
-dm_drv_version(unsigned int *v)
+static void init_dm_drv_version(void)
 {
 	char buff[64];
-
-	v[0] = 0;
-	v[1] = 0;
-	v[2] = 0;
+	unsigned int v[3];
 
 	if (!dm_driver_version(buff, sizeof(buff))) {
 		condlog(0, "cannot get kernel dm version");
-		return 1;
+		return;
 	}
 	if (sscanf(buff, "%u.%u.%u ", &v[0], &v[1], &v[2]) != 3) {
 		condlog(0, "invalid kernel dm version '%s'", buff);
-		return 1;
+		return;
 	}
-	return 0;
+	memcpy(dm_kernel_version, v, sizeof(dm_library_version));
+	condlog(3, "kernel device mapper v%u.%u.%u",
+		dm_kernel_version[0],
+		dm_kernel_version[1],
+		dm_kernel_version[2]);
 }
 
-int
-dm_tgt_version (unsigned int * version, char * str)
+static int dm_tgt_version (unsigned int *version, char *str)
 {
 	int r = 2;
 	struct dm_task *dmt;
@@ -174,10 +188,11 @@ dm_tgt_version (unsigned int * version, char * str)
 	struct dm_versions *last_target;
 	unsigned int *v;
 
-	version[0] = 0;
-	version[1] = 0;
-	version[2] = 0;
-
+	/*
+	 * We have to call dm_task_create() and not libmp_dm_task_create()
+	 * here to avoid a recursive invocation of
+	 * pthread_once(&dm_initialized), which would cause a deadlock.
+	 */
 	if (!(dmt = dm_task_create(DM_DEVICE_LIST_VERSIONS)))
 		return 1;
 
@@ -213,26 +228,25 @@ out:
 	return r;
 }
 
-static int
-dm_tgt_prereq (unsigned int *ver)
+static void init_dm_mpath_version(void)
+{
+	if (!dm_tgt_version(dm_mpath_target_version, TGT_MPATH))
+		condlog(3, "DM multipath kernel driver v%u.%u.%u",
+			dm_mpath_target_version[0],
+			dm_mpath_target_version[1],
+			dm_mpath_target_version[2]);
+}
+
+static int dm_tgt_prereq (unsigned int *ver)
 {
 	unsigned int minv[3] = {1, 0, 3};
-	unsigned int version[3] = {0, 0, 0};
-	unsigned int * v = version;
 
-	if (dm_tgt_version(v, TGT_MPATH)) {
-		/* in doubt return not capable */
-		return 1;
-	}
-
-	/* test request based multipath capability */
-	condlog(3, "DM multipath kernel driver v%u.%u.%u",
-		v[0], v[1], v[2]);
-
-	if (VERSION_GE(v, minv)) {
-		ver[0] = v[0];
-		ver[1] = v[1];
-		ver[2] = v[2];
+	if (VERSION_GE(dm_mpath_target_version, minv)) {
+		if (ver) {
+			ver[0] = dm_mpath_target_version[0];
+			ver[1] = dm_mpath_target_version[1];
+			ver[2] = dm_mpath_target_version[2];
+		}
 		return 0;
 	}
 
@@ -241,11 +255,58 @@ dm_tgt_prereq (unsigned int *ver)
 	return 1;
 }
 
+static void _init_versions(void)
+{
+	dlog(logsink, 3, VERSION_STRING);
+	init_dm_library_version();
+	init_dm_drv_version();
+	init_dm_mpath_version();
+}
+
+static int init_versions(void) {
+	pthread_once(&versions_initialized, _init_versions);
+	return (dm_library_version[0] == INVALID_VERSION ||
+		dm_kernel_version[0] == INVALID_VERSION ||
+		dm_mpath_target_version[0] == INVALID_VERSION);
+}
+
 int dm_prereq(unsigned int *v)
 {
+	if (init_versions())
+		return 1;
 	if (dm_lib_prereq())
 		return 1;
 	return dm_tgt_prereq(v);
+}
+
+int libmp_get_version(int which, unsigned int version[3])
+{
+	unsigned int *src_version;
+
+	init_versions();
+	switch (which) {
+	case DM_LIBRARY_VERSION:
+		src_version = dm_library_version;
+		break;
+	case DM_KERNEL_VERSION:
+		src_version = dm_kernel_version;
+		break;
+	case DM_MPATH_TARGET_VERSION:
+		src_version = dm_mpath_target_version;
+		break;
+	case MULTIPATH_VERSION:
+		version[0] = (VERSION_CODE >> 16) & 0xff;
+		version[1] = (VERSION_CODE >> 8) & 0xff;
+		version[2] = VERSION_CODE & 0xff;
+		return 0;
+	default:
+		condlog(0, "%s: invalid value for 'which'", __func__);
+		return 1;
+	}
+	if (src_version[0] == INVALID_VERSION)
+		return 1;
+	memcpy(version, src_version, 3 * sizeof(*version));
+	return 0;
 }
 
 static int libmp_dm_udev_sync = 0;
@@ -265,7 +326,6 @@ static void libmp_dm_init(void)
 		exit(1);
 	conf = get_multipath_config();
 	verbosity = conf->verbosity;
-	memcpy(conf->version, version, sizeof(version));
 	put_multipath_config(conf);
 	dm_init(verbosity);
 #ifdef LIBDM_API_HOLD_CONTROL

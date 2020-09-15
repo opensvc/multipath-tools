@@ -60,7 +60,7 @@ int dmevent_poll_supported(void)
 {
 	unsigned int v[3];
 
-	if (dm_drv_version(v))
+	if (libmp_get_version(DM_KERNEL_VERSION, v))
 		return 0;
 
 	if (VERSION_GE(v, DM_VERSION_FOR_ARM_POLL))

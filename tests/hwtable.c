@@ -30,8 +30,6 @@
 #define N_CONF_FILES 2
 
 static const char tmplate[] = "/tmp/hwtable-XXXXXX";
-/* pretend new dm, use minio_rq */
-static const unsigned int dm_tgt_version[3] = { 1, 1, 1 };
 
 struct key_value {
 	const char *key;
@@ -360,7 +358,6 @@ static void write_device(FILE *ff, int nkv, const struct key_value *kv)
 	assert_ptr_not_equal(__cf, NULL);				\
 	assert_ptr_not_equal(__cf->hwtable, NULL);			\
 	__cf->verbosity = VERBOSITY;					\
-	memcpy(&__cf->version, dm_tgt_version, sizeof(__cf->version));	\
 	__cf; })
 
 #define FREE_CONFIG(conf) do {			\

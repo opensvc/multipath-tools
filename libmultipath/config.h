@@ -192,7 +192,6 @@ struct config {
 	int find_multipaths_timeout;
 	int marginal_pathgroups;
 	int skip_delegate;
-	unsigned int version[3];
 	unsigned int sequence_nr;
 
 	char * multipath_dir;
