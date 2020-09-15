@@ -210,10 +210,11 @@ static void do_sd_notify(enum daemon_status old_state,
 
 	if (new_state == DAEMON_SHUTDOWN)
 		sd_notify(0, "STOPPING=1");
-	else if (new_state == DAEMON_IDLE && !startup_done) {
+	else if (new_state == DAEMON_IDLE && old_state == DAEMON_CONFIGURE) {
 		sd_notify(0, "READY=1");
 		startup_done = true;
-	}
+	} else if (new_state == DAEMON_CONFIGURE && startup_done)
+		sd_notify(0, "RELOADING=1");
 }
 #endif
 
