@@ -42,13 +42,10 @@ void * mpath_alloc_prin_response(int prin_sa);
 void mpath_print_transport_id(struct prin_fulldescr *fdesc);
 int construct_transportid(const char * inp, struct transportid transid[], int num_transportids);
 
-int logsink;
-
 void rcu_register_thread_memb(void) {}
 
 void rcu_unregister_thread_memb(void) {}
 
-struct udev *udev;
 
 static int verbose, loglevel, noisy;
 
@@ -641,16 +638,13 @@ int main(int argc, char *argv[])
 		exit (1);
 	}
 
-	udev = udev_new();
 	if (libmpathpersist_init()) {
-		udev_unref(udev);
 		exit(1);
 	}
 
 	ret = handle_args(argc, argv, 0);
 
 	libmpathpersist_exit();
-	udev_unref(udev);
 
 	return (ret >= 0) ? ret : MPATH_PR_OTHER;
 }
