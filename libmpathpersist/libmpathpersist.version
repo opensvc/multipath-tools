@@ -30,3 +30,9 @@ global:
 
 local: *;
 };
+
+LIBMPATHPERSIST_1.1.0 {
+global:
+	libmpathpersist_init;
+	libmpathpersist_exit;
+} LIBMPATHPERSIST_1.0.0;
