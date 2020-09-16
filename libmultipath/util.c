@@ -401,6 +401,14 @@ void close_fd(void *arg)
 	close((long)arg);
 }
 
+void cleanup_free_ptr(void *arg)
+{
+	void **p = arg;
+
+	if (p && *p)
+		free(*p);
+}
+
 struct bitfield *alloc_bitfield(unsigned int maxbit)
 {
 	unsigned int n;

@@ -580,7 +580,7 @@ static int _check_bindings_file(const struct config *conf, FILE *file,
 	size_t line_len = 0;
 	ssize_t n;
 
-	pthread_cleanup_push(free, line);
+	pthread_cleanup_push(cleanup_free_ptr, &line);
 	while ((n = getline(&line, &line_len, file)) >= 0) {
 		char *c, *alias, *wwid, *saveptr;
 		const char *mpe_wwid;
