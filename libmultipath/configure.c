@@ -312,6 +312,13 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 		mpp->disable_queueing = 0;
 
 	/*
+	 * If this map was created with add_map_without_path(),
+	 * mpp->hwe might not be set yet.
+	 */
+	if (!mpp->hwe)
+		extract_hwe_from_path(mpp);
+
+	/*
 	 * properties selectors
 	 *
 	 * Ordering matters for some properties:
