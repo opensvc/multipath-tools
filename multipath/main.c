@@ -66,9 +66,6 @@
 #include "valid.h"
 #include "alias.h"
 
-int logsink;
-struct udev *udev;
-
 /*
  * Return values of configure(), check_path_valid(), and main().
  */
@@ -810,7 +807,7 @@ main (int argc, char *argv[])
 	int retries = -1;
 	bool enable_foreign = false;
 
-	udev = udev_new();
+	libmultipath_init();
 	logsink = 0;
 	if (init_config(DEFAULT_CONFIGFILE))
 		exit(RTVL_FAIL);
@@ -1068,7 +1065,7 @@ out_free_config:
 	 */
 	put_multipath_config(conf);
 	uninit_config();
-	udev_unref(udev);
+	libmultipath_exit();
 	if (dev)
 		FREE(dev);
 #ifdef _DEBUG_
