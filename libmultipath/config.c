@@ -147,7 +147,7 @@ struct mpentry *find_mpe(vector mptable, char *wwid)
 	int i;
 	struct mpentry * mpe;
 
-	if (!wwid)
+	if (!wwid || !*wwid)
 		return NULL;
 
 	vector_foreach_slot (mptable, mpe, i)
