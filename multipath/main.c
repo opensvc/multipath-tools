@@ -68,7 +68,6 @@
 
 int logsink;
 struct udev *udev;
-struct config *multipath_conf;
 
 /*
  * Return values of configure(), check_path_valid(), and main().
@@ -78,16 +77,6 @@ enum {
 	RTVL_FAIL = 1,
 	RTVL_RETRY, /* returned by configure(), not by main() */
 };
-
-struct config *get_multipath_config(void)
-{
-	return multipath_conf;
-}
-
-void put_multipath_config(__attribute__((unused)) void *arg)
-{
-	/* Noop for now */
-}
 
 static int
 dump_config (struct config *conf, vector hwes, vector mpvec)
@@ -823,10 +812,9 @@ main (int argc, char *argv[])
 
 	udev = udev_new();
 	logsink = 0;
-	conf = load_config(DEFAULT_CONFIGFILE);
-	if (!conf)
+	if (init_config(DEFAULT_CONFIGFILE))
 		exit(RTVL_FAIL);
-	multipath_conf = conf;
+	conf = get_multipath_config();
 	conf->retrigger_tries = 0;
 	conf->force_sync = 1;
 	while ((arg = getopt(argc, argv, ":adDcChl::eFfM:v:p:b:BrR:itTquUwW")) != EOF ) {
@@ -1078,8 +1066,8 @@ out_free_config:
 	 * the logging function (dm_write_log()), which is called there,
 	 * references the config.
 	 */
-	free_config(conf);
-	conf = NULL;
+	put_multipath_config(conf);
+	uninit_config();
 	udev_unref(udev);
 	if (dev)
 		FREE(dev);
