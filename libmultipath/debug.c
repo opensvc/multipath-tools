@@ -15,6 +15,8 @@
 #include "defaults.h"
 #include "debug.h"
 
+int logsink;
+
 void dlog (int sink, int prio, const char * fmt, ...)
 {
 	va_list ap;

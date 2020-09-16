@@ -261,3 +261,11 @@ global:
 	init_config;
 	uninit_config;
 } LIBMULTIPATH_2.1.0;
+
+LIBMULTIPATH_2.3.0 {
+global:
+	udev;
+	logsink;
+	libmultipath_init;
+	libmultipath_exit;
+} LIBMULTIPATH_2.2.0;

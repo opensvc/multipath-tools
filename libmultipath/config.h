@@ -233,7 +233,51 @@ struct config {
 	char *enable_foreign;
 };
 
-extern struct udev * udev;
+/**
+ * extern variable: udev
+ *
+ * A &struct udev instance used by libmultipath. libmultipath expects
+ * a valid, initialized &struct udev in this variable.
+ * An application can define this variable itself, in which case
+ * the applications's instance will take precedence.
+ * The application can initialize and destroy this variable by
+ * calling libmultipath_init() and libmultipath_exit(), respectively,
+ * whether or not it defines the variable itself.
+ * An application can initialize udev with udev_new() before calling
+ * libmultipath_init(), e.g. if it has to make libudev calls before
+ * libmultipath calls. If an application wants to keep using the
+ * udev variable after calling libmultipath_exit(), it should have taken
+ * an additional reference on it beforehand. This is the case e.g.
+ * after initiazing udev with udev_new().
+ */
+extern struct udev *udev;
+
+/**
+ * libmultipath_init() - library initialization
+ *
+ * This function initializes libmultipath data structures.
+ * It is light-weight; some other initializations, like device-mapper
+ * initialization, are done lazily when the respective functionality
+ * is required.
+ *
+ * Clean up by libmultipath_exit() when the program terminates.
+ * It is an error to call libmultipath_init() after libmultipath_exit().
+ * Return: 0 on success, 1 on failure.
+ */
+int libmultipath_init(void);
+
+/**
+ * libmultipath_exit() - library un-initialization
+ *
+ * This function un-initializes libmultipath data structures.
+ * It is recommended to call this function at program exit.
+ *
+ * Calls to libmultipath_init() after libmultipath_exit() will fail
+ * (in other words, libmultipath can't be re-initialized).
+ * Any other libmultipath calls after libmultipath_exit() may cause
+ * undefined behavior.
+ */
+void libmultipath_exit(void);
 
 int find_hwe (const struct _vector *hwtable,
 	      const char * vendor, const char * product, const char *revision,

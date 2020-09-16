@@ -27,6 +27,47 @@
 #include "mpath_cmd.h"
 #include "propsel.h"
 
+/*
+ * We don't support re-initialization after
+ * libmultipath_exit().
+ */
+static bool libmultipath_exit_called;
+static pthread_once_t _init_once = PTHREAD_ONCE_INIT;
+static pthread_once_t _exit_once = PTHREAD_ONCE_INIT;
+struct udev *udev;
+
+static void _udev_init(void)
+{
+	if (udev)
+		udev_ref(udev);
+	else
+		udev = udev_new();
+	if (!udev)
+		condlog(0, "%s: failed to initialize udev", __func__);
+}
+
+static bool _is_libmultipath_initialized(void)
+{
+	return !libmultipath_exit_called && !!udev;
+}
+
+int libmultipath_init(void)
+{
+	pthread_once(&_init_once, _udev_init);
+	return !_is_libmultipath_initialized();
+}
+
+static void _libmultipath_exit(void)
+{
+	libmultipath_exit_called = true;
+	udev_unref(udev);
+}
+
+void libmultipath_exit(void)
+{
+	pthread_once(&_exit_once, _libmultipath_exit);
+}
+
 static struct config __internal_config;
 struct config *libmp_get_multipath_config(void)
 {
