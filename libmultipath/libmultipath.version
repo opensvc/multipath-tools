@@ -251,3 +251,13 @@ global:
 	libmp_dm_task_run;
 	cleanup_mutex;
 } LIBMULTIPATH_2.0.0;
+
+LIBMULTIPATH_2.2.0 {
+global:
+	libmp_get_multipath_config;
+	get_multipath_config;
+	libmp_put_multipath_config;
+	put_multipath_config;
+	init_config;
+	uninit_config;
+} LIBMULTIPATH_2.1.0;

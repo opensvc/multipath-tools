@@ -252,10 +252,25 @@ void free_mptable (vector mptable);
 int store_hwe (vector hwtable, struct hwentry *);
 
 struct config *load_config (const char *file);
-struct config * alloc_config (void);
 void free_config (struct config * conf);
-extern struct config *get_multipath_config(void);
-extern void put_multipath_config(void *);
+int init_config(const char *file);
+void uninit_config(void);
+
+/*
+ * libmultipath provides default implementations of
+ * get_multipath_config() and put_multipath_config().
+ * Applications using these should use init_config(file, NULL)
+ * to load the configuration, rather than load_config(file).
+ * Likewise, uninit_config() should be used for teardown, but
+ * using free_config() for that is supported, too.
+ * Applications can define their own {get,put}_multipath_config()
+ * functions, which override the library-internal ones, but
+ * could still call libmp_{get,put}_multipath_config().
+ */
+struct config *libmp_get_multipath_config(void);
+struct config *get_multipath_config(void);
+void libmp_put_multipath_config(void *);
+void put_multipath_config(void *);
 
 int parse_uid_attrs(char *uid_attrs, struct config *conf);
 char *get_uid_attribute_by_attrs(struct config *conf,
