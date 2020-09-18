@@ -10,7 +10,7 @@ W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)
 
 CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathcmddir) \
 	-Wno-unused-parameter $(W_MISSING_INITIALIZERS)
-LIBDEPS += -L$(multipathdir) -L$(mpathcmddir) -lmultipath -lmpathcmd -lcmocka
+LIBDEPS += -L. -L$(mpathcmddir) -lmultipath -lmpathcmd -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
 	 alias directio valid devt
@@ -68,7 +68,7 @@ lib/libchecktur.so:
 
 %.out:	%-test lib/libchecktur.so
 	@echo == running $< ==
-	@LD_LIBRARY_PATH=$(multipathdir):$(mpathcmddir) ./$< >$@
+	@LD_LIBRARY_PATH=.:$(mpathcmddir) ./$< >$@
 
 %.vgr:  %-test lib/libchecktur.so
 	@echo == running valgrind for $< ==
@@ -78,7 +78,7 @@ lib/libchecktur.so:
 OBJS = $(TESTS:%=%.o) $(HELPERS)
 
 test_clean:
-	$(RM) $(TESTS:%=%.out) $(TESTS:%=%.vgr)
+	$(RM) $(TESTS:%=%.out) $(TESTS:%=%.vgr) *.so*
 
 valgrind_clean:
 	$(RM) $(TESTS:%=%.vgr)
@@ -98,12 +98,14 @@ dep_clean:
 	@sed -n 's/^.*__wrap_\([a-zA-Z0-9_]*\).*$$/-Wl,--wrap=\1/p' $< | \
 		sort -u | tr '\n' ' ' >$@
 
+libmultipath.so.0:
+	$(MAKE) -C $(multipathdir) test-lib
 
 # COLON will get expanded during second expansion below
 COLON:=:
 .SECONDEXPANSION:
 %-test:	%.o %.o.wrap $$($$@_OBJDEPS) $$($$@_TESTDEPS) $$($$@_TESTDEPS$$(COLON).o=.o.wrap) \
-		$(multipathdir)/libmultipath.so Makefile
+		libmultipath.so.0 Makefile
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $< $($@_TESTDEPS) $($@_OBJDEPS) \
 		$(LIBDEPS) $($@_LIBDEPS) \
 		$(shell cat $<.wrap) $(foreach dep,$($@_TESTDEPS),$(shell cat $(dep).wrap))

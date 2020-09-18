@@ -78,6 +78,13 @@ $(LIBS): $(OBJS)
 $(DEVLIB): $(LIBS)
 	$(LN) $(LIBS) $@
 
+../tests/$(LIBS): $(OBJS) $(VERSION_SCRIPT)
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=`basename $@` \
+		-o $@ $(OBJS) $(LIBDEPS)
+	$(LN) $@ ${@:.so.0=.so}
+
+test-lib:	../tests/$(LIBS)
+
 install: all
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
