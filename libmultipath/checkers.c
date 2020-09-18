@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "checkers.h"
 #include "vector.h"
+#include "util.h"
 
 struct checker_class {
 	struct list_head node;
@@ -375,7 +376,23 @@ void checker_get(const char *multipath_dir, struct checker *dst,
 
 int init_checkers(const char *multipath_dir)
 {
+#ifdef LOAD_ALL_SHARED_LIBS
+	static const char *const all_checkers[] = {
+		DIRECTIO,
+		TUR,
+		HP_SW,
+		RDAC,
+		EMC_CLARIION,
+		READSECTOR0,
+		CCISS_TUR,
+	};
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(all_checkers); i++)
+		add_checker_class(multipath_dir, all_checkers[i]);
+#else
 	if (!add_checker_class(multipath_dir, DEFAULT_CHECKER))
 		return 1;
+#endif
 	return 0;
 }

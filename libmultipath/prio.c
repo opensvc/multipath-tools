@@ -20,8 +20,30 @@ unsigned int get_prio_timeout(unsigned int timeout_ms,
 
 int init_prio (const char *multipath_dir)
 {
+#ifdef LOAD_ALL_SHARED_LIBS
+	static const char *const all_prios[] = {
+		PRIO_ALUA,
+		PRIO_CONST,
+		PRIO_DATACORE,
+		PRIO_EMC,
+		PRIO_HDS,
+		PRIO_HP_SW,
+		PRIO_ONTAP,
+		PRIO_RANDOM,
+		PRIO_RDAC,
+		PRIO_WEIGHTED_PATH,
+		PRIO_SYSFS,
+		PRIO_PATH_LATENCY,
+		PRIO_ANA,
+	};
+	unsigned int i;
+
+	for  (i = 0; i < ARRAY_SIZE(all_prios); i++)
+		add_prio(multipath_dir, all_prios[i]);
+#else
 	if (!add_prio(multipath_dir, DEFAULT_PRIO))
 		return 1;
+#endif
 	return 0;
 }
 
