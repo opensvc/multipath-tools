@@ -18,7 +18,7 @@ unsigned int get_prio_timeout(unsigned int timeout_ms,
 	return default_timeout;
 }
 
-int init_prio (char *multipath_dir)
+int init_prio (const char *multipath_dir)
 {
 	if (!add_prio(multipath_dir, DEFAULT_PRIO))
 		return 1;
@@ -87,7 +87,7 @@ int prio_set_args (struct prio * p, const char * args)
 	return snprintf(p->args, PRIO_ARGS_LEN, "%s", args);
 }
 
-struct prio * add_prio (char *multipath_dir, char * name)
+struct prio * add_prio (const char *multipath_dir, const char * name)
 {
 	char libname[LIB_PRIO_NAMELEN];
 	struct stat stbuf;
