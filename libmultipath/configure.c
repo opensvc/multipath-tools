@@ -536,6 +536,7 @@ static void trigger_partitions_udev_change(struct udev_device *dev,
 {
 	struct udev_enumerate *part_enum;
 	struct udev_list_entry *item;
+	const char *devtype;
 
 	part_enum = udev_enumerate_new(udev);
 	if (!part_enum)
@@ -556,7 +557,8 @@ static void trigger_partitions_udev_change(struct udev_device *dev,
 		if (!part)
 			continue;
 
-		if (!strcmp("partition", udev_device_get_devtype(part))) {
+		devtype = udev_device_get_devtype(part);
+		if (devtype && !strcmp("partition", devtype)) {
 			condlog(4, "%s: triggering %s event for %s", __func__,
 				action, syspath);
 			sysfs_attr_set_value(part, "uevent", action, len);

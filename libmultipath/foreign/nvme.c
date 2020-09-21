@@ -482,6 +482,7 @@ _find_path_by_syspath(struct nvme_map *map, const char *syspath)
 	struct nvme_pathgroup *pg;
 	char real[PATH_MAX];
 	const char *ppath;
+	const char *psyspath;
 	int i;
 
 	ppath = realpath(syspath, real);
@@ -493,8 +494,8 @@ _find_path_by_syspath(struct nvme_map *map, const char *syspath)
 	vector_foreach_slot(&map->pgvec, pg, i) {
 		struct nvme_path *path = nvme_pg_to_path(pg);
 
-		if (!strcmp(ppath,
-			    udev_device_get_syspath(path->udev)))
+		psyspath = udev_device_get_syspath(path->udev);
+		if (psyspath && !strcmp(ppath, psyspath))
 			return path;
 	}
 	condlog(4, "%s: %s: %s not found", __func__, THIS, ppath);
@@ -538,6 +539,7 @@ struct udev_device *get_ctrl_blkdev(const struct context *ctx,
 	struct udev_list_entry *item;
 	struct udev_device *blkdev = NULL;
 	struct udev_enumerate *enm = udev_enumerate_new(ctx->udev);
+	const char *devtype;
 
 	if (enm == NULL)
 		return NULL;
@@ -562,7 +564,9 @@ struct udev_device *get_ctrl_blkdev(const struct context *ctx,
 					   udev_list_entry_get_name(item));
 		if (tmp == NULL)
 			continue;
-		if (!strcmp(udev_device_get_devtype(tmp), "disk")) {
+
+		devtype = udev_device_get_devtype(tmp);
+		if (devtype && !strcmp(devtype, "disk")) {
 			blkdev = tmp;
 			break;
 		} else

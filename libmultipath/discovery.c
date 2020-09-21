@@ -356,7 +356,7 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 		tgtdev = udev_device_get_parent(parent);
 		while (tgtdev) {
 			tgtname = udev_device_get_sysname(tgtdev);
-			if (sscanf(tgtname, "end_device-%d:%d",
+			if (tgtname && sscanf(tgtname, "end_device-%d:%d",
 				   &host, &tgtid) == 2)
 				break;
 			tgtdev = udev_device_get_parent(tgtdev);
@@ -389,7 +389,7 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 	/* Check for FibreChannel */
 	tgtdev = udev_device_get_parent(parent);
 	value = udev_device_get_sysname(tgtdev);
-	if (sscanf(value, "rport-%d:%d-%d",
+	if (value && sscanf(value, "rport-%d:%d-%d",
 		   &host, &channel, &tgtid) == 3) {
 		tgtdev = udev_device_new_from_subsystem_sysname(udev,
 				"fc_remote_ports", value);
@@ -518,6 +518,9 @@ int sysfs_get_host_pci_name(const struct path *pp, char *pci_name)
 		/* pci_device found
 		 */
 		value = udev_device_get_sysname(parent);
+
+		if (!value)
+			return 1;
 
 		strncpy(pci_name, value, SLOT_NAME_SIZE);
 		udev_device_unref(hostdev);
@@ -1468,6 +1471,8 @@ ccw_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 	 * host / bus / target / lun
 	 */
 	attr_path = udev_device_get_sysname(parent);
+	if (!attr_path)
+		return PATHINFO_FAILED;
 	pp->sg_id.lun = 0;
 	if (sscanf(attr_path, "%i.%i.%x",
 		   &pp->sg_id.host_no,
