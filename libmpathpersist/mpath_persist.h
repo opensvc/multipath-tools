@@ -176,7 +176,8 @@ struct prout_param_descriptor {		/* PROUT parameter descriptor */
  *	Initialize device mapper multipath configuration. This function must be invoked first
  *	before performing reservation management functions.
  *	Either this function or mpath_lib_init() may be used.
- *	Use this function to work with libmultipath's internal "struct config".
+ *	Use this function to work with libmultipath's internal "struct config"
+ *	and "struct udev". The latter will be initialized automatically.
  *	Call libmpathpersist_exit() for cleanup.
  * RESTRICTIONS:
  *
@@ -189,7 +190,8 @@ extern int libmpathpersist_init (void);
  *	Initialize device mapper multipath configuration. This function must be invoked first
  *	before performing reservation management functions.
  *	Either this function or libmpathpersist_init() may be used.
- *	Use this function to work with an application-specific "struct config".
+ *	Use this function to work with an application-specific "struct config"
+ *	and "struct udev". The latter must be initialized by the application.
  *	Call mpath_lib_exit() for cleanup.
  * RESTRICTIONS:
  *
@@ -211,9 +213,10 @@ extern int mpath_lib_exit (struct config *conf);
 
 /*
  * DESCRIPTION :
- *	Release device mapper multipath configuration. This function must be invoked after
+ *	Release device mapper multipath configuration a. This function must be invoked after
  *	performing reservation management functions.
  *	Use this after initialization with libmpathpersist_init().
+ *	Calling libmpathpersist_init() after libmpathpersist_exit() will fail.
  * RESTRICTIONS:
  *
  * RETURNS: 0->Success, 1->Failed.

@@ -48,6 +48,10 @@ int libmpathpersist_init(void)
 	struct config *conf;
 	int rc = 0;
 
+	if (libmultipath_init()) {
+		condlog(0, "Failed to initialize libmultipath.");
+		return 1;
+	}
 	if (init_config(DEFAULT_CONFIGFILE)) {
 		condlog(0, "Failed to initialize multipath config.");
 		return 1;
@@ -74,23 +78,24 @@ mpath_lib_init (void)
 
 static void libmpathpersist_cleanup(void)
 {
-	dm_lib_exit();
 	cleanup_prio();
 	cleanup_checkers();
+	libmultipath_exit();
+	dm_lib_exit();
 }
 
 int
 mpath_lib_exit (struct config *conf)
 {
-	libmpathpersist_cleanup();
 	free_config(conf);
+	libmpathpersist_cleanup();
 	return 0;
 }
 
 int libmpathpersist_exit(void)
 {
-	libmpathpersist_cleanup();
 	uninit_config();
+	libmpathpersist_cleanup();
 	return 0;
 }
 
