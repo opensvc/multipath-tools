@@ -8,13 +8,15 @@ CFLAGS += $(LIB_CFLAGS)
 
 OBJS = mpath_cmd.o
 
-all: $(LIBS)
+all:	$(DEVLIB)
 
 $(LIBS): $(OBJS)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS)
-	$(LN) $@ $(DEVLIB)
 
-install: $(LIBS)
+$(DEVLIB): $(LIBS)
+	$(LN) $(LIBS) $@
+
+install: all
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
 	$(LN) $(LIBS) $(DESTDIR)$(syslibdir)/$(DEVLIB)
