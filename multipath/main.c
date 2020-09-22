@@ -452,13 +452,19 @@ static bool released_to_systemd(void)
 	return ret;
 }
 
+static struct vectors vecs;
+static void cleanup_vecs(void)
+{
+	free_multipathvec(vecs.mpvec, KEEP_PATHS);
+	free_pathvec(vecs.pathvec, FREE_PATHS);
+}
+
 static int
 configure (struct config *conf, enum mpath_cmds cmd,
 	   enum devtypes dev_type, char *devpath)
 {
 	vector curmp = NULL;
 	vector pathvec = NULL;
-	struct vectors vecs;
 	int r = RTVL_FAIL, rc;
 	int di_flag = 0;
 	char * refwwid = NULL;
@@ -469,6 +475,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	 */
 	curmp = vector_alloc();
 	pathvec = vector_alloc();
+	atexit(cleanup_vecs);
 
 	if (!curmp || !pathvec) {
 		condlog(0, "can not allocate memory");
@@ -579,9 +586,6 @@ configure (struct config *conf, enum mpath_cmds cmd,
 out:
 	if (refwwid)
 		FREE(refwwid);
-
-	free_multipathvec(curmp, KEEP_PATHS);
-	free_pathvec(pathvec, FREE_PATHS);
 
 	return r;
 }
@@ -808,9 +812,13 @@ main (int argc, char *argv[])
 	bool enable_foreign = false;
 
 	libmultipath_init();
+	if (atexit(dm_lib_exit) || atexit(libmultipath_exit))
+		condlog(1, "failed to register cleanup handler for libmultipath: %m");
 	logsink = 0;
 	if (init_config(DEFAULT_CONFIGFILE))
 		exit(RTVL_FAIL);
+	if (atexit(uninit_config))
+		condlog(1, "failed to register cleanup handler for config: %m");
 	conf = get_multipath_config();
 	conf->retrigger_tries = 0;
 	conf->force_sync = 1;
@@ -887,7 +895,7 @@ main (int argc, char *argv[])
 			break;
 		case 't':
 			r = dump_config(conf, NULL, NULL) ? RTVL_FAIL : RTVL_OK;
-			goto out_free_config;
+			goto out;
 		case 'T':
 			cmd = CMD_DUMP_CONFIG;
 			break;
@@ -1048,26 +1056,13 @@ main (int argc, char *argv[])
 		condlog(3, "restart multipath configuration process");
 
 out:
-	dm_lib_exit();
-
-	cleanup_foreign();
-	cleanup_prio();
-	cleanup_checkers();
+	put_multipath_config(conf);
+	if (dev)
+		FREE(dev);
 
 	if (dev_type == DEV_UEVENT)
 		closelog();
 
-out_free_config:
-	/*
-	 * Freeing config must be done after dm_lib_exit(), because
-	 * the logging function (dm_write_log()), which is called there,
-	 * references the config.
-	 */
-	put_multipath_config(conf);
-	uninit_config();
-	libmultipath_exit();
-	if (dev)
-		FREE(dev);
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
 #endif
