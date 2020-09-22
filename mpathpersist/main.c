@@ -641,11 +641,10 @@ int main(int argc, char *argv[])
 	if (libmpathpersist_init()) {
 		exit(1);
 	}
+	if (atexit((void(*)(void))libmpathpersist_exit))
+		fprintf(stderr, "failed to register cleanup handler for libmpathpersist: %m");
 
 	ret = handle_args(argc, argv, 0);
-
-	libmpathpersist_exit();
-
 	return (ret >= 0) ? ret : MPATH_PR_OTHER;
 }
 
