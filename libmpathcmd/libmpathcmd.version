@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2020 SUSE LLC
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * libmpathcmd ABI
+ *
+ * The ABI of libmpathcmd is supposed to remain stable. Removing symbols
+ * or altering existing symbols' semantics is not allowed. When changing a
+ * a symbol, either use a new name, or explicit symver directives.
+ *
+ * See libmultipath.version for general policy about version numbers.
+ */
+LIBMPATHCMD_1.0.0 {
+global:
+	__mpath_connect;
+	mpath_connect;
+	mpath_disconnect;
+	mpath_process_cmd;
+	mpath_recv_reply;
+	mpath_recv_reply_len;
+	mpath_recv_reply_data;
+	mpath_send_cmd;
+local:
+	*;
+};
