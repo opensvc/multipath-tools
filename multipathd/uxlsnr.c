@@ -35,6 +35,7 @@
 #include "config.h"
 #include "mpath_cmd.h"
 #include "time-util.h"
+#include "util.h"
 
 #include "main.h"
 #include "cli.h"
@@ -116,7 +117,7 @@ static void _dead_client(struct client *c)
 
 static void dead_client(struct client *c)
 {
-	pthread_cleanup_push(cleanup_lock, &client_lock);
+	pthread_cleanup_push(cleanup_mutex, &client_lock);
 	pthread_mutex_lock(&client_lock);
 	_dead_client(c);
 	pthread_cleanup_pop(1);
@@ -302,10 +303,11 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 	sigdelset(&mask, SIGUSR1);
 	while (1) {
 		struct client *c, *tmp;
-		int i, poll_count, num_clients;
+		int i, n_pfds, poll_count, num_clients;
 
 		/* setup for a poll */
 		pthread_mutex_lock(&client_lock);
+		pthread_cleanup_push(cleanup_mutex, &client_lock);
 		num_clients = 0;
 		list_for_each_entry(c, &clients, node) {
 			num_clients++;
@@ -322,14 +324,13 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 						sizeof(struct pollfd));
 			}
 			if (!new) {
-				pthread_mutex_unlock(&client_lock);
 				condlog(0, "%s: failed to realloc %d poll fds",
 					"uxsock", 2 + num_clients);
-				sched_yield();
-				continue;
+				num_clients = old_clients;
+			} else {
+				old_clients = num_clients;
+				polls = new;
 			}
-			old_clients = num_clients;
-			polls = new;
 		}
 		polls[0].fd = ux_sock;
 		polls[0].events = POLLIN;
@@ -347,11 +348,14 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 			polls[i].fd = c->fd;
 			polls[i].events = POLLIN;
 			i++;
+			if (i >= 2 + num_clients)
+				break;
 		}
-		pthread_mutex_unlock(&client_lock);
+		n_pfds = i;
+		pthread_cleanup_pop(1);
 
 		/* most of our life is spent in this call */
-		poll_count = ppoll(polls, i, &sleep_time, &mask);
+		poll_count = ppoll(polls, n_pfds, &sleep_time, &mask);
 
 		handle_signals(false);
 		if (poll_count == -1) {
@@ -384,7 +388,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 		}
 
 		/* see if a client wants to speak to us */
-		for (i = 2; i < num_clients + 2; i++) {
+		for (i = 2; i < n_pfds; i++) {
 			if (polls[i].revents & POLLIN) {
 				struct timespec start_time;
 
