@@ -102,7 +102,7 @@ out:
 	return rc;
 }
 
-int main(int argc, char *argv[])
+int main(void)
 {
 	struct dmmp_context *ctx = NULL;
 	struct dmmp_mpath **dmmp_mps = NULL;
