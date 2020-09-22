@@ -836,7 +836,7 @@ dm_map_present_by_uuid(const char *uuid)
 	if (safe_sprintf(prefixed_uuid, UUID_PREFIX "%s", uuid))
 		goto out;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_INFO)))
 		goto out;
 
 	dm_task_no_open_count(dmt);
