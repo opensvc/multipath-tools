@@ -2892,6 +2892,12 @@ set_oom_adj (void)
 	condlog(0, "couldn't adjust oom score");
 }
 
+static void cleanup_pidfile(void)
+{
+	condlog(3, "unlink pidfile");
+	unlink(DEFAULT_PIDFILE);
+}
+
 static void cleanup_conf(void) {
 	struct config *conf;
 
@@ -3199,9 +3205,7 @@ child (__attribute__((unused)) void *param)
 	dm_lib_exit();
 
 	/* We're done here */
-	condlog(3, "unlink pidfile");
-	unlink(DEFAULT_PIDFILE);
-
+	cleanup_pidfile();
 	condlog(2, "--------shut down-------");
 
 	if (logsink == 1)
