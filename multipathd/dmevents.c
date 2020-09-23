@@ -257,6 +257,8 @@ void unwatch_all_dmevents(void)
 	struct dev_event *dev_evt;
 	int i;
 
+	if (!waiter)
+		return;
 	pthread_mutex_lock(&waiter->events_lock);
 	vector_foreach_slot(waiter->events, dev_evt, i)
 		free(dev_evt);
