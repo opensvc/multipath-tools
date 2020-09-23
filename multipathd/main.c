@@ -115,7 +115,6 @@ struct mpath_event_param
 	struct multipath *mpp;
 };
 
-int logsink;
 int uxsock_timeout;
 int verbosity;
 int bindings_read_only;
@@ -150,8 +149,6 @@ int should_exit(void)
  * global copy of vecs for use in sig handlers
  */
 struct vectors * gvecs;
-
-struct udev * udev;
 
 struct config *multipath_conf;
 
@@ -3123,8 +3120,6 @@ child (__attribute__((unused)) void *param)
 	conf = rcu_dereference(multipath_conf);
 	rcu_assign_pointer(multipath_conf, NULL);
 	call_rcu(&conf->rcu, rcu_free_config);
-	udev_unref(udev);
-	udev = NULL;
 	pthread_attr_destroy(&waiter_attr);
 	pthread_attr_destroy(&io_err_stat_attr);
 #ifdef _DEBUG_
@@ -3228,7 +3223,9 @@ main (int argc, char *argv[])
 
 	pthread_cond_init_mono(&config_cond);
 
-	udev = udev_new();
+	libmultipath_init();
+	if (atexit(libmultipath_exit))
+		condlog(3, "failed to register exit handler for libmultipath");
 	libmp_udev_set_sync_support(0);
 
 	while ((arg = getopt(argc, argv, ":dsv:k::Bniw")) != EOF ) {
