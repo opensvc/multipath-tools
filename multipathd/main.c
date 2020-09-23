@@ -3024,6 +3024,17 @@ static void cleanup_rcu(void)
 	rcu_unregister_thread();
 }
 
+static int sd_notify_exit(int err)
+{
+#ifdef USE_SYSTEMD
+	char msg[24];
+
+	snprintf(msg, sizeof(msg), "ERRNO=%d", err);
+	sd_notify(0, msg);
+#endif
+	return err;
+}
+
 static int
 child (__attribute__((unused)) void *param)
 {
@@ -3216,19 +3227,12 @@ child (__attribute__((unused)) void *param)
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
 #endif
-
-#ifdef USE_SYSTEMD
-	sd_notify(0, "ERRNO=0");
-#endif
-	exit(0);
+	exit(sd_notify_exit(0));
 
 failed:
-#ifdef USE_SYSTEMD
-	sd_notify(0, "ERRNO=1");
-#endif
 	if (pid_fd >= 0)
 		close(pid_fd);
-	exit(1);
+	exit(sd_notify_exit(1));
 }
 
 static int
