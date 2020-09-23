@@ -3044,6 +3044,7 @@ child (__attribute__((unused)) void *param)
 	struct config *conf;
 	char *envp;
 	enum daemon_status state;
+	int exit_code = 1;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	signal_init();
@@ -3207,6 +3208,8 @@ child (__attribute__((unused)) void *param)
 		}
 	}
 
+	exit_code = 0;
+failed:
 	cleanup_threads();
 	cleanup_vecs();
 	cleanup_foreign();
@@ -3227,12 +3230,7 @@ child (__attribute__((unused)) void *param)
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
 #endif
-	exit(sd_notify_exit(0));
-
-failed:
-	if (pid_fd >= 0)
-		close(pid_fd);
-	exit(sd_notify_exit(1));
+	return sd_notify_exit(exit_code);
 }
 
 static int
