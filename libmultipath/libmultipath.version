@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_3.0.0 {
+LIBMULTIPATH_4.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -51,10 +51,7 @@ global:
 	checker_name;
 	checker_state_name;
 	check_foreign;
-	cleanup_checkers;
-	cleanup_foreign;
 	cleanup_lock;
-	cleanup_prio;
 	close_fd;
 	coalesce_paths;
 	convert_dev;

@@ -26,6 +26,7 @@
 #include "devmapper.h"
 #include "mpath_cmd.h"
 #include "propsel.h"
+#include "foreign.h"
 
 /*
  * We don't support re-initialization after
@@ -60,6 +61,9 @@ int libmultipath_init(void)
 static void _libmultipath_exit(void)
 {
 	libmultipath_exit_called = true;
+	cleanup_foreign();
+	cleanup_checkers();
+	cleanup_prio();
 	libmp_dm_exit();
 	udev_unref(udev);
 }

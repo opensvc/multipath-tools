@@ -78,8 +78,6 @@ mpath_lib_init (void)
 
 static void libmpathpersist_cleanup(void)
 {
-	cleanup_prio();
-	cleanup_checkers();
 	libmultipath_exit();
 	dm_lib_exit();
 }

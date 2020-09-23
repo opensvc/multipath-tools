@@ -3028,9 +3028,6 @@ static void cleanup_child(void)
 {
 	cleanup_threads();
 	cleanup_vecs();
-	cleanup_foreign();
-	cleanup_checkers();
-	cleanup_prio();
 	if (poll_dmevents)
 		cleanup_dmevent_waiter();
 
