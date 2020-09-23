@@ -112,6 +112,9 @@ void log_thread_reset (void)
 
 void log_thread_stop (void)
 {
+	if (!la)
+		return;
+
 	logdbg(stderr,"enter log_thread_stop\n");
 
 	pthread_mutex_lock(&logev_lock);
