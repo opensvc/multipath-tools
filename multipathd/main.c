@@ -116,19 +116,19 @@ struct mpath_event_param
 };
 
 int uxsock_timeout;
-int verbosity;
-int bindings_read_only;
+static int verbosity;
+static int bindings_read_only;
 int ignore_new_devs;
 #ifdef NO_DMEVENTS_POLL
-int poll_dmevents = 0;
+static int poll_dmevents = 0;
 #else
-int poll_dmevents = 1;
+static int poll_dmevents = 1;
 #endif
 /* Don't access this variable without holding config_lock */
-volatile enum daemon_status running_state = DAEMON_INIT;
+static volatile enum daemon_status running_state = DAEMON_INIT;
 pid_t daemon_pid;
-pthread_mutex_t config_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t config_cond;
+static pthread_mutex_t config_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t config_cond;
 
 static inline enum daemon_status get_running_state(void)
 {
