@@ -3220,8 +3220,6 @@ failed:
 	if (poll_dmevents)
 		cleanup_dmevent_waiter();
 
-	dm_lib_exit();
-
 	/* We're done here */
 	cleanup_pidfile();
 	condlog(2, "--------shut down-------");
@@ -3317,6 +3315,9 @@ main (int argc, char *argv[])
 	umask(umask(077) | 022);
 
 	pthread_cond_init_mono(&config_cond);
+
+	if (atexit(dm_lib_exit))
+		condlog(3, "failed to register exit handler for libdm");
 
 	libmultipath_init();
 	if (atexit(libmultipath_exit))
