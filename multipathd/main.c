@@ -2889,6 +2889,48 @@ set_oom_adj (void)
 	condlog(0, "couldn't adjust oom score");
 }
 
+/*
+ * Use a non-default call_rcu_data for child().
+ *
+ * We do this to avoid a memory leak from liburcu.
+ * liburcu never frees the default rcu handler (see comments on
+ * call_rcu_data_free() in urcu-call-rcu-impl.h), its thread
+ * can't be joined with pthread_join(), leaving a memory leak.
+ *
+ * Therefore we create our own, which can be destroyed and joined.
+ */
+static struct call_rcu_data *setup_rcu(void)
+{
+	struct call_rcu_data *crdp;
+
+	rcu_init();
+	rcu_register_thread();
+	crdp = create_call_rcu_data(0UL, -1);
+	if (crdp != NULL)
+		set_thread_call_rcu_data(crdp);
+	return crdp;
+}
+
+static struct call_rcu_data *mp_rcu_data;
+
+static void cleanup_rcu(void)
+{
+	pthread_t rcu_thread;
+
+	/* Wait for any pending RCU calls */
+	rcu_barrier();
+	if (mp_rcu_data != NULL) {
+		rcu_thread = get_call_rcu_thread(mp_rcu_data);
+		/* detach this thread from the RCU thread */
+		set_thread_call_rcu_data(NULL);
+		synchronize_rcu();
+		/* tell RCU thread to exit */
+		call_rcu_data_free(mp_rcu_data);
+		pthread_join(rcu_thread, NULL);
+	}
+	rcu_unregister_thread();
+}
+
 static int
 child (__attribute__((unused)) void *param)
 {
@@ -2906,7 +2948,8 @@ child (__attribute__((unused)) void *param)
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	signal_init();
-	rcu_init();
+	mp_rcu_data = setup_rcu();
+	atexit(cleanup_rcu);
 
 	setup_thread_attr(&misc_attr, 64 * 1024, 0);
 	setup_thread_attr(&uevent_attr, DEFAULT_UEVENT_STACKSIZE * 1024, 0);
