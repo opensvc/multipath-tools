@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_2.0.0 {
+LIBMULTIPATH_3.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -121,7 +121,6 @@ global:
 	init_checkers;
 	init_foreign;
 	init_prio;
-	io_err_stat_attr;
 	io_err_stat_handle_pathfail;
 	is_path_valid;
 	is_quote;
@@ -242,30 +241,24 @@ global:
 	free_scandir_result;
 	sysfs_attr_get_value;
 
-local:
-	*;
-};
-
-LIBMULTIPATH_2.1.0 {
-global:
+	/* added in 2.1.0 */
 	libmp_dm_task_run;
 	cleanup_mutex;
-} LIBMULTIPATH_2.0.0;
 
-LIBMULTIPATH_2.2.0 {
-global:
+	/* added in 2.2.0 */
 	libmp_get_multipath_config;
 	get_multipath_config;
 	libmp_put_multipath_config;
 	put_multipath_config;
 	init_config;
 	uninit_config;
-} LIBMULTIPATH_2.1.0;
 
-LIBMULTIPATH_2.3.0 {
-global:
+	/* added in 2.3.0 */
 	udev;
 	logsink;
 	libmultipath_init;
 	libmultipath_exit;
-} LIBMULTIPATH_2.2.0;
+
+local:
+	*;
+};
