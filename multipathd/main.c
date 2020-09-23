@@ -132,6 +132,7 @@ static pthread_cond_t config_cond;
 static pthread_t check_thr, uevent_thr, uxlsnr_thr, uevq_thr, dmevent_thr;
 static bool check_thr_started, uevent_thr_started, uxlsnr_thr_started,
 	uevq_thr_started, dmevent_thr_started;
+static int pid_fd = -1;
 
 static inline enum daemon_status get_running_state(void)
 {
@@ -2894,6 +2895,8 @@ set_oom_adj (void)
 
 static void cleanup_pidfile(void)
 {
+	if (pid_fd >= 0)
+		close(pid_fd);
 	condlog(3, "unlink pidfile");
 	unlink(DEFAULT_PIDFILE);
 }
@@ -3027,7 +3030,6 @@ child (__attribute__((unused)) void *param)
 	pthread_attr_t log_attr, misc_attr, uevent_attr;
 	struct vectors * vecs;
 	int rc;
-	int pid_fd = -1;
 	struct config *conf;
 	char *envp;
 	enum daemon_status state;
