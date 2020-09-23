@@ -271,6 +271,8 @@ int libmultipath_init(void);
  *
  * This function un-initializes libmultipath data structures.
  * It is recommended to call this function at program exit.
+ * If the application also calls dm_lib_exit(), it should do so
+ * after libmultipath_exit().
  *
  * Calls to libmultipath_init() after libmultipath_exit() will fail
  * (in other words, libmultipath can't be re-initialized).

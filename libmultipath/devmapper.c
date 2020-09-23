@@ -335,6 +335,20 @@ void libmp_udev_set_sync_support(int on)
 	libmp_dm_udev_sync = !!on;
 }
 
+static bool libmp_dm_init_called;
+void libmp_dm_exit(void)
+{
+	if (!libmp_dm_init_called)
+		return;
+
+	/* switch back to default libdm logging */
+	dm_log_init(NULL);
+#ifdef LIBDM_API_HOLD_CONTROL
+	/* make sure control fd is closed in dm_lib_release() */
+	dm_hold_control_dev(0);
+#endif
+}
+
 static void libmp_dm_init(void)
 {
 	struct config *conf;
@@ -351,6 +365,7 @@ static void libmp_dm_init(void)
 	dm_hold_control_dev(1);
 #endif
 	dm_udev_set_sync_support(libmp_dm_udev_sync);
+	libmp_dm_init_called = true;
 }
 
 static void _do_skip_libmp_dm_init(void)

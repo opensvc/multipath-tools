@@ -60,6 +60,7 @@ int libmultipath_init(void)
 static void _libmultipath_exit(void)
 {
 	libmultipath_exit_called = true;
+	libmp_dm_exit();
 	udev_unref(udev);
 }
 

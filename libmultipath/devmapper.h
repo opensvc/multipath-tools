@@ -35,6 +35,7 @@ enum {
 
 int dm_prereq(unsigned int *v);
 void skip_libmp_dm_init(void);
+void libmp_dm_exit(void);
 void libmp_udev_set_sync_support(int on);
 struct dm_task *libmp_dm_task_create(int task);
 int dm_simplecmd_flush (int, const char *, uint16_t);
