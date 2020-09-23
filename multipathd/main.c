@@ -3074,8 +3074,10 @@ child (__attribute__((unused)) void *param)
 	condlog(2, "read " DEFAULT_CONFIGFILE);
 
 	conf = load_config(DEFAULT_CONFIGFILE);
-	if (!conf)
+	if (!conf) {
+		condlog(0, "failed to load configuration");
 		goto failed;
+	}
 
 	if (verbosity)
 		conf->verbosity = verbosity;
