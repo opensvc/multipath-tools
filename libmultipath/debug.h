@@ -12,3 +12,9 @@ extern int libmp_verbosity;
 
 #define condlog(prio, fmt, args...) \
 	dlog(logsink, prio, fmt "\n", ##args)
+
+enum {
+	LOGSINK_STDERR_WITH_TIME = 0,
+	LOGSINK_STDERR_WITHOUT_TIME = -1,
+	LOGSINK_SYSLOG = 1,
+};

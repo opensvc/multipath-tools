@@ -2780,7 +2780,7 @@ handle_signals(bool nonfatal)
 	}
 	if (log_reset_sig) {
 		condlog(2, "reset log (signal)");
-		if (logsink == 1)
+		if (logsink == LOGSINK_SYSLOG)
 			log_thread_reset();
 	}
 	reconfig_sig = 0;
@@ -3033,7 +3033,7 @@ static void cleanup_child(void)
 		cleanup_dmevent_waiter();
 
 	cleanup_pidfile();
-	if (logsink == 1)
+	if (logsink == LOGSINK_SYSLOG)
 		log_thread_stop();
 
 	cleanup_conf();
@@ -3076,7 +3076,7 @@ child (__attribute__((unused)) void *param)
 	setup_thread_attr(&uevent_attr, DEFAULT_UEVENT_STACKSIZE * 1024, 0);
 	setup_thread_attr(&waiter_attr, 32 * 1024, 1);
 
-	if (logsink == 1) {
+	if (logsink == LOGSINK_SYSLOG) {
 		setup_thread_attr(&log_attr, 64 * 1024, 0);
 		log_thread_start(&log_attr);
 		pthread_attr_destroy(&log_attr);
@@ -3307,7 +3307,7 @@ main (int argc, char *argv[])
 	ANNOTATE_BENIGN_RACE_SIZED(&uxsock_timeout, sizeof(uxsock_timeout),
 		"Suppress complaints about this scalar variable");
 
-	logsink = 1;
+	logsink = LOGSINK_SYSLOG;
 
 	if (getuid() != 0) {
 		fprintf(stderr, "need to be root\n");
@@ -3334,9 +3334,8 @@ main (int argc, char *argv[])
 		switch(arg) {
 		case 'd':
 			foreground = 1;
-			if (logsink > 0)
-				logsink = 0;
-			//debug=1; /* ### comment me out ### */
+			if (logsink == LOGSINK_SYSLOG)
+				logsink = LOGSINK_STDERR_WITH_TIME;
 			break;
 		case 'v':
 			if (sizeof(optarg) > sizeof(char *) ||
@@ -3346,7 +3345,7 @@ main (int argc, char *argv[])
 			libmp_verbosity = verbosity = atoi(optarg);
 			break;
 		case 's':
-			logsink = -1;
+			logsink = LOGSINK_STDERR_WITHOUT_TIME;
 			break;
 		case 'k':
 			logsink = 0;
@@ -3379,7 +3378,7 @@ main (int argc, char *argv[])
 		char * s = cmd;
 		char * c = s;
 
-		logsink = 0;
+		logsink = LOGSINK_STDERR_WITH_TIME;
 		if (verbosity)
 			libmp_verbosity = verbosity;
 		conf = load_config(DEFAULT_CONFIGFILE);

@@ -25,8 +25,8 @@ void dlog (int sink, int prio, const char * fmt, ...)
 	va_start(ap, fmt);
 
 	if (prio <= libmp_verbosity) {
-		if (sink < 1) {
-			if (sink == 0) {
+		if (sink != LOGSINK_SYSLOG) {
+			if (sink == LOGSINK_STDERR_WITH_TIME) {
 				time_t t = time(NULL);
 				struct tm *tb = localtime(&t);
 				char buff[16];

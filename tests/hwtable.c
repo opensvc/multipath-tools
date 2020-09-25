@@ -53,7 +53,7 @@ struct hwt_state {
 
 static struct config *_conf;
 struct udev *udev;
-int logsink = -1;
+int logsink = LOGSINK_STDERR_WITHOUT_TIME;
 
 struct config *get_multipath_config(void)
 {

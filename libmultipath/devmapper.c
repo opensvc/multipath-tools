@@ -104,8 +104,8 @@ dm_write_log (int level, const char *file, int line, const char *f, ...)
 		return;
 
 	va_start(ap, f);
-	if (logsink < 1) {
-		if (logsink == 0) {
+	if (logsink != LOGSINK_SYSLOG) {
+		if (logsink == LOGSINK_STDERR_WITH_TIME) {
 			time_t t = time(NULL);
 			struct tm *tb = localtime(&t);
 			char buff[16];

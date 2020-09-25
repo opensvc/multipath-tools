@@ -817,7 +817,7 @@ main (int argc, char *argv[])
 	libmultipath_init();
 	if (atexit(dm_lib_exit) || atexit(libmultipath_exit))
 		condlog(1, "failed to register cleanup handler for libmultipath: %m");
-	logsink = 0;
+	logsink = LOGSINK_STDERR_WITH_TIME;
 	if (init_config(DEFAULT_CONFIGFILE))
 		exit(RTVL_FAIL);
 	if (atexit(uninit_config))
@@ -968,7 +968,7 @@ main (int argc, char *argv[])
 	if (dev_type == DEV_UEVENT) {
 		openlog("multipath", 0, LOG_DAEMON);
 		setlogmask(LOG_UPTO(libmp_verbosity + 3));
-		logsink = 1;
+		logsink = LOGSINK_SYSLOG;
 	}
 
 	set_max_fds(conf->max_fds);
