@@ -1,5 +1,7 @@
-void dlog (int sink, int prio, const char * fmt, ...)
-	__attribute__((format(printf, 3, 4)));
+#ifndef _DEBUG_H
+#define _DEBUG_H
+void dlog (int prio, const char *fmt, ...)
+	__attribute__((format(printf, 2, 3)));
 
 
 #include <pthread.h>
@@ -10,11 +12,21 @@ void dlog (int sink, int prio, const char * fmt, ...)
 extern int logsink;
 extern int libmp_verbosity;
 
-#define condlog(prio, fmt, args...) \
-	dlog(logsink, prio, fmt "\n", ##args)
+#ifndef MAX_VERBOSITY
+#define MAX_VERBOSITY 4
+#endif
 
 enum {
 	LOGSINK_STDERR_WITH_TIME = 0,
 	LOGSINK_STDERR_WITHOUT_TIME = -1,
 	LOGSINK_SYSLOG = 1,
 };
+
+#define condlog(prio, fmt, args...)					\
+	do {								\
+		int __p = (prio);					\
+									\
+		if (__p <= MAX_VERBOSITY && __p <= libmp_verbosity)	\
+			dlog(__p, fmt "\n", ##args);			\
+	} while (0)
+#endif /* _DEBUG_H */

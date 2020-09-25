@@ -18,29 +18,25 @@
 int logsink;
 int libmp_verbosity = DEFAULT_VERBOSITY;
 
-void dlog (int sink, int prio, const char * fmt, ...)
+void dlog(int prio, const char * fmt, ...)
 {
 	va_list ap;
 
 	va_start(ap, fmt);
+	if (logsink != LOGSINK_SYSLOG) {
+		if (logsink == LOGSINK_STDERR_WITH_TIME) {
+			time_t t = time(NULL);
+			struct tm *tb = localtime(&t);
+			char buff[16];
 
-	if (prio <= libmp_verbosity) {
-		if (sink != LOGSINK_SYSLOG) {
-			if (sink == LOGSINK_STDERR_WITH_TIME) {
-				time_t t = time(NULL);
-				struct tm *tb = localtime(&t);
-				char buff[16];
-
-				strftime(buff, sizeof(buff),
-					 "%b %d %H:%M:%S", tb);
-				buff[sizeof(buff)-1] = '\0';
-
-				fprintf(stderr, "%s | ", buff);
-			}
-			vfprintf(stderr, fmt, ap);
+			strftime(buff, sizeof(buff),
+				 "%b %d %H:%M:%S", tb);
+			buff[sizeof(buff)-1] = '\0';
+			fprintf(stderr, "%s | ", buff);
 		}
-		else
-			log_safe(prio + 3, fmt, ap);
+		vfprintf(stderr, fmt, ap);
 	}
+	else
+		log_safe(prio + 3, fmt, ap);
 	va_end(ap);
 }

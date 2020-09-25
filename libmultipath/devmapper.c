@@ -276,7 +276,9 @@ static int dm_tgt_prereq (unsigned int *ver)
 
 static void _init_versions(void)
 {
-	dlog(logsink, 3, VERSION_STRING);
+	/* Can't use condlog here because of how VERSION_STRING is defined */
+	if (3 <= libmp_verbosity)
+		dlog(3, VERSION_STRING);
 	init_dm_library_version();
 	init_dm_drv_version();
 	init_dm_mpath_version();
