@@ -3301,6 +3301,8 @@ main (int argc, char *argv[])
 	int err;
 	int foreground = 0;
 	struct config *conf;
+	char *opt_k_arg = NULL;
+	bool opt_k = false;
 
 	ANNOTATE_BENIGN_RACE_SIZED(&multipath_conf, sizeof(multipath_conf),
 				   "Manipulated through RCU");
@@ -3348,16 +3350,9 @@ main (int argc, char *argv[])
 			logsink = LOGSINK_STDERR_WITHOUT_TIME;
 			break;
 		case 'k':
-			logsink = 0;
-			conf = load_config(DEFAULT_CONFIGFILE);
-			if (!conf)
-				exit(1);
-			if (verbosity)
-				libmp_verbosity = verbosity;
-			uxsock_timeout = conf->uxsock_timeout;
-			err = uxclnt(optarg, uxsock_timeout + 100);
-			free_config(conf);
-			return err;
+			opt_k = true;
+			opt_k_arg = optarg;
+			break;
 		case 'B':
 			bindings_read_only = 1;
 			break;
@@ -3373,7 +3368,7 @@ main (int argc, char *argv[])
 			exit(1);
 		}
 	}
-	if (optind < argc) {
+	if (opt_k || optind < argc) {
 		char cmd[CMDSIZE];
 		char * s = cmd;
 		char * c = s;
@@ -3388,14 +3383,20 @@ main (int argc, char *argv[])
 			libmp_verbosity = verbosity;
 		uxsock_timeout = conf->uxsock_timeout;
 		memset(cmd, 0x0, CMDSIZE);
-		while (optind < argc) {
-			if (strchr(argv[optind], ' '))
-				c += snprintf(c, s + CMDSIZE - c, "\"%s\" ", argv[optind]);
-			else
-				c += snprintf(c, s + CMDSIZE - c, "%s ", argv[optind]);
-			optind++;
+		if (opt_k)
+			s = opt_k_arg;
+		else {
+			while (optind < argc) {
+				if (strchr(argv[optind], ' '))
+					c += snprintf(c, s + CMDSIZE - c,
+						      "\"%s\" ", argv[optind]);
+				else
+					c += snprintf(c, s + CMDSIZE - c,
+						      "%s ", argv[optind]);
+				optind++;
+			}
+			c += snprintf(c, s + CMDSIZE - c, "\n");
 		}
-		c += snprintf(c, s + CMDSIZE - c, "\n");
 		err = uxclnt(s, uxsock_timeout + 100);
 		free_config(conf);
 		return err;
