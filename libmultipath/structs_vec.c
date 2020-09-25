@@ -148,73 +148,85 @@ bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 			 * uninitialized struct path to pgp->paths, with only
 			 * pp->dev_t filled in. Thus if pp->udev is set here,
 			 * we know that the path is in pathvec already.
+			 * However, it's possible that the path in pathvec is
+			 * different from the one the kernel still had in its
+			 * map.
 			 */
 			if (pp->udev) {
 				if (pathinfo_flags & ~DI_NOIO) {
 					conf = get_multipath_config();
 					pthread_cleanup_push(put_multipath_config,
 							     conf);
-					pathinfo(pp, conf, pathinfo_flags);
+					pathinfo(pp, conf, pathinfo_flags|DI_WWID);
 					pthread_cleanup_pop(1);
 				}
-				continue;
-			}
-
-			/* If this fails, the device is not in sysfs */
-			pp->udev = get_udev_device(pp->dev_t, DEV_DEVT);
-			if (!pp->udev) {
-				condlog(2, "%s: discarding non-existing path %s",
-					mpp->alias, pp->dev_t);
-				vector_del_slot(pgp->paths, j--);
-				free_path(pp);
-				must_reload = true;
 			} else {
-				int rc;
+				/* If this fails, the device is not in sysfs */
+				pp->udev = get_udev_device(pp->dev_t, DEV_DEVT);
 
-				devt2devname(pp->dev, sizeof(pp->dev),
-					     pp->dev_t);
-				conf = get_multipath_config();
-				pthread_cleanup_push(put_multipath_config,
-						     conf);
-				pp->checkint = conf->checkint;
-				rc = pathinfo(pp, conf,
-					      DI_SYSFS|DI_WWID|DI_BLACKLIST|
-					      pathinfo_flags);
-				pthread_cleanup_pop(1);
-				if (rc != PATHINFO_OK) {
-					condlog(1, "%s: error %d in pathinfo, discarding path",
-						pp->dev, rc);
+				if (!pp->udev) {
+					condlog(2, "%s: discarding non-existing path %s",
+						mpp->alias, pp->dev_t);
 					vector_del_slot(pgp->paths, j--);
 					free_path(pp);
 					must_reload = true;
-				} else if (mpp_has_wwid && pp->wwid[0] != '\0'
-					   && strcmp(mpp->wwid, pp->wwid)) {
-					condlog(0, "%s: path %s WWID %s doesn't match, removing from map",
-						mpp->wwid, pp->dev_t, pp->wwid);
-					/*
-					 * This path exists, but in the wrong map.
-					 * We can't reload the map from here.
-					 * Make sure it isn't used in this map
-					 * any more, and let the checker re-add
-					 * it as it sees fit.
-					 */
-					dm_fail_path(mpp->alias, pp->dev_t);
-					vector_del_slot(pgp->paths, j--);
-					orphan_path(pp, "WWID mismatch");
-					pp->tick = 1;
-					must_reload = true;
+					continue;
 				} else {
-					if (mpp_has_wwid && !strlen(pp->wwid)) {
-						condlog(3, "%s: setting wwid from map: %s",
-							pp->dev, mpp->wwid);
-						strlcpy(pp->wwid, mpp->wwid,
-							sizeof(pp->wwid));
+					int rc;
+
+					devt2devname(pp->dev, sizeof(pp->dev),
+						     pp->dev_t);
+					conf = get_multipath_config();
+					pthread_cleanup_push(put_multipath_config,
+							     conf);
+					pp->checkint = conf->checkint;
+					rc = pathinfo(pp, conf,
+						      DI_SYSFS|DI_WWID|DI_BLACKLIST|
+						      pathinfo_flags);
+					pthread_cleanup_pop(1);
+					if (rc != PATHINFO_OK) {
+						condlog(1, "%s: error %d in pathinfo, discarding path",
+							pp->dev, rc);
+						vector_del_slot(pgp->paths, j--);
+						free_path(pp);
+						must_reload = true;
+						continue;
 					}
 					condlog(2, "%s: adding new path %s",
 						mpp->alias, pp->dev);
 					store_path(pathvec, pp);
 					pp->tick = 1;
 				}
+			}
+
+			/* We don't set the map WWID from paths here */
+			if (!mpp_has_wwid)
+				continue;
+
+			/*
+			 * At this point, pp->udev is valid and and pp->wwid
+			 * is the best we could get
+			 */
+			if (*pp->wwid && strcmp(mpp->wwid, pp->wwid)) {
+				condlog(0, "%s: path %s WWID %s doesn't match, removing from map",
+					mpp->wwid, pp->dev_t, pp->wwid);
+				/*
+				 * This path exists, but in the wrong map.
+				 * We can't reload the map from here.
+				 * Make sure it isn't used in this map
+				 * any more, and let the checker re-add
+				 * it as it sees fit.
+				 */
+				dm_fail_path(mpp->alias, pp->dev_t);
+				vector_del_slot(pgp->paths, j--);
+				orphan_path(pp, "WWID mismatch");
+				pp->tick = 1;
+				must_reload = true;
+			} else if (!*pp->wwid) {
+				condlog(3, "%s: setting wwid from map: %s",
+					pp->dev, mpp->wwid);
+				strlcpy(pp->wwid, mpp->wwid,
+					sizeof(pp->wwid));
 			}
 		}
 		if (VECTOR_SIZE(pgp->paths) != 0)
