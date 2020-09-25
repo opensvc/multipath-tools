@@ -351,16 +351,11 @@ void libmp_dm_exit(void)
 
 static void libmp_dm_init(void)
 {
-	struct config *conf;
-	int verbosity;
 	unsigned int version[3];
 
 	if (dm_prereq(version))
 		exit(1);
-	conf = get_multipath_config();
-	verbosity = conf->verbosity;
-	put_multipath_config(conf);
-	dm_init(verbosity);
+	dm_init(libmp_verbosity);
 #ifdef LIBDM_API_HOLD_CONTROL
 	dm_hold_control_dev(1);
 #endif

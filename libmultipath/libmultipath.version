@@ -259,3 +259,8 @@ global:
 local:
 	*;
 };
+
+LIBMULTIPATH_4.1.0 {
+global:
+	libmp_verbosity;
+} LIBMULTIPATH_4.0.0;

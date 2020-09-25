@@ -208,22 +208,15 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 			mpp->bestpg = select_path_group(mpp);
 
 		if (cmd == CMD_LIST_SHORT ||
-		    cmd == CMD_LIST_LONG) {
-			struct config *conf = get_multipath_config();
-			print_multipath_topology(mpp, conf->verbosity);
-			put_multipath_config(conf);
-		}
+		    cmd == CMD_LIST_LONG)
+			print_multipath_topology(mpp, libmp_verbosity);
 
 		if (cmd == CMD_CREATE)
 			reinstate_paths(mpp);
 	}
 
-	if (cmd == CMD_LIST_SHORT || cmd == CMD_LIST_LONG) {
-		struct config *conf = get_multipath_config();
-
-		print_foreign_topology(conf->verbosity);
-		put_multipath_config(conf);
-	}
+	if (cmd == CMD_LIST_SHORT || cmd == CMD_LIST_LONG)
+		print_foreign_topology(libmp_verbosity);
 
 	return 0;
 }
@@ -552,7 +545,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	if (path_discovery(pathvec, di_flag) < 0)
 		goto out;
 
-	if (conf->verbosity > 2)
+	if (libmp_verbosity > 2)
 		print_all_paths(pathvec, 1);
 
 	get_path_layout(pathvec, 0);
@@ -843,7 +836,7 @@ main (int argc, char *argv[])
 				exit(RTVL_FAIL);
 			}
 
-			conf->verbosity = atoi(optarg);
+			libmp_verbosity = atoi(optarg);
 			break;
 		case 'b':
 			conf->bindings_file = strdup(optarg);
@@ -974,7 +967,7 @@ main (int argc, char *argv[])
 	}
 	if (dev_type == DEV_UEVENT) {
 		openlog("multipath", 0, LOG_DAEMON);
-		setlogmask(LOG_UPTO(conf->verbosity + 3));
+		setlogmask(LOG_UPTO(libmp_verbosity + 3));
 		logsink = 1;
 	}
 

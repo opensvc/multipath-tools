@@ -8,6 +8,7 @@ void dlog (int sink, int prio, const char * fmt, ...)
 #include "log_pthread.h"
 
 extern int logsink;
+extern int libmp_verbosity;
 
 #define condlog(prio, fmt, args...) \
 	dlog(logsink, prio, fmt "\n", ##args)

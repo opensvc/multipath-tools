@@ -88,10 +88,10 @@
 #define CMDSIZE 160
 #define MSG_SIZE 32
 
-#define LOG_MSG(lvl, verb, pp)					\
+#define LOG_MSG(lvl, pp)					\
 do {								\
 	if (pp->mpp && checker_selected(&pp->checker) &&	\
-	    lvl <= verb) {					\
+	    lvl <= libmp_verbosity) {					\
 		if (pp->offline)				\
 			condlog(lvl, "%s: %s - path offline",	\
 				pp->mpp->alias, pp->dev);	\
@@ -2070,7 +2070,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	int chkr_new_path_up = 0;
 	int disable_reinstate = 0;
 	int oldchkrstate = pp->chkrstate;
-	int retrigger_tries, verbosity;
+	int retrigger_tries;
 	unsigned int checkint, max_checkint;
 	struct config *conf;
 	int marginal_pathgroups, marginal_changed = 0;
@@ -2090,7 +2090,6 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	retrigger_tries = conf->retrigger_tries;
 	checkint = conf->checkint;
 	max_checkint = conf->max_checkint;
-	verbosity = conf->verbosity;
 	marginal_pathgroups = conf->marginal_pathgroups;
 	put_multipath_config(conf);
 
@@ -2152,7 +2151,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
 		condlog(2, "%s: unusable path (%s) - checker failed",
 			pp->dev, checker_state_name(newstate));
-		LOG_MSG(2, verbosity, pp);
+		LOG_MSG(2, pp);
 		conf = get_multipath_config();
 		pthread_cleanup_push(put_multipath_config, conf);
 		pathinfo(pp, conf, 0);
@@ -2257,7 +2256,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		int oldstate = pp->state;
 		pp->state = newstate;
 
-		LOG_MSG(1, verbosity, pp);
+		LOG_MSG(1, pp);
 
 		/*
 		 * upon state change, reset the checkint
@@ -2321,7 +2320,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 			/* Clear IO errors */
 			reinstate_path(pp);
 		else {
-			LOG_MSG(4, verbosity, pp);
+			LOG_MSG(4, pp);
 			if (pp->checkint != max_checkint) {
 				/*
 				 * double the next check delay.
@@ -2349,9 +2348,9 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 			log_checker_err = conf->log_checker_err;
 			put_multipath_config(conf);
 			if (log_checker_err == LOG_CHKR_ERR_ONCE)
-				LOG_MSG(3, verbosity, pp);
+				LOG_MSG(3, pp);
 			else
-				LOG_MSG(2, verbosity, pp);
+				LOG_MSG(2, pp);
 		}
 	}
 
@@ -2696,6 +2695,10 @@ reconfigure (struct vectors * vecs)
 	if (!conf)
 		return 1;
 
+	if (verbosity)
+		libmp_verbosity = verbosity;
+	setlogmask(LOG_UPTO(libmp_verbosity + 3));
+
 	/*
 	 * free old map and path vectors ... they use old conf state
 	 */
@@ -2710,8 +2713,6 @@ reconfigure (struct vectors * vecs)
 	/* Re-read any timezone changes */
 	tzset();
 
-	if (verbosity)
-		conf->verbosity = verbosity;
 	if (bindings_read_only)
 		conf->bindings_read_only = bindings_read_only;
 	check_alias_settings(conf);
@@ -3091,14 +3092,18 @@ child (__attribute__((unused)) void *param)
 	condlog(2, "--------start up--------");
 	condlog(2, "read " DEFAULT_CONFIGFILE);
 
+	if (verbosity)
+		libmp_verbosity = verbosity;
 	conf = load_config(DEFAULT_CONFIGFILE);
+	if (verbosity)
+		libmp_verbosity = verbosity;
+	setlogmask(LOG_UPTO(libmp_verbosity + 3));
+
 	if (!conf) {
 		condlog(0, "failed to load configuration");
 		goto failed;
 	}
 
-	if (verbosity)
-		conf->verbosity = verbosity;
 	if (bindings_read_only)
 		conf->bindings_read_only = bindings_read_only;
 	uxsock_timeout = conf->uxsock_timeout;
@@ -3117,7 +3122,6 @@ child (__attribute__((unused)) void *param)
 
 	if (poll_dmevents)
 		poll_dmevents = dmevent_poll_supported();
-	setlogmask(LOG_UPTO(conf->verbosity + 3));
 
 	envp = getenv("LimitNOFILE");
 
@@ -3339,7 +3343,7 @@ main (int argc, char *argv[])
 			    !isdigit(optarg[0]))
 				exit(1);
 
-			verbosity = atoi(optarg);
+			libmp_verbosity = verbosity = atoi(optarg);
 			break;
 		case 's':
 			logsink = -1;
@@ -3350,7 +3354,7 @@ main (int argc, char *argv[])
 			if (!conf)
 				exit(1);
 			if (verbosity)
-				conf->verbosity = verbosity;
+				libmp_verbosity = verbosity;
 			uxsock_timeout = conf->uxsock_timeout;
 			err = uxclnt(optarg, uxsock_timeout + 100);
 			free_config(conf);
@@ -3376,11 +3380,13 @@ main (int argc, char *argv[])
 		char * c = s;
 
 		logsink = 0;
+		if (verbosity)
+			libmp_verbosity = verbosity;
 		conf = load_config(DEFAULT_CONFIGFILE);
 		if (!conf)
 			exit(1);
 		if (verbosity)
-			conf->verbosity = verbosity;
+			libmp_verbosity = verbosity;
 		uxsock_timeout = conf->uxsock_timeout;
 		memset(cmd, 0x0, CMDSIZE);
 		while (optind < argc) {

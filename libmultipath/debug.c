@@ -16,21 +16,15 @@
 #include "debug.h"
 
 int logsink;
+int libmp_verbosity = DEFAULT_VERBOSITY;
 
 void dlog (int sink, int prio, const char * fmt, ...)
 {
 	va_list ap;
-	int thres;
-	struct config *conf;
 
 	va_start(ap, fmt);
-	conf = get_multipath_config();
-	ANNOTATE_IGNORE_READS_BEGIN();
-	thres = (conf) ? conf->verbosity : DEFAULT_VERBOSITY;
-	ANNOTATE_IGNORE_READS_END();
-	put_multipath_config(conf);
 
-	if (prio <= thres) {
+	if (prio <= libmp_verbosity) {
 		if (sink < 1) {
 			if (sink == 0) {
 				time_t t = time(NULL);

@@ -828,10 +828,14 @@ int _init_config (const char *file, struct config *conf)
 		conf = &__internal_config;
 
 	/*
+	 * Processing the config file will overwrite conf->verbosity if set
+	 * When we return, we'll copy the config value back
+	 */
+	conf->verbosity = libmp_verbosity;
+
+	/*
 	 * internal defaults
 	 */
-	conf->verbosity = DEFAULT_VERBOSITY;
-
 	get_sys_max_fds(&conf->max_fds);
 	conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 	conf->wwids_file = set_default(DEFAULT_WWIDS_FILE);
@@ -997,6 +1001,7 @@ int _init_config (const char *file, struct config *conf)
 	    !conf->wwids_file || !conf->prkeys_file)
 		goto out;
 
+	libmp_verbosity = conf->verbosity;
 	return 0;
 out:
 	_uninit_config(conf);

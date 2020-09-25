@@ -22,6 +22,7 @@
 #include "globals.c"
 #include "blacklist.h"
 #include "test-log.h"
+#include "debug.h"
 
 struct udev_device {
 	const char *sysname;
@@ -152,6 +153,7 @@ static int setup(void **state)
 	    store_ble(blist_property_wwn_inv, "!ID_WWN", ORIGIN_CONFIG))
 		return -1;
 
+	libmp_verbosity = conf.verbosity = 4;
 	return 0;
 }
 

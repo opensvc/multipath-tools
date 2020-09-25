@@ -170,10 +170,7 @@ void mpath_persistent_reserve_free_vecs(void)
 
 int mpath_persistent_reserve_init_vecs(int verbose)
 {
-	struct config *conf = get_multipath_config();
-
-	conf->verbosity = verbose;
-	put_multipath_config(conf);
+	libmp_verbosity = verbose;
 
 	if (curmp)
 		return MPATH_PR_SUCCESS;

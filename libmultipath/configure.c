@@ -934,16 +934,12 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 {
 	int r = DOMAP_FAIL;
 	struct config *conf;
-	int verbosity;
 
 	/*
 	 * last chance to quit before touching the devmaps
 	 */
 	if (mpp->action == ACT_DRY_RUN) {
-		conf = get_multipath_config();
-		verbosity = conf->verbosity;
-		put_multipath_config(conf);
-		print_multipath_topology(mpp, verbosity);
+		print_multipath_topology(mpp, libmp_verbosity);
 		return DOMAP_DRY;
 	}
 
@@ -1327,14 +1323,8 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 					       "queue_if_no_path");
 		}
 
-		if (!is_daemon && mpp->action != ACT_NOTHING) {
-			int verbosity;
-
-			conf = get_multipath_config();
-			verbosity = conf->verbosity;
-			put_multipath_config(conf);
-			print_multipath_topology(mpp, verbosity);
-		}
+		if (!is_daemon && mpp->action != ACT_NOTHING)
+			print_multipath_topology(mpp, libmp_verbosity);
 
 		if (mpp->action != ACT_REJECT) {
 			if (!vector_alloc_slot(newmp)) {
