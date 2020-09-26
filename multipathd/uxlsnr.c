@@ -41,14 +41,25 @@
 #include "cli.h"
 #include "uxlsnr.h"
 
-static struct timespec sleep_time = {5, 0};
-
 struct client {
 	struct list_head node;
 	int fd;
 };
 
-#define MIN_POLLS 1023
+/* The number of fds we poll on, other than individual client connections */
+#define POLLFDS_BASE 2
+#define POLLFD_CHUNK (4096 / sizeof(struct pollfd))
+/* Minimum mumber of pollfds to reserve for clients */
+#define MIN_POLLS (POLLFD_CHUNK - POLLFDS_BASE)
+/*
+ * Max number of client connections allowed
+ * During coldplug, there may be a large number of "multipath -u"
+ * processes connecting.
+ */
+#define MAX_CLIENTS (16384 - POLLFDS_BASE)
+
+/* Compile-time error if POLLFD_CHUNK is too small */
+static __attribute__((unused)) char ___a[-(MIN_POLLS <= 0)];
 
 static LIST_HEAD(clients);
 static pthread_mutex_t client_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -282,13 +293,13 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 	char *inbuf;
 	char *reply;
 	sigset_t mask;
-	int old_clients = MIN_POLLS;
+	int max_pfds = MIN_POLLS + POLLFDS_BASE;
 	/* conf->sequence_nr will be 1 when uxsock_listen is first called */
 	unsigned int sequence_nr = 0;
 	struct watch_descriptors wds = { .conf_wd = -1, .dir_wd = -1 };
 
 	condlog(3, "uxsock: startup listener");
-	polls = (struct pollfd *)MALLOC((MIN_POLLS + 2) * sizeof(struct pollfd));
+	polls = MALLOC(max_pfds * sizeof(*polls));
 	if (!polls) {
 		condlog(0, "uxsock: failed to allocate poll fds");
 		exit_daemon();
@@ -312,28 +323,33 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 		list_for_each_entry(c, &clients, node) {
 			num_clients++;
 		}
-		if (num_clients != old_clients) {
+		if (num_clients + POLLFDS_BASE > max_pfds) {
 			struct pollfd *new;
-			if (num_clients <= MIN_POLLS && old_clients > MIN_POLLS) {
-				new = REALLOC(polls, (2 + MIN_POLLS) *
-						sizeof(struct pollfd));
-			} else if (num_clients <= MIN_POLLS && old_clients <= MIN_POLLS) {
-				new = polls;
-			} else {
-				new = REALLOC(polls, (2 + num_clients) *
-						sizeof(struct pollfd));
-			}
-			if (!new) {
-				condlog(0, "%s: failed to realloc %d poll fds",
-					"uxsock", 2 + num_clients);
-				num_clients = old_clients;
-			} else {
-				old_clients = num_clients;
+			int n_new = max_pfds + POLLFD_CHUNK;
+
+			new = REALLOC(polls, n_new * sizeof(*polls));
+			if (new) {
+				max_pfds = n_new;
 				polls = new;
+			} else {
+				condlog(1, "%s: realloc failure, %d clients not served",
+					__func__,
+					num_clients + POLLFDS_BASE - max_pfds);
+				num_clients = max_pfds - POLLFDS_BASE;
 			}
 		}
-		polls[0].fd = ux_sock;
-		polls[0].events = POLLIN;
+		if (num_clients < MAX_CLIENTS) {
+			polls[0].fd = ux_sock;
+			polls[0].events = POLLIN;
+		} else {
+			/*
+			 * New clients can't connect, num_clients won't grow
+			 * to MAX_CLIENTS or higher
+			 */
+			condlog(1, "%s: max client connections reached, pausing polling",
+				__func__);
+			polls[0].fd = -1;
+		}
 
 		reset_watch(notify_fd, &wds, &sequence_nr);
 		if (notify_fd == -1 || (wds.conf_wd == -1 && wds.dir_wd == -1))
@@ -343,19 +359,19 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 		polls[1].events = POLLIN;
 
 		/* setup the clients */
-		i = 2;
+		i = POLLFDS_BASE;
 		list_for_each_entry(c, &clients, node) {
 			polls[i].fd = c->fd;
 			polls[i].events = POLLIN;
 			i++;
-			if (i >= 2 + num_clients)
+			if (i >= max_pfds)
 				break;
 		}
 		n_pfds = i;
 		pthread_cleanup_pop(1);
 
 		/* most of our life is spent in this call */
-		poll_count = ppoll(polls, n_pfds, &sleep_time, &mask);
+		poll_count = ppoll(polls, n_pfds, NULL, &mask);
 
 		handle_signals(false);
 		if (poll_count == -1) {
@@ -388,7 +404,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 		}
 
 		/* see if a client wants to speak to us */
-		for (i = 2; i < n_pfds; i++) {
+		for (i = POLLFDS_BASE; i < n_pfds; i++) {
 			if (polls[i].revents & POLLIN) {
 				struct timespec start_time;
 
