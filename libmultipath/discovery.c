@@ -375,11 +375,10 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 	while (tgtdev) {
 		value = udev_device_get_subsystem(tgtdev);
 		if (value && !strcmp(value, "usb")) {
-			pp->sg_id.proto_id = SCSI_PROTOCOL_UNSPEC;
+			pp->sg_id.proto_id = SCSI_PROTOCOL_USB;
 			tgtname = udev_device_get_sysname(tgtdev);
 			strlcpy(node, tgtname, NODE_NAME_SIZE);
-			condlog(3, "%s: skip USB device %s", pp->dev, node);
-			return 1;
+			return 0;
 		}
 		tgtdev = udev_device_get_parent(tgtdev);
 	}
@@ -2136,6 +2135,14 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 
 		if (rc != PATHINFO_OK)
 			return rc;
+
+		if (pp->bus == SYSFS_BUS_SCSI &&
+		    pp->sg_id.proto_id == SCSI_PROTOCOL_USB &&
+		    !conf->allow_usb_devices) {
+			condlog(3, "%s: skip USB device %s", pp->dev,
+				pp->tgt_node_name);
+			return PATHINFO_SKIPPED;
+		}
 	}
 
 	if (mask & DI_BLACKLIST && mask & DI_SYSFS) {

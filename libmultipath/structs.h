@@ -174,6 +174,7 @@ enum scsi_protocol {
 	SCSI_PROTOCOL_SAS = 6,
 	SCSI_PROTOCOL_ADT = 7,	/* Media Changers */
 	SCSI_PROTOCOL_ATA = 8,
+	SCSI_PROTOCOL_USB = 9,  /* USB Attached SCSI (UAS), and others */
 	SCSI_PROTOCOL_UNSPEC = 0xf, /* No specific protocol */
 };
 

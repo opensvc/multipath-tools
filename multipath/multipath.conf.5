@@ -643,6 +643,18 @@ The default is: in \fB/sys/block/sd<x>/device/timeout\fR
 .
 .
 .TP
+.B allow_usb_devices
+If set to
+.I no
+, all USB devices will be skipped during path discovery. If you intend to use
+multipath on USB attached devices, set this to \fIyes\fR.
+.RS
+.TP
+The default is: \fBno\fR
+.RE
+.
+.
+.TP
 .B flush_on_last_del
 If set to
 .I yes

@@ -684,6 +684,8 @@ snprint_path_protocol(char * buff, size_t len, const struct path * pp)
 			return snprintf(buff, len, "scsi:adt");
 		case SCSI_PROTOCOL_ATA:
 			return snprintf(buff, len, "scsi:ata");
+		case SCSI_PROTOCOL_USB:
+			return snprintf(buff, len, "scsi:usb");
 		case SCSI_PROTOCOL_UNSPEC:
 		default:
 			return snprintf(buff, len, "scsi:unspec");
