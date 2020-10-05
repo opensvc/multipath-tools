@@ -205,6 +205,11 @@ of outstanding I/O to the path.
 (Since 2.6.31 kernel) Choose the path for the next bunch of I/O based on the amount
 of outstanding I/O to the path and its relative throughput.
 .TP
+.I "historical-service-time 0"
+(Since 5.8 kernel) Choose the path for the next bunch of IOs based on the
+estimation of future service time based on the history of previous I/O submitted
+to each path.
+.TP
 The default is: \fBservice-time 0\fR
 .RE
 .
