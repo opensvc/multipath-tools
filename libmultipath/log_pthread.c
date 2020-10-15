@@ -17,31 +17,42 @@
 
 static pthread_t log_thr;
 
-static pthread_mutex_t logq_lock;
-static pthread_mutex_t logev_lock;
-static pthread_cond_t logev_cond;
+/* logev_lock must not be taken with logq_lock held */
+static pthread_mutex_t logq_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t logev_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t logev_cond = PTHREAD_COND_INITIALIZER;
 
 static int logq_running;
 static int log_messages_pending;
 
 void log_safe (int prio, const char * fmt, va_list ap)
 {
+	bool running;
+
 	if (prio > LOG_DEBUG)
 		prio = LOG_DEBUG;
 
-	if (log_thr == (pthread_t)0) {
-		vsyslog(prio, fmt, ap);
-		return;
-	}
-
-	pthread_mutex_lock(&logq_lock);
-	log_enqueue(prio, fmt, ap);
-	pthread_mutex_unlock(&logq_lock);
-
+	/*
+	 * logev_lock protects logq_running. By holding it, we avoid a race
+	 * with log_thread_stop() -> log_close(), which would free the logarea.
+	 */
 	pthread_mutex_lock(&logev_lock);
-	log_messages_pending = 1;
-	pthread_cond_signal(&logev_cond);
-	pthread_mutex_unlock(&logev_lock);
+	pthread_cleanup_push(cleanup_mutex, &logev_lock);
+	running = logq_running;
+
+	if (running) {
+		pthread_mutex_lock(&logq_lock);
+		pthread_cleanup_push(cleanup_mutex, &logq_lock);
+		log_enqueue(prio, fmt, ap);
+		pthread_cleanup_pop(1);
+
+		log_messages_pending = 1;
+		pthread_cond_signal(&logev_cond);
+	}
+	pthread_cleanup_pop(1);
+
+	if (!running)
+		vsyslog(prio, fmt, ap);
 }
 
 static void flush_logqueue (void)
@@ -103,9 +114,6 @@ void log_thread_start (pthread_attr_t *attr)
 	int running = 0;
 
 	logdbg(stderr,"enter log_thread_start\n");
-	pthread_mutex_init(&logq_lock, NULL);
-	pthread_mutex_init(&logev_lock, NULL);
-	pthread_cond_init(&logev_cond, NULL);
 
 	if (log_init("multipathd", 0)) {
 		fprintf(stderr,"can't initialize log buffer\n");
@@ -154,13 +162,9 @@ void log_thread_stop (void)
 	}
 	pthread_cleanup_pop(1);
 
-	flush_logqueue();
 	if (running)
 		pthread_join(log_thr, NULL);
 
-	pthread_mutex_destroy(&logq_lock);
-	pthread_mutex_destroy(&logev_lock);
-	pthread_cond_destroy(&logev_cond);
-
+	flush_logqueue();
 	log_close();
 }
