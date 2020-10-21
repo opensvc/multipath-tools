@@ -9,6 +9,7 @@ BUILDDIRS := \
 	libmultipath/checkers \
 	libmultipath/foreign \
 	libmpathpersist \
+	libmpathvalid \
 	multipath \
 	multipathd \
 	mpathpersist \
@@ -29,7 +30,7 @@ $(BUILDDIRS):
 	$(MAKE) -C $@
 
 libmultipath libdmmp: libmpathcmd
-libmpathpersist multipath multipathd: libmultipath
+libmpathpersist libmpathvalid multipath multipathd: libmultipath
 mpathpersist multipathd:  libmpathpersist
 
 libmultipath/checkers.install \
