@@ -13,7 +13,7 @@ CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathcmddir) \
 LIBDEPS += -L. -L$(mpathcmddir) -lmultipath -lmpathcmd -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
-	 alias directio valid devt
+	 alias directio valid devt mpathvalid
 HELPERS := test-lib.o test-log.o
 
 .SILENT: $(TESTS:%=%.o)
@@ -31,6 +31,7 @@ endif
 ifneq ($(DIO_TEST_DEV),)
 directio-test_FLAGS := -DDIO_TEST_DEV=\"$(DIO_TEST_DEV)\"
 endif
+mpathvalid-test_FLAGS := -I$(mpathvaliddir)
 
 # test-specific linker flags
 # XYZ-test_TESTDEPS: test libraries containing __wrap_xyz functions
@@ -56,6 +57,8 @@ alias-test_LIBDEPS := -lpthread -ldl
 valid-test_OBJDEPS := ../libmultipath/valid.o
 valid-test_LIBDEPS := -ludev -lpthread -ldl
 devt-test_LIBDEPS := -ludev
+mpathvalid-test_LIBDEPS := -ludev -lpthread -ldl
+mpathvalid-test_OBJDEPS := ../libmpathvalid/mpath_valid.o
 ifneq ($(DIO_TEST_DEV),)
 directio-test_LIBDEPS := -laio
 endif

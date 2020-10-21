@@ -66,6 +66,7 @@ libdir		= $(prefix)/$(LIB)/multipath
 unitdir		= $(prefix)/$(SYSTEMDPATH)/systemd/system
 mpathpersistdir	= $(TOPDIR)/libmpathpersist
 mpathcmddir	= $(TOPDIR)/libmpathcmd
+mpathvaliddir	= $(TOPDIR)/libmpathvalid
 thirdpartydir	= $(TOPDIR)/third-party
 libdmmpdir	= $(TOPDIR)/libdmmp
 nvmedir		= $(TOPDIR)/libmultipath/nvme
