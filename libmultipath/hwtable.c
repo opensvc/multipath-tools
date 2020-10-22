@@ -1279,6 +1279,18 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 	},
 	/*
+	 * MacroSAN Technologies
+	 */
+	{
+		/* MS family */
+		.vendor        = "MacroSAN",
+		.product       = "LU",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 30,
+	},
+	/*
 	 * EOL
 	 */
 	{
