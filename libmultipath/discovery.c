@@ -518,8 +518,10 @@ int sysfs_get_host_pci_name(const struct path *pp, char *pci_name)
 		 */
 		value = udev_device_get_sysname(parent);
 
-		if (!value)
+		if (!value) {
+			udev_device_unref(hostdev);
 			return 1;
+		}
 
 		strncpy(pci_name, value, SLOT_NAME_SIZE);
 		udev_device_unref(hostdev);
