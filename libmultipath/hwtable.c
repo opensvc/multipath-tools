@@ -745,26 +745,26 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = (300 / DEFAULT_CHECKINT),
 		.prio_name     = PRIO_ALUA,
 	},
-        /*
-         * Lenovo
-         */
-        {
-                /*
+	/*
+	 * Lenovo
+	 */
+	{
+		/*
 		 * DE Series
 		 *
 		 * Maintainer: NetApp RDAC team <ng-eseries-upstream-maintainers@netapp.com>
 		 */
-                .vendor        = "LENOVO",
-                .product       = "DE_Series",
-                .bl_product    = "Universal Xport",
-                .pgpolicy      = GROUP_BY_PRIO,
-                .checker_name  = RDAC,
-                .features      = "2 pg_init_retries 50",
-                .hwhandler     = "1 rdac",
-                .prio_name     = PRIO_RDAC,
-                .pgfailback    = -FAILBACK_IMMEDIATE,
-                .no_path_retry = 30,
-        },
+		.vendor        = "LENOVO",
+		.product       = "DE_Series",
+		.bl_product    = "Universal Xport",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.checker_name  = RDAC,
+		.features      = "2 pg_init_retries 50",
+		.hwhandler     = "1 rdac",
+		.prio_name     = PRIO_RDAC,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 30,
+	},
 	/*
 	 * NetApp
 	 */
