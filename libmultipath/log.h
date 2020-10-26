@@ -39,6 +39,5 @@ int log_enqueue (int prio, const char * fmt, va_list ap)
 int log_dequeue (void *);
 void log_syslog (void *);
 void dump_logmsg (void *);
-void free_logarea (void);
 
 #endif /* LOG_H */

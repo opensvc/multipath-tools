@@ -77,16 +77,23 @@ static int logarea_init (int size)
 
 int log_init(char *program_name, int size)
 {
+	int ret = 1;
+
 	logdbg(stderr,"enter log_init\n");
+
+	pthread_mutex_lock(&logq_lock);
+	pthread_cleanup_push(cleanup_mutex, &logq_lock);
+
 	openlog(program_name, 0, LOG_DAEMON);
+	if (!la)
+		ret = logarea_init(size);
 
-	if (logarea_init(size))
-		return 1;
+	pthread_cleanup_pop(1);
 
-	return 0;
+	return ret;
 }
 
-void free_logarea (void)
+static void free_logarea (void)
 {
 	FREE(la->start);
 	FREE(la->buff);
@@ -96,9 +103,14 @@ void free_logarea (void)
 
 void log_close (void)
 {
-	free_logarea();
+	pthread_mutex_lock(&logq_lock);
+	pthread_cleanup_push(cleanup_mutex, &logq_lock);
+
+	if (la)
+		free_logarea();
 	closelog();
 
+	pthread_cleanup_pop(1);
 	return;
 }
 
@@ -175,11 +187,12 @@ static int _log_enqueue(int prio, const char * fmt, va_list ap)
 
 int log_enqueue(int prio, const char *fmt, va_list ap)
 {
-	int ret;
+	int ret = 1;
 
 	pthread_mutex_lock(&logq_lock);
 	pthread_cleanup_push(cleanup_mutex, &logq_lock);
-	ret = _log_enqueue(prio, fmt, ap);
+	if (la)
+		ret = _log_enqueue(prio, fmt, ap);
 	pthread_cleanup_pop(1);
 	return ret;
 }
@@ -215,11 +228,12 @@ static int _log_dequeue(void *buff)
 
 int log_dequeue(void *buff)
 {
-	int ret;
+	int ret = 1;
 
 	pthread_mutex_lock(&logq_lock);
 	pthread_cleanup_push(cleanup_mutex, &logq_lock);
-	ret = _log_dequeue(buff);
+	if (la)
+		ret = _log_dequeue(buff);
 	pthread_cleanup_pop(1);
 	return ret;
 }
