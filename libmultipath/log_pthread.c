@@ -18,7 +18,6 @@
 static pthread_t log_thr;
 
 /* logev_lock must not be taken with logq_lock held */
-static pthread_mutex_t logq_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t logev_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t logev_cond = PTHREAD_COND_INITIALIZER;
 
@@ -41,10 +40,7 @@ void log_safe (int prio, const char * fmt, va_list ap)
 	running = logq_running;
 
 	if (running) {
-		pthread_mutex_lock(&logq_lock);
-		pthread_cleanup_push(cleanup_mutex, &logq_lock);
 		log_enqueue(prio, fmt, ap);
-		pthread_cleanup_pop(1);
 
 		log_messages_pending = 1;
 		pthread_cond_signal(&logev_cond);
@@ -60,9 +56,7 @@ static void flush_logqueue (void)
 	int empty;
 
 	do {
-		pthread_mutex_lock(&logq_lock);
 		empty = log_dequeue(la->buff);
-		pthread_mutex_unlock(&logq_lock);
 		if (!empty)
 			log_syslog(la->buff);
 	} while (empty == 0);
@@ -138,10 +132,7 @@ void log_thread_start (pthread_attr_t *attr)
 void log_thread_reset (void)
 {
 	logdbg(stderr,"resetting log\n");
-
-	pthread_mutex_lock(&logq_lock);
 	log_reset("multipathd");
-	pthread_mutex_unlock(&logq_lock);
 }
 
 void log_thread_stop (void)
