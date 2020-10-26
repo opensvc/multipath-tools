@@ -13,6 +13,7 @@
 #include "log_pthread.h"
 #include "log.h"
 #include "lock.h"
+#include "util.h"
 
 static pthread_t log_thr;
 
@@ -56,35 +57,52 @@ static void flush_logqueue (void)
 	} while (empty == 0);
 }
 
+static void cleanup_log_thread(__attribute((unused)) void *arg)
+{
+	logdbg(stderr, "log thread exiting");
+	pthread_mutex_lock(&logev_lock);
+	logq_running = 0;
+	pthread_mutex_unlock(&logev_lock);
+}
+
 static void * log_thread (__attribute__((unused)) void * et)
 {
 	int running;
 
 	pthread_mutex_lock(&logev_lock);
-	logq_running = 1;
+	running = logq_running;
+	if (!running)
+		logq_running = 1;
+	pthread_cond_signal(&logev_cond);
 	pthread_mutex_unlock(&logev_lock);
+	if (running)
+		/* already started */
+		return NULL;
+	pthread_cleanup_push(cleanup_log_thread, NULL);
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	logdbg(stderr,"enter log_thread\n");
 
 	while (1) {
 		pthread_mutex_lock(&logev_lock);
-		if (logq_running && !log_messages_pending)
+		pthread_cleanup_push(cleanup_mutex, &logev_lock);
+		while (!log_messages_pending)
+			/* this is a cancellation point */
 			pthread_cond_wait(&logev_cond, &logev_lock);
 		log_messages_pending = 0;
-		running = logq_running;
-		pthread_mutex_unlock(&logev_lock);
-		if (!running)
-			break;
+		pthread_cleanup_pop(1);
+
 		flush_logqueue();
 	}
+	pthread_cleanup_pop(1);
 	return NULL;
 }
 
 void log_thread_start (pthread_attr_t *attr)
 {
-	logdbg(stderr,"enter log_thread_start\n");
+	int running = 0;
 
+	logdbg(stderr,"enter log_thread_start\n");
 	pthread_mutex_init(&logq_lock, NULL);
 	pthread_mutex_init(&logev_lock, NULL);
 	pthread_cond_init(&logev_cond, NULL);
@@ -93,7 +111,15 @@ void log_thread_start (pthread_attr_t *attr)
 		fprintf(stderr,"can't initialize log buffer\n");
 		exit(1);
 	}
-	if (pthread_create(&log_thr, attr, log_thread, NULL)) {
+
+	pthread_mutex_lock(&logev_lock);
+	pthread_cleanup_push(cleanup_mutex, &logev_lock);
+	if (!pthread_create(&log_thr, attr, log_thread, NULL))
+		while (!(running = logq_running))
+			pthread_cond_wait(&logev_cond, &logev_lock);
+	pthread_cleanup_pop(1);
+
+	if (!running) {
 		fprintf(stderr,"can't start log thread\n");
 		exit(1);
 	}
@@ -112,23 +138,25 @@ void log_thread_reset (void)
 
 void log_thread_stop (void)
 {
+	int running;
+
 	if (!la)
 		return;
 
 	logdbg(stderr,"enter log_thread_stop\n");
 
 	pthread_mutex_lock(&logev_lock);
-	logq_running = 0;
-	pthread_cond_signal(&logev_cond);
-	pthread_mutex_unlock(&logev_lock);
-
-	pthread_mutex_lock(&logq_lock);
-	pthread_cancel(log_thr);
-	pthread_mutex_unlock(&logq_lock);
-	pthread_join(log_thr, NULL);
-	log_thr = (pthread_t)0;
+	pthread_cleanup_push(cleanup_mutex, &logev_lock);
+	running = logq_running;
+	if (running) {
+		pthread_cancel(log_thr);
+		pthread_cond_signal(&logev_cond);
+	}
+	pthread_cleanup_pop(1);
 
 	flush_logqueue();
+	if (running)
+		pthread_join(log_thr, NULL);
 
 	pthread_mutex_destroy(&logq_lock);
 	pthread_mutex_destroy(&logev_lock);
