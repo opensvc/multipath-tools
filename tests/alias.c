@@ -712,7 +712,7 @@ static void al_write_err(void **state)
 	will_return(__wrap_write, strlen(ln) - 1);
 	expect_value(__wrap_ftruncate, length, offset);
 	will_return(__wrap_ftruncate, 0);
-	expect_condlog(0, "Cannot write binding to bindings file : Success\n");
+	expect_condlog(0, "Cannot write binding to bindings file :");
 
 	alias = allocate_binding(0, "WWIDa", 1, "MPATH");
 	assert_ptr_equal(alias, NULL);
