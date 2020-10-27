@@ -55,6 +55,9 @@ struct scandir_result {
 };
 void free_scandir_result(struct scandir_result *);
 
+#ifndef __GLIBC_PREREQ
+#define __GLIBC_PREREQ(x, y) 0
+#endif
 /*
  * ffsll() is also available on glibc < 2.27 if _GNU_SOURCE is defined.
  * But relying on that would require that every program using this header file
