@@ -378,11 +378,13 @@ void set_max_fds(rlim_t max_fds)
 		if (setrlimit(RLIMIT_NOFILE, &fd_limit) < 0) {
 			condlog(0, "can't set open fds limit to "
 				"%lu/%lu : %s",
-				fd_limit.rlim_cur, fd_limit.rlim_max,
+				(unsigned long)fd_limit.rlim_cur,
+				(unsigned long)fd_limit.rlim_max,
 				strerror(errno));
 		} else {
 			condlog(3, "set open fds limit to %lu/%lu",
-				fd_limit.rlim_cur, fd_limit.rlim_max);
+				(unsigned long)fd_limit.rlim_cur,
+				(unsigned long)fd_limit.rlim_max);
 		}
 	}
 }

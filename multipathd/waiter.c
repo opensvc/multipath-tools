@@ -64,7 +64,7 @@ void stop_waiter_thread (struct multipath *mpp)
 		return;
 
 	condlog(3, "%s: stop event checker thread (%lu)", mpp->alias,
-		mpp->waiter);
+		(unsigned long)mpp->waiter);
 	thread = mpp->waiter;
 	mpp->waiter = (pthread_t)0;
 	pthread_cleanup_push(cleanup_lock, &waiter_lock);
