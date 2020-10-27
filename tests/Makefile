@@ -62,8 +62,8 @@ endif
 	$(CC) $(CFLAGS) $($*-test_FLAGS) -c -o $@ $<
 
 lib/libchecktur.so:
-	mkdir lib
-	ln -t lib ../libmultipath/{checkers,prioritizers,foreign}/*.so
+	mkdir -p lib
+	ln ../libmultipath/*/*.so lib
 
 %.out:	%-test lib/libchecktur.so
 	@echo == running $< ==
