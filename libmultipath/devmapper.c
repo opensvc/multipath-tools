@@ -119,6 +119,8 @@ dm_lib_prereq (void)
 	int v[3];
 #if defined(LIBDM_API_HOLD_CONTROL)
 	int minv[3] = {1, 2, 111};
+#elif defined(LIBDM_API_GET_ERRNO)
+	int minv[3] = {1, 2, 99};
 #elif defined(LIBDM_API_DEFERRED)
 	int minv[3] = {1, 2, 89};
 #elif defined(DM_SUBSYSTEM_UDEV_FLAG0)

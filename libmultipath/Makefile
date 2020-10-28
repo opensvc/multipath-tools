@@ -24,6 +24,10 @@ ifneq ($(call check_func,dm_task_no_flush,/usr/include/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_FLUSH -D_GNU_SOURCE
 endif
 
+ifneq ($(call check_func,dm_task_get_errno,/usr/include/libdevmapper.h),0)
+	CFLAGS += -DLIBDM_API_GET_ERRNO
+endif
+
 ifneq ($(call check_func,dm_task_set_cookie,/usr/include/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_COOKIE
 endif

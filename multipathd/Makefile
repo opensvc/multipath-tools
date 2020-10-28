@@ -1,5 +1,9 @@
 include ../Makefile.inc
 
+ifneq ($(call check_func,dm_task_get_errno,/usr/include/libdevmapper.h),0)
+	CFLAGS += -DLIBDM_API_GET_ERRNO
+endif
+
 #
 # debugging stuff
 #
