@@ -14,6 +14,7 @@ LIBDEPS += -L$(multipathdir) -L$(mpathcmddir) -lmultipath -lmpathcmd -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
 	 alias directio valid devt
+HELPERS := test-lib.o test-log.o
 
 .SILENT: $(TESTS:%=%.o)
 .PRECIOUS: $(TESTS:%=%-test)
@@ -74,7 +75,7 @@ lib/libchecktur.so:
 	@LD_LIBRARY_PATH=$(multipathdir):$(mpathcmddir) \
 		valgrind --leak-check=full --error-exitcode=128 ./$< >$@ 2>&1
 
-OBJS = $(TESTS:%=%.o) test-lib.o
+OBJS = $(TESTS:%=%.o) $(HELPERS)
 
 test_clean:
 	$(RM) $(TESTS:%=%.out) $(TESTS:%=%.vgr)
