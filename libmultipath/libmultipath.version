@@ -270,3 +270,8 @@ global:
 	dm_prereq;
 	skip_libmp_dm_init;
 } LIBMULTIPATH_4.1.0;
+
+LIBMULTIPATH_4.3.0 {
+global:
+	start_checker_thread;
+} LIBMULTIPATH_4.2.0;

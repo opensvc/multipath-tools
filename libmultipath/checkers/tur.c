@@ -15,7 +15,6 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <pthread.h>
-#include <urcu.h>
 #include <urcu/uatomic.h>
 
 #include "checkers.h"
@@ -55,6 +54,7 @@ struct tur_checker_context {
 	pthread_cond_t active;
 	int holders; /* uatomic access only */
 	int msgid;
+	struct checker_context ctx;
 };
 
 int libcheck_init (struct checker * c)
@@ -74,6 +74,7 @@ int libcheck_init (struct checker * c)
 	pthread_mutex_init(&ct->lock, NULL);
 	if (fstat(c->fd, &sb) == 0)
 		ct->devt = sb.st_rdev;
+	ct->ctx.cls = c->cls;
 	c->context = ct;
 
 	return 0;
@@ -204,7 +205,6 @@ static void cleanup_func(void *data)
 	holders = uatomic_sub_return(&ct->holders, 1);
 	if (!holders)
 		cleanup_context(ct);
-	rcu_unregister_thread();
 }
 
 /*
@@ -251,15 +251,15 @@ static void tur_deep_sleep(const struct tur_checker_context *ct)
 #define tur_deep_sleep(x) do {} while (0)
 #endif /* TUR_TEST_MAJOR */
 
-static void *tur_thread(void *ctx)
+void *libcheck_thread(struct checker_context *ctx)
 {
-	struct tur_checker_context *ct = ctx;
+	struct tur_checker_context *ct =
+		container_of(ctx, struct tur_checker_context, ctx);
 	int state, running;
 	short msgid;
 
 	/* This thread can be canceled, so setup clean up */
 	tur_thread_cleanup_push(ct);
-	rcu_register_thread();
 
 	condlog(4, "%d:%d : tur checker starting up", major(ct->devt),
 		minor(ct->devt));
@@ -394,7 +394,7 @@ int libcheck_check(struct checker * c)
 		uatomic_set(&ct->running, 1);
 		tur_set_async_timeout(c);
 		setup_thread_attr(&attr, 32 * 1024, 1);
-		r = pthread_create(&ct->thread, &attr, tur_thread, ct);
+		r = start_checker_thread(&ct->thread, &attr, &ct->ctx);
 		pthread_attr_destroy(&attr);
 		if (r) {
 			uatomic_sub(&ct->holders, 1);
