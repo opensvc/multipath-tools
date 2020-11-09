@@ -1139,7 +1139,7 @@ out:
  * FORCE_RELOAD_WEAK: existing maps are compared to the current conf and only
  * reloaded in DM if there's a difference. This is useful during startup.
  */
-int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
+int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 		    int force_reload, enum mpath_cmds cmd)
 {
 	int ret = CP_FAIL;
@@ -1151,6 +1151,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 	struct path * pp2;
 	vector curmp = vecs->mpvec;
 	vector pathvec = vecs->pathvec;
+	vector newmp;
 	struct config *conf;
 	int allow_queueing;
 	struct bitfield *size_mismatch_seen;
@@ -1170,6 +1171,15 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 	size_mismatch_seen = alloc_bitfield(VECTOR_SIZE(pathvec));
 	if (size_mismatch_seen == NULL)
 		return CP_FAIL;
+
+	if (mpvec)
+		newmp = mpvec;
+	else
+		newmp = vector_alloc();
+	if (!newmp) {
+		condlog(0, "can not allocate newmp");
+		goto out;
+	}
 
 	vector_foreach_slot (pathvec, pp1, k) {
 		int invalid;
@@ -1283,8 +1293,14 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 				goto out;
 			}
 		}
-		if (r == DOMAP_DRY)
+		if (r == DOMAP_DRY) {
+			if (!vector_alloc_slot(newmp)) {
+				remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
+				goto out;
+			}
+			vector_set_slot(newmp, mpp);
 			continue;
+		}
 
 		if (r == DOMAP_EXIST && mpp->action == ACT_NOTHING &&
 		    force_reload == FORCE_RELOAD_WEAK)
@@ -1320,22 +1336,22 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 			print_multipath_topology(mpp, verbosity);
 		}
 
-		if (newmp) {
-			if (mpp->action != ACT_REJECT) {
-				if (!vector_alloc_slot(newmp))
-					goto out;
-				vector_set_slot(newmp, mpp);
+		if (mpp->action != ACT_REJECT) {
+			if (!vector_alloc_slot(newmp)) {
+				remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
+				goto out;
 			}
-			else
-				remove_map(mpp, vecs->pathvec, vecs->mpvec,
-					   KEEP_VEC);
+			vector_set_slot(newmp, mpp);
 		}
+		else
+			remove_map(mpp, vecs->pathvec, vecs->mpvec,
+				   KEEP_VEC);
 	}
 	/*
 	 * Flush maps with only dead paths (ie not in sysfs)
 	 * Keep maps with only failed paths
 	 */
-	if (newmp) {
+	if (mpvec) {
 		vector_foreach_slot (newmp, mpp, i) {
 			char alias[WWID_SIZE];
 
@@ -1358,6 +1374,8 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 	ret = CP_OK;
 out:
 	free(size_mismatch_seen);
+	if (!mpvec)
+		free_multipathvec(newmp, KEEP_PATHS);
 	return ret;
 }
 
