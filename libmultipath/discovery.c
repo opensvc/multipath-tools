@@ -358,10 +358,17 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 	if (value) {
 		tgtdev = udev_device_get_parent(parent);
 		while (tgtdev) {
+			char c;
+
 			tgtname = udev_device_get_sysname(tgtdev);
-			if (tgtname && sscanf(tgtname, "end_device-%d:%d",
-				   &host, &tgtid) == 2)
-				break;
+			if (tgtname) {
+				if (sscanf(tgtname, "end_device-%d:%d:%d%c",
+					   &host, &channel, &tgtid, &c) == 3)
+					break;
+				if (sscanf(tgtname, "end_device-%d:%d%c",
+					   &host, &tgtid, &c) == 2)
+					break;
+			}
 			tgtdev = udev_device_get_parent(tgtdev);
 			tgtid = -1;
 		}
