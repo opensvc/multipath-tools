@@ -696,12 +696,11 @@ sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 	return err;
 }
 
-static void
-select_reload_action(struct multipath *mpp, const struct multipath *cmpp,
-		     const char *reason)
+static bool is_udev_ready(struct multipath *cmpp)
 {
 	struct udev_device *mpp_ud;
 	const char *env;
+	bool rc;
 
 	/*
 	 * MPATH_DEVICE_READY != 1 can mean two things:
@@ -713,14 +712,20 @@ select_reload_action(struct multipath *mpp, const struct multipath *cmpp,
 	 */
 
 	mpp_ud = get_udev_for_mpp(cmpp);
+	if (!mpp_ud)
+		return true;
 	env = udev_device_get_property_value(mpp_ud, "MPATH_DEVICE_READY");
-	if ((!env || strcmp(env, "1")) && count_active_paths(mpp) > 0)
-		mpp->force_udev_reload = 1;
+	rc = (env != NULL && !strcmp(env, "1"));
 	udev_device_unref(mpp_ud);
+	condlog(4, "%s: %s: \"%s\" -> %d\n", __func__, cmpp->alias, env, rc);
+	return rc;
+}
+
+static void
+select_reload_action(struct multipath *mpp, const char *reason)
+{
 	mpp->action = ACT_RELOAD;
-	condlog(3, "%s: set ACT_RELOAD (%s%s)", mpp->alias,
-		mpp->force_udev_reload ? "forced, " : "",
-		reason);
+	condlog(3, "%s: set ACT_RELOAD (%s)", mpp->alias, reason);
 }
 
 void select_action (struct multipath *mpp, const struct _vector *curmp,
@@ -789,10 +794,18 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 		return;
 	}
 
+	if (!is_udev_ready(cmpp) && count_active_paths(mpp) > 0) {
+		mpp->force_udev_reload = 1;
+		mpp->action = ACT_RELOAD;
+		condlog(3, "%s: set ACT_RELOAD (udev incomplete)",
+			mpp->alias);
+		return;
+	}
+
 	if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
 	    !!strstr(mpp->features, "queue_if_no_path") !=
 	    !!strstr(cmpp->features, "queue_if_no_path")) {
-		select_reload_action(mpp, cmpp, "no_path_retry change");
+		select_reload_action(mpp, "no_path_retry change");
 		return;
 	}
 	if ((mpp->retain_hwhandler != RETAIN_HWHANDLER_ON ||
@@ -800,7 +813,7 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 	    (strlen(cmpp->hwhandler) != strlen(mpp->hwhandler) ||
 	     strncmp(cmpp->hwhandler, mpp->hwhandler,
 		    strlen(mpp->hwhandler)))) {
-		select_reload_action(mpp, cmpp, "hwhandler change");
+		select_reload_action(mpp, "hwhandler change");
 		return;
 	}
 
@@ -808,7 +821,7 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 	    !!strstr(mpp->features, "retain_attached_hw_handler") !=
 	    !!strstr(cmpp->features, "retain_attached_hw_handler") &&
 	    get_linux_version_code() < KERNEL_VERSION(4, 3, 0)) {
-		select_reload_action(mpp, cmpp, "retain_hwhandler change");
+		select_reload_action(mpp, "retain_hwhandler change");
 		return;
 	}
 
@@ -820,7 +833,7 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 		remove_feature(&cmpp_feat, "queue_if_no_path");
 		remove_feature(&cmpp_feat, "retain_attached_hw_handler");
 		if (strncmp(mpp_feat, cmpp_feat, PARAMS_SIZE)) {
-			select_reload_action(mpp, cmpp, "features change");
+			select_reload_action(mpp, "features change");
 			FREE(cmpp_feat);
 			FREE(mpp_feat);
 			return;
@@ -831,19 +844,19 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 
 	if (!cmpp->selector || strncmp(cmpp->selector, mpp->selector,
 		    strlen(mpp->selector))) {
-		select_reload_action(mpp, cmpp, "selector change");
+		select_reload_action(mpp, "selector change");
 		return;
 	}
 	if (cmpp->minio != mpp->minio) {
-		select_reload_action(mpp, cmpp, "minio change");
+		select_reload_action(mpp, "minio change");
 		return;
 	}
 	if (!cmpp->pg || VECTOR_SIZE(cmpp->pg) != VECTOR_SIZE(mpp->pg)) {
-		select_reload_action(mpp, cmpp, "path group number change");
+		select_reload_action(mpp, "path group number change");
 		return;
 	}
 	if (pgcmp(mpp, cmpp)) {
-		select_reload_action(mpp, cmpp, "path group topology change");
+		select_reload_action(mpp, "path group topology change");
 		return;
 	}
 	if (cmpp->nextpg != mpp->bestpg) {
