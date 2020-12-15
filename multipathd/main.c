@@ -2706,9 +2706,6 @@ reconfigure (struct vectors * vecs)
 	delete_all_foreign();
 
 	reset_checker_classes();
-	/* Re-read any timezone changes */
-	tzset();
-
 	if (bindings_read_only)
 		conf->bindings_read_only = bindings_read_only;
 	check_alias_settings(conf);

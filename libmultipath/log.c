@@ -120,7 +120,6 @@ void log_reset (char *program_name)
 	pthread_cleanup_push(cleanup_mutex, &logq_lock);
 
 	closelog();
-	tzset();
 	openlog(program_name, 0, LOG_DAEMON);
 
 	pthread_cleanup_pop(1);

@@ -14,6 +14,8 @@
 #include "config.h"
 #include "defaults.h"
 #include "debug.h"
+#include "time-util.h"
+#include "util.h"
 
 int logsink;
 int libmp_verbosity = DEFAULT_VERBOSITY;
@@ -25,13 +27,13 @@ void dlog(int prio, const char * fmt, ...)
 	va_start(ap, fmt);
 	if (logsink != LOGSINK_SYSLOG) {
 		if (logsink == LOGSINK_STDERR_WITH_TIME) {
-			time_t t = time(NULL);
-			struct tm *tb = localtime(&t);
-			char buff[16];
+			struct timespec ts;
+			char buff[32];
 
-			strftime(buff, sizeof(buff),
-				 "%b %d %H:%M:%S", tb);
-			buff[sizeof(buff)-1] = '\0';
+			get_monotonic_time(&ts);
+			safe_sprintf(buff, "%ld.%06ld",
+				     (long)ts.tv_sec,
+				     ts.tv_nsec/1000);
 			fprintf(stderr, "%s | ", buff);
 		}
 		vfprintf(stderr, fmt, ap);
