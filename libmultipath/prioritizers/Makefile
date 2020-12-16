@@ -4,6 +4,8 @@
 include ../../Makefile.inc
 
 CFLAGS += $(LIB_CFLAGS) -I..
+LDFLAGS += -L..
+LIBDEPS = -lmultipath -lm -lpthread -lrt
 
 # If you add or remove a prioritizer also update multipath/multipath.conf.5
 LIBS = \
@@ -28,11 +30,8 @@ endif
 
 all: $(LIBS)
 
-libpriopath_latency.so: path_latency.o
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ -lm
-
 libprio%.so: %.o
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ $(LIBDEPS)
 
 install: $(LIBS)
 	$(INSTALL_PROGRAM) -m 755 libprio*.so $(DESTDIR)$(libdir)

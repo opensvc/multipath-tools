@@ -6,17 +6,17 @@ LIBS = $(DEVLIB).$(SONAME)
 VERSION_SCRIPT := libmpathpersist.version
 
 CFLAGS += $(LIB_CFLAGS) -I$(multipathdir) -I$(mpathpersistdir) -I$(mpathcmddir)
+LDFLAGS += -L$(multipathdir) -L$(mpathcmddir)
 
-LIBDEPS += -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath \
-	   -L$(mpathcmddir) -lmpathcmd
+LIBDEPS += -lmultipath -lmpathcmd -ldevmapper -lpthread -ldl
 
 OBJS = mpath_persist.o mpath_updatepr.o mpath_pr_ioctl.o
 
 all: $(DEVLIB) man
 
 $(LIBS): $(OBJS) $(VERSION_SCRIPT)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) $(LIBDEPS) -Wl,-soname=$@ \
-		-Wl,--version-script=$(VERSION_SCRIPT) -o $@ $(OBJS)
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
+		-Wl,--version-script=$(VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
 
 $(DEVLIB): $(LIBS)
 	$(LN) $(LIBS) $@

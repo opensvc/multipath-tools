@@ -31,6 +31,7 @@ $(BUILDDIRS):
 
 libmultipath libdmmp: libmpathcmd
 libmpathpersist libmpathvalid multipath multipathd: libmultipath
+libmultipath/prioritizers libmultipath/checkers libmultipath/foreign: libmultipath
 mpathpersist multipathd:  libmpathpersist
 
 libmultipath/checkers.install \
