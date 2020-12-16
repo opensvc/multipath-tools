@@ -1192,6 +1192,14 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 		.no_path_retry = 30,
 	},
+		/* Vexata */
+	{
+		/* VX */
+		.vendor        = "Vexata",
+		.product       = "VX",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 30,
+	},
 	/*
 	 * Promise Technology
 	 */
