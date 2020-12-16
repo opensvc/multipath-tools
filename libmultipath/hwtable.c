@@ -1113,8 +1113,9 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 	},
 	/*
-	 * Imation/Nexsan
+	 * StorCentric
 	 */
+		/* Nexsan */
 	{
 		/* E-Series */
 		.vendor        = "NEXSAN",
@@ -1143,9 +1144,7 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.no_path_retry = 30,
 	},
-	/*
-	 * Violin Systems
-	 */
+		/* Violin Systems */
 	{
 		/* 3000 / 6000 Series */
 		.vendor        = "VIOLIN",
