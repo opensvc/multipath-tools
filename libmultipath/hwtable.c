@@ -819,7 +819,7 @@ static struct hwentry default_hw[] = {
 		 *
 		 * The hwtable is searched backwards, so place this after "Generic NVMe"
 		 */
-		.vendor	       = "NVME",
+		.vendor        = "NVME",
 		.product       = "^NetApp ONTAP Controller",
 		.pgpolicy      = MULTIBUS,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
