@@ -219,6 +219,23 @@ enum vpd_vendor_ids {
 	VPD_VP_ARRAY_SIZE, /* This must remain the last entry */
 };
 
+/*
+ * Multipath treats 0 as undefined for optional config parameters.
+ * Use this for cases where 0 is a valid option for systems multipath
+ * is communicating with
+ */
+enum undefined_off_zero {
+	UOZ_UNDEF = 0,
+	UOZ_OFF = -1,
+	UOZ_ZERO = -2,
+};
+
+enum fast_io_fail_states {
+	MP_FAST_IO_FAIL_UNSET = UOZ_UNDEF,
+	MP_FAST_IO_FAIL_OFF = UOZ_OFF,
+	MP_FAST_IO_FAIL_ZERO = UOZ_ZERO,
+};
+
 struct vpd_vendor_page {
 	int pg;
 	const char *name;

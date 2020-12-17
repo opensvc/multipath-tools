@@ -754,7 +754,7 @@ int select_fast_io_fail(struct config *conf, struct multipath *mp)
 	mp_set_conf(fast_io_fail);
 	mp_set_default(fast_io_fail, DEFAULT_FAST_IO_FAIL);
 out:
-	print_fast_io_fail(buff, 12, mp->fast_io_fail);
+	print_undef_off_zero(buff, 12, mp->fast_io_fail);
 	condlog(3, "%s: fast_io_fail_tmo = %s %s", mp->alias, buff, origin);
 	return 0;
 }

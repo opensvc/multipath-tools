@@ -10,14 +10,6 @@
 #define ORIGIN_DEFAULT 0
 #define ORIGIN_CONFIG  1
 
-/*
- * In kernel, fast_io_fail == 0 means immediate failure on rport delete.
- * OTOH '0' means not-configured in various places in multipath-tools.
- */
-#define MP_FAST_IO_FAIL_UNSET (0)
-#define MP_FAST_IO_FAIL_OFF (-1)
-#define MP_FAST_IO_FAIL_ZERO (-2)
-
 enum devtypes {
 	DEV_NONE,
 	DEV_DEVT,

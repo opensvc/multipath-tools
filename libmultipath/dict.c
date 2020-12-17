@@ -822,7 +822,7 @@ declare_mp_attr_handler(gid, set_gid)
 declare_mp_attr_snprint(gid, print_gid)
 
 static int
-set_fast_io_fail(vector strvec, void *ptr)
+set_undef_off_zero(vector strvec, void *ptr)
 {
 	char * buff;
 	int *int_ptr = (int *)ptr;
@@ -832,36 +832,36 @@ set_fast_io_fail(vector strvec, void *ptr)
 		return 1;
 
 	if (strcmp(buff, "off") == 0)
-		*int_ptr = MP_FAST_IO_FAIL_OFF;
+		*int_ptr = UOZ_OFF;
 	else if (sscanf(buff, "%d", int_ptr) != 1 ||
-		 *int_ptr < MP_FAST_IO_FAIL_ZERO)
-		*int_ptr = MP_FAST_IO_FAIL_UNSET;
+		 *int_ptr < UOZ_ZERO)
+		*int_ptr = UOZ_UNDEF;
 	else if (*int_ptr == 0)
-		*int_ptr = MP_FAST_IO_FAIL_ZERO;
+		*int_ptr = UOZ_ZERO;
 
 	FREE(buff);
 	return 0;
 }
 
 int
-print_fast_io_fail(char * buff, int len, long v)
+print_undef_off_zero(char * buff, int len, long v)
 {
-	if (v == MP_FAST_IO_FAIL_UNSET)
+	if (v == UOZ_UNDEF)
 		return 0;
-	if (v == MP_FAST_IO_FAIL_OFF)
+	if (v == UOZ_OFF)
 		return snprintf(buff, len, "\"off\"");
-	if (v == MP_FAST_IO_FAIL_ZERO)
+	if (v == UOZ_ZERO)
 		return snprintf(buff, len, "0");
 	return snprintf(buff, len, "%ld", v);
 }
 
-declare_def_handler(fast_io_fail, set_fast_io_fail)
-declare_def_snprint_defint(fast_io_fail, print_fast_io_fail,
+declare_def_handler(fast_io_fail, set_undef_off_zero)
+declare_def_snprint_defint(fast_io_fail, print_undef_off_zero,
 			   DEFAULT_FAST_IO_FAIL)
-declare_ovr_handler(fast_io_fail, set_fast_io_fail)
-declare_ovr_snprint(fast_io_fail, print_fast_io_fail)
-declare_hw_handler(fast_io_fail, set_fast_io_fail)
-declare_hw_snprint(fast_io_fail, print_fast_io_fail)
+declare_ovr_handler(fast_io_fail, set_undef_off_zero)
+declare_ovr_snprint(fast_io_fail, print_undef_off_zero)
+declare_hw_handler(fast_io_fail, set_undef_off_zero)
+declare_hw_snprint(fast_io_fail, print_undef_off_zero)
 
 static int
 set_dev_loss(vector strvec, void *ptr)
