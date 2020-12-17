@@ -368,6 +368,7 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 	select_gid(conf, mpp);
 	select_fast_io_fail(conf, mpp);
 	select_dev_loss(conf, mpp);
+	select_eh_deadline(conf, mpp);
 	select_reservation_key(conf, mpp);
 	select_deferred_remove(conf, mpp);
 	select_marginal_path_err_sample_time(conf, mpp);

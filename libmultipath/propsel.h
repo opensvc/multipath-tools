@@ -17,6 +17,7 @@ int select_uid(struct config *conf, struct multipath *mp);
 int select_gid(struct config *conf, struct multipath *mp);
 int select_fast_io_fail(struct config *conf, struct multipath *mp);
 int select_dev_loss(struct config *conf, struct multipath *mp);
+int select_eh_deadline(struct config *conf, struct multipath *mp);
 int select_reservation_key(struct config *conf, struct multipath *mp);
 int select_retain_hwhandler (struct config *conf, struct multipath * mp);
 int select_detect_prio(struct config *conf, struct path * pp);

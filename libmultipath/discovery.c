@@ -587,6 +587,42 @@ sysfs_get_asymmetric_access_state(struct path *pp, char *buff, int buflen)
 	return !!preferred;
 }
 
+static int
+sysfs_set_eh_deadline(struct multipath *mpp, struct path *pp)
+{
+	struct udev_device *hostdev;
+	char host_name[HOST_NAME_LEN], value[16];
+	int ret, len;
+
+	if (mpp->eh_deadline == EH_DEADLINE_UNSET)
+		return 0;
+
+	sprintf(host_name, "host%d", pp->sg_id.host_no);
+	hostdev = udev_device_new_from_subsystem_sysname(udev,
+			"scsi_host", host_name);
+	if (!hostdev)
+		return 1;
+
+	if (mpp->eh_deadline == EH_DEADLINE_OFF)
+		len = sprintf(value, "off");
+	else if (mpp->eh_deadline == EH_DEADLINE_ZERO)
+		len = sprintf(value, "0");
+	else
+		len = sprintf(value, "%d", mpp->eh_deadline);
+
+	ret = sysfs_attr_set_value(hostdev, "eh_deadline",
+				   value, len + 1);
+	/*
+	 * not all scsi drivers support setting eh_deadline, so failing
+	 * is totally reasonable
+	 */
+	if (ret <= 0)
+		condlog(3, "%s: failed to set eh_deadline to %s, error %d", udev_device_get_sysname(hostdev), value, -ret);
+
+	udev_device_unref(hostdev);
+	return (ret <= 0);
+}
+
 static void
 sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 {
@@ -595,6 +631,10 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 	char rport_id[32];
 	unsigned int tmo;
 	int ret;
+
+	if (mpp->dev_loss == DEV_LOSS_TMO_UNSET &&
+	    mpp->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
+		return;
 
 	sprintf(rport_id, "rport-%d:%d-%d",
 		pp->sg_id.host_no, pp->sg_id.channel, pp->sg_id.transport_id);
@@ -703,6 +743,11 @@ sysfs_set_session_tmo(struct multipath *mpp, struct path *pp)
 	char session_id[64];
 	char value[11];
 
+	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET)
+		condlog(3, "%s: ignoring dev_loss_tmo on iSCSI", pp->dev);
+	if (mpp->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
+		return;
+
 	sprintf(session_id, "session%d", pp->sg_id.transport_id);
 	session_dev = udev_device_new_from_subsystem_sysname(udev,
 				"iscsi_session", session_id);
@@ -714,9 +759,6 @@ sysfs_set_session_tmo(struct multipath *mpp, struct path *pp)
 	condlog(4, "target%d:%d:%d -> %s", pp->sg_id.host_no,
 		pp->sg_id.channel, pp->sg_id.scsi_id, session_id);
 
-	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET) {
-		condlog(3, "%s: ignoring dev_loss_tmo on iSCSI", pp->dev);
-	}
 	if (mpp->fast_io_fail != MP_FAST_IO_FAIL_UNSET) {
 		if (mpp->fast_io_fail == MP_FAST_IO_FAIL_OFF) {
 			condlog(3, "%s: can't switch off fast_io_fail_tmo "
@@ -744,6 +786,8 @@ sysfs_set_nexus_loss_tmo(struct multipath *mpp, struct path *pp)
 	char end_dev_id[64];
 	char value[11];
 
+	if (mpp->dev_loss == DEV_LOSS_TMO_UNSET)
+		return;
 	sprintf(end_dev_id, "end_device-%d:%d",
 		pp->sg_id.host_no, pp->sg_id.transport_id);
 	sas_dev = udev_device_new_from_subsystem_sysname(udev,
@@ -801,7 +845,8 @@ sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint)
 		mpp->fast_io_fail = MP_FAST_IO_FAIL_OFF;
 	}
 	if (mpp->dev_loss == DEV_LOSS_TMO_UNSET &&
-	    mpp->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
+	    mpp->fast_io_fail == MP_FAST_IO_FAIL_UNSET &&
+	    mpp->eh_deadline == EH_DEADLINE_UNSET)
 		return 0;
 
 	vector_foreach_slot(mpp->paths, pp, i) {
@@ -814,17 +859,18 @@ sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint)
 		switch (pp->sg_id.proto_id) {
 		case SCSI_PROTOCOL_FCP:
 			sysfs_set_rport_tmo(mpp, pp);
-			continue;
+			break;
 		case SCSI_PROTOCOL_ISCSI:
 			sysfs_set_session_tmo(mpp, pp);
-			continue;
+			break;
 		case SCSI_PROTOCOL_SAS:
 			sysfs_set_nexus_loss_tmo(mpp, pp);
-			continue;
+			break;
 		default:
 			if (!err_path)
 				err_path = pp;
 		}
+		sysfs_set_eh_deadline(mpp, pp);
 	}
 
 	if (err_path) {

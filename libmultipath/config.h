@@ -63,6 +63,7 @@ struct hwentry {
 	int flush_on_last_del;
 	int fast_io_fail;
 	unsigned int dev_loss;
+	int eh_deadline;
 	int user_friendly_names;
 	int retain_hwhandler;
 	int detect_prio;
@@ -148,6 +149,7 @@ struct config {
 	int attribute_flags;
 	int fast_io_fail;
 	unsigned int dev_loss;
+	int eh_deadline;
 	int log_checker_err;
 	int allow_queueing;
 	int allow_usb_devices;

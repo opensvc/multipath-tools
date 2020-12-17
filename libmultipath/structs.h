@@ -236,6 +236,12 @@ enum fast_io_fail_states {
 	MP_FAST_IO_FAIL_ZERO = UOZ_ZERO,
 };
 
+enum eh_deadline_states {
+	EH_DEADLINE_UNSET = UOZ_UNDEF,
+	EH_DEADLINE_OFF = UOZ_OFF,
+	EH_DEADLINE_ZERO = UOZ_ZERO,
+};
+
 struct vpd_vendor_page {
 	int pg;
 	const char *name;
@@ -356,6 +362,7 @@ struct multipath {
 	int ghost_delay;
 	int ghost_delay_tick;
 	unsigned int dev_loss;
+	int eh_deadline;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;

@@ -775,6 +775,23 @@ out:
 	return 0;
 }
 
+int select_eh_deadline(struct config *conf, struct multipath *mp)
+{
+	const char *origin;
+	char buff[12];
+
+	mp_set_ovr(eh_deadline);
+	mp_set_hwe(eh_deadline);
+	mp_set_conf(eh_deadline);
+	mp->eh_deadline = EH_DEADLINE_UNSET;
+	/* not changing sysfs in default cause, so don't print anything */
+	return 0;
+out:
+	print_undef_off_zero(buff, 12, mp->eh_deadline);
+	condlog(3, "%s: eh_deadline = %s %s", mp->alias, buff, origin);
+	return 0;
+}
+
 int select_flush_on_last_del(struct config *conf, struct multipath *mp)
 {
 	const char *origin;

@@ -899,6 +899,13 @@ declare_ovr_snprint(dev_loss, print_dev_loss)
 declare_hw_handler(dev_loss, set_dev_loss)
 declare_hw_snprint(dev_loss, print_dev_loss)
 
+declare_def_handler(eh_deadline, set_undef_off_zero)
+declare_def_snprint(eh_deadline, print_undef_off_zero)
+declare_ovr_handler(eh_deadline, set_undef_off_zero)
+declare_ovr_snprint(eh_deadline, print_undef_off_zero)
+declare_hw_handler(eh_deadline, set_undef_off_zero)
+declare_hw_snprint(eh_deadline, print_undef_off_zero)
+
 static int
 set_pgpolicy(vector strvec, void *ptr)
 {
@@ -1771,6 +1778,7 @@ init_keywords(vector keywords)
 	install_keyword("gid", &def_gid_handler, &snprint_def_gid);
 	install_keyword("fast_io_fail_tmo", &def_fast_io_fail_handler, &snprint_def_fast_io_fail);
 	install_keyword("dev_loss_tmo", &def_dev_loss_handler, &snprint_def_dev_loss);
+	install_keyword("eh_deadline", &def_eh_deadline_handler, &snprint_def_eh_deadline);
 	install_keyword("bindings_file", &def_bindings_file_handler, &snprint_def_bindings_file);
 	install_keyword("wwids_file", &def_wwids_file_handler, &snprint_def_wwids_file);
 	install_keyword("prkeys_file", &def_prkeys_file_handler, &snprint_def_prkeys_file);
@@ -1880,6 +1888,7 @@ init_keywords(vector keywords)
 	install_keyword("flush_on_last_del", &hw_flush_on_last_del_handler, &snprint_hw_flush_on_last_del);
 	install_keyword("fast_io_fail_tmo", &hw_fast_io_fail_handler, &snprint_hw_fast_io_fail);
 	install_keyword("dev_loss_tmo", &hw_dev_loss_handler, &snprint_hw_dev_loss);
+	install_keyword("eh_deadline", &hw_eh_deadline_handler, &snprint_hw_eh_deadline);
 	install_keyword("user_friendly_names", &hw_user_friendly_names_handler, &snprint_hw_user_friendly_names);
 	install_keyword("retain_attached_hw_handler", &hw_retain_hwhandler_handler, &snprint_hw_retain_hwhandler);
 	install_keyword("detect_prio", &hw_detect_prio_handler, &snprint_hw_detect_prio);
@@ -1920,6 +1929,7 @@ init_keywords(vector keywords)
 	install_keyword("flush_on_last_del", &ovr_flush_on_last_del_handler, &snprint_ovr_flush_on_last_del);
 	install_keyword("fast_io_fail_tmo", &ovr_fast_io_fail_handler, &snprint_ovr_fast_io_fail);
 	install_keyword("dev_loss_tmo", &ovr_dev_loss_handler, &snprint_ovr_dev_loss);
+	install_keyword("eh_deadline", &ovr_eh_deadline_handler, &snprint_ovr_eh_deadline);
 	install_keyword("user_friendly_names", &ovr_user_friendly_names_handler, &snprint_ovr_user_friendly_names);
 	install_keyword("retain_attached_hw_handler", &ovr_retain_hwhandler_handler, &snprint_ovr_retain_hwhandler);
 	install_keyword("detect_prio", &ovr_detect_prio_handler, &snprint_ovr_detect_prio);
