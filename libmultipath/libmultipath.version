@@ -275,3 +275,8 @@ LIBMULTIPATH_4.3.0 {
 global:
 	start_checker_thread;
 } LIBMULTIPATH_4.2.0;
+
+LIBMULTIPATH_4.4.0 {
+global:
+	get_next_string;
+} LIBMULTIPATH_4.3.0;
