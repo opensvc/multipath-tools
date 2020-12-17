@@ -496,13 +496,15 @@ check_rdac(struct path * pp)
 {
 	int len;
 	char buff[44];
-	const char *checker_name;
+	const char *checker_name = NULL;
 
 	if (pp->bus != SYSFS_BUS_SCSI)
 		return 0;
-	/* Avoid ioctl if this is likely not an RDAC array */
-	if (__do_set_from_hwe(checker_name, pp, checker_name) &&
-	    strcmp(checker_name, RDAC))
+	/* Avoid checking 0xc9 if this is likely not an RDAC array */
+	if (!__do_set_from_hwe(checker_name, pp, checker_name) &&
+	    !is_vpd_page_supported(pp->fd, 0xC9))
+		return 0;
+	if (checker_name && strcmp(checker_name, RDAC))
 		return 0;
 	len = get_vpd_sgio(pp->fd, 0xC9, 0, buff, 44);
 	if (len <= 0)

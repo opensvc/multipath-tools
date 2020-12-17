@@ -56,6 +56,7 @@ int sysfs_get_asymmetric_access_state(struct path *pp,
 				      char *buff, int buflen);
 int get_uid(struct path * pp, int path_state, struct udev_device *udev,
 	    int allow_fallback);
+bool is_vpd_page_supported(int fd, int pg);
 
 /*
  * discovery bitmask
