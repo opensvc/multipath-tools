@@ -5,6 +5,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: mpath
+        run: sudo modprobe dm_multipath
+      - name: zram
+        run: sudo modprobe zram num_devices=0
+      - name: zram-device
+        run: echo ZRAM=$(sudo cat /sys/class/zram-control/hot_add) >> $GITHUB_ENV
+      - name: set-zram-size
+        run: echo 1G | sudo tee /sys/block/zram$ZRAM/disksize
       - name: dependencies
         run: >
           sudo apt-get install --yes gcc
@@ -15,3 +23,7 @@ jobs:
         run: make -O -j$(grep -c ^processor /proc/cpuinfo)
       - name: test
         run: make -O -j$(grep -c ^processor /proc/cpuinfo) test
+      - name: clean-nonroot-artifacts
+        run: rm -f tests/dmevents.out tests/directio.out
+      - name: root-test
+        run: sudo make DIO_TEST_DEV=/dev/zram$ZRAM test
