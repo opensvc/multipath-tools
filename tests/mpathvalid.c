@@ -381,6 +381,7 @@ static void test_mpathvalid_is_path_good2(void **state)
 	assert_int_equal(mpathvalid_is_path(test_dev, MPATH_DEFAULT, &wwid,
 					    wwids, 4), MPATH_IS_VALID);
 	assert_string_equal(wwid, TEST_WWID);
+	free(wwid);
 }
 
 static void test_mpathvalid_is_path_good3(void **state)
@@ -395,6 +396,7 @@ static void test_mpathvalid_is_path_good3(void **state)
 	assert_int_equal(mpathvalid_is_path(test_dev, MPATH_SMART, &wwid,
 					    wwids, 4), MPATH_IS_VALID);
 	assert_string_equal(wwid, TEST_WWID);
+	free(wwid);
 }
 
 /* mabybe valid with no matching paths */
@@ -410,6 +412,7 @@ static void test_mpathvalid_is_path_good4(void **state)
 	assert_int_equal(mpathvalid_is_path(test_dev, MPATH_DEFAULT, &wwid,
 					    wwids, 4), MPATH_IS_MAYBE_VALID);
 	assert_string_equal(wwid, TEST_WWID);
+	free(wwid);
 }
 
 /* maybe valid with matching paths */
@@ -425,6 +428,7 @@ static void test_mpathvalid_is_path_good5(void **state)
 	assert_int_equal(mpathvalid_is_path(test_dev, MPATH_DEFAULT, &wwid,
 					    wwids, 4), MPATH_IS_VALID);
 	assert_string_equal(wwid, TEST_WWID);
+	free(wwid);
 }
 
 #define setup_test(name) \
