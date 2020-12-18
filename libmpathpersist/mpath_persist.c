@@ -290,9 +290,10 @@ int __mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 
 	memcpy(&prkey, paramp->sa_key, 8);
 	if (mpp->prkey_source == PRKEY_SOURCE_FILE && prkey &&
-	    ((!get_be64(mpp->reservation_key) &&
-	      rq_servact == MPATH_PROUT_REG_SA) ||
-	     rq_servact == MPATH_PROUT_REG_IGN_SA)) {
+	    (rq_servact == MPATH_PROUT_REG_IGN_SA ||
+	     (rq_servact == MPATH_PROUT_REG_SA &&
+	      (!get_be64(mpp->reservation_key) ||
+	       memcmp(paramp->key, &mpp->reservation_key, 8) == 0)))) {
 		memcpy(&mpp->reservation_key, paramp->sa_key, 8);
 		if (update_prkey_flags(alias, get_be64(mpp->reservation_key),
 				       paramp->sa_flags)) {
