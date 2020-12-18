@@ -76,7 +76,7 @@ lib/libchecktur.so:
 
 %.vgr:  %-test lib/libchecktur.so
 	@echo == running valgrind for $< ==
-	@LD_LIBRARY_PATH=$(multipathdir):$(mpathcmddir) \
+	@LD_LIBRARY_PATH=.:$(mpathcmddir) \
 		valgrind --leak-check=full --error-exitcode=128 ./$< >$@ 2>&1
 
 OBJS = $(TESTS:%=%.o) $(HELPERS)
