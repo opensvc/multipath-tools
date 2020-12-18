@@ -125,6 +125,7 @@ void log_reset (char *program_name)
 	pthread_cleanup_pop(1);
 }
 
+__attribute__((format(printf, 2, 0)))
 static int _log_enqueue(int prio, const char * fmt, va_list ap)
 {
 	int len, fwd;
