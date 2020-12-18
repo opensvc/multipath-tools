@@ -509,6 +509,13 @@ void merge_mptable(vector mptable)
 	int i, j;
 
 	vector_foreach_slot(mptable, mp1, i) {
+		/* drop invalid multipath configs */
+		if (!mp1->wwid) {
+			condlog(0, "multipaths config section missing wwid");
+			vector_del_slot(mptable, i--);
+			free_mpe(mp1);
+			continue;
+		}
 		j = i + 1;
 		vector_foreach_slot_after(mptable, mp2, j) {
 			if (strcmp(mp1->wwid, mp2->wwid))
