@@ -13,6 +13,8 @@ jobs:
         run: echo ZRAM=$(sudo cat /sys/class/zram-control/hot_add) >> $GITHUB_ENV
       - name: set-zram-size
         run: echo 1G | sudo tee /sys/block/zram$ZRAM/disksize
+      - name: update
+        run: sudo apt-get update
       - name: dependencies
         run: >
           sudo apt-get install --yes gcc
