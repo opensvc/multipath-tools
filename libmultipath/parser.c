@@ -537,7 +537,7 @@ process_stream(struct config *conf, FILE *stream, vector keywords,
 		if (!strcmp(str, EOB)) {
 			if (kw_level > 0) {
 				free_strvec(strvec);
-				break;
+				goto out;
 			}
 			condlog(0, "unmatched '%s' at line %d of %s",
 				EOB, line_nr, file);
@@ -576,7 +576,8 @@ process_stream(struct config *conf, FILE *stream, vector keywords,
 
 		free_strvec(strvec);
 	}
-
+	if (kw_level == 1)
+		condlog(1, "missing '%s' at end of %s", EOB, file);
 out:
 	FREE(buf);
 	free_uniques(uniques);
