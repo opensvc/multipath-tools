@@ -16,13 +16,17 @@ jobs:
       - name: dependencies
         run: >
           sudo apt-get install --yes gcc
-          make perl-base pkg-config
+          make perl-base pkg-config valgrind
           libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
           libudev-dev libjson-c-dev liburcu-dev libcmocka-dev
       - name: build
         run: make -O -j$(grep -c ^processor /proc/cpuinfo)
       - name: test
         run: make -O -j$(grep -c ^processor /proc/cpuinfo) test
+      - name: valgrind-test
+        run: make -O -j$(grep -c ^processor /proc/cpuinfo) valgrind-test
+      - name: valgrind-results
+        run: cat tests/*.vgr
       - name: clean-nonroot-artifacts
         run: rm -f tests/dmevents.out tests/directio.out
       - name: root-test
