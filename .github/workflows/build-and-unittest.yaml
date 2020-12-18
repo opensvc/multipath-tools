@@ -2,7 +2,7 @@ name: basic-build-and-ci
 on:   [push]
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - name: mpath
