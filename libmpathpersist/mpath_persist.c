@@ -304,7 +304,8 @@ int __mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	}
 
 	if (memcmp(paramp->key, &mpp->reservation_key, 8) &&
-	    memcmp(paramp->sa_key, &mpp->reservation_key, 8)) {
+	    memcmp(paramp->sa_key, &mpp->reservation_key, 8) &&
+	    (prkey || rq_servact != MPATH_PROUT_REG_IGN_SA)) {
 		condlog(0, "%s: configured reservation key doesn't match: 0x%" PRIx64, alias, get_be64(mpp->reservation_key));
 		ret = MPATH_PR_SYNTAX_ERROR;
 		goto out1;
