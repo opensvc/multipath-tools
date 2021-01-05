@@ -518,7 +518,7 @@ void merge_mptable(vector mptable)
 		}
 		j = i + 1;
 		vector_foreach_slot_after(mptable, mp2, j) {
-			if (strcmp(mp1->wwid, mp2->wwid))
+			if (!mp2->wwid || strcmp(mp1->wwid, mp2->wwid))
 				continue;
 			condlog(1, "%s: duplicate multipath config section for %s",
 				__func__, mp1->wwid);
