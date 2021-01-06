@@ -2161,6 +2161,11 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 			(pp->state == PATH_DELAYED)) {
 		/* If path state become failed again cancel path delay state */
 		pp->state = newstate;
+		/*
+		 * path state bad again should change the check interval time
+		 * to the shortest delay
+		 */
+		pp->checkint = checkint;
 		return 1;
 	}
 	if (!pp->mpp) {
