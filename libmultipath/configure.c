@@ -636,15 +636,6 @@ trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
 }
 
 static int
-is_mpp_known_to_udev(const struct multipath *mpp)
-{
-	struct udev_device *udd = get_udev_for_mpp(mpp);
-	int ret = (udd != NULL);
-	udev_device_unref(udd);
-	return ret;
-}
-
-static int
 sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 {
 	struct pathgroup * pgp;
@@ -862,12 +853,6 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 	if (cmpp->nextpg != mpp->bestpg) {
 		mpp->action = ACT_SWITCHPG;
 		condlog(3, "%s: set ACT_SWITCHPG (next path group change)",
-			mpp->alias);
-		return;
-	}
-	if (!is_mpp_known_to_udev(cmpp)) {
-		mpp->action = ACT_RELOAD;
-		condlog(3, "%s: set ACT_RELOAD (udev device not initialized)",
 			mpp->alias);
 		return;
 	}
