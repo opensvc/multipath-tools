@@ -380,20 +380,6 @@ recover:
 	return 0;
 }
 
-static int delete_io_err_stat_by_addr(struct io_err_stat_path *p)
-{
-	int i;
-
-	i = find_slot(io_err_pathvec, p);
-	if (i != -1)
-		vector_del_slot(io_err_pathvec, i);
-
-	destroy_directio_ctx(p);
-	free_io_err_stat_path(p);
-
-	return 0;
-}
-
 static void account_async_io_state(struct io_err_stat_path *pp, int rc)
 {
 	switch (rc) {
@@ -410,17 +396,26 @@ static void account_async_io_state(struct io_err_stat_path *pp, int rc)
 	}
 }
 
-static int poll_io_err_stat(struct vectors *vecs, struct io_err_stat_path *pp)
+static int io_err_stat_time_up(struct io_err_stat_path *pp)
 {
 	struct timespec currtime, difftime;
+
+	if (clock_gettime(CLOCK_MONOTONIC, &currtime) != 0)
+		return 0;
+	timespecsub(&currtime, &pp->start_time, &difftime);
+	if (difftime.tv_sec < pp->total_time)
+		return 0;
+	return 1;
+}
+
+static void end_io_err_stat(struct io_err_stat_path *pp)
+{
+	struct timespec currtime;
 	struct path *path;
 	double err_rate;
 
 	if (clock_gettime(CLOCK_MONOTONIC, &currtime) != 0)
-		return 1;
-	timespecsub(&currtime, &pp->start_time, &difftime);
-	if (difftime.tv_sec < pp->total_time)
-		return 0;
+		currtime = pp->start_time;
 
 	io_err_stat_log(4, "%s: check end", pp->devname);
 
@@ -459,10 +454,6 @@ static int poll_io_err_stat(struct vectors *vecs, struct io_err_stat_path *pp)
 				pp->devname);
 	}
 	lock_cleanup_pop(vecs->lock);
-
-	delete_io_err_stat_by_addr(pp);
-
-	return 0;
 }
 
 static int send_each_async_io(struct dio_ctx *ct, int fd, char *dev)
@@ -622,6 +613,7 @@ static void process_async_ios_event(int timeout_nsecs, char *dev)
 	struct timespec	timeout = { .tv_nsec = timeout_nsecs };
 
 	errno = 0;
+	pthread_testcancel();
 	n = io_getevents(ioctx, 1L, CONCUR_NR_EVENT, events, &timeout);
 	if (n < 0) {
 		io_err_stat_log(3, "%s: async io events returned %d (errno=%s)",
@@ -634,17 +626,33 @@ static void process_async_ios_event(int timeout_nsecs, char *dev)
 
 static void service_paths(void)
 {
+	struct _vector _pathvec = {0};
+	/* avoid gcc warnings that &_pathvec will never be NULL in vector ops */
+	struct _vector * const tmp_pathvec = &_pathvec;
 	struct io_err_stat_path *pp;
 	int i;
 
 	pthread_mutex_lock(&io_err_pathvec_lock);
+	pthread_cleanup_push(cleanup_mutex, &io_err_pathvec_lock);
 	vector_foreach_slot(io_err_pathvec, pp, i) {
 		send_batch_async_ios(pp);
 		process_async_ios_event(TIMEOUT_NO_IO_NSEC, pp->devname);
 		poll_async_io_timeout();
-		poll_io_err_stat(vecs, pp);
+		if (io_err_stat_time_up(pp)) {
+			if (!vector_alloc_slot(tmp_pathvec))
+				continue;
+			vector_del_slot(io_err_pathvec, i--);
+			vector_set_slot(tmp_pathvec, pp);
+		}
 	}
-	pthread_mutex_unlock(&io_err_pathvec_lock);
+	pthread_cleanup_pop(1);
+	vector_foreach_slot_backwards(tmp_pathvec, pp, i) {
+		end_io_err_stat(pp);
+		vector_del_slot(tmp_pathvec, i);
+		destroy_directio_ctx(pp);
+		free_io_err_stat_path(pp);
+	}
+	vector_reset(tmp_pathvec);
 }
 
 static void cleanup_exited(__attribute__((unused)) void *arg)
