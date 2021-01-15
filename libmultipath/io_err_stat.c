@@ -46,12 +46,6 @@
 #define io_err_stat_log(prio, fmt, args...) \
 	condlog(prio, "io error statistic: " fmt, ##args)
 
-
-struct io_err_stat_pathvec {
-	pthread_mutex_t mutex;
-	vector		pathvec;
-};
-
 struct dio_ctx {
 	struct timespec	io_starttime;
 	unsigned int	blksize;
@@ -75,9 +69,10 @@ static pthread_t	io_err_stat_thr;
 
 static pthread_mutex_t io_err_thread_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t io_err_thread_cond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t io_err_pathvec_lock = PTHREAD_MUTEX_INITIALIZER;
 static int io_err_thread_running = 0;
 
-static struct io_err_stat_pathvec *paths;
+static vector io_err_pathvec;
 struct vectors *vecs;
 io_context_t	ioctx;
 
@@ -207,46 +202,23 @@ static void free_io_err_stat_path(struct io_err_stat_path *p)
 	FREE(p);
 }
 
-static struct io_err_stat_pathvec *alloc_pathvec(void)
-{
-	struct io_err_stat_pathvec *p;
-	int r;
-
-	p = (struct io_err_stat_pathvec *)MALLOC(sizeof(*p));
-	if (!p)
-		return NULL;
-	p->pathvec = vector_alloc();
-	if (!p->pathvec)
-		goto out_free_struct_pathvec;
-	r = pthread_mutex_init(&p->mutex, NULL);
-	if (r)
-		goto out_free_member_pathvec;
-
-	return p;
-
-out_free_member_pathvec:
-	vector_free(p->pathvec);
-out_free_struct_pathvec:
-	FREE(p);
-	return NULL;
-}
-
-static void free_io_err_pathvec(struct io_err_stat_pathvec *p)
+static void free_io_err_pathvec(void)
 {
 	struct io_err_stat_path *path;
 	int i;
 
-	if (!p)
-		return;
-	pthread_mutex_destroy(&p->mutex);
-	if (!p->pathvec) {
-		vector_foreach_slot(p->pathvec, path, i) {
-			destroy_directio_ctx(path);
-			free_io_err_stat_path(path);
-		}
-		vector_free(p->pathvec);
+	pthread_mutex_lock(&io_err_pathvec_lock);
+	pthread_cleanup_push(cleanup_mutex, &io_err_pathvec_lock);
+	if (!io_err_pathvec)
+		goto out;
+	vector_foreach_slot(io_err_pathvec, path, i) {
+		destroy_directio_ctx(path);
+		free_io_err_stat_path(path);
 	}
-	FREE(p);
+	vector_free(io_err_pathvec);
+	io_err_pathvec = NULL;
+out:
+	pthread_cleanup_pop(1);
 }
 
 /*
@@ -258,13 +230,13 @@ static int enqueue_io_err_stat_by_path(struct path *path)
 {
 	struct io_err_stat_path *p;
 
-	pthread_mutex_lock(&paths->mutex);
-	p = find_err_path_by_dev(paths->pathvec, path->dev);
+	pthread_mutex_lock(&io_err_pathvec_lock);
+	p = find_err_path_by_dev(io_err_pathvec, path->dev);
 	if (p) {
-		pthread_mutex_unlock(&paths->mutex);
+		pthread_mutex_unlock(&io_err_pathvec_lock);
 		return 0;
 	}
-	pthread_mutex_unlock(&paths->mutex);
+	pthread_mutex_unlock(&io_err_pathvec_lock);
 
 	p = alloc_io_err_stat_path();
 	if (!p)
@@ -276,18 +248,18 @@ static int enqueue_io_err_stat_by_path(struct path *path)
 
 	if (setup_directio_ctx(p))
 		goto free_ioerr_path;
-	pthread_mutex_lock(&paths->mutex);
-	if (!vector_alloc_slot(paths->pathvec))
+	pthread_mutex_lock(&io_err_pathvec_lock);
+	if (!vector_alloc_slot(io_err_pathvec))
 		goto unlock_destroy;
-	vector_set_slot(paths->pathvec, p);
-	pthread_mutex_unlock(&paths->mutex);
+	vector_set_slot(io_err_pathvec, p);
+	pthread_mutex_unlock(&io_err_pathvec_lock);
 
 	io_err_stat_log(2, "%s: enqueue path %s to check",
 			path->mpp->alias, path->dev);
 	return 0;
 
 unlock_destroy:
-	pthread_mutex_unlock(&paths->mutex);
+	pthread_mutex_unlock(&io_err_pathvec_lock);
 	destroy_directio_ctx(p);
 free_ioerr_path:
 	free_io_err_stat_path(p);
@@ -412,9 +384,9 @@ static int delete_io_err_stat_by_addr(struct io_err_stat_path *p)
 {
 	int i;
 
-	i = find_slot(paths->pathvec, p);
+	i = find_slot(io_err_pathvec, p);
 	if (i != -1)
-		vector_del_slot(paths->pathvec, i);
+		vector_del_slot(io_err_pathvec, i);
 
 	destroy_directio_ctx(p);
 	free_io_err_stat_path(p);
@@ -585,7 +557,7 @@ static void poll_async_io_timeout(void)
 
 	if (clock_gettime(CLOCK_MONOTONIC, &curr_time) != 0)
 		return;
-	vector_foreach_slot(paths->pathvec, pp, i) {
+	vector_foreach_slot(io_err_pathvec, pp, i) {
 		for (j = 0; j < CONCUR_NR_EVENT; j++) {
 			rc = try_to_cancel_timeout_io(pp->dio_ctx_array + j,
 					&curr_time, pp->devname);
@@ -631,7 +603,7 @@ static void handle_async_io_done_event(struct io_event *io_evt)
 	int rc = PATH_UNCHECKED;
 	int i, j;
 
-	vector_foreach_slot(paths->pathvec, pp, i) {
+	vector_foreach_slot(io_err_pathvec, pp, i) {
 		for (j = 0; j < CONCUR_NR_EVENT; j++) {
 			ct = pp->dio_ctx_array + j;
 			if (&ct->io == io_evt->obj) {
@@ -665,19 +637,14 @@ static void service_paths(void)
 	struct io_err_stat_path *pp;
 	int i;
 
-	pthread_mutex_lock(&paths->mutex);
-	vector_foreach_slot(paths->pathvec, pp, i) {
+	pthread_mutex_lock(&io_err_pathvec_lock);
+	vector_foreach_slot(io_err_pathvec, pp, i) {
 		send_batch_async_ios(pp);
 		process_async_ios_event(TIMEOUT_NO_IO_NSEC, pp->devname);
 		poll_async_io_timeout();
 		poll_io_err_stat(vecs, pp);
 	}
-	pthread_mutex_unlock(&paths->mutex);
-}
-
-static void cleanup_unlock(void *arg)
-{
-	pthread_mutex_unlock((pthread_mutex_t*) arg);
+	pthread_mutex_unlock(&io_err_pathvec_lock);
 }
 
 static void cleanup_exited(__attribute__((unused)) void *arg)
@@ -736,13 +703,18 @@ int start_io_err_stat_thread(void *data)
 		io_err_stat_log(4, "io_setup failed");
 		return 1;
 	}
-	paths = alloc_pathvec();
-	if (!paths)
+
+	pthread_mutex_lock(&io_err_pathvec_lock);
+	io_err_pathvec = vector_alloc();
+	if (!io_err_pathvec) {
+		pthread_mutex_unlock(&io_err_pathvec_lock);
 		goto destroy_ctx;
+	}
+	pthread_mutex_unlock(&io_err_pathvec_lock);
 
 	setup_thread_attr(&io_err_stat_attr, 32 * 1024, 0);
 	pthread_mutex_lock(&io_err_thread_lock);
-	pthread_cleanup_push(cleanup_unlock, &io_err_thread_lock);
+	pthread_cleanup_push(cleanup_mutex, &io_err_thread_lock);
 
 	ret = pthread_create(&io_err_stat_thr, &io_err_stat_attr,
 			     io_err_stat_loop, data);
@@ -763,7 +735,10 @@ int start_io_err_stat_thread(void *data)
 	return 0;
 
 out_free:
-	free_io_err_pathvec(paths);
+	pthread_mutex_lock(&io_err_pathvec_lock);
+	vector_free(io_err_pathvec);
+	io_err_pathvec = NULL;
+	pthread_mutex_unlock(&io_err_pathvec_lock);
 destroy_ctx:
 	io_destroy(ioctx);
 	io_err_stat_log(0, "failed to start io_error statistic thread");
@@ -779,6 +754,6 @@ void stop_io_err_stat_thread(void)
 		pthread_cancel(io_err_stat_thr);
 
 	pthread_join(io_err_stat_thr, NULL);
-	free_io_err_pathvec(paths);
+	free_io_err_pathvec();
 	io_destroy(ioctx);
 }
