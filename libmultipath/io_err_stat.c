@@ -295,8 +295,7 @@ int io_err_stat_handle_pathfail(struct path *path)
 	 * the repeated count threshold and time frame, we assume a path
 	 * which fails at least twice within 60 seconds is flaky.
 	 */
-	if (clock_gettime(CLOCK_MONOTONIC, &curr_time) != 0)
-		return 1;
+	get_monotonic_time(&curr_time);
 	if (path->io_err_pathfail_cnt == 0) {
 		path->io_err_pathfail_cnt++;
 		path->io_err_pathfail_starttime = curr_time.tv_sec;
@@ -352,9 +351,9 @@ int need_io_err_check(struct path *pp)
 	}
 	if (pp->io_err_pathfail_cnt != PATH_IO_ERR_WAITING_TO_CHECK)
 		return 1;
-	if (clock_gettime(CLOCK_MONOTONIC, &curr_time) != 0 ||
-	    (curr_time.tv_sec - pp->io_err_dis_reinstate_time) >
-			pp->mpp->marginal_path_err_recheck_gap_time) {
+	get_monotonic_time(&curr_time);
+	if ((curr_time.tv_sec - pp->io_err_dis_reinstate_time) >
+	    pp->mpp->marginal_path_err_recheck_gap_time) {
 		io_err_stat_log(4, "%s: reschedule checking after %d seconds",
 				pp->dev,
 				pp->mpp->marginal_path_err_recheck_gap_time);
@@ -400,8 +399,7 @@ static int io_err_stat_time_up(struct io_err_stat_path *pp)
 {
 	struct timespec currtime, difftime;
 
-	if (clock_gettime(CLOCK_MONOTONIC, &currtime) != 0)
-		return 0;
+	get_monotonic_time(&currtime);
 	timespecsub(&currtime, &pp->start_time, &difftime);
 	if (difftime.tv_sec < pp->total_time)
 		return 0;
@@ -414,8 +412,7 @@ static void end_io_err_stat(struct io_err_stat_path *pp)
 	struct path *path;
 	double err_rate;
 
-	if (clock_gettime(CLOCK_MONOTONIC, &currtime) != 0)
-		currtime = pp->start_time;
+	get_monotonic_time(&currtime);
 
 	io_err_stat_log(4, "%s: check end", pp->devname);
 
@@ -464,11 +461,7 @@ static int send_each_async_io(struct dio_ctx *ct, int fd, char *dev)
 			ct->io_starttime.tv_sec == 0) {
 		struct iocb *ios[1] = { &ct->io };
 
-		if (clock_gettime(CLOCK_MONOTONIC, &ct->io_starttime) != 0) {
-			ct->io_starttime.tv_sec = 0;
-			ct->io_starttime.tv_nsec = 0;
-			return rc;
-		}
+		get_monotonic_time(&ct->io_starttime);
 		io_prep_pread(&ct->io, fd, ct->buf, ct->blksize, 0);
 		if (io_submit(ioctx, 1, ios) != 1) {
 			io_err_stat_log(5, "%s: io_submit error %i",
@@ -487,8 +480,7 @@ static void send_batch_async_ios(struct io_err_stat_path *pp)
 	struct dio_ctx *ct;
 	struct timespec currtime, difftime;
 
-	if (clock_gettime(CLOCK_MONOTONIC, &currtime) != 0)
-		return;
+	get_monotonic_time(&currtime);
 	/*
 	 * Give a free time for all IO to complete or timeout
 	 */
@@ -503,11 +495,8 @@ static void send_batch_async_ios(struct io_err_stat_path *pp)
 		if (!send_each_async_io(ct, pp->fd, pp->devname))
 			pp->io_nr++;
 	}
-	if (pp->start_time.tv_sec == 0 && pp->start_time.tv_nsec == 0 &&
-		clock_gettime(CLOCK_MONOTONIC, &pp->start_time)) {
-		pp->start_time.tv_sec = 0;
-		pp->start_time.tv_nsec = 0;
-	}
+	if (pp->start_time.tv_sec == 0 && pp->start_time.tv_nsec == 0)
+		get_monotonic_time(&pp->start_time);
 }
 
 static int try_to_cancel_timeout_io(struct dio_ctx *ct, struct timespec *t,
@@ -546,8 +535,7 @@ static void poll_async_io_timeout(void)
 	int		rc = PATH_UNCHECKED;
 	int		i, j;
 
-	if (clock_gettime(CLOCK_MONOTONIC, &curr_time) != 0)
-		return;
+	get_monotonic_time(&curr_time);
 	vector_foreach_slot(io_err_pathvec, pp, i) {
 		for (j = 0; j < CONCUR_NR_EVENT; j++) {
 			rc = try_to_cancel_timeout_io(pp->dio_ctx_array + j,
