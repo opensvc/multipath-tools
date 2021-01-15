@@ -161,12 +161,15 @@ fail_close:
 	return 1;
 }
 
-static void destroy_directio_ctx(struct io_err_stat_path *p)
+static void free_io_err_stat_path(struct io_err_stat_path *p)
 {
 	int i;
 
-	if (!p || !p->dio_ctx_array)
+	if (!p)
 		return;
+	if (!p->dio_ctx_array)
+		goto free_path;
+
 	cancel_inflight_io(p);
 
 	for (i = 0; i < CONCUR_NR_EVENT; i++)
@@ -175,6 +178,8 @@ static void destroy_directio_ctx(struct io_err_stat_path *p)
 
 	if (p->fd > 0)
 		close(p->fd);
+free_path:
+	FREE(p);
 }
 
 static struct io_err_stat_path *alloc_io_err_stat_path(void)
@@ -197,11 +202,6 @@ static struct io_err_stat_path *alloc_io_err_stat_path(void)
 	return p;
 }
 
-static void free_io_err_stat_path(struct io_err_stat_path *p)
-{
-	FREE(p);
-}
-
 static void free_io_err_pathvec(void)
 {
 	struct io_err_stat_path *path;
@@ -211,10 +211,8 @@ static void free_io_err_pathvec(void)
 	pthread_cleanup_push(cleanup_mutex, &io_err_pathvec_lock);
 	if (!io_err_pathvec)
 		goto out;
-	vector_foreach_slot(io_err_pathvec, path, i) {
-		destroy_directio_ctx(path);
+	vector_foreach_slot(io_err_pathvec, path, i)
 		free_io_err_stat_path(path);
-	}
 	vector_free(io_err_pathvec);
 	io_err_pathvec = NULL;
 out:
@@ -250,7 +248,7 @@ static int enqueue_io_err_stat_by_path(struct path *path)
 		goto free_ioerr_path;
 	pthread_mutex_lock(&io_err_pathvec_lock);
 	if (!vector_alloc_slot(io_err_pathvec))
-		goto unlock_destroy;
+		goto unlock_pathvec;
 	vector_set_slot(io_err_pathvec, p);
 	pthread_mutex_unlock(&io_err_pathvec_lock);
 
@@ -258,9 +256,8 @@ static int enqueue_io_err_stat_by_path(struct path *path)
 			path->mpp->alias, path->dev);
 	return 0;
 
-unlock_destroy:
+unlock_pathvec:
 	pthread_mutex_unlock(&io_err_pathvec_lock);
-	destroy_directio_ctx(p);
 free_ioerr_path:
 	free_io_err_stat_path(p);
 
@@ -637,7 +634,6 @@ static void service_paths(void)
 	vector_foreach_slot_backwards(tmp_pathvec, pp, i) {
 		end_io_err_stat(pp);
 		vector_del_slot(tmp_pathvec, i);
-		destroy_directio_ctx(pp);
 		free_io_err_stat_path(pp);
 	}
 	vector_reset(tmp_pathvec);
