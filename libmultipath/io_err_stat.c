@@ -88,7 +88,7 @@ static void rcu_unregister(__attribute__((unused)) void *param)
 	rcu_unregister_thread();
 }
 
-struct io_err_stat_path *find_err_path_by_dev(vector pathvec, char *dev)
+static struct io_err_stat_path *find_err_path_by_dev(vector pathvec, char *dev)
 {
 	int i;
 	struct io_err_stat_path *pp;
