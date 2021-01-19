@@ -252,7 +252,7 @@ static int enqueue_io_err_stat_by_path(struct path *path)
 	vector_set_slot(io_err_pathvec, p);
 	pthread_mutex_unlock(&io_err_pathvec_lock);
 
-	io_err_stat_log(2, "%s: enqueue path %s to check",
+	io_err_stat_log(3, "%s: enqueue path %s to check",
 			path->mpp->alias, path->dev);
 	return 0;
 
@@ -343,7 +343,7 @@ int need_io_err_check(struct path *pp)
 	if (uatomic_read(&io_err_thread_running) == 0)
 		return 0;
 	if (count_active_paths(pp->mpp) <= 0) {
-		io_err_stat_log(2, "%s: recover path early", pp->dev);
+		io_err_stat_log(2, "%s: no paths. recovering early", pp->dev);
 		goto recover;
 	}
 	if (pp->io_err_pathfail_cnt != PATH_IO_ERR_WAITING_TO_CHECK)
@@ -361,8 +361,7 @@ int need_io_err_check(struct path *pp)
 		 * Or else,  return 1 to set path state to PATH_SHAKY
 		 */
 		if (r == 1) {
-			io_err_stat_log(3, "%s: enqueue fails, to recover",
-					pp->dev);
+			io_err_stat_log(2, "%s: enqueue failed. recovering early", pp->dev);
 			goto recover;
 		} else
 			pp->io_err_pathfail_cnt = PATH_IO_ERR_IN_CHECKING;
