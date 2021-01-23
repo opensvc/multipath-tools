@@ -453,12 +453,12 @@ find_mp_by_str (const struct _vector *mpvec, const char * str)
 }
 
 struct path *
-find_path_by_dev (const struct _vector *pathvec, const char * dev)
+find_path_by_dev (const struct _vector *pathvec, const char *dev)
 {
 	int i;
 	struct path * pp;
 
-	if (!pathvec)
+	if (!pathvec || !dev)
 		return NULL;
 
 	vector_foreach_slot (pathvec, pp, i)
