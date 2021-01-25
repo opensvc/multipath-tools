@@ -2055,8 +2055,16 @@ int snprint_devices(struct config *conf, char *buff, size_t len,
 		struct udev_device *u_dev;
 
 		path = udev_list_entry_get_name(item);
+		if (!path)
+			continue;
 		u_dev = udev_device_new_from_syspath(udev, path);
+		if (!u_dev)
+			continue;
 		devname = udev_device_get_sysname(u_dev);
+		if (!devname) {
+			udev_device_unref(u_dev);
+			continue;
+		}
 
 		fwd += snprintf(buff + fwd, len - fwd, "    %s", devname);
 		if (fwd >= len)
