@@ -246,9 +246,13 @@ extern int mpath_persistent_reserve_in (int fd, int rq_servact, struct prin_resp
 
 /*
  * DESCRIPTION :
- * This function is like mpath_persistent_reserve_in(), except that it doesn't call
- * mpath_persistent_reserve_init_vecs() and mpath_persistent_reserve_free_vecs()
- * before and after the actual PR call.
+ * This function is like mpath_persistent_reserve_in(), except that it
+ * requires mpath_persistent_reserve_init_vecs() to be called before the
+ * PR call to set up internal variables. These must later be cleanup up
+ * by calling mpath_persistent_reserve_free_vecs().
+ *
+ * RESTRICTIONS:
+ * This function uses static internal variables, and is not thread-safe.
  */
 extern int __mpath_persistent_reserve_in(int fd, int rq_servact,
 		struct prin_resp *resp, int noisy);
@@ -280,9 +284,13 @@ extern int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 		int verbose);
 /*
  * DESCRIPTION :
- * This function is like mpath_persistent_reserve_out(), except that it doesn't call
- * mpath_persistent_reserve_init_vecs() and mpath_persistent_reserve_free_vecs()
- * before and after the actual PR call.
+ * This function is like mpath_persistent_reserve_out(), except that it
+ * requires mpath_persistent_reserve_init_vecs() to be called before the
+ * PR call to set up internal variables. These must later be cleanup up
+ * by calling mpath_persistent_reserve_free_vecs().
+ *
+ * RESTRICTIONS:
+ * This function uses static internal variables, and is not thread-safe.
  */
 extern int __mpath_persistent_reserve_out( int fd, int rq_servact, int rq_scope,
 		unsigned int rq_type, struct prout_param_descriptor *paramp,
@@ -296,6 +304,7 @@ extern int __mpath_persistent_reserve_out( int fd, int rq_servact, int rq_scope,
  * @verbose: Set verbosity level. Input argument. value:0 to 3. 0->disabled, 3->Max verbose
  *
  * RESTRICTIONS:
+ * This function uses static internal variables, and is not thread-safe.
  *
  * RETURNS: MPATH_PR_SUCCESS if successful else returns any of the status specified
  *       above in RETURN_STATUS.
@@ -306,6 +315,9 @@ int mpath_persistent_reserve_init_vecs(int verbose);
  * DESCRIPTION :
  * This function frees data structures allocated by
  * mpath_persistent_reserve_init_vecs().
+ *
+ * RESTRICTIONS:
+ * This function uses static internal variables, and is not thread-safe.
  */
 void mpath_persistent_reserve_free_vecs(void);
 
