@@ -2255,8 +2255,8 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 		 * uid_attribute is required for filter_property below,
 		 * and needs access to pp->hwe.
 		 */
-		if (!(mask & DI_SYSFS) && !pp->uid_attribute &&
-		    VECTOR_SIZE(pp->hwe) == 0)
+		if (!(mask & DI_SYSFS) && (mask & DI_BLACKLIST) &&
+		    !pp->uid_attribute && VECTOR_SIZE(pp->hwe) == 0)
 			mask |= DI_SYSFS;
 	}
 
@@ -2295,17 +2295,13 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 		}
 	}
 
-	if (pp->udev) {
+	if (mask & DI_BLACKLIST && mask & DI_SYSFS) {
 		/* uid_attribute is required for filter_property() */
-		if (!pp->uid_attribute)
+		if (pp->udev && !pp->uid_attribute)
 			select_getuid(conf, pp);
 
-		if (filter_property(conf, pp->udev, 4, pp->uid_attribute) > 0)
-			return PATHINFO_SKIPPED;
-	}
-
-	if (mask & DI_BLACKLIST && mask & DI_SYSFS) {
-		if (filter_device(conf->blist_device, conf->elist_device,
+		if (filter_property(conf, pp->udev, 4, pp->uid_attribute) > 0 ||
+		    filter_device(conf->blist_device, conf->elist_device,
 				  pp->vendor_id, pp->product_id, pp->dev) > 0 ||
 		    filter_protocol(conf->blist_protocol, conf->elist_protocol,
 				    pp) > 0)
