@@ -1659,6 +1659,9 @@ common_sysfs_pathinfo (struct path * pp)
 		return PATHINFO_FAILED;
 	}
 	devt = udev_device_get_devnum(pp->udev);
+	if (major(devt) == 0 && minor(devt) == 0)
+		return PATHINFO_FAILED;
+
 	snprintf(pp->dev_t, BLK_DEV_SIZE, "%d:%d", major(devt), minor(devt));
 
 	condlog(4, "%s: dev_t = %s", pp->dev, pp->dev_t);
