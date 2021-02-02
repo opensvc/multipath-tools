@@ -707,8 +707,8 @@ struct multipath *add_map_with_path(struct vectors *vecs, struct path *pp,
 		goto out;
 	mpp->size = pp->size;
 
-	if (adopt_paths(vecs->pathvec, mpp) ||
-	    find_slot(vecs->pathvec, pp) == -1)
+	if (adopt_paths(vecs->pathvec, mpp) || pp->mpp != mpp ||
+	    find_slot(mpp->paths, pp) == -1)
 		goto out;
 
 	if (add_vec) {
