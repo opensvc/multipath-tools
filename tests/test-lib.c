@@ -257,6 +257,9 @@ void mock_pathinfo(int mask, const struct mocked_path *mp)
 	} else
 		will_return(__wrap_udev_device_get_sysattr_value, "0");
 
+	if (mask & DI_SYSFS)
+		mock_sysfs_pathinfo(mp);
+
 	/* filter_property */
 	will_return(__wrap_udev_device_get_sysname, mp->devnode);
 	if (mp->flags & BL_BY_PROPERTY) {
@@ -265,8 +268,6 @@ void mock_pathinfo(int mask, const struct mocked_path *mp)
 	} else
 		will_return(__wrap_udev_list_entry_get_name,
 			    "SCSI_IDENT_LUN_NAA_EXT");
-	if (mask & DI_SYSFS)
-		mock_sysfs_pathinfo(mp);
 
 	if (mp->flags & BL_BY_DEVICE &&
 	    (mask & DI_BLACKLIST && mask & DI_SYSFS))

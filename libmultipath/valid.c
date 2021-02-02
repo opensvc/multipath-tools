@@ -89,10 +89,6 @@ is_path_valid(const char *name, struct config *conf, struct path *pp,
 	if (pp->wwid[0] == '\0')
 		return PATH_IS_NOT_VALID;
 
-	if (pp->udev && pp->uid_attribute &&
-	    filter_property(conf, pp->udev, 3, pp->uid_attribute) > 0)
-		return PATH_IS_NOT_VALID;
-
 	r = is_failed_wwid(pp->wwid);
 	if (r != WWID_IS_NOT_FAILED) {
 		if (r == WWID_IS_FAILED)

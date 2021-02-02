@@ -2247,9 +2247,17 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			condlog(4, "%s: hidden", pp->dev);
 			return PATHINFO_SKIPPED;
 		}
-		if (is_claimed_by_foreign(pp->udev) ||
-		    filter_property(conf, pp->udev, 4, pp->uid_attribute) > 0)
+
+		if (is_claimed_by_foreign(pp->udev))
 			return PATHINFO_SKIPPED;
+
+		/*
+		 * uid_attribute is required for filter_property below,
+		 * and needs access to pp->hwe.
+		 */
+		if (!(mask & DI_SYSFS) && !pp->uid_attribute &&
+		    VECTOR_SIZE(pp->hwe) == 0)
+			mask |= DI_SYSFS;
 	}
 
 	if (strlen(pp->dev) != 0 && filter_devnode(conf->blist_devnode,
@@ -2285,6 +2293,15 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 				pp->tgt_node_name);
 			return PATHINFO_SKIPPED;
 		}
+	}
+
+	if (pp->udev) {
+		/* uid_attribute is required for filter_property() */
+		if (!pp->uid_attribute)
+			select_getuid(conf, pp);
+
+		if (filter_property(conf, pp->udev, 4, pp->uid_attribute) > 0)
+			return PATHINFO_SKIPPED;
 	}
 
 	if (mask & DI_BLACKLIST && mask & DI_SYSFS) {
