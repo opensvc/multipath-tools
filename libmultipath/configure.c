@@ -1441,7 +1441,7 @@ static int _get_refwwid(enum mpath_cmds cmd, const char *dev,
 				return ret;
 			}
 		}
-		if (pp->udev && pp->uid_attribute &&
+		if (flags & DI_BLACKLIST &&
 		    filter_property(conf, pp->udev, 3, pp->uid_attribute) > 0)
 			return PATHINFO_SKIPPED;
 		refwwid = pp->wwid;
@@ -1466,7 +1466,7 @@ static int _get_refwwid(enum mpath_cmds cmd, const char *dev,
 				refwwid = dev;
 		}
 
-		if (refwwid && strlen(refwwid) &&
+		if (flags & DI_BLACKLIST && refwwid && strlen(refwwid) &&
 		    filter_wwid(conf->blist_wwid, conf->elist_wwid, refwwid,
 				NULL) > 0)
 			return PATHINFO_SKIPPED;
