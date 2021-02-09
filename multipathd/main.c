@@ -890,13 +890,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 				 */
 				pp->mpp = prev_mpp;
 				ret = ev_remove_path(pp, vecs, true);
-				if (r == PATHINFO_OK && !ret)
-					/*
-					 * Path successfully freed, move on to
-					 * "new path" code path below
-					 */
-					pp = NULL;
-				else {
+				if (ret != 0) {
 					/*
 					 * Failure in ev_remove_path will keep
 					 * path in pathvec in INIT_REMOVED state
@@ -907,7 +901,12 @@ uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 					dm_fail_path(pp->mpp->alias, pp->dev_t);
 					condlog(1, "%s: failed to re-add path still mapped in %s",
 						pp->dev, pp->mpp->alias);
-				}
+				} else if (r == PATHINFO_OK)
+					/*
+					 * Path successfully freed, move on to
+					 * "new path" code path below
+					 */
+					pp = NULL;
 			} else if (r == PATHINFO_SKIPPED) {
 				condlog(3, "%s: remove blacklisted path",
 					uev->kernel);
