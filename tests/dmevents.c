@@ -16,6 +16,7 @@
  *
  */
 
+#include <pthread.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdarg.h>
