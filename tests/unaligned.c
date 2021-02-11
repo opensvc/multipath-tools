@@ -91,6 +91,7 @@ int main(void)
 {
 	int ret = 0;
 
+	init_test_verbosity(-1);
 	ret += test_unaligned();
 	return ret;
 }

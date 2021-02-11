@@ -770,7 +770,7 @@ int main(void)
 {
 	int ret = 0;
 
-	conf.verbosity = 2;
+	init_test_verbosity(2);
 	ret += test_directio();
 	return ret;
 }

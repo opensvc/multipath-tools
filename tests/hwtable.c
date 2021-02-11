@@ -1778,6 +1778,8 @@ int main(void)
 {
 	int ret = 0;
 
+	/* We can't use init_test_verbosity in this test */
+	libmp_verbosity = VERBOSITY;
 	ret += test_hwtable();
 	return ret;
 }

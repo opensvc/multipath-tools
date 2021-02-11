@@ -153,7 +153,7 @@ static int setup(void **state)
 	    store_ble(blist_property_wwn_inv, "!ID_WWN", ORIGIN_CONFIG))
 		return -1;
 
-	libmp_verbosity = conf.verbosity = 4;
+	init_test_verbosity(4);
 	return 0;
 }
 

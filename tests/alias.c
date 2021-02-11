@@ -1137,7 +1137,7 @@ static int test_allocate_binding(void)
 int main(void)
 {
 	int ret = 0;
-	libmp_verbosity = conf.verbosity;
+	init_test_verbosity(3);
 
 	ret += test_format_devname();
 	ret += test_scan_devname();

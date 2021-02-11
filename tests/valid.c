@@ -554,6 +554,8 @@ int test_valid(void)
 int main(void)
 {
 	int ret = 0;
+
+	init_test_verbosity(-1);
 	ret += test_valid();
 	return ret;
 }
