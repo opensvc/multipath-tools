@@ -2486,8 +2486,8 @@ checkerloop (void *ap)
 		get_monotonic_time(&start_time);
 		if (start_time.tv_sec && last_time.tv_sec) {
 			timespecsub(&start_time, &last_time, &diff_time);
-			condlog(4, "tick (%lu.%06lu secs)",
-				diff_time.tv_sec, diff_time.tv_nsec / 1000);
+			condlog(4, "tick (%ld.%06lu secs)",
+				(long)diff_time.tv_sec, diff_time.tv_nsec / 1000);
 			last_time = start_time;
 			ticks = diff_time.tv_sec;
 		} else {
@@ -2548,18 +2548,18 @@ checkerloop (void *ap)
 			if (num_paths) {
 				unsigned int max_checkint;
 
-				condlog(4, "checked %d path%s in %lu.%06lu secs",
+				condlog(4, "checked %d path%s in %ld.%06lu secs",
 					num_paths, num_paths > 1 ? "s" : "",
-					diff_time.tv_sec,
+					(long)diff_time.tv_sec,
 					diff_time.tv_nsec / 1000);
 				conf = get_multipath_config();
 				max_checkint = conf->max_checkint;
 				put_multipath_config(conf);
 				if (diff_time.tv_sec > (time_t)max_checkint)
 					condlog(1, "path checkers took longer "
-						"than %lu seconds, consider "
+						"than %ld seconds, consider "
 						"increasing max_polling_interval",
-						diff_time.tv_sec);
+						(long)diff_time.tv_sec);
 			}
 		}
 
@@ -2585,8 +2585,8 @@ checkerloop (void *ap)
 			} else
 				diff_time.tv_sec = 1;
 
-			condlog(3, "waiting for %lu.%06lu secs",
-				diff_time.tv_sec,
+			condlog(3, "waiting for %ld.%06lu secs",
+				(long)diff_time.tv_sec,
 				diff_time.tv_nsec / 1000);
 			if (nanosleep(&diff_time, NULL) != 0) {
 				condlog(3, "nanosleep failed with error %d",

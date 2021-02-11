@@ -154,8 +154,8 @@ static void check_timeout(struct timespec start_time, char *inbuf,
 			diff_time.tv_nsec / (1000 * 1000);
 		if (msecs > timeout)
 			condlog(2, "cli cmd '%s' timeout reached "
-				"after %lu.%06lu secs", inbuf,
-				diff_time.tv_sec, diff_time.tv_nsec / 1000);
+				"after %ld.%06lu secs", inbuf,
+				(long)diff_time.tv_sec, diff_time.tv_nsec / 1000);
 	}
 }
 
