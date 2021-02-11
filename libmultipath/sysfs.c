@@ -344,24 +344,23 @@ bool sysfs_is_multipathed(struct path *pp, bool set_wwid)
 		pthread_cleanup_push(close_fd, (void *)fd);
 		nr = read(fd, uuid, sizeof(uuid));
 		if (nr > (int)UUID_PREFIX_LEN &&
-		    !memcmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN))
+		    !memcmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN)) {
 			found = true;
-		else if (nr < 0) {
+			if (set_wwid) {
+				nr -= UUID_PREFIX_LEN;
+				memcpy(pp->wwid, uuid + UUID_PREFIX_LEN, nr);
+				if (nr == WWID_SIZE) {
+					condlog(4, "%s: overflow while reading from %s",
+						__func__, pathbuf);
+					pp->wwid[0] = '\0';
+				} else {
+					pp->wwid[nr] = '\0';
+					strchop(pp->wwid);
+				}
+			}
+                } else if (nr < 0)
 			condlog(1, "%s: error reading from %s: %m",
 				__func__, pathbuf);
-		}
-		if (found && set_wwid) {
-			nr -= UUID_PREFIX_LEN;
-			memcpy(pp->wwid, uuid + UUID_PREFIX_LEN, nr);
-			if (nr == WWID_SIZE) {
-				condlog(4, "%s: overflow while reading from %s",
-					__func__, pathbuf);
-				pp->wwid[0] = '\0';
-			} else {
-				pp->wwid[nr] = '\0';
-				strchop(pp->wwid);
-			}
-                }
 
 		pthread_cleanup_pop(1);
 	}
