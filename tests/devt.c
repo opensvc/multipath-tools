@@ -11,10 +11,24 @@
 #include <cmocka.h>
 #include <libudev.h>
 #include <sys/sysmacros.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "util.h"
 #include "debug.h"
 
 #include "globals.c"
+
+static bool sys_dev_block_exists(void)
+{
+	int fd;
+	bool rc;
+
+	fd = open("/sys/dev/block", O_RDONLY|O_DIRECTORY);
+	rc = (fd != -1);
+	close(fd);
+	return rc;
+}
 
 static int get_one_devt(char *devt, size_t len)
 {
@@ -71,6 +85,8 @@ static void test_devt2devname_devt_good(void **state)
 {
 	char dummy[BLK_DEV_SIZE];
 
+	if (!sys_dev_block_exists())
+		skip();
 	assert_int_equal(devt2devname(dummy, sizeof(dummy), *state), 0);
 }
 
@@ -137,6 +153,8 @@ static void test_devt2devname_real(void **state)
 	struct udev_list_entry *first, *item;
 	unsigned int i = 0;
 
+	if (!sys_dev_block_exists())
+		skip();
 	enm = udev_enumerate_new(udev);
 	assert_non_null(enm);
 	r = udev_enumerate_add_match_subsystem(enm, "block");
