@@ -2152,11 +2152,11 @@ int
 get_uid (struct path * pp, int path_state, struct udev_device *udev,
 	 int allow_fallback)
 {
-	char *c;
 	const char *origin = "unknown";
 	ssize_t len = 0;
 	struct config *conf;
 	int used_fallback = 0;
+	size_t i;
 
 	if (!pp->uid_attribute && !pp->getuid) {
 		conf = get_multipath_config();
@@ -2210,12 +2210,9 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev,
 		return 1;
 	} else {
 		/* Strip any trailing blanks */
-		c = strchr(pp->wwid, '\0');
-		c--;
-		while (c && c >= pp->wwid && *c == ' ') {
-			*c = '\0';
-			c--;
-		}
+		for (i = strlen(pp->wwid); i > 0 && pp->wwid[i-1] == ' '; i--);
+			/* no-op */
+		pp->wwid[i] = '\0';
 	}
 	condlog((used_fallback)? 1 : 3, "%s: uid = %s (%s)", pp->dev,
 		*pp->wwid == '\0' ? "<empty>" : pp->wwid, origin);
