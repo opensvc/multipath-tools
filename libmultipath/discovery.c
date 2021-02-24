@@ -2127,7 +2127,7 @@ static ssize_t uid_fallback(struct path *pp, int path_state,
 	return len;
 }
 
-static bool has_uid_fallback(struct path *pp)
+bool has_uid_fallback(struct path *pp)
 {
 	/*
 	 * Falling back to direct WWID determination is dangerous
@@ -2162,6 +2162,7 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev,
 		conf = get_multipath_config();
 		pthread_cleanup_push(put_multipath_config, conf);
 		select_getuid(conf, pp);
+		select_recheck_wwid(conf, pp);
 		pthread_cleanup_pop(1);
 	}
 
@@ -2293,8 +2294,10 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 
 	if (mask & DI_BLACKLIST && mask & DI_SYSFS) {
 		/* uid_attribute is required for filter_property() */
-		if (pp->udev && !pp->uid_attribute)
+		if (pp->udev && !pp->uid_attribute) {
 			select_getuid(conf, pp);
+			select_recheck_wwid(conf, pp);
+		}
 
 		if (filter_property(conf, pp->udev, 4, pp->uid_attribute) > 0 ||
 		    filter_device(conf->blist_device, conf->elist_device,

@@ -7,6 +7,7 @@ int select_features (struct config *conf, struct multipath * mp);
 int select_hwhandler (struct config *conf, struct multipath * mp);
 int select_checker(struct config *conf, struct path *pp);
 int select_getuid (struct config *conf, struct path * pp);
+int select_recheck_wwid(struct config *conf, struct path * pp);
 int select_prio (struct config *conf, struct path * pp);
 int select_find_multipaths_timeout(struct config *conf, struct path *pp);
 int select_no_path_retry(struct config *conf, struct multipath *mp);

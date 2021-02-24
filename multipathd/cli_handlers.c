@@ -715,6 +715,15 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 	pp = find_path_by_dev(vecs->pathvec, param);
 	if (pp && pp->initialized != INIT_REMOVED) {
 		condlog(2, "%s: path already in pathvec", param);
+
+		if (pp->recheck_wwid == RECHECK_WWID_ON &&
+		    check_path_wwid_change(pp)) {
+			condlog(0, "%s: wwid changed. Removing device",
+				pp->dev);
+			handle_path_wwid_change(pp, vecs);
+			return 1;
+		}
+
 		if (pp->mpp)
 			return 0;
 	} else if (pp) {

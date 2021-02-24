@@ -1273,6 +1273,20 @@ The default is: \fB\(dqNONE\(dq\fR
 .RE
 .
 .
+.TP
+.B recheck_wwid
+If set to \fIyes\fR, when a failed path is restored, its wwid is rechecked. If
+the wwid has changed, the path is removed from the current multipath device,
+and re-added as a new path. Multipathd will also recheck a path's wwid if it is
+manually re-added. This option only works for SCSI devices that are configured
+to use the default uid_attribute, \fIID_SERIAL\fR, or sysfs for getting their
+wwid.
+.RS
+.TP
+The default is \fBno\fR
+.RE
+.
+.
 
 .
 .\" ----------------------------------------------------------------------------

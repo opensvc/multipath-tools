@@ -823,6 +823,73 @@ ev_remove_map (char * devname, char * alias, int minor, struct vectors * vecs)
 	return flush_map(mpp, vecs, 0);
 }
 
+static void
+rescan_path(struct udev_device *parent)
+{
+	while(parent) {
+		const char *subsys = udev_device_get_subsystem(parent);
+		if (subsys && !strncmp(subsys, "scsi", 4))
+			break;
+		parent = udev_device_get_parent(parent);
+	}
+	if (parent)
+		sysfs_attr_set_value(parent, "rescan", "1", strlen("1"));
+}
+
+void
+handle_path_wwid_change(struct path *pp, struct vectors *vecs)
+{
+	struct udev_device *udd;
+
+	if (!pp || !pp->udev)
+		return;
+
+	udd = udev_device_ref(pp->udev);
+	if (ev_remove_path(pp, vecs, 1) != 0 && pp->mpp) {
+		pp->dmstate = PSTATE_FAILED;
+		dm_fail_path(pp->mpp->alias, pp->dev_t);
+	}
+	rescan_path(udd);
+	sysfs_attr_set_value(udd, "uevent", "add", strlen("add"));
+	trigger_partitions_udev_change(udd, "add", strlen("add"));
+	udev_device_unref(udd);
+}
+
+bool
+check_path_wwid_change(struct path *pp)
+{
+	char wwid[WWID_SIZE];
+	int len = 0;
+	size_t i;
+
+	if (!strlen(pp->wwid))
+		return false;
+
+	/* Get the real fresh device wwid by sgio. sysfs still has old
+	 * data, so only get_vpd_sgio will work to get the new wwid */
+	len = get_vpd_sgio(pp->fd, 0x83, 0, wwid, WWID_SIZE);
+
+	if (len <= 0) {
+		condlog(2, "%s: failed to check wwid by sgio: len = %d",
+			pp->dev, len);
+		return false;
+	}
+
+	/*Strip any trailing blanks */
+	for (i = strlen(pp->wwid); i > 0 && pp->wwid[i-1] == ' '; i--);
+		/* no-op */
+	pp->wwid[i] = '\0';
+	condlog(4, "%s: Got wwid %s by sgio", pp->dev, wwid);
+
+	if (strncmp(wwid, pp->wwid, WWID_SIZE)) {
+		condlog(0, "%s: wwid '%s' doesn't match wwid '%s' from device",
+			pp->dev, pp->wwid, wwid);
+		return true;
+	}
+
+	return false;
+}
+
 static int
 uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 {
@@ -1296,6 +1363,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			condlog(0, "%s: path wwid changed from '%s' to '%s'",
 				uev->kernel, wwid, pp->wwid);
 			ev_remove_path(pp, vecs, 1);
+			rescan_path(uev->udev);
 			needs_reinit = 1;
 			goto out;
 		} else {
@@ -2196,6 +2264,16 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	if (!pp->mpp)
 		return 0;
 	set_no_path_retry(pp->mpp);
+
+	if (pp->recheck_wwid == RECHECK_WWID_ON &&
+	    (newstate == PATH_UP || newstate == PATH_GHOST) &&
+	    ((pp->state != PATH_UP && pp->state != PATH_GHOST) ||
+	     pp->dmstate == PSTATE_FAILED) &&
+	    check_path_wwid_change(pp)) {
+		condlog(0, "%s: path wwid change detected. Removing", pp->dev);
+		handle_path_wwid_change(pp, vecs);
+		return 0;
+	}
 
 	if ((newstate == PATH_UP || newstate == PATH_GHOST) &&
 	    (san_path_check_enabled(pp->mpp) ||

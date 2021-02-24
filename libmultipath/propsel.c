@@ -581,6 +581,27 @@ out:
 	return 0;
 }
 
+/* must be called after select_getuid */
+int select_recheck_wwid(struct config *conf, struct path * pp)
+{
+	const char *origin;
+
+	pp_set_ovr(recheck_wwid);
+	pp_set_hwe(recheck_wwid);
+	pp_set_conf(recheck_wwid);
+	pp_set_default(recheck_wwid, DEFAULT_RECHECK_WWID);
+out:
+	if (pp->recheck_wwid == RECHECK_WWID_ON &&
+	    (pp->bus != SYSFS_BUS_SCSI || pp->getuid != NULL ||
+	     !has_uid_fallback(pp))) {
+		pp->recheck_wwid = RECHECK_WWID_OFF;
+		origin = "(setting: unsupported by device type/config)";
+	}
+	condlog(3, "%s: recheck_wwid = %i %s", pp->dev, pp->recheck_wwid,
+		origin);
+	return 0;
+}
+
 void
 detect_prio(struct config *conf, struct path * pp)
 {

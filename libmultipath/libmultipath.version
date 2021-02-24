@@ -280,3 +280,9 @@ LIBMULTIPATH_4.4.0 {
 global:
 	get_next_string;
 } LIBMULTIPATH_4.3.0;
+
+LIBMULITIPATH_4.5.0 {
+global:
+	get_vpd_sgio;
+	trigger_partitions_udev_change;
+} LIBMULTIPATH_4.4.0;
