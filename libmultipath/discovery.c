@@ -2183,22 +2183,21 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev,
 		} else
 			len = strlen(pp->wwid);
 		origin = "callout";
-	} else {
-		bool valid_uid_attr = pp->uid_attribute
-			&& *pp->uid_attribute;
-		bool empty_uid_attr = pp->uid_attribute
-			&& !*pp->uid_attribute;
-		bool udev_available = udev && valid_uid_attr;
+	} else if (pp->uid_attribute) {
+		/* if the uid_attribute is an empty string skip udev checking */
+		bool check_uid_attr = udev && *pp->uid_attribute;
 
-		if (udev_available) {
+		if (check_uid_attr) {
 			len = get_udev_uid(pp, pp->uid_attribute, udev);
 			origin = "udev";
 			if (len == 0)
 				condlog(1, "%s: empty udev uid", pp->dev);
 		}
-		if ((!udev_available || (len <= 0 && allow_fallback))
+		if ((!check_uid_attr || (len <= 0 && allow_fallback))
 		    && has_uid_fallback(pp)) {
-			if (!udev || !empty_uid_attr)
+			/* if udev wasn't set or we failed in get_udev_uid()
+			 * log at a higher priority */
+			if (!udev || check_uid_attr)
 				used_fallback = 1;
 			len = uid_fallback(pp, path_state, &origin);
 		}
