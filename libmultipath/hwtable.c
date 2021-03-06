@@ -388,6 +388,17 @@ static struct hwentry default_hw[] = {
 		.product       = "^EMC PowerMax_",
 		.pgpolicy      = MULTIBUS,
 	},
+	{
+		/* PowerStore */
+		.vendor        = "DellEMC",
+		.product       = "PowerStore",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.prio_name     = PRIO_ALUA,
+		.hwhandler     = "1 alua",
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 3,
+		.fast_io_fail  = 15,
+	},
 	/*
 	 * Fujitsu
 	 */
