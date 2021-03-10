@@ -357,7 +357,7 @@ static void lb_empty(void **state)
 
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID0] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID0", &alias, NULL);
+	rc = lookup_binding(NULL, "WWID0", &alias, NULL, 0);
 	assert_int_equal(rc, 1);
 	assert_ptr_equal(alias, NULL);
 }
@@ -370,7 +370,7 @@ static void lb_match_a(void **state)
 	will_return(__wrap_fgets, "MPATHa WWID0\n");
 	expect_condlog(3, "Found matching wwid [WWID0] in bindings file."
 		       " Setting alias to MPATHa\n");
-	rc = lookup_binding(NULL, "WWID0", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID0", &alias, "MPATH", 0);
 	assert_int_equal(rc, 0);
 	assert_ptr_not_equal(alias, NULL);
 	assert_string_equal(alias, "MPATHa");
@@ -385,7 +385,7 @@ static void lb_nomatch_a(void **state)
 	will_return(__wrap_fgets, "MPATHa WWID0\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID1] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID1", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID1", &alias, "MPATH", 0);
 	assert_int_equal(rc, 2);
 	assert_ptr_equal(alias, NULL);
 }
@@ -399,7 +399,7 @@ static void lb_match_c(void **state)
 	will_return(__wrap_fgets, "MPATHc WWID1\n");
 	expect_condlog(3, "Found matching wwid [WWID1] in bindings file."
 		       " Setting alias to MPATHc\n");
-	rc = lookup_binding(NULL, "WWID1", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID1", &alias, "MPATH", 0);
 	assert_int_equal(rc, 0);
 	assert_ptr_not_equal(alias, NULL);
 	assert_string_equal(alias, "MPATHc");
@@ -415,7 +415,7 @@ static void lb_nomatch_a_c(void **state)
 	will_return(__wrap_fgets, "MPATHc WWID1\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
 	assert_int_equal(rc, 2);
 	assert_ptr_equal(alias, NULL);
 }
@@ -429,7 +429,7 @@ static void lb_nomatch_c_a(void **state)
 	will_return(__wrap_fgets, "MPATHa WWID0\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
 	assert_int_equal(rc, 2);
 	assert_ptr_equal(alias, NULL);
 }
@@ -444,7 +444,7 @@ static void lb_nomatch_a_b(void **state)
 	will_return(__wrap_fgets, "MPATHb WWID1\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
 	assert_int_equal(rc, 3);
 	assert_ptr_equal(alias, NULL);
 }
@@ -460,7 +460,7 @@ static void lb_nomatch_a_b_bad(void **state)
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "Ignoring malformed line 3 in bindings file\n");
 	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
 	assert_int_equal(rc, 3);
 	assert_ptr_equal(alias, NULL);
 }
@@ -475,7 +475,7 @@ static void lb_nomatch_b_a(void **state)
 	will_return(__wrap_fgets, "MPATHa WWID0\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
 	assert_int_equal(rc, 27);
 	assert_ptr_equal(alias, NULL);
 }
@@ -491,7 +491,7 @@ static void lb_nomatch_int_max(void **state)
 	will_return(__wrap_fgets, "MPATHa WWID0\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(0, "no more available user_friendly_names\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
 	assert_int_equal(rc, -1);
 	assert_ptr_equal(alias, NULL);
 }
@@ -506,7 +506,7 @@ static void lb_nomatch_int_max_m1(void **state)
 	will_return(__wrap_fgets, "MPATHa WWID0\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
 	assert_int_equal(rc, INT_MAX);
 	assert_ptr_equal(alias, NULL);
 }
