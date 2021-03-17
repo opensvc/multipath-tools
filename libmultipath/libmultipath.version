@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_4.0.0 {
+LIBMULTIPATH_5.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -198,7 +198,6 @@ global:
 	uevent_is_mpath;
 	uevent_listen;
 	update_mpp_paths;
-	update_multipath_status;
 	update_multipath_strings;
 	update_multipath_table;
 	update_pathvec_from_dm;
@@ -256,33 +255,22 @@ global:
 	libmultipath_init;
 	libmultipath_exit;
 
+	/* added in 4.1.0 */
+	libmp_verbosity;
+
+	/* added in 4.2.0 */
+	dm_prereq;
+	skip_libmp_dm_init;
+
+	/* added in 4.3.0 */
+	start_checker_thread;
+
+	/* added in 4.4.0 */
+	get_next_string;
+
+	/* added in 4.5.0 */
+	get_vpd_sgio;
+	trigger_partitions_udev_change;
 local:
 	*;
 };
-
-LIBMULTIPATH_4.1.0 {
-global:
-	libmp_verbosity;
-} LIBMULTIPATH_4.0.0;
-
-LIBMULTIPATH_4.2.0 {
-global:
-	dm_prereq;
-	skip_libmp_dm_init;
-} LIBMULTIPATH_4.1.0;
-
-LIBMULTIPATH_4.3.0 {
-global:
-	start_checker_thread;
-} LIBMULTIPATH_4.2.0;
-
-LIBMULTIPATH_4.4.0 {
-global:
-	get_next_string;
-} LIBMULTIPATH_4.3.0;
-
-LIBMULITIPATH_4.5.0 {
-global:
-	get_vpd_sgio;
-	trigger_partitions_udev_change;
-} LIBMULTIPATH_4.4.0;

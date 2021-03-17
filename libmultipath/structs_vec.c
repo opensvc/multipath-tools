@@ -423,40 +423,23 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 
 	r = dm_get_map(mpp->alias, &mpp->size, params);
 	if (r != DMP_OK) {
-		condlog(3, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting table" : "map not present");
+		condlog(2, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting table" : "map not present");
 		return r;
 	}
 
 	if (disassemble_map(pathvec, params, mpp)) {
-		condlog(3, "%s: cannot disassemble map", mpp->alias);
+		condlog(2, "%s: cannot disassemble map", mpp->alias);
 		return DMP_ERR;
 	}
+
+	*params = '\0';
+	if (dm_get_status(mpp->alias, params) != DMP_OK)
+		condlog(2, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting status" : "map not present");
+	else if (disassemble_status(params, mpp))
+		condlog(2, "%s: cannot disassemble status", mpp->alias);
 
 	/* FIXME: we should deal with the return value here */
 	update_pathvec_from_dm(pathvec, mpp, flags);
-
-	return DMP_OK;
-}
-
-int
-update_multipath_status (struct multipath *mpp)
-{
-	int r = DMP_ERR;
-	char status[PARAMS_SIZE] = {0};
-
-	if (!mpp)
-		return r;
-
-	r = dm_get_status(mpp->alias, status);
-	if (r != DMP_OK) {
-		condlog(3, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting status" : "map not present");
-		return r;
-	}
-
-	if (disassemble_status(status, mpp)) {
-		condlog(3, "%s: cannot disassemble status", mpp->alias);
-		return DMP_ERR;
-	}
 
 	return DMP_OK;
 }
@@ -538,11 +521,8 @@ update_multipath_strings(struct multipath *mpp, vector pathvec)
 	r = update_multipath_table(mpp, pathvec, 0);
 	if (r != DMP_OK)
 		return r;
-	sync_paths(mpp, pathvec);
 
-	r = update_multipath_status(mpp);
-	if (r != DMP_OK)
-		return r;
+	sync_paths(mpp, pathvec);
 
 	vector_foreach_slot(mpp->pg, pgp, i)
 		if (pgp->paths)

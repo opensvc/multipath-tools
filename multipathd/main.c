@@ -559,8 +559,6 @@ add_map_without_path (struct vectors *vecs, const char *alias)
 
 	if (update_multipath_table(mpp, vecs->pathvec, 0) != DMP_OK)
 		goto out;
-	if (update_multipath_status(mpp) != DMP_OK)
-		goto out;
 
 	if (!vector_alloc_slot(vecs->mpvec))
 		goto out;
@@ -1469,8 +1467,7 @@ map_discovery (struct vectors * vecs)
 		return 1;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i)
-		if (update_multipath_table(mpp, vecs->pathvec, 0) != DMP_OK ||
-		    update_multipath_status(mpp) != DMP_OK) {
+		if (update_multipath_table(mpp, vecs->pathvec, 0) != DMP_OK) {
 			remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
 			i--;
 		}
