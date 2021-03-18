@@ -13,7 +13,9 @@
 #include <sys/sysmacros.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
+#include <dirent.h>
 #include "util.h"
 #include "debug.h"
 
@@ -21,12 +23,22 @@
 
 static bool sys_dev_block_exists(void)
 {
-	int fd;
-	bool rc;
+	DIR *dir;
+	bool rc = false;
 
-	fd = open("/sys/dev/block", O_RDONLY|O_DIRECTORY);
-	rc = (fd != -1);
-	close(fd);
+	dir = opendir("/sys/dev/block");
+	if (dir != NULL) {
+		struct dirent *de;
+
+		while((de = readdir(dir)) != NULL) {
+			if (strcmp(de->d_name, ".") &&
+			    strcmp(de->d_name, "..")) {
+				rc = true;
+				break;
+			}
+		}
+	}
+	closedir(dir);
 	return rc;
 }
 
