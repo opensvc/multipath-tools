@@ -852,14 +852,15 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 	}
 	do {
 		if (dm_get_major_minor(param, &major, &minor) < 0)
-			condlog(2, "%s: not a device mapper table", param);
+			condlog(count ? 2 : 3,
+				"%s: not a device mapper table", param);
 		else {
 			sprintf(dev_path, "dm-%d", minor);
 			alias = dm_mapname(major, minor);
 		}
 		/*if there is no mapname found, we first create the device*/
 		if (!alias && !count) {
-			condlog(2, "%s: mapname not found for %d:%d",
+			condlog(3, "%s: mapname not found for %d:%d",
 				param, major, minor);
 			get_refwwid(CMD_NONE, param, DEV_DEVMAP,
 				    vecs->pathvec, &refwwid);
