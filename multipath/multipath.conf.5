@@ -647,7 +647,7 @@ does not respond to the checker command after \fIchecker_timeout\fR
 seconds have elapsed, it is considered down.
 .RS
 .TP
-The default is: in \fB/sys/block/sd<x>/device/timeout\fR
+The default is: in \fB/sys/block/<dev>/device/timeout\fR
 .RE
 .
 .
@@ -1242,7 +1242,7 @@ Sets the max_sectors_kb device parameter on all path devices and the multipath
 device to the specified value.
 .RS
 .TP
-The default is: \fB<device dependent>\fR
+The default is: in \fB/sys/block/<dev>/queue/max_sectors_kb\fR
 .RE
 .
 .
