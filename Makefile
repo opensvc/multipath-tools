@@ -51,8 +51,11 @@ clean: $(BUILDDIRS.clean)
 install: $(BUILDDIRS:=.install)
 uninstall: $(BUILDDIRS:=.uninstall)
 
-test:	all
-	$(MAKE) -C tests
+test-progs:	all
+	$(MAKE) -C tests progs
+
+test:	test-progs
+	$(MAKE) -C tests all
 
 valgrind-test:	all
 	$(MAKE) -C tests valgrind
