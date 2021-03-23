@@ -2250,7 +2250,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		if (ret == DMP_NOT_FOUND) {
 			/* multipath device missing. Likely removed */
 			condlog(1, "%s: multipath device '%s' not found",
-				pp->dev, pp->mpp->alias);
+				pp->dev, pp->mpp ? pp->mpp->alias : "");
 			return 0;
 		} else
 			condlog(1, "%s: Couldn't synchronize with kernel state",
