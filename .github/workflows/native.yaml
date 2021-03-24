@@ -1,0 +1,31 @@
+name: compile and unit test on native arch
+on:
+  push:
+    branches:
+      - master
+      - queue
+      - tip
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        os: [buster, jessie, sid, alpine, fedora-34]
+        arch: ['', '-i386']
+        exclude:
+          - os: fedora-34
+            arch: '-i386'
+    container: mwilck/multipath-build-${{ matrix.os }}${{ matrix.arch }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+      - name: build and test
+        run: make test
+      - name: clean
+        run: make clean
+      - name: clang
+        env:
+          CC: clang
+        run: make test
+
