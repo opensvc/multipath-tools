@@ -1157,7 +1157,7 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 			if (memcmp(d + 4, "eui.", 4) &&
 			    memcmp(d + 4, "naa.", 4) &&
 			    memcmp(d + 4, "iqn.", 4))
-				continue;
+				break;
 			if (prio < 4) {
 				prio = 4;
 				vpd = d;
