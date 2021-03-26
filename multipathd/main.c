@@ -822,16 +822,12 @@ ev_remove_map (char * devname, char * alias, int minor, struct vectors * vecs)
 }
 
 static void
-rescan_path(struct udev_device *parent)
+rescan_path(struct udev_device *ud)
 {
-	while(parent) {
-		const char *subsys = udev_device_get_subsystem(parent);
-		if (subsys && !strncmp(subsys, "scsi", 4))
-			break;
-		parent = udev_device_get_parent(parent);
-	}
-	if (parent)
-		sysfs_attr_set_value(parent, "rescan", "1", strlen("1"));
+	ud = udev_device_get_parent_with_subsystem_devtype(ud, "scsi",
+							   "scsi_device");
+	if (ud)
+		sysfs_attr_set_value(ud, "rescan", "1", strlen("1"));
 }
 
 void
