@@ -48,7 +48,7 @@ $(BUILDDIRS:=.uninstall):
 	$(MAKE) -C ${@:.uninstall=} uninstall
 
 clean: $(BUILDDIRS.clean)
-install: $(BUILDDIRS:=.install)
+install: all $(BUILDDIRS:=.install)
 uninstall: $(BUILDDIRS:=.uninstall)
 
 test-progs:	all
