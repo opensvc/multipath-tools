@@ -1,0 +1,17 @@
+.TH "dmmp_path_blk_name_get" 3 "dmmp_path_blk_name_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_path_blk_name_get \- Retrieve block name.
+.SH SYNOPSIS
+.B "const char *" dmmp_path_blk_name_get
+.BI "(struct dmmp_path *" dmmp_p ");"
+.SH ARGUMENTS
+.IP "dmmp_p" 12
+Pointer of 'struct dmmp_path'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+Retrieve block name of certain path. The example of block names are "sda",
+"nvme0n1".
+.SH "RETURN"
+const char *. No need to free this memory, the resources will get
+freed when \fBdmmp_mpath_array_free\fP.

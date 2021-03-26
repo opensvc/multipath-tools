@@ -1,0 +1,36 @@
+.TH "dmmp_flush_mpath" 3 "dmmp_flush_mpath" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_flush_mpath \- Flush specified multipath device map if unused.
+.SH SYNOPSIS
+.B "int" dmmp_flush_mpath
+.BI "(struct dmmp_context *" ctx ","
+.BI "const char *" mpath_name ");"
+.SH ARGUMENTS
+.IP "ctx" 12
+Pointer of 'struct dmmp_context'.
+If this pointer is NULL, your program will be terminated by assert.
+.IP "mpath_name" 12
+const char *. The name of multipath device map.
+.SH "DESCRIPTION"
+
+Flush a multipath device map specified as parameter, if unused.
+.SH "RETURN"
+int. Valid error codes are:
+
+* DMMP_OK
+
+* DMMP_ERR_BUG
+
+* DMMP_ERR_NO_MEMORY
+
+* DMMP_ERR_NO_DAEMON
+
+* DMMP_ERR_MPATH_BUSY
+
+* DMMP_ERR_MPATH_NOT_FOUND
+
+* DMMP_ERR_INVALID_ARGUMENT
+
+* DMMP_ERR_PERMISSION_DENY
+
+Error number could be converted to string by \fBdmmp_strerror\fP.

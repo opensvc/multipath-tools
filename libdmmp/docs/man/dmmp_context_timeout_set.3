@@ -1,0 +1,19 @@
+.TH "dmmp_context_timeout_set" 3 "dmmp_context_timeout_set" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_context_timeout_set \- Set IPC timeout.
+.SH SYNOPSIS
+.B "void" dmmp_context_timeout_set
+.BI "(struct dmmp_context *" ctx ","
+.BI "unsigned int " tmo ");"
+.SH ARGUMENTS
+.IP "ctx" 12
+Pointer of 'struct dmmp_context'.
+If this pointer is NULL, your program will be terminated by assert.
+.IP "tmo" 12
+Timeout in milliseconds(1 seconds equal 1000 milliseconds).
+0 means infinite, function only return when error or pass.
+.SH "DESCRIPTION"
+
+By default, the IPC to multipathd daemon will timeout after 60 seconds.
+.SH "RETURN"
+void

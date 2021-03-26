@@ -1,0 +1,27 @@
+.TH "dmmp_path_group_array_get" 3 "dmmp_path_group_array_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_path_group_array_get \- Retrieve path groups pointer array.
+.SH SYNOPSIS
+.B "void" dmmp_path_group_array_get
+.BI "(struct dmmp_mpath *" dmmp_mp ","
+.BI "struct dmmp_path_group ***" dmmp_pgs ","
+.BI "uint32_t *" dmmp_pg_count ");"
+.SH ARGUMENTS
+.IP "dmmp_mp" 12
+Pointer of 'struct dmmp_mpath'.
+If this pointer is NULL, your program will be terminated by assert.
+.IP "dmmp_pgs" 12
+Output pointer of 'struct dmmp_path_group' pointer array.
+If this pointer is NULL, your program will be terminated by assert.
+.IP "dmmp_pg_count" 12
+Output pointer of uint32_t. Hold the size of 'dmmp_pgs' pointer array.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+Retrieve the path groups of certain mpath.
+
+The memory of output pointer array is hold by 'struct dmmp_mpath', no
+need to free this memory, the resources will got freed when
+\fBdmmp_mpath_array_free\fP.
+.SH "RETURN"
+void

@@ -1,0 +1,16 @@
+.TH "dmmp_path_group_selector_get" 3 "dmmp_path_group_selector_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_path_group_selector_get \- Retrieve path group selector.
+.SH SYNOPSIS
+.B "const char *" dmmp_path_group_selector_get
+.BI "(struct dmmp_path_group *" dmmp_pg ");"
+.SH ARGUMENTS
+.IP "dmmp_pg" 12
+Pointer of 'struct dmmp_path_group'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+Path group selector determine which path in active path group will be
+use to next I/O.
+.SH "RETURN"
+const char *.

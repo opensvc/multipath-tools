@@ -1,0 +1,16 @@
+.TH "dmmp_last_error_msg" 3 "dmmp_last_error_msg" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_last_error_msg \- Retrieves the last error message.
+.SH SYNOPSIS
+.B "const char *" dmmp_last_error_msg
+.BI "(struct dmmp_context *" ctx ");"
+.SH ARGUMENTS
+.IP "ctx" 12
+Pointer of 'struct dmmp_context'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+Retrieves the last error message.
+.SH "RETURN"
+const char *. No need to free this memory, the resources will get
+freed when \fBdmmp_context_free\fP.

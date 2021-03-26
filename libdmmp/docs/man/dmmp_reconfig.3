@@ -1,0 +1,27 @@
+.TH "dmmp_reconfig" 3 "dmmp_reconfig" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_reconfig \- Instruct multipathd daemon to do reconfiguration.
+.SH SYNOPSIS
+.B "int" dmmp_reconfig
+.BI "(struct dmmp_context *" ctx ");"
+.SH ARGUMENTS
+.IP "ctx" 12
+Pointer of 'struct dmmp_context'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+Instruct multipathd daemon to do reconfiguration.
+.SH "RETURN"
+int. Valid error codes are:
+
+* DMMP_OK
+
+* DMMP_ERR_BUG
+
+* DMMP_ERR_NO_MEMORY
+
+* DMMP_ERR_NO_DAEMON
+
+* DMMP_ERR_PERMISSION_DENY
+
+Error number could be converted to string by \fBdmmp_strerror\fP.

@@ -1,0 +1,13 @@
+.TH "dmmp_mpath_wwid_get" 3 "dmmp_mpath_wwid_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_mpath_wwid_get \- Retrieve WWID of certain mpath.
+.SH SYNOPSIS
+.B "const char *" dmmp_mpath_wwid_get
+.BI "(struct dmmp_mpath *" dmmp_mp ");"
+.SH ARGUMENTS
+.IP "dmmp_mp" 12
+Pointer of 'struct dmmp_mpath'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "RETURN"
+const char *. No need to free this memory, the resources will get
+freed when \fBdmmp_mpath_array_free\fP.

@@ -1,0 +1,24 @@
+.TH "dmmp_log_priority_str" 3 "dmmp_log_priority_str" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_log_priority_str \- Convert log priority to string.
+.SH SYNOPSIS
+.B "const char *" dmmp_log_priority_str
+.BI "(int " priority ");"
+.SH ARGUMENTS
+.IP "priority" 12
+int. Log priority.
+.SH "DESCRIPTION"
+
+Convert log priority to string (const char *).
+.SH "RETURN"
+const char *. Valid string are:
+
+* "ERROR" for DMMP_LOG_PRIORITY_ERROR
+
+* "WARN " for DMMP_LOG_PRIORITY_WARNING
+
+* "INFO " for DMMP_LOG_PRIORITY_INFO
+
+* "DEBUG" for DMMP_LOG_PRIORITY_DEBUG
+
+* "Invalid argument" for invalid log priority.

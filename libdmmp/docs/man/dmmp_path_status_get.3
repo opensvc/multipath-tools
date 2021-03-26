@@ -1,0 +1,54 @@
+.TH "dmmp_path_status_get" 3 "dmmp_path_status_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_path_status_get \- Retrieve the path status.
+.SH SYNOPSIS
+.B "uint32_t" dmmp_path_status_get
+.BI "(struct dmmp_path *" dmmp_p ");"
+.SH ARGUMENTS
+.IP "dmmp_p" 12
+Pointer of 'struct dmmp_path'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+The valid path statuses are:
+
+* DMMP_PATH_STATUS_UNKNOWN
+
+* DMMP_PATH_STATUS_DOWN
+
+Path is down and you shouldn't try to send commands to it.
+
+* DMMP_PATH_STATUS_UP
+
+Path is up and I/O can be sent to it.
+
+* DMMP_PATH_STATUS_SHAKY
+
+Only emc_clariion checker when path not available for "normal"
+operations.
+
+* DMMP_PATH_STATUS_GHOST
+
+Only hp_sw and rdac checkers.  Indicates a "passive/standby"
+path on active/passive HP arrays. These paths will return valid
+answers to certain SCSI commands (tur, read_capacity, inquiry,
+start_stop), but will fail I/O commands.  The path needs an
+initialization command to be sent to it in order for I/Os to
+succeed.
+
+* DMMP_PATH_STATUS_PENDING
+
+Available for all async checkers when a check IO is in flight.
+
+* DMMP_PATH_STATUS_TIMEOUT
+
+Only tur checker when command timed out.
+
+* DMMP_PATH_STATUS_DELAYED
+
+If a path fails after being up for less than delay_watch_checks checks,
+when it comes back up again, it will not be marked as up until it has
+been up for delay_wait_checks checks. During this time, it is marked as
+"delayed".
+.SH "RETURN"
+uint32_t.

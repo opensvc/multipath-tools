@@ -1,0 +1,29 @@
+.TH "dmmp_context_log_priority_set" 3 "dmmp_context_log_priority_set" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_context_log_priority_set \- Set log priority.
+.SH SYNOPSIS
+.B "void" dmmp_context_log_priority_set
+.BI "(struct dmmp_context *" ctx ","
+.BI "int " priority ");"
+.SH ARGUMENTS
+.IP "ctx" 12
+Pointer of 'struct dmmp_context'.
+If this pointer is NULL, your program will be terminated by assert.
+.IP "priority" 12
+int, log priority.
+.SH "DESCRIPTION"
+
+
+When library generates log message, only equal or more important(less value)
+message will be forwarded to log handler function. Valid log priority values
+are:
+
+* DMMP_LOG_PRIORITY_ERROR -- 3
+
+* DMMP_LOG_PRIORITY_WARNING -- 4
+
+* DMMP_LOG_PRIORITY_INFO -- 5
+
+* DMMP_LOG_PRIORITY_DEBUG -- 7
+.SH "RETURN"
+void

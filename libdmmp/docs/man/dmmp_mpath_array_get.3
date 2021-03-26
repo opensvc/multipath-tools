@@ -1,0 +1,36 @@
+.TH "dmmp_mpath_array_get" 3 "dmmp_mpath_array_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_mpath_array_get \- Query all existing multipath devices.
+.SH SYNOPSIS
+.B "int" dmmp_mpath_array_get
+.BI "(struct dmmp_context *" ctx ","
+.BI "struct dmmp_mpath ***" dmmp_mps ","
+.BI "uint32_t *" dmmp_mp_count ");"
+.SH ARGUMENTS
+.IP "ctx" 12
+Pointer of 'struct dmmp_context'.
+If this pointer is NULL, your program will be terminated by assert.
+.IP "dmmp_mps" 12
+Output pointer array of 'struct dmmp_mpath'.
+If this pointer is NULL, your program will be terminated by assert.
+.IP "dmmp_mp_count" 12
+Output pointer of uint32_t. Hold the size of 'dmmp_mps' pointer array.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+Query all existing multipath devices and store them into a pointer array.
+The memory of 'dmmp_mps' should be freed via \fBdmmp_mpath_array_free\fP.
+.SH "RETURN"
+int. Valid error codes are:
+
+* DMMP_OK
+
+* DMMP_ERR_BUG
+
+* DMMP_ERR_NO_MEMORY
+
+* DMMP_ERR_NO_DAEMON
+
+* DMMP_ERR_INCONSISTENT_DATA
+
+Error number could be converted to string by \fBdmmp_strerror\fP.

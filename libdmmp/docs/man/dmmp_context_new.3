@@ -1,0 +1,19 @@
+.TH "dmmp_context_new" 3 "dmmp_context_new" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_context_new \- Create struct dmmp_context.
+.SH SYNOPSIS
+.B "struct dmmp_context *" dmmp_context_new
+.BI "(" void ");"
+.SH ARGUMENTS
+.IP "void" 12
+no arguments
+.SH "DESCRIPTION"
+
+The default logging level (DMMP_LOG_PRIORITY_DEFAULT) is
+DMMP_LOG_PRIORITY_WARNING which means only warning and error message will be
+forward to log handler function.  The default log handler function will print
+log message to STDERR, to change so, please use \fBdmmp_context_log_func_set\fP
+to set your own log handler, check manpage libdmmp.h(3) for detail.
+.SH "RETURN"
+Pointer of 'struct dmmp_context'. Should be freed by
+\fBdmmp_context_free\fP.

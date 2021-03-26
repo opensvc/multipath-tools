@@ -1,0 +1,18 @@
+.TH "dmmp_path_group_id_get" 3 "dmmp_path_group_id_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_path_group_id_get \- Retrieve path group ID.
+.SH SYNOPSIS
+.B "uint32_t" dmmp_path_group_id_get
+.BI "(struct dmmp_path_group *" dmmp_pg ");"
+.SH ARGUMENTS
+.IP "dmmp_pg" 12
+Pointer of 'struct dmmp_path_group'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+Retrieve the path group ID which could be used to switch active path group
+via command:
+
+multipathd -k'switch multipath mpathb group $id'
+.SH "RETURN"
+uint32_t.
