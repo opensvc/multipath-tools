@@ -845,7 +845,6 @@ handle_path_wwid_change(struct path *pp, struct vectors *vecs)
 	}
 	rescan_path(udd);
 	sysfs_attr_set_value(udd, "uevent", "add", strlen("add"));
-	trigger_partitions_udev_change(udd, "add", strlen("add"));
 	udev_device_unref(udd);
 }
 
