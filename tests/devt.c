@@ -37,8 +37,8 @@ static bool sys_dev_block_exists(void)
 				break;
 			}
 		}
+		closedir(dir);
 	}
-	closedir(dir);
 	return rc;
 }
 
