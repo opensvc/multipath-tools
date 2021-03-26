@@ -1152,19 +1152,19 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 				vpd = d;
 			}
 			break;
-		case 0x8:
-			/* SCSI Name: Prio 4 */
-			if (memcmp(d + 4, "eui.", 4) &&
-			    memcmp(d + 4, "naa.", 4) &&
-			    memcmp(d + 4, "iqn.", 4))
-				break;
+		case 0x2:
+			/* EUI-64: Prio 4 */
 			if (prio < 4) {
 				prio = 4;
 				vpd = d;
 			}
 			break;
-		case 0x2:
-			/* EUI-64: Prio 3 */
+		case 0x8:
+			/* SCSI Name: Prio 3 */
+			if (memcmp(d + 4, "eui.", 4) &&
+			    memcmp(d + 4, "naa.", 4) &&
+			    memcmp(d + 4, "iqn.", 4))
+				break;
 			if (prio < 3) {
 				prio = 3;
 				vpd = d;
