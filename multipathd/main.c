@@ -2218,13 +2218,13 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 				ev_add_path(pp, vecs, 1);
 				pp->tick = 1;
 			} else {
+				if (ret == PATHINFO_SKIPPED)
+					return -1;
 				/*
 				 * We failed multiple times to initialize this
 				 * path properly. Don't re-check too often.
 				 */
 				pp->checkint = max_checkint;
-				if (ret == PATHINFO_SKIPPED)
-					return -1;
 			}
 		}
 		return 0;
@@ -2504,6 +2504,8 @@ checkerloop (void *ap)
 		vector_foreach_slot (vecs->pathvec, pp, i) {
 			rc = check_path(vecs, pp, ticks);
 			if (rc < 0) {
+				condlog(1, "%s: check_path() failed, removing",
+					pp->dev);
 				vector_del_slot(vecs->pathvec, i);
 				free_path(pp);
 				i--;

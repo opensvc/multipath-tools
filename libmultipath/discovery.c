@@ -2370,6 +2370,22 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			if (pp->initialized != INIT_FAILED) {
 				pp->initialized = INIT_MISSING_UDEV;
 				pp->tick = conf->retrigger_delay;
+			} else if (pp->retriggers >= conf->retrigger_tries &&
+				   (pp->state == PATH_UP || pp->state == PATH_GHOST)) {
+				/*
+				 * We have failed to read udev info for this path
+				 * repeatedly. We used the fallback in get_uid()
+				 * if there was any, and still got no WWID,
+				 * although the path is allegedly up.
+				 * It's likely that this path is not fit for
+				 * multipath use.
+				 */
+				char buf[16];
+
+				snprint_path(buf, sizeof(buf), "%T", pp, 0);
+				condlog(1, "%s: no WWID in state \"%s\", giving up",
+					pp->dev, buf);
+				return PATHINFO_SKIPPED;
 			}
 			return PATHINFO_OK;
 		}
