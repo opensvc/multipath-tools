@@ -1,5 +1,8 @@
+[![basic-build-and-ci](https://github.com/openSUSE/multipath-tools/actions/workflows/build-and-unittest.yaml/badge.svg)](https://github.com/openSUSE/multipath-tools/actions/workflows/build-and-unittest.yaml) [![compile and unit test on native arch](https://github.com/openSUSE/multipath-tools/actions/workflows/native.yaml/badge.svg)](https://github.com/openSUSE/multipath-tools/actions/workflows/native.yaml) [![compile and unit test on foreign arch](https://github.com/openSUSE/multipath-tools/actions/workflows/foreign.yaml/badge.svg)](https://github.com/openSUSE/multipath-tools/actions/workflows/foreign.yaml)
+
 multipath-tools for Linux
 *************************
+
 
 https://github.com/opensvc/multipath-tools
 
