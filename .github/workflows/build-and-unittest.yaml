@@ -5,6 +5,8 @@ on:
       - master
       - queue
       - tip
+  pull_request:
+
 jobs:
   bionic:
     runs-on: ubuntu-18.04

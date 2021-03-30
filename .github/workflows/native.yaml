@@ -5,6 +5,7 @@ on:
       - master
       - queue
       - tip
+  pull_request:
 
 jobs:
   build-and-test:
