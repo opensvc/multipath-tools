@@ -388,6 +388,17 @@ static struct hwentry default_hw[] = {
 		.product       = "^EMC PowerMax_",
 		.pgpolicy      = MULTIBUS,
 	},
+	{
+		/* PowerStore */
+		.vendor        = "DellEMC",
+		.product       = "PowerStore",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.prio_name     = PRIO_ALUA,
+		.hwhandler     = "1 alua",
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 3,
+		.fast_io_fail  = 15,
+	},
 	/*
 	 * Fujitsu
 	 */
@@ -819,7 +830,7 @@ static struct hwentry default_hw[] = {
 		 *
 		 * The hwtable is searched backwards, so place this after "Generic NVMe"
 		 */
-		.vendor	       = "NVME",
+		.vendor        = "NVME",
 		.product       = "^NetApp ONTAP Controller",
 		.pgpolicy      = MULTIBUS,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
@@ -1113,8 +1124,9 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 	},
 	/*
-	 * Imation/Nexsan
+	 * StorCentric
 	 */
+		/* Nexsan */
 	{
 		/* E-Series */
 		.vendor        = "NEXSAN",
@@ -1143,9 +1155,7 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.no_path_retry = 30,
 	},
-	/*
-	 * Violin Systems
-	 */
+		/* Violin Systems */
 	{
 		/* 3000 / 6000 Series */
 		.vendor        = "VIOLIN",
@@ -1189,6 +1199,14 @@ static struct hwentry default_hw[] = {
 		/* Magnitude family */
 		.vendor        = "(XIOTECH|XIOtech)",
 		.product       = "Magnitude",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 30,
+	},
+		/* Vexata */
+	{
+		/* VX */
+		.vendor        = "Vexata",
+		.product       = "VX",
 		.pgpolicy      = MULTIBUS,
 		.no_path_retry = 30,
 	},

@@ -13,6 +13,11 @@ If valgrind detects a bad memory access or leak, the test will fail. The
 output of the test run, including valgrind output, is stored as
 `<testname>.vgr`.
 
+## Controlling verbosity for unit tests
+
+Some test programs use the environment variable `MPATHTEST_VERBOSITY` to
+control the log level during test execution.
+
 ## Notes on individual tests
 
 ### Tests that require root permissions

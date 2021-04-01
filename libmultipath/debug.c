@@ -14,37 +14,31 @@
 #include "config.h"
 #include "defaults.h"
 #include "debug.h"
+#include "time-util.h"
+#include "util.h"
 
-void dlog (int sink, int prio, const char * fmt, ...)
+int logsink;
+int libmp_verbosity = DEFAULT_VERBOSITY;
+
+void dlog(int prio, const char * fmt, ...)
 {
 	va_list ap;
-	int thres;
-	struct config *conf;
 
 	va_start(ap, fmt);
-	conf = get_multipath_config();
-	ANNOTATE_IGNORE_READS_BEGIN();
-	thres = (conf) ? conf->verbosity : DEFAULT_VERBOSITY;
-	ANNOTATE_IGNORE_READS_END();
-	put_multipath_config(conf);
+	if (logsink != LOGSINK_SYSLOG) {
+		if (logsink == LOGSINK_STDERR_WITH_TIME) {
+			struct timespec ts;
+			char buff[32];
 
-	if (prio <= thres) {
-		if (sink < 1) {
-			if (sink == 0) {
-				time_t t = time(NULL);
-				struct tm *tb = localtime(&t);
-				char buff[16];
-
-				strftime(buff, sizeof(buff),
-					 "%b %d %H:%M:%S", tb);
-				buff[sizeof(buff)-1] = '\0';
-
-				fprintf(stderr, "%s | ", buff);
-			}
-			vfprintf(stderr, fmt, ap);
+			get_monotonic_time(&ts);
+			safe_sprintf(buff, "%ld.%06ld",
+				     (long)ts.tv_sec,
+				     ts.tv_nsec/1000);
+			fprintf(stderr, "%s | ", buff);
 		}
-		else
-			log_safe(prio + 3, fmt, ap);
+		vfprintf(stderr, fmt, ap);
 	}
+	else
+		log_safe(prio + 3, fmt, ap);
 	va_end(ap);
 }

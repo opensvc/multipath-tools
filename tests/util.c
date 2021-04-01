@@ -946,6 +946,7 @@ int main(void)
 {
 	int ret = 0;
 
+	init_test_verbosity(-1);
 	ret += test_basenamecpy();
 	ret += test_bitmasks();
 	ret += test_strlcpy();

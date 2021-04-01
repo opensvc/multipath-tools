@@ -56,6 +56,15 @@ int __wrap_execute_program(char *path, char *value, int len)
 	return 0;
 }
 
+int __wrap_libmp_get_version(int which, unsigned int version[3])
+{
+	unsigned int *vers = mock_ptr_type(unsigned int *);
+
+	condlog(4, "%s: %d", __func__, which);
+	memcpy(version, vers, 3 * sizeof(unsigned int));
+	return 0;
+}
+
 struct udev_list_entry
 *__wrap_udev_device_get_properties_list_entry(struct udev_device *ud)
 {
@@ -248,16 +257,18 @@ void mock_pathinfo(int mask, const struct mocked_path *mp)
 	} else
 		will_return(__wrap_udev_device_get_sysattr_value, "0");
 
-	/* filter_property */
-	will_return(__wrap_udev_device_get_sysname, mp->devnode);
-	if (mp->flags & BL_BY_PROPERTY) {
-		will_return(__wrap_udev_list_entry_get_name, "BAZ");
-		return;
-	} else
-		will_return(__wrap_udev_list_entry_get_name,
-			    "SCSI_IDENT_LUN_NAA_EXT");
 	if (mask & DI_SYSFS)
 		mock_sysfs_pathinfo(mp);
+
+	if (mask & DI_BLACKLIST) {
+		will_return(__wrap_udev_device_get_sysname, mp->devnode);
+		if (mp->flags & BL_BY_PROPERTY) {
+			will_return(__wrap_udev_list_entry_get_name, "BAZ");
+			return;
+		} else
+			will_return(__wrap_udev_list_entry_get_name,
+				    "SCSI_IDENT_LUN_NAA_EXT");
+	}
 
 	if (mp->flags & BL_BY_DEVICE &&
 	    (mask & DI_BLACKLIST && mask & DI_SYSFS))
@@ -339,6 +350,8 @@ struct multipath *__mock_multipath(struct vectors *vecs, struct path *pp)
 	struct multipath *mp;
 	struct config *conf;
 	struct mocked_path mop;
+	/* pretend new dm, use minio_rq,  */
+	static const unsigned int fake_dm_tgt_version[3] = { 1, 1, 1 };
 
 	mocked_path_from_path(&mop, pp);
 	/* pathinfo() call in adopt_paths */
@@ -351,7 +364,9 @@ struct multipath *__mock_multipath(struct vectors *vecs, struct path *pp)
 	conf = get_multipath_config();
 	select_pgpolicy(conf, mp);
 	select_no_path_retry(conf, mp);
+	will_return(__wrap_libmp_get_version, fake_dm_tgt_version);
 	select_retain_hwhandler(conf, mp);
+	will_return(__wrap_libmp_get_version, fake_dm_tgt_version);
 	select_minio(conf, mp);
 	put_multipath_config(conf);
 

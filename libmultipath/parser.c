@@ -390,7 +390,7 @@ oom:
 /* non-recursive configuration stream handler */
 static int kw_level = 0;
 
-int warn_on_duplicates(vector uniques, char *str, char *file)
+int warn_on_duplicates(vector uniques, char *str, const char *file)
 {
 	char *tmp;
 	int i;
@@ -434,7 +434,7 @@ is_sublevel_keyword(char *str)
 }
 
 int
-validate_config_strvec(vector strvec, char *file)
+validate_config_strvec(vector strvec, const char *file)
 {
 	char *str = NULL;
 	int i;
@@ -499,7 +499,8 @@ validate_config_strvec(vector strvec, char *file)
 }
 
 static int
-process_stream(struct config *conf, FILE *stream, vector keywords, char *file)
+process_stream(struct config *conf, FILE *stream, vector keywords,
+	       const char *file)
 {
 	int i;
 	int r = 0, t;
@@ -536,7 +537,7 @@ process_stream(struct config *conf, FILE *stream, vector keywords, char *file)
 		if (!strcmp(str, EOB)) {
 			if (kw_level > 0) {
 				free_strvec(strvec);
-				break;
+				goto out;
 			}
 			condlog(0, "unmatched '%s' at line %d of %s",
 				EOB, line_nr, file);
@@ -575,7 +576,8 @@ process_stream(struct config *conf, FILE *stream, vector keywords, char *file)
 
 		free_strvec(strvec);
 	}
-
+	if (kw_level == 1)
+		condlog(1, "missing '%s' at end of %s", EOB, file);
 out:
 	FREE(buf);
 	free_uniques(uniques);
@@ -584,7 +586,7 @@ out:
 
 /* Data initialization */
 int
-process_file(struct config *conf, char *file)
+process_file(struct config *conf, const char *file)
 {
 	int r;
 	FILE *stream;

@@ -1,0 +1,15 @@
+.TH "dmmp_context_userdata_get" 3 "dmmp_context_userdata_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_context_userdata_get \- Get user data pointer.
+.SH SYNOPSIS
+.B "void *" dmmp_context_userdata_get
+.BI "(struct dmmp_context *" ctx ");"
+.SH ARGUMENTS
+.IP "ctx" 12
+Pointer of 'struct dmmp_context'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+Retrieve user data pointer from 'struct dmmp_context'.
+.SH "RETURN"
+void *. Pointer of user defined data.

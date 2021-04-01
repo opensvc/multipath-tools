@@ -26,6 +26,8 @@
 #include "sysfs.h"
 #include "config.h"
 #include "wwids.h"
+#include "version.h"
+#include "time-util.h"
 
 #include "log_pthread.h"
 #include <sys/types.h>
@@ -34,7 +36,14 @@
 #define MAX_WAIT 5
 #define LOOPS_PER_SEC 5
 
+#define INVALID_VERSION ~0U
+static unsigned int dm_library_version[3] = { INVALID_VERSION, };
+static unsigned int dm_kernel_version[3] = { INVALID_VERSION, };
+static unsigned int dm_mpath_target_version[3] = { INVALID_VERSION, };
+
 static pthread_once_t dm_initialized = PTHREAD_ONCE_INIT;
+static pthread_once_t versions_initialized = PTHREAD_ONCE_INIT;
+static pthread_mutex_t libmp_dm_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static int dm_conf_verbosity;
 
@@ -52,15 +61,33 @@ static inline int dm_task_set_cookie(struct dm_task *dmt, uint32_t *c, int a)
 	return 1;
 }
 
-void dm_udev_wait(unsigned int c)
+static void libmp_udev_wait(unsigned int c)
 {
 }
 
-void dm_udev_set_sync_support(int c)
+static void dm_udev_set_sync_support(int c)
 {
 }
-
+#else
+static void libmp_udev_wait(unsigned int c)
+{
+	pthread_mutex_lock(&libmp_dm_lock);
+	pthread_cleanup_push(cleanup_mutex, &libmp_dm_lock);
+	dm_udev_wait(c);
+	pthread_cleanup_pop(1);
+}
 #endif
+
+int libmp_dm_task_run(struct dm_task *dmt)
+{
+	int r;
+
+	pthread_mutex_lock(&libmp_dm_lock);
+	pthread_cleanup_push(cleanup_mutex, &libmp_dm_lock);
+	r = dm_task_run(dmt);
+	pthread_cleanup_pop(1);
+	return r;
+}
 
 __attribute__((format(printf, 4, 5))) static void
 dm_write_log (int level, const char *file, int line, const char *f, ...)
@@ -78,15 +105,14 @@ dm_write_log (int level, const char *file, int line, const char *f, ...)
 		return;
 
 	va_start(ap, f);
-	if (logsink < 1) {
-		if (logsink == 0) {
-			time_t t = time(NULL);
-			struct tm *tb = localtime(&t);
-			char buff[16];
+	if (logsink != LOGSINK_SYSLOG) {
+		if (logsink == LOGSINK_STDERR_WITH_TIME) {
+			struct timespec ts;
+			char buff[32];
 
-			strftime(buff, sizeof(buff), "%b %d %H:%M:%S", tb);
-			buff[sizeof(buff)-1] = '\0';
-
+			get_monotonic_time(&ts);
+			safe_sprintf(buff, "%ld.%06ld",
+				     (long)ts.tv_sec, ts.tv_nsec/1000);
 			fprintf(stderr, "%s | ", buff);
 		}
 		fprintf(stderr, "libdevmapper: %s(%i): ", file, line);
@@ -102,7 +128,7 @@ dm_write_log (int level, const char *file, int line, const char *f, ...)
 	return;
 }
 
-void dm_init(int v)
+static void dm_init(int v)
 {
 	/*
 	 * This maps libdm's standard loglevel _LOG_WARN (= 4), which is rather
@@ -112,61 +138,68 @@ void dm_init(int v)
 	dm_log_init(&dm_write_log);
 }
 
+static void init_dm_library_version(void)
+{
+	char version[64];
+	unsigned int v[3];
+
+	dm_get_library_version(version, sizeof(version));
+	if (sscanf(version, "%u.%u.%u ", &v[0], &v[1], &v[2]) != 3) {
+		condlog(0, "invalid libdevmapper version %s", version);
+		return;
+	}
+	memcpy(dm_library_version, v, sizeof(dm_library_version));
+	condlog(3, "libdevmapper version %u.%.2u.%.2u",
+		dm_library_version[0], dm_library_version[1],
+		dm_library_version[2]);
+}
+
 static int
 dm_lib_prereq (void)
 {
-	char version[64];
-	int v[3];
+
 #if defined(LIBDM_API_HOLD_CONTROL)
-	int minv[3] = {1, 2, 111};
+	unsigned int minv[3] = {1, 2, 111};
 #elif defined(LIBDM_API_GET_ERRNO)
-	int minv[3] = {1, 2, 99};
+	unsigned int minv[3] = {1, 2, 99};
 #elif defined(LIBDM_API_DEFERRED)
-	int minv[3] = {1, 2, 89};
+	unsigned int minv[3] = {1, 2, 89};
 #elif defined(DM_SUBSYSTEM_UDEV_FLAG0)
-	int minv[3] = {1, 2, 82};
+	unsigned int minv[3] = {1, 2, 82};
 #elif defined(LIBDM_API_COOKIE)
-	int minv[3] = {1, 2, 38};
+	unsigned int minv[3] = {1, 2, 38};
 #else
-	int minv[3] = {1, 2, 8};
+	unsigned int minv[3] = {1, 2, 8};
 #endif
 
-	dm_get_library_version(version, sizeof(version));
-	condlog(3, "libdevmapper version %s", version);
-	if (sscanf(version, "%d.%d.%d ", &v[0], &v[1], &v[2]) != 3) {
-		condlog(0, "invalid libdevmapper version %s", version);
-		return 1;
-	}
-
-	if VERSION_GE(v, minv)
+	if (VERSION_GE(dm_library_version, minv))
 		return 0;
-	condlog(0, "libdevmapper version must be >= %d.%.2d.%.2d",
+	condlog(0, "libdevmapper version must be >= %u.%.2u.%.2u",
 		minv[0], minv[1], minv[2]);
 	return 1;
 }
 
-int
-dm_drv_version(unsigned int *v)
+static void init_dm_drv_version(void)
 {
 	char buff[64];
-
-	v[0] = 0;
-	v[1] = 0;
-	v[2] = 0;
+	unsigned int v[3];
 
 	if (!dm_driver_version(buff, sizeof(buff))) {
 		condlog(0, "cannot get kernel dm version");
-		return 1;
+		return;
 	}
 	if (sscanf(buff, "%u.%u.%u ", &v[0], &v[1], &v[2]) != 3) {
 		condlog(0, "invalid kernel dm version '%s'", buff);
-		return 1;
+		return;
 	}
-	return 0;
+	memcpy(dm_kernel_version, v, sizeof(dm_library_version));
+	condlog(3, "kernel device mapper v%u.%u.%u",
+		dm_kernel_version[0],
+		dm_kernel_version[1],
+		dm_kernel_version[2]);
 }
 
-int
-dm_tgt_version (unsigned int * version, char * str)
+static int dm_tgt_version (unsigned int *version, char *str)
 {
 	int r = 2;
 	struct dm_task *dmt;
@@ -174,16 +207,17 @@ dm_tgt_version (unsigned int * version, char * str)
 	struct dm_versions *last_target;
 	unsigned int *v;
 
-	version[0] = 0;
-	version[1] = 0;
-	version[2] = 0;
-
+	/*
+	 * We have to call dm_task_create() and not libmp_dm_task_create()
+	 * here to avoid a recursive invocation of
+	 * pthread_once(&dm_initialized), which would cause a deadlock.
+	 */
 	if (!(dmt = dm_task_create(DM_DEVICE_LIST_VERSIONS)))
 		return 1;
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(2, DM_DEVICE_LIST_VERSIONS, dmt);
 		condlog(0, "Can not communicate with kernel DM");
 		goto out;
@@ -213,26 +247,25 @@ out:
 	return r;
 }
 
-static int
-dm_tgt_prereq (unsigned int *ver)
+static void init_dm_mpath_version(void)
+{
+	if (!dm_tgt_version(dm_mpath_target_version, TGT_MPATH))
+		condlog(3, "DM multipath kernel driver v%u.%u.%u",
+			dm_mpath_target_version[0],
+			dm_mpath_target_version[1],
+			dm_mpath_target_version[2]);
+}
+
+static int dm_tgt_prereq (unsigned int *ver)
 {
 	unsigned int minv[3] = {1, 0, 3};
-	unsigned int version[3] = {0, 0, 0};
-	unsigned int * v = version;
 
-	if (dm_tgt_version(v, TGT_MPATH)) {
-		/* in doubt return not capable */
-		return 1;
-	}
-
-	/* test request based multipath capability */
-	condlog(3, "DM multipath kernel driver v%u.%u.%u",
-		v[0], v[1], v[2]);
-
-	if (VERSION_GE(v, minv)) {
-		ver[0] = v[0];
-		ver[1] = v[1];
-		ver[2] = v[2];
+	if (VERSION_GE(dm_mpath_target_version, minv)) {
+		if (ver) {
+			ver[0] = dm_mpath_target_version[0];
+			ver[1] = dm_mpath_target_version[1];
+			ver[2] = dm_mpath_target_version[2];
+		}
 		return 0;
 	}
 
@@ -241,11 +274,60 @@ dm_tgt_prereq (unsigned int *ver)
 	return 1;
 }
 
+static void _init_versions(void)
+{
+	/* Can't use condlog here because of how VERSION_STRING is defined */
+	if (3 <= libmp_verbosity)
+		dlog(3, VERSION_STRING);
+	init_dm_library_version();
+	init_dm_drv_version();
+	init_dm_mpath_version();
+}
+
+static int init_versions(void) {
+	pthread_once(&versions_initialized, _init_versions);
+	return (dm_library_version[0] == INVALID_VERSION ||
+		dm_kernel_version[0] == INVALID_VERSION ||
+		dm_mpath_target_version[0] == INVALID_VERSION);
+}
+
 int dm_prereq(unsigned int *v)
 {
+	if (init_versions())
+		return 1;
 	if (dm_lib_prereq())
 		return 1;
 	return dm_tgt_prereq(v);
+}
+
+int libmp_get_version(int which, unsigned int version[3])
+{
+	unsigned int *src_version;
+
+	init_versions();
+	switch (which) {
+	case DM_LIBRARY_VERSION:
+		src_version = dm_library_version;
+		break;
+	case DM_KERNEL_VERSION:
+		src_version = dm_kernel_version;
+		break;
+	case DM_MPATH_TARGET_VERSION:
+		src_version = dm_mpath_target_version;
+		break;
+	case MULTIPATH_VERSION:
+		version[0] = (VERSION_CODE >> 16) & 0xff;
+		version[1] = (VERSION_CODE >> 8) & 0xff;
+		version[2] = VERSION_CODE & 0xff;
+		return 0;
+	default:
+		condlog(0, "%s: invalid value for 'which'", __func__);
+		return 1;
+	}
+	if (src_version[0] == INVALID_VERSION)
+		return 1;
+	memcpy(version, src_version, 3 * sizeof(*version));
+	return 0;
 }
 
 static int libmp_dm_udev_sync = 0;
@@ -255,23 +337,32 @@ void libmp_udev_set_sync_support(int on)
 	libmp_dm_udev_sync = !!on;
 }
 
+static bool libmp_dm_init_called;
+void libmp_dm_exit(void)
+{
+	if (!libmp_dm_init_called)
+		return;
+
+	/* switch back to default libdm logging */
+	dm_log_init(NULL);
+#ifdef LIBDM_API_HOLD_CONTROL
+	/* make sure control fd is closed in dm_lib_release() */
+	dm_hold_control_dev(0);
+#endif
+}
+
 static void libmp_dm_init(void)
 {
-	struct config *conf;
-	int verbosity;
 	unsigned int version[3];
 
 	if (dm_prereq(version))
 		exit(1);
-	conf = get_multipath_config();
-	verbosity = conf->verbosity;
-	memcpy(conf->version, version, sizeof(version));
-	put_multipath_config(conf);
-	dm_init(verbosity);
+	dm_init(libmp_verbosity);
 #ifdef LIBDM_API_HOLD_CONTROL
 	dm_hold_control_dev(1);
 #endif
 	dm_udev_set_sync_support(libmp_dm_udev_sync);
+	libmp_dm_init_called = true;
 }
 
 static void _do_skip_libmp_dm_init(void)
@@ -322,12 +413,12 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t 
 				DM_UDEV_DISABLE_LIBRARY_FALLBACK | udev_flags))
 		goto out;
 
-	r = dm_task_run (dmt);
+	r = libmp_dm_task_run (dmt);
 	if (!r)
 		dm_log_error(2, task, dmt);
 
 	if (udev_wait_flag)
-			dm_udev_wait(cookie);
+			libmp_udev_wait(cookie);
 out:
 	dm_task_destroy (dmt);
 	return r;
@@ -414,12 +505,12 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 	    !dm_task_set_cookie(dmt, &cookie, udev_flags))
 		goto freeout;
 
-	r = dm_task_run (dmt);
+	r = libmp_dm_task_run (dmt);
 	if (!r)
 		dm_log_error(2, task, dmt);
 
 	if (task == DM_DEVICE_CREATE)
-			dm_udev_wait(cookie);
+			libmp_udev_wait(cookie);
 freeout:
 	if (prefixed_uuid)
 		FREE(prefixed_uuid);
@@ -529,7 +620,7 @@ do_get_info(const char *name, struct dm_info *info)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_INFO, dmt);
 		goto out;
 	}
@@ -570,7 +661,7 @@ int dm_get_map(const char *name, unsigned long long *size, char *outparams)
 	dm_task_no_open_count(dmt);
 
 	errno = 0;
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_TABLE, dmt);
 		if (dm_task_get_errno(dmt) == ENXIO)
 			r = DMP_NOT_FOUND;
@@ -612,7 +703,7 @@ dm_get_prefixed_uuid(const char *name, char *uuid, int uuid_len)
 	if (!dm_task_set_name (dmt, name))
 		goto uuidout;
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_INFO, dmt);
 		goto uuidout;
 	}
@@ -683,7 +774,7 @@ int dm_get_status(const char *name, char *outstatus)
 	dm_task_no_open_count(dmt);
 
 	errno = 0;
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_STATUS, dmt);
 		if (dm_task_get_errno(dmt) == ENXIO)
 			r = DMP_NOT_FOUND;
@@ -736,7 +827,7 @@ int dm_type(const char *name, char *type)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_TABLE, dmt);
 		goto out;
 	}
@@ -780,7 +871,7 @@ int dm_is_mpath(const char *name)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_TABLE, dmt);
 		goto out_task;
 	}
@@ -836,7 +927,7 @@ dm_map_present_by_uuid(const char *uuid)
 	if (safe_sprintf(prefixed_uuid, UUID_PREFIX "%s", uuid))
 		goto out;
 
-	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_INFO)))
 		goto out;
 
 	dm_task_no_open_count(dmt);
@@ -844,7 +935,7 @@ dm_map_present_by_uuid(const char *uuid)
 	if (!dm_task_set_uuid(dmt, prefixed_uuid))
 		goto out_task;
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_INFO, dmt);
 		goto out_task;
 	}
@@ -890,7 +981,7 @@ dm_get_opencount (const char * mapname)
 	if (!dm_task_set_name(dmt, mapname))
 		goto out;
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_INFO, dmt);
 		goto out;
 	}
@@ -1050,7 +1141,7 @@ int dm_flush_maps (int need_suspend, int retries)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run (dmt)) {
+	if (!libmp_dm_task_run (dmt)) {
 		dm_log_error(3, DM_DEVICE_LIST, dmt);
 		goto out;
 	}
@@ -1096,7 +1187,7 @@ dm_message(const char * mapname, char * message)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(2, DM_DEVICE_TARGET_MSG, dmt);
 		goto out;
 	}
@@ -1216,7 +1307,7 @@ dm_get_maps (vector mp)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_LIST, dmt);
 		goto out;
 	}
@@ -1301,7 +1392,7 @@ dm_mapname(int major, int minor)
 	 * daemon uev_trigger -> uev_add_map
 	 */
 	while (--loop) {
-		r = dm_task_run(dmt);
+		r = libmp_dm_task_run(dmt);
 
 		if (r)
 			break;
@@ -1346,7 +1437,7 @@ do_foreach_partmaps (const char * mapname,
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_LIST, dmt);
 		goto out;
 	}
@@ -1581,11 +1672,11 @@ dm_rename (const char * old, char * new, char *delim, int skip_kpartx)
 
 	if (!dm_task_set_cookie(dmt, &cookie, udev_flags))
 		goto out;
-	r = dm_task_run(dmt);
+	r = libmp_dm_task_run(dmt);
 	if (!r)
 		dm_log_error(2, DM_DEVICE_RENAME, dmt);
 
-	dm_udev_wait(cookie);
+	libmp_udev_wait(cookie);
 
 out:
 	dm_task_destroy(dmt);
@@ -1627,7 +1718,7 @@ int dm_reassign_table(const char *name, char *old, char *new)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_TABLE, dmt);
 		goto out;
 	}
@@ -1660,7 +1751,7 @@ int dm_reassign_table(const char *name, char *old, char *new)
 	if (modified) {
 		dm_task_no_open_count(reload_dmt);
 
-		if (!dm_task_run(reload_dmt)) {
+		if (!libmp_dm_task_run(reload_dmt)) {
 			dm_log_error(3, DM_DEVICE_RELOAD, reload_dmt);
 			condlog(3, "%s: failed to reassign targets", name);
 			goto out_reload;
@@ -1707,7 +1798,7 @@ int dm_reassign(const char *mapname)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_DEPS, dmt);
 		goto out;
 	}
@@ -1775,7 +1866,7 @@ int dm_setgeometry(struct multipath *mpp)
 		goto out;
 	}
 
-	r = dm_task_run(dmt);
+	r = libmp_dm_task_run(dmt);
 	if (!r)
 		dm_log_error(3, DM_DEVICE_SET_GEOMETRY, dmt);
 out:

@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdint.h>
 #include <setjmp.h>
 #include <stdio.h>
@@ -59,6 +60,25 @@ int __wrap_ftruncate(int fd, off_t length)
 {
 	check_expected(length);
 	return __set_errno(mock_type(int));
+}
+
+int __wrap_dm_map_present(const char * str)
+{
+	check_expected(str);
+	return mock_type(int);
+}
+
+int __wrap_dm_get_uuid(const char *name, char *uuid, int uuid_len)
+{
+	int ret;
+
+	check_expected(name);
+	check_expected(uuid_len);
+	assert_non_null(uuid);
+	ret = mock_type(int);
+	if (ret == 0)
+		strcpy(uuid, mock_ptr_type(char *));
+	return ret;
 }
 
 static void fd_mpatha(void **state)
@@ -349,6 +369,45 @@ static int test_scan_devname(void)
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }
 
+static void mock_unused_alias(const char *alias)
+{
+	expect_string(__wrap_dm_map_present, str, alias);
+	will_return(__wrap_dm_map_present, 0);
+}
+
+static void mock_self_alias(const char *alias, const char *wwid)
+{
+	expect_string(__wrap_dm_map_present, str, alias);
+	will_return(__wrap_dm_map_present, 1);
+	expect_string(__wrap_dm_get_uuid, name, alias);
+	expect_value(__wrap_dm_get_uuid, uuid_len, WWID_SIZE);
+	will_return(__wrap_dm_get_uuid, 0);
+	will_return(__wrap_dm_get_uuid, wwid);
+}
+
+#define USED_STR(alias_str, wwid_str) wwid_str ": alias '" alias_str "' already taken, but not in bindings file. reselecting alias\n"
+
+static void mock_failed_alias(const char *alias, char *msg)
+{
+	expect_string(__wrap_dm_map_present, str, alias);
+	will_return(__wrap_dm_map_present, 1);
+	expect_string(__wrap_dm_get_uuid, name, alias);
+	expect_value(__wrap_dm_get_uuid, uuid_len, WWID_SIZE);
+	will_return(__wrap_dm_get_uuid, 1);
+	expect_condlog(3, msg);
+}
+
+static void mock_used_alias(const char *alias, char *msg)
+{
+	expect_string(__wrap_dm_map_present, str, alias);
+	will_return(__wrap_dm_map_present, 1);
+	expect_string(__wrap_dm_get_uuid, name, alias);
+	expect_value(__wrap_dm_get_uuid, uuid_len, WWID_SIZE);
+	will_return(__wrap_dm_get_uuid, 0);
+	will_return(__wrap_dm_get_uuid, "WWID_USED");
+	expect_condlog(3, msg);
+}
+
 static void lb_empty(void **state)
 {
 	int rc;
@@ -356,9 +415,68 @@ static void lb_empty(void **state)
 
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID0] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID0", &alias, NULL);
+	rc = lookup_binding(NULL, "WWID0", &alias, NULL, 0);
 	assert_int_equal(rc, 1);
 	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_empty_unused(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, NULL);
+	mock_unused_alias("MPATHa");
+	expect_condlog(3, "No matching wwid [WWID0] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID0", &alias, "MPATH", 1);
+	assert_int_equal(rc, 1);
+	assert_ptr_equal(alias, NULL);
+	free(alias);
+}
+
+static void lb_empty_failed(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, NULL);
+	mock_failed_alias("MPATHa", USED_STR("MPATHa", "WWID0"));
+	mock_unused_alias("MPATHb");
+	expect_condlog(3, "No matching wwid [WWID0] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID0", &alias, "MPATH", 1);
+	assert_int_equal(rc, 2);
+	assert_ptr_equal(alias, NULL);
+	free(alias);
+}
+
+static void lb_empty_1_used(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, NULL);
+	mock_used_alias("MPATHa", USED_STR("MPATHa", "WWID0"));
+	mock_unused_alias("MPATHb");
+	expect_condlog(3, "No matching wwid [WWID0] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID0", &alias, "MPATH", 1);
+	assert_int_equal(rc, 2);
+	assert_ptr_equal(alias, NULL);
+	free(alias);
+}
+
+static void lb_empty_1_used_self(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, NULL);
+	mock_used_alias("MPATHa", USED_STR("MPATHa", "WWID0"));
+	mock_self_alias("MPATHb", "WWID0");
+	expect_condlog(3, "No matching wwid [WWID0] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID0", &alias, "MPATH", 1);
+	assert_int_equal(rc, 2);
+	assert_ptr_equal(alias, NULL);
+	free(alias);
 }
 
 static void lb_match_a(void **state)
@@ -369,7 +487,7 @@ static void lb_match_a(void **state)
 	will_return(__wrap_fgets, "MPATHa WWID0\n");
 	expect_condlog(3, "Found matching wwid [WWID0] in bindings file."
 		       " Setting alias to MPATHa\n");
-	rc = lookup_binding(NULL, "WWID0", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID0", &alias, "MPATH", 0);
 	assert_int_equal(rc, 0);
 	assert_ptr_not_equal(alias, NULL);
 	assert_string_equal(alias, "MPATHa");
@@ -384,12 +502,57 @@ static void lb_nomatch_a(void **state)
 	will_return(__wrap_fgets, "MPATHa WWID0\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID1] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID1", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID1", &alias, "MPATH", 0);
 	assert_int_equal(rc, 2);
 	assert_ptr_equal(alias, NULL);
 }
 
-static void lb_match_c(void **state)
+static void lb_nomatch_a_bad_check(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHa WWID0\n");
+	will_return(__wrap_fgets, NULL);
+	expect_condlog(0, "no more available user_friendly_names\n");
+	rc = lookup_binding(NULL, "WWID1", &alias, NULL, 1);
+	assert_int_equal(rc, -1);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_a_unused(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHa WWID0\n");
+	will_return(__wrap_fgets, NULL);
+	mock_unused_alias("MPATHb");
+	expect_condlog(3, "No matching wwid [WWID1] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID1", &alias, "MPATH", 1);
+	assert_int_equal(rc, 2);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_a_3_used_failed_self(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHa WWID0\n");
+	will_return(__wrap_fgets, NULL);
+	mock_used_alias("MPATHb", USED_STR("MPATHb", "WWID1"));
+	mock_used_alias("MPATHc", USED_STR("MPATHc", "WWID1"));
+	mock_used_alias("MPATHd", USED_STR("MPATHd", "WWID1"));
+	mock_failed_alias("MPATHe", USED_STR("MPATHe", "WWID1"));
+	mock_self_alias("MPATHf", "WWID1");
+	expect_condlog(3, "No matching wwid [WWID1] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID1", &alias, "MPATH", 1);
+	assert_int_equal(rc, 6);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void do_lb_match_c(void **state, int check_if_taken)
 {
 	int rc;
 	char *alias;
@@ -398,11 +561,21 @@ static void lb_match_c(void **state)
 	will_return(__wrap_fgets, "MPATHc WWID1\n");
 	expect_condlog(3, "Found matching wwid [WWID1] in bindings file."
 		       " Setting alias to MPATHc\n");
-	rc = lookup_binding(NULL, "WWID1", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID1", &alias, "MPATH", check_if_taken);
 	assert_int_equal(rc, 0);
 	assert_ptr_not_equal(alias, NULL);
 	assert_string_equal(alias, "MPATHc");
 	free(alias);
+}
+
+static void lb_match_c(void **state)
+{
+	do_lb_match_c(state, 0);
+}
+
+static void lb_match_c_check(void **state)
+{
+	do_lb_match_c(state, 1);
 }
 
 static void lb_nomatch_a_c(void **state)
@@ -414,8 +587,74 @@ static void lb_nomatch_a_c(void **state)
 	will_return(__wrap_fgets, "MPATHc WWID1\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
 	assert_int_equal(rc, 2);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_a_d_unused(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHa WWID0\n");
+	will_return(__wrap_fgets, "MPATHd WWID1\n");
+	will_return(__wrap_fgets, NULL);
+	mock_unused_alias("MPATHb");
+	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
+	assert_int_equal(rc, 2);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_a_d_1_used(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHa WWID0\n");
+	will_return(__wrap_fgets, "MPATHd WWID1\n");
+	will_return(__wrap_fgets, NULL);
+	mock_used_alias("MPATHb", USED_STR("MPATHb", "WWID2"));
+	mock_unused_alias("MPATHc");
+	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
+	assert_int_equal(rc, 3);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_a_d_2_used(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHa WWID0\n");
+	will_return(__wrap_fgets, "MPATHd WWID1\n");
+	will_return(__wrap_fgets, NULL);
+	mock_used_alias("MPATHb", USED_STR("MPATHb", "WWID2"));
+	mock_used_alias("MPATHc", USED_STR("MPATHc", "WWID2"));
+	mock_unused_alias("MPATHe");
+	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
+	assert_int_equal(rc, 5);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_a_d_3_used(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHa WWID0\n");
+	will_return(__wrap_fgets, "MPATHd WWID1\n");
+	will_return(__wrap_fgets, NULL);
+	mock_used_alias("MPATHb", USED_STR("MPATHb", "WWID2"));
+	mock_used_alias("MPATHc", USED_STR("MPATHc", "WWID2"));
+	mock_used_alias("MPATHe", USED_STR("MPATHe", "WWID2"));
+	mock_unused_alias("MPATHf");
+	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
+	assert_int_equal(rc, 6);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -428,8 +667,41 @@ static void lb_nomatch_c_a(void **state)
 	will_return(__wrap_fgets, "MPATHa WWID0\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
 	assert_int_equal(rc, 2);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_d_a_unused(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHc WWID1\n");
+	will_return(__wrap_fgets, "MPATHa WWID0\n");
+	will_return(__wrap_fgets, "MPATHd WWID0\n");
+	will_return(__wrap_fgets, NULL);
+	mock_unused_alias("MPATHb");
+	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
+	assert_int_equal(rc, 2);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_d_a_1_used(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHc WWID1\n");
+	will_return(__wrap_fgets, "MPATHa WWID0\n");
+	will_return(__wrap_fgets, "MPATHd WWID0\n");
+	will_return(__wrap_fgets, NULL);
+	mock_used_alias("MPATHb", USED_STR("MPATHb", "WWID2"));
+	mock_unused_alias("MPATHe");
+	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
+	assert_int_equal(rc, 5);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -443,7 +715,7 @@ static void lb_nomatch_a_b(void **state)
 	will_return(__wrap_fgets, "MPATHb WWID1\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
 	assert_int_equal(rc, 3);
 	assert_ptr_equal(alias, NULL);
 }
@@ -459,7 +731,24 @@ static void lb_nomatch_a_b_bad(void **state)
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "Ignoring malformed line 3 in bindings file\n");
 	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
+	assert_int_equal(rc, 3);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_a_b_bad_self(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHa WWID0\n");
+	will_return(__wrap_fgets, "MPATHz WWID26\n");
+	will_return(__wrap_fgets, "MPATHb\n");
+	will_return(__wrap_fgets, NULL);
+	expect_condlog(3, "Ignoring malformed line 3 in bindings file\n");
+	mock_self_alias("MPATHc", "WWID2");
+	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
 	assert_int_equal(rc, 3);
 	assert_ptr_equal(alias, NULL);
 }
@@ -474,13 +763,32 @@ static void lb_nomatch_b_a(void **state)
 	will_return(__wrap_fgets, "MPATHa WWID0\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
 	assert_int_equal(rc, 27);
 	assert_ptr_equal(alias, NULL);
 }
 
+static void lb_nomatch_b_a_3_used(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHb WWID1\n");
+	will_return(__wrap_fgets, "MPATHz WWID26\n");
+	will_return(__wrap_fgets, "MPATHa WWID0\n");
+	will_return(__wrap_fgets, NULL);
+	mock_used_alias("MPATHaa", USED_STR("MPATHaa", "WWID2"));
+	mock_used_alias("MPATHab", USED_STR("MPATHab", "WWID2"));
+	mock_used_alias("MPATHac", USED_STR("MPATHac", "WWID2"));
+	mock_unused_alias("MPATHad");
+	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
+	assert_int_equal(rc, 30);
+	assert_ptr_equal(alias, NULL);
+}
+
 #ifdef MPATH_ID_INT_MAX
-static void lb_nomatch_int_max(void **state)
+static void do_lb_nomatch_int_max(void **state, int check_if_taken)
 {
 	int rc;
 	char *alias;
@@ -490,7 +798,32 @@ static void lb_nomatch_int_max(void **state)
 	will_return(__wrap_fgets, "MPATHa WWID0\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(0, "no more available user_friendly_names\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", check_if_taken);
+	assert_int_equal(rc, -1);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_int_max(void **state)
+{
+	do_lb_nomatch_int_max(state, 0);
+}
+
+static void lb_nomatch_int_max_check(void **state)
+{
+	do_lb_nomatch_int_max(state, 1);
+}
+
+static void lb_nomatch_int_max_used(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHb WWID1\n");
+	will_return(__wrap_fgets, "MPATH" MPATH_ID_INT_MAX " WWIDMAX\n");
+	will_return(__wrap_fgets, NULL);
+	mock_used_alias("MPATHa", USED_STR("MPATHa", "WWID2"));
+	expect_condlog(0, "no more available user_friendly_names\n");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
 	assert_int_equal(rc, -1);
 	assert_ptr_equal(alias, NULL);
 }
@@ -505,8 +838,56 @@ static void lb_nomatch_int_max_m1(void **state)
 	will_return(__wrap_fgets, "MPATHa WWID0\n");
 	will_return(__wrap_fgets, NULL);
 	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 0);
 	assert_int_equal(rc, INT_MAX);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_int_max_m1_used(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHb WWID1\n");
+	will_return(__wrap_fgets, "MPATH" MPATH_ID_INT_MAX_m1 " WWIDMAX\n");
+	will_return(__wrap_fgets, "MPATHa WWID0\n");
+	will_return(__wrap_fgets, NULL);
+	mock_used_alias("MPATH" MPATH_ID_INT_MAX, USED_STR("MPATH" MPATH_ID_INT_MAX, "WWID2"));
+	expect_condlog(0, "no more available user_friendly_names\n");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
+	assert_int_equal(rc, -1);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_int_max_m1_1_used(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHb WWID1\n");
+	will_return(__wrap_fgets, "MPATH" MPATH_ID_INT_MAX_m1 " WWIDMAX\n");
+	will_return(__wrap_fgets, NULL);
+	mock_used_alias("MPATHa", USED_STR("MPATHa", "WWID2"));
+	mock_unused_alias("MPATH" MPATH_ID_INT_MAX);
+	expect_condlog(3, "No matching wwid [WWID2] in bindings file.\n");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
+	assert_int_equal(rc, INT_MAX);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void lb_nomatch_int_max_m1_2_used(void **state)
+{
+	int rc;
+	char *alias;
+
+	will_return(__wrap_fgets, "MPATHb WWID1\n");
+	will_return(__wrap_fgets, "MPATH" MPATH_ID_INT_MAX_m1 " WWIDMAX\n");
+	will_return(__wrap_fgets, NULL);
+	mock_used_alias("MPATHa", USED_STR("MPATHa", "WWID2"));
+	mock_used_alias("MPATH" MPATH_ID_INT_MAX, USED_STR("MPATH" MPATH_ID_INT_MAX, "WWID2"));
+	expect_condlog(0, "no more available user_friendly_names\n");
+	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
+	assert_int_equal(rc, -1);
 	assert_ptr_equal(alias, NULL);
 }
 #endif
@@ -515,17 +896,38 @@ static int test_lookup_binding(void)
 {
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(lb_empty),
+		cmocka_unit_test(lb_empty_unused),
+		cmocka_unit_test(lb_empty_failed),
+		cmocka_unit_test(lb_empty_1_used),
+		cmocka_unit_test(lb_empty_1_used_self),
 		cmocka_unit_test(lb_match_a),
 		cmocka_unit_test(lb_nomatch_a),
+		cmocka_unit_test(lb_nomatch_a_bad_check),
+		cmocka_unit_test(lb_nomatch_a_unused),
+		cmocka_unit_test(lb_nomatch_a_3_used_failed_self),
 		cmocka_unit_test(lb_match_c),
+		cmocka_unit_test(lb_match_c_check),
 		cmocka_unit_test(lb_nomatch_a_c),
+		cmocka_unit_test(lb_nomatch_a_d_unused),
+		cmocka_unit_test(lb_nomatch_a_d_1_used),
+		cmocka_unit_test(lb_nomatch_a_d_2_used),
+		cmocka_unit_test(lb_nomatch_a_d_3_used),
 		cmocka_unit_test(lb_nomatch_c_a),
+		cmocka_unit_test(lb_nomatch_d_a_unused),
+		cmocka_unit_test(lb_nomatch_d_a_1_used),
 		cmocka_unit_test(lb_nomatch_a_b),
 		cmocka_unit_test(lb_nomatch_a_b_bad),
+		cmocka_unit_test(lb_nomatch_a_b_bad_self),
 		cmocka_unit_test(lb_nomatch_b_a),
+		cmocka_unit_test(lb_nomatch_b_a_3_used),
 #ifdef MPATH_ID_INT_MAX
 		cmocka_unit_test(lb_nomatch_int_max),
+		cmocka_unit_test(lb_nomatch_int_max_check),
+		cmocka_unit_test(lb_nomatch_int_max_used),
 		cmocka_unit_test(lb_nomatch_int_max_m1),
+		cmocka_unit_test(lb_nomatch_int_max_m1_used),
+		cmocka_unit_test(lb_nomatch_int_max_m1_1_used),
+		cmocka_unit_test(lb_nomatch_int_max_m1_2_used),
 #endif
 	};
 
@@ -735,6 +1137,7 @@ static int test_allocate_binding(void)
 int main(void)
 {
 	int ret = 0;
+	init_test_verbosity(3);
 
 	ret += test_format_devname();
 	ret += test_scan_devname();

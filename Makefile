@@ -9,6 +9,7 @@ BUILDDIRS := \
 	libmultipath/checkers \
 	libmultipath/foreign \
 	libmpathpersist \
+	libmpathvalid \
 	multipath \
 	multipathd \
 	mpathpersist \
@@ -29,7 +30,8 @@ $(BUILDDIRS):
 	$(MAKE) -C $@
 
 libmultipath libdmmp: libmpathcmd
-libmpathpersist multipath multipathd: libmultipath
+libmpathpersist libmpathvalid multipath multipathd: libmultipath
+libmultipath/prioritizers libmultipath/checkers libmultipath/foreign: libmultipath
 mpathpersist multipathd:  libmpathpersist
 
 libmultipath/checkers.install \
@@ -46,11 +48,14 @@ $(BUILDDIRS:=.uninstall):
 	$(MAKE) -C ${@:.uninstall=} uninstall
 
 clean: $(BUILDDIRS.clean)
-install: $(BUILDDIRS:=.install)
+install: all $(BUILDDIRS:=.install)
 uninstall: $(BUILDDIRS:=.uninstall)
 
-test:	all
-	$(MAKE) -C tests
+test-progs:	all
+	$(MAKE) -C tests progs
+
+test:	test-progs
+	$(MAKE) -C tests all
 
 valgrind-test:	all
 	$(MAKE) -C tests valgrind

@@ -312,6 +312,13 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 		mpp->disable_queueing = 0;
 
 	/*
+	 * If this map was created with add_map_without_path(),
+	 * mpp->hwe might not be set yet.
+	 */
+	if (!mpp->hwe)
+		extract_hwe_from_path(mpp);
+
+	/*
 	 * properties selectors
 	 *
 	 * Ordering matters for some properties:
@@ -361,6 +368,7 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 	select_gid(conf, mpp);
 	select_fast_io_fail(conf, mpp);
 	select_dev_loss(conf, mpp);
+	select_eh_deadline(conf, mpp);
 	select_reservation_key(conf, mpp);
 	select_deferred_remove(conf, mpp);
 	select_marginal_path_err_sample_time(conf, mpp);
@@ -519,20 +527,8 @@ get_udev_for_mpp(const struct multipath *mpp)
 	return udd;
 }
 
-static void
-trigger_udev_change(const struct multipath *mpp)
-{
-	static const char change[] = "change";
-	struct udev_device *udd = get_udev_for_mpp(mpp);
-	if (!udd)
-		return;
-	condlog(3, "triggering %s uevent for %s", change, mpp->alias);
-	sysfs_attr_set_value(udd, "uevent", change, sizeof(change)-1);
-	udev_device_unref(udd);
-}
-
-static void trigger_partitions_udev_change(struct udev_device *dev,
-					   const char *action, int len)
+void trigger_partitions_udev_change(struct udev_device *dev,
+				    const char *action, int len)
 {
 	struct udev_enumerate *part_enum;
 	struct udev_list_entry *item;
@@ -628,15 +624,6 @@ trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
 }
 
 static int
-is_mpp_known_to_udev(const struct multipath *mpp)
-{
-	struct udev_device *udd = get_udev_for_mpp(mpp);
-	int ret = (udd != NULL);
-	udev_device_unref(udd);
-	return ret;
-}
-
-static int
 sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 {
 	struct pathgroup * pgp;
@@ -688,12 +675,11 @@ sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 	return err;
 }
 
-static void
-select_reload_action(struct multipath *mpp, const struct multipath *cmpp,
-		     const char *reason)
+static bool is_udev_ready(struct multipath *cmpp)
 {
 	struct udev_device *mpp_ud;
 	const char *env;
+	bool rc;
 
 	/*
 	 * MPATH_DEVICE_READY != 1 can mean two things:
@@ -705,14 +691,20 @@ select_reload_action(struct multipath *mpp, const struct multipath *cmpp,
 	 */
 
 	mpp_ud = get_udev_for_mpp(cmpp);
+	if (!mpp_ud)
+		return true;
 	env = udev_device_get_property_value(mpp_ud, "MPATH_DEVICE_READY");
-	if ((!env || strcmp(env, "1")) && count_active_paths(mpp) > 0)
-		mpp->force_udev_reload = 1;
+	rc = (env != NULL && !strcmp(env, "1"));
 	udev_device_unref(mpp_ud);
+	condlog(4, "%s: %s: \"%s\" -> %d\n", __func__, cmpp->alias, env, rc);
+	return rc;
+}
+
+static void
+select_reload_action(struct multipath *mpp, const char *reason)
+{
 	mpp->action = ACT_RELOAD;
-	condlog(3, "%s: set ACT_RELOAD (%s%s)", mpp->alias,
-		mpp->force_udev_reload ? "forced, " : "",
-		reason);
+	condlog(3, "%s: set ACT_RELOAD (%s)", mpp->alias, reason);
 }
 
 void select_action (struct multipath *mpp, const struct _vector *curmp,
@@ -781,10 +773,18 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 		return;
 	}
 
+	if (!is_udev_ready(cmpp) && count_active_paths(mpp) > 0) {
+		mpp->force_udev_reload = 1;
+		mpp->action = ACT_RELOAD;
+		condlog(3, "%s: set ACT_RELOAD (udev incomplete)",
+			mpp->alias);
+		return;
+	}
+
 	if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
 	    !!strstr(mpp->features, "queue_if_no_path") !=
 	    !!strstr(cmpp->features, "queue_if_no_path")) {
-		select_reload_action(mpp, cmpp, "no_path_retry change");
+		select_reload_action(mpp, "no_path_retry change");
 		return;
 	}
 	if ((mpp->retain_hwhandler != RETAIN_HWHANDLER_ON ||
@@ -792,7 +792,7 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 	    (strlen(cmpp->hwhandler) != strlen(mpp->hwhandler) ||
 	     strncmp(cmpp->hwhandler, mpp->hwhandler,
 		    strlen(mpp->hwhandler)))) {
-		select_reload_action(mpp, cmpp, "hwhandler change");
+		select_reload_action(mpp, "hwhandler change");
 		return;
 	}
 
@@ -800,7 +800,7 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 	    !!strstr(mpp->features, "retain_attached_hw_handler") !=
 	    !!strstr(cmpp->features, "retain_attached_hw_handler") &&
 	    get_linux_version_code() < KERNEL_VERSION(4, 3, 0)) {
-		select_reload_action(mpp, cmpp, "retain_hwhandler change");
+		select_reload_action(mpp, "retain_hwhandler change");
 		return;
 	}
 
@@ -812,7 +812,7 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 		remove_feature(&cmpp_feat, "queue_if_no_path");
 		remove_feature(&cmpp_feat, "retain_attached_hw_handler");
 		if (strncmp(mpp_feat, cmpp_feat, PARAMS_SIZE)) {
-			select_reload_action(mpp, cmpp, "features change");
+			select_reload_action(mpp, "features change");
 			FREE(cmpp_feat);
 			FREE(mpp_feat);
 			return;
@@ -823,30 +823,24 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 
 	if (!cmpp->selector || strncmp(cmpp->selector, mpp->selector,
 		    strlen(mpp->selector))) {
-		select_reload_action(mpp, cmpp, "selector change");
+		select_reload_action(mpp, "selector change");
 		return;
 	}
 	if (cmpp->minio != mpp->minio) {
-		select_reload_action(mpp, cmpp, "minio change");
+		select_reload_action(mpp, "minio change");
 		return;
 	}
 	if (!cmpp->pg || VECTOR_SIZE(cmpp->pg) != VECTOR_SIZE(mpp->pg)) {
-		select_reload_action(mpp, cmpp, "path group number change");
+		select_reload_action(mpp, "path group number change");
 		return;
 	}
 	if (pgcmp(mpp, cmpp)) {
-		select_reload_action(mpp, cmpp, "path group topology change");
+		select_reload_action(mpp, "path group topology change");
 		return;
 	}
 	if (cmpp->nextpg != mpp->bestpg) {
 		mpp->action = ACT_SWITCHPG;
 		condlog(3, "%s: set ACT_SWITCHPG (next path group change)",
-			mpp->alias);
-		return;
-	}
-	if (!is_mpp_known_to_udev(cmpp)) {
-		mpp->action = ACT_RELOAD;
-		condlog(3, "%s: set ACT_RELOAD (udev device not initialized)",
 			mpp->alias);
 		return;
 	}
@@ -927,16 +921,12 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 {
 	int r = DOMAP_FAIL;
 	struct config *conf;
-	int verbosity;
 
 	/*
 	 * last chance to quit before touching the devmaps
 	 */
 	if (mpp->action == ACT_DRY_RUN) {
-		conf = get_multipath_config();
-		verbosity = conf->verbosity;
-		put_multipath_config(conf);
-		print_multipath_topology(mpp, verbosity);
+		print_multipath_topology(mpp, libmp_verbosity);
 		return DOMAP_DRY;
 	}
 
@@ -1132,7 +1122,7 @@ out:
  * FORCE_RELOAD_WEAK: existing maps are compared to the current conf and only
  * reloaded in DM if there's a difference. This is useful during startup.
  */
-int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
+int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 		    int force_reload, enum mpath_cmds cmd)
 {
 	int ret = CP_FAIL;
@@ -1144,6 +1134,7 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 	struct path * pp2;
 	vector curmp = vecs->mpvec;
 	vector pathvec = vecs->pathvec;
+	vector newmp;
 	struct config *conf;
 	int allow_queueing;
 	struct bitfield *size_mismatch_seen;
@@ -1164,8 +1155,23 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 	if (size_mismatch_seen == NULL)
 		return CP_FAIL;
 
+	if (mpvec)
+		newmp = mpvec;
+	else
+		newmp = vector_alloc();
+	if (!newmp) {
+		condlog(0, "can not allocate newmp");
+		goto out;
+	}
+
 	vector_foreach_slot (pathvec, pp1, k) {
 		int invalid;
+
+		if (should_exit()) {
+			ret = CP_FAIL;
+			goto out;
+		}
+
 		/* skip this path for some reason */
 
 		/* 1. if path has no unique id or wwid blacklisted */
@@ -1270,20 +1276,14 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 				goto out;
 			}
 		}
-		if (r == DOMAP_DRY)
+		if (r == DOMAP_DRY) {
+			if (!vector_alloc_slot(newmp)) {
+				remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
+				goto out;
+			}
+			vector_set_slot(newmp, mpp);
 			continue;
-
-		if (r == DOMAP_EXIST && mpp->action == ACT_NOTHING &&
-		    force_reload == FORCE_RELOAD_WEAK)
-			/*
-			 * First time we're called, and no changes applied.
-			 * domap() was a noop. But we can't be sure that
-			 * udev has already finished setting up this device
-			 * (udev in initrd may have been shut down while
-			 * processing this device or its children).
-			 * Trigger a change event, just in case.
-			 */
-			trigger_udev_change(find_mp_by_wwid(curmp, mpp->wwid));
+		}
 
 		conf = get_multipath_config();
 		allow_queueing = conf->allow_queueing;
@@ -1298,31 +1298,25 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 					       "queue_if_no_path");
 		}
 
-		if (!is_daemon && mpp->action != ACT_NOTHING) {
-			int verbosity;
+		if (!is_daemon && mpp->action != ACT_NOTHING)
+			print_multipath_topology(mpp, libmp_verbosity);
 
-			conf = get_multipath_config();
-			verbosity = conf->verbosity;
-			put_multipath_config(conf);
-			print_multipath_topology(mpp, verbosity);
-		}
-
-		if (newmp) {
-			if (mpp->action != ACT_REJECT) {
-				if (!vector_alloc_slot(newmp))
-					goto out;
-				vector_set_slot(newmp, mpp);
+		if (mpp->action != ACT_REJECT) {
+			if (!vector_alloc_slot(newmp)) {
+				remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
+				goto out;
 			}
-			else
-				remove_map(mpp, vecs->pathvec, vecs->mpvec,
-					   KEEP_VEC);
+			vector_set_slot(newmp, mpp);
 		}
+		else
+			remove_map(mpp, vecs->pathvec, vecs->mpvec,
+				   KEEP_VEC);
 	}
 	/*
 	 * Flush maps with only dead paths (ie not in sysfs)
 	 * Keep maps with only failed paths
 	 */
-	if (newmp) {
+	if (mpvec) {
 		vector_foreach_slot (newmp, mpp, i) {
 			char alias[WWID_SIZE];
 
@@ -1345,6 +1339,8 @@ int coalesce_paths (struct vectors * vecs, vector newmp, char * refwwid,
 	ret = CP_OK;
 out:
 	free(size_mismatch_seen);
+	if (!mpvec)
+		free_multipathvec(newmp, KEEP_PATHS);
 	return ret;
 }
 
@@ -1445,7 +1441,7 @@ static int _get_refwwid(enum mpath_cmds cmd, const char *dev,
 				return ret;
 			}
 		}
-		if (pp->udev && pp->uid_attribute &&
+		if (flags & DI_BLACKLIST &&
 		    filter_property(conf, pp->udev, 3, pp->uid_attribute) > 0)
 			return PATHINFO_SKIPPED;
 		refwwid = pp->wwid;
@@ -1470,7 +1466,7 @@ static int _get_refwwid(enum mpath_cmds cmd, const char *dev,
 				refwwid = dev;
 		}
 
-		if (refwwid && strlen(refwwid) &&
+		if (flags & DI_BLACKLIST && refwwid && strlen(refwwid) &&
 		    filter_wwid(conf->blist_wwid, conf->elist_wwid, refwwid,
 				NULL) > 0)
 			return PATHINFO_SKIPPED;

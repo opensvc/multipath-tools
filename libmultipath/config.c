@@ -26,6 +26,72 @@
 #include "devmapper.h"
 #include "mpath_cmd.h"
 #include "propsel.h"
+#include "foreign.h"
+
+/*
+ * We don't support re-initialization after
+ * libmultipath_exit().
+ */
+static bool libmultipath_exit_called;
+static pthread_once_t _init_once = PTHREAD_ONCE_INIT;
+static pthread_once_t _exit_once = PTHREAD_ONCE_INIT;
+struct udev *udev;
+
+static void _udev_init(void)
+{
+	if (udev)
+		udev_ref(udev);
+	else
+		udev = udev_new();
+	if (!udev)
+		condlog(0, "%s: failed to initialize udev", __func__);
+}
+
+static bool _is_libmultipath_initialized(void)
+{
+	return !libmultipath_exit_called && !!udev;
+}
+
+int libmultipath_init(void)
+{
+	pthread_once(&_init_once, _udev_init);
+	return !_is_libmultipath_initialized();
+}
+
+static void _libmultipath_exit(void)
+{
+	libmultipath_exit_called = true;
+	cleanup_foreign();
+	cleanup_checkers();
+	cleanup_prio();
+	libmp_dm_exit();
+	udev_unref(udev);
+}
+
+void libmultipath_exit(void)
+{
+	pthread_once(&_exit_once, _libmultipath_exit);
+}
+
+static struct config __internal_config;
+struct config *libmp_get_multipath_config(void)
+{
+	if (!__internal_config.hwtable)
+		/* not initialized */
+		return NULL;
+	return &__internal_config;
+}
+
+struct config *get_multipath_config(void)
+	__attribute__((weak, alias("libmp_get_multipath_config")));
+
+void libmp_put_multipath_config(void *conf __attribute__((unused)))
+{
+	/* empty */
+}
+
+void put_multipath_config(void *conf)
+	__attribute__((weak, alias("libmp_put_multipath_config")));
 
 static int
 hwe_strmatch (const struct hwentry *hwe1, const struct hwentry *hwe2)
@@ -147,7 +213,7 @@ struct mpentry *find_mpe(vector mptable, char *wwid)
 	int i;
 	struct mpentry * mpe;
 
-	if (!wwid)
+	if (!wwid || !*wwid)
 		return NULL;
 
 	vector_foreach_slot (mptable, mpe, i)
@@ -358,6 +424,7 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(flush_on_last_del);
 	merge_num(fast_io_fail);
 	merge_num(dev_loss);
+	merge_num(eh_deadline);
 	merge_num(user_friendly_names);
 	merge_num(retain_hwhandler);
 	merge_num(detect_prio);
@@ -369,6 +436,7 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(max_sectors_kb);
 	merge_num(ghost_delay);
 	merge_num(all_tg_pt);
+	merge_num(recheck_wwid);
 	merge_num(vpd_vendor_id);
 	merge_num(san_path_err_threshold);
 	merge_num(san_path_err_forget_rate);
@@ -442,9 +510,16 @@ void merge_mptable(vector mptable)
 	int i, j;
 
 	vector_foreach_slot(mptable, mp1, i) {
+		/* drop invalid multipath configs */
+		if (!mp1->wwid) {
+			condlog(0, "multipaths config section missing wwid");
+			vector_del_slot(mptable, i--);
+			free_mpe(mp1);
+			continue;
+		}
 		j = i + 1;
 		vector_foreach_slot_after(mptable, mp2, j) {
-			if (strcmp(mp1->wwid, mp2->wwid))
+			if (!mp2->wwid || strcmp(mp1->wwid, mp2->wwid))
 				continue;
 			condlog(1, "%s: duplicate multipath config section for %s",
 				__func__, mp1->wwid);
@@ -513,6 +588,7 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->flush_on_last_del = dhwe->flush_on_last_del;
 	hwe->fast_io_fail = dhwe->fast_io_fail;
 	hwe->dev_loss = dhwe->dev_loss;
+	hwe->eh_deadline = dhwe->eh_deadline;
 	hwe->user_friendly_names = dhwe->user_friendly_names;
 	hwe->retain_hwhandler = dhwe->retain_hwhandler;
 	hwe->detect_prio = dhwe->detect_prio;
@@ -574,17 +650,15 @@ restart:
 	return;
 }
 
-struct config *
-alloc_config (void)
+static struct config *alloc_config (void)
 {
 	return (struct config *)MALLOC(sizeof(struct config));
 }
 
-void
-free_config (struct config * conf)
+static void _uninit_config(struct config *conf)
 {
 	if (!conf)
-		return;
+		conf = &__internal_config;
 
 	if (conf->multipath_dir)
 		FREE(conf->multipath_dir);
@@ -650,7 +724,27 @@ free_config (struct config * conf)
 	free_hwtable(conf->hwtable);
 	free_hwe(conf->overrides);
 	free_keywords(conf->keywords);
-	FREE(conf);
+
+	memset(conf, 0, sizeof(*conf));
+}
+
+void uninit_config(void)
+{
+	_uninit_config(&__internal_config);
+}
+
+void free_config(struct config *conf)
+{
+	if (!conf)
+		return;
+	else if (conf == &__internal_config) {
+		condlog(0, "ERROR: %s called for internal config. Use uninit_config() instead",
+			__func__);
+		return;
+	}
+
+	_uninit_config(conf);
+	free(conf);
 }
 
 /* if multipath fails to process the config directory, it should continue,
@@ -719,19 +813,39 @@ static void set_max_checkint_from_watchdog(struct config *conf)
 }
 #endif
 
-struct config *
-load_config (char * file)
+static int _init_config (const char *file, struct config *conf);
+
+int init_config(const char *file)
+{
+	return _init_config(file, &__internal_config);
+}
+
+struct config *load_config(const char *file)
 {
 	struct config *conf = alloc_config();
 
+	if (conf && !_init_config(file, conf))
+		return conf;
+
+	free(conf);
+	return NULL;
+}
+
+int _init_config (const char *file, struct config *conf)
+{
+
 	if (!conf)
-		return NULL;
+		conf = &__internal_config;
+
+	/*
+	 * Processing the config file will overwrite conf->verbosity if set
+	 * When we return, we'll copy the config value back
+	 */
+	conf->verbosity = libmp_verbosity;
 
 	/*
 	 * internal defaults
 	 */
-	conf->verbosity = DEFAULT_VERBOSITY;
-
 	get_sys_max_fds(&conf->max_fds);
 	conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 	conf->wwids_file = set_default(DEFAULT_WWIDS_FILE);
@@ -754,6 +868,7 @@ load_config (char * file)
 	conf->remove_retries = 0;
 	conf->ghost_delay = DEFAULT_GHOST_DELAY;
 	conf->all_tg_pt = DEFAULT_ALL_TG_PT;
+	conf->recheck_wwid = DEFAULT_RECHECK_WWID;
 	/*
 	 * preload default hwtable
 	 */
@@ -897,10 +1012,11 @@ load_config (char * file)
 	    !conf->wwids_file || !conf->prkeys_file)
 		goto out;
 
-	return conf;
+	libmp_verbosity = conf->verbosity;
+	return 0;
 out:
-	free_config(conf);
-	return NULL;
+	_uninit_config(conf);
+	return 1;
 }
 
 char *get_uid_attribute_by_attrs(struct config *conf,

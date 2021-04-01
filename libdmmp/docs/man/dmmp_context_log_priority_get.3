@@ -1,0 +1,23 @@
+.TH "dmmp_context_log_priority_get" 3 "dmmp_context_log_priority_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_context_log_priority_get \- Get log priority.
+.SH SYNOPSIS
+.B "int" dmmp_context_log_priority_get
+.BI "(struct dmmp_context *" ctx ");"
+.SH ARGUMENTS
+.IP "ctx" 12
+Pointer of 'struct dmmp_context'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+Retrieve current log priority. Valid log priority values are:
+
+* DMMP_LOG_PRIORITY_ERROR -- 3
+
+* DMMP_LOG_PRIORITY_WARNING -- 4
+
+* DMMP_LOG_PRIORITY_INFO -- 5
+
+* DMMP_LOG_PRIORITY_DEBUG -- 7
+.SH "RETURN"
+int, log priority.

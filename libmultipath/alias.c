@@ -21,6 +21,7 @@
 #include "config.h"
 #include "util.h"
 #include "errno.h"
+#include "devmapper.h"
 
 
 /*
@@ -119,6 +120,28 @@ scan_devname(const char *alias, const char *prefix)
 	return n;
 }
 
+static int
+id_already_taken(int id, const char *prefix, const char *map_wwid)
+{
+	char alias[LINE_MAX];
+
+	if (format_devname(alias, id, LINE_MAX, prefix) < 0)
+		return 0;
+
+	if (dm_map_present(alias)) {
+		char wwid[WWID_SIZE];
+
+		/* If both the name and the wwid match, then it's fine.*/
+		if (dm_get_uuid(alias, wwid, sizeof(wwid)) == 0 &&
+		    strncmp(map_wwid, wwid, sizeof(wwid)) == 0)
+			return 0;
+		condlog(3, "%s: alias '%s' already taken, but not in bindings file. reselecting alias", map_wwid, alias);
+		return 1;
+	}
+	return 0;
+}
+
+
 /*
  * Returns: 0   if matching entry in WWIDs file found
  *         -1   if an error occurs
@@ -128,7 +151,7 @@ scan_devname(const char *alias, const char *prefix)
  */
 static int
 lookup_binding(FILE *f, const char *map_wwid, char **map_alias,
-	       const char *prefix)
+	       const char *prefix, int check_if_taken)
 {
 	char buf[LINE_MAX];
 	unsigned int line_nr = 0;
@@ -183,11 +206,30 @@ lookup_binding(FILE *f, const char *map_wwid, char **map_alias,
 			return 0;
 		}
 	}
+	if (!prefix && check_if_taken)
+		id = -1;
 	if (id >= smallest_bigger_id) {
 		if (biggest_id < INT_MAX)
 			id = biggest_id + 1;
 		else
 			id = -1;
+	}
+	if (id > 0 && check_if_taken) {
+		while(id_already_taken(id, prefix, map_wwid)) {
+			if (id == INT_MAX) {
+				id = -1;
+				break;
+			}
+			id++;
+			if (id == smallest_bigger_id) {
+				if (biggest_id == INT_MAX) {
+					id = -1;
+					break;
+				}
+				if (biggest_id >= smallest_bigger_id)
+					id = biggest_id + 1;
+			}
+		}
 	}
 	if (id < 0) {
 		condlog(0, "no more available user_friendly_names");
@@ -331,7 +373,7 @@ use_existing_alias (const char *wwid, const char *file, const char *alias_old,
 		goto out;
 	}
 
-	id = lookup_binding(f, wwid, &alias, NULL);
+	id = lookup_binding(f, wwid, &alias, NULL, 0);
 	if (alias) {
 		condlog(3, "Use existing binding [%s] for WWID [%s]",
 			alias, wwid);
@@ -388,7 +430,7 @@ get_user_friendly_alias(const char *wwid, const char *file, const char *prefix,
 		return NULL;
 	}
 
-	id = lookup_binding(f, wwid, &alias, prefix);
+	id = lookup_binding(f, wwid, &alias, prefix, 1);
 	if (id < 0) {
 		fclose(f);
 		return NULL;

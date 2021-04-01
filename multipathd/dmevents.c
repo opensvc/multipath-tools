@@ -60,7 +60,7 @@ int dmevent_poll_supported(void)
 {
 	unsigned int v[3];
 
-	if (dm_drv_version(v))
+	if (libmp_get_version(DM_KERNEL_VERSION, v))
 		return 0;
 
 	if (VERSION_GE(v, DM_VERSION_FOR_ARM_POLL))
@@ -156,7 +156,7 @@ static int dm_get_events(void)
 
 	dm_task_no_open_count(dmt);
 
-	if (!dm_task_run(dmt)) {
+	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_LIST, dmt);
 		goto fail;
 	}
@@ -257,6 +257,8 @@ void unwatch_all_dmevents(void)
 	struct dev_event *dev_evt;
 	int i;
 
+	if (!waiter)
+		return;
 	pthread_mutex_lock(&waiter->events_lock);
 	vector_foreach_slot(waiter->events, dev_evt, i)
 		free(dev_evt);

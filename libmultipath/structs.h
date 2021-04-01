@@ -219,6 +219,35 @@ enum vpd_vendor_ids {
 	VPD_VP_ARRAY_SIZE, /* This must remain the last entry */
 };
 
+/*
+ * Multipath treats 0 as undefined for optional config parameters.
+ * Use this for cases where 0 is a valid option for systems multipath
+ * is communicating with
+ */
+enum undefined_off_zero {
+	UOZ_UNDEF = 0,
+	UOZ_OFF = -1,
+	UOZ_ZERO = -2,
+};
+
+enum fast_io_fail_states {
+	MP_FAST_IO_FAIL_UNSET = UOZ_UNDEF,
+	MP_FAST_IO_FAIL_OFF = UOZ_OFF,
+	MP_FAST_IO_FAIL_ZERO = UOZ_ZERO,
+};
+
+enum eh_deadline_states {
+	EH_DEADLINE_UNSET = UOZ_UNDEF,
+	EH_DEADLINE_OFF = UOZ_OFF,
+	EH_DEADLINE_ZERO = UOZ_ZERO,
+};
+
+enum recheck_wwid_states {
+	RECHECK_WWID_UNDEF = YNU_UNDEF,
+	RECHECK_WWID_OFF = YNU_NO,
+	RECHECK_WWID_ON = YNU_YES,
+};
+
 struct vpd_vendor_page {
 	int pg;
 	const char *name;
@@ -293,6 +322,7 @@ struct path {
 	int find_multipaths_timeout;
 	int marginal;
 	int vpd_vendor_id;
+	int recheck_wwid;
 	/* configlet pointers */
 	vector hwe;
 	struct gen_path generic_path;
@@ -339,6 +369,7 @@ struct multipath {
 	int ghost_delay;
 	int ghost_delay_tick;
 	unsigned int dev_loss;
+	int eh_deadline;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;
@@ -422,6 +453,7 @@ struct host_group {
 struct path * alloc_path (void);
 struct pathgroup * alloc_pathgroup (void);
 struct multipath * alloc_multipath (void);
+void *set_mpp_hwe(struct multipath *mpp, const struct path *pp);
 void uninitialize_path(struct path *pp);
 void free_path (struct path *);
 void free_pathvec (vector vec, enum free_path_mode free_paths);

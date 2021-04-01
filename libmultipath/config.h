@@ -10,14 +10,6 @@
 #define ORIGIN_DEFAULT 0
 #define ORIGIN_CONFIG  1
 
-/*
- * In kernel, fast_io_fail == 0 means immediate failure on rport delete.
- * OTOH '0' means not-configured in various places in multipath-tools.
- */
-#define MP_FAST_IO_FAIL_UNSET (0)
-#define MP_FAST_IO_FAIL_OFF (-1)
-#define MP_FAST_IO_FAIL_ZERO (-2)
-
 enum devtypes {
 	DEV_NONE,
 	DEV_DEVT,
@@ -71,6 +63,7 @@ struct hwentry {
 	int flush_on_last_del;
 	int fast_io_fail;
 	unsigned int dev_loss;
+	int eh_deadline;
 	int user_friendly_names;
 	int retain_hwhandler;
 	int detect_prio;
@@ -90,6 +83,7 @@ struct hwentry {
 	int ghost_delay;
 	int all_tg_pt;
 	int vpd_vendor_id;
+	int recheck_wwid;
 	char * bl_product;
 };
 
@@ -156,6 +150,7 @@ struct config {
 	int attribute_flags;
 	int fast_io_fail;
 	unsigned int dev_loss;
+	int eh_deadline;
 	int log_checker_err;
 	int allow_queueing;
 	int allow_usb_devices;
@@ -192,8 +187,8 @@ struct config {
 	int find_multipaths_timeout;
 	int marginal_pathgroups;
 	int skip_delegate;
-	unsigned int version[3];
 	unsigned int sequence_nr;
+	int recheck_wwid;
 
 	char * multipath_dir;
 	char * selector;
@@ -234,7 +229,53 @@ struct config {
 	char *enable_foreign;
 };
 
-extern struct udev * udev;
+/**
+ * extern variable: udev
+ *
+ * A &struct udev instance used by libmultipath. libmultipath expects
+ * a valid, initialized &struct udev in this variable.
+ * An application can define this variable itself, in which case
+ * the applications's instance will take precedence.
+ * The application can initialize and destroy this variable by
+ * calling libmultipath_init() and libmultipath_exit(), respectively,
+ * whether or not it defines the variable itself.
+ * An application can initialize udev with udev_new() before calling
+ * libmultipath_init(), e.g. if it has to make libudev calls before
+ * libmultipath calls. If an application wants to keep using the
+ * udev variable after calling libmultipath_exit(), it should have taken
+ * an additional reference on it beforehand. This is the case e.g.
+ * after initiazing udev with udev_new().
+ */
+extern struct udev *udev;
+
+/**
+ * libmultipath_init() - library initialization
+ *
+ * This function initializes libmultipath data structures.
+ * It is light-weight; some other initializations, like device-mapper
+ * initialization, are done lazily when the respective functionality
+ * is required.
+ *
+ * Clean up by libmultipath_exit() when the program terminates.
+ * It is an error to call libmultipath_init() after libmultipath_exit().
+ * Return: 0 on success, 1 on failure.
+ */
+int libmultipath_init(void);
+
+/**
+ * libmultipath_exit() - library un-initialization
+ *
+ * This function un-initializes libmultipath data structures.
+ * It is recommended to call this function at program exit.
+ * If the application also calls dm_lib_exit(), it should do so
+ * after libmultipath_exit().
+ *
+ * Calls to libmultipath_init() after libmultipath_exit() will fail
+ * (in other words, libmultipath can't be re-initialized).
+ * Any other libmultipath calls after libmultipath_exit() may cause
+ * undefined behavior.
+ */
+void libmultipath_exit(void);
 
 int find_hwe (const struct _vector *hwtable,
 	      const char * vendor, const char * product, const char *revision,
@@ -252,11 +293,26 @@ void free_mptable (vector mptable);
 
 int store_hwe (vector hwtable, struct hwentry *);
 
-struct config *load_config (char * file);
-struct config * alloc_config (void);
+struct config *load_config (const char *file);
 void free_config (struct config * conf);
-extern struct config *get_multipath_config(void);
-extern void put_multipath_config(void *);
+int init_config(const char *file);
+void uninit_config(void);
+
+/*
+ * libmultipath provides default implementations of
+ * get_multipath_config() and put_multipath_config().
+ * Applications using these should use init_config(file, NULL)
+ * to load the configuration, rather than load_config(file).
+ * Likewise, uninit_config() should be used for teardown, but
+ * using free_config() for that is supported, too.
+ * Applications can define their own {get,put}_multipath_config()
+ * functions, which override the library-internal ones, but
+ * could still call libmp_{get,put}_multipath_config().
+ */
+struct config *libmp_get_multipath_config(void);
+struct config *get_multipath_config(void);
+void libmp_put_multipath_config(void *);
+void put_multipath_config(void *);
 
 int parse_uid_attrs(char *uid_attrs, struct config *conf);
 char *get_uid_attribute_by_attrs(struct config *conf,

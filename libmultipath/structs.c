@@ -234,6 +234,17 @@ alloc_multipath (void)
 	return mpp;
 }
 
+void *set_mpp_hwe(struct multipath *mpp, const struct path *pp)
+{
+	if (!mpp || !pp || !pp->hwe)
+		return NULL;
+	if (mpp->hwe)
+		return mpp->hwe;
+	mpp->hwe = vector_convert(NULL, pp->hwe,
+				  struct hwentry, identity);
+	return mpp->hwe;
+}
+
 void free_multipath_attributes(struct multipath *mpp)
 {
 	if (!mpp)
@@ -290,6 +301,10 @@ free_multipath (struct multipath * mpp, enum free_path_mode free_paths)
 
 	free_pathvec(mpp->paths, free_paths);
 	free_pgvec(mpp->pg, free_paths);
+	if (mpp->hwe) {
+		vector_free(mpp->hwe);
+		mpp->hwe = NULL;
+	}
 	FREE_PTR(mpp->mpcontext);
 	FREE(mpp);
 }

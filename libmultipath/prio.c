@@ -18,10 +18,32 @@ unsigned int get_prio_timeout(unsigned int timeout_ms,
 	return default_timeout;
 }
 
-int init_prio (char *multipath_dir)
+int init_prio (const char *multipath_dir)
 {
+#ifdef LOAD_ALL_SHARED_LIBS
+	static const char *const all_prios[] = {
+		PRIO_ALUA,
+		PRIO_CONST,
+		PRIO_DATACORE,
+		PRIO_EMC,
+		PRIO_HDS,
+		PRIO_HP_SW,
+		PRIO_ONTAP,
+		PRIO_RANDOM,
+		PRIO_RDAC,
+		PRIO_WEIGHTED_PATH,
+		PRIO_SYSFS,
+		PRIO_PATH_LATENCY,
+		PRIO_ANA,
+	};
+	unsigned int i;
+
+	for  (i = 0; i < ARRAY_SIZE(all_prios); i++)
+		add_prio(multipath_dir, all_prios[i]);
+#else
 	if (!add_prio(multipath_dir, DEFAULT_PRIO))
 		return 1;
+#endif
 	return 0;
 }
 
@@ -87,7 +109,7 @@ int prio_set_args (struct prio * p, const char * args)
 	return snprintf(p->args, PRIO_ARGS_LEN, "%s", args);
 }
 
-struct prio * add_prio (char *multipath_dir, char * name)
+struct prio * add_prio (const char *multipath_dir, const char * name)
 {
 	char libname[LIB_PRIO_NAMELEN];
 	struct stat stbuf;

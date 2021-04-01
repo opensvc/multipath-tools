@@ -472,8 +472,12 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B path_checker
-The default method used to determine the paths state. Possible values
-are:
+The default method used to determine the path's state. The synchronous
+checkers (all except \fItur\fR and \fIdirectio\fR) will cause multipathd to
+pause most activity, waiting up to \fIchecker_timeout\fR seconds for the path
+to respond. The asynchronous checkers (\fItur\fR and \fIdirectio\fR) will not
+pause multipathd. Instead, multipathd will check for a response once per
+second, until \fIchecker_timeout\fR seconds have elapsed. Possible values are:
 .RS
 .TP 12
 .I readsector0
@@ -499,10 +503,8 @@ Check the path state for LSI/Engenio/NetApp RDAC class as NetApp SANtricity E/EF
 Series, and OEM arrays from IBM DELL SGI STK and SUN.
 .TP
 .I directio
-(Deprecated) Read the first sector with direct I/O. If you have a large number
-of paths, or many AIO users on a system, you may need to use sysctl to
-increase fs.aio-max-nr. This checker is being deprecated, it could cause
-spurious path failures under high load. Please use \fItur\fR instead.
+Read the first sector with direct I/O. This checker could cause spurious path
+failures under high load. Increasing \fIchecker_timeout\fR can help with this.
 .TP
 .I cciss_tur
 (Hardware-dependent)
@@ -639,11 +641,13 @@ The default is: \fBno\fR
 .
 .TP
 .B checker_timeout
-Specify the timeout to use for path checkers and prioritizers that issue SCSI
-commands with an explicit timeout, in seconds.
+Specify the timeout to use for path checkers and prioritizers, in seconds.
+Only prioritizers that issue scsi commands use checker_timeout.  If a path
+does not respond to the checker command after \fIchecker_timeout\fR
+seconds have elapsed, it is considered down.
 .RS
 .TP
-The default is: in \fB/sys/block/sd<x>/device/timeout\fR
+The default is: in \fB/sys/block/<dev>/device/timeout\fR
 .RE
 .
 .
@@ -713,6 +717,22 @@ is not set. See KNOWN ISSUES.
 .RS
 .TP
 The default is: \fB600\fR
+.RE
+.
+.
+.TP
+.B eh_deadline
+Specify the maximum number of seconds the SCSI layer will spend doing error
+handling when scsi devices fail. After this timeout the scsi layer will perform
+a full HBA reset. Setting this may be necessary in cases where the rport is
+never lost, so \fIfast_io_fail_tmo\fR and \fIdev_loss_tmo\fR will never
+trigger, but (frequently do to load) scsi commands still hang. \fBNote:\fR when
+the scsi error handler performs the HBA reset, all target paths on that HBA
+will be affected. eh_deadline should only be set in cases where all targets on
+the affected HBAs are multipathed.
+.RS
+.TP
+The default is: \fB<unset>\fR
 .RE
 .
 .
@@ -1075,7 +1095,7 @@ for the configured time, and is declared healthy, it will be returned to its
 normal pathgroup. See "Shaky paths detection" below for more information.
 .RS
 .TP
-The default  is: \fBno\fR
+The default is: \fBno\fR
 .RE
 .
 .
@@ -1222,7 +1242,7 @@ Sets the max_sectors_kb device parameter on all path devices and the multipath
 device to the specified value.
 .RS
 .TP
-The default is: \fB<device dependent>\fR
+The default is: in \fB/sys/block/<dev>/queue/max_sectors_kb\fR
 .RE
 .
 .
@@ -1250,6 +1270,20 @@ multipath support, or \(dq.*\(dq to enable all foreign libraries.
 .RS
 .TP
 The default is: \fB\(dqNONE\(dq\fR
+.RE
+.
+.
+.TP
+.B recheck_wwid
+If set to \fIyes\fR, when a failed path is restored, its wwid is rechecked. If
+the wwid has changed, the path is removed from the current multipath device,
+and re-added as a new path. Multipathd will also recheck a path's wwid if it is
+manually re-added. This option only works for SCSI devices that are configured
+to use the default uid_attribute, \fIID_SERIAL\fR, or sysfs for getting their
+wwid.
+.RS
+.TP
+The default is: \fBno\fR
 .RE
 .
 .

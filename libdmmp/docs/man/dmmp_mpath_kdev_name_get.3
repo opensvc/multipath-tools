@@ -1,0 +1,17 @@
+.TH "dmmp_mpath_kdev_name_get" 3 "dmmp_mpath_kdev_name_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_mpath_kdev_name_get \- Retrieve kernel DEVNAME of certain mpath.
+.SH SYNOPSIS
+.B "const char *" dmmp_mpath_kdev_name_get
+.BI "(struct dmmp_mpath *" dmmp_mp ");"
+.SH ARGUMENTS
+.IP "dmmp_mp" 12
+Pointer of 'struct dmmp_mpath'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+Retrieve DEVNAME name used by kernel uevent of specified mpath.
+For example: 'dm-1'.
+.SH "RETURN"
+const char *. No need to free this memory, the resources will get
+freed when \fBdmmp_mpath_array_free\fP.

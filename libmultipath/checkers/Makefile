@@ -4,6 +4,8 @@
 include ../../Makefile.inc
 
 CFLAGS += $(LIB_CFLAGS) -I..
+LDFLAGS += -L.. -lmultipath
+LIBDEPS = -lmultipath -laio -lpthread -lrt
 
 # If you add or remove a checker also update multipath/multipath.conf.5
 LIBS= \
@@ -17,11 +19,8 @@ LIBS= \
 
 all: $(LIBS)
 
-libcheckdirectio.so: directio.o
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ -laio
-
 libcheck%.so: %.o
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ $(LIBDEPS)
 
 install:
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(libdir)

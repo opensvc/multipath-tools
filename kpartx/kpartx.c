@@ -424,7 +424,7 @@ main(int argc, char **argv){
 					fprintf(stderr, "can't del loop : %s\n",
 					       loopdev);
 				r = 1;
-			} else
+			} else if (verbose)
 				fprintf(stderr, "loop deleted : %s\n", loopdev);
 		}
 		goto end;
@@ -668,20 +668,20 @@ main(int argc, char **argv){
 		if (n > 0)
 			break;
 	}
-	if (what == LIST && loopcreated && S_ISREG (buf.st_mode)) {
+	if (what == LIST && loopcreated) {
 		if (fd != -1)
 			close(fd);
 		if (del_loop(device)) {
 			if (verbose)
-				printf("can't del loop : %s\n",
+				fprintf(stderr, "can't del loop : %s\n",
 					device);
 			exit(1);
 		}
-		printf("loop deleted : %s\n", device);
+		if (verbose)
+			fprintf(stderr, "loop deleted : %s\n", device);
 	}
 
 end:
-	dm_lib_release();
 	dm_lib_exit();
 
 	return r;

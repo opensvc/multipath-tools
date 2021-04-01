@@ -424,6 +424,11 @@ void cleanup_free_ptr(void *arg)
 		free(*p);
 }
 
+void cleanup_mutex(void *arg)
+{
+	pthread_mutex_unlock(arg);
+}
+
 struct bitfield *alloc_bitfield(unsigned int maxbit)
 {
 	unsigned int n;
@@ -444,4 +449,9 @@ struct bitfield *alloc_bitfield(unsigned int maxbit)
 void _log_bitfield_overflow(const char *f, unsigned int bit, unsigned int len)
 {
 	condlog(0, "%s: bitfield overflow: %u >= %u", f, bit, len);
+}
+
+int should_exit(void)
+{
+	return 0;
 }

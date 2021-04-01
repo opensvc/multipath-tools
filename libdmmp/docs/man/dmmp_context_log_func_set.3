@@ -1,0 +1,21 @@
+.TH "dmmp_context_log_func_set" 3 "dmmp_context_log_func_set" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_context_log_func_set \- Set log handler function.
+.SH SYNOPSIS
+.B "void" dmmp_context_log_func_set
+.BI "(struct dmmp_context *" ctx ","
+.BI "void (*" log_func ") (struct dmmp_context *ctx, int priority, const char *file, int line, const char *func_name, const char *format, va_list args));"
+.SH ARGUMENTS
+.IP "ctx" 12
+Pointer of 'struct dmmp_context'.
+If this pointer is NULL, your program will be terminated by assert.
+.IP "log_func" 12
+Pointer of log handler function. If set to NULL, all log will be
+ignored.
+.SH "DESCRIPTION"
+
+Set custom log handler. The log handler will be invoked when log message
+is equal or more important(less value) than log priority setting.
+Please check manpage libdmmp.h(3) for detail usage.
+.SH "RETURN"
+void

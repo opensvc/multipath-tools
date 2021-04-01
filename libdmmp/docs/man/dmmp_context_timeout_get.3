@@ -1,0 +1,15 @@
+.TH "dmmp_context_timeout_get" 3 "dmmp_context_timeout_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_context_timeout_get \- Get IPC timeout.
+.SH SYNOPSIS
+.B "unsigned int" dmmp_context_timeout_get
+.BI "(struct dmmp_context *" ctx ");"
+.SH ARGUMENTS
+.IP "ctx" 12
+Pointer of 'struct dmmp_context'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+Retrieve timeout value of IPC connection to multipathd daemon.
+.SH "RETURN"
+unsigned int. Timeout in milliseconds.

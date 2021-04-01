@@ -1,0 +1,15 @@
+.TH "dmmp_context_free" 3 "dmmp_context_free" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_context_free \- Release the memory of struct dmmp_context.
+.SH SYNOPSIS
+.B "void" dmmp_context_free
+.BI "(struct dmmp_context *" ctx ");"
+.SH ARGUMENTS
+.IP "ctx" 12
+Pointer of 'struct dmmp_context'.
+.SH "DESCRIPTION"
+
+Release the memory of struct dmmp_context, but the userdata memory defined
+via \fBdmmp_context_userdata_set\fP will not be touched.
+.SH "RETURN"
+void

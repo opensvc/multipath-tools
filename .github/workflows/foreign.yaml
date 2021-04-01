@@ -1,0 +1,66 @@
+name: compile and unit test on foreign arch
+on:
+  push:
+    branches:
+      - master
+      - queue
+      - tip
+  pull_request:
+
+jobs:
+
+  build:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        os: [buster]
+        arch: ['ppc64le', 'aarch64', 's390x']
+    container: mwilck/multipath-build-${{ matrix.os }}-${{ matrix.arch }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+      - name: build and test
+        if: ${{ matrix.arch == '' || matrix.arch == '-i386' }}
+        run: make test
+      - name: build
+        if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
+        run: make test-progs
+      - name: archive
+        if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
+        run: >
+          tar cfv binaries.tar
+          Makefile*
+          libmpathcmd/*.so* libmultipath/*.so*
+          tests/lib tests/*-test tests/Makefile tests/*.so*
+      - uses: actions/upload-artifact@v1
+        if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
+        with:
+          name: multipath-${{ matrix.os }}-${{ matrix.arch }}
+          path: binaries.tar
+
+  test:
+    runs-on: ubuntu-20.04
+    needs: build
+    strategy:
+      matrix:
+        os: [buster]
+        arch: ['ppc64le', 'aarch64', 's390x']
+    steps:
+      - name: get binaries
+        uses: actions/download-artifact@v1
+        with:
+          name: multipath-${{ matrix.os }}-${{ matrix.arch }}
+      - name: unpack
+        run: tar xfv multipath-${{ matrix.os }}-${{ matrix.arch }}/binaries.tar
+      - name: enable foreign arch
+        run: sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset
+      - name: run tests
+        # Github actions doesn't support referencing docker images with
+        # context variables. Workaround: use mosteo-actions/docker-run action
+        # See https://github.community/t/expressions-in-docker-uri/16271
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: mwilck/multipath-run-${{ matrix.os }}-${{ matrix.arch }}
+          # The runner is an image that has "make" as entrypoint
+          # So run "make -C tests" here
+          command: -C tests

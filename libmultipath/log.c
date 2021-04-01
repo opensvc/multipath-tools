@@ -9,13 +9,16 @@
 #include <string.h>
 #include <syslog.h>
 #include <time.h>
+#include <pthread.h>
 
 #include "memory.h"
 #include "log.h"
+#include "util.h"
 
 #define ALIGN(len, s) (((len)+(s)-1)/(s)*(s))
 
 struct logarea* la;
+static pthread_mutex_t logq_lock = PTHREAD_MUTEX_INITIALIZER;
 
 #if LOGDBG
 static void dump_logarea (void)
@@ -74,16 +77,23 @@ static int logarea_init (int size)
 
 int log_init(char *program_name, int size)
 {
+	int ret = 1;
+
 	logdbg(stderr,"enter log_init\n");
+
+	pthread_mutex_lock(&logq_lock);
+	pthread_cleanup_push(cleanup_mutex, &logq_lock);
+
 	openlog(program_name, 0, LOG_DAEMON);
+	if (!la)
+		ret = logarea_init(size);
 
-	if (logarea_init(size))
-		return 1;
+	pthread_cleanup_pop(1);
 
-	return 0;
+	return ret;
 }
 
-void free_logarea (void)
+static void free_logarea (void)
 {
 	FREE(la->start);
 	FREE(la->buff);
@@ -93,20 +103,30 @@ void free_logarea (void)
 
 void log_close (void)
 {
-	free_logarea();
+	pthread_mutex_lock(&logq_lock);
+	pthread_cleanup_push(cleanup_mutex, &logq_lock);
+
+	if (la)
+		free_logarea();
 	closelog();
 
+	pthread_cleanup_pop(1);
 	return;
 }
 
 void log_reset (char *program_name)
 {
+	pthread_mutex_lock(&logq_lock);
+	pthread_cleanup_push(cleanup_mutex, &logq_lock);
+
 	closelog();
-	tzset();
 	openlog(program_name, 0, LOG_DAEMON);
+
+	pthread_cleanup_pop(1);
 }
 
-int log_enqueue (int prio, const char * fmt, va_list ap)
+__attribute__((format(printf, 2, 0)))
+static int _log_enqueue(int prio, const char * fmt, va_list ap)
 {
 	int len, fwd;
 	char buff[MAX_MSG_SIZE];
@@ -165,7 +185,19 @@ int log_enqueue (int prio, const char * fmt, va_list ap)
 	return 0;
 }
 
-int log_dequeue (void * buff)
+int log_enqueue(int prio, const char *fmt, va_list ap)
+{
+	int ret = 1;
+
+	pthread_mutex_lock(&logq_lock);
+	pthread_cleanup_push(cleanup_mutex, &logq_lock);
+	if (la)
+		ret = _log_enqueue(prio, fmt, ap);
+	pthread_cleanup_pop(1);
+	return ret;
+}
+
+static int _log_dequeue(void *buff)
 {
 	struct logmsg * src = (struct logmsg *)la->head;
 	struct logmsg * dst = (struct logmsg *)buff;
@@ -192,6 +224,18 @@ int log_dequeue (void * buff)
 	memset((void *)src, 0,  len);
 
 	return 0;
+}
+
+int log_dequeue(void *buff)
+{
+	int ret = 1;
+
+	pthread_mutex_lock(&logq_lock);
+	pthread_cleanup_push(cleanup_mutex, &logq_lock);
+	if (la)
+		ret = _log_dequeue(buff);
+	pthread_cleanup_pop(1);
+	return ret;
 }
 
 /*

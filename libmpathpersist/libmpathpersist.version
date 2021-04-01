@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2020 SUSE LLC
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * libmpathpersist ABI
+ *
+ * The ABI of libmpathpersist is supposed to remain stable. Removing symbols
+ * or altering existing symbols' semantics is not allowed. When changing a
+ * a symbol, either use a new name, or explicit symver directives.
+ *
+ * See libmultipath.version for general policy about version numbers.
+ */
+LIBMPATHPERSIST_1.0.0 {
+global:
+
+	__mpath_persistent_reserve_in;
+	__mpath_persistent_reserve_out;
+	dumpHex;
+	mpath_alloc_prin_response;
+	mpath_lib_exit;
+	mpath_lib_init;
+	mpath_mx_alloc_len;
+	mpath_persistent_reserve_in;
+	mpath_persistent_reserve_init_vecs;
+	mpath_persistent_reserve_out;
+	mpath_persistent_reserve_free_vecs;
+	prin_do_scsi_ioctl;
+	prout_do_scsi_ioctl;
+	update_map_pr;
+
+local: *;
+};
+
+LIBMPATHPERSIST_1.1.0 {
+global:
+	libmpathpersist_init;
+	libmpathpersist_exit;
+} LIBMPATHPERSIST_1.0.0;

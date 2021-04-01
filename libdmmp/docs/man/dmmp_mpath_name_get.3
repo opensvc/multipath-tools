@@ -1,0 +1,18 @@
+.TH "dmmp_mpath_name_get" 3 "dmmp_mpath_name_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_mpath_name_get \- Retrieve name(alias) of certain mpath.
+.SH SYNOPSIS
+.B "const char *" dmmp_mpath_name_get
+.BI "(struct dmmp_mpath *" dmmp_mp ");"
+.SH ARGUMENTS
+.IP "dmmp_mp" 12
+Pointer of 'struct dmmp_mpath'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+Retrieve the name (also known as alias) of certain mpath.
+When the config 'user_friendly_names' been set 'no', the name will be
+identical to WWID retrieved by \fBdmmp_mpath_wwid_get\fP.
+.SH "RETURN"
+const char *. No need to free this memory, the resources will get
+freed when \fBdmmp_mpath_array_free\fP.

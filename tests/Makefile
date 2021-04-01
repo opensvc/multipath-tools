@@ -10,16 +10,17 @@ W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)
 
 CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathcmddir) \
 	-Wno-unused-parameter $(W_MISSING_INITIALIZERS)
-LIBDEPS += -L$(multipathdir) -L$(mpathcmddir) -lmultipath -lmpathcmd -lcmocka
+LIBDEPS += -L. -L$(mpathcmddir) -lmultipath -lmpathcmd -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
-	 alias directio valid devt
+	 alias directio valid devt mpathvalid
 HELPERS := test-lib.o test-log.o
 
 .SILENT: $(TESTS:%=%.o)
 .PRECIOUS: $(TESTS:%=%-test)
 
 all:	$(TESTS:%=%.out)
+progs:	$(TESTS:%=%-test) lib/libchecktur.so
 valgrind:	$(TESTS:%=%.vgr)
 
 # test-specific compiler flags
@@ -31,6 +32,7 @@ endif
 ifneq ($(DIO_TEST_DEV),)
 directio-test_FLAGS := -DDIO_TEST_DEV=\"$(DIO_TEST_DEV)\"
 endif
+mpathvalid-test_FLAGS := -I$(mpathvaliddir)
 
 # test-specific linker flags
 # XYZ-test_TESTDEPS: test libraries containing __wrap_xyz functions
@@ -40,10 +42,11 @@ endif
 #    linker input file).
 # XYZ-test_LIBDEPS: Additional libs to link for this test
 
+dmevents-test_OBJDEPS = ../libmultipath/devmapper.o
 dmevents-test_LIBDEPS = -lpthread -ldevmapper -lurcu
 hwtable-test_TESTDEPS := test-lib.o
 hwtable-test_OBJDEPS := ../libmultipath/discovery.o ../libmultipath/blacklist.o \
-	../libmultipath/structs.o
+	../libmultipath/structs.o ../libmultipath/propsel.o
 hwtable-test_LIBDEPS := -ludev -lpthread -ldl
 blacklist-test_TESTDEPS := test-log.o
 blacklist-test_OBJDEPS := ../libmultipath/blacklist.o
@@ -52,9 +55,11 @@ vpd-test_OBJDEPS :=  ../libmultipath/discovery.o
 vpd-test_LIBDEPS := -ludev -lpthread -ldl
 alias-test_TESTDEPS := test-log.o
 alias-test_LIBDEPS := -lpthread -ldl
-valid-test_OBJDEPS := ../libmultipath/valid.o
+valid-test_OBJDEPS := ../libmultipath/valid.o ../libmultipath/discovery.o
 valid-test_LIBDEPS := -ludev -lpthread -ldl
 devt-test_LIBDEPS := -ludev
+mpathvalid-test_LIBDEPS := -ludev -lpthread -ldl
+mpathvalid-test_OBJDEPS := ../libmpathvalid/mpath_valid.o
 ifneq ($(DIO_TEST_DEV),)
 directio-test_LIBDEPS := -laio
 endif
@@ -68,17 +73,17 @@ lib/libchecktur.so:
 
 %.out:	%-test lib/libchecktur.so
 	@echo == running $< ==
-	@LD_LIBRARY_PATH=$(multipathdir):$(mpathcmddir) ./$< >$@
+	@LD_LIBRARY_PATH=.:$(mpathcmddir) ./$< >$@
 
 %.vgr:  %-test lib/libchecktur.so
 	@echo == running valgrind for $< ==
-	@LD_LIBRARY_PATH=$(multipathdir):$(mpathcmddir) \
+	@LD_LIBRARY_PATH=.:$(mpathcmddir) \
 		valgrind --leak-check=full --error-exitcode=128 ./$< >$@ 2>&1
 
 OBJS = $(TESTS:%=%.o) $(HELPERS)
 
 test_clean:
-	$(RM) $(TESTS:%=%.out) $(TESTS:%=%.vgr)
+	$(RM) $(TESTS:%=%.out) $(TESTS:%=%.vgr) *.so*
 
 valgrind_clean:
 	$(RM) $(TESTS:%=%.vgr)
@@ -98,12 +103,14 @@ dep_clean:
 	@sed -n 's/^.*__wrap_\([a-zA-Z0-9_]*\).*$$/-Wl,--wrap=\1/p' $< | \
 		sort -u | tr '\n' ' ' >$@
 
+libmultipath.so.0:
+	$(MAKE) -C $(multipathdir) test-lib
 
 # COLON will get expanded during second expansion below
 COLON:=:
 .SECONDEXPANSION:
 %-test:	%.o %.o.wrap $$($$@_OBJDEPS) $$($$@_TESTDEPS) $$($$@_TESTDEPS$$(COLON).o=.o.wrap) \
-		$(multipathdir)/libmultipath.so Makefile
+		libmultipath.so.0 Makefile
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $< $($@_TESTDEPS) $($@_OBJDEPS) \
 		$(LIBDEPS) $($@_LIBDEPS) \
 		$(shell cat $<.wrap) $(foreach dep,$($@_TESTDEPS),$(shell cat $(dep).wrap))

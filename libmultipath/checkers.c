@@ -3,10 +3,13 @@
 #include <stddef.h>
 #include <dlfcn.h>
 #include <sys/stat.h>
+#include <urcu.h>
+#include <urcu/uatomic.h>
 
 #include "debug.h"
 #include "checkers.h"
 #include "vector.h"
+#include "util.h"
 
 struct checker_class {
 	struct list_head node;
@@ -19,6 +22,7 @@ struct checker_class {
 	int (*mp_init)(struct checker *);    /* to allocate the mpcontext */
 	void (*free)(struct checker *);      /* to free the context */
 	void (*reset)(void);		     /* to reset the global variables */
+	void *(*thread)(void *);	     /* async thread entry point */
 	const char **msgtable;
 	short msgtable_size;
 };
@@ -54,19 +58,32 @@ static struct checker_class *alloc_checker_class(void)
 	c = MALLOC(sizeof(struct checker_class));
 	if (c) {
 		INIT_LIST_HEAD(&c->node);
-		c->refcount = 1;
+		uatomic_set(&c->refcount, 1);
 	}
 	return c;
 }
 
+/* Use uatomic_{sub,add}_return() to ensure proper memory barriers */
+static int checker_class_ref(struct checker_class *cls)
+{
+	return uatomic_add_return(&cls->refcount, 1);
+}
+
+static int checker_class_unref(struct checker_class *cls)
+{
+	return uatomic_sub_return(&cls->refcount, 1);
+}
+
 void free_checker_class(struct checker_class *c)
 {
+	int cnt;
+
 	if (!c)
 		return;
-	c->refcount--;
-	if (c->refcount) {
-		condlog(4, "%s checker refcount %d",
-			c->name, c->refcount);
+	cnt = checker_class_unref(c);
+	if (cnt != 0) {
+		condlog(cnt < 0 ? 1 : 4, "%s checker refcount %d",
+			c->name, cnt);
 		return;
 	}
 	condlog(3, "unloading %s checker", c->name);
@@ -160,7 +177,8 @@ static struct checker_class *add_checker_class(const char *multipath_dir,
 
 	c->mp_init = (int (*)(struct checker *)) dlsym(c->handle, "libcheck_mp_init");
 	c->reset = (void (*)(void)) dlsym(c->handle, "libcheck_reset");
-	/* These 2 functions can be NULL. call dlerror() to clear out any
+	c->thread = (void *(*)(void*)) dlsym(c->handle, "libcheck_thread");
+	/* These 3 functions can be NULL. call dlerror() to clear out any
 	 * error string */
 	dlerror();
 
@@ -346,6 +364,43 @@ bad_id:
 	return generic_msg[CHECKER_MSGID_NONE];
 }
 
+static void checker_cleanup_thread(void *arg)
+{
+	struct checker_class *cls = arg;
+
+	(void)checker_class_unref(cls);
+	rcu_unregister_thread();
+}
+
+static void *checker_thread_entry(void *arg)
+{
+	struct checker_context *ctx = arg;
+	void *rv;
+
+	rcu_register_thread();
+	pthread_cleanup_push(checker_cleanup_thread, ctx->cls);
+	rv = ctx->cls->thread(ctx);
+	pthread_cleanup_pop(1);
+	return rv;
+}
+
+int start_checker_thread(pthread_t *thread, const pthread_attr_t *attr,
+			 struct checker_context *ctx)
+{
+	int rv;
+
+	assert(ctx && ctx->cls && ctx->cls->thread);
+	/* Take a ref here, lest the class be freed before the thread starts */
+	(void)checker_class_ref(ctx->cls);
+	rv = pthread_create(thread, attr, checker_thread_entry, ctx);
+	if (rv != 0) {
+		condlog(1, "failed to start checker thread for %s: %m",
+			ctx->cls->name);
+		checker_class_unref(ctx->cls);
+	}
+	return rv;
+}
+
 void checker_clear_message (struct checker *c)
 {
 	if (!c)
@@ -370,12 +425,28 @@ void checker_get(const char *multipath_dir, struct checker *dst,
 	if (!src)
 		return;
 
-	src->refcount++;
+	(void)checker_class_ref(dst->cls);
 }
 
 int init_checkers(const char *multipath_dir)
 {
+#ifdef LOAD_ALL_SHARED_LIBS
+	static const char *const all_checkers[] = {
+		DIRECTIO,
+		TUR,
+		HP_SW,
+		RDAC,
+		EMC_CLARIION,
+		READSECTOR0,
+		CCISS_TUR,
+	};
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(all_checkers); i++)
+		add_checker_class(multipath_dir, all_checkers[i]);
+#else
 	if (!add_checker_class(multipath_dir, DEFAULT_CHECKER))
 		return 1;
+#endif
 	return 0;
 }

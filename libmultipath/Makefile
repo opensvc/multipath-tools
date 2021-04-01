@@ -6,6 +6,7 @@ include ../Makefile.inc
 SONAME = 0
 DEVLIB = libmultipath.so
 LIBS = $(DEVLIB).$(SONAME)
+VERSION_SCRIPT := libmultipath.version
 
 CFLAGS += $(LIB_CFLAGS) -I$(mpathcmddir) -I$(mpathpersistdir) -I$(nvmedir)
 
@@ -54,7 +55,7 @@ OBJS = memory.o parser.o vector.o devmapper.o callout.o \
 	io_err_stat.o dm-generic.o generic.o foreign.o nvme-lib.o \
 	libsg.o valid.o
 
-all: $(LIBS)
+all:	$(DEVLIB)
 
 nvme-lib.o: nvme-lib.c nvme-ioctl.c nvme-ioctl.h
 	$(CC) $(CFLAGS) -Wno-unused-function -c -o $@ $<
@@ -72,11 +73,22 @@ nvme-ioctl.c: nvme/nvme-ioctl.c
 nvme-ioctl.h: nvme/nvme-ioctl.h
 	$(call make_static,$<,$@)
 
-$(LIBS): $(OBJS)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS)
-	$(LN) $@ $(DEVLIB)
 
-install:
+$(LIBS): $(OBJS) $(VERSION_SCRIPT)
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
+		-Wl,--version-script=$(VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
+
+$(DEVLIB): $(LIBS)
+	$(LN) $(LIBS) $@
+
+../tests/$(LIBS): $(OBJS) $(VERSION_SCRIPT)
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=`basename $@` \
+		-o $@ $(OBJS) $(LIBDEPS)
+	$(LN) $@ ${@:.so.0=.so}
+
+test-lib:	../tests/$(LIBS)
+
+install: all
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(libdir)

@@ -4,7 +4,7 @@ ALUA is supported in some devices, but usually it's disabled by default.
 To enable ALUA, the following options should be changed:
 
 - EMC CLARiiON/VNX:
-   "Failover Mode" should be changed to "4".
+   "Failover Mode" should be changed to "4" or "Active-Active mode(ALUA)-failover mode 4"
 
 - HPE 3PAR:
    "Host:" should be changed to "Generic-ALUA Persona 2 (UARepLun, SESLun, ALUA)".
@@ -19,3 +19,6 @@ To enable ALUA, the following options should be changed:
 - NetApp ONTAP:
    To check ALUA state: "igroup show -v <igroup_name>", and to enable ALUA:
    "igroup set <igroup_name> alua yes".
+
+- Huawei OceanStor:
+   "Host Access Mode" should be changed to "Asymmetric".

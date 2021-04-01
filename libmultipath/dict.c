@@ -822,7 +822,7 @@ declare_mp_attr_handler(gid, set_gid)
 declare_mp_attr_snprint(gid, print_gid)
 
 static int
-set_fast_io_fail(vector strvec, void *ptr)
+set_undef_off_zero(vector strvec, void *ptr)
 {
 	char * buff;
 	int *int_ptr = (int *)ptr;
@@ -832,36 +832,36 @@ set_fast_io_fail(vector strvec, void *ptr)
 		return 1;
 
 	if (strcmp(buff, "off") == 0)
-		*int_ptr = MP_FAST_IO_FAIL_OFF;
+		*int_ptr = UOZ_OFF;
 	else if (sscanf(buff, "%d", int_ptr) != 1 ||
-		 *int_ptr < MP_FAST_IO_FAIL_ZERO)
-		*int_ptr = MP_FAST_IO_FAIL_UNSET;
+		 *int_ptr < UOZ_ZERO)
+		*int_ptr = UOZ_UNDEF;
 	else if (*int_ptr == 0)
-		*int_ptr = MP_FAST_IO_FAIL_ZERO;
+		*int_ptr = UOZ_ZERO;
 
 	FREE(buff);
 	return 0;
 }
 
 int
-print_fast_io_fail(char * buff, int len, long v)
+print_undef_off_zero(char * buff, int len, long v)
 {
-	if (v == MP_FAST_IO_FAIL_UNSET)
+	if (v == UOZ_UNDEF)
 		return 0;
-	if (v == MP_FAST_IO_FAIL_OFF)
+	if (v == UOZ_OFF)
 		return snprintf(buff, len, "\"off\"");
-	if (v == MP_FAST_IO_FAIL_ZERO)
+	if (v == UOZ_ZERO)
 		return snprintf(buff, len, "0");
 	return snprintf(buff, len, "%ld", v);
 }
 
-declare_def_handler(fast_io_fail, set_fast_io_fail)
-declare_def_snprint_defint(fast_io_fail, print_fast_io_fail,
+declare_def_handler(fast_io_fail, set_undef_off_zero)
+declare_def_snprint_defint(fast_io_fail, print_undef_off_zero,
 			   DEFAULT_FAST_IO_FAIL)
-declare_ovr_handler(fast_io_fail, set_fast_io_fail)
-declare_ovr_snprint(fast_io_fail, print_fast_io_fail)
-declare_hw_handler(fast_io_fail, set_fast_io_fail)
-declare_hw_snprint(fast_io_fail, print_fast_io_fail)
+declare_ovr_handler(fast_io_fail, set_undef_off_zero)
+declare_ovr_snprint(fast_io_fail, print_undef_off_zero)
+declare_hw_handler(fast_io_fail, set_undef_off_zero)
+declare_hw_snprint(fast_io_fail, print_undef_off_zero)
 
 static int
 set_dev_loss(vector strvec, void *ptr)
@@ -898,6 +898,13 @@ declare_ovr_handler(dev_loss, set_dev_loss)
 declare_ovr_snprint(dev_loss, print_dev_loss)
 declare_hw_handler(dev_loss, set_dev_loss)
 declare_hw_snprint(dev_loss, print_dev_loss)
+
+declare_def_handler(eh_deadline, set_undef_off_zero)
+declare_def_snprint(eh_deadline, print_undef_off_zero)
+declare_ovr_handler(eh_deadline, set_undef_off_zero)
+declare_ovr_snprint(eh_deadline, print_undef_off_zero)
+declare_hw_handler(eh_deadline, set_undef_off_zero)
+declare_hw_snprint(eh_deadline, print_undef_off_zero)
 
 static int
 set_pgpolicy(vector strvec, void *ptr)
@@ -1394,6 +1401,14 @@ declare_hw_snprint(all_tg_pt, print_yes_no_undef)
 declare_def_handler(marginal_pathgroups, set_yes_no)
 declare_def_snprint(marginal_pathgroups, print_yes_no)
 
+declare_def_handler(recheck_wwid, set_yes_no_undef)
+declare_def_snprint_defint(recheck_wwid, print_yes_no_undef, DEFAULT_RECHECK_WWID)
+declare_ovr_handler(recheck_wwid, set_yes_no_undef)
+declare_ovr_snprint(recheck_wwid, print_yes_no_undef)
+declare_hw_handler(recheck_wwid, set_yes_no_undef)
+declare_hw_snprint(recheck_wwid, print_yes_no_undef)
+
+
 static int
 def_uxsock_timeout_handler(struct config *conf, vector strvec)
 {
@@ -1771,6 +1786,7 @@ init_keywords(vector keywords)
 	install_keyword("gid", &def_gid_handler, &snprint_def_gid);
 	install_keyword("fast_io_fail_tmo", &def_fast_io_fail_handler, &snprint_def_fast_io_fail);
 	install_keyword("dev_loss_tmo", &def_dev_loss_handler, &snprint_def_dev_loss);
+	install_keyword("eh_deadline", &def_eh_deadline_handler, &snprint_def_eh_deadline);
 	install_keyword("bindings_file", &def_bindings_file_handler, &snprint_def_bindings_file);
 	install_keyword("wwids_file", &def_wwids_file_handler, &snprint_def_wwids_file);
 	install_keyword("prkeys_file", &def_prkeys_file_handler, &snprint_def_prkeys_file);
@@ -1811,6 +1827,7 @@ init_keywords(vector keywords)
 	install_keyword("enable_foreign", &def_enable_foreign_handler,
 			&snprint_def_enable_foreign);
 	install_keyword("marginal_pathgroups", &def_marginal_pathgroups_handler, &snprint_def_marginal_pathgroups);
+	install_keyword("recheck_wwid", &def_recheck_wwid_handler, &snprint_def_recheck_wwid);
 	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
 	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
 	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);
@@ -1880,6 +1897,7 @@ init_keywords(vector keywords)
 	install_keyword("flush_on_last_del", &hw_flush_on_last_del_handler, &snprint_hw_flush_on_last_del);
 	install_keyword("fast_io_fail_tmo", &hw_fast_io_fail_handler, &snprint_hw_fast_io_fail);
 	install_keyword("dev_loss_tmo", &hw_dev_loss_handler, &snprint_hw_dev_loss);
+	install_keyword("eh_deadline", &hw_eh_deadline_handler, &snprint_hw_eh_deadline);
 	install_keyword("user_friendly_names", &hw_user_friendly_names_handler, &snprint_hw_user_friendly_names);
 	install_keyword("retain_attached_hw_handler", &hw_retain_hwhandler_handler, &snprint_hw_retain_hwhandler);
 	install_keyword("detect_prio", &hw_detect_prio_handler, &snprint_hw_detect_prio);
@@ -1899,6 +1917,7 @@ init_keywords(vector keywords)
 	install_keyword("ghost_delay", &hw_ghost_delay_handler, &snprint_hw_ghost_delay);
 	install_keyword("all_tg_pt", &hw_all_tg_pt_handler, &snprint_hw_all_tg_pt);
 	install_keyword("vpd_vendor", &hw_vpd_vendor_handler, &snprint_hw_vpd_vendor);
+	install_keyword("recheck_wwid", &hw_recheck_wwid_handler, &snprint_hw_recheck_wwid);
 	install_sublevel_end();
 
 	install_keyword_root("overrides", &overrides_handler);
@@ -1920,6 +1939,7 @@ init_keywords(vector keywords)
 	install_keyword("flush_on_last_del", &ovr_flush_on_last_del_handler, &snprint_ovr_flush_on_last_del);
 	install_keyword("fast_io_fail_tmo", &ovr_fast_io_fail_handler, &snprint_ovr_fast_io_fail);
 	install_keyword("dev_loss_tmo", &ovr_dev_loss_handler, &snprint_ovr_dev_loss);
+	install_keyword("eh_deadline", &ovr_eh_deadline_handler, &snprint_ovr_eh_deadline);
 	install_keyword("user_friendly_names", &ovr_user_friendly_names_handler, &snprint_ovr_user_friendly_names);
 	install_keyword("retain_attached_hw_handler", &ovr_retain_hwhandler_handler, &snprint_ovr_retain_hwhandler);
 	install_keyword("detect_prio", &ovr_detect_prio_handler, &snprint_ovr_detect_prio);
@@ -1939,6 +1959,7 @@ init_keywords(vector keywords)
 	install_keyword("max_sectors_kb", &ovr_max_sectors_kb_handler, &snprint_ovr_max_sectors_kb);
 	install_keyword("ghost_delay", &ovr_ghost_delay_handler, &snprint_ovr_ghost_delay);
 	install_keyword("all_tg_pt", &ovr_all_tg_pt_handler, &snprint_ovr_all_tg_pt);
+	install_keyword("recheck_wwid", &ovr_recheck_wwid_handler, &snprint_ovr_recheck_wwid);
 
 	install_keyword_root("multipaths", &multipaths_handler);
 	install_keyword_multi("multipath", &multipath_handler, NULL);

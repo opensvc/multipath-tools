@@ -65,9 +65,7 @@ do {									\
 	__do_set_from_vec(struct hwentry, var, (src)->hwe, dest)
 
 #define do_set_from_hwe(var, src, dest, msg)				\
-	if (!src->hwe) {						\
-		condlog(0, "BUG: do_set_from_hwe called with hwe == NULL"); \
-	} else if (__do_set_from_hwe(var, src, dest)) {			\
+	if (src->hwe && __do_set_from_hwe(var, src, dest)) {		\
 		origin = msg;						\
 		goto out;						\
 	}
@@ -498,13 +496,15 @@ check_rdac(struct path * pp)
 {
 	int len;
 	char buff[44];
-	const char *checker_name;
+	const char *checker_name = NULL;
 
 	if (pp->bus != SYSFS_BUS_SCSI)
 		return 0;
-	/* Avoid ioctl if this is likely not an RDAC array */
-	if (__do_set_from_hwe(checker_name, pp, checker_name) &&
-	    strcmp(checker_name, RDAC))
+	/* Avoid checking 0xc9 if this is likely not an RDAC array */
+	if (!__do_set_from_hwe(checker_name, pp, checker_name) &&
+	    !is_vpd_page_supported(pp->fd, 0xC9))
+		return 0;
+	if (checker_name && strcmp(checker_name, RDAC))
 		return 0;
 	len = get_vpd_sgio(pp->fd, 0xC9, 0, buff, 44);
 	if (len <= 0)
@@ -578,6 +578,27 @@ out:
 	else if (pp->getuid)
 		condlog(3, "%s: getuid = \"%s\" %s", pp->dev, pp->getuid,
 			origin);
+	return 0;
+}
+
+/* must be called after select_getuid */
+int select_recheck_wwid(struct config *conf, struct path * pp)
+{
+	const char *origin;
+
+	pp_set_ovr(recheck_wwid);
+	pp_set_hwe(recheck_wwid);
+	pp_set_conf(recheck_wwid);
+	pp_set_default(recheck_wwid, DEFAULT_RECHECK_WWID);
+out:
+	if (pp->recheck_wwid == RECHECK_WWID_ON &&
+	    (pp->bus != SYSFS_BUS_SCSI || pp->getuid != NULL ||
+	     !has_uid_fallback(pp))) {
+		pp->recheck_wwid = RECHECK_WWID_OFF;
+		origin = "(setting: unsupported by device type/config)";
+	}
+	condlog(3, "%s: recheck_wwid = %i %s", pp->dev, pp->recheck_wwid,
+		origin);
 	return 0;
 }
 
@@ -737,9 +758,10 @@ out:
 
 int select_minio(struct config *conf, struct multipath *mp)
 {
-	unsigned int minv_dmrq[3] = {1, 1, 0};
+	unsigned int minv_dmrq[3] = {1, 1, 0}, version[3];
 
-	if (VERSION_GE(conf->version, minv_dmrq))
+	if (!libmp_get_version(DM_MPATH_TARGET_VERSION, version)
+	    && VERSION_GE(version, minv_dmrq))
 		return select_minio_rq(conf, mp);
 	else
 		return select_minio_bio(conf, mp);
@@ -755,7 +777,7 @@ int select_fast_io_fail(struct config *conf, struct multipath *mp)
 	mp_set_conf(fast_io_fail);
 	mp_set_default(fast_io_fail, DEFAULT_FAST_IO_FAIL);
 out:
-	print_fast_io_fail(buff, 12, mp->fast_io_fail);
+	print_undef_off_zero(buff, 12, mp->fast_io_fail);
 	condlog(3, "%s: fast_io_fail_tmo = %s %s", mp->alias, buff, origin);
 	return 0;
 }
@@ -773,6 +795,23 @@ int select_dev_loss(struct config *conf, struct multipath *mp)
 out:
 	print_dev_loss(buff, 12, mp->dev_loss);
 	condlog(3, "%s: dev_loss_tmo = %s %s", mp->alias, buff, origin);
+	return 0;
+}
+
+int select_eh_deadline(struct config *conf, struct multipath *mp)
+{
+	const char *origin;
+	char buff[12];
+
+	mp_set_ovr(eh_deadline);
+	mp_set_hwe(eh_deadline);
+	mp_set_conf(eh_deadline);
+	mp->eh_deadline = EH_DEADLINE_UNSET;
+	/* not changing sysfs in default cause, so don't print anything */
+	return 0;
+out:
+	print_undef_off_zero(buff, 12, mp->eh_deadline);
+	condlog(3, "%s: eh_deadline = %s %s", mp->alias, buff, origin);
 	return 0;
 }
 
@@ -822,9 +861,10 @@ out:
 int select_retain_hwhandler(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	unsigned int minv_dm_retain[3] = {1, 5, 0};
+	unsigned int minv_dm_retain[3] = {1, 5, 0}, version[3];
 
-	if (!VERSION_GE(conf->version, minv_dm_retain)) {
+	if (!libmp_get_version(DM_MPATH_TARGET_VERSION, version) &&
+	    !VERSION_GE(version, minv_dm_retain)) {
 		mp->retain_hwhandler = RETAIN_HWHANDLER_OFF;
 		origin = "(setting: WARNING, requires kernel dm-mpath version >= 1.5.0)";
 		goto out;

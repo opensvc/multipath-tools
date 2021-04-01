@@ -16,6 +16,7 @@
  *
  */
 
+#include <pthread.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdarg.h>
@@ -179,6 +180,8 @@ struct dm_names *build_dm_names(void)
 	return names;
 }
 
+static bool setup_done;
+
 static int setup(void **state)
 {
 	if (dmevent_poll_supported()) {
@@ -186,6 +189,7 @@ static int setup(void **state)
 		*state = &data;
 	} else
 		*state = NULL;
+	setup_done = true;
 	return 0;
 }
 
@@ -262,14 +266,20 @@ struct dm_task *__wrap_libmp_dm_task_create(int task)
 	return mock_type(struct dm_task *);
 }
 
+int __real_dm_task_no_open_count(struct dm_task *dmt);
 int __wrap_dm_task_no_open_count(struct dm_task *dmt)
 {
+	if (!setup_done)
+		return __real_dm_task_no_open_count(dmt);
 	assert_ptr_equal((struct test_data *)dmt, &data);
 	return mock_type(int);
 }
 
+int __real_dm_task_run(struct dm_task *dmt);
 int __wrap_dm_task_run(struct dm_task *dmt)
 {
+	if (!setup_done)
+		return __real_dm_task_run(dmt);
 	assert_ptr_equal((struct test_data *)dmt, &data);
 	return mock_type(int);
 }
@@ -291,8 +301,11 @@ struct dm_names * __wrap_dm_task_get_names(struct dm_task *dmt)
 	return data.names;
 }
 
+void __real_dm_task_destroy(struct dm_task *dmt);
 void __wrap_dm_task_destroy(struct dm_task *dmt)
 {
+	if (!setup_done)
+		return __real_dm_task_destroy(dmt);
 	assert_ptr_equal((struct test_data *)dmt, &data);
 
 	if (data.names) {
@@ -912,6 +925,7 @@ int main(void)
 {
 	int ret = 0;
 
+	init_test_verbosity(-1);
 	ret += test_dmevents();
 	return ret;
 }

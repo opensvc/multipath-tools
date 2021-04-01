@@ -1,0 +1,16 @@
+.TH "dmmp_path_group_priority_get" 3 "dmmp_path_group_priority_get" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_path_group_priority_get \- Retrieve path group priority.
+.SH SYNOPSIS
+.B "uint32_t" dmmp_path_group_priority_get
+.BI "(struct dmmp_path_group *" dmmp_pg ");"
+.SH ARGUMENTS
+.IP "dmmp_pg" 12
+Pointer of 'struct dmmp_path_group'.
+If this pointer is NULL, your program will be terminated by assert.
+.SH "DESCRIPTION"
+
+The enabled path group with highest priority will be next active path group
+if active path group down.
+.SH "RETURN"
+uint32_t.

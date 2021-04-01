@@ -1,0 +1,33 @@
+.TH "dmmp_strerror" 3 "dmmp_strerror" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_strerror \- Convert error code to string.
+.SH SYNOPSIS
+.B "const char *" dmmp_strerror
+.BI "(int " rc ");"
+.SH ARGUMENTS
+.IP "rc" 12
+int. Return code by libdmmp functions. When provided error code is not a
+valid error code, return "Invalid argument".
+.SH "DESCRIPTION"
+
+Convert error code (int) to string (const char *):
+
+* DMMP_OK -- "OK"
+
+* DMMP_ERR_BUG -- "BUG of libdmmp library"
+
+* DMMP_ERR_NO_MEMORY -- "Out of memory"
+
+* DMMP_ERR_IPC_TIMEOUT -- "Timeout when communicate with multipathd,
+try to set bigger timeout value via dmmp_context_timeout_set ()"
+
+* DMMP_ERR_IPC_ERROR -- "Error when communicate with multipathd daemon"
+
+* DMMP_ERR_NO_DAEMON -- "The multipathd daemon not started"
+
+* DMMP_ERR_INCOMPATIBLE -- "The multipathd daemon version is not
+compatible with current library"
+
+* Other invalid error number -- "Invalid argument"
+.SH "RETURN"
+const char *. The meaning of provided error code.

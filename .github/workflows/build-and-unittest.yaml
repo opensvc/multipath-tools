@@ -1,5 +1,12 @@
 name: basic-build-and-ci
-on:   [push]
+on:
+  push:
+    branches:
+      - master
+      - queue
+      - tip
+  pull_request:
+
 jobs:
   bionic:
     runs-on: ubuntu-18.04

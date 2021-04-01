@@ -1,0 +1,26 @@
+.TH "dmmp_path_group_status_str" 3 "dmmp_path_group_status_str" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_path_group_status_str \- Convert path group status to string.
+.SH SYNOPSIS
+.B "const char *" dmmp_path_group_status_str
+.BI "(uint32_t " pg_status ");"
+.SH ARGUMENTS
+.IP "pg_status" 12
+uint32_t. Path group status.
+When provided value is not a valid path group status, return "Invalid
+argument".
+.SH "DESCRIPTION"
+
+Convert path group status uint32_t to string (const char *).
+.SH "RETURN"
+const char *. Valid string are:
+
+* "Invalid argument"
+
+* "undef"
+
+* "enabled"
+
+* "disabled"
+
+* "active"

@@ -322,6 +322,7 @@ int main(void)
 {
 	int ret = 0;
 
+	init_test_verbosity(-1);
 	ret += test_uevent_get_XXX();
 	return ret;
 }

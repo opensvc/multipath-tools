@@ -42,24 +42,10 @@ void * mpath_alloc_prin_response(int prin_sa);
 void mpath_print_transport_id(struct prin_fulldescr *fdesc);
 int construct_transportid(const char * inp, struct transportid transid[], int num_transportids);
 
-int logsink;
-struct config *multipath_conf;
-
-struct config *get_multipath_config(void)
-{
-	return multipath_conf;
-}
-
-void put_multipath_config(__attribute__((unused)) void * arg)
-{
-	/* Noop for now */
-}
-
 void rcu_register_thread_memb(void) {}
 
 void rcu_unregister_thread_memb(void) {}
 
-struct udev *udev;
 
 static int verbose, loglevel, noisy;
 
@@ -652,18 +638,13 @@ int main(int argc, char *argv[])
 		exit (1);
 	}
 
-	udev = udev_new();
-	multipath_conf = mpath_lib_init();
-	if(!multipath_conf) {
-		udev_unref(udev);
+	if (libmpathpersist_init()) {
 		exit(1);
 	}
+	if (atexit((void(*)(void))libmpathpersist_exit))
+		fprintf(stderr, "failed to register cleanup handler for libmpathpersist: %m");
 
 	ret = handle_args(argc, argv, 0);
-
-	mpath_lib_exit(multipath_conf);
-	udev_unref(udev);
-
 	return (ret >= 0) ? ret : MPATH_PR_OTHER;
 }
 

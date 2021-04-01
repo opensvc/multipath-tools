@@ -1,0 +1,34 @@
+.TH "dmmp_path_status_str" 3 "dmmp_path_status_str" "March 2021" "Device Mapper Multipath API - libdmmp Manual" 
+.SH NAME
+dmmp_path_status_str \- Convert path status to string.
+.SH SYNOPSIS
+.B "const char *" dmmp_path_status_str
+.BI "(uint32_t " path_status ");"
+.SH ARGUMENTS
+.IP "path_status" 12
+uint32_t. Path status.
+When provided value is not a valid path status, return
+"Invalid argument".
+.SH "DESCRIPTION"
+
+Convert path status uint32_t to string (const char *):
+
+* DMMP_PATH_STATUS_UNKNOWN -- "undef"
+
+* DMMP_PATH_STATUS_DOWN -- "faulty"
+
+* DMMP_PATH_STATUS_UP -- "ready"
+
+* DMMP_PATH_STATUS_SHAKY -- "shaky"
+
+* DMMP_PATH_STATUS_GHOST -- "ghost"
+
+* DMMP_PATH_STATUS_PENDING -- "pending"
+
+* DMMP_PATH_STATUS_TIMEOUT -- "timeout"
+
+* DMMP_PATH_STATUS_REMOVED -- "removed"
+
+* DMMP_PATH_STATUS_DELAYED -- "delayed"
+.SH "RETURN"
+const char *. The meaning of status value.

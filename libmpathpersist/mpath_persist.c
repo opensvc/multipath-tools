@@ -37,6 +37,31 @@
 
 extern struct udev *udev;
 
+static void adapt_config(struct config *conf)
+{
+	conf->force_sync = 1;
+	set_max_fds(conf->max_fds);
+}
+
+int libmpathpersist_init(void)
+{
+	struct config *conf;
+	int rc = 0;
+
+	if (libmultipath_init()) {
+		condlog(0, "Failed to initialize libmultipath.");
+		return 1;
+	}
+	if (init_config(DEFAULT_CONFIGFILE)) {
+		condlog(0, "Failed to initialize multipath config.");
+		return 1;
+	}
+	conf = libmp_get_multipath_config();
+	adapt_config(conf);
+	libmp_put_multipath_config(conf);
+	return rc;
+}
+
 struct config *
 mpath_lib_init (void)
 {
@@ -47,21 +72,28 @@ mpath_lib_init (void)
 		condlog(0, "Failed to initialize multipath config.");
 		return NULL;
 	}
-	conf->force_sync = 1;
-	set_max_fds(conf->max_fds);
-
+	adapt_config(conf);
 	return conf;
+}
+
+static void libmpathpersist_cleanup(void)
+{
+	libmultipath_exit();
+	dm_lib_exit();
 }
 
 int
 mpath_lib_exit (struct config *conf)
 {
-	dm_lib_release();
-	dm_lib_exit();
-	cleanup_prio();
-	cleanup_checkers();
 	free_config(conf);
-	conf = NULL;
+	libmpathpersist_cleanup();
+	return 0;
+}
+
+int libmpathpersist_exit(void)
+{
+	uninit_config();
+	libmpathpersist_cleanup();
 	return 0;
 }
 
@@ -101,72 +133,57 @@ mpath_prin_activepath (struct multipath *mpp, int rq_servact,
 	return ret;
 }
 
-int mpath_persistent_reserve_in (int fd, int rq_servact,
-	struct prin_resp *resp, int noisy, int verbose)
-{
-	int ret = mpath_persistent_reserve_init_vecs(verbose);
-
-	if (ret != MPATH_PR_SUCCESS)
-		return ret;
-	ret = __mpath_persistent_reserve_in(fd, rq_servact, resp, noisy);
-	mpath_persistent_reserve_free_vecs();
-	return ret;
-}
-
-int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
-	unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy, int verbose)
-{
-	int ret = mpath_persistent_reserve_init_vecs(verbose);
-
-	if (ret != MPATH_PR_SUCCESS)
-		return ret;
-	ret = __mpath_persistent_reserve_out(fd, rq_servact, rq_scope, rq_type,
-					     paramp, noisy);
-	mpath_persistent_reserve_free_vecs();
-	return ret;
-}
-
 static vector curmp;
 static vector pathvec;
 
-void mpath_persistent_reserve_free_vecs(void)
+static void __mpath_persistent_reserve_free_vecs(vector curmp, vector pathvec)
 {
 	free_multipathvec(curmp, KEEP_PATHS);
 	free_pathvec(pathvec, FREE_PATHS);
+}
+
+void mpath_persistent_reserve_free_vecs(void)
+{
+	__mpath_persistent_reserve_free_vecs(curmp, pathvec);
 	curmp = pathvec = NULL;
 }
 
-int mpath_persistent_reserve_init_vecs(int verbose)
+static int __mpath_persistent_reserve_init_vecs(vector *curmp_p,
+						vector *pathvec_p, int verbose)
 {
-	struct config *conf = get_multipath_config();
+	libmp_verbosity = verbose;
 
-	conf->verbosity = verbose;
-	put_multipath_config(conf);
-
-	if (curmp)
+	if (*curmp_p)
 		return MPATH_PR_SUCCESS;
 	/*
 	 * allocate core vectors to store paths and multipaths
 	 */
-	curmp = vector_alloc ();
-	pathvec = vector_alloc ();
+	*curmp_p = vector_alloc ();
+	*pathvec_p = vector_alloc ();
 
-	if (!curmp || !pathvec){
+	if (!*curmp_p || !*pathvec_p){
 		condlog (0, "vector allocation failed.");
 		goto err;
 	}
 
-	if (dm_get_maps(curmp))
+	if (dm_get_maps(*curmp_p))
 		goto err;
 
 	return MPATH_PR_SUCCESS;
 
 err:
-	mpath_persistent_reserve_free_vecs();
+	__mpath_persistent_reserve_free_vecs(*curmp_p, *pathvec_p);
+	*curmp_p = *pathvec_p = NULL;
 	return MPATH_PR_DMMP_ERROR;
 }
 
-static int mpath_get_map(int fd, char **palias, struct multipath **pmpp)
+int mpath_persistent_reserve_init_vecs(int verbose)
+{
+	return __mpath_persistent_reserve_init_vecs(&curmp, &pathvec, verbose);
+}
+
+static int mpath_get_map(vector curmp, vector pathvec, int fd, char **palias,
+			 struct multipath **pmpp)
 {
 	int ret = MPATH_PR_DMMP_ERROR;
 	struct stat info;
@@ -226,13 +243,13 @@ out:
 	return ret;
 }
 
-int __mpath_persistent_reserve_in (int fd, int rq_servact,
-	struct prin_resp *resp, int noisy)
+static int do_mpath_persistent_reserve_in (vector curmp, vector pathvec,
+	int fd, int rq_servact, struct prin_resp *resp, int noisy)
 {
 	struct multipath *mpp;
 	int ret;
 
-	ret = mpath_get_map(fd, NULL, &mpp);
+	ret = mpath_get_map(curmp, pathvec, fd, NULL, &mpp);
 	if (ret != MPATH_PR_SUCCESS)
 		return ret;
 
@@ -241,8 +258,17 @@ int __mpath_persistent_reserve_in (int fd, int rq_servact,
 	return ret;
 }
 
-int __mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
-	unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy)
+
+int __mpath_persistent_reserve_in (int fd, int rq_servact,
+	struct prin_resp *resp, int noisy)
+{
+	return do_mpath_persistent_reserve_in(curmp, pathvec, fd, rq_servact,
+					      resp, noisy);
+}
+
+static int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
+	int rq_servact, int rq_scope, unsigned int rq_type,
+	struct prout_param_descriptor *paramp, int noisy)
 {
 	struct multipath *mpp;
 	char *alias;
@@ -250,7 +276,7 @@ int __mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	uint64_t prkey;
 	struct config *conf;
 
-	ret = mpath_get_map(fd, &alias, &mpp);
+	ret = mpath_get_map(curmp, pathvec, fd, &alias, &mpp);
 	if (ret != MPATH_PR_SUCCESS)
 		return ret;
 
@@ -261,9 +287,10 @@ int __mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 
 	memcpy(&prkey, paramp->sa_key, 8);
 	if (mpp->prkey_source == PRKEY_SOURCE_FILE && prkey &&
-	    ((!get_be64(mpp->reservation_key) &&
-	      rq_servact == MPATH_PROUT_REG_SA) ||
-	     rq_servact == MPATH_PROUT_REG_IGN_SA)) {
+	    (rq_servact == MPATH_PROUT_REG_IGN_SA ||
+	     (rq_servact == MPATH_PROUT_REG_SA &&
+	      (!get_be64(mpp->reservation_key) ||
+	       memcmp(paramp->key, &mpp->reservation_key, 8) == 0)))) {
 		memcpy(&mpp->reservation_key, paramp->sa_key, 8);
 		if (update_prkey_flags(alias, get_be64(mpp->reservation_key),
 				       paramp->sa_flags)) {
@@ -275,7 +302,8 @@ int __mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	}
 
 	if (memcmp(paramp->key, &mpp->reservation_key, 8) &&
-	    memcmp(paramp->sa_key, &mpp->reservation_key, 8)) {
+	    memcmp(paramp->sa_key, &mpp->reservation_key, 8) &&
+	    (prkey || rq_servact != MPATH_PROUT_REG_IGN_SA)) {
 		condlog(0, "%s: configured reservation key doesn't match: 0x%" PRIx64, alias, get_be64(mpp->reservation_key));
 		ret = MPATH_PR_SYNTAX_ERROR;
 		goto out1;
@@ -318,6 +346,45 @@ out1:
 	return ret;
 }
 
+
+int __mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
+	unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy)
+{
+	return do_mpath_persistent_reserve_out(curmp, pathvec, fd, rq_servact,
+					       rq_scope, rq_type, paramp,
+					       noisy);
+}
+
+int mpath_persistent_reserve_in (int fd, int rq_servact,
+	struct prin_resp *resp, int noisy, int verbose)
+{
+	vector curmp = NULL, pathvec;
+	int ret = __mpath_persistent_reserve_init_vecs(&curmp, &pathvec,
+						       verbose);
+
+	if (ret != MPATH_PR_SUCCESS)
+		return ret;
+	ret = do_mpath_persistent_reserve_in(curmp, pathvec, fd, rq_servact,
+					     resp, noisy);
+	__mpath_persistent_reserve_free_vecs(curmp, pathvec);
+	return ret;
+}
+
+int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
+	unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy, int verbose)
+{
+	vector curmp = NULL, pathvec;
+	int ret = __mpath_persistent_reserve_init_vecs(&curmp, &pathvec,
+						       verbose);
+
+	if (ret != MPATH_PR_SUCCESS)
+		return ret;
+	ret = do_mpath_persistent_reserve_out(curmp, pathvec, fd, rq_servact,
+					      rq_scope, rq_type, paramp, noisy);
+	__mpath_persistent_reserve_free_vecs(curmp, pathvec);
+	return ret;
+}
+
 int
 get_mpvec (vector curmp, vector pathvec, char * refwwid)
 {
@@ -341,11 +408,12 @@ get_mpvec (vector curmp, vector pathvec, char * refwwid)
 			continue;
 
 		if (update_multipath_table(mpp, pathvec, DI_CHECKER) != DMP_OK ||
-		    update_multipath_status(mpp) != DMP_OK) {
+		    update_mpp_paths(mpp, pathvec)) {
 			condlog(1, "error parsing map %s", mpp->wwid);
 			remove_map(mpp, pathvec, curmp, PURGE_VEC);
 			i--;
-		}
+		} else
+			extract_hwe_from_path(mpp);
 	}
 	return MPATH_PR_SUCCESS ;
 }

@@ -66,10 +66,6 @@
 #include "valid.h"
 #include "alias.h"
 
-int logsink;
-struct udev *udev;
-struct config *multipath_conf;
-
 /*
  * Return values of configure(), check_path_valid(), and main().
  */
@@ -78,16 +74,6 @@ enum {
 	RTVL_FAIL = 1,
 	RTVL_RETRY, /* returned by configure(), not by main() */
 };
-
-struct config *get_multipath_config(void)
-{
-	return multipath_conf;
-}
-
-void put_multipath_config(__attribute__((unused)) void *arg)
-{
-	/* Noop for now */
-}
 
 static int
 dump_config (struct config *conf, vector hwes, vector mpvec)
@@ -107,7 +93,7 @@ void rcu_register_thread_memb(void) {}
 void rcu_unregister_thread_memb(void) {}
 
 static int
-filter_pathvec (vector pathvec, char * refwwid)
+filter_pathvec (vector pathvec, const char *refwwid)
 {
 	int i;
 	struct path * pp;
@@ -210,8 +196,7 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 			continue;
 		}
 
-		if (update_multipath_table(mpp, pathvec, flags) != DMP_OK ||
-		    update_multipath_status(mpp) != DMP_OK) {
+		if (update_multipath_table(mpp, pathvec, flags) != DMP_OK) {
 			condlog(1, "error parsing map %s", mpp->wwid);
 			remove_map(mpp, pathvec, curmp, PURGE_VEC);
 			i--;
@@ -222,22 +207,15 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 			mpp->bestpg = select_path_group(mpp);
 
 		if (cmd == CMD_LIST_SHORT ||
-		    cmd == CMD_LIST_LONG) {
-			struct config *conf = get_multipath_config();
-			print_multipath_topology(mpp, conf->verbosity);
-			put_multipath_config(conf);
-		}
+		    cmd == CMD_LIST_LONG)
+			print_multipath_topology(mpp, libmp_verbosity);
 
 		if (cmd == CMD_CREATE)
 			reinstate_paths(mpp);
 	}
 
-	if (cmd == CMD_LIST_SHORT || cmd == CMD_LIST_LONG) {
-		struct config *conf = get_multipath_config();
-
-		print_foreign_topology(conf->verbosity);
-		put_multipath_config(conf);
-	}
+	if (cmd == CMD_LIST_SHORT || cmd == CMD_LIST_LONG)
+		print_foreign_topology(libmp_verbosity);
 
 	return 0;
 }
@@ -284,8 +262,7 @@ static int check_usable_paths(struct config *conf,
 	if (mpp == NULL)
 		goto free;
 
-	if (update_multipath_table(mpp, pathvec, 0) != DMP_OK ||
-		    update_multipath_status(mpp) != DMP_OK)
+	if (update_multipath_table(mpp, pathvec, 0) != DMP_OK)
 		    goto free;
 
 	vector_foreach_slot (mpp->pg, pg, i) {
@@ -438,7 +415,7 @@ static int print_cmd_valid(int k, const vector pathvec,
 		wait = find_multipaths_check_timeout(pp, 0, &until);
 	if (wait == FIND_MULTIPATHS_WAITING)
 		printf("FIND_MULTIPATHS_WAIT_UNTIL=\"%ld.%06ld\"\n",
-			       until.tv_sec, until.tv_nsec/1000);
+		       (long)until.tv_sec, until.tv_nsec/1000);
 	else if (wait == FIND_MULTIPATHS_WAIT_DONE)
 		printf("FIND_MULTIPATHS_WAIT_UNTIL=\"0\"\n");
 	printf("DM_MULTIPATH_DEVICE_PATH=\"%d\"\n",
@@ -466,13 +443,19 @@ static bool released_to_systemd(void)
 	return ret;
 }
 
+static struct vectors vecs;
+static void cleanup_vecs(void)
+{
+	free_multipathvec(vecs.mpvec, KEEP_PATHS);
+	free_pathvec(vecs.pathvec, FREE_PATHS);
+}
+
 static int
 configure (struct config *conf, enum mpath_cmds cmd,
 	   enum devtypes dev_type, char *devpath)
 {
 	vector curmp = NULL;
 	vector pathvec = NULL;
-	struct vectors vecs;
 	int r = RTVL_FAIL, rc;
 	int di_flag = 0;
 	char * refwwid = NULL;
@@ -483,6 +466,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	 */
 	curmp = vector_alloc();
 	pathvec = vector_alloc();
+	atexit(cleanup_vecs);
 
 	if (!curmp || !pathvec) {
 		condlog(0, "can not allocate memory");
@@ -559,7 +543,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	if (path_discovery(pathvec, di_flag) < 0)
 		goto out;
 
-	if (conf->verbosity > 2)
+	if (libmp_verbosity > 2)
 		print_all_paths(pathvec, 1);
 
 	get_path_layout(pathvec, 0);
@@ -594,9 +578,6 @@ out:
 	if (refwwid)
 		FREE(refwwid);
 
-	free_multipathvec(curmp, KEEP_PATHS);
-	free_pathvec(pathvec, FREE_PATHS);
-
 	return r;
 }
 
@@ -604,8 +585,9 @@ static int
 check_path_valid(const char *name, struct config *conf, bool is_uevent)
 {
 	int fd, r = PATH_IS_ERROR;
-	struct path *pp = NULL;
+	struct path *pp;
 	vector pathvec = NULL;
+	const char *wwid;
 
 	pp = alloc_path();
 	if (!pp)
@@ -674,14 +656,19 @@ check_path_valid(const char *name, struct config *conf, bool is_uevent)
 
 	if (store_path(pathvec, pp) != 0) {
 		free_path(pp);
+		pp = NULL;
 		goto fail;
+	} else {
+		/* make sure path isn't freed twice */
+		wwid = pp->wwid;
+		pp = NULL;
 	}
 
 	/* For find_multipaths = SMART, if there is more than one path
 	 * matching the refwwid, then the path is valid */
 	if (path_discovery(pathvec, DI_SYSFS | DI_WWID) < 0)
 		goto fail;
-	filter_pathvec(pathvec, pp->wwid);
+	filter_pathvec(pathvec, wwid);
 	if (VECTOR_SIZE(pathvec) > 1)
 		r = PATH_IS_VALID;
 	else
@@ -689,21 +676,25 @@ check_path_valid(const char *name, struct config *conf, bool is_uevent)
 
 out:
 	r = print_cmd_valid(r, pathvec, conf);
-	free_pathvec(pathvec, FREE_PATHS);
 	/*
 	 * multipath -u must exit with status 0, otherwise udev won't
 	 * import its output.
 	 */
 	if (!is_uevent && r == PATH_IS_NOT_VALID)
-		return RTVL_FAIL;
-	return RTVL_OK;
+		r = RTVL_FAIL;
+	else
+		r = RTVL_OK;
+	goto cleanup;
 
 fail:
-	if (pathvec)
-		free_pathvec(pathvec, FREE_PATHS);
-	else
+	r = RTVL_FAIL;
+
+cleanup:
+	if (pp != NULL)
 		free_path(pp);
-	return RTVL_FAIL;
+	if (pathvec != NULL)
+		free_pathvec(pathvec, FREE_PATHS);
+	return r;
 }
 
 static int
@@ -821,12 +812,15 @@ main (int argc, char *argv[])
 	int retries = -1;
 	bool enable_foreign = false;
 
-	udev = udev_new();
-	logsink = 0;
-	conf = load_config(DEFAULT_CONFIGFILE);
-	if (!conf)
+	libmultipath_init();
+	if (atexit(dm_lib_exit) || atexit(libmultipath_exit))
+		condlog(1, "failed to register cleanup handler for libmultipath: %m");
+	logsink = LOGSINK_STDERR_WITH_TIME;
+	if (init_config(DEFAULT_CONFIGFILE))
 		exit(RTVL_FAIL);
-	multipath_conf = conf;
+	if (atexit(uninit_config))
+		condlog(1, "failed to register cleanup handler for config: %m");
+	conf = get_multipath_config();
 	conf->retrigger_tries = 0;
 	conf->force_sync = 1;
 	while ((arg = getopt(argc, argv, ":adDcChl::eFfM:v:p:b:BrR:itTquUwW")) != EOF ) {
@@ -840,7 +834,7 @@ main (int argc, char *argv[])
 				exit(RTVL_FAIL);
 			}
 
-			conf->verbosity = atoi(optarg);
+			libmp_verbosity = atoi(optarg);
 			break;
 		case 'b':
 			conf->bindings_file = strdup(optarg);
@@ -902,7 +896,7 @@ main (int argc, char *argv[])
 			break;
 		case 't':
 			r = dump_config(conf, NULL, NULL) ? RTVL_FAIL : RTVL_OK;
-			goto out_free_config;
+			goto out;
 		case 'T':
 			cmd = CMD_DUMP_CONFIG;
 			break;
@@ -971,8 +965,8 @@ main (int argc, char *argv[])
 	}
 	if (dev_type == DEV_UEVENT) {
 		openlog("multipath", 0, LOG_DAEMON);
-		setlogmask(LOG_UPTO(conf->verbosity + 3));
-		logsink = 1;
+		setlogmask(LOG_UPTO(libmp_verbosity + 3));
+		logsink = LOGSINK_SYSLOG;
 	}
 
 	set_max_fds(conf->max_fds);
@@ -1063,27 +1057,13 @@ main (int argc, char *argv[])
 		condlog(3, "restart multipath configuration process");
 
 out:
-	dm_lib_release();
-	dm_lib_exit();
-
-	cleanup_foreign();
-	cleanup_prio();
-	cleanup_checkers();
+	put_multipath_config(conf);
+	if (dev)
+		FREE(dev);
 
 	if (dev_type == DEV_UEVENT)
 		closelog();
 
-out_free_config:
-	/*
-	 * Freeing config must be done after dm_lib_exit(), because
-	 * the logging function (dm_write_log()), which is called there,
-	 * references the config.
-	 */
-	free_config(conf);
-	conf = NULL;
-	udev_unref(udev);
-	if (dev)
-		FREE(dev);
 #ifdef _DEBUG_
 	dbg_free_final(NULL);
 #endif

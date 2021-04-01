@@ -294,11 +294,6 @@ err:
 void orphan_path(struct path *pp, const char *reason)
 {
 	condlog(3, "%s: orphan path, %s", pp->dev, reason);
-	if (pp->mpp && pp->hwe && pp->mpp->hwe == pp->hwe) {
-		condlog(0, "BUG: orphaning path %s that holds hwe of %s",
-			pp->dev, pp->mpp->alias);
-		pp->mpp->hwe = NULL;
-	}
 	pp->mpp = NULL;
 	uninitialize_path(pp);
 }
@@ -308,8 +303,6 @@ void orphan_paths(vector pathvec, struct multipath *mpp, const char *reason)
 	int i;
 	struct path * pp;
 
-	/* Avoid BUG message from orphan_path() */
-	mpp->hwe = NULL;
 	vector_foreach_slot (pathvec, pp, i) {
 		if (pp->mpp == mpp) {
 			if (pp->initialized == INIT_REMOVED) {
@@ -397,24 +390,26 @@ extract_hwe_from_path(struct multipath * mpp)
 	if (mpp->hwe || !mpp->paths)
 		return;
 
-	condlog(3, "%s: searching paths for valid hwe", mpp->alias);
+	condlog(4, "%s: searching paths for valid hwe", mpp->alias);
 	/* doing this in two passes seems like paranoia to me */
 	vector_foreach_slot(mpp->paths, pp, i) {
-		if (pp->state != PATH_UP)
-			continue;
-		if (pp->hwe) {
-			mpp->hwe = pp->hwe;
-			return;
-		}
+		if (pp->state == PATH_UP &&
+		    pp->initialized != INIT_REMOVED && pp->hwe)
+			goto done;
 	}
 	vector_foreach_slot(mpp->paths, pp, i) {
-		if (pp->state == PATH_UP)
-			continue;
-		if (pp->hwe) {
-			mpp->hwe = pp->hwe;
-			return;
-		}
+		if (pp->state != PATH_UP &&
+		    pp->initialized != INIT_REMOVED && pp->hwe)
+			goto done;
 	}
+done:
+	if (i < VECTOR_SIZE(mpp->paths))
+		(void)set_mpp_hwe(mpp, pp);
+
+	if (mpp->hwe)
+		condlog(3, "%s: got hwe from path %s", mpp->alias, pp->dev);
+	else
+		condlog(2, "%s: no hwe found", mpp->alias);
 }
 
 int
@@ -428,40 +423,23 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 
 	r = dm_get_map(mpp->alias, &mpp->size, params);
 	if (r != DMP_OK) {
-		condlog(3, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting table" : "map not present");
+		condlog(2, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting table" : "map not present");
 		return r;
 	}
 
 	if (disassemble_map(pathvec, params, mpp)) {
-		condlog(3, "%s: cannot disassemble map", mpp->alias);
+		condlog(2, "%s: cannot disassemble map", mpp->alias);
 		return DMP_ERR;
 	}
+
+	*params = '\0';
+	if (dm_get_status(mpp->alias, params) != DMP_OK)
+		condlog(2, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting status" : "map not present");
+	else if (disassemble_status(params, mpp))
+		condlog(2, "%s: cannot disassemble status", mpp->alias);
 
 	/* FIXME: we should deal with the return value here */
 	update_pathvec_from_dm(pathvec, mpp, flags);
-
-	return DMP_OK;
-}
-
-int
-update_multipath_status (struct multipath *mpp)
-{
-	int r = DMP_ERR;
-	char status[PARAMS_SIZE] = {0};
-
-	if (!mpp)
-		return r;
-
-	r = dm_get_status(mpp->alias, status);
-	if (r != DMP_OK) {
-		condlog(3, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting status" : "map not present");
-		return r;
-	}
-
-	if (disassemble_status(status, mpp)) {
-		condlog(3, "%s: cannot disassemble status", mpp->alias);
-		return DMP_ERR;
-	}
 
 	return DMP_OK;
 }
@@ -514,8 +492,6 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 		}
 		if (!found) {
 			condlog(3, "%s dropped path %s", mpp->alias, pp->dev);
-			if (mpp->hwe == pp->hwe)
-				mpp->hwe = NULL;
 			vector_del_slot(mpp->paths, i--);
 			orphan_path(pp, "path removed externally");
 		}
@@ -524,8 +500,6 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 	update_mpp_paths(mpp, pathvec);
 	vector_foreach_slot (mpp->paths, pp, i)
 		pp->mpp = mpp;
-	if (mpp->hwe == NULL)
-		extract_hwe_from_path(mpp);
 }
 
 int
@@ -547,11 +521,8 @@ update_multipath_strings(struct multipath *mpp, vector pathvec)
 	r = update_multipath_table(mpp, pathvec, 0);
 	if (r != DMP_OK)
 		return r;
-	sync_paths(mpp, pathvec);
 
-	r = update_multipath_status(mpp);
-	if (r != DMP_OK)
-		return r;
+	sync_paths(mpp, pathvec);
 
 	vector_foreach_slot(mpp->pg, pgp, i)
 		if (pgp->paths)
@@ -701,8 +672,14 @@ struct multipath *add_map_with_path(struct vectors *vecs, struct path *pp,
 
 	conf = get_multipath_config();
 	mpp->mpe = find_mpe(conf->mptable, pp->wwid);
-	mpp->hwe = pp->hwe;
 	put_multipath_config(conf);
+
+	/*
+	 * We need to call this before select_alias(),
+	 * because that accesses hwe properties.
+	 */
+	if (pp->hwe && !set_mpp_hwe(mpp, pp))
+		goto out;
 
 	strcpy(mpp->wwid, pp->wwid);
 	find_existing_alias(mpp, vecs);
@@ -710,8 +687,8 @@ struct multipath *add_map_with_path(struct vectors *vecs, struct path *pp,
 		goto out;
 	mpp->size = pp->size;
 
-	if (adopt_paths(vecs->pathvec, mpp) ||
-	    find_slot(vecs->pathvec, pp) == -1)
+	if (adopt_paths(vecs->pathvec, mpp) || pp->mpp != mpp ||
+	    find_slot(mpp->paths, pp) == -1)
 		goto out;
 
 	if (add_vec) {
@@ -754,12 +731,6 @@ int verify_paths(struct multipath *mpp)
 			vector_del_slot(mpp->paths, i);
 			i--;
 
-			/* Make sure mpp->hwe doesn't point to freed memory.
-			 * We call extract_hwe_from_path() below to restore
-			 * mpp->hwe
-			 */
-			if (mpp->hwe == pp->hwe)
-				mpp->hwe = NULL;
 			/*
 			 * Don't delete path from pathvec yet. We'll do this
 			 * after the path has been removed from the map, in
@@ -771,7 +742,6 @@ int verify_paths(struct multipath *mpp)
 				mpp->alias, pp->dev, pp->dev_t);
 		}
 	}
-	extract_hwe_from_path(mpp);
 	return count;
 }
 

@@ -16,17 +16,18 @@ HEADERS = libdmmp/libdmmp.h
 OBJS = libdmmp.o libdmmp_mp.o libdmmp_pg.o libdmmp_path.o libdmmp_misc.o
 
 CFLAGS += $(LIB_CFLAGS) -fvisibility=hidden -I$(libdmmpdir) -I$(mpathcmddir) \
-	  $(shell pkg-config --cflags json-c)
+	  $(shell $(PKGCONFIG) --cflags json-c)
 
-LIBDEPS += $(shell pkg-config --libs json-c) -L$(mpathcmddir) -lmpathcmd -lpthread
+LIBDEPS += $(shell $(PKGCONFIG) --libs json-c) -L$(mpathcmddir) -lmpathcmd -lpthread
 
 all: $(LIBS) doc
+.PHONY:	doc doc.gz clean install uninstall check speed_test dep_clean
 
 $(LIBS): $(OBJS)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS)
 	$(LN) $@ $(DEVLIB)
 
-install:
+install:	doc.gz
 	mkdir -p $(DESTDIR)$(usrlibdir)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(usrlibdir)/$(LIBS)
 	$(INSTALL_PROGRAM) -m 644 -D \
@@ -40,11 +41,7 @@ install:
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 	perl -i -pe 's|__INCLUDEDIR__|$(includedir)|g' \
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
-	@for file in docs/man/*.3.gz; do \
-		$(INSTALL_PROGRAM) -m 644 -D \
-			$$file \
-			$(DESTDIR)$(man3dir)/ || exit $?; \
-	done
+	$(INSTALL_PROGRAM) -m 644 -t $(DESTDIR)$(man3dir) docs/man/*.3.gz
 
 uninstall:
 	$(RM) $(DESTDIR)$(usrlibdir)/$(LIBS)
@@ -58,7 +55,7 @@ uninstall:
 
 clean: dep_clean
 	$(RM) core *.a *.o *.gz *.so *.so.*
-	$(RM) -r docs/man
+	$(RM) docs/man/*.gz
 	$(MAKE) -C test clean
 
 include $(wildcard $(OBJS:.o=.d))
@@ -69,23 +66,19 @@ check: all
 speed_test: all
 	$(MAKE) -C test speed_test
 
-doc: docs/man/$(EXTRA_MAN_FILES).gz
+doc.gz:	doc $(patsubst %,%.gz,$(wildcard docs/man/*.3))
 
-TEMPFILE := $(shell mktemp)
+doc: docs/man/dmmp_strerror.3
 
-docs/man/$(EXTRA_MAN_FILES).gz: $(HEADERS)
-	@for file in $(EXTRA_MAN_FILES); do \
-		$(INSTALL_PROGRAM) -v -m 644 -D docs/$$file docs/man/$$file; \
-	done
-	cat $(HEADERS) | \
-	    perl docs/doc-preclean.pl > "$(TEMPFILE)"
-	perl docs/kernel-doc -man "$(TEMPFILE)" | \
-	    perl docs/split-man.pl docs/man
-	-rm -f "$(TEMPFILE)"
-	@for file in docs/man/*.3; do \
-		gzip -f $$file; \
-	done
-	find docs/man -type f -name \*[0-9].gz
+docs/man/%.3.gz:	docs/man/%.3
+	gzip -c $< >$@
+
+docs/man/dmmp_strerror.3:	$(HEADERS)
+	TEMPFILE=$(shell mktemp); \
+	cat $^ | perl docs/doc-preclean.pl >$$TEMPFILE; \
+	perl docs/kernel-doc -man $$TEMPFILE | \
+	    perl docs/split-man.pl docs/man; \
+	rm -f $$TEMPFILE
 
 dep_clean:
 	$(RM) $(OBJS:.o=.d)
