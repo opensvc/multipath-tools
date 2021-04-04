@@ -1078,11 +1078,14 @@ static struct hwentry default_hw[] = {
 	 * Huawei
 	 */
 	{
-		/* OceanStor V3 */
+		/* OceanStor V3-V6 */
+		// This config works with multibus and ALUA
+		// ALUA is required by HyperMetro
 		.vendor        = "HUAWEI",
 		.product       = "XSG1",
 		.pgpolicy      = GROUP_BY_PRIO,
-		.prio_name     = PRIO_ALUA,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 15,
 	},
 	/*
 	 * Kove
