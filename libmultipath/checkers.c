@@ -368,7 +368,7 @@ static void checker_cleanup_thread(void *arg)
 {
 	struct checker_class *cls = arg;
 
-	(void)checker_class_unref(cls);
+	free_checker_class(cls);
 	rcu_unregister_thread();
 }
 
