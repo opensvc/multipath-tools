@@ -3031,6 +3031,10 @@ static void cleanup_threads(void)
 	pthread_attr_destroy(&waiter_attr);
 }
 
+#ifndef URCU_VERSION
+#  define URCU_VERSION 0
+#endif
+#if (URCU_VERSION >= 0x000800)
 /*
  * Use a non-default call_rcu_data for child().
  *
@@ -3040,6 +3044,9 @@ static void cleanup_threads(void)
  * can't be joined with pthread_join(), leaving a memory leak.
  *
  * Therefore we create our own, which can be destroyed and joined.
+ * The cleanup handler needs to call rcu_barrier(), which is only
+ * available in user-space RCU v0.8 and newer. See
+ * https://lists.lttng.org/pipermail/lttng-dev/2021-May/029958.html
  */
 static struct call_rcu_data *setup_rcu(void)
 {
@@ -3072,6 +3079,7 @@ static void cleanup_rcu(void)
 	}
 	rcu_unregister_thread();
 }
+#endif /* URCU_VERSION */
 
 static void cleanup_child(void)
 {
@@ -3116,9 +3124,14 @@ child (__attribute__((unused)) void *param)
 	init_unwinder();
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	signal_init();
+#if (URCU_VERSION >= 0x000800)
 	mp_rcu_data = setup_rcu();
-
-	if (atexit(cleanup_rcu) || atexit(cleanup_child))
+	if (atexit(cleanup_rcu))
+		fprintf(stderr, "failed to register RCU cleanup handler\n");
+#else
+	rcu_init();
+#endif
+	if (atexit(cleanup_child))
 		fprintf(stderr, "failed to register cleanup handlers\n");
 
 	setup_thread_attr(&misc_attr, 64 * 1024, 0);
