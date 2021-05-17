@@ -752,7 +752,8 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 				/* Have the checker reinstate this path asap */
 				pp->tick = 1;
 				return 0;
-			} else if (!ev_remove_path(pp, vecs, true))
+			} else if (ev_remove_path(pp, vecs, true) &
+				   REMOVE_PATH_SUCCESS)
 				/* Path removed in ev_remove_path() */
 				pp = NULL;
 			else {
@@ -813,6 +814,7 @@ cli_del_path (void * v, char ** reply, int * len, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, PATH);
 	struct path *pp;
+	int ret;
 
 	param = convert_dev(param, 1);
 	condlog(2, "%s: remove path (operator)", param);
@@ -821,7 +823,25 @@ cli_del_path (void * v, char ** reply, int * len, void * data)
 		condlog(0, "%s: path already removed", param);
 		return 1;
 	}
-	return ev_remove_path(pp, vecs, 1);
+	ret = ev_remove_path(pp, vecs, 1);
+	if (ret == REMOVE_PATH_DELAY) {
+		*reply = strdup("delayed\n");
+		if (*reply)
+			*len = strlen(*reply) + 1;
+		else {
+			*len = 0;
+			ret = REMOVE_PATH_FAILURE;
+		}
+	} else if (ret == REMOVE_PATH_MAP_ERROR) {
+		*reply = strdup("map reload error. removed\n");
+		if (*reply)
+			*len = strlen(*reply) + 1;
+		else {
+			*len = 0;
+			ret = REMOVE_PATH_FAILURE;
+		}
+	}
+	return (ret == REMOVE_PATH_FAILURE);
 }
 
 int
