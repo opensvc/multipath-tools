@@ -1359,7 +1359,6 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			condlog(0, "%s: path wwid changed from '%s' to '%s'",
 				uev->kernel, wwid, pp->wwid);
 			ev_remove_path(pp, vecs, 1);
-			rescan_path(uev->udev);
 			needs_reinit = 1;
 			goto out;
 		} else {
