@@ -635,7 +635,7 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 {
 	struct udev_device *rport_dev = NULL;
 	char value[16], *eptr;
-	char rport_id[32];
+	char rport_id[42];
 	unsigned int tmo;
 	int ret;
 

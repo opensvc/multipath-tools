@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (c) 2005 Christophe Varoqui
  */
 #include <stdio.h>
@@ -594,7 +594,7 @@ int
 snprint_tgt_wwpn (char * buff, size_t len, const struct path * pp)
 {
 	struct udev_device *rport_dev = NULL;
-	char rport_id[32];
+	char rport_id[42];
 	const char *value = NULL;
 	int ret;
 
