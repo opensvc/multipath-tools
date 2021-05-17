@@ -32,6 +32,12 @@
 #include "foreign.h"
 #include "cli_handlers.h"
 
+#define SET_REPLY_AND_LEN(__rep, __len, string_literal)			\
+	do {								\
+		*(__rep) = strdup(string_literal);			\
+		*(__len) = *(__rep) ? sizeof(string_literal) : 0;	\
+	} while (0)
+
 int
 show_paths (char ** r, int * len, struct vectors * vecs, char * style,
 	    int pretty)
@@ -802,8 +808,7 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 	}
 	return ev_add_path(pp, vecs, 1);
 blacklisted:
-	*reply = strdup("blacklisted\n");
-	*len = strlen(*reply) + 1;
+	SET_REPLY_AND_LEN(reply, len, "blacklisted\n");
 	condlog(2, "%s: path blacklisted", param);
 	return 0;
 }
@@ -824,23 +829,10 @@ cli_del_path (void * v, char ** reply, int * len, void * data)
 		return 1;
 	}
 	ret = ev_remove_path(pp, vecs, 1);
-	if (ret == REMOVE_PATH_DELAY) {
-		*reply = strdup("delayed\n");
-		if (*reply)
-			*len = strlen(*reply) + 1;
-		else {
-			*len = 0;
-			ret = REMOVE_PATH_FAILURE;
-		}
-	} else if (ret == REMOVE_PATH_MAP_ERROR) {
-		*reply = strdup("map reload error. removed\n");
-		if (*reply)
-			*len = strlen(*reply) + 1;
-		else {
-			*len = 0;
-			ret = REMOVE_PATH_FAILURE;
-		}
-	}
+	if (ret == REMOVE_PATH_DELAY)
+		SET_REPLY_AND_LEN(reply, len, "delayed\n");
+	else if (ret == REMOVE_PATH_MAP_ERROR)
+		SET_REPLY_AND_LEN(reply, len, "map reload error. removed\n");
 	return (ret == REMOVE_PATH_FAILURE);
 }
 
@@ -865,8 +857,7 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 		invalid = 1;
 	pthread_cleanup_pop(1);
 	if (invalid) {
-		*reply = strdup("blacklisted\n");
-		*len = strlen(*reply) + 1;
+		SET_REPLY_AND_LEN(reply, len, "blacklisted\n");
 		condlog(2, "%s: map blacklisted", param);
 		return 1;
 	}
