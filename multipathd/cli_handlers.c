@@ -1215,7 +1215,7 @@ cli_reconfigure(void * v, char ** reply, int * len, void * data)
 
 	condlog(2, "reconfigure (operator)");
 
-	rc = set_config_state(DAEMON_CONFIGURE); 
+	rc = set_config_state(DAEMON_CONFIGURE);
 	if (rc == ETIMEDOUT) {
 		condlog(2, "timeout starting reconfiguration");
 		return 1;

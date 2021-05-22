@@ -2014,7 +2014,7 @@ static int check_path_reinstate_state(struct path * pp) {
 
 		/* If path became failed again or continue failed, should reset
 		 * path san_path_err_forget_rate and path dis_reinstate_time to
-		 * start a new stable check. 
+		 * start a new stable check.
 		 */
 		if ((pp->state != PATH_UP) && (pp->state != PATH_GHOST) &&
 			(pp->state != PATH_DELAYED)) {

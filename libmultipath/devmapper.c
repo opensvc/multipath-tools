@@ -602,8 +602,8 @@ int dm_addmap_reload(struct multipath *mpp, char *params, int flush)
 		return r;
 
 	/* If the resume failed, dm will leave the device suspended, and
- 	 * drop the new table, so doing a second resume will try using
- 	 * the original table */
+	 * drop the new table, so doing a second resume will try using
+	 * the original table */
 	if (dm_is_suspended(mpp->alias))
 		dm_simplecmd(DM_DEVICE_RESUME, mpp->alias, !flush, 1,
 			     udev_flags, 0);
