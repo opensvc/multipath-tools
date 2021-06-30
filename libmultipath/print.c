@@ -392,7 +392,7 @@ snprint_hcil (char * buff, size_t len, const struct path * pp)
 	if (!pp || pp->sg_id.host_no < 0)
 		return snprintf(buff, len, "#:#:#:#");
 
-	return snprintf(buff, len, "%i:%i:%i:%i",
+	return snprintf(buff, len, "%i:%i:%i:%" PRIu64,
 			pp->sg_id.host_no,
 			pp->sg_id.channel,
 			pp->sg_id.scsi_id,

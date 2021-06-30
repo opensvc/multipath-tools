@@ -101,7 +101,7 @@ int prio_path_weight(struct path *pp, char *prio_args)
 	}
 
 	if (!strcmp(regex, HBTL)) {
-		sprintf(path, "%d:%d:%d:%d", pp->sg_id.host_no,
+		sprintf(path, "%d:%d:%d:%" PRIu64, pp->sg_id.host_no,
 			pp->sg_id.channel, pp->sg_id.scsi_id, pp->sg_id.lun);
 	} else if (!strcmp(regex, DEV_NAME)) {
 		strcpy(path, pp->dev);
