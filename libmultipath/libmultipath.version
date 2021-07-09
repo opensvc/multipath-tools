@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_6.0.0 {
+LIBMULTIPATH_7.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -267,6 +267,9 @@ global:
 	/* added in 4.5.0 */
 	get_vpd_sgio;
 	trigger_partitions_udev_change;
+
+	/* added in 7.0.0 */
+	cleanup_charp;
 local:
 	*;
 };

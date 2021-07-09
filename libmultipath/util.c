@@ -455,3 +455,8 @@ int should_exit(void)
 {
 	return 0;
 }
+
+void cleanup_charp(char **p)
+{
+	free(*p);
+}

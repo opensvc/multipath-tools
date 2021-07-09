@@ -489,7 +489,7 @@ static int
 update_map (struct multipath *mpp, struct vectors *vecs, int new_map)
 {
 	int retries = 3;
-	char params[PARAMS_SIZE] = {0};
+	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 
 retry:
 	condlog(4, "%s: updating new map", mpp->alias);
@@ -502,13 +502,15 @@ retry:
 	verify_paths(mpp);
 	mpp->action = ACT_RELOAD;
 
-	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
+	if (setup_map(mpp, &params, vecs)) {
 		condlog(0, "%s: failed to setup new map in update", mpp->alias);
 		retries = -1;
 		goto fail;
 	}
 	if (domap(mpp, params, 1) == DOMAP_FAIL && retries-- > 0) {
 		condlog(0, "%s: map_udate sleep", mpp->alias);
+		free(params);
+		params = NULL;
 		sleep(1);
 		goto retry;
 	}
@@ -1028,7 +1030,7 @@ int
 ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 {
 	struct multipath * mpp;
-	char params[PARAMS_SIZE] = {0};
+	char *params __attribute((cleanup(cleanup_charp))) = NULL;
 	int retries = 3;
 	int start_waiter = 0;
 	int ret;
@@ -1104,7 +1106,7 @@ rescan:
 	/*
 	 * push the map to the device-mapper
 	 */
-	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
+	if (setup_map(mpp, &params, vecs)) {
 		condlog(0, "%s: failed to setup map for addition of new "
 			"path %s", mpp->alias, pp->dev);
 		goto fail_map;
@@ -1129,6 +1131,8 @@ rescan:
 			condlog(0, "%s: ev_add_path sleep", mpp->alias);
 			sleep(1);
 			update_mpp_paths(mpp, vecs->pathvec);
+			free(params);
+			params = NULL;
 			goto rescan;
 		}
 		else if (mpp->action == ACT_RELOAD)
@@ -1189,7 +1193,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 {
 	struct multipath * mpp;
 	int i, retval = REMOVE_PATH_SUCCESS;
-	char params[PARAMS_SIZE] = {0};
+	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 
 	/*
 	 * avoid referring to the map of an orphaned path
@@ -1250,7 +1254,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 			 */
 		}
 
-		if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
+		if (setup_map(mpp, &params, vecs)) {
 			condlog(0, "%s: failed to setup map for"
 				" removal of path %s", mpp->alias, pp->dev);
 			goto fail;
@@ -1940,7 +1944,7 @@ int update_prio(struct path *pp, int refresh_all)
 static int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
 		      int is_daemon)
 {
-	char params[PARAMS_SIZE] = {0};
+	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 	struct path *pp;
 	int i, r;
 
@@ -1958,7 +1962,7 @@ static int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
 			}
 		}
 	}
-	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
+	if (setup_map(mpp, &params, vecs)) {
 		condlog(0, "%s: failed to setup map", mpp->alias);
 		return 1;
 	}

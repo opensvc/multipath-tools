@@ -15,6 +15,7 @@
 #include "util.h"
 #include "debug.h"
 #include "dmparser.h"
+#include "strbuf.h"
 
 #define WORD_SIZE 64
 
@@ -41,40 +42,21 @@ merge_words(char **dst, const char *word)
 	return 0;
 }
 
-#define APPEND(p, end, args...)						\
-({									\
-	int ret;							\
-									\
-	ret = snprintf(p, end - p, ##args);				\
-	if (ret < 0) {							\
-		condlog(0, "%s: conversion error", mp->alias);		\
-		goto err;						\
-	}								\
-	p += ret;							\
-	if (p >= end) {							\
-		condlog(0, "%s: params too small", mp->alias);		\
-		goto err;						\
-	}								\
-})
-
 /*
  * Transforms the path group vector into a proper device map string
  */
-int
-assemble_map (struct multipath * mp, char * params, int len)
+int assemble_map(struct multipath *mp, char **params)
 {
+	static const char no_path_retry[] = "queue_if_no_path";
+	static const char retain_hwhandler[] = "retain_attached_hw_handler";
 	int i, j;
 	int minio;
 	int nr_priority_groups, initial_pg_nr;
-	char * p;
-	const char *const end = params + len;
-	char no_path_retry[] = "queue_if_no_path";
-	char retain_hwhandler[] = "retain_attached_hw_handler";
+	STRBUF_ON_STACK(buff);
 	struct pathgroup * pgp;
 	struct path * pp;
 
 	minio = mp->minio;
-	p = params;
 
 	nr_priority_groups = VECTOR_SIZE(mp->pg);
 	initial_pg_nr = (nr_priority_groups ? mp->bestpg : 0);
@@ -87,14 +69,15 @@ assemble_map (struct multipath * mp, char * params, int len)
 	    get_linux_version_code() < KERNEL_VERSION(4, 3, 0))
 		add_feature(&mp->features, retain_hwhandler);
 
-	/* mp->features must not be NULL */
-	APPEND(p, end, "%s %s %i %i", mp->features, mp->hwhandler,
-		nr_priority_groups, initial_pg_nr);
+	if (print_strbuf(&buff, "%s %s %i %i", mp->features, mp->hwhandler,
+			 nr_priority_groups, initial_pg_nr) < 0)
+		goto err;
 
 	vector_foreach_slot (mp->pg, pgp, i) {
 		pgp = VECTOR_SLOT(mp->pg, i);
-		APPEND(p, end, " %s %i 1", mp->selector,
-		       VECTOR_SIZE(pgp->paths));
+		if (print_strbuf(&buff, " %s %i 1", mp->selector,
+				 VECTOR_SIZE(pgp->paths)) < 0)
+			goto err;
 
 		vector_foreach_slot (pgp->paths, pp, j) {
 			int tmp_minio = minio;
@@ -106,18 +89,18 @@ assemble_map (struct multipath * mp, char * params, int len)
 				condlog(0, "dev_t not set for '%s'", pp->dev);
 				goto err;
 			}
-			APPEND(p, end, " %s %d", pp->dev_t, tmp_minio);
+			if (print_strbuf(&buff, " %s %d", pp->dev_t, tmp_minio) < 0)
+				goto err;
 		}
 	}
 
-	condlog(4, "%s: assembled map [%s]", mp->alias, params);
+	*params = steal_strbuf_str(&buff);
+	condlog(4, "%s: assembled map [%s]", mp->alias, *params);
 	return 0;
 
 err:
 	return 1;
 }
-
-#undef APPEND
 
 /*
  * Caution callers: If this function encounters yet unkown path devices, it

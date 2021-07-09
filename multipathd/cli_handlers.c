@@ -972,12 +972,12 @@ cli_reload(void *v, char **reply, int *len, void *data)
 int resize_map(struct multipath *mpp, unsigned long long size,
 	       struct vectors * vecs)
 {
-	char params[PARAMS_SIZE] = {0};
+	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 	unsigned long long orig_size = mpp->size;
 
 	mpp->size = size;
 	update_mpp_paths(mpp, vecs->pathvec);
-	if (setup_map(mpp, params, PARAMS_SIZE, vecs) != 0) {
+	if (setup_map(mpp, &params, vecs) != 0) {
 		condlog(0, "%s: failed to setup map for resize : %s",
 			mpp->alias, strerror(errno));
 		mpp->size = orig_size;

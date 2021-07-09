@@ -292,8 +292,7 @@ static int wait_for_pending_paths(struct multipath *mpp,
 	return n_pending;
 }
 
-int setup_map(struct multipath *mpp, char *params, int params_size,
-	      struct vectors *vecs)
+int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 {
 	struct pathgroup * pgp;
 	struct config *conf;
@@ -462,7 +461,7 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 	 * transform the mp->pg vector of vectors of paths
 	 * into a mp->params strings to feed the device-mapper
 	 */
-	if (assemble_map(mpp, params, params_size)) {
+	if (assemble_map(mpp, params)) {
 		condlog(0, "%s: problem assembing map", mpp->alias);
 		return 1;
 	}
@@ -811,7 +810,7 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 		remove_feature(&mpp_feat, "retain_attached_hw_handler");
 		remove_feature(&cmpp_feat, "queue_if_no_path");
 		remove_feature(&cmpp_feat, "retain_attached_hw_handler");
-		if (strncmp(mpp_feat, cmpp_feat, PARAMS_SIZE)) {
+		if (strcmp(mpp_feat, cmpp_feat)) {
 			select_reload_action(mpp, "features change");
 			FREE(cmpp_feat);
 			FREE(mpp_feat);
@@ -1128,14 +1127,14 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 	int ret = CP_FAIL;
 	int k, i, r;
 	int is_daemon = (cmd == CMD_NONE) ? 1 : 0;
-	char params[PARAMS_SIZE];
+	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 	struct multipath * mpp;
-	struct path * pp1;
+	struct path * pp1 = NULL;
 	struct path * pp2;
 	vector curmp = vecs->mpvec;
 	vector pathvec = vecs->pathvec;
 	vector newmp;
-	struct config *conf;
+	struct config *conf = NULL;
 	int allow_queueing;
 	struct bitfield *size_mismatch_seen;
 
@@ -1247,8 +1246,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 		}
 		verify_paths(mpp);
 
-		params[0] = '\0';
-		if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
+		if (setup_map(mpp, &params, vecs)) {
 			remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
 			continue;
 		}
@@ -1260,6 +1258,8 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 				      force_reload == FORCE_RELOAD_YES ? 1 : 0);
 
 		r = domap(mpp, params, is_daemon);
+		free(params);
+		params = NULL;
 
 		if (r == DOMAP_FAIL || r == DOMAP_RETRY) {
 			condlog(3, "%s: domap (%u) failure "
