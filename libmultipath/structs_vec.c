@@ -416,12 +416,12 @@ int
 update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 {
 	int r = DMP_ERR;
-	char params[PARAMS_SIZE] = {0};
+	char *params = NULL;
 
 	if (!mpp)
 		return r;
 
-	r = dm_get_map(mpp->alias, &mpp->size, params);
+	r = dm_get_map(mpp->alias, &mpp->size, &params);
 	if (r != DMP_OK) {
 		condlog(2, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting table" : "map not present");
 		return r;
@@ -429,14 +429,17 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 
 	if (disassemble_map(pathvec, params, mpp)) {
 		condlog(2, "%s: cannot disassemble map", mpp->alias);
+		free(params);
 		return DMP_ERR;
 	}
 
-	*params = '\0';
-	if (dm_get_status(mpp->alias, params) != DMP_OK)
+	free(params);
+	params = NULL;
+	if (dm_get_status(mpp->alias, &params) != DMP_OK)
 		condlog(2, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting status" : "map not present");
 	else if (disassemble_status(params, mpp))
 		condlog(2, "%s: cannot disassemble status", mpp->alias);
+	free(params);
 
 	/* FIXME: we should deal with the return value here */
 	update_pathvec_from_dm(pathvec, mpp, flags);

@@ -648,7 +648,7 @@ int dm_map_present(const char * str)
 	return (do_get_info(str, &info) == 0);
 }
 
-int dm_get_map(const char *name, unsigned long long *size, char *outparams)
+int dm_get_map(const char *name, unsigned long long *size, char **outparams)
 {
 	int r = DMP_ERR;
 	struct dm_task *dmt;
@@ -682,12 +682,13 @@ int dm_get_map(const char *name, unsigned long long *size, char *outparams)
 	if (size)
 		*size = length;
 
-	if (!outparams) {
+	if (!outparams)
 		r = DMP_OK;
-		goto out;
+	else {
+		*outparams = strdup(params);
+		r = *outparams ? DMP_OK : DMP_ERR;
 	}
-	if (snprintf(outparams, PARAMS_SIZE, "%s", params) <= PARAMS_SIZE)
-		r = DMP_OK;
+
 out:
 	dm_task_destroy(dmt);
 	return r;
@@ -761,7 +762,7 @@ is_mpath_part(const char *part_name, const char *map_name)
 	return 0;
 }
 
-int dm_get_status(const char *name, char *outstatus)
+int dm_get_status(const char *name, char **outstatus)
 {
 	int r = DMP_ERR;
 	struct dm_task *dmt;
@@ -799,8 +800,12 @@ int dm_get_status(const char *name, char *outstatus)
 		goto out;
 	}
 
-	if (snprintf(outstatus, PARAMS_SIZE, "%s", status) <= PARAMS_SIZE)
+	if (!outstatus)
 		r = DMP_OK;
+	else {
+		*outstatus = strdup(status);
+		r = *outstatus ? DMP_OK : DMP_ERR;
+	}
 out:
 	if (r != DMP_OK)
 		condlog(0, "%s: error getting map status string", name);
@@ -1049,7 +1054,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	int queue_if_no_path = 0;
 	int udev_flags = 0;
 	unsigned long long mapsize;
-	char params[PARAMS_SIZE] = {0};
+	char *params = NULL;
 
 	if (dm_is_mpath(mapname) != 1)
 		return 0; /* nothing to do */
@@ -1065,7 +1070,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 			return 1;
 
 	if (need_suspend &&
-	    dm_get_map(mapname, &mapsize, params) == DMP_OK &&
+	    dm_get_map(mapname, &mapsize, &params) == DMP_OK &&
 	    strstr(params, "queue_if_no_path")) {
 		if (!dm_queue_if_no_path(mapname, 0))
 			queue_if_no_path = 1;
@@ -1073,6 +1078,8 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 			/* Leave queue_if_no_path alone if unset failed */
 			queue_if_no_path = -1;
 	}
+	free(params);
+	params = NULL;
 
 	if (dm_remove_partmaps(mapname, need_sync, deferred_remove))
 		return 1;
@@ -1431,7 +1438,7 @@ do_foreach_partmaps (const char * mapname,
 	struct dm_task *dmt;
 	struct dm_names *names;
 	unsigned next = 0;
-	char params[PARAMS_SIZE];
+	char *params = NULL;
 	unsigned long long size;
 	char dev_t[32];
 	int r = 1;
@@ -1474,7 +1481,7 @@ do_foreach_partmaps (const char * mapname,
 		    /*
 		     * and we can fetch the map table from the kernel
 		     */
-		    dm_get_map(names->name, &size, &params[0]) == DMP_OK &&
+		    dm_get_map(names->name, &size, &params) == DMP_OK &&
 
 		    /*
 		     * and the table maps over the multipath map
@@ -1486,12 +1493,15 @@ do_foreach_partmaps (const char * mapname,
 				goto out;
 		}
 
+		free(params);
+		params = NULL;
 		next = names->next;
 		names = (void *) names + next;
 	} while (next);
 
 	r = 0;
 out:
+	free(params);
 	dm_task_destroy (dmt);
 	return r;
 }
@@ -1620,17 +1630,19 @@ struct rename_data {
 static int
 rename_partmap (const char *name, void *data)
 {
-	char buff[PARAMS_SIZE];
+	char *buff = NULL;
 	int offset;
 	struct rename_data *rd = (struct rename_data *)data;
 
 	if (strncmp(name, rd->old, strlen(rd->old)) != 0)
 		return 0;
 	for (offset = strlen(rd->old); name[offset] && !(isdigit(name[offset])); offset++); /* do nothing */
-	snprintf(buff, PARAMS_SIZE, "%s%s%s", rd->new, rd->delim,
-		 name + offset);
-	dm_rename(name, buff, rd->delim, SKIP_KPARTX_OFF);
-	condlog(4, "partition map %s renamed", name);
+	if (asprintf(&buff, "%s%s%s", rd->new, rd->delim, name + offset) >= 0) {
+		dm_rename(name, buff, rd->delim, SKIP_KPARTX_OFF);
+		free(buff);
+		condlog(4, "partition map %s renamed", name);
+	} else
+		condlog(1, "failed to rename partition map %s", name);
 	return 0;
 }
 

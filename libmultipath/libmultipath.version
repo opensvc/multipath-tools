@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_5.0.0 {
+LIBMULTIPATH_6.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -58,8 +58,6 @@ global:
 	count_active_paths;
 	delete_all_foreign;
 	delete_foreign;
-	disassemble_map;
-	disassemble_status;
 	dlog;
 	dm_cancel_deferred_remove;
 	dm_enablegroup;
@@ -70,10 +68,8 @@ global:
 	dm_geteventnr;
 	dm_get_info;
 	dm_get_major_minor;
-	dm_get_map;
 	dm_get_maps;
 	dm_get_multipath;
-	dm_get_status;
 	dm_get_uuid;
 	dm_is_mpath;
 	dm_mapname;
