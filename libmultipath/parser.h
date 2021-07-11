@@ -34,16 +34,20 @@
 /* local includes */
 #include "vector.h"
 #include "config.h"
+struct strbuf;
 
 /* Global definitions */
 #define EOB  "}"
 #define MAXBUF	1024
 
-/* ketword definition */
+
+/* keyword definition */
+typedef int print_fn(struct config *, struct strbuf *, const void *);
+
 struct keyword {
 	char *string;
 	int (*handler) (struct config *, vector);
-	int (*print) (struct config *, char *, int, const void *);
+	print_fn *print;
 	vector sub;
 	int unique;
 };
@@ -60,16 +64,15 @@ struct keyword {
 /* Prototypes */
 extern int keyword_alloc(vector keywords, char *string,
 			 int (*handler) (struct config *, vector),
-			 int (*print) (struct config *, char *, int,
-				       const void *),
+			 print_fn *print,
 			 int unique);
 #define install_keyword_root(str, h) keyword_alloc(keywords, str, h, NULL, 1)
 extern void install_sublevel(void);
 extern void install_sublevel_end(void);
+
 extern int _install_keyword(vector keywords, char *string,
 			    int (*handler) (struct config *, vector),
-			    int (*print) (struct config *, char *, int,
-					  const void *),
+			    print_fn *print,
 			    int unique);
 #define install_keyword(str, vec, pri) _install_keyword(keywords, str, vec, pri, 1)
 #define install_keyword_multi(str, vec, pri) _install_keyword(keywords, str, vec, pri, 0)

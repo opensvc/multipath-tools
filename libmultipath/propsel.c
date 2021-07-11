@@ -24,6 +24,7 @@
 #include "prioritizers/alua_rtpg.h"
 #include "prkey.h"
 #include "propsel.h"
+#include "strbuf.h"
 #include <inttypes.h>
 #include <libudev.h>
 
@@ -191,7 +192,7 @@ out:
 int select_rr_weight(struct config *conf, struct multipath * mp)
 {
 	const char *origin;
-	char buff[13];
+	STRBUF_ON_STACK(buff);
 
 	mp_set_mpe(rr_weight);
 	mp_set_ovr(rr_weight);
@@ -199,15 +200,16 @@ int select_rr_weight(struct config *conf, struct multipath * mp)
 	mp_set_conf(rr_weight);
 	mp_set_default(rr_weight, DEFAULT_RR_WEIGHT);
 out:
-	print_rr_weight(buff, 13, mp->rr_weight);
-	condlog(3, "%s: rr_weight = %s %s", mp->alias, buff, origin);
+	print_rr_weight(&buff, mp->rr_weight);
+	condlog(3, "%s: rr_weight = %s %s", mp->alias,
+		get_strbuf_str(&buff), origin);
 	return 0;
 }
 
 int select_pgfailback(struct config *conf, struct multipath * mp)
 {
 	const char *origin;
-	char buff[13];
+	STRBUF_ON_STACK(buff);
 
 	mp_set_mpe(pgfailback);
 	mp_set_ovr(pgfailback);
@@ -215,8 +217,9 @@ int select_pgfailback(struct config *conf, struct multipath * mp)
 	mp_set_conf(pgfailback);
 	mp_set_default(pgfailback, DEFAULT_FAILBACK);
 out:
-	print_pgfailback(buff, 13, mp->pgfailback);
-	condlog(3, "%s: failback = %s %s", mp->alias, buff, origin);
+	print_pgfailback(&buff, mp->pgfailback);
+	condlog(3, "%s: failback = %s %s", mp->alias,
+		get_strbuf_str(&buff), origin);
 	return 0;
 }
 
@@ -339,7 +342,7 @@ void reconcile_features_with_options(const char *id, char **features, int* no_pa
 {
 	static const char q_i_n_p[] = "queue_if_no_path";
 	static const char r_a_h_h[] = "retain_attached_hw_handler";
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	if (*features == NULL)
 		return;
@@ -360,17 +363,15 @@ void reconcile_features_with_options(const char *id, char **features, int* no_pa
 			id, q_i_n_p);
 		if (*no_path_retry == NO_PATH_RETRY_UNDEF) {
 			*no_path_retry = NO_PATH_RETRY_QUEUE;
-			print_no_path_retry(buff, sizeof(buff),
-					    *no_path_retry);
+			print_no_path_retry(&buff, *no_path_retry);
 			condlog(3, "%s: no_path_retry = %s (inherited setting from feature '%s')",
-				id, buff, q_i_n_p);
+				id, get_strbuf_str(&buff), q_i_n_p);
 		};
 		/* Warn only if features string is overridden */
 		if (*no_path_retry != NO_PATH_RETRY_QUEUE) {
-			print_no_path_retry(buff, sizeof(buff),
-					    *no_path_retry);
+			print_no_path_retry(&buff, *no_path_retry);
 			condlog(2, "%s: ignoring feature '%s' because no_path_retry is set to '%s'",
-				id, q_i_n_p, buff);
+				id, q_i_n_p, get_strbuf_str(&buff));
 		}
 		remove_feature(features, q_i_n_p);
 	}
@@ -704,7 +705,7 @@ out:
 int select_no_path_retry(struct config *conf, struct multipath *mp)
 {
 	const char *origin = NULL;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	if (mp->disable_queueing) {
 		condlog(0, "%s: queueing disabled", mp->alias);
@@ -716,10 +717,10 @@ int select_no_path_retry(struct config *conf, struct multipath *mp)
 	mp_set_hwe(no_path_retry);
 	mp_set_conf(no_path_retry);
 out:
-	print_no_path_retry(buff, 12, mp->no_path_retry);
+	print_no_path_retry(&buff, mp->no_path_retry);
 	if (origin)
-		condlog(3, "%s: no_path_retry = %s %s", mp->alias, buff,
-			origin);
+		condlog(3, "%s: no_path_retry = %s %s", mp->alias,
+			get_strbuf_str(&buff), origin);
 	else
 		condlog(3, "%s: no_path_retry = undef %s",
 			mp->alias, default_origin);
@@ -770,22 +771,23 @@ int select_minio(struct config *conf, struct multipath *mp)
 int select_fast_io_fail(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	mp_set_ovr(fast_io_fail);
 	mp_set_hwe(fast_io_fail);
 	mp_set_conf(fast_io_fail);
 	mp_set_default(fast_io_fail, DEFAULT_FAST_IO_FAIL);
 out:
-	print_undef_off_zero(buff, 12, mp->fast_io_fail);
-	condlog(3, "%s: fast_io_fail_tmo = %s %s", mp->alias, buff, origin);
+	print_undef_off_zero(&buff, mp->fast_io_fail);
+	condlog(3, "%s: fast_io_fail_tmo = %s %s", mp->alias,
+		get_strbuf_str(&buff), origin);
 	return 0;
 }
 
 int select_dev_loss(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	mp_set_ovr(dev_loss);
 	mp_set_hwe(dev_loss);
@@ -793,15 +795,16 @@ int select_dev_loss(struct config *conf, struct multipath *mp)
 	mp->dev_loss = DEV_LOSS_TMO_UNSET;
 	return 0;
 out:
-	print_dev_loss(buff, 12, mp->dev_loss);
-	condlog(3, "%s: dev_loss_tmo = %s %s", mp->alias, buff, origin);
+	print_dev_loss(&buff, mp->dev_loss);
+	condlog(3, "%s: dev_loss_tmo = %s %s", mp->alias,
+		get_strbuf_str(&buff), origin);
 	return 0;
 }
 
 int select_eh_deadline(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	mp_set_ovr(eh_deadline);
 	mp_set_hwe(eh_deadline);
@@ -810,8 +813,9 @@ int select_eh_deadline(struct config *conf, struct multipath *mp)
 	/* not changing sysfs in default cause, so don't print anything */
 	return 0;
 out:
-	print_undef_off_zero(buff, 12, mp->eh_deadline);
-	condlog(3, "%s: eh_deadline = %s %s", mp->alias, buff, origin);
+	print_undef_off_zero(&buff, mp->eh_deadline);
+	condlog(3, "%s: eh_deadline = %s %s", mp->alias,
+		get_strbuf_str(&buff), origin);
 	return 0;
 }
 
@@ -833,7 +837,7 @@ out:
 int select_reservation_key(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	char buff[PRKEY_SIZE];
+	STRBUF_ON_STACK(buff);
 	char *from_file = "";
 	uint64_t prkey = 0;
 
@@ -851,10 +855,10 @@ out:
 		else
 			put_be64(mp->reservation_key, prkey);
 	}
-	print_reservation_key(buff, PRKEY_SIZE, mp->reservation_key,
+	print_reservation_key(&buff, mp->reservation_key,
 			      mp->sa_flags, mp->prkey_source);
-	condlog(3, "%s: reservation_key = %s %s%s", mp->alias, buff, origin,
-		from_file);
+	condlog(3, "%s: reservation_key = %s %s%s", mp->alias,
+		get_strbuf_str(&buff), origin, from_file);
 	return 0;
 }
 
@@ -951,16 +955,16 @@ use_delay_watch_checks(struct config *conf, struct multipath *mp)
 {
 	int value = NU_UNDEF;
 	const char *origin = default_origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	do_set(delay_watch_checks, mp->mpe, value, multipaths_origin);
 	do_set(delay_watch_checks, conf->overrides, value, overrides_origin);
 	do_set_from_hwe(delay_watch_checks, mp, value, hwe_origin);
 	do_set(delay_watch_checks, conf, value, conf_origin);
 out:
-	if (print_off_int_undef(buff, 12, value) != 0)
-		condlog(3, "%s: delay_watch_checks = %s %s", mp->alias, buff,
-			origin);
+	if (print_off_int_undef(&buff, value) > 0)
+		condlog(3, "%s: delay_watch_checks = %s %s", mp->alias,
+			get_strbuf_str(&buff), origin);
 	return value;
 }
 
@@ -969,23 +973,23 @@ use_delay_wait_checks(struct config *conf, struct multipath *mp)
 {
 	int value = NU_UNDEF;
 	const char *origin = default_origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	do_set(delay_wait_checks, mp->mpe, value, multipaths_origin);
 	do_set(delay_wait_checks, conf->overrides, value, overrides_origin);
 	do_set_from_hwe(delay_wait_checks, mp, value, hwe_origin);
 	do_set(delay_wait_checks, conf, value, conf_origin);
 out:
-	if (print_off_int_undef(buff, 12, value) != 0)
-		condlog(3, "%s: delay_wait_checks = %s %s", mp->alias, buff,
-			origin);
+	if (print_off_int_undef(&buff, value) > 0)
+		condlog(3, "%s: delay_wait_checks = %s %s", mp->alias,
+			get_strbuf_str(&buff), origin);
 	return value;
 }
 
 int select_delay_checks(struct config *conf, struct multipath *mp)
 {
 	int watch_checks, wait_checks;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	watch_checks = use_delay_watch_checks(conf, mp);
 	wait_checks = use_delay_wait_checks(conf, mp);
@@ -1001,16 +1005,17 @@ int select_delay_checks(struct config *conf, struct multipath *mp)
 		(watch_checks > 0)? delay_watch_origin : delay_wait_origin);
 	if (watch_checks > 0) {
 		mp->san_path_err_forget_rate = watch_checks;
-		print_off_int_undef(buff, 12, mp->san_path_err_forget_rate);
+		print_off_int_undef(&buff, mp->san_path_err_forget_rate);
 		condlog(3, "%s: san_path_err_forget_rate = %s %s", mp->alias,
-			buff, delay_watch_origin);
+			get_strbuf_str(&buff), delay_watch_origin);
+		reset_strbuf(&buff);
 	}
 	if (wait_checks > 0) {
 		mp->san_path_err_recovery_time = wait_checks *
 						 conf->max_checkint;
-		print_off_int_undef(buff, 12, mp->san_path_err_recovery_time);
+		print_off_int_undef(&buff, mp->san_path_err_recovery_time);
 		condlog(3, "%s: san_path_err_recovery_time = %s %s", mp->alias,
-			buff, delay_wait_origin);
+			get_strbuf_str(&buff), delay_wait_origin);
 	}
 	return 0;
 }
@@ -1029,7 +1034,7 @@ static int san_path_deprecated_warned;
 int select_san_path_err_threshold(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	if (marginal_path_check_enabled(mp)) {
 		mp->san_path_err_threshold = NU_NO;
@@ -1042,9 +1047,9 @@ int select_san_path_err_threshold(struct config *conf, struct multipath *mp)
 	mp_set_conf(san_path_err_threshold);
 	mp_set_default(san_path_err_threshold, DEFAULT_ERR_CHECKS);
 out:
-	if (print_off_int_undef(buff, 12, mp->san_path_err_threshold) != 0)
+	if (print_off_int_undef(&buff, mp->san_path_err_threshold) > 0)
 		condlog(3, "%s: san_path_err_threshold = %s %s",
-			mp->alias, buff, origin);
+			mp->alias, get_strbuf_str(&buff), origin);
 	warn_san_path_deprecated(mp, san_path_err_threshold);
 	return 0;
 }
@@ -1052,7 +1057,7 @@ out:
 int select_san_path_err_forget_rate(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	if (marginal_path_check_enabled(mp)) {
 		mp->san_path_err_forget_rate = NU_NO;
@@ -1065,9 +1070,9 @@ int select_san_path_err_forget_rate(struct config *conf, struct multipath *mp)
 	mp_set_conf(san_path_err_forget_rate);
 	mp_set_default(san_path_err_forget_rate, DEFAULT_ERR_CHECKS);
 out:
-	if (print_off_int_undef(buff, 12, mp->san_path_err_forget_rate) != 0)
-		condlog(3, "%s: san_path_err_forget_rate = %s %s", mp->alias,
-			buff, origin);
+	if (print_off_int_undef(&buff, mp->san_path_err_forget_rate) > 0)
+		condlog(3, "%s: san_path_err_forget_rate = %s %s",
+			mp->alias, get_strbuf_str(&buff), origin);
 	warn_san_path_deprecated(mp, san_path_err_forget_rate);
 	return 0;
 
@@ -1076,7 +1081,7 @@ out:
 int select_san_path_err_recovery_time(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	if (marginal_path_check_enabled(mp)) {
 		mp->san_path_err_recovery_time = NU_NO;
@@ -1089,9 +1094,9 @@ int select_san_path_err_recovery_time(struct config *conf, struct multipath *mp)
 	mp_set_conf(san_path_err_recovery_time);
 	mp_set_default(san_path_err_recovery_time, DEFAULT_ERR_CHECKS);
 out:
-	if (print_off_int_undef(buff, 12, mp->san_path_err_recovery_time) != 0)
+	if (print_off_int_undef(&buff, mp->san_path_err_recovery_time) != 0)
 		condlog(3, "%s: san_path_err_recovery_time = %s %s", mp->alias,
-			buff, origin);
+			get_strbuf_str(&buff), origin);
 	warn_san_path_deprecated(mp, san_path_err_recovery_time);
 	return 0;
 
@@ -1100,7 +1105,7 @@ out:
 int select_marginal_path_err_sample_time(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	mp_set_mpe(marginal_path_err_sample_time);
 	mp_set_ovr(marginal_path_err_sample_time);
@@ -1114,17 +1119,16 @@ out:
 			mp->alias, 2 * IOTIMEOUT_SEC);
 			mp->marginal_path_err_sample_time = 2 * IOTIMEOUT_SEC;
 	}
-	if (print_off_int_undef(buff, 12, mp->marginal_path_err_sample_time)
-	    != 0)
+	if (print_off_int_undef(&buff, mp->marginal_path_err_sample_time) > 0)
 		condlog(3, "%s: marginal_path_err_sample_time = %s %s",
-			mp->alias, buff, origin);
+			mp->alias, get_strbuf_str(&buff), origin);
 	return 0;
 }
 
 int select_marginal_path_err_rate_threshold(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	mp_set_mpe(marginal_path_err_rate_threshold);
 	mp_set_ovr(marginal_path_err_rate_threshold);
@@ -1132,17 +1136,16 @@ int select_marginal_path_err_rate_threshold(struct config *conf, struct multipat
 	mp_set_conf(marginal_path_err_rate_threshold);
 	mp_set_default(marginal_path_err_rate_threshold, DEFAULT_ERR_CHECKS);
 out:
-	if (print_off_int_undef(buff, 12, mp->marginal_path_err_rate_threshold)
-	    != 0)
+	if (print_off_int_undef(&buff, mp->marginal_path_err_rate_threshold) > 0)
 		condlog(3, "%s: marginal_path_err_rate_threshold = %s %s",
-			mp->alias, buff, origin);
+			mp->alias, get_strbuf_str(&buff), origin);
 	return 0;
 }
 
 int select_marginal_path_err_recheck_gap_time(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	mp_set_mpe(marginal_path_err_recheck_gap_time);
 	mp_set_ovr(marginal_path_err_recheck_gap_time);
@@ -1150,17 +1153,17 @@ int select_marginal_path_err_recheck_gap_time(struct config *conf, struct multip
 	mp_set_conf(marginal_path_err_recheck_gap_time);
 	mp_set_default(marginal_path_err_recheck_gap_time, DEFAULT_ERR_CHECKS);
 out:
-	if (print_off_int_undef(buff, 12,
-				mp->marginal_path_err_recheck_gap_time) != 0)
+	if (print_off_int_undef(&buff,
+				mp->marginal_path_err_recheck_gap_time) > 0)
 		condlog(3, "%s: marginal_path_err_recheck_gap_time = %s %s",
-			mp->alias, buff, origin);
+			mp->alias, get_strbuf_str(&buff), origin);
 	return 0;
 }
 
 int select_marginal_path_double_failed_time(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	mp_set_mpe(marginal_path_double_failed_time);
 	mp_set_ovr(marginal_path_double_failed_time);
@@ -1168,10 +1171,9 @@ int select_marginal_path_double_failed_time(struct config *conf, struct multipat
 	mp_set_conf(marginal_path_double_failed_time);
 	mp_set_default(marginal_path_double_failed_time, DEFAULT_ERR_CHECKS);
 out:
-	if (print_off_int_undef(buff, 12, mp->marginal_path_double_failed_time)
-	    != 0)
+	if (print_off_int_undef(&buff, mp->marginal_path_double_failed_time) > 0)
 		condlog(3, "%s: marginal_path_double_failed_time = %s %s",
-			mp->alias, buff, origin);
+			mp->alias, get_strbuf_str(&buff), origin);
 	return 0;
 }
 
@@ -1215,7 +1217,7 @@ out:
 int select_ghost_delay (struct config *conf, struct multipath * mp)
 {
 	const char *origin;
-	char buff[12];
+	STRBUF_ON_STACK(buff);
 
 	mp_set_mpe(ghost_delay);
 	mp_set_ovr(ghost_delay);
@@ -1223,8 +1225,9 @@ int select_ghost_delay (struct config *conf, struct multipath * mp)
 	mp_set_conf(ghost_delay);
 	mp_set_default(ghost_delay, DEFAULT_GHOST_DELAY);
 out:
-	if (print_off_int_undef(buff, 12, mp->ghost_delay) != 0)
-		condlog(3, "%s: ghost_delay = %s %s", mp->alias, buff, origin);
+	if (print_off_int_undef(&buff, mp->ghost_delay) != 0)
+		condlog(3, "%s: ghost_delay = %s %s", mp->alias,
+			get_strbuf_str(&buff), origin);
 	return 0;
 }
 

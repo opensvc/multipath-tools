@@ -26,6 +26,7 @@
 #include <mpath_persist.h>
 #include "mpath_cmd.h"
 #include "dict.h"
+#include "strbuf.h"
 
 static int
 set_int(vector strvec, void *ptr)
@@ -143,84 +144,45 @@ set_yes_no_undef(vector strvec, void *ptr)
 	return 0;
 }
 
-static int
-print_int (char *buff, int len, long v)
+static int print_int(struct strbuf *buff, long v)
 {
-	return snprintf(buff, len, "%li", v);
+	return print_strbuf(buff, "%li", v);
 }
 
-static int
-print_nonzero (char *buff, int len, long v)
+static int print_nonzero(struct strbuf *buff, long v)
 {
 	if (!v)
 		return 0;
-	return snprintf(buff, len, "%li", v);
+	return print_strbuf(buff, "%li", v);
 }
 
-static int
-print_str (char *buff, int len, const char *ptr)
+static int print_str(struct strbuf *buff, const char *ptr)
 {
-	char *p;
-	char *last;
-	const char *q;
+	int ret = append_strbuf_quoted(buff, ptr);
 
-	if (!ptr || len <= 0)
-		return 0;
-
-	q = strchr(ptr, '"');
-	if (q == NULL)
-		return snprintf(buff, len, "\"%s\"", ptr);
-
-	last = buff + len - 1;
-	p = buff;
-	if (p >= last)
-		goto out;
-	*p++ = '"';
-	if (p >= last)
-		goto out;
-	for (; q; q = strchr(ptr, '"')) {
-		if (q + 1 - ptr < last - p)
-			p = mempcpy(p, ptr, q + 1 - ptr);
-		else {
-			p = mempcpy(p, ptr, last - p);
-			goto out;
-		}
-		*p++ = '"';
-		if (p >= last)
-			goto out;
-		ptr = q + 1;
-	}
-	p += strlcpy(p, ptr, last - p);
-	if (p >= last)
-		goto out;
-	*p++ = '"';
-	*p = '\0';
-	return p - buff;
-out:
-	*p = '\0';
-	return len;
+	/*
+	 * -EINVAL aka (ptr == NULL) means "not set".
+	 * Returning an error here breaks unit tests
+	 * (logic in snprint_keyword()).
+	 */
+	return ret == -EINVAL ? 0 : ret;
 }
 
-static int
-print_ignored (char *buff, int len)
+static int print_ignored(struct strbuf *buff)
 {
-	return snprintf(buff, len, "ignored");
+	return append_strbuf_quoted(buff, "ignored");
 }
 
-static int
-print_yes_no (char *buff, int len, long v)
+static int print_yes_no(struct strbuf *buff, long v)
 {
-	return snprintf(buff, len, "\"%s\"",
-			(v == YN_NO)? "no" : "yes");
+	return append_strbuf_quoted(buff, v == YN_NO ? "no" : "yes");
 }
 
-static int
-print_yes_no_undef (char *buff, int len, long v)
+static int print_yes_no_undef(struct strbuf *buff, long v)
 {
 	if (!v)
 		return 0;
-	return snprintf(buff, len, "\"%s\"",
-			(v == YNU_NO)? "no" : "yes");
+	return append_strbuf_quoted(buff, v == YNU_NO? "no" : "yes");
 }
 
 #define declare_def_handler(option, function)				\
@@ -232,32 +194,32 @@ def_ ## option ## _handler (struct config *conf, vector strvec)		\
 
 #define declare_def_snprint(option, function)				\
 static int								\
-snprint_def_ ## option (struct config *conf, char * buff, int len,	\
-			const void * data)				\
+snprint_def_ ## option (struct config *conf, struct strbuf *buff,	\
+			const void *data)				\
 {									\
-	return function (buff, len, conf->option);			\
+	return function(buff, conf->option);				\
 }
 
 #define declare_def_snprint_defint(option, function, value)		\
 static int								\
-snprint_def_ ## option (struct config *conf, char * buff, int len,	\
-			const void * data)				\
+snprint_def_ ## option (struct config *conf, struct strbuf *buff,	\
+			const void *data)				\
 {									\
 	int i = value;							\
 	if (!conf->option)						\
-		return function (buff, len, i);				\
-	return function (buff, len, conf->option);			\
+		return function(buff, i);				\
+	return function (buff, conf->option);				\
 }
 
 #define declare_def_snprint_defstr(option, function, value)		\
 static int								\
-snprint_def_ ## option (struct config *conf, char * buff, int len,	\
-			const void * data)				\
+snprint_def_ ## option (struct config *conf, struct strbuf *buff,	\
+			const void *data)				\
 {									\
 	static const char *s = value;					\
 	if (!conf->option)						\
-		return function (buff, len, s);				\
-	return function (buff, len, conf->option);			\
+		return function(buff, s);				\
+	return function(buff, conf->option);				\
 }
 
 #define declare_hw_handler(option, function)				\
@@ -272,11 +234,11 @@ hw_ ## option ## _handler (struct config *conf, vector strvec)		\
 
 #define declare_hw_snprint(option, function)				\
 static int								\
-snprint_hw_ ## option (struct config *conf, char * buff, int len,	\
-		       const void * data)				\
+snprint_hw_ ## option (struct config *conf, struct strbuf *buff,	\
+		       const void *data)				\
 {									\
 	const struct hwentry * hwe = (const struct hwentry *)data;	\
-	return function (buff, len, hwe->option);			\
+	return function(buff, hwe->option);				\
 }
 
 #define declare_ovr_handler(option, function)				\
@@ -290,10 +252,10 @@ ovr_ ## option ## _handler (struct config *conf, vector strvec)		\
 
 #define declare_ovr_snprint(option, function)				\
 static int								\
-snprint_ovr_ ## option (struct config *conf, char * buff, int len,	\
-			const void * data)				\
+snprint_ovr_ ## option (struct config *conf, struct strbuf *buff,	\
+			const void *data)				\
 {									\
-	return function (buff, len, conf->overrides->option);		\
+	return function (buff, conf->overrides->option);		\
 }
 
 #define declare_mp_handler(option, function)				\
@@ -308,11 +270,11 @@ mp_ ## option ## _handler (struct config *conf, vector strvec)		\
 
 #define declare_mp_snprint(option, function)				\
 static int								\
-snprint_mp_ ## option (struct config *conf, char * buff, int len,	\
-		       const void * data)				\
+snprint_mp_ ## option (struct config *conf, struct strbuf *buff,	\
+		       const void *data)				\
 {									\
 	const struct mpentry * mpe = (const struct mpentry *)data;	\
-	return function (buff, len, mpe->option);			\
+	return function(buff, mpe->option);				\
 }
 
 static int checkint_handler(struct config *conf, vector strvec)
@@ -354,13 +316,13 @@ static int def_partition_delim_handler(struct config *conf, vector strvec)
 	return 0;
 }
 
-static int snprint_def_partition_delim(struct config *conf, char *buff,
-				       int len, const void *data)
+static int snprint_def_partition_delim(struct config *conf, struct strbuf *buff,
+				       const void *data)
 {
 	if (default_partition_delim == NULL || conf->partition_delim != NULL)
-		return print_str(buff, len, conf->partition_delim);
+		return print_str(buff, conf->partition_delim);
 	else
-		return print_str(buff, len, UNSET_PARTITION_DELIM);
+		return print_str(buff, UNSET_PARTITION_DELIM);
 }
 
 static const char * const find_multipaths_optvals[] = {
@@ -403,10 +365,10 @@ def_find_multipaths_handler(struct config *conf, vector strvec)
 }
 
 static int
-snprint_def_find_multipaths(struct config *conf, char *buff, int len,
+snprint_def_find_multipaths(struct config *conf, struct strbuf *buff,
 			    const void *data)
 {
-	return print_str(buff, len,
+	return append_strbuf_quoted(buff,
 			 find_multipaths_optvals[conf->find_multipaths]);
 }
 
@@ -419,21 +381,19 @@ declare_ovr_snprint(selector, print_str)
 declare_mp_handler(selector, set_str)
 declare_mp_snprint(selector, print_str)
 
-static int snprint_uid_attrs(struct config *conf, char *buff, int len,
+static int snprint_uid_attrs(struct config *conf, struct strbuf *buff,
 			     const void *dummy)
 {
-	char *p = buff;
-	int n, j;
+	int j, ret, total = 0;
 	const char *att;
 
 	vector_foreach_slot(&conf->uid_attrs, att, j) {
-		n = snprintf(p, len, "%s%s", j == 0 ? "" : " ", att);
-		if (n >= len)
-			return (p - buff) + n;
-		p += n;
-		len -= n;
+		ret = print_strbuf(buff, "%s%s", j == 0 ? "" : " ", att);
+		if (ret < 0)
+			return ret;
+		total += ret;
 	}
-	return p - buff;
+	return total;
 }
 
 static int uid_attrs_handler(struct config *conf, vector strvec)
@@ -526,18 +486,23 @@ declare_mp_snprint(minio_rq, print_nonzero)
 
 declare_def_handler(queue_without_daemon, set_yes_no)
 static int
-snprint_def_queue_without_daemon (struct config *conf,
-				  char * buff, int len, const void * data)
+snprint_def_queue_without_daemon(struct config *conf, struct strbuf *buff,
+				 const void * data)
 {
+	const char *qwd = "unknown";
+
 	switch (conf->queue_without_daemon) {
 	case QUE_NO_DAEMON_OFF:
-		return snprintf(buff, len, "\"no\"");
+		qwd = "no";
+		break;
 	case QUE_NO_DAEMON_ON:
-		return snprintf(buff, len, "\"yes\"");
+		qwd = "yes";
+		break;
 	case QUE_NO_DAEMON_FORCE:
-		return snprintf(buff, len, "\"forced\"");
+		qwd = "forced";
+		break;
 	}
-	return 0;
+	return append_strbuf_quoted(buff, qwd);
 }
 
 declare_def_handler(checker_timeout, set_int)
@@ -636,10 +601,11 @@ static int def_disable_changed_wwids_handler(struct config *conf, vector strvec)
 {
 	return 0;
 }
-static int snprint_def_disable_changed_wwids(struct config *conf, char *buff,
-					     int len, const void *data)
+static int snprint_def_disable_changed_wwids(struct config *conf,
+					     struct strbuf *buff,
+					     const void *data)
 {
-	return print_ignored(buff, len);
+	return print_ignored(buff);
 }
 
 declare_def_handler(remove_retries, set_int)
@@ -681,11 +647,10 @@ def_ ## option ## _handler (struct config *conf, vector strvec)		\
 
 #define declare_def_attr_snprint(option, function)			\
 static int								\
-snprint_def_ ## option (struct config *conf, char * buff, int len,	\
-			const void * data)				\
+snprint_def_ ## option (struct config *conf, struct strbuf *buff,	\
+			const void *data)				\
 {									\
-	return function (buff, len, conf->option,			\
-			 conf->attribute_flags);			\
+	return function(buff, conf->option, conf->attribute_flags);	\
 }
 
 #define declare_mp_attr_handler(option, function)			\
@@ -700,12 +665,11 @@ mp_ ## option ## _handler (struct config *conf, vector strvec)		\
 
 #define declare_mp_attr_snprint(option, function)			\
 static int								\
-snprint_mp_ ## option (struct config *conf, char * buff, int len,	\
+snprint_mp_ ## option (struct config *conf, struct strbuf *buff,	\
 		       const void * data)				\
 {									\
 	const struct mpentry * mpe = (const struct mpentry *)data;	\
-	return function (buff, len, mpe->option,			\
-			 mpe->attribute_flags);				\
+	return function(buff, mpe->option, mpe->attribute_flags);	\
 }
 
 static int
@@ -780,30 +744,30 @@ set_gid(vector strvec, void *ptr, int *flags)
 }
 
 static int
-print_mode(char * buff, int len, long v, int flags)
+print_mode(struct strbuf *buff, long v, int flags)
 {
 	mode_t mode = (mode_t)v;
 	if ((flags & (1 << ATTR_MODE)) == 0)
 		return 0;
-	return snprintf(buff, len, "0%o", mode);
+	return print_strbuf(buff, "0%o", mode);
 }
 
 static int
-print_uid(char * buff, int len, long v, int flags)
+print_uid(struct strbuf *buff, long v, int flags)
 {
 	uid_t uid = (uid_t)v;
 	if ((flags & (1 << ATTR_UID)) == 0)
 		return 0;
-	return snprintf(buff, len, "0%o", uid);
+	return print_strbuf(buff, "0%o", uid);
 }
 
 static int
-print_gid(char * buff, int len, long v, int flags)
+print_gid(struct strbuf *buff, long v, int flags)
 {
 	gid_t gid = (gid_t)v;
 	if ((flags & (1 << ATTR_GID)) == 0)
 		return 0;
-	return snprintf(buff, len, "0%o", gid);
+	return print_strbuf(buff, "0%o", gid);
 }
 
 declare_def_attr_handler(mode, set_mode)
@@ -843,16 +807,15 @@ set_undef_off_zero(vector strvec, void *ptr)
 	return 0;
 }
 
-int
-print_undef_off_zero(char * buff, int len, long v)
+int print_undef_off_zero(struct strbuf *buff, long v)
 {
 	if (v == UOZ_UNDEF)
 		return 0;
 	if (v == UOZ_OFF)
-		return snprintf(buff, len, "\"off\"");
+		return append_strbuf_str(buff, "off");
 	if (v == UOZ_ZERO)
-		return snprintf(buff, len, "0");
-	return snprintf(buff, len, "%ld", v);
+		return append_strbuf_str(buff, "0");
+	return print_int(buff, v);
 }
 
 declare_def_handler(fast_io_fail, set_undef_off_zero)
@@ -883,13 +846,13 @@ set_dev_loss(vector strvec, void *ptr)
 }
 
 int
-print_dev_loss(char * buff, int len, unsigned long v)
+print_dev_loss(struct strbuf *buff, unsigned long v)
 {
 	if (v == DEV_LOSS_TMO_UNSET)
 		return 0;
 	if (v >= MAX_DEV_LOSS_TMO)
-		return snprintf(buff, len, "\"infinity\"");
-	return snprintf(buff, len, "%lu", v);
+		return append_strbuf_quoted(buff, "infinity");
+	return print_strbuf(buff, "%lu", v);
 }
 
 declare_def_handler(dev_loss, set_dev_loss)
@@ -923,7 +886,7 @@ set_pgpolicy(vector strvec, void *ptr)
 }
 
 int
-print_pgpolicy(char * buff, int len, long pgpolicy)
+print_pgpolicy(struct strbuf *buff, long pgpolicy)
 {
 	char str[POLICY_NAME_SIZE];
 
@@ -932,7 +895,7 @@ print_pgpolicy(char * buff, int len, long pgpolicy)
 
 	get_pgpolicy_name(str, POLICY_NAME_SIZE, pgpolicy);
 
-	return snprintf(buff, len, "\"%s\"", str);
+	return append_strbuf_quoted(buff, str);
 }
 
 declare_def_handler(pgpolicy, set_pgpolicy)
@@ -1003,7 +966,7 @@ max_fds_handler(struct config *conf, vector strvec)
 }
 
 static int
-snprint_max_fds (struct config *conf, char * buff, int len, const void * data)
+snprint_max_fds (struct config *conf, struct strbuf *buff, const void *data)
 {
 	int r = 0, max_fds;
 
@@ -1012,9 +975,9 @@ snprint_max_fds (struct config *conf, char * buff, int len, const void * data)
 
 	r = get_sys_max_fds(&max_fds);
 	if (!r && conf->max_fds >= max_fds)
-		return snprintf(buff, len, "\"max\"");
+		return append_strbuf_quoted(buff, "max");
 	else
-		return snprintf(buff, len, "%d", conf->max_fds);
+		return print_int(buff, conf->max_fds);
 }
 
 static int
@@ -1040,14 +1003,14 @@ set_rr_weight(vector strvec, void *ptr)
 }
 
 int
-print_rr_weight (char * buff, int len, long v)
+print_rr_weight (struct strbuf *buff, long v)
 {
 	if (!v)
 		return 0;
 	if (v == RR_WEIGHT_PRIO)
-		return snprintf(buff, len, "\"priorities\"");
+		return append_strbuf_quoted(buff, "priorities");
 	if (v == RR_WEIGHT_NONE)
-		return snprintf(buff, len, "\"uniform\"");
+		return append_strbuf_quoted(buff, "uniform");
 
 	return 0;
 }
@@ -1086,19 +1049,19 @@ set_pgfailback(vector strvec, void *ptr)
 }
 
 int
-print_pgfailback (char * buff, int len, long v)
+print_pgfailback (struct strbuf *buff, long v)
 {
 	switch(v) {
 	case  FAILBACK_UNDEF:
 		return 0;
 	case -FAILBACK_MANUAL:
-		return snprintf(buff, len, "\"manual\"");
+		return append_strbuf_quoted(buff, "manual");
 	case -FAILBACK_IMMEDIATE:
-		return snprintf(buff, len, "\"immediate\"");
+		return append_strbuf_quoted(buff, "immediate");
 	case -FAILBACK_FOLLOWOVER:
-		return snprintf(buff, len, "\"followover\"");
+		return append_strbuf_quoted(buff, "followover");
 	default:
-		return snprintf(buff, len, "%li", v);
+		return print_int(buff, v);
 	}
 }
 
@@ -1133,17 +1096,17 @@ no_path_retry_helper(vector strvec, void *ptr)
 }
 
 int
-print_no_path_retry(char * buff, int len, long v)
+print_no_path_retry(struct strbuf *buff, long v)
 {
 	switch(v) {
 	case NO_PATH_RETRY_UNDEF:
 		return 0;
 	case NO_PATH_RETRY_FAIL:
-		return snprintf(buff, len, "\"fail\"");
+		return append_strbuf_quoted(buff, "fail");
 	case NO_PATH_RETRY_QUEUE:
-		return snprintf(buff, len, "\"queue\"");
+		return append_strbuf_quoted(buff, "queue");
 	default:
-		return snprintf(buff, len, "%li", v);
+		return print_int(buff, v);
 	}
 }
 
@@ -1176,12 +1139,12 @@ def_log_checker_err_handler(struct config *conf, vector strvec)
 }
 
 static int
-snprint_def_log_checker_err (struct config *conf, char * buff, int len,
-			     const void * data)
+snprint_def_log_checker_err(struct config *conf, struct strbuf *buff,
+			    const void * data)
 {
 	if (conf->log_checker_err == LOG_CHKR_ERR_ONCE)
-		return snprintf(buff, len, "once");
-	return snprintf(buff, len, "always");
+		return append_strbuf_quoted(buff, "once");
+	return append_strbuf_quoted(buff, "always");
 }
 
 static int
@@ -1216,18 +1179,17 @@ set_reservation_key(vector strvec, struct be64 *be64_ptr, uint8_t *flags_ptr,
 }
 
 int
-print_reservation_key(char * buff, int len, struct be64 key, uint8_t flags,
-		      int source)
+print_reservation_key(struct strbuf *buff,
+		      struct be64 key, uint8_t flags, int source)
 {
 	char *flagstr = "";
 	if (source == PRKEY_SOURCE_NONE)
 		return 0;
 	if (source == PRKEY_SOURCE_FILE)
-		return snprintf(buff, len, "file");
+		return append_strbuf_quoted(buff, "file");
 	if (flags & MPATH_F_APTPL_MASK)
 		flagstr = ":aptpl";
-	return snprintf(buff, len, "0x%" PRIx64 "%s", get_be64(key),
-			flagstr);
+	return print_strbuf(buff, "0x%" PRIx64 "%s", get_be64(key), flagstr);
 }
 
 static int
@@ -1239,12 +1201,11 @@ def_reservation_key_handler(struct config *conf, vector strvec)
 }
 
 static int
-snprint_def_reservation_key (struct config *conf, char * buff, int len,
+snprint_def_reservation_key (struct config *conf, struct strbuf *buff,
 			     const void * data)
 {
-	return print_reservation_key(buff, len, conf->reservation_key,
-				     conf->sa_flags,
-				     conf->prkey_source);
+	return print_reservation_key(buff, conf->reservation_key,
+				     conf->sa_flags, conf->prkey_source);
 }
 
 static int
@@ -1259,13 +1220,12 @@ mp_reservation_key_handler(struct config *conf, vector strvec)
 }
 
 static int
-snprint_mp_reservation_key (struct config *conf, char * buff, int len,
-			    const void * data)
+snprint_mp_reservation_key (struct config *conf, struct strbuf *buff,
+			    const void *data)
 {
 	const struct mpentry * mpe = (const struct mpentry *)data;
-	return print_reservation_key(buff, len, mpe->reservation_key,
-				     mpe->sa_flags,
-				     mpe->prkey_source);
+	return print_reservation_key(buff, mpe->reservation_key,
+				     mpe->sa_flags, mpe->prkey_source);
 }
 
 static int
@@ -1288,15 +1248,15 @@ set_off_int_undef(vector strvec, void *ptr)
 }
 
 int
-print_off_int_undef(char * buff, int len, long v)
+print_off_int_undef(struct strbuf *buff, long v)
 {
 	switch(v) {
 	case NU_UNDEF:
 		return 0;
 	case NU_NO:
-		return snprintf(buff, len, "\"no\"");
+		return append_strbuf_quoted(buff, "no");
 	default:
-		return snprintf(buff, len, "%li", v);
+		return print_int(buff, v);
 	}
 }
 
@@ -1455,13 +1415,13 @@ out:
 }
 
 static int
-snprint_hw_vpd_vendor(struct config *conf, char * buff, int len,
+snprint_hw_vpd_vendor(struct config *conf, struct strbuf *buff,
 		      const void * data)
 {
 	const struct hwentry * hwe = (const struct hwentry *)data;
 
 	if (hwe->vpd_vendor_id > 0 && hwe->vpd_vendor_id < VPD_VP_ARRAY_SIZE)
-		return snprintf(buff, len, "%s",
+		return append_strbuf_quoted(buff,
 				vpd_vendor_pages[hwe->vpd_vendor_id].name);
 	return 0;
 }
@@ -1561,19 +1521,18 @@ declare_ble_handler(blist_protocol)
 declare_ble_handler(elist_protocol)
 
 static int
-snprint_def_uxsock_timeout(struct config *conf, char * buff, int len,
-			   const void * data)
+snprint_def_uxsock_timeout(struct config *conf, struct strbuf *buff,
+			   const void *data)
 {
-	return snprintf(buff, len, "%u", conf->uxsock_timeout);
+	return print_strbuf(buff, "%u", conf->uxsock_timeout);
 }
 
 static int
-snprint_ble_simple (struct config *conf, char * buff, int len,
-		    const void * data)
+snprint_ble_simple (struct config *conf, struct strbuf *buff, const void *data)
 {
-	const struct blentry * ble = (const struct blentry *)data;
+	const struct blentry *ble = (const struct blentry *)data;
 
-	return snprintf(buff, len, "\"%s\"", ble->str);
+	return print_str(buff, ble->str);
 }
 
 static int
@@ -1593,24 +1552,22 @@ declare_ble_device_handler(vendor, elist_device, buff, NULL)
 declare_ble_device_handler(product, blist_device, NULL, buff)
 declare_ble_device_handler(product, elist_device, NULL, buff)
 
-static int
-snprint_bled_vendor (struct config *conf, char * buff, int len,
-		     const void * data)
+static int snprint_bled_vendor(struct config *conf, struct strbuf *buff,
+			       const void * data)
 {
 	const struct blentry_device * bled =
 		(const struct blentry_device *)data;
 
-	return snprintf(buff, len, "\"%s\"", bled->vendor);
+	return print_str(buff, bled->vendor);
 }
 
-static int
-snprint_bled_product (struct config *conf, char * buff, int len,
-		      const void * data)
+static int snprint_bled_product(struct config *conf, struct strbuf *buff,
+				const void *data)
 {
 	const struct blentry_device * bled =
 		(const struct blentry_device *)data;
 
-	return snprintf(buff, len, "\"%s\"", bled->product);
+	return print_str(buff, bled->product);
 }
 
 /*
@@ -1738,8 +1695,7 @@ deprecated_handler(struct config *conf, vector strvec)
 }
 
 static int
-snprint_deprecated (struct config *conf, char * buff, int len,
-		    const void * data)
+snprint_deprecated (struct config *conf, struct strbuf *buff, const void * data)
 {
 	return 0;
 }
