@@ -150,7 +150,7 @@ find_keyword(vector keywords, vector v, char * name)
 }
 
 int
-snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw,
+snprint_keyword(struct strbuf *buff, const char *fmt, struct keyword *kw,
 		const void *data)
 {
 	int r;
@@ -191,7 +191,8 @@ snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw,
 		}
 	} while (*fmt++);
 out:
-	return snprintf(buff, len, "%s", get_strbuf_str(&sbuf));
+	return __append_strbuf_str(buff, get_strbuf_str(&sbuf),
+				   get_strbuf_len(&sbuf));
 }
 
 static const char quote_marker[] = { '\0', '"', '\0' };

@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_7.0.0 {
+LIBMULTIPATH_8.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -273,3 +273,15 @@ global:
 local:
 	*;
 };
+
+LIBMULTIPATH_8.1.0 {
+global:
+	reset_strbuf;
+	append_strbuf_str;
+	get_strbuf_len;
+	get_strbuf_str;
+	steal_strbuf_str;
+	fill_strbuf;
+	print_strbuf;
+	truncate_strbuf;
+} LIBMULTIPATH_8.0.0;

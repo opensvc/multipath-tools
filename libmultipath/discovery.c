@@ -35,6 +35,7 @@
 #include "foreign.h"
 #include "configure.h"
 #include "print.h"
+#include "strbuf.h"
 
 struct vpd_vendor_page vpd_vendor_pages[VPD_VP_ARRAY_SIZE] = {
 	[VPD_VP_UNDEF]	= { 0x00, "undef" },
@@ -895,11 +896,11 @@ sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint)
 	}
 
 	if (err_path) {
-		char proto_buf[32];
+		STRBUF_ON_STACK(proto_buf);
 
-		snprint_path_protocol(proto_buf, sizeof(proto_buf), err_path);
+		snprint_path_protocol(&proto_buf, err_path);
 		condlog(2, "%s: setting dev_loss_tmo is unsupported for protocol %s",
-			mpp->alias, proto_buf);
+			mpp->alias, get_strbuf_str(&proto_buf));
 	}
 	return 0;
 }
@@ -2380,11 +2381,11 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 				 * It's likely that this path is not fit for
 				 * multipath use.
 				 */
-				char buf[16];
+				STRBUF_ON_STACK(buf);
 
-				snprint_path(buf, sizeof(buf), "%T", pp, 0);
+				snprint_path(&buf, "%T", pp, 0);
 				condlog(1, "%s: no WWID in state \"%s\", giving up",
-					pp->dev, buf);
+					pp->dev, get_strbuf_str(&buf));
 				return PATHINFO_SKIPPED;
 			}
 			return PATHINFO_OK;

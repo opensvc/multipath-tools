@@ -35,52 +35,37 @@
 #include "structs_vec.h"
 #include "print.h"
 #include "util.h"
-
-#define CHECK_LEN \
-do { \
-	if ((p - str) >= (len - 1)) { \
-		condlog(0, "%s: %s - buffer size too small", pp->dev, pp->prio.name); \
-		return -1; \
-	} \
-} while(0)
+#include "strbuf.h"
 
 static int
-build_serial_path(struct path *pp, char *str, int len)
+build_serial_path(struct path *pp, struct strbuf *buf)
 {
-	char *p = str;
+	int rc = snprint_path_serial(buf, pp);
 
-	p += snprint_path_serial(p, str + len - p, pp);
-	CHECK_LEN;
-	return 0;
+	return rc < 0 ? rc : 0;
 }
 
 static int
-build_wwn_path(struct path *pp, char *str, int len)
+build_wwn_path(struct path *pp, struct strbuf *buf)
 {
-	char *p = str;
+	int rc;
 
-	p += snprint_host_wwnn(p, str + len - p, pp);
-	CHECK_LEN;
-	p += snprintf(p, str + len - p, ":");
-	CHECK_LEN;
-	p += snprint_host_wwpn(p, str + len - p, pp);
-	CHECK_LEN;
-	p += snprintf(p, str + len - p, ":");
-	CHECK_LEN;
-	p += snprint_tgt_wwnn(p, str + len - p, pp);
-	CHECK_LEN;
-	p += snprintf(p, str + len - p, ":");
-	CHECK_LEN;
-	p += snprint_tgt_wwpn(p, str + len - p, pp);
-	CHECK_LEN;
+	if ((rc = snprint_host_wwnn(buf, pp)) < 0 ||
+	    (rc = fill_strbuf(buf, ':', 1)) < 0 ||
+	    (rc = snprint_host_wwpn(buf, pp)) < 0 ||
+	    (rc = fill_strbuf(buf, ':', 1)) < 0 ||
+	    (rc = snprint_tgt_wwnn(buf, pp) < 0) ||
+	    (rc = fill_strbuf(buf, ':', 1) < 0) ||
+	    (rc = snprint_tgt_wwpn(buf, pp) < 0))
+		return rc;
 	return 0;
 }
 
 /* main priority routine */
 int prio_path_weight(struct path *pp, char *prio_args)
 {
-	char path[FILE_NAME_SIZE];
-	char *arg;
+	STRBUF_ON_STACK(path);
+	char *arg __attribute__((cleanup(cleanup_charp))) = NULL;
 	char *temp, *regex, *prio;
 	char split_char[] = " \t";
 	int priority = DEFAULT_PRIORITY, path_found = 0;
@@ -101,24 +86,22 @@ int prio_path_weight(struct path *pp, char *prio_args)
 	}
 
 	if (!strcmp(regex, HBTL)) {
-		sprintf(path, "%d:%d:%d:%" PRIu64, pp->sg_id.host_no,
-			pp->sg_id.channel, pp->sg_id.scsi_id, pp->sg_id.lun);
+		if (print_strbuf(&path, "%d:%d:%d:%" PRIu64, pp->sg_id.host_no,
+				 pp->sg_id.channel, pp->sg_id.scsi_id,
+				 pp->sg_id.lun) < 0)
+			return priority;
 	} else if (!strcmp(regex, DEV_NAME)) {
-		strcpy(path, pp->dev);
+		if (append_strbuf_str(&path, pp->dev) < 0)
+			return priority;
 	} else if (!strcmp(regex, SERIAL)) {
-		if (build_serial_path(pp, path, FILE_NAME_SIZE) != 0) {
-			FREE(arg);
+		if (build_serial_path(pp, &path) != 0)
 			return priority;
-		}
 	} else if (!strcmp(regex, WWN)) {
-		if (build_wwn_path(pp, path, FILE_NAME_SIZE) != 0) {
-			FREE(arg);
+		if (build_wwn_path(pp, &path) != 0)
 			return priority;
-		}
 	} else {
 		condlog(0, "%s: %s - Invalid arguments", pp->dev,
 			pp->prio.name);
-		FREE(arg);
 		return priority;
 	}
 
@@ -131,7 +114,8 @@ int prio_path_weight(struct path *pp, char *prio_args)
 			break;
 
 		if (!regcomp(&pathe, regex, REG_EXTENDED|REG_NOSUB)) {
-			if (!regexec(&pathe, path, 0, NULL, 0)) {
+			if (!regexec(&pathe, get_strbuf_str(&path), 0,
+				     NULL, 0)) {
 				path_found = 1;
 				priority = atoi(prio);
 			}
@@ -139,7 +123,6 @@ int prio_path_weight(struct path *pp, char *prio_args)
 		}
 	}
 
-	FREE(arg);
 	return priority;
 }
 

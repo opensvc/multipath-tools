@@ -30,6 +30,7 @@
 #include "cli.h"
 #include "uevent.h"
 #include "foreign.h"
+#include "strbuf.h"
 #include "cli_handlers.h"
 
 #define SET_REPLY_AND_LEN(__rep, __len, string_literal)			\
@@ -42,49 +43,30 @@ int
 show_paths (char ** r, int * len, struct vectors * vecs, char * style,
 	    int pretty)
 {
+	STRBUF_ON_STACK(reply);
 	int i;
 	struct path * pp;
-	char * c;
-	char * reply, * header;
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	int again = 1;
+	int hdr_len = 0;
 
 	get_path_layout(vecs->pathvec, 1);
 	foreign_path_layout();
 
-	reply = MALLOC(maxlen);
+	if (pretty && (hdr_len = snprint_path_header(&reply, style)) < 0)
+		return 1;
 
-	while (again) {
-		if (!reply)
+	vector_foreach_slot(vecs->pathvec, pp, i) {
+		if (snprint_path(&reply, style, pp, pretty) < 0)
 			return 1;
-
-		c = reply;
-
-		if (pretty)
-			c += snprint_path_header(c, reply + maxlen - c,
-						 style);
-		header = c;
-
-		vector_foreach_slot(vecs->pathvec, pp, i)
-			c += snprint_path(c, reply + maxlen - c,
-					  style, pp, pretty);
-
-		c += snprint_foreign_paths(c, reply + maxlen - c,
-					   style, pretty);
-
-		again = (c == reply + maxlen - 1);
-
-		REALLOC_REPLY(reply, again, maxlen);
 	}
+	if (snprint_foreign_paths(&reply, style, pretty) < 0)
+		return 1;
 
-	if (pretty && c == header) {
+	if (pretty && get_strbuf_len(&reply) == (size_t)hdr_len)
 		/* No output - clear header */
-		*reply = '\0';
-		c = reply;
-	}
+		truncate_strbuf(&reply, 0);
 
-	*r = reply;
-	*len = (int)(c - reply + 1);
+	*len = (int)get_strbuf_len(&reply) + 1;
+	*r = steal_strbuf_str(&reply);
 	return 0;
 }
 
@@ -92,28 +74,14 @@ int
 show_path (char ** r, int * len, struct vectors * vecs, struct path *pp,
 	   char * style)
 {
-	char * c;
-	char * reply;
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	int again = 1;
+	STRBUF_ON_STACK(reply);
 
 	get_path_layout(vecs->pathvec, 1);
-	reply = MALLOC(maxlen);
+	if (snprint_path(&reply, style, pp, 0) < 0)
+		return 1;
+	*len = (int)get_strbuf_len(&reply) + 1;
+	*r = steal_strbuf_str(&reply);
 
-	while (again) {
-		if (!reply)
-			return 1;
-
-		c = reply;
-
-		c += snprint_path(c, reply + maxlen - c, style, pp, 0);
-
-		again = (c == reply + maxlen - 1);
-
-		REALLOC_REPLY(reply, again, maxlen);
-	}
-	*r = reply;
-	*len = (int)(c - reply + 1);
 	return 0;
 }
 
@@ -121,84 +89,51 @@ int
 show_map_topology (char ** r, int * len, struct multipath * mpp,
 		   struct vectors * vecs)
 {
-	char * c;
-	char * reply;
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	int again = 1;
+	STRBUF_ON_STACK(reply);
 
 	if (update_multipath(vecs, mpp->alias, 0))
 		return 1;
-	reply = MALLOC(maxlen);
 
-	while (again) {
-		if (!reply)
-			return 1;
+	if (snprint_multipath_topology(&reply, mpp, 2) < 0)
+		return 1;
+	*len = (int)get_strbuf_len(&reply) + 1;
+	*r = steal_strbuf_str(&reply);
 
-		c = reply;
-
-		c += snprint_multipath_topology(c, reply + maxlen - c, mpp, 2);
-		again = (c == reply + maxlen - 1);
-
-		REALLOC_REPLY(reply, again, maxlen);
-	}
-	*r = reply;
-	*len = (int)(c - reply + 1);
 	return 0;
 }
 
 int
 show_maps_topology (char ** r, int * len, struct vectors * vecs)
 {
+	STRBUF_ON_STACK(reply);
 	int i;
 	struct multipath * mpp;
-	char * c;
-	char * reply;
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	int again = 1;
 
 	get_path_layout(vecs->pathvec, 0);
 	foreign_path_layout();
 
-	reply = MALLOC(maxlen);
-
-	while (again) {
-		if (!reply)
-			return 1;
-
-		c = reply;
-
-		vector_foreach_slot(vecs->mpvec, mpp, i) {
-			if (update_multipath(vecs, mpp->alias, 0)) {
-				i--;
-				continue;
-			}
-			c += snprint_multipath_topology(c, reply + maxlen - c,
-							mpp, 2);
+	vector_foreach_slot(vecs->mpvec, mpp, i) {
+		if (update_multipath(vecs, mpp->alias, 0)) {
+			i--;
+			continue;
 		}
-		c += snprint_foreign_topology(c, reply + maxlen - c, 2);
-
-		again = (c == reply + maxlen - 1);
-
-		REALLOC_REPLY(reply, again, maxlen);
+		if (snprint_multipath_topology(&reply, mpp, 2) < 0)
+			return 1;
 	}
+	if (snprint_foreign_topology(&reply, 2) < 0)
+		return 1;
 
-	*r = reply;
-	*len = (int)(c - reply + 1);
+	*len = (int)get_strbuf_len(&reply) + 1;
+	*r = steal_strbuf_str(&reply);
 	return 0;
 }
 
 int
 show_maps_json (char ** r, int * len, struct vectors * vecs)
 {
+	STRBUF_ON_STACK(reply);
 	int i;
 	struct multipath * mpp;
-	char * c;
-	char * reply;
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	int again = 1;
-
-	if (VECTOR_SIZE(vecs->mpvec) > 0)
-		maxlen *= PRINT_JSON_MULTIPLIER * VECTOR_SIZE(vecs->mpvec);
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
 		if (update_multipath(vecs, mpp->alias, 0)) {
@@ -206,21 +141,11 @@ show_maps_json (char ** r, int * len, struct vectors * vecs)
 		}
 	}
 
-	reply = MALLOC(maxlen);
+	if (snprint_multipath_topology_json(&reply, vecs) < 0)
+		return 1;
 
-	while (again) {
-		if (!reply)
-			return 1;
-
-		c = reply;
-
-		c += snprint_multipath_topology_json(c, maxlen, vecs);
-		again = (c == reply + maxlen);
-
-		REALLOC_REPLY(reply, again, maxlen);
-	}
-	*r = reply;
-	*len = (int)(c - reply);
+	*len = (int)get_strbuf_len(&reply) + 1;
+	*r = steal_strbuf_str(&reply);
 	return 0;
 }
 
@@ -228,28 +153,16 @@ int
 show_map_json (char ** r, int * len, struct multipath * mpp,
 		   struct vectors * vecs)
 {
-	char * c;
-	char * reply;
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	int again = 1;
+	STRBUF_ON_STACK(reply);
 
 	if (update_multipath(vecs, mpp->alias, 0))
 		return 1;
-	reply = MALLOC(maxlen);
 
-	while (again) {
-		if (!reply)
-			return 1;
+	if (snprint_multipath_map_json(&reply, mpp) < 0)
+		return 1;
 
-		c = reply;
-
-		c += snprint_multipath_map_json(c, maxlen, mpp);
-		again = (c == reply + maxlen);
-
-		REALLOC_REPLY(reply, again, maxlen);
-	}
-	*r = reply;
-	*len = (int)(c - reply);
+	*len = (int)get_strbuf_len(&reply) + 1;
+	*r = steal_strbuf_str(&reply);
 	return 0;
 }
 
@@ -420,58 +333,40 @@ cli_list_maps_json (void * v, char ** reply, int * len, void * data)
 int
 cli_list_wildcards (void * v, char ** reply, int * len, void * data)
 {
-	char * c;
+	STRBUF_ON_STACK(buf);
 
-	*reply = MALLOC(INITIAL_REPLY_LEN);
-
-	if (!*reply)
+	if (snprint_wildcards(&buf) < 0)
 		return 1;
 
-	c = *reply;
-	c += snprint_wildcards(c, INITIAL_REPLY_LEN);
-
-	*len = INITIAL_REPLY_LEN;
+	*len = get_strbuf_len(&buf) + 1;
+	*reply = steal_strbuf_str(&buf);
 	return 0;
 }
 
 int
 show_status (char ** r, int *len, struct vectors * vecs)
 {
-	char * c;
-	char * reply;
+	STRBUF_ON_STACK(reply);
 
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	reply = MALLOC(maxlen);
-
-	if (!reply)
+	if (snprint_status(&reply, vecs) < 0)
 		return 1;
 
-	c = reply;
-	c += snprint_status(c, reply + maxlen - c, vecs);
-
-	*r = reply;
-	*len = (int)(c - reply + 1);
+	*len = get_strbuf_len(&reply) + 1;
+	*r = steal_strbuf_str(&reply);
 	return 0;
 }
 
 int
 show_daemon (char ** r, int *len)
 {
-	char * c;
-	char * reply;
+	STRBUF_ON_STACK(reply);
 
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	reply = MALLOC(maxlen);
-
-	if (!reply)
+	if (print_strbuf(&reply, "pid %d %s\n",
+			 daemon_pid, daemon_status()) < 0)
 		return 1;
 
-	c = reply;
-	c += snprintf(c, INITIAL_REPLY_LEN, "pid %d %s\n",
-		      daemon_pid, daemon_status());
-
-	*r = reply;
-	*len = (int)(c - reply + 1);
+	*len = get_strbuf_len(&reply) + 1;
+	*r = steal_strbuf_str(&reply);
 	return 0;
 }
 
@@ -479,26 +374,13 @@ int
 show_map (char ** r, int *len, struct multipath * mpp, char * style,
 	  int pretty)
 {
-	char * c;
-	char * reply;
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	int again = 1;
+	STRBUF_ON_STACK(reply);
 
-	reply = MALLOC(maxlen);
-	while (again) {
-		if (!reply)
-			return 1;
+	if (snprint_multipath(&reply, style, mpp, pretty) < 0)
+		return 1;
 
-		c = reply;
-		c += snprint_multipath(c, reply + maxlen - c, style,
-				       mpp, pretty);
-
-		again = (c == reply + maxlen - 1);
-
-		REALLOC_REPLY(reply, again, maxlen);
-	}
-	*r = reply;
-	*len = (int)(c - reply + 1);
+	*len = get_strbuf_len(&reply) + 1;
+	*r = steal_strbuf_str(&reply);
 	return 0;
 }
 
@@ -506,51 +388,34 @@ int
 show_maps (char ** r, int *len, struct vectors * vecs, char * style,
 	   int pretty)
 {
+	STRBUF_ON_STACK(reply);
 	int i;
 	struct multipath * mpp;
-	char * c, *header;
-	char * reply;
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	int again = 1;
+	int hdr_len = 0;
 
 	get_multipath_layout(vecs->mpvec, 1);
 	foreign_multipath_layout();
 
-	reply = MALLOC(maxlen);
+	if (pretty && (hdr_len = snprint_multipath_header(&reply, style)) < 0)
+		return 1;
 
-	while (again) {
-		if (!reply)
-			return 1;
-
-		c = reply;
-		if (pretty)
-			c += snprint_multipath_header(c, reply + maxlen - c,
-						      style);
-		header = c;
-
-		vector_foreach_slot(vecs->mpvec, mpp, i) {
-			if (update_multipath(vecs, mpp->alias, 0)) {
-				i--;
-				continue;
-			}
-			c += snprint_multipath(c, reply + maxlen - c,
-					       style, mpp, pretty);
-
+	vector_foreach_slot(vecs->mpvec, mpp, i) {
+		if (update_multipath(vecs, mpp->alias, 0)) {
+			i--;
+			continue;
 		}
-		c += snprint_foreign_multipaths(c, reply + maxlen - c,
-						style, pretty);
-		again = (c == reply + maxlen - 1);
-
-		REALLOC_REPLY(reply, again, maxlen);
+		if (snprint_multipath(&reply, style, mpp, pretty) < 0)
+			return 1;
 	}
+	if (snprint_foreign_multipaths(&reply, style, pretty) < 0)
+		return 1;
 
-	if (pretty && c == header) {
+	if (pretty && get_strbuf_len(&reply) == (size_t)hdr_len)
 		/* No output - clear header */
-		*reply = '\0';
-		c = reply;
-	}
-	*r = reply;
-	*len = (int)(c - reply + 1);
+		truncate_strbuf(&reply, 0);
+
+	*len = (int)get_strbuf_len(&reply) + 1;
+	*r = steal_strbuf_str(&reply);
 	return 0;
 }
 
@@ -1366,34 +1231,20 @@ cli_fail(void * v, char ** reply, int * len, void * data)
 int
 show_blacklist (char ** r, int * len)
 {
-	char *c = NULL;
-	char *reply = NULL;
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	int again = 1;
+	STRBUF_ON_STACK(reply);
 	struct config *conf;
-	int fail = 0;
-
-	reply = MALLOC(maxlen);
+	bool fail;
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
-	while (again) {
-		if (!reply) {
-			fail = 1;
-			break;
-		}
-
-		c = reply;
-		c += snprint_blacklist_report(conf, c, maxlen);
-		again = (c == reply + maxlen);
-		REALLOC_REPLY(reply, again, maxlen);
-	}
+	fail = snprint_blacklist_report(conf, &reply) < 0;
 	pthread_cleanup_pop(1);
 
 	if (fail)
 		return 1;
-	*r = reply;
-	*len = (int)(c - reply + 1);
+
+	*len = (int)get_strbuf_len(&reply) + 1;
+	*r = steal_strbuf_str(&reply);
 	return 0;
 }
 
@@ -1408,34 +1259,20 @@ cli_list_blacklist (void * v, char ** reply, int * len, void * data)
 int
 show_devices (char ** r, int * len, struct vectors *vecs)
 {
-	char *c = NULL;
-	char *reply = NULL;
-	unsigned int maxlen = INITIAL_REPLY_LEN;
-	int again = 1;
+	STRBUF_ON_STACK(reply);
 	struct config *conf;
-	int fail = 0;
-
-	reply = MALLOC(maxlen);
+	bool fail;
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
-	while (again) {
-		if (!reply) {
-			fail = 1;
-			break;
-		}
-
-		c = reply;
-		c += snprint_devices(conf, c, maxlen, vecs);
-		again = (c == reply + maxlen);
-		REALLOC_REPLY(reply, again, maxlen);
-	}
+	fail = snprint_devices(conf, &reply, vecs) < 0;
 	pthread_cleanup_pop(1);
 
 	if (fail)
 		return 1;
-	*r = reply;
-	*len = (int)(c - reply + 1);
+
+	*len = (int)get_strbuf_len(&reply) + 1;
+	*r = steal_strbuf_str(&reply);
 
 	return 0;
 }

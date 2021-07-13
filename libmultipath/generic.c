@@ -15,23 +15,23 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-
-#include <string.h>
 #include "generic.h"
 #include "structs.h"
+#include "util.h"
+#include "strbuf.h"
 
-int generic_style(const struct gen_multipath* gm,
-		  char *buf, int len, __attribute__((unused)) int verbosity)
+int generic_style(const struct gen_multipath* gm, struct strbuf *buf,
+		  __attribute__((unused)) int verbosity)
 {
-	char alias_buf[WWID_SIZE];
-	char wwid_buf[WWID_SIZE];
-	int n = 0;
+	STRBUF_ON_STACK(tmp);
+	char *alias_buf __attribute__((cleanup(cleanup_charp)));
+	const char *wwid_buf;
 
-	gm->ops->snprint(gm, alias_buf, sizeof(alias_buf), 'n');
-	gm->ops->snprint(gm, wwid_buf, sizeof(wwid_buf), 'w');
+	gm->ops->snprint(gm, &tmp, 'n');
+	alias_buf = steal_strbuf_str(&tmp);
+	gm->ops->snprint(gm, &tmp, 'w');
+	wwid_buf = get_strbuf_str(&tmp);
 
-	n += snprintf(buf, len, "%%n %s[%%G]:%%d %%s",
-		      strcmp(alias_buf, wwid_buf) ? "(%w) " : "");
-
-	return (n < len ? n : len - 1);
+	return print_strbuf(buf, "%%n %s[%%G]:%%d %%s",
+			    strcmp(alias_buf, wwid_buf) ? "(%w) " : "");
 }
