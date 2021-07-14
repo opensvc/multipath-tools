@@ -22,7 +22,7 @@
 #include "util.h"
 #include "errno.h"
 #include "devmapper.h"
-
+#include "strbuf.h"
 
 /*
  * significant parts of this file were taken from iscsi-bindings.c of the
@@ -61,31 +61,23 @@ valid_alias(const char *alias)
 	return 1;
 }
 
-
-static int
-format_devname(char *name, int id, int len, const char *prefix)
+static int format_devname(struct strbuf *buf, int id)
 {
-	int pos;
-	int prefix_len = strlen(prefix);
+	/*
+	 * We need: 7 chars for 32bit integers, 14 chars for 64bit integers
+	 */
+	char devname[2 * sizeof(int)];
+	int pos = sizeof(devname) - 1, rc;
 
-	if (len <= prefix_len + 1 || id <= 0)
+	if (id <= 0)
 		return -1;
 
-	memset(name, 0, len);
-	strcpy(name, prefix);
-	name[len - 1] = '\0';
-	for (pos = len - 2; pos >= prefix_len; pos--) {
-		id--;
-		name[pos] = 'a' + id % 26;
-		if (id < 26)
-			break;
-		id /= 26;
-	}
-	if (pos < prefix_len)
-		return -1;
+	devname[pos] = '\0';
+	for (; id >= 1; id /= 26)
+		devname[--pos] = 'a' + --id % 26;
 
-	memmove(name + prefix_len, name + pos, len - pos);
-	return (prefix_len + len - pos - 1);
+	rc = append_strbuf_str(buf, devname + pos);
+	return rc >= 0 ? rc : -1;
 }
 
 static int
@@ -123,11 +115,14 @@ scan_devname(const char *alias, const char *prefix)
 static int
 id_already_taken(int id, const char *prefix, const char *map_wwid)
 {
-	char alias[LINE_MAX];
+	STRBUF_ON_STACK(buf);
+	const char *alias;
 
-	if (format_devname(alias, id, LINE_MAX, prefix) < 0)
+	if (append_strbuf_str(&buf, prefix) < 0 ||
+	    format_devname(&buf, id) < 0)
 		return 0;
 
+	alias = get_strbuf_str(&buf);
 	if (dm_map_present(alias)) {
 		char wwid[WWID_SIZE];
 
@@ -285,10 +280,10 @@ rlookup_binding(FILE *f, char *buff, const char *map_alias)
 static char *
 allocate_binding(int fd, const char *wwid, int id, const char *prefix)
 {
-	char buf[LINE_MAX];
+	STRBUF_ON_STACK(buf);
 	off_t offset;
+	ssize_t len;
 	char *alias, *c;
-	int i;
 
 	if (id <= 0) {
 		condlog(0, "%s: cannot allocate new binding for id %d",
@@ -296,16 +291,12 @@ allocate_binding(int fd, const char *wwid, int id, const char *prefix)
 		return NULL;
 	}
 
-	i = format_devname(buf, id, LINE_MAX, prefix);
-	if (i == -1)
+	if (append_strbuf_str(&buf, prefix) < 0 ||
+	    format_devname(&buf, id) == -1)
 		return NULL;
 
-	c = buf + i;
-	if (snprintf(c, LINE_MAX - i, " %s\n", wwid) >= LINE_MAX - i) {
-		condlog(1, "%s: line too long for %s\n", __func__, wwid);
+	if (print_strbuf(&buf, " %s\n", wwid) < 0)
 		return NULL;
-	}
-	buf[LINE_MAX - 1] = '\0';
 
 	offset = lseek(fd, 0, SEEK_END);
 	if (offset < 0){
@@ -313,24 +304,25 @@ allocate_binding(int fd, const char *wwid, int id, const char *prefix)
 			strerror(errno));
 		return NULL;
 	}
-	if (write(fd, buf, strlen(buf)) != (ssize_t)strlen(buf)){
+
+	len = get_strbuf_len(&buf);
+	alias = steal_strbuf_str(&buf);
+
+	if (write(fd, alias, len) != len) {
 		condlog(0, "Cannot write binding to bindings file : %s",
 			strerror(errno));
 		/* clear partial write */
 		if (ftruncate(fd, offset))
 			condlog(0, "Cannot truncate the header : %s",
 				strerror(errno));
+		free(alias);
 		return NULL;
 	}
-	c = strchr(buf, ' ');
+	c = strchr(alias, ' ');
 	if (c)
 		*c = '\0';
 
-	condlog(3, "Created new binding [%s] for WWID [%s]", buf, wwid);
-	alias = strdup(buf);
-	if (alias == NULL)
-		condlog(0, "cannot copy new alias from bindings file: out of memory");
-
+	condlog(3, "Created new binding [%s] for WWID [%s]", alias, wwid);
 	return alias;
 }
 
@@ -560,7 +552,7 @@ static int add_binding(Bindings *bindings, const char *alias, const char *wwid)
 static int write_bindings_file(const Bindings *bindings, int fd)
 {
 	struct binding *bnd;
-	char line[LINE_MAX];
+	STRBUF_ON_STACK(line);
 	int i;
 
 	if (write(fd, BINDINGS_FILE_HEADER, sizeof(BINDINGS_FILE_HEADER) - 1)
@@ -570,16 +562,12 @@ static int write_bindings_file(const Bindings *bindings, int fd)
 	vector_foreach_slot(bindings, bnd, i) {
 		int len;
 
-		len = snprintf(line, sizeof(line), "%s %s\n",
-			       bnd->alias, bnd->wwid);
-
-		if (len < 0 || (size_t)len >= sizeof(line)) {
-			condlog(1, "%s: line overflow", __func__);
+		if ((len = print_strbuf(&line, "%s %s\n",
+					bnd->alias, bnd->wwid)) < 0)
 			return -1;
-		}
-
-		if (write(fd, line, len) != len)
+		if (write(fd, get_strbuf_str(&line), len) != len)
 			return -1;
+		truncate_strbuf(&line, 0);
 	}
 	return 0;
 }

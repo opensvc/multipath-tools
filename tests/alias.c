@@ -81,12 +81,25 @@ int __wrap_dm_get_uuid(const char *name, char *uuid, int uuid_len)
 	return ret;
 }
 
+/* strbuf wrapper for the old format_devname() */
+static int __format_devname(char *name, int id, size_t len, const char *prefix)
+{
+	STRBUF_ON_STACK(buf);
+
+	if (append_strbuf_str(&buf, prefix) < 0 ||
+	    format_devname(&buf, id) < 0 ||
+	    len <= get_strbuf_len(&buf))
+		return -1;
+	strcpy(name, get_strbuf_str(&buf));
+	return get_strbuf_len(&buf);
+}
+
 static void fd_mpatha(void **state)
 {
 	char buf[32];
 	int rc;
 
-	rc = format_devname(buf, 1, sizeof(buf), "FOO");
+	rc = __format_devname(buf, 1, sizeof(buf), "FOO");
 	assert_int_equal(rc, 4);
 	assert_string_equal(buf, "FOOa");
 }
@@ -97,7 +110,7 @@ static void fd_mpathz(void **state)
 	char buf[5];
 	int rc;
 
-	rc = format_devname(buf, 26, sizeof(buf), "FOO");
+	rc = __format_devname(buf, 26, sizeof(buf), "FOO");
 	assert_int_equal(rc, 4);
 	assert_string_equal(buf, "FOOz");
 }
@@ -107,7 +120,7 @@ static void fd_mpathaa(void **state)
 	char buf[32];
 	int rc;
 
-	rc = format_devname(buf, 26 + 1, sizeof(buf), "FOO");
+	rc = __format_devname(buf, 26 + 1, sizeof(buf), "FOO");
 	assert_int_equal(rc, 5);
 	assert_string_equal(buf, "FOOaa");
 }
@@ -117,7 +130,7 @@ static void fd_mpathzz(void **state)
 	char buf[32];
 	int rc;
 
-	rc = format_devname(buf, 26*26 + 26, sizeof(buf), "FOO");
+	rc = __format_devname(buf, 26*26 + 26, sizeof(buf), "FOO");
 	assert_int_equal(rc, 5);
 	assert_string_equal(buf, "FOOzz");
 }
@@ -127,7 +140,7 @@ static void fd_mpathaaa(void **state)
 	char buf[32];
 	int rc;
 
-	rc = format_devname(buf, 26*26 + 27, sizeof(buf), "FOO");
+	rc = __format_devname(buf, 26*26 + 27, sizeof(buf), "FOO");
 	assert_int_equal(rc, 6);
 	assert_string_equal(buf, "FOOaaa");
 }
@@ -137,7 +150,7 @@ static void fd_mpathzzz(void **state)
 	char buf[32];
 	int rc;
 
-	rc = format_devname(buf, 26*26*26 + 26*26 + 26, sizeof(buf), "FOO");
+	rc = __format_devname(buf, 26*26*26 + 26*26 + 26, sizeof(buf), "FOO");
 	assert_int_equal(rc, 6);
 	assert_string_equal(buf, "FOOzzz");
 }
@@ -147,7 +160,7 @@ static void fd_mpathaaaa(void **state)
 	char buf[32];
 	int rc;
 
-	rc = format_devname(buf, 26*26*26 + 26*26 + 27, sizeof(buf), "FOO");
+	rc = __format_devname(buf, 26*26*26 + 26*26 + 27, sizeof(buf), "FOO");
 	assert_int_equal(rc, 7);
 	assert_string_equal(buf, "FOOaaaa");
 }
@@ -157,7 +170,7 @@ static void fd_mpathzzzz(void **state)
 	char buf[32];
 	int rc;
 
-	rc = format_devname(buf, 26*26*26*26 + 26*26*26 + 26*26 + 26,
+	rc = __format_devname(buf, 26*26*26*26 + 26*26*26 + 26*26 + 26,
 			    sizeof(buf), "FOO");
 	assert_int_equal(rc, 7);
 	assert_string_equal(buf, "FOOzzzz");
@@ -169,7 +182,7 @@ static void fd_mpath_max(void **state)
 	char buf[32];
 	int rc;
 
-	rc  = format_devname(buf, INT_MAX, sizeof(buf), "");
+	rc  = __format_devname(buf, INT_MAX, sizeof(buf), "");
 	assert_int_equal(rc, strlen(MPATH_ID_INT_MAX));
 	assert_string_equal(buf, MPATH_ID_INT_MAX);
 }
@@ -180,7 +193,7 @@ static void fd_mpath_max1(void **state)
 	char buf[32];
 	int rc;
 
-	rc  = format_devname(buf, INT_MIN, sizeof(buf), "");
+	rc  = __format_devname(buf, INT_MIN, sizeof(buf), "");
 	assert_int_equal(rc, -1);
 }
 
@@ -189,7 +202,7 @@ static void fd_mpath_short(void **state)
 	char buf[4];
 	int rc;
 
-	rc = format_devname(buf, 1, sizeof(buf), "FOO");
+	rc = __format_devname(buf, 1, sizeof(buf), "FOO");
 	assert_int_equal(rc, -1);
 }
 
@@ -198,7 +211,7 @@ static void fd_mpath_short1(void **state)
 	char buf[5];
 	int rc;
 
-	rc = format_devname(buf, 27, sizeof(buf), "FOO");
+	rc = __format_devname(buf, 27, sizeof(buf), "FOO");
 	assert_int_equal(rc, -1);
 }
 
@@ -323,7 +336,7 @@ static void sd_fd_many(void **state)
 	int rc, i;
 
 	for (i = 1; i < 5000; i++) {
-		rc = format_devname(buf, i, sizeof(buf), "MPATH");
+		rc = __format_devname(buf, i, sizeof(buf), "MPATH");
 		assert_in_range(rc, 6, 8);
 		rc = scan_devname(buf, "MPATH");
 		assert_int_equal(rc, i);
@@ -338,7 +351,7 @@ static void sd_fd_random(void **state)
 	srandom(1);
 	for (i = 1; i < 1000; i++) {
 		n = random() & 0xffff;
-		rc = format_devname(buf, n, sizeof(buf), "MPATH");
+		rc = __format_devname(buf, n, sizeof(buf), "MPATH");
 		assert_in_range(rc, 6, 9);
 		rc = scan_devname(buf, "MPATH");
 		assert_int_equal(rc, n);
