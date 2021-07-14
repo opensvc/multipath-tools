@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 #include <libudev.h>
 
 #include "checkers.h"
@@ -1294,14 +1295,9 @@ snprint_hwentry (const struct config *conf,
 	size_t initial_len = get_strbuf_len(buff);
 
 	rootkw = find_keyword(conf->keywords, NULL, "devices");
-
-	if (!rootkw || !rootkw->sub)
-		return 0;
-
+	assert(rootkw && rootkw->sub);
 	rootkw = find_keyword(conf->keywords, rootkw->sub, "device");
-
-	if (!rootkw)
-		return 0;
+	assert(rootkw);
 
 	if ((rc = append_strbuf_str(buff, "\tdevice {\n")) < 0)
 		return rc;
@@ -1324,8 +1320,7 @@ static int snprint_hwtable(const struct config *conf, struct strbuf *buff,
 	size_t initial_len = get_strbuf_len(buff);
 
 	rootkw = find_keyword(conf->keywords, NULL, "devices");
-	if (!rootkw)
-		return 0;
+	assert(rootkw);
 
 	if ((rc = append_strbuf_str(buff, "devices {\n")) < 0)
 		return rc;
@@ -1355,8 +1350,7 @@ snprint_mpentry (const struct config *conf, struct strbuf *buff,
 		return 0;
 
 	rootkw = find_keyword(conf->keywords, NULL, "multipath");
-	if (!rootkw)
-		return 0;
+	assert(rootkw);
 
 	if ((rc = append_strbuf_str(buff, "\tmultipath {\n")) < 0)
 		return rc;
@@ -1387,8 +1381,7 @@ static int snprint_mptable(const struct config *conf, struct strbuf *buff,
 	size_t initial_len = get_strbuf_len(buff);
 
 	rootkw = find_keyword(conf->keywords, NULL, "multipaths");
-	if (!rootkw)
-		return 0;
+	assert(rootkw);
 
 	if ((rc = append_strbuf_str(buff, "multipaths {\n")) < 0)
 		return rc;
@@ -1435,8 +1428,7 @@ static int snprint_overrides(const struct config *conf, struct strbuf *buff,
 	size_t initial_len = get_strbuf_len(buff);
 
 	rootkw = find_keyword(conf->keywords, NULL, "overrides");
-	if (!rootkw)
-		return 0;
+	assert(rootkw);
 
 	if ((rc = append_strbuf_str(buff, "overrides {\n")) < 0)
 		return rc;
@@ -1461,8 +1453,7 @@ static int snprint_defaults(const struct config *conf, struct strbuf *buff)
 	size_t initial_len = get_strbuf_len(buff);
 
 	rootkw = find_keyword(conf->keywords, NULL, "defaults");
-	if (!rootkw)
-		return 0;
+	assert(rootkw);
 
 	if ((rc = append_strbuf_str(buff, "defaults {\n")) < 0)
 		return rc;
@@ -1584,63 +1575,52 @@ static int snprint_blacklist(const struct config *conf, struct strbuf *buff)
 	struct blentry * ble;
 	struct blentry_device * bled;
 	struct keyword *rootkw;
-	struct keyword *kw;
+	struct keyword *kw, *pkw;
 	size_t initial_len = get_strbuf_len(buff);
 
 	rootkw = find_keyword(conf->keywords, NULL, "blacklist");
-	if (!rootkw)
-		return 0;
+	assert(rootkw);
 
 	if ((rc = append_strbuf_str(buff, "blacklist {\n")) < 0)
 		return rc;
 
 	vector_foreach_slot (conf->blist_devnode, ble, i) {
 		kw = find_keyword(conf->keywords, rootkw->sub, "devnode");
-		if (!kw)
-			return 0;
+		assert(kw);
 		if ((rc = snprint_keyword(buff, "\t%k %v\n", kw, ble)) < 0)
 			return rc;
 	}
 	vector_foreach_slot (conf->blist_wwid, ble, i) {
 		kw = find_keyword(conf->keywords, rootkw->sub, "wwid");
-		if (!kw)
-			return 0;
+		assert(kw);
 		if ((rc = snprint_keyword(buff, "\t%k %v\n", kw, ble)) < 0)
 			return rc;
 	}
 	vector_foreach_slot (conf->blist_property, ble, i) {
 		kw = find_keyword(conf->keywords, rootkw->sub, "property");
-		if (!kw)
-			return 0;
+		assert(kw);
 		if ((rc = snprint_keyword(buff, "\t%k %v\n", kw, ble)) < 0)
 			return rc;
 	}
 	vector_foreach_slot (conf->blist_protocol, ble, i) {
 		kw = find_keyword(conf->keywords, rootkw->sub, "protocol");
-		if (!kw)
-			return 0;
+		assert(kw);
 		if ((rc = snprint_keyword(buff, "\t%k %v\n", kw, ble)) < 0)
 			return rc;
 	}
 
 	rootkw = find_keyword(conf->keywords, rootkw->sub, "device");
-	if (!rootkw)
-		return 0;
+	assert(rootkw);
+	kw = find_keyword(conf->keywords, rootkw->sub, "vendor");
+	pkw = find_keyword(conf->keywords, rootkw->sub, "product");
+	assert(kw && pkw);
 
 	vector_foreach_slot (conf->blist_device, bled, i) {
-		if ((rc = append_strbuf_str(buff, "\tdevice {\n")) < 0)
+		if ((rc = snprint_keyword(buff, "\tdevice {\n\t\t%k %v\n",
+					  kw, bled)) < 0)
 			return rc;
-
-		kw = find_keyword(conf->keywords, rootkw->sub, "vendor");
-		if (!kw)
-			return 0;
-		if ((rc = snprint_keyword(buff, "\t\t%k %v\n", kw, bled)) < 0)
-			return rc;
-		kw = find_keyword(conf->keywords, rootkw->sub, "product");
-		if (!kw)
-			return 0;
-		if ((rc = snprint_keyword(buff,
-					  "\t\t%k %v\n\t}\n", kw, bled)) < 0)
+		if ((rc = snprint_keyword(buff, "\t\t%k %v\n\t}\n",
+					  pkw, bled)) < 0)
 			return rc;
 	}
 
@@ -1656,63 +1636,52 @@ static int snprint_blacklist_except(const struct config *conf,
 	struct blentry * ele;
 	struct blentry_device * eled;
 	struct keyword *rootkw;
-	struct keyword *kw;
+	struct keyword *kw, *pkw;
 	size_t initial_len = get_strbuf_len(buff);
 
 	rootkw = find_keyword(conf->keywords, NULL, "blacklist_exceptions");
-	if (!rootkw)
-		return 0;
+	assert(rootkw);
 
 	if ((rc = append_strbuf_str(buff, "blacklist_exceptions {\n")) < 0)
 		return rc;
 
 	vector_foreach_slot (conf->elist_devnode, ele, i) {
 		kw = find_keyword(conf->keywords, rootkw->sub, "devnode");
-		if (!kw)
-			return 0;
+		assert(kw);
 		if ((rc = snprint_keyword(buff, "\t%k %v\n", kw, ele)) < 0)
 			return rc;
 	}
 	vector_foreach_slot (conf->elist_wwid, ele, i) {
 		kw = find_keyword(conf->keywords, rootkw->sub, "wwid");
-		if (!kw)
-			return 0;
+		assert(kw);
 		if ((rc = snprint_keyword(buff, "\t%k %v\n", kw, ele)) < 0)
 			return rc;
 	}
 	vector_foreach_slot (conf->elist_property, ele, i) {
 		kw = find_keyword(conf->keywords, rootkw->sub, "property");
-		if (!kw)
-			return 0;
+		assert(kw);
 		if ((rc = snprint_keyword(buff, "\t%k %v\n", kw, ele)) < 0)
 			return rc;
 	}
 	vector_foreach_slot (conf->elist_protocol, ele, i) {
 		kw = find_keyword(conf->keywords, rootkw->sub, "protocol");
-		if (!kw)
-			return 0;
+		assert(kw);
 		if ((rc = snprint_keyword(buff, "\t%k %v\n", kw, ele)) < 0)
 			return rc;
 	}
 
 	rootkw = find_keyword(conf->keywords, rootkw->sub, "device");
-	if (!rootkw)
-		return 0;
+	assert(rootkw);
+	kw = find_keyword(conf->keywords, rootkw->sub, "vendor");
+	pkw = find_keyword(conf->keywords, rootkw->sub, "product");
+	assert(kw && pkw);
 
 	vector_foreach_slot (conf->elist_device, eled, i) {
-		if ((rc = append_strbuf_str(buff, "\tdevice {\n")) < 0)
-			return rc;
-
-		kw = find_keyword(conf->keywords, rootkw->sub, "vendor");
-		if (!kw)
-			return 0;
-		if ((rc = snprint_keyword(buff, "\t\t%k %v\n", kw, eled)) < 0)
-			return rc;
-		kw = find_keyword(conf->keywords, rootkw->sub, "product");
-		if (!kw)
-			return 0;
-		if ((rc = snprint_keyword(buff, "\t\t%k %v\n\t}\n",
+		if ((rc = snprint_keyword(buff, "\tdevice {\n\t\t%k %v\n",
 					  kw, eled)) < 0)
+			return rc;
+		if ((rc = snprint_keyword(buff, "\t\t%k %v\n\t}\n",
+					  pkw, eled)) < 0)
 			return rc;
 	}
 
