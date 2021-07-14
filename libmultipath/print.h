@@ -2,80 +2,12 @@
 #define _PRINT_H
 #include "dm-generic.h"
 
-struct strbuf;
-
-#define PRINT_PATH_LONG      "%w %i %d %D %p %t %T %s %o"
-#define PRINT_PATH_INDENT    "%i %d %D %t %T %o"
 #define PRINT_PATH_CHECKER   "%i %d %D %p %t %T %o %C"
 #define PRINT_MAP_STATUS     "%n %F %Q %N %t %r"
 #define PRINT_MAP_STATS      "%n %0 %1 %2 %3 %4"
 #define PRINT_MAP_NAMES      "%n %d %w"
-#define PRINT_MAP_PROPS      "size=%S features='%f' hwhandler='%h' wp=%r"
-#define PRINT_PG_INDENT      "policy='%s' prio=%p status=%t"
 
-#define PRINT_JSON_MULTIPLIER     5
-#define PRINT_JSON_MAJOR_VERSION  0
-#define PRINT_JSON_MINOR_VERSION  1
-#define PRINT_JSON_START_VERSION  "   \"major_version\": %d,\n" \
-				  "   \"minor_version\": %d,\n"
-#define PRINT_JSON_START_ELEM     "{\n"
-#define PRINT_JSON_START_MAP      "   \"map\":"
-#define PRINT_JSON_START_MAPS     "\"maps\": ["
-#define PRINT_JSON_START_PATHS    "\"paths\": ["
-#define PRINT_JSON_START_GROUPS   "\"path_groups\": ["
-#define PRINT_JSON_END_ELEM       "},"
-#define PRINT_JSON_END_LAST_ELEM  "}"
-#define PRINT_JSON_END_LAST       "}\n"
-#define PRINT_JSON_END_ARRAY      "]\n"
-#define PRINT_JSON_INDENT_N    3
-#define PRINT_JSON_MAP       "{\n" \
-			     "      \"name\" : \"%n\",\n" \
-			     "      \"uuid\" : \"%w\",\n" \
-			     "      \"sysfs\" : \"%d\",\n" \
-			     "      \"failback\" : \"%F\",\n" \
-			     "      \"queueing\" : \"%Q\",\n" \
-			     "      \"paths\" : %N,\n" \
-			     "      \"write_prot\" : \"%r\",\n" \
-			     "      \"dm_st\" : \"%t\",\n" \
-			     "      \"features\" : \"%f\",\n" \
-			     "      \"hwhandler\" : \"%h\",\n" \
-			     "      \"action\" : \"%A\",\n" \
-			     "      \"path_faults\" : %0,\n" \
-			     "      \"vend\" : \"%v\",\n" \
-			     "      \"prod\" : \"%p\",\n" \
-			     "      \"rev\" : \"%e\",\n" \
-			     "      \"switch_grp\" : %1,\n" \
-			     "      \"map_loads\" : %2,\n" \
-			     "      \"total_q_time\" : %3,\n" \
-			     "      \"q_timeouts\" : %4,"
-
-#define PRINT_JSON_GROUP     "{\n" \
-			     "         \"selector\" : \"%s\",\n" \
-			     "         \"pri\" : %p,\n" \
-			     "         \"dm_st\" : \"%t\",\n" \
-			     "         \"marginal_st\" : \"%M\","
-
-#define PRINT_JSON_GROUP_NUM "         \"group\" : %d,\n"
-
-#define PRINT_JSON_PATH      "{\n" \
-			     "            \"dev\" : \"%d\",\n"\
-			     "            \"dev_t\" : \"%D\",\n" \
-			     "            \"dm_st\" : \"%t\",\n" \
-			     "            \"dev_st\" : \"%o\",\n" \
-			     "            \"chk_st\" : \"%T\",\n" \
-			     "            \"checker\" : \"%c\",\n" \
-			     "            \"pri\" : %p,\n" \
-			     "            \"host_wwnn\" : \"%N\",\n" \
-			     "            \"target_wwnn\" : \"%n\",\n" \
-			     "            \"host_wwpn\" : \"%R\",\n" \
-			     "            \"target_wwpn\" : \"%r\",\n" \
-			     "            \"host_adapter\" : \"%a\",\n" \
-			     "            \"marginal_st\" : \"%M\""
-
-#define MAX_LINE_LEN  80
-#define MAX_LINES     64
-#define MAX_FIELD_LEN 128
-#define PROGRESS_LEN  10
+struct strbuf;
 
 struct path_data {
 	char wildcard;
