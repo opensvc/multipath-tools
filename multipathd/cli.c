@@ -16,6 +16,7 @@
 #include "mpath_cmd.h"
 #include "cli.h"
 #include "debug.h"
+#include "strbuf.h"
 
 static vector keys;
 static vector handlers;
@@ -354,107 +355,80 @@ alloc_handlers (void)
 }
 
 static int
-genhelp_sprint_aliases (char * reply, int maxlen, vector keys,
+genhelp_sprint_aliases (struct strbuf *reply, vector keys,
 			struct key * refkw)
 {
-	int i, len = 0;
+	int i;
 	struct key * kw;
+	size_t initial_len = get_strbuf_len(reply);
 
 	vector_foreach_slot (keys, kw, i) {
-		if (kw->code == refkw->code && kw != refkw) {
-			len += snprintf(reply + len, maxlen - len,
-					"|%s", kw->str);
-			if (len >= maxlen)
-				return len;
-		}
+		if (kw->code == refkw->code && kw != refkw &&
+		    print_strbuf(reply, "|%s", kw->str) < 0)
+			return -1;
 	}
 
-	return len;
+	return get_strbuf_len(reply) - initial_len;
 }
 
 static int
-do_genhelp(char *reply, int maxlen, const char *cmd, int error) {
-	int len = 0;
+do_genhelp(struct strbuf *reply, const char *cmd, int error) {
 	int i, j;
 	uint64_t fp;
 	struct handler * h;
 	struct key * kw;
+	int rc = 0;
+	size_t initial_len = get_strbuf_len(reply);
 
 	switch(error) {
 	case ENOMEM:
-		len += snprintf(reply + len, maxlen - len,
-				"%s: Not enough memory\n", cmd);
+		rc = print_strbuf(reply, "%s: Not enough memory\n", cmd);
 		break;
 	case EAGAIN:
-		len += snprintf(reply + len, maxlen - len,
-				"%s: not found\n", cmd);
+		rc = print_strbuf(reply, "%s: not found\n", cmd);
 		break;
 	case EINVAL:
-		len += snprintf(reply + len, maxlen - len,
-				"%s: Missing argument\n", cmd);
+		rc = print_strbuf(reply, "%s: Missing argument\n", cmd);
 		break;
 	}
-	if (len >= maxlen)
-		goto out;
-	len += snprintf(reply + len, maxlen - len, VERSION_STRING);
-	if (len >= maxlen)
-		goto out;
-	len += snprintf(reply + len, maxlen - len, "CLI commands reference:\n");
-	if (len >= maxlen)
-		goto out;
+	if (rc < 0)
+		return -1;
+
+	if (print_strbuf(reply, VERSION_STRING) < 0 ||
+	    append_strbuf_str(reply, "CLI commands reference:\n") < 0)
+		return -1;
 
 	vector_foreach_slot (handlers, h, i) {
 		fp = h->fingerprint;
 		vector_foreach_slot (keys, kw, j) {
 			if ((kw->code & fp)) {
 				fp -= kw->code;
-				len += snprintf(reply + len , maxlen - len,
-						" %s", kw->str);
-				if (len >= maxlen)
-					goto out;
-				len += genhelp_sprint_aliases(reply + len,
-							      maxlen - len,
-							      keys, kw);
-				if (len >= maxlen)
-					goto out;
+				if (print_strbuf(reply, " %s", kw->str) < 0 ||
+				    genhelp_sprint_aliases(reply, keys, kw) < 0)
+					return -1;
 
 				if (kw->has_param) {
-					len += snprintf(reply + len,
-							maxlen - len,
-							" $%s", kw->str);
-					if (len >= maxlen)
-						goto out;
+					if (print_strbuf(reply, " $%s",
+							 kw->str) < 0)
+						return -1;
 				}
 			}
 		}
-		len += snprintf(reply + len, maxlen - len, "\n");
-		if (len >= maxlen)
-			goto out;
+		if (append_strbuf_str(reply, "\n") < 0)
+			return -1;
 	}
-out:
-	return len;
+	return get_strbuf_len(reply) - initial_len;
 }
 
 
 static char *
 genhelp_handler (const char *cmd, int error)
 {
-	char * reply;
-	char * p = NULL;
-	int maxlen = INITIAL_REPLY_LEN;
-	int again = 1;
+	STRBUF_ON_STACK(reply);
 
-	reply = MALLOC(maxlen);
-
-	while (again) {
-		if (!reply)
-			return NULL;
-		p = reply;
-		p += do_genhelp(reply, maxlen, cmd, error);
-		again = ((p - reply) >= maxlen);
-		REALLOC_REPLY(reply, again, maxlen);
-	}
-	return reply;
+	if (do_genhelp(&reply, cmd, error) == -1)
+		condlog(0, "genhelp_handler: out of memory");
+	return steal_strbuf_str(&reply);
 }
 
 int
