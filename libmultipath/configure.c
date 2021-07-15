@@ -397,7 +397,7 @@ int setup_map(struct multipath *mpp, char *params, int params_size,
 		start_io_err_stat_thread(vecs);
 
 	n_paths = VECTOR_SIZE(mpp->paths);
-        /*
+	/*
 	 * assign paths to path groups -- start with no groups and all paths
 	 * in mpp->paths
 	 */

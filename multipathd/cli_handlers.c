@@ -32,6 +32,12 @@
 #include "foreign.h"
 #include "cli_handlers.h"
 
+#define SET_REPLY_AND_LEN(__rep, __len, string_literal)			\
+	do {								\
+		*(__rep) = strdup(string_literal);			\
+		*(__len) = *(__rep) ? sizeof(string_literal) : 0;	\
+	} while (0)
+
 int
 show_paths (char ** r, int * len, struct vectors * vecs, char * style,
 	    int pretty)
@@ -752,7 +758,8 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 				/* Have the checker reinstate this path asap */
 				pp->tick = 1;
 				return 0;
-			} else if (!ev_remove_path(pp, vecs, true))
+			} else if (ev_remove_path(pp, vecs, true) &
+				   REMOVE_PATH_SUCCESS)
 				/* Path removed in ev_remove_path() */
 				pp = NULL;
 			else {
@@ -801,8 +808,7 @@ cli_add_path (void * v, char ** reply, int * len, void * data)
 	}
 	return ev_add_path(pp, vecs, 1);
 blacklisted:
-	*reply = strdup("blacklisted\n");
-	*len = strlen(*reply) + 1;
+	SET_REPLY_AND_LEN(reply, len, "blacklisted\n");
 	condlog(2, "%s: path blacklisted", param);
 	return 0;
 }
@@ -813,6 +819,7 @@ cli_del_path (void * v, char ** reply, int * len, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, PATH);
 	struct path *pp;
+	int ret;
 
 	param = convert_dev(param, 1);
 	condlog(2, "%s: remove path (operator)", param);
@@ -821,7 +828,12 @@ cli_del_path (void * v, char ** reply, int * len, void * data)
 		condlog(0, "%s: path already removed", param);
 		return 1;
 	}
-	return ev_remove_path(pp, vecs, 1);
+	ret = ev_remove_path(pp, vecs, 1);
+	if (ret == REMOVE_PATH_DELAY)
+		SET_REPLY_AND_LEN(reply, len, "delayed\n");
+	else if (ret == REMOVE_PATH_MAP_ERROR)
+		SET_REPLY_AND_LEN(reply, len, "map reload error. removed\n");
+	return (ret == REMOVE_PATH_FAILURE);
 }
 
 int
@@ -845,8 +857,7 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 		invalid = 1;
 	pthread_cleanup_pop(1);
 	if (invalid) {
-		*reply = strdup("blacklisted\n");
-		*len = strlen(*reply) + 1;
+		SET_REPLY_AND_LEN(reply, len, "blacklisted\n");
 		condlog(2, "%s: map blacklisted", param);
 		return 1;
 	}
@@ -1204,7 +1215,7 @@ cli_reconfigure(void * v, char ** reply, int * len, void * data)
 
 	condlog(2, "reconfigure (operator)");
 
-	rc = set_config_state(DAEMON_CONFIGURE); 
+	rc = set_config_state(DAEMON_CONFIGURE);
 	if (rc == ETIMEDOUT) {
 		condlog(2, "timeout starting reconfiguration");
 		return 1;
@@ -1529,7 +1540,7 @@ cli_getprkey(void * v, char ** reply, int * len, void * data)
 	struct multipath * mpp;
 	struct vectors * vecs = (struct vectors *)data;
 	char *mapname = get_keyparam(v, MAP);
-	char *flagstr = "";
+	uint64_t key;
 
 	mapname = convert_dev(mapname, 0);
 	condlog(3, "%s: get persistent reservation key (operator)", mapname);
@@ -1542,17 +1553,16 @@ cli_getprkey(void * v, char ** reply, int * len, void * data)
 	if (!*reply)
 		return 1;
 
-	if (!get_be64(mpp->reservation_key)) {
+	key = get_be64(mpp->reservation_key);
+	if (!key) {
 		sprintf(*reply, "none\n");
-		*len = strlen(*reply) + 1;
+		*len = sizeof("none\n");
 		return 0;
 	}
-	if (mpp->sa_flags & MPATH_F_APTPL_MASK)
-		flagstr = ":aptpl";
-	snprintf(*reply, 26, "0x%" PRIx64 "%s\n",
-		 get_be64(mpp->reservation_key), flagstr);
-	(*reply)[19] = '\0';
-	*len = strlen(*reply) + 1;
+
+	/* This snprintf() can't overflow - PRIx64 needs max 16 chars */
+	*len = snprintf(*reply, 26, "0x%" PRIx64 "%s\n", key,
+			mpp->sa_flags & MPATH_F_APTPL_MASK ? ":aptpl" : "") + 1;
 	return 0;
 }
 

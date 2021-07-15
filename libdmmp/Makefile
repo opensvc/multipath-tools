@@ -76,6 +76,8 @@ docs/man/%.3.gz:	docs/man/%.3
 docs/man/dmmp_strerror.3:	$(HEADERS)
 	TEMPFILE=$(shell mktemp); \
 	cat $^ | perl docs/doc-preclean.pl >$$TEMPFILE; \
+	LC_ALL=C \
+	KBUILD_BUILD_TIMESTAMP=`git log -n1 --pretty=%cd --date=iso -- $^` \
 	perl docs/kernel-doc -man $$TEMPFILE | \
 	    perl docs/split-man.pl docs/man; \
 	rm -f $$TEMPFILE

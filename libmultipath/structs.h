@@ -178,6 +178,8 @@ enum scsi_protocol {
 	SCSI_PROTOCOL_UNSPEC = 0xf, /* No specific protocol */
 };
 
+#define SCSI_INVALID_LUN ~0ULL
+
 enum no_undef_states {
 	NU_NO = -1,
 	NU_UNDEF = 0,
@@ -258,7 +260,7 @@ struct sg_id {
 	int host_no;
 	int channel;
 	int scsi_id;
-	int lun;
+	uint64_t lun;
 	short h_cmd_per_lun;
 	short d_queue_depth;
 	enum scsi_protocol proto_id;

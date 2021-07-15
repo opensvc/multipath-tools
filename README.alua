@@ -6,7 +6,7 @@ To enable ALUA, the following options should be changed:
 - EMC CLARiiON/VNX:
    "Failover Mode" should be changed to "4" or "Active-Active mode(ALUA)-failover mode 4"
 
-- HPE 3PAR:
+- HPE 3PAR, Primera, and Alletra 9000:
    "Host:" should be changed to "Generic-ALUA Persona 2 (UARepLun, SESLun, ALUA)".
 
 - Promise VTrak/Vess:

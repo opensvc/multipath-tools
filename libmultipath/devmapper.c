@@ -49,6 +49,9 @@ static int dm_conf_verbosity;
 
 #ifdef LIBDM_API_DEFERRED
 static int dm_cancel_remove_partmaps(const char * mapname);
+#define __DR_UNUSED__ /* empty */
+#else
+#define __DR_UNUSED__ __attribute__((unused))
 #endif
 
 static int do_foreach_partmaps(const char * mapname,
@@ -384,7 +387,8 @@ libmp_dm_task_create(int task)
 #define do_deferred(x) ((x) == DEFERRED_REMOVE_ON || (x) == DEFERRED_REMOVE_IN_PROGRESS)
 
 static int
-dm_simplecmd (int task, const char *name, int no_flush, int need_sync, uint16_t udev_flags, int deferred_remove) {
+dm_simplecmd (int task, const char *name, int no_flush, int need_sync,
+	      uint16_t udev_flags, int deferred_remove __DR_UNUSED__) {
 	int r = 0;
 	int udev_wait_flag = ((need_sync || udev_flags) &&
 			      (task == DM_DEVICE_RESUME ||
@@ -598,8 +602,8 @@ int dm_addmap_reload(struct multipath *mpp, char *params, int flush)
 		return r;
 
 	/* If the resume failed, dm will leave the device suspended, and
- 	 * drop the new table, so doing a second resume will try using
- 	 * the original table */
+	 * drop the new table, so doing a second resume will try using
+	 * the original table */
 	if (dm_is_suspended(mpp->alias))
 		dm_simplecmd(DM_DEVICE_RESUME, mpp->alias, !flush, 1,
 			     udev_flags, 0);
@@ -1122,7 +1126,8 @@ dm_flush_map_nopaths(const char * mapname, int deferred_remove)
 #else
 
 int
-dm_flush_map_nopaths(const char * mapname, int deferred_remove)
+dm_flush_map_nopaths(const char * mapname,
+		     int deferred_remove __attribute__((unused)))
 {
 	return _dm_flush_map(mapname, 1, 0, 0, 0);
 }
@@ -1573,7 +1578,7 @@ dm_cancel_deferred_remove (struct multipath *mpp)
 #else
 
 int
-dm_cancel_deferred_remove (struct multipath *mpp)
+dm_cancel_deferred_remove (struct multipath *mpp __attribute__((unused)))
 {
 	return 0;
 }

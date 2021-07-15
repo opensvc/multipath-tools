@@ -660,7 +660,6 @@ flush_map(struct multipath * mpp, struct vectors * vecs, int nopaths)
 	else
 		condlog(2, "%s: map flushed", mpp->alias);
 
-	orphan_paths(vecs->pathvec, mpp, "map flushed");
 	remove_map_and_stop_waiter(mpp, vecs);
 
 	return 0;
@@ -839,7 +838,7 @@ handle_path_wwid_change(struct path *pp, struct vectors *vecs)
 		return;
 
 	udd = udev_device_ref(pp->udev);
-	if (ev_remove_path(pp, vecs, 1) != 0 && pp->mpp) {
+	if (!(ev_remove_path(pp, vecs, 1) & REMOVE_PATH_SUCCESS) && pp->mpp) {
 		pp->dmstate = PSTATE_FAILED;
 		dm_fail_path(pp->mpp->alias, pp->dev_t);
 	}
@@ -949,8 +948,8 @@ uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 				 * Make another attempt to remove the path
 				 */
 				pp->mpp = prev_mpp;
-				ret = ev_remove_path(pp, vecs, true);
-				if (ret != 0) {
+				if (!(ev_remove_path(pp, vecs, true) &
+				      REMOVE_PATH_SUCCESS)) {
 					/*
 					 * Failure in ev_remove_path will keep
 					 * path in pathvec in INIT_REMOVED state
@@ -961,6 +960,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 					dm_fail_path(pp->mpp->alias, pp->dev_t);
 					condlog(1, "%s: failed to re-add path still mapped in %s",
 						pp->dev, pp->mpp->alias);
+					ret = 1;
 				} else if (r == PATHINFO_OK)
 					/*
 					 * Path successfully freed, move on to
@@ -1168,7 +1168,6 @@ static int
 uev_remove_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 {
 	struct path *pp;
-	int ret;
 
 	condlog(3, "%s: remove path (uevent)", uev->kernel);
 	delete_foreign(uev->udev);
@@ -1178,27 +1177,31 @@ uev_remove_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 	pthread_testcancel();
 	pp = find_path_by_dev(vecs->pathvec, uev->kernel);
 	if (pp)
-		ret = ev_remove_path(pp, vecs, need_do_map);
+		ev_remove_path(pp, vecs, need_do_map);
 	lock_cleanup_pop(vecs->lock);
-	if (!pp) {
-		/* Not an error; path might have been purged earlier */
+	if (!pp) /* Not an error; path might have been purged earlier */
 		condlog(0, "%s: path already removed", uev->kernel);
-		return 0;
-	}
-	return ret;
+	return 0;
 }
 
 int
 ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 {
 	struct multipath * mpp;
-	int i, retval = 0;
+	int i, retval = REMOVE_PATH_SUCCESS;
 	char params[PARAMS_SIZE] = {0};
 
 	/*
 	 * avoid referring to the map of an orphaned path
 	 */
 	if ((mpp = pp->mpp)) {
+		/*
+		 * Mark the path as removed. In case of success, we
+		 * will delete it for good. Otherwise, it will be deleted
+		 * later, unless all attempts to reload this map fail.
+		 */
+		set_path_removed(pp);
+
 		/*
 		 * transform the mp->pg vector of vectors of paths
 		 * into a mp->params string to feed the device-mapper
@@ -1210,13 +1213,9 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 		}
 
 		/*
-		 * Mark the path as removed. In case of success, we
-		 * will delete it for good. Otherwise, it will be deleted
-		 * later, unless all attempts to reload this map fail.
-		 * Note: we have to explicitly remove pp from mpp->paths,
+		 * we have to explicitly remove pp from mpp->paths,
 		 * update_mpp_paths() doesn't do that.
 		 */
-		set_path_removed(pp);
 		i = find_slot(mpp->paths, pp);
 		if (i != -1)
 			vector_del_slot(mpp->paths, i);
@@ -1243,7 +1242,6 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 				condlog(2, "%s: removed map after"
 					" removing all paths",
 					alias);
-				retval = 0;
 				/* flush_map() has freed the path */
 				goto out;
 			}
@@ -1260,11 +1258,14 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 
 		if (mpp->wait_for_udev) {
 			mpp->wait_for_udev = 2;
+			retval = REMOVE_PATH_DELAY;
 			goto out;
 		}
 
-		if (!need_do_map)
+		if (!need_do_map) {
+			retval = REMOVE_PATH_DELAY;
 			goto out;
+		}
 		/*
 		 * reload the map
 		 */
@@ -1273,7 +1274,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 			condlog(0, "%s: failed in domap for "
 				"removal of path %s",
 				mpp->alias, pp->dev);
-			retval = 1;
+			retval = REMOVE_PATH_FAILURE;
 		} else {
 			/*
 			 * update our state from kernel
@@ -1281,12 +1282,12 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 			char devt[BLK_DEV_SIZE];
 
 			strlcpy(devt, pp->dev_t, sizeof(devt));
+
+			/* setup_multipath will free the path
+			 * regardless of whether it succeeds or
+			 * fails */
 			if (setup_multipath(vecs, mpp))
-				return 1;
-			/*
-			 * Successful map reload without this path:
-			 * sync_map_state() will free it.
-			 */
+				return REMOVE_PATH_MAP_ERROR;
 			sync_map_state(mpp);
 
 			condlog(2, "%s: path removed from map %s",
@@ -1302,8 +1303,10 @@ out:
 	return retval;
 
 fail:
+	condlog(0, "%s: error removing path. removing map %s", pp->dev,
+		mpp->alias);
 	remove_map_and_stop_waiter(mpp, vecs);
-	return 1;
+	return REMOVE_PATH_MAP_ERROR;
 }
 
 static int
@@ -1356,7 +1359,6 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			condlog(0, "%s: path wwid changed from '%s' to '%s'",
 				uev->kernel, wwid, pp->wwid);
 			ev_remove_path(pp, vecs, 1);
-			rescan_path(uev->udev);
 			needs_reinit = 1;
 			goto out;
 		} else {
@@ -2012,7 +2014,7 @@ static int check_path_reinstate_state(struct path * pp) {
 
 		/* If path became failed again or continue failed, should reset
 		 * path san_path_err_forget_rate and path dis_reinstate_time to
-		 * start a new stable check. 
+		 * start a new stable check.
 		 */
 		if ((pp->state != PATH_UP) && (pp->state != PATH_GHOST) &&
 			(pp->state != PATH_DELAYED)) {
@@ -3031,6 +3033,10 @@ static void cleanup_threads(void)
 	pthread_attr_destroy(&waiter_attr);
 }
 
+#ifndef URCU_VERSION
+#  define URCU_VERSION 0
+#endif
+#if (URCU_VERSION >= 0x000800)
 /*
  * Use a non-default call_rcu_data for child().
  *
@@ -3040,6 +3046,9 @@ static void cleanup_threads(void)
  * can't be joined with pthread_join(), leaving a memory leak.
  *
  * Therefore we create our own, which can be destroyed and joined.
+ * The cleanup handler needs to call rcu_barrier(), which is only
+ * available in user-space RCU v0.8 and newer. See
+ * https://lists.lttng.org/pipermail/lttng-dev/2021-May/029958.html
  */
 static struct call_rcu_data *setup_rcu(void)
 {
@@ -3072,6 +3081,7 @@ static void cleanup_rcu(void)
 	}
 	rcu_unregister_thread();
 }
+#endif /* URCU_VERSION */
 
 static void cleanup_child(void)
 {
@@ -3116,9 +3126,14 @@ child (__attribute__((unused)) void *param)
 	init_unwinder();
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	signal_init();
+#if (URCU_VERSION >= 0x000800)
 	mp_rcu_data = setup_rcu();
-
-	if (atexit(cleanup_rcu) || atexit(cleanup_child))
+	if (atexit(cleanup_rcu))
+		fprintf(stderr, "failed to register RCU cleanup handler\n");
+#else
+	rcu_init();
+#endif
+	if (atexit(cleanup_child))
 		fprintf(stderr, "failed to register cleanup handlers\n");
 
 	setup_thread_attr(&misc_attr, 64 * 1024, 0);

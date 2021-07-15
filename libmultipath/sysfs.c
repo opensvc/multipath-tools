@@ -358,7 +358,7 @@ bool sysfs_is_multipathed(struct path *pp, bool set_wwid)
 					strchop(pp->wwid);
 				}
 			}
-                } else if (nr < 0)
+		} else if (nr < 0)
 			condlog(1, "%s: error reading from %s: %m",
 				__func__, pathbuf);
 
