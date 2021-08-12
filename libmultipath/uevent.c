@@ -569,7 +569,7 @@ int uevent_listen(struct udev *udev)
 	}
 	pthread_cleanup_push(monitor_cleanup, monitor);
 #ifdef LIBUDEV_API_RECVBUF
-	if (udev_monitor_set_receive_buffer_size(monitor, 128 * 1024 * 1024))
+	if (udev_monitor_set_receive_buffer_size(monitor, 128 * 1024 * 1024) < 0)
 		condlog(2, "failed to increase buffer size");
 #endif
 	fd = udev_monitor_get_fd(monitor);
