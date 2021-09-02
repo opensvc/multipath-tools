@@ -1198,7 +1198,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 
 		if (!mpp->paths) {
 			condlog(0, "%s: skip coalesce (no paths)", mpp->alias);
-			remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
+			remove_map(mpp, vecs->pathvec, NULL);
 			continue;
 		}
 
@@ -1226,7 +1226,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 		verify_paths(mpp);
 
 		if (setup_map(mpp, &params, vecs)) {
-			remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
+			remove_map(mpp, vecs->pathvec, NULL);
 			continue;
 		}
 
@@ -1248,7 +1248,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 				condlog(2, "%s: %s map",
 					mpp->alias, (mpp->action == ACT_CREATE)?
 					"ignoring" : "removing");
-				remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
+				remove_map(mpp, vecs->pathvec, NULL);
 				continue;
 			} else /* if (r == DOMAP_RETRY && !is_daemon) */ {
 				ret = CP_RETRY;
@@ -1257,7 +1257,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 		}
 		if (r == DOMAP_DRY) {
 			if (!vector_alloc_slot(newmp)) {
-				remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
+				remove_map(mpp, vecs->pathvec, NULL);
 				goto out;
 			}
 			vector_set_slot(newmp, mpp);
@@ -1282,14 +1282,13 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 
 		if (mpp->action != ACT_REJECT) {
 			if (!vector_alloc_slot(newmp)) {
-				remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
+				remove_map(mpp, vecs->pathvec, NULL);
 				goto out;
 			}
 			vector_set_slot(newmp, mpp);
 		}
 		else
-			remove_map(mpp, vecs->pathvec, vecs->mpvec,
-				   KEEP_VEC);
+			remove_map(mpp, vecs->pathvec, NULL);
 	}
 	ret = CP_OK;
 out:

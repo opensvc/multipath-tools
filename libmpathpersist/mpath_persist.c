@@ -410,7 +410,7 @@ get_mpvec (vector curmp, vector pathvec, char * refwwid)
 		if (update_multipath_table(mpp, pathvec, DI_CHECKER) != DMP_OK ||
 		    update_mpp_paths(mpp, pathvec)) {
 			condlog(1, "error parsing map %s", mpp->wwid);
-			remove_map(mpp, pathvec, curmp, PURGE_VEC);
+			remove_map(mpp, pathvec, curmp);
 			i--;
 		} else
 			extract_hwe_from_path(mpp);

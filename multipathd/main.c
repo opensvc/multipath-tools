@@ -385,7 +385,7 @@ remove_map_and_stop_waiter(struct multipath *mpp, struct vectors *vecs)
 	condlog(3, "%s: removing map from internal tables", mpp->alias);
 	if (!poll_dmevents)
 		stop_waiter_thread(mpp);
-	remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+	remove_map(mpp, vecs->pathvec, vecs->mpvec);
 }
 
 static void
@@ -518,7 +518,7 @@ retry:
 fail:
 	if (new_map && (retries < 0 || wait_for_events(mpp, vecs))) {
 		condlog(0, "%s: failed to create new map", mpp->alias);
-		remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+		remove_map(mpp, vecs->pathvec, vecs->mpvec);
 		return 1;
 	}
 
@@ -572,7 +572,7 @@ add_map_without_path (struct vectors *vecs, const char *alias)
 
 	return mpp;
 out:
-	remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+	remove_map(mpp, vecs->pathvec, vecs->mpvec);
 	return NULL;
 }
 
@@ -1162,7 +1162,7 @@ rescan:
 		goto fail;
 
 fail_map:
-	remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+	remove_map(mpp, vecs->pathvec, vecs->mpvec);
 fail:
 	orphan_path(pp, "failed to add path");
 	return 1;
@@ -1469,7 +1469,7 @@ map_discovery (struct vectors * vecs)
 
 	vector_foreach_slot (vecs->mpvec, mpp, i)
 		if (update_multipath_table(mpp, vecs->pathvec, 0) != DMP_OK) {
-			remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+			remove_map(mpp, vecs->pathvec, vecs->mpvec);
 			i--;
 		}
 
@@ -2706,7 +2706,7 @@ configure (struct vectors * vecs)
 	 */
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
 		if (wait_for_events(mpp, vecs)) {
-			remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+			remove_map(mpp, vecs->pathvec, vecs->mpvec);
 			i--;
 			continue;
 		}

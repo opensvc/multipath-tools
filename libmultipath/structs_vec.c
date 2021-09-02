@@ -334,7 +334,7 @@ void set_path_removed(struct path *pp)
 }
 
 void
-remove_map(struct multipath *mpp, vector pathvec, vector mpvec, int purge_vec)
+remove_map(struct multipath *mpp, vector pathvec, vector mpvec)
 {
 	int i;
 
@@ -343,7 +343,7 @@ remove_map(struct multipath *mpp, vector pathvec, vector mpvec, int purge_vec)
 	 */
 	orphan_paths(pathvec, mpp, "map removed internally");
 
-	if (purge_vec &&
+	if (mpvec &&
 	    (i = find_slot(mpvec, (void *)mpp)) != -1)
 		vector_del_slot(mpvec, i);
 
@@ -354,12 +354,12 @@ remove_map(struct multipath *mpp, vector pathvec, vector mpvec, int purge_vec)
 }
 
 void
-remove_map_by_alias(const char *alias, struct vectors * vecs, int purge_vec)
+remove_map_by_alias(const char *alias, struct vectors * vecs)
 {
 	struct multipath * mpp = find_mp_by_alias(vecs->mpvec, alias);
 	if (mpp) {
 		condlog(2, "%s: removing map by alias", alias);
-		remove_map(mpp, vecs->pathvec, vecs->mpvec, purge_vec);
+		remove_map(mpp, vecs->pathvec, vecs->mpvec);
 	}
 }
 
@@ -373,7 +373,7 @@ remove_maps(struct vectors * vecs)
 		return;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
-		remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+		remove_map(mpp, vecs->pathvec, vecs->mpvec);
 		i--;
 	}
 
@@ -704,7 +704,7 @@ struct multipath *add_map_with_path(struct vectors *vecs, struct path *pp,
 	return mpp;
 
 out:
-	remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+	remove_map(mpp, vecs->pathvec, vecs->mpvec);
 	return NULL;
 }
 
