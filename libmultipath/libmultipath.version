@@ -285,3 +285,8 @@ global:
 	print_strbuf;
 	truncate_strbuf;
 } LIBMULTIPATH_8.0.0;
+
+LIBMULTIPATH_8.2.0 {
+global:
+	check_daemon;
+} LIBMULTIPATH_8.1.0;
