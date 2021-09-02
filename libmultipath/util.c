@@ -223,8 +223,8 @@ setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
 
 	ret = pthread_attr_init(attr);
 	assert(ret == 0);
-	if (stacksize < PTHREAD_STACK_MIN)
-		stacksize = PTHREAD_STACK_MIN;
+	if (PTHREAD_STACK_MIN > 0 && stacksize < (size_t)PTHREAD_STACK_MIN)
+		stacksize = (size_t)PTHREAD_STACK_MIN;
 	ret = pthread_attr_setstacksize(attr, stacksize);
 	assert(ret == 0);
 	if (detached) {
