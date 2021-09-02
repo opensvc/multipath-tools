@@ -1060,28 +1060,6 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 	return DOMAP_FAIL;
 }
 
-static int
-deadmap (struct multipath * mpp)
-{
-	int i, j;
-	struct pathgroup * pgp;
-	struct path * pp;
-
-	if (!mpp->pg)
-		return 1;
-
-	vector_foreach_slot (mpp->pg, pgp, i) {
-		if (!pgp->paths)
-			continue;
-
-		vector_foreach_slot (pgp->paths, pp, j)
-			if (strlen(pp->dev))
-				return 0; /* alive */
-	}
-
-	return 1; /* dead */
-}
-
 extern int
 check_daemon(void)
 {
@@ -1312,30 +1290,6 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 		else
 			remove_map(mpp, vecs->pathvec, vecs->mpvec,
 				   KEEP_VEC);
-	}
-	/*
-	 * Flush maps with only dead paths (ie not in sysfs)
-	 * Keep maps with only failed paths
-	 */
-	if (mpvec) {
-		vector_foreach_slot (newmp, mpp, i) {
-			char alias[WWID_SIZE];
-
-			if (!deadmap(mpp))
-				continue;
-
-			strlcpy(alias, mpp->alias, WWID_SIZE);
-
-			vector_del_slot(newmp, i);
-			i--;
-			remove_map(mpp, vecs->pathvec, vecs->mpvec, KEEP_VEC);
-
-			if (dm_flush_map(alias))
-				condlog(2, "%s: remove failed (dead)",
-					alias);
-			else
-				condlog(2, "%s: remove (dead)", alias);
-		}
 	}
 	ret = CP_OK;
 out:
