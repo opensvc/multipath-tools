@@ -220,6 +220,10 @@ static void do_sd_notify(enum daemon_status old_state,
 	} else if (new_state == DAEMON_CONFIGURE && startup_done)
 		sd_notify(0, "RELOADING=1");
 }
+#else
+static void do_sd_notify(__attribute__((unused)) enum daemon_status old_state,
+			 __attribute__((unused)) enum daemon_status new_state)
+{}
 #endif
 
 static void config_cleanup(__attribute__((unused)) void *arg)
@@ -265,19 +269,38 @@ enum daemon_status wait_for_state_change_if(enum daemon_status oldstate,
 	return st;
 }
 
+/* Don't access this variable without holding config_lock */
+static bool reconfigure_pending;
+
 /* must be called with config_lock held */
 static void __post_config_state(enum daemon_status state)
 {
 	if (state != running_state && running_state != DAEMON_SHUTDOWN) {
-#ifdef USE_SYSTEMD
 		enum daemon_status old_state = running_state;
-#endif
 
+		/*
+		 * Handle a pending reconfigure request.
+		 * DAEMON_IDLE is set from child() after reconfigure(),
+		 * or from checkerloop() after completing checkers.
+		 * In either case, child() will see DAEMON_CONFIGURE
+		 * again and start another reconfigure cycle.
+		 */
+		if (reconfigure_pending && state == DAEMON_IDLE &&
+		    (old_state == DAEMON_CONFIGURE ||
+		     old_state == DAEMON_RUNNING)) {
+			/*
+			 * notify systemd of transient idle state, lest systemd
+			 * thinks the reload lasts forever.
+			 */
+			do_sd_notify(old_state, DAEMON_IDLE);
+			old_state = DAEMON_IDLE;
+			state = DAEMON_CONFIGURE;
+		}
+		if (reconfigure_pending && state == DAEMON_CONFIGURE)
+			reconfigure_pending = false;
 		running_state = state;
 		pthread_cond_broadcast(&config_cond);
-#ifdef USE_SYSTEMD
 		do_sd_notify(old_state, state);
-#endif
 	}
 }
 
@@ -289,24 +312,48 @@ void post_config_state(enum daemon_status state)
 	pthread_cleanup_pop(1);
 }
 
-int set_config_state(enum daemon_status state)
+void schedule_reconfigure(void)
+{
+	pthread_mutex_lock(&config_lock);
+	pthread_cleanup_push(config_cleanup, NULL);
+	switch (running_state)
+	{
+	case DAEMON_SHUTDOWN:
+		break;
+	case DAEMON_IDLE:
+		__post_config_state(DAEMON_CONFIGURE);
+		break;
+	case DAEMON_CONFIGURE:
+	case DAEMON_RUNNING:
+		reconfigure_pending = true;
+		break;
+	default:
+		break;
+	}
+	pthread_cleanup_pop(1);
+}
+
+static enum daemon_status set_config_state(enum daemon_status state)
 {
 	int rc = 0;
+	enum daemon_status st;
 
 	pthread_cleanup_push(config_cleanup, NULL);
 	pthread_mutex_lock(&config_lock);
-	if (running_state != state) {
 
-		if (running_state == DAEMON_SHUTDOWN)
-			rc = EINVAL;
-		else
-			rc = __wait_for_state_change(
-				running_state != DAEMON_IDLE, 1000);
-		if (!rc)
-			__post_config_state(state);
+	while (rc == 0 &&
+	       running_state != state &&
+	       running_state != DAEMON_SHUTDOWN &&
+	       running_state != DAEMON_IDLE) {
+		rc = pthread_cond_wait(&config_cond, &config_lock);
 	}
+
+	if (rc == 0 && running_state == DAEMON_IDLE && state != DAEMON_IDLE)
+		__post_config_state(state);
+	st = running_state;
+
 	pthread_cleanup_pop(1);
-	return rc;
+	return st;
 }
 
 struct config *get_multipath_config(void)
@@ -744,7 +791,7 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 			if (delayed_reconfig &&
 			    !need_to_delay_reconfig(vecs)) {
 				condlog(2, "reconfigure (delayed)");
-				set_config_state(DAEMON_CONFIGURE);
+				schedule_reconfigure();
 				return 0;
 			}
 		}
@@ -1855,7 +1902,7 @@ missing_uev_wait_tick(struct vectors *vecs)
 	if (timed_out && delayed_reconfig &&
 	    !need_to_delay_reconfig(vecs)) {
 		condlog(2, "reconfigure (delayed)");
-		set_config_state(DAEMON_CONFIGURE);
+		schedule_reconfigure();
 	}
 }
 
@@ -2494,6 +2541,10 @@ checkerloop (void *ap)
 		int num_paths = 0, strict_timing, rc = 0;
 		unsigned int ticks = 0;
 
+		if (set_config_state(DAEMON_RUNNING) != DAEMON_RUNNING)
+			/* daemon shutdown */
+			break;
+
 		get_monotonic_time(&start_time);
 		if (start_time.tv_sec && last_time.tv_sec) {
 			timespecsub(&start_time, &last_time, &diff_time);
@@ -2509,13 +2560,6 @@ checkerloop (void *ap)
 		if (use_watchdog)
 			sd_notify(0, "WATCHDOG=1");
 #endif
-		rc = set_config_state(DAEMON_RUNNING);
-		if (rc == ETIMEDOUT) {
-			condlog(4, "timeout waiting for DAEMON_IDLE");
-			continue;
-		} else if (rc == EINVAL)
-			/* daemon shutdown */
-			break;
 
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(&vecs->lock);
@@ -2843,7 +2887,7 @@ handle_signals(bool nonfatal)
 		return;
 	if (reconfig_sig) {
 		condlog(2, "reconfigure (signal)");
-		set_config_state(DAEMON_CONFIGURE);
+		schedule_reconfigure();
 	}
 	if (log_reset_sig) {
 		condlog(2, "reset log (signal)");
