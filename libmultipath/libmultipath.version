@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_8.0.0 {
+LIBMULTIPATH_9.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -270,12 +270,8 @@ global:
 
 	/* added in 7.0.0 */
 	cleanup_charp;
-local:
-	*;
-};
 
-LIBMULTIPATH_8.1.0 {
-global:
+	/* added in 8.1.0 */
 	reset_strbuf;
 	append_strbuf_str;
 	get_strbuf_len;
@@ -284,9 +280,10 @@ global:
 	fill_strbuf;
 	print_strbuf;
 	truncate_strbuf;
-} LIBMULTIPATH_8.0.0;
 
-LIBMULTIPATH_8.2.0 {
-global:
+	/* added in 8.2.0 */
 	check_daemon;
-} LIBMULTIPATH_8.1.0;
+
+local:
+	*;
+};
