@@ -209,9 +209,12 @@ static void do_sd_notify(enum daemon_status old_state,
 	if (msg && !safe_sprintf(notify_msg, "STATUS=%s", msg))
 		sd_notify(0, notify_msg);
 
-	if (new_state == DAEMON_SHUTDOWN)
+	if (new_state == DAEMON_SHUTDOWN) {
+		/* Tell systemd that we're not RELOADING any more */
+		if (old_state == DAEMON_CONFIGURE && startup_done)
+			sd_notify(0, "READY=1");
 		sd_notify(0, "STOPPING=1");
-	else if (new_state == DAEMON_IDLE && old_state == DAEMON_CONFIGURE) {
+	} else if (new_state == DAEMON_IDLE && old_state == DAEMON_CONFIGURE) {
 		sd_notify(0, "READY=1");
 		startup_done = true;
 	} else if (new_state == DAEMON_CONFIGURE && startup_done)
