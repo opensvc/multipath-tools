@@ -4,83 +4,83 @@
 #include <stdint.h>
 
 enum {
-	__LIST,
+	__LIST,			/*  0 */
 	__ADD,
 	__DEL,
 	__SWITCH,
 	__SUSPEND,
-	__RESUME,
+	__RESUME,			/*  5 */
 	__REINSTATE,
 	__FAIL,
 	__RESIZE,
 	__RESET,
-	__RELOAD,
+	__RELOAD,			/* 10 */
 	__FORCEQ,
 	__DISABLEQ,
 	__RESTOREQ,
 	__PATHS,
-	__MAPS,
+	__MAPS,			/* 15 */
 	__PATH,
 	__MAP,
 	__GROUP,
 	__RECONFIGURE,
-	__DAEMON,
+	__DAEMON,			/* 20 */
 	__STATUS,
 	__STATS,
 	__TOPOLOGY,
 	__CONFIG,
-	__BLACKLIST,
+	__BLACKLIST,			/* 25 */
 	__DEVICES,
 	__RAW,
 	__WILDCARDS,
 	__QUIT,
-	__SHUTDOWN,
+	__SHUTDOWN,			/* 30 */
 	__GETPRSTATUS,
 	__SETPRSTATUS,
 	__UNSETPRSTATUS,
 	__FMT,
-	__JSON,
+	__JSON,			/* 35 */
 	__GETPRKEY,
 	__SETPRKEY,
 	__UNSETPRKEY,
 	__KEY,
-	__LOCAL,
+	__LOCAL,			/* 40 */
 	__SETMARGINAL,
 	__UNSETMARGINAL,
 };
 
-#define LIST		(1 << __LIST)
-#define ADD		(1 << __ADD)
-#define DEL		(1 << __DEL)
-#define SWITCH		(1 << __SWITCH)
-#define SUSPEND		(1 << __SUSPEND)
-#define RESUME		(1 << __RESUME)
-#define REINSTATE	(1 << __REINSTATE)
-#define FAIL		(1 << __FAIL)
-#define RESIZE		(1 << __RESIZE)
-#define RESET		(1 << __RESET)
-#define RELOAD		(1 << __RELOAD)
-#define FORCEQ		(1 << __FORCEQ)
-#define DISABLEQ	(1 << __DISABLEQ)
-#define RESTOREQ	(1 << __RESTOREQ)
-#define PATHS		(1 << __PATHS)
-#define MAPS		(1 << __MAPS)
-#define PATH		(1 << __PATH)
-#define MAP		(1 << __MAP)
-#define GROUP		(1 << __GROUP)
-#define RECONFIGURE	(1 << __RECONFIGURE)
-#define DAEMON		(1 << __DAEMON)
-#define STATUS		(1 << __STATUS)
-#define STATS		(1 << __STATS)
-#define TOPOLOGY	(1 << __TOPOLOGY)
-#define CONFIG		(1 << __CONFIG)
-#define BLACKLIST	(1 << __BLACKLIST)
-#define DEVICES		(1 << __DEVICES)
-#define RAW		(1 << __RAW)
-#define COUNT		(1 << __COUNT)
-#define WILDCARDS	(1 << __WILDCARDS)
-#define QUIT		(1 << __QUIT)
-#define SHUTDOWN	(1 << __SHUTDOWN)
+#define LIST		(1ULL << __LIST)
+#define ADD		(1ULL << __ADD)
+#define DEL		(1ULL << __DEL)
+#define SWITCH		(1ULL << __SWITCH)
+#define SUSPEND	(1ULL << __SUSPEND)
+#define RESUME		(1ULL << __RESUME)
+#define REINSTATE	(1ULL << __REINSTATE)
+#define FAIL		(1ULL << __FAIL)
+#define RESIZE		(1ULL << __RESIZE)
+#define RESET		(1ULL << __RESET)
+#define RELOAD		(1ULL << __RELOAD)
+#define FORCEQ		(1ULL << __FORCEQ)
+#define DISABLEQ	(1ULL << __DISABLEQ)
+#define RESTOREQ	(1ULL << __RESTOREQ)
+#define PATHS		(1ULL << __PATHS)
+#define MAPS		(1ULL << __MAPS)
+#define PATH		(1ULL << __PATH)
+#define MAP		(1ULL << __MAP)
+#define GROUP		(1ULL << __GROUP)
+#define RECONFIGURE	(1ULL << __RECONFIGURE)
+#define DAEMON		(1ULL << __DAEMON)
+#define STATUS		(1ULL << __STATUS)
+#define STATS		(1ULL << __STATS)
+#define TOPOLOGY	(1ULL << __TOPOLOGY)
+#define CONFIG		(1ULL << __CONFIG)
+#define BLACKLIST	(1ULL << __BLACKLIST)
+#define DEVICES	(1ULL << __DEVICES)
+#define RAW		(1ULL << __RAW)
+#define COUNT		(1ULL << __COUNT)
+#define WILDCARDS	(1ULL << __WILDCARDS)
+#define QUIT		(1ULL << __QUIT)
+#define SHUTDOWN	(1ULL << __SHUTDOWN)
 #define GETPRSTATUS	(1ULL << __GETPRSTATUS)
 #define SETPRSTATUS	(1ULL << __SETPRSTATUS)
 #define UNSETPRSTATUS	(1ULL << __UNSETPRSTATUS)
