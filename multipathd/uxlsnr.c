@@ -390,18 +390,6 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 			continue;
 		}
 
-		/*
-		 * Client connection. We shouldn't answer while we're
-		 * configuring - nothing may be configured yet.
-		 * But we can't wait forever either, because this thread
-		 * must handle signals. So wait a short while only.
-		 */
-		if (wait_for_state_change_if(DAEMON_CONFIGURE, 10)
-		    == DAEMON_CONFIGURE) {
-			handle_signals(false);
-			continue;
-		}
-
 		/* see if a client wants to speak to us */
 		for (i = POLLFDS_BASE; i < n_pfds; i++) {
 			if (polls[i].revents & POLLIN) {
