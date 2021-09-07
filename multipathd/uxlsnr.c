@@ -39,10 +39,30 @@
 #include "main.h"
 #include "cli.h"
 #include "uxlsnr.h"
+#include "strbuf.h"
+
+/* state of client connection */
+enum {
+	CLT_RECV,
+	CLT_PARSE,
+	CLT_LOCKED_WORK,
+	CLT_WORK,
+	CLT_SEND,
+};
 
 struct client {
 	struct list_head node;
+	struct timespec expires;
+	int state;
 	int fd;
+	vector cmdvec;
+	/* NUL byte at end */
+	char cmd[_MAX_CMD_LEN + 1];
+	struct strbuf reply;
+	struct handler *handler;
+	size_t cmd_len, len;
+	int error;
+	bool is_root;
 };
 
 /* Indices for array of poll fds */
@@ -110,6 +130,7 @@ static void new_client(int ux_sock)
 	}
 	INIT_LIST_HEAD(&c->node);
 	c->fd = fd;
+	c->state = CLT_RECV;
 
 	/* put it in our linked list */
 	pthread_mutex_lock(&client_lock);
@@ -125,6 +146,9 @@ static void _dead_client(struct client *c)
 	int fd = c->fd;
 	list_del_init(&c->node);
 	c->fd = -1;
+	reset_strbuf(&c->reply);
+	if (c->cmdvec)
+		free_keys(c->cmdvec);
 	free(c);
 	close(fd);
 }
