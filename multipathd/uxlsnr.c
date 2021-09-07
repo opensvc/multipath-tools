@@ -45,8 +45,13 @@ struct client {
 	int fd;
 };
 
-/* The number of fds we poll on, other than individual client connections */
-#define POLLFDS_BASE 2
+/* Indices for array of poll fds */
+enum {
+	POLLFD_UX = 0,
+	POLLFD_NOTIFY,
+	POLLFDS_BASE,
+};
+
 #define POLLFD_CHUNK (4096 / sizeof(struct pollfd))
 /* Minimum mumber of pollfds to reserve for clients */
 #define MIN_POLLS (POLLFD_CHUNK - POLLFDS_BASE)
@@ -338,8 +343,8 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 			}
 		}
 		if (num_clients < MAX_CLIENTS) {
-			polls[0].fd = ux_sock;
-			polls[0].events = POLLIN;
+			polls[POLLFD_UX].fd = ux_sock;
+			polls[POLLFD_UX].events = POLLIN;
 		} else {
 			/*
 			 * New clients can't connect, num_clients won't grow
@@ -347,15 +352,15 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 			 */
 			condlog(1, "%s: max client connections reached, pausing polling",
 				__func__);
-			polls[0].fd = -1;
+			polls[POLLFD_UX].fd = -1;
 		}
 
 		reset_watch(notify_fd, &wds, &sequence_nr);
 		if (notify_fd == -1 || (wds.conf_wd == -1 && wds.dir_wd == -1))
-			polls[1].fd = -1;
+			polls[POLLFD_NOTIFY].fd = -1;
 		else
-			polls[1].fd = notify_fd;
-		polls[1].events = POLLIN;
+			polls[POLLFD_NOTIFY].fd = notify_fd;
+		polls[POLLFD_NOTIFY].events = POLLIN;
 
 		/* setup the clients */
 		i = POLLFDS_BASE;
@@ -453,12 +458,12 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 		handle_signals(true);
 
 		/* see if we got a new client */
-		if (polls[0].revents & POLLIN) {
+		if (polls[POLLFD_UX].revents & POLLIN) {
 			new_client(ux_sock);
 		}
 
 		/* handle inotify events on config files */
-		if (polls[1].revents & POLLIN)
+		if (polls[POLLFD_NOTIFY].revents & POLLIN)
 			handle_inotify(notify_fd, &wds);
 	}
 
