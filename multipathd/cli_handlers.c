@@ -782,6 +782,9 @@ cli_del_map (void * v, char ** reply, int * len, void * data)
 		return 1;
 	}
 	rc = ev_remove_map(param, alias, minor, vecs);
+	if (rc == 2)
+		*reply = strdup("delayed");
+
 	free(alias);
 	return rc;
 }
