@@ -133,9 +133,10 @@ struct handler {
 };
 
 int alloc_handlers (void);
-int add_handler (uint64_t fp, cli_handler *fn);
-int set_handler_callback (uint64_t fp, cli_handler *fn);
-int set_unlocked_handler_callback (uint64_t fp, cli_handler *fn);
+int __set_handler_callback (uint64_t fp, cli_handler *fn, bool locked);
+#define set_handler_callback(fp, fn) __set_handler_callback(fp, fn, true)
+#define set_unlocked_handler_callback(fp, fn) __set_handler_callback(fp, fn, false)
+
 int parse_cmd (char * cmd, char ** reply, int * len, void *, int);
 int load_keys (void);
 char * get_keyparam (vector v, uint64_t code);

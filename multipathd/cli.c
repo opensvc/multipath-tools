@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <pthread.h>
+#include <assert.h>
 #include "vector.h"
 #include "structs.h"
 #include "structs_vec.h"
@@ -63,26 +64,26 @@ out:
 	return 1;
 }
 
-int
-add_handler (uint64_t fp, cli_handler *fn)
+static struct handler *add_handler(uint64_t fp, cli_handler *fn, bool locked)
 {
 	struct handler * h;
 
 	h = alloc_handler();
 
-	if (!h)
-		return 1;
+	if (h == NULL)
+		return NULL;
 
 	if (!vector_alloc_slot(handlers)) {
 		free(h);
-		return 1;
+		return NULL;
 	}
 
 	vector_set_slot(handlers, h);
 	h->fingerprint = fp;
 	h->fn = fn;
+	h->locked = locked;
 
-	return 0;
+	return h;
 }
 
 static struct handler *
@@ -99,26 +100,17 @@ find_handler (uint64_t fp)
 }
 
 int
-set_handler_callback (uint64_t fp, cli_handler *fn)
+__set_handler_callback (uint64_t fp, cli_handler *fn, bool locked)
 {
-	struct handler * h = find_handler(fp);
+	struct handler *h;
 
-	if (!h)
+	assert(find_handler(fp) == NULL);
+	h = add_handler(fp, fn, locked);
+	if (!h) {
+		condlog(0, "%s: failed to set handler for code %"PRIu64,
+			__func__, fp);
 		return 1;
-	h->fn = fn;
-	h->locked = 1;
-	return 0;
-}
-
-int
-set_unlocked_handler_callback (uint64_t fp, cli_handler *fn)
-{
-	struct handler * h = find_handler(fp);
-
-	if (!h)
-		return 1;
-	h->fn = fn;
-	h->locked = 0;
+	}
 	return 0;
 }
 
@@ -511,63 +503,6 @@ cli_init (void) {
 
 	if (alloc_handlers())
 		return 1;
-
-	add_handler(LIST+PATHS, NULL);
-	add_handler(LIST+PATHS+FMT, NULL);
-	add_handler(LIST+PATHS+RAW+FMT, NULL);
-	add_handler(LIST+PATH, NULL);
-	add_handler(LIST+STATUS, NULL);
-	add_handler(LIST+DAEMON, NULL);
-	add_handler(LIST+MAPS, NULL);
-	add_handler(LIST+MAPS+STATUS, NULL);
-	add_handler(LIST+MAPS+STATS, NULL);
-	add_handler(LIST+MAPS+FMT, NULL);
-	add_handler(LIST+MAPS+RAW+FMT, NULL);
-	add_handler(LIST+MAPS+TOPOLOGY, NULL);
-	add_handler(LIST+MAPS+JSON, NULL);
-	add_handler(LIST+TOPOLOGY, NULL);
-	add_handler(LIST+MAP+TOPOLOGY, NULL);
-	add_handler(LIST+MAP+JSON, NULL);
-	add_handler(LIST+MAP+FMT, NULL);
-	add_handler(LIST+MAP+RAW+FMT, NULL);
-	add_handler(LIST+CONFIG, NULL);
-	add_handler(LIST+CONFIG+LOCAL, NULL);
-	add_handler(LIST+BLACKLIST, NULL);
-	add_handler(LIST+DEVICES, NULL);
-	add_handler(LIST+WILDCARDS, NULL);
-	add_handler(RESET+MAPS+STATS, NULL);
-	add_handler(RESET+MAP+STATS, NULL);
-	add_handler(ADD+PATH, NULL);
-	add_handler(DEL+PATH, NULL);
-	add_handler(ADD+MAP, NULL);
-	add_handler(DEL+MAP, NULL);
-	add_handler(DEL+MAPS, NULL);
-	add_handler(SWITCH+MAP+GROUP, NULL);
-	add_handler(RECONFIGURE, NULL);
-	add_handler(SUSPEND+MAP, NULL);
-	add_handler(RESUME+MAP, NULL);
-	add_handler(RESIZE+MAP, NULL);
-	add_handler(RESET+MAP, NULL);
-	add_handler(RELOAD+MAP, NULL);
-	add_handler(DISABLEQ+MAP, NULL);
-	add_handler(RESTOREQ+MAP, NULL);
-	add_handler(DISABLEQ+MAPS, NULL);
-	add_handler(RESTOREQ+MAPS, NULL);
-	add_handler(REINSTATE+PATH, NULL);
-	add_handler(FAIL+PATH, NULL);
-	add_handler(QUIT, NULL);
-	add_handler(SHUTDOWN, NULL);
-	add_handler(GETPRSTATUS+MAP, NULL);
-	add_handler(SETPRSTATUS+MAP, NULL);
-	add_handler(UNSETPRSTATUS+MAP, NULL);
-	add_handler(GETPRKEY+MAP, NULL);
-	add_handler(SETPRKEY+MAP+KEY, NULL);
-	add_handler(UNSETPRKEY+MAP, NULL);
-	add_handler(FORCEQ+DAEMON, NULL);
-	add_handler(RESTOREQ+DAEMON, NULL);
-	add_handler(SETMARGINAL+PATH, NULL);
-	add_handler(UNSETMARGINAL+PATH, NULL);
-	add_handler(UNSETMARGINAL+MAP, NULL);
 
 	return 0;
 }
