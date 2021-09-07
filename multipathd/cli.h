@@ -124,16 +124,18 @@ struct key {
 	int has_param;
 };
 
+typedef int (cli_handler)(void *keywords, char **reply, int *len, void *data);
+
 struct handler {
 	uint64_t fingerprint;
 	int locked;
-	int (*fn)(void *, char **, int *, void *);
+	cli_handler *fn;
 };
 
 int alloc_handlers (void);
-int add_handler (uint64_t fp, int (*fn)(void *, char **, int *, void *));
-int set_handler_callback (uint64_t fp, int (*fn)(void *, char **, int *, void *));
-int set_unlocked_handler_callback (uint64_t fp, int (*fn)(void *, char **, int *, void *));
+int add_handler (uint64_t fp, cli_handler *fn);
+int set_handler_callback (uint64_t fp, cli_handler *fn);
+int set_unlocked_handler_callback (uint64_t fp, cli_handler *fn);
 int parse_cmd (char * cmd, char ** reply, int * len, void *, int);
 int load_keys (void);
 char * get_keyparam (vector v, uint64_t code);
