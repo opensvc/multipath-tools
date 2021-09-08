@@ -299,22 +299,13 @@ static int parse_cmd(struct client *c)
 
 	r = get_cmdvec(c->cmd, &c->cmdvec);
 
-	if (r) {
-		genhelp_handler(c->cmd, r, &c->reply);
-		if (get_strbuf_len(&c->reply) == 0)
-			return EINVAL;
-		return 0;
-	}
+	if (r)
+		return -r;
 
 	c->handler = find_handler_for_cmdvec(c->cmdvec);
 
-	if (!c->handler || !c->handler->fn) {
-		genhelp_handler(c->cmd, EINVAL, &c->reply);
-		if (get_strbuf_len(&c->reply) == 0)
-			r = EINVAL;
-		else
-			r = 0;
-	}
+	if (!c->handler || !c->handler->fn)
+		return -EINVAL;
 
 	return r;
 }
@@ -325,7 +316,7 @@ static int execute_handler(struct client *c, struct vectors *vecs, int timeout)
 	struct timespec tmo;
 
 	if (!c->handler)
-		return EINVAL;
+		return -EINVAL;
 
 	if (clock_gettime(CLOCK_REALTIME, &tmo) == 0) {
 		tmo.tv_sec += timeout;
@@ -355,50 +346,30 @@ static int execute_handler(struct client *c, struct vectors *vecs, int timeout)
 	return r;
 }
 
-static int uxsock_trigger(struct client *c, void *trigger_data)
+void default_reply(struct client *c, int r)
 {
-	struct vectors * vecs;
-	int r = 1;
-
-	vecs = (struct vectors *)trigger_data;
-
-	r = parse_cmd(c);
-
-	if (r == 0 && c->cmdvec && VECTOR_SIZE(c->cmdvec) > 0) {
-		struct key *kw = VECTOR_SLOT(c->cmdvec, 0);
-
-		if (!c->is_root && kw->code != LIST)
-			r = EPERM;
-	}
-
-	if (r == 0 && c->handler)
-		r = execute_handler(c, vecs, uxsock_timeout / 1000);
-
-	if (c->cmdvec) {
-		free_keys(c->cmdvec);
-		c->cmdvec = NULL;
-	}
-
-	if (r > 0) {
-		switch(r) {
-		case ETIMEDOUT:
-			append_strbuf_str(&c->reply, "timeout\n");
-			break;
-		case EPERM:
-			append_strbuf_str(&c->reply,
-					  "permission deny: need to be root\n");
-			break;
-		default:
-			append_strbuf_str(&c->reply, "fail\n");
-			break;
-		}
-	}
-	else if (!r && get_strbuf_len(&c->reply) == 0) {
+	switch(r) {
+	case -EINVAL:
+	case -ESRCH:
+	case -ENOMEM:
+		/* return codes from get_cmdvec() */
+		genhelp_handler(c->cmd, -r, &c->reply);
+		break;
+	case -EPERM:
+		append_strbuf_str(&c->reply,
+				  "permission deny: need to be root\n");
+		break;
+	case -ETIMEDOUT:
+		append_strbuf_str(&c->reply, "timeout\n");
+		break;
+	case 0:
 		append_strbuf_str(&c->reply, "ok\n");
-		r = 0;
+		break;
+	default:
+		/* cli_handler functions return 1 on unspecified error */
+		append_strbuf_str(&c->reply, "fail\n");
+		break;
 	}
-	/* else if (r < 0) leave *reply alone */
-	return r;
 }
 
 static void set_client_state(struct client *c, int state)
@@ -409,6 +380,7 @@ static void set_client_state(struct client *c, int state)
 		reset_strbuf(&c->reply);
 		memset(c->cmd, '\0', sizeof(c->cmd));
 		c->expires = ts_zero;
+		c->error = 0;
 		/* fallthrough */
 	case CLT_SEND:
 		/* reuse these fields for next data transfer */
@@ -420,9 +392,18 @@ static void set_client_state(struct client *c, int state)
 	c->state = state;
 }
 
-static void handle_client(struct client *c, void *trigger_data)
+enum {
+	STM_CONT,
+	STM_BREAK,
+};
+
+static int client_state_machine(struct client *c, struct vectors *vecs)
 {
 	ssize_t n;
+	const char *buf;
+
+	condlog(4, "%s: cli[%d] state=%d cmd=\"%s\" repl \"%s\"", __func__,
+		c->fd, c->state, c->cmd, get_strbuf_str(&c->reply));
 
 	switch (c->state) {
 	case CLT_RECV:
@@ -449,31 +430,59 @@ static void handle_client(struct client *c, void *trigger_data)
 				condlog(4, "%s: cli[%d]: connected", __func__, c->fd);
 			}
 			/* poll for data */
-			return;
+			return STM_BREAK;
 		} else if (c->len < c->cmd_len) {
 			n = recv(c->fd, c->cmd + c->len, c->cmd_len - c->len, 0);
 			if (n <= 0 && errno != EINTR && errno != EAGAIN) {
 				condlog(1, "%s: cli[%d]: error in recv: %m",
 					__func__, c->fd);
 				c->error = -ECONNRESET;
-				return;
+				return STM_BREAK;
 			}
 			c->len += n;
 			if (c->len < c->cmd_len)
 				/* continue polling */
-				return;
-			set_client_state(c, CLT_PARSE);
+				return STM_BREAK;
 		}
-		break;
-	default:
-		break;
-	}
+		condlog(4, "cli[%d]: Got request [%s]", c->fd, c->cmd);
+		set_client_state(c, CLT_PARSE);
+		return STM_CONT;
 
-	condlog(4, "cli[%d]: Got request [%s]", c->fd, c->cmd);
-	uxsock_trigger(c, trigger_data);
+	case CLT_PARSE:
+		c->error = parse_cmd(c);
+		if (!c->error) {
+			/* Permission check */
+			struct key *kw = VECTOR_SLOT(c->cmdvec, 0);
 
-	if (get_strbuf_len(&c->reply) > 0) {
-		const char *buf = get_strbuf_str(&c->reply);
+			if (!c->is_root && kw->code != LIST) {
+				c->error = -EPERM;
+				condlog(0, "%s: cli[%d]: unauthorized cmd \"%s\"",
+					__func__, c->fd, c->cmd);
+			}
+		}
+		if (c->error)
+			set_client_state(c, CLT_SEND);
+		else
+			set_client_state(c, CLT_WORK);
+		return STM_CONT;
+
+	case CLT_LOCKED_WORK:
+		/* tbd */
+		set_client_state(c, CLT_WORK);
+		return STM_CONT;
+
+	case CLT_WORK:
+		c->error = execute_handler(c, vecs, uxsock_timeout / 1000);
+		free_keys(c->cmdvec);
+		c->cmdvec = NULL;
+		set_client_state(c, CLT_SEND);
+		return STM_CONT;
+
+	case CLT_SEND:
+		if (get_strbuf_len(&c->reply) == 0)
+			default_reply(c, c->error);
+
+		buf = get_strbuf_str(&c->reply);
 
 		if (send_packet(c->fd, buf) != 0)
 			dead_client(c);
@@ -481,9 +490,18 @@ static void handle_client(struct client *c, void *trigger_data)
 			condlog(4, "cli[%d]: Reply [%zu bytes]", c->fd,
 				get_strbuf_len(&c->reply) + 1);
 		reset_strbuf(&c->reply);
-	}
 
-	set_client_state(c, CLT_RECV);
+		set_client_state(c, CLT_RECV);
+		return STM_BREAK;
+
+	default:
+		return STM_BREAK;
+	}
+}
+
+static void handle_client(struct client *c, struct vectors *vecs)
+{
+	while (client_state_machine(c, vecs) == STM_CONT);
 }
 
 /*
