@@ -6,7 +6,7 @@
 .\"
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATH.CONF 5 2018-05-21 Linux
+.TH MULTIPATH.CONF 5 2021-09-08 Linux
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -209,6 +209,10 @@ of outstanding I/O to the path and its relative throughput.
 (Since 5.8 kernel) Choose the path for the next bunch of IOs based on the
 estimation of future service time based on the history of previous I/O submitted
 to each path.
+.TP
+.I "io-affinity 0"
+(Since 5.11 kernel) Choose the path for the next bunch of I/O based on a CPU to
+path mapping the user passes in and what CPU we are executing on.
 .TP
 The default is: \fBservice-time 0\fR
 .RE
