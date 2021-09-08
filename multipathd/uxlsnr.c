@@ -293,31 +293,28 @@ static void handle_inotify(int fd, struct watch_descriptors *wds)
 
 static const struct timespec ts_zero = { .tv_sec = 0, };
 
-static int parse_cmd (char *cmd, struct strbuf *reply, void *data,
-		      int timeout)
+static int parse_cmd (struct client *c, void *data, int timeout)
 {
 	int r;
 	struct handler * h;
-	vector cmdvec = NULL;
 	struct timespec tmo;
 
-	r = get_cmdvec(cmd, &cmdvec);
+	r = get_cmdvec(c->cmd, &c->cmdvec);
 
 	if (r) {
-		genhelp_handler(cmd, r, reply);
-		if (get_strbuf_len(reply) == 0)
+		genhelp_handler(c->cmd, r, &c->reply);
+		if (get_strbuf_len(&c->reply) == 0)
 			return EINVAL;
 		return 0;
 	}
 
-	h = find_handler_for_cmdvec(cmdvec);
+	h = find_handler_for_cmdvec(c->cmdvec);
 
 	if (!h || !h->fn) {
-		free_keys(cmdvec);
-		genhelp_handler(cmd, EINVAL, reply);
-		if (get_strbuf_len(reply) == 0)
-			return EINVAL;
-		return 0;
+		genhelp_handler(c->cmd, EINVAL, &c->reply);
+		if (get_strbuf_len(&c->reply) == 0)
+			r = EINVAL;
+		goto free_cmdvec;
 	}
 
 	/*
@@ -342,46 +339,47 @@ static int parse_cmd (char *cmd, struct strbuf *reply, void *data,
 		if (r == 0) {
 			locked = 1;
 			pthread_testcancel();
-			r = h->fn(cmdvec, reply, data);
+			r = h->fn(c->cmdvec, &c->reply, data);
 		}
 		pthread_cleanup_pop(locked);
 	} else
-		r = h->fn(cmdvec, reply, data);
-	free_keys(cmdvec);
+		r = h->fn(c->cmdvec, &c->reply, data);
+
+free_cmdvec:
+	free_keys(c->cmdvec);
+	c->cmdvec = NULL;
 
 	return r;
 }
 
-static int uxsock_trigger(char *str, struct strbuf *reply,
-			  bool is_root, void *trigger_data)
+static int uxsock_trigger(struct client *c, void *trigger_data)
 {
 	struct vectors * vecs;
-	int r;
+	int r = 1;
 
 	vecs = (struct vectors *)trigger_data;
 
-	if ((str != NULL) && (is_root == false) &&
-	    (strncmp(str, "list", strlen("list")) != 0) &&
-	    (strncmp(str, "show", strlen("show")) != 0)) {
-		append_strbuf_str(reply, "permission deny: need to be root");
-		return 1;
+
+	if (!c->is_root &&
+	    (strncmp(c->cmd, "list", strlen("list")) != 0) &&
+	    (strncmp(c->cmd, "show", strlen("show")) != 0)) {
+		append_strbuf_str(&c->reply, "permission deny: need to be root");
+		return r;
 	}
 
-	r = parse_cmd(str, reply, vecs, uxsock_timeout / 1000);
+	r = parse_cmd(c, vecs, uxsock_timeout / 1000);
 
 	if (r > 0) {
 		if (r == ETIMEDOUT)
-			append_strbuf_str(reply, "timeout\n");
+			append_strbuf_str(&c->reply, "timeout\n");
 		else
-			append_strbuf_str(reply, "fail\n");
-		r = 1;
+			append_strbuf_str(&c->reply, "fail\n");
 	}
-	else if (!r && get_strbuf_len(reply) == 0) {
-		append_strbuf_str(reply, "ok\n");
+	else if (!r && get_strbuf_len(&c->reply) == 0) {
+		append_strbuf_str(&c->reply, "ok\n");
 		r = 0;
 	}
 	/* else if (r < 0) leave *reply alone */
-
 	return r;
 }
 
@@ -454,8 +452,7 @@ static void handle_client(struct client *c, void *trigger_data)
 	}
 
 	condlog(4, "cli[%d]: Got request [%s]", c->fd, c->cmd);
-	uxsock_trigger(c->cmd, &c->reply, _socket_client_is_root(c->fd),
-		       trigger_data);
+	uxsock_trigger(c, trigger_data);
 
 	if (get_strbuf_len(&c->reply) > 0) {
 		const char *buf = get_strbuf_str(&c->reply);
