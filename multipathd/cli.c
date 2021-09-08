@@ -416,13 +416,10 @@ do_genhelp(struct strbuf *reply, const char *cmd, int error) {
 }
 
 
-char *genhelp_handler(const char *cmd, int error)
+void genhelp_handler(const char *cmd, int error, struct strbuf *reply)
 {
-	STRBUF_ON_STACK(reply);
-
-	if (do_genhelp(&reply, cmd, error) == -1)
+	if (do_genhelp(reply, cmd, error) == -1)
 		condlog(0, "genhelp_handler: out of memory");
-	return steal_strbuf_str(&reply);
 }
 
 char *

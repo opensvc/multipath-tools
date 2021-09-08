@@ -124,7 +124,9 @@ struct key {
 	int has_param;
 };
 
-typedef int (cli_handler)(void *keywords, char **reply, int *len, void *data);
+struct strbuf;
+
+typedef int (cli_handler)(void *keywords, struct strbuf *reply, void *data);
 
 struct handler {
 	uint64_t fingerprint;
@@ -139,7 +141,7 @@ int __set_handler_callback (uint64_t fp, cli_handler *fn, bool locked);
 
 int get_cmdvec (char *cmd, vector *v);
 struct handler *find_handler_for_cmdvec(const struct _vector *v);
-char *genhelp_handler (const char *cmd, int error);
+void genhelp_handler (const char *cmd, int error, struct strbuf *reply);
 
 int load_keys (void);
 char * get_keyparam (vector v, uint64_t code);

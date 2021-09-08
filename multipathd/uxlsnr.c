@@ -294,7 +294,7 @@ static void handle_inotify(int fd, struct watch_descriptors *wds)
 
 static const struct timespec ts_zero = { .tv_sec = 0, };
 
-static int parse_cmd (char *cmd, char **reply, int *len, void *data,
+static int parse_cmd (char *cmd, struct strbuf *reply, void *data,
 		      int timeout)
 {
 	int r;
@@ -305,10 +305,9 @@ static int parse_cmd (char *cmd, char **reply, int *len, void *data,
 	r = get_cmdvec(cmd, &cmdvec);
 
 	if (r) {
-		*reply = genhelp_handler(cmd, r);
-		if (*reply == NULL)
+		genhelp_handler(cmd, r, reply);
+		if (get_strbuf_len(reply) == 0)
 			return EINVAL;
-		*len = strlen(*reply) + 1;
 		return 0;
 	}
 
@@ -316,10 +315,9 @@ static int parse_cmd (char *cmd, char **reply, int *len, void *data,
 
 	if (!h || !h->fn) {
 		free_keys(cmdvec);
-		*reply = genhelp_handler(cmd, EINVAL);
-		if (*reply == NULL)
+		genhelp_handler(cmd, EINVAL, reply);
+		if (get_strbuf_len(reply) == 0)
 			return EINVAL;
-		*len = strlen(*reply) + 1;
 		return 0;
 	}
 
@@ -345,50 +343,42 @@ static int parse_cmd (char *cmd, char **reply, int *len, void *data,
 		if (r == 0) {
 			locked = 1;
 			pthread_testcancel();
-			r = h->fn(cmdvec, reply, len, data);
+			r = h->fn(cmdvec, reply, data);
 		}
 		pthread_cleanup_pop(locked);
 	} else
-		r = h->fn(cmdvec, reply, len, data);
+		r = h->fn(cmdvec, reply, data);
 	free_keys(cmdvec);
 
 	return r;
 }
 
-static int uxsock_trigger(char *str, char **reply, int *len,
+static int uxsock_trigger(char *str, struct strbuf *reply,
 			  bool is_root, void *trigger_data)
 {
 	struct vectors * vecs;
 	int r;
 
-	*reply = NULL;
-	*len = 0;
 	vecs = (struct vectors *)trigger_data;
 
 	if ((str != NULL) && (is_root == false) &&
 	    (strncmp(str, "list", strlen("list")) != 0) &&
 	    (strncmp(str, "show", strlen("show")) != 0)) {
-		*reply = strdup("permission deny: need to be root");
-		if (*reply)
-			*len = strlen(*reply) + 1;
+		append_strbuf_str(reply, "permission deny: need to be root");
 		return 1;
 	}
 
-	r = parse_cmd(str, reply, len, vecs, uxsock_timeout / 1000);
+	r = parse_cmd(str, reply, vecs, uxsock_timeout / 1000);
 
 	if (r > 0) {
 		if (r == ETIMEDOUT)
-			*reply = strdup("timeout\n");
+			append_strbuf_str(reply, "timeout\n");
 		else
-			*reply = strdup("fail\n");
-		if (*reply)
-			*len = strlen(*reply) + 1;
+			append_strbuf_str(reply, "fail\n");
 		r = 1;
 	}
-	else if (!r && *len == 0) {
-		*reply = strdup("ok\n");
-		if (*reply)
-			*len = strlen(*reply) + 1;
+	else if (!r && get_strbuf_len(reply) == 0) {
+		append_strbuf_str(reply, "ok\n");
 		r = 0;
 	}
 	/* else if (r < 0) leave *reply alone */
@@ -417,8 +407,6 @@ static void set_client_state(struct client *c, int state)
 
 static void handle_client(struct client *c, void *trigger_data)
 {
-	int rlen;
-	char *reply;
 	ssize_t n;
 
 	switch (c->state) {
@@ -467,12 +455,13 @@ static void handle_client(struct client *c, void *trigger_data)
 	}
 
 	condlog(4, "cli[%d]: Got request [%s]", c->fd, c->cmd);
-	uxsock_trigger(c->cmd, &reply, &rlen,
-		       _socket_client_is_root(c->fd),
+	uxsock_trigger(c->cmd, &c->reply, _socket_client_is_root(c->fd),
 		       trigger_data);
 
-	if (reply) {
-		if (send_packet(c->fd, reply) != 0)
+	if (get_strbuf_len(&c->reply) > 0) {
+		const char *buf = get_strbuf_str(&c->reply);
+
+		if (send_packet(c->fd, buf) != 0)
 			dead_client(c);
 		else
 			condlog(4, "cli[%d]: Reply [%zu bytes]", c->fd,
