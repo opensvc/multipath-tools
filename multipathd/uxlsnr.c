@@ -91,8 +91,6 @@ static struct pollfd *polls;
 static int notify_fd = -1;
 static char *watch_config_dir;
 
-static bool _socket_client_is_root(int fd);
-
 static bool _socket_client_is_root(int fd)
 {
 	socklen_t len = 0;
@@ -131,6 +129,7 @@ static void new_client(int ux_sock)
 	INIT_LIST_HEAD(&c->node);
 	c->fd = fd;
 	c->state = CLT_RECV;
+	c->is_root = _socket_client_is_root(c->fd);
 
 	/* put it in our linked list */
 	pthread_mutex_lock(&client_lock);
