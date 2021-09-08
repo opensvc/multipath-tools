@@ -287,3 +287,8 @@ global:
 local:
 	*;
 };
+
+LIBMULTIPATH_9.1.0 {
+global:
+	timespeccmp;
+} LIBMULTIPATH_9.0.0;

@@ -49,3 +49,15 @@ void timespecsub(const struct timespec *a, const struct timespec *b,
 	res->tv_nsec = a->tv_nsec - b->tv_nsec;
 	normalize_timespec(res);
 }
+
+int timespeccmp(const struct timespec *a, const struct timespec *b)
+{
+	struct timespec tmp;
+
+	timespecsub(a, b, &tmp);
+	if (tmp.tv_sec > 0)
+		return 1;
+	if (tmp.tv_sec < 0)
+		return -1;
+	return tmp.tv_nsec > 0 ? 1 : (tmp.tv_nsec < 0 ? -1 : 0);
+}
