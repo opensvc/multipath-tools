@@ -292,6 +292,8 @@ static void handle_inotify(int fd, struct watch_descriptors *wds)
 		condlog(1, "Multipath configuration updated.\nReload multipathd for changes to take effect");
 }
 
+static const struct timespec ts_zero = { .tv_sec = 0, };
+
 static int parse_cmd (char *cmd, char **reply, int *len, void *data,
 		      int timeout)
 {
@@ -394,23 +396,78 @@ static int uxsock_trigger(char *str, char **reply, int *len,
 	return r;
 }
 
+static void set_client_state(struct client *c, int state)
+{
+	switch(state)
+	{
+	case CLT_RECV:
+		reset_strbuf(&c->reply);
+		memset(c->cmd, '\0', sizeof(c->cmd));
+		c->expires = ts_zero;
+		/* fallthrough */
+	case CLT_SEND:
+		/* reuse these fields for next data transfer */
+		c->len = c->cmd_len = 0;
+		break;
+	default:
+		break;
+	}
+	c->state = state;
+}
+
 static void handle_client(struct client *c, void *trigger_data)
 {
 	int rlen;
-	char *inbuf, *reply;
+	char *reply;
+	ssize_t n;
 
-	if (recv_packet_from_client(c->fd, &inbuf, uxsock_timeout) != 0) {
-		dead_client(c);
-		return;
+	switch (c->state) {
+	case CLT_RECV:
+		if (c->cmd_len == 0) {
+			/*
+			 * We got POLLIN; assume that at least the length can
+			 * be read immediately.
+			 */
+			get_monotonic_time(&c->expires);
+			c->expires.tv_sec += uxsock_timeout / 1000;
+			c->expires.tv_nsec += (uxsock_timeout % 1000) * 1000000;
+			normalize_timespec(&c->expires);
+			n = mpath_recv_reply_len(c->fd, 0);
+			if (n == -1) {
+				condlog(1, "%s: cli[%d]: failed to receive reply len",
+					__func__, c->fd);
+				c->error = -ECONNRESET;
+			} else if (n > _MAX_CMD_LEN) {
+				condlog(1, "%s: cli[%d]: overlong command (%zd bytes)",
+					__func__, c->fd, n);
+				c->error = -ECONNRESET;
+			} else {
+				c->cmd_len = n;
+				condlog(4, "%s: cli[%d]: connected", __func__, c->fd);
+			}
+			/* poll for data */
+			return;
+		} else if (c->len < c->cmd_len) {
+			n = recv(c->fd, c->cmd + c->len, c->cmd_len - c->len, 0);
+			if (n <= 0 && errno != EINTR && errno != EAGAIN) {
+				condlog(1, "%s: cli[%d]: error in recv: %m",
+					__func__, c->fd);
+				c->error = -ECONNRESET;
+				return;
+			}
+			c->len += n;
+			if (c->len < c->cmd_len)
+				/* continue polling */
+				return;
+			set_client_state(c, CLT_PARSE);
+		}
+		break;
+	default:
+		break;
 	}
 
-	if (!inbuf) {
-		condlog(4, "recv_packet_from_client get null request");
-		return;
-	}
-
-	condlog(4, "cli[%d]: Got request [%s]", c->fd, inbuf);
-	uxsock_trigger(inbuf, &reply, &rlen,
+	condlog(4, "cli[%d]: Got request [%s]", c->fd, c->cmd);
+	uxsock_trigger(c->cmd, &reply, &rlen,
 		       _socket_client_is_root(c->fd),
 		       trigger_data);
 
@@ -418,11 +475,12 @@ static void handle_client(struct client *c, void *trigger_data)
 		if (send_packet(c->fd, reply) != 0)
 			dead_client(c);
 		else
-			condlog(4, "cli[%d]: Reply [%d bytes]", c->fd, rlen);
-		free(reply);
-		reply = NULL;
+			condlog(4, "cli[%d]: Reply [%zu bytes]", c->fd,
+				get_strbuf_len(&c->reply) + 1);
+		reset_strbuf(&c->reply);
 	}
-	free(inbuf);
+
+	set_client_state(c, CLT_RECV);
 }
 
 /*
@@ -553,6 +611,8 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 					continue;
 				}
 				handle_client(c, trigger_data);
+				if (c->error == -ECONNRESET)
+					dead_client(c);
 			}
 		}
 		/* see if we got a non-fatal signal */
