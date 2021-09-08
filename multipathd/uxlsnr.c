@@ -362,15 +362,14 @@ static int uxsock_trigger(struct client *c, void *trigger_data)
 
 	vecs = (struct vectors *)trigger_data;
 
-
-	if (!c->is_root &&
-	    (strncmp(c->cmd, "list", strlen("list")) != 0) &&
-	    (strncmp(c->cmd, "show", strlen("show")) != 0)) {
-		append_strbuf_str(&c->reply, "permission deny: need to be root");
-		return r;
-	}
-
 	r = parse_cmd(c);
+
+	if (r == 0 && c->cmdvec && VECTOR_SIZE(c->cmdvec) > 0) {
+		struct key *kw = VECTOR_SLOT(c->cmdvec, 0);
+
+		if (!c->is_root && kw->code != LIST)
+			r = EPERM;
+	}
 
 	if (r == 0 && c->handler)
 		r = execute_handler(c, vecs, uxsock_timeout / 1000);
@@ -381,10 +380,18 @@ static int uxsock_trigger(struct client *c, void *trigger_data)
 	}
 
 	if (r > 0) {
-		if (r == ETIMEDOUT)
+		switch(r) {
+		case ETIMEDOUT:
 			append_strbuf_str(&c->reply, "timeout\n");
-		else
+			break;
+		case EPERM:
+			append_strbuf_str(&c->reply,
+					  "permission deny: need to be root\n");
+			break;
+		default:
 			append_strbuf_str(&c->reply, "fail\n");
+			break;
+		}
 	}
 	else if (!r && get_strbuf_len(&c->reply) == 0) {
 		append_strbuf_str(&c->reply, "ok\n");
