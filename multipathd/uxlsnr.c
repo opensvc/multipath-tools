@@ -168,25 +168,6 @@ static void free_polls (void)
 	polls = NULL;
 }
 
-static void check_timeout(struct timespec start_time, char *inbuf,
-		   unsigned int timeout)
-{
-	struct timespec diff_time, end_time;
-
-	if (start_time.tv_sec) {
-		unsigned long msecs;
-
-		get_monotonic_time(&end_time);
-		timespecsub(&end_time, &start_time, &diff_time);
-		msecs = diff_time.tv_sec * 1000 +
-			diff_time.tv_nsec / (1000 * 1000);
-		if (msecs > timeout)
-			condlog(2, "cli cmd '%s' timeout reached "
-				"after %ld.%06lu secs", inbuf,
-				(long)diff_time.tv_sec, diff_time.tv_nsec / 1000);
-	}
-}
-
 void uxsock_cleanup(void *arg)
 {
 	struct client *client_loop;
@@ -574,8 +555,6 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 					free(reply);
 					reply = NULL;
 				}
-				check_timeout(start_time, inbuf,
-					      uxsock_timeout);
 				free(inbuf);
 			}
 		}
