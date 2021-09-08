@@ -311,11 +311,51 @@ static void handle_inotify(int fd, struct watch_descriptors *wds)
 		condlog(1, "Multipath configuration updated.\nReload multipathd for changes to take effect");
 }
 
+static int uxsock_trigger(char *str, char **reply, int *len,
+			  bool is_root, void *trigger_data)
+{
+	struct vectors * vecs;
+	int r;
+
+	*reply = NULL;
+	*len = 0;
+	vecs = (struct vectors *)trigger_data;
+
+	if ((str != NULL) && (is_root == false) &&
+	    (strncmp(str, "list", strlen("list")) != 0) &&
+	    (strncmp(str, "show", strlen("show")) != 0)) {
+		*reply = strdup("permission deny: need to be root");
+		if (*reply)
+			*len = strlen(*reply) + 1;
+		return 1;
+	}
+
+	r = parse_cmd(str, reply, len, vecs, uxsock_timeout / 1000);
+
+	if (r > 0) {
+		if (r == ETIMEDOUT)
+			*reply = strdup("timeout\n");
+		else
+			*reply = strdup("fail\n");
+		if (*reply)
+			*len = strlen(*reply) + 1;
+		r = 1;
+	}
+	else if (!r && *len == 0) {
+		*reply = strdup("ok\n");
+		if (*reply)
+			*len = strlen(*reply) + 1;
+		r = 0;
+	}
+	/* else if (r < 0) leave *reply alone */
+
+	return r;
+}
+
 /*
  * entry point
  */
-void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
-		     void * trigger_data)
+void *uxsock_listen(long ux_sock, void *trigger_data)
 {
 	int rlen;
 	char *inbuf;
