@@ -293,11 +293,9 @@ static void handle_inotify(int fd, struct watch_descriptors *wds)
 
 static const struct timespec ts_zero = { .tv_sec = 0, };
 
-static int parse_cmd (struct client *c, void *data, int timeout)
+static int parse_cmd(struct client *c)
 {
 	int r;
-	struct handler * h;
-	struct timespec tmo;
 
 	r = get_cmdvec(c->cmd, &c->cmdvec);
 
@@ -308,26 +306,35 @@ static int parse_cmd (struct client *c, void *data, int timeout)
 		return 0;
 	}
 
-	h = find_handler_for_cmdvec(c->cmdvec);
+	c->handler = find_handler_for_cmdvec(c->cmdvec);
 
-	if (!h || !h->fn) {
+	if (!c->handler || !c->handler->fn) {
 		genhelp_handler(c->cmd, EINVAL, &c->reply);
 		if (get_strbuf_len(&c->reply) == 0)
 			r = EINVAL;
-		goto free_cmdvec;
+		else
+			r = 0;
 	}
 
-	/*
-	 * execute handler
-	 */
+	return r;
+}
+
+static int execute_handler(struct client *c, struct vectors *vecs, int timeout)
+{
+	int r;
+	struct timespec tmo;
+
+	if (!c->handler)
+		return EINVAL;
+
 	if (clock_gettime(CLOCK_REALTIME, &tmo) == 0) {
 		tmo.tv_sec += timeout;
 	} else {
 		tmo.tv_sec = 0;
 	}
-	if (h->locked) {
+
+	if (c->handler->locked) {
 		int locked = 0;
-		struct vectors * vecs = (struct vectors *)data;
 
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		if (tmo.tv_sec) {
@@ -339,15 +346,11 @@ static int parse_cmd (struct client *c, void *data, int timeout)
 		if (r == 0) {
 			locked = 1;
 			pthread_testcancel();
-			r = h->fn(c->cmdvec, &c->reply, data);
+			r = c->handler->fn(c->cmdvec, &c->reply, vecs);
 		}
 		pthread_cleanup_pop(locked);
 	} else
-		r = h->fn(c->cmdvec, &c->reply, data);
-
-free_cmdvec:
-	free_keys(c->cmdvec);
-	c->cmdvec = NULL;
+		r = c->handler->fn(c->cmdvec, &c->reply, vecs);
 
 	return r;
 }
@@ -367,7 +370,15 @@ static int uxsock_trigger(struct client *c, void *trigger_data)
 		return r;
 	}
 
-	r = parse_cmd(c, vecs, uxsock_timeout / 1000);
+	r = parse_cmd(c);
+
+	if (r == 0 && c->handler)
+		r = execute_handler(c, vecs, uxsock_timeout / 1000);
+
+	if (c->cmdvec) {
+		free_keys(c->cmdvec);
+		c->cmdvec = NULL;
+	}
 
 	if (r > 0) {
 		if (r == ETIMEDOUT)
