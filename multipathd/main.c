@@ -385,7 +385,7 @@ remove_map_and_stop_waiter(struct multipath *mpp, struct vectors *vecs)
 	condlog(3, "%s: removing map from internal tables", mpp->alias);
 	if (!poll_dmevents)
 		stop_waiter_thread(mpp);
-	remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+	remove_map(mpp, vecs->pathvec, vecs->mpvec);
 }
 
 static void
@@ -489,7 +489,7 @@ static int
 update_map (struct multipath *mpp, struct vectors *vecs, int new_map)
 {
 	int retries = 3;
-	char params[PARAMS_SIZE] = {0};
+	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 
 retry:
 	condlog(4, "%s: updating new map", mpp->alias);
@@ -502,13 +502,15 @@ retry:
 	verify_paths(mpp);
 	mpp->action = ACT_RELOAD;
 
-	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
+	if (setup_map(mpp, &params, vecs)) {
 		condlog(0, "%s: failed to setup new map in update", mpp->alias);
 		retries = -1;
 		goto fail;
 	}
 	if (domap(mpp, params, 1) == DOMAP_FAIL && retries-- > 0) {
 		condlog(0, "%s: map_udate sleep", mpp->alias);
+		free(params);
+		params = NULL;
 		sleep(1);
 		goto retry;
 	}
@@ -516,7 +518,7 @@ retry:
 fail:
 	if (new_map && (retries < 0 || wait_for_events(mpp, vecs))) {
 		condlog(0, "%s: failed to create new map", mpp->alias);
-		remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+		remove_map(mpp, vecs->pathvec, vecs->mpvec);
 		return 1;
 	}
 
@@ -570,7 +572,7 @@ add_map_without_path (struct vectors *vecs, const char *alias)
 
 	return mpp;
 out:
-	remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+	remove_map(mpp, vecs->pathvec, vecs->mpvec);
 	return NULL;
 }
 
@@ -1028,7 +1030,7 @@ int
 ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 {
 	struct multipath * mpp;
-	char params[PARAMS_SIZE] = {0};
+	char *params __attribute((cleanup(cleanup_charp))) = NULL;
 	int retries = 3;
 	int start_waiter = 0;
 	int ret;
@@ -1104,7 +1106,7 @@ rescan:
 	/*
 	 * push the map to the device-mapper
 	 */
-	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
+	if (setup_map(mpp, &params, vecs)) {
 		condlog(0, "%s: failed to setup map for addition of new "
 			"path %s", mpp->alias, pp->dev);
 		goto fail_map;
@@ -1129,6 +1131,8 @@ rescan:
 			condlog(0, "%s: ev_add_path sleep", mpp->alias);
 			sleep(1);
 			update_mpp_paths(mpp, vecs->pathvec);
+			free(params);
+			params = NULL;
 			goto rescan;
 		}
 		else if (mpp->action == ACT_RELOAD)
@@ -1158,7 +1162,7 @@ rescan:
 		goto fail;
 
 fail_map:
-	remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+	remove_map(mpp, vecs->pathvec, vecs->mpvec);
 fail:
 	orphan_path(pp, "failed to add path");
 	return 1;
@@ -1189,7 +1193,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 {
 	struct multipath * mpp;
 	int i, retval = REMOVE_PATH_SUCCESS;
-	char params[PARAMS_SIZE] = {0};
+	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 
 	/*
 	 * avoid referring to the map of an orphaned path
@@ -1250,7 +1254,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 			 */
 		}
 
-		if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
+		if (setup_map(mpp, &params, vecs)) {
 			condlog(0, "%s: failed to setup map for"
 				" removal of path %s", mpp->alias, pp->dev);
 			goto fail;
@@ -1465,7 +1469,7 @@ map_discovery (struct vectors * vecs)
 
 	vector_foreach_slot (vecs->mpvec, mpp, i)
 		if (update_multipath_table(mpp, vecs->pathvec, 0) != DMP_OK) {
-			remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+			remove_map(mpp, vecs->pathvec, vecs->mpvec);
 			i--;
 		}
 
@@ -1940,7 +1944,7 @@ int update_prio(struct path *pp, int refresh_all)
 static int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
 		      int is_daemon)
 {
-	char params[PARAMS_SIZE] = {0};
+	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 	struct path *pp;
 	int i, r;
 
@@ -1958,7 +1962,7 @@ static int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
 			}
 		}
 	}
-	if (setup_map(mpp, params, PARAMS_SIZE, vecs)) {
+	if (setup_map(mpp, &params, vecs)) {
 		condlog(0, "%s: failed to setup map", mpp->alias);
 		return 1;
 	}
@@ -2702,7 +2706,7 @@ configure (struct vectors * vecs)
 	 */
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
 		if (wait_for_events(mpp, vecs)) {
-			remove_map(mpp, vecs->pathvec, vecs->mpvec, PURGE_VEC);
+			remove_map(mpp, vecs->pathvec, vecs->mpvec);
 			i--;
 			continue;
 		}

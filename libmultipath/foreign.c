@@ -34,6 +34,7 @@
 #include "structs.h"
 #include "structs_vec.h"
 #include "print.h"
+#include "strbuf.h"
 
 static vector foreigns;
 
@@ -497,11 +498,11 @@ void foreign_multipath_layout(void)
 	pthread_cleanup_pop(1);
 }
 
-int snprint_foreign_topology(char *buf, int len, int verbosity)
+int snprint_foreign_topology(struct strbuf *buf, int verbosity)
 {
 	struct foreign *fgn;
 	int i;
-	char *c = buf;
+	size_t initial_len = get_strbuf_len(buf);
 
 	rdlock_foreigns();
 	if (foreigns == NULL) {
@@ -521,58 +522,32 @@ int snprint_foreign_topology(char *buf, int len, int verbosity)
 		vec = fgn->get_multipaths(fgn->context);
 		if (vec != NULL) {
 			vector_foreach_slot(vec, gm, j) {
-
-				c += _snprint_multipath_topology(gm, c,
-								 buf + len - c,
-								 verbosity);
-				if (c >= buf + len - 1)
+				if (_snprint_multipath_topology(
+					    gm, buf, verbosity) < 0)
 					break;
 			}
-			if (c >= buf + len - 1)
-				break;
 		}
 		fgn->release_multipaths(fgn->context, vec);
 		pthread_cleanup_pop(1);
 	}
 
 	pthread_cleanup_pop(1);
-	return c - buf;
+	return get_strbuf_len(buf) - initial_len;
 }
 
 void print_foreign_topology(int verbosity)
 {
-	int buflen = MAX_LINE_LEN * MAX_LINES;
-	char *buf = NULL, *tmp = NULL;
+	STRBUF_ON_STACK(buf);
 
-	buf = calloc(1, buflen);
-
-	while (buf != NULL) {
-		char *c = buf;
-
-		c += snprint_foreign_topology(buf, buflen,
-						   verbosity);
-		if (c < buf + buflen - 1)
-			break;
-
-		buflen *= 2;
-		tmp = buf;
-		buf = realloc(buf, buflen);
-	}
-
-	if (buf == NULL && tmp != NULL)
-		buf = tmp;
-
-	if (buf != NULL) {
-		printf("%s", buf);
-		free(buf);
-	}
+	snprint_foreign_topology(&buf, verbosity);
+	printf("%s", get_strbuf_str(&buf));
 }
 
-int snprint_foreign_paths(char *buf, int len, const char *style, int pretty)
+int snprint_foreign_paths(struct strbuf *buf, const char *style, int pretty)
 {
 	struct foreign *fgn;
 	int i;
-	char *c = buf;
+	size_t initial_len = get_strbuf_len(buf);
 
 	rdlock_foreigns();
 	if (foreigns == NULL) {
@@ -584,7 +559,7 @@ int snprint_foreign_paths(char *buf, int len, const char *style, int pretty)
 	vector_foreach_slot(foreigns, fgn, i) {
 		const struct _vector *vec;
 		const struct gen_path *gp;
-		int j;
+		int j, ret = 0;
 
 		fgn->lock(fgn->context);
 		pthread_cleanup_push(fgn->unlock, fgn->context);
@@ -592,28 +567,27 @@ int snprint_foreign_paths(char *buf, int len, const char *style, int pretty)
 		vec = fgn->get_paths(fgn->context);
 		if (vec != NULL) {
 			vector_foreach_slot(vec, gp, j) {
-				c += _snprint_path(gp, c, buf + len - c,
-						   style, pretty);
-				if (c >= buf + len - 1)
+				ret = _snprint_path(gp, buf, style, pretty);
+				if (ret < 0)
 					break;
 			}
-			if (c >= buf + len - 1)
-				break;
 		}
 		fgn->release_paths(fgn->context, vec);
 		pthread_cleanup_pop(1);
+		if (ret < 0)
+			break;
 	}
 
 	pthread_cleanup_pop(1);
-	return c - buf;
+	return get_strbuf_len(buf) - initial_len;
 }
 
-int snprint_foreign_multipaths(char *buf, int len,
+int snprint_foreign_multipaths(struct strbuf *buf,
 			       const char *style, int pretty)
 {
 	struct foreign *fgn;
 	int i;
-	char *c = buf;
+	size_t initial_len = get_strbuf_len(buf);
 
 	rdlock_foreigns();
 	if (foreigns == NULL) {
@@ -625,7 +599,7 @@ int snprint_foreign_multipaths(char *buf, int len,
 	vector_foreach_slot(foreigns, fgn, i) {
 		const struct _vector *vec;
 		const struct gen_multipath *gm;
-		int j;
+		int j, ret = 0;
 
 		fgn->lock(fgn->context);
 		pthread_cleanup_push(fgn->unlock, fgn->context);
@@ -633,18 +607,18 @@ int snprint_foreign_multipaths(char *buf, int len,
 		vec = fgn->get_multipaths(fgn->context);
 		if (vec != NULL) {
 			vector_foreach_slot(vec, gm, j) {
-				c += _snprint_multipath(gm, c, buf + len - c,
-							style, pretty);
-				if (c >= buf + len - 1)
+				ret = _snprint_multipath(gm, buf,
+							 style, pretty);
+				if (ret < 0)
 					break;
 			}
-			if (c >= buf + len - 1)
-				break;
 		}
 		fgn->release_multipaths(fgn->context, vec);
 		pthread_cleanup_pop(1);
+		if (ret < 0)
+			break;
 	}
 
 	pthread_cleanup_pop(1);
-	return c - buf;
+	return get_strbuf_len(buf) - initial_len;
 }

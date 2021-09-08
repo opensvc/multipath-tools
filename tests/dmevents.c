@@ -323,12 +323,10 @@ int __wrap_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 	return mock_type(int);
 }
 
-void __wrap_remove_map_by_alias(const char *alias, struct vectors * vecs,
-				int purge_vec)
+void __wrap_remove_map_by_alias(const char *alias, struct vectors * vecs)
 {
 	check_expected(alias);
 	assert_ptr_equal(vecs, waiter->vecs);
-	assert_int_equal(purge_vec, 1);
 }
 
 /* pretend update the pretend dm devices. If fail is set, it

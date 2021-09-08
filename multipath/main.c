@@ -191,14 +191,14 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 		if (refwwid && strlen(refwwid) &&
 		    strncmp(mpp->wwid, refwwid, WWID_SIZE)) {
 			condlog(3, "skip map %s: out of scope", mpp->alias);
-			remove_map(mpp, pathvec, curmp, PURGE_VEC);
+			remove_map(mpp, pathvec, curmp);
 			i--;
 			continue;
 		}
 
 		if (update_multipath_table(mpp, pathvec, flags) != DMP_OK) {
 			condlog(1, "error parsing map %s", mpp->wwid);
-			remove_map(mpp, pathvec, curmp, PURGE_VEC);
+			remove_map(mpp, pathvec, curmp);
 			i--;
 			continue;
 		}
@@ -456,6 +456,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 {
 	vector curmp = NULL;
 	vector pathvec = NULL;
+	vector newmp = NULL;
 	int r = RTVL_FAIL, rc;
 	int di_flag = 0;
 	char * refwwid = NULL;
@@ -466,8 +467,9 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	 */
 	curmp = vector_alloc();
 	pathvec = vector_alloc();
+	newmp = vector_alloc();
 
-	if (!curmp || !pathvec) {
+	if (!curmp || !pathvec || !newmp) {
 		condlog(0, "can not allocate memory");
 		goto out;
 	}
@@ -569,16 +571,24 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	/*
 	 * core logic entry point
 	 */
-	rc = coalesce_paths(&vecs, NULL, refwwid,
+	rc = coalesce_paths(&vecs, newmp, refwwid,
 			   conf->force_reload, cmd);
 	r = rc == CP_RETRY ? RTVL_RETRY : rc == CP_OK ? RTVL_OK : RTVL_FAIL;
 
 out:
+	if (r == RTVL_OK &&
+	    (cmd == CMD_LIST_SHORT || cmd == CMD_LIST_LONG ||
+	     cmd == CMD_CREATE) &&
+	    (VECTOR_SIZE(curmp) > 0 || VECTOR_SIZE(newmp) > 0) &&
+	    !check_daemon())
+		condlog(2, "Warning: multipath devices exist, but multipathd service is not running");
+
 	if (refwwid)
 		FREE(refwwid);
 
 	free_multipathvec(curmp, KEEP_PATHS);
 	vecs.mpvec = NULL;
+	free_multipathvec(newmp, KEEP_PATHS);
 	free_pathvec(pathvec, FREE_PATHS);
 	vecs.pathvec = NULL;
 

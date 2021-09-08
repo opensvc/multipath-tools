@@ -14,6 +14,7 @@
 #include "blacklist.h"
 #include "structs_vec.h"
 #include "print.h"
+#include "strbuf.h"
 
 char *check_invert(char *str, bool *invert)
 {
@@ -341,19 +342,21 @@ int
 filter_protocol(const struct _vector *blist, const struct _vector *elist,
 		const struct path *pp)
 {
-	char buf[PROTOCOL_BUF_SIZE];
+	STRBUF_ON_STACK(buf);
+	const char *prot;
 	int r = MATCH_NOTHING;
 
 	if (pp) {
-		snprint_path_protocol(buf, sizeof(buf), pp);
+		snprint_path_protocol(&buf, pp);
+		prot = get_strbuf_str(&buf);
 
-		if (match_reglist(elist, buf))
+		if (match_reglist(elist, prot))
 			r = MATCH_PROTOCOL_BLIST_EXCEPT;
-		else if (match_reglist(blist, buf))
+		else if (match_reglist(blist, prot))
 			r = MATCH_PROTOCOL_BLIST;
+		log_filter(pp->dev, NULL, NULL, NULL, NULL, prot, r, 3);
 	}
 
-	log_filter(pp->dev, NULL, NULL, NULL, NULL, buf, r, 3);
 	return r;
 }
 

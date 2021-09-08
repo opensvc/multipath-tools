@@ -27,15 +27,8 @@ int update_mpp_paths(struct multipath * mpp, vector pathvec);
 int update_multipath_strings (struct multipath *mpp, vector pathvec);
 void extract_hwe_from_path(struct multipath * mpp);
 
-enum {
-	KEEP_VEC,
-	PURGE_VEC,
-};
-
-void remove_map (struct multipath *mpp, vector pathvec, vector mpvec,
-		 int purge_vec);
-void remove_map_by_alias(const char *alias, struct vectors * vecs,
-			 int purge_vec);
+void remove_map (struct multipath *mpp, vector pathvec, vector mpvec);
+void remove_map_by_alias(const char *alias, struct vectors * vecs);
 void remove_maps (struct vectors * vecs);
 
 void sync_map_state (struct multipath *);

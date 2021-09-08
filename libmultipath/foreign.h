@@ -18,9 +18,9 @@
 #define _FOREIGN_H
 #include <stdbool.h>
 #include <libudev.h>
+#define LIBMP_FOREIGN_API ((1 << 8) | 1)
 
-#define LIBMP_FOREIGN_API ((1 << 8) | 0)
-
+struct strbuf;
 struct context;
 
 /* return codes of functions below returning "int" */
@@ -267,35 +267,32 @@ void foreign_multipath_layout(void);
  * prints topology information from foreign libraries into buffer,
  * '\0' - terminated.
  * @param buf: output buffer
- * @param len: size of output buffer
  * @param verbosity: verbosity level
  * @returns: number of printed characters excluding trailing '\0'.
  */
-int snprint_foreign_topology(char *buf, int len, int verbosity);
+int snprint_foreign_topology(struct strbuf *buf, int verbosity);
 
 /**
  * snprint_foreign_paths(buf, len, style, pad);
  * prints formatted path information from foreign libraries into buffer,
  * '\0' - terminated.
  * @param buf: output buffer
- * @param len: size of output buffer
  * @param style: format string
  * @param pad: whether to pad field width
  * @returns: number of printed characters excluding trailing '\0'.
  */
-int snprint_foreign_paths(char *buf, int len, const char *style, int pad);
+int snprint_foreign_paths(struct strbuf *buf, const char *style, int pad);
 
 /**
  * snprint_foreign_multipaths(buf, len, style, pad);
  * prints formatted map information from foreign libraries into buffer,
  * '\0' - terminated.
  * @param buf: output buffer
- * @param len: size of output buffer
  * @param style: format string
  * @param pad: whether to pad field width
  * @returns: number of printed characters excluding trailing '\0'.
  */
-int snprint_foreign_multipaths(char *buf, int len,
+int snprint_foreign_multipaths(struct strbuf *buf,
 			       const char *style, int pretty);
 
 /**

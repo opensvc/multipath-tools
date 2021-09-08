@@ -25,6 +25,7 @@
 #include "parser.h"
 #include "memory.h"
 #include "debug.h"
+#include "strbuf.h"
 
 /* local vars */
 static int sublevel = 0;
@@ -33,7 +34,7 @@ static int line_nr;
 int
 keyword_alloc(vector keywords, char *string,
 	      int (*handler) (struct config *, vector),
-	      int (*print) (struct config *, char *, int, const void*),
+	      print_fn *print,
 	      int unique)
 {
 	struct keyword *keyword;
@@ -72,7 +73,7 @@ install_sublevel_end(void)
 int
 _install_keyword(vector keywords, char *string,
 		 int (*handler) (struct config *, vector),
-		 int (*print) (struct config *, char *, int, const void*),
+		 print_fn *print,
 		 int unique)
 {
 	int i = 0;
@@ -149,46 +150,49 @@ find_keyword(vector keywords, vector v, char * name)
 }
 
 int
-snprint_keyword(char *buff, int len, char *fmt, struct keyword *kw,
+snprint_keyword(struct strbuf *buff, const char *fmt, struct keyword *kw,
 		const void *data)
 {
 	int r;
-	int fwd = 0;
-	char *f = fmt;
+	char *f;
 	struct config *conf;
+	STRBUF_ON_STACK(sbuf);
 
 	if (!kw || !kw->print)
 		return 0;
 
 	do {
-		if (fwd == len || *f == '\0')
-			break;
-		if (*f != '%') {
-			*(buff + fwd) = *f;
-			fwd++;
-			continue;
+		f = strchr(fmt, '%');
+		if (f == NULL) {
+			r = append_strbuf_str(&sbuf, fmt);
+			goto out;
 		}
-		f++;
-		switch(*f) {
+		if (f != fmt &&
+		    (r = __append_strbuf_str(&sbuf, fmt, f - fmt)) < 0)
+			goto out;
+		fmt = f + 1;
+		switch(*fmt) {
 		case 'k':
-			fwd += snprintf(buff + fwd, len - fwd, "%s", kw->string);
+			if ((r = append_strbuf_str(&sbuf, kw->string)) < 0)
+				goto out;
 			break;
 		case 'v':
 			conf = get_multipath_config();
 			pthread_cleanup_push(put_multipath_config, conf);
-			r = kw->print(conf, buff + fwd, len - fwd, data);
+			r = kw->print(conf, &sbuf, data);
 			pthread_cleanup_pop(1);
-			if (!r) { /* no output if no value */
-				buff[0] = '\0';
-				return 0;
+			if (r < 0)
+				goto out;
+			else if (r == 0) {/* no output if no value */
+				reset_strbuf(&sbuf);
+				goto out;
 			}
-			fwd += r;
 			break;
 		}
-		if (fwd > len)
-			fwd = len;
-	} while (*f++);
-	return fwd;
+	} while (*fmt++);
+out:
+	return __append_strbuf_str(buff, get_strbuf_str(&sbuf),
+				   get_strbuf_len(&sbuf));
 }
 
 static const char quote_marker[] = { '\0', '"', '\0' };

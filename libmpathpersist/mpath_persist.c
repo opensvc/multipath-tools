@@ -410,7 +410,7 @@ get_mpvec (vector curmp, vector pathvec, char * refwwid)
 		if (update_multipath_table(mpp, pathvec, DI_CHECKER) != DMP_OK ||
 		    update_mpp_paths(mpp, pathvec)) {
 			condlog(1, "error parsing map %s", mpp->wwid);
-			remove_map(mpp, pathvec, curmp, PURGE_VEC);
+			remove_map(mpp, pathvec, curmp);
 			i--;
 		} else
 			extract_hwe_from_path(mpp);
@@ -604,7 +604,8 @@ int mpath_prout_common(struct multipath *mpp,int rq_servact, int rq_scope,
 			return ret ;
 		}
 	}
-	return MPATH_PR_SUCCESS;
+	condlog (0, "%s: no path available", mpp->wwid);
+	return MPATH_PR_DMMP_ERROR;
 }
 
 int send_prout_activepath(char * dev, int rq_servact, int rq_scope,
@@ -662,6 +663,11 @@ int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		return MPATH_PR_DMMP_ERROR;
 
 	active_pathcount = count_active_paths(mpp);
+
+	if (active_pathcount == 0) {
+		condlog (0, "%s: no path available", mpp->wwid);
+		return MPATH_PR_DMMP_ERROR;
+	}
 
 	struct threadinfo thread[active_pathcount];
 	memset(thread, 0, sizeof(thread));

@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_5.0.0 {
+LIBMULTIPATH_9.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -58,8 +58,6 @@ global:
 	count_active_paths;
 	delete_all_foreign;
 	delete_foreign;
-	disassemble_map;
-	disassemble_status;
 	dlog;
 	dm_cancel_deferred_remove;
 	dm_enablegroup;
@@ -70,10 +68,8 @@ global:
 	dm_geteventnr;
 	dm_get_info;
 	dm_get_major_minor;
-	dm_get_map;
 	dm_get_maps;
 	dm_get_multipath;
-	dm_get_status;
 	dm_get_uuid;
 	dm_is_mpath;
 	dm_mapname;
@@ -271,6 +267,23 @@ global:
 	/* added in 4.5.0 */
 	get_vpd_sgio;
 	trigger_partitions_udev_change;
+
+	/* added in 7.0.0 */
+	cleanup_charp;
+
+	/* added in 8.1.0 */
+	reset_strbuf;
+	append_strbuf_str;
+	get_strbuf_len;
+	get_strbuf_str;
+	steal_strbuf_str;
+	fill_strbuf;
+	print_strbuf;
+	truncate_strbuf;
+
+	/* added in 8.2.0 */
+	check_daemon;
+
 local:
 	*;
 };

@@ -6,6 +6,9 @@
 *.a
 *.gz
 *.d
+\#*
+cscope.files
+cscope.out
 kpartx/kpartx
 multipath/multipath
 multipathd/multipathd
@@ -21,5 +24,6 @@ libdmmp/test/libdmmp_test
 libdmmp/test/libdmmp_speed_test
 tests/*-test
 tests/*.out
+tests/*.vgr
 libmultipath/nvme-ioctl.c
 libmultipath/nvme-ioctl.h
