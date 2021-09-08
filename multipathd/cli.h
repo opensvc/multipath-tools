@@ -137,7 +137,10 @@ int __set_handler_callback (uint64_t fp, cli_handler *fn, bool locked);
 #define set_handler_callback(fp, fn) __set_handler_callback(fp, fn, true)
 #define set_unlocked_handler_callback(fp, fn) __set_handler_callback(fp, fn, false)
 
-int parse_cmd (char * cmd, char ** reply, int * len, void *, int);
+int get_cmdvec (char *cmd, vector *v);
+struct handler *find_handler_for_cmdvec(const struct _vector *v);
+char *genhelp_handler (const char *cmd, int error);
+
 int load_keys (void);
 char * get_keyparam (vector v, uint64_t code);
 void free_keys (vector vec);

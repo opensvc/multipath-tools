@@ -253,8 +253,7 @@ find_key (const char * str)
  * ESRCH: command not found
  * EINVAL: argument missing for command
  */
-static int
-get_cmdvec (char * cmd, vector *v)
+int get_cmdvec (char *cmd, vector *v)
 {
 	int i;
 	int r = 0;
@@ -319,7 +318,7 @@ out:
 }
 
 static uint64_t
-fingerprint(vector vec)
+fingerprint(const struct _vector *vec)
 {
 	int i;
 	uint64_t fp = 0;
@@ -332,6 +331,11 @@ fingerprint(vector vec)
 		fp += kw->code;
 
 	return fp;
+}
+
+struct handler *find_handler_for_cmdvec(const struct _vector *v)
+{
+	return find_handler(fingerprint(v));
 }
 
 int
@@ -412,75 +416,13 @@ do_genhelp(struct strbuf *reply, const char *cmd, int error) {
 }
 
 
-static char *
-genhelp_handler (const char *cmd, int error)
+char *genhelp_handler(const char *cmd, int error)
 {
 	STRBUF_ON_STACK(reply);
 
 	if (do_genhelp(&reply, cmd, error) == -1)
 		condlog(0, "genhelp_handler: out of memory");
 	return steal_strbuf_str(&reply);
-}
-
-int
-parse_cmd (char * cmd, char ** reply, int * len, void * data, int timeout )
-{
-	int r;
-	struct handler * h;
-	vector cmdvec = NULL;
-	struct timespec tmo;
-
-	r = get_cmdvec(cmd, &cmdvec);
-
-	if (r) {
-		*reply = genhelp_handler(cmd, r);
-		if (*reply == NULL)
-			return EINVAL;
-		*len = strlen(*reply) + 1;
-		return 0;
-	}
-
-	h = find_handler(fingerprint(cmdvec));
-
-	if (!h || !h->fn) {
-		free_keys(cmdvec);
-		*reply = genhelp_handler(cmd, EINVAL);
-		if (*reply == NULL)
-			return EINVAL;
-		*len = strlen(*reply) + 1;
-		return 0;
-	}
-
-	/*
-	 * execute handler
-	 */
-	if (clock_gettime(CLOCK_REALTIME, &tmo) == 0) {
-		tmo.tv_sec += timeout;
-	} else {
-		tmo.tv_sec = 0;
-	}
-	if (h->locked) {
-		int locked = 0;
-		struct vectors * vecs = (struct vectors *)data;
-
-		pthread_cleanup_push(cleanup_lock, &vecs->lock);
-		if (tmo.tv_sec) {
-			r = timedlock(&vecs->lock, &tmo);
-		} else {
-			lock(&vecs->lock);
-			r = 0;
-		}
-		if (r == 0) {
-			locked = 1;
-			pthread_testcancel();
-			r = h->fn(cmdvec, reply, len, data);
-		}
-		pthread_cleanup_pop(locked);
-	} else
-		r = h->fn(cmdvec, reply, len, data);
-	free_keys(cmdvec);
-
-	return r;
 }
 
 char *

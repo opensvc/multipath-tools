@@ -311,6 +311,67 @@ static void handle_inotify(int fd, struct watch_descriptors *wds)
 		condlog(1, "Multipath configuration updated.\nReload multipathd for changes to take effect");
 }
 
+static int parse_cmd (char *cmd, char **reply, int *len, void *data,
+		      int timeout)
+{
+	int r;
+	struct handler * h;
+	vector cmdvec = NULL;
+	struct timespec tmo;
+
+	r = get_cmdvec(cmd, &cmdvec);
+
+	if (r) {
+		*reply = genhelp_handler(cmd, r);
+		if (*reply == NULL)
+			return EINVAL;
+		*len = strlen(*reply) + 1;
+		return 0;
+	}
+
+	h = find_handler_for_cmdvec(cmdvec);
+
+	if (!h || !h->fn) {
+		free_keys(cmdvec);
+		*reply = genhelp_handler(cmd, EINVAL);
+		if (*reply == NULL)
+			return EINVAL;
+		*len = strlen(*reply) + 1;
+		return 0;
+	}
+
+	/*
+	 * execute handler
+	 */
+	if (clock_gettime(CLOCK_REALTIME, &tmo) == 0) {
+		tmo.tv_sec += timeout;
+	} else {
+		tmo.tv_sec = 0;
+	}
+	if (h->locked) {
+		int locked = 0;
+		struct vectors * vecs = (struct vectors *)data;
+
+		pthread_cleanup_push(cleanup_lock, &vecs->lock);
+		if (tmo.tv_sec) {
+			r = timedlock(&vecs->lock, &tmo);
+		} else {
+			lock(&vecs->lock);
+			r = 0;
+		}
+		if (r == 0) {
+			locked = 1;
+			pthread_testcancel();
+			r = h->fn(cmdvec, reply, len, data);
+		}
+		pthread_cleanup_pop(locked);
+	} else
+		r = h->fn(cmdvec, reply, len, data);
+	free_keys(cmdvec);
+
+	return r;
+}
+
 static int uxsock_trigger(char *str, char **reply, int *len,
 			  bool is_root, void *trigger_data)
 {
