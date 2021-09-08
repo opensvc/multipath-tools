@@ -12,6 +12,11 @@ static inline void lock(struct mutex_lock *a)
 	pthread_mutex_lock(&a->mutex);
 }
 
+static inline int trylock(struct mutex_lock *a)
+{
+	return pthread_mutex_trylock(&a->mutex);
+}
+
 static inline int timedlock(struct mutex_lock *a, struct timespec *tmo)
 {
 	return pthread_mutex_timedlock(&a->mutex, tmo);
