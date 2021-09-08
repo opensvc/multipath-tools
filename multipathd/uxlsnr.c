@@ -394,14 +394,42 @@ static int uxsock_trigger(char *str, char **reply, int *len,
 	return r;
 }
 
+static void handle_client(struct client *c, void *trigger_data)
+{
+	int rlen;
+	char *inbuf, *reply;
+
+	if (recv_packet_from_client(c->fd, &inbuf, uxsock_timeout) != 0) {
+		dead_client(c);
+		return;
+	}
+
+	if (!inbuf) {
+		condlog(4, "recv_packet_from_client get null request");
+		return;
+	}
+
+	condlog(4, "cli[%d]: Got request [%s]", c->fd, inbuf);
+	uxsock_trigger(inbuf, &reply, &rlen,
+		       _socket_client_is_root(c->fd),
+		       trigger_data);
+
+	if (reply) {
+		if (send_packet(c->fd, reply) != 0)
+			dead_client(c);
+		else
+			condlog(4, "cli[%d]: Reply [%d bytes]", c->fd, rlen);
+		free(reply);
+		reply = NULL;
+	}
+	free(inbuf);
+}
+
 /*
  * entry point
  */
 void *uxsock_listen(long ux_sock, void *trigger_data)
 {
-	int rlen;
-	char *inbuf;
-	char *reply;
 	sigset_t mask;
 	int max_pfds = MIN_POLLS + POLLFDS_BASE;
 	/* conf->sequence_nr will be 1 when uxsock_listen is first called */
@@ -504,8 +532,6 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 		/* see if a client wants to speak to us */
 		for (i = POLLFDS_BASE; i < n_pfds; i++) {
 			if (polls[i].revents & (POLLIN|POLLHUP|POLLERR)) {
-				struct timespec start_time;
-
 				c = NULL;
 				pthread_mutex_lock(&client_lock);
 				list_for_each_entry(tmp, &clients, node) {
@@ -526,36 +552,7 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 					dead_client(c);
 					continue;
 				}
-				get_monotonic_time(&start_time);
-				if (recv_packet_from_client(c->fd, &inbuf,
-							    uxsock_timeout)
-				    != 0) {
-					dead_client(c);
-					continue;
-				}
-				if (!inbuf) {
-					condlog(4, "recv_packet_from_client "
-						"get null request");
-					continue;
-				}
-				condlog(4, "cli[%d]: Got request [%s]",
-					polls[i].fd, inbuf);
-				uxsock_trigger(inbuf, &reply, &rlen,
-					       _socket_client_is_root(c->fd),
-					       trigger_data);
-				if (reply) {
-					if (send_packet(c->fd,
-							reply) != 0) {
-						dead_client(c);
-					} else {
-						condlog(4, "cli[%d]: "
-							"Reply [%d bytes]",
-							polls[i].fd, rlen);
-					}
-					free(reply);
-					reply = NULL;
-				}
-				free(inbuf);
+				handle_client(c, trigger_data);
 			}
 		}
 		/* see if we got a non-fatal signal */
