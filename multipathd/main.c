@@ -3344,11 +3344,6 @@ main (int argc, char *argv[])
 
 	logsink = LOGSINK_SYSLOG;
 
-	if (getuid() != 0) {
-		fprintf(stderr, "need to be root\n");
-		exit(1);
-	}
-
 	/* make sure we don't lock any path */
 	if (chdir("/") < 0)
 		fprintf(stderr, "can't chdir to root directory : %s\n",
@@ -3433,6 +3428,11 @@ main (int argc, char *argv[])
 		err = uxclnt(s, uxsock_timeout + 100);
 		free_config(conf);
 		return err;
+	}
+
+	if (getuid() != 0) {
+		fprintf(stderr, "need to be root\n");
+		exit(1);
 	}
 
 	if (foreground) {
