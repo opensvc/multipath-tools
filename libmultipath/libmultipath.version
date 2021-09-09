@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_9.0.0 {
+LIBMULTIPATH_10.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -284,11 +284,12 @@ global:
 	/* added in 8.2.0 */
 	check_daemon;
 
+	/* added in 9.1.0 */
+	timespeccmp;
+
+	/* added in 10.0.0 */
+	set_wakeup_fn;
+
 local:
 	*;
 };
-
-LIBMULTIPATH_9.1.0 {
-global:
-	timespeccmp;
-} LIBMULTIPATH_9.0.0;

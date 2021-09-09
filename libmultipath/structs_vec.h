@@ -6,9 +6,9 @@
 #include "lock.h"
 
 struct vectors {
-	struct mutex_lock lock; /* defined in lock.h */
 	vector pathvec;
 	vector mpvec;
+	struct mutex_lock lock; /* defined in lock.h */
 };
 
 void __set_no_path_retry(struct multipath *mpp, bool check_features);
