@@ -447,7 +447,6 @@ static int client_state_machine(struct client *c, struct vectors *vecs,
 				short revents)
 {
 	ssize_t n;
-	const char *buf;
 
 	condlog(4, "%s: cli[%d] poll=%x state=%d cmd=\"%s\" repl \"%s\"", __func__,
 		c->fd, revents, c->state, c->cmd, get_strbuf_str(&c->reply));
@@ -527,7 +526,8 @@ static int client_state_machine(struct client *c, struct vectors *vecs,
 			free_keys(c->cmdvec);
 			c->cmdvec = NULL;
 			set_client_state(c, CLT_SEND);
-			return STM_CONT;
+			/* Wait for POLLOUT */
+			return STM_BREAK;
 		} else {
 			condlog(4, "%s: cli[%d] waiting for lock", __func__, c->fd);
 			return STM_BREAK;
@@ -538,22 +538,38 @@ static int client_state_machine(struct client *c, struct vectors *vecs,
 		free_keys(c->cmdvec);
 		c->cmdvec = NULL;
 		set_client_state(c, CLT_SEND);
-		return STM_CONT;
+		/* Wait for POLLOUT */
+		return STM_BREAK;
 
 	case CLT_SEND:
 		if (get_strbuf_len(&c->reply) == 0)
 			default_reply(c, c->error);
 
-		buf = get_strbuf_str(&c->reply);
+		if (c->cmd_len == 0) {
+			size_t len = get_strbuf_len(&c->reply) + 1;
 
-		if (send_packet(c->fd, buf) != 0)
-			dead_client(c);
-		else
-			condlog(4, "cli[%d]: Reply [%zu bytes]", c->fd,
-				get_strbuf_len(&c->reply) + 1);
-		reset_strbuf(&c->reply);
+			if (send(c->fd, &len, sizeof(len), MSG_NOSIGNAL)
+			    != sizeof(len))
+				c->error = -ECONNRESET;
+			c->cmd_len = len;
+			return STM_BREAK;
+		}
 
-		set_client_state(c, CLT_RECV);
+		if (c->len < c->cmd_len) {
+			const char *buf = get_strbuf_str(&c->reply);
+
+			n = send(c->fd, buf + c->len, c->cmd_len, MSG_NOSIGNAL);
+			if (n == -1) {
+				if (!(errno == EAGAIN || errno == EINTR))
+					c->error = -ECONNRESET;
+			} else
+				c->len += n;
+		}
+
+		if (c->len >= c->cmd_len) {
+			condlog(4, "cli[%d]: Reply [%zu bytes]", c->fd, c->cmd_len);
+			set_client_state(c, CLT_RECV);
+		}
 		return STM_BREAK;
 
 	default:
@@ -686,6 +702,9 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 			switch(c->state) {
 			case CLT_RECV:
 				polls[i].events = POLLIN;
+				break;
+			case CLT_SEND:
+				polls[i].events = POLLOUT;
 				break;
 			default:
 				/* don't poll for this client */
