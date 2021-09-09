@@ -1756,24 +1756,36 @@ static int snprint_blacklist_except(const struct config *conf,
 	return get_strbuf_len(buff) - initial_len;
 }
 
+int __snprint_config(const struct config *conf, struct strbuf *buff,
+		     const struct _vector *hwtable, const struct _vector *mpvec)
+{
+	int rc;
+
+	if ((rc = snprint_defaults(conf, buff)) < 0 ||
+	    (rc = snprint_blacklist(conf, buff)) < 0 ||
+	    (rc = snprint_blacklist_except(conf, buff)) < 0 ||
+	    (rc = snprint_hwtable(conf, buff,
+				  hwtable ? hwtable : conf->hwtable)) < 0 ||
+	    (rc = snprint_overrides(conf, buff, conf->overrides)) < 0)
+		return rc;
+
+	if (VECTOR_SIZE(conf->mptable) > 0 ||
+	    (mpvec != NULL && VECTOR_SIZE(mpvec) > 0))
+		if ((rc = snprint_mptable(conf, buff, mpvec)) < 0)
+			return rc;
+
+	return 0;
+}
+
 char *snprint_config(const struct config *conf, int *len,
 		     const struct _vector *hwtable, const struct _vector *mpvec)
 {
 	STRBUF_ON_STACK(buff);
 	char *reply;
-	int rc;
+	int rc = __snprint_config(conf, &buff, hwtable, mpvec);
 
-	if ((rc = snprint_defaults(conf, &buff)) < 0 ||
-	    (rc = snprint_blacklist(conf, &buff)) < 0 ||
-	    (rc = snprint_blacklist_except(conf, &buff)) < 0 ||
-	    (rc = snprint_hwtable(conf, &buff,
-				  hwtable ? hwtable : conf->hwtable)) < 0 ||
-	    (rc = snprint_overrides(conf, &buff, conf->overrides)) < 0)
+	if (rc < 0)
 		return NULL;
-	if (VECTOR_SIZE(conf->mptable) > 0 ||
-	    (mpvec != NULL && VECTOR_SIZE(mpvec) > 0))
-		if ((rc = snprint_mptable(conf, &buff, mpvec)) < 0)
-			return NULL;
 
 	if (len)
 		*len = get_strbuf_len(&buff);

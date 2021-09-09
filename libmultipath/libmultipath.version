@@ -293,3 +293,8 @@ global:
 local:
 	*;
 };
+
+LIBMULTIPATH_10.1.0 {
+global:
+	__snprint_config;
+} LIBMULTIPATH_10.0.0;
