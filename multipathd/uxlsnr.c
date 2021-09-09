@@ -88,7 +88,6 @@ enum {
 static __attribute__((unused)) char ___a[-(MIN_POLLS <= 0)];
 
 static LIST_HEAD(clients);
-static pthread_mutex_t client_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct pollfd *polls;
 static int notify_fd = -1;
 static int idle_fd = -1;
@@ -135,15 +134,13 @@ static void new_client(int ux_sock)
 	c->is_root = _socket_client_is_root(c->fd);
 
 	/* put it in our linked list */
-	pthread_mutex_lock(&client_lock);
 	list_add_tail(&c->node, &clients);
-	pthread_mutex_unlock(&client_lock);
 }
 
 /*
  * kill off a dead client
  */
-static void _dead_client(struct client *c)
+static void dead_client(struct client *c)
 {
 	int fd = c->fd;
 	list_del_init(&c->node);
@@ -153,14 +150,6 @@ static void _dead_client(struct client *c)
 		free_keys(c->cmdvec);
 	free(c);
 	close(fd);
-}
-
-static void dead_client(struct client *c)
-{
-	pthread_cleanup_push(cleanup_mutex, &client_lock);
-	pthread_mutex_lock(&client_lock);
-	_dead_client(c);
-	pthread_cleanup_pop(1);
 }
 
 static void free_polls (void)
@@ -180,11 +169,9 @@ void uxsock_cleanup(void *arg)
 	close(notify_fd);
 	free(watch_config_dir);
 
-	pthread_mutex_lock(&client_lock);
 	list_for_each_entry_safe(client_loop, client_tmp, &clients, node) {
-		_dead_client(client_loop);
+		dead_client(client_loop);
 	}
-	pthread_mutex_unlock(&client_lock);
 
 	cli_exit();
 	free_polls();
@@ -308,8 +295,7 @@ static void handle_inotify(int fd, struct watch_descriptors *wds)
 static const struct timespec ts_zero = { .tv_sec = 0, };
 static const struct timespec ts_max = { .tv_sec = LONG_MAX, .tv_nsec = 999999999 };
 
-/* call with clients lock held */
-static struct timespec *__get_soonest_timeout(struct timespec *ts)
+static struct timespec *get_soonest_timeout(struct timespec *ts)
 {
 	struct timespec ts_min = ts_max, now;
 	bool any = false;
@@ -336,8 +322,7 @@ static struct timespec *__get_soonest_timeout(struct timespec *ts)
 	return ts;
 }
 
-/* call with clients lock held */
-static bool __need_vecs_lock(void)
+static bool need_vecs_lock(void)
 {
 	struct client *c;
 
@@ -616,7 +601,6 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 	/* conf->sequence_nr will be 1 when uxsock_listen is first called */
 	unsigned int sequence_nr = 0;
 	struct watch_descriptors wds = { .conf_wd = -1, .dir_wd = -1 };
-	bool need_lock = false;
 	struct vectors *vecs = trigger_data;
 
 	condlog(3, "uxsock: startup listener");
@@ -648,8 +632,6 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 		struct timespec __timeout, *timeout;
 
 		/* setup for a poll */
-		pthread_mutex_lock(&client_lock);
-		pthread_cleanup_push(cleanup_mutex, &client_lock);
 		num_clients = 0;
 		list_for_each_entry(c, &clients, node) {
 			num_clients++;
@@ -689,9 +671,8 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 		else
 			polls[POLLFD_NOTIFY].events = POLLIN;
 
-		need_lock = __need_vecs_lock();
 		polls[POLLFD_IDLE].fd = idle_fd;
-		if (need_lock)
+		if (need_vecs_lock())
 			polls[POLLFD_IDLE].events = POLLIN;
 		else
 			polls[POLLFD_IDLE].events = 0;
@@ -716,8 +697,7 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 				break;
 		}
 		n_pfds = i;
-		timeout = __get_soonest_timeout(&__timeout);
-		pthread_cleanup_pop(1);
+		timeout = get_soonest_timeout(&__timeout);
 
 		/* most of our life is spent in this call */
 		poll_count = ppoll(polls, n_pfds, timeout, &mask);
