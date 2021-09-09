@@ -356,11 +356,11 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 		}
 
 		reset_watch(notify_fd, &wds, &sequence_nr);
+		polls[POLLFD_NOTIFY].fd = notify_fd;
 		if (notify_fd == -1 || (wds.conf_wd == -1 && wds.dir_wd == -1))
-			polls[POLLFD_NOTIFY].fd = -1;
+			polls[POLLFD_NOTIFY].events = 0;
 		else
-			polls[POLLFD_NOTIFY].fd = notify_fd;
-		polls[POLLFD_NOTIFY].events = POLLIN;
+			polls[POLLFD_NOTIFY].events = POLLIN;
 
 		/* setup the clients */
 		i = POLLFDS_BASE;
