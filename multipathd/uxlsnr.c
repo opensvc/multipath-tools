@@ -306,6 +306,35 @@ static void handle_inotify(int fd, struct watch_descriptors *wds)
 }
 
 static const struct timespec ts_zero = { .tv_sec = 0, };
+static const struct timespec ts_max = { .tv_sec = LONG_MAX, .tv_nsec = 999999999 };
+
+/* call with clients lock held */
+static struct timespec *__get_soonest_timeout(struct timespec *ts)
+{
+	struct timespec ts_min = ts_max, now;
+	bool any = false;
+	struct client *c;
+
+	list_for_each_entry(c, &clients, node) {
+		if (timespeccmp(&c->expires, &ts_zero) != 0 &&
+		    timespeccmp(&c->expires, &ts_min) < 0) {
+			ts_min = c->expires;
+			any = true;
+		}
+	}
+
+	if (!any)
+		return NULL;
+
+	get_monotonic_time(&now);
+	timespecsub(&ts_min, &now, ts);
+	if (timespeccmp(ts, &ts_zero) < 0)
+		*ts = ts_zero;
+
+	condlog(4, "%s: next client expires in %ld.%03lds", __func__,
+		(long)ts->tv_sec, ts->tv_nsec / 1000000);
+	return ts;
+}
 
 /* call with clients lock held */
 static bool __need_vecs_lock(void)
@@ -532,6 +561,24 @@ static int client_state_machine(struct client *c, struct vectors *vecs,
 	}
 }
 
+static void check_timeout(struct client *c)
+{
+	struct timespec now;
+
+	if (timespeccmp(&c->expires, &ts_zero) == 0)
+		return;
+
+	get_monotonic_time(&now);
+	if (timespeccmp(&c->expires, &now) > 0)
+		return;
+
+	condlog(2, "%s: cli[%d]: timed out at %ld.%03ld", __func__,
+		c->fd, (long)c->expires.tv_sec, c->expires.tv_nsec / 1000000);
+
+	c->error = -ETIMEDOUT;
+	set_client_state(c, CLT_SEND);
+}
+
 static void handle_client(struct client *c, struct vectors *vecs, short revents)
 {
 	if (revents & (POLLHUP|POLLERR)) {
@@ -539,6 +586,7 @@ static void handle_client(struct client *c, struct vectors *vecs, short revents)
 		return;
 	}
 
+	check_timeout(c);
 	while (client_state_machine(c, vecs, revents) == STM_CONT);
 }
 
@@ -581,6 +629,7 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 	while (1) {
 		struct client *c, *tmp;
 		int i, n_pfds, poll_count, num_clients;
+		struct timespec __timeout, *timeout;
 
 		/* setup for a poll */
 		pthread_mutex_lock(&client_lock);
@@ -648,10 +697,11 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 				break;
 		}
 		n_pfds = i;
+		timeout = __get_soonest_timeout(&__timeout);
 		pthread_cleanup_pop(1);
 
 		/* most of our life is spent in this call */
-		poll_count = ppoll(polls, n_pfds, NULL, &mask);
+		poll_count = ppoll(polls, n_pfds, timeout, &mask);
 
 		handle_signals(false);
 		if (poll_count == -1) {
@@ -666,10 +716,6 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 			break;
 		}
 
-		if (poll_count == 0) {
-			handle_signals(true);
-			continue;
-		}
 		if (polls[POLLFD_IDLE].fd != -1 &&
 		    polls[POLLFD_IDLE].revents & POLLIN)
 			drain_idle_fd(idle_fd);
