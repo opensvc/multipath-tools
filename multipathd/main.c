@@ -490,6 +490,8 @@ update_map (struct multipath *mpp, struct vectors *vecs, int new_map)
 {
 	int retries = 3;
 	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
+	struct path *pp;
+	int i;
 
 retry:
 	condlog(4, "%s: updating new map", mpp->alias);
@@ -501,6 +503,15 @@ retry:
 	}
 	verify_paths(mpp);
 	mpp->action = ACT_RELOAD;
+
+	if (mpp->prflag) {
+		vector_foreach_slot(mpp->paths, pp, i) {
+			if ((pp->state == PATH_UP)  || (pp->state == PATH_GHOST)) {
+				/* persistent reseravtion check*/
+				mpath_pr_event_handle(pp);
+			}
+		}
+	}
 
 	if (setup_map(mpp, &params, vecs)) {
 		condlog(0, "%s: failed to setup new map in update", mpp->alias);
