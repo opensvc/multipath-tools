@@ -712,7 +712,8 @@ static struct hwentry default_hw[] = {
 		.vendor        = "(XIV|IBM)",
 		.product       = "(NEXTRA|2810XIV)",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
-		.pgpolicy      = MULTIBUS,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = 15,
 	},
 	{
 		/* TMS RamSan / FlashSystem 710/720/810/820/840/900 */
