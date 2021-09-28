@@ -368,7 +368,8 @@ static struct hwentry default_hw[] = {
 		 */
 		.vendor        = "COMPELNT",
 		.product       = "Compellent Vol",
-		.pgpolicy      = MULTIBUS,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
 	{
