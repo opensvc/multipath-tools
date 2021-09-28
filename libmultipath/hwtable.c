@@ -361,11 +361,7 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 	},
 	{
-		/*
-		 * SC Series, formerly Compellent
-		 *
-		 * Maintainer: Sean McGinnis <sean_mcginnis@dell.com>
-		 */
+		/* SC Series, formerly Compellent */
 		.vendor        = "COMPELNT",
 		.product       = "Compellent Vol",
 		.pgpolicy      = GROUP_BY_PRIO,
