@@ -329,8 +329,9 @@ static struct hwentry default_hw[] = {
 		/* Symmetrix / DMX / VMAX / PowerMax */
 		.vendor        = "EMC",
 		.product       = "SYMMETRIX",
-		.pgpolicy      = MULTIBUS,
+		.pgpolicy      = GROUP_BY_PRIO,
 		.no_path_retry = 6,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
 	},
 	{
 		/* DGC CLARiiON CX/AX / VNX and Unity */
