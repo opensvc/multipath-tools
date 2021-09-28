@@ -350,8 +350,9 @@ static struct hwentry default_hw[] = {
 		.vendor        = "EMC",
 		.product       = "Invista",
 		.bl_product    = "LUNZ",
-		.pgpolicy      = MULTIBUS,
+		.pgpolicy      = GROUP_BY_PRIO,
 		.no_path_retry = 5,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
 	},
 	{
 		/* XtremIO */
