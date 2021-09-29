@@ -396,6 +396,15 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 3,
 		.fast_io_fail  = 15,
 	},
+	{
+		/* PowerVault ME4 */
+		.vendor        = "DellEMC",
+		.product       = "ME4",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.prio_name     = PRIO_ALUA,
+		.hwhandler     = "1 alua",
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+	},
 	/*
 	 * Fujitsu
 	 */
