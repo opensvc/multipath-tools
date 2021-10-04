@@ -125,6 +125,7 @@ static int poll_dmevents = 0;
 #else
 static int poll_dmevents = 1;
 #endif
+int disable_systemd;
 /* Don't access this variable without holding config_lock */
 static volatile enum daemon_status running_state = DAEMON_INIT;
 pid_t daemon_pid;
@@ -198,8 +199,9 @@ static void do_sd_notify(enum daemon_status old_state,
 	 * No need to tell systemd each time.
 	 * These notifications cause a lot of overhead on dbus.
 	 */
-	if ((new_state == DAEMON_IDLE || new_state == DAEMON_RUNNING) &&
-	    (old_state == DAEMON_IDLE || old_state == DAEMON_RUNNING))
+	if (((new_state == DAEMON_IDLE || new_state == DAEMON_RUNNING) &&
+	     (old_state == DAEMON_IDLE || old_state == DAEMON_RUNNING)) ||
+	    disable_systemd)
 		return;
 
 	if (new_state == DAEMON_IDLE || new_state == DAEMON_RUNNING)
@@ -3400,7 +3402,7 @@ main (int argc, char *argv[])
 		condlog(3, "failed to register exit handler for libmultipath");
 	libmp_udev_set_sync_support(0);
 
-	while ((arg = getopt(argc, argv, ":dsv:k::Bniw")) != EOF ) {
+	while ((arg = getopt(argc, argv, ":dsv:k::Bniw1")) != EOF ) {
 		switch(arg) {
 		case 'd':
 			foreground = 1;
@@ -3429,6 +3431,9 @@ main (int argc, char *argv[])
 			break;
 		case 'w':
 			poll_dmevents = 0;
+			break;
+		case '1':
+			disable_systemd = 1;
 			break;
 		default:
 			fprintf(stderr, "Invalid argument '-%c'\n",

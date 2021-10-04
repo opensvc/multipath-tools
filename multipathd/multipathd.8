@@ -84,6 +84,12 @@ Since kernel 4.14 a new device-mapper event polling interface is used for updati
 multipath devices on dmevents. Use this flag to force it to use the old event
 waiting method, based on creating a seperate thread for each device.
 .
+.TP
+.B \-1
+Disable systemd \fIsd_notify()\fR calls. Useful in early boot where systemd
+is not yet available. Roughly equivalent to compiling \fBmultipath-tools\fR with
+\fIUSE_SYSTEMD\fR disabled.
+.
 .
 .
 .\" ----------------------------------------------------------------------------
