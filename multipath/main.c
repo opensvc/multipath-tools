@@ -560,6 +560,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 
 		dump_config(conf, hwes, curmp);
 		vector_free(hwes);
+		r = RTVL_OK;
 		goto out;
 	}
 
