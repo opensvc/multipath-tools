@@ -29,7 +29,8 @@
 #include "strbuf.h"
 
 static int
-set_int(vector strvec, void *ptr, const char *file, int line_nr)
+set_int(vector strvec, void *ptr, int min, int max, const char *file,
+	int line_nr)
 {
 	int *int_ptr = (int *)ptr;
 	char *buff, *eptr;
@@ -44,11 +45,17 @@ set_int(vector strvec, void *ptr, const char *file, int line_nr)
 	if (eptr > buff)
 		while (isspace(*eptr))
 			eptr++;
-	if (*buff == '\0' || *eptr != '\0' || res > INT_MAX || res < INT_MIN) {
-		condlog(1, "%s: invalid value for %s: \"%s\"",
-			__func__, (char*)VECTOR_SLOT(strvec, 0), buff);
+	if (*buff == '\0' || *eptr != '\0') {
+		condlog(1, "%s line %d, invalid value for %s: \"%s\"",
+			file, line_nr, (char*)VECTOR_SLOT(strvec, 0), buff);
 		rc = 1;
 	} else {
+		if (res > max || res < min) {
+			res = (res > max) ? max : min;
+			condlog(1, "%s line %d, value for %s too %s, capping at %ld",
+			file, line_nr, (char*)VECTOR_SLOT(strvec, 0),
+			(res == max)? "large" : "small", res);
+		}
 		rc = 0;
 		*int_ptr = res;
 	}
@@ -77,8 +84,8 @@ set_uint(vector strvec, void *ptr, const char *file, int line_nr)
 		while (isspace(*eptr))
 			eptr++;
 	if (*buff == '\0' || *eptr != '\0' || !isdigit(*p) || res > UINT_MAX) {
-		condlog(1, "%s: invalid value for %s: \"%s\"",
-			__func__, (char*)VECTOR_SLOT(strvec, 0), buff);
+		condlog(1, "%s line %d, invalid value for %s: \"%s\"",
+			file, line_nr, (char*)VECTOR_SLOT(strvec, 0), buff);
 		rc = 1;
 	} else {
 		rc = 0;
@@ -193,6 +200,14 @@ def_ ## option ## _handler (struct config *conf, vector strvec,		\
 	return function (strvec, &conf->option, file, line_nr);		\
 }
 
+#define declare_def_range_handler(option, minval, maxval)			\
+static int								\
+def_ ## option ## _handler (struct config *conf, vector strvec,         \
+			    const char *file, int line_nr)		\
+{									\
+	return set_int(strvec, &conf->option, minval, maxval, file, line_nr); \
+}
+
 #define declare_def_snprint(option, function)				\
 static int								\
 snprint_def_ ## option (struct config *conf, struct strbuf *buff,	\
@@ -234,6 +249,18 @@ hw_ ## option ## _handler (struct config *conf, vector strvec,		\
 	return function (strvec, &hwe->option, file, line_nr);		\
 }
 
+#define declare_hw_range_handler(option, minval, maxval)		\
+static int								\
+hw_ ## option ## _handler (struct config *conf, vector strvec,		\
+			   const char *file, int line_nr)		\
+{									\
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);		\
+	if (!hwe)							\
+		return 1;						\
+	return set_int(strvec, &hwe->option, minval, maxval, file, line_nr); \
+}
+
+
 #define declare_hw_snprint(option, function)				\
 static int								\
 snprint_hw_ ## option (struct config *conf, struct strbuf *buff,	\
@@ -253,6 +280,17 @@ ovr_ ## option ## _handler (struct config *conf, vector strvec,		\
 	return function (strvec, &conf->overrides->option, file, line_nr); \
 }
 
+#define declare_ovr_range_handler(option, minval, maxval)		\
+static int								\
+ovr_ ## option ## _handler (struct config *conf, vector strvec,		\
+			    const char *file, int line_nr)		\
+{									\
+	if (!conf->overrides)						\
+		return 1;						\
+	return set_int(strvec, &conf->overrides->option, minval, maxval, \
+		       file, line_nr); \
+}
+
 #define declare_ovr_snprint(option, function)				\
 static int								\
 snprint_ovr_ ## option (struct config *conf, struct strbuf *buff,	\
@@ -270,6 +308,17 @@ mp_ ## option ## _handler (struct config *conf, vector strvec,		\
 	if (!mpe)							\
 		return 1;						\
 	return function (strvec, &mpe->option, file, line_nr);		\
+}
+
+#define declare_mp_range_handler(option, minval, maxval)		\
+static int								\
+mp_ ## option ## _handler (struct config *conf, vector strvec,		\
+			   const char *file, int line_nr)		\
+{									\
+	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);		\
+	if (!mpe)							\
+		return 1;						\
+	return set_int(strvec, &mpe->option, minval, maxval, file, line_nr); \
 }
 
 #define declare_mp_snprint(option, function)				\
@@ -298,7 +347,7 @@ declare_def_snprint(checkint, print_int)
 declare_def_handler(max_checkint, set_uint)
 declare_def_snprint(max_checkint, print_int)
 
-declare_def_handler(verbosity, set_int)
+declare_def_range_handler(verbosity, 0, MAX_VERBOSITY)
 declare_def_snprint(verbosity, print_int)
 
 declare_def_handler(reassign_maps, set_yes_no)
@@ -473,22 +522,22 @@ declare_ovr_snprint(checker_name, print_str)
 declare_hw_handler(checker_name, set_str)
 declare_hw_snprint(checker_name, print_str)
 
-declare_def_handler(minio, set_int)
+declare_def_range_handler(minio, 0, INT_MAX)
 declare_def_snprint_defint(minio, print_int, DEFAULT_MINIO)
-declare_ovr_handler(minio, set_int)
+declare_ovr_range_handler(minio, 0, INT_MAX)
 declare_ovr_snprint(minio, print_nonzero)
-declare_hw_handler(minio, set_int)
+declare_hw_range_handler(minio, 0, INT_MAX)
 declare_hw_snprint(minio, print_nonzero)
-declare_mp_handler(minio, set_int)
+declare_mp_range_handler(minio, 0, INT_MAX)
 declare_mp_snprint(minio, print_nonzero)
 
-declare_def_handler(minio_rq, set_int)
+declare_def_range_handler(minio_rq, 0, INT_MAX)
 declare_def_snprint_defint(minio_rq, print_int, DEFAULT_MINIO_RQ)
-declare_ovr_handler(minio_rq, set_int)
+declare_ovr_range_handler(minio_rq, 0, INT_MAX)
 declare_ovr_snprint(minio_rq, print_nonzero)
-declare_hw_handler(minio_rq, set_int)
+declare_hw_range_handler(minio_rq, 0, INT_MAX)
 declare_hw_snprint(minio_rq, print_nonzero)
-declare_mp_handler(minio_rq, set_int)
+declare_mp_range_handler(minio_rq, 0, INT_MAX)
 declare_mp_snprint(minio_rq, print_nonzero)
 
 declare_def_handler(queue_without_daemon, set_yes_no)
@@ -512,7 +561,7 @@ snprint_def_queue_without_daemon(struct config *conf, struct strbuf *buff,
 	return append_strbuf_quoted(buff, qwd);
 }
 
-declare_def_handler(checker_timeout, set_int)
+declare_def_range_handler(checker_timeout, 0, INT_MAX)
 declare_def_snprint(checker_timeout, print_nonzero)
 
 declare_def_handler(allow_usb_devices, set_yes_no)
@@ -583,13 +632,13 @@ declare_hw_snprint(deferred_remove, print_yes_no_undef)
 declare_mp_handler(deferred_remove, set_yes_no_undef)
 declare_mp_snprint(deferred_remove, print_yes_no_undef)
 
-declare_def_handler(retrigger_tries, set_int)
+declare_def_range_handler(retrigger_tries, 0, INT_MAX)
 declare_def_snprint(retrigger_tries, print_int)
 
-declare_def_handler(retrigger_delay, set_int)
+declare_def_range_handler(retrigger_delay, 0, INT_MAX)
 declare_def_snprint(retrigger_delay, print_int)
 
-declare_def_handler(uev_wait_timeout, set_int)
+declare_def_range_handler(uev_wait_timeout, 0, INT_MAX)
 declare_def_snprint(uev_wait_timeout, print_int)
 
 declare_def_handler(strict_timing, set_yes_no)
@@ -616,19 +665,19 @@ static int snprint_def_disable_changed_wwids(struct config *conf,
 	return print_ignored(buff);
 }
 
-declare_def_handler(remove_retries, set_int)
+declare_def_range_handler(remove_retries, 0, INT_MAX)
 declare_def_snprint(remove_retries, print_int)
 
-declare_def_handler(max_sectors_kb, set_int)
+declare_def_range_handler(max_sectors_kb, 0, INT_MAX)
 declare_def_snprint(max_sectors_kb, print_nonzero)
-declare_ovr_handler(max_sectors_kb, set_int)
+declare_ovr_range_handler(max_sectors_kb, 0, INT_MAX)
 declare_ovr_snprint(max_sectors_kb, print_nonzero)
-declare_hw_handler(max_sectors_kb, set_int)
+declare_hw_range_handler(max_sectors_kb, 0, INT_MAX)
 declare_hw_snprint(max_sectors_kb, print_nonzero)
-declare_mp_handler(max_sectors_kb, set_int)
+declare_mp_range_handler(max_sectors_kb, 0, INT_MAX)
 declare_mp_snprint(max_sectors_kb, print_nonzero)
 
-declare_def_handler(find_multipaths_timeout, set_int)
+declare_def_range_handler(find_multipaths_timeout, INT_MIN, INT_MAX)
 declare_def_snprint_defint(find_multipaths_timeout, print_int,
 			   DEFAULT_FIND_MULTIPATHS_TIMEOUT)
 
@@ -1385,27 +1434,7 @@ declare_ovr_snprint(recheck_wwid, print_yes_no_undef)
 declare_hw_handler(recheck_wwid, set_yes_no_undef)
 declare_hw_snprint(recheck_wwid, print_yes_no_undef)
 
-
-static int
-def_uxsock_timeout_handler(struct config *conf, vector strvec, const char *file,
-			   int line_nr)
-{
-	unsigned int uxsock_timeout;
-	char *buff;
-
-	buff = set_value(strvec);
-	if (!buff)
-		return 1;
-
-	if (sscanf(buff, "%u", &uxsock_timeout) == 1 &&
-	    uxsock_timeout > DEFAULT_REPLY_TIMEOUT)
-		conf->uxsock_timeout = uxsock_timeout;
-	else
-		conf->uxsock_timeout = DEFAULT_REPLY_TIMEOUT;
-
-	free(buff);
-	return 0;
-}
+declare_def_range_handler(uxsock_timeout, DEFAULT_REPLY_TIMEOUT, INT_MAX)
 
 static int
 hw_vpd_vendor_handler(struct config *conf, vector strvec, const char *file,
