@@ -558,7 +558,8 @@ process_stream(struct config *conf, FILE *stream, vector keywords,
 						goto out;
 				}
 				if (keyword->handler) {
-				    t = keyword->handler(conf, strvec);
+				    t = keyword->handler(conf, strvec, file,
+							 line_nr);
 					r += t;
 					if (t)
 						condlog(1, "%s line %d, parsing failed: %s",

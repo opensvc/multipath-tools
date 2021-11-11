@@ -29,7 +29,7 @@
 #include "strbuf.h"
 
 static int
-set_int(vector strvec, void *ptr)
+set_int(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	int *int_ptr = (int *)ptr;
 	char *buff, *eptr;
@@ -58,7 +58,7 @@ set_int(vector strvec, void *ptr)
 }
 
 static int
-set_uint(vector strvec, void *ptr)
+set_uint(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	unsigned int *uint_ptr = (unsigned int *)ptr;
 	char *buff, *eptr, *p;
@@ -90,7 +90,7 @@ set_uint(vector strvec, void *ptr)
 }
 
 static int
-set_str(vector strvec, void *ptr)
+set_str(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	char **str_ptr = (char **)ptr;
 
@@ -105,7 +105,7 @@ set_str(vector strvec, void *ptr)
 }
 
 static int
-set_yes_no(vector strvec, void *ptr)
+set_yes_no(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	char * buff;
 	int *int_ptr = (int *)ptr;
@@ -124,7 +124,7 @@ set_yes_no(vector strvec, void *ptr)
 }
 
 static int
-set_yes_no_undef(vector strvec, void *ptr)
+set_yes_no_undef(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	char * buff;
 	int *int_ptr = (int *)ptr;
@@ -187,9 +187,10 @@ static int print_yes_no_undef(struct strbuf *buff, long v)
 
 #define declare_def_handler(option, function)				\
 static int								\
-def_ ## option ## _handler (struct config *conf, vector strvec)		\
+def_ ## option ## _handler (struct config *conf, vector strvec,		\
+			    const char *file, int line_nr)		\
 {									\
-	return function (strvec, &conf->option);			\
+	return function (strvec, &conf->option, file, line_nr);		\
 }
 
 #define declare_def_snprint(option, function)				\
@@ -224,12 +225,13 @@ snprint_def_ ## option (struct config *conf, struct strbuf *buff,	\
 
 #define declare_hw_handler(option, function)				\
 static int								\
-hw_ ## option ## _handler (struct config *conf, vector strvec)		\
+hw_ ## option ## _handler (struct config *conf, vector strvec,		\
+			   const char *file, int line_nr)		\
 {									\
 	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);		\
 	if (!hwe)							\
 		return 1;						\
-	return function (strvec, &hwe->option);				\
+	return function (strvec, &hwe->option, file, line_nr);		\
 }
 
 #define declare_hw_snprint(option, function)				\
@@ -243,11 +245,12 @@ snprint_hw_ ## option (struct config *conf, struct strbuf *buff,	\
 
 #define declare_ovr_handler(option, function)				\
 static int								\
-ovr_ ## option ## _handler (struct config *conf, vector strvec)		\
+ovr_ ## option ## _handler (struct config *conf, vector strvec,		\
+			    const char *file, int line_nr)		\
 {									\
 	if (!conf->overrides)						\
 		return 1;						\
-	return function (strvec, &conf->overrides->option);		\
+	return function (strvec, &conf->overrides->option, file, line_nr); \
 }
 
 #define declare_ovr_snprint(option, function)				\
@@ -260,12 +263,13 @@ snprint_ovr_ ## option (struct config *conf, struct strbuf *buff,	\
 
 #define declare_mp_handler(option, function)				\
 static int								\
-mp_ ## option ## _handler (struct config *conf, vector strvec)		\
+mp_ ## option ## _handler (struct config *conf, vector strvec,		\
+			   const char *file, int line_nr)		\
 {									\
 	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);		\
 	if (!mpe)							\
 		return 1;						\
-	return function (strvec, &mpe->option);				\
+	return function (strvec, &mpe->option, file, line_nr);		\
 }
 
 #define declare_mp_snprint(option, function)				\
@@ -277,9 +281,10 @@ snprint_mp_ ## option (struct config *conf, struct strbuf *buff,	\
 	return function(buff, mpe->option);				\
 }
 
-static int checkint_handler(struct config *conf, vector strvec)
+static int checkint_handler(struct config *conf, vector strvec,
+			    const char *file, int line_nr)
 {
-	int rc = set_uint(strvec, &conf->checkint);
+	int rc = set_uint(strvec, &conf->checkint, file, line_nr);
 
 	if (rc)
 		return rc;
@@ -302,9 +307,10 @@ declare_def_snprint(reassign_maps, print_yes_no)
 declare_def_handler(multipath_dir, set_str)
 declare_def_snprint(multipath_dir, print_str)
 
-static int def_partition_delim_handler(struct config *conf, vector strvec)
+static int def_partition_delim_handler(struct config *conf, vector strvec,
+				       const char *file, int line_nr)
 {
-	int rc = set_str(strvec, &conf->partition_delim);
+	int rc = set_str(strvec, &conf->partition_delim, file, line_nr);
 
 	if (rc != 0)
 		return rc;
@@ -334,13 +340,13 @@ static const char * const find_multipaths_optvals[] = {
 };
 
 static int
-def_find_multipaths_handler(struct config *conf, vector strvec)
+def_find_multipaths_handler(struct config *conf, vector strvec,
+			    const char *file, int line_nr)
 {
 	char *buff;
 	int i;
 
-	if (set_yes_no_undef(strvec, &conf->find_multipaths) == 0 &&
-	    conf->find_multipaths != FIND_MULTIPATHS_UNDEF)
+	if (set_yes_no_undef(strvec, &conf->find_multipaths, file, line_nr) == 0 && conf->find_multipaths != FIND_MULTIPATHS_UNDEF)
 		return 0;
 
 	buff = set_value(strvec);
@@ -396,7 +402,8 @@ static int snprint_uid_attrs(struct config *conf, struct strbuf *buff,
 	return total;
 }
 
-static int uid_attrs_handler(struct config *conf, vector strvec)
+static int uid_attrs_handler(struct config *conf, vector strvec,
+			     const char *file, int line_nr)
 {
 	char *val;
 
@@ -597,7 +604,8 @@ declare_hw_handler(skip_kpartx, set_yes_no_undef)
 declare_hw_snprint(skip_kpartx, print_yes_no_undef)
 declare_mp_handler(skip_kpartx, set_yes_no_undef)
 declare_mp_snprint(skip_kpartx, print_yes_no_undef)
-static int def_disable_changed_wwids_handler(struct config *conf, vector strvec)
+static int def_disable_changed_wwids_handler(struct config *conf, vector strvec,
+					     const char *file, int line_nr)
 {
 	return 0;
 }
@@ -629,20 +637,23 @@ declare_def_snprint_defstr(enable_foreign, print_str,
 			   DEFAULT_ENABLE_FOREIGN)
 
 static int
-def_config_dir_handler(struct config *conf, vector strvec)
+def_config_dir_handler(struct config *conf, vector strvec, const char *file,
+		       int line_nr)
 {
 	/* this is only valid in the main config file */
 	if (conf->processed_main_config)
 		return 0;
-	return set_str(strvec, &conf->config_dir);
+	return set_str(strvec, &conf->config_dir, file, line_nr);
 }
 declare_def_snprint(config_dir, print_str)
 
 #define declare_def_attr_handler(option, function)			\
 static int								\
-def_ ## option ## _handler (struct config *conf, vector strvec)		\
+def_ ## option ## _handler (struct config *conf, vector strvec,		\
+			    const char *file, int line_nr)		\
 {									\
-	return function (strvec, &conf->option, &conf->attribute_flags);\
+	return function (strvec, &conf->option, &conf->attribute_flags, \
+			 file, line_nr);				\
 }
 
 #define declare_def_attr_snprint(option, function)			\
@@ -655,12 +666,14 @@ snprint_def_ ## option (struct config *conf, struct strbuf *buff,	\
 
 #define declare_mp_attr_handler(option, function)			\
 static int								\
-mp_ ## option ## _handler (struct config *conf, vector strvec)		\
+mp_ ## option ## _handler (struct config *conf, vector strvec,		\
+			   const char *file, int line_nr)		\
 {									\
 	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);		\
 	if (!mpe)							\
 		return 1;						\
-	return function (strvec, &mpe->option, &mpe->attribute_flags);	\
+	return function (strvec, &mpe->option, &mpe->attribute_flags,	\
+			 file, line_nr);				\
 }
 
 #define declare_mp_attr_snprint(option, function)			\
@@ -673,7 +686,7 @@ snprint_mp_ ## option (struct config *conf, struct strbuf *buff,	\
 }
 
 static int
-set_mode(vector strvec, void *ptr, int *flags)
+set_mode(vector strvec, void *ptr, int *flags, const char *file, int line_nr)
 {
 	mode_t mode;
 	mode_t *mode_ptr = (mode_t *)ptr;
@@ -694,7 +707,7 @@ set_mode(vector strvec, void *ptr, int *flags)
 }
 
 static int
-set_uid(vector strvec, void *ptr, int *flags)
+set_uid(vector strvec, void *ptr, int *flags, const char *file, int line_nr)
 {
 	uid_t uid;
 	uid_t *uid_ptr = (uid_t *)ptr;
@@ -719,7 +732,7 @@ set_uid(vector strvec, void *ptr, int *flags)
 }
 
 static int
-set_gid(vector strvec, void *ptr, int *flags)
+set_gid(vector strvec, void *ptr, int *flags, const char *file, int line_nr)
 {
 	gid_t gid;
 	gid_t *gid_ptr = (gid_t *)ptr;
@@ -786,7 +799,7 @@ declare_mp_attr_handler(gid, set_gid)
 declare_mp_attr_snprint(gid, print_gid)
 
 static int
-set_undef_off_zero(vector strvec, void *ptr)
+set_undef_off_zero(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	char * buff;
 	int *int_ptr = (int *)ptr;
@@ -827,7 +840,7 @@ declare_hw_handler(fast_io_fail, set_undef_off_zero)
 declare_hw_snprint(fast_io_fail, print_undef_off_zero)
 
 static int
-set_dev_loss(vector strvec, void *ptr)
+set_dev_loss(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	char * buff;
 	unsigned int *uint_ptr = (unsigned int *)ptr;
@@ -870,7 +883,7 @@ declare_hw_handler(eh_deadline, set_undef_off_zero)
 declare_hw_snprint(eh_deadline, print_undef_off_zero)
 
 static int
-set_pgpolicy(vector strvec, void *ptr)
+set_pgpolicy(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	char * buff;
 	int *int_ptr = (int *)ptr;
@@ -936,7 +949,8 @@ get_sys_max_fds(int *max_fds)
 
 
 static int
-max_fds_handler(struct config *conf, vector strvec)
+max_fds_handler(struct config *conf, vector strvec, const char *file,
+		int line_nr)
 {
 	char * buff;
 	int r = 0, max_fds;
@@ -981,7 +995,7 @@ snprint_max_fds (struct config *conf, struct strbuf *buff, const void *data)
 }
 
 static int
-set_rr_weight(vector strvec, void *ptr)
+set_rr_weight(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	int *int_ptr = (int *)ptr;
 	char * buff;
@@ -1025,7 +1039,7 @@ declare_mp_handler(rr_weight, set_rr_weight)
 declare_mp_snprint(rr_weight, print_rr_weight)
 
 static int
-set_pgfailback(vector strvec, void *ptr)
+set_pgfailback(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	int *int_ptr = (int *)ptr;
 	char * buff;
@@ -1075,7 +1089,7 @@ declare_mp_handler(pgfailback, set_pgfailback)
 declare_mp_snprint(pgfailback, print_pgfailback)
 
 static int
-no_path_retry_helper(vector strvec, void *ptr)
+no_path_retry_helper(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	int *int_ptr = (int *)ptr;
 	char * buff;
@@ -1120,7 +1134,8 @@ declare_mp_handler(no_path_retry, no_path_retry_helper)
 declare_mp_snprint(no_path_retry, print_no_path_retry)
 
 static int
-def_log_checker_err_handler(struct config *conf, vector strvec)
+def_log_checker_err_handler(struct config *conf, vector strvec,
+			    const char *file, int line_nr)
 {
 	char * buff;
 
@@ -1193,7 +1208,8 @@ print_reservation_key(struct strbuf *buff,
 }
 
 static int
-def_reservation_key_handler(struct config *conf, vector strvec)
+def_reservation_key_handler(struct config *conf, vector strvec,
+			    const char *file, int line_nr)
 {
 	return set_reservation_key(strvec, &conf->reservation_key,
 				   &conf->sa_flags,
@@ -1209,7 +1225,8 @@ snprint_def_reservation_key (struct config *conf, struct strbuf *buff,
 }
 
 static int
-mp_reservation_key_handler(struct config *conf, vector strvec)
+mp_reservation_key_handler(struct config *conf, vector strvec, const char *file,
+			   int line_nr)
 {
 	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);
 	if (!mpe)
@@ -1229,7 +1246,7 @@ snprint_mp_reservation_key (struct config *conf, struct strbuf *buff,
 }
 
 static int
-set_off_int_undef(vector strvec, void *ptr)
+set_off_int_undef(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	int *int_ptr = (int *)ptr;
 	char * buff;
@@ -1370,7 +1387,8 @@ declare_hw_snprint(recheck_wwid, print_yes_no_undef)
 
 
 static int
-def_uxsock_timeout_handler(struct config *conf, vector strvec)
+def_uxsock_timeout_handler(struct config *conf, vector strvec, const char *file,
+			   int line_nr)
 {
 	unsigned int uxsock_timeout;
 	char *buff;
@@ -1390,7 +1408,8 @@ def_uxsock_timeout_handler(struct config *conf, vector strvec)
 }
 
 static int
-hw_vpd_vendor_handler(struct config *conf, vector strvec)
+hw_vpd_vendor_handler(struct config *conf, vector strvec, const char *file,
+		      int line_nr)
 {
 	int i;
 	char *buff;
@@ -1430,7 +1449,8 @@ snprint_hw_vpd_vendor(struct config *conf, struct strbuf *buff,
  * blacklist block handlers
  */
 static int
-blacklist_handler(struct config *conf, vector strvec)
+blacklist_handler(struct config *conf, vector strvec, const char*file,
+		  int line_nr)
 {
 	if (!conf->blist_devnode)
 		conf->blist_devnode = vector_alloc();
@@ -1452,7 +1472,8 @@ blacklist_handler(struct config *conf, vector strvec)
 }
 
 static int
-blacklist_exceptions_handler(struct config *conf, vector strvec)
+blacklist_exceptions_handler(struct config *conf, vector strvec,
+			     const char *file, int line_nr)
 {
 	if (!conf->elist_devnode)
 		conf->elist_devnode = vector_alloc();
@@ -1475,7 +1496,8 @@ blacklist_exceptions_handler(struct config *conf, vector strvec)
 
 #define declare_ble_handler(option)					\
 static int								\
-ble_ ## option ## _handler (struct config *conf, vector strvec)		\
+ble_ ## option ## _handler (struct config *conf, vector strvec,		\
+			    const char *file, int line_nr)		\
 {									\
 	char *buff;							\
 	int rc;								\
@@ -1494,7 +1516,8 @@ ble_ ## option ## _handler (struct config *conf, vector strvec)		\
 
 #define declare_ble_device_handler(name, option, vend, prod)		\
 static int								\
-ble_ ## option ## _ ## name ## _handler (struct config *conf, vector strvec) \
+ble_ ## option ## _ ## name ## _handler (struct config *conf, vector strvec, \
+					 const char *file, int line_nr)	\
 {									\
 	char * buff;							\
 	int rc;								\
@@ -1536,13 +1559,15 @@ snprint_ble_simple (struct config *conf, struct strbuf *buff, const void *data)
 }
 
 static int
-ble_device_handler(struct config *conf, vector strvec)
+ble_device_handler(struct config *conf, vector strvec, const char *file,
+		   int line_nr)
 {
 	return alloc_ble_device(conf->blist_device);
 }
 
 static int
-ble_except_device_handler(struct config *conf, vector strvec)
+ble_except_device_handler(struct config *conf, vector strvec, const char *file,
+			  int line_nr)
 {
 	return alloc_ble_device(conf->elist_device);
 }
@@ -1574,7 +1599,8 @@ static int snprint_bled_product(struct config *conf, struct strbuf *buff,
  * devices block handlers
  */
 static int
-devices_handler(struct config *conf, vector strvec)
+devices_handler(struct config *conf, vector strvec, const char *file,
+		int line_nr)
 {
 	if (!conf->hwtable)
 		conf->hwtable = vector_alloc();
@@ -1586,7 +1612,8 @@ devices_handler(struct config *conf, vector strvec)
 }
 
 static int
-device_handler(struct config *conf, vector strvec)
+device_handler(struct config *conf, vector strvec, const char *file,
+	       int line_nr)
 {
 	struct hwentry * hwe;
 
@@ -1623,7 +1650,8 @@ declare_hw_snprint(hwhandler, print_str)
  * overrides handlers
  */
 static int
-overrides_handler(struct config *conf, vector strvec)
+overrides_handler(struct config *conf, vector strvec, const char *file,
+		  int line_nr)
 {
 	if (!conf->overrides)
 		conf->overrides = alloc_hwe();
@@ -1640,7 +1668,8 @@ overrides_handler(struct config *conf, vector strvec)
  * multipaths block handlers
  */
 static int
-multipaths_handler(struct config *conf, vector strvec)
+multipaths_handler(struct config *conf, vector strvec, const char *file,
+		   int line_nr)
 {
 	if (!conf->mptable)
 		conf->mptable = vector_alloc();
@@ -1652,7 +1681,8 @@ multipaths_handler(struct config *conf, vector strvec)
 }
 
 static int
-multipath_handler(struct config *conf, vector strvec)
+multipath_handler(struct config *conf, vector strvec, const char *file,
+		  int line_nr)
 {
 	struct mpentry * mpe;
 
@@ -1681,7 +1711,8 @@ declare_mp_snprint(alias, print_str)
  */
 
 static int
-deprecated_handler(struct config *conf, vector strvec)
+deprecated_handler(struct config *conf, vector strvec, const char *file,
+		   int line_nr)
 {
 	char * buff;
 
