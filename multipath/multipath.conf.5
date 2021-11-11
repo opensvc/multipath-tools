@@ -178,6 +178,7 @@ The default is: \fBno\fR
 .
 .TP
 .B multipath_dir
+This option is deprecated, and will be removed in a future release.
 Directory where the dynamic shared objects are stored. Defined at compile time,
 commonly \fI/lib64/multipath/\fR or \fI/lib/multipath/\fR.
 .RS
@@ -742,6 +743,7 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B bindings_file
+This option is deprecated, and will be removed in a future release.
 The full pathname of the binding file to be used when the user_friendly_names
 option is set.
 .RS
@@ -752,6 +754,7 @@ The default is: \fB/etc/multipath/bindings\fR
 .
 .TP
 .B wwids_file
+This option is deprecated, and will be removed in a future release.
 The full pathname of the WWIDs file, which is used by multipath to keep track
 of the WWIDs for LUNs it has created multipath devices on in the past.
 .RS
@@ -762,6 +765,7 @@ The default is: \fB/etc/multipath/wwids\fR
 .
 .TP
 .B prkeys_file
+This option is deprecated, and will be removed in a future release.
 The full pathname of the prkeys file, which is used by multipathd to keep
 track of the persistent reservation key used for a specific WWID, when
 \fIreservation_key\fR is set to \fBfile\fR.
@@ -933,6 +937,7 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B config_dir
+This option is deprecated, and will be removed in a future release.
 If set to anything other than "", multipath will search this directory
 alphabetically for file ending in ".conf" and it will read configuration
 information from them, just as if it was in \fI/etc/multipath.conf\fR.
