@@ -1,0 +1,54 @@
+name: check-abi
+on:
+  - push
+  - pull_request
+env:
+  ABI_BRANCH: ${{ secrets.ABI_BRANCH }}
+
+jobs:
+  save-and-test-ABI:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: set ABI branch
+        if: ${{ env.ABI_BRANCH == '' }}
+        run: echo "ABI_BRANCH=master" >> $GITHUB_ENV
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: get reference ABI
+        id: reference
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: abi.yaml
+          branch: ${{ env.ABI_BRANCH }}
+          name: abi
+          path: reference-abi
+      - name: update
+        run: sudo apt-get update
+      - name: dependencies
+        run: >
+          sudo apt-get install --yes gcc
+          gcc make pkg-config abigail-tools
+          libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
+          libudev-dev libjson-c-dev liburcu-dev libcmocka-dev
+      - name: create ABI
+        run: make -O -j$(grep -c ^processor /proc/cpuinfo) abi.tar.gz
+      - name: save ABI
+        uses: actions/upload-artifact@v1
+        with:
+          name: abi
+          path: abi
+      - name: compare ABI against reference
+        id: compare
+        continue-on-error: true
+        if: ${{ steps.reference.outcome == 'success' }}
+        run: make abi-test
+      - name: save differences
+        if: ${{ steps.compare.outcome == 'failure' }}
+        uses: actions/upload-artifact@v1
+        with:
+          name: abi-test
+          path: abi-test
+      - name: fail
+        if: ${{ steps.compare.outcome == 'failure' }}
+        run: false
