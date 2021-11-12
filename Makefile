@@ -2,32 +2,69 @@
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
 
-BUILDDIRS := \
+LIB_BUILDDIRS := \
 	libmpathcmd \
 	libmultipath \
+	libmpathpersist \
+	libmpathvalid
+
+ifneq ($(ENABLE_LIBDMMP),0)
+LIB_BUILDDIRS += \
+	libdmmp
+endif
+
+BUILDDIRS := $(LIB_BUILDDIRS) \
 	libmultipath/prioritizers \
 	libmultipath/checkers \
 	libmultipath/foreign \
-	libmpathpersist \
-	libmpathvalid \
 	multipath \
 	multipathd \
 	mpathpersist \
 	kpartx
 
-ifneq ($(ENABLE_LIBDMMP),0)
-BUILDDIRS += \
-	libdmmp
-endif
 
 BUILDDIRS.clean := $(BUILDDIRS:=.clean) tests.clean
 
-.PHONY:	$(BUILDDIRS) $(BUILDDIRS:=.uninstall) $(BUILDDIRS:=.install) $(BUILDDIRS.clean)
+.PHONY:	$(BUILDDIRS) $(BUILDDIRS:=.uninstall) $(BUILDDIRS:=.install) $(BUILDDIRS:=.clean) $(LIB_BUILDDIRS:=.abi)
 
 all:	$(BUILDDIRS)
 
 $(BUILDDIRS):
 	$(MAKE) -C $@
+
+$(LIB_BUILDDIRS:=.abi): $(LIB_BUILDDIRS)
+	$(MAKE) -C ${@:.abi=} abi
+
+# Create formal representation of the ABI
+# Useful for verifying ABI compatibility
+# Requires abidw from the abigail suite (https://sourceware.org/libabigail/)
+.PHONY: abi
+abi:	$(LIB_BUILDDIRS:=.abi)
+	mkdir -p $@
+	ln -ft $@ $(LIB_BUILDDIRS:=/*.abi)
+
+abi.tar.gz:	abi
+	tar cfz $@ abi
+
+# Check the ABI against a reference.
+# This requires the ABI from a previous run to be present
+# in the directory "reference-abi"
+# Requires abidiff from the abigail suite
+abi-test:	abi reference-abi $(wildcard abi/*.abi)
+	@err=0; \
+	for lib in abi/*.abi; do \
+	    diff=$$(abidiff "reference-$$lib" "$$lib") || { \
+	        err=1; \
+		echo "==== ABI differences in for $$lib ===="; \
+		echo "$$diff"; \
+	    }; \
+	done >$@; \
+	if [ $$err -eq 0 ]; then \
+	    echo "*** OK, ABI unchanged ***"; \
+	else \
+	    echo "*** WARNING: ABI has changed, see file $@ ***"; \
+	fi; \
+	[ $$err -eq 0 ]
 
 libmultipath libdmmp: libmpathcmd
 libmpathpersist libmpathvalid multipath multipathd: libmultipath
@@ -48,6 +85,8 @@ $(BUILDDIRS:=.uninstall):
 	$(MAKE) -C ${@:.uninstall=} uninstall
 
 clean: $(BUILDDIRS.clean)
+	rm -rf abi abi.tar.gz abi-test compile_commands.json
+
 install: all $(BUILDDIRS:=.install)
 uninstall: $(BUILDDIRS:=.uninstall)
 

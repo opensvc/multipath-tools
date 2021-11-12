@@ -3,6 +3,7 @@
 *~
 *.so
 *.so.0
+*.abi
 *.a
 *.gz
 *.d
@@ -13,6 +14,9 @@ kpartx/kpartx
 multipath/multipath
 multipathd/multipathd
 mpathpersist/mpathpersist
+abi.tar.gz
+abi
+abi-test
 .nfs*
 *.swp
 *.patch

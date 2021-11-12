@@ -81,6 +81,8 @@ $(LIBS): $(OBJS) $(VERSION_SCRIPT)
 $(DEVLIB): $(LIBS)
 	$(LN) $(LIBS) $@
 
+abi:    $(LIBS:%.so.0=%.abi)
+
 ../tests/$(LIBS): $(OBJS) $(VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=`basename $@` \
 		-o $@ $(OBJS) $(LIBDEPS)
@@ -99,7 +101,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 clean: dep_clean
-	$(RM) core *.a *.o *.so *.so.* *.gz nvme-ioctl.c nvme-ioctl.h
+	$(RM) core *.a *.o *.so *.so.* *.gz *.abi nvme-ioctl.c nvme-ioctl.h
 
 include $(wildcard $(OBJS:.o=.d))
 

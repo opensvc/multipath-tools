@@ -18,6 +18,8 @@ $(LIBS): $(OBJS) $(VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS) -Wl,--version-script=libmpathvalid.version
 	$(LN) $(LIBS) $(DEVLIB)
 
+abi:    $(LIBS:%.so.0=%.abi)
+
 install: $(LIBS)
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(syslibdir)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
@@ -31,7 +33,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(includedir)/mpath_valid.h
 
 clean: dep_clean
-	$(RM) core *.a *.o *.so *.so.* *.gz
+	$(RM) core *.a *.o *.so *.so.* *.gz *.abi
 
 include $(wildcard $(OBJS:.o=.d))
 

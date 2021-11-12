@@ -15,6 +15,8 @@ $(LIBS): $(OBJS) $(VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
 		-Wl,--version-script=$(VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
 
+abi:    $(LIBS:%.so.0=%.abi)
+
 $(DEVLIB): $(LIBS)
 	$(LN) $(LIBS) $@
 
@@ -31,7 +33,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(includedir)/mpath_cmd.h
 
 clean: dep_clean
-	$(RM) core *.a *.o *.so *.so.* *.gz
+	$(RM) core *.a *.o *.so *.so.* *.gz *.abi
 
 include $(wildcard $(OBJS:.o=.d))
 

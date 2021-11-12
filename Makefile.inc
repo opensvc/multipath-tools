@@ -140,3 +140,9 @@ check_file = $(shell \
 %.o:	%.c
 	@echo building $@ because of $?
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+%.abi:  %.so.0
+	abidw $< >$@
+
+%.abi:  %.so
+	abidw $< >$@
