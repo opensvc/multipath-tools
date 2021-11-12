@@ -441,6 +441,7 @@ static int client_state_machine(struct client *c, struct vectors *vecs,
 		if (!(revents & POLLIN))
 			return STM_BREAK;
 		if (c->cmd_len == 0) {
+			size_t len;
 			/*
 			 * We got POLLIN; assume that at least the length can
 			 * be read immediately.
@@ -449,17 +450,17 @@ static int client_state_machine(struct client *c, struct vectors *vecs,
 			c->expires.tv_sec += uxsock_timeout / 1000;
 			c->expires.tv_nsec += (uxsock_timeout % 1000) * 1000000;
 			normalize_timespec(&c->expires);
-			n = mpath_recv_reply_len(c->fd, 0);
-			if (n == -1) {
-				condlog(1, "%s: cli[%d]: failed to receive reply len",
-					__func__, c->fd);
-				c->error = -ECONNRESET;
-			} else if (n > _MAX_CMD_LEN) {
-				condlog(1, "%s: cli[%d]: overlong command (%zd bytes)",
+			n = recv(c->fd, &len, sizeof(len), 0);
+			if (n < (ssize_t)sizeof(len)) {
+				condlog(1, "%s: cli[%d]: failed to receive reply len: %zd",
 					__func__, c->fd, n);
 				c->error = -ECONNRESET;
+			} else if (len <= 0 || len > _MAX_CMD_LEN) {
+				condlog(1, "%s: cli[%d]: invalid command length (%zu bytes)",
+					__func__, c->fd, len);
+				c->error = -ECONNRESET;
 			} else {
-				c->cmd_len = n;
+				c->cmd_len = len;
 				condlog(4, "%s: cli[%d]: connected", __func__, c->fd);
 			}
 			/* poll for data */
