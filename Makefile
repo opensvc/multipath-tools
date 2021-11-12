@@ -66,6 +66,12 @@ abi-test:	abi reference-abi $(wildcard abi/*.abi)
 	fi; \
 	[ $$err -eq 0 ]
 
+# Create compile_commands.json, useful for using clangd with an IDE
+# Requires bear (https://github.com/rizsotto/Bear)
+compile_commands.json: Makefile Makefile.inc $(BUILDDIRS:=/Makefile)
+	$(MAKE) clean
+	bear -- $(MAKE)
+
 libmultipath libdmmp: libmpathcmd
 libmpathpersist libmpathvalid multipath multipathd: libmultipath
 libmultipath/prioritizers libmultipath/checkers libmultipath/foreign: libmultipath

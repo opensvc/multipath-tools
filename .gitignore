@@ -17,6 +17,7 @@ mpathpersist/mpathpersist
 abi.tar.gz
 abi
 abi-test
+compile_commands.json
 .nfs*
 *.swp
 *.patch
