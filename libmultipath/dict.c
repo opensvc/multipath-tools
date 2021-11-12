@@ -30,7 +30,7 @@
 #include "dict.h"
 #include "strbuf.h"
 
-static int
+static void
 do_set_int(vector strvec, void *ptr, int min, int max, const char *file,
 	int line_nr, char *buff)
 {
@@ -45,7 +45,7 @@ do_set_int(vector strvec, void *ptr, int min, int max, const char *file,
 	if (*buff == '\0' || *eptr != '\0') {
 		condlog(1, "%s line %d, invalid value for %s: \"%s\"",
 			file, line_nr, (char*)VECTOR_SLOT(strvec, 0), buff);
-		return 1;
+		return;
 	}
 	if (res > max || res < min) {
 		res = (res > max) ? max : min;
@@ -54,7 +54,7 @@ do_set_int(vector strvec, void *ptr, int min, int max, const char *file,
 		(res == max)? "large" : "small", res);
 	}
 	*int_ptr = res;
-	return 0;
+	return;
 }
 
 static int
@@ -62,16 +62,15 @@ set_int(vector strvec, void *ptr, int min, int max, const char *file,
 	int line_nr)
 {
 	char *buff;
-	int rc;
 
 	buff = set_value(strvec);
 	if (!buff)
 		return 1;
 
-	rc = do_set_int(strvec, ptr, min, max, file, line_nr, buff);
+	do_set_int(strvec, ptr, min, max, file, line_nr, buff);
 
 	FREE(buff);
-	return rc;
+	return 0;
 }
 
 static int
@@ -80,7 +79,6 @@ set_uint(vector strvec, void *ptr, const char *file, int line_nr)
 	unsigned int *uint_ptr = (unsigned int *)ptr;
 	char *buff, *eptr, *p;
 	unsigned long res;
-	int rc;
 
 	buff = set_value(strvec);
 	if (!buff)
@@ -93,17 +91,14 @@ set_uint(vector strvec, void *ptr, const char *file, int line_nr)
 	if (eptr > buff)
 		while (isspace(*eptr))
 			eptr++;
-	if (*buff == '\0' || *eptr != '\0' || !isdigit(*p) || res > UINT_MAX) {
+	if (*buff == '\0' || *eptr != '\0' || !isdigit(*p) || res > UINT_MAX)
 		condlog(1, "%s line %d, invalid value for %s: \"%s\"",
 			file, line_nr, (char*)VECTOR_SLOT(strvec, 0), buff);
-		rc = 1;
-	} else {
-		rc = 0;
+	else
 		*uint_ptr = res;
-	}
 
 	FREE(buff);
-	return rc;
+	return 0;
 }
 
 static int
@@ -954,7 +949,6 @@ declare_mp_attr_snprint(gid, print_gid)
 static int
 set_undef_off_zero(vector strvec, void *ptr, const char *file, int line_nr)
 {
-	int rc = 0;
 	char * buff;
 	int *int_ptr = (int *)ptr;
 
@@ -964,11 +958,10 @@ set_undef_off_zero(vector strvec, void *ptr, const char *file, int line_nr)
 
 	if (strcmp(buff, "off") == 0)
 		*int_ptr = UOZ_OFF;
-	else
-		rc = do_set_int(strvec, int_ptr, 0, INT_MAX, file, line_nr,
-				buff);
-	if (rc == 0 && *int_ptr == 0)
+	else if (strcmp(buff, "0") == 0)
 		*int_ptr = UOZ_ZERO;
+	else
+		do_set_int(strvec, int_ptr, 1, INT_MAX, file, line_nr, buff);
 
 	FREE(buff);
 	return 0;
@@ -1114,28 +1107,24 @@ max_fds_handler(struct config *conf, vector strvec, const char *file,
 		int line_nr)
 {
 	char * buff;
-	int r = 0, max_fds;
+	int max_fds;
 
 	buff = set_value(strvec);
 
 	if (!buff)
 		return 1;
 
-	r = get_sys_max_fds(&max_fds);
-	if (r) {
-		/* Assume safe limit */
-		max_fds = 4096;
-	}
-	if (!strcmp(buff, "max")) {
+	if (get_sys_max_fds(&max_fds) != 0)
+		max_fds = 4096;  /* Assume safe limit */
+	if (!strcmp(buff, "max"))
 		conf->max_fds = max_fds;
-		r = 0;
-	} else
-		r = do_set_int(strvec, &conf->max_fds, 0, max_fds, file,
-			       line_nr, buff);
+	else
+		do_set_int(strvec, &conf->max_fds, 0, max_fds, file, line_nr,
+			   buff);
 
 	FREE(buff);
 
-	return r;
+	return 0;
 }
 
 static int
@@ -1201,7 +1190,6 @@ declare_mp_snprint(rr_weight, print_rr_weight)
 static int
 set_pgfailback(vector strvec, void *ptr, const char *file, int line_nr)
 {
-	int rc = 0;
 	int *int_ptr = (int *)ptr;
 	char * buff;
 
@@ -1216,11 +1204,11 @@ set_pgfailback(vector strvec, void *ptr, const char *file, int line_nr)
 	else if (strlen(buff) == 10 && !strcmp(buff, "followover"))
 		*int_ptr = -FAILBACK_FOLLOWOVER;
 	else
-		rc = do_set_int(strvec, ptr, 0, INT_MAX, file, line_nr, buff);
+		do_set_int(strvec, ptr, 0, INT_MAX, file, line_nr, buff);
 
 	FREE(buff);
 
-	return rc;
+	return 0;
 }
 
 int
@@ -1252,7 +1240,6 @@ declare_mp_snprint(pgfailback, print_pgfailback)
 static int
 no_path_retry_helper(vector strvec, void *ptr, const char *file, int line_nr)
 {
-	int rc = 0;
 	int *int_ptr = (int *)ptr;
 	char * buff;
 
@@ -1265,10 +1252,10 @@ no_path_retry_helper(vector strvec, void *ptr, const char *file, int line_nr)
 	else if (!strcmp(buff, "queue"))
 		*int_ptr = NO_PATH_RETRY_QUEUE;
 	else
-		rc = do_set_int(strvec, ptr, 1, INT_MAX, file, line_nr, buff);
+		do_set_int(strvec, ptr, 1, INT_MAX, file, line_nr, buff);
 
 	FREE(buff);
-	return rc;
+	return 0;
 }
 
 int
@@ -1413,7 +1400,6 @@ snprint_mp_reservation_key (struct config *conf, struct strbuf *buff,
 static int
 set_off_int_undef(vector strvec, void *ptr, const char *file, int line_nr)
 {
-	int rc =0;
 	int *int_ptr = (int *)ptr;
 	char * buff;
 
@@ -1424,10 +1410,10 @@ set_off_int_undef(vector strvec, void *ptr, const char *file, int line_nr)
 	if (!strcmp(buff, "no") || !strcmp(buff, "0"))
 		*int_ptr = NU_NO;
 	else
-		rc = do_set_int(strvec, ptr, 1, INT_MAX, file, line_nr, buff);
+		do_set_int(strvec, ptr, 1, INT_MAX, file, line_nr, buff);
 
 	FREE(buff);
-	return rc;
+	return 0;
 }
 
 int
