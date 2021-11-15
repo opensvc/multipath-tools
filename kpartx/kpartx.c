@@ -359,9 +359,7 @@ main(int argc, char **argv){
 			exit (0);
 
 		if (!loopdev) {
-			loopdev = find_unused_loop_device();
-
-			if (set_loop(loopdev, rpath, 0, &ro)) {
+			if (set_loop(&loopdev, rpath, 0, &ro)) {
 				fprintf(stderr, "can't set up loop\n");
 				exit (1);
 			}
