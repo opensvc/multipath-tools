@@ -36,6 +36,8 @@
 #include "print.h"
 #include "strbuf.h"
 
+#define VPD_BUFLEN 4096
+
 struct vpd_vendor_page vpd_vendor_pages[VPD_VP_ARRAY_SIZE] = {
 	[VPD_VP_UNDEF]	= { 0x00, "undef" },
 	[VPD_VP_HP3PAR]	= { 0xc0, "hp3par" },
@@ -1086,6 +1088,8 @@ parse_vpd_pg80(const unsigned char *in, char *out, size_t out_len)
 	if (out_len == 0)
 		return 0;
 
+	if (len > WWID_SIZE)
+		len = WWID_SIZE;
 	/*
 	 * Strip leading and trailing whitespace
 	 */
@@ -1115,84 +1119,123 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 	const unsigned char *d;
 	const unsigned char *vpd = NULL;
 	size_t len, vpd_len, i;
-	int vpd_type, prio = -1, naa_prio;
+	int vpd_type, prio = -1;
+	int err = -ENODATA;
+
+	/* Need space at least for one digit */
+	if (out_len <= 1)
+		return 0;
 
 	d = in + 4;
-	while (d < in + in_len) {
+	while (d <= in + in_len - 4) {
+		bool invalid = false;
+		int new_prio = -1;
+
 		/* Select 'association: LUN' */
-		if ((d[1] & 0x30) != 0) {
-			d += d[3] + 4;
-			continue;
-		}
+		if ((d[1] & 0x30) == 0x30) {
+			invalid = true;
+			goto next_designator;
+		} else if ((d[1] & 0x30) != 0x00)
+			goto next_designator;
+
 		switch (d[1] & 0xf) {
+			unsigned char good_len;
 		case 0x3:
 			/* NAA: Prio 5 */
 			switch (d[4] >> 4) {
 			case 6:
 				/* IEEE Registered Extended: Prio 8 */
-				naa_prio = 8;
+				new_prio = 8;
+				good_len = 16;
 				break;
 			case 5:
 				/* IEEE Registered: Prio 7 */
-				naa_prio = 7;
+				new_prio = 7;
+				good_len = 8;
 				break;
 			case 2:
 				/* IEEE Extended: Prio 6 */
-				naa_prio = 6;
+				new_prio = 6;
+				good_len = 8;
 				break;
 			case 3:
 				/* IEEE Locally assigned: Prio 1 */
-				naa_prio = 1;
+				new_prio = 1;
+				good_len = 8;
 				break;
 			default:
 				/* Default: no priority */
-				naa_prio = -1;
+				good_len = 0xff;
 				break;
 			}
-			if (prio < naa_prio) {
-				prio = naa_prio;
-				vpd = d;
-			}
+
+			invalid = good_len == 0xff || good_len != d[3];
 			break;
 		case 0x2:
 			/* EUI-64: Prio 4 */
-			if (prio < 4) {
-				prio = 4;
-				vpd = d;
-			}
+			invalid = (d[3] != 8 && d[3] != 12 && d[3] != 16);
+			new_prio = 4;
 			break;
 		case 0x8:
 			/* SCSI Name: Prio 3 */
-			if (memcmp(d + 4, "eui.", 4) &&
-			    memcmp(d + 4, "naa.", 4) &&
-			    memcmp(d + 4, "iqn.", 4))
-				break;
-			if (prio < 3) {
-				prio = 3;
-				vpd = d;
-			}
+			invalid = (d[3] < 4 || (memcmp(d + 4, "eui.", 4) &&
+						memcmp(d + 4, "naa.", 4) &&
+						memcmp(d + 4, "iqn.", 4)));
+			new_prio = 3;
 			break;
 		case 0x1:
 			/* T-10 Vendor ID: Prio 2 */
-			if (prio < 2) {
-				prio = 2;
-				vpd = d;
-			}
+			invalid = (d[3] < 8);
+			new_prio = 2;
 			break;
+		case 0xa:
+			condlog(2, "%s: UUID identifiers not yet supported",
+				__func__);
+			break;
+		default:
+			invalid = true;
+			break;
+		}
+
+	next_designator:
+		if (d + d[3] + 4 - in > (ssize_t)in_len) {
+			condlog(2, "%s: device descriptor length overflow: %zd > %zu",
+				__func__, d + d[3] + 4 - in, in_len);
+			err = -EOVERFLOW;
+			break;
+		} else if (invalid) {
+			condlog(2, "%s: invalid device designator at offset %zd: %02x%02x%02x%02x",
+				__func__, d - in, d[0], d[1], d[2], d[3]);
+			/*
+			 * We checked above that the next offset is within limits.
+			 * Proceed, fingers crossed.
+			 */
+			err = -EINVAL;
+		} else if (new_prio > prio) {
+			vpd = d;
+			prio = new_prio;
 		}
 		d += d[3] + 4;
 	}
 
 	if (prio <= 0)
-		return -ENODATA;
-	/* Need space at least for one digit */
-	else if (out_len <= 1)
-		return 0;
+		return err;
+
+	if (d != in + in_len)
+		/* Should this be fatal? (overflow covered above) */
+		condlog(2, "%s: warning: last descriptor end %zd != VPD length %zu",
+			__func__, d - in, in_len);
 
 	len = 0;
 	vpd_type = vpd[1] & 0xf;
 	vpd_len = vpd[3];
 	vpd += 4;
+	/* untaint vpd_len for coverity */
+	if (vpd_len > WWID_SIZE) {
+		condlog(1, "%s: suspicious designator length %zu truncated to %u",
+			__func__, vpd_len, WWID_SIZE);
+		vpd_len = WWID_SIZE;
+	}
 	if (vpd_type == 0x2 || vpd_type == 0x3) {
 		size_t i;
 
@@ -1206,10 +1249,6 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 		for (i = 0; i < vpd_len; i++)
 			len += sprintf(out + len,
 				       "%02x", vpd[i]);
-	} else if (vpd_type == 0x8 && vpd_len < 4) {
-		condlog(1, "%s: VPD length %zu too small for designator type 8",
-			__func__, vpd_len);
-		return -EINVAL;
 	} else if (vpd_type == 0x8) {
 		if (!memcmp("eui.", vpd, 4))
 			out[0] =  '2';
@@ -1316,11 +1355,12 @@ parse_vpd_c0_hp3par(const unsigned char *in, size_t in_len,
 static int
 get_vpd_sysfs (struct udev_device *parent, int pg, char * str, int maxlen)
 {
-	int len, buff_len;
-	unsigned char buff[4096];
+	int len;
+	size_t buff_len;
+	unsigned char buff[VPD_BUFLEN];
 
-	memset(buff, 0x0, 4096);
-	if (!parent || sysfs_get_vpd(parent, pg, buff, 4096) <= 0) {
+	memset(buff, 0x0, VPD_BUFLEN);
+	if (!parent || sysfs_get_vpd(parent, pg, buff, VPD_BUFLEN) <= 0) {
 		condlog(3, "failed to read sysfs vpd pg%02x", pg);
 		return -EINVAL;
 	}
@@ -1331,8 +1371,10 @@ get_vpd_sysfs (struct udev_device *parent, int pg, char * str, int maxlen)
 		return -ENODATA;
 	}
 	buff_len = get_unaligned_be16(&buff[2]) + 4;
-	if (buff_len > 4096)
+	if (buff_len > VPD_BUFLEN) {
 		condlog(3, "vpd pg%02x page truncated", pg);
+		buff_len = VPD_BUFLEN;
+	}
 
 	if (pg == 0x80)
 		len = parse_vpd_pg80(buff, str, maxlen);
@@ -1376,7 +1418,7 @@ bool
 is_vpd_page_supported(int fd, int pg)
 {
 	int i, len;
-	unsigned char buff[4096];
+	unsigned char buff[VPD_BUFLEN];
 
 	len = fetch_vpd_page(fd, 0x00, buff, sizeof(buff));
 	if (len < 0)
@@ -1392,7 +1434,7 @@ int
 get_vpd_sgio (int fd, int pg, int vend_id, char * str, int maxlen)
 {
 	int len, buff_len;
-	unsigned char buff[4096];
+	unsigned char buff[VPD_BUFLEN];
 
 	buff_len = fetch_vpd_page(fd, pg, buff, sizeof(buff));
 	if (buff_len < 0)
