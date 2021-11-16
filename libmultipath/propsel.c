@@ -524,7 +524,7 @@ int select_checker(struct config *conf, struct path *pp)
 			ckr_name = RDAC;
 			goto out;
 		}
-		path_get_tpgs(pp);
+		(void)path_get_tpgs(pp);
 		if (pp->tpgs != TPGS_NONE && pp->tpgs != TPGS_UNDEF) {
 			ckr_name = TUR;
 			goto out;
