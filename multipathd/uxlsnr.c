@@ -609,6 +609,7 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 	if (!polls) {
 		condlog(0, "uxsock: failed to allocate poll fds");
 		exit_daemon();
+		return NULL;
 	}
 	notify_fd = inotify_init1(IN_NONBLOCK);
 	if (notify_fd == -1) /* it's fine if notifications fail */
