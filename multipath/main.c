@@ -958,7 +958,10 @@ main (int argc, char *argv[])
 		exit(RTVL_FAIL);
 	}
 
-	check_alias_settings(conf);
+	if (check_alias_settings(conf)) {
+		fprintf(stderr, "fatal configuration error, aborting");
+		exit(RTVL_FAIL);
+	}
 
 	if (optind < argc) {
 		dev = calloc(1, FILE_NAME_SIZE);
