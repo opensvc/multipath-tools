@@ -841,11 +841,8 @@ main (int argc, char *argv[])
 		condlog(1, "failed to register cleanup handler for vecs: %m");
 	while ((arg = getopt(argc, argv, ":adDcChl::eFfM:v:p:b:BrR:itTquUwW")) != EOF ) {
 		switch(arg) {
-		case 1: printf("optarg : %s\n",optarg);
-			break;
 		case 'v':
-			if (sizeof(optarg) > sizeof(char *) ||
-			    !isdigit(optarg[0])) {
+			if (!isdigit(optarg[0])) {
 				usage (argv[0]);
 				exit(RTVL_FAIL);
 			}
