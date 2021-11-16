@@ -837,7 +837,8 @@ main (int argc, char *argv[])
 	conf = get_multipath_config();
 	conf->retrigger_tries = 0;
 	conf->force_sync = 1;
-	atexit(cleanup_vecs);
+	if (atexit(cleanup_vecs))
+		condlog(1, "failed to register cleanup handler for vecs: %m");
 	while ((arg = getopt(argc, argv, ":adDcChl::eFfM:v:p:b:BrR:itTquUwW")) != EOF ) {
 		switch(arg) {
 		case 1: printf("optarg : %s\n",optarg);
