@@ -3337,11 +3337,18 @@ failed:
 	return sd_notify_exit(exit_code);
 }
 
+static void cleanup_close(int *pfd)
+{
+	if (*pfd != -1 && *pfd != STDIN_FILENO && *pfd != STDOUT_FILENO &&
+	    *pfd != STDERR_FILENO)
+		close(*pfd);
+}
+
 static int
 daemonize(void)
 {
 	int pid;
-	int dev_null_fd;
+	int dev_null_fd __attribute__((cleanup(cleanup_close))) = -1;
 
 	if( (pid = fork()) < 0){
 		fprintf(stderr, "Failed first fork : %s\n", strerror(errno));
@@ -3367,25 +3374,21 @@ daemonize(void)
 		_exit(0);
 	}
 
-	close(STDIN_FILENO);
-	if (dup(dev_null_fd) < 0) {
-		fprintf(stderr, "cannot dup /dev/null to stdin : %s\n",
+	if (dup2(dev_null_fd, STDIN_FILENO) < 0) {
+		fprintf(stderr, "cannot dup2 /dev/null to stdin : %s\n",
 			strerror(errno));
 		_exit(0);
 	}
-	close(STDOUT_FILENO);
-	if (dup(dev_null_fd) < 0) {
-		fprintf(stderr, "cannot dup /dev/null to stdout : %s\n",
+	if (dup2(dev_null_fd, STDOUT_FILENO) < 0) {
+		fprintf(stderr, "cannot dup2 /dev/null to stdout : %s\n",
 			strerror(errno));
 		_exit(0);
 	}
-	close(STDERR_FILENO);
-	if (dup(dev_null_fd) < 0) {
+	if (dup2(dev_null_fd, STDERR_FILENO) < 0) {
 		fprintf(stderr, "cannot dup /dev/null to stderr : %s\n",
 			strerror(errno));
 		_exit(0);
 	}
-	close(dev_null_fd);
 	daemon_pid = getpid();
 	return 0;
 }
