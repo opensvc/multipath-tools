@@ -1,0 +1,51 @@
+name: coverity
+on:
+  push:
+    branches:
+      - coverity
+
+jobs:
+  upload-coverity-scan:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: dependencies
+        run: >
+          sudo apt-get install --yes
+          gcc make pkg-config
+          libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
+          libudev-dev libjson-c-dev liburcu-dev libcmocka-dev
+      - name: download coverity
+        run: >
+          curl -o cov-analysis-linux64.tar.gz
+          --form token="$COV_TOKEN"
+          --form project="$COV_PROJECT"
+          https://scan.coverity.com/download/cxx/linux64
+        env:
+          COV_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+          COV_PROJECT:  ${{ secrets.COVERITY_SCAN_PROJECT }}
+      - name: unpack coverity
+        run: |
+          mkdir -p coverity
+          tar xfz cov-analysis-linux64.tar.gz --strip 1 -C coverity
+      - name: build with cov-build
+        run: >
+          PATH="$PWD/coverity/bin:$PATH"
+          cov-build --dir cov-int make -O -j"$(grep -c ^processor /proc/cpuinfo)"
+      - name: pack results
+        run: tar cfz multipath-tools.tgz cov-int
+      - name: submit results
+        run: >
+          curl
+          --form token="$COV_TOKEN"
+          --form email="$COV_EMAIL"
+          --form file="@multipath-tools.tgz"
+          --form version="${{ github.ref_name }}"
+          --form description="$(git describe --tags --match "0.*")"
+          --form project="$COV_PROJECT"
+          https://scan.coverity.com/builds
+        env:
+          COV_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+          COV_PROJECT:  ${{ secrets.COVERITY_SCAN_PROJECT }}
+          COV_EMAIL: ${{ secrets.COVERITY_SCAN_EMAIL }}
