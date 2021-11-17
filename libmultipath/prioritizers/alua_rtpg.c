@@ -27,7 +27,6 @@
 #include "../structs.h"
 #include "../prio.h"
 #include "../discovery.h"
-#include "../unaligned.h"
 #include "../debug.h"
 #include "alua_rtpg.h"
 
@@ -252,12 +251,12 @@ int
 get_target_port_group(const struct path * pp, unsigned int timeout)
 {
 	unsigned char		*buf;
-	struct vpd83_data *	vpd83;
-	struct vpd83_dscr *	dscr;
+	const struct vpd83_data *	vpd83;
+	const struct vpd83_dscr *	dscr;
 	int			rc;
 	int			buflen, scsi_buflen;
 
-	buflen = 4096;
+	buflen = VPD_BUFLEN;
 	buf = (unsigned char *)malloc(buflen);
 	if (!buf) {
 		PRINT_DEBUG("malloc failed: could not allocate"
@@ -298,13 +297,13 @@ get_target_port_group(const struct path * pp, unsigned int timeout)
 	rc = -RTPG_NO_TPG_IDENTIFIER;
 	FOR_EACH_VPD83_DSCR(vpd83, dscr) {
 		if (vpd83_dscr_istype(dscr, IDTYPE_TARGET_PORT_GROUP)) {
-			struct vpd83_tpg_dscr *p;
+			const struct vpd83_tpg_dscr *p;
 			if (rc != -RTPG_NO_TPG_IDENTIFIER) {
 				PRINT_DEBUG("get_target_port_group: more "
 					    "than one TPG identifier found!");
 				continue;
 			}
-			p  = (struct vpd83_tpg_dscr *)dscr->data;
+			p  = (const struct vpd83_tpg_dscr *)dscr->data;
 			rc = get_unaligned_be16(p->tpg);
 		}
 	}
@@ -377,7 +376,7 @@ get_asymmetric_access_state(const struct path *pp, unsigned int tpg,
 	uint64_t		scsi_buflen;
 	int fd = pp->fd;
 
-	buflen = 4096;
+	buflen = VPD_BUFLEN;
 	buf = (unsigned char *)malloc(buflen);
 	if (!buf) {
 		PRINT_DEBUG ("malloc failed: could not allocate"
