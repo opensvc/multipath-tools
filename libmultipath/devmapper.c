@@ -1389,7 +1389,6 @@ dm_mapname(int major, int minor)
 	const char *map;
 	struct dm_task *dmt;
 	int r;
-	int loop = MAX_WAIT * LOOPS_PER_SEC;
 
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_STATUS)))
 		return NULL;
@@ -1399,23 +1398,9 @@ dm_mapname(int major, int minor)
 		goto bad;
 
 	dm_task_no_open_count(dmt);
-
-	/*
-	 * device map might not be ready when we get here from
-	 * daemon uev_trigger -> uev_add_map
-	 */
-	while (--loop) {
-		r = libmp_dm_task_run(dmt);
-
-		if (r)
-			break;
-
-		usleep(1000 * 1000 / LOOPS_PER_SEC);
-	}
-
+	r = libmp_dm_task_run(dmt);
 	if (!r) {
 		dm_log_error(2, DM_DEVICE_STATUS, dmt);
-		condlog(0, "%i:%i: timeout fetching map name", major, minor);
 		goto bad;
 	}
 
