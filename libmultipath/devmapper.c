@@ -1294,8 +1294,10 @@ struct multipath *dm_get_multipath(const char *name)
 	if (dm_get_map(name, &mpp->size, NULL) != DMP_OK)
 		goto out;
 
-	dm_get_uuid(name, mpp->wwid, WWID_SIZE);
-	dm_get_info(name, &mpp->dmi);
+	if (dm_get_uuid(name, mpp->wwid, WWID_SIZE) != 0)
+		condlog(2, "%s: failed to get uuid for %s", __func__, name);
+	if (dm_get_info(name, &mpp->dmi) != 0)
+		condlog(2, "%s: failed to get info for %s", __func__, name);
 
 	return mpp;
 out:
