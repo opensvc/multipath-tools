@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <libudev.h>
 
 #include "util.h"
 #include "checkers.h"
@@ -174,8 +175,8 @@ bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 				} else {
 					int rc;
 
-					devt2devname(pp->dev, sizeof(pp->dev),
-						     pp->dev_t);
+					strlcpy(pp->dev, udev_device_get_sysname(pp->udev),
+						sizeof(pp->dev));
 					conf = get_multipath_config();
 					pthread_cleanup_push(put_multipath_config,
 							     conf);
