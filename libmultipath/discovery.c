@@ -1121,6 +1121,7 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 	size_t len, vpd_len, i;
 	int vpd_type, prio = -1;
 	int err = -ENODATA;
+	STRBUF_ON_STACK(buf);
 
 	/* Need space at least for one digit */
 	if (out_len <= 1)
@@ -1239,92 +1240,76 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 	if (vpd_type == 0x2 || vpd_type == 0x3) {
 		size_t i;
 
-		len = sprintf(out, "%d", vpd_type);
-		if (2 * vpd_len >= out_len - len) {
-			condlog(1, "%s: WWID overflow, type %d, %zu/%zu bytes required",
-				__func__, vpd_type,
-				2 * vpd_len + len + 1, out_len);
-			vpd_len = (out_len - len - 1) / 2;
-		}
+		if ((err = print_strbuf(&buf, "%d", vpd_type)) < 0)
+			return err;
 		for (i = 0; i < vpd_len; i++)
-			len += sprintf(out + len,
-				       "%02x", vpd[i]);
+			if ((err = print_strbuf(&buf, "%02x", vpd[i])) < 0)
+				return err;
 	} else if (vpd_type == 0x8) {
+		char type;
+
 		if (!memcmp("eui.", vpd, 4))
-			out[0] =  '2';
+			type =  '2';
 		else if (!memcmp("naa.", vpd, 4))
-			out[0] = '3';
+			type = '3';
 		else
-			out[0] = '8';
+			type = '8';
+		if ((err = fill_strbuf(&buf, type, 1)) < 0)
+			return err;
 
 		vpd += 4;
 		len = vpd_len - 4;
-		while (len > 2 && vpd[len - 2] == '\0')
-			--len;
-		if (len > out_len - 1) {
-			condlog(1, "%s: WWID overflow, type 8/%c, %zu/%zu bytes required",
-				__func__, out[0], len + 1, out_len);
-			len = out_len - 1;
+		if ((err = __append_strbuf_str(&buf, (const char *)vpd, len)) < 0)
+			return err;
+
+		/* The input is 0-padded, make sure the length is correct */
+		truncate_strbuf(&buf, strlen(get_strbuf_str(&buf)));
+		len = get_strbuf_len(&buf);
+		if (type != '8') {
+			char *buffer = __get_strbuf_buf(&buf);
+
+			for (i = 0; i < len; ++i)
+				buffer[i] = tolower(buffer[i]);
 		}
-
-		if (out[0] == '8')
-			for (i = 0; i < len; ++i)
-				out[1 + i] = vpd[i];
-		else
-			for (i = 0; i < len; ++i)
-				out[1 + i] = tolower(vpd[i]);
-
-		/* designator should be 0-terminated, but let's make sure */
-		out[len] = '\0';
 
 	} else if (vpd_type == 0x1) {
 		const unsigned char *p;
 		size_t p_len;
 
-		out[0] = '1';
-		len = 1;
-		while ((p = memchr(vpd, ' ', vpd_len))) {
+		if ((err = fill_strbuf(&buf, '1', 1)) < 0)
+			return err;
+		while (vpd && (p = memchr(vpd, ' ', vpd_len))) {
 			p_len = p - vpd;
-			if (len + p_len > out_len - 1) {
-				condlog(1, "%s: WWID overflow, type 1, %zu/%zu bytes required",
-					__func__, len + p_len, out_len);
-				p_len = out_len - len - 1;
-			}
-			memcpy(out + len, vpd, p_len);
-			len += p_len;
-			if (len >= out_len - 1) {
-				out[len] = '\0';
-				break;
-			}
-			out[len] = '_';
-			len ++;
-			if (len >= out_len - 1) {
-				out[len] = '\0';
-				break;
-			}
+			if ((err = __append_strbuf_str(&buf, (const char *)vpd,
+						       p_len)) < 0)
+				return err;
 			vpd = p;
 			vpd_len -= p_len;
-			while (vpd && *vpd == ' ') {
+			while (vpd && vpd_len > 0 && *vpd == ' ') {
 				vpd++;
 				vpd_len --;
 			}
+			if (vpd_len > 0 && (err = fill_strbuf(&buf, '_', 1)) < 0)
+				return err;
 		}
-		p_len = vpd_len;
-		if (p_len > 0 && len < out_len - 1) {
-			if (len + p_len > out_len - 1) {
-				condlog(1, "%s: WWID overflow, type 1, %zu/%zu bytes required",
-					__func__, len + p_len + 1, out_len);
-				p_len = out_len - len - 1;
-			}
-			memcpy(out + len, vpd, p_len);
-			len += p_len;
-			out[len] = '\0';
-		}
-		if (len > 1 && out[len - 1] == '_') {
-			out[len - 1] = '\0';
-			len--;
+		if (vpd_len > 0) {
+			if ((err = __append_strbuf_str(&buf, (const char *)vpd,
+						       vpd_len)) < 0)
+				return err;
 		}
 	}
+
+	len = get_strbuf_len(&buf);
+	if (len >= out_len) {
+		condlog(1, "%s: WWID overflow, type %d, %zu/%zu bytes required",
+			__func__, vpd_type, len, out_len);
+		if (vpd_type == 2 || vpd_type == 3)
+			/* designator must have an even number of characters */
+			len = 2 * (out_len / 2) - 1;
+		else
+			len = out_len - 1;
+	}
+	strlcpy(out, get_strbuf_str(&buf), len + 1);
 	return len;
 }
 
