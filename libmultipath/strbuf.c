@@ -15,6 +15,11 @@
 
 static const char empty_str[] = "";
 
+char *__get_strbuf_buf(struct strbuf *buf)
+{
+	return buf->buf;
+}
+
 const char *get_strbuf_str(const struct strbuf *buf)
 {
 	return buf->buf ? buf->buf : empty_str;
