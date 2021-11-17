@@ -206,6 +206,7 @@ enum initialized_states {
 	 * change uevent is received.
 	 */
 	INIT_PARTIAL,
+	__INIT_LAST,
 };
 
 enum prkey_sources {
