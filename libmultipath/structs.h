@@ -318,6 +318,7 @@ struct path {
 	int fd;
 	int initialized;
 	int retriggers;
+	int partial_retrigger_delay;
 	unsigned int path_failures;
 	time_t dis_reinstate_time;
 	int disable_reinstate;

@@ -1948,6 +1948,25 @@ retry_count_tick(vector mpvec)
 	}
 }
 
+static void
+partial_retrigger_tick(vector pathvec)
+{
+	struct path *pp;
+	unsigned int i;
+
+	vector_foreach_slot (pathvec, pp, i) {
+		if (pp->initialized == INIT_PARTIAL && pp->udev &&
+		    pp->partial_retrigger_delay > 0 &&
+		    --pp->partial_retrigger_delay == 0) {
+			const char *msg = udev_device_get_is_initialized(pp->udev) ?
+					  "change" : "add";
+
+			sysfs_attr_set_value(pp->udev, "uevent", msg,
+					     strlen(msg));
+		}
+	}
+}
+
 int update_prio(struct path *pp, int refresh_all)
 {
 	int oldpriority;
@@ -2566,6 +2585,7 @@ checkerloop (void *ap)
 		retry_count_tick(vecs->mpvec);
 		missing_uev_wait_tick(vecs);
 		ghost_delay_tick(vecs);
+		partial_retrigger_tick(vecs->pathvec);
 		lock_cleanup_pop(vecs->lock);
 
 		if (count)
