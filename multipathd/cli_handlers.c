@@ -493,6 +493,33 @@ cli_reset_map_stats (void *v, struct strbuf *reply, void *data)
 }
 
 static int
+add_partial_path(struct path *pp, struct vectors *vecs)
+{
+	char wwid[WWID_SIZE];
+	struct udev_device *udd;
+
+	udd = get_udev_device(pp->dev_t, DEV_DEVT);
+	if (!udd)
+		return 0;
+	strcpy(wwid, pp->wwid);
+	if (get_uid(pp, pp->state, udd, 0) != 0) {
+		strcpy(pp->wwid, wwid);
+		udev_device_unref(udd);
+		return 0;
+	}
+	if (strlen(wwid) && strncmp(wwid, pp->wwid, WWID_SIZE) != 0) {
+		condlog(0, "%s: path wwid changed from '%s' to '%s'. removing",
+			pp->dev, wwid, pp->wwid);
+		ev_remove_path(pp, vecs, 1);
+		udev_device_unref(udd);
+		return -1;
+	}
+	udev_device_unref(pp->udev);
+	pp->udev = udd;
+	return finish_path_init(pp, vecs);
+}
+
+static int
 cli_add_path (void *v, struct strbuf *reply, void *data)
 {
 	struct vectors * vecs = (struct vectors *)data;
@@ -517,8 +544,12 @@ cli_add_path (void *v, struct strbuf *reply, void *data)
 	if (pp && pp->initialized != INIT_REMOVED) {
 		condlog(2, "%s: path already in pathvec", param);
 
-		if (pp->recheck_wwid == RECHECK_WWID_ON &&
-		    check_path_wwid_change(pp)) {
+		if (pp->initialized == INIT_PARTIAL) {
+			if (add_partial_path(pp, vecs) < 0)
+				return 1;
+		}
+		else if (pp->recheck_wwid == RECHECK_WWID_ON &&
+			 check_path_wwid_change(pp)) {
 			condlog(0, "%s: wwid changed. Removing device",
 				pp->dev);
 			handle_path_wwid_change(pp, vecs);

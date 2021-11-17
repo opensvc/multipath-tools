@@ -194,6 +194,7 @@ bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 					}
 					condlog(2, "%s: adding new path %s",
 						mpp->alias, pp->dev);
+					pp->initialized = INIT_PARTIAL;
 					store_path(pathvec, pp);
 					pp->tick = 1;
 				}
@@ -392,12 +393,12 @@ extract_hwe_from_path(struct multipath * mpp)
 	condlog(4, "%s: searching paths for valid hwe", mpp->alias);
 	/* doing this in two passes seems like paranoia to me */
 	vector_foreach_slot(mpp->paths, pp, i) {
-		if (pp->state == PATH_UP &&
+		if (pp->state == PATH_UP && pp->initialized != INIT_PARTIAL &&
 		    pp->initialized != INIT_REMOVED && pp->hwe)
 			goto done;
 	}
 	vector_foreach_slot(mpp->paths, pp, i) {
-		if (pp->state != PATH_UP &&
+		if ((pp->state != PATH_UP || pp->initialized == INIT_PARTIAL) &&
 		    pp->initialized != INIT_REMOVED && pp->hwe)
 			goto done;
 	}

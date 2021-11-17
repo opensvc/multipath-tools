@@ -200,6 +200,12 @@ enum initialized_states {
 	 * mapped by some multipath map because of map reload failure.
 	 */
 	INIT_REMOVED,
+	/*
+	 * INIT_PARTIAL: paths added by update_pathvec_from_dm() will not
+	 * be fully initialized. This will be handled when an add or
+	 * change uevent is received.
+	 */
+	INIT_PARTIAL,
 };
 
 enum prkey_sources {

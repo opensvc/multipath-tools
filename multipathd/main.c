@@ -976,12 +976,19 @@ check_path_wwid_change(struct path *pp)
 	return false;
 }
 
+/*
+ * uev_add_path can call uev_update_path, and uev_update_path can call
+ * uev_add_path
+ */
+static int uev_update_path (struct uevent *uev, struct vectors * vecs);
+
 static int
 uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 {
 	struct path *pp;
 	int ret = 0, i;
 	struct config *conf;
+	bool partial_init = false;
 
 	condlog(3, "%s: add path (uevent)", uev->kernel);
 	if (strstr(uev->kernel, "..") != NULL) {
@@ -1000,7 +1007,10 @@ uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 		int r;
 		struct multipath *prev_mpp = NULL;
 
-		if (pp->initialized == INIT_REMOVED) {
+		if (pp->initialized == INIT_PARTIAL) {
+			partial_init = true;
+			goto out;
+		} else if (pp->initialized == INIT_REMOVED) {
 			condlog(3, "%s: re-adding removed path", pp->dev);
 			pp->initialized = INIT_NEW;
 			prev_mpp = pp->mpp;
@@ -1110,6 +1120,8 @@ uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 	}
 out:
 	lock_cleanup_pop(vecs->lock);
+	if (partial_init)
+		return uev_update_path(uev, vecs);
 	return ret;
 }
 
@@ -1405,6 +1417,28 @@ fail:
 	return REMOVE_PATH_MAP_ERROR;
 }
 
+int
+finish_path_init(struct path *pp, struct vectors * vecs)
+{
+	int r;
+	struct config *conf;
+
+	if (pp->udev && pp->uid_attribute && *pp->uid_attribute &&
+	    !udev_device_get_is_initialized(pp->udev))
+		return 0;
+	conf = get_multipath_config();
+	pthread_cleanup_push(put_multipath_config, conf);
+	r = pathinfo(pp, conf, DI_ALL|DI_BLACKLIST);
+	pthread_cleanup_pop(1);
+
+	if (r == PATHINFO_OK)
+		return 0;
+
+	condlog(0, "%s: error fully initializing path, removing", pp->dev);
+	ev_remove_path(pp, vecs, 1);
+	return -1;
+}
+
 static int
 uev_update_path (struct uevent *uev, struct vectors * vecs)
 {
@@ -1443,7 +1477,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 		}
 		/* Don't deal with other types of failed initialization
 		 * now. check_path will handle it */
-		if (!strlen(pp->wwid))
+		if (!strlen(pp->wwid) && pp->initialized != INIT_PARTIAL)
 			goto out;
 
 		strcpy(wwid, pp->wwid);
@@ -1451,12 +1485,20 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 
 		if (rc != 0)
 			strcpy(pp->wwid, wwid);
-		else if (strncmp(wwid, pp->wwid, WWID_SIZE) != 0) {
+		else if (strlen(wwid) &&
+			 strncmp(wwid, pp->wwid, WWID_SIZE) != 0) {
 			condlog(0, "%s: path wwid changed from '%s' to '%s'",
 				uev->kernel, wwid, pp->wwid);
 			ev_remove_path(pp, vecs, 1);
 			needs_reinit = 1;
 			goto out;
+		} else if (pp->initialized == INIT_PARTIAL) {
+			udev_device_unref(pp->udev);
+			pp->udev = udev_device_ref(uev->udev);
+			if (finish_path_init(pp, vecs) < 0) {
+				retval = 1;
+				goto out;
+			}
 		} else {
 			udev_device_unref(pp->udev);
 			pp->udev = udev_device_ref(uev->udev);
@@ -1507,6 +1549,7 @@ out:
 
 		condlog(0, "%s: spurious uevent, path not found", uev->kernel);
 	}
+	/* pp->initalized must not be INIT_PARTIAL if needs_reinit is set */
 	if (needs_reinit)
 		retval = uev_add_path(uev, vecs, 1);
 	return retval;
@@ -2116,7 +2159,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	int marginal_pathgroups, marginal_changed = 0;
 	int ret;
 
-	if (((pp->initialized == INIT_OK ||
+	if (((pp->initialized == INIT_OK || pp->initialized == INIT_PARTIAL ||
 	      pp->initialized == INIT_REQUESTED_UDEV) && !pp->mpp) ||
 	    pp->initialized == INIT_REMOVED)
 		return 0;

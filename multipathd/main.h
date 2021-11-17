@@ -65,4 +65,5 @@ int reload_and_sync_map(struct multipath *mpp, struct vectors *vecs,
 
 void handle_path_wwid_change(struct path *pp, struct vectors *vecs);
 bool check_path_wwid_change(struct path *pp);
+int finish_path_init(struct path *pp, struct vectors * vecs);
 #endif /* MAIN_H */
