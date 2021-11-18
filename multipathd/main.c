@@ -2817,7 +2817,7 @@ handle_signals(bool nonfatal)
 		return;
 	if (reconfig_sig) {
 		condlog(2, "reconfigure (signal)");
-		schedule_reconfigure(FORCE_RELOAD_YES);
+		schedule_reconfigure(FORCE_RELOAD_WEAK);
 	}
 	if (log_reset_sig) {
 		condlog(2, "reset log (signal)");
