@@ -1011,7 +1011,7 @@ cli_reconfigure(void * v, struct strbuf *reply, void * data)
 {
 	condlog(2, "reconfigure (operator)");
 
-	schedule_reconfigure();
+	schedule_reconfigure(FORCE_RELOAD_YES);
 	return 0;
 }
 

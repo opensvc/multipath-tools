@@ -161,13 +161,6 @@ static bool get_delayed_reconfig(void)
 	return val;
 }
 
-static void set_delayed_reconfig(bool val)
-{
-	pthread_mutex_lock(&config_lock);
-	__delayed_reconfig = val;
-	pthread_mutex_unlock(&config_lock);
-}
-
 /*
  * global copy of vecs for use in sig handlers
  */
@@ -289,7 +282,18 @@ enum daemon_status wait_for_state_change_if(enum daemon_status oldstate,
 }
 
 /* Don't access this variable without holding config_lock */
-static bool reconfigure_pending;
+static enum force_reload_types reconfigure_pending = FORCE_RELOAD_NONE;
+/* Only set while changing to DAEMON_CONFIGURE, and only access while
+ * reconfiguring or scheduling a delayed reconfig in DAEMON_CONFIGURE */
+static volatile enum force_reload_types reload_type = FORCE_RELOAD_NONE;
+
+static void enable_delayed_reconfig(void)
+{
+	pthread_mutex_lock(&config_lock);
+	reconfigure_pending = reload_type;
+	__delayed_reconfig = true;
+	pthread_mutex_unlock(&config_lock);
+}
 
 /* must be called with config_lock held */
 static void __post_config_state(enum daemon_status state)
@@ -304,7 +308,8 @@ static void __post_config_state(enum daemon_status state)
 		 * In either case, child() will see DAEMON_CONFIGURE
 		 * again and start another reconfigure cycle.
 		 */
-		if (reconfigure_pending && state == DAEMON_IDLE &&
+		if (reconfigure_pending != FORCE_RELOAD_NONE &&
+		    state == DAEMON_IDLE &&
 		    (old_state == DAEMON_CONFIGURE ||
 		     old_state == DAEMON_RUNNING)) {
 			/*
@@ -316,7 +321,8 @@ static void __post_config_state(enum daemon_status state)
 			state = DAEMON_CONFIGURE;
 		}
 		if (state == DAEMON_CONFIGURE) {
-			reconfigure_pending = false;
+			reload_type = (reconfigure_pending == FORCE_RELOAD_YES) ? FORCE_RELOAD_YES : FORCE_RELOAD_WEAK;
+			reconfigure_pending = FORCE_RELOAD_NONE;
 			__delayed_reconfig = false;
 		}
 		running_state = state;
@@ -333,20 +339,26 @@ void post_config_state(enum daemon_status state)
 	pthread_cleanup_pop(1);
 }
 
-void schedule_reconfigure(void)
+void schedule_reconfigure(enum force_reload_types requested_type)
 {
 	pthread_mutex_lock(&config_lock);
 	pthread_cleanup_push(config_cleanup, NULL);
+	enum force_reload_types type;
+
+	type = (reconfigure_pending == FORCE_RELOAD_YES ||
+		requested_type == FORCE_RELOAD_YES) ?
+	       FORCE_RELOAD_YES : FORCE_RELOAD_WEAK;
 	switch (running_state)
 	{
 	case DAEMON_SHUTDOWN:
 		break;
 	case DAEMON_IDLE:
+		reconfigure_pending = type;
 		__post_config_state(DAEMON_CONFIGURE);
 		break;
 	case DAEMON_CONFIGURE:
 	case DAEMON_RUNNING:
-		reconfigure_pending = true;
+		reconfigure_pending = type;
 		break;
 	default:
 		break;
@@ -811,7 +823,7 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 			if (get_delayed_reconfig() &&
 			    !need_to_delay_reconfig(vecs)) {
 				condlog(2, "reconfigure (delayed)");
-				schedule_reconfigure();
+				schedule_reconfigure(FORCE_RELOAD_WEAK);
 				return 0;
 			}
 		}
@@ -1829,7 +1841,7 @@ missing_uev_wait_tick(struct vectors *vecs)
 	if (timed_out && get_delayed_reconfig() &&
 	    !need_to_delay_reconfig(vecs)) {
 		condlog(2, "reconfigure (delayed)");
-		schedule_reconfigure();
+		schedule_reconfigure(FORCE_RELOAD_WEAK);
 	}
 }
 
@@ -2594,7 +2606,6 @@ configure (struct vectors * vecs)
 	vector mpvec;
 	int i, ret;
 	struct config *conf;
-	static int force_reload = FORCE_RELOAD_WEAK;
 
 	if (!vecs->pathvec && !(vecs->pathvec = vector_alloc())) {
 		condlog(0, "couldn't allocate path vec in configure");
@@ -2642,15 +2653,7 @@ configure (struct vectors * vecs)
 	if (should_exit())
 		goto fail;
 
-	/*
-	 * create new set of maps & push changed ones into dm
-	 * In the first call, use FORCE_RELOAD_WEAK to avoid making
-	 * superfluous ACT_RELOAD ioctls. Later calls are done
-	 * with FORCE_RELOAD_YES.
-	 */
-	ret = coalesce_paths(vecs, mpvec, NULL, force_reload, CMD_NONE);
-	if (force_reload == FORCE_RELOAD_WEAK)
-		force_reload = FORCE_RELOAD_YES;
+	ret = coalesce_paths(vecs, mpvec, NULL, reload_type, CMD_NONE);
 	if (ret != CP_OK) {
 		condlog(0, "configure failed while coalescing paths");
 		goto fail;
@@ -2814,7 +2817,7 @@ handle_signals(bool nonfatal)
 		return;
 	if (reconfig_sig) {
 		condlog(2, "reconfigure (signal)");
-		schedule_reconfigure();
+		schedule_reconfigure(FORCE_RELOAD_YES);
 	}
 	if (log_reset_sig) {
 		condlog(2, "reset log (signal)");
@@ -3272,7 +3275,7 @@ child (__attribute__((unused)) void *param)
 			if (!need_to_delay_reconfig(vecs))
 				reconfigure(vecs);
 			else
-				set_delayed_reconfig(true);
+				enable_delayed_reconfig();
 			lock_cleanup_pop(vecs->lock);
 			post_config_state(DAEMON_IDLE);
 		}
