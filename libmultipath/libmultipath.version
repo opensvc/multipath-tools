@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_10.0.0 {
+LIBMULTIPATH_11.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -290,11 +290,8 @@ global:
 	/* added in 10.0.0 */
 	set_wakeup_fn;
 
+	/* added in 10.1.0 */
+	__snprint_config;
 local:
 	*;
 };
-
-LIBMULTIPATH_10.1.0 {
-global:
-	__snprint_config;
-} LIBMULTIPATH_10.0.0;

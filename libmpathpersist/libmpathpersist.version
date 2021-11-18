@@ -10,7 +10,7 @@
  *
  * See libmultipath.version for general policy about version numbers.
  */
-LIBMPATHPERSIST_1.0.0 {
+LIBMPATHPERSIST_2.0.0 {
 global:
 
 	__mpath_persistent_reserve_in;
@@ -28,11 +28,9 @@ global:
 	prout_do_scsi_ioctl;
 	update_map_pr;
 
-local: *;
-};
-
-LIBMPATHPERSIST_1.1.0 {
-global:
+	/* added in 1.1.0 */
 	libmpathpersist_init;
 	libmpathpersist_exit;
-} LIBMPATHPERSIST_1.0.0;
+
+local: *;
+};
