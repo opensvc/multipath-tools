@@ -149,16 +149,15 @@ bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 			 * uninitialized struct path to pgp->paths, with only
 			 * pp->dev_t filled in. Thus if pp->udev is set here,
 			 * we know that the path is in pathvec already.
-			 * However, it's possible that the path in pathvec is
-			 * different from the one the kernel still had in its
-			 * map.
 			 */
 			if (pp->udev) {
 				if (pathinfo_flags & ~DI_NOIO) {
 					conf = get_multipath_config();
 					pthread_cleanup_push(put_multipath_config,
 							     conf);
-					pathinfo(pp, conf, pathinfo_flags|DI_WWID);
+					if (pathinfo(pp, conf, pathinfo_flags) != PATHINFO_OK)
+						condlog(2, "%s: pathinfo failed for existing path %s (flags=0x%x)",
+							__func__, pp->dev, pathinfo_flags);
 					pthread_cleanup_pop(1);
 				}
 			} else {
