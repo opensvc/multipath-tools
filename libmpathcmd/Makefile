@@ -15,7 +15,16 @@ $(LIBS): $(OBJS) $(VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
 		-Wl,--version-script=$(VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
 
-abi:    $(LIBS:%.so.0=%.abi)
+$(NV_VERSION_SCRIPT):	$(VERSION_SCRIPT)
+	@printf 'NOVERSION {\nglobal:\n' >$@
+	@grep -P '^[ \t]+[a-zA-Z_][a-zA-Z0-9_]*;' $< >>$@
+	@printf 'local:\n\t*;\n};\n' >>$@
+
+$(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
+		-Wl,--version-script=$(NV_VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
+
+abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
 
 $(DEVLIB): $(LIBS)
 	$(LN) $(LIBS) $@
@@ -33,7 +42,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(includedir)/mpath_cmd.h
 
 clean: dep_clean
-	$(RM) core *.a *.o *.so *.so.* *.gz *.abi
+	$(RM) core *.a *.o *.so *.so.* *.gz *.abi $(NV_VERSION_SCRIPT)
 
 include $(wildcard $(OBJS:.o=.d))
 
