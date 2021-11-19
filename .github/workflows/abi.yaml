@@ -50,5 +50,5 @@ jobs:
           name: abi-test
           path: abi-test
       - name: fail
-        if: ${{ steps.compare.outcome == 'failure' }}
+        if: ${{ env.ABI_BRANCH != github.ref_name && steps.compare.outcome == 'failure' }}
         run: false
