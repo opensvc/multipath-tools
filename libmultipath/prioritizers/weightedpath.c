@@ -75,13 +75,12 @@ int prio_path_weight(struct path *pp, char *prio_args)
 	if (!prio_args)
 		return priority;
 
-	arg = temp = STRDUP(prio_args);
+	arg = temp = strdup(prio_args);
 
 	regex = get_next_string(&temp, split_char);
 
 	/* Return default priority if the argument is not parseable */
 	if (!regex) {
-		FREE(arg);
 		return priority;
 	}
 
