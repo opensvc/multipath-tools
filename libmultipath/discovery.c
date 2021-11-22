@@ -388,8 +388,10 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 		if (value && !strcmp(value, "usb")) {
 			pp->sg_id.proto_id = SCSI_PROTOCOL_USB;
 			tgtname = udev_device_get_sysname(tgtdev);
-			strlcpy(node, tgtname, NODE_NAME_SIZE);
-			return 0;
+			if (tgtname) {
+				strlcpy(node, tgtname, NODE_NAME_SIZE);
+				return 0;
+			}
 		}
 		tgtdev = udev_device_get_parent(tgtdev);
 	}
@@ -803,7 +805,7 @@ sysfs_set_nexus_loss_tmo(struct multipath *mpp, struct path *pp)
 	     parent = udev_device_get_parent(parent)) {
 		const char *ed = udev_device_get_sysname(parent);
 
-		if (!strncmp(ed, ed_str, sizeof(ed_str) - 1)) {
+		if (ed && !strncmp(ed, ed_str, sizeof(ed_str) - 1)) {
 			end_dev_id = ed;
 			break;
 		}

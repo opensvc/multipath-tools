@@ -168,6 +168,7 @@ size_t strlcat(char * restrict dst, const char * restrict src, size_t size)
 int devt2devname(char *devname, int devname_len, const char *devt)
 {
 	struct udev_device *u_dev;
+	const char * dev_name;
 	int r;
 
 	if (!devname || !devname_len || !devt)
@@ -178,7 +179,13 @@ int devt2devname(char *devname, int devname_len, const char *devt)
 		condlog(0, "\"%s\": invalid major/minor numbers, not found in sysfs", devt);
 		return 1;
 	}
-	r = strlcpy(devname, udev_device_get_sysname(u_dev), devname_len);
+
+	dev_name = udev_device_get_sysname(u_dev);
+	if (!dev_name) {
+		udev_device_unref(u_dev);
+		return 1;
+	}
+	r = strlcpy(devname, dev_name, devname_len);
 	udev_device_unref(u_dev);
 
 	return !(r < devname_len);
