@@ -57,7 +57,6 @@ static int logarea_init (int size)
 		FREE(la);
 		return 1;
 	}
-	memset(la->start, 0, size);
 
 	la->empty = 1;
 	la->end = la->start + size;

@@ -33,7 +33,6 @@ static struct event_thread *alloc_waiter (void)
 	struct event_thread *wp;
 
 	wp = (struct event_thread *)MALLOC(sizeof(struct event_thread));
-	memset(wp, 0, sizeof(struct event_thread));
 
 	return wp;
 }
