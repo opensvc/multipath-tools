@@ -976,73 +976,70 @@ _get_multipath_layout (const struct _vector *gmvec,
 	}
 }
 
-static struct multipath_data *
-mpd_lookup(char wildcard)
+static int mpd_lookup(char wildcard)
 {
 	int i;
 
 	for (i = 0; mpd[i].header; i++)
 		if (mpd[i].wildcard == wildcard)
-			return &mpd[i];
+			return i;
 
-	return NULL;
+	return -1;
 }
 
 int snprint_multipath_attr(const struct gen_multipath* gm,
 			   struct strbuf *buf, char wildcard)
 {
 	const struct multipath *mpp = gen_multipath_to_dm(gm);
-	struct multipath_data *mpd = mpd_lookup(wildcard);
+	int i = mpd_lookup(wildcard);
 
-	if (mpd == NULL)
+	if (i == -1)
 		return 0;
-	return mpd->snprint(buf, mpp);
+	return mpd[i].snprint(buf, mpp);
 }
 
-static struct path_data *
-pd_lookup(char wildcard)
+static int pd_lookup(char wildcard)
 {
 	int i;
 
 	for (i = 0; pd[i].header; i++)
 		if (pd[i].wildcard == wildcard)
-			return &pd[i];
+			return i;
 
-	return NULL;
+	return -1;
 }
 
 int snprint_path_attr(const struct gen_path* gp,
 		      struct strbuf *buf, char wildcard)
 {
 	const struct path *pp = gen_path_to_dm(gp);
-	struct path_data *pd = pd_lookup(wildcard);
+	int i = pd_lookup(wildcard);
 
-	if (pd == NULL)
+	if (i == -1)
 		return 0;
-	return pd->snprint(buf, pp);
+	return pd[i].snprint(buf, pp);
 }
 
-static struct pathgroup_data *
-pgd_lookup(char wildcard)
+static int pgd_lookup(char wildcard)
 {
 	int i;
 
 	for (i = 0; pgd[i].header; i++)
 		if (pgd[i].wildcard == wildcard)
-			return &pgd[i];
+			return i;
 
-	return NULL;
+	return -1;
 }
 
 int snprint_pathgroup_attr(const struct gen_pathgroup* gpg,
 			   struct strbuf *buf, char wildcard)
 {
 	const struct pathgroup *pg = gen_pathgroup_to_dm(gpg);
-	struct pathgroup_data *pdg = pgd_lookup(wildcard);
+	int i = pgd_lookup(wildcard);
 
-	if (pdg == NULL)
+	if (i == -1)
 		return 0;
-	return pdg->snprint(buf, pg);
+	return pgd[i].snprint(buf, pg);
 }
 
 int snprint_multipath_header(struct strbuf *line, const char *format)
@@ -1053,12 +1050,15 @@ int snprint_multipath_header(struct strbuf *line, const char *format)
 	int rc;
 
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
+		int iwc;
+
 		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
-		if (!(data = mpd_lookup(*format)))
+		if ((iwc = mpd_lookup(*format)) == -1)
 			continue; /* unknown wildcard */
+		data = &mpd[iwc];
 
 		if ((rc = append_strbuf_str(line, data->header)) < 0)
 			return rc;
@@ -1081,12 +1081,15 @@ int _snprint_multipath(const struct gen_multipath *gmp,
 	int rc;
 
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
+		int iwc;
+
 		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
-		if (!(data = mpd_lookup(*format)))
+		if ((iwc = mpd_lookup(*format)) == -1)
 			continue; /* unknown wildcard */
+		data = &mpd[iwc];
 
 		if ((rc = gmp->ops->snprint(gmp, line, *format)) < 0)
 			return rc;
@@ -1108,12 +1111,15 @@ int snprint_path_header(struct strbuf *line, const char *format)
 	int rc;
 
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
+		int iwc;
+
 		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
-		if (!(data = pd_lookup(*format)))
+		if ((iwc = pd_lookup(*format)) == -1)
 			continue; /* unknown wildcard */
+		data = &pd[iwc];
 
 		if ((rc = append_strbuf_str(line, data->header)) < 0)
 			return rc;
@@ -1136,12 +1142,15 @@ int _snprint_path(const struct gen_path *gp, struct strbuf *line,
 	int rc;
 
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
+		int iwc;
+
 		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
-		if (!(data = pd_lookup(*format)))
+		if ((iwc = pd_lookup(*format)) == -1)
 			continue; /* unknown wildcard */
+		data = &pd[iwc];
 
 		if ((rc = gp->ops->snprint(gp, line, *format)) < 0)
 			return rc;
@@ -1164,12 +1173,15 @@ int _snprint_pathgroup(const struct gen_pathgroup *ggp, struct strbuf *line,
 	int rc;
 
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
+		int iwc;
+
 		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
-		if (!(data = pgd_lookup(*format)))
+		if ((iwc = pgd_lookup(*format)) == -1)
 			continue; /* unknown wildcard */
+		data = &pgd[iwc];
 
 		if ((rc = ggp->ops->snprint(ggp, line, *format)) < 0)
 			return rc;
