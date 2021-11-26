@@ -771,7 +771,7 @@ snprint_path_vpd_data(struct strbuf *buff, const struct path * pp)
 	return append_strbuf_str(buff, "[undef]");
 }
 
-struct multipath_data mpd[] = {
+static struct multipath_data mpd[] = {
 	{'n', "name",          0, snprint_name},
 	{'w', "uuid",          0, snprint_multipath_uuid},
 	{'d', "sysfs",         0, snprint_sysfs},
@@ -799,7 +799,7 @@ struct multipath_data mpd[] = {
 	{0, NULL, 0 , NULL}
 };
 
-struct path_data pd[] = {
+static struct path_data pd[] = {
 	{'w', "uuid",          0, snprint_path_uuid},
 	{'i', "hcil",          0, snprint_hcil},
 	{'d', "dev",           0, snprint_dev},
@@ -828,7 +828,7 @@ struct path_data pd[] = {
 	{0, NULL, 0 , NULL}
 };
 
-struct pathgroup_data pgd[] = {
+static struct pathgroup_data pgd[] = {
 	{'s', "selector",      0, snprint_pg_selector},
 	{'p', "pri",           0, snprint_pg_pri},
 	{'t', "dm_st",         0, snprint_pg_state},
