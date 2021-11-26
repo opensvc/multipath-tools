@@ -9,27 +9,6 @@
 
 struct strbuf;
 
-struct path_data {
-	char wildcard;
-	char * header;
-	unsigned int width;
-	int (*snprint)(struct strbuf *, const struct path * pp);
-};
-
-struct multipath_data {
-	char wildcard;
-	char * header;
-	unsigned int width;
-	int (*snprint)(struct strbuf *, const struct multipath * mpp);
-};
-
-struct pathgroup_data {
-	char wildcard;
-	char * header;
-	unsigned int width;
-	int (*snprint)(struct strbuf *, const struct pathgroup * pgp);
-};
-
 enum layout_reset {
 	LAYOUT_RESET_NOT,
 	LAYOUT_RESET_ZERO,

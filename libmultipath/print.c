@@ -100,6 +100,27 @@
 
 #define PROGRESS_LEN  10
 
+struct path_data {
+	char wildcard;
+	char * header;
+	unsigned int width;
+	int (*snprint)(struct strbuf *, const struct path * pp);
+};
+
+struct multipath_data {
+	char wildcard;
+	char * header;
+	unsigned int width;
+	int (*snprint)(struct strbuf *, const struct multipath * mpp);
+};
+
+struct pathgroup_data {
+	char wildcard;
+	char * header;
+	unsigned int width;
+	int (*snprint)(struct strbuf *, const struct pathgroup * pgp);
+};
+
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
 #define MIN(x,y) (((x) > (y)) ? (y) : (x))
 /*
