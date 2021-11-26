@@ -17,7 +17,6 @@
 
 #include "checkers.h"
 #include "vector.h"
-#include "memory.h"
 #include "util.h"
 #include "structs.h"
 #include "config.h"

@@ -8,7 +8,6 @@
 
 #include "checkers.h"
 #include "util.h"
-#include "memory.h"
 #include "vector.h"
 #include "structs.h"
 #include "pgpolicies.h"
@@ -244,12 +243,12 @@ int group_by_match(struct multipath * mp, vector paths,
 			}
 		}
 	}
-	FREE(bitmap);
+	free(bitmap);
 	return 0;
 out2:
 	free_pathgroup(pgp, KEEP_PATHS);
 out1:
-	FREE(bitmap);
+	free(bitmap);
 out:
 	free_pgvec(mp->pg, KEEP_PATHS);
 	mp->pg = NULL;

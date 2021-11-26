@@ -3,7 +3,6 @@
 
 #include <pthread.h>
 #include "list.h"
-#include "memory.h"
 #include "defaults.h"
 
 /*
@@ -127,8 +126,7 @@ struct checker {
 	short msgid;		             /* checker-internal extra status */
 	void * context;                      /* store for persistent data */
 	void ** mpcontext;                   /* store for persistent data shared
-						multipath-wide. Use MALLOC if
-						you want to stuff data in. */
+						multipath-wide. */
 };
 
 static inline int checker_selected(const struct checker *c)

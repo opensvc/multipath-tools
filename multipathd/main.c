@@ -38,7 +38,6 @@
  */
 #include "parser.h"
 #include "vector.h"
-#include "memory.h"
 #include "config.h"
 #include "util.h"
 #include "hwtable.h"
@@ -552,11 +551,11 @@ add_map_without_path (struct vectors *vecs, const char *alias)
 	if (!mpp)
 		return NULL;
 	if (!alias) {
-		FREE(mpp);
+		free(mpp);
 		return NULL;
 	}
 
-	mpp->alias = STRDUP(alias);
+	mpp->alias = strdup(alias);
 
 	if (dm_get_info(mpp->alias, &mpp->dmi)) {
 		condlog(3, "%s: cannot access table", mpp->alias);
@@ -702,7 +701,7 @@ uev_add_map (struct uevent * uev, struct vectors * vecs)
 	pthread_testcancel();
 	rc = ev_add_map(uev->kernel, alias, vecs);
 	lock_cleanup_pop(vecs->lock);
-	FREE(alias);
+	free(alias);
 	return rc;
 }
 
@@ -808,7 +807,7 @@ uev_remove_map (struct uevent * uev, struct vectors * vecs)
 	remove_map_and_stop_waiter(mpp, vecs);
 out:
 	lock_cleanup_pop(vecs->lock);
-	FREE(alias);
+	free(alias);
 	return 0;
 }
 
@@ -1461,11 +1460,11 @@ uev_pathfail_check(struct uevent *uev, struct vectors *vecs)
 				pp->dev);
 out_lock:
 	lock_cleanup_pop(vecs->lock);
-	FREE(devt);
-	FREE(action);
+	free(devt);
+	free(action);
 	return r;
 out:
-	FREE(action);
+	free(action);
 	return 1;
 }
 
@@ -1501,7 +1500,7 @@ uxsock_trigger (char * str, char ** reply, int * len, bool is_root,
 	if ((str != NULL) && (is_root == false) &&
 	    (strncmp(str, "list", strlen("list")) != 0) &&
 	    (strncmp(str, "show", strlen("show")) != 0)) {
-		*reply = STRDUP("permission deny: need to be root");
+		*reply = strdup("permission deny: need to be root");
 		if (*reply)
 			*len = strlen(*reply) + 1;
 		return 1;
@@ -1511,15 +1510,15 @@ uxsock_trigger (char * str, char ** reply, int * len, bool is_root,
 
 	if (r > 0) {
 		if (r == ETIMEDOUT)
-			*reply = STRDUP("timeout\n");
+			*reply = strdup("timeout\n");
 		else
-			*reply = STRDUP("fail\n");
+			*reply = strdup("fail\n");
 		if (*reply)
 			*len = strlen(*reply) + 1;
 		r = 1;
 	}
 	else if (!r && *len == 0) {
-		*reply = STRDUP("ok\n");
+		*reply = strdup("ok\n");
 		if (*reply)
 			*len = strlen(*reply) + 1;
 		r = 0;
@@ -2800,7 +2799,7 @@ init_vecs (void)
 {
 	struct vectors * vecs;
 
-	vecs = (struct vectors *)MALLOC(sizeof(struct vectors));
+	vecs = (struct vectors *)calloc(1, sizeof(struct vectors));
 
 	if (!vecs)
 		return NULL;
@@ -3012,7 +3011,8 @@ static void cleanup_vecs(void)
 	cleanup_maps(gvecs);
 	cleanup_paths(gvecs);
 	pthread_mutex_destroy(&gvecs->lock.mutex);
-	FREE(gvecs);
+	free(gvecs);
+	gvecs = NULL;
 }
 
 static void cleanup_threads(void)
@@ -3110,10 +3110,6 @@ static void cleanup_child(void)
 		log_thread_stop();
 
 	cleanup_conf();
-
-#ifdef _DEBUG_
-	dbg_free_final(NULL);
-#endif
 }
 
 static int sd_notify_exit(int err)
@@ -3555,7 +3551,7 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 		goto out;
 	}
 
-	param = (struct prout_param_descriptor *)MALLOC(sizeof(struct prout_param_descriptor));
+	param = (struct prout_param_descriptor *)calloc(1, sizeof(struct prout_param_descriptor));
 	if (!param)
 		goto out;
 

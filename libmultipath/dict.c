@@ -16,7 +16,6 @@
 #include "parser.h"
 #include "config.h"
 #include "debug.h"
-#include "memory.h"
 #include "pgpolicies.h"
 #include "blacklist.h"
 #include "defaults.h"
@@ -69,7 +68,7 @@ set_int(vector strvec, void *ptr, int min, int max, const char *file,
 
 	do_set_int(strvec, ptr, min, max, file, line_nr, buff);
 
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -97,7 +96,7 @@ set_uint(vector strvec, void *ptr, const char *file, int line_nr)
 	else
 		*uint_ptr = res;
 
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -107,7 +106,7 @@ set_str(vector strvec, void *ptr, const char *file, int line_nr)
 	char **str_ptr = (char **)ptr;
 
 	if (*str_ptr)
-		FREE(*str_ptr);
+		free(*str_ptr);
 	*str_ptr = set_value(strvec);
 
 	if (!*str_ptr)
@@ -200,7 +199,7 @@ set_yes_no(vector strvec, void *ptr, const char *file, int line_nr)
 		condlog(1, "%s line %d, invalid value for %s: \"%s\"",
 			file, line_nr, (char*)VECTOR_SLOT(strvec, 0), buff);
 
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -222,7 +221,7 @@ set_yes_no_undef(vector strvec, void *ptr, const char *file, int line_nr)
 		condlog(1, "%s line %d, invalid value for %s: \"%s\"",
 			file, line_nr, (char*)VECTOR_SLOT(strvec, 0), buff);
 
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -449,7 +448,7 @@ static int def_partition_delim_handler(struct config *conf, vector strvec,
 		return rc;
 
 	if (!strcmp(conf->partition_delim, UNSET_PARTITION_DELIM)) {
-		FREE(conf->partition_delim);
+		free(conf->partition_delim);
 		conf->partition_delim = NULL;
 	}
 	return 0;
@@ -501,7 +500,7 @@ def_find_multipaths_handler(struct config *conf, vector strvec,
 				file, line_nr, buff);
 	}
 
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -551,7 +550,7 @@ static int uid_attrs_handler(struct config *conf, vector strvec,
 			line_nr, val);
 	else
 		condlog(4, "parsed %d uid_attrs", VECTOR_SIZE(&conf->uid_attrs));
-	FREE(val);
+	free(val);
 	return 0;
 }
 
@@ -846,7 +845,7 @@ set_mode(vector strvec, void *ptr, int *flags, const char *file, int line_nr)
 		condlog(1, "%s line %d, invalid value for mode: \"%s\"",
 			file, line_nr, buff);
 
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -873,7 +872,7 @@ set_uid(vector strvec, void *ptr, int *flags, const char *file, int line_nr)
 		condlog(1, "%s line %d, invalid value for uid: \"%s\"",
 			file, line_nr, buff);
 
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -900,7 +899,7 @@ set_gid(vector strvec, void *ptr, int *flags, const char *file, int line_nr)
 	} else
 		condlog(1, "%s line %d, invalid value for gid: \"%s\"",
 			file, line_nr, buff);
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -963,7 +962,7 @@ set_undef_off_zero(vector strvec, void *ptr, const char *file, int line_nr)
 	else
 		do_set_int(strvec, int_ptr, 1, INT_MAX, file, line_nr, buff);
 
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -1002,7 +1001,7 @@ set_dev_loss(vector strvec, void *ptr, const char *file, int line_nr)
 		condlog(1, "%s line %d, invalid value for dev_loss_tmo: \"%s\"",
 			file, line_nr, buff);
 
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -1047,7 +1046,7 @@ set_pgpolicy(vector strvec, void *ptr, const char *file, int line_nr)
 	else
 		condlog(1, "%s line %d, invalid value for path_grouping_policy: \"%s\"",
 			file, line_nr, buff);
-	FREE(buff);
+	free(buff);
 
 	return 0;
 }
@@ -1122,7 +1121,7 @@ max_fds_handler(struct config *conf, vector strvec, const char *file,
 		do_set_int(strvec, &conf->max_fds, 0, max_fds, file, line_nr,
 			   buff);
 
-	FREE(buff);
+	free(buff);
 
 	return 0;
 }
@@ -1160,7 +1159,7 @@ set_rr_weight(vector strvec, void *ptr, const char *file, int line_nr)
 	else
 		condlog(1, "%s line %d, invalid value for rr_weight: \"%s\"",
 			file, line_nr, buff);
-	FREE(buff);
+	free(buff);
 
 	return 0;
 }
@@ -1206,7 +1205,7 @@ set_pgfailback(vector strvec, void *ptr, const char *file, int line_nr)
 	else
 		do_set_int(strvec, ptr, 0, INT_MAX, file, line_nr, buff);
 
-	FREE(buff);
+	free(buff);
 
 	return 0;
 }
@@ -1254,7 +1253,7 @@ no_path_retry_helper(vector strvec, void *ptr, const char *file, int line_nr)
 	else
 		do_set_int(strvec, ptr, 1, INT_MAX, file, line_nr, buff);
 
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -1330,18 +1329,18 @@ set_reservation_key(vector strvec, struct be64 *be64_ptr, uint8_t *flags_ptr,
 		*source_ptr = PRKEY_SOURCE_FILE;
 		*flags_ptr = 0;
 		put_be64(*be64_ptr, 0);
-		FREE(buff);
+		free(buff);
 		return 0;
 	}
 
 	if (parse_prkey_flags(buff, &prkey, &sa_flags) != 0) {
-		FREE(buff);
+		free(buff);
 		return 1;
 	}
 	*source_ptr = PRKEY_SOURCE_CONF;
 	*flags_ptr = sa_flags;
 	put_be64(*be64_ptr, prkey);
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -1412,7 +1411,7 @@ set_off_int_undef(vector strvec, void *ptr, const char *file, int line_nr)
 	else
 		do_set_int(strvec, ptr, 1, INT_MAX, file, line_nr, buff);
 
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -1562,7 +1561,7 @@ hw_vpd_vendor_handler(struct config *conf, vector strvec, const char *file,
 	condlog(1, "%s line %d, invalid value for vpd_vendor: \"%s\"",
 		file, line_nr, buff);
 out:
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 
@@ -1854,7 +1853,7 @@ deprecated_handler(struct config *conf, vector strvec, const char *file,
 	if (!buff)
 		return 1;
 
-	FREE(buff);
+	free(buff);
 	return 0;
 }
 

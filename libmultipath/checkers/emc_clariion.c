@@ -15,7 +15,6 @@
 #include "libsg.h"
 #include "checkers.h"
 #include "debug.h"
-#include "memory.h"
 
 #define INQUIRY_CMD     0x12
 #define INQUIRY_CMDLEN  6
@@ -102,7 +101,7 @@ int libcheck_init (struct checker * c)
 	/*
 	 * Allocate and initialize the path specific context.
 	 */
-	c->context = MALLOC(sizeof(struct emc_clariion_checker_path_context));
+	c->context = calloc(1, sizeof(struct emc_clariion_checker_path_context));
 	if (!c->context)
 		return 1;
 	((struct emc_clariion_checker_path_context *)c->context)->wwn_set = 0;

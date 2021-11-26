@@ -10,7 +10,6 @@
 
 #include "checkers.h"
 #include "vector.h"
-#include "memory.h"
 #include "structs.h"
 #include "util.h"
 #include "debug.h"
@@ -27,7 +26,7 @@ merge_words(char **dst, const char *word)
 
 	dstlen = strlen(*dst);
 	len = dstlen + strlen(word) + 2;
-	*dst = REALLOC(*dst, len);
+	*dst = realloc(*dst, len);
 
 	if (!*dst) {
 		free(p);
@@ -146,11 +145,11 @@ int disassemble_map(const struct _vector *pathvec,
 			return 1;
 
 		if (merge_words(&mpp->features, word)) {
-			FREE(word);
+			free(word);
 			return 1;
 		}
 
-		FREE(word);
+		free(word);
 	}
 
 	/*
@@ -170,10 +169,10 @@ int disassemble_map(const struct _vector *pathvec,
 			return 1;
 
 		if (merge_words(&mpp->hwhandler, word)) {
-			FREE(word);
+			free(word);
 			return 1;
 		}
-		FREE(word);
+		free(word);
 	}
 
 	/*
@@ -185,7 +184,7 @@ int disassemble_map(const struct _vector *pathvec,
 		return 1;
 
 	num_pg = atoi(word);
-	FREE(word);
+	free(word);
 
 	if (num_pg > 0) {
 		if (!mpp->pg) {
@@ -207,7 +206,7 @@ int disassemble_map(const struct _vector *pathvec,
 		goto out;
 
 	mpp->nextpg = atoi(word);
-	FREE(word);
+	free(word);
 
 	for (i = 0; i < num_pg; i++) {
 		/*
@@ -232,7 +231,7 @@ int disassemble_map(const struct _vector *pathvec,
 
 			if (merge_words(&mpp->selector, word))
 				goto out1;
-			FREE(word);
+			free(word);
 		} else {
 			p += get_word(p, NULL);
 			p += get_word(p, NULL);
@@ -260,7 +259,7 @@ int disassemble_map(const struct _vector *pathvec,
 			goto out;
 
 		num_paths = atoi(word);
-		FREE(word);
+		free(word);
 
 		p += get_word(p, &word);
 
@@ -268,7 +267,7 @@ int disassemble_map(const struct _vector *pathvec,
 			goto out;
 
 		num_paths_args = atoi(word);
-		FREE(word);
+		free(word);
 
 		for (j = 0; j < num_paths; j++) {
 			pp = NULL;
@@ -294,7 +293,7 @@ int disassemble_map(const struct _vector *pathvec,
 			} else if (store_path(pgp->paths, pp))
 				goto out1;
 
-			FREE(word);
+			free(word);
 
 			pgp->id ^= (long)pp;
 			pp->pgindex = i + 1;
@@ -303,7 +302,7 @@ int disassemble_map(const struct _vector *pathvec,
 				if (k == 0) {
 					p += get_word(p, &word);
 					def_minio = atoi(word);
-					FREE(word);
+					free(word);
 
 					if (!strncmp(mpp->selector,
 						     "round-robin", 11)) {
@@ -324,7 +323,7 @@ int disassemble_map(const struct _vector *pathvec,
 	}
 	return 0;
 out1:
-	FREE(word);
+	free(word);
 out:
 	free_pgvec(mpp->pg, KEEP_PATHS);
 	mpp->pg = NULL;
@@ -358,7 +357,7 @@ int disassemble_status(const char *params, struct multipath *mpp)
 		return 1;
 
 	num_feature_args = atoi(word);
-	FREE(word);
+	free(word);
 
 	for (i = 0; i < num_feature_args; i++) {
 		if (i == 1) {
@@ -368,7 +367,7 @@ int disassemble_status(const char *params, struct multipath *mpp)
 				return 1;
 
 			mpp->queuedio = atoi(word);
-			FREE(word);
+			free(word);
 			continue;
 		}
 		/* unknown */
@@ -383,7 +382,7 @@ int disassemble_status(const char *params, struct multipath *mpp)
 		return 1;
 
 	num_hwhandler_args = atoi(word);
-	FREE(word);
+	free(word);
 
 	for (i = 0; i < num_hwhandler_args; i++)
 		p += get_word(p, NULL);
@@ -397,7 +396,7 @@ int disassemble_status(const char *params, struct multipath *mpp)
 		return 1;
 
 	num_pg = atoi(word);
-	FREE(word);
+	free(word);
 
 	if (num_pg == 0)
 		return 0;
@@ -434,7 +433,7 @@ int disassemble_status(const char *params, struct multipath *mpp)
 			pgp->status = PGSTATE_UNDEF;
 			break;
 		}
-		FREE(word);
+		free(word);
 
 		/*
 		 * PG Status (discarded, would be '0' anyway)
@@ -447,7 +446,7 @@ int disassemble_status(const char *params, struct multipath *mpp)
 			return 1;
 
 		num_paths = atoi(word);
-		FREE(word);
+		free(word);
 
 		p += get_word(p, &word);
 
@@ -455,7 +454,7 @@ int disassemble_status(const char *params, struct multipath *mpp)
 			return 1;
 
 		num_pg_args = atoi(word);
-		FREE(word);
+		free(word);
 
 		if (VECTOR_SIZE(pgp->paths) < num_paths)
 			return 1;
@@ -485,7 +484,7 @@ int disassemble_status(const char *params, struct multipath *mpp)
 			default:
 				break;
 			}
-			FREE(word);
+			free(word);
 			/*
 			 * fail count
 			 */
@@ -495,7 +494,7 @@ int disassemble_status(const char *params, struct multipath *mpp)
 				return 1;
 
 			pp->failcount = atoi(word);
-			FREE(word);
+			free(word);
 
 			/*
 			 * selector args
@@ -508,7 +507,7 @@ int disassemble_status(const char *params, struct multipath *mpp)
 						   &def_minio) == 1 &&
 					    def_minio != mpp->minio)
 							mpp->minio = def_minio;
-					FREE(word);
+					free(word);
 				} else
 					p += get_word(p, NULL);
 			}

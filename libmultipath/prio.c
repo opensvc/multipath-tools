@@ -51,7 +51,7 @@ static struct prio * alloc_prio (void)
 {
 	struct prio *p;
 
-	p = MALLOC(sizeof(struct prio));
+	p = calloc(1, sizeof(struct prio));
 	if (p) {
 		INIT_LIST_HEAD(&p->node);
 		p->refcount = 1;
@@ -77,7 +77,7 @@ void free_prio (struct prio * p)
 				p->name, dlerror());
 		}
 	}
-	FREE(p);
+	free(p);
 }
 
 void cleanup_prio(void)

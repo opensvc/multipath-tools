@@ -19,7 +19,6 @@
 
 #include "checkers.h"
 #include "vector.h"
-#include "memory.h"
 #include "devmapper.h"
 #include "defaults.h"
 #include "structs.h"
@@ -751,8 +750,8 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 			mpp->wwid, cmpp->alias, mpp->alias,
 			mpp->alias, cmpp_by_name->wwid);
 		/* reset alias to existing alias */
-		FREE(mpp->alias);
-		mpp->alias = STRDUP(cmpp->alias);
+		free(mpp->alias);
+		mpp->alias = strdup(cmpp->alias);
 		mpp->action = ACT_IMPOSSIBLE;
 		return;
 	}
@@ -803,8 +802,8 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 		return;
 	}
 
-	cmpp_feat = STRDUP(cmpp->features);
-	mpp_feat = STRDUP(mpp->features);
+	cmpp_feat = strdup(cmpp->features);
+	mpp_feat = strdup(mpp->features);
 	if (cmpp_feat && mpp_feat) {
 		remove_feature(&mpp_feat, "queue_if_no_path");
 		remove_feature(&mpp_feat, "retain_attached_hw_handler");
@@ -812,13 +811,13 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 		remove_feature(&cmpp_feat, "retain_attached_hw_handler");
 		if (strcmp(mpp_feat, cmpp_feat)) {
 			select_reload_action(mpp, "features change");
-			FREE(cmpp_feat);
-			FREE(mpp_feat);
+			free(cmpp_feat);
+			free(mpp_feat);
 			return;
 		}
 	}
-	FREE(cmpp_feat);
-	FREE(mpp_feat);
+	free(cmpp_feat);
+	free(mpp_feat);
 
 	if (!cmpp->selector || strncmp(cmpp->selector, mpp->selector,
 		    strlen(mpp->selector))) {
@@ -1087,7 +1086,7 @@ check_daemon(void)
 	ret = 1;
 
 out_free:
-	FREE(reply);
+	free(reply);
 out:
 	mpath_disconnect(fd);
 	return ret;
@@ -1430,7 +1429,7 @@ static int _get_refwwid(enum mpath_cmds cmd, const char *dev,
 	}
 
 	if (refwwid && strlen(refwwid)) {
-		*wwid = STRDUP(refwwid);
+		*wwid = strdup(refwwid);
 		return PATHINFO_OK;
 	}
 

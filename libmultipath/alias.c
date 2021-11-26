@@ -356,7 +356,7 @@ use_existing_alias (const char *wwid, const char *file, const char *alias_old,
 		 * allocated correctly
 		 */
 		if (strcmp(buff, wwid) == 0)
-			alias = STRDUP(alias_old);
+			alias = strdup(alias_old);
 		else {
 			alias = NULL;
 			condlog(0, "alias %s already bound to wwid %s, cannot reuse",

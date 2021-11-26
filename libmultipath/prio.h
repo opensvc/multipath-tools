@@ -11,7 +11,6 @@
 struct path;
 
 #include "list.h"
-#include "memory.h"
 #include "defaults.h"
 
 /*

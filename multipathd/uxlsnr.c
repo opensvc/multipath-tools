@@ -25,7 +25,6 @@
 #include <stdbool.h>
 #include <sys/inotify.h>
 #include "checkers.h"
-#include "memory.h"
 #include "debug.h"
 #include "vector.h"
 #include "structs.h"
@@ -99,12 +98,11 @@ static void new_client(int ux_sock)
 	if (fd == -1)
 		return;
 
-	c = (struct client *)MALLOC(sizeof(*c));
+	c = (struct client *)calloc(1, sizeof(*c));
 	if (!c) {
 		close(fd);
 		return;
 	}
-	memset(c, 0, sizeof(*c));
 	INIT_LIST_HEAD(&c->node);
 	c->fd = fd;
 
@@ -122,7 +120,7 @@ static void _dead_client(struct client *c)
 	int fd = c->fd;
 	list_del_init(&c->node);
 	c->fd = -1;
-	FREE(c);
+	free(c);
 	close(fd);
 }
 
@@ -137,7 +135,8 @@ static void dead_client(struct client *c)
 static void free_polls (void)
 {
 	if (polls)
-		FREE(polls);
+		free(polls);
+	polls = NULL;
 }
 
 static void check_timeout(struct timespec start_time, char *inbuf,
@@ -299,7 +298,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 	struct watch_descriptors wds = { .conf_wd = -1, .dir_wd = -1 };
 
 	condlog(3, "uxsock: startup listener");
-	polls = MALLOC(max_pfds * sizeof(*polls));
+	polls = calloc(1, max_pfds * sizeof(*polls));
 	if (!polls) {
 		condlog(0, "uxsock: failed to allocate poll fds");
 		exit_daemon();
@@ -327,7 +326,7 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 			struct pollfd *new;
 			int n_new = max_pfds + POLLFD_CHUNK;
 
-			new = REALLOC(polls, n_new * sizeof(*polls));
+			new = realloc(polls, n_new * sizeof(*polls));
 			if (new) {
 				max_pfds = n_new;
 				polls = new;
@@ -448,12 +447,12 @@ void * uxsock_listen(uxsock_trigger_fn uxsock_trigger, long ux_sock,
 							"Reply [%d bytes]",
 							i, rlen);
 					}
-					FREE(reply);
+					free(reply);
 					reply = NULL;
 				}
 				check_timeout(start_time, inbuf,
 					      uxsock_timeout);
-				FREE(inbuf);
+				free(inbuf);
 			}
 		}
 		/* see if we got a non-fatal signal */

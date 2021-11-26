@@ -1,6 +1,7 @@
 #ifndef _DEFAULTS_H
 #define _DEFAULTS_H
 #include <limits.h>
+#include <string.h>
 
 /*
  * If you add or modify a value also update multipath/multipath.conf.5

@@ -9,6 +9,7 @@
 #include <sys/resource.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 size_t strchop(char *);
 int basenamecpy (const char *src, char *dst, size_t size);

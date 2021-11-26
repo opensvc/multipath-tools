@@ -5,7 +5,6 @@
 #define _GNU_SOURCE
 
 #include "checkers.h"
-#include "memory.h"
 #include "vector.h"
 #include "structs.h"
 #include "structs_vec.h"
@@ -746,7 +745,7 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 				    != CP_OK)
 					condlog(2, "%s: coalesce_paths failed",
 									param);
-				FREE(refwwid);
+				free(refwwid);
 			}
 		} /*we attempt to create device only once*/
 		count++;
@@ -757,7 +756,7 @@ cli_add_map (void * v, char ** reply, int * len, void * data)
 		return 1;
 	}
 	rc = ev_add_map(dev_path, alias, vecs);
-	FREE(alias);
+	free(alias);
 	return rc;
 }
 
@@ -783,7 +782,7 @@ cli_del_map (void * v, char ** reply, int * len, void * data)
 		return 1;
 	}
 	rc = ev_remove_map(param, alias, minor, vecs);
-	FREE(alias);
+	free(alias);
 	return rc;
 }
 

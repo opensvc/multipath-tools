@@ -19,7 +19,6 @@
  * Copyright (c) 2005 Christophe Varoqui
  */
 
-#include "memory.h"
 #include <stdlib.h>
 #include "vector.h"
 
@@ -30,7 +29,7 @@
 vector
 vector_alloc(void)
 {
-	vector v = (vector) MALLOC(sizeof (struct _vector));
+	vector v = (vector) calloc(1, sizeof (struct _vector));
 	return v;
 }
 
@@ -46,7 +45,7 @@ vector_alloc_slot(vector v)
 		return false;
 
 	new_allocated = v->allocated + VECTOR_DEFAULT_SIZE;
-	new_slot = REALLOC(v->slot, sizeof (void *) * new_allocated);
+	new_slot = realloc(v->slot, sizeof (void *) * new_allocated);
 	if (!new_slot)
 		return false;
 
@@ -119,13 +118,13 @@ vector_del_slot(vector v, int slot)
 	v->allocated -= VECTOR_DEFAULT_SIZE;
 
 	if (v->allocated <= 0) {
-		FREE(v->slot);
+		free(v->slot);
 		v->slot = NULL;
 		v->allocated = 0;
 	} else {
 		void *new_slot;
 
-		new_slot = REALLOC(v->slot, sizeof (void *) * v->allocated);
+		new_slot = realloc(v->slot, sizeof (void *) * v->allocated);
 		if (!new_slot)
 			v->allocated += VECTOR_DEFAULT_SIZE;
 		else
@@ -153,7 +152,7 @@ vector_reset(vector v)
 		return NULL;
 
 	if (v->slot)
-		FREE(v->slot);
+		free(v->slot);
 
 	v->allocated = 0;
 	v->slot = NULL;
@@ -166,7 +165,7 @@ vector_free(vector v)
 {
 	if (!vector_reset(v))
 		return;
-	FREE(v);
+	free(v);
 }
 
 void
@@ -180,7 +179,7 @@ free_strvec(vector strvec)
 
 	vector_foreach_slot (strvec, str, i)
 		if (str)
-			FREE(str);
+			free(str);
 
 	vector_free(strvec);
 }

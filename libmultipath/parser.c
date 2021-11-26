@@ -23,7 +23,6 @@
 #include "vector.h"
 #include "config.h"
 #include "parser.h"
-#include "memory.h"
 #include "debug.h"
 #include "strbuf.h"
 
@@ -39,13 +38,13 @@ keyword_alloc(vector keywords, char *string,
 {
 	struct keyword *keyword;
 
-	keyword = (struct keyword *) MALLOC(sizeof (struct keyword));
+	keyword = (struct keyword *)calloc(1, sizeof (struct keyword));
 
 	if (!keyword)
 		return 1;
 
 	if (!vector_alloc_slot(keywords)) {
-		FREE(keyword);
+		free(keyword);
 		return 1;
 	}
 	keyword->string = string;
@@ -115,7 +114,7 @@ free_keywords(vector keywords)
 		keyword = VECTOR_SLOT(keywords, i);
 		if (keyword->sub)
 			free_keywords(keyword->sub);
-		FREE(keyword);
+		free(keyword);
 	}
 	vector_free(keywords);
 }
@@ -245,7 +244,7 @@ alloc_strvec(char *string)
 		start = cp;
 		if (*cp == '"' && !(in_string && *(cp + 1) == '"')) {
 			cp++;
-			token = MALLOC(sizeof(quote_marker));
+			token = calloc(1, sizeof(quote_marker));
 
 			if (!token)
 				goto out;
@@ -256,7 +255,7 @@ alloc_strvec(char *string)
 			else
 				in_string = 1;
 		} else if (!in_string && (*cp == '{' || *cp == '}')) {
-			token = MALLOC(2);
+			token = malloc(2);
 
 			if (!token)
 				goto out;
@@ -283,7 +282,7 @@ alloc_strvec(char *string)
 			}
 
 			strlen = cp - start;
-			token = MALLOC(strlen + 1);
+			token = calloc(1, strlen + 1);
 
 			if (!token)
 				goto out;
@@ -350,7 +349,7 @@ set_value(vector strvec)
 				(char *)VECTOR_SLOT(strvec, 0));
 			return NULL;
 		}
-		alloc = MALLOC(sizeof (char) * (size + 1));
+		alloc = calloc(1, sizeof (char) * (size + 1));
 		if (alloc)
 			memcpy(alloc, str, size);
 		else
@@ -358,7 +357,7 @@ set_value(vector strvec)
 		return alloc;
 	}
 	/* Even empty quotes counts as a value (An empty string) */
-	alloc = (char *) MALLOC(sizeof (char));
+	alloc = (char *)calloc(1, sizeof (char));
 	if (!alloc)
 		goto oom;
 	for (i = 2; i < VECTOR_SIZE(strvec); i++) {
@@ -375,9 +374,9 @@ set_value(vector strvec)
 		/* The first +1 is for the NULL byte. The rest are for the
 		 * spaces between words */
 		len += strlen(str) + 1;
-		alloc = REALLOC(alloc, sizeof (char) * len);
+		alloc = realloc(alloc, sizeof (char) * len);
 		if (!alloc) {
-			FREE(tmp);
+			free(tmp);
 			goto oom;
 		}
 		if (*alloc != '\0')
@@ -518,7 +517,7 @@ process_stream(struct config *conf, FILE *stream, vector keywords,
 	if (!uniques)
 		return 1;
 
-	buf = MALLOC(MAXBUF);
+	buf = calloc(1, MAXBUF);
 
 	if (!buf) {
 		vector_free(uniques);
@@ -590,7 +589,7 @@ process_stream(struct config *conf, FILE *stream, vector keywords,
 	if (kw_level == 1)
 		condlog(1, "missing '%s' at end of %s", EOB, file);
 out:
-	FREE(buf);
+	free(buf);
 	free_uniques(uniques);
 	return r;
 }

@@ -23,6 +23,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <cmocka.h>
+#include <stdio.h>
 
 #include "globals.c"
 #include "pgpolicies.h"

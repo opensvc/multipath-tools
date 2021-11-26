@@ -4,7 +4,6 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <pthread.h>
-#include "memory.h"
 #include "vector.h"
 #include "structs.h"
 #include "structs_vec.h"
@@ -24,13 +23,13 @@ static vector handlers;
 static struct key *
 alloc_key (void)
 {
-	return (struct key *)MALLOC(sizeof(struct key));
+	return (struct key *)calloc(1, sizeof(struct key));
 }
 
 static struct handler *
 alloc_handler (void)
 {
-	return (struct handler *)MALLOC(sizeof(struct handler));
+	return (struct handler *)calloc(1, sizeof(struct handler));
 }
 
 static int
@@ -45,7 +44,7 @@ add_key (vector vec, char * str, uint64_t code, int has_param)
 
 	kw->code = code;
 	kw->has_param = has_param;
-	kw->str = STRDUP(str);
+	kw->str = strdup(str);
 
 	if (!kw->str)
 		goto out;
@@ -58,9 +57,9 @@ add_key (vector vec, char * str, uint64_t code, int has_param)
 	return 0;
 
 out1:
-	FREE(kw->str);
+	free(kw->str);
 out:
-	FREE(kw);
+	free(kw);
 	return 1;
 }
 
@@ -75,7 +74,7 @@ add_handler (uint64_t fp, int (*fn)(void *, char **, int *, void *))
 		return 1;
 
 	if (!vector_alloc_slot(handlers)) {
-		FREE(h);
+		free(h);
 		return 1;
 	}
 
@@ -127,12 +126,12 @@ static void
 free_key (struct key * kw)
 {
 	if (kw->str)
-		FREE(kw->str);
+		free(kw->str);
 
 	if (kw->param)
-		FREE(kw->param);
+		free(kw->param);
 
-	FREE(kw);
+	free(kw);
 }
 
 void
@@ -154,7 +153,7 @@ free_handlers (void)
 	struct handler * h;
 
 	vector_foreach_slot (handlers, h, i)
-		FREE(h);
+		free(h);
 
 	vector_free(handlers);
 	handlers = NULL;
@@ -303,7 +302,7 @@ get_cmdvec (char * cmd, vector *v)
 			goto out;
 		}
 		if (!vector_alloc_slot(cmdvec)) {
-			FREE(cmdkw);
+			free(cmdkw);
 			r = ENOMEM;
 			goto out;
 		}

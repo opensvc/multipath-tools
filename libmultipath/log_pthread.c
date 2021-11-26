@@ -8,8 +8,6 @@
 #include <pthread.h>
 #include <sys/mman.h>
 
-#include "memory.h"
-
 #include "log_pthread.h"
 #include "log.h"
 #include "lock.h"

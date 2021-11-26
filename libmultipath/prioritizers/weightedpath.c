@@ -29,7 +29,6 @@
 #include "weightedpath.h"
 #include "config.h"
 #include "structs.h"
-#include "memory.h"
 #include "debug.h"
 #include <regex.h>
 #include "structs_vec.h"

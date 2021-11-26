@@ -8,7 +8,6 @@
 #include <libudev.h>
 
 #include "checkers.h"
-#include "memory.h"
 #include "vector.h"
 #include "util.h"
 #include "structs.h"
@@ -25,14 +24,14 @@ alloc_adaptergroup(void)
 {
 	struct adapter_group *agp;
 
-	agp = (struct adapter_group *)MALLOC(sizeof(struct adapter_group));
+	agp = (struct adapter_group *)calloc(1, sizeof(struct adapter_group));
 
 	if (!agp)
 		return NULL;
 
 	agp->host_groups = vector_alloc();
 	if (!agp->host_groups) {
-		FREE(agp);
+		free(agp);
 		agp = NULL;
 	}
 	return agp;
@@ -45,7 +44,7 @@ void free_adaptergroup(vector adapters)
 
 	vector_foreach_slot(adapters, agp, i) {
 		free_hostgroup(agp->host_groups);
-		FREE(agp);
+		free(agp);
 	}
 	vector_free(adapters);
 }
@@ -60,7 +59,7 @@ void free_hostgroup(vector hostgroups)
 
 	vector_foreach_slot(hostgroups, hgp, i) {
 		vector_free(hgp->paths);
-		FREE(hgp);
+		free(hgp);
 	}
 	vector_free(hostgroups);
 }
@@ -70,7 +69,7 @@ alloc_hostgroup(void)
 {
 	struct host_group *hgp;
 
-	hgp = (struct host_group *)MALLOC(sizeof(struct host_group));
+	hgp = (struct host_group *)calloc(1, sizeof(struct host_group));
 
 	if (!hgp)
 		return NULL;
@@ -78,7 +77,7 @@ alloc_hostgroup(void)
 	hgp->paths = vector_alloc();
 
 	if (!hgp->paths) {
-		FREE(hgp);
+		free(hgp);
 		hgp = NULL;
 	}
 	return hgp;
@@ -89,7 +88,7 @@ alloc_path (void)
 {
 	struct path * pp;
 
-	pp = (struct path *)MALLOC(sizeof(struct path));
+	pp = (struct path *)calloc(1, sizeof(struct path));
 
 	if (pp) {
 		pp->initialized = INIT_NEW;
@@ -152,7 +151,7 @@ free_path (struct path * pp)
 
 	vector_free(pp->hwe);
 
-	FREE(pp);
+	free(pp);
 }
 
 void
@@ -176,7 +175,7 @@ alloc_pathgroup (void)
 {
 	struct pathgroup * pgp;
 
-	pgp = (struct pathgroup *)MALLOC(sizeof(struct pathgroup));
+	pgp = (struct pathgroup *)calloc(1, sizeof(struct pathgroup));
 
 	if (!pgp)
 		return NULL;
@@ -184,7 +183,7 @@ alloc_pathgroup (void)
 	pgp->paths = vector_alloc();
 
 	if (!pgp->paths) {
-		FREE(pgp);
+		free(pgp);
 		return NULL;
 	}
 
@@ -199,7 +198,7 @@ free_pathgroup (struct pathgroup * pgp, enum free_path_mode free_paths)
 		return;
 
 	free_pathvec(pgp->paths, free_paths);
-	FREE(pgp);
+	free(pgp);
 }
 
 void
@@ -222,7 +221,7 @@ alloc_multipath (void)
 {
 	struct multipath * mpp;
 
-	mpp = (struct multipath *)MALLOC(sizeof(struct multipath));
+	mpp = (struct multipath *)calloc(1, sizeof(struct multipath));
 
 	if (mpp) {
 		mpp->bestpg = 1;
@@ -251,17 +250,17 @@ void free_multipath_attributes(struct multipath *mpp)
 		return;
 
 	if (mpp->selector) {
-		FREE(mpp->selector);
+		free(mpp->selector);
 		mpp->selector = NULL;
 	}
 
 	if (mpp->features) {
-		FREE(mpp->features);
+		free(mpp->features);
 		mpp->features = NULL;
 	}
 
 	if (mpp->hwhandler) {
-		FREE(mpp->hwhandler);
+		free(mpp->hwhandler);
 		mpp->hwhandler = NULL;
 	}
 }
@@ -275,12 +274,12 @@ free_multipath (struct multipath * mpp, enum free_path_mode free_paths)
 	free_multipath_attributes(mpp);
 
 	if (mpp->alias) {
-		FREE(mpp->alias);
+		free(mpp->alias);
 		mpp->alias = NULL;
 	}
 
 	if (mpp->dmi) {
-		FREE(mpp->dmi);
+		free(mpp->dmi);
 		mpp->dmi = NULL;
 	}
 
@@ -305,8 +304,8 @@ free_multipath (struct multipath * mpp, enum free_path_mode free_paths)
 		vector_free(mpp->hwe);
 		mpp->hwe = NULL;
 	}
-	FREE_PTR(mpp->mpcontext);
-	FREE(mpp);
+	free(mpp->mpcontext);
+	free(mpp);
 }
 
 void
@@ -633,7 +632,7 @@ int add_feature(char **f, const char *n)
 	for (d = c; d >= 10; d /= 10)
 		l++;
 
-	t = MALLOC(l + 1);
+	t = calloc(1, l + 1);
 	if (!t)
 		return 1;
 
@@ -644,7 +643,7 @@ int add_feature(char **f, const char *n)
 
 	snprintf(t, l + 1, "%0d%s %s", c, e, n);
 
-	FREE(*f);
+	free(*f);
 	*f = t;
 
 	return 0;
@@ -696,7 +695,7 @@ int remove_feature(char **f, const char *o)
 
 	/* Quick exit if all features have been removed */
 	if (c == 0) {
-		n = MALLOC(2);
+		n = malloc(2);
 		if (!n)
 			return 1;
 		strcpy(n, "0");
@@ -711,7 +710,7 @@ int remove_feature(char **f, const char *o)
 
 	/* Update feature count space */
 	l = strlen(*f) - d;
-	n =  MALLOC(l + 1);
+	n =  malloc(l + 1);
 	if (!n)
 		return 1;
 
@@ -724,7 +723,7 @@ int remove_feature(char **f, const char *o)
 	p = strchr(*f, ' ');
 	if (!p) {
 		/* Internal error, feature string inconsistent */
-		FREE(n);
+		free(n);
 		return 1;
 	}
 	while (*p == ' ')
@@ -753,7 +752,7 @@ int remove_feature(char **f, const char *o)
 	}
 
 out:
-	FREE(*f);
+	free(*f);
 	*f = n;
 
 	return 0;

@@ -106,7 +106,7 @@ enum {
 				free(tmp);			\
 				(r) = NULL;			\
 			} else {				\
-				(r) = REALLOC((r), (m) * 2);	\
+				(r) = realloc((r), (m) * 2);	\
 				if ((r)) {			\
 					memset((r) + (m), 0, (m)); \
 					(m) *= 2;		\

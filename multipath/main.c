@@ -35,7 +35,6 @@
 #include "checkers.h"
 #include "prio.h"
 #include "vector.h"
-#include "memory.h"
 #include <libdevmapper.h>
 #include "devmapper.h"
 #include "util.h"
@@ -82,7 +81,7 @@ dump_config (struct config *conf, vector hwes, vector mpvec)
 
 	if (reply != NULL) {
 		printf("%s", reply);
-		FREE(reply);
+		free(reply);
 		return 0;
 	} else
 		return 1;
@@ -286,7 +285,7 @@ found:
 	condlog(r == 0 ? 3 : 2, "%s:%s usable paths found",
 		devpath, r == 0 ? "" : " no");
 free:
-	FREE(mapname);
+	free(mapname);
 	free_multipath(mpp, FREE_PATHS);
 	vector_free(pathvec);
 out:
@@ -585,7 +584,7 @@ out:
 		condlog(2, "Warning: multipath devices exist, but multipathd service is not running");
 
 	if (refwwid)
-		FREE(refwwid);
+		free(refwwid);
 
 	free_multipathvec(curmp, KEEP_PATHS);
 	vecs.mpvec = NULL;
@@ -808,7 +807,7 @@ int delegate_to_multipathd(enum mpath_cmds cmd,
 	}
 
 out:
-	FREE(reply);
+	free(reply);
 	close(fd);
 	return r;
 }
@@ -888,9 +887,6 @@ main (int argc, char *argv[])
 
 			break;
 		case 'M':
-#if _DEBUG_
-			debug = atoi(optarg);
-#endif
 			break;
 		case 'p':
 			conf->pgpolicy_flag = get_pgpolicy_id(optarg);
@@ -964,7 +960,7 @@ main (int argc, char *argv[])
 	check_alias_settings(conf);
 
 	if (optind < argc) {
-		dev = MALLOC(FILE_NAME_SIZE);
+		dev = calloc(1, FILE_NAME_SIZE);
 
 		if (!dev)
 			goto out;
@@ -1075,13 +1071,10 @@ main (int argc, char *argv[])
 out:
 	put_multipath_config(conf);
 	if (dev)
-		FREE(dev);
+		free(dev);
 
 	if (dev_type == DEV_UEVENT)
 		closelog();
 
-#ifdef _DEBUG_
-	dbg_free_final(NULL);
-#endif
 	return r;
 }

@@ -43,7 +43,6 @@
 #include <libudev.h>
 #include <errno.h>
 
-#include "memory.h"
 #include "debug.h"
 #include "list.h"
 #include "uevent.h"
@@ -81,7 +80,7 @@ int is_uevent_busy(void)
 
 struct uevent * alloc_uevent (void)
 {
-	struct uevent *uev = MALLOC(sizeof(struct uevent));
+	struct uevent *uev = calloc(1, sizeof(struct uevent));
 
 	if (uev) {
 		INIT_LIST_HEAD(&uev->node);
@@ -100,7 +99,7 @@ static void uevq_cleanup(struct list_head *tmpq)
 
 		if (uev->udev)
 			udev_device_unref(uev->udev);
-		FREE(uev);
+		free(uev);
 	}
 }
 
@@ -309,7 +308,7 @@ uevent_prepare(struct list_head *tmpq)
 			list_del_init(&uev->node);
 			if (uev->udev)
 				udev_device_unref(uev->udev);
-			FREE(uev);
+			free(uev);
 			continue;
 		}
 
@@ -337,7 +336,7 @@ uevent_filter(struct uevent *later, struct list_head *tmpq)
 			list_del_init(&earlier->node);
 			if (earlier->udev)
 				udev_device_unref(earlier->udev);
-			FREE(earlier);
+			free(earlier);
 		}
 	}
 }
@@ -391,7 +390,7 @@ service_uevq(struct list_head *tmpq)
 
 		if (uev->udev)
 			udev_device_unref(uev->udev);
-		FREE(uev);
+		free(uev);
 	}
 }
 
@@ -492,7 +491,7 @@ static struct uevent *uevent_from_udev_device(struct udev_device *dev)
 	if (!uev->devpath || ! uev->action) {
 		udev_device_unref(dev);
 		condlog(1, "uevent missing necessary fields");
-		FREE(uev);
+		free(uev);
 		return NULL;
 	}
 	uev->udev = dev;

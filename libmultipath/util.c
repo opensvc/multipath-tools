@@ -17,7 +17,6 @@
 
 #include "util.h"
 #include "debug.h"
-#include "memory.h"
 #include "checkers.h"
 #include "vector.h"
 #include "structs.h"
@@ -110,7 +109,7 @@ get_word (const char *sentence, char **word)
 	if (!word)
 		return skip + len;
 
-	*word = MALLOC(len + 1);
+	*word = calloc(1, len + 1);
 
 	if (!*word) {
 		condlog(0, "get_word : oom");
@@ -414,8 +413,8 @@ void free_scandir_result(struct scandir_result *res)
 	int i;
 
 	for (i = 0; i < res->n; i++)
-		FREE(res->di[i]);
-	FREE(res->di);
+		free(res->di[i]);
+	free(res->di);
 }
 
 void close_fd(void *arg)
