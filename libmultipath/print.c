@@ -776,7 +776,7 @@ snprint_path_protocol(struct strbuf *buff, const struct path * pp)
 	}
 }
 
-int
+static int
 snprint_path_marginal(struct strbuf *buff, const struct path * pp)
 {
 	if (pp->marginal)
