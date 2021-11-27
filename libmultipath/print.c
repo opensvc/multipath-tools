@@ -1167,25 +1167,16 @@ int _snprint_pathgroup(const struct gen_pathgroup *ggp, struct strbuf *line,
 {
 	int initial_len = get_strbuf_len(line);
 	const char *f;
-	struct pathgroup_data *data;
 	int rc;
 
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
-		int iwc;
-
 		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
-		if ((iwc = pgd_lookup(*format)) == -1)
-			continue; /* unknown wildcard */
-		data = &pgd[iwc];
 
 		if ((rc = ggp->ops->snprint(ggp, line, *format)) < 0)
 			return rc;
-		else if ((unsigned int)rc < data->width)
-			if ((rc = fill_strbuf(line, ' ', data->width - rc)) < 0)
-				return rc;
 	}
 
 	if ((rc = print_strbuf(line, "%s\n", format)) < 0)
