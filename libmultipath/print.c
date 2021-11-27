@@ -103,21 +103,18 @@
 struct path_data {
 	char wildcard;
 	char * header;
-	unsigned int width;
 	int (*snprint)(struct strbuf *, const struct path * pp);
 };
 
 struct multipath_data {
 	char wildcard;
 	char * header;
-	unsigned int width;
 	int (*snprint)(struct strbuf *, const struct multipath * mpp);
 };
 
 struct pathgroup_data {
 	char wildcard;
 	char * header;
-	unsigned int width;
 	int (*snprint)(struct strbuf *, const struct pathgroup * pgp);
 };
 
@@ -792,66 +789,66 @@ snprint_path_vpd_data(struct strbuf *buff, const struct path * pp)
 	return append_strbuf_str(buff, "[undef]");
 }
 
-static struct multipath_data mpd[] = {
-	{'n', "name",          0, snprint_name},
-	{'w', "uuid",          0, snprint_multipath_uuid},
-	{'d', "sysfs",         0, snprint_sysfs},
-	{'F', "failback",      0, snprint_failback},
-	{'Q', "queueing",      0, snprint_queueing},
-	{'N', "paths",         0, snprint_nb_paths},
-	{'r', "write_prot",    0, snprint_ro},
-	{'t', "dm-st",         0, snprint_dm_map_state},
-	{'S', "size",          0, snprint_multipath_size},
-	{'f', "features",      0, snprint_features},
-	{'x', "failures",      0, snprint_map_failures},
-	{'h', "hwhandler",     0, snprint_hwhandler},
-	{'A', "action",        0, snprint_action},
-	{'0', "path_faults",   0, snprint_path_faults},
-	{'1', "switch_grp",    0, snprint_switch_grp},
-	{'2', "map_loads",     0, snprint_map_loads},
-	{'3', "total_q_time",  0, snprint_total_q_time},
-	{'4', "q_timeouts",    0, snprint_q_timeouts},
-	{'s', "vend/prod/rev", 0, snprint_multipath_vpr},
-	{'v', "vend",          0, snprint_multipath_vend},
-	{'p', "prod",          0, snprint_multipath_prod},
-	{'e', "rev",           0, snprint_multipath_rev},
-	{'G', "foreign",       0, snprint_multipath_foreign},
-	{'g', "vpd page data", 0, snprint_multipath_vpd_data},
+static const struct multipath_data mpd[] = {
+	{'n', "name",          snprint_name},
+	{'w', "uuid",          snprint_multipath_uuid},
+	{'d', "sysfs",         snprint_sysfs},
+	{'F', "failback",      snprint_failback},
+	{'Q', "queueing",      snprint_queueing},
+	{'N', "paths",         snprint_nb_paths},
+	{'r', "write_prot",    snprint_ro},
+	{'t', "dm-st",         snprint_dm_map_state},
+	{'S', "size",          snprint_multipath_size},
+	{'f', "features",      snprint_features},
+	{'x', "failures",      snprint_map_failures},
+	{'h', "hwhandler",     snprint_hwhandler},
+	{'A', "action",        snprint_action},
+	{'0', "path_faults",   snprint_path_faults},
+	{'1', "switch_grp",    snprint_switch_grp},
+	{'2', "map_loads",     snprint_map_loads},
+	{'3', "total_q_time",  snprint_total_q_time},
+	{'4', "q_timeouts",    snprint_q_timeouts},
+	{'s', "vend/prod/rev", snprint_multipath_vpr},
+	{'v', "vend",          snprint_multipath_vend},
+	{'p', "prod",          snprint_multipath_prod},
+	{'e', "rev",           snprint_multipath_rev},
+	{'G', "foreign",       snprint_multipath_foreign},
+	{'g', "vpd page data", snprint_multipath_vpd_data},
 };
 
-static struct path_data pd[] = {
-	{'w', "uuid",          0, snprint_path_uuid},
-	{'i', "hcil",          0, snprint_hcil},
-	{'d', "dev",           0, snprint_dev},
-	{'D', "dev_t",         0, snprint_dev_t},
-	{'t', "dm_st",         0, snprint_dm_path_state},
-	{'o', "dev_st",        0, snprint_offline},
-	{'T', "chk_st",        0, snprint_chk_state},
-	{'s', "vend/prod/rev", 0, snprint_vpr},
-	{'c', "checker",       0, snprint_path_checker},
-	{'C', "next_check",    0, snprint_next_check},
-	{'p', "pri",           0, snprint_pri},
-	{'S', "size",          0, snprint_path_size},
-	{'z', "serial",        0, snprint_path_serial},
-	{'M', "marginal_st",   0, snprint_path_marginal},
-	{'m', "multipath",     0, snprint_path_mpp},
-	{'N', "host WWNN",     0, snprint_host_wwnn},
-	{'n', "target WWNN",   0, snprint_tgt_wwnn},
-	{'R', "host WWPN",     0, snprint_host_wwpn},
-	{'r', "target WWPN",   0, snprint_tgt_wwpn},
-	{'a', "host adapter",  0, snprint_host_adapter},
-	{'G', "foreign",       0, snprint_path_foreign},
-	{'g', "vpd page data", 0, snprint_path_vpd_data},
-	{'0', "failures",      0, snprint_path_failures},
-	{'P', "protocol",      0, snprint_path_protocol},
-	{'I', "init_st",       0, snprint_initialized},
+static const struct path_data pd[] = {
+	{'w', "uuid",          snprint_path_uuid},
+	{'i', "hcil",          snprint_hcil},
+	{'d', "dev",           snprint_dev},
+	{'D', "dev_t",         snprint_dev_t},
+	{'t', "dm_st",         snprint_dm_path_state},
+	{'o', "dev_st",        snprint_offline},
+	{'T', "chk_st",        snprint_chk_state},
+	{'s', "vend/prod/rev", snprint_vpr},
+	{'c', "checker",       snprint_path_checker},
+	{'C', "next_check",    snprint_next_check},
+	{'p', "pri",           snprint_pri},
+	{'S', "size",          snprint_path_size},
+	{'z', "serial",        snprint_path_serial},
+	{'M', "marginal_st",   snprint_path_marginal},
+	{'m', "multipath",     snprint_path_mpp},
+	{'N', "host WWNN",     snprint_host_wwnn},
+	{'n', "target WWNN",   snprint_tgt_wwnn},
+	{'R', "host WWPN",     snprint_host_wwpn},
+	{'r', "target WWPN",   snprint_tgt_wwpn},
+	{'a', "host adapter",  snprint_host_adapter},
+	{'G', "foreign",       snprint_path_foreign},
+	{'g', "vpd page data", snprint_path_vpd_data},
+	{'0', "failures",      snprint_path_failures},
+	{'P', "protocol",      snprint_path_protocol},
+	{'I', "init_st",       snprint_initialized},
 };
 
-static struct pathgroup_data pgd[] = {
-	{'s', "selector",      0, snprint_pg_selector},
-	{'p', "pri",           0, snprint_pg_pri},
-	{'t', "dm_st",         0, snprint_pg_state},
-	{'M', "marginal_st",   0, snprint_pg_marginal},
+static const struct pathgroup_data pgd[] = {
+	{'s', "selector",      snprint_pg_selector},
+	{'p', "pri",           snprint_pg_pri},
+	{'t', "dm_st",         snprint_pg_state},
+	{'M', "marginal_st",   snprint_pg_marginal},
 };
 
 int snprint_wildcards(struct strbuf *buff)
@@ -1052,7 +1049,7 @@ int snprint_multipath_header(struct strbuf *line, const char *format,
 {
 	int initial_len = get_strbuf_len(line);
 	const char *f;
-	struct multipath_data * data;
+	const struct multipath_data * data;
 	int rc;
 
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
@@ -1113,7 +1110,7 @@ int snprint_path_header(struct strbuf *line, const char *format,
 {
 	int initial_len = get_strbuf_len(line);
 	const char *f;
-	struct path_data *data;
+	const struct path_data *data;
 	int rc;
 
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
