@@ -466,3 +466,8 @@ void cleanup_charp(char **p)
 {
 	free(*p);
 }
+
+void cleanup_ucharp(unsigned char **p)
+{
+	free(*p);
+}
