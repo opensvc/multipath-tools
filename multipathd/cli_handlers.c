@@ -278,7 +278,6 @@ cli_list_map_json (void *v, struct strbuf *reply, void *data)
 	char * param = get_keyparam(v, MAP);
 
 	param = convert_dev(param, 0);
-	get_path_layout(vecs->pathvec, 0);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
@@ -400,7 +399,6 @@ cli_list_map_fmt (void *v, struct strbuf *reply, void *data)
 	char * fmt = get_keyparam(v, FMT);
 
 	param = convert_dev(param, 0);
-	get_path_layout(vecs->pathvec, 0);
 	get_multipath_layout(vecs->mpvec, 1);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 	if (!mpp)
@@ -1267,7 +1265,6 @@ cli_getprstatus (void * v, struct strbuf *reply, void * data)
 	char * param = get_keyparam(v, MAP);
 
 	param = convert_dev(param, 0);
-	get_path_layout(vecs->pathvec, 0);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
@@ -1291,7 +1288,6 @@ cli_setprstatus(void * v, struct strbuf *reply, void * data)
 	char * param = get_keyparam(v, MAP);
 
 	param = convert_dev(param, 0);
-	get_path_layout(vecs->pathvec, 0);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
@@ -1314,7 +1310,6 @@ cli_unsetprstatus(void * v, struct strbuf *reply, void * data)
 	char * param = get_keyparam(v, MAP);
 
 	param = convert_dev(param, 0);
-	get_path_layout(vecs->pathvec, 0);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
