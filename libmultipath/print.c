@@ -884,18 +884,22 @@ int snprint_wildcards(struct strbuf *buff)
 	return get_strbuf_len(buff) - initial_len;
 }
 
-void
-get_path_layout(vector pathvec, int header)
+fieldwidth_t *alloc_path_layout(void) {
+	return calloc(ARRAY_SIZE(pd), sizeof(fieldwidth_t));
+}
+
+void get_path_layout(vector pathvec, int header, fieldwidth_t *width)
 {
 	vector gpvec = vector_convert(NULL, pathvec, struct path,
 				      dm_path_to_gen);
 	_get_path_layout(gpvec,
-			 header ? LAYOUT_RESET_HEADER : LAYOUT_RESET_ZERO);
+			 header ? LAYOUT_RESET_HEADER : LAYOUT_RESET_ZERO,
+			 width);
 	vector_free(gpvec);
 }
 
 static void
-reset_width(unsigned int *width, enum layout_reset reset, const char *header)
+reset_width(fieldwidth_t *width, enum layout_reset reset, const char *header)
 {
 	switch (reset) {
 	case LAYOUT_RESET_HEADER:
@@ -910,67 +914,70 @@ reset_width(unsigned int *width, enum layout_reset reset, const char *header)
 	}
 }
 
-void
-_get_path_layout (const struct _vector *gpvec, enum layout_reset reset)
+void _get_path_layout (const struct _vector *gpvec, enum layout_reset reset,
+		       fieldwidth_t *width)
 {
 	unsigned int i, j;
 	const struct gen_path *gp;
 
+	if (width == NULL)
+		return;
+
 	for (j = 0; j < ARRAY_SIZE(pd); j++) {
 		STRBUF_ON_STACK(buff);
 
-		reset_width(&pd[j].width, reset, pd[j].header);
+		reset_width(&width[j], reset, pd[j].header);
 
 		if (gpvec == NULL)
 			continue;
 
 		vector_foreach_slot (gpvec, gp, i) {
 			gp->ops->snprint(gp, &buff, pd[j].wildcard);
-			pd[j].width = MAX(pd[j].width, get_strbuf_len(&buff));
+			width[j] = MAX(width[j],
+				       MIN(get_strbuf_len(&buff), MAX_FIELD_WIDTH));
 			truncate_strbuf(&buff, 0);
 		}
 	}
 }
 
-static void
-reset_multipath_layout (void)
-{
-	unsigned int i;
+fieldwidth_t *alloc_multipath_layout(void) {
 
-	for (i = 0; i < ARRAY_SIZE(mpd); i++)
-		mpd[i].width = 0;
+	return calloc(ARRAY_SIZE(mpd), sizeof(fieldwidth_t));
 }
 
-void
-get_multipath_layout (vector mpvec, int header) {
+void get_multipath_layout (vector mpvec, int header, fieldwidth_t *width) {
 	vector gmvec = vector_convert(NULL, mpvec, struct multipath,
 				      dm_multipath_to_gen);
 	_get_multipath_layout(gmvec,
-			 header ? LAYOUT_RESET_HEADER : LAYOUT_RESET_ZERO);
+			      header ? LAYOUT_RESET_HEADER : LAYOUT_RESET_ZERO,
+			      width);
 	vector_free(gmvec);
 }
 
 void
-_get_multipath_layout (const struct _vector *gmvec,
-			    enum layout_reset reset)
+_get_multipath_layout (const struct _vector *gmvec, enum layout_reset reset,
+		       fieldwidth_t *width)
 {
 	unsigned int i, j;
 	const struct gen_multipath * gm;
 
+	if (width == NULL)
+		return;
 	for (j = 0; j < ARRAY_SIZE(mpd); j++) {
 		STRBUF_ON_STACK(buff);
 
-		reset_width(&mpd[j].width, reset, mpd[j].header);
+		reset_width(&width[j], reset, mpd[j].header);
 
 		if (gmvec == NULL)
 			continue;
 
 		vector_foreach_slot (gmvec, gm, i) {
 			gm->ops->snprint(gm, &buff, mpd[j].wildcard);
-			mpd[j].width = MAX(mpd[j].width, get_strbuf_len(&buff));
+			width[j] = MAX(width[j],
+				       MIN(get_strbuf_len(&buff), MAX_FIELD_WIDTH));
 			truncate_strbuf(&buff, 0);
 		}
-		condlog(4, "%s: width %d", mpd[j].header, mpd[j].width);
+		condlog(4, "%s: width %d", mpd[j].header, width[j]);
 	}
 }
 
@@ -1040,7 +1047,8 @@ int snprint_pathgroup_attr(const struct gen_pathgroup* gpg,
 	return pgd[i].snprint(buf, pg);
 }
 
-int snprint_multipath_header(struct strbuf *line, const char *format)
+int snprint_multipath_header(struct strbuf *line, const char *format,
+			     const fieldwidth_t *width)
 {
 	int initial_len = get_strbuf_len(line);
 	const char *f;
@@ -1060,8 +1068,8 @@ int snprint_multipath_header(struct strbuf *line, const char *format)
 
 		if ((rc = append_strbuf_str(line, data->header)) < 0)
 			return rc;
-		else if ((unsigned int)rc < data->width)
-			if ((rc = fill_strbuf(line, ' ', data->width - rc)) < 0)
+		else if ((unsigned int)rc < width[iwc])
+			if ((rc = fill_strbuf(line, ' ', width[iwc] - rc)) < 0)
 				return rc;
 	}
 
@@ -1071,11 +1079,11 @@ int snprint_multipath_header(struct strbuf *line, const char *format)
 }
 
 int _snprint_multipath(const struct gen_multipath *gmp,
-		       struct strbuf *line, const char *format, int pad)
+		       struct strbuf *line, const char *format,
+		       const fieldwidth_t *width)
 {
 	int initial_len = get_strbuf_len(line);
 	const char *f;
-	struct multipath_data * data;
 	int rc;
 
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
@@ -1087,12 +1095,11 @@ int _snprint_multipath(const struct gen_multipath *gmp,
 		format = f + 1;
 		if ((iwc = mpd_lookup(*format)) == -1)
 			continue; /* unknown wildcard */
-		data = &mpd[iwc];
 
 		if ((rc = gmp->ops->snprint(gmp, line, *format)) < 0)
 			return rc;
-		else if (pad && (unsigned int)rc < data->width)
-			if ((rc = fill_strbuf(line, ' ', data->width - rc)) < 0)
+		else if (width != NULL && (unsigned int)rc < width[iwc])
+			if ((rc = fill_strbuf(line, ' ', width[iwc] - rc)) < 0)
 				return rc;
 	}
 
@@ -1101,7 +1108,8 @@ int _snprint_multipath(const struct gen_multipath *gmp,
 	return get_strbuf_len(line) - initial_len;
 }
 
-int snprint_path_header(struct strbuf *line, const char *format)
+int snprint_path_header(struct strbuf *line, const char *format,
+			const fieldwidth_t *width)
 {
 	int initial_len = get_strbuf_len(line);
 	const char *f;
@@ -1121,8 +1129,8 @@ int snprint_path_header(struct strbuf *line, const char *format)
 
 		if ((rc = append_strbuf_str(line, data->header)) < 0)
 			return rc;
-		else if ((unsigned int)rc < data->width)
-			if ((rc = fill_strbuf(line, ' ', data->width - rc)) < 0)
+		else if ((unsigned int)rc < width[iwc])
+			if ((rc = fill_strbuf(line, ' ', width[iwc] - rc)) < 0)
 				return rc;
 	}
 
@@ -1132,11 +1140,10 @@ int snprint_path_header(struct strbuf *line, const char *format)
 }
 
 int _snprint_path(const struct gen_path *gp, struct strbuf *line,
-		  const char *format, int pad)
+		  const char *format, const fieldwidth_t *width)
 {
 	int initial_len = get_strbuf_len(line);
 	const char *f;
-	struct path_data * data;
 	int rc;
 
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
@@ -1148,12 +1155,11 @@ int _snprint_path(const struct gen_path *gp, struct strbuf *line,
 		format = f + 1;
 		if ((iwc = pd_lookup(*format)) == -1)
 			continue; /* unknown wildcard */
-		data = &pd[iwc];
 
 		if ((rc = gp->ops->snprint(gp, line, *format)) < 0)
 			return rc;
-		else if (pad && (unsigned int)rc < data->width)
-			if ((rc = fill_strbuf(line, ' ', data->width - rc)) < 0)
+		else if (width != NULL && (unsigned int)rc < width[iwc])
+			if ((rc = fill_strbuf(line, ' ', width[iwc] - rc)) < 0)
 				return rc;
 	}
 
@@ -1190,8 +1196,26 @@ int _snprint_pathgroup(const struct gen_pathgroup *ggp, struct strbuf *line,
 void _print_multipath_topology(const struct gen_multipath *gmp, int verbosity)
 {
 	STRBUF_ON_STACK(buff);
+	fieldwidth_t *p_width __attribute__((cleanup(cleanup_ucharp))) = NULL;
+	const struct gen_pathgroup *gpg;
+	const struct _vector *pgvec, *pathvec;
+	int j;
 
-	_snprint_multipath_topology(gmp, &buff, verbosity);
+	p_width = alloc_path_layout();
+	pgvec = gmp->ops->get_pathgroups(gmp);
+
+	if (pgvec != NULL) {
+		vector_foreach_slot (pgvec, gpg, j) {
+			pathvec = gpg->ops->get_paths(gpg);
+			if (pathvec == NULL)
+				continue;
+			_get_path_layout(pathvec, LAYOUT_RESET_NOT, p_width);
+			gpg->ops->rel_paths(gpg, pathvec);
+		}
+		gmp->ops->rel_pathgroups(gmp, pgvec);
+	}
+
+	_snprint_multipath_topology(gmp, &buff, verbosity, p_width);
 	printf("%s", get_strbuf_str(&buff));
 }
 
@@ -1211,21 +1235,24 @@ int snprint_multipath_style(const struct gen_multipath *gmp,
 }
 
 int _snprint_multipath_topology(const struct gen_multipath *gmp,
-				struct strbuf *buff, int verbosity)
+				struct strbuf *buff, int verbosity,
+				const fieldwidth_t *p_width)
 {
 	int j, i, rc;
 	const struct _vector *pgvec;
 	const struct gen_pathgroup *gpg;
 	STRBUF_ON_STACK(style);
 	size_t initial_len = get_strbuf_len(buff);
+	fieldwidth_t *width __attribute__((cleanup(cleanup_ucharp))) = NULL;
 
 	if (verbosity <= 0)
 		return 0;
 
-	reset_multipath_layout();
+	if ((width = alloc_multipath_layout()) == NULL)
+		return -ENOMEM;
 
 	if (verbosity == 1)
-		return _snprint_multipath(gmp, buff, "%n", 1);
+		return _snprint_multipath(gmp, buff, "%n", width);
 
 	if(isatty(1) &&
 	   (rc = print_strbuf(&style, "%c[%dm", 0x1B, 1)) < 0) /* bold on */
@@ -1236,8 +1263,8 @@ int _snprint_multipath_topology(const struct gen_multipath *gmp,
 	   (rc = print_strbuf(&style, "%c[%dm", 0x1B, 0)) < 0) /* bold off */
 		return rc;
 
-	if ((rc = _snprint_multipath(gmp, buff, get_strbuf_str(&style), 1)) < 0
-	    || (rc = _snprint_multipath(gmp, buff, PRINT_MAP_PROPS, 1)) < 0)
+	if ((rc = _snprint_multipath(gmp, buff, get_strbuf_str(&style), width)) < 0
+	    || (rc = _snprint_multipath(gmp, buff, PRINT_MAP_PROPS, width)) < 0)
 		return rc;
 
 	pgvec = gmp->ops->get_pathgroups(gmp);
@@ -1264,7 +1291,7 @@ int _snprint_multipath_topology(const struct gen_multipath *gmp,
 					       i + 1 == VECTOR_SIZE(pathvec) ?
 					       '`': '|')) < 0 ||
 			    (rc = _snprint_path(gp, buff,
-						PRINT_PATH_INDENT, 1)) < 0)
+						PRINT_PATH_INDENT, p_width)) < 0)
 				return rc;
 		}
 		gpg->ops->rel_paths(gpg, pathvec);
@@ -1949,6 +1976,7 @@ static void print_all_paths_custo(vector pathvec, int banner, const char *fmt)
 	int i;
 	struct path * pp;
 	STRBUF_ON_STACK(line);
+	fieldwidth_t *width __attribute__((cleanup(cleanup_ucharp))) = NULL;
 
 	if (!VECTOR_SIZE(pathvec)) {
 		if (banner)
@@ -1956,14 +1984,17 @@ static void print_all_paths_custo(vector pathvec, int banner, const char *fmt)
 		return;
 	}
 
+	if ((width = alloc_path_layout()) == NULL)
+		return;
+	get_path_layout(pathvec, 1, width);
+
 	if (banner)
 		append_strbuf_str(&line, "===== paths list =====\n");
 
-	get_path_layout(pathvec, 1);
-	snprint_path_header(&line, fmt);
+	snprint_path_header(&line, fmt, width);
 
 	vector_foreach_slot (pathvec, pp, i)
-		snprint_path(&line, fmt, pp, 1);
+		snprint_path(&line, fmt, pp, width);
 
 	printf("%s", get_strbuf_str(&line));
 }

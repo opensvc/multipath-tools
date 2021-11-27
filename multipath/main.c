@@ -460,6 +460,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	int di_flag = 0;
 	char * refwwid = NULL;
 	char * dev = NULL;
+	fieldwidth_t *width __attribute__((cleanup(cleanup_ucharp))) = NULL;
 
 	/*
 	 * allocate core vectors to store paths and multipaths
@@ -546,8 +547,10 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	if (libmp_verbosity > 2)
 		print_all_paths(pathvec, 1);
 
-	get_path_layout(pathvec, 0);
-	foreign_path_layout();
+	if ((width = alloc_path_layout()) == NULL)
+		goto out;
+	get_path_layout(pathvec, 0, width);
+	foreign_path_layout(width);
 
 	if (get_dm_mpvec(cmd, curmp, pathvec, refwwid))
 		goto out;

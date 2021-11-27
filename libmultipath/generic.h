@@ -18,6 +18,14 @@
 #define _GENERIC_H
 #include "vector.h"
 
+/*
+ * fieldwidth_t is required in print.h and foreign.h.
+ * Defining it twice is not allowed before C11.
+ * So do it here.
+ */
+typedef unsigned char fieldwidth_t;
+#define MAX_FIELD_WIDTH UCHAR_MAX
+
 struct strbuf;
 struct gen_multipath;
 struct gen_pathgroup;

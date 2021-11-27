@@ -38,18 +38,22 @@ show_paths (struct strbuf *reply, struct vectors *vecs, char *style, int pretty)
 	int i;
 	struct path * pp;
 	int hdr_len = 0;
+	fieldwidth_t *width __attribute__((cleanup(cleanup_ucharp))) = NULL;
 
-	get_path_layout(vecs->pathvec, 1);
-	foreign_path_layout();
-
-	if (pretty && (hdr_len = snprint_path_header(reply, style)) < 0)
+	if (pretty) {
+		if ((width = alloc_path_layout()) == NULL)
+			return 1;
+		get_path_layout(vecs->pathvec, 1, width);
+		foreign_path_layout(width);
+	}
+	if (pretty && (hdr_len = snprint_path_header(reply, style, width)) < 0)
 		return 1;
 
 	vector_foreach_slot(vecs->pathvec, pp, i) {
-		if (snprint_path(reply, style, pp, pretty) < 0)
+		if (snprint_path(reply, style, pp, width) < 0)
 			return 1;
 	}
-	if (snprint_foreign_paths(reply, style, pretty) < 0)
+	if (snprint_foreign_paths(reply, style, width) < 0)
 		return 1;
 
 	if (pretty && get_strbuf_len(reply) == (size_t)hdr_len)
@@ -63,7 +67,11 @@ static int
 show_path (struct strbuf *reply, struct vectors *vecs, struct path *pp,
 	   char *style)
 {
-	get_path_layout(vecs->pathvec, 1);
+	fieldwidth_t *width __attribute__((cleanup(cleanup_ucharp))) = NULL;
+
+	if ((width = alloc_path_layout()) == NULL)
+		return 1;
+	get_path_layout(vecs->pathvec, 1, width);
 	if (snprint_path(reply, style, pp, 0) < 0)
 		return 1;
 	return 0;
@@ -71,12 +79,12 @@ show_path (struct strbuf *reply, struct vectors *vecs, struct path *pp,
 
 static int
 show_map_topology (struct strbuf *reply, struct multipath *mpp,
-		   struct vectors *vecs)
+		   struct vectors *vecs, const fieldwidth_t *width)
 {
 	if (update_multipath(vecs, mpp->alias, 0))
 		return 1;
 
-	if (snprint_multipath_topology(reply, mpp, 2) < 0)
+	if (snprint_multipath_topology(reply, mpp, 2, width) < 0)
 		return 1;
 
 	return 0;
@@ -87,19 +95,22 @@ show_maps_topology (struct strbuf *reply, struct vectors * vecs)
 {
 	int i;
 	struct multipath * mpp;
+	fieldwidth_t *p_width __attribute__((cleanup(cleanup_ucharp))) = NULL;
 
-	get_path_layout(vecs->pathvec, 0);
-	foreign_path_layout();
+	if ((p_width = alloc_path_layout()) == NULL)
+		return 1;
+	get_path_layout(vecs->pathvec, 0, p_width);
+	foreign_path_layout(p_width);
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
 		if (update_multipath(vecs, mpp->alias, 0)) {
 			i--;
 			continue;
 		}
-		if (snprint_multipath_topology(reply, mpp, 2) < 0)
+		if (snprint_multipath_topology(reply, mpp, 2, p_width) < 0)
 			return 1;
 	}
-	if (snprint_foreign_topology(reply, 2) < 0)
+	if (snprint_foreign_topology(reply, 2, p_width) < 0)
 		return 1;
 
 	return 0;
@@ -247,9 +258,12 @@ cli_list_map_topology (void *v, struct strbuf *reply, void *data)
 	struct multipath * mpp;
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
+	fieldwidth_t *p_width __attribute__((cleanup(cleanup_ucharp))) = NULL;
 
+	if ((p_width = alloc_path_layout()) == NULL)
+		return 1;
+	get_path_layout(vecs->pathvec, 0, p_width);
 	param = convert_dev(param, 0);
-	get_path_layout(vecs->pathvec, 0);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
@@ -257,7 +271,7 @@ cli_list_map_topology (void *v, struct strbuf *reply, void *data)
 
 	condlog(3, "list multipath %s (operator)", param);
 
-	return show_map_topology(reply, mpp, vecs);
+	return show_map_topology(reply, mpp, vecs, p_width);
 }
 
 static int
@@ -328,9 +342,9 @@ show_daemon (struct strbuf *reply)
 
 static int
 show_map (struct strbuf *reply, struct multipath *mpp, char *style,
-	  int pretty)
+	  const fieldwidth_t *width)
 {
-	if (snprint_multipath(reply, style, mpp, pretty) < 0)
+	if (snprint_multipath(reply, style, mpp, width) < 0)
 		return 1;
 
 	return 0;
@@ -343,11 +357,16 @@ show_maps (struct strbuf *reply, struct vectors *vecs, char *style,
 	int i;
 	struct multipath * mpp;
 	int hdr_len = 0;
+	fieldwidth_t *width __attribute__((cleanup(cleanup_ucharp))) = NULL;
 
-	get_multipath_layout(vecs->mpvec, 1);
-	foreign_multipath_layout();
+	if (pretty) {
+		if ((width = alloc_multipath_layout()) == NULL)
+			return 1;
+		get_multipath_layout(vecs->mpvec, 1, width);
+		foreign_multipath_layout(width);
+	}
 
-	if (pretty && (hdr_len = snprint_multipath_header(reply, style)) < 0)
+	if (pretty && (hdr_len = snprint_multipath_header(reply, style, width)) < 0)
 		return 1;
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
@@ -355,10 +374,10 @@ show_maps (struct strbuf *reply, struct vectors *vecs, char *style,
 			i--;
 			continue;
 		}
-		if (snprint_multipath(reply, style, mpp, pretty) < 0)
+		if (snprint_multipath(reply, style, mpp, width) < 0)
 			return 1;
 	}
-	if (snprint_foreign_multipaths(reply, style, pretty) < 0)
+	if (snprint_foreign_multipaths(reply, style, width) < 0)
 		return 1;
 
 	if (pretty && get_strbuf_len(reply) == (size_t)hdr_len)
@@ -397,16 +416,19 @@ cli_list_map_fmt (void *v, struct strbuf *reply, void *data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
 	char * fmt = get_keyparam(v, FMT);
+	fieldwidth_t *width __attribute__((cleanup(cleanup_ucharp))) = NULL;
 
+	if ((width = alloc_multipath_layout()) == NULL)
+		return 1;
+	get_multipath_layout(vecs->pathvec, 1, width);
 	param = convert_dev(param, 0);
-	get_multipath_layout(vecs->mpvec, 1);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 	if (!mpp)
 		return 1;
 
 	condlog(3, "list map %s fmt %s (operator)", param, fmt);
 
-	return show_map(reply, mpp, fmt, 1);
+	return show_map(reply, mpp, fmt, width);
 }
 
 static int

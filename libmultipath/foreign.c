@@ -30,10 +30,10 @@
 #include "vector.h"
 #include "debug.h"
 #include "util.h"
-#include "foreign.h"
 #include "structs.h"
 #include "structs_vec.h"
 #include "print.h"
+#include "foreign.h"
 #include "strbuf.h"
 
 static vector foreigns;
@@ -437,7 +437,7 @@ void check_foreign(void)
 }
 
 /* Call this after get_path_layout */
-void foreign_path_layout(void)
+void foreign_path_layout(fieldwidth_t *width)
 {
 	struct foreign *fgn;
 	int i;
@@ -457,7 +457,7 @@ void foreign_path_layout(void)
 
 		vec = fgn->get_paths(fgn->context);
 		if (vec != NULL) {
-			_get_path_layout(vec, LAYOUT_RESET_NOT);
+			_get_path_layout(vec, LAYOUT_RESET_NOT, width);
 		}
 		fgn->release_paths(fgn->context, vec);
 
@@ -468,7 +468,7 @@ void foreign_path_layout(void)
 }
 
 /* Call this after get_multipath_layout */
-void foreign_multipath_layout(void)
+void foreign_multipath_layout(fieldwidth_t *width)
 {
 	struct foreign *fgn;
 	int i;
@@ -488,7 +488,7 @@ void foreign_multipath_layout(void)
 
 		vec = fgn->get_multipaths(fgn->context);
 		if (vec != NULL) {
-			_get_multipath_layout(vec, LAYOUT_RESET_NOT);
+			_get_multipath_layout(vec, LAYOUT_RESET_NOT, width);
 		}
 		fgn->release_multipaths(fgn->context, vec);
 
@@ -498,7 +498,8 @@ void foreign_multipath_layout(void)
 	pthread_cleanup_pop(1);
 }
 
-static int __snprint_foreign_topology(struct strbuf *buf, int verbosity)
+static int __snprint_foreign_topology(struct strbuf *buf, int verbosity,
+				      const fieldwidth_t *width)
 {
 	struct foreign *fgn;
 	int i;
@@ -516,7 +517,7 @@ static int __snprint_foreign_topology(struct strbuf *buf, int verbosity)
 		if (vec != NULL) {
 			vector_foreach_slot(vec, gm, j) {
 				if (_snprint_multipath_topology(
-					    gm, buf, verbosity) < 0)
+					    gm, buf, verbosity, width) < 0)
 					break;
 			}
 		}
@@ -527,7 +528,8 @@ static int __snprint_foreign_topology(struct strbuf *buf, int verbosity)
 	return get_strbuf_len(buf) - initial_len;
 }
 
-int snprint_foreign_topology(struct strbuf *buf, int verbosity)
+int snprint_foreign_topology(struct strbuf *buf, int verbosity,
+			     const fieldwidth_t *width)
 {
 	int rc;
 
@@ -537,7 +539,7 @@ int snprint_foreign_topology(struct strbuf *buf, int verbosity)
 		return 0;
 	}
 	pthread_cleanup_push(unlock_foreigns, NULL);
-	rc = __snprint_foreign_topology(buf, verbosity);
+	rc = __snprint_foreign_topology(buf, verbosity, width);
 	pthread_cleanup_pop(1);
 	return rc;
 }
@@ -545,12 +547,35 @@ int snprint_foreign_topology(struct strbuf *buf, int verbosity)
 void print_foreign_topology(int verbosity)
 {
 	STRBUF_ON_STACK(buf);
+	struct foreign *fgn;
+	int i;
+	fieldwidth_t *width __attribute__((cleanup(cleanup_ucharp))) = NULL;
 
-	snprint_foreign_topology(&buf, verbosity);
+	if ((width = alloc_path_layout()) == NULL)
+		return;
+	rdlock_foreigns();
+	if (foreigns == NULL) {
+		unlock_foreigns(NULL);
+		return;
+	}
+	pthread_cleanup_push(unlock_foreigns, NULL);
+	vector_foreach_slot(foreigns, fgn, i) {
+		const struct _vector *vec;
+
+		fgn->lock(fgn->context);
+		pthread_cleanup_push(fgn->unlock, fgn->context);
+		vec = fgn->get_paths(fgn->context);
+		_get_multipath_layout(vec, LAYOUT_RESET_NOT, width);
+		fgn->release_paths(fgn->context, vec);
+		pthread_cleanup_pop(1);
+	}
+	__snprint_foreign_topology(&buf, verbosity, width);
+	pthread_cleanup_pop(1);
 	printf("%s", get_strbuf_str(&buf));
 }
 
-int snprint_foreign_paths(struct strbuf *buf, const char *style, int pretty)
+int snprint_foreign_paths(struct strbuf *buf, const char *style,
+			  const fieldwidth_t *width)
 {
 	struct foreign *fgn;
 	int i;
@@ -574,7 +599,7 @@ int snprint_foreign_paths(struct strbuf *buf, const char *style, int pretty)
 		vec = fgn->get_paths(fgn->context);
 		if (vec != NULL) {
 			vector_foreach_slot(vec, gp, j) {
-				ret = _snprint_path(gp, buf, style, pretty);
+				ret = _snprint_path(gp, buf, style, width);
 				if (ret < 0)
 					break;
 			}
@@ -589,8 +614,8 @@ int snprint_foreign_paths(struct strbuf *buf, const char *style, int pretty)
 	return get_strbuf_len(buf) - initial_len;
 }
 
-int snprint_foreign_multipaths(struct strbuf *buf,
-			       const char *style, int pretty)
+int snprint_foreign_multipaths(struct strbuf *buf, const char *style,
+			       const fieldwidth_t *width)
 {
 	struct foreign *fgn;
 	int i;
@@ -615,7 +640,7 @@ int snprint_foreign_multipaths(struct strbuf *buf,
 		if (vec != NULL) {
 			vector_foreach_slot(vec, gm, j) {
 				ret = _snprint_multipath(gm, buf,
-							 style, pretty);
+							 style, width);
 				if (ret < 0)
 					break;
 			}
