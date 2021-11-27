@@ -817,7 +817,6 @@ static struct multipath_data mpd[] = {
 	{'e', "rev",           0, snprint_multipath_rev},
 	{'G', "foreign",       0, snprint_multipath_foreign},
 	{'g', "vpd page data", 0, snprint_multipath_vpd_data},
-	{0, NULL, 0 , NULL}
 };
 
 static struct path_data pd[] = {
@@ -846,7 +845,6 @@ static struct path_data pd[] = {
 	{'0', "failures",      0, snprint_path_failures},
 	{'P', "protocol",      0, snprint_path_protocol},
 	{'I', "init_st",       0, snprint_initialized},
-	{0, NULL, 0 , NULL}
 };
 
 static struct pathgroup_data pgd[] = {
@@ -854,31 +852,31 @@ static struct pathgroup_data pgd[] = {
 	{'p', "pri",           0, snprint_pg_pri},
 	{'t', "dm_st",         0, snprint_pg_state},
 	{'M', "marginal_st",   0, snprint_pg_marginal},
-	{0, NULL, 0 , NULL}
 };
 
 int snprint_wildcards(struct strbuf *buff)
 {
 	int initial_len = get_strbuf_len(buff);
-	int i, rc;
+	unsigned int i;
+	int rc;
 
 	if ((rc = append_strbuf_str(buff, "multipath format wildcards:\n")) < 0)
 		return rc;
-	for (i = 0; mpd[i].header; i++)
+	for (i = 0; i < ARRAY_SIZE(mpd); i++)
 		if ((rc = print_strbuf(buff, "%%%c  %s\n",
 				       mpd[i].wildcard, mpd[i].header)) < 0)
 			return rc;
 
 	if ((rc = append_strbuf_str(buff, "\npath format wildcards:\n")) < 0)
 		return rc;
-	for (i = 0; pd[i].header; i++)
+	for (i = 0; i < ARRAY_SIZE(pd); i++)
 		if ((rc = print_strbuf(buff, "%%%c  %s\n",
 				       pd[i].wildcard, pd[i].header)) < 0)
 			return rc;
 
 	if ((rc = append_strbuf_str(buff, "\npathgroup format wildcards:\n")) < 0)
 		return rc;
-	for (i = 0; pgd[i].header; i++)
+	for (i = 0; i < ARRAY_SIZE(pgd); i++)
 		if ((rc = print_strbuf(buff, "%%%c  %s\n",
 				       pgd[i].wildcard, pgd[i].header)) < 0)
 			return rc;
@@ -915,10 +913,10 @@ reset_width(unsigned int *width, enum layout_reset reset, const char *header)
 void
 _get_path_layout (const struct _vector *gpvec, enum layout_reset reset)
 {
-	int i, j;
+	unsigned int i, j;
 	const struct gen_path *gp;
 
-	for (j = 0; pd[j].header; j++) {
+	for (j = 0; j < ARRAY_SIZE(pd); j++) {
 		STRBUF_ON_STACK(buff);
 
 		reset_width(&pd[j].width, reset, pd[j].header);
@@ -937,9 +935,9 @@ _get_path_layout (const struct _vector *gpvec, enum layout_reset reset)
 static void
 reset_multipath_layout (void)
 {
-	int i;
+	unsigned int i;
 
-	for (i = 0; mpd[i].header; i++)
+	for (i = 0; i < ARRAY_SIZE(mpd); i++)
 		mpd[i].width = 0;
 }
 
@@ -956,10 +954,10 @@ void
 _get_multipath_layout (const struct _vector *gmvec,
 			    enum layout_reset reset)
 {
-	int i, j;
+	unsigned int i, j;
 	const struct gen_multipath * gm;
 
-	for (j = 0; mpd[j].header; j++) {
+	for (j = 0; j < ARRAY_SIZE(mpd); j++) {
 		STRBUF_ON_STACK(buff);
 
 		reset_width(&mpd[j].width, reset, mpd[j].header);
@@ -978,9 +976,9 @@ _get_multipath_layout (const struct _vector *gmvec,
 
 static int mpd_lookup(char wildcard)
 {
-	int i;
+	unsigned int i;
 
-	for (i = 0; mpd[i].header; i++)
+	for (i = 0; i < ARRAY_SIZE(mpd); i++)
 		if (mpd[i].wildcard == wildcard)
 			return i;
 
@@ -1000,9 +998,9 @@ int snprint_multipath_attr(const struct gen_multipath* gm,
 
 static int pd_lookup(char wildcard)
 {
-	int i;
+	unsigned int i;
 
-	for (i = 0; pd[i].header; i++)
+	for (i = 0; i < ARRAY_SIZE(pd); i++)
 		if (pd[i].wildcard == wildcard)
 			return i;
 
@@ -1022,9 +1020,9 @@ int snprint_path_attr(const struct gen_path* gp,
 
 static int pgd_lookup(char wildcard)
 {
-	int i;
+	unsigned int i;
 
-	for (i = 0; pgd[i].header; i++)
+	for (i = 0; i < ARRAY_SIZE(pgd); i++)
 		if (pgd[i].wildcard == wildcard)
 			return i;
 
