@@ -498,18 +498,11 @@ void foreign_multipath_layout(void)
 	pthread_cleanup_pop(1);
 }
 
-int snprint_foreign_topology(struct strbuf *buf, int verbosity)
+static int __snprint_foreign_topology(struct strbuf *buf, int verbosity)
 {
 	struct foreign *fgn;
 	int i;
 	size_t initial_len = get_strbuf_len(buf);
-
-	rdlock_foreigns();
-	if (foreigns == NULL) {
-		unlock_foreigns(NULL);
-		return 0;
-	}
-	pthread_cleanup_push(unlock_foreigns, NULL);
 
 	vector_foreach_slot(foreigns, fgn, i) {
 		const struct _vector *vec;
@@ -531,8 +524,22 @@ int snprint_foreign_topology(struct strbuf *buf, int verbosity)
 		pthread_cleanup_pop(1);
 	}
 
-	pthread_cleanup_pop(1);
 	return get_strbuf_len(buf) - initial_len;
+}
+
+int snprint_foreign_topology(struct strbuf *buf, int verbosity)
+{
+	int rc;
+
+	rdlock_foreigns();
+	if (foreigns == NULL) {
+		unlock_foreigns(NULL);
+		return 0;
+	}
+	pthread_cleanup_push(unlock_foreigns, NULL);
+	rc = __snprint_foreign_topology(buf, verbosity);
+	pthread_cleanup_pop(1);
+	return rc;
 }
 
 void print_foreign_topology(int verbosity)
