@@ -341,6 +341,10 @@ remove_map(struct multipath *mpp, vector pathvec, vector mpvec)
 {
 	int i;
 
+	free_pathvec(mpp->paths, KEEP_PATHS);
+	free_pgvec(mpp->pg, KEEP_PATHS);
+	mpp->paths = mpp->pg = NULL;
+
 	/*
 	 * clear references to this map
 	 */
