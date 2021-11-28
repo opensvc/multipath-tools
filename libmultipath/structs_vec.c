@@ -99,7 +99,7 @@ static bool guess_mpp_wwid(struct multipath *mpp)
  * - may set pp->wwid and / or mpp->wwid
  * - calls pathinfo() on existing paths is pathinfo_flags is not 0
  */
-bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
+static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 	int pathinfo_flags)
 {
 	int i, j;
