@@ -74,7 +74,8 @@ int prio_path_weight(struct path *pp, char *prio_args)
 	if (!prio_args)
 		return priority;
 
-	arg = temp = strdup(prio_args);
+	arg = strdup(prio_args);
+	temp = arg;
 
 	regex = get_next_string(&temp, split_char);
 
