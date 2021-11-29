@@ -8,14 +8,16 @@ on:
   pull_request:
 
 jobs:
-  build-and-test:
+  stable:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        os: [buster, jessie, sid, alpine, fedora-34]
+        os: [buster, jessie, bullseye, fedora-35]
         arch: ['', '-i386']
         exclude:
           - os: fedora-34
+            arch: '-i386'
+          - os: fedora-35
             arch: '-i386'
     container: mwilck/multipath-build-${{ matrix.os }}${{ matrix.arch }}
     steps:
@@ -30,3 +32,59 @@ jobs:
           CC: clang
         run: make test
 
+  rolling:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        os: ['debian:sid', 'alpine', 'fedora:rawhide']
+        arch: ['amd64', 'i386']
+        exclude:
+          - os: 'fedora:rawhide'
+            arch: 'i386'
+    container: ${{ matrix.arch }}/${{ matrix.os }}
+    steps:
+      - name: update
+        if: ${{ matrix.os == 'debian:sid' }}
+        run: apt-get update
+      - name: dependencies-debian
+        if: ${{ matrix.os == 'debian:sid' }}
+        run: >
+          apt-get install --yes -o APT::Immediate-Configure=0
+          gcc clang make pkg-config
+          libdevmapper-dev
+          libreadline-dev
+          libaio-dev
+          libudev-dev
+          libjson-c-dev
+          liburcu-dev
+          libcmocka-dev
+      - name: dependencies-alpine
+        if: ${{ matrix.os == 'alpine' }}
+        run: >
+          apk add make gcc clang cmocka
+          musl-dev lvm2-dev libaio-dev readline-dev ncurses-dev eudev-dev
+          userspace-rcu-dev json-c-dev cmocka-dev
+      - name: dependencies-fedora
+        if: ${{ matrix.os == 'fedora:rawhide' }}
+        run: >
+          dnf install -y
+          make clang gcc pkgconfig
+          libaio-devel
+          device-mapper-devel
+          libselinux-devel
+          libsepol-devel
+          readline-devel
+          ncurses-devel
+          userspace-rcu-devel
+          json-c-devel
+          libcmocka-devel
+      - name: checkout
+        uses: actions/checkout@v1
+      - name: build and test
+        run: make test
+      - name: clean
+        run: make clean
+      - name: clang
+        env:
+          CC: clang
+        run: make test
