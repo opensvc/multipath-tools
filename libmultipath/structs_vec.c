@@ -300,7 +300,7 @@ void orphan_path(struct path *pp, const char *reason)
 	uninitialize_path(pp);
 }
 
-void orphan_paths(vector pathvec, struct multipath *mpp, const char *reason)
+static void orphan_paths(vector pathvec, struct multipath *mpp, const char *reason)
 {
 	int i;
 	struct path * pp;

@@ -129,7 +129,6 @@ global:
 	need_io_err_check;
 	normalize_timespec;
 	orphan_path;
-	orphan_paths;
 	parse_prkey_flags;
 	pathcount;
 	path_discovery;

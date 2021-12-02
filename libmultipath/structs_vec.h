@@ -15,8 +15,6 @@ void __set_no_path_retry(struct multipath *mpp, bool check_features);
 #define set_no_path_retry(mpp) __set_no_path_retry(mpp, true)
 
 int adopt_paths (vector pathvec, struct multipath * mpp);
-void orphan_paths(vector pathvec, struct multipath *mpp,
-		  const char *reason);
 void orphan_path (struct path * pp, const char *reason);
 void set_path_removed(struct path *pp);
 
