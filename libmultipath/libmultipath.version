@@ -48,7 +48,6 @@ global:
 	checker_clear_message;
 	checker_disable;
 	checker_enable;
-	checker_is_sync;
 	checker_message;
 	checker_name;
 	checker_state_name;
@@ -209,10 +208,13 @@ global:
 	verify_paths;
 
 	/* checkers */
+	checker_is_sync;
 	sg_read;
+	start_checker_thread;
 
 	/* prioritizers */
 	get_asymmetric_access_state;
+	get_next_string;
 	get_prio_timeout;
 	get_target_port_group;
 	get_target_port_group_support;
@@ -234,7 +236,6 @@ global:
 
 	/* added in 2.1.0 */
 	libmp_dm_task_run;
-	cleanup_mutex;
 
 	/* added in 2.2.0 */
 	libmp_get_multipath_config;
@@ -257,15 +258,10 @@ global:
 	dm_prereq;
 	skip_libmp_dm_init;
 
-	/* added in 4.3.0 */
-	start_checker_thread;
-
 	/* added in 4.4.0 */
-	get_next_string;
 
 	/* added in 4.5.0 */
 	get_vpd_sgio;
-	trigger_partitions_udev_change;
 
 	/* added in 7.0.0 */
 	cleanup_charp;
@@ -276,7 +272,6 @@ global:
 	append_strbuf_str;
 	get_strbuf_len;
 	get_strbuf_str;
-	steal_strbuf_str;
 	fill_strbuf;
 	print_strbuf;
 	truncate_strbuf;
