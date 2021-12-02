@@ -13,7 +13,6 @@
 
 #include "util.h"
 #include "vector.h"
-#include "memory.h"
 #include "checkers.h"
 #include "config.h"
 #include "structs.h"
@@ -32,8 +31,7 @@ static struct event_thread *alloc_waiter (void)
 
 	struct event_thread *wp;
 
-	wp = (struct event_thread *)MALLOC(sizeof(struct event_thread));
-	memset(wp, 0, sizeof(struct event_thread));
+	wp = (struct event_thread *)calloc(1, sizeof(struct event_thread));
 
 	return wp;
 }
@@ -46,7 +44,7 @@ static void free_waiter (void *data)
 		dm_task_destroy(wp->dmt);
 
 	rcu_unregister_thread();
-	FREE(wp);
+	free(wp);
 }
 
 void stop_waiter_thread (struct multipath *mpp)

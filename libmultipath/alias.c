@@ -356,7 +356,7 @@ use_existing_alias (const char *wwid, const char *file, const char *alias_old,
 		 * allocated correctly
 		 */
 		if (strcmp(buff, wwid) == 0)
-			alias = STRDUP(alias_old);
+			alias = strdup(alias_old);
 		else {
 			alias = NULL;
 			condlog(0, "alias %s already bound to wwid %s, cannot reuse",
@@ -578,13 +578,17 @@ static int fix_bindings_file(const struct config *conf,
 	int rc;
 	long fd;
 	char tempname[PATH_MAX];
+	mode_t old_umask;
 
 	if (safe_sprintf(tempname, "%s.XXXXXX", conf->bindings_file))
 		return -1;
+	/* coverity: SECURE_TEMP */
+	old_umask = umask(0077);
 	if ((fd = mkstemp(tempname)) == -1) {
 		condlog(1, "%s: mkstemp: %m", __func__);
 		return -1;
 	}
+	umask(old_umask);
 	pthread_cleanup_push(close_fd, (void*)fd);
 	rc = write_bindings_file(bindings, fd);
 	pthread_cleanup_pop(1);

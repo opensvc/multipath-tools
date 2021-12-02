@@ -9,6 +9,7 @@
 #include <sys/resource.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 size_t strchop(char *);
 int basenamecpy (const char *src, char *dst, size_t size);
@@ -124,4 +125,5 @@ static inline void clear_bit_in_bitfield(unsigned int bit, struct bitfield *bf)
 	})
 
 void cleanup_charp(char **p);
+void cleanup_ucharp(unsigned char **p);
 #endif /* _UTIL_H */

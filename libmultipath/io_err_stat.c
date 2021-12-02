@@ -24,7 +24,6 @@
 #include <sys/select.h>
 
 #include "vector.h"
-#include "memory.h"
 #include "checkers.h"
 #include "config.h"
 #include "structs.h"
@@ -132,7 +131,7 @@ static int setup_directio_ctx(struct io_err_stat_path *p)
 	if (p->fd < 0)
 		return 1;
 
-	p->dio_ctx_array = MALLOC(sizeof(struct dio_ctx) * CONCUR_NR_EVENT);
+	p->dio_ctx_array = calloc(1, sizeof(struct dio_ctx) * CONCUR_NR_EVENT);
 	if (!p->dio_ctx_array)
 		goto fail_close;
 
@@ -154,7 +153,8 @@ deinit:
 	for (i = 0; i < CONCUR_NR_EVENT; i++)
 		deinit_each_dio_ctx(p->dio_ctx_array + i);
 free_pdctx:
-	FREE(p->dio_ctx_array);
+	free(p->dio_ctx_array);
+	p->dio_ctx_array = NULL;
 fail_close:
 	close(p->fd);
 
@@ -174,19 +174,19 @@ static void free_io_err_stat_path(struct io_err_stat_path *p)
 
 	for (i = 0; i < CONCUR_NR_EVENT; i++)
 		deinit_each_dio_ctx(p->dio_ctx_array + i);
-	FREE(p->dio_ctx_array);
+	free(p->dio_ctx_array);
 
 	if (p->fd > 0)
 		close(p->fd);
 free_path:
-	FREE(p);
+	free(p);
 }
 
 static struct io_err_stat_path *alloc_io_err_stat_path(void)
 {
 	struct io_err_stat_path *p;
 
-	p = (struct io_err_stat_path *)MALLOC(sizeof(*p));
+	p = (struct io_err_stat_path *)calloc(1, sizeof(*p));
 	if (!p)
 		return NULL;
 

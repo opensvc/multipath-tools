@@ -239,7 +239,7 @@ static int mpath_get_map(vector curmp, vector pathvec, int fd, char **palias,
 		alias = NULL;
 	}
 out:
-	FREE(alias);
+	free(alias);
 	return ret;
 }
 
@@ -342,7 +342,7 @@ static int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 		update_prkey(alias, 0);
 	}
 out1:
-	FREE(alias);
+	free(alias);
 	return ret;
 }
 

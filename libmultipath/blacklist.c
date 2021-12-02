@@ -5,7 +5,6 @@
 #include <libudev.h>
 
 #include "checkers.h"
-#include "memory.h"
 #include "vector.h"
 #include "util.h"
 #include "debug.h"
@@ -46,7 +45,7 @@ int store_ble(vector blist, const char *str, int origin)
 	if (!blist)
 		goto out;
 
-	ble = MALLOC(sizeof(struct blentry));
+	ble = calloc(1, sizeof(struct blentry));
 
 	if (!ble)
 		goto out;
@@ -63,9 +62,9 @@ int store_ble(vector blist, const char *str, int origin)
 	vector_set_slot(blist, ble);
 	return 0;
 out1:
-	FREE(ble);
+	free(ble);
 out:
-	FREE(strdup_str);
+	free(strdup_str);
 	return 1;
 }
 
@@ -77,12 +76,12 @@ int alloc_ble_device(vector blist)
 	if (!blist)
 		return 1;
 
-	ble = MALLOC(sizeof(struct blentry_device));
+	ble = calloc(1, sizeof(struct blentry_device));
 	if (!ble)
 		return 1;
 
 	if (!vector_alloc_slot(blist)) {
-		FREE(ble);
+		free(ble);
 		return 1;
 	}
 	vector_set_slot(blist, ble);
@@ -105,7 +104,7 @@ int set_ble_device(vector blist, const char *vendor, const char *product, int or
 		return 1;
 
 	if (vendor) {
-		vendor_str = STRDUP(vendor);
+		vendor_str = strdup(vendor);
 		if (!vendor_str)
 			goto out;
 
@@ -116,7 +115,7 @@ int set_ble_device(vector blist, const char *vendor, const char *product, int or
 		ble->vendor = vendor_str;
 	}
 	if (product) {
-		product_str = STRDUP(product);
+		product_str = strdup(product);
 		if (!product_str)
 			goto out1;
 
@@ -216,7 +215,7 @@ setup_default_blist (struct config * conf)
 					  VECTOR_SIZE(conf->blist_device) - 1);
 			if (set_ble_device(conf->blist_device, hwe->vendor, hwe->bl_product,
 					   ORIGIN_DEFAULT)) {
-				FREE(ble);
+				free(ble);
 				vector_del_slot(conf->blist_device, VECTOR_SIZE(conf->blist_device) - 1);
 				return 1;
 			}
@@ -445,8 +444,8 @@ static void free_ble(struct blentry *ble)
 	if (!ble)
 		return;
 	regfree(&ble->regex);
-	FREE(ble->str);
-	FREE(ble);
+	free(ble->str);
+	free(ble);
 }
 
 void
@@ -488,13 +487,13 @@ static void free_ble_device(struct blentry_device *ble)
 	if (ble) {
 		if (ble->vendor) {
 			regfree(&ble->vendor_reg);
-			FREE(ble->vendor);
+			free(ble->vendor);
 		}
 		if (ble->product) {
 			regfree(&ble->product_reg);
-			FREE(ble->product);
+			free(ble->product);
 		}
-		FREE(ble);
+		free(ble);
 	}
 }
 

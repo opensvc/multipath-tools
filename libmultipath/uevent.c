@@ -43,7 +43,6 @@
 #include <libudev.h>
 #include <errno.h>
 
-#include "memory.h"
 #include "debug.h"
 #include "list.h"
 #include "uevent.h"
@@ -81,7 +80,7 @@ int is_uevent_busy(void)
 
 struct uevent * alloc_uevent (void)
 {
-	struct uevent *uev = MALLOC(sizeof(struct uevent));
+	struct uevent *uev = calloc(1, sizeof(struct uevent));
 
 	if (uev) {
 		INIT_LIST_HEAD(&uev->node);
@@ -91,16 +90,25 @@ struct uevent * alloc_uevent (void)
 	return uev;
 }
 
+static void uevq_cleanup(struct list_head *tmpq);
+
+static void cleanup_uev(void *arg)
+{
+	struct uevent *uev = arg;
+
+	uevq_cleanup(&uev->merge_node);
+	if (uev->udev)
+		udev_device_unref(uev->udev);
+	free(uev);
+}
+
 static void uevq_cleanup(struct list_head *tmpq)
 {
 	struct uevent *uev, *tmp;
 
 	list_for_each_entry_safe(uev, tmp, tmpq, node) {
 		list_del_init(&uev->node);
-
-		if (uev->udev)
-			udev_device_unref(uev->udev);
-		FREE(uev);
+		cleanup_uev(uev);
 	}
 }
 
@@ -309,7 +317,7 @@ uevent_prepare(struct list_head *tmpq)
 			list_del_init(&uev->node);
 			if (uev->udev)
 				udev_device_unref(uev->udev);
-			FREE(uev);
+			free(uev);
 			continue;
 		}
 
@@ -337,7 +345,7 @@ uevent_filter(struct uevent *later, struct list_head *tmpq)
 			list_del_init(&earlier->node);
 			if (earlier->udev)
 				udev_device_unref(earlier->udev);
-			FREE(earlier);
+			free(earlier);
 		}
 	}
 }
@@ -384,14 +392,10 @@ service_uevq(struct list_head *tmpq)
 	list_for_each_entry_safe(uev, tmp, tmpq, node) {
 		list_del_init(&uev->node);
 
+		pthread_cleanup_push(cleanup_uev, uev);
 		if (my_uev_trigger && my_uev_trigger(uev, my_trigger_data))
 			condlog(0, "uevent trigger error");
-
-		uevq_cleanup(&uev->merge_node);
-
-		if (uev->udev)
-			udev_device_unref(uev->udev);
-		FREE(uev);
+		pthread_cleanup_pop(1);
 	}
 }
 
@@ -411,6 +415,18 @@ static void monitor_cleanup(void *arg)
 	udev_monitor_unref(monitor);
 }
 
+static void cleanup_uevq(void *arg)
+{
+	uevq_cleanup(arg);
+}
+
+static void cleanup_global_uevq(void *arg __attribute__((unused)))
+{
+	pthread_mutex_lock(uevq_lockp);
+	uevq_cleanup(&uevq);
+	pthread_mutex_unlock(uevq_lockp);
+}
+
 /*
  * Service the uevent queue.
  */
@@ -425,6 +441,7 @@ int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
 	while (1) {
 		LIST_HEAD(uevq_tmp);
 
+		pthread_cleanup_push(cleanup_mutex, uevq_lockp);
 		pthread_mutex_lock(uevq_lockp);
 		servicing_uev = 0;
 		/*
@@ -436,14 +453,17 @@ int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		}
 		servicing_uev = 1;
 		list_splice_init(&uevq, &uevq_tmp);
-		pthread_mutex_unlock(uevq_lockp);
+		pthread_cleanup_pop(1);
+
 		if (!my_uev_trigger)
 			break;
+
+		pthread_cleanup_push(cleanup_uevq, &uevq_tmp);
 		merge_uevq(&uevq_tmp);
 		service_uevq(&uevq_tmp);
+		pthread_cleanup_pop(1);
 	}
 	condlog(3, "Terminating uev service queue");
-	uevq_cleanup(&uevq);
 	return 0;
 }
 
@@ -492,7 +512,7 @@ static struct uevent *uevent_from_udev_device(struct udev_device *dev)
 	if (!uev->devpath || ! uev->action) {
 		udev_device_unref(dev);
 		condlog(1, "uevent missing necessary fields");
-		FREE(uev);
+		free(uev);
 		return NULL;
 	}
 	uev->udev = dev;
@@ -600,6 +620,8 @@ int uevent_listen(struct udev *udev)
 
 	events = 0;
 	gettimeofday(&start_time, NULL);
+	pthread_cleanup_push(cleanup_global_uevq, NULL);
+	pthread_cleanup_push(cleanup_uevq, &uevlisten_tmp);
 	while (1) {
 		struct uevent *uev;
 		struct udev_device *dev;
@@ -650,6 +672,8 @@ int uevent_listen(struct udev *udev)
 		gettimeofday(&start_time, NULL);
 		timeout = 30;
 	}
+	pthread_cleanup_pop(1);
+	pthread_cleanup_pop(1);
 out:
 	pthread_cleanup_pop(1);
 out_udev:

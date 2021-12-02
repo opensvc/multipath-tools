@@ -17,7 +17,6 @@
 
 #include "checkers.h"
 #include "vector.h"
-#include "memory.h"
 #include "util.h"
 #include "structs.h"
 #include "config.h"
@@ -36,6 +35,8 @@
 #include "configure.h"
 #include "print.h"
 #include "strbuf.h"
+
+#define VPD_BUFLEN 4096
 
 struct vpd_vendor_page vpd_vendor_pages[VPD_VP_ARRAY_SIZE] = {
 	[VPD_VP_UNDEF]	= { 0x00, "undef" },
@@ -388,8 +389,10 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 		if (value && !strcmp(value, "usb")) {
 			pp->sg_id.proto_id = SCSI_PROTOCOL_USB;
 			tgtname = udev_device_get_sysname(tgtdev);
-			strlcpy(node, tgtname, NODE_NAME_SIZE);
-			return 0;
+			if (tgtname) {
+				strlcpy(node, tgtname, NODE_NAME_SIZE);
+				return 0;
+			}
 		}
 		tgtdev = udev_device_get_parent(tgtdev);
 	}
@@ -803,7 +806,7 @@ sysfs_set_nexus_loss_tmo(struct multipath *mpp, struct path *pp)
 	     parent = udev_device_get_parent(parent)) {
 		const char *ed = udev_device_get_sysname(parent);
 
-		if (!strncmp(ed, ed_str, sizeof(ed_str) - 1)) {
+		if (ed && !strncmp(ed, ed_str, sizeof(ed_str) - 1)) {
 			end_dev_id = ed;
 			break;
 		}
@@ -1085,6 +1088,8 @@ parse_vpd_pg80(const unsigned char *in, char *out, size_t out_len)
 	if (out_len == 0)
 		return 0;
 
+	if (len > WWID_SIZE)
+		len = WWID_SIZE;
 	/*
 	 * Strip leading and trailing whitespace
 	 */
@@ -1114,177 +1119,197 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 	const unsigned char *d;
 	const unsigned char *vpd = NULL;
 	size_t len, vpd_len, i;
-	int vpd_type, prio = -1, naa_prio;
+	int vpd_type, prio = -1;
+	int err = -ENODATA;
+	STRBUF_ON_STACK(buf);
+
+	/* Need space at least for one digit */
+	if (out_len <= 1)
+		return 0;
 
 	d = in + 4;
-	while (d < in + in_len) {
+	while (d <= in + in_len - 4) {
+		bool invalid = false;
+		int new_prio = -1;
+
 		/* Select 'association: LUN' */
-		if ((d[1] & 0x30) != 0) {
-			d += d[3] + 4;
-			continue;
-		}
+		if ((d[1] & 0x30) == 0x30) {
+			invalid = true;
+			goto next_designator;
+		} else if ((d[1] & 0x30) != 0x00)
+			goto next_designator;
+
 		switch (d[1] & 0xf) {
+			unsigned char good_len;
 		case 0x3:
 			/* NAA: Prio 5 */
 			switch (d[4] >> 4) {
 			case 6:
 				/* IEEE Registered Extended: Prio 8 */
-				naa_prio = 8;
+				new_prio = 8;
+				good_len = 16;
 				break;
 			case 5:
 				/* IEEE Registered: Prio 7 */
-				naa_prio = 7;
+				new_prio = 7;
+				good_len = 8;
 				break;
 			case 2:
 				/* IEEE Extended: Prio 6 */
-				naa_prio = 6;
+				new_prio = 6;
+				good_len = 8;
 				break;
 			case 3:
 				/* IEEE Locally assigned: Prio 1 */
-				naa_prio = 1;
+				new_prio = 1;
+				good_len = 8;
 				break;
 			default:
 				/* Default: no priority */
-				naa_prio = -1;
+				good_len = 0xff;
 				break;
 			}
-			if (prio < naa_prio) {
-				prio = naa_prio;
-				vpd = d;
-			}
+
+			invalid = good_len == 0xff || good_len != d[3];
 			break;
 		case 0x2:
 			/* EUI-64: Prio 4 */
-			if (prio < 4) {
-				prio = 4;
-				vpd = d;
-			}
+			invalid = (d[3] != 8 && d[3] != 12 && d[3] != 16);
+			new_prio = 4;
 			break;
 		case 0x8:
 			/* SCSI Name: Prio 3 */
-			if (memcmp(d + 4, "eui.", 4) &&
-			    memcmp(d + 4, "naa.", 4) &&
-			    memcmp(d + 4, "iqn.", 4))
-				break;
-			if (prio < 3) {
-				prio = 3;
-				vpd = d;
-			}
+			invalid = (d[3] < 4 || (memcmp(d + 4, "eui.", 4) &&
+						memcmp(d + 4, "naa.", 4) &&
+						memcmp(d + 4, "iqn.", 4)));
+			new_prio = 3;
 			break;
 		case 0x1:
 			/* T-10 Vendor ID: Prio 2 */
-			if (prio < 2) {
-				prio = 2;
-				vpd = d;
-			}
+			invalid = (d[3] < 8);
+			new_prio = 2;
 			break;
+		case 0xa:
+			condlog(2, "%s: UUID identifiers not yet supported",
+				__func__);
+			break;
+		default:
+			invalid = true;
+			break;
+		}
+
+	next_designator:
+		if (d + d[3] + 4 - in > (ssize_t)in_len) {
+			condlog(2, "%s: device descriptor length overflow: %zd > %zu",
+				__func__, d + d[3] + 4 - in, in_len);
+			err = -EOVERFLOW;
+			break;
+		} else if (invalid) {
+			condlog(2, "%s: invalid device designator at offset %zd: %02x%02x%02x%02x",
+				__func__, d - in, d[0], d[1], d[2], d[3]);
+			/*
+			 * We checked above that the next offset is within limits.
+			 * Proceed, fingers crossed.
+			 */
+			err = -EINVAL;
+		} else if (new_prio > prio) {
+			vpd = d;
+			prio = new_prio;
 		}
 		d += d[3] + 4;
 	}
 
 	if (prio <= 0)
-		return -ENODATA;
-	/* Need space at least for one digit */
-	else if (out_len <= 1)
-		return 0;
+		return err;
+
+	if (d != in + in_len)
+		/* Should this be fatal? (overflow covered above) */
+		condlog(2, "%s: warning: last descriptor end %zd != VPD length %zu",
+			__func__, d - in, in_len);
 
 	len = 0;
 	vpd_type = vpd[1] & 0xf;
 	vpd_len = vpd[3];
 	vpd += 4;
+	/* untaint vpd_len for coverity */
+	if (vpd_len > WWID_SIZE) {
+		condlog(1, "%s: suspicious designator length %zu truncated to %u",
+			__func__, vpd_len, WWID_SIZE);
+		vpd_len = WWID_SIZE;
+	}
 	if (vpd_type == 0x2 || vpd_type == 0x3) {
 		size_t i;
 
-		len = sprintf(out, "%d", vpd_type);
-		if (2 * vpd_len >= out_len - len) {
-			condlog(1, "%s: WWID overflow, type %d, %zu/%zu bytes required",
-				__func__, vpd_type,
-				2 * vpd_len + len + 1, out_len);
-			vpd_len = (out_len - len - 1) / 2;
-		}
+		if ((err = print_strbuf(&buf, "%d", vpd_type)) < 0)
+			return err;
 		for (i = 0; i < vpd_len; i++)
-			len += sprintf(out + len,
-				       "%02x", vpd[i]);
-	} else if (vpd_type == 0x8 && vpd_len < 4) {
-		condlog(1, "%s: VPD length %zu too small for designator type 8",
-			__func__, vpd_len);
-		return -EINVAL;
+			if ((err = print_strbuf(&buf, "%02x", vpd[i])) < 0)
+				return err;
 	} else if (vpd_type == 0x8) {
+		char type;
+
 		if (!memcmp("eui.", vpd, 4))
-			out[0] =  '2';
+			type =  '2';
 		else if (!memcmp("naa.", vpd, 4))
-			out[0] = '3';
+			type = '3';
 		else
-			out[0] = '8';
+			type = '8';
+		if ((err = fill_strbuf(&buf, type, 1)) < 0)
+			return err;
 
 		vpd += 4;
 		len = vpd_len - 4;
-		while (len > 2 && vpd[len - 2] == '\0')
-			--len;
-		if (len > out_len - 1) {
-			condlog(1, "%s: WWID overflow, type 8/%c, %zu/%zu bytes required",
-				__func__, out[0], len + 1, out_len);
-			len = out_len - 1;
+		if ((err = __append_strbuf_str(&buf, (const char *)vpd, len)) < 0)
+			return err;
+
+		/* The input is 0-padded, make sure the length is correct */
+		truncate_strbuf(&buf, strlen(get_strbuf_str(&buf)));
+		len = get_strbuf_len(&buf);
+		if (type != '8') {
+			char *buffer = __get_strbuf_buf(&buf);
+
+			for (i = 0; i < len; ++i)
+				buffer[i] = tolower(buffer[i]);
 		}
-
-		if (out[0] == '8')
-			for (i = 0; i < len; ++i)
-				out[1 + i] = vpd[i];
-		else
-			for (i = 0; i < len; ++i)
-				out[1 + i] = tolower(vpd[i]);
-
-		/* designator should be 0-terminated, but let's make sure */
-		out[len] = '\0';
 
 	} else if (vpd_type == 0x1) {
 		const unsigned char *p;
 		size_t p_len;
 
-		out[0] = '1';
-		len = 1;
-		while ((p = memchr(vpd, ' ', vpd_len))) {
+		if ((err = fill_strbuf(&buf, '1', 1)) < 0)
+			return err;
+		while (vpd && (p = memchr(vpd, ' ', vpd_len))) {
 			p_len = p - vpd;
-			if (len + p_len > out_len - 1) {
-				condlog(1, "%s: WWID overflow, type 1, %zu/%zu bytes required",
-					__func__, len + p_len, out_len);
-				p_len = out_len - len - 1;
-			}
-			memcpy(out + len, vpd, p_len);
-			len += p_len;
-			if (len >= out_len - 1) {
-				out[len] = '\0';
-				break;
-			}
-			out[len] = '_';
-			len ++;
-			if (len >= out_len - 1) {
-				out[len] = '\0';
-				break;
-			}
+			if ((err = __append_strbuf_str(&buf, (const char *)vpd,
+						       p_len)) < 0)
+				return err;
 			vpd = p;
 			vpd_len -= p_len;
-			while (vpd && *vpd == ' ') {
+			while (vpd && vpd_len > 0 && *vpd == ' ') {
 				vpd++;
 				vpd_len --;
 			}
+			if (vpd_len > 0 && (err = fill_strbuf(&buf, '_', 1)) < 0)
+				return err;
 		}
-		p_len = vpd_len;
-		if (p_len > 0 && len < out_len - 1) {
-			if (len + p_len > out_len - 1) {
-				condlog(1, "%s: WWID overflow, type 1, %zu/%zu bytes required",
-					__func__, len + p_len + 1, out_len);
-				p_len = out_len - len - 1;
-			}
-			memcpy(out + len, vpd, p_len);
-			len += p_len;
-			out[len] = '\0';
-		}
-		if (len > 1 && out[len - 1] == '_') {
-			out[len - 1] = '\0';
-			len--;
+		if (vpd_len > 0) {
+			if ((err = __append_strbuf_str(&buf, (const char *)vpd,
+						       vpd_len)) < 0)
+				return err;
 		}
 	}
+
+	len = get_strbuf_len(&buf);
+	if (len >= out_len) {
+		condlog(1, "%s: WWID overflow, type %d, %zu/%zu bytes required",
+			__func__, vpd_type, len, out_len);
+		if (vpd_type == 2 || vpd_type == 3)
+			/* designator must have an even number of characters */
+			len = 2 * (out_len / 2) - 1;
+		else
+			len = out_len - 1;
+	}
+	strlcpy(out, get_strbuf_str(&buf), len + 1);
 	return len;
 }
 
@@ -1315,11 +1340,12 @@ parse_vpd_c0_hp3par(const unsigned char *in, size_t in_len,
 static int
 get_vpd_sysfs (struct udev_device *parent, int pg, char * str, int maxlen)
 {
-	int len, buff_len;
-	unsigned char buff[4096];
+	int len;
+	size_t buff_len;
+	unsigned char buff[VPD_BUFLEN];
 
-	memset(buff, 0x0, 4096);
-	if (!parent || sysfs_get_vpd(parent, pg, buff, 4096) <= 0) {
+	memset(buff, 0x0, VPD_BUFLEN);
+	if (!parent || sysfs_get_vpd(parent, pg, buff, VPD_BUFLEN) <= 0) {
 		condlog(3, "failed to read sysfs vpd pg%02x", pg);
 		return -EINVAL;
 	}
@@ -1330,8 +1356,10 @@ get_vpd_sysfs (struct udev_device *parent, int pg, char * str, int maxlen)
 		return -ENODATA;
 	}
 	buff_len = get_unaligned_be16(&buff[2]) + 4;
-	if (buff_len > 4096)
+	if (buff_len > VPD_BUFLEN) {
 		condlog(3, "vpd pg%02x page truncated", pg);
+		buff_len = VPD_BUFLEN;
+	}
 
 	if (pg == 0x80)
 		len = parse_vpd_pg80(buff, str, maxlen);
@@ -1375,7 +1403,7 @@ bool
 is_vpd_page_supported(int fd, int pg)
 {
 	int i, len;
-	unsigned char buff[4096];
+	unsigned char buff[VPD_BUFLEN];
 
 	len = fetch_vpd_page(fd, 0x00, buff, sizeof(buff));
 	if (len < 0)
@@ -1391,7 +1419,7 @@ int
 get_vpd_sgio (int fd, int pg, int vend_id, char * str, int maxlen)
 {
 	int len, buff_len;
-	unsigned char buff[4096];
+	unsigned char buff[VPD_BUFLEN];
 
 	buff_len = fetch_vpd_page(fd, pg, buff, sizeof(buff));
 	if (buff_len < 0)
@@ -2363,15 +2391,16 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	}
 
 	if ((mask & DI_WWID) && !strlen(pp->wwid)) {
-		get_uid(pp, path_state, pp->udev,
-			(pp->retriggers >= conf->retrigger_tries));
+		int allow_fallback = ((mask & DI_NOFALLBACK) == 0 &&
+				      pp->retriggers >= conf->retrigger_tries);
+		get_uid(pp, path_state, pp->udev, allow_fallback);
 		if (!strlen(pp->wwid)) {
 			if (pp->bus == SYSFS_BUS_UNDEF)
 				return PATHINFO_SKIPPED;
 			if (pp->initialized != INIT_FAILED) {
 				pp->initialized = INIT_MISSING_UDEV;
 				pp->tick = conf->retrigger_delay;
-			} else if (pp->retriggers >= conf->retrigger_tries &&
+			} else if (allow_fallback &&
 				   (pp->state == PATH_UP || pp->state == PATH_GHOST)) {
 				/*
 				 * We have failed to read udev info for this path

@@ -158,7 +158,7 @@ static int get_ionum_and_basenum(char *args, int *ionum, double *basenum)
 		return 0;
 	}
 
-	arg = temp = STRDUP(args);
+	arg = temp = strdup(args);
 	if (!arg)
 		return 0;
 
@@ -185,10 +185,10 @@ static int get_ionum_and_basenum(char *args, int *ionum, double *basenum)
 	if (check_args_valid(*ionum, *basenum) == 0)
 		goto out;
 
-	FREE(arg);
+	free(arg);
 	return 1;
 out:
-	FREE(arg);
+	free(arg);
 	return 0;
 }
 

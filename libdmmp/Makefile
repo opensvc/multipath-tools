@@ -25,7 +25,11 @@ all: $(LIBS) doc
 
 $(LIBS): $(OBJS)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS)
-	$(LN) $@ $(DEVLIB)
+
+$(DEVLIB): $(LIBS)
+	$(LN) $(LIBS) $@
+
+abi:    $(DEVLIB:%.so=%.abi)
 
 install:	doc.gz
 	mkdir -p $(DESTDIR)$(usrlibdir)
@@ -54,7 +58,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 
 clean: dep_clean
-	$(RM) core *.a *.o *.gz *.so *.so.*
+	$(RM) core *.a *.o *.gz *.so *.so.* *.abi $(NV_VERSION_SCRIPT)
 	$(RM) docs/man/*.gz
 	$(MAKE) -C test clean
 

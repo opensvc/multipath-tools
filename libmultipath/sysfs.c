@@ -287,7 +287,7 @@ int sysfs_check_holders(char * check_devt, char * new_devt)
 			table_name, check_devt, new_devt);
 
 		dm_reassign_table(table_name, check_devt, new_devt);
-		FREE(table_name);
+		free(table_name);
 	}
 	closedir(dirfd);
 

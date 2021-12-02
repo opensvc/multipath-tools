@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <libudev.h>
 
 #include "util.h"
 #include "checkers.h"
@@ -98,7 +99,7 @@ static bool guess_mpp_wwid(struct multipath *mpp)
  * - may set pp->wwid and / or mpp->wwid
  * - calls pathinfo() on existing paths is pathinfo_flags is not 0
  */
-bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
+static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 	int pathinfo_flags)
 {
 	int i, j;
@@ -148,16 +149,15 @@ bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 			 * uninitialized struct path to pgp->paths, with only
 			 * pp->dev_t filled in. Thus if pp->udev is set here,
 			 * we know that the path is in pathvec already.
-			 * However, it's possible that the path in pathvec is
-			 * different from the one the kernel still had in its
-			 * map.
 			 */
 			if (pp->udev) {
 				if (pathinfo_flags & ~DI_NOIO) {
 					conf = get_multipath_config();
 					pthread_cleanup_push(put_multipath_config,
 							     conf);
-					pathinfo(pp, conf, pathinfo_flags|DI_WWID);
+					if (pathinfo(pp, conf, pathinfo_flags) != PATHINFO_OK)
+						condlog(2, "%s: pathinfo failed for existing path %s (flags=0x%x)",
+							__func__, pp->dev, pathinfo_flags);
 					pthread_cleanup_pop(1);
 				}
 			} else {
@@ -174,15 +174,14 @@ bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 				} else {
 					int rc;
 
-					devt2devname(pp->dev, sizeof(pp->dev),
-						     pp->dev_t);
+					strlcpy(pp->dev, udev_device_get_sysname(pp->udev),
+						sizeof(pp->dev));
 					conf = get_multipath_config();
 					pthread_cleanup_push(put_multipath_config,
 							     conf);
 					pp->checkint = conf->checkint;
 					rc = pathinfo(pp, conf,
-						      DI_SYSFS|DI_WWID|DI_BLACKLIST|
-						      pathinfo_flags);
+						      DI_SYSFS|DI_WWID|DI_BLACKLIST|DI_NOFALLBACK|pathinfo_flags);
 					pthread_cleanup_pop(1);
 					if (rc != PATHINFO_OK) {
 						condlog(1, "%s: error %d in pathinfo, discarding path",
@@ -194,6 +193,8 @@ bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 					}
 					condlog(2, "%s: adding new path %s",
 						mpp->alias, pp->dev);
+					pp->initialized = INIT_PARTIAL;
+					pp->partial_retrigger_delay = 180;
 					store_path(pathvec, pp);
 					pp->tick = 1;
 				}
@@ -237,6 +238,7 @@ bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 		free_pathgroup(pgp, KEEP_PATHS);
 		must_reload = true;
 	}
+	mpp->need_reload = mpp->need_reload || must_reload;
 	return must_reload;
 }
 
@@ -298,16 +300,19 @@ void orphan_path(struct path *pp, const char *reason)
 	uninitialize_path(pp);
 }
 
-void orphan_paths(vector pathvec, struct multipath *mpp, const char *reason)
+static void orphan_paths(vector pathvec, struct multipath *mpp, const char *reason)
 {
 	int i;
 	struct path * pp;
 
 	vector_foreach_slot (pathvec, pp, i) {
 		if (pp->mpp == mpp) {
-			if (pp->initialized == INIT_REMOVED) {
-				condlog(3, "%s: freeing path in removed state",
-					pp->dev);
+			if (pp->initialized == INIT_REMOVED ||
+			    pp->initialized == INIT_PARTIAL) {
+				condlog(3, "%s: freeing path in %s state",
+					pp->dev,
+					pp->initialized == INIT_REMOVED ?
+					"removed" : "partial");
 				vector_del_slot(pathvec, i--);
 				free_path(pp);
 			} else
@@ -325,10 +330,8 @@ void set_path_removed(struct path *pp)
 	 * Keep link to mpp. It will be removed when the path
 	 * is successfully removed from the map.
 	 */
-	if (!mpp) {
+	if (!mpp)
 		condlog(0, "%s: internal error: mpp == NULL", pp->dev);
-		return;
-	}
 	pp->mpp = mpp;
 	pp->initialized = INIT_REMOVED;
 }
@@ -337,6 +340,10 @@ void
 remove_map(struct multipath *mpp, vector pathvec, vector mpvec)
 {
 	int i;
+
+	free_pathvec(mpp->paths, KEEP_PATHS);
+	free_pgvec(mpp->pg, KEEP_PATHS);
+	mpp->paths = mpp->pg = NULL;
 
 	/*
 	 * clear references to this map
@@ -393,12 +400,12 @@ extract_hwe_from_path(struct multipath * mpp)
 	condlog(4, "%s: searching paths for valid hwe", mpp->alias);
 	/* doing this in two passes seems like paranoia to me */
 	vector_foreach_slot(mpp->paths, pp, i) {
-		if (pp->state == PATH_UP &&
+		if (pp->state == PATH_UP && pp->initialized != INIT_PARTIAL &&
 		    pp->initialized != INIT_REMOVED && pp->hwe)
 			goto done;
 	}
 	vector_foreach_slot(mpp->paths, pp, i) {
-		if (pp->state != PATH_UP &&
+		if ((pp->state != PATH_UP || pp->initialized == INIT_PARTIAL) &&
 		    pp->initialized != INIT_REMOVED && pp->hwe)
 			goto done;
 	}
@@ -468,11 +475,14 @@ static void check_removed_paths(const struct multipath *mpp, vector pathvec)
 	int i;
 
 	vector_foreach_slot(pathvec, pp, i) {
-		if (pp->initialized != INIT_REMOVED || pp->mpp != mpp)
-			continue;
-		if (!find_devt_in_pathgroups(mpp, pp->dev_t)) {
-			condlog(2, "%s: %s: freeing path in removed state",
-				__func__, pp->dev);
+		if (pp->mpp == mpp &&
+		    (pp->initialized == INIT_REMOVED ||
+		     pp->initialized == INIT_PARTIAL) &&
+		    !find_devt_in_pathgroups(mpp, pp->dev_t)) {
+			condlog(2, "%s: %s: freeing path in %s state",
+				__func__, pp->dev,
+				pp->initialized == INIT_REMOVED ?
+				"removed" : "partial");
 			vector_del_slot(pathvec, i--);
 			free_path(pp);
 		}

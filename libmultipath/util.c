@@ -17,7 +17,6 @@
 
 #include "util.h"
 #include "debug.h"
-#include "memory.h"
 #include "checkers.h"
 #include "vector.h"
 #include "structs.h"
@@ -110,7 +109,7 @@ get_word (const char *sentence, char **word)
 	if (!word)
 		return skip + len;
 
-	*word = MALLOC(len + 1);
+	*word = calloc(1, len + 1);
 
 	if (!*word) {
 		condlog(0, "get_word : oom");
@@ -168,6 +167,7 @@ size_t strlcat(char * restrict dst, const char * restrict src, size_t size)
 int devt2devname(char *devname, int devname_len, const char *devt)
 {
 	struct udev_device *u_dev;
+	const char * dev_name;
 	int r;
 
 	if (!devname || !devname_len || !devt)
@@ -178,7 +178,13 @@ int devt2devname(char *devname, int devname_len, const char *devt)
 		condlog(0, "\"%s\": invalid major/minor numbers, not found in sysfs", devt);
 		return 1;
 	}
-	r = strlcpy(devname, udev_device_get_sysname(u_dev), devname_len);
+
+	dev_name = udev_device_get_sysname(u_dev);
+	if (!dev_name) {
+		udev_device_unref(u_dev);
+		return 1;
+	}
+	r = strlcpy(devname, dev_name, devname_len);
 	udev_device_unref(u_dev);
 
 	return !(r < devname_len);
@@ -407,8 +413,8 @@ void free_scandir_result(struct scandir_result *res)
 	int i;
 
 	for (i = 0; i < res->n; i++)
-		FREE(res->di[i]);
-	FREE(res->di);
+		free(res->di[i]);
+	free(res->di);
 }
 
 void close_fd(void *arg)
@@ -457,6 +463,11 @@ int should_exit(void)
 }
 
 void cleanup_charp(char **p)
+{
+	free(*p);
+}
+
+void cleanup_ucharp(unsigned char **p)
 {
 	free(*p);
 }

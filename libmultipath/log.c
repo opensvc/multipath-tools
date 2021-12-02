@@ -11,7 +11,6 @@
 #include <time.h>
 #include <pthread.h>
 
-#include "memory.h"
 #include "log.h"
 #include "util.h"
 
@@ -44,7 +43,7 @@ static void dump_logarea (void)
 static int logarea_init (int size)
 {
 	logdbg(stderr,"enter logarea_init\n");
-	la = (struct logarea *)MALLOC(sizeof(struct logarea));
+	la = (struct logarea *)calloc(1, sizeof(struct logarea));
 
 	if (!la)
 		return 1;
@@ -52,23 +51,24 @@ static int logarea_init (int size)
 	if (size < MAX_MSG_SIZE)
 		size = DEFAULT_AREA_SIZE;
 
-	la->start = MALLOC(size);
+	la->start = calloc(1, size);
 	if (!la->start) {
-		FREE(la);
+		free(la);
+		la = NULL;
 		return 1;
 	}
-	memset(la->start, 0, size);
 
 	la->empty = 1;
 	la->end = la->start + size;
 	la->head = la->start;
 	la->tail = la->start;
 
-	la->buff = MALLOC(MAX_MSG_SIZE + sizeof(struct logmsg));
+	la->buff = calloc(1, MAX_MSG_SIZE + sizeof(struct logmsg));
 
 	if (!la->buff) {
-		FREE(la->start);
-		FREE(la);
+		free(la->start);
+		free(la);
+		la = NULL;
 		return 1;
 	}
 	return 0;
@@ -95,9 +95,10 @@ int log_init(char *program_name, int size)
 
 static void free_logarea (void)
 {
-	FREE(la->start);
-	FREE(la->buff);
-	FREE(la);
+	free(la->start);
+	free(la->buff);
+	free(la);
+	la = NULL;
 	return;
 }
 

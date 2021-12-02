@@ -3,7 +3,7 @@ include ../Makefile.inc
 SONAME = 0
 DEVLIB = libmpathpersist.so
 LIBS = $(DEVLIB).$(SONAME)
-VERSION_SCRIPT := libmpathpersist.version
+VERSION_SCRIPT:= libmpathpersist.version
 
 CFLAGS += $(LIB_CFLAGS) -I$(multipathdir) -I$(mpathpersistdir) -I$(mpathcmddir)
 LDFLAGS += -L$(multipathdir) -L$(mpathcmddir)
@@ -17,6 +17,17 @@ all: $(DEVLIB) man
 $(LIBS): $(OBJS) $(VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
 		-Wl,--version-script=$(VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
+
+$(NV_VERSION_SCRIPT):	$(VERSION_SCRIPT)
+	@printf 'NOVERSION {\nglobal:\n' >$@
+	@grep -P '^[ \t]+[a-zA-Z_][a-zA-Z0-9_]*;' $< >>$@
+	@printf 'local:\n\t*;\n};\n' >>$@
+
+$(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
+		-Wl,--version-script=$(NV_VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
+
+abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
 
 $(DEVLIB): $(LIBS)
 	$(LN) $(LIBS) $@
@@ -44,7 +55,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 clean: dep_clean
-	$(RM) core *.a *.o *.so *.so.* *.gz
+	$(RM) core *.a *.o *.so *.so.* *.gz *.abi $(NV_VERSION_SCRIPT)
 
 include $(wildcard $(OBJS:.o=.d))
 

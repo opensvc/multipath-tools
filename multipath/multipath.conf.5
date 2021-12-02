@@ -1,12 +1,12 @@
 .\" ----------------------------------------------------------------------------
-.\" Update the date below if you make any significant change.
 .\" Make sure there are no errors with:
 .\" groff -z -wall -b -e -t multipath/multipath.conf.5
 .\" man --warnings -E UTF-8 -l -Tutf8 -Z multipath/multipath.conf.5 >/dev/null
 .\"
+.\" Update the date below if you make any significant change.
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATH.CONF 5 2018-05-21 Linux
+.TH MULTIPATH.CONF 5 2021-09-08 Linux
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -178,6 +178,7 @@ The default is: \fBno\fR
 .
 .TP
 .B multipath_dir
+This option is deprecated, and will be removed in a future release.
 Directory where the dynamic shared objects are stored. Defined at compile time,
 commonly \fI/lib64/multipath/\fR or \fI/lib/multipath/\fR.
 .RS
@@ -189,7 +190,7 @@ The default is: \fB<system dependent>\fR
 .TP
 .B path_selector
 The default path selector algorithm to use; they are offered by the
-kernel multipath target. There are three selector algorithms:
+kernel multipath target:
 .RS
 .TP 12
 .I "round-robin 0"
@@ -206,9 +207,13 @@ of outstanding I/O to the path.
 of outstanding I/O to the path and its relative throughput.
 .TP
 .I "historical-service-time 0"
-(Since 5.8 kernel) Choose the path for the next bunch of IOs based on the
+(Since 5.8 kernel) Choose the path for the next bunch of I/O based on the
 estimation of future service time based on the history of previous I/O submitted
 to each path.
+.TP
+.I "io-affinity 0"
+(Since 5.11 kernel) Choose the path for the next bunch of I/O based on a CPU to
+path mapping the user passes in and what CPU we are executing on.
 .TP
 The default is: \fBservice-time 0\fR
 .RE
@@ -738,6 +743,7 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B bindings_file
+This option is deprecated, and will be removed in a future release.
 The full pathname of the binding file to be used when the user_friendly_names
 option is set.
 .RS
@@ -748,6 +754,7 @@ The default is: \fB/etc/multipath/bindings\fR
 .
 .TP
 .B wwids_file
+This option is deprecated, and will be removed in a future release.
 The full pathname of the WWIDs file, which is used by multipath to keep track
 of the WWIDs for LUNs it has created multipath devices on in the past.
 .RS
@@ -758,6 +765,7 @@ The default is: \fB/etc/multipath/wwids\fR
 .
 .TP
 .B prkeys_file
+This option is deprecated, and will be removed in a future release.
 The full pathname of the prkeys file, which is used by multipathd to keep
 track of the persistent reservation key used for a specific WWID, when
 \fIreservation_key\fR is set to \fBfile\fR.
@@ -929,6 +937,7 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B config_dir
+This option is deprecated, and will be removed in a future release.
 If set to anything other than "", multipath will search this directory
 alphabetically for file ending in ".conf" and it will read configuration
 information from them, just as if it was in \fI/etc/multipath.conf\fR.

@@ -21,7 +21,6 @@
 #endif
 #include "mpath_cmd.h"
 
-#include "memory.h"
 #include "uxsock.h"
 #include "debug.h"
 
@@ -110,12 +109,12 @@ static int _recv_packet(int fd, char **buf, unsigned int timeout, ssize_t limit)
 		return -errno;
 	if ((limit > 0) && (len > limit))
 		return -EINVAL;
-	(*buf) = MALLOC(len);
+	(*buf) = calloc(1, len);
 	if (!*buf)
 		return -ENOMEM;
 	err = mpath_recv_reply_data(fd, *buf, len, timeout);
 	if (err != 0) {
-		FREE(*buf);
+		free(*buf);
 		(*buf) = NULL;
 		return -errno;
 	}
@@ -128,9 +127,4 @@ static int _recv_packet(int fd, char **buf, unsigned int timeout, ssize_t limit)
 int recv_packet(int fd, char **buf, unsigned int timeout)
 {
 	return _recv_packet(fd, buf, timeout, 0 /* no limit */);
-}
-
-int recv_packet_from_client(int fd, char **buf, unsigned int timeout)
-{
-	return _recv_packet(fd, buf, timeout, _MAX_CMD_LEN);
 }

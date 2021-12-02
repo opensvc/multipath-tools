@@ -359,14 +359,11 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 	},
 	{
-		/*
-		 * SC Series, formerly Compellent
-		 *
-		 * Maintainer: Sean McGinnis <sean_mcginnis@dell.com>
-		 */
+		/* SC Series, formerly Compellent */
 		.vendor        = "COMPELNT",
 		.product       = "Compellent Vol",
-		.pgpolicy      = MULTIBUS,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
 	{
@@ -398,6 +395,15 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 3,
 		.fast_io_fail  = 15,
+	},
+	{
+		/* PowerVault ME4 */
+		.vendor        = "DellEMC",
+		.product       = "ME4",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.prio_name     = PRIO_ALUA,
+		.hwhandler     = "1 alua",
+		.pgfailback    = -FAILBACK_IMMEDIATE,
 	},
 	/*
 	 * Fujitsu
@@ -483,8 +489,6 @@ static struct hwentry default_hw[] = {
 	},
 	/*
 	 * IBM
-	 *
-	 * Maintainer: Hannes Reinecke <hare@suse.de>
 	 */
 	{
 		/* ProFibre 4000R */
@@ -656,7 +660,8 @@ static struct hwentry default_hw[] = {
 		.vendor        = "IBM",
 		.product       = "^2107900",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
-		.pgpolicy      = MULTIBUS,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
 	},
 	{
 		// Storwize V5000 and V7000 lines / SAN Volume Controller (SVC) / Flex System V7000 /
@@ -712,7 +717,8 @@ static struct hwentry default_hw[] = {
 		.vendor        = "(XIV|IBM)",
 		.product       = "(NEXTRA|2810XIV)",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
-		.pgpolicy      = MULTIBUS,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = 15,
 	},
 	{
 		/* TMS RamSan / FlashSystem 710/720/810/820/840/900 */

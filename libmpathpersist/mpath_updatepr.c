@@ -14,7 +14,6 @@
 #include "debug.h"
 #include "mpath_cmd.h"
 #include "uxsock.h"
-#include "memory.h"
 #include "mpathpr.h"
 
 

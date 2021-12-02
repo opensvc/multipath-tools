@@ -6,23 +6,19 @@
 #include "lock.h"
 
 struct vectors {
-	struct mutex_lock lock; /* defined in lock.h */
 	vector pathvec;
 	vector mpvec;
+	struct mutex_lock lock; /* defined in lock.h */
 };
 
 void __set_no_path_retry(struct multipath *mpp, bool check_features);
 #define set_no_path_retry(mpp) __set_no_path_retry(mpp, true)
 
 int adopt_paths (vector pathvec, struct multipath * mpp);
-void orphan_paths(vector pathvec, struct multipath *mpp,
-		  const char *reason);
 void orphan_path (struct path * pp, const char *reason);
 void set_path_removed(struct path *pp);
 
 int verify_paths(struct multipath *mpp);
-bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
-			    int pathinfo_flags);
 int update_mpp_paths(struct multipath * mpp, vector pathvec);
 int update_multipath_strings (struct multipath *mpp, vector pathvec);
 void extract_hwe_from_path(struct multipath * mpp);

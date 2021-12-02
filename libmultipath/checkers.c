@@ -55,7 +55,7 @@ static struct checker_class *alloc_checker_class(void)
 {
 	struct checker_class *c;
 
-	c = MALLOC(sizeof(struct checker_class));
+	c = calloc(1, sizeof(struct checker_class));
 	if (c) {
 		INIT_LIST_HEAD(&c->node);
 		uatomic_set(&c->refcount, 1);
@@ -96,7 +96,7 @@ void free_checker_class(struct checker_class *c)
 				c->name, dlerror());
 		}
 	}
-	FREE(c);
+	free(c);
 }
 
 void cleanup_checkers (void)

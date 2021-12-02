@@ -29,7 +29,6 @@
 #include "weightedpath.h"
 #include "config.h"
 #include "structs.h"
-#include "memory.h"
 #include "debug.h"
 #include <regex.h>
 #include "structs_vec.h"
@@ -75,13 +74,13 @@ int prio_path_weight(struct path *pp, char *prio_args)
 	if (!prio_args)
 		return priority;
 
-	arg = temp = STRDUP(prio_args);
+	arg = strdup(prio_args);
+	temp = arg;
 
 	regex = get_next_string(&temp, split_char);
 
 	/* Return default priority if the argument is not parseable */
 	if (!regex) {
-		FREE(arg);
 		return priority;
 	}
 

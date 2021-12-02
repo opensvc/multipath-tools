@@ -9,51 +9,39 @@
 
 struct strbuf;
 
-struct path_data {
-	char wildcard;
-	char * header;
-	unsigned int width;
-	int (*snprint)(struct strbuf *, const struct path * pp);
-};
-
-struct multipath_data {
-	char wildcard;
-	char * header;
-	unsigned int width;
-	int (*snprint)(struct strbuf *, const struct multipath * mpp);
-};
-
-struct pathgroup_data {
-	char wildcard;
-	char * header;
-	unsigned int width;
-	int (*snprint)(struct strbuf *, const struct pathgroup * pgp);
-};
-
 enum layout_reset {
 	LAYOUT_RESET_NOT,
 	LAYOUT_RESET_ZERO,
 	LAYOUT_RESET_HEADER,
 };
 
-void _get_path_layout (const struct _vector *gpvec, enum layout_reset);
-void get_path_layout (vector pathvec, int header);
-void _get_multipath_layout (const struct _vector *gmvec, enum layout_reset);
-void get_multipath_layout (vector mpvec, int header);
-int snprint_path_header(struct strbuf *, const char *);
-int snprint_multipath_header(struct strbuf *, const char *);
-int _snprint_path (const struct gen_path *, struct strbuf *, const char *, int);
-#define snprint_path(buf, fmt, pp, v) \
-	_snprint_path(dm_path_to_gen(pp), buf, fmt,  v)
+/* fieldwidth_t is defined in generic.h */
+fieldwidth_t *alloc_path_layout(void);
+void _get_path_layout (const struct _vector *gpvec, enum layout_reset,
+		       fieldwidth_t *width);
+void get_path_layout (vector pathvec, int header, fieldwidth_t *width);
+fieldwidth_t *alloc_multipath_layout(void);
+void _get_multipath_layout (const struct _vector *gmvec, enum layout_reset,
+			    fieldwidth_t *width);
+void get_multipath_layout (vector mpvec, int header, fieldwidth_t *width);
+int snprint_path_header(struct strbuf *, const char *, const fieldwidth_t *);
+int snprint_multipath_header(struct strbuf *, const char *,
+			     const fieldwidth_t *);
+int _snprint_path (const struct gen_path *, struct strbuf *, const char *,
+		   const fieldwidth_t *);
+#define snprint_path(buf, fmt, pp, w)		\
+	_snprint_path(dm_path_to_gen(pp), buf, fmt, w)
 int _snprint_multipath (const struct gen_multipath *, struct strbuf *,
-			const char *, int);
-#define snprint_multipath(buf, fmt, mp, v)				\
-	_snprint_multipath(dm_multipath_to_gen(mp), buf, fmt,  v)
+			const char *, const fieldwidth_t *);
+#define snprint_multipath(buf, fmt, mp, w)				\
+	_snprint_multipath(dm_multipath_to_gen(mp), buf, fmt, w)
 int _snprint_multipath_topology (const struct gen_multipath *, struct strbuf *,
-				 int verbosity);
-#define snprint_multipath_topology(buf, mpp, v) \
-	_snprint_multipath_topology (dm_multipath_to_gen(mpp), buf, v)
+				 int verbosity, const fieldwidth_t *);
+#define snprint_multipath_topology(buf, mpp, v, w)			\
+	_snprint_multipath_topology (dm_multipath_to_gen(mpp), buf, v, w)
 int snprint_multipath_topology_json(struct strbuf *, const struct vectors *vecs);
+int __snprint_config(const struct config *conf, struct strbuf *buff,
+		     const struct _vector *hwtable, const struct _vector *mpvec);
 char *snprint_config(const struct config *conf, int *len,
 		     const struct _vector *hwtable,
 		     const struct _vector *mpvec);

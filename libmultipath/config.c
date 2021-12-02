@@ -11,7 +11,6 @@
 #include <errno.h>
 
 #include "checkers.h"
-#include "memory.h"
 #include "util.h"
 #include "debug.h"
 #include "parser.h"
@@ -245,45 +244,45 @@ free_hwe (struct hwentry * hwe)
 		return;
 
 	if (hwe->vendor)
-		FREE(hwe->vendor);
+		free(hwe->vendor);
 
 	if (hwe->product)
-		FREE(hwe->product);
+		free(hwe->product);
 
 	if (hwe->revision)
-		FREE(hwe->revision);
+		free(hwe->revision);
 
 	if (hwe->getuid)
-		FREE(hwe->getuid);
+		free(hwe->getuid);
 
 	if (hwe->uid_attribute)
-		FREE(hwe->uid_attribute);
+		free(hwe->uid_attribute);
 
 	if (hwe->features)
-		FREE(hwe->features);
+		free(hwe->features);
 
 	if (hwe->hwhandler)
-		FREE(hwe->hwhandler);
+		free(hwe->hwhandler);
 
 	if (hwe->selector)
-		FREE(hwe->selector);
+		free(hwe->selector);
 
 	if (hwe->checker_name)
-		FREE(hwe->checker_name);
+		free(hwe->checker_name);
 
 	if (hwe->prio_name)
-		FREE(hwe->prio_name);
+		free(hwe->prio_name);
 
 	if (hwe->prio_args)
-		FREE(hwe->prio_args);
+		free(hwe->prio_args);
 
 	if (hwe->alias_prefix)
-		FREE(hwe->alias_prefix);
+		free(hwe->alias_prefix);
 
 	if (hwe->bl_product)
-		FREE(hwe->bl_product);
+		free(hwe->bl_product);
 
-	FREE(hwe);
+	free(hwe);
 }
 
 void
@@ -308,27 +307,27 @@ free_mpe (struct mpentry * mpe)
 		return;
 
 	if (mpe->wwid)
-		FREE(mpe->wwid);
+		free(mpe->wwid);
 
 	if (mpe->selector)
-		FREE(mpe->selector);
+		free(mpe->selector);
 
 	if (mpe->getuid)
-		FREE(mpe->getuid);
+		free(mpe->getuid);
 
 	if (mpe->uid_attribute)
-		FREE(mpe->uid_attribute);
+		free(mpe->uid_attribute);
 
 	if (mpe->alias)
-		FREE(mpe->alias);
+		free(mpe->alias);
 
 	if (mpe->prio_name)
-		FREE(mpe->prio_name);
+		free(mpe->prio_name);
 
 	if (mpe->prio_args)
-		FREE(mpe->prio_args);
+		free(mpe->prio_args);
 
-	FREE(mpe);
+	free(mpe);
 }
 
 void
@@ -350,7 +349,7 @@ struct mpentry *
 alloc_mpe (void)
 {
 	struct mpentry * mpe = (struct mpentry *)
-				MALLOC(sizeof(struct mpentry));
+				calloc(1, sizeof(struct mpentry));
 
 	return mpe;
 }
@@ -359,7 +358,7 @@ struct hwentry *
 alloc_hwe (void)
 {
 	struct hwentry * hwe = (struct hwentry *)
-				MALLOC(sizeof(struct hwentry));
+				calloc(1, sizeof(struct hwentry));
 
 	return hwe;
 }
@@ -378,7 +377,7 @@ set_param_str(const char * str)
 	if (!len)
 		return NULL;
 
-	dst = (char *)MALLOC(len + 1);
+	dst = (char *)calloc(1, len + 1);
 
 	if (!dst)
 		return NULL;
@@ -652,7 +651,7 @@ restart:
 
 static struct config *alloc_config (void)
 {
-	return (struct config *)MALLOC(sizeof(struct config));
+	return (struct config *)calloc(1, sizeof(struct config));
 }
 
 static void _uninit_config(struct config *conf)
@@ -661,52 +660,52 @@ static void _uninit_config(struct config *conf)
 		conf = &__internal_config;
 
 	if (conf->multipath_dir)
-		FREE(conf->multipath_dir);
+		free(conf->multipath_dir);
 
 	if (conf->selector)
-		FREE(conf->selector);
+		free(conf->selector);
 
 	if (conf->uid_attribute)
-		FREE(conf->uid_attribute);
+		free(conf->uid_attribute);
 
 	vector_reset(&conf->uid_attrs);
 
 	if (conf->getuid)
-		FREE(conf->getuid);
+		free(conf->getuid);
 
 	if (conf->features)
-		FREE(conf->features);
+		free(conf->features);
 
 	if (conf->hwhandler)
-		FREE(conf->hwhandler);
+		free(conf->hwhandler);
 
 	if (conf->bindings_file)
-		FREE(conf->bindings_file);
+		free(conf->bindings_file);
 
 	if (conf->wwids_file)
-		FREE(conf->wwids_file);
+		free(conf->wwids_file);
 
 	if (conf->prkeys_file)
-		FREE(conf->prkeys_file);
+		free(conf->prkeys_file);
 
 	if (conf->prio_name)
-		FREE(conf->prio_name);
+		free(conf->prio_name);
 
 	if (conf->alias_prefix)
-		FREE(conf->alias_prefix);
+		free(conf->alias_prefix);
 	if (conf->partition_delim)
-		FREE(conf->partition_delim);
+		free(conf->partition_delim);
 
 	if (conf->prio_args)
-		FREE(conf->prio_args);
+		free(conf->prio_args);
 
 	if (conf->checker_name)
-		FREE(conf->checker_name);
+		free(conf->checker_name);
 
 	if (conf->config_dir)
-		FREE(conf->config_dir);
+		free(conf->config_dir);
 	if (conf->enable_foreign)
-		FREE(conf->enable_foreign);
+		free(conf->enable_foreign);
 
 	free_blacklist(conf->blist_devnode);
 	free_blacklist(conf->blist_wwid);

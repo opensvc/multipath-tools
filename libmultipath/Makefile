@@ -45,7 +45,7 @@ ifneq ($(call check_func,dm_hold_control_dev,/usr/include/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_HOLD_CONTROL
 endif
 
-OBJS = memory.o parser.o vector.o devmapper.o callout.o \
+OBJS = parser.o vector.o devmapper.o callout.o \
 	hwtable.o blacklist.o util.o dmparser.o config.o \
 	structs.o discovery.o propsel.o dict.o \
 	pgpolicies.o debug.o defaults.o uevent.o time-util.o \
@@ -81,6 +81,17 @@ $(LIBS): $(OBJS) $(VERSION_SCRIPT)
 $(DEVLIB): $(LIBS)
 	$(LN) $(LIBS) $@
 
+$(NV_VERSION_SCRIPT):	$(VERSION_SCRIPT)
+	@printf 'NOVERSION {\nglobal:\n' >$@
+	@grep -P '^[ \t]+[a-zA-Z_][a-zA-Z0-9_]*;' $< >>$@
+	@printf 'local:\n\t*;\n};\n' >>$@
+
+$(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
+	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
+		-Wl,--version-script=$(NV_VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
+
+abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
+
 ../tests/$(LIBS): $(OBJS) $(VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=`basename $@` \
 		-o $@ $(OBJS) $(LIBDEPS)
@@ -99,7 +110,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 clean: dep_clean
-	$(RM) core *.a *.o *.so *.so.* *.gz nvme-ioctl.c nvme-ioctl.h
+	$(RM) core *.a *.o *.so *.so.* *.gz *.abi nvme-ioctl.c nvme-ioctl.h $(NV_VERSION_SCRIPT)
 
 include $(wildcard $(OBJS:.o=.d))
 

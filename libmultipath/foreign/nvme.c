@@ -184,7 +184,9 @@ static int snprint_nvme_map(const struct gen_multipath *gmp,
 							      "firmware_rev"));
 	case 'r':
 		val = udev_device_get_sysattr_value(nvm->udev, "ro");
-		if (val[0] == 1)
+		if (!val)
+			return append_strbuf_str(buff, "undef");
+		else if (val[0] == 1)
 			return append_strbuf_str(buff, "ro");
 		else
 			return append_strbuf_str(buff, "rw");

@@ -1,0 +1,31 @@
+#
+# This list is used by git-shortlog to fix a few botched name translations
+# in the git archive, either because the author's full name was messed up
+# and/or not always written the same way, making contributions from the
+# same person appearing not to be so or badly displayed. Also allows for
+# old email addresses to map to new email addresses.
+#
+# For format details, see "MAPPING AUTHORS" in "man git-shortlog".
+#
+# Please keep this list dictionary sorted.
+#
+Bart Van Assche <bvanassche@acm.org> <bart.vanassche@sandisk.com>
+Bart Van Assche <bvanassche@acm.org> <bart.vanassche@wdc.com>
+Benjamin Marzinski <bmarzins@redhat.com> <bmarzin@redhat.com>
+Benjamin Marzinski <bmarzins@redhat.com> <bmarzins@sourceware.org>
+Benjamin Marzinski <bmarzins@redhat.com> bmarzins@sourceware.org <bmarzins@sourceware.org>
+Chongyun Wu <wucy11@chinatelecom.cn> Wuchongyun <wu.chongyun@h3c.com>
+Chongyun Wu <wucy11@chinatelecom.cn> <wu.chongyun@h3c.com>
+Christophe Varoqui <christophe.varoqui@opensvc.com> <christophe.varoqui@free.fr>
+Christophe Varoqui <christophe.varoqui@opensvc.com> <cvaroqui@cl039.(none)>
+Christophe Varoqui <christophe.varoqui@opensvc.com> <cvaroqui@hera.kernel.org>
+Christophe Varoqui <christophe.varoqui@opensvc.com> <cvaroqui@zezette.localdomain>
+Christophe Varoqui <christophe.varoqui@opensvc.com> root <root@potab.(none)>
+Christophe Varoqui <christophe.varoqui@opensvc.com> root <root@xa-s05.(none)>
+Christophe Varoqui <christophe.varoqui@opensvc.com> root <root@zezette.localdomain>
+Christophe Varoqui <christophe.varoqui@opensvc.com> <root@xa-s05.(none)>
+Hannes Reinecke <hare@suse.de> <hare@acerbis.suse.de>
+Hannes Reinecke <hare@suse.de> <hare@suse.com>
+Martin Wilck <mwilck@suse.com> <Martin.Wilck@suse.com>
+Martin Wilck <mwilck@suse.com> <mwilck@suse.de>
+wei huang <huang.wei56@zte.com.cn> wei.huang <huang.wei56@zte.com.cn>

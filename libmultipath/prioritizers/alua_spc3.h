@@ -14,6 +14,7 @@
  */
 #ifndef __SPC3_H__
 #define __SPC3_H__
+#include "../unaligned.h"
 
 /*=============================================================================
  * Definitions to support the standard inquiry command as defined in SPC-3.
@@ -177,7 +178,7 @@ struct vpd83_dscr {
 } __attribute__((packed));
 
 static inline int
-vpd83_dscr_istype(struct vpd83_dscr *d, unsigned char type)
+vpd83_dscr_istype(const struct vpd83_dscr *d, unsigned char type)
 {
 	return ((d->b1 & 7) == type);
 }
@@ -190,6 +191,38 @@ struct vpd83_data {
 	struct vpd83_dscr	data[0];
 } __attribute__((packed));
 
+#define VPD_BUFLEN 4096
+
+/* Returns the max byte offset in the VPD page from the start of the page */
+static inline unsigned int vpd83_max_offs(const struct vpd83_data *p)
+{
+	uint16_t len = get_unaligned_be16(p->length) + 4;
+
+	return len <= VPD_BUFLEN ? len : VPD_BUFLEN;
+}
+
+static inline bool
+vpd83_descr_fits(const struct vpd83_dscr *d, const struct vpd83_data *p)
+{
+	ptrdiff_t max_offs = vpd83_max_offs(p);
+	ptrdiff_t offs = ((const char *)d - (const char *)p);
+
+	/* make sure we can read d->length */
+	if (offs < 0 || offs > max_offs - 4)
+		return false;
+
+	offs += d->length + 4;
+	return offs <= max_offs;
+}
+
+static inline const struct vpd83_dscr *
+vpd83_next_dscr(const struct vpd83_dscr *d, const struct vpd83_data *p)
+{
+	ptrdiff_t offs = ((const char *)d - (const char *)p) + d->length + 4;
+
+	return (const struct vpd83_dscr *)((const char *)p + offs);
+}
+
 /*-----------------------------------------------------------------------------
  * This macro should be used to walk through all identification descriptors
  * defined in the code page 0x83.
@@ -199,11 +232,9 @@ struct vpd83_data {
  */
 #define FOR_EACH_VPD83_DSCR(p, d) \
 		for( \
-			d = p->data; \
-			(((char *) d) - ((char *) p)) < \
-			get_unaligned_be16(p->length); \
-			d = (struct vpd83_dscr *) \
-				((char *) d + d->length + 4) \
+			d = p->data;		  \
+			vpd83_descr_fits(d, p);	  \
+			d = vpd83_next_dscr(d, p) \
 		)
 
 /*=============================================================================

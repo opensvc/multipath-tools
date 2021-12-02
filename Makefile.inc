@@ -79,6 +79,7 @@ GZIP		= gzip -9 -c
 RM		= rm -f
 LN		= ln -sf
 INSTALL_PROGRAM	= install
+NV_VERSION_SCRIPT = $(VERSION_SCRIPT:%.version=%-nv.version)
 
 # $(call TEST_CC_OPTION,option,fallback)
 # Test if the C compiler supports the option.
@@ -140,3 +141,9 @@ check_file = $(shell \
 %.o:	%.c
 	@echo building $@ because of $?
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+%.abi:  %.so.0
+	abidw $< >$@
+
+%.abi:  %.so
+	abidw $< >$@

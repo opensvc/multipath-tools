@@ -1,6 +1,9 @@
 [Unit]
 Description=multipathd control socket
 DefaultDependencies=no
+ConditionKernelCommandLine=!nompath
+ConditionKernelCommandLine=!multipath=off
+ConditionVirtualization=!container
 Before=sockets.target
 
 [Socket]

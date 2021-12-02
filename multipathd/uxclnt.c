@@ -20,7 +20,6 @@
 
 #include "mpath_cmd.h"
 #include "uxsock.h"
-#include "memory.h"
 #include "defaults.h"
 
 #include "vector.h"
@@ -99,7 +98,7 @@ static void process(int fd, unsigned int timeout)
 			add_history(line);
 
 		free(line);
-		FREE(reply);
+		free(reply);
 	}
 }
 
@@ -122,7 +121,7 @@ static int process_req(int fd, char * inbuf, unsigned int timeout)
 	} else {
 		printf("%s", reply);
 		ret = (strcmp(reply, "fail\n") == 0);
-		FREE(reply);
+		free(reply);
 		return ret;
 	}
 }

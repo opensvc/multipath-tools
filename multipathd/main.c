@@ -38,7 +38,6 @@
  */
 #include "parser.h"
 #include "vector.h"
-#include "memory.h"
 #include "config.h"
 #include "util.h"
 #include "hwtable.h"
@@ -127,6 +126,8 @@ static int poll_dmevents = 1;
 #endif
 /* Don't access this variable without holding config_lock */
 static volatile enum daemon_status running_state = DAEMON_INIT;
+/* Don't access this variable without holding config_lock */
+static bool __delayed_reconfig;
 pid_t daemon_pid;
 static pthread_mutex_t config_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t config_cond;
@@ -148,6 +149,16 @@ static inline enum daemon_status get_running_state(void)
 int should_exit(void)
 {
 	return get_running_state() == DAEMON_SHUTDOWN;
+}
+
+static bool get_delayed_reconfig(void)
+{
+	bool val;
+
+	pthread_mutex_lock(&config_lock);
+	val = __delayed_reconfig;
+	pthread_mutex_unlock(&config_lock);
+	return val;
 }
 
 /*
@@ -210,14 +221,21 @@ static void do_sd_notify(enum daemon_status old_state,
 	if (msg && !safe_sprintf(notify_msg, "STATUS=%s", msg))
 		sd_notify(0, notify_msg);
 
-	if (new_state == DAEMON_SHUTDOWN)
+	if (new_state == DAEMON_SHUTDOWN) {
+		/* Tell systemd that we're not RELOADING any more */
+		if (old_state == DAEMON_CONFIGURE && startup_done)
+			sd_notify(0, "READY=1");
 		sd_notify(0, "STOPPING=1");
-	else if (new_state == DAEMON_IDLE && old_state == DAEMON_CONFIGURE) {
+	} else if (new_state == DAEMON_IDLE && old_state == DAEMON_CONFIGURE) {
 		sd_notify(0, "READY=1");
 		startup_done = true;
 	} else if (new_state == DAEMON_CONFIGURE && startup_done)
 		sd_notify(0, "RELOADING=1");
 }
+#else
+static void do_sd_notify(__attribute__((unused)) enum daemon_status old_state,
+			 __attribute__((unused)) enum daemon_status new_state)
+{}
 #endif
 
 static void config_cleanup(__attribute__((unused)) void *arg)
@@ -263,19 +281,53 @@ enum daemon_status wait_for_state_change_if(enum daemon_status oldstate,
 	return st;
 }
 
+/* Don't access this variable without holding config_lock */
+static enum force_reload_types reconfigure_pending = FORCE_RELOAD_NONE;
+/* Only set while changing to DAEMON_CONFIGURE, and only access while
+ * reconfiguring or scheduling a delayed reconfig in DAEMON_CONFIGURE */
+static volatile enum force_reload_types reload_type = FORCE_RELOAD_NONE;
+
+static void enable_delayed_reconfig(void)
+{
+	pthread_mutex_lock(&config_lock);
+	reconfigure_pending = reload_type;
+	__delayed_reconfig = true;
+	pthread_mutex_unlock(&config_lock);
+}
+
 /* must be called with config_lock held */
 static void __post_config_state(enum daemon_status state)
 {
 	if (state != running_state && running_state != DAEMON_SHUTDOWN) {
-#ifdef USE_SYSTEMD
 		enum daemon_status old_state = running_state;
-#endif
 
+		/*
+		 * Handle a pending reconfigure request.
+		 * DAEMON_IDLE is set from child() after reconfigure(),
+		 * or from checkerloop() after completing checkers.
+		 * In either case, child() will see DAEMON_CONFIGURE
+		 * again and start another reconfigure cycle.
+		 */
+		if (reconfigure_pending != FORCE_RELOAD_NONE &&
+		    state == DAEMON_IDLE &&
+		    (old_state == DAEMON_CONFIGURE ||
+		     old_state == DAEMON_RUNNING)) {
+			/*
+			 * notify systemd of transient idle state, lest systemd
+			 * thinks the reload lasts forever.
+			 */
+			do_sd_notify(old_state, DAEMON_IDLE);
+			old_state = DAEMON_IDLE;
+			state = DAEMON_CONFIGURE;
+		}
+		if (state == DAEMON_CONFIGURE) {
+			reload_type = (reconfigure_pending == FORCE_RELOAD_YES) ? FORCE_RELOAD_YES : FORCE_RELOAD_WEAK;
+			reconfigure_pending = FORCE_RELOAD_NONE;
+			__delayed_reconfig = false;
+		}
 		running_state = state;
 		pthread_cond_broadcast(&config_cond);
-#ifdef USE_SYSTEMD
 		do_sd_notify(old_state, state);
-#endif
 	}
 }
 
@@ -287,24 +339,54 @@ void post_config_state(enum daemon_status state)
 	pthread_cleanup_pop(1);
 }
 
-int set_config_state(enum daemon_status state)
+void schedule_reconfigure(enum force_reload_types requested_type)
+{
+	pthread_mutex_lock(&config_lock);
+	pthread_cleanup_push(config_cleanup, NULL);
+	enum force_reload_types type;
+
+	type = (reconfigure_pending == FORCE_RELOAD_YES ||
+		requested_type == FORCE_RELOAD_YES) ?
+	       FORCE_RELOAD_YES : FORCE_RELOAD_WEAK;
+	switch (running_state)
+	{
+	case DAEMON_SHUTDOWN:
+		break;
+	case DAEMON_IDLE:
+		reconfigure_pending = type;
+		__post_config_state(DAEMON_CONFIGURE);
+		break;
+	case DAEMON_CONFIGURE:
+	case DAEMON_RUNNING:
+		reconfigure_pending = type;
+		break;
+	default:
+		break;
+	}
+	pthread_cleanup_pop(1);
+}
+
+static enum daemon_status set_config_state(enum daemon_status state)
 {
 	int rc = 0;
+	enum daemon_status st;
 
 	pthread_cleanup_push(config_cleanup, NULL);
 	pthread_mutex_lock(&config_lock);
-	if (running_state != state) {
 
-		if (running_state == DAEMON_SHUTDOWN)
-			rc = EINVAL;
-		else
-			rc = __wait_for_state_change(
-				running_state != DAEMON_IDLE, 1000);
-		if (!rc)
-			__post_config_state(state);
+	while (rc == 0 &&
+	       running_state != state &&
+	       running_state != DAEMON_SHUTDOWN &&
+	       running_state != DAEMON_IDLE) {
+		rc = pthread_cond_wait(&config_cond, &config_lock);
 	}
+
+	if (rc == 0 && running_state == DAEMON_IDLE && state != DAEMON_IDLE)
+		__post_config_state(state);
+	st = running_state;
+
 	pthread_cleanup_pop(1);
-	return rc;
+	return st;
 }
 
 struct config *get_multipath_config(void)
@@ -490,6 +572,8 @@ update_map (struct multipath *mpp, struct vectors *vecs, int new_map)
 {
 	int retries = 3;
 	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
+	struct path *pp;
+	int i;
 
 retry:
 	condlog(4, "%s: updating new map", mpp->alias);
@@ -501,6 +585,15 @@ retry:
 	}
 	verify_paths(mpp);
 	mpp->action = ACT_RELOAD;
+
+	if (mpp->prflag) {
+		vector_foreach_slot(mpp->paths, pp, i) {
+			if ((pp->state == PATH_UP)  || (pp->state == PATH_GHOST)) {
+				/* persistent reseravtion check*/
+				mpath_pr_event_handle(pp);
+			}
+		}
+	}
 
 	if (setup_map(mpp, &params, vecs)) {
 		condlog(0, "%s: failed to setup new map in update", mpp->alias);
@@ -541,11 +634,11 @@ add_map_without_path (struct vectors *vecs, const char *alias)
 	if (!mpp)
 		return NULL;
 	if (!alias) {
-		FREE(mpp);
+		free(mpp);
 		return NULL;
 	}
 
-	mpp->alias = STRDUP(alias);
+	mpp->alias = strdup(alias);
 
 	if (dm_get_info(mpp->alias, &mpp->dmi)) {
 		condlog(3, "%s: cannot access table", mpp->alias);
@@ -691,7 +784,7 @@ uev_add_map (struct uevent * uev, struct vectors * vecs)
 	pthread_testcancel();
 	rc = ev_add_map(uev->kernel, alias, vecs);
 	lock_cleanup_pop(vecs->lock);
-	FREE(alias);
+	free(alias);
 	return rc;
 }
 
@@ -704,7 +797,7 @@ int
 ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 {
 	struct multipath * mpp;
-	int delayed_reconfig, reassign_maps;
+	int reassign_maps;
 	struct config *conf;
 
 	if (dm_is_mpath(alias) != 1) {
@@ -723,15 +816,14 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 				return 1;
 		}
 		conf = get_multipath_config();
-		delayed_reconfig = conf->delayed_reconfig;
 		reassign_maps = conf->reassign_maps;
 		put_multipath_config(conf);
 		if (mpp->wait_for_udev) {
 			mpp->wait_for_udev = 0;
-			if (delayed_reconfig &&
+			if (get_delayed_reconfig() &&
 			    !need_to_delay_reconfig(vecs)) {
 				condlog(2, "reconfigure (delayed)");
-				set_config_state(DAEMON_CONFIGURE);
+				schedule_reconfigure(FORCE_RELOAD_WEAK);
 				return 0;
 			}
 		}
@@ -797,7 +889,7 @@ uev_remove_map (struct uevent * uev, struct vectors * vecs)
 	remove_map_and_stop_waiter(mpp, vecs);
 out:
 	lock_cleanup_pop(vecs->lock);
-	FREE(alias);
+	free(alias);
 	return 0;
 }
 
@@ -884,12 +976,19 @@ check_path_wwid_change(struct path *pp)
 	return false;
 }
 
+/*
+ * uev_add_path can call uev_update_path, and uev_update_path can call
+ * uev_add_path
+ */
+static int uev_update_path (struct uevent *uev, struct vectors * vecs);
+
 static int
 uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 {
 	struct path *pp;
 	int ret = 0, i;
 	struct config *conf;
+	bool partial_init = false;
 
 	condlog(3, "%s: add path (uevent)", uev->kernel);
 	if (strstr(uev->kernel, "..") != NULL) {
@@ -908,7 +1007,10 @@ uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 		int r;
 		struct multipath *prev_mpp = NULL;
 
-		if (pp->initialized == INIT_REMOVED) {
+		if (pp->initialized == INIT_PARTIAL) {
+			partial_init = true;
+			goto out;
+		} else if (pp->initialized == INIT_REMOVED) {
 			condlog(3, "%s: re-adding removed path", pp->dev);
 			pp->initialized = INIT_NEW;
 			prev_mpp = pp->mpp;
@@ -1018,6 +1120,8 @@ uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 	}
 out:
 	lock_cleanup_pop(vecs->lock);
+	if (partial_init)
+		return uev_update_path(uev, vecs);
 	return ret;
 }
 
@@ -1313,6 +1417,28 @@ fail:
 	return REMOVE_PATH_MAP_ERROR;
 }
 
+int
+finish_path_init(struct path *pp, struct vectors * vecs)
+{
+	int r;
+	struct config *conf;
+
+	if (pp->udev && pp->uid_attribute && *pp->uid_attribute &&
+	    !udev_device_get_is_initialized(pp->udev))
+		return 0;
+	conf = get_multipath_config();
+	pthread_cleanup_push(put_multipath_config, conf);
+	r = pathinfo(pp, conf, DI_ALL|DI_BLACKLIST);
+	pthread_cleanup_pop(1);
+
+	if (r == PATHINFO_OK)
+		return 0;
+
+	condlog(0, "%s: error fully initializing path, removing", pp->dev);
+	ev_remove_path(pp, vecs, 1);
+	return -1;
+}
+
 static int
 uev_update_path (struct uevent *uev, struct vectors * vecs)
 {
@@ -1351,7 +1477,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 		}
 		/* Don't deal with other types of failed initialization
 		 * now. check_path will handle it */
-		if (!strlen(pp->wwid))
+		if (!strlen(pp->wwid) && pp->initialized != INIT_PARTIAL)
 			goto out;
 
 		strcpy(wwid, pp->wwid);
@@ -1359,12 +1485,20 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 
 		if (rc != 0)
 			strcpy(pp->wwid, wwid);
-		else if (strncmp(wwid, pp->wwid, WWID_SIZE) != 0) {
+		else if (strlen(wwid) &&
+			 strncmp(wwid, pp->wwid, WWID_SIZE) != 0) {
 			condlog(0, "%s: path wwid changed from '%s' to '%s'",
 				uev->kernel, wwid, pp->wwid);
 			ev_remove_path(pp, vecs, 1);
 			needs_reinit = 1;
 			goto out;
+		} else if (pp->initialized == INIT_PARTIAL) {
+			udev_device_unref(pp->udev);
+			pp->udev = udev_device_ref(uev->udev);
+			if (finish_path_init(pp, vecs) < 0) {
+				retval = 1;
+				goto out;
+			}
 		} else {
 			udev_device_unref(pp->udev);
 			pp->udev = udev_device_ref(uev->udev);
@@ -1415,6 +1549,7 @@ out:
 
 		condlog(0, "%s: spurious uevent, path not found", uev->kernel);
 	}
+	/* pp->initalized must not be INIT_PARTIAL if needs_reinit is set */
 	if (needs_reinit)
 		retval = uev_add_path(uev, vecs, 1);
 	return retval;
@@ -1450,11 +1585,11 @@ uev_pathfail_check(struct uevent *uev, struct vectors *vecs)
 				pp->dev);
 out_lock:
 	lock_cleanup_pop(vecs->lock);
-	FREE(devt);
-	FREE(action);
+	free(devt);
+	free(action);
 	return r;
 out:
-	FREE(action);
+	free(action);
 	return 1;
 }
 
@@ -1474,48 +1609,6 @@ map_discovery (struct vectors * vecs)
 		}
 
 	return 0;
-}
-
-int
-uxsock_trigger (char * str, char ** reply, int * len, bool is_root,
-		void * trigger_data)
-{
-	struct vectors * vecs;
-	int r;
-
-	*reply = NULL;
-	*len = 0;
-	vecs = (struct vectors *)trigger_data;
-
-	if ((str != NULL) && (is_root == false) &&
-	    (strncmp(str, "list", strlen("list")) != 0) &&
-	    (strncmp(str, "show", strlen("show")) != 0)) {
-		*reply = STRDUP("permission deny: need to be root");
-		if (*reply)
-			*len = strlen(*reply) + 1;
-		return 1;
-	}
-
-	r = parse_cmd(str, reply, len, vecs, uxsock_timeout / 1000);
-
-	if (r > 0) {
-		if (r == ETIMEDOUT)
-			*reply = STRDUP("timeout\n");
-		else
-			*reply = STRDUP("fail\n");
-		if (*reply)
-			*len = strlen(*reply) + 1;
-		r = 1;
-	}
-	else if (!r && *len == 0) {
-		*reply = STRDUP("ok\n");
-		if (*reply)
-			*len = strlen(*reply) + 1;
-		r = 0;
-	}
-	/* else if (r < 0) leave *reply alone */
-
-	return r;
 }
 
 int
@@ -1643,65 +1736,18 @@ uxlsnrloop (void * ap)
 	/* Tell main thread that thread has started */
 	post_config_state(DAEMON_CONFIGURE);
 
-	set_handler_callback(LIST+PATHS, cli_list_paths);
-	set_handler_callback(LIST+PATHS+FMT, cli_list_paths_fmt);
-	set_handler_callback(LIST+PATHS+RAW+FMT, cli_list_paths_raw);
-	set_handler_callback(LIST+PATH, cli_list_path);
-	set_handler_callback(LIST+MAPS, cli_list_maps);
-	set_handler_callback(LIST+STATUS, cli_list_status);
-	set_unlocked_handler_callback(LIST+DAEMON, cli_list_daemon);
-	set_handler_callback(LIST+MAPS+STATUS, cli_list_maps_status);
-	set_handler_callback(LIST+MAPS+STATS, cli_list_maps_stats);
-	set_handler_callback(LIST+MAPS+FMT, cli_list_maps_fmt);
-	set_handler_callback(LIST+MAPS+RAW+FMT, cli_list_maps_raw);
-	set_handler_callback(LIST+MAPS+TOPOLOGY, cli_list_maps_topology);
-	set_handler_callback(LIST+TOPOLOGY, cli_list_maps_topology);
-	set_handler_callback(LIST+MAPS+JSON, cli_list_maps_json);
-	set_handler_callback(LIST+MAP+TOPOLOGY, cli_list_map_topology);
-	set_handler_callback(LIST+MAP+FMT, cli_list_map_fmt);
-	set_handler_callback(LIST+MAP+RAW+FMT, cli_list_map_fmt);
-	set_handler_callback(LIST+MAP+JSON, cli_list_map_json);
-	set_handler_callback(LIST+CONFIG+LOCAL, cli_list_config_local);
-	set_handler_callback(LIST+CONFIG, cli_list_config);
-	set_handler_callback(LIST+BLACKLIST, cli_list_blacklist);
-	set_handler_callback(LIST+DEVICES, cli_list_devices);
-	set_handler_callback(LIST+WILDCARDS, cli_list_wildcards);
-	set_handler_callback(RESET+MAPS+STATS, cli_reset_maps_stats);
-	set_handler_callback(RESET+MAP+STATS, cli_reset_map_stats);
-	set_handler_callback(ADD+PATH, cli_add_path);
-	set_handler_callback(DEL+PATH, cli_del_path);
-	set_handler_callback(ADD+MAP, cli_add_map);
-	set_handler_callback(DEL+MAP, cli_del_map);
-	set_handler_callback(DEL+MAPS, cli_del_maps);
-	set_handler_callback(SWITCH+MAP+GROUP, cli_switch_group);
-	set_unlocked_handler_callback(RECONFIGURE, cli_reconfigure);
-	set_handler_callback(SUSPEND+MAP, cli_suspend);
-	set_handler_callback(RESUME+MAP, cli_resume);
-	set_handler_callback(RESIZE+MAP, cli_resize);
-	set_handler_callback(RELOAD+MAP, cli_reload);
-	set_handler_callback(RESET+MAP, cli_reassign);
-	set_handler_callback(REINSTATE+PATH, cli_reinstate);
-	set_handler_callback(FAIL+PATH, cli_fail);
-	set_handler_callback(DISABLEQ+MAP, cli_disable_queueing);
-	set_handler_callback(RESTOREQ+MAP, cli_restore_queueing);
-	set_handler_callback(DISABLEQ+MAPS, cli_disable_all_queueing);
-	set_handler_callback(RESTOREQ+MAPS, cli_restore_all_queueing);
-	set_unlocked_handler_callback(QUIT, cli_quit);
-	set_unlocked_handler_callback(SHUTDOWN, cli_shutdown);
-	set_handler_callback(GETPRSTATUS+MAP, cli_getprstatus);
-	set_handler_callback(SETPRSTATUS+MAP, cli_setprstatus);
-	set_handler_callback(UNSETPRSTATUS+MAP, cli_unsetprstatus);
-	set_handler_callback(FORCEQ+DAEMON, cli_force_no_daemon_q);
-	set_handler_callback(RESTOREQ+DAEMON, cli_restore_no_daemon_q);
-	set_handler_callback(GETPRKEY+MAP, cli_getprkey);
-	set_handler_callback(SETPRKEY+MAP+KEY, cli_setprkey);
-	set_handler_callback(UNSETPRKEY+MAP, cli_unsetprkey);
-	set_handler_callback(SETMARGINAL+PATH, cli_set_marginal);
-	set_handler_callback(UNSETMARGINAL+PATH, cli_unset_marginal);
-	set_handler_callback(UNSETMARGINAL+MAP, cli_unset_all_marginal);
-
+	init_handler_callbacks();
 	umask(077);
-	uxsock_listen(&uxsock_trigger, ux_sock, ap);
+
+	/*
+	 * Wait for initial reconfiguration to finish, while
+	 * hadling signals
+	 */
+	while (wait_for_state_change_if(DAEMON_CONFIGURE, 50)
+	       == DAEMON_CONFIGURE)
+		handle_signals(false);
+
+	uxsock_listen(ux_sock, ap);
 
 out_sock:
 	pthread_cleanup_pop(1); /* uxsock_cleanup */
@@ -1819,8 +1865,7 @@ missing_uev_wait_tick(struct vectors *vecs)
 {
 	struct multipath * mpp;
 	unsigned int i;
-	int timed_out = 0, delayed_reconfig;
-	struct config *conf;
+	int timed_out = 0;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		if (mpp->wait_for_udev && --mpp->uev_wait_tick <= 0) {
@@ -1836,13 +1881,10 @@ missing_uev_wait_tick(struct vectors *vecs)
 		}
 	}
 
-	conf = get_multipath_config();
-	delayed_reconfig = conf->delayed_reconfig;
-	put_multipath_config(conf);
-	if (timed_out && delayed_reconfig &&
+	if (timed_out && get_delayed_reconfig() &&
 	    !need_to_delay_reconfig(vecs)) {
 		condlog(2, "reconfigure (delayed)");
-		set_config_state(DAEMON_CONFIGURE);
+		schedule_reconfigure(FORCE_RELOAD_WEAK);
 	}
 }
 
@@ -1902,6 +1944,25 @@ retry_count_tick(vector mpvec)
 				dm_queue_if_no_path(mpp->alias, 0);
 				condlog(2, "%s: Disable queueing", mpp->alias);
 			}
+		}
+	}
+}
+
+static void
+partial_retrigger_tick(vector pathvec)
+{
+	struct path *pp;
+	unsigned int i;
+
+	vector_foreach_slot (pathvec, pp, i) {
+		if (pp->initialized == INIT_PARTIAL && pp->udev &&
+		    pp->partial_retrigger_delay > 0 &&
+		    --pp->partial_retrigger_delay == 0) {
+			const char *msg = udev_device_get_is_initialized(pp->udev) ?
+					  "change" : "add";
+
+			sysfs_attr_set_value(pp->udev, "uevent", msg,
+					     strlen(msg));
 		}
 	}
 }
@@ -2117,7 +2178,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	int marginal_pathgroups, marginal_changed = 0;
 	int ret;
 
-	if (((pp->initialized == INIT_OK ||
+	if (((pp->initialized == INIT_OK || pp->initialized == INIT_PARTIAL ||
 	      pp->initialized == INIT_REQUESTED_UDEV) && !pp->mpp) ||
 	    pp->initialized == INIT_REMOVED)
 		return 0;
@@ -2481,6 +2542,10 @@ checkerloop (void *ap)
 		int num_paths = 0, strict_timing, rc = 0;
 		unsigned int ticks = 0;
 
+		if (set_config_state(DAEMON_RUNNING) != DAEMON_RUNNING)
+			/* daemon shutdown */
+			break;
+
 		get_monotonic_time(&start_time);
 		if (start_time.tv_sec && last_time.tv_sec) {
 			timespecsub(&start_time, &last_time, &diff_time);
@@ -2496,13 +2561,6 @@ checkerloop (void *ap)
 		if (use_watchdog)
 			sd_notify(0, "WATCHDOG=1");
 #endif
-		rc = set_config_state(DAEMON_RUNNING);
-		if (rc == ETIMEDOUT) {
-			condlog(4, "timeout waiting for DAEMON_IDLE");
-			continue;
-		} else if (rc == EINVAL)
-			/* daemon shutdown */
-			break;
 
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(&vecs->lock);
@@ -2527,6 +2585,7 @@ checkerloop (void *ap)
 		retry_count_tick(vecs->mpvec);
 		missing_uev_wait_tick(vecs);
 		ghost_delay_tick(vecs);
+		partial_retrigger_tick(vecs->pathvec);
 		lock_cleanup_pop(vecs->lock);
 
 		if (count)
@@ -2610,7 +2669,6 @@ configure (struct vectors * vecs)
 	vector mpvec;
 	int i, ret;
 	struct config *conf;
-	static int force_reload = FORCE_RELOAD_WEAK;
 
 	if (!vecs->pathvec && !(vecs->pathvec = vector_alloc())) {
 		condlog(0, "couldn't allocate path vec in configure");
@@ -2658,15 +2716,7 @@ configure (struct vectors * vecs)
 	if (should_exit())
 		goto fail;
 
-	/*
-	 * create new set of maps & push changed ones into dm
-	 * In the first call, use FORCE_RELOAD_WEAK to avoid making
-	 * superfluous ACT_RELOAD ioctls. Later calls are done
-	 * with FORCE_RELOAD_YES.
-	 */
-	ret = coalesce_paths(vecs, mpvec, NULL, force_reload, CMD_NONE);
-	if (force_reload == FORCE_RELOAD_WEAK)
-		force_reload = FORCE_RELOAD_YES;
+	ret = coalesce_paths(vecs, mpvec, NULL, reload_type, CMD_NONE);
 	if (ret != CP_OK) {
 		condlog(0, "configure failed while coalescing paths");
 		goto fail;
@@ -2769,7 +2819,9 @@ reconfigure (struct vectors * vecs)
 	reset_checker_classes();
 	if (bindings_read_only)
 		conf->bindings_read_only = bindings_read_only;
-	check_alias_settings(conf);
+
+	if (check_alias_settings(conf))
+		return 1;
 
 	uxsock_timeout = conf->uxsock_timeout;
 
@@ -2789,7 +2841,7 @@ init_vecs (void)
 {
 	struct vectors * vecs;
 
-	vecs = (struct vectors *)MALLOC(sizeof(struct vectors));
+	vecs = (struct vectors *)calloc(1, sizeof(struct vectors));
 
 	if (!vecs)
 		return NULL;
@@ -2830,7 +2882,7 @@ handle_signals(bool nonfatal)
 		return;
 	if (reconfig_sig) {
 		condlog(2, "reconfigure (signal)");
-		set_config_state(DAEMON_CONFIGURE);
+		schedule_reconfigure(FORCE_RELOAD_WEAK);
 	}
 	if (log_reset_sig) {
 		condlog(2, "reset log (signal)");
@@ -2900,51 +2952,28 @@ setscheduler (void)
 	return;
 }
 
-static void
-set_oom_adj (void)
+static void set_oom_adj(void)
 {
-#ifdef OOM_SCORE_ADJ_MIN
-	int retry = 1;
-	char *file = "/proc/self/oom_score_adj";
-	int score = OOM_SCORE_ADJ_MIN;
-#else
-	int retry = 0;
-	char *file = "/proc/self/oom_adj";
-	int score = OOM_ADJUST_MIN;
-#endif
 	FILE *fp;
-	struct stat st;
-	char *envp;
 
-	envp = getenv("OOMScoreAdjust");
-	if (envp) {
+	if (getenv("OOMScoreAdjust")) {
 		condlog(3, "Using systemd provided OOMScoreAdjust");
 		return;
 	}
-	do {
-		if (stat(file, &st) == 0){
-			fp = fopen(file, "w");
-			if (!fp) {
-				condlog(0, "couldn't fopen %s : %s", file,
-					strerror(errno));
-				return;
-			}
-			fprintf(fp, "%i", score);
-			fclose(fp);
-			return;
-		}
-		if (errno != ENOENT) {
-			condlog(0, "couldn't stat %s : %s", file,
-				strerror(errno));
-			return;
-		}
-#ifdef OOM_ADJUST_MIN
-		file = "/proc/self/oom_adj";
-		score = OOM_ADJUST_MIN;
-#else
-		retry = 0;
+#ifdef OOM_SCORE_ADJ_MIN
+	fp = fopen("/proc/self/oom_score_adj", "w");
+	if (fp) {
+		fprintf(fp, "%i", OOM_SCORE_ADJ_MIN);
+		fclose(fp);
+		return;
+	}
 #endif
-	} while (retry--);
+	fp = fopen("/proc/self/oom_adj", "w");
+	if (fp) {
+		fprintf(fp, "%i", OOM_ADJUST_MIN);
+		fclose(fp);
+		return;
+	}
 	condlog(0, "couldn't adjust oom score");
 }
 
@@ -3001,7 +3030,8 @@ static void cleanup_vecs(void)
 	cleanup_maps(gvecs);
 	cleanup_paths(gvecs);
 	pthread_mutex_destroy(&gvecs->lock.mutex);
-	FREE(gvecs);
+	free(gvecs);
+	gvecs = NULL;
 }
 
 static void cleanup_threads(void)
@@ -3099,10 +3129,6 @@ static void cleanup_child(void)
 		log_thread_stop();
 
 	cleanup_conf();
-
-#ifdef _DEBUG_
-	dbg_free_final(NULL);
-#endif
 }
 
 static int sd_notify_exit(int err)
@@ -3285,18 +3311,22 @@ child (__attribute__((unused)) void *param)
 		if (state == DAEMON_SHUTDOWN)
 			break;
 		if (state == DAEMON_CONFIGURE) {
+			int rc = 0;
+
 			pthread_cleanup_push(cleanup_lock, &vecs->lock);
 			lock(&vecs->lock);
 			pthread_testcancel();
-			if (!need_to_delay_reconfig(vecs)) {
-				reconfigure(vecs);
-			} else {
-				conf = get_multipath_config();
-				conf->delayed_reconfig = 1;
-				put_multipath_config(conf);
-			}
+			if (!need_to_delay_reconfig(vecs))
+				rc = reconfigure(vecs);
+			else
+				enable_delayed_reconfig();
 			lock_cleanup_pop(vecs->lock);
-			post_config_state(DAEMON_IDLE);
+			if (!rc)
+				post_config_state(DAEMON_IDLE);
+			else {
+				condlog(0, "fatal error applying configuration - aborting");
+				exit_daemon();
+			}
 		}
 	}
 
@@ -3307,11 +3337,18 @@ failed:
 	return sd_notify_exit(exit_code);
 }
 
+static void cleanup_close(int *pfd)
+{
+	if (*pfd != -1 && *pfd != STDIN_FILENO && *pfd != STDOUT_FILENO &&
+	    *pfd != STDERR_FILENO)
+		close(*pfd);
+}
+
 static int
 daemonize(void)
 {
 	int pid;
-	int dev_null_fd;
+	int dev_null_fd __attribute__((cleanup(cleanup_close))) = -1;
 
 	if( (pid = fork()) < 0){
 		fprintf(stderr, "Failed first fork : %s\n", strerror(errno));
@@ -3337,25 +3374,21 @@ daemonize(void)
 		_exit(0);
 	}
 
-	close(STDIN_FILENO);
-	if (dup(dev_null_fd) < 0) {
-		fprintf(stderr, "cannot dup /dev/null to stdin : %s\n",
+	if (dup2(dev_null_fd, STDIN_FILENO) < 0) {
+		fprintf(stderr, "cannot dup2 /dev/null to stdin : %s\n",
 			strerror(errno));
 		_exit(0);
 	}
-	close(STDOUT_FILENO);
-	if (dup(dev_null_fd) < 0) {
-		fprintf(stderr, "cannot dup /dev/null to stdout : %s\n",
+	if (dup2(dev_null_fd, STDOUT_FILENO) < 0) {
+		fprintf(stderr, "cannot dup2 /dev/null to stdout : %s\n",
 			strerror(errno));
 		_exit(0);
 	}
-	close(STDERR_FILENO);
-	if (dup(dev_null_fd) < 0) {
+	if (dup2(dev_null_fd, STDERR_FILENO) < 0) {
 		fprintf(stderr, "cannot dup /dev/null to stderr : %s\n",
 			strerror(errno));
 		_exit(0);
 	}
-	close(dev_null_fd);
 	daemon_pid = getpid();
 	return 0;
 }
@@ -3378,11 +3411,6 @@ main (int argc, char *argv[])
 		"Suppress complaints about this scalar variable");
 
 	logsink = LOGSINK_SYSLOG;
-
-	if (getuid() != 0) {
-		fprintf(stderr, "need to be root\n");
-		exit(1);
-	}
 
 	/* make sure we don't lock any path */
 	if (chdir("/") < 0)
@@ -3470,6 +3498,11 @@ main (int argc, char *argv[])
 		return err;
 	}
 
+	if (getuid() != 0) {
+		fprintf(stderr, "need to be root\n");
+		exit(1);
+	}
+
 	if (foreground) {
 		if (!isatty(fileno(stdout)))
 			setbuf(stdout, NULL);
@@ -3544,7 +3577,7 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 		goto out;
 	}
 
-	param = (struct prout_param_descriptor *)MALLOC(sizeof(struct prout_param_descriptor));
+	param = (struct prout_param_descriptor *)calloc(1, sizeof(struct prout_param_descriptor));
 	if (!param)
 		goto out;
 

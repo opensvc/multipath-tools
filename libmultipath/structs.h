@@ -200,6 +200,13 @@ enum initialized_states {
 	 * mapped by some multipath map because of map reload failure.
 	 */
 	INIT_REMOVED,
+	/*
+	 * INIT_PARTIAL: paths added by update_pathvec_from_dm() will not
+	 * be fully initialized. This will be handled when an add or
+	 * change uevent is received.
+	 */
+	INIT_PARTIAL,
+	__INIT_LAST,
 };
 
 enum prkey_sources {
@@ -312,6 +319,7 @@ struct path {
 	int fd;
 	int initialized;
 	int retriggers;
+	int partial_retrigger_delay;
 	unsigned int path_failures;
 	time_t dis_reinstate_time;
 	int disable_reinstate;
@@ -355,6 +363,7 @@ struct multipath {
 	int retain_hwhandler;
 	int deferred_remove;
 	bool in_recovery;
+	bool need_reload;
 	int san_path_err_threshold;
 	int san_path_err_forget_rate;
 	int san_path_err_recovery_time;

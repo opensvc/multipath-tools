@@ -39,24 +39,6 @@
 #define LOOP_CTL_GET_FREE       0x4C82
 #endif
 
-static char *
-xstrdup (const char *s)
-{
-	char *t;
-
-	if (s == NULL)
-		return NULL;
-
-	t = strdup (s);
-
-	if (t == NULL) {
-		fprintf(stderr, "not enough memory");
-		exit(1);
-	}
-
-	return t;
-}
-
 #define SIZE(a) (sizeof(a)/sizeof(a[0]))
 
 char *find_loop_by_file(const char *filename)
@@ -157,51 +139,59 @@ char *find_loop_by_file(const char *filename)
 	return found;
 }
 
-char *find_unused_loop_device(void)
+static char *find_unused_loop_device(int mode, int *loop_fd)
 {
-	char dev[20], *next_loop_dev = NULL;
+	char dev[21];
 	int fd, next_loop = 0, somedev = 0, someloop = 0, loop_known = 0;
+	int next_loop_fd;
 	struct stat statbuf;
 	struct loop_info loopinfo;
 	FILE *procdev;
 
-	while (next_loop_dev == NULL) {
-		if (stat("/dev/loop-control", &statbuf) == 0 &&
-		    S_ISCHR(statbuf.st_mode)) {
-			int next_loop_fd;
+	next_loop_fd = open("/dev/loop-control", O_RDWR);
+	if (next_loop_fd < 0)
+		goto no_loop_fd;
 
-			next_loop_fd = open("/dev/loop-control", O_RDWR);
-			if (next_loop_fd < 0)
-				return NULL;
-			next_loop = ioctl(next_loop_fd, LOOP_CTL_GET_FREE);
-			close(next_loop_fd);
-			if (next_loop < 0)
-				return NULL;
-		}
+	if (!(fstat(next_loop_fd, &statbuf) == 0 && S_ISCHR(statbuf.st_mode)))
+		goto nothing_found;
+
+	for (;;) {
+		next_loop = ioctl(next_loop_fd, LOOP_CTL_GET_FREE);
+		if (next_loop < 0)
+			goto nothing_found;
 
 		sprintf(dev, "/dev/loop%d", next_loop);
 
-		fd = open (dev, O_RDONLY);
+		fd = open (dev, mode);
 		if (fd >= 0) {
 			if (fstat (fd, &statbuf) == 0 &&
 			    S_ISBLK(statbuf.st_mode)) {
 				somedev++;
 				if(ioctl (fd, LOOP_GET_STATUS, &loopinfo) == 0)
 					someloop++;		/* in use */
-				else if (errno == ENXIO)
-					next_loop_dev = xstrdup(dev);
+				else if (errno == ENXIO) {
+					char *name = strdup(dev);
+
+					if (name == NULL)
+						close(fd);
+					else
+						*loop_fd = fd;
+					close(next_loop_fd);
+					return name;
+				}
 
 			}
 			close (fd);
 
 			/* continue trying as long as devices exist */
-			continue;
-		}
-		break;
+		} else
+			break;
 	}
-	if (next_loop_dev)
-		return next_loop_dev;
 
+nothing_found:
+	close(next_loop_fd);
+
+no_loop_fd:
 	/* Nothing found. Why not? */
 	if ((procdev = fopen(PROC_DEVICES, "r")) != NULL) {
 		char line[100];
@@ -220,33 +210,33 @@ char *find_unused_loop_device(void)
 	}
 
 	if (!somedev)
-		fprintf(stderr, "mount: could not find any device /dev/loop#");
+		fprintf(stderr, "mount: could not find any device /dev/loop#\n");
 
 	else if (!someloop) {
 		if (loop_known == 1)
 			fprintf(stderr,
 				"mount: Could not find any loop device.\n"
-				"       Maybe /dev/loop# has a wrong major number?");
+				"       Maybe /dev/loop# has a wrong major number?\n");
 		else if (loop_known == -1)
 			fprintf(stderr,
 				"mount: Could not find any loop device, and, according to %s,\n"
 				"       this kernel does not know about the loop device.\n"
-				"       (If so, then recompile or `modprobe loop'.)",
+				"       (If so, then recompile or `modprobe loop'.)\n",
 				PROC_DEVICES);
 		else
 			fprintf(stderr,
 				"mount: Could not find any loop device. Maybe this kernel does not know\n"
 				"       about the loop device (then recompile or `modprobe loop'), or\n"
-				"       maybe /dev/loop# has the wrong major number?");
+				"       maybe /dev/loop# has the wrong major number?\n");
 	} else
-		fprintf(stderr, "mount: could not find any free loop device");
+		fprintf(stderr, "mount: could not find any free loop device\n");
 	return NULL;
 }
 
-int set_loop(const char *device, const char *file, int offset, int *loopro)
+int set_loop(char **device, const char *file, int offset, int *loopro)
 {
 	struct loop_info loopinfo;
-	int fd, ffd, mode;
+	int fd = -1, ret = 1, ffd, mode;
 
 	mode = (*loopro ? O_RDONLY : O_RDWR);
 
@@ -261,9 +251,9 @@ int set_loop(const char *device, const char *file, int offset, int *loopro)
 		}
 	}
 
-	if ((fd = open (device, mode)) < 0) {
+	*device = find_unused_loop_device(mode, &fd);
+	if (!*device) {
 		close(ffd);
-		perror (device);
 		return 1;
 	}
 
@@ -277,22 +267,20 @@ int set_loop(const char *device, const char *file, int offset, int *loopro)
 
 	if (ioctl(fd, LOOP_SET_FD, (void*)(uintptr_t)(ffd)) < 0) {
 		perror ("ioctl: LOOP_SET_FD");
-		close (fd);
-		close (ffd);
-		return 1;
+		goto out;
 	}
 
 	if (ioctl (fd, LOOP_SET_STATUS, &loopinfo) < 0) {
 		(void) ioctl (fd, LOOP_CLR_FD, 0);
 		perror ("ioctl: LOOP_SET_STATUS");
-		close (fd);
-		close (ffd);
-		return 1;
+		goto out;
 	}
+	ret = 0;
 
+out:
 	close (fd);
 	close (ffd);
-	return 0;
+	return ret;
 }
 
 int del_loop(const char *device)

@@ -7,7 +7,6 @@
 
 #include "nvme-lib.h"
 #include "checkers.h"
-#include "memory.h"
 #include "vector.h"
 #include "structs.h"
 #include "config.h"
@@ -255,7 +254,7 @@ int select_selector(struct config *conf, struct multipath * mp)
 	mp_set_conf(selector);
 	mp_set_default(selector, DEFAULT_SELECTOR);
 out:
-	mp->selector = STRDUP(mp->selector);
+	mp->selector = strdup(mp->selector);
 	condlog(3, "%s: path_selector = \"%s\" %s", mp->alias, mp->selector,
 		origin);
 	return 0;
@@ -303,7 +302,7 @@ int select_alias(struct config *conf, struct multipath * mp)
 	const char *origin = NULL;
 
 	if (mp->mpe && mp->mpe->alias) {
-		mp->alias = STRDUP(mp->mpe->alias);
+		mp->alias = strdup(mp->mpe->alias);
 		origin = multipaths_origin;
 		goto out;
 	}
@@ -329,7 +328,7 @@ int select_alias(struct config *conf, struct multipath * mp)
 	}
 out:
 	if (mp->alias == NULL) {
-		mp->alias = STRDUP(mp->wwid);
+		mp->alias = strdup(mp->wwid);
 		origin = "(setting: default to WWID)";
 	}
 	if (mp->alias)
@@ -399,7 +398,7 @@ int select_features(struct config *conf, struct multipath *mp)
 	mp_set_conf(features);
 	mp_set_default(features, DEFAULT_FEATURES);
 out:
-	mp->features = STRDUP(mp->features);
+	mp->features = strdup(mp->features);
 
 	reconcile_features_with_options(mp->alias, &mp->features,
 					&mp->no_path_retry,
@@ -477,7 +476,7 @@ out:
 		mp->hwhandler = DEFAULT_HWHANDLER;
 		origin = tpgs_origin;
 	}
-	mp->hwhandler = STRDUP(mp->hwhandler);
+	mp->hwhandler = strdup(mp->hwhandler);
 	condlog(3, "%s: hardware_handler = \"%s\" %s", mp->alias, mp->hwhandler,
 		origin);
 	return 0;
@@ -525,7 +524,7 @@ int select_checker(struct config *conf, struct path *pp)
 			ckr_name = RDAC;
 			goto out;
 		}
-		path_get_tpgs(pp);
+		(void)path_get_tpgs(pp);
 		if (pp->tpgs != TPGS_NONE && pp->tpgs != TPGS_UNDEF) {
 			ckr_name = TUR;
 			goto out;

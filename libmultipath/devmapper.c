@@ -21,7 +21,6 @@
 #include "vector.h"
 #include "structs.h"
 #include "debug.h"
-#include "memory.h"
 #include "devmapper.h"
 #include "sysfs.h"
 #include "config.h"
@@ -474,7 +473,7 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 		dm_task_set_ro(dmt);
 
 	if (task == DM_DEVICE_CREATE) {
-		prefixed_uuid = MALLOC(UUID_PREFIX_LEN +
+		prefixed_uuid = calloc(1, UUID_PREFIX_LEN +
 				       strlen(mpp->wwid) + 1);
 		if (!prefixed_uuid) {
 			condlog(0, "cannot create prefixed uuid : %s",
@@ -517,11 +516,13 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 			libmp_udev_wait(cookie);
 freeout:
 	if (prefixed_uuid)
-		FREE(prefixed_uuid);
+		free(prefixed_uuid);
 
 addout:
 	dm_task_destroy (dmt);
 
+	if (r)
+		mpp->need_reload = false;
 	return r;
 }
 
@@ -1285,7 +1286,7 @@ struct multipath *dm_get_multipath(const char *name)
 	if (!mpp)
 		return NULL;
 
-	mpp->alias = STRDUP(name);
+	mpp->alias = strdup(name);
 
 	if (!mpp->alias)
 		goto out;
@@ -1293,8 +1294,10 @@ struct multipath *dm_get_multipath(const char *name)
 	if (dm_get_map(name, &mpp->size, NULL) != DMP_OK)
 		goto out;
 
-	dm_get_uuid(name, mpp->wwid, WWID_SIZE);
-	dm_get_info(name, &mpp->dmi);
+	if (dm_get_uuid(name, mpp->wwid, WWID_SIZE) != 0)
+		condlog(2, "%s: failed to get uuid for %s", __func__, name);
+	if (dm_get_info(name, &mpp->dmi) != 0)
+		condlog(2, "%s: failed to get info for %s", __func__, name);
 
 	return mpp;
 out:
@@ -1388,7 +1391,6 @@ dm_mapname(int major, int minor)
 	const char *map;
 	struct dm_task *dmt;
 	int r;
-	int loop = MAX_WAIT * LOOPS_PER_SEC;
 
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_STATUS)))
 		return NULL;
@@ -1398,29 +1400,15 @@ dm_mapname(int major, int minor)
 		goto bad;
 
 	dm_task_no_open_count(dmt);
-
-	/*
-	 * device map might not be ready when we get here from
-	 * daemon uev_trigger -> uev_add_map
-	 */
-	while (--loop) {
-		r = libmp_dm_task_run(dmt);
-
-		if (r)
-			break;
-
-		usleep(1000 * 1000 / LOOPS_PER_SEC);
-	}
-
+	r = libmp_dm_task_run(dmt);
 	if (!r) {
 		dm_log_error(2, DM_DEVICE_STATUS, dmt);
-		condlog(0, "%i:%i: timeout fetching map name", major, minor);
 		goto bad;
 	}
 
 	map = dm_task_get_name(dmt);
 	if (map && strlen(map))
-		response = STRDUP((const char *)map);
+		response = strdup((const char *)map);
 
 	dm_task_destroy(dmt);
 	return response;
@@ -1598,7 +1586,7 @@ dm_cancel_deferred_remove (struct multipath *mpp __attribute__((unused)))
 static struct dm_info *
 alloc_dminfo (void)
 {
-	return MALLOC(sizeof(struct dm_info));
+	return calloc(1, sizeof(struct dm_info));
 }
 
 int
@@ -1614,7 +1602,7 @@ dm_get_info (const char * mapname, struct dm_info ** dmi)
 		return 1;
 
 	if (do_get_info(mapname, *dmi) != 0) {
-		FREE(*dmi);
+		free(*dmi);
 		*dmi = NULL;
 		return 1;
 	}
@@ -1715,7 +1703,7 @@ void dm_reassign_deps(char *table, const char *dep, const char *newdep)
 	n += strlen(newdep);
 	p += strlen(dep);
 	strcat(n, p);
-	FREE(newtable);
+	free(newtable);
 }
 
 int dm_reassign_table(const char *name, char *old, char *new)

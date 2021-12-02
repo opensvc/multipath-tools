@@ -55,6 +55,20 @@ void free_strbuf(struct strbuf *buf);
 struct strbuf *new_strbuf(void);
 
 /**
+ * get_strbuf_buf(): retrieve a pointer to the strbuf's buffer
+ * @param buf: a struct strbuf
+ * @returns: pointer to the string written to the strbuf so far.
+ *
+ * INTERNAL ONLY.
+ * DANGEROUS: Unlike the return value of get_strbuf_str(),
+ * this string can be written to, modifying the strbuf's content.
+ * USE WITH CAUTION.
+ * If @strbuf was never written to, the function returns NULL.
+ * The return value of this function must not be free()d.
+ */
+char *__get_strbuf_buf(struct strbuf *buf);
+
+/**
  * get_strbuf_str(): retrieve string from strbuf
  * @param buf: a struct strbuf
  * @returns: pointer to the string written to the strbuf so far.

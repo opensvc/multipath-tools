@@ -4,7 +4,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <pthread.h>
-#include "memory.h"
+#include <assert.h>
 #include "vector.h"
 #include "structs.h"
 #include "structs_vec.h"
@@ -24,13 +24,13 @@ static vector handlers;
 static struct key *
 alloc_key (void)
 {
-	return (struct key *)MALLOC(sizeof(struct key));
+	return (struct key *)calloc(1, sizeof(struct key));
 }
 
 static struct handler *
 alloc_handler (void)
 {
-	return (struct handler *)MALLOC(sizeof(struct handler));
+	return (struct handler *)calloc(1, sizeof(struct handler));
 }
 
 static int
@@ -45,7 +45,7 @@ add_key (vector vec, char * str, uint64_t code, int has_param)
 
 	kw->code = code;
 	kw->has_param = has_param;
-	kw->str = STRDUP(str);
+	kw->str = strdup(str);
 
 	if (!kw->str)
 		goto out;
@@ -58,32 +58,32 @@ add_key (vector vec, char * str, uint64_t code, int has_param)
 	return 0;
 
 out1:
-	FREE(kw->str);
+	free(kw->str);
 out:
-	FREE(kw);
+	free(kw);
 	return 1;
 }
 
-int
-add_handler (uint64_t fp, int (*fn)(void *, char **, int *, void *))
+static struct handler *add_handler(uint64_t fp, cli_handler *fn, bool locked)
 {
 	struct handler * h;
 
 	h = alloc_handler();
 
-	if (!h)
-		return 1;
+	if (h == NULL)
+		return NULL;
 
 	if (!vector_alloc_slot(handlers)) {
-		FREE(h);
-		return 1;
+		free(h);
+		return NULL;
 	}
 
 	vector_set_slot(handlers, h);
 	h->fingerprint = fp;
 	h->fn = fn;
+	h->locked = locked;
 
-	return 0;
+	return h;
 }
 
 static struct handler *
@@ -100,26 +100,17 @@ find_handler (uint64_t fp)
 }
 
 int
-set_handler_callback (uint64_t fp, int (*fn)(void *, char **, int *, void *))
+__set_handler_callback (uint64_t fp, cli_handler *fn, bool locked)
 {
-	struct handler * h = find_handler(fp);
+	struct handler *h;
 
-	if (!h)
+	assert(find_handler(fp) == NULL);
+	h = add_handler(fp, fn, locked);
+	if (!h) {
+		condlog(0, "%s: failed to set handler for code %"PRIu64,
+			__func__, fp);
 		return 1;
-	h->fn = fn;
-	h->locked = 1;
-	return 0;
-}
-
-int
-set_unlocked_handler_callback (uint64_t fp,int (*fn)(void *, char **, int *, void *))
-{
-	struct handler * h = find_handler(fp);
-
-	if (!h)
-		return 1;
-	h->fn = fn;
-	h->locked = 0;
+	}
 	return 0;
 }
 
@@ -127,12 +118,12 @@ static void
 free_key (struct key * kw)
 {
 	if (kw->str)
-		FREE(kw->str);
+		free(kw->str);
 
 	if (kw->param)
-		FREE(kw->param);
+		free(kw->param);
 
-	FREE(kw);
+	free(kw);
 }
 
 void
@@ -154,7 +145,7 @@ free_handlers (void)
 	struct handler * h;
 
 	vector_foreach_slot (handlers, h, i)
-		FREE(h);
+		free(h);
 
 	vector_free(handlers);
 	handlers = NULL;
@@ -218,6 +209,7 @@ load_keys (void)
 	r += add_key(keys, "local", LOCAL, 0);
 	r += add_key(keys, "setmarginal", SETMARGINAL, 0);
 	r += add_key(keys, "unsetmarginal", UNSETMARGINAL, 0);
+	r += add_key(keys, "all", ALL, 0);
 
 
 	if (r) {
@@ -259,11 +251,10 @@ find_key (const char * str)
  *
  * returns:
  * ENOMEM: not enough memory to allocate command
- * EAGAIN: command not found
+ * ESRCH: command not found
  * EINVAL: argument missing for command
  */
-static int
-get_cmdvec (char * cmd, vector *v)
+int get_cmdvec (char *cmd, vector *v)
 {
 	int i;
 	int r = 0;
@@ -294,7 +285,7 @@ get_cmdvec (char * cmd, vector *v)
 		}
 		kw = find_key(buff);
 		if (!kw) {
-			r = EAGAIN;
+			r = ESRCH;
 			goto out;
 		}
 		cmdkw = alloc_key();
@@ -303,7 +294,7 @@ get_cmdvec (char * cmd, vector *v)
 			goto out;
 		}
 		if (!vector_alloc_slot(cmdvec)) {
-			FREE(cmdkw);
+			free(cmdkw);
 			r = ENOMEM;
 			goto out;
 		}
@@ -328,7 +319,7 @@ out:
 }
 
 static uint64_t
-fingerprint(vector vec)
+fingerprint(const struct _vector *vec)
 {
 	int i;
 	uint64_t fp = 0;
@@ -341,6 +332,11 @@ fingerprint(vector vec)
 		fp += kw->code;
 
 	return fp;
+}
+
+struct handler *find_handler_for_cmdvec(const struct _vector *v)
+{
+	return find_handler(fingerprint(v));
 }
 
 int
@@ -384,7 +380,7 @@ do_genhelp(struct strbuf *reply, const char *cmd, int error) {
 	case ENOMEM:
 		rc = print_strbuf(reply, "%s: Not enough memory\n", cmd);
 		break;
-	case EAGAIN:
+	case ESRCH:
 		rc = print_strbuf(reply, "%s: not found\n", cmd);
 		break;
 	case EINVAL:
@@ -421,75 +417,10 @@ do_genhelp(struct strbuf *reply, const char *cmd, int error) {
 }
 
 
-static char *
-genhelp_handler (const char *cmd, int error)
+void genhelp_handler(const char *cmd, int error, struct strbuf *reply)
 {
-	STRBUF_ON_STACK(reply);
-
-	if (do_genhelp(&reply, cmd, error) == -1)
+	if (do_genhelp(reply, cmd, error) == -1)
 		condlog(0, "genhelp_handler: out of memory");
-	return steal_strbuf_str(&reply);
-}
-
-int
-parse_cmd (char * cmd, char ** reply, int * len, void * data, int timeout )
-{
-	int r;
-	struct handler * h;
-	vector cmdvec = NULL;
-	struct timespec tmo;
-
-	r = get_cmdvec(cmd, &cmdvec);
-
-	if (r) {
-		*reply = genhelp_handler(cmd, r);
-		if (*reply == NULL)
-			return EINVAL;
-		*len = strlen(*reply) + 1;
-		return 0;
-	}
-
-	h = find_handler(fingerprint(cmdvec));
-
-	if (!h || !h->fn) {
-		free_keys(cmdvec);
-		*reply = genhelp_handler(cmd, EINVAL);
-		if (*reply == NULL)
-			return EINVAL;
-		*len = strlen(*reply) + 1;
-		return 0;
-	}
-
-	/*
-	 * execute handler
-	 */
-	if (clock_gettime(CLOCK_REALTIME, &tmo) == 0) {
-		tmo.tv_sec += timeout;
-	} else {
-		tmo.tv_sec = 0;
-	}
-	if (h->locked) {
-		int locked = 0;
-		struct vectors * vecs = (struct vectors *)data;
-
-		pthread_cleanup_push(cleanup_lock, &vecs->lock);
-		if (tmo.tv_sec) {
-			r = timedlock(&vecs->lock, &tmo);
-		} else {
-			lock(&vecs->lock);
-			r = 0;
-		}
-		if (r == 0) {
-			locked = 1;
-			pthread_testcancel();
-			r = h->fn(cmdvec, reply, len, data);
-		}
-		pthread_cleanup_pop(locked);
-	} else
-		r = h->fn(cmdvec, reply, len, data);
-	free_keys(cmdvec);
-
-	return r;
 }
 
 char *
@@ -512,63 +443,6 @@ cli_init (void) {
 
 	if (alloc_handlers())
 		return 1;
-
-	add_handler(LIST+PATHS, NULL);
-	add_handler(LIST+PATHS+FMT, NULL);
-	add_handler(LIST+PATHS+RAW+FMT, NULL);
-	add_handler(LIST+PATH, NULL);
-	add_handler(LIST+STATUS, NULL);
-	add_handler(LIST+DAEMON, NULL);
-	add_handler(LIST+MAPS, NULL);
-	add_handler(LIST+MAPS+STATUS, NULL);
-	add_handler(LIST+MAPS+STATS, NULL);
-	add_handler(LIST+MAPS+FMT, NULL);
-	add_handler(LIST+MAPS+RAW+FMT, NULL);
-	add_handler(LIST+MAPS+TOPOLOGY, NULL);
-	add_handler(LIST+MAPS+JSON, NULL);
-	add_handler(LIST+TOPOLOGY, NULL);
-	add_handler(LIST+MAP+TOPOLOGY, NULL);
-	add_handler(LIST+MAP+JSON, NULL);
-	add_handler(LIST+MAP+FMT, NULL);
-	add_handler(LIST+MAP+RAW+FMT, NULL);
-	add_handler(LIST+CONFIG, NULL);
-	add_handler(LIST+CONFIG+LOCAL, NULL);
-	add_handler(LIST+BLACKLIST, NULL);
-	add_handler(LIST+DEVICES, NULL);
-	add_handler(LIST+WILDCARDS, NULL);
-	add_handler(RESET+MAPS+STATS, NULL);
-	add_handler(RESET+MAP+STATS, NULL);
-	add_handler(ADD+PATH, NULL);
-	add_handler(DEL+PATH, NULL);
-	add_handler(ADD+MAP, NULL);
-	add_handler(DEL+MAP, NULL);
-	add_handler(DEL+MAPS, NULL);
-	add_handler(SWITCH+MAP+GROUP, NULL);
-	add_handler(RECONFIGURE, NULL);
-	add_handler(SUSPEND+MAP, NULL);
-	add_handler(RESUME+MAP, NULL);
-	add_handler(RESIZE+MAP, NULL);
-	add_handler(RESET+MAP, NULL);
-	add_handler(RELOAD+MAP, NULL);
-	add_handler(DISABLEQ+MAP, NULL);
-	add_handler(RESTOREQ+MAP, NULL);
-	add_handler(DISABLEQ+MAPS, NULL);
-	add_handler(RESTOREQ+MAPS, NULL);
-	add_handler(REINSTATE+PATH, NULL);
-	add_handler(FAIL+PATH, NULL);
-	add_handler(QUIT, NULL);
-	add_handler(SHUTDOWN, NULL);
-	add_handler(GETPRSTATUS+MAP, NULL);
-	add_handler(SETPRSTATUS+MAP, NULL);
-	add_handler(UNSETPRSTATUS+MAP, NULL);
-	add_handler(GETPRKEY+MAP, NULL);
-	add_handler(SETPRKEY+MAP+KEY, NULL);
-	add_handler(UNSETPRKEY+MAP, NULL);
-	add_handler(FORCEQ+DAEMON, NULL);
-	add_handler(RESTOREQ+DAEMON, NULL);
-	add_handler(SETMARGINAL+PATH, NULL);
-	add_handler(UNSETMARGINAL+PATH, NULL);
-	add_handler(UNSETMARGINAL+MAP, NULL);
 
 	return 0;
 }

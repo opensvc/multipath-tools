@@ -19,7 +19,6 @@
 
 #include "checkers.h"
 #include "vector.h"
-#include "memory.h"
 #include "devmapper.h"
 #include "defaults.h"
 #include "structs.h"
@@ -43,10 +42,6 @@
 #include "wwids.h"
 #include "sysfs.h"
 #include "io_err_stat.h"
-
-/* Time in ms to wait for pending checkers in setup_map() */
-#define WAIT_CHECKERS_PENDING_MS 10
-#define WAIT_ALL_CHECKERS_PENDING_MS 90
 
 /* group paths in pg by host adapter
  */
@@ -261,42 +256,11 @@ int rr_optimize_path_order(struct pathgroup *pgp)
 	return 0;
 }
 
-static int wait_for_pending_paths(struct multipath *mpp,
-				  struct config *conf,
-				  int n_pending, int goal, int wait_ms)
-{
-	static const struct timespec millisec =
-		{ .tv_sec = 0, .tv_nsec = 1000*1000 };
-	int i, j;
-	struct path *pp;
-	struct pathgroup *pgp;
-	struct timespec ts;
-
-	do {
-		vector_foreach_slot(mpp->pg, pgp, i) {
-			vector_foreach_slot(pgp->paths, pp, j) {
-				if (pp->state != PATH_PENDING)
-					continue;
-				pp->state = get_state(pp, conf,
-						      0, PATH_PENDING);
-				if (pp->state != PATH_PENDING &&
-				    --n_pending <= goal)
-					return 0;
-			}
-		}
-		ts = millisec;
-		while (nanosleep(&ts, &ts) != 0 && errno == EINTR)
-			/* nothing */;
-	} while (--wait_ms > 0);
-
-	return n_pending;
-}
-
 int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 {
 	struct pathgroup * pgp;
 	struct config *conf;
-	int i, n_paths, marginal_pathgroups;
+	int i, marginal_pathgroups;
 	char *save_attr;
 
 	/*
@@ -395,7 +359,6 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 	if (marginal_path_check_enabled(mpp))
 		start_io_err_stat_thread(vecs);
 
-	n_paths = VECTOR_SIZE(mpp->paths);
 	/*
 	 * assign paths to path groups -- start with no groups and all paths
 	 * in mpp->paths
@@ -409,31 +372,6 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 	}
 	if (group_paths(mpp, marginal_pathgroups))
 		return 1;
-
-	/*
-	 * If async state detection is used, see if pending state checks
-	 * have finished, to get nr_active right. We can't wait until the
-	 * checkers time out, as that may take 30s or more, and we are
-	 * holding the vecs lock.
-	 */
-	if (conf->force_sync == 0 && n_paths > 0) {
-		int n_pending = pathcount(mpp, PATH_PENDING);
-
-		if (n_pending > 0)
-			n_pending = wait_for_pending_paths(
-				mpp, conf, n_pending, 0,
-				WAIT_CHECKERS_PENDING_MS);
-		/* ALL paths pending - wait some more, but be satisfied
-		   with only some paths finished */
-		if (n_pending == n_paths)
-			n_pending = wait_for_pending_paths(
-				mpp, conf, n_pending,
-				n_paths >= 4 ? 2 : 1,
-				WAIT_ALL_CHECKERS_PENDING_MS);
-		if (n_pending > 0)
-			condlog(2, "%s: setting up map with %d/%d path checkers pending",
-				mpp->alias, n_pending, n_paths);
-	}
 
 	/*
 	 * ponders each path group and determine highest prio pg
@@ -715,6 +653,8 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 
 	cmpp = find_mp_by_wwid(curmp, mpp->wwid);
 	cmpp_by_name = find_mp_by_alias(curmp, mpp->alias);
+	if (mpp->need_reload || (cmpp && cmpp->need_reload))
+		force_reload = 1;
 
 	if (!cmpp_by_name) {
 		if (cmpp) {
@@ -751,8 +691,8 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 			mpp->wwid, cmpp->alias, mpp->alias,
 			mpp->alias, cmpp_by_name->wwid);
 		/* reset alias to existing alias */
-		FREE(mpp->alias);
-		mpp->alias = STRDUP(cmpp->alias);
+		free(mpp->alias);
+		mpp->alias = strdup(cmpp->alias);
 		mpp->action = ACT_IMPOSSIBLE;
 		return;
 	}
@@ -803,8 +743,8 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 		return;
 	}
 
-	cmpp_feat = STRDUP(cmpp->features);
-	mpp_feat = STRDUP(mpp->features);
+	cmpp_feat = strdup(cmpp->features);
+	mpp_feat = strdup(mpp->features);
 	if (cmpp_feat && mpp_feat) {
 		remove_feature(&mpp_feat, "queue_if_no_path");
 		remove_feature(&mpp_feat, "retain_attached_hw_handler");
@@ -812,13 +752,13 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 		remove_feature(&cmpp_feat, "retain_attached_hw_handler");
 		if (strcmp(mpp_feat, cmpp_feat)) {
 			select_reload_action(mpp, "features change");
-			FREE(cmpp_feat);
-			FREE(mpp_feat);
+			free(cmpp_feat);
+			free(mpp_feat);
 			return;
 		}
 	}
-	FREE(cmpp_feat);
-	FREE(mpp_feat);
+	free(cmpp_feat);
+	free(mpp_feat);
 
 	if (!cmpp->selector || strncmp(cmpp->selector, mpp->selector,
 		    strlen(mpp->selector))) {
@@ -1087,7 +1027,7 @@ check_daemon(void)
 	ret = 1;
 
 out_free:
-	FREE(reply);
+	free(reply);
 out:
 	mpath_disconnect(fd);
 	return ret;
@@ -1098,7 +1038,7 @@ out:
  * FORCE_RELOAD_NONE: existing maps aren't touched at all
  * FORCE_RELOAD_YES: all maps are rebuilt from scratch and (re)loaded in DM
  * FORCE_RELOAD_WEAK: existing maps are compared to the current conf and only
- * reloaded in DM if there's a difference. This is useful during startup.
+ * reloaded in DM if there's a difference. This is normally sufficient.
  */
 int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 		    int force_reload, enum mpath_cmds cmd)
@@ -1430,7 +1370,7 @@ static int _get_refwwid(enum mpath_cmds cmd, const char *dev,
 	}
 
 	if (refwwid && strlen(refwwid)) {
-		*wwid = STRDUP(refwwid);
+		*wwid = strdup(refwwid);
 		return PATHINFO_OK;
 	}
 
