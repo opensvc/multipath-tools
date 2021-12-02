@@ -128,8 +128,3 @@ int recv_packet(int fd, char **buf, unsigned int timeout)
 {
 	return _recv_packet(fd, buf, timeout, 0 /* no limit */);
 }
-
-int recv_packet_from_client(int fd, char **buf, unsigned int timeout)
-{
-	return _recv_packet(fd, buf, timeout, _MAX_CMD_LEN);
-}

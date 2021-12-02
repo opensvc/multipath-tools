@@ -140,7 +140,6 @@ global:
 	_print_multipath_topology;
 	pthread_cond_init_mono;
 	recv_packet;
-	recv_packet_from_client;
 	reinstate_paths;
 	remember_wwid;
 	remove_map;
