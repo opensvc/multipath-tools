@@ -43,8 +43,10 @@ global:
 	alloc_path_layout;
 	alloc_path_with_pathinfo;
 	alloc_strvec;
+	append_strbuf_str;
 	change_foreign;
 	check_alias_settings;
+	check_daemon;
 	checker_clear_message;
 	checker_disable;
 	checker_enable;
@@ -52,7 +54,9 @@ global:
 	checker_name;
 	checker_state_name;
 	check_foreign;
+	cleanup_charp;
 	cleanup_lock;
+	cleanup_ucharp;
 	close_fd;
 	coalesce_paths;
 	convert_dev;
@@ -75,6 +79,7 @@ global:
 	dm_is_mpath;
 	dm_mapname;
 	dm_map_present;
+	dm_prereq;
 	dm_queue_if_no_path;
 	dm_reassign;
 	dm_reinstate_path;
@@ -103,16 +108,21 @@ global:
 	free_pathvec;
 	free_strvec;
 	get_monotonic_time;
+	get_multipath_config;
 	get_multipath_layout;
 	get_path_layout;
 	get_pgpolicy_id;
 	get_refwwid;
 	get_state;
+	get_strbuf_len;
+	get_strbuf_str;
 	get_udev_device;
 	get_uid;
 	get_used_hwes;
+	get_vpd_sgio;
 	group_by_prio;
 	init_checkers;
+	init_config;
 	init_foreign;
 	init_prio;
 	io_err_stat_handle_pathfail;
@@ -120,11 +130,18 @@ global:
 	is_quote;
 	libmp_dm_task_create;
 	libmp_get_version;
+	libmp_get_multipath_config;
+	libmp_dm_task_run;
+	libmp_put_multipath_config;
 	libmp_udev_set_sync_support;
+	libmp_verbosity;
+	libmultipath_exit;
+	libmultipath_init;
 	load_config;
 	log_thread_reset;
 	log_thread_start;
 	log_thread_stop;
+	logsink;
 	need_io_err_check;
 	normalize_timespec;
 	orphan_path;
@@ -137,7 +154,9 @@ global:
 	print_all_paths;
 	print_foreign_topology;
 	_print_multipath_topology;
+	print_strbuf;
 	pthread_cond_init_mono;
+	put_multipath_config;
 	recv_packet;
 	reinstate_paths;
 	remember_wwid;
@@ -147,6 +166,7 @@ global:
 	remove_wwid;
 	replace_wwids;
 	reset_checker_classes;
+	reset_strbuf;
 	select_all_tg_pt;
 	select_action;
 	select_find_multipaths_timeout;
@@ -161,7 +181,9 @@ global:
 	setup_map;
 	setup_thread_attr;
 	should_multipath;
+	skip_libmp_dm_init;
 	snprint_blacklist_report;
+	__snprint_config;
 	snprint_config;
 	snprint_devices;
 	snprint_foreign_multipaths;
@@ -185,13 +207,17 @@ global:
 	sysfs_attr_set_value;
 	sysfs_get_size;
 	sysfs_is_multipathed;
+	timespeccmp;
 	timespecsub;
 	trigger_paths_udev_change;
+	truncate_strbuf;
+	udev;
 	uevent_dispatch;
 	uevent_get_dm_str;
 	uevent_get_env_positive_int;
 	uevent_is_mpath;
 	uevent_listen;
+	uninit_config;
 	update_mpp_paths;
 	update_multipath_strings;
 	update_multipath_table;
@@ -213,6 +239,7 @@ global:
 	start_checker_thread;
 
 	/* prioritizers */
+	fill_strbuf;
 	get_asymmetric_access_state;
 	get_next_string;
 	get_prio_timeout;
@@ -223,6 +250,7 @@ global:
 	libmp_nvme_identify_ns;
 	log_nvme_errcode;
 	nvme_id_ctrl_ana;
+	set_wakeup_fn;
 	snprint_host_wwnn;
 	snprint_host_wwpn;
 	snprint_path_serial;
@@ -234,59 +262,6 @@ global:
 	free_scandir_result;
 	sysfs_attr_get_value;
 
-	/* added in 2.1.0 */
-	libmp_dm_task_run;
-
-	/* added in 2.2.0 */
-	libmp_get_multipath_config;
-	get_multipath_config;
-	libmp_put_multipath_config;
-	put_multipath_config;
-	init_config;
-	uninit_config;
-
-	/* added in 2.3.0 */
-	udev;
-	logsink;
-	libmultipath_init;
-	libmultipath_exit;
-
-	/* added in 4.1.0 */
-	libmp_verbosity;
-
-	/* added in 4.2.0 */
-	dm_prereq;
-	skip_libmp_dm_init;
-
-	/* added in 4.4.0 */
-
-	/* added in 4.5.0 */
-	get_vpd_sgio;
-
-	/* added in 7.0.0 */
-	cleanup_charp;
-	cleanup_ucharp;
-
-	/* added in 8.1.0 */
-	reset_strbuf;
-	append_strbuf_str;
-	get_strbuf_len;
-	get_strbuf_str;
-	fill_strbuf;
-	print_strbuf;
-	truncate_strbuf;
-
-	/* added in 8.2.0 */
-	check_daemon;
-
-	/* added in 9.1.0 */
-	timespeccmp;
-
-	/* added in 10.0.0 */
-	set_wakeup_fn;
-
-	/* added in 10.1.0 */
-	__snprint_config;
 local:
 	*;
 };
