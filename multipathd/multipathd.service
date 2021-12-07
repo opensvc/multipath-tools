@@ -14,7 +14,7 @@ ConditionVirtualization=!container
 [Service]
 Type=notify
 NotifyAccess=main
-ExecStartPre=-/sbin/modprobe -a scsi_dh_alua scsi_dh_emc scsi_dh_rdac dm-multipath
+ExecStartPre=-/sbin/modprobe dm-multipath
 ExecStart=/sbin/multipathd -d -s
 ExecReload=/sbin/multipathd reconfigure
 TasksMax=infinity
