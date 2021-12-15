@@ -66,6 +66,7 @@
 
 #include "mpath_cmd.h"
 #include "mpath_persist.h"
+#include "mpath_persist_int.h"
 
 #include "prioritizers/alua_rtpg.h"
 

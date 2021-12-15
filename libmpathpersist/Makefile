@@ -10,7 +10,7 @@ LDFLAGS += -L$(multipathdir) -L$(mpathcmddir)
 
 LIBDEPS += -lmultipath -lmpathcmd -ldevmapper -lpthread -ldl
 
-OBJS = mpath_persist.o mpath_updatepr.o mpath_pr_ioctl.o
+OBJS = mpath_persist.o mpath_updatepr.o mpath_pr_ioctl.o mpath_persist_int.o
 
 all: $(DEVLIB) man
 
