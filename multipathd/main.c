@@ -818,6 +818,7 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 		conf = get_multipath_config();
 		reassign_maps = conf->reassign_maps;
 		put_multipath_config(conf);
+		dm_get_info(mpp->alias, &mpp->dmi);
 		if (mpp->wait_for_udev) {
 			mpp->wait_for_udev = 0;
 			if (get_delayed_reconfig() &&
