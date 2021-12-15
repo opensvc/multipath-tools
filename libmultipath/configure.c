@@ -450,12 +450,12 @@ get_udev_for_mpp(const struct multipath *mpp)
 	dev_t devnum;
 	struct udev_device *udd;
 
-	if (!mpp || !mpp->dmi) {
+	if (!mpp || !has_dm_info(mpp)) {
 		condlog(1, "%s called with empty mpp", __func__);
 		return NULL;
 	}
 
-	devnum = makedev(mpp->dmi->major, mpp->dmi->minor);
+	devnum = makedev(mpp->dmi.major, mpp->dmi.minor);
 	udd = udev_device_new_from_devnum(udev, 'b', devnum);
 	if (!udd) {
 		condlog(1, "failed to get udev device for %s", mpp->alias);
@@ -574,7 +574,8 @@ sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 		return 0;
 	max_sectors_kb = mpp->max_sectors_kb;
 	if (is_reload) {
-		if (!mpp->dmi && dm_get_info(mpp->alias, &mpp->dmi) != 0) {
+		if (!has_dm_info(mpp) &&
+		    dm_get_info(mpp->alias, &mpp->dmi) != 0) {
 			condlog(1, "failed to get dm info for %s", mpp->alias);
 			return 1;
 		}

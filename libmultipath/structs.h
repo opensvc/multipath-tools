@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <libdevmapper.h>
 
 #include "prio.h"
 #include "byteorder.h"
@@ -386,7 +387,7 @@ struct multipath {
 	unsigned long long size;
 	vector paths;
 	vector pg;
-	struct dm_info * dmi;
+	struct dm_info dmi;
 
 	/* configlet pointers */
 	char * alias;

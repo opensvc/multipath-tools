@@ -121,6 +121,7 @@ global:
 	get_used_hwes;
 	get_vpd_sgio;
 	group_by_prio;
+	has_dm_info;
 	init_checkers;
 	init_config;
 	init_foreign;
