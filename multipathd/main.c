@@ -85,7 +85,6 @@
 #include "../third-party/valgrind/drd.h"
 #include "init_unwinder.h"
 
-#define FILE_NAME_SIZE 256
 #define CMDSIZE 160
 #define MSG_SIZE 32
 
