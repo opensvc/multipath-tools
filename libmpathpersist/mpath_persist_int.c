@@ -34,7 +34,6 @@
 #include "mpath_pr_ioctl.h"
 
 
-#define __STDC_FORMAT_MACROS 1
 
 static int mpath_send_prin_activepath (char * dev, int rq_servact,
 				struct prin_resp * resp, int noisy)
