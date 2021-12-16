@@ -89,6 +89,9 @@
 #define CMDSIZE 160
 #define MSG_SIZE 32
 
+int mpath_pr_event_handle(struct path *pp);
+void * mpath_pr_event_handler_fn (void * );
+
 #define LOG_MSG(lvl, pp)					\
 do {								\
 	if (pp->mpp && checker_selected(&pp->checker) &&	\
