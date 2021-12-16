@@ -33,7 +33,21 @@
 #include "mpathpr.h"
 #include "mpath_pr_ioctl.h"
 
+struct prout_param {
+	char dev[FILE_NAME_SIZE];
+	int rq_servact;
+	int rq_scope;
+	unsigned int rq_type;
+	struct prout_param_descriptor  *paramp;
+	int noisy;
+	int status;
+};
 
+struct threadinfo {
+	int status;
+	pthread_t id;
+	struct prout_param param;
+};
 
 static int mpath_send_prin_activepath (char * dev, int rq_servact,
 				struct prin_resp * resp, int noisy)
