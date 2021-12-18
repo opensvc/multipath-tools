@@ -38,7 +38,7 @@ device will be opened in read-only mode; you don't need to worry about data
 loss. However, the user needs to specify a device to be used. Set the
 environment variable `DIO_TEST_DEV` to the path of the device.
 Alternatively, create a file `directio_test_dev` under
-the `tests` directory containting a single line that sets this environment
+the `tests` directory containing a single line that sets this environment
 variable in Bourne Shell syntax, like this:
 
     DIO_TEST_DEV=/dev/sdc3

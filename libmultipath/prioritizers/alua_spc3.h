@@ -286,7 +286,7 @@ struct rtpg_tp_dscr {
 struct rtpg_tpg_dscr {
 	unsigned char	b0;		/* x....... = pref(ered) port        */
 					/* .xxx.... = reserved               */
-					/* ....xxxx = asymetric access state */
+					/* ....xxxx = asymmetric access state*/
 	unsigned char	b1;		/* xxx..... = reserved               */
 					/* ...x.... = LBA dependent support  */
 					/* ....x... = unavailable support    */

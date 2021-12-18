@@ -284,7 +284,7 @@ int getprio(struct path *pp, char *args, unsigned int timeout)
 
 	if (lg_avglatency > lg_maxavglatency) {
 		pp_pl_log(2,
-			  "%s: average latency (%lld us) is outside the thresold (%lld us)",
+			  "%s: average latency (%lld us) is outside the threshold (%lld us)",
 			  pp->dev, (long long)pow(base_num, lg_avglatency),
 			  (long long)MAX_AVG_LATENCY);
 		return DEFAULT_PRIORITY;

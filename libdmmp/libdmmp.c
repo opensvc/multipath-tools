@@ -189,7 +189,7 @@ int dmmp_mpath_array_get(struct dmmp_context *ctx,
 	j_token = json_tokener_new();
 	if (j_token == NULL) {
 		rc = DMMP_ERR_BUG;
-		_error(ctx, "BUG: json_tokener_new() retuned NULL");
+		_error(ctx, "BUG: json_tokener_new() returned NULL");
 		goto out;
 	}
 	j_obj = json_tokener_parse_ex(j_token, j_str, strlen(j_str) + 1);

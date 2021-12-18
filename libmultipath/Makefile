@@ -61,7 +61,7 @@ nvme-lib.o: nvme-lib.c nvme-ioctl.c nvme-ioctl.h
 	$(CC) $(CFLAGS) -Wno-unused-function -c -o $@ $<
 
 # there are lots of "unused parameters" in dict.c
-# because not all handler / snprint methods nees all parameters
+# because not all handler / snprint methods need all parameters
 dict.o:	dict.c
 	$(CC) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
 

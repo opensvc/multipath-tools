@@ -546,7 +546,7 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		condlog (2, "%s: Path holding reservation is released.", mpp->wwid);
 		return MPATH_PR_SUCCESS;
 	}
-	condlog (2, "%s: Path holding reservation is not avialable.", mpp->wwid);
+	condlog (2, "%s: Path holding reservation is not available.", mpp->wwid);
 
 	pr_buff =  mpath_alloc_prin_response(MPATH_PRIN_RFSTAT_SA);
 	if (!pr_buff){

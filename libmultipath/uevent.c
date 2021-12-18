@@ -292,7 +292,7 @@ static bool
 uevent_can_merge(struct uevent *earlier, struct uevent *later)
 {
 	/* merge paths uevents
-	 * whose wwids exsit and are same
+	 * whose wwids exist and are same
 	 * and actions are same,
 	 * and actions are addition or deletion
 	 */

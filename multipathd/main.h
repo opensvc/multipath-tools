@@ -17,7 +17,7 @@ enum remove_path_result {
 	REMOVE_PATH_FAILURE = 0x0, /* path could not be removed. It is still
 				    * part of the kernel map, but its state
 				    * is set to INIT_REMOVED, and it will be
-				    * removed at the next possible occassion */
+				    * removed at the next possible occasion */
 	REMOVE_PATH_SUCCESS = 0x1, /* path was removed */
 	REMOVE_PATH_DELAY = 0x2, /* path is set to be removed later. it
 			          * currently still exists and is part of the

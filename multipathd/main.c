@@ -1599,7 +1599,7 @@ out:
 
 		condlog(0, "%s: spurious uevent, path not found", uev->kernel);
 	}
-	/* pp->initalized must not be INIT_PARTIAL if needs_reinit is set */
+	/* pp->initialized must not be INIT_PARTIAL if needs_reinit is set */
 	if (needs_reinit)
 		retval = uev_add_path(uev, vecs, 1);
 	return retval;
@@ -1791,7 +1791,7 @@ uxlsnrloop (void * ap)
 
 	/*
 	 * Wait for initial reconfiguration to finish, while
-	 * hadling signals
+	 * handling signals
 	 */
 	while (wait_for_state_change_if(DAEMON_CONFIGURE, 50)
 	       == DAEMON_CONFIGURE)
@@ -2107,7 +2107,7 @@ static int check_path_reinstate_state(struct path * pp) {
 	/*
 	 * This function is only called when the path state changes
 	 * from "bad" to "good". pp->state reflects the *previous* state.
-	 * If this was "bad", we know that a failure must have occured
+	 * If this was "bad", we know that a failure must have occurred
 	 * beforehand, and count that.
 	 * Note that we count path state _changes_ this way. If a path
 	 * remains in "bad" state, failure count is not increased.
@@ -2277,7 +2277,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 
 	/*
 	 * provision a next check soonest,
-	 * in case we exit abnormaly from here
+	 * in case we exit abnormally from here
 	 */
 	pp->tick = checkint;
 
