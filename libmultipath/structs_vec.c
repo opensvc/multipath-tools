@@ -616,7 +616,7 @@ void set_no_path_retry(struct multipath *mpp)
 			    !mpp->in_recovery)
 				dm_queue_if_no_path(mpp->alias, 1);
 			leave_recovery_mode(mpp);
-		} else
+		} else if (pathcount(mpp, PATH_PENDING) == 0)
 			enter_recovery_mode(mpp);
 		break;
 	}
