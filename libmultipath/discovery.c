@@ -2345,7 +2345,10 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			 * Avoid any IO on the device itself.
 			 * simply use the path_offline() return as its state
 			 */
-			pp->chkrstate = pp->state = path_state;
+			if (path_state != PATH_PENDING ||
+			    pp->state == PATH_UNCHECKED ||
+			    pp->state == PATH_WILD)
+				pp->chkrstate = pp->state = path_state;
 		return PATHINFO_OK;
 	}
 
