@@ -176,7 +176,7 @@ global:
 	select_reservation_key;
 	send_packet;
 	set_max_fds;
-	__set_no_path_retry;
+	set_no_path_retry;
 	set_path_removed;
 	set_prkey;
 	setup_map;
