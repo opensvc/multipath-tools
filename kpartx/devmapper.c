@@ -58,9 +58,9 @@ out:
 int dm_simplecmd(int task, const char *name, int no_flush, uint16_t udev_flags)
 {
 	int r = 0;
+#ifdef LIBDM_API_COOKIE
 	int udev_wait_flag = (task == DM_DEVICE_RESUME ||
 			      task == DM_DEVICE_REMOVE);
-#ifdef LIBDM_API_COOKIE
 	uint32_t cookie = 0;
 #endif
 	struct dm_task *dmt;
