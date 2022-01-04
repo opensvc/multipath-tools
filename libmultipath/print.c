@@ -8,7 +8,6 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
-#include <string.h>
 #include <errno.h>
 #include <assert.h>
 #include <libudev.h>

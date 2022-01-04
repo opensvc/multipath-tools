@@ -41,7 +41,6 @@
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <libudev.h>
-#include <errno.h>
 
 #include "debug.h"
 #include "list.h"
