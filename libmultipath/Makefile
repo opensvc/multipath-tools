@@ -33,7 +33,7 @@ ifneq ($(call check_func,dm_task_set_cookie,$(DEVMAPPER_INCDIR)/libdevmapper.h),
 	CFLAGS += -DLIBDM_API_COOKIE
 endif
 
-ifneq ($(call check_func,udev_monitor_set_receive_buffer_size,/usr/include/libudev.h),0)
+ifneq ($(call check_func,udev_monitor_set_receive_buffer_size,$(LIBUDEV_INCDIR)/libudev.h),0)
 	CFLAGS += -DLIBUDEV_API_RECVBUF
 endif
 

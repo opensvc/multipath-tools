@@ -60,6 +60,14 @@ ifndef DEVMAPPER_INCDIR
 	endif
 endif
 
+ifndef LIBUDEV_INCDIR
+	ifeq ($(shell $(PKGCONFIG) --modversion libudev >/dev/null 2>&1 && echo 1), 1)
+		LIBUDEV_INCDIR = $(shell $(PKGCONFIG) --variable=includedir libudev)
+	else
+		LIBUDEV_INCDIR = /usr/include
+	endif
+endif
+
 prefix		=
 exec_prefix	= $(prefix)
 usr_prefix	= $(prefix)
