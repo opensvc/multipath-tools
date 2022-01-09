@@ -68,6 +68,11 @@ ifndef LIBUDEV_INCDIR
 	endif
 endif
 
+# Allow user to override default location.
+ifndef LINUX_HEADERS_INCDIR
+	LINUX_HEADERS_INCDIR = /usr/include
+endif
+
 prefix		=
 exec_prefix	= $(prefix)
 usr_prefix	= $(prefix)
