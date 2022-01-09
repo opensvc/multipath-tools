@@ -21,15 +21,15 @@ ifdef SYSTEMD
 	endif
 endif
 
-ifneq ($(call check_func,dm_task_no_flush,/usr/include/libdevmapper.h),0)
+ifneq ($(call check_func,dm_task_no_flush,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_FLUSH -D_GNU_SOURCE
 endif
 
-ifneq ($(call check_func,dm_task_get_errno,/usr/include/libdevmapper.h),0)
+ifneq ($(call check_func,dm_task_get_errno,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_GET_ERRNO
 endif
 
-ifneq ($(call check_func,dm_task_set_cookie,/usr/include/libdevmapper.h),0)
+ifneq ($(call check_func,dm_task_set_cookie,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_COOKIE
 endif
 
@@ -37,11 +37,11 @@ ifneq ($(call check_func,udev_monitor_set_receive_buffer_size,/usr/include/libud
 	CFLAGS += -DLIBUDEV_API_RECVBUF
 endif
 
-ifneq ($(call check_func,dm_task_deferred_remove,/usr/include/libdevmapper.h),0)
+ifneq ($(call check_func,dm_task_deferred_remove,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_DEFERRED
 endif
 
-ifneq ($(call check_func,dm_hold_control_dev,/usr/include/libdevmapper.h),0)
+ifneq ($(call check_func,dm_hold_control_dev,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_HOLD_CONTROL
 endif
 

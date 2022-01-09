@@ -52,6 +52,14 @@ ifndef SYSTEMDPATH
 	SYSTEMDPATH=usr/lib
 endif
 
+ifndef DEVMAPPER_INCDIR
+	ifeq ($(shell $(PKGCONFIG) --modversion devmapper >/dev/null 2>&1 && echo 1), 1)
+		DEVMAPPER_INCDIR = $(shell $(PKGCONFIG) --variable=includedir devmapper)
+	else
+		DEVMAPPER_INCDIR = /usr/include
+	endif
+endif
+
 prefix		=
 exec_prefix	= $(prefix)
 usr_prefix	= $(prefix)
