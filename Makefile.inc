@@ -96,7 +96,7 @@ nvmedir		= $(TOPDIR)/libmultipath/nvme
 includedir	= $(prefix)/usr/include
 pkgconfdir	= $(usrlibdir)/pkgconfig
 
-GZIP		= gzip -9 -c
+GZIP_PROG	= gzip -9 -c
 RM		= rm -f
 LN		= ln -sf
 INSTALL_PROGRAM	= install
