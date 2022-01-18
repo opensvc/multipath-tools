@@ -4,3 +4,41 @@ workflow:
         source_project: home:mwilck:multipath
         source_package: multipath-tools
         target_project: home:mwilck
+    - configure_repositories:
+        project: home:mwilck:multipath
+        repositories:
+          - name: openSUSE_Tumbleweed
+            target_project: openSUSE:Factory
+            target_repository: snapshot
+            architectures:
+              - x86_64
+              - i586
+          - name: openSUSE_Leap_15.4
+            target_project: openSUSE:Leap:15.4
+            target_repository: standard
+            architectures:
+              - x86_64
+  filters:
+    event: pull_request
+
+rebuild_workflow:
+  steps:
+    - rebuild_package:
+        project: home:mwilck:multipath
+        package: multipath-tools
+  filters:
+    event: push
+    branches:
+      only:
+        - next
+    
+future_workflow:
+  steps:
+    - rebuild_package:
+        project: home:mwilck:Future
+        package: multipath-tools
+  filters:
+    event: push
+    branches:
+      only:
+        - edge
