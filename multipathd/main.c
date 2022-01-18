@@ -1157,6 +1157,8 @@ ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 		free_path(pp);
 		return 1;
 	}
+	if (mpp)
+		trigger_path_udev_change(pp, true);
 	if (mpp && mpp->wait_for_udev &&
 	    (pathcount(mpp, PATH_UP) > 0 ||
 	     (pathcount(mpp, PATH_GHOST) > 0 &&
