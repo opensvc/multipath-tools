@@ -503,11 +503,8 @@ unref:
 }
 
 void
-trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
+trigger_path_udev_change(struct path *pp, bool is_mpath)
 {
-	struct pathgroup *pgp;
-	struct path *pp;
-	int i, j;
 	/*
 	 * If a path changes from multipath to non-multipath, we must
 	 * synthesize an artificial "add" event, otherwise the LVM2 rules
@@ -515,6 +512,45 @@ trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
 	 * irritate ourselves with an "add", so use "change".
 	 */
 	const char *action = is_mpath ? "change" : "add";
+	const char *env;
+
+	if (!pp->udev)
+		return;
+	/*
+	 * Paths that are already classified as multipath
+	 * members don't need another uevent.
+	 */
+	env = udev_device_get_property_value(
+		pp->udev, "DM_MULTIPATH_DEVICE_PATH");
+
+	if (is_mpath && env != NULL && !strcmp(env, "1")) {
+		/*
+		 * If FIND_MULTIPATHS_WAIT_UNTIL is not "0",
+		 * path is in "maybe" state and timer is running
+		 * Send uevent now (see multipath.rules).
+		 */
+		env = udev_device_get_property_value(
+			pp->udev, "FIND_MULTIPATHS_WAIT_UNTIL");
+		if (env == NULL || !strcmp(env, "0"))
+			return;
+	} else if (!is_mpath &&
+		   (env == NULL || !strcmp(env, "0")))
+		return;
+
+	condlog(3, "triggering %s uevent for %s (is %smultipath member)",
+		action, pp->dev, is_mpath ? "" : "no ");
+	sysfs_attr_set_value(pp->udev, "uevent",
+			     action, strlen(action));
+	trigger_partitions_udev_change(pp->udev, action,
+				       strlen(action));
+}
+
+void
+trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
+{
+	struct pathgroup *pgp;
+	struct path *pp;
+	int i, j;
 
 	if (!mpp || !mpp->pg)
 		return;
@@ -522,39 +558,8 @@ trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		if (!pgp->paths)
 			continue;
-		vector_foreach_slot(pgp->paths, pp, j) {
-			const char *env;
-
-			if (!pp->udev)
-				continue;
-			/*
-			 * Paths that are already classified as multipath
-			 * members don't need another uevent.
-			 */
-			env = udev_device_get_property_value(
-				pp->udev, "DM_MULTIPATH_DEVICE_PATH");
-
-			if (is_mpath && env != NULL && !strcmp(env, "1")) {
-				/*
-				 * If FIND_MULTIPATHS_WAIT_UNTIL is not "0",
-				 * path is in "maybe" state and timer is running
-				 * Send uevent now (see multipath.rules).
-				 */
-				env = udev_device_get_property_value(
-					pp->udev, "FIND_MULTIPATHS_WAIT_UNTIL");
-				if (env == NULL || !strcmp(env, "0"))
-					continue;
-			} else if (!is_mpath &&
-				   (env == NULL || !strcmp(env, "0")))
-				continue;
-
-			condlog(3, "triggering %s uevent for %s (is %smultipath member)",
-				action, pp->dev, is_mpath ? "" : "no ");
-			sysfs_attr_set_value(pp->udev, "uevent",
-					     action, strlen(action));
-			trigger_partitions_udev_change(pp->udev, action,
-						       strlen(action));
-		}
+		vector_foreach_slot(pgp->paths, pp, j)
+			trigger_path_udev_change(pp, is_mpath);
 	}
 
 	mpp->needs_paths_uevent = 0;
