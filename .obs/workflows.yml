@@ -3,7 +3,7 @@ workflow:
     - branch_package:
         source_project: home:mwilck:multipath
         source_package: multipath-tools
-        target_project: home:mwilck
+        target_project: home:mwilck:multipath
     - configure_repositories:
         project: home:mwilck:multipath
         repositories:
