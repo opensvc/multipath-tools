@@ -8,16 +8,29 @@ workflow:
         project: home:mwilck:multipath
         repositories:
           - name: openSUSE_Tumbleweed
-            target_project: openSUSE:Factory
-            target_repository: snapshot
+            paths:
+              - target_project: openSUSE:Factory
+                target_repository: snapshot
             architectures:
               - x86_64
               - i586
           - name: openSUSE_Leap_15.4
-            target_project: openSUSE:Leap:15.4
-            target_repository: standard
+            paths:
+              - target_project: openSUSE:Leap:15.4
+                target_repository: standard
             architectures:
               - x86_64
+          - name: SLE_15_SP4
+            paths:
+              - target_project: openSUSE:Backports:SLE-15-SP4
+                target_repository: standard
+              - target_project: SUSE:SLE-15-SP4:GA
+                target_repository: pool
+            architectures:
+              - x86_64
+              - s390x
+              - ppc64le
+              - aarch64
   filters:
     event: pull_request
 
