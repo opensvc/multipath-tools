@@ -1,0 +1,2860 @@
+# License assessment for multipath-tools 0.7.6, git 1cb704b
+
+Author: Martin Wilck, 2018-04-10
+
+SUSE note: This assessment has been made against the upstream
+code base, but the findings apply to the SUSE code base as well.
+
+# DISCLAIMER
+
+I AM NOT A LAWYER.
+
+THIS IS A BEST-EFFORT ASSESSMENT MADE BY A DEVELOPER.
+THIS DOCUMENT IS NOT INTENDED AS LEGAL ADVICE.
+
+# Statistics
+
+ * LGPLv2.0 ("default license", see below): 120
+ * GPLv2.0+: 35
+ * GPLv2.0: 23 (under libmultipath and kpartx)
+ * GPLv3.0+: 12 (only libdmmp)
+ * LGPLv2.0+: 2 (libmpathcmd, recently changed to LGPLv2.1)
+ * LGPLv2.1: 1 (libmultipath/checkers/rbd.c)
+ * GPL (any version): 7 (only in libmultipath/prioritizers)
+ * zlib (BSD-like): 2 (valgrind)
+
+## License propagation for libraries and binaries
+
+Because libmultipath contains code covered by GPLv2.0 code, it's effectively
+under GPLv2.0. The same holds for the multipath and multipathd executables,
+and also for mpathpersist, as they need to link with
+libmultipath. libmpathpersist itself is under LGPLv2.0, but as it needs to  
+be linked with libmultipath, all executables linking with it must be under
+GPLv2.0-compatible licenses.
+
+The "plugins" in the "checkers", "prioritizers", and "foreign" subdirectories
+have different licenses; when they're pulled in by libmultipath, they'd fall
+under GPLv2.0, too by common interpretation.
+
+kpartx also contains GPLv2.0 code, and thus the executable is under GPLv2.0.
+
+Therfore, the "main" license for the multipath-tools package is GPLv2.0.
+
+libmpathcmd is under LGPLv2.0+ (recently, LGPLv2.1). That's no problem because it
+communicates with libmultipath only through the socket.
+
+libdmmp is under GPLv3.0+. That's no problem because it communicates with
+libmultipath only through the socket.
+
+# Notes on the assessment
+
+The code has been scanned with fossology #c6260f, and the results manually
+reviewed.
+
+The "LicenseConcluded" tag is what I think applies to the individual source
+files.
+
+## What has not been done
+
+I have not scanned the code for "known code snippets"; I've trusted the
+file headers describing their origins. Only in some obvious cases
+(e.g. list.h, sg_include.h) I inferred the origin from the code itself.
+
+There are many more things I have not done, can't list them all.
+
+## Default license
+
+The default license for source files without an explicit license header
+was assumed to be LGPL v2.0, which was the license in COPYING since May 1,
+2005. Some files contain hints like "copied from xyz" that make it
+possible to infer other original licenses. Whether or not that original
+license still applies is a matter of discussion, but by nature of the GPL,
+I assume that a file that emerged from GPL'd code remains under
+GPL, even if the changes far outweigh the original import - unless the
+differntly licensed sections are clearly identified in the file (e.g.
+libmultipath/util.c).
+
+## "Irrelevant" files
+
+I didn't bother assigning a license to Makefiles, .gitignore, etc. If in
+doubt, they can be assumed to be under the "default license".
+
+## man pages
+
+Man pages without license tag (all) were considered to have the
+same license as the respective source files they are documenting.
+
+## Udev rules etc.
+
+udev rules, systemd .service files etc. were assumed to be under the default
+license.
+
+## Notes on individual files
+
+ * multipathd/uxclnt.c: header says some code was imported from Samba,
+   which would mean GPL-2.0+. But it's highly unclear what actually came from
+   samba.
+ * libmultipath/list.h: copied from kernel => GPLv2.0
+ * libmultipath/sg_include.h: dito.
+ * libmultipath/callout.[hc]: refers to udev, I couldn't identify the original
+   (early udev) code, assuming GPLv2.0
+ * libmultipath/util.c: contains code snippet from busybox (GPLv2.0+)
+ * libmultipath/file.[hc], libmultipath/alias.[hc]:
+   headers mention code from linux-iscsi (GPLv2.0)
+ * libmultipath/devmapper.c: header mentions code from device-mapper.
+ * libmultipath/checkers/rbd.c: includes Ceph code under LGPL 2.1
+ * libmultipath/prioritizers: several files here claim to be under "GPL".
+   According to common interpretation, this allows choosing any GPL version.
+ * kpartx: several files were taken from util-linux (GPL-2.0)
+ * kpartx/lopart.c: very ancient, origins couldn't be determined.
+ * libmpathcmd: fossology knew "LesserGPLv2+", which I didn't know existed.
+   late patches change this to LGPLv2.1.
+ * libdmmp: all code, except the perl scripts to extract documentation,
+   are under GPLv3.0+
+
+# Fossology SPDX output below
+
+SPDXVersion: SPDX-2.1
+DataLicense: CC0-1.0
+
+##-------------------------
+## Document Information
+##-------------------------
+
+DocumentNamespace: http://a16e1a111b4e/repo/SPDX2TV_.git_1523308617.spdx
+DocumentName: /srv/fossology/repository/report
+SPDXID: SPDXRef-DOCUMENT
+
+##-------------------------
+## Creation Information
+##-------------------------
+
+Creator: Tool: spdx2
+Creator: Person: fossy (y)1
+CreatorComment: <text>
+This document was created using license information and a generator from Fossology.
+</text>
+Created: 2018-04-09T21:16:58Z
+LicenseListVersion: 2.6
+
+##-------------------------
+## Package Information
+##-------------------------
+
+
+PackageName: multipath-tools
+PackageFileName: multipath-tools.tar.gz
+SPDXID: SPDXRef-upload2
+PackageDownloadLocation: http://git.opensvc.com/multipath-tools/.git
+PackageVerificationCode: 745c7adf96ec9f52ec8a49a8491edb37dc6c8560
+PackageChecksum: SHA1: 03601c006aa22d6a09d55f9343b3f089ea628300
+PackageChecksum: MD5: 5d49876d7b89857f2b3ea044d151730c
+PackageLicenseConcluded: LGPL-2.0
+PackageLicenseDeclared: LGPL-2.0
+PackageLicenseComments: <text> licenseInfoInFile determined by Scanners:
+ - nomos ("unknown".c6260f)
+ - monk ("unknown".c6260f)
+ - ninka ("unknown".c6260f) </text>
+PackageLicenseInfoFromFiles: NOASSERTION
+PackageCopyrightText: NOASSERTION
+
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-upload2
+
+##--------------------------
+## File Information
+##--------------------------
+
+##File
+
+FileName: mpathpersist/mpathpersist.8
+SPDXID: SPDXRef-item190
+FileChecksum: SHA1: ac9829bcafaf2895f53c5adf202e5889d741ace8
+FileChecksum: MD5: bfaee72861d364384a9844461550bc1e
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/log_pthread.c
+SPDXID: SPDXRef-item163
+FileChecksum: SHA1: 26f331467fa3a47dd13f9249d6abc527ee81d14d
+FileChecksum: MD5: ee33b52e133f5676e9759cb09e5fb968
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/pgpolicies.c
+SPDXID: SPDXRef-item91
+FileChecksum: SHA1: 493050470f9d8fc838b96f09992d90118adaf0d8
+FileChecksum: MD5: 0a7a15f4d386265fe8863206c96fa80b
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/pgpolicies.h
+SPDXID: SPDXRef-item159
+FileChecksum: SHA1: 0ac6d6ec159b99f854d7fc0f13b4708c610a8ea3
+FileChecksum: MD5: 7618c3ea5d09517dbca42299f5153ce2
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/print.c
+SPDXID: SPDXRef-item156
+FileChecksum: SHA1: c6d8df4b28b92adde30ca80bc8c8a4ea318386e3
+FileChecksum: MD5: 0170e15090575e28d93ef46425bf3ec5
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: multipathd/dmevents.c
+SPDXID: SPDXRef-item213
+FileChecksum: SHA1: 4a8d9523cb2fd721bef485a3610c7df219106ae5
+FileChecksum: MD5: 40e6c953f59bd068189dfe045baa0672
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui
+Copyright (c) 2005 Edward Goggin, EMC
+Copyright (c) 2005 Kiyoshi Ueda, NEC
+Copyright (c) 2005, 2018 Benjamin Marzinski, Redhat </text>
+ 
+
+##File
+
+FileName: multipathd/dmevents.h
+SPDXID: SPDXRef-item210
+FileChecksum: SHA1: 25312c47244b11fa9d9c200235941eb22def0a24
+FileChecksum: MD5: 5cd93f37e706a41422f7dd8d9a302135
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipathd/main.c
+SPDXID: SPDXRef-item207
+FileChecksum: SHA1: 6739fc0d69335d52ca97c372159c5fce69f2a793
+FileChecksum: MD5: 9512d253aa1a2e3bbdc694cf7795b7b8
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui
+Copyright (c) 2005 Benjamin Marzinski, Redhat
+Copyright (c) 2005 Edward Goggin, EMC
+Copyright (c) 2005 Kiyoshi Ueda, NEC </text>
+ 
+
+##File
+
+FileName: multipathd/uxclnt.c
+SPDXID: SPDXRef-item198
+FileChecksum: SHA1: e96a52057fd14a219d45001d34b0fbed67393859
+FileChecksum: MD5: 58dc30ed2a57125ae271e257cbcb0425
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Benjamin Marzinski, Redhat
+Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: multipathd/uxlsnr.c
+SPDXID: SPDXRef-item204
+FileChecksum: SHA1: 9c115eafbe1f4d74e125362c87061902a7fb67c8
+FileChecksum: MD5: 29a21ad25b551aeaf29ede2d24e47afc
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Benjamin Marzinski, Redhat
+Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: multipathd/waiter.h
+SPDXID: SPDXRef-item214
+FileChecksum: SHA1: 041d79e8670f239bfdc3073fc1a0b2b7b9a1da8e
+FileChecksum: MD5: ec8f4aa5ebb02d430c40c4363c7dca6c
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipathd/waiter.c
+SPDXID: SPDXRef-item212
+FileChecksum: SHA1: 9497cfe46e7ed5c1f02ad98e78f3084a4aff564f
+FileChecksum: MD5: 575c2d81f757c6ebf836e80f7214007e
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui
+Copyright (c) 2005 Benjamin Marzinski, Redhat
+Copyright (c) 2005 Edward Goggin, EMC
+Copyright (c) 2005 Kiyoshi Ueda, NEC </text>
+ 
+
+##File
+
+FileName: multipathd/uxlsnr.h
+SPDXID: SPDXRef-item203
+FileChecksum: SHA1: 4f048adb7fee2f88b1212d2beae71e9869c25342
+FileChecksum: MD5: 827a4cd8f3e766469496a53f2d8f224b
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipathd/uxclnt.h
+SPDXID: SPDXRef-item199
+FileChecksum: SHA1: f6d0746f986298a00ad11e2045209518fa168d26
+FileChecksum: MD5: 47d574adec97c34d8d8f37863123ffdc
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipathd/pidfile.h
+SPDXID: SPDXRef-item206
+FileChecksum: SHA1: d372e2556693523a55c00d38ca837e60c810abb5
+FileChecksum: MD5: 679194d0c43d7aafa9d219afda6dedd4
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipathd/pidfile.c
+SPDXID: SPDXRef-item195
+FileChecksum: SHA1: 60a34e4d429bb828e2bfda7715f251486fadcfb5
+FileChecksum: MD5: cacfeebc481a27f11cd8cbaba00b5d10
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipathd/multipathd.socket
+SPDXID: SPDXRef-item205
+FileChecksum: SHA1: 0db2c80fdf4b49444f4d5249228d5f6d6eea80e5
+FileChecksum: MD5: b6205d53063909cca94e0d93656ca9b2
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipathd/multipathd.service
+SPDXID: SPDXRef-item201
+FileChecksum: SHA1: 2be07f91b937577725c6589006b78d2b12000660
+FileChecksum: MD5: ff54d891849b11abe8b4aab732f98a4f
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipathd/multipathd.8
+SPDXID: SPDXRef-item211
+FileChecksum: SHA1: 6989b9c842abe36077fc31b2264a7d13bad21903
+FileChecksum: MD5: c018c6b17e1aaf505785214f9ab4ab23
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipathd/main.h
+SPDXID: SPDXRef-item208
+FileChecksum: SHA1: 9a959d4d447ddb4567f3f5eaabb6b9d471f55ad3
+FileChecksum: MD5: f4c8a189b948998ed728b904315816a5
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipathd/cli_handlers.h
+SPDXID: SPDXRef-item197
+FileChecksum: SHA1: 8712e8ed7353bd986e9327fd64f14666f2e757cf
+FileChecksum: MD5: dac6cea3ecbb85fcb917623b2feec789
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipathd/cli_handlers.c
+SPDXID: SPDXRef-item200
+FileChecksum: SHA1: 255ab0bb06ac6018f58955912c21928b093fd3a6
+FileChecksum: MD5: 9bbd19f9968609f23432e9d3e99b8acb
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: multipathd/cli.h
+SPDXID: SPDXRef-item209
+FileChecksum: SHA1: 95bae799f4f4917954adae8d7a01498ecfc3b53d
+FileChecksum: MD5: f8855bfb3d9e761156ffd72854deab65
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipathd/cli.c
+SPDXID: SPDXRef-item196
+FileChecksum: SHA1: 42f893d27f9aa8fbcb1b8a082d04e15a69a73352
+FileChecksum: MD5: 27a01b8be99c70386ce260a3b6797132
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: multipath/multipath.rules
+SPDXID: SPDXRef-item221
+FileChecksum: SHA1: 42c94e6db6eef239417690ef8300f4a9b0f77e09
+FileChecksum: MD5: 84a79cee9106ccc62f133a57b92d4d10
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prio.h
+SPDXID: SPDXRef-item114
+FileChecksum: SHA1: 39a2ac4c5715ea15a0609249cb14ff79560967fa
+FileChecksum: MD5: cfea10ee9c2abb3720f38fcf6e43d337
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/propsel.c
+SPDXID: SPDXRef-item65
+FileChecksum: SHA1: c4663e0d15cb304d0eb212427622f953322d01e7
+FileChecksum: MD5: 2ebdcd6ed2f21d012c6e7ebbfd6f8955
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui
+Copyright (c) 2005 Benjamin Marzinski, Redhat
+Copyright (c) 2005 Kiyoshi Ueda, NEC </text>
+ 
+
+##File
+
+FileName: libmultipath/wwids.c
+SPDXID: SPDXRef-item150
+FileChecksum: SHA1: 28ea3b6d54424b06e4defa6d7a11461ff5c62ed5
+FileChecksum: MD5: 44c2f196451be227e7a75ea444cd6c43
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2010 Benjamin Marzinski, Redhat </text>
+ 
+
+##File
+
+FileName: libmultipath/wwids.h
+SPDXID: SPDXRef-item188
+FileChecksum: SHA1: 6ec52393cc917aa31430286c9e4997b474050d6b
+FileChecksum: MD5: 4687616d97d33424b9637882a0142ce9
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2010 Benjamin Marzinski, Redhat </text>
+ 
+
+##File
+
+FileName: multipath/multipath.conf.5
+SPDXID: SPDXRef-item216
+FileChecksum: SHA1: 0af21e8a68d4efbcca6d2dba7a53d66e6bf92c42
+FileChecksum: MD5: addb7a901ac4485d10ff1ca3c0f6490c
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/uxsock.h
+SPDXID: SPDXRef-item186
+FileChecksum: SHA1: 3552d37d972396fb9e58614f3f8020ae3e9b1c7d
+FileChecksum: MD5: f91111ce11b781f62a89654d1b6f4d7f
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/uxsock.c
+SPDXID: SPDXRef-item179
+FileChecksum: SHA1: d9720ebffa399b10d2249d8428781f1036b6c5cf
+FileChecksum: MD5: 93896b56a96da357e926e33f3df4544e
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Alasdair Kergon, Redhat
+Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/util.h
+SPDXID: SPDXRef-item106
+FileChecksum: SHA1: 5d0db073c53f1e353359ec901015fc0c14011d0c
+FileChecksum: MD5: 2db60f7a3fc3a061049d48837ac4ca26
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/util.c
+SPDXID: SPDXRef-item88
+FileChecksum: SHA1: 3da86f33c2afbc4f511ff16b7bdd146ab78bab88
+FileChecksum: MD5: ac3f9b1260b4aa597c855ad0202d1fd6
+LicenseConcluded: LGPL-2.0, GPL-2.0+
+LicenseInfoInFile: GPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+FileCopyrightText: <text> Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org> Code copied from busybox (GPLv2 or later) </text>
+ 
+
+##File
+
+FileName: libmultipath/unaligned.h
+SPDXID: SPDXRef-item96
+FileChecksum: SHA1: fea8fb6a781e16fe6f6803884449979ef380c95f
+FileChecksum: MD5: edc0196981ece86e91d4e09e6cb14809
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/time-util.h
+SPDXID: SPDXRef-item170
+FileChecksum: SHA1: 77ac6b4af0be89127bb388035b49e8c6fcef06df
+FileChecksum: MD5: b41ddf13e1e37c4fdc71929c79cf4ab2
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/switchgroup.c
+SPDXID: SPDXRef-item173
+FileChecksum: SHA1: c17c96a4a304eeae47e813fada073129ecd42ad3
+FileChecksum: MD5: 33dde39dea88edb120df1e27e2680bb0
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Christophe Varoqui
+Copyright (c) 2005 Edward Goggin, EMC </text>
+ 
+
+##File
+
+FileName: libmultipath/switchgroup.h
+SPDXID: SPDXRef-item99
+FileChecksum: SHA1: 27391dc791ed133e0930d0c8e2f3ec791f7b7fae
+FileChecksum: MD5: bf4d23cfcddfdc54477450d602ff0a39
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/structs_vec.h
+SPDXID: SPDXRef-item100
+FileChecksum: SHA1: 00cddb5deba1066112a9bff4f2bb6c017ccd94e8
+FileChecksum: MD5: 41e8a94f57f148137f2d09afa44a7bf0
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/structs_vec.c
+SPDXID: SPDXRef-item109
+FileChecksum: SHA1: 7185961bb73dd1dca89d3a1f1ffd238b9327bdbd
+FileChecksum: MD5: 495de4f6050532b94bd4a6541e91877b
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/structs.h
+SPDXID: SPDXRef-item171
+FileChecksum: SHA1: 2844cc241a242d4d9795cf1df216755189234aeb
+FileChecksum: MD5: 3c882587573115df338099bb4e498f9d
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/structs.c
+SPDXID: SPDXRef-item68
+FileChecksum: SHA1: 47cbe97f544b82035f3c1c95a76b30e90e2388c1
+FileChecksum: MD5: 86f82094d4059713fdd8e053b73804fe
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004 Stefan Bader, IBM
+Copyright (c) 2004, 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/sg_include.h
+SPDXID: SPDXRef-item92
+FileChecksum: SHA1: 9c5d51c8596db78ea61ce2b106208ad0bffc40e0
+FileChecksum: MD5: bc8df4968f6ac1676277366dd451966a
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/propsel.h
+SPDXID: SPDXRef-item103
+FileChecksum: SHA1: df247acb7976925f44fd73d5bd7c7c5dec82a703
+FileChecksum: MD5: 1089b1ba52eaef059745760518f76d51
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prkey.h
+SPDXID: SPDXRef-item182
+FileChecksum: SHA1: c2e4ba49861e85ebd35a2b575d6260c4d24c0b68
+FileChecksum: MD5: bd4829f9ace6e004cb5f2784c283a5cf
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prkey.c
+SPDXID: SPDXRef-item105
+FileChecksum: SHA1: f3d9d65841e2b2801ea9aa9be2b24d8fef15ccc8
+FileChecksum: MD5: a306332d12567f6e9b76b201334bc203
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prio.c
+SPDXID: SPDXRef-item112
+FileChecksum: SHA1: 464c4e4dbad68fcde1f29c6b85614a55f86beeea
+FileChecksum: MD5: 6750203b239f5b4d80faf8c6fb7c8764
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/print.h
+SPDXID: SPDXRef-item140
+FileChecksum: SHA1: 94bed7d68bb67c381db63e2733b704b0e847ebf2
+FileChecksum: MD5: cad88bee83232448f6c0a6d1d9fd645f
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/log_pthread.h
+SPDXID: SPDXRef-item151
+FileChecksum: SHA1: 01f3a9f79f572e6f875d95a9e82f2ded9c14db9e
+FileChecksum: MD5: 7db49a57a9caf7ad95aaad565a47a013
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/log.h
+SPDXID: SPDXRef-item115
+FileChecksum: SHA1: aa2c0576ff907a640f0e8dd4e757230e43fc2ca2
+FileChecksum: MD5: 3741c19b2ec07ea307adff708ca84686
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/log.c
+SPDXID: SPDXRef-item94
+FileChecksum: SHA1: bcc9bf815748191f3003a8c7e1718c2fb632aed9
+FileChecksum: MD5: 95f01bac2ec0b8613d69d30b5721ee09
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Benjamin Marzinski, Redhat
+Copyright (c) 2005 Christophe Varoqui
+Copyright (c) 2005 Jun'ichi Nomura, NEC </text>
+ 
+
+##File
+
+FileName: libmultipath/lock.h
+SPDXID: SPDXRef-item90
+FileChecksum: SHA1: f9494e06586369d89fb3de01b97f40e30248df51
+FileChecksum: MD5: 6ddad9822533de4e185ddb810844a217
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/debug.c
+SPDXID: SPDXRef-item176
+FileChecksum: SHA1: c1ffd3b62a132c54f4afc5753b5f409cdcb08738
+FileChecksum: MD5: 143d5de90fdde206708ad5dc78f650eb
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/hwtable.h
+SPDXID: SPDXRef-item101
+FileChecksum: SHA1: 9c7706c39937797190e1d2e735dfa9ecd00dc5b5
+FileChecksum: MD5: bc00838468ba83b50ab7ea59fc6a232b
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/hwtable.c
+SPDXID: SPDXRef-item104
+FileChecksum: SHA1: 8aff488ddde5707257d7ce7761bde7b79d053a3f
+FileChecksum: MD5: dc7d29ce824c39ae89b22f0ad01f2687
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/file.h
+SPDXID: SPDXRef-item147
+FileChecksum: SHA1: b2b57345e2df8a884b780582c75777a2ab13980a
+FileChecksum: MD5: 36e652b51598b7facb882187f79c092b
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2010 Benjamin Marzinski, Redhat </text>
+ 
+
+##File
+
+FileName: libmultipath/file.c
+SPDXID: SPDXRef-item111
+FileChecksum: SHA1: 9319641b7a393eb26c2fe673b5164411d60af435
+FileChecksum: MD5: 2492281d8f3206bfaebf44a4b7dee113
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+LicenseInfoInFile: LicenseRef-See-file
+FileCopyrightText: <text> Copyright (C) 2002 Cisco Systems, Inc.
+Copyright (c) 2005 Benjamin Marzinski, Redhat
+Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/dmparser.h
+SPDXID: SPDXRef-item180
+FileChecksum: SHA1: 7e2a5288e491552801ac0af83d703c916f88715e
+FileChecksum: MD5: f8d3524394efaca7b63eb5eff0ae58c9
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/dmparser.c
+SPDXID: SPDXRef-item108
+FileChecksum: SHA1: b5315e752910fb04022d691e767c4c8d989d8e5f
+FileChecksum: MD5: d161f7e97fe0801a19ad35d59e1b735f
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui
+Copyright (c) 2005 Edward Goggin, EMC
+Copyright (c) 2005 Stefan Bader, IBM </text>
+ 
+
+##File
+
+FileName: libmultipath/discovery.h
+SPDXID: SPDXRef-item107
+FileChecksum: SHA1: c2f3267e1cda57a1ea7eef39695d8a2bd85869b8
+FileChecksum: MD5: 6bedfa8b3100c8288da25cb6627e475a
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/discovery.c
+SPDXID: SPDXRef-item143
+FileChecksum: SHA1: 96f9c6ee64b53033ce5137cd2aae6b2ae31ca931
+FileChecksum: MD5: 2b7d6fc5efd8b47732c8b4b32739ecb2
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005, 2006 Christophe Varoqui
+Copyright (c) 2005 Mike Anderson
+Copyright (c) 2005 Stefan Bader, IBM </text>
+ 
+
+##File
+
+FileName: libmultipath/dict.h
+SPDXID: SPDXRef-item113
+FileChecksum: SHA1: 8e6f5543732bb5d899c1b810086c32f7b92a7695
+FileChecksum: MD5: 2e5506859326261a86e5c1d36e4d770d
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/dict.c
+SPDXID: SPDXRef-item168
+FileChecksum: SHA1: d7a9bab089787b9173f27aa370e333d2d4681230
+FileChecksum: MD5: b2c81a0a00939602abad78fb1e13fe6e
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005, 2006 Christophe Varoqui
+Copyright (c) 2005 Benjamin Marzinski, Redhat
+Copyright (c) 2005 Kiyoshi Ueda, NEC </text>
+ 
+
+##File
+
+FileName: libmultipath/devmapper.h
+SPDXID: SPDXRef-item117
+FileChecksum: SHA1: 96e18a629055a3453345bbeedfef4016ffd2771d
+FileChecksum: MD5: c7afec3a8a9d3ea07159ff827e7b9de8
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/devmapper.c
+SPDXID: SPDXRef-item172
+FileChecksum: SHA1: 417b5fb3b7475580ca65ca29e729b16190914f16
+FileChecksum: MD5: ddd65d9c2b8589f7922cdc7b726eb65f
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui
+Copyright (c) 2005 Kiyoshi Ueda, NEC
+Copyright (c) 2005 Patrick Caulfield, Redhat </text>
+ 
+
+##File
+
+FileName: libmultipath/defaults.h
+SPDXID: SPDXRef-item102
+FileChecksum: SHA1: 7499f580acc823fa197b417e9de10a345db35db4
+FileChecksum: MD5: 5075978d7f01ee223485228105db22f7
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/defaults.c
+SPDXID: SPDXRef-item145
+FileChecksum: SHA1: 679e88ae2187a4faa65d1c8d319cefeb643d9baf
+FileChecksum: MD5: eaeea02e54e3c3d8f187dc055bfa280e
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/debug.h
+SPDXID: SPDXRef-item67
+FileChecksum: SHA1: fa5373f393484a75422927337d48762b8e74ccc1
+FileChecksum: MD5: 3e0fd039fc65a80cc389473d85757cfb
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/configure.h
+SPDXID: SPDXRef-item152
+FileChecksum: SHA1: 9399fe06d5480be4ad6c28d0a18f8d5b86573de6
+FileChecksum: MD5: 6ea3daf4ca532ae164cdab2144afe83c
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/configure.c
+SPDXID: SPDXRef-item141
+FileChecksum: SHA1: 273e492af99ef0d734d49e027aa36549080d8aff
+FileChecksum: MD5: 65954541f0761ba44d395a29936d0731
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2003, 2004, 2005 Christophe Varoqui
+Copyright (c) 2005 Benjamin Marzinski, Redhat
+Copyright (c) 2005 Edward Goggin, EMC
+Copyright (c) 2005 Kiyoshi Ueda, NEC
+Copyright (c) 2005 Patrick Caulfield, Redhat </text>
+ 
+
+##File
+
+FileName: libmultipath/config.h
+SPDXID: SPDXRef-item174
+FileChecksum: SHA1: 93e24f44eb1b1ad30df1a0a26bcb8aab4f5a377c
+FileChecksum: MD5: a683c59bfa9d767908ba86cc8f9d98cc
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/config.c
+SPDXID: SPDXRef-item183
+FileChecksum: SHA1: 2923db354b062680b5233a347d6ba574d96d0f7b
+FileChecksum: MD5: 9d31fba1d5245258d1ef26b40f7cbd49
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui
+Copyright (c) 2005 Benjamin Marzinski, Redhat
+Copyright (c) 2005 Edward Goggin, EMC </text>
+ 
+
+##File
+
+FileName: libmultipath/checkers.h
+SPDXID: SPDXRef-item187
+FileChecksum: SHA1: 376e7333049c53ff99517c8b3442e58fe4a3d7e8
+FileChecksum: MD5: fceaf04b354085531172e2e722d32931
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/checkers.c
+SPDXID: SPDXRef-item177
+FileChecksum: SHA1: fb1be464c536bd487c073d2c824f6f4a7dac4f42
+FileChecksum: MD5: 5f3aa54bc94a77a56d7d898128c13f8d
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/byteorder.h
+SPDXID: SPDXRef-item181
+FileChecksum: SHA1: 8397430c96b007a3efdfd40f28ef8521f0fb041c
+FileChecksum: MD5: 74ead3d91f3e212a2396182b39a51247
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/blacklist.h
+SPDXID: SPDXRef-item138
+FileChecksum: SHA1: 01c78fad7a1c2e7e280e3d7b2c1d384c49bb8509
+FileChecksum: MD5: 2b8afcf8dc311f752b2709df745fae3f
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/blacklist.c
+SPDXID: SPDXRef-item157
+FileChecksum: SHA1: 55540fcd01502b8c3bb692c83c710a45cf87fd86
+FileChecksum: MD5: 2cb7f73f63b9b09f8bffb99aeac04f4d
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/weightedpath.h
+SPDXID: SPDXRef-item131
+FileChecksum: SHA1: 3fa530f5adf22b973dd6798e7f06b1f1be7ffb3d
+FileChecksum: MD5: 2914da522c7e38f622e5c63864c3c8ee
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/sysfs.c
+SPDXID: SPDXRef-item122
+FileChecksum: SHA1: 7fc77186024e2bdc8f4aa6add29364e56cabb822
+FileChecksum: MD5: 2e2447d8a08aa2f9ec75e471834dbc95
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> (c) 2016 Hannes Reinecke, SUSE Linux GmbH </text>
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/rdac.c
+SPDXID: SPDXRef-item121
+FileChecksum: SHA1: 9438351a39c51e07ad48c2e82a21b2799b562e63
+FileChecksum: MD5: 2e77aa43d8bfe1cd22164557728bc342
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/random.c
+SPDXID: SPDXRef-item130
+FileChecksum: SHA1: 36e6aa05459b4e0324f795acb26bc5b5577debe0
+FileChecksum: MD5: d0a34519cc3575a6eae84302bf98fccc
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/iet.c
+SPDXID: SPDXRef-item123
+FileChecksum: SHA1: 9e761291f66e565698452322ffb6c2129efd6e2a
+FileChecksum: MD5: 45d1b93c4c90a2fb31c598649b6f6a98
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/hp_sw.c
+SPDXID: SPDXRef-item133
+FileChecksum: SHA1: ccf71b2a2432fce8834307f7595767a43234f94b
+FileChecksum: MD5: 8608a550c50acd83e040473c8cf59b5f
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/emc.c
+SPDXID: SPDXRef-item119
+FileChecksum: SHA1: 839407fc5b22de3549eb15e89b33a5a0221a1bb3
+FileChecksum: MD5: 978a9f706caea906f91f51e55a549397
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/const.c
+SPDXID: SPDXRef-item128
+FileChecksum: SHA1: 951e34b21a6c0412c0b3bd4810e08ff3ee0c1436
+FileChecksum: MD5: f29b3825f5cd735f345f95f88e3687af
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/alua.h
+SPDXID: SPDXRef-item137
+FileChecksum: SHA1: 764f29c258deb4f8a98d7de5bcb1f33172258ed2
+FileChecksum: MD5: 3f46cae353684caa89717639fcac2b70
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/checkers/tur.h
+SPDXID: SPDXRef-item84
+FileChecksum: SHA1: 538f05db6c2c647e8be6c67c2c66e7f8fd19a56b
+FileChecksum: MD5: eeddd06007da305038b8050ae916982d
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/checkers/tur.c
+SPDXID: SPDXRef-item71
+FileChecksum: SHA1: 5f4e48a149f2a28066ae91813383df13125d5a67
+FileChecksum: MD5: eca24ecba6164c496d60724a36c7a8b8
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/checkers/readsector0.h
+SPDXID: SPDXRef-item74
+FileChecksum: SHA1: 237f74551baef105c160206244e239aab0c7ebf7
+FileChecksum: MD5: 8252229e27c7544b4cbabd9a3622c3c8
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/checkers/readsector0.c
+SPDXID: SPDXRef-item80
+FileChecksum: SHA1: 9ddf68e08a9a55a07027883d5b4cbac851bb4282
+FileChecksum: MD5: d1f774a0bcdc0e6bcc3786d1c31e1c24
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/checkers/rdac.h
+SPDXID: SPDXRef-item70
+FileChecksum: SHA1: ec255b4c1dc02c949f7d188935f3a0cb010f93a9
+FileChecksum: MD5: f6150e377086f796ee16ec9d4ce9bb47
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/checkers/rdac.c
+SPDXID: SPDXRef-item73
+FileChecksum: SHA1: b6dedbc195f05241187cbab7f2da35cb60c55e33
+FileChecksum: MD5: 57a188b6a42a533715f08c4a099d5c87
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/checkers/rbd.c
+SPDXID: SPDXRef-item86
+FileChecksum: SHA1: d0864f5d63f38f5bac22c5cf6f4428fa28fc4184
+FileChecksum: MD5: da67bb6f7bf623f470c3a5978a80cacc
+LicenseConcluded: LGPL-2.1
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004 Christophe Varoqui
+Copyright (c) 2016 Red Hat </text>
+ 
+
+##File
+
+FileName: libmultipath/checkers/libsg.h
+SPDXID: SPDXRef-item75
+FileChecksum: SHA1: a51dc2e6a2dd4c20929dfc12e8d5ef0be04cfa16
+FileChecksum: MD5: 078beae8ae63fab8319ef2909ab975b7
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/checkers/libsg.c
+SPDXID: SPDXRef-item85
+FileChecksum: SHA1: d1d5185a6b022ce17f433c983f33609bd449d886
+FileChecksum: MD5: aa7448a59c42d4ffb9c7b2a0d20904af
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/checkers/hp_sw.c
+SPDXID: SPDXRef-item87
+FileChecksum: SHA1: 4e68d086aff96534b81c4a365e309f255729d54c
+FileChecksum: MD5: 918f32c2c00c2e5febfcfb1a960d105d
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/checkers/emc_clariion.h
+SPDXID: SPDXRef-item79
+FileChecksum: SHA1: 10799f60411220714d77b4860e53cddee329fff1
+FileChecksum: MD5: dd3893be2f43f310f6cc8161ca688d3c
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/checkers/emc_clariion.c
+SPDXID: SPDXRef-item83
+FileChecksum: SHA1: 163f09b23629600e797efe6769176d05ecaf2f44
+FileChecksum: MD5: e159193eb108e4e55b74d720d4f27308
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text>
+Copyright (c) 2004, 2005 Lars Marowsky-Bree </text>
+ 
+
+##File
+
+FileName: libmultipath/checkers/directio.h
+SPDXID: SPDXRef-item82
+FileChecksum: SHA1: c5d7c41a6b0752165219cf473dfdcce228eba730
+FileChecksum: MD5: d6eb08441f417477f2349779469e6761
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/checkers/directio.c
+SPDXID: SPDXRef-item81
+FileChecksum: SHA1: 08791db92fc36aeb26f968e94ca680b586ec686d
+FileChecksum: MD5: e9d44f84c2bf7e77b64c31ef7393fa09
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Hannes Reinecke, Suse </text>
+ 
+
+##File
+
+FileName: libmpathpersist/mpathpr.h
+SPDXID: SPDXRef-item16
+FileChecksum: SHA1: 5b72e0bda0cde01824666532140c18d5cfd9aa63
+FileChecksum: MD5: 629e1f2e1d7dddad83ee6e67d788dc8c
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmpathpersist/mpath_updatepr.c
+SPDXID: SPDXRef-item23
+FileChecksum: SHA1: da4e4423fa9e524a5a1e02bd005cc5003ecafa37
+FileChecksum: MD5: 8e0e79c9648a9567554a651811c971bd
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmpathpersist/mpath_pr_ioctl.h
+SPDXID: SPDXRef-item19
+FileChecksum: SHA1: 3b660049e25a6c36fd00fa3b6e32bc2b5256f513
+FileChecksum: MD5: bee61f007dbf0526aac6f6e511cc15ca
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmpathpersist/mpath_pr_ioctl.c
+SPDXID: SPDXRef-item22
+FileChecksum: SHA1: fdedaa7732a8568f1929d6a7e803920455c1c1ea
+FileChecksum: MD5: d2788e09331468004ce8affe73aef032
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmpathpersist/mpath_persistent_reserve_out.3
+SPDXID: SPDXRef-item21
+FileChecksum: SHA1: a5060be9a697adee861c468d997ad47e39b594f6
+FileChecksum: MD5: d88ffa0fe2c58ff08905a21b3e24660a
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmpathpersist/mpath_persistent_reserve_in.3
+SPDXID: SPDXRef-item17
+FileChecksum: SHA1: 56a4d388a36bf9a7e43b50805072c88f9326158c
+FileChecksum: MD5: 357cdcb7c944b350c97b134974ee009a
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmpathpersist/mpath_persist.h
+SPDXID: SPDXRef-item18
+FileChecksum: SHA1: c46c8055a10703d2af05f60a3757d946b2de2fa2
+FileChecksum: MD5: 73da344e9a8a9a96a024d315ebb2b506
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmpathpersist/mpath_persist.c
+SPDXID: SPDXRef-item24
+FileChecksum: SHA1: be3e5d98ffe70b0c2fd4341df81aa081c1f15715
+FileChecksum: MD5: d3897226965b790585980d062ed38262
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libdmmp/docs/split-man.pl
+SPDXID: SPDXRef-item231
+FileChecksum: SHA1: 4e838248a29d15927a9b3f808d3b531b33d073eb
+FileChecksum: MD5: 090452e5575f42abc3d5080665a2aece
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/xstrncpy.h
+SPDXID: SPDXRef-item59
+FileChecksum: SHA1: 354af3645e06fcdc32e071ffafb8db79f25953bc
+FileChecksum: MD5: d13c42fa90a963ac7d805d8aa15c7494
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/xstrncpy.c
+SPDXID: SPDXRef-item53
+FileChecksum: SHA1: 831af72193927356c6f9607cf6027191375f8ed6
+FileChecksum: MD5: 1e37e2e8e2a9c051a5c1d35afc0bab2f
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/unixware.c
+SPDXID: SPDXRef-item54
+FileChecksum: SHA1: 0cb604b8ab80f48b2ffe07df64f01190b100dfc3
+FileChecksum: MD5: c602eee8313cc511464d977430b0eb84
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/sun.c
+SPDXID: SPDXRef-item44
+FileChecksum: SHA1: bb300be0995de53d0376c042f4e5db024a38bd50
+FileChecksum: MD5: f404ff9a87f02ec2aa3c58f089b7e001
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2007 Hannes Reinecke
+Copyrights of the original file apply </text>
+ 
+
+##File
+
+FileName: kpartx/solaris.c
+SPDXID: SPDXRef-item34
+FileChecksum: SHA1: bcf533a7f2ffcea00fed10cc24a710cce21aca48
+FileChecksum: MD5: 206a267d8a79f2eda51605ecfb138392
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/ps3.c
+SPDXID: SPDXRef-item40
+FileChecksum: SHA1: 81f832bf716440245f21373ecbd6016b67b183e3
+FileChecksum: MD5: b07439801b8dd5a1ff7cad16a3b58aa4
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/lopart.h
+SPDXID: SPDXRef-item58
+FileChecksum: SHA1: 2063bfed3d4a2710e64af26ff5de5e5170a1f3bd
+FileChecksum: MD5: aca894d2e7f104ba5355f347f15d61fc
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/lopart.c
+SPDXID: SPDXRef-item43
+FileChecksum: SHA1: 2bc49053daff3c44ddfc47320d6228620c180049
+FileChecksum: MD5: 73630250a2cb932134009d71413f30f9
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/kpartx.rules
+SPDXID: SPDXRef-item42
+FileChecksum: SHA1: 9d85ef47d1e50b0c49d6a2c4188fe50f71e88a0d
+FileChecksum: MD5: 317ed267e6bb8c8d93154c51c283d82e
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/kpartx.h
+SPDXID: SPDXRef-item38
+FileChecksum: SHA1: aa23f06a1ad86fa9b6f02cc84270c95bb6ecf7ba
+FileChecksum: MD5: a7676c054a13a9869fadfbb2b1a1c0ea
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/kpartx.c
+SPDXID: SPDXRef-item33
+FileChecksum: SHA1: e218f2923c737fd234495fe12c577dded37b9f74
+FileChecksum: MD5: 7ecca68fd0598ee6280ce7d2bba20ca2
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui
+Copyright (c) 2005 Kiyoshi Ueda
+Copyright (c) 2005 Lars Soltau
+Copyrights of the original file applies </text>
+ 
+
+##File
+
+FileName: kpartx/kpartx.8
+SPDXID: SPDXRef-item46
+FileChecksum: SHA1: 5f8d5c07c228d9d62e00011873a4b314ec16e878
+FileChecksum: MD5: 53d8c419c654128ac212d5b263500bf4
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/dos.h
+SPDXID: SPDXRef-item51
+FileChecksum: SHA1: 24704d93c5d8f06e934b40d70717f9ed5d62740c
+FileChecksum: MD5: e0cee4ca962a3fc303a1dfc1eb6b5f59
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/dos.c
+SPDXID: SPDXRef-item47
+FileChecksum: SHA1: 45f4f783cfa1b8e08d7a472a73a418dd746f0702
+FileChecksum: MD5: 455be597f818875ad03ec10f58def5f0
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2005 Bastian Blank
+Copyrights of the original file apply </text>
+ 
+
+##File
+
+FileName: kpartx/dm-parts.rules
+SPDXID: SPDXRef-item49
+FileChecksum: SHA1: b979aa58372928c56655263c9b9c8a116660bdb4
+FileChecksum: MD5: 8792b261415d07cf9b82349e88572956
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/devmapper.h
+SPDXID: SPDXRef-item48
+FileChecksum: SHA1: 8fa4edc02adca076c377d316263a31621a0649bd
+FileChecksum: MD5: 712eb8f66aa9e498c8516ac94d2d9fd0
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/devmapper.c
+SPDXID: SPDXRef-item57
+FileChecksum: SHA1: 8fc45f2bccb4f15be25ab5d367cc5982c004d506
+FileChecksum: MD5: bc0749639ab9da47132248ebbf59ccd3
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004, 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: kpartx/del-part-nodes.rules
+SPDXID: SPDXRef-item50
+FileChecksum: SHA1: a36ccb891dfdb199c939073b8de787985e6c671a
+FileChecksum: MD5: f3a8a2ab04471cd5d3ef73a3ce517ce0
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/byteorder.h
+SPDXID: SPDXRef-item61
+FileChecksum: SHA1: 7275e9a0b43e740666a876722b8d6740297b525b
+FileChecksum: MD5: 12a029ad703216f1e0c30af223b7b66b
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmpathcmd/mpath_cmd.c
+SPDXID: SPDXRef-item244
+FileChecksum: SHA1: d157b455f744651d2d199b8f18d327a7d380747a
+FileChecksum: MD5: 930e7edae1135a129b9fbe21c0324da5
+LicenseConcluded: LicenseRef-LesserGPLv2+
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libdmmp/docs/libdmmp.h.3
+SPDXID: SPDXRef-item229
+FileChecksum: SHA1: 16acf3606dbab4d0897c821ec02f89458b6660d1
+FileChecksum: MD5: 788610f3d21cca9cfb8110474e8ba140
+LicenseConcluded: GPL-3.0+
+LicenseInfoInFile: GPL-2.0+
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/weightedpath.c
+SPDXID: SPDXRef-item120
+FileChecksum: SHA1: b110ab40dfa57a6fdb01ace94990b6e3e3f4a305
+FileChecksum: MD5: 0e54015355d6b76b615c218fa439a727
+LicenseConcluded: LicenseRef-GPL
+LicenseInfoInFile: LicenseRef-GPL
+FileCopyrightText: <text> (C) Copyright 2008 Hewlett-Packard Development Company, L.P </text>
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/path_latency.c
+SPDXID: SPDXRef-item127
+FileChecksum: SHA1: e87ee4e19c6f3dbe569fe7d6f3fe59ffe047ebc3
+FileChecksum: MD5: 15b1ca11f405ce6bbace0f7d18f1a6a2
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> (C) Copyright HUAWEI Technology Corp. 2017, All Rights Reserved. </text>
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/ontap.c
+SPDXID: SPDXRef-item136
+FileChecksum: SHA1: 75c649de50c72cf83d3402ed0f9a9ccbdf71a733
+FileChecksum: MD5: 951269c805f4a8b143a8d49b36124927
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: GPL-2.0
+FileCopyrightText: <text> Copyright 2005 Network Appliance, Inc., All Rights Reserved Author: David Wysochanski available at davidw@netapp.com </text>
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/hds.c
+SPDXID: SPDXRef-item129
+FileChecksum: SHA1: d0fb68a6a1f1c7daaf28175512a8593f248880f3
+FileChecksum: MD5: 380f5530d68538e2556aaa456a0a579a
+LicenseConcluded: LicenseRef-GPL
+LicenseInfoInFile: LicenseRef-GPL
+FileCopyrightText: <text> (C) Copyright HDS GmbH 2006. All Rights Reserved. </text>
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/datacore.c
+SPDXID: SPDXRef-item134
+FileChecksum: SHA1: c839c908182184f73851560ed3b0d1ffcf1f444d
+FileChecksum: MD5: d94dc6149777efe844c3ae263104e010
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: GPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+FileCopyrightText: <text> (C) 2009 Dembach Goo Infromatik GmbH & Co KG Manon Goo <manon.goo@dg-i.net>
+(C) 2010 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/alua_spc3.h
+SPDXID: SPDXRef-item135
+FileChecksum: SHA1: e00d972351b221cff635a12e819b9c7d20d17a76
+FileChecksum: MD5: 7b8bad45f9b43490bf567e61fc93eb77
+LicenseConcluded: LicenseRef-GPL
+LicenseInfoInFile: LicenseRef-GPL
+FileCopyrightText: <text> (C) Copyright IBM Corp. 2004, 2005 All Rights Reserved. </text>
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/alua_rtpg.h
+SPDXID: SPDXRef-item132
+FileChecksum: SHA1: 6b3aaea499c36a8e4cdd23fbb6273321de0cd38b
+FileChecksum: MD5: 1c2df3ec6bb2063f243169c936e04466
+LicenseConcluded: LicenseRef-GPL
+LicenseInfoInFile: LicenseRef-GPL
+FileCopyrightText: <text> (C) Copyright IBM Corp. 2004, 2005 All Rights Reserved. </text>
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/alua_rtpg.c
+SPDXID: SPDXRef-item125
+FileChecksum: SHA1: d0b367b5116301fdb1d4e48a89e742514e8fc4a8
+FileChecksum: MD5: 8e54229ea2af630ba7236e6cd671d9c6
+LicenseConcluded: LicenseRef-GPL
+LicenseInfoInFile: LicenseRef-GPL
+FileCopyrightText: <text> (C) Copyright IBM Corp. 2004, 2005 All Rights Reserved. </text>
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/alua.c
+SPDXID: SPDXRef-item126
+FileChecksum: SHA1: d9222a9d0cd818cfdcd69f78da0b20ef29ec7ba4
+FileChecksum: MD5: 2af784fb2eae8df5425826f324375858
+LicenseConcluded: LicenseRef-GPL
+LicenseInfoInFile: LicenseRef-GPL
+FileCopyrightText: <text> (C) Copyright IBM Corp. 2004, 2005 All Rights Reserved. </text>
+ 
+
+##File
+
+FileName: libmultipath/foreign/nvme.c
+SPDXID: SPDXRef-item161
+FileChecksum: SHA1: f06fb3b0883713f88ea4db9d6302573e52a0cea8
+FileChecksum: MD5: 581a386b0360c3b23f35af63e5d47f79
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2018 Martin Wilck, SUSE Linux GmbH </text>
+ 
+
+##File
+
+FileName: libmultipath/checkers/cciss_tur.c
+SPDXID: SPDXRef-item72
+FileChecksum: SHA1: 7d7cf699a27cf3005c2f2fe16a164729b27426fd
+FileChecksum: MD5: 46d8e01722068eabb467d680539901a5
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> (C) Copyright 2007 Hewlett-Packard Development Company, L.P * </text>
+ 
+
+##File
+
+FileName: libmultipath/checkers/cciss.h
+SPDXID: SPDXRef-item77
+FileChecksum: SHA1: 3e31fe6a085d2baaa5ed0b140cdea0395a03a602
+FileChecksum: MD5: c8d5be95ec9528b70685a779a7b03362
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: third-party/valgrind/valgrind.h
+SPDXID: SPDXRef-item29
+FileChecksum: SHA1: 4ec536029102080b55ad92e4a6eb57df38666716
+FileChecksum: MD5: 911a830b04bfd5fe23add97827f688bb
+LicenseConcluded: Zlib
+LicenseInfoInFile: Zlib
+LicenseInfoInFile: GPL-2.0
+LicenseInfoInFile: LicenseRef-See-file
+LicenseInfoInFile: LicenseRef-bzip2
+FileCopyrightText: <text> Copyright (C) 2000-2017 Julian Seward. All rights reserved.
+copyright notice, this list of conditions and the following disclaimer. </text>
+ 
+
+##File
+
+FileName: third-party/valgrind/drd.h
+SPDXID: SPDXRef-item30
+FileChecksum: SHA1: 108fed30a2fdc5f8fede89fc1eadcdb086595a4f
+FileChecksum: MD5: ec04f10bd4dc170b111af9362a4ba2d3
+LicenseConcluded: Zlib
+LicenseInfoInFile: Zlib
+LicenseInfoInFile: GPL-2.0
+LicenseInfoInFile: LicenseRef-See-file
+LicenseInfoInFile: LicenseRef-bzip2
+FileCopyrightText: <text> Copyright (C) 2006-2017 Bart Van Assche <bvanassche@acm.org>. All rights reserved.
+copyright notice, this list of conditions and the following disclaimer. </text>
+ 
+
+##File
+
+FileName: tests/util.c
+SPDXID: SPDXRef-item9
+FileChecksum: SHA1: 5da0ebee2caea7ed91fd0af2d1c175d5c4a8c280
+FileChecksum: MD5: 88165376ba55bb4f74a991ee460fe268
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2018 Benjamin Marzinski, Redhat </text>
+ 
+
+##File
+
+FileName: tests/uevent.c
+SPDXID: SPDXRef-item10
+FileChecksum: SHA1: 98e6d4a30b537ae9374f35d8acca023b5fdc6576
+FileChecksum: MD5: cbb71aae5e43e60988a988e94fcef3b0
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2018 SUSE Linux GmbH </text>
+ 
+
+##File
+
+FileName: tests/parser.c
+SPDXID: SPDXRef-item11
+FileChecksum: SHA1: 77fd106fe233121b7914513a4c8a6dcaab488db4
+FileChecksum: MD5: 5f20c7b3c953852e3f158e4d300b39e6
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2018 SUSE Linux GmbH </text>
+ 
+
+##File
+
+FileName: tests/globals.c
+SPDXID: SPDXRef-item13
+FileChecksum: SHA1: 086475edcc60166163186160b9b0054c91c91c6b
+FileChecksum: MD5: 2c4bd07523895ecf9d645b92d8523b96
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: tests/dmevents.c
+SPDXID: SPDXRef-item14
+FileChecksum: SHA1: 79eed72a2b27047a189c9124eb7868878031f565
+FileChecksum: MD5: b7550b3f6f8d614ae975d5f2eb5e45c9
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2018 Benjamin Marzinski, Redhat </text>
+ 
+
+##File
+
+FileName: multipathd/Makefile
+SPDXID: SPDXRef-item202
+FileChecksum: SHA1: 82809b517fdb2e10e0ee7583901596680c61089b
+FileChecksum: MD5: 9342fe660d0d39843fa721fa0eefc261
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipath/main.c
+SPDXID: SPDXRef-item220
+FileChecksum: SHA1: fe7cd9d88533ddba3d471a27472c2dc87f7f88dd
+FileChecksum: MD5: cb7455356f5952435fc2096aee85119d
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2003, 2004, 2005 Christophe Varoqui
+Copyright (c) 2005 Benjamin Marzinski, Redhat
+Copyright (c) 2005 Edward Goggin, EMC
+Copyright (c) 2005 Kiyoshi Ueda, NEC
+Copyright (c) 2005 Patrick Caulfield, Redhat </text>
+ 
+
+##File
+
+FileName: libmultipath/version.h
+SPDXID: SPDXRef-item139
+FileChecksum: SHA1: 2fffb866416ce37dbff3195181cf4f152a4ae094
+FileChecksum: MD5: 05c5cadda5540ddfe74f514688ccec22
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2006 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/vector.h
+SPDXID: SPDXRef-item142
+FileChecksum: SHA1: 8e74163a2065eaded7677411fb1aded6d9f29375
+FileChecksum: MD5: a53344bfdb5d16dde343301bf54cbcc3
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/vector.c
+SPDXID: SPDXRef-item149
+FileChecksum: SHA1: e34adca15a6c49a9621516d707b623d99de7a693
+FileChecksum: MD5: 0e23785e70e2534b3ba0938d1d079198
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2002, 2003, 2004 Alexandre Cassen
+Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/uevent.h
+SPDXID: SPDXRef-item185
+FileChecksum: SHA1: daf574b90eaa06e23bbaa054e83f98fb06f84311
+FileChecksum: MD5: 017719b5d2d5d023ffa723c25355b6db
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/uevent.c
+SPDXID: SPDXRef-item97
+FileChecksum: SHA1: 38d69fb3dad3d82038c5652cc8a44971868fb7f9
+FileChecksum: MD5: 151952ca44858f2379c3d41f1d343092
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: GPL-2.0
+FileCopyrightText: <text> Copyright (C) 2004 Kay Sievers <kay.sievers@vrfy.org> </text>
+ 
+
+##File
+
+FileName: libmultipath/sysfs.h
+SPDXID: SPDXRef-item89
+FileChecksum: SHA1: 21486cb601f4b24254ef452b0833de9f6e9b6f23
+FileChecksum: MD5: 09175b42209a3f1fcfc6530ac0b23d8a
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/sysfs.c
+SPDXID: SPDXRef-item110
+FileChecksum: SHA1: f69257afe9d55d91e1c9c5491bb93c684c5a33ee
+FileChecksum: MD5: f5d1f0d3e6ae604526b2a0a7a9f8047f
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: GPL-2.0
+FileCopyrightText: <text> Copyright (C) 2005-2006 Kay Sievers <kay.sievers@vrfy.org> </text>
+ 
+
+##File
+
+FileName: libmultipath/parser.h
+SPDXID: SPDXRef-item153
+FileChecksum: SHA1: 75aa1b11d4d7299344645ac3bbe553fe736058b1
+FileChecksum: MD5: a5a85c55d20b7714f5aab89626de7897
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/parser.c
+SPDXID: SPDXRef-item98
+FileChecksum: SHA1: b439fb91ba763bc6a62a74ef148da8ac6065fadb
+FileChecksum: MD5: 71b17831825c166cfb4b227d9c9ed5e4
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/memory.h
+SPDXID: SPDXRef-item146
+FileChecksum: SHA1: 9b3077bba441c6a7955814ac68953c69e60a737c
+FileChecksum: MD5: b7a4921890e7c9b7ae00b3ec7357f431
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (C) 2001-2005 Alexandre Cassen, <acassen@linux-vs.org> </text>
+ 
+
+##File
+
+FileName: libmultipath/memory.c
+SPDXID: SPDXRef-item154
+FileChecksum: SHA1: 379ff153599c9b6e4d7a7a0577fec859e4fabf5e
+FileChecksum: MD5: 9b4852aaccef10a67f273148bb4d1be2
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (C) 2001-2005 Alexandre Cassen, <acassen@linux-vs.org> </text>
+ 
+
+##File
+
+FileName: libmultipath/list.h
+SPDXID: SPDXRef-item175
+FileChecksum: SHA1: fb07b9123774f8dd5dbb910f55b930315b810163
+FileChecksum: MD5: e4a7030a0c38717caa15818c31df7528
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: GPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/io_err_stat.h
+SPDXID: SPDXRef-item169
+FileChecksum: SHA1: b33382c16fb8cfd60f8dc2163ff7246493a54c0d
+FileChecksum: MD5: b779fbf4209da379984b2ef97e147884
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/io_err_stat.c
+SPDXID: SPDXRef-item167
+FileChecksum: SHA1: 6c6926e423842c3d88d29afbcc750b96f0cc90b6
+FileChecksum: MD5: a212c73db7e6e38d57a034b48ce6aff4
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> (C) Copyright HUAWEI Technology Corp. 2017, All Rights Reserved. </text>
+ 
+
+##File
+
+FileName: libmultipath/generic.h
+SPDXID: SPDXRef-item66
+FileChecksum: SHA1: 89665ab04ca1d8b2038ca83ebab102723f511f6d
+FileChecksum: MD5: 4aebf1bb709a8b622d2bc8ad36a5d55f
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2018 Martin Wilck, SUSE Linux GmbH </text>
+ 
+
+##File
+
+FileName: libmultipath/generic.c
+SPDXID: SPDXRef-item166
+FileChecksum: SHA1: 9835edc7fd41cc6225b2690dc9bf74a72e63d5a6
+FileChecksum: MD5: fa342d060cde3d44b8c80e4eec8ac308
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2018 Martin Wilck, SUSE Linux GmbH </text>
+ 
+
+##File
+
+FileName: libmultipath/foreign.h
+SPDXID: SPDXRef-item178
+FileChecksum: SHA1: bcdf11a4b29f62a45f26545f352c8c450f91be6b
+FileChecksum: MD5: 72058fd17c6b7a335fd0c0cd8ee39b79
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2018 Martin Wilck, SUSE Linux GmbH </text>
+ 
+
+##File
+
+FileName: libmultipath/foreign.c
+SPDXID: SPDXRef-item165
+FileChecksum: SHA1: 7f28c1b7912189708ea7d9b81fdddb08dba80a3d
+FileChecksum: MD5: 82a060ca4dd8162616274d7b88bd2a8b
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2018 Martin Wilck, SUSE Linux GmbH </text>
+ 
+
+##File
+
+FileName: libmultipath/dm-generic.h
+SPDXID: SPDXRef-item116
+FileChecksum: SHA1: 309d19bf6bd9bebfc653f8ebbb10ac522c8a4b40
+FileChecksum: MD5: 81311c2fa8ef2b33387a02ae2a3a93a6
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2018 Martin Wilck, SUSE Linux GmbH </text>
+ 
+
+##File
+
+FileName: libmultipath/dm-generic.c
+SPDXID: SPDXRef-item184
+FileChecksum: SHA1: ea281cf425ecb96d0277a4be2223954a4823a2a2
+FileChecksum: MD5: 005996c32f0e6d266e537a9dbf326d7c
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2018 Martin Wilck, SUSE Linux GmbH </text>
+ 
+
+##File
+
+FileName: libmultipath/callout.h
+SPDXID: SPDXRef-item95
+FileChecksum: SHA1: 1697064ca5045985f3ab04c5bb7aacb895b39954
+FileChecksum: MD5: f52371cec1446c53adad751b0083db1b
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/callout.c
+SPDXID: SPDXRef-item93
+FileChecksum: SHA1: 19acdf3dcc0c2c4b829d0ba7baf7040e287602b4
+FileChecksum: MD5: cc5e77c4dfcce5e527f0086d14510e2d
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (c) 2004 Christophe Varoqui
+Copyrights of the source file apply </text>
+ 
+
+##File
+
+FileName: libmultipath/alias.c
+SPDXID: SPDXRef-item164
+FileChecksum: SHA1: 4acb79a2141e8280f0f6450e9c94a9db9ca3ba81
+FileChecksum: MD5: 9ad26d7f967954f3e416e770fd9da84d
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+LicenseInfoInFile: LicenseRef-See-file
+FileCopyrightText: <text> Copyright (C) 2002 Cisco Systems, Inc.
+Copyright (c) 2005 Benjamin Marzinski, Redhat
+Copyright (c) 2005 Christophe Varoqui </text>
+ 
+
+##File
+
+FileName: libmultipath/alias.h
+SPDXID: SPDXRef-item144
+FileChecksum: SHA1: b543ae798c4288f4cb1b3f868b23efda6fbdb135
+FileChecksum: MD5: 113de67842dfca06637da3d27e2e14dc
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/test-kpartx
+SPDXID: SPDXRef-item41
+FileChecksum: SHA1: d216822b200f8cd02906b84b8d99261bcf445133
+FileChecksum: MD5: 7047a8fe43ed8bf5a914c156d818495d
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/mac.h
+SPDXID: SPDXRef-item35
+FileChecksum: SHA1: 3b052b4c1d5f0f283c96b07cec6eb7a778a85f8b
+FileChecksum: MD5: 7130106531f869f8ba0eb997b68c91d4
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/mac.c
+SPDXID: SPDXRef-item36
+FileChecksum: SHA1: 2aebd692b535f70a8cf0e67f3884c7289ff60779
+FileChecksum: MD5: 49112d0d64588f644d4c8fb65213c72a
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/kpartx_id
+SPDXID: SPDXRef-item62
+FileChecksum: SHA1: 46a56c45d427101eef39162c482560cd631aa5fd
+FileChecksum: MD5: 459aa27033b78f4dd7d87c706b55c90c
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: GPL-2.0
+FileCopyrightText: <text> Copyright (C) 2006 SUSE Linux Products GmbH Author: Hannes Reinecke <hare@suse.de> </text>
+ 
+
+##File
+
+FileName: kpartx/gpt.h
+SPDXID: SPDXRef-item63
+FileChecksum: SHA1: 76e117068b10c0b371c00720beabc3c4ee616a64
+FileChecksum: MD5: b40acc40c79fa404a9af1e70b379338f
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (C) 2000-2001 Dell Computer Corporation <Matt_Domsch@dell.com> </text>
+ 
+
+##File
+
+FileName: kpartx/gpt.c
+SPDXID: SPDXRef-item45
+FileChecksum: SHA1: 6c26aacab25d31bc3f98fe86bfa694815267a539
+FileChecksum: MD5: e9c935c41621805ef20416913ac659bd
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (C) 2000-2001 Dell Computer Corporation <Matt_Domsch@dell.com> </text>
+ 
+
+##File
+
+FileName: kpartx/efi.h
+SPDXID: SPDXRef-item32
+FileChecksum: SHA1: 4586b6d09856376cf0005a0af11b55094721dc87
+FileChecksum: MD5: 7487ad5d7cf1d0a09d055d7dae4ef2b9
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (C) 2001 Dell Computer Corporation <Matt_Domsch@dell.com> </text>
+ 
+
+##File
+
+FileName: kpartx/dasd.h
+SPDXID: SPDXRef-item56
+FileChecksum: SHA1: 740f5ed5cb970fb19d7191c71bd02362647067f5
+FileChecksum: MD5: e4718af97bf99449759accb2130620a0
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2005, Hannes Reinecke, SUSE Linux Products GmbH
+Copyright IBM Corporation, 2009 </text>
+ 
+
+##File
+
+FileName: kpartx/dasd.c
+SPDXID: SPDXRef-item60
+FileChecksum: SHA1: bf1740384fee785c98e2a9442d52a9054665f00d
+FileChecksum: MD5: 04bb5c1af501c63a8f7b86d26d8e89a8
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: GPL-2.0+
+FileCopyrightText: <text> Copyright (c) 2005, Hannes Reinecke, SUSE Linux Products GmbH
+Copyright IBM Corporation, 2009 </text>
+ 
+
+##File
+
+FileName: kpartx/crc32.h
+SPDXID: SPDXRef-item39
+FileChecksum: SHA1: 43bc12ebcb1fde29bd9220b0ccf0108e15212296
+FileChecksum: MD5: 52bcd14a247aa840b19a830850993d7e
+LicenseConcluded: LicenseRef-Public-domain
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: kpartx/crc32.c
+SPDXID: SPDXRef-item37
+FileChecksum: SHA1: 41ddcb744da8e68818db529114cd7f18bd37f03d
+FileChecksum: MD5: d693c6ff60288e071b88a0ce29fff034
+LicenseConcluded: LicenseRef-Public-domain
+LicenseInfoInFile: LicenseRef-Public-domain
+FileCopyrightText: <text> copyright abandoned. Liability for non-performance of this code is limited to the amount you paid for it. Since it is distributed for free, your refund will be very very small. If it breaks, you get to keep both pieces. </text>
+ 
+
+##File
+
+FileName: kpartx/bsd.c
+SPDXID: SPDXRef-item55
+FileChecksum: SHA1: e48bd3bf7a01f22b2f360fc72a64d6124d06df23
+FileChecksum: MD5: 316ece6c2e9954c76e9ed8856b24291b
+LicenseConcluded: GPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libdmmp/docs/kernel-doc
+SPDXID: SPDXRef-item230
+FileChecksum: SHA1: c6bd0d2089ccee2888f62cf30784c7cd7a738256
+FileChecksum: MD5: 5b9bd625efeaaae81b854b4bbedb5f0f
+LicenseConcluded: LicenseRef-GPL
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: LicenseRef-GPL
+FileCopyrightText: <text> Copyright (C) 2000, 1 Tim Waugh <twaugh@redhat.com> ##
+Copyright (C) 2001 Simon Huggins ##
+Copyright (C) 2005-2012 Randy Dunlap ##
+Copyright (C) 2012 Dan Luedtke ##
+Copyright (c) 1998 Michael Zucchi, All Rights Reserved ##
+Copyright (c) 2000 MontaVista Software, Inc. ## </text>
+ 
+
+##File
+
+FileName: libdmmp/docs/doc-preclean.pl
+SPDXID: SPDXRef-item228
+FileChecksum: SHA1: 699cfef73617293162d0d7f936cfbcb219f68fe0
+FileChecksum: MD5: 8bd42c3696484ba799f37a27106449a2
+LicenseConcluded: GPL-3.0+
+LicenseInfoInFile: GPL-3.0+
+FileCopyrightText: <text> Copyright (C) 2016 Red Hat, Inc. </text>
+ 
+
+##File
+
+FileName: libdmmp/libdmmp/libdmmp.h
+SPDXID: SPDXRef-item242
+FileChecksum: SHA1: 140233ee44a9e6a1c9476efe1c4eb8f287aa3b31
+FileChecksum: MD5: 7dc1c0653502ad1cc2db3e9cbabe1b26
+LicenseConcluded: GPL-3.0+
+LicenseInfoInFile: GPL-3.0+
+FileCopyrightText: <text> Copyright (C) 2015 - 2017 Red Hat, Inc. </text>
+ 
+
+##File
+
+FileName: libdmmp/test/libdmmp_test.c
+SPDXID: SPDXRef-item236
+FileChecksum: SHA1: a400e1fb038cc7fa439453395be29c846ce16fd0
+FileChecksum: MD5: 1ff89ee9b612b092cca9da49ffbf83cb
+LicenseConcluded: GPL-3.0+
+LicenseInfoInFile: GPL-3.0+
+FileCopyrightText: <text> Copyright (C) 2015-2017 Red Hat, Inc. </text>
+ 
+
+##File
+
+FileName: libdmmp/test/libdmmp_speed_test.c
+SPDXID: SPDXRef-item238
+FileChecksum: SHA1: 5b751769df2c5206411fd5a7b8a20ab2b1d775d6
+FileChecksum: MD5: ec7f06a8618a4067eca378d06d64a1d2
+LicenseConcluded: GPL-3.0+
+LicenseInfoInFile: GPL-3.0+
+FileCopyrightText: <text> Copyright (C) 2015-2016 Red Hat, Inc. </text>
+ 
+
+##File
+
+FileName: libmpathcmd/mpath_cmd.h
+SPDXID: SPDXRef-item246
+FileChecksum: SHA1: 005f541d7173223468b0b613ffe5172b69b34ff5
+FileChecksum: MD5: 55b96ba3e399f8e3d3e18db6819c7945
+LicenseConcluded: LicenseRef-LesserGPLv2+
+LicenseInfoInFile: LGPL-2.0+
+LicenseInfoInFile: LicenseRef-LesserGPLv2+
+FileCopyrightText: <text> Copyright (C) 2015 Red Hat, Inc. </text>
+ 
+
+##File
+
+FileName: libdmmp/libdmmp_private.h
+SPDXID: SPDXRef-item240
+FileChecksum: SHA1: 80b544448c540bcc4f09e2d0d37b311eb7befa1c
+FileChecksum: MD5: f42f53b4c6c203ed3110ffd15c4256a6
+LicenseConcluded: GPL-3.0+
+LicenseInfoInFile: GPL-3.0+
+FileCopyrightText: <text> Copyright (C) 2015 - 2016 Red Hat, Inc. </text>
+ 
+
+##File
+
+FileName: libdmmp/libdmmp_pg.c
+SPDXID: SPDXRef-item223
+FileChecksum: SHA1: 5cf0ff32e312b3b8b71637d0d2d0356419be7178
+FileChecksum: MD5: 80add00f1c048ff9935c2a33933ced90
+LicenseConcluded: GPL-3.0+
+LicenseInfoInFile: GPL-3.0+
+FileCopyrightText: <text> Copyright (C) 2015 - 2016 Red Hat, Inc. </text>
+ 
+
+##File
+
+FileName: libdmmp/libdmmp_path.c
+SPDXID: SPDXRef-item239
+FileChecksum: SHA1: db1605c689830d3580bf549b5d1fcfbd3c94ef77
+FileChecksum: MD5: c78199c33c19c52d7ae44567f766b990
+LicenseConcluded: GPL-3.0+
+LicenseInfoInFile: GPL-3.0+
+FileCopyrightText: <text> Copyright (C) 2015 - 2016 Red Hat, Inc. </text>
+ 
+
+##File
+
+FileName: libdmmp/libdmmp_mp.c
+SPDXID: SPDXRef-item224
+FileChecksum: SHA1: 14bdd63b7a359760b186783bd355df2da6e1adb6
+FileChecksum: MD5: 4ddcf3fac2b1d33637dd62f96786ed95
+LicenseConcluded: GPL-3.0+
+LicenseInfoInFile: GPL-3.0+
+FileCopyrightText: <text> Copyright (C) 2015 - 2016 Red Hat, Inc. </text>
+ 
+
+##File
+
+FileName: libdmmp/libdmmp_misc.c
+SPDXID: SPDXRef-item225
+FileChecksum: SHA1: 141771248f652b536e89cd427a3baf1093c8010e
+FileChecksum: MD5: 5319d8268cf0c21180a9f31faaed5c60
+LicenseConcluded: GPL-3.0+
+LicenseInfoInFile: GPL-3.0+
+FileCopyrightText: <text> Copyright (C) 2015 - 2017 Red Hat, Inc. </text>
+ 
+
+##File
+
+FileName: libdmmp/libdmmp.c
+SPDXID: SPDXRef-item226
+FileChecksum: SHA1: a6ec0c14ae239c5c91743a56f4803cc203406780
+FileChecksum: MD5: 5951e55a8c7440f0abe1685c853a8510
+LicenseConcluded: GPL-3.0+
+LicenseInfoInFile: GPL-3.0+
+FileCopyrightText: <text> Copyright (C) 2015 - 2017 Red Hat, Inc. </text>
+ 
+
+##File
+
+FileName: COPYING
+SPDXID: SPDXRef-item4
+FileChecksum: SHA1: 4cc77b90af91e615a64ae04893fdffa7939db84c
+FileChecksum: MD5: b234ee4d69f5fce4486a80fdaf4a4263
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0+
+LicenseInfoInFile: GPL-2.0
+FileCopyrightText: <text> Copyright (C) 1989, 1991 Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
+Copyright (C) <year> <name of author>
+Copyright (C) year name of author Gnomovision comes with ABSOLUTELY NO WARRANTY; for details type `show w'. This is free software, and you are welcome to redistribute it under certain conditions; type `show c' for details.
+copyright disclaimer" for the program, if necessary. Here is a sample; alter the names:
+copyright interest in the program Gnomovision' (which makes passes at compilers) written by James Hacker.
+copyright law: that is to say, a work containing the Program or a portion of it, either verbatim or with modifications and/or translated into another language. (Hereinafter, translation is included without limitation in the term "modification".) Each licensee is addressed as "you".
+copyright the software, and 2) offer you this license which gives you legal permission to copy, distribute and/or modify the software.
+copyrighted by the Free Software Foundation, write to the Free Software Foundation; we sometimes make exceptions for this. Our decision will be guided by the two goals of preserving the free status of all derivatives of our free software and of promoting the sharing and reuse of software generally.
+copyrighted interfaces, the </text>
+ 
+
+##File
+
+FileName: .gitignore
+SPDXID: SPDXRef-item5
+FileChecksum: SHA1: 483d272d5067d744347ec2d8c80a7f809009394a
+FileChecksum: MD5: 3c721541a9bcea1a8c2ba30124043ae9
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: README.alua
+SPDXID: SPDXRef-item6
+FileChecksum: SHA1: 67ab55fb29b92f1907516dcb5fc84e35998e9acb
+FileChecksum: MD5: 9d0e262b227246f9a74d0e301445ca50
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: COPYING.LESSER
+SPDXID: SPDXRef-item7
+FileChecksum: SHA1: ba8966e2473a9969bdcab3dc82274c817cfd98a1
+FileChecksum: MD5: 5f30f0716dfdd0d91eb439ebec522ec2
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: LGPL-2.0
+LicenseInfoInFile: LGPL-2.0+
+LicenseInfoInFile: LicenseRef-LibraryGPLv2+
+FileCopyrightText: <text> Copyright (C) 1991 Free Software Foundation, Inc. 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
+Copyright (C) <year> <name of author>
+copyright disclaimer" for the library, if necessary. Here is a sample; alter the names:
+copyright interest in the library `Frob' (a library for tweaking knobs) written by James Random Hacker.
+copyright law: that is to say, a work containing the Library or a portion of it, either verbatim or with modifications and/or translated straightforwardly into another language. (Hereinafter, translation is included without limitation in the term "modification".)
+copyright the library, and (2) offer you this license which gives you legal permission to copy, distribute and/or modify the library.
+copyrighted by the Free Software Foundation, write to the Free Software Foundation; we sometimes make exceptions for this. Our decision will be guided by the two goals of preserving the free status of all derivatives of our free software and of promoting the sharing and reuse of software generally.
+copyrighted interfaces, the </text>
+ 
+
+##File
+
+FileName: tests/Makefile
+SPDXID: SPDXRef-item12
+FileChecksum: SHA1: 10673ea82e3738f1a445e165fcc7d9093d3e6d09
+FileChecksum: MD5: b89b852e9a785dbb09c247bc7f1520d0
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmpathpersist/Makefile
+SPDXID: SPDXRef-item20
+FileChecksum: SHA1: 462155d4e050126fa3a9b124dc7f6f45eb71db94
+FileChecksum: MD5: e699ce721c316efa5a9b28d706ef009e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: Makefile
+SPDXID: SPDXRef-item25
+FileChecksum: SHA1: ebadd514bcc8d82250b38401a771466747279b26
+FileChecksum: MD5: f156cc35c80859918639c9270866ec45
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com> </text>
+ 
+
+##File
+
+FileName: Makefile.inc
+SPDXID: SPDXRef-item26
+FileChecksum: SHA1: 41bc6f483776996d3ae2a94d90360cefc7a60740
+FileChecksum: MD5: 560988c478f3d202aaca9a68e097265a
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (C) 2004 Christophe Varoqui, <christophe.varoqui@opensvc.com> </text>
+ 
+
+##File
+
+FileName: kpartx/Makefile
+SPDXID: SPDXRef-item52
+FileChecksum: SHA1: 2aa4755ad6f552275ab8299afa1dbe6b204673c4
+FileChecksum: MD5: 5984ce0fce7ed44a9aad72a1496d4898
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com> </text>
+ 
+
+##File
+
+FileName: libmultipath/checkers/Makefile
+SPDXID: SPDXRef-item76
+FileChecksum: SHA1: e1f07eaa99ac77900bd5df39d38c15360848ab46
+FileChecksum: MD5: 9b825715f87efdd384657f21600eca05
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com> </text>
+ 
+
+##File
+
+FileName: libmultipath/checkers/hp_sw.h
+SPDXID: SPDXRef-item78
+FileChecksum: SHA1: ef517aca3cea9abe2921be2b20731aea99dadce1
+FileChecksum: MD5: 147739fac1a0a4f6def38aa8762aa813
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/prioritizers/Makefile
+SPDXID: SPDXRef-item124
+FileChecksum: SHA1: d9af7596f83f90cdab077d1535b3eb06959e2432
+FileChecksum: MD5: 27f8096752bb5e7859573de3e11cf0ac
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (C) 2007 Christophe Varoqui, <christophe.varoqui@opensvc.com> </text>
+ 
+
+##File
+
+FileName: libmultipath/Makefile
+SPDXID: SPDXRef-item148
+FileChecksum: SHA1: c0ee0dc0f8ba2e8f92e921ed43d810293bfc8da7
+FileChecksum: MD5: 29edcb8d1a20494a6a01ef9911f5842d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com> </text>
+ 
+
+##File
+
+FileName: libmultipath/time-util.c
+SPDXID: SPDXRef-item155
+FileChecksum: SHA1: 0d95305ad2780a1c941095f88ba893211c33cdd9
+FileChecksum: MD5: 6f86215172b808c2966bb502cf333787
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/lock.c
+SPDXID: SPDXRef-item158
+FileChecksum: SHA1: b772ac83691c9456087e0cf73775722503ab9419
+FileChecksum: MD5: 95ed98a7a44c89089f83d7c7466655f9
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libmultipath/foreign/Makefile
+SPDXID: SPDXRef-item162
+FileChecksum: SHA1: aeb91cffd4d521c43746585a38eee29dd9062b47
+FileChecksum: MD5: 52091881f6924a765eac16aadda5c059
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com> </text>
+ 
+
+##File
+
+FileName: mpathpersist/Makefile
+SPDXID: SPDXRef-item191
+FileChecksum: SHA1: f0182b220e78255bec8907a892ce6a2b2d0f09f0
+FileChecksum: MD5: 13158e28787490a1116eb59b2aa1fded
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: mpathpersist/main.c
+SPDXID: SPDXRef-item192
+FileChecksum: SHA1: 40bd98f27b8fd620d90aff5e830ada303c840176
+FileChecksum: MD5: bc29dde17928dbbe0b5b28e9fcbc6bdb
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: mpathpersist/main.h
+SPDXID: SPDXRef-item193
+FileChecksum: SHA1: 0e305d2a913d3be1fc58332fe0ff18dd22f7af5b
+FileChecksum: MD5: f049bcdfd7a7a9a80319178a91c94026
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipath/Makefile
+SPDXID: SPDXRef-item217
+FileChecksum: SHA1: d339cb933d07218315553a94a02d133ccfd035d1
+FileChecksum: MD5: fe570607041079e9df7c811de0804392
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com> </text>
+ 
+
+##File
+
+FileName: multipath/multipath.8
+SPDXID: SPDXRef-item218
+FileChecksum: SHA1: 63c71afc0ef37f0b891db9cdd80f9ec018a9c349
+FileChecksum: MD5: 32fcfdfe2906ea2c087936062e851b22
+LicenseConcluded: GPL-2.0+
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: multipath/11-dm-mpath.rules
+SPDXID: SPDXRef-item219
+FileChecksum: SHA1: 87b1d8fbde2b6739f2e0e2780df841d7236162ac
+FileChecksum: MD5: 5cae2fbd40430bc18560a6539d0842c3
+LicenseConcluded: LGPL-2.0
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libdmmp/Makefile
+SPDXID: SPDXRef-item232
+FileChecksum: SHA1: 93563485860c68ecce93c48c5fa4c9059a9f6823
+FileChecksum: MD5: 1e4a39ac0a4a52b4780e8c8999089711
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (C) 2015 - 2016 Red Hat, Inc. Gris Ge <fge@redhat.com> </text>
+ 
+
+##File
+
+FileName: libdmmp/libdmmp.pc.in
+SPDXID: SPDXRef-item233
+FileChecksum: SHA1: 8ea513562d79a0fb4e7c9196b24b529a88110d7b
+FileChecksum: MD5: eaef8759140f0cc36f8f3ff1bc7227f1
+LicenseConcluded: GPL-3.0+
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libdmmp/DEV_NOTES
+SPDXID: SPDXRef-item234
+FileChecksum: SHA1: 29d79858a9c2032a4469bc07bf4b6adc13ca968f
+FileChecksum: MD5: 301646f747529acf957274b080a54469
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: libdmmp/test/Makefile
+SPDXID: SPDXRef-item237
+FileChecksum: SHA1: 1c539df9f66eb837d8354badc0767b9d2185fd98
+FileChecksum: MD5: 43053b90397d13fdac930880da7e4cd8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: LicenseRef-UnclassifiedLicense
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: <text> Copyright (C) 2015-2016 Gris Ge <fge@redhat.com> </text>
+ 
+
+##File
+
+FileName: libmpathcmd/Makefile
+SPDXID: SPDXRef-item245
+FileChecksum: SHA1: 40fe4c9b545cc8ccf34924a1ce54aea1775625bf
+FileChecksum: MD5: cc82d134e1ea63d8832d26e2cfbbfb3e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+##File
+
+FileName: README
+SPDXID: SPDXRef-item247
+FileChecksum: SHA1: 061f8f1e1b2817270bec0f0fb231d13adcdcaf18
+FileChecksum: MD5: 814d2759fce6b1c816a9a28c32c29319
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+ 
+
+
+
+##-------------------------
+## License Information
+##-------------------------
+
+LicenseID: LicenseRef-bzip2
+LicenseName: bzip2
+ExtractedText: <text> License by Nomos. </text>
+
+LicenseID: LicenseRef-GPL
+LicenseName: GNU General Public License
+ExtractedText: <text> GPL is referenced without a version number. Please look up GPL in the License Admin to view the different versions. </text>
+
+LicenseID: LicenseRef-Public-domain
+LicenseName: Public domain software
+ExtractedText: <text> Public domain software is software that is not copyrighted. If the source code is in the public domain, that is a special case of noncopylefted free software, which means that some copies or modified versions may not be free at all.
+
+In some cases, an executable program can be in the public domain but the source code is not available. This is not free software, because free software requires accessibility of source code. Meanwhile, most free software is not in the public domain; it is copyrighted, and the copyright holders have legally given permission for everyone to use it in freedom, using a free software license.
+
+Sometimes people use the term “public domain” in a loose fashion to mean “free” or “available gratis.” However, “public domain” is a legal term and means, precisely, “not copyrighted”. For clarity, we recommend using “public domain” for that meaning only, and using other terms to convey the other meanings.
+
+Under the Berne Convention, which most countries have signed, anything written down is automatically copyrighted. This includes programs. Therefore, if you want a program you have written to be in the public domain, you must take some legal steps to disclaim the copyright on it; otherwise, the program is copyrighted. </text>
+
+LicenseID: LicenseRef-LibraryGPLv2+
+LicenseName: LibraryGPLv2+
+ExtractedText: <text> License by Ninka. </text>
+
+LicenseID: LicenseRef-No_license_found
+LicenseName: No_license_found
+ExtractedText: <text> Not find any license in the scanned file </text>
+
+LicenseID: LicenseRef-LesserGPLv2+
+LicenseName: LesserGPLv2+
+ExtractedText: <text> License by Ninka. </text>
+
+LicenseID: LicenseRef-UnclassifiedLicense
+LicenseName: UnclassifiedLicense
+ExtractedText: <text> An unclassified license reference looks like a license (it contains common license terminology) but we don't recognize a specific license. </text>
+
+LicenseID: LicenseRef-See-file
+LicenseName: See-file
+ExtractedText: <text> This license means that you can get copyright or license information through a reference file.
+
+one example below:
+/* 
+ * Copyright (C) 2007  Olli Salonen &lt;oasalonen@gmail.com&gt;
+ * see btnx.c for detailed license information
+ * 
+ * revoco.c is under a different copyright. See that file for details.
+ * 
+ */ </text>
+
