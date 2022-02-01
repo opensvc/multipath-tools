@@ -9,6 +9,11 @@
 # Uncomment to disable dmevents polling support
 # ENABLE_DMEVENTS_POLL = 0
 
+# List of scsi device handler modules to load on boot, e.g.
+# SCSI_DH_MODULES_PRELOAD := scsi_dh_alua scsi_dh_rdac
+SCSI_DH_MODULES_PRELOAD :=
+
+
 PKGCONFIG	?= pkg-config
 
 ifeq ($(TOPDIR),)

@@ -29,11 +29,17 @@ install:
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(man8dir)
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(man5dir)
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).conf.5 $(DESTDIR)$(man5dir)
+ifneq ($(SCSI_DH_MODULES_PRELOAD),)
+	$(INSTALL_PROGRAM) -m 644 scsi_dh.conf $(DESTDIR)$(modulesloaddir)/scsi_dh.conf
+	for _x in $(SCSI_DH_MODULES_PRELOAD); do echo "$$_x"; done \
+	    >>$(DESTDIR)$(modulesloaddir)/scsi_dh.conf
+endif
 
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
 	$(RM) $(DESTDIR)$(udevrulesdir)/11-dm-mpath.rules
 	$(RM) $(DESTDIR)$(modulesloaddir)/multipath.conf
+	$(RM) $(DESTDIR)$(modulesloaddir)/scsi_dh.conf
 	$(RM) $(DESTDIR)$(libudevdir)/rules.d/56-multipath.rules
 	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8
 	$(RM) $(DESTDIR)$(man5dir)/$(EXEC).conf.5
