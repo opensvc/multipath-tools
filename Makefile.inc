@@ -3,12 +3,6 @@
 #
 
 #
-# Allow to force some libraries to be used statically. (Uncomment one of the
-# following lines or define the values when calling make.)
-#
-# WITH_LOCAL_LIBDM	= 1
-# WITH_LOCAL_LIBSYSFS	= 1
-#
 # Uncomment to disable libdmmp support
 # ENABLE_LIBDMMP = 0
 #
