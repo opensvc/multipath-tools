@@ -52,6 +52,62 @@ To get latest devel code:
 Github page: https://github.com/opensvc/multipath-tools
 
 
+Building multipath-tools
+========================
+
+Prerequisites: development packages of for `libdevmapper`, `libreadline`,
+`libaio`, `libudev`, `libjson-c`, `liburcu`, and `libsystemd`.
+
+To build multipath-tools, type:
+
+    make
+	make DESTDIR="/my/target/dir" install
+
+To uninstall, type:
+
+    make uninstall
+
+Customizing the build
+---------------------
+
+The following variables can be passed to the `make` command line:
+
+ * `ENABLE_LIBDMMP=0`: disable building libdmmp
+ * `ENABLE_DMEVENTS_POLL=0`: disable support for the device-mapper event
+   polling API. For use with pre-5.0 kernels that don't supprt dmevent polling
+   (but even if you don't use this option, multipath-tools will work with
+   these kernels).
+ * `SCSI_DH_MODULES_PRELOAD="(list)"`: specify a space-separated list of SCSI
+   device handler kernel modules to load early during boot. Some
+   multipath-tools functionality depends on these modules being loaded
+   early. This option causes a *modules-load.d(5)* configuration file to be
+   created, thus it depends on functionality provided by *systemd*.
+   This variable only matters for `make install`.
+
+Note: The usefulness of the preload list depends on the kernel configuration.
+It's especially useful if `scsi_mod` is builtin but `scsi_dh_alua` and
+other device handler modules are built as modules. If `scsi_mod` itself is compiled
+as a module, it might make more sense to use a module softdep for the same
+purpose.
+
+See `Makefile.inc` for additional variables to customize paths and compiler
+flags.
+
+Special Makefile targets
+------------------------
+
+The following targets are intended for developers only.
+
+ * `make test` to build and run the unit tests
+ * `make valgrind-test` to run the unit tests under valgrind
+ * `make abi` to create an XML representation of the ABI of the libraries in
+   the `abi/` subdirectory
+ * `make abi-test` to compare the ABI of a different multipath-tools version,
+   which must be stored in the `reference-abi/` subdirectory. If this test
+   fails, the ABI has changed wrt the reference.
+ * `make compile-commands.json` to create input for [clangd](https://clangd.llvm.org/).
+
+
 Add storage devices
 ===================
 
