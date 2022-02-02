@@ -23,7 +23,7 @@ LIBS = \
 	libpriopath_latency.so \
 	libpriosysfs.so
 
-ifneq ($(call check_file,/usr/include/linux/nvme_ioctl.h),0)
+ifneq ($(call check_file,$(LINUX_HEADERS_INCDIR)/linux/nvme_ioctl.h),0)
 	LIBS += libprioana.so
 	CFLAGS += -I../nvme
 endif

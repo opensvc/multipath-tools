@@ -77,7 +77,7 @@ extern "C" {
 #define MPATH_PROTOCOL_ID_SAS		0x06
 
 
-/*Transport ID FORMATE CODE */
+/*Transport ID FORMAT CODE */
 #define MPATH_WWUI_DEVICE_NAME		0x00	/* World wide unique initiator device name */
 #define MPATH_WWUI_PORT_IDENTIFIER	0x40	/* World wide unique initiator port identifier	*/
 

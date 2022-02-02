@@ -11,8 +11,7 @@ struct vectors {
 	struct mutex_lock lock; /* defined in lock.h */
 };
 
-void __set_no_path_retry(struct multipath *mpp, bool check_features);
-#define set_no_path_retry(mpp) __set_no_path_retry(mpp, true)
+void set_no_path_retry(struct multipath *mpp);
 
 int adopt_paths (vector pathvec, struct multipath * mpp);
 void orphan_path (struct path * pp, const char *reason);

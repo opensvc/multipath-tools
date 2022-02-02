@@ -421,7 +421,7 @@ static const struct key_value vnd_boo = { _vendor, "boo" };
 static const struct key_value prd_baz = { _product, "baz" };
 static const struct key_value wwid_test = { _wwid, default_wwid };
 
-/* Regular expresssions */
+/* Regular expressions */
 static const struct key_value vnd__oo = { _vendor, ".oo" };
 static const struct key_value vnd_t_oo = { _vendor, "^.oo" };
 static const struct key_value prd_ba_ = { _product, "ba." };
@@ -603,7 +603,7 @@ static int setup_internal_nvme(void **state)
 }
 
 /*
- * Device section with a simple entry qith double quotes ('foo:"bar"')
+ * Device section with a simple entry with double quotes ('foo:"bar"')
  */
 static void test_quoted_hwe(const struct hwt_state *hwt)
 {
@@ -967,7 +967,7 @@ static int setup_string_regex_hwe_dir(void **state)
 }
 
 /*
- * Two identical device entries kv1 and kv2, trival regex ("string").
+ * Two identical device entries kv1 and kv2, trivial regex ("string").
  * Both are added to the main config file.
  * These entries are NOT merged.
  * This could happen in a large multipath.conf file.
@@ -1003,7 +1003,7 @@ static int setup_2_ident_strings_hwe(void **state)
 }
 
 /*
- * Two identical device entries kv1 and kv2, trival regex ("string").
+ * Two identical device entries kv1 and kv2, trivial regex ("string").
  * Both are added to an extra config file.
  * This could happen in a large multipath.conf file.
  *
@@ -1043,7 +1043,7 @@ static int setup_2_ident_strings_both_dir(void **state)
 }
 
 /*
- * Two identical device entries kv1 and kv2, trival regex ("string").
+ * Two identical device entries kv1 and kv2, trivial regex ("string").
  * Both are added to an extra config file.
  * An empty entry kv0 with the same string exists in the main config file.
  *
@@ -1086,7 +1086,7 @@ static int setup_2_ident_strings_both_dir_w_prev(void **state)
 }
 
 /*
- * Two identical device entries kv1 and kv2, trival regex ("string").
+ * Two identical device entries kv1 and kv2, trivial regex ("string").
  * kv1 is added to the main config file, kv2 to a config_dir file.
  * These entries are merged.
  * This case is more important as you may think, because it's equivalent

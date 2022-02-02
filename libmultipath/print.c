@@ -8,7 +8,6 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
-#include <string.h>
 #include <errno.h>
 #include <assert.h>
 #include <libudev.h>
@@ -171,8 +170,8 @@ snprint_name (struct strbuf *buff, const struct multipath * mpp)
 static int
 snprint_sysfs (struct strbuf *buff, const struct multipath * mpp)
 {
-	if (mpp->dmi)
-		return print_strbuf(buff, "dm-%i", mpp->dmi->minor);
+	if (has_dm_info(mpp))
+		return print_strbuf(buff, "dm-%i", mpp->dmi.minor);
 	else
 		return append_strbuf_str(buff, "undef");
 }
@@ -180,9 +179,9 @@ snprint_sysfs (struct strbuf *buff, const struct multipath * mpp)
 static int
 snprint_ro (struct strbuf *buff, const struct multipath * mpp)
 {
-	if (!mpp->dmi)
+	if (!has_dm_info(mpp))
 		return append_strbuf_str(buff, "undef");
-	if (mpp->dmi->read_only)
+	if (mpp->dmi.read_only)
 		return append_strbuf_str(buff, "ro");
 	else
 		return append_strbuf_str(buff, "rw");
@@ -256,7 +255,9 @@ snprint_nb_paths (struct strbuf *buff, const struct multipath * mpp)
 static int
 snprint_dm_map_state (struct strbuf *buff, const struct multipath * mpp)
 {
-	if (mpp->dmi && mpp->dmi->suspended)
+	if (!has_dm_info(mpp))
+		return append_strbuf_str(buff, "undef");
+	else if (mpp->dmi.suspended)
 		return append_strbuf_str(buff, "suspend");
 	else
 		return append_strbuf_str(buff, "active");

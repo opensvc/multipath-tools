@@ -59,13 +59,13 @@
 #include "prio.h"
 #include "wwids.h"
 #include "pgpolicies.h"
-#include "uevent.h"
 #include "log.h"
 #include "uxsock.h"
 #include "alias.h"
 
 #include "mpath_cmd.h"
 #include "mpath_persist.h"
+#include "mpath_persist_int.h"
 
 #include "prioritizers/alua_rtpg.h"
 
@@ -79,14 +79,15 @@
 #include "waiter.h"
 #include "dmevents.h"
 #include "io_err_stat.h"
-#include "wwids.h"
 #include "foreign.h"
 #include "../third-party/valgrind/drd.h"
 #include "init_unwinder.h"
 
-#define FILE_NAME_SIZE 256
 #define CMDSIZE 160
 #define MSG_SIZE 32
+
+int mpath_pr_event_handle(struct path *pp);
+void * mpath_pr_event_handler_fn (void * );
 
 #define LOG_MSG(lvl, pp)					\
 do {								\
@@ -818,6 +819,7 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 		conf = get_multipath_config();
 		reassign_maps = conf->reassign_maps;
 		put_multipath_config(conf);
+		dm_get_info(mpp->alias, &mpp->dmi);
 		if (mpp->wait_for_udev) {
 			mpp->wait_for_udev = 0;
 			if (get_delayed_reconfig() &&
@@ -908,7 +910,7 @@ ev_remove_map (char * devname, char * alias, int minor, struct vectors * vecs)
 	}
 	if (strcmp(mpp->alias, alias)) {
 		condlog(2, "%s: minor number mismatch (map %d, event %d)",
-			mpp->alias, mpp->dmi->minor, minor);
+			mpp->alias, mpp->dmi.minor, minor);
 		return 1;
 	}
 	return flush_map(mpp, vecs, 0);
@@ -1155,6 +1157,8 @@ ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 		free_path(pp);
 		return 1;
 	}
+	if (mpp)
+		trigger_path_udev_change(pp, true);
 	if (mpp && mpp->wait_for_udev &&
 	    (pathcount(mpp, PATH_UP) > 0 ||
 	     (pathcount(mpp, PATH_GHOST) > 0 &&
@@ -1440,6 +1444,52 @@ finish_path_init(struct path *pp, struct vectors * vecs)
 }
 
 static int
+sysfs_get_ro (struct path *pp)
+{
+	int ro;
+	char buff[3]; /* Either "0\n\0" or "1\n\0" */
+
+	if (!pp->udev)
+		return -1;
+
+	if (sysfs_attr_get_value(pp->udev, "ro", buff, sizeof(buff)) <= 0) {
+		condlog(3, "%s: Cannot read ro attribute in sysfs", pp->dev);
+		return -1;
+	}
+
+	if (sscanf(buff, "%d\n", &ro) != 1 || ro < 0 || ro > 1) {
+		condlog(3, "%s: Cannot parse ro attribute", pp->dev);
+		return -1;
+	}
+
+	return ro;
+}
+
+static bool
+needs_ro_update(struct multipath *mpp, int ro)
+{
+	struct pathgroup * pgp;
+	struct path * pp;
+	unsigned int i, j;
+
+	if (!mpp || ro < 0)
+		return false;
+	if (!has_dm_info(mpp))
+		return true;
+	if (mpp->dmi.read_only == ro)
+		return false;
+	if (ro == 1)
+		return true;
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp, j) {
+			if (sysfs_get_ro(pp) == 1)
+				return false;
+		}
+	}
+	return true;
+}
+
+static int
 uev_update_path (struct uevent *uev, struct vectors * vecs)
 {
 	int ro, retval = 0, rc;
@@ -1511,7 +1561,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 		}
 
 		ro = uevent_get_disk_ro(uev);
-		if (mpp && ro >= 0) {
+		if (needs_ro_update(mpp, ro)) {
 			condlog(2, "%s: update path write_protect to '%d' (uevent)", uev->kernel, ro);
 
 			if (mpp->wait_for_udev)
@@ -1549,7 +1599,7 @@ out:
 
 		condlog(0, "%s: spurious uevent, path not found", uev->kernel);
 	}
-	/* pp->initalized must not be INIT_PARTIAL if needs_reinit is set */
+	/* pp->initialized must not be INIT_PARTIAL if needs_reinit is set */
 	if (needs_reinit)
 		retval = uev_add_path(uev, vecs, 1);
 	return retval;
@@ -1741,7 +1791,7 @@ uxlsnrloop (void * ap)
 
 	/*
 	 * Wait for initial reconfiguration to finish, while
-	 * hadling signals
+	 * handling signals
 	 */
 	while (wait_for_state_change_if(DAEMON_CONFIGURE, 50)
 	       == DAEMON_CONFIGURE)
@@ -2057,7 +2107,7 @@ static int check_path_reinstate_state(struct path * pp) {
 	/*
 	 * This function is only called when the path state changes
 	 * from "bad" to "good". pp->state reflects the *previous* state.
-	 * If this was "bad", we know that a failure must have occured
+	 * If this was "bad", we know that a failure must have occurred
 	 * beforehand, and count that.
 	 * Note that we count path state _changes_ this way. If a path
 	 * remains in "bad" state, failure count is not increased.
@@ -2227,7 +2277,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 
 	/*
 	 * provision a next check soonest,
-	 * in case we exit abnormaly from here
+	 * in case we exit abnormally from here
 	 */
 	pp->tick = checkint;
 

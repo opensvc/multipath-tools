@@ -52,6 +52,27 @@ ifndef SYSTEMDPATH
 	SYSTEMDPATH=usr/lib
 endif
 
+ifndef DEVMAPPER_INCDIR
+	ifeq ($(shell $(PKGCONFIG) --modversion devmapper >/dev/null 2>&1 && echo 1), 1)
+		DEVMAPPER_INCDIR = $(shell $(PKGCONFIG) --variable=includedir devmapper)
+	else
+		DEVMAPPER_INCDIR = /usr/include
+	endif
+endif
+
+ifndef LIBUDEV_INCDIR
+	ifeq ($(shell $(PKGCONFIG) --modversion libudev >/dev/null 2>&1 && echo 1), 1)
+		LIBUDEV_INCDIR = $(shell $(PKGCONFIG) --variable=includedir libudev)
+	else
+		LIBUDEV_INCDIR = /usr/include
+	endif
+endif
+
+# Allow user to override default location.
+ifndef LINUX_HEADERS_INCDIR
+	LINUX_HEADERS_INCDIR = /usr/include
+endif
+
 prefix		=
 exec_prefix	= $(prefix)
 usr_prefix	= $(prefix)
@@ -75,7 +96,7 @@ nvmedir		= $(TOPDIR)/libmultipath/nvme
 includedir	= $(prefix)/usr/include
 pkgconfdir	= $(usrlibdir)/pkgconfig
 
-GZIP		= gzip -9 -c
+GZIP_PROG	= gzip -9 -c
 RM		= rm -f
 LN		= ln -sf
 INSTALL_PROGRAM	= install

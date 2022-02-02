@@ -8,7 +8,7 @@ LDFLAGS += $(BIN_LDFLAGS)
 
 LIBDEPS += -ldevmapper
 
-ifneq ($(call check_func,dm_task_set_cookie,/usr/include/libdevmapper.h),0)
+ifneq ($(call check_func,dm_task_set_cookie,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_COOKIE
 endif
 
@@ -21,7 +21,6 @@ all: $(EXEC)
 
 $(EXEC): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $(EXEC) $(LDFLAGS) $(LIBDEPS)
-	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 
 install: $(EXEC) $(EXEC).8
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
@@ -33,11 +32,11 @@ install: $(EXEC) $(EXEC).8
 	$(INSTALL_PROGRAM) -m 644 kpartx.rules $(DESTDIR)$(libudevdir)/rules.d/66-kpartx.rules
 	$(INSTALL_PROGRAM) -m 644 del-part-nodes.rules $(DESTDIR)$(libudevdir)/rules.d/68-del-part-nodes.rules
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(man8dir)
-	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(man8dir)
+	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(man8dir)
 
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
-	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8.gz
+	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8
 	$(RM) $(DESTDIR)$(libudevdir)/kpartx_id
 	$(RM) $(DESTDIR)$(libudevdir)/rules.d/11-dm-parts.rules
 	$(RM) $(DESTDIR)$(libudevdir)/rules.d/66-kpartx.rules
@@ -45,7 +44,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(libudevdir)/rules.d/68-del-part-nodes.rules
 
 clean: dep_clean
-	$(RM) core *.o $(EXEC) *.gz
+	$(RM) core *.o $(EXEC)
 
 include $(wildcard $(OBJS:.o=.d))
 

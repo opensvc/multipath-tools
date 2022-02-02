@@ -156,7 +156,7 @@ void checker_disable (struct checker *);
  *
  * Rationale:
  * Path checkers that do I/O may hang forever. To avoid blocking, some
- * checkers therefore use asyncronous, detached threads for checking
+ * checkers therefore use asynchronous, detached threads for checking
  * the paths. These threads may continue hanging if multipathd is stopped.
  * In this case, we can't unload the checker DSO at exit. In order to
  * avoid race conditions and crashes, the entry point of the thread

@@ -41,7 +41,6 @@
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <libudev.h>
-#include <errno.h>
 
 #include "debug.h"
 #include "list.h"
@@ -292,7 +291,7 @@ static bool
 uevent_can_merge(struct uevent *earlier, struct uevent *later)
 {
 	/* merge paths uevents
-	 * whose wwids exsit and are same
+	 * whose wwids exist and are same
 	 * and actions are same,
 	 * and actions are addition or deletion
 	 */

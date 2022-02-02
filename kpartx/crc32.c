@@ -342,7 +342,7 @@ uint32_t attribute((pure)) crc32_be(uint32_t crc, unsigned char const *p, size_t
  * but again the multiple of the polynomial to subtract depends only on
  * the high bits, the high 8 bits in this case.
  *
- * The multile we need in that case is the low 32 bits of a 40-bit
+ * The multiple we need in that case is the low 32 bits of a 40-bit
  * value whose high 8 bits are given, and which is a multiple of the
  * generator polynomial.  This is simply the CRC-32 of the given
  * one-byte message.

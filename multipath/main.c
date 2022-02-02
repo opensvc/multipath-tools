@@ -63,7 +63,6 @@
 #include "time-util.h"
 #include "file.h"
 #include "valid.h"
-#include "alias.h"
 
 /*
  * Return values of configure(), check_path_valid(), and main().

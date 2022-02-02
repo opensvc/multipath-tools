@@ -9,7 +9,6 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <cmocka.h>
 #include <errno.h>
 #include "strbuf.h"

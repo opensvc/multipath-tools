@@ -42,7 +42,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(includedir)/mpath_cmd.h
 
 clean: dep_clean
-	$(RM) core *.a *.o *.so *.so.* *.gz *.abi $(NV_VERSION_SCRIPT)
+	$(RM) core *.a *.o *.so *.so.* *.abi $(NV_VERSION_SCRIPT)
 
 include $(wildcard $(OBJS:.o=.d))
 

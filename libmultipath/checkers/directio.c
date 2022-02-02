@@ -12,7 +12,6 @@
 #include <sys/ioctl.h>
 #include <linux/fs.h>
 #include <errno.h>
-#include <unistd.h>
 #include <libaio.h>
 
 #include "checkers.h"
@@ -23,7 +22,7 @@
 
 /* Note: This checker type relies on the fact that only one checker can be run
  * at a time, since multiple checkers share the same aio_group, and must be
- * able to modify other checker's async_reqs. If multple checkers become able
+ * able to modify other checker's async_reqs. If multiple checkers become able
  * to be run at the same time, this checker will need to add locking, and
  * probably polling on event fds, to deal with that */
 

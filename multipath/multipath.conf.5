@@ -251,7 +251,7 @@ The default is: \fBfailover\fR
 .B uid_attrs
 .
 Setting this option activates \fBmerging uevents\fR by WWID, which may improve
-uevent processing effiency. Moreover, it's an alternative method to configure
+uevent processing efficiency. Moreover, it's an alternative method to configure
 the udev properties to use for determining unique path identifiers (WWIDs).
 .RS
 .PP
@@ -594,7 +594,7 @@ and multipathd. This is equivalent to ulimit \-n. A value of \fImax\fR will set
 this to the system limit from \fI/proc/sys/fs/nr_open\fR. If this is not set, the
 maximum number of open fds is taken from the calling process. It is usually
 1024. To be safe, this should be set to the maximum number of paths plus 32,
-if that number is greated than 1024.
+if that number is greater than 1024.
 .RS
 .TP
 The default is: \fBmax\fR
@@ -837,7 +837,7 @@ The default is: \fBno\fR
 .I yes
 and the SCSI layer has already attached a hardware_handler to the device,
 multipath will not force the device to use the hardware_handler specified by
-mutipath.conf. If the SCSI layer has not attached a hardware handler,
+multipath.conf. If the SCSI layer has not attached a hardware handler,
 multipath will continue to use its configured hardware handler.
 .RS
 .PP
@@ -1104,8 +1104,8 @@ device is not configured to queue IO in this case, it can cause IO errors to
 occur, even though there are marginal paths available.  However, if this
 option is set to \fIyes\fR, when one of the marginal path detecting methods
 determines that a path is marginal, it will be reinstated and placed in a
-seperate pathgroup that will only be used after all the non-marginal pathgroups
-have been tried first. This prevents the possibility of IO errors occuring
+separate pathgroup that will only be used after all the non-marginal pathgroups
+have been tried first. This prevents the possibility of IO errors occurring
 while marginal paths are still usable. After the path has been monitored
 for the configured time, and is declared healthy, it will be returned to its
 normal pathgroup. See "Shaky paths detection" below for more information.
@@ -1147,7 +1147,7 @@ device path.
 .I smart
 This differs from \fIfind_multipaths yes\fR only in
 the way it treats new devices for which only one path has been
-detected yet. When such a device is first encounted in udev rules, it is
+detected yet. When such a device is first encountered in udev rules, it is
 treated as a multipath device. multipathd waits whether additional paths with
 the same WWID appears. If that happens, it sets up a multipath map. If it
 doesn\'t happen until a
@@ -1427,7 +1427,7 @@ from later entries take precedence.
 The \fImultipath\fR subsection recognizes the following attributes:
 .TP 17
 .B wwid
-(Mandatory) World Wide Identifier. Detected multipath maps are matched agains this attribute.
+(Mandatory) World Wide Identifier. Detected multipath maps are matched against this attribute.
 Note that, unlike the \fIwwid\fR attribute in the \fIblacklist\fR section,
 this is \fBnot\fR a regular expression or a substring; WWIDs must match
 exactly inside the multipaths section.
@@ -1554,7 +1554,7 @@ device type, instead of the default "mpath".
 The vendor specific vpd page information, using the vpd page abbreviation.
 The vpd page abbreviation can be found by running \fIsg_vpd -e\fR. multipathd
 will use this information to gather device specific information that can be
-displayed with the \fI%g\fR wilcard for the \fImultipathd show maps format\fR
+displayed with the \fI%g\fR wildcard for the \fImultipathd show maps format\fR
 and \fImultipathd show paths format\fR commands. Currently only the
 \fBhp3par\fR vpd page is supported.
 .TP
@@ -1802,7 +1802,7 @@ in most scenarios. Users who want to enable uevent merging must set
 .SH "Shaky paths detection"
 .\" ----------------------------------------------------------------------------
 .
-A common problem in SAN setups is the occurence of intermittent errors: a
+A common problem in SAN setups is the occurrence of intermittent errors: a
 path is unreachable, then reachable again for a short time, disappears again,
 and so forth. This happens typically on unstable interconnects. It is
 undesirable to switch pathgroups unnecessarily on such frequent, unreliable

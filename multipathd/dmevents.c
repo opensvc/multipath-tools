@@ -385,7 +385,7 @@ void *wait_dmevents (__attribute__((unused)) void *unused)
 
 
 	if (!waiter) {
-		condlog(0, "dmevents waiter not intialized");
+		condlog(0, "dmevents waiter not initialized");
 		return NULL;
 	}
 

@@ -42,7 +42,7 @@ struct foreign {
 	/**
 	 * method: init(api, name)
 	 * Initialize foreign library, and check API compatibility
-	 * return pointer to opaque internal data strucure if successful,
+	 * return pointer to opaque internal data structure if successful,
 	 * NULL otherwise.
 	 *
 	 * @param[in] api: API version

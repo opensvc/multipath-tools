@@ -94,7 +94,7 @@ efi_crc32(const void *buf, unsigned long len)
  *
  * Description: Returns 1 if PMBR is valid, 0 otherwise.
  * Validity depends on two things:
- *  1) MSDOS signature is in the last two bytes of the MBR
+ *  1) MS-DOS signature is in the last two bytes of the MBR
  *  2) One partition of type 0xEE is found
  */
 static int

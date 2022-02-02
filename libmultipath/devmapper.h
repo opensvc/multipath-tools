@@ -70,7 +70,8 @@ char * dm_mapname(int major, int minor);
 int dm_remove_partmaps (const char * mapname, int need_sync,
 			int deferred_remove);
 int dm_get_uuid(const char *name, char *uuid, int uuid_len);
-int dm_get_info (const char * mapname, struct dm_info ** dmi);
+bool has_dm_info(const struct multipath *mpp);
+int dm_get_info (const char * mapname, struct dm_info *dmi);
 int dm_rename (const char * old, char * new, char * delim, int skip_kpartx);
 int dm_reassign(const char * mapname);
 int dm_reassign_table(const char *name, char *old, char *new);

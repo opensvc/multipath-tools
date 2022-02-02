@@ -83,7 +83,7 @@ int mpathvalid_init(int verbosity, int log_style);
 
 /*
  * DESCRIPTION:
- * 	Reread the multipath configuration files and reinitalize
+ * 	Reread the multipath configuration files and reinitialize
  * 	the device mapper multipath configuration. This function can
  * 	be called as many times as necessary.
  *
@@ -95,8 +95,8 @@ int mpathvalid_reload_config(void);
 /*
  * DESCRIPTION:
  * 	Release the device mapper multipath configuration. This
- * 	function must be called to cleanup resoures allocated by
- * 	mpathvalid_init(). After calling this function, no futher
+ * 	function must be called to cleanup resources allocated by
+ * 	mpathvalid_init(). After calling this function, no further
  * 	libmpathvalid functions may be called.
  *
  * RETURNS: 0 = Success, -1 = Failure

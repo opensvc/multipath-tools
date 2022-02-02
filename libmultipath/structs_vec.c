@@ -588,23 +588,22 @@ static void leave_recovery_mode(struct multipath *mpp)
 	}
 }
 
-void __set_no_path_retry(struct multipath *mpp, bool check_features)
+void set_no_path_retry(struct multipath *mpp)
 {
 	bool is_queueing = false; /* assign a value to make gcc happy */
 
-	check_features = check_features && mpp->features != NULL;
-	if (check_features)
+	if (mpp->features)
 		is_queueing = strstr(mpp->features, "queue_if_no_path");
 
 	switch (mpp->no_path_retry) {
 	case NO_PATH_RETRY_UNDEF:
 		break;
 	case NO_PATH_RETRY_FAIL:
-		if (!check_features || is_queueing)
+		if (!mpp->features || is_queueing)
 			dm_queue_if_no_path(mpp->alias, 0);
 		break;
 	case NO_PATH_RETRY_QUEUE:
-		if (!check_features || !is_queueing)
+		if (!mpp->features || !is_queueing)
 			dm_queue_if_no_path(mpp->alias, 1);
 		break;
 	default:
@@ -613,11 +612,11 @@ void __set_no_path_retry(struct multipath *mpp, bool check_features)
 			 * If in_recovery is set, leave_recovery_mode() takes
 			 * care of dm_queue_if_no_path. Otherwise, do it here.
 			 */
-			if ((!check_features || !is_queueing) &&
+			if ((!mpp->features || !is_queueing) &&
 			    !mpp->in_recovery)
 				dm_queue_if_no_path(mpp->alias, 1);
 			leave_recovery_mode(mpp);
-		} else
+		} else if (pathcount(mpp, PATH_PENDING) == 0)
 			enter_recovery_mode(mpp);
 		break;
 	}

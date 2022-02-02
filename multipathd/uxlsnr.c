@@ -75,7 +75,7 @@ enum {
 };
 
 #define POLLFD_CHUNK (4096 / sizeof(struct pollfd))
-/* Minimum mumber of pollfds to reserve for clients */
+/* Minimum number of pollfds to reserve for clients */
 #define MIN_POLLS (POLLFD_CHUNK - POLLFDS_BASE)
 /*
  * Max number of client connections allowed
