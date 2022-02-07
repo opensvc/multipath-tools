@@ -34,34 +34,24 @@ workflow:
   filters:
     event: pull_request
 
-push_workflow:
+rebuild_next:
   steps:
-    - branch_package:
-        source_project: home:mwilck:multipath
-        source_package: multipath-tools
-        target_project: home:mwilck:multipath
-    - configure_repositories:
+    - rebuild_package:
         project: home:mwilck:multipath
-        repositories:
-          - name: openSUSE_Tumbleweed
-            paths:
-              - target_project: openSUSE:Factory
-                target_repository: snapshot
-            architectures:
-              - x86_64
-          - name: SLE_15_SP4
-            paths:
-              - target_project: openSUSE:Backports:SLE-15-SP4
-                target_repository: standard
-              - target_project: SUSE:SLE-15-SP4:GA
-                target_repository: pool
-            architectures:
-              - x86_64
-              - s390x
+        package: multipath-tools
   filters:
     event: push
     branches:
       only:
-        - next
-        - edge
+         - next
 
+rebuild_edge:
+  steps:
+    - rebuild_package:
+        project: home:mwilck:Future
+        package: multipath-tools
+  filters:
+    event: push
+    branches:
+      only:
+        - edge
