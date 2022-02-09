@@ -33,25 +33,3 @@ workflow:
               - aarch64
   filters:
     event: pull_request
-
-rebuild_next:
-  steps:
-    - rebuild_package:
-        project: home:mwilck:multipath
-        package: multipath-tools
-  filters:
-    event: push
-    branches:
-      only:
-         - next
-
-rebuild_edge:
-  steps:
-    - rebuild_package:
-        project: home:mwilck:Future
-        package: multipath-tools
-  filters:
-    event: push
-    branches:
-      only:
-        - edge
