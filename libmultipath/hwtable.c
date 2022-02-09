@@ -1039,7 +1039,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* Linux-IO Target */
 		.vendor        = "(LIO-ORG|SUSE)",
-		.product       = "RBD",
+		.product       = ".",
 		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,

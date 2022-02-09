@@ -3,17 +3,16 @@
 #
 
 #
-# Allow to force some libraries to be used statically. (Uncomment one of the
-# following lines or define the values when calling make.)
-#
-# WITH_LOCAL_LIBDM	= 1
-# WITH_LOCAL_LIBSYSFS	= 1
-#
 # Uncomment to disable libdmmp support
 # ENABLE_LIBDMMP = 0
 #
 # Uncomment to disable dmevents polling support
 # ENABLE_DMEVENTS_POLL = 0
+
+# List of scsi device handler modules to load on boot, e.g.
+# SCSI_DH_MODULES_PRELOAD := scsi_dh_alua scsi_dh_rdac
+SCSI_DH_MODULES_PRELOAD :=
+
 
 PKGCONFIG	?= pkg-config
 
@@ -79,6 +78,7 @@ usr_prefix	= $(prefix)
 bindir		= $(exec_prefix)/sbin
 libudevdir	= $(prefix)/$(SYSTEMDPATH)/udev
 udevrulesdir	= $(libudevdir)/rules.d
+modulesloaddir  = $(prefix)/$(SYSTEMDPATH)/modules-load.d
 multipathdir	= $(TOPDIR)/libmultipath
 man8dir		= $(prefix)/usr/share/man/man8
 man5dir		= $(prefix)/usr/share/man/man5
