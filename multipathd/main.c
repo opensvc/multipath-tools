@@ -16,6 +16,7 @@
 #include <linux/oom.h>
 #include <libudev.h>
 #include <urcu.h>
+#include "fpin.h"
 #ifdef USE_SYSTEMD
 #include <systemd/sd-daemon.h>
 #endif
@@ -132,9 +133,11 @@ static bool __delayed_reconfig;
 pid_t daemon_pid;
 static pthread_mutex_t config_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t config_cond;
-static pthread_t check_thr, uevent_thr, uxlsnr_thr, uevq_thr, dmevent_thr;
+static pthread_t check_thr, uevent_thr, uxlsnr_thr, uevq_thr, dmevent_thr,
+	fpin_thr, fpin_consumer_thr;
 static bool check_thr_started, uevent_thr_started, uxlsnr_thr_started,
-	uevq_thr_started, dmevent_thr_started;
+	uevq_thr_started, dmevent_thr_started, fpin_thr_started,
+	fpin_consumer_thr_started;
 static int pid_fd = -1;
 
 static inline enum daemon_status get_running_state(void)
@@ -2879,7 +2882,9 @@ reconfigure (struct vectors * vecs)
 	conf->sequence_nr = old->sequence_nr + 1;
 	rcu_assign_pointer(multipath_conf, conf);
 	call_rcu(&old->rcu, rcu_free_config);
-
+#ifdef FPIN_EVENT_HANDLER
+	fpin_clean_marginal_dev_list(NULL);
+#endif
 	configure(vecs);
 
 
@@ -3098,6 +3103,11 @@ static void cleanup_threads(void)
 		pthread_cancel(uevq_thr);
 	if (dmevent_thr_started)
 		pthread_cancel(dmevent_thr);
+	if (fpin_thr_started)
+		pthread_cancel(fpin_thr);
+	if (fpin_consumer_thr_started)
+		pthread_cancel(fpin_consumer_thr);
+
 
 	if (check_thr_started)
 		pthread_join(check_thr, NULL);
@@ -3109,6 +3119,11 @@ static void cleanup_threads(void)
 		pthread_join(uevq_thr, NULL);
 	if (dmevent_thr_started)
 		pthread_join(dmevent_thr, NULL);
+	if (fpin_thr_started)
+		pthread_join(fpin_thr, NULL);
+	if (fpin_consumer_thr_started)
+		pthread_join(fpin_consumer_thr, NULL);
+
 
 	/*
 	 * As all threads are joined now, and we're in DAEMON_SHUTDOWN
@@ -3202,6 +3217,7 @@ child (__attribute__((unused)) void *param)
 	char *envp;
 	enum daemon_status state;
 	int exit_code = 1;
+	int fpin_marginal_paths = 0;
 
 	init_unwinder();
 	mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -3280,7 +3296,10 @@ child (__attribute__((unused)) void *param)
 
 	setscheduler();
 	set_oom_adj();
-
+#ifdef FPIN_EVENT_HANDLER
+	if (conf->marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)
+		fpin_marginal_paths = 1;
+#endif
 	/*
 	 * Startup done, invalidate configuration
 	 */
@@ -3348,6 +3367,22 @@ child (__attribute__((unused)) void *param)
 		goto failed;
 	} else
 		uevq_thr_started = true;
+
+	if (fpin_marginal_paths) {
+		if ((rc = pthread_create(&fpin_thr, &misc_attr,
+			fpin_fabric_notification_receiver, NULL))) {
+			condlog(0, "failed to create the fpin receiver thread: %d", rc);
+			goto failed;
+		} else
+			fpin_thr_started = true;
+
+		if ((rc = pthread_create(&fpin_consumer_thr,
+			&misc_attr, fpin_els_li_consumer, vecs))) {
+			condlog(0, "failed to create the fpin consumer thread thread: %d", rc);
+			goto failed;
+		} else
+			fpin_consumer_thr_started = true;
+	}
 	pthread_attr_destroy(&misc_attr);
 
 	while (1) {

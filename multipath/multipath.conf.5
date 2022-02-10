@@ -1088,20 +1088,26 @@ The default is: \fBno\fR
 .
 .TP
 .B marginal_pathgroups
-If set to \fIno\fR, the \fIdelay_*_checks\fR, \fImarginal_path_*\fR, and
+If set to \fIoff\fR, the \fIdelay_*_checks\fR, \fImarginal_path_*\fR, and
 \fIsan_path_err_*\fR options will keep marginal, or \(dqshaky\(dq, paths from
 being reinstated until they have been monitored for some time. This can cause
 situations where all non-marginal paths are down, and no paths are usable
 until multipathd detects this and reinstates a marginal path. If the multipath
 device is not configured to queue IO in this case, it can cause IO errors to
 occur, even though there are marginal paths available.  However, if this
-option is set to \fIyes\fR, when one of the marginal path detecting methods
+option is set to \fIon\fR, when one of the marginal path detecting methods
 determines that a path is marginal, it will be reinstated and placed in a
 separate pathgroup that will only be used after all the non-marginal pathgroups
 have been tried first. This prevents the possibility of IO errors occurring
 while marginal paths are still usable. After the path has been monitored
 for the configured time, and is declared healthy, it will be returned to its
-normal pathgroup. See "Shaky paths detection" below for more information.
+normal pathgroup.
+However if this option is set to \fIfpin\fR multipathd will receive fpin
+notifications, set path states to "marginal" accordingly, and regroup paths
+as described for "marginal_pathgroups yes". This option can't be used in combination
+with other options for "Shaky path detection" (see below).If it is set to fpin,
+marginal_path_xyz and san_path_err_xyz parameters are implicitly set to 0.
+See "Shaky paths detection" below for more information.
 .RS
 .TP
 The default is: \fBno\fR
@@ -1840,6 +1846,13 @@ often then once in the forget rate interval, the failure count doesn't
 increase and the threshold is never reached. Ticks are the time between
 path checks by multipathd, which is variable and controlled by the
 \fIpolling_interval\fR and \fImax_polling_interval\fR parameters.
+.
+.TP
+.B \(dqFPIN \(dq failure tracking
+Fibre channel fabrics can notify hosts about fabric-level issues such
+as integrity failures or congestion with so-called Fabric Performance
+Impact Notifications (FPINs).On receiving the fpin notifications through ELS
+multipathd will move the affected path and port states to marginal.
 .
 .RS 8
 .LP

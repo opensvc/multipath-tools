@@ -159,6 +159,19 @@ check_file = $(shell \
 	echo "$$found" \
 	)
 
+# Check whether a file contains a variable with name $1 in header file $2
+check_var = $(shell \
+	if grep -Eq "(^|[[:blank:]])$1([[:blank:]]|=|$$)" "$2"; then \
+                found=1; \
+                status="yes"; \
+        else \
+                found=0; \
+                status="no"; \
+        fi; \
+        echo 1>&2 "Checking for ..  $1 in $2 ... $$status"; \
+        echo "$$found" \
+        )
+
 %.o:	%.c
 	@echo building $@ because of $?
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
