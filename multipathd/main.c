@@ -2850,6 +2850,7 @@ int
 reconfigure (struct vectors * vecs)
 {
 	struct config * old, *conf;
+	int old_marginal_pathgroups;
 
 	conf = load_config(DEFAULT_CONFIGFILE);
 	if (!conf)
@@ -2879,6 +2880,14 @@ reconfigure (struct vectors * vecs)
 	uxsock_timeout = conf->uxsock_timeout;
 
 	old = rcu_dereference(multipath_conf);
+	old_marginal_pathgroups = old->marginal_pathgroups;
+	if ((old_marginal_pathgroups == MARGINAL_PATHGROUP_FPIN) !=
+	    (conf->marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)) {
+		condlog(1, "multipathd must be restarted to turn %s fpin marginal paths",
+			(old_marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)?
+			"off" : "on");
+		conf->marginal_pathgroups = old_marginal_pathgroups;
+	}
 	conf->sequence_nr = old->sequence_nr + 1;
 	rcu_assign_pointer(multipath_conf, conf);
 	call_rcu(&old->rcu, rcu_free_config);

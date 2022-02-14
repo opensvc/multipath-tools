@@ -1102,15 +1102,18 @@ have been tried first. This prevents the possibility of IO errors occurring
 while marginal paths are still usable. After the path has been monitored
 for the configured time, and is declared healthy, it will be returned to its
 normal pathgroup.
-However if this option is set to \fIfpin\fR multipathd will receive fpin
+If this option is set to \fIfpin\fR, multipathd will receive fpin
 notifications, set path states to "marginal" accordingly, and regroup paths
-as described for "marginal_pathgroups yes". This option can't be used in combination
-with other options for "Shaky path detection" (see below).If it is set to fpin,
-marginal_path_xyz and san_path_err_xyz parameters are implicitly set to 0.
+as described for \fIon\fR. This option can't be used in combination
+with other options for "Shaky path detection" (see below). \fBNote:\fR If this
+is set to \fIfpin\fR, the \fImarginal_path_*\fR and \fIsan_path_err_*\fR
+options are implicitly set to \fIno\fP. Also, this option cannot be switched
+either to or from \fIfpin\fR on a multipathd reconfigure. multipathd must be
+restarted for the change to take effect.
 See "Shaky paths detection" below for more information.
 .RS
 .TP
-The default is: \fBno\fR
+The default is: \fBoff\fR
 .RE
 .
 .
