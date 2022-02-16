@@ -337,7 +337,7 @@ static int snprint_nvme_pg(const struct gen_pathgroup *gmp,
 static int nvme_style(__attribute__((unused)) const struct gen_multipath* gm,
 		      struct strbuf *buf, __attribute__((unused)) int verbosity)
 {
-	return append_strbuf_str(buf, "%%w [%%G]:%%d %%s");
+	return append_strbuf_str(buf, "%w [%G]:%d %s");
 }
 
 static const struct gen_multipath_ops nvme_map_ops = {
