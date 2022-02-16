@@ -95,6 +95,7 @@
 			     "            \"host_wwpn\" : \"%R\",\n" \
 			     "            \"target_wwpn\" : \"%r\",\n" \
 			     "            \"host_adapter\" : \"%a\",\n" \
+			     "            \"lun_hex\" : \"%L\",\n" \
 			     "            \"marginal_st\" : \"%M\""
 
 #define PROGRESS_LEN  10
@@ -450,6 +451,24 @@ snprint_hcil (struct strbuf *buff, const struct path * pp)
 			pp->sg_id.channel,
 			pp->sg_id.scsi_id,
 			pp->sg_id.lun);
+}
+
+
+static int
+snprint_path_lunhex (struct strbuf *buff, const struct path * pp)
+{
+	uint64_t lunhex = SCSI_INVALID_LUN, scsilun;
+
+	if (!pp || pp->sg_id.host_no < 0)
+		return print_strbuf(buff, "0x%016" PRIx64, lunhex);
+
+	scsilun = pp->sg_id.lun;
+	/* cf. Linux kernel function int_to_scsilun() */
+	lunhex = ((scsilun & 0x000000000000ffffULL) << 48) |
+		((scsilun & 0x00000000ffff0000ULL) << 16) |
+		((scsilun & 0x0000ffff00000000ULL) >> 16) |
+		((scsilun & 0xffff000000000000ULL) >> 48);
+	return print_strbuf(buff, "0x%016" PRIx64, lunhex);
 }
 
 static int
@@ -843,6 +862,7 @@ static const struct path_data pd[] = {
 	{'0', "failures",      snprint_path_failures},
 	{'P', "protocol",      snprint_path_protocol},
 	{'I', "init_st",       snprint_initialized},
+	{'L', "LUN hex",       snprint_path_lunhex},
 };
 
 static const struct pathgroup_data pgd[] = {
