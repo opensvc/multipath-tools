@@ -754,43 +754,27 @@ snprint_path_failures(struct strbuf *buff, const struct path * pp)
 int
 snprint_path_protocol(struct strbuf *buff, const struct path * pp)
 {
-	switch (pp->bus) {
-	case SYSFS_BUS_SCSI:
-		switch (pp->sg_id.proto_id) {
-		case SCSI_PROTOCOL_FCP:
-			return append_strbuf_str(buff, "scsi:fcp");
-		case SCSI_PROTOCOL_SPI:
-			return append_strbuf_str(buff, "scsi:spi");
-		case SCSI_PROTOCOL_SSA:
-			return append_strbuf_str(buff, "scsi:ssa");
-		case SCSI_PROTOCOL_SBP:
-			return append_strbuf_str(buff, "scsi:sbp");
-		case SCSI_PROTOCOL_SRP:
-			return append_strbuf_str(buff, "scsi:srp");
-		case SCSI_PROTOCOL_ISCSI:
-			return append_strbuf_str(buff, "scsi:iscsi");
-		case SCSI_PROTOCOL_SAS:
-			return append_strbuf_str(buff, "scsi:sas");
-		case SCSI_PROTOCOL_ADT:
-			return append_strbuf_str(buff, "scsi:adt");
-		case SCSI_PROTOCOL_ATA:
-			return append_strbuf_str(buff, "scsi:ata");
-		case SCSI_PROTOCOL_USB:
-			return append_strbuf_str(buff, "scsi:usb");
-		case SCSI_PROTOCOL_UNSPEC:
-		default:
-			return append_strbuf_str(buff, "scsi:unspec");
-		}
-	case SYSFS_BUS_CCW:
-		return append_strbuf_str(buff, "ccw");
-	case SYSFS_BUS_CCISS:
-		return append_strbuf_str(buff, "cciss");
-	case SYSFS_BUS_NVME:
-		return append_strbuf_str(buff, "nvme");
-	case SYSFS_BUS_UNDEF:
-	default:
-		return append_strbuf_str(buff, "undef");
-	}
+	static const char * const protocol_name[LAST_BUS_PROTOCOL_ID + 1] = {
+		[SYSFS_BUS_UNDEF] = "undef",
+		[SYSFS_BUS_CCW] = "ccw",
+		[SYSFS_BUS_CCISS] = "cciss",
+		[SYSFS_BUS_NVME] = "nvme",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_FCP] = "scsi:fcp",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SPI] = "scsi:spi",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SSA] = "scsi:ssa",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SBP] = "scsi:sbp",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SRP] = "scsi:srp",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_ISCSI] = "scsi:iscsi",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SAS] = "scsi:sas",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_ADT] = "scsi:adt",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_ATA] = "scsi:ata",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_USB] = "scsi:usb",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_UNSPEC] = "scsi:unspec",
+	};
+	const char *pn = protocol_name[bus_protocol_id(pp)];
+
+	assert(pn != NULL);
+	return append_strbuf_str(buff, pn);
 }
 
 static int
