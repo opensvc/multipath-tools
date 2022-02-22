@@ -10,27 +10,28 @@
  *
  * See libmultipath.version for general policy about version numbers.
  */
-LIBMPATHPERSIST_2.0.0 {
+LIBMPATHPERSIST_2.1.0 {
 global:
-
-	__mpath_persistent_reserve_in;
-	__mpath_persistent_reserve_out;
-	dumpHex;
-	mpath_alloc_prin_response;
+	/* public API as defined in mpath_persist.h */
+	libmpathpersist_exit;
+	libmpathpersist_init;
 	mpath_lib_exit;
 	mpath_lib_init;
 	mpath_mx_alloc_len;
+	mpath_persistent_reserve_free_vecs;
+	__mpath_persistent_reserve_in;
 	mpath_persistent_reserve_in;
 	mpath_persistent_reserve_init_vecs;
+	__mpath_persistent_reserve_out;
 	mpath_persistent_reserve_out;
-	mpath_persistent_reserve_free_vecs;
+local: *;
+};
+
+__LIBMPATHPERSIST_INT_1.0.0 {
+	/* Internal use by multipath-tools */
+	dumpHex;
+	mpath_alloc_prin_response;
 	prin_do_scsi_ioctl;
 	prout_do_scsi_ioctl;
 	update_map_pr;
-
-	/* added in 1.1.0 */
-	libmpathpersist_init;
-	libmpathpersist_exit;
-
-local: *;
 };

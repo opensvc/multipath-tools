@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_13.0.0 {
+LIBMULTIPATH_14.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -56,6 +56,7 @@ global:
 	check_foreign;
 	cleanup_charp;
 	cleanup_lock;
+	cleanup_mutex;
 	cleanup_ucharp;
 	close_fd;
 	coalesce_paths;
@@ -121,6 +122,7 @@ global:
 	get_used_hwes;
 	get_vpd_sgio;
 	group_by_prio;
+	has_dm_info;
 	init_checkers;
 	init_config;
 	init_foreign;
@@ -175,7 +177,7 @@ global:
 	select_reservation_key;
 	send_packet;
 	set_max_fds;
-	__set_no_path_retry;
+	set_no_path_retry;
 	set_path_removed;
 	set_prkey;
 	setup_map;
@@ -209,6 +211,7 @@ global:
 	sysfs_is_multipathed;
 	timespeccmp;
 	timespecsub;
+	trigger_path_udev_change;
 	trigger_paths_udev_change;
 	truncate_strbuf;
 	udev;

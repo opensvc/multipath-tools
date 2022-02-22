@@ -1,9 +1,13 @@
 include ../Makefile.inc
 
-ifneq ($(call check_func,dm_task_get_errno,/usr/include/libdevmapper.h),0)
+ifneq ($(call check_func,dm_task_get_errno,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
 	CFLAGS += -DLIBDM_API_GET_ERRNO
 endif
 
+ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(LINUX_HEADERS_INCDIR)/scsi/fc/fc_els.h),0)
+	CFLAGS += -DFPIN_EVENT_HANDLER
+	FPIN_SUPPORT = 1
+endif
 #
 # debugging stuff
 #
@@ -34,13 +38,18 @@ endif
 OBJS = main.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o waiter.o \
        dmevents.o init_unwinder.o
 
+ifeq ($(FPIN_SUPPORT),1)
+OBJS += fpin_handlers.o
+endif
+
+
+
 EXEC = multipathd
 
 all : $(EXEC)
 
 $(EXEC): $(OBJS) $(multipathdir)/libmultipath.so $(mpathcmddir)/libmpathcmd.so
 	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(EXEC) $(LIBDEPS)
-	$(GZIP) $(EXEC).8 > $(EXEC).8.gz
 
 cli_handlers.o:	cli_handlers.c
 	$(CC) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
@@ -54,16 +63,16 @@ ifdef SYSTEMD
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).socket $(DESTDIR)$(unitdir)
 endif
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(man8dir)
-	$(INSTALL_PROGRAM) -m 644 $(EXEC).8.gz $(DESTDIR)$(man8dir)
+	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(man8dir)
 
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
-	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8.gz
+	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8
 	$(RM) $(DESTDIR)$(unitdir)/$(EXEC).service
 	$(RM) $(DESTDIR)$(unitdir)/$(EXEC).socket
 
 clean: dep_clean
-	$(RM) core *.o $(EXEC) *.gz
+	$(RM) core *.o $(EXEC)
 
 include $(wildcard $(OBJS:.o=.d))
 

@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <urcu.h>
 #include <urcu/uatomic.h>
+#include <assert.h>
 
 #include "debug.h"
 #include "checkers.h"

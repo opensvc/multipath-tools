@@ -8,7 +8,6 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
-#include <string.h>
 #include <errno.h>
 #include <assert.h>
 #include <libudev.h>
@@ -96,6 +95,7 @@
 			     "            \"host_wwpn\" : \"%R\",\n" \
 			     "            \"target_wwpn\" : \"%r\",\n" \
 			     "            \"host_adapter\" : \"%a\",\n" \
+			     "            \"lun_hex\" : \"%L\",\n" \
 			     "            \"marginal_st\" : \"%M\""
 
 #define PROGRESS_LEN  10
@@ -171,8 +171,8 @@ snprint_name (struct strbuf *buff, const struct multipath * mpp)
 static int
 snprint_sysfs (struct strbuf *buff, const struct multipath * mpp)
 {
-	if (mpp->dmi)
-		return print_strbuf(buff, "dm-%i", mpp->dmi->minor);
+	if (has_dm_info(mpp))
+		return print_strbuf(buff, "dm-%i", mpp->dmi.minor);
 	else
 		return append_strbuf_str(buff, "undef");
 }
@@ -180,9 +180,9 @@ snprint_sysfs (struct strbuf *buff, const struct multipath * mpp)
 static int
 snprint_ro (struct strbuf *buff, const struct multipath * mpp)
 {
-	if (!mpp->dmi)
+	if (!has_dm_info(mpp))
 		return append_strbuf_str(buff, "undef");
-	if (mpp->dmi->read_only)
+	if (mpp->dmi.read_only)
 		return append_strbuf_str(buff, "ro");
 	else
 		return append_strbuf_str(buff, "rw");
@@ -256,7 +256,9 @@ snprint_nb_paths (struct strbuf *buff, const struct multipath * mpp)
 static int
 snprint_dm_map_state (struct strbuf *buff, const struct multipath * mpp)
 {
-	if (mpp->dmi && mpp->dmi->suspended)
+	if (!has_dm_info(mpp))
+		return append_strbuf_str(buff, "undef");
+	else if (mpp->dmi.suspended)
 		return append_strbuf_str(buff, "suspend");
 	else
 		return append_strbuf_str(buff, "active");
@@ -449,6 +451,24 @@ snprint_hcil (struct strbuf *buff, const struct path * pp)
 			pp->sg_id.channel,
 			pp->sg_id.scsi_id,
 			pp->sg_id.lun);
+}
+
+
+static int
+snprint_path_lunhex (struct strbuf *buff, const struct path * pp)
+{
+	uint64_t lunhex = SCSI_INVALID_LUN, scsilun;
+
+	if (!pp || pp->sg_id.host_no < 0)
+		return print_strbuf(buff, "0x%016" PRIx64, lunhex);
+
+	scsilun = pp->sg_id.lun;
+	/* cf. Linux kernel function int_to_scsilun() */
+	lunhex = ((scsilun & 0x000000000000ffffULL) << 48) |
+		((scsilun & 0x00000000ffff0000ULL) << 16) |
+		((scsilun & 0x0000ffff00000000ULL) >> 16) |
+		((scsilun & 0xffff000000000000ULL) >> 48);
+	return print_strbuf(buff, "0x%016" PRIx64, lunhex);
 }
 
 static int
@@ -734,43 +754,27 @@ snprint_path_failures(struct strbuf *buff, const struct path * pp)
 int
 snprint_path_protocol(struct strbuf *buff, const struct path * pp)
 {
-	switch (pp->bus) {
-	case SYSFS_BUS_SCSI:
-		switch (pp->sg_id.proto_id) {
-		case SCSI_PROTOCOL_FCP:
-			return append_strbuf_str(buff, "scsi:fcp");
-		case SCSI_PROTOCOL_SPI:
-			return append_strbuf_str(buff, "scsi:spi");
-		case SCSI_PROTOCOL_SSA:
-			return append_strbuf_str(buff, "scsi:ssa");
-		case SCSI_PROTOCOL_SBP:
-			return append_strbuf_str(buff, "scsi:sbp");
-		case SCSI_PROTOCOL_SRP:
-			return append_strbuf_str(buff, "scsi:srp");
-		case SCSI_PROTOCOL_ISCSI:
-			return append_strbuf_str(buff, "scsi:iscsi");
-		case SCSI_PROTOCOL_SAS:
-			return append_strbuf_str(buff, "scsi:sas");
-		case SCSI_PROTOCOL_ADT:
-			return append_strbuf_str(buff, "scsi:adt");
-		case SCSI_PROTOCOL_ATA:
-			return append_strbuf_str(buff, "scsi:ata");
-		case SCSI_PROTOCOL_USB:
-			return append_strbuf_str(buff, "scsi:usb");
-		case SCSI_PROTOCOL_UNSPEC:
-		default:
-			return append_strbuf_str(buff, "scsi:unspec");
-		}
-	case SYSFS_BUS_CCW:
-		return append_strbuf_str(buff, "ccw");
-	case SYSFS_BUS_CCISS:
-		return append_strbuf_str(buff, "cciss");
-	case SYSFS_BUS_NVME:
-		return append_strbuf_str(buff, "nvme");
-	case SYSFS_BUS_UNDEF:
-	default:
-		return append_strbuf_str(buff, "undef");
-	}
+	static const char * const protocol_name[LAST_BUS_PROTOCOL_ID + 1] = {
+		[SYSFS_BUS_UNDEF] = "undef",
+		[SYSFS_BUS_CCW] = "ccw",
+		[SYSFS_BUS_CCISS] = "cciss",
+		[SYSFS_BUS_NVME] = "nvme",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_FCP] = "scsi:fcp",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SPI] = "scsi:spi",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SSA] = "scsi:ssa",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SBP] = "scsi:sbp",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SRP] = "scsi:srp",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_ISCSI] = "scsi:iscsi",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SAS] = "scsi:sas",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_ADT] = "scsi:adt",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_ATA] = "scsi:ata",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_USB] = "scsi:usb",
+		[SYSFS_BUS_SCSI + SCSI_PROTOCOL_UNSPEC] = "scsi:unspec",
+	};
+	const char *pn = protocol_name[bus_protocol_id(pp)];
+
+	assert(pn != NULL);
+	return append_strbuf_str(buff, pn);
 }
 
 static int
@@ -842,6 +846,7 @@ static const struct path_data pd[] = {
 	{'0', "failures",      snprint_path_failures},
 	{'P', "protocol",      snprint_path_protocol},
 	{'I', "init_st",       snprint_initialized},
+	{'L', "LUN hex",       snprint_path_lunhex},
 };
 
 static const struct pathgroup_data pgd[] = {

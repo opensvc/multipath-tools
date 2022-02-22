@@ -102,7 +102,7 @@ err:
 }
 
 /*
- * Caution callers: If this function encounters yet unkown path devices, it
+ * Caution callers: If this function encounters yet unknown path devices, it
  * adds them uninitialized to the mpp.
  * Call update_pathvec_from_dm() after this function to make sure
  * all data structures are in a sane state.
@@ -436,9 +436,19 @@ int disassemble_status(const char *params, struct multipath *mpp)
 		free(word);
 
 		/*
-		 * PG Status (discarded, would be '0' anyway)
+		 * Path Selector Group Arguments
 		 */
-		p += get_word(p, NULL);
+		p += get_word(p, &word);
+
+		if (!word)
+			return 1;
+
+		num_pg_args = atoi(word);
+		free(word);
+
+		/* Ignore ps group arguments */
+		for (j = 0; j < num_pg_args; j++)
+			p += get_word(p, NULL);
 
 		p += get_word(p, &word);
 

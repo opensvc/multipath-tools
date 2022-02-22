@@ -3,17 +3,16 @@
 #
 
 #
-# Allow to force some libraries to be used statically. (Uncomment one of the
-# following lines or define the values when calling make.)
-#
-# WITH_LOCAL_LIBDM	= 1
-# WITH_LOCAL_LIBSYSFS	= 1
-#
 # Uncomment to disable libdmmp support
 # ENABLE_LIBDMMP = 0
 #
 # Uncomment to disable dmevents polling support
 # ENABLE_DMEVENTS_POLL = 0
+
+# List of scsi device handler modules to load on boot, e.g.
+# SCSI_DH_MODULES_PRELOAD := scsi_dh_alua scsi_dh_rdac
+SCSI_DH_MODULES_PRELOAD :=
+
 
 PKGCONFIG	?= pkg-config
 
@@ -52,12 +51,34 @@ ifndef SYSTEMDPATH
 	SYSTEMDPATH=usr/lib
 endif
 
+ifndef DEVMAPPER_INCDIR
+	ifeq ($(shell $(PKGCONFIG) --modversion devmapper >/dev/null 2>&1 && echo 1), 1)
+		DEVMAPPER_INCDIR = $(shell $(PKGCONFIG) --variable=includedir devmapper)
+	else
+		DEVMAPPER_INCDIR = /usr/include
+	endif
+endif
+
+ifndef LIBUDEV_INCDIR
+	ifeq ($(shell $(PKGCONFIG) --modversion libudev >/dev/null 2>&1 && echo 1), 1)
+		LIBUDEV_INCDIR = $(shell $(PKGCONFIG) --variable=includedir libudev)
+	else
+		LIBUDEV_INCDIR = /usr/include
+	endif
+endif
+
+# Allow user to override default location.
+ifndef LINUX_HEADERS_INCDIR
+	LINUX_HEADERS_INCDIR = /usr/include
+endif
+
 prefix		=
 exec_prefix	= $(prefix)
 usr_prefix	= $(prefix)
 bindir		= $(exec_prefix)/sbin
 libudevdir	= $(prefix)/$(SYSTEMDPATH)/udev
 udevrulesdir	= $(libudevdir)/rules.d
+modulesloaddir  = $(prefix)/$(SYSTEMDPATH)/modules-load.d
 multipathdir	= $(TOPDIR)/libmultipath
 man8dir		= $(prefix)/usr/share/man/man8
 man5dir		= $(prefix)/usr/share/man/man5
@@ -75,7 +96,7 @@ nvmedir		= $(TOPDIR)/libmultipath/nvme
 includedir	= $(prefix)/usr/include
 pkgconfdir	= $(usrlibdir)/pkgconfig
 
-GZIP		= gzip -9 -c
+GZIP_PROG	= gzip -9 -c
 RM		= rm -f
 LN		= ln -sf
 INSTALL_PROGRAM	= install
@@ -137,6 +158,19 @@ check_file = $(shell \
 	echo 1>&2 "Checking if $1 exists ... $$status"; \
 	echo "$$found" \
 	)
+
+# Check whether a file contains a variable with name $1 in header file $2
+check_var = $(shell \
+	if grep -Eq "(^|[[:blank:]])$1([[:blank:]]|=|$$)" "$2"; then \
+                found=1; \
+                status="yes"; \
+        else \
+                found=0; \
+                status="no"; \
+        fi; \
+        echo 1>&2 "Checking for ..  $1 in $2 ... $$status"; \
+        echo "$$found" \
+        )
 
 %.o:	%.c
 	@echo building $@ because of $?

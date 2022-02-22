@@ -512,6 +512,59 @@ snprint_def_find_multipaths(struct config *conf, struct strbuf *buff,
 			 find_multipaths_optvals[conf->find_multipaths]);
 }
 
+static const char * const marginal_pathgroups_optvals[] = {
+	[MARGINAL_PATHGROUP_OFF] = "off",
+	[MARGINAL_PATHGROUP_ON] = "on",
+#ifdef FPIN_EVENT_HANDLER
+	[MARGINAL_PATHGROUP_FPIN] = "fpin",
+#endif
+};
+
+static int
+def_marginal_pathgroups_handler(struct config *conf, vector strvec,
+			    const char *file, int line_nr)
+{
+	char *buff;
+	unsigned int i;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+	for (i = MARGINAL_PATHGROUP_OFF;
+	     i < ARRAY_SIZE(marginal_pathgroups_optvals); i++) {
+		if (marginal_pathgroups_optvals[i] != NULL &&
+		    !strcmp(buff, marginal_pathgroups_optvals[i])) {
+			conf->marginal_pathgroups = i;
+			break;
+		}
+	}
+
+	if (i >= ARRAY_SIZE(marginal_pathgroups_optvals)) {
+		if (strcmp(buff, "no") == 0 || strcmp(buff, "0") == 0)
+			conf->marginal_pathgroups = MARGINAL_PATHGROUP_OFF;
+		else if (strcmp(buff, "yes") == 0 || strcmp(buff, "1") == 0)
+			conf->marginal_pathgroups = MARGINAL_PATHGROUP_ON;
+		/* This can only be true if FPIN_EVENT_HANDLER isn't defined,
+		 * otherwise this check will have already happened above */
+		else if (strcmp(buff, "fpin") == 0)
+			condlog(1, "%s line %d, support for \"fpin\" is not compiled in for marginal_pathgroups", file, line_nr);
+		else
+			condlog(1, "%s line %d, invalid value for marginal_pathgroups: \"%s\"",
+				file, line_nr, buff);
+	}
+	free(buff);
+	return 0;
+}
+
+static int
+snprint_def_marginal_pathgroups(struct config *conf, struct strbuf *buff,
+			    const void *data)
+{
+	return append_strbuf_quoted(buff,
+			 marginal_pathgroups_optvals[conf->marginal_pathgroups]);
+}
+
+
 declare_def_handler(selector, set_str)
 declare_def_snprint_defstr(selector, print_str, DEFAULT_SELECTOR)
 declare_hw_handler(selector, set_str)
@@ -1525,9 +1578,6 @@ declare_ovr_handler(all_tg_pt, set_yes_no_undef)
 declare_ovr_snprint(all_tg_pt, print_yes_no_undef)
 declare_hw_handler(all_tg_pt, set_yes_no_undef)
 declare_hw_snprint(all_tg_pt, print_yes_no_undef)
-
-declare_def_handler(marginal_pathgroups, set_yes_no)
-declare_def_snprint(marginal_pathgroups, print_yes_no)
 
 declare_def_handler(recheck_wwid, set_yes_no_undef)
 declare_def_snprint_defint(recheck_wwid, print_yes_no_undef, DEFAULT_RECHECK_WWID)

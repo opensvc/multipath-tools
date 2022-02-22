@@ -1,12 +1,14 @@
 [Unit]
 Description=Device-Mapper Multipath Device Controller
-Before=iscsi.service iscsid.service lvm2-activation-early.service
+Before=lvm2-activation-early.service
 Before=local-fs-pre.target blk-availability.service shutdown.target
 Wants=systemd-udevd-kernel.socket
 After=systemd-udevd-kernel.socket
 After=multipathd.socket systemd-remount-fs.service
+Before=initrd-cleanup.service
 DefaultDependencies=no
 Conflicts=shutdown.target
+Conflicts=initrd-cleanup.service
 ConditionKernelCommandLine=!nompath
 ConditionKernelCommandLine=!multipath=off
 ConditionVirtualization=!container
@@ -14,8 +16,6 @@ ConditionVirtualization=!container
 [Service]
 Type=notify
 NotifyAccess=main
-LimitCORE=infinity
-ExecStartPre=-/sbin/modprobe -a scsi_dh_alua scsi_dh_emc scsi_dh_rdac dm-multipath
 ExecStart=/sbin/multipathd -d -s
 ExecReload=/sbin/multipathd reconfigure
 TasksMax=infinity

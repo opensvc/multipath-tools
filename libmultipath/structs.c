@@ -18,6 +18,7 @@
 #include "prio.h"
 #include "prioritizers/alua_spc3.h"
 #include "dm-generic.h"
+#include "devmapper.h"
 
 struct adapter_group *
 alloc_adaptergroup(void)
@@ -278,11 +279,6 @@ free_multipath (struct multipath * mpp, enum free_path_mode free_paths)
 		mpp->alias = NULL;
 	}
 
-	if (mpp->dmi) {
-		free(mpp->dmi);
-		mpp->dmi = NULL;
-	}
-
 	if (!free_paths && mpp->pg) {
 		struct pathgroup *pgp;
 		struct path *pp;
@@ -407,10 +403,10 @@ find_mp_by_minor (const struct _vector *mpvec, unsigned int minor)
 		return NULL;
 
 	vector_foreach_slot (mpvec, mpp, i) {
-		if (!mpp->dmi)
+		if (!has_dm_info(mpp))
 			continue;
 
-		if (mpp->dmi->minor == minor)
+		if (mpp->dmi.minor == minor)
 			return mpp;
 	}
 	return NULL;
@@ -756,4 +752,14 @@ out:
 	*f = n;
 
 	return 0;
+}
+
+unsigned int bus_protocol_id(const struct path *pp) {
+	if (!pp || pp->bus < 0 || pp->bus > SYSFS_BUS_SCSI)
+		return SYSFS_BUS_UNDEF;
+	if (pp->bus != SYSFS_BUS_SCSI)
+		return pp->bus;
+	if ((int)pp->sg_id.proto_id < 0 || pp->sg_id.proto_id > SCSI_PROTOCOL_UNSPEC)
+		return SYSFS_BUS_UNDEF;
+	return SYSFS_BUS_SCSI + pp->sg_id.proto_id;
 }

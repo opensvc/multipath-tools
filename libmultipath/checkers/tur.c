@@ -23,7 +23,6 @@
 #include "../libmultipath/sg_include.h"
 #include "../libmultipath/util.h"
 #include "../libmultipath/time-util.h"
-#include "../libmultipath/util.h"
 
 #define TUR_CMD_LEN 6
 #define HEAVY_CHECK_COUNT       10

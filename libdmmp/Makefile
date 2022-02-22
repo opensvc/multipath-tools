@@ -21,7 +21,7 @@ CFLAGS += $(LIB_CFLAGS) -fvisibility=hidden -I$(libdmmpdir) -I$(mpathcmddir) \
 LIBDEPS += $(shell $(PKGCONFIG) --libs json-c) -L$(mpathcmddir) -lmpathcmd -lpthread
 
 all: $(LIBS) doc
-.PHONY:	doc doc.gz clean install uninstall check speed_test dep_clean
+.PHONY:	doc clean install uninstall check speed_test dep_clean
 
 $(LIBS): $(OBJS)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS)
@@ -31,7 +31,7 @@ $(DEVLIB): $(LIBS)
 
 abi:    $(DEVLIB:%.so=%.abi)
 
-install:	doc.gz
+install:
 	mkdir -p $(DESTDIR)$(usrlibdir)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(usrlibdir)/$(LIBS)
 	$(INSTALL_PROGRAM) -m 644 -D \
@@ -45,7 +45,7 @@ install:	doc.gz
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 	perl -i -pe 's|__INCLUDEDIR__|$(includedir)|g' \
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
-	$(INSTALL_PROGRAM) -m 644 -t $(DESTDIR)$(man3dir) docs/man/*.3.gz
+	$(INSTALL_PROGRAM) -m 644 -t $(DESTDIR)$(man3dir) docs/man/*.3
 
 uninstall:
 	$(RM) $(DESTDIR)$(usrlibdir)/$(LIBS)
@@ -58,8 +58,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 
 clean: dep_clean
-	$(RM) core *.a *.o *.gz *.so *.so.* *.abi $(NV_VERSION_SCRIPT)
-	$(RM) docs/man/*.gz
+	$(RM) core *.a *.o *.so *.so.* *.abi $(NV_VERSION_SCRIPT)
 	$(MAKE) -C test clean
 
 include $(wildcard $(OBJS:.o=.d))
@@ -70,12 +69,7 @@ check: all
 speed_test: all
 	$(MAKE) -C test speed_test
 
-doc.gz:	doc $(patsubst %,%.gz,$(wildcard docs/man/*.3))
-
 doc: docs/man/dmmp_strerror.3
-
-docs/man/%.3.gz:	docs/man/%.3
-	gzip -c $< >$@
 
 docs/man/dmmp_strerror.3:	$(HEADERS)
 	TEMPFILE=$(shell mktemp); \

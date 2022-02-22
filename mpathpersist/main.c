@@ -10,6 +10,7 @@
 #include <getopt.h>
 #include <libudev.h>
 #include "mpath_persist.h"
+#include "mpath_persist_int.h"
 #include "main.h"
 #include "debug.h"
 #include <pthread.h>

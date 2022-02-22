@@ -475,6 +475,49 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 	return 0;
 }
 
+static int sysfs_get_host_bus_id(const struct path *pp, char *bus_id)
+{
+	struct udev_device *hostdev, *parent;
+	char host_name[HOST_NAME_LEN];
+	const char *driver_name, *subsystem_name, *value;
+
+	if (!pp || !bus_id)
+		return 1;
+
+	snprintf(host_name, sizeof(host_name), "host%d", pp->sg_id.host_no);
+	hostdev = udev_device_new_from_subsystem_sysname(udev,
+			"scsi_host", host_name);
+	if (!hostdev)
+		return 1;
+
+	for (parent = udev_device_get_parent(hostdev);
+	     parent;
+	     parent = udev_device_get_parent(parent)) {
+		driver_name = udev_device_get_driver(parent);
+		subsystem_name = udev_device_get_subsystem(parent);
+		if (driver_name && !strcmp(driver_name, "pcieport"))
+			break;
+		if (subsystem_name && !strcmp(subsystem_name, "ccw"))
+			break;
+	}
+	if (parent) {
+		/* pci_device or ccw fcp device found
+		 */
+		value = udev_device_get_sysname(parent);
+
+		if (!value) {
+			udev_device_unref(hostdev);
+			return 1;
+		}
+
+		strlcpy(bus_id, value, SLOT_NAME_SIZE);
+		udev_device_unref(hostdev);
+		return 0;
+	}
+	udev_device_unref(hostdev);
+	return 1;
+}
+
 int sysfs_get_host_adapter_name(const struct path *pp, char *adapter_name)
 {
 	int proto_id;
@@ -496,53 +539,9 @@ int sysfs_get_host_adapter_name(const struct path *pp, char *adapter_name)
 	if (pp->sg_id.proto_id == SCSI_PROTOCOL_ISCSI)
 		return sysfs_get_iscsi_ip_address(pp, adapter_name);
 
-	/* fetch adapter pci name for other protocols
+	/* fetch adapter bus-ID for other protocols
 	 */
-	return sysfs_get_host_pci_name(pp, adapter_name);
-}
-
-int sysfs_get_host_pci_name(const struct path *pp, char *pci_name)
-{
-	struct udev_device *hostdev, *parent;
-	char host_name[HOST_NAME_LEN];
-	const char *driver_name, *value;
-
-	if (!pp || !pci_name)
-		return 1;
-
-	sprintf(host_name, "host%d", pp->sg_id.host_no);
-	hostdev = udev_device_new_from_subsystem_sysname(udev,
-			"scsi_host", host_name);
-	if (!hostdev)
-		return 1;
-
-	parent = udev_device_get_parent(hostdev);
-	while (parent) {
-		driver_name = udev_device_get_driver(parent);
-		if (!driver_name) {
-			parent = udev_device_get_parent(parent);
-			continue;
-		}
-		if (!strcmp(driver_name, "pcieport"))
-			break;
-		parent = udev_device_get_parent(parent);
-	}
-	if (parent) {
-		/* pci_device found
-		 */
-		value = udev_device_get_sysname(parent);
-
-		if (!value) {
-			udev_device_unref(hostdev);
-			return 1;
-		}
-
-		strncpy(pci_name, value, SLOT_NAME_SIZE);
-		udev_device_unref(hostdev);
-		return 0;
-	}
-	udev_device_unref(hostdev);
-	return 1;
+	return sysfs_get_host_bus_id(pp, adapter_name);
 }
 
 int sysfs_get_iscsi_ip_address(const struct path *pp, char *ip_address)
@@ -844,6 +843,7 @@ sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint)
 	int i;
 	unsigned int dev_loss_tmo = mpp->dev_loss;
 	struct path *err_path = NULL;
+	STATIC_BITFIELD(bf, LAST_BUS_PROTOCOL_ID + 1);
 
 	if (mpp->no_path_retry > 0) {
 		uint64_t no_path_retry_tmo =
@@ -898,12 +898,13 @@ sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint)
 		sysfs_set_eh_deadline(mpp, pp);
 	}
 
-	if (err_path) {
+	if (err_path && !is_bit_set_in_bitfield(bus_protocol_id(pp), bf)) {
 		STRBUF_ON_STACK(proto_buf);
 
 		snprint_path_protocol(&proto_buf, err_path);
 		condlog(2, "%s: setting dev_loss_tmo is unsupported for protocol %s",
 			mpp->alias, get_strbuf_str(&proto_buf));
+		set_bit_in_bitfield(bus_protocol_id(pp), bf);
 	}
 	return 0;
 }
@@ -2345,7 +2346,10 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			 * Avoid any IO on the device itself.
 			 * simply use the path_offline() return as its state
 			 */
-			pp->chkrstate = pp->state = path_state;
+			if (path_state != PATH_PENDING ||
+			    pp->state == PATH_UNCHECKED ||
+			    pp->state == PATH_WILD)
+				pp->chkrstate = pp->state = path_state;
 		return PATHINFO_OK;
 	}
 

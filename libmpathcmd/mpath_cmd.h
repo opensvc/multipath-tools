@@ -80,7 +80,7 @@ int mpath_disconnect(int fd);
  *	mpath_recv_reply()
  *
  * RETURNS:
- *	0 on successs, and reply will either be NULL (if there was no
+ *	0 on success, and reply will either be NULL (if there was no
  *	reply data), or point to the reply string, which must be freed by
  *	the caller. -1 on failure (with errno set).
  */

@@ -44,7 +44,6 @@ int store_pathinfo (vector pathvec, struct config *conf,
 		    struct path **pp_ptr);
 int sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint);
 int sysfs_get_timeout(const struct path *pp, unsigned int *timeout);
-int sysfs_get_host_pci_name(const struct path *pp, char *pci_name);
 int sysfs_get_iscsi_ip_address(const struct path *pp, char *ip_address);
 int sysfs_get_host_adapter_name(const struct path *pp,
 				char *adapter_name);

@@ -4,7 +4,6 @@
  */
 #include <stdlib.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
@@ -19,8 +18,6 @@
 #include "checkers.h"
 #include "structs.h"
 #include "config.h"
-#include "util.h"
-#include "errno.h"
 #include "devmapper.h"
 #include "strbuf.h"
 

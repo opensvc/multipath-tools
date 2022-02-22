@@ -56,6 +56,7 @@ int coalesce_paths (struct vectors *vecs, vector curmp, char * refwwid, int forc
 int get_refwwid (enum mpath_cmds cmd, const char *dev, enum devtypes dev_type,
 		 vector pathvec, char **wwid);
 struct udev_device *get_udev_device(const char *dev, enum devtypes dev_type);
+void trigger_path_udev_change(struct path *pp, bool is_mpath);
 void trigger_paths_udev_change(struct multipath *mpp, bool is_mpath);
 void trigger_partitions_udev_change(struct udev_device *dev, const char *action,
 				    int len);

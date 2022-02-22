@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <libdevmapper.h>
 
 #include "prio.h"
 #include "byteorder.h"
@@ -56,12 +57,13 @@ enum failback_mode {
 	FAILBACK_FOLLOWOVER
 };
 
+/* SYSFS_BUS_SCSI should be last, see bus_protocol_id() */
 enum sysfs_buses {
 	SYSFS_BUS_UNDEF,
-	SYSFS_BUS_SCSI,
 	SYSFS_BUS_CCW,
 	SYSFS_BUS_CCISS,
 	SYSFS_BUS_NVME,
+	SYSFS_BUS_SCSI,
 };
 
 enum pathstates {
@@ -108,6 +110,12 @@ enum find_multipaths_states {
 	FIND_MULTIPATHS_SMART,
 	FIND_MULTIPATHS_STRICT,
 	__FIND_MULTIPATHS_LAST,
+};
+
+enum marginal_pathgroups_mode {
+	MARGINAL_PATHGROUP_OFF = YN_NO,
+	MARGINAL_PATHGROUP_ON = YN_YES,
+	MARGINAL_PATHGROUP_FPIN,
 };
 
 enum flush_states {
@@ -174,8 +182,16 @@ enum scsi_protocol {
 	SCSI_PROTOCOL_ADT = 7,	/* Media Changers */
 	SCSI_PROTOCOL_ATA = 8,
 	SCSI_PROTOCOL_USB = 9,  /* USB Attached SCSI (UAS), and others */
-	SCSI_PROTOCOL_UNSPEC = 0xf, /* No specific protocol */
+	SCSI_PROTOCOL_UNSPEC = 0xa, /* No specific protocol */
 };
+
+/*
+ * Linear ordering of bus/protocol
+ * This assumes that SYSFS_BUS_SCSI is last in enum sysfs_buses
+ * SCSI is the only bus type for which we distinguish protocols.
+ */
+#define LAST_BUS_PROTOCOL_ID (SYSFS_BUS_SCSI + SCSI_PROTOCOL_UNSPEC)
+unsigned int bus_protocol_id(const struct path *pp);
 
 #define SCSI_INVALID_LUN ~0ULL
 
@@ -386,7 +402,7 @@ struct multipath {
 	unsigned long long size;
 	vector paths;
 	vector pg;
-	struct dm_info * dmi;
+	struct dm_info dmi;
 
 	/* configlet pointers */
 	char * alias;
@@ -418,6 +434,7 @@ struct multipath {
 	unsigned char prflag;
 	int all_tg_pt;
 	struct gen_multipath generic_mp;
+	bool fpin_must_reload;
 };
 
 static inline int marginal_path_check_enabled(const struct multipath *mpp)

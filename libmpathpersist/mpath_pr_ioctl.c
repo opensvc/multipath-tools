@@ -10,15 +10,13 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <unistd.h>
 #include <libudev.h>
 #include "mpath_pr_ioctl.h"
 #include "mpath_persist.h"
 #include "unaligned.h"
 
 #include "debug.h"
-
-#define FILE_NAME_SIZE          256
+#include "structs.h" /* FILE_NAME_SIZE */
 
 #define TIMEOUT 2000
 #define MAXRETRY 5
