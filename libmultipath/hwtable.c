@@ -397,9 +397,9 @@ static struct hwentry default_hw[] = {
 		.fast_io_fail  = 15,
 	},
 	{
-		/* PowerVault ME4 */
+		/* PowerVault ME 4/5 families */
 		.vendor        = "DellEMC",
-		.product       = "ME4",
+		.product       = "^ME",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.prio_name     = PRIO_ALUA,
 		.hwhandler     = "1 alua",
