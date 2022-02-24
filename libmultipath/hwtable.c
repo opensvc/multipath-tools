@@ -665,7 +665,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		// Storwize V5000 and V7000 lines / SAN Volume Controller (SVC) / Flex System V7000 /
-		// FlashSystem V840/V9000/5000/5100/5200/7200/9100/9200/9200R
+		// FlashSystem V840/V9000/5000/5100/5200/7200/7300/9100/9200/9200R/9500
 		.vendor        = "IBM",
 		.product       = "^2145",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
