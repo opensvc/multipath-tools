@@ -192,7 +192,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* SAN Virtualization Services Platform */
 		.vendor        = "HP",
-		.product       = "HSVX700",
+		.product       = "(HSVX700|HSVX740)",
 		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
