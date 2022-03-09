@@ -1130,6 +1130,28 @@ out:
 	return ret;
 }
 
+static int
+sysfs_get_ro (struct path *pp)
+{
+	int ro;
+	char buff[3]; /* Either "0\n\0" or "1\n\0" */
+
+	if (!pp->udev)
+		return -1;
+
+	if (sysfs_attr_get_value(pp->udev, "ro", buff, sizeof(buff)) <= 0) {
+		condlog(3, "%s: Cannot read ro attribute in sysfs", pp->dev);
+		return -1;
+	}
+
+	if (sscanf(buff, "%d\n", &ro) != 1 || ro < 0 || ro > 1) {
+		condlog(3, "%s: Cannot parse ro attribute", pp->dev);
+		return -1;
+	}
+
+	return ro;
+}
+
 /*
  * returns:
  * 0: added
@@ -1143,6 +1165,7 @@ ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 	int retries = 3;
 	int start_waiter = 0;
 	int ret;
+	int ro;
 
 	/*
 	 * need path UID to go any further
@@ -1206,6 +1229,11 @@ rescan:
 
 	/* persistent reservation check*/
 	mpath_pr_event_handle(pp);
+
+	/* ro check - if new path is ro, force map to be ro as well */
+	ro = sysfs_get_ro(pp);
+	if (ro == 1)
+		mpp->force_readonly = 1;
 
 	if (!need_do_map)
 		return 0;
@@ -1444,28 +1472,6 @@ finish_path_init(struct path *pp, struct vectors * vecs)
 	condlog(0, "%s: error fully initializing path, removing", pp->dev);
 	ev_remove_path(pp, vecs, 1);
 	return -1;
-}
-
-static int
-sysfs_get_ro (struct path *pp)
-{
-	int ro;
-	char buff[3]; /* Either "0\n\0" or "1\n\0" */
-
-	if (!pp->udev)
-		return -1;
-
-	if (sysfs_attr_get_value(pp->udev, "ro", buff, sizeof(buff)) <= 0) {
-		condlog(3, "%s: Cannot read ro attribute in sysfs", pp->dev);
-		return -1;
-	}
-
-	if (sscanf(buff, "%d\n", &ro) != 1 || ro < 0 || ro > 1) {
-		condlog(3, "%s: Cannot parse ro attribute", pp->dev);
-		return -1;
-	}
-
-	return ro;
 }
 
 static bool
