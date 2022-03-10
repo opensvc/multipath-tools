@@ -287,14 +287,10 @@ enum daemon_status wait_for_state_change_if(enum daemon_status oldstate,
 
 /* Don't access this variable without holding config_lock */
 static enum force_reload_types reconfigure_pending = FORCE_RELOAD_NONE;
-/* Only set while changing to DAEMON_CONFIGURE, and only access while
- * reconfiguring or scheduling a delayed reconfig in DAEMON_CONFIGURE */
-static volatile enum force_reload_types reload_type = FORCE_RELOAD_NONE;
 
 static void enable_delayed_reconfig(void)
 {
 	pthread_mutex_lock(&config_lock);
-	reconfigure_pending = reload_type;
 	__delayed_reconfig = true;
 	pthread_mutex_unlock(&config_lock);
 }
@@ -323,11 +319,6 @@ static void __post_config_state(enum daemon_status state)
 			do_sd_notify(old_state, DAEMON_IDLE);
 			old_state = DAEMON_IDLE;
 			state = DAEMON_CONFIGURE;
-		}
-		if (state == DAEMON_CONFIGURE) {
-			reload_type = (reconfigure_pending == FORCE_RELOAD_YES) ? FORCE_RELOAD_YES : FORCE_RELOAD_WEAK;
-			reconfigure_pending = FORCE_RELOAD_NONE;
-			__delayed_reconfig = false;
 		}
 		running_state = state;
 		pthread_cond_broadcast(&config_cond);
@@ -2720,8 +2711,8 @@ checkerloop (void *ap)
 	return NULL;
 }
 
-int
-configure (struct vectors * vecs)
+static int
+configure (struct vectors * vecs, enum force_reload_types reload_type)
 {
 	struct multipath * mpp;
 	struct path * pp;
@@ -2852,8 +2843,8 @@ void rcu_free_config(struct rcu_head *head)
 	free_config(conf);
 }
 
-int
-reconfigure (struct vectors * vecs)
+static int
+reconfigure (struct vectors *vecs, enum force_reload_types reload_type)
 {
 	struct config * old, *conf;
 	int old_marginal_pathgroups;
@@ -2900,8 +2891,7 @@ reconfigure (struct vectors * vecs)
 #ifdef FPIN_EVENT_HANDLER
 	fpin_clean_marginal_dev_list(NULL);
 #endif
-	configure(vecs);
-
+	configure(vecs, reload_type);
 
 	return 0;
 }
@@ -3417,9 +3407,18 @@ child (__attribute__((unused)) void *param)
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(&vecs->lock);
 		pthread_testcancel();
-		if (!need_to_delay_reconfig(vecs))
-			rc = reconfigure(vecs);
-		else
+		if (!need_to_delay_reconfig(vecs)) {
+			enum force_reload_types reload_type;
+
+			pthread_mutex_lock(&config_lock);
+			reload_type = reconfigure_pending == FORCE_RELOAD_YES ?
+				FORCE_RELOAD_YES : FORCE_RELOAD_WEAK;
+			reconfigure_pending = FORCE_RELOAD_NONE;
+			__delayed_reconfig = false;
+			pthread_mutex_unlock(&config_lock);
+
+			rc = reconfigure(vecs, reload_type);
+		} else
 			enable_delayed_reconfig();
 		lock_cleanup_pop(vecs->lock);
 		if (!rc)
