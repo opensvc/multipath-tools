@@ -288,38 +288,12 @@ enum daemon_status wait_for_state_change_if(enum daemon_status oldstate,
 /* Don't access this variable without holding config_lock */
 static enum force_reload_types reconfigure_pending = FORCE_RELOAD_NONE;
 
-static void enable_delayed_reconfig(void)
-{
-	pthread_mutex_lock(&config_lock);
-	__delayed_reconfig = true;
-	pthread_mutex_unlock(&config_lock);
-}
-
 /* must be called with config_lock held */
 static void __post_config_state(enum daemon_status state)
 {
 	if (state != running_state && running_state != DAEMON_SHUTDOWN) {
 		enum daemon_status old_state = running_state;
 
-		/*
-		 * Handle a pending reconfigure request.
-		 * DAEMON_IDLE is set from child() after reconfigure(),
-		 * or from checkerloop() after completing checkers.
-		 * In either case, child() will see DAEMON_CONFIGURE
-		 * again and start another reconfigure cycle.
-		 */
-		if (reconfigure_pending != FORCE_RELOAD_NONE &&
-		    state == DAEMON_IDLE &&
-		    (old_state == DAEMON_CONFIGURE ||
-		     old_state == DAEMON_RUNNING)) {
-			/*
-			 * notify systemd of transient idle state, lest systemd
-			 * thinks the reload lasts forever.
-			 */
-			do_sd_notify(old_state, DAEMON_IDLE);
-			old_state = DAEMON_IDLE;
-			state = DAEMON_CONFIGURE;
-		}
 		running_state = state;
 		pthread_cond_broadcast(&config_cond);
 		do_sd_notify(old_state, state);
@@ -3396,8 +3370,21 @@ child (__attribute__((unused)) void *param)
 		pthread_cleanup_push(config_cleanup, NULL);
 		pthread_mutex_lock(&config_lock);
 		while (running_state != DAEMON_CONFIGURE &&
-		       running_state != DAEMON_SHUTDOWN)
+		       running_state != DAEMON_SHUTDOWN &&
+		       /*
+			* Check if another reconfigure request was scheduled
+			* while we last ran reconfigure().
+			* We have to test __delayed_reconfig here
+			* to avoid a busy loop
+			*/
+		       (reconfigure_pending == FORCE_RELOAD_NONE
+			 || __delayed_reconfig))
 			pthread_cond_wait(&config_cond, &config_lock);
+
+		if (running_state != DAEMON_CONFIGURE &&
+		    running_state != DAEMON_SHUTDOWN)
+			/* This sets running_state to DAEMON_CONFIGURE */
+			__post_config_state(DAEMON_CONFIGURE);
 		state = running_state;
 		pthread_cleanup_pop(1);
 		if (state == DAEMON_SHUTDOWN)
@@ -3418,8 +3405,11 @@ child (__attribute__((unused)) void *param)
 			pthread_mutex_unlock(&config_lock);
 
 			rc = reconfigure(vecs, reload_type);
-		} else
-			enable_delayed_reconfig();
+		} else {
+			pthread_mutex_lock(&config_lock);
+			__delayed_reconfig = true;
+			pthread_mutex_unlock(&config_lock);
+		}
 		lock_cleanup_pop(vecs->lock);
 		if (!rc)
 			post_config_state(DAEMON_IDLE);
