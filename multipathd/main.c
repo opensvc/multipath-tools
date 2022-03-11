@@ -3401,6 +3401,8 @@ child (__attribute__((unused)) void *param)
 	pthread_attr_destroy(&misc_attr);
 
 	while (1) {
+		int rc = 0;
+
 		pthread_cleanup_push(config_cleanup, NULL);
 		pthread_mutex_lock(&config_lock);
 		while (running_state != DAEMON_CONFIGURE &&
@@ -3410,23 +3412,21 @@ child (__attribute__((unused)) void *param)
 		pthread_cleanup_pop(1);
 		if (state == DAEMON_SHUTDOWN)
 			break;
-		if (state == DAEMON_CONFIGURE) {
-			int rc = 0;
 
-			pthread_cleanup_push(cleanup_lock, &vecs->lock);
-			lock(&vecs->lock);
-			pthread_testcancel();
-			if (!need_to_delay_reconfig(vecs))
-				rc = reconfigure(vecs);
-			else
-				enable_delayed_reconfig();
-			lock_cleanup_pop(vecs->lock);
-			if (!rc)
-				post_config_state(DAEMON_IDLE);
-			else {
-				condlog(0, "fatal error applying configuration - aborting");
-				exit_daemon();
-			}
+		/* handle DAEMON_CONFIGURE */
+		pthread_cleanup_push(cleanup_lock, &vecs->lock);
+		lock(&vecs->lock);
+		pthread_testcancel();
+		if (!need_to_delay_reconfig(vecs))
+			rc = reconfigure(vecs);
+		else
+			enable_delayed_reconfig();
+		lock_cleanup_pop(vecs->lock);
+		if (!rc)
+			post_config_state(DAEMON_IDLE);
+		else {
+			condlog(0, "fatal error applying configuration - aborting");
+			exit_daemon();
 		}
 	}
 
