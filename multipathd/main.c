@@ -155,16 +155,6 @@ int should_exit(void)
 	return get_running_state() == DAEMON_SHUTDOWN;
 }
 
-static bool get_delayed_reconfig(void)
-{
-	bool val;
-
-	pthread_mutex_lock(&config_lock);
-	val = __delayed_reconfig;
-	pthread_mutex_unlock(&config_lock);
-	return val;
-}
-
 /*
  * global copy of vecs for use in sig handlers
  */
@@ -306,6 +296,27 @@ void post_config_state(enum daemon_status state)
 	pthread_cleanup_push(config_cleanup, NULL);
 	__post_config_state(state);
 	pthread_cleanup_pop(1);
+}
+
+static bool unblock_reconfigure(void)
+{
+	bool was_delayed;
+
+	pthread_mutex_lock(&config_lock);
+	was_delayed = __delayed_reconfig;
+	if (was_delayed) {
+		__delayed_reconfig = false;
+		/*
+		 * In IDLE state, make sure child() is woken up
+		 * Otherwise it will wake up when state switches to IDLE
+		 */
+		if (running_state == DAEMON_IDLE)
+			__post_config_state(DAEMON_CONFIGURE);
+	}
+	pthread_mutex_unlock(&config_lock);
+	if (was_delayed)
+		condlog(3, "unblocked delayed reconfigure");
+	return was_delayed;
 }
 
 void schedule_reconfigure(enum force_reload_types requested_type)
@@ -790,12 +801,9 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 		dm_get_info(mpp->alias, &mpp->dmi);
 		if (mpp->wait_for_udev) {
 			mpp->wait_for_udev = 0;
-			if (get_delayed_reconfig() &&
-			    !need_to_delay_reconfig(vecs)) {
-				condlog(2, "reconfigure (delayed)");
-				schedule_reconfigure(FORCE_RELOAD_WEAK);
+			if (!need_to_delay_reconfig(vecs) &&
+			    unblock_reconfigure())
 				return 0;
-			}
 		}
 		/*
 		 * Not really an error -- we generate our own uevent
@@ -1905,11 +1913,8 @@ missing_uev_wait_tick(struct vectors *vecs)
 		}
 	}
 
-	if (timed_out && get_delayed_reconfig() &&
-	    !need_to_delay_reconfig(vecs)) {
-		condlog(2, "reconfigure (delayed)");
-		schedule_reconfigure(FORCE_RELOAD_WEAK);
-	}
+	if (timed_out && !need_to_delay_reconfig(vecs))
+		unblock_reconfigure();
 }
 
 static void
