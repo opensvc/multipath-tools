@@ -127,7 +127,7 @@ static int poll_dmevents = 0;
 static int poll_dmevents = 1;
 #endif
 /* Don't access this variable without holding config_lock */
-static volatile enum daemon_status running_state = DAEMON_INIT;
+static enum daemon_status running_state = DAEMON_INIT;
 /* Don't access this variable without holding config_lock */
 static bool __delayed_reconfig;
 pid_t daemon_pid;
