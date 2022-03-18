@@ -287,6 +287,8 @@ static void __post_config_state(enum daemon_status state)
 		running_state = state;
 		pthread_cond_broadcast(&config_cond);
 		do_sd_notify(old_state, state);
+		condlog(4, "daemon state %s -> %s",
+			daemon_status_msg[old_state], daemon_status_msg[state]);
 	}
 }
 
