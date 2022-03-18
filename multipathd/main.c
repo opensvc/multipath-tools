@@ -37,6 +37,7 @@
 /*
  * libmultipath
  */
+#include "version.h"
 #include "parser.h"
 #include "vector.h"
 #include "config.h"
@@ -2566,7 +2567,6 @@ checkerloop (void *ap)
 	rcu_register_thread();
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	vecs = (struct vectors *)ap;
-	condlog(2, "path checkers start up");
 
 	/* Tweak start time for initial path check */
 	get_monotonic_time(&last_time);
@@ -3247,8 +3247,8 @@ child (__attribute__((unused)) void *param)
 
 	post_config_state(DAEMON_START);
 
-	condlog(2, "--------start up--------");
-	condlog(2, "read " DEFAULT_CONFIGFILE);
+	condlog(2, "multipathd v%d.%d.%d: start up", MULTIPATH_VERSION(VERSION_CODE));
+	condlog(3, "read " DEFAULT_CONFIGFILE);
 
 	if (verbosity)
 		libmp_verbosity = verbosity;
@@ -3441,7 +3441,7 @@ child (__attribute__((unused)) void *param)
 
 	exit_code = 0;
 failed:
-	condlog(2, "--------shut down-------");
+	condlog(2, "multipathd: shut down");
 	/* All cleanup is done in the cleanup_child() exit handler */
 	return sd_notify_exit(exit_code);
 }
