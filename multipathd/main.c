@@ -2846,6 +2846,7 @@ reconfigure (struct vectors *vecs, enum force_reload_types reload_type)
 	if (verbosity)
 		libmp_verbosity = verbosity;
 	setlogmask(LOG_UPTO(libmp_verbosity + 3));
+	condlog(2, "%s: setting up paths and maps", __func__);
 
 	/*
 	 * free old map and path vectors ... they use old conf state
@@ -3425,6 +3426,7 @@ child (__attribute__((unused)) void *param)
 			pthread_mutex_lock(&config_lock);
 			__delayed_reconfig = true;
 			pthread_mutex_unlock(&config_lock);
+			condlog(3, "delaying reconfigure()");
 		}
 		lock_cleanup_pop(vecs->lock);
 		if (!rc)
