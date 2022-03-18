@@ -319,6 +319,17 @@ static bool unblock_reconfigure(void)
 	return was_delayed;
 }
 
+/*
+ * Make sure child() is woken up when a map is removed that multipathd
+ * is currently waiting for.
+ * Overrides libmultipath's weak symbol by the same name
+ */
+void remove_map_callback(struct multipath *mpp)
+{
+	if (mpp->wait_for_udev > 0)
+		unblock_reconfigure();
+}
+
 void schedule_reconfigure(enum force_reload_types requested_type)
 {
 	pthread_mutex_lock(&config_lock);
