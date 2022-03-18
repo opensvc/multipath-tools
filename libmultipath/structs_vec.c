@@ -336,10 +336,16 @@ void set_path_removed(struct path *pp)
 	pp->initialized = INIT_REMOVED;
 }
 
+void remove_map_callback(struct multipath *mpp __attribute__((unused)))
+{
+}
+
 void
 remove_map(struct multipath *mpp, vector pathvec, vector mpvec)
 {
 	int i;
+
+	remove_map_callback(mpp);
 
 	free_pathvec(mpp->paths, KEEP_PATHS);
 	free_pgvec(mpp->pg, KEEP_PATHS);
