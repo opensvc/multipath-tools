@@ -2927,18 +2927,18 @@ void
 handle_signals(bool nonfatal)
 {
 	if (exit_sig) {
-		condlog(2, "exit (signal)");
+		condlog(3, "exit (signal)");
 		exit_sig = 0;
 		exit_daemon();
 	}
 	if (!nonfatal)
 		return;
 	if (reconfig_sig) {
-		condlog(2, "reconfigure (signal)");
+		condlog(3, "reconfigure (signal)");
 		schedule_reconfigure(FORCE_RELOAD_WEAK);
 	}
 	if (log_reset_sig) {
-		condlog(2, "reset log (signal)");
+		condlog(3, "reset log (signal)");
 		if (logsink == LOGSINK_SYSLOG)
 			log_thread_reset();
 	}
