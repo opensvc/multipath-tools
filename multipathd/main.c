@@ -3247,7 +3247,8 @@ child (__attribute__((unused)) void *param)
 
 	post_config_state(DAEMON_START);
 
-	condlog(2, "multipathd v%d.%d.%d: start up", MULTIPATH_VERSION(VERSION_CODE));
+	condlog(2, "multipathd v%d.%d.%d%s: start up",
+		MULTIPATH_VERSION(VERSION_CODE), EXTRAVERSION);
 	condlog(3, "read " DEFAULT_CONFIGFILE);
 
 	if (verbosity)
