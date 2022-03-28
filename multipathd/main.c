@@ -3307,11 +3307,10 @@ child (__attribute__((unused)) void *param)
 	pthread_cleanup_push(config_cleanup, NULL);
 	pthread_mutex_lock(&config_lock);
 
-	__post_config_state(DAEMON_IDLE);
 	rc = pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs);
 	if (!rc) {
 		/* Wait for uxlsnr startup */
-		while (running_state == DAEMON_IDLE)
+		while (running_state == DAEMON_START)
 			pthread_cond_wait(&config_cond, &config_lock);
 		state = running_state;
 	}
