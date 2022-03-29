@@ -220,6 +220,10 @@ static bool
 uevent_can_filter(struct uevent *earlier, struct uevent *later)
 {
 
+	if (!strncmp(later->kernel, "dm-", 3) ||
+	    strcmp(earlier->kernel, later->kernel))
+		return false;
+
 	/*
 	 * filter earlier uvents if path has removed later. Eg:
 	 * "add path1 |chang path1 |add path2 |remove path1"
@@ -227,11 +231,8 @@ uevent_can_filter(struct uevent *earlier, struct uevent *later)
 	 * "add path2 |remove path1"
 	 * uevents "add path1" and "chang path1" are filtered out
 	 */
-	if (!strcmp(earlier->kernel, later->kernel) &&
-		!strcmp(later->action, "remove") &&
-		strncmp(later->kernel, "dm-", 3)) {
+	if (!strcmp(later->action, "remove"))
 		return true;
-	}
 
 	/*
 	 * filter change uvents if add uevents exist. Eg:
@@ -240,12 +241,9 @@ uevent_can_filter(struct uevent *earlier, struct uevent *later)
 	 * "add path1 |add path2"
 	 * uevent "chang path1" is filtered out
 	 */
-	if (!strcmp(earlier->kernel, later->kernel) &&
-		!strcmp(earlier->action, "change") &&
-		!strcmp(later->action, "add") &&
-		strncmp(later->kernel, "dm-", 3)) {
+	if (!strcmp(earlier->action, "change") &&
+	    !strcmp(later->action, "add"))
 		return true;
-	}
 
 	return false;
 }
@@ -278,10 +276,10 @@ merge_need_stop(struct uevent *earlier, struct uevent *later)
 	 * with the same wwid and different action
 	 * it would be better to stop merging.
 	 */
-	if (!strcmp(earlier->wwid, later->wwid) &&
-	    strcmp(earlier->action, later->action) &&
+	if (strcmp(earlier->action, later->action) &&
 	    strcmp(earlier->action, "change") &&
-	    strcmp(later->action, "change"))
+	    strcmp(later->action, "change") &&
+	    !strcmp(earlier->wwid, later->wwid))
 		return true;
 
 	return false;
@@ -296,12 +294,12 @@ uevent_can_merge(struct uevent *earlier, struct uevent *later)
 	 * and actions are addition or deletion
 	 */
 	if (earlier->wwid && later->wwid &&
-	    !strcmp(earlier->wwid, later->wwid) &&
+	    strncmp(earlier->kernel, "dm-", 3) &&
 	    !strcmp(earlier->action, later->action) &&
-	    strncmp(earlier->action, "change", 6) &&
-	    strncmp(earlier->kernel, "dm-", 3)) {
+	    (!strcmp(earlier->action, "add") ||
+	     !strcmp(earlier->action, "remove")) &&
+	    !strcmp(earlier->wwid, later->wwid))
 		return true;
-	}
 
 	return false;
 }
