@@ -52,10 +52,6 @@
 #include "blacklist.h"
 #include "devmapper.h"
 
-#define MAX_ACCUMULATION_COUNT 2048
-#define MAX_ACCUMULATION_TIME 30*1000
-#define MIN_BURST_SPEED 10
-
 typedef int (uev_trigger)(struct uevent *, void * trigger_data);
 
 static LIST_HEAD(uevq);
@@ -582,44 +578,43 @@ static struct uevent *uevent_from_udev_device(struct udev_device *dev)
 	return uev;
 }
 
-static bool uevent_burst(struct timeval *start_time, int events)
+#define MAX_UEVENTS 1000
+static int uevent_receive_events(int fd, struct list_head *tmpq,
+				 struct udev_monitor *monitor)
 {
-	struct timeval diff_time, end_time;
-	unsigned long speed;
-	unsigned long eclipse_ms;
+	struct pollfd ev_poll;
+	int n = 0;
 
-	if(events > MAX_ACCUMULATION_COUNT) {
-		condlog(2, "burst got %u uevents, too much uevents, stopped", events);
-		return false;
-	}
+	do {
+		struct uevent *uev;
+		struct udev_device *dev;
 
-	gettimeofday(&end_time, NULL);
-	timersub(&end_time, start_time, &diff_time);
+		dev = udev_monitor_receive_device(monitor);
+		if (!dev) {
+			condlog(0, "failed getting udev device");
+			break;
+		}
+		uev = uevent_from_udev_device(dev);
+		if (!uev)
+			break;
 
-	eclipse_ms = diff_time.tv_sec * 1000 + diff_time.tv_usec / 1000;
+		list_add_tail(&uev->node, tmpq);
+		n++;
+		condlog(4, "received uevent \"%s %s\"", uev->action, uev->kernel);
 
-	if (eclipse_ms == 0)
-		return true;
+		ev_poll.fd = fd;
+		ev_poll.events = POLLIN;
 
-	if (eclipse_ms > MAX_ACCUMULATION_TIME) {
-		condlog(2, "burst continued %lu ms, too long time, stopped", eclipse_ms);
-		return false;
-	}
+	} while (n < MAX_UEVENTS && poll(&ev_poll, 1, 0) > 0);
 
-	speed = (events * 1000) / eclipse_ms;
-	if (speed > MIN_BURST_SPEED)
-		return true;
-
-	return false;
+	return n;
 }
 
 int uevent_listen(struct udev *udev)
 {
 	int err = 2;
 	struct udev_monitor *monitor = NULL;
-	int fd, socket_flags, events;
-	struct timeval start_time;
-	int timeout = 30;
+	int fd, socket_flags;
 	LIST_HEAD(uevlisten_tmp);
 
 	/*
@@ -671,59 +666,30 @@ int uevent_listen(struct udev *udev)
 		goto out;
 	}
 
-	events = 0;
-	gettimeofday(&start_time, NULL);
 	pthread_cleanup_push(cleanup_global_uevq, NULL);
 	pthread_cleanup_push(cleanup_uevq, &uevlisten_tmp);
 	while (1) {
-		struct uevent *uev;
-		struct udev_device *dev;
-		struct pollfd ev_poll;
-		int poll_timeout;
-		int fdcount;
+		int fdcount, events;
+		struct pollfd ev_poll = { .fd = fd, .events = POLLIN, };
 
-		memset(&ev_poll, 0, sizeof(struct pollfd));
-		ev_poll.fd = fd;
-		ev_poll.events = POLLIN;
-		poll_timeout = timeout * 1000;
-		errno = 0;
-		fdcount = poll(&ev_poll, 1, poll_timeout);
-		if (fdcount > 0 && ev_poll.revents & POLLIN) {
-			timeout = uevent_burst(&start_time, events + 1) ? 1 : 0;
-			dev = udev_monitor_receive_device(monitor);
-			if (!dev) {
-				condlog(0, "failed getting udev device");
-				continue;
-			}
-			uev = uevent_from_udev_device(dev);
-			if (!uev)
-				continue;
-			list_add_tail(&uev->node, &uevlisten_tmp);
-			events++;
-			continue;
-		}
+		fdcount = poll(&ev_poll, 1, -1);
 		if (fdcount < 0) {
 			if (errno == EINTR)
 				continue;
 
-			condlog(0, "error receiving "
-				"uevent message: %m");
+			condlog(0, "error receiving uevent message: %m");
 			err = -errno;
 			break;
 		}
-		if (!list_empty(&uevlisten_tmp)) {
-			/*
-			 * Queue uevents and poke service pthread.
-			 */
-			condlog(3, "Forwarding %d uevents", events);
-			pthread_mutex_lock(uevq_lockp);
-			list_splice_tail_init(&uevlisten_tmp, &uevq);
-			pthread_cond_signal(uev_condp);
-			pthread_mutex_unlock(uevq_lockp);
-			events = 0;
-		}
-		gettimeofday(&start_time, NULL);
-		timeout = 30;
+		events = uevent_receive_events(fd, &uevlisten_tmp, monitor);
+		if (events <= 0)
+			continue;
+
+		condlog(4, "Forwarding %d uevents", events);
+		pthread_mutex_lock(uevq_lockp);
+		list_splice_tail_init(&uevlisten_tmp, &uevq);
+		pthread_cond_signal(uev_condp);
+		pthread_mutex_unlock(uevq_lockp);
 	}
 	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
