@@ -63,6 +63,12 @@ static uev_trigger *my_uev_trigger;
 static void *my_trigger_data;
 static int servicing_uev;
 
+struct uevent_filter_state {
+	struct list_head uevq;
+	struct list_head *old_tail;
+	struct config *conf;
+};
+
 int is_uevent_busy(void)
 {
 	int empty;
@@ -158,40 +164,24 @@ int uevent_get_env_positive_int(const struct uevent *uev,
 }
 
 void
-uevent_get_wwid(struct uevent *uev)
+uevent_get_wwid(struct uevent *uev, const struct config *conf)
 {
-	char *uid_attribute;
+	const char *uid_attribute;
 	const char *val;
-	struct config * conf;
 
-	conf = get_multipath_config();
-	pthread_cleanup_push(put_multipath_config, conf);
 	uid_attribute = get_uid_attribute_by_attrs(conf, uev->kernel);
-	pthread_cleanup_pop(1);
-
 	val = uevent_get_env_var(uev, uid_attribute);
 	if (val)
 		uev->wwid = val;
 }
 
-static bool uevent_need_merge(void)
+static bool uevent_need_merge(const struct config *conf)
 {
-	struct config * conf;
-	bool need_merge = false;
-
-	conf = get_multipath_config();
-	if (VECTOR_SIZE(&conf->uid_attrs) > 0)
-		need_merge = true;
-	put_multipath_config(conf);
-
-	return need_merge;
+	return VECTOR_SIZE(&conf->uid_attrs) > 0;
 }
 
-static bool uevent_can_discard(struct uevent *uev)
+static bool uevent_can_discard(struct uevent *uev, const struct config *conf)
 {
-	int invalid = 0;
-	struct config * conf;
-
 	/*
 	 * do not filter dm devices by devnode
 	 */
@@ -200,15 +190,10 @@ static bool uevent_can_discard(struct uevent *uev)
 	/*
 	 * filter paths devices by devnode
 	 */
-	conf = get_multipath_config();
-	pthread_cleanup_push(put_multipath_config, conf);
 	if (filter_devnode(conf->blist_devnode, conf->elist_devnode,
 			   uev->kernel) > 0)
-		invalid = 1;
-	pthread_cleanup_pop(1);
-
-	if (invalid)
 		return true;
+
 	return false;
 }
 
@@ -350,29 +335,28 @@ static void uevent_delete_simple(struct uevent *to_delete)
 	free(to_delete);
 }
 
-static void
-uevent_prepare(struct list_head *tmpq, const struct list_head *stop)
+static void uevent_prepare(struct uevent_filter_state *st)
 {
 	struct uevent *uev, *tmp;
 
-	list_for_some_entry_reverse_safe(uev, tmp, tmpq, stop, node) {
-		if (uevent_can_discard(uev)) {
+	list_for_some_entry_reverse_safe(uev, tmp, &st->uevq, st->old_tail, node) {
+		if (uevent_can_discard(uev, st->conf)) {
 			uevent_delete_simple(uev);
 			continue;
 		}
 
 		if (strncmp(uev->kernel, "dm-", 3) &&
-		    uevent_need_merge())
-			uevent_get_wwid(uev);
+		    uevent_need_merge(st->conf))
+			uevent_get_wwid(uev, st->conf);
 	}
 }
 
 static void
-uevent_filter(struct uevent *later, struct list_head *tmpq, struct list_head **stop)
+uevent_filter(struct uevent *later, struct uevent_filter_state *st)
 {
 	struct uevent *earlier, *tmp;
 
-	list_for_some_entry_reverse_safe(earlier, tmp, &later->node, tmpq, node) {
+	list_for_some_entry_reverse_safe(earlier, tmp, &later->node, &st->uevq, node) {
 		/*
 		 * filter unnessary earlier uevents
 		 * by the later uevent
@@ -382,17 +366,16 @@ uevent_filter(struct uevent *later, struct list_head *tmpq, struct list_head **s
 				earlier->kernel, earlier->action,
 				later->kernel, later->action);
 
-			uevent_delete_from_list(earlier, &tmp, stop);
+			uevent_delete_from_list(earlier, &tmp, &st->old_tail);
 		}
 	}
 }
 
-static void
-uevent_merge(struct uevent *later, struct list_head *tmpq, struct list_head **stop)
+static void uevent_merge(struct uevent *later, struct uevent_filter_state *st)
 {
 	struct uevent *earlier, *tmp;
 
-	list_for_some_entry_reverse_safe(earlier, tmp, &later->node, tmpq, node) {
+	list_for_some_entry_reverse_safe(earlier, tmp, &later->node, &st->uevq, node) {
 		if (merge_need_stop(earlier, later))
 			break;
 		/*
@@ -404,8 +387,8 @@ uevent_merge(struct uevent *later, struct list_head *tmpq, struct list_head **st
 				later->action, later->kernel, later->wwid);
 
 			/* See comment in uevent_delete_from_list() */
-			if (&earlier->node == *stop)
-				*stop = earlier->node.prev;
+			if (&earlier->node == st->old_tail)
+				st->old_tail = earlier->node.prev;
 
 			list_move(&earlier->node, &later->merge_node);
 			list_splice_init(&earlier->merge_node,
@@ -414,16 +397,15 @@ uevent_merge(struct uevent *later, struct list_head *tmpq, struct list_head **st
 	}
 }
 
-static void
-merge_uevq(struct list_head *tmpq, struct list_head *stop)
+static void merge_uevq(struct uevent_filter_state *st)
 {
 	struct uevent *later;
 
-	uevent_prepare(tmpq, stop);
-	list_for_some_entry_reverse(later, tmpq, stop, node) {
-		uevent_filter(later, tmpq, &stop);
-		if(uevent_need_merge())
-			uevent_merge(later, tmpq, &stop);
+	uevent_prepare(st);
+	list_for_some_entry_reverse(later, &st->uevq, st->old_tail, node) {
+		uevent_filter(later, st);
+		if(uevent_need_merge(st->conf))
+			uevent_merge(later, st);
 	}
 }
 
@@ -475,41 +457,45 @@ static void cleanup_global_uevq(void *arg __attribute__((unused)))
 int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		    void * trigger_data)
 {
-	LIST_HEAD(uevq_work);
+	struct uevent_filter_state filter_state;
 
+	INIT_LIST_HEAD(&filter_state.uevq);
 	my_uev_trigger = uev_trigger;
 	my_trigger_data = trigger_data;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
-	pthread_cleanup_push(cleanup_uevq, &uevq_work);
+	pthread_cleanup_push(cleanup_uevq, &filter_state.uevq);
 	while (1) {
-		struct list_head *stop;
-
 		pthread_cleanup_push(cleanup_mutex, uevq_lockp);
 		pthread_mutex_lock(uevq_lockp);
 
-		servicing_uev = !list_empty(&uevq_work);
+		servicing_uev = !list_empty(&filter_state.uevq);
 
-		while (list_empty(&uevq_work) && list_empty(&uevq))
+		while (list_empty(&filter_state.uevq) && list_empty(&uevq))
 			pthread_cond_wait(uev_condp, uevq_lockp);
 
 		servicing_uev = 1;
 		/*
-		 * "stop" is the list element towards which merge_uevq()
-		 * will iterate: the last element of uevq_work before
-		 * appending new uevents. If uveq_is empty, uevq_work.prev
-		 * equals &uevq_work, which is what we need.
+		 * "old_tail" is the list element towards which merge_uevq()
+		 * will iterate: the last element of uevq before
+		 * appending new uevents. If uveq  empty, uevq.prev
+		 * equals &uevq, which is what we need.
 		 */
-		stop = uevq_work.prev;
-		list_splice_tail_init(&uevq, &uevq_work);
+		filter_state.old_tail = filter_state.uevq.prev;
+		list_splice_tail_init(&uevq, &filter_state.uevq);
 		pthread_cleanup_pop(1);
 
 		if (!my_uev_trigger)
 			break;
 
-		merge_uevq(&uevq_work, stop);
-		service_uevq(&uevq_work);
+
+		pthread_cleanup_push(put_multipath_config, filter_state.conf);
+		filter_state.conf = get_multipath_config();
+		merge_uevq(&filter_state);
+		pthread_cleanup_pop(1);
+
+		service_uevq(&filter_state.uevq);
 	}
 	pthread_cleanup_pop(1);
 	condlog(3, "Terminating uev service queue");

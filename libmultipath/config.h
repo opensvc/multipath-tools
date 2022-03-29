@@ -314,7 +314,7 @@ void libmp_put_multipath_config(void *);
 void put_multipath_config(void *);
 
 int parse_uid_attrs(char *uid_attrs, struct config *conf);
-char *get_uid_attribute_by_attrs(struct config *conf,
-				 const char *path_dev);
+const char *get_uid_attribute_by_attrs(const struct config *conf,
+				       const char *path_dev);
 
 #endif

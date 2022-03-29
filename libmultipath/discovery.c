@@ -2044,7 +2044,7 @@ fix_broken_nvme_wwid(struct path *pp, const char *value, size_t size)
 }
 
 static int
-get_udev_uid(struct path * pp, char *uid_attribute, struct udev_device *udev)
+get_udev_uid(struct path * pp, const char *uid_attribute, struct udev_device *udev)
 {
 	ssize_t len;
 	const char *value;

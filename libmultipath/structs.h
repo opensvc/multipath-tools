@@ -327,7 +327,7 @@ struct path {
 	int detect_prio;
 	int detect_checker;
 	int tpgs;
-	char * uid_attribute;
+	const char *uid_attribute;
 	char * getuid;
 	struct prio prio;
 	struct checker checker;

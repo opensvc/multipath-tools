@@ -1018,10 +1018,10 @@ out:
 	return 1;
 }
 
-char *get_uid_attribute_by_attrs(struct config *conf,
-				 const char *path_dev)
+const char *get_uid_attribute_by_attrs(const struct config *conf,
+				       const char *path_dev)
 {
-	vector uid_attrs = &conf->uid_attrs;
+	const struct _vector *uid_attrs = &conf->uid_attrs;
 	int j;
 	char *att, *col;
 

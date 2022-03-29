@@ -10,6 +10,7 @@
 #define OBJECT_SIZE			512
 
 struct udev;
+struct config;
 
 struct uevent {
 	struct list_head node;
@@ -31,7 +32,7 @@ int uevent_listen(struct udev *udev);
 int uevent_dispatch(int (*store_uev)(struct uevent *, void * trigger_data),
 		    void * trigger_data);
 bool uevent_is_mpath(const struct uevent *uev);
-void uevent_get_wwid(struct uevent *uev);
+void uevent_get_wwid(struct uevent *uev, const struct config *conf);
 
 int uevent_get_env_positive_int(const struct uevent *uev,
 				const char *attr);
