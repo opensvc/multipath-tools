@@ -443,13 +443,10 @@ int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		pthread_cleanup_push(cleanup_mutex, uevq_lockp);
 		pthread_mutex_lock(uevq_lockp);
 		servicing_uev = 0;
-		/*
-		 * Condition signals are unreliable,
-		 * so make sure we only wait if we have to.
-		 */
-		if (list_empty(&uevq)) {
+
+		while (list_empty(&uevq))
 			pthread_cond_wait(uev_condp, uevq_lockp);
-		}
+
 		servicing_uev = 1;
 		list_splice_init(&uevq, &uevq_tmp);
 		pthread_cleanup_pop(1);
