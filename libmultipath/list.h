@@ -246,6 +246,35 @@ static inline void list_splice_tail_init(struct list_head *list,
 #define list_entry(ptr, type, member) \
 	container_of(ptr, type, member)
 
+
+/**
+ * list_pop - unlink and return the first list element
+ * @head:	the &struct list_head pointer.
+ */
+static inline struct list_head *list_pop(struct list_head *head)
+{
+	struct list_head *tmp;
+
+	if (list_empty(head))
+		return NULL;
+	tmp = head->next;
+	list_del_init(tmp);
+	return tmp;
+}
+
+/**
+ * list_pop_entry - unlink and return the entry of the first list element
+ * @head:	the &struct list_head pointer.
+ * @type:	the type of the struct this is embedded in.
+ * @member:	the name of the list_struct within the struct.
+ */
+#define list_pop_entry(head, type, member)		\
+({							\
+	struct list_head *__h = list_pop(head);		\
+							\
+	(__h ? container_of(__h, type, member) : NULL);	\
+})
+
 /**
  * list_for_each	-	iterate over a list
  * @pos:	the &struct list_head to use as a loop counter.
@@ -333,6 +362,30 @@ static inline void list_splice_tail_init(struct list_head *list,
 		 n = list_entry(pos->member.prev, typeof(*pos), member);\
 	     &pos->member != (head);                                    \
 	     pos = n, n = list_entry(n->member.prev, typeof(*n), member))
+
+/**
+ * list_for_some_entry - iterate list from the given begin node to the given end node
+ * @pos:	the type * to use as a loop counter.
+ * @from:	the begin node of the iteration.
+ * @to:		the end node of the iteration.
+ * @member:	the name of the list_struct within the struct.
+ */
+#define list_for_some_entry(pos, from, to, member)                      \
+	for (pos = list_entry((from)->next, typeof(*pos), member);      \
+	     &pos->member != (to);                                      \
+	     pos = list_entry(pos->member.next, typeof(*pos), member))
+
+/**
+ * list_for_some_entry_reverse - iterate backwards list from the given begin node to the given end node
+ * @pos:	the type * to use as a loop counter.
+ * @from:	the begin node of the iteration.
+ * @to:		the end node of the iteration.
+ * @member:	the name of the list_struct within the struct.
+ */
+#define list_for_some_entry_reverse(pos, from, to, member)		\
+	for (pos = list_entry((from)->prev, typeof(*pos), member);      \
+	     &pos->member != (to);                                      \
+	     pos = list_entry(pos->member.prev, typeof(*pos), member))
 
 /**
  * list_for_some_entry_safe - iterate list from the given begin node to the given end node safe against removal of list entry

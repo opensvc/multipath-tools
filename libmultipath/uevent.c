@@ -306,17 +306,64 @@ uevent_can_merge(struct uevent *earlier, struct uevent *later)
 	return false;
 }
 
+static void uevent_delete_from_list(struct uevent *to_delete,
+				    struct uevent **previous,
+				    struct list_head **old_tail)
+{
+	/*
+	 * "old_tail" is the list_head before the last list element to which
+	 * the caller iterates (the list anchor if the caller iterates over
+	 * the entire list). If this element is removed (which can't happen
+	 * for the anchor), "old_tail" must be moved. It can happen that
+	 * "old_tail" ends up pointing at the anchor.
+	 */
+	if (*old_tail == &to_delete->node)
+		*old_tail = to_delete->node.prev;
+
+	list_del_init(&to_delete->node);
+
+	/*
+	 * The "to_delete" uevent has been merged with other uevents
+	 * previously. Re-insert them into the list, at the point we're
+	 * currently at. This must be done after the list_del_init() above,
+	 * otherwise previous->next would still point to to_delete.
+	 */
+	if (!list_empty(&to_delete->merge_node)) {
+		struct uevent *last = list_entry(to_delete->merge_node.prev,
+						 typeof(*last), node);
+
+		list_splice(&to_delete->merge_node, &(*previous)->node);
+		*previous = last;
+	}
+	if (to_delete->udev)
+		udev_device_unref(to_delete->udev);
+
+	free(to_delete);
+}
+
+/*
+ * Use this function to delete events that are known not to
+ * be equal to old_tail, and have an empty merge_node list.
+ * For others, use uevent_delete_from_list().
+ */
+static void uevent_delete_simple(struct uevent *to_delete)
+{
+	list_del_init(&to_delete->node);
+
+	if (to_delete->udev)
+		udev_device_unref(to_delete->udev);
+
+	free(to_delete);
+}
+
 static void
-uevent_prepare(struct list_head *tmpq)
+uevent_prepare(struct list_head *tmpq, const struct list_head *stop)
 {
 	struct uevent *uev, *tmp;
 
-	list_for_each_entry_reverse_safe(uev, tmp, tmpq, node) {
+	list_for_some_entry_reverse_safe(uev, tmp, tmpq, stop, node) {
 		if (uevent_can_discard(uev)) {
-			list_del_init(&uev->node);
-			if (uev->udev)
-				udev_device_unref(uev->udev);
-			free(uev);
+			uevent_delete_simple(uev);
 			continue;
 		}
 
@@ -327,7 +374,7 @@ uevent_prepare(struct list_head *tmpq)
 }
 
 static void
-uevent_filter(struct uevent *later, struct list_head *tmpq)
+uevent_filter(struct uevent *later, struct list_head *tmpq, struct list_head **stop)
 {
 	struct uevent *earlier, *tmp;
 
@@ -341,16 +388,13 @@ uevent_filter(struct uevent *later, struct list_head *tmpq)
 				earlier->kernel, earlier->action,
 				later->kernel, later->action);
 
-			list_del_init(&earlier->node);
-			if (earlier->udev)
-				udev_device_unref(earlier->udev);
-			free(earlier);
+			uevent_delete_from_list(earlier, &tmp, stop);
 		}
 	}
 }
 
 static void
-uevent_merge(struct uevent *later, struct list_head *tmpq)
+uevent_merge(struct uevent *later, struct list_head *tmpq, struct list_head **stop)
 {
 	struct uevent *earlier, *tmp;
 
@@ -365,37 +409,42 @@ uevent_merge(struct uevent *later, struct list_head *tmpq)
 				earlier->action, earlier->kernel, earlier->wwid,
 				later->action, later->kernel, later->wwid);
 
+			/* See comment in uevent_delete_from_list() */
+			if (&earlier->node == *stop)
+				*stop = earlier->node.prev;
+
 			list_move(&earlier->node, &later->merge_node);
+			list_splice_init(&earlier->merge_node,
+					 &later->merge_node);
 		}
 	}
 }
 
 static void
-merge_uevq(struct list_head *tmpq)
+merge_uevq(struct list_head *tmpq, struct list_head *stop)
 {
 	struct uevent *later;
 
-	uevent_prepare(tmpq);
-	list_for_each_entry_reverse(later, tmpq, node) {
-		uevent_filter(later, tmpq);
+	uevent_prepare(tmpq, stop);
+	list_for_some_entry_reverse(later, tmpq, stop, node) {
+		uevent_filter(later, tmpq, &stop);
 		if(uevent_need_merge())
-			uevent_merge(later, tmpq);
+			uevent_merge(later, tmpq, &stop);
 	}
 }
 
 static void
 service_uevq(struct list_head *tmpq)
 {
-	struct uevent *uev, *tmp;
+	struct uevent *uev = list_pop_entry(tmpq, typeof(*uev), node);
 
-	list_for_each_entry_safe(uev, tmp, tmpq, node) {
-		list_del_init(&uev->node);
-
-		pthread_cleanup_push(cleanup_uev, uev);
-		if (my_uev_trigger && my_uev_trigger(uev, my_trigger_data))
-			condlog(0, "uevent trigger error");
-		pthread_cleanup_pop(1);
-	}
+	if (uev == NULL)
+		return;
+	condlog(4, "servicing uevent '%s %s'", uev->action, uev->kernel);
+	pthread_cleanup_push(cleanup_uev, uev);
+	if (my_uev_trigger && my_uev_trigger(uev, my_trigger_data))
+		condlog(0, "uevent trigger error");
+	pthread_cleanup_pop(1);
 }
 
 static void uevent_cleanup(void *arg)
@@ -432,33 +481,43 @@ static void cleanup_global_uevq(void *arg __attribute__((unused)))
 int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		    void * trigger_data)
 {
+	LIST_HEAD(uevq_work);
+
 	my_uev_trigger = uev_trigger;
 	my_trigger_data = trigger_data;
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
+	pthread_cleanup_push(cleanup_uevq, &uevq_work);
 	while (1) {
-		LIST_HEAD(uevq_tmp);
+		struct list_head *stop;
 
 		pthread_cleanup_push(cleanup_mutex, uevq_lockp);
 		pthread_mutex_lock(uevq_lockp);
-		servicing_uev = 0;
 
-		while (list_empty(&uevq))
+		servicing_uev = !list_empty(&uevq_work);
+
+		while (list_empty(&uevq_work) && list_empty(&uevq))
 			pthread_cond_wait(uev_condp, uevq_lockp);
 
 		servicing_uev = 1;
-		list_splice_init(&uevq, &uevq_tmp);
+		/*
+		 * "stop" is the list element towards which merge_uevq()
+		 * will iterate: the last element of uevq_work before
+		 * appending new uevents. If uveq_is empty, uevq_work.prev
+		 * equals &uevq_work, which is what we need.
+		 */
+		stop = uevq_work.prev;
+		list_splice_tail_init(&uevq, &uevq_work);
 		pthread_cleanup_pop(1);
 
 		if (!my_uev_trigger)
 			break;
 
-		pthread_cleanup_push(cleanup_uevq, &uevq_tmp);
-		merge_uevq(&uevq_tmp);
-		service_uevq(&uevq_tmp);
-		pthread_cleanup_pop(1);
+		merge_uevq(&uevq_work, stop);
+		service_uevq(&uevq_work);
 	}
+	pthread_cleanup_pop(1);
 	condlog(3, "Terminating uev service queue");
 	return 0;
 }
