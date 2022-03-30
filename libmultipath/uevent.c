@@ -418,11 +418,13 @@ static void merge_uevq(struct uevent_filter_state *st)
 	struct uevent *later;
 
 	uevent_prepare(st);
-	list_for_some_entry_reverse(later, &st->uevq, st->old_tail, node) {
+
+	list_for_some_entry_reverse(later, &st->uevq, st->old_tail, node)
 		uevent_filter(later, st);
-		if(uevent_need_merge(st->conf))
+
+	if(uevent_need_merge(st->conf))
+		list_for_some_entry_reverse(later, &st->uevq, st->old_tail, node)
 			uevent_merge(later, st);
-	}
 }
 
 static void
