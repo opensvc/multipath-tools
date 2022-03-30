@@ -390,9 +390,9 @@ uevent_filter(struct uevent *later, struct uevent_filter_state *st)
 			}
 		}
 		if (uevent_can_filter(earlier, later)) {
-			condlog(3, "uevent: %s-%s has filtered by uevent: %s-%s",
-				earlier->kernel, earlier->action,
-				later->kernel, later->action);
+			condlog(4, "uevent: \"%s %s\" filtered by \"%s %s\"",
+				earlier->action, earlier->kernel,
+				later->action, later->kernel);
 
 			uevent_delete_from_list(earlier, &tmp, &st->old_tail);
 			st->filtered++;
@@ -411,8 +411,8 @@ static void uevent_merge(struct uevent *later, struct uevent_filter_state *st)
 		 * merge earlier uevents to the later uevent
 		 */
 		if (uevent_can_merge(earlier, later)) {
-			condlog(3, "merged uevent: %s-%s-%s with uevent: %s-%s-%s",
-				earlier->action, earlier->kernel, earlier->wwid,
+			condlog(4, "uevent: \"%s %s\" merged with \"%s %s\" for WWID %s",
+				earlier->action, earlier->kernel,
 				later->action, later->kernel, later->wwid);
 
 			/* See comment in uevent_delete_from_list() */
