@@ -264,6 +264,8 @@ If this option is configured and matches the device
 node name of a device, it overrides any other configured  methods for
 determining the WWID for this device.
 .PP
+This option cannot be changed during runtime with the multipathd \fBreconfigure\fR command.
+.PP
 The default is: \fB<unset>\fR. To enable uevent merging, set it e.g. to
 \(dqsd:ID_SERIAL dasd:ID_UID nvme:ID_WWN\(dq.
 .RE

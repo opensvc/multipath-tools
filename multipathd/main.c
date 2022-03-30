@@ -2835,11 +2835,58 @@ void rcu_free_config(struct rcu_head *head)
 	free_config(conf);
 }
 
+static bool reconfigure_check_uid_attrs(const struct _vector *old_attrs,
+					const struct _vector *new_attrs)
+{
+	int i;
+	char *old;
+
+	if (VECTOR_SIZE(old_attrs) != VECTOR_SIZE(new_attrs))
+		return true;
+
+	vector_foreach_slot(old_attrs, old, i) {
+		char *new = VECTOR_SLOT(new_attrs, i);
+
+		if (strcmp(old, new))
+			return true;
+	}
+
+	return false;
+}
+
+static void reconfigure_check(struct config *old, struct config *new)
+{
+	int old_marginal_pathgroups;
+
+	old_marginal_pathgroups = old->marginal_pathgroups;
+	if ((old_marginal_pathgroups == MARGINAL_PATHGROUP_FPIN) !=
+	    (new->marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)) {
+		condlog(1, "multipathd must be restarted to turn %s fpin marginal paths",
+			(old_marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)?
+			"off" : "on");
+		new->marginal_pathgroups = old_marginal_pathgroups;
+	}
+
+	if (reconfigure_check_uid_attrs(&old->uid_attrs, &new->uid_attrs)) {
+		int i;
+		void *ptr;
+
+		condlog(1, "multipathd must be restarted to change uid_attrs, keeping old values");
+		vector_foreach_slot(&new->uid_attrs, ptr, i)
+			free(ptr);
+		vector_reset(&new->uid_attrs);
+		new->uid_attrs = old->uid_attrs;
+
+		/* avoid uid_attrs being freed in rcu_free_config() */
+		old->uid_attrs.allocated = 0;
+		old->uid_attrs.slot = NULL;
+	}
+}
+
 static int
 reconfigure (struct vectors *vecs, enum force_reload_types reload_type)
 {
 	struct config * old, *conf;
-	int old_marginal_pathgroups;
 
 	conf = load_config(DEFAULT_CONFIGFILE);
 	if (!conf)
@@ -2870,14 +2917,8 @@ reconfigure (struct vectors *vecs, enum force_reload_types reload_type)
 	uxsock_timeout = conf->uxsock_timeout;
 
 	old = rcu_dereference(multipath_conf);
-	old_marginal_pathgroups = old->marginal_pathgroups;
-	if ((old_marginal_pathgroups == MARGINAL_PATHGROUP_FPIN) !=
-	    (conf->marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)) {
-		condlog(1, "multipathd must be restarted to turn %s fpin marginal paths",
-			(old_marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)?
-			"off" : "on");
-		conf->marginal_pathgroups = old_marginal_pathgroups;
-	}
+	reconfigure_check(old, conf);
+
 	conf->sequence_nr = old->sequence_nr + 1;
 	rcu_assign_pointer(multipath_conf, conf);
 	call_rcu(&old->rcu, rcu_free_config);
