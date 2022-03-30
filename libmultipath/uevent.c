@@ -51,6 +51,7 @@
 #include "config.h"
 #include "blacklist.h"
 #include "devmapper.h"
+#include "strbuf.h"
 
 typedef int (uev_trigger)(struct uevent *, void * trigger_data);
 
@@ -441,6 +442,40 @@ static void merge_uevq(struct uevent_filter_state *st)
 			uevent_merge(later, st);
 }
 
+static void print_uev(struct strbuf *buf, struct uevent *uev)
+{
+	print_strbuf(buf, "\"%s %s\"", uev->action, uev->kernel);
+	if (!list_empty(&uev->merge_node)) {
+		struct uevent *u;
+
+		append_strbuf_str(buf, "[");
+		list_for_each_entry(u, &uev->merge_node, node)
+			print_strbuf(buf, "\"%s %s \"", u->action, u->kernel);
+		append_strbuf_str(buf, "]");
+	}
+	append_strbuf_str(buf, " ");
+}
+
+static void print_uevq(const char *msg, struct list_head *uevq)
+{
+	struct uevent *uev;
+	int i = 0;
+	STRBUF_ON_STACK(buf);
+
+	if (4 > MAX_VERBOSITY || 4 > libmp_verbosity)
+		return;
+
+	if (list_empty(uevq))
+		append_strbuf_str(&buf, "*empty*");
+	else
+		list_for_each_entry(uev, uevq, node) {
+			print_strbuf(&buf, "%d:", i++);
+			print_uev(&buf, uev);
+		}
+
+	condlog(4, "uevent queue (%s): %s", msg, steal_strbuf_str(&buf));
+}
+
 static void
 service_uevq(struct list_head *tmpq)
 {
@@ -535,11 +570,13 @@ int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
 
 		reset_filter_state(&filter_state);
 		pthread_cleanup_push(put_multipath_config, filter_state.conf);
+		print_uevq("append", &filter_state.uevq);
 		filter_state.conf = get_multipath_config();
 		merge_uevq(&filter_state);
 		pthread_cleanup_pop(1);
 		log_filter_state(&filter_state);
 
+		print_uevq("merge", &filter_state.uevq);
 		service_uevq(&filter_state.uevq);
 	}
 	pthread_cleanup_pop(1);
