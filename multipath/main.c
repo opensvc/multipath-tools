@@ -1060,6 +1060,11 @@ main (int argc, char *argv[])
 	if (retries < 0)
 		retries = conf->remove_retries;
 	if (cmd == CMD_FLUSH_ONE) {
+		if (dm_is_mpath(dev) != 1) {
+			condlog(0, "%s is not a multipath device", dev);
+			r = RTVL_FAIL;
+			goto out;
+		}
 		r = dm_suspend_and_flush_map(dev, retries) ?
 		    RTVL_FAIL : RTVL_OK;
 		goto out;
