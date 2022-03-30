@@ -375,6 +375,20 @@ uevent_filter(struct uevent *later, struct uevent_filter_state *st)
 		 * filter unnessary earlier uevents
 		 * by the later uevent
 		 */
+		if (!list_empty(&earlier->merge_node)) {
+			struct uevent *mn, *t;
+
+			list_for_each_entry_reverse_safe(mn, t, &earlier->merge_node, node) {
+				if (uevent_can_filter(mn, later)) {
+					condlog(4, "uevent: \"%s %s\" (merged into \"%s %s\") filtered by \"%s %s\"",
+						mn->action, mn->kernel,
+						earlier->action, earlier->kernel,
+						later->action, later->kernel);
+					uevent_delete_simple(mn);
+					st->filtered++;
+				}
+			}
+		}
 		if (uevent_can_filter(earlier, later)) {
 			condlog(3, "uevent: %s-%s has filtered by uevent: %s-%s",
 				earlier->kernel, earlier->action,
