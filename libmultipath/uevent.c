@@ -67,7 +67,16 @@ struct uevent_filter_state {
 	struct list_head uevq;
 	struct list_head *old_tail;
 	struct config *conf;
+	unsigned long added;
+	unsigned long discarded;
+	unsigned long filtered;
+	unsigned long merged;
 };
+
+static void reset_filter_state(struct uevent_filter_state *st)
+{
+	st->added = st->discarded = st->filtered = st->merged = 0;
+}
 
 int is_uevent_busy(void)
 {
@@ -311,6 +320,8 @@ static void uevent_delete_from_list(struct uevent *to_delete,
 		struct uevent *last = list_entry(to_delete->merge_node.prev,
 						 typeof(*last), node);
 
+		condlog(3, "%s: deleted uevent \"%s %s\" with merged uevents",
+			__func__, to_delete->action, to_delete->kernel);
 		list_splice(&to_delete->merge_node, &(*previous)->node);
 		*previous = last;
 	}
@@ -340,8 +351,11 @@ static void uevent_prepare(struct uevent_filter_state *st)
 	struct uevent *uev, *tmp;
 
 	list_for_some_entry_reverse_safe(uev, tmp, &st->uevq, st->old_tail, node) {
+
+		st->added++;
 		if (uevent_can_discard(uev, st->conf)) {
 			uevent_delete_simple(uev);
+			st->discarded++;
 			continue;
 		}
 
@@ -367,6 +381,7 @@ uevent_filter(struct uevent *later, struct uevent_filter_state *st)
 				later->kernel, later->action);
 
 			uevent_delete_from_list(earlier, &tmp, &st->old_tail);
+			st->filtered++;
 		}
 	}
 }
@@ -393,6 +408,7 @@ static void uevent_merge(struct uevent *later, struct uevent_filter_state *st)
 			list_move(&earlier->node, &later->merge_node);
 			list_splice_init(&earlier->merge_node,
 					 &later->merge_node);
+			st->merged++;
 		}
 	}
 }
@@ -451,6 +467,15 @@ static void cleanup_global_uevq(void *arg __attribute__((unused)))
 	pthread_mutex_unlock(uevq_lockp);
 }
 
+static void log_filter_state(const struct uevent_filter_state *st)
+{
+	if (st->added == 0 && st->filtered == 0 && st->merged == 0)
+		return;
+
+	condlog(3, "uevents: %lu added, %lu discarded, %lu filtered, %lu merged",
+		st->added, st->discarded, st->filtered, st->merged);
+}
+
 /*
  * Service the uevent queue.
  */
@@ -472,8 +497,11 @@ int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
 
 		servicing_uev = !list_empty(&filter_state.uevq);
 
-		while (list_empty(&filter_state.uevq) && list_empty(&uevq))
+		while (list_empty(&filter_state.uevq) && list_empty(&uevq)) {
+			condlog(4, "%s: waiting for events", __func__);
 			pthread_cond_wait(uev_condp, uevq_lockp);
+			condlog(4, "%s: waking up", __func__);
+		}
 
 		servicing_uev = 1;
 		/*
@@ -489,11 +517,12 @@ int uevent_dispatch(int (*uev_trigger)(struct uevent *, void * trigger_data),
 		if (!my_uev_trigger)
 			break;
 
-
+		reset_filter_state(&filter_state);
 		pthread_cleanup_push(put_multipath_config, filter_state.conf);
 		filter_state.conf = get_multipath_config();
 		merge_uevq(&filter_state);
 		pthread_cleanup_pop(1);
+		log_filter_state(&filter_state);
 
 		service_uevq(&filter_state.uevq);
 	}
