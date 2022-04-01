@@ -843,6 +843,7 @@ sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint)
 	int i;
 	unsigned int dev_loss_tmo = mpp->dev_loss;
 	struct path *err_path = NULL;
+	STATIC_BITFIELD(bf, LAST_BUS_PROTOCOL_ID + 1);
 
 	if (mpp->no_path_retry > 0) {
 		uint64_t no_path_retry_tmo =
@@ -897,12 +898,13 @@ sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint)
 		sysfs_set_eh_deadline(mpp, pp);
 	}
 
-	if (err_path) {
+	if (err_path && !is_bit_set_in_bitfield(bus_protocol_id(pp), bf)) {
 		STRBUF_ON_STACK(proto_buf);
 
 		snprint_path_protocol(&proto_buf, err_path);
 		condlog(2, "%s: setting dev_loss_tmo is unsupported for protocol %s",
 			mpp->alias, get_strbuf_str(&proto_buf));
+		set_bit_in_bitfield(bus_protocol_id(pp), bf);
 	}
 	return 0;
 }

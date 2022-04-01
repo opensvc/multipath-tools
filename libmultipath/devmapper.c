@@ -540,7 +540,7 @@ int dm_addmap_create (struct multipath *mpp, char * params)
 	int ro;
 	uint16_t udev_flags = build_udev_flags(mpp, 0);
 
-	for (ro = 0; ro <= 1; ro++) {
+	for (ro = mpp->force_readonly ? 1 : 0; ro <= 1; ro++) {
 		int err;
 
 		if (dm_addmap(DM_DEVICE_CREATE, TGT_MPATH, mpp, params, ro,

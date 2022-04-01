@@ -753,3 +753,13 @@ out:
 
 	return 0;
 }
+
+unsigned int bus_protocol_id(const struct path *pp) {
+	if (!pp || pp->bus < 0 || pp->bus > SYSFS_BUS_SCSI)
+		return SYSFS_BUS_UNDEF;
+	if (pp->bus != SYSFS_BUS_SCSI)
+		return pp->bus;
+	if ((int)pp->sg_id.proto_id < 0 || pp->sg_id.proto_id > SCSI_PROTOCOL_UNSPEC)
+		return SYSFS_BUS_UNDEF;
+	return SYSFS_BUS_SCSI + pp->sg_id.proto_id;
+}

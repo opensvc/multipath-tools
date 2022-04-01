@@ -279,7 +279,11 @@ static int								\
 def_ ## option ## _handler (struct config *conf, vector strvec,		\
 			    const char *file, int line_nr)		\
 {									\
-	condlog(2, "%s line %d, \"" #option "\" is deprecated and will be disabled in a future release", file, line_nr);				\
+	static bool warned;						\
+	if (!warned) {							\
+		condlog(2, "%s line %d, \"" #option "\" is deprecated and will be disabled in a future release", file, line_nr); \
+		warned = true;						\
+	}								\
 	return function (strvec, &conf->option, file, line_nr);		\
 }
 
@@ -829,14 +833,19 @@ static int
 def_config_dir_handler(struct config *conf, vector strvec, const char *file,
 		       int line_nr)
 {
+	static bool warned;
+
 	/* this is only valid in the main config file */
 	if (conf->processed_main_config) {
 		condlog(1, "%s line %d, config_dir option only valid in /etc/multipath.conf",
 			file, line_nr);
 		return 0;
 	}
-	condlog(2, "%s line %d, \"config_dir\" is deprecated and will be disabled in a future release",
-		file, line_nr);
+	if (!warned) {
+		condlog(2, "%s line %d, \"config_dir\" is deprecated and will be disabled in a future release",
+			file, line_nr);
+		warned = true;
+	}
 	return set_path(strvec, &conf->config_dir, file, line_nr);
 }
 declare_def_snprint(config_dir, print_str)
