@@ -656,6 +656,9 @@ static struct config *alloc_config (void)
 
 static void _uninit_config(struct config *conf)
 {
+	void *ptr;
+	int i;
+
 	if (!conf)
 		conf = &__internal_config;
 
@@ -668,6 +671,8 @@ static void _uninit_config(struct config *conf)
 	if (conf->uid_attribute)
 		free(conf->uid_attribute);
 
+	vector_foreach_slot(&conf->uid_attrs, ptr, i)
+		free(ptr);
 	vector_reset(&conf->uid_attrs);
 
 	if (conf->getuid)

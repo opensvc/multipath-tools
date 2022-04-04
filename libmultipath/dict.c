@@ -597,8 +597,13 @@ static int uid_attrs_handler(struct config *conf, vector strvec,
 			     const char *file, int line_nr)
 {
 	char *val;
+	void *ptr;
+	int i;
 
+	vector_foreach_slot(&conf->uid_attrs, ptr, i)
+		free(ptr);
 	vector_reset(&conf->uid_attrs);
+
 	val = set_value(strvec);
 	if (!val)
 		return 1;
