@@ -387,9 +387,9 @@ set_param_str(const char * str)
 }
 
 #define merge_str(s) \
-	if (!dst->s && src->s) { \
-		if (!(dst->s = set_param_str(src->s))) \
-			return 1; \
+	if (!dst->s && src->s && strlen(src->s)) { \
+		dst->s = src->s; \
+		src->s = NULL; \
 	}
 
 #define merge_num(s) \
@@ -397,7 +397,7 @@ set_param_str(const char * str)
 		dst->s = src->s
 
 
-static int
+static void
 merge_hwe (struct hwentry * dst, struct hwentry * src)
 {
 	char id[SCSI_VENDOR_SIZE+PATH_PRODUCT_SIZE];
@@ -449,15 +449,11 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	reconcile_features_with_options(id, &dst->features,
 					&dst->no_path_retry,
 					&dst->retain_hwhandler);
-	return 0;
 }
 
-static int
+static void
 merge_mpe(struct mpentry *dst, struct mpentry *src)
 {
-	if (!dst || !src)
-		return 1;
-
 	merge_str(alias);
 	merge_str(uid_attribute);
 	merge_str(getuid);
@@ -499,8 +495,6 @@ merge_mpe(struct mpentry *dst, struct mpentry *src)
 	merge_num(uid);
 	merge_num(gid);
 	merge_num(mode);
-
-	return 0;
 }
 
 void merge_mptable(vector mptable)
