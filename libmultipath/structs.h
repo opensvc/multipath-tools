@@ -192,6 +192,7 @@ enum scsi_protocol {
  */
 #define LAST_BUS_PROTOCOL_ID (SYSFS_BUS_SCSI + SCSI_PROTOCOL_UNSPEC)
 unsigned int bus_protocol_id(const struct path *pp);
+extern const char * const protocol_name[];
 
 #define SCSI_INVALID_LUN ~0ULL
 
@@ -327,7 +328,7 @@ struct path {
 	int detect_prio;
 	int detect_checker;
 	int tpgs;
-	char * uid_attribute;
+	const char *uid_attribute;
 	char * getuid;
 	struct prio prio;
 	struct checker checker;
@@ -348,6 +349,9 @@ struct path {
 	int marginal;
 	int vpd_vendor_id;
 	int recheck_wwid;
+	int fast_io_fail;
+	unsigned int dev_loss;
+	int eh_deadline;
 	/* configlet pointers */
 	vector hwe;
 	struct gen_path generic_path;
@@ -375,7 +379,6 @@ struct multipath {
 	int minio;
 	int flush_on_last_del;
 	int attribute_flags;
-	int fast_io_fail;
 	int retain_hwhandler;
 	int deferred_remove;
 	bool in_recovery;
@@ -394,8 +397,6 @@ struct multipath {
 	int needs_paths_uevent;
 	int ghost_delay;
 	int ghost_delay_tick;
-	unsigned int dev_loss;
-	int eh_deadline;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;

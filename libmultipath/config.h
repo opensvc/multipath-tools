@@ -40,6 +40,13 @@ enum force_reload_types {
 	FORCE_RELOAD_WEAK,
 };
 
+struct pcentry {
+	int type;
+	int fast_io_fail;
+	unsigned int dev_loss;
+	int eh_deadline;
+};
+
 struct hwentry {
 	char * vendor;
 	char * product;
@@ -85,6 +92,8 @@ struct hwentry {
 	int vpd_vendor_id;
 	int recheck_wwid;
 	char * bl_product;
+
+	vector pctable;
 };
 
 struct mpentry {
@@ -284,6 +293,7 @@ const char *get_mpe_wwid (const struct _vector *mptable, const char *alias);
 
 struct hwentry * alloc_hwe (void);
 struct mpentry * alloc_mpe (void);
+struct pcentry * alloc_pce (void);
 
 void free_hwe (struct hwentry * hwe);
 void free_hwtable (vector hwtable);
@@ -314,7 +324,7 @@ void libmp_put_multipath_config(void *);
 void put_multipath_config(void *);
 
 int parse_uid_attrs(char *uid_attrs, struct config *conf);
-char *get_uid_attribute_by_attrs(struct config *conf,
-				 const char *path_dev);
+const char *get_uid_attribute_by_attrs(const struct config *conf,
+				       const char *path_dev);
 
 #endif

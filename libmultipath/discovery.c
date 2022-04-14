@@ -598,13 +598,13 @@ sysfs_get_asymmetric_access_state(struct path *pp, char *buff, int buflen)
 }
 
 static int
-sysfs_set_eh_deadline(struct multipath *mpp, struct path *pp)
+sysfs_set_eh_deadline(struct path *pp)
 {
 	struct udev_device *hostdev;
 	char host_name[HOST_NAME_LEN], value[16];
 	int ret, len;
 
-	if (mpp->eh_deadline == EH_DEADLINE_UNSET)
+	if (pp->eh_deadline == EH_DEADLINE_UNSET)
 		return 0;
 
 	sprintf(host_name, "host%d", pp->sg_id.host_no);
@@ -613,12 +613,12 @@ sysfs_set_eh_deadline(struct multipath *mpp, struct path *pp)
 	if (!hostdev)
 		return 1;
 
-	if (mpp->eh_deadline == EH_DEADLINE_OFF)
+	if (pp->eh_deadline == EH_DEADLINE_OFF)
 		len = sprintf(value, "off");
-	else if (mpp->eh_deadline == EH_DEADLINE_ZERO)
+	else if (pp->eh_deadline == EH_DEADLINE_ZERO)
 		len = sprintf(value, "0");
 	else
-		len = sprintf(value, "%d", mpp->eh_deadline);
+		len = sprintf(value, "%d", pp->eh_deadline);
 
 	ret = sysfs_attr_set_value(hostdev, "eh_deadline",
 				   value, len + 1);
@@ -642,8 +642,8 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 	unsigned int tmo;
 	int ret;
 
-	if (mpp->dev_loss == DEV_LOSS_TMO_UNSET &&
-	    mpp->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
+	if (pp->dev_loss == DEV_LOSS_TMO_UNSET &&
+	    pp->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
 		return;
 
 	sprintf(rport_id, "rport-%d:%d-%d",
@@ -685,14 +685,14 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 	 * then set fast_io_fail, and _then_ set dev_loss_tmo
 	 * to the correct value.
 	 */
-	if (mpp->fast_io_fail != MP_FAST_IO_FAIL_UNSET &&
-	    mpp->fast_io_fail != MP_FAST_IO_FAIL_ZERO &&
-	    mpp->fast_io_fail != MP_FAST_IO_FAIL_OFF) {
+	if (pp->fast_io_fail != MP_FAST_IO_FAIL_UNSET &&
+	    pp->fast_io_fail != MP_FAST_IO_FAIL_ZERO &&
+	    pp->fast_io_fail != MP_FAST_IO_FAIL_OFF) {
 		/* Check if we need to temporarily increase dev_loss_tmo */
-		if ((unsigned int)mpp->fast_io_fail >= tmo) {
+		if ((unsigned int)pp->fast_io_fail >= tmo) {
 			/* Increase dev_loss_tmo temporarily */
 			snprintf(value, sizeof(value), "%u",
-				 (unsigned int)mpp->fast_io_fail + 1);
+				 (unsigned int)pp->fast_io_fail + 1);
 			ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
 						   value, strlen(value));
 			if (ret <= 0) {
@@ -706,20 +706,20 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 				goto out;
 			}
 		}
-	} else if (mpp->dev_loss > DEFAULT_DEV_LOSS_TMO &&
-		mpp->no_path_retry != NO_PATH_RETRY_QUEUE) {
+	} else if (pp->dev_loss > DEFAULT_DEV_LOSS_TMO &&
+		   mpp->no_path_retry != NO_PATH_RETRY_QUEUE) {
 		condlog(2, "%s: limiting dev_loss_tmo to %d, since "
 			"fast_io_fail is not set",
 			rport_id, DEFAULT_DEV_LOSS_TMO);
-		mpp->dev_loss = DEFAULT_DEV_LOSS_TMO;
+		pp->dev_loss = DEFAULT_DEV_LOSS_TMO;
 	}
-	if (mpp->fast_io_fail != MP_FAST_IO_FAIL_UNSET) {
-		if (mpp->fast_io_fail == MP_FAST_IO_FAIL_OFF)
+	if (pp->fast_io_fail != MP_FAST_IO_FAIL_UNSET) {
+		if (pp->fast_io_fail == MP_FAST_IO_FAIL_OFF)
 			sprintf(value, "off");
-		else if (mpp->fast_io_fail == MP_FAST_IO_FAIL_ZERO)
+		else if (pp->fast_io_fail == MP_FAST_IO_FAIL_ZERO)
 			sprintf(value, "0");
 		else
-			snprintf(value, 16, "%u", mpp->fast_io_fail);
+			snprintf(value, 16, "%u", pp->fast_io_fail);
 		ret = sysfs_attr_set_value(rport_dev, "fast_io_fail_tmo",
 					   value, strlen(value));
 		if (ret <= 0) {
@@ -730,8 +730,8 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 					rport_id, value, -ret);
 		}
 	}
-	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET) {
-		snprintf(value, 16, "%u", mpp->dev_loss);
+	if (pp->dev_loss != DEV_LOSS_TMO_UNSET) {
+		snprintf(value, 16, "%u", pp->dev_loss);
 		ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
 					   value, strlen(value));
 		if (ret <= 0) {
@@ -747,15 +747,15 @@ out:
 }
 
 static void
-sysfs_set_session_tmo(struct multipath *mpp, struct path *pp)
+sysfs_set_session_tmo(struct path *pp)
 {
 	struct udev_device *session_dev = NULL;
 	char session_id[64];
 	char value[11];
 
-	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET)
+	if (pp->dev_loss != DEV_LOSS_TMO_UNSET)
 		condlog(3, "%s: ignoring dev_loss_tmo on iSCSI", pp->dev);
-	if (mpp->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
+	if (pp->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
 		return;
 
 	sprintf(session_id, "session%d", pp->sg_id.transport_id);
@@ -769,15 +769,15 @@ sysfs_set_session_tmo(struct multipath *mpp, struct path *pp)
 	condlog(4, "target%d:%d:%d -> %s", pp->sg_id.host_no,
 		pp->sg_id.channel, pp->sg_id.scsi_id, session_id);
 
-	if (mpp->fast_io_fail != MP_FAST_IO_FAIL_UNSET) {
-		if (mpp->fast_io_fail == MP_FAST_IO_FAIL_OFF) {
+	if (pp->fast_io_fail != MP_FAST_IO_FAIL_UNSET) {
+		if (pp->fast_io_fail == MP_FAST_IO_FAIL_OFF) {
 			condlog(3, "%s: can't switch off fast_io_fail_tmo "
 				"on iSCSI", pp->dev);
-		} else if (mpp->fast_io_fail == MP_FAST_IO_FAIL_ZERO) {
+		} else if (pp->fast_io_fail == MP_FAST_IO_FAIL_ZERO) {
 			condlog(3, "%s: can't set fast_io_fail_tmo to '0'"
 				"on iSCSI", pp->dev);
 		} else {
-			snprintf(value, 11, "%u", mpp->fast_io_fail);
+			snprintf(value, 11, "%u", pp->fast_io_fail);
 			if (sysfs_attr_set_value(session_dev, "recovery_tmo",
 						 value, strlen(value)) <= 0) {
 				condlog(3, "%s: Failed to set recovery_tmo, "
@@ -790,14 +790,14 @@ sysfs_set_session_tmo(struct multipath *mpp, struct path *pp)
 }
 
 static void
-sysfs_set_nexus_loss_tmo(struct multipath *mpp, struct path *pp)
+sysfs_set_nexus_loss_tmo(struct path *pp)
 {
 	struct udev_device *parent, *sas_dev = NULL;
 	const char *end_dev_id = NULL;
 	char value[11];
 	static const char ed_str[] = "end_device-";
 
-	if (!pp->udev || mpp->dev_loss == DEV_LOSS_TMO_UNSET)
+	if (!pp->udev || pp->dev_loss == DEV_LOSS_TMO_UNSET)
 		return;
 
 	for (parent = udev_device_get_parent(pp->udev);
@@ -824,8 +824,8 @@ sysfs_set_nexus_loss_tmo(struct multipath *mpp, struct path *pp)
 	condlog(4, "target%d:%d:%d -> %s", pp->sg_id.host_no,
 		pp->sg_id.channel, pp->sg_id.scsi_id, end_dev_id);
 
-	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET) {
-		snprintf(value, 11, "%u", mpp->dev_loss);
+	if (pp->dev_loss != DEV_LOSS_TMO_UNSET) {
+		snprintf(value, 11, "%u", pp->dev_loss);
 		if (sysfs_attr_set_value(sas_dev, "I_T_nexus_loss_timeout",
 					 value, strlen(value)) <= 0)
 			condlog(3, "%s: failed to update "
@@ -836,49 +836,76 @@ sysfs_set_nexus_loss_tmo(struct multipath *mpp, struct path *pp)
 	return;
 }
 
+static void
+scsi_tmo_error_msg(struct path *pp)
+{
+	STATIC_BITFIELD(bf, LAST_BUS_PROTOCOL_ID + 1);
+	STRBUF_ON_STACK(proto_buf);
+	unsigned int proto_id = bus_protocol_id(pp);
+
+	snprint_path_protocol(&proto_buf, pp);
+	condlog(2, "%s: setting scsi timeouts is unsupported for protocol %s",
+		pp->dev, get_strbuf_str(&proto_buf));
+	set_bit_in_bitfield(proto_id, bf);
+}
+
 int
-sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint)
+sysfs_set_scsi_tmo (struct config *conf, struct multipath *mpp)
 {
 	struct path *pp;
 	int i;
-	unsigned int dev_loss_tmo = mpp->dev_loss;
-	struct path *err_path = NULL;
-	STATIC_BITFIELD(bf, LAST_BUS_PROTOCOL_ID + 1);
+	unsigned int min_dev_loss = 0;
+	bool warn_dev_loss = false;
+	bool warn_fast_io_fail = false;
 
 	if (mpp->no_path_retry > 0) {
 		uint64_t no_path_retry_tmo =
-			(uint64_t)mpp->no_path_retry * checkint;
+			(uint64_t)mpp->no_path_retry * conf->checkint;
 
 		if (no_path_retry_tmo > MAX_DEV_LOSS_TMO)
-			no_path_retry_tmo = MAX_DEV_LOSS_TMO;
-		if (no_path_retry_tmo > dev_loss_tmo)
-			dev_loss_tmo = no_path_retry_tmo;
-	} else if (mpp->no_path_retry == NO_PATH_RETRY_QUEUE) {
-		dev_loss_tmo = MAX_DEV_LOSS_TMO;
-	}
-	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET &&
-	    mpp->dev_loss != dev_loss_tmo) {
-		condlog(2, "%s: Using dev_loss_tmo=%u instead of %u because of no_path_retry setting",
-			mpp->alias, dev_loss_tmo, mpp->dev_loss);
-		mpp->dev_loss = dev_loss_tmo;
-	}
-	if (mpp->dev_loss != DEV_LOSS_TMO_UNSET &&
-	    mpp->fast_io_fail != MP_FAST_IO_FAIL_UNSET &&
-	    (unsigned int)mpp->fast_io_fail >= mpp->dev_loss) {
-		condlog(3, "%s: turning off fast_io_fail (%d is not smaller than dev_loss_tmo)",
-			mpp->alias, mpp->fast_io_fail);
-		mpp->fast_io_fail = MP_FAST_IO_FAIL_OFF;
-	}
-	if (mpp->dev_loss == DEV_LOSS_TMO_UNSET &&
-	    mpp->fast_io_fail == MP_FAST_IO_FAIL_UNSET &&
-	    mpp->eh_deadline == EH_DEADLINE_UNSET)
-		return 0;
+			min_dev_loss = MAX_DEV_LOSS_TMO;
+		else
+			min_dev_loss = no_path_retry_tmo;
+	} else if (mpp->no_path_retry == NO_PATH_RETRY_QUEUE)
+		min_dev_loss = MAX_DEV_LOSS_TMO;
 
 	vector_foreach_slot(mpp->paths, pp, i) {
-		if (pp->bus != SYSFS_BUS_SCSI) {
-			if (!err_path)
-				err_path = pp;
+		select_fast_io_fail(conf, pp);
+		select_dev_loss(conf, pp);
+		select_eh_deadline(conf, pp);
+
+		if (pp->dev_loss == DEV_LOSS_TMO_UNSET &&
+		    pp->fast_io_fail == MP_FAST_IO_FAIL_UNSET &&
+		    pp->eh_deadline == EH_DEADLINE_UNSET)
 			continue;
+
+		if (pp->bus != SYSFS_BUS_SCSI) {
+			scsi_tmo_error_msg(pp);
+			continue;
+		}
+		sysfs_set_eh_deadline(pp);
+
+		if (pp->dev_loss == DEV_LOSS_TMO_UNSET &&
+		    pp->fast_io_fail == MP_FAST_IO_FAIL_UNSET)
+			continue;
+
+		if (pp->sg_id.proto_id != SCSI_PROTOCOL_FCP &&
+		    pp->sg_id.proto_id != SCSI_PROTOCOL_ISCSI &&
+		    pp->sg_id.proto_id != SCSI_PROTOCOL_SAS) {
+			scsi_tmo_error_msg(pp);
+			continue;
+		}
+
+		if (pp->dev_loss != DEV_LOSS_TMO_UNSET &&
+		    pp->dev_loss < min_dev_loss) {
+			warn_dev_loss = true;
+			pp->dev_loss = min_dev_loss;
+		}
+		if (pp->dev_loss != DEV_LOSS_TMO_UNSET &&
+		    pp->fast_io_fail > 0 &&
+		    (unsigned int)pp->fast_io_fail >= pp->dev_loss) {
+			warn_fast_io_fail = true;
+			pp->fast_io_fail = MP_FAST_IO_FAIL_OFF;
 		}
 
 		switch (pp->sg_id.proto_id) {
@@ -886,26 +913,21 @@ sysfs_set_scsi_tmo (struct multipath *mpp, unsigned int checkint)
 			sysfs_set_rport_tmo(mpp, pp);
 			break;
 		case SCSI_PROTOCOL_ISCSI:
-			sysfs_set_session_tmo(mpp, pp);
+			sysfs_set_session_tmo(pp);
 			break;
 		case SCSI_PROTOCOL_SAS:
-			sysfs_set_nexus_loss_tmo(mpp, pp);
+			sysfs_set_nexus_loss_tmo(pp);
 			break;
 		default:
-			if (!err_path)
-				err_path = pp;
+			break;
 		}
-		sysfs_set_eh_deadline(mpp, pp);
 	}
-
-	if (err_path && !is_bit_set_in_bitfield(bus_protocol_id(pp), bf)) {
-		STRBUF_ON_STACK(proto_buf);
-
-		snprint_path_protocol(&proto_buf, err_path);
-		condlog(2, "%s: setting dev_loss_tmo is unsupported for protocol %s",
-			mpp->alias, get_strbuf_str(&proto_buf));
-		set_bit_in_bitfield(bus_protocol_id(pp), bf);
-	}
+	if (warn_dev_loss)
+		condlog(2, "%s: Raising dev_loss_tmo to %u because of no_path_retry setting",
+			mpp->alias, min_dev_loss);
+	if (warn_fast_io_fail)
+		condlog(3, "%s: turning off fast_io_fail (not smaller than dev_loss_tmo)",
+			mpp->alias);
 	return 0;
 }
 
@@ -2044,7 +2066,7 @@ fix_broken_nvme_wwid(struct path *pp, const char *value, size_t size)
 }
 
 static int
-get_udev_uid(struct path * pp, char *uid_attribute, struct udev_device *udev)
+get_udev_uid(struct path * pp, const char *uid_attribute, struct udev_device *udev)
 {
 	ssize_t len;
 	const char *value;

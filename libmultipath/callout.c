@@ -160,7 +160,7 @@ int apply_format(char * string, char * cmd, struct path * pp)
 	myfree = CALLOUT_MAX_SIZE;
 
 	if (!pos) {
-		strcpy(dst, string);
+		strlcpy(dst, string, CALLOUT_MAX_SIZE);
 		return 0;
 	}
 

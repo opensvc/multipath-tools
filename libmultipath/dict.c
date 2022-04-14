@@ -417,6 +417,29 @@ snprint_mp_ ## option (struct config *conf, struct strbuf *buff,	\
 	return function(buff, mpe->option);				\
 }
 
+#define declare_pc_handler(option, function)				\
+static int								\
+pc_ ## option ## _handler (struct config *conf, vector strvec,		\
+			   const char *file, int line_nr)		\
+{									\
+	struct pcentry *pce;						\
+	if (!conf->overrides || !conf->overrides->pctable)		\
+		return 1;						\
+	pce = VECTOR_LAST_SLOT(conf->overrides->pctable);		\
+	if (!pce)							\
+		return 1;						\
+	return function (strvec, &pce->option, file, line_nr);		\
+}
+
+#define declare_pc_snprint(option, function)				\
+static int								\
+snprint_pc_ ## option (struct config *conf, struct strbuf *buff,	\
+		       const void *data)				\
+{									\
+	const struct pcentry *pce  = (const struct pcentry *)data;	\
+	return function(buff, pce->option);				\
+}
+
 static int checkint_handler(struct config *conf, vector strvec,
 			    const char *file, int line_nr)
 {
@@ -597,8 +620,13 @@ static int uid_attrs_handler(struct config *conf, vector strvec,
 			     const char *file, int line_nr)
 {
 	char *val;
+	void *ptr;
+	int i;
 
+	vector_foreach_slot(&conf->uid_attrs, ptr, i)
+		free(ptr);
 	vector_reset(&conf->uid_attrs);
+
 	val = set_value(strvec);
 	if (!val)
 		return 1;
@@ -1046,6 +1074,8 @@ declare_ovr_handler(fast_io_fail, set_undef_off_zero)
 declare_ovr_snprint(fast_io_fail, print_undef_off_zero)
 declare_hw_handler(fast_io_fail, set_undef_off_zero)
 declare_hw_snprint(fast_io_fail, print_undef_off_zero)
+declare_pc_handler(fast_io_fail, set_undef_off_zero)
+declare_pc_snprint(fast_io_fail, print_undef_off_zero)
 
 static int
 set_dev_loss(vector strvec, void *ptr, const char *file, int line_nr)
@@ -1083,6 +1113,8 @@ declare_ovr_handler(dev_loss, set_dev_loss)
 declare_ovr_snprint(dev_loss, print_dev_loss)
 declare_hw_handler(dev_loss, set_dev_loss)
 declare_hw_snprint(dev_loss, print_dev_loss)
+declare_pc_handler(dev_loss, set_dev_loss)
+declare_pc_snprint(dev_loss, print_dev_loss)
 
 declare_def_handler(eh_deadline, set_undef_off_zero)
 declare_def_snprint(eh_deadline, print_undef_off_zero)
@@ -1090,6 +1122,8 @@ declare_ovr_handler(eh_deadline, set_undef_off_zero)
 declare_ovr_snprint(eh_deadline, print_undef_off_zero)
 declare_hw_handler(eh_deadline, set_undef_off_zero)
 declare_hw_snprint(eh_deadline, print_undef_off_zero)
+declare_pc_handler(eh_deadline, set_undef_off_zero)
+declare_pc_snprint(eh_deadline, print_undef_off_zero)
 
 static int
 set_pgpolicy(vector strvec, void *ptr, const char *file, int line_nr)
@@ -1897,6 +1931,69 @@ declare_mp_snprint(wwid, print_str)
 declare_mp_handler(alias, set_str_noslash)
 declare_mp_snprint(alias, print_str)
 
+
+static int
+protocol_handler(struct config *conf, vector strvec, const char *file,
+               int line_nr)
+{
+	struct pcentry *pce;
+
+	if (!conf->overrides)
+		return 1;
+
+	if (!conf->overrides->pctable &&
+	    !(conf->overrides->pctable = vector_alloc()))
+		return 1;
+
+	if (!(pce = alloc_pce()))
+		return 1;
+
+	if (!vector_alloc_slot(conf->overrides->pctable)) {
+		free(pce);
+		return 1;
+	}
+	vector_set_slot(conf->overrides->pctable, pce);
+
+	return 0;
+}
+
+static int
+set_protocol_type(vector strvec, void *ptr, const char *file, int line_nr)
+{
+	int *int_ptr = (int *)ptr;
+	char *buff;
+	int i;
+
+	buff = set_value(strvec);
+
+	if (!buff)
+		return 1;
+
+	for (i = 0; i <= LAST_BUS_PROTOCOL_ID; i++) {
+		if (protocol_name[i] && !strcmp(buff, protocol_name[i])) {
+			*int_ptr = i;
+			break;
+		}
+	}
+	if (i > LAST_BUS_PROTOCOL_ID)
+		condlog(1, "%s line %d, invalid value for type: \"%s\"",
+			file, line_nr, buff);
+
+	free(buff);
+	return 0;
+}
+
+static int
+print_protocol_type(struct strbuf *buff, int type)
+{
+	if (type < 0)
+		return 0;
+	return append_strbuf_quoted(buff, protocol_name[type]);
+}
+
+declare_pc_handler(type, set_protocol_type)
+declare_pc_snprint(type, print_protocol_type)
+
 /*
  * deprecated handlers
  */
@@ -2138,6 +2235,13 @@ init_keywords(vector keywords)
 	install_keyword("ghost_delay", &ovr_ghost_delay_handler, &snprint_ovr_ghost_delay);
 	install_keyword("all_tg_pt", &ovr_all_tg_pt_handler, &snprint_ovr_all_tg_pt);
 	install_keyword("recheck_wwid", &ovr_recheck_wwid_handler, &snprint_ovr_recheck_wwid);
+	install_keyword_multi("protocol", &protocol_handler, NULL);
+	install_sublevel();
+	install_keyword("type", &pc_type_handler, &snprint_pc_type);
+	install_keyword("fast_io_fail_tmo", &pc_fast_io_fail_handler, &snprint_pc_fast_io_fail);
+	install_keyword("dev_loss_tmo", &pc_dev_loss_handler, &snprint_pc_dev_loss);
+	install_keyword("eh_deadline", &pc_eh_deadline_handler, &snprint_pc_eh_deadline);
+	install_sublevel_end();
 
 	install_keyword_root("multipaths", &multipaths_handler);
 	install_keyword_multi("multipath", &multipath_handler, NULL);

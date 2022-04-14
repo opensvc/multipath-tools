@@ -79,6 +79,8 @@ static const char conf_origin[] =
 	"(setting: multipath.conf defaults/devices section)";
 static const char overrides_origin[] =
 	"(setting: multipath.conf overrides section)";
+static const char overrides_pce_origin[] =
+	"(setting: multipath.conf overrides protocol section)";
 static const char cmdline_origin[] =
 	"(setting: multipath command line [-p] flag)";
 static const char autodetect_origin[] =
@@ -143,6 +145,27 @@ do {									\
 		mp->sa_flags = src->sa_flags;				\
 		origin = msg;						\
 		goto out;						\
+	}								\
+} while (0)
+
+#define pp_set_ovr_pce(var)						\
+do {									\
+	struct pcentry *_pce;						\
+	int _i;								\
+									\
+	if (conf->overrides) {						\
+		vector_foreach_slot(conf->overrides->pctable, _pce, _i) {	\
+			if (_pce->type == (int)bus_protocol_id(pp) && _pce->var) {	\
+				pp->var = _pce->var;			\
+				origin = overrides_pce_origin;		\
+				goto out;				\
+			}						\
+		}							\
+		if (conf->overrides->var) {				\
+			pp->var = conf->overrides->var;			\
+			origin = overrides_origin;			\
+			goto out;					\
+		}							\
 	}								\
 } while (0)
 
@@ -784,53 +807,53 @@ int select_minio(struct config *conf, struct multipath *mp)
 		return select_minio_bio(conf, mp);
 }
 
-int select_fast_io_fail(struct config *conf, struct multipath *mp)
+int select_fast_io_fail(struct config *conf, struct path *pp)
 {
 	const char *origin;
 	STRBUF_ON_STACK(buff);
 
-	mp_set_ovr(fast_io_fail);
-	mp_set_hwe(fast_io_fail);
-	mp_set_conf(fast_io_fail);
-	mp_set_default(fast_io_fail, DEFAULT_FAST_IO_FAIL);
+	pp_set_ovr_pce(fast_io_fail);
+	pp_set_hwe(fast_io_fail);
+	pp_set_conf(fast_io_fail);
+	pp_set_default(fast_io_fail, DEFAULT_FAST_IO_FAIL);
 out:
-	print_undef_off_zero(&buff, mp->fast_io_fail);
-	condlog(3, "%s: fast_io_fail_tmo = %s %s", mp->alias,
+	print_undef_off_zero(&buff, pp->fast_io_fail);
+	condlog(3, "%s: fast_io_fail_tmo = %s %s", pp->dev,
 		get_strbuf_str(&buff), origin);
 	return 0;
 }
 
-int select_dev_loss(struct config *conf, struct multipath *mp)
+int select_dev_loss(struct config *conf, struct path *pp)
 {
 	const char *origin;
 	STRBUF_ON_STACK(buff);
 
-	mp_set_ovr(dev_loss);
-	mp_set_hwe(dev_loss);
-	mp_set_conf(dev_loss);
-	mp->dev_loss = DEV_LOSS_TMO_UNSET;
+	pp_set_ovr_pce(dev_loss);
+	pp_set_hwe(dev_loss);
+	pp_set_conf(dev_loss);
+	pp->dev_loss = DEV_LOSS_TMO_UNSET;
 	return 0;
 out:
-	print_dev_loss(&buff, mp->dev_loss);
-	condlog(3, "%s: dev_loss_tmo = %s %s", mp->alias,
+	print_dev_loss(&buff, pp->dev_loss);
+	condlog(3, "%s: dev_loss_tmo = %s %s", pp->dev,
 		get_strbuf_str(&buff), origin);
 	return 0;
 }
 
-int select_eh_deadline(struct config *conf, struct multipath *mp)
+int select_eh_deadline(struct config *conf, struct path *pp)
 {
 	const char *origin;
 	STRBUF_ON_STACK(buff);
 
-	mp_set_ovr(eh_deadline);
-	mp_set_hwe(eh_deadline);
-	mp_set_conf(eh_deadline);
-	mp->eh_deadline = EH_DEADLINE_UNSET;
+	pp_set_ovr_pce(eh_deadline);
+	pp_set_hwe(eh_deadline);
+	pp_set_conf(eh_deadline);
+	pp->eh_deadline = EH_DEADLINE_UNSET;
 	/* not changing sysfs in default cause, so don't print anything */
 	return 0;
 out:
-	print_undef_off_zero(&buff, mp->eh_deadline);
-	condlog(3, "%s: eh_deadline = %s %s", mp->alias,
+	print_undef_off_zero(&buff, pp->eh_deadline);
+	condlog(3, "%s: eh_deadline = %s %s", pp->dev,
 		get_strbuf_str(&buff), origin);
 	return 0;
 }
