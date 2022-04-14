@@ -287,6 +287,22 @@ def_ ## option ## _handler (struct config *conf, vector strvec,		\
 	return function (strvec, &conf->option, file, line_nr);		\
 }
 
+static int deprecated_handler(struct config *conf, vector strvec, const char *file,
+			      int line_nr);
+
+#define declare_deprecated_handler(option)				\
+static int								\
+def_ ## option ## _handler (struct config *conf, vector strvec,		\
+			    const char *file, int line_nr)		\
+{									\
+	static bool warned;						\
+	if (!warned) {							\
+		condlog(1, "%s line %d: ignoring deprecated option \"" #option "\"", file, line_nr); \
+		warned = true;						\
+	}								\
+	return deprecated_handler(conf, strvec, file, line_nr);		\
+}
+
 #define declare_def_range_handler(option, minval, maxval)			\
 static int								\
 def_ ## option ## _handler (struct config *conf, vector strvec,         \
