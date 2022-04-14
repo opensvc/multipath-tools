@@ -1990,8 +1990,6 @@ snprint_deprecated (struct config *conf, struct strbuf *buff, const void * data)
 	return 0;
 }
 
-#define __deprecated
-
 /*
  * If you add or remove a keyword also update multipath/multipath.conf.5
  */
@@ -2074,12 +2072,6 @@ init_keywords(vector keywords)
 			&snprint_def_enable_foreign);
 	install_keyword("marginal_pathgroups", &def_marginal_pathgroups_handler, &snprint_def_marginal_pathgroups);
 	install_keyword("recheck_wwid", &def_recheck_wwid_handler, &snprint_def_recheck_wwid);
-	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
-	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
-	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);
-	__deprecated install_keyword("default_getuid_callout", &def_getuid_handler, NULL);
-	__deprecated install_keyword("default_features", &def_features_handler, NULL);
-	__deprecated install_keyword("default_path_checker", &def_checker_name_handler, NULL);
 
 	install_keyword_root("blacklist", &blacklist_handler);
 	install_keyword_multi("devnode", &ble_blist_devnode_handler, &snprint_ble_simple);
@@ -2102,16 +2094,6 @@ init_keywords(vector keywords)
 	install_keyword("product", &ble_elist_device_product_handler, &snprint_bled_product);
 	install_sublevel_end();
 
-#if 0
-	__deprecated install_keyword_root("devnode_blacklist", &blacklist_handler);
-	__deprecated install_keyword("devnode", &ble_devnode_handler, &snprint_ble_simple);
-	__deprecated install_keyword("wwid", &ble_wwid_handler, &snprint_ble_simple);
-	__deprecated install_keyword("device", &ble_device_handler, NULL);
-	__deprecated install_sublevel();
-	__deprecated install_keyword("vendor", &ble_vendor_handler, &snprint_bled_vendor);
-	__deprecated install_keyword("product", &ble_product_handler, &snprint_bled_product);
-	__deprecated install_sublevel_end();
-#endif
 /*
  * If you add or remove a "device subsection" keyword also update
  * multipath/multipath.conf.5 and the TEMPLATE in libmultipath/hwtable.c
