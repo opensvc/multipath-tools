@@ -91,7 +91,6 @@ static LIST_HEAD(clients);
 static struct pollfd *polls;
 static int notify_fd = -1;
 static int idle_fd = -1;
-static char *watch_config_dir;
 
 static bool _socket_client_is_root(int fd)
 {
@@ -167,7 +166,6 @@ void uxsock_cleanup(void *arg)
 
 	close(ux_sock);
 	close(notify_fd);
-	free(watch_config_dir);
 
 	list_for_each_entry_safe(client_loop, client_tmp, &clients, node) {
 		dead_client(client_loop);
@@ -213,16 +211,7 @@ static void reset_watch(int notify_fd, struct watch_descriptors *wds,
 		*sequence_nr = conf->sequence_nr;
 		if (wds->conf_wd == -1)
 			conf_reset = 1;
-		if (!watch_config_dir || !conf->config_dir ||
-		    strcmp(watch_config_dir, conf->config_dir)) {
-			dir_reset = 1;
-			if (watch_config_dir)
-				free(watch_config_dir);
-			if (conf->config_dir)
-				watch_config_dir = strdup(conf->config_dir);
-			else
-				watch_config_dir = NULL;
-		} else if (wds->dir_wd == -1)
+		if (wds->dir_wd == -1)
 			dir_reset = 1;
 	}
 	put_multipath_config(conf);
@@ -232,14 +221,12 @@ static void reset_watch(int notify_fd, struct watch_descriptors *wds,
 			inotify_rm_watch(notify_fd, wds->dir_wd);
 			wds->dir_wd = -1;
 		}
-		if (watch_config_dir) {
-			wds->dir_wd = inotify_add_watch(notify_fd,
-							watch_config_dir,
-							IN_CLOSE_WRITE |
-							IN_DELETE | IN_ONLYDIR);
-			if (wds->dir_wd == -1)
-				condlog(3, "didn't set up notifications on %s: %m", watch_config_dir);
-		}
+		wds->dir_wd = inotify_add_watch(notify_fd,
+						CONFIG_DIR,
+						IN_CLOSE_WRITE |
+						IN_DELETE | IN_ONLYDIR);
+		if (wds->dir_wd == -1)
+			condlog(3, "didn't set up notifications on %s: %m", CONFIG_DIR);
 	}
 	if (conf_reset) {
 		wds->conf_wd = inotify_add_watch(notify_fd, DEFAULT_CONFIGFILE,

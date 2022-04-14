@@ -774,11 +774,6 @@ static void _uninit_config(struct config *conf)
 	if (conf->checker_name)
 		free(conf->checker_name);
 
-	if (conf->config_dir)
-		free(conf->config_dir);
-	if (conf->enable_foreign)
-		free(conf->enable_foreign);
-
 	free_blacklist(conf->blist_devnode);
 	free_blacklist(conf->blist_wwid);
 	free_blacklist(conf->blist_property);
@@ -974,10 +969,7 @@ int _init_config (const char *file, struct config *conf)
 	}
 
 	conf->processed_main_config = 1;
-	if (conf->config_dir == NULL)
-		conf->config_dir = set_default(DEFAULT_CONFIG_DIR);
-	if (conf->config_dir && conf->config_dir[0] != '\0')
-		process_config_dir(conf, conf->config_dir);
+	process_config_dir(conf, CONFIG_DIR);
 
 	/*
 	 * fill the voids left in the config file

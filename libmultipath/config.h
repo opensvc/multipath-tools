@@ -213,7 +213,6 @@ struct config {
 	char * checker_name;
 	char * alias_prefix;
 	char * partition_delim;
-	char * config_dir;
 	int prkey_source;
 	int all_tg_pt;
 	struct be64 reservation_key;

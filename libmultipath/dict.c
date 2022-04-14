@@ -266,8 +266,8 @@ static int deprecated_handler(struct config *conf, vector strvec, const char *fi
 
 #define declare_deprecated_handler(option)				\
 static int								\
-def_ ## option ## _handler (struct config *conf, vector strvec,		\
-			    const char *file, int line_nr)		\
+deprecated_ ## option ## _handler (struct config *conf, vector strvec,	\
+				   const char *file, int line_nr)	\
 {									\
 	static bool warned;						\
 	if (!warned) {							\
@@ -846,26 +846,7 @@ declare_def_handler(enable_foreign, set_str)
 declare_def_snprint_defstr(enable_foreign, print_str,
 			   DEFAULT_ENABLE_FOREIGN)
 
-static int
-def_config_dir_handler(struct config *conf, vector strvec, const char *file,
-		       int line_nr)
-{
-	static bool warned;
-
-	/* this is only valid in the main config file */
-	if (conf->processed_main_config) {
-		condlog(1, "%s line %d, config_dir option only valid in /etc/multipath.conf",
-			file, line_nr);
-		return 0;
-	}
-	if (!warned) {
-		condlog(2, "%s line %d, \"config_dir\" is deprecated and will be disabled in a future release",
-			file, line_nr);
-		warned = true;
-	}
-	return set_path(strvec, &conf->config_dir, file, line_nr);
-}
-declare_def_snprint(config_dir, print_str)
+declare_deprecated_handler(config_dir)
 
 #define declare_def_attr_handler(option, function)			\
 static int								\
@@ -2021,7 +2002,7 @@ init_keywords(vector keywords)
 	install_keyword("polling_interval", &checkint_handler, &snprint_def_checkint);
 	install_keyword("max_polling_interval", &def_max_checkint_handler, &snprint_def_max_checkint);
 	install_keyword("reassign_maps", &def_reassign_maps_handler, &snprint_def_reassign_maps);
-	install_keyword("multipath_dir", &def_multipath_dir_handler, &snprint_deprecated);
+	install_keyword("multipath_dir", &deprecated_multipath_dir_handler, &snprint_deprecated);
 	install_keyword("path_selector", &def_selector_handler, &snprint_def_selector);
 	install_keyword("path_grouping_policy", &def_pgpolicy_handler, &snprint_def_pgpolicy);
 	install_keyword("uid_attrs", &uid_attrs_handler, &snprint_uid_attrs);
@@ -2064,7 +2045,7 @@ init_keywords(vector keywords)
 	install_keyword("strict_timing", &def_strict_timing_handler, &snprint_def_strict_timing);
 	install_keyword("deferred_remove", &def_deferred_remove_handler, &snprint_def_deferred_remove);
 	install_keyword("partition_delimiter", &def_partition_delim_handler, &snprint_def_partition_delim);
-	install_keyword("config_dir", &def_config_dir_handler, &snprint_def_config_dir);
+	install_keyword("config_dir", &deprecated_config_dir_handler, &snprint_deprecated);
 	install_keyword("delay_watch_checks", &def_delay_watch_checks_handler, &snprint_def_delay_watch_checks);
 	install_keyword("delay_wait_checks", &def_delay_wait_checks_handler, &snprint_def_delay_wait_checks);
 	install_keyword("san_path_err_threshold", &def_san_path_err_threshold_handler, &snprint_def_san_path_err_threshold);
