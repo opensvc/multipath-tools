@@ -1407,6 +1407,52 @@ int snprint_multipath_topology_json (struct strbuf *buff,
 }
 
 static int
+snprint_pcentry (const struct config *conf, struct strbuf *buff,
+		 const struct pcentry *pce)
+{
+	int i, rc;
+	struct keyword *kw;
+	struct keyword * rootkw;
+	size_t initial_len = get_strbuf_len(buff);
+
+	rootkw = find_keyword(conf->keywords, NULL, "overrides");
+	assert(rootkw && rootkw->sub);
+	rootkw = find_keyword(conf->keywords, rootkw->sub, "protocol");
+	assert(rootkw);
+
+	if ((rc = append_strbuf_str(buff, "\tprotocol {\n")) < 0)
+		return rc;
+
+	iterate_sub_keywords(rootkw, kw, i) {
+		if ((rc = snprint_keyword(buff, "\t\t%k %v\n", kw, pce)) < 0)
+			return rc;
+	}
+
+	if ((rc = append_strbuf_str(buff, "\t}\n")) < 0)
+		return rc;
+	return get_strbuf_len(buff) - initial_len;
+}
+
+static int
+snprint_pctable (const struct config *conf, struct strbuf *buff,
+		 const struct _vector *pctable)
+{
+	int i, rc;
+	struct pcentry *pce;
+	struct keyword * rootkw;
+	size_t initial_len = get_strbuf_len(buff);
+
+	rootkw = find_keyword(conf->keywords, NULL, "overrides");
+	assert(rootkw);
+
+	vector_foreach_slot(pctable, pce, i) {
+		if ((rc = snprint_pcentry(conf, buff, pce)) < 0)
+			return rc;
+	}
+	return get_strbuf_len(buff) - initial_len;
+}
+
+static int
 snprint_hwentry (const struct config *conf,
 		 struct strbuf *buff, const struct hwentry * hwe)
 {
@@ -1560,6 +1606,10 @@ static int snprint_overrides(const struct config *conf, struct strbuf *buff,
 		if ((rc = snprint_keyword(buff, "\t%k %v\n", kw, NULL)) < 0)
 			return rc;
 	}
+
+	if (overrides->pctable &&
+	    (rc = snprint_pctable(conf, buff, overrides->pctable)) < 0)
+		return rc;
 out:
 	if ((rc = append_strbuf_str(buff, "}\n")) < 0)
 		return rc;

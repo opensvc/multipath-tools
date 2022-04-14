@@ -237,6 +237,18 @@ const char *get_mpe_wwid(const struct _vector *mptable, const char *alias)
 	return NULL;
 }
 
+static void
+free_pctable (vector pctable)
+{
+	int i;
+	struct pcentry *pce;
+
+	vector_foreach_slot(pctable, pce, i)
+		free(pce);
+
+	vector_free(pctable);
+}
+
 void
 free_hwe (struct hwentry * hwe)
 {
@@ -281,6 +293,9 @@ free_hwe (struct hwentry * hwe)
 
 	if (hwe->bl_product)
 		free(hwe->bl_product);
+
+	if (hwe->pctable)
+		free_pctable(hwe->pctable);
 
 	free(hwe);
 }
@@ -363,6 +378,15 @@ alloc_hwe (void)
 	return hwe;
 }
 
+struct pcentry *
+alloc_pce (void)
+{
+	struct pcentry *pce = (struct pcentry *)
+				calloc(1, sizeof(struct pcentry));
+	pce->type = -1;
+	return pce;
+}
+
 static char *
 set_param_str(const char * str)
 {
@@ -396,6 +420,13 @@ set_param_str(const char * str)
 	if (!dst->s && src->s) \
 		dst->s = src->s
 
+static void
+merge_pce(struct pcentry *dst, struct pcentry *src)
+{
+	merge_num(fast_io_fail);
+	merge_num(dev_loss);
+	merge_num(eh_deadline);
+}
 
 static void
 merge_hwe (struct hwentry * dst, struct hwentry * src)
@@ -603,6 +634,51 @@ out:
 }
 
 static void
+validate_pctable(struct hwentry *ovr, int idx, const char *table_desc)
+{
+	struct pcentry *pce;
+
+	if (!ovr || !ovr->pctable)
+		return;
+
+	vector_foreach_slot_after(ovr->pctable, pce, idx) {
+		if (pce->type < 0) {
+			condlog(0, "protocol section in %s missing type",
+				table_desc);
+			vector_del_slot(ovr->pctable, idx--);
+			free(pce);
+		}
+	}
+
+	if (VECTOR_SIZE(ovr->pctable) == 0) {
+		vector_free(ovr->pctable);
+		ovr->pctable = NULL;
+	}
+}
+
+static void
+merge_pctable(struct hwentry *ovr)
+{
+	struct pcentry *pce1, *pce2;
+	int i, j;
+
+	if (!ovr || !ovr->pctable)
+		return;
+
+	vector_foreach_slot(ovr->pctable, pce1, i) {
+		j = i + 1;
+		vector_foreach_slot_after(ovr->pctable, pce2, j) {
+			if (pce1->type != pce2->type)
+				continue;
+			merge_pce(pce2,pce1);
+			vector_del_slot(ovr->pctable, i--);
+			free(pce1);
+			break;
+		}
+	}
+}
+
+static void
 factorize_hwtable (vector hw, int n, const char *table_desc)
 {
 	struct hwentry *hwe1, *hwe2;
@@ -755,6 +831,7 @@ process_config_dir(struct config *conf, char *dir)
 	int i, n;
 	char path[LINE_MAX];
 	int old_hwtable_size;
+	int old_pctable_size = 0;
 
 	if (dir[0] != '/') {
 		condlog(1, "config_dir '%s' must be a fully qualified path",
@@ -781,11 +858,15 @@ process_config_dir(struct config *conf, char *dir)
 			continue;
 
 		old_hwtable_size = VECTOR_SIZE(conf->hwtable);
+		old_pctable_size = conf->overrides ?
+				   VECTOR_SIZE(conf->overrides->pctable) : 0;
 		snprintf(path, LINE_MAX, "%s/%s", dir, namelist[i]->d_name);
 		path[LINE_MAX-1] = '\0';
 		process_file(conf, path);
 		factorize_hwtable(conf->hwtable, old_hwtable_size,
 				  namelist[i]->d_name);
+		validate_pctable(conf->overrides, old_pctable_size,
+				 namelist[i]->d_name);
 	}
 	pthread_cleanup_pop(1);
 }
@@ -893,6 +974,7 @@ int _init_config (const char *file, struct config *conf)
 			goto out;
 		}
 		factorize_hwtable(conf->hwtable, builtin_hwtable_size, file);
+		validate_pctable(conf->overrides, 0, file);
 	}
 
 	conf->processed_main_config = 1;
@@ -993,6 +1075,7 @@ int _init_config (const char *file, struct config *conf)
 			goto out;
 	}
 
+	merge_pctable(conf->overrides);
 	merge_mptable(conf->mptable);
 	merge_blacklist(conf->blist_devnode);
 	merge_blacklist(conf->blist_property);
