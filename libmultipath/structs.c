@@ -246,7 +246,6 @@ alloc_multipath (void)
 		mpp->bestpg = 1;
 		mpp->mpcontext = NULL;
 		mpp->no_path_retry = NO_PATH_RETRY_UNDEF;
-		mpp->fast_io_fail = MP_FAST_IO_FAIL_UNSET;
 		dm_multipath_to_gen(mpp)->ops = &dm_gen_multipath_ops;
 	}
 	return mpp;
