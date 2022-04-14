@@ -40,6 +40,7 @@ enum force_reload_types {
 	FORCE_RELOAD_WEAK,
 };
 
+#define PCE_INVALID -1
 struct pcentry {
 	int type;
 	int fast_io_fail;

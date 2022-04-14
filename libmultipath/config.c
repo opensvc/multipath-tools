@@ -383,7 +383,7 @@ alloc_pce (void)
 {
 	struct pcentry *pce = (struct pcentry *)
 				calloc(1, sizeof(struct pcentry));
-	pce->type = -1;
+	pce->type = PCE_INVALID;
 	return pce;
 }
 
@@ -642,7 +642,7 @@ validate_pctable(struct hwentry *ovr, int idx, const char *table_desc)
 		return;
 
 	vector_foreach_slot_after(ovr->pctable, pce, idx) {
-		if (pce->type < 0) {
+		if (pce->type == PCE_INVALID) {
 			condlog(0, "protocol section in %s missing type",
 				table_desc);
 			vector_del_slot(ovr->pctable, idx--);
