@@ -1766,6 +1766,38 @@ the values are taken from the \fIdevices\fR or \fIdefaults\fR sections:
 .RE
 .PD
 .LP
+The overrides section also recognizes the optional \fIprotocol\fR subsection,
+and can contain multiple protocol subsections. Path devices are matched against
+the protocol subsection using the mandatory \fItype\fR attribute.  Attributes
+in a matching protocol subsection take precedence over attributes in the rest
+of the overrides section. If there are multiple matching protocol subsections,
+later entries take precedence.
+.TP
+.B protocol subsection
+The protocol subsection recognizes the following mandatory attribute:
+.RS
+.TP
+.B type
+The protocol string of the path device. The possible values are \fIscsi:fcp\fR,
+\fIscsi:spi\fR, \fIscsi:ssa\fR, \fIscsi:sbp\fR, \fIscsi:srp\fR,
+\fIscsi:iscsi\fR, \fIscsi:sas\fR, \fIscsi:adt\fR, \fIscsi:ata\fR,
+\fIscsi:unspec\fR, \fIccw\fR, \fIcciss\fR, \fInvme\fR, and \fIundef\fR. This is
+\fBnot\fR a regular expression. the path device protcol string must match
+exactly. The protocol that a path is using can be viewed by running
+\fBmultipathd show paths format "%d %P"\fR
+.LP
+The following attributes are optional; if not set, the default values are taken
+from the \fIoverrides\fR, \fIdevices\fR, or \fIdefaults\fR section:
+.sp 1
+.PD .1v
+.RS
+.TP
+.B fast_io_fail_tmo
+.TP
+.B dev_loss_tmo
+.TP
+.B eh_deadline
+.PD
 .
 .
 .\" ----------------------------------------------------------------------------
