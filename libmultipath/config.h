@@ -53,7 +53,6 @@ struct hwentry {
 	char * product;
 	char * revision;
 	char * uid_attribute;
-	char * getuid;
 	char * features;
 	char * hwhandler;
 	char * selector;
@@ -101,7 +100,6 @@ struct mpentry {
 	char * wwid;
 	char * alias;
 	char * uid_attribute;
-	char * getuid;
 	char * selector;
 	char * features;
 
@@ -202,7 +200,6 @@ struct config {
 	char * selector;
 	struct _vector uid_attrs;
 	char * uid_attribute;
-	char * getuid;
 	char * features;
 	char * hwhandler;
 	char * bindings_file;

@@ -635,13 +635,6 @@ declare_ovr_snprint(uid_attribute, print_str)
 declare_hw_handler(uid_attribute, set_str)
 declare_hw_snprint(uid_attribute, print_str)
 
-declare_def_handler(getuid, set_str)
-declare_def_snprint(getuid, print_str)
-declare_ovr_handler(getuid, set_str)
-declare_ovr_snprint(getuid, print_str)
-declare_hw_handler(getuid, set_str)
-declare_hw_snprint(getuid, print_str)
-
 declare_def_handler(prio_name, set_str)
 declare_def_snprint_defstr(prio_name, print_str, DEFAULT_PRIO)
 declare_ovr_handler(prio_name, set_str)
@@ -1990,6 +1983,8 @@ snprint_deprecated (struct config *conf, struct strbuf *buff, const void * data)
 	return 0;
 }
 
+declare_deprecated_handler(getuid_callout)
+
 /*
  * If you add or remove a keyword also update multipath/multipath.conf.5
  */
@@ -2006,7 +2001,7 @@ init_keywords(vector keywords)
 	install_keyword("path_grouping_policy", &def_pgpolicy_handler, &snprint_def_pgpolicy);
 	install_keyword("uid_attrs", &uid_attrs_handler, &snprint_uid_attrs);
 	install_keyword("uid_attribute", &def_uid_attribute_handler, &snprint_def_uid_attribute);
-	install_keyword("getuid_callout", &def_getuid_handler, &snprint_def_getuid);
+	install_keyword("getuid_callout", &deprecated_getuid_callout_handler, &snprint_deprecated);
 	install_keyword("prio", &def_prio_name_handler, &snprint_def_prio_name);
 	install_keyword("prio_args", &def_prio_args_handler, &snprint_def_prio_args);
 	install_keyword("features", &def_features_handler, &snprint_def_features);
@@ -2107,7 +2102,7 @@ init_keywords(vector keywords)
 	install_keyword("product_blacklist", &hw_bl_product_handler, &snprint_hw_bl_product);
 	install_keyword("path_grouping_policy", &hw_pgpolicy_handler, &snprint_hw_pgpolicy);
 	install_keyword("uid_attribute", &hw_uid_attribute_handler, &snprint_hw_uid_attribute);
-	install_keyword("getuid_callout", &hw_getuid_handler, &snprint_hw_getuid);
+	install_keyword("getuid_callout", &deprecated_getuid_callout_handler, &snprint_deprecated);
 	install_keyword("path_selector", &hw_selector_handler, &snprint_hw_selector);
 	install_keyword("path_checker", &hw_checker_name_handler, &snprint_hw_checker_name);
 	install_keyword("checker", &hw_checker_name_handler, NULL);
@@ -2151,7 +2146,7 @@ init_keywords(vector keywords)
 	install_keyword_root("overrides", &overrides_handler);
 	install_keyword("path_grouping_policy", &ovr_pgpolicy_handler, &snprint_ovr_pgpolicy);
 	install_keyword("uid_attribute", &ovr_uid_attribute_handler, &snprint_ovr_uid_attribute);
-	install_keyword("getuid_callout", &ovr_getuid_handler, &snprint_ovr_getuid);
+	install_keyword("getuid_callout", &deprecated_getuid_callout_handler, &snprint_deprecated);
 	install_keyword("path_selector", &ovr_selector_handler, &snprint_ovr_selector);
 	install_keyword("path_checker", &ovr_checker_name_handler, &snprint_ovr_checker_name);
 	install_keyword("checker", &ovr_checker_name_handler, NULL);

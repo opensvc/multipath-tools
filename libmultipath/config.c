@@ -264,9 +264,6 @@ free_hwe (struct hwentry * hwe)
 	if (hwe->revision)
 		free(hwe->revision);
 
-	if (hwe->getuid)
-		free(hwe->getuid);
-
 	if (hwe->uid_attribute)
 		free(hwe->uid_attribute);
 
@@ -326,9 +323,6 @@ free_mpe (struct mpentry * mpe)
 
 	if (mpe->selector)
 		free(mpe->selector);
-
-	if (mpe->getuid)
-		free(mpe->getuid);
 
 	if (mpe->uid_attribute)
 		free(mpe->uid_attribute);
@@ -435,7 +429,6 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_str(vendor);
 	merge_str(product);
 	merge_str(revision);
-	merge_str(getuid);
 	merge_str(uid_attribute);
 	merge_str(features);
 	merge_str(hwhandler);
@@ -487,7 +480,6 @@ merge_mpe(struct mpentry *dst, struct mpentry *src)
 {
 	merge_str(alias);
 	merge_str(uid_attribute);
-	merge_str(getuid);
 	merge_str(selector);
 	merge_str(features);
 	merge_str(prio_name);
@@ -577,9 +569,6 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 		goto out;
 
 	if (dhwe->uid_attribute && !(hwe->uid_attribute = set_param_str(dhwe->uid_attribute)))
-		goto out;
-
-	if (dhwe->getuid && !(hwe->getuid = set_param_str(dhwe->getuid)))
 		goto out;
 
 	if (dhwe->features && !(hwe->features = set_param_str(dhwe->features)))
@@ -741,9 +730,6 @@ static void _uninit_config(struct config *conf)
 	vector_foreach_slot(&conf->uid_attrs, ptr, i)
 		free(ptr);
 	vector_reset(&conf->uid_attrs);
-
-	if (conf->getuid)
-		free(conf->getuid);
 
 	if (conf->features)
 		free(conf->features);

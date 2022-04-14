@@ -589,20 +589,14 @@ int select_getuid(struct config *conf, struct path *pp)
 		goto out;
 	}
 
-	pp_set_ovr(getuid);
 	pp_set_ovr(uid_attribute);
-	pp_set_hwe(getuid);
 	pp_set_hwe(uid_attribute);
-	pp_set_conf(getuid);
 	pp_set_conf(uid_attribute);
 	pp_set_default(uid_attribute, DEFAULT_UID_ATTRIBUTE);
 out:
 	if (pp->uid_attribute)
 		condlog(3, "%s: uid_attribute = %s %s", pp->dev,
 			pp->uid_attribute, origin);
-	else if (pp->getuid)
-		condlog(3, "%s: getuid = \"%s\" %s", pp->dev, pp->getuid,
-			origin);
 	return 0;
 }
 
@@ -617,7 +611,7 @@ int select_recheck_wwid(struct config *conf, struct path * pp)
 	pp_set_default(recheck_wwid, DEFAULT_RECHECK_WWID);
 out:
 	if (pp->recheck_wwid == RECHECK_WWID_ON &&
-	    (pp->bus != SYSFS_BUS_SCSI || pp->getuid != NULL ||
+	    (pp->bus != SYSFS_BUS_SCSI ||
 	     !has_uid_fallback(pp))) {
 		pp->recheck_wwid = RECHECK_WWID_OFF;
 		origin = "(setting: unsupported by device type/config)";

@@ -21,7 +21,6 @@
 #include "structs.h"
 #include "config.h"
 #include "blacklist.h"
-#include "callout.h"
 #include "debug.h"
 #include "propsel.h"
 #include "sg_include.h"
@@ -2210,7 +2209,7 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev,
 	int used_fallback = 0;
 	size_t i;
 
-	if (!pp->uid_attribute && !pp->getuid) {
+	if (!pp->uid_attribute) {
 		conf = get_multipath_config();
 		pthread_cleanup_push(put_multipath_config, conf);
 		select_getuid(conf, pp);
@@ -2219,24 +2218,7 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev,
 	}
 
 	memset(pp->wwid, 0, WWID_SIZE);
-	if (pp->getuid) {
-		char buff[CALLOUT_MAX_SIZE];
-
-		/* Use 'getuid' callout, deprecated */
-		condlog(1, "%s: using deprecated getuid callout", pp->dev);
-		if (path_state != PATH_UP) {
-			condlog(3, "%s: path inaccessible", pp->dev);
-			len = -EWOULDBLOCK;
-		} else if (apply_format(pp->getuid, &buff[0], pp)) {
-			condlog(0, "error formatting uid callout command");
-			len = -EINVAL;
-		} else if (execute_program(buff, pp->wwid, WWID_SIZE)) {
-			condlog(3, "error calling out %s", buff);
-			len = -EIO;
-		} else
-			len = strlen(pp->wwid);
-		origin = "callout";
-	} else if (pp->uid_attribute) {
+	if (pp->uid_attribute) {
 		/* if the uid_attribute is an empty string skip udev checking */
 		bool check_uid_attr = udev && *pp->uid_attribute;
 

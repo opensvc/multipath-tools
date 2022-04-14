@@ -50,7 +50,7 @@ ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(LINUX_HEADERS_INCDIR)/scsi/fc/f
 endif
 
 
-OBJS = parser.o vector.o devmapper.o callout.o \
+OBJS = parser.o vector.o devmapper.o \
 	hwtable.o blacklist.o util.o dmparser.o config.o \
 	structs.o discovery.o propsel.o dict.o \
 	pgpolicies.o debug.o defaults.o uevent.o time-util.o \
