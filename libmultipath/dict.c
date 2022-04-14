@@ -116,32 +116,6 @@ set_str(vector strvec, void *ptr, const char *file, int line_nr)
 }
 
 static int
-set_dir(vector strvec, void *ptr, const char *file, int line_nr)
-{
-	char **str_ptr = (char **)ptr;
-	char *old_str = *str_ptr;
-	struct stat sb;
-
-	*str_ptr = set_value(strvec);
-	if (!*str_ptr) {
-		free(old_str);
-		return 1;
-	}
-	if ((*str_ptr)[0] != '/'){
-		condlog(1, "%s line %d, %s is not an absolute directory path. Ignoring", file, line_nr, *str_ptr);
-		*str_ptr = old_str;
-	} else {
-		if (stat(*str_ptr, &sb) == 0 && S_ISDIR(sb.st_mode))
-			free(old_str);
-		else {
-			condlog(1, "%s line %d, %s is not an existing directory. Ignoring", file, line_nr, *str_ptr);
-			*str_ptr = old_str;
-		}
-	}
-	return 0;
-}
-
-static int
 set_path(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	char **str_ptr = (char **)ptr;
@@ -479,8 +453,7 @@ declare_def_snprint(verbosity, print_int)
 declare_def_handler(reassign_maps, set_yes_no)
 declare_def_snprint(reassign_maps, print_yes_no)
 
-declare_def_warn_handler(multipath_dir, set_dir)
-declare_def_snprint(multipath_dir, print_str)
+declare_deprecated_handler(multipath_dir)
 
 static int def_partition_delim_handler(struct config *conf, vector strvec,
 				       const char *file, int line_nr)
@@ -2048,7 +2021,7 @@ init_keywords(vector keywords)
 	install_keyword("polling_interval", &checkint_handler, &snprint_def_checkint);
 	install_keyword("max_polling_interval", &def_max_checkint_handler, &snprint_def_max_checkint);
 	install_keyword("reassign_maps", &def_reassign_maps_handler, &snprint_def_reassign_maps);
-	install_keyword("multipath_dir", &def_multipath_dir_handler, &snprint_def_multipath_dir);
+	install_keyword("multipath_dir", &def_multipath_dir_handler, &snprint_deprecated);
 	install_keyword("path_selector", &def_selector_handler, &snprint_def_selector);
 	install_keyword("path_grouping_policy", &def_pgpolicy_handler, &snprint_def_pgpolicy);
 	install_keyword("uid_attrs", &uid_attrs_handler, &snprint_uid_attrs);

@@ -732,9 +732,6 @@ static void _uninit_config(struct config *conf)
 	if (!conf)
 		conf = &__internal_config;
 
-	if (conf->multipath_dir)
-		free(conf->multipath_dir);
-
 	if (conf->selector)
 		free(conf->selector);
 
@@ -929,7 +926,6 @@ int _init_config (const char *file, struct config *conf)
 	conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 	conf->wwids_file = set_default(DEFAULT_WWIDS_FILE);
 	conf->prkeys_file = set_default(DEFAULT_PRKEYS_FILE);
-	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
 	conf->attribute_flags = 0;
 	conf->reassign_maps = DEFAULT_REASSIGN_MAPS;
 	conf->checkint = CHECKINT_UNDEF;
@@ -1089,8 +1085,7 @@ int _init_config (const char *file, struct config *conf)
 	if (conf->bindings_file == NULL)
 		conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 
-	if (!conf->multipath_dir || !conf->bindings_file ||
-	    !conf->wwids_file || !conf->prkeys_file)
+	if (!conf->bindings_file || !conf->wwids_file || !conf->prkeys_file)
 		goto out;
 
 	libmp_verbosity = conf->verbosity;

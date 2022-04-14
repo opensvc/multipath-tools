@@ -11,7 +11,6 @@
 #define DEFAULT_NVME_UID_ATTRIBUTE	"ID_WWN"
 #define DEFAULT_DASD_UID_ATTRIBUTE	"ID_UID"
 #define DEFAULT_UDEVDIR		"/dev"
-#define DEFAULT_MULTIPATHDIR	"/" LIB_STRING "/multipath"
 #define DEFAULT_SELECTOR	"service-time 0"
 #define DEFAULT_ALIAS_PREFIX	"mpath"
 #define DEFAULT_FEATURES	"0"

@@ -135,7 +135,7 @@ static inline int checker_selected(const struct checker *c)
 }
 
 const char *checker_state_name(int);
-int init_checkers(const char *);
+int init_checkers(void);
 void cleanup_checkers (void);
 int checker_init (struct checker *, void **);
 int checker_mp_init(struct checker *, void **);
@@ -179,7 +179,7 @@ void reset_checker_classes(void);
  */
 const char *checker_message(const struct checker *);
 void checker_clear_message (struct checker *c);
-void checker_get(const char *, struct checker *, const char *);
+void checker_get(struct checker *, const char *);
 
 /* Prototypes for symbols exported by path checker dynamic libraries (.so) */
 int libcheck_check(struct checker *);

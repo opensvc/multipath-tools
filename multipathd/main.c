@@ -3308,17 +3308,17 @@ child (__attribute__((unused)) void *param)
 		conf->bindings_read_only = bindings_read_only;
 	uxsock_timeout = conf->uxsock_timeout;
 	rcu_assign_pointer(multipath_conf, conf);
-	if (init_checkers(conf->multipath_dir)) {
+	if (init_checkers()) {
 		condlog(0, "failed to initialize checkers");
 		goto failed;
 	}
-	if (init_prio(conf->multipath_dir)) {
+	if (init_prio()) {
 		condlog(0, "failed to initialize prioritizers");
 		goto failed;
 	}
 	/* Failing this is non-fatal */
 
-	init_foreign(conf->multipath_dir, conf->enable_foreign);
+	init_foreign(conf->enable_foreign);
 
 	if (poll_dmevents)
 		poll_dmevents = dmevent_poll_supported();

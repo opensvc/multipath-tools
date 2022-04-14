@@ -72,6 +72,9 @@ Customizing the build
 
 The following variables can be passed to the `make` command line:
 
+ * `plugindir="/some/path"`: directory where libmultipath plugins (path
+   checkers, prioritizers, and foreign multipath support) will be looked up.
+   This used to be the run-time option `multipath_dir` in earlier versions.
  * `ENABLE_LIBDMMP=0`: disable building libdmmp
  * `ENABLE_DMEVENTS_POLL=0`: disable support for the device-mapper event
    polling API. For use with pre-5.0 kernels that don't supprt dmevent polling

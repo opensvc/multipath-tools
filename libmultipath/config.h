@@ -199,7 +199,6 @@ struct config {
 	unsigned int sequence_nr;
 	int recheck_wwid;
 
-	char * multipath_dir;
 	char * selector;
 	struct _vector uid_attrs;
 	char * uid_attribute;
