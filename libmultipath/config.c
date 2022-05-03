@@ -760,6 +760,9 @@ static void _uninit_config(struct config *conf)
 	if (conf->checker_name)
 		free(conf->checker_name);
 
+	if (conf->enable_foreign)
+		free(conf->enable_foreign);
+
 	free_blacklist(conf->blist_devnode);
 	free_blacklist(conf->blist_wwid);
 	free_blacklist(conf->blist_property);
