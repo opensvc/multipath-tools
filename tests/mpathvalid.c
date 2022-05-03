@@ -104,7 +104,7 @@ int __wrap_init_config(const char *file)
 	int r = mock_type(int);
 	struct config *conf;
 
-	assert_ptr_equal(file, DEFAULT_CONFIGFILE);
+	assert_string_equal(file, DEFAULT_CONFIGFILE);
 	if (r != 0)
 		return r;
 
