@@ -4,6 +4,8 @@
 #include <cmocka.h>
 #include <libudev.h>
 #include <sys/sysmacros.h>
+#include <linux/hdreg.h>
+#include <scsi/sg.h>
 #include "debug.h"
 #include "util.h"
 #include "vector.h"
@@ -12,9 +14,10 @@
 #include "config.h"
 #include "discovery.h"
 #include "propsel.h"
+#include "unaligned.h"
 #include "test-lib.h"
 
-const int default_mask = (DI_SYSFS|DI_BLACKLIST|DI_WWID|DI_CHECKER|DI_PRIO);
+const int default_mask = (DI_SYSFS|DI_BLACKLIST|DI_WWID|DI_CHECKER|DI_PRIO|DI_SERIAL);
 const char default_devnode[] = "sdxTEST";
 const char default_wwid[] = "TEST-WWID";
 /* default_wwid should be a substring of default_wwid_1! */
@@ -45,15 +48,6 @@ int __wrap_open(const char *path, int flags, int mode)
 	if (!strcmp(path, _mocked_filename))
 		return 111;
 	return __real_open(path, flags, mode);
-}
-
-int __wrap_execute_program(char *path, char *value, int len)
-{
-	char *val = mock_ptr_type(char *);
-
-	condlog(5, "%s: %s", __func__, val);
-	strlcpy(value, val, len);
-	return 0;
 }
 
 int __wrap_libmp_get_version(int which, unsigned int version[3])
@@ -181,6 +175,23 @@ ssize_t __wrap_sysfs_attr_get_value(struct udev_device *dev,
 	return strlen(value);
 }
 
+/* mock vpd_pg80 */
+ssize_t __wrap_sysfs_bin_attr_get_value(struct udev_device *dev,
+					const char *attr_name,
+					char *buf, size_t sz)
+{
+	static const char serial[] = "mptest_serial";
+
+	assert_string_equal(attr_name, "vpd_pg80");
+	assert_in_range(sz, sizeof(serial) + 3, INT_MAX);
+	memset(buf, 0, sizeof(serial) + 3);
+	buf[1] = 0x80;
+	put_unaligned_be16(sizeof(serial) - 1, &buf[2]);
+	memcpy(&buf[4], serial, sizeof(serial) - 1);
+
+	return sizeof(serial) + 3;
+}
+
 int __wrap_checker_check(struct checker *c, int st)
 {
 	condlog(5, "%s: %d", __func__, st);
@@ -193,6 +204,41 @@ int __wrap_prio_getprio(struct prio *p, struct path *pp, unsigned int tmo)
 
 	condlog(5, "%s: %d", __func__, pr);
 	return pr;
+}
+
+int __real_ioctl(int fd, unsigned long request, void *param);
+
+int __wrap_ioctl(int fd, unsigned long request, void *param)
+{
+	condlog(5, "%s: %lu", __func__, request);
+
+	if (request == HDIO_GETGEO) {
+		static const struct hd_geometry geom = {
+			.heads = 4, .sectors = 31, .cylinders = 64, .start = 0
+		};
+		memcpy(param, &geom, sizeof(geom));
+		return 0;
+	} else if (request == SG_IO) {
+		/* mock hp3par special VPD */
+		struct sg_io_hdr *hdr = param;
+		static const char vpd_data[] = "VPD DATA";
+		unsigned char *buf = hdr->dxferp;
+		/* see vpd_vendor_pages in discovery.c */
+		const int HP3PAR_VPD = 0xc0;
+
+		if (hdr->interface_id == 'S' && hdr->cmdp[0] == 0x12
+		    && (hdr->cmdp[1] & 1) == 1 && hdr->cmdp[2] == HP3PAR_VPD) {
+			assert_in_range(hdr->dxfer_len,
+					sizeof(vpd_data + 3), INT_MAX);
+			memset(buf, 0, hdr->dxfer_len);
+			buf[1] = HP3PAR_VPD;
+			put_unaligned_be16(sizeof(vpd_data), &buf[2]);
+			memcpy(&buf[4], vpd_data, sizeof(vpd_data));
+			hdr->status = 0;
+			return 0;
+		}
+	}
+	return __real_ioctl(fd, request, param);
 }
 
 struct mocked_path *fill_mocked_path(struct mocked_path *mp,
@@ -219,14 +265,13 @@ struct mocked_path *mocked_path_from_path(struct mocked_path *mp,
 	mp->devnode = pp->dev;
 	mp->flags = (prio_selected(&pp->prio) ? 0 : NEED_SELECT_PRIO) |
 		(pp->fd < 0 ? NEED_FD : 0) |
-		(pp->getuid ? USE_GETUID : 0);
+		(pp->vpd_vendor_id != 0 ? USE_VPD_VND : 0);
 	return mp;
 }
 
+static const char hbtl[] = "4:0:3:1";
 static void mock_sysfs_pathinfo(const struct mocked_path *mp)
 {
-	static const char hbtl[] = "4:0:3:1";
-
 	will_return(__wrap_udev_device_get_subsystem, "scsi");
 	will_return(__wrap_udev_device_get_sysname, hbtl);
 	will_return(__wrap_udev_device_get_sysname, hbtl);
@@ -284,16 +329,18 @@ void mock_pathinfo(int mask, const struct mocked_path *mp)
 	/* fake open() in pathinfo() */
 	if (mp->flags & NEED_FD)
 		will_return(__wrap_udev_device_get_devnode, _mocked_filename);
-	/* DI_SERIAL is unsupported */
-	assert_false(mask & DI_SERIAL);
+
+	/* scsi_ioctl_pathinfo() */
+	if (mask & DI_SERIAL) {
+		will_return(__wrap_udev_device_get_subsystem, "scsi");
+		will_return(__wrap_udev_device_get_sysname, hbtl);
+		will_return(__wrap_udev_device_get_sysname, hbtl);
+	}
 
 	if (mask & DI_WWID) {
-		if (mp->flags & USE_GETUID)
-			will_return(__wrap_execute_program, mp->wwid);
-		else
-			/* get_udev_uid() */
-			will_return(__wrap_udev_device_get_property_value,
-				    mp->wwid);
+		/* get_udev_uid() */
+		will_return(__wrap_udev_device_get_property_value,
+			    mp->wwid);
 	}
 
 	if (mask & DI_CHECKER) {

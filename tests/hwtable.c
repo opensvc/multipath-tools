@@ -403,7 +403,7 @@ static const char _vendor[] = "vendor";
 static const char _product[] = "product";
 static const char _prio[] = "prio";
 static const char _checker[] = "path_checker";
-static const char _getuid[] = "getuid_callout";
+static const char _vpd_vnd[] = "vpd_vendor";
 static const char _uid_attr[] = "uid_attribute";
 static const char _bl_product[] = "product_blacklist";
 static const char _minio[] = "rr_min_io_rq";
@@ -435,7 +435,7 @@ static const struct key_value prio_emc = { _prio, "emc" };
 static const struct key_value prio_hds = { _prio, "hds" };
 static const struct key_value prio_rdac = { _prio, "rdac" };
 static const struct key_value chk_hp = { _checker, "hp_sw" };
-static const struct key_value gui_foo = { _getuid, "/tmp/foo" };
+static const struct key_value vpd_hp3par = { _vpd_vnd, "hp3par" };
 static const struct key_value uid_baz = { _uid_attr, "BAZ_ATTR" };
 static const struct key_value bl_bar = { _bl_product, "bar" };
 static const struct key_value bl_baz = { _bl_product, "baz" };
@@ -755,31 +755,31 @@ static void test_regex_string_hwe(const struct hwt_state *hwt)
 	/* foo:baz matches kv1 */
 	pp = mock_path(vnd_foo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* boo:baz matches kv1 */
 	pp = mock_path(vnd_boo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* .oo:ba. matches kv1 */
 	pp = mock_path(vnd__oo.value, prd_ba_.value);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* .foo:(bar|baz|ba\.) doesn't match */
 	pp = mock_path(vnd__oo.value, prd_ba_s.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 
 	/* foo:bar matches kv2 and kv1 */
-	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 
@@ -787,7 +787,7 @@ static int setup_regex_string_hwe(void **state)
 {
 	struct hwt_state *hwt = CHECK_STATE(state);
 	const struct key_value kv1[] = { vnd_t_oo, prd_ba_s, prio_emc, chk_hp };
-	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, gui_foo };
+	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, vpd_hp3par };
 
 	WRITE_TWO_DEVICES(hwt, kv1, kv2);
 	SET_TEST_FUNC(hwt, test_regex_string_hwe);
@@ -812,39 +812,39 @@ static void test_regex_string_hwe_dir(const struct hwt_state *hwt)
 	/* foo:baz matches kv1 */
 	pp = mock_path(vnd_foo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* boo:baz matches kv1 */
 	pp = mock_path(vnd_boo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* .oo:ba. matches kv1 */
 	pp = mock_path(vnd__oo.value, prd_ba_.value);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* .oo:(bar|baz|ba\.)$ doesn't match */
 	pp = mock_path(vnd__oo.value, prd_ba_s.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 
 	/* foo:bar matches kv2 */
-	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_VPD_VND);
 	/* Later match takes prio */
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 
 static int setup_regex_string_hwe_dir(void **state)
 {
 	const struct key_value kv1[] = { vnd_t_oo, prd_ba_s, prio_emc, chk_hp };
-	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, gui_foo };
+	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, vpd_hp3par };
 	struct hwt_state *hwt = CHECK_STATE(state);
 
 	WRITE_TWO_DEVICES_W_DIR(hwt, kv1, kv2);
@@ -867,29 +867,29 @@ static void test_regex_2_strings_hwe_dir(const struct hwt_state *hwt)
 	/* foo:baz matches kv1 */
 	pp = mock_path(vnd_foo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* boo:baz doesn't match */
 	pp = mock_path(vnd_boo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(pp->uid_attribute, DEFAULT_UID_ATTRIBUTE);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 
 	/* foo:bar matches kv2 and kv1 */
 	pp = mock_path(vnd_foo.value, prd_bar.value);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(pp->uid_attribute, uid_baz.value);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* foo:barz matches kv3 and kv2 and kv1 */
-	pp = mock_path_flags(vnd_foo.value, prd_barz.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_barz.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_rdac.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
 	TEST_PROP(pp->uid_attribute, NULL);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 
@@ -898,7 +898,7 @@ static int setup_regex_2_strings_hwe_dir(void **state)
 	const struct key_value kv1[] = { vnd_foo, prd_ba_, prio_emc, chk_hp };
 	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, uid_baz };
 	const struct key_value kv3[] = { vnd_foo, prd_barz,
-					 prio_rdac, gui_foo };
+					 prio_rdac, vpd_hp3par };
 	struct hwt_state *hwt = CHECK_STATE(state);
 
 	begin_config(hwt);
@@ -924,40 +924,40 @@ static void test_string_regex_hwe_dir(const struct hwt_state *hwt)
 	struct path *pp;
 
 	/* foo:bar matches kv2 and kv1 */
-	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* foo:baz matches kv1 */
 	pp = mock_path(vnd_foo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* boo:baz matches kv1 */
 	pp = mock_path(vnd_boo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* .oo:ba. matches kv1 */
 	pp = mock_path(vnd__oo.value, prd_ba_.value);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* .oo:(bar|baz|ba\.)$ doesn't match */
 	pp = mock_path(vnd__oo.value, prd_ba_s.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 }
 
 static int setup_string_regex_hwe_dir(void **state)
 {
 	const struct key_value kv1[] = { vnd_t_oo, prd_ba_s, prio_emc, chk_hp };
-	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, gui_foo };
+	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, vpd_hp3par };
 	struct hwt_state *hwt = CHECK_STATE(state);
 
 	WRITE_TWO_DEVICES_W_DIR(hwt, kv2, kv1);
@@ -980,20 +980,20 @@ static void test_2_ident_strings_hwe(const struct hwt_state *hwt)
 	/* foo:baz doesn't match */
 	pp = mock_path(vnd_foo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 
 	/* foo:bar matches both */
-	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 
 static int setup_2_ident_strings_hwe(void **state)
 {
 	const struct key_value kv1[] = { vnd_foo, prd_bar, prio_emc, chk_hp };
-	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, gui_foo };
+	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, vpd_hp3par };
 	struct hwt_state *hwt = CHECK_STATE(state);
 
 	WRITE_TWO_DEVICES(hwt, kv1, kv2);
@@ -1015,20 +1015,20 @@ static void test_2_ident_strings_both_dir(const struct hwt_state *hwt)
 	/* foo:baz doesn't match */
 	pp = mock_path(vnd_foo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 
 	/* foo:bar matches both */
-	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 
 static int setup_2_ident_strings_both_dir(void **state)
 {
 	const struct key_value kv1[] = { vnd_foo, prd_bar, prio_emc, chk_hp };
-	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, gui_foo };
+	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, vpd_hp3par };
 	struct hwt_state *hwt = CHECK_STATE(state);
 
 	begin_config(hwt);
@@ -1055,13 +1055,13 @@ static void test_2_ident_strings_both_dir_w_prev(const struct hwt_state *hwt)
 	/* foo:baz doesn't match */
 	pp = mock_path(vnd_foo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 
 	/* foo:bar matches both */
-	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 
@@ -1071,7 +1071,7 @@ static int setup_2_ident_strings_both_dir_w_prev(void **state)
 
 	const struct key_value kv0[] = { vnd_foo, prd_bar };
 	const struct key_value kv1[] = { vnd_foo, prd_bar, prio_emc, chk_hp };
-	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, gui_foo };
+	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, vpd_hp3par };
 
 	begin_config(hwt);
 	begin_section_all(hwt, "devices");
@@ -1100,20 +1100,20 @@ static void test_2_ident_strings_hwe_dir(const struct hwt_state *hwt)
 	/* foo:baz doesn't match */
 	pp = mock_path(vnd_foo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 
 	/* foo:bar matches both */
-	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 
 static int setup_2_ident_strings_hwe_dir(void **state)
 {
 	const struct key_value kv1[] = { vnd_foo, prd_bar, prio_emc, chk_hp };
-	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, gui_foo };
+	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, vpd_hp3par };
 	struct hwt_state *hwt = CHECK_STATE(state);
 
 	WRITE_TWO_DEVICES_W_DIR(hwt, kv1, kv2);
@@ -1134,13 +1134,13 @@ static void test_3_ident_strings_hwe_dir(const struct hwt_state *hwt)
 	/* foo:baz doesn't match */
 	pp = mock_path(vnd_foo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 
 	/* foo:bar matches both */
-	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 
@@ -1148,7 +1148,7 @@ static int setup_3_ident_strings_hwe_dir(void **state)
 {
 	const struct key_value kv0[] = { vnd_foo, prd_bar };
 	const struct key_value kv1[] = { vnd_foo, prd_bar, prio_emc, chk_hp };
-	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, gui_foo };
+	const struct key_value kv2[] = { vnd_foo, prd_bar, prio_hds, vpd_hp3par };
 	struct hwt_state *hwt = CHECK_STATE(state);
 
 	begin_config(hwt);
@@ -1178,20 +1178,20 @@ static void test_2_ident_self_matching_re_hwe_dir(const struct hwt_state *hwt)
 	/* foo:baz doesn't match */
 	pp = mock_path(vnd_foo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 
 	/* foo:bar matches both */
-	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 
 static int setup_2_ident_self_matching_re_hwe_dir(void **state)
 {
 	const struct key_value kv1[] = { vnd__oo, prd_bar, prio_emc, chk_hp };
-	const struct key_value kv2[] = { vnd__oo, prd_bar, prio_hds, gui_foo };
+	const struct key_value kv2[] = { vnd__oo, prd_bar, prio_hds, vpd_hp3par };
 	struct hwt_state *hwt = CHECK_STATE(state);
 
 	WRITE_TWO_DEVICES_W_DIR(hwt, kv1, kv2);
@@ -1213,20 +1213,20 @@ static void test_2_ident_self_matching_re_hwe(const struct hwt_state *hwt)
 	/* foo:baz doesn't match */
 	pp = mock_path(vnd_foo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 
 	/* foo:bar matches */
-	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 
 static int setup_2_ident_self_matching_re_hwe(void **state)
 {
 	const struct key_value kv1[] = { vnd__oo, prd_bar, prio_emc, chk_hp };
-	const struct key_value kv2[] = { vnd__oo, prd_bar, prio_hds, gui_foo };
+	const struct key_value kv2[] = { vnd__oo, prd_bar, prio_hds, vpd_hp3par };
 	struct hwt_state *hwt = CHECK_STATE(state);
 
 	WRITE_TWO_DEVICES(hwt, kv1, kv2);
@@ -1250,20 +1250,20 @@ test_2_ident_not_self_matching_re_hwe_dir(const struct hwt_state *hwt)
 	/* foo:baz doesn't match */
 	pp = mock_path(vnd_foo.value, prd_baz.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 
 	/* foo:bar matches both */
-	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_bar.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 
 static int setup_2_ident_not_self_matching_re_hwe_dir(void **state)
 {
 	const struct key_value kv1[] = { vnd_t_oo, prd_bar, prio_emc, chk_hp };
-	const struct key_value kv2[] = { vnd_t_oo, prd_bar, prio_hds, gui_foo };
+	const struct key_value kv2[] = { vnd_t_oo, prd_bar, prio_hds, vpd_hp3par };
 	struct hwt_state *hwt = CHECK_STATE(state);
 
 	WRITE_TWO_DEVICES_W_DIR(hwt, kv1, kv2);
@@ -1287,26 +1287,26 @@ static void test_2_matching_res_hwe_dir(const struct hwt_state *hwt)
 	/* foo:bar matches k1 only */
 	pp = mock_path(vnd_foo.value, prd_bar.value);
 	TEST_PROP(prio_name(&pp->prio), prio_emc.value);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* foo:bay matches k1 and k2 */
-	pp = mock_path_flags(vnd_foo.value, "bay", USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, "bay", USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 
 	/* foo:baz matches k2 only. */
-	pp = mock_path_flags(vnd_foo.value, prd_baz.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_baz.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 }
 
 static int setup_2_matching_res_hwe_dir(void **state)
 {
 	const struct key_value kv1[] = { vnd_foo, prd_barx, prio_emc, chk_hp };
-	const struct key_value kv2[] = { vnd_foo, prd_bazy, prio_hds, gui_foo };
+	const struct key_value kv2[] = { vnd_foo, prd_bazy, prio_hds, vpd_hp3par };
 	struct hwt_state *hwt = CHECK_STATE(state);
 
 	WRITE_TWO_DEVICES_W_DIR(hwt, kv1, kv2);
@@ -1328,12 +1328,12 @@ static void test_2_nonmatching_res_hwe_dir(const struct hwt_state *hwt)
 	/* foo:bar doesn't match */
 	pp = mock_path(vnd_foo.value, prd_bar.value);
 	TEST_PROP(prio_name(&pp->prio), DEFAULT_PRIO);
-	TEST_PROP(pp->getuid, NULL);
+	assert_int_equal(pp->vpd_vendor_id, 0);
 	TEST_PROP(checker_name(&pp->checker), DEFAULT_CHECKER);
 
-	pp = mock_path_flags(vnd_foo.value, prd_baz.value, USE_GETUID);
+	pp = mock_path_flags(vnd_foo.value, prd_baz.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_hds.value);
-	TEST_PROP(pp->getuid, gui_foo.value);
+	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 
@@ -1341,7 +1341,7 @@ static int setup_2_nonmatching_res_hwe_dir(void **state)
 {
 	const struct key_value kv1[] = { vnd_foo, prd_bazy, prio_emc, chk_hp };
 	const struct key_value kv2[] = { vnd_foo, prd_bazy1,
-					 prio_hds, gui_foo };
+					 prio_hds, vpd_hp3par };
 	struct hwt_state *hwt = CHECK_STATE(state);
 
 	WRITE_TWO_DEVICES_W_DIR(hwt, kv1, kv2);

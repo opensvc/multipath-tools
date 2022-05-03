@@ -14,7 +14,7 @@ enum {
 	BL_MASK = BL_BY_DEVNODE|BL_BY_DEVICE|BL_BY_WWID|BL_BY_PROPERTY,
 	NEED_SELECT_PRIO = (1 << 8),
 	NEED_FD		= (1 << 9),
-	USE_GETUID	= (1 << 10),
+	USE_VPD_VND	= (1 << 10),
 	DEV_HIDDEN	= (1 << 11),
 };
 
