@@ -143,12 +143,11 @@ static int setup(void **state)
 	}
 	hwt->tmpname = strdup(buf);
 
-	snprintf(buf, sizeof(buf), "%s", tmplate);
-	if (mkdtemp(buf) == NULL) {
-		condlog(0, "mkdtemp (2): %s", strerror(errno));
+	hwt->dirname = strdup(TESTCONFDIR);
+	if (mkdir(hwt->dirname, 0744) != 0) {
+		condlog(0, "mkdir %s: %s", hwt->dirname, strerror(errno));
 		goto err;
 	}
-	hwt->dirname = strdup(buf);
 
 	make_config_file_path(buf, sizeof(buf), hwt, -1);
 	hwt->config_file = fopen(buf, "w+");

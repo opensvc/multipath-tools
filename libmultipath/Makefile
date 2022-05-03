@@ -49,16 +49,23 @@ ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(LINUX_HEADERS_INCDIR)/scsi/fc/f
 	CFLAGS += -DFPIN_EVENT_HANDLER
 endif
 
+# object files referencing MULTIPATH_DIR or CONFIG_DIR
+# they need to be recompiled for unit tests
+OBJS-U := prio.o checkers.o foreign.o config.o
+OBJS-T := $(patsubst %.o,%-test.o,$(OBJS-U))
 
-OBJS = parser.o vector.o devmapper.o \
-	hwtable.o blacklist.o util.o dmparser.o config.o \
+# other object files
+OBJS-O := parser.o vector.o devmapper.o \
+	hwtable.o blacklist.o util.o dmparser.o \
 	structs.o discovery.o propsel.o dict.o \
 	pgpolicies.o debug.o defaults.o uevent.o time-util.o \
 	switchgroup.o uxsock.o print.o alias.o log_pthread.o \
-	log.o configure.o structs_vec.o sysfs.o prio.o checkers.o \
+	log.o configure.o structs_vec.o sysfs.o \
 	lock.o file.o wwids.o prioritizers/alua_rtpg.o prkey.o \
-	io_err_stat.o dm-generic.o generic.o foreign.o nvme-lib.o \
+	io_err_stat.o dm-generic.o generic.o nvme-lib.o \
 	libsg.o valid.o strbuf.o
+
+OBJS := $(OBJS-O) $(OBJS-U)
 
 all:	$(DEVLIB)
 
@@ -97,10 +104,15 @@ $(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
 
 abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
 
-../tests/$(LIBS): $(OBJS) $(VERSION_SCRIPT)
+../tests/$(LIBS): $(OBJS-O) $(OBJS-T) $(VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=`basename $@` \
-		-o $@ $(OBJS) $(LIBDEPS)
+		-o $@ $(OBJS-O) $(OBJS-T) $(LIBDEPS)
 	$(LN) $@ ${@:.so.0=.so}
+
+# This rule is invoked from tests/Makefile, overriding configdir and plugindir
+%-test.o: %.c
+	@echo building $@ because of $?
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 test-lib:	../tests/$(LIBS)
 
