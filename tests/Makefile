@@ -1,5 +1,8 @@
 include ../Makefile.inc
 
+# directory where to run the tests
+TESTDIR := $(CURDIR)
+
 # Test special behavior of gcc 4.8 with nested initializers
 # gcc 4.8 compiles blacklist.c only with -Wno-missing-field-initializers
 TEST_MISSING_INITIALIZERS = $(shell \
@@ -9,7 +12,7 @@ TEST_MISSING_INITIALIZERS = $(shell \
 W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)
 
 CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathcmddir) \
-	-Wno-unused-parameter $(W_MISSING_INITIALIZERS) -DTESTCONFDIR=\"$(CURDIR)/conf.d\"
+	-Wno-unused-parameter $(W_MISSING_INITIALIZERS) -DTESTCONFDIR=\"$(TESTDIR)/conf.d\"
 LIBDEPS += -L. -L$(mpathcmddir) -lmultipath -lmpathcmd -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
@@ -108,7 +111,7 @@ dep_clean:
 		sort -u | tr '\n' ' ' >$@
 
 libmultipath.so.0:
-	make -C $(multipathdir) configdir=$(CURDIR)/conf.d plugindir=$(CURDIR)/lib test-lib
+	make -C $(multipathdir) configdir=$(TESTDIR)/conf.d plugindir=$(TESTDIR)/lib test-lib
 
 # COLON will get expanded during second expansion below
 COLON:=:
