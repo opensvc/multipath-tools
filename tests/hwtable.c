@@ -888,8 +888,8 @@ static void test_regex_2_strings_hwe_dir(const struct hwt_state *hwt)
 	/* foo:barz matches kv3 and kv2 and kv1 */
 	pp = mock_path_flags(vnd_foo.value, prd_barz.value, USE_VPD_VND);
 	TEST_PROP(prio_name(&pp->prio), prio_rdac.value);
-	TEST_PROP(pp->uid_attribute, NULL);
 	assert_int_equal(pp->vpd_vendor_id, VPD_VP_HP3PAR);
+	TEST_PROP(pp->uid_attribute, uid_baz.value);
 	TEST_PROP(checker_name(&pp->checker), chk_hp.value);
 }
 

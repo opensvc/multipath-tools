@@ -229,7 +229,7 @@ int __wrap_ioctl(int fd, unsigned long request, void *param)
 		if (hdr->interface_id == 'S' && hdr->cmdp[0] == 0x12
 		    && (hdr->cmdp[1] & 1) == 1 && hdr->cmdp[2] == HP3PAR_VPD) {
 			assert_in_range(hdr->dxfer_len,
-					sizeof(vpd_data + 3), INT_MAX);
+					sizeof(vpd_data) + 3, INT_MAX);
 			memset(buf, 0, hdr->dxfer_len);
 			buf[1] = HP3PAR_VPD;
 			put_unaligned_be16(sizeof(vpd_data), &buf[2]);
