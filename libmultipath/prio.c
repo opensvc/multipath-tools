@@ -8,6 +8,7 @@
 #include "util.h"
 #include "prio.h"
 
+static const char * const prio_dir = MULTIPATH_DIR;
 static LIST_HEAD(prioritizers);
 
 unsigned int get_prio_timeout(unsigned int timeout_ms,
@@ -18,7 +19,7 @@ unsigned int get_prio_timeout(unsigned int timeout_ms,
 	return default_timeout;
 }
 
-int init_prio (const char *multipath_dir)
+int init_prio(void)
 {
 #ifdef LOAD_ALL_SHARED_LIBS
 	static const char *const all_prios[] = {
@@ -39,9 +40,9 @@ int init_prio (const char *multipath_dir)
 	unsigned int i;
 
 	for  (i = 0; i < ARRAY_SIZE(all_prios); i++)
-		add_prio(multipath_dir, all_prios[i]);
+		add_prio(all_prios[i]);
 #else
-	if (!add_prio(multipath_dir, DEFAULT_PRIO))
+	if (!add_prio(DEFAULT_PRIO))
 		return 1;
 #endif
 	return 0;
@@ -90,7 +91,7 @@ void cleanup_prio(void)
 	}
 }
 
-static struct prio * prio_lookup (char * name)
+static struct prio *prio_lookup(const char *name)
 {
 	struct prio * p;
 
@@ -109,7 +110,7 @@ int prio_set_args (struct prio * p, const char * args)
 	return snprintf(p->args, PRIO_ARGS_LEN, "%s", args);
 }
 
-struct prio * add_prio (const char *multipath_dir, const char * name)
+struct prio *add_prio (const char *name)
 {
 	char libname[LIB_PRIO_NAMELEN];
 	struct stat stbuf;
@@ -121,10 +122,10 @@ struct prio * add_prio (const char *multipath_dir, const char * name)
 		return NULL;
 	snprintf(p->name, PRIO_NAME_LEN, "%s", name);
 	snprintf(libname, LIB_PRIO_NAMELEN, "%s/libprio%s.so",
-		 multipath_dir, name);
+		 prio_dir, name);
 	if (stat(libname,&stbuf) < 0) {
 		condlog(0,"Prioritizer '%s' not found in %s",
-			name, multipath_dir);
+			name, prio_dir);
 		goto out;
 	}
 	condlog(3, "loading %s prioritizer", libname);
@@ -170,7 +171,7 @@ const char * prio_args (const struct prio * p)
 	return p->args;
 }
 
-void prio_get (char *multipath_dir, struct prio * dst, char * name, char * args)
+void prio_get(struct prio *dst, const char *name, const char *args)
 {
 	struct prio * src = NULL;
 
@@ -180,7 +181,7 @@ void prio_get (char *multipath_dir, struct prio * dst, char * name, char * args)
 	if (name && strlen(name)) {
 		src = prio_lookup(name);
 		if (!src)
-			src = add_prio(multipath_dir, name);
+			src = add_prio(name);
 	}
 	if (!src) {
 		dst->getprio = NULL;

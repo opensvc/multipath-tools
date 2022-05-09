@@ -27,7 +27,8 @@ jobs:
         run: make test
       - name: build
         if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
-        run: make test-progs
+        # The build path is different between builder and runner
+        run: make TESTDIR=${{ github.workspace }}/tests test-progs
       - name: archive
         if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
         run: >
@@ -64,6 +65,8 @@ jobs:
         uses: mosteo-actions/docker-run@v1
         with:
           image: mwilck/multipath-run-${{ matrix.os }}-${{ matrix.arch }}
-          # The runner is an image that has "make" as entrypoint
+          # The runner is an image that has "make" as entrypoint and uses
+          # github.workspace as both host dir and guest volume by default.
+          # See https://github.com/mosteo-actions/docker-run/blob/v1/action.yml
           # So run "make -C tests" here
           command: -C tests

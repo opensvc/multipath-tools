@@ -988,11 +988,11 @@ main (int argc, char *argv[])
 
 	libmp_udev_set_sync_support(1);
 
-	if (init_checkers(conf->multipath_dir)) {
+	if (init_checkers()) {
 		condlog(0, "failed to initialize checkers");
 		goto out;
 	}
-	if (init_prio(conf->multipath_dir)) {
+	if (init_prio()) {
 		condlog(0, "failed to initialize prioritizers");
 		goto out;
 	}
@@ -1001,7 +1001,7 @@ main (int argc, char *argv[])
 		conf->enable_foreign = strdup("");
 
 	/* Failing here is non-fatal */
-	init_foreign(conf->multipath_dir, conf->enable_foreign);
+	init_foreign(conf->enable_foreign);
 	if (cmd == CMD_USABLE_PATHS) {
 		r = check_usable_paths(conf, dev, dev_type) ?
 			RTVL_FAIL : RTVL_OK;

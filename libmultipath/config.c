@@ -264,9 +264,6 @@ free_hwe (struct hwentry * hwe)
 	if (hwe->revision)
 		free(hwe->revision);
 
-	if (hwe->getuid)
-		free(hwe->getuid);
-
 	if (hwe->uid_attribute)
 		free(hwe->uid_attribute);
 
@@ -327,9 +324,6 @@ free_mpe (struct mpentry * mpe)
 	if (mpe->selector)
 		free(mpe->selector);
 
-	if (mpe->getuid)
-		free(mpe->getuid);
-
 	if (mpe->uid_attribute)
 		free(mpe->uid_attribute);
 
@@ -383,7 +377,7 @@ alloc_pce (void)
 {
 	struct pcentry *pce = (struct pcentry *)
 				calloc(1, sizeof(struct pcentry));
-	pce->type = -1;
+	pce->type = PCE_INVALID;
 	return pce;
 }
 
@@ -435,7 +429,6 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_str(vendor);
 	merge_str(product);
 	merge_str(revision);
-	merge_str(getuid);
 	merge_str(uid_attribute);
 	merge_str(features);
 	merge_str(hwhandler);
@@ -488,7 +481,6 @@ merge_mpe(struct mpentry *dst, struct mpentry *src)
 {
 	merge_str(alias);
 	merge_str(uid_attribute);
-	merge_str(getuid);
 	merge_str(selector);
 	merge_str(features);
 	merge_str(prio_name);
@@ -580,9 +572,6 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	if (dhwe->uid_attribute && !(hwe->uid_attribute = set_param_str(dhwe->uid_attribute)))
 		goto out;
 
-	if (dhwe->getuid && !(hwe->getuid = set_param_str(dhwe->getuid)))
-		goto out;
-
 	if (dhwe->features && !(hwe->features = set_param_str(dhwe->features)))
 		goto out;
 
@@ -643,7 +632,7 @@ validate_pctable(struct hwentry *ovr, int idx, const char *table_desc)
 		return;
 
 	vector_foreach_slot_after(ovr->pctable, pce, idx) {
-		if (pce->type < 0) {
+		if (pce->type == PCE_INVALID) {
 			condlog(0, "protocol section in %s missing type",
 				table_desc);
 			vector_del_slot(ovr->pctable, idx--);
@@ -733,9 +722,6 @@ static void _uninit_config(struct config *conf)
 	if (!conf)
 		conf = &__internal_config;
 
-	if (conf->multipath_dir)
-		free(conf->multipath_dir);
-
 	if (conf->selector)
 		free(conf->selector);
 
@@ -745,9 +731,6 @@ static void _uninit_config(struct config *conf)
 	vector_foreach_slot(&conf->uid_attrs, ptr, i)
 		free(ptr);
 	vector_reset(&conf->uid_attrs);
-
-	if (conf->getuid)
-		free(conf->getuid);
 
 	if (conf->features)
 		free(conf->features);
@@ -778,8 +761,6 @@ static void _uninit_config(struct config *conf)
 	if (conf->checker_name)
 		free(conf->checker_name);
 
-	if (conf->config_dir)
-		free(conf->config_dir);
 	if (conf->enable_foreign)
 		free(conf->enable_foreign);
 
@@ -930,7 +911,6 @@ int _init_config (const char *file, struct config *conf)
 	conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 	conf->wwids_file = set_default(DEFAULT_WWIDS_FILE);
 	conf->prkeys_file = set_default(DEFAULT_PRKEYS_FILE);
-	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
 	conf->attribute_flags = 0;
 	conf->reassign_maps = DEFAULT_REASSIGN_MAPS;
 	conf->checkint = CHECKINT_UNDEF;
@@ -979,10 +959,7 @@ int _init_config (const char *file, struct config *conf)
 	}
 
 	conf->processed_main_config = 1;
-	if (conf->config_dir == NULL)
-		conf->config_dir = set_default(DEFAULT_CONFIG_DIR);
-	if (conf->config_dir && conf->config_dir[0] != '\0')
-		process_config_dir(conf, conf->config_dir);
+	process_config_dir(conf, CONFIG_DIR);
 
 	/*
 	 * fill the voids left in the config file
@@ -1090,8 +1067,7 @@ int _init_config (const char *file, struct config *conf)
 	if (conf->bindings_file == NULL)
 		conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 
-	if (!conf->multipath_dir || !conf->bindings_file ||
-	    !conf->wwids_file || !conf->prkeys_file)
+	if (!conf->bindings_file || !conf->wwids_file || !conf->prkeys_file)
 		goto out;
 
 	libmp_verbosity = conf->verbosity;

@@ -12,6 +12,8 @@
 #include "vector.h"
 #include "util.h"
 
+static const char * const checker_dir = MULTIPATH_DIR;
+
 struct checker_class {
 	struct list_head node;
 	void *handle;
@@ -133,8 +135,7 @@ void reset_checker_classes(void)
 	}
 }
 
-static struct checker_class *add_checker_class(const char *multipath_dir,
-					       const char *name)
+static struct checker_class *add_checker_class(const char *name)
 {
 	char libname[LIB_CHECKER_NAMELEN];
 	struct stat stbuf;
@@ -148,10 +149,10 @@ static struct checker_class *add_checker_class(const char *multipath_dir,
 	if (!strncmp(c->name, NONE, 4))
 		goto done;
 	snprintf(libname, LIB_CHECKER_NAMELEN, "%s/libcheck%s.so",
-		 multipath_dir, name);
+		 checker_dir, name);
 	if (stat(libname,&stbuf) < 0) {
 		condlog(0,"Checker '%s' not found in %s",
-			name, multipath_dir);
+			name, checker_dir);
 		goto out;
 	}
 	condlog(3, "loading %s checker", libname);
@@ -409,8 +410,7 @@ void checker_clear_message (struct checker *c)
 	c->msgid = CHECKER_MSGID_NONE;
 }
 
-void checker_get(const char *multipath_dir, struct checker *dst,
-		 const char *name)
+void checker_get(struct checker *dst, const char *name)
 {
 	struct checker_class *src = NULL;
 
@@ -420,7 +420,7 @@ void checker_get(const char *multipath_dir, struct checker *dst,
 	if (name && strlen(name)) {
 		src = checker_class_lookup(name);
 		if (!src)
-			src = add_checker_class(multipath_dir, name);
+			src = add_checker_class(name);
 	}
 	dst->cls = src;
 	if (!src)
@@ -429,7 +429,7 @@ void checker_get(const char *multipath_dir, struct checker *dst,
 	(void)checker_class_ref(dst->cls);
 }
 
-int init_checkers(const char *multipath_dir)
+int init_checkers(void)
 {
 #ifdef LOAD_ALL_SHARED_LIBS
 	static const char *const all_checkers[] = {
@@ -444,9 +444,9 @@ int init_checkers(const char *multipath_dir)
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(all_checkers); i++)
-		add_checker_class(multipath_dir, all_checkers[i]);
+		add_checker_class(all_checkers[i]);
 #else
-	if (!add_checker_class(multipath_dir, DEFAULT_CHECKER))
+	if (!add_checker_class(DEFAULT_CHECKER))
 		return 1;
 #endif
 	return 0;

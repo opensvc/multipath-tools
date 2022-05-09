@@ -198,7 +198,7 @@ struct foreign {
  * @param enable: regex to match foreign library name ("*" above) against
  * @returns: 0 on success, negative value on failure.
  */
-int init_foreign(const char *multipath_dir, const char *enable);
+int init_foreign(const char *enable);
 
 /**
  * cleanup_foreign(dir)

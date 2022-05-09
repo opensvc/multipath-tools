@@ -139,7 +139,6 @@ uninitialize_path(struct path *pp)
 
 	pp->dmstate = PSTATE_UNDEF;
 	pp->uid_attribute = NULL;
-	pp->getuid = NULL;
 
 	if (checker_selected(&pp->checker))
 		checker_put(&pp->checker);

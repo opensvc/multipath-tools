@@ -116,32 +116,6 @@ set_str(vector strvec, void *ptr, const char *file, int line_nr)
 }
 
 static int
-set_dir(vector strvec, void *ptr, const char *file, int line_nr)
-{
-	char **str_ptr = (char **)ptr;
-	char *old_str = *str_ptr;
-	struct stat sb;
-
-	*str_ptr = set_value(strvec);
-	if (!*str_ptr) {
-		free(old_str);
-		return 1;
-	}
-	if ((*str_ptr)[0] != '/'){
-		condlog(1, "%s line %d, %s is not an absolute directory path. Ignoring", file, line_nr, *str_ptr);
-		*str_ptr = old_str;
-	} else {
-		if (stat(*str_ptr, &sb) == 0 && S_ISDIR(sb.st_mode))
-			free(old_str);
-		else {
-			condlog(1, "%s line %d, %s is not an existing directory. Ignoring", file, line_nr, *str_ptr);
-			*str_ptr = old_str;
-		}
-	}
-	return 0;
-}
-
-static int
 set_path(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	char **str_ptr = (char **)ptr;
@@ -285,6 +259,22 @@ def_ ## option ## _handler (struct config *conf, vector strvec,		\
 		warned = true;						\
 	}								\
 	return function (strvec, &conf->option, file, line_nr);		\
+}
+
+static int deprecated_handler(struct config *conf, vector strvec, const char *file,
+			      int line_nr);
+
+#define declare_deprecated_handler(option)				\
+static int								\
+deprecated_ ## option ## _handler (struct config *conf, vector strvec,	\
+				   const char *file, int line_nr)	\
+{									\
+	static bool warned;						\
+	if (!warned) {							\
+		condlog(1, "%s line %d: ignoring deprecated option \"" #option "\"", file, line_nr); \
+		warned = true;						\
+	}								\
+	return deprecated_handler(conf, strvec, file, line_nr);		\
 }
 
 #define declare_def_range_handler(option, minval, maxval)			\
@@ -463,8 +453,7 @@ declare_def_snprint(verbosity, print_int)
 declare_def_handler(reassign_maps, set_yes_no)
 declare_def_snprint(reassign_maps, print_yes_no)
 
-declare_def_warn_handler(multipath_dir, set_dir)
-declare_def_snprint(multipath_dir, print_str)
+declare_deprecated_handler(multipath_dir)
 
 static int def_partition_delim_handler(struct config *conf, vector strvec,
 				       const char *file, int line_nr)
@@ -645,13 +634,6 @@ declare_ovr_handler(uid_attribute, set_str)
 declare_ovr_snprint(uid_attribute, print_str)
 declare_hw_handler(uid_attribute, set_str)
 declare_hw_snprint(uid_attribute, print_str)
-
-declare_def_handler(getuid, set_str)
-declare_def_snprint(getuid, print_str)
-declare_ovr_handler(getuid, set_str)
-declare_ovr_snprint(getuid, print_str)
-declare_hw_handler(getuid, set_str)
-declare_hw_snprint(getuid, print_str)
 
 declare_def_handler(prio_name, set_str)
 declare_def_snprint_defstr(prio_name, print_str, DEFAULT_PRIO)
@@ -857,26 +839,8 @@ declare_def_handler(enable_foreign, set_str)
 declare_def_snprint_defstr(enable_foreign, print_str,
 			   DEFAULT_ENABLE_FOREIGN)
 
-static int
-def_config_dir_handler(struct config *conf, vector strvec, const char *file,
-		       int line_nr)
-{
-	static bool warned;
-
-	/* this is only valid in the main config file */
-	if (conf->processed_main_config) {
-		condlog(1, "%s line %d, config_dir option only valid in /etc/multipath.conf",
-			file, line_nr);
-		return 0;
-	}
-	if (!warned) {
-		condlog(2, "%s line %d, \"config_dir\" is deprecated and will be disabled in a future release",
-			file, line_nr);
-		warned = true;
-	}
-	return set_path(strvec, &conf->config_dir, file, line_nr);
-}
-declare_def_snprint(config_dir, print_str)
+declare_deprecated_handler(config_dir)
+declare_deprecated_handler(pg_timeout)
 
 #define declare_def_attr_handler(option, function)			\
 static int								\
@@ -2019,7 +1983,7 @@ snprint_deprecated (struct config *conf, struct strbuf *buff, const void * data)
 	return 0;
 }
 
-#define __deprecated
+declare_deprecated_handler(getuid_callout)
 
 /*
  * If you add or remove a keyword also update multipath/multipath.conf.5
@@ -2032,12 +1996,12 @@ init_keywords(vector keywords)
 	install_keyword("polling_interval", &checkint_handler, &snprint_def_checkint);
 	install_keyword("max_polling_interval", &def_max_checkint_handler, &snprint_def_max_checkint);
 	install_keyword("reassign_maps", &def_reassign_maps_handler, &snprint_def_reassign_maps);
-	install_keyword("multipath_dir", &def_multipath_dir_handler, &snprint_def_multipath_dir);
+	install_keyword("multipath_dir", &deprecated_multipath_dir_handler, &snprint_deprecated);
 	install_keyword("path_selector", &def_selector_handler, &snprint_def_selector);
 	install_keyword("path_grouping_policy", &def_pgpolicy_handler, &snprint_def_pgpolicy);
 	install_keyword("uid_attrs", &uid_attrs_handler, &snprint_uid_attrs);
 	install_keyword("uid_attribute", &def_uid_attribute_handler, &snprint_def_uid_attribute);
-	install_keyword("getuid_callout", &def_getuid_handler, &snprint_def_getuid);
+	install_keyword("getuid_callout", &deprecated_getuid_callout_handler, &snprint_deprecated);
 	install_keyword("prio", &def_prio_name_handler, &snprint_def_prio_name);
 	install_keyword("prio_args", &def_prio_args_handler, &snprint_def_prio_args);
 	install_keyword("features", &def_features_handler, &snprint_def_features);
@@ -2053,7 +2017,7 @@ init_keywords(vector keywords)
 	install_keyword("queue_without_daemon", &def_queue_without_daemon_handler, &snprint_def_queue_without_daemon);
 	install_keyword("checker_timeout", &def_checker_timeout_handler, &snprint_def_checker_timeout);
 	install_keyword("allow_usb_devices", &def_allow_usb_devices_handler, &snprint_def_allow_usb_devices);
-	install_keyword("pg_timeout", &deprecated_handler, &snprint_deprecated);
+	install_keyword("pg_timeout", &deprecated_pg_timeout_handler, &snprint_deprecated);
 	install_keyword("flush_on_last_del", &def_flush_on_last_del_handler, &snprint_def_flush_on_last_del);
 	install_keyword("user_friendly_names", &def_user_friendly_names_handler, &snprint_def_user_friendly_names);
 	install_keyword("mode", &def_mode_handler, &snprint_def_mode);
@@ -2075,7 +2039,7 @@ init_keywords(vector keywords)
 	install_keyword("strict_timing", &def_strict_timing_handler, &snprint_def_strict_timing);
 	install_keyword("deferred_remove", &def_deferred_remove_handler, &snprint_def_deferred_remove);
 	install_keyword("partition_delimiter", &def_partition_delim_handler, &snprint_def_partition_delim);
-	install_keyword("config_dir", &def_config_dir_handler, &snprint_def_config_dir);
+	install_keyword("config_dir", &deprecated_config_dir_handler, &snprint_deprecated);
 	install_keyword("delay_watch_checks", &def_delay_watch_checks_handler, &snprint_def_delay_watch_checks);
 	install_keyword("delay_wait_checks", &def_delay_wait_checks_handler, &snprint_def_delay_wait_checks);
 	install_keyword("san_path_err_threshold", &def_san_path_err_threshold_handler, &snprint_def_san_path_err_threshold);
@@ -2103,12 +2067,6 @@ init_keywords(vector keywords)
 			&snprint_def_enable_foreign);
 	install_keyword("marginal_pathgroups", &def_marginal_pathgroups_handler, &snprint_def_marginal_pathgroups);
 	install_keyword("recheck_wwid", &def_recheck_wwid_handler, &snprint_def_recheck_wwid);
-	__deprecated install_keyword("default_selector", &def_selector_handler, NULL);
-	__deprecated install_keyword("default_path_grouping_policy", &def_pgpolicy_handler, NULL);
-	__deprecated install_keyword("default_uid_attribute", &def_uid_attribute_handler, NULL);
-	__deprecated install_keyword("default_getuid_callout", &def_getuid_handler, NULL);
-	__deprecated install_keyword("default_features", &def_features_handler, NULL);
-	__deprecated install_keyword("default_path_checker", &def_checker_name_handler, NULL);
 
 	install_keyword_root("blacklist", &blacklist_handler);
 	install_keyword_multi("devnode", &ble_blist_devnode_handler, &snprint_ble_simple);
@@ -2131,16 +2089,6 @@ init_keywords(vector keywords)
 	install_keyword("product", &ble_elist_device_product_handler, &snprint_bled_product);
 	install_sublevel_end();
 
-#if 0
-	__deprecated install_keyword_root("devnode_blacklist", &blacklist_handler);
-	__deprecated install_keyword("devnode", &ble_devnode_handler, &snprint_ble_simple);
-	__deprecated install_keyword("wwid", &ble_wwid_handler, &snprint_ble_simple);
-	__deprecated install_keyword("device", &ble_device_handler, NULL);
-	__deprecated install_sublevel();
-	__deprecated install_keyword("vendor", &ble_vendor_handler, &snprint_bled_vendor);
-	__deprecated install_keyword("product", &ble_product_handler, &snprint_bled_product);
-	__deprecated install_sublevel_end();
-#endif
 /*
  * If you add or remove a "device subsection" keyword also update
  * multipath/multipath.conf.5 and the TEMPLATE in libmultipath/hwtable.c
@@ -2154,7 +2102,7 @@ init_keywords(vector keywords)
 	install_keyword("product_blacklist", &hw_bl_product_handler, &snprint_hw_bl_product);
 	install_keyword("path_grouping_policy", &hw_pgpolicy_handler, &snprint_hw_pgpolicy);
 	install_keyword("uid_attribute", &hw_uid_attribute_handler, &snprint_hw_uid_attribute);
-	install_keyword("getuid_callout", &hw_getuid_handler, &snprint_hw_getuid);
+	install_keyword("getuid_callout", &deprecated_getuid_callout_handler, &snprint_deprecated);
 	install_keyword("path_selector", &hw_selector_handler, &snprint_hw_selector);
 	install_keyword("path_checker", &hw_checker_name_handler, &snprint_hw_checker_name);
 	install_keyword("checker", &hw_checker_name_handler, NULL);
@@ -2198,7 +2146,7 @@ init_keywords(vector keywords)
 	install_keyword_root("overrides", &overrides_handler);
 	install_keyword("path_grouping_policy", &ovr_pgpolicy_handler, &snprint_ovr_pgpolicy);
 	install_keyword("uid_attribute", &ovr_uid_attribute_handler, &snprint_ovr_uid_attribute);
-	install_keyword("getuid_callout", &ovr_getuid_handler, &snprint_ovr_getuid);
+	install_keyword("getuid_callout", &deprecated_getuid_callout_handler, &snprint_deprecated);
 	install_keyword("path_selector", &ovr_selector_handler, &snprint_ovr_selector);
 	install_keyword("path_checker", &ovr_checker_name_handler, &snprint_ovr_checker_name);
 	install_keyword("checker", &ovr_checker_name_handler, NULL);

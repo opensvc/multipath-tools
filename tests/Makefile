@@ -1,5 +1,8 @@
 include ../Makefile.inc
 
+# directory where to run the tests
+TESTDIR := $(CURDIR)
+
 # Test special behavior of gcc 4.8 with nested initializers
 # gcc 4.8 compiles blacklist.c only with -Wno-missing-field-initializers
 TEST_MISSING_INITIALIZERS = $(shell \
@@ -9,7 +12,7 @@ TEST_MISSING_INITIALIZERS = $(shell \
 W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)
 
 CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathcmddir) \
-	-Wno-unused-parameter $(W_MISSING_INITIALIZERS)
+	-Wno-unused-parameter $(W_MISSING_INITIALIZERS) -DTESTCONFDIR=\"$(TESTDIR)/conf.d\"
 LIBDEPS += -L. -L$(mpathcmddir) -lmultipath -lmpathcmd -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
@@ -40,6 +43,9 @@ mpathvalid-test_FLAGS := -I$(mpathvaliddir)
 #    That may be necessary if functions called from the object file are wrapped
 #    (wrapping works only for symbols which are undefined after processing a
 #    linker input file).
+#    Some object files, e.g. "config.o", are compiled separately for the
+#    unit tests. Look for OBJS-U in libmultipath/Makefile. Make sure to use the
+#    unit test file, e.g. "config-test.o", in XYZ-test_OBJDEPS
 # XYZ-test_LIBDEPS: Additional libs to link for this test
 
 dmevents-test_OBJDEPS = ../libmultipath/devmapper.o
@@ -91,7 +97,7 @@ valgrind_clean:
 
 clean: test_clean valgrind_clean dep_clean
 	$(RM) $(TESTS:%=%-test) $(OBJS) *.o.wrap
-	$(RM) -rf lib
+	$(RM) -rf lib conf.d
 
 .SECONDARY: $(OBJS)
 
@@ -105,7 +111,7 @@ dep_clean:
 		sort -u | tr '\n' ' ' >$@
 
 libmultipath.so.0:
-	$(MAKE) -C $(multipathdir) test-lib
+	make -C $(multipathdir) configdir=$(TESTDIR)/conf.d plugindir=$(TESTDIR)/lib test-lib
 
 # COLON will get expanded during second expansion below
 COLON:=:

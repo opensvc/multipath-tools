@@ -40,6 +40,7 @@ enum force_reload_types {
 	FORCE_RELOAD_WEAK,
 };
 
+#define PCE_INVALID -1
 struct pcentry {
 	int type;
 	int fast_io_fail;
@@ -52,7 +53,6 @@ struct hwentry {
 	char * product;
 	char * revision;
 	char * uid_attribute;
-	char * getuid;
 	char * features;
 	char * hwhandler;
 	char * selector;
@@ -100,7 +100,6 @@ struct mpentry {
 	char * wwid;
 	char * alias;
 	char * uid_attribute;
-	char * getuid;
 	char * selector;
 	char * features;
 
@@ -198,11 +197,9 @@ struct config {
 	unsigned int sequence_nr;
 	int recheck_wwid;
 
-	char * multipath_dir;
 	char * selector;
 	struct _vector uid_attrs;
 	char * uid_attribute;
-	char * getuid;
 	char * features;
 	char * hwhandler;
 	char * bindings_file;
@@ -213,7 +210,6 @@ struct config {
 	char * checker_name;
 	char * alias_prefix;
 	char * partition_delim;
-	char * config_dir;
 	int prkey_source;
 	int all_tg_pt;
 	struct be64 reservation_key;

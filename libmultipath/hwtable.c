@@ -182,8 +182,8 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* MSA 1040, 1050, 1060, 2040, 2050 and 2060 families */
-		.vendor        = "HP",
-		.product       = "MSA [12]0[456]0 SA[NS]",
+		.vendor        = "(HP|HPE)",
+		.product       = "MSA [12]0[456]0 (SAN|SAS|FC|iSCSI)",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 18,
