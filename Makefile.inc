@@ -117,6 +117,20 @@ TEST_CC_OPTION = $(shell \
 		echo "$(2)"; \
 	fi)
 
+# "make" on some distros will fail on explicit '#' or '\#' in the program text below
+__HASH__ := \#
+# Check if _DFORTIFY_SOURCE=3 is supported.
+# On some distros (e.g. Debian Buster) it will be falsely reported as supported
+# but it doesn't seem to make a difference wrt the compilation result.
+FORTIFY_OPT := $(shell \
+	if /bin/echo -e '$(__HASH__)include <string.h>\nint main(void) { return 0; }' | \
+		$(CC) -o /dev/null -c -O2 -Werror -D_FORTIFY_SOURCE=3 -xc - 2>/dev/null; \
+	then \
+		echo "-D_FORTIFY_SOURCE=3"; \
+	else \
+		echo "-D_FORTIFY_SOURCE=2"; \
+	fi)
+
 STACKPROT := $(call TEST_CC_OPTION,-fstack-protector-strong,-fstack-protector)
 ERROR_DISCARDED_QUALIFIERS := $(call TEST_CC_OPTION,-Werror=discarded-qualifiers,)
 WNOCLOBBERED := $(call TEST_CC_OPTION,-Wno-clobbered -Wno-error=clobbered,)
@@ -126,7 +140,7 @@ OPTFLAGS	:= -O2 -g $(STACKPROT) --param=ssp-buffer-size=4
 WARNFLAGS	:= -Werror -Wall -Wextra -Wformat=2 $(WFORMATOVERFLOW) -Werror=implicit-int \
 		  -Werror=implicit-function-declaration -Werror=format-security \
 		  $(WNOCLOBBERED) -Werror=cast-qual $(ERROR_DISCARDED_QUALIFIERS)
-CPPFLAGS	:= -D_FORTIFY_SOURCE=2
+CPPFLAGS	:= $(FORTIFY_OPT)
 CFLAGS		:= --std=gnu99 $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe \
 		   -DBIN_DIR=\"$(bindir)\" -DMULTIPATH_DIR=\"$(plugindir)\" -DRUN_DIR=\"${RUN}\" \
 		   -DCONFIG_DIR=\"$(configdir)\" -DEXTRAVERSION=\"$(EXTRAVERSION)\" -MMD -MP
