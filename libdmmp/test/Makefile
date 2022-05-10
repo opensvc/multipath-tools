@@ -9,7 +9,7 @@ _mpathcmddir=../$(mpathcmddir)
 
 TEST_EXEC = libdmmp_test
 SPD_TEST_EXEC = libdmmp_speed_test
-CFLAGS += -I$(_libdmmpdir)
+CPPFLAGS += -I$(_libdmmpdir)
 LDFLAGS += -L$(_libdmmpdir) -ldmmp
 
 all: $(TEST_EXEC) $(SPD_TEST_EXEC)

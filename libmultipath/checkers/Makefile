@@ -3,7 +3,8 @@
 #
 include ../../Makefile.inc
 
-CFLAGS += $(LIB_CFLAGS) -I..
+CPPFLAGS += -I..
+CFLAGS += $(LIB_CFLAGS)
 LDFLAGS += -L.. -lmultipath
 LIBDEPS = -lmultipath -laio -lpthread -lrt
 

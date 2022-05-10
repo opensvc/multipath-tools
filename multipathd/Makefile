@@ -1,30 +1,31 @@
 include ../Makefile.inc
 
 ifneq ($(call check_func,dm_task_get_errno,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
-	CFLAGS += -DLIBDM_API_GET_ERRNO
+	CPPFLAGS += -DLIBDM_API_GET_ERRNO
 endif
 
 ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(LINUX_HEADERS_INCDIR)/scsi/fc/fc_els.h),0)
-	CFLAGS += -DFPIN_EVENT_HANDLER
+	CPPFLAGS += -DFPIN_EVENT_HANDLER
 	FPIN_SUPPORT = 1
 endif
 #
 # debugging stuff
 #
-#CFLAGS += -DLCKDBG
-#CFLAGS += -D_DEBUG_
-#CFLAGS += -DLOGDBG
-CFLAGS += $(BIN_CFLAGS) -I$(multipathdir) -I$(mpathpersistdir) \
-	  -I$(mpathcmddir) -I$(thirdpartydir)
+#CPPFLAGS += -DLCKDBG
+#CPPFLAGS += -D_DEBUG_
+#CPPFLAGS += -DLOGDBG
+
+CPPFLAGS += -I$(multipathdir) -I$(mpathpersistdir) -I$(mpathcmddir) -I$(thirdpartydir) \
+	$(shell $(PKGCONFIG) --modversion liburcu 2>/dev/null | \
+		awk -F. '{ printf("-DURCU_VERSION=0x%06x", 256 * ( 256 * $$1 + $$2) + $$3); }')
+CFLAGS += $(BIN_CFLAGS)
 LDFLAGS += $(BIN_LDFLAGS)
 LIBDEPS += -L$(multipathdir) -lmultipath -L$(mpathpersistdir) -lmpathpersist \
 	   -L$(mpathcmddir) -lmpathcmd -ludev -ldl -lurcu -lpthread \
 	   -ldevmapper -lreadline
-CFLAGS += $(shell $(PKGCONFIG) --modversion liburcu 2>/dev/null | \
-	awk -F. '{ printf("-DURCU_VERSION=0x%06x", 256 * ( 256 * $$1 + $$2) + $$3); }')
 
 ifdef SYSTEMD
-	CFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
+	CPPFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
 	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
 		LIBDEPS += -lsystemd
 	else
@@ -32,7 +33,7 @@ ifdef SYSTEMD
 	endif
 endif
 ifeq ($(ENABLE_DMEVENTS_POLL),0)
-	CFLAGS += -DNO_DMEVENTS_POLL
+	CPPFLAGS += -DNO_DMEVENTS_POLL
 endif
 
 OBJS = main.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o waiter.o \
