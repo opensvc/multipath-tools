@@ -72,7 +72,7 @@ endif
 strbuf-test_OBJDEPS := ../libmultipath/strbuf.o
 
 %.o: %.c
-	$(CC) $(CFLAGS) $($*-test_FLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $($*-test_FLAGS) -c -o $@ $<
 
 lib/libchecktur.so:
 	mkdir -p lib

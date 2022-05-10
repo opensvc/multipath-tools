@@ -52,7 +52,7 @@ $(EXEC): $(OBJS) $(multipathdir)/libmultipath.so $(mpathcmddir)/libmpathcmd.so
 	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(EXEC) $(LIBDEPS)
 
 cli_handlers.o:	cli_handlers.c
-	$(CC) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
 
 install:
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)

@@ -191,7 +191,7 @@ check_var = $(shell \
 
 %.o:	%.c
 	@echo building $@ because of $?
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 %.abi:  %.so.0
 	abidw $< >$@

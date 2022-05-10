@@ -70,12 +70,12 @@ OBJS := $(OBJS-O) $(OBJS-U)
 all:	$(DEVLIB)
 
 nvme-lib.o: nvme-lib.c nvme-ioctl.c nvme-ioctl.h
-	$(CC) $(CFLAGS) -Wno-unused-function -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-function -c -o $@ $<
 
 # there are lots of "unused parameters" in dict.c
 # because not all handler / snprint methods need all parameters
 dict.o:	dict.c
-	$(CC) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
 
 make_static = $(shell sed '/^static/!s/^\([a-z]\{1,\} \)/static \1/' <$1 >$2)
 
@@ -112,7 +112,7 @@ abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
 # This rule is invoked from tests/Makefile, overriding configdir and plugindir
 %-test.o: %.c
 	@echo building $@ because of $?
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 test-lib:	../tests/$(LIBS)
 
