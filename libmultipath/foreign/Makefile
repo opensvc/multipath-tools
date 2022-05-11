@@ -4,7 +4,8 @@
 TOPDIR=../..
 include ../../Makefile.inc
 
-CFLAGS += $(LIB_CFLAGS) -I.. -I$(nvmedir)
+CPPFLAGS += -I.. -I$(nvmedir)
+CFLAGS += $(LIB_CFLAGS)
 LDFLAGS += -L..
 LIBDEPS = -lmultipath -ludev -lpthread -lrt
 
