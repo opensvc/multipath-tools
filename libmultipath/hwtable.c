@@ -839,11 +839,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 24,
 	},
 	{
-		/*
-		 * NVMe-FC namespace devices: MULTIBUS, queueing preferred
-		 *
-		 * The hwtable is searched backwards, so place this after "Generic NVMe"
-		 */
+		/* ONTAP NVMe */
 		.vendor        = "NVME",
 		.product       = "^NetApp ONTAP Controller",
 		.pgpolicy      = MULTIBUS,
