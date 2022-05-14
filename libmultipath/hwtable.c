@@ -845,6 +845,15 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
+	{
+		/* E-Series NVMe */
+		.vendor        = "NVME",
+		.product       = "NetApp E-Series",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.prio_name     = PRIO_ANA,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 30,
+	},
 	/*
 	 * NEC
 	 */
