@@ -1106,6 +1106,14 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 15,
 	},
+	{
+		/* OceanStor NVMe */
+		.vendor        = "NVME",
+		.product       = "Huawei-XSG1",
+		.pgpolicy      = MULTIBUS,
+		.checker_name  = DIRECTIO,
+		.no_path_retry = 12,
+	},
 	/*
 	 * Kove
 	 */
