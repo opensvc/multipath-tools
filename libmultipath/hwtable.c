@@ -1107,6 +1107,13 @@ static struct hwentry default_hw[] = {
 		.fast_io_fail  = 10,
 		.max_sectors_kb = 4096,
 	},
+	{
+		/* FlashArray NVMe */
+		.vendor        = "NVME",
+		.product       = "Pure Storage FlashArray",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 10,
+	},
 	/*
 	 * Huawei
 	 */
