@@ -734,6 +734,13 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 	},
 	{
+		/* FlashSystem(RamSan) NVMe */
+		.vendor        = "NVMe",
+		.product       = "FlashSystem",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = NO_PATH_RETRY_FAIL,
+	},
+	{
 		/* (DDN) DCS9900, SONAS 2851-DR1 */
 		.vendor        = "IBM",
 		.product       = "^(DCS9900|2851)",
