@@ -96,7 +96,7 @@ int libcheck_init (struct checker * c)
 		goto out;
 	}
 
-	/* get the changeble values */
+	/* get the changeable values */
 	cmd[2] = 0xA + (CHANGEABLE_PAGE_CODE_VALUES << 6);
 	io_hdr.dxferp = &changeable;
 	memset(&changeable, 0, sizeof(struct control_mode_page));
