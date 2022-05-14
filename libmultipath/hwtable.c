@@ -404,6 +404,15 @@ static struct hwentry default_hw[] = {
 		.fast_io_fail  = 15,
 	},
 	{
+		/* PowerStore NVMe */
+		.vendor        = ".*",
+		.product       = "dellemc-powerstore",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.prio_name     = PRIO_ANA,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 3,
+	},
+	{
 		/* PowerVault ME 4/5 families */
 		.vendor        = "DellEMC",
 		.product       = "^ME",
