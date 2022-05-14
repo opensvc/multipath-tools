@@ -681,6 +681,13 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 	},
 	{
+		/* FlashSystem(Storwize/SVC) NVMe */
+		.vendor        = "NVME",
+		.product       = "IBM[ ]+2145",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+	},
+	{
 		/* PAV DASD ECKD */
 		.vendor        = "IBM",
 		.product       = "S/390 DASD ECKD",
