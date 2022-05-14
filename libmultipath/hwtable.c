@@ -120,6 +120,13 @@ static struct hwentry default_hw[] = {
 		.vpd_vendor_id = VPD_VP_HP3PAR,
 	},
 	{
+		/* Alletra 9000 NVMe */
+		.vendor        = "NVME",
+		.product       = "HPE Alletra",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+	},
+	{
 		/* RA8000 / ESA12000 */
 		.vendor        = "DEC",
 		.product       = "HSG80",
