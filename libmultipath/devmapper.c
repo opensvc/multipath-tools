@@ -682,8 +682,8 @@ int dm_get_map(const char *name, unsigned long long *size, char **outparams)
 	r = DMP_NOT_FOUND;
 	/* Fetch 1st target */
 	if (dm_get_next_target(dmt, NULL, &start, &length,
-			       &target_type, &params) != NULL)
-		/* more than one target */
+			       &target_type, &params) != NULL || !params)
+		/* more than one target or not found target */
 		goto out;
 
 	if (size)
