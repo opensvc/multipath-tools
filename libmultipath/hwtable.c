@@ -90,7 +90,8 @@ static struct hwentry default_hw[] = {
 		.product       = ".*",
 		.uid_attribute = DEFAULT_NVME_UID_ATTRIBUTE,
 		.checker_name  = NONE,
-		.retain_hwhandler = RETAIN_HWHANDLER_OFF,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
 	},
 	/*
 	 * Apple
