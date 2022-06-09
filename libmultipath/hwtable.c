@@ -468,12 +468,6 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
 	},
-	{
-		/* ETERNUS AB/HB NVMe */
-		.vendor        = "NVME",
-		.product       = "Fujitsu ETERNUS AB/HB Series",
-		.no_path_retry = 30,
-	},
 	/*
 	 * Hitachi Vantara
 	 *
