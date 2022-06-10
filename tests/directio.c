@@ -693,7 +693,7 @@ static void test_check_state_blksize(void **state)
 	do_libcheck_reset(1);
 }
 
-/* test async checkers pending and getting resovled by another checker
+/* test async checkers pending and getting resolved by another checker
  * as well as the loops for getting multiple events */
 static void test_check_state_async(void **state)
 {

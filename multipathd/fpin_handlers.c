@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <libudev.h>

@@ -682,8 +682,8 @@ int dm_get_map(const char *name, unsigned long long *size, char **outparams)
 	r = DMP_NOT_FOUND;
 	/* Fetch 1st target */
 	if (dm_get_next_target(dmt, NULL, &start, &length,
-			       &target_type, &params) != NULL)
-		/* more than one target */
+			       &target_type, &params) != NULL || !params)
+		/* more than one target or not found target */
 		goto out;
 
 	if (size)
@@ -1715,6 +1715,16 @@ int dm_reassign_table(const char *name, char *old, char *new)
 	do {
 		next = dm_get_next_target(dmt, next, &start, &length,
 					  &target, &params);
+		if (!target || !params) {
+			/*
+			 * We can't call dm_task_add_target() with
+			 * invalid parameters. But simply dropping this
+			 * target feels wrong, too. Abort and warn.
+			 */
+			condlog(1, "%s: invalid target found in map %s",
+				__func__, name);
+			goto out_reload;
+		}
 		buff = strdup(params);
 		if (!buff) {
 			condlog(3, "%s: failed to replace target %s, "

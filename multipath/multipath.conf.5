@@ -1497,6 +1497,18 @@ section:
 .SH "devices section"
 .\" ----------------------------------------------------------------------------
 .
+.TP 4
+.B Important:
+The built-in hardware device table of
+.I multipath-tools
+is created by members of the Linux community in the hope that it will be useful.
+The existence of an entry for a given storage product in the hardware table
+.B does not imply
+that the product vendor supports, or has tested, the product with
+.I multipath-tools
+in any way.
+.B Always consult the vendor\(aqs official documentation for support-related information.
+.PP
 \fImultipath-tools\fR have a built-in device table with reasonable defaults
 for more than 100 known multipath-capable storage devices. The devices section
 can be used to override these settings. If there are multiple matches for a
@@ -1766,7 +1778,7 @@ The protocol string of the path device. The possible values are \fIscsi:fcp\fR,
 \fIscsi:spi\fR, \fIscsi:ssa\fR, \fIscsi:sbp\fR, \fIscsi:srp\fR,
 \fIscsi:iscsi\fR, \fIscsi:sas\fR, \fIscsi:adt\fR, \fIscsi:ata\fR,
 \fIscsi:unspec\fR, \fIccw\fR, \fIcciss\fR, \fInvme\fR, and \fIundef\fR. This is
-\fBnot\fR a regular expression. the path device protcol string must match
+\fBnot\fR a regular expression. the path device protocol string must match
 exactly. The protocol that a path is using can be viewed by running
 \fBmultipathd show paths format "%d %P"\fR
 .LP

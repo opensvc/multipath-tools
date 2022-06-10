@@ -80,7 +80,7 @@ The following variables can be passed to the `make` command line:
 	The default is `/etc/multipath/conf.d`.
  * `ENABLE_LIBDMMP=0`: disable building libdmmp
  * `ENABLE_DMEVENTS_POLL=0`: disable support for the device-mapper event
-   polling API. For use with pre-5.0 kernels that don't supprt dmevent polling
+   polling API. For use with pre-5.0 kernels that don't support dmevent polling
    (but even if you don't use this option, multipath-tools will work with
    these kernels).
  * `SCSI_DH_MODULES_PRELOAD="(list)"`: specify a space-separated list of SCSI

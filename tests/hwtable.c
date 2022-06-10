@@ -573,7 +573,7 @@ static void test_internal_nvme(const struct hwt_state *hwt)
 	assert_ptr_not_equal(mp, NULL);
 	TEST_PROP(checker_name(&pp->checker), NONE);
 	TEST_PROP(pp->uid_attribute, DEFAULT_NVME_UID_ATTRIBUTE);
-	assert_int_equal(mp->pgpolicy, DEFAULT_PGPOLICY);
+	assert_int_equal(mp->pgpolicy, GROUP_BY_PRIO);
 	assert_int_equal(mp->no_path_retry, DEFAULT_NO_PATH_RETRY);
 	assert_int_equal(mp->retain_hwhandler, RETAIN_HWHANDLER_OFF);
 
@@ -586,7 +586,7 @@ static void test_internal_nvme(const struct hwt_state *hwt)
 	assert_ptr_not_equal(mp, NULL);
 	TEST_PROP(checker_name(&pp->checker), NONE);
 	TEST_PROP(pp->uid_attribute, "ID_WWN");
-	assert_int_equal(mp->pgpolicy, MULTIBUS);
+	assert_int_equal(mp->pgpolicy, GROUP_BY_PRIO);
 	assert_int_equal(mp->no_path_retry, NO_PATH_RETRY_QUEUE);
 	assert_int_equal(mp->retain_hwhandler, RETAIN_HWHANDLER_OFF);
 }
