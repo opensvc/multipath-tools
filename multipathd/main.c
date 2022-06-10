@@ -37,6 +37,7 @@
 /*
  * libmultipath
  */
+#include "version.h"
 #include "parser.h"
 #include "vector.h"
 #include "config.h"
@@ -127,7 +128,7 @@ static int poll_dmevents = 0;
 static int poll_dmevents = 1;
 #endif
 /* Don't access this variable without holding config_lock */
-static volatile enum daemon_status running_state = DAEMON_INIT;
+static enum daemon_status running_state = DAEMON_INIT;
 /* Don't access this variable without holding config_lock */
 static bool __delayed_reconfig;
 pid_t daemon_pid;
@@ -153,16 +154,6 @@ static inline enum daemon_status get_running_state(void)
 int should_exit(void)
 {
 	return get_running_state() == DAEMON_SHUTDOWN;
-}
-
-static bool get_delayed_reconfig(void)
-{
-	bool val;
-
-	pthread_mutex_lock(&config_lock);
-	val = __delayed_reconfig;
-	pthread_mutex_unlock(&config_lock);
-	return val;
 }
 
 /*
@@ -287,17 +278,6 @@ enum daemon_status wait_for_state_change_if(enum daemon_status oldstate,
 
 /* Don't access this variable without holding config_lock */
 static enum force_reload_types reconfigure_pending = FORCE_RELOAD_NONE;
-/* Only set while changing to DAEMON_CONFIGURE, and only access while
- * reconfiguring or scheduling a delayed reconfig in DAEMON_CONFIGURE */
-static volatile enum force_reload_types reload_type = FORCE_RELOAD_NONE;
-
-static void enable_delayed_reconfig(void)
-{
-	pthread_mutex_lock(&config_lock);
-	reconfigure_pending = reload_type;
-	__delayed_reconfig = true;
-	pthread_mutex_unlock(&config_lock);
-}
 
 /* must be called with config_lock held */
 static void __post_config_state(enum daemon_status state)
@@ -305,33 +285,11 @@ static void __post_config_state(enum daemon_status state)
 	if (state != running_state && running_state != DAEMON_SHUTDOWN) {
 		enum daemon_status old_state = running_state;
 
-		/*
-		 * Handle a pending reconfigure request.
-		 * DAEMON_IDLE is set from child() after reconfigure(),
-		 * or from checkerloop() after completing checkers.
-		 * In either case, child() will see DAEMON_CONFIGURE
-		 * again and start another reconfigure cycle.
-		 */
-		if (reconfigure_pending != FORCE_RELOAD_NONE &&
-		    state == DAEMON_IDLE &&
-		    (old_state == DAEMON_CONFIGURE ||
-		     old_state == DAEMON_RUNNING)) {
-			/*
-			 * notify systemd of transient idle state, lest systemd
-			 * thinks the reload lasts forever.
-			 */
-			do_sd_notify(old_state, DAEMON_IDLE);
-			old_state = DAEMON_IDLE;
-			state = DAEMON_CONFIGURE;
-		}
-		if (state == DAEMON_CONFIGURE) {
-			reload_type = (reconfigure_pending == FORCE_RELOAD_YES) ? FORCE_RELOAD_YES : FORCE_RELOAD_WEAK;
-			reconfigure_pending = FORCE_RELOAD_NONE;
-			__delayed_reconfig = false;
-		}
 		running_state = state;
 		pthread_cond_broadcast(&config_cond);
 		do_sd_notify(old_state, state);
+		condlog(4, "daemon state %s -> %s",
+			daemon_status_msg[old_state], daemon_status_msg[state]);
 	}
 }
 
@@ -341,6 +299,38 @@ void post_config_state(enum daemon_status state)
 	pthread_cleanup_push(config_cleanup, NULL);
 	__post_config_state(state);
 	pthread_cleanup_pop(1);
+}
+
+static bool unblock_reconfigure(void)
+{
+	bool was_delayed;
+
+	pthread_mutex_lock(&config_lock);
+	was_delayed = __delayed_reconfig;
+	if (was_delayed) {
+		__delayed_reconfig = false;
+		/*
+		 * In IDLE state, make sure child() is woken up
+		 * Otherwise it will wake up when state switches to IDLE
+		 */
+		if (running_state == DAEMON_IDLE)
+			__post_config_state(DAEMON_CONFIGURE);
+	}
+	pthread_mutex_unlock(&config_lock);
+	if (was_delayed)
+		condlog(3, "unblocked delayed reconfigure");
+	return was_delayed;
+}
+
+/*
+ * Make sure child() is woken up when a map is removed that multipathd
+ * is currently waiting for.
+ * Overrides libmultipath's weak symbol by the same name
+ */
+void remove_map_callback(struct multipath *mpp)
+{
+	if (mpp->wait_for_udev > 0)
+		unblock_reconfigure();
 }
 
 void schedule_reconfigure(enum force_reload_types requested_type)
@@ -825,12 +815,9 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 		dm_get_info(mpp->alias, &mpp->dmi);
 		if (mpp->wait_for_udev) {
 			mpp->wait_for_udev = 0;
-			if (get_delayed_reconfig() &&
-			    !need_to_delay_reconfig(vecs)) {
-				condlog(2, "reconfigure (delayed)");
-				schedule_reconfigure(FORCE_RELOAD_WEAK);
+			if (!need_to_delay_reconfig(vecs) &&
+			    unblock_reconfigure())
 				return 0;
-			}
 		}
 		/*
 		 * Not really an error -- we generate our own uevent
@@ -1130,6 +1117,28 @@ out:
 	return ret;
 }
 
+static int
+sysfs_get_ro (struct path *pp)
+{
+	int ro;
+	char buff[3]; /* Either "0\n\0" or "1\n\0" */
+
+	if (!pp->udev)
+		return -1;
+
+	if (sysfs_attr_get_value(pp->udev, "ro", buff, sizeof(buff)) <= 0) {
+		condlog(3, "%s: Cannot read ro attribute in sysfs", pp->dev);
+		return -1;
+	}
+
+	if (sscanf(buff, "%d\n", &ro) != 1 || ro < 0 || ro > 1) {
+		condlog(3, "%s: Cannot parse ro attribute", pp->dev);
+		return -1;
+	}
+
+	return ro;
+}
+
 /*
  * returns:
  * 0: added
@@ -1143,6 +1152,7 @@ ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 	int retries = 3;
 	int start_waiter = 0;
 	int ret;
+	int ro;
 
 	/*
 	 * need path UID to go any further
@@ -1206,6 +1216,11 @@ rescan:
 
 	/* persistent reservation check*/
 	mpath_pr_event_handle(pp);
+
+	/* ro check - if new path is ro, force map to be ro as well */
+	ro = sysfs_get_ro(pp);
+	if (ro == 1)
+		mpp->force_readonly = 1;
 
 	if (!need_do_map)
 		return 0;
@@ -1444,28 +1459,6 @@ finish_path_init(struct path *pp, struct vectors * vecs)
 	condlog(0, "%s: error fully initializing path, removing", pp->dev);
 	ev_remove_path(pp, vecs, 1);
 	return -1;
-}
-
-static int
-sysfs_get_ro (struct path *pp)
-{
-	int ro;
-	char buff[3]; /* Either "0\n\0" or "1\n\0" */
-
-	if (!pp->udev)
-		return -1;
-
-	if (sysfs_attr_get_value(pp->udev, "ro", buff, sizeof(buff)) <= 0) {
-		condlog(3, "%s: Cannot read ro attribute in sysfs", pp->dev);
-		return -1;
-	}
-
-	if (sscanf(buff, "%d\n", &ro) != 1 || ro < 0 || ro > 1) {
-		condlog(3, "%s: Cannot parse ro attribute", pp->dev);
-		return -1;
-	}
-
-	return ro;
 }
 
 static bool
@@ -1934,11 +1927,8 @@ missing_uev_wait_tick(struct vectors *vecs)
 		}
 	}
 
-	if (timed_out && get_delayed_reconfig() &&
-	    !need_to_delay_reconfig(vecs)) {
-		condlog(2, "reconfigure (delayed)");
-		schedule_reconfigure(FORCE_RELOAD_WEAK);
-	}
+	if (timed_out && !need_to_delay_reconfig(vecs))
+		unblock_reconfigure();
 }
 
 static void
@@ -2577,7 +2567,6 @@ checkerloop (void *ap)
 	rcu_register_thread();
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 	vecs = (struct vectors *)ap;
-	condlog(2, "path checkers start up");
 
 	/* Tweak start time for initial path check */
 	get_monotonic_time(&last_time);
@@ -2714,8 +2703,8 @@ checkerloop (void *ap)
 	return NULL;
 }
 
-int
-configure (struct vectors * vecs)
+static int
+configure (struct vectors * vecs, enum force_reload_types reload_type)
 {
 	struct multipath * mpp;
 	struct path * pp;
@@ -2846,11 +2835,58 @@ void rcu_free_config(struct rcu_head *head)
 	free_config(conf);
 }
 
-int
-reconfigure (struct vectors * vecs)
+static bool reconfigure_check_uid_attrs(const struct _vector *old_attrs,
+					const struct _vector *new_attrs)
+{
+	int i;
+	char *old;
+
+	if (VECTOR_SIZE(old_attrs) != VECTOR_SIZE(new_attrs))
+		return true;
+
+	vector_foreach_slot(old_attrs, old, i) {
+		char *new = VECTOR_SLOT(new_attrs, i);
+
+		if (strcmp(old, new))
+			return true;
+	}
+
+	return false;
+}
+
+static void reconfigure_check(struct config *old, struct config *new)
+{
+	int old_marginal_pathgroups;
+
+	old_marginal_pathgroups = old->marginal_pathgroups;
+	if ((old_marginal_pathgroups == MARGINAL_PATHGROUP_FPIN) !=
+	    (new->marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)) {
+		condlog(1, "multipathd must be restarted to turn %s fpin marginal paths",
+			(old_marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)?
+			"off" : "on");
+		new->marginal_pathgroups = old_marginal_pathgroups;
+	}
+
+	if (reconfigure_check_uid_attrs(&old->uid_attrs, &new->uid_attrs)) {
+		int i;
+		void *ptr;
+
+		condlog(1, "multipathd must be restarted to change uid_attrs, keeping old values");
+		vector_foreach_slot(&new->uid_attrs, ptr, i)
+			free(ptr);
+		vector_reset(&new->uid_attrs);
+		new->uid_attrs = old->uid_attrs;
+
+		/* avoid uid_attrs being freed in rcu_free_config() */
+		old->uid_attrs.allocated = 0;
+		old->uid_attrs.slot = NULL;
+	}
+}
+
+static int
+reconfigure (struct vectors *vecs, enum force_reload_types reload_type)
 {
 	struct config * old, *conf;
-	int old_marginal_pathgroups;
 
 	conf = load_config(DEFAULT_CONFIGFILE);
 	if (!conf)
@@ -2859,6 +2895,7 @@ reconfigure (struct vectors * vecs)
 	if (verbosity)
 		libmp_verbosity = verbosity;
 	setlogmask(LOG_UPTO(libmp_verbosity + 3));
+	condlog(2, "%s: setting up paths and maps", __func__);
 
 	/*
 	 * free old map and path vectors ... they use old conf state
@@ -2880,22 +2917,15 @@ reconfigure (struct vectors * vecs)
 	uxsock_timeout = conf->uxsock_timeout;
 
 	old = rcu_dereference(multipath_conf);
-	old_marginal_pathgroups = old->marginal_pathgroups;
-	if ((old_marginal_pathgroups == MARGINAL_PATHGROUP_FPIN) !=
-	    (conf->marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)) {
-		condlog(1, "multipathd must be restarted to turn %s fpin marginal paths",
-			(old_marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)?
-			"off" : "on");
-		conf->marginal_pathgroups = old_marginal_pathgroups;
-	}
+	reconfigure_check(old, conf);
+
 	conf->sequence_nr = old->sequence_nr + 1;
 	rcu_assign_pointer(multipath_conf, conf);
 	call_rcu(&old->rcu, rcu_free_config);
 #ifdef FPIN_EVENT_HANDLER
 	fpin_clean_marginal_dev_list(NULL);
 #endif
-	configure(vecs);
-
+	configure(vecs, reload_type);
 
 	return 0;
 }
@@ -2938,18 +2968,18 @@ void
 handle_signals(bool nonfatal)
 {
 	if (exit_sig) {
-		condlog(2, "exit (signal)");
+		condlog(3, "exit (signal)");
 		exit_sig = 0;
 		exit_daemon();
 	}
 	if (!nonfatal)
 		return;
 	if (reconfig_sig) {
-		condlog(2, "reconfigure (signal)");
+		condlog(3, "reconfigure (signal)");
 		schedule_reconfigure(FORCE_RELOAD_WEAK);
 	}
 	if (log_reset_sig) {
-		condlog(2, "reset log (signal)");
+		condlog(3, "reset log (signal)");
 		if (logsink == LOGSINK_SYSLOG)
 			log_thread_reset();
 	}
@@ -3258,8 +3288,9 @@ child (__attribute__((unused)) void *param)
 
 	post_config_state(DAEMON_START);
 
-	condlog(2, "--------start up--------");
-	condlog(2, "read " DEFAULT_CONFIGFILE);
+	condlog(2, "multipathd v%d.%d.%d%s: start up",
+		MULTIPATH_VERSION(VERSION_CODE), EXTRAVERSION);
+	condlog(3, "read " DEFAULT_CONFIGFILE);
 
 	if (verbosity)
 		libmp_verbosity = verbosity;
@@ -3277,17 +3308,17 @@ child (__attribute__((unused)) void *param)
 		conf->bindings_read_only = bindings_read_only;
 	uxsock_timeout = conf->uxsock_timeout;
 	rcu_assign_pointer(multipath_conf, conf);
-	if (init_checkers(conf->multipath_dir)) {
+	if (init_checkers()) {
 		condlog(0, "failed to initialize checkers");
 		goto failed;
 	}
-	if (init_prio(conf->multipath_dir)) {
+	if (init_prio()) {
 		condlog(0, "failed to initialize prioritizers");
 		goto failed;
 	}
 	/* Failing this is non-fatal */
 
-	init_foreign(conf->multipath_dir, conf->enable_foreign);
+	init_foreign(conf->enable_foreign);
 
 	if (poll_dmevents)
 		poll_dmevents = dmevent_poll_supported();
@@ -3317,11 +3348,10 @@ child (__attribute__((unused)) void *param)
 	pthread_cleanup_push(config_cleanup, NULL);
 	pthread_mutex_lock(&config_lock);
 
-	__post_config_state(DAEMON_IDLE);
 	rc = pthread_create(&uxlsnr_thr, &misc_attr, uxlsnrloop, vecs);
 	if (!rc) {
 		/* Wait for uxlsnr startup */
-		while (running_state == DAEMON_IDLE)
+		while (running_state == DAEMON_START)
 			pthread_cond_wait(&config_cond, &config_lock);
 		state = running_state;
 	}
@@ -3395,38 +3425,64 @@ child (__attribute__((unused)) void *param)
 	pthread_attr_destroy(&misc_attr);
 
 	while (1) {
+		int rc = 0;
+
 		pthread_cleanup_push(config_cleanup, NULL);
 		pthread_mutex_lock(&config_lock);
 		while (running_state != DAEMON_CONFIGURE &&
-		       running_state != DAEMON_SHUTDOWN)
+		       running_state != DAEMON_SHUTDOWN &&
+		       /*
+			* Check if another reconfigure request was scheduled
+			* while we last ran reconfigure().
+			* We have to test __delayed_reconfig here
+			* to avoid a busy loop
+			*/
+		       (reconfigure_pending == FORCE_RELOAD_NONE
+			 || __delayed_reconfig))
 			pthread_cond_wait(&config_cond, &config_lock);
+
+		if (running_state != DAEMON_CONFIGURE &&
+		    running_state != DAEMON_SHUTDOWN)
+			/* This sets running_state to DAEMON_CONFIGURE */
+			__post_config_state(DAEMON_CONFIGURE);
 		state = running_state;
 		pthread_cleanup_pop(1);
 		if (state == DAEMON_SHUTDOWN)
 			break;
-		if (state == DAEMON_CONFIGURE) {
-			int rc = 0;
 
-			pthread_cleanup_push(cleanup_lock, &vecs->lock);
-			lock(&vecs->lock);
-			pthread_testcancel();
-			if (!need_to_delay_reconfig(vecs))
-				rc = reconfigure(vecs);
-			else
-				enable_delayed_reconfig();
-			lock_cleanup_pop(vecs->lock);
-			if (!rc)
-				post_config_state(DAEMON_IDLE);
-			else {
-				condlog(0, "fatal error applying configuration - aborting");
-				exit_daemon();
-			}
+		/* handle DAEMON_CONFIGURE */
+		pthread_cleanup_push(cleanup_lock, &vecs->lock);
+		lock(&vecs->lock);
+		pthread_testcancel();
+		if (!need_to_delay_reconfig(vecs)) {
+			enum force_reload_types reload_type;
+
+			pthread_mutex_lock(&config_lock);
+			reload_type = reconfigure_pending == FORCE_RELOAD_YES ?
+				FORCE_RELOAD_YES : FORCE_RELOAD_WEAK;
+			reconfigure_pending = FORCE_RELOAD_NONE;
+			__delayed_reconfig = false;
+			pthread_mutex_unlock(&config_lock);
+
+			rc = reconfigure(vecs, reload_type);
+		} else {
+			pthread_mutex_lock(&config_lock);
+			__delayed_reconfig = true;
+			pthread_mutex_unlock(&config_lock);
+			condlog(3, "delaying reconfigure()");
+		}
+		lock_cleanup_pop(vecs->lock);
+		if (!rc)
+			post_config_state(DAEMON_IDLE);
+		else {
+			condlog(0, "fatal error applying configuration - aborting");
+			exit_daemon();
 		}
 	}
 
 	exit_code = 0;
 failed:
-	condlog(2, "--------shut down-------");
+	condlog(2, "multipathd: shut down");
 	/* All cleanup is done in the cleanup_child() exit handler */
 	return sd_notify_exit(exit_code);
 }

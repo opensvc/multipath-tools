@@ -26,6 +26,7 @@
 
 #define TUR_CMD_LEN 6
 #define HEAVY_CHECK_COUNT       10
+#define MAX_NR_TIMEOUTS 1
 
 enum {
 	MSG_TUR_RUNNING = CHECKER_FIRST_MSGID,
@@ -54,6 +55,7 @@ struct tur_checker_context {
 	int holders; /* uatomic access only */
 	int msgid;
 	struct checker_context ctx;
+	unsigned int nr_timeouts;
 };
 
 int libcheck_init (struct checker * c)
@@ -358,8 +360,23 @@ int libcheck_check(struct checker * c)
 		}
 	} else {
 		if (uatomic_read(&ct->holders) > 1) {
+			/* The thread has been cancelled but hasn't quit. */
+			if (ct->nr_timeouts == MAX_NR_TIMEOUTS) {
+				condlog(2, "%d:%d : waiting for stalled tur thread to finish",
+					major(ct->devt), minor(ct->devt));
+				ct->nr_timeouts++;
+			}
 			/*
-			 * The thread has been cancelled but hasn't quit.
+			 * Don't start new threads until the last once has
+			 * finished.
+			 */
+			if (ct->nr_timeouts > MAX_NR_TIMEOUTS) {
+				c->msgid = MSG_TUR_TIMEOUT;
+				return PATH_TIMEOUT;
+			}
+			ct->nr_timeouts++;
+			/*
+			 * Start a new thread while the old one is stalled.
 			 * We have to prevent it from interfering with the new
 			 * thread. We create a new context and leave the old
 			 * one with the stale thread, hoping it will clean up
@@ -375,13 +392,15 @@ int libcheck_check(struct checker * c)
 			 */
 			if (libcheck_init(c) != 0)
 				return PATH_UNCHECKED;
+			((struct tur_checker_context *)c->context)->nr_timeouts = ct->nr_timeouts;
 
 			if (!uatomic_sub_return(&ct->holders, 1))
 				/* It did terminate, eventually */
 				cleanup_context(ct);
 
 			ct = c->context;
-		}
+		} else
+			ct->nr_timeouts = 0;
 		/* Start new TUR checker */
 		pthread_mutex_lock(&ct->lock);
 		tur_status = ct->state = PATH_PENDING;

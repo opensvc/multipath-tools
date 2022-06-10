@@ -111,7 +111,7 @@ static void test_uid_attrs(void **state)
 static void test_wwid(void **state)
 {
 	struct uevent *uev = *state;
-	uevent_get_wwid(uev);
+	uevent_get_wwid(uev, &conf);
 
 	assert_string_equal(uev->wwid, WWID);
 }

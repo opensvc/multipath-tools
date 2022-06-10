@@ -40,12 +40,19 @@ enum force_reload_types {
 	FORCE_RELOAD_WEAK,
 };
 
+#define PCE_INVALID -1
+struct pcentry {
+	int type;
+	int fast_io_fail;
+	unsigned int dev_loss;
+	int eh_deadline;
+};
+
 struct hwentry {
 	char * vendor;
 	char * product;
 	char * revision;
 	char * uid_attribute;
-	char * getuid;
 	char * features;
 	char * hwhandler;
 	char * selector;
@@ -85,13 +92,14 @@ struct hwentry {
 	int vpd_vendor_id;
 	int recheck_wwid;
 	char * bl_product;
+
+	vector pctable;
 };
 
 struct mpentry {
 	char * wwid;
 	char * alias;
 	char * uid_attribute;
-	char * getuid;
 	char * selector;
 	char * features;
 
@@ -189,11 +197,9 @@ struct config {
 	unsigned int sequence_nr;
 	int recheck_wwid;
 
-	char * multipath_dir;
 	char * selector;
 	struct _vector uid_attrs;
 	char * uid_attribute;
-	char * getuid;
 	char * features;
 	char * hwhandler;
 	char * bindings_file;
@@ -204,7 +210,6 @@ struct config {
 	char * checker_name;
 	char * alias_prefix;
 	char * partition_delim;
-	char * config_dir;
 	int prkey_source;
 	int all_tg_pt;
 	struct be64 reservation_key;
@@ -284,6 +289,7 @@ const char *get_mpe_wwid (const struct _vector *mptable, const char *alias);
 
 struct hwentry * alloc_hwe (void);
 struct mpentry * alloc_mpe (void);
+struct pcentry * alloc_pce (void);
 
 void free_hwe (struct hwentry * hwe);
 void free_hwtable (vector hwtable);
@@ -314,7 +320,7 @@ void libmp_put_multipath_config(void *);
 void put_multipath_config(void *);
 
 int parse_uid_attrs(char *uid_attrs, struct config *conf);
-char *get_uid_attribute_by_attrs(struct config *conf,
-				 const char *path_dev);
+const char *get_uid_attribute_by_attrs(const struct config *conf,
+				       const char *path_dev);
 
 #endif

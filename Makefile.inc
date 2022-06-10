@@ -13,6 +13,7 @@
 # SCSI_DH_MODULES_PRELOAD := scsi_dh_alua scsi_dh_rdac
 SCSI_DH_MODULES_PRELOAD :=
 
+EXTRAVERSION := $(shell rev=$$(git rev-parse --short=7 HEAD 2>/dev/null); echo $${rev:+-g$$rev})
 
 PKGCONFIG	?= pkg-config
 
@@ -95,6 +96,8 @@ libdmmpdir	= $(TOPDIR)/libdmmp
 nvmedir		= $(TOPDIR)/libmultipath/nvme
 includedir	= $(prefix)/usr/include
 pkgconfdir	= $(usrlibdir)/pkgconfig
+plugindir       := $(prefix)/$(LIB)/multipath
+configdir       := $(prefix)/etc/multipath/conf.d
 
 GZIP_PROG	= gzip -9 -c
 RM		= rm -f
@@ -114,6 +117,20 @@ TEST_CC_OPTION = $(shell \
 		echo "$(2)"; \
 	fi)
 
+# "make" on some distros will fail on explicit '#' or '\#' in the program text below
+__HASH__ := \#
+# Check if _DFORTIFY_SOURCE=3 is supported.
+# On some distros (e.g. Debian Buster) it will be falsely reported as supported
+# but it doesn't seem to make a difference wrt the compilation result.
+FORTIFY_OPT := $(shell \
+	if /bin/echo -e '$(__HASH__)include <string.h>\nint main(void) { return 0; }' | \
+		$(CC) -o /dev/null -c -O2 -Werror -D_FORTIFY_SOURCE=3 -xc - 2>/dev/null; \
+	then \
+		echo "-D_FORTIFY_SOURCE=3"; \
+	else \
+		echo "-D_FORTIFY_SOURCE=2"; \
+	fi)
+
 STACKPROT := $(call TEST_CC_OPTION,-fstack-protector-strong,-fstack-protector)
 ERROR_DISCARDED_QUALIFIERS := $(call TEST_CC_OPTION,-Werror=discarded-qualifiers,)
 WNOCLOBBERED := $(call TEST_CC_OPTION,-Wno-clobbered -Wno-error=clobbered,)
@@ -123,10 +140,10 @@ OPTFLAGS	:= -O2 -g $(STACKPROT) --param=ssp-buffer-size=4
 WARNFLAGS	:= -Werror -Wall -Wextra -Wformat=2 $(WFORMATOVERFLOW) -Werror=implicit-int \
 		  -Werror=implicit-function-declaration -Werror=format-security \
 		  $(WNOCLOBBERED) -Werror=cast-qual $(ERROR_DISCARDED_QUALIFIERS)
-CPPFLAGS	:= -Wp,-D_FORTIFY_SOURCE=2
-CFLAGS		:= --std=gnu99 $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe \
-		   -DBIN_DIR=\"$(bindir)\" -DLIB_STRING=\"${LIB}\" -DRUN_DIR=\"${RUN}\" \
-		   -MMD -MP
+CPPFLAGS	:= $(FORTIFY_OPT) \
+		   -DBIN_DIR=\"$(bindir)\" -DMULTIPATH_DIR=\"$(plugindir)\" -DRUN_DIR=\"${RUN}\" \
+		   -DCONFIG_DIR=\"$(configdir)\" -DEXTRAVERSION=\"$(EXTRAVERSION)\" -MMD -MP
+CFLAGS		:= --std=gnu99 $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe
 BIN_CFLAGS	= -fPIE -DPIE
 LIB_CFLAGS	= -fPIC
 SHARED_FLAGS	= -shared
@@ -174,7 +191,7 @@ check_var = $(shell \
 
 %.o:	%.c
 	@echo building $@ because of $?
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 %.abi:  %.so.0
 	abidw $< >$@

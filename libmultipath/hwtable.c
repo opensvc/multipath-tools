@@ -90,7 +90,8 @@ static struct hwentry default_hw[] = {
 		.product       = ".*",
 		.uid_attribute = DEFAULT_NVME_UID_ATTRIBUTE,
 		.checker_name  = NONE,
-		.retain_hwhandler = RETAIN_HWHANDLER_OFF,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
 	},
 	/*
 	 * Apple
@@ -118,6 +119,12 @@ static struct hwentry default_hw[] = {
 		.fast_io_fail  = 10,
 		.dev_loss      = MAX_DEV_LOSS_TMO,
 		.vpd_vendor_id = VPD_VP_HP3PAR,
+	},
+	{
+		/* Alletra 9000 NVMe */
+		.vendor        = "NVME",
+		.product       = "HPE Alletra",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
 	{
 		/* RA8000 / ESA12000 */
@@ -182,8 +189,8 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* MSA 1040, 1050, 1060, 2040, 2050 and 2060 families */
-		.vendor        = "HP",
-		.product       = "MSA [12]0[456]0 SA[NS]",
+		.vendor        = "(HP|HPE)",
+		.product       = "MSA [12]0[456]0 (SAN|SAS|FC|iSCSI)",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 18,
@@ -192,7 +199,7 @@ static struct hwentry default_hw[] = {
 	{
 		/* SAN Virtualization Services Platform */
 		.vendor        = "HP",
-		.product       = "HSVX700",
+		.product       = "(HSVX700|HSVX740)",
 		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
@@ -380,12 +387,6 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	{
-		/* EMC PowerMax NVMe */
-		.vendor        = "NVME",
-		.product       = "^EMC PowerMax_",
-		.pgpolicy      = MULTIBUS,
-	},
-	{
 		/* PowerStore */
 		.vendor        = "DellEMC",
 		.product       = "PowerStore",
@@ -397,9 +398,15 @@ static struct hwentry default_hw[] = {
 		.fast_io_fail  = 15,
 	},
 	{
-		/* PowerVault ME4 */
+		/* PowerStore NVMe */
+		.vendor        = ".*",
+		.product       = "dellemc-powerstore",
+		.no_path_retry = 3,
+	},
+	{
+		/* PowerVault ME 4/5 families */
 		.vendor        = "DellEMC",
-		.product       = "ME4",
+		.product       = "^ME",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.prio_name     = PRIO_ALUA,
 		.hwhandler     = "1 alua",
@@ -467,8 +474,8 @@ static struct hwentry default_hw[] = {
 	 * Maintainer: Matthias Rudolph <Matthias.Rudolph@hitachivantara.com>
 	 */
 	{
-		/* USP-V, HUS VM, VSP, VSP G1X00 and VSP GX00 families / HP XP */
-		.vendor        = "(HITACHI|HP)",
+		/* USP-V, HUS VM, VSP, VSP G1X00 and VSP GX00 families / HPE XP */
+		.vendor        = "(HITACHI|HP|HPE)",
 		.product       = "^OPEN-",
 		.pgpolicy      = MULTIBUS,
 	},
@@ -665,13 +672,19 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		// Storwize V5000 and V7000 lines / SAN Volume Controller (SVC) / Flex System V7000 /
-		// FlashSystem V840/V9000/5000/5100/5200/7200/9100/9200/9200R
+		// FlashSystem V840/V9000/5000/5100/5200/7200/7300/9100/9200/9200R/9500
 		.vendor        = "IBM",
 		.product       = "^2145",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
+	},
+	{
+		/* FlashSystem(Storwize/SVC) NVMe */
+		.vendor        = "NVME",
+		.product       = "IBM[ ]+2145",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
 	{
 		/* PAV DASD ECKD */
@@ -725,6 +738,12 @@ static struct hwentry default_hw[] = {
 		.vendor        = "(TMS|IBM)",
 		.product       = "(RamSan|FlashSystem)",
 		.pgpolicy      = MULTIBUS,
+	},
+	{
+		/* FlashSystem(RamSan) NVMe */
+		.vendor        = "NVMe",
+		.product       = "FlashSystem",
+		.no_path_retry = NO_PATH_RETRY_FAIL,
 	},
 	{
 		/* (DDN) DCS9900, SONAS 2851-DR1 */
@@ -832,14 +851,9 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 24,
 	},
 	{
-		/*
-		 * NVMe-FC namespace devices: MULTIBUS, queueing preferred
-		 *
-		 * The hwtable is searched backwards, so place this after "Generic NVMe"
-		 */
+		/* ONTAP NVMe */
 		.vendor        = "NVME",
 		.product       = "^NetApp ONTAP Controller",
-		.pgpolicy      = MULTIBUS,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
 	/*
@@ -1081,6 +1095,12 @@ static struct hwentry default_hw[] = {
 		.fast_io_fail  = 10,
 		.max_sectors_kb = 4096,
 	},
+	{
+		/* FlashArray NVMe */
+		.vendor        = "NVME",
+		.product       = "Pure Storage FlashArray",
+		.no_path_retry = 10,
+	},
 	/*
 	 * Huawei
 	 */
@@ -1093,6 +1113,13 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 15,
+	},
+	{
+		/* OceanStor NVMe */
+		.vendor        = "NVME",
+		.product       = "Huawei-XSG1",
+		.checker_name  = DIRECTIO,
+		.no_path_retry = 12,
 	},
 	/*
 	 * Kove

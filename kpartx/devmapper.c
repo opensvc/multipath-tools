@@ -412,8 +412,10 @@ dm_get_map(const char *mapname, char * outparams)
 		goto out;
 
 	/* Fetch 1st target */
-	dm_get_next_target(dmt, NULL, &start, &length,
-			   &target_type, &params);
+	if (dm_get_next_target(dmt, NULL, &start, &length,
+			       &target_type, &params) != NULL || !params)
+		/* more than one target or not found target */
+		goto out;
 
 	if (snprintf(outparams, PARAMS_SIZE, "%s", params) <= PARAMS_SIZE)
 		r = 0;

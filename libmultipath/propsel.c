@@ -79,6 +79,8 @@ static const char conf_origin[] =
 	"(setting: multipath.conf defaults/devices section)";
 static const char overrides_origin[] =
 	"(setting: multipath.conf overrides section)";
+static const char overrides_pce_origin[] =
+	"(setting: multipath.conf overrides protocol section)";
 static const char cmdline_origin[] =
 	"(setting: multipath command line [-p] flag)";
 static const char autodetect_origin[] =
@@ -143,6 +145,27 @@ do {									\
 		mp->sa_flags = src->sa_flags;				\
 		origin = msg;						\
 		goto out;						\
+	}								\
+} while (0)
+
+#define pp_set_ovr_pce(var)						\
+do {									\
+	struct pcentry *_pce;						\
+	int _i;								\
+									\
+	if (conf->overrides) {						\
+		vector_foreach_slot(conf->overrides->pctable, _pce, _i) {	\
+			if (_pce->type == (int)bus_protocol_id(pp) && _pce->var) {	\
+				pp->var = _pce->var;			\
+				origin = overrides_pce_origin;		\
+				goto out;				\
+			}						\
+		}							\
+		if (conf->overrides->var) {				\
+			pp->var = conf->overrides->var;			\
+			origin = overrides_origin;			\
+			goto out;					\
+		}							\
 	}								\
 } while (0)
 
@@ -537,7 +560,7 @@ int select_checker(struct config *conf, struct path *pp)
 	do_set(checker_name, conf, ckr_name, conf_origin);
 	do_default(ckr_name, DEFAULT_CHECKER);
 out:
-	checker_get(conf->multipath_dir, c, ckr_name);
+	checker_get(c, ckr_name);
 	condlog(3, "%s: path_checker = %s %s", pp->dev,
 		checker_name(c), origin);
 	if (conf->checker_timeout) {
@@ -566,20 +589,14 @@ int select_getuid(struct config *conf, struct path *pp)
 		goto out;
 	}
 
-	pp_set_ovr(getuid);
 	pp_set_ovr(uid_attribute);
-	pp_set_hwe(getuid);
 	pp_set_hwe(uid_attribute);
-	pp_set_conf(getuid);
 	pp_set_conf(uid_attribute);
 	pp_set_default(uid_attribute, DEFAULT_UID_ATTRIBUTE);
 out:
 	if (pp->uid_attribute)
 		condlog(3, "%s: uid_attribute = %s %s", pp->dev,
 			pp->uid_attribute, origin);
-	else if (pp->getuid)
-		condlog(3, "%s: getuid = \"%s\" %s", pp->dev, pp->getuid,
-			origin);
 	return 0;
 }
 
@@ -594,7 +611,7 @@ int select_recheck_wwid(struct config *conf, struct path * pp)
 	pp_set_default(recheck_wwid, DEFAULT_RECHECK_WWID);
 out:
 	if (pp->recheck_wwid == RECHECK_WWID_ON &&
-	    (pp->bus != SYSFS_BUS_SCSI || pp->getuid != NULL ||
+	    (pp->bus != SYSFS_BUS_SCSI ||
 	     !has_uid_fallback(pp))) {
 		pp->recheck_wwid = RECHECK_WWID_OFF;
 		origin = "(setting: unsupported by device type/config)";
@@ -604,8 +621,7 @@ out:
 	return 0;
 }
 
-void
-detect_prio(struct config *conf, struct path * pp)
+void detect_prio(struct path *pp)
 {
 	struct prio *p = &pp->prio;
 	char buff[512];
@@ -631,19 +647,19 @@ detect_prio(struct config *conf, struct path * pp)
 	default:
 		return;
 	}
-	prio_get(conf->multipath_dir, p, default_prio, DEFAULT_PRIO_ARGS);
+	prio_get(p, default_prio, DEFAULT_PRIO_ARGS);
 }
 
-#define set_prio(dir, src, msg)					\
+#define set_prio(src, msg)						\
 do {									\
 	if (src && src->prio_name) {					\
-		prio_get(dir, p, src->prio_name, src->prio_args);	\
+		prio_get(p, src->prio_name, src->prio_args);		\
 		origin = msg;						\
 		goto out;						\
 	}								\
 } while(0)
 
-#define set_prio_from_vec(type, dir, src, msg, p)			\
+#define set_prio_from_vec(type, src, msg, p)				\
 do {									\
 	type *_p;							\
 	int i;								\
@@ -656,7 +672,7 @@ do {									\
 			prio_args = _p->prio_args;			\
 	}								\
 	if (prio_name != NULL) {					\
-		prio_get(dir, p, prio_name, prio_args);			\
+		prio_get(p, prio_name, prio_args);			\
 		origin = msg;						\
 		goto out;						\
 	}								\
@@ -670,19 +686,18 @@ int select_prio(struct config *conf, struct path *pp)
 	int log_prio = 3;
 
 	if (pp->detect_prio == DETECT_PRIO_ON) {
-		detect_prio(conf, pp);
+		detect_prio(pp);
 		if (prio_selected(p)) {
 			origin = autodetect_origin;
 			goto out;
 		}
 	}
 	mpe = find_mpe(conf->mptable, pp->wwid);
-	set_prio(conf->multipath_dir, mpe, multipaths_origin);
-	set_prio(conf->multipath_dir, conf->overrides, overrides_origin);
-	set_prio_from_vec(struct hwentry, conf->multipath_dir,
-			  pp->hwe, hwe_origin, p);
-	set_prio(conf->multipath_dir, conf, conf_origin);
-	prio_get(conf->multipath_dir, p, DEFAULT_PRIO, DEFAULT_PRIO_ARGS);
+	set_prio(mpe, multipaths_origin);
+	set_prio(conf->overrides, overrides_origin);
+	set_prio_from_vec(struct hwentry, pp->hwe, hwe_origin, p);
+	set_prio(conf, conf_origin);
+	prio_get(p, DEFAULT_PRIO, DEFAULT_PRIO_ARGS);
 	origin = default_origin;
 out:
 	/*
@@ -692,8 +707,7 @@ out:
 		int tpgs = path_get_tpgs(pp);
 
 		if (tpgs == TPGS_NONE) {
-			prio_get(conf->multipath_dir,
-				 p, DEFAULT_PRIO, DEFAULT_PRIO_ARGS);
+			prio_get(p, DEFAULT_PRIO, DEFAULT_PRIO_ARGS);
 			origin = "(setting: emergency fallback - alua failed)";
 			log_prio = 1;
 		}
@@ -769,53 +783,53 @@ int select_minio(struct config *conf, struct multipath *mp)
 		return select_minio_bio(conf, mp);
 }
 
-int select_fast_io_fail(struct config *conf, struct multipath *mp)
+int select_fast_io_fail(struct config *conf, struct path *pp)
 {
 	const char *origin;
 	STRBUF_ON_STACK(buff);
 
-	mp_set_ovr(fast_io_fail);
-	mp_set_hwe(fast_io_fail);
-	mp_set_conf(fast_io_fail);
-	mp_set_default(fast_io_fail, DEFAULT_FAST_IO_FAIL);
+	pp_set_ovr_pce(fast_io_fail);
+	pp_set_hwe(fast_io_fail);
+	pp_set_conf(fast_io_fail);
+	pp_set_default(fast_io_fail, DEFAULT_FAST_IO_FAIL);
 out:
-	print_undef_off_zero(&buff, mp->fast_io_fail);
-	condlog(3, "%s: fast_io_fail_tmo = %s %s", mp->alias,
+	print_undef_off_zero(&buff, pp->fast_io_fail);
+	condlog(3, "%s: fast_io_fail_tmo = %s %s", pp->dev,
 		get_strbuf_str(&buff), origin);
 	return 0;
 }
 
-int select_dev_loss(struct config *conf, struct multipath *mp)
+int select_dev_loss(struct config *conf, struct path *pp)
 {
 	const char *origin;
 	STRBUF_ON_STACK(buff);
 
-	mp_set_ovr(dev_loss);
-	mp_set_hwe(dev_loss);
-	mp_set_conf(dev_loss);
-	mp->dev_loss = DEV_LOSS_TMO_UNSET;
+	pp_set_ovr_pce(dev_loss);
+	pp_set_hwe(dev_loss);
+	pp_set_conf(dev_loss);
+	pp->dev_loss = DEV_LOSS_TMO_UNSET;
 	return 0;
 out:
-	print_dev_loss(&buff, mp->dev_loss);
-	condlog(3, "%s: dev_loss_tmo = %s %s", mp->alias,
+	print_dev_loss(&buff, pp->dev_loss);
+	condlog(3, "%s: dev_loss_tmo = %s %s", pp->dev,
 		get_strbuf_str(&buff), origin);
 	return 0;
 }
 
-int select_eh_deadline(struct config *conf, struct multipath *mp)
+int select_eh_deadline(struct config *conf, struct path *pp)
 {
 	const char *origin;
 	STRBUF_ON_STACK(buff);
 
-	mp_set_ovr(eh_deadline);
-	mp_set_hwe(eh_deadline);
-	mp_set_conf(eh_deadline);
-	mp->eh_deadline = EH_DEADLINE_UNSET;
+	pp_set_ovr_pce(eh_deadline);
+	pp_set_hwe(eh_deadline);
+	pp_set_conf(eh_deadline);
+	pp->eh_deadline = EH_DEADLINE_UNSET;
 	/* not changing sysfs in default cause, so don't print anything */
 	return 0;
 out:
-	print_undef_off_zero(&buff, mp->eh_deadline);
-	condlog(3, "%s: eh_deadline = %s %s", mp->alias,
+	print_undef_off_zero(&buff, pp->eh_deadline);
+	condlog(3, "%s: eh_deadline = %s %s", pp->dev,
 		get_strbuf_str(&buff), origin);
 	return 0;
 }

@@ -237,6 +237,18 @@ const char *get_mpe_wwid(const struct _vector *mptable, const char *alias)
 	return NULL;
 }
 
+static void
+free_pctable (vector pctable)
+{
+	int i;
+	struct pcentry *pce;
+
+	vector_foreach_slot(pctable, pce, i)
+		free(pce);
+
+	vector_free(pctable);
+}
+
 void
 free_hwe (struct hwentry * hwe)
 {
@@ -251,9 +263,6 @@ free_hwe (struct hwentry * hwe)
 
 	if (hwe->revision)
 		free(hwe->revision);
-
-	if (hwe->getuid)
-		free(hwe->getuid);
 
 	if (hwe->uid_attribute)
 		free(hwe->uid_attribute);
@@ -281,6 +290,9 @@ free_hwe (struct hwentry * hwe)
 
 	if (hwe->bl_product)
 		free(hwe->bl_product);
+
+	if (hwe->pctable)
+		free_pctable(hwe->pctable);
 
 	free(hwe);
 }
@@ -311,9 +323,6 @@ free_mpe (struct mpentry * mpe)
 
 	if (mpe->selector)
 		free(mpe->selector);
-
-	if (mpe->getuid)
-		free(mpe->getuid);
 
 	if (mpe->uid_attribute)
 		free(mpe->uid_attribute);
@@ -363,6 +372,15 @@ alloc_hwe (void)
 	return hwe;
 }
 
+struct pcentry *
+alloc_pce (void)
+{
+	struct pcentry *pce = (struct pcentry *)
+				calloc(1, sizeof(struct pcentry));
+	pce->type = PCE_INVALID;
+	return pce;
+}
+
 static char *
 set_param_str(const char * str)
 {
@@ -387,24 +405,30 @@ set_param_str(const char * str)
 }
 
 #define merge_str(s) \
-	if (!dst->s && src->s) { \
-		if (!(dst->s = set_param_str(src->s))) \
-			return 1; \
+	if (!dst->s && src->s && strlen(src->s)) { \
+		dst->s = src->s; \
+		src->s = NULL; \
 	}
 
 #define merge_num(s) \
 	if (!dst->s && src->s) \
 		dst->s = src->s
 
+static void
+merge_pce(struct pcentry *dst, struct pcentry *src)
+{
+	merge_num(fast_io_fail);
+	merge_num(dev_loss);
+	merge_num(eh_deadline);
+}
 
-static int
+static void
 merge_hwe (struct hwentry * dst, struct hwentry * src)
 {
 	char id[SCSI_VENDOR_SIZE+PATH_PRODUCT_SIZE];
 	merge_str(vendor);
 	merge_str(product);
 	merge_str(revision);
-	merge_str(getuid);
 	merge_str(uid_attribute);
 	merge_str(features);
 	merge_str(hwhandler);
@@ -449,18 +473,13 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	reconcile_features_with_options(id, &dst->features,
 					&dst->no_path_retry,
 					&dst->retain_hwhandler);
-	return 0;
 }
 
-static int
+static void
 merge_mpe(struct mpentry *dst, struct mpentry *src)
 {
-	if (!dst || !src)
-		return 1;
-
 	merge_str(alias);
 	merge_str(uid_attribute);
-	merge_str(getuid);
 	merge_str(selector);
 	merge_str(features);
 	merge_str(prio_name);
@@ -499,8 +518,6 @@ merge_mpe(struct mpentry *dst, struct mpentry *src)
 	merge_num(uid);
 	merge_num(gid);
 	merge_num(mode);
-
-	return 0;
 }
 
 void merge_mptable(vector mptable)
@@ -552,9 +569,6 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 		goto out;
 
 	if (dhwe->uid_attribute && !(hwe->uid_attribute = set_param_str(dhwe->uid_attribute)))
-		goto out;
-
-	if (dhwe->getuid && !(hwe->getuid = set_param_str(dhwe->getuid)))
 		goto out;
 
 	if (dhwe->features && !(hwe->features = set_param_str(dhwe->features)))
@@ -609,6 +623,51 @@ out:
 }
 
 static void
+validate_pctable(struct hwentry *ovr, int idx, const char *table_desc)
+{
+	struct pcentry *pce;
+
+	if (!ovr || !ovr->pctable)
+		return;
+
+	vector_foreach_slot_after(ovr->pctable, pce, idx) {
+		if (pce->type == PCE_INVALID) {
+			condlog(0, "protocol section in %s missing type",
+				table_desc);
+			vector_del_slot(ovr->pctable, idx--);
+			free(pce);
+		}
+	}
+
+	if (VECTOR_SIZE(ovr->pctable) == 0) {
+		vector_free(ovr->pctable);
+		ovr->pctable = NULL;
+	}
+}
+
+static void
+merge_pctable(struct hwentry *ovr)
+{
+	struct pcentry *pce1, *pce2;
+	int i, j;
+
+	if (!ovr || !ovr->pctable)
+		return;
+
+	vector_foreach_slot(ovr->pctable, pce1, i) {
+		j = i + 1;
+		vector_foreach_slot_after(ovr->pctable, pce2, j) {
+			if (pce1->type != pce2->type)
+				continue;
+			merge_pce(pce2,pce1);
+			vector_del_slot(ovr->pctable, i--);
+			free(pce1);
+			break;
+		}
+	}
+}
+
+static void
 factorize_hwtable (vector hw, int n, const char *table_desc)
 {
 	struct hwentry *hwe1, *hwe2;
@@ -656,11 +715,11 @@ static struct config *alloc_config (void)
 
 static void _uninit_config(struct config *conf)
 {
+	void *ptr;
+	int i;
+
 	if (!conf)
 		conf = &__internal_config;
-
-	if (conf->multipath_dir)
-		free(conf->multipath_dir);
 
 	if (conf->selector)
 		free(conf->selector);
@@ -668,10 +727,9 @@ static void _uninit_config(struct config *conf)
 	if (conf->uid_attribute)
 		free(conf->uid_attribute);
 
+	vector_foreach_slot(&conf->uid_attrs, ptr, i)
+		free(ptr);
 	vector_reset(&conf->uid_attrs);
-
-	if (conf->getuid)
-		free(conf->getuid);
 
 	if (conf->features)
 		free(conf->features);
@@ -702,8 +760,6 @@ static void _uninit_config(struct config *conf)
 	if (conf->checker_name)
 		free(conf->checker_name);
 
-	if (conf->config_dir)
-		free(conf->config_dir);
 	if (conf->enable_foreign)
 		free(conf->enable_foreign);
 
@@ -756,6 +812,7 @@ process_config_dir(struct config *conf, char *dir)
 	int i, n;
 	char path[LINE_MAX];
 	int old_hwtable_size;
+	int old_pctable_size = 0;
 
 	if (dir[0] != '/') {
 		condlog(1, "config_dir '%s' must be a fully qualified path",
@@ -782,11 +839,15 @@ process_config_dir(struct config *conf, char *dir)
 			continue;
 
 		old_hwtable_size = VECTOR_SIZE(conf->hwtable);
+		old_pctable_size = conf->overrides ?
+				   VECTOR_SIZE(conf->overrides->pctable) : 0;
 		snprintf(path, LINE_MAX, "%s/%s", dir, namelist[i]->d_name);
 		path[LINE_MAX-1] = '\0';
 		process_file(conf, path);
 		factorize_hwtable(conf->hwtable, old_hwtable_size,
 				  namelist[i]->d_name);
+		validate_pctable(conf->overrides, old_pctable_size,
+				 namelist[i]->d_name);
 	}
 	pthread_cleanup_pop(1);
 }
@@ -849,7 +910,6 @@ int _init_config (const char *file, struct config *conf)
 	conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 	conf->wwids_file = set_default(DEFAULT_WWIDS_FILE);
 	conf->prkeys_file = set_default(DEFAULT_PRKEYS_FILE);
-	conf->multipath_dir = set_default(DEFAULT_MULTIPATHDIR);
 	conf->attribute_flags = 0;
 	conf->reassign_maps = DEFAULT_REASSIGN_MAPS;
 	conf->checkint = CHECKINT_UNDEF;
@@ -894,13 +954,11 @@ int _init_config (const char *file, struct config *conf)
 			goto out;
 		}
 		factorize_hwtable(conf->hwtable, builtin_hwtable_size, file);
+		validate_pctable(conf->overrides, 0, file);
 	}
 
 	conf->processed_main_config = 1;
-	if (conf->config_dir == NULL)
-		conf->config_dir = set_default(DEFAULT_CONFIG_DIR);
-	if (conf->config_dir && conf->config_dir[0] != '\0')
-		process_config_dir(conf, conf->config_dir);
+	process_config_dir(conf, CONFIG_DIR);
 
 	/*
 	 * fill the voids left in the config file
@@ -994,6 +1052,7 @@ int _init_config (const char *file, struct config *conf)
 			goto out;
 	}
 
+	merge_pctable(conf->overrides);
 	merge_mptable(conf->mptable);
 	merge_blacklist(conf->blist_devnode);
 	merge_blacklist(conf->blist_property);
@@ -1007,8 +1066,7 @@ int _init_config (const char *file, struct config *conf)
 	if (conf->bindings_file == NULL)
 		conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
 
-	if (!conf->multipath_dir || !conf->bindings_file ||
-	    !conf->wwids_file || !conf->prkeys_file)
+	if (!conf->bindings_file || !conf->wwids_file || !conf->prkeys_file)
 		goto out;
 
 	libmp_verbosity = conf->verbosity;
@@ -1018,10 +1076,10 @@ out:
 	return 1;
 }
 
-char *get_uid_attribute_by_attrs(struct config *conf,
-				 const char *path_dev)
+const char *get_uid_attribute_by_attrs(const struct config *conf,
+				       const char *path_dev)
 {
-	vector uid_attrs = &conf->uid_attrs;
+	const struct _vector *uid_attrs = &conf->uid_attrs;
 	int j;
 	char *att, *col;
 

@@ -37,6 +37,7 @@
 #include "strbuf.h"
 
 static vector foreigns;
+static const char *const foreign_dir = MULTIPATH_DIR;
 
 /* This protects vector foreigns */
 static pthread_rwlock_t foreign_lock = PTHREAD_RWLOCK_INITIALIZER;
@@ -125,7 +126,7 @@ static void free_pre(void *arg)
 	}
 }
 
-static int _init_foreign(const char *multipath_dir, const char *enable)
+static int _init_foreign(const char *enable)
 {
 	char pathbuf[PATH_MAX];
 	struct dirent **di;
@@ -153,7 +154,7 @@ static int _init_foreign(const char *multipath_dir, const char *enable)
 		}
 	}
 
-	r = scandir(multipath_dir, &di, select_foreign_libs, alphasort);
+	r = scandir(foreign_dir, &di, select_foreign_libs, alphasort);
 
 	if (r == 0) {
 		condlog(3, "%s: no foreign multipath libraries found",
@@ -208,7 +209,7 @@ static int _init_foreign(const char *multipath_dir, const char *enable)
 					__func__, ret, fgn->name);
 		}
 
-		snprintf(pathbuf, sizeof(pathbuf), "%s/%s", multipath_dir, fn);
+		snprintf(pathbuf, sizeof(pathbuf), "%s/%s", foreign_dir, fn);
 		fgn->handle = dlopen(pathbuf, RTLD_NOW|RTLD_LOCAL);
 		msg = dlerror();
 		if (fgn->handle == NULL) {
@@ -257,7 +258,7 @@ out_free_pre:
 	return r;
 }
 
-int init_foreign(const char *multipath_dir, const char *enable)
+int init_foreign(const char *enable)
 {
 	int ret;
 
@@ -270,7 +271,7 @@ int init_foreign(const char *multipath_dir, const char *enable)
 	}
 
 	pthread_cleanup_push(unlock_foreigns, NULL);
-	ret = _init_foreign(multipath_dir, enable);
+	ret = _init_foreign(enable);
 	pthread_cleanup_pop(1);
 
 	return ret;

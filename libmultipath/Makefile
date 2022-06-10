@@ -8,12 +8,13 @@ DEVLIB = libmultipath.so
 LIBS = $(DEVLIB).$(SONAME)
 VERSION_SCRIPT := libmultipath.version
 
-CFLAGS += $(LIB_CFLAGS) -I$(mpathcmddir) -I$(mpathpersistdir) -I$(nvmedir)
+CPPFLAGS += -I$(mpathcmddir) -I$(mpathpersistdir) -I$(nvmedir)
+CFLAGS += $(LIB_CFLAGS)
 
 LIBDEPS += -lpthread -ldl -ldevmapper -ludev -L$(mpathcmddir) -lmpathcmd -lurcu -laio
 
 ifdef SYSTEMD
-	CFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
+	CPPFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
 	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
 		LIBDEPS += -lsystemd
 	else
@@ -22,53 +23,60 @@ ifdef SYSTEMD
 endif
 
 ifneq ($(call check_func,dm_task_no_flush,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
-	CFLAGS += -DLIBDM_API_FLUSH -D_GNU_SOURCE
+	CPPFLAGS += -DLIBDM_API_FLUSH -D_GNU_SOURCE
 endif
 
 ifneq ($(call check_func,dm_task_get_errno,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
-	CFLAGS += -DLIBDM_API_GET_ERRNO
+	CPPFLAGS += -DLIBDM_API_GET_ERRNO
 endif
 
 ifneq ($(call check_func,dm_task_set_cookie,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
-	CFLAGS += -DLIBDM_API_COOKIE
+	CPPFLAGS += -DLIBDM_API_COOKIE
 endif
 
 ifneq ($(call check_func,udev_monitor_set_receive_buffer_size,$(LIBUDEV_INCDIR)/libudev.h),0)
-	CFLAGS += -DLIBUDEV_API_RECVBUF
+	CPPFLAGS += -DLIBUDEV_API_RECVBUF
 endif
 
 ifneq ($(call check_func,dm_task_deferred_remove,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
-	CFLAGS += -DLIBDM_API_DEFERRED
+	CPPFLAGS += -DLIBDM_API_DEFERRED
 endif
 
 ifneq ($(call check_func,dm_hold_control_dev,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
-	CFLAGS += -DLIBDM_API_HOLD_CONTROL
+	CPPFLAGS += -DLIBDM_API_HOLD_CONTROL
 endif
 
 ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(LINUX_HEADERS_INCDIR)/scsi/fc/fc_els.h),0)
-	CFLAGS += -DFPIN_EVENT_HANDLER
+	CPPFLAGS += -DFPIN_EVENT_HANDLER
 endif
 
+# object files referencing MULTIPATH_DIR or CONFIG_DIR
+# they need to be recompiled for unit tests
+OBJS-U := prio.o checkers.o foreign.o config.o
+OBJS-T := $(patsubst %.o,%-test.o,$(OBJS-U))
 
-OBJS = parser.o vector.o devmapper.o callout.o \
-	hwtable.o blacklist.o util.o dmparser.o config.o \
+# other object files
+OBJS-O := parser.o vector.o devmapper.o \
+	hwtable.o blacklist.o util.o dmparser.o \
 	structs.o discovery.o propsel.o dict.o \
 	pgpolicies.o debug.o defaults.o uevent.o time-util.o \
 	switchgroup.o uxsock.o print.o alias.o log_pthread.o \
-	log.o configure.o structs_vec.o sysfs.o prio.o checkers.o \
+	log.o configure.o structs_vec.o sysfs.o \
 	lock.o file.o wwids.o prioritizers/alua_rtpg.o prkey.o \
-	io_err_stat.o dm-generic.o generic.o foreign.o nvme-lib.o \
+	io_err_stat.o dm-generic.o generic.o nvme-lib.o \
 	libsg.o valid.o strbuf.o
+
+OBJS := $(OBJS-O) $(OBJS-U)
 
 all:	$(DEVLIB)
 
 nvme-lib.o: nvme-lib.c nvme-ioctl.c nvme-ioctl.h
-	$(CC) $(CFLAGS) -Wno-unused-function -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-function -c -o $@ $<
 
 # there are lots of "unused parameters" in dict.c
 # because not all handler / snprint methods need all parameters
 dict.o:	dict.c
-	$(CC) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
 
 make_static = $(shell sed '/^static/!s/^\([a-z]\{1,\} \)/static \1/' <$1 >$2)
 
@@ -97,10 +105,15 @@ $(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
 
 abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
 
-../tests/$(LIBS): $(OBJS) $(VERSION_SCRIPT)
+../tests/$(LIBS): $(OBJS-O) $(OBJS-T) $(VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=`basename $@` \
-		-o $@ $(OBJS) $(LIBDEPS)
+		-o $@ $(OBJS-O) $(OBJS-T) $(LIBDEPS)
 	$(LN) $@ ${@:.so.0=.so}
+
+# This rule is invoked from tests/Makefile, overriding configdir and plugindir
+%-test.o: %.c
+	@echo building $@ because of $?
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 test-lib:	../tests/$(LIBS)
 

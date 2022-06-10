@@ -3,13 +3,14 @@
 #
 include ../Makefile.inc
 
-CFLAGS += $(BIN_CFLAGS) -I. -I$(multipathdir) -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+CPPFLAGS += -I. -I$(multipathdir) -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+CFLAGS += $(BIN_CFLAGS)
 LDFLAGS += $(BIN_LDFLAGS)
 
 LIBDEPS += -ldevmapper
 
 ifneq ($(call check_func,dm_task_set_cookie,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
-	CFLAGS += -DLIBDM_API_COOKIE
+	CPPFLAGS += -DLIBDM_API_COOKIE
 endif
 
 OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o dasd.o sun.o \

@@ -3,7 +3,8 @@
 #
 include ../../Makefile.inc
 
-CFLAGS += $(LIB_CFLAGS) -I..
+CPPFLAGS += -I..
+CFLAGS += $(LIB_CFLAGS)
 LDFLAGS += -L..
 LIBDEPS = -lmultipath -lm -lpthread -lrt
 
@@ -25,7 +26,7 @@ LIBS = \
 
 ifneq ($(call check_file,$(LINUX_HEADERS_INCDIR)/linux/nvme_ioctl.h),0)
 	LIBS += libprioana.so
-	CFLAGS += -I../nvme
+	CPPFLAGS += -I../nvme
 endif
 
 all: $(LIBS)

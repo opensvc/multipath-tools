@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <libudev.h>
 #include <pthread.h>
 #include <limits.h>
 #include <dirent.h>

@@ -31,7 +31,7 @@
 // name: find_regex
 // @param string: string you want to search into
 // @param regex: the pattern used
-// @return result: string finded in string with regex, "none" if none
+// @return result: string found in string with regex, "none" if none
 char *find_regex(char * string, char * regex)
 {
 	int err;
