@@ -37,6 +37,7 @@ ifndef RUN
 	endif
 endif
 
+ifdef ENABLE_SYSTEMD
 ifndef SYSTEMD
 	ifeq ($(shell $(PKGCONFIG) --modversion libsystemd >/dev/null 2>&1 && echo 1), 1)
 		SYSTEMD = $(shell $(PKGCONFIG) --modversion libsystemd | awk '{print $$1}')
@@ -46,6 +47,7 @@ ifndef SYSTEMD
 				sed -n 's/systemd \([0-9]*\).*/\1/p')
 		endif
 	endif
+endif
 endif
 
 ifndef SYSTEMDPATH
