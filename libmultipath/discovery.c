@@ -1341,13 +1341,15 @@ static int
 get_vpd_sysfs (struct udev_device *parent, int pg, char * str, int maxlen)
 {
 	int len;
-	size_t buff_len;
+	ssize_t buff_len;
 	unsigned char buff[VPD_BUFLEN];
 
 	memset(buff, 0x0, VPD_BUFLEN);
-	if (!parent || sysfs_get_vpd(parent, pg, buff, VPD_BUFLEN) <= 0) {
-		condlog(3, "failed to read sysfs vpd pg%02x", pg);
-		return -EINVAL;
+	buff_len = sysfs_get_vpd(parent, pg, buff, VPD_BUFLEN);
+	if (buff_len < 0) {
+		condlog(3, "failed to read sysfs vpd pg%02x: %s",
+			pg, strerror(-buff_len));
+		return buff_len;
 	}
 
 	if (buff[1] != pg) {
