@@ -44,8 +44,8 @@
  * as libudev lacks the capability to update an attribute value.
  * So for modified attributes we need to implement our own function.
  */
-ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
-			     char * value, size_t value_len)
+static ssize_t __sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
+				      char *value, size_t value_len, bool binary)
 {
 	char devpath[PATH_SIZE];
 	struct stat statbuf;
@@ -87,12 +87,14 @@ ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
 	if (size < 0) {
 		condlog(4, "read from %s failed: %s", devpath, strerror(errno));
 		size = -errno;
-		value[0] = '\0';
-	} else if (size == (ssize_t)value_len) {
+		if (!binary)
+			value[0] = '\0';
+	} else if (!binary && size == (ssize_t)value_len) {
+		condlog(3, "%s: overflow reading from %s (required len: %zu)",
+			__func__, devpath, size);
 		value[size - 1] = '\0';
-		condlog(4, "overflow while reading from %s", devpath);
 		size = 0;
-	} else {
+	} else if (!binary) {
 		value[size] = '\0';
 		size = strchop(value);
 	}
@@ -101,55 +103,17 @@ ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
 	return size;
 }
 
-ssize_t sysfs_bin_attr_get_value(struct udev_device *dev, const char *attr_name,
-				 unsigned char * value, size_t value_len)
+ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
+			     char *value, size_t value_len)
 {
-	char devpath[PATH_SIZE];
-	struct stat statbuf;
-	int fd;
-	ssize_t size = -1;
+	return __sysfs_attr_get_value(dev, attr_name, value, value_len, false);
+}
 
-	if (!dev || !attr_name || !value)
-		return 0;
-
-	snprintf(devpath, PATH_SIZE, "%s/%s", udev_device_get_syspath(dev),
-		 attr_name);
-	condlog(4, "open '%s'", devpath);
-	/* read attribute value */
-	fd = open(devpath, O_RDONLY);
-	if (fd < 0) {
-		condlog(4, "attribute '%s' can not be opened: %s",
-			devpath, strerror(errno));
-		return -errno;
-	}
-	if (fstat(fd, &statbuf) != 0) {
-		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
-		close(fd);
-		return -ENXIO;
-	}
-
-	/* skip directories */
-	if (S_ISDIR(statbuf.st_mode)) {
-		condlog(4, "%s is a directory", devpath);
-		close(fd);
-		return -EISDIR;
-	}
-
-	/* skip non-writeable files */
-	if ((statbuf.st_mode & S_IRUSR) == 0) {
-		condlog(4, "%s is not readable", devpath);
-		close(fd);
-		return -EPERM;
-	}
-
-	size = read(fd, value, value_len);
-	if (size < 0) {
-		condlog(4, "read from %s failed: %s", devpath, strerror(errno));
-		size = -errno;
-	};
-
-	close(fd);
-	return size;
+ssize_t sysfs_bin_attr_get_value(struct udev_device *dev, const char *attr_name,
+				 unsigned char *value, size_t value_len)
+{
+	return __sysfs_attr_get_value(dev, attr_name, (char *)value,
+				      value_len, true);
 }
 
 ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
