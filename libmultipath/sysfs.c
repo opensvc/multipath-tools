@@ -49,7 +49,7 @@ static ssize_t __sysfs_attr_get_value(struct udev_device *dev, const char *attr_
 {
 	const char *syspath;
 	char devpath[PATH_MAX];
-	int fd;
+	long fd;
 	ssize_t size = -1;
 
 	if (!dev || !attr_name || !value || !value_len) {
@@ -74,6 +74,8 @@ static ssize_t __sysfs_attr_get_value(struct udev_device *dev, const char *attr_
 			__func__, devpath, strerror(errno));
 		return -errno;
 	}
+	pthread_cleanup_push(close_fd, (void *)fd);
+
 	size = read(fd, value, value_len);
 	if (size < 0) {
 		size = -errno;
@@ -90,7 +92,7 @@ static ssize_t __sysfs_attr_get_value(struct udev_device *dev, const char *attr_
 		size = strchop(value);
 	}
 
-	close(fd);
+	pthread_cleanup_pop(1);
 	return size;
 }
 
@@ -112,7 +114,7 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 {
 	const char *syspath;
 	char devpath[PATH_MAX];
-	int fd;
+	long fd;
 	ssize_t size = -1;
 
 	if (!dev || !attr_name || !value || !value_len) {
@@ -138,6 +140,7 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 			__func__, devpath, strerror(errno));
 		return -errno;
 	}
+	pthread_cleanup_push(close_fd, (void *)fd);
 
 	size = write(fd, value, value_len);
 	if (size < 0) {
@@ -148,7 +151,7 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 		condlog(3, "%s: underflow writing %zu bytes to %s. Wrote %zd bytes",
 			__func__, value_len, devpath, size);
 
-	close(fd);
+	pthread_cleanup_pop(1);
 	return size;
 }
 
