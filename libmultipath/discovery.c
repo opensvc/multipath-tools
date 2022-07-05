@@ -598,13 +598,15 @@ sysfs_set_eh_deadline(struct path *pp)
 		len = sprintf(value, "%d", pp->eh_deadline);
 
 	ret = sysfs_attr_set_value(hostdev, "eh_deadline",
-				   value, len + 1);
+				   value, len);
 	/*
 	 * not all scsi drivers support setting eh_deadline, so failing
 	 * is totally reasonable
 	 */
-	if (ret <= 0)
-		condlog(3, "%s: failed to set eh_deadline to %s, error %d", udev_device_get_sysname(hostdev), value, -ret);
+	if (ret != len)
+		log_sysfs_attr_set_value(3, ret,
+			"%s: failed to set eh_deadline to %s",
+			udev_device_get_sysname(hostdev), value);
 
 	udev_device_unref(hostdev);
 	return (ret <= 0);
@@ -667,19 +669,22 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 	    pp->fast_io_fail != MP_FAST_IO_FAIL_OFF) {
 		/* Check if we need to temporarily increase dev_loss_tmo */
 		if ((unsigned int)pp->fast_io_fail >= tmo) {
+			ssize_t len;
+
 			/* Increase dev_loss_tmo temporarily */
 			snprintf(value, sizeof(value), "%u",
 				 (unsigned int)pp->fast_io_fail + 1);
+			len = strlen(value);
 			ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
-						   value, strlen(value));
-			if (ret <= 0) {
+						   value, len);
+			if (ret != len) {
 				if (ret == -EBUSY)
 					condlog(3, "%s: rport blocked",
 						rport_id);
 				else
-					condlog(0, "%s: failed to set "
-						"dev_loss_tmo to %s, error %d",
-						rport_id, value, -ret);
+					log_sysfs_attr_set_value(0, ret,
+						"%s: failed to set dev_loss_tmo to %s",
+						rport_id, value);
 				goto out;
 			}
 		}
@@ -691,32 +696,39 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 		pp->dev_loss = DEFAULT_DEV_LOSS_TMO;
 	}
 	if (pp->fast_io_fail != MP_FAST_IO_FAIL_UNSET) {
+		ssize_t len;
+
 		if (pp->fast_io_fail == MP_FAST_IO_FAIL_OFF)
 			sprintf(value, "off");
 		else if (pp->fast_io_fail == MP_FAST_IO_FAIL_ZERO)
 			sprintf(value, "0");
 		else
 			snprintf(value, 16, "%u", pp->fast_io_fail);
+		len = strlen(value);
 		ret = sysfs_attr_set_value(rport_dev, "fast_io_fail_tmo",
-					   value, strlen(value));
-		if (ret <= 0) {
+					   value, len);
+		if (ret != len) {
 			if (ret == -EBUSY)
 				condlog(3, "%s: rport blocked", rport_id);
 			else
-				condlog(0, "%s: failed to set fast_io_fail_tmo to %s, error %d",
-					rport_id, value, -ret);
+				log_sysfs_attr_set_value(0, ret,
+					"%s: failed to set fast_io_fail_tmo to %s",
+					rport_id, value);
 		}
 	}
 	if (pp->dev_loss != DEV_LOSS_TMO_UNSET) {
+		ssize_t len;
+
 		snprintf(value, 16, "%u", pp->dev_loss);
-		ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
-					   value, strlen(value));
-		if (ret <= 0) {
+		len = strlen(value);
+		ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo", value, len);
+		if (ret != len) {
 			if (ret == -EBUSY)
 				condlog(3, "%s: rport blocked", rport_id);
 			else
-				condlog(0, "%s: failed to set dev_loss_tmo to %s, error %d",
-					rport_id, value, -ret);
+				log_sysfs_attr_set_value(0, ret,
+					"%s: failed to set dev_loss_tmo to %s",
+					rport_id, value);
 		}
 	}
 out:
@@ -754,12 +766,16 @@ sysfs_set_session_tmo(struct path *pp)
 			condlog(3, "%s: can't set fast_io_fail_tmo to '0'"
 				"on iSCSI", pp->dev);
 		} else {
+			ssize_t len, ret;
+
 			snprintf(value, 11, "%u", pp->fast_io_fail);
-			if (sysfs_attr_set_value(session_dev, "recovery_tmo",
-						 value, strlen(value)) <= 0) {
-				condlog(3, "%s: Failed to set recovery_tmo, "
-					" error %d", pp->dev, errno);
-			}
+			len = strlen(value);
+			ret = sysfs_attr_set_value(session_dev, "recovery_tmo",
+						   value, len);
+			if (ret != len)
+				log_sysfs_attr_set_value(3, ret,
+					"%s: Failed to set recovery_tmo to %s",
+							 pp->dev, value);
 		}
 	}
 	udev_device_unref(session_dev);
@@ -802,12 +818,16 @@ sysfs_set_nexus_loss_tmo(struct path *pp)
 		pp->sg_id.channel, pp->sg_id.scsi_id, end_dev_id);
 
 	if (pp->dev_loss != DEV_LOSS_TMO_UNSET) {
+		ssize_t len, ret;
+
 		snprintf(value, 11, "%u", pp->dev_loss);
-		if (sysfs_attr_set_value(sas_dev, "I_T_nexus_loss_timeout",
-					 value, strlen(value)) <= 0)
-			condlog(3, "%s: failed to update "
-				"I_T Nexus loss timeout, error %d",
-				pp->dev, errno);
+		len = strlen(value);
+		ret = sysfs_attr_set_value(sas_dev, "I_T_nexus_loss_timeout",
+					   value, len);
+		if (ret != len)
+			log_sysfs_attr_set_value(3, ret,
+				"%s: failed to update I_T Nexus loss timeout",
+				pp->dev);
 	}
 	udev_device_unref(sas_dev);
 	return;

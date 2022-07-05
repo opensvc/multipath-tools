@@ -568,6 +568,7 @@ sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 	struct pathgroup * pgp;
 	struct path *pp;
 	char buff[11];
+	ssize_t len;
 	int i, j, ret, err = 0;
 	struct udev_device *udd;
 	int max_sectors_kb;
@@ -600,14 +601,17 @@ sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 		}
 	}
 	snprintf(buff, 11, "%d", max_sectors_kb);
+	len = strlen(buff);
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		vector_foreach_slot(pgp->paths, pp, j) {
 			ret = sysfs_attr_set_value(pp->udev,
 						   "queue/max_sectors_kb",
-						   buff, strlen(buff));
-			if (ret < 0) {
-				condlog(1, "failed setting max_sectors_kb on %s : %s", pp->dev, strerror(-ret));
+						   buff, len);
+			if (ret != len) {
+				log_sysfs_attr_set_value(1, ret,
+					"failed setting max_sectors_kb on %s",
+					pp->dev);
 				err = 1;
 			}
 		}

@@ -134,7 +134,7 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 	/* write attribute value */
 	fd = open(devpath, O_WRONLY);
 	if (fd < 0) {
-		condlog(2, "%s: attribute '%s' can not be opened: %s",
+		condlog(3, "%s: attribute '%s' can not be opened: %s",
 			__func__, devpath, strerror(errno));
 		return -errno;
 	}
@@ -144,11 +144,9 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 		size = -errno;
 		condlog(3, "%s: write to %s failed: %s", __func__, 
 			devpath, strerror(errno));
-	} else if (size < (ssize_t)value_len) {
+	} else if (size < (ssize_t)value_len)
 		condlog(3, "%s: underflow writing %zu bytes to %s. Wrote %zd bytes",
 			__func__, value_len, devpath, size);
-		size = 0;
-	}
 
 	close(fd);
 	return size;
