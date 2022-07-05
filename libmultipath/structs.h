@@ -17,7 +17,6 @@
 #define FILE_NAME_SIZE		256
 #define CALLOUT_MAX_SIZE	256
 #define BLK_DEV_SIZE		33
-#define PATH_SIZE		512
 #define NAME_SIZE		512
 #define HOST_NAME_LEN		16
 #define SLOT_NAME_SIZE		40
@@ -518,7 +517,5 @@ int count_active_pending_paths(const struct multipath *);
 int pathcmp (const struct pathgroup *, const struct pathgroup *);
 int add_feature (char **, const char *);
 int remove_feature (char **, const char *);
-
-extern char sysfs_path[PATH_SIZE];
 
 #endif /* _STRUCTS_H */

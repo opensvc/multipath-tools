@@ -48,7 +48,7 @@ static ssize_t __sysfs_attr_get_value(struct udev_device *dev, const char *attr_
 				      char *value, size_t value_len, bool binary)
 {
 	const char *syspath;
-	char devpath[PATH_SIZE];
+	char devpath[PATH_MAX];
 	int fd;
 	ssize_t size = -1;
 
@@ -112,7 +112,7 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 			     const char * value, size_t value_len)
 {
 	const char *syspath;
-	char devpath[PATH_SIZE];
+	char devpath[PATH_MAX];
 	int fd;
 	ssize_t size = -1;
 
@@ -184,7 +184,7 @@ sysfs_get_size (struct path *pp, unsigned long long * size)
 int sysfs_check_holders(char * check_devt, char * new_devt)
 {
 	unsigned int major, new_minor, table_minor;
-	char path[PATH_MAX], check_dev[PATH_SIZE];
+	char path[PATH_MAX], check_dev[FILE_NAME_SIZE];
 	char * table_name;
 	DIR *dirfd;
 	struct dirent *holder;
@@ -194,7 +194,7 @@ int sysfs_check_holders(char * check_devt, char * new_devt)
 		return 0;
 	}
 
-	if (devt2devname(check_dev, PATH_SIZE, check_devt)) {
+	if (devt2devname(check_dev, sizeof(check_dev), check_devt)) {
 		condlog(1, "can't get devname for %s", check_devt);
 		return 0;
 	}
