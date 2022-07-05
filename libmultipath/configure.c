@@ -489,9 +489,15 @@ void trigger_partitions_udev_change(struct udev_device *dev,
 
 		devtype = udev_device_get_devtype(part);
 		if (devtype && !strcmp("partition", devtype)) {
+			ssize_t ret;
+
 			condlog(4, "%s: triggering %s event for %s", __func__,
 				action, syspath);
-			sysfs_attr_set_value(part, "uevent", action, len);
+			ret = sysfs_attr_set_value(part, "uevent", action, len);
+			if (ret != len)
+				log_sysfs_attr_set_value(2, ret,
+					"%s: failed to trigger %s uevent",
+					syspath, action);
 		}
 		udev_device_unref(part);
 	}
@@ -510,6 +516,7 @@ trigger_path_udev_change(struct path *pp, bool is_mpath)
 	 */
 	const char *action = is_mpath ? "change" : "add";
 	const char *env;
+	ssize_t len, ret;
 
 	if (!pp->udev)
 		return;
@@ -536,8 +543,13 @@ trigger_path_udev_change(struct path *pp, bool is_mpath)
 
 	condlog(3, "triggering %s uevent for %s (is %smultipath member)",
 		action, pp->dev, is_mpath ? "" : "no ");
-	sysfs_attr_set_value(pp->udev, "uevent",
-			     action, strlen(action));
+
+	len = strlen(action);
+	ret = sysfs_attr_set_value(pp->udev, "uevent", action, len);
+	if (ret != len)
+		log_sysfs_attr_set_value(2, ret,
+					 "%s: failed to trigger %s uevent",
+					 pp->dev, action);
 	trigger_partitions_udev_change(pp->udev, action,
 				       strlen(action));
 }
