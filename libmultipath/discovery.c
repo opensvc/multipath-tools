@@ -263,41 +263,19 @@ declare_sysfs_get_str(vendor);
 declare_sysfs_get_str(model);
 declare_sysfs_get_str(rev);
 
-static ssize_t
-sysfs_get_binary (struct udev_device * udev, const char *attrname,
-		  unsigned char *buff, size_t len)
-{
-	ssize_t attr_len;
-	const char * devname;
-
-	if (!udev) {
-		condlog(3, "No udev device given\n");
-		return -ENOSYS;
-	}
-
-	devname = udev_device_get_sysname(udev);
-	attr_len = sysfs_bin_attr_get_value(udev, attrname, buff, len);
-	if (attr_len < 0) {
-		condlog(3, "%s: attribute %s not found in sysfs",
-			devname, attrname);
-		return attr_len;
-	}
-	return attr_len;
-}
-
 ssize_t sysfs_get_vpd(struct udev_device * udev, unsigned char pg,
 		      unsigned char *buff, size_t len)
 {
 	char attrname[9];
 
 	snprintf(attrname, sizeof(attrname), "vpd_pg%02x", pg);
-	return sysfs_get_binary(udev, attrname, buff, len);
+	return sysfs_bin_attr_get_value(udev, attrname, buff, len);
 }
 
 ssize_t sysfs_get_inquiry(struct udev_device * udev,
 			  unsigned char *buff, size_t len)
 {
-	return sysfs_get_binary(udev, "inquiry", buff, len);
+	return sysfs_bin_attr_get_value(udev, "inquiry", buff, len);
 }
 
 int
