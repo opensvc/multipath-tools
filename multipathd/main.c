@@ -1126,7 +1126,7 @@ sysfs_get_ro (struct path *pp)
 	if (!pp->udev)
 		return -1;
 
-	if (sysfs_attr_get_value(pp->udev, "ro", buff, sizeof(buff)) <= 0) {
+	if (!sysfs_attr_get_value_ok(pp->udev, "ro", buff, sizeof(buff))) {
 		condlog(3, "%s: Cannot read ro attribute in sysfs", pp->dev);
 		return -1;
 	}

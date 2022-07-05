@@ -589,7 +589,7 @@ sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 		ret = sysfs_attr_get_value(udd, "queue/max_sectors_kb", buff,
 					   sizeof(buff));
 		udev_device_unref(udd);
-		if (ret <= 0) {
+		if (!sysfs_attr_value_ok(ret, sizeof(buff))) {
 			condlog(1, "failed to get current max_sectors_kb from %s", mpp->alias);
 			return 1;
 		}

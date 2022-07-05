@@ -85,7 +85,6 @@ static ssize_t __sysfs_attr_get_value(struct udev_device *dev, const char *attr_
 		condlog(3, "%s: overflow reading from %s (required len: %zu)",
 			__func__, devpath, size);
 		value[size - 1] = '\0';
-		size = 0;
 	} else if (!binary) {
 		value[size] = '\0';
 		size = strchop(value);
@@ -165,7 +164,7 @@ sysfs_get_size (struct path *pp, unsigned long long * size)
 		return 1;
 
 	attr[0] = '\0';
-	if (sysfs_attr_get_value(pp->udev, "size", attr, 255) <= 0) {
+	if (!sysfs_attr_get_value_ok(pp->udev, "size", attr, sizeof(attr))) {
 		condlog(3, "%s: No size attribute in sysfs", pp->dev);
 		return 1;
 	}

@@ -560,10 +560,10 @@ sysfs_get_asymmetric_access_state(struct path *pp, char *buff, int buflen)
 	if (!parent)
 		return -1;
 
-	if (sysfs_attr_get_value(parent, "access_state", buff, buflen) <= 0)
+	if (!sysfs_attr_get_value_ok(parent, "access_state", buff, buflen))
 		return -1;
 
-	if (sysfs_attr_get_value(parent, "preferred_path", value, 16) <= 0)
+	if (!sysfs_attr_get_value_ok(parent, "preferred_path", value, sizeof(value)))
 		return 0;
 
 	preferred = strtoul(value, &eptr, 0);
@@ -638,8 +638,8 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 	/*
 	 * read the current dev_loss_tmo value from sysfs
 	 */
-	ret = sysfs_attr_get_value(rport_dev, "dev_loss_tmo", value, 16);
-	if (ret <= 0) {
+	ret = sysfs_attr_get_value(rport_dev, "dev_loss_tmo", value, sizeof(value));
+	if (!sysfs_attr_value_ok(ret, sizeof(value))) {
 		condlog(0, "%s: failed to read dev_loss_tmo value, "
 			"error %d", rport_id, -ret);
 		goto out;
@@ -1737,8 +1737,8 @@ path_offline (struct path * pp)
 	}
 
 	memset(buff, 0x0, SCSI_STATE_SIZE);
-	err = sysfs_attr_get_value(parent, "state", buff, SCSI_STATE_SIZE);
-	if (err <= 0) {
+	err = sysfs_attr_get_value(parent, "state", buff, sizeof(buff));
+	if (!sysfs_attr_value_ok(err, sizeof(buff))) {
 		if (err == -ENXIO)
 			return PATH_REMOVED;
 		else
@@ -2142,7 +2142,7 @@ static ssize_t uid_fallback(struct path *pp, int path_state,
 			return -1;
 		len = sysfs_attr_get_value(pp->udev, "wwid", value,
 					   sizeof(value));
-		if (len <= 0)
+		if (!sysfs_attr_value_ok(len, sizeof(value)))
 			return -1;
 		len = strlcpy(pp->wwid, value, WWID_SIZE);
 		if (len >= WWID_SIZE) {
