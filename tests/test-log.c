@@ -6,6 +6,8 @@
 #include <cmocka.h>
 #include "log.h"
 #include "test-log.h"
+#include "debug.h"
+
 
 __attribute__((format(printf, 2, 0)))
 void __wrap_dlog (int prio, const char * fmt, ...)
@@ -24,6 +26,8 @@ void __wrap_dlog (int prio, const char * fmt, ...)
 
 void expect_condlog(int prio, char *string)
 {
+	if (prio > MAX_VERBOSITY || prio > libmp_verbosity)
+		return;
 	expect_value(__wrap_dlog, prio, prio);
 	will_return(__wrap_dlog, string);
 }
