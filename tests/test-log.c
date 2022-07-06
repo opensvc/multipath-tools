@@ -20,6 +20,7 @@ void __wrap_dlog (int prio, const char * fmt, ...)
 	va_start(ap, fmt);
 	vsnprintf(buff, MAX_MSG_SIZE, fmt, ap);
 	va_end(ap);
+	fprintf(stderr, "%s(%d): %s", __func__, prio, buff);
 	expected = mock_ptr_type(char *);
 	assert_memory_equal(buff, expected, strlen(expected));
 }
