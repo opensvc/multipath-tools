@@ -207,7 +207,6 @@ global:
 	strchop;
 	strlcpy;
 	sync_map_state;
-	sysfs_attr_set_value;
 	sysfs_get_size;
 	sysfs_is_multipathed;
 	timespeccmp;
@@ -264,8 +263,13 @@ global:
 
 	/* foreign */
 	free_scandir_result;
-	sysfs_attr_get_value;
 
 local:
 	*;
+};
+
+LIBMULTIPATH_16.0.0 {
+global:
+	sysfs_attr_set_value;
+	sysfs_attr_get_value;
 };
