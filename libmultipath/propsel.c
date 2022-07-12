@@ -1293,7 +1293,7 @@ out:
 	 */
 	if (pp->find_multipaths_timeout < 0) {
 		pp->find_multipaths_timeout = -pp->find_multipaths_timeout;
-		if (!pp->hwe) {
+		if (VECTOR_SIZE(pp->hwe) == 0) {
 			pp->find_multipaths_timeout =
 				DEFAULT_UNKNOWN_FIND_MULTIPATHS_TIMEOUT;
 			origin = "(default for unknown hardware)";
