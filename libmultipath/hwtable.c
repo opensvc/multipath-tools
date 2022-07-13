@@ -86,7 +86,7 @@ static struct hwentry default_hw[] = {
 	 */
 	{
 		/* Generic NVMe */
-		.vendor        = "NVME",
+		.vendor        = "NVM[eE]",
 		.product       = ".*",
 		.uid_attribute = DEFAULT_NVME_UID_ATTRIBUTE,
 		.checker_name  = NONE,
@@ -1116,7 +1116,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* OceanStor NVMe */
-		.vendor        = "NVME",
+		.vendor        = "NVM[eE]",
 		.product       = "Huawei-XSG1",
 		.checker_name  = DIRECTIO,
 		.no_path_retry = 12,

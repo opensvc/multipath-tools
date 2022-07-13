@@ -15,12 +15,10 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        os: [buster, jessie, bullseye, fedora-35]
+        os: [buster, jessie, bullseye, fedora-36]
         arch: ['', '-i386']
         exclude:
-          - os: fedora-34
-            arch: '-i386'
-          - os: fedora-35
+          - os: fedora-36
             arch: '-i386'
     container: mwilck/multipath-build-${{ matrix.os }}${{ matrix.arch }}
     steps:
