@@ -3,7 +3,6 @@
 multipath-tools for Linux
 =========================
 
-
 https://github.com/opensvc/multipath-tools
 
 This package provides the following binaries to drive the Device Mapper multipathing driver:
@@ -42,14 +41,12 @@ Go to: https://github.com/opensvc/multipath-tools/tags
 Select a release-tag and then click on "zip" or "tar.gz".
 
 
-Source code
-===========
+Devel code
+==========
 
 To get latest devel code:
 
-    git clone https://github.com/opensvc/multipath-tools.git
-
-Github page: https://github.com/opensvc/multipath-tools
+    git clone -b queue https://github.com/openSUSE/multipath-tools
 
 
 Building multipath-tools
@@ -149,4 +146,3 @@ The multipath-tools source code is covered by several different licences.
 Refer to the individual source files for details.
 Source files which do not specify a licence are shipped under LGPL-2.0
 (see `LICENSES/LGPL-2.0`).
-
