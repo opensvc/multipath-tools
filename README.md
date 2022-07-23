@@ -174,3 +174,19 @@ To enable ALUA, the following options should be changed:
 
 - Huawei OceanStor:
    "Host Access Mode" should be changed to "Asymmetric".
+
+
+NVMe
+====
+To use Device Mapper/multipath-tools with NVMe devices,
+if the Native NVMe Multipath subsystem is enabled
+( "Y" in `/sys/module/nvme_core/parameters/multipath` ),
+it has to be disabled:
+
+`echo "options nvme_core multipath=N" > /etc/modprobe.d/01-nvme_core-mp.conf`,
+regenerate the initramfs (`dracut -f` or `update-initramfs`) and reboot.
+
+Check that it is disabled(N) with:
+`cat /sys/module/nvme_core/parameters/multipath`
+or
+`systool -m nvme_core -A multipath`
