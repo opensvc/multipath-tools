@@ -308,7 +308,7 @@ static void write_device(FILE *ff, int nkv, const struct key_value *kv)
 }
 
 /*
- * Some macros to avoid boilerplace code
+ * Some macros to avoid boilerplate code
  */
 
 #define CHECK_STATE(state) ({ \
