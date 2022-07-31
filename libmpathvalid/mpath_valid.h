@@ -112,7 +112,7 @@ int mpathvalid_exit(void);
  * RETURNS:
  * 	MPATH_STRICT, MPATH_SMART, MPATH_GREEDY, or MPATH_MODE_ERROR
  *
- * 	MPATH_STRICT     = find_multiapths (yes|on|no|off)
+ * 	MPATH_STRICT     = find_multipaths (yes|on|no|off)
  * 	MPATH_SMART      = find_multipaths smart
  * 	MPATH_GREEDY     = find_multipaths greedy
  * 	MPATH_MODE_ERROR = multipath configuration not initialized
