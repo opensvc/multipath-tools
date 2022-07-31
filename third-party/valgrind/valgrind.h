@@ -1620,7 +1620,7 @@ typedef
    and say that %r15 is trashed instead.  gcc seems happy to go with
    that.
 
-   Oh .. and this all needs to be conditionalised so that it is
+   Oh .. and this all needs to be conditionalized so that it is
    unchanged from before this commit, when compiled with older gccs
    that don't support __builtin_dwarf_cfa.  Furthermore, since
    this header file is freestanding, it has to be independent of
