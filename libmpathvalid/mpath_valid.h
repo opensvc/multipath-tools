@@ -20,7 +20,7 @@
 #ifndef LIB_MPATH_VALID_H
 #define LIB_MPATH_VALID_H
 
-#ifdef __cpluscplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
