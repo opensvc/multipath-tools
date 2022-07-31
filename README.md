@@ -49,7 +49,7 @@ To get latest devel code:
 
     git clone https://github.com/opensvc/multipath-tools.git
 
-Github page: https://github.com/opensvc/multipath-tools
+GitHub page: https://github.com/opensvc/multipath-tools
 
 
 Building multipath-tools
