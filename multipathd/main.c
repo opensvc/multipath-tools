@@ -583,7 +583,7 @@ retry:
 	if (mpp->prflag) {
 		vector_foreach_slot(mpp->paths, pp, i) {
 			if ((pp->state == PATH_UP)  || (pp->state == PATH_GHOST)) {
-				/* persistent reseravtion check*/
+				/* persistent reservation check*/
 				mpath_pr_event_handle(pp);
 			}
 		}
