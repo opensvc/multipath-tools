@@ -1503,7 +1503,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 		condlog(3, "%s: error in change_foreign", __func__);
 		break;
 	default:
-		condlog(1, "%s: return code %d of change_forein is unsupported",
+		condlog(1, "%s: return code %d of change_foreign is unsupported",
 			__func__, rc);
 		break;
 	}
