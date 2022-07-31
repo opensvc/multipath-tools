@@ -28,7 +28,7 @@
 #include "libdmmp_private.h"
 
 #define _DMMP_SHOW_PS_INDEX_BLK_NAME	0
-#define _DMMP_SHOW_PS_INDEX_SATAUS	1
+#define _DMMP_SHOW_PS_INDEX_STATUS	1
 #define _DMMP_SHOW_PS_INDEX_WWID	2
 #define _DMMP_SHOW_PS_INDEX_PGID	3
 
