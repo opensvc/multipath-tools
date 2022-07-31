@@ -143,7 +143,7 @@ inquiry_data_get_tpgs(struct inquiry_data *id)
  *-----------------------------------------------------------------------------
  */
 #define CODESET_BINARY			0x1
-#define CODESET_ACSII			0x2
+#define CODESET_ASCII			0x2
 #define CODESET_UTF8			0x3
 
 #define ASSOCIATION_UNIT		0x0
