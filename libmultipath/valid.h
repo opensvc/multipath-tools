@@ -23,7 +23,7 @@
  * already.
  * PATH_IS_VALID is returned by is_path_valid, when the path is
  * valid only if it hasn't been released to systemd already.
- * PATH_IS_MAYBE_VALID is returned when the the path would be valid
+ * PATH_IS_MAYBE_VALID is returned when the path would be valid
  * if other paths with the same wwid existed. It is up to the caller
  * to check for these other paths.
  */

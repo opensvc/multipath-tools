@@ -171,7 +171,7 @@ int append_strbuf_quoted(struct strbuf *buf, const char *str);
  * @returns: number of appended characters if successful, (excluding
  * terminating '\0'); negative error code otherwise
  *
- * Appends the the arguments following @fmt, formatted as in printf(), to
+ * Appends the arguments following @fmt, formatted as in printf(), to
  * @strbuf, expanding @strbuf's size as necessary. The function makes sure that
  * the output @strbuf is always 0-terminated.
  * If the function returns an error, @strbuf is unchanged.

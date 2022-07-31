@@ -455,7 +455,7 @@ precedence. See KNOWN ISSUES.
 (Since kernel 2.6.38) Number of msecs before pg_init retry, it must be between 0 and 60000.
 .TP
 .I queue_mode <mode>
-(Since kernel 4.8) Select the the queueing mode per multipath device.
+(Since kernel 4.8) Select the queueing mode per multipath device.
 <mode> can be \fIbio\fR, \fIrq\fR or \fImq\fR, which corresponds to
 bio-based, request-based, and block-multiqueue (blk-mq) request-based,
 respectively.
@@ -1379,7 +1379,7 @@ The protocol that a path is using can be viewed by running
 \fBmultipathd show paths format "%d %P"\fR
 .RE
 .LP
-For every device, these 5 blacklist criteria are evaluated in the the order
+For every device, these 5 blacklist criteria are evaluated in the order
 "property, dev\%node, device, protocol, wwid". If a device turns out to be
 blacklisted by any criterion, it's excluded from handling by multipathd, and
 the later criteria aren't evaluated any more. For each
