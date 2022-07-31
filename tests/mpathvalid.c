@@ -399,7 +399,7 @@ static void test_mpathvalid_is_path_good3(void **state)
 	free(wwid);
 }
 
-/* mabybe valid with no matching paths */
+/* maybe valid with no matching paths */
 static void test_mpathvalid_is_path_good4(void **state)
 {
 	const char *wwids[] = { "WWID_A", "WWID_B", "WWID_C", "WWID_D" };
