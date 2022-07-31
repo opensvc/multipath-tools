@@ -2169,7 +2169,7 @@ static int check_path_reinstate_state(struct path * pp) {
 	get_monotonic_time(&curr_time);
 	/* when path failures has exceeded the san_path_err_threshold
 	 * place the path in delayed state till san_path_err_recovery_time
-	 * so that the cutomer can rectify the issue within this time. After
+	 * so that the customer can rectify the issue within this time. After
 	 * the completion of san_path_err_recovery_time it should
 	 * automatically reinstate the path
 	 * (note: we know that san_path_err_threshold > 0 here).
