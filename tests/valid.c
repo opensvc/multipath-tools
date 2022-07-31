@@ -293,7 +293,7 @@ static void test_sysfs_is_multipathed(void **state)
 
 	memset(&pp, 0, sizeof(pp));
 	conf.find_multipaths = FIND_MULTIPATHS_STRICT;
-	/* test for already existing multiapthed device */
+	/* test for already existing multipathed device */
 	will_return(__wrap_sysfs_is_multipathed, true);
 	will_return(__wrap_sysfs_is_multipathed, wwid);
 	assert_int_equal(is_path_valid(name, &conf, &pp, true),
