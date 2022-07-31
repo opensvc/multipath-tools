@@ -29,7 +29,7 @@
 
 #define N_CONF_FILES 2
 
-static const char tmplate[] = "/tmp/hwtable-XXXXXX";
+static const char template[] = "/tmp/hwtable-XXXXXX";
 
 struct key_value {
 	const char *key;
@@ -136,7 +136,7 @@ static int setup(void **state)
 	if (hwt == NULL)
 		return -1;
 
-	snprintf(buf, sizeof(buf), "%s", tmplate);
+	snprintf(buf, sizeof(buf), "%s", template);
 	if (mkdtemp(buf) == NULL) {
 		condlog(0, "mkdtemp: %s", strerror(errno));
 		goto err;
@@ -255,7 +255,7 @@ static void write_defaults(const struct hwt_state *hwt)
 		{ "detect_prio", "no" },
 		{ "detect_checker", "no" },
 	};
-	char buf[sizeof(tmplate) + sizeof(bindings_name)];
+	char buf[sizeof(template) + sizeof(bindings_name)];
 	char dirbuf[PATH_MAX];
 
 	snprintf(buf, sizeof(buf), "%s/%s", hwt->tmpname, bindings_name);
