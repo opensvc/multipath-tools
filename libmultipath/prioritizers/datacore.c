@@ -1,6 +1,6 @@
 /*
  * (C) 2010 Christophe Varoqui
- * (C) 2009 Dembach Goo Infromatik GmbH & Co KG
+ * (C) 2009 Dembach Goo Informatik GmbH & Co KG
  * Manon Goo <manon.goo@dg-i.net>
  *
  * datacore.c
