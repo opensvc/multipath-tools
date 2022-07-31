@@ -10,7 +10,7 @@
  * Matthias Rudolph <matthias.rudolph@hds.com>
  *
  * This work is made available on the basis of the
- * GPLv2 for detials see <http://www.gnu.org/licenses/>.
+ * GPLv2 for details see <http://www.gnu.org/licenses/>.
  *
  * Manon Goo 2009
  *
