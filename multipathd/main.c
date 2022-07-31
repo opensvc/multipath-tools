@@ -1954,7 +1954,7 @@ ghost_delay_tick(struct vectors *vecs)
 }
 
 static void
-defered_failback_tick (vector mpvec)
+deferred_failback_tick (vector mpvec)
 {
 	struct multipath * mpp;
 	unsigned int i;
@@ -2623,7 +2623,7 @@ checkerloop (void *ap)
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(&vecs->lock);
 		pthread_testcancel();
-		defered_failback_tick(vecs->mpvec);
+		deferred_failback_tick(vecs->mpvec);
 		retry_count_tick(vecs->mpvec);
 		missing_uev_wait_tick(vecs);
 		ghost_delay_tick(vecs);
