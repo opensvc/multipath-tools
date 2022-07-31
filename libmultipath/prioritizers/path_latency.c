@@ -193,7 +193,7 @@ out:
 }
 
 /*
- * Do not scale the prioriy in a certain range such as [0, 1024]
+ * Do not scale the priority in a certain range such as [0, 1024]
  * because scaling will eliminate the effect of base_num.
  */
 int calcPrio(double lg_avglatency, double lg_maxavglatency,
