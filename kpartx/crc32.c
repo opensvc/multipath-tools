@@ -290,7 +290,7 @@ uint32_t attribute((pure)) crc32_be(uint32_t crc, unsigned char const *p, size_t
  * the end, so we have to add 32 extra cycles shifting in zeros at the
  * end of every message,
  *
- * So the standard trick is to rearrage merging in the next_input_bit()
+ * So the standard trick is to rearrange merging in the next_input_bit()
  * until the moment it's needed.  Then the first 32 cycles can be precomputed,
  * and merging in the final 32 zero bits to make room for the CRC can be
  * skipped entirely.
