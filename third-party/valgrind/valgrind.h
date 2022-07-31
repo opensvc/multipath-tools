@@ -1624,7 +1624,7 @@ typedef
    unchanged from before this commit, when compiled with older gccs
    that don't support __builtin_dwarf_cfa.  Furthermore, since
    this header file is freestanding, it has to be independent of
-   config.h, and so the following conditionalisation cannot depend on
+   config.h, and so the following conditionalization cannot depend on
    configure time checks.
 
    Although it's not clear from
