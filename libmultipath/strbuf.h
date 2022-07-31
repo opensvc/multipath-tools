@@ -159,7 +159,7 @@ int fill_strbuf(struct strbuf *buf, char c, int slen);
  *
  * Appends the given string to @strbuf, with leading and trailing double
  * quotes (") added, expanding @strbuf's size as necessary. Any double quote
- * characters (") in the string are transformed to double double quotes ("").
+ * characters (") in the string are transformed to a pair of double quotes ("").
  * If the function returns an error, @strbuf is unchanged.
  */
 int append_strbuf_quoted(struct strbuf *buf, const char *str);
