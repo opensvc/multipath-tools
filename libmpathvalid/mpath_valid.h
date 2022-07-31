@@ -112,7 +112,7 @@ int mpathvalid_exit(void);
  * RETURNS:
  * 	MPATH_STRICT, MPATH_SMART, MPATH_GREEDY, or MPATH_MODE_ERROR
  *
- * 	MPATH_STRICT     = find_multiapths (yes|on|no|off)
+ * 	MPATH_STRICT     = find_multipaths (yes|on|no|off)
  * 	MPATH_SMART      = find_multipaths smart
  * 	MPATH_GREEDY     = find_multipaths greedy
  * 	MPATH_MODE_ERROR = multipath configuration not initialized
@@ -126,7 +126,7 @@ unsigned int mpathvalid_get_mode(void);
  * 	potentially claimed (MPATH_IS_VALID, MPATH_IS_VALID_NO_CHECK,
  * 	or MPATH_IS_MAYBE_VALID) and wwid is not NULL, then *wiid will
  * 	be set to point to the wwid of device. If set, *wwid must be
- * 	freed by the caller. path_wwids is an obptional parameter that
+ * 	freed by the caller. path_wwids is an optional parameter that
  * 	points to an array of wwids, that were returned from previous
  * 	calls to mpathvalid_is_path(). These are wwids of existing
  * 	devices that are or potentially are claimed by device-mapper

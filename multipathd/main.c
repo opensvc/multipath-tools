@@ -583,7 +583,7 @@ retry:
 	if (mpp->prflag) {
 		vector_foreach_slot(mpp->paths, pp, i) {
 			if ((pp->state == PATH_UP)  || (pp->state == PATH_GHOST)) {
-				/* persistent reseravtion check*/
+				/* persistent reservation check*/
 				mpath_pr_event_handle(pp);
 			}
 		}
@@ -1515,7 +1515,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 		condlog(3, "%s: error in change_foreign", __func__);
 		break;
 	default:
-		condlog(1, "%s: return code %d of change_forein is unsupported",
+		condlog(1, "%s: return code %d of change_foreign is unsupported",
 			__func__, rc);
 		break;
 	}
@@ -1966,7 +1966,7 @@ ghost_delay_tick(struct vectors *vecs)
 }
 
 static void
-defered_failback_tick (vector mpvec)
+deferred_failback_tick (vector mpvec)
 {
 	struct multipath * mpp;
 	unsigned int i;
@@ -2186,7 +2186,7 @@ static int check_path_reinstate_state(struct path * pp) {
 	get_monotonic_time(&curr_time);
 	/* when path failures has exceeded the san_path_err_threshold
 	 * place the path in delayed state till san_path_err_recovery_time
-	 * so that the cutomer can rectify the issue within this time. After
+	 * so that the customer can rectify the issue within this time. After
 	 * the completion of san_path_err_recovery_time it should
 	 * automatically reinstate the path
 	 * (note: we know that san_path_err_threshold > 0 here).
@@ -2647,7 +2647,7 @@ checkerloop (void *ap)
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(&vecs->lock);
 		pthread_testcancel();
-		defered_failback_tick(vecs->mpvec);
+		deferred_failback_tick(vecs->mpvec);
 		retry_count_tick(vecs->mpvec);
 		missing_uev_wait_tick(vecs);
 		ghost_delay_tick(vecs);

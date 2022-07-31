@@ -65,7 +65,7 @@ int mpath_connect(void);
 /*
  * DESCRIPTION:
  *	Disconnect from the multipathd daemon. This function must be
- *	run after after processing all the multipath commands.
+ *	run after processing all the multipath commands.
  *
  * RETURNS:
  *	0 on success. -1 on failure (with errno set).

@@ -1075,7 +1075,7 @@ typedef
 
 /* Use these to write the name of your wrapper.  NOTE: duplicates
    VG_WRAP_FUNCTION_Z{U,Z} in pub_tool_redir.h.  NOTE also: inserts
-   the default behaviour equivalance class tag "0000" into the name.
+   the default behaviour equivalence class tag "0000" into the name.
    See pub_tool_redir.h for details -- normally you don't need to
    think about this, though. */
 
@@ -1620,11 +1620,11 @@ typedef
    and say that %r15 is trashed instead.  gcc seems happy to go with
    that.
 
-   Oh .. and this all needs to be conditionalised so that it is
+   Oh .. and this all needs to be conditionalized so that it is
    unchanged from before this commit, when compiled with older gccs
    that don't support __builtin_dwarf_cfa.  Furthermore, since
    this header file is freestanding, it has to be independent of
-   config.h, and so the following conditionalisation cannot depend on
+   config.h, and so the following conditionalization cannot depend on
    configure time checks.
 
    Although it's not clear from
@@ -1673,7 +1673,7 @@ typedef
 /* NB 9 Sept 07.  There is a nasty kludge here in all these CALL_FN_
    macros.  In order not to trash the stack redzone, we need to drop
    %rsp by 128 before the hidden call, and restore afterwards.  The
-   nastyness is that it is only by luck that the stack still appears
+   nastiness is that it is only by luck that the stack still appears
    to be unwindable during the hidden call - since then the behaviour
    of any routine using this macro does not match what the CFI data
    says.  Sigh.

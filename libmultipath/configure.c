@@ -397,7 +397,7 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 	 * into a mp->params strings to feed the device-mapper
 	 */
 	if (assemble_map(mpp, params)) {
-		condlog(0, "%s: problem assembing map", mpp->alias);
+		condlog(0, "%s: problem assembling map", mpp->alias);
 		return 1;
 	}
 	return 0;

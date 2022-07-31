@@ -480,7 +480,7 @@ static int handle_args(int argc, char * argv[], int nline)
 	}
 	if ((verbose > 2) && num_transportids)
 	{
-		fprintf (stderr, "number of tranport-ids decoded from "
+		fprintf (stderr, "number of transport-ids decoded from "
 				"command line : %d\n", num_transportids);
 	}
 

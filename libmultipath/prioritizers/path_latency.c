@@ -64,7 +64,7 @@ static int prepare_directio_read(int fd, int *blksz, char **pbuf,
 	long flags;
 
 	if (ioctl(fd, BLKBSZGET, blksz) < 0) {
-		pp_pl_log(3,"catnnot get blocksize, set default");
+		pp_pl_log(3,"cannot get blocksize, set default");
 		*blksz = DEF_BLK_SIZE;
 	}
 	if (posix_memalign((void **)pbuf, pgsize, *blksz))
@@ -193,7 +193,7 @@ out:
 }
 
 /*
- * Do not scale the prioriy in a certain range such as [0, 1024]
+ * Do not scale the priority in a certain range such as [0, 1024]
  * because scaling will eliminate the effect of base_num.
  */
 int calcPrio(double lg_avglatency, double lg_maxavglatency,

@@ -497,7 +497,7 @@ static void test_free_with_pending(void **state)
         do_libcheck_reset(1);
 }
 
-/* test removing orpahed aio_group on free */
+/* test removing orphaned aio_group on free */
 static void test_orphaned_aio_group(void **state)
 {
 	struct checker c[AIO_GROUP_SIZE] = {{.cls = NULL}};

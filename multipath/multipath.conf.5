@@ -455,7 +455,7 @@ precedence. See KNOWN ISSUES.
 (Since kernel 2.6.38) Number of msecs before pg_init retry, it must be between 0 and 60000.
 .TP
 .I queue_mode <mode>
-(Since kernel 4.8) Select the the queueing mode per multipath device.
+(Since kernel 4.8) Select the queueing mode per multipath device.
 <mode> can be \fIbio\fR, \fIrq\fR or \fImq\fR, which corresponds to
 bio-based, request-based, and block-multiqueue (blk-mq) request-based,
 respectively.
@@ -935,7 +935,7 @@ This option is not supported any more. The value is ignored.
 .B san_path_err_threshold
 If set to a value greater than 0, multipathd will watch paths and check how many
 times a path has been failed due to errors.If the number of failures on a particular
-path is greater then the san_path_err_threshold, then the path will not reinstate
+path is greater than the san_path_err_threshold, then the path will not reinstate
 till san_path_err_recovery_time. These path failures should occur within a
 san_path_err_forget_rate checks, if not we will consider the path is good enough
 to reinstantate. See "Shaky paths detection" below.
@@ -949,7 +949,7 @@ The default is: \fBno\fR
 .B san_path_err_forget_rate
 If set to a value greater than 0, multipathd will check whether the path failures
 has exceeded  the san_path_err_threshold within this many checks i.e
-san_path_err_forget_rate . If so we will not reinstante the path till
+san_path_err_forget_rate . If so we will not reinstate the path till
 san_path_err_recovery_time. See "Shaky paths detection" below.
 .RS
 .TP
@@ -962,7 +962,7 @@ The default is: \fBno\fR
 If set to a value greater than 0, multipathd will make sure that when path failures
 has exceeded the san_path_err_threshold within san_path_err_forget_rate then the path
 will be placed in failed state for san_path_err_recovery_time duration.Once san_path_err_recovery_time
-has timeout  we will reinstante the failed path .
+has timeout  we will reinstate the failed path .
 san_path_err_recovery_time value should be in secs.
 See "Shaky paths detection" below.
 .RS
@@ -1000,7 +1000,7 @@ If the rate of IO error on a particular path is greater than the
 \fImarginal_path_err_rate_threshold\fR, then the path will not reinstate for
 \fImarginal_path_err_recheck_gap_time\fR seconds unless there is only one
 active path. After \fImarginal_path_err_recheck_gap_time\fR expires, the path
-will be requeueed for rechecking. If checking result is good enough, the
+will be requeued for rechecking. If checking result is good enough, the
 path will be reinstated. See "Shaky paths detection" below.
 .RS
 .TP
@@ -1031,7 +1031,7 @@ value, the failed path of  which the IO error rate is larger than
 \fImarginal_path_err_rate_threshold\fR will be kept in failed state for
 \fImarginal_path_err_recheck_gap_time\fR seconds. When
 \fImarginal_path_err_recheck_gap_time\fR seconds expires, the path will be
-requeueed for checking. If checking result is good enough, the path will be
+requeued for checking. If checking result is good enough, the path will be
 reinstated, or else it will keep failed. See "Shaky paths detection" below.
 .RS
 .TP
@@ -1379,7 +1379,7 @@ The protocol that a path is using can be viewed by running
 \fBmultipathd show paths format "%d %P"\fR
 .RE
 .LP
-For every device, these 5 blacklist criteria are evaluated in the the order
+For every device, these 5 blacklist criteria are evaluated in the order
 "property, dev\%node, device, protocol, wwid". If a device turns out to be
 blacklisted by any criterion, it's excluded from handling by multipathd, and
 the later criteria aren't evaluated any more. For each

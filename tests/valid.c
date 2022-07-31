@@ -293,7 +293,7 @@ static void test_sysfs_is_multipathed(void **state)
 
 	memset(&pp, 0, sizeof(pp));
 	conf.find_multipaths = FIND_MULTIPATHS_STRICT;
-	/* test for already existing multiapthed device */
+	/* test for already existing multipathed device */
 	will_return(__wrap_sysfs_is_multipathed, true);
 	will_return(__wrap_sysfs_is_multipathed, wwid);
 	assert_int_equal(is_path_valid(name, &conf, &pp, true),
@@ -452,7 +452,7 @@ static void test_greedy(void **state)
 	assert_string_equal(pp.dev, name);
 	assert_ptr_equal(pp.udev, &test_udev);
 	assert_string_equal(pp.wwid, wwid);
-	/* test greedy success without checking multiapthd */
+	/* test greedy success without checking multipathd */
 	memset(&pp, 0, sizeof(pp));
 	setup_passing(name, wwid, CHECK_MPATHD_SKIP, STAGE_IS_FAILED);
 	assert_int_equal(is_path_valid(name, &conf, &pp, false),

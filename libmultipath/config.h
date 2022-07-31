@@ -248,7 +248,7 @@ struct config {
  * libmultipath calls. If an application wants to keep using the
  * udev variable after calling libmultipath_exit(), it should have taken
  * an additional reference on it beforehand. This is the case e.g.
- * after initiazing udev with udev_new().
+ * after initializing udev with udev_new().
  */
 extern struct udev *udev;
 

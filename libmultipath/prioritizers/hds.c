@@ -32,7 +32,7 @@
  * Half of the LUNs are accessed via one HBA/storage controller and the other
  * half via the other HBA/storage controller.
  *
- * In cluster environmemnts (RAC) it also guarantees that all cluster nodes have
+ * In cluster environments (RAC) it also guarantees that all cluster nodes have
  * access to the LDEVs via the same controller.
  *
  * You can run the prioritizer manually in verbose mode:

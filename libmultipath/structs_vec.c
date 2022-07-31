@@ -205,7 +205,7 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 				continue;
 
 			/*
-			 * At this point, pp->udev is valid and and pp->wwid
+			 * At this point, pp->udev is valid and pp->wwid
 			 * is the best we could get
 			 */
 			if (*pp->wwid && strcmp(mpp->wwid, pp->wwid)) {
