@@ -448,7 +448,7 @@ static const struct key_value npr_queue = { _no_path_retry, "queue" };
 /***** BEGIN TESTS SECTION *****/
 
 /*
- * Dump the configuration, subistitute the dumped configuration
+ * Dump the configuration, substitute the dumped configuration
  * for the current one, and verify that the result is identical.
  */
 static void replicate_config(const struct hwt_state *hwt, bool local)
