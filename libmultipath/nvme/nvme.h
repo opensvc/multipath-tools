@@ -224,7 +224,7 @@ char *nvme_char_from_block(char *block);
  * Notes:  This function does not care about transport so that the offset is
  * not going to be checked inside of this function for the unsupported fields
  * in a specific transport.  For example, BPMBL(Boot Partition Memory Buffer
- * Location) register is not supported by fabrics, but it can be chcked here.
+ * Location) register is not supported by fabrics, but it can be checked here.
  */
 static inline bool is_64bit_reg(__u32 offset)
 {
