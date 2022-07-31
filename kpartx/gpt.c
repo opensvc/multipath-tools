@@ -357,7 +357,7 @@ is_gpt_valid(int fd, uint64_t lba,
 			__le32_to_cpu((*gpt)->num_partition_entries) *
 			__le32_to_cpu((*gpt)->sizeof_partition_entry));
 	if (crc != __le32_to_cpu((*gpt)->partition_entry_array_crc32)) {
-		// printf("GUID Partitition Entry Array CRC check failed.\n");
+		// printf("GUID Partition Entry Array CRC check failed.\n");
 		free(*gpt);
 		*gpt = NULL;
 		free(*ptes);
