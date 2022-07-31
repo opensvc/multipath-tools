@@ -373,7 +373,7 @@ uevent_filter(struct uevent *later, struct uevent_filter_state *st)
 
 	list_for_some_entry_reverse_safe(earlier, tmp, &later->node, &st->uevq, node) {
 		/*
-		 * filter unnessary earlier uevents
+		 * filter unnecessary earlier uevents
 		 * by the later uevent
 		 */
 		if (!list_empty(&earlier->merge_node)) {
