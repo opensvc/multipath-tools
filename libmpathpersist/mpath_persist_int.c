@@ -601,7 +601,7 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		if (get_be64(mpp->reservation_key) &&
 			memcmp(pr_buff->prin_descriptor.prin_readfd.descriptors[i]->key,
 			       &mpp->reservation_key, 8)){
-			/*register with tarnsport id*/
+			/*register with transport id*/
 			memset(pamp, 0, length);
 			pamp->trnptid_list[0] = pptr;
 			memset (pamp->trnptid_list[0], 0, sizeof (struct transportid));
