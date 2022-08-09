@@ -602,6 +602,10 @@ retry:
 		goto fail;
 	}
 	verify_paths(mpp);
+	if (VECTOR_SIZE(mpp->paths) == 0 &&
+	    flush_map_nopaths(mpp, vecs))
+		return 1;
+
 	mpp->action = ACT_RELOAD;
 
 	if (mpp->prflag) {
