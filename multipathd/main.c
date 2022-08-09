@@ -561,6 +561,30 @@ int update_multipath (struct vectors *vecs, char *mapname, int reset)
 	return 0;
 }
 
+static bool
+flush_map_nopaths(struct multipath *mpp, struct vectors *vecs) {
+	char alias[WWID_SIZE];
+
+	/*
+	 * flush_map will fail if the device is open
+	 */
+	strlcpy(alias, mpp->alias, WWID_SIZE);
+	if (mpp->flush_on_last_del == FLUSH_ENABLED) {
+		condlog(2, "%s Last path deleted, disabling queueing",
+			mpp->alias);
+		mpp->retry_tick = 0;
+		mpp->no_path_retry = NO_PATH_RETRY_FAIL;
+		mpp->disable_queueing = 1;
+		mpp->stat_map_failures++;
+		dm_queue_if_no_path(mpp->alias, 0);
+	}
+	if (!flush_map(mpp, vecs, 1)) {
+		condlog(2, "%s: removed map after removing all paths", alias);
+		return true;
+	}
+	return false;
+}
+
 static int
 update_map (struct multipath *mpp, struct vectors *vecs, int new_map)
 {
@@ -1363,34 +1387,12 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 			vector_del_slot(mpp->paths, i);
 
 		/*
-		 * remove the map IF removing the last path
+		 * remove the map IF removing the last path. If
+		 * flush_map_nopaths succeeds, the path has been removed.
 		 */
-		if (VECTOR_SIZE(mpp->paths) == 0) {
-			char alias[WWID_SIZE];
-
-			/*
-			 * flush_map will fail if the device is open
-			 */
-			strlcpy(alias, mpp->alias, WWID_SIZE);
-			if (mpp->flush_on_last_del == FLUSH_ENABLED) {
-				condlog(2, "%s Last path deleted, disabling queueing", mpp->alias);
-				mpp->retry_tick = 0;
-				mpp->no_path_retry = NO_PATH_RETRY_FAIL;
-				mpp->disable_queueing = 1;
-				mpp->stat_map_failures++;
-				dm_queue_if_no_path(mpp->alias, 0);
-			}
-			if (!flush_map(mpp, vecs, 1)) {
-				condlog(2, "%s: removed map after"
-					" removing all paths",
-					alias);
-				/* flush_map() has freed the path */
-				goto out;
-			}
-			/*
-			 * Not an error, continue
-			 */
-		}
+		if (VECTOR_SIZE(mpp->paths) == 0 &&
+		    flush_map_nopaths(mpp, vecs))
+			goto out;
 
 		if (setup_map(mpp, &params, vecs)) {
 			condlog(0, "%s: failed to setup map for"
