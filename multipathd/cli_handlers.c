@@ -688,7 +688,7 @@ cli_add_map (void * v, struct strbuf *reply, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
 	int major = -1, minor = -1;
-	char dev_path[PATH_SIZE];
+	char dev_path[FILE_NAME_SIZE];
 	char *refwwid, *alias = NULL;
 	int rc, count = 0;
 	struct config *conf;

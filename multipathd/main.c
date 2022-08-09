@@ -911,14 +911,22 @@ rescan_path(struct udev_device *ud)
 {
 	ud = udev_device_get_parent_with_subsystem_devtype(ud, "scsi",
 							   "scsi_device");
-	if (ud)
-		sysfs_attr_set_value(ud, "rescan", "1", strlen("1"));
+	if (ud) {
+		ssize_t ret =
+			sysfs_attr_set_value(ud, "rescan", "1", strlen("1"));
+		if (ret != strlen("1"))
+			log_sysfs_attr_set_value(1, ret,
+						 "%s: failed to trigger rescan",
+						 udev_device_get_syspath(ud));
+	}
 }
 
 void
 handle_path_wwid_change(struct path *pp, struct vectors *vecs)
 {
 	struct udev_device *udd;
+	static const char add[] = "add";
+	ssize_t ret;
 
 	if (!pp || !pp->udev)
 		return;
@@ -929,8 +937,12 @@ handle_path_wwid_change(struct path *pp, struct vectors *vecs)
 		dm_fail_path(pp->mpp->alias, pp->dev_t);
 	}
 	rescan_path(udd);
-	sysfs_attr_set_value(udd, "uevent", "add", strlen("add"));
+	ret = sysfs_attr_set_value(udd, "uevent", add, sizeof(add) - 1);
 	udev_device_unref(udd);
+	if (ret != sizeof(add) - 1)
+		log_sysfs_attr_set_value(1, ret,
+					 "%s: failed to trigger add event",
+					 pp->dev);
 }
 
 bool
@@ -1126,7 +1138,7 @@ sysfs_get_ro (struct path *pp)
 	if (!pp->udev)
 		return -1;
 
-	if (sysfs_attr_get_value(pp->udev, "ro", buff, sizeof(buff)) <= 0) {
+	if (!sysfs_attr_get_value_ok(pp->udev, "ro", buff, sizeof(buff))) {
 		condlog(3, "%s: Cannot read ro attribute in sysfs", pp->dev);
 		return -1;
 	}
@@ -2003,9 +2015,14 @@ partial_retrigger_tick(vector pathvec)
 		    --pp->partial_retrigger_delay == 0) {
 			const char *msg = udev_device_get_is_initialized(pp->udev) ?
 					  "change" : "add";
+			ssize_t len = strlen(msg);
+			ssize_t ret = sysfs_attr_set_value(pp->udev, "uevent", msg,
+							   len);
 
-			sysfs_attr_set_value(pp->udev, "uevent", msg,
-					     strlen(msg));
+			if (len != ret)
+				log_sysfs_attr_set_value(2, ret,
+					"%s: failed to trigger %s event",
+					pp->dev, msg);
 		}
 	}
 }
@@ -2245,12 +2262,19 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 
 	if (!pp->mpp && pp->initialized == INIT_MISSING_UDEV) {
 		if (pp->retriggers < retrigger_tries) {
+			static const char change[] = "change";
+			ssize_t ret;
+
 			condlog(2, "%s: triggering change event to reinitialize",
 				pp->dev);
 			pp->initialized = INIT_REQUESTED_UDEV;
 			pp->retriggers++;
-			sysfs_attr_set_value(pp->udev, "uevent", "change",
-					     strlen("change"));
+			ret = sysfs_attr_set_value(pp->udev, "uevent", change,
+						   sizeof(change) - 1);
+			if (ret != sizeof(change) - 1)
+				log_sysfs_attr_set_value(1, ret,
+							 "%s: failed to trigger change event",
+							 pp->dev);
 			return 0;
 		} else {
 			condlog(1, "%s: not initialized after %d udev retriggers",

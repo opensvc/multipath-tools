@@ -172,8 +172,15 @@ fpin_els_add_li_frame(struct fc_nl_event *fc_event)
 /*Sets the rport port_state to marginal*/
 static void fpin_set_rport_marginal(struct udev_device *rport_dev)
 {
-	sysfs_attr_set_value(rport_dev, "port_state",
-				"Marginal", strlen("Marginal"));
+	static const char marginal[] = "Marginal";
+	ssize_t ret;
+
+	ret = sysfs_attr_set_value(rport_dev, "port_state",
+				   marginal, sizeof(marginal) - 1);
+	if (ret != sizeof(marginal) - 1)
+		log_sysfs_attr_set_value(2, ret,
+					 "%s: failed to set port_state to marginal",
+					 udev_device_get_syspath(rport_dev));
 }
 
 /*Add the marginal devices info into the list*/

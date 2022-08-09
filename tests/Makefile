@@ -16,7 +16,7 @@ CFLAGS += $(BIN_CFLAGS) -Wno-unused-parameter $(W_MISSING_INITIALIZERS)
 LIBDEPS += -L. -L$(mpathcmddir) -lmultipath -lmpathcmd -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
-	 alias directio valid devt mpathvalid strbuf
+	 alias directio valid devt mpathvalid strbuf sysfs
 HELPERS := test-lib.o test-log.o
 
 .SILENT: $(TESTS:%=%.o)
@@ -70,6 +70,9 @@ ifneq ($(DIO_TEST_DEV),)
 directio-test_LIBDEPS := -laio
 endif
 strbuf-test_OBJDEPS := ../libmultipath/strbuf.o
+sysfs-test_TESTDEPS := test-log.o
+sysfs-test_OBJDEPS := ../libmultipath/sysfs.o ../libmultipath/util.o
+sysfs-test_LIBDEPS := -ludev -lpthread -ldl
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $($*-test_FLAGS) -c -o $@ $<

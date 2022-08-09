@@ -350,6 +350,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = (300 / DEFAULT_CHECKINT),
 		.checker_name  = EMC_CLARIION,
 		.prio_name     = PRIO_EMC,
+		.detect_checker = DETECT_CHECKER_OFF,
 	},
 	{
 		/* Invista / VPLEX */

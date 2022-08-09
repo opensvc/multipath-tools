@@ -3,7 +3,6 @@
 multipath-tools for Linux
 =========================
 
-
 https://github.com/opensvc/multipath-tools
 
 This package provides the following binaries to drive the Device Mapper multipathing driver:
@@ -42,14 +41,12 @@ Go to: https://github.com/opensvc/multipath-tools/tags
 Select a release-tag and then click on "zip" or "tar.gz".
 
 
-Source code
-===========
+Devel code
+==========
 
 To get latest devel code:
 
-    git clone https://github.com/opensvc/multipath-tools.git
-
-Github page: https://github.com/opensvc/multipath-tools
+    git clone -b queue https://github.com/openSUSE/multipath-tools
 
 
 Building multipath-tools
@@ -150,3 +147,30 @@ Refer to the individual source files for details.
 Source files which do not specify a licence are shipped under LGPL-2.0
 (see `LICENSES/LGPL-2.0`).
 
+
+ALUA
+====
+This is a rough guide, consult your storage device manufacturer documentation.
+
+ALUA is supported in some devices, but usually it's disabled by default.
+To enable ALUA, the following options should be changed:
+
+- EMC CLARiiON/VNX:
+   "Failover Mode" should be changed to "4" or "Active-Active mode(ALUA)-failover mode 4"
+
+- HPE 3PAR, Primera, and Alletra 9000:
+   "Host:" should be changed to "Generic-ALUA Persona 2 (UARepLun, SESLun, ALUA)".
+
+- Promise VTrak/Vess:
+   "LUN Affinity" and "ALUA" should be changed to "Enable", "Redundancy Type"
+   must be "Active-Active".
+
+- LSI/Engenio/NetApp RDAC class, as NetApp SANtricity E/EF Series and OEM arrays:
+   "Select operating system:" should be changed to "Linux DM-MP (Kernel 3.10 or later)".
+
+- NetApp ONTAP:
+   To check ALUA state: "igroup show -v <igroup_name>", and to enable ALUA:
+   "igroup set <igroup_name> alua yes".
+
+- Huawei OceanStor:
+   "Host Access Mode" should be changed to "Asymmetric".

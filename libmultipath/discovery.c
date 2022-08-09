@@ -263,41 +263,19 @@ declare_sysfs_get_str(vendor);
 declare_sysfs_get_str(model);
 declare_sysfs_get_str(rev);
 
-static ssize_t
-sysfs_get_binary (struct udev_device * udev, const char *attrname,
-		  unsigned char *buff, size_t len)
-{
-	ssize_t attr_len;
-	const char * devname;
-
-	if (!udev) {
-		condlog(3, "No udev device given\n");
-		return -ENOSYS;
-	}
-
-	devname = udev_device_get_sysname(udev);
-	attr_len = sysfs_bin_attr_get_value(udev, attrname, buff, len);
-	if (attr_len < 0) {
-		condlog(3, "%s: attribute %s not found in sysfs",
-			devname, attrname);
-		return attr_len;
-	}
-	return attr_len;
-}
-
 ssize_t sysfs_get_vpd(struct udev_device * udev, unsigned char pg,
 		      unsigned char *buff, size_t len)
 {
 	char attrname[9];
 
 	snprintf(attrname, sizeof(attrname), "vpd_pg%02x", pg);
-	return sysfs_get_binary(udev, attrname, buff, len);
+	return sysfs_bin_attr_get_value(udev, attrname, buff, len);
 }
 
 ssize_t sysfs_get_inquiry(struct udev_device * udev,
 			  unsigned char *buff, size_t len)
 {
-	return sysfs_get_binary(udev, "inquiry", buff, len);
+	return sysfs_bin_attr_get_value(udev, "inquiry", buff, len);
 }
 
 int
@@ -582,10 +560,10 @@ sysfs_get_asymmetric_access_state(struct path *pp, char *buff, int buflen)
 	if (!parent)
 		return -1;
 
-	if (sysfs_attr_get_value(parent, "access_state", buff, buflen) <= 0)
+	if (!sysfs_attr_get_value_ok(parent, "access_state", buff, buflen))
 		return -1;
 
-	if (sysfs_attr_get_value(parent, "preferred_path", value, 16) <= 0)
+	if (!sysfs_attr_get_value_ok(parent, "preferred_path", value, sizeof(value)))
 		return 0;
 
 	preferred = strtoul(value, &eptr, 0);
@@ -620,13 +598,15 @@ sysfs_set_eh_deadline(struct path *pp)
 		len = sprintf(value, "%d", pp->eh_deadline);
 
 	ret = sysfs_attr_set_value(hostdev, "eh_deadline",
-				   value, len + 1);
+				   value, len);
 	/*
 	 * not all scsi drivers support setting eh_deadline, so failing
 	 * is totally reasonable
 	 */
-	if (ret <= 0)
-		condlog(3, "%s: failed to set eh_deadline to %s, error %d", udev_device_get_sysname(hostdev), value, -ret);
+	if (ret != len)
+		log_sysfs_attr_set_value(3, ret,
+			"%s: failed to set eh_deadline to %s",
+			udev_device_get_sysname(hostdev), value);
 
 	udev_device_unref(hostdev);
 	return (ret <= 0);
@@ -660,8 +640,8 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 	/*
 	 * read the current dev_loss_tmo value from sysfs
 	 */
-	ret = sysfs_attr_get_value(rport_dev, "dev_loss_tmo", value, 16);
-	if (ret <= 0) {
+	ret = sysfs_attr_get_value(rport_dev, "dev_loss_tmo", value, sizeof(value));
+	if (!sysfs_attr_value_ok(ret, sizeof(value))) {
 		condlog(0, "%s: failed to read dev_loss_tmo value, "
 			"error %d", rport_id, -ret);
 		goto out;
@@ -689,19 +669,22 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 	    pp->fast_io_fail != MP_FAST_IO_FAIL_OFF) {
 		/* Check if we need to temporarily increase dev_loss_tmo */
 		if ((unsigned int)pp->fast_io_fail >= tmo) {
+			ssize_t len;
+
 			/* Increase dev_loss_tmo temporarily */
 			snprintf(value, sizeof(value), "%u",
 				 (unsigned int)pp->fast_io_fail + 1);
+			len = strlen(value);
 			ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
-						   value, strlen(value));
-			if (ret <= 0) {
+						   value, len);
+			if (ret != len) {
 				if (ret == -EBUSY)
 					condlog(3, "%s: rport blocked",
 						rport_id);
 				else
-					condlog(0, "%s: failed to set "
-						"dev_loss_tmo to %s, error %d",
-						rport_id, value, -ret);
+					log_sysfs_attr_set_value(0, ret,
+						"%s: failed to set dev_loss_tmo to %s",
+						rport_id, value);
 				goto out;
 			}
 		}
@@ -713,32 +696,39 @@ sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 		pp->dev_loss = DEFAULT_DEV_LOSS_TMO;
 	}
 	if (pp->fast_io_fail != MP_FAST_IO_FAIL_UNSET) {
+		ssize_t len;
+
 		if (pp->fast_io_fail == MP_FAST_IO_FAIL_OFF)
 			sprintf(value, "off");
 		else if (pp->fast_io_fail == MP_FAST_IO_FAIL_ZERO)
 			sprintf(value, "0");
 		else
 			snprintf(value, 16, "%u", pp->fast_io_fail);
+		len = strlen(value);
 		ret = sysfs_attr_set_value(rport_dev, "fast_io_fail_tmo",
-					   value, strlen(value));
-		if (ret <= 0) {
+					   value, len);
+		if (ret != len) {
 			if (ret == -EBUSY)
 				condlog(3, "%s: rport blocked", rport_id);
 			else
-				condlog(0, "%s: failed to set fast_io_fail_tmo to %s, error %d",
-					rport_id, value, -ret);
+				log_sysfs_attr_set_value(0, ret,
+					"%s: failed to set fast_io_fail_tmo to %s",
+					rport_id, value);
 		}
 	}
 	if (pp->dev_loss != DEV_LOSS_TMO_UNSET) {
+		ssize_t len;
+
 		snprintf(value, 16, "%u", pp->dev_loss);
-		ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo",
-					   value, strlen(value));
-		if (ret <= 0) {
+		len = strlen(value);
+		ret = sysfs_attr_set_value(rport_dev, "dev_loss_tmo", value, len);
+		if (ret != len) {
 			if (ret == -EBUSY)
 				condlog(3, "%s: rport blocked", rport_id);
 			else
-				condlog(0, "%s: failed to set dev_loss_tmo to %s, error %d",
-					rport_id, value, -ret);
+				log_sysfs_attr_set_value(0, ret,
+					"%s: failed to set dev_loss_tmo to %s",
+					rport_id, value);
 		}
 	}
 out:
@@ -776,12 +766,16 @@ sysfs_set_session_tmo(struct path *pp)
 			condlog(3, "%s: can't set fast_io_fail_tmo to '0'"
 				"on iSCSI", pp->dev);
 		} else {
+			ssize_t len, ret;
+
 			snprintf(value, 11, "%u", pp->fast_io_fail);
-			if (sysfs_attr_set_value(session_dev, "recovery_tmo",
-						 value, strlen(value)) <= 0) {
-				condlog(3, "%s: Failed to set recovery_tmo, "
-					" error %d", pp->dev, errno);
-			}
+			len = strlen(value);
+			ret = sysfs_attr_set_value(session_dev, "recovery_tmo",
+						   value, len);
+			if (ret != len)
+				log_sysfs_attr_set_value(3, ret,
+					"%s: Failed to set recovery_tmo to %s",
+							 pp->dev, value);
 		}
 	}
 	udev_device_unref(session_dev);
@@ -824,12 +818,16 @@ sysfs_set_nexus_loss_tmo(struct path *pp)
 		pp->sg_id.channel, pp->sg_id.scsi_id, end_dev_id);
 
 	if (pp->dev_loss != DEV_LOSS_TMO_UNSET) {
+		ssize_t len, ret;
+
 		snprintf(value, 11, "%u", pp->dev_loss);
-		if (sysfs_attr_set_value(sas_dev, "I_T_nexus_loss_timeout",
-					 value, strlen(value)) <= 0)
-			condlog(3, "%s: failed to update "
-				"I_T Nexus loss timeout, error %d",
-				pp->dev, errno);
+		len = strlen(value);
+		ret = sysfs_attr_set_value(sas_dev, "I_T_nexus_loss_timeout",
+					   value, len);
+		if (ret != len)
+			log_sysfs_attr_set_value(3, ret,
+				"%s: failed to update I_T Nexus loss timeout",
+				pp->dev);
 	}
 	udev_device_unref(sas_dev);
 	return;
@@ -1363,13 +1361,15 @@ static int
 get_vpd_sysfs (struct udev_device *parent, int pg, char * str, int maxlen)
 {
 	int len;
-	size_t buff_len;
+	ssize_t buff_len;
 	unsigned char buff[VPD_BUFLEN];
 
 	memset(buff, 0x0, VPD_BUFLEN);
-	if (!parent || sysfs_get_vpd(parent, pg, buff, VPD_BUFLEN) <= 0) {
-		condlog(3, "failed to read sysfs vpd pg%02x", pg);
-		return -EINVAL;
+	buff_len = sysfs_get_vpd(parent, pg, buff, VPD_BUFLEN);
+	if (buff_len < 0) {
+		condlog(3, "failed to read sysfs vpd pg%02x: %s",
+			pg, strerror(-buff_len));
+		return buff_len;
 	}
 
 	if (buff[1] != pg) {
@@ -1757,8 +1757,8 @@ path_offline (struct path * pp)
 	}
 
 	memset(buff, 0x0, SCSI_STATE_SIZE);
-	err = sysfs_attr_get_value(parent, "state", buff, SCSI_STATE_SIZE);
-	if (err <= 0) {
+	err = sysfs_attr_get_value(parent, "state", buff, sizeof(buff));
+	if (!sysfs_attr_value_ok(err, sizeof(buff))) {
 		if (err == -ENXIO)
 			return PATH_REMOVED;
 		else
@@ -2162,7 +2162,7 @@ static ssize_t uid_fallback(struct path *pp, int path_state,
 			return -1;
 		len = sysfs_attr_get_value(pp->udev, "wwid", value,
 					   sizeof(value));
-		if (len <= 0)
+		if (!sysfs_attr_value_ok(len, sizeof(value)))
 			return -1;
 		len = strlcpy(pp->wwid, value, WWID_SIZE);
 		if (len >= WWID_SIZE) {

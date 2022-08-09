@@ -490,9 +490,15 @@ void trigger_partitions_udev_change(struct udev_device *dev,
 
 		devtype = udev_device_get_devtype(part);
 		if (devtype && !strcmp("partition", devtype)) {
+			ssize_t ret;
+
 			condlog(4, "%s: triggering %s event for %s", __func__,
 				action, syspath);
-			sysfs_attr_set_value(part, "uevent", action, len);
+			ret = sysfs_attr_set_value(part, "uevent", action, len);
+			if (ret != len)
+				log_sysfs_attr_set_value(2, ret,
+					"%s: failed to trigger %s uevent",
+					syspath, action);
 		}
 		udev_device_unref(part);
 	}
@@ -511,6 +517,7 @@ trigger_path_udev_change(struct path *pp, bool is_mpath)
 	 */
 	const char *action = is_mpath ? "change" : "add";
 	const char *env;
+	ssize_t len, ret;
 
 	if (!pp->udev)
 		return;
@@ -537,8 +544,13 @@ trigger_path_udev_change(struct path *pp, bool is_mpath)
 
 	condlog(3, "triggering %s uevent for %s (is %smultipath member)",
 		action, pp->dev, is_mpath ? "" : "no ");
-	sysfs_attr_set_value(pp->udev, "uevent",
-			     action, strlen(action));
+
+	len = strlen(action);
+	ret = sysfs_attr_set_value(pp->udev, "uevent", action, len);
+	if (ret != len)
+		log_sysfs_attr_set_value(2, ret,
+					 "%s: failed to trigger %s uevent",
+					 pp->dev, action);
 	trigger_partitions_udev_change(pp->udev, action,
 				       strlen(action));
 }
@@ -569,6 +581,7 @@ sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 	struct pathgroup * pgp;
 	struct path *pp;
 	char buff[11];
+	ssize_t len;
 	int i, j, ret, err = 0;
 	struct udev_device *udd;
 	int max_sectors_kb;
@@ -590,7 +603,7 @@ sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 		ret = sysfs_attr_get_value(udd, "queue/max_sectors_kb", buff,
 					   sizeof(buff));
 		udev_device_unref(udd);
-		if (ret <= 0) {
+		if (!sysfs_attr_value_ok(ret, sizeof(buff))) {
 			condlog(1, "failed to get current max_sectors_kb from %s", mpp->alias);
 			return 1;
 		}
@@ -601,14 +614,17 @@ sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 		}
 	}
 	snprintf(buff, 11, "%d", max_sectors_kb);
+	len = strlen(buff);
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		vector_foreach_slot(pgp->paths, pp, j) {
 			ret = sysfs_attr_set_value(pp->udev,
 						   "queue/max_sectors_kb",
-						   buff, strlen(buff));
-			if (ret < 0) {
-				condlog(1, "failed setting max_sectors_kb on %s : %s", pp->dev, strerror(-ret));
+						   buff, len);
+			if (ret != len) {
+				log_sysfs_attr_set_value(1, ret,
+					"failed setting max_sectors_kb on %s",
+					pp->dev);
 				err = 1;
 			}
 		}

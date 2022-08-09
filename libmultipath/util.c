@@ -242,13 +242,15 @@ setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
 
 int systemd_service_enabled_in(const char *dev, const char *prefix)
 {
-	char path[PATH_SIZE], file[PATH_MAX], service[PATH_SIZE];
+	static const char service[] = "multipathd.service";
+	char path[PATH_MAX], file[PATH_MAX];
 	DIR *dirfd;
 	struct dirent *d;
 	int found = 0;
 
-	snprintf(service, PATH_SIZE, "multipathd.service");
-	snprintf(path, PATH_SIZE, "%s/systemd/system", prefix);
+	if (safe_sprintf(path, "%s/systemd/system", prefix))
+		return 0;
+
 	condlog(3, "%s: checking for %s in %s", dev, service, path);
 
 	dirfd = opendir(path);
