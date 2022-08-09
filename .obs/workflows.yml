@@ -16,17 +16,22 @@ workflow:
               - i586
           - name: openSUSE_Leap_15.4
             paths:
-              - target_project: openSUSE:Tools
-                target_repository: 15.4
               - target_project: openSUSE:Leap:15.4
                 target_repository: standard
             architectures:
               - x86_64
           - name: SLE_15_SP4
             paths:
-              - target_project: openSUSE:Tools
-                target_repository: 15.4
               - target_project: SUSE:SLE-15-SP4:GA
+                target_repository: pool
+            architectures:
+              - x86_64
+              - s390x
+              - ppc64le
+              - aarch64
+          - name: SLE_15_SP3
+            paths:
+              - target_project: SUSE:SLE-15-SP3:GA
                 target_repository: pool
             architectures:
               - x86_64
