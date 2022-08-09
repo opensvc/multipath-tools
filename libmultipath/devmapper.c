@@ -1111,6 +1111,10 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 			}
 			condlog(4, "multipath map %s removed", mapname);
 			return 0;
+		} else if (dm_is_mpath(mapname) != 1) {
+			condlog(4, "multipath map %s removed externally",
+				mapname);
+			return 0; /*we raced with someone else removing it */
 		} else {
 			condlog(2, "failed to remove multipath map %s",
 				mapname);

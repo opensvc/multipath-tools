@@ -758,10 +758,6 @@ flush_map(struct multipath * mpp, struct vectors * vecs, int nopaths)
 	 * the spurious uevent we may generate with the dm_flush_map call below
 	 */
 	if (r) {
-		/*
-		 * May not really be an error -- if the map was already flushed
-		 * from the device mapper by dmsetup(8) for instance.
-		 */
 		if (r == 1)
 			condlog(0, "%s: can't flush", mpp->alias);
 		else {
