@@ -24,13 +24,24 @@ jobs:
       - name: checkout
         uses: actions/checkout@v1
       - name: build and test
+        if: ${{ matrix.os != 'jessie' }}
         run: make test
+      - name: build and test (jessie)
+        # On jessie, we use libreadline 5 (no licensing issue)
+        if: ${{ matrix.os == 'jessie' }}
+        run: make READLINE=libreadline test
       - name: clean
         run: make clean
       - name: clang
+        if: ${{ matrix.os != 'jessie' }}
         env:
           CC: clang
         run: make test
+      - name: clang (jessie)
+        if: ${{ matrix.os == 'jessie' }}
+        env:
+          CC: clang
+        run: make READLINE=libreadline test
 
   rolling:
     runs-on: ubuntu-20.04
@@ -58,12 +69,13 @@ jobs:
           libjson-c-dev
           liburcu-dev
           libcmocka-dev
+          libedit-dev
       - name: dependencies-alpine
         if: ${{ matrix.os == 'alpine' }}
         run: >
           apk add make gcc clang cmocka
           musl-dev lvm2-dev libaio-dev readline-dev ncurses-dev eudev-dev
-          userspace-rcu-dev json-c-dev cmocka-dev
+          userspace-rcu-dev json-c-dev cmocka-dev libedit-dev
       - name: dependencies-fedora
         if: ${{ matrix.os == 'fedora:rawhide' }}
         run: >
@@ -78,6 +90,7 @@ jobs:
           userspace-rcu-devel
           json-c-devel
           libcmocka-devel
+          libedit-devel
       - name: checkout
         uses: actions/checkout@v1
       - name: build and test
