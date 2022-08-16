@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        os: [buster]
+        os: [bullseye]
         arch: ['ppc64le', 'aarch64', 's390x']
     container: mwilck/multipath-build-${{ matrix.os }}-${{ matrix.arch }}
     steps:
@@ -44,7 +44,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        os: [buster]
+        os: [bullseye]
         arch: ['ppc64le', 'aarch64', 's390x']
     steps:
       - name: get binaries
