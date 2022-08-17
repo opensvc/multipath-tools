@@ -350,6 +350,7 @@ struct path {
 	int fast_io_fail;
 	unsigned int dev_loss;
 	int eh_deadline;
+	bool is_checked;
 	/* configlet pointers */
 	vector hwe;
 	struct gen_path generic_path;
