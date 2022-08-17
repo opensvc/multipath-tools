@@ -2620,16 +2620,11 @@ checkerloop (void *ap)
 			break;
 
 		get_monotonic_time(&start_time);
-		if (start_time.tv_sec && last_time.tv_sec) {
-			timespecsub(&start_time, &last_time, &diff_time);
-			condlog(4, "tick (%ld.%06lu secs)",
-				(long)diff_time.tv_sec, diff_time.tv_nsec / 1000);
-			last_time = start_time;
-			ticks = diff_time.tv_sec;
-		} else {
-			ticks = 1;
-			condlog(4, "tick (%d ticks)", ticks);
-		}
+		timespecsub(&start_time, &last_time, &diff_time);
+		condlog(4, "tick (%ld.%06lu secs)",
+			(long)diff_time.tv_sec, diff_time.tv_nsec / 1000);
+		last_time = start_time;
+		ticks = diff_time.tv_sec;
 #ifdef USE_SYSTEMD
 		if (use_watchdog)
 			sd_notify(0, "WATCHDOG=1");
@@ -2719,26 +2714,23 @@ unlock:
 			lock_cleanup_pop(vecs->lock);
 		}
 
-		diff_time.tv_nsec = 0;
-		if (start_time.tv_sec) {
-			get_monotonic_time(&end_time);
-			timespecsub(&end_time, &start_time, &diff_time);
-			if (num_paths) {
-				unsigned int max_checkint;
+		get_monotonic_time(&end_time);
+		timespecsub(&end_time, &start_time, &diff_time);
+		if (num_paths) {
+			unsigned int max_checkint;
 
-				condlog(4, "checked %d path%s in %ld.%06lu secs",
-					num_paths, num_paths > 1 ? "s" : "",
-					(long)diff_time.tv_sec,
-					diff_time.tv_nsec / 1000);
-				conf = get_multipath_config();
-				max_checkint = conf->max_checkint;
-				put_multipath_config(conf);
-				if (diff_time.tv_sec > (time_t)max_checkint)
-					condlog(1, "path checkers took longer "
-						"than %ld seconds, consider "
-						"increasing max_polling_interval",
-						(long)diff_time.tv_sec);
-			}
+			condlog(4, "checked %d path%s in %ld.%06lu secs",
+				num_paths, num_paths > 1 ? "s" : "",
+				(long)diff_time.tv_sec,
+				diff_time.tv_nsec / 1000);
+			conf = get_multipath_config();
+			max_checkint = conf->max_checkint;
+			put_multipath_config(conf);
+			if (diff_time.tv_sec > (time_t)max_checkint)
+				condlog(1, "path checkers took longer "
+					"than %ld seconds, consider "
+					"increasing max_polling_interval",
+					(long)diff_time.tv_sec);
 		}
 
 		if (foreign_tick == 0) {
@@ -2756,12 +2748,10 @@ unlock:
 		if (!strict_timing)
 			sleep(1);
 		else {
-			if (diff_time.tv_nsec) {
-				diff_time.tv_sec = 0;
-				diff_time.tv_nsec =
-				     1000UL * 1000 * 1000 - diff_time.tv_nsec;
-			} else
-				diff_time.tv_sec = 1;
+			diff_time.tv_sec = 0;
+			diff_time.tv_nsec =
+			     1000UL * 1000 * 1000 - diff_time.tv_nsec;
+			normalize_timespec(&diff_time);
 
 			condlog(3, "waiting for %ld.%06lu secs",
 				(long)diff_time.tv_sec,
