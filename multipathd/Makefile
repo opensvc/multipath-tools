@@ -34,6 +34,10 @@ endif
 ifeq ($(READLINE),libreadline)
 RL_CPPFLAGS += -DUSE_LIBREADLINE
 RL_LIBDEPS += -lreadline
+# See comment in uxclnt.c
+ifeq ($(shell sed -En 's/.*\<Function\s*\*rl_completion_entry_function;.*/yes/p' /usr/include/editline/readline.h),yes)
+RL_CPPFLAGS += -DBROKEN_RL_COMPLETION_FUNC
+endif
 endif
 
 ifdef SYSTEMD
