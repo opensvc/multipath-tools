@@ -405,10 +405,11 @@ static void set_client_state(struct client *c, int state)
 	case CLT_RECV:
 		reset_strbuf(&c->reply);
 		memset(c->cmd, '\0', sizeof(c->cmd));
-		c->expires = ts_zero;
 		c->error = 0;
 		/* fallthrough */
 	case CLT_SEND:
+		/* no timeout while waiting for the client or sending a reply */
+		c->expires = ts_zero;
 		/* reuse these fields for next data transfer */
 		c->len = c->cmd_len = 0;
 		break;
