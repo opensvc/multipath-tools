@@ -2966,7 +2966,7 @@ init_vecs (void)
 	if (!vecs)
 		return NULL;
 
-	pthread_mutex_init(&vecs->lock.mutex, NULL);
+	init_lock(&vecs->lock);
 
 	return vecs;
 }
