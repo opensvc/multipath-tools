@@ -2678,7 +2678,8 @@ checkerloop (void *ap)
 				} else
 					num_paths += rc;
 				if (++paths_checked % 128 == 0 &&
-				    lock_has_waiters(&vecs->lock)) {
+				    (lock_has_waiters(&vecs->lock) ||
+				     waiting_clients())) {
 					get_monotonic_time(&end_time);
 					timespecsub(&end_time, &chk_start_time,
 						    &diff_time);
