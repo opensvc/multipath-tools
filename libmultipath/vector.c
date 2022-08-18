@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include "vector.h"
+#include "msort.h"
 
 /*
  * Initialize vector struct.
@@ -207,4 +208,12 @@ int vector_find_or_add_slot(vector v, void *value)
 		return -1;
 	vector_set_slot(v, value);
 	return VECTOR_SIZE(v) - 1;
+}
+
+void vector_sort(vector v, int (*compar)(const void *, const void *))
+{
+	if (!v || !v->slot || !v->allocated)
+		return;
+	return msort((void *)v->slot, v->allocated, sizeof(void *), compar);
+
 }

@@ -89,4 +89,5 @@ extern void vector_repack(vector v);
 extern void vector_dump(vector v);
 extern void dump_strvec(vector strvec);
 extern int vector_move_up(vector v, int src, int dest);
+void vector_sort(vector v, int (*compar)(const void *, const void *));
 #endif
