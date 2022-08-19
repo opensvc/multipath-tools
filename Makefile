@@ -84,7 +84,7 @@ libmultipath/checkers.install \
 $(BUILDDIRS.clean):
 	$(MAKE) -C ${@:.clean=} clean
 
-$(BUILDDIRS:=.install):
+$(BUILDDIRS:=.install): $(BUILDDIRS)
 	$(MAKE) -C ${@:.install=} install
 
 $(BUILDDIRS:=.uninstall):
@@ -93,7 +93,7 @@ $(BUILDDIRS:=.uninstall):
 clean: $(BUILDDIRS.clean)
 	rm -rf abi abi.tar.gz abi-test compile_commands.json
 
-install: all $(BUILDDIRS:=.install)
+install: $(BUILDDIRS:=.install)
 uninstall: $(BUILDDIRS:=.uninstall)
 
 test-progs:	all
