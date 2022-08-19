@@ -30,6 +30,7 @@
 #include "defaults.h"
 
 #include "vector.h"
+#include "util.h"
 #include "cli.h"
 #include "uxclnt.h"
 
@@ -77,35 +78,57 @@ static int need_quit(char *str, size_t len)
  */
 static void process(int fd, unsigned int timeout)
 {
-	char *line;
-	char *reply;
-	int ret;
 
-	cli_init();
+#if defined(USE_LIBREADLINE) || defined(USE_LIBEDIT)
 	rl_readline_name = "multipathd";
 	rl_completion_entry_function = key_generator;
-	while ((line = readline("multipathd> "))) {
-		size_t llen = strlen(line);
+#endif
 
-		if (!llen) {
-			free(line);
+	cli_init();
+	for(;;)
+	{
+		char *line __attribute__((cleanup(cleanup_charp))) = NULL;
+		char *reply __attribute__((cleanup(cleanup_charp))) = NULL;
+		ssize_t llen;
+		int ret;
+
+#if defined(USE_LIBREADLINE) || defined(USE_LIBEDIT)
+		line = readline("multipathd> ");
+		if (!line)
+			break;
+		llen = strlen(line);
+		if (!llen)
 			continue;
+#else
+		size_t lsize = 0;
+
+		fputs("multipathd> ", stdout);
+		errno = 0;
+		llen = getline(&line, &lsize, stdin);
+		if (llen == -1) {
+			if (errno != 0)
+				fprintf(stderr, "Error in getline: %m");
+			break;
 		}
+		if (!llen || !strcmp(line, "\n"))
+			continue;
+#endif
 
 		if (need_quit(line, llen))
 			break;
 
-		if (send_packet(fd, line) != 0) break;
+		if (send_packet(fd, line) != 0)
+			break;
 		ret = recv_packet(fd, &reply, timeout);
-		if (ret != 0) break;
+		if (ret != 0)
+			break;
 
 		print_reply(reply);
 
+#if defined(USE_LIBREADLINE) || defined(USE_LIBEDIT)
 		if (line && *line)
 			add_history(line);
-
-		free(line);
-		free(reply);
+#endif
 	}
 }
 

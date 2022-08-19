@@ -459,6 +459,7 @@ void cli_exit(void)
 	keys = NULL;
 }
 
+#if defined(USE_LIBREADLINE) || defined(USE_LIBEDIT)
 static int
 key_match_fingerprint (struct key * kw, uint64_t fp)
 {
@@ -564,3 +565,4 @@ key_generator (const char * str, int state)
 	 */
 	return ((char *)NULL);
 }
+#endif

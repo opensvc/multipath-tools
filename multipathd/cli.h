@@ -151,6 +151,8 @@ void free_keys (vector vec);
 void free_handlers (void);
 int cli_init (void);
 void cli_exit(void);
-char * key_generator (const char * str, int state);
+#if defined(USE_LIBREADLINE) || defined(USE_LIBEDIT)
+char *key_generator (const char * str, int state);
+#endif
 
 #endif /* _CLI_H_ */
