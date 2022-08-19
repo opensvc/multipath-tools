@@ -246,14 +246,31 @@ static void process(int fd, unsigned int timeout)
 	}
 }
 
-int main (void)
+int main (int argc, const char * const argv[])
 {
-	int fd = mpath_connect();
+	int fd;
+	int tmo = DEFAULT_REPLY_TIMEOUT + 100;
+	char *ep;
 
-	if (fd == -1)
+	if (argc > 2) {
+		fprintf(stderr, "Usage: %s [timeout]\n", argv[0]);
 		return 1;
+	}
+	if (argc == 2) {
+		tmo = strtol(argv[1], &ep, 10);
+		if (*argv[1] == '\0' || *ep != '\0' || tmo < 0) {
+			fprintf(stderr, "ERROR: invalid timeout value\n");
+			return 1;
+		}
+	}
 
-	process(fd, DEFAULT_REPLY_TIMEOUT + 100);
+	fd = mpath_connect();
+	if (fd == -1) {
+		fprintf(stderr, "ERROR: failed to connect to multipathd\n");
+		return 1;
+	}
+
+	process(fd, tmo);
 	mpath_disconnect(fd);
 	return 0;
 }
