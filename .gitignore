@@ -32,3 +32,5 @@ tests/*.out
 tests/*.vgr
 libmultipath/nvme-ioctl.c
 libmultipath/nvme-ioctl.h
+*/*-nv.version
+reference-abi
