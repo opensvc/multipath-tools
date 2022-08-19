@@ -15,8 +15,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <poll.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#include <ctype.h>
 
 #include "mpath_cmd.h"
 #include "uxsock.h"
@@ -70,20 +69,20 @@ static int need_quit(char *str, size_t len)
  */
 static void process(int fd, unsigned int timeout)
 {
-	char *line;
+	char line[256];
 	char *reply;
+	unsigned int i;
 	int ret;
+	char prompt[] = "multipathd> ";
 
 	cli_init();
-	rl_readline_name = "multipathd";
-	rl_completion_entry_function = key_generator;
-	while ((line = readline("multipathd> "))) {
+	for (i = 0; i < strlen(prompt); i++)
+		fputc(prompt[i], stdout);
+	while (fgets(line, 256, stdin)) {
 		size_t llen = strlen(line);
 
-		if (!llen) {
-			free(line);
+		if (!llen)
 			continue;
-		}
 
 		if (need_quit(line, llen))
 			break;
@@ -94,11 +93,9 @@ static void process(int fd, unsigned int timeout)
 
 		print_reply(reply);
 
-		if (line && *line)
-			add_history(line);
-
-		free(line);
 		free(reply);
+		for (i = 0; i < strlen(prompt); i++)
+			fputc(prompt[i], stdout);
 	}
 }
 
