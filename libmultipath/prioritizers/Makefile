@@ -1,11 +1,13 @@
 #
 # Copyright (C) 2007 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
+TOPDIR=../..
+
 include ../../Makefile.inc
 
-CPPFLAGS += -I..
+CPPFLAGS += -I$(multipathdir)
 CFLAGS += $(LIB_CFLAGS)
-LDFLAGS += -L..
+LDFLAGS += -L$(multipathdir)
 LIBDEPS = -lmultipath -lm -lpthread -lrt
 
 # If you add or remove a prioritizer also update multipath/multipath.conf.5

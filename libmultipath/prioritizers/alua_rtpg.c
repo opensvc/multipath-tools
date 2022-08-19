@@ -27,7 +27,7 @@
 #include "../structs.h"
 #include "../prio.h"
 #include "../discovery.h"
-#include "../debug.h"
+#include "debug.h"
 #include "alua_rtpg.h"
 
 #define SENSE_BUFF_LEN  32

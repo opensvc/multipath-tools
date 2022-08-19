@@ -15,8 +15,8 @@
 #include <libaio.h>
 
 #include "checkers.h"
-#include "../libmultipath/debug.h"
-#include "../libmultipath/time-util.h"
+#include "debug.h"
+#include "time-util.h"
 
 #define AIO_GROUP_SIZE 1024
 
