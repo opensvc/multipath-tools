@@ -27,12 +27,12 @@ LIBDEPS += -L$(multipathdir) -lmultipath -L$(mpathpersistdir) -lmpathpersist \
 
 
 ifeq ($(READLINE),libedit)
-CPPFLAGS += -DUSE_LIBEDIT
-LIBDEPS += -ledit
+RL_CPPFLAGS = -DUSE_LIBEDIT
+RL_LIBDEPS += -ledit
 endif
 ifeq ($(READLINE),libreadline)
-CPPFLAGS += -DUSE_LIBREADLINE
-LIBDEPS += -lreadline
+RL_CPPFLAGS += -DUSE_LIBREADLINE
+RL_LIBDEPS += -lreadline
 endif
 
 ifdef SYSTEMD
@@ -50,6 +50,8 @@ endif
 OBJS = main.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o waiter.o \
        dmevents.o init_unwinder.o
 
+CLI_OBJS = multipathc.o cli.o
+
 ifeq ($(FPIN_SUPPORT),1)
 OBJS += fpin_handlers.o
 endif
@@ -57,11 +59,18 @@ endif
 
 
 EXEC = multipathd
+CLI = multipathc
 
-all : $(EXEC)
+all : $(EXEC) $(CLI)
 
 $(EXEC): $(OBJS) $(multipathdir)/libmultipath.so $(mpathcmddir)/libmpathcmd.so
 	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(EXEC) $(LIBDEPS)
+
+multipathc.o:	multipathc.c
+	$(CC) $(CPPFLAGS) $(RL_CPPFLAGS) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
+
+$(CLI):  $(CLI_OBJS)
+	$(CC) $(CFLAGS) $(CLI_OBJS) $(LDFLAGS) -o $@ $(CLI_LIBDEPS) $(RL_LIBDEPS)
 
 cli_handlers.o:	cli_handlers.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
@@ -69,6 +78,7 @@ cli_handlers.o:	cli_handlers.c
 install:
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)
+	$(INSTALL_PROGRAM) -m 755 $(CLI) $(DESTDIR)$(bindir)
 ifdef SYSTEMD
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(unitdir)
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).service $(DESTDIR)$(unitdir)
@@ -78,13 +88,13 @@ endif
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(man8dir)
 
 uninstall:
-	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
+	$(RM) $(DESTDIR)$(bindir)/$(EXEC) $(DESTDIR)$(bindir)/$(CLI)
 	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8
 	$(RM) $(DESTDIR)$(unitdir)/$(EXEC).service
 	$(RM) $(DESTDIR)$(unitdir)/$(EXEC).socket
 
 clean: dep_clean
-	$(RM) core *.o $(EXEC)
+	$(RM) core *.o $(EXEC) $(CLI)
 
 include $(wildcard $(OBJS:.o=.d))
 
