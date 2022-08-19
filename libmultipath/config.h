@@ -6,6 +6,7 @@
 #include <urcu.h>
 #include <inttypes.h>
 #include "byteorder.h"
+#include "globals.h"
 
 #define ORIGIN_DEFAULT 0
 #define ORIGIN_CONFIG  1
@@ -304,9 +305,7 @@ int init_config(const char *file);
 void uninit_config(void);
 
 struct config *libmp_get_multipath_config(void);
-struct config *get_multipath_config(void);
 void libmp_put_multipath_config(void *);
-void put_multipath_config(void *);
 
 int parse_uid_attrs(char *uid_attrs, struct config *conf);
 const char *get_uid_attribute_by_attrs(const struct config *conf,

@@ -3,11 +3,11 @@
 #
 include ../Makefile.inc
 
-CPPFLAGS += -I$(multipathdir) -I$(mpathcmddir)
+CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathcmddir)
 CFLAGS += $(BIN_CFLAGS)
 LDFLAGS += $(BIN_LDFLAGS)
-LIBDEPS += -L$(multipathdir) -lmultipath -L$(mpathcmddir) -lmpathcmd \
-	-lpthread -ldevmapper -ldl -ludev
+LIBDEPS += -L$(multipathdir) -lmultipath -L$(mpathutildir) -lmpathutil \
+	-L$(mpathcmddir) -lmpathcmd -lpthread -ldevmapper -ldl -ludev
 
 EXEC = multipath
 

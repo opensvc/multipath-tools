@@ -4,6 +4,7 @@
 
 LIB_BUILDDIRS := \
 	libmpathcmd \
+	libmpathutil \
 	libmultipath \
 	libmpathpersist \
 	libmpathvalid
@@ -72,7 +73,8 @@ compile_commands.json: Makefile Makefile.inc $(BUILDDIRS:=/Makefile)
 	$(MAKE) clean
 	bear -- $(MAKE)
 
-libmultipath libdmmp: libmpathcmd
+libmpathutil libdmmp: libmpathcmd
+libmultipath: libmpathutil
 libmpathpersist libmpathvalid multipath multipathd: libmultipath
 libmultipath/prioritizers libmultipath/checkers libmultipath/foreign: libmultipath
 mpathpersist multipathd:  libmpathpersist

@@ -4,10 +4,10 @@
 TOPDIR = ../..
 include ../../Makefile.inc
 
-CPPFLAGS += -I$(multipathdir)
+CPPFLAGS +=  -I$(multipathdir) -I$(mpathutildir)
 CFLAGS += $(LIB_CFLAGS)
-LDFLAGS += -L$(multipathdir)
-LIBDEPS = -lmultipath -laio -lpthread -lrt
+LDFLAGS += -L$(multipathdir) -L$(mpathutildir)
+LIBDEPS = -lmultipath -lmpathutil -laio -lpthread -lrt
 
 # If you add or remove a checker also update multipath/multipath.conf.5
 LIBS= \

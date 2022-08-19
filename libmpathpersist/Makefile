@@ -5,10 +5,10 @@ DEVLIB = libmpathpersist.so
 LIBS = $(DEVLIB).$(SONAME)
 VERSION_SCRIPT:= libmpathpersist.version
 
-CFLAGS += $(LIB_CFLAGS) -I$(multipathdir) -I$(mpathpersistdir) -I$(mpathcmddir)
-LDFLAGS += -L$(multipathdir) -L$(mpathcmddir)
+CFLAGS += $(LIB_CFLAGS) -I$(multipathdir) -I$(mpathutildir) -I$(mpathpersistdir) -I$(mpathcmddir)
+LDFLAGS += -L$(multipathdir) -L$(mpathutildir) -L$(mpathcmddir)
 
-LIBDEPS += -lmultipath -lmpathcmd -ldevmapper -lpthread -ldl
+LIBDEPS += -lmultipath -lmpathutil -lmpathcmd -ldevmapper -lpthread -ldl
 
 OBJS = mpath_persist.o mpath_updatepr.o mpath_pr_ioctl.o mpath_persist_int.o
 

@@ -1,0 +1,123 @@
+/*
+ * Copyright (c) 2020 SUSE LLC
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * libmultipath ABI (libmpathutil part)
+ *
+ * libmultipath doesn't have a stable ABI in the usual sense. In particular,
+ * the library does not attempt to ship different versions of the same symbol
+ * for backward compatibility.
+ *
+ * The ABI versioning only serves to avoid linking with a non-matching ABI, to
+ * cut down the set of exported symbols, and to describe it.
+ * The version string is LIBMULTIPATH_$MAJOR.$MINOR.$REL.
+ *
+ * Policy:
+ *
+ * * Bump $MAJOR for incompatible changes, like:
+ *   - symbols removed
+ *   - parameter list or return values changed for existing functions
+ *   - externally visible data structures changed in incompatible ways
+ *     (like offsets of previously existing struct members)
+ *   In this case, the new version doesn't inherit the previous versions,
+ *   because the new library doesn't provide the full previous ABI any more.
+ *   All predecessors are merged into the new version.
+ *
+ * * Bump $MINOR for compatible changes, like adding symbols.
+ *   The new version inherits the previous ones.
+ *
+ * * Bump $REL to describe deviations from upstream, e.g. in
+ *   multipath-tools packages shipped by distributions.
+ *   The new version inherits the previous ones.
+ */
+
+/* symbols referenced by multipath and multipathd */
+LIBMULTIPATH_16.0.0 {
+global:
+	alloc_strvec;
+	append_strbuf_str;
+	cleanup_charp;
+	cleanup_mutex;
+	cleanup_ucharp;
+	close_fd;
+	convert_dev;
+	dlog;
+	fill_strbuf;
+	find_slot;
+	free_scandir_result;
+	free_strvec;
+	get_monotonic_time;
+	get_multipath_config;
+	get_next_string;
+	get_strbuf_len;
+	get_strbuf_str;
+	is_quote;
+	libmp_verbosity;
+	log_thread_reset;
+	log_thread_start;
+	log_thread_stop;
+	logsink;
+	normalize_timespec;
+	print_strbuf;
+	pthread_cond_init_mono;
+	put_multipath_config;
+	recv_packet;
+	reset_strbuf;
+	send_packet;
+	set_max_fds;
+	setup_thread_attr;
+	strchop;
+	strlcpy;
+	timespeccmp;
+	timespecsub;
+	truncate_strbuf;
+	udev;
+	ux_socket_listen;
+	vector_alloc;
+	vector_alloc_slot;
+	vector_del_slot;
+	vector_free;
+	vector_reset;
+	vector_set_slot;
+
+local:
+	*;
+};
+
+/* symbols referenced internally by libmultipath */
+LIBMPATHUTIL_1.0 {
+	alloc_bitfield;
+	__append_strbuf_str;
+	append_strbuf_quoted;
+	basenamecpy;
+	cleanup_free_ptr;
+	devt2devname;
+	filepresent;
+	find_keyword;
+	free_keywords;
+	get_linux_version_code;
+	__get_strbuf_buf;
+	get_word;
+	_install_keyword;
+	install_sublevel;
+	install_sublevel_end;
+	keyword_alloc;
+	_log_bitfield_overflow;
+	log_safe;
+	msort;
+	parse_devt;
+	parse_prkey;
+	process_file;
+	safe_write;
+	set_value;
+	should_exit;
+	snprint_keyword;
+	steal_strbuf_str;
+	strlcat;
+	systemd_service_enabled;
+	validate_config_strvec;
+	vector_find_or_add_slot;
+	vector_insert_slot;
+	vector_move_up;
+	vector_sort;
+};

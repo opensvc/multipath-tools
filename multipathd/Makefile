@@ -15,14 +15,16 @@ endif
 #CPPFLAGS += -D_DEBUG_
 #CPPFLAGS += -DLOGDBG
 
-CPPFLAGS += -I$(multipathdir) -I$(mpathpersistdir) -I$(mpathcmddir) -I$(thirdpartydir) \
+CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathpersistdir) -I$(mpathcmddir) -I$(thirdpartydir) \
 	$(shell $(PKGCONFIG) --modversion liburcu 2>/dev/null | \
 		awk -F. '{ printf("-DURCU_VERSION=0x%06x", 256 * ( 256 * $$1 + $$2) + $$3); }')
 CFLAGS += $(BIN_CFLAGS)
 LDFLAGS += $(BIN_LDFLAGS)
+
+CLI_LIBDEPS :=  -L$(mpathutildir) -lmpathutil -L$(mpathcmddir) -lmpathcmd -ludev -ldl -lurcu -lpthread
 LIBDEPS += -L$(multipathdir) -lmultipath -L$(mpathpersistdir) -lmpathpersist \
-	   -L$(mpathcmddir) -lmpathcmd -ludev -ldl -lurcu -lpthread \
-	   -ldevmapper
+	   -ldevmapper $(CLI_LIBDEPS)
+
 
 ifeq ($(READLINE),libedit)
 CPPFLAGS += -DUSE_LIBEDIT
@@ -36,9 +38,9 @@ endif
 ifdef SYSTEMD
 	CPPFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
 	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
-		LIBDEPS += -lsystemd
+		CLI_LIBDEPS += -lsystemd
 	else
-		LIBDEPS += -lsystemd-daemon
+		CLI_LIBDEPS += -lsystemd-daemon
 	endif
 endif
 ifeq ($(ENABLE_DMEVENTS_POLL),0)

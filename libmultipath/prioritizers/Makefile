@@ -5,10 +5,10 @@ TOPDIR=../..
 
 include ../../Makefile.inc
 
-CPPFLAGS += -I$(multipathdir)
+CPPFLAGS += -I$(multipathdir) -I$(mpathutildir)
 CFLAGS += $(LIB_CFLAGS)
-LDFLAGS += -L$(multipathdir)
-LIBDEPS = -lmultipath -lm -lpthread -lrt
+LDFLAGS += -L$(multipathdir) -L$(mpathutildir)
+LIBDEPS = -lmultipath -lmpathutil -lm -lpthread -lrt
 
 # If you add or remove a prioritizer also update multipath/multipath.conf.5
 LIBS = \

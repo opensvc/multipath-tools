@@ -8,10 +8,10 @@ DEVLIB = libmultipath.so
 LIBS = $(DEVLIB).$(SONAME)
 VERSION_SCRIPT := libmultipath.version
 
-CPPFLAGS += -I$(multipathdir) -I$(mpathcmddir) -I$(nvmedir) -D_GNU_SOURCE
+CPPFLAGS += -I$(mpathutildir) -I$(mpathcmddir) -I$(nvmedir) -D_GNU_SOURCE
 CFLAGS += $(LIB_CFLAGS)
 
-LIBDEPS += -lpthread -ldl -ldevmapper -ludev -L$(mpathcmddir) -lmpathcmd -lurcu -laio
+LIBDEPS += -lpthread -ldl -ldevmapper -ludev -L$(mpathutildir) -lmpathutil -L$(mpathcmddir) -lmpathcmd -lurcu -laio
 
 ifdef SYSTEMD
 	CPPFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
@@ -56,15 +56,14 @@ OBJS-U := prio.o checkers.o foreign.o config.o
 OBJS-T := $(patsubst %.o,%-test.o,$(OBJS-U))
 
 # other object files
-OBJS-O := parser.o vector.o devmapper.o \
-	hwtable.o blacklist.o util.o dmparser.o \
+OBJS-O := devmapper.o hwtable.o blacklist.o dmparser.o \
 	structs.o discovery.o propsel.o dict.o \
-	pgpolicies.o debug.o defaults.o uevent.o time-util.o \
-	switchgroup.o uxsock.o print.o alias.o log_pthread.o \
-	log.o configure.o structs_vec.o sysfs.o \
+	pgpolicies.o defaults.o uevent.o \
+	switchgroup.o print.o alias.o \
+	configure.o structs_vec.o sysfs.o \
 	lock.o file.o wwids.o prioritizers/alua_rtpg.o prkey.o \
 	io_err_stat.o dm-generic.o generic.o nvme-lib.o \
-	libsg.o valid.o strbuf.o msort.o
+	libsg.o valid.o
 
 OBJS := $(OBJS-O) $(OBJS-U)
 

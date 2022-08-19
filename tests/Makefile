@@ -11,9 +11,9 @@ TEST_MISSING_INITIALIZERS = $(shell \
 	|| echo -Wno-missing-field-initializers)
 W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)
 
-CPPFLAGS += -I$(multipathdir) -I$(mpathcmddir) -DTESTCONFDIR=\"$(TESTDIR)/conf.d\"
+CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathcmddir) -DTESTCONFDIR=\"$(TESTDIR)/conf.d\"
 CFLAGS += $(BIN_CFLAGS) -Wno-unused-parameter $(W_MISSING_INITIALIZERS)
-LIBDEPS += -L. -L$(mpathcmddir) -lmultipath -lmpathcmd -lcmocka
+LIBDEPS += -L. -L $(mpathutildir) -L$(mpathcmddir) -lmultipath -lmpathutil -lmpathcmd -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
 	 alias directio valid devt mpathvalid strbuf sysfs
@@ -69,9 +69,9 @@ mpathvalid-test_OBJDEPS := ../libmpathvalid/mpath_valid.o
 ifneq ($(DIO_TEST_DEV),)
 directio-test_LIBDEPS := -laio
 endif
-strbuf-test_OBJDEPS := ../libmultipath/strbuf.o
+strbuf-test_OBJDEPS := ../libmpathutil/strbuf.o
 sysfs-test_TESTDEPS := test-log.o
-sysfs-test_OBJDEPS := ../libmultipath/sysfs.o ../libmultipath/util.o
+sysfs-test_OBJDEPS := ../libmultipath/sysfs.o ../libmpathutil/util.o
 sysfs-test_LIBDEPS := -ludev -lpthread -ldl
 
 %.o: %.c
@@ -83,11 +83,11 @@ lib/libchecktur.so:
 
 %.out:	%-test lib/libchecktur.so
 	@echo == running $< ==
-	@LD_LIBRARY_PATH=.:$(mpathcmddir) ./$< >$@
+	@LD_LIBRARY_PATH=.:$(mpathutildir):$(mpathcmddir) ./$< >$@
 
 %.vgr:  %-test lib/libchecktur.so
 	@echo == running valgrind for $< ==
-	@LD_LIBRARY_PATH=.:$(mpathcmddir) \
+	@LD_LIBRARY_PATH=.:$(mpathutildir):$(mpathcmddir) \
 		valgrind --leak-check=full --error-exitcode=128 ./$< >$@ 2>&1
 
 OBJS = $(TESTS:%=%.o) $(HELPERS)
