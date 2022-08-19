@@ -303,17 +303,6 @@ void free_config (struct config * conf);
 int init_config(const char *file);
 void uninit_config(void);
 
-/*
- * libmultipath provides default implementations of
- * get_multipath_config() and put_multipath_config().
- * Applications using these should use init_config(file, NULL)
- * to load the configuration, rather than load_config(file).
- * Likewise, uninit_config() should be used for teardown, but
- * using free_config() for that is supported, too.
- * Applications can define their own {get,put}_multipath_config()
- * functions, which override the library-internal ones, but
- * could still call libmp_{get,put}_multipath_config().
- */
 struct config *libmp_get_multipath_config(void);
 struct config *get_multipath_config(void);
 void libmp_put_multipath_config(void *);
