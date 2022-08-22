@@ -4,6 +4,7 @@
 #include "config.h"
 #include "util.h"
 #include "propsel.h"
+#include "strbuf.h"
 #include "prkey.h"
 #include <sys/types.h>
 #include <unistd.h>
@@ -12,10 +13,56 @@
 #include <inttypes.h>
 #include <errno.h>
 #include <libudev.h>
-#include <mpath_persist.h>
+/* MPATH_F_APTPL_MASK is publicly defined in mpath_persist.h */
+#include <../libmpathpersist/mpath_persist.h>
 
 #define PRKEY_READ 0
 #define PRKEY_WRITE 1
+
+int
+print_reservation_key(struct strbuf *buff,
+		      struct be64 key, uint8_t flags, int source)
+{
+	char *flagstr = "";
+	if (source == PRKEY_SOURCE_NONE)
+		return 0;
+	if (source == PRKEY_SOURCE_FILE)
+		return append_strbuf_quoted(buff, "file");
+	if (flags & MPATH_F_APTPL_MASK)
+		flagstr = ":aptpl";
+	return print_strbuf(buff, "0x%" PRIx64 "%s", get_be64(key), flagstr);
+}
+
+static int parse_prkey(const char *ptr, uint64_t *prkey)
+{
+	if (!ptr)
+		return 1;
+	if (*ptr == '0')
+		ptr++;
+	if (*ptr == 'x' || *ptr == 'X')
+		ptr++;
+	if (*ptr == '\0' || strlen(ptr) > 16)
+		return 1;
+	if (strlen(ptr) != strspn(ptr, "0123456789aAbBcCdDeEfF"))
+		return 1;
+	if (sscanf(ptr, "%" SCNx64 "", prkey) != 1)
+		return 1;
+	return 0;
+}
+
+int parse_prkey_flags(const char *ptr, uint64_t *prkey, uint8_t *flags)
+{
+	char *flagstr;
+
+	flagstr = strchr(ptr, ':');
+	*flags = 0;
+	if (flagstr) {
+		*flagstr++ = '\0';
+		if (strlen(flagstr) == 5 && strcmp(flagstr, "aptpl") == 0)
+			*flags = MPATH_F_APTPL_MASK;
+	}
+	return parse_prkey(ptr, prkey);
+}
 
 static int do_prkey(int fd, char *wwid, char *keystr, int cmd)
 {

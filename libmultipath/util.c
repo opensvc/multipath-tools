@@ -13,7 +13,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <libudev.h>
-#include <mpath_persist.h>
 
 #include "util.h"
 #include "debug.h"
@@ -331,37 +330,6 @@ int get_linux_version_code(void)
 {
 	pthread_once(&_lvc_initialized, _set_linux_version_code);
 	return _linux_version_code;
-}
-
-int parse_prkey(const char *ptr, uint64_t *prkey)
-{
-	if (!ptr)
-		return 1;
-	if (*ptr == '0')
-		ptr++;
-	if (*ptr == 'x' || *ptr == 'X')
-		ptr++;
-	if (*ptr == '\0' || strlen(ptr) > 16)
-		return 1;
-	if (strlen(ptr) != strspn(ptr, "0123456789aAbBcCdDeEfF"))
-		return 1;
-	if (sscanf(ptr, "%" SCNx64 "", prkey) != 1)
-		return 1;
-	return 0;
-}
-
-int parse_prkey_flags(const char *ptr, uint64_t *prkey, uint8_t *flags)
-{
-	char *flagstr;
-
-	flagstr = strchr(ptr, ':');
-	*flags = 0;
-	if (flagstr) {
-		*flagstr++ = '\0';
-		if (strlen(flagstr) == 5 && strcmp(flagstr, "aptpl") == 0)
-			*flags = MPATH_F_APTPL_MASK;
-	}
-	return parse_prkey(ptr, prkey);
 }
 
 int safe_write(int fd, const void *buf, size_t count)
