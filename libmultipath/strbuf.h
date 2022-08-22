@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 SUSE LLC
- * SPDX-License-Identifier: GPL-2.0-only
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef _STRBUF_H
 #define _STRBUF_H

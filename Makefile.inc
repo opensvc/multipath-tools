@@ -8,6 +8,11 @@
 #
 # Uncomment to disable dmevents polling support
 # ENABLE_DMEVENTS_POLL = 0
+#
+# Readline library to use, libedit or libreadline
+# Caution: Using libreadline may make the multipathd binary undistributable,
+# see https://github.com/opensvc/multipath-tools/issues/36
+READLINE = libedit
 
 # List of scsi device handler modules to load on boot, e.g.
 # SCSI_DH_MODULES_PRELOAD := scsi_dh_alua scsi_dh_rdac

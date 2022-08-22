@@ -11,7 +11,12 @@
 #include "parser.h"
 #include "util.h"
 #include "version.h"
+#ifdef USE_LIBEDIT
+#include <editline/readline.h>
+#endif
+#ifdef USE_LIBREADLINE
 #include <readline/readline.h>
+#endif
 
 #include "mpath_cmd.h"
 #include "cli.h"
