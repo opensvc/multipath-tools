@@ -31,7 +31,7 @@ jobs:
         run: >
           tar cfv binaries.tar
           Makefile*
-          libmpathcmd/*.so* libmultipath/*.so*
+          libmpathcmd/*.so* libmultipath/*.so* libmpathutil/*.so*
           tests/lib tests/*-test tests/Makefile tests/*.so*
       - uses: actions/upload-artifact@v1
         if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
