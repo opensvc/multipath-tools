@@ -30,6 +30,8 @@ vector get_handlers(void)
 {
 	return handlers;
 }
+/* See KEY_INVALID in cli.h */
+#define INVALID_FINGERPRINT ((uint32_t)(0))
 
 static struct key *
 alloc_key (void)
@@ -44,7 +46,7 @@ alloc_handler (void)
 }
 
 static int
-add_key (vector vec, char * str, uint64_t code, int has_param)
+add_key (vector vec, char * str, uint8_t code, int has_param)
 {
 	struct key * kw;
 
@@ -74,7 +76,7 @@ out:
 	return 1;
 }
 
-static struct handler *add_handler(uint64_t fp, cli_handler *fn, bool locked)
+static struct handler *add_handler(uint32_t fp, cli_handler *fn, bool locked)
 {
 	struct handler * h;
 
@@ -97,11 +99,13 @@ static struct handler *add_handler(uint64_t fp, cli_handler *fn, bool locked)
 }
 
 static struct handler *
-find_handler (uint64_t fp)
+find_handler (uint32_t fp)
 {
 	int i;
 	struct handler *h;
 
+	if (fp == INVALID_FINGERPRINT)
+		return NULL;
 	vector_foreach_slot (handlers, h, i)
 		if (h->fingerprint == fp)
 			return h;
@@ -110,14 +114,15 @@ find_handler (uint64_t fp)
 }
 
 int
-__set_handler_callback (uint64_t fp, cli_handler *fn, bool locked)
+__set_handler_callback (uint32_t fp, cli_handler *fn, bool locked)
 {
 	struct handler *h;
 
+	assert(fp != INVALID_FINGERPRINT);
 	assert(find_handler(fp) == NULL);
 	h = add_handler(fp, fn, locked);
 	if (!h) {
-		condlog(0, "%s: failed to set handler for code %"PRIu64,
+		condlog(0, "%s: failed to set handler for code %"PRIu32,
 			__func__, fp);
 		return 1;
 	}
@@ -170,56 +175,56 @@ load_keys (void)
 	if (!keys)
 		return 1;
 
-	r += add_key(keys, "list", LIST, 0);
-	r += add_key(keys, "show", LIST, 0);
-	r += add_key(keys, "add", ADD, 0);
-	r += add_key(keys, "remove", DEL, 0);
-	r += add_key(keys, "del", DEL, 0);
-	r += add_key(keys, "switch", SWITCH, 0);
-	r += add_key(keys, "switchgroup", SWITCH, 0);
-	r += add_key(keys, "suspend", SUSPEND, 0);
-	r += add_key(keys, "resume", RESUME, 0);
-	r += add_key(keys, "reinstate", REINSTATE, 0);
-	r += add_key(keys, "fail", FAIL, 0);
-	r += add_key(keys, "resize", RESIZE, 0);
-	r += add_key(keys, "reset", RESET, 0);
-	r += add_key(keys, "reload", RELOAD, 0);
-	r += add_key(keys, "forcequeueing", FORCEQ, 0);
-	r += add_key(keys, "disablequeueing", DISABLEQ, 0);
-	r += add_key(keys, "restorequeueing", RESTOREQ, 0);
-	r += add_key(keys, "paths", PATHS, 0);
-	r += add_key(keys, "maps", MAPS, 0);
-	r += add_key(keys, "multipaths", MAPS, 0);
-	r += add_key(keys, "path", PATH, 1);
-	r += add_key(keys, "map", MAP, 1);
-	r += add_key(keys, "multipath", MAP, 1);
-	r += add_key(keys, "group", GROUP, 1);
-	r += add_key(keys, "reconfigure", RECONFIGURE, 0);
-	r += add_key(keys, "daemon", DAEMON, 0);
-	r += add_key(keys, "status", STATUS, 0);
-	r += add_key(keys, "stats", STATS, 0);
-	r += add_key(keys, "topology", TOPOLOGY, 0);
-	r += add_key(keys, "config", CONFIG, 0);
-	r += add_key(keys, "blacklist", BLACKLIST, 0);
-	r += add_key(keys, "devices", DEVICES, 0);
-	r += add_key(keys, "raw", RAW, 0);
-	r += add_key(keys, "wildcards", WILDCARDS, 0);
-	r += add_key(keys, "quit", QUIT, 0);
-	r += add_key(keys, "exit", QUIT, 0);
-	r += add_key(keys, "shutdown", SHUTDOWN, 0);
-	r += add_key(keys, "getprstatus", GETPRSTATUS, 0);
-	r += add_key(keys, "setprstatus", SETPRSTATUS, 0);
-	r += add_key(keys, "unsetprstatus", UNSETPRSTATUS, 0);
-	r += add_key(keys, "format", FMT, 1);
-	r += add_key(keys, "json", JSON, 0);
-	r += add_key(keys, "getprkey", GETPRKEY, 0);
-	r += add_key(keys, "setprkey", SETPRKEY, 0);
-	r += add_key(keys, "unsetprkey", UNSETPRKEY, 0);
-	r += add_key(keys, "key", KEY, 1);
-	r += add_key(keys, "local", LOCAL, 0);
-	r += add_key(keys, "setmarginal", SETMARGINAL, 0);
-	r += add_key(keys, "unsetmarginal", UNSETMARGINAL, 0);
-	r += add_key(keys, "all", ALL, 0);
+	r += add_key(keys, "list", VRB_LIST, 0);
+	r += add_key(keys, "show", VRB_LIST, 0);
+	r += add_key(keys, "add", VRB_ADD, 0);
+	r += add_key(keys, "remove", VRB_DEL, 0);
+	r += add_key(keys, "del", VRB_DEL, 0);
+	r += add_key(keys, "switch", VRB_SWITCH, 0);
+	r += add_key(keys, "switchgroup", VRB_SWITCH, 0);
+	r += add_key(keys, "suspend", VRB_SUSPEND, 0);
+	r += add_key(keys, "resume", VRB_RESUME, 0);
+	r += add_key(keys, "reinstate", VRB_REINSTATE, 0);
+	r += add_key(keys, "fail", VRB_FAIL, 0);
+	r += add_key(keys, "resize", VRB_RESIZE, 0);
+	r += add_key(keys, "reset", VRB_RESET, 0);
+	r += add_key(keys, "reload", VRB_RELOAD, 0);
+	r += add_key(keys, "forcequeueing", VRB_FORCEQ, 0);
+	r += add_key(keys, "disablequeueing", VRB_DISABLEQ, 0);
+	r += add_key(keys, "restorequeueing", VRB_RESTOREQ, 0);
+	r += add_key(keys, "paths", KEY_PATHS, 0);
+	r += add_key(keys, "maps", KEY_MAPS, 0);
+	r += add_key(keys, "multipaths", KEY_MAPS, 0);
+	r += add_key(keys, "path", KEY_PATH, 1);
+	r += add_key(keys, "map", KEY_MAP, 1);
+	r += add_key(keys, "multipath", KEY_MAP, 1);
+	r += add_key(keys, "group", KEY_GROUP, 1);
+	r += add_key(keys, "reconfigure", VRB_RECONFIGURE, 0);
+	r += add_key(keys, "daemon", KEY_DAEMON, 0);
+	r += add_key(keys, "status", KEY_STATUS, 0);
+	r += add_key(keys, "stats", KEY_STATS, 0);
+	r += add_key(keys, "topology", KEY_TOPOLOGY, 0);
+	r += add_key(keys, "config", KEY_CONFIG, 0);
+	r += add_key(keys, "blacklist", KEY_BLACKLIST, 0);
+	r += add_key(keys, "devices", KEY_DEVICES, 0);
+	r += add_key(keys, "raw", KEY_RAW, 0);
+	r += add_key(keys, "wildcards", KEY_WILDCARDS, 0);
+	r += add_key(keys, "quit", VRB_QUIT, 0);
+	r += add_key(keys, "exit", VRB_QUIT, 0);
+	r += add_key(keys, "shutdown", VRB_SHUTDOWN, 0);
+	r += add_key(keys, "getprstatus", VRB_GETPRSTATUS, 0);
+	r += add_key(keys, "setprstatus", VRB_SETPRSTATUS, 0);
+	r += add_key(keys, "unsetprstatus", VRB_UNSETPRSTATUS, 0);
+	r += add_key(keys, "format", KEY_FMT, 1);
+	r += add_key(keys, "json", KEY_JSON, 0);
+	r += add_key(keys, "getprkey", VRB_GETPRKEY, 0);
+	r += add_key(keys, "setprkey", VRB_SETPRKEY, 0);
+	r += add_key(keys, "unsetprkey", VRB_UNSETPRKEY, 0);
+	r += add_key(keys, "key", KEY_KEY, 1);
+	r += add_key(keys, "local", KEY_LOCAL, 0);
+	r += add_key(keys, "setmarginal", VRB_SETMARGINAL, 0);
+	r += add_key(keys, "unsetmarginal", VRB_UNSETMARGINAL, 0);
+	r += add_key(keys, "all", KEY_ALL, 0);
 
 
 	if (r) {
@@ -327,18 +332,20 @@ out:
 	return r;
 }
 
-uint64_t fingerprint(const struct _vector *vec)
+uint32_t fingerprint(const struct _vector *vec)
 {
 	int i;
-	uint64_t fp = 0;
+	uint32_t fp = 0;
 	struct key * kw;
 
-	if (!vec)
-		return 0;
+	if (!vec || VECTOR_SIZE(vec) > 4)
+		return INVALID_FINGERPRINT;
 
-	vector_foreach_slot(vec, kw, i)
-		fp += kw->code;
-
+	vector_foreach_slot(vec, kw, i) {
+		if (i >= 4)
+			break;
+		fp |= (uint32_t)kw->code << (8 * i);
+	}
 	return fp;
 }
 
@@ -377,8 +384,8 @@ genhelp_sprint_aliases (struct strbuf *reply, vector keys,
 
 static int
 do_genhelp(struct strbuf *reply, const char *cmd, int error) {
-	int i, j;
-	uint64_t fp;
+	int i, j, k;
+	uint32_t fp;
 	struct handler * h;
 	struct key * kw;
 	int rc = 0;
@@ -404,17 +411,24 @@ do_genhelp(struct strbuf *reply, const char *cmd, int error) {
 
 	vector_foreach_slot (handlers, h, i) {
 		fp = h->fingerprint;
-		vector_foreach_slot (keys, kw, j) {
-			if ((kw->code & fp)) {
-				fp -= kw->code;
-				if (print_strbuf(reply, " %s", kw->str) < 0 ||
-				    genhelp_sprint_aliases(reply, keys, kw) < 0)
-					return -1;
+		for (k = 0; k < 4; k++, fp >>= 8) {
+			uint32_t code = fp & 0xff;
 
-				if (kw->has_param) {
-					if (print_strbuf(reply, " $%s",
-							 kw->str) < 0)
+			if (!code)
+				break;
+
+			vector_foreach_slot (keys, kw, j) {
+				if ((uint32_t)kw->code == code) {
+					if (print_strbuf(reply, " %s", kw->str) < 0 ||
+					    genhelp_sprint_aliases(reply, keys, kw) < 0)
 						return -1;
+
+					if (kw->has_param) {
+						if (print_strbuf(reply, " $%s",
+								 kw->str) < 0)
+							return -1;
+					}
+					break;
 				}
 			}
 		}
@@ -432,7 +446,7 @@ void genhelp_handler(const char *cmd, int error, struct strbuf *reply)
 }
 
 char *
-get_keyparam (vector v, uint64_t code)
+get_keyparam (vector v, uint8_t code)
 {
 	struct key * kw;
 	int i;

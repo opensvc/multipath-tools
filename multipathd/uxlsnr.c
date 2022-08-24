@@ -484,7 +484,7 @@ static int client_state_machine(struct client *c, struct vectors *vecs,
 			/* Permission check */
 			struct key *kw = VECTOR_SLOT(c->cmdvec, 0);
 
-			if (!c->is_root && kw->code != LIST) {
+			if (!c->is_root && kw->code != VRB_LIST) {
 				c->error = -EPERM;
 				condlog(0, "%s: cli[%d]: unauthorized cmd \"%s\"",
 					__func__, c->fd, c->cmd);

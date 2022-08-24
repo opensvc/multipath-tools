@@ -40,7 +40,7 @@
 
 #if defined(USE_LIBREADLINE) || defined(USE_LIBEDIT)
 static int
-key_match_fingerprint (struct key * kw, uint64_t fp)
+key_match_fingerprint (struct key * kw, uint32_t fp)
 {
 	if (!fp)
 		return 0;
@@ -55,7 +55,7 @@ char *
 key_generator (const char * str, int state)
 {
 	static int index, len, has_param;
-	static uint64_t rlfp;
+	static uint32_t rlfp;
 	struct key * kw;
 	int i;
 	struct handler *h;
@@ -127,7 +127,7 @@ key_generator (const char * str, int state)
 			 * nfp is the candidate fingerprint we try to
 			 * validate against all known command fingerprints.
 			 */
-			uint64_t nfp = rlfp | kw->code;
+			uint32_t nfp = rlfp | kw->code;
 			vector_foreach_slot(handlers, h, i) {
 				if (!rlfp || ((h->fingerprint & nfp) == nfp)) {
 					/*
