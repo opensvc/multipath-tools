@@ -274,3 +274,6 @@ int main (int argc, const char * const argv[])
 	mpath_disconnect(fd);
 	return 0;
 }
+
+#define HANDLER(x) NULL
+#include "callbacks.c"

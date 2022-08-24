@@ -1797,7 +1797,6 @@ uxlsnrloop (void * ap)
 	/* Tell main thread that thread has started */
 	post_config_state(DAEMON_CONFIGURE);
 
-	init_handler_callbacks();
 	umask(077);
 
 	/*
