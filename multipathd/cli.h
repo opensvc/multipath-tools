@@ -141,12 +141,13 @@ int __set_handler_callback (uint32_t fp, cli_handler *fn, bool locked);
 #define set_handler_callback(fp, fn) __set_handler_callback(fp, fn, true)
 #define set_unlocked_handler_callback(fp, fn) __set_handler_callback(fp, fn, false)
 
-int get_cmdvec (char *cmd, vector *v);
+int get_cmdvec (char *cmd, vector *v, bool allow_incomplete);
 struct handler *find_handler_for_cmdvec(const struct _vector *v);
 void genhelp_handler (const char *cmd, int error, struct strbuf *reply);
 
 int load_keys (void);
 char * get_keyparam (vector v, uint8_t code);
+void free_key (struct key * kw);
 void free_keys (vector vec);
 void free_handlers (void);
 int cli_init (void);

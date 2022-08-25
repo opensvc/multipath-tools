@@ -129,8 +129,7 @@ __set_handler_callback (uint32_t fp, cli_handler *fn, bool locked)
 	return 0;
 }
 
-static void
-free_key (struct key * kw)
+void free_key (struct key * kw)
 {
 	if (kw->str)
 		free(kw->str);
@@ -260,15 +259,29 @@ struct key *find_key (const char * str)
 	return foundkw;
 }
 
+static void cleanup_strvec(vector *arg)
+{
+	free_strvec(*arg);
+}
+
+static void cleanup_keys(vector *arg)
+{
+	free_keys(*arg);
+}
+
 /*
- * get_cmdvec
+ * get_cmdvec() - parse input
+ *
+ * @cmd: a command string to be parsed
+ * @v: a vector of keywords with parameters
  *
  * returns:
  * ENOMEM: not enough memory to allocate command
- * ESRCH: command not found
+ * ESRCH: keyword not found at end of input
+ * ENOENT: keyword not found somewhere else
  * EINVAL: argument missing for command
  */
-int get_cmdvec (char *cmd, vector *v)
+int get_cmdvec (char *cmd, vector *v, bool allow_incomplete)
 {
 	int i;
 	int r = 0;
@@ -276,18 +289,11 @@ int get_cmdvec (char *cmd, vector *v)
 	char * buff;
 	struct key * kw = NULL;
 	struct key * cmdkw = NULL;
-	vector cmdvec, strvec;
+	vector cmdvec __attribute__((cleanup(cleanup_keys))) = vector_alloc();
+	vector strvec __attribute__((cleanup(cleanup_strvec))) = alloc_strvec(cmd);
 
-	strvec = alloc_strvec(cmd);
-	if (!strvec)
+	if (!strvec || !cmdvec)
 		return ENOMEM;
-
-	cmdvec = vector_alloc();
-
-	if (!cmdvec) {
-		free_strvec(strvec);
-		return ENOMEM;
-	}
 
 	vector_foreach_slot(strvec, buff, i) {
 		if (is_quote(buff))
@@ -299,18 +305,18 @@ int get_cmdvec (char *cmd, vector *v)
 		}
 		kw = find_key(buff);
 		if (!kw) {
-			r = ESRCH;
-			goto out;
+			r = i == VECTOR_SIZE(strvec) - 1 ? ESRCH : ENOENT;
+			break;
 		}
 		cmdkw = alloc_key();
 		if (!cmdkw) {
 			r = ENOMEM;
-			goto out;
+			break;
 		}
 		if (!vector_alloc_slot(cmdvec)) {
 			free(cmdkw);
 			r = ENOMEM;
-			goto out;
+			break;
 		}
 		vector_set_slot(cmdvec, cmdkw);
 		cmdkw->code = kw->code;
@@ -318,17 +324,14 @@ int get_cmdvec (char *cmd, vector *v)
 		if (kw->has_param)
 			get_param = 1;
 	}
-	if (get_param) {
+	if (get_param)
 		r = EINVAL;
-		goto out;
-	}
-	*v = cmdvec;
-	free_strvec(strvec);
-	return 0;
 
-out:
-	free_strvec(strvec);
-	free_keys(cmdvec);
+	if (r && !allow_incomplete)
+		return r;
+
+	*v = cmdvec;
+	cmdvec = NULL;
 	return r;
 }
 

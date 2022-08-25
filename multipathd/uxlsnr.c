@@ -332,7 +332,7 @@ static int parse_cmd(struct client *c)
 {
 	int r;
 
-	r = get_cmdvec(c->cmd, &c->cmdvec);
+	r = get_cmdvec(c->cmd, &c->cmdvec, false);
 
 	if (r)
 		return -r;
