@@ -420,7 +420,7 @@ cli_list_map_fmt (void *v, struct strbuf *reply, void *data)
 
 	if ((width = alloc_multipath_layout()) == NULL)
 		return 1;
-	get_multipath_layout(vecs->pathvec, 1, width);
+	get_multipath_layout(vecs->mpvec, 1, width);
 	param = convert_dev(param, 0);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 	if (!mpp)
