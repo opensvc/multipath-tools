@@ -321,7 +321,7 @@ static int find_multipaths_check_timeout(const struct path *pp, long tmo,
 	char path[PATH_MAX];
 	struct timespec now, ftimes[2], tdiff;
 	struct stat st;
-	int fd = -1;
+	int fd;
 	int r, retries = 0;
 
 	clock_gettime(CLOCK_REALTIME, &now);
@@ -339,9 +339,8 @@ static int find_multipaths_check_timeout(const struct path *pp, long tmo,
 retry:
 	fd = open(path, O_RDONLY);
 	if (fd != -1) {
-		pthread_cleanup_push(cleanup_fd_ptr, &fd);
 		r = fstat(fd, &st);
-		pthread_cleanup_pop(1);
+		close(fd);
 
 	} else if (tmo > 0) {
 		if (errno == ENOENT)
@@ -355,7 +354,6 @@ retry:
 			return FIND_MULTIPATHS_ERROR;
 		};
 
-		pthread_cleanup_push(cleanup_fd_ptr, &fd);
 		/*
 		 * We just created the file. Set st_mtim to our desired
 		 * expiry time.
@@ -369,7 +367,7 @@ retry:
 				path, strerror(errno));
 		}
 		r = fstat(fd, &st);
-		pthread_cleanup_pop(1);
+		close(fd);
 	} else
 		return FIND_MULTIPATHS_NEVER;
 
