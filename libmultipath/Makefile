@@ -64,7 +64,7 @@ OBJS-O := parser.o vector.o devmapper.o \
 	log.o configure.o structs_vec.o sysfs.o \
 	lock.o file.o wwids.o prioritizers/alua_rtpg.o prkey.o \
 	io_err_stat.o dm-generic.o generic.o nvme-lib.o \
-	libsg.o valid.o strbuf.o
+	libsg.o valid.o strbuf.o msort.o
 
 OBJS := $(OBJS-O) $(OBJS-U)
 

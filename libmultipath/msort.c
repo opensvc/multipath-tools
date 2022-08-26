@@ -21,9 +21,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <memcopy.h>
+#include <string.h>
 #include <errno.h>
-#include <atomic.h>
+#include "msort.h"
+
+typedef int(*__compar_d_fn_t)(const void *, const void *, void *);
 
 struct msort_param
 {
@@ -140,13 +142,13 @@ msort_with_tmp (const struct msort_param *p, void *b, size_t n)
 	{
 	  if ((*cmp) (b1, b2, arg) <= 0)
 	    {
-	      tmp = (char *) __mempcpy (tmp, b1, s);
+	      tmp = (char *) mempcpy (tmp, b1, s);
 	      b1 += s;
 	      --n1;
 	    }
 	  else
 	    {
-	      tmp = (char *) __mempcpy (tmp, b2, s);
+	      tmp = (char *) mempcpy (tmp, b2, s);
 	      b2 += s;
 	      --n2;
 	    }
@@ -160,8 +162,8 @@ msort_with_tmp (const struct msort_param *p, void *b, size_t n)
 }
 
 
-void
-__qsort_r (void *b, size_t n, size_t s, __compar_d_fn_t cmp, void *arg)
+static void
+msort_r (void *b, size_t n, size_t s, __compar_d_fn_t cmp, void *arg)
 {
   size_t size = n * s;
   char *tmp = NULL;
@@ -173,60 +175,15 @@ __qsort_r (void *b, size_t n, size_t s, __compar_d_fn_t cmp, void *arg)
 
   if (size < 1024)
     /* The temporary array is small, so put it on the stack.  */
-    p.t = __alloca (size);
+    p.t = alloca (size);
   else
     {
-      /* We should avoid allocating too much memory since this might
-	 have to be backed up by swap space.  */
-      static long int phys_pages;
-      static int pagesize;
-
-      if (pagesize == 0)
-	{
-	  phys_pages = __sysconf (_SC_PHYS_PAGES);
-
-	  if (phys_pages == -1)
-	    /* Error while determining the memory size.  So let's
-	       assume there is enough memory.  Otherwise the
-	       implementer should provide a complete implementation of
-	       the `sysconf' function.  */
-	    phys_pages = (long int) (~0ul >> 1);
-
-	  /* The following determines that we will never use more than
-	     a quarter of the physical memory.  */
-	  phys_pages /= 4;
-
-	  /* Make sure phys_pages is written to memory.  */
-	  atomic_write_barrier ();
-
-	  pagesize = __sysconf (_SC_PAGESIZE);
-	}
-
-      /* Just a comment here.  We cannot compute
-	   phys_pages * pagesize
-	   and compare the needed amount of memory against this value.
-	   The problem is that some systems might have more physical
-	   memory then can be represented with a `size_t' value (when
-	   measured in bytes.  */
-
-      /* If the memory requirements are too high don't allocate memory.  */
-      if (size / pagesize > (size_t) phys_pages)
-	{
-	  _quicksort (b, n, s, cmp, arg);
-	  return;
-	}
-
       /* It's somewhat large, so malloc it.  */
       int save = errno;
       tmp = malloc (size);
-      __set_errno (save);
+      errno = save;
       if (tmp == NULL)
-	{
-	  /* Couldn't get space, so use the slower algorithm
-	     that doesn't need a temporary array.  */
-	  _quicksort (b, n, s, cmp, arg);
-	  return;
-	}
+	      return;
       p.t = tmp;
     }
 
@@ -281,15 +238,15 @@ __qsort_r (void *b, size_t n, size_t s, __compar_d_fn_t cmp, void *arg)
   else
     {
       if ((s & (sizeof (uint32_t) - 1)) == 0
-	  && ((char *) b - (char *) 0) % __alignof__ (uint32_t) == 0)
+	  && ((unsigned long) b) % __alignof__ (uint32_t) == 0)
 	{
 	  if (s == sizeof (uint32_t))
 	    p.var = 0;
 	  else if (s == sizeof (uint64_t)
-		   && ((char *) b - (char *) 0) % __alignof__ (uint64_t) == 0)
+		   && ((unsigned long) b) % __alignof__ (uint64_t) == 0)
 	    p.var = 1;
 	  else if ((s & (sizeof (unsigned long) - 1)) == 0
-		   && ((char *) b - (char *) 0)
+		   && ((unsigned long) b)
 		      % __alignof__ (unsigned long) == 0)
 	    p.var = 2;
 	}
@@ -297,13 +254,18 @@ __qsort_r (void *b, size_t n, size_t s, __compar_d_fn_t cmp, void *arg)
     }
   free (tmp);
 }
-libc_hidden_def (__qsort_r)
-weak_alias (__qsort_r, qsort_r)
 
-
+/*
+ * glibc apparently doesn't use -Wcast-function-type.
+ * If this is safe for them, it should be for us, too.
+ */
+#pragma GCC diagnostic push
+#if __GNUC__ >= 8
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
 void
-qsort (void *b, size_t n, size_t s, __compar_fn_t cmp)
+msort (void *b, size_t n, size_t s, __compar_fn_t cmp)
 {
-  return __qsort_r (b, n, s, (__compar_d_fn_t) cmp, NULL);
+	return msort_r (b, n, s, (__compar_d_fn_t)cmp, NULL);
 }
-libc_hidden_def (qsort)
+#pragma GCC diagnostic pop
