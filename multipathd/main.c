@@ -3707,6 +3707,10 @@ main (int argc, char *argv[])
 					c += snprintf(c, s + CMDSIZE - c,
 						      "%s ", argv[optind]);
 				optind++;
+				if (c >= s + CMDSIZE) {
+					fprintf(stderr, "multipathd command too large\n");
+					exit(1);
+				}
 			}
 			c += snprintf(c, s + CMDSIZE - c, "\n");
 		}
