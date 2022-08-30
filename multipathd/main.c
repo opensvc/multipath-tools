@@ -951,10 +951,12 @@ handle_path_wwid_change(struct path *pp, struct vectors *vecs)
 	struct udev_device *udd;
 	static const char add[] = "add";
 	ssize_t ret;
+	char dev[FILE_NAME_SIZE];
 
 	if (!pp || !pp->udev)
 		return;
 
+	strlcpy(dev, pp->dev, sizeof(dev));
 	udd = udev_device_ref(pp->udev);
 	if (!(ev_remove_path(pp, vecs, 1) & REMOVE_PATH_SUCCESS) && pp->mpp) {
 		pp->dmstate = PSTATE_FAILED;
@@ -965,8 +967,7 @@ handle_path_wwid_change(struct path *pp, struct vectors *vecs)
 	udev_device_unref(udd);
 	if (ret != sizeof(add) - 1)
 		log_sysfs_attr_set_value(1, ret,
-					 "%s: failed to trigger add event",
-					 pp->dev);
+					 "%s: failed to trigger add event", dev);
 }
 
 bool
