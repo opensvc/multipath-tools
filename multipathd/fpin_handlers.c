@@ -499,13 +499,14 @@ void *fpin_fabric_notification_receiver(__attribute__((unused))void *unused)
 	rcu_register_thread();
 
 	pthread_cleanup_push(receiver_cleanup_list, NULL);
+	pthread_cleanup_push(cleanup_fd_ptr, &fd);
+
 	fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_SCSITRANSPORT);
 	if (fd < 0) {
 		condlog(0, "fc socket error %d", fd);
-		return NULL;
+		goto out;
 	}
 
-	pthread_cleanup_push(cleanup_fd_ptr, &fd);
 	memset(&fc_local, 0, sizeof(fc_local));
 	fc_local.nl_family = AF_NETLINK;
 	fc_local.nl_groups = ~0;
