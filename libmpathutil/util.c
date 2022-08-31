@@ -391,8 +391,10 @@ void cleanup_free_ptr(void *arg)
 {
 	void **p = arg;
 
-	if (p && *p)
+	if (p && *p) {
 		free(*p);
+		*p = NULL;
+	}
 }
 
 void cleanup_fd_ptr(void *arg)
