@@ -45,6 +45,7 @@ install:
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 	perl -i -pe 's|__INCLUDEDIR__|$(includedir)|g' \
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
+	$(INSTALL_PROGRAM) -d 755 $(DESTDIR)$(man3dir)
 	$(INSTALL_PROGRAM) -m 644 -t $(DESTDIR)$(man3dir) docs/man/*.3
 
 uninstall:
