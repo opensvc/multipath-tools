@@ -54,7 +54,7 @@ abi.tar.gz:	abi
 abi-test:	abi reference-abi $(wildcard abi/*.abi)
 	@err=0; \
 	for lib in abi/*.abi; do \
-	    diff=$$(abidiff "reference-$$lib" "$$lib") || { \
+	    diff=$$(abidiff --redundant "reference-$$lib" "$$lib") || { \
 	        err=1; \
 		echo "==== ABI differences in for $$lib ===="; \
 		echo "$$diff"; \
