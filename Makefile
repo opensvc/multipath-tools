@@ -26,7 +26,7 @@ BUILDDIRS := $(LIB_BUILDDIRS) \
 
 BUILDDIRS.clean := $(BUILDDIRS:=.clean) tests.clean
 
-.PHONY:	$(BUILDDIRS) $(BUILDDIRS:=.uninstall) $(BUILDDIRS:=.install) $(BUILDDIRS:=.clean) $(LIB_BUILDDIRS:=.abi)
+.PHONY:	$(BUILDDIRS)
 
 all:	$(BUILDDIRS)
 
