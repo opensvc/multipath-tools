@@ -387,17 +387,22 @@ void free_scandir_result(struct scandir_result *res)
 	free(res->di);
 }
 
-void close_fd(void *arg)
-{
-	close((long)arg);
-}
-
 void cleanup_free_ptr(void *arg)
 {
 	void **p = arg;
 
 	if (p && *p)
 		free(*p);
+}
+
+void cleanup_fd_ptr(void *arg)
+{
+	int *fd = arg;
+
+	if (*fd >= 0) {
+		close(*fd);
+		*fd = -1;
+	}
 }
 
 void cleanup_mutex(void *arg)

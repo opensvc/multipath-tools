@@ -488,7 +488,7 @@ static void receiver_cleanup_list(__attribute__((unused)) void *arg)
 void *fpin_fabric_notification_receiver(__attribute__((unused))void *unused)
 {
 	int ret;
-	long fd;
+	int fd = -1;
 	uint32_t els_cmd;
 	struct fc_nl_event *fc_event = NULL;
 	struct sockaddr_nl fc_local;
@@ -501,11 +501,11 @@ void *fpin_fabric_notification_receiver(__attribute__((unused))void *unused)
 	pthread_cleanup_push(receiver_cleanup_list, NULL);
 	fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_SCSITRANSPORT);
 	if (fd < 0) {
-		condlog(0, "fc socket error %ld", fd);
+		condlog(0, "fc socket error %d", fd);
 		return NULL;
 	}
 
-	pthread_cleanup_push(close_fd, (void *)fd);
+	pthread_cleanup_push(cleanup_fd_ptr, &fd);
 	memset(&fc_local, 0, sizeof(fc_local));
 	fc_local.nl_family = AF_NETLINK;
 	fc_local.nl_groups = ~0;

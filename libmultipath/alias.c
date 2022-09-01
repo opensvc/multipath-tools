@@ -573,7 +573,7 @@ static int fix_bindings_file(const struct config *conf,
 			     const Bindings *bindings)
 {
 	int rc;
-	long fd;
+	int fd = -1;
 	char tempname[PATH_MAX];
 	mode_t old_umask;
 
@@ -586,7 +586,7 @@ static int fix_bindings_file(const struct config *conf,
 		return -1;
 	}
 	umask(old_umask);
-	pthread_cleanup_push(close_fd, (void*)fd);
+	pthread_cleanup_push(cleanup_fd_ptr, &fd);
 	rc = write_bindings_file(bindings, fd);
 	pthread_cleanup_pop(1);
 	if (rc == -1) {

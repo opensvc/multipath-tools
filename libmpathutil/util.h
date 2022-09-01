@@ -46,7 +46,7 @@ int should_exit(void);
 #define pthread_cleanup_push_cast(f, arg)		\
 	pthread_cleanup_push(((void (*)(void *))&f), (arg))
 
-void close_fd(void *arg);
+void cleanup_fd_ptr(void *arg);
 void cleanup_free_ptr(void *arg);
 void cleanup_mutex(void *arg);
 

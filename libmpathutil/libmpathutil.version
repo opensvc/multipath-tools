@@ -39,7 +39,6 @@ global:
 	cleanup_charp;
 	cleanup_mutex;
 	cleanup_ucharp;
-	close_fd;
 	convert_dev;
 	dlog;
 	fill_strbuf;
@@ -121,3 +120,8 @@ LIBMPATHUTIL_1.0 {
 	vector_move_up;
 	vector_sort;
 };
+
+LIBMPATHUTIL_1.1 {
+global:
+	cleanup_fd_ptr;
+} LIBMPATHUTIL_1.0;

@@ -599,7 +599,7 @@ static void test_ana_support(struct nvme_map *map, struct udev_device *ctl)
 {
 	const char *dev_t;
 	char sys_path[64];
-	long fd;
+	int fd = -1;
 	int rc;
 
 	if (map->ana_supported != YNU_UNDEF)
@@ -615,7 +615,7 @@ static void test_ana_support(struct nvme_map *map, struct udev_device *ctl)
 		return;
 	}
 
-	pthread_cleanup_push(close_fd, (void *)fd);
+	pthread_cleanup_push(cleanup_fd_ptr, &fd);
 	rc = nvme_id_ctrl_ana(fd, NULL);
 	if (rc < 0)
 		condlog(2, "%s: error in nvme_id_ctrl: %s", __func__,
