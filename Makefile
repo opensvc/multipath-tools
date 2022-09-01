@@ -86,7 +86,7 @@ libmultipath/checkers.install \
 $(BUILDDIRS.clean):
 	$(MAKE) -C ${@:.clean=} clean
 
-$(BUILDDIRS:=.install): $(BUILDDIRS)
+%.install:	%
 	$(MAKE) -C ${@:.install=} install
 
 $(BUILDDIRS:=.uninstall):
