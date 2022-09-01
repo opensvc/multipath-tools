@@ -83,6 +83,7 @@ exec_prefix	= $(prefix)
 usr_prefix	= $(prefix)
 bindir		= $(exec_prefix)/sbin
 libudevdir	= $(prefix)/$(SYSTEMDPATH)/udev
+tmpfilesdir	= $(prefix)/$(SYSTEMDPATH)/tmpfiles.d
 udevrulesdir	= $(libudevdir)/rules.d
 modulesloaddir  = $(prefix)/$(SYSTEMDPATH)/modules-load.d
 multipathdir	= $(TOPDIR)/libmultipath
@@ -105,6 +106,7 @@ includedir	= $(prefix)/usr/include
 pkgconfdir	= $(usrlibdir)/pkgconfig
 plugindir       := $(prefix)/$(LIB)/multipath
 configdir       := $(prefix)/etc/multipath/conf.d
+runtimedir      := /$(RUN)
 
 GZIP_PROG	= gzip -9 -c
 RM		= rm -f
@@ -149,6 +151,7 @@ WARNFLAGS	:= -Werror -Wall -Wextra -Wformat=2 $(WFORMATOVERFLOW) -Werror=implici
 		  $(WNOCLOBBERED) -Werror=cast-qual $(ERROR_DISCARDED_QUALIFIERS)
 CPPFLAGS	:= $(FORTIFY_OPT) \
 		   -DBIN_DIR=\"$(bindir)\" -DMULTIPATH_DIR=\"$(plugindir)\" -DRUN_DIR=\"${RUN}\" \
+		   -DRUNTIME_DIR=\"$(runtimedir)\" \
 		   -DCONFIG_DIR=\"$(configdir)\" -DEXTRAVERSION=\"$(EXTRAVERSION)\" -MMD -MP
 CFLAGS		:= --std=gnu99 $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe
 BIN_CFLAGS	= -fPIE -DPIE
