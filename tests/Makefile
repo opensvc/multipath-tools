@@ -48,30 +48,30 @@ mpathvalid-test_FLAGS := -I$(mpathvaliddir)
 #    unit test file, e.g. "config-test.o", in XYZ-test_OBJDEPS
 # XYZ-test_LIBDEPS: Additional libs to link for this test
 
-dmevents-test_OBJDEPS = ../libmultipath/devmapper.o
+dmevents-test_OBJDEPS = $(multipathdir)/devmapper.o
 dmevents-test_LIBDEPS = -lpthread -ldevmapper -lurcu
 hwtable-test_TESTDEPS := test-lib.o
-hwtable-test_OBJDEPS := ../libmultipath/discovery.o ../libmultipath/blacklist.o \
-	../libmultipath/structs.o ../libmultipath/propsel.o
+hwtable-test_OBJDEPS := $(multipathdir)/discovery.o $(multipathdir)/blacklist.o \
+	$(multipathdir)/structs.o $(multipathdir)/propsel.o
 hwtable-test_LIBDEPS := -ludev -lpthread -ldl
 blacklist-test_TESTDEPS := test-log.o
-blacklist-test_OBJDEPS := ../libmultipath/blacklist.o
+blacklist-test_OBJDEPS := $(multipathdir)/blacklist.o
 blacklist-test_LIBDEPS := -ludev
-vpd-test_OBJDEPS :=  ../libmultipath/discovery.o
+vpd-test_OBJDEPS :=  $(multipathdir)/discovery.o
 vpd-test_LIBDEPS := -ludev -lpthread -ldl
 alias-test_TESTDEPS := test-log.o
 alias-test_LIBDEPS := -lpthread -ldl
-valid-test_OBJDEPS := ../libmultipath/valid.o ../libmultipath/discovery.o
+valid-test_OBJDEPS := $(multipathdir)/valid.o $(multipathdir)/discovery.o
 valid-test_LIBDEPS := -ludev -lpthread -ldl
 devt-test_LIBDEPS := -ludev
 mpathvalid-test_LIBDEPS := -ludev -lpthread -ldl
-mpathvalid-test_OBJDEPS := ../libmpathvalid/mpath_valid.o
+mpathvalid-test_OBJDEPS := $(mpathvaliddir)/mpath_valid.o
 ifneq ($(DIO_TEST_DEV),)
 directio-test_LIBDEPS := -laio
 endif
-strbuf-test_OBJDEPS := ../libmpathutil/strbuf.o
+strbuf-test_OBJDEPS := $(mpathutildir)/strbuf.o
 sysfs-test_TESTDEPS := test-log.o
-sysfs-test_OBJDEPS := ../libmultipath/sysfs.o ../libmpathutil/util.o
+sysfs-test_OBJDEPS := $(multipathdir)/sysfs.o $(mpathutildir)/util.o
 sysfs-test_LIBDEPS := -ludev -lpthread -ldl
 
 %.o: %.c
@@ -79,7 +79,7 @@ sysfs-test_LIBDEPS := -ludev -lpthread -ldl
 
 lib/libchecktur.so:
 	mkdir -p lib
-	ln ../libmultipath/*/*.so lib
+	ln $(multipathdir)/*/*.so lib
 
 %.out:	%-test lib/libchecktur.so
 	@echo == running $< ==
