@@ -79,7 +79,7 @@ sysfs-test_LIBDEPS := -ludev -lpthread -ldl
 
 lib/libchecktur.so:
 	mkdir -p lib
-	ln $(multipathdir)/*/*.so lib
+	cd lib && ln -s ../$(multipathdir)/*/*.so .
 
 %.out:	%-test lib/libchecktur.so
 	@echo == running $< ==
