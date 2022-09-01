@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_15.0.0 {
+LIBMULTIPATH_16.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -259,6 +259,8 @@ global:
 	snprint_path_serial;
 	snprint_tgt_wwnn;
 	snprint_tgt_wwpn;
+	sysfs_attr_set_value;
+	sysfs_attr_get_value;
 	sysfs_get_asymmetric_access_state;
 
 	/* foreign */
@@ -266,10 +268,4 @@ global:
 
 local:
 	*;
-};
-
-LIBMULTIPATH_16.0.0 {
-global:
-	sysfs_attr_set_value;
-	sysfs_attr_get_value;
 };
