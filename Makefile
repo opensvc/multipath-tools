@@ -101,7 +101,7 @@ uninstall: $(BUILDDIRS:=.uninstall)
 test-progs:	all
 	$(MAKE) -C tests progs
 
-test:	test-progs
+test:	all
 	$(MAKE) -C tests all
 
 valgrind-test:	all
