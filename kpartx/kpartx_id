@@ -93,7 +93,7 @@ if [ -n "$dmdeps" ] ; then
 else
     echo "DM_TYPE=raid"
 fi
-if [[ $dmserial ]]; then
+if [ -n "$dmserial" ]; then
     echo "DM_SERIAL=$dmserial"
 fi
 
