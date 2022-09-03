@@ -1,0 +1,64 @@
+.\" ----------------------------------------------------------------------------
+.\" Update the date below if you make any significant change.
+.\" Make sure there are no errors with:
+.\" groff -z -wall -b -e -t multipathd/multipathd.8
+.\"
+.\" ----------------------------------------------------------------------------
+.
+.TH MULTIPATHC 8 2022-09-03 Linux
+.
+.
+.\" ----------------------------------------------------------------------------
+.SH NAME
+.\" ----------------------------------------------------------------------------
+.
+multipathc \- Interactive client for multipathd
+.
+.
+.\" ----------------------------------------------------------------------------
+.SH SYNOPSIS
+.\" ----------------------------------------------------------------------------
+.
+.B multipathc 
+.RB [\|
+.IR timeout
+.RB \|]
+.
+.
+.\" ----------------------------------------------------------------------------
+.SH DESCRIPTION
+.\" ----------------------------------------------------------------------------
+.
+The \fBmultipathc\fR tool provides an interactive shell for communicating
+with the \fBmultipathd\fR daemon.
+The command \fBmultipathd -k\fR invokes \fBmultipathc\fR.
+.P
+All commands documented in \fBmultipathd(8)\fR are supported.
+The available commands can be viewed by entering '\fIhelp\fR'.
+Use \fIquit\fR, \fIexit\fR, or \fBCTRL-D\fR to exit the shell.
+Keywords can be abbreviated with the first letters (for example,
+\fIshu\fR for \fIshutdown\fR), if the abbreviation is unique.
+Some commands support pretty-printing
+using \fBprintf\fR-style format specifiers. The supported format specifiers
+can be listed with the command \fBshow wildcards\fR.
+Depending on build options, the interactive shell
+may provide command completion and history expansion features.
+.P
+The optional parameter \fBtimeout\fR specifies the timeout to wait for
+a reply from \fBmultipathd\fR, in milliseconds. The default is 4000 ms.
+.
+.
+.\" ----------------------------------------------------------------------------
+.SH "SEE ALSO"
+.\" ----------------------------------------------------------------------------
+.
+.BR multipathd (8)
+.
+.
+.\" ----------------------------------------------------------------------------
+.SH AUTHORS
+.\" ----------------------------------------------------------------------------
+.
+\fImultipath-tools\fR was developed by Christophe Varoqui
+<christophe.varoqui@opensvc.com> and others.
+.\" EOF
