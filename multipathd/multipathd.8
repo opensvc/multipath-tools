@@ -48,10 +48,6 @@ map regains its maximum performance and redundancy.
 With the \fB-k\fR option, \fBmultipathd\fR acts as a client utility that
 sends commands to a running instance of the multipathd daemon (see
 \fBCOMMANDS\fR below).
-
-This daemon executes the external \fBmultipath\fR tool when events occur.
-In turn, the multipath tool signals the multipathd daemon when it is done with
-devmap reconfiguration, so that it can refresh its failed path list.
 .
 .
 .\" ----------------------------------------------------------------------------
