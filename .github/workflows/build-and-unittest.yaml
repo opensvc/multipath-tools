@@ -10,6 +10,9 @@ on:
 jobs:
   bionic:
     runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        rl: ['', 'libreadline', 'libedit']
     steps:
       - uses: actions/checkout@v2
       - name: mpath
@@ -29,7 +32,7 @@ jobs:
           libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
           libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
       - name: build
-        run: make -O -j$(grep -c ^processor /proc/cpuinfo)
+        run: make -O -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
       - name: test
         run: make -O -j$(grep -c ^processor /proc/cpuinfo) test
       - name: valgrind-test
@@ -42,6 +45,9 @@ jobs:
         run: sudo make DIO_TEST_DEV=/dev/zram$ZRAM test
   focal-gcc10:
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        rl: ['', 'libreadline', 'libedit']
     steps:
       - uses: actions/checkout@v2
       - name: mpath
@@ -59,7 +65,7 @@ jobs:
       - name: set CC
         run: echo CC=gcc-10 >> $GITHUB_ENV
       - name: build
-        run: make -O -j$(grep -c ^processor /proc/cpuinfo)
+        run: make -O -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
       - name: test
         run: make -O -j$(grep -c ^processor /proc/cpuinfo) test
       - name: valgrind-test
@@ -72,6 +78,9 @@ jobs:
         run: sudo make DIO_TEST_DEV=/dev/ram0 test
   focal-clang10:
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        rl: ['', 'libreadline', 'libedit']
     steps:
       - uses: actions/checkout@v2
       - name: mpath
@@ -89,7 +98,7 @@ jobs:
       - name: set CC
         run: echo CC=clang >> $GITHUB_ENV
       - name: build
-        run: make -O -j$(grep -c ^processor /proc/cpuinfo)
+        run: make -O -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
       - name: test
         run: make -O -j$(grep -c ^processor /proc/cpuinfo) test
       - name: valgrind-test
