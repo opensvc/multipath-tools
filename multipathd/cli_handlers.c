@@ -420,7 +420,7 @@ cli_list_map_fmt (void *v, struct strbuf *reply, void *data)
 
 	if ((width = alloc_multipath_layout()) == NULL)
 		return 1;
-	get_multipath_layout(vecs->pathvec, 1, width);
+	get_multipath_layout(vecs->mpvec, 1, width);
 	param = convert_dev(param, 0);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 	if (!mpp)
@@ -688,7 +688,7 @@ cli_add_map (void * v, struct strbuf *reply, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, MAP);
 	int major = -1, minor = -1;
-	char dev_path[PATH_SIZE];
+	char dev_path[FILE_NAME_SIZE];
 	char *refwwid, *alias = NULL;
 	int rc, count = 0;
 	struct config *conf;
@@ -1519,63 +1519,5 @@ static int cli_unset_all_marginal(void * v, struct strbuf *reply, void * data)
 	return reload_and_sync_map(mpp, vecs, 0);
 }
 
-void init_handler_callbacks(void)
-{
-	set_handler_callback(LIST+PATHS, cli_list_paths);
-	set_handler_callback(LIST+PATHS+FMT, cli_list_paths_fmt);
-	set_handler_callback(LIST+PATHS+RAW+FMT, cli_list_paths_raw);
-	set_handler_callback(LIST+PATH, cli_list_path);
-	set_handler_callback(LIST+MAPS, cli_list_maps);
-	set_handler_callback(LIST+STATUS, cli_list_status);
-	set_unlocked_handler_callback(LIST+DAEMON, cli_list_daemon);
-	set_handler_callback(LIST+MAPS+STATUS, cli_list_maps_status);
-	set_handler_callback(LIST+MAPS+STATS, cli_list_maps_stats);
-	set_handler_callback(LIST+MAPS+FMT, cli_list_maps_fmt);
-	set_handler_callback(LIST+MAPS+RAW+FMT, cli_list_maps_raw);
-	set_handler_callback(LIST+MAPS+TOPOLOGY, cli_list_maps_topology);
-	set_handler_callback(LIST+TOPOLOGY, cli_list_maps_topology);
-	set_handler_callback(LIST+MAPS+JSON, cli_list_maps_json);
-	set_handler_callback(LIST+MAP+TOPOLOGY, cli_list_map_topology);
-	set_handler_callback(LIST+MAP+FMT, cli_list_map_fmt);
-	set_handler_callback(LIST+MAP+RAW+FMT, cli_list_map_fmt);
-	set_handler_callback(LIST+MAP+JSON, cli_list_map_json);
-	set_handler_callback(LIST+CONFIG+LOCAL, cli_list_config_local);
-	set_handler_callback(LIST+CONFIG, cli_list_config);
-	set_handler_callback(LIST+BLACKLIST, cli_list_blacklist);
-	set_handler_callback(LIST+DEVICES, cli_list_devices);
-	set_handler_callback(LIST+WILDCARDS, cli_list_wildcards);
-	set_handler_callback(RESET+MAPS+STATS, cli_reset_maps_stats);
-	set_handler_callback(RESET+MAP+STATS, cli_reset_map_stats);
-	set_handler_callback(ADD+PATH, cli_add_path);
-	set_handler_callback(DEL+PATH, cli_del_path);
-	set_handler_callback(ADD+MAP, cli_add_map);
-	set_handler_callback(DEL+MAP, cli_del_map);
-	set_handler_callback(DEL+MAPS, cli_del_maps);
-	set_handler_callback(SWITCH+MAP+GROUP, cli_switch_group);
-	set_unlocked_handler_callback(RECONFIGURE, cli_reconfigure);
-	set_unlocked_handler_callback(RECONFIGURE+ALL, cli_reconfigure_all);
-	set_handler_callback(SUSPEND+MAP, cli_suspend);
-	set_handler_callback(RESUME+MAP, cli_resume);
-	set_handler_callback(RESIZE+MAP, cli_resize);
-	set_handler_callback(RELOAD+MAP, cli_reload);
-	set_handler_callback(RESET+MAP, cli_reassign);
-	set_handler_callback(REINSTATE+PATH, cli_reinstate);
-	set_handler_callback(FAIL+PATH, cli_fail);
-	set_handler_callback(DISABLEQ+MAP, cli_disable_queueing);
-	set_handler_callback(RESTOREQ+MAP, cli_restore_queueing);
-	set_handler_callback(DISABLEQ+MAPS, cli_disable_all_queueing);
-	set_handler_callback(RESTOREQ+MAPS, cli_restore_all_queueing);
-	set_unlocked_handler_callback(QUIT, cli_quit);
-	set_unlocked_handler_callback(SHUTDOWN, cli_shutdown);
-	set_handler_callback(GETPRSTATUS+MAP, cli_getprstatus);
-	set_handler_callback(SETPRSTATUS+MAP, cli_setprstatus);
-	set_handler_callback(UNSETPRSTATUS+MAP, cli_unsetprstatus);
-	set_handler_callback(FORCEQ+DAEMON, cli_force_no_daemon_q);
-	set_handler_callback(RESTOREQ+DAEMON, cli_restore_no_daemon_q);
-	set_handler_callback(GETPRKEY+MAP, cli_getprkey);
-	set_handler_callback(SETPRKEY+MAP+KEY, cli_setprkey);
-	set_handler_callback(UNSETPRKEY+MAP, cli_unsetprkey);
-	set_handler_callback(SETMARGINAL+PATH, cli_set_marginal);
-	set_handler_callback(UNSETMARGINAL+PATH, cli_unset_marginal);
-	set_handler_callback(UNSETMARGINAL+MAP, cli_unset_all_marginal);
-}
+#define HANDLER(x) x
+#include "callbacks.c"

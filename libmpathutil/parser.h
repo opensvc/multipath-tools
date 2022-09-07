@@ -33,8 +33,8 @@
 
 /* local includes */
 #include "vector.h"
-#include "config.h"
 struct strbuf;
+struct config;
 
 /* Global definitions */
 #define EOB  "}"

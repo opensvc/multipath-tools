@@ -24,10 +24,10 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <libudev.h>
-#include <mpath_persist.h>
 #include "mpath_cmd.h"
 #include "dict.h"
 #include "strbuf.h"
+#include "prkey.h"
 
 static void
 do_set_int(vector strvec, void *ptr, int min, int max, const char *file,
@@ -1402,20 +1402,6 @@ set_reservation_key(vector strvec, struct be64 *be64_ptr, uint8_t *flags_ptr,
 	put_be64(*be64_ptr, prkey);
 	free(buff);
 	return 0;
-}
-
-int
-print_reservation_key(struct strbuf *buff,
-		      struct be64 key, uint8_t flags, int source)
-{
-	char *flagstr = "";
-	if (source == PRKEY_SOURCE_NONE)
-		return 0;
-	if (source == PRKEY_SOURCE_FILE)
-		return append_strbuf_quoted(buff, "file");
-	if (flags & MPATH_F_APTPL_MASK)
-		flagstr = ":aptpl";
-	return print_strbuf(buff, "0x%" PRIx64 "%s", get_be64(key), flagstr);
 }
 
 static int

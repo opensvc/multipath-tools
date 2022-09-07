@@ -573,7 +573,7 @@ static int fix_bindings_file(const struct config *conf,
 			     const Bindings *bindings)
 {
 	int rc;
-	long fd;
+	int fd = -1;
 	char tempname[PATH_MAX];
 	mode_t old_umask;
 
@@ -586,7 +586,7 @@ static int fix_bindings_file(const struct config *conf,
 		return -1;
 	}
 	umask(old_umask);
-	pthread_cleanup_push(close_fd, (void*)fd);
+	pthread_cleanup_push(cleanup_fd_ptr, &fd);
 	rc = write_bindings_file(bindings, fd);
 	pthread_cleanup_pop(1);
 	if (rc == -1) {
@@ -672,6 +672,24 @@ static void cleanup_fclose(void *p)
 	fclose(p);
 }
 
+static int alias_compar(const void *p1, const void *p2)
+{
+	const char *alias1 = (*(struct mpentry * const *)p1)->alias;
+	const char *alias2 = (*(struct mpentry * const *)p2)->alias;
+
+	if (alias1 && alias2)
+		return strcmp(alias1, alias2);
+	else
+		/* Move NULL alias to the end */
+		return alias1 ? -1 : alias2 ? 1 : 0;
+}
+
+static void cleanup_vector_free(void *arg)
+{
+	if  (arg)
+		vector_free((vector)arg);
+}
+
 /*
  * check_alias_settings(): test for inconsistent alias configuration
  *
@@ -693,12 +711,24 @@ int check_alias_settings(const struct config *conf)
 	int can_write;
 	int rc = 0, i, fd;
 	Bindings bindings = {.allocated = 0, };
+	vector mptable = NULL;
 	struct mpentry *mpe;
 
+	mptable = vector_convert(NULL, conf->mptable, struct mpentry *, identity);
+	if (!mptable)
+		return -1;
+
 	pthread_cleanup_push_cast(free_bindings, &bindings);
-	vector_foreach_slot(conf->mptable, mpe, i) {
-		if (!mpe->wwid || !mpe->alias)
-			continue;
+	pthread_cleanup_push(cleanup_vector_free, mptable);
+
+	vector_sort(mptable, alias_compar);
+	vector_foreach_slot(mptable, mpe, i) {
+		if (!mpe->alias)
+			/*
+			 * alias_compar() sorts NULL alias at the end,
+			 * so we can stop if we encounter this.
+			 */
+			break;
 		if (add_binding(&bindings, mpe->alias, mpe->wwid) ==
 		    BINDING_CONFLICT) {
 			condlog(0, "ERROR: alias \"%s\" bound to multiple wwids in multipath.conf, "
@@ -709,6 +739,7 @@ int check_alias_settings(const struct config *conf)
 		}
 	}
 	/* This clears the bindings */
+	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
 
 	pthread_cleanup_push_cast(free_bindings, &bindings);

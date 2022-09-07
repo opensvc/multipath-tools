@@ -191,7 +191,7 @@ verify_pathgroups(struct multipath *mp, struct path *pp, int **groups,
 			/* Test names instead of pointers to get a more
 			 * useful error message */
 			assert_string_equal(pgp_path->dev, pp_path->dev);
-			/* This test is just a backkup in case the
+			/* This test is just a backup in case the
 			 * something wenth wrong naming the paths */
 			assert_ptr_equal(pgp_path, pp_path);
 		}

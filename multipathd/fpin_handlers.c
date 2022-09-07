@@ -172,8 +172,15 @@ fpin_els_add_li_frame(struct fc_nl_event *fc_event)
 /*Sets the rport port_state to marginal*/
 static void fpin_set_rport_marginal(struct udev_device *rport_dev)
 {
-	sysfs_attr_set_value(rport_dev, "port_state",
-				"Marginal", strlen("Marginal"));
+	static const char marginal[] = "Marginal";
+	ssize_t ret;
+
+	ret = sysfs_attr_set_value(rport_dev, "port_state",
+				   marginal, sizeof(marginal) - 1);
+	if (ret != sizeof(marginal) - 1)
+		log_sysfs_attr_set_value(2, ret,
+					 "%s: failed to set port_state to marginal",
+					 udev_device_get_syspath(rport_dev));
 }
 
 /*Add the marginal devices info into the list*/
@@ -481,7 +488,7 @@ static void receiver_cleanup_list(__attribute__((unused)) void *arg)
 void *fpin_fabric_notification_receiver(__attribute__((unused))void *unused)
 {
 	int ret;
-	long fd;
+	int fd = -1;
 	uint32_t els_cmd;
 	struct fc_nl_event *fc_event = NULL;
 	struct sockaddr_nl fc_local;
@@ -492,13 +499,14 @@ void *fpin_fabric_notification_receiver(__attribute__((unused))void *unused)
 	rcu_register_thread();
 
 	pthread_cleanup_push(receiver_cleanup_list, NULL);
+	pthread_cleanup_push(cleanup_fd_ptr, &fd);
+
 	fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_SCSITRANSPORT);
 	if (fd < 0) {
-		condlog(0, "fc socket error %ld", fd);
-		return NULL;
+		condlog(0, "fc socket error %d", fd);
+		goto out;
 	}
 
-	pthread_cleanup_push(close_fd, (void *)fd);
 	memset(&fc_local, 0, sizeof(fc_local));
 	fc_local.nl_family = AF_NETLINK;
 	fc_local.nl_groups = ~0;

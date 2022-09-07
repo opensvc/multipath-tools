@@ -6,6 +6,7 @@
 #include <urcu.h>
 #include <inttypes.h>
 #include "byteorder.h"
+#include "globals.h"
 
 #define ORIGIN_DEFAULT 0
 #define ORIGIN_CONFIG  1
@@ -248,7 +249,7 @@ struct config {
  * libmultipath calls. If an application wants to keep using the
  * udev variable after calling libmultipath_exit(), it should have taken
  * an additional reference on it beforehand. This is the case e.g.
- * after initiazing udev with udev_new().
+ * after initializing udev with udev_new().
  */
 extern struct udev *udev;
 
@@ -303,21 +304,8 @@ void free_config (struct config * conf);
 int init_config(const char *file);
 void uninit_config(void);
 
-/*
- * libmultipath provides default implementations of
- * get_multipath_config() and put_multipath_config().
- * Applications using these should use init_config(file, NULL)
- * to load the configuration, rather than load_config(file).
- * Likewise, uninit_config() should be used for teardown, but
- * using free_config() for that is supported, too.
- * Applications can define their own {get,put}_multipath_config()
- * functions, which override the library-internal ones, but
- * could still call libmp_{get,put}_multipath_config().
- */
 struct config *libmp_get_multipath_config(void);
-struct config *get_multipath_config(void);
 void libmp_put_multipath_config(void *);
-void put_multipath_config(void *);
 
 int parse_uid_attrs(char *uid_attrs, struct config *conf);
 const char *get_uid_attribute_by_attrs(const struct config *conf,

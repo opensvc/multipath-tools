@@ -13,8 +13,8 @@
 
 #include "checkers.h"
 
-#include "../libmultipath/sg_include.h"
-#include "../libmultipath/unaligned.h"
+#include "sg_include.h"
+#include "unaligned.h"
 
 #define TUR_CMD_LEN		6
 #define INQUIRY_CMDLEN		6

@@ -5,7 +5,7 @@
 .\"
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATHD 8 2016-10-27 Linux
+.TH MULTIPATHD 8 2022-09-03 Linux
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -20,14 +20,23 @@ multipathd \- Multipath daemon.
 .\" ----------------------------------------------------------------------------
 .
 .B multipathd
-.RB [\| \-d | \-k \|]
+.RB [\| \-d \|]
 .RB [\| \-s \|]
 .RB [\| \-v\ \c
 .IR verbosity \|]
 .RB [\| \-B \|]
 .RB [\| \-w \|]
-.
-.
+.LP
+.B multipathd
+.RB [\| \-v\ \c
+.IR verbosity \|]
+.B -k\fIcommand\fR
+.LP
+.B multipathd
+.RB [\| \-v\ \c
+.IR verbosity \|]
+.B -k
+
 .\" ----------------------------------------------------------------------------
 .SH DESCRIPTION
 .\" ----------------------------------------------------------------------------
@@ -36,9 +45,9 @@ The \fBmultipathd\fR daemon is in charge of checking for failed paths. When this
 happens, it will reconfigure the multipath map the path belongs to, so that this
 map regains its maximum performance and redundancy.
 
-This daemon executes the external \fBmultipath\fR tool when events occur.
-In turn, the multipath tool signals the multipathd daemon when it is done with
-devmap reconfiguration, so that it can refresh its failed path list.
+With the \fB-k\fR option, \fBmultipathd\fR acts as a client utility that
+sends commands to a running instance of the multipathd daemon (see
+\fBCOMMANDS\fR below).
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -66,10 +75,16 @@ bindings file. If a \fIuser_friendly_name\fR doesn't already exist for a device,
 will use its WWID as its alias.
 .
 .TP
+.B \-k\fIcommand\fB
+multipathd executes the given command (see \fBCOMMANDS\fR below). If the
+command contains whitespace or shell special characters, it needs to be quoted
+like in \fImultipathd -k'show topology'\fR. No whitespace is allowed between
+the \fB-k\fR and the command string.
+.
+.TP
 .B \-k
-multipathd will enter interactive mode. From this mode, the available commands can
-be viewed by entering '\fIhelp\fR'. When you are finished entering commands, press
-\fBCTRL-D\fR to quit.
+multipathd executes the \fBmultipathc\fR interactive shell for entering
+commands (see \fBCOMMANDS\fR below).
 .
 .TP
 .B \-n
@@ -346,10 +361,12 @@ Overrides the \fImax_fds\fR configuration setting.
 .SH "SEE ALSO"
 .\" ----------------------------------------------------------------------------
 .
+.BR multipathc (8),
 .BR multipath (8),
-.BR kpartx (8),
+.BR kpartx (8)
+.RE
 .BR sd_notify (3),
-.BR system.service (5).
+.BR systemd.service (5).
 .
 .
 .\" ----------------------------------------------------------------------------

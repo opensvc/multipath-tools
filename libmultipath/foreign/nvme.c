@@ -531,14 +531,18 @@ static int _dirent_controller(const struct dirent *di)
 
 /* Find the block device for a given nvme controller */
 struct udev_device *get_ctrl_blkdev(const struct context *ctx,
-				    struct udev_device *ctrl)
+				    struct udev_device *ctrl, const char *ctrl_name)
 {
+	int ctrl_num, ns_num; 
 	struct udev_list_entry *item;
 	struct udev_device *blkdev = NULL;
 	struct udev_enumerate *enm = udev_enumerate_new(ctx->udev);
 	const char *devtype;
 
-	if (enm == NULL)
+	if (enm == NULL || ctrl_name == NULL)
+		return NULL;
+
+	if (sscanf(ctrl_name, "nvme%dn%d", &ctrl_num, &ns_num) != 2)
 		return NULL;
 
 	pthread_cleanup_push(_udev_enumerate_unref, enm);
@@ -556,6 +560,8 @@ struct udev_device *get_ctrl_blkdev(const struct context *ctx,
 	     item != NULL;
 	     item = udev_list_entry_get_next(item)) {
 		struct udev_device *tmp;
+		const char *name = NULL ;
+		int m, n, l;
 
 		tmp = udev_device_new_from_syspath(ctx->udev,
 					   udev_list_entry_get_name(item));
@@ -563,11 +569,19 @@ struct udev_device *get_ctrl_blkdev(const struct context *ctx,
 			continue;
 
 		devtype = udev_device_get_devtype(tmp);
-		if (devtype && !strcmp(devtype, "disk")) {
+		if (devtype == NULL || strcmp(devtype, "disk")) {
+			udev_device_unref(tmp);
+			continue;
+		}
+
+		name = udev_device_get_sysname(tmp);
+		if (name != NULL &&
+		    sscanf(name, "nvme%dc%dn%d", &m, &n, &l) == 3 &&
+		    l == ns_num) {
 			blkdev = tmp;
 			break;
-		} else
-			udev_device_unref(tmp);
+		}
+		udev_device_unref(tmp);
 	}
 
 	if (blkdev == NULL)
@@ -585,7 +599,7 @@ static void test_ana_support(struct nvme_map *map, struct udev_device *ctl)
 {
 	const char *dev_t;
 	char sys_path[64];
-	long fd;
+	int fd = -1;
 	int rc;
 
 	if (map->ana_supported != YNU_UNDEF)
@@ -601,7 +615,7 @@ static void test_ana_support(struct nvme_map *map, struct udev_device *ctl)
 		return;
 	}
 
-	pthread_cleanup_push(close_fd, (void *)fd);
+	pthread_cleanup_push(cleanup_fd_ptr, &fd);
 	rc = nvme_id_ctrl_ana(fd, NULL);
 	if (rc < 0)
 		condlog(2, "%s: error in nvme_id_ctrl: %s", __func__,
@@ -680,7 +694,7 @@ static void _find_controllers(struct context *ctx, struct nvme_map *map)
 		}
 
 		pthread_cleanup_push(_udev_device_unref, ctrl);
-		udev = get_ctrl_blkdev(ctx, ctrl);
+		udev = get_ctrl_blkdev(ctx, ctrl, udev_device_get_sysname(map->udev));
 		/*
 		 * We give up the reference to the nvme device here and get
 		 * it back from the child below.

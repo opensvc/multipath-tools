@@ -44,169 +44,114 @@
  * as libudev lacks the capability to update an attribute value.
  * So for modified attributes we need to implement our own function.
  */
-ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
-			     char * value, size_t value_len)
+static ssize_t __sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
+				      char *value, size_t value_len, bool binary)
 {
-	char devpath[PATH_SIZE];
-	struct stat statbuf;
-	int fd;
+	const char *syspath;
+	char devpath[PATH_MAX];
+	int fd = -1;
 	ssize_t size = -1;
 
-	if (!dev || !attr_name || !value)
-		return 0;
+	if (!dev || !attr_name || !value || !value_len) {
+		condlog(1, "%s: invalid parameters", __func__);
+		return -EINVAL;
+	}
 
-	snprintf(devpath, PATH_SIZE, "%s/%s", udev_device_get_syspath(dev),
-		 attr_name);
+	syspath = udev_device_get_syspath(dev);
+	if (!syspath) {
+		condlog(3, "%s: invalid udevice", __func__);
+		return -EINVAL;
+	}
+	if (safe_sprintf(devpath, "%s/%s", syspath, attr_name)) {
+		condlog(3, "%s: devpath overflow", __func__);
+		return -EOVERFLOW;
+	}
 	condlog(4, "open '%s'", devpath);
 	/* read attribute value */
 	fd = open(devpath, O_RDONLY);
 	if (fd < 0) {
-		condlog(4, "attribute '%s' can not be opened: %s",
-			devpath, strerror(errno));
+		condlog(3, "%s: attribute '%s' can not be opened: %s",
+			__func__, devpath, strerror(errno));
 		return -errno;
 	}
-	if (fstat(fd, &statbuf) < 0) {
-		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
-		close(fd);
-		return -ENXIO;
-	}
-	/* skip directories */
-	if (S_ISDIR(statbuf.st_mode)) {
-		condlog(4, "%s is a directory", devpath);
-		close(fd);
-		return -EISDIR;
-	}
-	/* skip non-writeable files */
-	if ((statbuf.st_mode & S_IRUSR) == 0) {
-		condlog(4, "%s is not readable", devpath);
-		close(fd);
-		return -EPERM;
-	}
+	pthread_cleanup_push(cleanup_fd_ptr, &fd);
 
 	size = read(fd, value, value_len);
 	if (size < 0) {
-		condlog(4, "read from %s failed: %s", devpath, strerror(errno));
 		size = -errno;
-		value[0] = '\0';
-	} else if (size == (ssize_t)value_len) {
+		condlog(3, "%s: read from %s failed: %s", __func__, devpath,
+			strerror(errno));
+		if (!binary)
+			value[0] = '\0';
+	} else if (!binary && size == (ssize_t)value_len) {
+		condlog(3, "%s: overflow reading from %s (required len: %zu)",
+			__func__, devpath, size);
 		value[size - 1] = '\0';
-		condlog(4, "overflow while reading from %s", devpath);
-		size = 0;
-	} else {
+	} else if (!binary) {
 		value[size] = '\0';
 		size = strchop(value);
 	}
 
-	close(fd);
+	pthread_cleanup_pop(1);
 	return size;
 }
 
-ssize_t sysfs_bin_attr_get_value(struct udev_device *dev, const char *attr_name,
-				 unsigned char * value, size_t value_len)
+ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
+			     char *value, size_t value_len)
 {
-	char devpath[PATH_SIZE];
-	struct stat statbuf;
-	int fd;
-	ssize_t size = -1;
+	return __sysfs_attr_get_value(dev, attr_name, value, value_len, false);
+}
 
-	if (!dev || !attr_name || !value)
-		return 0;
-
-	snprintf(devpath, PATH_SIZE, "%s/%s", udev_device_get_syspath(dev),
-		 attr_name);
-	condlog(4, "open '%s'", devpath);
-	/* read attribute value */
-	fd = open(devpath, O_RDONLY);
-	if (fd < 0) {
-		condlog(4, "attribute '%s' can not be opened: %s",
-			devpath, strerror(errno));
-		return -errno;
-	}
-	if (fstat(fd, &statbuf) != 0) {
-		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
-		close(fd);
-		return -ENXIO;
-	}
-
-	/* skip directories */
-	if (S_ISDIR(statbuf.st_mode)) {
-		condlog(4, "%s is a directory", devpath);
-		close(fd);
-		return -EISDIR;
-	}
-
-	/* skip non-writeable files */
-	if ((statbuf.st_mode & S_IRUSR) == 0) {
-		condlog(4, "%s is not readable", devpath);
-		close(fd);
-		return -EPERM;
-	}
-
-	size = read(fd, value, value_len);
-	if (size < 0) {
-		condlog(4, "read from %s failed: %s", devpath, strerror(errno));
-		size = -errno;
-	} else if (size == (ssize_t)value_len) {
-		condlog(4, "overflow while reading from %s", devpath);
-		size = 0;
-	}
-
-	close(fd);
-	return size;
+ssize_t sysfs_bin_attr_get_value(struct udev_device *dev, const char *attr_name,
+				 unsigned char *value, size_t value_len)
+{
+	return __sysfs_attr_get_value(dev, attr_name, (char *)value,
+				      value_len, true);
 }
 
 ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 			     const char * value, size_t value_len)
 {
-	char devpath[PATH_SIZE];
-	struct stat statbuf;
-	int fd;
+	const char *syspath;
+	char devpath[PATH_MAX];
+	int fd = -1;
 	ssize_t size = -1;
 
-	if (!dev || !attr_name || !value || !value_len)
-		return 0;
+	if (!dev || !attr_name || !value || !value_len) {
+		condlog(1, "%s: invalid parameters", __func__);
+		return -EINVAL;
+	}
 
-	snprintf(devpath, PATH_SIZE, "%s/%s", udev_device_get_syspath(dev),
-		 attr_name);
+	syspath = udev_device_get_syspath(dev);
+	if (!syspath) {
+		condlog(3, "%s: invalid udevice", __func__);
+		return -EINVAL;
+	}
+	if (safe_sprintf(devpath, "%s/%s", syspath, attr_name)) {
+		condlog(3, "%s: devpath overflow", __func__);
+		return -EOVERFLOW;
+	}
+
 	condlog(4, "open '%s'", devpath);
 	/* write attribute value */
 	fd = open(devpath, O_WRONLY);
 	if (fd < 0) {
-		condlog(4, "attribute '%s' can not be opened: %s",
-			devpath, strerror(errno));
+		condlog(3, "%s: attribute '%s' can not be opened: %s",
+			__func__, devpath, strerror(errno));
 		return -errno;
 	}
-	if (fstat(fd, &statbuf) != 0) {
-		condlog(4, "stat '%s' failed: %s", devpath, strerror(errno));
-		close(fd);
-		return -errno;
-	}
-
-	/* skip directories */
-	if (S_ISDIR(statbuf.st_mode)) {
-		condlog(4, "%s is a directory", devpath);
-		close(fd);
-		return -EISDIR;
-	}
-
-	/* skip non-writeable files */
-	if ((statbuf.st_mode & S_IWUSR) == 0) {
-		condlog(4, "%s is not writeable", devpath);
-		close(fd);
-		return -EPERM;
-	}
+	pthread_cleanup_push(cleanup_fd_ptr, &fd);
 
 	size = write(fd, value, value_len);
 	if (size < 0) {
-		condlog(4, "write to %s failed: %s", devpath, strerror(errno));
 		size = -errno;
-	} else if (size < (ssize_t)value_len) {
-		condlog(4, "tried to write %ld to %s. Wrote %ld",
-			(long)value_len, devpath, (long)size);
-		size = 0;
-	}
+		condlog(3, "%s: write to %s failed: %s", __func__, 
+			devpath, strerror(errno));
+	} else if (size < (ssize_t)value_len)
+		condlog(3, "%s: underflow writing %zu bytes to %s. Wrote %zd bytes",
+			__func__, value_len, devpath, size);
 
-	close(fd);
+	pthread_cleanup_pop(1);
 	return size;
 }
 
@@ -220,7 +165,7 @@ sysfs_get_size (struct path *pp, unsigned long long * size)
 		return 1;
 
 	attr[0] = '\0';
-	if (sysfs_attr_get_value(pp->udev, "size", attr, 255) <= 0) {
+	if (!sysfs_attr_get_value_ok(pp->udev, "size", attr, sizeof(attr))) {
 		condlog(3, "%s: No size attribute in sysfs", pp->dev);
 		return 1;
 	}
@@ -239,7 +184,7 @@ sysfs_get_size (struct path *pp, unsigned long long * size)
 int sysfs_check_holders(char * check_devt, char * new_devt)
 {
 	unsigned int major, new_minor, table_minor;
-	char path[PATH_MAX], check_dev[PATH_SIZE];
+	char path[PATH_MAX], check_dev[FILE_NAME_SIZE];
 	char * table_name;
 	DIR *dirfd;
 	struct dirent *holder;
@@ -249,7 +194,7 @@ int sysfs_check_holders(char * check_devt, char * new_devt)
 		return 0;
 	}
 
-	if (devt2devname(check_dev, PATH_SIZE, check_devt)) {
+	if (devt2devname(check_dev, sizeof(check_dev), check_devt)) {
 		condlog(1, "can't get devname for %s", check_devt);
 		return 0;
 	}
@@ -327,7 +272,7 @@ bool sysfs_is_multipathed(struct path *pp, bool set_wwid)
 	sr.n = r;
 	pthread_cleanup_push_cast(free_scandir_result, &sr);
 	for (i = 0; i < r && !found; i++) {
-		long fd;
+		int fd = -1;
 		int nr;
 		char uuid[WWID_SIZE + UUID_PREFIX_LEN];
 
@@ -341,7 +286,7 @@ bool sysfs_is_multipathed(struct path *pp, bool set_wwid)
 			continue;
 		}
 
-		pthread_cleanup_push(close_fd, (void *)fd);
+		pthread_cleanup_push(cleanup_fd_ptr, &fd);
 		nr = read(fd, uuid, sizeof(uuid));
 		if (nr > (int)UUID_PREFIX_LEN &&
 		    !memcmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN)) {

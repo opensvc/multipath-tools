@@ -13,6 +13,7 @@ cscope.out
 kpartx/kpartx
 multipath/multipath
 multipathd/multipathd
+multipathd/multipathc
 mpathpersist/mpathpersist
 abi.tar.gz
 abi
@@ -32,3 +33,5 @@ tests/*.out
 tests/*.vgr
 libmultipath/nvme-ioctl.c
 libmultipath/nvme-ioctl.h
+*/*-nv.version
+reference-abi

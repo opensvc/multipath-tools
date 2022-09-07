@@ -435,6 +435,7 @@ out:
 static int get_dh_state(struct path *pp, char *value, size_t value_len)
 {
 	struct udev_device *ud;
+	ssize_t rc;
 
 	if (pp->udev == NULL)
 		return -1;
@@ -444,7 +445,10 @@ static int get_dh_state(struct path *pp, char *value, size_t value_len)
 	if (ud == NULL)
 		return -1;
 
-	return sysfs_attr_get_value(ud, "dh_state", value, value_len);
+	rc = sysfs_attr_get_value(ud, "dh_state", value, value_len);
+	if (!sysfs_attr_value_ok(rc, value_len))
+		return -1;
+	return rc;
 }
 
 int select_hwhandler(struct config *conf, struct multipath *mp)
@@ -1293,7 +1297,7 @@ out:
 	 */
 	if (pp->find_multipaths_timeout < 0) {
 		pp->find_multipaths_timeout = -pp->find_multipaths_timeout;
-		if (!pp->hwe) {
+		if (VECTOR_SIZE(pp->hwe) == 0) {
 			pp->find_multipaths_timeout =
 				DEFAULT_UNKNOWN_FIND_MULTIPATHS_TIMEOUT;
 			origin = "(default for unknown hardware)";

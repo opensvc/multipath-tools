@@ -16,7 +16,5 @@ int print_pgpolicy(struct strbuf *buff, long v);
 int print_no_path_retry(struct strbuf *buff, long v);
 int print_undef_off_zero(struct strbuf *buff, long v);
 int print_dev_loss(struct strbuf *buff, unsigned long v);
-int print_reservation_key(struct strbuf *buff,
-			  struct be64 key, uint8_t flags, int source);
 int print_off_int_undef(struct strbuf *buff, long v);
 #endif /* _DICT_H */

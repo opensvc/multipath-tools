@@ -15,8 +15,8 @@
 #include <libaio.h>
 
 #include "checkers.h"
-#include "../libmultipath/debug.h"
-#include "../libmultipath/time-util.h"
+#include "debug.h"
+#include "time-util.h"
 
 #define AIO_GROUP_SIZE 1024
 
@@ -124,7 +124,7 @@ remove_aio_group(struct aio_group *aio_grp)
 
 /* If an aio_group is completely full of orphans, then no checkers can
  * use it, which means that no checkers can clear out the orphans. To
- * avoid keeping the useless group around, simply remove remove the
+ * avoid keeping the useless group around, simply remove the
  * group */
 static void
 check_orphaned_group(struct aio_group *aio_grp)

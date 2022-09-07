@@ -90,7 +90,7 @@ int
 replace_wwids(vector mp)
 {
 	int i, can_write;
-	long fd;
+	int fd = -1;
 	struct multipath * mpp;
 	size_t len;
 	int ret = -1;
@@ -103,7 +103,7 @@ replace_wwids(vector mp)
 	if (fd < 0)
 		goto out;
 
-	pthread_cleanup_push(close_fd, (void*)fd);
+	pthread_cleanup_push(cleanup_fd_ptr, &fd);
 	if (!can_write) {
 		condlog(0, "cannot replace wwids. wwids file is read-only");
 		goto out_file;
@@ -196,7 +196,7 @@ do_remove_wwid(int fd, char *str) {
 
 int
 remove_wwid(char *wwid) {
-	long fd;
+	int fd = -1;
 	int len, can_write;
 	char *str;
 	int ret = -1;
@@ -226,7 +226,7 @@ remove_wwid(char *wwid) {
 		goto out;
 	}
 
-	pthread_cleanup_push(close_fd, (void*)fd);
+	pthread_cleanup_push(cleanup_fd_ptr, &fd);
 	if (!can_write) {
 		ret = -1;
 		condlog(0, "cannot remove wwid. wwids file is read-only");

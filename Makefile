@@ -4,6 +4,7 @@
 
 LIB_BUILDDIRS := \
 	libmpathcmd \
+	libmpathutil \
 	libmultipath \
 	libmpathpersist \
 	libmpathvalid
@@ -25,7 +26,7 @@ BUILDDIRS := $(LIB_BUILDDIRS) \
 
 BUILDDIRS.clean := $(BUILDDIRS:=.clean) tests.clean
 
-.PHONY:	$(BUILDDIRS) $(BUILDDIRS:=.uninstall) $(BUILDDIRS:=.install) $(BUILDDIRS:=.clean) $(LIB_BUILDDIRS:=.abi)
+.PHONY:	$(BUILDDIRS)
 
 all:	$(BUILDDIRS)
 
@@ -53,7 +54,7 @@ abi.tar.gz:	abi
 abi-test:	abi reference-abi $(wildcard abi/*.abi)
 	@err=0; \
 	for lib in abi/*.abi; do \
-	    diff=$$(abidiff "reference-$$lib" "$$lib") || { \
+	    diff=$$(abidiff --redundant "reference-$$lib" "$$lib") || { \
 	        err=1; \
 		echo "==== ABI differences in for $$lib ===="; \
 		echo "$$diff"; \
@@ -72,7 +73,8 @@ compile_commands.json: Makefile Makefile.inc $(BUILDDIRS:=/Makefile)
 	$(MAKE) clean
 	bear -- $(MAKE)
 
-libmultipath libdmmp: libmpathcmd
+libmpathutil libdmmp: libmpathcmd
+libmultipath: libmpathutil
 libmpathpersist libmpathvalid multipath multipathd: libmultipath
 libmultipath/prioritizers libmultipath/checkers libmultipath/foreign: libmultipath
 mpathpersist multipathd:  libmpathpersist
@@ -84,7 +86,7 @@ libmultipath/checkers.install \
 $(BUILDDIRS.clean):
 	$(MAKE) -C ${@:.clean=} clean
 
-$(BUILDDIRS:=.install):
+%.install:	%
 	$(MAKE) -C ${@:.install=} install
 
 $(BUILDDIRS:=.uninstall):
@@ -93,13 +95,13 @@ $(BUILDDIRS:=.uninstall):
 clean: $(BUILDDIRS.clean)
 	rm -rf abi abi.tar.gz abi-test compile_commands.json
 
-install: all $(BUILDDIRS:=.install)
+install: $(BUILDDIRS:=.install)
 uninstall: $(BUILDDIRS:=.uninstall)
 
 test-progs:	all
 	$(MAKE) -C tests progs
 
-test:	test-progs
+test:	all
 	$(MAKE) -C tests all
 
 valgrind-test:	all

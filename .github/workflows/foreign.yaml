@@ -31,7 +31,9 @@ jobs:
         run: >
           tar cfv binaries.tar
           Makefile*
-          libmpathcmd/*.so* libmultipath/*.so*
+          libmpathcmd/*.so* libmultipath/*.so* libmpathutil/*.so*
+          libmultipath/checkers/*.so libmultipath/prioritizers/*.so
+          libmultipath/foreign/*.so
           tests/lib tests/*-test tests/Makefile tests/*.so*
       - uses: actions/upload-artifact@v1
         if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
@@ -56,7 +58,7 @@ jobs:
       - name: enable foreign arch
         run: sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset
       - name: run tests
-        # Github actions doesn't support referencing docker images with
+        # GitHub actions doesn't support referencing docker images with
         # context variables. Workaround: use mosteo-actions/docker-run action
         # See https://github.community/t/expressions-in-docker-uri/16271
         uses: mosteo-actions/docker-run@v1

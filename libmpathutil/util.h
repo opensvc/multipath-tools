@@ -24,8 +24,6 @@ char *convert_dev(char *dev, int is_path_device);
 void setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached);
 int systemd_service_enabled(const char *dev);
 int get_linux_version_code(void);
-int parse_prkey(const char *ptr, uint64_t *prkey);
-int parse_prkey_flags(const char *ptr, uint64_t *prkey, uint8_t *flags);
 int safe_write(int fd, const void *buf, size_t count);
 void set_max_fds(rlim_t max_fds);
 int should_exit(void);
@@ -48,7 +46,7 @@ int should_exit(void);
 #define pthread_cleanup_push_cast(f, arg)		\
 	pthread_cleanup_push(((void (*)(void *))&f), (arg))
 
-void close_fd(void *arg);
+void cleanup_fd_ptr(void *arg);
 void cleanup_free_ptr(void *arg);
 void cleanup_mutex(void *arg);
 

@@ -334,7 +334,6 @@ void mock_pathinfo(int mask, const struct mocked_path *mp)
 	if (mask & DI_SERIAL) {
 		will_return(__wrap_udev_device_get_subsystem, "scsi");
 		will_return(__wrap_udev_device_get_sysname, hbtl);
-		will_return(__wrap_udev_device_get_sysname, hbtl);
 	}
 
 	if (mask & DI_WWID) {

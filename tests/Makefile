@@ -11,12 +11,12 @@ TEST_MISSING_INITIALIZERS = $(shell \
 	|| echo -Wno-missing-field-initializers)
 W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)
 
-CPPFLAGS += -I$(multipathdir) -I$(mpathcmddir) -DTESTCONFDIR=\"$(TESTDIR)/conf.d\"
+CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathcmddir) -DTESTCONFDIR=\"$(TESTDIR)/conf.d\"
 CFLAGS += $(BIN_CFLAGS) -Wno-unused-parameter $(W_MISSING_INITIALIZERS)
-LIBDEPS += -L. -L$(mpathcmddir) -lmultipath -lmpathcmd -lcmocka
+LIBDEPS += -L. -L $(mpathutildir) -L$(mpathcmddir) -lmultipath -lmpathutil -lmpathcmd -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
-	 alias directio valid devt mpathvalid strbuf
+	 alias directio valid devt mpathvalid strbuf sysfs
 HELPERS := test-lib.o test-log.o
 
 .SILENT: $(TESTS:%=%.o)
@@ -48,43 +48,46 @@ mpathvalid-test_FLAGS := -I$(mpathvaliddir)
 #    unit test file, e.g. "config-test.o", in XYZ-test_OBJDEPS
 # XYZ-test_LIBDEPS: Additional libs to link for this test
 
-dmevents-test_OBJDEPS = ../libmultipath/devmapper.o
+dmevents-test_OBJDEPS = $(multipathdir)/devmapper.o
 dmevents-test_LIBDEPS = -lpthread -ldevmapper -lurcu
 hwtable-test_TESTDEPS := test-lib.o
-hwtable-test_OBJDEPS := ../libmultipath/discovery.o ../libmultipath/blacklist.o \
-	../libmultipath/structs.o ../libmultipath/propsel.o
+hwtable-test_OBJDEPS := $(multipathdir)/discovery.o $(multipathdir)/blacklist.o \
+	$(multipathdir)/structs.o $(multipathdir)/propsel.o
 hwtable-test_LIBDEPS := -ludev -lpthread -ldl
 blacklist-test_TESTDEPS := test-log.o
-blacklist-test_OBJDEPS := ../libmultipath/blacklist.o
+blacklist-test_OBJDEPS := $(multipathdir)/blacklist.o
 blacklist-test_LIBDEPS := -ludev
-vpd-test_OBJDEPS :=  ../libmultipath/discovery.o
+vpd-test_OBJDEPS :=  $(multipathdir)/discovery.o
 vpd-test_LIBDEPS := -ludev -lpthread -ldl
 alias-test_TESTDEPS := test-log.o
 alias-test_LIBDEPS := -lpthread -ldl
-valid-test_OBJDEPS := ../libmultipath/valid.o ../libmultipath/discovery.o
+valid-test_OBJDEPS := $(multipathdir)/valid.o $(multipathdir)/discovery.o
 valid-test_LIBDEPS := -ludev -lpthread -ldl
 devt-test_LIBDEPS := -ludev
 mpathvalid-test_LIBDEPS := -ludev -lpthread -ldl
-mpathvalid-test_OBJDEPS := ../libmpathvalid/mpath_valid.o
+mpathvalid-test_OBJDEPS := $(mpathvaliddir)/mpath_valid.o
 ifneq ($(DIO_TEST_DEV),)
 directio-test_LIBDEPS := -laio
 endif
-strbuf-test_OBJDEPS := ../libmultipath/strbuf.o
+strbuf-test_OBJDEPS := $(mpathutildir)/strbuf.o
+sysfs-test_TESTDEPS := test-log.o
+sysfs-test_OBJDEPS := $(multipathdir)/sysfs.o $(mpathutildir)/util.o
+sysfs-test_LIBDEPS := -ludev -lpthread -ldl
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $($*-test_FLAGS) -c -o $@ $<
 
 lib/libchecktur.so:
 	mkdir -p lib
-	ln ../libmultipath/*/*.so lib
+	cd lib && ln -s ../$(multipathdir)/*/*.so .
 
 %.out:	%-test lib/libchecktur.so
 	@echo == running $< ==
-	@LD_LIBRARY_PATH=.:$(mpathcmddir) ./$< >$@
+	@LD_LIBRARY_PATH=.:$(mpathutildir):$(mpathcmddir) ./$< >$@ 2>&1
 
 %.vgr:  %-test lib/libchecktur.so
 	@echo == running valgrind for $< ==
-	@LD_LIBRARY_PATH=.:$(mpathcmddir) \
+	@LD_LIBRARY_PATH=.:$(mpathutildir):$(mpathcmddir) \
 		valgrind --leak-check=full --error-exitcode=128 ./$< >$@ 2>&1
 
 OBJS = $(TESTS:%=%.o) $(HELPERS)
@@ -110,14 +113,14 @@ dep_clean:
 	@sed -n 's/^.*__wrap_\([a-zA-Z0-9_]*\).*$$/-Wl,--wrap=\1/p' $< | \
 		sort -u | tr '\n' ' ' >$@
 
-libmultipath.so.0:
+libmultipath.so.0: $(multipathdir)/libmultipath.so.0
 	make -C $(multipathdir) configdir=$(TESTDIR)/conf.d plugindir=$(TESTDIR)/lib test-lib
 
 # COLON will get expanded during second expansion below
 COLON:=:
 .SECONDEXPANSION:
 %-test:	%.o %.o.wrap $$($$@_OBJDEPS) $$($$@_TESTDEPS) $$($$@_TESTDEPS$$(COLON).o=.o.wrap) \
-		libmultipath.so.0 Makefile
+		libmultipath.so.0 $(mpathutildir)/libmpathutil.so.0 $(mpathcmddir)/libmpathcmd.so.0 Makefile
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $< $($@_TESTDEPS) $($@_OBJDEPS) \
 		$(LIBDEPS) $($@_LIBDEPS) \
 		$(shell cat $<.wrap) $(foreach dep,$($@_TESTDEPS),$(shell cat $(dep).wrap))

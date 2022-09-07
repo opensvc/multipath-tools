@@ -19,10 +19,10 @@
 
 #include "checkers.h"
 
-#include "../libmultipath/debug.h"
-#include "../libmultipath/sg_include.h"
-#include "../libmultipath/util.h"
-#include "../libmultipath/time-util.h"
+#include "debug.h"
+#include "sg_include.h"
+#include "util.h"
+#include "time-util.h"
 
 #define TUR_CMD_LEN 6
 #define HEAVY_CHECK_COUNT       10

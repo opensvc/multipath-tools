@@ -5,11 +5,11 @@ DEVLIB = libmpathvalid.so
 LIBS = $(DEVLIB).$(SONAME)
 VERSION_SCRIPT := libmpathvalid.version
 
-CPPFLAGS += -I$(multipathdir) -I$(mpathcmddir)
+CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathcmddir)
 CFLAGS += $(LIB_CFLAGS)
 
-LIBDEPS += -lpthread -ldevmapper -ldl -L$(multipathdir) \
-	   -lmultipath -L$(mpathcmddir) -lmpathcmd -ludev
+LIBDEPS += -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath \
+	   -L$(mpathutildir) -lmpathutil -L$(mpathcmddir) -lmpathcmd -ludev
 
 OBJS = mpath_valid.o
 

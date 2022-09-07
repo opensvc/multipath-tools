@@ -151,6 +151,9 @@ void free_keys (vector vec);
 void free_handlers (void);
 int cli_init (void);
 void cli_exit(void);
-char * key_generator (const char * str, int state);
+uint64_t fingerprint(const struct _vector *vec);
+vector get_keys(void);
+vector get_handlers(void);
+struct key *find_key (const char * str);
 
 #endif /* _CLI_H_ */

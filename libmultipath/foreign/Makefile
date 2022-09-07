@@ -4,10 +4,10 @@
 TOPDIR=../..
 include ../../Makefile.inc
 
-CPPFLAGS += -I.. -I$(nvmedir)
+CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(nvmedir)
 CFLAGS += $(LIB_CFLAGS)
-LDFLAGS += -L..
-LIBDEPS = -lmultipath -ludev -lpthread -lrt
+LDFLAGS += -L$(multipathdir) -L$(mpathutildir)
+LIBDEPS = -lmultipath -lmpathutil -ludev -lpthread -lrt
 
 LIBS = libforeign-nvme.so
 

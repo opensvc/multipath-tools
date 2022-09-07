@@ -11,7 +11,7 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
-#include "../libmultipath/sg_include.h"
+#include "sg_include.h"
 #include "libsg.h"
 #include "checkers.h"
 #include "debug.h"

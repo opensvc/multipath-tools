@@ -91,6 +91,7 @@ static LIST_HEAD(clients);
 static struct pollfd *polls;
 static int notify_fd = -1;
 static int idle_fd = -1;
+static bool clients_need_lock = false;
 
 static bool _socket_client_is_root(int fd)
 {
@@ -309,15 +310,22 @@ static struct timespec *get_soonest_timeout(struct timespec *ts)
 	return ts;
 }
 
-static bool need_vecs_lock(void)
+bool waiting_clients(void)
+{
+	return clients_need_lock;
+}
+
+static void check_for_locked_work(struct client *skip)
 {
 	struct client *c;
 
 	list_for_each_entry(c, &clients, node) {
-		if (c->state == CLT_LOCKED_WORK)
-			return true;
+		if (c != skip && c->state == CLT_LOCKED_WORK) {
+			clients_need_lock = true;
+			return;
+		}
 	}
-	return false;
+	clients_need_lock = false;
 }
 
 static int parse_cmd(struct client *c)
@@ -397,10 +405,11 @@ static void set_client_state(struct client *c, int state)
 	case CLT_RECV:
 		reset_strbuf(&c->reply);
 		memset(c->cmd, '\0', sizeof(c->cmd));
-		c->expires = ts_zero;
 		c->error = 0;
 		/* fallthrough */
 	case CLT_SEND:
+		/* no timeout while waiting for the client or sending a reply */
+		c->expires = ts_zero;
 		/* reuse these fields for next data transfer */
 		c->len = c->cmd_len = 0;
 		break;
@@ -494,6 +503,7 @@ static int client_state_machine(struct client *c, struct vectors *vecs,
 			/* don't use cleanup_lock(), lest we wakeup ourselves */
 			pthread_cleanup_push_cast(__unlock, &vecs->lock);
 			c->error = execute_handler(c, vecs);
+			check_for_locked_work(c);
 			pthread_cleanup_pop(1);
 			condlog(4, "%s: cli[%d] grabbed lock", __func__, c->fd);
 			free_keys(c->cmdvec);
@@ -661,7 +671,8 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 			polls[POLLFD_NOTIFY].events = POLLIN;
 
 		polls[POLLFD_IDLE].fd = idle_fd;
-		if (need_vecs_lock())
+		check_for_locked_work(NULL);
+		if (clients_need_lock)
 			polls[POLLFD_IDLE].events = POLLIN;
 		else
 			polls[POLLFD_IDLE].events = 0;

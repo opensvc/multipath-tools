@@ -82,7 +82,7 @@ struct config *libmp_get_multipath_config(void)
 }
 
 struct config *get_multipath_config(void)
-	__attribute__((weak, alias("libmp_get_multipath_config")));
+	__attribute__((alias("libmp_get_multipath_config")));
 
 void libmp_put_multipath_config(void *conf __attribute__((unused)))
 {
@@ -90,7 +90,7 @@ void libmp_put_multipath_config(void *conf __attribute__((unused)))
 }
 
 void put_multipath_config(void *conf)
-	__attribute__((weak, alias("libmp_put_multipath_config")));
+	__attribute__((alias("libmp_put_multipath_config")));
 
 static int
 hwe_strmatch (const struct hwentry *hwe1, const struct hwentry *hwe2)
@@ -520,6 +520,14 @@ merge_mpe(struct mpentry *dst, struct mpentry *src)
 	merge_num(mode);
 }
 
+static int wwid_compar(const void *p1, const void *p2)
+{
+	const char *wwid1 = (*(struct mpentry * const *)p1)->wwid;
+	const char *wwid2 = (*(struct mpentry * const *)p2)->wwid;
+
+	return strcmp(wwid1, wwid2);
+}
+
 void merge_mptable(vector mptable)
 {
 	struct mpentry *mp1, *mp2;
@@ -533,10 +541,13 @@ void merge_mptable(vector mptable)
 			free_mpe(mp1);
 			continue;
 		}
+	}
+	vector_sort(mptable, wwid_compar);
+	vector_foreach_slot(mptable, mp1, i) {
 		j = i + 1;
 		vector_foreach_slot_after(mptable, mp2, j) {
-			if (!mp2->wwid || strcmp(mp1->wwid, mp2->wwid))
-				continue;
+			if (strcmp(mp1->wwid, mp2->wwid))
+				break;
 			condlog(1, "%s: duplicate multipath config section for %s",
 				__func__, mp1->wwid);
 			merge_mpe(mp2, mp1);

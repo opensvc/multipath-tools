@@ -14,7 +14,7 @@
 #include "checkers.h"
 #include "debug.h"
 
-#include "../libmultipath/sg_include.h"
+#include "sg_include.h"
 
 #define INQUIRY_CMDLEN		6
 #define INQUIRY_CMD		0x12

@@ -13,7 +13,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <libudev.h>
-#include <mpath_persist.h>
 
 #include "util.h"
 #include "debug.h"
@@ -242,13 +241,15 @@ setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
 
 int systemd_service_enabled_in(const char *dev, const char *prefix)
 {
-	char path[PATH_SIZE], file[PATH_MAX], service[PATH_SIZE];
+	static const char service[] = "multipathd.service";
+	char path[PATH_MAX], file[PATH_MAX];
 	DIR *dirfd;
 	struct dirent *d;
 	int found = 0;
 
-	snprintf(service, PATH_SIZE, "multipathd.service");
-	snprintf(path, PATH_SIZE, "%s/systemd/system", prefix);
+	if (safe_sprintf(path, "%s/systemd/system", prefix))
+		return 0;
+
 	condlog(3, "%s: checking for %s in %s", dev, service, path);
 
 	dirfd = opendir(path);
@@ -331,37 +332,6 @@ int get_linux_version_code(void)
 	return _linux_version_code;
 }
 
-int parse_prkey(const char *ptr, uint64_t *prkey)
-{
-	if (!ptr)
-		return 1;
-	if (*ptr == '0')
-		ptr++;
-	if (*ptr == 'x' || *ptr == 'X')
-		ptr++;
-	if (*ptr == '\0' || strlen(ptr) > 16)
-		return 1;
-	if (strlen(ptr) != strspn(ptr, "0123456789aAbBcCdDeEfF"))
-		return 1;
-	if (sscanf(ptr, "%" SCNx64 "", prkey) != 1)
-		return 1;
-	return 0;
-}
-
-int parse_prkey_flags(const char *ptr, uint64_t *prkey, uint8_t *flags)
-{
-	char *flagstr;
-
-	flagstr = strchr(ptr, ':');
-	*flags = 0;
-	if (flagstr) {
-		*flagstr++ = '\0';
-		if (strlen(flagstr) == 5 && strcmp(flagstr, "aptpl") == 0)
-			*flags = MPATH_F_APTPL_MASK;
-	}
-	return parse_prkey(ptr, prkey);
-}
-
 int safe_write(int fd, const void *buf, size_t count)
 {
 	while (count > 0) {
@@ -417,17 +387,24 @@ void free_scandir_result(struct scandir_result *res)
 	free(res->di);
 }
 
-void close_fd(void *arg)
-{
-	close((long)arg);
-}
-
 void cleanup_free_ptr(void *arg)
 {
 	void **p = arg;
 
-	if (p && *p)
+	if (p && *p) {
 		free(*p);
+		*p = NULL;
+	}
+}
+
+void cleanup_fd_ptr(void *arg)
+{
+	int *fd = arg;
+
+	if (*fd >= 0) {
+		close(*fd);
+		*fd = -1;
+	}
 }
 
 void cleanup_mutex(void *arg)
