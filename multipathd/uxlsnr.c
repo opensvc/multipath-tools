@@ -541,7 +541,7 @@ static int client_state_machine(struct client *c, struct vectors *vecs,
 		if (c->len < c->cmd_len) {
 			const char *buf = get_strbuf_str(&c->reply);
 
-			n = send(c->fd, buf + c->len, c->cmd_len, MSG_NOSIGNAL);
+			n = send(c->fd, buf + c->len, c->cmd_len - c->len, MSG_NOSIGNAL);
 			if (n == -1) {
 				if (!(errno == EAGAIN || errno == EINTR))
 					c->error = -ECONNRESET;
