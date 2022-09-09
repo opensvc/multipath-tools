@@ -165,7 +165,7 @@ To enable ALUA, the following options should be changed:
    "LUN Affinity" and "ALUA" should be changed to "Enable", "Redundancy Type"
    must be "Active-Active".
 
-- LSI/Engenio/NetApp RDAC class, as NetApp SANtricity E/EF Series and OEM arrays:
+- LSI/Engenio/NetApp RDAC class, as NetApp SANtricity E/EF Series and rebranded arrays:
    "Select operating system:" should be changed to "Linux DM-MP (Kernel 3.10 or later)".
 
 - NetApp ONTAP:
