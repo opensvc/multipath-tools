@@ -662,7 +662,8 @@ static bool is_udev_ready(struct multipath *cmpp)
 	env = udev_device_get_property_value(mpp_ud, "MPATH_DEVICE_READY");
 	rc = (env != NULL && !strcmp(env, "1"));
 	udev_device_unref(mpp_ud);
-	condlog(4, "%s: %s: \"%s\" -> %d\n", __func__, cmpp->alias, env, rc);
+	condlog(4, "%s: %s: \"%s\" -> %d\n", __func__, cmpp->alias,
+		env ? env : "", rc);
 	return rc;
 }
 
