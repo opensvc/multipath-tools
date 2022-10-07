@@ -26,6 +26,7 @@
 #include "strbuf.h"
 #include <inttypes.h>
 #include <libudev.h>
+#include <ctype.h>
 
 pgpolicyfn *pgpolicies[] = {
 	NULL,
@@ -413,6 +414,59 @@ void reconcile_features_with_options(const char *id, char **features, int* no_pa
 	}
 }
 
+static void reconcile_features_with_queue_mode(struct multipath *mp)
+{
+	char *space = NULL, *val = NULL, *mode_str = NULL, *feat;
+	int features_mode = QUEUE_MODE_UNDEF;
+
+	if (!mp->features)
+		return;
+
+	pthread_cleanup_push(cleanup_free_ptr, &space);
+	pthread_cleanup_push(cleanup_free_ptr, &val);
+	pthread_cleanup_push(cleanup_free_ptr, &mode_str);
+
+	if (!(feat = strstr(mp->features, "queue_mode")) ||
+	    feat == mp->features || !isspace(*(feat - 1)) ||
+	    sscanf(feat, "queue_mode%m[ \f\n\r\t\v]%ms", &space, &val) != 2)
+		goto sync_mode;
+	if (asprintf(&mode_str, "queue_mode%s%s", space, val) < 0) {
+		condlog(1, "failed to allocate space for queue_mode feature string");
+		mode_str = NULL; /* value undefined on failure */
+		goto exit;
+	}
+
+	if (!strcmp(val, "rq") || !strcmp(val, "mq"))
+		features_mode = QUEUE_MODE_RQ;
+	else if (!strcmp(val, "bio"))
+		features_mode = QUEUE_MODE_BIO;
+	if (features_mode == QUEUE_MODE_UNDEF) {
+		condlog(2, "%s: ignoring invalid feature '%s'",
+			mp->alias, mode_str);
+		goto sync_mode;
+	}
+
+	if (mp->queue_mode == QUEUE_MODE_UNDEF)
+		mp->queue_mode = features_mode;
+	if (mp->queue_mode == features_mode)
+		goto exit;
+
+	condlog(2,
+		"%s: ignoring feature '%s' because queue_mode is set to '%s'",
+		mp->alias, mode_str,
+		(mp->queue_mode == QUEUE_MODE_RQ)? "rq" : "bio");
+
+sync_mode:
+	if (mode_str)
+		remove_feature(&mp->features, mode_str);
+	if (mp->queue_mode == QUEUE_MODE_BIO)
+		add_feature(&mp->features, "queue_mode bio");
+exit:
+	pthread_cleanup_pop(1);
+	pthread_cleanup_pop(1);
+	pthread_cleanup_pop(1);
+}
+
 int select_features(struct config *conf, struct multipath *mp)
 {
 	const char *origin;
@@ -428,6 +482,7 @@ out:
 	reconcile_features_with_options(mp->alias, &mp->features,
 					&mp->no_path_retry,
 					&mp->retain_hwhandler);
+	reconcile_features_with_queue_mode(mp);
 	condlog(3, "%s: features = \"%s\" %s", mp->alias, mp->features, origin);
 	return 0;
 }

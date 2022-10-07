@@ -1075,6 +1075,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 	struct config *conf = NULL;
 	int allow_queueing;
 	struct bitfield *size_mismatch_seen;
+	struct multipath * cmpp;
 
 	/* ignore refwwid if it's empty */
 	if (refwwid && !strlen(refwwid))
@@ -1184,6 +1185,9 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 		}
 		verify_paths(mpp);
 
+		cmpp = find_mp_by_wwid(curmp, mpp->wwid);
+		if (cmpp)
+			mpp->queue_mode = cmpp->queue_mode;
 		if (setup_map(mpp, &params, vecs)) {
 			remove_map(mpp, vecs->pathvec, NULL);
 			continue;

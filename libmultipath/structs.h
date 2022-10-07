@@ -170,6 +170,12 @@ enum max_sectors_kb_states {
 	MAX_SECTORS_KB_MIN = 4,  /* can't be smaller than page size */
 };
 
+enum queue_mode_states {
+	QUEUE_MODE_UNDEF = 0,
+	QUEUE_MODE_BIO,
+	QUEUE_MODE_RQ,
+};
+
 enum scsi_protocol {
 	SCSI_PROTOCOL_FCP = 0,	/* Fibre Channel */
 	SCSI_PROTOCOL_SPI = 1,	/* parallel SCSI */
@@ -396,6 +402,7 @@ struct multipath {
 	int needs_paths_uevent;
 	int ghost_delay;
 	int ghost_delay_tick;
+	int queue_mode;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;

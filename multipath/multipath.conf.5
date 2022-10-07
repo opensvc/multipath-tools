@@ -459,8 +459,11 @@ precedence. See KNOWN ISSUES.
 <mode> can be \fIbio\fR, \fIrq\fR or \fImq\fR, which corresponds to
 bio-based, request-based, and block-multiqueue (blk-mq) request-based,
 respectively.
-The default depends on the kernel parameter \fBdm_mod.use_blk_mq\fR. It is
-\fImq\fR if the latter is set, and \fIrq\fR otherwise.
+Before kernel 4.20 The default depends on the kernel parameter
+\fBdm_mod.use_blk_mq\fR. It is \fImq\fR if the latter is set, and \fIrq\fR
+otherwise. Since kernel 4.20, \fIrq\fR and \fImq\fR both correspond to
+block-multiqueue. Once a multipath device has been created, its queue_mode
+cannot be changed.
 .TP
 The default is: \fB<unset>\fR
 .RE
