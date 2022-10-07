@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <libdevmapper.h>
 #include <libudev.h>
+#include <ctype.h>
 
 #include "checkers.h"
 #include "vector.h"
@@ -663,7 +664,7 @@ int add_feature(char **f, const char *n)
 
 int remove_feature(char **f, const char *o)
 {
-	int c = 0, d, l;
+	int c = 0, d;
 	char *e, *p, *n;
 	const char *q;
 
@@ -674,33 +675,35 @@ int remove_feature(char **f, const char *o)
 	if (!o || *o == '\0')
 		return 0;
 
-	/* Check if not present */
-	if (!strstr(*f, o))
+	d = strlen(o);
+	if (isspace(*o) || isspace(*(o + d - 1))) {
+		condlog(0, "internal error: feature \"%s\" has leading or trailing spaces", o);
+		return 1;
+	}
+
+	/* Check if present and not part of a larger feature token*/
+	p = *f + 1; /* the size must be at the start of the features string */
+	while ((p = strstr(p, o)) != NULL) {
+		if (isspace(*(p - 1)) &&
+		    (isspace(*(p + d)) || *(p + d) == '\0'))
+			break;
+		p += d;
+	}
+	if (!p)
 		return 0;
 
 	/* Get feature count */
 	c = strtoul(*f, &e, 10);
-	if (*f == e)
-		/* parse error */
+	if (*f == e || !isspace(*e)) {
+		condlog(0, "parse error in feature string \"%s\"", *f);
 		return 1;
-
-	/* Normalize features */
-	while (*o == ' ') {
-		o++;
 	}
-	/* Just spaces, return */
-	if (*o == '\0')
-		return 0;
-	q = o + strlen(o);
-	while (*q == ' ')
-		q--;
-	d = (int)(q - o);
 
 	/* Update feature count */
 	c--;
 	q = o;
-	while (q[0] != '\0') {
-		if (q[0] == ' ' && q[1] != ' ' && q[1] != '\0')
+	while (*q != '\0') {
+		if (isspace(*q) && !isspace(*(q + 1)) && *(q + 1) != '\0')
 			c--;
 		q++;
 	}
@@ -714,15 +717,8 @@ int remove_feature(char **f, const char *o)
 		goto out;
 	}
 
-	/* Search feature to be removed */
-	e = strstr(*f, o);
-	if (!e)
-		/* Not found, return */
-		return 0;
-
 	/* Update feature count space */
-	l = strlen(*f) - d;
-	n =  malloc(l + 1);
+	n =  malloc(strlen(*f) - d + 1);
 	if (!n)
 		return 1;
 
@@ -732,36 +728,16 @@ int remove_feature(char **f, const char *o)
 	 * Copy existing features up to the feature
 	 * about to be removed
 	 */
-	p = strchr(*f, ' ');
-	if (!p) {
-		/* Internal error, feature string inconsistent */
-		free(n);
-		return 1;
-	}
-	while (*p == ' ')
-		p++;
-	p--;
-	if (e != p) {
-		do {
-			e--;
-			d++;
-		} while (*e == ' ');
-		e++; d--;
-		strncat(n, p, (size_t)(e - p));
-		p += (size_t)(e - p);
-	}
+	strncat(n, e, (size_t)(p - e));
 	/* Skip feature to be removed */
 	p += d;
-
 	/* Copy remaining features */
-	if (strlen(p)) {
-		while (*p == ' ')
-			p++;
-		if (strlen(p)) {
-			p--;
-			strcat(n, p);
-		}
-	}
+	while (isspace(*p))
+		p++;
+	if (*p != '\0')
+		strcat(n, p);
+	else
+		strchop(n);
 
 out:
 	free(*f);
