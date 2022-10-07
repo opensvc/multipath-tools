@@ -218,10 +218,11 @@ int rr_optimize_path_order(struct pathgroup *pgp)
 
 	total_paths = VECTOR_SIZE(pgp->paths);
 	vector_foreach_slot(pgp->paths, pp, i) {
-		if (pp->sg_id.proto_id != SCSI_PROTOCOL_FCP &&
-			pp->sg_id.proto_id != SCSI_PROTOCOL_SAS &&
-			pp->sg_id.proto_id != SCSI_PROTOCOL_ISCSI &&
-			pp->sg_id.proto_id != SCSI_PROTOCOL_SRP) {
+		if (pp->bus != SYSFS_BUS_SCSI ||
+		    (pp->sg_id.proto_id != SCSI_PROTOCOL_FCP &&
+		     pp->sg_id.proto_id != SCSI_PROTOCOL_SAS &&
+		     pp->sg_id.proto_id != SCSI_PROTOCOL_ISCSI &&
+		     pp->sg_id.proto_id != SCSI_PROTOCOL_SRP)) {
 			/* return success as default path order
 			 * is maintained in path group
 			 */

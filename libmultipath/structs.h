@@ -176,6 +176,8 @@ enum queue_mode_states {
 	QUEUE_MODE_RQ,
 };
 
+#define PROTOCOL_UNSET -1
+
 enum scsi_protocol {
 	SCSI_PROTOCOL_FCP = 0,	/* Fibre Channel */
 	SCSI_PROTOCOL_SPI = 1,	/* parallel SCSI */
@@ -291,7 +293,7 @@ struct sg_id {
 	uint64_t lun;
 	short h_cmd_per_lun;
 	short d_queue_depth;
-	enum scsi_protocol proto_id;
+	int proto_id;
 	int transport_id;
 };
 

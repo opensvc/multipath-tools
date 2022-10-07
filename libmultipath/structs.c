@@ -116,7 +116,7 @@ alloc_path (void)
 		pp->sg_id.channel = -1;
 		pp->sg_id.scsi_id = -1;
 		pp->sg_id.lun = SCSI_INVALID_LUN;
-		pp->sg_id.proto_id = SCSI_PROTOCOL_UNSPEC;
+		pp->sg_id.proto_id = PROTOCOL_UNSET;
 		pp->fd = -1;
 		pp->tpgs = TPGS_UNDEF;
 		pp->priority = PRIO_UNDEF;

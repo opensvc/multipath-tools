@@ -504,10 +504,11 @@ int sysfs_get_host_adapter_name(const struct path *pp, char *adapter_name)
 
 	proto_id = pp->sg_id.proto_id;
 
-	if (proto_id != SCSI_PROTOCOL_FCP &&
-	    proto_id != SCSI_PROTOCOL_SAS &&
-	    proto_id != SCSI_PROTOCOL_ISCSI &&
-	    proto_id != SCSI_PROTOCOL_SRP) {
+	if (pp->bus != SYSFS_BUS_SCSI ||
+	    (proto_id != SCSI_PROTOCOL_FCP &&
+	     proto_id != SCSI_PROTOCOL_SAS &&
+	     proto_id != SCSI_PROTOCOL_ISCSI &&
+	     proto_id != SCSI_PROTOCOL_SRP)) {
 		return 1;
 	}
 	/* iscsi doesn't have adapter info in sysfs
@@ -1810,8 +1811,10 @@ sysfs_pathinfo(struct path *pp, const struct _vector *hwtable)
 		pp->bus = SYSFS_BUS_CCISS;
 	if (!strncmp(pp->dev,"dasd", 4))
 		pp->bus = SYSFS_BUS_CCW;
-	if (!strncmp(pp->dev,"sd", 2))
+	if (!strncmp(pp->dev,"sd", 2)) {
 		pp->bus = SYSFS_BUS_SCSI;
+		pp->sg_id.proto_id = SCSI_PROTOCOL_UNSPEC;
+	}
 	if (!strncmp(pp->dev,"nvme", 4))
 		pp->bus = SYSFS_BUS_NVME;
 
