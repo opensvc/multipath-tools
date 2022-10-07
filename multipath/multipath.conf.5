@@ -463,7 +463,9 @@ Before kernel 4.20 The default depends on the kernel parameter
 \fBdm_mod.use_blk_mq\fR. It is \fImq\fR if the latter is set, and \fIrq\fR
 otherwise. Since kernel 4.20, \fIrq\fR and \fImq\fR both correspond to
 block-multiqueue. Once a multipath device has been created, its queue_mode
-cannot be changed.
+cannot be changed. \fInvme:tcp\fR paths are only supported in multipath
+devices with queue_mode set to \fIbio\fR. multipath will automatically
+set this when creating a device with \fInvme:tcp\fR paths.
 .TP
 The default is: \fB<unset>\fR
 .RE
