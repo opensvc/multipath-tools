@@ -25,7 +25,6 @@ const char * const protocol_name[LAST_BUS_PROTOCOL_ID + 1] = {
 	[SYSFS_BUS_UNDEF] = "undef",
 	[SYSFS_BUS_CCW] = "ccw",
 	[SYSFS_BUS_CCISS] = "cciss",
-	[SYSFS_BUS_NVME] = "nvme",
 	[SYSFS_BUS_SCSI + SCSI_PROTOCOL_FCP] = "scsi:fcp",
 	[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SPI] = "scsi:spi",
 	[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SSA] = "scsi:ssa",
@@ -37,6 +36,13 @@ const char * const protocol_name[LAST_BUS_PROTOCOL_ID + 1] = {
 	[SYSFS_BUS_SCSI + SCSI_PROTOCOL_ATA] = "scsi:ata",
 	[SYSFS_BUS_SCSI + SCSI_PROTOCOL_USB] = "scsi:usb",
 	[SYSFS_BUS_SCSI + SCSI_PROTOCOL_UNSPEC] = "scsi:unspec",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_PCIE] = "nvme:pcie",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_RDMA] = "nvme:rdma",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_FC] = "nvme:fc",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_TCP] = "nvme:tcp",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_LOOP] = "nvme:loop",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_APPLE_NVME] = "nvme:apple-nvme",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_UNSPEC] = "nvme:unspec",
 };
 
 struct adapter_group *
@@ -746,11 +752,17 @@ out:
 }
 
 unsigned int bus_protocol_id(const struct path *pp) {
-	if (!pp || pp->bus < 0 || pp->bus > SYSFS_BUS_SCSI)
+	if (!pp || pp->bus < 0 || pp->bus > SYSFS_BUS_NVME)
 		return SYSFS_BUS_UNDEF;
-	if (pp->bus != SYSFS_BUS_SCSI)
+	if (pp->bus != SYSFS_BUS_SCSI && pp->bus != SYSFS_BUS_NVME)
 		return pp->bus;
-	if ((int)pp->sg_id.proto_id < 0 || pp->sg_id.proto_id > SCSI_PROTOCOL_UNSPEC)
+	if (pp->sg_id.proto_id < 0)
 		return SYSFS_BUS_UNDEF;
-	return SYSFS_BUS_SCSI + pp->sg_id.proto_id;
+	if (pp->bus == SYSFS_BUS_SCSI &&
+	    pp->sg_id.proto_id > SCSI_PROTOCOL_UNSPEC)
+		return SYSFS_BUS_UNDEF;
+	if (pp->bus == SYSFS_BUS_NVME &&
+	    pp->sg_id.proto_id > NVME_PROTOCOL_UNSPEC)
+		return SYSFS_BUS_UNDEF;
+	return pp->bus + pp->sg_id.proto_id;
 }

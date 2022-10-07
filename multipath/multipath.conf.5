@@ -1377,7 +1377,9 @@ Regular expression for the protocol of a device to be excluded/included.
 The protocol strings that multipath recognizes are \fIscsi:fcp\fR,
 \fIscsi:spi\fR, \fIscsi:ssa\fR, \fIscsi:sbp\fR, \fIscsi:srp\fR,
 \fIscsi:iscsi\fR, \fIscsi:sas\fR, \fIscsi:adt\fR, \fIscsi:ata\fR,
-\fIscsi:unspec\fR, \fIccw\fR, \fIcciss\fR, \fInvme\fR, and \fIundef\fR.
+\fIscsi:unspec\fR, \fInvme:pcie\fR, \fInvme:rdma\fR, \fInvme:fc\fR,
+\fInvme:tcp\fR, \fInvme:loop\fR, \fInvme:apple-nvme\fR, \fInvme:unspec\fR,
+\fIccw\fR, \fIcciss\fR, and \fIundef\fR.
 The protocol that a path is using can be viewed by running
 \fBmultipathd show paths format "%d %P"\fR
 .RE
@@ -1773,7 +1775,9 @@ The protocol subsection recognizes the following mandatory attribute:
 The protocol string of the path device. The possible values are \fIscsi:fcp\fR,
 \fIscsi:spi\fR, \fIscsi:ssa\fR, \fIscsi:sbp\fR, \fIscsi:srp\fR,
 \fIscsi:iscsi\fR, \fIscsi:sas\fR, \fIscsi:adt\fR, \fIscsi:ata\fR,
-\fIscsi:unspec\fR, \fIccw\fR, \fIcciss\fR, \fInvme\fR, and \fIundef\fR. This is
+\fIscsi:unspec\fR, \fInvme:pcie\fR, \fInvme:rdma\fR, \fInvme:fc\fR,
+\fInvme:tcp\fR, \fInvme:loop\fR, \fInvme:apple-nvme\fR, \fInvme:unspec\fR,
+\fIccw\fR, \fIcciss\fR, and \fIundef\fR. This is
 \fBnot\fR a regular expression. the path device protocol string must match
 exactly. The protocol that a path is using can be viewed by running
 \fBmultipathd show paths format "%d %P"\fR

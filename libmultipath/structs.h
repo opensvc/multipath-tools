@@ -56,15 +56,6 @@ enum failback_mode {
 	FAILBACK_FOLLOWOVER
 };
 
-/* SYSFS_BUS_SCSI should be last, see bus_protocol_id() */
-enum sysfs_buses {
-	SYSFS_BUS_UNDEF,
-	SYSFS_BUS_CCW,
-	SYSFS_BUS_CCISS,
-	SYSFS_BUS_NVME,
-	SYSFS_BUS_SCSI,
-};
-
 enum pathstates {
 	PSTATE_UNDEF,
 	PSTATE_FAILED,
@@ -190,14 +181,32 @@ enum scsi_protocol {
 	SCSI_PROTOCOL_ATA = 8,
 	SCSI_PROTOCOL_USB = 9,  /* USB Attached SCSI (UAS), and others */
 	SCSI_PROTOCOL_UNSPEC = 0xa, /* No specific protocol */
+	SCSI_PROTOCOL_END = 0xb, /* offset of the next sysfs_buses entry */
+};
+
+/* values from /sys/class/nvme/nvmeX */
+enum nvme_protocol {
+	NVME_PROTOCOL_PCIE = 0,
+	NVME_PROTOCOL_RDMA = 1,
+	NVME_PROTOCOL_FC = 2,
+	NVME_PROTOCOL_TCP = 3,
+	NVME_PROTOCOL_LOOP = 4,
+	NVME_PROTOCOL_APPLE_NVME = 5,
+	NVME_PROTOCOL_UNSPEC = 6, /* unknown protocol */
+};
+
+enum sysfs_buses {
+	SYSFS_BUS_UNDEF,
+	SYSFS_BUS_CCW,
+	SYSFS_BUS_CCISS,
+	SYSFS_BUS_SCSI,
+	SYSFS_BUS_NVME = SYSFS_BUS_SCSI + SCSI_PROTOCOL_END,
 };
 
 /*
  * Linear ordering of bus/protocol
- * This assumes that SYSFS_BUS_SCSI is last in enum sysfs_buses
- * SCSI is the only bus type for which we distinguish protocols.
  */
-#define LAST_BUS_PROTOCOL_ID (SYSFS_BUS_SCSI + SCSI_PROTOCOL_UNSPEC)
+#define LAST_BUS_PROTOCOL_ID (SYSFS_BUS_NVME + NVME_PROTOCOL_UNSPEC)
 unsigned int bus_protocol_id(const struct path *pp);
 extern const char * const protocol_name[];
 
