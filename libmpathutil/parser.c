@@ -152,7 +152,7 @@ int
 snprint_keyword(struct strbuf *buff, const char *fmt, struct keyword *kw,
 		const void *data)
 {
-	int r;
+	int r = 0;
 	char *f;
 	struct config *conf;
 	STRBUF_ON_STACK(sbuf);
@@ -190,8 +190,10 @@ snprint_keyword(struct strbuf *buff, const char *fmt, struct keyword *kw,
 		}
 	} while (*fmt++);
 out:
-	return __append_strbuf_str(buff, get_strbuf_str(&sbuf),
-				   get_strbuf_len(&sbuf));
+	if (r >= 0)
+		r = __append_strbuf_str(buff, get_strbuf_str(&sbuf),
+					get_strbuf_len(&sbuf));
+	return r;
 }
 
 static const char quote_marker[] = { '\0', '"', '\0' };
