@@ -56,15 +56,6 @@ enum failback_mode {
 	FAILBACK_FOLLOWOVER
 };
 
-/* SYSFS_BUS_SCSI should be last, see bus_protocol_id() */
-enum sysfs_buses {
-	SYSFS_BUS_UNDEF,
-	SYSFS_BUS_CCW,
-	SYSFS_BUS_CCISS,
-	SYSFS_BUS_NVME,
-	SYSFS_BUS_SCSI,
-};
-
 enum pathstates {
 	PSTATE_UNDEF,
 	PSTATE_FAILED,
@@ -170,6 +161,14 @@ enum max_sectors_kb_states {
 	MAX_SECTORS_KB_MIN = 4,  /* can't be smaller than page size */
 };
 
+enum queue_mode_states {
+	QUEUE_MODE_UNDEF = 0,
+	QUEUE_MODE_BIO,
+	QUEUE_MODE_RQ,
+};
+
+#define PROTOCOL_UNSET -1
+
 enum scsi_protocol {
 	SCSI_PROTOCOL_FCP = 0,	/* Fibre Channel */
 	SCSI_PROTOCOL_SPI = 1,	/* parallel SCSI */
@@ -182,14 +181,32 @@ enum scsi_protocol {
 	SCSI_PROTOCOL_ATA = 8,
 	SCSI_PROTOCOL_USB = 9,  /* USB Attached SCSI (UAS), and others */
 	SCSI_PROTOCOL_UNSPEC = 0xa, /* No specific protocol */
+	SCSI_PROTOCOL_END = 0xb, /* offset of the next sysfs_buses entry */
+};
+
+/* values from /sys/class/nvme/nvmeX */
+enum nvme_protocol {
+	NVME_PROTOCOL_PCIE = 0,
+	NVME_PROTOCOL_RDMA = 1,
+	NVME_PROTOCOL_FC = 2,
+	NVME_PROTOCOL_TCP = 3,
+	NVME_PROTOCOL_LOOP = 4,
+	NVME_PROTOCOL_APPLE_NVME = 5,
+	NVME_PROTOCOL_UNSPEC = 6, /* unknown protocol */
+};
+
+enum sysfs_buses {
+	SYSFS_BUS_UNDEF,
+	SYSFS_BUS_CCW,
+	SYSFS_BUS_CCISS,
+	SYSFS_BUS_SCSI,
+	SYSFS_BUS_NVME = SYSFS_BUS_SCSI + SCSI_PROTOCOL_END,
 };
 
 /*
  * Linear ordering of bus/protocol
- * This assumes that SYSFS_BUS_SCSI is last in enum sysfs_buses
- * SCSI is the only bus type for which we distinguish protocols.
  */
-#define LAST_BUS_PROTOCOL_ID (SYSFS_BUS_SCSI + SCSI_PROTOCOL_UNSPEC)
+#define LAST_BUS_PROTOCOL_ID (SYSFS_BUS_NVME + NVME_PROTOCOL_UNSPEC)
 unsigned int bus_protocol_id(const struct path *pp);
 extern const char * const protocol_name[];
 
@@ -285,7 +302,7 @@ struct sg_id {
 	uint64_t lun;
 	short h_cmd_per_lun;
 	short d_queue_depth;
-	enum scsi_protocol proto_id;
+	int proto_id;
 	int transport_id;
 };
 
@@ -396,6 +413,7 @@ struct multipath {
 	int needs_paths_uevent;
 	int ghost_delay;
 	int ghost_delay_tick;
+	int queue_mode;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;

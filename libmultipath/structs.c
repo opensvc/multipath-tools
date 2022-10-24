@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <libdevmapper.h>
 #include <libudev.h>
+#include <ctype.h>
 
 #include "checkers.h"
 #include "vector.h"
@@ -24,7 +25,6 @@ const char * const protocol_name[LAST_BUS_PROTOCOL_ID + 1] = {
 	[SYSFS_BUS_UNDEF] = "undef",
 	[SYSFS_BUS_CCW] = "ccw",
 	[SYSFS_BUS_CCISS] = "cciss",
-	[SYSFS_BUS_NVME] = "nvme",
 	[SYSFS_BUS_SCSI + SCSI_PROTOCOL_FCP] = "scsi:fcp",
 	[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SPI] = "scsi:spi",
 	[SYSFS_BUS_SCSI + SCSI_PROTOCOL_SSA] = "scsi:ssa",
@@ -36,6 +36,13 @@ const char * const protocol_name[LAST_BUS_PROTOCOL_ID + 1] = {
 	[SYSFS_BUS_SCSI + SCSI_PROTOCOL_ATA] = "scsi:ata",
 	[SYSFS_BUS_SCSI + SCSI_PROTOCOL_USB] = "scsi:usb",
 	[SYSFS_BUS_SCSI + SCSI_PROTOCOL_UNSPEC] = "scsi:unspec",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_PCIE] = "nvme:pcie",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_RDMA] = "nvme:rdma",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_FC] = "nvme:fc",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_TCP] = "nvme:tcp",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_LOOP] = "nvme:loop",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_APPLE_NVME] = "nvme:apple-nvme",
+	[SYSFS_BUS_NVME + NVME_PROTOCOL_UNSPEC] = "nvme:unspec",
 };
 
 struct adapter_group *
@@ -115,7 +122,7 @@ alloc_path (void)
 		pp->sg_id.channel = -1;
 		pp->sg_id.scsi_id = -1;
 		pp->sg_id.lun = SCSI_INVALID_LUN;
-		pp->sg_id.proto_id = SCSI_PROTOCOL_UNSPEC;
+		pp->sg_id.proto_id = PROTOCOL_UNSET;
 		pp->fd = -1;
 		pp->tpgs = TPGS_UNDEF;
 		pp->priority = PRIO_UNDEF;
@@ -601,23 +608,33 @@ int add_feature(char **f, const char *n)
 {
 	int c = 0, d, l;
 	char *e, *t;
+	const char *p;
 
 	if (!f)
 		return 1;
 
 	/* Nothing to do */
-	if (!n || *n == '0')
+	if (!n || *n == '\0')
 		return 0;
 
-	if (strchr(n, ' ') != NULL) {
-		condlog(0, "internal error: feature \"%s\" contains spaces", n);
+	l = strlen(n);
+	if (isspace(*n) || isspace(*(n + l - 1))) {
+		condlog(0, "internal error: feature \"%s\" has leading or trailing spaces", n);
 		return 1;
+	}
+
+	p = n;
+	d = 1;
+	while (*p != '\0') {
+		if (isspace(*p) && !isspace(*(p + 1)) && *(p + 1) != '\0')
+			d++;
+		p++;
 	}
 
 	/* default feature is null */
 	if(!*f)
 	{
-		l = asprintf(&t, "1 %s", n);
+		l = asprintf(&t, "%0d %s", d, n);
 		if(l == -1)
 			return 1;
 
@@ -626,34 +643,23 @@ int add_feature(char **f, const char *n)
 	}
 
 	/* Check if feature is already present */
-	if (strstr(*f, n))
-		return 0;
+	e = *f;
+	while ((e = strstr(e, n)) != NULL) {
+		if (isspace(*(e - 1)) &&
+		    (isspace(*(e + l)) || *(e + l) == '\0'))
+			return 0;
+		e += l;
+	}
 
 	/* Get feature count */
 	c = strtoul(*f, &e, 10);
-	if (*f == e || (*e != ' ' && *e != '\0')) {
+	if (*f == e || (!isspace(*e) && *e != '\0')) {
 		condlog(0, "parse error in feature string \"%s\"", *f);
 		return 1;
 	}
-
-	/* Add 1 digit and 1 space */
-	l = strlen(e) + strlen(n) + 2;
-
-	c++;
-	/* Check if we need more digits for feature count */
-	for (d = c; d >= 10; d /= 10)
-		l++;
-
-	t = calloc(1, l + 1);
-	if (!t)
+	c += d;
+	if (asprintf(&t, "%0d%s %s", c, e, n) < 0)
 		return 1;
-
-	/* e: old feature string with leading space, or "" */
-	if (*e == ' ')
-		while (*(e + 1) == ' ')
-			e++;
-
-	snprintf(t, l + 1, "%0d%s %s", c, e, n);
 
 	free(*f);
 	*f = t;
@@ -663,7 +669,7 @@ int add_feature(char **f, const char *n)
 
 int remove_feature(char **f, const char *o)
 {
-	int c = 0, d, l;
+	int c = 0, d;
 	char *e, *p, *n;
 	const char *q;
 
@@ -674,33 +680,35 @@ int remove_feature(char **f, const char *o)
 	if (!o || *o == '\0')
 		return 0;
 
-	/* Check if not present */
-	if (!strstr(*f, o))
+	d = strlen(o);
+	if (isspace(*o) || isspace(*(o + d - 1))) {
+		condlog(0, "internal error: feature \"%s\" has leading or trailing spaces", o);
+		return 1;
+	}
+
+	/* Check if present and not part of a larger feature token*/
+	p = *f + 1; /* the size must be at the start of the features string */
+	while ((p = strstr(p, o)) != NULL) {
+		if (isspace(*(p - 1)) &&
+		    (isspace(*(p + d)) || *(p + d) == '\0'))
+			break;
+		p += d;
+	}
+	if (!p)
 		return 0;
 
 	/* Get feature count */
 	c = strtoul(*f, &e, 10);
-	if (*f == e)
-		/* parse error */
+	if (*f == e || !isspace(*e)) {
+		condlog(0, "parse error in feature string \"%s\"", *f);
 		return 1;
-
-	/* Normalize features */
-	while (*o == ' ') {
-		o++;
 	}
-	/* Just spaces, return */
-	if (*o == '\0')
-		return 0;
-	q = o + strlen(o);
-	while (*q == ' ')
-		q--;
-	d = (int)(q - o);
 
 	/* Update feature count */
 	c--;
 	q = o;
-	while (q[0] != '\0') {
-		if (q[0] == ' ' && q[1] != ' ' && q[1] != '\0')
+	while (*q != '\0') {
+		if (isspace(*q) && !isspace(*(q + 1)) && *(q + 1) != '\0')
 			c--;
 		q++;
 	}
@@ -714,15 +722,8 @@ int remove_feature(char **f, const char *o)
 		goto out;
 	}
 
-	/* Search feature to be removed */
-	e = strstr(*f, o);
-	if (!e)
-		/* Not found, return */
-		return 0;
-
 	/* Update feature count space */
-	l = strlen(*f) - d;
-	n =  malloc(l + 1);
+	n =  malloc(strlen(*f) - d + 1);
 	if (!n)
 		return 1;
 
@@ -732,36 +733,16 @@ int remove_feature(char **f, const char *o)
 	 * Copy existing features up to the feature
 	 * about to be removed
 	 */
-	p = strchr(*f, ' ');
-	if (!p) {
-		/* Internal error, feature string inconsistent */
-		free(n);
-		return 1;
-	}
-	while (*p == ' ')
-		p++;
-	p--;
-	if (e != p) {
-		do {
-			e--;
-			d++;
-		} while (*e == ' ');
-		e++; d--;
-		strncat(n, p, (size_t)(e - p));
-		p += (size_t)(e - p);
-	}
+	strncat(n, e, (size_t)(p - e));
 	/* Skip feature to be removed */
 	p += d;
-
 	/* Copy remaining features */
-	if (strlen(p)) {
-		while (*p == ' ')
-			p++;
-		if (strlen(p)) {
-			p--;
-			strcat(n, p);
-		}
-	}
+	while (isspace(*p))
+		p++;
+	if (*p != '\0')
+		strcat(n, p);
+	else
+		strchop(n);
 
 out:
 	free(*f);
@@ -771,11 +752,17 @@ out:
 }
 
 unsigned int bus_protocol_id(const struct path *pp) {
-	if (!pp || pp->bus < 0 || pp->bus > SYSFS_BUS_SCSI)
+	if (!pp || pp->bus < 0 || pp->bus > SYSFS_BUS_NVME)
 		return SYSFS_BUS_UNDEF;
-	if (pp->bus != SYSFS_BUS_SCSI)
+	if (pp->bus != SYSFS_BUS_SCSI && pp->bus != SYSFS_BUS_NVME)
 		return pp->bus;
-	if ((int)pp->sg_id.proto_id < 0 || pp->sg_id.proto_id > SCSI_PROTOCOL_UNSPEC)
+	if (pp->sg_id.proto_id < 0)
 		return SYSFS_BUS_UNDEF;
-	return SYSFS_BUS_SCSI + pp->sg_id.proto_id;
+	if (pp->bus == SYSFS_BUS_SCSI &&
+	    pp->sg_id.proto_id > SCSI_PROTOCOL_UNSPEC)
+		return SYSFS_BUS_UNDEF;
+	if (pp->bus == SYSFS_BUS_NVME &&
+	    pp->sg_id.proto_id > NVME_PROTOCOL_UNSPEC)
+		return SYSFS_BUS_UNDEF;
+	return pp->bus + pp->sg_id.proto_id;
 }

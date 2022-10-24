@@ -68,7 +68,7 @@
 #define DEFAULT_BINDINGS_FILE	"/etc/multipath/bindings"
 #define DEFAULT_WWIDS_FILE	"/etc/multipath/wwids"
 #define DEFAULT_PRKEYS_FILE    "/etc/multipath/prkeys"
-#define MULTIPATH_SHM_BASE	"/dev/shm/multipath/"
+#define MULTIPATH_SHM_BASE	RUNTIME_DIR "/multipath/"
 
 
 static inline char *set_default(char *str)

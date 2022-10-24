@@ -227,7 +227,7 @@ static int  fpin_chk_wwn_setpath_marginal(uint16_t host_num,  struct vectors *ve
 
 	vector_foreach_slot(vecs->pathvec, pp, k) {
 		/* Checks the host number and also for the SCSI FCP */
-		if (pp->sg_id.proto_id != SCSI_PROTOCOL_FCP || host_num !=  pp->sg_id.host_no)
+		if (pp->bus != SYSFS_BUS_SCSI || pp->sg_id.proto_id != SCSI_PROTOCOL_FCP || host_num !=  pp->sg_id.host_no)
 			continue;
 		sprintf(rport_id, "rport-%d:%d-%d",
 				pp->sg_id.host_no, pp->sg_id.channel, pp->sg_id.transport_id);

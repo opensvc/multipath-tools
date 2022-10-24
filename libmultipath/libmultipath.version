@@ -31,7 +31,7 @@
  *   The new version inherits the previous ones.
  */
 
-LIBMULTIPATH_16.0.0 {
+LIBMULTIPATH_17.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;

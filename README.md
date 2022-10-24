@@ -52,10 +52,17 @@ To get latest devel code:
 Building multipath-tools
 ========================
 
-Prerequisites: development packages of for `libdevmapper`, `libreadline`,
-`libaio`, `libudev`, `libjson-c`, `liburcu`, and `libsystemd`.
+Prerequisites: development packages of for `libdevmapper`, `libaio`, `libudev`,
+`libjson-c`, `liburcu`, and `libsystemd`.
 
-To build multipath-tools, type:
+To enable commandline history and TAB completion in the interactive mode *(which
+is entered with `multipathd -k` or `multipathc`)* you might also set `READLINE`
+make variable to `libedit` or `libreadline`, like `make READLINE=libreadline`.
+That requires a development package for the library you chose. Note that using
+libreadline may [make binary indistributable due to license
+incompatibility](https://github.com/opensvc/multipath-tools/issues/36).
+
+Then, build and install multipath-tools with:
 
     make
 	make DESTDIR="/my/target/dir" install
@@ -165,7 +172,7 @@ To enable ALUA, the following options should be changed:
    "LUN Affinity" and "ALUA" should be changed to "Enable", "Redundancy Type"
    must be "Active-Active".
 
-- LSI/Engenio/NetApp RDAC class, as NetApp SANtricity E/EF Series and OEM arrays:
+- LSI/Engenio/NetApp RDAC class, as NetApp SANtricity E/EF Series and rebranded arrays:
    "Select operating system:" should be changed to "Linux DM-MP (Kernel 3.10 or later)".
 
 - NetApp ONTAP:

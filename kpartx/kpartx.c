@@ -441,12 +441,7 @@ main(int argc, char **argv){
 		if (n >= 0)
 			printf("%s: %d slices\n", ptp->type, n);
 #endif
-
-		if (n > 0) {
-			close(fd);
-			fd = -1;
-		}
-		else
+		if (n <= 0)
 			continue;
 
 		switch(what) {
@@ -666,9 +661,9 @@ main(int argc, char **argv){
 		if (n > 0)
 			break;
 	}
+	if (fd != -1)
+		close(fd);
 	if (what == LIST && loopcreated) {
-		if (fd != -1)
-			close(fd);
 		if (del_loop(device)) {
 			if (verbose)
 				fprintf(stderr, "can't del loop : %s\n",

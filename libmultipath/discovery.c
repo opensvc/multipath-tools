@@ -504,10 +504,11 @@ int sysfs_get_host_adapter_name(const struct path *pp, char *adapter_name)
 
 	proto_id = pp->sg_id.proto_id;
 
-	if (proto_id != SCSI_PROTOCOL_FCP &&
-	    proto_id != SCSI_PROTOCOL_SAS &&
-	    proto_id != SCSI_PROTOCOL_ISCSI &&
-	    proto_id != SCSI_PROTOCOL_SRP) {
+	if (pp->bus != SYSFS_BUS_SCSI ||
+	    (proto_id != SCSI_PROTOCOL_FCP &&
+	     proto_id != SCSI_PROTOCOL_SAS &&
+	     proto_id != SCSI_PROTOCOL_ISCSI &&
+	     proto_id != SCSI_PROTOCOL_SRP)) {
 		return 1;
 	}
 	/* iscsi doesn't have adapter info in sysfs
@@ -1538,6 +1539,7 @@ nvme_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 	struct udev_device *parent;
 	const char *attr_path = NULL;
 	const char *attr;
+	int i;
 
 	if (pp->udev)
 		attr_path = udev_device_get_sysname(pp->udev);
@@ -1559,6 +1561,18 @@ nvme_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 
 	attr = udev_device_get_sysattr_value(parent, "cntlid");
 	pp->sg_id.channel = attr ? atoi(attr) : 0;
+
+	attr = udev_device_get_sysattr_value(parent, "transport");
+	if (attr) {
+		for (i = 0; i < NVME_PROTOCOL_UNSPEC; i++){
+			if (protocol_name[SYSFS_BUS_NVME + i] &&
+			    !strcmp(attr,
+				    protocol_name[SYSFS_BUS_NVME + i] + 5)) {
+				pp->sg_id.proto_id = i;
+				break;
+			}
+		}
+	}
 
 	snprintf(pp->vendor_id, SCSI_VENDOR_SIZE, "NVME");
 	snprintf(pp->product_id, PATH_PRODUCT_SIZE, "%s",
@@ -1810,11 +1824,14 @@ sysfs_pathinfo(struct path *pp, const struct _vector *hwtable)
 		pp->bus = SYSFS_BUS_CCISS;
 	if (!strncmp(pp->dev,"dasd", 4))
 		pp->bus = SYSFS_BUS_CCW;
-	if (!strncmp(pp->dev,"sd", 2))
+	if (!strncmp(pp->dev,"sd", 2)) {
 		pp->bus = SYSFS_BUS_SCSI;
-	if (!strncmp(pp->dev,"nvme", 4))
+		pp->sg_id.proto_id = SCSI_PROTOCOL_UNSPEC;
+	}
+	if (!strncmp(pp->dev,"nvme", 4)) {
 		pp->bus = SYSFS_BUS_NVME;
-
+		pp->sg_id.proto_id = NVME_PROTOCOL_UNSPEC;
+	}
 	switch (pp->bus) {
 	case SYSFS_BUS_SCSI:
 		return scsi_sysfs_pathinfo(pp, hwtable);

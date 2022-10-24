@@ -151,6 +151,8 @@ int disassemble_map(const struct _vector *pathvec,
 
 		free(word);
 	}
+	mpp->queue_mode = strstr(mpp->features, "queue_mode bio") ?
+			  QUEUE_MODE_BIO : QUEUE_MODE_RQ;
 
 	/*
 	 * hwhandler
