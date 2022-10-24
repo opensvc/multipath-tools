@@ -178,7 +178,6 @@ static int handle_args(int argc, char * argv[], int nline)
 	const char *device_name = NULL;
 	int num_prin_sa = 0;
 	int num_prout_sa = 0;
-	int num_prout_param = 0;
 	int prin_flag = 0;
 	int prout_flag = 0;
 	int ret = 0;
@@ -263,11 +262,9 @@ static int handle_args(int argc, char * argv[], int nline)
 
 			case 'Y':
 				param_alltgpt = 1;
-				++num_prout_param;
 				break;
 			case 'Z':
 				param_aptpl = 1;
-				++num_prout_param;
 				break;
 			case 'K':
 				if (1 != sscanf (optarg, "%" SCNx64 "", &param_rk))
@@ -276,7 +273,6 @@ static int handle_args(int argc, char * argv[], int nline)
 					ret = MPATH_PR_SYNTAX_ERROR;
 					goto out;
 				}
-				++num_prout_param;
 				break;
 
 			case 'S':
@@ -286,7 +282,6 @@ static int handle_args(int argc, char * argv[], int nline)
 					ret = MPATH_PR_SYNTAX_ERROR;
 					goto out;
 				}
-				++num_prout_param;
 				break;
 
 			case 'P':
@@ -306,7 +301,6 @@ static int handle_args(int argc, char * argv[], int nline)
 					ret = MPATH_PR_SYNTAX_ERROR;
 					goto out;
 				}
-				++num_prout_param;
 				break;
 
 			case 's':
