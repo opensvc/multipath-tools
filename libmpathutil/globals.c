@@ -2,7 +2,6 @@
 #include <libudev.h>
 #include "globals.h"
 
-struct udev __attribute__((weak)) *udev;
 struct config __attribute__((weak)) *get_multipath_config(void)
 {
 	return NULL;

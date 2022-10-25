@@ -3,25 +3,6 @@
 
 struct config;
 
-/**
- * extern variable: udev
- *
- * A &struct udev instance used by libmultipath. libmultipath expects
- * a valid, initialized &struct udev in this variable.
- * An application can define this variable itself, in which case
- * the applications's instance will take precedence.
- * The application can initialize and destroy this variable by
- * calling libmultipath_init() and libmultipath_exit(), respectively,
- * whether or not it defines the variable itself.
- * An application can initialize udev with udev_new() before calling
- * libmultipath_init(), e.g. if it has to make libudev calls before
- * libmultipath calls. If an application wants to keep using the
- * udev variable after calling libmultipath_exit(), it should have taken
- * an additional reference on it beforehand. This is the case e.g.
- * after initializing udev with udev_new().
- */
-extern struct udev *udev;
-
 /*
  * libmultipath provides default implementations of
  * get_multipath_config() and put_multipath_config().

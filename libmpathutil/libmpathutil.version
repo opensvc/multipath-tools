@@ -70,7 +70,6 @@ global:
 	timespeccmp;
 	timespecsub;
 	truncate_strbuf;
-	udev;
 	ux_socket_listen;
 	vector_alloc;
 	vector_alloc_slot;
