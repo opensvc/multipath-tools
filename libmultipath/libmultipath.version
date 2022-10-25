@@ -31,6 +31,18 @@
  *   The new version inherits the previous ones.
  */
 
+/*
+ * Symbols exported by both libmpathutil and libmultipath
+ * libmpathutil exports just dummy symbols, intended to be overriden
+ * by those in libmultipath.
+ * CAUTION - the version in libmpathutil.version and libmultipath.version
+ * must be THE SAME, otherwise the overriding will fail!
+ */
+LIBMPATHCOMMON_1.0.0 {
+	get_multipath_config;
+	put_multipath_config;
+};
+
 LIBMULTIPATH_17.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
@@ -98,7 +110,6 @@ global:
 	free_multipathvec;
 	free_path;
 	free_pathvec;
-	get_multipath_config;
 	get_multipath_layout;
 	get_path_layout;
 	get_pgpolicy_id;
@@ -136,7 +147,6 @@ global:
 	print_all_paths;
 	print_foreign_topology;
 	_print_multipath_topology;
-	put_multipath_config;
 	reinstate_paths;
 	remember_wwid;
 	remove_map;

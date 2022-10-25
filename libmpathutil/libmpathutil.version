@@ -31,6 +31,18 @@
  *   The new version inherits the previous ones.
  */
 
+/*
+ * Symbols exported by both libmpathutil and libmultipath
+ * libmpathutil exports just dummy symbols, intended to be overriden
+ * by those in libmultipath.
+ * CAUTION - the version in libmpathutil.version and libmultipath.version
+ * must be THE SAME, otherwise the overriding will fail!
+ */
+LIBMPATHCOMMON_1.0.0 {
+	get_multipath_config;
+	put_multipath_config;
+};
+
 /* symbols referenced by multipath and multipathd */
 LIBMULTIPATH_16.0.0 {
 global:
@@ -46,7 +58,6 @@ global:
 	free_scandir_result;
 	free_strvec;
 	get_monotonic_time;
-	get_multipath_config;
 	get_next_string;
 	get_strbuf_len;
 	get_strbuf_str;
@@ -59,7 +70,6 @@ global:
 	normalize_timespec;
 	print_strbuf;
 	pthread_cond_init_mono;
-	put_multipath_config;
 	recv_packet;
 	reset_strbuf;
 	send_packet;
