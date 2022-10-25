@@ -122,7 +122,6 @@ global:
 	libmp_dm_task_run;
 	libmp_put_multipath_config;
 	libmp_udev_set_sync_support;
-	libmp_verbosity;
 	libmultipath_exit;
 	libmultipath_init;
 	load_config;
