@@ -163,32 +163,6 @@ size_t strlcat(char * restrict dst, const char * restrict src, size_t size)
 	return bytes;
 }
 
-int devt2devname(char *devname, int devname_len, const char *devt)
-{
-	struct udev_device *u_dev;
-	const char * dev_name;
-	int r;
-
-	if (!devname || !devname_len || !devt)
-		return 1;
-
-	u_dev = udev_device_new_from_devnum(udev, 'b', parse_devt(devt));
-	if (!u_dev) {
-		condlog(0, "\"%s\": invalid major/minor numbers, not found in sysfs", devt);
-		return 1;
-	}
-
-	dev_name = udev_device_get_sysname(u_dev);
-	if (!dev_name) {
-		udev_device_unref(u_dev);
-		return 1;
-	}
-	r = strlcpy(devname, dev_name, devname_len);
-	udev_device_unref(u_dev);
-
-	return !(r < devname_len);
-}
-
 /* This function returns a pointer inside of the supplied pathname string.
  * If is_path_device is true, it may also modify the supplied string */
 char *convert_dev(char *name, int is_path_device)

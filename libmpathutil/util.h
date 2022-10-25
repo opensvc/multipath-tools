@@ -18,7 +18,6 @@ char *get_next_string(char **temp, const char *split_char);
 int get_word (const char * sentence, char ** word);
 size_t strlcpy(char * restrict dst, const char * restrict src, size_t size);
 size_t strlcat(char * restrict dst, const char * restrict src, size_t size);
-int devt2devname (char *, int, const char *);
 dev_t parse_devt(const char *dev_t);
 char *convert_dev(char *dev, int is_path_device);
 void setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached);
