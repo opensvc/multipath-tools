@@ -90,7 +90,6 @@ LIBMPATHUTIL_1.0 {
 	append_strbuf_quoted;
 	basenamecpy;
 	cleanup_free_ptr;
-	devt2devname;
 	filepresent;
 	find_keyword;
 	free_keywords;

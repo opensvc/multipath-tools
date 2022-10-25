@@ -38,6 +38,7 @@
 #include "util.h"
 #include "debug.h"
 #include "devmapper.h"
+#include "config.h"
 
 /*
  * When we modify an attribute value we cannot rely on libudev for now,
@@ -179,6 +180,32 @@ sysfs_get_size (struct path *pp, unsigned long long * size)
 	}
 
 	return 0;
+}
+
+int devt2devname(char *devname, int devname_len, const char *devt)
+{
+	struct udev_device *u_dev;
+	const char * dev_name;
+	int r;
+
+	if (!devname || !devname_len || !devt)
+		return 1;
+
+	u_dev = udev_device_new_from_devnum(udev, 'b', parse_devt(devt));
+	if (!u_dev) {
+		condlog(0, "\"%s\": invalid major/minor numbers, not found in sysfs", devt);
+		return 1;
+	}
+
+	dev_name = udev_device_get_sysname(u_dev);
+	if (!dev_name) {
+		udev_device_unref(u_dev);
+		return 1;
+	}
+	r = strlcpy(devname, dev_name, devname_len);
+	udev_device_unref(u_dev);
+
+	return !(r < devname_len);
 }
 
 int sysfs_check_holders(char * check_devt, char * new_devt)

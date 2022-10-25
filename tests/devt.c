@@ -19,6 +19,9 @@
 #include "util.h"
 #include "debug.h"
 
+struct path;
+#include "sysfs.h"
+
 #include "globals.c"
 
 static bool sys_dev_block_exists(void)

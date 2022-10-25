@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include "strbuf.h"
 
+int devt2devname (char *, int, const char *);
 ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 			     const char * value, size_t value_len);
 ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
