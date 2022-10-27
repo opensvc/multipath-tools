@@ -31,8 +31,6 @@ endif
 SYSTEMD := $(strip $(or $(shell $(PKGCONFIG) --modversion libsystemd 2>/dev/null | awk '{print $$1}'), \
 			$(shell systemctl --version 2>/dev/null | sed -n 's/systemd \([0-9]*\).*/\1/p')))
 
-# Allow user to override default location.
-
 # Paths. All these can be overridden on the "make" command line.
 prefix		=
 # Prefix for binaries
@@ -49,20 +47,11 @@ modulesloaddir	:= $(systemd_prefix)/lib/modules-load.d
 libudevdir	:= $(systemd_prefix)/lib/udev
 udevrulesdir	:= $(libudevdir)/rules.d
 bindir		= $(exec_prefix)/sbin
-multipathdir	= $(TOPDIR)/libmultipath
-daemondir       = $(TOPDIR)/multipathd
-mpathutildir	= $(TOPDIR)/libmpathutil
 mandir		:= $(usr_prefix)/share/man
 LIB		:= $(if $(shell test -d /lib64 && echo 1),lib64,lib)
 syslibdir	= $(prefix)/$(LIB)
 usrlibdir	= $(usr_prefix)/$(LIB)
 libdir		= $(prefix)/$(LIB)/multipath
-mpathpersistdir	= $(TOPDIR)/libmpathpersist
-mpathcmddir	= $(TOPDIR)/libmpathcmd
-mpathvaliddir	= $(TOPDIR)/libmpathvalid
-thirdpartydir	= $(TOPDIR)/third-party
-libdmmpdir	= $(TOPDIR)/libdmmp
-nvmedir		= $(TOPDIR)/libmultipath/nvme
 includedir	= $(usr_prefix)/include
 pkgconfdir	= $(usrlibdir)/pkgconfig
 plugindir       := $(prefix)/$(LIB)/multipath
@@ -123,6 +112,18 @@ LIB_CFLAGS	= -fPIC
 SHARED_FLAGS	= -shared
 LDFLAGS		:= $(LDFLAGS) -Wl,-z,relro -Wl,-z,now -Wl,-z,defs
 BIN_LDFLAGS	= -pie
+
+# Source code directories. Don't modify.
+
+multipathdir	= $(TOPDIR)/libmultipath
+daemondir       = $(TOPDIR)/multipathd
+mpathutildir	= $(TOPDIR)/libmpathutil
+mpathpersistdir	= $(TOPDIR)/libmpathpersist
+mpathcmddir	= $(TOPDIR)/libmpathcmd
+mpathvaliddir	= $(TOPDIR)/libmpathvalid
+thirdpartydir	= $(TOPDIR)/third-party
+libdmmpdir	= $(TOPDIR)/libdmmp
+nvmedir		= $(TOPDIR)/libmultipath/nvme
 
 # Check whether a function with name $1 has been declared in header file $2.
 check_func = $(shell \
