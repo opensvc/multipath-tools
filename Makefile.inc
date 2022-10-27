@@ -37,20 +37,7 @@ else
 	endif
 endif
 
-ifeq ($(shell $(PKGCONFIG) --modversion devmapper >/dev/null 2>&1 && echo 1), 1)
-	DEVMAPPER_INCDIR = $(shell $(PKGCONFIG) --variable=includedir devmapper)
-else
-	DEVMAPPER_INCDIR = /usr/include
-endif
-
-ifeq ($(shell $(PKGCONFIG) --modversion libudev >/dev/null 2>&1 && echo 1), 1)
-	LIBUDEV_INCDIR = $(shell $(PKGCONFIG) --variable=includedir libudev)
-else
-	LIBUDEV_INCDIR = /usr/include
-endif
-
 # Allow user to override default location.
-LINUX_HEADERS_INCDIR = /usr/include
 
 # Paths. All these can be overridden on the "make" command line.
 prefix		=
@@ -89,6 +76,9 @@ pkgconfdir	= $(usrlibdir)/pkgconfig
 plugindir       := $(prefix)/$(LIB)/multipath
 configdir       := $(prefix)/etc/multipath/conf.d
 runtimedir      := $(if $(shell test -L /var/run -o ! -d /var/run && echo 1),/run,/var/run)
+devmapper_incdir := $(or $(shell $(PKGCONFIG) --variable=includedir devmapper),/usr/include)
+libudev_incdir	:= $(or $(shell $(PKGCONFIG) --variable=includedir libudev),/usr/include)
+kernel_incdir	:= /usr/include
 
 GZIP_PROG	= gzip -9 -c
 RM		= rm -f

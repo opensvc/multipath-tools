@@ -1,10 +1,10 @@
 include ../Makefile.inc
 
-ifneq ($(call check_func,dm_task_get_errno,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
+ifneq ($(call check_func,dm_task_get_errno,$(devmapper_incdir)/libdevmapper.h),0)
 	CPPFLAGS += -DLIBDM_API_GET_ERRNO
 endif
 
-ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(LINUX_HEADERS_INCDIR)/scsi/fc/fc_els.h),0)
+ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(kernel_incdir)/scsi/fc/fc_els.h),0)
 	CPPFLAGS += -DFPIN_EVENT_HANDLER
 	FPIN_SUPPORT = 1
 endif

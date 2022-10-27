@@ -9,7 +9,7 @@ LDFLAGS += $(BIN_LDFLAGS)
 
 LIBDEPS += -ldevmapper
 
-ifneq ($(call check_func,dm_task_set_cookie,$(DEVMAPPER_INCDIR)/libdevmapper.h),0)
+ifneq ($(call check_func,dm_task_set_cookie,$(devmapper_incdir)/libdevmapper.h),0)
 	CPPFLAGS += -DLIBDM_API_COOKIE
 endif
 
