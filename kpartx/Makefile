@@ -32,12 +32,12 @@ install: $(EXEC) $(EXEC).8
 	$(INSTALL_PROGRAM) -m 644 dm-parts.rules $(DESTDIR)$(libudevdir)/rules.d/11-dm-parts.rules
 	$(INSTALL_PROGRAM) -m 644 kpartx.rules $(DESTDIR)$(libudevdir)/rules.d/66-kpartx.rules
 	$(INSTALL_PROGRAM) -m 644 del-part-nodes.rules $(DESTDIR)$(libudevdir)/rules.d/68-del-part-nodes.rules
-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(man8dir)
-	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(man8dir)
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)/man8
+	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(mandir)/man8
 
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
-	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8
+	$(RM) $(DESTDIR)$(mandir)/man8/$(EXEC).8
 	$(RM) $(DESTDIR)$(libudevdir)/kpartx_id
 	$(RM) $(DESTDIR)$(libudevdir)/rules.d/11-dm-parts.rules
 	$(RM) $(DESTDIR)$(libudevdir)/rules.d/66-kpartx.rules

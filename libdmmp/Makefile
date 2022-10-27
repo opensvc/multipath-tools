@@ -45,17 +45,17 @@ install:
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 	perl -i -pe 's|__INCLUDEDIR__|$(includedir)|g' \
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
-	$(INSTALL_PROGRAM) -d 755 $(DESTDIR)$(man3dir)
-	$(INSTALL_PROGRAM) -m 644 -t $(DESTDIR)$(man3dir) docs/man/*.3
+	$(INSTALL_PROGRAM) -d 755 $(DESTDIR)$(mandir)/man3
+	$(INSTALL_PROGRAM) -m 644 -t $(DESTDIR)$(mandir)/man3 docs/man/*.3
 
 uninstall:
 	$(RM) $(DESTDIR)$(usrlibdir)/$(LIBS)
 	$(RM) $(DESTDIR)$(includedir)/$(HEADERS)
 	$(RM) $(DESTDIR)$(usrlibdir)/$(DEVLIB)
-	@for file in $(DESTDIR)$(man3dir)/dmmp_*; do \
+	@for file in $(DESTDIR)$(mandir)/man3/dmmp_*; do \
 		$(RM) $$file; \
 	done
-	$(RM) $(DESTDIR)$(man3dir)/libdmmp.h*
+	$(RM) $(DESTDIR)$(mandir)/man3/libdmmp.h*
 	$(RM) $(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 
 clean: dep_clean

@@ -89,14 +89,14 @@ ifdef SYSTEMD
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).service $(DESTDIR)$(unitdir)
 	$(INSTALL_PROGRAM) -m 644 $(EXEC).socket $(DESTDIR)$(unitdir)
 endif
-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(man8dir)
-	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(man8dir)
-	$(INSTALL_PROGRAM) -m 644 $(CLI).8 $(DESTDIR)$(man8dir)
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)/man8
+	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(mandir)/man8
+	$(INSTALL_PROGRAM) -m 644 $(CLI).8 $(DESTDIR)$(mandir)/man8
 
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/$(EXEC) $(DESTDIR)$(bindir)/$(CLI)
-	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8
-	$(RM) $(DESTDIR)$(man8dir)/$(CLI).8
+	$(RM) $(DESTDIR)$(mandir)/man8/$(EXEC).8
+	$(RM) $(DESTDIR)$(mandir)/man8/$(CLI).8
 	$(RM) $(DESTDIR)$(unitdir)/$(EXEC).service
 	$(RM) $(DESTDIR)$(unitdir)/$(EXEC).socket
 

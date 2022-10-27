@@ -19,8 +19,8 @@ $(EXEC): $(OBJS)
 install:
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)/
-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(man8dir)
-	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(man8dir)
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)/man8
+	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(mandir)/man8
 
 clean: dep_clean
 	$(RM) core *.o $(EXEC)
@@ -29,7 +29,7 @@ include $(wildcard $(OBJS:.o=.d))
 
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/$(EXEC)
-	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8
+	$(RM) $(DESTDIR)$(mandir)/man8/$(EXEC).8
 
 dep_clean:
 	$(RM) $(OBJS:.o=.d)

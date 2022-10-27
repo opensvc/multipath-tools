@@ -36,17 +36,17 @@ install: all
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(syslibdir)
-	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(man3dir)
+	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(mandir)/man3
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(includedir)
 	$(LN) $(LIBS) $(DESTDIR)$(syslibdir)/$(DEVLIB)
-	$(INSTALL_PROGRAM) -m 644 mpath_persistent_reserve_in.3 $(DESTDIR)$(man3dir)
-	$(INSTALL_PROGRAM) -m 644 mpath_persistent_reserve_out.3 $(DESTDIR)$(man3dir)
+	$(INSTALL_PROGRAM) -m 644 mpath_persistent_reserve_in.3 $(DESTDIR)$(mandir)/man3
+	$(INSTALL_PROGRAM) -m 644 mpath_persistent_reserve_out.3 $(DESTDIR)$(mandir)/man3
 	$(INSTALL_PROGRAM) -m 644 mpath_persist.h $(DESTDIR)$(includedir)
 
 uninstall:
 	$(RM) $(DESTDIR)$(syslibdir)/$(LIBS)
-	$(RM) $(DESTDIR)$(man3dir)/mpath_persistent_reserve_in.3
-	$(RM) $(DESTDIR)$(man3dir)/mpath_persistent_reserve_out.3
+	$(RM) $(DESTDIR)$(mandir)/man3/mpath_persistent_reserve_in.3
+	$(RM) $(DESTDIR)$(mandir)/man3/mpath_persistent_reserve_out.3
 	$(RM) $(DESTDIR)$(includedir)/mpath_persist.h
 	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 

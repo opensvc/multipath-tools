@@ -28,10 +28,10 @@ install:
 	$(INSTALL_PROGRAM) -m 644 modules-load.conf $(DESTDIR)$(modulesloaddir)/multipath.conf
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(tmpfilesdir)
 	$(INSTALL_PROGRAM) -m 644 tmpfiles.conf $(DESTDIR)$(tmpfilesdir)/multipath.conf
-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(man8dir)
-	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(man8dir)
-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(man5dir)
-	$(INSTALL_PROGRAM) -m 644 $(EXEC).conf.5 $(DESTDIR)$(man5dir)
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)/man8
+	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(mandir)/man8
+	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)/man5
+	$(INSTALL_PROGRAM) -m 644 $(EXEC).conf.5 $(DESTDIR)$(mandir)/man5
 ifneq ($(SCSI_DH_MODULES_PRELOAD),)
 	$(INSTALL_PROGRAM) -m 644 scsi_dh.conf $(DESTDIR)$(modulesloaddir)/scsi_dh.conf
 	for _x in $(SCSI_DH_MODULES_PRELOAD); do echo "$$_x"; done \
@@ -44,8 +44,8 @@ uninstall:
 	$(RM) $(DESTDIR)$(modulesloaddir)/multipath.conf
 	$(RM) $(DESTDIR)$(modulesloaddir)/scsi_dh.conf
 	$(RM) $(DESTDIR)$(libudevdir)/rules.d/56-multipath.rules
-	$(RM) $(DESTDIR)$(man8dir)/$(EXEC).8
-	$(RM) $(DESTDIR)$(man5dir)/$(EXEC).conf.5
+	$(RM) $(DESTDIR)$(mandir)/man8/$(EXEC).8
+	$(RM) $(DESTDIR)$(mandir)/man5/$(EXEC).conf.5
 
 clean: dep_clean
 	$(RM) core *.o $(EXEC) multipath.rules tmpfiles.conf
