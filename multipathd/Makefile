@@ -18,14 +18,17 @@ endif
 CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathpersistdir) -I$(mpathcmddir) -I$(thirdpartydir) \
 	$(shell $(PKGCONFIG) --modversion liburcu 2>/dev/null | \
 		awk -F. '{ printf("-DURCU_VERSION=0x%06x", 256 * ( 256 * $$1 + $$2) + $$3); }') \
-	-DBINDIR='"$(bindir)"'
+	-DBINDIR='"$(bindir)"' $(SYSTEMD_CPPFLAGS)
+ifeq ($(ENABLE_DMEVENTS_POLL),0)
+	CPPFLAGS += -DNO_DMEVENTS_POLL
+endif
 CFLAGS += $(BIN_CFLAGS)
 LDFLAGS += $(BIN_LDFLAGS)
 
-CLI_LIBDEPS :=  -L$(mpathutildir) -lmpathutil -L$(mpathcmddir) -lmpathcmd -ludev -ldl -lurcu -lpthread
-LIBDEPS += -L$(multipathdir) -lmultipath -L$(mpathpersistdir) -lmpathpersist \
-	   -ldevmapper $(CLI_LIBDEPS)
-
+CLI_LIBDEPS	:=  -L$(mpathutildir) -lmpathutil -L$(mpathcmddir) -lmpathcmd \
+		-ludev -ldl -lurcu -lpthread $(SYSTEMD_LIBDEPS)
+LIBDEPS		:= -L$(multipathdir) -lmultipath -L$(mpathpersistdir) -lmpathpersist \
+	  	-ldevmapper $(CLI_LIBDEPS)
 
 ifeq ($(READLINE),libedit)
 RL_CPPFLAGS = -DUSE_LIBEDIT
@@ -38,18 +41,6 @@ RL_LIBDEPS += -lreadline
 ifeq ($(shell sed -En 's/.*\<Function\s*\*rl_completion_entry_function;.*/yes/p' /usr/include/editline/readline.h),yes)
 RL_CPPFLAGS += -DBROKEN_RL_COMPLETION_FUNC
 endif
-endif
-
-ifdef SYSTEMD
-	CPPFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
-	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
-		CLI_LIBDEPS += -lsystemd
-	else
-		CLI_LIBDEPS += -lsystemd-daemon
-	endif
-endif
-ifeq ($(ENABLE_DMEVENTS_POLL),0)
-	CPPFLAGS += -DNO_DMEVENTS_POLL
 endif
 
 OBJS = main.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o waiter.o \

@@ -8,19 +8,10 @@ DEVLIB = libmpathutil.so
 LIBS = $(DEVLIB).$(SONAME)
 VERSION_SCRIPT := libmpathutil.version
 
-CPPFLAGS += -I. -I$(multipathdir) -I$(mpathcmddir)
+CPPFLAGS += -I. -I$(multipathdir) -I$(mpathcmddir) $(SYSTEMD_CPPFLAGS)
 CFLAGS += $(LIB_CFLAGS) -D_GNU_SOURCE
 
-LIBDEPS += -lpthread -ldl -ludev -L$(mpathcmddir) -lmpathcmd
-
-ifdef SYSTEMD
-	CPPFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
-	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
-		LIBDEPS += -lsystemd
-	else
-		LIBDEPS += -lsystemd-daemon
-	endif
-endif
+LIBDEPS += -lpthread -ldl -ludev -L$(mpathcmddir) -lmpathcmd $(SYSTEMD_LIBDEPS)
 
 # object files referencing MULTIPATH_DIR or CONFIG_DIR
 # they need to be recompiled for unit tests

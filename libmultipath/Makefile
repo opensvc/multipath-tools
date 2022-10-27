@@ -8,19 +8,11 @@ DEVLIB = libmultipath.so
 LIBS = $(DEVLIB).$(SONAME)
 VERSION_SCRIPT := libmultipath.version
 
-CPPFLAGS += -I$(mpathutildir) -I$(mpathcmddir) -I$(nvmedir) -D_GNU_SOURCE
+CPPFLAGS += -I$(mpathutildir) -I$(mpathcmddir) -I$(nvmedir) -D_GNU_SOURCE $(SYSTEMD_CPPFLAGS)
 CFLAGS += $(LIB_CFLAGS)
 
-LIBDEPS += -lpthread -ldl -ldevmapper -ludev -L$(mpathutildir) -lmpathutil -L$(mpathcmddir) -lmpathcmd -lurcu -laio
-
-ifdef SYSTEMD
-	CPPFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
-	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
-		LIBDEPS += -lsystemd
-	else
-		LIBDEPS += -lsystemd-daemon
-	endif
-endif
+LIBDEPS += -lpthread -ldl -ldevmapper -ludev -L$(mpathutildir) -lmpathutil -L$(mpathcmddir) -lmpathcmd \
+	-lurcu -laio $(SYSTEMD_LIBDEPS)
 
 ifneq ($(call check_func,dm_task_no_flush,$(devmapper_incdir)/libdevmapper.h),0)
 	CPPFLAGS += -DLIBDM_API_FLUSH
