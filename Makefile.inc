@@ -32,11 +32,11 @@ SYSTEMD := $(strip $(or $(shell $(PKGCONFIG) --modversion libsystemd 2>/dev/null
 			$(shell systemctl --version 2>/dev/null | sed -n 's/systemd \([0-9]*\).*/\1/p')))
 
 # Paths. All these can be overridden on the "make" command line.
-prefix		=
+prefix		:=
 # Prefix for binaries
-exec_prefix	= $(prefix)
+exec_prefix	:= $(prefix)
 # Prefix for non-essential libraries (libdmmp)
-usr_prefix	= $(prefix)
+usr_prefix	:= $(prefix)
 # Where to install systemd-related files. systemd is usually installed under /usr
 # Note: some systemd installations use separate "prefix" and "rootprefix".
 # In this case, override only unitdir to use systemd's "rootprefix" instead of $(systemd_prefix)
@@ -46,13 +46,13 @@ tmpfilesdir	:= $(systemd_prefix)/lib/tmpfiles.d
 modulesloaddir	:= $(systemd_prefix)/lib/modules-load.d
 libudevdir	:= $(systemd_prefix)/lib/udev
 udevrulesdir	:= $(libudevdir)/rules.d
-bindir		= $(exec_prefix)/sbin
+bindir		:= $(exec_prefix)/sbin
 mandir		:= $(usr_prefix)/share/man
 LIB		:= $(if $(shell test -d /lib64 && echo 1),lib64,lib)
-syslibdir	= $(prefix)/$(LIB)
-usrlibdir	= $(usr_prefix)/$(LIB)
-includedir	= $(usr_prefix)/include
-pkgconfdir	= $(usrlibdir)/pkgconfig
+syslibdir	:= $(prefix)/$(LIB)
+usrlibdir	:= $(usr_prefix)/$(LIB)
+includedir	:= $(usr_prefix)/include
+pkgconfdir	:= $(usrlibdir)/pkgconfig
 plugindir       := $(prefix)/$(LIB)/multipath
 configdir       := $(prefix)/etc/multipath/conf.d
 runtimedir      := $(if $(shell test -L /var/run -o ! -d /var/run && echo 1),/run,/var/run)
@@ -60,10 +60,10 @@ devmapper_incdir := $(or $(shell $(PKGCONFIG) --variable=includedir devmapper),/
 libudev_incdir	:= $(or $(shell $(PKGCONFIG) --variable=includedir libudev),/usr/include)
 kernel_incdir	:= /usr/include
 
-GZIP_PROG	= gzip -9 -c
-RM		= rm -f
-LN		= ln -sf
-INSTALL_PROGRAM	= install
+GZIP_PROG	:= gzip -9 -c
+RM		:= rm -f
+LN		:= ln -sf
+INSTALL_PROGRAM	:= install
 NV_VERSION_SCRIPT = $(VERSION_SCRIPT:%.version=%-nv.version)
 
 # $(call TEST_CC_OPTION,option,fallback)
@@ -106,23 +106,23 @@ CPPFLAGS	:= $(FORTIFY_OPT) \
 		   -DRUNTIME_DIR=\"$(runtimedir)\" \
 		   -DCONFIG_DIR=\"$(configdir)\" -DEXTRAVERSION=\"$(EXTRAVERSION)\" -MMD -MP
 CFLAGS		:= --std=gnu99 $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe
-BIN_CFLAGS	= -fPIE -DPIE
-LIB_CFLAGS	= -fPIC
-SHARED_FLAGS	= -shared
+BIN_CFLAGS	:= -fPIE -DPIE
+LIB_CFLAGS	:= -fPIC
+SHARED_FLAGS	:= -shared
 LDFLAGS		:= $(LDFLAGS) -Wl,-z,relro -Wl,-z,now -Wl,-z,defs
-BIN_LDFLAGS	= -pie
+BIN_LDFLAGS	:= -pie
 
 # Source code directories. Don't modify.
 
-multipathdir	= $(TOPDIR)/libmultipath
-daemondir       = $(TOPDIR)/multipathd
-mpathutildir	= $(TOPDIR)/libmpathutil
-mpathpersistdir	= $(TOPDIR)/libmpathpersist
-mpathcmddir	= $(TOPDIR)/libmpathcmd
-mpathvaliddir	= $(TOPDIR)/libmpathvalid
-thirdpartydir	= $(TOPDIR)/third-party
-libdmmpdir	= $(TOPDIR)/libdmmp
-nvmedir		= $(TOPDIR)/libmultipath/nvme
+multipathdir	:= $(TOPDIR)/libmultipath
+daemondir	:= $(TOPDIR)/multipathd
+mpathutildir	:= $(TOPDIR)/libmpathutil
+mpathpersistdir	:= $(TOPDIR)/libmpathpersist
+mpathcmddir	:= $(TOPDIR)/libmpathcmd
+mpathvaliddir	:= $(TOPDIR)/libmpathvalid
+thirdpartydir	:= $(TOPDIR)/third-party
+libdmmpdir	:= $(TOPDIR)/libdmmp
+nvmedir		:= $(TOPDIR)/libmultipath/nvme
 
 # Check whether a function with name $1 has been declared in header file $2.
 check_func = $(shell \
