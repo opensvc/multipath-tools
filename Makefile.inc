@@ -28,14 +28,8 @@ ifeq ($(TOPDIR),)
 	TOPDIR	= ..
 endif
 
-ifeq ($(shell $(PKGCONFIG) --modversion libsystemd >/dev/null 2>&1 && echo 1), 1)
-	SYSTEMD = $(shell $(PKGCONFIG) --modversion libsystemd | awk '{print $$1}')
-else
-	ifeq ($(shell systemctl --version >/dev/null 2>&1 && echo 1), 1)
-		SYSTEMD = $(shell systemctl --version 2> /dev/null | \
-			sed -n 's/systemd \([0-9]*\).*/\1/p')
-	endif
-endif
+SYSTEMD := $(strip $(or $(shell $(PKGCONFIG) --modversion libsystemd 2>/dev/null | awk '{print $$1}'), \
+			$(shell systemctl --version 2>/dev/null | sed -n 's/systemd \([0-9]*\).*/\1/p')))
 
 # Allow user to override default location.
 
