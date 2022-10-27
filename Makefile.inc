@@ -20,59 +20,49 @@ SCSI_DH_MODULES_PRELOAD :=
 
 EXTRAVERSION := $(shell rev=$$(git rev-parse --short=7 HEAD 2>/dev/null); echo $${rev:+-g$$rev})
 
+# PKGCONFIG must be read from the environment to enable compilation
+# in Debian multiarch setups
 PKGCONFIG	?= pkg-config
 
 ifeq ($(TOPDIR),)
 	TOPDIR	= ..
 endif
 
-ifndef LIB
-	ifeq ($(shell test -d /lib64 && echo 1),1)
-		LIB=lib64
-	else
-		LIB=lib
+ifeq ($(shell test -d /lib64 && echo 1),1)
+	LIB=lib64
+else
+	LIB=lib
+endif
+
+ifeq ($(shell test -L /var/run -o ! -d /var/run && echo 1),1)
+	RUN=run
+else
+	RUN=var/run
+endif
+
+ifeq ($(shell $(PKGCONFIG) --modversion libsystemd >/dev/null 2>&1 && echo 1), 1)
+	SYSTEMD = $(shell $(PKGCONFIG) --modversion libsystemd | awk '{print $$1}')
+else
+	ifeq ($(shell systemctl --version >/dev/null 2>&1 && echo 1), 1)
+		SYSTEMD = $(shell systemctl --version 2> /dev/null | \
+			sed -n 's/systemd \([0-9]*\).*/\1/p')
 	endif
 endif
 
-ifndef RUN
-	ifeq ($(shell test -L /var/run -o ! -d /var/run && echo 1),1)
-		RUN=run
-	else
-		RUN=var/run
-	endif
+ifeq ($(shell $(PKGCONFIG) --modversion devmapper >/dev/null 2>&1 && echo 1), 1)
+	DEVMAPPER_INCDIR = $(shell $(PKGCONFIG) --variable=includedir devmapper)
+else
+	DEVMAPPER_INCDIR = /usr/include
 endif
 
-ifndef SYSTEMD
-	ifeq ($(shell $(PKGCONFIG) --modversion libsystemd >/dev/null 2>&1 && echo 1), 1)
-		SYSTEMD = $(shell $(PKGCONFIG) --modversion libsystemd | awk '{print $$1}')
-	else
-		ifeq ($(shell systemctl --version >/dev/null 2>&1 && echo 1), 1)
-			SYSTEMD = $(shell systemctl --version 2> /dev/null | \
-				sed -n 's/systemd \([0-9]*\).*/\1/p')
-		endif
-	endif
-endif
-
-ifndef DEVMAPPER_INCDIR
-	ifeq ($(shell $(PKGCONFIG) --modversion devmapper >/dev/null 2>&1 && echo 1), 1)
-		DEVMAPPER_INCDIR = $(shell $(PKGCONFIG) --variable=includedir devmapper)
-	else
-		DEVMAPPER_INCDIR = /usr/include
-	endif
-endif
-
-ifndef LIBUDEV_INCDIR
-	ifeq ($(shell $(PKGCONFIG) --modversion libudev >/dev/null 2>&1 && echo 1), 1)
-		LIBUDEV_INCDIR = $(shell $(PKGCONFIG) --variable=includedir libudev)
-	else
-		LIBUDEV_INCDIR = /usr/include
-	endif
+ifeq ($(shell $(PKGCONFIG) --modversion libudev >/dev/null 2>&1 && echo 1), 1)
+	LIBUDEV_INCDIR = $(shell $(PKGCONFIG) --variable=includedir libudev)
+else
+	LIBUDEV_INCDIR = /usr/include
 endif
 
 # Allow user to override default location.
-ifndef LINUX_HEADERS_INCDIR
-	LINUX_HEADERS_INCDIR = /usr/include
-endif
+LINUX_HEADERS_INCDIR = /usr/include
 
 # Paths. All these can be overridden on the "make" command line.
 prefix		=
