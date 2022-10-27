@@ -51,7 +51,6 @@ mandir		:= $(usr_prefix)/share/man
 LIB		:= $(if $(shell test -d /lib64 && echo 1),lib64,lib)
 syslibdir	= $(prefix)/$(LIB)
 usrlibdir	= $(usr_prefix)/$(LIB)
-libdir		= $(prefix)/$(LIB)/multipath
 includedir	= $(usr_prefix)/include
 pkgconfdir	= $(usrlibdir)/pkgconfig
 plugindir       := $(prefix)/$(LIB)/multipath

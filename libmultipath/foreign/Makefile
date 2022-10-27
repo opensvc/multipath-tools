@@ -17,10 +17,10 @@ libforeign-%.so: %.o
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ $(LIBDEPS)
 
 install:
-	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(libdir)
+	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(plugindir)
 
 uninstall:
-	for file in $(LIBS); do $(RM) $(DESTDIR)$(libdir)/$$file; done
+	for file in $(LIBS); do $(RM) $(DESTDIR)$(plugindir)/$$file; done
 
 clean: dep_clean
 	$(RM) core *.a *.o *.gz *.so

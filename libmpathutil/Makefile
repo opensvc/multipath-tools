@@ -54,7 +54,6 @@ abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
 install: all
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
-	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(libdir)
 	$(LN) $(LIBS) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 uninstall:

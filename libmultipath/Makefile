@@ -119,7 +119,7 @@ test-lib:	../tests/$(LIBS)
 install: all
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)
 	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
-	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(libdir)
+	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(plugindir)
 	$(LN) $(LIBS) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 uninstall:
