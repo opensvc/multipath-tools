@@ -31,16 +31,16 @@ LIBDEPS		:= -L$(multipathdir) -lmultipath -L$(mpathpersistdir) -lmpathpersist \
 	  	-ldevmapper $(CLI_LIBDEPS)
 
 ifeq ($(READLINE),libedit)
-RL_CPPFLAGS = -DUSE_LIBEDIT
-RL_LIBDEPS += -ledit
-endif
-ifeq ($(READLINE),libreadline)
-RL_CPPFLAGS += -DUSE_LIBREADLINE
-RL_LIBDEPS += -lreadline
-# See comment in uxclnt.c
+RL_CPPFLAGS	:= -DUSE_LIBEDIT
+RL_LIBDEPS	:= -ledit
+# See comment in multipathc.c
 ifeq ($(shell sed -En 's/.*\<Function\s*\*rl_completion_entry_function;.*/yes/p' /usr/include/editline/readline.h),yes)
 RL_CPPFLAGS += -DBROKEN_RL_COMPLETION_FUNC
 endif
+endif
+ifeq ($(READLINE),libreadline)
+RL_CPPFLAGS	:= -DUSE_LIBREADLINE
+RL_LIBDEPS	:= -lreadline
 endif
 
 OBJS = main.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o waiter.o \
@@ -51,8 +51,6 @@ CLI_OBJS = multipathc.o cli.o
 ifeq ($(FPIN_SUPPORT),1)
 OBJS += fpin_handlers.o
 endif
-
-
 
 EXEC = multipathd
 CLI = multipathc
