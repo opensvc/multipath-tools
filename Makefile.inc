@@ -28,12 +28,6 @@ ifeq ($(TOPDIR),)
 	TOPDIR	= ..
 endif
 
-ifeq ($(shell test -d /lib64 && echo 1),1)
-	LIB=lib64
-else
-	LIB=lib
-endif
-
 ifeq ($(shell $(PKGCONFIG) --modversion libsystemd >/dev/null 2>&1 && echo 1), 1)
 	SYSTEMD = $(shell $(PKGCONFIG) --modversion libsystemd | awk '{print $$1}')
 else
@@ -80,6 +74,7 @@ mpathutildir	= $(TOPDIR)/libmpathutil
 man8dir		= $(usr_prefix)/share/man/man8
 man5dir		= $(usr_prefix)/share/man/man5
 man3dir		= $(usr_prefix)/share/man/man3
+LIB		:= $(if $(shell test -d /lib64 && echo 1),lib64,lib)
 syslibdir	= $(prefix)/$(LIB)
 usrlibdir	= $(usr_prefix)/$(LIB)
 libdir		= $(prefix)/$(LIB)/multipath
