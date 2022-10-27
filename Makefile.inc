@@ -159,7 +159,7 @@ check_var = $(shell \
                 found=0; \
                 status="no"; \
         fi; \
-        echo 1>&2 "Checking for ..  $1 in $2 ... $$status"; \
+	echo 1>&2 "Checking for $1 in $2 ... $$status"; \
         echo "$$found" \
         )
 
