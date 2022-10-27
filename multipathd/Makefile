@@ -1,27 +1,30 @@
 include ../Makefile.inc
 
-ifneq ($(call check_func,dm_task_get_errno,$(devmapper_incdir)/libdevmapper.h),0)
-	CPPFLAGS += -DLIBDM_API_GET_ERRNO
-endif
-
-ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(kernel_incdir)/scsi/fc/fc_els.h),0)
-	CPPFLAGS += -DFPIN_EVENT_HANDLER
-	FPIN_SUPPORT = 1
-endif
-#
-# debugging stuff
-#
-#CPPFLAGS += -DLCKDBG
-#CPPFLAGS += -D_DEBUG_
-#CPPFLAGS += -DLOGDBG
+EXEC := multipathd
+CLI := multipathc
 
 CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathpersistdir) -I$(mpathcmddir) -I$(thirdpartydir) \
 	$(shell $(PKGCONFIG) --modversion liburcu 2>/dev/null | \
 		awk -F. '{ printf("-DURCU_VERSION=0x%06x", 256 * ( 256 * $$1 + $$2) + $$3); }') \
 	-DBINDIR='"$(bindir)"' $(SYSTEMD_CPPFLAGS)
+
 ifeq ($(ENABLE_DMEVENTS_POLL),0)
 	CPPFLAGS += -DNO_DMEVENTS_POLL
 endif
+ifneq ($(call check_func,dm_task_get_errno,$(devmapper_incdir)/libdevmapper.h),0)
+	CPPFLAGS += -DLIBDM_API_GET_ERRNO
+endif
+ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(kernel_incdir)/scsi/fc/fc_els.h),0)
+	CPPFLAGS += -DFPIN_EVENT_HANDLER
+	FPIN_SUPPORT = 1
+endif
+
+#
+# debugging stuff
+#
+#CPPFLAGS += -DLCKDBG
+#CPPFLAGS += -DLOGDBG
+
 CFLAGS += $(BIN_CFLAGS)
 LDFLAGS += $(BIN_LDFLAGS)
 
@@ -43,17 +46,12 @@ RL_CPPFLAGS	:= -DUSE_LIBREADLINE
 RL_LIBDEPS	:= -lreadline
 endif
 
-OBJS = main.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o waiter.o \
+CLI_OBJS := multipathc.o cli.o
+OBJS := main.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o waiter.o \
        dmevents.o init_unwinder.o
-
-CLI_OBJS = multipathc.o cli.o
-
 ifeq ($(FPIN_SUPPORT),1)
 OBJS += fpin_handlers.o
 endif
-
-EXEC = multipathd
-CLI = multipathc
 
 all : $(EXEC) $(CLI)
 

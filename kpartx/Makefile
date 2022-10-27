@@ -3,20 +3,19 @@
 #
 include ../Makefile.inc
 
+EXEC := kpartx
+
 CPPFLAGS += -I. -I$(multipathdir) -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
-CFLAGS += $(BIN_CFLAGS)
-LDFLAGS += $(BIN_LDFLAGS)
-
-LIBDEPS += -ldevmapper
-
 ifneq ($(call check_func,dm_task_set_cookie,$(devmapper_incdir)/libdevmapper.h),0)
 	CPPFLAGS += -DLIBDM_API_COOKIE
 endif
 
-OBJS = bsd.o dos.o kpartx.o solaris.o unixware.o dasd.o sun.o \
-	gpt.o mac.o ps3.o crc32.o lopart.o xstrncpy.o devmapper.o
+CFLAGS += $(BIN_CFLAGS)
+LDFLAGS += $(BIN_LDFLAGS)
+LIBDEPS += -ldevmapper
 
-EXEC = kpartx
+OBJS := bsd.o dos.o kpartx.o solaris.o unixware.o dasd.o sun.o \
+	gpt.o mac.o ps3.o crc32.o lopart.o xstrncpy.o devmapper.o
 
 all: $(EXEC)
 

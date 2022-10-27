@@ -3,15 +3,15 @@
 #
 include ../Makefile.inc
 
+EXEC := multipath
+
 CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathcmddir)
 CFLAGS += $(BIN_CFLAGS)
 LDFLAGS += $(BIN_LDFLAGS)
 LIBDEPS += -L$(multipathdir) -lmultipath -L$(mpathutildir) -lmpathutil \
 	-L$(mpathcmddir) -lmpathcmd -lpthread -ldevmapper -ldl -ludev
 
-EXEC = multipath
-
-OBJS = main.o
+OBJS := main.o
 
 all: $(EXEC) multipath.rules tmpfiles.conf
 
