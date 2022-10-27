@@ -53,10 +53,6 @@ ifndef SYSTEMD
 	endif
 endif
 
-ifndef SYSTEMDPATH
-	SYSTEMDPATH=usr/lib
-endif
-
 ifndef DEVMAPPER_INCDIR
 	ifeq ($(shell $(PKGCONFIG) --modversion devmapper >/dev/null 2>&1 && echo 1), 1)
 		DEVMAPPER_INCDIR = $(shell $(PKGCONFIG) --variable=includedir devmapper)
@@ -78,14 +74,22 @@ ifndef LINUX_HEADERS_INCDIR
 	LINUX_HEADERS_INCDIR = /usr/include
 endif
 
+# Paths. All these can be overridden on the "make" command line.
 prefix		=
+# Prefix for binaries
 exec_prefix	= $(prefix)
+# Prefix for non-essential libraries (libdmmp)
 usr_prefix	= $(prefix)
+# Where to install systemd-related files. systemd is usually installed under /usr
+# Note: some systemd installations use separate "prefix" and "rootprefix".
+# In this case, override only unitdir to use systemd's "rootprefix" instead of $(systemd_prefix)
+systemd_prefix  := /usr
+unitdir		:= $(systemd_prefix)/lib/systemd/system
+tmpfilesdir	:= $(systemd_prefix)/lib/tmpfiles.d
+modulesloaddir	:= $(systemd_prefix)/lib/modules-load.d
+libudevdir	:= $(systemd_prefix)/lib/udev
+udevrulesdir	:= $(libudevdir)/rules.d
 bindir		= $(exec_prefix)/sbin
-libudevdir	= $(prefix)/$(SYSTEMDPATH)/udev
-tmpfilesdir	= $(prefix)/$(SYSTEMDPATH)/tmpfiles.d
-udevrulesdir	= $(libudevdir)/rules.d
-modulesloaddir  = $(prefix)/$(SYSTEMDPATH)/modules-load.d
 multipathdir	= $(TOPDIR)/libmultipath
 daemondir       = $(TOPDIR)/multipathd
 mpathutildir	= $(TOPDIR)/libmpathutil
@@ -95,7 +99,6 @@ man3dir		= $(usr_prefix)/share/man/man3
 syslibdir	= $(prefix)/$(LIB)
 usrlibdir	= $(usr_prefix)/$(LIB)
 libdir		= $(prefix)/$(LIB)/multipath
-unitdir		= $(prefix)/$(SYSTEMDPATH)/systemd/system
 mpathpersistdir	= $(TOPDIR)/libmpathpersist
 mpathcmddir	= $(TOPDIR)/libmpathcmd
 mpathvaliddir	= $(TOPDIR)/libmpathvalid
