@@ -8,18 +8,9 @@ LIBDEPS += -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath \
 
 OBJS := mpath_valid.o
 
-all: $(LIBS)
+all: $(DEVLIB)
 
-$(LIBS): $(OBJS) $(VERSION_SCRIPT)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS) \
-		-Wl,--version-script=$(VERSION_SCRIPT)
-	$(LN) $(LIBS) $(DEVLIB)
-
-$(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
-		-Wl,--version-script=$(NV_VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
-
-abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
+include $(TOPDIR)/rules.mk
 
 install: $(LIBS)
 	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(syslibdir)

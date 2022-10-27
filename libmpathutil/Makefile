@@ -17,18 +17,7 @@ OBJS := parser.o vector.o util.o debug.o time-util.o \
 
 all:	$(DEVLIB)
 
-$(LIBS): $(OBJS) $(VERSION_SCRIPT)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
-		-Wl,--version-script=$(VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
-
-$(DEVLIB): $(LIBS)
-	$(LN) $(LIBS) $@
-
-$(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
-		-Wl,--version-script=$(NV_VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
-
-abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
+include $(TOPDIR)/rules.mk
 
 install: all
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)

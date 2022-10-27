@@ -6,18 +6,7 @@ OBJS := mpath_cmd.o
 
 all:	$(DEVLIB)
 
-$(LIBS): $(OBJS) $(VERSION_SCRIPT)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
-		-Wl,--version-script=$(VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
-
-$(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
-		-Wl,--version-script=$(NV_VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
-
-abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
-
-$(DEVLIB): $(LIBS)
-	$(LN) $(LIBS) $@
+include $(TOPDIR)/rules.mk
 
 install: all
 	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)

@@ -56,6 +56,8 @@ OBJS := $(OBJS-O) $(OBJS-U)
 
 all:	$(DEVLIB)
 
+include $(TOPDIR)/rules.mk
+
 nvme-lib.o: nvme-lib.c nvme-ioctl.c nvme-ioctl.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-function -c -o $@ $<
 
@@ -71,20 +73,6 @@ nvme-ioctl.c: nvme/nvme-ioctl.c
 
 nvme-ioctl.h: nvme/nvme-ioctl.h
 	$(call make_static,$<,$@)
-
-
-$(LIBS): $(OBJS) $(VERSION_SCRIPT)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
-		-Wl,--version-script=$(VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
-
-$(DEVLIB): $(LIBS)
-	$(LN) $(LIBS) $@
-
-$(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
-		-Wl,--version-script=$(NV_VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
-
-abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
 
 ../tests/$(LIBS): $(OBJS-O) $(OBJS-T) $(VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=`basename $@` \
