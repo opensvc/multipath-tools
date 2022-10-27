@@ -53,10 +53,6 @@ ifndef SYSTEMD
 	endif
 endif
 
-ifndef SYSTEMDPATH
-	SYSTEMDPATH=usr/lib
-endif
-
 ifndef DEVMAPPER_INCDIR
 	ifeq ($(shell $(PKGCONFIG) --modversion devmapper >/dev/null 2>&1 && echo 1), 1)
 		DEVMAPPER_INCDIR = $(shell $(PKGCONFIG) --variable=includedir devmapper)
@@ -82,10 +78,11 @@ prefix		=
 exec_prefix	= $(prefix)
 usr_prefix	= $(prefix)
 bindir		= $(exec_prefix)/sbin
-libudevdir	= $(prefix)/$(SYSTEMDPATH)/udev
-tmpfilesdir	= $(prefix)/$(SYSTEMDPATH)/tmpfiles.d
+systemddir	= $(prefix)/lib
+libudevdir	= $(systemddir)/udev
+tmpfilesdir	= $(systemddir)/tmpfiles.d
 udevrulesdir	= $(libudevdir)/rules.d
-modulesloaddir  = $(prefix)/$(SYSTEMDPATH)/modules-load.d
+modulesloaddir  = $(systemddir)/modules-load.d
 multipathdir	= $(TOPDIR)/libmultipath
 daemondir       = $(TOPDIR)/multipathd
 mpathutildir	= $(TOPDIR)/libmpathutil
@@ -95,7 +92,7 @@ man3dir		= $(prefix)/share/man/man3
 syslibdir	= $(prefix)/$(LIB)
 usrlibdir	= $(usr_prefix)/$(LIB)
 libdir		= $(prefix)/$(LIB)/multipath
-unitdir		= $(prefix)/$(SYSTEMDPATH)/systemd/system
+unitdir		= $(systemddir)/systemd/system
 mpathpersistdir	= $(TOPDIR)/libmpathpersist
 mpathcmddir	= $(TOPDIR)/libmpathcmd
 mpathvaliddir	= $(TOPDIR)/libmpathvalid
