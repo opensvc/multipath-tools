@@ -3,14 +3,9 @@
 #
 include ../Makefile.inc
 
-SONAME = 0
-DEVLIB = libmultipath.so
-LIBS = $(DEVLIB).$(SONAME)
-VERSION_SCRIPT := libmultipath.version
-
+DEVLIB := libmultipath.so
 CPPFLAGS += -I$(mpathutildir) -I$(mpathcmddir) -I$(nvmedir) -D_GNU_SOURCE $(SYSTEMD_CPPFLAGS)
 CFLAGS += $(LIB_CFLAGS)
-
 LIBDEPS += -lpthread -ldl -ldevmapper -ludev -L$(mpathutildir) -lmpathutil -L$(mpathcmddir) -lmpathcmd \
 	-lurcu -laio $(SYSTEMD_LIBDEPS)
 
@@ -84,11 +79,6 @@ $(LIBS): $(OBJS) $(VERSION_SCRIPT)
 
 $(DEVLIB): $(LIBS)
 	$(LN) $(LIBS) $@
-
-$(NV_VERSION_SCRIPT):	$(VERSION_SCRIPT)
-	@printf 'NOVERSION {\nglobal:\n' >$@
-	@grep -P '^[ \t]+[a-zA-Z_][a-zA-Z0-9_]*;' $< >>$@
-	@printf 'local:\n\t*;\n};\n' >>$@
 
 $(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \

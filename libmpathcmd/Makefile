@@ -1,24 +1,14 @@
 include ../Makefile.inc
 
-SONAME = 0
-DEVLIB = libmpathcmd.so
-LIBS = $(DEVLIB).$(SONAME)
-VERSION_SCRIPT := libmpathcmd.version
-
+DEVLIB := libmpathcmd.so
 CFLAGS += $(LIB_CFLAGS)
-
-OBJS = mpath_cmd.o
+OBJS := mpath_cmd.o
 
 all:	$(DEVLIB)
 
 $(LIBS): $(OBJS) $(VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
 		-Wl,--version-script=$(VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
-
-$(NV_VERSION_SCRIPT):	$(VERSION_SCRIPT)
-	@printf 'NOVERSION {\nglobal:\n' >$@
-	@grep -P '^[ \t]+[a-zA-Z_][a-zA-Z0-9_]*;' $< >>$@
-	@printf 'local:\n\t*;\n};\n' >>$@
 
 $(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \

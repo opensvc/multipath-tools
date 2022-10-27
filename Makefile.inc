@@ -64,7 +64,6 @@ GZIP_PROG	:= gzip -9 -c
 RM		:= rm -f
 LN		:= ln -sf
 INSTALL_PROGRAM	:= install
-NV_VERSION_SCRIPT = $(VERSION_SCRIPT:%.version=%-nv.version)
 
 # $(call TEST_CC_OPTION,option,fallback)
 # Test if the C compiler supports the option.
@@ -127,6 +126,13 @@ thirdpartydir	:= $(TOPDIR)/third-party
 libdmmpdir	:= $(TOPDIR)/libdmmp
 nvmedir		:= $(TOPDIR)/libmultipath/nvme
 
+# Common code for libraries - library Makefiles just set DEVLIB
+# SONAME defaults to 0 (we use version scripts)
+SONAME := 0
+LIBS = $(DEVLIB).$(SONAME)
+VERSION_SCRIPT = $(DEVLIB:%.so=%.version)
+NV_VERSION_SCRIPT = $(DEVLIB:%.so=%-nv.version)
+
 # Check whether a function with name $1 has been declared in header file $2.
 check_func = $(shell \
 	if grep -Eq "^[^[:blank:]]+[[:blank:]]+$1[[:blank:]]*(.*)*" "$2"; then \
@@ -175,3 +181,10 @@ check_var = $(shell \
 
 %.abi:  %.so
 	abidw $< >$@
+
+%-nv.version:	%.version
+	@echo creating $@ from $<
+	@printf 'NOVERSION {\nglobal:\n' >$@
+	@grep -P '^[ \t]+[a-zA-Z_][a-zA-Z0-9_]*;' $< >>$@
+	@printf 'local:\n\t*;\n};\n' >>$@
+

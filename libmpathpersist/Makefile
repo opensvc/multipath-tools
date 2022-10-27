@@ -1,27 +1,17 @@
 include ../Makefile.inc
 
-SONAME = 0
-DEVLIB = libmpathpersist.so
-LIBS = $(DEVLIB).$(SONAME)
-VERSION_SCRIPT:= libmpathpersist.version
-
+DEVLIB := libmpathpersist.so
 CFLAGS += $(LIB_CFLAGS) -I$(multipathdir) -I$(mpathutildir) -I$(mpathpersistdir) -I$(mpathcmddir)
 LDFLAGS += -L$(multipathdir) -L$(mpathutildir) -L$(mpathcmddir)
-
 LIBDEPS += -lmultipath -lmpathutil -lmpathcmd -ldevmapper -lpthread -ldl
 
-OBJS = mpath_persist.o mpath_updatepr.o mpath_pr_ioctl.o mpath_persist_int.o
+OBJS := mpath_persist.o mpath_updatepr.o mpath_pr_ioctl.o mpath_persist_int.o
 
 all: $(DEVLIB)
 
 $(LIBS): $(OBJS) $(VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
 		-Wl,--version-script=$(VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
-
-$(NV_VERSION_SCRIPT):	$(VERSION_SCRIPT)
-	@printf 'NOVERSION {\nglobal:\n' >$@
-	@grep -P '^[ \t]+[a-zA-Z_][a-zA-Z0-9_]*;' $< >>$@
-	@printf 'local:\n\t*;\n};\n' >>$@
 
 $(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \

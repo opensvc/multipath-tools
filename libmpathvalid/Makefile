@@ -1,17 +1,12 @@
 include ../Makefile.inc
 
-SONAME = 0
-DEVLIB = libmpathvalid.so
-LIBS = $(DEVLIB).$(SONAME)
-VERSION_SCRIPT := libmpathvalid.version
-
+DEVLIB := libmpathvalid.so
 CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathcmddir)
 CFLAGS += $(LIB_CFLAGS)
-
 LIBDEPS += -lpthread -ldevmapper -ldl -L$(multipathdir) -lmultipath \
 	   -L$(mpathutildir) -lmpathutil -L$(mpathcmddir) -lmpathcmd -ludev
 
-OBJS = mpath_valid.o
+OBJS := mpath_valid.o
 
 all: $(LIBS)
 
@@ -19,11 +14,6 @@ $(LIBS): $(OBJS) $(VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS) \
 		-Wl,--version-script=$(VERSION_SCRIPT)
 	$(LN) $(LIBS) $(DEVLIB)
-
-$(NV_VERSION_SCRIPT):	$(VERSION_SCRIPT)
-	@printf 'NOVERSION {\nglobal:\n' >$@
-	@grep -P '^[ \t]+[a-zA-Z_][a-zA-Z0-9_]*;' $< >>$@
-	@printf 'local:\n\t*;\n};\n' >>$@
 
 $(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
 	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \

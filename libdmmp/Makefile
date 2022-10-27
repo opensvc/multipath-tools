@@ -5,15 +5,14 @@
 #
 include ../Makefile.inc
 
-LIBDMMP_VERSION=0.2.0
-SONAME=$(LIBDMMP_VERSION)
-DEVLIB = libdmmp.so
-LIBS = $(DEVLIB).$(SONAME)
-PKGFILE = libdmmp.pc
-EXTRA_MAN_FILES = libdmmp.h.3
-HEADERS = libdmmp/libdmmp.h
+LIBDMMP_VERSION := 0.2.0
+SONAME := $(LIBDMMP_VERSION)
+DEVLIB := libdmmp.so
+PKGFILE := libdmmp.pc
+EXTRA_MAN_FILES := libdmmp.h.3
+HEADERS := libdmmp/libdmmp.h
 
-OBJS = libdmmp.o libdmmp_mp.o libdmmp_pg.o libdmmp_path.o libdmmp_misc.o
+OBJS := libdmmp.o libdmmp_mp.o libdmmp_pg.o libdmmp_path.o libdmmp_misc.o
 
 CPPFLAGS += -I$(libdmmpdir) -I$(mpathcmddir) $(shell $(PKGCONFIG) --cflags json-c)
 CFLAGS += $(LIB_CFLAGS) -fvisibility=hidden
