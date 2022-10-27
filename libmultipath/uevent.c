@@ -42,6 +42,7 @@
 #include <sys/time.h>
 #include <libudev.h>
 
+#include "autoconfig.h"
 #include "debug.h"
 #include "list.h"
 #include "uevent.h"

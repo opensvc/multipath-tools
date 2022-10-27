@@ -30,7 +30,14 @@ BUILDDIRS.clean := $(BUILDDIRS:=.clean) tests.clean
 
 all:	$(BUILDDIRS)
 
-$(BUILDDIRS):
+config.mk libmultipath/autoconfig.h:
+	@$(MAKE) -f create-config.mk
+	@echo ==== config.mk ====
+	@cat config.mk
+	@echo ==== autoconfig.h ====
+	@cat libmultipath/autoconfig.h
+
+$(BUILDDIRS):	config.mk
 	$(MAKE) -C $@
 
 $(LIB_BUILDDIRS:=.abi): $(LIB_BUILDDIRS)
@@ -83,7 +90,7 @@ libmultipath/checkers.install \
 	libmultipath/prioritizers.install \
 	libmultipath/foreign.install: libmultipath.install
 
-$(BUILDDIRS.clean):
+%.clean:
 	$(MAKE) -C ${@:.clean=} clean
 
 %.install:	%
@@ -92,8 +99,12 @@ $(BUILDDIRS.clean):
 $(BUILDDIRS:=.uninstall):
 	$(MAKE) -C ${@:.uninstall=} uninstall
 
-clean: $(BUILDDIRS.clean)
-	rm -rf abi abi.tar.gz abi-test compile_commands.json
+# If config.mk is missing, "make clean" in subdir either fails, or tries to
+# build it. Both is undesirable. Avoid it by creating config.mk temporarily.
+clean:
+	@touch config.mk
+	$(MAKE) $(BUILDDIRS:=.clean) tests.clean || true
+	rm -rf abi abi.tar.gz abi-test compile_commands.json config.mk
 
 install: $(BUILDDIRS:=.install)
 uninstall: $(BUILDDIRS:=.uninstall)

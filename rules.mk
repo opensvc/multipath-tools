@@ -13,3 +13,6 @@ $(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
 		-Wl,--version-script=$(NV_VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
 
 abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
+
+$(TOPDIR)/config.mk $(multipathdir)/autoconfig.h:
+	$(MAKE) -C $(TOPDIR) -f create-config.mk

@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <libudev.h>
+#include "autoconfig.h"
 #include "mpath_cmd.h"
 #include "dict.h"
 #include "strbuf.h"

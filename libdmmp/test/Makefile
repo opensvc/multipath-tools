@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2015-2016 Gris Ge <fge@redhat.com>
 #
+TOPDIR := ../..
 include ../../Makefile.inc
 
 _libdmmpdir=../$(libdmmpdir)

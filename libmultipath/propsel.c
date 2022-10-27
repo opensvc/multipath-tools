@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 
+#include "autoconfig.h"
 #include "nvme-lib.h"
 #include "checkers.h"
 #include "vector.h"

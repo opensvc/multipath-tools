@@ -8,6 +8,7 @@
 *.gz
 *.d
 \#*
+config.mk
 cscope.files
 cscope.out
 kpartx/kpartx
@@ -35,5 +36,6 @@ tests/*.out
 tests/*.vgr
 libmultipath/nvme-ioctl.c
 libmultipath/nvme-ioctl.h
+libmultipath/autoconfig.h
 */*-nv.version
 reference-abi

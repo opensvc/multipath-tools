@@ -30,7 +30,7 @@ jobs:
         if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
         run: >
           tar cfv binaries.tar
-          Makefile*
+          Makefile* config.mk
           libmpathcmd/*.so* libmultipath/*.so* libmpathutil/*.so*
           libmultipath/checkers/*.so libmultipath/prioritizers/*.so
           libmultipath/foreign/*.so

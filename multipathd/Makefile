@@ -8,17 +8,6 @@ CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathpersistdir) -I$(mpathcm
 		awk -F. '{ printf("-DURCU_VERSION=0x%06x", 256 * ( 256 * $$1 + $$2) + $$3); }') \
 	-DBINDIR='"$(bindir)"' $(SYSTEMD_CPPFLAGS)
 
-ifeq ($(ENABLE_DMEVENTS_POLL),0)
-	CPPFLAGS += -DNO_DMEVENTS_POLL
-endif
-ifneq ($(call check_func,dm_task_get_errno,$(devmapper_incdir)/libdevmapper.h),0)
-	CPPFLAGS += -DLIBDM_API_GET_ERRNO
-endif
-ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(kernel_incdir)/scsi/fc/fc_els.h),0)
-	CPPFLAGS += -DFPIN_EVENT_HANDLER
-	FPIN_SUPPORT = 1
-endif
-
 #
 # debugging stuff
 #

@@ -27,9 +27,9 @@ PKGCONFIG	?= pkg-config
 ifeq ($(TOPDIR),)
 	TOPDIR	= ..
 endif
-
-SYSTEMD := $(strip $(or $(shell $(PKGCONFIG) --modversion libsystemd 2>/dev/null | awk '{print $$1}'), \
-			$(shell systemctl --version 2>/dev/null | sed -n 's/systemd \([0-9]*\).*/\1/p')))
+ifneq ($(CREATE_CONFIG),1)
+include $(TOPDIR)/config.mk
+endif
 
 # Paths. All these can be overridden on the "make" command line.
 prefix		:=
@@ -64,37 +64,6 @@ GZIP_PROG	:= gzip -9 -c
 RM		:= rm -f
 LN		:= ln -sf
 INSTALL_PROGRAM	:= install
-
-# $(call TEST_CC_OPTION,option,fallback)
-# Test if the C compiler supports the option.
-# Evaluates to "option" if yes, and "fallback" otherwise.
-TEST_CC_OPTION = $(shell \
-	if echo 'int main(void){return 0;}' | \
-		$(CC) -o /dev/null -c -Werror "$(1)" -xc - >/dev/null 2>&1; \
-	then \
-		echo "$(1)"; \
-	else \
-		echo "$(2)"; \
-	fi)
-
-# "make" on some distros will fail on explicit '#' or '\#' in the program text below
-__HASH__ := \#
-# Check if _DFORTIFY_SOURCE=3 is supported.
-# On some distros (e.g. Debian Buster) it will be falsely reported as supported
-# but it doesn't seem to make a difference wrt the compilation result.
-FORTIFY_OPT := $(shell \
-	if /bin/echo -e '$(__HASH__)include <string.h>\nint main(void) { return 0; }' | \
-		$(CC) -o /dev/null -c -O2 -Werror -D_FORTIFY_SOURCE=3 -xc - 2>/dev/null; \
-	then \
-		echo "-D_FORTIFY_SOURCE=3"; \
-	else \
-		echo "-D_FORTIFY_SOURCE=2"; \
-	fi)
-
-STACKPROT := $(call TEST_CC_OPTION,-fstack-protector-strong,-fstack-protector)
-ERROR_DISCARDED_QUALIFIERS := $(call TEST_CC_OPTION,-Werror=discarded-qualifiers,)
-WNOCLOBBERED := $(call TEST_CC_OPTION,-Wno-clobbered -Wno-error=clobbered,)
-WFORMATOVERFLOW := $(call TEST_CC_OPTION,-Wformat-overflow=2,)
 
 SYSTEMD_CPPFLAGS := $(if $(SYSTEMD),-DUSE_SYSTEMD=$(SYSTEMD))
 SYSTEMD_LIBDEPS := $(if $(SYSTEMD),$(if $(shell test $(SYSTEMD) -gt 209 && echo 1),-lsystemd,-lsystemd-daemon))
@@ -132,45 +101,6 @@ SONAME := 0
 LIBS = $(DEVLIB).$(SONAME)
 VERSION_SCRIPT = $(DEVLIB:%.so=%.version)
 NV_VERSION_SCRIPT = $(DEVLIB:%.so=%-nv.version)
-
-# Check whether a function with name $1 has been declared in header file $2.
-check_func = $(shell \
-	if grep -Eq "^[^[:blank:]]+[[:blank:]]+$1[[:blank:]]*(.*)*" "$2"; then \
-		found=1; \
-		status="yes"; \
-	else \
-		found=0; \
-		status="no"; \
-	fi; \
-	echo 1>&2 "Checking for $1 in $2 ... $$status"; \
-	echo "$$found" \
-	)
-
-# Checker whether a file with name $1 exists
-check_file = $(shell \
-	if [ -f "$1" ]; then \
-		found=1; \
-		status="yes"; \
-	else \
-		found=0; \
-		status="no"; \
-	fi; \
-	echo 1>&2 "Checking if $1 exists ... $$status"; \
-	echo "$$found" \
-	)
-
-# Check whether a file contains a variable with name $1 in header file $2
-check_var = $(shell \
-	if grep -Eq "(^|[[:blank:]])$1([[:blank:]]|=|$$)" "$2"; then \
-                found=1; \
-                status="yes"; \
-        else \
-                found=0; \
-                status="no"; \
-        fi; \
-	echo 1>&2 "Checking for $1 in $2 ... $$status"; \
-        echo "$$found" \
-        )
 
 %.o:	%.c
 	@echo building $@ because of $?

@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <sys/sysmacros.h>
+#include "autoconfig.h"
 #include "devmapper.h"
 #include "kpartx.h"
 

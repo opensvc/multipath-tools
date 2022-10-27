@@ -3,14 +3,6 @@ include ../Makefile.inc
 # directory where to run the tests
 TESTDIR := $(CURDIR)
 
-# Test special behavior of gcc 4.8 with nested initializers
-# gcc 4.8 compiles blacklist.c only with -Wno-missing-field-initializers
-TEST_MISSING_INITIALIZERS = $(shell \
-	echo 'struct A {int a, b;}; struct B {struct A a; int b;} b = {.a.a=1};' | \
-		$(CC) -c -Werror -Wmissing-field-initializers -o /dev/null -xc - >/dev/null 2>&1 \
-	|| echo -Wno-missing-field-initializers)
-W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)
-
 CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathcmddir) -I$(daemondir) \
 	-DTESTCONFDIR=\"$(TESTDIR)/conf.d\"
 CFLAGS += $(BIN_CFLAGS) -Wno-unused-parameter $(W_MISSING_INITIALIZERS)

@@ -26,7 +26,7 @@ LIBS = \
 	libpriopath_latency.so \
 	libpriosysfs.so
 
-ifneq ($(call check_file,$(kernel_incdir)/linux/nvme_ioctl.h),0)
+ifneq ($(ANA_SUPPORT),1)
 	LIBS += libprioana.so
 	CPPFLAGS += -I../nvme
 endif

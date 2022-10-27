@@ -6,10 +6,6 @@ include ../Makefile.inc
 EXEC := kpartx
 
 CPPFLAGS += -I. -I$(multipathdir) -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
-ifneq ($(call check_func,dm_task_set_cookie,$(devmapper_incdir)/libdevmapper.h),0)
-	CPPFLAGS += -DLIBDM_API_COOKIE
-endif
-
 CFLAGS += $(BIN_CFLAGS)
 LDFLAGS += $(BIN_LDFLAGS)
 LIBDEPS += -ldevmapper

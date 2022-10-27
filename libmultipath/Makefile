@@ -9,34 +9,6 @@ CFLAGS += $(LIB_CFLAGS)
 LIBDEPS += -lpthread -ldl -ldevmapper -ludev -L$(mpathutildir) -lmpathutil -L$(mpathcmddir) -lmpathcmd \
 	-lurcu -laio $(SYSTEMD_LIBDEPS)
 
-ifneq ($(call check_func,dm_task_no_flush,$(devmapper_incdir)/libdevmapper.h),0)
-	CPPFLAGS += -DLIBDM_API_FLUSH
-endif
-
-ifneq ($(call check_func,dm_task_get_errno,$(devmapper_incdir)/libdevmapper.h),0)
-	CPPFLAGS += -DLIBDM_API_GET_ERRNO
-endif
-
-ifneq ($(call check_func,dm_task_set_cookie,$(devmapper_incdir)/libdevmapper.h),0)
-	CPPFLAGS += -DLIBDM_API_COOKIE
-endif
-
-ifneq ($(call check_func,udev_monitor_set_receive_buffer_size,$(libudev_incdir)/libudev.h),0)
-	CPPFLAGS += -DLIBUDEV_API_RECVBUF
-endif
-
-ifneq ($(call check_func,dm_task_deferred_remove,$(devmapper_incdir)/libdevmapper.h),0)
-	CPPFLAGS += -DLIBDM_API_DEFERRED
-endif
-
-ifneq ($(call check_func,dm_hold_control_dev,$(devmapper_incdir)/libdevmapper.h),0)
-	CPPFLAGS += -DLIBDM_API_HOLD_CONTROL
-endif
-
-ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(kernel_incdir)/scsi/fc/fc_els.h),0)
-	CPPFLAGS += -DFPIN_EVENT_HANDLER
-endif
-
 # object files referencing MULTIPATH_DIR or CONFIG_DIR
 # they need to be recompiled for unit tests
 OBJS-U := prio.o checkers.o foreign.o config.o
@@ -97,7 +69,7 @@ uninstall:
 	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 clean: dep_clean
-	$(RM) core *.a *.o *.so *.so.* *.abi nvme-ioctl.c nvme-ioctl.h $(NV_VERSION_SCRIPT)
+	$(RM) core *.a *.o *.so *.so.* *.abi nvme-ioctl.c nvme-ioctl.h autoconfig.h $(NV_VERSION_SCRIPT)
 
 include $(wildcard $(OBJS:.o=.d))
 
