@@ -101,8 +101,29 @@ The following variables can be passed to the `make` command line:
    as a module, it might make more sense to use a module softdep for the same
    purpose.
 
-See `Makefile.inc` for additional variables to customize paths and compiler
-flags.
+### Installation Paths
+
+ * `prefix`: The directory prefix for (almost) all files to be installed.
+   Distributions may want to set this to `/usr`.
+   **Note**: for multipath-tools, unlike many other packages, `prefix`
+   defaults to the empty string, which resolves to the root directory (`/`).
+ * `usr_prefix`: where to install those parts of the code that aren't necessary
+   for booting. You may want to set this to `/usr` if `prefix` is empty.
+ * `systemd_prefix`: Prefix for systemd-related files. It defaults to `/usr`.
+   Some systemd installations use separate `prefix` and `rootprefix`. On such
+   a distribution, set `prefix`, and override `unitdir` to use systemd's
+   `rootprefix`.
+ * `LIB`: the subdirectory under `prefix` where shared libraries will be
+   installed. By default, the makefile uses `/lib64` if this directory is
+   found on the build system, and `/lib` otherwise.
+   
+See also `configdir` and `plugindir` above. See `Makefile.inc` for more
+fine-grained control.
+
+### Compiler Options
+
+Use `OPTFLAGS` to change optimization-related compiler options;
+e.g. `OPTFLAGS="-g -O0"` to disable all optimizations.
 
 Special Makefile targets
 ------------------------
