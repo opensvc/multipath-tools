@@ -20,7 +20,7 @@ install:
 	$(Q)$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(plugindir)
 
 uninstall:
-	for file in $(LIBS); do $(RM) $(DESTDIR)$(plugindir)/$$file; done
+	$(Q)for file in $(LIBS); do $(RM) $(DESTDIR)$(plugindir)/$$file; done
 
 clean: dep_clean
 	$(Q)$(RM) core *.a *.o *.gz *.so

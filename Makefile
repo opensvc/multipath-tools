@@ -2,6 +2,9 @@
 # Copyright (C) 2003 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
 
+TOPDIR := .
+include Makefile.inc
+
 LIB_BUILDDIRS := \
 	libmpathcmd \
 	libmpathutil \
@@ -32,10 +35,12 @@ all:	$(BUILDDIRS)
 
 config.mk libmultipath/autoconfig.h:
 	@$(MAKE) -f create-config.mk
+ifeq ($(V),1)
 	@echo ==== config.mk ====
 	@cat config.mk
 	@echo ==== autoconfig.h ====
 	@cat libmultipath/autoconfig.h
+endif
 
 $(BUILDDIRS):	config.mk
 	@$(MAKE) -C $@
@@ -48,11 +53,12 @@ $(LIB_BUILDDIRS:=.abi): $(LIB_BUILDDIRS)
 # Requires abidw from the abigail suite (https://sourceware.org/libabigail/)
 .PHONY: abi
 abi:	$(LIB_BUILDDIRS:=.abi)
+	@echo creating abi
 	@mkdir -p $@
-	ln -ft $@ $(LIB_BUILDDIRS:=/*.abi)
+	$(Q)ln -ft $@ $(LIB_BUILDDIRS:=/*.abi)
 
 abi.tar.gz:	abi
-	tar cfz $@ abi
+	$(Q)tar cfz $@ abi
 
 # Check the ABI against a reference.
 # This requires the ABI from a previous run to be present
@@ -77,8 +83,8 @@ abi-test:	abi reference-abi $(wildcard abi/*.abi)
 # Create compile_commands.json, useful for using clangd with an IDE
 # Requires bear (https://github.com/rizsotto/Bear)
 compile_commands.json: Makefile Makefile.inc $(BUILDDIRS:=/Makefile)
-	$(MAKE) clean
-	bear -- $(MAKE)
+	$(Q)$(MAKE) clean
+	$(Q)bear -- $(MAKE)
 
 libmpathutil libdmmp: libmpathcmd
 libmultipath: libmpathutil
@@ -103,24 +109,24 @@ $(BUILDDIRS:=.uninstall):
 # build it. Both is undesirable. Avoid it by creating config.mk temporarily.
 clean:
 	@touch config.mk
-	$(MAKE) $(BUILDDIRS:=.clean) tests.clean || true
-	rm -rf abi abi.tar.gz abi-test compile_commands.json config.mk
+	$(Q)$(MAKE) $(BUILDDIRS:=.clean) tests.clean || true
+	$(Q)$(RM) -r abi abi.tar.gz abi-test compile_commands.json config.mk
 
 install: $(BUILDDIRS:=.install)
 uninstall: $(BUILDDIRS:=.uninstall)
 
 test-progs:	all
-	$(MAKE) -C tests progs
+	@$(MAKE) -C tests progs
 
 test:	all
-	$(MAKE) -C tests all
+	@$(MAKE) -C tests all
 
 valgrind-test:	all
-	$(MAKE) -C tests valgrind
+	@$(MAKE) -C tests valgrind
 
 .PHONY:	TAGS
 TAGS:
-	etags -a libmultipath/*.c
-	etags -a libmultipath/*.h
-	etags -a multipathd/*.c
-	etags -a multipathd/*.h
+	@etags -a libmultipath/*.c
+	@etags -a libmultipath/*.h
+	@etags -a multipathd/*.c
+	@etags -a multipathd/*.h

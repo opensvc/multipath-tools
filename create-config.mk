@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 TOPDIR := .
-CREATE_CONFIG := 1
 include $(TOPDIR)/Makefile.inc
 
 # Check whether a function with name $1 has been declared in header file $2.

@@ -27,7 +27,7 @@ PKGCONFIG	?= pkg-config
 ifeq ($(TOPDIR),)
 	TOPDIR	= ..
 endif
-ifneq ($(CREATE_CONFIG),1)
+ifneq ($(TOPDIR),.)
 include $(TOPDIR)/config.mk
 endif
 
@@ -60,7 +60,11 @@ devmapper_incdir := $(or $(shell $(PKGCONFIG) --variable=includedir devmapper),/
 libudev_incdir	:= $(or $(shell $(PKGCONFIG) --variable=includedir libudev),/usr/include)
 kernel_incdir	:= /usr/include
 
-Q		:= $(if $(V),,@)
+ifeq ($(V),)
+Q		:= @
+# make's "Entering directory" messages are confusing in parallel mode
+#MAKEFLAGS	= --no-print-directory
+endif
 
 GZIP_PROG	:= gzip -9 -c
 RM		:= rm -f
