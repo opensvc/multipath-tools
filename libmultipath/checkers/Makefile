@@ -22,16 +22,16 @@ LIBS= \
 all: $(LIBS)
 
 libcheck%.so: %.o
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ $(LIBDEPS)
+	$(Q)$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ $(LIBDEPS)
 
 install:
-	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(plugindir)
+	$(Q)$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(plugindir)
 
 uninstall:
 	for file in $(LIBS); do $(RM) $(DESTDIR)$(plugindir)/$$file; done
 
 clean: dep_clean
-	$(RM) core *.a *.o *.gz *.so
+	$(Q)$(RM) core *.a *.o *.gz *.so
 
 OBJS := $(LIBS:libcheck%.so=%.o)
 .SECONDARY: $(OBJS)
@@ -39,4 +39,4 @@ OBJS := $(LIBS:libcheck%.so=%.o)
 include $(wildcard $(OBJS:.o=.d))
 
 dep_clean:
-	$(RM) $(OBJS:.o=.d)
+	$(Q)$(RM) $(OBJS:.o=.d)

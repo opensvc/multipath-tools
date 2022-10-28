@@ -1,4 +1,4 @@
-#
+# -*- Makefile -*-
 # Copyright (C) 2004 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
 
@@ -60,6 +60,8 @@ devmapper_incdir := $(or $(shell $(PKGCONFIG) --variable=includedir devmapper),/
 libudev_incdir	:= $(or $(shell $(PKGCONFIG) --variable=includedir libudev),/usr/include)
 kernel_incdir	:= /usr/include
 
+Q		:= $(if $(V),,@)
+
 GZIP_PROG	:= gzip -9 -c
 RM		:= rm -f
 LN		:= ln -sf
@@ -104,13 +106,13 @@ NV_VERSION_SCRIPT = $(DEVLIB:%.so=%-nv.version)
 
 %.o:	%.c
 	@echo building $@ because of $?
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(Q)$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 %.abi:  %.so.0
-	abidw $< >$@
+	$(Q)abidw $< >$@
 
 %.abi:  %.so
-	abidw $< >$@
+	$(Q)abidw $< >$@
 
 %-nv.version:	%.version
 	@echo creating $@ from $<

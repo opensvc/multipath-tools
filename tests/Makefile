@@ -12,7 +12,6 @@ TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
 	 alias directio valid devt mpathvalid strbuf sysfs features cli
 HELPERS := test-lib.o test-log.o
 
-.SILENT: $(TESTS:%=%.o)
 .PRECIOUS: $(TESTS:%=%-test)
 
 all:	$(TESTS:%=%.out)
@@ -71,11 +70,12 @@ features-test_LIBDEPS := -ludev -lpthread
 cli-test_OBJDEPS := $(daemondir)/cli.o
 
 %.o: %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $($*-test_FLAGS) -c -o $@ $<
+	@echo building $@ because of $?
+	$(Q)$(CC) $(CPPFLAGS) $(CFLAGS) $($*-test_FLAGS) -c -o $@ $<
 
 lib/libchecktur.so:
-	mkdir -p lib
-	cd lib && ln -s ../$(multipathdir)/*/*.so .
+	@mkdir -p lib
+	$(Q)cd lib && ln -s ../$(multipathdir)/*/*.so .
 
 %.out:	%-test lib/libchecktur.so
 	@echo == running $< ==
@@ -89,34 +89,35 @@ lib/libchecktur.so:
 OBJS = $(TESTS:%=%.o) $(HELPERS)
 
 test_clean:
-	$(RM) $(TESTS:%=%.out) $(TESTS:%=%.vgr) *.so*
+	$(Q)$(RM) $(TESTS:%=%.out) $(TESTS:%=%.vgr) *.so*
 
 valgrind_clean:
-	$(RM) $(TESTS:%=%.vgr)
+	$(Q)$(RM) $(TESTS:%=%.vgr)
 
 clean: test_clean valgrind_clean dep_clean
-	$(RM) $(TESTS:%=%-test) $(OBJS) *.o.wrap
-	$(RM) -rf lib conf.d
+	$(Q)$(RM) $(TESTS:%=%-test) $(OBJS) *.o.wrap
+	$(Q)$(RM) -rf lib conf.d
 
 .SECONDARY: $(OBJS)
 
 include $(wildcard $(OBJS:.o=.d))
 
 dep_clean:
-	$(RM) $(OBJS:.o=.d)
+	$(Q)$(RM) $(OBJS:.o=.d)
 
 %.o.wrap:	%.c
 	@sed -n 's/^.*__wrap_\([a-zA-Z0-9_]*\).*$$/-Wl,--wrap=\1/p' $< | \
 		sort -u | tr '\n' ' ' >$@
 
 libmultipath.so.0: $(multipathdir)/libmultipath.so.0
-	make -C $(multipathdir) configdir=$(TESTDIR)/conf.d plugindir=$(TESTDIR)/lib test-lib
+	@make -C $(multipathdir) configdir=$(TESTDIR)/conf.d plugindir=$(TESTDIR)/lib test-lib
 
 # COLON will get expanded during second expansion below
 COLON:=:
 .SECONDEXPANSION:
 %-test:	%.o %.o.wrap $$($$@_OBJDEPS) $$($$@_TESTDEPS) $$($$@_TESTDEPS$$(COLON).o=.o.wrap) \
 		libmultipath.so.0 $(mpathutildir)/libmpathutil.so.0 $(mpathcmddir)/libmpathcmd.so.0 Makefile
-	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $< $($@_TESTDEPS) $($@_OBJDEPS) \
+	@echo building $@
+	$(Q)$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $< $($@_TESTDEPS) $($@_OBJDEPS) \
 		$(LIBDEPS) $($@_LIBDEPS) \
 		$(shell cat $<.wrap) $(foreach dep,$($@_TESTDEPS),$(shell cat $(dep).wrap))

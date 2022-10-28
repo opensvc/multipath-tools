@@ -23,62 +23,62 @@ all: $(LIBS) doc
 .PHONY:	doc clean install uninstall check speed_test dep_clean
 
 $(LIBS): $(OBJS)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS)
+	$(Q)$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ -o $@ $(OBJS) $(LIBDEPS)
 
 $(DEVLIB): $(LIBS)
-	$(LN) $(LIBS) $@
+	$(Q)$(LN) $(LIBS) $@
 
 abi:    $(DEVLIB:%.so=%.abi)
 
 install:
-	mkdir -p $(DESTDIR)$(usrlibdir)
-	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(usrlibdir)/$(LIBS)
-	$(INSTALL_PROGRAM) -m 644 -D \
+	@mkdir -p $(DESTDIR)$(usrlibdir)
+	$(Q)$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(usrlibdir)/$(LIBS)
+	$(Q)$(INSTALL_PROGRAM) -m 644 -D \
 		$(HEADERS) $(DESTDIR)$(includedir)/$(HEADERS)
-	$(LN) $(LIBS) $(DESTDIR)$(usrlibdir)/$(DEVLIB)
-	$(INSTALL_PROGRAM) -m 644 -D \
+	$(Q)$(LN) $(LIBS) $(DESTDIR)$(usrlibdir)/$(DEVLIB)
+	$(Q)$(INSTALL_PROGRAM) -m 644 -D \
 		$(PKGFILE).in $(DESTDIR)$(pkgconfdir)/$(PKGFILE)
-	perl -i -pe 's|__VERSION__|$(LIBDMMP_VERSION)|g' \
+	$(Q)perl -i -pe 's|__VERSION__|$(LIBDMMP_VERSION)|g' \
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
-	perl -i -pe 's|__LIBDIR__|$(usrlibdir)|g' \
+	$(Q)perl -i -pe 's|__LIBDIR__|$(usrlibdir)|g' \
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
-	perl -i -pe 's|__INCLUDEDIR__|$(includedir)|g' \
+	$(Q)perl -i -pe 's|__INCLUDEDIR__|$(includedir)|g' \
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
-	$(INSTALL_PROGRAM) -d 755 $(DESTDIR)$(mandir)/man3
-	$(INSTALL_PROGRAM) -m 644 -t $(DESTDIR)$(mandir)/man3 docs/man/*.3
+	$(Q)$(INSTALL_PROGRAM) -d 755 $(DESTDIR)$(mandir)/man3
+	$(Q)$(INSTALL_PROGRAM) -m 644 -t $(DESTDIR)$(mandir)/man3 docs/man/*.3
 
 uninstall:
-	$(RM) $(DESTDIR)$(usrlibdir)/$(LIBS)
-	$(RM) $(DESTDIR)$(includedir)/$(HEADERS)
-	$(RM) $(DESTDIR)$(usrlibdir)/$(DEVLIB)
+	$(Q)$(RM) $(DESTDIR)$(usrlibdir)/$(LIBS)
+	$(Q)$(RM) $(DESTDIR)$(includedir)/$(HEADERS)
+	$(Q)$(RM) $(DESTDIR)$(usrlibdir)/$(DEVLIB)
 	@for file in $(DESTDIR)$(mandir)/man3/dmmp_*; do \
 		$(RM) $$file; \
 	done
-	$(RM) $(DESTDIR)$(mandir)/man3/libdmmp.h*
-	$(RM) $(DESTDIR)$(pkgconfdir)/$(PKGFILE)
+	$(Q)$(RM) $(DESTDIR)$(mandir)/man3/libdmmp.h*
+	$(Q)$(RM) $(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 
 clean: dep_clean
-	$(RM) core *.a *.o *.so *.so.* *.abi $(NV_VERSION_SCRIPT)
-	$(MAKE) -C test clean
+	$(Q)$(RM) core *.a *.o *.so *.so.* *.abi $(NV_VERSION_SCRIPT)
+	@$(MAKE) -C test clean
 
 include $(wildcard $(OBJS:.o=.d))
 
 check: all
-	$(MAKE) -C test check
+	@$(MAKE) -C test check
 
 speed_test: all
-	$(MAKE) -C test speed_test
+	@$(MAKE) -C test speed_test
 
 doc: docs/man/dmmp_strerror.3
 
 docs/man/dmmp_strerror.3:	$(HEADERS)
-	TEMPFILE=$(shell mktemp); \
+	$(Q)TEMPFILE=$(shell mktemp); \
 	cat $^ | perl docs/doc-preclean.pl >$$TEMPFILE; \
 	LC_ALL=C \
 	KBUILD_BUILD_TIMESTAMP=`git log -n1 --pretty=%cd --date=iso -- $^` \
 	perl docs/kernel-doc -man $$TEMPFILE | \
 	    perl docs/split-man.pl docs/man; \
-	rm -f $$TEMPFILE
+	$(RM) -f $$TEMPFILE
 
 dep_clean:
-	$(RM) $(OBJS:.o=.d)
+	$(Q)$(RM) $(OBJS:.o=.d)

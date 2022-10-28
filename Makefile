@@ -38,17 +38,17 @@ config.mk libmultipath/autoconfig.h:
 	@cat libmultipath/autoconfig.h
 
 $(BUILDDIRS):	config.mk
-	$(MAKE) -C $@
+	@$(MAKE) -C $@
 
 $(LIB_BUILDDIRS:=.abi): $(LIB_BUILDDIRS)
-	$(MAKE) -C ${@:.abi=} abi
+	@$(MAKE) -C ${@:.abi=} abi
 
 # Create formal representation of the ABI
 # Useful for verifying ABI compatibility
 # Requires abidw from the abigail suite (https://sourceware.org/libabigail/)
 .PHONY: abi
 abi:	$(LIB_BUILDDIRS:=.abi)
-	mkdir -p $@
+	@mkdir -p $@
 	ln -ft $@ $(LIB_BUILDDIRS:=/*.abi)
 
 abi.tar.gz:	abi
@@ -91,13 +91,13 @@ libmultipath/checkers.install \
 	libmultipath/foreign.install: libmultipath.install
 
 %.clean:
-	$(MAKE) -C ${@:.clean=} clean
+	@$(MAKE) -C ${@:.clean=} clean
 
 %.install:	%
-	$(MAKE) -C ${@:.install=} install
+	@$(MAKE) -C ${@:.install=} install
 
 $(BUILDDIRS:=.uninstall):
-	$(MAKE) -C ${@:.uninstall=} uninstall
+	@$(MAKE) -C ${@:.uninstall=} uninstall
 
 # If config.mk is missing, "make clean" in subdir either fails, or tries to
 # build it. Both is undesirable. Avoid it by creating config.mk temporarily.

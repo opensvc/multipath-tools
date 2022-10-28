@@ -45,41 +45,43 @@ endif
 all : $(EXEC) $(CLI)
 
 $(EXEC): $(OBJS) $(multipathdir)/libmultipath.so $(mpathcmddir)/libmpathcmd.so
-	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(EXEC) $(LIBDEPS)
+	@echo building $@ because of $?
+	$(Q)$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(EXEC) $(LIBDEPS)
 
 multipathc.o:	multipathc.c
-	$(CC) $(CPPFLAGS) $(RL_CPPFLAGS) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
+	$(Q)$(CC) $(CPPFLAGS) $(RL_CPPFLAGS) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
 
 $(CLI):  $(CLI_OBJS)
-	$(CC) $(CFLAGS) $(CLI_OBJS) $(LDFLAGS) -o $@ $(CLI_LIBDEPS) $(RL_LIBDEPS)
+	@echo building $@ because of $?
+	$(Q)$(CC) $(CFLAGS) $(CLI_OBJS) $(LDFLAGS) -o $@ $(CLI_LIBDEPS) $(RL_LIBDEPS)
 
 cli_handlers.o:	cli_handlers.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
+	$(Q)$(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
 
 install:
-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
-	$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)
-	$(INSTALL_PROGRAM) -m 755 $(CLI) $(DESTDIR)$(bindir)
+	$(Q)$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
+	$(Q)$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)
+	$(Q)$(INSTALL_PROGRAM) -m 755 $(CLI) $(DESTDIR)$(bindir)
 ifdef SYSTEMD
-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(unitdir)
-	$(INSTALL_PROGRAM) -m 644 $(EXEC).service $(DESTDIR)$(unitdir)
-	$(INSTALL_PROGRAM) -m 644 $(EXEC).socket $(DESTDIR)$(unitdir)
+	$(Q)$(INSTALL_PROGRAM) -d $(DESTDIR)$(unitdir)
+	$(Q)$(INSTALL_PROGRAM) -m 644 $(EXEC).service $(DESTDIR)$(unitdir)
+	$(Q)$(INSTALL_PROGRAM) -m 644 $(EXEC).socket $(DESTDIR)$(unitdir)
 endif
-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)/man8
-	$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(mandir)/man8
-	$(INSTALL_PROGRAM) -m 644 $(CLI).8 $(DESTDIR)$(mandir)/man8
+	$(Q)$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)/man8
+	$(Q)$(INSTALL_PROGRAM) -m 644 $(EXEC).8 $(DESTDIR)$(mandir)/man8
+	$(Q)$(INSTALL_PROGRAM) -m 644 $(CLI).8 $(DESTDIR)$(mandir)/man8
 
 uninstall:
-	$(RM) $(DESTDIR)$(bindir)/$(EXEC) $(DESTDIR)$(bindir)/$(CLI)
-	$(RM) $(DESTDIR)$(mandir)/man8/$(EXEC).8
-	$(RM) $(DESTDIR)$(mandir)/man8/$(CLI).8
-	$(RM) $(DESTDIR)$(unitdir)/$(EXEC).service
-	$(RM) $(DESTDIR)$(unitdir)/$(EXEC).socket
+	$(Q)$(RM) $(DESTDIR)$(bindir)/$(EXEC) $(DESTDIR)$(bindir)/$(CLI)
+	$(Q)$(RM) $(DESTDIR)$(mandir)/man8/$(EXEC).8
+	$(Q)$(RM) $(DESTDIR)$(mandir)/man8/$(CLI).8
+	$(Q)$(RM) $(DESTDIR)$(unitdir)/$(EXEC).service
+	$(Q)$(RM) $(DESTDIR)$(unitdir)/$(EXEC).socket
 
 clean: dep_clean
-	$(RM) core *.o $(EXEC) $(CLI)
+	$(Q)$(RM) core *.o $(EXEC) $(CLI)
 
 include $(wildcard $(OBJS:.o=.d))
 
 dep_clean:
-	$(RM) $(OBJS:.o=.d)
+	$(Q)$(RM) $(OBJS:.o=.d)

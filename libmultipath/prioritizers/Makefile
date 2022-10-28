@@ -34,16 +34,16 @@ endif
 all: $(LIBS)
 
 libprio%.so: %.o
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ $(LIBDEPS)
+	$(Q)$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ $(LIBDEPS)
 
 install: $(LIBS)
-	$(INSTALL_PROGRAM) -m 755 libprio*.so $(DESTDIR)$(plugindir)
+	$(Q)$(INSTALL_PROGRAM) -m 755 libprio*.so $(DESTDIR)$(plugindir)
 
 uninstall:
 	for file in $(LIBS); do $(RM) $(DESTDIR)$(plugindir)/$$file; done
 
 clean: dep_clean
-	$(RM) core *.a *.o *.gz *.so
+	$(Q)$(RM) core *.a *.o *.gz *.so
 
 OBJS = $(LIBS:libprio%.so=%.o) alua_rtpg.o
 .SECONDARY: $(OBJS)
@@ -51,4 +51,4 @@ OBJS = $(LIBS:libprio%.so=%.o) alua_rtpg.o
 include $(wildcard $(OBJS:.o=.d))
 
 dep_clean:
-	$(RM) $(OBJS:.o=.d)
+	$(Q)$(RM) $(OBJS:.o=.d)
