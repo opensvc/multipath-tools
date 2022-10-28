@@ -66,8 +66,20 @@ To uninstall, type:
 
     make uninstall
 
+By default, the build will run quietly, just printing one-line messages
+about the files being built. To enable more verbose output, run `make V=1`.
+
 Customizing the build
 ---------------------
+
+**Note**: With very few exceptions, the build process does not read
+configuration from the environment. So using syntax like
+
+    SOME_VAR=some_value make
+
+will **not** have the intended effect. Use the following instead:
+
+    make SOME_VAR=some_value
 
 The following variables can be passed to the `make` command line:
 
