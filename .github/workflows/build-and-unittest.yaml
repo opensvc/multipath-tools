@@ -32,11 +32,11 @@ jobs:
           libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
           libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
       - name: build
-        run: make -O -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
+        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
       - name: test
-        run: make -O -j$(grep -c ^processor /proc/cpuinfo) test
+        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) test
       - name: valgrind-test
-        run: make -O -j$(grep -c ^processor /proc/cpuinfo) valgrind-test
+        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) valgrind-test
       - name: valgrind-results
         run: cat tests/*.vgr
       - name: clean-nonroot-artifacts
@@ -65,11 +65,11 @@ jobs:
       - name: set CC
         run: echo CC=gcc-10 >> $GITHUB_ENV
       - name: build
-        run: make -O -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
+        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
       - name: test
-        run: make -O -j$(grep -c ^processor /proc/cpuinfo) test
+        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) test
       - name: valgrind-test
-        run: make -O -j$(grep -c ^processor /proc/cpuinfo) valgrind-test
+        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) valgrind-test
       - name: valgrind-results
         run: cat tests/*.vgr
       - name: clean-nonroot-artifacts
@@ -98,11 +98,11 @@ jobs:
       - name: set CC
         run: echo CC=clang >> $GITHUB_ENV
       - name: build
-        run: make -O -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
+        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
       - name: test
-        run: make -O -j$(grep -c ^processor /proc/cpuinfo) test
+        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) test
       - name: valgrind-test
-        run: make -O -j$(grep -c ^processor /proc/cpuinfo) valgrind-test
+        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) valgrind-test
       - name: valgrind-results
         run: cat tests/*.vgr
       - name: clean-nonroot-artifacts

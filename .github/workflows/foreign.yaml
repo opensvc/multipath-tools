@@ -21,11 +21,11 @@ jobs:
         uses: actions/checkout@v1
       - name: build and test
         if: ${{ matrix.arch == '' || matrix.arch == '-i386' }}
-        run: make test
+        run: make -j8 -Orecurse test
       - name: build
         if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
         # The build path is different between builder and runner
-        run: make TESTDIR=${{ github.workspace }}/tests test-progs
+        run: make -j8 -Orecurse TESTDIR=${{ github.workspace }}/tests test-progs
       - name: archive
         if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
         run: >
