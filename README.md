@@ -94,12 +94,12 @@ The following variables can be passed to the `make` command line:
    early. This option causes a *modules-load.d(5)* configuration file to be
    created, thus it depends on functionality provided by *systemd*.
    This variable only matters for `make install`.
-
-Note: The usefulness of the preload list depends on the kernel configuration.
-It's especially useful if `scsi_mod` is builtin but `scsi_dh_alua` and
-other device handler modules are built as modules. If `scsi_mod` itself is compiled
-as a module, it might make more sense to use a module softdep for the same
-purpose.
+   
+   **Note**: The usefulness of the preload list depends on the kernel configuration.
+   It's especially useful if `scsi_mod` is builtin but `scsi_dh_alua` and
+   other device handler modules are built as modules. If `scsi_mod` itself is compiled
+   as a module, it might make more sense to use a module softdep for the same
+   purpose.
 
 See `Makefile.inc` for additional variables to customize paths and compiler
 flags.
