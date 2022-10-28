@@ -53,14 +53,9 @@ Building multipath-tools
 ========================
 
 Prerequisites: development packages of for `libdevmapper`, `libaio`, `libudev`,
-`libjson-c`, `liburcu`, and `libsystemd`.
-
-To enable commandline history and TAB completion in the interactive mode *(which
-is entered with `multipathd -k` or `multipathc`)* you might also set `READLINE`
-make variable to `libedit` or `libreadline`, like `make READLINE=libreadline`.
-That requires a development package for the library you chose. Note that using
-libreadline may [make binary indistributable due to license
-incompatibility](https://github.com/opensvc/multipath-tools/issues/36).
+`libjson-c`, `liburcu`, and `libsystemd`. If commandline editing is enabled
+(see below), the development package for either `libedit` or `libreadline` is
+required as well.
 
 Then, build and install multipath-tools with:
 
@@ -82,6 +77,12 @@ The following variables can be passed to the `make` command line:
  * `configdir="/some/path"` : directory to search for configuration files.
     This used to be the run-time option `config_dir` in earlier versions.
 	The default is `/etc/multipath/conf.d`.
+ * `READLINE=libedit` or `READLINE=libreadline`: enable command line history
+    and TAB completion in the interactive mode *(which is entered with `multipathd -k` or `multipathc`)*.
+    The respective development package will be required for building.
+    By default, command line editing is disabled.
+    Note that using libreadline may
+    [make binary indistributable due to license incompatibility](https://github.com/opensvc/multipath-tools/issues/36).
  * `ENABLE_LIBDMMP=0`: disable building libdmmp
  * `ENABLE_DMEVENTS_POLL=0`: disable support for the device-mapper event
    polling API. For use with pre-5.0 kernels that don't support dmevent polling
