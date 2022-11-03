@@ -219,7 +219,7 @@ To enable ALUA, the following options should be changed:
 - LSI/Engenio/NetApp RDAC class, as NetApp SANtricity E/EF Series and rebranded arrays:
    "Select operating system:" should be changed to "Linux DM-MP (Kernel 3.10 or later)".
 
-- NetApp ONTAP:
+- NetApp ONTAP FAS/AFF Series:
    To check ALUA state: "igroup show -v <igroup_name>", and to enable ALUA:
    "igroup set <igroup_name> alua yes".
 

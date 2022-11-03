@@ -6,7 +6,7 @@
 .\" Update the date below if you make any significant change.
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATH.CONF 5 2022-09-09 Linux
+.TH MULTIPATH.CONF 5 2022-10-01 Linux
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -316,7 +316,8 @@ accepts the optional prio_arg \fIexclusive_pref_bit\fR.
 .TP
 .I ontap
 (Hardware-dependent)
-Generate the path priority for NetApp ONTAP class, and rebranded arrays.
+Generate the path priority for NetApp ONTAP FAS/AFF Series and rebranded arrays,
+with ONTAP native mode(not ALUA).
 .TP
 .I rdac
 (Hardware-dependent)
@@ -1308,8 +1309,6 @@ The default is: \fBno\fR
 .RE
 .
 .
-
-.
 .\" ----------------------------------------------------------------------------
 .SH "blacklist and blacklist_exceptions sections"
 .\" ----------------------------------------------------------------------------
@@ -1867,7 +1866,7 @@ the logic when to reinstate, differs between the three methods.
 (Deprecated) This method is \fBdeprecated\fR and mapped to the \(dqsan_path_err\(dq method.
 See the \fIdelay_watch_checks\fR and \fIdelay_wait_checks\fR options above
 for more information.
-
+.
 .TP
 .B \(dqmarginal_path\(dq failure tracking
 If a second failure event (good->bad transition) occurs within
@@ -1939,6 +1938,7 @@ size=167772160 features='n/a' hwhandler='ANA' wp=rw
 .P
 The \(dqnvme\(dq foreign library provides support for NVMe native multipathing
 in the kernel. It is part of the standard multipath package.
+.
 .
 .\" ----------------------------------------------------------------------------
 .SH "KNOWN ISSUES"
