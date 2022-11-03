@@ -340,6 +340,12 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 6,
 	},
 	{
+		/* PowerMax NVMe */
+		.vendor        = "NVME",
+		.product       = "EMC PowerMax",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+	},
+	{
 		/* DGC CLARiiON CX/AX / VNX and Unity */
 		.vendor        = "^DGC",
 		.product       = "^(RAID|DISK|VRAID)",
