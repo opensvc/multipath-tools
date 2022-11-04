@@ -2103,7 +2103,7 @@ init_keywords(vector keywords)
 	install_keyword("no_path_retry", &hw_no_path_retry_handler, &snprint_hw_no_path_retry);
 	install_keyword("rr_min_io", &hw_minio_handler, &snprint_hw_minio);
 	install_keyword("rr_min_io_rq", &hw_minio_rq_handler, &snprint_hw_minio_rq);
-	install_keyword("pg_timeout", &deprecated_handler, &snprint_deprecated);
+	install_keyword("pg_timeout", &deprecated_pg_timeout_handler, &snprint_deprecated);
 	install_keyword("flush_on_last_del", &hw_flush_on_last_del_handler, &snprint_hw_flush_on_last_del);
 	install_keyword("fast_io_fail_tmo", &hw_fast_io_fail_handler, &snprint_hw_fast_io_fail);
 	install_keyword("dev_loss_tmo", &hw_dev_loss_handler, &snprint_hw_dev_loss);
@@ -2192,7 +2192,7 @@ init_keywords(vector keywords)
 	install_keyword("no_path_retry", &mp_no_path_retry_handler, &snprint_mp_no_path_retry);
 	install_keyword("rr_min_io", &mp_minio_handler, &snprint_mp_minio);
 	install_keyword("rr_min_io_rq", &mp_minio_rq_handler, &snprint_mp_minio_rq);
-	install_keyword("pg_timeout", &deprecated_handler, &snprint_deprecated);
+	install_keyword("pg_timeout", &deprecated_pg_timeout_handler, &snprint_deprecated);
 	install_keyword("flush_on_last_del", &mp_flush_on_last_del_handler, &snprint_mp_flush_on_last_del);
 	install_keyword("features", &mp_features_handler, &snprint_mp_features);
 	install_keyword("mode", &mp_mode_handler, &snprint_mp_mode);
