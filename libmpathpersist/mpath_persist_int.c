@@ -675,7 +675,7 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 	       memcmp(paramp->key, &mpp->reservation_key, 8) == 0)))) {
 		memcpy(&mpp->reservation_key, paramp->sa_key, 8);
 		if (update_prkey_flags(alias, get_be64(mpp->reservation_key),
-				       paramp->sa_flags)) {
+				       paramp->sa_flags, conf->uxsock_timeout)) {
 			condlog(0, "%s: failed to set prkey for multipathd.",
 				alias);
 			ret = MPATH_PR_DMMP_ERROR;

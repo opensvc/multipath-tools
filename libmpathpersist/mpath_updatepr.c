@@ -18,7 +18,7 @@
 #include "mpathpr.h"
 
 
-static int do_update_pr(char *alias, char *arg)
+static int do_update_pr(char *alias, char *arg, int timeout)
 {
 	int fd;
 	char str[256];
@@ -38,7 +38,7 @@ static int do_update_pr(char *alias, char *arg)
 		mpath_disconnect(fd);
 		return -1;
 	}
-	ret = recv_packet(fd, &reply, DEFAULT_REPLY_TIMEOUT);
+	ret = recv_packet(fd, &reply, timeout);
 	if (ret < 0) {
 		condlog(2, "%s: message=%s recv error=%d", alias, str, errno);
 		ret = -1;
@@ -56,18 +56,20 @@ static int do_update_pr(char *alias, char *arg)
 }
 
 int update_prflag(char *mapname, int set) {
-	return do_update_pr(mapname, (set)? "setprstatus" : "unsetprstatus");
+	return do_update_pr(mapname, (set)? "setprstatus" : "unsetprstatus", DEFAULT_REPLY_TIMEOUT);
 }
 
-int update_prkey_flags(char *mapname, uint64_t prkey, uint8_t sa_flags) {
+int update_prkey_flags(char *mapname, uint64_t prkey, uint8_t sa_flags, int timeout) {
 	char str[256];
 	char *flagstr = "";
 
+	if (timeout <=0)
+		timeout = DEFAULT_REPLY_TIMEOUT;
 	if (sa_flags & MPATH_F_APTPL_MASK)
 		flagstr = ":aptpl";
 	if (prkey)
 		sprintf(str, "setprkey key %" PRIx64 "%s", prkey, flagstr);
 	else
 		sprintf(str, "unsetprkey");
-	return do_update_pr(mapname, str);
+	return do_update_pr(mapname, str, timeout);
 }
