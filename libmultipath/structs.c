@@ -604,65 +604,66 @@ first_path (const struct multipath * mpp)
 	return pgp?VECTOR_SLOT(pgp->paths, 0):NULL;
 }
 
-int add_feature(char **f, const char *n)
+int add_feature(char **features_p, const char *new_feat)
 {
-	int c = 0, d, l;
-	char *e, *t;
-	const char *p;
+	int count = 0, new_count, len;
+	char *tmp, *feats;
+	const char *ptr;
 
-	if (!f)
+	if (!features_p)
 		return 1;
 
 	/* Nothing to do */
-	if (!n || *n == '\0')
+	if (!new_feat || *new_feat == '\0')
 		return 0;
 
-	l = strlen(n);
-	if (isspace(*n) || isspace(*(n + l - 1))) {
-		condlog(0, "internal error: feature \"%s\" has leading or trailing spaces", n);
+	len = strlen(new_feat);
+	if (isspace(*new_feat) || isspace(*(new_feat + len - 1))) {
+		condlog(0, "internal error: feature \"%s\" has leading or trailing spaces",
+			new_feat);
 		return 1;
 	}
 
-	p = n;
-	d = 1;
-	while (*p != '\0') {
-		if (isspace(*p) && !isspace(*(p + 1)) && *(p + 1) != '\0')
-			d++;
-		p++;
+	ptr = new_feat;
+	new_count = 1;
+	while (*ptr != '\0') {
+		if (isspace(*ptr) && !isspace(*(ptr + 1)) && *(ptr + 1) != '\0')
+			new_count++;
+		ptr++;
 	}
 
 	/* default feature is null */
-	if(!*f)
+	if(!*features_p)
 	{
-		l = asprintf(&t, "%0d %s", d, n);
-		if(l == -1)
+		len = asprintf(&feats, "%0d %s", new_count, new_feat);
+		if(len == -1)
 			return 1;
 
-		*f = t;
+		*features_p = feats;
 		return 0;
 	}
 
 	/* Check if feature is already present */
-	e = *f;
-	while ((e = strstr(e, n)) != NULL) {
-		if (isspace(*(e - 1)) &&
-		    (isspace(*(e + l)) || *(e + l) == '\0'))
+	tmp = *features_p;
+	while ((tmp = strstr(tmp, new_feat)) != NULL) {
+		if (isspace(*(tmp - 1)) &&
+		    (isspace(*(tmp + len)) || *(tmp + len) == '\0'))
 			return 0;
-		e += l;
+		tmp += len;
 	}
 
 	/* Get feature count */
-	c = strtoul(*f, &e, 10);
-	if (*f == e || (!isspace(*e) && *e != '\0')) {
-		condlog(0, "parse error in feature string \"%s\"", *f);
+	count = strtoul(*features_p, &tmp, 10);
+	if (*features_p == tmp || (!isspace(*tmp) && *tmp != '\0')) {
+		condlog(0, "parse error in feature string \"%s\"", *features_p);
 		return 1;
 	}
-	c += d;
-	if (asprintf(&t, "%0d%s %s", c, e, n) < 0)
+	count += new_count;
+	if (asprintf(&feats, "%0d%s %s", count, tmp, new_feat) < 0)
 		return 1;
 
-	free(*f);
-	*f = t;
+	free(*features_p);
+	*features_p = feats;
 
 	return 0;
 }
