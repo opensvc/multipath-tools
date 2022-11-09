@@ -668,86 +668,86 @@ int add_feature(char **features_p, const char *new_feat)
 	return 0;
 }
 
-int remove_feature(char **f, const char *o)
+int remove_feature(char **features_p, const char *old_feat)
 {
-	int c = 0, d;
-	char *e, *p, *n;
-	const char *q;
+	int count = 0, len;
+	char *feats_start, *ptr, *new;
 
-	if (!f || !*f)
+	if (!features_p || !*features_p)
 		return 1;
 
 	/* Nothing to do */
-	if (!o || *o == '\0')
+	if (!old_feat || *old_feat == '\0')
 		return 0;
 
-	d = strlen(o);
-	if (isspace(*o) || isspace(*(o + d - 1))) {
-		condlog(0, "internal error: feature \"%s\" has leading or trailing spaces", o);
+	len = strlen(old_feat);
+	if (isspace(*old_feat) || isspace(*(old_feat + len - 1))) {
+		condlog(0, "internal error: feature \"%s\" has leading or trailing spaces",
+			old_feat);
 		return 1;
 	}
 
 	/* Check if present and not part of a larger feature token*/
-	p = *f + 1; /* the size must be at the start of the features string */
-	while ((p = strstr(p, o)) != NULL) {
-		if (isspace(*(p - 1)) &&
-		    (isspace(*(p + d)) || *(p + d) == '\0'))
+	ptr = *features_p + 1;
+	while ((ptr = strstr(ptr, old_feat)) != NULL) {
+		if (isspace(*(ptr - 1)) &&
+		    (isspace(*(ptr + len)) || *(ptr + len) == '\0'))
 			break;
-		p += d;
+		ptr += len;
 	}
-	if (!p)
+	if (!ptr)
 		return 0;
 
 	/* Get feature count */
-	c = strtoul(*f, &e, 10);
-	if (*f == e || !isspace(*e)) {
-		condlog(0, "parse error in feature string \"%s\"", *f);
+	count = strtoul(*features_p, &feats_start, 10);
+	if (*features_p == feats_start || !isspace(*feats_start)) {
+		condlog(0, "parse error in feature string \"%s\"", *features_p);
 		return 1;
 	}
 
 	/* Update feature count */
-	c--;
-	q = o;
-	while (*q != '\0') {
-		if (isspace(*q) && !isspace(*(q + 1)) && *(q + 1) != '\0')
-			c--;
-		q++;
+	count--;
+	while (*old_feat != '\0') {
+		if (isspace(*old_feat) && !isspace(*(old_feat + 1)) &&
+		    *(old_feat + 1) != '\0')
+			count--;
+		old_feat++;
 	}
 
 	/* Quick exit if all features have been removed */
-	if (c == 0) {
-		n = malloc(2);
-		if (!n)
+	if (count == 0) {
+		new = malloc(2);
+		if (!new)
 			return 1;
-		strcpy(n, "0");
+		strcpy(new, "0");
 		goto out;
 	}
 
 	/* Update feature count space */
-	n =  malloc(strlen(*f) - d + 1);
-	if (!n)
+	new = malloc(strlen(*features_p) - len + 1);
+	if (!new)
 		return 1;
 
 	/* Copy the feature count */
-	sprintf(n, "%0d", c);
+	sprintf(new, "%0d", count);
 	/*
 	 * Copy existing features up to the feature
 	 * about to be removed
 	 */
-	strncat(n, e, (size_t)(p - e));
+	strncat(new, feats_start, (size_t)(ptr - feats_start));
 	/* Skip feature to be removed */
-	p += d;
+	ptr += len;
 	/* Copy remaining features */
-	while (isspace(*p))
-		p++;
-	if (*p != '\0')
-		strcat(n, p);
+	while (isspace(*ptr))
+		ptr++;
+	if (*ptr != '\0')
+		strcat(new, ptr);
 	else
-		strchop(n);
+		strchop(new);
 
 out:
-	free(*f);
-	*f = n;
+	free(*features_p);
+	*features_p = new;
 
 	return 0;
 }
