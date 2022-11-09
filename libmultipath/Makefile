@@ -7,7 +7,7 @@ DEVLIB := libmultipath.so
 CPPFLAGS += -I$(mpathutildir) -I$(mpathcmddir) -I$(nvmedir) -D_GNU_SOURCE $(SYSTEMD_CPPFLAGS)
 CFLAGS += $(LIB_CFLAGS)
 LIBDEPS += -lpthread -ldl -ldevmapper -ludev -L$(mpathutildir) -lmpathutil -L$(mpathcmddir) -lmpathcmd \
-	-lurcu -laio $(SYSTEMD_LIBDEPS)
+	-lmount -lurcu -laio $(SYSTEMD_LIBDEPS)
 
 # object files referencing MULTIPATH_DIR or CONFIG_DIR
 # they need to be recompiled for unit tests

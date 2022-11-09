@@ -667,11 +667,6 @@ static int _check_bindings_file(const struct config *conf, FILE *file,
 	return rc;
 }
 
-static void cleanup_fclose(void *p)
-{
-	fclose(p);
-}
-
 static int alias_compar(const void *p1, const void *p2)
 {
 	const char *alias1 = (*(struct mpentry * const *)p1)->alias;
@@ -682,12 +677,6 @@ static int alias_compar(const void *p1, const void *p2)
 	else
 		/* Move NULL alias to the end */
 		return alias1 ? -1 : alias2 ? 1 : 0;
-}
-
-static void cleanup_vector_free(void *arg)
-{
-	if  (arg)
-		vector_free((vector)arg);
 }
 
 /*

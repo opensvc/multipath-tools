@@ -133,3 +133,9 @@ LIBMPATHUTIL_1.1 {
 global:
 	cleanup_fd_ptr;
 } LIBMPATHUTIL_1.0;
+
+LIBMPATHUTIL_1.2 {
+global:
+	cleanup_vector_free;
+	cleanup_fclose;
+} LIBMPATHUTIL_1.0;

@@ -48,6 +48,8 @@ int should_exit(void);
 void cleanup_fd_ptr(void *arg);
 void cleanup_free_ptr(void *arg);
 void cleanup_mutex(void *arg);
+void cleanup_vector_free(void *arg);
+void cleanup_fclose(void *p);
 
 struct scandir_result {
 	struct dirent **di;
