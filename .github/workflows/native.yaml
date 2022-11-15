@@ -12,12 +12,13 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        os: [buster, jessie, bullseye, fedora-36]
-        arch: ['', '-i386']
-        exclude:
-          - os: fedora-36
-            arch: '-i386'
-    container: mwilck/multipath-build-${{ matrix.os }}${{ matrix.arch }}
+        os:
+          - debian-buster
+          - debian-jessie
+          - debian-bullseye
+          - fedora-36
+          - opensuse-leap
+    container: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
     steps:
       - name: checkout
         uses: actions/checkout@v1
