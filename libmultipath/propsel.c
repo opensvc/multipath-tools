@@ -568,7 +568,7 @@ out:
 }
 
 /*
- * Current RDAC (NetApp E-Series) firmware relies
+ * Current RDAC (NetApp E/EF Series) firmware relies
  * on periodic REPORT TARGET PORT GROUPS for
  * internal load balancing.
  * Using the sysfs priority checker defeats this purpose.
