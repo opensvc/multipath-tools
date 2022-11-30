@@ -1472,6 +1472,7 @@ scsi_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 {
 	struct udev_device *parent;
 	const char *attr_path = NULL;
+	static const char unknown[] = "UNKNOWN";
 
 	parent = pp->udev;
 	while (parent) {
@@ -1492,19 +1493,22 @@ scsi_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 	if (!attr_path || pp->sg_id.host_no == -1)
 		return PATHINFO_FAILED;
 
-	if (sysfs_get_vendor(parent, pp->vendor_id, SCSI_VENDOR_SIZE) <= 0)
-		return PATHINFO_FAILED;;
-
+	if (sysfs_get_vendor(parent, pp->vendor_id, SCSI_VENDOR_SIZE) <= 0) {
+		condlog(1, "%s: broken device without vendor ID", pp->dev);
+		strlcpy(pp->vendor_id, unknown, SCSI_VENDOR_SIZE);
+	}
 	condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
 
-	if (sysfs_get_model(parent, pp->product_id, PATH_PRODUCT_SIZE) <= 0)
-		return PATHINFO_FAILED;;
-
+	if (sysfs_get_model(parent, pp->product_id, PATH_PRODUCT_SIZE) <= 0) {
+		condlog(1, "%s: broken device without product ID", pp->dev);
+		strlcpy(pp->product_id, unknown, PATH_PRODUCT_SIZE);
+	}
 	condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 
-	if (sysfs_get_rev(parent, pp->rev, PATH_REV_SIZE) < 0)
-		return PATHINFO_FAILED;;
-
+	if (sysfs_get_rev(parent, pp->rev, PATH_REV_SIZE) < 0) {
+		condlog(2, "%s: broken device without revision", pp->dev);
+		strlcpy(pp->rev, unknown, PATH_REV_SIZE);
+	}
 	condlog(3, "%s: rev = %s", pp->dev, pp->rev);
 
 	/*
