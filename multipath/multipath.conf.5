@@ -1877,17 +1877,18 @@ increase and the threshold is never reached. Ticks are the time between
 path checks by multipathd, which is variable and controlled by the
 \fIpolling_interval\fR and \fImax_polling_interval\fR parameters.
 .
+.RS 8
+.LP
+This algorithm is superseded by the \(dqmarginal_path\(dq failure tracking,
+but remains supported for backward compatibility.
+.
+.RE
 .TP
-.B \(dqFPIN \(dq failure tracking
+.B \(dqFPIN\(dq failure tracking
 Fibre channel fabrics can notify hosts about fabric-level issues such
 as integrity failures or congestion with so-called Fabric Performance
 Impact Notifications (FPINs).On receiving the fpin notifications through ELS
 multipathd will move the affected path and port states to marginal.
-.
-.RS 8
-.LP
-This method is \fBdeprecated\fR in favor of the \(dqmarginal_path\(dq failure
-tracking method, and only offered for backward compatibility.
 .
 .RE
 .LP
