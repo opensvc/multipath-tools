@@ -34,9 +34,15 @@ int ev_off = 0;
 struct timespec zero_timeout = { .tv_sec = 0 };
 struct timespec full_timeout = { .tv_sec = -1 };
 
-int __real_ioctl(int fd, unsigned long request, void *argp);
+#ifdef __GLIBC__
+#define ioctl_request_t unsigned long
+#else
+#define ioctl_request_t int
+#endif
 
-int __wrap_ioctl(int fd, unsigned long request, void *argp)
+int __real_ioctl(int fd, ioctl_request_t request, void *argp);
+
+int __wrap_ioctl(int fd, ioctl_request_t request, void *argp)
 {
 #ifdef DIO_TEST_DEV
 	mock_type(int);
@@ -45,7 +51,15 @@ int __wrap_ioctl(int fd, unsigned long request, void *argp)
 	int *blocksize = (int *)argp;
 
 	assert_int_equal(fd, test_fd);
-	assert_int_equal(request, BLKBSZGET);
+	/*
+	 * On MUSL libc, the "request" arg is an int (glibc: unsigned long).
+	 * cmocka casts the args of assert_int_equal() to "unsigned long".
+	 * BLKSZGET = 80081270 is sign-extended to ffffffff80081270
+	 * when cast from int to unsigned long on s390x.
+	 * BLKSZGET must be cast to "int" and back to "unsigned long",
+	 * otherwise the assertion below will fail.
+	 */
+	assert_int_equal(request, (ioctl_request_t)BLKBSZGET);
 	assert_non_null(blocksize);
 	*blocksize = mock_type(int);
 	return 0;
