@@ -178,7 +178,7 @@ The default is: \fBno\fR
 .
 .TP
 .B multipath_dir
-This option is not supported any more. The value is ignored.
+(Deprecated) This option is not supported any more, and the value is ignored.
 .
 .
 .TP
@@ -238,6 +238,11 @@ The default is: \fBfailover\fR
 .
 .
 .TP
+.B pg_timeout
+(Deprecated) This option is not supported any more, and the value is ignored.
+.
+.
+.TP
 .B uid_attrs
 .
 Setting this option activates \fBmerging uevents\fR by WWID, which may improve
@@ -279,7 +284,7 @@ The default is: \fBID_WWN\fR, for NVMe devices
 .
 .TP
 .B getuid_callout
-This option is not supported any more. The value is ignored.
+(Deprecated) This option is not supported any more, and the value is ignored.
 .
 .
 .TP
@@ -463,7 +468,7 @@ cannot be changed. \fInvme:tcp\fR paths are only supported in multipath
 devices with queue_mode set to \fIbio\fR. multipath will automatically
 set this when creating a device with \fInvme:tcp\fR paths.
 .TP
-The default is: \fB<unset>\fR
+The default is: \fB0\fR
 .RE
 .
 .
@@ -479,7 +484,7 @@ second, until \fIchecker_timeout\fR seconds have elapsed. Possible values are:
 .TP 12
 .I readsector0
 (Deprecated) Read the first sector of the device. This checker is being
-deprecated, please use \fItur\fR instead.
+deprecated, please use \fItur\fR or \fIdirectio\fR instead.
 .TP
 .I tur
 Issue a \fITEST UNIT READY\fR command to the device.
@@ -551,7 +556,7 @@ The default is: \fBmanual\fR
 .
 .
 .TP
-.B  rr_min_io
+.B rr_min_io
 Number of I/O requests to route to a path before switching to the next in the
 same path group. This is only for \fIBlock I/O\fR(BIO) based multipath and
 only apply to \fIround-robin\fR path_selector.
@@ -735,7 +740,7 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B bindings_file
-This option is deprecated, and will be removed in a future release.
+(Deprecated) This option is deprecated, and will be removed in a future release.
 The full pathname of the binding file to be used when the user_friendly_names
 option is set.
 .RS
@@ -746,7 +751,7 @@ The default is: \fB/etc/multipath/bindings\fR
 .
 .TP
 .B wwids_file
-This option is deprecated, and will be removed in a future release.
+(Deprecated) This option is deprecated, and will be removed in a future release.
 The full pathname of the WWIDs file, which is used by multipath to keep track
 of the WWIDs for LUNs it has created multipath devices on in the past.
 .RS
@@ -757,7 +762,7 @@ The default is: \fB/etc/multipath/wwids\fR
 .
 .TP
 .B prkeys_file
-This option is deprecated, and will be removed in a future release.
+(Deprecated) This option is deprecated, and will be removed in a future release.
 The full pathname of the prkeys file, which is used by multipathd to keep
 track of the persistent reservation key used for a specific WWID, when
 \fIreservation_key\fR is set to \fBfile\fR.
@@ -929,7 +934,7 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B config_dir
-This option is not supported any more. The value is ignored.
+(Deprecated) This option is not supported any more, and the value is ignored.
 .
 .
 .TP
@@ -1042,7 +1047,7 @@ The default is: \fBno\fR
 .
 .TP
 .B delay_watch_checks
-This option is \fBdeprecated\fR, and mapped to \fIsan_path_err_forget_rate\fR.
+(Deprecated) This option is \fBdeprecated\fR, and mapped to \fIsan_path_err_forget_rate\fR.
 If this is set to a value greater than 0 and no \fIsan_path_err\fR options
 are set, \fIsan_path_err_forget_rate\fR will be set to the value of
 \fIdelay_watch_checks\fR and \fIsan_path_err_threshold\fR will be set to 1.
@@ -1056,7 +1061,7 @@ The default is: \fBno\fR
 .
 .TP
 .B delay_wait_checks
-This option is \fBdeprecated\fR, and mapped to \fIsan_path_err_recovery_time\fR.
+(Deprecated) This option is \fBdeprecated\fR, and mapped to \fIsan_path_err_recovery_time\fR.
 If this is set to a value greater than 0 and no \fIsan_path_err\fR options
 are set, \fIsan_path_err_recovery_time\fR will be set to the value of
 \fIdelay_wait_checks\fR times \fImax_polling_interval\fR. This will give
@@ -1223,8 +1228,7 @@ The default is: \fBno\fR
 .
 .TP
 .B disable_changed_wwids
-This option is deprecated and ignored. If the WWID of a path suddenly changes,
-multipathd handles it as if it was removed and then added again.
+(Deprecated) This option is not supported any more, and the value is ignored.
 .RE
 .
 .
@@ -1845,7 +1849,7 @@ normal pathgroup. The logic of determining \(dqshaky\(dq condition, as well as
 the logic when to reinstate, differs between the three methods.
 .TP 8
 .B \(dqdelay_checks\(dq failure tracking
-This method is \fBdeprecated\fR and mapped to the \(dqsan_path_err\(dq method.
+(Deprecated) This method is \fBdeprecated\fR and mapped to the \(dqsan_path_err\(dq method.
 See the \fIdelay_watch_checks\fR and \fIdelay_wait_checks\fR options above
 for more information.
 
