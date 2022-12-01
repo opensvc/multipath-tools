@@ -4,6 +4,9 @@
 TOPDIR := .
 include $(TOPDIR)/Makefile.inc
 
+# "make" on some distros will fail on explicit '#' or '\#' in the program text below
+__HASH__ := \#
+
 # Check whether a function with name $1 has been declared in header file $2.
 check_func = $(shell \
 	if grep -Eq "^[^[:blank:]]+[[:blank:]]+$1[[:blank:]]*(.*)*" "$2"; then \
@@ -49,6 +52,12 @@ TEST_MISSING_INITIALIZERS = $(shell \
 	echo 'struct A {int a, b;}; struct B {struct A a; int b;} b = {.a.a=1};' | \
 		$(CC) -c -Werror -Wmissing-field-initializers -o /dev/null -xc - >/dev/null 2>&1 \
 	|| echo -Wno-missing-field-initializers)
+
+# gcc 4.8.4 and certain versions of liburcu fail to compile this with -Werror=type-limits
+TEST_URCU_TYPE_LIMITS = $(shell \
+	echo -e '$(__HASH__)include <urcu/uatomic.h>\nint main() { int z=8; return uatomic_sub_return(&z, 1); }' | \
+		$(CC) -c -Werror=type-limits -xc - >/dev/null 2>&1 \
+	|| echo -Wno-type-limits )
 
 DEFINES :=
 
@@ -105,8 +114,6 @@ TEST_CC_OPTION = $(shell \
 		echo "$(2)"; \
 	fi)
 
-# "make" on some distros will fail on explicit '#' or '\#' in the program text below
-__HASH__ := \#
 # Check if _DFORTIFY_SOURCE=3 is supported.
 # On some distros (e.g. Debian Buster) it will be falsely reported as supported
 # but it doesn't seem to make a difference wrt the compilation result.
@@ -141,3 +148,4 @@ $(TOPDIR)/config.mk:
 	@echo "WNOCLOBBERED := $(call TEST_CC_OPTION,-Wno-clobbered -Wno-error=clobbered,)" >>$@
 	@echo "WFORMATOVERFLOW := $(call TEST_CC_OPTION,-Wformat-overflow=2,)" >>$@
 	@echo "W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)" >>$@
+	@echo "W_URCU_TYPE_LIMITS := $(call TEST_URCU_TYPE_LIMITS)" >>$@
