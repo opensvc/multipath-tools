@@ -79,7 +79,7 @@ lib/libchecktur.so:
 
 %.out:	%-test lib/libchecktur.so
 	@echo == running $< ==
-	@LD_LIBRARY_PATH=.:$(mpathutildir):$(mpathcmddir) ./$< >$@ 2>&1
+	@LD_LIBRARY_PATH=.:$(mpathutildir):$(mpathcmddir) ./$< >$@ 2>&1 || { cat "$@"; false; }
 
 %.vgr:  %-test lib/libchecktur.so
 	@echo == running valgrind for $< ==
