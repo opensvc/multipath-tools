@@ -38,11 +38,11 @@ install:
 	$(Q)$(LN) $(LIBS) $(DESTDIR)$(usrlibdir)/$(DEVLIB)
 	$(Q)$(INSTALL_PROGRAM) -m 644 -D \
 		$(PKGFILE).in $(DESTDIR)$(pkgconfdir)/$(PKGFILE)
-	$(Q)perl -i -pe 's|__VERSION__|$(LIBDMMP_VERSION)|g' \
+	$(Q)sed -i 's|__VERSION__|$(LIBDMMP_VERSION)|g' \
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
-	$(Q)perl -i -pe 's|__LIBDIR__|$(usrlibdir)|g' \
+	$(Q)sed -i 's|__LIBDIR__|$(usrlibdir)|g' \
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
-	$(Q)perl -i -pe 's|__INCLUDEDIR__|$(includedir)|g' \
+	$(Q)sed -i 's|__INCLUDEDIR__|$(includedir)|g' \
 		$(DESTDIR)$(pkgconfdir)/$(PKGFILE)
 	$(Q)$(INSTALL_PROGRAM) -d 755 $(DESTDIR)$(mandir)/man3
 	$(Q)$(INSTALL_PROGRAM) -m 644 -t $(DESTDIR)$(mandir)/man3 docs/man/*.3
