@@ -130,7 +130,7 @@ FORTIFY_OPT := $(shell \
 
 STACKPROT :=
 
-all:	$(multipathdir)/autoconfig.h $(TOPDIR)/config.mk
+all:	$(TOPDIR)/config.mk
 
 $(multipathdir)/autoconfig.h:
 	@echo creating $@
@@ -139,7 +139,7 @@ $(multipathdir)/autoconfig.h:
 	@for x in $(DEFINES); do echo "#define $$x" >>$@; done
 	@echo '#endif' >>$@
 
-$(TOPDIR)/config.mk:
+$(TOPDIR)/config.mk:	$(multipathdir)/autoconfig.h
 	@echo creating $@
 	@echo "FPIN_SUPPORT := $(FPIN_SUPPORT)" >$@
 	@echo "FORTIFY_OPT := $(FORTIFY_OPT)" >>$@
