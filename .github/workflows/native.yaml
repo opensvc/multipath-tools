@@ -11,6 +11,7 @@ jobs:
   stable:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         os:
           - debian-buster
@@ -45,6 +46,7 @@ jobs:
   rolling:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         os: ['debian:sid', 'alpine', 'fedora:rawhide']
         arch: ['amd64', 'i386']

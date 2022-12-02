@@ -11,6 +11,7 @@ jobs:
   bionic:
     runs-on: ubuntu-18.04
     strategy:
+      fail-fast: false
       matrix:
         rl: ['', 'libreadline', 'libedit']
     steps:
@@ -46,6 +47,7 @@ jobs:
   focal-gcc10:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         rl: ['', 'libreadline', 'libedit']
     steps:
@@ -79,6 +81,7 @@ jobs:
   focal-clang10:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         rl: ['', 'libreadline', 'libedit']
     steps:

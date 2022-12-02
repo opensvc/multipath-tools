@@ -12,6 +12,7 @@ jobs:
   cross-build:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         os: [bullseye, sid]
         arch: [ppc64le, arm64, s390x]
@@ -39,6 +40,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: cross-build
     strategy:
+      fail-fast: false
       matrix:
         os: [bullseye, sid]
         arch: [ppc64le, arm64, s390x]
