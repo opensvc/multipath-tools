@@ -29,76 +29,16 @@ jobs:
       - name: build and test (jessie)
         # On jessie, we use libreadline 5 (no licensing issue)
         if: ${{ matrix.os == 'jessie' }}
-        run: make READLINE=libreadline test
+        run: make  -j -Orecurse READLINE=libreadline test
       - name: clean
         run: make clean
       - name: clang
         if: ${{ matrix.os != 'jessie' }}
         env:
           CC: clang
-        run: make test
+        run: make -j -Orecurse test
       - name: clang (jessie)
         if: ${{ matrix.os == 'jessie' }}
         env:
           CC: clang
         run: make READLINE=libreadline test
-
-  rolling:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ['debian:sid', 'alpine', 'fedora:rawhide']
-        arch: ['amd64', 'i386']
-        exclude:
-          - os: 'fedora:rawhide'
-            arch: 'i386'
-    container: ${{ matrix.arch }}/${{ matrix.os }}
-    steps:
-      - name: update
-        if: ${{ matrix.os == 'debian:sid' }}
-        run: apt-get update
-      - name: dependencies-debian
-        if: ${{ matrix.os == 'debian:sid' }}
-        run: >
-          apt-get install --yes -o APT::Immediate-Configure=0
-          gcc clang make pkg-config
-          libdevmapper-dev
-          libreadline-dev
-          libaio-dev
-          libudev-dev
-          libjson-c-dev
-          liburcu-dev
-          libcmocka-dev
-          libedit-dev
-      - name: dependencies-alpine
-        if: ${{ matrix.os == 'alpine' }}
-        run: >
-          apk add make gcc clang cmocka
-          musl-dev lvm2-dev libaio-dev readline-dev ncurses-dev eudev-dev
-          userspace-rcu-dev json-c-dev cmocka-dev libedit-dev
-      - name: dependencies-fedora
-        if: ${{ matrix.os == 'fedora:rawhide' }}
-        run: >
-          dnf install -y
-          make clang gcc pkgconfig
-          libaio-devel
-          device-mapper-devel
-          libselinux-devel
-          libsepol-devel
-          readline-devel
-          ncurses-devel
-          userspace-rcu-devel
-          json-c-devel
-          libcmocka-devel
-          libedit-devel
-      - name: checkout
-        uses: actions/checkout@v1
-      - name: build and test
-        run: make -j8 -Orecurse test
-      - name: clean
-        run: make -j8 -Orecurse clean
-      - name: clang
-        env:
-          CC: clang
-        run: make -j8 -Orecurse test
