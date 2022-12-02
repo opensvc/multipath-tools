@@ -16,6 +16,7 @@ jobs:
       matrix:
         os:
           - alpine
+          - debian-sid
           - opensuse-tumbleweed
           - opensuse-leap
           - fedora-rawhide
@@ -32,6 +33,8 @@ jobs:
             arch: 386
           - os: alpine
             arch: arm/v7
+          - os: debian-sid
+            arch: 386
           - os: opensuse-tumbleweed
             arch: 386
         
