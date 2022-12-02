@@ -119,10 +119,12 @@ TEST_CC_OPTION = $(shell \
 # but it doesn't seem to make a difference wrt the compilation result.
 FORTIFY_OPT := $(shell \
 	if /bin/echo -e '$(__HASH__)include <string.h>\nint main(void) { return 0; }' | \
-		$(CC) -o /dev/null -c -O2 -Werror -D_FORTIFY_SOURCE=3 -xc - 2>/dev/null; \
+		$(CC) -o /dev/null $(OPTFLAGS) -c -Werror -D_FORTIFY_SOURCE=3 -xc - 2>/dev/null; \
 	then \
 		echo "-D_FORTIFY_SOURCE=3"; \
-	else \
+	elif /bin/echo -e '$(__HASH__)include <string.h>\nint main(void) { return 0; }' | \
+		$(CC) -o /dev/null $(OPTFLAGS) -c -Werror -D_FORTIFY_SOURCE=2 -xc - 2>/dev/null; \
+	then \
 		echo "-D_FORTIFY_SOURCE=2"; \
 	fi)
 
