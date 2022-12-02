@@ -2,10 +2,24 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 TOPDIR := .
+CREATE_CONFIG := 1
 include $(TOPDIR)/Makefile.inc
 
 # "make" on some distros will fail on explicit '#' or '\#' in the program text below
 __HASH__ := \#
+
+# Check whether a given shell command succeeds
+check_cmd = $(shell \
+	if $1; then \
+		found=1; \
+		status="yes"; \
+	else \
+		found=0; \
+		status="no"; \
+	fi; \
+	echo 1>&2 "Checking $(if $3,$3,command \"$1\") ... $$status"; \
+	echo "$$found" \
+	)
 
 # Check whether a function with name $1 has been declared in header file $2.
 check_func = $(shell \
@@ -94,6 +108,8 @@ ifneq ($(call check_file,$(kernel_incdir)/linux/nvme_ioctl.h),0)
 	ANA_SUPPORT := 1
 endif
 
+ENABLE_LIBDMMP := $(call check_cmd,$(PKGCONFIG) --exists json-c)
+
 ifeq ($(ENABLE_DMEVENTS_POLL),0)
 	DEFINES += -DNO_DMEVENTS_POLL
 endif
@@ -151,3 +167,4 @@ $(TOPDIR)/config.mk:	$(multipathdir)/autoconfig.h
 	@echo "WFORMATOVERFLOW := $(call TEST_CC_OPTION,-Wformat-overflow=2,)" >>$@
 	@echo "W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)" >>$@
 	@echo "W_URCU_TYPE_LIMITS := $(call TEST_URCU_TYPE_LIMITS)" >>$@
+	@echo "ENABLE_LIBDMMP := $(ENABLE_LIBDMMP)" >>$@

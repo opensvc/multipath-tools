@@ -27,7 +27,7 @@ PKGCONFIG	?= pkg-config
 ifeq ($(TOPDIR),)
 	TOPDIR	= ..
 endif
-ifneq ($(TOPDIR),.)
+ifneq ($(CREATE_CONFIG),1)
 include $(TOPDIR)/config.mk
 endif
 
