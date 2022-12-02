@@ -3,7 +3,6 @@
 #
 
 TOPDIR := .
-include Makefile.inc
 
 LIB_BUILDDIRS := \
 	libmpathcmd \

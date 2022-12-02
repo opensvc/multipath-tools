@@ -109,8 +109,11 @@ dep_clean:
 	@sed -n 's/^.*__wrap_\([a-zA-Z0-9_]*\).*$$/-Wl,--wrap=\1/p' $< | \
 		sort -u | tr '\n' ' ' >$@
 
+# Pass the original values of CFLAGS etc. to the sub-make, which will include
+# Makefile.in again. Otherwise, the flags would be added twice.
 libmultipath.so.0: $(multipathdir)/libmultipath.so.0
-	@make -C $(multipathdir) configdir=$(TESTDIR)/conf.d plugindir=$(TESTDIR)/lib test-lib
+	@CFLAGS=$(ORIG_CFLAGS) CPPFLAGS=$(ORIG_CPPFLAGS) LDFLAGS=$(ORIG_LDFLAGS) \
+	$(MAKE) -C $(multipathdir) configdir=$(TESTDIR)/conf.d plugindir=$(TESTDIR)/lib test-lib
 
 # COLON will get expanded during second expansion below
 COLON:=:
