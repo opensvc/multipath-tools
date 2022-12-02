@@ -707,18 +707,33 @@ The default is: \fB5\fR
 .
 .TP
 .B dev_loss_tmo
-Specify the number of seconds the SCSI layer will wait after a problem has
-been detected on a FC remote port before removing it from the system. This
-can be set to "infinity" which sets it to the max value of 2147483647
-seconds, or 68 years. It will be automatically adjusted to the overall
-retry interval \fIno_path_retry\fR * \fIpolling_interval\fR
-if a number of retries is given with \fIno_path_retry\fR and the
-overall retry interval is longer than the specified \fIdev_loss_tmo\fR value.
-The Linux kernel will cap this value to \fI600\fR if \fIfast_io_fail_tmo\fR
-is not set. See KNOWN ISSUES.
+Specify the number of seconds the SCSI layer will wait after a connection loss has
+been detected on a remote port before removing it from the system. This
+can be set to "infinity", which effectively means 136 years (2^32-1 seconds).
+This parameter is only applied to Fibre Channel and SAS devices.
 .RS
+.LP
+The value of \fIdev_loss_tmo\fR is restricted by other settings.
+If \fIfast_io_fail_tmo\fR is set to a positive value, \fBmultipathd\fR
+will make sure that the value of \fIdev_loss_tmo\fR is larger than
+\fIno_path_retry\fR * \fIpolling_interval\fR.
+If \fIfast_io_fail_tmo\fR is not set, the kernel limits the \fIdev_loss_tmo\fR
+value to 600 seconds.
+In this case, the user has to make sure that \fIno_path_retry\fR is smaller
+than \fIdev_loss_tmo / polling_interval\fR. In particular,
+\fIno_path_retry\fR must not be set to \(dq\fIqueue\fR\(dq. See KNOWN ISSUES.
+.LP
+When path devices reappear after a connection loss, it is much easier for
+the kernel to simply reactivate an inactive device than to re-add
+a previously deleted one. It is therefore recommended to set
+\fIdev_loss_tmo\fR to a large value within the restrictions mentioned above.
+.LP
+Fibre Channel and SAS devices have hardware-dependent defaults, which are left
+unchanged if \fIdev_loss_tmo\fR is not specified. For a few storage arrays,
+the multipath-tools built-in settings override the default. Run \fImultipath -T\fR
+to see the settings for your device.
 .TP
-The default is: \fB600\fR
+The default is: \fB<hardware dependent>\fR
 .RE
 .
 .
