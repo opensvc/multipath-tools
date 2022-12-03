@@ -172,7 +172,7 @@ Mailing list
 ============
 
 (subscribers-only)
-To subscribe and archives: https://www.redhat.com/mailman/listinfo/dm-devel
+To subscribe and archives: https://listman.redhat.com/mailman/listinfo/dm-devel
 Searchable: https://marc.info/?l=dm-devel
 
 

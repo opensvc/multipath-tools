@@ -574,7 +574,7 @@ out:
  * Using the sysfs priority checker defeats this purpose.
  *
  * Moreover, NetApp would also prefer the RDAC checker over ALUA.
- * (https://www.redhat.com/archives/dm-devel/2017-September/msg00326.html)
+ * (https://listman.redhat.com/archives/dm-devel/2017-September/msg00326.html)
  */
 static int
 check_rdac(struct path * pp)
