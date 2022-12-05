@@ -70,7 +70,7 @@ TEST_MISSING_INITIALIZERS = $(shell \
 # gcc 4.8.4 and certain versions of liburcu fail to compile this with -Werror=type-limits
 TEST_URCU_TYPE_LIMITS = $(shell \
 	echo -e '$(__HASH__)include <urcu/uatomic.h>\nint main() { int z=8; return uatomic_sub_return(&z, 1); }' | \
-		$(CC) -c -Werror=type-limits -xc - >/dev/null 2>&1 \
+		$(CC) -c -Werror=type-limits -o /dev/null -xc - 2>/dev/null  \
 	|| echo -Wno-type-limits )
 
 DEFINES :=
