@@ -130,6 +130,7 @@ set_path(vector strvec, void *ptr, const char *file, int line_nr)
 	if ((*str_ptr)[0] != '/'){
 		condlog(1, "%s line %d, %s is not an absolute path. Ignoring",
 			file, line_nr, *str_ptr);
+		free(*str_ptr);
 		*str_ptr = old_str;
 	} else
 		free(old_str);
@@ -150,6 +151,7 @@ set_str_noslash(vector strvec, void *ptr, const char *file, int line_nr)
 	if (strchr(*str_ptr, '/')) {
 		condlog(1, "%s line %d, %s cannot contain a slash. Ignoring",
 			file, line_nr, *str_ptr);
+		free(*str_ptr);
 		*str_ptr = old_str;
 	} else
 		free(old_str);
