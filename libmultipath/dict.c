@@ -117,6 +117,58 @@ set_str(vector strvec, void *ptr, const char *file, int line_nr)
 }
 
 static int
+set_arg_str(vector strvec, void *ptr, int count_idx, const char *file,
+	    int line_nr)
+{
+	char **str_ptr = (char **)ptr;
+	char *old_str = *str_ptr;
+	const char * const spaces = " \f\r\t\v";
+	char *p, *end;
+	int idx = -1;
+	long int count = -1;
+
+	*str_ptr = set_value(strvec);
+	if (!*str_ptr) {
+		free(old_str);
+		return 1;
+	}
+	p = *str_ptr;
+	while (*p != '\0') {
+		p += strspn(p, spaces);
+		if (*p == '\0')
+			break;
+		idx += 1;
+		if (idx == count_idx) {
+			errno = 0;
+			count = strtol(p, &end, 10);
+			if (errno == ERANGE || end == p ||
+			    !(isspace(*end) || *end == '\0')) {
+				count = -1;
+				break;
+			}
+		}
+		p += strcspn(p, spaces);
+	}
+	if (count < 0) {
+		condlog(1, "%s line %d, missing argument count for %s",
+			file, line_nr, (char*)VECTOR_SLOT(strvec, 0));
+		goto fail;
+	}
+	if (count != idx - count_idx) {
+		condlog(1, "%s line %d, invalid argument count for %s:, got '%ld' expected '%d'",
+			file, line_nr, (char*)VECTOR_SLOT(strvec, 0), count,
+			idx - count_idx);
+		goto fail;
+	}
+	free(old_str);
+	return 0;
+fail:
+	free(*str_ptr);
+	*str_ptr = old_str;
+	return 0;
+}
+
+static int
 set_path(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	char **str_ptr = (char **)ptr;
@@ -288,6 +340,14 @@ def_ ## option ## _handler (struct config *conf, vector strvec,         \
 	return set_int(strvec, &conf->option, minval, maxval, file, line_nr); \
 }
 
+#define declare_def_arg_str_handler(option, count_idx)			\
+static int								\
+def_ ## option ## _handler (struct config *conf, vector strvec,		\
+			    const char *file, int line_nr)		\
+{									\
+	return set_arg_str(strvec, &conf->option, count_idx, file, line_nr); \
+}
+
 #define declare_def_snprint(option, function)				\
 static int								\
 snprint_def_ ## option (struct config *conf, struct strbuf *buff,	\
@@ -340,6 +400,17 @@ hw_ ## option ## _handler (struct config *conf, vector strvec,		\
 	return set_int(strvec, &hwe->option, minval, maxval, file, line_nr); \
 }
 
+#define declare_hw_arg_str_handler(option, count_idx)			\
+static int								\
+hw_ ## option ## _handler (struct config *conf, vector strvec,		\
+			    const char *file, int line_nr)		\
+{									\
+	struct hwentry * hwe = VECTOR_LAST_SLOT(conf->hwtable);		\
+	if (!hwe)							\
+		return 1;						\
+	return set_arg_str(strvec, &hwe->option, count_idx, file, line_nr); \
+}
+
 
 #define declare_hw_snprint(option, function)				\
 static int								\
@@ -371,6 +442,16 @@ ovr_ ## option ## _handler (struct config *conf, vector strvec,		\
 		       file, line_nr); \
 }
 
+#define declare_ovr_arg_str_handler(option, count_idx)			\
+static int								\
+ovr_ ## option ## _handler (struct config *conf, vector strvec,		\
+			    const char *file, int line_nr)		\
+{									\
+	if (!conf->overrides)						\
+		return 1;						\
+	return set_arg_str(strvec, &conf->overrides->option, count_idx, file, line_nr); \
+}
+
 #define declare_ovr_snprint(option, function)				\
 static int								\
 snprint_ovr_ ## option (struct config *conf, struct strbuf *buff,	\
@@ -399,6 +480,17 @@ mp_ ## option ## _handler (struct config *conf, vector strvec,		\
 	if (!mpe)							\
 		return 1;						\
 	return set_int(strvec, &mpe->option, minval, maxval, file, line_nr); \
+}
+
+#define declare_mp_arg_str_handler(option, count_idx)			\
+static int								\
+mp_ ## option ## _handler (struct config *conf, vector strvec,		\
+			    const char *file, int line_nr)		\
+{									\
+	struct mpentry * mpe = VECTOR_LAST_SLOT(conf->mptable);		\
+	if (!mpe)							\
+		return 1;						\
+	return set_arg_str(strvec, &mpe->option, count_idx, file, line_nr); \
 }
 
 #define declare_mp_snprint(option, function)				\
@@ -584,13 +676,13 @@ snprint_def_marginal_pathgroups(struct config *conf, struct strbuf *buff,
 }
 
 
-declare_def_handler(selector, set_str)
+declare_def_arg_str_handler(selector, 1)
 declare_def_snprint_defstr(selector, print_str, DEFAULT_SELECTOR)
-declare_hw_handler(selector, set_str)
+declare_hw_arg_str_handler(selector, 1)
 declare_hw_snprint(selector, print_str)
-declare_ovr_handler(selector, set_str)
+declare_ovr_arg_str_handler(selector, 1)
 declare_ovr_snprint(selector, print_str)
-declare_mp_handler(selector, set_str)
+declare_mp_arg_str_handler(selector, 1)
 declare_mp_snprint(selector, print_str)
 
 static int snprint_uid_attrs(struct config *conf, struct strbuf *buff,
@@ -663,13 +755,13 @@ declare_hw_snprint(prio_args, print_str)
 declare_mp_handler(prio_args, set_str)
 declare_mp_snprint(prio_args, print_str)
 
-declare_def_handler(features, set_str)
+declare_def_arg_str_handler(features, 0)
 declare_def_snprint_defstr(features, print_str, DEFAULT_FEATURES)
-declare_ovr_handler(features, set_str)
+declare_ovr_arg_str_handler(features, 0)
 declare_ovr_snprint(features, print_str)
-declare_hw_handler(features, set_str)
+declare_hw_arg_str_handler(features, 0)
 declare_hw_snprint(features, print_str)
-declare_mp_handler(features, set_str)
+declare_mp_arg_str_handler(features, 0)
 declare_mp_snprint(features, print_str)
 
 declare_def_handler(checker_name, set_str)
@@ -1821,7 +1913,7 @@ declare_hw_snprint(revision, print_str)
 declare_hw_handler(bl_product, set_str)
 declare_hw_snprint(bl_product, print_str)
 
-declare_hw_handler(hwhandler, set_str)
+declare_hw_arg_str_handler(hwhandler, 0)
 declare_hw_snprint(hwhandler, print_str)
 
 /*
