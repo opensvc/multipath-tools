@@ -28,7 +28,7 @@ MINOR=$2
 UUID=$3
 
 if [ -z "$MAJOR" -o -z "$MINOR" ]; then
-    echo "usage: $0 major minor"
+    echo "usage: $0 major minor UUID"
     exit 1;
 fi
 
