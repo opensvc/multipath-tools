@@ -1,4 +1,4 @@
-#
+# -*- Makefile -*-
 # Copyright (C) 2004 Christophe Varoqui, <christophe.varoqui@opensvc.com>
 #
 
@@ -20,191 +20,111 @@ SCSI_DH_MODULES_PRELOAD :=
 
 EXTRAVERSION := $(shell rev=$$(git rev-parse --short=7 HEAD 2>/dev/null); echo $${rev:+-g$$rev})
 
+# PKGCONFIG must be read from the environment to enable compilation
+# in Debian multiarch setups
 PKGCONFIG	?= pkg-config
 
 ifeq ($(TOPDIR),)
 	TOPDIR	= ..
 endif
-
-ifndef LIB
-	ifeq ($(shell test -d /lib64 && echo 1),1)
-		LIB=lib64
-	else
-		LIB=lib
-	endif
+ifneq ($(CREATE_CONFIG),1)
+include $(TOPDIR)/config.mk
 endif
 
-ifndef RUN
-	ifeq ($(shell test -L /var/run -o ! -d /var/run && echo 1),1)
-		RUN=run
-	else
-		RUN=var/run
-	endif
-endif
-
-ifndef SYSTEMD
-	ifeq ($(shell $(PKGCONFIG) --modversion libsystemd >/dev/null 2>&1 && echo 1), 1)
-		SYSTEMD = $(shell $(PKGCONFIG) --modversion libsystemd | awk '{print $$1}')
-	else
-		ifeq ($(shell systemctl --version >/dev/null 2>&1 && echo 1), 1)
-			SYSTEMD = $(shell systemctl --version 2> /dev/null | \
-				sed -n 's/systemd \([0-9]*\).*/\1/p')
-		endif
-	endif
-endif
-
-ifndef SYSTEMDPATH
-	SYSTEMDPATH=usr/lib
-endif
-
-ifndef DEVMAPPER_INCDIR
-	ifeq ($(shell $(PKGCONFIG) --modversion devmapper >/dev/null 2>&1 && echo 1), 1)
-		DEVMAPPER_INCDIR = $(shell $(PKGCONFIG) --variable=includedir devmapper)
-	else
-		DEVMAPPER_INCDIR = /usr/include
-	endif
-endif
-
-ifndef LIBUDEV_INCDIR
-	ifeq ($(shell $(PKGCONFIG) --modversion libudev >/dev/null 2>&1 && echo 1), 1)
-		LIBUDEV_INCDIR = $(shell $(PKGCONFIG) --variable=includedir libudev)
-	else
-		LIBUDEV_INCDIR = /usr/include
-	endif
-endif
-
-# Allow user to override default location.
-ifndef LINUX_HEADERS_INCDIR
-	LINUX_HEADERS_INCDIR = /usr/include
-endif
-
-prefix		=
-exec_prefix	= $(prefix)
-usr_prefix	= $(prefix)
-bindir		= $(exec_prefix)/sbin
-libudevdir	= $(prefix)/$(SYSTEMDPATH)/udev
-tmpfilesdir	= $(prefix)/$(SYSTEMDPATH)/tmpfiles.d
-udevrulesdir	= $(libudevdir)/rules.d
-modulesloaddir  = $(prefix)/$(SYSTEMDPATH)/modules-load.d
-multipathdir	= $(TOPDIR)/libmultipath
-daemondir       = $(TOPDIR)/multipathd
-mpathutildir	= $(TOPDIR)/libmpathutil
-man8dir		= $(prefix)/share/man/man8
-man5dir		= $(prefix)/share/man/man5
-man3dir		= $(prefix)/share/man/man3
-syslibdir	= $(prefix)/$(LIB)
-usrlibdir	= $(usr_prefix)/$(LIB)
-libdir		= $(prefix)/$(LIB)/multipath
-unitdir		= $(prefix)/$(SYSTEMDPATH)/systemd/system
-mpathpersistdir	= $(TOPDIR)/libmpathpersist
-mpathcmddir	= $(TOPDIR)/libmpathcmd
-mpathvaliddir	= $(TOPDIR)/libmpathvalid
-thirdpartydir	= $(TOPDIR)/third-party
-libdmmpdir	= $(TOPDIR)/libdmmp
-nvmedir		= $(TOPDIR)/libmultipath/nvme
-includedir	= $(prefix)/include
-pkgconfdir	= $(usrlibdir)/pkgconfig
+# Paths. All these can be overridden on the "make" command line.
+prefix		:=
+# Prefix for binaries
+exec_prefix	:= $(prefix)
+# Prefix for non-essential libraries (libdmmp)
+usr_prefix	:= $(prefix)
+# Where to install systemd-related files. systemd is usually installed under /usr
+# Note: some systemd installations use separate "prefix" and "rootprefix".
+# In this case, override only unitdir to use systemd's "rootprefix" instead of $(systemd_prefix)
+systemd_prefix  := /usr
+unitdir		:= $(systemd_prefix)/lib/systemd/system
+tmpfilesdir	:= $(systemd_prefix)/lib/tmpfiles.d
+modulesloaddir	:= $(systemd_prefix)/lib/modules-load.d
+libudevdir	:= $(systemd_prefix)/lib/udev
+udevrulesdir	:= $(libudevdir)/rules.d
+bindir		:= $(exec_prefix)/sbin
+mandir		:= $(usr_prefix)/share/man
+LIB		:= $(if $(shell test -d /lib64 && echo 1),lib64,lib)
+syslibdir	:= $(prefix)/$(LIB)
+usrlibdir	:= $(usr_prefix)/$(LIB)
+includedir	:= $(usr_prefix)/include
+pkgconfdir	:= $(usrlibdir)/pkgconfig
 plugindir       := $(prefix)/$(LIB)/multipath
 configdir       := $(prefix)/etc/multipath/conf.d
-runtimedir      := /$(RUN)
+runtimedir      := $(if $(shell test -L /var/run -o ! -d /var/run && echo 1),/run,/var/run)
+devmapper_incdir := $(or $(shell $(PKGCONFIG) --variable=includedir devmapper),/usr/include)
+libudev_incdir	:= $(or $(shell $(PKGCONFIG) --variable=includedir libudev),/usr/include)
+kernel_incdir	:= /usr/include
 
-GZIP_PROG	= gzip -9 -c
-RM		= rm -f
-LN		= ln -sf
-INSTALL_PROGRAM	= install
-NV_VERSION_SCRIPT = $(VERSION_SCRIPT:%.version=%-nv.version)
+ifeq ($(V),)
+Q		:= @
+# make's "Entering directory" messages are confusing in parallel mode
+#MAKEFLAGS	= --no-print-directory
+endif
 
-# $(call TEST_CC_OPTION,option,fallback)
-# Test if the C compiler supports the option.
-# Evaluates to "option" if yes, and "fallback" otherwise.
-TEST_CC_OPTION = $(shell \
-	if echo 'int main(void){return 0;}' | \
-		$(CC) -o /dev/null -c -Werror "$(1)" -xc - >/dev/null 2>&1; \
-	then \
-		echo "$(1)"; \
-	else \
-		echo "$(2)"; \
-	fi)
+GZIP_PROG	:= gzip -9 -c
+RM		:= rm -f
+LN		:= ln -sf
+INSTALL_PROGRAM	:= install
 
-# "make" on some distros will fail on explicit '#' or '\#' in the program text below
-__HASH__ := \#
-# Check if _DFORTIFY_SOURCE=3 is supported.
-# On some distros (e.g. Debian Buster) it will be falsely reported as supported
-# but it doesn't seem to make a difference wrt the compilation result.
-FORTIFY_OPT := $(shell \
-	if /bin/echo -e '$(__HASH__)include <string.h>\nint main(void) { return 0; }' | \
-		$(CC) -o /dev/null -c -O2 -Werror -D_FORTIFY_SOURCE=3 -xc - 2>/dev/null; \
-	then \
-		echo "-D_FORTIFY_SOURCE=3"; \
-	else \
-		echo "-D_FORTIFY_SOURCE=2"; \
-	fi)
+ORIG_CPPFLAGS    := $(CPPFLAGS)
+ORIG_CFLAGS      := $(CFLAGS)
+ORIG_LDFLAGS     := $(LDFLAGS)
 
-STACKPROT := $(call TEST_CC_OPTION,-fstack-protector-strong,-fstack-protector)
-ERROR_DISCARDED_QUALIFIERS := $(call TEST_CC_OPTION,-Werror=discarded-qualifiers,)
-WNOCLOBBERED := $(call TEST_CC_OPTION,-Wno-clobbered -Wno-error=clobbered,)
-WFORMATOVERFLOW := $(call TEST_CC_OPTION,-Wformat-overflow=2,)
+SYSTEMD_CPPFLAGS := $(if $(SYSTEMD),-DUSE_SYSTEMD=$(SYSTEMD))
+SYSTEMD_LIBDEPS := $(if $(SYSTEMD),$(if $(shell test $(SYSTEMD) -gt 209 && echo 1),-lsystemd,-lsystemd-daemon))
 
 OPTFLAGS	:= -O2 -g $(STACKPROT) --param=ssp-buffer-size=4
 WARNFLAGS	:= -Werror -Wall -Wextra -Wformat=2 $(WFORMATOVERFLOW) -Werror=implicit-int \
 		  -Werror=implicit-function-declaration -Werror=format-security \
-		  $(WNOCLOBBERED) -Werror=cast-qual $(ERROR_DISCARDED_QUALIFIERS)
-CPPFLAGS	:= $(FORTIFY_OPT) \
-		   -DBIN_DIR=\"$(bindir)\" -DMULTIPATH_DIR=\"$(plugindir)\" -DRUN_DIR=\"${RUN}\" \
+		  $(WNOCLOBBERED) -Werror=cast-qual $(ERROR_DISCARDED_QUALIFIERS) $(W_URCU_TYPE_LIMITS)
+CPPFLAGS	:= $(FORTIFY_OPT) $(CPPFLAGS) \
+		   -DBIN_DIR=\"$(bindir)\" -DMULTIPATH_DIR=\"$(plugindir)\" \
 		   -DRUNTIME_DIR=\"$(runtimedir)\" \
 		   -DCONFIG_DIR=\"$(configdir)\" -DEXTRAVERSION=\"$(EXTRAVERSION)\" -MMD -MP
 CFLAGS		:= --std=gnu99 $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe
-BIN_CFLAGS	= -fPIE -DPIE
-LIB_CFLAGS	= -fPIC
-SHARED_FLAGS	= -shared
+BIN_CFLAGS	:= -fPIE -DPIE
+LIB_CFLAGS	:= -fPIC
+SHARED_FLAGS	:= -shared
 LDFLAGS		:= $(LDFLAGS) -Wl,-z,relro -Wl,-z,now -Wl,-z,defs
-BIN_LDFLAGS	= -pie
+BIN_LDFLAGS	:= -pie
 
-# Check whether a function with name $1 has been declared in header file $2.
-check_func = $(shell \
-	if grep -Eq "^[^[:blank:]]+[[:blank:]]+$1[[:blank:]]*(.*)*" "$2"; then \
-		found=1; \
-		status="yes"; \
-	else \
-		found=0; \
-		status="no"; \
-	fi; \
-	echo 1>&2 "Checking for $1 in $2 ... $$status"; \
-	echo "$$found" \
-	)
+# Source code directories. Don't modify.
 
-# Checker whether a file with name $1 exists
-check_file = $(shell \
-	if [ -f "$1" ]; then \
-		found=1; \
-		status="yes"; \
-	else \
-		found=0; \
-		status="no"; \
-	fi; \
-	echo 1>&2 "Checking if $1 exists ... $$status"; \
-	echo "$$found" \
-	)
+multipathdir	:= $(TOPDIR)/libmultipath
+daemondir	:= $(TOPDIR)/multipathd
+mpathutildir	:= $(TOPDIR)/libmpathutil
+mpathpersistdir	:= $(TOPDIR)/libmpathpersist
+mpathcmddir	:= $(TOPDIR)/libmpathcmd
+mpathvaliddir	:= $(TOPDIR)/libmpathvalid
+thirdpartydir	:= $(TOPDIR)/third-party
+libdmmpdir	:= $(TOPDIR)/libdmmp
+nvmedir		:= $(TOPDIR)/libmultipath/nvme
 
-# Check whether a file contains a variable with name $1 in header file $2
-check_var = $(shell \
-	if grep -Eq "(^|[[:blank:]])$1([[:blank:]]|=|$$)" "$2"; then \
-                found=1; \
-                status="yes"; \
-        else \
-                found=0; \
-                status="no"; \
-        fi; \
-        echo 1>&2 "Checking for ..  $1 in $2 ... $$status"; \
-        echo "$$found" \
-        )
+# Common code for libraries - library Makefiles just set DEVLIB
+# SONAME defaults to 0 (we use version scripts)
+SONAME := 0
+LIBS = $(DEVLIB).$(SONAME)
+VERSION_SCRIPT = $(DEVLIB:%.so=%.version)
+NV_VERSION_SCRIPT = $(DEVLIB:%.so=%-nv.version)
 
 %.o:	%.c
 	@echo building $@ because of $?
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(Q)$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 %.abi:  %.so.0
-	abidw $< >$@
+	$(Q)abidw $< >$@
 
 %.abi:  %.so
-	abidw $< >$@
+	$(Q)abidw $< >$@
+
+%-nv.version:	%.version
+	@echo creating $@ from $<
+	@printf 'NOVERSION {\nglobal:\n' >$@
+	@grep -P '^[ \t]+[a-zA-Z_][a-zA-Z0-9_]*;' $< >>$@
+	@printf 'local:\n\t*;\n};\n' >>$@
+

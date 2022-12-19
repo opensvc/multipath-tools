@@ -3,24 +3,10 @@
 #
 include ../Makefile.inc
 
-SONAME = 0
-DEVLIB = libmpathutil.so
-LIBS = $(DEVLIB).$(SONAME)
-VERSION_SCRIPT := libmpathutil.version
-
-CPPFLAGS += -I. -I$(multipathdir) -I$(mpathcmddir)
+DEVLIB := libmpathutil.so
+CPPFLAGS += -I. -I$(multipathdir) -I$(mpathcmddir) $(SYSTEMD_CPPFLAGS)
 CFLAGS += $(LIB_CFLAGS) -D_GNU_SOURCE
-
-LIBDEPS += -lpthread -ldl -ludev -L$(mpathcmddir) -lmpathcmd
-
-ifdef SYSTEMD
-	CPPFLAGS += -DUSE_SYSTEMD=$(SYSTEMD)
-	ifeq ($(shell test $(SYSTEMD) -gt 209 && echo 1), 1)
-		LIBDEPS += -lsystemd
-	else
-		LIBDEPS += -lsystemd-daemon
-	endif
-endif
+LIBDEPS += -lpthread -ldl -ludev -L$(mpathcmddir) -lmpathcmd $(SYSTEMD_LIBDEPS) -lrt
 
 # object files referencing MULTIPATH_DIR or CONFIG_DIR
 # they need to be recompiled for unit tests
@@ -31,40 +17,21 @@ OBJS := parser.o vector.o util.o debug.o time-util.o \
 
 all:	$(DEVLIB)
 
-make_static = $(shell sed '/^static/!s/^\([a-z]\{1,\} \)/static \1/' <$1 >$2)
-
-$(LIBS): $(OBJS) $(VERSION_SCRIPT)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
-		-Wl,--version-script=$(VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
-
-$(DEVLIB): $(LIBS)
-	$(LN) $(LIBS) $@
-
-$(NV_VERSION_SCRIPT):	$(VERSION_SCRIPT)
-	@printf 'NOVERSION {\nglobal:\n' >$@
-	@grep -P '^[ \t]+[a-zA-Z_][a-zA-Z0-9_]*;' $< >>$@
-	@printf 'local:\n\t*;\n};\n' >>$@
-
-$(LIBS:%.so.$(SONAME)=%-nv.so):	$(OBJS) $(NV_VERSION_SCRIPT)
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -Wl,-soname=$@ \
-		-Wl,--version-script=$(NV_VERSION_SCRIPT) -o $@ $(OBJS) $(LIBDEPS)
-
-abi:    $(LIBS:%.so.$(SONAME)=%-nv.abi)
+include $(TOPDIR)/rules.mk
 
 install: all
-	$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)
-	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
-	$(INSTALL_PROGRAM) -m 755 -d $(DESTDIR)$(libdir)
-	$(LN) $(LIBS) $(DESTDIR)$(syslibdir)/$(DEVLIB)
+	$(Q)$(INSTALL_PROGRAM) -d $(DESTDIR)$(syslibdir)
+	$(Q)$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(syslibdir)/$(LIBS)
+	$(Q)$(LN) $(LIBS) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 uninstall:
-	$(RM) $(DESTDIR)$(syslibdir)/$(LIBS)
-	$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
+	$(Q)$(RM) $(DESTDIR)$(syslibdir)/$(LIBS)
+	$(Q)$(RM) $(DESTDIR)$(syslibdir)/$(DEVLIB)
 
 clean: dep_clean
-	$(RM) core *.a *.o *.so *.so.* *.abi nvme-ioctl.c nvme-ioctl.h $(NV_VERSION_SCRIPT)
+	$(Q)$(RM) core *.a *.o *.so *.so.* *.abi nvme-ioctl.c nvme-ioctl.h $(NV_VERSION_SCRIPT)
 
 include $(wildcard $(OBJS:.o=.d))
 
 dep_clean:
-	$(RM) $(OBJS:.o=.d)
+	$(Q)$(RM) $(OBJS:.o=.d)

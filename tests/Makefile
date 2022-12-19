@@ -3,14 +3,6 @@ include ../Makefile.inc
 # directory where to run the tests
 TESTDIR := $(CURDIR)
 
-# Test special behavior of gcc 4.8 with nested initializers
-# gcc 4.8 compiles blacklist.c only with -Wno-missing-field-initializers
-TEST_MISSING_INITIALIZERS = $(shell \
-	echo 'struct A {int a, b;}; struct B {struct A a; int b;} b = {.a.a=1};' | \
-		$(CC) -c -Werror -Wmissing-field-initializers -o /dev/null -xc - >/dev/null 2>&1 \
-	|| echo -Wno-missing-field-initializers)
-W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)
-
 CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathcmddir) -I$(daemondir) \
 	-DTESTCONFDIR=\"$(TESTDIR)/conf.d\"
 CFLAGS += $(BIN_CFLAGS) -Wno-unused-parameter $(W_MISSING_INITIALIZERS)
@@ -20,7 +12,6 @@ TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
 	 alias directio valid devt mpathvalid strbuf sysfs features cli
 HELPERS := test-lib.o test-log.o
 
-.SILENT: $(TESTS:%=%.o)
 .PRECIOUS: $(TESTS:%=%-test)
 
 all:	$(TESTS:%=%.out)
@@ -79,15 +70,16 @@ features-test_LIBDEPS := -ludev -lpthread
 cli-test_OBJDEPS := $(daemondir)/cli.o
 
 %.o: %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $($*-test_FLAGS) -c -o $@ $<
+	@echo building $@ because of $?
+	$(Q)$(CC) $(CPPFLAGS) $(CFLAGS) $($*-test_FLAGS) -c -o $@ $<
 
 lib/libchecktur.so:
-	mkdir -p lib
-	cd lib && ln -s ../$(multipathdir)/*/*.so .
+	@mkdir -p lib
+	$(Q)cd lib && ln -s ../$(multipathdir)/*/*.so .
 
 %.out:	%-test lib/libchecktur.so
 	@echo == running $< ==
-	@LD_LIBRARY_PATH=.:$(mpathutildir):$(mpathcmddir) ./$< >$@ 2>&1
+	@LD_LIBRARY_PATH=.:$(mpathutildir):$(mpathcmddir) ./$< >$@ 2>&1 || { cat "$@"; false; }
 
 %.vgr:  %-test lib/libchecktur.so
 	@echo == running valgrind for $< ==
@@ -97,34 +89,38 @@ lib/libchecktur.so:
 OBJS = $(TESTS:%=%.o) $(HELPERS)
 
 test_clean:
-	$(RM) $(TESTS:%=%.out) $(TESTS:%=%.vgr) *.so*
+	$(Q)$(RM) $(TESTS:%=%.out) $(TESTS:%=%.vgr) *.so*
 
 valgrind_clean:
-	$(RM) $(TESTS:%=%.vgr)
+	$(Q)$(RM) $(TESTS:%=%.vgr)
 
 clean: test_clean valgrind_clean dep_clean
-	$(RM) $(TESTS:%=%-test) $(OBJS) *.o.wrap
-	$(RM) -rf lib conf.d
+	$(Q)$(RM) $(TESTS:%=%-test) $(OBJS) *.o.wrap
+	$(Q)$(RM) -rf lib conf.d
 
 .SECONDARY: $(OBJS)
 
 include $(wildcard $(OBJS:.o=.d))
 
 dep_clean:
-	$(RM) $(OBJS:.o=.d)
+	$(Q)$(RM) $(OBJS:.o=.d)
 
 %.o.wrap:	%.c
 	@sed -n 's/^.*__wrap_\([a-zA-Z0-9_]*\).*$$/-Wl,--wrap=\1/p' $< | \
 		sort -u | tr '\n' ' ' >$@
 
+# Pass the original values of CFLAGS etc. to the sub-make, which will include
+# Makefile.in again. Otherwise, the flags would be added twice.
 libmultipath.so.0: $(multipathdir)/libmultipath.so.0
-	make -C $(multipathdir) configdir=$(TESTDIR)/conf.d plugindir=$(TESTDIR)/lib test-lib
+	@CFLAGS=$(ORIG_CFLAGS) CPPFLAGS=$(ORIG_CPPFLAGS) LDFLAGS=$(ORIG_LDFLAGS) \
+	$(MAKE) -C $(multipathdir) configdir=$(TESTDIR)/conf.d plugindir=$(TESTDIR)/lib test-lib
 
 # COLON will get expanded during second expansion below
 COLON:=:
 .SECONDEXPANSION:
 %-test:	%.o %.o.wrap $$($$@_OBJDEPS) $$($$@_TESTDEPS) $$($$@_TESTDEPS$$(COLON).o=.o.wrap) \
 		libmultipath.so.0 $(mpathutildir)/libmpathutil.so.0 $(mpathcmddir)/libmpathcmd.so.0 Makefile
-	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $< $($@_TESTDEPS) $($@_OBJDEPS) \
+	@echo building $@
+	$(Q)$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $< $($@_TESTDEPS) $($@_OBJDEPS) \
 		$(LIBDEPS) $($@_LIBDEPS) \
 		$(shell cat $<.wrap) $(foreach dep,$($@_TESTDEPS),$(shell cat $(dep).wrap))

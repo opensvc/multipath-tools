@@ -1,6 +1,6 @@
 #ifndef _DEVMAPPER_H
 #define _DEVMAPPER_H
-
+#include "autoconfig.h"
 #include "structs.h"
 
 #define TGT_MPATH	"multipath"

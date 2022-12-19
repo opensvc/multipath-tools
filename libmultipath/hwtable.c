@@ -232,7 +232,7 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 	},
 	{
-		/* Nimble Storage / HPE Alletra 6000 */
+		/* Nimble Storage / HPE Alletra 5000/6000 */
 		.vendor        = "Nimble",
 		.product       = "Server",
 		.hwhandler     = "1 alua",
@@ -340,6 +340,12 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 6,
 	},
 	{
+		/* PowerMax NVMe */
+		.vendor        = "NVME",
+		.product       = "EMC PowerMax",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+	},
+	{
 		/* DGC CLARiiON CX/AX / VNX and Unity */
 		.vendor        = "^DGC",
 		.product       = "^(RAID|DISK|VRAID)",
@@ -367,7 +373,7 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = MULTIBUS,
 	},
 	{
-		/* SC Series, formerly Compellent */
+		/* SC Series (formerly Compellent) */
 		.vendor        = "COMPELNT",
 		.product       = "Compellent Vol",
 		.pgpolicy      = GROUP_BY_PRIO,
@@ -456,6 +462,7 @@ static struct hwentry default_hw[] = {
 	{
 		/*
 		 * ETERNUS AB/HB
+		 *
 		 * Maintainer: NetApp RDAC team <ng-eseries-upstream-maintainers@netapp.com>
 		 */
 		.vendor        = "FUJITSU",
@@ -672,7 +679,7 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 	},
 	{
-		// Storwize V5000 and V7000 lines / SAN Volume Controller (SVC) / Flex System V7000 /
+		// Storwize V5000/V7000 lines / SAN Volume Controller (SVC) / Flex System V7000
 		// FlashSystem V840/V9000/5000/5100/5200/7200/7300/9100/9200/9200R/9500
 		.vendor        = "IBM",
 		.product       = "^2145",
@@ -808,7 +815,7 @@ static struct hwentry default_hw[] = {
 	 */
 	{
 		/*
-		 * ONTAP family
+		 * ONTAP FAS/AFF Series
 		 *
 		 * Maintainer: Martin George <marting@netapp.com>
 		 */
@@ -825,7 +832,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/*
-		 * SANtricity(RDAC) family
+		 * SANtricity(RDAC) E/EF Series
 		 *
 		 * Maintainer: NetApp RDAC team <ng-eseries-upstream-maintainers@netapp.com>
 		 */
@@ -1049,12 +1056,12 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 	},
 	/*
-	 * Linux-IO Target
+	 * Linux
 	 */
 	{
-		/* Linux-IO Target */
+		/* Linux-IO (LIO) Target */
 		.vendor        = "(LIO-ORG|SUSE)",
-		.product       = ".",
+		.product       = ".*",
 		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
@@ -1107,8 +1114,6 @@ static struct hwentry default_hw[] = {
 	 */
 	{
 		/* OceanStor V3-V6 */
-		// This config works with multibus and ALUA
-		// ALUA is required by HyperMetro
 		.vendor        = "HUAWEI",
 		.product       = "XSG1",
 		.pgpolicy      = GROUP_BY_PRIO,
@@ -1202,7 +1207,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	{
-		/* 3000 / 6000 Series - ALUA mode */
+		/* 3000 / 6000 Series (ALUA mode) */
 		.vendor        = "VIOLIN",
 		.product       = "SAN ARRAY ALUA",
 		.hwhandler     = "1 alua",

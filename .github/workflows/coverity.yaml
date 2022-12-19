@@ -32,7 +32,7 @@ jobs:
       - name: build with cov-build
         run: >
           PATH="$PWD/coverity/bin:$PATH"
-          cov-build --dir cov-int make -O -j"$(grep -c ^processor /proc/cpuinfo)"
+          cov-build --dir cov-int make -Orecurse -j"$(grep -c ^processor /proc/cpuinfo)"
       - name: pack results
         run: tar cfz multipath-tools.tgz cov-int
       - name: submit results

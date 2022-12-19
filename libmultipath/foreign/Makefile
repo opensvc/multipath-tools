@@ -14,16 +14,16 @@ LIBS = libforeign-nvme.so
 all: $(LIBS)
 
 libforeign-%.so: %.o
-	$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ $(LIBDEPS)
+	$(Q)$(CC) $(LDFLAGS) $(SHARED_FLAGS) -o $@ $^ $(LIBDEPS)
 
 install:
-	$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(libdir)
+	$(Q)$(INSTALL_PROGRAM) -m 755 $(LIBS) $(DESTDIR)$(plugindir)
 
 uninstall:
-	for file in $(LIBS); do $(RM) $(DESTDIR)$(libdir)/$$file; done
+	$(Q)for file in $(LIBS); do $(RM) $(DESTDIR)$(plugindir)/$$file; done
 
 clean: dep_clean
-	$(RM) core *.a *.o *.gz *.so
+	$(Q)$(RM) core *.a *.o *.gz *.so
 
 OBJS := $(LIBS:libforeign-%.so=%.o)
 .SECONDARY: $(OBJS)
@@ -31,4 +31,4 @@ OBJS := $(LIBS:libforeign-%.so=%.o)
 include $(wildcard $(OBJS:.o=.d))
 
 dep_clean:
-	$(RM) $(OBJS:.o=.d)
+	$(Q)$(RM) $(OBJS:.o=.d)

@@ -6,7 +6,7 @@
 .\" Update the date below if you make any significant change.
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATH.CONF 5 2022-09-09 Linux
+.TH MULTIPATH.CONF 5 2022-10-01 Linux
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -178,7 +178,7 @@ The default is: \fBno\fR
 .
 .TP
 .B multipath_dir
-This option is not supported any more. The value is ignored.
+(Deprecated) This option is not supported any more, and the value is ignored.
 .
 .
 .TP
@@ -204,10 +204,6 @@ of outstanding I/O to the path and its relative throughput.
 (Since 5.8 kernel) Choose the path for the next bunch of I/O based on the
 estimation of future service time based on the history of previous I/O submitted
 to each path.
-.TP
-.I "io-affinity 0"
-(Since 5.11 kernel) Choose the path for the next bunch of I/O based on a CPU to
-path mapping the user passes in and what CPU we are executing on.
 .TP
 The default is: \fBservice-time 0\fR
 .RE
@@ -239,6 +235,11 @@ in \fI/sys/class/fc_transport/target*/node_name\fR.
 .TP
 The default is: \fBfailover\fR
 .RE
+.
+.
+.TP
+.B pg_timeout
+(Deprecated) This option is not supported any more, and the value is ignored.
 .
 .
 .TP
@@ -283,7 +284,7 @@ The default is: \fBID_WWN\fR, for NVMe devices
 .
 .TP
 .B getuid_callout
-This option is not supported any more. The value is ignored.
+(Deprecated) This option is not supported any more, and the value is ignored.
 .
 .
 .TP
@@ -315,7 +316,8 @@ accepts the optional prio_arg \fIexclusive_pref_bit\fR.
 .TP
 .I ontap
 (Hardware-dependent)
-Generate the path priority for NetApp ONTAP class, and rebranded arrays.
+Generate the path priority for NetApp ONTAP FAS/AFF Series and rebranded arrays,
+with ONTAP native mode(not ALUA).
 .TP
 .I rdac
 (Hardware-dependent)
@@ -358,7 +360,7 @@ prio_args keyword.
 .PP
 The default depends on the \fBdetect_prio\fR setting: If \fBdetect_prio\fR is
 \fByes\fR (default), the default priority algorithm is \fBsysfs\fR (except for
-NetAPP E-Series, where it is \fBalua\fR). If \fBdetect_prio\fR is
+NetAPP E/EF Series, where it is \fBalua\fR). If \fBdetect_prio\fR is
 \fBno\fR, the default priority algorithm is \fBconst\fR.
 .RE
 .
@@ -467,7 +469,7 @@ cannot be changed. \fInvme:tcp\fR paths are only supported in multipath
 devices with queue_mode set to \fIbio\fR. multipath will automatically
 set this when creating a device with \fInvme:tcp\fR paths.
 .TP
-The default is: \fB<unset>\fR
+The default is: \fB0\fR
 .RE
 .
 .
@@ -483,7 +485,7 @@ second, until \fIchecker_timeout\fR seconds have elapsed. Possible values are:
 .TP 12
 .I readsector0
 (Deprecated) Read the first sector of the device. This checker is being
-deprecated, please use \fItur\fR instead.
+deprecated, please use \fItur\fR or \fIdirectio\fR instead.
 .TP
 .I tur
 Issue a \fITEST UNIT READY\fR command to the device.
@@ -555,7 +557,7 @@ The default is: \fBmanual\fR
 .
 .
 .TP
-.B  rr_min_io
+.B rr_min_io
 Number of I/O requests to route to a path before switching to the next in the
 same path group. This is only for \fIBlock I/O\fR(BIO) based multipath and
 only apply to \fIround-robin\fR path_selector.
@@ -706,18 +708,33 @@ The default is: \fB5\fR
 .
 .TP
 .B dev_loss_tmo
-Specify the number of seconds the SCSI layer will wait after a problem has
-been detected on a FC remote port before removing it from the system. This
-can be set to "infinity" which sets it to the max value of 2147483647
-seconds, or 68 years. It will be automatically adjusted to the overall
-retry interval \fIno_path_retry\fR * \fIpolling_interval\fR
-if a number of retries is given with \fIno_path_retry\fR and the
-overall retry interval is longer than the specified \fIdev_loss_tmo\fR value.
-The Linux kernel will cap this value to \fI600\fR if \fIfast_io_fail_tmo\fR
-is not set. See KNOWN ISSUES.
+Specify the number of seconds the SCSI layer will wait after a connection loss has
+been detected on a remote port before removing it from the system. This
+can be set to "infinity", which effectively means 136 years (2^32-1 seconds).
+This parameter is only applied to Fibre Channel and SAS devices.
 .RS
+.LP
+The value of \fIdev_loss_tmo\fR is restricted by other settings.
+If \fIfast_io_fail_tmo\fR is set to a positive value, \fBmultipathd\fR
+will make sure that the value of \fIdev_loss_tmo\fR is larger than
+\fIno_path_retry\fR * \fIpolling_interval\fR.
+If \fIfast_io_fail_tmo\fR is not set, the kernel limits the \fIdev_loss_tmo\fR
+value to 600 seconds.
+In this case, the user has to make sure that \fIno_path_retry\fR is smaller
+than \fIdev_loss_tmo / polling_interval\fR. In particular,
+\fIno_path_retry\fR must not be set to \(dq\fIqueue\fR\(dq. See KNOWN ISSUES.
+.LP
+When path devices reappear after a connection loss, it is much easier for
+the kernel to simply reactivate an inactive device than to re-add
+a previously deleted one. It is therefore recommended to set
+\fIdev_loss_tmo\fR to a large value within the restrictions mentioned above.
+.LP
+Fibre Channel and SAS devices have hardware-dependent defaults, which are left
+unchanged if \fIdev_loss_tmo\fR is not specified. For a few storage arrays,
+the multipath-tools built-in settings override the default. Run \fImultipath -T\fR
+to see the settings for your device.
 .TP
-The default is: \fB600\fR
+The default is: \fB<hardware dependent>\fR
 .RE
 .
 .
@@ -739,7 +756,7 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B bindings_file
-This option is deprecated, and will be removed in a future release.
+(Deprecated) This option is deprecated, and will be removed in a future release.
 The full pathname of the binding file to be used when the user_friendly_names
 option is set.
 .RS
@@ -750,7 +767,7 @@ The default is: \fB/etc/multipath/bindings\fR
 .
 .TP
 .B wwids_file
-This option is deprecated, and will be removed in a future release.
+(Deprecated) This option is deprecated, and will be removed in a future release.
 The full pathname of the WWIDs file, which is used by multipath to keep track
 of the WWIDs for LUNs it has created multipath devices on in the past.
 .RS
@@ -761,7 +778,7 @@ The default is: \fB/etc/multipath/wwids\fR
 .
 .TP
 .B prkeys_file
-This option is deprecated, and will be removed in a future release.
+(Deprecated) This option is deprecated, and will be removed in a future release.
 The full pathname of the prkeys file, which is used by multipathd to keep
 track of the persistent reservation key used for a specific WWID, when
 \fIreservation_key\fR is set to \fBfile\fR.
@@ -933,7 +950,7 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B config_dir
-This option is not supported any more. The value is ignored.
+(Deprecated) This option is not supported any more, and the value is ignored.
 .
 .
 .TP
@@ -1046,7 +1063,7 @@ The default is: \fBno\fR
 .
 .TP
 .B delay_watch_checks
-This option is \fBdeprecated\fR, and mapped to \fIsan_path_err_forget_rate\fR.
+(Deprecated) This option is \fBdeprecated\fR, and mapped to \fIsan_path_err_forget_rate\fR.
 If this is set to a value greater than 0 and no \fIsan_path_err\fR options
 are set, \fIsan_path_err_forget_rate\fR will be set to the value of
 \fIdelay_watch_checks\fR and \fIsan_path_err_threshold\fR will be set to 1.
@@ -1060,7 +1077,7 @@ The default is: \fBno\fR
 .
 .TP
 .B delay_wait_checks
-This option is \fBdeprecated\fR, and mapped to \fIsan_path_err_recovery_time\fR.
+(Deprecated) This option is \fBdeprecated\fR, and mapped to \fIsan_path_err_recovery_time\fR.
 If this is set to a value greater than 0 and no \fIsan_path_err\fR options
 are set, \fIsan_path_err_recovery_time\fR will be set to the value of
 \fIdelay_wait_checks\fR times \fImax_polling_interval\fR. This will give
@@ -1227,8 +1244,7 @@ The default is: \fBno\fR
 .
 .TP
 .B disable_changed_wwids
-This option is deprecated and ignored. If the WWID of a path suddenly changes,
-multipathd handles it as if it was removed and then added again.
+(Deprecated) This option is not supported any more, and the value is ignored.
 .RE
 .
 .
@@ -1292,8 +1308,6 @@ wwid.
 The default is: \fBno\fR
 .RE
 .
-.
-
 .
 .\" ----------------------------------------------------------------------------
 .SH "blacklist and blacklist_exceptions sections"
@@ -1849,10 +1863,10 @@ normal pathgroup. The logic of determining \(dqshaky\(dq condition, as well as
 the logic when to reinstate, differs between the three methods.
 .TP 8
 .B \(dqdelay_checks\(dq failure tracking
-This method is \fBdeprecated\fR and mapped to the \(dqsan_path_err\(dq method.
+(Deprecated) This method is \fBdeprecated\fR and mapped to the \(dqsan_path_err\(dq method.
 See the \fIdelay_watch_checks\fR and \fIdelay_wait_checks\fR options above
 for more information.
-
+.
 .TP
 .B \(dqmarginal_path\(dq failure tracking
 If a second failure event (good->bad transition) occurs within
@@ -1877,17 +1891,18 @@ increase and the threshold is never reached. Ticks are the time between
 path checks by multipathd, which is variable and controlled by the
 \fIpolling_interval\fR and \fImax_polling_interval\fR parameters.
 .
+.RS 8
+.LP
+This algorithm is superseded by the \(dqmarginal_path\(dq failure tracking,
+but remains supported for backward compatibility.
+.
+.RE
 .TP
-.B \(dqFPIN \(dq failure tracking
+.B \(dqFPIN\(dq failure tracking
 Fibre channel fabrics can notify hosts about fabric-level issues such
 as integrity failures or congestion with so-called Fabric Performance
 Impact Notifications (FPINs).On receiving the fpin notifications through ELS
 multipathd will move the affected path and port states to marginal.
-.
-.RS 8
-.LP
-This method is \fBdeprecated\fR in favor of the \(dqmarginal_path\(dq failure
-tracking method, and only offered for backward compatibility.
 .
 .RE
 .LP
@@ -1923,6 +1938,7 @@ size=167772160 features='n/a' hwhandler='ANA' wp=rw
 .P
 The \(dqnvme\(dq foreign library provides support for NVMe native multipathing
 in the kernel. It is part of the standard multipath package.
+.
 .
 .\" ----------------------------------------------------------------------------
 .SH "KNOWN ISSUES"

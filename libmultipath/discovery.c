@@ -218,7 +218,8 @@ path_discovery (vector pathvec, int flag)
 					  udevice, flag) == PATHINFO_OK)
 				num_paths++;
 		}
-		udevice = udev_device_unref(udevice);
+		udev_device_unref(udevice);
+		udevice = NULL;
 	}
 	ret = total_paths - num_paths;
 	condlog(4, "Discovered %d/%d paths", num_paths, total_paths);

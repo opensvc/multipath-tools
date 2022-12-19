@@ -67,12 +67,7 @@ static int
 show_path (struct strbuf *reply, struct vectors *vecs, struct path *pp,
 	   char *style)
 {
-	fieldwidth_t *width __attribute__((cleanup(cleanup_ucharp))) = NULL;
-
-	if ((width = alloc_path_layout()) == NULL)
-		return 1;
-	get_path_layout(vecs->pathvec, 1, width);
-	if (snprint_path(reply, style, pp, 0) < 0)
+	if (snprint_path(reply, style, pp, NULL) < 0)
 		return 1;
 	return 0;
 }

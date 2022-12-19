@@ -333,59 +333,33 @@ void *
 set_value(vector strvec)
 {
 	char *str = VECTOR_SLOT(strvec, 1);
-	size_t size;
-	int i = 0;
-	int len = 0;
 	char *alloc = NULL;
-	char *tmp;
 
 	if (!str) {
 		condlog(0, "option '%s' missing value",
 			(char *)VECTOR_SLOT(strvec, 0));
 		return NULL;
 	}
-	if (!is_quote(str)) {
-		size = strlen(str);
-		if (size == 0) {
-			condlog(0, "option '%s' has empty value",
-				(char *)VECTOR_SLOT(strvec, 0));
-			return NULL;
+	if (is_quote(str)) {
+		if (VECTOR_SIZE(strvec) > 2) {
+			str = VECTOR_SLOT(strvec, 2);
+			if (!str) {
+				condlog(0, "parse error for option '%s'",
+					(char *)VECTOR_SLOT(strvec, 0));
+				return NULL;
+			}
 		}
-		alloc = calloc(1, sizeof (char) * (size + 1));
-		if (alloc)
-			memcpy(alloc, str, size);
-		else
-			goto oom;
+		/* Even empty quotes counts as a value (An empty string) */
+		if (is_quote(str)) {
+			alloc = (char *)calloc(1, sizeof (char));
+			if (!alloc)
+				goto oom;
+			return alloc;
+		}
+	}
+	alloc = strdup(str);
+	if (alloc)
 		return alloc;
-	}
-	/* Even empty quotes counts as a value (An empty string) */
-	alloc = (char *)calloc(1, sizeof (char));
-	if (!alloc)
-		goto oom;
-	for (i = 2; i < VECTOR_SIZE(strvec); i++) {
-		str = VECTOR_SLOT(strvec, i);
-		if (!str) {
-			free(alloc);
-			condlog(0, "parse error for option '%s'",
-				(char *)VECTOR_SLOT(strvec, 0));
-			return NULL;
-		}
-		if (is_quote(str))
-			break;
-		tmp = alloc;
-		/* The first +1 is for the NULL byte. The rest are for the
-		 * spaces between words */
-		len += strlen(str) + 1;
-		alloc = realloc(alloc, sizeof (char) * len);
-		if (!alloc) {
-			free(tmp);
-			goto oom;
-		}
-		if (*alloc != '\0')
-			strncat(alloc, " ", len - strlen(alloc));
-		strncat(alloc, str, len - strlen(alloc) - 1);
-	}
-	return alloc;
 oom:
 	condlog(0, "can't allocate memory for option '%s'",
 		(char *)VECTOR_SLOT(strvec, 0));
@@ -442,7 +416,6 @@ int
 validate_config_strvec(vector strvec, const char *file)
 {
 	char *str = NULL;
-	int i;
 
 	if (strvec && VECTOR_SIZE(strvec) > 0)
 		str = VECTOR_SLOT(strvec, 0);
@@ -485,21 +458,41 @@ validate_config_strvec(vector strvec, const char *file)
 			condlog(0, "ignoring extra data starting with '%s' on line %d of %s", (char *)VECTOR_SLOT(strvec, 2), line_nr, file);
 		return 0;
 	}
-	for (i = 2; i < VECTOR_SIZE(strvec); i++) {
-		str = VECTOR_SLOT(strvec, i);
-		if (str == NULL) {
-			condlog(0, "can't parse value on line %d of %s",
-				line_nr, file);
-			return -1;
-		}
-		if (is_quote(str)) {
-			if (VECTOR_SIZE(strvec) > i + 1)
-				condlog(0, "ignoring extra data starting with '%s' on line %d of %s", (char *)VECTOR_SLOT(strvec, (i + 1)), line_nr, file);
-			return 0;
-		}
+	if (VECTOR_SIZE(strvec) == 2) {
+		condlog(0, "missing closing quotes on line %d of %s",
+			line_nr, file);
+		return 0;
 	}
-	condlog(0, "missing closing quotes on line %d of %s",
-		line_nr, file);
+	str = VECTOR_SLOT(strvec, 2);
+	if (str == NULL) {
+		condlog(0, "can't parse value on line %d of %s",
+			line_nr, file);
+		return -1;
+	}
+	if (is_quote(str)) {
+		if (VECTOR_SIZE(strvec) > 3)
+			condlog(0, "ignoring extra data starting with '%s' on line %d of %s", (char *)VECTOR_SLOT(strvec, 3), line_nr, file);
+		return 0;
+	}
+	if (VECTOR_SIZE(strvec) == 3) {
+		condlog(0, "missing closing quotes on line %d of %s",
+			line_nr, file);
+		return 0;
+	}
+	str = VECTOR_SLOT(strvec, 3);
+	if (str == NULL) {
+		condlog(0, "can't parse value on line %d of %s",
+			line_nr, file);
+		return -1;
+	}
+	if (!is_quote(str)) {
+		/* There should only ever be one token between quotes */
+		condlog(0, "parsing error starting with '%s' on line %d of %s",
+			str, line_nr, file);
+		return -1;
+	}
+	if (VECTOR_SIZE(strvec) > 4)
+		condlog(0, "ignoring extra data starting with '%s' on line %d of %s", (char *)VECTOR_SLOT(strvec, 4), line_nr, file);
 	return 0;
 }
 

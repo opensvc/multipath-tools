@@ -1,5 +1,6 @@
 #ifndef __FPIN_H__
 #define __FPIN_H__
+#include "autoconfig.h"
 
 #ifdef FPIN_EVENT_HANDLER
 void *fpin_fabric_notification_receiver(void *unused);

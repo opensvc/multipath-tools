@@ -1,0 +1,80 @@
+name: multiarch compile and unit test
+on:
+  push:
+    branches:
+      - master
+      - queue
+      - tip
+  pull_request:
+
+jobs:
+
+  build-current:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - alpine
+          - debian-sid
+          - opensuse-tumbleweed
+          - opensuse-leap
+          - fedora-rawhide
+          - centos-8
+          - centos-7
+        arch: [amd64, ppc64le, aarch64, s390x]
+        exclude:
+          - os: centos-8
+            arch: s390x
+          - os: centos-7
+            arch: s390x
+        include:
+          - os: alpine
+            arch: 386
+          - os: alpine
+            arch: arm/v7
+          - os: debian-sid
+            arch: 386
+          - os: opensuse-tumbleweed
+            arch: 386
+        
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: enable foreign arch
+        uses: dbhi/qus/action@main
+      - name: compile and run unit tests
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          guest-dir: /build
+          host-dir: ${{ github.workspace }}
+          command: test
+          params: "--platform linux/${{ matrix.arch }}"
+          pull-params: "--platform linux/${{ matrix.arch }}"
+
+  build-old:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - debian-buster
+          - debian-jessie
+          - ubuntu-trusty
+        arch: [amd64, 386]
+        
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: enable foreign arch
+        uses: dbhi/qus/action@main
+      - name: compile and run unit tests
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          guest-dir: /build
+          host-dir: ${{ github.workspace }}
+          command: test
+          params: "--platform linux/${{ matrix.arch }}"
+          pull-params: "--platform linux/${{ matrix.arch }}"

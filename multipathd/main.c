@@ -4,6 +4,7 @@
  * Copyright (c) 2005 Benjamin Marzinski, Redhat
  * Copyright (c) 2005 Edward Goggin, EMC
  */
+#include "autoconfig.h"
 #include <unistd.h>
 #include <sys/stat.h>
 #include <libdevmapper.h>

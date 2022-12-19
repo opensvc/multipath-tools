@@ -18,7 +18,7 @@
 #include "mpathpr.h"
 
 
-static int do_update_pr(char *alias, char *arg)
+static int do_update_pr(char *alias, char *cmd, char *key)
 {
 	int fd;
 	char str[256];
@@ -31,7 +31,10 @@ static int do_update_pr(char *alias, char *arg)
 		return -1;
 	}
 
-	snprintf(str,sizeof(str),"map %s %s", alias, arg);
+	if (key)
+		snprintf(str,sizeof(str),"%s map %s key %s", cmd, alias, key);
+	else
+		snprintf(str,sizeof(str),"%s map %s", cmd, alias);
 	condlog (2, "%s: pr message=%s", alias, str);
 	if (send_packet(fd, str) != 0) {
 		condlog(2, "%s: message=%s send error=%d", alias, str, errno);
@@ -56,18 +59,16 @@ static int do_update_pr(char *alias, char *arg)
 }
 
 int update_prflag(char *mapname, int set) {
-	return do_update_pr(mapname, (set)? "setprstatus" : "unsetprstatus");
+	return do_update_pr(mapname, (set)? "setprstatus" : "unsetprstatus",
+			    NULL);
 }
 
 int update_prkey_flags(char *mapname, uint64_t prkey, uint8_t sa_flags) {
 	char str[256];
-	char *flagstr = "";
 
-	if (sa_flags & MPATH_F_APTPL_MASK)
-		flagstr = ":aptpl";
-	if (prkey)
-		sprintf(str, "setprkey key %" PRIx64 "%s", prkey, flagstr);
-	else
-		sprintf(str, "unsetprkey");
-	return do_update_pr(mapname, str);
+	if (!prkey)
+		return do_update_pr(mapname, "unsetprkey", NULL);
+	sprintf(str, "%" PRIx64 "%s", prkey,
+		(sa_flags & MPATH_F_APTPL_MASK) ? ":aptpl" : "");
+	return do_update_pr(mapname, "setprkey", str);
 }

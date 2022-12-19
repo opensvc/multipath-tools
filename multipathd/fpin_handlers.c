@@ -517,6 +517,8 @@ void *fpin_fabric_notification_receiver(__attribute__((unused))void *unused)
 		goto out;
 	}
 	for ( ; ; ) {
+		struct nlmsghdr *msghdr;
+
 		condlog(4, "Waiting for ELS...\n");
 		ret = read(fd, buf, DEF_RX_BUF_SIZE);
 		if (ret < 0) {
@@ -524,12 +526,13 @@ void *fpin_fabric_notification_receiver(__attribute__((unused))void *unused)
 			continue;
 		}
 		condlog(4, "Got a new request %d\n", ret);
-		if (!NLMSG_OK((struct nlmsghdr *)buf, (unsigned int)ret)) {
+		msghdr = (struct nlmsghdr *)buf;
+		if (!NLMSG_OK(msghdr, (unsigned int)ret)) {
 			condlog(0, "bad els frame read (%d)", ret);
 			continue;
 		}
 		/* Push the frame to appropriate frame list */
-		plen = NLMSG_PAYLOAD((struct nlmsghdr *)buf, 0);
+		plen = NLMSG_PAYLOAD(msghdr, 0);
 		fc_event = (struct fc_nl_event *)NLMSG_DATA(buf);
 		if (plen < sizeof(*fc_event)) {
 			condlog(0, "too short (%d) to be an FC event", ret);

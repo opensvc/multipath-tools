@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 
+#include "autoconfig.h"
 #include "nvme-lib.h"
 #include "checkers.h"
 #include "vector.h"
@@ -567,13 +568,13 @@ out:
 }
 
 /*
- * Current RDAC (NetApp E-Series) firmware relies
+ * Current RDAC (NetApp E/EF Series) firmware relies
  * on periodic REPORT TARGET PORT GROUPS for
  * internal load balancing.
  * Using the sysfs priority checker defeats this purpose.
  *
  * Moreover, NetApp would also prefer the RDAC checker over ALUA.
- * (https://www.redhat.com/archives/dm-devel/2017-September/msg00326.html)
+ * (https://listman.redhat.com/archives/dm-devel/2017-September/msg00326.html)
  */
 static int
 check_rdac(struct path * pp)

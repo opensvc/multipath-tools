@@ -34,6 +34,7 @@
 #include <ctype.h>
 #include <libdevmapper.h>
 
+#include "autoconfig.h"
 #include "devmapper.h"
 #include "crc32.h"
 #include "lopart.h"

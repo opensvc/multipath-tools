@@ -1,0 +1,33 @@
+name: compile and unit test on rolling distros
+on:
+  push:
+    branches:
+      - master
+      - queue
+      - tip
+  pull_request:
+  schedule:
+    - cron: '30 06 * * 1'
+
+jobs:
+  rolling:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - debian-sid
+          - alpine
+          - fedora-rawhide
+    container: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+      - name: build and test
+        run: make READLINE=libreadline -j -Orecurse test
+      - name: clean
+        run: make -j -Orecurse clean
+      - name: clang
+        env:
+          CC: clang
+        run: make READLINE=libedit -j -Orecurse test

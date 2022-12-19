@@ -9,63 +9,62 @@ on:
 
 jobs:
 
-  build:
+  cross-build:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
-        os: [bullseye]
-        arch: ['ppc64le', 'aarch64', 's390x']
-    container: mwilck/multipath-build-${{ matrix.os }}-${{ matrix.arch }}
+        os: [bullseye, sid]
+        arch: [ppc64le, arm64, s390x]
+    container: ghcr.io/mwilck/multipath-cross-debian_cross-${{ matrix.os }}-${{ matrix.arch }}
     steps:
       - name: checkout
         uses: actions/checkout@v1
-      - name: build and test
-        if: ${{ matrix.arch == '' || matrix.arch == '-i386' }}
-        run: make test
       - name: build
-        if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
-        # The build path is different between builder and runner
-        run: make TESTDIR=${{ github.workspace }}/tests test-progs
-      - name: archive
-        if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
+        run: make -j8 -Orecurse TESTDIR=/build/tests test-progs
+      - name: create binary archive
         run: >
           tar cfv binaries.tar
-          Makefile*
+          Makefile* config.mk
           libmpathcmd/*.so* libmultipath/*.so* libmpathutil/*.so*
           libmultipath/checkers/*.so libmultipath/prioritizers/*.so
           libmultipath/foreign/*.so
           tests/lib tests/*-test tests/Makefile tests/*.so*
-      - uses: actions/upload-artifact@v1
-        if: ${{ matrix.arch != '' && matrix.arch != '-i386' }}
+      - name: upload binary archive
+        uses: actions/upload-artifact@v1
         with:
-          name: multipath-${{ matrix.os }}-${{ matrix.arch }}
+          name: cross-${{ matrix.os }}-${{ matrix.arch }}
           path: binaries.tar
 
   test:
     runs-on: ubuntu-20.04
-    needs: build
+    needs: cross-build
     strategy:
+      fail-fast: false
       matrix:
-        os: [bullseye]
-        arch: ['ppc64le', 'aarch64', 's390x']
+        os: [bullseye, sid]
+        arch: [ppc64le, arm64, s390x]
     steps:
-      - name: get binaries
+      - name: set container arch
+        run: echo CONTAINER_ARCH="${{ matrix.arch }}" >> $GITHUB_ENV
+        if: ${{ matrix.arch != 'armhf' }}
+      - name: set container arch
+        run: echo CONTAINER_ARCH="arm/v7" >> $GITHUB_ENV
+        if: ${{ matrix.arch == 'armhf' }}
+      - name: download binary archive
         uses: actions/download-artifact@v1
         with:
-          name: multipath-${{ matrix.os }}-${{ matrix.arch }}
-      - name: unpack
-        run: tar xfv multipath-${{ matrix.os }}-${{ matrix.arch }}/binaries.tar
+          name: cross-${{ matrix.os }}-${{ matrix.arch }}
+      - name: unpack binary archive
+        run: tar xfv cross-${{ matrix.os }}-${{ matrix.arch }}/binaries.tar
       - name: enable foreign arch
-        run: sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset
+        uses: dbhi/qus/action@main
       - name: run tests
-        # GitHub actions doesn't support referencing docker images with
-        # context variables. Workaround: use mosteo-actions/docker-run action
-        # See https://github.community/t/expressions-in-docker-uri/16271
         uses: mosteo-actions/docker-run@v1
         with:
-          image: mwilck/multipath-run-${{ matrix.os }}-${{ matrix.arch }}
-          # The runner is an image that has "make" as entrypoint and uses
-          # github.workspace as both host dir and guest volume by default.
-          # See https://github.com/mosteo-actions/docker-run/blob/v1/action.yml
-          # So run "make -C tests" here
+          image: ghcr.io/mwilck/multipath-run-debian-${{ matrix.os }}
+          guest-dir: /build
+          host-dir: ${{ github.workspace }}
           command: -C tests
+          params: "--platform linux/${{ env.CONTAINER_ARCH }}"
+          pull-params: "--platform linux/${{ env.CONTAINER_ARCH }}"

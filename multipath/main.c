@@ -435,7 +435,8 @@ static bool released_to_systemd(void)
 	bool ret;
 
 	ret = dm_mp_dev_path != NULL && !strcmp(dm_mp_dev_path, "0");
-	condlog(4, "%s: %s=%s -> %d", __func__, dmdp, dm_mp_dev_path, ret);
+	condlog(4, "%s: %s=%s -> %d", __func__, dmdp,
+		dm_mp_dev_path ? dm_mp_dev_path : "", ret);
 	return ret;
 }
 
