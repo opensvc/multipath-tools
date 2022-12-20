@@ -377,6 +377,7 @@ typedef int (pgpolicyfn) (struct multipath *, vector);
 
 
 enum prflag_value {
+	PRFLAG_UNKNOWN,
 	PRFLAG_UNSET,
 	PRFLAG_SET,
 };

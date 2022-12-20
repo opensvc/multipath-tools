@@ -1278,6 +1278,7 @@ static int
 cli_getprstatus (void * v, struct strbuf *reply, void * data)
 {
 	static const char * const prflag_str[] = {
+		[PRFLAG_UNKNOWN] = "unknown\n",
 		[PRFLAG_UNSET] = "unset\n",
 		[PRFLAG_SET] = "set\n",
 	};

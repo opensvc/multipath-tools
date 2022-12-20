@@ -647,7 +647,7 @@ fail:
 
 	sync_map_state(mpp);
 
-	if (mpp->prflag == PRFLAG_UNSET)
+	if (mpp->prflag != PRFLAG_SET)
 		update_map_pr(mpp);
 	if (mpp->prflag == PRFLAG_SET)
 		pr_register_active_paths(mpp);
@@ -1330,7 +1330,7 @@ rescan:
 	if (retries >= 0) {
 		if (start_waiter)
 			update_map_pr(mpp);
-		if (mpp->prflag == PRFLAG_SET && prflag == PRFLAG_UNSET)
+		if (mpp->prflag == PRFLAG_SET && prflag != PRFLAG_SET)
 				pr_register_active_paths(mpp);
 		condlog(2, "%s [%s]: path added to devmap %s",
 			pp->dev, pp->dev_t, mpp->alias);
@@ -2492,13 +2492,17 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		}
 
 		if (newstate == PATH_UP || newstate == PATH_GHOST) {
-			if (pp->mpp->prflag == PRFLAG_SET) {
+			if (pp->mpp->prflag != PRFLAG_UNSET) {
+				int prflag = pp->mpp->prflag;
 				/*
 				 * Check Persistent Reservation.
 				 */
 				condlog(2, "%s: checking persistent "
 					"reservation registration", pp->dev);
 				mpath_pr_event_handle(pp);
+				if (pp->mpp->prflag == PRFLAG_SET &&
+				    prflag != PRFLAG_SET)
+					pr_register_active_paths(pp->mpp);
 			}
 		}
 
@@ -3788,6 +3792,7 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 		goto out;
 	}
 
+	mpp->prflag = PRFLAG_UNSET;
 	ret = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RKEY_SA, resp, 0);
 	if (ret != MPATH_PR_SUCCESS )
 	{
@@ -3858,12 +3863,12 @@ int mpath_pr_event_handle(struct path *pp)
 	struct multipath * mpp;
 
 	if (pp->bus != SYSFS_BUS_SCSI)
-		return 0;
+		goto no_pr;
 
 	mpp = pp->mpp;
 
 	if (!get_be64(mpp->reservation_key))
-		return -1;
+		goto no_pr;
 
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -3875,5 +3880,9 @@ int mpath_pr_event_handle(struct path *pp)
 	}
 	pthread_attr_destroy(&attr);
 	rc = pthread_join(thread, NULL);
+	return 0;
+
+no_pr:
+	pp->mpp->prflag = PRFLAG_UNSET;
 	return 0;
 }

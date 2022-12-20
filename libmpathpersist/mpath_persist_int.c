@@ -738,6 +738,7 @@ int update_map_pr(struct multipath *mpp)
 	if (!get_be64(mpp->reservation_key))
 	{
 		/* Nothing to do. Assuming pr mgmt feature is disabled*/
+		mpp->prflag = PRFLAG_UNSET;
 		condlog(4, "%s: reservation_key not set in multipath.conf",
 			mpp->alias);
 		return MPATH_PR_SUCCESS;
@@ -749,6 +750,13 @@ int update_map_pr(struct multipath *mpp)
 		condlog(0,"%s : failed to alloc resp in update_map_pr", mpp->alias);
 		return MPATH_PR_OTHER;
 	}
+	if (count_active_paths(mpp) == 0)
+	{
+		condlog(0,"%s: No available paths to check pr status",
+			mpp->alias);
+		return MPATH_PR_OTHER;
+	}
+	mpp->prflag = PRFLAG_UNSET;
 	ret = mpath_prin_activepath(mpp, MPATH_PRIN_RKEY_SA, resp, noisy);
 
 	if (ret != MPATH_PR_SUCCESS )
