@@ -760,7 +760,7 @@ cli_del_map (void * v, struct strbuf *reply, void * data)
 	}
 	rc = ev_remove_map(param, alias, minor, vecs);
 	if (rc == 2)
-		append_strbuf_str(reply, "delayed");
+		append_strbuf_str(reply, "delayed\n");
 
 	free(alias);
 	return rc;
