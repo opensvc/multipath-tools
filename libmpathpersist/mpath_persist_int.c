@@ -783,7 +783,7 @@ int update_map_pr(struct multipath *mpp)
 
 	if (isFound)
 	{
-		mpp->prflag = 1;
+		mpp->prflag = PRFLAG_SET;
 		condlog(2, "%s: prflag flag set.", mpp->alias );
 	}
 

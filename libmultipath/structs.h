@@ -375,6 +375,12 @@ struct path {
 
 typedef int (pgpolicyfn) (struct multipath *, vector);
 
+
+enum prflag_value {
+	PRFLAG_UNSET,
+	PRFLAG_SET,
+};
+
 struct multipath {
 	char wwid[WWID_SIZE];
 	char alias_old[WWID_SIZE];
@@ -449,7 +455,7 @@ struct multipath {
 	int prkey_source;
 	struct be64 reservation_key;
 	uint8_t sa_flags;
-	unsigned char prflag;
+	int prflag;
 	int all_tg_pt;
 	struct gen_multipath generic_mp;
 	bool fpin_must_reload;
