@@ -1273,8 +1273,11 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 	ret = CP_OK;
 out:
 	free(size_mismatch_seen);
-	if (!mpvec)
-		free_multipathvec(newmp, KEEP_PATHS);
+	if (!mpvec) {
+		vector_foreach_slot (newmp, mpp, i)
+			remove_map(mpp, vecs->pathvec, NULL);
+		vector_free(newmp);
+	}
 	return ret;
 }
 
