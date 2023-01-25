@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_17.0.0 {
+LIBMULTIPATH_18.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
