@@ -727,16 +727,17 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 		return;
 	}
 
-	if (force_reload) {
-		mpp->force_udev_reload = 1;
-		select_reload_action(mpp, "forced by user");
-		return;
-	}
 	if (cmpp->size != mpp->size) {
 		mpp->force_udev_reload = 1;
 		mpp->action = ACT_RESIZE;
 		condlog(3, "%s: set ACT_RESIZE (size change)",
 			mpp->alias);
+		return;
+	}
+
+	if (force_reload) {
+		mpp->force_udev_reload = 1;
+		select_reload_action(mpp, "forced by user");
 		return;
 	}
 
