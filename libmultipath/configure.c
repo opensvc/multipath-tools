@@ -686,33 +686,29 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 	if (mpp->need_reload || (cmpp && cmpp->need_reload))
 		force_reload = 1;
 
-	if (!cmpp_by_name) {
-		if (cmpp) {
-			condlog(2, "%s: rename %s to %s", mpp->wwid,
-				cmpp->alias, mpp->alias);
-			strlcpy(mpp->alias_old, cmpp->alias, WWID_SIZE);
-			mpp->action = ACT_RENAME;
-			if (force_reload) {
-				mpp->force_udev_reload = 1;
-				mpp->action = ACT_FORCERENAME;
-			}
-			return;
+	if (!cmpp) {
+		if (cmpp_by_name) {
+			condlog(1, "%s: can't use alias \"%s\" used by %s, falling back to WWID",
+				mpp->wwid, mpp->alias, cmpp_by_name->wwid);
+			/* We can do this because wwid wasn't found */
+			free(mpp->alias);
+			mpp->alias = strdup(mpp->wwid);
 		}
 		mpp->action = ACT_CREATE;
-		condlog(3, "%s: set ACT_CREATE (map does not exist)",
-			mpp->alias);
+		condlog(3, "%s: set ACT_CREATE (map does not exist%s)",
+			mpp->alias, cmpp_by_name ? ", name changed" : "");
 		return;
 	}
 
-	if (!cmpp) {
-		condlog(1, "%s: can't use alias \"%s\" used by %s, falling back to WWID",
-			mpp->wwid, mpp->alias, cmpp_by_name->wwid);
-		/* We can do this because wwid wasn't found */
-		free(mpp->alias);
-		mpp->alias = strdup(mpp->wwid);
-		mpp->action = ACT_CREATE;
-		condlog(3, "%s: set ACT_CREATE (map does not exist, name changed)",
+	if (!cmpp_by_name) {
+		condlog(2, "%s: rename %s to %s", mpp->wwid, cmpp->alias,
 			mpp->alias);
+		strlcpy(mpp->alias_old, cmpp->alias, WWID_SIZE);
+		mpp->action = ACT_RENAME;
+		if (force_reload) {
+			mpp->force_udev_reload = 1;
+			mpp->action = ACT_FORCERENAME;
+		}
 		return;
 	}
 
