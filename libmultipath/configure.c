@@ -729,9 +729,7 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 
 	if (force_reload) {
 		mpp->force_udev_reload = 1;
-		mpp->action = ACT_RELOAD;
-		condlog(3, "%s: set ACT_RELOAD (forced by user)",
-			mpp->alias);
+		select_reload_action(mpp, "forced by user");
 		return;
 	}
 	if (cmpp->size != mpp->size) {
@@ -744,9 +742,7 @@ void select_action (struct multipath *mpp, const struct _vector *curmp,
 
 	if (!is_udev_ready(cmpp) && count_active_paths(mpp) > 0) {
 		mpp->force_udev_reload = 1;
-		mpp->action = ACT_RELOAD;
-		condlog(3, "%s: set ACT_RELOAD (udev incomplete)",
-			mpp->alias);
+		select_reload_action(mpp, "udev incomplete");
 		return;
 	}
 
