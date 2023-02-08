@@ -31,7 +31,8 @@ IMPORT{db}="DM_MULTIPATH_DEVICE_PATH"
 
 # multipath -u sets DM_MULTIPATH_DEVICE_PATH and,
 # if "find_multipaths smart", also FIND_MULTIPATHS_WAIT_UNTIL.
-IMPORT{program}="$env{MPATH_SBIN_PATH}/multipath -u %k"
+IMPORT{program}=="$env{MPATH_SBIN_PATH}/multipath -u %k", \
+	ENV{.MPATH_CHECK_PASSED}="1"
 
 # case 1: this is definitely multipath
 ENV{DM_MULTIPATH_DEVICE_PATH}=="1", \
@@ -82,10 +83,19 @@ LABEL="stop_wait"
 # If timeout hasn't expired but we're not in "maybe" state any more, stop timer
 # Do this only once, and only if the timer has been started before
 IMPORT{db}="FIND_MULTIPATHS_WAIT_CANCELLED"
-ENV{FIND_MULTIPATHS_WAIT_CANCELLED}!="?*", \
-	ENV{FIND_MULTIPATHS_WAIT_UNTIL}=="?*", \
-	ENV{FIND_MULTIPATHS_WAIT_UNTIL}!="0", \
-	ENV{FIND_MULTIPATHS_WAIT_CANCELLED}="1", \
-	RUN+="/usr/bin/systemctl stop cancel-multipath-wait-$kernel.timer"
+ENV{FIND_MULTIPATHS_WAIT_CANCELLED}=="?*", GOTO="end_mpath"
+ENV{FIND_MULTIPATHS_WAIT_UNTIL}!="?*", GOTO="end_mpath"
+ENV{FIND_MULTIPATHS_WAIT_UNTIL}=="0", GOTO="end_mpath"
+
+ENV{FIND_MULTIPATHS_WAIT_CANCELLED}="1"
+RUN+="/usr/bin/systemctl stop cancel-multipath-wait-$kernel.timer"
+
+# If "multipath -u" failed, no values are imported from the program,
+# and we are still using the values for DM_MULTIPATH_DEVICE_PATH and
+# FIND_MULTIPATHS_WAIT_UNTIL that were imported from the database.
+# If we are in "smart" mode, we need to give up on the path now,
+# since this may have been the timeout event. Without the imports
+# from "multipath -u", we can't tell.
+ENV{.MPATH_CHECK_PASSED}!="?*", ENV{DM_MULTIPATH_DEVICE_PATH}="0"
 
 LABEL="end_mpath"
