@@ -607,6 +607,8 @@ check_path_valid(const char *name, struct config *conf, bool is_uevent)
 	pp = alloc_path();
 	if (!pp)
 		return RTVL_FAIL;
+	if (is_uevent)
+		pp->can_use_env_uid = true;
 
 	r = is_path_valid(name, conf, pp, is_uevent);
 	if (r <= PATH_IS_ERROR || r >= PATH_MAX_VALID_RESULT)
