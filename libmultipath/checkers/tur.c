@@ -179,10 +179,11 @@ retry:
 		else if (key == 0x2) {
 			/* Not Ready */
 			/* Note: Other ALUA states are either UP or DOWN */
-			if( asc == 0x04 && ascq == 0x0b){
+			if (asc == 0x04 &&
+			    (ascq == 0x0b || ascq == 0x0a)) {
 				/*
 				 * LOGICAL UNIT NOT ACCESSIBLE,
-				 * TARGET PORT IN STANDBY STATE
+				 * TARGET PORT IN STANDBY OR TRANSITION STATE
 				 */
 				*msgid = CHECKER_MSGID_GHOST;
 				return PATH_GHOST;
