@@ -400,8 +400,10 @@ int libcheck_check(struct checker * c)
 			 * It fails only in OOM situations. In this case, return
 			 * PATH_UNCHECKED to avoid prematurely failing the path.
 			 */
-			if (libcheck_init(c) != 0)
+			if (libcheck_init(c) != 0) {
+				c->msgid = MSG_TUR_FAILED;
 				return PATH_UNCHECKED;
+			}
 			((struct tur_checker_context *)c->context)->nr_timeouts = ct->nr_timeouts;
 
 			if (!uatomic_sub_return(&ct->holders, 1))
