@@ -32,6 +32,7 @@ enum {
 	MSG_TUR_RUNNING = CHECKER_FIRST_MSGID,
 	MSG_TUR_TIMEOUT,
 	MSG_TUR_FAILED,
+	MSG_TUR_TRANSITIONING,
 };
 
 #define _IDX(x) (MSG_ ## x - CHECKER_FIRST_MSGID)
@@ -39,6 +40,7 @@ const char *libcheck_msgtable[] = {
 	[_IDX(TUR_RUNNING)] = " still running",
 	[_IDX(TUR_TIMEOUT)] = " timed out",
 	[_IDX(TUR_FAILED)] = " failed to initialize",
+	[_IDX(TUR_TRANSITIONING)] = " reports path is transitioning",
 	NULL,
 };
 
@@ -179,13 +181,20 @@ retry:
 		else if (key == 0x2) {
 			/* Not Ready */
 			/* Note: Other ALUA states are either UP or DOWN */
-			if( asc == 0x04 && ascq == 0x0b){
+			if (asc == 0x04 && ascq == 0x0b) {
 				/*
 				 * LOGICAL UNIT NOT ACCESSIBLE,
 				 * TARGET PORT IN STANDBY STATE
 				 */
 				*msgid = CHECKER_MSGID_GHOST;
 				return PATH_GHOST;
+			} else if (asc == 0x04 && ascq == 0x0a) {
+				/*
+				 * LOGICAL UNIT NOT ACCESSIBLE,
+				 * ASYMMETRIC ACCESS STATE TRANSITION
+				 */
+				*msgid = MSG_TUR_TRANSITIONING;
+				return PATH_PENDING;
 			}
 		}
 		*msgid = CHECKER_MSGID_DOWN;
@@ -350,6 +359,7 @@ int libcheck_check(struct checker * c)
 			condlog(3, "%d:%d : tur checker not finished",
 				major(ct->devt), minor(ct->devt));
 			tur_status = PATH_PENDING;
+			c->msgid = MSG_TUR_RUNNING;
 		} else {
 			/* TUR checker done */
 			ct->thread = 0;
@@ -404,7 +414,7 @@ int libcheck_check(struct checker * c)
 		/* Start new TUR checker */
 		pthread_mutex_lock(&ct->lock);
 		tur_status = ct->state = PATH_PENDING;
-		ct->msgid = CHECKER_MSGID_NONE;
+		c->msgid = ct->msgid = MSG_TUR_RUNNING;
 		pthread_mutex_unlock(&ct->lock);
 		ct->fd = c->fd;
 		ct->timeout = c->timeout;
@@ -424,7 +434,7 @@ int libcheck_check(struct checker * c)
 		}
 		tur_timeout(&tsp);
 		pthread_mutex_lock(&ct->lock);
-		if (ct->state == PATH_PENDING)
+		if (ct->state == PATH_PENDING && ct->msgid == MSG_TUR_RUNNING)
 			r = pthread_cond_timedwait(&ct->active, &ct->lock,
 						   &tsp);
 		if (!r) {
@@ -432,7 +442,7 @@ int libcheck_check(struct checker * c)
 			c->msgid = ct->msgid;
 		}
 		pthread_mutex_unlock(&ct->lock);
-		if (tur_status == PATH_PENDING) {
+		if (tur_status == PATH_PENDING && c->msgid == MSG_TUR_RUNNING) {
 			condlog(4, "%d:%d : tur checker still running",
 				major(ct->devt), minor(ct->devt));
 		} else {
