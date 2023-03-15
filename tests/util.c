@@ -193,7 +193,7 @@ static void test_bitmask_1(void **state)
 	for (j = 0; j < BITARR_SZ; j++) {
 		for (i = 0; i < 64; i++) {
 			b = 64 * j + i;
-			assert(!is_bit_set_in_bitfield(b, bf));
+			assert_false(is_bit_set_in_bitfield(b, bf));
 			set_bit_in_bitfield(b, bf);
 			for (k = 0; k < BITARR_SZ; k++) {
 #if 0
@@ -207,13 +207,13 @@ static void test_bitmask_1(void **state)
 			}
 			for (m = 0; m < 64; m++)
 				if (i == m)
-					assert(is_bit_set_in_bitfield(64 * j + m,
-								      bf));
+					assert_true(is_bit_set_in_bitfield(64 * j + m,
+									   bf));
 				else
-					assert(!is_bit_set_in_bitfield(64 * j + m,
-								       bf));
+					assert_false(is_bit_set_in_bitfield(64 * j + m,
+									   bf));
 			clear_bit_in_bitfield(b, bf);
-			assert(!is_bit_set_in_bitfield(b, bf));
+			assert_false(is_bit_set_in_bitfield(b, bf));
 			for (k = 0; k < BITARR_SZ; k++)
 				assert_int_equal(arr[k], 0ULL);
 		}
@@ -235,16 +235,16 @@ static void test_bitmask_2(void **state)
 	for (j = 0; j < BITARR_SZ; j++) {
 		for (i = 0; i < 64; i++) {
 			b = 64 * j + i;
-			assert(!is_bit_set_in_bitfield(b, bf));
+			assert_false(is_bit_set_in_bitfield(b, bf));
 			set_bit_in_bitfield(b, bf);
 			for (m = 0; m < 64; m++)
 				if (m <= i)
-					assert(is_bit_set_in_bitfield(64 * j + m,
-								      bf));
+					assert_true(is_bit_set_in_bitfield(64 * j + m,
+									   bf));
 				else
-					assert(!is_bit_set_in_bitfield(64 * j + m,
-								       bf));
-			assert(is_bit_set_in_bitfield(b, bf));
+					assert_false(is_bit_set_in_bitfield(64 * j + m,
+									    bf));
+			assert_true(is_bit_set_in_bitfield(b, bf));
 			for (k = 0; k < BITARR_SZ; k++) {
 				if (k < j || (k == j && i == 63))
 					assert_int_equal(arr[k], ~0ULL);
@@ -260,16 +260,16 @@ static void test_bitmask_2(void **state)
 	for (j = 0; j < BITARR_SZ; j++) {
 		for (i = 0; i < 64; i++) {
 			b = 64 * j + i;
-			assert(is_bit_set_in_bitfield(b, bf));
+			assert_true(is_bit_set_in_bitfield(b, bf));
 			clear_bit_in_bitfield(b, bf);
 			for (m = 0; m < 64; m++)
 				if (m <= i)
-					assert(!is_bit_set_in_bitfield(64 * j + m,
-								       bf));
+					assert_false(is_bit_set_in_bitfield(64 * j + m,
+									    bf));
 				else
-					assert(is_bit_set_in_bitfield(64 * j + m,
-								      bf));
-			assert(!is_bit_set_in_bitfield(b, bf));
+					assert_true(is_bit_set_in_bitfield(64 * j + m,
+									   bf));
+			assert_false(is_bit_set_in_bitfield(b, bf));
 			for (k = 0; k < BITARR_SZ; k++) {
 				if (k < j || (k == j && i == 63))
 					assert_int_equal(arr[k], 0ULL);
@@ -316,9 +316,8 @@ static void _test_bitmask_small(unsigned int n)
 	uint32_t *arr;
 	unsigned int size = maybe_swap_idx((n - 1) / 32) + 1, i;
 
-	assert(sizeof(bitfield_t) == 4 || sizeof(bitfield_t) == 8);
-	assert(n <= 64);
-	assert(n >= 1);
+	assert_true(sizeof(bitfield_t) == 4 || sizeof(bitfield_t) == 8);
+	assert_in_range(n, 1, 64);
 
 	bf = alloc_bitfield(n);
 	assert_non_null(bf);
@@ -366,8 +365,7 @@ static void _test_bitmask_small_2(unsigned int n)
 	uint32_t *arr;
 	unsigned int size = maybe_swap_idx((n - 1) / 32) + 1, i;
 
-	assert(n <= 128);
-	assert(n >= 65);
+	assert_in_range(n, 65, 128);
 
 	bf = alloc_bitfield(n);
 	assert_non_null(bf);
