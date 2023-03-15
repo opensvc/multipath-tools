@@ -119,7 +119,7 @@ static void hex2bin(unsigned char *dst, const char *src,
 	const char *sc;
 	unsigned char *ds;
 
-	assert(srclen % 2 == 0);
+	assert_true(srclen % 2 == 0);
 	for (sc = src, ds = dst;
 	     sc < src + srclen &&  ds < dst + dstlen;
 	     sc += 2, ++ds)
