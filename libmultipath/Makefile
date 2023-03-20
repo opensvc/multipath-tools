@@ -71,7 +71,7 @@ uninstall:
 clean: dep_clean
 	$(Q)$(RM) core *.a *.o *.so *.so.* *.abi nvme-ioctl.c nvme-ioctl.h autoconfig.h $(NV_VERSION_SCRIPT)
 
-include $(wildcard $(OBJS:.o=.d))
+include $(wildcard $(OBJS:.o=.d) $(OBJS-T:.o=.d))
 
 dep_clean:
-	$(Q)$(RM) $(OBJS:.o=.d)
+	$(Q)$(RM) $(OBJS:.o=.d) $(OBJS-T:.o=.d)
