@@ -1211,6 +1211,17 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 			invalid = (d[3] < 8);
 			new_prio = 2;
 			break;
+		case 0x6:
+			/* Logical Unit Group */
+			invalid = (d[3] != 4);
+			break;
+		case 0x7:
+			/* MD5 logical unit designator */
+			invalid = (d[3] != 16);
+			break;
+		case 0x0:
+			/* Vendor Specific */
+			break;
 		case 0xa:
 			condlog(2, "%s: UUID identifiers not yet supported",
 				__func__);
