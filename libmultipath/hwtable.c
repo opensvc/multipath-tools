@@ -1067,6 +1067,8 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 12,
 		.prio_name     = PRIO_ALUA,
+		.checker_name  = DIRECTIO,
+		.detect_checker = DETECT_CHECKER_OFF,
 	},
 	/*
 	 * DataCore
