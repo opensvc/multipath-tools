@@ -7,7 +7,7 @@ DEVLIB := libmultipath.so
 CPPFLAGS += -I$(mpathutildir) -I$(mpathcmddir) -I$(nvmedir) -D_GNU_SOURCE $(SYSTEMD_CPPFLAGS)
 CFLAGS += $(LIB_CFLAGS)
 LIBDEPS += -lpthread -ldl -ldevmapper -ludev -L$(mpathutildir) -lmpathutil -L$(mpathcmddir) -lmpathcmd \
-	-lurcu -laio $(SYSTEMD_LIBDEPS)
+	-lmount -lurcu -laio $(SYSTEMD_LIBDEPS)
 
 # object files referencing MULTIPATH_DIR or CONFIG_DIR
 # they need to be recompiled for unit tests
@@ -71,7 +71,7 @@ uninstall:
 clean: dep_clean
 	$(Q)$(RM) core *.a *.o *.so *.so.* *.abi nvme-ioctl.c nvme-ioctl.h autoconfig.h $(NV_VERSION_SCRIPT)
 
-include $(wildcard $(OBJS:.o=.d))
+include $(wildcard $(OBJS:.o=.d) $(OBJS-T:.o=.d))
 
 dep_clean:
-	$(Q)$(RM) $(OBJS:.o=.d)
+	$(Q)$(RM) $(OBJS:.o=.d) $(OBJS-T:.o=.d)

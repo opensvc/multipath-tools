@@ -368,12 +368,20 @@ struct path {
 	unsigned int dev_loss;
 	int eh_deadline;
 	bool is_checked;
+	bool can_use_env_uid;
 	/* configlet pointers */
 	vector hwe;
 	struct gen_path generic_path;
 };
 
 typedef int (pgpolicyfn) (struct multipath *, vector);
+
+
+enum prflag_value {
+	PRFLAG_UNKNOWN,
+	PRFLAG_UNSET,
+	PRFLAG_SET,
+};
 
 struct multipath {
 	char wwid[WWID_SIZE];
@@ -449,7 +457,7 @@ struct multipath {
 	int prkey_source;
 	struct be64 reservation_key;
 	uint8_t sa_flags;
-	unsigned char prflag;
+	int prflag;
 	int all_tg_pt;
 	struct gen_multipath generic_mp;
 	bool fpin_must_reload;

@@ -14,6 +14,9 @@
 #include <mpath_persist.h>
 #include "debug.h"
 #include "mpath_cmd.h"
+#include "vector.h"
+#include "globals.h"
+#include "config.h"
 #include "uxsock.h"
 #include "mpathpr.h"
 
@@ -24,6 +27,12 @@ static int do_update_pr(char *alias, char *cmd, char *key)
 	char str[256];
 	char *reply;
 	int ret = 0;
+	int timeout;
+	struct config *conf;
+
+	conf = get_multipath_config();
+	timeout = conf->uxsock_timeout;
+	put_multipath_config(conf);
 
 	fd = mpath_connect();
 	if (fd == -1) {
@@ -41,7 +50,7 @@ static int do_update_pr(char *alias, char *cmd, char *key)
 		mpath_disconnect(fd);
 		return -1;
 	}
-	ret = recv_packet(fd, &reply, DEFAULT_REPLY_TIMEOUT);
+	ret = recv_packet(fd, &reply, timeout);
 	if (ret < 0) {
 		condlog(2, "%s: message=%s recv error=%d", alias, str, errno);
 		ret = -1;

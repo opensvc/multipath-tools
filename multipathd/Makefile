@@ -81,7 +81,7 @@ uninstall:
 clean: dep_clean
 	$(Q)$(RM) core *.o $(EXEC) $(CLI)
 
-include $(wildcard $(OBJS:.o=.d))
+include $(wildcard $(OBJS:.o=.d) $(CLI_OBJS:.o=.d))
 
 dep_clean:
-	$(Q)$(RM) $(OBJS:.o=.d)
+	$(Q)$(RM) $(OBJS:.o=.d) $(CLI_OBJS:.o=.d)

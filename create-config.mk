@@ -23,7 +23,7 @@ check_cmd = $(shell \
 
 # Check whether a function with name $1 has been declared in header file $2.
 check_func = $(shell \
-	if grep -Eq "^[^[:blank:]]+[[:blank:]]+$1[[:blank:]]*(.*)*" "$2"; then \
+	if grep -Eq "^(extern[[:blank:]]+)?[^[:blank:]]+[[:blank:]]+$1[[:blank:]]*(.*)*" "$2"; then \
 		found=1; \
 		status="yes"; \
 	else \
@@ -102,6 +102,15 @@ endif
 ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(kernel_incdir)/scsi/fc/fc_els.h),0)
 	DEFINES += FPIN_EVENT_HANDLER
 	FPIN_SUPPORT = 1
+endif
+
+libmount_h := $(shell $(PKGCONFIG) --variable=includedir mount)/libmount/libmount.h
+ifneq ($(call check_func,mnt_unref_cache,$(libmount_h)),0)
+	DEFINES += LIBMOUNT_HAS_MNT_UNREF_CACHE
+endif
+
+ifneq ($(call check_func,mnt_table_parse_swaps,$(libmount_h)),0)
+	DEFINES += LIBMOUNT_SUPPORTS_SWAP
 endif
 
 ifneq ($(call check_file,$(kernel_incdir)/linux/nvme_ioctl.h),0)

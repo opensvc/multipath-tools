@@ -733,11 +733,12 @@ int update_map_pr(struct multipath *mpp)
 	int noisy=0;
 	struct prin_resp *resp;
 	unsigned int i;
-	int ret, isFound;
+	int ret = MPATH_PR_OTHER, isFound;
 
 	if (!get_be64(mpp->reservation_key))
 	{
 		/* Nothing to do. Assuming pr mgmt feature is disabled*/
+		mpp->prflag = PRFLAG_UNSET;
 		condlog(4, "%s: reservation_key not set in multipath.conf",
 			mpp->alias);
 		return MPATH_PR_SUCCESS;
@@ -749,20 +750,27 @@ int update_map_pr(struct multipath *mpp)
 		condlog(0,"%s : failed to alloc resp in update_map_pr", mpp->alias);
 		return MPATH_PR_OTHER;
 	}
+	if (count_active_paths(mpp) == 0)
+	{
+		condlog(0,"%s: No available paths to check pr status",
+			mpp->alias);
+		goto out;
+	}
+	mpp->prflag = PRFLAG_UNSET;
 	ret = mpath_prin_activepath(mpp, MPATH_PRIN_RKEY_SA, resp, noisy);
 
 	if (ret != MPATH_PR_SUCCESS )
 	{
 		condlog(0,"%s : pr in read keys service action failed Error=%d", mpp->alias, ret);
-		free(resp);
-		return  ret;
+		goto out;
 	}
+
+	ret = MPATH_PR_SUCCESS;
 
 	if (resp->prin_descriptor.prin_readkeys.additional_length == 0 )
 	{
 		condlog(3,"%s: No key found. Device may not be registered. ", mpp->alias);
-		free(resp);
-		return MPATH_PR_SUCCESS;
+		goto out;
 	}
 
 	condlog(2, "%s: Multipath  reservation_key: 0x%" PRIx64 " ", mpp->alias,
@@ -783,10 +791,11 @@ int update_map_pr(struct multipath *mpp)
 
 	if (isFound)
 	{
-		mpp->prflag = 1;
+		mpp->prflag = PRFLAG_SET;
 		condlog(2, "%s: prflag flag set.", mpp->alias );
 	}
 
+out:
 	free(resp);
-	return MPATH_PR_SUCCESS;
+	return ret;
 }

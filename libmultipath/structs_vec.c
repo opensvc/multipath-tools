@@ -392,10 +392,8 @@ remove_maps(struct vectors * vecs)
 	if (!vecs)
 		return;
 
-	vector_foreach_slot (vecs->mpvec, mpp, i) {
-		remove_map(mpp, vecs->pathvec, vecs->mpvec);
-		i--;
-	}
+	vector_foreach_slot (vecs->mpvec, mpp, i)
+		remove_map(mpp, vecs->pathvec, NULL);
 
 	vector_free(vecs->mpvec);
 	vecs->mpvec = NULL;

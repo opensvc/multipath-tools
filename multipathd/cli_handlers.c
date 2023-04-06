@@ -760,7 +760,7 @@ cli_del_map (void * v, struct strbuf *reply, void * data)
 	}
 	rc = ev_remove_map(param, alias, minor, vecs);
 	if (rc == 2)
-		append_strbuf_str(reply, "delayed");
+		append_strbuf_str(reply, "delayed\n");
 
 	free(alias);
 	return rc;
@@ -1277,6 +1277,11 @@ cli_shutdown (void * v, struct strbuf *reply, void * data)
 static int
 cli_getprstatus (void * v, struct strbuf *reply, void * data)
 {
+	static const char * const prflag_str[] = {
+		[PRFLAG_UNKNOWN] = "unknown\n",
+		[PRFLAG_UNSET] = "unset\n",
+		[PRFLAG_SET] = "set\n",
+	};
 	struct multipath * mpp;
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, KEY_MAP);
@@ -1287,10 +1292,7 @@ cli_getprstatus (void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return 1;
 
-	condlog(3, "%s: prflag = %u", param, (unsigned int)mpp->prflag);
-
-	if (print_strbuf(reply, "%d", mpp->prflag) < 0)
-		return 1;
+	append_strbuf_str(reply, prflag_str[mpp->prflag]);
 
 	condlog(3, "%s: reply = %s", param, get_strbuf_str(reply));
 
@@ -1310,8 +1312,8 @@ cli_setprstatus(void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return 1;
 
-	if (!mpp->prflag) {
-		mpp->prflag = 1;
+	if (mpp->prflag != PRFLAG_SET) {
+		mpp->prflag = PRFLAG_SET;
 		condlog(2, "%s: prflag set", param);
 	}
 
@@ -1332,8 +1334,8 @@ cli_unsetprstatus(void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return 1;
 
-	if (mpp->prflag) {
-		mpp->prflag = 0;
+	if (mpp->prflag != PRFLAG_UNSET) {
+		mpp->prflag = PRFLAG_UNSET;
 		condlog(2, "%s: prflag unset", param);
 	}
 

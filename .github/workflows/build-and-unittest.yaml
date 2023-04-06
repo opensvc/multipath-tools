@@ -8,14 +8,24 @@ on:
   pull_request:
 
 jobs:
-  bionic:
-    runs-on: ubuntu-18.04
+  jammy:
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         rl: ['', 'libreadline', 'libedit']
+        cc: [ gcc, clang ]
     steps:
       - uses: actions/checkout@v2
+      - name: update
+        run: sudo apt-get update
+      - name: dependencies
+        run: >
+          sudo apt-get install --yes gcc
+          make pkg-config valgrind
+          libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
+          libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
+          libmount-dev linux-modules-extra-$(uname -r)
       - name: mpath
         run: sudo modprobe dm_multipath
       - name: zram
@@ -24,32 +34,42 @@ jobs:
         run: echo ZRAM=$(sudo cat /sys/class/zram-control/hot_add) >> $GITHUB_ENV
       - name: set-zram-size
         run: echo 1G | sudo tee /sys/block/zram$ZRAM/disksize
-      - name: update
-        run: sudo apt-get update
-      - name: dependencies
-        run: >
-          sudo apt-get install --yes gcc
-          make perl-base pkg-config valgrind
-          libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
-          libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
+      - name: set CC
+        run: echo CC=${{ matrix.cc }} >> $GITHUB_ENV
+      - name: set optflags
+        # valgrind doesn't support the dwarf-5 format of clang 14
+        run: echo OPT='-O2 -gdwarf-4 -fstack-protector-strong' >> $GITHUB_ENV
+        if: ${{ matrix.cc == 'clang' }}
       - name: build
-        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
+        run: >
+          make -Orecurse -j$(grep -c ^processor /proc/cpuinfo)
+          READLINE=${{ matrix.rl }} OPTFLAGS="$OPT"
       - name: test
-        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) test
+        run: >
+          make -Orecurse -j$(grep -c ^processor /proc/cpuinfo)
+          OPTFLAGS="$OPT" test
       - name: valgrind-test
-        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) valgrind-test
+        id: valgrind
+        run: >
+          make -Orecurse -j$(grep -c ^processor /proc/cpuinfo)
+          OPTFLAGS="$OPT" valgrind-test
+        continue-on-error: true
       - name: valgrind-results
         run: cat tests/*.vgr
+      - name: fail if valgrind failed
+        run: /bin/false
+        if: steps.valgrind.outcome != 'success'
       - name: clean-nonroot-artifacts
         run: rm -f tests/dmevents.out tests/directio.out
       - name: root-test
         run: sudo make DIO_TEST_DEV=/dev/zram$ZRAM test
-  focal-gcc10:
+  focal:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
         rl: ['', 'libreadline', 'libedit']
+        cc: [ gcc, clang ]
     steps:
       - uses: actions/checkout@v2
       - name: mpath
@@ -61,53 +81,24 @@ jobs:
       - name: dependencies
         run: >
           sudo apt-get install --yes gcc-10
-          make perl-base pkg-config valgrind
+          make pkg-config valgrind
           libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
           libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
       - name: set CC
-        run: echo CC=gcc-10 >> $GITHUB_ENV
+        run: echo CC=${{ matrix.cc }} >> $GITHUB_ENV
       - name: build
         run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
       - name: test
         run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) test
       - name: valgrind-test
+        id: valgrind
         run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) valgrind-test
+        continue-on-error: true
       - name: valgrind-results
         run: cat tests/*.vgr
-      - name: clean-nonroot-artifacts
-        run: rm -f tests/dmevents.out tests/directio.out
-      - name: root-test
-        run: sudo make DIO_TEST_DEV=/dev/ram0 test
-  focal-clang10:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        rl: ['', 'libreadline', 'libedit']
-    steps:
-      - uses: actions/checkout@v2
-      - name: mpath
-        run: sudo modprobe dm_multipath
-      - name: brd
-        run: sudo modprobe brd rd_nr=1 rd_size=65536
-      - name: update
-        run: sudo apt-get update
-      - name: dependencies
-        run: >
-          sudo apt-get install --yes clang
-          make perl-base pkg-config valgrind
-          libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
-          libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
-      - name: set CC
-        run: echo CC=clang >> $GITHUB_ENV
-      - name: build
-        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
-      - name: test
-        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) test
-      - name: valgrind-test
-        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) valgrind-test
-      - name: valgrind-results
-        run: cat tests/*.vgr
+      - name: fail if valgrind failed
+        run: /bin/false
+        if: steps.valgrind.outcome != 'success'
       - name: clean-nonroot-artifacts
         run: rm -f tests/dmevents.out tests/directio.out
       - name: root-test

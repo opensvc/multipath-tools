@@ -1211,6 +1211,17 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 			invalid = (d[3] < 8);
 			new_prio = 2;
 			break;
+		case 0x6:
+			/* Logical Unit Group */
+			invalid = (d[3] != 4);
+			break;
+		case 0x7:
+			/* MD5 logical unit designator */
+			invalid = (d[3] != 16);
+			break;
+		case 0x0:
+			/* Vendor Specific */
+			break;
 		case 0xa:
 			condlog(2, "%s: UUID identifiers not yet supported",
 				__func__);
@@ -1472,6 +1483,7 @@ scsi_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 {
 	struct udev_device *parent;
 	const char *attr_path = NULL;
+	static const char unknown[] = "UNKNOWN";
 
 	parent = pp->udev;
 	while (parent) {
@@ -1492,19 +1504,22 @@ scsi_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 	if (!attr_path || pp->sg_id.host_no == -1)
 		return PATHINFO_FAILED;
 
-	if (sysfs_get_vendor(parent, pp->vendor_id, SCSI_VENDOR_SIZE) <= 0)
-		return PATHINFO_FAILED;;
-
+	if (sysfs_get_vendor(parent, pp->vendor_id, SCSI_VENDOR_SIZE) <= 0) {
+		condlog(1, "%s: broken device without vendor ID", pp->dev);
+		strlcpy(pp->vendor_id, unknown, SCSI_VENDOR_SIZE);
+	}
 	condlog(3, "%s: vendor = %s", pp->dev, pp->vendor_id);
 
-	if (sysfs_get_model(parent, pp->product_id, PATH_PRODUCT_SIZE) <= 0)
-		return PATHINFO_FAILED;;
-
+	if (sysfs_get_model(parent, pp->product_id, PATH_PRODUCT_SIZE) <= 0) {
+		condlog(1, "%s: broken device without product ID", pp->dev);
+		strlcpy(pp->product_id, unknown, PATH_PRODUCT_SIZE);
+	}
 	condlog(3, "%s: product = %s", pp->dev, pp->product_id);
 
-	if (sysfs_get_rev(parent, pp->rev, PATH_REV_SIZE) < 0)
-		return PATHINFO_FAILED;;
-
+	if (sysfs_get_rev(parent, pp->rev, PATH_REV_SIZE) < 0) {
+		condlog(2, "%s: broken device without revision", pp->dev);
+		strlcpy(pp->rev, unknown, PATH_REV_SIZE);
+	}
 	condlog(3, "%s: rev = %s", pp->dev, pp->rev);
 
 	/*
@@ -2089,7 +2104,7 @@ get_udev_uid(struct path * pp, const char *uid_attribute, struct udev_device *ud
 	const char *value;
 
 	value = udev_device_get_property_value(udev, uid_attribute);
-	if (!value || strlen(value) == 0)
+	if ((!value || strlen(value) == 0) && pp->can_use_env_uid)
 		value = getenv(uid_attribute);
 	if (value && strlen(value)) {
 		len = strlcpy(pp->wwid, value, WWID_SIZE);

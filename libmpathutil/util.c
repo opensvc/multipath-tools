@@ -386,6 +386,18 @@ void cleanup_mutex(void *arg)
 	pthread_mutex_unlock(arg);
 }
 
+void cleanup_vector_free(void *arg)
+{
+	if  (arg)
+		vector_free((vector)arg);
+}
+
+void cleanup_fclose(void *p)
+{
+	if (p)
+		fclose(p);
+}
+
 struct bitfield *alloc_bitfield(unsigned int maxbit)
 {
 	unsigned int n;
