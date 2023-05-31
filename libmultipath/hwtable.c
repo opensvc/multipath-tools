@@ -485,7 +485,9 @@ static struct hwentry default_hw[] = {
 		/* USP-V, HUS VM, VSP, VSP G1X00 and VSP GX00 families / HPE XP */
 		.vendor        = "(HITACHI|HP|HPE)",
 		.product       = "^OPEN-",
-		.pgpolicy      = MULTIBUS,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 10,
 	},
 	{
 		/* AMS other than AMS 2000 */
