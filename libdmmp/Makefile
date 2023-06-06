@@ -74,8 +74,10 @@ doc: docs/man/dmmp_strerror.3
 docs/man/dmmp_strerror.3:	$(HEADERS)
 	$(Q)TEMPFILE=$(shell mktemp); \
 	cat $^ | perl docs/doc-preclean.pl >$$TEMPFILE; \
+	[ "$KBUILD_BUILD_TIMESTAMP" ] || \
+	    KBUILD_BUILD_TIMESTAMP=`git log -n1 --pretty=%cd --date=iso -- $^`; \
+	export KBUILD_BUILD_TIMESTAMP; \
 	LC_ALL=C \
-	KBUILD_BUILD_TIMESTAMP=`git log -n1 --pretty=%cd --date=iso -- $^` \
 	perl docs/kernel-doc -man $$TEMPFILE | \
 	    perl docs/split-man.pl docs/man; \
 	$(RM) -f $$TEMPFILE
