@@ -104,7 +104,7 @@ ifneq ($(call check_var,ELS_DTAG_LNK_INTEGRITY,$(kernel_incdir)/scsi/fc/fc_els.h
 	FPIN_SUPPORT = 1
 endif
 
-libmount_h := $(shell $(PKGCONFIG) --variable=includedir mount)/libmount/libmount.h
+libmount_h := $(shell $(PKG_CONFIG) --variable=includedir mount)/libmount/libmount.h
 ifneq ($(call check_func,mnt_unref_cache,$(libmount_h)),0)
 	DEFINES += LIBMOUNT_HAS_MNT_UNREF_CACHE
 endif
@@ -117,13 +117,13 @@ ifneq ($(call check_file,$(kernel_incdir)/linux/nvme_ioctl.h),0)
 	ANA_SUPPORT := 1
 endif
 
-ENABLE_LIBDMMP := $(call check_cmd,$(PKGCONFIG) --exists json-c)
+ENABLE_LIBDMMP := $(call check_cmd,$(PKG_CONFIG) --exists json-c)
 
 ifeq ($(ENABLE_DMEVENTS_POLL),0)
 	DEFINES += -DNO_DMEVENTS_POLL
 endif
 
-SYSTEMD := $(strip $(or $(shell $(PKGCONFIG) --modversion libsystemd 2>/dev/null | awk '{print $$1}'), \
+SYSTEMD := $(strip $(or $(shell $(PKG_CONFIG) --modversion libsystemd 2>/dev/null | awk '{print $$1}'), \
 			$(shell systemctl --version 2>/dev/null | sed -n 's/systemd \([0-9]*\).*/\1/p')))
 
 

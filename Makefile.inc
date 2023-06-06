@@ -20,9 +20,9 @@ SCSI_DH_MODULES_PRELOAD :=
 
 EXTRAVERSION := $(shell rev=$$(git rev-parse --short=7 HEAD 2>/dev/null); echo $${rev:+-g$$rev})
 
-# PKGCONFIG must be read from the environment to enable compilation
+# PKG_CONFIG must be read from the environment to enable compilation
 # in Debian multiarch setups
-PKGCONFIG	?= pkg-config
+PKG_CONFIG	?= pkg-config
 
 ifeq ($(TOPDIR),)
 	TOPDIR	= ..
@@ -56,8 +56,8 @@ pkgconfdir	:= $(usrlibdir)/pkgconfig
 plugindir       := $(prefix)/$(LIB)/multipath
 configdir       := $(prefix)/etc/multipath/conf.d
 runtimedir      := $(if $(shell test -L /var/run -o ! -d /var/run && echo 1),/run,/var/run)
-devmapper_incdir := $(or $(shell $(PKGCONFIG) --variable=includedir devmapper),/usr/include)
-libudev_incdir	:= $(or $(shell $(PKGCONFIG) --variable=includedir libudev),/usr/include)
+devmapper_incdir := $(or $(shell $(PKG_CONFIG) --variable=includedir devmapper),/usr/include)
+libudev_incdir	:= $(or $(shell $(PKG_CONFIG) --variable=includedir libudev),/usr/include)
 kernel_incdir	:= /usr/include
 
 ifeq ($(V),)
