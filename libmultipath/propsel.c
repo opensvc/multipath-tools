@@ -268,7 +268,6 @@ verify_alua_prio(struct multipath *mp)
 int select_pgpolicy(struct config *conf, struct multipath * mp)
 {
 	const char *origin;
-	char buff[POLICY_NAME_SIZE];
 	int log_prio = 3;
 
 	if (conf->pgpolicy_flag > 0) {
@@ -288,9 +287,8 @@ out:
 		log_prio = 1;
 	}
 	mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
-	get_pgpolicy_name(buff, POLICY_NAME_SIZE, mp->pgpolicy);
-	condlog(log_prio, "%s: path_grouping_policy = %s %s", mp->alias, buff,
-		origin);
+	condlog(log_prio, "%s: path_grouping_policy = %s %s", mp->alias,
+		get_pgpolicy_name(mp->pgpolicy), origin);
 	return 0;
 }
 

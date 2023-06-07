@@ -1209,14 +1209,10 @@ set_pgpolicy(vector strvec, void *ptr, const char *file, int line_nr)
 int
 print_pgpolicy(struct strbuf *buff, long pgpolicy)
 {
-	char str[POLICY_NAME_SIZE];
-
 	if (!pgpolicy)
 		return 0;
 
-	get_pgpolicy_name(str, POLICY_NAME_SIZE, pgpolicy);
-
-	return append_strbuf_quoted(buff, str);
+	return append_strbuf_quoted(buff, get_pgpolicy_name(pgpolicy));
 }
 
 declare_def_handler(pgpolicy, set_pgpolicy)

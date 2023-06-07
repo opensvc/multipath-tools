@@ -31,34 +31,23 @@ int get_pgpolicy_id(char * str)
 	return IOPOLICY_UNDEF;
 }
 
-int get_pgpolicy_name(char * buff, int len, int id)
+const char *get_pgpolicy_name(int id)
 {
-	char * s;
-
 	switch (id) {
 	case FAILOVER:
-		s = "failover";
-		break;
+		return "failover";
 	case MULTIBUS:
-		s = "multibus";
-		break;
+		return "multibus";
 	case GROUP_BY_SERIAL:
-		s = "group_by_serial";
-		break;
+		return "group_by_serial";
 	case GROUP_BY_PRIO:
-		s = "group_by_prio";
-		break;
+		return "group_by_prio";
 	case GROUP_BY_NODE_NAME:
-		s = "group_by_node_name";
-		break;
+		return "group_by_node_name";
 	case GROUP_BY_TPG:
-		s = "group_by_tpg";
-		break;
-	default:
-		s = "undefined";
-		break;
+		return "group_by_tpg";
 	}
-	return snprintf(buff, len, "%s", s);
+	return "undefined"; /* IOPOLICY_UNDEF */
 }
 
 
