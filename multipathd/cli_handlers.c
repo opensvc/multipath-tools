@@ -810,7 +810,7 @@ cli_reload(void *v, struct strbuf *reply, void *data)
 		return 1;
 	}
 
-	return reload_and_sync_map(mpp, vecs, 0);
+	return reload_and_sync_map(mpp, vecs);
 }
 
 static int resize_map(struct multipath *mpp, unsigned long long size,
@@ -1449,7 +1449,7 @@ static int cli_set_marginal(void * v, struct strbuf *reply, void * data)
 	}
 	pp->marginal = 1;
 
-	return reload_and_sync_map(pp->mpp, vecs, 0);
+	return reload_and_sync_map(pp->mpp, vecs);
 }
 
 static int cli_unset_marginal(void * v, struct strbuf *reply, void * data)
@@ -1476,7 +1476,7 @@ static int cli_unset_marginal(void * v, struct strbuf *reply, void * data)
 	}
 	pp->marginal = 0;
 
-	return reload_and_sync_map(pp->mpp, vecs, 0);
+	return reload_and_sync_map(pp->mpp, vecs);
 }
 
 static int cli_unset_all_marginal(void * v, struct strbuf *reply, void * data)
@@ -1513,7 +1513,7 @@ static int cli_unset_all_marginal(void * v, struct strbuf *reply, void * data)
 		vector_foreach_slot (pgp->paths, pp, j)
 			pp->marginal = 0;
 
-	return reload_and_sync_map(mpp, vecs, 0);
+	return reload_and_sync_map(mpp, vecs);
 }
 
 #define HANDLER(x) x

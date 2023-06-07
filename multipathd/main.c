@@ -396,31 +396,12 @@ void put_multipath_config(__attribute__((unused)) void *arg)
 }
 
 static int
-need_switch_pathgroup (struct multipath * mpp, int refresh)
+need_switch_pathgroup (struct multipath * mpp)
 {
-	struct pathgroup * pgp;
-	struct path * pp;
-	unsigned int i, j;
-	struct config *conf;
 	int bestpg;
 
 	if (!mpp)
 		return 0;
-
-	/*
-	 * Refresh path priority values
-	 */
-	if (refresh) {
-		vector_foreach_slot (mpp->pg, pgp, i) {
-			vector_foreach_slot (pgp->paths, pp, j) {
-				conf = get_multipath_config();
-				pthread_cleanup_push(put_multipath_config,
-						     conf);
-				pathinfo(pp, conf, DI_PRIO);
-				pthread_cleanup_pop(1);
-			}
-		}
-	}
 
 	if (!mpp->pg || VECTOR_SIZE(mpp->paths) == 0)
 		return 0;
@@ -1594,7 +1575,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			else {
 				if (ro == 1)
 					pp->mpp->force_readonly = 1;
-				retval = reload_and_sync_map(mpp, vecs, 0);
+				retval = reload_and_sync_map(mpp, vecs);
 				if (retval == 2)
 					condlog(2, "%s: map removed during reload", pp->dev);
 				else {
@@ -1994,7 +1975,7 @@ deferred_failback_tick (vector mpvec)
 		if (mpp->pgfailback > 0 && mpp->failback_tick > 0) {
 			mpp->failback_tick--;
 
-			if (!mpp->failback_tick && need_switch_pathgroup(mpp, 1))
+			if (!mpp->failback_tick && need_switch_pathgroup(mpp))
 				switch_pathgroup(mpp);
 		}
 	}
@@ -2051,54 +2032,40 @@ int update_prio(struct path *pp, int refresh_all)
 	int i, j, changed = 0;
 	struct config *conf;
 
-	if (refresh_all) {
-		vector_foreach_slot (pp->mpp->pg, pgp, i) {
-			vector_foreach_slot (pgp->paths, pp1, j) {
-				oldpriority = pp1->priority;
-				conf = get_multipath_config();
-				pthread_cleanup_push(put_multipath_config,
-						     conf);
-				pathinfo(pp1, conf, DI_PRIO);
-				pthread_cleanup_pop(1);
-				if (pp1->priority != oldpriority)
-					changed = 1;
-			}
-		}
-		return changed;
-	}
 	oldpriority = pp->priority;
-	conf = get_multipath_config();
-	pthread_cleanup_push(put_multipath_config, conf);
-	if (pp->state != PATH_DOWN)
+	if (pp->state != PATH_DOWN) {
+		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
 		pathinfo(pp, conf, DI_PRIO);
-	pthread_cleanup_pop(1);
+		pthread_cleanup_pop(1);
+	}
 
-	if (pp->priority == oldpriority)
+	if (pp->priority == oldpriority && !refresh_all)
 		return 0;
-	return 1;
+
+	vector_foreach_slot (pp->mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp1, j) {
+			if (pp1 == pp || pp1->state == PATH_DOWN)
+				continue;
+			oldpriority = pp1->priority;
+			conf = get_multipath_config();
+			pthread_cleanup_push(put_multipath_config, conf);
+			pathinfo(pp1, conf, DI_PRIO);
+			pthread_cleanup_pop(1);
+			if (pp1->priority != oldpriority)
+				changed = 1;
+		}
+	}
+	return changed;
 }
 
-static int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
+static int reload_map(struct vectors *vecs, struct multipath *mpp,
 		      int is_daemon)
 {
 	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
-	struct path *pp;
-	int i, r;
+	int r;
 
 	update_mpp_paths(mpp, vecs->pathvec);
-	if (refresh) {
-		vector_foreach_slot (mpp->paths, pp, i) {
-			struct config *conf = get_multipath_config();
-			pthread_cleanup_push(put_multipath_config, conf);
-			r = pathinfo(pp, conf, DI_PRIO);
-			pthread_cleanup_pop(1);
-			if (r) {
-				condlog(2, "%s: failed to refresh pathinfo",
-					mpp->alias);
-				return 1;
-			}
-		}
-	}
 	if (setup_map(mpp, &params, vecs)) {
 		condlog(0, "%s: failed to setup map", mpp->alias);
 		return 1;
@@ -2115,10 +2082,9 @@ static int reload_map(struct vectors *vecs, struct multipath *mpp, int refresh,
 	return 0;
 }
 
-int reload_and_sync_map(struct multipath *mpp,
-			struct vectors *vecs, int refresh)
+int reload_and_sync_map(struct multipath *mpp, struct vectors *vecs)
 {
-	if (reload_map(vecs, mpp, refresh, 1))
+	if (reload_map(vecs, mpp, 1))
 		return 1;
 	if (setup_multipath(vecs, mpp) != 0)
 		return 2;
@@ -2573,25 +2539,26 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	 */
 	condlog(4, "path prio refresh");
 
-	if (marginal_changed)
-		reload_and_sync_map(pp->mpp, vecs, 1);
-	else if (update_prio(pp, new_path_up) &&
-	    (pp->mpp->pgpolicyfn == (pgpolicyfn *)group_by_prio) &&
-	     pp->mpp->pgfailback == -FAILBACK_IMMEDIATE) {
+	if (marginal_changed) {
+		update_prio(pp, 1);
+		reload_and_sync_map(pp->mpp, vecs);
+	} else if (update_prio(pp, new_path_up) &&
+		   pp->mpp->pgpolicyfn == (pgpolicyfn *)group_by_prio &&
+		   pp->mpp->pgfailback == -FAILBACK_IMMEDIATE) {
 		condlog(2, "%s: path priorities changed. reloading",
 			pp->mpp->alias);
-		reload_and_sync_map(pp->mpp, vecs, !new_path_up);
-	} else if (need_switch_pathgroup(pp->mpp, 0)) {
+		reload_and_sync_map(pp->mpp, vecs);
+	} else if (need_switch_pathgroup(pp->mpp)) {
 		if (pp->mpp->pgfailback > 0 &&
 		    (new_path_up || pp->mpp->failback_tick <= 0))
-			pp->mpp->failback_tick =
-				pp->mpp->pgfailback + 1;
+			pp->mpp->failback_tick = pp->mpp->pgfailback + 1;
 		else if (pp->mpp->pgfailback == -FAILBACK_IMMEDIATE ||
 			 (chkr_new_path_up && followover_should_failback(pp)))
 			switch_pathgroup(pp->mpp);
 	}
 	return 1;
 }
+
 enum checker_state {
 	CHECKER_STARTING,
 	CHECKER_RUNNING,

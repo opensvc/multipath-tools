@@ -127,7 +127,7 @@ empty:
 	/* walk backwards because reload_and_sync_map() can remove mpp */
 	vector_foreach_slot_backwards(vecs->mpvec, mpp, i) {
 		if (mpp->fpin_must_reload) {
-			ret = reload_and_sync_map(mpp, vecs, 0);
+			ret = reload_and_sync_map(mpp, vecs);
 			if (ret == 2)
 				condlog(2, "map removed during reload");
 			else
@@ -262,7 +262,7 @@ unref:
 	/* walk backwards because reload_and_sync_map() can remove mpp */
 	vector_foreach_slot_backwards(vecs->mpvec, mpp, i) {
 		if (mpp->fpin_must_reload) {
-			ret = reload_and_sync_map(mpp, vecs, 0);
+			ret = reload_and_sync_map(mpp, vecs);
 			if (ret == 2)
 				condlog(2, "map removed during reload");
 			else
