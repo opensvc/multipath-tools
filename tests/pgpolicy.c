@@ -32,6 +32,15 @@ struct multipath mp8, mp4, mp1, mp0, mp_null;
 struct path p8[8], p4[4], p1[1];
 
 
+static void set_tpg(struct path *pp, int *tpg, int size)
+{
+	int i;
+
+	for (i = 0; i < size; i++) {
+		pp[i].tpg_id = tpg[i];
+	}
+}
+
 static void set_priority(struct path *pp, int *prio, int size)
 {
 	int i;
@@ -639,6 +648,187 @@ static void test_group_by_prio_mixed_one_marginal8(void **state)
 	verify_pathgroups(&mp8, p8, groups, group_size, group_marginal, 7);
 }
 
+static void test_group_by_tpg_same8(void **state)
+{
+	int paths[] = {0,1,2,3,4,5,6,7};
+	int *groups[] = {paths};
+	int group_size[] = {8};
+
+	mp8.pgpolicyfn = group_by_tpg;
+	assert_int_equal(group_paths(&mp8, 0), 0);
+	verify_pathgroups(&mp8, p8, groups, group_size, NULL, 1);
+}
+
+static void test_group_by_tpg_different8(void **state)
+{
+	int prio[] = {1,2,3,4,5,6,7,8};
+	int tpg[] = {3,5,4,1,8,6,7,2};
+	int paths[] = {7,6,5,4,3,2,1,0};
+	int *groups[] = {&paths[0], &paths[1], &paths[2], &paths[3],
+			  &paths[4], &paths[5], &paths[6], &paths[7]};
+	int group_size[] = {1,1,1,1,1,1,1,1};
+
+	set_priority(p8, prio, 8);
+	set_tpg(p8, tpg, 8);
+	mp8.pgpolicyfn = group_by_tpg;
+	assert_int_equal(group_paths(&mp8, 0), 0);
+	verify_pathgroups(&mp8, p8, groups, group_size, NULL, 8);
+}
+
+static void test_group_by_tpg_mixed8(void **state)
+{
+	int prio[] = {7,2,3,3,5,2,8,2};
+	int tpg[] = {1,2,3,3,4,2,5,6};
+	int group0[] = {6};
+	int group1[] = {0};
+	int group2[] = {4};
+	int group3[] = {2,3};
+	int group4[] = {1,5};
+	int group5[] = {7};
+	int *groups[] = {group0, group1, group2, group3,
+			  group4, group5};
+	int group_size[] = {1,1,1,2,2,1};
+
+	set_priority(p8, prio, 8);
+	set_tpg(p8, tpg, 8);
+	mp8.pgpolicyfn = group_by_tpg;
+	assert_int_equal(group_paths(&mp8, 0), 0);
+	verify_pathgroups(&mp8, p8, groups, group_size, NULL, 6);
+}
+
+static void test_group_by_tpg_3_groups8(void **state)
+{
+	int prio[] = {1,2,2,1,2,1,1,2};
+	int tpg[] = {1,2,2,1,3,1,1,3};
+	int group0[] = {1,2};
+	int group1[] = {4,7};
+	int group2[] = {0,3,5,6};
+	int *groups[] = {group0, group1, group2};
+	int group_size[] = {2,2,4};
+
+	set_priority(p8, prio, 8);
+	set_tpg(p8, tpg, 8);
+	mp8.pgpolicyfn = group_by_tpg;
+	assert_int_equal(group_paths(&mp8, 0), 0);
+	verify_pathgroups(&mp8, p8, groups, group_size, NULL, 3);
+}
+
+static void test_group_by_tpg_2_groups4(void **state)
+{
+	int prio[] = {2,1,1,2};
+	int tpg[] = {1,2,2,1};
+	int group0[] = {0,3};
+	int group1[] = {1,2};
+	int *groups[] = {group0, group1};
+	int group_size[] = {2,2};
+
+	set_priority(p4, prio, 4);
+	set_tpg(p4, tpg, 4);
+	mp4.pgpolicyfn = group_by_tpg;
+	assert_int_equal(group_paths(&mp4, 0), 0);
+	verify_pathgroups(&mp4, p4, groups, group_size, NULL, 2);
+}
+
+static void test_group_by_tpg1(void **state)
+{
+	int paths[] = {0};
+	int *groups[] = {paths};
+	int group_size[] = {1};
+
+	mp1.pgpolicyfn = group_by_tpg;
+	assert_int_equal(group_paths(&mp1, 0), 0);
+	verify_pathgroups(&mp1, p1, groups, group_size, NULL, 1);
+}
+
+static void test_group_by_tpg0(void **state)
+{
+	mp0.pgpolicyfn = group_by_tpg;
+	assert_int_equal(group_paths(&mp0, 0), 0);
+	verify_pathgroups(&mp0, NULL, NULL, NULL, NULL, 0);
+}
+
+static void test_group_by_tpg_null(void **state)
+{
+	mp_null.pgpolicyfn = group_by_tpg;
+	assert_int_equal(group_paths(&mp_null, 0), 0);
+	verify_pathgroups(&mp_null, NULL, NULL, NULL, NULL, 0);
+}
+
+static void test_group_by_tpg_mixed_all_marginal8(void **state)
+{
+	int prio[] = {7,2,3,3,5,2,8,2};
+	int tpg[] = {1,2,3,3,4,2,5,6};
+	int marginal[] = {1,1,1,1,1,1,1,1};
+	int group0[] = {6};
+	int group1[] = {0};
+	int group2[] = {4};
+	int group3[] = {2,3};
+	int group4[] = {1,5};
+	int group5[] = {7};
+	int *groups[] = {group0, group1, group2, group3,
+			  group4, group5};
+	int group_size[] = {1,1,1,2,2,1};
+	int group_marginal[] = {1,1,1,1,1,1};
+
+	set_priority(p8, prio, 8);
+	set_tpg(p8, tpg, 8);
+	set_marginal(p8, marginal, 8);
+	mp8.pgpolicyfn = group_by_tpg;
+	assert_int_equal(group_paths(&mp8, 1), 0);
+	verify_pathgroups(&mp8, p8, groups, group_size, group_marginal, 6);
+}
+
+static void test_group_by_tpg_mixed_half_marginal8(void **state)
+{
+	int prio[] = {7,1,3,3,3,2,8,2};
+	int tpg[] = {1,2,3,4,5,6,7,6};
+	int marginal[] = {0,0,0,1,0,1,1,1};
+	int group0[] = {0};
+	int group1[] = {2};
+	int group2[] = {4};
+	int group3[] = {1};
+	int group4[] = {6};
+	int group5[] = {3};
+	int group6[] = {5,7};
+	int *groups[] = {group0, group1, group2, group3,
+			  group4, group5, group6};
+	int group_size[] = {1,1,1,1,1,1,2};
+	int group_marginal[] = {0,0,0,0,1,1,1};
+
+	set_priority(p8, prio, 8);
+	set_tpg(p8, tpg, 8);
+	set_marginal(p8, marginal, 8);
+	mp8.pgpolicyfn = group_by_tpg;
+	assert_int_equal(group_paths(&mp8, 1), 0);
+	verify_pathgroups(&mp8, p8, groups, group_size, group_marginal, 7);
+}
+
+static void test_group_by_tpg_mixed_one_marginal8(void **state)
+{
+	int prio[] = {7,1,3,3,5,2,8,2};
+	int tpg[]  = {1,2,3,3,4,5,6,5};
+	int marginal[] = {0,0,0,0,0,1,0,0};
+	int group0[] = {6};
+	int group1[] = {0};
+	int group2[] = {4};
+	int group3[] = {2,3};
+	int group4[] = {7};
+	int group5[] = {1};
+	int group6[] = {5};
+	int *groups[] = {group0, group1, group2, group3,
+			  group4, group5, group6};
+	int group_size[] = {1,1,1,2,1,1,1};
+	int group_marginal[] = {0,0,0,0,0,0,1};
+
+	set_priority(p8, prio, 8);
+	set_tpg(p8, tpg, 8);
+	set_marginal(p8, marginal, 8);
+	mp8.pgpolicyfn = group_by_tpg;
+	assert_int_equal(group_paths(&mp8, 1), 0);
+	verify_pathgroups(&mp8, p8, groups, group_size, group_marginal, 7);
+}
+
+
 static void test_group_by_node_name_same8(void **state)
 {
 	char *node_name[] = {"a","a","a","a","a","a","a","a"};
@@ -1002,6 +1192,17 @@ int test_pgpolicies(void)
 		setup_test(test_group_by_prio_mixed_all_marginal, 8),
 		setup_test(test_group_by_prio_mixed_half_marginal, 8),
 		setup_test(test_group_by_prio_mixed_one_marginal, 8),
+		setup_test(test_group_by_tpg_same, 8),
+		setup_test(test_group_by_tpg_different, 8),
+		setup_test(test_group_by_tpg_mixed, 8),
+		setup_test(test_group_by_tpg_3_groups, 8),
+		setup_test(test_group_by_tpg_2_groups, 4),
+		setup_test(test_group_by_tpg, 1),
+		setup_test(test_group_by_tpg, 0),
+		setup_test(test_group_by_tpg, _null),
+		setup_test(test_group_by_tpg_mixed_all_marginal, 8),
+		setup_test(test_group_by_tpg_mixed_half_marginal, 8),
+		setup_test(test_group_by_tpg_mixed_one_marginal, 8),
 		setup_test(test_group_by_node_name_same, 8),
 		setup_test(test_group_by_node_name_increasing, 8),
 		setup_test(test_group_by_node_name_3_groups, 8),
