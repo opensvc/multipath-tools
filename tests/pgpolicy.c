@@ -648,6 +648,26 @@ static void test_group_by_prio_mixed_one_marginal8(void **state)
 	verify_pathgroups(&mp8, p8, groups, group_size, group_marginal, 7);
 }
 
+static void test_group_by_prio_mixed_undef8(void **state)
+{
+	int prio[] = {7,1,3,-1,5,2,8,2};
+	int group0[] = {6};
+	int group1[] = {0};
+	int group2[] = {4};
+	int group3[] = {2};
+	int group4[] = {5,7};
+	int group5[] = {1};
+	int group6[] = {3};
+	int *groups[] = {group0, group1, group2, group3,
+			  group4, group5, group6};
+	int group_size[] = {1,1,1,1,2,1,1};
+
+	set_priority(p8, prio, 8);
+	mp8.pgpolicyfn = group_by_prio;
+	assert_int_equal(group_paths(&mp8, 0), 0);
+	verify_pathgroups(&mp8, p8, groups, group_size, NULL, 7);
+}
+
 static void test_group_by_tpg_same8(void **state)
 {
 	int paths[] = {0,1,2,3,4,5,6,7};
@@ -828,6 +848,26 @@ static void test_group_by_tpg_mixed_one_marginal8(void **state)
 	verify_pathgroups(&mp8, p8, groups, group_size, group_marginal, 7);
 }
 
+static void test_group_by_tpg_mixed_undef8(void **state)
+{
+	int prio[] = {-1,2,3,-1,5,2,8,2};
+	int tpg[] = {1,2,3,3,4,2,5,6};
+	int group0[] = {6};
+	int group1[] = {4};
+	int group2[] = {2,3};
+	int group3[] = {1,5};
+	int group4[] = {7};
+	int group5[] = {0};
+	int *groups[] = {group0, group1, group2, group3,
+			  group4, group5};
+	int group_size[] = {1,1,2,2,1,1};
+
+	set_priority(p8, prio, 8);
+	set_tpg(p8, tpg, 8);
+	mp8.pgpolicyfn = group_by_tpg;
+	assert_int_equal(group_paths(&mp8, 0), 0);
+	verify_pathgroups(&mp8, p8, groups, group_size, NULL, 6);
+}
 
 static void test_group_by_node_name_same8(void **state)
 {
@@ -1192,6 +1232,7 @@ int test_pgpolicies(void)
 		setup_test(test_group_by_prio_mixed_all_marginal, 8),
 		setup_test(test_group_by_prio_mixed_half_marginal, 8),
 		setup_test(test_group_by_prio_mixed_one_marginal, 8),
+		setup_test(test_group_by_prio_mixed_undef, 8),
 		setup_test(test_group_by_tpg_same, 8),
 		setup_test(test_group_by_tpg_different, 8),
 		setup_test(test_group_by_tpg_mixed, 8),
@@ -1203,6 +1244,7 @@ int test_pgpolicies(void)
 		setup_test(test_group_by_tpg_mixed_all_marginal, 8),
 		setup_test(test_group_by_tpg_mixed_half_marginal, 8),
 		setup_test(test_group_by_tpg_mixed_one_marginal, 8),
+		setup_test(test_group_by_tpg_mixed_undef, 8),
 		setup_test(test_group_by_node_name_same, 8),
 		setup_test(test_group_by_node_name_increasing, 8),
 		setup_test(test_group_by_node_name_3_groups, 8),
