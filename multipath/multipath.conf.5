@@ -233,6 +233,10 @@ per-multipath option in the configuration file.
 One priority group per target node name. Target node names are fetched
 in \fI/sys/class/fc_transport/target*/node_name\fR.
 .TP
+.I group_by_tpg
+One priority group per ALUA target port group. In order to use this policy,
+all paths in the multipath device must have \fIprio\fR set to \fBalua\fR.
+.TP
 The default is: \fBfailover\fR
 .RE
 .

@@ -317,6 +317,8 @@ struct hd_geometry {
 };
 #endif
 
+#define GROUP_ID_UNDEF -1
+
 struct path {
 	char dev[FILE_NAME_SIZE];
 	char dev_t[BLK_DEV_SIZE];
@@ -372,6 +374,7 @@ struct path {
 	/* configlet pointers */
 	vector hwe;
 	struct gen_path generic_path;
+	int tpg_id;
 };
 
 typedef int (pgpolicyfn) (struct multipath *, vector);

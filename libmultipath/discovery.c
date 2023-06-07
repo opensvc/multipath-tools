@@ -1051,6 +1051,7 @@ detect_alua(struct path * pp)
 		return;
 	}
 	pp->tpgs = tpgs;
+	pp->tpg_id = ret;
 }
 
 int path_get_tpgs(struct path *pp)

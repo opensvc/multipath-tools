@@ -125,6 +125,7 @@ alloc_path (void)
 		pp->sg_id.proto_id = PROTOCOL_UNSET;
 		pp->fd = -1;
 		pp->tpgs = TPGS_UNDEF;
+		pp->tpg_id = GROUP_ID_UNDEF;
 		pp->priority = PRIO_UNDEF;
 		pp->checkint = CHECKINT_UNDEF;
 		checker_clear(&pp->checker);
