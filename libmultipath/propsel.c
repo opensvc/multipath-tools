@@ -280,6 +280,22 @@ out:
 	return 0;
 }
 
+int select_detect_pgpolicy_use_tpg(struct config *conf, struct multipath *mp)
+{
+	const char *origin;
+
+	mp_set_ovr(detect_pgpolicy_use_tpg);
+	mp_set_hwe(detect_pgpolicy_use_tpg);
+	mp_set_conf(detect_pgpolicy_use_tpg);
+	mp_set_default(detect_pgpolicy_use_tpg,
+		       DEFAULT_DETECT_PGPOLICY_USE_TPG);
+out:
+	condlog(3, "%s: detect_pgpolicy_use_tpg = %s %s", mp->alias,
+		(mp->detect_pgpolicy_use_tpg == DETECT_PGPOLICY_USE_TPG_ON)?
+		"yes" : "no", origin);
+	return 0;
+}
+
 int select_pgpolicy(struct config *conf, struct multipath * mp)
 {
 	const char *origin;
@@ -291,7 +307,10 @@ int select_pgpolicy(struct config *conf, struct multipath * mp)
 		goto out;
 	}
 	if (mp->detect_pgpolicy == DETECT_PGPOLICY_ON && verify_alua_prio(mp)) {
-		mp->pgpolicy = GROUP_BY_PRIO;
+		if (mp->detect_pgpolicy_use_tpg == DETECT_PGPOLICY_USE_TPG_ON)
+			mp->pgpolicy = GROUP_BY_TPG;
+		else
+			mp->pgpolicy = GROUP_BY_PRIO;
 		origin = autodetect_origin;
 		goto out;
 	}
@@ -301,7 +320,8 @@ int select_pgpolicy(struct config *conf, struct multipath * mp)
 	mp_set_conf(pgpolicy);
 	mp_set_default(pgpolicy, DEFAULT_PGPOLICY);
 out:
-	if (mp->pgpolicy == GROUP_BY_TPG && !verify_alua_prio(mp)) {
+	if (mp->pgpolicy == GROUP_BY_TPG && origin != autodetect_origin &&
+	    !verify_alua_prio(mp)) {
 		mp->pgpolicy = DEFAULT_PGPOLICY;
 		origin = "(setting: emergency fallback - not all paths use alua prio)";
 		log_prio = 1;

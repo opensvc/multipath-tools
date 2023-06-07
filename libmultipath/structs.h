@@ -149,6 +149,12 @@ enum detect_pgpolicy_states {
 	DETECT_PGPOLICY_ON = YNU_YES,
 };
 
+enum detect_pgpolicy_use_tpg_states {
+	DETECT_PGPOLICY_USE_TPG_UNDEF = YNU_UNDEF,
+	DETECT_PGPOLICY_USE_TPG_OFF = YNU_NO,
+	DETECT_PGPOLICY_USE_TPG_ON = YNU_YES,
+};
+
 enum deferred_remove_states {
 	DEFERRED_REMOVE_UNDEF = YNU_UNDEF,
 	DEFERRED_REMOVE_OFF = YNU_NO,
@@ -396,6 +402,7 @@ struct multipath {
 	char wwid[WWID_SIZE];
 	char alias_old[WWID_SIZE];
 	int detect_pgpolicy;
+	int detect_pgpolicy_use_tpg;
 	int pgpolicy;
 	pgpolicyfn *pgpolicyfn;
 	int nextpg;

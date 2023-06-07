@@ -305,6 +305,7 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 
 	select_pgfailback(conf, mpp);
 	select_detect_pgpolicy(conf, mpp);
+	select_detect_pgpolicy_use_tpg(conf, mpp);
 	select_pgpolicy(conf, mpp);
 
 	/*

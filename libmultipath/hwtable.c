@@ -68,6 +68,7 @@
 		.detect_prio   = DETECT_PRIO_ON,
 		.detect_checker = DETECT_CHECKER_ON,
 		.detect_pgpolicy = DETECT_PGPOLICY_ON,
+		.detect_pgpolicy_use_tpg = DETECT_PGPOLICY_USE_TPG_OFF,
 		.deferred_remove = DEFERRED_REMOVE_OFF,
 		.delay_watch_checks = DELAY_CHECKS_OFF,
 		.delay_wait_checks = DELAY_CHECKS_OFF,

@@ -453,6 +453,7 @@ merge_hwe (struct hwentry * dst, struct hwentry * src)
 	merge_num(detect_prio);
 	merge_num(detect_checker);
 	merge_num(detect_pgpolicy);
+	merge_num(detect_pgpolicy_use_tpg);
 	merge_num(deferred_remove);
 	merge_num(delay_watch_checks);
 	merge_num(delay_wait_checks);
@@ -619,6 +620,7 @@ store_hwe (vector hwtable, struct hwentry * dhwe)
 	hwe->detect_prio = dhwe->detect_prio;
 	hwe->detect_checker = dhwe->detect_checker;
 	hwe->detect_pgpolicy = dhwe->detect_pgpolicy;
+	hwe->detect_pgpolicy_use_tpg = dhwe->detect_pgpolicy_use_tpg;
 	hwe->ghost_delay = dhwe->ghost_delay;
 	hwe->vpd_vendor_id = dhwe->vpd_vendor_id;
 

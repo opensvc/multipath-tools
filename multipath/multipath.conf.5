@@ -254,6 +254,19 @@ The default is: \fIyes\fR
 .
 .
 .TP
+.B detect_pgpolicy_use_tpg
+If both this and \fIdetect_pgpolicy\fR are set to \fIyes\fR and all path
+devcices are configured with either the \fIalua\fR or \fIsysfs\fR prioritizer,
+the multipath device will automatically use the \fIgroup_by_tpg\fR
+path_grouping_policy. If set to \fIno\fR, the path_grouping_policy will be
+selected by the method described for \fIdetect_pgpolicy\fR above.
+.RS
+.TP
+The default is: \fIno\fR
+.RE
+.
+.
+.TP
 .B pg_timeout
 (Deprecated) This option is not supported any more, and the value is ignored.
 .

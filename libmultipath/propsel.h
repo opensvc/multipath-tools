@@ -1,6 +1,7 @@
 int select_rr_weight (struct config *conf, struct multipath * mp);
 int select_pgfailback (struct config *conf, struct multipath * mp);
 int select_detect_pgpolicy (struct config *conf, struct multipath * mp);
+int select_detect_pgpolicy_use_tpg (struct config *conf, struct multipath * mp);
 int select_pgpolicy (struct config *conf, struct multipath * mp);
 int select_selector (struct config *conf, struct multipath * mp);
 int select_alias (struct config *conf, struct multipath * mp);

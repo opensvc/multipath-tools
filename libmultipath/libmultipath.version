@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_18.0.0 {
+LIBMULTIPATH_19.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -116,6 +116,7 @@ global:
 	get_refwwid;
 	get_state;
 	get_udev_device;
+	get_uid;
 	get_used_hwes;
 	get_vpd_sgio;
 	group_by_prio;
@@ -141,6 +142,7 @@ global:
 	pathcount;
 	path_discovery;
 	path_get_tpgs;
+	pathinfo;
 	path_offline;
 	print_all_paths;
 	print_foreign_topology;
@@ -235,9 +237,3 @@ global:
 local:
 	*;
 };
-
-LIBMULTIPATH_18.1.0 {
-global:
-	get_uid;
-	pathinfo;
-} LIBMULTIPATH_18.0.0;
