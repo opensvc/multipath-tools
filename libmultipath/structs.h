@@ -143,6 +143,12 @@ enum detect_checker_states {
 	DETECT_CHECKER_ON = YNU_YES,
 };
 
+enum detect_pgpolicy_states {
+	DETECT_PGPOLICY_UNDEF = YNU_UNDEF,
+	DETECT_PGPOLICY_OFF = YNU_NO,
+	DETECT_PGPOLICY_ON = YNU_YES,
+};
+
 enum deferred_remove_states {
 	DEFERRED_REMOVE_UNDEF = YNU_UNDEF,
 	DEFERRED_REMOVE_OFF = YNU_NO,
@@ -389,6 +395,7 @@ enum prflag_value {
 struct multipath {
 	char wwid[WWID_SIZE];
 	char alias_old[WWID_SIZE];
+	int detect_pgpolicy;
 	int pgpolicy;
 	pgpolicyfn *pgpolicyfn;
 	int nextpg;

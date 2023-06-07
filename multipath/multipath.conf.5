@@ -242,6 +242,18 @@ The default is: \fBfailover\fR
 .
 .
 .TP
+.B detect_pgpolicy
+If set to \fIyes\fR and all path devcices are configured with either the
+\fIalua\fR or \fIsysfs\fR prioritizer, the multipath device will automatically
+use the \fIgroup_by_prio\fR path_grouping_policy. If set to \fIno\fR, the
+path_grouping_policy will be selected as usual.
+.RS
+.TP
+The default is: \fIyes\fR
+.RE
+.
+.
+.TP
 .B pg_timeout
 (Deprecated) This option is not supported any more, and the value is ignored.
 .

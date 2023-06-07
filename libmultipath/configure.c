@@ -304,6 +304,7 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 	pthread_cleanup_push(put_multipath_config, conf);
 
 	select_pgfailback(conf, mpp);
+	select_detect_pgpolicy(conf, mpp);
 	select_pgpolicy(conf, mpp);
 
 	/*

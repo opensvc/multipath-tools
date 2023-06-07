@@ -265,6 +265,21 @@ verify_alua_prio(struct multipath *mp)
 	return true;
 }
 
+int select_detect_pgpolicy(struct config *conf, struct multipath *mp)
+{
+	const char *origin;
+
+	mp_set_ovr(detect_pgpolicy);
+	mp_set_hwe(detect_pgpolicy);
+	mp_set_conf(detect_pgpolicy);
+	mp_set_default(detect_pgpolicy, DEFAULT_DETECT_PGPOLICY);
+out:
+	condlog(3, "%s: detect_pgpolicy = %s %s", mp->alias,
+		(mp->detect_pgpolicy == DETECT_PGPOLICY_ON)? "yes" : "no",
+		 origin);
+	return 0;
+}
+
 int select_pgpolicy(struct config *conf, struct multipath * mp)
 {
 	const char *origin;
@@ -273,6 +288,11 @@ int select_pgpolicy(struct config *conf, struct multipath * mp)
 	if (conf->pgpolicy_flag > 0) {
 		mp->pgpolicy = conf->pgpolicy_flag;
 		origin = cmdline_origin;
+		goto out;
+	}
+	if (mp->detect_pgpolicy == DETECT_PGPOLICY_ON && verify_alua_prio(mp)) {
+		mp->pgpolicy = GROUP_BY_PRIO;
+		origin = autodetect_origin;
 		goto out;
 	}
 	mp_set_mpe(pgpolicy);
