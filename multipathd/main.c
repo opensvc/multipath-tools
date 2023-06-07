@@ -395,11 +395,47 @@ void put_multipath_config(__attribute__((unused)) void *arg)
 	rcu_read_unlock();
 }
 
+/*
+ * The path group orderings that this function finds acceptible are different
+ * from now select_path_group determines the best pathgroup. The idea here is
+ * to only trigger a kernel reload when it is obvious that the pathgroups would
+ * be out of order, even if all the paths were usable. Thus pathgroups with
+ * PRIO_UNDEF are skipped, and the number of enabled paths doesn't matter here.
+ */
+bool path_groups_in_order(struct multipath *mpp)
+{
+	int i;
+	struct pathgroup *pgp;
+	bool seen_marginal_pg = false;
+	int last_prio = INT_MAX;
+
+	if (VECTOR_SIZE(mpp->pg) < 2)
+		return true;
+
+	vector_foreach_slot(mpp->pg, pgp, i) {
+		if (seen_marginal_pg && !pgp->marginal)
+			return false;
+		/* skip pgs with PRIO_UNDEF, since this is likely temporary */
+		if (!pgp->paths || pgp->priority == PRIO_UNDEF)
+			continue;
+		if (pgp->marginal && !seen_marginal_pg) {
+			seen_marginal_pg = true;
+			last_prio = pgp->priority;
+			continue;
+		}
+		if (pgp->priority > last_prio)
+			return false;
+		last_prio = pgp->priority;
+	}
+	return true;
+}
+
 static int
-need_switch_pathgroup (struct multipath * mpp)
+need_switch_pathgroup (struct multipath * mpp, bool *need_reload)
 {
 	int bestpg;
 
+	*need_reload = false;
 	if (!mpp)
 		return 0;
 
@@ -411,10 +447,9 @@ need_switch_pathgroup (struct multipath * mpp)
 		return 0;
 
 	mpp->bestpg = bestpg;
-	if (mpp->bestpg != mpp->nextpg)
-		return 1;
+	*need_reload = !path_groups_in_order(mpp);
 
-	return 0;
+	return (*need_reload || mpp->bestpg != mpp->nextpg);
 }
 
 static void
@@ -1963,20 +1998,26 @@ ghost_delay_tick(struct vectors *vecs)
 }
 
 static void
-deferred_failback_tick (vector mpvec)
+deferred_failback_tick (struct vectors *vecs)
 {
 	struct multipath * mpp;
 	unsigned int i;
+	bool need_reload;
 
-	vector_foreach_slot (mpvec, mpp, i) {
+	vector_foreach_slot (vecs->mpvec, mpp, i) {
 		/*
 		 * deferred failback getting sooner
 		 */
 		if (mpp->pgfailback > 0 && mpp->failback_tick > 0) {
 			mpp->failback_tick--;
 
-			if (!mpp->failback_tick && need_switch_pathgroup(mpp))
-				switch_pathgroup(mpp);
+			if (!mpp->failback_tick &&
+			    need_switch_pathgroup(mpp, &need_reload)) {
+				if (need_reload)
+					reload_and_sync_map(mpp, vecs);
+				else
+					switch_pathgroup(mpp);
+			}
 		}
 	}
 }
@@ -2219,6 +2260,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	struct config *conf;
 	int marginal_pathgroups, marginal_changed = 0;
 	int ret;
+	bool need_reload;
 
 	if (((pp->initialized == INIT_OK || pp->initialized == INIT_PARTIAL ||
 	      pp->initialized == INIT_REQUESTED_UDEV) && !pp->mpp) ||
@@ -2548,13 +2590,17 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		condlog(2, "%s: path priorities changed. reloading",
 			pp->mpp->alias);
 		reload_and_sync_map(pp->mpp, vecs);
-	} else if (need_switch_pathgroup(pp->mpp)) {
+	} else if (need_switch_pathgroup(pp->mpp, &need_reload)) {
 		if (pp->mpp->pgfailback > 0 &&
 		    (new_path_up || pp->mpp->failback_tick <= 0))
 			pp->mpp->failback_tick = pp->mpp->pgfailback + 1;
 		else if (pp->mpp->pgfailback == -FAILBACK_IMMEDIATE ||
-			 (chkr_new_path_up && followover_should_failback(pp)))
-			switch_pathgroup(pp->mpp);
+			 (chkr_new_path_up && followover_should_failback(pp))) {
+			if (need_reload)
+				reload_and_sync_map(pp->mpp, vecs);
+			else
+				switch_pathgroup(pp->mpp);
+		}
 	}
 	return 1;
 }
@@ -2680,7 +2726,7 @@ unlock:
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
 		lock(&vecs->lock);
 		pthread_testcancel();
-		deferred_failback_tick(vecs->mpvec);
+		deferred_failback_tick(vecs);
 		retry_count_tick(vecs->mpvec);
 		missing_uev_wait_tick(vecs);
 		ghost_delay_tick(vecs);
