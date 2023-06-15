@@ -33,7 +33,7 @@
 
 /*
  * Symbols exported by both libmpathutil and libmultipath
- * libmpathutil exports just dummy symbols, intended to be overriden
+ * libmpathutil exports just dummy symbols, intended to be overridden
  * by those in libmultipath.
  * CAUTION - the version in libmpathutil.version and libmultipath.version
  * must be THE SAME, otherwise the overriding will fail!
