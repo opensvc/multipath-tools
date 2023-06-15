@@ -396,7 +396,7 @@ void put_multipath_config(__attribute__((unused)) void *arg)
 }
 
 /*
- * The path group orderings that this function finds acceptible are different
+ * The path group orderings that this function finds acceptable are different
  * from now select_path_group determines the best pathgroup. The idea here is
  * to only trigger a kernel reload when it is obvious that the pathgroups would
  * be out of order, even if all the paths were usable. Thus pathgroups with
