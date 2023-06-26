@@ -1359,7 +1359,6 @@ dm_get_maps (vector mp)
 		}
 
 		vector_set_slot(mp, mpp);
-		mpp = NULL;
 next:
 		next = names->next;
 		names = (void *) names + next;
