@@ -10,7 +10,7 @@ on:
 jobs:
 
   cross-build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -37,7 +37,7 @@ jobs:
           path: binaries.tar
 
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: cross-build
     strategy:
       fail-fast: false

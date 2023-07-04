@@ -10,7 +10,7 @@ on:
 jobs:
 
   build-current:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -54,7 +54,7 @@ jobs:
           pull-params: "--platform linux/${{ matrix.arch }}"
 
   build-old:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
