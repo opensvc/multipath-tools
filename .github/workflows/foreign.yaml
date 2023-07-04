@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [bullseye, sid]
+        os: [bullseye, bookworm, sid]
         arch: [ppc64le, arm64, s390x]
     container: ghcr.io/mwilck/multipath-cross-debian_cross-${{ matrix.os }}-${{ matrix.arch }}
     steps:
@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [bullseye, sid]
+        os: [bullseye, bookworm, sid]
         arch: [ppc64le, arm64, s390x]
     steps:
       - name: set container arch
