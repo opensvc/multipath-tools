@@ -8,6 +8,7 @@ https://github.com/opensvc/multipath-tools
 This package provides the following binaries to drive the Device Mapper multipathing driver:
 
 * multipath - Device mapper target autoconfig.
+* multipathc - Interactive client for multipathd.
 * multipathd - Multipath daemon.
 * mpathpersist - Manages SCSI persistent reservations on dm multipath devices.
 * kpartx - Create device maps from partition tables.
