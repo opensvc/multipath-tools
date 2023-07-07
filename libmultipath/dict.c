@@ -278,11 +278,6 @@ static int print_str(struct strbuf *buff, const char *ptr)
 	return ret == -EINVAL ? 0 : ret;
 }
 
-static int print_ignored(struct strbuf *buff)
-{
-	return append_strbuf_quoted(buff, "ignored");
-}
-
 static int print_yes_no(struct strbuf *buff, long v)
 {
 	return append_strbuf_quoted(buff, v == YN_NO ? "no" : "yes");
@@ -548,7 +543,6 @@ declare_def_snprint(verbosity, print_int)
 declare_def_handler(reassign_maps, set_yes_no)
 declare_def_snprint(reassign_maps, print_yes_no)
 
-declare_deprecated_handler(multipath_dir)
 
 static int def_partition_delim_handler(struct config *conf, vector strvec,
 				       const char *file, int line_nr)
@@ -918,17 +912,6 @@ declare_hw_handler(skip_kpartx, set_yes_no_undef)
 declare_hw_snprint(skip_kpartx, print_yes_no_undef)
 declare_mp_handler(skip_kpartx, set_yes_no_undef)
 declare_mp_snprint(skip_kpartx, print_yes_no_undef)
-static int def_disable_changed_wwids_handler(struct config *conf, vector strvec,
-					     const char *file, int line_nr)
-{
-	return 0;
-}
-static int snprint_def_disable_changed_wwids(struct config *conf,
-					     struct strbuf *buff,
-					     const void *data)
-{
-	return print_ignored(buff);
-}
 
 declare_def_range_handler(remove_retries, 0, INT_MAX)
 declare_def_snprint(remove_retries, print_int)
@@ -949,9 +932,6 @@ declare_def_snprint_defint(find_multipaths_timeout, print_int,
 declare_def_handler(enable_foreign, set_str)
 declare_def_snprint_defstr(enable_foreign, print_str,
 			   DEFAULT_ENABLE_FOREIGN)
-
-declare_deprecated_handler(config_dir)
-declare_deprecated_handler(pg_timeout)
 
 #define declare_def_attr_handler(option, function)			\
 static int								\
@@ -2076,7 +2056,12 @@ snprint_deprecated (struct config *conf, struct strbuf *buff, const void * data)
 	return 0;
 }
 
+// Deprecated keywords
+declare_deprecated_handler(config_dir)
+declare_deprecated_handler(disable_changed_wwids)
 declare_deprecated_handler(getuid_callout)
+declare_deprecated_handler(multipath_dir)
+declare_deprecated_handler(pg_timeout)
 
 /*
  * If you add or remove a keyword also update multipath/multipath.conf.5
@@ -2151,7 +2136,7 @@ init_keywords(vector keywords)
 	install_keyword("retrigger_delay", &def_retrigger_delay_handler, &snprint_def_retrigger_delay);
 	install_keyword("missing_uev_wait_timeout", &def_uev_wait_timeout_handler, &snprint_def_uev_wait_timeout);
 	install_keyword("skip_kpartx", &def_skip_kpartx_handler, &snprint_def_skip_kpartx);
-	install_keyword("disable_changed_wwids", &def_disable_changed_wwids_handler, &snprint_def_disable_changed_wwids);
+	install_keyword("disable_changed_wwids", &deprecated_disable_changed_wwids_handler, &snprint_deprecated);
 	install_keyword("remove_retries", &def_remove_retries_handler, &snprint_def_remove_retries);
 	install_keyword("max_sectors_kb", &def_max_sectors_kb_handler, &snprint_def_max_sectors_kb);
 	install_keyword("ghost_delay", &def_ghost_delay_handler, &snprint_def_ghost_delay);
