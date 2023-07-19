@@ -593,11 +593,12 @@ sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
 	ssize_t len;
 	int i, j, ret, err = 0;
 	struct udev_device *udd;
-	int max_sectors_kb;
+	int max_sectors_kb = mpp->max_sectors_kb;
 
-	if (mpp->max_sectors_kb == MAX_SECTORS_KB_UNDEF)
+	/* by default, do not initialize max_sectors_kb on the device */
+	if (max_sectors_kb == MAX_SECTORS_KB_UNDEF && !is_reload)
 		return 0;
-	max_sectors_kb = mpp->max_sectors_kb;
+	/* on reload, re-apply the user tuning on all the path devices */
 	if (is_reload) {
 		if (!has_dm_info(mpp) &&
 		    dm_get_info(mpp->alias, &mpp->dmi) != 0) {
