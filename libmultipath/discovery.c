@@ -857,6 +857,9 @@ sysfs_set_scsi_tmo (struct config *conf, struct multipath *mpp)
 	bool warn_dev_loss = false;
 	bool warn_fast_io_fail = false;
 
+	if (mpp->action == ACT_DRY_RUN || mpp->action == ACT_REJECT)
+		return 0;
+
 	if (mpp->no_path_retry > 0) {
 		uint64_t no_path_retry_tmo =
 			(uint64_t)mpp->no_path_retry * conf->checkint;
