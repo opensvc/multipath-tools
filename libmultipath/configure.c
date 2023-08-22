@@ -1378,8 +1378,7 @@ static int _get_refwwid(enum mpath_cmds cmd, const char *dev,
 			refwwid = tmpwwid;
 
 		/* or may be a binding */
-		else if (get_user_friendly_wwid(dev, tmpwwid,
-						conf->bindings_file) == 0)
+		else if (get_user_friendly_wwid(dev, tmpwwid) == 0)
 			refwwid = tmpwwid;
 
 		/* or may be an alias */
