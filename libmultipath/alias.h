@@ -9,5 +9,6 @@ char *get_user_friendly_alias(const char *wwid, const char *file,
 
 struct config;
 int check_alias_settings(const struct config *);
+void cleanup_bindings(void);
 
 #endif /* _ALIAS_H */

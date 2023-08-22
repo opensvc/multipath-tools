@@ -843,6 +843,8 @@ main (int argc, char *argv[])
 	conf->force_sync = 1;
 	if (atexit(cleanup_vecs))
 		condlog(1, "failed to register cleanup handler for vecs: %m");
+	if (atexit(cleanup_bindings))
+		condlog(1, "failed to register cleanup handler for bindings: %m");
 	while ((arg = getopt(argc, argv, ":adDcChl::eFfM:v:p:b:BrR:itTquUwW")) != EOF ) {
 		switch(arg) {
 		case 'v':

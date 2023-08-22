@@ -3325,6 +3325,7 @@ static void cleanup_child(void)
 {
 	cleanup_threads();
 	cleanup_vecs();
+	cleanup_bindings();
 	if (poll_dmevents)
 		cleanup_dmevent_waiter();
 

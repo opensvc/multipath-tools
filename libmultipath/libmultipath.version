@@ -64,6 +64,7 @@ global:
 	checker_name;
 	checker_state_name;
 	check_foreign;
+	cleanup_bindings;
 	cleanup_lock;
 	coalesce_paths;
 	count_active_paths;

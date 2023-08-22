@@ -511,6 +511,7 @@ static void _free_binding(struct binding *bdg)
  * an abstract type.
  */
 typedef struct _vector Bindings;
+static Bindings global_bindings = { .allocated = 0 };
 
 static void free_bindings(Bindings *bindings)
 {
@@ -520,6 +521,11 @@ static void free_bindings(Bindings *bindings)
 	vector_foreach_slot(bindings, bdg, i)
 		_free_binding(bdg);
 	vector_reset(bindings);
+}
+
+void cleanup_bindings(void)
+{
+	free_bindings(&global_bindings);
 }
 
 enum {
@@ -751,7 +757,6 @@ int check_alias_settings(const struct config *conf)
 	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
 
-	pthread_cleanup_push_cast(free_bindings, &bindings);
 	fd = open_file(conf->bindings_file, &can_write, BINDINGS_FILE_HEADER);
 	if (fd != -1) {
 		FILE *file = fdopen(fd, "r");
@@ -771,6 +776,8 @@ int check_alias_settings(const struct config *conf)
 			close(fd);
 		}
 	}
-	pthread_cleanup_pop(1);
+
+	cleanup_bindings();
+	global_bindings = bindings;
 	return rc;
 }
