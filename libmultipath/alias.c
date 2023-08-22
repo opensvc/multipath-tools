@@ -595,8 +595,8 @@ static int write_bindings_file(const Bindings *bindings, int fd)
 	return 0;
 }
 
-static int fix_bindings_file(const struct config *conf,
-			     const Bindings *bindings)
+static int update_bindings_file(const struct config *conf,
+				const Bindings *bindings)
 {
 	int rc;
 	int fd = -1;
@@ -766,7 +766,7 @@ int check_alias_settings(const struct config *conf)
 			rc = _check_bindings_file(conf, file, &bindings);
 			pthread_cleanup_pop(1);
 			if (rc == -1 && can_write && !conf->bindings_read_only)
-				rc = fix_bindings_file(conf, &bindings);
+				rc = update_bindings_file(conf, &bindings);
 			else if (rc == -1)
 				condlog(0, "ERROR: bad settings in read-only bindings file %s",
 					conf->bindings_file);
