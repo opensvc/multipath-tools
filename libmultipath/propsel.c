@@ -401,19 +401,16 @@ int select_alias(struct config *conf, struct multipath * mp)
 
 	select_alias_prefix(conf, mp);
 
-	if (strlen(mp->alias_old) > 0) {
-		mp->alias = use_existing_alias(mp->wwid, conf->bindings_file,
-				mp->alias_old, mp->alias_prefix,
-				conf->bindings_read_only);
-		memset (mp->alias_old, 0, WWID_SIZE);
-		origin = "(setting: using existing alias)";
-	}
+	mp->alias = get_user_friendly_alias(mp->wwid, conf->bindings_file,
+					    mp->alias_old, mp->alias_prefix,
+					    conf->bindings_read_only);
 
-	if (mp->alias == NULL) {
-		mp->alias = get_user_friendly_alias(mp->wwid,
-				conf->bindings_file, mp->alias_prefix, conf->bindings_read_only);
+	if (mp->alias && !strncmp(mp->alias, mp->alias_old, WWID_SIZE))
+		origin = "(setting: using existing alias)";
+	else if (mp->alias)
 		origin = "(setting: user_friendly_name)";
-	}
+	memset (mp->alias_old, 0, WWID_SIZE);
+
 out:
 	if (mp->alias == NULL) {
 		mp->alias = strdup(mp->wwid);
