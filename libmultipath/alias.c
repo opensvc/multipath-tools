@@ -120,7 +120,7 @@ static bool alias_already_taken(const char *alias, const char *map_wwid)
 		if (dm_get_uuid(alias, wwid, sizeof(wwid)) == 0 &&
 		    strncmp(map_wwid, wwid, sizeof(wwid)) == 0)
 			return false;
-		condlog(3, "%s: alias '%s' already taken, but not in bindings file. reselecting alias",
+		condlog(3, "%s: alias '%s' already taken, reselecting alias",
 			map_wwid, alias);
 		return true;
 	}
@@ -359,12 +359,11 @@ char *get_user_friendly_alias(const char *wwid, const char *file, const char *al
 	rlookup_binding(f, buff, alias_old);
 
 	if (strlen(buff) > 0) {
-		/* if buff is our wwid, it's already
-		 * allocated correctly
-		 */
+		/* If buff is our wwid, it's already allocated correctly. */
 		if (strcmp(buff, wwid) == 0) {
 			alias = strdup(alias_old);
 			goto out;
+
 		} else {
 			condlog(0, "alias %s already bound to wwid %s, cannot reuse",
 				alias_old, buff);
@@ -372,19 +371,35 @@ char *get_user_friendly_alias(const char *wwid, const char *file, const char *al
 		}
 	}
 
-	id = lookup_binding(f, wwid, &alias, NULL, 0);
+	/*
+	 * Look for an existing alias in the bindings file.
+	 * Pass prefix = NULL, so lookup_binding() won't try to allocate a new id.
+	 */
+	lookup_binding(f, wwid, &alias, NULL, 0);
 	if (alias) {
-		condlog(3, "Use existing binding [%s] for WWID [%s]",
-			alias, wwid);
+		if (alias_already_taken(alias, wwid)) {
+			free(alias);
+			alias = NULL;
+		} else
+			condlog(3, "Use existing binding [%s] for WWID [%s]",
+				alias, wwid);
 		goto out;
 	}
 
-	/* allocate the existing alias in the bindings file */
+	/* alias_old is already taken by our WWID, update bindings file. */
 	id = scan_devname(alias_old, prefix);
 
 new_alias:
 	if (id <= 0) {
+		/*
+		 * no existing alias was provided, or allocating it
+		 * failed. Try a new one.
+		 */
 		id = lookup_binding(f, wwid, &alias, prefix, 1);
+		if (id == 0 && alias_already_taken(alias, wwid)) {
+			free(alias);
+			alias = NULL;
+		}
 		if (id <= 0)
 			goto out;
 		else

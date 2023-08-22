@@ -398,7 +398,7 @@ static void mock_self_alias(const char *alias, const char *wwid)
 	will_return(__wrap_dm_get_uuid, wwid);
 }
 
-#define USED_STR(alias_str, wwid_str) wwid_str ": alias '" alias_str "' already taken, but not in bindings file. reselecting alias\n"
+#define USED_STR(alias_str, wwid_str) wwid_str ": alias '" alias_str "' already taken, reselecting alias\n"
 
 static void mock_failed_alias(const char *alias, char *msg)
 {
