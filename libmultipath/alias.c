@@ -9,6 +9,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #include "debug.h"
 #include "util.h"
@@ -50,6 +51,125 @@
 "#\n"
 
 static const char bindings_file_header[] = BINDINGS_FILE_HEADER;
+
+struct binding {
+	char *alias;
+	char *wwid;
+};
+
+/*
+ * Perhaps one day we'll implement this more efficiently, thus use
+ * an abstract type.
+ */
+typedef struct _vector Bindings;
+static Bindings global_bindings = { .allocated = 0 };
+
+enum {
+	BINDING_EXISTS,
+	BINDING_CONFLICT,
+	BINDING_ADDED,
+	BINDING_DELETED,
+	BINDING_NOTFOUND,
+	BINDING_ERROR,
+};
+
+static void _free_binding(struct binding *bdg)
+{
+	free(bdg->wwid);
+	free(bdg->alias);
+	free(bdg);
+}
+
+static int add_binding(Bindings *bindings, const char *alias, const char *wwid)
+{
+	struct binding *bdg;
+	int i, cmp = 0;
+
+	/*
+	 * Keep the bindings array sorted by alias.
+	 * Optimization: Search backwards, assuming that the bindings file is
+	 * sorted already.
+	 */
+	vector_foreach_slot_backwards(bindings, bdg, i) {
+		if ((cmp = strcmp(bdg->alias, alias)) <= 0)
+			break;
+	}
+
+	/* Check for exact match */
+	if (i >= 0 && cmp == 0)
+		return strcmp(bdg->wwid, wwid) ?
+			BINDING_CONFLICT : BINDING_EXISTS;
+
+	i++;
+	bdg = calloc(1, sizeof(*bdg));
+	if (bdg) {
+		bdg->wwid = strdup(wwid);
+		bdg->alias = strdup(alias);
+		if (bdg->wwid && bdg->alias &&
+		    vector_insert_slot(bindings, i, bdg))
+			return BINDING_ADDED;
+		else
+			_free_binding(bdg);
+	}
+
+	return BINDING_ERROR;
+}
+
+static int write_bindings_file(const Bindings *bindings, int fd)
+{
+	struct binding *bnd;
+	STRBUF_ON_STACK(line);
+	int i;
+
+	if (write(fd, BINDINGS_FILE_HEADER, sizeof(BINDINGS_FILE_HEADER) - 1)
+	    != sizeof(BINDINGS_FILE_HEADER) - 1)
+		return -1;
+
+	vector_foreach_slot(bindings, bnd, i) {
+		int len;
+
+		if ((len = print_strbuf(&line, "%s %s\n",
+					bnd->alias, bnd->wwid)) < 0)
+			return -1;
+		if (write(fd, get_strbuf_str(&line), len) != len)
+			return -1;
+		truncate_strbuf(&line, 0);
+	}
+	return 0;
+}
+
+static int update_bindings_file(const struct config *conf,
+				const Bindings *bindings)
+{
+	int rc;
+	int fd = -1;
+	char tempname[PATH_MAX];
+	mode_t old_umask;
+
+	if (safe_sprintf(tempname, "%s.XXXXXX", conf->bindings_file))
+		return -1;
+	/* coverity: SECURE_TEMP */
+	old_umask = umask(0077);
+	if ((fd = mkstemp(tempname)) == -1) {
+		condlog(1, "%s: mkstemp: %m", __func__);
+		return -1;
+	}
+	umask(old_umask);
+	pthread_cleanup_push(cleanup_fd_ptr, &fd);
+	rc = write_bindings_file(bindings, fd);
+	pthread_cleanup_pop(1);
+	if (rc == -1) {
+		condlog(1, "failed to write new bindings file %s",
+			tempname);
+		unlink(tempname);
+		return rc;
+	}
+	if ((rc = rename(tempname, conf->bindings_file)) == -1)
+		condlog(0, "%s: rename: %m", __func__);
+	else
+		condlog(1, "updated bindings file %s", conf->bindings_file);
+	return rc;
+}
 
 int
 valid_alias(const char *alias)
@@ -494,25 +614,6 @@ get_user_friendly_wwid(const char *alias, char *buff, const char *file)
 	return 0;
 }
 
-struct binding {
-	char *alias;
-	char *wwid;
-};
-
-static void _free_binding(struct binding *bdg)
-{
-	free(bdg->wwid);
-	free(bdg->alias);
-	free(bdg);
-}
-
-/*
- * Perhaps one day we'll implement this more efficiently, thus use
- * an abstract type.
- */
-typedef struct _vector Bindings;
-static Bindings global_bindings = { .allocated = 0 };
-
 static void free_bindings(Bindings *bindings)
 {
 	struct binding *bdg;
@@ -526,106 +627,6 @@ static void free_bindings(Bindings *bindings)
 void cleanup_bindings(void)
 {
 	free_bindings(&global_bindings);
-}
-
-enum {
-	BINDING_EXISTS,
-	BINDING_CONFLICT,
-	BINDING_ADDED,
-	BINDING_DELETED,
-	BINDING_NOTFOUND,
-	BINDING_ERROR,
-};
-
-static int add_binding(Bindings *bindings, const char *alias, const char *wwid)
-{
-	struct binding *bdg;
-	int i, cmp = 0;
-
-	/*
-	 * Keep the bindings array sorted by alias.
-	 * Optimization: Search backwards, assuming that the bindings file is
-	 * sorted already.
-	 */
-	vector_foreach_slot_backwards(bindings, bdg, i) {
-		if ((cmp = strcmp(bdg->alias, alias)) <= 0)
-			break;
-	}
-
-	/* Check for exact match */
-	if (i >= 0 && cmp == 0)
-		return strcmp(bdg->wwid, wwid) ?
-			BINDING_CONFLICT : BINDING_EXISTS;
-
-	i++;
-	bdg = calloc(1, sizeof(*bdg));
-	if (bdg) {
-		bdg->wwid = strdup(wwid);
-		bdg->alias = strdup(alias);
-		if (bdg->wwid && bdg->alias &&
-		    vector_insert_slot(bindings, i, bdg))
-			return BINDING_ADDED;
-		else
-			_free_binding(bdg);
-	}
-
-	return BINDING_ERROR;
-}
-
-static int write_bindings_file(const Bindings *bindings, int fd)
-{
-	struct binding *bnd;
-	STRBUF_ON_STACK(line);
-	int i;
-
-	if (write(fd, BINDINGS_FILE_HEADER, sizeof(BINDINGS_FILE_HEADER) - 1)
-	    != sizeof(BINDINGS_FILE_HEADER) - 1)
-		return -1;
-
-	vector_foreach_slot(bindings, bnd, i) {
-		int len;
-
-		if ((len = print_strbuf(&line, "%s %s\n",
-					bnd->alias, bnd->wwid)) < 0)
-			return -1;
-		if (write(fd, get_strbuf_str(&line), len) != len)
-			return -1;
-		truncate_strbuf(&line, 0);
-	}
-	return 0;
-}
-
-static int update_bindings_file(const struct config *conf,
-				const Bindings *bindings)
-{
-	int rc;
-	int fd = -1;
-	char tempname[PATH_MAX];
-	mode_t old_umask;
-
-	if (safe_sprintf(tempname, "%s.XXXXXX", conf->bindings_file))
-		return -1;
-	/* coverity: SECURE_TEMP */
-	old_umask = umask(0077);
-	if ((fd = mkstemp(tempname)) == -1) {
-		condlog(1, "%s: mkstemp: %m", __func__);
-		return -1;
-	}
-	umask(old_umask);
-	pthread_cleanup_push(cleanup_fd_ptr, &fd);
-	rc = write_bindings_file(bindings, fd);
-	pthread_cleanup_pop(1);
-	if (rc == -1) {
-		condlog(1, "failed to write new bindings file %s",
-			tempname);
-		unlink(tempname);
-		return rc;
-	}
-	if ((rc = rename(tempname, conf->bindings_file)) == -1)
-		condlog(0, "%s: rename: %m", __func__);
-	else
-		condlog(1, "updated bindings file %s", conf->bindings_file);
-	return rc;
 }
 
 static int _check_bindings_file(const struct config *conf, FILE *file,
