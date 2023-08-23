@@ -81,6 +81,35 @@ int __wrap_dm_get_uuid(const char *name, char *uuid, int uuid_len)
 	return ret;
 }
 
+#define TEST_FDNO 1234
+#define TEST_FPTR ((FILE *) 0xaffe)
+
+int __wrap_open_file(const char *file, int *can_write, const char *header)
+{
+	int cw = mock_type(int);
+
+        *can_write = cw;
+	return TEST_FDNO;
+}
+
+FILE *__wrap_fdopen(int fd, const char *mode)
+{
+	assert_int_equal(fd, TEST_FDNO);
+	return TEST_FPTR;
+}
+
+int __wrap_fflush(FILE *f)
+{
+	assert_ptr_equal(f, TEST_FPTR);
+	return 0;
+}
+
+int __wrap_fclose(FILE *f)
+{
+	assert_ptr_equal(f, TEST_FPTR);
+	return 0;
+}
+
 /* strbuf wrapper for the old format_devname() */
 static int __format_devname(char *name, int id, size_t len, const char *prefix)
 {
@@ -399,6 +428,22 @@ static void mock_self_alias(const char *alias, const char *wwid)
 }
 
 #define USED_STR(alias_str, wwid_str) wwid_str ": alias '" alias_str "' already taken, reselecting alias\n"
+#define NOMATCH_STR(alias_str) ("No matching alias [" alias_str "] in bindings file.\n")
+#define FOUND_STR(alias_str, wwid_str)				\
+	"Found matching wwid [" wwid_str "] in bindings file."	\
+	" Setting alias to " alias_str "\n"
+#define FOUND_ALIAS_STR(alias_str, wwid_str)				\
+	"Found matching alias [" alias_str "] in bindings file."	\
+	" Setting wwid to " wwid_str "\n"
+#define NOMATCH_WWID_STR(wwid_str) ("No matching wwid [" wwid_str "] in bindings file.\n")
+#define NEW_STR(alias_str, wwid_str) ("Created new binding [" alias_str "] for WWID [" wwid_str "]\n")
+#define EXISTING_STR(alias_str, wwid_str) ("Use existing binding [" alias_str "] for WWID [" wwid_str "]\n")
+#define ALLOC_STR(alias_str, wwid_str) ("Allocated existing binding [" alias_str "] for WWID [" wwid_str "]\n")
+#define BINDING_STR(alias_str, wwid_str) (alias_str " " wwid_str "\n")
+#define BOUND_STR(alias_str, wwid_str) ("alias "alias_str " already bound to wwid " wwid_str ", cannot reuse")
+#define ERR_STR(alias_str, wwid_str) ("ERROR: old alias [" alias_str "] for wwid [" wwid_str "] is used by other map\n")
+#define REUSE_STR(alias_str, wwid_str) ("alias " alias_str " already bound to wwid " wwid_str ", cannot reuse\n")
+#define NOMORE_STR "no more available user_friendly_names\n"
 
 static void mock_failed_alias(const char *alias, char *msg)
 {
@@ -419,6 +464,24 @@ static void mock_used_alias(const char *alias, char *msg)
 	will_return(__wrap_dm_get_uuid, 0);
 	will_return(__wrap_dm_get_uuid, "WWID_USED");
 	expect_condlog(3, msg);
+}
+
+static void mock_bindings_file(const char *content, int match_line)
+{
+	static char cnt[1024];
+	char *token;
+	int i;
+
+	assert_in_range(strlcpy(cnt, content, sizeof(cnt)), 0, sizeof(cnt) - 1);
+
+	for (token = strtok(cnt, "\n"), i = 0;
+	     token && *token;
+	     token = strtok(NULL, "\n"), i++) {
+		will_return(__wrap_fgets, token);
+		if (match_line == i)
+			return;
+	}
+	will_return(__wrap_fgets, NULL);
 }
 
 static void lb_empty(void **state)
@@ -1147,6 +1210,382 @@ static int test_allocate_binding(void)
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }
 
+#define mock_allocate_binding(alias, wwid)				\
+	do {								\
+		static const char ln[] = BINDING_STR(alias, wwid);	\
+									\
+		will_return(__wrap_lseek, 0);				\
+		expect_value(__wrap_write, count, strlen(ln));		\
+		expect_string(__wrap_write, buf, ln);			\
+		will_return(__wrap_write, strlen(ln));			\
+		expect_condlog(3, NEW_STR(alias, wwid));		\
+	} while (0)
+
+static void gufa_empty_new_rw(void **state) {
+	char *alias;
+
+	will_return(__wrap_open_file, true);
+
+	will_return(__wrap_fgets, NULL);
+	mock_unused_alias("MPATHa");
+	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
+
+	mock_allocate_binding("MPATHa", "WWID0");
+	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", false);
+	assert_string_equal(alias, "MPATHa");
+	free(alias);
+}
+
+static void gufa_empty_new_ro_1(void **state) {
+	char *alias;
+	will_return(__wrap_open_file, false);
+	will_return(__wrap_fgets, NULL);
+	mock_unused_alias("MPATHa");
+	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
+
+	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", false);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void gufa_empty_new_ro_2(void **state) {
+	char *alias;
+
+	will_return(__wrap_open_file, true);
+
+	will_return(__wrap_fgets, NULL);
+	mock_unused_alias("MPATHa");
+	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
+
+	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", true);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void gufa_match_a_unused(void **state) {
+	char *alias;
+
+	will_return(__wrap_open_file, true);
+
+	will_return(__wrap_fgets, BINDING_STR("MPATHa", "WWID0"));
+	expect_condlog(3, FOUND_STR("MPATHa", "WWID0"));
+	mock_unused_alias("MPATHa");
+
+	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", true);
+	assert_string_equal(alias, "MPATHa");
+	free(alias);
+}
+
+static void gufa_match_a_self(void **state) {
+	char *alias;
+
+	will_return(__wrap_open_file, true);
+
+	will_return(__wrap_fgets, BINDING_STR("MPATHa", "WWID0"));
+	expect_condlog(3, FOUND_STR("MPATHa", "WWID0"));
+	mock_self_alias("MPATHa", "WWID0");
+
+	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", true);
+	assert_string_equal(alias, "MPATHa");
+	free(alias);
+}
+
+static void gufa_match_a_used(void **state) {
+	char *alias;
+
+	will_return(__wrap_open_file, true);
+
+	will_return(__wrap_fgets, BINDING_STR("MPATHa", "WWID0"));
+	expect_condlog(3, FOUND_STR("MPATHa", "WWID0"));
+	mock_used_alias("MPATHa", USED_STR("MPATHa", "WWID0"));
+
+	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", true);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void gufa_nomatch_a_c(void **state) {
+	char *alias;
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file("MPATHa WWID0\n"
+			   "MPATHc WWID2",
+			   -1);
+	mock_unused_alias("MPATHb");
+	expect_condlog(3, NOMATCH_WWID_STR("WWID1"));
+
+	mock_allocate_binding("MPATHb", "WWID1");
+
+	alias = get_user_friendly_alias("WWID1", "x", "", "MPATH", false);
+	assert_string_equal(alias, "MPATHb");
+	free(alias);
+}
+
+static void gufa_nomatch_c_a(void **state) {
+	char *alias;
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file("MPATHc WWID2\n"
+			   "MPATHa WWID0",
+			   -1);
+	mock_unused_alias("MPATHb");
+	expect_condlog(3, NOMATCH_WWID_STR("WWID1"));
+
+	mock_allocate_binding("MPATHb", "WWID1");
+
+	alias = get_user_friendly_alias("WWID1", "x", "", "MPATH", false);
+	assert_string_equal(alias, "MPATHb");
+	free(alias);
+}
+
+static void gufa_nomatch_c_b(void **state) {
+	char *alias;
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file("MPATHc WWID2\n"
+			   "MPATHb WWID1\n",
+			   -1);
+	mock_unused_alias("MPATHa");
+	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
+
+	mock_allocate_binding("MPATHa", "WWID0");
+
+	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", false);
+	assert_string_equal(alias, "MPATHa");
+	free(alias);
+}
+
+static void gufa_nomatch_c_b_used(void **state) {
+	char *alias;
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file("MPATHc WWID2\n"
+			   "MPATHb WWID1",
+			   -1);
+	mock_used_alias("MPATHa", USED_STR("MPATHa", "WWID4"));
+	expect_condlog(3, NOMATCH_WWID_STR("WWID4"));
+	mock_unused_alias("MPATHd");
+
+	mock_allocate_binding("MPATHd", "WWID4");
+
+	alias = get_user_friendly_alias("WWID4", "x", "", "MPATH", false);
+	assert_string_equal(alias, "MPATHd");
+	free(alias);
+}
+
+static void gufa_nomatch_b_f_a(void **state) {
+	char *alias;
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file("MPATHb WWID1\n"
+			   "MPATHf WWID6\n"
+			   "MPATHa WWID0\n",
+			   -1);
+	expect_condlog(3, NOMATCH_WWID_STR("WWID7"));
+	mock_unused_alias("MPATHg");
+
+	mock_allocate_binding("MPATHg", "WWID7");
+
+	alias = get_user_friendly_alias("WWID7", "x", "", "MPATH", false);
+	assert_string_equal(alias, "MPATHg");
+	free(alias);
+}
+
+static void gufa_old_empty(void **state) {
+	char *alias;
+	will_return(__wrap_open_file, true);
+
+	/* rlookup_binding for ALIAS */
+	will_return(__wrap_fgets, NULL);
+	expect_condlog(3, NOMATCH_STR("MPATHz"));
+
+	/* lookup_binding */
+	will_return(__wrap_fgets, NULL);
+	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
+
+	mock_allocate_binding("MPATHz", "WWID0");
+	expect_condlog(2, ALLOC_STR("MPATHz", "WWID0"));
+
+	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	assert_string_equal(alias, "MPATHz");
+	free(alias);
+}
+
+static void gufa_old_match(void **state) {
+	char *alias;
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file("MPATHb WWID1\n"
+			   "MPATHz WWID0",
+			   1);
+	expect_condlog(3, FOUND_ALIAS_STR("MPATHz", "WWID0"));
+
+	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	assert_string_equal(alias, "MPATHz");
+	free(alias);
+}
+
+static void gufa_old_match_other(void **state) {
+	char *alias;
+	static const char bindings[] = "MPATHz WWID9";
+
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file(bindings, 0);
+	expect_condlog(3, FOUND_ALIAS_STR("MPATHz", "WWID9"));
+	expect_condlog(0, REUSE_STR("MPATHz", "WWID9"));
+
+	mock_bindings_file(bindings, -1);
+	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
+	mock_unused_alias("MPATHa");
+
+	mock_allocate_binding("MPATHa", "WWID0");
+
+	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	assert_string_equal(alias, "MPATHa");
+	free(alias);
+}
+
+static void gufa_old_match_other_used(void **state) {
+	char *alias;
+	static const char bindings[] = "MPATHz WWID9";
+
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file(bindings, 0);
+	expect_condlog(3, FOUND_ALIAS_STR("MPATHz", "WWID9"));
+	expect_condlog(0, REUSE_STR("MPATHz", "WWID9"));
+
+	mock_bindings_file(bindings, -1);
+	mock_used_alias("MPATHa", USED_STR("MPATHa", "WWID0"));
+	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
+	mock_unused_alias("MPATHb");
+
+	mock_allocate_binding("MPATHb", "WWID0");
+
+	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	assert_string_equal(alias, "MPATHb");
+	free(alias);
+}
+
+static void gufa_old_match_other_wwidmatch(void **state) {
+	char *alias;
+	static const char bindings[] = ("MPATHz WWID9\n"
+					"MPATHc WWID2");
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file(bindings, 0);
+	expect_condlog(3, FOUND_ALIAS_STR("MPATHz", "WWID9"));
+	expect_condlog(0, REUSE_STR("MPATHz", "WWID9"));
+
+	mock_bindings_file(bindings, 1);
+	expect_condlog(3, FOUND_STR("MPATHc", "WWID2"));
+	mock_unused_alias("MPATHc");
+
+	alias = get_user_friendly_alias("WWID2", "x", "MPATHz", "MPATH", false);
+	assert_string_equal(alias, "MPATHc");
+	free(alias);
+}
+
+static void gufa_old_match_other_wwidmatch_used(void **state) {
+	char *alias;
+	static const char bindings[] = ("MPATHz WWID9\n"
+					"MPATHc WWID2");
+
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file(bindings, 0);
+	expect_condlog(3, FOUND_ALIAS_STR("MPATHz", "WWID9"));
+	expect_condlog(0, REUSE_STR("MPATHz", "WWID9"));
+
+	mock_bindings_file(bindings, 1);
+	expect_condlog(3, FOUND_STR("MPATHc", "WWID2"));
+	mock_used_alias("MPATHc", USED_STR("MPATHc", "WWID2"));
+
+	alias = get_user_friendly_alias("WWID2", "x", "MPATHz", "MPATH", false);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void gufa_old_nomatch_wwidmatch(void **state) {
+	char *alias;
+	static const char bindings[] = "MPATHa WWID0";
+
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file(bindings, -1);
+	expect_condlog(3, NOMATCH_STR("MPATHz"));
+
+	mock_bindings_file(bindings, 0);
+	expect_condlog(3, FOUND_STR("MPATHa", "WWID0"));
+	mock_unused_alias("MPATHa");
+	expect_condlog(3, EXISTING_STR("MPATHa", "WWID0"));
+
+	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	assert_string_equal(alias, "MPATHa");
+	free(alias);
+}
+
+static void gufa_old_nomatch_wwidmatch_used(void **state) {
+	char *alias;
+	static const char bindings[] = "MPATHa WWID0";
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file(bindings, -1);
+	expect_condlog(3, NOMATCH_STR("MPATHz"));
+
+	mock_bindings_file(bindings, 0);
+	expect_condlog(3, FOUND_STR("MPATHa", "WWID0"));
+	mock_used_alias("MPATHa", USED_STR("MPATHa", "WWID0"));
+
+	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	assert_ptr_equal(alias, NULL);
+}
+
+static void gufa_old_nomatch_nowwidmatch(void **state) {
+	char *alias;
+	static const char bindings[] = "MPATHb WWID1";
+
+	will_return(__wrap_open_file, true);
+
+	mock_bindings_file(bindings, -1);
+	expect_condlog(3, NOMATCH_STR("MPATHz"));
+
+	mock_bindings_file(bindings, -1);
+	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
+
+	mock_allocate_binding("MPATHz", "WWID0");
+	expect_condlog(2, ALLOC_STR("MPATHz", "WWID0"));
+
+	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	assert_string_equal(alias, "MPATHz");
+	free(alias);
+}
+
+static int test_get_user_friendly_alias()
+{
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(gufa_empty_new_rw),
+		cmocka_unit_test(gufa_empty_new_ro_1),
+		cmocka_unit_test(gufa_empty_new_ro_2),
+		cmocka_unit_test(gufa_match_a_unused),
+		cmocka_unit_test(gufa_match_a_self),
+		cmocka_unit_test(gufa_match_a_used),
+		cmocka_unit_test(gufa_nomatch_a_c),
+		cmocka_unit_test(gufa_nomatch_c_a),
+		cmocka_unit_test(gufa_nomatch_c_b),
+		cmocka_unit_test(gufa_nomatch_c_b_used),
+		cmocka_unit_test(gufa_nomatch_b_f_a),
+		cmocka_unit_test(gufa_old_empty),
+		cmocka_unit_test(gufa_old_match),
+		cmocka_unit_test(gufa_old_match_other),
+		cmocka_unit_test(gufa_old_match_other_used),
+		cmocka_unit_test(gufa_old_match_other_wwidmatch),
+		cmocka_unit_test(gufa_old_match_other_wwidmatch_used),
+		cmocka_unit_test(gufa_old_nomatch_wwidmatch),
+		cmocka_unit_test(gufa_old_nomatch_wwidmatch_used),
+		cmocka_unit_test(gufa_old_nomatch_nowwidmatch),
+	};
+
+	return cmocka_run_group_tests(tests, NULL, NULL);
+}
+
 int main(void)
 {
 	int ret = 0;
@@ -1157,6 +1596,8 @@ int main(void)
 	ret += test_lookup_binding();
 	ret += test_rlookup_binding();
 	ret += test_allocate_binding();
+	ret += test_allocate_binding();
+	ret += test_get_user_friendly_alias();
 
 	return ret;
 }
