@@ -138,15 +138,15 @@ static int write_bindings_file(const Bindings *bindings, int fd)
 	return 0;
 }
 
-static int update_bindings_file(const struct config *conf,
-				const Bindings *bindings)
+static int update_bindings_file(const Bindings *bindings,
+				const char *bindings_file)
 {
 	int rc;
 	int fd = -1;
 	char tempname[PATH_MAX];
 	mode_t old_umask;
 
-	if (safe_sprintf(tempname, "%s.XXXXXX", conf->bindings_file))
+	if (safe_sprintf(tempname, "%s.XXXXXX", bindings_file))
 		return -1;
 	/* coverity: SECURE_TEMP */
 	old_umask = umask(0077);
@@ -164,10 +164,10 @@ static int update_bindings_file(const struct config *conf,
 		unlink(tempname);
 		return rc;
 	}
-	if ((rc = rename(tempname, conf->bindings_file)) == -1)
+	if ((rc = rename(tempname, bindings_file)) == -1)
 		condlog(0, "%s: rename: %m", __func__);
 	else
-		condlog(1, "updated bindings file %s", conf->bindings_file);
+		condlog(1, "updated bindings file %s", bindings_file);
 	return rc;
 }
 
@@ -767,7 +767,7 @@ int check_alias_settings(const struct config *conf)
 			rc = _check_bindings_file(conf, file, &bindings);
 			pthread_cleanup_pop(1);
 			if (rc == -1 && can_write && !conf->bindings_read_only)
-				rc = update_bindings_file(conf, &bindings);
+				rc = update_bindings_file(&bindings, conf->bindings_file);
 			else if (rc == -1)
 				condlog(0, "ERROR: bad settings in read-only bindings file %s",
 					conf->bindings_file);
