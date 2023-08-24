@@ -118,22 +118,30 @@ static int add_binding(Bindings *bindings, const char *alias, const char *wwid)
 static int write_bindings_file(const Bindings *bindings, int fd)
 {
 	struct binding *bnd;
-	STRBUF_ON_STACK(line);
+	STRBUF_ON_STACK(content);
 	int i;
+	size_t len;
 
-	if (write(fd, BINDINGS_FILE_HEADER, sizeof(BINDINGS_FILE_HEADER) - 1)
-	    != sizeof(BINDINGS_FILE_HEADER) - 1)
+	if (__append_strbuf_str(&content, BINDINGS_FILE_HEADER,
+				sizeof(BINDINGS_FILE_HEADER) - 1) == -1)
 		return -1;
 
 	vector_foreach_slot(bindings, bnd, i) {
-		int len;
+		if (print_strbuf(&content, "%s %s\n",
+					bnd->alias, bnd->wwid) < 0)
+			return -1;
+	}
+	len = get_strbuf_len(&content);
+	while (len > 0) {
+		ssize_t n = write(fd, get_strbuf_str(&content), len);
 
-		if ((len = print_strbuf(&line, "%s %s\n",
-					bnd->alias, bnd->wwid)) < 0)
+		if (n < 0)
+			return n;
+		else if (n == 0) {
+			condlog(2, "%s: short write", __func__);
 			return -1;
-		if (write(fd, get_strbuf_str(&line), len) != len)
-			return -1;
-		truncate_strbuf(&line, 0);
+		}
+		len -= n;
 	}
 	return 0;
 }
