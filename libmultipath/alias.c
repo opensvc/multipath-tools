@@ -167,8 +167,7 @@ static int update_bindings_file(const Bindings *bindings,
 	rc = write_bindings_file(bindings, fd);
 	pthread_cleanup_pop(1);
 	if (rc == -1) {
-		condlog(1, "failed to write new bindings file %s",
-			tempname);
+		condlog(1, "failed to write new bindings file");
 		unlink(tempname);
 		return rc;
 	}
