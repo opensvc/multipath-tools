@@ -636,6 +636,43 @@ void cleanup_bindings(void)
 	free_bindings(&global_bindings);
 }
 
+enum {
+	READ_BINDING_OK,
+	READ_BINDING_SKIP,
+};
+
+static int read_binding(char *line, unsigned int linenr, char **alias,
+			char **wwid) {
+	char *c, *saveptr;
+
+	c = strpbrk(line, "#\n\r");
+	if (c)
+		*c = '\0';
+
+	*alias = strtok_r(line, " \t", &saveptr);
+	if (!*alias) /* blank line */
+		return READ_BINDING_SKIP;
+
+	*wwid = strtok_r(NULL, " \t", &saveptr);
+	if (!*wwid) {
+		condlog(1, "invalid line %u in bindings file, missing WWID",
+			linenr);
+		return READ_BINDING_SKIP;
+	}
+	if (strlen(*wwid) > WWID_SIZE - 1) {
+		condlog(3,
+			"Ignoring too large wwid at %u in bindings file",
+			linenr);
+		return READ_BINDING_SKIP;
+	}
+	c = strtok_r(NULL, " \t", &saveptr);
+	if (c)
+		/* This is non-fatal */
+		condlog(1, "invalid line %d in bindings file, extra args \"%s\"",
+			linenr, c);
+	return READ_BINDING_OK;
+}
+
 static int _check_bindings_file(const struct config *conf, FILE *file,
 				 Bindings *bindings)
 {
@@ -647,27 +684,12 @@ static int _check_bindings_file(const struct config *conf, FILE *file,
 
 	pthread_cleanup_push(cleanup_free_ptr, &line);
 	while ((n = getline(&line, &line_len, file)) >= 0) {
-		char *c, *alias, *wwid, *saveptr;
+		char *alias, *wwid;
 		const char *mpe_wwid;
 
-		linenr++;
-		c = strpbrk(line, "#\n\r");
-		if (c)
-			*c = '\0';
-		alias = strtok_r(line, " \t", &saveptr);
-		if (!alias) /* blank line */
+		if (read_binding(line, ++linenr, &alias, &wwid)
+		    == READ_BINDING_SKIP)
 			continue;
-		wwid = strtok_r(NULL, " \t", &saveptr);
-		if (!wwid) {
-			condlog(1, "invalid line %d in bindings file, missing WWID",
-				linenr);
-			continue;
-		}
-		c = strtok_r(NULL, " \t", &saveptr);
-		if (c)
-			/* This is non-fatal */
-			condlog(1, "invalid line %d in bindings file, extra args \"%s\"",
-				linenr, c);
 
 		mpe_wwid = get_mpe_wwid(conf->mptable, alias);
 		if (mpe_wwid && strcmp(mpe_wwid, wwid)) {
