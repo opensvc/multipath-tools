@@ -73,12 +73,6 @@ int __wrap_mkstemp(char *template)
 	return 10;
 }
 
-int __wrap_dm_map_present(const char * str)
-{
-	check_expected(str);
-	return mock_type(int);
-}
-
 int __wrap_dm_get_uuid(const char *name, char *uuid, int uuid_len)
 {
 	int ret;
@@ -398,14 +392,13 @@ static int test_scan_devname(void)
 
 static void mock_unused_alias(const char *alias)
 {
-	expect_string(__wrap_dm_map_present, str, alias);
-	will_return(__wrap_dm_map_present, 0);
+	expect_string(__wrap_dm_get_uuid, name, alias);
+	expect_value(__wrap_dm_get_uuid, uuid_len, WWID_SIZE);
+	will_return(__wrap_dm_get_uuid, 1);
 }
 
 static void mock_self_alias(const char *alias, const char *wwid)
 {
-	expect_string(__wrap_dm_map_present, str, alias);
-	will_return(__wrap_dm_map_present, 1);
 	expect_string(__wrap_dm_get_uuid, name, alias);
 	expect_value(__wrap_dm_get_uuid, uuid_len, WWID_SIZE);
 	will_return(__wrap_dm_get_uuid, 0);
@@ -432,18 +425,13 @@ static void mock_self_alias(const char *alias, const char *wwid)
 
 #define mock_failed_alias(alias, wwid)					\
 	do {								\
-		expect_string(__wrap_dm_map_present, str, alias);	\
-		will_return(__wrap_dm_map_present, 1);			\
 		expect_string(__wrap_dm_get_uuid, name, alias);		\
 		expect_value(__wrap_dm_get_uuid, uuid_len, WWID_SIZE);	\
 		will_return(__wrap_dm_get_uuid, 1);			\
-		expect_condlog(3, USED_STR(alias, wwid));		\
 	} while (0)
 
 #define mock_used_alias(alias, wwid)					\
 	do {								\
-		expect_string(__wrap_dm_map_present, str, alias);	\
-		will_return(__wrap_dm_map_present, 1);			\
 		expect_string(__wrap_dm_get_uuid, name, alias);		\
 		expect_value(__wrap_dm_get_uuid, uuid_len, WWID_SIZE);	\
 		will_return(__wrap_dm_get_uuid, 0);			\
@@ -566,9 +554,8 @@ static void lb_empty_failed(void **state)
 	mock_bindings_file("");
 	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
 	mock_failed_alias("MPATHa", "WWID0");
-	mock_unused_alias("MPATHb");
 	rc = lookup_binding(NULL, "WWID0", &alias, "MPATH", 1);
-	assert_int_equal(rc, 2);
+	assert_int_equal(rc, 1);
 	assert_ptr_equal(alias, NULL);
 	free(alias);
 }
@@ -666,9 +653,8 @@ static void lb_nomatch_a_3_used_failed_self(void **state)
 	mock_used_alias("MPATHc", "WWID1");
 	mock_used_alias("MPATHd", "WWID1");
 	mock_failed_alias("MPATHe", "WWID1");
-	mock_self_alias("MPATHf", "WWID1");
 	rc = lookup_binding(NULL, "WWID1", &alias, "MPATH", 1);
-	assert_int_equal(rc, 6);
+	assert_int_equal(rc, 5);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -940,7 +926,7 @@ static void lb_nomatch_b_a_aa(void **state)
 
 static void lb_nomatch_b_a_aa_zz(void **state)
 {
-	int rc, i;
+	int rc;
 	char *alias;
 	STRBUF_ON_STACK(buf);
 
@@ -949,11 +935,7 @@ static void lb_nomatch_b_a_aa_zz(void **state)
 	 * lookup_binding finds MPATHaaa as next free entry, because MPATHaa is
 	 * found before MPATHb, and MPATHzz was in the bindings, too.
 	 */
-	for (i = 0; i <= 26; i++) {
-		print_strbuf(&buf,  "MPATH");
-		format_devname(&buf, i + 1);
-		print_strbuf(&buf,  " WWID%d\n", i);
-	}
+	fill_bindings(&buf, 0, 26);
 	print_strbuf(&buf, "MPATHzz WWID676\n");
 	mock_bindings_file(get_strbuf_str(&buf));
 	expect_condlog(3, NOMATCH_WWID_STR("WWID703"));

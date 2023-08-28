@@ -295,18 +295,19 @@ scan_devname(const char *alias, const char *prefix)
 static bool alias_already_taken(const char *alias, const char *map_wwid)
 {
 
-	if (dm_map_present(alias)) {
-		char wwid[WWID_SIZE];
+	char wwid[WWID_SIZE];
 
-		/* If both the name and the wwid match, then it's fine.*/
-		if (dm_get_uuid(alias, wwid, sizeof(wwid)) == 0 &&
-		    strncmp(map_wwid, wwid, sizeof(wwid)) == 0)
-			return false;
-		condlog(3, "%s: alias '%s' already taken, reselecting alias",
-			map_wwid, alias);
-		return true;
-	}
-	return false;
+	/* If the map doesn't exist, it's fine */
+	if (dm_get_uuid(alias, wwid, sizeof(wwid)) != 0)
+		return false;
+
+	/* If both the name and the wwid match, it's fine.*/
+	if (strncmp(map_wwid, wwid, sizeof(wwid)) == 0)
+		return false;
+
+	condlog(3, "%s: alias '%s' already taken, reselecting alias",
+		map_wwid, alias);
+	return true;
 }
 
 static bool id_already_taken(int id, const char *prefix, const char *map_wwid)
