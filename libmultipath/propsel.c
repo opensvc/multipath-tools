@@ -628,6 +628,23 @@ out:
 	return 0;
 }
 
+
+int select_checker_timeout(struct config *conf, struct path *pp)
+{
+	const char *origin;
+
+	pp_set_conf(checker_timeout);
+	if (sysfs_get_timeout(pp, &pp->checker_timeout) > 0) {
+		origin = "(setting: kernel sysfs)";
+		goto out;
+	}
+	pp_set_default(checker_timeout, DEF_TIMEOUT);
+out:
+	condlog(3, "%s checker timeout = %u s %s", pp->dev, pp->checker_timeout,
+		origin);
+	return 0;
+}
+
 /*
  * Current RDAC (NetApp E/EF Series) firmware relies
  * on periodic REPORT TARGET PORT GROUPS for
@@ -664,6 +681,8 @@ int select_checker(struct config *conf, struct path *pp)
 	char *ckr_name;
 	struct checker * c = &pp->checker;
 
+	if (!pp->checker_timeout)
+		select_checker_timeout(conf, pp);
 	if (pp->detect_checker == DETECT_CHECKER_ON) {
 		origin = autodetect_origin;
 		if (check_rdac(pp)) {
@@ -684,19 +703,7 @@ out:
 	checker_get(c, ckr_name);
 	condlog(3, "%s: path_checker = %s %s", pp->dev,
 		checker_name(c), origin);
-	if (conf->checker_timeout) {
-		c->timeout = conf->checker_timeout;
-		condlog(3, "%s: checker timeout = %u s %s",
-			pp->dev, c->timeout, conf_origin);
-	}
-	else if (sysfs_get_timeout(pp, &c->timeout) > 0)
-		condlog(3, "%s: checker timeout = %u s (setting: kernel sysfs)",
-			pp->dev, c->timeout);
-	else {
-		c->timeout = DEF_TIMEOUT;
-		condlog(3, "%s: checker timeout = %u s %s",
-			pp->dev, c->timeout, default_origin);
-	}
+	c->timeout = pp->checker_timeout;
 	return 0;
 }
 

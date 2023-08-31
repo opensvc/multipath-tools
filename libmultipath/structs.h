@@ -383,6 +383,7 @@ struct path {
 	int eh_deadline;
 	bool is_checked;
 	bool can_use_env_uid;
+	unsigned int checker_timeout;
 	/* configlet pointers */
 	vector hwe;
 	struct gen_path generic_path;
