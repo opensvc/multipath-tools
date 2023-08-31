@@ -51,15 +51,15 @@ static const char *aas_print_string(int rc)
 }
 
 int
-get_alua_info(struct path * pp, unsigned int timeout)
+get_alua_info(struct path * pp)
 {
 	int	rc;
 	int	tpg;
 	bool	diff_tpg;
 
-	tpg = get_target_port_group(pp, timeout);
+	tpg = get_target_port_group(pp);
 	if (tpg < 0) {
-		rc = get_target_port_group_support(pp, timeout);
+		rc = get_target_port_group_support(pp);
 		if (rc < 0)
 			return -ALUA_PRIO_TPGS_FAILED;
 		if (rc == TPGS_NONE)
@@ -70,7 +70,7 @@ get_alua_info(struct path * pp, unsigned int timeout)
 	pp->tpg_id = tpg;
 	condlog((diff_tpg) ? 2 : 4, "%s: reported target port group is %i",
 		pp->dev, tpg);
-	rc = get_asymmetric_access_state(pp, tpg, timeout);
+	rc = get_asymmetric_access_state(pp, tpg);
 	if (rc < 0) {
 		condlog(2, "%s: get_asymmetric_access_state returned %d",
 			__func__, rc);
@@ -98,7 +98,7 @@ int get_exclusive_pref_arg(char *args)
 	return 1;
 }
 
-int getprio (struct path * pp, char * args, unsigned int timeout)
+int getprio (struct path * pp, char * args)
 {
 	int rc;
 	int aas;
@@ -109,7 +109,7 @@ int getprio (struct path * pp, char * args, unsigned int timeout)
 		return -ALUA_PRIO_NO_INFORMATION;
 
 	exclusive_pref = get_exclusive_pref_arg(args);
-	rc = get_alua_info(pp, timeout);
+	rc = get_alua_info(pp);
 	if (rc >= 0) {
 		aas = (rc & 0x0f);
 		priopath = (rc & 0x80);

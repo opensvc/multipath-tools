@@ -3,20 +3,25 @@
 #include <stddef.h>
 #include <dlfcn.h>
 #include <sys/stat.h>
+#include <libudev.h>
 
 #include "debug.h"
 #include "util.h"
 #include "prio.h"
+#include "structs.h"
+#include "discovery.h"
 
 static const char * const prio_dir = MULTIPATH_DIR;
 static LIST_HEAD(prioritizers);
 
-unsigned int get_prio_timeout(unsigned int timeout_ms,
-			      unsigned int default_timeout)
+unsigned int get_prio_timeout_ms(const struct path *pp)
 {
-	if (timeout_ms)
-		return timeout_ms;
-	return default_timeout;
+	if (pp->state == PATH_DOWN)
+		return 10;
+	else if (pp->checker_timeout)
+		return pp->checker_timeout * 1000;
+	else
+		return DEF_TIMEOUT;
 }
 
 int init_prio(void)
@@ -136,7 +141,7 @@ struct prio *add_prio (const char *name)
 				errstr);
 		goto out;
 	}
-	p->getprio = (int (*)(struct path *, char *, unsigned int)) dlsym(p->handle, "getprio");
+	p->getprio = (int (*)(struct path *, char *)) dlsym(p->handle, "getprio");
 	errstr = dlerror();
 	if (errstr != NULL)
 		condlog(0, "A dynamic linking error occurred: (%s)", errstr);
@@ -149,9 +154,9 @@ out:
 	return NULL;
 }
 
-int prio_getprio (struct prio * p, struct path * pp, unsigned int timeout)
+int prio_getprio (struct prio * p, struct path * pp)
 {
-	return p->getprio(pp, p->args, timeout);
+	return p->getprio(pp, p->args);
 }
 
 int prio_selected (const struct prio * p)

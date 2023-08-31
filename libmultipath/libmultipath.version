@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_19.0.0 {
+LIBMULTIPATH_20.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -214,7 +214,7 @@ global:
 
 	/* prioritizers */
 	get_asymmetric_access_state;
-	get_prio_timeout;
+	get_prio_timeout_ms;
 	get_target_port_group;
 	get_target_port_group_support;
 	libmp_nvme_ana_log;

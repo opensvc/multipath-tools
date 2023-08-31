@@ -84,7 +84,7 @@
 #define pp_hds_log(prio, fmt, args...) \
 	condlog(prio, "%s: hds prio: " fmt, dev, ##args)
 
-int hds_modular_prio (const char *dev, int fd, unsigned int timeout)
+int hds_modular_prio (const char *dev, int fd, unsigned int timeout_ms)
 {
 	int k;
 	char vendor[9];
@@ -114,7 +114,7 @@ int hds_modular_prio (const char *dev, int fd, unsigned int timeout)
 	io_hdr.dxferp = inqBuff;
 	io_hdr.cmdp = inqCmdBlk;
 	io_hdr.sbp = sense_buffer;
-	io_hdr.timeout = get_prio_timeout(timeout, 2000); /* TimeOut = 2 seconds */
+	io_hdr.timeout = timeout_ms;
 
 	if (ioctl (fd, SG_IO, &io_hdr) < 0) {
 		pp_hds_log(0, "SG_IO error");
@@ -168,8 +168,7 @@ int hds_modular_prio (const char *dev, int fd, unsigned int timeout)
 	return -1;
 }
 
-int getprio (struct path * pp, __attribute__((unused)) char *args,
-	     unsigned int timeout)
+int getprio (struct path * pp, __attribute__((unused)) char *args)
 {
-	return hds_modular_prio(pp->dev, pp->fd, timeout);
+	return hds_modular_prio(pp->dev, pp->fd, get_prio_timeout_ms(pp));
 }

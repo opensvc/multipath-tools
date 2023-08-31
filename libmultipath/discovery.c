@@ -1015,18 +1015,13 @@ detect_alua(struct path * pp)
 {
 	int ret;
 	int tpgs;
-	unsigned int timeout;
-
 
 	if (pp->bus != SYSFS_BUS_SCSI) {
 		pp->tpgs = TPGS_NONE;
 		return;
 	}
 
-	if (sysfs_get_timeout(pp, &timeout) <= 0)
-		timeout = DEF_TIMEOUT;
-
-	tpgs = get_target_port_group_support(pp, timeout);
+	tpgs = get_target_port_group_support(pp);
 	if (tpgs == -RTPG_INQUIRY_FAILED)
 		return;
 	else if (tpgs <= 0) {
@@ -1037,8 +1032,8 @@ detect_alua(struct path * pp)
 	if (pp->fd == -1 || pp->offline)
 		return;
 
-	ret = get_target_port_group(pp, timeout);
-	if (ret < 0 || get_asymmetric_access_state(pp, ret, timeout) < 0) {
+	ret = get_target_port_group(pp);
+	if (ret < 0 || get_asymmetric_access_state(pp, ret) < 0) {
 		int state;
 
 		if (ret == -RTPG_INQUIRY_FAILED)
@@ -1976,7 +1971,7 @@ get_state (struct path * pp, struct config *conf, int daemon, int oldstate)
 }
 
 static int
-get_prio (struct path * pp, int timeout)
+get_prio (struct path * pp)
 {
 	struct prio * p;
 	struct config *conf;
@@ -1999,7 +1994,7 @@ get_prio (struct path * pp, int timeout)
 		}
 	}
 	old_prio = pp->priority;
-	pp->priority = prio_getprio(p, pp, timeout);
+	pp->priority = prio_getprio(p, pp);
 	if (pp->priority < 0) {
 		/* this changes pp->offline, but why not */
 		int state = path_offline(pp);
@@ -2477,8 +2472,7 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	  */
 	if ((mask & DI_PRIO) && path_state == PATH_UP && strlen(pp->wwid)) {
 		if (pp->state != PATH_DOWN || pp->priority == PRIO_UNDEF) {
-			get_prio(pp, (pp->state != PATH_DOWN)?
-				     (conf->checker_timeout * 1000) : 10);
+			get_prio(pp);
 		}
 	}
 

@@ -36,8 +36,7 @@ int get_exclusive_pref_arg(char *args)
 	return 1;
 }
 
-int getprio (struct path * pp, char *args,
-	     __attribute__((unused)) unsigned int timeout)
+int getprio (struct path * pp, char *args)
 {
 	int prio = 0, rc, i;
 	char buff[512];

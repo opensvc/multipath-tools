@@ -813,6 +813,8 @@ int select_prio(struct config *conf, struct path *pp)
 	struct prio * p = &pp->prio;
 	int log_prio = 3;
 
+	if (!pp->checker_timeout)
+		select_checker_timeout(conf, pp);
 	if (pp->detect_prio == DETECT_PRIO_ON) {
 		detect_prio(pp);
 		if (prio_selected(p)) {
