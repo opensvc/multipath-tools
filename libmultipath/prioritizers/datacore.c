@@ -32,7 +32,8 @@
 
 #define dc_log(prio, msg) condlog(prio, "%s: datacore prio: " msg, dev)
 
-int datacore_prio (const char *dev, int sg_fd, char * args)
+int datacore_prio (const char *dev, int sg_fd, char * args,
+		   unsigned int timeout_ms)
 {
 	int k;
 	char sdsname[32];
@@ -42,7 +43,6 @@ int datacore_prio (const char *dev, int sg_fd, char * args)
 	unsigned char sense_buffer[32];
 	sg_io_hdr_t io_hdr;
 
-	int timeout = 2000;
 	char preferredsds_buff[255] = "";
 	char * preferredsds = &preferredsds_buff[0];
 
@@ -52,9 +52,9 @@ int datacore_prio (const char *dev, int sg_fd, char * args)
 	}
 
 	if (sscanf(args, "timeout=%i preferredsds=%s",
-		   &timeout, preferredsds) == 2) {}
+		   (int *)&timeout_ms, preferredsds) == 2) {}
 	else if (sscanf(args, "preferredsds=%s timeout=%i",
-			preferredsds, &timeout) == 2) {}
+			preferredsds, (int *)&timeout_ms) == 2) {}
 	else if (sscanf(args, "preferredsds=%s",
 			preferredsds) == 1) {}
 	else {
@@ -65,10 +65,6 @@ int datacore_prio (const char *dev, int sg_fd, char * args)
 	// on error just return prio 0
 	if (strlen(preferredsds) <= 1) {
 		dc_log(0, "prio args: preferredsds too short (1 character min)");
-		return 0;
-	}
-	if ((timeout < 500) || (timeout > 20000)) {
-		dc_log(0, "prio args: timeout out of bounds [500:20000]");
 		return 0;
 	}
 	if ((ioctl(sg_fd, SG_GET_VERSION_NUM, &k) < 0) || (k < 30000))
@@ -83,7 +79,7 @@ int datacore_prio (const char *dev, int sg_fd, char * args)
 	io_hdr.dxferp = inqBuff;
 	io_hdr.cmdp = inqCmdBlk;
 	io_hdr.sbp = sense_buffer;
-	io_hdr.timeout = timeout;
+	io_hdr.timeout = timeout_ms;
 
 	// on error just return prio 0
 	if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
@@ -100,5 +96,5 @@ int datacore_prio (const char *dev, int sg_fd, char * args)
 
 int getprio(struct path * pp, char * args)
 {
-	return datacore_prio(pp->dev, pp->fd, args);
+	return datacore_prio(pp->dev, pp->fd, args, get_prio_timeout_ms(pp));
 }
