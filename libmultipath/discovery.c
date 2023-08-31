@@ -1965,9 +1965,6 @@ get_state (struct path * pp, struct config *conf, int daemon, int oldstate)
 		checker_set_async(c);
 	else
 		checker_set_sync(c);
-	if (!conf->checker_timeout &&
-	    sysfs_get_timeout(pp, &(c->timeout)) <= 0)
-		c->timeout = DEF_TIMEOUT;
 	state = checker_check(c, oldstate);
 	condlog(3, "%s: %s state = %s", pp->dev,
 		checker_name(c), checker_state_name(state));
