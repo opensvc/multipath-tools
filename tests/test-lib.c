@@ -342,12 +342,6 @@ void mock_pathinfo(int mask, const struct mocked_path *mp)
 			    mp->wwid);
 	}
 
-	if (mask & DI_CHECKER) {
-		/* get_state -> sysfs_get_timeout  */
-		will_return(__wrap_udev_device_get_subsystem, "scsi");
-		will_return(__wrap_udev_device_get_sysattr_value, "180");
-	}
-
 	if (mask & DI_PRIO && mp->flags & NEED_SELECT_PRIO) {
 
 		/* sysfs_get_timeout, again (!?) */
