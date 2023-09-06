@@ -25,35 +25,29 @@ int get_pgpolicy_id(char * str)
 		return GROUP_BY_PRIO;
 	if (0 == strncmp(str, "group_by_node_name", 18))
 		return GROUP_BY_NODE_NAME;
+	if (0 == strncmp(str, "group_by_tpg", 12))
+		return GROUP_BY_TPG;
 
 	return IOPOLICY_UNDEF;
 }
 
-int get_pgpolicy_name(char * buff, int len, int id)
+const char *get_pgpolicy_name(int id)
 {
-	char * s;
-
 	switch (id) {
 	case FAILOVER:
-		s = "failover";
-		break;
+		return "failover";
 	case MULTIBUS:
-		s = "multibus";
-		break;
+		return "multibus";
 	case GROUP_BY_SERIAL:
-		s = "group_by_serial";
-		break;
+		return "group_by_serial";
 	case GROUP_BY_PRIO:
-		s = "group_by_prio";
-		break;
+		return "group_by_prio";
 	case GROUP_BY_NODE_NAME:
-		s = "group_by_node_name";
-		break;
-	default:
-		s = "undefined";
-		break;
+		return "group_by_node_name";
+	case GROUP_BY_TPG:
+		return "group_by_tpg";
 	}
-	return snprintf(buff, len, "%s", s);
+	return "undefined"; /* IOPOLICY_UNDEF */
 }
 
 
@@ -191,6 +185,12 @@ prios_match(struct path *pp1, struct path *pp2)
 	return (pp1->priority == pp2->priority);
 }
 
+bool
+tpg_match(struct path *pp1, struct path *pp2)
+{
+	return (pp1->tpg_id == pp2->tpg_id);
+}
+
 int group_by_match(struct multipath * mp, vector paths,
 		   bool (*path_match_fn)(struct path *, struct path *))
 {
@@ -277,6 +277,14 @@ int group_by_serial(struct multipath * mp, vector paths)
 int group_by_prio(struct multipath *mp, vector paths)
 {
 	return group_by_match(mp, paths, prios_match);
+}
+
+/*
+ * One path group per alua target port group present in the path vector
+ */
+int group_by_tpg(struct multipath *mp, vector paths)
+{
+	return group_by_match(mp, paths, tpg_match);
 }
 
 int one_path_per_group(struct multipath *mp, vector paths)

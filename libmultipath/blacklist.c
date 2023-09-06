@@ -2,6 +2,8 @@
  * Copyright (c) 2004, 2005 Christophe Varoqui
  */
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <libudev.h>
 
 #include "checkers.h"
@@ -191,6 +193,27 @@ find_blacklist_device (const struct _vector *blist, const char *vendor,
 	return 0;
 }
 
+/*
+ * Test if nvme native multipath is enabled. If the sysfs file can't
+ * be accessed, multipath is either disabled at compile time, or no
+ * nvme driver is loaded at all. Thus treat errors as "no".
+ */
+static bool nvme_multipath_enabled(void)
+{
+	static const char fn[] = "/sys/module/nvme_core/parameters/multipath";
+	int fd, len;
+	char buf[2];
+
+	fd = open(fn, O_RDONLY);
+	if (fd == -1)
+		return false;
+
+	len = read(fd, buf, sizeof(buf));
+	close(fd);
+
+	return (len >= 1 && buf[0] == 'Y');
+}
+
 int
 setup_default_blist (struct config * conf)
 {
@@ -198,9 +221,15 @@ setup_default_blist (struct config * conf)
 	struct hwentry *hwe;
 	int i;
 
-	if (store_ble(conf->blist_devnode, "!^(sd[a-z]|dasd[a-z]|nvme[0-9])", ORIGIN_DEFAULT))
-		return 1;
-
+	if (nvme_multipath_enabled()) {
+		if (store_ble(conf->blist_devnode, "!^(sd[a-z]|dasd[a-z])",
+			      ORIGIN_DEFAULT))
+			return 1;
+	} else {
+		if (store_ble(conf->blist_devnode, "!^(sd[a-z]|dasd[a-z]|nvme[0-9])",
+			      ORIGIN_DEFAULT))
+			return 1;
+	}
 	if (store_ble(conf->elist_property, "(SCSI_IDENT_|ID_WWN)", ORIGIN_DEFAULT))
 		return 1;
 

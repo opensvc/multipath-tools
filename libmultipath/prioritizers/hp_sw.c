@@ -32,7 +32,7 @@
 #define pp_hp_sw_log(prio, fmt, args...) \
 	condlog(prio, "%s: hp_sw prio: " fmt, dev, ##args)
 
-int hp_sw_prio(const char *dev, int fd, unsigned int timeout)
+int hp_sw_prio(const char *dev, int fd, unsigned int timeout_ms)
 {
 	unsigned char turCmdBlk[TUR_CMD_LEN] = { 0x00, 0, 0, 0, 0, 0 };
 	unsigned char sb[128];
@@ -46,7 +46,7 @@ int hp_sw_prio(const char *dev, int fd, unsigned int timeout)
 	io_hdr.dxfer_direction = SG_DXFER_NONE;
 	io_hdr.cmdp = turCmdBlk;
 	io_hdr.sbp = sb;
-	io_hdr.timeout = get_prio_timeout(timeout, 60000);
+	io_hdr.timeout = timeout_ms;
 	io_hdr.pack_id = 0;
 retry:
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
@@ -95,8 +95,7 @@ out:
 	return(ret);
 }
 
-int getprio (struct path *pp, __attribute__((unused)) char *args,
-	     unsigned int timeout)
+int getprio (struct path *pp, __attribute__((unused)) char *args)
 {
-	return hp_sw_prio(pp->dev, pp->fd, timeout);
+	return hp_sw_prio(pp->dev, pp->fd, get_prio_timeout_ms(pp));
 }

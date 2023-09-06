@@ -278,11 +278,6 @@ static int print_str(struct strbuf *buff, const char *ptr)
 	return ret == -EINVAL ? 0 : ret;
 }
 
-static int print_ignored(struct strbuf *buff)
-{
-	return append_strbuf_quoted(buff, "ignored");
-}
-
 static int print_yes_no(struct strbuf *buff, long v)
 {
 	return append_strbuf_quoted(buff, v == YN_NO ? "no" : "yes");
@@ -548,7 +543,6 @@ declare_def_snprint(verbosity, print_int)
 declare_def_handler(reassign_maps, set_yes_no)
 declare_def_snprint(reassign_maps, print_yes_no)
 
-declare_deprecated_handler(multipath_dir)
 
 static int def_partition_delim_handler(struct config *conf, vector strvec,
 				       const char *file, int line_nr)
@@ -868,6 +862,22 @@ declare_ovr_snprint(detect_checker, print_yes_no_undef)
 declare_hw_handler(detect_checker, set_yes_no_undef)
 declare_hw_snprint(detect_checker, print_yes_no_undef)
 
+declare_def_handler(detect_pgpolicy, set_yes_no_undef)
+declare_def_snprint_defint(detect_pgpolicy, print_yes_no_undef,
+			   DEFAULT_DETECT_PGPOLICY)
+declare_ovr_handler(detect_pgpolicy, set_yes_no_undef)
+declare_ovr_snprint(detect_pgpolicy, print_yes_no_undef)
+declare_hw_handler(detect_pgpolicy, set_yes_no_undef)
+declare_hw_snprint(detect_pgpolicy, print_yes_no_undef)
+
+declare_def_handler(detect_pgpolicy_use_tpg, set_yes_no_undef)
+declare_def_snprint_defint(detect_pgpolicy_use_tpg, print_yes_no_undef,
+			   DEFAULT_DETECT_PGPOLICY_USE_TPG)
+declare_ovr_handler(detect_pgpolicy_use_tpg, set_yes_no_undef)
+declare_ovr_snprint(detect_pgpolicy_use_tpg, print_yes_no_undef)
+declare_hw_handler(detect_pgpolicy_use_tpg, set_yes_no_undef)
+declare_hw_snprint(detect_pgpolicy_use_tpg, print_yes_no_undef)
+
 declare_def_handler(force_sync, set_yes_no)
 declare_def_snprint(force_sync, print_yes_no)
 
@@ -902,17 +912,6 @@ declare_hw_handler(skip_kpartx, set_yes_no_undef)
 declare_hw_snprint(skip_kpartx, print_yes_no_undef)
 declare_mp_handler(skip_kpartx, set_yes_no_undef)
 declare_mp_snprint(skip_kpartx, print_yes_no_undef)
-static int def_disable_changed_wwids_handler(struct config *conf, vector strvec,
-					     const char *file, int line_nr)
-{
-	return 0;
-}
-static int snprint_def_disable_changed_wwids(struct config *conf,
-					     struct strbuf *buff,
-					     const void *data)
-{
-	return print_ignored(buff);
-}
 
 declare_def_range_handler(remove_retries, 0, INT_MAX)
 declare_def_snprint(remove_retries, print_int)
@@ -933,9 +932,6 @@ declare_def_snprint_defint(find_multipaths_timeout, print_int,
 declare_def_handler(enable_foreign, set_str)
 declare_def_snprint_defstr(enable_foreign, print_str,
 			   DEFAULT_ENABLE_FOREIGN)
-
-declare_deprecated_handler(config_dir)
-declare_deprecated_handler(pg_timeout)
 
 #define declare_def_attr_handler(option, function)			\
 static int								\
@@ -1209,14 +1205,10 @@ set_pgpolicy(vector strvec, void *ptr, const char *file, int line_nr)
 int
 print_pgpolicy(struct strbuf *buff, long pgpolicy)
 {
-	char str[POLICY_NAME_SIZE];
-
 	if (!pgpolicy)
 		return 0;
 
-	get_pgpolicy_name(str, POLICY_NAME_SIZE, pgpolicy);
-
-	return append_strbuf_quoted(buff, str);
+	return append_strbuf_quoted(buff, get_pgpolicy_name(pgpolicy));
 }
 
 declare_def_handler(pgpolicy, set_pgpolicy)
@@ -2064,7 +2056,12 @@ snprint_deprecated (struct config *conf, struct strbuf *buff, const void * data)
 	return 0;
 }
 
+// Deprecated keywords
+declare_deprecated_handler(config_dir)
+declare_deprecated_handler(disable_changed_wwids)
 declare_deprecated_handler(getuid_callout)
+declare_deprecated_handler(multipath_dir)
+declare_deprecated_handler(pg_timeout)
 
 /*
  * If you add or remove a keyword also update multipath/multipath.conf.5
@@ -2116,6 +2113,8 @@ init_keywords(vector keywords)
 	install_keyword("retain_attached_hw_handler", &def_retain_hwhandler_handler, &snprint_def_retain_hwhandler);
 	install_keyword("detect_prio", &def_detect_prio_handler, &snprint_def_detect_prio);
 	install_keyword("detect_checker", &def_detect_checker_handler, &snprint_def_detect_checker);
+	install_keyword("detect_pgpolicy", &def_detect_pgpolicy_handler, &snprint_def_detect_pgpolicy);
+	install_keyword("detect_pgpolicy_use_tpg", &def_detect_pgpolicy_use_tpg_handler, &snprint_def_detect_pgpolicy_use_tpg);
 	install_keyword("force_sync", &def_force_sync_handler, &snprint_def_force_sync);
 	install_keyword("strict_timing", &def_strict_timing_handler, &snprint_def_strict_timing);
 	install_keyword("deferred_remove", &def_deferred_remove_handler, &snprint_def_deferred_remove);
@@ -2137,7 +2136,7 @@ init_keywords(vector keywords)
 	install_keyword("retrigger_delay", &def_retrigger_delay_handler, &snprint_def_retrigger_delay);
 	install_keyword("missing_uev_wait_timeout", &def_uev_wait_timeout_handler, &snprint_def_uev_wait_timeout);
 	install_keyword("skip_kpartx", &def_skip_kpartx_handler, &snprint_def_skip_kpartx);
-	install_keyword("disable_changed_wwids", &def_disable_changed_wwids_handler, &snprint_def_disable_changed_wwids);
+	install_keyword("disable_changed_wwids", &deprecated_disable_changed_wwids_handler, &snprint_deprecated);
 	install_keyword("remove_retries", &def_remove_retries_handler, &snprint_def_remove_retries);
 	install_keyword("max_sectors_kb", &def_max_sectors_kb_handler, &snprint_def_max_sectors_kb);
 	install_keyword("ghost_delay", &def_ghost_delay_handler, &snprint_def_ghost_delay);
@@ -2206,6 +2205,8 @@ init_keywords(vector keywords)
 	install_keyword("retain_attached_hw_handler", &hw_retain_hwhandler_handler, &snprint_hw_retain_hwhandler);
 	install_keyword("detect_prio", &hw_detect_prio_handler, &snprint_hw_detect_prio);
 	install_keyword("detect_checker", &hw_detect_checker_handler, &snprint_hw_detect_checker);
+	install_keyword("detect_pgpolicy", &hw_detect_pgpolicy_handler, &snprint_hw_detect_pgpolicy);
+	install_keyword("detect_pgpolicy_use_tpg", &hw_detect_pgpolicy_use_tpg_handler, &snprint_hw_detect_pgpolicy_use_tpg);
 	install_keyword("deferred_remove", &hw_deferred_remove_handler, &snprint_hw_deferred_remove);
 	install_keyword("delay_watch_checks", &hw_delay_watch_checks_handler, &snprint_hw_delay_watch_checks);
 	install_keyword("delay_wait_checks", &hw_delay_wait_checks_handler, &snprint_hw_delay_wait_checks);
@@ -2248,6 +2249,8 @@ init_keywords(vector keywords)
 	install_keyword("retain_attached_hw_handler", &ovr_retain_hwhandler_handler, &snprint_ovr_retain_hwhandler);
 	install_keyword("detect_prio", &ovr_detect_prio_handler, &snprint_ovr_detect_prio);
 	install_keyword("detect_checker", &ovr_detect_checker_handler, &snprint_ovr_detect_checker);
+	install_keyword("detect_pgpolicy", &ovr_detect_pgpolicy_handler, &snprint_ovr_detect_pgpolicy);
+	install_keyword("detect_pgpolicy_use_tpg", &ovr_detect_pgpolicy_use_tpg_handler, &snprint_ovr_detect_pgpolicy_use_tpg);
 	install_keyword("deferred_remove", &ovr_deferred_remove_handler, &snprint_ovr_deferred_remove);
 	install_keyword("delay_watch_checks", &ovr_delay_watch_checks_handler, &snprint_ovr_delay_watch_checks);
 	install_keyword("delay_wait_checks", &ovr_delay_wait_checks_handler, &snprint_ovr_delay_wait_checks);

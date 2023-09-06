@@ -14,10 +14,10 @@ HEADERS := libdmmp/libdmmp.h
 
 OBJS := libdmmp.o libdmmp_mp.o libdmmp_pg.o libdmmp_path.o libdmmp_misc.o
 
-CPPFLAGS += -I$(libdmmpdir) -I$(mpathcmddir) $(shell $(PKGCONFIG) --cflags json-c)
+CPPFLAGS += -I$(libdmmpdir) -I$(mpathcmddir) $(shell $(PKG_CONFIG) --cflags json-c)
 CFLAGS += $(LIB_CFLAGS) -fvisibility=hidden
 
-LIBDEPS += $(shell $(PKGCONFIG) --libs json-c) -L$(mpathcmddir) -lmpathcmd -lpthread
+LIBDEPS += $(shell $(PKG_CONFIG) --libs json-c) -L$(mpathcmddir) -lmpathcmd -lpthread
 
 all: $(LIBS) doc
 .PHONY:	doc clean install uninstall check speed_test dep_clean
@@ -74,8 +74,10 @@ doc: docs/man/dmmp_strerror.3
 docs/man/dmmp_strerror.3:	$(HEADERS)
 	$(Q)TEMPFILE=$(shell mktemp); \
 	cat $^ | perl docs/doc-preclean.pl >$$TEMPFILE; \
+	[ "$KBUILD_BUILD_TIMESTAMP" ] || \
+	    KBUILD_BUILD_TIMESTAMP=`git log -n1 --pretty=%cd --date=iso -- $^`; \
+	export KBUILD_BUILD_TIMESTAMP; \
 	LC_ALL=C \
-	KBUILD_BUILD_TIMESTAMP=`git log -n1 --pretty=%cd --date=iso -- $^` \
 	perl docs/kernel-doc -man $$TEMPFILE | \
 	    perl docs/split-man.pl docs/man; \
 	$(RM) -f $$TEMPFILE

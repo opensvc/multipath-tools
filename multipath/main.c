@@ -157,6 +157,7 @@ usage (char * progname)
 		"          . group_by_serial     one priority group per serial\n"
 		"          . group_by_prio       one priority group per priority lvl\n"
 		"          . group_by_node_name  one priority group per target node\n"
+		"          . group_by_tpg        one priority group per ALUA target port group\n"
 		"  -v lvl  verbosity level:\n"
 		"          . 0 no output\n"
 		"          . 1 print created devmap names only\n"

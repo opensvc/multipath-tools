@@ -35,7 +35,8 @@ pgpolicyfn *pgpolicies[] = {
 	one_group,
 	group_by_serial,
 	group_by_prio,
-	group_by_node_name
+	group_by_node_name,
+	group_by_tpg,
 };
 
 #define do_set(var, src, dest, msg)					\
@@ -249,14 +250,68 @@ out:
 	return 0;
 }
 
+static bool
+verify_alua_prio(struct multipath *mp)
+{
+	int i;
+	struct path *pp;
+
+	vector_foreach_slot(mp->paths, pp, i) {
+		const char *name = prio_name(&pp->prio);
+		if (strncmp(name, PRIO_ALUA, PRIO_NAME_LEN) &&
+		    strncmp(name, PRIO_SYSFS, PRIO_NAME_LEN))
+			 return false;
+	}
+	return true;
+}
+
+int select_detect_pgpolicy(struct config *conf, struct multipath *mp)
+{
+	const char *origin;
+
+	mp_set_ovr(detect_pgpolicy);
+	mp_set_hwe(detect_pgpolicy);
+	mp_set_conf(detect_pgpolicy);
+	mp_set_default(detect_pgpolicy, DEFAULT_DETECT_PGPOLICY);
+out:
+	condlog(3, "%s: detect_pgpolicy = %s %s", mp->alias,
+		(mp->detect_pgpolicy == DETECT_PGPOLICY_ON)? "yes" : "no",
+		 origin);
+	return 0;
+}
+
+int select_detect_pgpolicy_use_tpg(struct config *conf, struct multipath *mp)
+{
+	const char *origin;
+
+	mp_set_ovr(detect_pgpolicy_use_tpg);
+	mp_set_hwe(detect_pgpolicy_use_tpg);
+	mp_set_conf(detect_pgpolicy_use_tpg);
+	mp_set_default(detect_pgpolicy_use_tpg,
+		       DEFAULT_DETECT_PGPOLICY_USE_TPG);
+out:
+	condlog(3, "%s: detect_pgpolicy_use_tpg = %s %s", mp->alias,
+		(mp->detect_pgpolicy_use_tpg == DETECT_PGPOLICY_USE_TPG_ON)?
+		"yes" : "no", origin);
+	return 0;
+}
+
 int select_pgpolicy(struct config *conf, struct multipath * mp)
 {
 	const char *origin;
-	char buff[POLICY_NAME_SIZE];
+	int log_prio = 3;
 
 	if (conf->pgpolicy_flag > 0) {
 		mp->pgpolicy = conf->pgpolicy_flag;
 		origin = cmdline_origin;
+		goto out;
+	}
+	if (mp->detect_pgpolicy == DETECT_PGPOLICY_ON && verify_alua_prio(mp)) {
+		if (mp->detect_pgpolicy_use_tpg == DETECT_PGPOLICY_USE_TPG_ON)
+			mp->pgpolicy = GROUP_BY_TPG;
+		else
+			mp->pgpolicy = GROUP_BY_PRIO;
+		origin = autodetect_origin;
 		goto out;
 	}
 	mp_set_mpe(pgpolicy);
@@ -265,9 +320,15 @@ int select_pgpolicy(struct config *conf, struct multipath * mp)
 	mp_set_conf(pgpolicy);
 	mp_set_default(pgpolicy, DEFAULT_PGPOLICY);
 out:
+	if (mp->pgpolicy == GROUP_BY_TPG && origin != autodetect_origin &&
+	    !verify_alua_prio(mp)) {
+		mp->pgpolicy = DEFAULT_PGPOLICY;
+		origin = "(setting: emergency fallback - not all paths use alua prio)";
+		log_prio = 1;
+	}
 	mp->pgpolicyfn = pgpolicies[mp->pgpolicy];
-	get_pgpolicy_name(buff, POLICY_NAME_SIZE, mp->pgpolicy);
-	condlog(3, "%s: path_grouping_policy = %s %s", mp->alias, buff, origin);
+	condlog(log_prio, "%s: path_grouping_policy = %s %s", mp->alias,
+		get_pgpolicy_name(mp->pgpolicy), origin);
 	return 0;
 }
 
@@ -567,6 +628,23 @@ out:
 	return 0;
 }
 
+
+int select_checker_timeout(struct config *conf, struct path *pp)
+{
+	const char *origin;
+
+	pp_set_conf(checker_timeout);
+	if (sysfs_get_timeout(pp, &pp->checker_timeout) > 0) {
+		origin = "(setting: kernel sysfs)";
+		goto out;
+	}
+	pp_set_default(checker_timeout, DEF_TIMEOUT);
+out:
+	condlog(3, "%s checker timeout = %u s %s", pp->dev, pp->checker_timeout,
+		origin);
+	return 0;
+}
+
 /*
  * Current RDAC (NetApp E/EF Series) firmware relies
  * on periodic REPORT TARGET PORT GROUPS for
@@ -603,6 +681,8 @@ int select_checker(struct config *conf, struct path *pp)
 	char *ckr_name;
 	struct checker * c = &pp->checker;
 
+	if (!pp->checker_timeout)
+		select_checker_timeout(conf, pp);
 	if (pp->detect_checker == DETECT_CHECKER_ON) {
 		origin = autodetect_origin;
 		if (check_rdac(pp)) {
@@ -623,19 +703,7 @@ out:
 	checker_get(c, ckr_name);
 	condlog(3, "%s: path_checker = %s %s", pp->dev,
 		checker_name(c), origin);
-	if (conf->checker_timeout) {
-		c->timeout = conf->checker_timeout;
-		condlog(3, "%s: checker timeout = %u s %s",
-			pp->dev, c->timeout, conf_origin);
-	}
-	else if (sysfs_get_timeout(pp, &c->timeout) > 0)
-		condlog(3, "%s: checker timeout = %u s (setting: kernel sysfs)",
-			pp->dev, c->timeout);
-	else {
-		c->timeout = DEF_TIMEOUT;
-		condlog(3, "%s: checker timeout = %u s %s",
-			pp->dev, c->timeout, default_origin);
-	}
+	c->timeout = pp->checker_timeout;
 	return 0;
 }
 
@@ -745,6 +813,8 @@ int select_prio(struct config *conf, struct path *pp)
 	struct prio * p = &pp->prio;
 	int log_prio = 3;
 
+	if (!pp->checker_timeout)
+		select_checker_timeout(conf, pp);
 	if (pp->detect_prio == DETECT_PRIO_ON) {
 		detect_prio(pp);
 		if (prio_selected(p)) {

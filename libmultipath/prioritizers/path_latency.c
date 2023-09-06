@@ -104,10 +104,10 @@ static void cleanup_directio_read(int fd, char *buf, int restore_flags)
 	}
 }
 
-static int do_directio_read(int fd, unsigned int timeout, char *buf, int sz)
+static int do_directio_read(int fd, unsigned int timeout_ms, char *buf, int sz)
 {
 	fd_set read_fds;
-	struct timeval tm = { .tv_sec = timeout };
+	struct timeval tm = { .tv_sec = timeout_ms / 1000};
 	int ret;
 	int num_read;
 
@@ -208,7 +208,7 @@ int calcPrio(double lg_avglatency, double lg_maxavglatency,
 	return lg_maxavglatency - lg_avglatency;
 }
 
-int getprio(struct path *pp, char *args, unsigned int timeout)
+int getprio(struct path *pp, char *args)
 {
 	int rc, temp;
 	int io_num = 0;
@@ -247,7 +247,8 @@ int getprio(struct path *pp, char *args, unsigned int timeout)
 
 		(void)clock_gettime(CLOCK_MONOTONIC, &tv_before);
 
-		if (do_directio_read(pp->fd, timeout, buf, blksize)) {
+		if (do_directio_read(pp->fd, get_prio_timeout_ms(pp), buf,
+				     blksize)) {
 			pp_pl_log(0, "%s: path down", pp->dev);
 			cleanup_directio_read(pp->fd, buf, restore_flags);
 			return -1;

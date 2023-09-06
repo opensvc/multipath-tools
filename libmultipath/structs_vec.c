@@ -267,7 +267,7 @@ int adopt_paths(vector pathvec, struct multipath *mpp)
 			if (mpp->queue_mode == QUEUE_MODE_RQ &&
 			    pp->bus == SYSFS_BUS_NVME &&
 			    pp->sg_id.proto_id == NVME_PROTOCOL_TCP) {
-				condlog(2, "%s: mulitpath device %s created with request queue_mode. Unable to add nvme:tcp paths",
+				condlog(2, "%s: multipath device %s created with request queue_mode. Unable to add nvme:tcp paths",
 					pp->dev, mpp->alias);
 				continue;
 			}

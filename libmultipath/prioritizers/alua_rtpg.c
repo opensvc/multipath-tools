@@ -136,7 +136,7 @@ scsi_error(struct sg_io_hdr *hdr, int opcode)
  */
 static int
 do_inquiry_sg(int fd, int evpd, unsigned int codepage,
-	      void *resp, int resplen, unsigned int timeout)
+	      void *resp, int resplen, unsigned int timeout_ms)
 {
 	struct inquiry_command	cmd;
 	struct sg_io_hdr	hdr;
@@ -162,7 +162,7 @@ retry:
 	hdr.dxfer_len		= resplen;
 	hdr.sbp			= sense;
 	hdr.mx_sb_len		= sizeof(sense);
-	hdr.timeout		= get_prio_timeout(timeout, SGIO_TIMEOUT);
+	hdr.timeout		= timeout_ms;
 
 	if (ioctl(fd, SG_IO, &hdr) < 0) {
 		PRINT_DEBUG("do_inquiry: IOCTL failed!");
@@ -185,7 +185,7 @@ retry:
 }
 
 int do_inquiry(const struct path *pp, int evpd, unsigned int codepage,
-	       void *resp, int resplen, unsigned int timeout)
+	       void *resp, int resplen)
 {
 	struct udev_device *ud = NULL;
 
@@ -206,7 +206,8 @@ int do_inquiry(const struct path *pp, int evpd, unsigned int codepage,
 			return 0;
 		}
 	}
-	return do_inquiry_sg(pp->fd, evpd, codepage, resp, resplen, timeout);
+	return do_inquiry_sg(pp->fd, evpd, codepage, resp, resplen,
+			     get_prio_timeout_ms(pp));
 }
 
 /*
@@ -214,13 +215,13 @@ int do_inquiry(const struct path *pp, int evpd, unsigned int codepage,
  * data returned by the standard inquiry command.
  */
 int
-get_target_port_group_support(const struct path *pp, unsigned int timeout)
+get_target_port_group_support(const struct path *pp)
 {
 	struct inquiry_data	inq;
 	int			rc;
 
 	memset((unsigned char *)&inq, 0, sizeof(inq));
-	rc = do_inquiry(pp, 0, 0x00, &inq, sizeof(inq), timeout);
+	rc = do_inquiry(pp, 0, 0x00, &inq, sizeof(inq));
 	if (!rc) {
 		rc = inquiry_data_get_tpgs(&inq);
 	}
@@ -229,7 +230,7 @@ get_target_port_group_support(const struct path *pp, unsigned int timeout)
 }
 
 int
-get_target_port_group(const struct path * pp, unsigned int timeout)
+get_target_port_group(const struct path * pp)
 {
 	unsigned char		*buf;
 	const struct vpd83_data *	vpd83;
@@ -246,7 +247,7 @@ get_target_port_group(const struct path * pp, unsigned int timeout)
 	}
 
 	memset(buf, 0, buflen);
-	rc = do_inquiry(pp, 1, 0x83, buf, buflen, timeout);
+	rc = do_inquiry(pp, 1, 0x83, buf, buflen);
 	if (rc < 0)
 		goto out;
 
@@ -263,7 +264,7 @@ get_target_port_group(const struct path * pp, unsigned int timeout)
 		}
 		buflen = scsi_buflen;
 		memset(buf, 0, buflen);
-		rc = do_inquiry(pp, 1, 0x83, buf, buflen, timeout);
+		rc = do_inquiry(pp, 1, 0x83, buf, buflen);
 		if (rc < 0)
 			goto out;
 	}
@@ -293,7 +294,7 @@ out:
 }
 
 int
-do_rtpg(int fd, void* resp, long resplen, unsigned int timeout)
+do_rtpg(int fd, void* resp, long resplen, unsigned int timeout_ms)
 {
 	struct rtpg_command	cmd;
 	struct sg_io_hdr	hdr;
@@ -316,7 +317,7 @@ retry:
 	hdr.dxfer_len		= resplen;
 	hdr.mx_sb_len		= sizeof(sense);
 	hdr.sbp			= sense;
-	hdr.timeout		= get_prio_timeout(timeout, SGIO_TIMEOUT);
+	hdr.timeout		= timeout_ms;
 
 	if (ioctl(fd, SG_IO, &hdr) < 0) {
 		condlog(2, "%s: sg ioctl failed: %s",
@@ -340,8 +341,7 @@ retry:
 }
 
 int
-get_asymmetric_access_state(const struct path *pp, unsigned int tpg,
-			    unsigned int timeout)
+get_asymmetric_access_state(const struct path *pp, unsigned int tpg)
 {
 	unsigned char		*buf;
 	struct rtpg_data *	tpgd;
@@ -349,6 +349,7 @@ get_asymmetric_access_state(const struct path *pp, unsigned int tpg,
 	int			rc;
 	unsigned int		buflen;
 	uint64_t		scsi_buflen;
+	unsigned int		timeout_ms = get_prio_timeout_ms(pp);
 	int fd = pp->fd;
 
 	buflen = VPD_BUFLEN;
@@ -359,7 +360,7 @@ get_asymmetric_access_state(const struct path *pp, unsigned int tpg,
 		return -RTPG_RTPG_FAILED;
 	}
 	memset(buf, 0, buflen);
-	rc = do_rtpg(fd, buf, buflen, timeout);
+	rc = do_rtpg(fd, buf, buflen, timeout_ms);
 	if (rc < 0) {
 		PRINT_DEBUG("%s: do_rtpg returned %d", __func__, rc);
 		goto out;
@@ -377,7 +378,7 @@ get_asymmetric_access_state(const struct path *pp, unsigned int tpg,
 		}
 		buflen = scsi_buflen;
 		memset(buf, 0, buflen);
-		rc = do_rtpg(fd, buf, buflen, timeout);
+		rc = do_rtpg(fd, buf, buflen, timeout_ms);
 		if (rc < 0)
 			goto out;
 	}

@@ -67,6 +67,8 @@
 		.retain_hwhandler = RETAIN_HWHANDLER_ON,
 		.detect_prio   = DETECT_PRIO_ON,
 		.detect_checker = DETECT_CHECKER_ON,
+		.detect_pgpolicy = DETECT_PGPOLICY_ON,
+		.detect_pgpolicy_use_tpg = DETECT_PGPOLICY_USE_TPG_OFF,
 		.deferred_remove = DEFERRED_REMOVE_OFF,
 		.delay_watch_checks = DELAY_CHECKS_OFF,
 		.delay_wait_checks = DELAY_CHECKS_OFF,
@@ -485,7 +487,9 @@ static struct hwentry default_hw[] = {
 		/* USP-V, HUS VM, VSP, VSP G1X00 and VSP GX00 families / HPE XP */
 		.vendor        = "(HITACHI|HP|HPE)",
 		.product       = "^OPEN-",
-		.pgpolicy      = MULTIBUS,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 10,
 	},
 	{
 		/* AMS other than AMS 2000 */

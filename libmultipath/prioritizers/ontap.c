@@ -28,7 +28,6 @@
 #define INQUIRY_CMDLEN	6
 #define DEFAULT_PRIOVAL	10
 #define RESULTS_MAX	256
-#define SG_TIMEOUT	60000
 
 #define pp_ontap_log(prio, fmt, args...) \
 	condlog(prio, "%s: ontap prio: " fmt, dev, ##args)
@@ -72,7 +71,7 @@ static void process_sg_error(struct sg_io_hdr *io_hdr)
  */
 static int send_gva(const char *dev, int fd, unsigned char pg,
 		    unsigned char *results, int *results_size,
-		    unsigned int timeout)
+		    unsigned int timeout_ms)
 {
 	unsigned char sb[128];
 	unsigned char cdb[10] = {0xc0, 0, 0x1, 0xa, 0x98, 0xa,
@@ -90,7 +89,7 @@ static int send_gva(const char *dev, int fd, unsigned char pg,
 	io_hdr.dxferp = results;
 	io_hdr.cmdp = cdb;
 	io_hdr.sbp = sb;
-	io_hdr.timeout = get_prio_timeout(timeout, SG_TIMEOUT);
+	io_hdr.timeout = timeout_ms;
 	io_hdr.pack_id = 0;
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
 		pp_ontap_log(0, "SG_IO ioctl failed, errno=%d", errno);
@@ -123,7 +122,7 @@ out:
  *  0: Device _not_ proxy path
  *  1: Device _is_ proxy path
  */
-static int get_proxy(const char *dev, int fd, unsigned int timeout)
+static int get_proxy(const char *dev, int fd, unsigned int timeout_ms)
 {
 	unsigned char results[256];
 	unsigned char sb[128];
@@ -142,7 +141,7 @@ static int get_proxy(const char *dev, int fd, unsigned int timeout)
 	io_hdr.dxferp = results;
 	io_hdr.cmdp = cdb;
 	io_hdr.sbp = sb;
-	io_hdr.timeout = get_prio_timeout(timeout, SG_TIMEOUT);
+	io_hdr.timeout = timeout_ms;
 	io_hdr.pack_id = 0;
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
 		pp_ontap_log(0, "ioctl sending inquiry command failed, "
@@ -183,7 +182,7 @@ out:
  * 2: iSCSI software
  * 1: FCP proxy
  */
-static int ontap_prio(const char *dev, int fd, unsigned int timeout)
+static int ontap_prio(const char *dev, int fd, unsigned int timeout_ms)
 {
 	unsigned char results[RESULTS_MAX];
 	int results_size=RESULTS_MAX;
@@ -196,7 +195,7 @@ static int ontap_prio(const char *dev, int fd, unsigned int timeout)
 	is_iscsi_software = is_iscsi_hardware = is_proxy = 0;
 
 	memset(&results, 0, sizeof (results));
-	rc = send_gva(dev, fd, 0x41, results, &results_size, timeout);
+	rc = send_gva(dev, fd, 0x41, results, &results_size, timeout_ms);
 	if (rc >= 0) {
 		tot_len = get_unaligned_be32(&results[0]);
 		if (tot_len <= 8) {
@@ -221,7 +220,7 @@ static int ontap_prio(const char *dev, int fd, unsigned int timeout)
 	}
 
 try_fcp_proxy:
-	rc = get_proxy(dev, fd, timeout);
+	rc = get_proxy(dev, fd, timeout_ms);
 	if (rc >= 0) {
 		is_proxy = rc;
 	}
@@ -241,8 +240,7 @@ prio_select:
 	}
 }
 
-int getprio (struct path *pp, __attribute__((unused)) char *args,
-	     unsigned int timeout)
+int getprio (struct path *pp, __attribute__((unused)) char *args)
 {
-	return ontap_prio(pp->dev, pp->fd, timeout);
+	return ontap_prio(pp->dev, pp->fd, get_prio_timeout_ms(pp));
 }

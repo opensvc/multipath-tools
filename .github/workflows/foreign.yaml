@@ -10,11 +10,11 @@ on:
 jobs:
 
   cross-build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        os: [bullseye, sid]
+        os: [bullseye, bookworm, sid]
         arch: [ppc64le, arm64, s390x]
     container: ghcr.io/mwilck/multipath-cross-debian_cross-${{ matrix.os }}-${{ matrix.arch }}
     steps:
@@ -37,12 +37,12 @@ jobs:
           path: binaries.tar
 
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: cross-build
     strategy:
       fail-fast: false
       matrix:
-        os: [bullseye, sid]
+        os: [bullseye, bookworm, sid]
         arch: [ppc64le, arm64, s390x]
     steps:
       - name: set container arch

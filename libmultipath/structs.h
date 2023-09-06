@@ -143,6 +143,18 @@ enum detect_checker_states {
 	DETECT_CHECKER_ON = YNU_YES,
 };
 
+enum detect_pgpolicy_states {
+	DETECT_PGPOLICY_UNDEF = YNU_UNDEF,
+	DETECT_PGPOLICY_OFF = YNU_NO,
+	DETECT_PGPOLICY_ON = YNU_YES,
+};
+
+enum detect_pgpolicy_use_tpg_states {
+	DETECT_PGPOLICY_USE_TPG_UNDEF = YNU_UNDEF,
+	DETECT_PGPOLICY_USE_TPG_OFF = YNU_NO,
+	DETECT_PGPOLICY_USE_TPG_ON = YNU_YES,
+};
+
 enum deferred_remove_states {
 	DEFERRED_REMOVE_UNDEF = YNU_UNDEF,
 	DEFERRED_REMOVE_OFF = YNU_NO,
@@ -317,6 +329,8 @@ struct hd_geometry {
 };
 #endif
 
+#define GROUP_ID_UNDEF -1
+
 struct path {
 	char dev[FILE_NAME_SIZE];
 	char dev_t[BLK_DEV_SIZE];
@@ -369,9 +383,11 @@ struct path {
 	int eh_deadline;
 	bool is_checked;
 	bool can_use_env_uid;
+	unsigned int checker_timeout;
 	/* configlet pointers */
 	vector hwe;
 	struct gen_path generic_path;
+	int tpg_id;
 };
 
 typedef int (pgpolicyfn) (struct multipath *, vector);
@@ -386,6 +402,8 @@ enum prflag_value {
 struct multipath {
 	char wwid[WWID_SIZE];
 	char alias_old[WWID_SIZE];
+	int detect_pgpolicy;
+	int detect_pgpolicy_use_tpg;
 	int pgpolicy;
 	pgpolicyfn *pgpolicyfn;
 	int nextpg;

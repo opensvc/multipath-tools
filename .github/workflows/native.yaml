@@ -9,15 +9,16 @@ on:
 
 jobs:
   stable:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         os:
-          - debian-buster
           - debian-jessie
+          - debian-buster
           - debian-bullseye
-          - fedora-36
+          - debian-bookworm
+          - fedora-37
           - opensuse-leap
     container: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
     steps:

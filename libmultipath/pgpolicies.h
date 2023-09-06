@@ -16,11 +16,12 @@ enum iopolicies {
 	MULTIBUS,
 	GROUP_BY_SERIAL,
 	GROUP_BY_PRIO,
-	GROUP_BY_NODE_NAME
+	GROUP_BY_NODE_NAME,
+	GROUP_BY_TPG,
 };
 
 int get_pgpolicy_id(char *);
-int get_pgpolicy_name (char *, int, int);
+const char *get_pgpolicy_name (int);
 int group_paths(struct multipath *, int);
 /*
  * policies
@@ -30,5 +31,6 @@ int one_group(struct multipath *, vector);
 int group_by_serial(struct multipath *, vector);
 int group_by_prio(struct multipath *, vector);
 int group_by_node_name(struct multipath *, vector);
+int group_by_tpg(struct multipath *, vector);
 
 #endif
