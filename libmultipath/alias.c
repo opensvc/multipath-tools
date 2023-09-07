@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <sys/inotify.h>
 
 #include "debug.h"
 #include "util.h"
@@ -22,6 +23,7 @@
 #include "config.h"
 #include "devmapper.h"
 #include "strbuf.h"
+#include "time-util.h"
 
 /*
  * significant parts of this file were taken from iscsi-bindings.c of the
@@ -50,6 +52,12 @@
 "# alias wwid\n" \
 "#\n"
 
+/* uatomic access only */
+static int bindings_file_changed = 1;
+
+static pthread_mutex_t timestamp_mutex = PTHREAD_MUTEX_INITIALIZER;
+static struct timespec bindings_last_updated;
+
 struct binding {
 	char *alias;
 	char *wwid;
@@ -60,6 +68,9 @@ struct binding {
  * an abstract type.
  */
 typedef struct _vector Bindings;
+
+/* Protect global_bindings */
+static pthread_mutex_t bindings_mutex = PTHREAD_MUTEX_INITIALIZER;
 static Bindings global_bindings = { .allocated = 0 };
 
 enum {
@@ -76,6 +87,27 @@ static void _free_binding(struct binding *bdg)
 	free(bdg->wwid);
 	free(bdg->alias);
 	free(bdg);
+}
+
+static void free_bindings(Bindings *bindings)
+{
+	struct binding *bdg;
+	int i;
+
+	vector_foreach_slot(bindings, bdg, i)
+		_free_binding(bdg);
+	vector_reset(bindings);
+}
+
+static void set_global_bindings(Bindings *bindings)
+{
+	Bindings old_bindings;
+
+	pthread_mutex_lock(&bindings_mutex);
+	old_bindings = global_bindings;
+	global_bindings = *bindings;
+	pthread_mutex_unlock(&bindings_mutex);
+	free_bindings(&old_bindings);
 }
 
 static const struct binding *get_binding_for_alias(const Bindings *bindings,
@@ -199,7 +231,8 @@ static int delete_binding(Bindings *bindings, const char *wwid)
 	return BINDING_DELETED;
 }
 
-static int write_bindings_file(const Bindings *bindings, int fd)
+static int write_bindings_file(const Bindings *bindings, int fd,
+			       struct timespec *ts)
 {
 	struct binding *bnd;
 	STRBUF_ON_STACK(content);
@@ -227,7 +260,54 @@ static int write_bindings_file(const Bindings *bindings, int fd)
 		}
 		len -= n;
 	}
+	fsync(fd);
+	if (ts) {
+		struct stat st;
+
+		if (fstat(fd, &st) == 0)
+			*ts = st.st_mtim;
+		else
+			clock_gettime(CLOCK_REALTIME_COARSE, ts);
+	}
 	return 0;
+}
+
+void handle_bindings_file_inotify(const struct inotify_event *event)
+{
+	struct config *conf;
+	const char *base;
+	bool changed = false;
+	struct stat st;
+	struct timespec ts = { 0, 0 };
+	int ret;
+
+	if (!(event->mask & IN_MOVED_TO))
+		return;
+
+	conf = get_multipath_config();
+	base = strrchr(conf->bindings_file, '/');
+	changed = base && base > conf->bindings_file &&
+		!strcmp(base + 1, event->name);
+	ret = stat(conf->bindings_file, &st);
+	put_multipath_config(conf);
+
+	if (!changed)
+		return;
+
+	pthread_mutex_lock(&timestamp_mutex);
+	if (ret == 0) {
+		ts = st.st_mtim;
+		changed = timespeccmp(&ts, &bindings_last_updated) > 0;
+	}
+	pthread_mutex_unlock(&timestamp_mutex);
+
+	if (changed) {
+		uatomic_xchg(&bindings_file_changed, 1);
+		condlog(3, "%s: bindings file must be re-read, new timestamp: %ld.%06ld",
+			__func__, (long)ts.tv_sec, (long)ts.tv_nsec / 1000);
+	} else
+		condlog(3, "%s: bindings file is up-to-date, timestamp: %ld.%06ld",
+			__func__, (long)ts.tv_sec, (long)ts.tv_nsec / 1000);
 }
 
 static int update_bindings_file(const Bindings *bindings,
@@ -237,6 +317,7 @@ static int update_bindings_file(const Bindings *bindings,
 	int fd = -1;
 	char tempname[PATH_MAX];
 	mode_t old_umask;
+	struct timespec ts;
 
 	if (safe_sprintf(tempname, "%s.XXXXXX", bindings_file))
 		return -1;
@@ -248,7 +329,7 @@ static int update_bindings_file(const Bindings *bindings,
 	}
 	umask(old_umask);
 	pthread_cleanup_push(cleanup_fd_ptr, &fd);
-	rc = write_bindings_file(bindings, fd);
+	rc = write_bindings_file(bindings, fd, &ts);
 	pthread_cleanup_pop(1);
 	if (rc == -1) {
 		condlog(1, "failed to write new bindings file");
@@ -257,8 +338,12 @@ static int update_bindings_file(const Bindings *bindings,
 	}
 	if ((rc = rename(tempname, bindings_file)) == -1)
 		condlog(0, "%s: rename: %m", __func__);
-	else
+	else {
+		pthread_mutex_lock(&timestamp_mutex);
+		bindings_last_updated = ts;
+		pthread_mutex_unlock(&timestamp_mutex);
 		condlog(1, "updated bindings file %s", bindings_file);
+	}
 	return rc;
 }
 
@@ -387,6 +472,7 @@ int get_free_id(const Bindings *bindings, const char *prefix, const char *map_ww
 	return id;
 }
 
+/* Called with binding_mutex held */
 static char *
 allocate_binding(const char *filename, const char *wwid, int id, const char *prefix)
 {
@@ -421,6 +507,30 @@ allocate_binding(const char *filename, const char *wwid, int id, const char *pre
 
 	condlog(3, "Created new binding [%s] for WWID [%s]", alias, wwid);
 	return alias;
+}
+
+enum {
+	BINDINGS_FILE_UP2DATE,
+	BINDINGS_FILE_READ,
+	BINDINGS_FILE_ERROR,
+	BINDINGS_FILE_BAD,
+};
+
+static int _read_bindings_file(const struct config *conf, Bindings *bindings,
+			       bool force);
+
+static void read_bindings_file(void)
+{
+	struct config *conf;
+	Bindings bindings = {.allocated = 0, };
+	int rc;
+
+	conf = get_multipath_config();
+	pthread_cleanup_push(put_multipath_config, conf);
+	rc = _read_bindings_file(conf, &bindings, false);
+	pthread_cleanup_pop(1);
+	if (rc == BINDINGS_FILE_READ)
+		set_global_bindings(&bindings);
 }
 
 /*
@@ -462,6 +572,11 @@ char *get_user_friendly_alias(const char *wwid, const char *file, const char *al
 	int id = 0;
 	bool new_binding = false;
 	const struct binding *bdg;
+
+	read_bindings_file();
+
+	pthread_mutex_lock(&bindings_mutex);
+	pthread_cleanup_push(cleanup_mutex, &bindings_mutex);
 
 	if (!*alias_old)
 		goto new_alias;
@@ -514,40 +629,40 @@ new_alias:
 			alias, wwid);
 
 out:
+	/* unlock bindings_mutex */
+	pthread_cleanup_pop(1);
 	return alias;
 }
 
 int get_user_friendly_wwid(const char *alias, char *buff)
 {
 	const struct binding *bdg;
+	int rc = -1;
 
 	if (!alias || *alias == '\0') {
 		condlog(3, "Cannot find binding for empty alias");
 		return -1;
 	}
 
+	read_bindings_file();
+
+	pthread_mutex_lock(&bindings_mutex);
+	pthread_cleanup_push(cleanup_mutex, &bindings_mutex);
 	bdg = get_binding_for_alias(&global_bindings, alias);
-	if (!bdg) {
+	if (bdg) {
+		strlcpy(buff, bdg->wwid, WWID_SIZE);
+		rc = 0;
+	} else
 		*buff = '\0';
-		return -1;
-	}
-	strlcpy(buff, bdg->wwid, WWID_SIZE);
-	return 0;
-}
-
-static void free_bindings(Bindings *bindings)
-{
-	struct binding *bdg;
-	int i;
-
-	vector_foreach_slot(bindings, bdg, i)
-		_free_binding(bdg);
-	vector_reset(bindings);
+	pthread_cleanup_pop(1);
+	return rc;
 }
 
 void cleanup_bindings(void)
 {
+	pthread_mutex_lock(&bindings_mutex);
 	free_bindings(&global_bindings);
+	pthread_mutex_unlock(&bindings_mutex);
 }
 
 enum {
@@ -595,7 +710,20 @@ static int _check_bindings_file(const struct config *conf, FILE *file,
 	char *line = NULL;
 	size_t line_len = 0;
 	ssize_t n;
+	char header[sizeof(BINDINGS_FILE_HEADER)];
 
+	header[sizeof(BINDINGS_FILE_HEADER) - 1] = '\0';
+	if (fread(header, sizeof(BINDINGS_FILE_HEADER) - 1, 1, file) < 1) {
+		condlog(2, "%s: failed to read header from %s", __func__,
+			conf->bindings_file);
+		fseek(file, 0, SEEK_SET);
+		rc = -1;
+	} else if (strcmp(header, BINDINGS_FILE_HEADER)) {
+		condlog(2, "%s: invalid header in %s", __func__,
+			conf->bindings_file);
+		fseek(file, 0, SEEK_SET);
+		rc = -1;
+	}
 	pthread_cleanup_push(cleanup_free_ptr, &line);
 	while ((n = getline(&line, &line_len, file)) >= 0) {
 		char *alias, *wwid;
@@ -643,6 +771,68 @@ static int mp_alias_compar(const void *p1, const void *p2)
 			    &((*(struct mpentry * const *)p2)->alias));
 }
 
+static int _read_bindings_file(const struct config *conf, Bindings *bindings,
+			       bool force)
+{
+	int can_write;
+	int rc = 0, ret, fd;
+	FILE *file;
+	struct stat st;
+	int has_changed = uatomic_xchg(&bindings_file_changed, 0);
+
+	if (!force) {
+		if (!has_changed) {
+			condlog(4, "%s: bindings are unchanged", __func__);
+			return BINDINGS_FILE_UP2DATE;
+		}
+	}
+
+	fd = open_file(conf->bindings_file, &can_write, BINDINGS_FILE_HEADER);
+	if (fd == -1)
+		return BINDINGS_FILE_ERROR;
+
+	file = fdopen(fd, "r");
+	if (file != NULL) {
+		condlog(3, "%s: reading %s", __func__, conf->bindings_file);
+
+		pthread_cleanup_push(cleanup_fclose, file);
+		ret = _check_bindings_file(conf, file, bindings);
+		if (ret == 0) {
+			struct timespec ts;
+
+			rc = BINDINGS_FILE_READ;
+			ret = fstat(fd, &st);
+			if (ret == 0)
+				ts = st.st_mtim;
+			else {
+				condlog(1, "%s: fstat failed (%m), using current time", __func__);
+				clock_gettime(CLOCK_REALTIME_COARSE, &ts);
+			}
+			pthread_mutex_lock(&timestamp_mutex);
+			bindings_last_updated = ts;
+			pthread_mutex_unlock(&timestamp_mutex);
+		} else if (ret == -1 && can_write && !conf->bindings_read_only) {
+			ret = update_bindings_file(bindings, conf->bindings_file);
+			if (ret == 0)
+				rc = BINDINGS_FILE_READ;
+			else
+				rc = BINDINGS_FILE_BAD;
+		} else {
+			condlog(0, "ERROR: bad settings in read-only bindings file %s",
+				conf->bindings_file);
+			rc = BINDINGS_FILE_BAD;
+		}
+		pthread_cleanup_pop(1);
+	} else {
+		condlog(1, "failed to fdopen %s: %m",
+			conf->bindings_file);
+		close(fd);
+		rc = BINDINGS_FILE_ERROR;
+	}
+
+	return rc;
+}
+
 /*
  * check_alias_settings(): test for inconsistent alias configuration
  *
@@ -661,8 +851,7 @@ static int mp_alias_compar(const void *p1, const void *p2)
  */
 int check_alias_settings(const struct config *conf)
 {
-	int can_write;
-	int rc = 0, i, fd;
+	int i, rc;
 	Bindings bindings = {.allocated = 0, };
 	vector mptable = NULL;
 	struct mpentry *mpe;
@@ -695,27 +884,12 @@ int check_alias_settings(const struct config *conf)
 	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
 
-	fd = open_file(conf->bindings_file, &can_write, BINDINGS_FILE_HEADER);
-	if (fd != -1) {
-		FILE *file = fdopen(fd, "r");
+	rc = _read_bindings_file(conf, &bindings, true);
 
-		if (file != NULL) {
-			pthread_cleanup_push(cleanup_fclose, file);
-			rc = _check_bindings_file(conf, file, &bindings);
-			pthread_cleanup_pop(1);
-			if (rc == -1 && can_write && !conf->bindings_read_only)
-				rc = update_bindings_file(&bindings, conf->bindings_file);
-			else if (rc == -1)
-				condlog(0, "ERROR: bad settings in read-only bindings file %s",
-					conf->bindings_file);
-		} else {
-			condlog(1, "failed to fdopen %s: %m",
-				conf->bindings_file);
-			close(fd);
-		}
+	if (rc == BINDINGS_FILE_READ) {
+		set_global_bindings(&bindings);
+		rc = 0;
 	}
 
-	cleanup_bindings();
-	global_bindings = bindings;
 	return rc;
 }

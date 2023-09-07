@@ -10,5 +10,6 @@ char *get_user_friendly_alias(const char *wwid, const char *file,
 struct config;
 int check_alias_settings(const struct config *);
 void cleanup_bindings(void);
-
+struct inotify_event;
+void handle_bindings_file_inotify(const struct inotify_event *event);
 #endif /* _ALIAS_H */

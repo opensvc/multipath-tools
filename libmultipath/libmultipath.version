@@ -238,3 +238,8 @@ global:
 local:
 	*;
 };
+
+LIBMULTIPATH_20.1.0 {
+global:
+	handle_bindings_file_inotify;
+};

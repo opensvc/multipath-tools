@@ -1954,6 +1954,9 @@ int main(void)
 	int ret = 0;
 	init_test_verbosity(3);
 
+	/* avoid open_file() call in _read_bindings_file */
+	bindings_file_changed = 0;
+
 	ret += test_format_devname();
 	ret += test_scan_devname();
 	ret += test_lookup_binding();

@@ -41,6 +41,7 @@
 #include "cli.h"
 #include "uxlsnr.h"
 #include "strbuf.h"
+#include "alias.h"
 
 /* state of client connection */
 enum {
@@ -190,6 +191,7 @@ void wakeup_cleanup(void *arg)
 struct watch_descriptors {
 	int conf_wd;
 	int dir_wd;
+	int mp_wd; /* /etc/multipath; for bindings file */
 };
 
 /* failing to set the watch descriptor is o.k. we just miss a warning
@@ -200,6 +202,8 @@ static void reset_watch(int notify_fd, struct watch_descriptors *wds,
 	struct config *conf;
 	int dir_reset = 0;
 	int conf_reset = 0;
+	int mp_reset = 0;
+	char *bindings_file __attribute__((cleanup(cleanup_charp))) = NULL;
 
 	if (notify_fd == -1)
 		return;
@@ -214,7 +218,10 @@ static void reset_watch(int notify_fd, struct watch_descriptors *wds,
 			conf_reset = 1;
 		if (wds->dir_wd == -1)
 			dir_reset = 1;
+		if (wds->mp_wd == -1)
+			mp_reset = 1;
 	}
+	bindings_file = strdup(conf->bindings_file);
 	put_multipath_config(conf);
 
 	if (dir_reset) {
@@ -235,7 +242,18 @@ static void reset_watch(int notify_fd, struct watch_descriptors *wds,
 		if (wds->conf_wd == -1)
 			condlog(3, "didn't set up notifications on /etc/multipath.conf: %m");
 	}
-	return;
+	if (mp_reset && bindings_file) {
+		char *slash = strrchr(bindings_file, '/');
+
+		if (slash && slash > bindings_file) {
+			*slash = '\0';
+			wds->mp_wd = inotify_add_watch(notify_fd, bindings_file,
+						       IN_MOVED_TO|IN_ONLYDIR);
+			if (wds->mp_wd == -1)
+				condlog(3, "didn't set up notifications on %s: %m",
+					bindings_file);
+		}
+	}
 }
 
 static void handle_inotify(int fd, struct watch_descriptors *wds)
@@ -256,12 +274,13 @@ static void handle_inotify(int fd, struct watch_descriptors *wds)
 					inotify_rm_watch(fd, wds->conf_wd);
 				if (wds->dir_wd != -1)
 					inotify_rm_watch(fd, wds->dir_wd);
-				wds->conf_wd = wds->dir_wd = -1;
+				if (wds->mp_wd != -1)
+					inotify_rm_watch(fd, wds->mp_wd);
+				wds->conf_wd = wds->dir_wd = wds->mp_wd = -1;
 			}
 			break;
 		}
 
-		got_notify = 1;
 		for (ptr = buff; ptr < buff + len;
 		     ptr += sizeof(struct inotify_event) + event->len) {
 			event = (const struct inotify_event *) ptr;
@@ -273,7 +292,13 @@ static void handle_inotify(int fd, struct watch_descriptors *wds)
 					wds->conf_wd = inotify_add_watch(notify_fd, DEFAULT_CONFIGFILE, IN_CLOSE_WRITE);
 				else if (wds->dir_wd == event->wd)
 					wds->dir_wd = -1;
+				else if (wds->mp_wd == event->wd)
+					wds->mp_wd = -1;
 			}
+			if (wds->mp_wd != -1 && wds->mp_wd == event->wd)
+				handle_bindings_file_inotify(event);
+			else
+				got_notify = 1;
 		}
 	}
 	if (got_notify)
@@ -599,7 +624,7 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 	int max_pfds = MIN_POLLS + POLLFDS_BASE;
 	/* conf->sequence_nr will be 1 when uxsock_listen is first called */
 	unsigned int sequence_nr = 0;
-	struct watch_descriptors wds = { .conf_wd = -1, .dir_wd = -1 };
+	struct watch_descriptors wds = { .conf_wd = -1, .dir_wd = -1, .mp_wd = -1, };
 	struct vectors *vecs = trigger_data;
 
 	condlog(3, "uxsock: startup listener");
@@ -666,7 +691,8 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 
 		reset_watch(notify_fd, &wds, &sequence_nr);
 		polls[POLLFD_NOTIFY].fd = notify_fd;
-		if (notify_fd == -1 || (wds.conf_wd == -1 && wds.dir_wd == -1))
+		if (notify_fd == -1 || (wds.conf_wd == -1 && wds.dir_wd == -1
+					&& wds.mp_wd == -1))
 			polls[POLLFD_NOTIFY].events = 0;
 		else
 			polls[POLLFD_NOTIFY].events = POLLIN;
