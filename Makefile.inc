@@ -37,6 +37,8 @@ prefix		:=
 exec_prefix	:= $(prefix)
 # Prefix for non-essential libraries (libdmmp)
 usr_prefix	:= $(prefix)
+# Prefix for configfuration files (multipath.conf)
+etc_prefix	:= $(prefix)
 # Where to install systemd-related files. systemd is usually installed under /usr
 # Note: some systemd installations use separate "prefix" and "rootprefix".
 # In this case, override only unitdir to use systemd's "rootprefix" instead of $(systemd_prefix)
@@ -54,7 +56,8 @@ usrlibdir	:= $(usr_prefix)/$(LIB)
 includedir	:= $(usr_prefix)/include
 pkgconfdir	:= $(usrlibdir)/pkgconfig
 plugindir       := $(prefix)/$(LIB)/multipath
-configdir       := $(prefix)/etc/multipath/conf.d
+configdir       := $(etc_prefix)/etc/multipath/conf.d
+configfile      := $(etc_prefix)/etc/multipath.conf
 runtimedir      := $(if $(shell test -L /var/run -o ! -d /var/run && echo 1),/run,/var/run)
 devmapper_incdir := $(or $(shell $(PKG_CONFIG) --variable=includedir devmapper),/usr/include)
 libudev_incdir	:= $(or $(shell $(PKG_CONFIG) --variable=includedir libudev),/usr/include)
@@ -84,8 +87,8 @@ WARNFLAGS	:= -Werror -Wall -Wextra -Wformat=2 $(WFORMATOVERFLOW) -Werror=implici
 		  $(WNOCLOBBERED) -Werror=cast-qual $(ERROR_DISCARDED_QUALIFIERS) $(W_URCU_TYPE_LIMITS)
 CPPFLAGS	:= $(FORTIFY_OPT) $(CPPFLAGS) \
 		   -DBIN_DIR=\"$(bindir)\" -DMULTIPATH_DIR=\"$(plugindir)\" \
-		   -DRUNTIME_DIR=\"$(runtimedir)\" \
-		   -DCONFIG_DIR=\"$(configdir)\" -DEXTRAVERSION=\"$(EXTRAVERSION)\" -MMD -MP
+		   -DRUNTIME_DIR=\"$(runtimedir)\" -DCONFIG_DIR=\"$(configdir)\" \
+		   -DDEFAULT_CONFIGFILE=\"$(configfile)\" -DEXTRAVERSION=\"$(EXTRAVERSION)\" -MMD -MP
 CFLAGS		:= --std=gnu99 $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe
 BIN_CFLAGS	:= -fPIE -DPIE
 LIB_CFLAGS	:= -fPIC
