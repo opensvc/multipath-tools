@@ -89,6 +89,47 @@ int __wrap_dm_get_uuid(const char *name, char *uuid, int uuid_len)
 	return ret;
 }
 
+static int lock_errors;
+static int bindings_locked;
+static int timestamp_locked;
+int __wrap_pthread_mutex_lock(pthread_mutex_t *mutex)
+{
+	if (mutex == &bindings_mutex) {
+		if (bindings_locked) {
+			fprintf(stderr, "%s: bindings_mutex LOCKED\n", __func__);
+			lock_errors++;
+		}
+		bindings_locked = 1;
+	}  else if (mutex == &timestamp_mutex) {
+		if (timestamp_locked) {
+			fprintf(stderr, "%s: timestamp_mutex LOCKED\n", __func__);
+			lock_errors++;
+		}
+		timestamp_locked = 1;
+	} else
+		  fprintf(stderr, "%s called for unknown mutex %p\n", __func__, mutex);
+	return 0;
+}
+
+int __wrap_pthread_mutex_unlock(pthread_mutex_t *mutex)
+{
+	if (mutex == &bindings_mutex) {
+		if (!bindings_locked) {
+			fprintf(stderr, "%s: bindings_mutex UNLOCKED\n", __func__);
+			lock_errors++;
+		}
+		bindings_locked = 0;
+	}  else if (mutex == &timestamp_mutex) {
+		if (!timestamp_locked) {
+			fprintf(stderr, "%s: timestamp_mutex UNLOCKED\n", __func__);
+			lock_errors++;
+		}
+		timestamp_locked = 0;
+	} else
+		  fprintf(stderr, "%s called for unknown mutex %p\n", __func__, mutex);
+	return 0;
+}
+
 #define TEST_FDNO 1234
 #define TEST_FPTR ((FILE *) 0xaffe)
 
@@ -1718,6 +1759,10 @@ static void gufa_old_nomatch_nowwidmatch(void **state) {
 	free(alias);
 }
 
+static void gufa_check_locking(void **state) {
+	assert_int_equal(lock_errors, 0);
+}
+
 static int test_get_user_friendly_alias()
 {
 	const struct CMUnitTest tests[] = {
@@ -1743,6 +1788,7 @@ static int test_get_user_friendly_alias()
 		cmocka_unit_test_teardown(gufa_old_nomatch_wwidmatch, teardown_bindings),
 		cmocka_unit_test_teardown(gufa_old_nomatch_wwidmatch_used, teardown_bindings),
 		cmocka_unit_test_teardown(gufa_old_nomatch_nowwidmatch, teardown_bindings),
+		cmocka_unit_test(gufa_check_locking),
 	};
 
 	return cmocka_run_group_tests(tests, NULL, NULL);
