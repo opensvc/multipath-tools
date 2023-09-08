@@ -117,6 +117,35 @@ static const struct binding *get_binding_for_wwid(const Bindings *bindings,
 	return NULL;
 }
 
+/*
+ * Sort order for aliases.
+ *
+ * The "numeric" ordering of aliases for a given prefix P is
+ * Pa, ..., Pz, Paa, ..., Paz, Pba, ... , Pzz, Paaa, ..., Pzzz, Paaaa, ...
+ * We use the fact that for equal prefix, longer strings are always
+ * higher than shorter ones. Strings of equal length are sorted alphabetically.
+ * This is achieved by sorting be length first, then using strcmp().
+ * If multiple prefixes are in use, the aliases with a given prefix will
+ * not necessarily be in a contiguous range of the vector, but they will
+ * be ordered such that for a given prefix, numercally higher aliases will
+ * always be sorted after lower ones.
+ */
+static int alias_compar(const void *p1, const void *p2)
+{
+	const char *alias1 = *((char * const *)p1);
+	const char *alias2 = *((char * const *)p2);
+
+	if (alias1 && alias2) {
+		ssize_t ldif = strlen(alias1) - strlen(alias2);
+
+		if (ldif)
+			return ldif;
+		return strcmp(alias1, alias2);
+	} else
+		/* Move NULL alias to the end */
+		return alias1 ? -1 : alias2 ? 1 : 0;
+}
+
 static int add_binding(Bindings *bindings, const char *alias, const char *wwid)
 {
 	struct binding *bdg;
@@ -128,7 +157,7 @@ static int add_binding(Bindings *bindings, const char *alias, const char *wwid)
 	 * sorted already.
 	 */
 	vector_foreach_slot_backwards(bindings, bdg, i) {
-		if ((cmp = strcmp(bdg->alias, alias)) <= 0)
+		if ((cmp = alias_compar(&bdg->alias, &alias)) <= 0)
 			break;
 	}
 
@@ -657,16 +686,10 @@ static int _check_bindings_file(const struct config *conf, FILE *file,
 	return rc;
 }
 
-static int alias_compar(const void *p1, const void *p2)
+static int mp_alias_compar(const void *p1, const void *p2)
 {
-	const char *alias1 = (*(struct mpentry * const *)p1)->alias;
-	const char *alias2 = (*(struct mpentry * const *)p2)->alias;
-
-	if (alias1 && alias2)
-		return strcmp(alias1, alias2);
-	else
-		/* Move NULL alias to the end */
-		return alias1 ? -1 : alias2 ? 1 : 0;
+	return alias_compar(&((*(struct mpentry * const *)p1)->alias),
+			    &((*(struct mpentry * const *)p2)->alias));
 }
 
 /*
@@ -700,7 +723,7 @@ int check_alias_settings(const struct config *conf)
 	pthread_cleanup_push_cast(free_bindings, &bindings);
 	pthread_cleanup_push(cleanup_vector_free, mptable);
 
-	vector_sort(mptable, alias_compar);
+	vector_sort(mptable, mp_alias_compar);
 	vector_foreach_slot(mptable, mpe, i) {
 		if (!mpe->alias)
 			/*
