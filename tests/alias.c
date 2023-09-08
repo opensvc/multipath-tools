@@ -439,27 +439,7 @@ static void mock_self_alias(const char *alias, const char *wwid)
 		expect_condlog(3, USED_STR(alias, wwid));		\
 	} while(0)
 
-static int add_binding_unsorted(Bindings *bindings,
-				const char *alias, const char *wwid)
-{
-	struct binding *bdg = calloc(1, sizeof(*bdg));
-
-	if (!bdg)
-		return -1;
-	bdg->wwid = strdup(wwid);
-	bdg->alias = strdup(alias);
-	if (!bdg->wwid || !bdg->alias || !vector_alloc_slot(bindings)) {
-		free(bdg->alias);
-		free(bdg->wwid);
-		free(bdg);
-		return BINDING_ERROR;
-	}
-	vector_set_slot(bindings, bdg);
-	return BINDING_ADDED;
-}
-
-static void __mock_bindings_file(const char *content,
-				 int (*add)(Bindings *, const char *, const char *))
+static void __mock_bindings_file(const char *content)
 {
 	char *cnt __attribute__((cleanup(cleanup_charp))) = NULL;
 	char *token, *savep = NULL;
@@ -478,17 +458,13 @@ static void __mock_bindings_file(const char *content,
 		    == READ_BINDING_SKIP)
 			continue;
 
-		rc = add(&global_bindings, alias, wwid);
+		rc = add_binding(&global_bindings, alias, wwid);
 		assert_int_equal(rc, BINDING_ADDED);
 	}
 }
 
 static void mock_bindings_file(const char *content) {
-	return __mock_bindings_file(content, add_binding);
-}
-
-static void mock_bindings_file_unsorted(const char *content) {
-	return __mock_bindings_file(content, add_binding_unsorted);
+	return __mock_bindings_file(content);
 }
 
 static int teardown_bindings(void **state)
@@ -861,10 +837,6 @@ static void lb_nomatch_b_z_a(void **state)
 	int rc;
 	char *alias;
 
-	/*
-	 * add_bindings() sorts alphabetically. Therefore get_free_id()
-	 * finds MPATHc as a free entry.
-	 */
 	mock_bindings_file("MPATHb WWID1\n"
 			   "MPATHz WWID26\n"
 			   "MPATHa WWID0\n");
@@ -880,10 +852,6 @@ static void lb_nomatch_b_aa_a(void **state)
 	int rc;
 	char *alias;
 
-	/*
-	 * add_bindings() sorts alphabetically. ("a", "aa", b").
-	 * The get_free_id() algorithm finds the "hole" after "b".
-	 */
 	mock_bindings_file("MPATHb WWID1\n"
 			   "MPATHz WWID26\n"
 			   "MPATHa WWID0\n");
@@ -911,10 +879,6 @@ static void lb_nomatch_b_a_aa(void **state)
 	char *alias;
 	STRBUF_ON_STACK(buf);
 
-	/*
-	 * add_bindings() sorts alphabetically. ("a", "aa", "ab", "b", "c", ...)
-	 * lookup_binding finds MPATHac as next free entry.
-	 */
 	fill_bindings(&buf, 0, 26);
 	mock_bindings_file(get_strbuf_str(&buf));
 	expect_condlog(3, NOMATCH_WWID_STR("WWID28"));
@@ -930,10 +894,6 @@ static void lb_nomatch_b_a_aa_zz(void **state)
 	char *alias;
 	STRBUF_ON_STACK(buf);
 
-	/*
-	 * add_bindings() sorts alphabetically. ("a", "aa", "ab", "b", "c", ...)
-	 * lookup_binding finds MPATHab as next free entry.
-	 */
 	fill_bindings(&buf, 0, 26);
 	print_strbuf(&buf, "MPATHzz WWID676\n");
 	mock_bindings_file(get_strbuf_str(&buf));
@@ -941,25 +901,6 @@ static void lb_nomatch_b_a_aa_zz(void **state)
 	mock_unused_alias("MPATHab");
 	rc = lookup_binding(NULL, "WWID703", &alias, "MPATH", 1);
 	assert_int_equal(rc, 28);
-	assert_ptr_equal(alias, NULL);
-}
-
-static void lb_nomatch_b_z_a_unsorted(void **state)
-{
-	int rc;
-	char *alias;
-
-	/*
-	 * With unsorted bindings (shouldn't happen normally), get_free_id()
-	 * plays safe and returns MPATHaa as first free entry.
-	 */
-	mock_bindings_file_unsorted("MPATHb WWID1\n"
-				    "MPATHz WWID26\n"
-				    "MPATHa WWID0\n");
-	expect_condlog(3, NOMATCH_WWID_STR("WWID2"));
-	mock_unused_alias("MPATHaa");
-	rc = lookup_binding(NULL, "WWID2", &alias, "MPATH", 1);
-	assert_int_equal(rc, 27);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -1027,9 +968,9 @@ static void lb_nomatch_int_max_used(void **state)
 	mock_bindings_file(get_strbuf_str(&buf));
 	expect_condlog(3, NOMATCH_WWID_STR("WWIDNOMORE"));
 	mock_used_alias("MPATHa", "WWIDNOMORE");
-	expect_condlog(0, NOMORE_STR);
+	mock_unused_alias("MPATHab");
 	rc = lookup_binding(NULL, "WWIDNOMORE", &alias, "MPATH", 1);
-	assert_int_equal(rc, -1);
+	assert_int_equal(rc, 28);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -1077,9 +1018,9 @@ static void lb_nomatch_int_max_m1_1_used(void **state)
 	mock_bindings_file(get_strbuf_str(&buf));
 	expect_condlog(3, NOMATCH_WWID_STR("WWIDMAX"));
 	mock_used_alias("MPATHa", "WWIDMAX");
-	mock_unused_alias("MPATH" MPATH_ID_INT_MAX);
+	mock_unused_alias("MPATHab");
 	rc = lookup_binding(NULL, "WWIDMAX", &alias, "MPATH", 1);
-	assert_int_equal(rc, INT_MAX);
+	assert_int_equal(rc, 28);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -1095,10 +1036,10 @@ static void lb_nomatch_int_max_m1_2_used(void **state)
 
 	expect_condlog(3, NOMATCH_WWID_STR("WWIDMAX"));
 	mock_used_alias("MPATHa", "WWIDMAX");
-	mock_used_alias("MPATH" MPATH_ID_INT_MAX, "WWIDMAX");
-	expect_condlog(0, NOMORE_STR);
+	mock_used_alias("MPATHab", "WWIDMAX");
+	mock_unused_alias("MPATHac");
 	rc = lookup_binding(NULL, "WWIDMAX", &alias, "MPATH", 1);
-	assert_int_equal(rc, -1);
+	assert_int_equal(rc, 29);
 	assert_ptr_equal(alias, NULL);
 }
 #endif
@@ -1133,7 +1074,6 @@ static int test_lookup_binding(void)
 		cmocka_unit_test_teardown(lb_nomatch_b_aa_a, teardown_bindings),
 		cmocka_unit_test_teardown(lb_nomatch_b_a_aa, teardown_bindings),
 		cmocka_unit_test_teardown(lb_nomatch_b_a_aa_zz, teardown_bindings),
-		cmocka_unit_test_teardown(lb_nomatch_b_z_a_unsorted, teardown_bindings),
 		cmocka_unit_test_teardown(lb_nomatch_b_a, teardown_bindings),
 		cmocka_unit_test_teardown(lb_nomatch_b_a_3_used, teardown_bindings),
 #ifdef MPATH_ID_INT_MAX
@@ -1593,14 +1533,14 @@ static void gufa_nomatch_b_f_a(void **state) {
 				 "MPATHf WWID6\n"
 				 "MPATHa WWID0\n");
 
-	mock_bindings_file_unsorted(bindings);
+	mock_bindings_file(bindings);
 	expect_condlog(3, NOMATCH_WWID_STR("WWID7"));
-	mock_unused_alias("MPATHg");
+	mock_unused_alias("MPATHc");
 
-	mock_allocate_binding_len("MPATHg", "WWID7", sizeof(bindings) - 1);
+	mock_allocate_binding_len("MPATHc", "WWID7", sizeof(bindings) - 1);
 
 	alias = get_user_friendly_alias("WWID7", "x", "", "MPATH", false);
-	assert_string_equal(alias, "MPATHg");
+	assert_string_equal(alias, "MPATHc");
 	free(alias);
 }
 
