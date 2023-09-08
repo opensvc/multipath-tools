@@ -356,83 +356,34 @@ int get_free_id(const Bindings *bindings, const char *prefix, const char *map_ww
 {
 	const struct binding *bdg;
 	int i, id = 1;
-	int biggest_id = 1;
-	int smallest_bigger_id = INT_MAX;
 
 	vector_foreach_slot(bindings, bdg, i) {
 		int curr_id = scan_devname(bdg->alias, prefix);
 
-		/*
-		 * Find an unused index - explanation of the algorithm
-		 *
-		 * ID: 1 = mpatha, 2 = mpathb, ...
-		 *
-		 * We assume the bindings are unsorted. The only constraint
-		 * is that no ID occurs more than once. IDs that occur in the
-		 * bindings are called "used".
-		 *
-		 * We call the list 1,2,3,..., exactly in this order, the list
-		 * of "expected" IDs. The variable "id" always holds the next
-		 * "expected" ID, IOW the last "expected" ID encountered plus 1.
-		 * Thus all IDs below "id" are known to be used. However, at the
-		 * end of the loop, the value of "id" isn't necessarily unused.
-		 *
-		 * "smallest_bigger_id" is the smallest used ID that was
-		 * encountered while it was larger than the next "expected" ID
-		 * at that iteration. Let X be some used ID. If all IDs below X
-		 * are used and encountered in the right sequence before X, "id"
-		 * will be > X when the loop ends. Otherwise, X was encountered
-		 * "out of order", the condition (X > id) holds when X is
-		 * encountered, and "smallest_bigger_id" will be set to X; i.e.
-		 * it will be less or equal than X when the loop ends.
-		 *
-		 * At the end of the loop, (id < smallest_bigger_id) means that
-		 * the value of "id" had been encountered neither in order nor
-		 * out of order, and is thus unused. (id >= smallest_bigger_id)
-		 * means that "id"'s value is in use. In this case, we play safe
-		 * and use "biggest_id + 1" as the next value to try.
-		 *
-		 * biggest_id is always > smallest_bigger_id, except in the
-		 * "perfectly ordered" case.
-		 */
-		if (curr_id == id) {
-			if (id < INT_MAX)
-				id++;
-			else {
-				id = -1;
-				break;
-			}
+		if (curr_id == -1)
+			continue;
+		if (id > curr_id) {
+			condlog(0, "%s: ERROR: bindings are not sorted", __func__);
+			return -1;
 		}
-		if (curr_id > biggest_id)
-			biggest_id = curr_id;
-
-		if (curr_id > id && curr_id < smallest_bigger_id)
-			smallest_bigger_id = curr_id;
-	}
-
-	if (id >= smallest_bigger_id)
-		id = biggest_id < INT_MAX ? biggest_id + 1 : -1;
-
-	if (id > 0) {
-		while(id_already_taken(id, prefix, map_wwid)) {
-			if (id == INT_MAX) {
-				id = -1;
-				break;
-			}
+		while (id < curr_id && id_already_taken(id, prefix, map_wwid))
 			id++;
-			if (id == smallest_bigger_id) {
-				if (biggest_id == INT_MAX) {
-					id = -1;
-					break;
-				}
-				if (biggest_id >= smallest_bigger_id)
-					id = biggest_id + 1;
-			}
-		}
+		if (id < curr_id)
+			return id;
+		id++;
+		if (id <= 0)
+			break;
 	}
 
-	if (id < 0)
+	for (; id > 0; id++) {
+		if (!id_already_taken(id, prefix, map_wwid))
+			break;
+	}
+
+	if (id <= 0) {
+		id = -1;
 		condlog(0, "no more available user_friendly_names");
+	}
 	return id;
 }
 
