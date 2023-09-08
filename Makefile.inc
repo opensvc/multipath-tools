@@ -133,3 +133,6 @@ NV_VERSION_SCRIPT = $(DEVLIB:%.so=%-nv.version)
 	@grep -P '^[ \t]+[a-zA-Z_][a-zA-Z0-9_]*;' $< >>$@
 	@printf 'local:\n\t*;\n};\n' >>$@
 
+%:	%.in
+	@echo creating $@
+	$(Q)sed 's:@CONFIGFILE@:'$(configfile)':g;s:@CONFIGDIR@:'$(configdir)':g;s:@STATE_DIR@:'$(statedir)':g;s:@RUNTIME_DIR@:'$(runtimedir)':g' $< >$@

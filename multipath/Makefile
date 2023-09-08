@@ -3,7 +3,9 @@
 #
 include ../Makefile.inc
 
-EXEC := multipath
+EXEC      := multipath
+MANPAGES  := multipath.8 multipath.conf.5
+GENERATED := $(MANPAGES) multipath.rules tmpfiles.conf
 
 CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathcmddir)
 CFLAGS += $(BIN_CFLAGS)
@@ -13,7 +15,7 @@ LIBDEPS += -L$(multipathdir) -lmultipath -L$(mpathutildir) -lmpathutil \
 
 OBJS := main.o
 
-all: $(EXEC) multipath.rules tmpfiles.conf
+all: $(EXEC) $(GENERATED)
 
 $(EXEC): $(OBJS) $(multipathdir)/libmultipath.so $(mpathcmddir)/libmpathcmd.so
 	@echo building $@ because of $?
@@ -47,15 +49,12 @@ uninstall:
 	$(Q)$(RM) $(DESTDIR)$(libudevdir)/rules.d/56-multipath.rules
 	$(Q)$(RM) $(DESTDIR)$(mandir)/man8/$(EXEC).8
 	$(Q)$(RM) $(DESTDIR)$(mandir)/man5/$(EXEC).conf.5
+	$(Q)$(RM) $(DESTDIR)$(tmpfilesdir)/multipath.conf
 
 clean: dep_clean
-	$(Q)$(RM) core *.o $(EXEC) multipath.rules tmpfiles.conf
+	$(Q)$(RM) core *.o $(EXEC) $(GENERATED)
 
 include $(wildcard $(OBJS:.o=.d))
 
 dep_clean:
 	$(Q)$(RM) $(OBJS:.o=.d)
-
-%:	%.in
-	@echo creating $@
-	$(Q)sed 's,@RUNTIME_DIR@,$(runtimedir),' $< >$@

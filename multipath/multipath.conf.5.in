@@ -13,14 +13,14 @@
 .SH NAME
 .\" ----------------------------------------------------------------------------
 .
-multipath.conf \- multipath daemon configuration file.
+@CONFIGFILE@, @CONFIGDIR@/*.conf \- multipath daemon configuration file.
 .
 .
 .\" ----------------------------------------------------------------------------
 .SH DESCRIPTION
 .\" ----------------------------------------------------------------------------
 .
-.B "/etc/multipath.conf"
+.B "@CONFIGFILE@"
 is the configuration file for the multipath daemon. It is used to
 overwrite the built-in configuration table of \fBmultipathd\fP.
 Any line whose first non-white-space character is a '#' is considered
@@ -28,6 +28,15 @@ a comment line. Empty lines are ignored.
 .PP
 Currently used multipathd configuration can be displayed with the \fBmultipath -t\fR
 or \fBmultipathd show config\fR command.
+.
+.PP
+Additional configuration can be made in drop-in files under
+.B @CONFIGDIR@.
+Files ending in \fI.conf\fR in this directory are read
+in alphabetical order, after reading \fI@CONFIGFILE@\fR.
+They use the same syntax as \fI@CONFIGFILE@\fR itself,
+and support all sections and keywords. If a keyword occurs in the same section
+in multiple files, the last occurence will take precedence over all others.
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -85,7 +94,7 @@ not mandatory.
 .
 .LP
 .B Note on regular expressions:
-The \fImultipath.conf\fR syntax allows many attribute values to be specified as POSIX
+The \fI@CONFIGFILE@\fR syntax allows many attribute values to be specified as POSIX
 Extended Regular Expressions (see \fBregex\fR(7)). These regular expressions
 are \fBcase sensitive\fR and \fBnot anchored\fR, thus the expression "bar" matches "barbie",
 "rhabarber", and "wunderbar", but not "Barbie". To avoid unwanted substring
@@ -711,7 +720,7 @@ The default is: \fBno\fR
 .B user_friendly_names
 If set to
 .I yes
-, using the bindings file \fI/etc/multipath/bindings\fR to assign a persistent
+, using the bindings file \fI@STATE_DIR@/bindings\fR to assign a persistent
 and unique alias to the multipath, in the form of mpath<n>. If set to
 .I no
 use the WWID as the alias. In either case this be will
@@ -790,7 +799,7 @@ The full pathname of the binding file to be used when the user_friendly_names
 option is set.
 .RS
 .TP
-The default is: \fB/etc/multipath/bindings\fR
+The default is: \fB@STATE_DIR@/bindings\fR
 .RE
 .
 .
@@ -801,7 +810,7 @@ The full pathname of the WWIDs file, which is used by multipath to keep track
 of the WWIDs for LUNs it has created multipath devices on in the past.
 .RS
 .TP
-The default is: \fB/etc/multipath/wwids\fR
+The default is: \fB@STATE_DIR@/wwids\fR
 .RE
 .
 .
@@ -813,7 +822,7 @@ track of the persistent reservation key used for a specific WWID, when
 \fIreservation_key\fR is set to \fBfile\fR.
 .RS
 .TP
-The default is: \fB/etc/multipath/prkeys\fR
+The default is: \fB@STATE_DIR@/prkeys\fR
 .RE
 .
 .
@@ -872,7 +881,7 @@ The default is: \fBno\fR
 .I yes
 and the SCSI layer has already attached a hardware_handler to the device,
 multipath will not force the device to use the hardware_handler specified by
-multipath.conf. If the SCSI layer has not attached a hardware handler,
+@CONFIGFILE@. If the SCSI layer has not attached a hardware handler,
 multipath will continue to use its configured hardware handler.
 .RS
 .PP
@@ -1559,7 +1568,7 @@ given device, the attributes of all matching entries are applied to it.
 If an attribute is specified in several matching device subsections,
 later entries take precedence. Thus, entries in files under \fIconfig_dir\fR (in
 reverse alphabetical order) have the highest precedence, followed by entries
-in \fImultipath.conf\fR; the built-in hardware table has the lowest
+in \fI@CONFIGFILE@\fR; the built-in hardware table has the lowest
 precedence. Inside a configuration file, later entries have higher precedence
 than earlier ones.
 .LP
