@@ -932,16 +932,15 @@ static void lb_nomatch_b_a_aa_zz(void **state)
 
 	/*
 	 * add_bindings() sorts alphabetically. ("a", "aa", "ab", "b", "c", ...)
-	 * lookup_binding finds MPATHaaa as next free entry, because MPATHaa is
-	 * found before MPATHb, and MPATHzz was in the bindings, too.
+	 * lookup_binding finds MPATHab as next free entry.
 	 */
 	fill_bindings(&buf, 0, 26);
 	print_strbuf(&buf, "MPATHzz WWID676\n");
 	mock_bindings_file(get_strbuf_str(&buf));
 	expect_condlog(3, NOMATCH_WWID_STR("WWID703"));
-	mock_unused_alias("MPATHaaa");
+	mock_unused_alias("MPATHab");
 	rc = lookup_binding(NULL, "WWID703", &alias, "MPATH", 1);
-	assert_int_equal(rc, 703);
+	assert_int_equal(rc, 28);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -998,13 +997,8 @@ static void lb_nomatch_b_a_3_used(void **state)
 
 #ifdef MPATH_ID_INT_MAX
 /*
- * The bindings will be sorted by alias, alphabetically, which is not
- * the same as the "numeric" sort order for user-friendly aliases.
- * get_free_id() selects the highest used ID + 1 if an unsorted entry
- * is encountered in the bindings table and it's id is equal to the
- * next "expected" id. This happens if all IDs from "a" to "aa" are
- * in the table. If the INT_MAX entry is in the table, too, it will
- * overflow.
+ * The bindings will be sorted by alias. Therefore we have no chance to
+ * simulate a "full" table.
  */
 static void lb_nomatch_int_max(void **state)
 {
@@ -1016,9 +1010,9 @@ static void lb_nomatch_int_max(void **state)
 	print_strbuf(&buf, "MPATH%s WWIDMAX\n", MPATH_ID_INT_MAX);
 	mock_bindings_file(get_strbuf_str(&buf));
 	expect_condlog(3, NOMATCH_WWID_STR("WWIDNOMORE"));
-	expect_condlog(0, NOMORE_STR);
+	mock_unused_alias("MPATHab");
 	rc = lookup_binding(NULL, "WWIDNOMORE", &alias, "MPATH", 1);
-	assert_int_equal(rc, -1);
+	assert_int_equal(rc, 28);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -1049,9 +1043,9 @@ static void lb_nomatch_int_max_m1(void **state)
 	print_strbuf(&buf, "MPATH%s WWIDMAXM1\n", MPATH_ID_INT_MAX_m1);
 	mock_bindings_file(get_strbuf_str(&buf));
 	expect_condlog(3, NOMATCH_WWID_STR("WWIDMAX"));
-	mock_unused_alias("MPATH" MPATH_ID_INT_MAX);
+	mock_unused_alias("MPATHab");
 	rc = lookup_binding(NULL, "WWIDMAX", &alias, "MPATH", 1);
-	assert_int_equal(rc, INT_MAX);
+	assert_int_equal(rc, 28);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -1065,10 +1059,10 @@ static void lb_nomatch_int_max_m1_used(void **state)
 	print_strbuf(&buf, "MPATH%s WWIDMAXM1\n", MPATH_ID_INT_MAX_m1);
 	mock_bindings_file(get_strbuf_str(&buf));
 	expect_condlog(3, NOMATCH_WWID_STR("WWIDMAX"));
-	mock_used_alias("MPATH" MPATH_ID_INT_MAX, "WWIDMAX");
-	expect_condlog(0, NOMORE_STR);
+	mock_used_alias("MPATHab", "WWIDMAX");
+	mock_unused_alias("MPATHac");
 	rc = lookup_binding(NULL, "WWIDMAX", &alias, "MPATH", 1);
-	assert_int_equal(rc, -1);
+	assert_int_equal(rc, 29);
 	assert_ptr_equal(alias, NULL);
 }
 
