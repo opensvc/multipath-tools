@@ -66,9 +66,9 @@
 #define MAX_DEV_LOSS_TMO	UINT_MAX
 #define DEFAULT_PIDFILE		RUNTIME_DIR "/multipathd.pid"
 #define DEFAULT_SOCKET		"/org/kernel/linux/storage/multipathd"
-#define DEFAULT_BINDINGS_FILE	"/etc/multipath/bindings"
-#define DEFAULT_WWIDS_FILE	"/etc/multipath/wwids"
-#define DEFAULT_PRKEYS_FILE    "/etc/multipath/prkeys"
+#define DEFAULT_BINDINGS_FILE	STATE_DIR "/bindings"
+#define DEFAULT_WWIDS_FILE	STATE_DIR "/wwids"
+#define DEFAULT_PRKEYS_FILE	STATE_DIR "/prkeys"
 #define MULTIPATH_SHM_BASE	RUNTIME_DIR "/multipath/"
 
 
