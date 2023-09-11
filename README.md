@@ -89,9 +89,17 @@ The following variables can be passed to the `make` command line:
  * `plugindir="/some/path"`: directory where libmultipath plugins (path
    checkers, prioritizers, and foreign multipath support) will be looked up.
    This used to be the run-time option `multipath_dir` in earlier versions.
- * `configdir="/some/path"` : directory to search for configuration files.
+   The default is `$(prefix)/$(LIB)/multipath`, where `$(LIB)` is `lib64` on
+   systems that have `/lib64`, and `lib` otherwise.
+ * `configfile="/some/path`": The path to the main configuration file.
+    The defalt is `$(etc_prefix)/etc/multipath.conf`.
+ * `configdir="/some/path"` : directory to search for additional configuration files.
     This used to be the run-time option `config_dir` in earlier versions.
-	The default is `/etc/multipath/conf.d`.
+	The default is `$(etc_prefix)/etc/multipath/conf.d`.
+ * `statedir="/some/path"`: The path of the directory where multipath-tools
+    stores run-time settings that need persist between reboots, such as known
+	WWIDs, user-friendly names, and persistent reservation keys.
+	The default is `$(etc_prefix)/etc/multipath`.
  * `READLINE=libedit` or `READLINE=libreadline`: enable command line history
     and TAB completion in the interactive mode *(which is entered with `multipathd -k` or `multipathc`)*.
     The respective development package will be required for building.
@@ -119,21 +127,27 @@ The following variables can be passed to the `make` command line:
 ### Installation Paths
 
  * `prefix`: The directory prefix for (almost) all files to be installed.
-   Distributions may want to set this to `/usr`.
-   **Note**: for multipath-tools, unlike many other packages, `prefix`
-   defaults to the empty string, which resolves to the root directory (`/`).
+   "Usr-merged" distributions[^systemd] may want to set this to `/usr`. The
+   default is empty (`""`).
  * `usr_prefix`: where to install those parts of the code that aren't necessary
-   for booting. You may want to set this to `/usr` if `prefix` is empty.
- * `systemd_prefix`: Prefix for systemd-related files. It defaults to `/usr`.
-   Some systemd installations use separate `prefix` and `rootprefix`. On such
-   a distribution, set `prefix`, and override `unitdir` to use systemd's
-   `rootprefix`.
+   for booting. Non-usr-merged distributions[^systemd] may want to set this to
+   `/usr`. The default is `$(prefix)`.
+ * `systemd_prefix`: Prefix for systemd-related files[^systemd]. The default is `/usr`.
+ * `etc_prefix`: The prefix for configuration files. "Usr-merged"
+   distributions with immutable `/usr`[^systemd] may want to set this to
+   `/etc`. The default is `$(prefix)`.
  * `LIB`: the subdirectory under `prefix` where shared libraries will be
    installed. By default, the makefile uses `/lib64` if this directory is
    found on the build system, and `/lib` otherwise.
    
-See also `configdir` and `plugindir` above. See `Makefile.inc` for more
-fine-grained control.
+The options `configdir`, `plugindir`, `configfile`, and `statedir` above can
+be used for setting indvidual paths where the `prefix` variables don't provide
+sufficient control. See `Makefile.inc` for even more fine-grained control.
+
+[^systemd]: Some systemd installations use separate `prefix` and `rootprefix`. 
+	On such a distribution, set `prefix`, and override `unitdir` to use systemd's
+   `rootprefix`. Recent systemd releases generally require everything to be
+	installed under `/usr` (so-called "usr-merged" distribution). On "usr-
 
 ### Compiler Options
 
