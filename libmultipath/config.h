@@ -207,9 +207,6 @@ struct config {
 	char * uid_attribute;
 	char * features;
 	char * hwhandler;
-	char * bindings_file;
-	char * wwids_file;
-	char * prkeys_file;
 	char * prio_name;
 	char * prio_args;
 	char * checker_name;

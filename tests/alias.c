@@ -1264,10 +1264,10 @@ static void al_a(void **state)
 	will_return(__wrap_write, ln);
 	will_return(__wrap_write, strlen(BINDINGS_FILE_HEADER) + strlen(ln));
 	will_return(__wrap_rename, 0);
-	expect_condlog(1, "updated bindings file foo");
+	expect_condlog(1, "updated bindings file " DEFAULT_BINDINGS_FILE);
 	expect_condlog(3, NEW_STR("MPATHa", "WWIDa"));
 
-	alias = allocate_binding("foo", "WWIDa", 1, "MPATH");
+	alias = allocate_binding("WWIDa", 1, "MPATH");
 	assert_ptr_not_equal(alias, NULL);
 	assert_string_equal(alias, "MPATHa");
 	check_bindings_size(1);
@@ -1283,10 +1283,10 @@ static void al_zz(void **state)
 	will_return(__wrap_write, ln);
 	will_return(__wrap_write, strlen(BINDINGS_FILE_HEADER) + strlen(ln));
 	will_return(__wrap_rename, 0);
-	expect_condlog(1, "updated bindings file foo");
+	expect_condlog(1, "updated bindings file " DEFAULT_BINDINGS_FILE);
 	expect_condlog(3, NEW_STR("MPATHzz", "WWIDzz"));
 
-	alias = allocate_binding("foo", "WWIDzz", 26*26 + 26, "MPATH");
+	alias = allocate_binding("WWIDzz", 26*26 + 26, "MPATH");
 	assert_ptr_not_equal(alias, NULL);
 	assert_string_equal(alias, "MPATHzz");
 	check_bindings_size(1);
@@ -1298,7 +1298,7 @@ static void al_0(void **state)
 	char *alias;
 
 	expect_condlog(0, "allocate_binding: cannot allocate new binding for id 0\n");
-	alias = allocate_binding(0, "WWIDa", 0, "MPATH");
+	alias = allocate_binding("WWIDa", 0, "MPATH");
 	assert_ptr_equal(alias, NULL);
 	check_bindings_size(0);
 }
@@ -1308,7 +1308,7 @@ static void al_m2(void **state)
 	char *alias;
 
 	expect_condlog(0, "allocate_binding: cannot allocate new binding for id -2\n");
-	alias = allocate_binding(0, "WWIDa", -2, "MPATH");
+	alias = allocate_binding("WWIDa", -2, "MPATH");
 	assert_ptr_equal(alias, NULL);
 	check_bindings_size(0);
 }
@@ -1325,10 +1325,10 @@ static void al_write_partial(void **state)
 	will_return(__wrap_write, ln + sizeof(ln) - 2);
 	will_return(__wrap_write, 1);
 	will_return(__wrap_rename, 0);
-	expect_condlog(1, "updated bindings file foo");
+	expect_condlog(1, "updated bindings file " DEFAULT_BINDINGS_FILE);
 	expect_condlog(3, "Created new binding [MPATHa] for WWID [WWIDa]\n");
 
-	alias = allocate_binding("foo", "WWIDa", 1, "MPATH");
+	alias = allocate_binding("WWIDa", 1, "MPATH");
 	assert_ptr_not_equal(alias, NULL);
 	assert_string_equal(alias, "MPATHa");
 	check_bindings_size(1);
@@ -1350,7 +1350,7 @@ static void al_write_short(void **state)
 	expect_condlog(1, "failed to write new bindings file");
 	expect_condlog(1, "allocate_binding: deleting binding MPATHa for WWIDa");
 
-	alias = allocate_binding("foo", "WWIDa", 1, "MPATH");
+	alias = allocate_binding("WWIDa", 1, "MPATH");
 	assert_ptr_equal(alias, NULL);
 	check_bindings_size(0);
 }
@@ -1366,7 +1366,7 @@ static void al_write_err(void **state)
 	expect_condlog(1, "failed to write new bindings file");
 	expect_condlog(1, "allocate_binding: deleting binding MPATHa for WWIDa");
 
-	alias = allocate_binding("foo", "WWIDa", 1, "MPATH");
+	alias = allocate_binding("WWIDa", 1, "MPATH");
 	assert_ptr_equal(alias, NULL);
 	check_bindings_size(0);
 }
@@ -1383,7 +1383,7 @@ static void al_rename_err(void **state)
 
 	expect_condlog(0, "update_bindings_file: rename: Read-only file system");
 	expect_condlog(1, "allocate_binding: deleting binding MPATHa for WWIDa");
-	alias = allocate_binding("foo", "WWIDa", 1, "MPATH");
+	alias = allocate_binding("WWIDa", 1, "MPATH");
 	assert_ptr_equal(alias, NULL);
 	check_bindings_size(0);
 }
@@ -1415,7 +1415,7 @@ static int test_allocate_binding(void)
 			    strlen(BINDINGS_FILE_HEADER) + (len) + strlen(ln)); \
 		will_return(__wrap_rename, err);			\
 		if (err == 0) {						\
-			expect_condlog(1, "updated bindings file x\n");	\
+			expect_condlog(1, "updated bindings file " DEFAULT_BINDINGS_FILE);	\
 			expect_condlog(3, NEW_STR(alias, wwid));	\
 		} else {						\
 			expect_condlog(0, "update_bindings_file: rename: " msg "\n"); \
@@ -1441,7 +1441,7 @@ static void gufa_empty_new_rw(void **state) {
 	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
 
 	mock_allocate_binding("MPATHa", "WWID0");
-	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", false);
+	alias = get_user_friendly_alias("WWID0", "", "MPATH", false);
 	assert_string_equal(alias, "MPATHa");
 	free(alias);
 }
@@ -1454,7 +1454,7 @@ static void gufa_empty_new_ro_1(void **state) {
 	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
 	mock_allocate_binding_err("MPATHa", "WWID0", -EROFS, "Read-only file system");
 
-	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", false);
+	alias = get_user_friendly_alias("WWID0", "", "MPATH", false);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -1465,7 +1465,7 @@ static void gufa_empty_new_ro_2(void **state) {
 	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
 	mock_unused_alias("MPATHa");
 
-	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", true);
+	alias = get_user_friendly_alias("WWID0", "", "MPATH", true);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -1477,7 +1477,7 @@ static void gufa_match_a_unused(void **state) {
 	mock_unused_alias("MPATHa");
 	expect_condlog(3, EXISTING_STR("MPATHa", "WWID0"));
 
-	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", true);
+	alias = get_user_friendly_alias("WWID0", "", "MPATH", true);
 	assert_string_equal(alias, "MPATHa");
 	free(alias);
 }
@@ -1490,7 +1490,7 @@ static void gufa_match_a_self(void **state) {
 	mock_self_alias("MPATHa", "WWID0");
 	expect_condlog(3, EXISTING_STR("MPATHa", "WWID0"));
 
-	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", true);
+	alias = get_user_friendly_alias("WWID0", "", "MPATH", true);
 	assert_string_equal(alias, "MPATHa");
 	free(alias);
 }
@@ -1503,7 +1503,7 @@ static void gufa_match_a_used(void **state) {
 	expect_condlog(3, FOUND_STR("MPATHa", "WWID0"));
 	mock_used_alias("MPATHa", "WWID0");
 
-	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", true);
+	alias = get_user_friendly_alias("WWID0", "", "MPATH", true);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -1518,7 +1518,7 @@ static void gufa_nomatch_a_c(void **state) {
 
 	mock_allocate_binding_len("MPATHb", "WWID1", strlen(bindings));
 
-	alias = get_user_friendly_alias("WWID1", "x", "", "MPATH", false);
+	alias = get_user_friendly_alias("WWID1", "", "MPATH", false);
 	assert_string_equal(alias, "MPATHb");
 	free(alias);
 }
@@ -1534,7 +1534,7 @@ static void gufa_nomatch_c_a(void **state) {
 
 	mock_allocate_binding_len("MPATHb", "WWID1", sizeof(bindings) - 1);
 
-	alias = get_user_friendly_alias("WWID1", "x", "", "MPATH", false);
+	alias = get_user_friendly_alias("WWID1", "", "MPATH", false);
 	assert_string_equal(alias, "MPATHb");
 	free(alias);
 }
@@ -1550,7 +1550,7 @@ static void gufa_nomatch_c_b(void **state) {
 
 	mock_allocate_binding_len("MPATHa", "WWID0", sizeof(bindings) - 1);
 
-	alias = get_user_friendly_alias("WWID0", "x", "", "MPATH", false);
+	alias = get_user_friendly_alias("WWID0", "", "MPATH", false);
 	assert_string_equal(alias, "MPATHa");
 	free(alias);
 }
@@ -1567,7 +1567,7 @@ static void gufa_nomatch_c_b_used(void **state) {
 
 	mock_allocate_binding_len("MPATHd", "WWID4", sizeof(bindings) - 1);
 
-	alias = get_user_friendly_alias("WWID4", "x", "", "MPATH", false);
+	alias = get_user_friendly_alias("WWID4", "", "MPATH", false);
 	assert_string_equal(alias, "MPATHd");
 	free(alias);
 }
@@ -1584,7 +1584,7 @@ static void gufa_nomatch_b_f_a(void **state) {
 
 	mock_allocate_binding_len("MPATHc", "WWID7", sizeof(bindings) - 1);
 
-	alias = get_user_friendly_alias("WWID7", "x", "", "MPATH", false);
+	alias = get_user_friendly_alias("WWID7", "", "MPATH", false);
 	assert_string_equal(alias, "MPATHc");
 	free(alias);
 }
@@ -1599,7 +1599,7 @@ static void gufa_nomatch_b_aa_a(void **state) {
 	mock_unused_alias("MPATHab");
 	mock_allocate_binding_len("MPATHab", "WWID28", get_strbuf_len(&buf));
 
-	alias = get_user_friendly_alias("WWID28", "x", "", "MPATH", false);
+	alias = get_user_friendly_alias("WWID28", "", "MPATH", false);
 	assert_string_equal(alias, "MPATHab");
 	free(alias);
 }
@@ -1616,7 +1616,7 @@ static void gufa_nomatch_b_f_a_sorted(void **state) {
 
 	mock_allocate_binding_len("MPATHc", "WWID7", sizeof(bindings) - 1);
 
-	alias = get_user_friendly_alias("WWID7", "x", "", "MPATH", false);
+	alias = get_user_friendly_alias("WWID7", "", "MPATH", false);
 	assert_string_equal(alias, "MPATHc");
 	free(alias);
 }
@@ -1632,7 +1632,7 @@ static void gufa_old_empty(void **state) {
 	mock_allocate_binding("MPATHz", "WWID0");
 	expect_condlog(2, ALLOC_STR("MPATHz", "WWID0"));
 
-	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	alias = get_user_friendly_alias("WWID0", "MPATHz", "MPATH", false);
 	assert_string_equal(alias, "MPATHz");
 	free(alias);
 }
@@ -1644,7 +1644,7 @@ static void gufa_old_match(void **state) {
 			   "MPATHz WWID0");
 	expect_condlog(3, FOUND_ALIAS_STR("MPATHz", "WWID0"));
 
-	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	alias = get_user_friendly_alias("WWID0", "MPATHz", "MPATH", false);
 	assert_string_equal(alias, "MPATHz");
 	free(alias);
 }
@@ -1661,7 +1661,7 @@ static void gufa_old_match_other(void **state) {
 
 	mock_allocate_binding_len("MPATHa", "WWID0", sizeof(bindings) - 1);
 
-	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	alias = get_user_friendly_alias("WWID0", "MPATHz", "MPATH", false);
 	assert_string_equal(alias, "MPATHa");
 	free(alias);
 }
@@ -1678,7 +1678,7 @@ static void gufa_old_match_other_used(void **state) {
 	mock_unused_alias("MPATHb");
 
 	mock_allocate_binding_len("MPATHb", "WWID0", sizeof(bindings) - 1);
-	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	alias = get_user_friendly_alias("WWID0", "MPATHz", "MPATH", false);
 	assert_string_equal(alias, "MPATHb");
 	free(alias);
 }
@@ -1695,7 +1695,7 @@ static void gufa_old_match_other_wwidmatch(void **state) {
 	mock_unused_alias("MPATHc");
 	expect_condlog(3, EXISTING_STR("MPATHc", "WWID2"));
 
-	alias = get_user_friendly_alias("WWID2", "x", "MPATHz", "MPATH", false);
+	alias = get_user_friendly_alias("WWID2", "MPATHz", "MPATH", false);
 	assert_string_equal(alias, "MPATHc");
 	free(alias);
 }
@@ -1711,7 +1711,7 @@ static void gufa_old_match_other_wwidmatch_used(void **state) {
 	expect_condlog(3, FOUND_STR("MPATHc", "WWID2"));
 	mock_used_alias("MPATHc", "WWID2");
 
-	alias = get_user_friendly_alias("WWID2", "x", "MPATHz", "MPATH", false);
+	alias = get_user_friendly_alias("WWID2", "MPATHz", "MPATH", false);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -1725,7 +1725,7 @@ static void gufa_old_nomatch_wwidmatch(void **state) {
 	mock_unused_alias("MPATHa");
 	expect_condlog(3, EXISTING_STR("MPATHa", "WWID0"));
 
-	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	alias = get_user_friendly_alias("WWID0", "MPATHz", "MPATH", false);
 	assert_string_equal(alias, "MPATHa");
 	free(alias);
 }
@@ -1739,7 +1739,7 @@ static void gufa_old_nomatch_wwidmatch_used(void **state) {
 	expect_condlog(3, FOUND_STR("MPATHa", "WWID0"));
 	mock_used_alias("MPATHa", "WWID0");
 
-	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	alias = get_user_friendly_alias("WWID0", "MPATHz", "MPATH", false);
 	assert_ptr_equal(alias, NULL);
 }
 
@@ -1754,7 +1754,7 @@ static void gufa_old_nomatch_nowwidmatch(void **state) {
 	mock_allocate_binding_len("MPATHz", "WWID0", sizeof(bindings) - 1);
 	expect_condlog(2, ALLOC_STR("MPATHz", "WWID0"));
 
-	alias = get_user_friendly_alias("WWID0", "x", "MPATHz", "MPATH", false);
+	alias = get_user_friendly_alias("WWID0", "MPATHz", "MPATH", false);
 	assert_string_equal(alias, "MPATHz");
 	free(alias);
 }

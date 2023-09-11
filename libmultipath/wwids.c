@@ -94,12 +94,8 @@ replace_wwids(vector mp)
 	struct multipath * mpp;
 	size_t len;
 	int ret = -1;
-	struct config *conf;
 
-	conf = get_multipath_config();
-	pthread_cleanup_push(put_multipath_config, conf);
-	fd = open_file(conf->wwids_file, &can_write, WWIDS_FILE_HEADER);
-	pthread_cleanup_pop(1);
+	fd = open_file(DEFAULT_WWIDS_FILE, &can_write, WWIDS_FILE_HEADER);
 	if (fd < 0)
 		goto out;
 
@@ -200,7 +196,6 @@ remove_wwid(char *wwid) {
 	int len, can_write;
 	char *str;
 	int ret = -1;
-	struct config *conf;
 
 	len = strlen(wwid) + 4; /* two slashes the newline and a zero byte */
 	str = malloc(len);
@@ -216,10 +211,7 @@ remove_wwid(char *wwid) {
 		goto out;
 	}
 	condlog(3, "removing line '%s' from wwids file", str);
-	conf = get_multipath_config();
-	pthread_cleanup_push(put_multipath_config, conf);
-	fd = open_file(conf->wwids_file, &can_write, WWIDS_FILE_HEADER);
-	pthread_cleanup_pop(1);
+	fd = open_file(DEFAULT_WWIDS_FILE, &can_write, WWIDS_FILE_HEADER);
 
 	if (fd < 0) {
 		ret = -1;
@@ -244,12 +236,8 @@ check_wwids_file(char *wwid, int write_wwid)
 {
 	int fd, can_write, found, ret;
 	FILE *f;
-	struct config *conf;
 
-	conf = get_multipath_config();
-	pthread_cleanup_push(put_multipath_config, conf);
-	fd = open_file(conf->wwids_file, &can_write, WWIDS_FILE_HEADER);
-	pthread_cleanup_pop(1);
+	fd = open_file(DEFAULT_WWIDS_FILE, &can_write, WWIDS_FILE_HEADER);
 	if (fd < 0)
 		return -1;
 

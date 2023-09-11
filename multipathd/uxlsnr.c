@@ -203,7 +203,6 @@ static void reset_watch(int notify_fd, struct watch_descriptors *wds,
 	int dir_reset = 0;
 	int conf_reset = 0;
 	int mp_reset = 0;
-	char *bindings_file __attribute__((cleanup(cleanup_charp))) = NULL;
 
 	if (notify_fd == -1)
 		return;
@@ -221,7 +220,6 @@ static void reset_watch(int notify_fd, struct watch_descriptors *wds,
 		if (wds->mp_wd == -1)
 			mp_reset = 1;
 	}
-	bindings_file = strdup(conf->bindings_file);
 	put_multipath_config(conf);
 
 	if (dir_reset) {
@@ -242,17 +240,12 @@ static void reset_watch(int notify_fd, struct watch_descriptors *wds,
 		if (wds->conf_wd == -1)
 			condlog(3, "didn't set up notifications on /etc/multipath.conf: %m");
 	}
-	if (mp_reset && bindings_file) {
-		char *slash = strrchr(bindings_file, '/');
-
-		if (slash && slash > bindings_file) {
-			*slash = '\0';
-			wds->mp_wd = inotify_add_watch(notify_fd, bindings_file,
-						       IN_MOVED_TO|IN_ONLYDIR);
-			if (wds->mp_wd == -1)
+	if (mp_reset) {
+		wds->mp_wd = inotify_add_watch(notify_fd, STATE_DIR,
+					       IN_MOVED_TO|IN_ONLYDIR);
+		if (wds->mp_wd == -1)
 				condlog(3, "didn't set up notifications on %s: %m",
-					bindings_file);
-		}
+					STATE_DIR);
 	}
 }
 

@@ -157,8 +157,7 @@ static int do_prkey(int fd, char *wwid, char *keystr, int cmd)
 	return 0;
 }
 
-int get_prkey(struct config *conf, struct multipath *mpp, uint64_t *prkey,
-	      uint8_t *sa_flags)
+int get_prkey(struct multipath *mpp, uint64_t *prkey, uint8_t *sa_flags)
 {
 	int fd;
 	int unused;
@@ -168,7 +167,7 @@ int get_prkey(struct config *conf, struct multipath *mpp, uint64_t *prkey,
 	if (!strlen(mpp->wwid))
 		goto out;
 
-	fd = open_file(conf->prkeys_file, &unused, PRKEYS_FILE_HEADER);
+	fd = open_file(DEFAULT_PRKEYS_FILE, &unused, PRKEYS_FILE_HEADER);
 	if (fd < 0)
 		goto out;
 	ret = do_prkey(fd, mpp->wwid, keystr, PRKEY_READ);
@@ -201,7 +200,7 @@ int set_prkey(struct config *conf, struct multipath *mpp, uint64_t prkey,
 		sa_flags &= MPATH_F_APTPL_MASK;
 	}
 
-	fd = open_file(conf->prkeys_file, &can_write, PRKEYS_FILE_HEADER);
+	fd = open_file(DEFAULT_PRKEYS_FILE, &can_write, PRKEYS_FILE_HEADER);
 	if (fd < 0)
 		goto out;
 	if (!can_write) {

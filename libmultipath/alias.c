@@ -55,6 +55,8 @@
 /* uatomic access only */
 static int bindings_file_changed = 1;
 
+static const char bindings_file_path[] = DEFAULT_BINDINGS_FILE;
+
 static pthread_mutex_t timestamp_mutex = PTHREAD_MUTEX_INITIALIZER;
 static struct timespec bindings_last_updated;
 
@@ -274,7 +276,6 @@ static int write_bindings_file(const Bindings *bindings, int fd,
 
 void handle_bindings_file_inotify(const struct inotify_event *event)
 {
-	struct config *conf;
 	const char *base;
 	bool changed = false;
 	struct stat st;
@@ -284,12 +285,9 @@ void handle_bindings_file_inotify(const struct inotify_event *event)
 	if (!(event->mask & IN_MOVED_TO))
 		return;
 
-	conf = get_multipath_config();
-	base = strrchr(conf->bindings_file, '/');
-	changed = base && base > conf->bindings_file &&
-		!strcmp(base + 1, event->name);
-	ret = stat(conf->bindings_file, &st);
-	put_multipath_config(conf);
+	base = strrchr(bindings_file_path, '/');
+	changed = base && !strcmp(base + 1, event->name);
+	ret = stat(bindings_file_path, &st);
 
 	if (!changed)
 		return;
@@ -310,8 +308,7 @@ void handle_bindings_file_inotify(const struct inotify_event *event)
 			__func__, (long)ts.tv_sec, (long)ts.tv_nsec / 1000);
 }
 
-static int update_bindings_file(const Bindings *bindings,
-				const char *bindings_file)
+static int update_bindings_file(const Bindings *bindings)
 {
 	int rc;
 	int fd = -1;
@@ -319,7 +316,7 @@ static int update_bindings_file(const Bindings *bindings,
 	mode_t old_umask;
 	struct timespec ts;
 
-	if (safe_sprintf(tempname, "%s.XXXXXX", bindings_file))
+	if (safe_sprintf(tempname, "%s.XXXXXX", bindings_file_path))
 		return -1;
 	/* coverity: SECURE_TEMP */
 	old_umask = umask(0077);
@@ -336,13 +333,13 @@ static int update_bindings_file(const Bindings *bindings,
 		unlink(tempname);
 		return rc;
 	}
-	if ((rc = rename(tempname, bindings_file)) == -1)
+	if ((rc = rename(tempname, bindings_file_path)) == -1)
 		condlog(0, "%s: rename: %m", __func__);
 	else {
 		pthread_mutex_lock(&timestamp_mutex);
 		bindings_last_updated = ts;
 		pthread_mutex_unlock(&timestamp_mutex);
-		condlog(1, "updated bindings file %s", bindings_file);
+		condlog(1, "updated bindings file %s", bindings_file_path);
 	}
 	return rc;
 }
@@ -474,7 +471,7 @@ int get_free_id(const Bindings *bindings, const char *prefix, const char *map_ww
 
 /* Called with binding_mutex held */
 static char *
-allocate_binding(const char *filename, const char *wwid, int id, const char *prefix)
+allocate_binding(const char *wwid, int id, const char *prefix)
 {
 	STRBUF_ON_STACK(buf);
 	char *alias;
@@ -498,7 +495,7 @@ allocate_binding(const char *filename, const char *wwid, int id, const char *pre
 		return NULL;
 	}
 
-	if (update_bindings_file(&global_bindings, filename) == -1) {
+	if (update_bindings_file(&global_bindings) == -1) {
 		condlog(1, "%s: deleting binding %s for %s", __func__, alias, wwid);
 		delete_binding(&global_bindings, wwid);
 		free(alias);
@@ -565,7 +562,7 @@ static void read_bindings_file(void)
  *    that the mpvec corrcectly represents kernel state.
  */
 
-char *get_user_friendly_alias(const char *wwid, const char *file, const char *alias_old,
+char *get_user_friendly_alias(const char *wwid, const char *alias_old,
 			      const char *prefix, bool bindings_read_only)
 {
 	char *alias = NULL;
@@ -622,7 +619,7 @@ new_alias:
 	}
 
 	if (!bindings_read_only && id > 0)
-		alias = allocate_binding(file, wwid, id, prefix);
+		alias = allocate_binding(wwid, id, prefix);
 
 	if (alias && !new_binding)
 		condlog(2, "Allocated existing binding [%s] for WWID [%s]",
@@ -715,12 +712,12 @@ static int _check_bindings_file(const struct config *conf, FILE *file,
 	header[sizeof(BINDINGS_FILE_HEADER) - 1] = '\0';
 	if (fread(header, sizeof(BINDINGS_FILE_HEADER) - 1, 1, file) < 1) {
 		condlog(2, "%s: failed to read header from %s", __func__,
-			conf->bindings_file);
+			bindings_file_path);
 		fseek(file, 0, SEEK_SET);
 		rc = -1;
 	} else if (strcmp(header, BINDINGS_FILE_HEADER)) {
 		condlog(2, "%s: invalid header in %s", __func__,
-			conf->bindings_file);
+			bindings_file_path);
 		fseek(file, 0, SEEK_SET);
 		rc = -1;
 	}
@@ -787,13 +784,13 @@ static int _read_bindings_file(const struct config *conf, Bindings *bindings,
 		}
 	}
 
-	fd = open_file(conf->bindings_file, &can_write, BINDINGS_FILE_HEADER);
+	fd = open_file(bindings_file_path, &can_write, BINDINGS_FILE_HEADER);
 	if (fd == -1)
 		return BINDINGS_FILE_ERROR;
 
 	file = fdopen(fd, "r");
 	if (file != NULL) {
-		condlog(3, "%s: reading %s", __func__, conf->bindings_file);
+		condlog(3, "%s: reading %s", __func__, bindings_file_path);
 
 		pthread_cleanup_push(cleanup_fclose, file);
 		ret = _check_bindings_file(conf, file, bindings);
@@ -812,20 +809,20 @@ static int _read_bindings_file(const struct config *conf, Bindings *bindings,
 			bindings_last_updated = ts;
 			pthread_mutex_unlock(&timestamp_mutex);
 		} else if (ret == -1 && can_write && !conf->bindings_read_only) {
-			ret = update_bindings_file(bindings, conf->bindings_file);
+			ret = update_bindings_file(bindings);
 			if (ret == 0)
 				rc = BINDINGS_FILE_READ;
 			else
 				rc = BINDINGS_FILE_BAD;
 		} else {
 			condlog(0, "ERROR: bad settings in read-only bindings file %s",
-				conf->bindings_file);
+				bindings_file_path);
 			rc = BINDINGS_FILE_BAD;
 		}
 		pthread_cleanup_pop(1);
 	} else {
 		condlog(1, "failed to fdopen %s: %m",
-			conf->bindings_file);
+			bindings_file_path);
 		close(fd);
 		rc = BINDINGS_FILE_ERROR;
 	}

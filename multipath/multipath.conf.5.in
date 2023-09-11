@@ -794,35 +794,28 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B bindings_file
-(Deprecated) This option is deprecated, and will be removed in a future release.
-The full pathname of the binding file to be used when the user_friendly_names
-option is set.
+(Deprecated) This option is not supported any more, and will be ignored.
 .RS
 .TP
-The default is: \fB@STATE_DIR@/bindings\fR
+The compiled-in value is: \fB@STATE_DIR@/bindings\fR
 .RE
 .
 .
 .TP
 .B wwids_file
-(Deprecated) This option is deprecated, and will be removed in a future release.
-The full pathname of the WWIDs file, which is used by multipath to keep track
-of the WWIDs for LUNs it has created multipath devices on in the past.
+(Deprecated) This option is not supported any more, and will be ignored.
 .RS
 .TP
-The default is: \fB@STATE_DIR@/wwids\fR
+The compiled-in value is: \fB@STATE_DIR@/wwids\fR
 .RE
 .
 .
 .TP
 .B prkeys_file
-(Deprecated) This option is deprecated, and will be removed in a future release.
-The full pathname of the prkeys file, which is used by multipathd to keep
-track of the persistent reservation key used for a specific WWID, when
-\fIreservation_key\fR is set to \fBfile\fR.
+(Deprecated) This option is not supported any more, and will be ignored.
 .RS
 .TP
-The default is: \fB@STATE_DIR@/prkeys\fR
+The compiled-in value is: \fB@STATE_DIR@/prkeys\fR
 .RE
 .
 .
@@ -989,6 +982,10 @@ The default is: \fB<unset>\fR
 .TP
 .B config_dir
 (Deprecated) This option is not supported any more, and the value is ignored.
+.RS
+.TP
+The compiled-in value is: \fB@CONFIGDIR@\fR
+.RE
 .
 .
 .TP

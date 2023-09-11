@@ -169,27 +169,6 @@ fail:
 }
 
 static int
-set_path(vector strvec, void *ptr, const char *file, int line_nr)
-{
-	char **str_ptr = (char **)ptr;
-	char *old_str = *str_ptr;
-
-	*str_ptr = set_value(strvec);
-	if (!*str_ptr) {
-		free(old_str);
-		return 1;
-	}
-	if ((*str_ptr)[0] != '/'){
-		condlog(1, "%s line %d, %s is not an absolute path. Ignoring",
-			file, line_nr, *str_ptr);
-		free(*str_ptr);
-		*str_ptr = old_str;
-	} else
-		free(old_str);
-	return 0;
-}
-
-static int
 set_str_noslash(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	char **str_ptr = (char **)ptr;
@@ -830,15 +809,6 @@ declare_hw_handler(user_friendly_names, set_yes_no_undef)
 declare_hw_snprint(user_friendly_names, print_yes_no_undef)
 declare_mp_handler(user_friendly_names, set_yes_no_undef)
 declare_mp_snprint(user_friendly_names, print_yes_no_undef)
-
-declare_def_warn_handler(bindings_file, set_path)
-declare_def_snprint(bindings_file, print_str)
-
-declare_def_warn_handler(wwids_file, set_path)
-declare_def_snprint(wwids_file, print_str)
-
-declare_def_warn_handler(prkeys_file, set_path)
-declare_def_snprint(prkeys_file, print_str)
 
 declare_def_handler(retain_hwhandler, set_yes_no_undef)
 declare_def_snprint_defint(retain_hwhandler, print_yes_no_undef,
@@ -2064,6 +2034,9 @@ declare_deprecated_handler(disable_changed_wwids, "yes")
 declare_deprecated_handler(getuid_callout, "(not set)")
 declare_deprecated_handler(multipath_dir, MULTIPATH_DIR)
 declare_deprecated_handler(pg_timeout, "(not set)")
+declare_deprecated_handler(bindings_file, DEFAULT_BINDINGS_FILE)
+declare_deprecated_handler(wwids_file, DEFAULT_WWIDS_FILE)
+declare_deprecated_handler(prkeys_file, DEFAULT_PRKEYS_FILE)
 
 /*
  * If you add or remove a keyword also update multipath/multipath.conf.5
@@ -2106,9 +2079,9 @@ init_keywords(vector keywords)
 	install_keyword("fast_io_fail_tmo", &def_fast_io_fail_handler, &snprint_def_fast_io_fail);
 	install_keyword("dev_loss_tmo", &def_dev_loss_handler, &snprint_def_dev_loss);
 	install_keyword("eh_deadline", &def_eh_deadline_handler, &snprint_def_eh_deadline);
-	install_keyword("bindings_file", &def_bindings_file_handler, &snprint_def_bindings_file);
-	install_keyword("wwids_file", &def_wwids_file_handler, &snprint_def_wwids_file);
-	install_keyword("prkeys_file", &def_prkeys_file_handler, &snprint_def_prkeys_file);
+	install_keyword("bindings_file", &deprecated_bindings_file_handler, &snprint_deprecated);
+	install_keyword("wwids_file", &deprecated_wwids_file_handler, &snprint_deprecated);
+	install_keyword("prkeys_file", &deprecated_prkeys_file_handler, &snprint_deprecated);
 	install_keyword("log_checker_err", &def_log_checker_err_handler, &snprint_def_log_checker_err);
 	install_keyword("reservation_key", &def_reservation_key_handler, &snprint_def_reservation_key);
 	install_keyword("all_tg_pt", &def_all_tg_pt_handler, &snprint_def_all_tg_pt);

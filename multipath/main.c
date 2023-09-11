@@ -856,7 +856,7 @@ main (int argc, char *argv[])
 			libmp_verbosity = atoi(optarg);
 			break;
 		case 'b':
-			conf->bindings_file = strdup(optarg);
+			condlog(1, "option -b ignored");
 			break;
 		case 'B':
 			conf->bindings_read_only = 1;

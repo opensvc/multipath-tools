@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_20.0.0 {
+LIBMULTIPATH_21.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -121,6 +121,7 @@ global:
 	get_used_hwes;
 	get_vpd_sgio;
 	group_by_prio;
+	handle_bindings_file_inotify;
 	has_dm_info;
 	init_checkers;
 	init_config;
@@ -237,9 +238,4 @@ global:
 
 local:
 	*;
-};
-
-LIBMULTIPATH_20.1.0 {
-global:
-	handle_bindings_file_inotify;
 };

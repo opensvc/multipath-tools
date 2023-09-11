@@ -752,15 +752,6 @@ static void _uninit_config(struct config *conf)
 	if (conf->hwhandler)
 		free(conf->hwhandler);
 
-	if (conf->bindings_file)
-		free(conf->bindings_file);
-
-	if (conf->wwids_file)
-		free(conf->wwids_file);
-
-	if (conf->prkeys_file)
-		free(conf->prkeys_file);
-
 	if (conf->prio_name)
 		free(conf->prio_name);
 
@@ -922,9 +913,6 @@ int _init_config (const char *file, struct config *conf)
 	 * internal defaults
 	 */
 	get_sys_max_fds(&conf->max_fds);
-	conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
-	conf->wwids_file = set_default(DEFAULT_WWIDS_FILE);
-	conf->prkeys_file = set_default(DEFAULT_PRKEYS_FILE);
 	conf->attribute_flags = 0;
 	conf->reassign_maps = DEFAULT_REASSIGN_MAPS;
 	conf->checkint = CHECKINT_UNDEF;
@@ -1077,12 +1065,6 @@ int _init_config (const char *file, struct config *conf)
 	merge_blacklist(conf->elist_property);
 	merge_blacklist(conf->elist_wwid);
 	merge_blacklist_device(conf->elist_device);
-
-	if (conf->bindings_file == NULL)
-		conf->bindings_file = set_default(DEFAULT_BINDINGS_FILE);
-
-	if (!conf->bindings_file || !conf->wwids_file || !conf->prkeys_file)
-		goto out;
 
 	libmp_verbosity = conf->verbosity;
 	return 0;
