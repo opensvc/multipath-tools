@@ -314,14 +314,16 @@ def_ ## option ## _handler (struct config *conf, vector strvec,		\
 static int deprecated_handler(struct config *conf, vector strvec, const char *file,
 			      int line_nr);
 
-#define declare_deprecated_handler(option)				\
+#define declare_deprecated_handler(option, default)				\
 static int								\
 deprecated_ ## option ## _handler (struct config *conf, vector strvec,	\
 				   const char *file, int line_nr)	\
 {									\
 	static bool warned;						\
 	if (!warned) {							\
-		condlog(1, "%s line %d: ignoring deprecated option \"" #option "\"", file, line_nr); \
+		condlog(1, "%s line %d: ignoring deprecated option \""	\
+			#option "\", using built-in value: \"%s\"",	\
+			file, line_nr, default);			\
 		warned = true;						\
 	}								\
 	return deprecated_handler(conf, strvec, file, line_nr);		\
@@ -2057,11 +2059,11 @@ snprint_deprecated (struct config *conf, struct strbuf *buff, const void * data)
 }
 
 // Deprecated keywords
-declare_deprecated_handler(config_dir)
-declare_deprecated_handler(disable_changed_wwids)
-declare_deprecated_handler(getuid_callout)
-declare_deprecated_handler(multipath_dir)
-declare_deprecated_handler(pg_timeout)
+declare_deprecated_handler(config_dir, CONFIG_DIR)
+declare_deprecated_handler(disable_changed_wwids, "yes")
+declare_deprecated_handler(getuid_callout, "(not set)")
+declare_deprecated_handler(multipath_dir, MULTIPATH_DIR)
+declare_deprecated_handler(pg_timeout, "(not set)")
 
 /*
  * If you add or remove a keyword also update multipath/multipath.conf.5
