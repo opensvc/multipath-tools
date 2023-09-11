@@ -1025,7 +1025,7 @@ main (int argc, char *argv[])
 	}
 
 	if (check_alias_settings(conf)) {
-		fprintf(stderr, "fatal configuration error, aborting");
+		fprintf(stderr, "fatal configuration error, aborting\n");
 		exit(RTVL_FAIL);
 	}
 
