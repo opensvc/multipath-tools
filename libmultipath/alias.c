@@ -24,6 +24,7 @@
 #include "devmapper.h"
 #include "strbuf.h"
 #include "time-util.h"
+#include "lock.h"
 
 /*
  * significant parts of this file were taken from iscsi-bindings.c of the
@@ -300,7 +301,7 @@ void handle_bindings_file_inotify(const struct inotify_event *event)
 	pthread_mutex_unlock(&timestamp_mutex);
 
 	if (changed) {
-		uatomic_xchg(&bindings_file_changed, 1);
+		uatomic_xchg_int(&bindings_file_changed, 1);
 		condlog(3, "%s: bindings file must be re-read, new timestamp: %ld.%06ld",
 			__func__, (long)ts.tv_sec, (long)ts.tv_nsec / 1000);
 	} else
@@ -775,7 +776,7 @@ static int _read_bindings_file(const struct config *conf, Bindings *bindings,
 	int rc = 0, ret, fd;
 	FILE *file;
 	struct stat st;
-	int has_changed = uatomic_xchg(&bindings_file_changed, 0);
+	int has_changed = uatomic_xchg_int(&bindings_file_changed, 0);
 
 	if (!force) {
 		if (!has_changed) {

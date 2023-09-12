@@ -73,6 +73,10 @@ TEST_URCU_TYPE_LIMITS = $(shell \
 		$(CC) -c -Werror=type-limits -o /dev/null -xc - 2>/dev/null  \
 	|| echo -Wno-type-limits )
 
+URCU_VERSION = $(shell \
+	$(PKG_CONFIG) --modversion liburcu 2>/dev/null | \
+			awk -F. '{ printf("-DURCU_VERSION=0x%06x", 256 * ( 256 * $$1 + $$2) + $$3); }')
+
 DEFINES :=
 
 ifneq ($(call check_func,dm_task_no_flush,$(devmapper_incdir)/libdevmapper.h),0)
@@ -168,6 +172,7 @@ $(TOPDIR)/config.mk:	$(multipathdir)/autoconfig.h
 	@echo creating $@
 	@echo "FPIN_SUPPORT := $(FPIN_SUPPORT)" >$@
 	@echo "FORTIFY_OPT := $(FORTIFY_OPT)" >>$@
+	@echo "D_URCU_VERSION := $(call URCU_VERSION)" >>$@
 	@echo "SYSTEMD := $(SYSTEMD)" >>$@
 	@echo "ANA_SUPPORT := $(ANA_SUPPORT)" >>$@
 	@echo "STACKPROT := $(call TEST_CC_OPTION,-fstack-protector-strong,-fstack-protector)" >>$@
