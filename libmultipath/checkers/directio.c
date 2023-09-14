@@ -266,7 +266,7 @@ get_events(struct aio_group *aio_grp, struct timespec *timeout)
 		for (i = 0; i < nr; i++) {
 			struct async_req *req = container_of(events[i].obj, struct async_req, io);
 
-			LOG(3, "io finished %lu/%lu", events[i].res,
+			LOG(4, "io finished %lu/%lu", events[i].res,
 			    events[i].res2);
 
 			/* got an orphaned request */
@@ -283,7 +283,7 @@ get_events(struct aio_group *aio_grp, struct timespec *timeout)
 	} while (nr == 128); /* assume there are more events and try again */
 
 	if (nr < 0)
-		LOG(3, "async io getevents returned %i (errno=%s)",
+		LOG(4, "async io getevents returned %i (errno=%s)",
 		    nr, strerror(errno));
 
 	return got_events;
@@ -315,7 +315,7 @@ check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 	} else {
 		struct iocb *ios[1] = { &ct->req->io };
 
-		LOG(3, "starting new request");
+		LOG(4, "starting new request");
 		memset(&ct->req->io, 0, sizeof(struct iocb));
 		io_prep_pread(&ct->req->io, fd, ct->req->buf,
 			      ct->req->blksize, 0);
@@ -360,7 +360,7 @@ check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 			ct->running = 0;
 		rc = PATH_DOWN;
 	} else {
-		LOG(3, "async io pending");
+		LOG(4, "async io pending");
 		rc = PATH_PENDING;
 	}
 
