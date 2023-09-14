@@ -5,6 +5,7 @@ Before=local-fs-pre.target blk-availability.service shutdown.target
 Wants=systemd-udevd-kernel.socket
 After=systemd-udevd-kernel.socket
 After=multipathd.socket systemd-remount-fs.service
+Wants=multipathd.socket
 Before=initrd-cleanup.service
 DefaultDependencies=no
 Conflicts=shutdown.target
