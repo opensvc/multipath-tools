@@ -92,7 +92,7 @@ The following variables can be passed to the `make` command line:
    The default is `$(prefix)/$(LIB)/multipath`, where `$(LIB)` is `lib64` on
    systems that have `/lib64`, and `lib` otherwise.
  * `configfile="/some/path`": The path to the main configuration file.
-    The defalt is `$(etc_prefix)/etc/multipath.conf`.
+    The default is `$(etc_prefix)/etc/multipath.conf`.
  * `configdir="/some/path"` : directory to search for additional configuration files.
     This used to be the run-time option `config_dir` in earlier versions.
 	The default is `$(etc_prefix)/etc/multipath/conf.d`.
@@ -141,7 +141,7 @@ The following variables can be passed to the `make` command line:
    found on the build system, and `/lib` otherwise.
    
 The options `configdir`, `plugindir`, `configfile`, and `statedir` above can
-be used for setting indvidual paths where the `prefix` variables don't provide
+be used for setting individual paths where the `prefix` variables don't provide
 sufficient control. See `Makefile.inc` for even more fine-grained control.
 
 [^systemd]: Some systemd installations use separate `prefix` and `rootprefix`. 

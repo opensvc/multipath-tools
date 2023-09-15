@@ -36,7 +36,7 @@ Files ending in \fI.conf\fR in this directory are read
 in alphabetical order, after reading \fI@CONFIGFILE@\fR.
 They use the same syntax as \fI@CONFIGFILE@\fR itself,
 and support all sections and keywords. If a keyword occurs in the same section
-in multiple files, the last occurence will take precedence over all others.
+in multiple files, the last occurrence will take precedence over all others.
 .
 .
 .\" ----------------------------------------------------------------------------
