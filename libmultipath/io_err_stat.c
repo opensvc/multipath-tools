@@ -111,10 +111,14 @@ static int init_each_dio_ctx(struct dio_ctx *ct, int blksize,
 	return 0;
 }
 
-static void deinit_each_dio_ctx(struct dio_ctx *ct)
+static int deinit_each_dio_ctx(struct dio_ctx *ct)
 {
-	if (ct->buf)
-		free(ct->buf);
+	if (!ct->buf)
+		return 0;
+	if (ct->io_starttime.tv_sec != 0 || ct->io_starttime.tv_nsec != 0)
+		return 1;
+	free(ct->buf);
+	return 0;
 }
 
 static int setup_directio_ctx(struct io_err_stat_path *p)
@@ -164,6 +168,7 @@ fail_close:
 static void free_io_err_stat_path(struct io_err_stat_path *p)
 {
 	int i;
+	int inflight = 0;
 
 	if (!p)
 		return;
@@ -173,8 +178,13 @@ static void free_io_err_stat_path(struct io_err_stat_path *p)
 	cancel_inflight_io(p);
 
 	for (i = 0; i < CONCUR_NR_EVENT; i++)
-		deinit_each_dio_ctx(p->dio_ctx_array + i);
-	free(p->dio_ctx_array);
+		inflight += deinit_each_dio_ctx(p->dio_ctx_array + i);
+
+	if (!inflight)
+		free(p->dio_ctx_array);
+	else
+		io_err_stat_log(2, "%s: can't free aio space of %s, %d IOs in flight",
+				__func__, p->devname, inflight);
 
 	if (p->fd > 0)
 		close(p->fd);
@@ -503,7 +513,7 @@ static int try_to_cancel_timeout_io(struct dio_ctx *ct, struct timespec *t,
 	int		rc = PATH_UNCHECKED;
 	int		r;
 
-	if (ct->io_starttime.tv_sec == 0)
+	if (ct->io_starttime.tv_sec == 0 && ct->io_starttime.tv_nsec == 0)
 		return rc;
 	timespecsub(t, &ct->io_starttime, &difftime);
 	if (difftime.tv_sec > IOTIMEOUT_SEC) {
@@ -514,8 +524,6 @@ static int try_to_cancel_timeout_io(struct dio_ctx *ct, struct timespec *t,
 		if (r)
 			io_err_stat_log(5, "%s: io_cancel error %i",
 					dev, errno);
-		ct->io_starttime.tv_sec = 0;
-		ct->io_starttime.tv_nsec = 0;
 		rc = PATH_TIMEOUT;
 	} else {
 		rc = PATH_PENDING;
@@ -559,8 +567,6 @@ static void cancel_inflight_io(struct io_err_stat_path *pp)
 		if (r)
 			io_err_stat_log(5, "%s: io_cancel error %d, %i",
 					pp->devname, r, errno);
-		ct->io_starttime.tv_sec = 0;
-		ct->io_starttime.tv_nsec = 0;
 	}
 }
 
