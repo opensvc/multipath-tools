@@ -232,15 +232,15 @@ void libcheck_free (struct checker * c)
 		}
 	}
 
-	if (ct->running &&
-	    (ct->req->state != PATH_PENDING ||
-	     io_cancel(ct->aio_grp->ioctx, &ct->req->io, &event) == 0))
+	if (ct->running && ct->req->state != PATH_PENDING)
 		ct->running = 0;
 	if (!ct->running) {
 		free(ct->req->buf);
 		free(ct->req);
 		ct->aio_grp->holders--;
 	} else {
+		/* Currently a no-op */
+		io_cancel(ct->aio_grp->ioctx, &ct->req->io, &event);
 		ct->req->state = PATH_REMOVED;
 		list_add(&ct->req->node, &ct->aio_grp->orphans);
 		check_orphaned_group(ct->aio_grp);
@@ -351,13 +351,7 @@ check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 
 		LOG(3, "abort check on timeout");
 
-		r = io_cancel(ct->aio_grp->ioctx, &ct->req->io, &event);
-		/*
-		 * Only reset ct->running if we really
-		 * could abort the pending I/O
-		 */
-		if (!r)
-			ct->running = 0;
+		io_cancel(ct->aio_grp->ioctx, &ct->req->io, &event);
 		rc = PATH_DOWN;
 	} else {
 		LOG(4, "async io pending");

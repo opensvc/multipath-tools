@@ -141,10 +141,9 @@ int __real_io_cancel(io_context_t ctx, struct iocb *iocb, struct io_event *evt);
 int __wrap_io_cancel(io_context_t ctx, struct iocb *iocb, struct io_event *evt)
 {
 #ifdef DIO_TEST_DEV
-	mock_type(int);
 	return __real_io_cancel(ctx, iocb, evt);
 #else
-	return mock_type(int);
+	return 0;
 #endif
 }
 
@@ -439,14 +438,8 @@ static void test_check_state_timeout(void **state)
 	do_libcheck_init(&c, 4096, NULL);
 	aio_grp = get_aio_grp(&c);
 	return_io_getevents_none();
-	will_return(__wrap_io_cancel, 0);
 	do_check_state(&c, 1, 30, PATH_DOWN);
 	check_aio_grp(aio_grp, 1, 0);
-#ifdef DIO_TEST_DEV
-	/* io_cancel will return negative value on timeout, so it happens again
-	 * when freeing the checker */
-	will_return(__wrap_io_cancel, 0);
-#endif
 	libcheck_free(&c);
 	do_libcheck_reset(1);
 }
@@ -468,12 +461,8 @@ static void test_check_state_async_timeout(void **state)
 	return_io_getevents_none();
 	do_check_state(&c, 0, 3, PATH_PENDING);
 	return_io_getevents_none();
-	will_return(__wrap_io_cancel, 0);
 	do_check_state(&c, 0, 3, PATH_DOWN);
 	check_aio_grp(aio_grp, 1, 0);
-#ifdef DIO_TEST_DEV
-	will_return(__wrap_io_cancel, 0);
-#endif
 	libcheck_free(&c);
 	do_libcheck_reset(1);
 }
@@ -501,13 +490,8 @@ static void test_free_with_pending(void **state)
 	check_aio_grp(aio_grp, 2, 0);
         libcheck_free(&c[0]);
 	check_aio_grp(aio_grp, 1, 0);
-        will_return(__wrap_io_cancel, 0);
         libcheck_free(&c[1]);
-#ifdef DIO_TEST_DEV
-	check_aio_grp(aio_grp, 1, 1); /* real cancel doesn't remove request */
-#else
-        check_aio_grp(aio_grp, 0, 0);
-#endif
+	check_aio_grp(aio_grp, 1, 1); /* cancel doesn't remove request */
         do_libcheck_reset(1);
 }
 
@@ -533,7 +517,6 @@ static void test_orphaned_aio_group(void **state)
 	assert_int_equal(i, 1);
 	for (i = 0; i < AIO_GROUP_SIZE; i++) {
 		assert_true(is_checker_running(&c[i]));
-		will_return(__wrap_io_cancel, -1);
 		if (i == AIO_GROUP_SIZE - 1) {
 			/* remove the orphaned group and create a new one */
 			will_return(__wrap_io_destroy, 0);
@@ -559,12 +542,10 @@ static void test_timeout_cancel_failed(void **state)
 		do_libcheck_init(&c[i], 4096, &reqs[i]);
 	aio_grp = get_aio_grp(c);
 	return_io_getevents_none();
-	will_return(__wrap_io_cancel, -1);
 	do_check_state(&c[0], 1, 30, PATH_DOWN);
 	assert_true(is_checker_running(&c[0]));
 	check_aio_grp(aio_grp, 2, 0);
 	return_io_getevents_none();
-	will_return(__wrap_io_cancel, -1);
 	do_check_state(&c[0], 1, 30, PATH_DOWN);
 	assert_true(is_checker_running(&c[0]));
 	return_io_getevents_nr(NULL, 1, &reqs[0], &res[0]);
@@ -600,7 +581,6 @@ static void test_async_timeout_cancel_failed(void **state)
 	return_io_getevents_none();
 	do_check_state(&c[1], 0, 2, PATH_PENDING);
 	return_io_getevents_none();
-	will_return(__wrap_io_cancel, -1);
 	do_check_state(&c[0], 0, 2, PATH_DOWN);
 #ifndef DIO_TEST_DEV
 	/* can't pick which even gets returned on real devices */
@@ -608,7 +588,6 @@ static void test_async_timeout_cancel_failed(void **state)
 	do_check_state(&c[1], 0, 2, PATH_UP);
 #endif
 	return_io_getevents_none();
-	will_return(__wrap_io_cancel, -1);
 	do_check_state(&c[0], 0, 2, PATH_DOWN);
 	assert_true(is_checker_running(&c[0]));
 	return_io_getevents_nr(NULL, 2, reqs, res);
@@ -637,7 +616,6 @@ static void test_orphan_checker_cleanup(void **state)
 	aio_grp = get_aio_grp(c);
 	return_io_getevents_none();
 	do_check_state(&c[0], 0, 30, PATH_PENDING);
-	will_return(__wrap_io_cancel, -1);
 	check_aio_grp(aio_grp, 2, 0);
 	libcheck_free(&c[0]);
 	check_aio_grp(aio_grp, 2, 1);
@@ -662,7 +640,6 @@ static void test_orphan_reset_cleanup(void **state)
 	orphan_aio_grp = get_aio_grp(&c);
 	return_io_getevents_none();
 	do_check_state(&c, 0, 30, PATH_PENDING);
-	will_return(__wrap_io_cancel, -1);
 	check_aio_grp(orphan_aio_grp, 1, 0);
 	libcheck_free(&c);
 	check_aio_grp(orphan_aio_grp, 1, 1);
