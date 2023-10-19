@@ -113,7 +113,6 @@ LIBMPATHUTIL_1.0 {
 	log_safe;
 	msort;
 	parse_devt;
-	parse_prkey;
 	process_file;
 	safe_write;
 	set_value;
