@@ -175,8 +175,6 @@ static void free_io_err_stat_path(struct io_err_stat_path *p)
 	if (!p->dio_ctx_array)
 		goto free_path;
 
-	cancel_inflight_io(p);
-
 	for (i = 0; i < CONCUR_NR_EVENT; i++)
 		inflight += deinit_each_dio_ctx(p->dio_ctx_array + i);
 
@@ -221,6 +219,15 @@ static void free_io_err_pathvec(void)
 	pthread_cleanup_push(cleanup_mutex, &io_err_pathvec_lock);
 	if (!io_err_pathvec)
 		goto out;
+
+	/* io_cancel() is a noop, but maybe in the future it won't be */
+	vector_foreach_slot(io_err_pathvec, path, i) {
+		if (path && path->dio_ctx_array)
+			cancel_inflight_io(path);
+	}
+
+	/* This blocks until all I/O is finished */
+	io_destroy(ioctx);
 	vector_foreach_slot(io_err_pathvec, path, i)
 		free_io_err_stat_path(path);
 	vector_free(io_err_pathvec);
@@ -752,5 +759,4 @@ void stop_io_err_stat_thread(void)
 
 	pthread_join(io_err_stat_thr, NULL);
 	free_io_err_pathvec();
-	io_destroy(ioctx);
 }
