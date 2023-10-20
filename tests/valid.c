@@ -62,11 +62,6 @@ int __wrap___mpath_connect(int nonblocking)
 	return -1;
 }
 
-int __wrap_systemd_service_enabled(const char *dev)
-{
-	return (int)mock_type(bool);
-}
-
 /* There's no point in checking the return value here */
 int __wrap_mpath_disconnect(int fd)
 {
@@ -216,7 +211,6 @@ enum {
 enum {
 	CHECK_MPATHD_RUNNING,
 	CHECK_MPATHD_EAGAIN,
-	CHECK_MPATHD_ENABLED,
 	CHECK_MPATHD_SKIP,
 };
 
@@ -232,11 +226,8 @@ static void setup_passing(char *name, char *wwid, unsigned int check_multipathd,
 	else if (check_multipathd == CHECK_MPATHD_EAGAIN) {
 		will_return(__wrap___mpath_connect, false);
 		will_return(__wrap___mpath_connect, EAGAIN);
-	} else if (check_multipathd == CHECK_MPATHD_ENABLED) {
-		will_return(__wrap___mpath_connect, false);
-		will_return(__wrap___mpath_connect, ECONNREFUSED);
-		will_return(__wrap_systemd_service_enabled, true);
 	}
+
 	/* nothing for CHECK_MPATHD_SKIP */
 	if (stage == STAGE_CHECK_MULTIPATHD)
 		return;
@@ -342,18 +333,9 @@ static void test_check_multipathd(void **state)
 	will_return(__wrap_sysfs_is_multipathed, false);
 	will_return(__wrap___mpath_connect, false);
 	will_return(__wrap___mpath_connect, ECONNREFUSED);
-	will_return(__wrap_systemd_service_enabled, false);
+
 	assert_int_equal(is_path_valid(name, &conf, &pp, true),
 			 PATH_IS_NOT_VALID);
-	assert_string_equal(pp.dev, name);
-	/* test pass because service is enabled. fail getting udev */
-	memset(&pp, 0, sizeof(pp));
-	setup_passing(name, NULL, CHECK_MPATHD_ENABLED, STAGE_CHECK_MULTIPATHD);
-	will_return(__wrap_udev_device_new_from_subsystem_sysname, false);
-	will_return(__wrap_udev_device_new_from_subsystem_sysname,
-		    name);
-	assert_int_equal(is_path_valid(name, &conf, &pp, true),
-			 PATH_IS_ERROR);
 	assert_string_equal(pp.dev, name);
 	/* test pass because connect returned EAGAIN. fail getting udev */
 	setup_passing(name, NULL, CHECK_MPATHD_EAGAIN, STAGE_CHECK_MULTIPATHD);
@@ -533,7 +515,7 @@ static void test_check_uuid_present(void **state)
 
 	memset(&pp, 0, sizeof(pp));
 	conf.find_multipaths = FIND_MULTIPATHS_STRICT;
-	setup_passing(name, wwid, CHECK_MPATHD_ENABLED, STAGE_CHECK_WWIDS);
+	setup_passing(name, wwid, CHECK_MPATHD_RUNNING, STAGE_CHECK_WWIDS);
 	will_return(__wrap_dm_map_present_by_uuid, 1);
 	will_return(__wrap_dm_map_present_by_uuid, wwid);
 	assert_int_equal(is_path_valid(name, &conf, &pp, true),

@@ -93,12 +93,15 @@ local:
 };
 
 /* symbols referenced internally by libmultipath */
-LIBMPATHUTIL_1.0 {
+LIBMPATHUTIL_2.0 {
 	alloc_bitfield;
 	__append_strbuf_str;
 	append_strbuf_quoted;
 	basenamecpy;
+	cleanup_fd_ptr;
 	cleanup_free_ptr;
+	cleanup_vector_free;
+	cleanup_fclose;
 	filepresent;
 	find_keyword;
 	free_keywords;
@@ -120,21 +123,9 @@ LIBMPATHUTIL_1.0 {
 	snprint_keyword;
 	steal_strbuf_str;
 	strlcat;
-	systemd_service_enabled;
 	validate_config_strvec;
 	vector_find_or_add_slot;
 	vector_insert_slot;
 	vector_move_up;
 	vector_sort;
 };
-
-LIBMPATHUTIL_1.1 {
-global:
-	cleanup_fd_ptr;
-} LIBMPATHUTIL_1.0;
-
-LIBMPATHUTIL_1.2 {
-global:
-	cleanup_vector_free;
-	cleanup_fclose;
-} LIBMPATHUTIL_1.0;
