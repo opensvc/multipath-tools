@@ -42,14 +42,6 @@ Go to: https://github.com/opensvc/multipath-tools/tags
 Select a release-tag and then click on "zip" or "tar.gz".
 
 
-Devel code
-==========
-
-To get latest devel code:
-
-    git clone -b queue https://github.com/openSUSE/multipath-tools
-
-
 Building multipath-tools
 ========================
 
@@ -188,19 +180,45 @@ The following targets are intended for developers only.
  * `make compile-commands.json` to create input for [clangd](https://clangd.llvm.org/).
 
 
-Add storage devices
-===================
-
-Follow the instructions in the `libmultipath/hwtable.c` header.
-
-
-Mailing list
+Contributing
 ============
 
-(subscribers-only)
-To subscribe and archives: https://listman.redhat.com/mailman/listinfo/dm-devel
-Searchable: https://marc.info/?l=dm-devel
+Please send patches or contributions for general discussion about
+multipath tools to the mailing list (see below). You can also create
+issues or pull requests on
+[GitHub](https://github.com/opensvc/multipath-tools).
+You will be asked to send your patches to the mailing list
+unless your patch is trivial.
 
+Mailing list
+------------
+
+The mailing list for multipath-tools is `dm-devel@lists.linux.dev`.
+To subscribe, send an email to `dm-devel+subscribe@lists.linux.dev`.
+Mailing list archives are available on
+[lore.kernel.org](https://lore.kernel.org/dm-devel/) and
+[marc.info](https://marc.info/?l=dm-devel). See also the
+[lists.linux.dev home page](https://subspace.kernel.org/lists.linux.dev.html).
+
+When sending patches to the mailing list, please add a `Signed-off-by:`
+tag, and add Benjamin Marzinski <bmarzins@redhat.com> and 
+Martin Wilck <mwilck@suse.com> to the Cc list.
+
+Staging area
+------------
+
+Between releases, the latest reviewed code can be obtained from
+[the queue branch](https://github.com/openSUSE/multipath-tools/tree/queue)
+in the openSUSE/multipath-tools repository on GitHub. From there,
+pull requests for new releases in the master repository are
+created roughly every 3 months.
+
+Adding new storage devices
+--------------------------
+
+If you want to add special settings for a storage device which is
+new on the market, follow the instructions at the top of the
+file `libmultipath/hwtable.c`.
 
 Changelog
 =========
@@ -213,7 +231,7 @@ Maintainer
 ==========
 
 Christophe Varoqui <christophe.varoqui@opensvc.com>
-Device-mapper development mailing list <dm-devel@redhat.com>
+Device-mapper development mailing list <dm-devel@lists.linux.dev>
 
 
 Licence
