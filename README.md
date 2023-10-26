@@ -223,8 +223,8 @@ file `libmultipath/hwtable.c`.
 Changelog
 =========
 
-pre-0.4.5: https://web.archive.org/web/20070309224034/http://christophe.varoqui.free.fr/wiki/wakka.php?wiki=ChangeLog
-post-0.4.5: https://github.com/opensvc/multipath-tools/commits/master
+* pre-0.4.5: https://web.archive.org/web/20070309224034/http://christophe.varoqui.free.fr/wiki/wakka.php?wiki=ChangeLog
+* post-0.4.5: https://github.com/opensvc/multipath-tools/commits/master
 
 
 Maintainer
