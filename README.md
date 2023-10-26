@@ -273,15 +273,25 @@ To enable ALUA, the following options should be changed:
 
 NVMe
 ====
-To use Device Mapper/multipath-tools with NVMe devices,
-if the Native NVMe Multipath subsystem is enabled
-( "Y" in `/sys/module/nvme_core/parameters/multipath` ),
-it has to be disabled:
 
-`echo "options nvme_core multipath=N" > /etc/modprobe.d/01-nvme_core-mp.conf`,
-regenerate the initramfs (`dracut -f` or `update-initramfs`) and reboot.
+Using dm-multipath with NVMe
+----------------------------
 
-Check that it is disabled(N) with:
-`cat /sys/module/nvme_core/parameters/multipath`
-or
-`systool -m nvme_core -A multipath`
+NVMe multipath is natively supported by the Linux kernel. If for some reason
+you prefer using device mapper multipath with NVMe devices,
+you need to disable native multipathing first:
+
+    echo "options nvme_core multipath=N" > /etc/modprobe.d/01-nvme_core-mp.conf
+
+Afterwards, regenerate the initramfs (`dracut -f` or `update-initramfs`) and reboot.
+
+Using multipath-tools with native NVMe multipath
+------------------------------------------------
+
+If native NVMe multipathing is enabled, you can still use multipath-tools
+for displaying the topology and some other information about native NVMe
+multipath setups. This feature is disabled by default. To enable it, set
+`enable_foreign nvme` in the `defaults` section of `multipath.conf`.
+Commands like `multipath -ll` will then display information about NVMe
+native multipath. This support is read-only; modifying the native multipath
+configuration is not supported.
