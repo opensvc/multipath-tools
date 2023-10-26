@@ -38,6 +38,7 @@
 #define TIMEOUT_NO_IO_NSEC		10000000 /*10ms = 10000000ns*/
 #define FLAKY_PATHFAIL_THRESHOLD	2
 #define CONCUR_NR_EVENT			32
+#define NR_IOSTAT_PATHS			32
 
 #define PATH_IO_ERR_IN_CHECKING		-1
 #define PATH_IO_ERR_WAITING_TO_CHECK	-2
@@ -477,7 +478,7 @@ static int send_each_async_io(struct dio_ctx *ct, int fd, char *dev)
 		get_monotonic_time(&ct->io_starttime);
 		io_prep_pread(&ct->io, fd, ct->buf, ct->blksize, 0);
 		if (io_submit(ioctx, 1, ios) != 1) {
-			io_err_stat_log(5, "%s: io_submit error %i",
+			io_err_stat_log(2, "%s: io_submit error %i",
 					dev, errno);
 			return rc;
 		}
@@ -703,8 +704,8 @@ int start_io_err_stat_thread(void *data)
 	if (uatomic_read(&io_err_thread_running) == 1)
 		return 0;
 
-	if (io_setup(CONCUR_NR_EVENT, &ioctx) != 0) {
-		io_err_stat_log(4, "io_setup failed");
+	if (io_setup(CONCUR_NR_EVENT * NR_IOSTAT_PATHS, &ioctx) != 0) {
+		io_err_stat_log(1, "io_setup failed - increase /proc/sys/fs/aio-nr ?");
 		return 1;
 	}
 
