@@ -19,7 +19,6 @@
 #include <sys/ioctl.h>
 #include <linux/fs.h>
 #include <libaio.h>
-#include <errno.h>
 #include <sys/mman.h>
 #include <sys/select.h>
 
@@ -469,7 +468,7 @@ static void end_io_err_stat(struct io_err_stat_path *pp)
 
 static int send_each_async_io(struct dio_ctx *ct, int fd, char *dev)
 {
-	int rc = -1;
+	int rc;
 
 	if (ct->io_starttime.tv_nsec == 0 &&
 			ct->io_starttime.tv_sec == 0) {
@@ -477,15 +476,15 @@ static int send_each_async_io(struct dio_ctx *ct, int fd, char *dev)
 
 		get_monotonic_time(&ct->io_starttime);
 		io_prep_pread(&ct->io, fd, ct->buf, ct->blksize, 0);
-		if (io_submit(ioctx, 1, ios) != 1) {
-			io_err_stat_log(2, "%s: io_submit error %i",
-					dev, errno);
-			return rc;
+		if ((rc = io_submit(ioctx, 1, ios)) != 1) {
+			io_err_stat_log(2, "%s: io_submit error %s",
+					dev, strerror(-rc));
+			return -1;
 		}
-		rc = 0;
+		return 0;
 	}
 
-	return rc;
+	return -1;
 }
 
 static void send_batch_async_ios(struct io_err_stat_path *pp)
@@ -530,8 +529,8 @@ static int try_to_cancel_timeout_io(struct dio_ctx *ct, struct timespec *t,
 		io_err_stat_log(5, "%s: abort check on timeout", dev);
 		r = io_cancel(ioctx, ios[0], &event);
 		if (r)
-			io_err_stat_log(5, "%s: io_cancel error %i",
-					dev, errno);
+			io_err_stat_log(5, "%s: io_cancel error %s",
+					dev, strerror(-r));
 		rc = PATH_TIMEOUT;
 	} else {
 		rc = PATH_PENDING;
@@ -560,7 +559,7 @@ static void poll_async_io_timeout(void)
 static void cancel_inflight_io(struct io_err_stat_path *pp)
 {
 	struct io_event event;
-	int i, r;
+	int i;
 
 	for (i = 0; i < CONCUR_NR_EVENT; i++) {
 		struct dio_ctx *ct = pp->dio_ctx_array + i;
@@ -571,10 +570,7 @@ static void cancel_inflight_io(struct io_err_stat_path *pp)
 			continue;
 		io_err_stat_log(5, "%s: abort infligh io",
 				pp->devname);
-		r = io_cancel(ioctx, ios[0], &event);
-		if (r)
-			io_err_stat_log(5, "%s: io_cancel error %d, %i",
-					pp->devname, r, errno);
+		io_cancel(ioctx, ios[0], &event);
 	}
 }
 
@@ -610,12 +606,11 @@ static void process_async_ios_event(int timeout_nsecs, char *dev)
 	int		i, n;
 	struct timespec	timeout = { .tv_nsec = timeout_nsecs };
 
-	errno = 0;
 	pthread_testcancel();
 	n = io_getevents(ioctx, 1L, CONCUR_NR_EVENT, events, &timeout);
 	if (n < 0) {
-		io_err_stat_log(3, "%s: async io events returned %d (errno=%s)",
-				dev, n, strerror(errno));
+		io_err_stat_log(3, "%s: io_getevents returned %s",
+				dev, strerror(-n));
 	} else {
 		for (i = 0; i < n; i++)
 			handle_async_io_done_event(&events[i]);
@@ -704,8 +699,9 @@ int start_io_err_stat_thread(void *data)
 	if (uatomic_read(&io_err_thread_running) == 1)
 		return 0;
 
-	if (io_setup(CONCUR_NR_EVENT * NR_IOSTAT_PATHS, &ioctx) != 0) {
-		io_err_stat_log(1, "io_setup failed - increase /proc/sys/fs/aio-nr ?");
+	if ((ret = io_setup(NR_IOSTAT_PATHS * CONCUR_NR_EVENT, &ioctx)) != 0) {
+		io_err_stat_log(1, "io_setup failed: %s, increase /proc/sys/fs/aio-nr ?",
+				strerror(-ret));
 		return 1;
 	}
 
