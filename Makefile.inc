@@ -40,8 +40,10 @@ usr_prefix	:= $(prefix)
 # Prefix for configfuration files (multipath.conf)
 etc_prefix	:= $(prefix)
 # Where to install systemd-related files. systemd is usually installed under /usr
-# Note: some systemd installations use separate "prefix" and "rootprefix".
-# In this case, override only unitdir to use systemd's "rootprefix" instead of $(systemd_prefix)
+# Note: systemd installations with "split-usr=true" use separate "prefixdir" and
+# "rootprefixdir". Our systemd_prefix corresponds to "prefixdir".
+# In this case, override only unitdir and libudevdir below to use
+# systemd's "rootprefixdir" instead of $(systemd_prefix)
 systemd_prefix  := /usr
 
 # Make sure all prefix variables end in "/"

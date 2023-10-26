@@ -111,6 +111,13 @@ The following variables can be passed to the `make` command line:
    polling API. For use with pre-5.0 kernels that don't support dmevent polling
    (but even if you don't use this option, multipath-tools will work with
    these kernels).
+ * `SYSTEMD`: The version number of systemd (e.g. "244") to compile the code for.
+   The default is autodetected, assuming that the systemd version in the build
+   environment is the same as on the target system. Override the value to
+   build for a different systemd version, or set it to `""` to build for a
+   system without systemd.
+   **Caution:** multipathd without systemd has been largely untested by the
+   upstream maintainers since at least 2020.
  * `SCSI_DH_MODULES_PRELOAD="(list)"`: specify a space-separated list of SCSI
    device handler kernel modules to load early during boot. Some
    multipath-tools functionality depends on these modules being loaded
@@ -122,7 +129,9 @@ The following variables can be passed to the `make` command line:
    It's especially useful if `scsi_mod` is builtin but `scsi_dh_alua` and
    other device handler modules are built as modules. If `scsi_mod` itself is compiled
    as a module, it might make more sense to use a module softdep for the same
-   purpose.
+   purpose by creating a `modprobe.d` file like this:
+       
+        softdep scsi_mod post: scsi_dh_alua scsi_dh_rdac
 
 ### Installation Paths
 
@@ -133,9 +142,9 @@ The following variables can be passed to the `make` command line:
    for booting. Non-usr-merged distributions[^systemd] may want to set this to
    `/usr`. The default is `$(prefix)`.
  * `systemd_prefix`: Prefix for systemd-related files[^systemd]. The default is `/usr`.
- * `etc_prefix`: The prefix for configuration files. "Usr-merged"
+ * `etc_prefix`: The prefix for configuration files. "usr-merged"
    distributions with immutable `/usr`[^systemd] may want to set this to
-   `/etc`. The default is `$(prefix)`.
+   `""`. The default is `$(prefix)`.
  * `LIB`: the subdirectory under `prefix` where shared libraries will be
    installed. By default, the makefile uses `/lib64` if this directory is
    found on the build system, and `/lib` otherwise.
@@ -144,10 +153,12 @@ The options `configdir`, `plugindir`, `configfile`, and `statedir` above can
 be used for setting individual paths where the `prefix` variables don't provide
 sufficient control. See `Makefile.inc` for even more fine-grained control.
 
-[^systemd]: Some systemd installations use separate `prefix` and `rootprefix`. 
-	On such a distribution, set `prefix`, and override `unitdir` to use systemd's
-   `rootprefix`. Recent systemd releases generally require everything to be
-	installed under `/usr` (so-called "usr-merged" distribution). On "usr-
+[^systemd]: systemd installations up to v254 which have been built with
+    `split-usr=true` may use separate `prefixdir` and `rootprefixdir`
+    directories, where `prefixdir` is a subdirectory of `rootprefixdir`.
+	multipath-tools' `systemd_prefix` corresponds to systemd's `prefixdir`.
+	On such distributions, override `unitdir` and `libudevdir` to use systemd's
+   `rootprefix`: `make libudevdir=/lib/udev unitdir=/lib/systemd/system`
 
 ### Compiler Options
 
