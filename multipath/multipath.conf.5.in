@@ -782,7 +782,7 @@ Specify the maximum number of seconds the SCSI layer will spend doing error
 handling when scsi devices fail. After this timeout the scsi layer will perform
 a full HBA reset. Setting this may be necessary in cases where the rport is
 never lost, so \fIfast_io_fail_tmo\fR and \fIdev_loss_tmo\fR will never
-trigger, but (frequently do to load) scsi commands still hang. \fBNote:\fR when
+trigger, but (frequently due to load) scsi commands still hang. \fBNote:\fR when
 the scsi error handler performs the HBA reset, all target paths on that HBA
 will be affected. eh_deadline should only be set in cases where all targets on
 the affected HBAs are multipathed.
