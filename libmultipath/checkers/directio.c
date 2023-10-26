@@ -70,6 +70,7 @@ static struct aio_group *
 add_aio_group(void)
 {
 	struct aio_group *aio_grp;
+	int rc;
 
 	aio_grp = malloc(sizeof(struct aio_group));
 	if (!aio_grp)
@@ -77,9 +78,9 @@ add_aio_group(void)
 	memset(aio_grp, 0, sizeof(struct aio_group));
 	INIT_LIST_HEAD(&aio_grp->orphans);
 
-	if (io_setup(AIO_GROUP_SIZE, &aio_grp->ioctx) != 0) {
+	if ((rc = io_setup(AIO_GROUP_SIZE, &aio_grp->ioctx)) != 0) {
 		LOG(1, "io_setup failed");
-		if (errno == EAGAIN)
+		if (rc == -EAGAIN)
 			LOG(1, "global number of io events too small. Increase fs.aio-max-nr with sysctl");
 		free(aio_grp);
 		return NULL;
@@ -259,7 +260,6 @@ get_events(struct aio_group *aio_grp, struct timespec *timeout)
 	struct timespec *timep = timeout;
 
 	do {
-		errno = 0;
 		nr = io_getevents(aio_grp->ioctx, 1, 128, events, timep);
 		got_events |= (nr > 0);
 
@@ -283,8 +283,7 @@ get_events(struct aio_group *aio_grp, struct timespec *timeout)
 	} while (nr == 128); /* assume there are more events and try again */
 
 	if (nr < 0)
-		LOG(4, "async io getevents returned %i (errno=%s)",
-		    nr, strerror(errno));
+		LOG(4, "async io getevents returned %s", strerror(-nr));
 
 	return got_events;
 }
@@ -320,8 +319,8 @@ check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 		io_prep_pread(&ct->req->io, fd, ct->req->buf,
 			      ct->req->blksize, 0);
 		ct->req->state = PATH_PENDING;
-		if (io_submit(ct->aio_grp->ioctx, 1, ios) != 1) {
-			LOG(3, "io_submit error %i", errno);
+		if ((rc = io_submit(ct->aio_grp->ioctx, 1, ios)) != 1) {
+			LOG(3, "io_submit error %i", -rc);
 			return PATH_UNCHECKED;
 		}
 	}
