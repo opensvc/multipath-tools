@@ -1168,10 +1168,10 @@ listed in the \fBwwids_file\fR. Users can manually set up multipath maps using t
 \fBmultipathd add map\fR command. Once set up manually, the map is
 remembered in the wwids file and will be set up automatically in the future.
 .TP
-.I no
+.I off|no
 Multipath behaves like \fBstrict\fR. Multipathd behaves like \fBgreedy\fR.
 .TP
-.I yes
+.I on|yes
 Both multipathd and multipath treat a device as multipath device if the
 conditions for \fBstrict\fR are met, or if at least two non-blacklisted paths
 with the same WWID have been detected.
@@ -1181,7 +1181,7 @@ Both multipathd and multipath treat every non-blacklisted device as multipath
 device path.
 .TP
 .I smart
-This differs from \fIfind_multipaths yes\fR only in
+This differs from \fIfind_multipaths on\fR only in
 the way it treats new devices for which only one path has been
 detected yet. When such a device is first encountered in udev rules, it is
 treated as a multipath device. multipathd waits whether additional paths with
