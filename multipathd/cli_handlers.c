@@ -845,9 +845,11 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 	char * mapname = get_keyparam(v, KEY_MAP);
 	struct multipath *mpp;
 	int minor;
-	unsigned long long size;
+	unsigned long long size = 0;
 	struct pathgroup *pgp;
 	struct path *pp;
+	unsigned int i, j;
+	bool mismatch = false;
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: resize map (operator)", mapname);
@@ -867,21 +869,24 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 		return 1;
 	}
 
-	pgp = VECTOR_SLOT(mpp->pg, 0);
-
-	if (!pgp){
-		condlog(0, "%s: couldn't get path group. cannot resize",
+	vector_foreach_slot(mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp, j) {
+			sysfs_get_size(pp, &pp->size);
+			if (!pp->size)
+				continue;
+			if (!size)
+				size = pp->size;
+			else if (pp->size != size)
+				mismatch = true;
+		}
+	}
+	if (!size) {
+		condlog(0, "%s: couldn't get size from sysfs. cannot resize",
 			mapname);
 		return 1;
 	}
-	pp = VECTOR_SLOT(pgp->paths, 0);
-
-	if (!pp){
-		condlog(0, "%s: couldn't get path. cannot resize", mapname);
-		return 1;
-	}
-	if (!pp->udev || sysfs_get_size(pp, &size)) {
-		condlog(0, "%s: couldn't get size for sysfs. cannot resize",
+	if (mismatch) {
+		condlog(0, "%s: path size not consistent. cannot resize",
 			mapname);
 		return 1;
 	}
