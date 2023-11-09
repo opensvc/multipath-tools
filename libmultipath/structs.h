@@ -295,6 +295,12 @@ enum eh_deadline_states {
 	EH_DEADLINE_ZERO = UOZ_ZERO,
 };
 
+enum max_retries_states {
+	MAX_RETRIES_UNSET = UOZ_UNDEF,
+	MAX_RETRIES_OFF = UOZ_OFF,
+	MAX_RETRIES_ZERO = UOZ_ZERO,
+};
+
 enum recheck_wwid_states {
 	RECHECK_WWID_UNDEF = YNU_UNDEF,
 	RECHECK_WWID_OFF = YNU_NO,

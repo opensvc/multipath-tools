@@ -1153,6 +1153,30 @@ declare_pc_handler(eh_deadline, set_undef_off_zero)
 declare_pc_snprint(eh_deadline, print_undef_off_zero)
 
 static int
+def_max_retries_handler(struct config *conf, vector strvec, const char *file,
+			int line_nr)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if (strcmp(buff, "off") == 0)
+		conf->max_retries = MAX_RETRIES_OFF;
+	else if (strcmp(buff, "0") == 0)
+		conf->max_retries = MAX_RETRIES_ZERO;
+	else
+		do_set_int(strvec, &conf->max_retries, 1, 5, file, line_nr,
+			   buff);
+
+	free(buff);
+	return 0;
+}
+
+declare_def_snprint(max_retries, print_undef_off_zero)
+
+static int
 set_pgpolicy(vector strvec, void *ptr, const char *file, int line_nr)
 {
 	char * buff;
@@ -2079,6 +2103,7 @@ init_keywords(vector keywords)
 	install_keyword("fast_io_fail_tmo", &def_fast_io_fail_handler, &snprint_def_fast_io_fail);
 	install_keyword("dev_loss_tmo", &def_dev_loss_handler, &snprint_def_dev_loss);
 	install_keyword("eh_deadline", &def_eh_deadline_handler, &snprint_def_eh_deadline);
+	install_keyword("max_retries", &def_max_retries_handler, &snprint_def_max_retries);
 	install_keyword("bindings_file", &deprecated_bindings_file_handler, &snprint_deprecated);
 	install_keyword("wwids_file", &deprecated_wwids_file_handler, &snprint_deprecated);
 	install_keyword("prkeys_file", &deprecated_prkeys_file_handler, &snprint_deprecated);

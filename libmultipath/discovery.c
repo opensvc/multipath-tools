@@ -614,6 +614,43 @@ sysfs_set_eh_deadline(struct path *pp)
 	return (ret <= 0);
 }
 
+static int
+sysfs_set_max_retries(struct config *conf, struct path *pp)
+{
+	struct udev_device *parent;
+	char value[16];
+	STRBUF_ON_STACK(buf);
+	int ret, len;
+
+	if (conf->max_retries == MAX_RETRIES_UNSET)
+		return 0;
+
+	if (!pp->udev || pp->sg_id.host_no < 0)
+		return 1;
+
+	len = sprintf(value, "%d", (conf->max_retries == MAX_RETRIES_OFF)? -1 :
+				   (conf->max_retries == MAX_RETRIES_ZERO)? 0 :
+				   conf->max_retries);
+
+	parent = udev_device_get_parent_with_subsystem_devtype(pp->udev,
+			"scsi", "scsi_device");
+	if (!parent)
+		return 1;
+
+	if (print_strbuf(&buf, "scsi_disk/%i:%i:%i:%" PRIu64 "/max_retries",
+			 pp->sg_id.host_no, pp->sg_id.channel,
+			 pp->sg_id.scsi_id, pp->sg_id.lun) < 0)
+		return 1;
+
+	ret = sysfs_attr_set_value(parent, get_strbuf_str(&buf), value, len);
+	if (len != ret)
+		log_sysfs_attr_set_value(3, ret,
+					 "%s/%s: failed to set value to %s",
+					 udev_device_get_sysname(parent),
+					 get_strbuf_str(&buf), value);
+	return (len != ret);
+}
+
 static void
 sysfs_set_rport_tmo(struct multipath *mpp, struct path *pp)
 {
@@ -878,7 +915,8 @@ sysfs_set_scsi_tmo (struct config *conf, struct multipath *mpp)
 
 		if (pp->dev_loss == DEV_LOSS_TMO_UNSET &&
 		    pp->fast_io_fail == MP_FAST_IO_FAIL_UNSET &&
-		    pp->eh_deadline == EH_DEADLINE_UNSET)
+		    pp->eh_deadline == EH_DEADLINE_UNSET &&
+		    conf->max_retries == MAX_RETRIES_UNSET)
 			continue;
 
 		if (pp->bus != SYSFS_BUS_SCSI) {
@@ -886,6 +924,7 @@ sysfs_set_scsi_tmo (struct config *conf, struct multipath *mpp)
 			continue;
 		}
 		sysfs_set_eh_deadline(pp);
+		sysfs_set_max_retries(conf, pp);
 
 		if (pp->dev_loss == DEV_LOSS_TMO_UNSET &&
 		    pp->fast_io_fail == MP_FAST_IO_FAIL_UNSET)

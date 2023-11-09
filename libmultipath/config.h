@@ -162,6 +162,7 @@ struct config {
 	int fast_io_fail;
 	unsigned int dev_loss;
 	int eh_deadline;
+	int max_retries;
 	int log_checker_err;
 	int allow_queueing;
 	int allow_usb_devices;
