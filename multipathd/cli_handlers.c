@@ -813,35 +813,6 @@ cli_reload(void *v, struct strbuf *reply, void *data)
 	return reload_and_sync_map(mpp, vecs);
 }
 
-static int resize_map(struct multipath *mpp, unsigned long long size,
-	       struct vectors * vecs)
-{
-	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
-	unsigned long long orig_size = mpp->size;
-
-	mpp->size = size;
-	update_mpp_paths(mpp, vecs->pathvec);
-	if (setup_map(mpp, &params, vecs) != 0) {
-		condlog(0, "%s: failed to setup map for resize : %s",
-			mpp->alias, strerror(errno));
-		mpp->size = orig_size;
-		return 1;
-	}
-	mpp->action = ACT_RESIZE;
-	mpp->force_udev_reload = 1;
-	if (domap(mpp, params, 1) == DOMAP_FAIL) {
-		condlog(0, "%s: failed to resize map : %s", mpp->alias,
-			strerror(errno));
-		mpp->size = orig_size;
-		return 1;
-	}
-	if (setup_multipath(vecs, mpp) != 0)
-		return 2;
-	sync_map_state(mpp);
-
-	return 0;
-}
-
 static int
 cli_resize(void *v, struct strbuf *reply, void *data)
 {
