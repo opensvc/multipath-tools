@@ -1331,6 +1331,21 @@ The default is: \fBno\fR
 .
 .
 .TP
+.B auto_resize
+Controls when multipathd will automatically resize a multipath device.  If set
+to \fInever\fR, multipath devices must always be manually resized by either
+running \fBmultipathd resize map <name>\fR.  If set to \fIgrow_only\fR, when
+multipathd detects that all of a multipath device's paths have increased in
+size, it will automatically grow the multipath device to the new size. If set
+to \fIgrow_shrink\fR, multipathd will also automatically shrink the device
+once it detects all of its paths have decreased in size.
+.RS
+.TP
+The default is: \fBnever\fR
+.RE
+.
+.
+.TP
 .B enable_foreign
 Enables or disables foreign libraries (see section
 .I FOREIGN MULTIPATH SUPPORT

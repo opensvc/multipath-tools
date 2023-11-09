@@ -1590,6 +1590,11 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 	if (pp) {
 		struct multipath *mpp = pp->mpp;
 		char wwid[WWID_SIZE];
+		int auto_resize;
+
+		conf = get_multipath_config();
+		auto_resize = conf->auto_resize;
+		put_multipath_config(conf);
 
 		if (pp->initialized == INIT_REQUESTED_UDEV) {
 			needs_reinit = 1;
@@ -1647,6 +1652,29 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 					condlog(2, "%s: map %s reloaded (retval %d)", uev->kernel, mpp->alias, retval);
 				}
 			}
+		}
+		if (auto_resize != AUTO_RESIZE_NEVER &&
+		    !mpp->wait_for_udev) {
+			struct pathgroup *pgp;
+			struct path *pp2;
+			unsigned int i, j;
+			unsigned long long orig_size = mpp->size;
+
+			if (!pp->size || pp->size == mpp->size ||
+			    (pp->size < mpp->size &&
+			     auto_resize == AUTO_RESIZE_GROW_ONLY))
+				goto out;
+
+			vector_foreach_slot(mpp->pg, pgp, i)
+				vector_foreach_slot (pgp->paths, pp2, j)
+					if (pp2->size && pp2->size != pp->size)
+						goto out;
+			retval = resize_map(mpp, pp->size, vecs);
+			if (retval == 2)
+				condlog(2, "%s: map removed during resize", pp->dev);
+			else if (retval == 0)
+				condlog(2, "%s: resized map from %llu to %llu",
+					mpp->alias, orig_size, pp->size);
 		}
 	}
 out:

@@ -179,6 +179,13 @@ enum queue_mode_states {
 	QUEUE_MODE_RQ,
 };
 
+enum auto_resize_state {
+	AUTO_RESIZE_UNDEF = 0,
+	AUTO_RESIZE_NEVER,
+	AUTO_RESIZE_GROW_ONLY,
+	AUTO_RESIZE_GROW_SHRINK,
+};
+
 #define PROTOCOL_UNSET -1
 
 enum scsi_protocol {

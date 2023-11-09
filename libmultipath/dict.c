@@ -1665,6 +1665,43 @@ declare_hw_snprint(recheck_wwid, print_yes_no_undef)
 declare_def_range_handler(uxsock_timeout, DEFAULT_REPLY_TIMEOUT, INT_MAX)
 
 static int
+def_auto_resize_handler(struct config *conf, vector strvec, const char *file,
+			int line_nr)
+{
+	char * buff;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	if (strcmp(buff, "never") == 0)
+		conf->auto_resize = AUTO_RESIZE_NEVER;
+	else if (strcmp(buff, "grow_only") == 0)
+		conf->auto_resize = AUTO_RESIZE_GROW_ONLY;
+	else if (strcmp(buff, "grow_shrink") == 0)
+		conf->auto_resize = AUTO_RESIZE_GROW_SHRINK;
+	else
+		condlog(1, "%s line %d, invalid value for auto_resize: \"%s\"",
+			file, line_nr, buff);
+
+	free(buff);
+	return 0;
+}
+
+int
+print_auto_resize(struct strbuf *buff, long v)
+{
+	if (!v)
+		return 0;
+	return append_strbuf_quoted(buff,
+			v == AUTO_RESIZE_GROW_ONLY ? "grow_only" :
+			v == AUTO_RESIZE_GROW_SHRINK ? "grow_shrink" :
+			"never");
+}
+
+declare_def_snprint(auto_resize, print_auto_resize)
+
+static int
 hw_vpd_vendor_handler(struct config *conf, vector strvec, const char *file,
 		      int line_nr)
 {
@@ -2140,6 +2177,7 @@ init_keywords(vector keywords)
 	install_keyword("remove_retries", &def_remove_retries_handler, &snprint_def_remove_retries);
 	install_keyword("max_sectors_kb", &def_max_sectors_kb_handler, &snprint_def_max_sectors_kb);
 	install_keyword("ghost_delay", &def_ghost_delay_handler, &snprint_def_ghost_delay);
+	install_keyword("auto_resize", &def_auto_resize_handler, &snprint_def_auto_resize);
 	install_keyword("find_multipaths_timeout",
 			&def_find_multipaths_timeout_handler,
 			&snprint_def_find_multipaths_timeout);
