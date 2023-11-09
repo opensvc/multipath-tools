@@ -835,6 +835,10 @@ static int resize_map(struct multipath *mpp, unsigned long long size,
 		mpp->size = orig_size;
 		return 1;
 	}
+	if (setup_multipath(vecs, mpp) != 0)
+		return 2;
+	sync_map_state(mpp);
+
 	return 0;
 }
 
@@ -848,7 +852,7 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 	unsigned long long size = 0;
 	struct pathgroup *pgp;
 	struct path *pp;
-	unsigned int i, j;
+	unsigned int i, j, ret;
 	bool mismatch = false;
 
 	mapname = convert_dev(mapname, 0);
@@ -898,14 +902,12 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 	condlog(3, "%s old size is %llu, new size is %llu", mapname, mpp->size,
 		size);
 
-	if (resize_map(mpp, size, vecs) != 0)
-		return 1;
+	ret = resize_map(mpp, size, vecs);
 
-	if (setup_multipath(vecs, mpp) != 0)
-		return 1;
-	sync_map_state(mpp);
+	if (ret == 2)
+		condlog(0, "%s: map removed while trying to resize", mapname);
 
-	return 0;
+	return (ret != 0);
 }
 
 static int
