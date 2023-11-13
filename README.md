@@ -131,8 +131,7 @@ The following variables can be passed to the `make` command line:
    "Usr-merged" distributions[^systemd] may want to set this to `/usr`. The
    default is empty (`""`).
  * `usr_prefix`: where to install those parts of the code that aren't necessary
-   for booting. Non-usr-merged distributions[^systemd] may want to set this to
-   `/usr`. The default is `$(prefix)`.
+   for booting. The default is `/usr` if `$(prefix)` is empty, and `$(prefix)` otherwise.
  * `systemd_prefix`: Prefix for systemd-related files[^systemd]. The default is `/usr`.
  * `etc_prefix`: The prefix for configuration files. "usr-merged"
    distributions with immutable `/usr`[^systemd] may want to set this to
