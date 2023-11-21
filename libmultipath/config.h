@@ -162,6 +162,7 @@ struct config {
 	int fast_io_fail;
 	unsigned int dev_loss;
 	int eh_deadline;
+	int max_retries;
 	int log_checker_err;
 	int allow_queueing;
 	int allow_usb_devices;
@@ -201,15 +202,13 @@ struct config {
 	int skip_delegate;
 	unsigned int sequence_nr;
 	int recheck_wwid;
+	int auto_resize;
 
 	char * selector;
 	struct _vector uid_attrs;
 	char * uid_attribute;
 	char * features;
 	char * hwhandler;
-	char * bindings_file;
-	char * wwids_file;
-	char * prkeys_file;
 	char * prio_name;
 	char * prio_args;
 	char * checker_name;

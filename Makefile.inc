@@ -36,25 +36,40 @@ prefix		:=
 # Prefix for binaries
 exec_prefix	:= $(prefix)
 # Prefix for non-essential libraries (libdmmp)
-usr_prefix	:= $(prefix)
+usr_prefix	:= $(if $(prefix),$(prefix),/usr)
+# Prefix for configfuration files (multipath.conf)
+etc_prefix	:= $(prefix)
 # Where to install systemd-related files. systemd is usually installed under /usr
-# Note: some systemd installations use separate "prefix" and "rootprefix".
-# In this case, override only unitdir to use systemd's "rootprefix" instead of $(systemd_prefix)
+# Note: systemd installations with "split-usr=true" use separate "prefixdir" and
+# "rootprefixdir". Our systemd_prefix corresponds to "prefixdir".
+# In this case, override only unitdir and libudevdir below to use
+# systemd's "rootprefixdir" instead of $(systemd_prefix)
 systemd_prefix  := /usr
-unitdir		:= $(systemd_prefix)/lib/systemd/system
-tmpfilesdir	:= $(systemd_prefix)/lib/tmpfiles.d
-modulesloaddir	:= $(systemd_prefix)/lib/modules-load.d
-libudevdir	:= $(systemd_prefix)/lib/udev
+
+# Make sure all prefix variables end in "/"
+append-slash = $(1)$(if $(filter %/,$(1)),,/)
+override prefix          := $(call append-slash,$(prefix))
+override exec_prefix     := $(call append-slash,$(exec_prefix))
+override usr_prefix      := $(call append-slash,$(usr_prefix))
+override etc_prefix      := $(call append-slash,$(etc_prefix))
+override systemd_prefix  := $(call append-slash,$(systemd_prefix))
+
+unitdir		:= $(systemd_prefix)lib/systemd/system
+tmpfilesdir	:= $(systemd_prefix)lib/tmpfiles.d
+modulesloaddir	:= $(systemd_prefix)lib/modules-load.d
+libudevdir	:= $(systemd_prefix)lib/udev
 udevrulesdir	:= $(libudevdir)/rules.d
-bindir		:= $(exec_prefix)/sbin
-mandir		:= $(usr_prefix)/share/man
+bindir		:= $(exec_prefix)sbin
+mandir		:= $(usr_prefix)share/man
 LIB		:= $(if $(shell test -d /lib64 && echo 1),lib64,lib)
-syslibdir	:= $(prefix)/$(LIB)
-usrlibdir	:= $(usr_prefix)/$(LIB)
-includedir	:= $(usr_prefix)/include
+syslibdir	:= $(prefix)$(LIB)
+usrlibdir	:= $(usr_prefix)$(LIB)
+includedir	:= $(usr_prefix)include
 pkgconfdir	:= $(usrlibdir)/pkgconfig
-plugindir       := $(prefix)/$(LIB)/multipath
-configdir       := $(prefix)/etc/multipath/conf.d
+plugindir       := $(prefix)$(LIB)/multipath
+configdir       := $(etc_prefix)etc/multipath/conf.d
+configfile      := $(etc_prefix)etc/multipath.conf
+statedir        := $(etc_prefix)etc/multipath
 runtimedir      := $(if $(shell test -L /var/run -o ! -d /var/run && echo 1),/run,/var/run)
 devmapper_incdir := $(or $(shell $(PKG_CONFIG) --variable=includedir devmapper),/usr/include)
 libudev_incdir	:= $(or $(shell $(PKG_CONFIG) --variable=includedir libudev),/usr/include)
@@ -77,15 +92,18 @@ ORIG_LDFLAGS     := $(LDFLAGS)
 
 SYSTEMD_CPPFLAGS := $(if $(SYSTEMD),-DUSE_SYSTEMD=$(SYSTEMD))
 SYSTEMD_LIBDEPS := $(if $(SYSTEMD),$(if $(shell test $(SYSTEMD) -gt 209 && echo 1),-lsystemd,-lsystemd-daemon))
+MODPROBE_UNIT := $(shell test "0$(SYSTEMD)" -lt 245 2>/dev/null || \
+			echo "modprobe@dm_multipath.service")
 
 OPTFLAGS	:= -O2 -g $(STACKPROT) --param=ssp-buffer-size=4
 WARNFLAGS	:= -Werror -Wall -Wextra -Wformat=2 $(WFORMATOVERFLOW) -Werror=implicit-int \
 		  -Werror=implicit-function-declaration -Werror=format-security \
 		  $(WNOCLOBBERED) -Werror=cast-qual $(ERROR_DISCARDED_QUALIFIERS) $(W_URCU_TYPE_LIMITS)
-CPPFLAGS	:= $(FORTIFY_OPT) $(CPPFLAGS) \
+CPPFLAGS	:= $(FORTIFY_OPT) $(CPPFLAGS) $(D_URCU_VERSION) \
 		   -DBIN_DIR=\"$(bindir)\" -DMULTIPATH_DIR=\"$(plugindir)\" \
-		   -DRUNTIME_DIR=\"$(runtimedir)\" \
-		   -DCONFIG_DIR=\"$(configdir)\" -DEXTRAVERSION=\"$(EXTRAVERSION)\" -MMD -MP
+		   -DRUNTIME_DIR=\"$(runtimedir)\" -DCONFIG_DIR=\"$(configdir)\" \
+		   -DDEFAULT_CONFIGFILE=\"$(configfile)\" -DSTATE_DIR=\"$(statedir)\" \
+		   -DEXTRAVERSION=\"$(EXTRAVERSION)\" -MMD -MP
 CFLAGS		:= --std=gnu99 $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe
 BIN_CFLAGS	:= -fPIE -DPIE
 LIB_CFLAGS	:= -fPIC
@@ -128,3 +146,6 @@ NV_VERSION_SCRIPT = $(DEVLIB:%.so=%-nv.version)
 	@grep -P '^[ \t]+[a-zA-Z_][a-zA-Z0-9_]*;' $< >>$@
 	@printf 'local:\n\t*;\n};\n' >>$@
 
+%:	%.in
+	@echo creating $@
+	$(Q)sed 's:@CONFIGFILE@:'$(configfile)':g;s:@CONFIGDIR@:'$(configdir)':g;s:@STATE_DIR@:'$(statedir)':g;s:@RUNTIME_DIR@:'$(runtimedir)':g;s/@MODPROBE_UNIT@/'$(MODPROBE_UNIT)'/g' $< >$@

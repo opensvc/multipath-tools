@@ -155,7 +155,7 @@ Show the format wildcards used in interactive commands taking $format.
 .TP
 .B list|show config
 Show the currently used configuration, derived from default values and values
-specified within the configuration file \fI/etc/multipath.conf\fR.
+specified within the configuration file \fI@CONFIGFILE@\fR.
 .
 .TP
 .B list|show config local
@@ -165,7 +165,7 @@ the devices section to those devices that are actually present in the system.
 .TP
 .B list|show blacklist
 Show the currently used blacklist rules, derived from default values and values
-specified within the configuration file \fI/etc/multipath.conf\fR.
+specified within the configuration file \fI@CONFIGFILE@\fR.
 .
 .TP
 .B list|show devices
@@ -290,13 +290,13 @@ Get the current persistent reservation key associated with $map.
 .B map|multipath $map setprkey key $key
 Set the persistent reservation key associated with $map to $key in the
 \fIprkeys_file\fR. This key will only be used by multipathd if
-\fIreservation_key\fR is set to \fBfile\fR in \fI/etc/multipath.conf\fR.
+\fIreservation_key\fR is set to \fBfile\fR in \fI@CONFIGFILE@\fR.
 .
 .TP
 .B map|multipath $map unsetprkey
 Remove the persistent reservation key associated with $map from the
 \fIprkeys_file\fR. This will only unset the key used by multipathd if
-\fIreservation_key\fR is set to \fBfile\fR in \fI/etc/multipath.conf\fR.
+\fIreservation_key\fR is set to \fBfile\fR in \fI@CONFIGFILE@\fR.
 .
 .TP
 .B path $path setmarginal

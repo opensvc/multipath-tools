@@ -843,6 +843,8 @@ main (int argc, char *argv[])
 	conf->force_sync = 1;
 	if (atexit(cleanup_vecs))
 		condlog(1, "failed to register cleanup handler for vecs: %m");
+	if (atexit(cleanup_bindings))
+		condlog(1, "failed to register cleanup handler for bindings: %m");
 	while ((arg = getopt(argc, argv, ":adDcChl::eFfM:v:p:b:BrR:itTquUwW")) != EOF ) {
 		switch(arg) {
 		case 'v':
@@ -854,7 +856,7 @@ main (int argc, char *argv[])
 			libmp_verbosity = atoi(optarg);
 			break;
 		case 'b':
-			conf->bindings_file = strdup(optarg);
+			condlog(1, "option -b ignored");
 			break;
 		case 'B':
 			conf->bindings_read_only = 1;
@@ -1023,7 +1025,7 @@ main (int argc, char *argv[])
 	}
 
 	if (check_alias_settings(conf)) {
-		fprintf(stderr, "fatal configuration error, aborting");
+		fprintf(stderr, "fatal configuration error, aborting\n");
 		exit(RTVL_FAIL);
 	}
 

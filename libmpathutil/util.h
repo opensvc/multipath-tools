@@ -21,7 +21,6 @@ size_t strlcat(char * restrict dst, const char * restrict src, size_t size);
 dev_t parse_devt(const char *dev_t);
 char *convert_dev(char *dev, int is_path_device);
 void setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached);
-int systemd_service_enabled(const char *dev);
 int get_linux_version_code(void);
 int safe_write(int fd, const void *buf, size_t count);
 void set_max_fds(rlim_t max_fds);

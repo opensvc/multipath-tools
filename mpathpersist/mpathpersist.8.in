@@ -31,7 +31,7 @@ mpathpersist \- Manages SCSI persistent reservations on dm multipath devices.
 .
 This utility is used to manage SCSI persistent reservations on Device Mapper
 Multipath devices. To be able to use this functionality, the \fIreservation_key\fR
-attribute must be defined in the \fI/etc/multipath.conf\fR file. Otherwise the
+attribute must be defined in the \fI@CONFIGFILE@\fR file. Otherwise the
 \fBmultipathd\fR daemon will not check for persistent reservation for newly
 discovered paths or reinstated paths.
 .

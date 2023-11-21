@@ -16,12 +16,14 @@ void __wrap_dlog (int prio, const char * fmt, ...)
 	va_list ap;
 	char *expected;
 
-	check_expected(prio);
 	va_start(ap, fmt);
 	vsnprintf(buff, MAX_MSG_SIZE, fmt, ap);
 	va_end(ap);
 	fprintf(stderr, "%s(%d): %s", __func__, prio, buff);
 	expected = mock_ptr_type(char *);
+	if (memcmp(expected, buff, strlen(expected)))
+		fprintf(stderr, "%s(expected): %s", __func__, expected);
+	check_expected(prio);
 	assert_memory_equal(buff, expected, strlen(expected));
 }
 

@@ -706,11 +706,15 @@ dm_get_prefixed_uuid(const char *name, char *uuid, int uuid_len)
 {
 	struct dm_task *dmt;
 	const char *uuidtmp;
+	struct dm_info info;
 	int r = 1;
 
 	dmt = libmp_dm_task_create(DM_DEVICE_INFO);
 	if (!dmt)
 		return 1;
+
+	if (uuid_len > 0)
+		uuid[0] = '\0';
 
 	if (!dm_task_set_name (dmt, name))
 		goto uuidout;
@@ -720,11 +724,13 @@ dm_get_prefixed_uuid(const char *name, char *uuid, int uuid_len)
 		goto uuidout;
 	}
 
+	if (!dm_task_get_info(dmt, &info) ||
+	    !info.exists)
+		goto uuidout;
+
 	uuidtmp = dm_task_get_uuid(dmt);
 	if (uuidtmp)
 		strlcpy(uuid, uuidtmp, uuid_len);
-	else
-		uuid[0] = '\0';
 
 	r = 0;
 uuidout:

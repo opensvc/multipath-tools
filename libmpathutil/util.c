@@ -213,64 +213,6 @@ setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached)
 	}
 }
 
-int systemd_service_enabled_in(const char *dev, const char *prefix)
-{
-	static const char service[] = "multipathd.service";
-	char path[PATH_MAX], file[PATH_MAX];
-	DIR *dirfd;
-	struct dirent *d;
-	int found = 0;
-
-	if (safe_sprintf(path, "%s/systemd/system", prefix))
-		return 0;
-
-	condlog(3, "%s: checking for %s in %s", dev, service, path);
-
-	dirfd = opendir(path);
-	if (dirfd == NULL)
-		return 0;
-
-	while ((d = readdir(dirfd)) != NULL) {
-		char *p;
-		struct stat stbuf;
-
-		if ((strcmp(d->d_name,".") == 0) ||
-		    (strcmp(d->d_name,"..") == 0))
-			continue;
-
-		if (strlen(d->d_name) < 6)
-			continue;
-
-		p = d->d_name + strlen(d->d_name) - 6;
-		if (strcmp(p, ".wants"))
-			continue;
-		if (!safe_sprintf(file, "%s/%s/%s",
-				  path, d->d_name, service)
-		    && stat(file, &stbuf) == 0) {
-			condlog(3, "%s: found %s", dev, file);
-			found++;
-			break;
-		}
-	}
-	closedir(dirfd);
-
-	return found;
-}
-
-int systemd_service_enabled(const char *dev)
-{
-	int found = 0;
-
-	found = systemd_service_enabled_in(dev, "/etc");
-	if (!found)
-		found = systemd_service_enabled_in(dev, "/usr/lib");
-	if (!found)
-		found = systemd_service_enabled_in(dev, "/lib");
-	if (!found)
-		found = systemd_service_enabled_in(dev, "/run");
-	return found;
-}
-
 static int _linux_version_code;
 static pthread_once_t _lvc_initialized = PTHREAD_ONCE_INIT;
 

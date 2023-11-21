@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_20.0.0 {
+LIBMULTIPATH_22.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -64,6 +64,7 @@ global:
 	checker_name;
 	checker_state_name;
 	check_foreign;
+	cleanup_bindings;
 	cleanup_lock;
 	coalesce_paths;
 	count_active_paths;
@@ -120,6 +121,7 @@ global:
 	get_used_hwes;
 	get_vpd_sgio;
 	group_by_prio;
+	handle_bindings_file_inotify;
 	has_dm_info;
 	init_checkers;
 	init_config;

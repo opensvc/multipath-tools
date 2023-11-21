@@ -56,6 +56,7 @@
 #define DEFAULT_UNKNOWN_FIND_MULTIPATHS_TIMEOUT 1
 #define DEFAULT_ALL_TG_PT ALL_TG_PT_OFF
 #define DEFAULT_RECHECK_WWID RECHECK_WWID_OFF
+#define DEFAULT_AUTO_RESIZE AUTO_RESIZE_NEVER
 /* Enable no foreign libraries by default */
 #define DEFAULT_ENABLE_FOREIGN "NONE"
 
@@ -66,10 +67,9 @@
 #define MAX_DEV_LOSS_TMO	UINT_MAX
 #define DEFAULT_PIDFILE		RUNTIME_DIR "/multipathd.pid"
 #define DEFAULT_SOCKET		"/org/kernel/linux/storage/multipathd"
-#define DEFAULT_CONFIGFILE	"/etc/multipath.conf"
-#define DEFAULT_BINDINGS_FILE	"/etc/multipath/bindings"
-#define DEFAULT_WWIDS_FILE	"/etc/multipath/wwids"
-#define DEFAULT_PRKEYS_FILE    "/etc/multipath/prkeys"
+#define DEFAULT_BINDINGS_FILE	STATE_DIR "/bindings"
+#define DEFAULT_WWIDS_FILE	STATE_DIR "/wwids"
+#define DEFAULT_PRKEYS_FILE	STATE_DIR "/prkeys"
 #define MULTIPATH_SHM_BASE	RUNTIME_DIR "/multipath/"
 
 

@@ -13,11 +13,16 @@ cscope.files
 cscope.out
 kpartx/kpartx
 multipath/multipath
+multipath/multipath.8
+multipath/multipath.conf.5
 multipath/multipath.rules
 multipath/tmpfiles.conf
 multipathd/multipathd
+multipathd/multipathd.8
 multipathd/multipathc
+multipathd/multipathd.service
 mpathpersist/mpathpersist
+mpathpersist/mpathpersist.8
 abi.tar.gz
 abi
 abi-test

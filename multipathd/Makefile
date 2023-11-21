@@ -1,11 +1,10 @@
 include ../Makefile.inc
 
-EXEC := multipathd
-CLI := multipathc
+EXEC     := multipathd
+CLI      := multipathc
+MANPAGES := multipathd.8
 
 CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathpersistdir) -I$(mpathcmddir) -I$(thirdpartydir) \
-	$(shell $(PKG_CONFIG) --modversion liburcu 2>/dev/null | \
-		awk -F. '{ printf("-DURCU_VERSION=0x%06x", 256 * ( 256 * $$1 + $$2) + $$3); }') \
 	-DBINDIR='"$(bindir)"' $(SYSTEMD_CPPFLAGS)
 
 #
@@ -42,7 +41,7 @@ ifeq ($(FPIN_SUPPORT),1)
 OBJS += fpin_handlers.o
 endif
 
-all : $(EXEC) $(CLI)
+all : $(EXEC) $(CLI) $(MANPAGES) $(EXEC).service
 
 $(EXEC): $(OBJS) $(multipathdir)/libmultipath.so $(mpathcmddir)/libmpathcmd.so
 	@echo building $@ because of $?
@@ -79,7 +78,7 @@ uninstall:
 	$(Q)$(RM) $(DESTDIR)$(unitdir)/$(EXEC).socket
 
 clean: dep_clean
-	$(Q)$(RM) core *.o $(EXEC) $(CLI)
+	$(Q)$(RM) core *.o $(EXEC) $(CLI) $(MANPAGES) $(EXEC).service
 
 include $(wildcard $(OBJS:.o=.d) $(CLI_OBJS:.o=.d))
 

@@ -179,6 +179,13 @@ enum queue_mode_states {
 	QUEUE_MODE_RQ,
 };
 
+enum auto_resize_state {
+	AUTO_RESIZE_UNDEF = 0,
+	AUTO_RESIZE_NEVER,
+	AUTO_RESIZE_GROW_ONLY,
+	AUTO_RESIZE_GROW_SHRINK,
+};
+
 #define PROTOCOL_UNSET -1
 
 enum scsi_protocol {
@@ -293,6 +300,12 @@ enum eh_deadline_states {
 	EH_DEADLINE_UNSET = UOZ_UNDEF,
 	EH_DEADLINE_OFF = UOZ_OFF,
 	EH_DEADLINE_ZERO = UOZ_ZERO,
+};
+
+enum max_retries_states {
+	MAX_RETRIES_UNSET = UOZ_UNDEF,
+	MAX_RETRIES_OFF = UOZ_OFF,
+	MAX_RETRIES_ZERO = UOZ_ZERO,
 };
 
 enum recheck_wwid_states {

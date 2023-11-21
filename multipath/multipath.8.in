@@ -185,7 +185,7 @@ Display the currently used multipathd configuration.
 .B \-T
 Display the currently used multipathd configuration, limiting the output to
 those devices actually present in the system. This can be used a template for
-creating \fImultipath.conf\fR.
+creating \fI@CONFIGFILE@\fR.
 .
 .\" ----------------------------------------------------------------------------
 .SH OPTIONS
@@ -233,11 +233,11 @@ option from \fBmultipath.conf(5)\fR.
 .B \-i
 Ignore WWIDs file when processing devices. If
 \fIfind_multipaths strict\fR or \fIfind_multipaths no\fR is set in
-\fImultipath.conf\fR, multipath only considers devices that are
+\fI@CONFIGFILE@\fR, multipath only considers devices that are
 listed in the WWIDs file. This option overrides that behavior. For other values
 of \fIfind_multipaths\fR, this option has no effect. See the description of
 \fIfind_multipaths\fR in
-.BR multipath.conf (5).
+.BR @CONFIGFILE@ (5).
 This option should only be used in rare circumstances.
 .
 .TP
@@ -246,8 +246,8 @@ Treat the bindings file as read only.
 .
 .TP
 .BI \-b " file"
-Set \fIuser_friendly_names\fR bindings file location. The default is
-\fI/etc/multipath/bindings\fR.
+(\fBdeprecated, do not use\fR) Set \fIuser_friendly_names\fR bindings file location. The default is
+\fI@STATE_DIR@/bindings\fR.
 .
 .TP
 .B \-q

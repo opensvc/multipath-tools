@@ -19,7 +19,6 @@
 #include <sys/ioctl.h>
 #include <linux/fs.h>
 #include <libaio.h>
-#include <errno.h>
 #include <sys/mman.h>
 #include <sys/select.h>
 
@@ -38,6 +37,7 @@
 #define TIMEOUT_NO_IO_NSEC		10000000 /*10ms = 10000000ns*/
 #define FLAKY_PATHFAIL_THRESHOLD	2
 #define CONCUR_NR_EVENT			32
+#define NR_IOSTAT_PATHS			32
 
 #define PATH_IO_ERR_IN_CHECKING		-1
 #define PATH_IO_ERR_WAITING_TO_CHECK	-2
@@ -111,10 +111,14 @@ static int init_each_dio_ctx(struct dio_ctx *ct, int blksize,
 	return 0;
 }
 
-static void deinit_each_dio_ctx(struct dio_ctx *ct)
+static int deinit_each_dio_ctx(struct dio_ctx *ct)
 {
-	if (ct->buf)
-		free(ct->buf);
+	if (!ct->buf)
+		return 0;
+	if (ct->io_starttime.tv_sec != 0 || ct->io_starttime.tv_nsec != 0)
+		return 1;
+	free(ct->buf);
+	return 0;
 }
 
 static int setup_directio_ctx(struct io_err_stat_path *p)
@@ -164,17 +168,21 @@ fail_close:
 static void free_io_err_stat_path(struct io_err_stat_path *p)
 {
 	int i;
+	int inflight = 0;
 
 	if (!p)
 		return;
 	if (!p->dio_ctx_array)
 		goto free_path;
 
-	cancel_inflight_io(p);
-
 	for (i = 0; i < CONCUR_NR_EVENT; i++)
-		deinit_each_dio_ctx(p->dio_ctx_array + i);
-	free(p->dio_ctx_array);
+		inflight += deinit_each_dio_ctx(p->dio_ctx_array + i);
+
+	if (!inflight)
+		free(p->dio_ctx_array);
+	else
+		io_err_stat_log(2, "%s: can't free aio space of %s, %d IOs in flight",
+				__func__, p->devname, inflight);
 
 	if (p->fd > 0)
 		close(p->fd);
@@ -211,6 +219,15 @@ static void free_io_err_pathvec(void)
 	pthread_cleanup_push(cleanup_mutex, &io_err_pathvec_lock);
 	if (!io_err_pathvec)
 		goto out;
+
+	/* io_cancel() is a noop, but maybe in the future it won't be */
+	vector_foreach_slot(io_err_pathvec, path, i) {
+		if (path && path->dio_ctx_array)
+			cancel_inflight_io(path);
+	}
+
+	/* This blocks until all I/O is finished */
+	io_destroy(ioctx);
 	vector_foreach_slot(io_err_pathvec, path, i)
 		free_io_err_stat_path(path);
 	vector_free(io_err_pathvec);
@@ -451,7 +468,7 @@ static void end_io_err_stat(struct io_err_stat_path *pp)
 
 static int send_each_async_io(struct dio_ctx *ct, int fd, char *dev)
 {
-	int rc = -1;
+	int rc;
 
 	if (ct->io_starttime.tv_nsec == 0 &&
 			ct->io_starttime.tv_sec == 0) {
@@ -459,15 +476,15 @@ static int send_each_async_io(struct dio_ctx *ct, int fd, char *dev)
 
 		get_monotonic_time(&ct->io_starttime);
 		io_prep_pread(&ct->io, fd, ct->buf, ct->blksize, 0);
-		if (io_submit(ioctx, 1, ios) != 1) {
-			io_err_stat_log(5, "%s: io_submit error %i",
-					dev, errno);
-			return rc;
+		if ((rc = io_submit(ioctx, 1, ios)) != 1) {
+			io_err_stat_log(2, "%s: io_submit error %s",
+					dev, strerror(-rc));
+			return -1;
 		}
-		rc = 0;
+		return 0;
 	}
 
-	return rc;
+	return -1;
 }
 
 static void send_batch_async_ios(struct io_err_stat_path *pp)
@@ -503,7 +520,7 @@ static int try_to_cancel_timeout_io(struct dio_ctx *ct, struct timespec *t,
 	int		rc = PATH_UNCHECKED;
 	int		r;
 
-	if (ct->io_starttime.tv_sec == 0)
+	if (ct->io_starttime.tv_sec == 0 && ct->io_starttime.tv_nsec == 0)
 		return rc;
 	timespecsub(t, &ct->io_starttime, &difftime);
 	if (difftime.tv_sec > IOTIMEOUT_SEC) {
@@ -512,10 +529,8 @@ static int try_to_cancel_timeout_io(struct dio_ctx *ct, struct timespec *t,
 		io_err_stat_log(5, "%s: abort check on timeout", dev);
 		r = io_cancel(ioctx, ios[0], &event);
 		if (r)
-			io_err_stat_log(5, "%s: io_cancel error %i",
-					dev, errno);
-		ct->io_starttime.tv_sec = 0;
-		ct->io_starttime.tv_nsec = 0;
+			io_err_stat_log(5, "%s: io_cancel error %s",
+					dev, strerror(-r));
 		rc = PATH_TIMEOUT;
 	} else {
 		rc = PATH_PENDING;
@@ -544,7 +559,7 @@ static void poll_async_io_timeout(void)
 static void cancel_inflight_io(struct io_err_stat_path *pp)
 {
 	struct io_event event;
-	int i, r;
+	int i;
 
 	for (i = 0; i < CONCUR_NR_EVENT; i++) {
 		struct dio_ctx *ct = pp->dio_ctx_array + i;
@@ -555,12 +570,7 @@ static void cancel_inflight_io(struct io_err_stat_path *pp)
 			continue;
 		io_err_stat_log(5, "%s: abort infligh io",
 				pp->devname);
-		r = io_cancel(ioctx, ios[0], &event);
-		if (r)
-			io_err_stat_log(5, "%s: io_cancel error %d, %i",
-					pp->devname, r, errno);
-		ct->io_starttime.tv_sec = 0;
-		ct->io_starttime.tv_nsec = 0;
+		io_cancel(ioctx, ios[0], &event);
 	}
 }
 
@@ -596,12 +606,11 @@ static void process_async_ios_event(int timeout_nsecs, char *dev)
 	int		i, n;
 	struct timespec	timeout = { .tv_nsec = timeout_nsecs };
 
-	errno = 0;
 	pthread_testcancel();
 	n = io_getevents(ioctx, 1L, CONCUR_NR_EVENT, events, &timeout);
 	if (n < 0) {
-		io_err_stat_log(3, "%s: async io events returned %d (errno=%s)",
-				dev, n, strerror(errno));
+		io_err_stat_log(3, "%s: io_getevents returned %s",
+				dev, strerror(-n));
 	} else {
 		for (i = 0; i < n; i++)
 			handle_async_io_done_event(&events[i]);
@@ -690,8 +699,9 @@ int start_io_err_stat_thread(void *data)
 	if (uatomic_read(&io_err_thread_running) == 1)
 		return 0;
 
-	if (io_setup(CONCUR_NR_EVENT, &ioctx) != 0) {
-		io_err_stat_log(4, "io_setup failed");
+	if ((ret = io_setup(NR_IOSTAT_PATHS * CONCUR_NR_EVENT, &ioctx)) != 0) {
+		io_err_stat_log(1, "io_setup failed: %s, increase /proc/sys/fs/aio-nr ?",
+				strerror(-ret));
 		return 1;
 	}
 
@@ -746,5 +756,4 @@ void stop_io_err_stat_thread(void)
 
 	pthread_join(io_err_stat_thr, NULL);
 	free_io_err_pathvec();
-	io_destroy(ioctx);
 }

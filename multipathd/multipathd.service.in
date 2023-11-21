@@ -2,8 +2,8 @@
 Description=Device-Mapper Multipath Device Controller
 Before=lvm2-activation-early.service
 Before=local-fs-pre.target blk-availability.service shutdown.target
-Wants=systemd-udevd-kernel.socket
-After=systemd-udevd-kernel.socket
+Wants=systemd-udevd-kernel.socket @MODPROBE_UNIT@
+After=systemd-udevd-kernel.socket @MODPROBE_UNIT@
 After=multipathd.socket systemd-remount-fs.service
 Before=initrd-cleanup.service
 DefaultDependencies=no

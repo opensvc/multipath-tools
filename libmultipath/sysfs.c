@@ -175,7 +175,6 @@ sysfs_get_size (struct path *pp, unsigned long long * size)
 
 	if (r != 1) {
 		condlog(3, "%s: Cannot parse size attribute", pp->dev);
-		*size = 0;
 		return 1;
 	}
 

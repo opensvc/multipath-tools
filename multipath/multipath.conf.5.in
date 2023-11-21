@@ -13,14 +13,14 @@
 .SH NAME
 .\" ----------------------------------------------------------------------------
 .
-multipath.conf \- multipath daemon configuration file.
+@CONFIGFILE@, @CONFIGDIR@/*.conf \- multipath daemon configuration file.
 .
 .
 .\" ----------------------------------------------------------------------------
 .SH DESCRIPTION
 .\" ----------------------------------------------------------------------------
 .
-.B "/etc/multipath.conf"
+.B "@CONFIGFILE@"
 is the configuration file for the multipath daemon. It is used to
 overwrite the built-in configuration table of \fBmultipathd\fP.
 Any line whose first non-white-space character is a '#' is considered
@@ -28,6 +28,15 @@ a comment line. Empty lines are ignored.
 .PP
 Currently used multipathd configuration can be displayed with the \fBmultipath -t\fR
 or \fBmultipathd show config\fR command.
+.
+.PP
+Additional configuration can be made in drop-in files under
+.B @CONFIGDIR@.
+Files ending in \fI.conf\fR in this directory are read
+in alphabetical order, after reading \fI@CONFIGFILE@\fR.
+They use the same syntax as \fI@CONFIGFILE@\fR itself,
+and support all sections and keywords. If a keyword occurs in the same section
+in multiple files, the last occurrence will take precedence over all others.
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -85,7 +94,7 @@ not mandatory.
 .
 .LP
 .B Note on regular expressions:
-The \fImultipath.conf\fR syntax allows many attribute values to be specified as POSIX
+The \fI@CONFIGFILE@\fR syntax allows many attribute values to be specified as POSIX
 Extended Regular Expressions (see \fBregex\fR(7)). These regular expressions
 are \fBcase sensitive\fR and \fBnot anchored\fR, thus the expression "bar" matches "barbie",
 "rhabarber", and "wunderbar", but not "Barbie". To avoid unwanted substring
@@ -711,7 +720,7 @@ The default is: \fBno\fR
 .B user_friendly_names
 If set to
 .I yes
-, using the bindings file \fI/etc/multipath/bindings\fR to assign a persistent
+, using the bindings file \fI@STATE_DIR@/bindings\fR to assign a persistent
 and unique alias to the multipath, in the form of mpath<n>. If set to
 .I no
 use the WWID as the alias. In either case this be will
@@ -773,7 +782,7 @@ Specify the maximum number of seconds the SCSI layer will spend doing error
 handling when scsi devices fail. After this timeout the scsi layer will perform
 a full HBA reset. Setting this may be necessary in cases where the rport is
 never lost, so \fIfast_io_fail_tmo\fR and \fIdev_loss_tmo\fR will never
-trigger, but (frequently do to load) scsi commands still hang. \fBNote:\fR when
+trigger, but (frequently due to load) scsi commands still hang. \fBNote:\fR when
 the scsi error handler performs the HBA reset, all target paths on that HBA
 will be affected. eh_deadline should only be set in cases where all targets on
 the affected HBAs are multipathed.
@@ -784,36 +793,43 @@ The default is: \fB<unset>\fR
 .
 .
 .TP
-.B bindings_file
-(Deprecated) This option is deprecated, and will be removed in a future release.
-The full pathname of the binding file to be used when the user_friendly_names
-option is set.
+.B max_retries
+Specify the maximum number of times the SCSI layer will retry IO commands for
+some types of SCSI errors before returning failure. Setting this can be helpful
+for cases where IO commands hang and timeout. By default, the SCSI layer will
+retry IOs 5 times. Reducing this value will allow multipath to retry the IO
+down another path sooner. Valid values are
+\fB0\fR through \fB5\fR.
 .RS
 .TP
-The default is: \fB/etc/multipath/bindings\fR
+The default is: \fB<unset>\fR
+.RE
+.
+.
+.TP
+.B bindings_file
+(Deprecated) This option is not supported any more, and will be ignored.
+.RS
+.TP
+The compiled-in value is: \fB@STATE_DIR@/bindings\fR
 .RE
 .
 .
 .TP
 .B wwids_file
-(Deprecated) This option is deprecated, and will be removed in a future release.
-The full pathname of the WWIDs file, which is used by multipath to keep track
-of the WWIDs for LUNs it has created multipath devices on in the past.
+(Deprecated) This option is not supported any more, and will be ignored.
 .RS
 .TP
-The default is: \fB/etc/multipath/wwids\fR
+The compiled-in value is: \fB@STATE_DIR@/wwids\fR
 .RE
 .
 .
 .TP
 .B prkeys_file
-(Deprecated) This option is deprecated, and will be removed in a future release.
-The full pathname of the prkeys file, which is used by multipathd to keep
-track of the persistent reservation key used for a specific WWID, when
-\fIreservation_key\fR is set to \fBfile\fR.
+(Deprecated) This option is not supported any more, and will be ignored.
 .RS
 .TP
-The default is: \fB/etc/multipath/prkeys\fR
+The compiled-in value is: \fB@STATE_DIR@/prkeys\fR
 .RE
 .
 .
@@ -872,7 +888,7 @@ The default is: \fBno\fR
 .I yes
 and the SCSI layer has already attached a hardware_handler to the device,
 multipath will not force the device to use the hardware_handler specified by
-multipath.conf. If the SCSI layer has not attached a hardware handler,
+@CONFIGFILE@. If the SCSI layer has not attached a hardware handler,
 multipath will continue to use its configured hardware handler.
 .RS
 .PP
@@ -980,6 +996,10 @@ The default is: \fB<unset>\fR
 .TP
 .B config_dir
 (Deprecated) This option is not supported any more, and the value is ignored.
+.RS
+.TP
+The compiled-in value is: \fB@CONFIGDIR@\fR
+.RE
 .
 .
 .TP
@@ -1311,6 +1331,21 @@ The default is: \fBno\fR
 .
 .
 .TP
+.B auto_resize
+Controls when multipathd will automatically resize a multipath device.  If set
+to \fInever\fR, multipath devices must always be manually resized by either
+running \fBmultipathd resize map <name>\fR.  If set to \fIgrow_only\fR, when
+multipathd detects that all of a multipath device's paths have increased in
+size, it will automatically grow the multipath device to the new size. If set
+to \fIgrow_shrink\fR, multipathd will also automatically shrink the device
+once it detects all of its paths have decreased in size.
+.RS
+.TP
+The default is: \fBnever\fR
+.RE
+.
+.
+.TP
 .B enable_foreign
 Enables or disables foreign libraries (see section
 .I FOREIGN MULTIPATH SUPPORT
@@ -1559,7 +1594,7 @@ given device, the attributes of all matching entries are applied to it.
 If an attribute is specified in several matching device subsections,
 later entries take precedence. Thus, entries in files under \fIconfig_dir\fR (in
 reverse alphabetical order) have the highest precedence, followed by entries
-in \fImultipath.conf\fR; the built-in hardware table has the lowest
+in \fI@CONFIGFILE@\fR; the built-in hardware table has the lowest
 precedence. Inside a configuration file, later entries have higher precedence
 than earlier ones.
 .LP

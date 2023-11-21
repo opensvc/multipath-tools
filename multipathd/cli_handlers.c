@@ -813,31 +813,6 @@ cli_reload(void *v, struct strbuf *reply, void *data)
 	return reload_and_sync_map(mpp, vecs);
 }
 
-static int resize_map(struct multipath *mpp, unsigned long long size,
-	       struct vectors * vecs)
-{
-	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
-	unsigned long long orig_size = mpp->size;
-
-	mpp->size = size;
-	update_mpp_paths(mpp, vecs->pathvec);
-	if (setup_map(mpp, &params, vecs) != 0) {
-		condlog(0, "%s: failed to setup map for resize : %s",
-			mpp->alias, strerror(errno));
-		mpp->size = orig_size;
-		return 1;
-	}
-	mpp->action = ACT_RESIZE;
-	mpp->force_udev_reload = 1;
-	if (domap(mpp, params, 1) == DOMAP_FAIL) {
-		condlog(0, "%s: failed to resize map : %s", mpp->alias,
-			strerror(errno));
-		mpp->size = orig_size;
-		return 1;
-	}
-	return 0;
-}
-
 static int
 cli_resize(void *v, struct strbuf *reply, void *data)
 {
@@ -845,9 +820,11 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 	char * mapname = get_keyparam(v, KEY_MAP);
 	struct multipath *mpp;
 	int minor;
-	unsigned long long size;
+	unsigned long long size = 0;
 	struct pathgroup *pgp;
 	struct path *pp;
+	unsigned int i, j, ret;
+	bool mismatch = false;
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: resize map (operator)", mapname);
@@ -867,21 +844,24 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 		return 1;
 	}
 
-	pgp = VECTOR_SLOT(mpp->pg, 0);
-
-	if (!pgp){
-		condlog(0, "%s: couldn't get path group. cannot resize",
+	vector_foreach_slot(mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp, j) {
+			sysfs_get_size(pp, &pp->size);
+			if (!pp->size)
+				continue;
+			if (!size)
+				size = pp->size;
+			else if (pp->size != size)
+				mismatch = true;
+		}
+	}
+	if (!size) {
+		condlog(0, "%s: couldn't get size from sysfs. cannot resize",
 			mapname);
 		return 1;
 	}
-	pp = VECTOR_SLOT(pgp->paths, 0);
-
-	if (!pp){
-		condlog(0, "%s: couldn't get path. cannot resize", mapname);
-		return 1;
-	}
-	if (!pp->udev || sysfs_get_size(pp, &size)) {
-		condlog(0, "%s: couldn't get size for sysfs. cannot resize",
+	if (mismatch) {
+		condlog(0, "%s: path size not consistent. cannot resize",
 			mapname);
 		return 1;
 	}
@@ -893,14 +873,12 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 	condlog(3, "%s old size is %llu, new size is %llu", mapname, mpp->size,
 		size);
 
-	if (resize_map(mpp, size, vecs) != 0)
-		return 1;
+	ret = resize_map(mpp, size, vecs);
 
-	if (setup_multipath(vecs, mpp) != 0)
-		return 1;
-	sync_map_state(mpp);
+	if (ret == 2)
+		condlog(0, "%s: map removed while trying to resize", mapname);
 
-	return 0;
+	return (ret != 0);
 }
 
 static int
