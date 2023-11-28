@@ -224,6 +224,7 @@ load_keys (void)
 	r += add_key(keys, "setmarginal", VRB_SETMARGINAL, 0);
 	r += add_key(keys, "unsetmarginal", VRB_UNSETMARGINAL, 0);
 	r += add_key(keys, "all", KEY_ALL, 0);
+	r += add_key(keys, "if-idle", KEY_IF_IDLE, 0);
 
 
 	if (r) {

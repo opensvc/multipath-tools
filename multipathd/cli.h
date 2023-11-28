@@ -59,6 +59,7 @@ enum {
 	KEY_LOCAL		= 81,
 	KEY_GROUP		= 82,
 	KEY_KEY			= 83,
+	KEY_IF_IDLE		= 84,
 };
 
 /*
@@ -80,6 +81,7 @@ enum {
 	Q1_ALL			= KEY_ALL << 8,
 	Q1_DAEMON		= KEY_DAEMON << 8,
 	Q1_STATUS		= KEY_STATUS << 8,
+	Q1_IF_IDLE		= KEY_IF_IDLE << 8,
 
 	/* byte 2: qualifier 2 */
 	Q2_FMT			= KEY_FMT << 16,

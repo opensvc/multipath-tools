@@ -1252,6 +1252,24 @@ cli_shutdown (void * v, struct strbuf *reply, void * data)
 	return 0;
 }
 
+/*
+ * Shutdown multipathd if no multipath maps have been found.  This is
+ * mostly used after the system has been initialized in order to
+ * prevent multipathd from consuming resources.
+ */
+static int
+cli_shutdown_if_no_multipath (void * v, struct strbuf *reply, void * data)
+{
+	struct vectors * vecs = (struct vectors *)data;
+
+	condlog(3, "shutdown if no multipath map found (operator)");
+
+	if (VECTOR_SIZE (vecs->mpvec) == 0)
+		exit_daemon();
+
+	return 0;
+}
+
 static int
 cli_getprstatus (void * v, struct strbuf *reply, void * data)
 {

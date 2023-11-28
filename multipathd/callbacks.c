@@ -57,6 +57,8 @@ void init_handler_callbacks(void)
 	set_handler_callback(VRB_RESTOREQ | Q1_MAPS, HANDLER(cli_restore_all_queueing));
 	set_unlocked_handler_callback(VRB_QUIT, HANDLER(cli_quit));
 	set_unlocked_handler_callback(VRB_SHUTDOWN, HANDLER(cli_shutdown));
+	set_handler_callback(VRB_SHUTDOWN | Q1_IF_IDLE,
+			     HANDLER(cli_shutdown_if_no_multipath));
 	set_handler_callback(VRB_GETPRSTATUS | Q1_MAP, HANDLER(cli_getprstatus));
 	set_handler_callback(VRB_SETPRSTATUS | Q1_MAP, HANDLER(cli_setprstatus));
 	set_handler_callback(VRB_UNSETPRSTATUS | Q1_MAP, HANDLER(cli_unsetprstatus));
