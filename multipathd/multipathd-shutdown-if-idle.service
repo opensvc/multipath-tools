@@ -1,0 +1,12 @@
+[Unit]
+Description=Device-Mapper Multipath Conditional Shutdown Trigger
+
+[Service]
+Type=exec
+ExecCondition=/usr/bin/systemctl is-active multipathd.service
+# By sending "shutdown if-idle" to multipathd, we're asking the
+# daemon to shutdown if no multipath maps have been found.
+ExecStart=/sbin/multipathd shutdown if-idle
+
+[Install]
+WantedBy=multi-user.target

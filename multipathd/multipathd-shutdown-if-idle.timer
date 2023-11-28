@@ -1,0 +1,10 @@
+[Unit]
+Description=Device-Mapper Multipath Conditional Shutdown Trigger
+After=multi-user.target
+
+[Timer]
+OnBootSec=120s
+OnActiveSec=120s
+
+[Install]
+WantedBy=timers.target
