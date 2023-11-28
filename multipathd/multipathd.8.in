@@ -6,7 +6,7 @@
 .\" Update the date below if you make any significant change.
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATHD 8 2022-09-03 Linux
+.TH MULTIPATHD 8 2024-01-02 Linux
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -325,18 +325,30 @@ End interactive session.
 .B shutdown
 Stop multipathd.
 .
+.TP
+.B shutdown if-idle
+Stop multipathd if and only if no multipath maps exist.
 .
 .\" ----------------------------------------------------------------------------
 .SH "SYSTEMD INTEGRATION"
 .\" ----------------------------------------------------------------------------
 .
-When compiled with systemd support two systemd service files are installed,
-\fImultipathd.service\fR and \fImultipathd.socket\fR The \fImultipathd.socket\fR
-service instructs systemd to intercept the CLI command socket, so that any call
-to the CLI interface will start-up the daemon if required.
-The \fImultipathd.service\fR file carries the definitions for controlling the
-multipath daemon. The daemon itself uses the \fBsd_notify\fR(3) interface to
-communicate with systemd. The following unit keywords are recognized:
+When compiled with systemd support three systemd service files and one
+systemd timer are installed, \fImultipathd.service\fR,
+\fImultipathd.socket\fR, \fImultipathd-shutdown-if-idle.service\fR and
+\fImultipathd-shutdown-if-idle.timer\fR.  The \fImultipathd.socket\fR
+service instructs systemd to intercept the CLI command socket, so that
+any call to the CLI interface will start-up the daemon if required.
+The \fImultipathd-shutdown-if-idle.timer\fR is activated after the
+system has finished booting or after \fImultipathd.service\fR has been
+activated, and will invoke its \fI.service\fR counterpart after 120
+seconds have passed.  The \fImultipathd-shutdown-if-idle.service\fR
+will then invoke \fImultipathd shutdown if-idle\fR, which will shut
+the daemon down if and only if no multipath maps have been found in
+the system.  The \fImultipathd.service\fR file carries the definitions
+for controlling the multipath daemon. The daemon itself uses the
+\fBsd_notify\fR(3) interface to communicate with systemd. The
+following unit keywords are recognized:
 .
 .TP
 .B WatchdogSec=
