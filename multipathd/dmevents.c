@@ -361,7 +361,7 @@ static int dmevent_loop (void)
 		if (curr_dev.action == EVENT_REMOVE)
 			remove_map_by_alias(curr_dev.name, waiter->vecs);
 		else
-			r = update_multipath(waiter->vecs, curr_dev.name, 1);
+			r = update_multipath(waiter->vecs, curr_dev.name);
 		pthread_cleanup_pop(1);
 
 		if (r) {

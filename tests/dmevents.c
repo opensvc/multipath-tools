@@ -332,13 +332,12 @@ void __wrap_remove_map_by_alias(const char *alias, struct vectors * vecs)
 /* pretend update the pretend dm devices. If fail is set, it
  * simulates having the dm device removed. Otherwise it just sets
  * update_nr to record when the update happened */
-int __wrap_update_multipath(struct vectors *vecs, char *mapname, int reset)
+int __wrap_update_multipath(struct vectors *vecs, char *mapname)
 {
 	int fail;
 
 	check_expected(mapname);
 	assert_ptr_equal(vecs, waiter->vecs);
-	assert_int_equal(reset, 1);
 	fail = mock_type(int);
 	if (fail) {
 		assert_int_equal(remove_dm_device_event(mapname), 0);

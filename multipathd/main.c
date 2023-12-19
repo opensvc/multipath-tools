@@ -500,8 +500,7 @@ remove_maps_and_stop_waiters(struct vectors *vecs)
 	remove_maps(vecs);
 }
 
-int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
-		      int reset)
+int refresh_multipath(struct vectors *vecs, struct multipath *mpp)
 {
 	if (dm_get_info(mpp->alias, &mpp->dmi)) {
 		/* Error accessing table */
@@ -513,20 +512,24 @@ int __setup_multipath(struct vectors *vecs, struct multipath *mpp,
 		condlog(0, "%s: failed to setup multipath", mpp->alias);
 		goto out;
 	}
-
-	if (reset) {
-		set_no_path_retry(mpp);
-		if (VECTOR_SIZE(mpp->paths) != 0)
-			dm_cancel_deferred_remove(mpp);
-	}
-
 	return 0;
 out:
 	remove_map_and_stop_waiter(mpp, vecs);
 	return 1;
 }
 
-int update_multipath (struct vectors *vecs, char *mapname, int reset)
+int setup_multipath(struct vectors *vecs, struct multipath *mpp)
+{
+	if (refresh_multipath(vecs, mpp) != 0)
+		return 1;
+
+	set_no_path_retry(mpp);
+	if (VECTOR_SIZE(mpp->paths) != 0)
+		dm_cancel_deferred_remove(mpp);
+	return 0;
+}
+
+int update_multipath (struct vectors *vecs, char *mapname)
 {
 	struct multipath *mpp;
 	struct pathgroup  *pgp;
@@ -540,7 +543,7 @@ int update_multipath (struct vectors *vecs, char *mapname, int reset)
 		return 2;
 	}
 
-	if (__setup_multipath(vecs, mpp, reset))
+	if (setup_multipath(vecs, mpp))
 		return 1; /* mpp freed in setup_multipath */
 
 	/*

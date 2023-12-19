@@ -76,7 +76,7 @@ static int
 show_map_topology (struct strbuf *reply, struct multipath *mpp,
 		   struct vectors *vecs, const fieldwidth_t *width)
 {
-	if (update_multipath(vecs, mpp->alias, 0))
+	if (refresh_multipath(vecs, mpp))
 		return 1;
 
 	if (snprint_multipath_topology(reply, mpp, 2, width) < 0)
@@ -98,7 +98,7 @@ show_maps_topology (struct strbuf *reply, struct vectors * vecs)
 	foreign_path_layout(p_width);
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (update_multipath(vecs, mpp->alias, 0)) {
+		if (refresh_multipath(vecs, mpp)) {
 			i--;
 			continue;
 		}
@@ -118,7 +118,7 @@ show_maps_json (struct strbuf *reply, struct vectors * vecs)
 	struct multipath * mpp;
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (update_multipath(vecs, mpp->alias, 0)) {
+		if (refresh_multipath(vecs, mpp)) {
 			return 1;
 		}
 	}
@@ -133,7 +133,7 @@ static int
 show_map_json (struct strbuf *reply, struct multipath * mpp,
 	       struct vectors * vecs)
 {
-	if (update_multipath(vecs, mpp->alias, 0))
+	if (refresh_multipath(vecs, mpp))
 		return 1;
 
 	if (snprint_multipath_map_json(reply, mpp) < 0)
@@ -365,7 +365,7 @@ show_maps (struct strbuf *reply, struct vectors *vecs, char *style,
 		return 1;
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (update_multipath(vecs, mpp->alias, 0)) {
+		if (refresh_multipath(vecs, mpp)) {
 			i--;
 			continue;
 		}
