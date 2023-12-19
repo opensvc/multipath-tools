@@ -593,7 +593,7 @@ static void leave_recovery_mode(struct multipath *mpp)
 	 */
 	if (recovery && (mpp->no_path_retry == NO_PATH_RETRY_QUEUE ||
 			 mpp->no_path_retry > 0)) {
-		dm_queue_if_no_path(mpp->alias, 1);
+		dm_queue_if_no_path(mpp, 1);
 		condlog(2, "%s: queue_if_no_path enabled", mpp->alias);
 		condlog(1, "%s: Recovered to normal mode", mpp->alias);
 	}
@@ -611,11 +611,11 @@ void set_no_path_retry(struct multipath *mpp)
 		break;
 	case NO_PATH_RETRY_FAIL:
 		if (!mpp->features || is_queueing)
-			dm_queue_if_no_path(mpp->alias, 0);
+			dm_queue_if_no_path(mpp, 0);
 		break;
 	case NO_PATH_RETRY_QUEUE:
 		if (!mpp->features || !is_queueing)
-			dm_queue_if_no_path(mpp->alias, 1);
+			dm_queue_if_no_path(mpp, 1);
 		break;
 	default:
 		if (count_active_paths(mpp) > 0) {
@@ -625,7 +625,7 @@ void set_no_path_retry(struct multipath *mpp)
 			 */
 			if ((!mpp->features || !is_queueing) &&
 			    !mpp->in_recovery)
-				dm_queue_if_no_path(mpp->alias, 1);
+				dm_queue_if_no_path(mpp, 1);
 			leave_recovery_mode(mpp);
 		} else {
 			/*
@@ -636,7 +636,7 @@ void set_no_path_retry(struct multipath *mpp)
 			 */
 			if ((!mpp->features || is_queueing) &&
 			    mpp->in_recovery && mpp->retry_tick == 0)
-				dm_queue_if_no_path(mpp->alias, 0);
+				dm_queue_if_no_path(mpp, 0);
 			if (pathcount(mpp, PATH_PENDING) == 0)
 				enter_recovery_mode(mpp);
 		}

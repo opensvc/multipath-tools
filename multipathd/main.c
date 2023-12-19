@@ -596,7 +596,7 @@ flush_map_nopaths(struct multipath *mpp, struct vectors *vecs) {
 		mpp->no_path_retry = NO_PATH_RETRY_FAIL;
 		mpp->disable_queueing = 1;
 		mpp->stat_map_failures++;
-		dm_queue_if_no_path(mpp->alias, 0);
+		dm_queue_if_no_path(mpp, 0);
 	}
 	if (!flush_map(mpp, vecs, 1)) {
 		condlog(2, "%s: removed map after removing all paths", alias);
@@ -930,7 +930,7 @@ uev_remove_map (struct uevent * uev, struct vectors * vecs)
 		goto out;
 	}
 
-	dm_queue_if_no_path(alias, 0);
+	dm_queue_if_no_path(mpp, 0);
 	remove_map_and_stop_waiter(mpp, vecs);
 out:
 	lock_cleanup_pop(vecs->lock);
@@ -2094,7 +2094,7 @@ retry_count_tick(vector mpvec)
 			condlog(4, "%s: Retrying.. No active path", mpp->alias);
 			if(--mpp->retry_tick == 0) {
 				mpp->stat_map_failures++;
-				dm_queue_if_no_path(mpp->alias, 0);
+				dm_queue_if_no_path(mpp, 0);
 				condlog(2, "%s: Disable queueing", mpp->alias);
 			}
 		}
@@ -3260,7 +3260,7 @@ static void cleanup_maps(struct vectors *vecs)
 	put_multipath_config(conf);
 	if (queue_without_daemon == QUE_NO_DAEMON_OFF)
 		vector_foreach_slot(vecs->mpvec, mpp, i)
-			dm_queue_if_no_path(mpp->alias, 0);
+			dm_queue_if_no_path(mpp, 0);
 	remove_maps_and_stop_waiters(vecs);
 	vecs->mpvec = NULL;
 }

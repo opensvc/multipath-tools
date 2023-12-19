@@ -1240,9 +1240,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 			    mpp->no_path_retry != NO_PATH_RETRY_FAIL)
 				condlog(3, "%s: multipathd not running, unset "
 					"queue_if_no_path feature", mpp->alias);
-			if (!dm_queue_if_no_path(mpp->alias, 0))
-				remove_feature(&mpp->features,
-					       "queue_if_no_path");
+			dm_queue_if_no_path(mpp, 0);
 		}
 
 		if (!is_daemon && mpp->action != ACT_NOTHING)

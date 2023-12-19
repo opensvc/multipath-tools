@@ -56,6 +56,7 @@ static int dm_cancel_remove_partmaps(const char * mapname);
 static int do_foreach_partmaps(const char * mapname,
 			       int (*partmap_func)(const char *, void *),
 			       void *data);
+static int _dm_queue_if_no_path(const char *mapname, int enable);
 
 #ifndef LIBDM_API_COOKIE
 static inline int dm_task_set_cookie(struct dm_task *dmt, uint32_t *c, int a)
@@ -1085,7 +1086,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	if (need_suspend &&
 	    dm_get_map(mapname, &mapsize, &params) == DMP_OK &&
 	    strstr(params, "queue_if_no_path")) {
-		if (!dm_queue_if_no_path(mapname, 0))
+		if (!_dm_queue_if_no_path(mapname, 0))
 			queue_if_no_path = 1;
 		else
 			/* Leave queue_if_no_path alone if unset failed */
@@ -1134,7 +1135,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	} while (retries-- > 0);
 
 	if (queue_if_no_path == 1)
-		dm_queue_if_no_path(mapname, 1);
+		_dm_queue_if_no_path(mapname, 1);
 
 	return 1;
 }
@@ -1252,8 +1253,8 @@ dm_reinstate_path(const char * mapname, char * path)
 	return dm_message(mapname, message);
 }
 
-int
-dm_queue_if_no_path(const char *mapname, int enable)
+static int
+_dm_queue_if_no_path(const char *mapname, int enable)
 {
 	char *message;
 
@@ -1263,6 +1264,20 @@ dm_queue_if_no_path(const char *mapname, int enable)
 		message = "fail_if_no_path";
 
 	return dm_message(mapname, message);
+}
+
+int dm_queue_if_no_path(struct multipath *mpp, int enable)
+{
+	int r;
+	static const char no_path_retry[] = "queue_if_no_path";
+
+	if ((r = _dm_queue_if_no_path(mpp->alias, enable)) == 0) {
+		if (enable)
+			add_feature(&mpp->features, no_path_retry);
+		else
+			remove_feature(&mpp->features, no_path_retry);
+	}
+	return r;
 }
 
 static int

@@ -58,7 +58,7 @@ int dm_cancel_deferred_remove(struct multipath *mpp);
 int dm_flush_maps (int need_suspend, int retries);
 int dm_fail_path(const char * mapname, char * path);
 int dm_reinstate_path(const char * mapname, char * path);
-int dm_queue_if_no_path(const char *mapname, int enable);
+int dm_queue_if_no_path(struct multipath *mpp, int enable);
 int dm_switchgroup(const char * mapname, int index);
 int dm_enablegroup(const char * mapname, int index);
 int dm_disablegroup(const char * mapname, int index);
