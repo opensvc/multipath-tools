@@ -251,7 +251,11 @@ Disable queueing on all multipath devices.
 .
 .TP
 .B restorequeueing maps|multipaths
-Restore queueing on all multipath devices.
+Restore queueing to the configured \fIno_path_retry\fR setting on all multipath
+devices whose queueing has been previously disabled by the \fIdisablequeueing\fR
+command. \fBNote:\fR If \fIno_path_path_retry\fR is set to queue for a limited
+number of retries after all paths have failed, this will not enable queueing if
+there are no active paths.
 .
 .TP
 .B disablequeueing map|multipath $map
@@ -259,7 +263,11 @@ Disable queuing on multipathed map $map.
 .
 .TP
 .B restorequeueing map|multipath $map
-Restore queuing on multipahted map $map.
+restore queueing to the configured \fIno_path_retry\fR setting on multipathed
+map $map whose queueing has been previously disabled by the
+\fIdisablequeueing\fR command. \fBNote:\fR If \fIno_path_path_retry\fR is set to
+queue for a limited number of retries after all paths have failed, this will not
+enable queueing if there are no active paths.
 .
 .TP
 .B forcequeueing daemon
