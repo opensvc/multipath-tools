@@ -53,6 +53,8 @@ static int dm_cancel_remove_partmaps(const char * mapname);
 #define __DR_UNUSED__ __attribute__((unused))
 #endif
 
+static int dm_remove_partmaps (const char * mapname, int need_sync,
+			       int deferred_remove);
 static int do_foreach_partmaps(const char * mapname,
 			       int (*partmap_func)(const char *, void *),
 			       void *data);
@@ -1544,7 +1546,7 @@ remove_partmap(const char *name, void *data)
 	return 0;
 }
 
-int
+static int
 dm_remove_partmaps (const char * mapname, int need_sync, int deferred_remove)
 {
 	struct remove_data rd = { need_sync, deferred_remove };
