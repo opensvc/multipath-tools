@@ -1163,7 +1163,7 @@ dm_flush_map_nopaths(const char * mapname,
 
 int dm_flush_maps (int retries)
 {
-	int r = 1;
+	int r = DM_FLUSH_FAIL;
 	struct dm_task *dmt;
 	struct dm_names *names;
 	unsigned next = 0;
@@ -1181,12 +1181,16 @@ int dm_flush_maps (int retries)
 	if (!(names = dm_task_get_names (dmt)))
 		goto out;
 
-	r = 0;
+	r = DM_FLUSH_OK;
 	if (!names->dev)
 		goto out;
 
 	do {
-		r |= dm_suspend_and_flush_map(names->name, retries) != DM_FLUSH_OK;
+		int ret;
+		ret = dm_suspend_and_flush_map(names->name, retries);
+		if (ret == DM_FLUSH_FAIL ||
+		    (r != DM_FLUSH_FAIL && ret == DM_FLUSH_BUSY))
+			r = ret;
 		next = names->next;
 		names = (void *) names + next;
 	} while (next);

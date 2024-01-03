@@ -767,18 +767,25 @@ cli_del_maps (void *v, struct strbuf *reply, void *data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	struct multipath *mpp;
-	int i, ret = 0;
+	int i, ret, r = 0;
 
 	condlog(2, "remove maps (operator)");
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (flush_map(mpp, vecs))
-			ret++;
-		else
+		ret = flush_map(mpp, vecs);
+		if (ret == DM_FLUSH_OK)
 			i--;
+		else if (ret == DM_FLUSH_BUSY && r != 1)
+			r = -EBUSY;
+		else
+			r = 1;
 	}
 	/* flush any multipath maps that aren't currently known by multipathd */
-	ret |= dm_flush_maps(0);
-	return ret;
+	ret = dm_flush_maps(0);
+	if (ret == DM_FLUSH_BUSY && r != 1)
+		r = -EBUSY;
+	else if (ret != DM_FLUSH_OK)
+		r = 1;
+	return r;
 }
 
 static int
