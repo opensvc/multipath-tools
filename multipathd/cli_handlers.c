@@ -33,6 +33,20 @@
 #include "cli_handlers.h"
 #include "devmapper.h"
 
+static struct path *
+find_path_by_str(const struct _vector *pathvec, const char *str,
+		  const char *action_str)
+{
+	struct path *pp;
+
+	if (!(pp = find_path_by_devt(pathvec, str)))
+		pp = find_path_by_dev(pathvec, str);
+
+	if (!pp && action_str)
+		condlog(2, "%s: invalid path name. cannot %s", str, action_str);
+	return pp;
+}
+
 static int
 show_paths (struct strbuf *reply, struct vectors *vecs, char *style, int pretty)
 {
@@ -241,7 +255,7 @@ cli_list_path (void *v, struct strbuf *reply, void *data)
 	param = convert_dev(param, 1);
 	condlog(3, "%s: list path (operator)", param);
 
-	pp = find_path_by_dev(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, "list path");
 	if (!pp)
 		return 1;
 
@@ -556,7 +570,7 @@ cli_add_path (void *v, struct strbuf *reply, void *data)
 	if (invalid)
 		goto blacklisted;
 
-	pp = find_path_by_dev(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, NULL);
 	if (pp && pp->initialized != INIT_REMOVED) {
 		condlog(2, "%s: path already in pathvec", param);
 
@@ -665,7 +679,7 @@ cli_del_path (void * v, struct strbuf *reply, void * data)
 
 	param = convert_dev(param, 1);
 	condlog(2, "%s: remove path (operator)", param);
-	pp = find_path_by_dev(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, NULL);
 	if (!pp) {
 		condlog(0, "%s: path already removed", param);
 		return 1;
@@ -1092,10 +1106,7 @@ cli_reinstate(void * v, struct strbuf *reply, void * data)
 	struct path * pp;
 
 	param = convert_dev(param, 1);
-	pp = find_path_by_dev(vecs->pathvec, param);
-
-	if (!pp)
-		 pp = find_path_by_devt(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, "reinstate path");
 
 	if (!pp || !pp->mpp || !pp->mpp->alias)
 		return 1;
@@ -1140,10 +1151,7 @@ cli_fail(void * v, struct strbuf *reply, void * data)
 	int r;
 
 	param = convert_dev(param, 1);
-	pp = find_path_by_dev(vecs->pathvec, param);
-
-	if (!pp)
-		 pp = find_path_by_devt(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, "fail path");
 
 	if (!pp || !pp->mpp || !pp->mpp->alias)
 		return 1;
@@ -1384,10 +1392,7 @@ static int cli_set_marginal(void * v, struct strbuf *reply, void * data)
 	struct path * pp;
 
 	param = convert_dev(param, 1);
-	pp = find_path_by_dev(vecs->pathvec, param);
-
-	if (!pp)
-		pp = find_path_by_devt(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, "set marginal path");
 
 	if (!pp || !pp->mpp || !pp->mpp->alias)
 		return 1;
@@ -1411,10 +1416,7 @@ static int cli_unset_marginal(void * v, struct strbuf *reply, void * data)
 	struct path * pp;
 
 	param = convert_dev(param, 1);
-	pp = find_path_by_dev(vecs->pathvec, param);
-
-	if (!pp)
-		pp = find_path_by_devt(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, "unset marginal path");
 
 	if (!pp || !pp->mpp || !pp->mpp->alias)
 		return 1;
