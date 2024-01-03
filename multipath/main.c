@@ -799,6 +799,8 @@ int delegate_to_multipathd(enum mpath_cmds cmd,
 
 	if (mpath_process_cmd(fd, command, &reply, conf->uxsock_timeout)
 	    == -1) {
+		if (errno == ETIMEDOUT)
+			r = NOT_DELEGATED;
 		condlog(1, "error in multipath command %s: %s",
 			command, strerror(errno));
 		goto out;
@@ -807,6 +809,10 @@ int delegate_to_multipathd(enum mpath_cmds cmd,
 	if (reply != NULL && *reply != '\0') {
 		if (strncmp(reply, "fail\n", 5))
 			r = DELEGATE_OK;
+		else if (strcmp(reply, "fail\ntimeout\n") == 0) {
+			r = NOT_DELEGATED;
+			goto out;
+		}
 		if (r != DELEGATE_RETRY && strcmp(reply, "ok\n")) {
 			/* If there is additional failure information, skip the
 			 * initial 'fail' */
