@@ -1136,8 +1136,8 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 			sleep(1);
 	} while (retries-- > 0);
 
-	if (queue_if_no_path == 1)
-		_dm_queue_if_no_path(mapname, 1);
+	if (queue_if_no_path == 1 && _dm_queue_if_no_path(mapname, 1) != 0)
+		return DM_FLUSH_FAIL_CANT_RESTORE;
 
 	return DM_FLUSH_FAIL;
 }

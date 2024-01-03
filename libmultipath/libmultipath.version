@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_22.0.0 {
+LIBMULTIPATH_23.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -151,6 +151,7 @@ global:
 	_print_multipath_topology;
 	reinstate_paths;
 	remember_wwid;
+	remove_feature;
 	remove_map;
 	remove_map_by_alias;
 	remove_map_callback;

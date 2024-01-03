@@ -52,6 +52,7 @@ int dm_is_mpath(const char *);
 enum {
 	DM_FLUSH_OK = 0,
 	DM_FLUSH_FAIL,
+	DM_FLUSH_FAIL_CANT_RESTORE,
 	DM_FLUSH_DEFERRED,
 	DM_FLUSH_BUSY,
 };
