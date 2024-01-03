@@ -834,7 +834,6 @@ main (int argc, char *argv[])
 	enum devtypes dev_type = DEV_NONE;
 	char *dev = NULL;
 	struct config *conf;
-	int retries = -1;
 	bool enable_foreign = false;
 
 	libmultipath_init();
@@ -944,7 +943,7 @@ main (int argc, char *argv[])
 			cmd = CMD_ADD_WWID;
 			break;
 		case 'R':
-			retries = atoi(optarg);
+			conf->remove_retries = atoi(optarg);
 			break;
 		case 'e':
 			enable_foreign = true;
@@ -1069,20 +1068,18 @@ main (int argc, char *argv[])
 		vector_free(curmp);
 		goto out;
 	}
-	if (retries < 0)
-		retries = conf->remove_retries;
 	if (cmd == CMD_FLUSH_ONE) {
 		if (dm_is_mpath(dev) != 1) {
 			condlog(0, "%s is not a multipath device", dev);
 			r = RTVL_FAIL;
 			goto out;
 		}
-		r = (dm_suspend_and_flush_map(dev, retries) != DM_FLUSH_OK) ?
+		r = (dm_suspend_and_flush_map(dev, conf->remove_retries) != DM_FLUSH_OK) ?
 		    RTVL_FAIL : RTVL_OK;
 		goto out;
 	}
 	else if (cmd == CMD_FLUSH_ALL) {
-		r = (dm_flush_maps(retries) != DM_FLUSH_OK) ?
+		r = (dm_flush_maps(conf->remove_retries) != DM_FLUSH_OK) ?
 		    RTVL_FAIL : RTVL_OK;
 		goto out;
 	}
