@@ -1083,7 +1083,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	/* If you aren't doing a deferred remove, make sure that no
 	 * devices are in use */
 	if (!do_deferred(deferred_remove) && partmap_in_use(mapname, NULL))
-			return DM_FLUSH_FAIL;
+			return DM_FLUSH_BUSY;
 
 	if (need_suspend &&
 	    dm_get_map(mapname, &mapsize, &params) == DMP_OK &&
@@ -1097,12 +1097,12 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	free(params);
 	params = NULL;
 
-	if (dm_remove_partmaps(mapname, need_sync, deferred_remove))
-		return DM_FLUSH_FAIL;
+	if ((r = dm_remove_partmaps(mapname, need_sync, deferred_remove)))
+		return r;
 
 	if (!do_deferred(deferred_remove) && dm_get_opencount(mapname)) {
 		condlog(2, "%s: map in use", mapname);
-		return DM_FLUSH_FAIL;
+		return DM_FLUSH_BUSY;
 	}
 
 	do {
@@ -1506,7 +1506,7 @@ do_foreach_partmaps (const char * mapname,
 		    (p = strstr(params, dev_t)) &&
 		    !isdigit(*(p + strlen(dev_t)))
 		   ) {
-			if (partmap_func(names->name, data) != 0)
+			if ((r = partmap_func(names->name, data)) != 0)
 				goto out;
 		}
 
@@ -1538,12 +1538,12 @@ remove_partmap(const char *name, void *data)
 		if (!do_deferred(rd->deferred_remove) &&
 		    dm_get_opencount(name)) {
 			condlog(2, "%s: map in use", name);
-			return 1;
+			return DM_FLUSH_BUSY;
 		}
 	}
 	condlog(4, "partition map %s removed", name);
 	dm_device_remove(name, rd->need_sync, rd->deferred_remove);
-	return 0;
+	return DM_FLUSH_OK;
 }
 
 static int

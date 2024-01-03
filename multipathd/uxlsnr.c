@@ -411,6 +411,9 @@ void default_reply(struct client *c, int r)
 	case -ETIMEDOUT:
 		append_strbuf_str(&c->reply, "timeout\n");
 		break;
+	case -EBUSY:
+		append_strbuf_str(&c->reply, "map or partition in use\n");
+		break;
 	}
 }
 

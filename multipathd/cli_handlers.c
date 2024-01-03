@@ -31,6 +31,7 @@
 #include "foreign.h"
 #include "strbuf.h"
 #include "cli_handlers.h"
+#include "devmapper.h"
 
 static int
 show_paths (struct strbuf *reply, struct vectors *vecs, char *style, int pretty)
@@ -743,6 +744,7 @@ cli_del_map (void * v, struct strbuf *reply, void * data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, KEY_MAP);
 	struct multipath *mpp;
+	int r;
 
 	param = convert_dev(param, 0);
 	condlog(2, "%s: remove map (operator)", param);
@@ -752,7 +754,12 @@ cli_del_map (void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return 1;
 
-	return flush_map(mpp, vecs);
+	r = flush_map(mpp, vecs);
+	if (r == DM_FLUSH_OK)
+		return 0;
+	else if (r == DM_FLUSH_BUSY)
+		return -EBUSY;
+	return 1;
 }
 
 static int

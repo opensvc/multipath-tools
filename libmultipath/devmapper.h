@@ -53,6 +53,7 @@ enum {
 	DM_FLUSH_OK = 0,
 	DM_FLUSH_FAIL,
 	DM_FLUSH_DEFERRED,
+	DM_FLUSH_BUSY,
 };
 
 int _dm_flush_map (const char *, int, int, int, int);
