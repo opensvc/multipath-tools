@@ -931,27 +931,6 @@ out:
 	return 0;
 }
 
-/* Called from CLI handler */
-int
-ev_remove_map (char * devname, char * alias, int minor, struct vectors * vecs)
-{
-	struct multipath * mpp;
-
-	mpp = find_mp_by_minor(vecs->mpvec, minor);
-
-	if (!mpp) {
-		condlog(2, "%s: devmap not registered, can't remove",
-			devname);
-		return 1;
-	}
-	if (strcmp(mpp->alias, alias)) {
-		condlog(2, "%s: minor number mismatch (map %d, event %d)",
-			mpp->alias, mpp->dmi.minor, minor);
-		return 1;
-	}
-	return flush_map(mpp, vecs);
-}
-
 static void
 rescan_path(struct udev_device *ud)
 {

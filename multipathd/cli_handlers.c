@@ -742,28 +742,17 @@ cli_del_map (void * v, struct strbuf *reply, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, KEY_MAP);
-	int major, minor;
-	char *alias;
-	int rc;
+	struct multipath *mpp;
 
 	param = convert_dev(param, 0);
 	condlog(2, "%s: remove map (operator)", param);
-	if (dm_get_major_minor(param, &major, &minor) < 0) {
-		condlog(2, "%s: not a device mapper table", param);
-		return 1;
-	}
-	alias = dm_mapname(major, minor);
-	if (!alias) {
-		condlog(2, "%s: mapname not found for %d:%d",
-			param, major, minor);
-		return 1;
-	}
-	rc = ev_remove_map(param, alias, minor, vecs);
-	if (rc == 2)
-		append_strbuf_str(reply, "delayed\n");
 
-	free(alias);
-	return rc;
+	mpp = find_mp_by_str(vecs->mpvec, param);
+
+	if (!mpp)
+		return 1;
+
+	return flush_map(mpp, vecs);
 }
 
 static int
