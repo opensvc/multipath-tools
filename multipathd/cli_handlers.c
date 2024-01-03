@@ -794,19 +794,14 @@ cli_reload(void *v, struct strbuf *reply, void *data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * mapname = get_keyparam(v, KEY_MAP);
 	struct multipath *mpp;
-	int minor;
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: reload map (operator)", mapname);
-	if (sscanf(mapname, "dm-%d", &minor) == 1)
-		mpp = find_mp_by_minor(vecs->mpvec, minor);
-	else
-		mpp = find_mp_by_alias(vecs->mpvec, mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
-	if (!mpp) {
-		condlog(0, "%s: invalid map name. cannot reload", mapname);
+	if (!mpp)
 		return 1;
-	}
+
 	if (mpp->wait_for_udev) {
 		condlog(2, "%s: device not fully created, failing reload",
 			mpp->alias);
@@ -822,7 +817,6 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * mapname = get_keyparam(v, KEY_MAP);
 	struct multipath *mpp;
-	int minor;
 	unsigned long long size = 0;
 	struct pathgroup *pgp;
 	struct path *pp;
@@ -831,15 +825,10 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: resize map (operator)", mapname);
-	if (sscanf(mapname, "dm-%d", &minor) == 1)
-		mpp = find_mp_by_minor(vecs->mpvec, minor);
-	else
-		mpp = find_mp_by_alias(vecs->mpvec, mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
-	if (!mpp) {
-		condlog(0, "%s: invalid map name. cannot resize", mapname);
+	if (!mpp)
 		return 1;
-	}
 
 	if (mpp->wait_for_udev) {
 		condlog(2, "%s: device not fully created, failing resize",
@@ -916,20 +905,14 @@ cli_restore_queueing(void *v, struct strbuf *reply, void *data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * mapname = get_keyparam(v, KEY_MAP);
 	struct multipath *mpp;
-	int minor;
 	struct config *conf;
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: restore map queueing (operator)", mapname);
-	if (sscanf(mapname, "dm-%d", &minor) == 1)
-		mpp = find_mp_by_minor(vecs->mpvec, minor);
-	else
-		mpp = find_mp_by_alias(vecs->mpvec, mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
-	if (!mpp) {
-		condlog(0, "%s: invalid map name, cannot restore queueing", mapname);
+	if (!mpp)
 		return 1;
-	}
 
 	if (mpp->disable_queueing) {
 		mpp->disable_queueing = 0;
@@ -973,19 +956,13 @@ cli_disable_queueing(void *v, struct strbuf *reply, void *data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * mapname = get_keyparam(v, KEY_MAP);
 	struct multipath *mpp;
-	int minor;
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: disable map queueing (operator)", mapname);
-	if (sscanf(mapname, "dm-%d", &minor) == 1)
-		mpp = find_mp_by_minor(vecs->mpvec, minor);
-	else
-		mpp = find_mp_by_alias(vecs->mpvec, mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
-	if (!mpp) {
-		condlog(0, "%s: invalid map name, cannot disable queueing", mapname);
+	if (!mpp)
 		return 1;
-	}
 
 	if (count_active_paths(mpp) == 0)
 		mpp->stat_map_failures++;
@@ -1462,22 +1439,16 @@ static int cli_unset_all_marginal(void * v, struct strbuf *reply, void * data)
 	struct pathgroup * pgp;
 	struct path * pp;
 	unsigned int i, j;
-	int minor;
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: unset all marginal paths (operator)",
 		mapname);
 
-	if (sscanf(mapname, "dm-%d", &minor) == 1)
-		mpp = find_mp_by_minor(vecs->mpvec, minor);
-	else
-		mpp = find_mp_by_alias(vecs->mpvec, mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
-	if (!mpp) {
-		condlog(0, "%s: invalid map name. "
-			"cannot unset marginal paths", mapname);
+	if (!mpp)
 		return 1;
-	}
+
 	if (mpp->wait_for_udev) {
 		condlog(2, "%s: device not fully created, "
 			"failing unset all marginal", mpp->alias);
