@@ -775,7 +775,7 @@ cli_del_maps (void *v, struct strbuf *reply, void *data)
 
 	condlog(2, "remove maps (operator)");
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (flush_map(mpp, vecs, 0))
+		if (flush_map(mpp, vecs))
 			ret++;
 		else
 			i--;
