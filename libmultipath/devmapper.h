@@ -48,6 +48,13 @@ int dm_get_map(const char *, unsigned long long *, char **);
 int dm_get_status(const char *, char **);
 int dm_type(const char *, char *);
 int dm_is_mpath(const char *);
+
+enum {
+	DM_FLUSH_OK = 0,
+	DM_FLUSH_FAIL,
+	DM_FLUSH_DEFERRED,
+};
+
 int _dm_flush_map (const char *, int, int, int, int);
 int dm_flush_map_nopaths(const char * mapname, int deferred_remove);
 #define dm_flush_map(mapname) _dm_flush_map(mapname, 1, 0, 0, 0)

@@ -598,13 +598,13 @@ flush_map_nopaths(struct multipath *mpp, struct vectors *vecs) {
 		dm_queue_if_no_path(mpp, 0);
 	}
 	r = dm_flush_map_nopaths(mpp->alias, mpp->deferred_remove);
-	if (r) {
-		if (r == 1)
-			condlog(0, "%s: can't flush", mpp->alias);
-		else {
+	if (r != DM_FLUSH_OK) {
+		if (r == DM_FLUSH_DEFERRED) {
 			condlog(2, "%s: devmap deferred remove", mpp->alias);
 			mpp->deferred_remove = DEFERRED_REMOVE_IN_PROGRESS;
 		}
+		else
+			condlog(0, "%s: can't flush", mpp->alias);
 		return false;
 	}
 
@@ -746,7 +746,7 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 			 * remove all current maps not allowed by the
 			 * current configuration
 			 */
-			if (dm_flush_map(ompp->alias)) {
+			if (dm_flush_map(ompp->alias) != DM_FLUSH_OK) {
 				condlog(0, "%s: unable to flush devmap",
 					ompp->alias);
 				/*
@@ -789,7 +789,7 @@ int
 flush_map(struct multipath * mpp, struct vectors * vecs)
 {
 	int r = dm_suspend_and_flush_map(mpp->alias, 0);
-	if (r) {
+	if (r != DM_FLUSH_OK) {
 		condlog(0, "%s: can't flush", mpp->alias);
 		return r;
 	}

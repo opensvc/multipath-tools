@@ -1070,7 +1070,7 @@ main (int argc, char *argv[])
 			r = RTVL_FAIL;
 			goto out;
 		}
-		r = dm_suspend_and_flush_map(dev, retries) ?
+		r = (dm_suspend_and_flush_map(dev, retries) != DM_FLUSH_OK) ?
 		    RTVL_FAIL : RTVL_OK;
 		goto out;
 	}

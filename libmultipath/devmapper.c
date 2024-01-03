@@ -1071,7 +1071,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	char *params = NULL;
 
 	if (dm_is_mpath(mapname) != 1)
-		return 0; /* nothing to do */
+		return DM_FLUSH_OK; /* nothing to do */
 
 	/* if the device currently has no partitions, do not
 	   run kpartx on it if you fail to delete it */
@@ -1081,7 +1081,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	/* If you aren't doing a deferred remove, make sure that no
 	 * devices are in use */
 	if (!do_deferred(deferred_remove) && partmap_in_use(mapname, NULL))
-			return 1;
+			return DM_FLUSH_FAIL;
 
 	if (need_suspend &&
 	    dm_get_map(mapname, &mapsize, &params) == DMP_OK &&
@@ -1096,11 +1096,11 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	params = NULL;
 
 	if (dm_remove_partmaps(mapname, need_sync, deferred_remove))
-		return 1;
+		return DM_FLUSH_FAIL;
 
 	if (!do_deferred(deferred_remove) && dm_get_opencount(mapname)) {
 		condlog(2, "%s: map in use", mapname);
-		return 1;
+		return DM_FLUSH_FAIL;
 	}
 
 	do {
@@ -1114,14 +1114,14 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 			    && dm_map_present(mapname)) {
 				condlog(4, "multipath map %s remove deferred",
 					mapname);
-				return 2;
+				return DM_FLUSH_DEFERRED;
 			}
 			condlog(4, "multipath map %s removed", mapname);
-			return 0;
+			return DM_FLUSH_OK;
 		} else if (dm_is_mpath(mapname) != 1) {
 			condlog(4, "multipath map %s removed externally",
 				mapname);
-			return 0; /*we raced with someone else removing it */
+			return DM_FLUSH_OK; /* raced. someone else removed it */
 		} else {
 			condlog(2, "failed to remove multipath map %s",
 				mapname);
@@ -1137,7 +1137,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	if (queue_if_no_path == 1)
 		_dm_queue_if_no_path(mapname, 1);
 
-	return 1;
+	return DM_FLUSH_FAIL;
 }
 
 #ifdef LIBDM_API_DEFERRED
@@ -1184,7 +1184,7 @@ int dm_flush_maps (int retries)
 		goto out;
 
 	do {
-		r |= dm_suspend_and_flush_map(names->name, retries);
+		r |= dm_suspend_and_flush_map(names->name, retries) != DM_FLUSH_OK;
 		next = names->next;
 		names = (void *) names + next;
 	} while (next);
