@@ -788,7 +788,7 @@ sync_maps_state(vector mpvec)
 int
 flush_map(struct multipath * mpp, struct vectors * vecs)
 {
-	int r = dm_flush_map(mpp->alias);
+	int r = dm_suspend_and_flush_map(mpp->alias, 0);
 	if (r) {
 		condlog(0, "%s: can't flush", mpp->alias);
 		return r;
