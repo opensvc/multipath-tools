@@ -414,6 +414,8 @@ void default_reply(struct client *c, int r)
 	case -EBUSY:
 		append_strbuf_str(&c->reply, "map or partition in use\n");
 		break;
+	case -ENODEV:
+		append_strbuf_str(&c->reply, "device not found\n");
 	}
 }
 

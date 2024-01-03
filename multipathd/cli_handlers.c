@@ -257,7 +257,7 @@ cli_list_path (void *v, struct strbuf *reply, void *data)
 
 	pp = find_path_by_str(vecs->pathvec, param, "list path");
 	if (!pp)
-		return 1;
+		return -ENODEV;
 
 	return show_path(reply, vecs, pp, "%o");
 }
@@ -277,7 +277,7 @@ cli_list_map_topology (void *v, struct strbuf *reply, void *data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	condlog(3, "list multipath %s (operator)", param);
 
@@ -305,7 +305,7 @@ cli_list_map_json (void *v, struct strbuf *reply, void *data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	condlog(3, "list multipath json %s (operator)", param);
 
@@ -434,7 +434,7 @@ cli_list_map_fmt (void *v, struct strbuf *reply, void *data)
 	param = convert_dev(param, 0);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	condlog(3, "list map %s fmt %s (operator)", param, fmt);
 
@@ -515,7 +515,7 @@ cli_reset_map_stats (void *v, struct strbuf *reply, void *data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	condlog(3, "reset multipath %s stats (operator)", param);
 	reset_stats(mpp);
@@ -682,7 +682,7 @@ cli_del_path (void * v, struct strbuf *reply, void * data)
 	pp = find_path_by_str(vecs->pathvec, param, NULL);
 	if (!pp) {
 		condlog(0, "%s: path already removed", param);
-		return 1;
+		return -ENODEV;
 	}
 	ret = ev_remove_path(pp, vecs, 1);
 	if (ret == REMOVE_PATH_DELAY)
@@ -766,7 +766,7 @@ cli_del_map (void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	r = flush_map(mpp, vecs);
 	if (r == DM_FLUSH_OK)
@@ -814,7 +814,7 @@ cli_reload(void *v, struct strbuf *reply, void *data)
 	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	if (mpp->wait_for_udev) {
 		condlog(2, "%s: device not fully created, failing reload",
@@ -842,7 +842,7 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	if (mpp->wait_for_udev) {
 		condlog(2, "%s: device not fully created, failing resize",
@@ -926,7 +926,7 @@ cli_restore_queueing(void *v, struct strbuf *reply, void *data)
 	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	if (mpp->disable_queueing) {
 		mpp->disable_queueing = 0;
@@ -976,7 +976,7 @@ cli_disable_queueing(void *v, struct strbuf *reply, void *data)
 	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	if (count_active_paths(mpp) == 0)
 		mpp->stat_map_failures++;
@@ -1108,7 +1108,10 @@ cli_reinstate(void * v, struct strbuf *reply, void * data)
 	param = convert_dev(param, 1);
 	pp = find_path_by_str(vecs->pathvec, param, "reinstate path");
 
-	if (!pp || !pp->mpp || !pp->mpp->alias)
+	if (!pp)
+		return -ENODEV;
+
+	if (!pp->mpp || !pp->mpp->alias)
 		return 1;
 
 	condlog(2, "%s: reinstate path %s (operator)",
@@ -1153,7 +1156,10 @@ cli_fail(void * v, struct strbuf *reply, void * data)
 	param = convert_dev(param, 1);
 	pp = find_path_by_str(vecs->pathvec, param, "fail path");
 
-	if (!pp || !pp->mpp || !pp->mpp->alias)
+	if (!pp)
+		return -ENODEV;
+
+	if (!pp->mpp || !pp->mpp->alias)
 		return 1;
 
 	condlog(2, "%s: fail path %s (operator)",
@@ -1250,7 +1256,7 @@ cli_getprstatus (void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	append_strbuf_str(reply, prflag_str[mpp->prflag]);
 
@@ -1270,7 +1276,7 @@ cli_setprstatus(void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	if (mpp->prflag != PRFLAG_SET) {
 		mpp->prflag = PRFLAG_SET;
@@ -1292,7 +1298,7 @@ cli_unsetprstatus(void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	if (mpp->prflag != PRFLAG_UNSET) {
 		mpp->prflag = PRFLAG_UNSET;
@@ -1315,7 +1321,7 @@ cli_getprkey(void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	key = get_be64(mpp->reservation_key);
 	if (!key) {
@@ -1343,7 +1349,7 @@ cli_unsetprkey(void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
@@ -1370,7 +1376,7 @@ cli_setprkey(void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	if (parse_prkey_flags(keyparam, &prkey, &flags) != 0) {
 		condlog(0, "%s: invalid prkey : '%s'", mapname, keyparam);
@@ -1394,7 +1400,10 @@ static int cli_set_marginal(void * v, struct strbuf *reply, void * data)
 	param = convert_dev(param, 1);
 	pp = find_path_by_str(vecs->pathvec, param, "set marginal path");
 
-	if (!pp || !pp->mpp || !pp->mpp->alias)
+	if (!pp)
+		return -ENODEV;
+
+	if (!pp->mpp || !pp->mpp->alias)
 		return 1;
 
 	condlog(2, "%s: set marginal path %s (operator)",
@@ -1418,7 +1427,10 @@ static int cli_unset_marginal(void * v, struct strbuf *reply, void * data)
 	param = convert_dev(param, 1);
 	pp = find_path_by_str(vecs->pathvec, param, "unset marginal path");
 
-	if (!pp || !pp->mpp || !pp->mpp->alias)
+	if (!pp)
+		return -ENODEV;
+
+	if (!pp->mpp || !pp->mpp->alias)
 		return 1;
 
 	condlog(2, "%s: unset marginal path %s (operator)",
@@ -1449,7 +1461,7 @@ static int cli_unset_all_marginal(void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	if (mpp->wait_for_udev) {
 		condlog(2, "%s: device not fully created, "
