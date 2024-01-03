@@ -1075,7 +1075,7 @@ main (int argc, char *argv[])
 		goto out;
 	}
 	else if (cmd == CMD_FLUSH_ALL) {
-		r = dm_flush_maps(1, retries) ? RTVL_FAIL : RTVL_OK;
+		r = dm_flush_maps(retries) ? RTVL_FAIL : RTVL_OK;
 		goto out;
 	}
 	while ((r = configure(conf, cmd, dev_type, dev)) == RTVL_RETRY)
