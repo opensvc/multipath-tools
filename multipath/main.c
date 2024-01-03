@@ -804,10 +804,17 @@ int delegate_to_multipathd(enum mpath_cmds cmd,
 	}
 
 	if (reply != NULL && *reply != '\0') {
-		if (strcmp(reply, "fail\n"))
+		if (strncmp(reply, "fail\n", 5))
 			r = DELEGATE_OK;
-		if (r != NOT_DELEGATED && strcmp(reply, "ok\n"))
-			printf("%s", reply);
+		if (r != NOT_DELEGATED && strcmp(reply, "ok\n")) {
+			/* If there is additional failure information, skip the
+			 * initial 'fail' */
+			if (strncmp(reply, "fail\n", 5) == 0 &&
+			    strlen(reply) > 5)
+				printf("%s", reply + 5);
+			else
+				printf("%s", reply);
+		}
 	}
 
 out:

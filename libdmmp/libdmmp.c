@@ -321,7 +321,7 @@ invoke:
 		}
 	}
 	if ((*output != NULL) &&
-	    (strncmp(*output, "timeout", strlen("timeout")) == 0))
+	    (strncmp(*output, "fail\ntimeout", strlen("fail\ntimeout")) == 0))
 		flag_check_tmo = true;
 
 	if (flag_check_tmo == true) {
@@ -364,8 +364,8 @@ invoke:
 	}
 
 	if ((*output != NULL) &&
-	    strncmp(*output, "permission deny",
-		    strlen("permission deny")) == 0) {
+	    strncmp(*output, "fail\npermission deny",
+		    strlen("fail\npermission deny")) == 0) {
 		_error(ctx, "Permission deny, need to be root");
 		rc = DMMP_ERR_PERMISSION_DENY;
 		goto out;
