@@ -741,15 +741,16 @@ get_dev_type(char *dev) {
  * It is safer to use equivalent multipathd client commands instead.
  */
 enum {
-	DELEGATE_OK = 0,
-	DELEGATE_ERROR = -1,
-	NOT_DELEGATED = 1,
+	DELEGATE_OK,
+	DELEGATE_ERROR,
+	DELEGATE_RETRY,
+	NOT_DELEGATED,
 };
 
 int delegate_to_multipathd(enum mpath_cmds cmd,
 			   __attribute__((unused)) const char *dev,
 			   __attribute__((unused)) enum devtypes dev_type,
-			   const struct config *conf)
+			   struct config *conf)
 {
 	int fd;
 	char command[1024], *p, *reply = NULL;
@@ -767,17 +768,17 @@ int delegate_to_multipathd(enum mpath_cmds cmd,
 	}
 	else if (cmd == CMD_FLUSH_ONE && dev && dev_type == DEV_DEVMAP) {
 		p += snprintf(p, n, "del map %s", dev);
-		/* multipathd doesn't try as hard, to avoid potentially
-		 * hanging. If it fails, retry with the regular multipath
-		 * command */
-		r = NOT_DELEGATED;
+		if (conf->remove_retries > 0) {
+			r = DELEGATE_RETRY;
+			conf->remove_retries--;
+		}
 	}
 	else if (cmd == CMD_FLUSH_ALL) {
 		p += snprintf(p, n, "del maps");
-		/* multipathd doesn't try as hard, to avoid potentially
-		 * hanging. If it fails, retry with the regular multipath
-		 * command */
-		r = NOT_DELEGATED;
+		if (conf->remove_retries > 0) {
+			r = DELEGATE_RETRY;
+			conf->remove_retries--;
+		}
 	}
 	/* Add other translations here */
 
@@ -806,7 +807,7 @@ int delegate_to_multipathd(enum mpath_cmds cmd,
 	if (reply != NULL && *reply != '\0') {
 		if (strncmp(reply, "fail\n", 5))
 			r = DELEGATE_OK;
-		if (r != NOT_DELEGATED && strcmp(reply, "ok\n")) {
+		if (r != DELEGATE_RETRY && strcmp(reply, "ok\n")) {
 			/* If there is additional failure information, skip the
 			 * initial 'fail' */
 			if (strncmp(reply, "fail\n", 5) == 0 &&
@@ -1021,13 +1022,17 @@ main (int argc, char *argv[])
 		goto out;
 	}
 
-	switch(delegate_to_multipathd(cmd, dev, dev_type, conf)) {
-	case DELEGATE_OK:
-		exit(RTVL_OK);
-	case DELEGATE_ERROR:
-		exit(RTVL_FAIL);
-	case NOT_DELEGATED:
-		break;
+	while (1) {
+		int ret = delegate_to_multipathd(cmd, dev, dev_type, conf);
+
+		if (ret == DELEGATE_OK)
+			exit(RTVL_OK);
+		if (ret == DELEGATE_ERROR)
+			exit(RTVL_FAIL);
+		if (ret == DELEGATE_RETRY)
+			sleep(1);
+		else /* NOT_DELEGATED */
+			break;
 	}
 
 	if (check_alias_settings(conf)) {
