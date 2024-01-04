@@ -162,7 +162,7 @@ static const struct binding *get_binding_for_wwid(const Bindings *bindings,
  * This is achieved by sorting be length first, then using strcmp().
  * If multiple prefixes are in use, the aliases with a given prefix will
  * not necessarily be in a contiguous range of the vector, but they will
- * be ordered such that for a given prefix, numercally higher aliases will
+ * be ordered such that for a given prefix, numerically higher aliases will
  * always be sorted after lower ones.
  */
 static int alias_compar(const void *p1, const void *p2)
