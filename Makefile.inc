@@ -37,7 +37,7 @@ prefix		:=
 exec_prefix	:= $(prefix)
 # Prefix for non-essential libraries (libdmmp)
 usr_prefix	:= $(if $(prefix),$(prefix),/usr)
-# Prefix for configfuration files (multipath.conf)
+# Prefix for configuration files (multipath.conf)
 etc_prefix	:= $(prefix)
 # Where to install systemd-related files. systemd is usually installed under /usr
 # Note: systemd installations with "split-usr=true" use separate "prefixdir" and
