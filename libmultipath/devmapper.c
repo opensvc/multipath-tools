@@ -221,7 +221,7 @@ static int dm_tgt_version (unsigned int *version, char *str)
 
 	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(2, DM_DEVICE_LIST_VERSIONS, dmt);
-		condlog(0, "Can not communicate with kernel DM");
+		condlog(0, "Cannot communicate with kernel DM");
 		goto out;
 	}
 	target = dm_task_get_versions(dmt);

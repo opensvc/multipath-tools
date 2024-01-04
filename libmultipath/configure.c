@@ -1097,7 +1097,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 	else
 		newmp = vector_alloc();
 	if (!newmp) {
-		condlog(0, "can not allocate newmp");
+		condlog(0, "cannot allocate newmp");
 		goto out;
 	}
 
