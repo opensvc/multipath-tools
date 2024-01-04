@@ -215,7 +215,7 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 				 * This path exists, but in the wrong map.
 				 * We can't reload the map from here.
 				 * Make sure it isn't used in this map
-				 * any more, and let the checker re-add
+				 * anymore, and let the checker re-add
 				 * it as it sees fit.
 				 */
 				dm_fail_path(mpp->alias, pp->dev_t);

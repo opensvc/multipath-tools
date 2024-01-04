@@ -1116,7 +1116,7 @@ uev_add_path (struct uevent *uev, struct vectors * vecs, int need_do_map)
 					 * Failure in ev_remove_path will keep
 					 * path in pathvec in INIT_REMOVED state
 					 * Fail the path to make sure it isn't
-					 * used any more.
+					 * used anymore.
 					 */
 					pp->dmstate = PSTATE_FAILED;
 					dm_fail_path(pp->mpp->alias, pp->dev_t);
@@ -3326,7 +3326,7 @@ static void cleanup_threads(void)
 
 	/*
 	 * As all threads are joined now, and we're in DAEMON_SHUTDOWN
-	 * state, no new waiter threads will be created any more.
+	 * state, no new waiter threads will be created anymore.
 	 */
 	pthread_attr_destroy(&waiter_attr);
 }

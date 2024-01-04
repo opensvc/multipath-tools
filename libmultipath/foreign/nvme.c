@@ -410,7 +410,7 @@ void cleanup(struct context *ctx)
 	lock(ctx);
 	/*
 	 * Locking is not strictly necessary here, locking in foreign.c
-	 * makes sure that no other code is called with this ctx any more.
+	 * makes sure that no other code is called with this ctx anymore.
 	 * But this should make static checkers feel better.
 	 */
 	pthread_cleanup_push(unlock, ctx);

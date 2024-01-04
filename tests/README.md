@@ -64,7 +64,7 @@ to wrap a function which is both defined in libmultipath and called from other
 functions in libmultipath, such as `checker_check()`. When `libmultipath.so` is
 created, the linker resolves calls to `checker_check()` inside the `.so`
 file. When later the test executable is built by linking the test object file with
-`libmultipath.so`, these calls can't be wrapped any more, because they've
+`libmultipath.so`, these calls can't be wrapped anymore, because they've
 already been resolved, and wrapping works only for *unresolved* symbols.
 Therefore, object files from libraries that contain calls to functions
 which need to be wrapped must be explicitly listed on the linker command line

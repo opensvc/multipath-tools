@@ -80,7 +80,7 @@ ENV{SYSTEMD_READY}="0"
 GOTO="end_mpath"
 
 LABEL="stop_wait"
-# If timeout hasn't expired but we're not in "maybe" state any more, stop timer
+# If timeout hasn't expired but we're not in "maybe" state anymore, stop timer
 # Do this only once, and only if the timer has been started before
 IMPORT{db}="FIND_MULTIPATHS_WAIT_CANCELLED"
 ENV{FIND_MULTIPATHS_WAIT_CANCELLED}=="?*", GOTO="end_mpath"
