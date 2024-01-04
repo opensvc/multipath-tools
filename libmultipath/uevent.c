@@ -250,7 +250,7 @@ merge_need_stop(struct uevent *earlier, struct uevent *later)
 		return true;
 
 	/*
-	 * we can not make a jugement without wwid,
+	 * we cannot make a jugement without wwid,
 	 * so it is sensible to stop merging
 	 */
 	if (!earlier->wwid || !later->wwid)

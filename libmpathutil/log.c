@@ -149,7 +149,7 @@ static int _log_enqueue(int prio, const char * fmt, va_list ap)
 	if (la->head <= la->tail && len > (la->end - la->tail)) {
 		logdbg(stderr, "enqueue: rewind tail to %p\n", la->tail);
 		if (la->head == la->start ) {
-			logdbg(stderr, "enqueue: can not rewind tail, drop msg\n");
+			logdbg(stderr, "enqueue: cannot rewind tail, drop msg\n");
 			la->tail = lastmsg;
 			return 1;  /* can't reuse */
 		}

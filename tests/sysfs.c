@@ -170,7 +170,7 @@ static void test_sagv_open_fail(void **state)
 	expect_value(__wrap_open, flags, O_RDONLY);
 	errno = ENOENT;
 	will_return(__wrap_open, -1);
-	expect_condlog(3, "__sysfs_attr_get_value: attribute '/foo/bar' can not be opened");
+	expect_condlog(3, "__sysfs_attr_get_value: attribute '/foo/bar' cannot be opened");
 	assert_int_equal(sysfs_attr_get_value((void *)state, "bar",
 					      buf, sizeof(buf)), -ENOENT);
 }
@@ -389,7 +389,7 @@ static void test_sasv_open_fail(void **state)
 	expect_value(__wrap_open, flags, O_WRONLY);
 	errno = EPERM;
 	will_return(__wrap_open, -1);
-	expect_condlog(3, "sysfs_attr_set_value: attribute '/foo/bar' can not be opened");
+	expect_condlog(3, "sysfs_attr_set_value: attribute '/foo/bar' cannot be opened");
 	assert_int_equal(sysfs_attr_set_value((void *)state, "bar",
 					      buf, sizeof(buf)), -EPERM);
 }

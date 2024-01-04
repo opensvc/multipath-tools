@@ -469,7 +469,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	newmp = vector_alloc();
 
 	if (!curmp || !pathvec || !newmp) {
-		condlog(0, "can not allocate memory");
+		condlog(0, "cannot allocate memory");
 		goto out;
 	}
 	vecs.pathvec = pathvec;
