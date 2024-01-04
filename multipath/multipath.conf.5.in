@@ -308,7 +308,7 @@ The default is: \fB<unset>\fR. To enable uevent merging, set it e.g. to
 .B uid_attribute
 The udev attribute providing a unique path identifier (WWID). If
 \fIuid_attribute\fR is set to the empty string, WWID determination is done
-using the \fIsysfs\fR method rather then using udev (not recommended in
+using the \fIsysfs\fR method rather than using udev (not recommended in
 production; see \fBWWID generation\fR below).
 .RS
 .TP
