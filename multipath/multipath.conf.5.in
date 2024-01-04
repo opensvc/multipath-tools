@@ -96,7 +96,7 @@ not mandatory.
 .B Note on regular expressions:
 The \fI@CONFIGFILE@\fR syntax allows many attribute values to be specified as POSIX
 Extended Regular Expressions (see \fBregex\fR(7)). These regular expressions
-are \fBcase sensitive\fR and \fBnot anchored\fR, thus the expression "bar" matches "barbie",
+are \fBcase-sensitive\fR and \fBnot anchored\fR, thus the expression "bar" matches "barbie",
 "rhabarber", and "wunderbar", but not "Barbie". To avoid unwanted substring
 matches, standard regular expression syntax using the special characters "^" and "$" can be used.
 .
