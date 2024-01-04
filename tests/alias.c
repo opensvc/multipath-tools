@@ -38,7 +38,7 @@ static int __set_errno(int err)
 
 /*
  * allocate_binding -> write_bindings_file() writes the entire file, i.e. the
- * header, any pre-existing bindings, and the new binding. The complete content
+ * header, any preexisting bindings, and the new binding. The complete content
  * depends on history and is different to predict here. Therefore we check only
  * the newly added binding. Because add_binding() sorts entries, this new
  * binding isn't necessarily the last one; receive it from will_return() and
