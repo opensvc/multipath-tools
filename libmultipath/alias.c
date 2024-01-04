@@ -560,7 +560,7 @@ static void read_bindings_file(void)
  *    bindings file fails.
  *  - if "alias_old" is set, it can't be bound to a different map. alias_old is
  *    initialized in find_existing_alias() by scanning the mpvec. We trust
- *    that the mpvec corrcectly represents kernel state.
+ *    that the mpvec correctly represents kernel state.
  */
 
 char *get_user_friendly_alias(const char *wwid, const char *alias_old,
