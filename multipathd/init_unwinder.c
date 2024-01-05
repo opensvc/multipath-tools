@@ -4,10 +4,12 @@
 
 static pthread_mutex_t dummy_mtx = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t dummy_cond = PTHREAD_COND_INITIALIZER;
+static int dummy_started;
 
 static void *dummy_thread(void *arg __attribute__((unused)))
 {
 	pthread_mutex_lock(&dummy_mtx);
+	dummy_started = 1;
 	pthread_cond_broadcast(&dummy_cond);
 	pthread_mutex_unlock(&dummy_mtx);
 	pause();
@@ -27,7 +29,9 @@ int init_unwinder(void)
 		return rc;
 	}
 
-	pthread_cond_wait(&dummy_cond, &dummy_mtx);
+	while (!dummy_started)
+		pthread_cond_wait(&dummy_cond, &dummy_mtx);
+
 	pthread_mutex_unlock(&dummy_mtx);
 
 	return pthread_cancel(dummy);
