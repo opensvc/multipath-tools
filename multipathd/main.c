@@ -1630,7 +1630,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 				}
 			}
 		}
-		if (auto_resize != AUTO_RESIZE_NEVER &&
+		if (auto_resize != AUTO_RESIZE_NEVER && mpp &&
 		    !mpp->wait_for_udev) {
 			struct pathgroup *pgp;
 			struct path *pp2;
