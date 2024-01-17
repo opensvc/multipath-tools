@@ -2115,7 +2115,9 @@ int update_prio(struct path *pp, int refresh_all)
 		pthread_cleanup_pop(1);
 	}
 
-	if (pp->priority == oldpriority && !refresh_all)
+	if (pp->priority != oldpriority)
+		changed = 1;
+	else if (!refresh_all)
 		return 0;
 
 	vector_foreach_slot (pp->mpp->pg, pgp, i) {
