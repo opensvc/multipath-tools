@@ -2099,7 +2099,7 @@ partial_retrigger_tick(vector pathvec)
 	}
 }
 
-int update_prio(struct path *pp, int refresh_all)
+static int update_prio(struct path *pp, int force_refresh_all)
 {
 	int oldpriority;
 	struct path *pp1;
@@ -2117,7 +2117,7 @@ int update_prio(struct path *pp, int refresh_all)
 
 	if (pp->priority != oldpriority)
 		changed = 1;
-	else if (!refresh_all)
+	else if (!force_refresh_all)
 		return 0;
 
 	vector_foreach_slot (pp->mpp->pg, pgp, i) {
