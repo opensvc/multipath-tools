@@ -606,7 +606,7 @@ read_gpt_pt (int fd, __attribute__((unused)) struct slice all,
 	gpt_entry *ptes = NULL;
 	unsigned int i;
 	int n = 0;
-	int last_used_index=-1;
+	int last_used_index = -1;
 	int sector_size_mul = get_sector_size(fd)/512;
 
 	if (!find_valid_gpt (fd, &gpt, &ptes) || !gpt || !ptes) {
