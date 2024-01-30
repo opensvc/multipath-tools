@@ -1691,8 +1691,6 @@ def_auto_resize_handler(struct config *conf, vector strvec, const char *file,
 int
 print_auto_resize(struct strbuf *buff, long v)
 {
-	if (!v)
-		return 0;
 	return append_strbuf_quoted(buff,
 			v == AUTO_RESIZE_GROW_ONLY ? "grow_only" :
 			v == AUTO_RESIZE_GROW_SHRINK ? "grow_shrink" :
