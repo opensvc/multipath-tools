@@ -1763,7 +1763,7 @@ static void gufa_check_locking(void **state) {
 	assert_int_equal(lock_errors, 0);
 }
 
-static int test_get_user_friendly_alias()
+static int test_get_user_friendly_alias(void)
 {
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test_teardown(gufa_empty_new_rw, teardown_bindings),
@@ -1981,7 +1981,7 @@ static void order_06(void **state)
 	order_test(ARRAY_SIZE(ra), ra, true);
 }
 
-static int test_bindings_order()
+static int test_bindings_order(void)
 {
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test_teardown(order_01, teardown_bindings),
