@@ -1162,7 +1162,6 @@ static struct hwentry default_hw[] = {
 		.minio_rq      = 1,
 		.flush_on_last_del = FLUSH_ENABLED,
 		.fast_io_fail  = 15,
-		.dev_loss      = 15,
 	},
 	/*
 	 * Kaminario
