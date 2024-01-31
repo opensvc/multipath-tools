@@ -1106,6 +1106,7 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.hwhandler     = "1 alua",
 		.prio_name     = PRIO_ALUA,
+		.detect_prio   = DETECT_PRIO_OFF,
 		.fast_io_fail  = 10,
 		.max_sectors_kb = 4096,
 	},
