@@ -16,6 +16,7 @@ multipath/multipath
 multipath/multipath.8
 multipath/multipath.conf.5
 multipath/multipath.rules
+multipath/11-dm-mpath.rules
 multipath/tmpfiles.conf
 multipathd/multipathd
 multipathd/multipathd.8

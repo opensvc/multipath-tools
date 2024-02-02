@@ -5,7 +5,7 @@ include ../Makefile.inc
 
 EXEC      := multipath
 MANPAGES  := multipath.8 multipath.conf.5
-GENERATED := $(MANPAGES) multipath.rules tmpfiles.conf
+GENERATED := $(MANPAGES) multipath.rules tmpfiles.conf 11-dm-mpath.rules
 
 CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathcmddir)
 CFLAGS += $(BIN_CFLAGS)
