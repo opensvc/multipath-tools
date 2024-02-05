@@ -10,4 +10,6 @@ Before=sockets.target
 ListenStream=@/org/kernel/linux/storage/multipathd
 
 [Install]
-WantedBy=sockets.target
+# Socket activation for multipathd is disabled by default.
+# Activate it here if you find it useful.
+# WantedBy=sockets.target
