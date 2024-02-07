@@ -2,7 +2,6 @@ ACTION!="add|change", GOTO="mpath_end"
 ENV{DM_UDEV_RULES_VSN}!="?*", GOTO="mpath_end"
 ENV{DM_UUID}!="mpath-?*", GOTO="mpath_end"
 
-IMPORT{db}="DM_DISABLE_OTHER_RULES_FLAG_OLD"
 IMPORT{db}="MPATH_DEVICE_READY"
 
 # Coldplug event while device is suspended (e.g. during a reload)
@@ -81,16 +80,16 @@ LABEL="force_activation"
 # We'd like to avoid this, especially within udev processing.
 ENV{MPATH_DEVICE_READY}=="0", ENV{DM_NOSCAN}="1"
 
-# Also skip all foreign rules if no path is available.
-# Remember the original value of DM_DISABLE_OTHER_RULES_FLAG
-# and restore it back once we have at least one path available.
-ENV{MPATH_DEVICE_READY}=="0", ENV{.MPATH_DEVICE_READY_OLD}=="1", \
-	ENV{DM_DISABLE_OTHER_RULES_FLAG_OLD}=="", \
-	ENV{DM_DISABLE_OTHER_RULES_FLAG_OLD}="$env{DM_UDEV_DISABLE_OTHER_RULES_FLAG}"
-ENV{MPATH_DEVICE_READY}=="0", ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="1"
+# Skip all foreign rules if no path is available.
+# Use DM_UDEV_DISABLE_OTHER_RULES_FLAG to communicate this
+# to upper layers. The original value will be restored in a late
+# udev rule.
+ENV{MPATH_DEVICE_READY}=="0", \
+	ENV{.MPATH_SAVE_DISABLE_OTHER_RULES_FLAG}="$env{DM_UDEV_DISABLE_OTHER_RULES_FLAG}", \
+	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="1"
+# If the device comes back online, set DM_ACTIVATION so that
+# upper layers do a rescan.
 ENV{MPATH_DEVICE_READY}!="0", ENV{.MPATH_DEVICE_READY_OLD}=="0", \
-	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="$env{DM_DISABLE_OTHER_RULES_FLAG_OLD}", \
-	ENV{DM_DISABLE_OTHER_RULES_FLAG_OLD}="", \
 	ENV{DM_ACTIVATION}="1", ENV{MPATH_UNCHANGED}="0"
 
 # The code to check multipath state ends here. We need to set

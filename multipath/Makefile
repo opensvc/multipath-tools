@@ -26,6 +26,7 @@ install:
 	$(Q)$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)/
 	$(Q)$(INSTALL_PROGRAM) -d $(DESTDIR)$(udevrulesdir)
 	$(Q)$(INSTALL_PROGRAM) -m 644 11-dm-mpath.rules $(DESTDIR)$(udevrulesdir)
+	$(Q)$(INSTALL_PROGRAM) -m 644 99-z-dm-mpath-late.rules $(DESTDIR)$(udevrulesdir)
 	$(Q)$(INSTALL_PROGRAM) -m 644 multipath.rules $(DESTDIR)$(udevrulesdir)/56-multipath.rules
 	$(Q)$(INSTALL_PROGRAM) -d $(DESTDIR)$(tmpfilesdir)
 	$(Q)$(INSTALL_PROGRAM) -m 644 tmpfiles.conf $(DESTDIR)$(tmpfilesdir)/multipath.conf
@@ -46,6 +47,7 @@ endif
 uninstall:
 	$(Q)$(RM) $(DESTDIR)$(bindir)/$(EXEC)
 	$(Q)$(RM) $(DESTDIR)$(udevrulesdir)/11-dm-mpath.rules
+	$(Q)$(RM) $(DESTDIR)$(udevrulesdir)/99-z-dm-mpath-late.rules
 	$(Q)$(RM) $(DESTDIR)$(modulesloaddir)/multipath.conf
 	$(Q)$(RM) $(DESTDIR)$(modulesloaddir)/scsi_dh.conf
 	$(Q)$(RM) $(DESTDIR)$(libudevdir)/rules.d/56-multipath.rules
