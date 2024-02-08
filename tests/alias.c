@@ -9,7 +9,7 @@
 #include "test-log.h"
 #include <errno.h>
 #include <string.h>
-
+#include "wrap64.h"
 #include "globals.c"
 #include "../libmultipath/alias.c"
 
@@ -71,7 +71,7 @@ int __wrap_rename(const char *old, const char *new)
 	return __set_errno(mock_type(int));
 }
 
-int __wrap_mkstemp(char *template)
+int WRAP_FUNC(mkstemp)(char *template)
 {
 	return 10;
 }

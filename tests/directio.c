@@ -24,6 +24,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <cmocka.h>
+#include "wrap64.h"
 #include "globals.c"
 #include "../libmultipath/checkers/directio.c"
 
@@ -66,12 +67,12 @@ int __wrap_ioctl(int fd, ioctl_request_t request, void *argp)
 #endif
 }
 
-int __real_fcntl(int fd, int cmd, long arg);
+int REAL_FCNTL (int fd, int cmd, long arg);
 
-int __wrap_fcntl(int fd, int cmd, long arg)
+int WRAP_FCNTL (int fd, int cmd, long arg)
 {
 #ifdef DIO_TEST_DEV
-	return __real_fcntl(fd, cmd, arg);
+	return REAL_FCNTL(fd, cmd, arg);
 #else
 	assert_int_equal(fd, test_fd);
 	assert_int_equal(cmd, F_GETFL);

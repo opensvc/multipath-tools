@@ -105,8 +105,11 @@ include $(wildcard $(OBJS:.o=.d))
 dep_clean:
 	$(Q)$(RM) $(OBJS:.o=.d)
 
+# Parse the C code for __wrap_xyz() functions and generate linker options from them.
+# See comment in wrap64.h
 %.o.wrap:	%.c
-	@sed -n 's/^.*__wrap_\([a-zA-Z0-9_]*\).*$$/-Wl,--wrap=\1/p' $< | \
+	$(Q)$(CC) $(OPTFLAGS) $(CPPFLAGS) $($*-test_FLAGS) -E $< | \
+		sed -n 's/^.*__wrap_\([a-zA-Z0-9_]*\).*$$/-Wl,--wrap=\1/p' | \
 		sort -u | tr '\n' ' ' >$@
 
 # Pass the original values of CFLAGS etc. to the sub-make, which will include
