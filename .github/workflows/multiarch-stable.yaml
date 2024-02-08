@@ -1,4 +1,4 @@
-name: multiarch test for rolling distros
+name: multiarch test for stable distros
 on:
   push:
     branches:
@@ -8,27 +8,25 @@ on:
   pull_request:
     branches:
       - master
-  # run monthly to catch rolling distro changes
-  schedule:
-    - cron: '45 02 1 * *'
-
 jobs:
 
-  build-current:
+  build-old:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         os:
-          - alpine
-          - debian-sid
-          - fedora-rawhide
-        arch: [amd64, ppc64le, aarch64, s390x, 386, arm/v7]
-        exclude:
-          - os: fedora-rawhide
-            arch: 386
-          - os: fedora-rawhide
-            arch: arm/v7
+          - debian-bookworm
+          - debian-buster
+          - ubuntu-trusty
+        arch: [386, arm/v7]
+        include:
+          - os: debian-bookworm
+            arch: aarch64
+          - os: debian-bookworm
+            arch: s390x
+          - os: debian-bookworm
+            arch: ppc64le
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -43,4 +41,3 @@ jobs:
           command: test
           params: "--platform linux/${{ matrix.arch }}"
           pull-params: "--platform linux/${{ matrix.arch }}"
-
