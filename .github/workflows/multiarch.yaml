@@ -6,6 +6,11 @@ on:
       - queue
       - tip
   pull_request:
+    branches:
+      - master
+  # run monthly to catch rolling distro changes
+  schedule:
+    - cron: '45 02 1 * *'
 
 jobs:
 

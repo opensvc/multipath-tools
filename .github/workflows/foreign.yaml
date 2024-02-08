@@ -6,6 +6,8 @@ on:
       - queue
       - tip
   pull_request:
+    branches:
+      - master
 
 jobs:
 

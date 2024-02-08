@@ -1,7 +1,12 @@
 name: check-abi
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - queue
+      - abi
+  pull_request:
+    branches:
+      - master
 env:
   ABI_BRANCH: ${{ secrets.ABI_BRANCH }}
 

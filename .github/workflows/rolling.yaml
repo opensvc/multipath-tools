@@ -6,6 +6,9 @@ on:
       - queue
       - tip
   pull_request:
+    branches:
+      - master
+  # run weekly to catch rolling distro changes
   schedule:
     - cron: '30 06 * * 1'
 
