@@ -22,27 +22,13 @@ jobs:
         os:
           - alpine
           - debian-sid
-          - opensuse-tumbleweed
-          - opensuse-leap
           - fedora-rawhide
-          - centos-8
-          - centos-7
-        arch: [amd64, ppc64le, aarch64, s390x]
+        arch: [amd64, ppc64le, aarch64, s390x, 386, arm/v7]
         exclude:
-          - os: centos-8
-            arch: s390x
-          - os: centos-7
-            arch: s390x
-        include:
-          - os: alpine
+          - os: fedora-rawhide
             arch: 386
-          - os: alpine
+          - os: fedora-rawhide
             arch: arm/v7
-          - os: debian-sid
-            arch: 386
-          - os: opensuse-tumbleweed
-            arch: 386
-        
     steps:
       - name: checkout
         uses: actions/checkout@v2

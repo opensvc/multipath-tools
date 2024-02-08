@@ -21,6 +21,7 @@ jobs:
         os:
           - debian-sid
           - alpine
+          - opensuse-tumbleweed
           - fedora-rawhide
     container: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
     steps:
