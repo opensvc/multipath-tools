@@ -5,9 +5,19 @@ on:
       - master
       - queue
       - tip
+    paths:
+      - '**.h'
+      - '**.c'
+      - '**Makefile*'
+      - '**.mk'
   pull_request:
     branches:
       - master
+    paths:
+      - '**.h'
+      - '**.c'
+      - '**Makefile*'
+      - '**.mk'
   # run weekly to catch rolling distro changes
   schedule:
     - cron: '30 06 * * 1'
