@@ -621,7 +621,7 @@ The default is: \fB1\fR
 Specify the maximum number of file descriptors that can be opened by multipath
 and multipathd. This is equivalent to ulimit \-n. A value of \fImax\fR will set
 this to the system limit from \fI/proc/sys/fs/nr_open\fR. If this is not set, the
-maximum number of open fds is taken from the calling process. It is usually
+maximum number of open file descriptors is taken from the calling process. It is usually
 1024. To be safe, this should be set to the maximum number of paths plus 32,
 if that number is greater than 1024.
 .RS
@@ -904,7 +904,7 @@ The default is: \fByes\fR
 If set to
 .I yes
 , multipath will try to detect if the device supports SCSI-3 ALUA. If so, the
-device will automatically use the \fIsysfs\fR prioritizer if the required sysf
+device will automatically use the \fIsysfs\fR prioritizer if the required sysfs
 attributes \fIaccess_state\fR and \fIpreferred_path\fR are supported, or the
 \fIalua\fR prioritizer if not. If set to
 .I no
@@ -1009,7 +1009,7 @@ times a path has been failed due to errors.If the number of failures on a partic
 path is greater than the san_path_err_threshold, then the path will not reinstate
 till san_path_err_recovery_time. These path failures should occur within a
 san_path_err_forget_rate checks, if not we will consider the path is good enough
-to reinstantate. See "Shaky paths detection" below.
+to reinstate. See "Shaky paths detection" below.
 .RS
 .TP
 The default is: \fBno\fR

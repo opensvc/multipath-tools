@@ -124,7 +124,7 @@ unsigned int mpathvalid_get_mode(void);
  * 	using the configuration read from either mpathvalid_init() or
  * 	mpathvalid_reload_config(). If the device is either claimed or
  * 	potentially claimed (MPATH_IS_VALID, MPATH_IS_VALID_NO_CHECK,
- * 	or MPATH_IS_MAYBE_VALID) and wwid is not NULL, then *wiid will
+ * 	or MPATH_IS_MAYBE_VALID) and wwid is not NULL, then *wwid will
  * 	be set to point to the wwid of device. If set, *wwid must be
  * 	freed by the caller. path_wwids is an optional parameter that
  * 	points to an array of wwids, that were returned from previous
