@@ -94,10 +94,16 @@ ENV{MPATH_DEVICE_READY}=="0", ENV{DM_NOSCAN}="1"
 ENV{MPATH_DEVICE_READY}=="0", \
 	ENV{.MPATH_SAVE_DISABLE_OTHER_RULES_FLAG}="$env{DM_UDEV_DISABLE_OTHER_RULES_FLAG}", \
 	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="1"
+
 # If the device comes back online, set DM_ACTIVATION so that
-# upper layers do a rescan.
-ENV{MPATH_DEVICE_READY}!="0", ENV{.MPATH_DEVICE_READY_OLD}=="0", \
-	ENV{DM_ACTIVATION}="1", ENV{MPATH_UNCHANGED}="0"
+# upper layers do a rescan. If the device is currently suspended,
+# we have to postpone the activation until the next event.
+ENV{MPATH_DEVICE_READY}=="0", GOTO="dont_activate"
+ENV{.MPATH_DEVICE_READY_OLD}!="0", GOTO="dont_activate"
+ENV{DM_SUSPENDED}=="1", ENV{MPATH_DEVICE_READY}="0", GOTO="dont_activate"
+
+ENV{DM_ACTIVATION}="1", ENV{MPATH_UNCHANGED}="0"
+LABEL="dont_activate"
 
 # The code to check multipath state ends here. We need to set
 # properties and symlinks regardless whether the map is usable or
