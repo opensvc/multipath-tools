@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - master
+      - queue
 jobs:
   jammy:
     runs-on: ubuntu-22.04
