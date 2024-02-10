@@ -4,9 +4,15 @@ on:
     branches:
       - queue
       - abi
+    paths:
+      - '**.h'
+      - '**.c'
   pull_request:
     branches:
       - master
+    paths:
+      - '**.h'
+      - '**.c'
 env:
   ABI_BRANCH: ${{ secrets.ABI_BRANCH }}
 
