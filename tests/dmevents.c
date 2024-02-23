@@ -29,7 +29,7 @@
 #include <fcntl.h>
 #include "structs.h"
 #include "structs_vec.h"
-
+#include "wrap64.h"
 #include "globals.c"
 /* I have to do this to get at the static variables */
 #include "../multipathd/dmevents.c"
@@ -207,7 +207,7 @@ static int teardown(void **state)
 	return 0;
 }
 
-int __wrap_open(const char *pathname, int flags)
+int WRAP_FUNC(open)(const char *pathname, int flags)
 {
 	assert_ptr_equal(pathname, "/dev/mapper/control");
 	assert_int_equal(flags, O_RDWR);
@@ -332,13 +332,12 @@ void __wrap_remove_map_by_alias(const char *alias, struct vectors * vecs)
 /* pretend update the pretend dm devices. If fail is set, it
  * simulates having the dm device removed. Otherwise it just sets
  * update_nr to record when the update happened */
-int __wrap_update_multipath(struct vectors *vecs, char *mapname, int reset)
+int __wrap_update_multipath(struct vectors *vecs, char *mapname)
 {
 	int fail;
 
 	check_expected(mapname);
 	assert_ptr_equal(vecs, waiter->vecs);
-	assert_int_equal(reset, 1);
 	fail = mock_type(int);
 	if (fail) {
 		assert_int_equal(remove_dm_device_event(mapname), 0);
@@ -390,7 +389,7 @@ static void test_init_waiter_bad1(void **state)
 	struct test_data *datap = (struct test_data *)(*state);
 	if (datap == NULL)
 		skip();
-	will_return(__wrap_open, -1);
+	wrap_will_return(WRAP_FUNC(open), -1);
 	assert_int_equal(init_dmevent_waiter(&datap->vecs), -1);
 	assert_ptr_equal(waiter, NULL);
 }
@@ -401,7 +400,7 @@ static void test_init_waiter_good0(void **state)
 	struct test_data *datap = (struct test_data *)(*state);
 	if (datap == NULL)
 		skip();
-	will_return(__wrap_open, 2);
+	wrap_will_return(WRAP_FUNC(open), 2);
 	assert_int_equal(init_dmevent_waiter(&datap->vecs), 0);
 	assert_ptr_not_equal(waiter, NULL);
 }

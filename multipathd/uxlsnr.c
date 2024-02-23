@@ -392,6 +392,11 @@ static void drain_idle_fd(int fd)
 
 void default_reply(struct client *c, int r)
 {
+	if (r == 0) {
+		append_strbuf_str(&c->reply, "ok\n");
+		return;
+	}
+	append_strbuf_str(&c->reply, "fail\n");
 	switch(r) {
 	case -EINVAL:
 	case -ESRCH:
@@ -406,13 +411,11 @@ void default_reply(struct client *c, int r)
 	case -ETIMEDOUT:
 		append_strbuf_str(&c->reply, "timeout\n");
 		break;
-	case 0:
-		append_strbuf_str(&c->reply, "ok\n");
+	case -EBUSY:
+		append_strbuf_str(&c->reply, "map or partition in use\n");
 		break;
-	default:
-		/* cli_handler functions return 1 on unspecified error */
-		append_strbuf_str(&c->reply, "fail\n");
-		break;
+	case -ENODEV:
+		append_strbuf_str(&c->reply, "device not found\n");
 	}
 }
 

@@ -1,0 +1,18 @@
+# Files to check - see on.push.paths in spelling.yml
+# public header files
+libdmmp\.h
+mpath_valid\.h
+mpath_cmd\.h
+mpath_persist\.h
+# udev rules
+\.rules
+\.rules\.in
+# systemd unit files
+\.service
+\.service\.in
+\.socket
+# man pages
+\.[358]
+\.[358]\.in
+README\.md
+NEWS\.md

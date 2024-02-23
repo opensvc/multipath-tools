@@ -53,9 +53,12 @@ static int dm_cancel_remove_partmaps(const char * mapname);
 #define __DR_UNUSED__ __attribute__((unused))
 #endif
 
+static int dm_remove_partmaps (const char * mapname, int need_sync,
+			       int deferred_remove);
 static int do_foreach_partmaps(const char * mapname,
 			       int (*partmap_func)(const char *, void *),
 			       void *data);
+static int _dm_queue_if_no_path(const char *mapname, int enable);
 
 #ifndef LIBDM_API_COOKIE
 static inline int dm_task_set_cookie(struct dm_task *dmt, uint32_t *c, int a)
@@ -221,7 +224,7 @@ static int dm_tgt_version (unsigned int *version, char *str)
 
 	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(2, DM_DEVICE_LIST_VERSIONS, dmt);
-		condlog(0, "Can not communicate with kernel DM");
+		condlog(0, "Cannot communicate with kernel DM");
 		goto out;
 	}
 	target = dm_task_get_versions(dmt);
@@ -1070,7 +1073,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	char *params = NULL;
 
 	if (dm_is_mpath(mapname) != 1)
-		return 0; /* nothing to do */
+		return DM_FLUSH_OK; /* nothing to do */
 
 	/* if the device currently has no partitions, do not
 	   run kpartx on it if you fail to delete it */
@@ -1080,12 +1083,12 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	/* If you aren't doing a deferred remove, make sure that no
 	 * devices are in use */
 	if (!do_deferred(deferred_remove) && partmap_in_use(mapname, NULL))
-			return 1;
+			return DM_FLUSH_BUSY;
 
 	if (need_suspend &&
 	    dm_get_map(mapname, &mapsize, &params) == DMP_OK &&
 	    strstr(params, "queue_if_no_path")) {
-		if (!dm_queue_if_no_path(mapname, 0))
+		if (!_dm_queue_if_no_path(mapname, 0))
 			queue_if_no_path = 1;
 		else
 			/* Leave queue_if_no_path alone if unset failed */
@@ -1094,12 +1097,12 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	free(params);
 	params = NULL;
 
-	if (dm_remove_partmaps(mapname, need_sync, deferred_remove))
-		return 1;
+	if ((r = dm_remove_partmaps(mapname, need_sync, deferred_remove)))
+		return r;
 
 	if (!do_deferred(deferred_remove) && dm_get_opencount(mapname)) {
 		condlog(2, "%s: map in use", mapname);
-		return 1;
+		return DM_FLUSH_BUSY;
 	}
 
 	do {
@@ -1113,14 +1116,14 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 			    && dm_map_present(mapname)) {
 				condlog(4, "multipath map %s remove deferred",
 					mapname);
-				return 2;
+				return DM_FLUSH_DEFERRED;
 			}
 			condlog(4, "multipath map %s removed", mapname);
-			return 0;
+			return DM_FLUSH_OK;
 		} else if (dm_is_mpath(mapname) != 1) {
 			condlog(4, "multipath map %s removed externally",
 				mapname);
-			return 0; /*we raced with someone else removing it */
+			return DM_FLUSH_OK; /* raced. someone else removed it */
 		} else {
 			condlog(2, "failed to remove multipath map %s",
 				mapname);
@@ -1133,10 +1136,10 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 			sleep(1);
 	} while (retries-- > 0);
 
-	if (queue_if_no_path == 1)
-		dm_queue_if_no_path(mapname, 1);
+	if (queue_if_no_path == 1 && _dm_queue_if_no_path(mapname, 1) != 0)
+		return DM_FLUSH_FAIL_CANT_RESTORE;
 
-	return 1;
+	return DM_FLUSH_FAIL;
 }
 
 #ifdef LIBDM_API_DEFERRED
@@ -1158,9 +1161,9 @@ dm_flush_map_nopaths(const char * mapname,
 
 #endif
 
-int dm_flush_maps (int need_suspend, int retries)
+int dm_flush_maps (int retries)
 {
-	int r = 1;
+	int r = DM_FLUSH_FAIL;
 	struct dm_task *dmt;
 	struct dm_names *names;
 	unsigned next = 0;
@@ -1178,15 +1181,16 @@ int dm_flush_maps (int need_suspend, int retries)
 	if (!(names = dm_task_get_names (dmt)))
 		goto out;
 
-	r = 0;
+	r = DM_FLUSH_OK;
 	if (!names->dev)
 		goto out;
 
 	do {
-		if (need_suspend)
-			r |= dm_suspend_and_flush_map(names->name, retries);
-		else
-			r |= dm_flush_map(names->name);
+		int ret;
+		ret = dm_suspend_and_flush_map(names->name, retries);
+		if (ret == DM_FLUSH_FAIL ||
+		    (r != DM_FLUSH_FAIL && ret == DM_FLUSH_BUSY))
+			r = ret;
 		next = names->next;
 		names = (void *) names + next;
 	} while (next);
@@ -1252,8 +1256,8 @@ dm_reinstate_path(const char * mapname, char * path)
 	return dm_message(mapname, message);
 }
 
-int
-dm_queue_if_no_path(const char *mapname, int enable)
+static int
+_dm_queue_if_no_path(const char *mapname, int enable)
 {
 	char *message;
 
@@ -1263,6 +1267,20 @@ dm_queue_if_no_path(const char *mapname, int enable)
 		message = "fail_if_no_path";
 
 	return dm_message(mapname, message);
+}
+
+int dm_queue_if_no_path(struct multipath *mpp, int enable)
+{
+	int r;
+	static const char no_path_retry[] = "queue_if_no_path";
+
+	if ((r = _dm_queue_if_no_path(mpp->alias, enable)) == 0) {
+		if (enable)
+			add_feature(&mpp->features, no_path_retry);
+		else
+			remove_feature(&mpp->features, no_path_retry);
+	}
+	return r;
 }
 
 static int
@@ -1492,7 +1510,7 @@ do_foreach_partmaps (const char * mapname,
 		    (p = strstr(params, dev_t)) &&
 		    !isdigit(*(p + strlen(dev_t)))
 		   ) {
-			if (partmap_func(names->name, data) != 0)
+			if ((r = partmap_func(names->name, data)) != 0)
 				goto out;
 		}
 
@@ -1524,15 +1542,15 @@ remove_partmap(const char *name, void *data)
 		if (!do_deferred(rd->deferred_remove) &&
 		    dm_get_opencount(name)) {
 			condlog(2, "%s: map in use", name);
-			return 1;
+			return DM_FLUSH_BUSY;
 		}
 	}
 	condlog(4, "partition map %s removed", name);
 	dm_device_remove(name, rd->need_sync, rd->deferred_remove);
-	return 0;
+	return DM_FLUSH_OK;
 }
 
-int
+static int
 dm_remove_partmaps (const char * mapname, int need_sync, int deferred_remove)
 {
 	struct remove_data rd = { need_sync, deferred_remove };

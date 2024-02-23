@@ -5,7 +5,21 @@ on:
       - master
       - queue
       - tip
+    paths:
+      - '**.h'
+      - '**.c'
+      - '**Makefile*'
+      - '**.mk'
   pull_request:
+    branches:
+      - master
+      - queue
+    paths:
+      - '**.h'
+      - '**.c'
+      - '**Makefile*'
+      - '**.mk'
+  # run weekly to catch rolling distro changes
   schedule:
     - cron: '30 06 * * 1'
 
@@ -18,6 +32,7 @@ jobs:
         os:
           - debian-sid
           - alpine
+          - opensuse-tumbleweed
           - fedora-rawhide
     container: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
     steps:

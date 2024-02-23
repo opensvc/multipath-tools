@@ -82,12 +82,13 @@ static void reset_filter_state(struct uevent_filter_state *st)
 
 int is_uevent_busy(void)
 {
-	int empty;
+	int empty, servicing;
 
 	pthread_mutex_lock(uevq_lockp);
 	empty = list_empty(&uevq);
+	servicing = servicing_uev;
 	pthread_mutex_unlock(uevq_lockp);
-	return (!empty || servicing_uev);
+	return (!empty || servicing);
 }
 
 struct uevent * alloc_uevent (void)
@@ -250,7 +251,7 @@ merge_need_stop(struct uevent *earlier, struct uevent *later)
 		return true;
 
 	/*
-	 * we can not make a jugement without wwid,
+	 * we cannot make a jugement without wwid,
 	 * so it is sensible to stop merging
 	 */
 	if (!earlier->wwid || !later->wwid)

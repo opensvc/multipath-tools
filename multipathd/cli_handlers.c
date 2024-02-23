@@ -31,6 +31,21 @@
 #include "foreign.h"
 #include "strbuf.h"
 #include "cli_handlers.h"
+#include "devmapper.h"
+
+static struct path *
+find_path_by_str(const struct _vector *pathvec, const char *str,
+		  const char *action_str)
+{
+	struct path *pp;
+
+	if (!(pp = find_path_by_devt(pathvec, str)))
+		pp = find_path_by_dev(pathvec, str);
+
+	if (!pp && action_str)
+		condlog(2, "%s: invalid path name. cannot %s", str, action_str);
+	return pp;
+}
 
 static int
 show_paths (struct strbuf *reply, struct vectors *vecs, char *style, int pretty)
@@ -76,7 +91,7 @@ static int
 show_map_topology (struct strbuf *reply, struct multipath *mpp,
 		   struct vectors *vecs, const fieldwidth_t *width)
 {
-	if (update_multipath(vecs, mpp->alias, 0))
+	if (refresh_multipath(vecs, mpp))
 		return 1;
 
 	if (snprint_multipath_topology(reply, mpp, 2, width) < 0)
@@ -98,7 +113,7 @@ show_maps_topology (struct strbuf *reply, struct vectors * vecs)
 	foreign_path_layout(p_width);
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (update_multipath(vecs, mpp->alias, 0)) {
+		if (refresh_multipath(vecs, mpp)) {
 			i--;
 			continue;
 		}
@@ -118,7 +133,7 @@ show_maps_json (struct strbuf *reply, struct vectors * vecs)
 	struct multipath * mpp;
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (update_multipath(vecs, mpp->alias, 0)) {
+		if (refresh_multipath(vecs, mpp)) {
 			return 1;
 		}
 	}
@@ -133,7 +148,7 @@ static int
 show_map_json (struct strbuf *reply, struct multipath * mpp,
 	       struct vectors * vecs)
 {
-	if (update_multipath(vecs, mpp->alias, 0))
+	if (refresh_multipath(vecs, mpp))
 		return 1;
 
 	if (snprint_multipath_map_json(reply, mpp) < 0)
@@ -240,9 +255,9 @@ cli_list_path (void *v, struct strbuf *reply, void *data)
 	param = convert_dev(param, 1);
 	condlog(3, "%s: list path (operator)", param);
 
-	pp = find_path_by_dev(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, "list path");
 	if (!pp)
-		return 1;
+		return -ENODEV;
 
 	return show_path(reply, vecs, pp, "%o");
 }
@@ -262,7 +277,7 @@ cli_list_map_topology (void *v, struct strbuf *reply, void *data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	condlog(3, "list multipath %s (operator)", param);
 
@@ -290,7 +305,7 @@ cli_list_map_json (void *v, struct strbuf *reply, void *data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	condlog(3, "list multipath json %s (operator)", param);
 
@@ -365,7 +380,7 @@ show_maps (struct strbuf *reply, struct vectors *vecs, char *style,
 		return 1;
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (update_multipath(vecs, mpp->alias, 0)) {
+		if (refresh_multipath(vecs, mpp)) {
 			i--;
 			continue;
 		}
@@ -419,7 +434,7 @@ cli_list_map_fmt (void *v, struct strbuf *reply, void *data)
 	param = convert_dev(param, 0);
 	mpp = find_mp_by_str(vecs->mpvec, param);
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	condlog(3, "list map %s fmt %s (operator)", param, fmt);
 
@@ -500,7 +515,7 @@ cli_reset_map_stats (void *v, struct strbuf *reply, void *data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	condlog(3, "reset multipath %s stats (operator)", param);
 	reset_stats(mpp);
@@ -555,7 +570,7 @@ cli_add_path (void *v, struct strbuf *reply, void *data)
 	if (invalid)
 		goto blacklisted;
 
-	pp = find_path_by_dev(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, NULL);
 	if (pp && pp->initialized != INIT_REMOVED) {
 		condlog(2, "%s: path already in pathvec", param);
 
@@ -664,10 +679,10 @@ cli_del_path (void * v, struct strbuf *reply, void * data)
 
 	param = convert_dev(param, 1);
 	condlog(2, "%s: remove path (operator)", param);
-	pp = find_path_by_dev(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, NULL);
 	if (!pp) {
 		condlog(0, "%s: path already removed", param);
-		return 1;
+		return -ENODEV;
 	}
 	ret = ev_remove_path(pp, vecs, 1);
 	if (ret == REMOVE_PATH_DELAY)
@@ -742,28 +757,23 @@ cli_del_map (void * v, struct strbuf *reply, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, KEY_MAP);
-	int major, minor;
-	char *alias;
-	int rc;
+	struct multipath *mpp;
+	int r;
 
 	param = convert_dev(param, 0);
 	condlog(2, "%s: remove map (operator)", param);
-	if (dm_get_major_minor(param, &major, &minor) < 0) {
-		condlog(2, "%s: not a device mapper table", param);
-		return 1;
-	}
-	alias = dm_mapname(major, minor);
-	if (!alias) {
-		condlog(2, "%s: mapname not found for %d:%d",
-			param, major, minor);
-		return 1;
-	}
-	rc = ev_remove_map(param, alias, minor, vecs);
-	if (rc == 2)
-		append_strbuf_str(reply, "delayed\n");
 
-	free(alias);
-	return rc;
+	mpp = find_mp_by_str(vecs->mpvec, param);
+
+	if (!mpp)
+		return -ENODEV;
+
+	r = flush_map(mpp, vecs);
+	if (r == DM_FLUSH_OK)
+		return 0;
+	else if (r == DM_FLUSH_BUSY)
+		return -EBUSY;
+	return 1;
 }
 
 static int
@@ -771,18 +781,25 @@ cli_del_maps (void *v, struct strbuf *reply, void *data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	struct multipath *mpp;
-	int i, ret = 0;
+	int i, ret, r = 0;
 
 	condlog(2, "remove maps (operator)");
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (flush_map(mpp, vecs, 0))
-			ret++;
-		else
+		ret = flush_map(mpp, vecs);
+		if (ret == DM_FLUSH_OK)
 			i--;
+		else if (ret == DM_FLUSH_BUSY && r != 1)
+			r = -EBUSY;
+		else
+			r = 1;
 	}
 	/* flush any multipath maps that aren't currently known by multipathd */
-	ret |= dm_flush_maps(0, 0);
-	return ret;
+	ret = dm_flush_maps(0);
+	if (ret == DM_FLUSH_BUSY && r != 1)
+		r = -EBUSY;
+	else if (ret != DM_FLUSH_OK)
+		r = 1;
+	return r;
 }
 
 static int
@@ -791,19 +808,14 @@ cli_reload(void *v, struct strbuf *reply, void *data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * mapname = get_keyparam(v, KEY_MAP);
 	struct multipath *mpp;
-	int minor;
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: reload map (operator)", mapname);
-	if (sscanf(mapname, "dm-%d", &minor) == 1)
-		mpp = find_mp_by_minor(vecs->mpvec, minor);
-	else
-		mpp = find_mp_by_alias(vecs->mpvec, mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
-	if (!mpp) {
-		condlog(0, "%s: invalid map name. cannot reload", mapname);
-		return 1;
-	}
+	if (!mpp)
+		return -ENODEV;
+
 	if (mpp->wait_for_udev) {
 		condlog(2, "%s: device not fully created, failing reload",
 			mpp->alias);
@@ -819,7 +831,6 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * mapname = get_keyparam(v, KEY_MAP);
 	struct multipath *mpp;
-	int minor;
 	unsigned long long size = 0;
 	struct pathgroup *pgp;
 	struct path *pp;
@@ -828,15 +839,10 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: resize map (operator)", mapname);
-	if (sscanf(mapname, "dm-%d", &minor) == 1)
-		mpp = find_mp_by_minor(vecs->mpvec, minor);
-	else
-		mpp = find_mp_by_alias(vecs->mpvec, mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
-	if (!mpp) {
-		condlog(0, "%s: invalid map name. cannot resize", mapname);
-		return 1;
-	}
+	if (!mpp)
+		return -ENODEV;
 
 	if (mpp->wait_for_udev) {
 		condlog(2, "%s: device not fully created, failing resize",
@@ -913,37 +919,24 @@ cli_restore_queueing(void *v, struct strbuf *reply, void *data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * mapname = get_keyparam(v, KEY_MAP);
 	struct multipath *mpp;
-	int minor;
 	struct config *conf;
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: restore map queueing (operator)", mapname);
-	if (sscanf(mapname, "dm-%d", &minor) == 1)
-		mpp = find_mp_by_minor(vecs->mpvec, minor);
-	else
-		mpp = find_mp_by_alias(vecs->mpvec, mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
-	if (!mpp) {
-		condlog(0, "%s: invalid map name, cannot restore queueing", mapname);
-		return 1;
-	}
+	if (!mpp)
+		return -ENODEV;
 
-	mpp->disable_queueing = 0;
-	conf = get_multipath_config();
-	pthread_cleanup_push(put_multipath_config, conf);
-	select_no_path_retry(conf, mpp);
-	pthread_cleanup_pop(1);
-
-	/*
-	 * Don't call set_no_path_retry() for the NO_PATH_RETRY_FAIL case.
-	 * That would disable queueing when "restorequeueing" is called,
-	 * and the code never behaved that way. Users might not expect it.
-	 * In almost all cases, queueing will be disabled anyway when we
-	 * are here.
-	 */
-	if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
-	    mpp->no_path_retry != NO_PATH_RETRY_FAIL)
+	if (mpp->disable_queueing) {
+		mpp->disable_queueing = 0;
+		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
+		select_no_path_retry(conf, mpp);
+		pthread_cleanup_pop(1);
 		set_no_path_retry(mpp);
+	} else
+		condlog(2, "%s: queueing not disabled. Nothing to do", mapname);
 
 	return 0;
 }
@@ -957,15 +950,16 @@ cli_restore_all_queueing(void *v, struct strbuf *reply, void *data)
 
 	condlog(2, "restore queueing (operator)");
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		mpp->disable_queueing = 0;
-		struct config *conf = get_multipath_config();
-		pthread_cleanup_push(put_multipath_config, conf);
-		select_no_path_retry(conf, mpp);
-		pthread_cleanup_pop(1);
-		/* See comment in cli_restore_queueing() */
-		if (mpp->no_path_retry != NO_PATH_RETRY_UNDEF &&
-		    mpp->no_path_retry != NO_PATH_RETRY_FAIL)
+		if (mpp->disable_queueing) {
+			mpp->disable_queueing = 0;
+			struct config *conf = get_multipath_config();
+			pthread_cleanup_push(put_multipath_config, conf);
+			select_no_path_retry(conf, mpp);
+			pthread_cleanup_pop(1);
 			set_no_path_retry(mpp);
+		} else
+			condlog(2, "%s: queueing not disabled. Nothing to do",
+				mpp->alias);
 	}
 	return 0;
 }
@@ -976,19 +970,13 @@ cli_disable_queueing(void *v, struct strbuf *reply, void *data)
 	struct vectors * vecs = (struct vectors *)data;
 	char * mapname = get_keyparam(v, KEY_MAP);
 	struct multipath *mpp;
-	int minor;
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: disable map queueing (operator)", mapname);
-	if (sscanf(mapname, "dm-%d", &minor) == 1)
-		mpp = find_mp_by_minor(vecs->mpvec, minor);
-	else
-		mpp = find_mp_by_alias(vecs->mpvec, mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
-	if (!mpp) {
-		condlog(0, "%s: invalid map name, cannot disable queueing", mapname);
-		return 1;
-	}
+	if (!mpp)
+		return -ENODEV;
 
 	if (count_active_paths(mpp) == 0)
 		mpp->stat_map_failures++;
@@ -1118,12 +1106,12 @@ cli_reinstate(void * v, struct strbuf *reply, void * data)
 	struct path * pp;
 
 	param = convert_dev(param, 1);
-	pp = find_path_by_dev(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, "reinstate path");
 
 	if (!pp)
-		 pp = find_path_by_devt(vecs->pathvec, param);
+		return -ENODEV;
 
-	if (!pp || !pp->mpp || !pp->mpp->alias)
+	if (!pp->mpp || !pp->mpp->alias)
 		return 1;
 
 	condlog(2, "%s: reinstate path %s (operator)",
@@ -1166,12 +1154,12 @@ cli_fail(void * v, struct strbuf *reply, void * data)
 	int r;
 
 	param = convert_dev(param, 1);
-	pp = find_path_by_dev(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, "fail path");
 
 	if (!pp)
-		 pp = find_path_by_devt(vecs->pathvec, param);
+		return -ENODEV;
 
-	if (!pp || !pp->mpp || !pp->mpp->alias)
+	if (!pp->mpp || !pp->mpp->alias)
 		return 1;
 
 	condlog(2, "%s: fail path %s (operator)",
@@ -1268,7 +1256,7 @@ cli_getprstatus (void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	append_strbuf_str(reply, prflag_str[mpp->prflag]);
 
@@ -1288,7 +1276,7 @@ cli_setprstatus(void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	if (mpp->prflag != PRFLAG_SET) {
 		mpp->prflag = PRFLAG_SET;
@@ -1310,7 +1298,7 @@ cli_unsetprstatus(void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, param);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	if (mpp->prflag != PRFLAG_UNSET) {
 		mpp->prflag = PRFLAG_UNSET;
@@ -1333,7 +1321,7 @@ cli_getprkey(void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	key = get_be64(mpp->reservation_key);
 	if (!key) {
@@ -1361,7 +1349,7 @@ cli_unsetprkey(void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
@@ -1388,7 +1376,7 @@ cli_setprkey(void * v, struct strbuf *reply, void * data)
 	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
 	if (!mpp)
-		return 1;
+		return -ENODEV;
 
 	if (parse_prkey_flags(keyparam, &prkey, &flags) != 0) {
 		condlog(0, "%s: invalid prkey : '%s'", mapname, keyparam);
@@ -1410,12 +1398,12 @@ static int cli_set_marginal(void * v, struct strbuf *reply, void * data)
 	struct path * pp;
 
 	param = convert_dev(param, 1);
-	pp = find_path_by_dev(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, "set marginal path");
 
 	if (!pp)
-		pp = find_path_by_devt(vecs->pathvec, param);
+		return -ENODEV;
 
-	if (!pp || !pp->mpp || !pp->mpp->alias)
+	if (!pp->mpp || !pp->mpp->alias)
 		return 1;
 
 	condlog(2, "%s: set marginal path %s (operator)",
@@ -1437,12 +1425,12 @@ static int cli_unset_marginal(void * v, struct strbuf *reply, void * data)
 	struct path * pp;
 
 	param = convert_dev(param, 1);
-	pp = find_path_by_dev(vecs->pathvec, param);
+	pp = find_path_by_str(vecs->pathvec, param, "unset marginal path");
 
 	if (!pp)
-		pp = find_path_by_devt(vecs->pathvec, param);
+		return -ENODEV;
 
-	if (!pp || !pp->mpp || !pp->mpp->alias)
+	if (!pp->mpp || !pp->mpp->alias)
 		return 1;
 
 	condlog(2, "%s: unset marginal path %s (operator)",
@@ -1465,22 +1453,16 @@ static int cli_unset_all_marginal(void * v, struct strbuf *reply, void * data)
 	struct pathgroup * pgp;
 	struct path * pp;
 	unsigned int i, j;
-	int minor;
 
 	mapname = convert_dev(mapname, 0);
 	condlog(2, "%s: unset all marginal paths (operator)",
 		mapname);
 
-	if (sscanf(mapname, "dm-%d", &minor) == 1)
-		mpp = find_mp_by_minor(vecs->mpvec, minor);
-	else
-		mpp = find_mp_by_alias(vecs->mpvec, mapname);
+	mpp = find_mp_by_str(vecs->mpvec, mapname);
 
-	if (!mpp) {
-		condlog(0, "%s: invalid map name. "
-			"cannot unset marginal paths", mapname);
-		return 1;
-	}
+	if (!mpp)
+		return -ENODEV;
+
 	if (mpp->wait_for_udev) {
 		condlog(2, "%s: device not fully created, "
 			"failing unset all marginal", mpp->alias);

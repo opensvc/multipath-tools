@@ -60,9 +60,19 @@ int assemble_map(struct multipath *mp, char **params)
 	nr_priority_groups = VECTOR_SIZE(mp->pg);
 	initial_pg_nr = (nr_priority_groups ? mp->bestpg : 0);
 
-	if (mp->no_path_retry != NO_PATH_RETRY_UNDEF  &&
-	    mp->no_path_retry != NO_PATH_RETRY_FAIL) {
+	switch (mp->no_path_retry) {
+	case NO_PATH_RETRY_UNDEF:
+	case NO_PATH_RETRY_FAIL:
+		break;
+	default:
+		/* don't enable queueing if no_path_retry has timed out */
+		if (mp->in_recovery && mp->retry_tick == 0 &&
+		    count_active_paths(mp) == 0)
+			break;
+		/* fallthrough */
+	case NO_PATH_RETRY_QUEUE:
 		add_feature(&mp->features, no_path_retry);
+		break;
 	}
 	if (mp->retain_hwhandler == RETAIN_HWHANDLER_ON &&
 	    get_linux_version_code() < KERNEL_VERSION(4, 3, 0))

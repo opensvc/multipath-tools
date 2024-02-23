@@ -480,11 +480,16 @@ struct multipath *
 find_mp_by_str (const struct _vector *mpvec, const char * str)
 {
 	int minor;
+	struct multipath *mpp;
 
 	if (sscanf(str, "dm-%d", &minor) == 1)
-		return find_mp_by_minor(mpvec, minor);
+		mpp = find_mp_by_minor(mpvec, minor);
 	else
-		return find_mp_by_alias(mpvec, str);
+		mpp = find_mp_by_alias(mpvec, str);
+
+	if (!mpp)
+		condlog(2, "%s: invalid map name.", str);
+	return mpp;
 }
 
 struct path *

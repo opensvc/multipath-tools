@@ -30,8 +30,13 @@ static int process_req(int fd, char * inbuf, unsigned int timeout)
 			printf("error %d receiving packet\n", ret);
 		return 1;
 	} else {
-		printf("%s", reply);
-		ret = (strcmp(reply, "fail\n") == 0);
+		ret = (strncmp(reply, "fail\n", 5) == 0);
+		/* If there is additional failure information, skip the
+		 * initial 'fail' */
+		if (ret && strlen(reply) > 5)
+			printf("%s", reply + 5);
+		else
+			printf("%s", reply);
 		free(reply);
 		return ret;
 	}

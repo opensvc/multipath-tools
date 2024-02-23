@@ -1,7 +1,17 @@
 name: check-abi
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - queue
+      - abi
+    paths:
+      - '**.h'
+      - '**.c'
+  pull_request:
+    branches:
+      - master
+      - queue
+  workflow_dispatch:
 env:
   ABI_BRANCH: ${{ secrets.ABI_BRANCH }}
 
@@ -49,6 +59,13 @@ jobs:
         with:
           name: abi-test
           path: abi-test
+
       - name: fail
-        if: ${{ env.ABI_BRANCH != github.ref_name && steps.compare.outcome == 'failure' }}
+        # MUST use >- here, otherwise the condition always evaluates to true
+        if: >-
+          ${{
+              env.ABI_BRANCH != github.ref_name &&
+              (steps.reference.outcome == 'failure' ||
+               steps.compare.outcome == 'failure')
+          }}
         run: false

@@ -438,9 +438,12 @@ int libcheck_check(struct checker * c)
 		}
 		tur_timeout(&tsp);
 		pthread_mutex_lock(&ct->lock);
-		if (ct->state == PATH_PENDING && ct->msgid == MSG_TUR_RUNNING)
-			r = pthread_cond_timedwait(&ct->active, &ct->lock,
-						   &tsp);
+
+		for (r = 0;
+		     r == 0 && ct->state == PATH_PENDING &&
+			     ct->msgid == MSG_TUR_RUNNING;
+		     r = pthread_cond_timedwait(&ct->active, &ct->lock, &tsp));
+
 		if (!r) {
 			tur_status = ct->state;
 			c->msgid = ct->msgid;

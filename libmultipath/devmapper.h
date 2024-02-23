@@ -48,6 +48,15 @@ int dm_get_map(const char *, unsigned long long *, char **);
 int dm_get_status(const char *, char **);
 int dm_type(const char *, char *);
 int dm_is_mpath(const char *);
+
+enum {
+	DM_FLUSH_OK = 0,
+	DM_FLUSH_FAIL,
+	DM_FLUSH_FAIL_CANT_RESTORE,
+	DM_FLUSH_DEFERRED,
+	DM_FLUSH_BUSY,
+};
+
 int _dm_flush_map (const char *, int, int, int, int);
 int dm_flush_map_nopaths(const char * mapname, int deferred_remove);
 #define dm_flush_map(mapname) _dm_flush_map(mapname, 1, 0, 0, 0)
@@ -55,10 +64,10 @@ int dm_flush_map_nopaths(const char * mapname, int deferred_remove);
 #define dm_suspend_and_flush_map(mapname, retries) \
 	_dm_flush_map(mapname, 1, 0, 1, retries)
 int dm_cancel_deferred_remove(struct multipath *mpp);
-int dm_flush_maps (int need_suspend, int retries);
+int dm_flush_maps (int retries);
 int dm_fail_path(const char * mapname, char * path);
 int dm_reinstate_path(const char * mapname, char * path);
-int dm_queue_if_no_path(const char *mapname, int enable);
+int dm_queue_if_no_path(struct multipath *mpp, int enable);
 int dm_switchgroup(const char * mapname, int index);
 int dm_enablegroup(const char * mapname, int index);
 int dm_disablegroup(const char * mapname, int index);
@@ -67,8 +76,6 @@ int dm_geteventnr (const char *name);
 int dm_is_suspended(const char *name);
 int dm_get_major_minor (const char *name, int *major, int *minor);
 char * dm_mapname(int major, int minor);
-int dm_remove_partmaps (const char * mapname, int need_sync,
-			int deferred_remove);
 int dm_get_uuid(const char *name, char *uuid, int uuid_len);
 bool has_dm_info(const struct multipath *mpp);
 int dm_get_info (const char * mapname, struct dm_info *dmi);

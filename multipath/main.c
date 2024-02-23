@@ -469,7 +469,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 	newmp = vector_alloc();
 
 	if (!curmp || !pathvec || !newmp) {
-		condlog(0, "can not allocate memory");
+		condlog(0, "cannot allocate memory");
 		goto out;
 	}
 	vecs.pathvec = pathvec;
@@ -741,15 +741,16 @@ get_dev_type(char *dev) {
  * It is safer to use equivalent multipathd client commands instead.
  */
 enum {
-	DELEGATE_OK = 0,
-	DELEGATE_ERROR = -1,
-	NOT_DELEGATED = 1,
+	DELEGATE_OK,
+	DELEGATE_ERROR,
+	DELEGATE_RETRY,
+	NOT_DELEGATED,
 };
 
 int delegate_to_multipathd(enum mpath_cmds cmd,
 			   __attribute__((unused)) const char *dev,
 			   __attribute__((unused)) enum devtypes dev_type,
-			   const struct config *conf)
+			   struct config *conf)
 {
 	int fd;
 	char command[1024], *p, *reply = NULL;
@@ -767,17 +768,17 @@ int delegate_to_multipathd(enum mpath_cmds cmd,
 	}
 	else if (cmd == CMD_FLUSH_ONE && dev && dev_type == DEV_DEVMAP) {
 		p += snprintf(p, n, "del map %s", dev);
-		/* multipathd doesn't try as hard, to avoid potentially
-		 * hanging. If it fails, retry with the regular multipath
-		 * command */
-		r = NOT_DELEGATED;
+		if (conf->remove_retries > 0) {
+			r = DELEGATE_RETRY;
+			conf->remove_retries--;
+		}
 	}
 	else if (cmd == CMD_FLUSH_ALL) {
 		p += snprintf(p, n, "del maps");
-		/* multipathd doesn't try as hard, to avoid potentially
-		 * hanging. If it fails, retry with the regular multipath
-		 * command */
-		r = NOT_DELEGATED;
+		if (conf->remove_retries > 0) {
+			r = DELEGATE_RETRY;
+			conf->remove_retries--;
+		}
 	}
 	/* Add other translations here */
 
@@ -798,16 +799,29 @@ int delegate_to_multipathd(enum mpath_cmds cmd,
 
 	if (mpath_process_cmd(fd, command, &reply, conf->uxsock_timeout)
 	    == -1) {
+		if (errno == ETIMEDOUT)
+			r = NOT_DELEGATED;
 		condlog(1, "error in multipath command %s: %s",
 			command, strerror(errno));
 		goto out;
 	}
 
 	if (reply != NULL && *reply != '\0') {
-		if (strcmp(reply, "fail\n"))
+		if (strncmp(reply, "fail\n", 5))
 			r = DELEGATE_OK;
-		if (r != NOT_DELEGATED && strcmp(reply, "ok\n"))
-			printf("%s", reply);
+		else if (strcmp(reply, "fail\ntimeout\n") == 0) {
+			r = NOT_DELEGATED;
+			goto out;
+		}
+		if (r != DELEGATE_RETRY && strcmp(reply, "ok\n")) {
+			/* If there is additional failure information, skip the
+			 * initial 'fail' */
+			if (strncmp(reply, "fail\n", 5) == 0 &&
+			    strlen(reply) > 5)
+				printf("%s", reply + 5);
+			else
+				printf("%s", reply);
+		}
 	}
 
 out:
@@ -827,7 +841,6 @@ main (int argc, char *argv[])
 	enum devtypes dev_type = DEV_NONE;
 	char *dev = NULL;
 	struct config *conf;
-	int retries = -1;
 	bool enable_foreign = false;
 
 	libmultipath_init();
@@ -937,7 +950,7 @@ main (int argc, char *argv[])
 			cmd = CMD_ADD_WWID;
 			break;
 		case 'R':
-			retries = atoi(optarg);
+			conf->remove_retries = atoi(optarg);
 			break;
 		case 'e':
 			enable_foreign = true;
@@ -1015,13 +1028,17 @@ main (int argc, char *argv[])
 		goto out;
 	}
 
-	switch(delegate_to_multipathd(cmd, dev, dev_type, conf)) {
-	case DELEGATE_OK:
-		exit(RTVL_OK);
-	case DELEGATE_ERROR:
-		exit(RTVL_FAIL);
-	case NOT_DELEGATED:
-		break;
+	while (1) {
+		int ret = delegate_to_multipathd(cmd, dev, dev_type, conf);
+
+		if (ret == DELEGATE_OK)
+			exit(RTVL_OK);
+		if (ret == DELEGATE_ERROR)
+			exit(RTVL_FAIL);
+		if (ret == DELEGATE_RETRY)
+			sleep(1);
+		else /* NOT_DELEGATED */
+			break;
 	}
 
 	if (check_alias_settings(conf)) {
@@ -1062,20 +1079,19 @@ main (int argc, char *argv[])
 		vector_free(curmp);
 		goto out;
 	}
-	if (retries < 0)
-		retries = conf->remove_retries;
 	if (cmd == CMD_FLUSH_ONE) {
 		if (dm_is_mpath(dev) != 1) {
 			condlog(0, "%s is not a multipath device", dev);
 			r = RTVL_FAIL;
 			goto out;
 		}
-		r = dm_suspend_and_flush_map(dev, retries) ?
+		r = (dm_suspend_and_flush_map(dev, conf->remove_retries) != DM_FLUSH_OK) ?
 		    RTVL_FAIL : RTVL_OK;
 		goto out;
 	}
 	else if (cmd == CMD_FLUSH_ALL) {
-		r = dm_flush_maps(1, retries) ? RTVL_FAIL : RTVL_OK;
+		r = (dm_flush_maps(conf->remove_retries) != DM_FLUSH_OK) ?
+		    RTVL_FAIL : RTVL_OK;
 		goto out;
 	}
 	while ((r = configure(conf, cmd, dev_type, dev)) == RTVL_RETRY)

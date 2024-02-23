@@ -321,7 +321,7 @@ invoke:
 		}
 	}
 	if ((*output != NULL) &&
-	    (strncmp(*output, "timeout", strlen("timeout")) == 0))
+	    (strncmp(*output, "fail\ntimeout", strlen("fail\ntimeout")) == 0))
 		flag_check_tmo = true;
 
 	if (flag_check_tmo == true) {
@@ -354,21 +354,35 @@ invoke:
 		_debug(ctx, "IPC timeout, but user requested timeout has not "
 		       "reached yet, still have %u milliseconds", ipc_tmo);
 		goto invoke;
-	} else {
-		if ((*output == NULL) || (strlen(*output) == 0)) {
-			_error(ctx, "IPC return empty reply for command %s",
-			       cmd);
-			rc = DMMP_ERR_IPC_ERROR;
+	}
+	if ((*output == NULL) || (strlen(*output) == 0)) {
+		_error(ctx, "IPC return empty reply for command %s",
+		       cmd);
+		rc = DMMP_ERR_IPC_ERROR;
+		goto out;
+	}
+	if (strncmp(*output, "fail\n", 5) == 0) {
+		if (strncmp(*output, "fail\npermission deny",
+			    strlen("fail\npermission deny")) == 0) {
+			_error(ctx, "Permission deny, need to be root");
+			rc = DMMP_ERR_PERMISSION_DENY;
 			goto out;
 		}
-	}
-
-	if ((*output != NULL) &&
-	    strncmp(*output, "permission deny",
-		    strlen("permission deny")) == 0) {
-		_error(ctx, "Permission deny, need to be root");
-		rc = DMMP_ERR_PERMISSION_DENY;
-		goto out;
+		else if (strncmp(*output, "fail\nmap or partition in use",
+				strlen("fail\nmap or partition in use")) == 0) {
+			_error(ctx, "Specified mpath is in use");
+			rc = DMMP_ERR_MPATH_BUSY;
+			goto out;
+		}
+		else if (strncmp(*output, "fail\ndevice not found",
+				 strlen("fail\ndevice not found")) == 0) {
+			_error(ctx, "Specified mpath not found");
+			rc = DMMP_ERR_MPATH_NOT_FOUND;
+			goto out;
+		}
+		_error(ctx, "Got unexpected error for cmd '%s': '%s'",
+		       cmd, *output);
+		rc = DMMP_ERR_BUG;
 	}
 
 out:
@@ -411,10 +425,6 @@ static int _ipc_connect(struct dmmp_context *ctx, int *fd)
 int dmmp_flush_mpath(struct dmmp_context *ctx, const char *mpath_name)
 {
 	int rc = DMMP_OK;
-	struct dmmp_mpath **dmmp_mps = NULL;
-	uint32_t dmmp_mp_count = 0;
-	uint32_t i = 0;
-	bool found = false;
 	int ipc_fd = -1;
 	char cmd[_IPC_MAX_CMD_LEN];
 	char *output = NULL;
@@ -433,29 +443,7 @@ int dmmp_flush_mpath(struct dmmp_context *ctx, const char *mpath_name)
 	_good(_process_cmd(ctx, ipc_fd, cmd, &output), rc, out);
 
 	/* _process_cmd() already make sure output is not NULL */
-
-	if (strncmp(output, "fail", strlen("fail")) == 0) {
-		/* Check whether specified mpath exits */
-		_good(dmmp_mpath_array_get(ctx, &dmmp_mps, &dmmp_mp_count),
-		      rc, out);
-
-		for (i = 0; i < dmmp_mp_count; ++i) {
-			if (strcmp(dmmp_mpath_name_get(dmmp_mps[i]),
-				   mpath_name) == 0) {
-				found = true;
-				break;
-			}
-		}
-
-		if (found == false) {
-			rc = DMMP_ERR_MPATH_NOT_FOUND;
-			_error(ctx, "Specified mpath %s not found", mpath_name);
-			goto out;
-		}
-
-		rc = DMMP_ERR_MPATH_BUSY;
-		_error(ctx, "Specified mpath is in use");
-	} else if (strncmp(output, "ok", strlen("ok")) != 0) {
+	if (strncmp(output, "ok", strlen("ok")) != 0) {
 		rc = DMMP_ERR_BUG;
 		_error(ctx, "Got unexpected output for cmd '%s': '%s'",
 		       cmd, output);
@@ -464,7 +452,6 @@ int dmmp_flush_mpath(struct dmmp_context *ctx, const char *mpath_name)
 out:
 	if (ipc_fd >= 0)
 		mpath_disconnect(ipc_fd);
-	dmmp_mpath_array_free(dmmp_mps, dmmp_mp_count);
 	free(output);
 	return rc;
 }

@@ -180,7 +180,6 @@ enum queue_mode_states {
 };
 
 enum auto_resize_state {
-	AUTO_RESIZE_UNDEF = 0,
 	AUTO_RESIZE_NEVER,
 	AUTO_RESIZE_GROW_ONLY,
 	AUTO_RESIZE_GROW_SHRINK,

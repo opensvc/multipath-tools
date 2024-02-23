@@ -11,7 +11,7 @@
 
 /*
  * Tuning suggestions on these parameters should go to
- * dm-devel@redhat.com (subscribers-only, see README)
+ * <dm-devel@lists.linux.dev> (see README.md)
  *
  * You are welcome to claim maintainership over a controller
  * family. Please mail the currently enlisted maintainer and
@@ -1106,6 +1106,7 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.hwhandler     = "1 alua",
 		.prio_name     = PRIO_ALUA,
+		.detect_prio   = DETECT_PRIO_OFF,
 		.fast_io_fail  = 10,
 		.max_sectors_kb = 4096,
 	},
@@ -1161,7 +1162,6 @@ static struct hwentry default_hw[] = {
 		.minio_rq      = 1,
 		.flush_on_last_del = FLUSH_ENABLED,
 		.fast_io_fail  = 15,
-		.dev_loss      = 15,
 	},
 	/*
 	 * Kaminario

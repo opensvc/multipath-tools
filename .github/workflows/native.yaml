@@ -5,7 +5,20 @@ on:
       - master
       - queue
       - tip
+    paths:
+      - '**.h'
+      - '**.c'
+      - '**Makefile*'
+      - '**.mk'
   pull_request:
+    branches:
+      - master
+      - queue
+    paths:
+      - '**.h'
+      - '**.c'
+      - '**Makefile*'
+      - '**.mk'
 
 jobs:
   stable:
@@ -18,7 +31,7 @@ jobs:
           - debian-buster
           - debian-bullseye
           - debian-bookworm
-          - fedora-37
+          - fedora-39
           - opensuse-leap
     container: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
     steps:

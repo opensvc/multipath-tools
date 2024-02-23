@@ -18,9 +18,6 @@ GOTO="end_mpath"
 
 LABEL="test_dev"
 
-ENV{MPATH_SBIN_PATH}="/sbin"
-TEST!="$env{MPATH_SBIN_PATH}/multipath", ENV{MPATH_SBIN_PATH}="/usr/sbin"
-
 # FIND_MULTIPATHS_WAIT_UNTIL is the timeout (in seconds after the
 # epoch).
 IMPORT{db}="FIND_MULTIPATHS_WAIT_UNTIL"
@@ -31,7 +28,7 @@ IMPORT{db}="DM_MULTIPATH_DEVICE_PATH"
 
 # multipath -u sets DM_MULTIPATH_DEVICE_PATH and,
 # if "find_multipaths smart", also FIND_MULTIPATHS_WAIT_UNTIL.
-IMPORT{program}=="$env{MPATH_SBIN_PATH}/multipath -u %k", \
+IMPORT{program}=="@BINDIR@/multipath -u %k", \
 	ENV{.MPATH_CHECK_PASSED}="1"
 
 # case 1: this is definitely multipath
@@ -80,7 +77,7 @@ ENV{SYSTEMD_READY}="0"
 GOTO="end_mpath"
 
 LABEL="stop_wait"
-# If timeout hasn't expired but we're not in "maybe" state any more, stop timer
+# If timeout hasn't expired but we're not in "maybe" state anymore, stop timer
 # Do this only once, and only if the timer has been started before
 IMPORT{db}="FIND_MULTIPATHS_WAIT_CANCELLED"
 ENV{FIND_MULTIPATHS_WAIT_CANCELLED}=="?*", GOTO="end_mpath"

@@ -5,7 +5,20 @@ on:
       - master
       - queue
       - tip
+    paths:
+      - '**.h'
+      - '**.c'
+      - '**Makefile*'
+      - '**.mk'
   pull_request:
+    branches:
+      - master
+      - queue
+    paths:
+      - '**.h'
+      - '**.c'
+      - '**Makefile*'
+      - '**.mk'
 
 jobs:
 
@@ -14,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [bullseye, bookworm, sid]
+        os: [bookworm, sid]
         arch: [ppc64le, arm64, s390x]
     container: ghcr.io/mwilck/multipath-cross-debian_cross-${{ matrix.os }}-${{ matrix.arch }}
     steps:
@@ -42,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [bullseye, bookworm, sid]
+        os: [bookworm, sid]
         arch: [ppc64le, arm64, s390x]
     steps:
       - name: set container arch

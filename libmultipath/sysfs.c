@@ -71,7 +71,7 @@ static ssize_t __sysfs_attr_get_value(struct udev_device *dev, const char *attr_
 	/* read attribute value */
 	fd = open(devpath, O_RDONLY);
 	if (fd < 0) {
-		condlog(3, "%s: attribute '%s' can not be opened: %s",
+		condlog(3, "%s: attribute '%s' cannot be opened: %s",
 			__func__, devpath, strerror(errno));
 		return -errno;
 	}
@@ -137,7 +137,7 @@ ssize_t sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
 	/* write attribute value */
 	fd = open(devpath, O_WRONLY);
 	if (fd < 0) {
-		condlog(3, "%s: attribute '%s' can not be opened: %s",
+		condlog(3, "%s: attribute '%s' cannot be opened: %s",
 			__func__, devpath, strerror(errno));
 		return -errno;
 	}

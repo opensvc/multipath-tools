@@ -215,7 +215,7 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 				 * This path exists, but in the wrong map.
 				 * We can't reload the map from here.
 				 * Make sure it isn't used in this map
-				 * any more, and let the checker re-add
+				 * anymore, and let the checker re-add
 				 * it as it sees fit.
 				 */
 				dm_fail_path(mpp->alias, pp->dev_t);
@@ -593,7 +593,7 @@ static void leave_recovery_mode(struct multipath *mpp)
 	 */
 	if (recovery && (mpp->no_path_retry == NO_PATH_RETRY_QUEUE ||
 			 mpp->no_path_retry > 0)) {
-		dm_queue_if_no_path(mpp->alias, 1);
+		dm_queue_if_no_path(mpp, 1);
 		condlog(2, "%s: queue_if_no_path enabled", mpp->alias);
 		condlog(1, "%s: Recovered to normal mode", mpp->alias);
 	}
@@ -611,11 +611,11 @@ void set_no_path_retry(struct multipath *mpp)
 		break;
 	case NO_PATH_RETRY_FAIL:
 		if (!mpp->features || is_queueing)
-			dm_queue_if_no_path(mpp->alias, 0);
+			dm_queue_if_no_path(mpp, 0);
 		break;
 	case NO_PATH_RETRY_QUEUE:
 		if (!mpp->features || !is_queueing)
-			dm_queue_if_no_path(mpp->alias, 1);
+			dm_queue_if_no_path(mpp, 1);
 		break;
 	default:
 		if (count_active_paths(mpp) > 0) {
@@ -625,10 +625,21 @@ void set_no_path_retry(struct multipath *mpp)
 			 */
 			if ((!mpp->features || !is_queueing) &&
 			    !mpp->in_recovery)
-				dm_queue_if_no_path(mpp->alias, 1);
+				dm_queue_if_no_path(mpp, 1);
 			leave_recovery_mode(mpp);
-		} else if (pathcount(mpp, PATH_PENDING) == 0)
-			enter_recovery_mode(mpp);
+		} else {
+			/*
+			 * If in_recovery is set, enter_recovery_mode does
+			 * nothing. If the device is already in recovery
+			 * mode and has already timed out, manually call
+			 * dm_queue_if_no_path to stop it from queueing.
+			 */
+			if ((!mpp->features || is_queueing) &&
+			    mpp->in_recovery && mpp->retry_tick == 0)
+				dm_queue_if_no_path(mpp, 0);
+			if (pathcount(mpp, PATH_PENDING) == 0)
+				enter_recovery_mode(mpp);
+		}
 		break;
 	}
 }
@@ -774,6 +785,11 @@ int verify_paths(struct multipath *mpp)
  *   -1 (FAIL)  : fail_if_no_path
  *    0 (UNDEF) : nothing
  *   >0         : queue_if_no_path enabled, turned off after polling n times
+ *
+ * Since this will only be called when fail_path(), update_multipath(), or
+ * io_err_stat_handle_pathfail() are failing a previously active path, the
+ * device cannot already be in recovery mode, so there will never be a need
+ * to disable queueing here.
  */
 void update_queue_mode_del_path(struct multipath *mpp)
 {
@@ -787,6 +803,12 @@ void update_queue_mode_del_path(struct multipath *mpp)
 	condlog(2, "%s: remaining active paths: %d", mpp->alias, active);
 }
 
+/*
+ * Since this will only be called from check_path() -> reinstate_path() after
+ * the queueing state has been updated in set_no_path_retry, this does not
+ * need to worry about modifying the queueing state except when actually
+ * leaving recovery mode.
+ */
 void update_queue_mode_add_path(struct multipath *mpp)
 {
 	int active = count_active_paths(mpp);

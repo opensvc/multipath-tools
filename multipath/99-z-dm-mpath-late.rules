@@ -1,0 +1,4 @@
+# If DM_UDEV_DISABLE_OTHER_RULES_FLAG was modified in 11-dm-mpath.rules,
+# restore it here, lest a temporary value be saved in the udev db
+ACTION=="add|change", ENV{.MPATH_SAVE_DISABLE_OTHER_RULES_FLAG}=="?*", \
+    ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="$env{.MPATH_SAVE_DISABLE_OTHER_RULES_FLAG}"

@@ -20,7 +20,7 @@
  *   - externally visible data structures changed in incompatible ways
  *     (like offsets of previously existing struct members)
  *   In this case, the new version doesn't inherit the previous versions,
- *   because the new library doesn't provide the full previous ABI any more.
+ *   because the new library doesn't provide the full previous ABI anymore.
  *   All predecessors are merged into the new version.
  *
  * * Bump $MINOR for compatible changes, like adding symbols.
@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_22.0.0 {
+LIBMULTIPATH_23.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -151,6 +151,7 @@ global:
 	_print_multipath_topology;
 	reinstate_paths;
 	remember_wwid;
+	remove_feature;
 	remove_map;
 	remove_map_by_alias;
 	remove_map_callback;

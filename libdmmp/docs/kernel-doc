@@ -1934,7 +1934,7 @@ sub process_name($$) {
 sub process_body($$) {
     my $file = shift;
 
-    if (/$doc_sect/i) { # case insensitive for supported section names
+    if (/$doc_sect/i) { # case-insensitive for supported section names
 	$newsection = $1;
 	$newcontents = $2;
 

@@ -16,6 +16,7 @@
 #include "propsel.h"
 #include "unaligned.h"
 #include "test-lib.h"
+#include "wrap64.h"
 
 const int default_mask = (DI_SYSFS|DI_BLACKLIST|DI_WWID|DI_CHECKER|DI_PRIO|DI_SERIAL);
 const char default_devnode[] = "sdxTEST";
@@ -38,16 +39,18 @@ const char default_wwid_1[] = "TEST-WWID-1";
  * resolved by the assembler before the linking stage.
  */
 
-int __real_open(const char *path, int flags, int mode);
+
+int REAL_FUNC(open)(const char *path, int flags, int mode);
 
 static const char _mocked_filename[] = "mocked_path";
-int __wrap_open(const char *path, int flags, int mode)
+
+int WRAP_FUNC(open)(const char *path, int flags, int mode)
 {
 	condlog(4, "%s: %s", __func__, path);
 
 	if (!strcmp(path, _mocked_filename))
 		return 111;
-	return __real_open(path, flags, mode);
+	return REAL_FUNC(open)(path, flags, mode);
 }
 
 int __wrap_libmp_get_version(int which, unsigned int version[3])

@@ -39,14 +39,12 @@ int need_to_delay_reconfig (struct vectors *);
 int ev_add_path (struct path *, struct vectors *, int);
 int ev_remove_path (struct path *, struct vectors *, int);
 int ev_add_map (char *, const char *, struct vectors *);
-int ev_remove_map (char *, char *, int, struct vectors *);
-int flush_map(struct multipath *, struct vectors *, int);
+int flush_map(struct multipath *, struct vectors *);
 
 void handle_signals(bool);
-int __setup_multipath (struct vectors * vecs, struct multipath * mpp,
-		       int reset);
-#define setup_multipath(vecs, mpp) __setup_multipath(vecs, mpp, 1)
-int update_multipath (struct vectors *vecs, char *mapname, int reset);
+int refresh_multipath(struct vectors * vecs, struct multipath * mpp);
+int setup_multipath(struct vectors * vecs, struct multipath * mpp);
+int update_multipath(struct vectors *vecs, char *mapname);
 int reload_and_sync_map(struct multipath *mpp, struct vectors *vecs);
 
 void handle_path_wwid_change(struct path *pp, struct vectors *vecs);

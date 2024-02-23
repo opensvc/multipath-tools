@@ -9,7 +9,7 @@
 #include "test-log.h"
 #include <errno.h>
 #include <string.h>
-
+#include "wrap64.h"
 #include "globals.c"
 #include "../libmultipath/alias.c"
 
@@ -38,7 +38,7 @@ static int __set_errno(int err)
 
 /*
  * allocate_binding -> write_bindings_file() writes the entire file, i.e. the
- * header, any pre-existing bindings, and the new binding. The complete content
+ * header, any preexisting bindings, and the new binding. The complete content
  * depends on history and is different to predict here. Therefore we check only
  * the newly added binding. Because add_binding() sorts entries, this new
  * binding isn't necessarily the last one; receive it from will_return() and
@@ -71,7 +71,7 @@ int __wrap_rename(const char *old, const char *new)
 	return __set_errno(mock_type(int));
 }
 
-int __wrap_mkstemp(char *template)
+int WRAP_FUNC(mkstemp)(char *template)
 {
 	return 10;
 }
@@ -1763,7 +1763,7 @@ static void gufa_check_locking(void **state) {
 	assert_int_equal(lock_errors, 0);
 }
 
-static int test_get_user_friendly_alias()
+static int test_get_user_friendly_alias(void)
 {
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test_teardown(gufa_empty_new_rw, teardown_bindings),
@@ -1981,7 +1981,7 @@ static void order_06(void **state)
 	order_test(ARRAY_SIZE(ra), ra, true);
 }
 
-static int test_bindings_order()
+static int test_bindings_order(void)
 {
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test_teardown(order_01, teardown_bindings),
