@@ -1,5 +1,6 @@
 abi
 adt
+aio
 Alletra
 alloc
 alltgpt
@@ -9,6 +10,7 @@ ascq
 ata
 autoconfig
 autodetected
+autoresize
 barbie
 BINDIR
 blkid
@@ -26,6 +28,7 @@ COMPAQ
 configdir
 configfile
 configurator
+coverity
 cplusplus
 CPPFLAGS
 ctx
@@ -61,6 +64,7 @@ followover
 forcequeueing
 fpin
 fulldescr
+gcc
 getprkey
 getprstatus
 getuid
@@ -68,6 +72,7 @@ github
 GPT
 hbtl
 hds
+HITACHI
 hotplug
 HPE
 HSG
@@ -80,6 +85,7 @@ ifdef
 ifndef
 igroup
 img
+inotify
 inttypes
 iscsi
 isw
@@ -87,12 +93,14 @@ kpartx
 LDFLAGS
 len
 libaio
+libc
 LIBDEPS
 libdevmapper
 libdmmp
 libedit
 libjson
 libmpathpersist
+libmpathutil
 libmpathvalid
 libmultipath
 libreadline
@@ -101,6 +109,7 @@ libudev
 libudevdir
 liburcu
 linux
+LIO
 lpthread
 Lun
 lvm
@@ -148,7 +157,7 @@ readcap
 readdescr
 readfd
 readkeys
-READLINE
+readline
 readsector
 rebranded
 reconfig
@@ -168,6 +177,7 @@ sdc
 setmarginal
 setprkey
 setprstatus
+shm
 shu
 SIGHUP
 softdep
@@ -193,6 +203,7 @@ tgill
 TIDS
 tmo
 tpg
+transitioning
 transportid
 trnptid
 udev
