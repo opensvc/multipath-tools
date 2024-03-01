@@ -19,7 +19,7 @@ ACTION=="add", ENV{DM_ACTIVATION}=="1", ENV{DM_SUSPENDED}!="1", ENV{DISK_RO}!="1
 # If this uevent didn't come from dm, don't try to update the
 # device state
 # Note that .MPATH_DEVICE_READY_OLD=="" here. Thus we won't activate the
-# device below at force_activation, which is correct.
+# device below at mpath_is_ready, which is correct.
 ENV{DM_COOKIE}!="?*", ENV{DM_ACTION}!="PATH_*", \
 	IMPORT{db}="DM_COLDPLUG_SUSPENDED", \
 	GOTO="force_activation"
@@ -84,25 +84,27 @@ ENV{DM_ACTION}=="PATH_FAILED|PATH_REINSTATED", \
 
 LABEL="force_activation"
 
+ENV{MPATH_DEVICE_READY}!="0", GOTO="mpath_is_ready"
 # Do not initiate scanning if no path is available,
 # otherwise there would be a hang or IO error on access.
 # We'd like to avoid this, especially within udev processing.
-ENV{MPATH_DEVICE_READY}=="0", ENV{DM_NOSCAN}="1"
-
-# Skip all foreign rules if no path is available.
+# This is communicated to later rules in DM_NOSCAN.
+# Likewise, skip all foreign rules if no path is available.
 # Use DM_UDEV_DISABLE_OTHER_RULES_FLAG to communicate this
-# to upper layers. The original value will be restored in a late
-# udev rule.
-ENV{MPATH_DEVICE_READY}=="0", \
-	ENV{.MPATH_SAVE_DISABLE_OTHER_RULES_FLAG}="$env{DM_UDEV_DISABLE_OTHER_RULES_FLAG}", \
-	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="1"
+# to upper layers. With dm rules < v3, save the original value here;
+# it will be restored in a late udev rule.
+ENV{DM_UDEV_RULES_VSN}=="1|2", \
+	ENV{.MPATH_SAVE_DISABLE_OTHER_RULES_FLAG}="$env{DM_UDEV_DISABLE_OTHER_RULES_FLAG}"
+ENV{DM_NOSCAN}="1", ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="1"
+GOTO="dont_activate"
+
+LABEL="mpath_is_ready"
 
 # If the device comes back online, set DM_ACTIVATION so that
 # upper layers do a rescan. If the device is currently suspended,
 # we have to postpone the activation until the next event.
 # In this case, we have to set MPATH_DEVICE_READY=0; otherwise, the
 # MPATH_UNCHANGED logic will cause later rules to skipped in the next event.
-ENV{MPATH_DEVICE_READY}=="0", GOTO="dont_activate"
 ENV{.MPATH_DEVICE_READY_OLD}!="0", GOTO="dont_activate"
 ENV{DM_SUSPENDED}=="1", ENV{MPATH_DEVICE_READY}="0", GOTO="dont_activate"
 
