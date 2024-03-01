@@ -9,12 +9,17 @@ ACTION=="add", ENV{DM_ACTIVATION}=="1", ENV{DM_SUSPENDED}=="1", \
 	PROGRAM="/bin/logger -t 11-dm-mpath.rules -p daemon.warning \"Coldplug event for suspended device\"", \
 	ENV{DM_COLDPLUG_SUSPENDED}="1", GOTO="scan_import"
 
-# Coldplug event. DM_UDEV_DISABLE_OTHER_RULES_FLAG has been restored
+# Coldplug event. Import previously set properties.
+ACTION!="add", GOTO="mpath_coldplug_end"
+ENV{DM_ACTIVATION}!="1", GOTO="mpath_coldplug_end"
+ENV{DM_UDEV_RULES_VSN}!="1|2", ENV{.DM_SUSPENDED}!="1", GOTO="scan_import"
+# With DM rules < v3, DM_UDEV_DISABLE_OTHER_RULES_FLAG has been restored
 # from DB in 10-dm.rules. If the device is not suspended, clear the flag.
 # This is safe for multipath where DM_UDEV_DISABLE_OTHER_RULES_FLAG is basically
 # equivalent to DM_SUSPENDED==1 || DISK_RO==1
-ACTION=="add", ENV{DM_ACTIVATION}=="1", ENV{DM_SUSPENDED}!="1", ENV{DISK_RO}!="1", \
+ENV{DM_UDEV_RULES_VSN}=="1|2", ENV{DM_SUSPENDED}!="1", ENV{DISK_RO}!="1", \
 	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="", GOTO="scan_import"
+LABEL="mpath_coldplug_end"
 
 # If this uevent didn't come from dm, don't try to update the
 # device state
