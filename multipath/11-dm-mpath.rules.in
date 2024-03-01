@@ -18,9 +18,11 @@ ACTION=="add", ENV{DM_ACTIVATION}=="1", ENV{DM_SUSPENDED}!="1", ENV{DISK_RO}!="1
 
 # If this uevent didn't come from dm, don't try to update the
 # device state
+# Note that .MPATH_DEVICE_READY_OLD=="" here. Thus we won't activate the
+# device below at force_activation, which is correct.
 ENV{DM_COOKIE}!="?*", ENV{DM_ACTION}!="PATH_*", \
-	IMPORT{db}="DM_NOSCAN", IMPORT{db}="DM_COLDPLUG_SUSPENDED", \
-	GOTO="scan_import"
+	IMPORT{db}="DM_COLDPLUG_SUSPENDED", \
+	GOTO="force_activation"
 
 ENV{.MPATH_DEVICE_READY_OLD}="$env{MPATH_DEVICE_READY}"
 
