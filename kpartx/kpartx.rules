@@ -27,7 +27,7 @@ ENV{DM_SUBSYSTEM_UDEV_FLAG1}=="1", GOTO="mpath_kpartx_end"
 ENV{MPATH_UNCHANGED}=="1", GOTO="mpath_kpartx_end"
 
 # Don't run kpartx now if we know it will fail or hang.
-ENV{DM_SUSPENDED}=="1", GOTO="mpath_kpartx_end"
+# This is required for device mapper rules v2 compatibility.
 ENV{DM_NOSCAN}=="1", GOTO="mpath_kpartx_end"
 
 # Run kpartx
