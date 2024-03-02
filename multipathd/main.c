@@ -3172,7 +3172,7 @@ setscheduler (void)
 {
 	int res;
 	static struct sched_param sched_param = {
-		.sched_priority = 99
+		.sched_priority = SCHED_RT_PRIO
 	};
 
 	res = sched_setscheduler (0, SCHED_RR, &sched_param);
@@ -3471,7 +3471,8 @@ child (__attribute__((unused)) void *param)
 	if (!vecs)
 		goto failed;
 
-	setscheduler();
+	if (SCHED_RT_PRIO)
+		setscheduler();
 	set_oom_adj();
 #ifdef FPIN_EVENT_HANDLER
 	if (conf->marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)

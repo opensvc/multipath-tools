@@ -98,6 +98,9 @@ The following variables can be passed to the `make` command line:
     By default, command line editing is disabled.
     Note that using libreadline may
     [make binary indistributable due to license incompatibility](https://github.com/opensvc/multipath-tools/issues/36).
+ * `SCHED_RT_PRIO={0-99}`: for values {1-99} set the realtime priority
+    multipathd will attempt to run with. for value 0, disable multipathd
+    changing itself to a realtime process.
  * `ENABLE_LIBDMMP=0`: disable building libdmmp
  * `ENABLE_DMEVENTS_POLL=0`: disable support for the device-mapper event
    polling API. For use with pre-5.0 kernels that don't support dmevent polling
