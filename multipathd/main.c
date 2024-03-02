@@ -3178,7 +3178,7 @@ setscheduler (void)
 	res = sched_setscheduler (0, SCHED_RR, &sched_param);
 
 	if (res == -1)
-		condlog(LOG_WARNING, "Could not set SCHED_RR at priority 99");
+		condlog(2, "Could not set SCHED_RR at priority 99");
 	return;
 }
 
