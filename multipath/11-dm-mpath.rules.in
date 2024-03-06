@@ -56,14 +56,10 @@ PROGRAM=="@BINDIR@/multipath -U -v1 %k", GOTO="paths_ok"
 ENV{MPATH_DEVICE_READY}="0", GOTO="mpath_action"
 LABEL="paths_ok"
 
-# Don't mark a device ready on a PATH_FAILED event. even if
-# DM_NR_VALID_PATHS is greater than 0. Just keep the existing
-# value
-ENV{DM_ACTION}=="PATH_FAILED", GOTO="mpath_action"
-
-# This event is either a PATH_REINSTATED or a table reload where
-# there are active paths. Mark the device ready
-ENV{MPATH_DEVICE_READY}="1"
+# For PATH_FAILED events, keep the existing value of MPATH_DEVICE_READY.
+# If it's not PATH_FAILED, this event is either a PATH_REINSTATED or a
+# table reload where there are active paths. Mark the device ready.
+ENV{DM_ACTION}!="PATH_FAILED", ENV{MPATH_DEVICE_READY}="1"
 
 LABEL="mpath_action"
 
