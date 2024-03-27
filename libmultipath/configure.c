@@ -43,6 +43,19 @@
 #include "sysfs.h"
 #include "io_err_stat.h"
 
+#ifndef __GLIBC__
+/*
+ * glibc's non-destructive version of basename()
+ * License: LGPL-2.1-or-later
+ */
+static const char *__basename(const char *filename)
+{
+	char *p = strrchr(filename, '/');
+	return p ? p + 1 : filename;
+}
+#define basename(x) __basename(x)
+#endif
+
 /* group paths in pg by host adapter
  */
 int group_by_host_adapter(struct pathgroup *pgp, vector adapters)
