@@ -12,6 +12,11 @@
 #include <stdio.h>
 
 size_t strchop(char *);
+
+const char *libmp_basename(const char *filename);
+#ifndef __GLIBC__
+#define basename(x) libmp_basename(x)
+#endif
 int basenamecpy (const char *src, char *dst, size_t size);
 int filepresent (const char *run);
 char *get_next_string(char **temp, const char *split_char);
