@@ -40,17 +40,17 @@ const char default_wwid_1[] = "TEST-WWID-1";
  */
 
 
-int REAL_FUNC(open)(const char *path, int flags, int mode);
+int REAL_OPEN(const char *path, int flags, int mode);
 
 static const char _mocked_filename[] = "mocked_path";
 
-int WRAP_FUNC(open)(const char *path, int flags, int mode)
+int WRAP_OPEN(const char *path, int flags, int mode)
 {
 	condlog(4, "%s: %s", __func__, path);
 
 	if (!strcmp(path, _mocked_filename))
 		return 111;
-	return REAL_FUNC(open)(path, flags, mode);
+	return REAL_OPEN(path, flags, mode);
 }
 
 int __wrap_libmp_get_version(int which, unsigned int version[3])

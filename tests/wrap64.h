@@ -30,6 +30,20 @@
 #define REAL_FUNC(x) CONCAT2(__real_, WRAP_NAME(x))
 
 /*
+ * With clang, glibc 2.39, and _FILE_OFFSET_BITS==64,
+ * open() resolves to __open64_2().
+ */
+#if defined(__GLIBC__) && __GLIBC_PREREQ(2, 39) && \
+	defined(__clang__) && __clang__ == 1 && \
+	defined(__fortify_use_clang) && __fortify_use_clang == 1
+#define WRAP_OPEN_NAME __open64_2
+#else
+#define WRAP_OPEN_NAME WRAP_NAME(open)
+#endif
+#define WRAP_OPEN CONCAT2(__wrap_, WRAP_OPEN_NAME)
+#define REAL_OPEN CONCAT2(__real_, WRAP_OPEN_NAME)
+
+/*
  * fcntl() needs special treatment; fcntl64() has been introduced in 2.28.
  * https://savannah.gnu.org/forum/forum.php?forum_id=9205
  */
