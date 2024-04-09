@@ -19,6 +19,7 @@ NotifyAccess=main
 ExecStart=/sbin/multipathd -d -s
 ExecReload=/sbin/multipathd reconfigure
 TasksMax=infinity
+LimitRTPRIO=infinity
 
 [Install]
 WantedBy=sysinit.target

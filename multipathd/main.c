@@ -3171,14 +3171,23 @@ static void
 setscheduler (void)
 {
 	int res;
-	static struct sched_param sched_param = {
-		.sched_priority = SCHED_RT_PRIO
-	};
+	static struct sched_param sched_param;
+	struct rlimit rlim;
 
-	res = sched_setscheduler (0, SCHED_RR, &sched_param);
+	if (getrlimit(RLIMIT_RTPRIO, &rlim) < 0 || rlim.rlim_max == 0)
+		return;
+
+	sched_param.sched_priority = rlim.rlim_max > INT_MAX ? INT_MAX :
+				     rlim.rlim_max;
+	res = sched_get_priority_max(SCHED_RR);
+	if (res > 0 && res < sched_param.sched_priority)
+		sched_param.sched_priority = res;
+
+	res = sched_setscheduler(0, SCHED_RR, &sched_param);
 
 	if (res == -1)
-		condlog(2, "Could not set SCHED_RR at priority 99");
+		condlog(2, "Could not set SCHED_RR at priority %d",
+			sched_param.sched_priority);
 	return;
 }
 
@@ -3471,8 +3480,7 @@ child (__attribute__((unused)) void *param)
 	if (!vecs)
 		goto failed;
 
-	if (SCHED_RT_PRIO)
-		setscheduler();
+	setscheduler();
 	set_oom_adj();
 #ifdef FPIN_EVENT_HANDLER
 	if (conf->marginal_pathgroups == MARGINAL_PATHGROUP_FPIN)

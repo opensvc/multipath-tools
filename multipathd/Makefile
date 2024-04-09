@@ -57,9 +57,6 @@ $(CLI):  $(CLI_OBJS)
 cli_handlers.o:	cli_handlers.c
 	$(Q)$(CC) $(CPPFLAGS) $(CFLAGS) -Wno-unused-parameter -c -o $@ $<
 
-main.o:	main.c
-	$(Q)$(CC) $(CPPFLAGS) -DSCHED_RT_PRIO=$(SCHED_RT_PRIO) $(CFLAGS) -c -o $@ $<
-
 install:
 	$(Q)$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
 	$(Q)$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)
