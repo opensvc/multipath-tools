@@ -152,6 +152,13 @@ int __wrap_sysfs_get_size(struct path *pp, unsigned long long *sz)
 	return 0;
 }
 
+int __wrap_sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
+			   const char * value, size_t value_len)
+{
+	condlog(5, "%s: %s", __func__, value);
+	return value_len;
+}
+
 void *__wrap_udev_device_get_parent_with_subsystem_devtype(
 	struct udev_device *ud, const char *subsys, char *type)
 {
@@ -400,7 +407,7 @@ struct multipath *__mock_multipath(struct vectors *vecs, struct path *pp)
 	/* pathinfo() call in adopt_paths */
 	mock_pathinfo(DI_CHECKER|DI_PRIO, &mop);
 
-	mp = add_map_with_path(vecs, pp, 1);
+	mp = add_map_with_path(vecs, pp, 1, NULL);
 	assert_ptr_not_equal(mp, NULL);
 
 	/* TBD: mock setup_map() ... */

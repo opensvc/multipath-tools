@@ -636,7 +636,7 @@ update_map (struct multipath *mpp, struct vectors *vecs, int new_map)
 
 retry:
 	condlog(4, "%s: updating new map", mpp->alias);
-	if (adopt_paths(vecs->pathvec, mpp)) {
+	if (adopt_paths(vecs->pathvec, mpp, NULL)) {
 		condlog(0, "%s: failed to adopt paths for new map update",
 			mpp->alias);
 		retries = -1;
@@ -1231,7 +1231,7 @@ rescan:
 	if (mpp) {
 		condlog(4,"%s: adopting all paths for path %s",
 			mpp->alias, pp->dev);
-		if (adopt_paths(vecs->pathvec, mpp) || pp->mpp != mpp ||
+		if (adopt_paths(vecs->pathvec, mpp, NULL) || pp->mpp != mpp ||
 		    find_slot(mpp->paths, pp) == -1)
 			goto fail; /* leave path added to pathvec */
 
@@ -1245,7 +1245,7 @@ rescan:
 			return 0;
 		}
 		condlog(4,"%s: creating new map", pp->dev);
-		if ((mpp = add_map_with_path(vecs, pp, 1))) {
+		if ((mpp = add_map_with_path(vecs, pp, 1, NULL))) {
 			mpp->action = ACT_CREATE;
 			/*
 			 * We don't depend on ACT_CREATE, as domap will

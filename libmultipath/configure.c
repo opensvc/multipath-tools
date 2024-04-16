@@ -1105,7 +1105,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 		/*
 		 * at this point, we know we really got a new mp
 		 */
-		mpp = add_map_with_path(vecs, pp1, 0);
+		mpp = add_map_with_path(vecs, pp1, 0, cmpp);
 		if (!mpp) {
 			orphan_path(pp1, "failed to create multipath device");
 			continue;
