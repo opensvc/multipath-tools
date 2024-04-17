@@ -32,6 +32,7 @@
 #include "util.h"
 #include "foreign.h"
 #include "strbuf.h"
+#include "sysfs.h"
 
 #define PRINT_PATH_LONG      "%w %i %d %D %p %t %T %s %o"
 #define PRINT_PATH_INDENT    "%i %d %D %t %T %o"
@@ -431,6 +432,27 @@ snprint_multipath_vpd_data(struct strbuf *buff,
 	return append_strbuf_str(buff, "[undef]");
 }
 
+static void cleanup_udev_device(struct udev_device **udd)
+{
+	if (*udd)
+		udev_device_unref(*udd);
+}
+
+static int
+snprint_multipath_max_sectors_kb(struct strbuf *buff, const struct multipath *mpp)
+{
+	char buf[11];
+	int max_sectors_kb;
+	struct udev_device *udd __attribute__((cleanup(cleanup_udev_device)))
+		= get_udev_for_mpp(mpp);
+
+	if (!udd ||
+	    sysfs_attr_get_value(udd, "queue/max_sectors_kb", buf, sizeof(buf)) <= 0 ||
+	    sscanf(buf, "%d\n", &max_sectors_kb) != 1)
+		return print_strbuf(buff, "n/a");
+	return print_strbuf(buff, "%d", max_sectors_kb);
+}
+
 /*
  * path info printing functions
  */
@@ -790,6 +812,20 @@ snprint_alua_tpg(struct strbuf *buff, const struct path * pp)
 	return print_strbuf(buff, "0x%04x", pp->tpg_id);
 }
 
+static int
+snprint_path_max_sectors_kb(struct strbuf *buff, const struct path *pp)
+{
+	char buf[11];
+	int max_sectors_kb;
+
+	if (!pp->udev ||
+	    sysfs_attr_get_value(pp->udev, "queue/max_sectors_kb", 
+				 buf, sizeof(buf)) <= 0 ||
+	    sscanf(buf, "%d\n", &max_sectors_kb) != 1)
+		return print_strbuf(buff, "n/a");
+	return print_strbuf(buff, "%d", max_sectors_kb);
+}
+
 static const struct multipath_data mpd[] = {
 	{'n', "name",          snprint_name},
 	{'w', "uuid",          snprint_multipath_uuid},
@@ -815,6 +851,7 @@ static const struct multipath_data mpd[] = {
 	{'e', "rev",           snprint_multipath_rev},
 	{'G', "foreign",       snprint_multipath_foreign},
 	{'g', "vpd page data", snprint_multipath_vpd_data},
+	{'k', "max_sectors_kb",snprint_multipath_max_sectors_kb},
 };
 
 static const struct path_data pd[] = {
@@ -845,6 +882,7 @@ static const struct path_data pd[] = {
 	{'I', "init_st",       snprint_initialized},
 	{'L', "LUN hex",       snprint_path_lunhex},
 	{'A', "TPG",           snprint_alua_tpg},
+	{'k', "max_sectors_kb",snprint_path_max_sectors_kb},
 };
 
 static const struct pathgroup_data pgd[] = {
