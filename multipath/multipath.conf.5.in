@@ -1311,11 +1311,36 @@ The default is: \fB0\fR
 .
 .TP
 .B max_sectors_kb
-Sets the max_sectors_kb device parameter on all path devices and the multipath
-device to the specified value.
+Sets the \fImax_sectors_kb\fR device parameter on some path devices and the multipath
+device to the specified value. \fImax_sectors_kb\fR is the largest I/O size, in units
+of 1024 bytes, that the kernel allows for a single I/O request. For hardware devices
+like SCSI disks, this value is limited by the capabilities of the hardware.
+It is crucial that the value of a multipath map is never higher than the minimum value of
+of all its path devices. This is ensured by the kernel when a multipath map
+is loaded, but manipulating the values of a map or either of its paths while the
+map is live can cause race conditions and I/O errors. Therefore this value is only
+enforced by multipathd when a multipath map is first created, or when a path device
+is added to a map. In both cases, race conditions are avoided by the kernel.
 .RS
-.TP
-The default is: in \fB/sys/block/<dev>/queue/max_sectors_kb\fR
+.PP
+Setting \fImax_sectors_kb\fR does not guarantee that all path devices will have this
+value set. It is not an error if the value of a path device is higher than that of
+the containing multipath map. It is also not an error if the actual limit of a map is
+lower than the value in \fI@CONFIGFILE@\fR. This can happen if the hardware limits of one
+or more path devices are lower than the configured value.
+.PP
+Normally the kernel and its device drivers take care of the maximum
+I/O size, and administrators do not need to bother about \fImax_sectors_kb\fR.
+But some hardware devices may report incorrect I/O size limits, or other components
+in the environment (e.g. the fabric) may impose constraints that the kernel cannot
+detect. In such cases setting \fImax_sectors_kb\fR makes sense. It should be set when
+maps are first created, and not be changed thereafter.
+If the setting \fBmust\fR be changed for a live map, set the
+value in \fI@CONFIGFILE@\fR, run \fBmultipathd reconfigure\fR, and use
+\fBmultipathd del path <path>\fR and \fBmultipathd add path <path>\fR to
+delete and re-add the same path device.
+.LP
+The default is: \fBundefined\fR.
 .RE
 .
 .
