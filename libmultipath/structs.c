@@ -526,6 +526,25 @@ find_path_by_devt (const struct _vector *pathvec, const char * dev_t)
 	return NULL;
 }
 
+struct path *mp_find_path_by_devt(const struct multipath *mpp, const char *devt)
+{
+	struct path *pp;
+	struct pathgroup *pgp;
+	unsigned int i, j;
+
+	pp = find_path_by_devt(mpp->paths, devt);
+	if (pp)
+		return pp;
+
+	vector_foreach_slot (mpp->pg, pgp, i){
+		vector_foreach_slot (pgp->paths, pp, j){
+			if (!strcmp(pp->dev_t, devt))
+				return pp;
+		}
+	}
+	return NULL;
+}
+
 static int do_pathcount(const struct multipath *mpp, const int *states,
 			unsigned int nr_states)
 {
