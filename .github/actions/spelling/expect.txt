@@ -167,6 +167,7 @@ retrigger
 rhabarber
 rootprefix
 rootprefixdir
+rpmbuild
 rport
 rtpi
 sas
@@ -200,6 +201,7 @@ tcp
 TESTDEPS
 testname
 tgill
+TGTDIR
 TIDS
 tmo
 tpg
