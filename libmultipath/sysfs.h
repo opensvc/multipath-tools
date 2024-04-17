@@ -39,4 +39,8 @@ do {									\
 int sysfs_get_size (struct path *pp, unsigned long long * size);
 int sysfs_check_holders(char * check_devt, char * new_devt);
 bool sysfs_is_multipathed(struct path *pp, bool set_wwid);
+
+struct multipath;
+struct udev_device *get_udev_for_mpp(const struct multipath *mpp);
+
 #endif

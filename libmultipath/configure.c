@@ -453,26 +453,6 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 	return r;
 }
 
-static struct udev_device *
-get_udev_for_mpp(const struct multipath *mpp)
-{
-	dev_t devnum;
-	struct udev_device *udd;
-
-	if (!mpp || !has_dm_info(mpp)) {
-		condlog(1, "%s called with empty mpp", __func__);
-		return NULL;
-	}
-
-	devnum = makedev(mpp->dmi.major, mpp->dmi.minor);
-	udd = udev_device_new_from_devnum(udev, 'b', devnum);
-	if (!udd) {
-		condlog(1, "failed to get udev device for %s", mpp->alias);
-		return NULL;
-	}
-	return udd;
-}
-
 void trigger_partitions_udev_change(struct udev_device *dev,
 				    const char *action, int len)
 {
