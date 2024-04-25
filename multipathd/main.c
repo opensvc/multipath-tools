@@ -584,19 +584,42 @@ int update_multipath (struct vectors *vecs, char *mapname)
 static bool
 flush_map_nopaths(struct multipath *mpp, struct vectors *vecs) {
 	int r;
+	bool is_queueing = true;
 
-	/*
-	 * flush_map will fail if the device is open
-	 */
-	if (mpp->flush_on_last_del == FLUSH_ENABLED) {
-		condlog(2, "%s Last path deleted, disabling queueing",
-			mpp->alias);
-		mpp->retry_tick = 0;
-		mpp->no_path_retry = NO_PATH_RETRY_FAIL;
-		mpp->disable_queueing = 1;
-		mpp->stat_map_failures++;
-		dm_queue_if_no_path(mpp, 0);
+	if (mpp->features)
+		is_queueing = strstr(mpp->features, "queue_if_no_path");
+
+	/* It's not safe to do a remove of a map that has "queue_if_no_path"
+	 * set, since there could be outstanding IO which will cause
+	 * multipathd to hang while attempting the remove */
+	if (mpp->flush_on_last_del == FLUSH_NEVER && is_queueing) {
+		condlog(2, "%s: map is queueing, can't remove", mpp->alias);
+		return false;
 	}
+	if (mpp->flush_on_last_del == FLUSH_UNUSED &&
+            partmap_in_use(mpp->alias, NULL) && is_queueing) {
+		condlog(2, "%s: map in use and queueing, can't remove",
+			mpp->alias);
+		return false;
+	}
+	/*
+	 * This will flush FLUSH_NEVER devices and FLUSH_UNUSED devices
+	 * that are in use, but only if they are already marked as not
+	 * queueing. That is just to make absolutely certain that they
+	 * really are not queueing, like they claim.
+	 */
+	condlog(is_queueing ? 2 : 3, "%s Last path deleted, disabling queueing",
+		mpp->alias);
+	mpp->retry_tick = 0;
+	mpp->no_path_retry = NO_PATH_RETRY_FAIL;
+	mpp->disable_queueing = 1;
+	mpp->stat_map_failures++;
+	if (dm_queue_if_no_path(mpp, 0) != 0) {
+		condlog(0, "%s: failed to disable queueing. Not removing",
+			mpp->alias);
+		return false;
+	}
+
 	r = dm_flush_map_nopaths(mpp->alias, mpp->deferred_remove);
 	if (r != DM_FLUSH_OK) {
 		if (r == DM_FLUSH_DEFERRED) {

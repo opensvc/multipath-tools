@@ -707,12 +707,22 @@ The default is: \fBno\fR
 .TP
 .B flush_on_last_del
 If set to
-.I yes
+.I always
 , multipathd will disable queueing when the last path to a device has been
-deleted.
+deleted. If set to
+.I never
+, multipathd will not disable queueing when the last path to a device has
+been deleted. Since multipath cannot safely remove a device while queueing
+is enabled, setting this to \fInever\fR means that multipathd will not
+automatically remove an unused multipath device whose paths are all deleted if
+it is currently set to queue_if_no_path. If set to
+.I unused
+, multipathd will only disable queueing when the last path is removed if
+nothing currently has the multipath device or any of the kpartx partition
+devices on top of it open.
 .RS
 .TP
-The default is: \fBno\fR
+The default is: \fBunused\fR
 .RE
 .
 .

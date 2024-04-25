@@ -109,9 +109,10 @@ enum marginal_pathgroups_mode {
 };
 
 enum flush_states {
-	FLUSH_UNDEF = YNU_UNDEF,
-	FLUSH_DISABLED = YNU_NO,
-	FLUSH_ENABLED = YNU_YES,
+	FLUSH_UNDEF,
+	FLUSH_NEVER,
+	FLUSH_ALWAYS,
+	FLUSH_UNUSED,
 };
 
 enum log_checker_err_states {
