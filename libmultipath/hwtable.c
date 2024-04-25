@@ -1160,7 +1160,6 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_FAIL,
 		.minio         = 1,
 		.minio_rq      = 1,
-		.flush_on_last_del = FLUSH_ALWAYS,
 		.fast_io_fail  = 15,
 	},
 	/*
