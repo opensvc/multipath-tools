@@ -1043,7 +1043,7 @@ has_partmap(const char *name __attribute__((unused)),
 	return 1;
 }
 
-static int
+int
 partmap_in_use(const char *name, void *data)
 {
 	int part_count, *ret_count = (int *)data;
