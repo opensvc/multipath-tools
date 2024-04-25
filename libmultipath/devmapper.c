@@ -386,8 +386,6 @@ libmp_dm_task_create(int task)
 	return dm_task_create(task);
 }
 
-#define do_deferred(x) ((x) == DEFERRED_REMOVE_ON || (x) == DEFERRED_REMOVE_IN_PROGRESS)
-
 static int
 dm_simplecmd (int task, const char *name, int no_flush, int need_sync,
 	      uint16_t udev_flags, int deferred_remove __DR_UNUSED__) {
@@ -411,7 +409,7 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync,
 		dm_task_no_flush(dmt);		/* for DM_DEVICE_SUSPEND/RESUME */
 #endif
 #ifdef LIBDM_API_DEFERRED
-	if (do_deferred(deferred_remove))
+	if (deferred_remove)
 		dm_task_deferred_remove(dmt);
 #endif
 	if (udev_wait_flag &&
@@ -1082,7 +1080,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 
 	/* If you aren't doing a deferred remove, make sure that no
 	 * devices are in use */
-	if (!do_deferred(deferred_remove) && partmap_in_use(mapname, NULL))
+	if (!deferred_remove && partmap_in_use(mapname, NULL))
 			return DM_FLUSH_BUSY;
 
 	if (need_suspend &&
@@ -1100,7 +1098,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 	if ((r = dm_remove_partmaps(mapname, need_sync, deferred_remove)))
 		return r;
 
-	if (!do_deferred(deferred_remove) && dm_get_opencount(mapname)) {
+	if (!deferred_remove && dm_get_opencount(mapname)) {
 		condlog(2, "%s: map in use", mapname);
 		return DM_FLUSH_BUSY;
 	}
@@ -1112,8 +1110,7 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 		r = dm_device_remove(mapname, need_sync, deferred_remove);
 
 		if (r) {
-			if (do_deferred(deferred_remove)
-			    && dm_map_present(mapname)) {
+			if (deferred_remove && dm_map_present(mapname)) {
 				condlog(4, "multipath map %s remove deferred",
 					mapname);
 				return DM_FLUSH_DEFERRED;
@@ -1147,7 +1144,10 @@ int _dm_flush_map (const char * mapname, int need_sync, int deferred_remove,
 int
 dm_flush_map_nopaths(const char * mapname, int deferred_remove)
 {
-	return _dm_flush_map(mapname, 1, deferred_remove, 0, 0);
+	return _dm_flush_map(mapname, 1,
+			     (deferred_remove == DEFERRED_REMOVE_ON ||
+			      deferred_remove == DEFERRED_REMOVE_IN_PROGRESS),
+			     0, 0);
 }
 
 #else
@@ -1539,8 +1539,7 @@ remove_partmap(const char *name, void *data)
 
 	if (dm_get_opencount(name)) {
 		dm_remove_partmaps(name, rd->need_sync, rd->deferred_remove);
-		if (!do_deferred(rd->deferred_remove) &&
-		    dm_get_opencount(name)) {
+		if (rd->deferred_remove && dm_get_opencount(name)) {
 			condlog(2, "%s: map in use", name);
 			return DM_FLUSH_BUSY;
 		}
