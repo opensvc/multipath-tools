@@ -187,7 +187,7 @@ The default is: \fBno\fR
 .
 .TP
 .B multipath_dir
-(Deprecated) This option is not supported anymore, and the value is ignored.
+(Deprecated) This option is not supported anymore, and will be ignored.
 .
 .
 .TP
@@ -277,7 +277,7 @@ The default is: \fBno\fR
 .
 .TP
 .B pg_timeout
-(Deprecated) This option is not supported anymore, and the value is ignored.
+(Deprecated) This option is not supported anymore, and will be ignored.
 .
 .
 .TP
@@ -322,7 +322,7 @@ The default is: \fBID_WWN\fR, for NVMe devices
 .
 .TP
 .B getuid_callout
-(Deprecated) This option is not supported anymore, and the value is ignored.
+(Deprecated) This option is not supported anymore, and will be ignored.
 .
 .
 .TP
@@ -995,7 +995,7 @@ The default is: \fB<unset>\fR
 .
 .TP
 .B config_dir
-(Deprecated) This option is not supported anymore, and the value is ignored.
+(Deprecated) This option is not supported anymore, and will be ignored.
 .RS
 .TP
 The compiled-in value is: \fB@CONFIGDIR@\fR
@@ -1295,7 +1295,7 @@ The default is: \fBno\fR
 .
 .TP
 .B disable_changed_wwids
-(Deprecated) This option is not supported anymore, and the value is ignored.
+(Deprecated) This option is not supported anymore, and will be ignored.
 .RE
 .
 .
@@ -1340,7 +1340,7 @@ value in \fI@CONFIGFILE@\fR, run \fBmultipathd reconfigure\fR, and use
 \fBmultipathd del path <path>\fR and \fBmultipathd add path <path>\fR to
 delete and re-add the same path device.
 .LP
-The default is: \fBundefined\fR.
+The default is: \fB<undefined>\fR
 .RE
 .
 .
