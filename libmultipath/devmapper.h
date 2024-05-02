@@ -58,12 +58,20 @@ enum {
 };
 
 int partmap_in_use(const char *name, void *data);
-int _dm_flush_map (const char *, int, int, int, int);
-int dm_flush_map_nopaths(const char * mapname, int deferred_remove);
-#define dm_flush_map(mapname) _dm_flush_map(mapname, 1, 0, 0, 0)
-#define dm_flush_map_nosync(mapname) _dm_flush_map(mapname, 0, 0, 0, 0)
+
+enum {
+	DMFL_NONE      = 0,
+	DMFL_NEED_SYNC = 1 << 0,
+	DMFL_DEFERRED  = 1 << 1,
+	DMFL_SUSPEND   = 1 << 2,
+};
+
+int _dm_flush_map (const char *mapname, int flags, int retries);
+#define dm_flush_map(mapname) _dm_flush_map(mapname, DMFL_NEED_SYNC, 0)
+#define dm_flush_map_nosync(mapname) _dm_flush_map(mapname, DMFL_NONE, 0)
 #define dm_suspend_and_flush_map(mapname, retries) \
-	_dm_flush_map(mapname, 1, 0, 1, retries)
+	_dm_flush_map(mapname, DMFL_NEED_SYNC|DMFL_SUSPEND, retries)
+int dm_flush_map_nopaths(const char * mapname, int deferred_remove);
 int dm_cancel_deferred_remove(struct multipath *mpp);
 int dm_flush_maps (int retries);
 int dm_fail_path(const char * mapname, char * path);
