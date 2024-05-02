@@ -42,12 +42,12 @@ int dm_simplecmd_flush (int task, const char *name, uint16_t udev_flags);
 int dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags);
 int dm_addmap_create (struct multipath *mpp, char *params);
 int dm_addmap_reload (struct multipath *mpp, char *params, int flush);
-int dm_map_present (const char *);
+int dm_map_present (const char *name);
 int dm_map_present_by_uuid(const char *uuid);
-int dm_get_map(const char *, unsigned long long *, char **);
-int dm_get_status(const char *, char **);
-int dm_type(const char *, char *);
-int dm_is_mpath(const char *);
+int dm_get_map(const char *name, unsigned long long *size, char **outparams);
+int dm_get_status(const char *name, char **outstatus);
+int dm_type(const char *name, char *type);
+int dm_is_mpath(const char *name);
 
 enum {
 	DM_FLUSH_OK = 0,
