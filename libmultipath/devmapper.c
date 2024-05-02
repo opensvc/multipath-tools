@@ -386,10 +386,9 @@ libmp_dm_task_create(int task)
 }
 
 static int
-dm_simplecmd (int task, const char *name, int no_flush, int need_sync,
-	      uint16_t udev_flags, int deferred_remove __DR_UNUSED__) {
+dm_simplecmd (int task, const char *name, int flags, uint16_t udev_flags) {
 	int r = 0;
-	int udev_wait_flag = ((need_sync || udev_flags) &&
+	int udev_wait_flag = (((flags & DMFL_NEED_SYNC) || udev_flags) &&
 			      (task == DM_DEVICE_RESUME ||
 			       task == DM_DEVICE_REMOVE));
 	uint32_t cookie = 0;
@@ -404,11 +403,11 @@ dm_simplecmd (int task, const char *name, int no_flush, int need_sync,
 	dm_task_no_open_count(dmt);
 	dm_task_skip_lockfs(dmt);	/* for DM_DEVICE_RESUME */
 #ifdef LIBDM_API_FLUSH
-	if (no_flush)
+	if (flags & DMFL_NO_FLUSH)
 		dm_task_no_flush(dmt);		/* for DM_DEVICE_SUSPEND/RESUME */
 #endif
 #ifdef LIBDM_API_DEFERRED
-	if (deferred_remove)
+	if (flags & DMFL_DEFERRED)
 		dm_task_deferred_remove(dmt);
 #endif
 	if (udev_wait_flag &&
@@ -429,18 +428,17 @@ out:
 
 int dm_simplecmd_flush (int task, const char *name, uint16_t udev_flags)
 {
-	return dm_simplecmd(task, name, 0, 1, udev_flags, 0);
+	return dm_simplecmd(task, name, DMFL_NEED_SYNC, udev_flags);
 }
 
 int dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags)
 {
-	return dm_simplecmd(task, name, 1, 1, udev_flags, 0);
+	return dm_simplecmd(task, name, DMFL_NO_FLUSH|DMFL_NEED_SYNC, udev_flags);
 }
 
 static int
 dm_device_remove (const char *name, int flags) {
-	return dm_simplecmd(DM_DEVICE_REMOVE, name, 0, flags & DMFL_NEED_SYNC, 0,
-			    flags & DMFL_DEFERRED);
+	return dm_simplecmd(DM_DEVICE_REMOVE, name, flags, 0);
 }
 
 static int
@@ -594,8 +592,9 @@ int dm_addmap_reload(struct multipath *mpp, char *params, int flush)
 			      params, ADDMAP_RO, 0);
 	}
 	if (r)
-		r = dm_simplecmd(DM_DEVICE_RESUME, mpp->alias, !flush,
-				 1, udev_flags, 0);
+		r = dm_simplecmd(DM_DEVICE_RESUME, mpp->alias,
+				 DMFL_NEED_SYNC | (flush ? 0 : DMFL_NO_FLUSH),
+				 udev_flags);
 	if (r)
 		return r;
 
@@ -603,8 +602,9 @@ int dm_addmap_reload(struct multipath *mpp, char *params, int flush)
 	 * drop the new table, so doing a second resume will try using
 	 * the original table */
 	if (dm_is_suspended(mpp->alias))
-		dm_simplecmd(DM_DEVICE_RESUME, mpp->alias, !flush, 1,
-			     udev_flags, 0);
+		dm_simplecmd(DM_DEVICE_RESUME, mpp->alias,
+			     DMFL_NEED_SYNC | (flush ? 0 : DMFL_NO_FLUSH),
+			     udev_flags);
 	return 0;
 }
 

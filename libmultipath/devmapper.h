@@ -38,8 +38,8 @@ void skip_libmp_dm_init(void);
 void libmp_dm_exit(void);
 void libmp_udev_set_sync_support(int on);
 struct dm_task *libmp_dm_task_create(int task);
-int dm_simplecmd_flush (int, const char *, uint16_t);
-int dm_simplecmd_noflush (int, const char *, uint16_t);
+int dm_simplecmd_flush (int task, const char *name, uint16_t udev_flags);
+int dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags);
 int dm_addmap_create (struct multipath *mpp, char *params);
 int dm_addmap_reload (struct multipath *mpp, char *params, int flush);
 int dm_map_present (const char *);
@@ -64,6 +64,7 @@ enum {
 	DMFL_NEED_SYNC = 1 << 0,
 	DMFL_DEFERRED  = 1 << 1,
 	DMFL_SUSPEND   = 1 << 2,
+	DMFL_NO_FLUSH  = 1 << 3,
 };
 
 int _dm_flush_map (const char *mapname, int flags, int retries);
