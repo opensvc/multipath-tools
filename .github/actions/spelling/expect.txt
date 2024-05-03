@@ -17,6 +17,7 @@ blkid
 bmarzins
 cciss
 CFLAGS
+cgroups
 christophe
 clangd
 clariion
@@ -67,6 +68,7 @@ fulldescr
 gcc
 getprkey
 getprstatus
+getrlimit
 getuid
 github
 GPT
@@ -170,6 +172,7 @@ rootprefixdir
 rpmbuild
 rport
 rtpi
+rtprio
 sas
 sbp
 scsi

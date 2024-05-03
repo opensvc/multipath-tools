@@ -1,5 +1,67 @@
 # multipath-tools Release Notes
 
+## multipath-tools 0.9.9, 2024/05
+
+### User-Visible Changes
+
+* *Changed realtime scheduling:* multipathd used to run at the highest possible
+  realtime priority, 99. This has always been excessive, and on some
+  distributions (e.g. RHEL 8), it hasn't worked at all.  It is now possible to
+  set multipathd's real time scheduling by setting the hard limit for
+  `RLIMIT_RTPRIO` (see getrlimit(2)), which corresponds to the `rtprio`
+  setting in limits.conf and to `LimitRTPRIO=` in the systemd unit file. The
+  default in the systemd unit file has been set to 10.  If the limit is set to
+  0, multipathd doesn't attempt to enable real-time scheduling.
+  Otherwise, it will try to set the scheduling priority to the given value.
+  Fixes [#82](https://github.com/opensvc/multipath-tools/issues/82).
+* *Changed normal scheduling:* In order to make sure that multipathd has
+  sufficient priority even if real time scheduling is switched off, the
+  `CPUWeight=` setting in the unit file is set to 1000. This is necessary
+  because regular nice(2) values have no effect in systems with cgroups enabled.
+* *Changed handling of `max_sectors_kb` configuration:* multipathd applies
+  the `max_sectors_kb` setting only during map creation, or when a new path is
+  added to an existing map. The kernel makes sure that the multipath device
+  never has a larger `max_sectors_kb` value than any of its configured path
+  devices. The reason for this change is that applying `max_sectors_kb` on
+  live maps can cause IO errors and data loss in rare situations.
+  It can now happen that some path devices have a higher `max_sectors_kb`
+  value than the map; this is not an error. It is not possible any more to
+  decrease `max_sectors_kb` in `multipath.conf` and run `multipathd
+  reconfigure` to "apply" this setting to the map and its paths. If decreasing
+  the IO size is necessary, either destroy and recreate the map, or remove one
+  path with `multipathd del path $PATH`, run `multipathd reconfigure`, and
+  re-add the path with `multipathd add path $PATH`.
+* *New wildcard %k:* The wildcard `%k` for `max_sectors_kb` has been added to
+   the `multipathd show paths format` and `multipathd show maps format`
+   commands.
+* *Changed semantics of flush_on_last_del:* The `flush_on_last_del` option
+   now takes the values `always` , `unused`, or `never`. `yes` and `no`
+   are still accepted as aliases for `always` and `unused`, respectively.
+   `always` means that when all paths for a multipath map have been removed,
+   *outstanding IO will be failed* and the map will be deleted. `unused` means
+   that this will only happen when the map is not mounted or otherwise opened.
+   `never` means the map will only be removed if the `queue_if_no_path`
+   feature is off.
+   This fixes a problem where multipathd could hang when the last path of 
+   a queueing map was deleted.
+  
+### Other major changes
+
+* Adapted the dm-mpath udev rules such that they will work with the modified
+  device mapper udev rules (`DM_UDEV_RULES_VSN==3`, lvm2 > 2.03.22). They are
+  still compatible with older versions of the device-mapper udev rules.
+
+### Bug fixes
+
+* Fixed misspelled DM_UDEV_DISABLE_OTHER_RULES_FLAG in 11-dm-mpath.rules
+* Always use `glibc_basename()` to avoid some issues with MUSL libc.
+  Fixes [#84](https://github.com/opensvc/multipath-tools/pull/84).
+
+### Other
+
+* Build: added `TGTDIR` option to simplify building for a different target
+  host (see README.md).
+
 ## multipath-tools 0.9.8, 2024/02
 
 ### User-Visible Changes
