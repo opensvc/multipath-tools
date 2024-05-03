@@ -33,7 +33,7 @@ jobs:
           - debian-buster
           - debian-bullseye
           - debian-bookworm
-          - fedora-39
+          - fedora-40
           - opensuse-leap
     container: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
     steps:
