@@ -443,7 +443,7 @@ find_mp_by_wwid (const struct _vector *mpvec, const char * wwid)
 	int i;
 	struct multipath * mpp;
 
-	if (!mpvec)
+	if (!mpvec || strlen(wwid) >= WWID_SIZE)
 		return NULL;
 
 	vector_foreach_slot (mpvec, mpp, i)
@@ -487,6 +487,8 @@ find_mp_by_str (const struct _vector *mpvec, const char * str)
 		mpp = find_mp_by_minor(mpvec, minor);
 	if (!mpp)
 		mpp = find_mp_by_alias(mpvec, str);
+	if (!mpp)
+		mpp = find_mp_by_wwid(mpvec, str);
 
 	if (!mpp)
 		condlog(2, "%s: invalid map name.", str);
