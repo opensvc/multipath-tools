@@ -480,11 +480,12 @@ struct multipath *
 find_mp_by_str (const struct _vector *mpvec, const char * str)
 {
 	int minor;
-	struct multipath *mpp;
+	char dummy;
+	struct multipath *mpp = NULL;
 
-	if (sscanf(str, "dm-%d", &minor) == 1)
+	if (sscanf(str, "dm-%d%c", &minor, &dummy) == 1)
 		mpp = find_mp_by_minor(mpvec, minor);
-	else
+	if (!mpp)
 		mpp = find_mp_by_alias(mpvec, str);
 
 	if (!mpp)
