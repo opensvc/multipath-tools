@@ -330,7 +330,7 @@ snprint_multipath_uuid (struct strbuf *buff, const struct multipath * mpp)
 }
 
 static int
-snprint_multipath_vpr (struct strbuf *buff, const struct multipath * mpp)
+snprint_multipath_vp (struct strbuf *buff, const struct multipath * mpp)
 {
 	struct pathgroup * pgp;
 	struct path * pp;
@@ -591,7 +591,10 @@ static int snprint_initialized(struct strbuf *buff, const struct path * pp)
 static int
 snprint_vpr (struct strbuf *buff, const struct path * pp)
 {
-	return print_strbuf(buff, "%s,%s", pp->vendor_id, pp->product_id);
+	return print_strbuf(buff, "%s,%s,%s",
+			    strlen(pp->vendor_id) ? pp->vendor_id : "##",
+			    strlen(pp->product_id) ? pp->product_id : "##",
+			    strlen(pp->rev) ? pp->rev : "##");
 }
 
 static int
@@ -849,7 +852,7 @@ static const struct multipath_data mpd[] = {
 	{'2', "map_loads",     snprint_map_loads},
 	{'3', "total_q_time",  snprint_total_q_time},
 	{'4', "q_timeouts",    snprint_q_timeouts},
-	{'s', "vend/prod/rev", snprint_multipath_vpr},
+	{'s', "vend/prod",     snprint_multipath_vp},
 	{'v', "vend",          snprint_multipath_vend},
 	{'p', "prod",          snprint_multipath_prod},
 	{'e', "rev",           snprint_multipath_rev},
