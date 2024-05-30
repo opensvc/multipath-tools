@@ -844,10 +844,13 @@ int verify_paths(struct multipath *mpp)
 void update_queue_mode_del_path(struct multipath *mpp)
 {
 	int active = count_active_paths(mpp);
+	bool is_queueing = mpp->features &&
+			   strstr(mpp->features, "queue_if_no_path");
 
 	if (active == 0) {
 		enter_recovery_mode(mpp);
-		if (mpp->no_path_retry != NO_PATH_RETRY_QUEUE)
+		if (mpp->no_path_retry == NO_PATH_RETRY_FAIL ||
+		    (mpp->no_path_retry == NO_PATH_RETRY_UNDEF && !is_queueing))
 			mpp->stat_map_failures++;
 	}
 	condlog(2, "%s: remaining active paths: %d", mpp->alias, active);
