@@ -339,12 +339,13 @@ Stop multipathd.
 .\" ----------------------------------------------------------------------------
 .
 When compiled with systemd support two systemd service files are installed,
-\fImultipathd.service\fR and \fImultipathd.socket\fR The \fImultipathd.socket\fR
-service instructs systemd to intercept the CLI command socket, so that any call
-to the CLI interface will start-up the daemon if required.
-The \fImultipathd.service\fR file carries the definitions for controlling the
-multipath daemon. The daemon itself uses the \fBsd_notify\fR(3) interface to
-communicate with systemd. The following unit keywords are recognized:
+\fImultipathd.service\fR and \fImultipathd.socket\fR. If enabled, the
+\fImultipathd.socket\fR service instructs systemd to intercept the CLI command
+socket, so that any call to the CLI interface will start-up the daemon if
+required. The \fImultipathd.service\fR file carries the definitions for
+controlling the multipath daemon. The daemon itself uses the \fBsd_notify\fR(3)
+interface to communicate with systemd. The following unit keywords are
+recognized:
 .
 .TP
 .B WatchdogSec=
