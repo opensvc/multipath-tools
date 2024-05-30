@@ -912,13 +912,6 @@ int snprint_wildcards(struct strbuf *buff)
 				       pd[i].wildcard, pd[i].header)) < 0)
 			return rc;
 
-	if ((rc = append_strbuf_str(buff, "\npathgroup format wildcards:\n")) < 0)
-		return rc;
-	for (i = 0; i < ARRAY_SIZE(pgd); i++)
-		if ((rc = print_strbuf(buff, "%%%c  %s\n",
-				       pgd[i].wildcard, pgd[i].header)) < 0)
-			return rc;
-
 	return get_strbuf_len(buff) - initial_len;
 }
 
