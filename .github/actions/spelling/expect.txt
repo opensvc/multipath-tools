@@ -141,6 +141,7 @@ OPTFLAGS
 paramp
 partx
 pathgroup
+petabytes
 pgpolicy
 plugindir
 PNR
@@ -201,6 +202,7 @@ sys
 sysfs
 sysinit
 tcp
+terabytes
 TESTDEPS
 testname
 tgill
