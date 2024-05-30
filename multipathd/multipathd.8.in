@@ -114,18 +114,24 @@ The following commands can be used in interactive mode:
 Show the paths that multipathd is monitoring, and their state.
 .
 .TP
-.B list|show paths format $format
+.B list|show paths [raw] format $format
 Show the paths that multipathd is monitoring, using a format string with path
-format wildcards.
+format wildcards. Adding \fIraw\fR will remove the headers and alignment
+padding from the ouput.
+.
+.TP
+.B list|show path $path
+Show whether path $path is offline or running.
 .
 .TP
 .B list|show maps|multipaths
 Show the multipath devices that the multipathd is monitoring.
 .
 .TP
-.B list|show maps|multipaths format $format
+.B list|show maps|multipaths [raw] format $format
 Show the status of all multipath devices that the multipathd is monitoring,
-using a format string with multipath format wildcards.
+using a format string with multipath format wildcards. Adding \fIraw\fR will
+remove the headers and alignment padding from the output.
 .
 .TP
 .B list|show maps|multipaths status
@@ -138,6 +144,10 @@ Show some statistics of all multipath devices that the multipathd is monitoring.
 .TP
 .B list|show maps|multipaths topology
 Show the current multipath topology. Same as '\fImultipath \-ll\fR'.
+.TP
+.
+.B list|show maps|multipaths json
+Show information about all multipath devices in JSON format.
 .
 .TP
 .B list|show topology
@@ -147,6 +157,16 @@ Show the current multipath topology. Same as '\fImultipath \-ll\fR'.
 .B list|show map|multipath $map topology
 Show topology of a single multipath device specified by $map, for example
 36005076303ffc56200000000000010aa. This map could be obtained from '\fIlist maps\fR'.
+.
+.TP
+.B list|show map|multipath $map [raw] format $format.
+Show the status of multipath device $map, using a format string with multipath
+format wildcards. Adding \fIraw\fR will remove the headers and alignment
+padding from the output.
+.
+.TP
+.B list|show map|multipath $map json
+Show information about multipath device $map in JSON format.
 .
 .TP
 .B list|show wildcards
@@ -182,6 +202,14 @@ paths, and whether multipathd is currently handling a uevent.
 Show the current state of the multipathd daemon.
 .
 .TP
+.B reset maps|multipaths stats
+Reset the statistics of all multipath devices.
+.
+.TP
+.B reset map|multipath $map stats
+Reset the statistics of multipath device $map.
+.
+.TP
 .B add path $path
 Add a path to the list of monitored paths. $path is as listed in /sys/block (e.g. sda).
 .
@@ -197,8 +225,12 @@ for the multipath device (e.g. mpath1) or the uid of the multipath device
 (e.g. 36005076303ffc56200000000000010aa).
 .
 .TP
+.B remove|del maps|multipaths
+Remove all multipath devices.
+.
+.TP
 .B remove|del map|multipath $map
-Stop monitoring a multipath device.
+Remove the multipath device $map.
 .
 .TP
 .B resize map|multipath $map
