@@ -218,9 +218,13 @@ snprint_failback (struct strbuf *buff, const struct multipath * mpp)
 		return append_strbuf_str(buff, "immediate");
 	if (mpp->pgfailback == -FAILBACK_FOLLOWOVER)
 		return append_strbuf_str(buff, "followover");
+	if (mpp->pgfailback == -FAILBACK_MANUAL)
+		return append_strbuf_str(buff, "manual");
+	if (mpp->pgfailback == FAILBACK_UNDEF)
+		return append_strbuf_str(buff, "undef");
 
 	if (!mpp->failback_tick)
-		return append_strbuf_str(buff, "-");
+		return print_strbuf(buff, "deferred:%i", mpp->pgfailback);
 	else
 		return snprint_progress(buff, mpp->failback_tick,
 					mpp->pgfailback);
