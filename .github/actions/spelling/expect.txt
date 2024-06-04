@@ -71,6 +71,7 @@ getprstatus
 getrlimit
 getuid
 github
+gitlab
 GPT
 hbtl
 hds
@@ -115,6 +116,7 @@ LIO
 lpthread
 Lun
 lvm
+lvmteam
 Marzinski
 mpath
 mpathb

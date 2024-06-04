@@ -2,6 +2,11 @@
 
 ## multipath-tools 0.9.9, 2024/05
 
+### Important note
+
+It is not recommended to use *lvm2* 2.03.24 and newer with multipath-tools
+versions earlier than 0.9.9. See "Other major changes" below.
+
 ### User-Visible Changes
 
 * *Changed realtime scheduling:* multipathd used to run at the highest possible
@@ -44,18 +49,33 @@
    feature is off.
    This fixes a problem where multipathd could hang when the last path of 
    a queueing map was deleted.
-  
+* *Better parsing of `$map` arguments in multipathd interactive shell*: The
+  `$map` argument in commands like `resize map $map` now accepts a WWID,
+  and poorly chosen map aliases that could be mistaken for device names.
+* *Added documentation for CLI wildcards*. The wildcards used in the `show
+  maps format` and `show paths format` commands are documented in the
+  *multipathd(8)* man page now.
+* *`%s` wildcard for paths:* this wildcard in `show paths format` now prints
+  the product revision, too.
+
 ### Other major changes
 
 * Adapted the dm-mpath udev rules such that they will work with the modified
-  device mapper udev rules (`DM_UDEV_RULES_VSN==3`, lvm2 > 2.03.22). They are
-  still compatible with older versions of the device-mapper udev rules.
+  device mapper udev rules (`DM_UDEV_RULES_VSN==3`, lvm2 >= 2.03.24). They are
+  still compatible with older versions of the device-mapper udev
+  rules (lvm2 < 2.03.24). If lvm2 2.03.24 or newer is installed, it is
+  recommended to update multipath-tools to 0.9.9 or newer.
+  See also [LVM2 2.03.24 release notes](https://gitlab.com/lvmteam/lvm2/-/tags/v2_03_24).
 
 ### Bug fixes
 
 * Fixed misspelled DM_UDEV_DISABLE_OTHER_RULES_FLAG in 11-dm-mpath.rules
 * Always use `glibc_basename()` to avoid some issues with MUSL libc.
   Fixes [#84](https://github.com/opensvc/multipath-tools/pull/84).
+* Fixed map failure counting for `no_path_retry > 0`.
+* The wildcards for path groups are not available for actual
+  commands and have thus been removed from the `show wildcards` command
+  output.
 
 ### Other
 
