@@ -1087,7 +1087,7 @@ detect_alua(struct path * pp)
 			return;
 
 		state = path_offline(pp);
-		if (state == PATH_DOWN || state == PATH_PENDING)
+		if (state != PATH_UP)
 			return;
 
 		pp->tpgs = TPGS_NONE;
