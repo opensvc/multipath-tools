@@ -813,7 +813,7 @@ flush_map(struct multipath * mpp, struct vectors * vecs)
 {
 	int r = dm_suspend_and_flush_map(mpp->alias, 0);
 	if (r != DM_FLUSH_OK) {
-		if (DM_FLUSH_FAIL_CANT_RESTORE)
+		if (r == DM_FLUSH_FAIL_CANT_RESTORE)
 			remove_feature(&mpp->features, "queue_if_no_path");
 		condlog(0, "%s: can't flush", mpp->alias);
 		return r;
