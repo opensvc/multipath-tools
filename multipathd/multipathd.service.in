@@ -16,8 +16,8 @@ ConditionVirtualization=!container
 [Service]
 Type=notify
 NotifyAccess=main
-ExecStart=/sbin/multipathd -d -s
-ExecReload=/sbin/multipathd reconfigure
+ExecStart=@BINDIR@/multipathd -d -s
+ExecReload=@BINDIR@/multipathd reconfigure
 TasksMax=infinity
 LimitRTPRIO=10
 CPUWeight=1000
