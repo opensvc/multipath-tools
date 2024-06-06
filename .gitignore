@@ -12,6 +12,7 @@ config.mk
 cscope.files
 cscope.out
 kpartx/kpartx
+kpartx/kpartx.rules
 multipath/multipath
 multipath/multipath.8
 multipath/multipath.conf.5

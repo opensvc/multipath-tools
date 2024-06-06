@@ -39,6 +39,6 @@ LABEL="mpath_kpartx_end"
 GOTO="kpartx_end"
 
 LABEL="run_kpartx"
-RUN+="/sbin/kpartx -un -p -part /dev/$name"
+RUN+="@BINDIR@/kpartx -un -p -part /dev/$name"
 
 LABEL="kpartx_end"

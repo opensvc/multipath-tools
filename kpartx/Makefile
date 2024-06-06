@@ -13,13 +13,13 @@ LIBDEPS += -ldevmapper
 OBJS := bsd.o dos.o kpartx.o solaris.o unixware.o dasd.o sun.o \
 	gpt.o mac.o ps3.o crc32.o lopart.o xstrncpy.o devmapper.o
 
-all: $(EXEC)
+all: $(EXEC) kpartx.rules
 
 $(EXEC): $(OBJS)
 	@echo building $@ because of $?
 	$(Q)$(CC) $(CFLAGS) $(OBJS) -o $(EXEC) $(LDFLAGS) $(LIBDEPS)
 
-install: $(EXEC) $(EXEC).8
+install: $(EXEC) $(EXEC).8 kpartx.rules
 	$(Q)$(INSTALL_PROGRAM) -d $(DESTDIR)$(bindir)
 	$(Q)$(INSTALL_PROGRAM) -m 755 $(EXEC) $(DESTDIR)$(bindir)
 	$(Q)$(INSTALL_PROGRAM) -d $(DESTDIR)$(libudevdir)
@@ -41,7 +41,7 @@ uninstall:
 	$(Q)$(RM) $(DESTDIR)$(libudevdir)/rules.d/68-del-part-nodes.rules
 
 clean: dep_clean
-	$(Q)$(RM) core *.o $(EXEC)
+	$(Q)$(RM) core *.o $(EXEC) kpartx.rules
 
 include $(wildcard $(OBJS:.o=.d))
 
