@@ -147,11 +147,11 @@ TEST_CC_OPTION = $(shell \
 # On some distros (e.g. Debian Buster) it will be falsely reported as supported
 # but it doesn't seem to make a difference wrt the compilation result.
 FORTIFY_OPT := $(shell \
-	if /bin/echo -e '$(__HASH__)include <string.h>\nint main(void) { return 0; }' | \
+	if printf '$(__HASH__)include <string.h>\nint main(void) { return 0; }\n' | \
 		$(CC) -o /dev/null $(OPTFLAGS) -c -Werror -D_FORTIFY_SOURCE=3 -xc - 2>/dev/null; \
 	then \
 		echo "-D_FORTIFY_SOURCE=3"; \
-	elif /bin/echo -e '$(__HASH__)include <string.h>\nint main(void) { return 0; }' | \
+	elif printf '$(__HASH__)include <string.h>\nint main(void) { return 0; }\n' | \
 		$(CC) -o /dev/null $(OPTFLAGS) -c -Werror -D_FORTIFY_SOURCE=2 -xc - 2>/dev/null; \
 	then \
 		echo "-D_FORTIFY_SOURCE=2"; \
