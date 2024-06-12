@@ -437,11 +437,11 @@ Needs a value of the form "io_num=\fI<20>\fR base_num=\fI<10>\fR"
 .TP 8
 .I io_num
 The number of read IOs sent to the current path continuously, used to calculate the average path latency.
-Valid Values: Integer, [2, 200].
+Valid Values: Integer, [20, 200].
 .TP
 .I base_num
-The base number value of logarithmic scale, used to partition different priority ranks. Valid Values: Integer,
-[2, 10]. And Max average latency value is 100s, min average latency value is 1us.
+The base number value of logarithmic scale, used to partition different priority ranks. Valid Values:
+Double-precision floating-point, [1.1, 10]. And Max average latency value is 100s, min average latency value is 1us.
 For example: If base_num=10, the paths will be grouped in priority groups with path latency <=1us, (1us, 10us],
 (10us, 100us], (100us, 1ms], (1ms, 10ms], (10ms, 100ms], (100ms, 1s], (1s, 10s], (10s, 100s], >100s.
 .RE
