@@ -82,7 +82,7 @@ struct config *libmp_get_multipath_config(void)
 }
 
 struct config *get_multipath_config(void)
-	__attribute__((alias("libmp_get_multipath_config")));
+	__attribute__((weak, alias("libmp_get_multipath_config")));
 
 void libmp_put_multipath_config(void *conf __attribute__((unused)))
 {
@@ -90,7 +90,7 @@ void libmp_put_multipath_config(void *conf __attribute__((unused)))
 }
 
 void put_multipath_config(void *conf)
-	__attribute__((alias("libmp_put_multipath_config")));
+	__attribute__((weak, alias("libmp_put_multipath_config")));
 
 static int
 hwe_strmatch (const struct hwentry *hwe1, const struct hwentry *hwe2)
