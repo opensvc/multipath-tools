@@ -6,6 +6,7 @@ on:
       - queue
       - tip
     paths:
+      - '.github/workflows/foreign.yaml'
       - '**.h'
       - '**.c'
       - '**Makefile*'
@@ -15,6 +16,7 @@ on:
       - master
       - queue
     paths:
+      - '.github/workflows/foreign.yaml'
       - '**.h'
       - '**.c'
       - '**Makefile*'

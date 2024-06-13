@@ -38,16 +38,16 @@ void skip_libmp_dm_init(void);
 void libmp_dm_exit(void);
 void libmp_udev_set_sync_support(int on);
 struct dm_task *libmp_dm_task_create(int task);
-int dm_simplecmd_flush (int, const char *, uint16_t);
-int dm_simplecmd_noflush (int, const char *, uint16_t);
+int dm_simplecmd_flush (int task, const char *name, uint16_t udev_flags);
+int dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags);
 int dm_addmap_create (struct multipath *mpp, char *params);
 int dm_addmap_reload (struct multipath *mpp, char *params, int flush);
-int dm_map_present (const char *);
+int dm_map_present (const char *name);
 int dm_map_present_by_uuid(const char *uuid);
-int dm_get_map(const char *, unsigned long long *, char **);
-int dm_get_status(const char *, char **);
-int dm_type(const char *, char *);
-int dm_is_mpath(const char *);
+int dm_get_map(const char *name, unsigned long long *size, char **outparams);
+int dm_get_status(const char *name, char **outstatus);
+int dm_type(const char *name, char *type);
+int dm_is_mpath(const char *name);
 
 enum {
 	DM_FLUSH_OK = 0,
@@ -57,12 +57,22 @@ enum {
 	DM_FLUSH_BUSY,
 };
 
-int _dm_flush_map (const char *, int, int, int, int);
-int dm_flush_map_nopaths(const char * mapname, int deferred_remove);
-#define dm_flush_map(mapname) _dm_flush_map(mapname, 1, 0, 0, 0)
-#define dm_flush_map_nosync(mapname) _dm_flush_map(mapname, 0, 0, 0, 0)
+int partmap_in_use(const char *name, void *data);
+
+enum {
+	DMFL_NONE      = 0,
+	DMFL_NEED_SYNC = 1 << 0,
+	DMFL_DEFERRED  = 1 << 1,
+	DMFL_SUSPEND   = 1 << 2,
+	DMFL_NO_FLUSH  = 1 << 3,
+};
+
+int _dm_flush_map (const char *mapname, int flags, int retries);
+#define dm_flush_map(mapname) _dm_flush_map(mapname, DMFL_NEED_SYNC, 0)
+#define dm_flush_map_nosync(mapname) _dm_flush_map(mapname, DMFL_NONE, 0)
 #define dm_suspend_and_flush_map(mapname, retries) \
-	_dm_flush_map(mapname, 1, 0, 1, retries)
+	_dm_flush_map(mapname, DMFL_NEED_SYNC|DMFL_SUSPEND, retries)
+int dm_flush_map_nopaths(const char * mapname, int deferred_remove);
 int dm_cancel_deferred_remove(struct multipath *mpp);
 int dm_flush_maps (int retries);
 int dm_fail_path(const char * mapname, char * path);

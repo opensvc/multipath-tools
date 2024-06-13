@@ -32,6 +32,7 @@
 #include "util.h"
 #include "foreign.h"
 #include "strbuf.h"
+#include "sysfs.h"
 
 #define PRINT_PATH_LONG      "%w %i %d %D %p %t %T %s %o"
 #define PRINT_PATH_INDENT    "%i %d %D %t %T %o"
@@ -217,9 +218,13 @@ snprint_failback (struct strbuf *buff, const struct multipath * mpp)
 		return append_strbuf_str(buff, "immediate");
 	if (mpp->pgfailback == -FAILBACK_FOLLOWOVER)
 		return append_strbuf_str(buff, "followover");
+	if (mpp->pgfailback == -FAILBACK_MANUAL)
+		return append_strbuf_str(buff, "manual");
+	if (mpp->pgfailback == FAILBACK_UNDEF)
+		return append_strbuf_str(buff, "undef");
 
 	if (!mpp->failback_tick)
-		return append_strbuf_str(buff, "-");
+		return print_strbuf(buff, "deferred:%i", mpp->pgfailback);
 	else
 		return snprint_progress(buff, mpp->failback_tick,
 					mpp->pgfailback);
@@ -325,7 +330,7 @@ snprint_multipath_uuid (struct strbuf *buff, const struct multipath * mpp)
 }
 
 static int
-snprint_multipath_vpr (struct strbuf *buff, const struct multipath * mpp)
+snprint_multipath_vp (struct strbuf *buff, const struct multipath * mpp)
 {
 	struct pathgroup * pgp;
 	struct path * pp;
@@ -429,6 +434,27 @@ snprint_multipath_vpd_data(struct strbuf *buff,
 			if (pp->vpd_data)
 				return append_strbuf_str(buff, pp->vpd_data);
 	return append_strbuf_str(buff, "[undef]");
+}
+
+static void cleanup_udev_device(struct udev_device **udd)
+{
+	if (*udd)
+		udev_device_unref(*udd);
+}
+
+static int
+snprint_multipath_max_sectors_kb(struct strbuf *buff, const struct multipath *mpp)
+{
+	char buf[11];
+	int max_sectors_kb;
+	struct udev_device *udd __attribute__((cleanup(cleanup_udev_device)))
+		= get_udev_for_mpp(mpp);
+
+	if (!udd ||
+	    sysfs_attr_get_value(udd, "queue/max_sectors_kb", buf, sizeof(buf)) <= 0 ||
+	    sscanf(buf, "%d\n", &max_sectors_kb) != 1)
+		return print_strbuf(buff, "n/a");
+	return print_strbuf(buff, "%d", max_sectors_kb);
 }
 
 /*
@@ -565,7 +591,10 @@ static int snprint_initialized(struct strbuf *buff, const struct path * pp)
 static int
 snprint_vpr (struct strbuf *buff, const struct path * pp)
 {
-	return print_strbuf(buff, "%s,%s", pp->vendor_id, pp->product_id);
+	return print_strbuf(buff, "%s,%s,%s",
+			    strlen(pp->vendor_id) ? pp->vendor_id : "##",
+			    strlen(pp->product_id) ? pp->product_id : "##",
+			    strlen(pp->rev) ? pp->rev : "##");
 }
 
 static int
@@ -790,6 +819,20 @@ snprint_alua_tpg(struct strbuf *buff, const struct path * pp)
 	return print_strbuf(buff, "0x%04x", pp->tpg_id);
 }
 
+static int
+snprint_path_max_sectors_kb(struct strbuf *buff, const struct path *pp)
+{
+	char buf[11];
+	int max_sectors_kb;
+
+	if (!pp->udev ||
+	    sysfs_attr_get_value(pp->udev, "queue/max_sectors_kb", 
+				 buf, sizeof(buf)) <= 0 ||
+	    sscanf(buf, "%d\n", &max_sectors_kb) != 1)
+		return print_strbuf(buff, "n/a");
+	return print_strbuf(buff, "%d", max_sectors_kb);
+}
+
 static const struct multipath_data mpd[] = {
 	{'n', "name",          snprint_name},
 	{'w', "uuid",          snprint_multipath_uuid},
@@ -809,12 +852,13 @@ static const struct multipath_data mpd[] = {
 	{'2', "map_loads",     snprint_map_loads},
 	{'3', "total_q_time",  snprint_total_q_time},
 	{'4', "q_timeouts",    snprint_q_timeouts},
-	{'s', "vend/prod/rev", snprint_multipath_vpr},
+	{'s', "vend/prod",     snprint_multipath_vp},
 	{'v', "vend",          snprint_multipath_vend},
 	{'p', "prod",          snprint_multipath_prod},
 	{'e', "rev",           snprint_multipath_rev},
 	{'G', "foreign",       snprint_multipath_foreign},
 	{'g', "vpd page data", snprint_multipath_vpd_data},
+	{'k', "max_sectors_kb",snprint_multipath_max_sectors_kb},
 };
 
 static const struct path_data pd[] = {
@@ -845,6 +889,7 @@ static const struct path_data pd[] = {
 	{'I', "init_st",       snprint_initialized},
 	{'L', "LUN hex",       snprint_path_lunhex},
 	{'A', "TPG",           snprint_alua_tpg},
+	{'k', "max_sectors_kb",snprint_path_max_sectors_kb},
 };
 
 static const struct pathgroup_data pgd[] = {
@@ -872,13 +917,6 @@ int snprint_wildcards(struct strbuf *buff)
 	for (i = 0; i < ARRAY_SIZE(pd); i++)
 		if ((rc = print_strbuf(buff, "%%%c  %s\n",
 				       pd[i].wildcard, pd[i].header)) < 0)
-			return rc;
-
-	if ((rc = append_strbuf_str(buff, "\npathgroup format wildcards:\n")) < 0)
-		return rc;
-	for (i = 0; i < ARRAY_SIZE(pgd); i++)
-		if ((rc = print_strbuf(buff, "%%%c  %s\n",
-				       pgd[i].wildcard, pgd[i].header)) < 0)
 			return rc;
 
 	return get_strbuf_len(buff) - initial_len;

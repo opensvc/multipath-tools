@@ -791,14 +791,70 @@ declare_def_snprint(checker_timeout, print_nonzero)
 declare_def_handler(allow_usb_devices, set_yes_no)
 declare_def_snprint(allow_usb_devices, print_yes_no)
 
-declare_def_handler(flush_on_last_del, set_yes_no_undef)
-declare_def_snprint_defint(flush_on_last_del, print_yes_no_undef, DEFAULT_FLUSH)
-declare_ovr_handler(flush_on_last_del, set_yes_no_undef)
-declare_ovr_snprint(flush_on_last_del, print_yes_no_undef)
-declare_hw_handler(flush_on_last_del, set_yes_no_undef)
-declare_hw_snprint(flush_on_last_del, print_yes_no_undef)
-declare_mp_handler(flush_on_last_del, set_yes_no_undef)
-declare_mp_snprint(flush_on_last_del, print_yes_no_undef)
+
+static const char * const flush_on_last_del_optvals[] = {
+	[FLUSH_NEVER] = "never",
+	[FLUSH_ALWAYS] = "always",
+	[FLUSH_UNUSED] = "unused",
+};
+
+static int
+set_flush_on_last_del(vector strvec, void *ptr, const char *file, int line_nr)
+{
+	int i;
+	int *flush_val_ptr = (int *)ptr;
+	char *buff;
+
+	buff = set_value(strvec);
+	if (!buff)
+		return 1;
+
+	for (i = FLUSH_NEVER; i <= FLUSH_UNUSED; i++) {
+		if (flush_on_last_del_optvals[i] != NULL &&
+		    !strcmp(buff, flush_on_last_del_optvals[i])) {
+			*flush_val_ptr = i;
+			break;
+		}
+	}
+
+	if (i > FLUSH_UNUSED) {
+		bool deprecated = true;
+		if (strcmp(buff, "no") == 0 || strcmp(buff, "0") == 0)
+			*flush_val_ptr = FLUSH_UNUSED;
+		else if (strcmp(buff, "yes") == 0 || strcmp(buff, "1") == 0)
+			*flush_val_ptr = FLUSH_ALWAYS;
+		else {
+			deprecated = false;
+			condlog(1, "%s line %d, invalid value for flush_on_last_del: \"%s\"",
+				file, line_nr, buff);
+		}
+		if (deprecated)
+			condlog(2, "%s line %d, \"%s\" is a deprecated value for flush_on_last_del and is treated as \"%s\"",
+				file, line_nr, buff,
+				flush_on_last_del_optvals[*flush_val_ptr]);
+	}
+
+	free(buff);
+	return 0;
+}
+
+int
+print_flush_on_last_del(struct strbuf *buff, long v)
+{
+	if (v == FLUSH_UNDEF)
+		return 0;
+	return append_strbuf_quoted(buff, flush_on_last_del_optvals[(int)v]);
+}
+
+declare_def_handler(flush_on_last_del, set_flush_on_last_del)
+declare_def_snprint_defint(flush_on_last_del, print_flush_on_last_del,
+			   DEFAULT_FLUSH)
+declare_ovr_handler(flush_on_last_del, set_flush_on_last_del)
+declare_ovr_snprint(flush_on_last_del, print_flush_on_last_del)
+declare_hw_handler(flush_on_last_del, set_flush_on_last_del)
+declare_hw_snprint(flush_on_last_del, print_flush_on_last_del)
+declare_mp_handler(flush_on_last_del, set_flush_on_last_del)
+declare_mp_snprint(flush_on_last_del, print_flush_on_last_del)
 
 declare_def_handler(user_friendly_names, set_yes_no_undef)
 declare_def_snprint_defint(user_friendly_names, print_yes_no_undef,

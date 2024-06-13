@@ -60,7 +60,7 @@
 		.no_path_retry = NO_PATH_RETRY_UNDEF,
 		.minio         = 1000,
 		.minio_rq      = 1,
-		.flush_on_last_del = FLUSH_DISABLED,
+		.flush_on_last_del = FLUSH_UNUSED,
 		.user_friendly_names = USER_FRIENDLY_NAMES_OFF,
 		.fast_io_fail  = 5,
 		.dev_loss      = 600,
@@ -683,8 +683,8 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 	},
 	{
-		// Storwize V5000/V7000 lines / SAN Volume Controller (SVC) / Flex System V7000
-		// FlashSystem V840/V9000/5000/5100/5200/7200/7300/9100/9200/9200R/9500
+		// Storwize V5000/V7000 lines / SAN Volume Controller (SVC)
+		// Flex System V7000 / FlashSystem V840/V9000 and 5x00/7x00/9x00
 		.vendor        = "IBM",
 		.product       = "^2145",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
@@ -829,7 +829,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.flush_on_last_del = FLUSH_ENABLED,
+		.flush_on_last_del = FLUSH_ALWAYS,
 		.dev_loss      = MAX_DEV_LOSS_TMO,
 		.prio_name     = PRIO_ONTAP,
 		.user_friendly_names = USER_FRIENDLY_NAMES_OFF,
@@ -1160,7 +1160,6 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_FAIL,
 		.minio         = 1,
 		.minio_rq      = 1,
-		.flush_on_last_del = FLUSH_ENABLED,
 		.fast_io_fail  = 15,
 	},
 	/*

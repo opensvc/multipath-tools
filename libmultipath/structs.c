@@ -443,7 +443,7 @@ find_mp_by_wwid (const struct _vector *mpvec, const char * wwid)
 	int i;
 	struct multipath * mpp;
 
-	if (!mpvec)
+	if (!mpvec || strlen(wwid) >= WWID_SIZE)
 		return NULL;
 
 	vector_foreach_slot (mpvec, mpp, i)
@@ -480,12 +480,15 @@ struct multipath *
 find_mp_by_str (const struct _vector *mpvec, const char * str)
 {
 	int minor;
-	struct multipath *mpp;
+	char dummy;
+	struct multipath *mpp = NULL;
 
-	if (sscanf(str, "dm-%d", &minor) == 1)
+	if (sscanf(str, "dm-%d%c", &minor, &dummy) == 1)
 		mpp = find_mp_by_minor(mpvec, minor);
-	else
+	if (!mpp)
 		mpp = find_mp_by_alias(mpvec, str);
+	if (!mpp)
+		mpp = find_mp_by_wwid(mpvec, str);
 
 	if (!mpp)
 		condlog(2, "%s: invalid map name.", str);
@@ -523,6 +526,25 @@ find_path_by_devt (const struct _vector *pathvec, const char * dev_t)
 			return pp;
 
 	condlog(4, "%s: dev_t not found in pathvec", dev_t);
+	return NULL;
+}
+
+struct path *mp_find_path_by_devt(const struct multipath *mpp, const char *devt)
+{
+	struct path *pp;
+	struct pathgroup *pgp;
+	unsigned int i, j;
+
+	pp = find_path_by_devt(mpp->paths, devt);
+	if (pp)
+		return pp;
+
+	vector_foreach_slot (mpp->pg, pgp, i){
+		vector_foreach_slot (pgp->paths, pp, j){
+			if (!strcmp(pp->dev_t, devt))
+				return pp;
+		}
+	}
 	return NULL;
 }
 

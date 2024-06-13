@@ -242,7 +242,38 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 	return must_reload;
 }
 
-int adopt_paths(vector pathvec, struct multipath *mpp)
+static bool set_path_max_sectors_kb(const struct path *pp, int max_sectors_kb)
+{
+	char buf[11];
+	ssize_t len;
+	int ret, current;
+	bool rc = false;
+
+	if (max_sectors_kb == MAX_SECTORS_KB_UNDEF)
+		return rc;
+
+	if (sysfs_attr_get_value(pp->udev, "queue/max_sectors_kb", buf, sizeof(buf)) <= 0
+	    || sscanf(buf, "%d\n", &current) != 1)
+		current = MAX_SECTORS_KB_UNDEF;
+	if (current == max_sectors_kb)
+		return rc;
+
+	len = snprintf(buf, sizeof(buf), "%d", max_sectors_kb);
+	ret = sysfs_attr_set_value(pp->udev, "queue/max_sectors_kb", buf, len);
+	if (ret != len)
+		log_sysfs_attr_set_value(3, ret,
+					 "failed setting max_sectors_kb on %s",
+					 pp->dev);
+	else {
+		condlog(3, "%s: set max_sectors_kb to %d for %s", __func__,
+			max_sectors_kb, pp->dev);
+		rc = true;
+	}
+	return rc;
+}
+
+int adopt_paths(vector pathvec, struct multipath *mpp,
+		const struct multipath *current_mpp)
 {
 	int i, ret;
 	struct path * pp;
@@ -285,9 +316,28 @@ int adopt_paths(vector pathvec, struct multipath *mpp)
 				continue;
 			}
 
-			if (!find_path_by_devt(mpp->paths, pp->dev_t) &&
-			    store_path(mpp->paths, pp))
-				goto err;
+			if (!find_path_by_devt(mpp->paths, pp->dev_t)) {
+
+				if (store_path(mpp->paths, pp))
+					goto err;
+				/*
+				 * Setting max_sectors_kb on live paths is dangerous.
+				 * But we can do it here on a path that isn't yet part
+				 * of the map. If this value is lower than the current
+				 * max_sectors_kb and the map is reloaded, the map's
+				 * max_sectors_kb will be safely adjusted by the kernel.
+				 *
+				 * We must make sure that the path is not part of the
+				 * map yet. Normally we can check this in mpp->paths.
+				 * But if adopt_paths is called from coalesce_paths,
+				 * we need to check the separate struct multipath that
+				 * has been obtained from map_discovery().
+				 */
+				if (!current_mpp ||
+				    !mp_find_path_by_devt(current_mpp, pp->dev_t))
+					mpp->need_reload = mpp->need_reload ||
+						set_path_max_sectors_kb(pp, mpp->max_sectors_kb);
+			}
 
 			pp->mpp = mpp;
 			condlog(3, "%s: ownership set to %s",
@@ -693,7 +743,7 @@ find_existing_alias (struct multipath * mpp,
 }
 
 struct multipath *add_map_with_path(struct vectors *vecs, struct path *pp,
-				    int add_vec)
+				    int add_vec, const struct multipath *current_mpp)
 {
 	struct multipath * mpp;
 	struct config *conf = NULL;
@@ -721,7 +771,7 @@ struct multipath *add_map_with_path(struct vectors *vecs, struct path *pp,
 		goto out;
 	mpp->size = pp->size;
 
-	if (adopt_paths(vecs->pathvec, mpp) || pp->mpp != mpp ||
+	if (adopt_paths(vecs->pathvec, mpp, current_mpp) || pp->mpp != mpp ||
 	    find_slot(mpp->paths, pp) == -1)
 		goto out;
 
@@ -794,10 +844,13 @@ int verify_paths(struct multipath *mpp)
 void update_queue_mode_del_path(struct multipath *mpp)
 {
 	int active = count_active_paths(mpp);
+	bool is_queueing = mpp->features &&
+			   strstr(mpp->features, "queue_if_no_path");
 
 	if (active == 0) {
 		enter_recovery_mode(mpp);
-		if (mpp->no_path_retry != NO_PATH_RETRY_QUEUE)
+		if (mpp->no_path_retry == NO_PATH_RETRY_FAIL ||
+		    (mpp->no_path_retry == NO_PATH_RETRY_UNDEF && !is_queueing))
 			mpp->stat_map_failures++;
 	}
 	condlog(2, "%s: remaining active paths: %d", mpp->alias, active);

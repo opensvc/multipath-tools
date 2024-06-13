@@ -5,6 +5,7 @@ on:
       - queue
       - abi
     paths:
+      - '.github/workflows/abi.yaml'
       - '**.h'
       - '**.c'
   pull_request:

@@ -40,17 +40,17 @@ const char default_wwid_1[] = "TEST-WWID-1";
  */
 
 
-int REAL_FUNC(open)(const char *path, int flags, int mode);
+int REAL_OPEN(const char *path, int flags, int mode);
 
 static const char _mocked_filename[] = "mocked_path";
 
-int WRAP_FUNC(open)(const char *path, int flags, int mode)
+int WRAP_OPEN(const char *path, int flags, int mode)
 {
 	condlog(4, "%s: %s", __func__, path);
 
 	if (!strcmp(path, _mocked_filename))
 		return 111;
-	return REAL_FUNC(open)(path, flags, mode);
+	return REAL_OPEN(path, flags, mode);
 }
 
 int __wrap_libmp_get_version(int which, unsigned int version[3])
@@ -150,6 +150,13 @@ int __wrap_sysfs_get_size(struct path *pp, unsigned long long *sz)
 {
 	*sz = 12345678UL;
 	return 0;
+}
+
+int __wrap_sysfs_attr_set_value(struct udev_device *dev, const char *attr_name,
+			   const char * value, size_t value_len)
+{
+	condlog(5, "%s: %s", __func__, value);
+	return value_len;
 }
 
 void *__wrap_udev_device_get_parent_with_subsystem_devtype(
@@ -400,7 +407,7 @@ struct multipath *__mock_multipath(struct vectors *vecs, struct path *pp)
 	/* pathinfo() call in adopt_paths */
 	mock_pathinfo(DI_CHECKER|DI_PRIO, &mop);
 
-	mp = add_map_with_path(vecs, pp, 1);
+	mp = add_map_with_path(vecs, pp, 1, NULL);
 	assert_ptr_not_equal(mp, NULL);
 
 	/* TBD: mock setup_map() ... */

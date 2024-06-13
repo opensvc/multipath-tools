@@ -109,9 +109,10 @@ enum marginal_pathgroups_mode {
 };
 
 enum flush_states {
-	FLUSH_UNDEF = YNU_UNDEF,
-	FLUSH_DISABLED = YNU_NO,
-	FLUSH_ENABLED = YNU_YES,
+	FLUSH_UNDEF,
+	FLUSH_NEVER,
+	FLUSH_ALWAYS,
+	FLUSH_UNUSED,
 };
 
 enum log_checker_err_states {
@@ -567,6 +568,9 @@ struct multipath * find_mp_by_minor (const struct _vector *mp,
 struct path * find_path_by_devt (const struct _vector *pathvec, const char *devt);
 struct path * find_path_by_dev (const struct _vector *pathvec, const char *dev);
 struct path * first_path (const struct multipath *mpp);
+
+struct path *mp_find_path_by_devt(const struct multipath *mpp, const char *devt);
+
 
 int pathcount (const struct multipath *, int);
 int count_active_paths(const struct multipath *);

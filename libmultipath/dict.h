@@ -18,4 +18,5 @@ int print_undef_off_zero(struct strbuf *buff, long v);
 int print_dev_loss(struct strbuf *buff, unsigned long v);
 int print_off_int_undef(struct strbuf *buff, long v);
 int print_auto_resize(struct strbuf *buff, long v);
+int print_flush_on_last_del(struct strbuf *buff, long v);
 #endif /* _DICT_H */

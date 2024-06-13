@@ -129,3 +129,7 @@ LIBMPATHUTIL_2.0 {
 	vector_move_up;
 	vector_sort;
 };
+
+LIBMPATHUTIL_2.1 {
+	libmp_basename;
+};

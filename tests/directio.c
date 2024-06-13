@@ -41,13 +41,13 @@ struct timespec full_timeout = { .tv_sec = -1 };
 #define ioctl_request_t int
 #endif
 
-int __real_ioctl(int fd, ioctl_request_t request, void *argp);
+int REAL_IOCTL(int fd, ioctl_request_t request, void *argp);
 
-int __wrap_ioctl(int fd, ioctl_request_t request, void *argp)
+int WRAP_IOCTL(int fd, ioctl_request_t request, void *argp)
 {
 #ifdef DIO_TEST_DEV
 	mock_type(int);
-	return __real_ioctl(fd, request, argp);
+	return REAL_IOCTL(fd, request, argp);
 #else
 	int *blocksize = (int *)argp;
 
@@ -148,10 +148,10 @@ int __wrap_io_cancel(io_context_t ctx, struct iocb *iocb, struct io_event *evt)
 #endif
 }
 
-int __real_io_getevents(io_context_t ctx, long min_nr, long nr,
+int REAL_IO_GETEVENTS(io_context_t ctx, long min_nr, long nr,
 			struct io_event *events, struct timespec *timeout);
 
-int __wrap_io_getevents(io_context_t ctx, long min_nr, long nr,
+int WRAP_IO_GETEVENTS(io_context_t ctx, long min_nr, long nr,
 			struct io_event *events, struct timespec *timeout)
 {
 	int nr_evs;
@@ -169,8 +169,8 @@ int __wrap_io_getevents(io_context_t ctx, long min_nr, long nr,
 #ifdef DIO_TEST_DEV
 	mock_ptr_type(struct timespec *);
 	mock_ptr_type(struct io_event *);
-	assert_int_equal(nr_evs, __real_io_getevents(ctx, min_nr, nr_evs,
-						     events, timeout));
+	assert_int_equal(nr_evs, REAL_IO_GETEVENTS(ctx, min_nr, nr_evs,
+						   events, timeout));
 #else
 	sleep_tmo = mock_ptr_type(struct timespec *);
 	if (sleep_tmo) {
@@ -193,7 +193,7 @@ int __wrap_io_getevents(io_context_t ctx, long min_nr, long nr,
 
 static void return_io_getevents_none(void)
 {
-	will_return(__wrap_io_getevents, 0);
+	wrap_will_return(WRAP_IO_GETEVENTS, 0);
 }
 
 static void return_io_getevents_nr(struct timespec *ts, int nr,
@@ -207,15 +207,15 @@ static void return_io_getevents_nr(struct timespec *ts, int nr,
 			mock_events[i + ev_off].res = reqs[i]->blksize;
 	}
 	while (nr > 0) {
-		will_return(__wrap_io_getevents, (nr > 128)? 128 : nr);
-		will_return(__wrap_io_getevents, ts);
-		will_return(__wrap_io_getevents, &mock_events[off + ev_off]);
+		wrap_will_return(WRAP_IO_GETEVENTS, (nr > 128)? 128 : nr);
+		wrap_will_return(WRAP_IO_GETEVENTS, ts);
+		wrap_will_return(WRAP_IO_GETEVENTS, &mock_events[off + ev_off]);
 		ts = NULL;
 		off += 128;
 		nr -= 128;
 	}
 	if (nr == 0)
-		will_return(__wrap_io_getevents, 0);
+		wrap_will_return(WRAP_IO_GETEVENTS, 0);
 	ev_off += i;
 }
 
@@ -251,7 +251,7 @@ static void do_libcheck_init(struct checker *c, int blocksize,
 	struct directio_context * ct;
 
 	c->fd = test_fd;
-	will_return(__wrap_ioctl, blocksize);
+	wrap_will_return(WRAP_IOCTL, blocksize);
 	assert_int_equal(libcheck_init(c), 0);
 	ct = (struct directio_context *)c->context;
 	assert_non_null(ct);
@@ -762,7 +762,7 @@ int main(void)
 {
 	int ret = 0;
 
-	init_test_verbosity(2);
+	init_test_verbosity(5);
 	ret += test_directio();
 	return ret;
 }

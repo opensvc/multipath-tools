@@ -13,7 +13,8 @@ struct vectors {
 
 void set_no_path_retry(struct multipath *mpp);
 
-int adopt_paths (vector pathvec, struct multipath * mpp);
+int adopt_paths (vector pathvec, struct multipath *mpp,
+		 const struct multipath *current_mpp);
 void orphan_path (struct path * pp, const char *reason);
 void set_path_removed(struct path *pp);
 
@@ -28,7 +29,8 @@ void remove_maps (struct vectors * vecs);
 
 void sync_map_state (struct multipath *);
 struct multipath * add_map_with_path (struct vectors * vecs,
-				struct path * pp, int add_vec);
+				      struct path * pp, int add_vec,
+				      const struct multipath *current_mpp);
 void update_queue_mode_del_path(struct multipath *mpp);
 void update_queue_mode_add_path(struct multipath *mpp);
 int update_multipath_table (struct multipath *mpp, vector pathvec, int flags);

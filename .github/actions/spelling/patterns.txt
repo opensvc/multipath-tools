@@ -22,6 +22,7 @@
 \bdmmp_pgs\b
 \bdmmp_mpath_kdev_name_get\b
 \bfast_io_fail_tmo\b
+\bLimitRTPRIO=?\b
 \bmax_fds\b
 \bmissing_uev_wait_timeout\b
 \bMPATH_MAX_PARAM_LEN\b
@@ -86,6 +87,8 @@
 \bprin_resvdescr\b
 \bprout_param_descriptor\b
 \brq_servact\b
+\bRLIMIT_RTPRIO\b
+\bSCHED_RT_PRIO\b
 \bssize_t\b
 \btrnptid_list\b
 \buxsock_timeout\b

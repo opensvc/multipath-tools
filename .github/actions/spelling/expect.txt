@@ -17,6 +17,7 @@ blkid
 bmarzins
 cciss
 CFLAGS
+cgroups
 christophe
 clangd
 clariion
@@ -67,8 +68,10 @@ fulldescr
 gcc
 getprkey
 getprstatus
+getrlimit
 getuid
 github
+gitlab
 GPT
 hbtl
 hds
@@ -113,6 +116,7 @@ LIO
 lpthread
 Lun
 lvm
+lvmteam
 Marzinski
 mpath
 mpathb
@@ -139,6 +143,7 @@ OPTFLAGS
 paramp
 partx
 pathgroup
+petabytes
 pgpolicy
 plugindir
 PNR
@@ -167,8 +172,10 @@ retrigger
 rhabarber
 rootprefix
 rootprefixdir
+rpmbuild
 rport
 rtpi
+rtprio
 sas
 sbp
 scsi
@@ -197,9 +204,11 @@ sys
 sysfs
 sysinit
 tcp
+terabytes
 TESTDEPS
 testname
 tgill
+TGTDIR
 TIDS
 tmo
 tpg

@@ -16,6 +16,7 @@
  *
  */
 
+#define _GNU_SOURCE
 #include <stdbool.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -23,6 +24,7 @@
 #include <stdlib.h>
 #include <cmocka.h>
 #include <endian.h>
+#include <string.h>
 #include "util.h"
 
 #include "globals.c"
@@ -159,6 +161,34 @@ static int test_basenamecpy(void)
 		cmocka_unit_test(test_basenamecpy_bad3),
 		cmocka_unit_test(test_basenamecpy_bad4),
 		cmocka_unit_test(test_basenamecpy_bad5),
+	};
+	return cmocka_run_group_tests(tests, NULL, NULL);
+}
+
+static void test_basename_01(void **state)
+{
+	const char *path = "/foo/bar";
+	const char *base;
+
+	base = basename(path);
+	assert_string_equal(base, "bar");
+	assert_string_equal(path, "/foo/bar");
+}
+
+static void test_basename_02(void **state)
+{
+	const char *path = "/foo/bar/";
+	const char *base;
+
+	base = basename(path);
+	assert_string_equal(base, "");
+	assert_string_equal(path, "/foo/bar/");
+}
+
+static int test_basename(void) {
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_basename_01),
+		cmocka_unit_test(test_basename_02),
 	};
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }
@@ -946,6 +976,7 @@ int main(void)
 
 	init_test_verbosity(-1);
 	ret += test_basenamecpy();
+	ret += test_basename();
 	ret += test_bitmasks();
 	ret += test_strlcpy();
 	ret += test_strlcat();

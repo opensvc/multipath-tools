@@ -207,7 +207,7 @@ static int teardown(void **state)
 	return 0;
 }
 
-int WRAP_FUNC(open)(const char *pathname, int flags)
+int WRAP_OPEN(const char *pathname, int flags)
 {
 	assert_ptr_equal(pathname, "/dev/mapper/control");
 	assert_int_equal(flags, O_RDWR);
@@ -389,7 +389,7 @@ static void test_init_waiter_bad1(void **state)
 	struct test_data *datap = (struct test_data *)(*state);
 	if (datap == NULL)
 		skip();
-	wrap_will_return(WRAP_FUNC(open), -1);
+	wrap_will_return(WRAP_OPEN, -1);
 	assert_int_equal(init_dmevent_waiter(&datap->vecs), -1);
 	assert_ptr_equal(waiter, NULL);
 }
@@ -400,7 +400,7 @@ static void test_init_waiter_good0(void **state)
 	struct test_data *datap = (struct test_data *)(*state);
 	if (datap == NULL)
 		skip();
-	wrap_will_return(WRAP_FUNC(open), 2);
+	wrap_will_return(WRAP_OPEN, 2);
 	assert_int_equal(init_dmevent_waiter(&datap->vecs), 0);
 	assert_ptr_not_equal(waiter, NULL);
 }

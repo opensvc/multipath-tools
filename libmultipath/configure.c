@@ -453,26 +453,6 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 	return r;
 }
 
-static struct udev_device *
-get_udev_for_mpp(const struct multipath *mpp)
-{
-	dev_t devnum;
-	struct udev_device *udd;
-
-	if (!mpp || !has_dm_info(mpp)) {
-		condlog(1, "%s called with empty mpp", __func__);
-		return NULL;
-	}
-
-	devnum = makedev(mpp->dmi.major, mpp->dmi.minor);
-	udd = udev_device_new_from_devnum(udev, 'b', devnum);
-	if (!udd) {
-		condlog(1, "failed to get udev device for %s", mpp->alias);
-		return NULL;
-	}
-	return udd;
-}
-
 void trigger_partitions_udev_change(struct udev_device *dev,
 				    const char *action, int len)
 {
@@ -586,47 +566,18 @@ trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
 	mpp->needs_paths_uevent = 0;
 }
 
-static int
-sysfs_set_max_sectors_kb(struct multipath *mpp, int is_reload)
+static int sysfs_set_max_sectors_kb(struct multipath *mpp)
 {
 	struct pathgroup * pgp;
 	struct path *pp;
 	char buff[11];
 	ssize_t len;
 	int i, j, ret, err = 0;
-	struct udev_device *udd;
-	int max_sectors_kb = mpp->max_sectors_kb;
 
-	/* by default, do not initialize max_sectors_kb on the device */
-	if (max_sectors_kb == MAX_SECTORS_KB_UNDEF && !is_reload)
+	if (mpp->max_sectors_kb == MAX_SECTORS_KB_UNDEF)
 		return 0;
-	/* on reload, re-apply the user tuning on all the path devices */
-	if (is_reload) {
-		if (!has_dm_info(mpp) &&
-		    dm_get_info(mpp->alias, &mpp->dmi) != 0) {
-			condlog(1, "failed to get dm info for %s", mpp->alias);
-			return 1;
-		}
-		udd = get_udev_for_mpp(mpp);
-		if (!udd) {
-			condlog(1, "failed to get udev device to set max_sectors_kb for %s", mpp->alias);
-			return 1;
-		}
-		ret = sysfs_attr_get_value(udd, "queue/max_sectors_kb", buff,
-					   sizeof(buff));
-		udev_device_unref(udd);
-		if (!sysfs_attr_value_ok(ret, sizeof(buff))) {
-			condlog(1, "failed to get current max_sectors_kb from %s", mpp->alias);
-			return 1;
-		}
-		if (sscanf(buff, "%u\n", &max_sectors_kb) != 1) {
-			condlog(1, "can't parse current max_sectors_kb from %s",
-				mpp->alias);
-			return 1;
-		}
-	}
-	snprintf(buff, 11, "%d", max_sectors_kb);
-	len = strlen(buff);
+
+	len = snprintf(buff, sizeof(buff), "%d", mpp->max_sectors_kb);
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		vector_foreach_slot(pgp->paths, pp, j) {
@@ -944,7 +895,7 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 			return DOMAP_RETRY;
 		}
 
-		sysfs_set_max_sectors_kb(mpp, 0);
+		sysfs_set_max_sectors_kb(mpp);
 		if (is_daemon && mpp->ghost_delay > 0 && count_active_paths(mpp) &&
 		    pathcount(mpp, PATH_UP) == 0)
 			mpp->ghost_delay_tick = mpp->ghost_delay;
@@ -955,7 +906,6 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 
 	case ACT_RELOAD:
 	case ACT_RELOAD_RENAME:
-		sysfs_set_max_sectors_kb(mpp, 1);
 		if (mpp->ghost_delay_tick > 0 && pathcount(mpp, PATH_UP))
 			mpp->ghost_delay_tick = 0;
 		r = dm_addmap_reload(mpp, params, 0);
@@ -963,7 +913,6 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 
 	case ACT_RESIZE:
 	case ACT_RESIZE_RENAME:
-		sysfs_set_max_sectors_kb(mpp, 1);
 		if (mpp->ghost_delay_tick > 0 && pathcount(mpp, PATH_UP))
 			mpp->ghost_delay_tick = 0;
 		r = dm_addmap_reload(mpp, params, 1);
@@ -1156,7 +1105,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 		/*
 		 * at this point, we know we really got a new mp
 		 */
-		mpp = add_map_with_path(vecs, pp1, 0);
+		mpp = add_map_with_path(vecs, pp1, 0, cmpp);
 		if (!mpp) {
 			orphan_path(pp1, "failed to create multipath device");
 			continue;

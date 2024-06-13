@@ -20,6 +20,7 @@
 #include "vector.h"
 #include "structs.h"
 #include "discovery.h"
+#include "wrap64.h"
 #include "globals.c"
 
 #define VPD_BUFSIZ 4096
@@ -58,7 +59,7 @@ static const char vendor_id[] = "Linux";
 static const char test_id[] =
 	"A123456789AbcDefB123456789AbcDefC123456789AbcDefD123456789AbcDef";
 
-int __wrap_ioctl(int fd, unsigned long request, void *param)
+int WRAP_IOCTL(int fd, unsigned long request, void *param)
 {
 	int len;
 	struct sg_io_hdr *io_hdr;
@@ -428,8 +429,8 @@ static void test_vpd_vnd_ ## len ## _ ## wlen(void **state)             \
 	/* Replace spaces, like code under test */			\
 	exp_subst = subst_spaces(exp_wwid);				\
 	free(exp_wwid);							\
-	will_return(__wrap_ioctl, n);					\
-	will_return(__wrap_ioctl, vt->vpdbuf);				\
+	wrap_will_return(WRAP_IOCTL, n);				\
+	wrap_will_return(WRAP_IOCTL, vt->vpdbuf);			\
 	ret = get_vpd_sgio(10, 0x83, 0, vt->wwid, wlen);		\
 	assert_correct_wwid("test_vpd_vnd_" #len "_" #wlen,		\
 			    exp_len, ret, '1', 0, false,		\
@@ -458,8 +459,8 @@ static void test_vpd_str_ ## typ ## _ ## len ## _ ## wlen(void **state) \
 		exp_len--;						\
 	if (exp_len >= wlen)						\
 		exp_len = wlen - 1;					\
-	will_return(__wrap_ioctl, n);					\
-	will_return(__wrap_ioctl, vt->vpdbuf);				\
+	wrap_will_return(WRAP_IOCTL, n);				\
+	wrap_will_return(WRAP_IOCTL, vt->vpdbuf);			\
 	ret = get_vpd_sgio(10, 0x83, 0, vt->wwid, wlen);		\
 	assert_correct_wwid("test_vpd_str_" #typ "_" #len "_" #wlen,	\
 			    exp_len, ret, byte0[type], 0,		\
@@ -495,8 +496,8 @@ static void test_vpd_naa_ ## naa ## _ ## wlen(void **state)             \
 									\
 	n = create_vpd83(vt->vpdbuf, sizeof(vt->vpdbuf), test_id,	\
 			 3, naa, 0);					\
-	will_return(__wrap_ioctl, n);					\
-	will_return(__wrap_ioctl, vt->vpdbuf);				\
+	wrap_will_return(WRAP_IOCTL, n);				\
+	wrap_will_return(WRAP_IOCTL, vt->vpdbuf);			\
 	ret = get_vpd_sgio(10, 0x83, 0, vt->wwid, wlen);		\
 	assert_correct_wwid("test_vpd_naa_" #naa "_" #wlen,		\
 			    exp_len, ret, '3', '0' + naa, true,		\
@@ -518,8 +519,8 @@ static void test_vpd_naa_##NAA##_badlen_##BAD(void **state)	\
 	n = create_vpd83(vt->vpdbuf, sizeof(vt->vpdbuf), test_id, 3, NAA, 0); \
 									\
 	vt->vpdbuf[7] = BAD;						\
-	will_return(__wrap_ioctl, n);					\
-	will_return(__wrap_ioctl, vt->vpdbuf);				\
+	wrap_will_return(WRAP_IOCTL, n);				\
+	wrap_will_return(WRAP_IOCTL, vt->vpdbuf);			\
 	ret = get_vpd_sgio(10, 0x83, 0, vt->wwid, 40);			\
 	assert_int_equal(-ret, -ERR);					\
 }
@@ -545,11 +546,11 @@ static void test_vpd_eui_ ## len ## _ ## wlen ## _ ## sml(void **state)	\
 		/* overwrite the page size to DEFAULT_SGIO_LEN + 1 */	\
 		put_unaligned_be16(255, vt->vpdbuf + 2);		\
 		/* this causes get_vpd_sgio to do a second ioctl */	\
-		will_return(__wrap_ioctl, n);				\
-		will_return(__wrap_ioctl, vt->vpdbuf);			\
+		wrap_will_return(WRAP_IOCTL, n);			\
+		wrap_will_return(WRAP_IOCTL, vt->vpdbuf);		\
 	}								\
-	will_return(__wrap_ioctl, n);					\
-	will_return(__wrap_ioctl, vt->vpdbuf);				\
+	wrap_will_return(WRAP_IOCTL, n);				\
+	wrap_will_return(WRAP_IOCTL, vt->vpdbuf);			\
 	ret = get_vpd_sgio(10, 0x83, 0, vt->wwid, wlen);		\
 	assert_correct_wwid("test_vpd_eui_" #len "_" #wlen "_" #sml,	\
 			    exp_len, ret, '2', 0, true,			\
@@ -571,8 +572,8 @@ static void test_vpd_eui_badlen_##LEN##_##BAD(void **state)	\
 	n = create_vpd83(vt->vpdbuf, sizeof(vt->vpdbuf), test_id, 2, 0, LEN); \
 									\
 	vt->vpdbuf[7] = BAD;						\
-	will_return(__wrap_ioctl, n);					\
-	will_return(__wrap_ioctl, vt->vpdbuf);				\
+	wrap_will_return(WRAP_IOCTL, n);				\
+	wrap_will_return(WRAP_IOCTL, vt->vpdbuf);			\
 	ret = get_vpd_sgio(10, 0x83, 0, vt->wwid, 40);			\
 	assert_int_equal(ret, ERR);					\
 	if (ERR >= 0)							\
@@ -600,8 +601,8 @@ static void test_vpd80_ ## size ## _ ## len ## _ ## wlen(void **state)  \
 		exp_len = wlen - 1;					\
 	n = create_vpd80(vt->vpdbuf, sizeof(vt->vpdbuf), input,		\
 			 size, len);					\
-	will_return(__wrap_ioctl, n);					\
-	will_return(__wrap_ioctl, vt->vpdbuf);				\
+	wrap_will_return(WRAP_IOCTL, n);				\
+	wrap_will_return(WRAP_IOCTL, vt->vpdbuf);			\
 	ret = get_vpd_sgio(10, 0x80, 0, vt->wwid, wlen);		\
 	assert_correct_wwid("test_vpd80_" #size "_" #len "_" #wlen,	\
 			    exp_len, ret, 0, 0, false,			\

@@ -4,23 +4,33 @@ ENV{DM_UUID}!="mpath-?*", GOTO="mpath_end"
 
 IMPORT{db}="MPATH_DEVICE_READY"
 
+# device-mapper rules v2 compatibility
+ENV{.DM_SUSPENDED}!="?*", ENV{.DM_SUSPENDED}="$env{DM_SUSPENDED}"
+
 # Coldplug event while device is suspended (e.g. during a reload)
-ACTION=="add", ENV{DM_ACTIVATION}=="1", ENV{DM_SUSPENDED}=="1", \
+ACTION=="add", ENV{DM_ACTIVATION}=="1", ENV{.DM_SUSPENDED}=="1", \
 	PROGRAM="/bin/logger -t 11-dm-mpath.rules -p daemon.warning \"Coldplug event for suspended device\"", \
 	ENV{DM_COLDPLUG_SUSPENDED}="1", GOTO="scan_import"
 
-# Coldplug event. DM_UDEV_DISABLE_OTHER_RULES_FLAG has been restored
+# Coldplug event. Import previously set properties.
+ACTION!="add", GOTO="mpath_coldplug_end"
+ENV{DM_ACTIVATION}!="1", GOTO="mpath_coldplug_end"
+ENV{DM_UDEV_RULES_VSN}!="1|2", ENV{.DM_SUSPENDED}!="1", GOTO="scan_import"
+# With DM rules < v3, DM_UDEV_DISABLE_OTHER_RULES_FLAG has been restored
 # from DB in 10-dm.rules. If the device is not suspended, clear the flag.
 # This is safe for multipath where DM_UDEV_DISABLE_OTHER_RULES_FLAG is basically
 # equivalent to DM_SUSPENDED==1 || DISK_RO==1
-ACTION=="add", ENV{DM_ACTIVATION}=="1", ENV{DM_SUSPENDED}!="1", ENV{DISK_RO}!="1", \
+ENV{DM_UDEV_RULES_VSN}=="1|2", ENV{.DM_SUSPENDED}!="1", ENV{DISK_RO}!="1", \
 	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="", GOTO="scan_import"
+LABEL="mpath_coldplug_end"
 
 # If this uevent didn't come from dm, don't try to update the
 # device state
+# Note that .MPATH_DEVICE_READY_OLD=="" here. Thus we won't activate the
+# device below at mpath_is_ready, which is correct.
 ENV{DM_COOKIE}!="?*", ENV{DM_ACTION}!="PATH_*", \
-	IMPORT{db}="DM_NOSCAN", IMPORT{db}="DM_COLDPLUG_SUSPENDED", \
-	GOTO="scan_import"
+	IMPORT{db}="DM_COLDPLUG_SUSPENDED", \
+	GOTO="check_mpath_ready"
 
 ENV{.MPATH_DEVICE_READY_OLD}="$env{MPATH_DEVICE_READY}"
 
@@ -28,13 +38,13 @@ ENV{.MPATH_DEVICE_READY_OLD}="$env{MPATH_DEVICE_READY}"
 # table with no active devices. If this happens, mark the
 # device not ready
 ENV{DM_SUBSYSTEM_UDEV_FLAG2}=="1", ENV{MPATH_DEVICE_READY}="0", \
-	GOTO="mpath_action"
+	GOTO="check_mpath_unchanged"
 
 # If the last path has failed mark the device not ready
 # Note that DM_NR_VALID_PATHS is only set for PATH_FAILED|PATH_REINSTATED
 # events.
 # This may not be reliable, as events aren't necessarily received in order.
-ENV{DM_NR_VALID_PATHS}=="0", ENV{MPATH_DEVICE_READY}="0", GOTO="mpath_action"
+ENV{DM_NR_VALID_PATHS}=="0", ENV{MPATH_DEVICE_READY}="0", GOTO="check_mpath_unchanged"
 
 # Don't run multipath -U during "coldplug" after switching root,
 # because paths are just being added to the udev db.
@@ -43,28 +53,25 @@ ACTION=="add", ENV{.MPATH_DEVICE_READY_OLD}=="1", GOTO="paths_ok"
 # Check the map state directly with multipath -U.
 # This doesn't attempt I/O on the device.
 PROGRAM=="@BINDIR@/multipath -U -v1 %k", GOTO="paths_ok"
-ENV{MPATH_DEVICE_READY}="0", GOTO="mpath_action"
+ENV{MPATH_DEVICE_READY}="0", GOTO="check_mpath_unchanged"
+
 LABEL="paths_ok"
 
-# Don't mark a device ready on a PATH_FAILED event. even if
-# DM_NR_VALID_PATHS is greater than 0. Just keep the existing
-# value
-ENV{DM_ACTION}=="PATH_FAILED", GOTO="mpath_action"
+# For PATH_FAILED events, keep the existing value of MPATH_DEVICE_READY.
+# If it's not PATH_FAILED, this event is either a PATH_REINSTATED or a
+# table reload where there are active paths. Mark the device ready.
+ENV{DM_ACTION}!="PATH_FAILED", ENV{MPATH_DEVICE_READY}="1"
 
-# This event is either a PATH_REINSTATED or a table reload where
-# there are active paths. Mark the device ready
-ENV{MPATH_DEVICE_READY}="1"
-
-LABEL="mpath_action"
+LABEL="check_mpath_unchanged"
 
 # A previous coldplug event occurred while the device was suspended.
 # Activation might have been partially skipped. Activate the device now,
 # i.e. disable the MPATH_UNCHANGED logic and set DM_ACTIVATION=1.
 IMPORT{db}="DM_COLDPLUG_SUSPENDED"
-ENV{DM_COLDPLUG_SUSPENDED}=="1", ENV{DM_SUSPENDED}!="1", \
+ENV{DM_COLDPLUG_SUSPENDED}=="1", ENV{.DM_SUSPENDED}!="1", \
 	ENV{DM_ACTIVATION}="1", ENV{MPATH_UNCHANGED}="0", \
 	PROGRAM="/bin/logger -t 11-dm-mpath.rules -p daemon.notice \"Forcing activation of previously suspended device\"", \
-	GOTO="force_activation"
+	GOTO="check_mpath_ready"
 
 # DM_SUBSYSTEM_UDEV_FLAG0 is the "RELOAD" flag for multipath subsystem.
 # Drop the DM_ACTIVATION flag here as mpath reloads tables if any of its
@@ -80,30 +87,33 @@ ENV{DM_SUBSYSTEM_UDEV_FLAG0}=="1", \
 ENV{DM_ACTION}=="PATH_FAILED|PATH_REINSTATED", \
 	ENV{DM_ACTIVATION}="0", ENV{MPATH_UNCHANGED}="1"
 
-LABEL="force_activation"
+LABEL="check_mpath_ready"
 
+ENV{MPATH_DEVICE_READY}!="0", GOTO="mpath_is_ready"
 # Do not initiate scanning if no path is available,
 # otherwise there would be a hang or IO error on access.
 # We'd like to avoid this, especially within udev processing.
-ENV{MPATH_DEVICE_READY}=="0", ENV{DM_NOSCAN}="1"
-
-# Skip all foreign rules if no path is available.
+# This is communicated to later rules in .DM_NOSCAN.
+# Likewise, skip all foreign rules if no path is available.
 # Use DM_UDEV_DISABLE_OTHER_RULES_FLAG to communicate this
-# to upper layers. The original value will be restored in a late
-# udev rule.
-ENV{MPATH_DEVICE_READY}=="0", \
-	ENV{.MPATH_SAVE_DISABLE_OTHER_RULES_FLAG}="$env{DM_UDEV_DISABLE_OTHER_RULES_FLAG}", \
-	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="1"
+# to upper layers. With dm rules < v3, save the original value here;
+# it will be restored in a late udev rule.
+ENV{DM_UDEV_RULES_VSN}=="1|2", \
+	ENV{.MPATH_SAVE_DISABLE_OTHER_RULES_FLAG}="$env{DM_UDEV_DISABLE_OTHER_RULES_FLAG}"
+ENV{.DM_NOSCAN}="1", ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="1"
+GOTO="scan_import"
+
+LABEL="mpath_is_ready"
 
 # If the device comes back online, set DM_ACTIVATION so that
 # upper layers do a rescan. If the device is currently suspended,
 # we have to postpone the activation until the next event.
-ENV{MPATH_DEVICE_READY}=="0", GOTO="dont_activate"
-ENV{.MPATH_DEVICE_READY_OLD}!="0", GOTO="dont_activate"
-ENV{DM_SUSPENDED}=="1", ENV{MPATH_DEVICE_READY}="0", GOTO="dont_activate"
+# In this case, we have to set MPATH_DEVICE_READY=0; otherwise, the
+# MPATH_UNCHANGED logic will cause later rules to skipped in the next event.
+ENV{.MPATH_DEVICE_READY_OLD}!="0", GOTO="scan_import"
+ENV{.DM_SUSPENDED}=="1", ENV{MPATH_DEVICE_READY}="0", GOTO="scan_import"
 
 ENV{DM_ACTIVATION}="1", ENV{MPATH_UNCHANGED}="0"
-LABEL="dont_activate"
 
 # The code to check multipath state ends here. We need to set
 # properties and symlinks regardless whether the map is usable or
@@ -115,14 +125,17 @@ LABEL="scan_import"
 # have never been properly set. Don't import them.
 ENV{DM_UDEV_PRIMARY_SOURCE_FLAG}!="1", GOTO="import_end"
 
+# DM rules v3 will import missing properties on 13-dm-disk.rules.
+# No need to do it here.
+ENV{DM_UDEV_RULES_VSN}!="1|2", GOTO="import_end"
+
 # Don't import the properties from db if we will run blkid later.
-ENV{DM_NOSCAN}!="1", ENV{DM_DISABLE_OTHER_RULES_FLAG}!="1", GOTO="import_end"
+ENV{.DM_NOSCAN}!="1", ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}!="1", GOTO="import_end"
 
 IMPORT{db}="ID_FS_TYPE"
 IMPORT{db}="ID_FS_USAGE"
 IMPORT{db}="ID_FS_UUID_ENC"
 IMPORT{db}="ID_FS_LABEL_ENC"
-IMPORT{db}="ID_FS_VERSION"
 IMPORT{db}="ID_PART_ENTRY_NAME"
 IMPORT{db}="ID_PART_ENTRY_UUID"
 IMPORT{db}="ID_PART_ENTRY_SCHEME"
@@ -131,7 +144,10 @@ IMPORT{db}="ID_PART_GPT_AUTO_ROOT"
 LABEL="import_end"
 
 # Reset previous DM_COLDPLUG_SUSPENDED if activation happens now
-ENV{DM_SUSPENDED}!="1", ENV{DM_ACTIVATION}=="1", ENV{DM_COLDPLUG_SUSPENDED}=""
+ENV{.DM_SUSPENDED}!="1", ENV{DM_ACTIVATION}=="1", ENV{DM_COLDPLUG_SUSPENDED}=""
+
+# device-mapper rules v2 compatibility for 13-dm-disk.rules
+ENV{DM_UDEV_RULES_VSN}=="1|2", ENV{DM_NOSCAN}="$env{.DM_NOSCAN}"
 
 # Multipath maps should take precedence over their members.
 ENV{DM_UDEV_LOW_PRIORITY_FLAG}!="1", OPTIONS+="link_priority=50"

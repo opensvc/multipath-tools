@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_23.0.0 {
+LIBMULTIPATH_24.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -141,6 +141,7 @@ global:
 	need_io_err_check;
 	orphan_path;
 	parse_prkey_flags;
+	partmap_in_use;
 	pathcount;
 	path_discovery;
 	path_get_tpgs;

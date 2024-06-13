@@ -584,19 +584,42 @@ int update_multipath (struct vectors *vecs, char *mapname)
 static bool
 flush_map_nopaths(struct multipath *mpp, struct vectors *vecs) {
 	int r;
+	bool is_queueing = true;
 
-	/*
-	 * flush_map will fail if the device is open
-	 */
-	if (mpp->flush_on_last_del == FLUSH_ENABLED) {
-		condlog(2, "%s Last path deleted, disabling queueing",
-			mpp->alias);
-		mpp->retry_tick = 0;
-		mpp->no_path_retry = NO_PATH_RETRY_FAIL;
-		mpp->disable_queueing = 1;
-		mpp->stat_map_failures++;
-		dm_queue_if_no_path(mpp, 0);
+	if (mpp->features)
+		is_queueing = strstr(mpp->features, "queue_if_no_path");
+
+	/* It's not safe to do a remove of a map that has "queue_if_no_path"
+	 * set, since there could be outstanding IO which will cause
+	 * multipathd to hang while attempting the remove */
+	if (mpp->flush_on_last_del == FLUSH_NEVER && is_queueing) {
+		condlog(2, "%s: map is queueing, can't remove", mpp->alias);
+		return false;
 	}
+	if (mpp->flush_on_last_del == FLUSH_UNUSED &&
+            partmap_in_use(mpp->alias, NULL) && is_queueing) {
+		condlog(2, "%s: map in use and queueing, can't remove",
+			mpp->alias);
+		return false;
+	}
+	/*
+	 * This will flush FLUSH_NEVER devices and FLUSH_UNUSED devices
+	 * that are in use, but only if they are already marked as not
+	 * queueing. That is just to make absolutely certain that they
+	 * really are not queueing, like they claim.
+	 */
+	condlog(is_queueing ? 2 : 3, "%s Last path deleted, disabling queueing",
+		mpp->alias);
+	mpp->retry_tick = 0;
+	mpp->no_path_retry = NO_PATH_RETRY_FAIL;
+	mpp->disable_queueing = 1;
+	mpp->stat_map_failures++;
+	if (dm_queue_if_no_path(mpp, 0) != 0) {
+		condlog(0, "%s: failed to disable queueing. Not removing",
+			mpp->alias);
+		return false;
+	}
+
 	r = dm_flush_map_nopaths(mpp->alias, mpp->deferred_remove);
 	if (r != DM_FLUSH_OK) {
 		if (r == DM_FLUSH_DEFERRED) {
@@ -636,7 +659,7 @@ update_map (struct multipath *mpp, struct vectors *vecs, int new_map)
 
 retry:
 	condlog(4, "%s: updating new map", mpp->alias);
-	if (adopt_paths(vecs->pathvec, mpp)) {
+	if (adopt_paths(vecs->pathvec, mpp, NULL)) {
 		condlog(0, "%s: failed to adopt paths for new map update",
 			mpp->alias);
 		retries = -1;
@@ -1231,7 +1254,7 @@ rescan:
 	if (mpp) {
 		condlog(4,"%s: adopting all paths for path %s",
 			mpp->alias, pp->dev);
-		if (adopt_paths(vecs->pathvec, mpp) || pp->mpp != mpp ||
+		if (adopt_paths(vecs->pathvec, mpp, NULL) || pp->mpp != mpp ||
 		    find_slot(mpp->paths, pp) == -1)
 			goto fail; /* leave path added to pathvec */
 
@@ -1245,7 +1268,7 @@ rescan:
 			return 0;
 		}
 		condlog(4,"%s: creating new map", pp->dev);
-		if ((mpp = add_map_with_path(vecs, pp, 1))) {
+		if ((mpp = add_map_with_path(vecs, pp, 1, NULL))) {
 			mpp->action = ACT_CREATE;
 			/*
 			 * We don't depend on ACT_CREATE, as domap will
@@ -3171,14 +3194,23 @@ static void
 setscheduler (void)
 {
 	int res;
-	static struct sched_param sched_param = {
-		.sched_priority = 99
-	};
+	static struct sched_param sched_param;
+	struct rlimit rlim;
 
-	res = sched_setscheduler (0, SCHED_RR, &sched_param);
+	if (getrlimit(RLIMIT_RTPRIO, &rlim) < 0 || rlim.rlim_max == 0)
+		return;
+
+	sched_param.sched_priority = rlim.rlim_max > INT_MAX ? INT_MAX :
+				     rlim.rlim_max;
+	res = sched_get_priority_max(SCHED_RR);
+	if (res > 0 && res < sched_param.sched_priority)
+		sched_param.sched_priority = res;
+
+	res = sched_setscheduler(0, SCHED_RR, &sched_param);
 
 	if (res == -1)
-		condlog(LOG_WARNING, "Could not set SCHED_RR at priority 99");
+		condlog(2, "Could not set SCHED_RR at priority %d",
+			sched_param.sched_priority);
 	return;
 }
 

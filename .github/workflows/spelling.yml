@@ -63,7 +63,9 @@ on:
     tags-ignore:
     - "**"
     paths:
+    - '.github/workflows/spelling.yml'
     - 'README*'
+    - 'NEWS.md'
     - '**.3'
     - '**.5'
     - '**.8'

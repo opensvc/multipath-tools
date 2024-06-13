@@ -901,6 +901,11 @@ sysfs_set_scsi_tmo (struct config *conf, struct multipath *mpp)
 		uint64_t no_path_retry_tmo =
 			(uint64_t)mpp->no_path_retry * conf->checkint;
 
+		/* pad no_path_retry_tmo by one standard check interval
+		 * plus one second per minute to account for timing
+		 * issues with the rechecks */
+		no_path_retry_tmo += no_path_retry_tmo / 60 + DEFAULT_CHECKINT;
+
 		if (no_path_retry_tmo > MAX_DEV_LOSS_TMO)
 			min_dev_loss = MAX_DEV_LOSS_TMO;
 		else
