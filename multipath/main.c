@@ -842,6 +842,8 @@ main (int argc, char *argv[])
 	char *dev = NULL;
 	struct config *conf;
 	bool enable_foreign = false;
+	int retrigger_tries_ori;
+	int force_sync_ori;
 
 	libmultipath_init();
 	if (atexit(dm_lib_exit) || atexit(libmultipath_exit))
@@ -852,7 +854,9 @@ main (int argc, char *argv[])
 	if (atexit(uninit_config))
 		condlog(1, "failed to register cleanup handler for config: %m");
 	conf = get_multipath_config();
+	retrigger_tries_ori = conf->retrigger_tries;
 	conf->retrigger_tries = 0;
+	force_sync_ori = conf->force_sync;
 	conf->force_sync = 1;
 	if (atexit(cleanup_vecs))
 		condlog(1, "failed to register cleanup handler for vecs: %m");
@@ -924,10 +928,14 @@ main (int argc, char *argv[])
 				conf->find_multipaths = FIND_MULTIPATHS_GREEDY;
 			break;
 		case 't':
+			conf->retrigger_tries = retrigger_tries_ori;
+			conf->force_sync = force_sync_ori;
 			r = dump_config(conf, NULL, NULL) ? RTVL_FAIL : RTVL_OK;
 			goto out;
 		case 'T':
 			cmd = CMD_DUMP_CONFIG;
+			conf->retrigger_tries = retrigger_tries_ori;
+			conf->force_sync = force_sync_ori;
 			break;
 		case 'h':
 			usage(argv[0]);
