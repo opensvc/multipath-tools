@@ -36,6 +36,7 @@ jobs:
           - alpine
           - debian-sid
           - fedora-rawhide
+          - opensuse-tumbleweed
         arch: [amd64, ppc64le, aarch64, s390x, 386, arm/v7]
         exclude:
           - os: fedora-rawhide
