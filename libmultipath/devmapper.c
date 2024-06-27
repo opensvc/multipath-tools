@@ -1412,7 +1412,7 @@ dm_mapname(int major, int minor)
 	struct dm_task *dmt;
 	int r;
 
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_STATUS)))
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_INFO)))
 		return NULL;
 
 	if (!dm_task_set_major(dmt, major) ||
@@ -1422,7 +1422,7 @@ dm_mapname(int major, int minor)
 	dm_task_no_open_count(dmt);
 	r = libmp_dm_task_run(dmt);
 	if (!r) {
-		dm_log_error(2, DM_DEVICE_STATUS, dmt);
+		dm_log_error(2, DM_DEVICE_INFO, dmt);
 		goto bad;
 	}
 
