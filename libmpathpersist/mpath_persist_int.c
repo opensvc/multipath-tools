@@ -185,7 +185,7 @@ static int mpath_get_map(vector curmp, vector pathvec, int fd, char **palias,
 
 	condlog(3, "alias = %s", alias);
 
-	if (dm_map_present(alias) && dm_is_mpath(alias) != DM_IS_MPATH_YES) {
+	if (dm_is_mpath(alias) != DM_IS_MPATH_YES) {
 		condlog(3, "%s: not a multipath device.", alias);
 		goto out;
 	}
