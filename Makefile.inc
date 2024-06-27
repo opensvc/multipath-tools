@@ -100,9 +100,15 @@ MODPROBE_UNIT := $(shell test "0$(SYSTEMD)" -lt 245 2>/dev/null || \
 			echo "modprobe@dm_multipath.service")
 
 OPTFLAGS	:= -O2 -g $(STACKPROT) --param=ssp-buffer-size=4
-WARNFLAGS	:= -Werror -Wall -Wextra -Wformat=2 $(WFORMATOVERFLOW) -Werror=implicit-int \
-		  -Werror=implicit-function-declaration -Werror=format-security \
-		  $(WNOCLOBBERED) -Werror=cast-qual $(ERROR_DISCARDED_QUALIFIERS) $(W_URCU_TYPE_LIMITS)
+
+# Set WARN_ONLY=1 to avoid compilation erroring out due to warnings. Useful during development.
+WARN_ONLY       :=
+ERROR           := $(if $(WARN_ONLY),,error=)
+WERROR          := $(if $(WARN_ONLY),,-Werror)
+WARNFLAGS	:= $(WERROR) -Wall -Wextra -Wformat=2 $(WFORMATOVERFLOW) -W$(ERROR)implicit-int \
+		  -W$(ERROR)implicit-function-declaration -W$(ERROR)format-security \
+		  $(WNOCLOBBERED) -W$(ERROR)cast-qual $(ERROR_DISCARDED_QUALIFIERS) $(W_URCU_TYPE_LIMITS)
+
 CPPFLAGS	:= $(FORTIFY_OPT) $(CPPFLAGS) $(D_URCU_VERSION) \
 		   -D_FILE_OFFSET_BITS=64 \
 		   -DBIN_DIR=\"$(bindir)\" -DMULTIPATH_DIR=\"$(TGTDIR)$(plugindir)\" \

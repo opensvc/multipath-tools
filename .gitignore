@@ -8,6 +8,7 @@
 *.gz
 *.d
 \#*
+compile_commands.json
 config.mk
 cscope.files
 cscope.out

@@ -83,7 +83,7 @@ abi-test:	abi reference-abi $(wildcard abi/*.abi)
 # Requires bear (https://github.com/rizsotto/Bear)
 compile_commands.json: Makefile Makefile.inc $(BUILDDIRS:=/Makefile)
 	$(Q)$(MAKE) clean
-	$(Q)bear -- $(MAKE)
+	$(Q)bear -- $(MAKE) WARN_ONLY=1 test-progs || rm $@
 
 libmpathutil libdmmp: libmpathcmd
 libmultipath: libmpathutil
@@ -109,7 +109,7 @@ $(BUILDDIRS:=.uninstall):
 clean:
 	@touch config.mk
 	$(Q)$(MAKE) $(BUILDDIRS:=.clean) tests.clean || true
-	$(Q)$(RM) -r abi abi.tar.gz abi-test compile_commands.json config.mk
+	$(Q)$(RM) -r abi abi.tar.gz abi-test config.mk
 
 install: $(BUILDDIRS:=.install)
 uninstall: $(BUILDDIRS:=.uninstall)
