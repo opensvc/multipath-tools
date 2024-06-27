@@ -154,8 +154,6 @@ static int dm_get_events(void)
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_LIST)))
 		return -1;
 
-	dm_task_no_open_count(dmt);
-
 	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_LIST, dmt);
 		goto fail;

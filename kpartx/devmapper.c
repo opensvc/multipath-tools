@@ -35,8 +35,6 @@ int dm_prereq(char * str, uint32_t x, uint32_t y, uint32_t z)
 	if (!(dmt = dm_task_create(DM_DEVICE_LIST_VERSIONS)))
 		return 1;
 
-	dm_task_no_open_count(dmt);
-
 	if (!dm_task_run(dmt))
 		goto out;
 
@@ -78,7 +76,6 @@ int dm_simplecmd(int task, const char *name, int no_flush, __DM_API_COOKIE_UNUSE
 	if (!dm_task_set_name(dmt, name))
 		goto out;
 
-	dm_task_no_open_count(dmt);
 	dm_task_skip_lockfs(dmt);
 
 	if (no_flush)
@@ -175,8 +172,6 @@ int dm_addmap(int task, const char *name, const char *target,
 	if (!dm_task_set_gid(dmt, gid))
 		goto addout;
 
-	dm_task_no_open_count(dmt);
-
 #ifdef LIBDM_API_COOKIE
 	if (!udev_sync)
 		udev_flags = DM_UDEV_DISABLE_LIBRARY_FALLBACK;
@@ -212,8 +207,6 @@ static int dm_map_present(char *str, char **uuid)
 	if (!dm_task_set_name(dmt, str))
 		goto out;
 
-	dm_task_no_open_count(dmt);
-
 	if (!dm_task_run(dmt))
 		goto out;
 
@@ -247,7 +240,6 @@ static int dm_rename (const char *old, const char *new)
 
 	if (!dm_task_set_name(dmt, old) ||
 	    !dm_task_set_newname(dmt, new) ||
-	    !dm_task_no_open_count(dmt) ||
 	    !dm_task_set_cookie(dmt, &cookie, udev_flags))
 		goto out;
 
@@ -291,7 +283,6 @@ dm_mapname(int major, int minor)
 	if (!(dmt = dm_task_create(DM_DEVICE_INFO)))
 		return NULL;
 
-	dm_task_no_open_count(dmt);
 	dm_task_set_major(dmt, major);
 	dm_task_set_minor(dmt, minor);
 
@@ -352,7 +343,6 @@ dm_mapuuid(const char *mapname)
 
 	if (!dm_task_set_name(dmt, mapname))
 		goto out;
-	dm_task_no_open_count(dmt);
 
 	if (!dm_task_run(dmt))
 		goto out;
@@ -407,7 +397,6 @@ dm_get_map(const char *mapname, char * outparams)
 
 	if (!dm_task_set_name(dmt, mapname))
 		goto out;
-	dm_task_no_open_count(dmt);
 
 	if (!dm_task_run(dmt))
 		goto out;
@@ -473,8 +462,6 @@ dm_type(const char * name, char * type)
 
 	if (!dm_task_set_name(dmt, name))
 		goto out;
-
-	dm_task_no_open_count(dmt);
 
 	if (!dm_task_run(dmt))
 		goto out;
@@ -544,8 +531,6 @@ do_foreach_partmaps (const char * mapname, const char *uuid,
 
 	if (!(dmt = dm_task_create(DM_DEVICE_LIST)))
 		return 1;
-
-	dm_task_no_open_count(dmt);
 
 	if (!dm_task_run(dmt))
 		goto out;

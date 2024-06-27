@@ -108,8 +108,6 @@ static int waiteventloop (struct event_thread *waiter)
 		return 1;
 	}
 
-	dm_task_no_open_count(waiter->dmt);
-
 	/* wait */
 	sigemptyset(&set);
 	sigaddset(&set, SIGUSR2);

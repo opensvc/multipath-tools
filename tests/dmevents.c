@@ -267,15 +267,6 @@ struct dm_task *__wrap_libmp_dm_task_create(int task)
 	return mock_type(struct dm_task *);
 }
 
-int __real_dm_task_no_open_count(struct dm_task *dmt);
-int __wrap_dm_task_no_open_count(struct dm_task *dmt)
-{
-	if (!setup_done)
-		return __real_dm_task_no_open_count(dmt);
-	assert_ptr_equal((struct test_data *)dmt, &data);
-	return mock_type(int);
-}
-
 int __real_dm_task_run(struct dm_task *dmt);
 int __wrap_dm_task_run(struct dm_task *dmt)
 {
@@ -554,7 +545,6 @@ static void test_get_events_bad1(void **state)
 		skip();
 
 	will_return(__wrap_libmp_dm_task_create, &data);
-	will_return(__wrap_dm_task_no_open_count, 1);
 	will_return(__wrap_dm_task_run, 0);
 	assert_int_equal(dm_get_events(), -1);
 }
@@ -567,7 +557,6 @@ static void test_get_events_bad2(void **state)
 		skip();
 
 	will_return(__wrap_libmp_dm_task_create, &data);
-	will_return(__wrap_dm_task_no_open_count, 1);
 	will_return(__wrap_dm_task_run, 1);
 	will_return(__wrap_dm_task_get_names, 0);
 	assert_int_equal(dm_get_events(), -1);
@@ -582,7 +571,6 @@ static void test_get_events_good0(void **state)
 
 	assert_int_equal(add_dm_device_event("foo", 1, 5), 0);
 	will_return(__wrap_libmp_dm_task_create, &data);
-	will_return(__wrap_dm_task_no_open_count, 1);
 	will_return(__wrap_dm_task_run, 1);
 	will_return(__wrap_dm_task_get_names, 1);
 	assert_int_equal(dm_get_events(), 0);
@@ -617,7 +605,6 @@ static void test_get_events_good1(void **state)
 	assert_int_equal(add_dm_device_event("foo", 1, 6), 0);
 	assert_int_equal(remove_dm_device_event("xyzzy"), 0);
 	will_return(__wrap_libmp_dm_task_create, &data);
-	will_return(__wrap_dm_task_no_open_count, 1);
 	will_return(__wrap_dm_task_run, 1);
 	will_return(__wrap_dm_task_get_names, 1);
 	assert_int_equal(dm_get_events(), 0);
