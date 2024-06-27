@@ -17,13 +17,11 @@
 #include <linux/dm-ioctl.h>
 
 #include "util.h"
-#include "checkers.h"
 #include "vector.h"
 #include "structs.h"
 #include "debug.h"
 #include "devmapper.h"
 #include "sysfs.h"
-#include "config.h"
 #include "wwids.h"
 #include "version.h"
 #include "time-util.h"
