@@ -1025,49 +1025,16 @@ out:
 	return r;
 }
 
-/*
- * Return
- *   1 : map with uuid exists
- *   0 : map with uuid doesn't exist
- *  -1 : error
- */
-int
-dm_map_present_by_uuid(const char *uuid)
+int dm_map_present_by_wwid(const char *wwid)
 {
-	struct dm_task *dmt;
-	struct dm_info info;
-	char prefixed_uuid[WWID_SIZE + UUID_PREFIX_LEN];
-	int r = -1;
+	char tmp[DM_UUID_LEN];
 
-	if (!uuid || uuid[0] == '\0')
-		return 0;
+	if (safe_sprintf(tmp, UUID_PREFIX "%s", wwid))
+		return DMP_ERR;
 
-	if (safe_sprintf(prefixed_uuid, UUID_PREFIX "%s", uuid))
-		goto out;
-
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_INFO)))
-		goto out;
-
-	if (!dm_task_set_uuid(dmt, prefixed_uuid))
-		goto out_task;
-
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_INFO, dmt);
-		goto out_task;
-	}
-
-	if (!dm_task_get_info(dmt, &info))
-		goto out_task;
-
-	r = !!info.exists;
-
-out_task:
-	dm_task_destroy(dmt);
-out:
-	if (r < 0)
-		condlog(3, "%s: dm command failed in %s: %s", uuid,
-			__FUNCTION__, strerror(errno));
-	return r;
+	return libmp_mapinfo(DM_MAP_BY_UUID,
+			     (mapid_t) { .str = tmp },
+			     (mapinfo_t) { .name = NULL });
 }
 
 static int dm_dev_t (const char *mapname, char *dev_t, int len)
