@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_24.0.0 {
+LIBMULTIPATH_25.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -134,6 +134,7 @@ global:
 	libmp_get_version;
 	libmp_get_multipath_config;
 	libmp_dm_task_run;
+	libmp_mapinfo;
 	libmp_put_multipath_config;
 	libmp_udev_set_sync_support;
 	libmultipath_exit;

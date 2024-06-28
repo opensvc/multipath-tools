@@ -1,5 +1,6 @@
 #ifndef _DEVMAPPER_H
 #define _DEVMAPPER_H
+#include <linux/dm-ioctl.h>
 #include "autoconfig.h"
 #include "structs.h"
 
@@ -31,7 +32,76 @@ enum {
 	DMP_ERR,
 	DMP_OK,
 	DMP_NOT_FOUND,
+	DMP_NO_MATCH,
 };
+
+/**
+ * enum mapinfo_flags: input flags for libmp_mapinfo()
+ */
+enum __mapinfo_flags {
+	/** DM_MAP_BY_NAME: identify map by device-mapper name from @name */
+	DM_MAP_BY_NAME      = 0,
+	/** DM_MAP_BY_UUID: identify map by device-mapper UUID from @uuid */
+	DM_MAP_BY_UUID,
+	/** DM_MAP_BY_DEV: identify map by major/minor number from @dmi */
+	DM_MAP_BY_DEV,
+	/** DM_MAP_BY_DEVT: identify map by a dev_t */
+	DM_MAP_BY_DEVT,
+	__DM_MAP_BY_MASK    = (1 << 8) - 1,
+	/* Fail if target type is not multipath */
+	MAPINFO_MPATH_ONLY  = (1 << 8),
+	/* Fail if target type is not "partition" (linear) */
+	MAPINFO_PART_ONLY   = (1 << 9),
+	__MAPINFO_TGT_TYPE  = (MAPINFO_MPATH_ONLY | MAPINFO_PART_ONLY),
+};
+
+typedef union libmp_map_identifier {
+	const char *str;
+	struct {
+		int major;
+		int minor;
+	} _u;
+	dev_t devt;
+} mapid_t;
+
+typedef struct libmp_map_info {
+	/** @name: name of the map.
+	 * If non-NULL, it must point to an array of WWID_SIZE bytes
+	 */
+	char *name;
+	/** @uuid: UUID of the map.
+	 * If non-NULL it must point to an array of DM_UUID_LEN bytes
+	 */
+	char *uuid;
+	/** @dmi: Basic info, must point to a valid dm_info buffer if non-NULL */
+	struct dm_info *dmi;
+	/** @target: target params, *@target will be allocated if @target is non-NULL*/
+	char **target;
+	/** @size: target size. */
+	unsigned long long *size;
+	/** @status: target status, *@status will be allocated if @status is non-NULL */
+	char **status;
+} mapinfo_t;
+
+/**
+ * libmp_mapinfo(): obtain information about a map from the kernel
+ * @param flags: see __mapinfo_flags above.
+ *     Exactly one of DM_MAP_BY_NAME, DM_MAP_BY_UUID, and DM_MAP_BY_DEV must be set.
+ * @param id: string or major/minor to identify the map to query
+ * @param info: output parameters, see above. Non-NULL elements will be filled in.
+ * @returns:
+ *     DMP_OK if successful.
+ *     DMP_NOT_FOUND if the map wasn't found, or has no or multiple targets.
+ *     DMP_NO_MATCH if the map didn't match @tgt_type (see above).
+ *     DMP_ERR if some other error occurred.
+ *
+ * This function obtains the requested information for the device-mapper map
+ * identified by the input parameters.
+ * Output parameters are only filled in if the return value is DMP_OK.
+ * For target / status / size information, the  map's table should contain
+ * only one target (usually multipath or linear).
+ */
+int libmp_mapinfo(int flags, mapid_t id, mapinfo_t info);
 
 int dm_prereq(unsigned int *v);
 void skip_libmp_dm_init(void);

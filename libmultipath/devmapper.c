@@ -14,7 +14,6 @@
 #include <errno.h>
 #include <syslog.h>
 #include <sys/sysmacros.h>
-#include <linux/dm-ioctl.h>
 
 #include "util.h"
 #include "vector.h"
@@ -602,6 +601,199 @@ bool
 has_dm_info(const struct multipath *mpp)
 {
 	return (mpp && mpp->dmi.exists != 0);
+}
+
+static int libmp_set_map_identifier(int flags, mapid_t id, struct dm_task *dmt)
+{
+	switch (flags & __DM_MAP_BY_MASK) {
+	case DM_MAP_BY_UUID:
+		if (!id.str || !(*id.str))
+			return 0;
+		return dm_task_set_uuid(dmt, id.str);
+	case DM_MAP_BY_NAME:
+		if (!id.str || !(*id.str))
+			return 0;
+		return dm_task_set_name(dmt, id.str);
+	case DM_MAP_BY_DEV:
+		if (!dm_task_set_major(dmt, id._u.major))
+			return 0;
+		return dm_task_set_minor(dmt, id._u.minor);
+	case DM_MAP_BY_DEVT:
+		if (!dm_task_set_major(dmt, major(id.devt)))
+			return 0;
+		return dm_task_set_minor(dmt, minor(id.devt));
+	default:
+		condlog(0, "%s: invalid by_id", __func__);
+		return 0;
+	}
+}
+
+static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *map_id)
+{
+	/* avoid libmp_mapinfo__ in log messages */
+	static const char fname__[] = "libmp_mapinfo";
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
+	struct dm_info dmi;
+	int rc, ioctl_nr;
+	uint64_t start, length = 0;
+	char *target_type = NULL, *params = NULL;
+	const char *name = NULL, *uuid = NULL;
+	char __attribute__((cleanup(cleanup_charp))) *tmp_target = NULL;
+	char __attribute__((cleanup(cleanup_charp))) *tmp_status = NULL;
+	bool tgt_set = false;
+
+	/*
+	 * If both info.target and info.status are set, we need two
+	 * ioctls. Call this function recursively.
+	 * If successful, tmp_target will be non-NULL.
+	 */
+	if (info.target && info.status) {
+		rc = libmp_mapinfo__(flags, id,
+				     (mapinfo_t) { .target = &tmp_target },
+				     map_id);
+		if (rc != DMP_OK)
+			return rc;
+		tgt_set = true;
+	}
+
+	/*
+	 * The DM_DEVICE_TABLE and DM_DEVICE_STATUS ioctls both fetch the basic
+	 * information from DM_DEVICE_INFO, too.
+	 * Choose the most lightweight ioctl to fetch all requested info.
+	 */
+	if (info.target && !info.status)
+		ioctl_nr = DM_DEVICE_TABLE;
+	else if (info.status || info.size || flags & __MAPINFO_TGT_TYPE)
+		ioctl_nr = DM_DEVICE_STATUS;
+	else
+		ioctl_nr = DM_DEVICE_INFO;
+
+	if (!(dmt = libmp_dm_task_create(ioctl_nr)))
+		return DMP_ERR;
+
+	if (!libmp_set_map_identifier(flags, id, dmt)) {
+		condlog(2, "%s: failed to set map identifier to %s", fname__, map_id);
+		return DMP_ERR;
+	}
+
+	if (!libmp_dm_task_run(dmt)) {
+		dm_log_error(3, ioctl_nr, dmt);
+		if (dm_task_get_errno(dmt) == ENXIO) {
+			condlog(2, "%s: map %s not found", fname__, map_id);
+			return DMP_NOT_FOUND;
+		} else
+			return DMP_ERR;
+	}
+
+	condlog(4, "%s: DM ioctl %d succeeded for %s",
+		fname__, ioctl_nr, map_id);
+
+	if (!dm_task_get_info(dmt, &dmi)) {
+		condlog(2, "%s: dm_task_get_info() failed for %s ", fname__, map_id);
+		return DMP_ERR;
+	} else if(!dmi.exists) {
+		condlog(2, "%s: map %s doesn't exist", fname__, map_id);
+		return DMP_NOT_FOUND;
+	}
+
+	if (info.target || info.status || info.size || flags & __MAPINFO_TGT_TYPE) {
+		if (dm_get_next_target(dmt, NULL, &start, &length,
+				       &target_type, &params) != NULL) {
+			condlog(2, "%s: map %s has multiple targets", fname__, map_id);
+			return DMP_NOT_FOUND;
+		}
+		if (!params) {
+			condlog(2, "%s: map %s has no targets", fname__, map_id);
+			return DMP_NOT_FOUND;
+		}
+		if (flags & __MAPINFO_TGT_TYPE) {
+			const char *tgt_type = flags & MAPINFO_MPATH_ONLY ? TGT_MPATH : TGT_PART;
+
+			if (strcmp(target_type, tgt_type)) {
+				condlog(3, "%s: target type mismatch: \"%s\" != \"%s\"",
+					fname__, tgt_type, target_type);
+				return DMP_NO_MATCH;
+			}
+		}
+	}
+
+	/*
+	 * Check possible error conditions.
+	 * If error is returned, don't touch any output parameters.
+	 */
+	if ((info.name && !(name = dm_task_get_name(dmt)))
+	    || (info.uuid && !(uuid = dm_task_get_uuid(dmt)))
+	    || (info.status && !(tmp_status = strdup(params)))
+	    || (info.target && !tmp_target && !(tmp_target = strdup(params))))
+		return DMP_ERR;
+
+	if (info.name) {
+		strlcpy(info.name, name, WWID_SIZE);
+		condlog(4, "%s: %s: name: \"%s\"", fname__, map_id, info.name);
+	}
+	if (info.uuid) {
+		strlcpy(info.uuid, uuid, DM_UUID_LEN);
+		condlog(4, "%s: %s: uuid: \"%s\"", fname__, map_id, info.uuid);
+	}
+
+	if (info.size) {
+		*info.size = length;
+		condlog(4, "%s: %s: size: %lld", fname__, map_id, *info.size);
+	}
+
+	if (info.dmi) {
+		memcpy(info.dmi, &dmi, sizeof(*info.dmi));
+		condlog(4, "%s: %s %d:%d, %d targets, %s table, %s, %s, %d opened, %u events",
+			fname__, map_id,
+			info.dmi->major, info.dmi->minor,
+			info.dmi->target_count,
+			info.dmi->live_table ? "live" :
+				info.dmi->inactive_table ? "inactive" : "no",
+			info.dmi->suspended ? "suspended" : "active",
+			info.dmi->read_only ? "ro" : "rw",
+			info.dmi->open_count,
+			info.dmi->event_nr);
+	}
+
+	if (info.target) {
+		*info.target = steal_ptr(tmp_target);
+		if (!tgt_set)
+			condlog(4, "%s: %s: target: \"%s\"", fname__, map_id, *info.target);
+	}
+
+	if (info.status) {
+		*info.status = steal_ptr(tmp_status);
+		condlog(4, "%s: %s: status: \"%s\"", fname__, map_id, *info.status);
+	}
+
+	return DMP_OK;
+}
+
+/* Helper: format a string describing the map for log messages */
+static const char* libmp_map_identifier(int flags, mapid_t id, char buf[BLK_DEV_SIZE])
+{
+	switch (flags & __DM_MAP_BY_MASK) {
+	case DM_MAP_BY_NAME:
+	case DM_MAP_BY_UUID:
+		return id.str;
+	case DM_MAP_BY_DEV:
+		safe_snprintf(buf, BLK_DEV_SIZE, "%d:%d", id._u.major, id._u.minor);
+		return buf;
+	case DM_MAP_BY_DEVT:
+		safe_snprintf(buf, BLK_DEV_SIZE, "%d:%d", major(id.devt), minor(id.devt));
+		return buf;
+	default:
+		safe_snprintf(buf, BLK_DEV_SIZE, "*invalid*");
+		return buf;
+	}
+}
+
+int libmp_mapinfo(int flags, mapid_t id, mapinfo_t info)
+{
+	char idbuf[BLK_DEV_SIZE];
+
+	return libmp_mapinfo__(flags, id, info,
+			       libmp_map_identifier(flags, id, idbuf));
 }
 
 int
