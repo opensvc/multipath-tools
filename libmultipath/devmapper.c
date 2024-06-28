@@ -1483,37 +1483,15 @@ dm_is_suspended(const char *name)
 	return info.suspended;
 }
 
-char *
-dm_mapname(int major, int minor)
+char *dm_mapname(int major, int minor)
 {
-	char * response = NULL;
-	const char *map;
-	struct dm_task *dmt;
-	int r;
+	char name[WWID_SIZE];
 
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_INFO)))
+	if (libmp_mapinfo(DM_MAP_BY_DEV,
+			  (mapid_t) { ._u = { major, minor } },
+			  (mapinfo_t) { .name = name }) != DMP_OK)
 		return NULL;
-
-	if (!dm_task_set_major(dmt, major) ||
-	    !dm_task_set_minor(dmt, minor))
-		goto bad;
-
-	r = libmp_dm_task_run(dmt);
-	if (!r) {
-		dm_log_error(2, DM_DEVICE_INFO, dmt);
-		goto bad;
-	}
-
-	map = dm_task_get_name(dmt);
-	if (map && strlen(map))
-		response = strdup((const char *)map);
-
-	dm_task_destroy(dmt);
-	return response;
-bad:
-	dm_task_destroy(dmt);
-	condlog(0, "%i:%i: error fetching map name", major, minor);
-	return NULL;
+	return strdup(name);
 }
 
 static int
