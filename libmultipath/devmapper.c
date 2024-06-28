@@ -796,6 +796,13 @@ int libmp_mapinfo(int flags, mapid_t id, mapinfo_t info)
 			       libmp_map_identifier(flags, id, idbuf));
 }
 
+static int dm_get_dm_uuid(const char *mapname, char uuid[DM_UUID_LEN])
+{
+	return libmp_mapinfo(DM_MAP_BY_NAME,
+			     (mapid_t) { .str = mapname },
+			     (mapinfo_t) { .uuid = uuid });
+}
+
 int dm_get_map(const char *name, unsigned long long *size, char **outparams)
 {
 	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
@@ -835,48 +842,11 @@ int dm_get_map(const char *name, unsigned long long *size, char **outparams)
 	}
 }
 
-static int
-dm_get_prefixed_uuid(const char *name, char *uuid, int uuid_len)
-{
-	struct dm_task *dmt;
-	const char *uuidtmp;
-	struct dm_info info;
-	int r = 1;
-
-	dmt = libmp_dm_task_create(DM_DEVICE_INFO);
-	if (!dmt)
-		return 1;
-
-	if (uuid_len > 0)
-		uuid[0] = '\0';
-
-	if (!dm_task_set_name (dmt, name))
-		goto uuidout;
-
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_INFO, dmt);
-		goto uuidout;
-	}
-
-	if (!dm_task_get_info(dmt, &info) ||
-	    !info.exists)
-		goto uuidout;
-
-	uuidtmp = dm_task_get_uuid(dmt);
-	if (uuidtmp)
-		strlcpy(uuid, uuidtmp, uuid_len);
-
-	r = 0;
-uuidout:
-	dm_task_destroy(dmt);
-	return r;
-}
-
 int dm_get_uuid(const char *name, char *uuid, int uuid_len)
 {
 	char tmp[DM_UUID_LEN];
 
-	if (dm_get_prefixed_uuid(name, tmp, sizeof(tmp)))
+	if (dm_get_dm_uuid(name, tmp) != DMP_OK)
 		return 1;
 
 	if (!strncmp(tmp, UUID_PREFIX, UUID_PREFIX_LEN))
@@ -887,16 +857,15 @@ int dm_get_uuid(const char *name, char *uuid, int uuid_len)
 	return 0;
 }
 
-static int
-is_mpath_part(const char *part_name, const char *map_name)
+static int is_mpath_part(const char *part_name, const char *map_name)
 {
 	char *p;
 	char part_uuid[DM_UUID_LEN], map_uuid[DM_UUID_LEN];
 
-	if (dm_get_prefixed_uuid(part_name, part_uuid, sizeof(part_uuid)))
+	if (dm_get_dm_uuid(part_name, part_uuid) != DMP_OK)
 		return 0;
 
-	if (dm_get_prefixed_uuid(map_name, map_uuid, sizeof(map_uuid)))
+	if (dm_get_dm_uuid(map_name, map_uuid) != DMP_OK)
 		return 0;
 
 	if (strncmp(part_uuid, "part", 4) != 0)
