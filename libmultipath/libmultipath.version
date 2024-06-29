@@ -78,14 +78,12 @@ global:
 	dm_flush_map_nopaths;
 	dm_flush_maps;
 	dm_geteventnr;
-	dm_get_info;
 	dm_get_major_minor;
 	dm_get_maps;
 	dm_get_multipath;
 	dm_get_uuid;
 	dm_is_mpath;
 	dm_mapname;
-	dm_map_present;
 	dm_prereq;
 	dm_queue_if_no_path;
 	dm_reassign;

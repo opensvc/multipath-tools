@@ -104,6 +104,20 @@ typedef struct libmp_map_info {
  */
 int libmp_mapinfo(int flags, mapid_t id, mapinfo_t info);
 
+static inline int dm_get_info(const char *mapname, struct dm_info *info)
+{
+	return libmp_mapinfo(DM_MAP_BY_NAME,
+			     (mapid_t) { .str = mapname },
+			     (mapinfo_t) { .dmi = info });
+}
+
+static inline int dm_map_present(const char *mapname)
+{
+	return libmp_mapinfo(DM_MAP_BY_NAME,
+			     (mapid_t) { .str = mapname },
+			     (mapinfo_t) { .name = NULL }) == DMP_OK;
+}
+
 int dm_prereq(unsigned int *v);
 void skip_libmp_dm_init(void);
 void libmp_dm_exit(void);
@@ -113,7 +127,6 @@ int dm_simplecmd_flush (int task, const char *name, uint16_t udev_flags);
 int dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags);
 int dm_addmap_create (struct multipath *mpp, char *params);
 int dm_addmap_reload (struct multipath *mpp, char *params, int flush);
-int dm_map_present (const char *name);
 int dm_map_present_by_uuid(const char *uuid);
 int dm_get_map(const char *name, unsigned long long *size, char **outparams);
 int dm_get_status(const char *name, char **outstatus);
@@ -164,7 +177,6 @@ int dm_get_major_minor (const char *name, int *major, int *minor);
 char * dm_mapname(int major, int minor);
 int dm_get_uuid(const char *name, char *uuid, int uuid_len);
 bool has_dm_info(const struct multipath *mpp);
-int dm_get_info (const char * mapname, struct dm_info *dmi);
 int dm_rename (const char * old, char * new, char * delim, int skip_kpartx);
 int dm_reassign(const char * mapname);
 int dm_reassign_table(const char *name, char *old, char *new);

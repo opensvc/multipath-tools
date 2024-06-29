@@ -796,45 +796,6 @@ int libmp_mapinfo(int flags, mapid_t id, mapinfo_t info)
 			       libmp_map_identifier(flags, id, idbuf));
 }
 
-int
-dm_get_info(const char *name, struct dm_info *info)
-{
-	int r = -1;
-	struct dm_task *dmt;
-
-	if (!name || !info)
-		return r;
-
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_INFO)))
-		return r;
-
-	if (!dm_task_set_name(dmt, name))
-		goto out;
-
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_INFO, dmt);
-		goto out;
-	}
-
-	if (!dm_task_get_info(dmt, info))
-		goto out;
-
-	if (!info->exists)
-		goto out;
-
-	r = 0;
-out:
-	dm_task_destroy(dmt);
-	return r;
-}
-
-int dm_map_present(const char * str)
-{
-	struct dm_info info;
-
-	return (dm_get_info(str, &info) == 0);
-}
-
 int dm_get_map(const char *name, unsigned long long *size, char **outparams)
 {
 	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
@@ -1133,15 +1094,14 @@ out:
 	return r;
 }
 
-static int
-dm_dev_t (const char * mapname, char * dev_t, int len)
+static int dm_dev_t (const char *mapname, char *dev_t, int len)
 {
 	struct dm_info info;
 
-	if (dm_get_info(mapname, &info) != 0)
+	if (dm_get_info(mapname, &info) != DMP_OK)
 		return 1;
 
-	if (snprintf(dev_t, len, "%i:%i", info.major, info.minor) > len)
+	if (safe_snprintf(dev_t, len, "%i:%i", info.major, info.minor))
 		return 1;
 
 	return 0;
@@ -1182,7 +1142,7 @@ dm_get_major_minor(const char *name, int *major, int *minor)
 {
 	struct dm_info info;
 
-	if (dm_get_info(name, &info) != 0)
+	if (dm_get_info(name, &info) != DMP_OK)
 		return -1;
 
 	*major = info.major;
@@ -1528,7 +1488,7 @@ dm_geteventnr (const char *name)
 {
 	struct dm_info info;
 
-	if (dm_get_info(name, &info) != 0)
+	if (dm_get_info(name, &info) != DMP_OK)
 		return -1;
 
 	return info.event_nr;
@@ -1539,7 +1499,7 @@ dm_is_suspended(const char *name)
 {
 	struct dm_info info;
 
-	if (dm_get_info(name, &info) != 0)
+	if (dm_get_info(name, &info) != DMP_OK)
 		return -1;
 
 	return info.suspended;
@@ -1690,7 +1650,7 @@ dm_get_deferred_remove (const char * mapname)
 {
 	struct dm_info info;
 
-	if (dm_get_info(mapname, &info) != 0)
+	if (dm_get_info(mapname, &info) != DMP_OK)
 		return -1;
 
 	return info.deferred_remove;

@@ -502,7 +502,7 @@ remove_maps_and_stop_waiters(struct vectors *vecs)
 
 int refresh_multipath(struct vectors *vecs, struct multipath *mpp)
 {
-	if (dm_get_info(mpp->alias, &mpp->dmi)) {
+	if (dm_get_info(mpp->alias, &mpp->dmi) != DMP_OK) {
 		/* Error accessing table */
 		condlog(2, "%s: cannot access table", mpp->alias);
 		goto out;
@@ -722,7 +722,7 @@ add_map_without_path (struct vectors *vecs, const char *alias)
 
 	mpp->alias = strdup(alias);
 
-	if (dm_get_info(mpp->alias, &mpp->dmi)) {
+	if (dm_get_info(mpp->alias, &mpp->dmi) != DMP_OK) {
 		condlog(3, "%s: cannot access table", mpp->alias);
 		goto out;
 	}
