@@ -84,7 +84,7 @@ int __wrap_dm_get_wwid(const char *name, char *uuid, int uuid_len)
 	check_expected(uuid_len);
 	assert_non_null(uuid);
 	ret = mock_type(int);
-	if (ret == 0)
+	if (ret == DMP_OK)
 		strcpy(uuid, mock_ptr_type(char *));
 	return ret;
 }
@@ -438,14 +438,14 @@ static void mock_unused_alias(const char *alias)
 {
 	expect_string(__wrap_dm_get_wwid, name, alias);
 	expect_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);
-	will_return(__wrap_dm_get_wwid, 1);
+	will_return(__wrap_dm_get_wwid, DMP_NOT_FOUND);
 }
 
 static void mock_self_alias(const char *alias, const char *wwid)
 {
 	expect_string(__wrap_dm_get_wwid, name, alias);
 	expect_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);
-	will_return(__wrap_dm_get_wwid, 0);
+	will_return(__wrap_dm_get_wwid, DMP_OK);
 	will_return(__wrap_dm_get_wwid, wwid);
 }
 
@@ -471,14 +471,14 @@ static void mock_self_alias(const char *alias, const char *wwid)
 	do {								\
 		expect_string(__wrap_dm_get_wwid, name, alias);		\
 		expect_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);	\
-		will_return(__wrap_dm_get_wwid, 1);			\
+		will_return(__wrap_dm_get_wwid, DMP_NOT_FOUND);		\
 	} while (0)
 
 #define mock_used_alias(alias, wwid)					\
 	do {								\
 		expect_string(__wrap_dm_get_wwid, name, alias);		\
 		expect_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);	\
-		will_return(__wrap_dm_get_wwid, 0);			\
+		will_return(__wrap_dm_get_wwid, DMP_OK);		\
 		will_return(__wrap_dm_get_wwid, "WWID_USED");		\
 		expect_condlog(3, USED_STR(alias, wwid));		\
 	} while(0)

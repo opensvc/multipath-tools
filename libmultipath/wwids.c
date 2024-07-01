@@ -295,7 +295,7 @@ should_multipath(struct path *pp1, vector pathvec, vector mpvec)
 		struct multipath *mp = find_mp_by_wwid(mpvec, pp1->wwid);
 
 		if (mp != NULL &&
-		    dm_get_wwid(mp->alias, tmp_wwid, WWID_SIZE) == 0 &&
+		    dm_get_wwid(mp->alias, tmp_wwid, WWID_SIZE) == DMP_OK &&
 		    !strncmp(tmp_wwid, pp1->wwid, WWID_SIZE)) {
 			condlog(3, "wwid %s is already multipathed, keeping it",
 				pp1->wwid);

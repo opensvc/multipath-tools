@@ -408,13 +408,18 @@ static bool alias_already_taken(const char *alias, const char *map_wwid)
 {
 
 	char wwid[WWID_SIZE];
+	int rc = dm_get_wwid(alias, wwid, sizeof(wwid));
 
-	/* If the map doesn't exist, it's fine */
-	if (dm_get_wwid(alias, wwid, sizeof(wwid)) != 0)
+	/*
+	 * If the map doesn't exist, it's fine.
+	 * In the generic error case, assume that the device is not
+	 * taken, and try to proceed.
+	 */
+	if (rc == DMP_NOT_FOUND || rc == DMP_ERR)
 		return false;
 
 	/* If both the name and the wwid match, it's fine.*/
-	if (strncmp(map_wwid, wwid, sizeof(wwid)) == 0)
+	if (rc == DMP_OK && strncmp(map_wwid, wwid, sizeof(wwid)) == 0)
 		return false;
 
 	condlog(3, "%s: alias '%s' already taken, reselecting alias",

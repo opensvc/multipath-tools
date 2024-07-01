@@ -842,19 +842,29 @@ int dm_get_map(const char *name, unsigned long long *size, char **outparams)
 	}
 }
 
+/**
+ * dm_get_wwid(): return WWID for a multipath map
+ * @returns:
+ *    DMP_OK if successful
+ *    DMP_NOT_FOUND if the map doesn't exist
+ *    DMP_NO_MATCH if the map exists but is not a multipath map
+ *    DMP_ERR for other errors
+ * Caller may access uuid if and only if DMP_OK is returned.
+ */
 int dm_get_wwid(const char *name, char *uuid, int uuid_len)
 {
 	char tmp[DM_UUID_LEN];
+	int rc = dm_get_dm_uuid(name, tmp);
 
-	if (dm_get_dm_uuid(name, tmp) != DMP_OK)
-		return 1;
+	if (rc != DMP_OK)
+		return rc;
 
 	if (!strncmp(tmp, UUID_PREFIX, UUID_PREFIX_LEN))
 		strlcpy(uuid, tmp + UUID_PREFIX_LEN, uuid_len);
 	else
-		uuid[0] = '\0';
+		return DMP_NO_MATCH;
 
-	return 0;
+	return DMP_OK;
 }
 
 static int is_mpath_part(const char *part_name, const char *map_name)
@@ -1390,8 +1400,10 @@ struct multipath *dm_get_multipath(const char *name)
 	if (dm_get_map(name, &mpp->size, NULL) != DMP_OK)
 		goto out;
 
-	if (dm_get_wwid(name, mpp->wwid, WWID_SIZE) != 0)
+	if (dm_get_wwid(name, mpp->wwid, WWID_SIZE) != DMP_OK) {
 		condlog(2, "%s: failed to get uuid for %s", __func__, name);
+		mpp->wwid[0] = '\0';
+	}
 	if (dm_get_info(name, &mpp->dmi) != 0)
 		condlog(2, "%s: failed to get info for %s", __func__, name);
 
