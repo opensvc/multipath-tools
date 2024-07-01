@@ -410,7 +410,7 @@ static bool alias_already_taken(const char *alias, const char *map_wwid)
 	char wwid[WWID_SIZE];
 
 	/* If the map doesn't exist, it's fine */
-	if (dm_get_uuid(alias, wwid, sizeof(wwid)) != 0)
+	if (dm_get_wwid(alias, wwid, sizeof(wwid)) != 0)
 		return false;
 
 	/* If both the name and the wwid match, it's fine.*/

@@ -846,7 +846,7 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 	if (mpp->action == ACT_CREATE && dm_map_present(mpp->alias)) {
 		char wwid[WWID_SIZE];
 
-		if (dm_get_uuid(mpp->alias, wwid, sizeof(wwid)) == 0) {
+		if (dm_get_wwid(mpp->alias, wwid, sizeof(wwid)) == 0) {
 			if (!strncmp(mpp->wwid, wwid, sizeof(wwid))) {
 				condlog(3, "%s: map already present",
 					mpp->alias);
@@ -1320,7 +1320,7 @@ static int _get_refwwid(enum mpath_cmds cmd, const char *dev,
 		break;
 
 	case DEV_DEVMAP:
-		if (((dm_get_uuid(dev, tmpwwid, WWID_SIZE)) == 0)
+		if (((dm_get_wwid(dev, tmpwwid, WWID_SIZE)) == 0)
 		    && (strlen(tmpwwid)))
 			refwwid = tmpwwid;
 

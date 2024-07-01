@@ -842,7 +842,7 @@ int dm_get_map(const char *name, unsigned long long *size, char **outparams)
 	}
 }
 
-int dm_get_uuid(const char *name, char *uuid, int uuid_len)
+int dm_get_wwid(const char *name, char *uuid, int uuid_len)
 {
 	char tmp[DM_UUID_LEN];
 
@@ -1390,7 +1390,7 @@ struct multipath *dm_get_multipath(const char *name)
 	if (dm_get_map(name, &mpp->size, NULL) != DMP_OK)
 		goto out;
 
-	if (dm_get_uuid(name, mpp->wwid, WWID_SIZE) != 0)
+	if (dm_get_wwid(name, mpp->wwid, WWID_SIZE) != 0)
 		condlog(2, "%s: failed to get uuid for %s", __func__, name);
 	if (dm_get_info(name, &mpp->dmi) != 0)
 		condlog(2, "%s: failed to get info for %s", __func__, name);

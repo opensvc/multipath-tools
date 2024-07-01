@@ -76,7 +76,7 @@ int WRAP_FUNC(mkstemp)(char *template)
 	return 10;
 }
 
-int __wrap_dm_get_uuid(const char *name, char *uuid, int uuid_len)
+int __wrap_dm_get_wwid(const char *name, char *uuid, int uuid_len)
 {
 	int ret;
 
@@ -436,17 +436,17 @@ static int test_scan_devname(void)
 
 static void mock_unused_alias(const char *alias)
 {
-	expect_string(__wrap_dm_get_uuid, name, alias);
-	expect_value(__wrap_dm_get_uuid, uuid_len, WWID_SIZE);
-	will_return(__wrap_dm_get_uuid, 1);
+	expect_string(__wrap_dm_get_wwid, name, alias);
+	expect_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);
+	will_return(__wrap_dm_get_wwid, 1);
 }
 
 static void mock_self_alias(const char *alias, const char *wwid)
 {
-	expect_string(__wrap_dm_get_uuid, name, alias);
-	expect_value(__wrap_dm_get_uuid, uuid_len, WWID_SIZE);
-	will_return(__wrap_dm_get_uuid, 0);
-	will_return(__wrap_dm_get_uuid, wwid);
+	expect_string(__wrap_dm_get_wwid, name, alias);
+	expect_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);
+	will_return(__wrap_dm_get_wwid, 0);
+	will_return(__wrap_dm_get_wwid, wwid);
 }
 
 #define USED_STR(alias_str, wwid_str) wwid_str ": alias '" alias_str "' already taken, reselecting alias\n"
@@ -469,17 +469,17 @@ static void mock_self_alias(const char *alias, const char *wwid)
 
 #define mock_failed_alias(alias, wwid)					\
 	do {								\
-		expect_string(__wrap_dm_get_uuid, name, alias);		\
-		expect_value(__wrap_dm_get_uuid, uuid_len, WWID_SIZE);	\
-		will_return(__wrap_dm_get_uuid, 1);			\
+		expect_string(__wrap_dm_get_wwid, name, alias);		\
+		expect_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);	\
+		will_return(__wrap_dm_get_wwid, 1);			\
 	} while (0)
 
 #define mock_used_alias(alias, wwid)					\
 	do {								\
-		expect_string(__wrap_dm_get_uuid, name, alias);		\
-		expect_value(__wrap_dm_get_uuid, uuid_len, WWID_SIZE);	\
-		will_return(__wrap_dm_get_uuid, 0);			\
-		will_return(__wrap_dm_get_uuid, "WWID_USED");		\
+		expect_string(__wrap_dm_get_wwid, name, alias);		\
+		expect_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);	\
+		will_return(__wrap_dm_get_wwid, 0);			\
+		will_return(__wrap_dm_get_wwid, "WWID_USED");		\
 		expect_condlog(3, USED_STR(alias, wwid));		\
 	} while(0)
 

@@ -727,7 +727,7 @@ add_map_without_path (struct vectors *vecs, const char *alias)
 		goto out;
 	}
 	if (!strlen(mpp->wwid))
-		dm_get_uuid(mpp->alias, mpp->wwid, WWID_SIZE);
+		dm_get_wwid(mpp->alias, mpp->wwid, WWID_SIZE);
 	if (!strlen(mpp->wwid))
 		condlog(1, "%s: adding map with empty WWID", mpp->alias);
 	conf = get_multipath_config();
