@@ -859,23 +859,20 @@ int dm_get_uuid(const char *name, char *uuid, int uuid_len)
 
 static int is_mpath_part(const char *part_name, const char *map_name)
 {
-	char *p;
-	char part_uuid[DM_UUID_LEN], map_uuid[DM_UUID_LEN];
+	char part_uuid[DM_UUID_LEN], map_uuid[DM_UUID_LEN], c;
+	int np, nc;
 
 	if (dm_get_dm_uuid(part_name, part_uuid) != DMP_OK)
+		return 0;
+
+	if (2 != sscanf(part_uuid, "part%d-%n" UUID_PREFIX "%c", &np, &nc, &c)
+	    || np <= 0)
 		return 0;
 
 	if (dm_get_dm_uuid(map_name, map_uuid) != DMP_OK)
 		return 0;
 
-	if (strncmp(part_uuid, "part", 4) != 0)
-		return 0;
-
-	p = strstr(part_uuid, UUID_PREFIX);
-	if (p && !strcmp(p, map_uuid))
-		return 1;
-
-	return 0;
+	return !strcmp(part_uuid + nc, map_uuid);
 }
 
 int dm_get_status(const char *name, char **outstatus)
