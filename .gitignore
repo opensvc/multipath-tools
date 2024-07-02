@@ -42,6 +42,8 @@ libdmmp/test/libdmmp_speed_test
 tests/*-test
 tests/*.out
 tests/*.vgr
+tests/test-lib.o.wrap
+tests/test-log.o.wrap
 libmultipath/nvme-ioctl.c
 libmultipath/nvme-ioctl.h
 libmultipath/autoconfig.h
