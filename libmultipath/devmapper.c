@@ -977,52 +977,23 @@ static int dm_type_match(const char *name, char *type)
 
 int dm_is_mpath(const char *name)
 {
-	int r = DM_IS_MPATH_ERR;
-	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
-	struct dm_info info;
-	uint64_t start, length;
-	char *target_type = NULL;
-	char *params;
-	const char *uuid;
+	char uuid[DM_UUID_LEN];
+	int rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+			       (mapid_t) { .str = name },
+			       (mapinfo_t) { .uuid = uuid });
 
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
-		goto out;
-
-	if (!dm_task_set_name(dmt, name))
-		goto out;
-
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_TABLE, dmt);
-		goto out;
+	switch (rc) {
+	case DMP_OK:
+		if (!strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN))
+			return DM_IS_MPATH_YES;
+		/* fallthrough */
+	case DMP_NOT_FOUND:
+	case DMP_NO_MATCH:
+		return DM_IS_MPATH_NO;
+	case DMP_ERR:
+	default:
+		return DM_IS_MPATH_ERR;
 	}
-
-	if (!dm_task_get_info(dmt, &info))
-		goto out;
-
-	r = DM_IS_MPATH_NO;
-
-	if (!info.exists)
-		goto out;
-
-	uuid = dm_task_get_uuid(dmt);
-
-	if (!uuid || strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN) != 0)
-		goto out;
-
-	/* Fetch 1st target */
-	if (dm_get_next_target(dmt, NULL, &start, &length, &target_type,
-			       &params) != NULL)
-		/* multiple targets */
-		goto out;
-
-	if (!target_type || strcmp(target_type, TGT_MPATH) != 0)
-		goto out;
-
-	r = DM_IS_MPATH_YES;
-out:
-	if (r == DM_IS_MPATH_ERR)
-		condlog(3, "%s: dm command failed in %s: %s", name, __func__, strerror(errno));
-	return r;
 }
 
 int dm_map_present_by_wwid(const char *wwid)
