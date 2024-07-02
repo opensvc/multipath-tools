@@ -1304,7 +1304,8 @@ dm_disablegroup(const char * mapname, int index)
 
 struct multipath *dm_get_multipath(const char *name)
 {
-	struct multipath *mpp = NULL;
+	struct multipath __attribute((cleanup(cleanup_multipath))) *mpp = NULL;
+	char uuid[DM_UUID_LEN];
 
 	mpp = alloc_multipath();
 	if (!mpp)
@@ -1313,22 +1314,22 @@ struct multipath *dm_get_multipath(const char *name)
 	mpp->alias = strdup(name);
 
 	if (!mpp->alias)
-		goto out;
+		return NULL;
 
-	if (dm_get_map(name, &mpp->size, NULL) != DMP_OK)
-		goto out;
+	if (libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+			  (mapid_t) { .str = name },
+			  (mapinfo_t) {
+				  .size = &mpp->size,
+				  .uuid = uuid,
+				  .dmi = &mpp->dmi,
+			  }) != DMP_OK)
+		return NULL;
 
-	if (dm_get_wwid(name, mpp->wwid, WWID_SIZE) != DMP_OK) {
-		condlog(2, "%s: failed to get uuid for %s", __func__, name);
-		mpp->wwid[0] = '\0';
-	}
-	if (dm_get_info(name, &mpp->dmi) != 0)
-		condlog(2, "%s: failed to get info for %s", __func__, name);
+	if (strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN))
+		return NULL;
 
-	return mpp;
-out:
-	free_multipath(mpp, KEEP_PATHS);
-	return NULL;
+	strlcpy(mpp->wwid, uuid + UUID_PREFIX_LEN, sizeof(mpp->wwid));
+	return steal_ptr(mpp);
 }
 
 int dm_get_maps(vector mp)
