@@ -497,6 +497,7 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 				  .target = &params,
 				  .status = &status,
 				  .size = &mpp->size,
+				  .dmi = &mpp->dmi,
 			  });
 
 	if (r != DMP_OK) {
