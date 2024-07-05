@@ -842,6 +842,11 @@ int dm_get_map(const char *name, unsigned long long *size, char **outparams)
 	}
 }
 
+bool is_mpath_uuid(const char uuid[DM_UUID_LEN])
+{
+	return !strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN);
+}
+
 /**
  * dm_get_wwid(): return WWID for a multipath map
  * @returns:
@@ -859,7 +864,7 @@ int dm_get_wwid(const char *name, char *uuid, int uuid_len)
 	if (rc != DMP_OK)
 		return rc;
 
-	if (!strncmp(tmp, UUID_PREFIX, UUID_PREFIX_LEN))
+	if (is_mpath_uuid(tmp))
 		strlcpy(uuid, tmp + UUID_PREFIX_LEN, uuid_len);
 	else
 		return DMP_NO_MATCH;
@@ -984,7 +989,7 @@ int dm_is_mpath(const char *name)
 
 	switch (rc) {
 	case DMP_OK:
-		if (!strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN))
+		if (is_mpath_uuid(uuid))
 			return DM_IS_MPATH_YES;
 		/* fallthrough */
 	case DMP_NOT_FOUND:
@@ -1084,7 +1089,7 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 			  (mapinfo_t) {
 				  .uuid = uuid,
 				  .target = &params }) != DMP_OK
-	    || strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN))
+	    || !is_mpath_uuid(uuid))
 		return DM_FLUSH_OK; /* nothing to do */
 
 	/* if the device currently has no partitions, do not
@@ -1327,7 +1332,7 @@ struct multipath *dm_get_multipath(const char *name)
 			  }) != DMP_OK)
 		return NULL;
 
-	if (strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN))
+	if (!is_mpath_uuid(uuid))
 		return NULL;
 
 	strlcpy(mpp->wwid, uuid + UUID_PREFIX_LEN, sizeof(mpp->wwid));

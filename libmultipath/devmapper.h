@@ -136,6 +136,8 @@ enum {
 	DM_IS_MPATH_YES,
 	DM_IS_MPATH_ERR,
 };
+
+bool is_mpath_uuid(const char uuid[DM_UUID_LEN]);
 int dm_is_mpath(const char *name);
 
 enum {
