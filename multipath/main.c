@@ -222,12 +222,14 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 static int check_usable_paths(struct config *conf,
 			      const char *devpath, enum devtypes dev_type)
 {
-	struct udev_device *ud = NULL;
-	struct multipath *mpp = NULL;
+	struct udev_device __attribute__((cleanup(cleanup_udev_device))) *ud = NULL;
+	struct multipath __attribute__((cleanup(cleanup_multipath_and_paths))) *mpp = NULL;
 	struct pathgroup *pg;
 	struct path *pp;
-	char *mapname;
-	vector pathvec = NULL;
+	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
+	char __attribute__((cleanup(cleanup_charp))) *status = NULL;
+	vector __attribute((cleanup(cleanup_vector))) pathvec = NULL;
+	char uuid[DM_UUID_LEN];
 	dev_t devt;
 	int r = 1, i, j;
 
@@ -238,31 +240,39 @@ static int check_usable_paths(struct config *conf,
 	devt = udev_device_get_devnum(ud);
 	if (!dm_is_dm_major(major(devt))) {
 		condlog(1, "%s is not a dm device", devpath);
-		goto out;
+		return r;
 	}
 
-	mapname = dm_mapname(major(devt), minor(devt));
-	if (mapname == NULL) {
-		condlog(1, "dm device not found: %s", devpath);
-		goto out;
-	}
-
-	if (dm_is_mpath(mapname) != DM_IS_MPATH_YES) {
-		condlog(1, "%s is not a multipath map", devpath);
-		goto free;
-	}
+	mpp = alloc_multipath();
+	if (!mpp)
+		return r;
+	if (!(mpp->alias = malloc(WWID_SIZE)))
+		return r;
 
 	/* pathvec is needed for disassemble_map */
 	pathvec = vector_alloc();
 	if (pathvec == NULL)
-		goto free;
+		return r;
 
-	mpp = dm_get_multipath(mapname);
-	if (mpp == NULL)
-		goto free;
+	if (libmp_mapinfo(DM_MAP_BY_DEVT | MAPINFO_MPATH_ONLY,
+			  (mapid_t) { .devt = devt },
+			  (mapinfo_t) {
+			      .name = mpp->alias,
+			      .uuid = uuid,
+			      .dmi = &mpp->dmi,
+			      .size = &mpp->size,
+			      .target = &params,
+			      .status = &status,
+		      }) != DMP_OK)
+		return r;
 
-	if (update_multipath_table(mpp, pathvec, 0) != DMP_OK)
-		    goto free;
+	if (!is_mpath_uuid(uuid))
+		return r;
+
+	strlcpy(mpp->wwid, uuid + UUID_PREFIX_LEN, sizeof(mpp->wwid));
+
+	if (update_multipath_table__(mpp, pathvec, 0, params, status) != DMP_OK)
+		return r;
 
 	vector_foreach_slot (mpp->pg, pg, i) {
 		vector_foreach_slot (pg->paths, pp, j) {
@@ -284,12 +294,6 @@ static int check_usable_paths(struct config *conf,
 found:
 	condlog(r == 0 ? 3 : 2, "%s:%s usable paths found",
 		devpath, r == 0 ? "" : " no");
-free:
-	free(mapname);
-	free_multipath(mpp, FREE_PATHS);
-	vector_free(pathvec);
-out:
-	udev_device_unref(ud);
 	return r;
 }
 
