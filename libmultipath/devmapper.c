@@ -948,60 +948,6 @@ out:
 	return r;
 }
 
-enum {
-	DM_TYPE_NOMATCH = 0,
-	DM_TYPE_MATCH,
-	/* more than 1 target */
-	DM_TYPE_MULTI,
-	/* empty map */
-	DM_TYPE_EMPTY,
-	DM_TYPE_ERR,
-};
-static int dm_type_match(const char *name, char *type)
-{
-	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
-	uint64_t start, length;
-	char *target_type = NULL;
-	char *params;
-
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
-		return DM_TYPE_ERR;
-
-	if (!dm_task_set_name(dmt, name))
-		return DM_TYPE_ERR;
-
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_TABLE, dmt);
-		return DM_TYPE_ERR;
-	}
-
-	/* Fetch 1st target */
-	if (dm_get_next_target(dmt, NULL, &start, &length,
-			       &target_type, &params) != NULL)
-		/* multiple targets */
-		return DM_TYPE_MULTI;
-	else if (!target_type)
-		return DM_TYPE_EMPTY;
-	else if (!strcmp(target_type, type))
-		return DM_TYPE_MATCH;
-	else
-		return DM_TYPE_NOMATCH;
-}
-
-static bool is_mpath_part(const char *part_name, const char *map_name)
-{
-	char part_uuid[DM_UUID_LEN], map_uuid[DM_UUID_LEN];
-
-	if (dm_get_dm_uuid(map_name, map_uuid) != DMP_OK
-	    || !is_mpath_uuid(map_uuid))
-		return false;
-
-	if (dm_get_dm_uuid(part_name, part_uuid) != DMP_OK)
-		return false;
-
-	return is_mpath_part_uuid(part_uuid, map_uuid);
-}
-
 int dm_is_mpath(const char *name)
 {
 	char uuid[DM_UUID_LEN];
@@ -1443,7 +1389,7 @@ char *dm_mapname(int major, int minor)
 }
 
 static int
-do_foreach_partmaps (const char * mapname,
+do_foreach_partmaps (const char *mapname,
 		     int (*partmap_func)(const char *, void *),
 		     void *data)
 {
@@ -1451,9 +1397,18 @@ do_foreach_partmaps (const char * mapname,
 	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
 	struct dm_names *names;
 	unsigned next = 0;
-	unsigned long long size;
-	char dev_t[32];
+	char dev_t[BLK_DEV_SIZE];
 	char *p;
+	char map_uuid[DM_UUID_LEN];
+	struct dm_info info;
+
+	if (libmp_mapinfo(DM_MAP_BY_NAME,
+			  (mapid_t) { .str = mapname },
+			  (mapinfo_t) { .uuid = map_uuid, .dmi = &info }) != DMP_OK)
+		return 1;
+
+	if (safe_sprintf(dev_t, "%i:%i", info.major, info.minor))
+		return 1;
 
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_LIST)))
 		return 1;
@@ -1468,41 +1423,38 @@ do_foreach_partmaps (const char * mapname,
 		/* this is perfectly valid */
 		return 0;
 
-	if (dm_dev_t(mapname, &dev_t[0], 32))
-		return 1;
-
 	do {
+		char part_uuid[DM_UUID_LEN];
+
 		if (
 		    /*
 		     * if there is only a single "linear" target
 		     */
-		    (dm_type_match(names->name, TGT_PART) == DM_TYPE_MATCH) &&
-
+		    libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_PART_ONLY,
+				  (mapid_t) { .str = names->name },
+				  (mapinfo_t) {
+					  .uuid = part_uuid,
+					  .target = &params,
+				  }) == DMP_OK &&
 		    /*
 		     * and the uuid of the target is a partition of the
 		     * uuid of the multipath device
 		     */
-		    is_mpath_part(names->name, mapname) &&
-
-		    /*
-		     * and we can fetch the map table from the kernel
-		     */
-		    dm_get_map(names->name, &size, &params) == DMP_OK &&
+		    is_mpath_part_uuid(part_uuid, map_uuid) &&
 
 		    /*
 		     * and the table maps over the multipath map
 		     */
 		    (p = strstr(params, dev_t)) &&
-		    !isdigit(*(p + strlen(dev_t)))
-		   ) {
-			if (partmap_func(names->name, data) != 0)
-				return 1;
-		}
+		    !isdigit(*(p + strlen(dev_t))) &&
+
+		    (partmap_func(names->name, data) != 0))
+			return 1;
 
 		free(params);
 		params = NULL;
 		next = names->next;
-		names = (void *) names + next;
+		names = (void*) names + next;
 	} while (next);
 
 	return 0;
