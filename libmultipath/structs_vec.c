@@ -481,6 +481,24 @@ done:
 }
 
 int
+update_multipath_table__ (struct multipath *mpp, vector pathvec, int flags,
+			  const char *params, const char *status)
+{
+	if (disassemble_map(pathvec, params, mpp)) {
+		condlog(2, "%s: cannot disassemble map", mpp->alias);
+		return DMP_ERR;
+	}
+
+	if (disassemble_status(status, mpp))
+		condlog(2, "%s: cannot disassemble status", mpp->alias);
+
+	/* FIXME: we should deal with the return value here */
+	update_pathvec_from_dm(pathvec, mpp, flags);
+
+	return DMP_OK;
+}
+
+int
 update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 {
 	int r = DMP_ERR;
@@ -506,18 +524,7 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 	} else if (size != mpp->size)
 		condlog(0, "%s: size changed from %llu to %llu", mpp->alias, size, mpp->size);
 
-	if (disassemble_map(pathvec, params, mpp)) {
-		condlog(2, "%s: cannot disassemble map", mpp->alias);
-		return DMP_ERR;
-	}
-
-	if (disassemble_status(status, mpp))
-		condlog(2, "%s: cannot disassemble status", mpp->alias);
-
-	/* FIXME: we should deal with the return value here */
-	update_pathvec_from_dm(pathvec, mpp, flags);
-
-	return DMP_OK;
+	return update_multipath_table__(mpp, pathvec, flags, params, status);
 }
 
 static struct path *find_devt_in_pathgroups(const struct multipath *mpp,

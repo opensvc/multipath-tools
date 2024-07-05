@@ -206,6 +206,7 @@ global:
 	uninit_config;
 	update_mpp_paths;
 	update_multipath_strings;
+	update_multipath_table__;
 	update_multipath_table;
 	update_queue_mode_add_path;
 	update_queue_mode_del_path;
