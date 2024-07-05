@@ -329,6 +329,18 @@ free_multipath (struct multipath * mpp, enum free_path_mode free_paths)
 	free(mpp);
 }
 
+void cleanup_multipath(struct multipath **pmpp)
+{
+	if (*pmpp)
+		free_multipath(*pmpp, KEEP_PATHS);
+}
+
+void cleanup_multipath_and_paths(struct multipath **pmpp)
+{
+	if (*pmpp)
+		free_multipath(*pmpp, FREE_PATHS);
+}
+
 void
 drop_multipath (vector mpvec, char * wwid, enum free_path_mode free_paths)
 {

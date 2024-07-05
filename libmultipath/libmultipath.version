@@ -66,6 +66,7 @@ global:
 	check_foreign;
 	cleanup_bindings;
 	cleanup_lock;
+	cleanup_multipath_and_paths;
 	coalesce_paths;
 	count_active_paths;
 	delete_all_foreign;
