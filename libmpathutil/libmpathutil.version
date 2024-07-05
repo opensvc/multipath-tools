@@ -133,3 +133,7 @@ LIBMPATHUTIL_2.0 {
 LIBMPATHUTIL_2.1 {
 	libmp_basename;
 };
+
+LIBMPATHUTIL_2.2 {
+	cleanup_udev_device;
+};

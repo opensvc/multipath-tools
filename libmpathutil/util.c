@@ -373,3 +373,9 @@ void cleanup_ucharp(unsigned char **p)
 {
 	free(*p);
 }
+
+void cleanup_udev_device(struct udev_device **udd)
+{
+	if (*udd)
+		udev_device_unref(*udd);
+}

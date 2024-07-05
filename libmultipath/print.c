@@ -436,12 +436,6 @@ snprint_multipath_vpd_data(struct strbuf *buff,
 	return append_strbuf_str(buff, "[undef]");
 }
 
-static void cleanup_udev_device(struct udev_device **udd)
-{
-	if (*udd)
-		udev_device_unref(*udd);
-}
-
 static int
 snprint_multipath_max_sectors_kb(struct strbuf *buff, const struct multipath *mpp)
 {
