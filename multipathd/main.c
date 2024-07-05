@@ -707,51 +707,57 @@ fail:
 	return 0;
 }
 
-static struct multipath *
-add_map_without_path (struct vectors *vecs, const char *alias)
+static int add_map_without_path (struct vectors *vecs, const char *alias)
 {
-	struct multipath * mpp = alloc_multipath();
+	struct multipath __attribute__((cleanup(cleanup_multipath_and_paths)))
+		*mpp = alloc_multipath();
+	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
+	char __attribute__((cleanup(cleanup_charp))) *status = NULL;
 	struct config *conf;
+	char uuid[DM_UUID_LEN];
+	int rc = DMP_ERR;
 
-	if (!mpp)
-		return NULL;
-	if (!alias) {
-		free(mpp);
-		return NULL;
-	}
+	if (!mpp || !(mpp->alias = strdup(alias)))
+		return DMP_ERR;
 
-	mpp->alias = strdup(alias);
+	if ((rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+				(mapid_t) { .str = mpp->alias },
+				(mapinfo_t) {
+					.uuid = uuid,
+					.dmi = &mpp->dmi,
+					.size = &mpp->size,
+					.target = &params,
+					.status = &status,
+				})) != DMP_OK)
+		return rc;
 
-	if (dm_get_info(mpp->alias, &mpp->dmi) != DMP_OK) {
-		condlog(3, "%s: cannot access table", mpp->alias);
-		goto out;
-	}
-	if (!strlen(mpp->wwid) &&
-	    dm_get_wwid(mpp->alias, mpp->wwid, WWID_SIZE) != DMP_OK) {
-		condlog(3, "%s: cannot obtain WWID", mpp->alias);
-		goto out;
-	}
+	if (!is_mpath_uuid(uuid))
+		return DMP_NO_MATCH;
+	else
+		strlcpy(mpp->wwid, uuid + UUID_PREFIX_LEN, sizeof(mpp->wwid));
+
 	if (!strlen(mpp->wwid))
 		condlog(1, "%s: adding map with empty WWID", mpp->alias);
+
 	conf = get_multipath_config();
 	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
 	put_multipath_config(conf);
 
-	if (update_multipath_table(mpp, vecs->pathvec, 0) != DMP_OK)
-		goto out;
+	if ((rc = update_multipath_table__(mpp, vecs->pathvec, 0, params, status)) != DMP_OK)
+		return DMP_ERR;
 
 	if (!vector_alloc_slot(vecs->mpvec))
-		goto out;
+		return DMP_ERR;
+	vector_set_slot(vecs->mpvec, steal_ptr(mpp));
 
-	vector_set_slot(vecs->mpvec, mpp);
+	/*
+	 * We can't pass mpp here, steal_ptr() has just nullified it.
+	 * vector_set_slot() just set the last slot, use that.
+	 */
+	if (update_map(VECTOR_LAST_SLOT(vecs->mpvec), vecs, 1) != 0) /* map removed */
+		return DMP_ERR;
 
-	if (update_map(mpp, vecs, 1) != 0) /* map removed */
-		return NULL;
-
-	return mpp;
-out:
-	remove_map(mpp, vecs->pathvec, vecs->mpvec);
-	return NULL;
+	return DMP_OK;
 }
 
 static int
@@ -865,13 +871,8 @@ int
 ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 {
 	struct multipath * mpp;
-	int reassign_maps;
+	int reassign_maps, rc;
 	struct config *conf;
-
-	if (dm_is_mpath(alias) != DM_IS_MPATH_YES) {
-		condlog(4, "%s: not a multipath map", alias);
-		return 0;
-	}
 
 	mpp = find_mp_by_alias(vecs->mpvec, alias);
 
@@ -910,9 +911,11 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 	/*
 	 * now we can register the map
 	 */
-	if ((mpp = add_map_without_path(vecs, alias))) {
-		sync_map_state(mpp);
+	if ((rc = add_map_without_path(vecs, alias)) == DMP_OK) {
 		condlog(2, "%s: devmap %s registered", alias, dev);
+		return 0;
+	} else if (rc == DMP_NO_MATCH) {
+		condlog(4, "%s: not a multipath map", alias);
 		return 0;
 	} else {
 		condlog(2, "%s: ev_add_map failed", dev);
