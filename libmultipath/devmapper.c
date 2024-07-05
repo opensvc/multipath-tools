@@ -1076,10 +1076,15 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 	int r;
 	int queue_if_no_path = 0;
 	int udev_flags = 0;
-	unsigned long long mapsize;
-	char *params = NULL;
+	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
+	char uuid[DM_UUID_LEN];
 
-	if (dm_is_mpath(mapname) != DM_IS_MPATH_YES)
+	if (libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+			  (mapid_t) { .str = mapname },
+			  (mapinfo_t) {
+				  .uuid = uuid,
+				  .target = &params }) != DMP_OK
+	    || strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN))
 		return DM_FLUSH_OK; /* nothing to do */
 
 	/* if the device currently has no partitions, do not
@@ -1093,7 +1098,6 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 			return DM_FLUSH_BUSY;
 
 	if ((flags & DMFL_SUSPEND) &&
-	    dm_get_map(mapname, &mapsize, &params) == DMP_OK &&
 	    strstr(params, "queue_if_no_path")) {
 		if (!_dm_queue_if_no_path(mapname, 0))
 			queue_if_no_path = 1;
@@ -1101,8 +1105,6 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 			/* Leave queue_if_no_path alone if unset failed */
 			queue_if_no_path = -1;
 	}
-	free(params);
-	params = NULL;
 
 	if ((r = dm_remove_partmaps(mapname, flags)))
 		return r;
