@@ -872,21 +872,15 @@ int dm_get_wwid(const char *name, char *uuid, int uuid_len)
 	return DMP_OK;
 }
 
-static int is_mpath_part(const char *part_name, const char *map_name)
+static bool is_mpath_part_uuid(const char part_uuid[DM_UUID_LEN],
+			       const char map_uuid[DM_UUID_LEN])
 {
-	char part_uuid[DM_UUID_LEN], map_uuid[DM_UUID_LEN], c;
+	char c;
 	int np, nc;
-
-	if (dm_get_dm_uuid(part_name, part_uuid) != DMP_OK)
-		return 0;
 
 	if (2 != sscanf(part_uuid, "part%d-%n" UUID_PREFIX "%c", &np, &nc, &c)
 	    || np <= 0)
-		return 0;
-
-	if (dm_get_dm_uuid(map_name, map_uuid) != DMP_OK)
-		return 0;
-
+		return false;
 	return !strcmp(part_uuid + nc, map_uuid);
 }
 
@@ -978,6 +972,20 @@ static int dm_type_match(const char *name, char *type)
 		return DM_TYPE_MATCH;
 	else
 		return DM_TYPE_NOMATCH;
+}
+
+static bool is_mpath_part(const char *part_name, const char *map_name)
+{
+	char part_uuid[DM_UUID_LEN], map_uuid[DM_UUID_LEN];
+
+	if (dm_get_dm_uuid(map_name, map_uuid) != DMP_OK
+	    || !is_mpath_uuid(map_uuid))
+		return false;
+
+	if (dm_get_dm_uuid(part_name, part_uuid) != DMP_OK)
+		return false;
+
+	return is_mpath_part_uuid(part_uuid, map_uuid);
 }
 
 int dm_is_mpath(const char *name)
