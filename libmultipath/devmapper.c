@@ -817,45 +817,6 @@ static int dm_get_dm_uuid(const char *mapname, char uuid[DM_UUID_LEN])
 			     (mapinfo_t) { .uuid = uuid });
 }
 
-int dm_get_map(const char *name, unsigned long long *size, char **outparams)
-{
-	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
-	uint64_t start, length;
-	char *target_type = NULL;
-	char *params = NULL;
-
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
-		return DMP_ERR;
-
-	if (!dm_task_set_name(dmt, name))
-		return DMP_ERR;
-
-	errno = 0;
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_TABLE, dmt);
-		if (dm_task_get_errno(dmt) == ENXIO)
-			return DMP_NOT_FOUND;
-		else
-			return DMP_ERR;
-	}
-
-	/* Fetch 1st target */
-	if (dm_get_next_target(dmt, NULL, &start, &length,
-			       &target_type, &params) != NULL || !params)
-		/* more than one target or not found target */
-		return DMP_NOT_FOUND;
-
-	if (size)
-		*size = length;
-
-	if (!outparams)
-		return DMP_OK;
-	else {
-		*outparams = strdup(params);
-		return *outparams ? DMP_OK : DMP_ERR;
-	}
-}
-
 bool is_mpath_uuid(const char uuid[DM_UUID_LEN])
 {
 	return !strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN);
@@ -896,56 +857,6 @@ static bool is_mpath_part_uuid(const char part_uuid[DM_UUID_LEN],
 	    || np <= 0)
 		return false;
 	return !strcmp(part_uuid + nc, map_uuid);
-}
-
-int dm_get_status(const char *name, char **outstatus)
-{
-	int r = DMP_ERR;
-	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
-	uint64_t start, length;
-	char *target_type = NULL;
-	char *status = NULL;
-
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_STATUS)))
-		return r;
-
-	if (!dm_task_set_name(dmt, name))
-		goto out;
-
-	errno = 0;
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_STATUS, dmt);
-		if (dm_task_get_errno(dmt) == ENXIO)
-			r = DMP_NOT_FOUND;
-		goto out;
-	}
-
-	r = DMP_NOT_FOUND;
-	/* Fetch 1st target */
-	if (dm_get_next_target(dmt, NULL, &start, &length,
-			       &target_type, &status) != NULL)
-		goto out;
-
-	if (!target_type || strcmp(target_type, TGT_MPATH) != 0)
-		goto out;
-
-	if (!status) {
-		condlog(2, "got null status.");
-		goto out;
-	}
-
-	if (!outstatus)
-		r = DMP_OK;
-	else {
-		*outstatus = strdup(status);
-		r = *outstatus ? DMP_OK : DMP_ERR;
-	}
-out:
-	if (r != DMP_OK)
-		condlog(0, "%s: %s: error getting map status string: %d",
-			__func__, name, r);
-
-	return r;
 }
 
 int dm_is_mpath(const char *name)
