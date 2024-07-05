@@ -34,7 +34,10 @@ enum {
 	DMP_OK,
 	DMP_NOT_FOUND,
 	DMP_NO_MATCH,
+	__DMP_LAST__,
 };
+
+const char* dmp_errstr(int rc);
 
 /**
  * enum mapinfo_flags: input flags for libmp_mapinfo()

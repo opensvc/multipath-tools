@@ -79,6 +79,20 @@ static void libmp_udev_wait(unsigned int c)
 }
 #endif
 
+const char *dmp_errstr(int rc)
+{
+	static const char *str[] = {
+		[DMP_ERR] = "generic error",
+		[DMP_OK] = "success",
+		[DMP_NOT_FOUND] = "not found",
+		[DMP_NO_MATCH] = "target type mismatch",
+		[__DMP_LAST__] = "**invalid**",
+	};
+	if (rc < 0 || rc > __DMP_LAST__)
+		rc = __DMP_LAST__;
+	return str[rc];
+}
+
 int libmp_dm_task_run(struct dm_task *dmt)
 {
 	int r;
