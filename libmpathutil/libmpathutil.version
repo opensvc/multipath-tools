@@ -136,4 +136,5 @@ LIBMPATHUTIL_2.1 {
 
 LIBMPATHUTIL_2.2 {
 	cleanup_udev_device;
+	cleanup_vector;
 };

@@ -169,6 +169,12 @@ vector_free(vector v)
 	free(v);
 }
 
+void cleanup_vector(vector *pv)
+{
+	if (*pv)
+		vector_free(*pv);
+}
+
 void
 free_strvec(vector strvec)
 {
