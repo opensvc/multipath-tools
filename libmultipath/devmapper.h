@@ -1,5 +1,6 @@
 #ifndef _DEVMAPPER_H
 #define _DEVMAPPER_H
+#include <sys/sysmacros.h>
 #include <linux/dm-ioctl.h>
 #include "autoconfig.h"
 #include "structs.h"
