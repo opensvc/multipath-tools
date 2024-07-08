@@ -154,8 +154,7 @@ static int get_mpvec(vector curmp, vector pathvec, char *refwwid)
 	return MPATH_PR_SUCCESS ;
 }
 
-static int mpath_get_map(vector curmp, vector pathvec, int fd, char **palias,
-			 struct multipath **pmpp)
+static int mpath_get_map(vector curmp, vector pathvec, int fd, struct multipath **pmpp)
 {
 	int rc;
 	struct stat info;
@@ -205,8 +204,6 @@ static int mpath_get_map(vector curmp, vector pathvec, int fd, char **palias,
 
 	if (pmpp)
 		*pmpp = mpp;
-	if (palias && (*palias = strdup(alias)) == NULL)
-		return MPATH_PR_DMMP_ERROR;
 
 	return MPATH_PR_SUCCESS;
 }
@@ -218,7 +215,7 @@ int do_mpath_persistent_reserve_in(vector curmp, vector pathvec,
 	struct multipath *mpp;
 	int ret;
 
-	ret = mpath_get_map(curmp, pathvec, fd, NULL, &mpp);
+	ret = mpath_get_map(curmp, pathvec, fd, &mpp);
 	if (ret != MPATH_PR_SUCCESS)
 		return ret;
 
@@ -649,12 +646,11 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 				    struct prout_param_descriptor *paramp, int noisy)
 {
 	struct multipath *mpp;
-	char *alias;
 	int ret;
 	uint64_t prkey;
 	struct config *conf;
 
-	ret = mpath_get_map(curmp, pathvec, fd, &alias, &mpp);
+	ret = mpath_get_map(curmp, pathvec, fd, &mpp);
 	if (ret != MPATH_PR_SUCCESS)
 		return ret;
 
@@ -670,21 +666,20 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 	      (!get_be64(mpp->reservation_key) ||
 	       memcmp(paramp->key, &mpp->reservation_key, 8) == 0)))) {
 		memcpy(&mpp->reservation_key, paramp->sa_key, 8);
-		if (update_prkey_flags(alias, get_be64(mpp->reservation_key),
+		if (update_prkey_flags(mpp->alias, get_be64(mpp->reservation_key),
 				       paramp->sa_flags)) {
 			condlog(0, "%s: failed to set prkey for multipathd.",
-				alias);
-			ret = MPATH_PR_DMMP_ERROR;
-			goto out1;
+				mpp->alias);
+			return MPATH_PR_DMMP_ERROR;
 		}
 	}
 
 	if (memcmp(paramp->key, &mpp->reservation_key, 8) &&
 	    memcmp(paramp->sa_key, &mpp->reservation_key, 8) &&
 	    (prkey || rq_servact != MPATH_PROUT_REG_IGN_SA)) {
-		condlog(0, "%s: configured reservation key doesn't match: 0x%" PRIx64, alias, get_be64(mpp->reservation_key));
-		ret = MPATH_PR_SYNTAX_ERROR;
-		goto out1;
+		condlog(0, "%s: configured reservation key doesn't match: 0x%" PRIx64,
+			mpp->alias, get_be64(mpp->reservation_key));
+		return MPATH_PR_SYNTAX_ERROR;
 	}
 
 	switch(rq_servact)
@@ -703,24 +698,21 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 		ret = mpath_prout_rel(mpp, rq_servact, rq_scope, rq_type, paramp, noisy);
 		break;
 	default:
-		ret = MPATH_PR_OTHER;
-		goto out1;
+		return MPATH_PR_OTHER;
 	}
 
 	if ((ret == MPATH_PR_SUCCESS) && ((rq_servact == MPATH_PROUT_REG_SA) ||
 				(rq_servact ==  MPATH_PROUT_REG_IGN_SA)))
 	{
 		if (prkey == 0) {
-			update_prflag(alias, 0);
-			update_prkey(alias, 0);
+			update_prflag(mpp->alias, 0);
+			update_prkey(mpp->alias, 0);
 		} else
-			update_prflag(alias, 1);
+			update_prflag(mpp->alias, 1);
 	} else if ((ret == MPATH_PR_SUCCESS) && (rq_servact == MPATH_PROUT_CLEAR_SA)) {
-		update_prflag(alias, 0);
-		update_prkey(alias, 0);
+		update_prflag(mpp->alias, 0);
+		update_prkey(mpp->alias, 0);
 	}
-out1:
-	free(alias);
 	return ret;
 }
 
