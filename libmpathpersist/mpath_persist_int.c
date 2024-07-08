@@ -157,10 +157,9 @@ static int get_mpvec(vector curmp, vector pathvec, char *refwwid)
 static int mpath_get_map(vector curmp, vector pathvec, int fd, char **palias,
 			 struct multipath **pmpp)
 {
-	int ret = MPATH_PR_DMMP_ERROR;
+	int rc;
 	struct stat info;
-	int major, minor;
-	char *alias;
+	char alias[WWID_SIZE], uuid[DM_UUID_LEN];
 	struct multipath *mpp;
 
 	if (fstat(fd, &info) != 0){
@@ -172,47 +171,44 @@ static int mpath_get_map(vector curmp, vector pathvec, int fd, char **palias,
 		return MPATH_PR_FILE_ERROR;
 	}
 
-	major = major(info.st_rdev);
-	minor = minor(info.st_rdev);
-	condlog(4, "Device  %d:%d", major, minor);
-
 	/* get alias from major:minor*/
-	alias = dm_mapname(major, minor);
-	if (!alias){
-		condlog(0, "%d:%d failed to get device alias.", major, minor);
+	rc = libmp_mapinfo(DM_MAP_BY_DEVT | MAPINFO_MPATH_ONLY,
+			   (mapid_t) { .devt = info.st_rdev },
+			   (mapinfo_t) {
+				   .name = alias,
+				   .uuid = uuid,
+			   });
+
+	if (rc == DMP_NO_MATCH || !is_mpath_uuid(uuid)) {
+		condlog(3, "%s: not a multipath device.", alias);
+		return MPATH_PR_DMMP_ERROR;
+	} else if (rc != DMP_OK) {
+		condlog(1, "%d:%d failed to get device alias.",
+			major(info.st_rdev), minor(info.st_rdev));
 		return MPATH_PR_DMMP_ERROR;
 	}
 
-	condlog(3, "alias = %s", alias);
-
-	if (dm_is_mpath(alias) != DM_IS_MPATH_YES) {
-		condlog(3, "%s: not a multipath device.", alias);
-		goto out;
-	}
+	condlog(4, "alias = %s", alias);
 
 	/* get info of all paths from the dm device     */
-	if (get_mpvec(curmp, pathvec, alias)){
+	if (get_mpvec(curmp, pathvec, alias)) {
 		condlog(0, "%s: failed to get device info.", alias);
-		goto out;
+		return MPATH_PR_DMMP_ERROR;
 	}
 
 	mpp = find_mp_by_alias(curmp, alias);
 
 	if (!mpp) {
 		condlog(0, "%s: devmap not registered.", alias);
-		goto out;
+		return MPATH_PR_DMMP_ERROR;
 	}
 
-	ret = MPATH_PR_SUCCESS;
 	if (pmpp)
 		*pmpp = mpp;
-	if (palias) {
-		*palias = alias;
-		alias = NULL;
-	}
-out:
-	free(alias);
-	return ret;
+	if (palias && (*palias = strdup(alias)) == NULL)
+		return MPATH_PR_DMMP_ERROR;
+
+	return MPATH_PR_SUCCESS;
 }
 
 int do_mpath_persistent_reserve_in(vector curmp, vector pathvec,
