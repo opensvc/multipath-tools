@@ -1188,39 +1188,42 @@ dm_disablegroup(const char * mapname, int index)
 	return dm_groupmsg("disable", mapname, index);
 }
 
-struct multipath *dm_get_multipath(const char *name)
+static int dm_get_multipath(const char *name, struct multipath **pmpp)
 {
 	struct multipath __attribute((cleanup(cleanup_multipath))) *mpp = NULL;
 	char uuid[DM_UUID_LEN];
+	int rc;
 
 	mpp = alloc_multipath();
 	if (!mpp)
-		return NULL;
+		return DMP_ERR;
 
 	mpp->alias = strdup(name);
 
 	if (!mpp->alias)
-		return NULL;
+		return DMP_ERR;
 
-	if (libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+	if ((rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
 			  (mapid_t) { .str = name },
 			  (mapinfo_t) {
 				  .size = &mpp->size,
 				  .uuid = uuid,
 				  .dmi = &mpp->dmi,
-			  }) != DMP_OK)
-		return NULL;
+			  })) != DMP_OK)
+		return rc;
 
 	if (!is_mpath_uuid(uuid))
-		return NULL;
+		return DMP_NO_MATCH;
 
 	strlcpy(mpp->wwid, uuid + UUID_PREFIX_LEN, sizeof(mpp->wwid));
-	return steal_ptr(mpp);
+	*pmpp = steal_ptr(mpp);
+
+	return DMP_OK;
 }
 
 int dm_get_maps(vector mp)
 {
-	struct multipath * mpp;
+	struct multipath *mpp = NULL;
 	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
 	struct dm_names *names;
 	unsigned next = 0;
@@ -1245,20 +1248,19 @@ int dm_get_maps(vector mp)
 	}
 
 	do {
-		if (dm_is_mpath(names->name) != DM_IS_MPATH_YES)
-			goto next;
-
-		mpp = dm_get_multipath(names->name);
-		if (!mpp)
-			return 1;
-
-		if (!vector_alloc_slot(mp)) {
-			free_multipath(mpp, KEEP_PATHS);
+		switch (dm_get_multipath(names->name, &mpp)) {
+		case DMP_OK:
+			if (!vector_alloc_slot(mp)) {
+				free_multipath(mpp, KEEP_PATHS);
+				return 1;
+			}
+			vector_set_slot(mp, mpp);
+			break;
+		case DMP_NO_MATCH:
+			break;
+		default:
 			return 1;
 		}
-
-		vector_set_slot(mp, mpp);
-next:
 		next = names->next;
 		names = (void *) names + next;
 	} while (next);

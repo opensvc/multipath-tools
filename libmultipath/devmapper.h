@@ -184,7 +184,6 @@ int dm_rename (const char * old, char * new, char * delim, int skip_kpartx);
 int dm_reassign(const char * mapname);
 int dm_reassign_table(const char *name, char *old, char *new);
 int dm_setgeometry(struct multipath *mpp);
-struct multipath *dm_get_multipath(const char *name);
 
 #define VERSION_GE(v, minv) ( \
 	(v[0] > minv[0]) || \
