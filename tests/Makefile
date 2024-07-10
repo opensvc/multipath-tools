@@ -91,7 +91,7 @@ clean: test_clean valgrind_clean dep_clean
 	$(Q)$(RM) $(TESTS:%=%-test) $(OBJS) *.o.wrap
 	$(Q)$(RM) -rf lib conf.d
 
-.SECONDARY: $(OBJS)
+.SECONDARY: $(OBJS) $(foreach T,$(TESTS),$($T-test_OBJDEPS)) $(HELPERS:%=%.wrap)
 
 include $(wildcard $(OBJS:.o=.d))
 
