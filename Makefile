@@ -16,10 +16,13 @@ LIB_BUILDDIRS += \
 	libdmmp
 endif
 
-BUILDDIRS := $(LIB_BUILDDIRS) \
+PLUGIN_BUILDDIRS := \
 	libmultipath/prioritizers \
 	libmultipath/checkers \
 	libmultipath/foreign \
+
+BUILDDIRS := $(LIB_BUILDDIRS) \
+	$(PLUGIN_BUILDDIRS) \
 	multipath \
 	multipathd \
 	mpathpersist \
@@ -122,6 +125,16 @@ test:	all
 
 valgrind-test:	all
 	@$(MAKE) -C tests valgrind
+
+TEST-ARTIFACTS := config.mk Makefile.inc \
+	$(LIB_BUILDDIRS:%=%/*.so*) $(PLUGIN_BUILDDIRS:%=%/*.so) \
+	tests/Makefile tests/*.so* tests/lib/* tests/*-test 
+
+test-progs.cpio: test-progs
+	@printf "%s\\n" $(TEST-ARTIFACTS) | cpio -o -H crc >$@
+
+test-progs.tar: test-progs
+	@tar cf $@ $(TEST-ARTIFACTS)
 
 .PHONY:	TAGS
 TAGS:
