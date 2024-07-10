@@ -47,6 +47,21 @@ jobs:
         if: ${{ matrix.os == 'debian-jessie' }}
         run: make -j -Orecurse READLINE=libreadline test
 
+      - name: set archive name
+        # Leap containers have cpio but not tar
+        run: echo ARCHIVE_TGT=test-progs.cpio >> $GITHUB_ENV
+        if: ${{ matrix.os == 'opensuse-leap' }}
+      - name: set archive name
+        run: echo ARCHIVE_TGT=test-progs.tar >> $GITHUB_ENV
+        if: ${{ matrix.os != 'opensuse-leap' }}
+      - name: create binary archive
+        run: make ${{ env.ARCHIVE_TGT }}
+      - name: upload binary archive
+        uses: actions/upload-artifact@v1
+        with:
+          name: native-${{ matrix.os }}
+          path: ${{ env.ARCHIVE_TGT }}
+
       - name: clean
         run: make clean
       - name: clang
@@ -59,3 +74,54 @@ jobs:
         env:
           CC: clang
         run: make READLINE=libreadline test
+
+  root-test:
+    runs-on: ubuntu-22.04
+    needs: stable
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - debian-jessie
+          - debian-buster
+          - debian-bullseye
+          - debian-bookworm
+          - fedora-40
+          - opensuse-leap
+    steps:
+      - name: mpath
+        run: sudo modprobe dm_multipath
+      - name: brd
+        run: sudo modprobe brd rd_nr=1 rd_size=65536
+
+      - name: checkout
+        uses: actions/checkout@v1
+
+      - name: download binary archive
+        uses: actions/download-artifact@v1
+        with:
+          name: native-${{ matrix.os }}
+      - name: unpack binary archive
+        run: cpio -idv < native-${{ matrix.os }}/test-progs.cpio
+        if: ${{ matrix.os == 'opensuse-leap' }}
+      - name: unpack binary archive
+        run: tar xfmv native-${{ matrix.os }}/test-progs.tar
+        if: ${{ matrix.os != 'opensuse-leap' }}
+
+      - name: run root tests
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          guest-dir: /__w/multipath-tools/multipath-tools
+          host-dir: ${{ github.workspace }}
+          params: >
+            --workdir /__w/multipath-tools/multipath-tools --privileged
+            -v /dev/ram0:/dev/ram0 -e DIO_TEST_DEV=/dev/ram0
+          command: -C tests directio.out dmevents.out
+        id: root-test
+        continue-on-error: true
+      - name: show root test output
+        run: for o in tests/*.out; do echo "===== $o ====="; cat "$o"; done
+      - name: fail
+        run: /bin/false
+        if: ${{ steps.root-test.outcome == 'failure' }}
