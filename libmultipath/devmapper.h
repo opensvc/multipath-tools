@@ -46,6 +46,12 @@ int dm_map_present (const char *name);
 int dm_map_present_by_uuid(const char *uuid);
 int dm_get_map(const char *name, unsigned long long *size, char **outparams);
 int dm_get_status(const char *name, char **outstatus);
+
+enum {
+	DM_IS_MPATH_NO,
+	DM_IS_MPATH_YES,
+	DM_IS_MPATH_ERR,
+};
 int dm_is_mpath(const char *name);
 
 enum {

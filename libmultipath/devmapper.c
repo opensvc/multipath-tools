@@ -846,15 +846,9 @@ static int dm_type_match(const char *name, char *type)
 		return DM_TYPE_NOMATCH;
 }
 
-/*
- * returns:
- * 1  : is multipath device
- * 0  : is not multipath device
- * -1 : error
- */
 int dm_is_mpath(const char *name)
 {
-	int r = -1;
+	int r = DM_IS_MPATH_ERR;
 	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
 	struct dm_info info;
 	uint64_t start, length;
@@ -876,7 +870,7 @@ int dm_is_mpath(const char *name)
 	if (!dm_task_get_info(dmt, &info))
 		goto out;
 
-	r = 0;
+	r = DM_IS_MPATH_NO;
 
 	if (!info.exists)
 		goto out;
@@ -895,10 +889,10 @@ int dm_is_mpath(const char *name)
 	if (!target_type || strcmp(target_type, TGT_MPATH) != 0)
 		goto out;
 
-	r = 1;
+	r = DM_IS_MPATH_YES;
 out:
-	if (r < 0)
-		condlog(3, "%s: dm command failed in %s: %s", name, __FUNCTION__, strerror(errno));
+	if (r == DM_IS_MPATH_ERR)
+		condlog(3, "%s: dm command failed in %s: %s", name, __func__, strerror(errno));
 	return r;
 }
 
@@ -1039,7 +1033,7 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 	unsigned long long mapsize;
 	char *params = NULL;
 
-	if (dm_is_mpath(mapname) != 1)
+	if (dm_is_mpath(mapname) != DM_IS_MPATH_YES)
 		return DM_FLUSH_OK; /* nothing to do */
 
 	/* if the device currently has no partitions, do not
@@ -1086,7 +1080,7 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 			}
 			condlog(4, "multipath map %s removed", mapname);
 			return DM_FLUSH_OK;
-		} else if (dm_is_mpath(mapname) != 1) {
+		} else if (dm_is_mpath(mapname) != DM_IS_MPATH_YES) {
 			condlog(4, "multipath map %s removed externally",
 				mapname);
 			return DM_FLUSH_OK; /* raced. someone else removed it */
@@ -1316,7 +1310,7 @@ int dm_get_maps(vector mp)
 	}
 
 	do {
-		if (dm_is_mpath(names->name) != 1)
+		if (dm_is_mpath(names->name) != DM_IS_MPATH_YES)
 			goto next;
 
 		mpp = dm_get_multipath(names->name);

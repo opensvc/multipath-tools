@@ -247,7 +247,7 @@ static int check_usable_paths(struct config *conf,
 		goto out;
 	}
 
-	if (dm_is_mpath(mapname) != 1) {
+	if (dm_is_mpath(mapname) != DM_IS_MPATH_YES) {
 		condlog(1, "%s is not a multipath map", devpath);
 		goto free;
 	}
@@ -1080,7 +1080,7 @@ main (int argc, char *argv[])
 		goto out;
 	}
 	if (cmd == CMD_FLUSH_ONE) {
-		if (dm_is_mpath(dev) != 1) {
+		if (dm_is_mpath(dev) != DM_IS_MPATH_YES) {
 			condlog(0, "%s is not a multipath device", dev);
 			r = RTVL_FAIL;
 			goto out;

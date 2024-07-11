@@ -865,7 +865,7 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 	int reassign_maps;
 	struct config *conf;
 
-	if (dm_is_mpath(alias) != 1) {
+	if (dm_is_mpath(alias) != DM_IS_MPATH_YES) {
 		condlog(4, "%s: not a multipath map", alias);
 		return 0;
 	}
