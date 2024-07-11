@@ -806,43 +806,44 @@ out:
 	return r;
 }
 
-/*
- * returns:
- *    1 : match
- *    0 : no match
- *   -1 : empty map, or more than 1 target
- */
-int dm_type(const char *name, char *type)
+enum {
+	DM_TYPE_NOMATCH = 0,
+	DM_TYPE_MATCH,
+	/* more than 1 target */
+	DM_TYPE_MULTI,
+	/* empty map */
+	DM_TYPE_EMPTY,
+	DM_TYPE_ERR,
+};
+static int dm_type_match(const char *name, char *type)
 {
-	int r = 0;
 	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
 	uint64_t start, length;
 	char *target_type = NULL;
 	char *params;
 
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
-		return 0;
+		return DM_TYPE_ERR;
 
 	if (!dm_task_set_name(dmt, name))
-		goto out;
+		return DM_TYPE_ERR;
 
 	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_TABLE, dmt);
-		goto out;
+		return DM_TYPE_ERR;
 	}
 
 	/* Fetch 1st target */
 	if (dm_get_next_target(dmt, NULL, &start, &length,
 			       &target_type, &params) != NULL)
 		/* multiple targets */
-		r = -1;
+		return DM_TYPE_MULTI;
 	else if (!target_type)
-		r = -1;
+		return DM_TYPE_EMPTY;
 	else if (!strcmp(target_type, type))
-		r = 1;
-
-out:
-	return r;
+		return DM_TYPE_MATCH;
+	else
+		return DM_TYPE_NOMATCH;
 }
 
 /*
@@ -1425,7 +1426,7 @@ do_foreach_partmaps (const char * mapname,
 		    /*
 		     * if there is only a single "linear" target
 		     */
-		    (dm_type(names->name, TGT_PART) == 1) &&
+		    (dm_type_match(names->name, TGT_PART) == DM_TYPE_MATCH) &&
 
 		    /*
 		     * and the uuid of the target is a partition of the
