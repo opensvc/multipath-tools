@@ -21,12 +21,6 @@ valgrind:	$(TESTS:%=%.vgr)
 # test-specific compiler flags
 # XYZ-test_FLAGS: Additional compiler flags for this test
 
-ifneq ($(wildcard directio_test_dev),)
-DIO_TEST_DEV = $(shell sed -n -e 's/^[[:space:]]*DIO_TEST_DEV[[:space:]]*=[[:space:]]*\([^[:space:]\#]\+\).*/\1/p' < directio_test_dev)
-endif
-ifneq ($(DIO_TEST_DEV),)
-directio-test_FLAGS := -DDIO_TEST_DEV=\"$(DIO_TEST_DEV)\"
-endif
 mpathvalid-test_FLAGS := -I$(mpathvaliddir)
 features-test_FLAGS := -I$(multipathdir)/nvme
 
@@ -59,9 +53,7 @@ valid-test_LIBDEPS := -lmount -ludev -lpthread -ldl
 devt-test_LIBDEPS := -ludev
 mpathvalid-test_LIBDEPS := -ludev -lpthread -ldl
 mpathvalid-test_OBJDEPS := $(mpathvaliddir)/mpath_valid.o
-ifneq ($(DIO_TEST_DEV),)
 directio-test_LIBDEPS := -laio
-endif
 strbuf-test_OBJDEPS := $(mpathutildir)/strbuf.o
 sysfs-test_TESTDEPS := test-log.o
 sysfs-test_OBJDEPS := $(multipathdir)/sysfs.o $(mpathutildir)/util.o

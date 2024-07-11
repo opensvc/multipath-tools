@@ -13,6 +13,17 @@ If valgrind detects a bad memory access or leak, the test will fail. The
 output of the test run, including valgrind output, is stored as
 `<testname>.vgr`.
 
+## Running tests manually
+
+`make test` or `make -C test "$TEST.out"` will only run the test program if
+the output files `$TEST.out` don't exist yet. To re-run the test, delete the
+output file first. In order to run a test outside `make`, set the library
+search path:
+
+    cd tests
+    export LD_LIBRARY_PATH=.:../libmpathutil:../libmpathcmd
+	./dmevents-test  # or whatever other test you want to run
+
 ## Controlling verbosity for unit tests
 
 Some test programs use the environment variable `MPATHTEST_VERBOSITY` to
@@ -37,14 +48,20 @@ This test includes test items that require a access to a block device. The
 device will be opened in read-only mode; you don't need to worry about data
 loss. However, the user needs to specify a device to be used. Set the
 environment variable `DIO_TEST_DEV` to the path of the device.
-Alternatively, create a file `directio_test_dev` under
-the `tests` directory containing a single line that sets this environment
-variable in Bourne Shell syntax, like this:
-
-    DIO_TEST_DEV=/dev/sdc3
-
 After that, run `make directio.out` as root in the `tests` directory to
 perform the test.
+
+With a real test device, the test results may note be 100% reproducible,
+and sporadic test failures may occur under certain circumstances.
+It may be necessary to introduce a certain delay between test
+operations. To do so, set the environment variable `DIO_TEST_DELAY` to a
+positive integer that determines the delay (in microseconds) after each
+`io_submit()` operation. The default delay is 10 microseconds.
+
+*Note:* `DIO_TEST_DEV` doesn't have to be set during compilation of
+`directio-test`. This used to be the case in previous versions of
+multipath-tools. Previously, it was possible to set `DIO_TEST_DEV` in a file
+`tests/directio_test_dev`. This is not supported any more.
 
 ## Adding tests
 

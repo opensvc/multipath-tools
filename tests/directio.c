@@ -34,6 +34,8 @@ struct io_event mock_events[AIO_GROUP_SIZE]; /* same as the checker max */
 int ev_off = 0;
 struct timespec zero_timeout = { .tv_sec = 0 };
 struct timespec full_timeout = { .tv_sec = -1 };
+const char *test_dev = NULL;
+unsigned int test_delay = 10000;
 
 #ifdef __GLIBC__
 #define ioctl_request_t unsigned long
@@ -45,11 +47,12 @@ int REAL_IOCTL(int fd, ioctl_request_t request, void *argp);
 
 int WRAP_IOCTL(int fd, ioctl_request_t request, void *argp)
 {
-#ifdef DIO_TEST_DEV
-	mock_type(int);
-	return REAL_IOCTL(fd, request, argp);
-#else
 	int *blocksize = (int *)argp;
+
+	if (test_dev) {
+		mock_type(int);
+		return REAL_IOCTL(fd, request, argp);
+	}
 
 	assert_int_equal(fd, test_fd);
 	/*
@@ -64,88 +67,80 @@ int WRAP_IOCTL(int fd, ioctl_request_t request, void *argp)
 	assert_non_null(blocksize);
 	*blocksize = mock_type(int);
 	return 0;
-#endif
 }
 
 int REAL_FCNTL (int fd, int cmd, long arg);
 
 int WRAP_FCNTL (int fd, int cmd, long arg)
 {
-#ifdef DIO_TEST_DEV
-	return REAL_FCNTL(fd, cmd, arg);
-#else
+	if (test_dev)
+		return REAL_FCNTL(fd, cmd, arg);
 	assert_int_equal(fd, test_fd);
 	assert_int_equal(cmd, F_GETFL);
 	return O_DIRECT;
-#endif
 }
 
 int __real___fxstat(int ver, int fd, struct stat *statbuf);
 
 int __wrap___fxstat(int ver, int fd, struct stat *statbuf)
 {
-#ifdef DIO_TEST_DEV
-	return __real___fxstat(ver, fd, statbuf);
-#else
+	if (test_dev)
+		return __real___fxstat(ver, fd, statbuf);
+
 	assert_int_equal(fd, test_fd);
 	assert_non_null(statbuf);
 	memset(statbuf, 0, sizeof(struct stat));
 	return 0;
-#endif
+
 }
 
 int __real_io_setup(int maxevents, io_context_t *ctxp);
 
 int __wrap_io_setup(int maxevents, io_context_t *ctxp)
 {
-	ioctx_count++;
-#ifdef DIO_TEST_DEV
 	int ret = mock_type(int);
-	assert_int_equal(ret, __real_io_setup(maxevents, ctxp));
+
+	if (test_dev)
+		assert_int_equal(ret, __real_io_setup(maxevents, ctxp));
+	ioctx_count++;
 	return ret;
-#else
-	return mock_type(int);
-#endif
 }
 
 int __real_io_destroy(io_context_t ctx);
 
 int __wrap_io_destroy(io_context_t ctx)
 {
-	ioctx_count--;
-#ifdef DIO_TEST_DEV
 	int ret = mock_type(int);
-	assert_int_equal(ret, __real_io_destroy(ctx));
+
+	ioctx_count--;
+	if (test_dev)
+		assert_int_equal(ret, __real_io_destroy(ctx));
+
 	return ret;
-#else
-	return mock_type(int);
-#endif
 }
 
 int __real_io_submit(io_context_t ctx, long nr, struct iocb *ios[]);
 
 int __wrap_io_submit(io_context_t ctx, long nr, struct iocb *ios[])
 {
-#ifdef DIO_TEST_DEV
-	struct timespec dev_delay = { .tv_nsec = 100000 };
 	int ret = mock_type(int);
-	assert_int_equal(ret, __real_io_submit(ctx, nr, ios));
-	nanosleep(&dev_delay, NULL);
+
+	if (test_dev) {
+		struct timespec dev_delay = { .tv_nsec = test_delay };
+		assert_int_equal(ret, __real_io_submit(ctx, nr, ios));
+		nanosleep(&dev_delay, NULL);
+	}
 	return ret;
-#else
-	return mock_type(int);
-#endif
 }
 
 int __real_io_cancel(io_context_t ctx, struct iocb *iocb, struct io_event *evt);
 
 int __wrap_io_cancel(io_context_t ctx, struct iocb *iocb, struct io_event *evt)
 {
-#ifdef DIO_TEST_DEV
-	return __real_io_cancel(ctx, iocb, evt);
-#else
-	return 0;
-#endif
+	if (test_dev)
+		return __real_io_cancel(ctx, iocb, evt);
+	else
+		return 0;
 }
 
 int REAL_IO_GETEVENTS(io_context_t ctx, long min_nr, long nr,
@@ -155,38 +150,43 @@ int WRAP_IO_GETEVENTS(io_context_t ctx, long min_nr, long nr,
 			struct io_event *events, struct timespec *timeout)
 {
 	int nr_evs;
-#ifndef DIO_TEST_DEV
 	struct timespec *sleep_tmo;
 	int i;
 	struct io_event *evs;
-#endif
 
 	assert_non_null(timeout);
 	nr_evs = mock_type(int);
 	assert_true(nr_evs <= nr);
 	if (!nr_evs)
 		return 0;
-#ifdef DIO_TEST_DEV
-	mock_ptr_type(struct timespec *);
-	mock_ptr_type(struct io_event *);
-	assert_int_equal(nr_evs, REAL_IO_GETEVENTS(ctx, min_nr, nr_evs,
-						   events, timeout));
-#else
-	sleep_tmo = mock_ptr_type(struct timespec *);
-	if (sleep_tmo) {
-		if (sleep_tmo->tv_sec < 0)
-			nanosleep(timeout, NULL);
-		else
-			nanosleep(sleep_tmo, NULL);
+	if (test_dev) {
+		int n = 0;
+		mock_ptr_type(struct timespec *);
+		mock_ptr_type(struct io_event *);
+
+		condlog(2, "min_nr = %ld nr_evs = %d", min_nr, nr_evs);
+		while (n < nr_evs) {
+			min_nr = min_nr <= nr_evs - n ? min_nr : nr_evs - n;
+			n += REAL_IO_GETEVENTS(ctx, min_nr, nr_evs - n,
+					       events + n, timeout);
+		}
+		assert_int_equal(nr_evs, n);
+	} else {
+		sleep_tmo = mock_ptr_type(struct timespec *);
+		if (sleep_tmo) {
+			if (sleep_tmo->tv_sec < 0)
+				nanosleep(timeout, NULL);
+			else
+				nanosleep(sleep_tmo, NULL);
+		}
+		if (nr_evs < 0) {
+			errno = -nr_evs;
+			return -1;
+		}
+		evs = mock_ptr_type(struct io_event *);
+		for (i = 0; i < nr_evs; i++)
+			events[i] = evs[i];
 	}
-	if (nr_evs < 0) {
-		errno = -nr_evs;
-		return -1;
-	}
-	evs = mock_ptr_type(struct io_event *);
-	for (i = 0; i < nr_evs; i++)
-		events[i] = evs[i];
-#endif
 	ev_off -= nr_evs;
 	return nr_evs;
 }
@@ -259,10 +259,9 @@ static void do_libcheck_init(struct checker *c, int blocksize,
 	assert_non_null(ct->req);
 	if (req)
 		*req = ct->req;
-#ifndef DIO_TEST_DEV
-	/* don't check fake blocksize on real devices */
-	assert_int_equal(ct->req->blksize, blocksize);
-#endif
+	if (!test_dev)
+		/* don't check fake blocksize on real devices */
+		assert_int_equal(ct->req->blksize, blocksize);
 }
 
 static int is_checker_running(struct checker *c)
@@ -583,11 +582,11 @@ static void test_async_timeout_cancel_failed(void **state)
 	do_check_state(&c[1], 0, 2, PATH_PENDING);
 	return_io_getevents_none();
 	do_check_state(&c[0], 0, 2, PATH_DOWN);
-#ifndef DIO_TEST_DEV
-	/* can't pick which even gets returned on real devices */
-	return_io_getevents_nr(NULL, 1, &reqs[1], &res[1]);
-	do_check_state(&c[1], 0, 2, PATH_UP);
-#endif
+	if (!test_dev) {
+		/* can't pick which even gets returned on real devices */
+		return_io_getevents_nr(NULL, 1, &reqs[1], &res[1]);
+		do_check_state(&c[1], 0, 2, PATH_UP);
+	}
 	return_io_getevents_none();
 	do_check_state(&c[0], 0, 2, PATH_DOWN);
 	assert_true(is_checker_running(&c[0]));
@@ -663,12 +662,11 @@ static void test_check_state_blksize(void **state)
 	int blksize[] = {4096, 1024, 512};
 	struct async_req *reqs[3];
 	int res[] = {0,1,0};
-#ifdef DIO_TEST_DEV
-	/* can't pick event return state on real devices */
 	int chk_state[] = {PATH_UP, PATH_UP, PATH_UP};
-#else
-	int chk_state[] = {PATH_UP, PATH_DOWN, PATH_UP};
-#endif
+
+	/* can't pick event return state on real devices */
+	if (!test_dev)
+		chk_state[1] = PATH_DOWN;
 
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
@@ -718,20 +716,38 @@ static void test_check_state_async(void **state)
 
 static int setup(void **state)
 {
-#ifdef DIO_TEST_DEV
-	test_fd = open(DIO_TEST_DEV, O_RDONLY);
-	if (test_fd < 0)
-		fail_msg("cannot open %s: %m", DIO_TEST_DEV);
-#endif
+	char *dl = getenv("DIO_TEST_DELAY");
+	test_dev = getenv("DIO_TEST_DEV");
+
+	if (test_dev) {
+		condlog(2, "%s: opening %s", __func__, test_dev);
+		test_fd = open(test_dev, O_RDONLY);
+		if (dl) {
+			char *e;
+			long int d = strtol(dl, &e, 10);
+
+			if (*e == '\0' && d >= 0 && (d * 1000) < (long)UINT_MAX)
+				test_delay = d * 1000;
+			else {
+				condlog(1, "DIO_TEST_DELAY=%s is invalid", dl);
+				return 1;
+			}
+		}
+		condlog(2, "%s: delay = %u us", __func__, test_delay / 1000);
+	}
+	if (test_fd < 0) {
+		fail_msg("cannot open %s: %m", test_dev);
+		return 1;
+	}
 	return 0;
 }
 
 static int teardown(void **state)
 {
-#ifdef DIO_TEST_DEV
-	assert_true(test_fd > 0);
-	assert_int_equal(close(test_fd), 0);
-#endif
+	if (test_dev) {
+		assert_true(test_fd > 0);
+		assert_int_equal(close(test_fd), 0);
+	}
 	return 0;
 }
 
@@ -762,7 +778,7 @@ int main(void)
 {
 	int ret = 0;
 
-	init_test_verbosity(5);
+	init_test_verbosity(2);
 	ret += test_directio();
 	return ret;
 }
