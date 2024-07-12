@@ -57,6 +57,8 @@ enum __mapinfo_flags {
 	/* Fail if target type is not "partition" (linear) */
 	MAPINFO_PART_ONLY   = (1 << 9),
 	__MAPINFO_TGT_TYPE  = (MAPINFO_MPATH_ONLY | MAPINFO_PART_ONLY),
+	/* Fail if the UUID doesn't match the multipath UUID format */
+	MAPINFO_CHECK_UUID  = (1 << 10),
 };
 
 typedef union libmp_map_identifier {
@@ -138,7 +140,6 @@ enum {
 	DM_IS_MPATH_ERR,
 };
 
-bool is_mpath_uuid(const char uuid[DM_UUID_LEN]);
 int dm_is_mpath(const char *name);
 
 enum {

@@ -720,7 +720,7 @@ static int add_map_without_path (struct vectors *vecs, const char *alias)
 	if (!mpp || !(mpp->alias = strdup(alias)))
 		return DMP_ERR;
 
-	if ((rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+	if ((rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
 				(mapid_t) { .str = mpp->alias },
 				(mapinfo_t) {
 					.uuid = uuid,
@@ -731,10 +731,7 @@ static int add_map_without_path (struct vectors *vecs, const char *alias)
 				})) != DMP_OK)
 		return rc;
 
-	if (!is_mpath_uuid(uuid))
-		return DMP_NO_MATCH;
-	else
-		strlcpy(mpp->wwid, uuid + UUID_PREFIX_LEN, sizeof(mpp->wwid));
+	strlcpy(mpp->wwid, uuid + UUID_PREFIX_LEN, sizeof(mpp->wwid));
 
 	if (!strlen(mpp->wwid))
 		condlog(1, "%s: adding map with empty WWID", mpp->alias);

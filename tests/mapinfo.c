@@ -54,6 +54,16 @@ static const char MPATH_STATUS_01[] =
 	"A 0 3 2 65:32 A 0 0 1 67:64 A 0 0 1 69:96 A 0 0 1 "
 	"E 0 3 2 8:16 A 0 0 1 66:48 A 0 0 1 68:80 A 0 0 1 ";
 
+static const char BAD_UUID_01[] = "";
+static const char BAD_UUID_02[] = "mpath3600a098038302d414b2b4d4453474f62";
+static const char BAD_UUID_03[] = " mpath-3600a098038302d414b2b4d4453474f62";
+static const char BAD_UUID_04[] = "-mpath-3600a098038302d414b2b4d4453474f62";
+static const char BAD_UUID_05[] = "mpth-3600a098038302d414b2b4d4453474f62";
+static const char BAD_UUID_06[] = "part1-mpath-3600a098038302d414b2b4d4453474f62";
+static const char BAD_UUID_07[] = "mpath 3600a098038302d414b2b4d4453474f62";
+static const char BAD_UUID_08[] = "mpath";
+static const char BAD_UUID_09[] = "mpath-";
+
 char *__real_strdup(const char *str);
 char *__wrap_strdup(const char *str)
 {
@@ -410,6 +420,208 @@ static void test_mapinfo_good_exists(void **state)
 	rc = libmp_mapinfo(DM_MAP_BY_NAME,
 			   (mapid_t) { .str = "foo", },
 			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_OK);
+}
+
+static void test_mapinfo_bad_check_uuid_00(void **state)
+{
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_uuid, NULL);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_ERR);
+}
+
+static void test_mapinfo_bad_check_uuid_01(void **state)
+{
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_uuid, BAD_UUID_01);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_NO_MATCH);
+}
+
+static void test_mapinfo_bad_check_uuid_02(void **state)
+{
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_uuid, BAD_UUID_02);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_NO_MATCH);
+}
+
+static void test_mapinfo_bad_check_uuid_03(void **state)
+{
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_uuid, BAD_UUID_03);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_NO_MATCH);
+}
+
+static void test_mapinfo_bad_check_uuid_04(void **state)
+{
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_uuid, BAD_UUID_04);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_NO_MATCH);
+}
+
+static void test_mapinfo_bad_check_uuid_05(void **state)
+{
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_uuid, BAD_UUID_05);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_NO_MATCH);
+}
+
+static void test_mapinfo_bad_check_uuid_06(void **state)
+{
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_uuid, BAD_UUID_06);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_NO_MATCH);
+}
+
+static void test_mapinfo_bad_check_uuid_07(void **state)
+{
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_uuid, BAD_UUID_07);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_NO_MATCH);
+}
+
+static void test_mapinfo_bad_check_uuid_08(void **state)
+{
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_uuid, BAD_UUID_08);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_NO_MATCH);
+}
+
+static void test_mapinfo_bad_check_uuid_09(void **state)
+{
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_uuid, BAD_UUID_09);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_OK);
+}
+
+static void test_mapinfo_good_check_uuid_01(void **state)
+{
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_uuid, MPATH_UUID_01);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_OK);
+}
+
+static void test_mapinfo_good_check_uuid_02(void **state)
+{
+	int rc;
+	char uuid[DM_UUID_LEN];
+
+	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_uuid, MPATH_UUID_01);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .uuid = uuid });
+	assert_int_equal(rc, DMP_OK);
+}
+
+static void test_mapinfo_good_check_uuid_03(void **state)
+{
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	mock_dm_get_next_target(12345, TGT_MPATH, MPATH_STATUS_01, NULL);
+	will_return(__wrap_dm_task_get_uuid, MPATH_UUID_01);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .name = NULL });
+	assert_int_equal(rc, DMP_OK);
+}
+
+static void test_mapinfo_good_check_uuid_04(void **state)
+{
+	char __attribute__((cleanup(cleanup_charp))) *target = NULL;
+	int rc;
+
+	mock_mapinfo_name_1(DM_DEVICE_TABLE, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	mock_dm_get_next_target(12345, TGT_MPATH, MPATH_STATUS_01, NULL);
+	will_return(__wrap_dm_task_get_uuid, MPATH_UUID_01);
+	will_return(__wrap_strdup, 1);
+
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .target = &target });
 	assert_int_equal(rc, DMP_OK);
 }
 
@@ -1126,6 +1338,20 @@ static int test_mapinfo(void)
 		cmocka_unit_test(test_mapinfo_bad_get_info_03),
 		cmocka_unit_test(test_mapinfo_bad_get_info_04),
 		cmocka_unit_test(test_mapinfo_good_exists),
+		cmocka_unit_test(test_mapinfo_bad_check_uuid_00),
+		cmocka_unit_test(test_mapinfo_bad_check_uuid_01),
+		cmocka_unit_test(test_mapinfo_bad_check_uuid_02),
+		cmocka_unit_test(test_mapinfo_bad_check_uuid_03),
+		cmocka_unit_test(test_mapinfo_bad_check_uuid_04),
+		cmocka_unit_test(test_mapinfo_bad_check_uuid_05),
+		cmocka_unit_test(test_mapinfo_bad_check_uuid_06),
+		cmocka_unit_test(test_mapinfo_bad_check_uuid_07),
+		cmocka_unit_test(test_mapinfo_bad_check_uuid_08),
+		cmocka_unit_test(test_mapinfo_bad_check_uuid_09),
+		cmocka_unit_test(test_mapinfo_good_check_uuid_01),
+		cmocka_unit_test(test_mapinfo_good_check_uuid_02),
+		cmocka_unit_test(test_mapinfo_good_check_uuid_03),
+		cmocka_unit_test(test_mapinfo_good_check_uuid_04),
 		cmocka_unit_test(test_mapinfo_bad_set_uuid),
 		cmocka_unit_test(test_mapinfo_bad_set_dev_01),
 		cmocka_unit_test(test_mapinfo_bad_set_dev_02),

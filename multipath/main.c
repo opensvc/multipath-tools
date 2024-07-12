@@ -254,7 +254,7 @@ static int check_usable_paths(struct config *conf,
 	if (pathvec == NULL)
 		return r;
 
-	if (libmp_mapinfo(DM_MAP_BY_DEVT | MAPINFO_MPATH_ONLY,
+	if (libmp_mapinfo(DM_MAP_BY_DEVT | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
 			  (mapid_t) { .devt = devt },
 			  (mapinfo_t) {
 			      .name = mpp->alias,
@@ -264,9 +264,6 @@ static int check_usable_paths(struct config *conf,
 			      .target = &params,
 			      .status = &status,
 		      }) != DMP_OK)
-		return r;
-
-	if (!is_mpath_uuid(uuid))
 		return r;
 
 	strlcpy(mpp->wwid, uuid + UUID_PREFIX_LEN, sizeof(mpp->wwid));

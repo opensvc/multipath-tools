@@ -158,7 +158,7 @@ static int mpath_get_map(vector curmp, vector pathvec, int fd, struct multipath 
 {
 	int rc;
 	struct stat info;
-	char alias[WWID_SIZE], uuid[DM_UUID_LEN];
+	char alias[WWID_SIZE];
 	struct multipath *mpp;
 
 	if (fstat(fd, &info) != 0){
@@ -171,14 +171,11 @@ static int mpath_get_map(vector curmp, vector pathvec, int fd, struct multipath 
 	}
 
 	/* get alias from major:minor*/
-	rc = libmp_mapinfo(DM_MAP_BY_DEVT | MAPINFO_MPATH_ONLY,
+	rc = libmp_mapinfo(DM_MAP_BY_DEVT | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
 			   (mapid_t) { .devt = info.st_rdev },
-			   (mapinfo_t) {
-				   .name = alias,
-				   .uuid = uuid,
-			   });
+			   (mapinfo_t) { .name = alias });
 
-	if (rc == DMP_NO_MATCH || !is_mpath_uuid(uuid)) {
+	if (rc == DMP_NO_MATCH) {
 		condlog(3, "%s: not a multipath device.", alias);
 		return MPATH_PR_DMMP_ERROR;
 	} else if (rc != DMP_OK) {

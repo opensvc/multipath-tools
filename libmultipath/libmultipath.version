@@ -127,7 +127,6 @@ global:
 	init_foreign;
 	init_prio;
 	io_err_stat_handle_pathfail;
-	is_mpath_uuid;
 	is_path_valid;
 	libmp_dm_task_create;
 	libmp_get_version;

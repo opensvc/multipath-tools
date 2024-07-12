@@ -611,6 +611,11 @@ int dm_addmap_reload(struct multipath *mpp, char *params, int flush)
 	return 0;
 }
 
+static bool is_mpath_uuid(const char uuid[DM_UUID_LEN])
+{
+	return !strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN);
+}
+
 bool
 has_dm_info(const struct multipath *mpp)
 {
@@ -736,10 +741,16 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 	 * If error is returned, don't touch any output parameters.
 	 */
 	if ((info.name && !(name = dm_task_get_name(dmt)))
-	    || (info.uuid && !(uuid = dm_task_get_uuid(dmt)))
+	    || ((info.uuid || flags & MAPINFO_CHECK_UUID)
+		&& !(uuid = dm_task_get_uuid(dmt)))
 	    || (info.status && !(tmp_status = strdup(params)))
 	    || (info.target && !tmp_target && !(tmp_target = strdup(params))))
 		return DMP_ERR;
+
+	if (flags & MAPINFO_CHECK_UUID && !is_mpath_uuid(uuid)) {
+		condlog(3, "%s: UUID mismatch: %s", fname__, uuid);
+		return DMP_NO_MATCH;
+	}
 
 	if (info.name) {
 		strlcpy(info.name, name, WWID_SIZE);
@@ -810,18 +821,6 @@ int libmp_mapinfo(int flags, mapid_t id, mapinfo_t info)
 			       libmp_map_identifier(flags, id, idbuf));
 }
 
-static int dm_get_dm_uuid(const char *mapname, char uuid[DM_UUID_LEN])
-{
-	return libmp_mapinfo(DM_MAP_BY_NAME,
-			     (mapid_t) { .str = mapname },
-			     (mapinfo_t) { .uuid = uuid });
-}
-
-bool is_mpath_uuid(const char uuid[DM_UUID_LEN])
-{
-	return !strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN);
-}
-
 /**
  * dm_get_wwid(): return WWID for a multipath map
  * @returns:
@@ -834,16 +833,14 @@ bool is_mpath_uuid(const char uuid[DM_UUID_LEN])
 int dm_get_wwid(const char *name, char *uuid, int uuid_len)
 {
 	char tmp[DM_UUID_LEN];
-	int rc = dm_get_dm_uuid(name, tmp);
+	int rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			       (mapid_t) { .str = name },
+			       (mapinfo_t) { .uuid = tmp });
 
 	if (rc != DMP_OK)
 		return rc;
 
-	if (is_mpath_uuid(tmp))
-		strlcpy(uuid, tmp + UUID_PREFIX_LEN, uuid_len);
-	else
-		return DMP_NO_MATCH;
-
+	strlcpy(uuid, tmp + UUID_PREFIX_LEN, uuid_len);
 	return DMP_OK;
 }
 
@@ -861,16 +858,13 @@ static bool is_mpath_part_uuid(const char part_uuid[DM_UUID_LEN],
 
 int dm_is_mpath(const char *name)
 {
-	char uuid[DM_UUID_LEN];
-	int rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+	int rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
 			       (mapid_t) { .str = name },
-			       (mapinfo_t) { .uuid = uuid });
+			       (mapinfo_t) { .uuid = NULL });
 
 	switch (rc) {
 	case DMP_OK:
-		if (is_mpath_uuid(uuid))
-			return DM_IS_MPATH_YES;
-		/* fallthrough */
+		return DM_IS_MPATH_YES;
 	case DMP_NOT_FOUND:
 	case DMP_NO_MATCH:
 		return DM_IS_MPATH_NO;
@@ -961,14 +955,10 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 	int queue_if_no_path = 0;
 	int udev_flags = 0;
 	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
-	char uuid[DM_UUID_LEN];
 
-	if (libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+	if (libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
 			  (mapid_t) { .str = mapname },
-			  (mapinfo_t) {
-				  .uuid = uuid,
-				  .target = &params }) != DMP_OK
-	    || !is_mpath_uuid(uuid))
+			  (mapinfo_t) { .target = &params }) != DMP_OK)
 		return DM_FLUSH_OK; /* nothing to do */
 
 	/* if the device currently has no partitions, do not
