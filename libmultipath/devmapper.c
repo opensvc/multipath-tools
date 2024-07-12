@@ -929,22 +929,37 @@ has_partmap(const char *name __attribute__((unused)),
 	return 1;
 }
 
-int
-partmap_in_use(const char *name, void *data)
+/*
+ * This will be called from mpath_in_use, for each partition.
+ * If the partition itself in use, returns 1 immediately, causing
+ * do_foreach_partmaps() to stop iterating and return 1.
+ * Otherwise, increases the partition count.
+ */
+static int count_partitions(const char *name, void *data)
 {
-	int part_count, *ret_count = (int *)data;
+	int *ret_count = (int *)data;
 	int open_count = dm_get_opencount(name);
 
-	if (ret_count)
-		(*ret_count)++;
-	part_count = 0;
+	if (open_count)
+		return 1;
+	(*ret_count)++;
+	return 0;
+}
+
+int mpath_in_use(const char *name)
+{
+	int open_count = dm_get_opencount(name);
+
 	if (open_count) {
-		if (do_foreach_partmaps(name, partmap_in_use, &part_count))
-			return 1;
-		if (open_count != part_count) {
-			condlog(2, "%s: map in use", name);
+		int part_count = 0;
+
+		if (do_foreach_partmaps(name, count_partitions, &part_count)) {
+			condlog(4, "%s: %s has open partitions", __func__, name);
 			return 1;
 		}
+		condlog(4, "%s: %s: %d openers, %d partitions", __func__, name,
+			open_count, part_count);
+		return open_count > part_count;
 	}
 	return 0;
 }
@@ -968,7 +983,7 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 
 	/* If you aren't doing a deferred remove, make sure that no
 	 * devices are in use */
-	if (!(flags & DMFL_DEFERRED) && partmap_in_use(mapname, NULL))
+	if (!(flags & DMFL_DEFERRED) && mpath_in_use(mapname))
 			return DM_FLUSH_BUSY;
 
 	if ((flags & DMFL_SUSPEND) &&
@@ -1305,7 +1320,7 @@ do_foreach_partmaps (const char *mapname,
 	char map_uuid[DM_UUID_LEN];
 	struct dm_info info;
 
-	if (libmp_mapinfo(DM_MAP_BY_NAME,
+	if (libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
 			  (mapid_t) { .str = mapname },
 			  (mapinfo_t) { .uuid = map_uuid, .dmi = &info }) != DMP_OK)
 		return 1;
@@ -1372,12 +1387,9 @@ remove_partmap(const char *name, void *data)
 {
 	struct remove_data *rd = (struct remove_data *)data;
 
-	if (dm_get_opencount(name)) {
-		dm_remove_partmaps(name, rd->flags);
-		if (!(rd->flags & DMFL_DEFERRED) && dm_get_opencount(name)) {
-			condlog(2, "%s: map in use", name);
-			return DM_FLUSH_BUSY;
-		}
+	if (!(rd->flags & DMFL_DEFERRED) && dm_get_opencount(name)) {
+		condlog(2, "%s: map in use", name);
+		return DM_FLUSH_BUSY;
 	}
 	condlog(4, "partition map %s removed", name);
 	dm_device_remove(name, rd->flags);

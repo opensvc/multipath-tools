@@ -150,7 +150,7 @@ enum {
 	DM_FLUSH_BUSY,
 };
 
-int partmap_in_use(const char *name, void *data);
+int mpath_in_use(const char *name);
 
 enum {
 	DMFL_NONE      = 0,

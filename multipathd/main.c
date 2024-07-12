@@ -597,7 +597,7 @@ flush_map_nopaths(struct multipath *mpp, struct vectors *vecs) {
 		return false;
 	}
 	if (mpp->flush_on_last_del == FLUSH_UNUSED &&
-            partmap_in_use(mpp->alias, NULL) && is_queueing) {
+	    mpath_in_use(mpp->alias) && is_queueing) {
 		condlog(2, "%s: map in use and queueing, can't remove",
 			mpp->alias);
 		return false;
