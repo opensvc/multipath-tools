@@ -1384,7 +1384,7 @@ remove_partmap(const char *name, void *data)
 
 	if (dm_get_opencount(name)) {
 		dm_remove_partmaps(name, rd->flags);
-		if ((rd->flags & DMFL_DEFERRED) && dm_get_opencount(name)) {
+		if (!(rd->flags & DMFL_DEFERRED) && dm_get_opencount(name)) {
 			condlog(2, "%s: map in use", name);
 			return DM_FLUSH_BUSY;
 		}
