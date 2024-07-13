@@ -1129,7 +1129,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* OceanStor V3-V6 */
-		.vendor        = "HUAWEI",
+		.vendor        = "^(HUAWEI|AnyStor|Marstor|NETPOSA|SanM|SUGON|UDsafe)",
 		.product       = "XSG1",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
