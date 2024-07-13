@@ -1120,6 +1120,14 @@ static struct hwentry default_hw[] = {
 	 * Huawei
 	 */
 	{
+		/* All, except OceanStor V3-V6 */
+		.vendor        = "^(HUAWEI|HUASY|HS)",
+		.product       = "^(Dorado|HVS8|S[23568]|V1[568]|VIS6000)",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 15,
+	},
+	{
 		/* OceanStor V3-V6 */
 		.vendor        = "HUAWEI",
 		.product       = "XSG1",
