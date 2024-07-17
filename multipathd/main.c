@@ -2188,13 +2188,15 @@ static int reload_map(struct vectors *vecs, struct multipath *mpp,
 
 int reload_and_sync_map(struct multipath *mpp, struct vectors *vecs)
 {
+	int ret = 0;
+
 	if (reload_map(vecs, mpp, 1))
-		return 1;
+		ret = 1;
 	if (setup_multipath(vecs, mpp) != 0)
 		return 2;
 	sync_map_state(mpp);
 
-	return 0;
+	return ret;
 }
 
 static int check_path_reinstate_state(struct path * pp) {
