@@ -2783,6 +2783,38 @@ enum checker_state {
 	CHECKER_FINISHED,
 };
 
+static enum checker_state
+check_paths(struct vectors *vecs, unsigned int ticks, int *num_paths_p)
+{
+	unsigned int paths_checked = 0;
+	struct timespec diff_time, start_time, end_time;
+	struct path *pp;
+	int i, rc;
+
+	get_monotonic_time(&start_time);
+	vector_foreach_slot(vecs->pathvec, pp, i) {
+		if (pp->is_checked)
+			continue;
+		pp->is_checked = true;
+		if (pp->mpp)
+			rc = check_path(vecs, pp, ticks, start_time.tv_sec);
+		else
+			rc = handle_uninitialized_path(vecs, pp, ticks);
+		if (rc == CHECK_PATH_REMOVED)
+			i--;
+		else if (rc == CHECK_PATH_CHECKED)
+			(*num_paths_p)++;
+		if (++paths_checked % 128 == 0 &&
+		    (lock_has_waiters(&vecs->lock) || waiting_clients())) {
+			get_monotonic_time(&end_time);
+			timespecsub(&end_time, &start_time, &diff_time);
+			if (diff_time.tv_sec > 0)
+				return CHECKER_RUNNING;
+		}
+	}
+	return CHECKER_FINISHED;
+}
+
 static void *
 checkerloop (void *ap)
 {
@@ -2814,7 +2846,7 @@ checkerloop (void *ap)
 
 	while (1) {
 		struct timespec diff_time, start_time, end_time;
-		int num_paths = 0, strict_timing, rc = 0;
+		int num_paths = 0, strict_timing;
 		unsigned int ticks = 0;
 		enum checker_state checker_state = CHECKER_STARTING;
 
@@ -2833,16 +2865,14 @@ checkerloop (void *ap)
 			sd_notify(0, "WATCHDOG=1");
 #endif
 		while (checker_state != CHECKER_FINISHED) {
-			unsigned int paths_checked = 0, i;
-			struct timespec chk_start_time;
 			struct multipath *mpp;
+			int i;
 
 			pthread_cleanup_push(cleanup_lock, &vecs->lock);
 			lock(&vecs->lock);
 			pthread_testcancel();
 			vector_foreach_slot(vecs->mpvec, mpp, i)
 				mpp->is_checked = false;
-			get_monotonic_time(&chk_start_time);
 			if (checker_state == CHECKER_STARTING) {
 				vector_foreach_slot(vecs->mpvec, mpp, i)
 					sync_mpp(vecs, mpp, ticks);
@@ -2850,32 +2880,7 @@ checkerloop (void *ap)
 					pp->is_checked = false;
 				checker_state = CHECKER_RUNNING;
 			}
-			vector_foreach_slot(vecs->pathvec, pp, i) {
-				if (pp->is_checked)
-					continue;
-				pp->is_checked = true;
-				if (pp->mpp)
-					rc = check_path(vecs, pp, ticks,
-							chk_start_time.tv_sec);
-				else
-					rc = handle_uninitialized_path(vecs, pp,
-								       ticks);
-				if (rc == CHECK_PATH_REMOVED)
-					i--;
-				else if (rc == CHECK_PATH_CHECKED)
-					num_paths++;
-				if (++paths_checked % 128 == 0 &&
-				    (lock_has_waiters(&vecs->lock) ||
-				     waiting_clients())) {
-					get_monotonic_time(&end_time);
-					timespecsub(&end_time, &chk_start_time,
-						    &diff_time);
-					if (diff_time.tv_sec > 0)
-						goto unlock;
-				}
-			}
-			checker_state = CHECKER_FINISHED;
-unlock:
+			checker_state = check_paths(vecs, ticks, &num_paths);
 			lock_cleanup_pop(vecs->lock);
 			if (checker_state != CHECKER_FINISHED) {
 				/* Yield to waiters */
