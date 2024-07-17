@@ -539,7 +539,11 @@ add_partial_path(struct path *pp, struct vectors *vecs)
 	if (strlen(wwid) && strncmp(wwid, pp->wwid, WWID_SIZE) != 0) {
 		condlog(0, "%s: path wwid changed from '%s' to '%s'. removing",
 			pp->dev, wwid, pp->wwid);
-		ev_remove_path(pp, vecs, 1);
+		if (!(ev_remove_path(pp, vecs, 1) & REMOVE_PATH_SUCCESS) &&
+		    pp->mpp) {
+			pp->dmstate = PSTATE_FAILED;
+			dm_fail_path(pp->mpp->alias, pp->dev_t);
+		}
 		udev_device_unref(udd);
 		return -1;
 	}

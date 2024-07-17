@@ -146,6 +146,7 @@ uninitialize_path(struct path *pp)
 		return;
 
 	pp->dmstate = PSTATE_UNDEF;
+	pp->state = PATH_UNCHECKED;
 	pp->uid_attribute = NULL;
 	pp->checker_timeout = 0;
 
