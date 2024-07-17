@@ -2386,7 +2386,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 
 	newstate = check_path_state(pp);
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
-		return 1;
+		return 0;
 	} else if ((newstate != PATH_UP && newstate != PATH_GHOST &&
 		    newstate != PATH_PENDING) && (pp->state == PATH_DELAYED)) {
 		/* If path state become failed again cancel path delay state */
