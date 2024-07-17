@@ -31,7 +31,6 @@
 #include "foreign.h"
 #include "strbuf.h"
 #include "cli_handlers.h"
-#include "devmapper.h"
 
 static struct path *
 find_path_by_str(const struct _vector *pathvec, const char *str,
