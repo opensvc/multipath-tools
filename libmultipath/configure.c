@@ -358,6 +358,7 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 
 	sysfs_set_scsi_tmo(conf, mpp);
 	marginal_pathgroups = conf->marginal_pathgroups;
+	mpp->sync_tick = conf->max_checkint;
 	pthread_cleanup_pop(1);
 
 	if (!mpp->features || !mpp->hwhandler || !mpp->selector) {

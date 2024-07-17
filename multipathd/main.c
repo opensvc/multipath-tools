@@ -2342,6 +2342,37 @@ check_path_state(struct path *pp)
 	return newstate;
 }
 
+static void
+do_sync_mpp(struct vectors * vecs, struct multipath *mpp)
+{
+	int i, ret;
+	struct path *pp;
+
+	mpp->is_checked = true;
+	ret = update_multipath_strings(mpp, vecs->pathvec);
+	if (ret != DMP_OK) {
+		condlog(1, "%s: %s", mpp->alias, ret == DMP_NOT_FOUND ?
+			"device not found" :
+			"couldn't synchronize with kernel state");
+		vector_foreach_slot (mpp->paths, pp, i)
+			pp->dmstate = PSTATE_UNDEF;
+		return;
+	}
+	set_no_path_retry(mpp);
+}
+
+static void
+sync_mpp(struct vectors * vecs, struct multipath *mpp, unsigned int ticks)
+{
+	if (mpp->sync_tick)
+		mpp->sync_tick -= (mpp->sync_tick > ticks) ? ticks :
+				  mpp->sync_tick;
+	if (mpp->sync_tick)
+		return;
+
+	do_sync_mpp(vecs, mpp);
+}
+
 /*
  * Returns '1' if the path has been checked and '0' otherwise
  */
@@ -2356,7 +2387,6 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	unsigned int checkint, max_checkint;
 	struct config *conf;
 	int marginal_pathgroups, marginal_changed = 0;
-	int ret;
 	bool need_reload;
 
 	if (pp->initialized == INIT_REMOVED)
@@ -2395,26 +2425,6 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		pp->tick = 1;
 		return 0;
 	}
-	/*
-	 * Synchronize with kernel state
-	 */
-	ret = update_multipath_strings(pp->mpp, vecs->pathvec);
-	if (ret != DMP_OK) {
-		if (ret == DMP_NOT_FOUND) {
-			/* multipath device missing. Likely removed */
-			condlog(1, "%s: multipath device '%s' not found",
-				pp->dev, pp->mpp ? pp->mpp->alias : "");
-			return 0;
-		} else
-			condlog(1, "%s: Couldn't synchronize with kernel state",
-				pp->dev);
-		pp->dmstate = PSTATE_UNDEF;
-	}
-	/* if update_multipath_strings orphaned the path, quit early */
-	if (!pp->mpp)
-		return 0;
-	set_no_path_retry(pp->mpp);
-
 	if (pp->recheck_wwid == RECHECK_WWID_ON &&
 	    (newstate == PATH_UP || newstate == PATH_GHOST) &&
 	    ((pp->state != PATH_UP && pp->state != PATH_GHOST) ||
@@ -2424,7 +2434,12 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		handle_path_wwid_change(pp, vecs);
 		return 0;
 	}
-
+	if (!pp->mpp->is_checked) {
+		do_sync_mpp(vecs, pp->mpp);
+		/* if update_multipath_strings orphaned the path, quit early */
+		if (!pp->mpp)
+			return 0;
+	}
 	if ((newstate != PATH_UP && newstate != PATH_GHOST &&
 	     newstate != PATH_PENDING) && (pp->state == PATH_DELAYED)) {
 		/* If path state become failed again cancel path delay state */
@@ -2752,12 +2767,17 @@ checkerloop (void *ap)
 		while (checker_state != CHECKER_FINISHED) {
 			unsigned int paths_checked = 0, i;
 			struct timespec chk_start_time;
+			struct multipath *mpp;
 
 			pthread_cleanup_push(cleanup_lock, &vecs->lock);
 			lock(&vecs->lock);
 			pthread_testcancel();
+			vector_foreach_slot(vecs->mpvec, mpp, i)
+				mpp->is_checked = false;
 			get_monotonic_time(&chk_start_time);
 			if (checker_state == CHECKER_STARTING) {
+				vector_foreach_slot(vecs->mpvec, mpp, i)
+					sync_mpp(vecs, mpp, ticks);
 				vector_foreach_slot(vecs->pathvec, pp, i)
 					pp->is_checked = false;
 				checker_state = CHECKER_RUNNING;

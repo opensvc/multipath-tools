@@ -505,11 +505,16 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
 	char __attribute__((cleanup(cleanup_charp))) *status = NULL;
 	unsigned long long size;
+	struct config *conf;
 
 	if (!mpp)
 		return r;
 
 	size = mpp->size;
+	conf = get_multipath_config();
+	mpp->sync_tick = conf->max_checkint;
+	put_multipath_config(conf);
+
 	r = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
 			  (mapid_t) { .str = mpp->alias },
 			  (mapinfo_t) {
