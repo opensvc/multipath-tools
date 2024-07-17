@@ -2356,7 +2356,6 @@ do_sync_mpp(struct vectors * vecs, struct multipath *mpp)
 	int i, ret;
 	struct path *pp;
 
-	mpp->is_checked = true;
 	ret = update_multipath_strings(mpp, vecs->pathvec);
 	if (ret != DMP_OK) {
 		condlog(1, "%s: %s", mpp->alias, ret == DMP_NOT_FOUND ?
@@ -2431,7 +2430,7 @@ do_check_path (struct vectors * vecs, struct path * pp)
 		return handle_path_wwid_change(pp, vecs)? CHECK_PATH_REMOVED :
 							  CHECK_PATH_SKIPPED;
 	}
-	if (!pp->mpp->is_checked) {
+	if (pp->mpp->synced_count == 0) {
 		do_sync_mpp(vecs, pp->mpp);
 		/* if update_multipath_strings orphaned the path, quit early */
 		if (!pp->mpp)
@@ -2788,18 +2787,57 @@ check_paths(struct vectors *vecs, unsigned int ticks, int *num_paths_p)
 {
 	unsigned int paths_checked = 0;
 	struct timespec diff_time, start_time, end_time;
+	struct multipath *mpp;
 	struct path *pp;
 	int i, rc;
 
 	get_monotonic_time(&start_time);
+
+	vector_foreach_slot(vecs->mpvec, mpp, i) {
+		struct pathgroup *pgp;
+		struct path *pp;
+		int j, k;
+		bool check_for_waiters = false;
+		/* maps can be rechecked, so this is not always 0 */
+		int synced_count = mpp->synced_count;
+
+		vector_foreach_slot (mpp->pg, pgp, j) {
+			vector_foreach_slot (pgp->paths, pp, k) {
+				if (!pp->mpp || pp->is_checked)
+					continue;
+				pp->is_checked = true;
+				rc = check_path(vecs, pp, ticks,
+						start_time.tv_sec);
+				if (rc == CHECK_PATH_CHECKED)
+					(*num_paths_p)++;
+				if (++paths_checked % 128 == 0)
+					check_for_waiters = true;
+				/*
+				 * mpp has been removed or resynced. Path may
+				 * have been removed.
+				 */
+				if (VECTOR_SLOT(vecs->mpvec, i) != mpp ||
+				    synced_count != mpp->synced_count) {
+					i--;
+					goto next_mpp;
+				}
+			}
+		}
+next_mpp:
+		if (check_for_waiters &&
+		    (lock_has_waiters(&vecs->lock) || waiting_clients())) {
+			get_monotonic_time(&end_time);
+			timespecsub(&end_time, &start_time, &diff_time);
+			if (diff_time.tv_sec > 0)
+				return CHECKER_RUNNING;
+		}
+	}
 	vector_foreach_slot(vecs->pathvec, pp, i) {
-		if (pp->is_checked)
+		if (pp->mpp || pp->is_checked)
 			continue;
 		pp->is_checked = true;
-		if (pp->mpp)
-			rc = check_path(vecs, pp, ticks, start_time.tv_sec);
-		else
-			rc = handle_uninitialized_path(vecs, pp, ticks);
+
+		rc = handle_uninitialized_path(vecs, pp, ticks);
 		if (rc == CHECK_PATH_REMOVED)
 			i--;
 		else if (rc == CHECK_PATH_CHECKED)
@@ -2872,7 +2910,7 @@ checkerloop (void *ap)
 			lock(&vecs->lock);
 			pthread_testcancel();
 			vector_foreach_slot(vecs->mpvec, mpp, i)
-				mpp->is_checked = false;
+				mpp->synced_count = 0;
 			if (checker_state == CHECKER_STARTING) {
 				vector_foreach_slot(vecs->mpvec, mpp, i)
 					sync_mpp(vecs, mpp, ticks);

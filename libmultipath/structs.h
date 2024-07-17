@@ -455,7 +455,7 @@ struct multipath {
 	int ghost_delay_tick;
 	int queue_mode;
 	unsigned int sync_tick;
-	bool is_checked;
+	int synced_count;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;
