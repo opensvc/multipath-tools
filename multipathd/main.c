@@ -2625,7 +2625,6 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 {
 	int newstate;
 	int retrigger_tries;
-	unsigned int checkint, max_checkint;
 	struct config *conf;
 	int ret;
 
@@ -2640,8 +2639,7 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 
 	conf = get_multipath_config();
 	retrigger_tries = conf->retrigger_tries;
-	checkint = conf->checkint;
-	max_checkint = conf->max_checkint;
+	pp->tick = conf->max_checkint;
 	put_multipath_config(conf);
 
 	if (pp->initialized == INIT_MISSING_UDEV) {
@@ -2675,12 +2673,6 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 		}
 	}
 
-	/*
-	 * provision a next check soonest,
-	 * in case we exit abnormally from here
-	 */
-	pp->tick = checkint;
-
 	newstate = check_path_state(pp);
 
 	if (!strlen(pp->wwid) &&
@@ -2695,14 +2687,8 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 		if (pp->initialized == INIT_OK) {
 			ev_add_path(pp, vecs, 1);
 			pp->tick = 1;
-		} else {
-			if (ret == PATHINFO_SKIPPED)
-				return -1;
-			/*
-			 * We failed multiple times to initialize this
-			 * path properly. Don't re-check too often.
-			 */
-			pp->checkint = max_checkint;
+		} else if (ret == PATHINFO_SKIPPED) {
+			return -1;
 		}
 	}
 	return 0;
