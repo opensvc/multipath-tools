@@ -974,20 +974,24 @@ rescan_path(struct udev_device *ud)
 	}
 }
 
-void
+/* Returns true if the path was removed */
+bool
 handle_path_wwid_change(struct path *pp, struct vectors *vecs)
 {
 	struct udev_device *udd;
 	static const char add[] = "add";
 	ssize_t ret;
 	char dev[FILE_NAME_SIZE];
+	bool removed = false;
 
 	if (!pp || !pp->udev)
-		return;
+		return removed;
 
 	strlcpy(dev, pp->dev, sizeof(dev));
 	udd = udev_device_ref(pp->udev);
-	if (!(ev_remove_path(pp, vecs, 1) & REMOVE_PATH_SUCCESS) && pp->mpp) {
+	if (ev_remove_path(pp, vecs, 1) & REMOVE_PATH_SUCCESS) {
+		removed = true;
+	} else if (pp->mpp) {
 		pp->dmstate = PSTATE_FAILED;
 		dm_fail_path(pp->mpp->alias, pp->dev_t);
 	}
@@ -997,6 +1001,7 @@ handle_path_wwid_change(struct path *pp, struct vectors *vecs)
 	if (ret != sizeof(add) - 1)
 		log_sysfs_attr_set_value(1, ret,
 					 "%s: failed to trigger add event", dev);
+	return removed;
 }
 
 bool
@@ -2376,9 +2381,12 @@ sync_mpp(struct vectors * vecs, struct multipath *mpp, unsigned int ticks)
 	do_sync_mpp(vecs, mpp);
 }
 
-/*
- * Returns '1' if the path has been checked and '0' otherwise
- */
+enum check_path_return {
+	CHECK_PATH_CHECKED,
+	CHECK_PATH_SKIPPED,
+	CHECK_PATH_REMOVED,
+};
+
 static int
 check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 {
@@ -2393,12 +2401,12 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	bool need_reload;
 
 	if (pp->initialized == INIT_REMOVED)
-		return 0;
+		return CHECK_PATH_SKIPPED;
 
 	if (pp->tick)
 		pp->tick -= (pp->tick > ticks) ? ticks : pp->tick;
 	if (pp->tick)
-		return 0; /* don't check this path yet */
+		return CHECK_PATH_SKIPPED;
 
 	conf = get_multipath_config();
 	checkint = conf->checkint;
@@ -2419,14 +2427,14 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 
 	newstate = check_path_state(pp);
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED)
-		return 0;
+		return CHECK_PATH_SKIPPED;
 	/*
 	 * Async IO in flight. Keep the previous path state
 	 * and reschedule as soon as possible
 	 */
 	if (newstate == PATH_PENDING) {
 		pp->tick = 1;
-		return 0;
+		return CHECK_PATH_SKIPPED;
 	}
 	if (pp->recheck_wwid == RECHECK_WWID_ON &&
 	    (newstate == PATH_UP || newstate == PATH_GHOST) &&
@@ -2434,14 +2442,14 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	     pp->dmstate == PSTATE_FAILED) &&
 	    check_path_wwid_change(pp)) {
 		condlog(0, "%s: path wwid change detected. Removing", pp->dev);
-		handle_path_wwid_change(pp, vecs);
-		return 0;
+		return handle_path_wwid_change(pp, vecs)? CHECK_PATH_REMOVED :
+							  CHECK_PATH_SKIPPED;
 	}
 	if (!pp->mpp->is_checked) {
 		do_sync_mpp(vecs, pp->mpp);
 		/* if update_multipath_strings orphaned the path, quit early */
 		if (!pp->mpp)
-			return 0;
+			return CHECK_PATH_SKIPPED;
 	}
 	if ((newstate != PATH_UP && newstate != PATH_GHOST &&
 	     newstate != PATH_PENDING) && (pp->state == PATH_DELAYED)) {
@@ -2452,7 +2460,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		 * to the shortest delay
 		 */
 		pp->checkint = checkint;
-		return 1;
+		return CHECK_PATH_CHECKED;
 	}
 	if ((newstate == PATH_UP || newstate == PATH_GHOST) &&
 	    (san_path_check_enabled(pp->mpp) ||
@@ -2467,7 +2475,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 					 * in time */
 					pp->tick = 1;
 				pp->state = PATH_DELAYED;
-				return 1;
+				return CHECK_PATH_CHECKED;
 			}
 			if (!pp->marginal) {
 				pp->marginal = 1;
@@ -2525,7 +2533,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 			pp->mpp->failback_tick = 0;
 
 			pp->mpp->stat_path_failures++;
-			return 1;
+			return CHECK_PATH_CHECKED;
 		}
 
 		if (newstate == PATH_UP || newstate == PATH_GHOST) {
@@ -2604,7 +2612,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	pp->state = newstate;
 
 	if (pp->mpp->wait_for_udev)
-		return 1;
+		return CHECK_PATH_CHECKED;
 	/*
 	 * path prio refreshing
 	 */
@@ -2631,12 +2639,9 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 				switch_pathgroup(pp->mpp);
 		}
 	}
-	return 1;
+	return CHECK_PATH_CHECKED;
 }
 
-/*
- * Returns -1 if the path was blacklisted, and 0 otherwise
- */
 static int
 handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 			  unsigned int ticks)
@@ -2648,12 +2653,12 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 
 	if (pp->initialized != INIT_NEW && pp->initialized != INIT_FAILED &&
 	    pp->initialized != INIT_MISSING_UDEV)
-		return 0;
+		return CHECK_PATH_SKIPPED;
 
 	if (pp->tick)
 		pp->tick -= (pp->tick > ticks) ? ticks : pp->tick;
 	if (pp->tick)
-		return 0; /* don't check this path yet */
+		return CHECK_PATH_SKIPPED;
 
 	conf = get_multipath_config();
 	retrigger_tries = conf->retrigger_tries;
@@ -2675,7 +2680,7 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 				log_sysfs_attr_set_value(1, ret,
 							 "%s: failed to trigger change event",
 							 pp->dev);
-			return 0;
+			return CHECK_PATH_SKIPPED;
 		} else {
 			condlog(1, "%s: not initialized after %d udev retriggers",
 				pp->dev, retrigger_tries);
@@ -2706,10 +2711,16 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 			ev_add_path(pp, vecs, 1);
 			pp->tick = 1;
 		} else if (ret == PATHINFO_SKIPPED) {
-			return -1;
+			int i;
+
+			condlog(1, "%s: path blacklisted. removing", pp->dev);
+			if ((i = find_slot(vecs->pathvec, (void *)pp)) != -1)
+				vector_del_slot(vecs->pathvec, i);
+			free_path(pp);
+			return CHECK_PATH_REMOVED;
 		}
 	}
-	return 0;
+	return CHECK_PATH_CHECKED;
 }
 
 enum checker_state {
@@ -2794,14 +2805,10 @@ checkerloop (void *ap)
 				else
 					rc = handle_uninitialized_path(vecs, pp,
 								       ticks);
-				if (rc < 0) {
-					condlog(1, "%s: check_path() failed, removing",
-						pp->dev);
-					vector_del_slot(vecs->pathvec, i);
-					free_path(pp);
+				if (rc == CHECK_PATH_REMOVED)
 					i--;
-				} else
-					num_paths += rc;
+				else if (rc == CHECK_PATH_CHECKED)
+					num_paths++;
 				if (++paths_checked % 128 == 0 &&
 				    (lock_has_waiters(&vecs->lock) ||
 				     waiting_clients())) {
