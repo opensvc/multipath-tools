@@ -2305,6 +2305,43 @@ should_skip_path(struct path *pp){
 	return 0;
 }
 
+static int
+check_path_state(struct path *pp)
+{
+	int newstate;
+	struct config *conf;
+
+	newstate = path_offline(pp);
+	if (newstate == PATH_UP) {
+		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
+		newstate = get_state(pp, conf, 1, newstate);
+		pthread_cleanup_pop(1);
+	} else {
+		checker_clear_message(&pp->checker);
+		condlog(3, "%s: state %s, checker not called",
+			pp->dev, checker_state_name(newstate));
+	}
+	/*
+	 * Wait for uevent for removed paths;
+	 * some LLDDs like zfcp keep paths unavailable
+	 * without sending uevents.
+	 */
+	if (newstate == PATH_REMOVED)
+		newstate = PATH_DOWN;
+
+	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
+		condlog(2, "%s: unusable path (%s) - checker failed",
+			pp->dev, checker_state_name(newstate));
+		LOG_MSG(2, pp);
+		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
+		pathinfo(pp, conf, 0);
+		pthread_cleanup_pop(1);
+	}
+	return newstate;
+}
+
 /*
  * Returns '1' if the path has been checked, '-1' if it was blacklisted
  * and '0' otherwise
@@ -2384,33 +2421,8 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	 */
 	pp->tick = checkint;
 
-	newstate = path_offline(pp);
-	if (newstate == PATH_UP) {
-		conf = get_multipath_config();
-		pthread_cleanup_push(put_multipath_config, conf);
-		newstate = get_state(pp, conf, 1, newstate);
-		pthread_cleanup_pop(1);
-	} else {
-		checker_clear_message(&pp->checker);
-		condlog(3, "%s: state %s, checker not called",
-			pp->dev, checker_state_name(newstate));
-	}
-	/*
-	 * Wait for uevent for removed paths;
-	 * some LLDDs like zfcp keep paths unavailable
-	 * without sending uevents.
-	 */
-	if (newstate == PATH_REMOVED)
-		newstate = PATH_DOWN;
-
+	newstate = check_path_state(pp);
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
-		condlog(2, "%s: unusable path (%s) - checker failed",
-			pp->dev, checker_state_name(newstate));
-		LOG_MSG(2, pp);
-		conf = get_multipath_config();
-		pthread_cleanup_push(put_multipath_config, conf);
-		pathinfo(pp, conf, 0);
-		pthread_cleanup_pop(1);
 		return 1;
 	} else if ((newstate != PATH_UP && newstate != PATH_GHOST &&
 		    newstate != PATH_PENDING) && (pp->state == PATH_DELAYED)) {
