@@ -1025,9 +1025,9 @@ check_path_wwid_change(struct path *pp)
 	}
 
 	/*Strip any trailing blanks */
-	for (i = strlen(pp->wwid); i > 0 && pp->wwid[i-1] == ' '; i--);
+	for (i = strlen(wwid); i > 0 && wwid[i-1] == ' '; i--);
 		/* no-op */
-	pp->wwid[i] = '\0';
+	wwid[i] = '\0';
 	condlog(4, "%s: Got wwid %s by sgio", pp->dev, wwid);
 
 	if (strncmp(wwid, pp->wwid, WWID_SIZE)) {
