@@ -2343,10 +2343,9 @@ check_path_state(struct path *pp)
 }
 
 /*
- * Returns '1' if the path has been checked, '-1' if it was blacklisted
- * and '0' otherwise
+ * Returns '1' if the path has been checked and '0' otherwise
  */
-int
+static int
 check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 {
 	int newstate;
@@ -2354,16 +2353,13 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	int chkr_new_path_up = 0;
 	int disable_reinstate = 0;
 	int oldchkrstate = pp->chkrstate;
-	int retrigger_tries;
 	unsigned int checkint, max_checkint;
 	struct config *conf;
 	int marginal_pathgroups, marginal_changed = 0;
 	int ret;
 	bool need_reload;
 
-	if (((pp->initialized == INIT_OK || pp->initialized == INIT_PARTIAL ||
-	      pp->initialized == INIT_REQUESTED_UDEV) && !pp->mpp) ||
-	    pp->initialized == INIT_REMOVED)
+	if (pp->initialized == INIT_REMOVED)
 		return 0;
 
 	if (pp->tick)
@@ -2372,7 +2368,6 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		return 0; /* don't check this path yet */
 
 	conf = get_multipath_config();
-	retrigger_tries = conf->retrigger_tries;
 	checkint = conf->checkint;
 	max_checkint = conf->max_checkint;
 	marginal_pathgroups = conf->marginal_pathgroups;
@@ -2382,38 +2377,6 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		condlog(0, "%s: BUG: checkint is not set", pp->dev);
 		pp->checkint = checkint;
 	};
-
-	if (!pp->mpp && pp->initialized == INIT_MISSING_UDEV) {
-		if (pp->retriggers < retrigger_tries) {
-			static const char change[] = "change";
-			ssize_t ret;
-
-			condlog(2, "%s: triggering change event to reinitialize",
-				pp->dev);
-			pp->initialized = INIT_REQUESTED_UDEV;
-			pp->retriggers++;
-			ret = sysfs_attr_set_value(pp->udev, "uevent", change,
-						   sizeof(change) - 1);
-			if (ret != sizeof(change) - 1)
-				log_sysfs_attr_set_value(1, ret,
-							 "%s: failed to trigger change event",
-							 pp->dev);
-			return 0;
-		} else {
-			condlog(1, "%s: not initialized after %d udev retriggers",
-				pp->dev, retrigger_tries);
-			/*
-			 * Make sure that the "add missing path" code path
-			 * below may reinstate the path later, if it ever
-			 * comes up again.
-			 * The WWID needs not be cleared; if it was set, the
-			 * state hadn't been INIT_MISSING_UDEV in the first
-			 * place.
-			 */
-			pp->initialized = INIT_FAILED;
-			return 0;
-		}
-	}
 
 	/*
 	 * provision a next check soonest,
@@ -2434,32 +2397,6 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		 */
 		pp->checkint = checkint;
 		return 1;
-	}
-	if (!pp->mpp) {
-		if (!strlen(pp->wwid) &&
-		    (pp->initialized == INIT_FAILED ||
-		     pp->initialized == INIT_NEW) &&
-		    (newstate == PATH_UP || newstate == PATH_GHOST)) {
-			condlog(2, "%s: add missing path", pp->dev);
-			conf = get_multipath_config();
-			pthread_cleanup_push(put_multipath_config, conf);
-			ret = pathinfo(pp, conf, DI_ALL | DI_BLACKLIST);
-			pthread_cleanup_pop(1);
-			/* INIT_OK implies ret == PATHINFO_OK */
-			if (pp->initialized == INIT_OK) {
-				ev_add_path(pp, vecs, 1);
-				pp->tick = 1;
-			} else {
-				if (ret == PATHINFO_SKIPPED)
-					return -1;
-				/*
-				 * We failed multiple times to initialize this
-				 * path properly. Don't re-check too often.
-				 */
-				pp->checkint = max_checkint;
-			}
-		}
-		return 0;
 	}
 	/*
 	 * Async IO in flight. Keep the previous path state
@@ -2679,6 +2616,99 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	return 1;
 }
 
+/*
+ * Returns -1 if the path was blacklisted, and 0 otherwise
+ */
+static int
+handle_uninitialized_path(struct vectors * vecs, struct path * pp,
+			  unsigned int ticks)
+{
+	int newstate;
+	int retrigger_tries;
+	unsigned int checkint, max_checkint;
+	struct config *conf;
+	int ret;
+
+	if (pp->initialized != INIT_NEW && pp->initialized != INIT_FAILED &&
+	    pp->initialized != INIT_MISSING_UDEV)
+		return 0;
+
+	if (pp->tick)
+		pp->tick -= (pp->tick > ticks) ? ticks : pp->tick;
+	if (pp->tick)
+		return 0; /* don't check this path yet */
+
+	conf = get_multipath_config();
+	retrigger_tries = conf->retrigger_tries;
+	checkint = conf->checkint;
+	max_checkint = conf->max_checkint;
+	put_multipath_config(conf);
+
+	if (pp->initialized == INIT_MISSING_UDEV) {
+		if (pp->retriggers < retrigger_tries) {
+			static const char change[] = "change";
+			ssize_t ret;
+
+			condlog(2, "%s: triggering change event to reinitialize",
+				pp->dev);
+			pp->initialized = INIT_REQUESTED_UDEV;
+			pp->retriggers++;
+			ret = sysfs_attr_set_value(pp->udev, "uevent", change,
+						   sizeof(change) - 1);
+			if (ret != sizeof(change) - 1)
+				log_sysfs_attr_set_value(1, ret,
+							 "%s: failed to trigger change event",
+							 pp->dev);
+			return 0;
+		} else {
+			condlog(1, "%s: not initialized after %d udev retriggers",
+				pp->dev, retrigger_tries);
+			/*
+			 * Make sure that the "add missing path" code path
+			 * below may reinstate the path later, if it ever
+			 * comes up again.
+			 * The WWID needs not be cleared; if it was set, the
+			 * state hadn't been INIT_MISSING_UDEV in the first
+			 * place.
+			 */
+			pp->initialized = INIT_FAILED;
+			return 0;
+		}
+	}
+
+	/*
+	 * provision a next check soonest,
+	 * in case we exit abnormally from here
+	 */
+	pp->tick = checkint;
+
+	newstate = check_path_state(pp);
+
+	if (!strlen(pp->wwid) &&
+	    (pp->initialized == INIT_FAILED || pp->initialized == INIT_NEW) &&
+	    (newstate == PATH_UP || newstate == PATH_GHOST)) {
+		condlog(2, "%s: add missing path", pp->dev);
+		conf = get_multipath_config();
+		pthread_cleanup_push(put_multipath_config, conf);
+		ret = pathinfo(pp, conf, DI_ALL | DI_BLACKLIST);
+		pthread_cleanup_pop(1);
+		/* INIT_OK implies ret == PATHINFO_OK */
+		if (pp->initialized == INIT_OK) {
+			ev_add_path(pp, vecs, 1);
+			pp->tick = 1;
+		} else {
+			if (ret == PATHINFO_SKIPPED)
+				return -1;
+			/*
+			 * We failed multiple times to initialize this
+			 * path properly. Don't re-check too often.
+			 */
+			pp->checkint = max_checkint;
+		}
+	}
+	return 0;
+}
+
 enum checker_state {
 	CHECKER_STARTING,
 	CHECKER_RUNNING,
@@ -2751,7 +2781,11 @@ checkerloop (void *ap)
 				if (pp->is_checked)
 					continue;
 				pp->is_checked = true;
-				rc = check_path(vecs, pp, ticks);
+				if (pp->mpp)
+					rc = check_path(vecs, pp, ticks);
+				else
+					rc = handle_uninitialized_path(vecs, pp,
+								       ticks);
 				if (rc < 0) {
 					condlog(1, "%s: check_path() failed, removing",
 						pp->dev);
