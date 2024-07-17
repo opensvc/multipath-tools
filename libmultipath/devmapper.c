@@ -874,7 +874,8 @@ int dm_is_mpath(const char *name)
 	}
 }
 
-int dm_map_present_by_wwid(const char *wwid)
+/* if name is non-NULL, it must point to an array of WWID_SIZE bytes */
+int dm_find_map_by_wwid(const char *wwid, char *name, struct dm_info *dmi)
 {
 	char tmp[DM_UUID_LEN];
 
@@ -883,7 +884,7 @@ int dm_map_present_by_wwid(const char *wwid)
 
 	return libmp_mapinfo(DM_MAP_BY_UUID,
 			     (mapid_t) { .str = tmp },
-			     (mapinfo_t) { .name = NULL });
+			     (mapinfo_t) { .name = name, .dmi = dmi });
 }
 
 static int dm_dev_t (const char *mapname, char *dev_t, int len)

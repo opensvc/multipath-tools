@@ -132,7 +132,7 @@ int dm_simplecmd_flush (int task, const char *name, uint16_t udev_flags);
 int dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags);
 int dm_addmap_create (struct multipath *mpp, char *params);
 int dm_addmap_reload (struct multipath *mpp, char *params, int flush);
-int dm_map_present_by_wwid(const char *uuid);
+int dm_find_map_by_wwid(const char *wwid, char *name, struct dm_info *dmi);
 
 enum {
 	DM_IS_MPATH_NO,
