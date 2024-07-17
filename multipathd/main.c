@@ -1534,6 +1534,7 @@ needs_ro_update(struct multipath *mpp, int ro)
 int resize_map(struct multipath *mpp, unsigned long long size,
 	       struct vectors * vecs)
 {
+	int ret = 0;
 	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 	unsigned long long orig_size = mpp->size;
 
@@ -1543,7 +1544,8 @@ int resize_map(struct multipath *mpp, unsigned long long size,
 		condlog(0, "%s: failed to setup map for resize : %s",
 			mpp->alias, strerror(errno));
 		mpp->size = orig_size;
-		return 1;
+		ret = 1;
+		goto out;
 	}
 	mpp->action = ACT_RESIZE;
 	mpp->force_udev_reload = 1;
@@ -1551,13 +1553,14 @@ int resize_map(struct multipath *mpp, unsigned long long size,
 		condlog(0, "%s: failed to resize map : %s", mpp->alias,
 			strerror(errno));
 		mpp->size = orig_size;
-		return 1;
+		ret = 1;
 	}
+out:
 	if (setup_multipath(vecs, mpp) != 0)
 		return 2;
 	sync_map_state(mpp);
 
-	return 0;
+	return ret;
 }
 
 static int
