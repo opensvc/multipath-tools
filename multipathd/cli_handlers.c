@@ -696,57 +696,37 @@ cli_add_map (void * v, struct strbuf *reply, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, KEY_MAP);
-	int major = -1, minor = -1;
 	char dev_path[FILE_NAME_SIZE];
-	char *refwwid;
-	char *alias __attribute__((cleanup(cleanup_charp))) = NULL;
-	int rc, count = 0;
-	struct config *conf;
-	int invalid = 0;
+	char *refwwid __attribute__((cleanup(cleanup_charp))) = NULL;
+	char alias[WWID_SIZE];
+	int rc;
+	struct dm_info dmi;
 
 	param = convert_dev(param, 0);
 	condlog(2, "%s: add map (operator)", param);
 
-	conf = get_multipath_config();
-	pthread_cleanup_push(put_multipath_config, conf);
-	if (filter_wwid(conf->blist_wwid, conf->elist_wwid, param, NULL) > 0)
-		invalid = 1;
-	pthread_cleanup_pop(1);
-	if (invalid) {
+	if (get_refwwid(CMD_NONE, param, DEV_DEVMAP, vecs->pathvec, &refwwid) ==
+	    PATHINFO_SKIPPED) {
 		append_strbuf_str(reply, "blacklisted\n");
 		condlog(2, "%s: map blacklisted", param);
 		return 1;
+	} else if (!refwwid) {
+		condlog(2, "%s: unknown map.", param);
+		return -ENODEV;
 	}
-	do {
-		if (dm_get_major_minor(param, &major, &minor) < 0)
-			condlog(count ? 2 : 3,
-				"%s: not a device mapper table", param);
-		else {
-			sprintf(dev_path, "dm-%d", minor);
-			alias = dm_mapname(major, minor);
+	if (dm_find_map_by_wwid(refwwid, alias, &dmi) != DMP_OK) {
+		condlog(3, "%s: map not present. creating", param);
+		if (coalesce_paths(vecs, NULL, refwwid, FORCE_RELOAD_NONE,
+				   CMD_NONE) != CP_OK) {
+			condlog(2, "%s: coalesce_paths failed", param);
+			return 1;
 		}
-		/*if there is no mapname found, we first create the device*/
-		if (!alias && !count) {
-			condlog(3, "%s: mapname not found for %d:%d",
-				param, major, minor);
-			get_refwwid(CMD_NONE, param, DEV_DEVMAP,
-				    vecs->pathvec, &refwwid);
-			if (refwwid) {
-				if (coalesce_paths(vecs, NULL, refwwid,
-						   FORCE_RELOAD_NONE, CMD_NONE)
-				    != CP_OK)
-					condlog(2, "%s: coalesce_paths failed",
-									param);
-				free(refwwid);
-			}
-		} /*we attempt to create device only once*/
-		count++;
-	} while (!alias && (count < 2));
-
-	if (!alias) {
-		condlog(2, "%s: add map failed", param);
-		return 1;
+		if (dm_find_map_by_wwid(refwwid, alias, &dmi) != DMP_OK) {
+			condlog(2, "%s: failed getting map", param);
+			return 1;
+		}
 	}
+	sprintf(dev_path, "dm-%u", dmi.minor);
 	rc = ev_add_map(dev_path, alias, vecs);
 	return rc;
 }
