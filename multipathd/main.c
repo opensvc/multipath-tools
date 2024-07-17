@@ -2704,7 +2704,7 @@ checkerloop (void *ap)
 
 	while (1) {
 		struct timespec diff_time, start_time, end_time;
-		int num_paths = 0, strict_timing, rc = 0, i = 0;
+		int num_paths = 0, strict_timing, rc = 0;
 		unsigned int ticks = 0;
 		enum checker_state checker_state = CHECKER_STARTING;
 
@@ -2723,7 +2723,7 @@ checkerloop (void *ap)
 			sd_notify(0, "WATCHDOG=1");
 #endif
 		while (checker_state != CHECKER_FINISHED) {
-			unsigned int paths_checked = 0;
+			unsigned int paths_checked = 0, i;
 			struct timespec chk_start_time;
 
 			pthread_cleanup_push(cleanup_lock, &vecs->lock);
@@ -2733,28 +2733,11 @@ checkerloop (void *ap)
 			if (checker_state == CHECKER_STARTING) {
 				vector_foreach_slot(vecs->pathvec, pp, i)
 					pp->is_checked = false;
-				i = 0;
 				checker_state = CHECKER_RUNNING;
-			} else {
-				/*
-				 * Paths could have been removed since we
-				 * dropped the lock. Find the path to continue
-				 * checking at. Since paths can be removed from
-				 * anywhere in the vector, but can only be added
-				 * at the end, the last checked path must be
-				 * between its old location, and the start or
-				 * the vector.
-				 */
-				if (i >= VECTOR_SIZE(vecs->pathvec))
-					i = VECTOR_SIZE(vecs->pathvec) - 1;
-				while ((pp = VECTOR_SLOT(vecs->pathvec, i))) {
-					if (pp->is_checked == true)
-						break;
-					i--;
-				}
-				i++;
 			}
-			vector_foreach_slot_after (vecs->pathvec, pp, i) {
+			vector_foreach_slot(vecs->pathvec, pp, i) {
+				if (pp->is_checked)
+					continue;
 				pp->is_checked = true;
 				rc = check_path(vecs, pp, ticks);
 				if (rc < 0) {
