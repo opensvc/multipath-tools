@@ -2385,19 +2385,8 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	pp->tick = checkint;
 
 	newstate = check_path_state(pp);
-	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
+	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED)
 		return 0;
-	} else if ((newstate != PATH_UP && newstate != PATH_GHOST &&
-		    newstate != PATH_PENDING) && (pp->state == PATH_DELAYED)) {
-		/* If path state become failed again cancel path delay state */
-		pp->state = newstate;
-		/*
-		 * path state bad again should change the check interval time
-		 * to the shortest delay
-		 */
-		pp->checkint = checkint;
-		return 1;
-	}
 	/*
 	 * Async IO in flight. Keep the previous path state
 	 * and reschedule as soon as possible
@@ -2436,6 +2425,17 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		return 0;
 	}
 
+	if ((newstate != PATH_UP && newstate != PATH_GHOST &&
+	     newstate != PATH_PENDING) && (pp->state == PATH_DELAYED)) {
+		/* If path state become failed again cancel path delay state */
+		pp->state = newstate;
+		/*
+		 * path state bad again should change the check interval time
+		 * to the shortest delay
+		 */
+		pp->checkint = checkint;
+		return 1;
+	}
 	if ((newstate == PATH_UP || newstate == PATH_GHOST) &&
 	    (san_path_check_enabled(pp->mpp) ||
 	     marginal_path_check_enabled(pp->mpp))) {
