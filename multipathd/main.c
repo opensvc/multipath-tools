@@ -2513,9 +2513,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		 * upon state change, reset the checkint
 		 * to the shortest delay
 		 */
-		conf = get_multipath_config();
-		pp->checkint = conf->checkint;
-		put_multipath_config(conf);
+		pp->checkint = checkint;
 
 		if (newstate != PATH_UP && newstate != PATH_GHOST) {
 			/*
