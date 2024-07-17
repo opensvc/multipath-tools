@@ -2672,7 +2672,6 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 			 * place.
 			 */
 			pp->initialized = INIT_FAILED;
-			return 0;
 		}
 	}
 
