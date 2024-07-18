@@ -102,6 +102,7 @@ libdevmapper
 libdmmp
 libedit
 libjson
+libmpathcmd
 libmpathpersist
 libmpathutil
 libmpathvalid
@@ -205,6 +206,7 @@ sysfs
 sysinit
 tcp
 terabytes
+SYSDIR
 TESTDEPS
 testname
 tgill
