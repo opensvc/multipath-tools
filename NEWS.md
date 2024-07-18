@@ -19,7 +19,11 @@
 
 * Fixed bug that caused queueing to be always disabled if flushing a map failed
   (bug introduced in 0.9.8).
-* Fixed failure to remove maps even with `deferred_remove` (bug introduced in 0.9.9).
+* Fixed failure to remove maps even with `deferred_remove` (bug introduced in
+  0.9.9).
+* Fixed old mpathpersist bug leading to the error message "configured reservation
+  key doesn't match: 0x0" when `reservation_key` was configured in the
+  multipaths section of `multipath.conf`.
 
 ### Other
 
@@ -29,6 +33,7 @@
 * Remove hardcoded paths and make them configurable instead.
   This should improve compatibility e.g. with NixOS.
 * Fixed directio CI test for real devices, run more "real" tests in CI
+* Fixed minor issues detected by coverity.
 
 ## multipath-tools 0.9.9, 2024/05
 
