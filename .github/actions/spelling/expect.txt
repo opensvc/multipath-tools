@@ -59,6 +59,7 @@ EVPD
 failback
 failover
 fds
+fexceptions
 FFFFFFFF
 fge
 followover
@@ -90,6 +91,7 @@ igroup
 img
 inotify
 inttypes
+ioctls
 iscsi
 isw
 kpartx

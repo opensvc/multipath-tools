@@ -1,5 +1,35 @@
 # multipath-tools Release Notes
 
+## multipath-tools 0.9.x (in preparation)
+
+### User-Visible Changes
+
+* Add hardware defaults for Huawei storage arrays and XSG1 vendors
+
+### Other major changes
+
+* Refactored a significant part of the libmultipath / libdevmapper interface.
+  All functions that retrieve information about DM maps have been converted
+  to use just one worker function, libmp_mapinfo(). This reduces code size
+  while providing more flexibility and efficiency (less device-mapper ioctls).
+  Also, cleanup attributes are used consistently in the libdevmapper-related code.
+* Made map removal more efficient by avoiding unnecessary recursion.
+
+### Bug fixes
+
+* Fixed bug that caused queueing to be always disabled if flushing a map failed
+  (bug introduced in 0.9.8).
+* Fixed failure to remove maps even with `deferred_remove` (bug introduced in 0.9.9).
+
+### Other
+
+* Use `-fexceptions` during compilation to make sure cleanup code is executed
+  when threads are cancelled
+* Fixed CI for ARM/v7
+* Remove hardcoded paths and make them configurable instead.
+  This should improve compatibility e.g. with NixOS.
+* Fixed directio CI test for real devices, run more "real" tests in CI
+
 ## multipath-tools 0.9.9, 2024/05
 
 ### Important note
