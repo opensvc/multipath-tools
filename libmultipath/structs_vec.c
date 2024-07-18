@@ -504,11 +504,12 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 	int r = DMP_ERR;
 	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
 	char __attribute__((cleanup(cleanup_charp))) *status = NULL;
-	unsigned long long size = mpp->size;
+	unsigned long long size;
 
 	if (!mpp)
 		return r;
 
+	size = mpp->size;
 	r = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
 			  (mapid_t) { .str = mpp->alias },
 			  (mapinfo_t) {
