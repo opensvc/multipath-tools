@@ -170,6 +170,8 @@ int mpath_recv_reply_data(int fd, char *reply, size_t len,
 {
 	ssize_t ret;
 
+	if (len <= 0)
+		return 0;
 	ret = read_all(fd, reply, len, timeout);
 	if (ret < 0)
 		return ret;
