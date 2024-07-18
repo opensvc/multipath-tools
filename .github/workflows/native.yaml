@@ -40,21 +40,22 @@ jobs:
       - name: checkout
         uses: actions/checkout@v1
       - name: build and test
-        if: ${{ matrix.os != 'jessie' }}
-        run: make test
+        if: ${{ matrix.os != 'debian-jessie' }}
+        run: make -j -Orecurse test
       - name: build and test (jessie)
         # On jessie, we use libreadline 5 (no licensing issue)
-        if: ${{ matrix.os == 'jessie' }}
-        run: make  -j -Orecurse READLINE=libreadline test
+        if: ${{ matrix.os == 'debian-jessie' }}
+        run: make -j -Orecurse READLINE=libreadline test
+
       - name: clean
         run: make clean
       - name: clang
-        if: ${{ matrix.os != 'jessie' }}
+        if: ${{ matrix.os != 'debian-jessie' }}
         env:
           CC: clang
         run: make -j -Orecurse test
       - name: clang (jessie)
-        if: ${{ matrix.os == 'jessie' }}
+        if: ${{ matrix.os == 'debian-jessie' }}
         env:
           CC: clang
         run: make READLINE=libreadline test
