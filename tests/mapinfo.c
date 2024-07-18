@@ -13,7 +13,7 @@
 #ifndef __GLIBC_PREREQ
 #define __GLIBC_PREREQ(x, y) 0
 #endif
-#if defined(__GLIBC__) && !(__GLIBC_PREREQ(2, 20))
+#if defined(__GLIBC__) && !(__GLIBC_PREREQ(2, 23))
 #define __NO_STRING_INLINES 1
 #endif
 
