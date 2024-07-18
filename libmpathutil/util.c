@@ -27,8 +27,8 @@ strchop(char *str)
 {
 	size_t i;
 
-	for (i = strlen(str) - 1; i != (size_t) -1 && isspace(str[i]); i--) ;
-	str[++i] = '\0';
+	for (i = strlen(str); i != 0 && isspace(str[i - 1]); i--) ;
+	str[i] = '\0';
 	return i;
 }
 
