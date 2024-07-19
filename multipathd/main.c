@@ -2388,7 +2388,7 @@ enum check_path_return {
 };
 
 static int
-check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
+do_check_path (struct vectors * vecs, struct path * pp)
 {
 	int newstate;
 	int new_path_up = 0;
@@ -2400,14 +2400,6 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 	int marginal_pathgroups, marginal_changed = 0;
 	bool need_reload;
 
-	if (pp->initialized == INIT_REMOVED)
-		return CHECK_PATH_SKIPPED;
-
-	if (pp->tick)
-		pp->tick -= (pp->tick > ticks) ? ticks : pp->tick;
-	if (pp->tick)
-		return CHECK_PATH_SKIPPED;
-
 	conf = get_multipath_config();
 	checkint = conf->checkint;
 	max_checkint = conf->max_checkint;
@@ -2418,12 +2410,6 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		condlog(0, "%s: BUG: checkint is not set", pp->dev);
 		pp->checkint = checkint;
 	};
-
-	/*
-	 * provision a next check soonest,
-	 * in case we exit abnormally from here
-	 */
-	pp->tick = checkint;
 
 	newstate = check_path_state(pp);
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED)
@@ -2587,7 +2573,6 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 				condlog(4, "%s: delay next check %is",
 					pp->dev_t, pp->checkint);
 			}
-			pp->tick = pp->checkint;
 		}
 	}
 	else if (newstate != PATH_UP && newstate != PATH_GHOST) {
@@ -2638,6 +2623,77 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks)
 		}
 	}
 	return CHECK_PATH_CHECKED;
+}
+
+static int
+check_path (struct vectors * vecs, struct path * pp, unsigned int ticks,
+	    time_t start_secs)
+{
+	int r;
+	unsigned int adjust_int, max_checkint;
+	struct config *conf;
+	time_t next_idx, goal_idx;
+
+	if (pp->initialized == INIT_REMOVED)
+		return CHECK_PATH_SKIPPED;
+
+	if (pp->tick)
+		pp->tick -= (pp->tick > ticks) ? ticks : pp->tick;
+	if (pp->tick)
+		return CHECK_PATH_SKIPPED;
+
+	conf = get_multipath_config();
+	max_checkint = conf->max_checkint;
+	adjust_int = conf->adjust_int;
+	put_multipath_config(conf);
+
+	r = do_check_path(vecs, pp);
+
+	/*
+	 * do_check_path() removed or orphaned the path.
+	 */
+	if (r == CHECK_PATH_REMOVED || !pp->mpp)
+		return r;
+
+	if (pp->tick != 0) {
+		/* the path checker is pending */
+		if (pp->state != PATH_DELAYED)
+			pp->pending_ticks++;
+		else
+			pp->pending_ticks = 0;
+		return r;
+	}
+
+	/* schedule the next check */
+	pp->tick = pp->checkint;
+	if (pp->pending_ticks >= pp->tick)
+		pp->tick = 1;
+	else
+		pp->tick -= pp->pending_ticks;
+	pp->pending_ticks = 0;
+
+	if (pp->tick == 1)
+		return r;
+
+	/*
+	 * every mpp has a goal_idx in the range of
+	 * 0 <= goal_idx < conf->max_checkint
+	 *
+	 * The next check has an index, next_idx, in the range of
+	 * 0 <= next_idx < conf->adjust_int
+	 *
+	 * If the difference between the goal index and the next check index
+	 * is not a multiple of pp->checkint, then the device is not checking
+	 * the paths at its goal index, and pp->tick will be decremented by
+	 * one, to align it over time.
+	 */
+	goal_idx = (find_slot(vecs->mpvec, pp->mpp)) *
+		   max_checkint / VECTOR_SIZE(vecs->mpvec);
+	next_idx = (start_secs + pp->tick) % adjust_int;
+	if ((goal_idx - next_idx) % pp->checkint != 0)
+		pp->tick--;
+
+	return r;
 }
 
 static int
@@ -2799,7 +2855,8 @@ checkerloop (void *ap)
 					continue;
 				pp->is_checked = true;
 				if (pp->mpp)
-					rc = check_path(vecs, pp, ticks);
+					rc = check_path(vecs, pp, ticks,
+							chk_start_time.tv_sec);
 				else
 					rc = handle_uninitialized_path(vecs, pp,
 								       ticks);

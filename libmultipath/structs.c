@@ -149,6 +149,7 @@ uninitialize_path(struct path *pp)
 	pp->state = PATH_UNCHECKED;
 	pp->uid_attribute = NULL;
 	pp->checker_timeout = 0;
+	pp->pending_ticks = 0;
 
 	if (checker_selected(&pp->checker))
 		checker_put(&pp->checker);

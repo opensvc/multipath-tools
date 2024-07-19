@@ -147,6 +147,7 @@ struct config {
 	int minio_rq;
 	unsigned int checkint;
 	unsigned int max_checkint;
+	unsigned int adjust_int;
 	bool use_watchdog;
 	int pgfailback;
 	int rr_weight;

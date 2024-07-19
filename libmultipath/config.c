@@ -982,6 +982,18 @@ int _init_config (const char *file, struct config *conf)
 		conf->checkint = conf->max_checkint;
 	condlog(3, "polling interval: %d, max: %d",
 		conf->checkint, conf->max_checkint);
+	/*
+	 * make sure that that adjust_int is a multiple of all possible values
+	 * of pp->checkint.
+	 */
+	if (conf->max_checkint % conf->checkint == 0) {
+		conf->adjust_int = conf->max_checkint;
+	} else {
+		conf->adjust_int = conf->checkint;
+		while (2 * conf->adjust_int < conf->max_checkint)
+			conf->adjust_int *= 2;
+		conf->adjust_int *= conf->max_checkint;
+	}
 
 	if (conf->blist_devnode == NULL) {
 		conf->blist_devnode = vector_alloc();
