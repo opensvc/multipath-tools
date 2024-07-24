@@ -652,6 +652,7 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 		return ret;
 
 	conf = get_multipath_config();
+	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
 	select_reservation_key(conf, mpp);
 	select_all_tg_pt(conf, mpp);
 	put_multipath_config(conf);
@@ -669,6 +670,12 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 				mpp->alias);
 			return MPATH_PR_DMMP_ERROR;
 		}
+	}
+
+	if (!get_be64(mpp->reservation_key) &&
+	    (prkey || rq_servact != MPATH_PROUT_REG_IGN_SA)) {
+		condlog(0, "%s: no configured reservation key", mpp->alias);
+		return MPATH_PR_SYNTAX_ERROR;
 	}
 
 	if (memcmp(paramp->key, &mpp->reservation_key, 8) &&
