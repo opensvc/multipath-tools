@@ -342,8 +342,15 @@ show_status (struct strbuf *reply, struct vectors *vecs)
 static int
 show_daemon (struct strbuf *reply)
 {
-	if (print_strbuf(reply, "pid %d %s\n",
-			 daemon_pid, daemon_status()) < 0)
+	const char *status;
+	bool pending_reconfig;
+
+	status = daemon_status(&pending_reconfig);
+	if (status == NULL)
+		return 1;
+	if (print_strbuf(reply, "pid %d %s%s\n",
+			 daemon_pid, status,
+			 pending_reconfig ? " (pending reconfigure)" : "") < 0)
 		return 1;
 
 	return 0;

@@ -132,6 +132,8 @@ static int poll_dmevents = 1;
 static enum daemon_status running_state = DAEMON_INIT;
 /* Don't access this variable without holding config_lock */
 static bool __delayed_reconfig;
+/* Don't access this variable without holding config_lock */
+static enum force_reload_types reconfigure_pending = FORCE_RELOAD_NONE;
 pid_t daemon_pid;
 static pthread_mutex_t config_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t config_cond;
@@ -142,19 +144,21 @@ static bool check_thr_started, uevent_thr_started, uxlsnr_thr_started,
 	fpin_consumer_thr_started;
 static int pid_fd = -1;
 
-static inline enum daemon_status get_running_state(void)
+static inline enum daemon_status get_running_state(bool *pending_reconfig)
 {
 	enum daemon_status st;
 
 	pthread_mutex_lock(&config_lock);
 	st = running_state;
+	if (pending_reconfig != NULL)
+		*pending_reconfig = (reconfigure_pending != FORCE_RELOAD_NONE);
 	pthread_mutex_unlock(&config_lock);
 	return st;
 }
 
 int should_exit(void)
 {
-	return get_running_state() == DAEMON_SHUTDOWN;
+	return get_running_state(NULL) == DAEMON_SHUTDOWN;
 }
 
 /*
@@ -179,9 +183,9 @@ static const char *daemon_status_msg[DAEMON_STATUS_SIZE] = {
 };
 
 const char *
-daemon_status(void)
+daemon_status(bool *pending_reconfig)
 {
-	int status = get_running_state();
+	int status = get_running_state(pending_reconfig);
 
 	if (status < DAEMON_INIT || status >= DAEMON_STATUS_SIZE)
 		return NULL;
@@ -276,9 +280,6 @@ enum daemon_status wait_for_state_change_if(enum daemon_status oldstate,
 	pthread_cleanup_pop(1);
 	return st;
 }
-
-/* Don't access this variable without holding config_lock */
-static enum force_reload_types reconfigure_pending = FORCE_RELOAD_NONE;
 
 /* must be called with config_lock held */
 static void __post_config_state(enum daemon_status state)
