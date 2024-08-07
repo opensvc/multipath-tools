@@ -1,6 +1,5 @@
 #ifndef SG_INCLUDE_H_INCLUDED
 #define SG_INCLUDE_H_INCLUDED
-#define __user
 #include <scsi/sg.h>
 
 #ifndef DID_OK
