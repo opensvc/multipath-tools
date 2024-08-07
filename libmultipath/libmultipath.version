@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_25.0.0 {
+LIBMULTIPATH_26.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -74,6 +74,7 @@ global:
 	dm_cancel_deferred_remove;
 	dm_enablegroup;
 	dm_fail_path;
+	dm_find_map_by_wwid;
 	_dm_flush_map;
 	dm_flush_map_nopaths;
 	dm_flush_maps;
@@ -172,7 +173,7 @@ global:
 	should_multipath;
 	skip_libmp_dm_init;
 	snprint_blacklist_report;
-	__snprint_config;
+	snprint_config__;
 	snprint_config;
 	snprint_devices;
 	snprint_foreign_multipaths;
@@ -241,8 +242,3 @@ global:
 local:
 	*;
 };
-
-LIBMULTIPATH_25.1.0 {
-global:
-	dm_find_map_by_wwid;
-} LIBMULTIPATH_25.0.0;

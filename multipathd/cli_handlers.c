@@ -165,7 +165,7 @@ show_config (struct strbuf *reply, const struct _vector *hwtable,
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
-	rc = __snprint_config(conf, reply, hwtable, mpvec);
+	rc = snprint_config__(conf, reply, hwtable, mpvec);
 	pthread_cleanup_pop(1);
 	if (rc < 0)
 		return 1;

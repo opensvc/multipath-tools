@@ -1908,7 +1908,7 @@ static int snprint_blacklist_except(const struct config *conf,
 	return get_strbuf_len(buff) - initial_len;
 }
 
-int __snprint_config(const struct config *conf, struct strbuf *buff,
+int snprint_config__(const struct config *conf, struct strbuf *buff,
 		     const struct _vector *hwtable, const struct _vector *mpvec)
 {
 	int rc;
@@ -1934,7 +1934,7 @@ char *snprint_config(const struct config *conf, int *len,
 {
 	STRBUF_ON_STACK(buff);
 	char *reply;
-	int rc = __snprint_config(conf, &buff, hwtable, mpvec);
+	int rc = snprint_config__(conf, &buff, hwtable, mpvec);
 
 	if (rc < 0)
 		return NULL;

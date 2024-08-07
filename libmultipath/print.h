@@ -40,7 +40,7 @@ int _snprint_multipath_topology (const struct gen_multipath *, struct strbuf *,
 #define snprint_multipath_topology(buf, mpp, v, w)			\
 	_snprint_multipath_topology (dm_multipath_to_gen(mpp), buf, v, w)
 int snprint_multipath_topology_json(struct strbuf *, const struct vectors *vecs);
-int __snprint_config(const struct config *conf, struct strbuf *buff,
+int snprint_config__(const struct config *conf, struct strbuf *buff,
 		     const struct _vector *hwtable, const struct _vector *mpvec);
 char *snprint_config(const struct config *conf, int *len,
 		     const struct _vector *hwtable,
