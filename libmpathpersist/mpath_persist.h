@@ -3,7 +3,6 @@
 #ifndef MPATH_PERSIST_H_INCLUDED
 #define MPATH_PERSIST_H_INCLUDED
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -81,11 +80,7 @@ extern "C" {
 #define MPATH_WWUI_DEVICE_NAME		0x00	/* World wide unique initiator device name */
 #define MPATH_WWUI_PORT_IDENTIFIER	0x40	/* World wide unique initiator port identifier	*/
 
-
-
 extern unsigned int mpath_mx_alloc_len;
-
-
 
 struct prin_readdescr
 {
@@ -183,7 +178,7 @@ struct prout_param_descriptor {		/* PROUT parameter descriptor */
  *
  * RETURNS: 0->Success, 1->Failed.
  */
-extern int libmpathpersist_init (void);
+int libmpathpersist_init(void);
 
 /*
  * DESCRIPTION :
@@ -197,7 +192,7 @@ extern int libmpathpersist_init (void);
  *
  * RETURNS: struct config ->Success, NULL->Failed.
  */
-extern struct config * mpath_lib_init (void);
+struct config *mpath_lib_init(void);
 
 
 /*
@@ -209,7 +204,7 @@ extern struct config * mpath_lib_init (void);
  *
  * RETURNS: 0->Success, 1->Failed.
  */
-extern int mpath_lib_exit (struct config *conf);
+int mpath_lib_exit(struct config *conf);
 
 /*
  * DESCRIPTION :
@@ -221,7 +216,7 @@ extern int mpath_lib_exit (struct config *conf);
  *
  * RETURNS: 0->Success, 1->Failed.
  */
-extern int libmpathpersist_exit (void);
+int libmpathpersist_exit(void);
 
 
 /*
@@ -241,8 +236,8 @@ extern int libmpathpersist_exit (void);
  *       above in RETURN_STATUS.
  *
  */
-extern int mpath_persistent_reserve_in (int fd, int rq_servact, struct prin_resp *resp,
-		int noisy, int verbose);
+int mpath_persistent_reserve_in(int fd, int rq_servact, struct prin_resp *resp,
+				int noisy, int verbose);
 
 /*
  * DESCRIPTION :
@@ -254,8 +249,8 @@ extern int mpath_persistent_reserve_in (int fd, int rq_servact, struct prin_resp
  * RESTRICTIONS:
  * This function uses static internal variables, and is not thread-safe.
  */
-extern int __mpath_persistent_reserve_in(int fd, int rq_servact,
-		struct prin_resp *resp, int noisy);
+int mpath_persistent_reserve_in__(int fd, int rq_servact,
+				  struct prin_resp *resp, int noisy);
 
 /*
  * DESCRIPTION :
@@ -279,9 +274,10 @@ extern int __mpath_persistent_reserve_in(int fd, int rq_servact,
  * RETURNS: MPATH_PR_SUCCESS if PR command successful else returns any of the status specified
  *       above in RETURN_STATUS.
  */
-extern int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
-		unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy,
-		int verbose);
+int mpath_persistent_reserve_out(int fd, int rq_servact, int rq_scope,
+				 unsigned int rq_type,
+				 struct prout_param_descriptor *paramp,
+				 int noisy, int verbose);
 /*
  * DESCRIPTION :
  * This function is like mpath_persistent_reserve_out(), except that it
@@ -292,15 +288,16 @@ extern int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
  * RESTRICTIONS:
  * This function uses static internal variables, and is not thread-safe.
  */
-extern int __mpath_persistent_reserve_out( int fd, int rq_servact, int rq_scope,
-		unsigned int rq_type, struct prout_param_descriptor *paramp,
-		int noisy);
+int mpath_persistent_reserve_out__(int fd, int rq_servact, int rq_scope,
+				   unsigned int rq_type,
+				   struct prout_param_descriptor *paramp,
+				   int noisy);
 
 /*
  * DESCRIPTION :
  * This function allocates data structures and performs basic initialization and
- * device discovery for later calls of __mpath_persistent_reserve_in() or
- * __mpath_persistent_reserve_out().
+ * device discovery for later calls of mpath_persistent_reserve_in__() or
+ * mpath_persistent_reserve_out__().
  * @verbose: Set verbosity level. Input argument. value:0 to 3. 0->disabled, 3->Max verbose
  *
  * RESTRICTIONS:

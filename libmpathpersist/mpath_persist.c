@@ -74,7 +74,7 @@ int libmpathpersist_exit(void)
 static vector curmp;
 static vector pathvec;
 
-static void __mpath_persistent_reserve_free_vecs(vector curmp, vector pathvec)
+static void mpath_persistent_reserve_free_vecs__(vector curmp, vector pathvec)
 {
 	free_multipathvec(curmp, KEEP_PATHS);
 	free_pathvec(pathvec, FREE_PATHS);
@@ -82,11 +82,11 @@ static void __mpath_persistent_reserve_free_vecs(vector curmp, vector pathvec)
 
 void mpath_persistent_reserve_free_vecs(void)
 {
-	__mpath_persistent_reserve_free_vecs(curmp, pathvec);
+	mpath_persistent_reserve_free_vecs__(curmp, pathvec);
 	curmp = pathvec = NULL;
 }
 
-static int __mpath_persistent_reserve_init_vecs(vector *curmp_p,
+static int mpath_persistent_reserve_init_vecs__(vector *curmp_p,
 						vector *pathvec_p, int verbose)
 {
 	libmp_verbosity = verbose;
@@ -110,17 +110,17 @@ static int __mpath_persistent_reserve_init_vecs(vector *curmp_p,
 	return MPATH_PR_SUCCESS;
 
 err:
-	__mpath_persistent_reserve_free_vecs(*curmp_p, *pathvec_p);
+	mpath_persistent_reserve_free_vecs__(*curmp_p, *pathvec_p);
 	*curmp_p = *pathvec_p = NULL;
 	return MPATH_PR_DMMP_ERROR;
 }
 
 int mpath_persistent_reserve_init_vecs(int verbose)
 {
-	return __mpath_persistent_reserve_init_vecs(&curmp, &pathvec, verbose);
+	return mpath_persistent_reserve_init_vecs__(&curmp, &pathvec, verbose);
 }
 
-int __mpath_persistent_reserve_in (int fd, int rq_servact,
+int mpath_persistent_reserve_in__(int fd, int rq_servact,
 	struct prin_resp *resp, int noisy)
 {
 	return do_mpath_persistent_reserve_in(curmp, pathvec, fd, rq_servact,
@@ -128,7 +128,7 @@ int __mpath_persistent_reserve_in (int fd, int rq_servact,
 }
 
 
-int __mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
+int mpath_persistent_reserve_out__( int fd, int rq_servact, int rq_scope,
 	unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy)
 {
 	return do_mpath_persistent_reserve_out(curmp, pathvec, fd, rq_servact,
@@ -140,14 +140,14 @@ int mpath_persistent_reserve_in (int fd, int rq_servact,
 	struct prin_resp *resp, int noisy, int verbose)
 {
 	vector curmp = NULL, pathvec;
-	int ret = __mpath_persistent_reserve_init_vecs(&curmp, &pathvec,
+	int ret = mpath_persistent_reserve_init_vecs__(&curmp, &pathvec,
 						       verbose);
 
 	if (ret != MPATH_PR_SUCCESS)
 		return ret;
 	ret = do_mpath_persistent_reserve_in(curmp, pathvec, fd, rq_servact,
 					     resp, noisy);
-	__mpath_persistent_reserve_free_vecs(curmp, pathvec);
+	mpath_persistent_reserve_free_vecs__(curmp, pathvec);
 	return ret;
 }
 
@@ -155,13 +155,13 @@ int mpath_persistent_reserve_out ( int fd, int rq_servact, int rq_scope,
 	unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy, int verbose)
 {
 	vector curmp = NULL, pathvec;
-	int ret = __mpath_persistent_reserve_init_vecs(&curmp, &pathvec,
+	int ret = mpath_persistent_reserve_init_vecs__(&curmp, &pathvec,
 						       verbose);
 
 	if (ret != MPATH_PR_SUCCESS)
 		return ret;
 	ret = do_mpath_persistent_reserve_out(curmp, pathvec, fd, rq_servact,
 					      rq_scope, rq_type, paramp, noisy);
-	__mpath_persistent_reserve_free_vecs(curmp, pathvec);
+	mpath_persistent_reserve_free_vecs__(curmp, pathvec);
 	return ret;
 }

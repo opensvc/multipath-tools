@@ -10,7 +10,7 @@
  *
  * See libmultipath.version for general policy about version numbers.
  */
-LIBMPATHPERSIST_2.1.0 {
+LIBMPATHPERSIST_3.0.0 {
 global:
 	/* public API as defined in mpath_persist.h */
 	libmpathpersist_exit;
@@ -19,10 +19,10 @@ global:
 	mpath_lib_init;
 	mpath_mx_alloc_len;
 	mpath_persistent_reserve_free_vecs;
-	__mpath_persistent_reserve_in;
+	mpath_persistent_reserve_in__;
 	mpath_persistent_reserve_in;
 	mpath_persistent_reserve_init_vecs;
-	__mpath_persistent_reserve_out;
+	mpath_persistent_reserve_out__;
 	mpath_persistent_reserve_out;
 local: *;
 };
