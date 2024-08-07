@@ -13,16 +13,16 @@
 #include "devmapper.h"
 #include "kpartx.h"
 
-#define _UUID_PREFIX "part"
-#define UUID_PREFIX _UUID_PREFIX "%d-"
-#define _UUID_PREFIX_LEN (sizeof(_UUID_PREFIX) - 1)
-#define MAX_PREFIX_LEN (_UUID_PREFIX_LEN + 4)
+#define UUID_PREFIX_ "part"
+#define UUID_PREFIX UUID_PREFIX_ "%d-"
+#define UUID_PREFIX_LEN (sizeof(UUID_PREFIX_) - 1)
+#define MAX_PREFIX_LEN (UUID_PREFIX_LEN + 4)
 #define PARAMS_SIZE 1024
 
 #ifdef LIBDM_API_COOKIE
-#    define __DM_API_COOKIE_UNUSED__ /* empty */
+#    define DM_API_COOKIE_UNUSED__ /* empty */
 #else
-#    define __DM_API_COOKIE_UNUSED__ __attribute__((unused))
+#    define DM_API_COOKIE_UNUSED__ __attribute__((unused))
 #endif
 
 int dm_prereq(char * str, uint32_t x, uint32_t y, uint32_t z)
@@ -60,7 +60,7 @@ out:
 	return r;
 }
 
-int dm_simplecmd(int task, const char *name, int no_flush, __DM_API_COOKIE_UNUSED__ uint16_t udev_flags)
+int dm_simplecmd(int task, const char *name, int no_flush, DM_API_COOKIE_UNUSED__ uint16_t udev_flags)
 {
 	int r = 0;
 #ifdef LIBDM_API_COOKIE
@@ -496,12 +496,12 @@ dm_compare_uuid(const char *mapuuid, const char *partname)
 	if (!partuuid)
 		return 1;
 
-	if (!strncmp(partuuid, _UUID_PREFIX, _UUID_PREFIX_LEN)) {
-		char *p = partuuid + _UUID_PREFIX_LEN;
+	if (!strncmp(partuuid, UUID_PREFIX_, UUID_PREFIX_LEN)) {
+		char *p = partuuid + UUID_PREFIX_LEN;
 		/* skip partition number */
 		while (isdigit(*p))
 			p++;
-		if (p != partuuid + _UUID_PREFIX_LEN && *p == '-' &&
+		if (p != partuuid + UUID_PREFIX_LEN && *p == '-' &&
 		    !strcmp(mapuuid, p + 1))
 			r = 0;
 	}
