@@ -23,6 +23,7 @@
 #include "prio.h"
 #include "structs.h"
 #include "unaligned.h"
+#include "strbuf.h"
 
 #define INQUIRY_CMD	0x12
 #define INQUIRY_CMDLEN	6
@@ -35,32 +36,29 @@
 static void dump_cdb(unsigned char *cdb, int size)
 {
 	int i;
-	char buf[10*5+1];
-	char * p = &buf[0];
+	STRBUF_ON_STACK(buf);
 
-	condlog(0, "- SCSI CDB: ");
-	for (i=0; i<size; i++) {
-		p += snprintf(p, 10*(size-i), "0x%02x ", cdb[i]);
+	for (i = 0; i < size; i++) {
+		if (print_strbuf(&buf, "0x%02x ", cdb[i]) < 0)
+			return;
 	}
-	condlog(0, "%s", buf);
+	condlog(0, "- SCSI CDB: %s", get_strbuf_str(&buf));
 }
 
 static void process_sg_error(struct sg_io_hdr *io_hdr)
 {
 	int i;
-	char buf[128*5+1];
-	char * p = &buf[0];
+	STRBUF_ON_STACK(buf);
 
 	condlog(0, "- masked_status=0x%02x, host_status=0x%02x, "
 		"driver_status=0x%02x", io_hdr->masked_status,
 		io_hdr->host_status, io_hdr->driver_status);
 	if (io_hdr->sb_len_wr > 0) {
-		condlog(0, "- SCSI sense data: ");
-		for (i=0; i<io_hdr->sb_len_wr; i++) {
-			p += snprintf(p, 128*(io_hdr->sb_len_wr-i), "0x%02x ",
-				      io_hdr->sbp[i]);
+		for (i = 0; i < io_hdr->sb_len_wr; i++) {
+			if (print_strbuf(&buf, "0x%02x ", io_hdr->sbp[i]) < 0)
+				return;
 		}
-		condlog(0, "%s", buf);
+		condlog(0, "- SCSI sense data: %s", get_strbuf_str(&buf));
 	}
 }
 
