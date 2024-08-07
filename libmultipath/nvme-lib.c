@@ -1,6 +1,6 @@
 #include <sys/types.h>
 /* avoid inclusion of standard API */
-#define _NVME_LIB_C 1
+#define NVME_LIB_C 1
 #include "nvme-lib.h"
 #include "nvme-ioctl.c"
 #include "debug.h"
