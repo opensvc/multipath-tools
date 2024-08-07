@@ -52,7 +52,7 @@ bool __wrap_sysfs_is_multipathed(struct path *pp, bool set_wwid)
 	return is_multipathed;
 }
 
-int __wrap___mpath_connect(int nonblocking)
+int __wrap_mpath_connect__(int nonblocking)
 {
 	bool connected = mock_type(bool);
 	assert_int_equal(nonblocking, 1);
@@ -223,10 +223,10 @@ static void setup_passing(char *name, char *wwid, unsigned int check_multipathd,
 	if (stage == STAGE_IS_MULTIPATHED)
 		return;
 	if (check_multipathd == CHECK_MPATHD_RUNNING)
-		will_return(__wrap___mpath_connect, true);
+		will_return(__wrap_mpath_connect__, true);
 	else if (check_multipathd == CHECK_MPATHD_EAGAIN) {
-		will_return(__wrap___mpath_connect, false);
-		will_return(__wrap___mpath_connect, EAGAIN);
+		will_return(__wrap_mpath_connect__, false);
+		will_return(__wrap_mpath_connect__, EAGAIN);
 	}
 
 	/* nothing for CHECK_MPATHD_SKIP */
@@ -332,8 +332,8 @@ static void test_check_multipathd(void **state)
 	conf.find_multipaths = FIND_MULTIPATHS_STRICT;
 	/* test failed check to see if multipathd is active */
 	will_return(__wrap_sysfs_is_multipathed, false);
-	will_return(__wrap___mpath_connect, false);
-	will_return(__wrap___mpath_connect, ECONNREFUSED);
+	will_return(__wrap_mpath_connect__, false);
+	will_return(__wrap_mpath_connect__, ECONNREFUSED);
 
 	assert_int_equal(is_path_valid(name, &conf, &pp, true),
 			 PATH_IS_NOT_VALID);

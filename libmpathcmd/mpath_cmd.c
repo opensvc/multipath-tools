@@ -94,7 +94,7 @@ static size_t write_all(int fd, const void *buf, size_t len)
 /*
  * connect to a unix domain socket
  */
-int __mpath_connect(int nonblocking)
+int mpath_connect__(int nonblocking)
 {
 	int fd;
 	size_t len;
@@ -138,7 +138,7 @@ int __mpath_connect(int nonblocking)
  */
 int mpath_connect(void)
 {
-	return __mpath_connect(0);
+	return mpath_connect__(0);
 }
 
 int mpath_disconnect(int fd)

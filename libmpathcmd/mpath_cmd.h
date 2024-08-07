@@ -47,7 +47,7 @@ extern "C" {
  * RETURNS:
  *	A file descriptor on success. -1 on failure (with errno set).
  */
-int __mpath_connect(int nonblocking);
+int mpath_connect__(int nonblocking);
 
 /*
  * DESCRIPTION:

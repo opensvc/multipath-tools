@@ -315,7 +315,7 @@ is_path_valid(const char *name, struct config *conf, struct path *pp,
 	}
 
 	if (check_multipathd) {
-		fd = __mpath_connect(1);
+		fd = mpath_connect__(1);
 		if (fd < 0) {
 			if (errno != EAGAIN) {
 				condlog(3, "multipathd not running");
