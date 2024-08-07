@@ -72,13 +72,13 @@ void libmultipath_exit(void)
 	pthread_once(&_exit_once, _libmultipath_exit);
 }
 
-static struct config __internal_config;
+static struct config internal_config;
 struct config *libmp_get_multipath_config(void)
 {
-	if (!__internal_config.hwtable)
+	if (!internal_config.hwtable)
 		/* not initialized */
 		return NULL;
-	return &__internal_config;
+	return &internal_config;
 }
 
 struct config *get_multipath_config(void)
@@ -734,7 +734,7 @@ static void _uninit_config(struct config *conf)
 	int i;
 
 	if (!conf)
-		conf = &__internal_config;
+		conf = &internal_config;
 
 	if (conf->selector)
 		free(conf->selector);
@@ -791,14 +791,14 @@ static void _uninit_config(struct config *conf)
 
 void uninit_config(void)
 {
-	_uninit_config(&__internal_config);
+	_uninit_config(&internal_config);
 }
 
 void free_config(struct config *conf)
 {
 	if (!conf)
 		return;
-	else if (conf == &__internal_config) {
+	else if (conf == &internal_config) {
 		condlog(0, "ERROR: %s called for internal config. Use uninit_config() instead",
 			__func__);
 		return;
@@ -883,7 +883,7 @@ static int _init_config (const char *file, struct config *conf);
 
 int init_config(const char *file)
 {
-	return _init_config(file, &__internal_config);
+	return _init_config(file, &internal_config);
 }
 
 struct config *load_config(const char *file)
@@ -901,7 +901,7 @@ int _init_config (const char *file, struct config *conf)
 {
 
 	if (!conf)
-		conf = &__internal_config;
+		conf = &internal_config;
 
 	/*
 	 * Processing the config file will overwrite conf->verbosity if set
