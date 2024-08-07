@@ -45,7 +45,7 @@
  * as libudev lacks the capability to update an attribute value.
  * So for modified attributes we need to implement our own function.
  */
-static ssize_t __sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
+static ssize_t sysfs_attr_get_value__(struct udev_device *dev, const char *attr_name,
 				      char *value, size_t value_len, bool binary)
 {
 	const char *syspath;
@@ -100,13 +100,13 @@ static ssize_t __sysfs_attr_get_value(struct udev_device *dev, const char *attr_
 ssize_t sysfs_attr_get_value(struct udev_device *dev, const char *attr_name,
 			     char *value, size_t value_len)
 {
-	return __sysfs_attr_get_value(dev, attr_name, value, value_len, false);
+	return sysfs_attr_get_value__(dev, attr_name, value, value_len, false);
 }
 
 ssize_t sysfs_bin_attr_get_value(struct udev_device *dev, const char *attr_name,
 				 unsigned char *value, size_t value_len)
 {
-	return __sysfs_attr_get_value(dev, attr_name, (char *)value,
+	return sysfs_attr_get_value__(dev, attr_name, (char *)value,
 				      value_len, true);
 }
 
