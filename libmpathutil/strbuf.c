@@ -15,7 +15,7 @@
 
 static const char empty_str[] = "";
 
-char *__get_strbuf_buf(struct strbuf *buf)
+char *get_strbuf_buf__(struct strbuf *buf)
 {
 	return buf->buf;
 }
@@ -110,7 +110,7 @@ static int expand_strbuf(struct strbuf *buf, int addsz)
 	return 0;
 }
 
-int __append_strbuf_str(struct strbuf *buf, const char *str, int slen)
+int append_strbuf_str__(struct strbuf *buf, const char *str, int slen)
 {
 	int ret;
 
@@ -135,7 +135,7 @@ int append_strbuf_str(struct strbuf *buf, const char *str)
 	if (slen > INT_MAX)
 		return -ERANGE;
 
-	return __append_strbuf_str(buf, str, slen);
+	return append_strbuf_str__(buf, str, slen);
 }
 
 int fill_strbuf(struct strbuf *buf, char c, int slen)

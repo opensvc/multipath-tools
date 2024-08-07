@@ -242,7 +242,7 @@ static int write_bindings_file(const Bindings *bindings, int fd,
 	int i;
 	size_t len;
 
-	if (__append_strbuf_str(&content, BINDINGS_FILE_HEADER,
+	if (append_strbuf_str__(&content, BINDINGS_FILE_HEADER,
 				sizeof(BINDINGS_FILE_HEADER) - 1) == -1)
 		return -1;
 

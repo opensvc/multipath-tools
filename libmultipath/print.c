@@ -1090,7 +1090,7 @@ int snprint_multipath_header(struct strbuf *line, const char *format,
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
 		int iwc;
 
-		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
+		if ((rc = append_strbuf_str__(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
@@ -1121,7 +1121,7 @@ int _snprint_multipath(const struct gen_multipath *gmp,
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
 		int iwc;
 
-		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
+		if ((rc = append_strbuf_str__(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
@@ -1151,7 +1151,7 @@ int snprint_path_header(struct strbuf *line, const char *format,
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
 		int iwc;
 
-		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
+		if ((rc = append_strbuf_str__(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
@@ -1181,7 +1181,7 @@ int _snprint_path(const struct gen_path *gp, struct strbuf *line,
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
 		int iwc;
 
-		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
+		if ((rc = append_strbuf_str__(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
@@ -1208,7 +1208,7 @@ int _snprint_pathgroup(const struct gen_pathgroup *ggp, struct strbuf *line,
 	int rc;
 
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
-		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
+		if ((rc = append_strbuf_str__(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;

@@ -167,7 +167,7 @@ snprint_keyword(struct strbuf *buff, const char *fmt, struct keyword *kw,
 			goto out;
 		}
 		if (f != fmt &&
-		    (r = __append_strbuf_str(&sbuf, fmt, f - fmt)) < 0)
+		    (r = append_strbuf_str__(&sbuf, fmt, f - fmt)) < 0)
 			goto out;
 		fmt = f + 1;
 		switch(*fmt) {
@@ -191,7 +191,7 @@ snprint_keyword(struct strbuf *buff, const char *fmt, struct keyword *kw,
 	} while (*fmt++);
 out:
 	if (r >= 0)
-		r = __append_strbuf_str(buff, get_strbuf_str(&sbuf),
+		r = append_strbuf_str__(buff, get_strbuf_str(&sbuf),
 					get_strbuf_len(&sbuf));
 	return r;
 }

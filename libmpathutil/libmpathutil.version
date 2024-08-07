@@ -47,8 +47,8 @@ LIBMPATHUTIL_4.0 {
 global:
 	alloc_bitfield;
 	alloc_strvec;
-	__append_strbuf_str;
 	append_strbuf_str;
+	append_strbuf_str__;
 	append_strbuf_quoted;
 	basenamecpy;
 	cleanup_charp;
@@ -71,7 +71,7 @@ global:
 	free_strvec;
 	get_linux_version_code;
 	get_monotonic_time;
-	__get_strbuf_buf;
+	get_strbuf_buf__;
 	get_next_string;
 	get_strbuf_len;
 	get_strbuf_str;

@@ -66,7 +66,7 @@ struct strbuf *new_strbuf(void);
  * If @strbuf was never written to, the function returns NULL.
  * The return value of this function must not be free()d.
  */
-char *__get_strbuf_buf(struct strbuf *buf);
+char *get_strbuf_buf__(struct strbuf *buf);
 
 /**
  * get_strbuf_str(): retrieve string from strbuf
@@ -112,7 +112,7 @@ size_t get_strbuf_len(const struct strbuf *buf);
 int truncate_strbuf(struct strbuf *buf, size_t offs);
 
 /**
- * __append_strbuf_str(): append string of known length
+ * append_strbuf_str__(): append string of known length
  * @param buf: the struct strbuf to write to
  * @param str: the string to append, not necessarily 0-terminated
  * @param slen: max number of characters to append, must be non-negative
@@ -123,7 +123,7 @@ int truncate_strbuf(struct strbuf *buf, size_t offs);
  * 0-bytes possibly contained in the first @slen characters are copied into
  * the output. If the function returns an error, @strbuf is unchanged.
  */
-int __append_strbuf_str(struct strbuf *buf, const char *str, int slen);
+int append_strbuf_str__(struct strbuf *buf, const char *str, int slen);
 
 /**
  * append_strbuf_str(): append string

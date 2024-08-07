@@ -78,7 +78,7 @@ static void test_strbuf_00(void **state)
 	assert_string_equal(p, "");
 	free(p);
 
-	assert_int_equal(__append_strbuf_str(&buf, "x", 0), 0);
+	assert_int_equal(append_strbuf_str__(&buf, "x", 0), 0);
 	/* appending a 0-length string allocates memory */
 	assert_in_range(buf.size, 1, SIZE_MAX);
 	assert_int_equal(buf.offs, 0);
@@ -181,9 +181,9 @@ static void test_strbuf_nul(void **state)
 	STRBUF_ON_STACK(buf);
 	char greet[] = "hello, sir!";
 
-	assert_int_equal(__append_strbuf_str(&buf, greet, 6), 6);
+	assert_int_equal(append_strbuf_str__(&buf, greet, 6), 6);
 	assert_string_equal(get_strbuf_str(&buf), "hello,");
-	assert_int_equal(__append_strbuf_str(&buf, greet, 6), 6);
+	assert_int_equal(append_strbuf_str__(&buf, greet, 6), 6);
 	assert_string_equal(get_strbuf_str(&buf), "hello,hello,");
 
 	/* overwrite comma with NUL; append_strbuf_str() stops at NUL byte */
@@ -196,14 +196,14 @@ static void test_strbuf_nul(void **state)
 	assert_int_equal(get_strbuf_len(&buf), 10);
 	assert_string_equal(get_strbuf_str(&buf), "hellohello");
 
-	/* __append_strbuf_str() appends full memory, including NUL bytes */
+	/* append_strbuf_str__() appends full memory, including NUL bytes */
 	reset_strbuf(&buf);
-	assert_int_equal(__append_strbuf_str(&buf, greet, sizeof(greet) - 1),
+	assert_int_equal(append_strbuf_str__(&buf, greet, sizeof(greet) - 1),
 			 sizeof(greet) - 1);
 	assert_int_equal(get_strbuf_len(&buf), sizeof(greet) - 1);
 	assert_string_equal(get_strbuf_str(&buf), "hello");
 	assert_string_equal(get_strbuf_str(&buf) + get_strbuf_len(&buf) - 5, " sir!");
-	assert_int_equal(__append_strbuf_str(&buf, greet, sizeof(greet) - 1),
+	assert_int_equal(append_strbuf_str__(&buf, greet, sizeof(greet) - 1),
 			 sizeof(greet) - 1);
 	assert_string_equal(get_strbuf_str(&buf), "hello");
 	assert_int_equal(get_strbuf_len(&buf), 2 * (sizeof(greet) - 1));
