@@ -194,7 +194,7 @@ void *libcheck_thread(struct checker_context *ctx);
  * message IDs.
  * Message IDs available to checkers start at CHECKER_FIRST_MSG.
  * The msgtable array is 0-based, i.e. msgtable[0] is the message
- * for msgid == __CHECKER_FIRST_MSG.
+ * for msgid == CHECKER_FIRST_MSG.
  * The table ends with a NULL element.
  */
 extern const char *libcheck_msgtable[];
