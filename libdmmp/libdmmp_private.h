@@ -46,7 +46,7 @@ extern "C" {
 			goto out; \
 	} while(0)
 
-#define _DMMP_PATH_GROUP_ID_UNKNOWN	0
+#define DMMP_PATH_GROUP_ID_UNKNOWN	0
 
 struct DMMP_DLL_LOCAL _num_str_conv;
 struct _num_str_conv {

@@ -78,7 +78,7 @@ struct dmmp_path_group *_dmmp_path_group_new(void)
 		malloc(sizeof(struct dmmp_path_group));
 
 	if (dmmp_pg != NULL) {
-		dmmp_pg->id = _DMMP_PATH_GROUP_ID_UNKNOWN;
+		dmmp_pg->id = DMMP_PATH_GROUP_ID_UNKNOWN;
 		dmmp_pg->status = DMMP_PATH_GROUP_STATUS_UNKNOWN;
 		dmmp_pg->priority = 0;
 		dmmp_pg->selector = NULL;
@@ -127,10 +127,10 @@ int _dmmp_path_group_update(struct dmmp_context *ctx,
 
 	dmmp_pg->id = id;
 
-	if (dmmp_pg->id == _DMMP_PATH_GROUP_ID_UNKNOWN) {
+	if (dmmp_pg->id == DMMP_PATH_GROUP_ID_UNKNOWN) {
 		rc = DMMP_ERR_BUG;
 		_error(ctx, "BUG: Got unknown(%d) path group ID",
-		       _DMMP_PATH_GROUP_ID_UNKNOWN);
+		       DMMP_PATH_GROUP_ID_UNKNOWN);
 		goto out;
 	}
 
