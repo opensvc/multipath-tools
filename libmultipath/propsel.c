@@ -48,7 +48,7 @@ do {									\
 	}								\
 } while(0)
 
-#define __do_set_from_vec(type, var, src, dest)				\
+#define do_set_from_vec__(type, var, src, dest)				\
 ({									\
 	type *_p;							\
 	bool _found = false;						\
@@ -64,11 +64,11 @@ do {									\
 	_found;								\
 })
 
-#define __do_set_from_hwe(var, src, dest) \
-	__do_set_from_vec(struct hwentry, var, (src)->hwe, dest)
+#define do_set_from_hwe__(var, src, dest) \
+	do_set_from_vec__(struct hwentry, var, (src)->hwe, dest)
 
 #define do_set_from_hwe(var, src, dest, msg)				\
-	if (src->hwe && __do_set_from_hwe(var, src, dest)) {		\
+	if (src->hwe && do_set_from_hwe__(var, src, dest)) {		\
 		origin = msg;						\
 		goto out;						\
 	}
@@ -660,7 +660,7 @@ check_rdac(struct path * pp)
 	if (pp->bus != SYSFS_BUS_SCSI)
 		return 0;
 	/* Avoid checking 0xc9 if this is likely not an RDAC array */
-	if (!__do_set_from_hwe(checker_name, pp, checker_name) &&
+	if (!do_set_from_hwe__(checker_name, pp, checker_name) &&
 	    !is_vpd_page_supported(pp->fd, 0xC9))
 		return 0;
 	if (checker_name && strcmp(checker_name, RDAC))
