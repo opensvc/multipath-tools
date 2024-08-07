@@ -499,7 +499,7 @@ void foreign_multipath_layout(fieldwidth_t *width)
 	pthread_cleanup_pop(1);
 }
 
-static int __snprint_foreign_topology(struct strbuf *buf, int verbosity,
+static int snprint_foreign_topology__(struct strbuf *buf, int verbosity,
 				      const fieldwidth_t *width)
 {
 	struct foreign *fgn;
@@ -540,7 +540,7 @@ int snprint_foreign_topology(struct strbuf *buf, int verbosity,
 		return 0;
 	}
 	pthread_cleanup_push(unlock_foreigns, NULL);
-	rc = __snprint_foreign_topology(buf, verbosity, width);
+	rc = snprint_foreign_topology__(buf, verbosity, width);
 	pthread_cleanup_pop(1);
 	return rc;
 }
@@ -570,7 +570,7 @@ void print_foreign_topology(int verbosity)
 		fgn->release_paths(fgn->context, vec);
 		pthread_cleanup_pop(1);
 	}
-	__snprint_foreign_topology(&buf, verbosity, width);
+	snprint_foreign_topology__(&buf, verbosity, width);
 	pthread_cleanup_pop(1);
 	printf("%s", get_strbuf_str(&buf));
 }
