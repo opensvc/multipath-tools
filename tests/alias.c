@@ -25,7 +25,7 @@
 #define MPATH_ID_INT_MAX_p1 "fxshrxx"
 #endif
 
-static int __set_errno(int err)
+static int set_errno__(int err)
 {
 	if (err >= 0) {
 		errno = 0;
@@ -63,12 +63,12 @@ ssize_t __wrap_write(int fd, const void *buf, size_t count)
 	start = strstr(start, binding);
 	check_expected(count);
 	assert_ptr_not_equal(start, NULL);
-	return __set_errno(mock_type(int));
+	return set_errno__(mock_type(int));
 }
 
 int __wrap_rename(const char *old, const char *new)
 {
-	return __set_errno(mock_type(int));
+	return set_errno__(mock_type(int));
 }
 
 int WRAP_FUNC(mkstemp)(char *template)
@@ -134,7 +134,7 @@ int __wrap_pthread_mutex_unlock(pthread_mutex_t *mutex)
 #define TEST_FPTR ((FILE *) 0xaffe)
 
 /* strbuf wrapper for the old format_devname() */
-static int __format_devname(char *name, int id, size_t len, const char *prefix)
+static int format_devname__(char *name, int id, size_t len, const char *prefix)
 {
 	STRBUF_ON_STACK(buf);
 
@@ -151,7 +151,7 @@ static void fd_mpatha(void **state)
 	char buf[32];
 	int rc;
 
-	rc = __format_devname(buf, 1, sizeof(buf), "FOO");
+	rc = format_devname__(buf, 1, sizeof(buf), "FOO");
 	assert_int_equal(rc, 4);
 	assert_string_equal(buf, "FOOa");
 }
@@ -162,7 +162,7 @@ static void fd_mpathz(void **state)
 	char buf[5];
 	int rc;
 
-	rc = __format_devname(buf, 26, sizeof(buf), "FOO");
+	rc = format_devname__(buf, 26, sizeof(buf), "FOO");
 	assert_int_equal(rc, 4);
 	assert_string_equal(buf, "FOOz");
 }
@@ -172,7 +172,7 @@ static void fd_mpathaa(void **state)
 	char buf[32];
 	int rc;
 
-	rc = __format_devname(buf, 26 + 1, sizeof(buf), "FOO");
+	rc = format_devname__(buf, 26 + 1, sizeof(buf), "FOO");
 	assert_int_equal(rc, 5);
 	assert_string_equal(buf, "FOOaa");
 }
@@ -182,7 +182,7 @@ static void fd_mpathzz(void **state)
 	char buf[32];
 	int rc;
 
-	rc = __format_devname(buf, 26*26 + 26, sizeof(buf), "FOO");
+	rc = format_devname__(buf, 26*26 + 26, sizeof(buf), "FOO");
 	assert_int_equal(rc, 5);
 	assert_string_equal(buf, "FOOzz");
 }
@@ -192,7 +192,7 @@ static void fd_mpathaaa(void **state)
 	char buf[32];
 	int rc;
 
-	rc = __format_devname(buf, 26*26 + 27, sizeof(buf), "FOO");
+	rc = format_devname__(buf, 26*26 + 27, sizeof(buf), "FOO");
 	assert_int_equal(rc, 6);
 	assert_string_equal(buf, "FOOaaa");
 }
@@ -202,7 +202,7 @@ static void fd_mpathzzz(void **state)
 	char buf[32];
 	int rc;
 
-	rc = __format_devname(buf, 26*26*26 + 26*26 + 26, sizeof(buf), "FOO");
+	rc = format_devname__(buf, 26*26*26 + 26*26 + 26, sizeof(buf), "FOO");
 	assert_int_equal(rc, 6);
 	assert_string_equal(buf, "FOOzzz");
 }
@@ -212,7 +212,7 @@ static void fd_mpathaaaa(void **state)
 	char buf[32];
 	int rc;
 
-	rc = __format_devname(buf, 26*26*26 + 26*26 + 27, sizeof(buf), "FOO");
+	rc = format_devname__(buf, 26*26*26 + 26*26 + 27, sizeof(buf), "FOO");
 	assert_int_equal(rc, 7);
 	assert_string_equal(buf, "FOOaaaa");
 }
@@ -222,7 +222,7 @@ static void fd_mpathzzzz(void **state)
 	char buf[32];
 	int rc;
 
-	rc = __format_devname(buf, 26*26*26*26 + 26*26*26 + 26*26 + 26,
+	rc = format_devname__(buf, 26*26*26*26 + 26*26*26 + 26*26 + 26,
 			    sizeof(buf), "FOO");
 	assert_int_equal(rc, 7);
 	assert_string_equal(buf, "FOOzzzz");
@@ -234,7 +234,7 @@ static void fd_mpath_max(void **state)
 	char buf[32];
 	int rc;
 
-	rc  = __format_devname(buf, INT_MAX, sizeof(buf), "");
+	rc  = format_devname__(buf, INT_MAX, sizeof(buf), "");
 	assert_int_equal(rc, strlen(MPATH_ID_INT_MAX));
 	assert_string_equal(buf, MPATH_ID_INT_MAX);
 }
@@ -245,7 +245,7 @@ static void fd_mpath_max1(void **state)
 	char buf[32];
 	int rc;
 
-	rc  = __format_devname(buf, INT_MIN, sizeof(buf), "");
+	rc  = format_devname__(buf, INT_MIN, sizeof(buf), "");
 	assert_int_equal(rc, -1);
 }
 
@@ -254,7 +254,7 @@ static void fd_mpath_short(void **state)
 	char buf[4];
 	int rc;
 
-	rc = __format_devname(buf, 1, sizeof(buf), "FOO");
+	rc = format_devname__(buf, 1, sizeof(buf), "FOO");
 	assert_int_equal(rc, -1);
 }
 
@@ -263,7 +263,7 @@ static void fd_mpath_short1(void **state)
 	char buf[5];
 	int rc;
 
-	rc = __format_devname(buf, 27, sizeof(buf), "FOO");
+	rc = format_devname__(buf, 27, sizeof(buf), "FOO");
 	assert_int_equal(rc, -1);
 }
 
@@ -388,7 +388,7 @@ static void sd_fd_many(void **state)
 	int rc, i;
 
 	for (i = 1; i < 5000; i++) {
-		rc = __format_devname(buf, i, sizeof(buf), "MPATH");
+		rc = format_devname__(buf, i, sizeof(buf), "MPATH");
 		assert_in_range(rc, 6, 8);
 		rc = scan_devname(buf, "MPATH");
 		assert_int_equal(rc, i);
@@ -403,7 +403,7 @@ static void sd_fd_random(void **state)
 	srandom(1);
 	for (i = 1; i < 1000; i++) {
 		n = random() & 0xffff;
-		rc = __format_devname(buf, n, sizeof(buf), "MPATH");
+		rc = format_devname__(buf, n, sizeof(buf), "MPATH");
 		assert_in_range(rc, 6, 9);
 		rc = scan_devname(buf, "MPATH");
 		assert_int_equal(rc, n);
@@ -483,7 +483,7 @@ static void mock_self_alias(const char *alias, const char *wwid)
 		expect_condlog(3, USED_STR(alias, wwid));		\
 	} while(0)
 
-static void __mock_bindings_file(const char *content, bool conflict_ok)
+static void mock_bindings_file__(const char *content, bool conflict_ok)
 {
 	char *cnt __attribute__((cleanup(cleanup_charp))) = NULL;
 	char *token, *savep = NULL;
@@ -509,7 +509,7 @@ static void __mock_bindings_file(const char *content, bool conflict_ok)
 }
 
 static void mock_bindings_file(const char *content) {
-	return __mock_bindings_file(content, false);
+	return mock_bindings_file__(content, false);
 }
 
 static int teardown_bindings(void **state)
@@ -1918,7 +1918,7 @@ static void order_test(int n, const struct random_aliases ra[], bool conflict_ok
 
 	for (j = 0; j < n; j++)
 		fill_bindings_random(&buf, ra[j].start, ra[j].end, ra[j].prefix);
-	__mock_bindings_file(get_strbuf_str(&buf), conflict_ok);
+	mock_bindings_file__(get_strbuf_str(&buf), conflict_ok);
 
 	for (j = 0; j < n; j++) {
 		bdg = VECTOR_SLOT(bindings, 0);

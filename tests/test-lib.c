@@ -367,7 +367,7 @@ void mock_store_pathinfo(int mask,  const struct mocked_path *mp)
 	mock_pathinfo(mask, mp);
 }
 
-struct path *__mock_path(vector pathvec,
+struct path *mock_path__(vector pathvec,
 			 const char *vnd, const char *prd,
 			 const char *rev, const char *wwid,
 			 const char *dev,
@@ -395,7 +395,7 @@ struct path *__mock_path(vector pathvec,
 }
 
 
-struct multipath *__mock_multipath(struct vectors *vecs, struct path *pp)
+struct multipath *mock_multipath__(struct vectors *vecs, struct path *pp)
 {
 	struct multipath *mp;
 	struct config *conf;
