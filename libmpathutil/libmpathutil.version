@@ -43,98 +43,86 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-/* symbols referenced by multipath and multipathd */
-LIBMULTIPATH_16.0.0 {
+LIBMPATHUTIL_4.0 {
 global:
+	alloc_bitfield;
 	alloc_strvec;
+	__append_strbuf_str;
 	append_strbuf_str;
+	append_strbuf_quoted;
+	basenamecpy;
 	cleanup_charp;
+	cleanup_fclose;
+	cleanup_fd_ptr;
+	cleanup_free_ptr;
 	cleanup_mutex;
 	cleanup_ucharp;
+	cleanup_udev_device;
+	cleanup_vector;
+	cleanup_vector_free;
 	convert_dev;
 	dlog;
+	filepresent;
 	fill_strbuf;
+	find_keyword;
 	find_slot;
+	free_keywords;
 	free_scandir_result;
 	free_strvec;
+	get_linux_version_code;
 	get_monotonic_time;
+	__get_strbuf_buf;
 	get_next_string;
 	get_strbuf_len;
 	get_strbuf_str;
-	is_quote;
-	libmp_verbosity;
-	log_thread_reset;
-	log_thread_start;
-	log_thread_stop;
-	logsink;
-	normalize_timespec;
-	print_strbuf;
-	pthread_cond_init_mono;
-	recv_packet;
-	reset_strbuf;
-	send_packet;
-	set_max_fds;
-	setup_thread_attr;
-	strchop;
-	strlcpy;
-	timespeccmp;
-	timespecsub;
-	truncate_strbuf;
-	ux_socket_listen;
-	vector_alloc;
-	vector_alloc_slot;
-	vector_del_slot;
-	vector_free;
-	vector_reset;
-	vector_set_slot;
-
-local:
-	*;
-};
-
-/* symbols referenced internally by libmultipath */
-LIBMPATHUTIL_2.0 {
-	alloc_bitfield;
-	__append_strbuf_str;
-	append_strbuf_quoted;
-	basenamecpy;
-	cleanup_fd_ptr;
-	cleanup_free_ptr;
-	cleanup_vector_free;
-	cleanup_fclose;
-	filepresent;
-	find_keyword;
-	free_keywords;
-	get_linux_version_code;
-	__get_strbuf_buf;
 	get_word;
 	_install_keyword;
 	install_sublevel;
 	install_sublevel_end;
+	is_quote;
 	keyword_alloc;
 	_log_bitfield_overflow;
+	libmp_basename;
+	libmp_strlcat;
+	libmp_strlcpy;
+	libmp_verbosity;
 	log_safe;
+	log_thread_reset;
+	log_thread_start;
+	log_thread_stop;
+	logsink;
 	msort;
+	normalize_timespec;
 	parse_devt;
+	print_strbuf;
 	process_file;
+	pthread_cond_init_mono;
+	recv_packet;
+	reset_strbuf;
 	safe_write;
+	send_packet;
+	set_max_fds;
 	set_value;
+	setup_thread_attr;
+	strchop;
 	should_exit;
 	snprint_keyword;
 	steal_strbuf_str;
-	strlcat;
+	timespeccmp;
+	timespecsub;
+	truncate_strbuf;
 	validate_config_strvec;
+	ux_socket_listen;
+	vector_alloc;
+	vector_alloc_slot;
+	vector_del_slot;
 	vector_find_or_add_slot;
+	vector_free;
 	vector_insert_slot;
 	vector_move_up;
+	vector_reset;
+	vector_set_slot;
 	vector_sort;
-};
-
-LIBMPATHUTIL_2.1 {
-	libmp_basename;
-};
-
-LIBMPATHUTIL_2.2 {
-	cleanup_udev_device;
-	cleanup_vector;
+local:
+	*;
 };
