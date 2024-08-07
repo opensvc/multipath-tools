@@ -121,7 +121,7 @@ get_word (const char *sentence, char **word)
 	return skip + len;
 }
 
-size_t strlcpy(char * restrict dst, const char * restrict src, size_t size)
+size_t libmp_strlcpy(char * restrict dst, const char * restrict src, size_t size)
 {
 	size_t bytes = 0;
 	char ch;
@@ -138,7 +138,7 @@ size_t strlcpy(char * restrict dst, const char * restrict src, size_t size)
 	return bytes;
 }
 
-size_t strlcat(char * restrict dst, const char * restrict src, size_t size)
+size_t libmp_strlcat(char * restrict dst, const char * restrict src, size_t size)
 {
 	size_t bytes = 0;
 	char ch;

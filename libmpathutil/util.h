@@ -12,6 +12,10 @@
 #include <stdio.h>
 #include <libudev.h>
 
+#ifndef __GLIBC_PREREQ
+#define __GLIBC_PREREQ(x, y) 0
+#endif
+
 size_t strchop(char *);
 
 const char *libmp_basename(const char *filename);
@@ -22,8 +26,12 @@ int basenamecpy (const char *src, char *dst, size_t size);
 int filepresent (const char *run);
 char *get_next_string(char **temp, const char *split_char);
 int get_word (const char * sentence, char ** word);
-size_t strlcpy(char * restrict dst, const char * restrict src, size_t size);
-size_t strlcat(char * restrict dst, const char * restrict src, size_t size);
+size_t libmp_strlcpy(char * restrict dst, const char * restrict src, size_t size);
+size_t libmp_strlcat(char * restrict dst, const char * restrict src, size_t size);
+#if defined(__GLIBC__) && ! (__GLIBC_PREREQ(2, 38))
+#define strlcpy(dst, src, size) libmp_strlcpy(dst, src, size)
+#define strlcat(dst, src, size) libmp_strlcat(dst, src, size)
+#endif
 dev_t parse_devt(const char *dev_t);
 char *convert_dev(char *dev, int is_path_device);
 void setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached);
@@ -62,9 +70,6 @@ struct scandir_result {
 };
 void free_scandir_result(struct scandir_result *);
 
-#ifndef __GLIBC_PREREQ
-#define __GLIBC_PREREQ(x, y) 0
-#endif
 /*
  * ffsll() is also available on glibc < 2.27 if _GNU_SOURCE is defined.
  * But relying on that would require that every program using this header file
