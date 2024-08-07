@@ -46,7 +46,7 @@
 #define _DMMP_JSON_MAPS_KEY			"maps"
 #define _ERRNO_STR_BUFF_SIZE			256
 #define _IPC_MAX_CMD_LEN			512
-/* ^ Was _MAX_CMD_LEN in ./libmultipath/uxsock.h */
+/* ^ Was MAX_CMD_LEN in ./libmultipath/uxsock.h */
 #define _LAST_ERR_MSG_BUFF_SIZE			1024
 
 struct dmmp_context {
