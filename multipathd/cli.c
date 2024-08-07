@@ -114,7 +114,7 @@ find_handler (uint32_t fp)
 }
 
 int
-__set_handler_callback (uint32_t fp, cli_handler *fn, bool locked)
+set_handler_callback__ (uint32_t fp, cli_handler *fn, bool locked)
 {
 	struct handler *h;
 

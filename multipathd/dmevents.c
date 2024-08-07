@@ -202,7 +202,7 @@ fail:
 	return -1;
 }
 
-/* You must call __setup_multipath() after calling this function, to
+/* You must call setup_multipath() after calling this function, to
  * deal with any events that came in before the device was added */
 int watch_dmevents(char *name)
 {

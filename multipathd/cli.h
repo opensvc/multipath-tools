@@ -137,9 +137,9 @@ struct handler {
 };
 
 int alloc_handlers (void);
-int __set_handler_callback (uint32_t fp, cli_handler *fn, bool locked);
-#define set_handler_callback(fp, fn) __set_handler_callback(fp, fn, true)
-#define set_unlocked_handler_callback(fp, fn) __set_handler_callback(fp, fn, false)
+int set_handler_callback__ (uint32_t fp, cli_handler *fn, bool locked);
+#define set_handler_callback(fp, fn) set_handler_callback__(fp, fn, true)
+#define set_unlocked_handler_callback(fp, fn) set_handler_callback__(fp, fn, false)
 
 int get_cmdvec (char *cmd, vector *v, bool allow_incomplete);
 struct handler *find_handler_for_cmdvec(const struct _vector *v);
