@@ -575,7 +575,7 @@ static int snprint_initialized(struct strbuf *buff, const struct path * pp)
 	};
 	const char *str;
 
-	if (pp->initialized < INIT_NEW || pp->initialized >= __INIT_LAST)
+	if (pp->initialized < INIT_NEW || pp->initialized >= INIT_LAST__)
 		str = "undef";
 	else
 		str = init_state_name[pp->initialized];

@@ -302,7 +302,7 @@ is_path_valid(const char *name, struct config *conf, struct path *pp,
 		return PATH_IS_ERROR;
 
 	if (conf->find_multipaths <= FIND_MULTIPATHS_UNDEF ||
-	    conf->find_multipaths >= __FIND_MULTIPATHS_LAST)
+	    conf->find_multipaths >= FIND_MULTIPATHS_LAST__)
 		return PATH_IS_ERROR;
 
 	if (safe_sprintf(pp->dev, "%s", name))

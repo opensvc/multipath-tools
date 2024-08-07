@@ -99,7 +99,7 @@ enum find_multipaths_states {
 	FIND_MULTIPATHS_GREEDY,
 	FIND_MULTIPATHS_SMART,
 	FIND_MULTIPATHS_STRICT,
-	__FIND_MULTIPATHS_LAST,
+	FIND_MULTIPATHS_LAST__,
 };
 
 enum marginal_pathgroups_mode {
@@ -258,7 +258,7 @@ enum initialized_states {
 	 * change uevent is received.
 	 */
 	INIT_PARTIAL,
-	__INIT_LAST,
+	INIT_LAST__,
 };
 
 enum prkey_sources {
