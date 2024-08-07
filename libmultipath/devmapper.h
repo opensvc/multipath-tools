@@ -35,15 +35,15 @@ enum {
 	DMP_OK,
 	DMP_NOT_FOUND,
 	DMP_NO_MATCH,
-	__DMP_LAST__,
+	DMP_LAST__,
 };
 
 const char* dmp_errstr(int rc);
 
 /**
- * enum mapinfo_flags: input flags for libmp_mapinfo()
+ * input flags for libmp_mapinfo()
  */
-enum __mapinfo_flags {
+enum {
 	/** DM_MAP_BY_NAME: identify map by device-mapper name from @name */
 	DM_MAP_BY_NAME      = 0,
 	/** DM_MAP_BY_UUID: identify map by device-mapper UUID from @uuid */
@@ -52,12 +52,12 @@ enum __mapinfo_flags {
 	DM_MAP_BY_DEV,
 	/** DM_MAP_BY_DEVT: identify map by a dev_t */
 	DM_MAP_BY_DEVT,
-	__DM_MAP_BY_MASK    = (1 << 8) - 1,
+	DM_MAP_BY_MASK__    = (1 << 8) - 1,
 	/* Fail if target type is not multipath */
 	MAPINFO_MPATH_ONLY  = (1 << 8),
 	/* Fail if target type is not "partition" (linear) */
 	MAPINFO_PART_ONLY   = (1 << 9),
-	__MAPINFO_TGT_TYPE  = (MAPINFO_MPATH_ONLY | MAPINFO_PART_ONLY),
+	MAPINFO_TGT_TYPE__  = (MAPINFO_MPATH_ONLY | MAPINFO_PART_ONLY),
 	/* Fail if the UUID doesn't match the multipath UUID format */
 	MAPINFO_CHECK_UUID  = (1 << 10),
 };
@@ -92,7 +92,7 @@ typedef struct libmp_map_info {
 
 /**
  * libmp_mapinfo(): obtain information about a map from the kernel
- * @param flags: see __mapinfo_flags above.
+ * @param flags: see enum values above.
  *     Exactly one of DM_MAP_BY_NAME, DM_MAP_BY_UUID, and DM_MAP_BY_DEV must be set.
  * @param id: string or major/minor to identify the map to query
  * @param info: output parameters, see above. Non-NULL elements will be filled in.
