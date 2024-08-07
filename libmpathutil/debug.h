@@ -1,5 +1,5 @@
-#ifndef _DEBUG_H
-#define _DEBUG_H
+#ifndef DEBUG_H_INCLUDED
+#define DEBUG_H_INCLUDED
 void dlog (int prio, const char *fmt, ...)
 	__attribute__((format(printf, 2, 3)));
 
@@ -29,4 +29,4 @@ enum {
 		if (__p <= MAX_VERBOSITY && __p <= libmp_verbosity)	\
 			dlog(__p, fmt "\n", ##args);			\
 	} while (0)
-#endif /* _DEBUG_H */
+#endif /* DEBUG_H_INCLUDED */

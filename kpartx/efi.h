@@ -17,8 +17,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef EFI_H
-#define EFI_H
+#ifndef EFI_H_INCLUDED
+#define EFI_H_INCLUDED
 
 /*
  * Extensible Firmware Interface
@@ -54,4 +54,4 @@ efi_guidcmp(efi_guid_t left, efi_guid_t right)
 
 typedef uint16_t efi_char16_t;		/* UNICODE character */
 
-#endif /* EFI_H */
+#endif /* EFI_H_INCLUDED */

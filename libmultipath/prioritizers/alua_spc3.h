@@ -12,8 +12,8 @@
  *
  * This file is released under the GPL.
  */
-#ifndef __SPC3_H__
-#define __SPC3_H__
+#ifndef ALUA_SPC3_H_INCLUDED
+#define ALUA_SPC3_H_INCLUDED
 #include "../unaligned.h"
 
 /*=============================================================================
@@ -323,4 +323,4 @@ struct rtpg_data {
 			) \
 		)
 
-#endif /* __SPC3_H__ */
+#endif /* ALUA_SPC3_H_INCLUDED */

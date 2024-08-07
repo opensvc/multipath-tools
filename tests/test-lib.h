@@ -1,5 +1,5 @@
-#ifndef __LIB_H
-#define __LIB_H
+#ifndef TEST_LIB_H_INCLUDED
+#define TEST_LIB_H_INCLUDED
 
 extern const int default_mask;
 extern const char default_devnode[];

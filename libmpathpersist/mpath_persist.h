@@ -1,7 +1,7 @@
 /* version - 1.0 */
 
-#ifndef MPATH_PERSIST_LIB_H
-#define MPATH_PERSIST_LIB_H
+#ifndef MPATH_PERSIST_H_INCLUDED
+#define MPATH_PERSIST_H_INCLUDED
 
 
 #ifdef __cplusplus
@@ -326,4 +326,4 @@ void mpath_persistent_reserve_free_vecs(void);
 }
 #endif
 
-#endif  /*MPATH_PERSIST_LIB_H*/
+#endif /* MPATH_PERSIST_H_INCLUDED */

@@ -14,8 +14,8 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef _GENERIC_H
-#define _GENERIC_H
+#ifndef GENERIC_H_INCLUDED
+#define GENERIC_H_INCLUDED
 #include "vector.h"
 
 /*
@@ -138,4 +138,4 @@ struct gen_path {
 int generic_style(const struct gen_multipath*,
 		  struct strbuf *buf, int verbosity);
 
-#endif /* _GENERIC_H */
+#endif /* GENERIC_H_INCLUDED */

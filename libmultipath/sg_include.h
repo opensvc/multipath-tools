@@ -1,3 +1,5 @@
+#ifndef SG_INCLUDE_H_INCLUDED
+#define SG_INCLUDE_H_INCLUDED
 #define __user
 #include <scsi/sg.h>
 
@@ -22,4 +24,5 @@
 				      * recover the link. Transport class will
 				      * retry or fail IO */
 #define DID_TRANSPORT_FAILFAST	0x0f /* Transport class fastfailed the io */
+#endif
 #endif

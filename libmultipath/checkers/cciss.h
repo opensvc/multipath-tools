@@ -1,5 +1,5 @@
-#ifndef CCISS_H
-#define CCISS_H
+#ifndef CCISS_H_INCLUDED
+#define CCISS_H_INCLUDED
 
 #include <linux/types.h>
 #include <linux/ioctl.h>

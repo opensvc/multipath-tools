@@ -1,5 +1,5 @@
-#ifndef NVME_LIB_H
-#define NVME_LIB_H
+#ifndef NVME_LIB_H_INCLUDED
+#define NVME_LIB_H_INCLUDED
 
 #include "nvme.h"
 
@@ -36,4 +36,4 @@ int nvme_id_ctrl_ana(int fd, struct nvme_id_ctrl *ctrl);
 #undef le64_to_cpu
 #endif
 
-#endif /* NVME_LIB_H */
+#endif /* NVME_LIB_H_INCLUDED */

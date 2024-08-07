@@ -1,3 +1,6 @@
+#ifndef CONFIGURE_H_INCLUDED
+#define CONFIGURE_H_INCLUDED
+
 /*
  * configurator actions
  */
@@ -63,3 +66,4 @@ void trigger_paths_udev_change(struct multipath *mpp, bool is_mpath);
 void trigger_partitions_udev_change(struct udev_device *dev, const char *action,
 				    int len);
 int check_daemon(void);
+#endif

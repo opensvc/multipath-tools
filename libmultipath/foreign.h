@@ -14,8 +14,9 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#ifndef _FOREIGN_H
-#define _FOREIGN_H
+#ifndef FOREIGN_H_INCLUDED
+#define FOREIGN_H_INCLUDED
+
 #include <stdbool.h>
 #include <libudev.h>
 #define LIBMP_FOREIGN_API ((1 << 8) | 2)
@@ -320,4 +321,4 @@ is_claimed_by_foreign(struct udev_device *ud)
 	return (rc == FOREIGN_CLAIMED || rc == FOREIGN_OK);
 }
 
-#endif /*  _FOREIGN_H */
+#endif /*  FOREIGN_H_INCLUDED */

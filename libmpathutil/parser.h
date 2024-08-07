@@ -20,8 +20,8 @@
  *              2 of the License, or (at your option) any later version.
  */
 
-#ifndef _PARSER_H
-#define _PARSER_H
+#ifndef PARSER_H_INCLUDED
+#define PARSER_H_INCLUDED
 
 /* system includes */
 #include <stdlib.h>

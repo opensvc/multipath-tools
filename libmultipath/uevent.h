@@ -1,5 +1,5 @@
-#ifndef _UEVENT_H
-#define _UEVENT_H
+#ifndef UEVENT_H_INCLUDED
+#define UEVENT_H_INCLUDED
 
 /*
  * buffer for environment variables, the kernel's size in
@@ -69,4 +69,4 @@ static inline char *uevent_get_dm_action(const struct uevent *uev)
 	return uevent_get_dm_str(uev, "DM_ACTION");
 }
 
-#endif /* _UEVENT_H */
+#endif /* UEVENT_H_INCLUDED */

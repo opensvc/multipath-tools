@@ -1,5 +1,5 @@
-#ifndef _CLI_H_
-#define _CLI_H_
+#ifndef CLI_H_INCLUDED
+#define CLI_H_INCLUDED
 
 #include <stdint.h>
 
@@ -157,4 +157,4 @@ vector get_keys(void);
 vector get_handlers(void);
 struct key *find_key (const char * str);
 
-#endif /* _CLI_H_ */
+#endif /* CLI_H_INCLUDED */

@@ -1,5 +1,5 @@
-#ifndef DISCOVERY_H
-#define DISCOVERY_H
+#ifndef DISCOVERY_H_INCLUDED
+#define DISCOVERY_H_INCLUDED
 
 #define SYSFS_PATH_SIZE 255
 #define INQUIRY_CMDLEN  6
@@ -84,4 +84,4 @@ enum discovery_mode {
 #define DI_ALL		(DI_SYSFS  | DI_SERIAL | DI_CHECKER | DI_PRIO | \
 			 DI_WWID)
 
-#endif /* DISCOVERY_H */
+#endif /* DISCOVERY_H_INCLUDED */

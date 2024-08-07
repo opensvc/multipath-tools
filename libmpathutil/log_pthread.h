@@ -1,5 +1,5 @@
-#ifndef _LOG_PTHREAD_H
-#define _LOG_PTHREAD_H
+#ifndef LOG_PTHREAD_H_INCLUDED
+#define LOG_PTHREAD_H_INCLUDED
 
 #include <pthread.h>
 
@@ -9,4 +9,4 @@ void log_thread_start(pthread_attr_t *attr);
 void log_thread_reset (void);
 void log_thread_stop(void);
 
-#endif /* _LOG_PTHREAD_H */
+#endif /* LOG_PTHREAD_H_INCLUDED */

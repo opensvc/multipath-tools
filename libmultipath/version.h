@@ -17,8 +17,8 @@
  *
  * Copyright (c) 2006 Christophe Varoqui
  */
-#ifndef _VERSION_H
-#define _VERSION_H
+#ifndef VERSION_H_INCLUDED
+#define VERSION_H_INCLUDED
 
 #define VERSION_CODE 0x000909
 /* MMDDYY, in hex */
@@ -35,4 +35,4 @@
 		MULTIPATH_VERSION(VERSION_CODE),                \
 		MULTIPATH_VERSION(DATE_CODE)
 
-#endif /* _VERSION_H */
+#endif /* VERSION_H_INCLUDED */

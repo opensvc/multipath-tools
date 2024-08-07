@@ -1,5 +1,5 @@
-#ifndef PLUGIN_H
-#define PLUGIN_H
+#ifndef NVME_PLUGIN_H_INCLUDED
+#define NVME_PLUGIN_H_INCLUDED
 
 #include <stdbool.h>
 

@@ -163,8 +163,8 @@ all:	$(TOPDIR)/config.mk
 
 $(multipathdir)/autoconfig.h:
 	@echo creating $@
-	@echo '#ifndef _AUTOCONFIG_H' >$@
-	@echo '#define _AUTOCONFIG_H' >>$@
+	@echo '#ifndef AUTOCONFIG_H_INCLUDED' >$@
+	@echo '#define AUTOCONFIG_H_INCLUDED' >>$@
 	@for x in $(DEFINES); do echo "#define $$x" >>$@; done
 	@echo '#endif' >>$@
 

@@ -12,8 +12,8 @@
  * more details.
  */
 
-#ifndef _UAPI_LINUX_NVME_IOCTL_H
-#define _UAPI_LINUX_NVME_IOCTL_H
+#ifndef LINUX_NVME_IOCTL_H_INCLUDED
+#define LINUX_NVME_IOCTL_H_INCLUDED
 
 #include <linux/types.h>
 #include <sys/ioctl.h>
@@ -64,4 +64,4 @@ struct nvme_passthru_cmd {
 #define NVME_IOCTL_SUBSYS_RESET	_IO('N', 0x45)
 #define NVME_IOCTL_RESCAN	_IO('N', 0x46)
 
-#endif /* _UAPI_LINUX_NVME_IOCTL_H */
+#endif /* LINUX_NVME_IOCTL_H_INCLUDED */

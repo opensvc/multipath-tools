@@ -1,5 +1,5 @@
-#ifndef _ALUA_H
-#define _ALUA_H
+#ifndef ALUA_H_INCLUDED
+#define ALUA_H_INCLUDED
 
 #include "alua_rtpg.h"
 

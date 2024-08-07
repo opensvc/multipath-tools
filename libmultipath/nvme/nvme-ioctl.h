@@ -1,5 +1,5 @@
-#ifndef _NVME_LIB_H
-#define _NVME_LIB_H
+#ifndef NVME_NVME_IOCTL_H_INCLUDED
+#define NVME_NVME_IOCTL_H_INCLUDED
 
 #include <linux/types.h>
 #include <stdbool.h>
@@ -155,4 +155,4 @@ int nvme_sanitize(int fd, __u8 sanact, __u8 ause, __u8 owpass, __u8 oipbp,
 int nvme_self_test_start(int fd, __u32 nsid, __u32 cdw10);
 int nvme_self_test_log(int fd, struct nvme_self_test_log *self_test_log);
 int nvme_virtual_mgmt(int fd, __u32 cdw10, __u32 cdw11, __u32 *result);
-#endif				/* _NVME_LIB_H */
+#endif /* NVME_NVME_IOCTL_H_INCLUDED */

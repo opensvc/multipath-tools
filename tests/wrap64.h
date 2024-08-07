@@ -1,5 +1,5 @@
-#ifndef _WRAP64_H
-#define _WRAP64_H 1
+#ifndef WRAP64_H_INCLUDED
+#define WRAP64_H_INCLUDED
 #include <syscall.h>
 #include <linux/types.h>
 /* The following include is required for LIBAIO_REDIRECT */

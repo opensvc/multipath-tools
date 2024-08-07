@@ -1,5 +1,5 @@
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef MAIN_H_INCLUDED
+#define MAIN_H_INCLUDED
 
 #define MAPGCINT 5
 
@@ -52,4 +52,4 @@ bool check_path_wwid_change(struct path *pp);
 int finish_path_init(struct path *pp, struct vectors * vecs);
 int resize_map(struct multipath *mpp, unsigned long long size,
 	       struct vectors *vecs);
-#endif /* MAIN_H */
+#endif /* MAIN_H_INCLUDED */

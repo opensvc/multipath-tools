@@ -1,5 +1,5 @@
-#ifndef _BLACKLIST_H
-#define _BLACKLIST_H
+#ifndef BLACKLIST_H_INCLUDED
+#define BLACKLIST_H_INCLUDED
 
 #include <libudev.h>
 #include <regex.h>
@@ -54,4 +54,4 @@ void free_blacklist_device (vector);
 void merge_blacklist(vector);
 void merge_blacklist_device(vector);
 
-#endif /* _BLACKLIST_H */
+#endif /* BLACKLIST_H_INCLUDED */

@@ -1,5 +1,5 @@
-#ifndef _STRUCTS_VEC_H
-#define _STRUCTS_VEC_H
+#ifndef STRUCTS_VEC_H_INCLUDED
+#define STRUCTS_VEC_H_INCLUDED
 
 #include "vector.h"
 #include "config.h"
@@ -39,4 +39,4 @@ int update_multipath_table (struct multipath *mpp, vector pathvec, int flags);
 int update_multipath_status (struct multipath *mpp);
 vector get_used_hwes(const struct _vector *pathvec);
 
-#endif /* _STRUCTS_VEC_H */
+#endif /* STRUCTS_VEC_H_INCLUDED */

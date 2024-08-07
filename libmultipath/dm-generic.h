@@ -14,8 +14,8 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef _DM_GENERIC_H
-#define _DM_GENERIC_H
+#ifndef DM_GENERIC_H_INCLUDED
+#define DM_GENERIC_H_INCLUDED
 #include "generic.h"
 #include "list.h" /* for container_of */
 #include "structs.h"
@@ -36,4 +36,4 @@ extern const struct gen_multipath_ops dm_gen_multipath_ops;
 extern const struct gen_pathgroup_ops dm_gen_pathgroup_ops;
 extern const struct gen_path_ops dm_gen_path_ops;
 
-#endif /* _DM_GENERIC_H */
+#endif /* DM_GENERIC_H_INCLUDED */

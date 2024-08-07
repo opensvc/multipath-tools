@@ -1,5 +1,5 @@
-#ifndef _UTIL_H
-#define _UTIL_H
+#ifndef UTIL_H_INCLUDED
+#define UTIL_H_INCLUDED
 
 #include <stdlib.h>
 #include <string.h>
@@ -147,4 +147,4 @@ void cleanup_charp(char **p);
 void cleanup_ucharp(unsigned char **p);
 void cleanup_udev_device(struct udev_device **udd);
 
-#endif /* _UTIL_H */
+#endif /* UTIL_H_INCLUDED */

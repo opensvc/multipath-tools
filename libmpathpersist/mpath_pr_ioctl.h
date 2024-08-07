@@ -1,3 +1,6 @@
+#ifndef MPATH_PR_IOCTL_H_INCLUDED
+#define MPATH_PR_IOCTL_H_INCLUDED
+
 #define MPATH_XFER_HOST_DEV              0   /*data transfer from initiator to target */
 #define MPATH_XFER_DEV_HOST              1   /*data transfer from target to initiator */
 #define MPATH_XFER_NONE                  2   /*no data transfer */
@@ -107,3 +110,5 @@ typedef struct SenseData
 
 /* Driver status */
 #define DRIVER_OK 0x00
+
+#endif

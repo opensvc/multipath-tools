@@ -20,8 +20,8 @@
  *              2 of the License, or (at your option) any later version.
  */
 
-#ifndef _VECTOR_H
-#define _VECTOR_H
+#ifndef VECTOR_H_INCLUDED
+#define VECTOR_H_INCLUDED
 
 #include <stdbool.h>
 

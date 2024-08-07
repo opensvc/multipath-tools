@@ -18,8 +18,8 @@
  *         Todd Gill <tgill@redhat.com>
  */
 
-#ifndef _LIB_DMMP_PRIVATE_H_
-#define _LIB_DMMP_PRIVATE_H_
+#ifndef LIBDMMP_PRIVATE_H_INCLUDED
+#define LIBDMMP_PRIVATE_H_INCLUDED
 
 /*
  * Notes:
@@ -209,4 +209,4 @@ DMMP_DLL_LOCAL void _dmmp_log_stderr(struct dmmp_context *ctx, int priority,
 } /* End of extern "C" */
 #endif
 
-#endif /* End of _LIB_DMMP_PRIVATE_H_ */
+#endif /* End of LIBDMMP_PRIVATE_H_INCLUDED */

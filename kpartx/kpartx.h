@@ -1,5 +1,5 @@
-#ifndef _KPARTX_H
-#define _KPARTX_H
+#ifndef KPARTX_H_INCLUDED
+#define KPARTX_H_INCLUDED
 
 #include <stddef.h>
 #include <stdint.h>
@@ -70,4 +70,4 @@ four2int(unsigned char *p) {
 	return p[0] + (p[1]<<8) + (p[2]<<16) + (p[3]<<24);
 }
 
-#endif /* _KPARTX_H */
+#endif /* KPARTX_H_INCLUDED */

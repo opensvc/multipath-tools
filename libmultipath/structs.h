@@ -1,5 +1,5 @@
-#ifndef _STRUCTS_H
-#define _STRUCTS_H
+#ifndef STRUCTS_H_INCLUDED
+#define STRUCTS_H_INCLUDED
 
 #include <sys/types.h>
 #include <inttypes.h>
@@ -584,4 +584,4 @@ int pathcmp (const struct pathgroup *, const struct pathgroup *);
 int add_feature (char **, const char *);
 int remove_feature (char **, const char *);
 
-#endif /* _STRUCTS_H */
+#endif /* STRUCTS_H_INCLUDED */

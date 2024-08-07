@@ -1,5 +1,5 @@
-#ifndef _PRINT_H
-#define _PRINT_H
+#ifndef PRINT_H_INCLUDED
+#define PRINT_H_INCLUDED
 #include "dm-generic.h"
 
 #define PRINT_PATH_CHECKER   "%i %d %D %p %t %T %o %C"
@@ -73,4 +73,4 @@ int snprint_multipath_attr(const struct gen_multipath* gm,
 			   struct strbuf *buf, char wildcard);
 int snprint_multipath_style(const struct gen_multipath *gmp,
 			    struct strbuf *style, int verbosity);
-#endif /* _PRINT_H */
+#endif /* PRINT_H_INCLUDED */

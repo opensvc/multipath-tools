@@ -1,5 +1,5 @@
-#ifndef __JSON__H
-#define __JSON__H
+#ifndef NVME_JSON_H_INCLUDED
+#define NVME_JSON_H_INCLUDED
 
 struct json_object;
 struct json_array;

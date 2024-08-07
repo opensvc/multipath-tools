@@ -1,5 +1,5 @@
-#ifndef _CHECKERS_H
-#define _CHECKERS_H
+#ifndef CHECKERS_H_INCLUDED
+#define CHECKERS_H_INCLUDED
 
 #include <pthread.h>
 #include "list.h"
@@ -199,4 +199,4 @@ void *libcheck_thread(struct checker_context *ctx);
  */
 extern const char *libcheck_msgtable[];
 
-#endif /* _CHECKERS_H */
+#endif /* CHECKERS_H_INCLUDED */

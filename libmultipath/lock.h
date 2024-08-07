@@ -1,5 +1,5 @@
-#ifndef _LOCK_H
-#define _LOCK_H
+#ifndef LOCK_H_INCLUDED
+#define LOCK_H_INCLUDED
 
 #include <pthread.h>
 #include <urcu/uatomic.h>
@@ -65,4 +65,4 @@ static inline bool lock_has_waiters(struct mutex_lock *a)
 void cleanup_lock (void * data);
 void set_wakeup_fn(struct mutex_lock *lock, wakeup_fn *fn);
 
-#endif /* _LOCK_H */
+#endif /* LOCK_H_INCLUDED */

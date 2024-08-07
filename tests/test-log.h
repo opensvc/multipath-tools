@@ -1,5 +1,5 @@
-#ifndef _TEST_LOG_H
-#define _TEST_LOG_H
+#ifndef TEST_LOG_H_INCLUDED
+#define TEST_LOG_H_INCLUDED
 
 __attribute__((format(printf, 2, 0)))
 void __wrap_dlog (int prio, const char * fmt, ...);

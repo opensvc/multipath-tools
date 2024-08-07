@@ -2,8 +2,8 @@
  * Copyright (c) 2021 SUSE LLC
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-#ifndef _STRBUF_H
-#define _STRBUF_H
+#ifndef STRBUF_H_INCLUDED
+#define STRBUF_H_INCLUDED
 #include <errno.h>
 #include <string.h>
 

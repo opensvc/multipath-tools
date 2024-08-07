@@ -1,5 +1,6 @@
-#ifndef _DEVMAPPER_H
-#define _DEVMAPPER_H
+#ifndef DEVMAPPER_H_INCLUDED
+#define DEVMAPPER_H_INCLUDED
+
 #include <sys/sysmacros.h>
 #include <linux/dm-ioctl.h>
 #include "autoconfig.h"
@@ -210,4 +211,4 @@ int libmp_dm_task_run(struct dm_task *dmt);
 	condlog(lvl, "%s: libdm task=%d error: %s", __func__, \
 		cmd, strerror(dm_task_get_errno(dmt)))	      \
 
-#endif /* _DEVMAPPER_H */
+#endif /* DEVMAPPER_H_INCLUDED */

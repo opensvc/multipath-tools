@@ -1,5 +1,5 @@
-#ifndef _WEIGHTED_PATH_H
-#define _WEIGHTED_PATH_H
+#ifndef WEIGHTEDPATH_H_INCLUDED
+#define WEIGHTEDPATH_H_INCLUDED
 
 #define PRIO_WEIGHTED_PATH "weightedpath"
 #define HBTL "hbtl"
