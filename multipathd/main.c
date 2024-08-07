@@ -1220,7 +1220,7 @@ int
 ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 {
 	struct multipath * mpp;
-	char *params __attribute((cleanup(cleanup_charp))) = NULL;
+	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 	int retries = 3;
 	int start_waiter = 0;
 	int ret;
