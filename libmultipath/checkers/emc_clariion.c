@@ -57,20 +57,20 @@ enum {
 	MSG_CLARIION_PASSIVE_GOOD,
 };
 
-#define _IDX(x) (MSG_CLARIION_ ## x - CHECKER_FIRST_MSGID)
+#define IDX_(x) (MSG_CLARIION_ ## x - CHECKER_FIRST_MSGID)
 const char *libcheck_msgtable[] = {
-	[_IDX(QUERY_FAILED)] = ": sending query command failed",
-	[_IDX(QUERY_ERROR)] = ": query command indicates error",
-	[_IDX(PATH_CONFIG)] =
+	[IDX_(QUERY_FAILED)] = ": sending query command failed",
+	[IDX_(QUERY_ERROR)] = ": query command indicates error",
+	[IDX_(PATH_CONFIG)] =
 	": Path not correctly configured for failover",
-	[_IDX(UNIT_REPORT)] =
+	[IDX_(UNIT_REPORT)] =
 	": Path unit report page in unknown format",
-	[_IDX(PATH_NOT_AVAIL)] =
+	[IDX_(PATH_NOT_AVAIL)] =
 	": Path not available for normal operations",
-	[_IDX(LUN_UNBOUND)] = ": Logical Unit is unbound or LUNZ",
-	[_IDX(WWN_CHANGED)] = ": Logical Unit WWN has changed",
-	[_IDX(READ_ERROR)] = ": Read error",
-	[_IDX(PASSIVE_GOOD)] = ": Active path is healthy",
+	[IDX_(LUN_UNBOUND)] = ": Logical Unit is unbound or LUNZ",
+	[IDX_(WWN_CHANGED)] = ": Logical Unit WWN has changed",
+	[IDX_(READ_ERROR)] = ": Read error",
+	[IDX_(PASSIVE_GOOD)] = ": Active path is healthy",
 	NULL,
 };
 

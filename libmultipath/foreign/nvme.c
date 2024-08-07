@@ -955,18 +955,18 @@ void release_paths(__attribute__((unused)) const struct context *ctx,
 }
 
 /* compile-time check whether all methods are present and correctly typed */
-#define _METHOD_INIT(x) .x = x
+#define METHOD_INIT(x) .x = x
 static struct foreign __methods __attribute__((unused)) = {
-	_METHOD_INIT(init),
-	_METHOD_INIT(cleanup),
-	_METHOD_INIT(change),
-	_METHOD_INIT(delete),
-	_METHOD_INIT(delete_all),
-	_METHOD_INIT(check),
-	_METHOD_INIT(lock),
-	_METHOD_INIT(unlock),
-	_METHOD_INIT(get_multipaths),
-	_METHOD_INIT(release_multipaths),
-	_METHOD_INIT(get_paths),
-	_METHOD_INIT(release_paths),
+	METHOD_INIT(init),
+	METHOD_INIT(cleanup),
+	METHOD_INIT(change),
+	METHOD_INIT(delete),
+	METHOD_INIT(delete_all),
+	METHOD_INIT(check),
+	METHOD_INIT(lock),
+	METHOD_INIT(unlock),
+	METHOD_INIT(get_multipaths),
+	METHOD_INIT(release_multipaths),
+	METHOD_INIT(get_paths),
+	METHOD_INIT(release_paths),
 };

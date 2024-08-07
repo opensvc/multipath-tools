@@ -234,19 +234,19 @@ enum {
 	RDAC_MSGID_INQUIRY_FAILED,
 };
 
-#define _IDX(x) (RDAC_MSGID_##x - CHECKER_FIRST_MSGID)
+#define IDX_(x) (RDAC_MSGID_##x - CHECKER_FIRST_MSGID)
 const char *libcheck_msgtable[] = {
-	[_IDX(NOT_CONN)] = MSG_RDAC_DOWN_TYPE("lun not connected"),
-	[_IDX(IN_STARTUP)] = MSG_RDAC_DOWN_TYPE("ctlr is in startup sequence"),
-	[_IDX(NON_RESPONSIVE)] =
+	[IDX_(NOT_CONN)] = MSG_RDAC_DOWN_TYPE("lun not connected"),
+	[IDX_(IN_STARTUP)] = MSG_RDAC_DOWN_TYPE("ctlr is in startup sequence"),
+	[IDX_(NON_RESPONSIVE)] =
 	MSG_RDAC_DOWN_TYPE("non-responsive to queries"),
-	[_IDX(IN_RESET)] = MSG_RDAC_DOWN_TYPE("ctlr held in reset"),
-	[_IDX(FW_DOWNLOADING)] =
+	[IDX_(IN_RESET)] = MSG_RDAC_DOWN_TYPE("ctlr held in reset"),
+	[IDX_(FW_DOWNLOADING)] =
 	MSG_RDAC_DOWN_TYPE("ctlr firmware downloading"),
-	[_IDX(QUIESCED)] = MSG_RDAC_DOWN_TYPE("ctlr quiesced by admin request"),
-	[_IDX(SERVICE_MODE)] = MSG_RDAC_DOWN_TYPE("ctlr is in service mode"),
-	[_IDX(UNAVAILABLE)] = MSG_RDAC_DOWN_TYPE("ctlr is unavailable"),
-	[_IDX(INQUIRY_FAILED)] = MSG_RDAC_DOWN_TYPE("inquiry failed"),
+	[IDX_(QUIESCED)] = MSG_RDAC_DOWN_TYPE("ctlr quiesced by admin request"),
+	[IDX_(SERVICE_MODE)] = MSG_RDAC_DOWN_TYPE("ctlr is in service mode"),
+	[IDX_(UNAVAILABLE)] = MSG_RDAC_DOWN_TYPE("ctlr is unavailable"),
+	[IDX_(INQUIRY_FAILED)] = MSG_RDAC_DOWN_TYPE("inquiry failed"),
 	NULL,
 };
 

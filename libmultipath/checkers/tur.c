@@ -35,12 +35,12 @@ enum {
 	MSG_TUR_TRANSITIONING,
 };
 
-#define _IDX(x) (MSG_ ## x - CHECKER_FIRST_MSGID)
+#define IDX_(x) (MSG_ ## x - CHECKER_FIRST_MSGID)
 const char *libcheck_msgtable[] = {
-	[_IDX(TUR_RUNNING)] = " still running",
-	[_IDX(TUR_TIMEOUT)] = " timed out",
-	[_IDX(TUR_FAILED)] = " failed to initialize",
-	[_IDX(TUR_TRANSITIONING)] = " reports path is transitioning",
+	[IDX_(TUR_RUNNING)] = " still running",
+	[IDX_(TUR_TIMEOUT)] = " timed out",
+	[IDX_(TUR_FAILED)] = " failed to initialize",
+	[IDX_(TUR_TRANSITIONING)] = " reports path is transitioning",
 	NULL,
 };
 
