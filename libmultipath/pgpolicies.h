@@ -1,12 +1,6 @@
 #ifndef PGPOLICIES_H_INCLUDED
 #define PGPOLICIES_H_INCLUDED
 
-#if 0
-#ifndef _MAIN_H
-#include "main.h"
-#endif
-#endif
-
 #define POLICY_NAME_SIZE 32
 
 /* Storage controllers capabilities */
