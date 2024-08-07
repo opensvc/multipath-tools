@@ -28,12 +28,12 @@
 #include "libdmmp/libdmmp.h"
 #include "libdmmp_private.h"
 
-#define _DMMP_SHOW_PGS_CMD "show groups raw format %w|%g|%p|%t|%s"
-#define _DMMP_SHOW_PG_INDEX_WWID	0
-#define _DMMP_SHOW_PG_INDEX_PG_ID	1
-#define _DMMP_SHOW_PG_INDEX_PRI		2
-#define _DMMP_SHOW_PG_INDEX_STATUS	3
-#define _DMMP_SHOW_PG_INDEX_SELECTOR	4
+#define DMMP_SHOW_PGS_CMD "show groups raw format %w|%g|%p|%t|%s"
+#define DMMP_SHOW_PG_INDEX_WWID	0
+#define DMMP_SHOW_PG_INDEX_PG_ID	1
+#define DMMP_SHOW_PG_INDEX_PRI		2
+#define DMMP_SHOW_PG_INDEX_STATUS	3
+#define DMMP_SHOW_PG_INDEX_SELECTOR	4
 
 struct dmmp_path_group {
 	uint32_t id;
@@ -45,7 +45,7 @@ struct dmmp_path_group {
 	struct dmmp_path **dmmp_ps;
 };
 
-static const struct _num_str_conv _DMMP_PATH_GROUP_STATUS_CONV[] = {
+static const struct _num_str_conv DMMP_PATH_GROUP_STATUS_CONV[] = {
 	{DMMP_PATH_GROUP_STATUS_UNKNOWN, "undef"},
 	{DMMP_PATH_GROUP_STATUS_ACTIVE, "active"},
 	{DMMP_PATH_GROUP_STATUS_DISABLED, "disabled"},
@@ -53,10 +53,10 @@ static const struct _num_str_conv _DMMP_PATH_GROUP_STATUS_CONV[] = {
 };
 
 _dmmp_str_func_gen(dmmp_path_group_status_str, uint32_t, pg_status,
-		   _DMMP_PATH_GROUP_STATUS_CONV);
+		   DMMP_PATH_GROUP_STATUS_CONV);
 _dmmp_str_conv_func_gen(_dmmp_path_group_status_str_conv, ctx, pg_status_str,
 			uint32_t, DMMP_PATH_GROUP_STATUS_UNKNOWN,
-			_DMMP_PATH_GROUP_STATUS_CONV);
+			DMMP_PATH_GROUP_STATUS_CONV);
 
 _dmmp_getter_func_gen(dmmp_path_group_id_get, struct dmmp_path_group, dmmp_pg,
 		      id, uint32_t);
