@@ -50,7 +50,7 @@ static inline int timedlock(struct mutex_lock *a, struct timespec *tmo)
 	return pthread_mutex_timedlock(&a->mutex, tmo);
 }
 
-static inline void __unlock(struct mutex_lock *a)
+static inline void unlock__(struct mutex_lock *a)
 {
 	pthread_mutex_unlock(&a->mutex);
 }

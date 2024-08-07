@@ -527,7 +527,7 @@ static int client_state_machine(struct client *c, struct vectors *vecs,
 	case CLT_LOCKED_WORK:
 		if (trylock(&vecs->lock) == 0) {
 			/* don't use cleanup_lock(), lest we wakeup ourselves */
-			pthread_cleanup_push_cast(__unlock, &vecs->lock);
+			pthread_cleanup_push_cast(unlock__, &vecs->lock);
 			c->error = execute_handler(c, vecs);
 			check_for_locked_work(c);
 			pthread_cleanup_pop(1);
