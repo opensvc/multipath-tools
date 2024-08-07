@@ -45,9 +45,9 @@ static int dm_conf_verbosity;
 
 #ifdef LIBDM_API_DEFERRED
 static int dm_cancel_remove_partmaps(const char * mapname);
-#define __DR_UNUSED__ /* empty */
+#define DR_UNUSED__ /* empty */
 #else
-#define __DR_UNUSED__ __attribute__((unused))
+#define DR_UNUSED__ __attribute__((unused))
 #endif
 
 static int dm_remove_partmaps (const char *mapname, int flags);
@@ -1041,7 +1041,7 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 }
 
 int
-dm_flush_map_nopaths(const char *mapname, int deferred_remove __DR_UNUSED__)
+dm_flush_map_nopaths(const char *mapname, int deferred_remove DR_UNUSED__)
 {
 	int flags = DMFL_NEED_SYNC;
 
@@ -1196,7 +1196,7 @@ dm_disablegroup(const char * mapname, int index)
 
 static int dm_get_multipath(const char *name, struct multipath **pmpp)
 {
-	struct multipath __attribute((cleanup(cleanup_multipath))) *mpp = NULL;
+	struct multipath __attribute__((cleanup(cleanup_multipath))) *mpp = NULL;
 	char uuid[DM_UUID_LEN];
 	int rc;
 
