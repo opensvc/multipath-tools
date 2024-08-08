@@ -271,7 +271,7 @@ void foreign_multipath_layout(fieldwidth_t *width);
  * '\0' - terminated.
  * @param buf: output buffer
  * @param verbosity: verbosity level
- * @param width: an array of field widths, initialized by _get_path_layout()
+ * @param width: an array of field widths, initialized by get_path_layout__()
  * @returns: number of printed characters excluding trailing '\0'.
  */
 int snprint_foreign_topology(struct strbuf *buf, int verbosity,

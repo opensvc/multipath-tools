@@ -149,7 +149,7 @@ global:
 	path_offline;
 	print_all_paths;
 	print_foreign_topology;
-	_print_multipath_topology;
+	print_multipath_topology__;
 	reinstate_paths;
 	remember_wwid;
 	remove_feature;
@@ -179,12 +179,12 @@ global:
 	snprint_foreign_multipaths;
 	snprint_foreign_paths;
 	snprint_foreign_topology;
-	_snprint_multipath;
+	snprint_multipath__;
 	snprint_multipath_header;
 	snprint_multipath_map_json;
-	_snprint_multipath_topology;
+	snprint_multipath_topology__;
 	snprint_multipath_topology_json;
-	_snprint_path;
+	snprint_path__;
 	snprint_path_header;
 	snprint_status;
 	snprint_wildcards;

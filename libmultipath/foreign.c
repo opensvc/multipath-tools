@@ -458,7 +458,7 @@ void foreign_path_layout(fieldwidth_t *width)
 
 		vec = fgn->get_paths(fgn->context);
 		if (vec != NULL) {
-			_get_path_layout(vec, LAYOUT_RESET_NOT, width);
+			get_path_layout__(vec, LAYOUT_RESET_NOT, width);
 		}
 		fgn->release_paths(fgn->context, vec);
 
@@ -489,7 +489,7 @@ void foreign_multipath_layout(fieldwidth_t *width)
 
 		vec = fgn->get_multipaths(fgn->context);
 		if (vec != NULL) {
-			_get_multipath_layout(vec, LAYOUT_RESET_NOT, width);
+			get_multipath_layout__(vec, LAYOUT_RESET_NOT, width);
 		}
 		fgn->release_multipaths(fgn->context, vec);
 
@@ -517,7 +517,7 @@ static int snprint_foreign_topology__(struct strbuf *buf, int verbosity,
 		vec = fgn->get_multipaths(fgn->context);
 		if (vec != NULL) {
 			vector_foreach_slot(vec, gm, j) {
-				if (_snprint_multipath_topology(
+				if (snprint_multipath_topology__(
 					    gm, buf, verbosity, width) < 0)
 					break;
 			}
@@ -566,7 +566,7 @@ void print_foreign_topology(int verbosity)
 		fgn->lock(fgn->context);
 		pthread_cleanup_push(fgn->unlock, fgn->context);
 		vec = fgn->get_paths(fgn->context);
-		_get_multipath_layout(vec, LAYOUT_RESET_NOT, width);
+		get_multipath_layout__(vec, LAYOUT_RESET_NOT, width);
 		fgn->release_paths(fgn->context, vec);
 		pthread_cleanup_pop(1);
 	}
@@ -600,7 +600,7 @@ int snprint_foreign_paths(struct strbuf *buf, const char *style,
 		vec = fgn->get_paths(fgn->context);
 		if (vec != NULL) {
 			vector_foreach_slot(vec, gp, j) {
-				ret = _snprint_path(gp, buf, style, width);
+				ret = snprint_path__(gp, buf, style, width);
 				if (ret < 0)
 					break;
 			}
@@ -640,7 +640,7 @@ int snprint_foreign_multipaths(struct strbuf *buf, const char *style,
 		vec = fgn->get_multipaths(fgn->context);
 		if (vec != NULL) {
 			vector_foreach_slot(vec, gm, j) {
-				ret = _snprint_multipath(gm, buf,
+				ret = snprint_multipath__(gm, buf,
 							 style, width);
 				if (ret < 0)
 					break;
