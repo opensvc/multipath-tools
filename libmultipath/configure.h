@@ -53,7 +53,7 @@ enum {
 struct vectors;
 
 int setup_map (struct multipath * mpp, char **params, struct vectors *vecs);
-void select_action (struct multipath *mpp, const struct _vector *curmp,
+void select_action (struct multipath *mpp, const struct vector_s *curmp,
 		    int force_reload);
 int domap (struct multipath * mpp, char * params, int is_daemon);
 int reinstate_paths (struct multipath *mpp);

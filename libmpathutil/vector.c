@@ -30,7 +30,7 @@
 vector
 vector_alloc(void)
 {
-	vector v = (vector) calloc(1, sizeof (struct _vector));
+	vector v = (vector) calloc(1, sizeof (struct vector_s));
 	return v;
 }
 

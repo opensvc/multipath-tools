@@ -70,7 +70,7 @@ struct binding {
  * Perhaps one day we'll implement this more efficiently, thus use
  * an abstract type.
  */
-typedef struct _vector Bindings;
+typedef struct vector_s Bindings;
 
 /* Protect global_bindings */
 static pthread_mutex_t bindings_mutex = PTHREAD_MUTEX_INITIALIZER;

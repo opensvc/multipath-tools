@@ -3140,8 +3140,8 @@ void rcu_free_config(struct rcu_head *head)
 	free_config(conf);
 }
 
-static bool reconfigure_check_uid_attrs(const struct _vector *old_attrs,
-					const struct _vector *new_attrs)
+static bool reconfigure_check_uid_attrs(const struct vector_s *old_attrs,
+					const struct vector_s *new_attrs)
 {
 	int i;
 	char *old;

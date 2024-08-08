@@ -106,14 +106,14 @@ const char *__wrap_udev_device_get_sysname(struct udev_device *udev_device)
 }
 
 /* called from pathinfo() */
-int __wrap_filter_devnode(struct config *conf, const struct _vector *elist,
+int __wrap_filter_devnode(struct config *conf, const struct vector_s *elist,
 			  const char *vendor, const char * product, const char *dev)
 {
 	return mock_type(int);
 }
 
 /* called from pathinfo() */
-int __wrap_filter_device(const struct _vector *blist, const struct _vector *elist,
+int __wrap_filter_device(const struct vector_s *blist, const struct vector_s *elist,
 	       const char *vendor, const char * product, const char *dev)
 {
 	return mock_type(int);

@@ -155,7 +155,7 @@ struct foreign {
 	 * @returns a vector of "struct gen_multipath*" with the map devices
 	 * belonging to this library (see generic.h).
 	 */
-	const struct _vector* (*get_multipaths)(const struct context *);
+	const struct vector_s* (*get_multipaths)(const struct context *);
 
 	/**
 	 * method: release_multipaths(context, mpvec)
@@ -165,7 +165,7 @@ struct foreign {
 	 * @param[in] mpvec the vector allocated with get_multipaths()
 	 */
 	void (*release_multipaths)(const struct context *ctx,
-				   const struct _vector* mpvec);
+				   const struct vector_s* mpvec);
 
 	/**
 	 * method: get_paths
@@ -176,7 +176,7 @@ struct foreign {
 	 * @returns a vector of "struct gen_path*" with the path devices
 	 * belonging to this library (see generic.h)
 	 */
-	const struct _vector* (*get_paths)(const struct context *);
+	const struct vector_s* (*get_paths)(const struct context *);
 
 	/**
 	 * release data structures obtained with get_multipaths (if any)
@@ -185,7 +185,7 @@ struct foreign {
 	 * @param[in] ppvec the vector allocated with get_paths()
 	 */
 	void (*release_paths)(const struct context *ctx,
-			      const struct _vector* ppvec);
+			      const struct vector_s* ppvec);
 
 	void *handle;
 	struct context *context;

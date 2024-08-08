@@ -37,6 +37,6 @@ int update_multipath_table__ (struct multipath *mpp, vector pathvec, int flags,
 			      const char *params, const char *status);
 int update_multipath_table (struct multipath *mpp, vector pathvec, int flags);
 int update_multipath_status (struct multipath *mpp);
-vector get_used_hwes(const struct _vector *pathvec);
+vector get_used_hwes(const struct vector_s *pathvec);
 
 #endif /* STRUCTS_VEC_H_INCLUDED */

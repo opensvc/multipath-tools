@@ -24,7 +24,7 @@
 #include "config.h"
 #include "print.h"
 
-static const struct _vector*
+static const struct vector_s*
 dm_mp_get_pgs(const struct gen_multipath *gmp)
 {
 	return vector_convert(NULL, gen_multipath_to_dm(gmp)->pg,
@@ -33,12 +33,12 @@ dm_mp_get_pgs(const struct gen_multipath *gmp)
 
 static void dm_mp_rel_pgs(__attribute__((unused))
 			  const struct gen_multipath *gmp,
-			  const struct _vector* v)
+			  const struct vector_s* v)
 {
 	vector_free_const(v);
 }
 
-static const struct _vector*
+static const struct vector_s*
 dm_pg_get_paths(const struct gen_pathgroup *gpg)
 {
 	return vector_convert(NULL, gen_pathgroup_to_dm(gpg)->paths,
@@ -47,7 +47,7 @@ dm_pg_get_paths(const struct gen_pathgroup *gpg)
 
 static void dm_mp_rel_paths(__attribute__((unused))
 			    const struct gen_pathgroup *gpg,
-			    const struct _vector* v)
+			    const struct vector_s* v)
 {
 	vector_free_const(v);
 }

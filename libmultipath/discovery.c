@@ -1523,7 +1523,7 @@ get_vpd_sgio (int fd, int pg, int vend_id, char * str, int maxlen)
 }
 
 static int
-scsi_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
+scsi_sysfs_pathinfo (struct path *pp, const struct vector_s *hwtable)
 {
 	struct udev_device *parent;
 	const char *attr_path = NULL;
@@ -1594,7 +1594,7 @@ scsi_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 }
 
 static int
-nvme_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
+nvme_sysfs_pathinfo (struct path *pp, const struct vector_s *hwtable)
 {
 	struct udev_device *parent;
 	const char *attr_path = NULL;
@@ -1653,7 +1653,7 @@ nvme_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 }
 
 static int
-ccw_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
+ccw_sysfs_pathinfo (struct path *pp, const struct vector_s *hwtable)
 {
 	struct udev_device *parent;
 	char attr_buff[NAME_SIZE];
@@ -1714,7 +1714,7 @@ ccw_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 }
 
 static int
-cciss_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
+cciss_sysfs_pathinfo (struct path *pp, const struct vector_s *hwtable)
 {
 	const char * attr_path = NULL;
 	struct udev_device *parent;
@@ -1872,7 +1872,7 @@ path_offline (struct path * pp)
 }
 
 static int
-sysfs_pathinfo(struct path *pp, const struct _vector *hwtable)
+sysfs_pathinfo(struct path *pp, const struct vector_s *hwtable)
 {
 	int r = common_sysfs_pathinfo(pp);
 

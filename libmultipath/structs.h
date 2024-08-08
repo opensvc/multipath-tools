@@ -564,14 +564,14 @@ int store_hostgroup(vector hostgroupvec, struct host_group *hgp);
 int store_path (vector pathvec, struct path * pp);
 int add_pathgroup(struct multipath*, struct pathgroup *);
 
-struct multipath * find_mp_by_alias (const struct _vector *mp, const char *alias);
-struct multipath * find_mp_by_wwid (const struct _vector *mp, const char *wwid);
-struct multipath * find_mp_by_str (const struct _vector *mp, const char *wwid);
-struct multipath * find_mp_by_minor (const struct _vector *mp,
+struct multipath * find_mp_by_alias (const struct vector_s *mp, const char *alias);
+struct multipath * find_mp_by_wwid (const struct vector_s *mp, const char *wwid);
+struct multipath * find_mp_by_str (const struct vector_s *mp, const char *wwid);
+struct multipath * find_mp_by_minor (const struct vector_s *mp,
 				     unsigned int minor);
 
-struct path * find_path_by_devt (const struct _vector *pathvec, const char *devt);
-struct path * find_path_by_dev (const struct _vector *pathvec, const char *dev);
+struct path * find_path_by_devt (const struct vector_s *pathvec, const char *devt);
+struct path * find_path_by_dev (const struct vector_s *pathvec, const char *dev);
 struct path * first_path (const struct multipath *mpp);
 
 struct path *mp_find_path_by_devt(const struct multipath *mpp, const char *devt);

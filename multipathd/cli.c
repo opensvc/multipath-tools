@@ -335,7 +335,7 @@ int get_cmdvec (char *cmd, vector *v, bool allow_incomplete)
 	return r;
 }
 
-uint32_t fingerprint(const struct _vector *vec)
+uint32_t fingerprint(const struct vector_s *vec)
 {
 	int i;
 	uint32_t fp = 0;
@@ -352,7 +352,7 @@ uint32_t fingerprint(const struct _vector *vec)
 	return fp;
 }
 
-struct handler *find_handler_for_cmdvec(const struct _vector *v)
+struct handler *find_handler_for_cmdvec(const struct vector_s *v)
 {
 	return find_handler(fingerprint(v));
 }

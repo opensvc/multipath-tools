@@ -43,7 +43,7 @@ struct gen_multipath_ops {
 	 * @param gmp: generic multipath object to act on
 	 * @returns a vector of const struct gen_pathgroup*
 	 */
-	const struct _vector* (*get_pathgroups)(const struct gen_multipath*);
+	const struct vector_s* (*get_pathgroups)(const struct gen_multipath*);
 	/**
 	 * method: rel_pathgroups(gmp, v)
 	 * free data allocated by get_pathgroups(), if any
@@ -51,7 +51,7 @@ struct gen_multipath_ops {
 	 * @param v the value returned by get_pathgroups()
 	 */
 	void (*rel_pathgroups)(const struct gen_multipath*,
-			       const struct _vector*);
+			       const struct vector_s*);
 	/**
 	 * method: snprint(gmp, buf, len, wildcard)
 	 * prints the property of the multipath map matching
@@ -89,14 +89,14 @@ struct gen_pathgroup_ops {
 	 * @param gpg: generic pathgroup object to act on
 	 * @returns a vector of const struct gen_path*
 	 */
-	const struct _vector* (*get_paths)(const struct gen_pathgroup*);
+	const struct vector_s* (*get_paths)(const struct gen_pathgroup*);
 	/**
 	 * method: rel_paths(gpg, v)
 	 * free data allocated by get_paths(), if any
 	 * @param gmp: generic pathgroup object to act on
 	 * @param v the value returned by get_paths()
 	 */
-	void (*rel_paths)(const struct gen_pathgroup*, const struct _vector*);
+	void (*rel_paths)(const struct gen_pathgroup*, const struct vector_s*);
 	/**
 	 * Method snprint()
 	 * see gen_multipath_ops->snprint() above

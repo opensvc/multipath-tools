@@ -45,7 +45,7 @@ const char *THIS;
 struct nvme_map;
 struct nvme_pathgroup {
 	struct gen_pathgroup gen;
-	struct _vector pathvec;
+	struct vector_s pathvec;
 };
 
 struct nvme_path {
@@ -66,7 +66,7 @@ struct nvme_map {
 	struct udev_device *udev;
 	struct udev_device *subsys;
 	dev_t devt;
-	struct _vector pgvec;
+	struct vector_s pgvec;
 	int nr_live;
 	int ana_supported;
 };
@@ -114,7 +114,7 @@ static void cleanup_nvme_map(struct nvme_map *map)
 	free(map);
 }
 
-static const struct _vector*
+static const struct vector_s*
 nvme_mp_get_pgs(const struct gen_multipath *gmp) {
 	const struct nvme_map *nvme = const_gen_mp_to_nvme(gmp);
 
@@ -124,7 +124,7 @@ nvme_mp_get_pgs(const struct gen_multipath *gmp) {
 
 static void
 nvme_mp_rel_pgs(__attribute__((unused)) const struct gen_multipath *gmp,
-		__attribute__((unused)) const struct _vector *v)
+		__attribute__((unused)) const struct vector_s *v)
 {
 	/* empty */
 }
@@ -201,7 +201,7 @@ static int snprint_nvme_map(const struct gen_multipath *gmp,
 	return append_strbuf_str(buff, N_A);
 }
 
-static const struct _vector*
+static const struct vector_s*
 nvme_pg_get_paths(const struct gen_pathgroup *gpg) {
 	const struct nvme_pathgroup *gp = const_gen_pg_to_nvme(gpg);
 
@@ -211,7 +211,7 @@ nvme_pg_get_paths(const struct gen_pathgroup *gpg) {
 
 static void
 nvme_pg_rel_paths(__attribute__((unused)) const struct gen_pathgroup *gpg,
-		  __attribute__((unused)) const struct _vector *v)
+		  __attribute__((unused)) const struct vector_s *v)
 {
 	/* empty */
 }
@@ -916,14 +916,14 @@ void check(struct context *ctx)
 /*
  * It's safe to pass our internal pointer, this is only used under the lock.
  */
-const struct _vector *get_multipaths(const struct context *ctx)
+const struct vector_s *get_multipaths(const struct context *ctx)
 {
 	condlog(5, "%s called for \"%s\"", __func__, THIS);
 	return ctx->mpvec;
 }
 
 void release_multipaths(__attribute__((unused)) const struct context *ctx,
-			__attribute__((unused)) const struct _vector *mpvec)
+			__attribute__((unused)) const struct vector_s *mpvec)
 {
 	condlog(5, "%s called for \"%s\"", __func__, THIS);
 	/* NOP */
@@ -932,7 +932,7 @@ void release_multipaths(__attribute__((unused)) const struct context *ctx,
 /*
  * It's safe to pass our internal pointer, this is only used under the lock.
  */
-const struct _vector * get_paths(const struct context *ctx)
+const struct vector_s * get_paths(const struct context *ctx)
 {
 	vector paths = NULL;
 	const struct gen_multipath *gm;
@@ -948,7 +948,7 @@ const struct _vector * get_paths(const struct context *ctx)
 }
 
 void release_paths(__attribute__((unused)) const struct context *ctx,
-		   const struct _vector *mpvec)
+		   const struct vector_s *mpvec)
 {
 	condlog(5, "%s called for \"%s\"", __func__, THIS);
 	vector_free_const(mpvec);

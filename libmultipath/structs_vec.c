@@ -891,7 +891,7 @@ void update_queue_mode_add_path(struct multipath *mpp)
 	condlog(2, "%s: remaining active paths: %d", mpp->alias, active);
 }
 
-vector get_used_hwes(const struct _vector *pathvec)
+vector get_used_hwes(const struct vector_s *pathvec)
 {
 	int i, j;
 	struct path *pp;

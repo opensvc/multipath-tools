@@ -26,11 +26,11 @@
 #include <stdbool.h>
 
 /* vector definition */
-struct _vector {
+struct vector_s {
 	int allocated;
 	void **slot;
 };
-typedef struct _vector *vector;
+typedef struct vector_s *vector;
 
 #define VECTOR_DEFAULT_SIZE 1
 #define VECTOR_SIZE(V)   ((V) ? ((V)->allocated) / VECTOR_DEFAULT_SIZE : 0)
@@ -53,7 +53,7 @@ typedef struct _vector *vector;
  */
 #define vector_convert(new, vec, type, conv)				\
 	({								\
-		const struct _vector *__v = (vec);			\
+		const struct vector_s *__v = (vec);			\
 		vector __t = (new);					\
 		type *__j;						\
 		int __i;						\

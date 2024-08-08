@@ -117,7 +117,7 @@ err:
  * Call update_pathvec_from_dm() after this function to make sure
  * all data structures are in a sane state.
  */
-int disassemble_map(const struct _vector *pathvec,
+int disassemble_map(const struct vector_s *pathvec,
 		    const char *params, struct multipath *mpp)
 {
 	char * word;

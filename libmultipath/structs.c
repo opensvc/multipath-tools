@@ -433,7 +433,7 @@ store_adaptergroup(vector adapters, struct adapter_group * agp)
 }
 
 struct multipath *
-find_mp_by_minor (const struct _vector *mpvec, unsigned int minor)
+find_mp_by_minor (const struct vector_s *mpvec, unsigned int minor)
 {
 	int i;
 	struct multipath * mpp;
@@ -452,7 +452,7 @@ find_mp_by_minor (const struct _vector *mpvec, unsigned int minor)
 }
 
 struct multipath *
-find_mp_by_wwid (const struct _vector *mpvec, const char * wwid)
+find_mp_by_wwid (const struct vector_s *mpvec, const char * wwid)
 {
 	int i;
 	struct multipath * mpp;
@@ -468,7 +468,7 @@ find_mp_by_wwid (const struct _vector *mpvec, const char * wwid)
 }
 
 struct multipath *
-find_mp_by_alias (const struct _vector *mpvec, const char * alias)
+find_mp_by_alias (const struct vector_s *mpvec, const char * alias)
 {
 	int i;
 	size_t len;
@@ -491,7 +491,7 @@ find_mp_by_alias (const struct _vector *mpvec, const char * alias)
 }
 
 struct multipath *
-find_mp_by_str (const struct _vector *mpvec, const char * str)
+find_mp_by_str (const struct vector_s *mpvec, const char * str)
 {
 	int minor;
 	char dummy;
@@ -510,7 +510,7 @@ find_mp_by_str (const struct _vector *mpvec, const char * str)
 }
 
 struct path *
-find_path_by_dev (const struct _vector *pathvec, const char *dev)
+find_path_by_dev (const struct vector_s *pathvec, const char *dev)
 {
 	int i;
 	struct path * pp;
@@ -527,7 +527,7 @@ find_path_by_dev (const struct _vector *pathvec, const char *dev)
 }
 
 struct path *
-find_path_by_devt (const struct _vector *pathvec, const char * dev_t)
+find_path_by_devt (const struct vector_s *pathvec, const char * dev_t)
 {
 	int i;
 	struct path * pp;

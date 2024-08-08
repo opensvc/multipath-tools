@@ -206,7 +206,7 @@ struct config {
 	int auto_resize;
 
 	char * selector;
-	struct _vector uid_attrs;
+	struct vector_s uid_attrs;
 	char * uid_attribute;
 	char * features;
 	char * hwhandler;
@@ -286,11 +286,11 @@ int libmultipath_init(void);
  */
 void libmultipath_exit(void);
 
-int find_hwe (const struct _vector *hwtable,
+int find_hwe (const struct vector_s *hwtable,
 	      const char * vendor, const char * product, const char *revision,
 	      vector result);
 struct mpentry * find_mpe (vector mptable, char * wwid);
-const char *get_mpe_wwid (const struct _vector *mptable, const char *alias);
+const char *get_mpe_wwid (const struct vector_s *mptable, const char *alias);
 
 struct hwentry * alloc_hwe (void);
 struct mpentry * alloc_mpe (void);

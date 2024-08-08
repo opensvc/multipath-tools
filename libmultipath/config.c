@@ -114,7 +114,7 @@ hwe_strmatch (const struct hwentry *hwe1, const struct hwentry *hwe2)
 }
 
 static struct hwentry *
-find_hwe_strmatch (const struct _vector *hwtable, const struct hwentry *hwe)
+find_hwe_strmatch (const struct vector_s *hwtable, const struct hwentry *hwe)
 {
 	int i;
 	struct hwentry *tmp, *ret = NULL;
@@ -179,7 +179,7 @@ static void _log_match(const char *fn, const struct hwentry *h,
 #define log_match(h, v, p, r) _log_match(__func__, (h), (v), (p), (r))
 
 int
-find_hwe (const struct _vector *hwtable,
+find_hwe (const struct vector_s *hwtable,
 	  const char * vendor, const char * product, const char * revision,
 	  vector result)
 {
@@ -222,7 +222,7 @@ struct mpentry *find_mpe(vector mptable, char *wwid)
 	return NULL;
 }
 
-const char *get_mpe_wwid(const struct _vector *mptable, const char *alias)
+const char *get_mpe_wwid(const struct vector_s *mptable, const char *alias)
 {
 	int i;
 	struct mpentry * mpe;
@@ -1089,7 +1089,7 @@ out:
 const char *get_uid_attribute_by_attrs(const struct config *conf,
 				       const char *path_dev)
 {
-	const struct _vector *uid_attrs = &conf->uid_attrs;
+	const struct vector_s *uid_attrs = &conf->uid_attrs;
 	int j;
 	char *att, *col;
 
