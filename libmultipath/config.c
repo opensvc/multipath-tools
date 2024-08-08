@@ -879,25 +879,25 @@ static void set_max_checkint_from_watchdog(struct config *conf)
 }
 #endif
 
-static int _init_config (const char *file, struct config *conf);
+static int init_config__ (const char *file, struct config *conf);
 
 int init_config(const char *file)
 {
-	return _init_config(file, &internal_config);
+	return init_config__(file, &internal_config);
 }
 
 struct config *load_config(const char *file)
 {
 	struct config *conf = alloc_config();
 
-	if (conf && !_init_config(file, conf))
+	if (conf && !init_config__(file, conf))
 		return conf;
 
 	free(conf);
 	return NULL;
 }
 
-int _init_config (const char *file, struct config *conf)
+int init_config__ (const char *file, struct config *conf)
 {
 
 	if (!conf)
