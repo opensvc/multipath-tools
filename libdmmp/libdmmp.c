@@ -86,9 +86,9 @@ _dmmp_getter_func_gen(dmmp_last_error_msg, struct dmmp_context, ctx,
 		      last_err_msg, const char *);
 
 _dmmp_array_free_func_gen(dmmp_mpath_array_free, struct dmmp_mpath,
-			  _dmmp_mpath_free);
+			  dmmp_mpath_free);
 
-void _dmmp_log(struct dmmp_context *ctx, int priority, const char *file,
+void dmmp_log(struct dmmp_context *ctx, int priority, const char *file,
 	       int line, const char *func_name, const char *format, ...)
 {
 	va_list args;
@@ -113,7 +113,7 @@ struct dmmp_context *dmmp_context_new(void)
 	if (ctx == NULL)
 		return NULL;
 
-	ctx->log_func = _dmmp_log_stderr;
+	ctx->log_func = dmmp_log_stderr;
 	ctx->log_priority = DMMP_LOG_PRIORITY_DEFAULT;
 	ctx->userdata = NULL;
 	ctx->tmo = DEFAULT_UXSOCK_TIMEOUT;
@@ -250,10 +250,10 @@ int dmmp_mpath_array_get(struct dmmp_context *ctx,
 			goto out;
 		}
 
-		dmmp_mp = _dmmp_mpath_new();
+		dmmp_mp = dmmp_mpath_new();
 		_dmmp_alloc_null_check(ctx, dmmp_mp, rc, out);
 		(*dmmp_mps)[i] = dmmp_mp;
-		_good(_dmmp_mpath_update(ctx, dmmp_mp, j_obj_map), rc, out);
+		_good(dmmp_mpath_update(ctx, dmmp_mp, j_obj_map), rc, out);
 	}
 
 out:

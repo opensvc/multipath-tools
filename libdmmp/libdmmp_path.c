@@ -59,7 +59,7 @@ _dmmp_getter_func_gen(dmmp_path_blk_name_get, struct dmmp_path, dmmp_p,
 _dmmp_getter_func_gen(dmmp_path_status_get, struct dmmp_path, dmmp_p,
 		      status, uint32_t);
 
-struct dmmp_path *_dmmp_path_new(void)
+struct dmmp_path *dmmp_path_new(void)
 {
 	struct dmmp_path *dmmp_p = NULL;
 
@@ -72,7 +72,7 @@ struct dmmp_path *_dmmp_path_new(void)
 	return dmmp_p;
 }
 
-int _dmmp_path_update(struct dmmp_context *ctx, struct dmmp_path *dmmp_p,
+int dmmp_path_update(struct dmmp_context *ctx, struct dmmp_path *dmmp_p,
 		      json_object *j_obj_p)
 {
 	int rc = DMMP_OK;
@@ -102,11 +102,11 @@ int _dmmp_path_update(struct dmmp_context *ctx, struct dmmp_path *dmmp_p,
 
 out:
 	if (rc != DMMP_OK)
-		_dmmp_path_free(dmmp_p);
+		dmmp_path_free(dmmp_p);
 	return rc;
 }
 
-void _dmmp_path_free(struct dmmp_path *dmmp_p)
+void dmmp_path_free(struct dmmp_path *dmmp_p)
 {
 	if (dmmp_p == NULL)
 		return;

@@ -110,33 +110,33 @@ do { \
 DMMP_DLL_LOCAL int _dmmp_ipc_exec(struct dmmp_context *ctx, const char *cmd,
 				  char **output);
 
-DMMP_DLL_LOCAL struct dmmp_mpath *_dmmp_mpath_new(void);
-DMMP_DLL_LOCAL struct dmmp_path_group *_dmmp_path_group_new(void);
-DMMP_DLL_LOCAL struct dmmp_path *_dmmp_path_new(void);
+DMMP_DLL_LOCAL struct dmmp_mpath *dmmp_mpath_new(void);
+DMMP_DLL_LOCAL struct dmmp_path_group *dmmp_path_group_new(void);
+DMMP_DLL_LOCAL struct dmmp_path *dmmp_path_new(void);
 
-DMMP_DLL_LOCAL int _dmmp_mpath_update(struct dmmp_context *ctx,
+DMMP_DLL_LOCAL int dmmp_mpath_update(struct dmmp_context *ctx,
 				      struct dmmp_mpath *dmmp_mp,
 				      json_object *j_obj_map);
-DMMP_DLL_LOCAL int _dmmp_path_group_update(struct dmmp_context *ctx,
+DMMP_DLL_LOCAL int dmmp_path_group_update(struct dmmp_context *ctx,
 					   struct dmmp_path_group *dmmp_pg,
 					   json_object *j_obj_pg);
-DMMP_DLL_LOCAL int _dmmp_path_update(struct dmmp_context *ctx,
+DMMP_DLL_LOCAL int dmmp_path_update(struct dmmp_context *ctx,
 				     struct dmmp_path *dmmp_p,
 				     json_object *j_obj_p);
 
-DMMP_DLL_LOCAL void _dmmp_mpath_free(struct dmmp_mpath *dmmp_mp);
-DMMP_DLL_LOCAL void _dmmp_path_group_free(struct dmmp_path_group *dmmp_pg);
+DMMP_DLL_LOCAL void dmmp_mpath_free(struct dmmp_mpath *dmmp_mp);
+DMMP_DLL_LOCAL void dmmp_path_group_free(struct dmmp_path_group *dmmp_pg);
 DMMP_DLL_LOCAL void _dmmp_path_group_array_free
 	(struct dmmp_path_group **dmmp_pgs, uint32_t dmmp_pg_count);
-DMMP_DLL_LOCAL void _dmmp_path_free(struct dmmp_path *dmmp_p);
-DMMP_DLL_LOCAL void _dmmp_log(struct dmmp_context *ctx, int priority,
+DMMP_DLL_LOCAL void dmmp_path_free(struct dmmp_path *dmmp_p);
+DMMP_DLL_LOCAL void dmmp_log(struct dmmp_context *ctx, int priority,
 			      const char *file, int line,
 			      const char *func_name,
 			      const char *format, ...)
 	__attribute__((format(printf, 6, 7)));
 DMMP_DLL_LOCAL void _dmmp_log_err_str(struct dmmp_context *ctx, int rc);
 
-DMMP_DLL_LOCAL void _dmmp_log_stderr(struct dmmp_context *ctx, int priority,
+DMMP_DLL_LOCAL void dmmp_log_stderr(struct dmmp_context *ctx, int priority,
 				     const char *file, int line,
 				     const char *func_name, const char *format,
 				     va_list args)
@@ -146,7 +146,7 @@ DMMP_DLL_LOCAL void _dmmp_log_stderr(struct dmmp_context *ctx, int priority,
 #define _dmmp_log_cond(ctx, prio, arg...) \
 	do { \
 		if (dmmp_context_log_priority_get(ctx) >= prio) \
-			_dmmp_log(ctx, prio, __FILE__, __LINE__, __FUNCTION__, \
+			dmmp_log(ctx, prio, __FILE__, __LINE__, __FUNCTION__, \
 				  ## arg); \
 	} while (0)
 

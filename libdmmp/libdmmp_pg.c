@@ -67,10 +67,10 @@ _dmmp_getter_func_gen(dmmp_path_group_priority_get, struct dmmp_path_group,
 _dmmp_getter_func_gen(dmmp_path_group_selector_get, struct dmmp_path_group,
 		      dmmp_pg, selector, const char *);
 _dmmp_array_free_func_gen(_dmmp_path_group_array_free, struct dmmp_path_group,
-			  _dmmp_path_group_free);
+			  dmmp_path_group_free);
 
 
-struct dmmp_path_group *_dmmp_path_group_new(void)
+struct dmmp_path_group *dmmp_path_group_new(void)
 {
 	struct dmmp_path_group *dmmp_pg = NULL;
 
@@ -87,7 +87,7 @@ struct dmmp_path_group *_dmmp_path_group_new(void)
 	}
 	return dmmp_pg;
 }
-int _dmmp_path_group_update(struct dmmp_context *ctx,
+int dmmp_path_group_update(struct dmmp_context *ctx,
 			    struct dmmp_path_group *dmmp_pg,
 			    json_object *j_obj_pg)
 {
@@ -157,10 +157,10 @@ int _dmmp_path_group_update(struct dmmp_context *ctx,
 		dmmp_pg->dmmp_ps[i] = NULL;
 
 	for (i = 0; i < dmmp_pg->dmmp_p_count; ++i) {
-		dmmp_p = _dmmp_path_new();
+		dmmp_p = dmmp_path_new();
 		_dmmp_alloc_null_check(ctx, dmmp_p, rc, out);
 		dmmp_pg->dmmp_ps[i] = dmmp_p;
-		_good(_dmmp_path_update(ctx, dmmp_p,
+		_good(dmmp_path_update(ctx, dmmp_p,
 					array_list_get_idx(ar_ps, i)),
 		      rc, out);
 	}
@@ -173,11 +173,11 @@ int _dmmp_path_group_update(struct dmmp_context *ctx,
 
 out:
 	if (rc != DMMP_OK)
-		_dmmp_path_group_free(dmmp_pg);
+		dmmp_path_group_free(dmmp_pg);
 	return rc;
 }
 
-void _dmmp_path_group_free(struct dmmp_path_group *dmmp_pg)
+void dmmp_path_group_free(struct dmmp_path_group *dmmp_pg)
 {
 	uint32_t i = 0;
 
@@ -188,7 +188,7 @@ void _dmmp_path_group_free(struct dmmp_path_group *dmmp_pg)
 
 	if (dmmp_pg->dmmp_ps != NULL) {
 		for (i = 0; i < dmmp_pg->dmmp_p_count; ++i) {
-			_dmmp_path_free(dmmp_pg->dmmp_ps[i]);
+			dmmp_path_free(dmmp_pg->dmmp_ps[i]);
 		}
 		free(dmmp_pg->dmmp_ps);
 	}
