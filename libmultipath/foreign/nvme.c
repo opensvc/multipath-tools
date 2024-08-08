@@ -891,7 +891,7 @@ int delete(struct context *ctx, struct udev_device *ud)
 	return rc;
 }
 
-void _check(struct context *ctx)
+void check__(struct context *ctx)
 {
 	struct gen_multipath *gm;
 	int i;
@@ -908,7 +908,7 @@ void check(struct context *ctx)
 	condlog(4, "%s called for \"%s\"", __func__, THIS);
 	lock(ctx);
 	pthread_cleanup_push(unlock, ctx);
-	_check(ctx);
+	check__(ctx);
 	pthread_cleanup_pop(1);
 	return;
 }
