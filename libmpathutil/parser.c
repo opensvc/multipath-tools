@@ -70,7 +70,7 @@ install_sublevel_end(void)
 }
 
 int
-_install_keyword(vector keywords, char *string,
+install_keyword__(vector keywords, char *string,
 		 handler_fn *handler,
 		 print_fn *print,
 		 int unique)

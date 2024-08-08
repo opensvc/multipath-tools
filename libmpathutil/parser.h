@@ -63,22 +63,22 @@ struct keyword {
 	for (i = 0; i < (k)->sub->allocated && ((p) = (k)->sub->slot[i]); i++)
 
 /* Prototypes */
-extern int keyword_alloc(vector keywords, char *string, handler_fn *handler,
-			 print_fn *print, int unique);
+int keyword_alloc(vector keywords, char *string, handler_fn *handler,
+		  print_fn *print, int unique);
 #define install_keyword_root(str, h) keyword_alloc(keywords, str, h, NULL, 1)
-extern void install_sublevel(void);
-extern void install_sublevel_end(void);
+void install_sublevel(void);
+void install_sublevel_end(void);
 
-extern int _install_keyword(vector keywords, char *string, handler_fn *handler,
-			    print_fn *print, int unique);
-#define install_keyword(str, vec, pri) _install_keyword(keywords, str, vec, pri, 1)
-#define install_keyword_multi(str, vec, pri) _install_keyword(keywords, str, vec, pri, 0)
-extern void dump_keywords(vector keydump, int level);
-extern void free_keywords(vector keywords);
-extern vector alloc_strvec(char *string);
-extern void *set_value(vector strvec);
-extern int process_file(struct config *conf, const char *conf_file);
-extern struct keyword * find_keyword(vector keywords, vector v, char * name);
+int install_keyword__(vector keywords, char *string, handler_fn *handler,
+		      print_fn *print, int unique);
+#define install_keyword(str, vec, pri) install_keyword__(keywords, str, vec, pri, 1)
+#define install_keyword_multi(str, vec, pri) install_keyword__(keywords, str, vec, pri, 0)
+void dump_keywords(vector keydump, int level);
+void free_keywords(vector keywords);
+vector alloc_strvec(char *string);
+void *set_value(vector strvec);
+int process_file(struct config *conf, const char *conf_file);
+struct keyword * find_keyword(vector keywords, vector v, char * name);
 int snprint_keyword(struct strbuf *buff, const char *fmt, struct keyword *kw,
 		    const void *data);
 bool is_quote(const char* token);

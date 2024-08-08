@@ -76,7 +76,7 @@ global:
 	get_strbuf_len;
 	get_strbuf_str;
 	get_word;
-	_install_keyword;
+	install_keyword__;
 	install_sublevel;
 	install_sublevel_end;
 	is_quote;
