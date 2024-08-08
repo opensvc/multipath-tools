@@ -279,6 +279,71 @@ static void test_print_strbuf(void **state)
 	assert_int_equal(print_strbuf(&buf, "%d%% of %d is %0.2f",
 				      5, 100, 0.05), 17);
 	assert_string_equal(get_strbuf_str(&buf), "5% of 100 is 0.05");
+
+}
+
+/* length of string is not a divisor of chunk size */
+static void test_print_strbuf_2(void **state)
+{
+	STRBUF_ON_STACK(buf);
+	const char sentence[] = "This sentence has forty-seven (47) characters. ";
+	const char *s;
+	const int repeat = 100;
+	int i;
+
+	for (i = 0; i < repeat; i++)
+		assert_int_equal(print_strbuf(&buf, "%s", sentence),
+				 sizeof(sentence) - 1);
+
+	s = get_strbuf_str(&buf);
+	condlog(3, "%s", s);
+	assert_int_equal(strlen(s), repeat * (sizeof(sentence) - 1));
+	for (i = 0; i < repeat; i++)
+		assert_int_equal(strncmp(s + i * (sizeof(sentence) - 1),
+					 sentence, sizeof(sentence) - 1), 0);
+}
+
+/* length of string is divisor of chunk size */
+static void test_print_strbuf_3(void **state)
+{
+	STRBUF_ON_STACK(buf);
+	const char sentence[] = "This sentence has 32 characters.";
+	const char *s;
+	const int repeat = 100;
+	int i;
+
+	for (i = 0; i < repeat; i++)
+		assert_int_equal(print_strbuf(&buf, "%s", sentence),
+				 sizeof(sentence) - 1);
+
+	s = get_strbuf_str(&buf);
+	condlog(3, "%s", s);
+	assert_int_equal(strlen(s), repeat * (sizeof(sentence) - 1));
+	for (i = 0; i < repeat; i++)
+		assert_int_equal(strncmp(s + i * (sizeof(sentence) - 1),
+					 sentence, sizeof(sentence) - 1), 0);
+}
+
+static void test_print_strbuf_4(void **state)
+{
+	STRBUF_ON_STACK(buf);
+	const char sentence[] = "This sentence has a lot of characters, "
+		"which makes it hopefully longer than the chunk size given by "
+		"the constant \"BUF_CHUNK\" in libmpathutil/strbuf.c. ";
+	const char *s;
+	const int repeat = 100;
+	int i;
+
+	for (i = 0; i < repeat; i++)
+		assert_int_equal(print_strbuf(&buf, "%s", sentence),
+				 sizeof(sentence) - 1);
+
+	s = get_strbuf_str(&buf);
+	condlog(3, "%s", s);
+	assert_int_equal(strlen(s), repeat * (sizeof(sentence) - 1));
+	for (i = 0; i < repeat; i++)
+		assert_int_equal(strncmp(s + i * (sizeof(sentence) - 1),
+					 sentence, sizeof(sentence) - 1), 0);
 }
 
 static void test_truncate_strbuf(void **state)
@@ -394,6 +459,9 @@ static int test_strbuf(void)
 		cmocka_unit_test(test_strbuf_quoted),
 		cmocka_unit_test(test_strbuf_escaped),
 		cmocka_unit_test(test_print_strbuf),
+		cmocka_unit_test(test_print_strbuf_2),
+		cmocka_unit_test(test_print_strbuf_3),
+		cmocka_unit_test(test_print_strbuf_4),
 		cmocka_unit_test(test_truncate_strbuf),
 		cmocka_unit_test(test_fill_strbuf),
 	};

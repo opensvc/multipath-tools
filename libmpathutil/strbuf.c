@@ -196,17 +196,30 @@ int print_strbuf(struct strbuf *buf, const char *fmt, ...)
 {
 	va_list ap;
 	int ret;
-	char *tail;
+	size_t space = buf->size - buf->offs;
 
 	va_start(ap, fmt);
-	ret = vasprintf(&tail, fmt, ap);
+	ret = vsnprintf(buf->buf + buf->offs, space, fmt, ap);
 	va_end(ap);
 
 	if (ret < 0)
-		return -ENOMEM;
+		return ret;
+	else if ((size_t)ret < space) {
+		buf->offs += ret;
+		return ret;
+	}
 
-	ret = __append_strbuf_str(buf, tail, ret);
+	ret = expand_strbuf(buf, ret);
+	if (ret < 0)
+		return ret;
 
-	free(tail);
+	space = buf->size - buf->offs;
+	va_start(ap, fmt);
+	ret = vsnprintf(buf->buf + buf->offs, space, fmt, ap);
+	va_end(ap);
+
+	if (ret >= 0)
+		buf->offs += ret;
+
 	return ret;
 }
