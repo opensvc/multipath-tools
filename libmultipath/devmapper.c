@@ -965,7 +965,7 @@ int mpath_in_use(const char *name)
 	return 0;
 }
 
-int _dm_flush_map (const char *mapname, int flags, int retries)
+int dm_flush_map__ (const char *mapname, int flags, int retries)
 {
 	int r;
 	int queue_if_no_path = 0;
@@ -1050,7 +1050,7 @@ dm_flush_map_nopaths(const char *mapname, int deferred_remove DR_UNUSED__)
 		   deferred_remove == DEFERRED_REMOVE_IN_PROGRESS) ?
 		  DMFL_DEFERRED : 0);
 #endif
-	return _dm_flush_map(mapname, flags, 0);
+	return dm_flush_map__(mapname, flags, 0);
 }
 
 int dm_flush_maps(int retries)

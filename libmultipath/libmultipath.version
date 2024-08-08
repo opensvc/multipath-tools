@@ -75,7 +75,7 @@ global:
 	dm_enablegroup;
 	dm_fail_path;
 	dm_find_map_by_wwid;
-	_dm_flush_map;
+	dm_flush_map__;
 	dm_flush_map_nopaths;
 	dm_flush_maps;
 	dm_geteventnr;

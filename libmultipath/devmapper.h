@@ -161,11 +161,11 @@ enum {
 	DMFL_NO_FLUSH  = 1 << 3,
 };
 
-int _dm_flush_map (const char *mapname, int flags, int retries);
-#define dm_flush_map(mapname) _dm_flush_map(mapname, DMFL_NEED_SYNC, 0)
-#define dm_flush_map_nosync(mapname) _dm_flush_map(mapname, DMFL_NONE, 0)
+int dm_flush_map__ (const char *mapname, int flags, int retries);
+#define dm_flush_map(mapname) dm_flush_map__(mapname, DMFL_NEED_SYNC, 0)
+#define dm_flush_map_nosync(mapname) dm_flush_map__(mapname, DMFL_NONE, 0)
 #define dm_suspend_and_flush_map(mapname, retries) \
-	_dm_flush_map(mapname, DMFL_NEED_SYNC|DMFL_SUSPEND, retries)
+	dm_flush_map__(mapname, DMFL_NEED_SYNC|DMFL_SUSPEND, retries)
 int dm_flush_map_nopaths(const char * mapname, int deferred_remove);
 int dm_cancel_deferred_remove(struct multipath *mpp);
 int dm_flush_maps (int retries);
