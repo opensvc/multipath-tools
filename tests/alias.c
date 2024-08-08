@@ -1438,6 +1438,7 @@ static void gufa_empty_new_rw(void **state) {
 
 	mock_bindings_file("");
 	mock_unused_alias("MPATHa");
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
 
 	mock_allocate_binding("MPATHa", "WWID0");
@@ -1451,6 +1452,7 @@ static void gufa_empty_new_ro_1(void **state) {
 
 	mock_bindings_file("");
 	mock_unused_alias("MPATHa");
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
 	mock_allocate_binding_err("MPATHa", "WWID0", -EROFS, "Read-only file system");
 
@@ -1462,6 +1464,7 @@ static void gufa_empty_new_ro_2(void **state) {
 	char *alias;
 
 	mock_bindings_file("");
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
 	mock_unused_alias("MPATHa");
 
@@ -1473,6 +1476,7 @@ static void gufa_match_a_unused(void **state) {
 	char *alias;
 
 	mock_bindings_file("MPATHa WWID0");
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, FOUND_STR("MPATHa", "WWID0"));
 	mock_unused_alias("MPATHa");
 	expect_condlog(3, EXISTING_STR("MPATHa", "WWID0"));
@@ -1486,6 +1490,7 @@ static void gufa_match_a_self(void **state) {
 	char *alias;
 
 	mock_bindings_file("MPATHa WWID0");
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, FOUND_STR("MPATHa", "WWID0"));
 	mock_self_alias("MPATHa", "WWID0");
 	expect_condlog(3, EXISTING_STR("MPATHa", "WWID0"));
@@ -1500,6 +1505,7 @@ static void gufa_match_a_used(void **state) {
 
 
 	mock_bindings_file("MPATHa WWID0");
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, FOUND_STR("MPATHa", "WWID0"));
 	mock_used_alias("MPATHa", "WWID0");
 
@@ -1514,6 +1520,7 @@ static void gufa_nomatch_a_c(void **state) {
 
 	mock_bindings_file(bindings);
 	mock_unused_alias("MPATHb");
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_WWID_STR("WWID1"));
 
 	mock_allocate_binding_len("MPATHb", "WWID1", strlen(bindings));
@@ -1530,6 +1537,7 @@ static void gufa_nomatch_c_a(void **state) {
 
 	mock_bindings_file(bindings);
 	mock_unused_alias("MPATHb");
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_WWID_STR("WWID1"));
 
 	mock_allocate_binding_len("MPATHb", "WWID1", sizeof(bindings) - 1);
@@ -1545,6 +1553,7 @@ static void gufa_nomatch_c_b(void **state) {
 				 "MPATHb WWID1\n");
 
 	mock_bindings_file(bindings);
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
 	mock_unused_alias("MPATHa");
 
@@ -1561,6 +1570,7 @@ static void gufa_nomatch_c_b_used(void **state) {
 				 "MPATHb WWID1\n");
 
 	mock_bindings_file(bindings);
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_WWID_STR("WWID4"));
 	mock_used_alias("MPATHa", "WWID4");
 	mock_unused_alias("MPATHd");
@@ -1579,6 +1589,7 @@ static void gufa_nomatch_b_f_a(void **state) {
 				 "MPATHa WWID0\n");
 
 	mock_bindings_file(bindings);
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_WWID_STR("WWID7"));
 	mock_unused_alias("MPATHc");
 
@@ -1595,6 +1606,7 @@ static void gufa_nomatch_b_aa_a(void **state) {
 
 	fill_bindings(&buf, 0, 26);
 	mock_bindings_file(get_strbuf_str(&buf));
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_WWID_STR("WWID28"));
 	mock_unused_alias("MPATHab");
 	mock_allocate_binding_len("MPATHab", "WWID28", get_strbuf_len(&buf));
@@ -1611,6 +1623,7 @@ static void gufa_nomatch_b_f_a_sorted(void **state) {
 				 "MPATHa WWID0\n");
 
 	mock_bindings_file(bindings);
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_WWID_STR("WWID7"));
 	mock_unused_alias("MPATHc");
 
@@ -1626,6 +1639,7 @@ static void gufa_old_empty(void **state) {
 
 	/* rlookup_binding for ALIAS */
 	mock_bindings_file("");
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_STR("MPATHz"));
 	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
 
@@ -1642,6 +1656,7 @@ static void gufa_old_match(void **state) {
 
 	mock_bindings_file("MPATHb WWID1\n"
 			   "MPATHz WWID0");
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, FOUND_ALIAS_STR("MPATHz", "WWID0"));
 
 	alias = get_user_friendly_alias("WWID0", "MPATHz", "MPATH", false);
@@ -1654,6 +1669,7 @@ static void gufa_old_match_other(void **state) {
 	static const char bindings[] = "MPATHz WWID9\n";
 
 	mock_bindings_file(bindings);
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, FOUND_ALIAS_STR("MPATHz", "WWID9"));
 	expect_condlog(0, REUSE_STR("MPATHz", "WWID9"));
 	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
@@ -1671,6 +1687,7 @@ static void gufa_old_match_other_used(void **state) {
 	static const char bindings[] = "MPATHz WWID9\n";
 
 	mock_bindings_file(bindings);
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, FOUND_ALIAS_STR("MPATHz", "WWID9"));
 	expect_condlog(0, REUSE_STR("MPATHz", "WWID9"));
 	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
@@ -1689,6 +1706,7 @@ static void gufa_old_match_other_wwidmatch(void **state) {
 					"MPATHc WWID2");
 
 	mock_bindings_file(bindings);
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, FOUND_ALIAS_STR("MPATHz", "WWID9"));
 	expect_condlog(0, REUSE_STR("MPATHz", "WWID9"));
 	expect_condlog(3, FOUND_STR("MPATHc", "WWID2"));
@@ -1706,6 +1724,7 @@ static void gufa_old_match_other_wwidmatch_used(void **state) {
 					"MPATHc WWID2");
 
 	mock_bindings_file(bindings);
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, FOUND_ALIAS_STR("MPATHz", "WWID9"));
 	expect_condlog(0, REUSE_STR("MPATHz", "WWID9"));
 	expect_condlog(3, FOUND_STR("MPATHc", "WWID2"));
@@ -1720,6 +1739,7 @@ static void gufa_old_nomatch_wwidmatch(void **state) {
 	static const char bindings[] = "MPATHa WWID0";
 
 	mock_bindings_file(bindings);
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_STR("MPATHz"));
 	expect_condlog(3, FOUND_STR("MPATHa", "WWID0"));
 	mock_unused_alias("MPATHa");
@@ -1735,6 +1755,7 @@ static void gufa_old_nomatch_wwidmatch_used(void **state) {
 	static const char bindings[] = "MPATHa WWID0";
 
 	mock_bindings_file(bindings);
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_STR("MPATHz"));
 	expect_condlog(3, FOUND_STR("MPATHa", "WWID0"));
 	mock_used_alias("MPATHa", "WWID0");
@@ -1748,6 +1769,7 @@ static void gufa_old_nomatch_nowwidmatch(void **state) {
 	static const char bindings[] = "MPATHb WWID1\n";
 
 	mock_bindings_file(bindings);
+	expect_condlog(4, "_read_bindings_file: bindings are unchanged");
 	expect_condlog(3, NOMATCH_STR("MPATHz"));
 	expect_condlog(3, NOMATCH_WWID_STR("WWID0"));
 
