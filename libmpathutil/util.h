@@ -103,9 +103,9 @@ struct bitfield {
 
 struct bitfield *alloc_bitfield(unsigned int maxbit);
 
-void _log_bitfield_overflow(const char *f, unsigned int bit, unsigned int len);
+void log_bitfield_overflow__(const char *f, unsigned int bit, unsigned int len);
 #define log_bitfield_overflow(bit, len) \
-	_log_bitfield_overflow(__func__, bit, len)
+	log_bitfield_overflow__(__func__, bit, len)
 
 static inline bool is_bit_set_in_bitfield(unsigned int bit,
 				       const struct bitfield *bf)

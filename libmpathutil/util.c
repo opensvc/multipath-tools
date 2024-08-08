@@ -354,7 +354,7 @@ struct bitfield *alloc_bitfield(unsigned int maxbit)
 	return bf;
 }
 
-void _log_bitfield_overflow(const char *f, unsigned int bit, unsigned int len)
+void log_bitfield_overflow__(const char *f, unsigned int bit, unsigned int len)
 {
 	condlog(0, "%s: bitfield overflow: %u >= %u", f, bit, len);
 }

@@ -81,7 +81,7 @@ global:
 	install_sublevel_end;
 	is_quote;
 	keyword_alloc;
-	_log_bitfield_overflow;
+	log_bitfield_overflow__;
 	libmp_basename;
 	libmp_strlcat;
 	libmp_strlcpy;
