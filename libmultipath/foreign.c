@@ -84,7 +84,7 @@ static void free_foreign(struct foreign *fgn)
 	free(fgn);
 }
 
-void _cleanup_foreign(void)
+void cleanup_foreign__(void)
 {
 	struct foreign *fgn;
 	int i;
@@ -103,7 +103,7 @@ void _cleanup_foreign(void)
 void cleanup_foreign(void)
 {
 	wrlock_foreigns();
-	_cleanup_foreign();
+	cleanup_foreign__();
 	unlock_foreigns(NULL);
 }
 
@@ -164,7 +164,7 @@ static int _init_foreign(const char *enable)
 		r = -errno;
 		condlog(1, "%s: error scanning foreign multipath libraries: %m",
 			__func__);
-		_cleanup_foreign();
+		cleanup_foreign__();
 		goto out_free_pre;
 	}
 
