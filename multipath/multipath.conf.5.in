@@ -526,7 +526,8 @@ second, until \fIchecker_timeout\fR seconds have elapsed. Possible values are:
 deprecated, please use \fItur\fR or \fIdirectio\fR instead.
 .TP
 .I tur
-Issue a \fITEST UNIT READY\fR command to the device.
+(Hardware-dependent)
+Issue a \fITEST UNIT READY\fR command to a SCSI device.
 .TP
 .I emc_clariion
 (Hardware-dependent)
