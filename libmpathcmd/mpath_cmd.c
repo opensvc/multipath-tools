@@ -133,6 +133,9 @@ int mpath_connect__(int nonblocking)
 	return fd;
 }
 
+extern int __mpath_connect(int)
+	__attribute__((weak, alias("mpath_connect__")));
+
 /*
  * connect to a unix domain socket
  */
