@@ -127,6 +127,8 @@ int mpath_persistent_reserve_in__(int fd, int rq_servact,
 					      resp, noisy);
 }
 
+extern int __mpath_persistent_reserve_in(int, int, struct prin_resp *, int)
+	__attribute__((weak, alias("mpath_persistent_reserve_in__")));
 
 int mpath_persistent_reserve_out__( int fd, int rq_servact, int rq_scope,
 	unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy)
@@ -135,6 +137,10 @@ int mpath_persistent_reserve_out__( int fd, int rq_servact, int rq_scope,
 					       rq_scope, rq_type, paramp,
 					       noisy);
 }
+
+extern int __mpath_persistent_reserve_out(int, int, int, unsigned int,
+					  struct prout_param_descriptor *, int)
+	__attribute__((weak, alias("mpath_persistent_reserve_out__")));
 
 int mpath_persistent_reserve_in (int fd, int rq_servact,
 	struct prin_resp *resp, int noisy, int verbose)
