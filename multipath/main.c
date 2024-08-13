@@ -853,8 +853,6 @@ main (int argc, char *argv[])
 	if (atexit(uninit_config))
 		condlog(1, "failed to register cleanup handler for config: %m");
 	conf = get_multipath_config();
-	conf->retrigger_tries = 0;
-	conf->force_sync = 1;
 	if (atexit(cleanup_vecs))
 		condlog(1, "failed to register cleanup handler for vecs: %m");
 	if (atexit(cleanup_bindings))
@@ -1000,6 +998,11 @@ main (int argc, char *argv[])
 	set_max_fds(conf->max_fds);
 
 	libmp_udev_set_sync_support(1);
+
+	if (cmd != CMD_DUMP_CONFIG) {
+		conf->retrigger_tries = 0;
+		conf->force_sync = 1;
+	}
 
 	if ((cmd == CMD_LIST_SHORT || cmd == CMD_LIST_LONG) && enable_foreign)
 		conf->enable_foreign = strdup("");
