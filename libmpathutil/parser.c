@@ -406,8 +406,7 @@ int
 is_sublevel_keyword(char *str)
 {
 	return (strcmp(str, "defaults") == 0 || strcmp(str, "blacklist") == 0 ||
-		strcmp(str, "blacklist_exceptions") == 0 ||
-		strcmp(str, "devices") == 0 || strcmp(str, "devices") == 0 ||
+		strcmp(str, "blacklist_exceptions") == 0 || strcmp(str, "devices") == 0 ||
 		strcmp(str, "device") == 0 || strcmp(str, "multipaths") == 0 ||
 		strcmp(str, "multipath") == 0);
 }
