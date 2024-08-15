@@ -37,7 +37,7 @@
   (Fixes [#92](https://github.com/opensvc/multipath-tools/issues/92)).
 * Fixed output of `multipath -t` and `multipath -T` for the options
   `force_sync` and `retrigger_tries`.
-  (Fixes [#88](https://github.com/opensvc/multipath-tools/pull/93))
+  (Fixes [#88](https://github.com/opensvc/multipath-tools/pull/88))
 * Fixed adding maps by WWID in CLI (command `add map $WWID`).
 
 ### Other
@@ -54,7 +54,7 @@
 * Use `weak` attribute for `get_multipath_config()` and
   `put_multipath_config()` in order to enable linking with
   `-Bsymbolic-non-weak-functions`
-  (Fixes [#86](https://github.com/opensvc/multipath-tools/pull/87)).
+  (Fixes [#86](https://github.com/opensvc/multipath-tools/pull/86)).
 * Fixed CI for ARM/v7
 * Fixed directio CI test for real devices, run more "real" tests in CI
 * Fixed minor issues detected by coverity.
