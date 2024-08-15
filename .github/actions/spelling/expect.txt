@@ -15,6 +15,7 @@ barbie
 BINDIR
 blkid
 bmarzins
+Bsymbolic
 cciss
 CFLAGS
 cgroups

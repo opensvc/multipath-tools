@@ -1,19 +1,29 @@
 # multipath-tools Release Notes
 
-## multipath-tools 0.9.x (in preparation)
+## multipath-tools 0.10.0, 2024/08
 
 ### User-Visible Changes
 
-* Add hardware defaults for Huawei storage arrays and XSG1 vendors
+* The `multipathd show daemon` command now shows `(reconfigure pending)`
+  if a reconfiguration has been triggered but not finished yet.
 
 ### Other major changes
 
+* Refactored the path checker loop. Paths are now checked for each multipath
+  map in turn, rather than walking linearly through the list of paths. Paths
+  for different multipath maps will be checked at different time offsets in
+  the `polling_interval` time span, which distributes the load caused by
+  path checking more evenly over time.
 * Refactored a significant part of the libmultipath / libdevmapper interface.
   All functions that retrieve information about DM maps have been converted
   to use just one worker function, libmp_mapinfo(). This reduces code size
   while providing more flexibility and efficiency (less device-mapper ioctls).
   Also, cleanup attributes are used consistently in the libdevmapper-related code.
-* Made map removal more efficient by avoiding unnecessary recursion.
+* Renamed public functions, variables, and macros to comply with the
+  glibc [policy for reserved names](https://www.gnu.org/software/libc/manual/html_node/Reserved-Names.html).
+  For backward compatibility reasons, the exported functions  from `libmpathcmd`
+  and `libmpathpersist` that start with double underscore are kept as weak
+  symbols. Fixes [#91](https://github.com/opensvc/multipath-tools/issues/91).
 
 ### Bug fixes
 
@@ -23,17 +33,35 @@
   0.9.9).
 * Fixed old mpathpersist bug leading to the error message "configured reservation
   key doesn't match: 0x0" when `reservation_key` was configured in the
-  multipaths section of `multipath.conf`.
+  multipaths section of `multipath.conf`
+  (Fixes [#92](https://github.com/opensvc/multipath-tools/issues/92)).
+* Fixed output of `multipath -t` and `multipath -T` for the options
+  `force_sync` and `retrigger_tries`.
+  (Fixes [#88](https://github.com/opensvc/multipath-tools/pull/93))
+* Fixed adding maps by WWID in CLI (command `add map $WWID`).
 
 ### Other
 
+* Removed hardcoded paths and make them configurable instead.
+  This should improve compatibility e.g. with NixOS.
+* Improved handling of paths with changed WWIDs.
+* Improved synchronization between kernel state and multipathd's internal
+  state.
+* Made map removal more efficient by avoiding unnecessary recursion.
+* Added hardware defaults for Huawei storage arrays and XSG1 vendors.
 * Use `-fexceptions` during compilation to make sure cleanup code is executed
   when threads are cancelled
+* Use `weak` attribute for `get_multipath_config()` and
+  `put_multipath_config()` in order to enable linking with
+  `-Bsymbolic-non-weak-functions`
+  (Fixes [#86](https://github.com/opensvc/multipath-tools/pull/87)).
 * Fixed CI for ARM/v7
-* Remove hardcoded paths and make them configurable instead.
-  This should improve compatibility e.g. with NixOS.
 * Fixed directio CI test for real devices, run more "real" tests in CI
 * Fixed minor issues detected by coverity.
+* Fixed a minor bug in the config file parser
+  (Fixes [#93](https://github.com/opensvc/multipath-tools/pull/93)).
+* Minor documentation fixes
+  (Fixes [#87](https://github.com/opensvc/multipath-tools/pull/87)).
 
 ## multipath-tools 0.9.9, 2024/05
 
@@ -128,8 +156,8 @@ versions earlier than 0.9.9. See "Other major changes" below.
   had been sent before.
 * Error messages sent from multipathd to the command line client have been
   improved. The user will now see messages like "map or partition in use" or
-  "device not found" instead of just "fail". 
-  
+  "device not found" instead of just "fail".
+
 ### Other Major Changes
 
 * multipathd now tracks the queueing mode of maps in its internal features
@@ -144,7 +172,7 @@ versions earlier than 0.9.9. See "Other major changes" below.
 
 * A segmentation fault in the 0.9.7 autoresize code has been fixed.
 * Fixed a bug introduced in 0.9.6 that had caused map reloads being omitted
-  when path priorities changed. 
+  when path priorities changed.
 * Fixed compilation with gcc 14. (Fixes [#80](https://github.com/opensvc/multipath-tools/issues/80))
 * Minor fixes for issues detected by coverity.
 * Spelling fixes and other minor fixes.
@@ -166,7 +194,7 @@ versions earlier than 0.9.9. See "Other major changes" below.
 * Added `max_retries` config option to limit SCSI retries.
 * Added `auto_resize` config option to enable resizing multipath maps automatically.
 * Added support for handling FPIN-Li events for FC-NVMe.
-  
+
 ### Other Major Changes
 
 * Rework of alias selection code:
@@ -219,7 +247,7 @@ and the directio checker (fixes
 * Fix handling of `dev_loss_tmo` in cases where it wasn't explicitly
   configured.
 * Syntax fixes in udev rules (Fixes [#69](https://github.com/opensvc/multipath-tools/pull/69)).
-  
+
 ### Other
 
 * Adapt HITACHI/OPEN- config to work with alua and multibus.
@@ -228,7 +256,7 @@ and the directio checker (fixes
 ## multipath-tools 0.9.5, 2023/04
 
 ### User-Visible Changes
-  
+
 * Always use directio path checker for Linux TCM (LIO) targets
   (Fixes [#54](https://github.com/opensvc/multipath-tools/issues/54).
 * `multipath -u` now checks if path devices are already in use 
