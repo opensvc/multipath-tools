@@ -6,7 +6,7 @@
 .\" Update the date below if you make any significant change.
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATH.CONF 5 2024-04-25 Linux
+.TH MULTIPATH.CONF 5 2024-08-15 Linux
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -220,7 +220,7 @@ The default is: \fBservice-time 0\fR
 .
 .TP
 .B path_grouping_policy
-The default path grouping policy to apply to unspecified
+(Hardware-dependent) The default path grouping policy to apply to unspecified
 multipaths. Possible values are:
 .RS
 .TP 12
