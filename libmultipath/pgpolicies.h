@@ -1,11 +1,5 @@
-#ifndef _PGPOLICIES_H
-#define _PGPOLICIES_H
-
-#if 0
-#ifndef _MAIN_H
-#include "main.h"
-#endif
-#endif
+#ifndef PGPOLICIES_H_INCLUDED
+#define PGPOLICIES_H_INCLUDED
 
 #define POLICY_NAME_SIZE 32
 

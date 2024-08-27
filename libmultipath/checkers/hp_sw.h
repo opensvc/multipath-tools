@@ -1,8 +1,8 @@
-#ifndef _HP_SW_H
-#define _HP_SW_H
+#ifndef HP_SW_H_INCLUDED
+#define HP_SW_H_INCLUDED
 
 int hp_sw (struct checker *);
 int hp_sw_init (struct checker *);
 void hp_sw_free (struct checker *);
 
-#endif /* _HP_SW_H */
+#endif /* HP_SW_H_INCLUDED */

@@ -6,7 +6,7 @@
 .\" Update the date below if you make any significant change.
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATH.CONF 5 2024-04-25 Linux
+.TH MULTIPATH.CONF 5 2024-08-15 Linux
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -220,7 +220,7 @@ The default is: \fBservice-time 0\fR
 .
 .TP
 .B path_grouping_policy
-The default path grouping policy to apply to unspecified
+(Hardware-dependent) The default path grouping policy to apply to unspecified
 multipaths. Possible values are:
 .RS
 .TP 12
@@ -437,11 +437,11 @@ Needs a value of the form "io_num=\fI<20>\fR base_num=\fI<10>\fR"
 .TP 8
 .I io_num
 The number of read IOs sent to the current path continuously, used to calculate the average path latency.
-Valid Values: Integer, [2, 200].
+Valid Values: Integer, [20, 200].
 .TP
 .I base_num
-The base number value of logarithmic scale, used to partition different priority ranks. Valid Values: Integer,
-[2, 10]. And Max average latency value is 100s, min average latency value is 1us.
+The base number value of logarithmic scale, used to partition different priority ranks. Valid Values:
+Double-precision floating-point, [1.1, 10]. And Max average latency value is 100s, min average latency value is 1us.
 For example: If base_num=10, the paths will be grouped in priority groups with path latency <=1us, (1us, 10us],
 (10us, 100us], (100us, 1ms], (1ms, 10ms], (10ms, 100ms], (100ms, 1s], (1s, 10s], (10s, 100s], >100s.
 .RE
@@ -526,7 +526,8 @@ second, until \fIchecker_timeout\fR seconds have elapsed. Possible values are:
 deprecated, please use \fItur\fR or \fIdirectio\fR instead.
 .TP
 .I tur
-Issue a \fITEST UNIT READY\fR command to the device.
+(Hardware-dependent)
+Issue a \fITEST UNIT READY\fR command to a SCSI device.
 .TP
 .I emc_clariion
 (Hardware-dependent)

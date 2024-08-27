@@ -14,8 +14,9 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#ifndef _FOREIGN_H
-#define _FOREIGN_H
+#ifndef FOREIGN_H_INCLUDED
+#define FOREIGN_H_INCLUDED
+
 #include <stdbool.h>
 #include <libudev.h>
 #define LIBMP_FOREIGN_API ((1 << 8) | 2)
@@ -31,7 +32,7 @@ enum foreign_retcode {
 	FOREIGN_UNCLAIMED,
 	FOREIGN_NODEV,
 	FOREIGN_ERR,
-	__LAST_FOREIGN_RETCODE,
+	LAST_FOREIGN_RETCODE__,
 };
 
 /**
@@ -154,7 +155,7 @@ struct foreign {
 	 * @returns a vector of "struct gen_multipath*" with the map devices
 	 * belonging to this library (see generic.h).
 	 */
-	const struct _vector* (*get_multipaths)(const struct context *);
+	const struct vector_s* (*get_multipaths)(const struct context *);
 
 	/**
 	 * method: release_multipaths(context, mpvec)
@@ -164,7 +165,7 @@ struct foreign {
 	 * @param[in] mpvec the vector allocated with get_multipaths()
 	 */
 	void (*release_multipaths)(const struct context *ctx,
-				   const struct _vector* mpvec);
+				   const struct vector_s* mpvec);
 
 	/**
 	 * method: get_paths
@@ -175,7 +176,7 @@ struct foreign {
 	 * @returns a vector of "struct gen_path*" with the path devices
 	 * belonging to this library (see generic.h)
 	 */
-	const struct _vector* (*get_paths)(const struct context *);
+	const struct vector_s* (*get_paths)(const struct context *);
 
 	/**
 	 * release data structures obtained with get_multipaths (if any)
@@ -184,7 +185,7 @@ struct foreign {
 	 * @param[in] ppvec the vector allocated with get_paths()
 	 */
 	void (*release_paths)(const struct context *ctx,
-			      const struct _vector* ppvec);
+			      const struct vector_s* ppvec);
 
 	void *handle;
 	struct context *context;
@@ -270,7 +271,7 @@ void foreign_multipath_layout(fieldwidth_t *width);
  * '\0' - terminated.
  * @param buf: output buffer
  * @param verbosity: verbosity level
- * @param width: an array of field widths, initialized by _get_path_layout()
+ * @param width: an array of field widths, initialized by get_path_layout__()
  * @returns: number of printed characters excluding trailing '\0'.
  */
 int snprint_foreign_topology(struct strbuf *buf, int verbosity,
@@ -320,4 +321,4 @@ is_claimed_by_foreign(struct udev_device *ud)
 	return (rc == FOREIGN_CLAIMED || rc == FOREIGN_OK);
 }
 
-#endif /*  _FOREIGN_H */
+#endif /*  FOREIGN_H_INCLUDED */

@@ -2,8 +2,8 @@
  * Copyright (c) 2010 Benjamin Marzinski, Redhat
  */
 
-#ifndef _WWIDS_H
-#define _WWIDS_H
+#ifndef WWIDS_H_INCLUDED
+#define WWIDS_H_INCLUDED
 
 #define WWIDS_FILE_HEADER \
 "# Multipath wwids, Version : 1.0\n" \
@@ -29,4 +29,4 @@ enum {
 int is_failed_wwid(const char *wwid);
 int mark_failed_wwid(const char *wwid);
 int unmark_failed_wwid(const char *wwid);
-#endif /* _WWIDS_H */
+#endif /* WWIDS_H_INCLUDED */

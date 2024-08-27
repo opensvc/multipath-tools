@@ -21,7 +21,6 @@
 #include <libudev.h>
 #include <errno.h>
 
-#define __user
 #include <scsi/sg.h>
 
 #include "../structs.h"

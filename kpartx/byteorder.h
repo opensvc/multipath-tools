@@ -1,5 +1,5 @@
-#ifndef BYTEORDER_H_INCLUDED
-#define BYTEORDER_H_INCLUDED
+#ifndef KPARTX_BYTEORDER_H_INCLUDED
+#define KPARTX_BYTEORDER_H_INCLUDED
 
 #ifdef __linux__
 #  include <endian.h>
@@ -26,4 +26,4 @@
 #  error unsupported
 #endif
 
-#endif				/* BYTEORDER_H_INCLUDED */
+#endif /* KPARTX_BYTEORDER_H_INCLUDED */

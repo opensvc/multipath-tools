@@ -1,5 +1,5 @@
-#ifndef _IO_ERR_STAT_H
-#define _IO_ERR_STAT_H
+#ifndef IO_ERR_STAT_H_INCLUDED
+#define IO_ERR_STAT_H_INCLUDED
 
 #include "vector.h"
 #include "lock.h"
@@ -12,4 +12,4 @@ void stop_io_err_stat_thread(void);
 int io_err_stat_handle_pathfail(struct path *path);
 int need_io_err_check(struct path *pp);
 
-#endif /* _IO_ERR_STAT_H */
+#endif /* IO_ERR_STAT_H_INCLUDED */

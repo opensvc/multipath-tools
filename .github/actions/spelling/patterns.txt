@@ -22,6 +22,7 @@
 \bdmmp_pgs\b
 \bdmmp_mpath_kdev_name_get\b
 \bfast_io_fail_tmo\b
+\blibmp_mapinfo\b
 \bLimitRTPRIO=?\b
 \bmax_fds\b
 \bmissing_uev_wait_timeout\b
@@ -101,5 +102,7 @@
 \bHBAs\b
 \bSANtricity\b
 \bVTrak\b
+\bXSG1\b
+
 
 

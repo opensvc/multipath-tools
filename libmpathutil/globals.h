@@ -1,5 +1,5 @@
-#ifndef _GLOBALS_H
-#define _GLOBALS_H
+#ifndef GLOBALS_H_INCLUDED
+#define GLOBALS_H_INCLUDED
 
 struct config;
 

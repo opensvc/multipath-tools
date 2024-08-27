@@ -1,5 +1,5 @@
-#ifndef _UTIL_H
-#define _UTIL_H
+#ifndef UTIL_H_INCLUDED
+#define UTIL_H_INCLUDED
 
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +10,11 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <libudev.h>
+
+#ifndef __GLIBC_PREREQ
+#define __GLIBC_PREREQ(x, y) 0
+#endif
 
 size_t strchop(char *);
 
@@ -21,8 +26,12 @@ int basenamecpy (const char *src, char *dst, size_t size);
 int filepresent (const char *run);
 char *get_next_string(char **temp, const char *split_char);
 int get_word (const char * sentence, char ** word);
-size_t strlcpy(char * restrict dst, const char * restrict src, size_t size);
-size_t strlcat(char * restrict dst, const char * restrict src, size_t size);
+size_t libmp_strlcpy(char * restrict dst, const char * restrict src, size_t size);
+size_t libmp_strlcat(char * restrict dst, const char * restrict src, size_t size);
+#if defined(__GLIBC__) && ! (__GLIBC_PREREQ(2, 38))
+#define strlcpy(dst, src, size) libmp_strlcpy(dst, src, size)
+#define strlcat(dst, src, size) libmp_strlcat(dst, src, size)
+#endif
 dev_t parse_devt(const char *dev_t);
 char *convert_dev(char *dev, int is_path_device);
 void setup_thread_attr(pthread_attr_t *attr, size_t stacksize, int detached);
@@ -61,9 +70,6 @@ struct scandir_result {
 };
 void free_scandir_result(struct scandir_result *);
 
-#ifndef __GLIBC_PREREQ
-#define __GLIBC_PREREQ(x, y) 0
-#endif
 /*
  * ffsll() is also available on glibc < 2.27 if _GNU_SOURCE is defined.
  * But relying on that would require that every program using this header file
@@ -97,9 +103,9 @@ struct bitfield {
 
 struct bitfield *alloc_bitfield(unsigned int maxbit);
 
-void _log_bitfield_overflow(const char *f, unsigned int bit, unsigned int len);
+void log_bitfield_overflow__(const char *f, unsigned int bit, unsigned int len);
 #define log_bitfield_overflow(bit, len) \
-	_log_bitfield_overflow(__func__, bit, len)
+	log_bitfield_overflow__(__func__, bit, len)
 
 static inline bool is_bit_set_in_bitfield(unsigned int bit,
 				       const struct bitfield *bf)
@@ -139,4 +145,6 @@ static inline void clear_bit_in_bitfield(unsigned int bit, struct bitfield *bf)
 
 void cleanup_charp(char **p);
 void cleanup_ucharp(unsigned char **p);
-#endif /* _UTIL_H */
+void cleanup_udev_device(struct udev_device **udd);
+
+#endif /* UTIL_H_INCLUDED */

@@ -19,8 +19,8 @@
  */
 
 
-#ifndef _LIB_DMMP_H_
-#define _LIB_DMMP_H_
+#ifndef LIBDMMP_H_INCLUDED
+#define LIBDMMP_H_INCLUDED
 
 #include <stdint.h>
 #include <stdarg.h>
@@ -732,4 +732,4 @@ DMMP_DLL_EXPORT const char *dmmp_last_error_msg(struct dmmp_context *ctx);
 } /* End of extern "C" */
 #endif
 
-#endif /* End of _LIB_DMMP_H_ */
+#endif /* End of LIBDMMP_H_INCLUDED */

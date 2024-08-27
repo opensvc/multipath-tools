@@ -20,17 +20,17 @@
  *              2 of the License, or (at your option) any later version.
  */
 
-#ifndef _VECTOR_H
-#define _VECTOR_H
+#ifndef VECTOR_H_INCLUDED
+#define VECTOR_H_INCLUDED
 
 #include <stdbool.h>
 
 /* vector definition */
-struct _vector {
+struct vector_s {
 	int allocated;
 	void **slot;
 };
-typedef struct _vector *vector;
+typedef struct vector_s *vector;
 
 #define VECTOR_DEFAULT_SIZE 1
 #define VECTOR_SIZE(V)   ((V) ? ((V)->allocated) / VECTOR_DEFAULT_SIZE : 0)
@@ -53,7 +53,7 @@ typedef struct _vector *vector;
  */
 #define vector_convert(new, vec, type, conv)				\
 	({								\
-		const struct _vector *__v = (vec);			\
+		const struct vector_s *__v = (vec);			\
 		vector __t = (new);					\
 		type *__j;						\
 		int __i;						\
@@ -78,6 +78,7 @@ extern vector vector_alloc(void);
 extern bool vector_alloc_slot(vector v);
 vector vector_reset(vector v);
 extern void vector_free(vector v);
+void cleanup_vector(vector *pv);
 #define vector_free_const(x) vector_free((vector)(long)(x))
 extern void free_strvec(vector strvec);
 extern void vector_set_slot(vector v, void *value);

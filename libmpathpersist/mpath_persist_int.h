@@ -1,5 +1,5 @@
-#ifndef _MPATH_PERSIST_INT_H
-#define _MPATH_PERSIST_INT_H
+#ifndef MPATH_PERSIST_INT_H_INCLUDED
+#define MPATH_PERSIST_INT_H_INCLUDED
 
 /*
  * This header file contains symbols that are used by multipath-tools
@@ -22,4 +22,4 @@ int prout_do_scsi_ioctl( char * dev, int rq_servact, int rq_scope,
 void dumpHex(const char* , int len, int no_ascii);
 int update_map_pr(struct multipath *mpp);
 
-#endif /* _MPATH_PERSIST_INT_H */
+#endif /* MPATH_PERSIST_INT_H_INCLUDED */

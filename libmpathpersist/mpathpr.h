@@ -1,5 +1,5 @@
-#ifndef MPATHPR_H
-#define MPATHPR_H
+#ifndef MPATHPR_H_INCLUDED
+#define MPATHPR_H_INCLUDED
 
 /*
  * This header file contains symbols that are only used by

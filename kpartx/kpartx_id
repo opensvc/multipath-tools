@@ -21,8 +21,6 @@
 # sent upstream but has not been accepted yet.
 #
 
-DMSETUP=/sbin/dmsetup
-
 MAJOR=$1
 MINOR=$2
 UUID=$3
@@ -32,11 +30,13 @@ if [ -z "$MAJOR" -o -z "$MINOR" ]; then
     exit 1;
 fi
 
+DMSETUP=$(command -v dmsetup) || DMSETUP=/sbin/dmsetup
+
 # Device-mapper not installed; not an error
-if [ ! -x $DMSETUP ] ; then
+if [ ! -x "$DMSETUP" ] ; then
+    echo "$0: dmsetup not found" >&2
     exit 0
 fi
-
 
 # Table UUIDs are always '<type>-<uuid>'.
 dmuuid=${UUID#*-}

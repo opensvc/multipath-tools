@@ -1,5 +1,5 @@
-#ifndef NVME_LIB_H
-#define NVME_LIB_H
+#ifndef NVME_LIB_H_INCLUDED
+#define NVME_LIB_H_INCLUDED
 
 #include "nvme.h"
 
@@ -16,7 +16,7 @@ int libmp_nvme_ana_log(int fd, void *ana_log, size_t ana_log_len, int rgo);
  */
 int nvme_id_ctrl_ana(int fd, struct nvme_id_ctrl *ctrl);
 
-#ifndef _NVME_LIB_C
+#ifndef NVME_LIB_C
 /*
  * In all files except nvme-lib.c, the nvme functions can be called
  * by their usual name.
@@ -36,4 +36,4 @@ int nvme_id_ctrl_ana(int fd, struct nvme_id_ctrl *ctrl);
 #undef le64_to_cpu
 #endif
 
-#endif /* NVME_LIB_H */
+#endif /* NVME_LIB_H_INCLUDED */

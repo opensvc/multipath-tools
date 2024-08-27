@@ -1,5 +1,5 @@
-#ifndef _KPARTX_DEVMAPPER_H
-#define _KPARTX_DEVMAPPER_H
+#ifndef KPARTX_DEVMAPPER_H_INCLUDED
+#define KPARTX_DEVMAPPER_H_INCLUDED
 
 #ifdef DM_SUBSYSTEM_UDEV_FLAG0
 #define MPATH_UDEV_RELOAD_FLAG DM_SUBSYSTEM_UDEV_FLAG0
@@ -36,4 +36,4 @@ int dm_find_part(const char *parent, const char *delim, int part,
 char *nondm_create_uuid(dev_t devt);
 int nondm_parse_uuid(const char *uuid,
 		     unsigned int *major, unsigned int *minor);
-#endif /* _KPARTX_DEVMAPPER_H */
+#endif /* KPARTX_DEVMAPPER_H_INCLUDED */

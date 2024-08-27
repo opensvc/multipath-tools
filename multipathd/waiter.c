@@ -56,7 +56,7 @@ void stop_waiter_thread (struct multipath *mpp)
 			mpp->alias);
 		return;
 	}
-	/* Don't cancel yourself. __setup_multipath is called by
+	/* Don't cancel yourself. setup_multipath is called by
 	   by the waiter thread, and may remove a multipath device */
 	if (pthread_equal(mpp->waiter, pthread_self()))
 		return;
@@ -107,8 +107,6 @@ static int waiteventloop (struct event_thread *waiter)
 		waiter->dmt = NULL;
 		return 1;
 	}
-
-	dm_task_no_open_count(waiter->dmt);
 
 	/* wait */
 	sigemptyset(&set);

@@ -1,5 +1,5 @@
-#ifndef CCISS_H
-#define CCISS_H
+#ifndef CCISS_H_INCLUDED
+#define CCISS_H_INCLUDED
 
 #include <linux/types.h>
 #include <linux/ioctl.h>
@@ -42,7 +42,7 @@
 #pragma pack(1)
 
 //Command List Structure
-typedef union _SCSI3Addr_struct {
+typedef union {
 	struct {
 		BYTE Dev;
 		BYTE Bus:6;
@@ -61,27 +61,27 @@ typedef union _SCSI3Addr_struct {
 	} LogUnit;
 } SCSI3Addr_struct;
 
-typedef struct _PhysDevAddr_struct {
+typedef struct {
 	DWORD             TargetId:24;
 	DWORD             Bus:6;
 	DWORD             Mode:2;
 	SCSI3Addr_struct  Target[2]; //2 level target device addr
 } PhysDevAddr_struct;
 
-typedef struct _LogDevAddr_struct {
+typedef struct {
 	DWORD            VolId:30;
 	DWORD            Mode:2;
 	BYTE             reserved[4];
 } LogDevAddr_struct;
 
-typedef union _LUNAddr_struct {
+typedef union {
 	BYTE               LunAddrBytes[8];
 	SCSI3Addr_struct   SCSI3Lun[4];
 	PhysDevAddr_struct PhysDev;
 	LogDevAddr_struct  LogDev;
 } LUNAddr_struct;
 
-typedef struct _RequestBlock_struct {
+typedef struct {
 	BYTE   CDBLen;
 	struct {
 		BYTE Type:3;
@@ -92,7 +92,7 @@ typedef struct _RequestBlock_struct {
 	BYTE   CDB[16];
 } RequestBlock_struct;
 
-typedef union _MoreErrInfo_struct{
+typedef union {
 	struct {
 		BYTE  Reserved[3];
 		BYTE  Type;
@@ -106,7 +106,7 @@ typedef union _MoreErrInfo_struct{
 	} Invalid_Cmd;
 } MoreErrInfo_struct;
 
-typedef struct _ErrorInfo_struct {
+typedef struct {
 	BYTE               ScsiStatus;
 	BYTE               SenseLen;
 	HWORD              CommandStatus;
@@ -117,7 +117,7 @@ typedef struct _ErrorInfo_struct {
 
 #pragma pack()
 
-typedef struct _IOCTL_Command_struct {
+typedef struct {
 	LUNAddr_struct		LUN_info;
 	RequestBlock_struct	Request;
 	ErrorInfo_struct	error_info;
@@ -125,7 +125,7 @@ typedef struct _IOCTL_Command_struct {
 	BYTE			*buf;
 } IOCTL_Command_struct;
 
-typedef struct _LogvolInfo_struct{
+typedef struct {
 	__u32   LunID;
 	int     num_opens;  /* number of opens on the logical volume */
 	int     num_parts;  /* number of partitions configured on logvol */

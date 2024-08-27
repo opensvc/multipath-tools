@@ -44,7 +44,7 @@ _dmmp_getter_func_gen(dmmp_mpath_wwid_get, struct dmmp_mpath, dmmp_mp,
 _dmmp_getter_func_gen(dmmp_mpath_kdev_name_get, struct dmmp_mpath, dmmp_mp,
 		      kdev_name, const char *);
 
-struct dmmp_mpath *_dmmp_mpath_new(void)
+struct dmmp_mpath *dmmp_mpath_new(void)
 {
 	struct dmmp_mpath *dmmp_mp = NULL;
 
@@ -59,7 +59,7 @@ struct dmmp_mpath *_dmmp_mpath_new(void)
 	return dmmp_mp;
 }
 
-int _dmmp_mpath_update(struct dmmp_context *ctx, struct dmmp_mpath *dmmp_mp,
+int dmmp_mpath_update(struct dmmp_context *ctx, struct dmmp_mpath *dmmp_mp,
 		       json_object *j_obj_map)
 {
 	int rc = DMMP_OK;
@@ -113,10 +113,10 @@ int _dmmp_mpath_update(struct dmmp_context *ctx, struct dmmp_mpath *dmmp_mp,
 		dmmp_mp->dmmp_pgs[i] = NULL;
 
 	for (i = 0; i < dmmp_mp->dmmp_pg_count; ++i) {
-		dmmp_pg = _dmmp_path_group_new();
+		dmmp_pg = dmmp_path_group_new();
 		_dmmp_alloc_null_check(ctx, dmmp_pg, rc, out);
 		dmmp_mp->dmmp_pgs[i] = dmmp_pg;
-		_good(_dmmp_path_group_update(ctx, dmmp_pg,
+		_good(dmmp_path_group_update(ctx, dmmp_pg,
 					      array_list_get_idx(ar_pgs, i)),
 		      rc, out);
 	}
@@ -126,11 +126,11 @@ int _dmmp_mpath_update(struct dmmp_context *ctx, struct dmmp_mpath *dmmp_mp,
 
 out:
 	if (rc != DMMP_OK)
-		_dmmp_mpath_free(dmmp_mp);
+		dmmp_mpath_free(dmmp_mp);
 	return rc;
 }
 
-void _dmmp_mpath_free(struct dmmp_mpath *dmmp_mp)
+void dmmp_mpath_free(struct dmmp_mpath *dmmp_mp)
 {
 	if (dmmp_mp == NULL)
 		return ;

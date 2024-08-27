@@ -27,17 +27,17 @@
 #include "libdmmp/libdmmp.h"
 #include "libdmmp_private.h"
 
-#define _DMMP_SHOW_PS_INDEX_BLK_NAME	0
-#define _DMMP_SHOW_PS_INDEX_STATUS	1
-#define _DMMP_SHOW_PS_INDEX_WWID	2
-#define _DMMP_SHOW_PS_INDEX_PGID	3
+#define DMMP_SHOW_PS_INDEX_BLK_NAME	0
+#define DMMP_SHOW_PS_INDEX_STATUS	1
+#define DMMP_SHOW_PS_INDEX_WWID	2
+#define DMMP_SHOW_PS_INDEX_PGID	3
 
 struct dmmp_path {
 	char *blk_name;
 	uint32_t status;
 };
 
-static const struct _num_str_conv _DMMP_PATH_STATUS_CONV[] = {
+static const struct _num_str_conv DMMP_PATH_STATUS_CONV[] = {
 	{DMMP_PATH_STATUS_UNKNOWN, "undef"},
 	{DMMP_PATH_STATUS_UP, "ready"},
 	{DMMP_PATH_STATUS_DOWN, "faulty"},
@@ -49,17 +49,17 @@ static const struct _num_str_conv _DMMP_PATH_STATUS_CONV[] = {
 };
 
 _dmmp_str_func_gen(dmmp_path_status_str, uint32_t, path_status,
-		   _DMMP_PATH_STATUS_CONV);
+		   DMMP_PATH_STATUS_CONV);
 _dmmp_str_conv_func_gen(_dmmp_path_status_str_conv, ctx, path_status_str,
 			uint32_t, DMMP_PATH_STATUS_UNKNOWN,
-			_DMMP_PATH_STATUS_CONV);
+			DMMP_PATH_STATUS_CONV);
 
 _dmmp_getter_func_gen(dmmp_path_blk_name_get, struct dmmp_path, dmmp_p,
 		      blk_name, const char *);
 _dmmp_getter_func_gen(dmmp_path_status_get, struct dmmp_path, dmmp_p,
 		      status, uint32_t);
 
-struct dmmp_path *_dmmp_path_new(void)
+struct dmmp_path *dmmp_path_new(void)
 {
 	struct dmmp_path *dmmp_p = NULL;
 
@@ -72,7 +72,7 @@ struct dmmp_path *_dmmp_path_new(void)
 	return dmmp_p;
 }
 
-int _dmmp_path_update(struct dmmp_context *ctx, struct dmmp_path *dmmp_p,
+int dmmp_path_update(struct dmmp_context *ctx, struct dmmp_path *dmmp_p,
 		      json_object *j_obj_p)
 {
 	int rc = DMMP_OK;
@@ -102,11 +102,11 @@ int _dmmp_path_update(struct dmmp_context *ctx, struct dmmp_path *dmmp_p,
 
 out:
 	if (rc != DMMP_OK)
-		_dmmp_path_free(dmmp_p);
+		dmmp_path_free(dmmp_p);
 	return rc;
 }
 
-void _dmmp_path_free(struct dmmp_path *dmmp_p)
+void dmmp_path_free(struct dmmp_path *dmmp_p)
 {
 	if (dmmp_p == NULL)
 		return;

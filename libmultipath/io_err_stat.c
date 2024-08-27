@@ -619,9 +619,9 @@ static void process_async_ios_event(int timeout_nsecs, char *dev)
 
 static void service_paths(void)
 {
-	struct _vector _pathvec = { .allocated = 0 };
+	struct vector_s _pathvec = { .allocated = 0 };
 	/* avoid gcc warnings that &_pathvec will never be NULL in vector ops */
-	struct _vector * const tmp_pathvec = &_pathvec;
+	struct vector_s * const tmp_pathvec = &_pathvec;
 	struct io_err_stat_path *pp;
 	int i;
 

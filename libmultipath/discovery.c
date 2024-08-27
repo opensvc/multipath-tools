@@ -1087,7 +1087,7 @@ detect_alua(struct path * pp)
 			return;
 
 		state = path_offline(pp);
-		if (state == PATH_DOWN || state == PATH_PENDING)
+		if (state != PATH_UP)
 			return;
 
 		pp->tpgs = TPGS_NONE;
@@ -1336,14 +1336,14 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 
 		vpd += 4;
 		len = vpd_len - 4;
-		if ((err = __append_strbuf_str(&buf, (const char *)vpd, len)) < 0)
+		if ((err = append_strbuf_str__(&buf, (const char *)vpd, len)) < 0)
 			return err;
 
 		/* The input is 0-padded, make sure the length is correct */
 		truncate_strbuf(&buf, strlen(get_strbuf_str(&buf)));
 		len = get_strbuf_len(&buf);
 		if (type != '8') {
-			char *buffer = __get_strbuf_buf(&buf);
+			char *buffer = get_strbuf_buf__(&buf);
 
 			for (i = 0; i < len; ++i)
 				buffer[i] = tolower(buffer[i]);
@@ -1357,7 +1357,7 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 			return err;
 		while (vpd && (p = memchr(vpd, ' ', vpd_len))) {
 			p_len = p - vpd;
-			if ((err = __append_strbuf_str(&buf, (const char *)vpd,
+			if ((err = append_strbuf_str__(&buf, (const char *)vpd,
 						       p_len)) < 0)
 				return err;
 			vpd = p;
@@ -1370,7 +1370,7 @@ parse_vpd_pg83(const unsigned char *in, size_t in_len,
 				return err;
 		}
 		if (vpd_len > 0) {
-			if ((err = __append_strbuf_str(&buf, (const char *)vpd,
+			if ((err = append_strbuf_str__(&buf, (const char *)vpd,
 						       vpd_len)) < 0)
 				return err;
 		}
@@ -1523,7 +1523,7 @@ get_vpd_sgio (int fd, int pg, int vend_id, char * str, int maxlen)
 }
 
 static int
-scsi_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
+scsi_sysfs_pathinfo (struct path *pp, const struct vector_s *hwtable)
 {
 	struct udev_device *parent;
 	const char *attr_path = NULL;
@@ -1594,7 +1594,7 @@ scsi_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 }
 
 static int
-nvme_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
+nvme_sysfs_pathinfo (struct path *pp, const struct vector_s *hwtable)
 {
 	struct udev_device *parent;
 	const char *attr_path = NULL;
@@ -1653,7 +1653,7 @@ nvme_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 }
 
 static int
-ccw_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
+ccw_sysfs_pathinfo (struct path *pp, const struct vector_s *hwtable)
 {
 	struct udev_device *parent;
 	char attr_buff[NAME_SIZE];
@@ -1714,7 +1714,7 @@ ccw_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
 }
 
 static int
-cciss_sysfs_pathinfo (struct path *pp, const struct _vector *hwtable)
+cciss_sysfs_pathinfo (struct path *pp, const struct vector_s *hwtable)
 {
 	const char * attr_path = NULL;
 	struct udev_device *parent;
@@ -1872,7 +1872,7 @@ path_offline (struct path * pp)
 }
 
 static int
-sysfs_pathinfo(struct path *pp, const struct _vector *hwtable)
+sysfs_pathinfo(struct path *pp, const struct vector_s *hwtable)
 {
 	int r = common_sysfs_pathinfo(pp);
 

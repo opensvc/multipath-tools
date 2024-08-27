@@ -72,17 +72,17 @@ void libmultipath_exit(void)
 	pthread_once(&_exit_once, _libmultipath_exit);
 }
 
-static struct config __internal_config;
+static struct config internal_config;
 struct config *libmp_get_multipath_config(void)
 {
-	if (!__internal_config.hwtable)
+	if (!internal_config.hwtable)
 		/* not initialized */
 		return NULL;
-	return &__internal_config;
+	return &internal_config;
 }
 
 struct config *get_multipath_config(void)
-	__attribute__((alias("libmp_get_multipath_config")));
+	__attribute__((weak, alias("libmp_get_multipath_config")));
 
 void libmp_put_multipath_config(void *conf __attribute__((unused)))
 {
@@ -90,7 +90,7 @@ void libmp_put_multipath_config(void *conf __attribute__((unused)))
 }
 
 void put_multipath_config(void *conf)
-	__attribute__((alias("libmp_put_multipath_config")));
+	__attribute__((weak, alias("libmp_put_multipath_config")));
 
 static int
 hwe_strmatch (const struct hwentry *hwe1, const struct hwentry *hwe2)
@@ -114,7 +114,7 @@ hwe_strmatch (const struct hwentry *hwe1, const struct hwentry *hwe2)
 }
 
 static struct hwentry *
-find_hwe_strmatch (const struct _vector *hwtable, const struct hwentry *hwe)
+find_hwe_strmatch (const struct vector_s *hwtable, const struct hwentry *hwe)
 {
 	int i;
 	struct hwentry *tmp, *ret = NULL;
@@ -179,7 +179,7 @@ static void _log_match(const char *fn, const struct hwentry *h,
 #define log_match(h, v, p, r) _log_match(__func__, (h), (v), (p), (r))
 
 int
-find_hwe (const struct _vector *hwtable,
+find_hwe (const struct vector_s *hwtable,
 	  const char * vendor, const char * product, const char * revision,
 	  vector result)
 {
@@ -222,7 +222,7 @@ struct mpentry *find_mpe(vector mptable, char *wwid)
 	return NULL;
 }
 
-const char *get_mpe_wwid(const struct _vector *mptable, const char *alias)
+const char *get_mpe_wwid(const struct vector_s *mptable, const char *alias)
 {
 	int i;
 	struct mpentry * mpe;
@@ -734,7 +734,7 @@ static void _uninit_config(struct config *conf)
 	int i;
 
 	if (!conf)
-		conf = &__internal_config;
+		conf = &internal_config;
 
 	if (conf->selector)
 		free(conf->selector);
@@ -791,14 +791,14 @@ static void _uninit_config(struct config *conf)
 
 void uninit_config(void)
 {
-	_uninit_config(&__internal_config);
+	_uninit_config(&internal_config);
 }
 
 void free_config(struct config *conf)
 {
 	if (!conf)
 		return;
-	else if (conf == &__internal_config) {
+	else if (conf == &internal_config) {
 		condlog(0, "ERROR: %s called for internal config. Use uninit_config() instead",
 			__func__);
 		return;
@@ -879,29 +879,29 @@ static void set_max_checkint_from_watchdog(struct config *conf)
 }
 #endif
 
-static int _init_config (const char *file, struct config *conf);
+static int init_config__ (const char *file, struct config *conf);
 
 int init_config(const char *file)
 {
-	return _init_config(file, &__internal_config);
+	return init_config__(file, &internal_config);
 }
 
 struct config *load_config(const char *file)
 {
 	struct config *conf = alloc_config();
 
-	if (conf && !_init_config(file, conf))
+	if (conf && !init_config__(file, conf))
 		return conf;
 
 	free(conf);
 	return NULL;
 }
 
-int _init_config (const char *file, struct config *conf)
+int init_config__ (const char *file, struct config *conf)
 {
 
 	if (!conf)
-		conf = &__internal_config;
+		conf = &internal_config;
 
 	/*
 	 * Processing the config file will overwrite conf->verbosity if set
@@ -982,6 +982,18 @@ int _init_config (const char *file, struct config *conf)
 		conf->checkint = conf->max_checkint;
 	condlog(3, "polling interval: %d, max: %d",
 		conf->checkint, conf->max_checkint);
+	/*
+	 * make sure that that adjust_int is a multiple of all possible values
+	 * of pp->checkint.
+	 */
+	if (conf->max_checkint % conf->checkint == 0) {
+		conf->adjust_int = conf->max_checkint;
+	} else {
+		conf->adjust_int = conf->checkint;
+		while (2 * conf->adjust_int < conf->max_checkint)
+			conf->adjust_int *= 2;
+		conf->adjust_int *= conf->max_checkint;
+	}
 
 	if (conf->blist_devnode == NULL) {
 		conf->blist_devnode = vector_alloc();
@@ -1077,7 +1089,7 @@ out:
 const char *get_uid_attribute_by_attrs(const struct config *conf,
 				       const char *path_dev)
 {
-	const struct _vector *uid_attrs = &conf->uid_attrs;
+	const struct vector_s *uid_attrs = &conf->uid_attrs;
 	int j;
 	char *att, *col;
 

@@ -436,12 +436,6 @@ snprint_multipath_vpd_data(struct strbuf *buff,
 	return append_strbuf_str(buff, "[undef]");
 }
 
-static void cleanup_udev_device(struct udev_device **udd)
-{
-	if (*udd)
-		udev_device_unref(*udd);
-}
-
 static int
 snprint_multipath_max_sectors_kb(struct strbuf *buff, const struct multipath *mpp)
 {
@@ -581,7 +575,7 @@ static int snprint_initialized(struct strbuf *buff, const struct path * pp)
 	};
 	const char *str;
 
-	if (pp->initialized < INIT_NEW || pp->initialized >= __INIT_LAST)
+	if (pp->initialized < INIT_NEW || pp->initialized >= INIT_LAST__)
 		str = "undef";
 	else
 		str = init_state_name[pp->initialized];
@@ -930,7 +924,7 @@ void get_path_layout(vector pathvec, int header, fieldwidth_t *width)
 {
 	vector gpvec = vector_convert(NULL, pathvec, struct path,
 				      dm_path_to_gen);
-	_get_path_layout(gpvec,
+	get_path_layout__(gpvec,
 			 header ? LAYOUT_RESET_HEADER : LAYOUT_RESET_ZERO,
 			 width);
 	vector_free(gpvec);
@@ -952,7 +946,7 @@ reset_width(fieldwidth_t *width, enum layout_reset reset, const char *header)
 	}
 }
 
-void _get_path_layout (const struct _vector *gpvec, enum layout_reset reset,
+void get_path_layout__ (const struct vector_s *gpvec, enum layout_reset reset,
 		       fieldwidth_t *width)
 {
 	unsigned int i, j;
@@ -986,14 +980,14 @@ fieldwidth_t *alloc_multipath_layout(void) {
 void get_multipath_layout (vector mpvec, int header, fieldwidth_t *width) {
 	vector gmvec = vector_convert(NULL, mpvec, struct multipath,
 				      dm_multipath_to_gen);
-	_get_multipath_layout(gmvec,
+	get_multipath_layout__(gmvec,
 			      header ? LAYOUT_RESET_HEADER : LAYOUT_RESET_ZERO,
 			      width);
 	vector_free(gmvec);
 }
 
 void
-_get_multipath_layout (const struct _vector *gmvec, enum layout_reset reset,
+get_multipath_layout__ (const struct vector_s *gmvec, enum layout_reset reset,
 		       fieldwidth_t *width)
 {
 	unsigned int i, j;
@@ -1096,7 +1090,7 @@ int snprint_multipath_header(struct strbuf *line, const char *format,
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
 		int iwc;
 
-		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
+		if ((rc = append_strbuf_str__(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
@@ -1116,7 +1110,7 @@ int snprint_multipath_header(struct strbuf *line, const char *format,
 	return get_strbuf_len(line) - initial_len;
 }
 
-int _snprint_multipath(const struct gen_multipath *gmp,
+int snprint_multipath__(const struct gen_multipath *gmp,
 		       struct strbuf *line, const char *format,
 		       const fieldwidth_t *width)
 {
@@ -1127,7 +1121,7 @@ int _snprint_multipath(const struct gen_multipath *gmp,
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
 		int iwc;
 
-		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
+		if ((rc = append_strbuf_str__(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
@@ -1157,7 +1151,7 @@ int snprint_path_header(struct strbuf *line, const char *format,
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
 		int iwc;
 
-		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
+		if ((rc = append_strbuf_str__(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
@@ -1177,7 +1171,7 @@ int snprint_path_header(struct strbuf *line, const char *format,
 	return get_strbuf_len(line) - initial_len;
 }
 
-int _snprint_path(const struct gen_path *gp, struct strbuf *line,
+int snprint_path__(const struct gen_path *gp, struct strbuf *line,
 		  const char *format, const fieldwidth_t *width)
 {
 	int initial_len = get_strbuf_len(line);
@@ -1187,7 +1181,7 @@ int _snprint_path(const struct gen_path *gp, struct strbuf *line,
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
 		int iwc;
 
-		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
+		if ((rc = append_strbuf_str__(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
@@ -1206,7 +1200,7 @@ int _snprint_path(const struct gen_path *gp, struct strbuf *line,
 	return get_strbuf_len(line) - initial_len;
 }
 
-int _snprint_pathgroup(const struct gen_pathgroup *ggp, struct strbuf *line,
+int snprint_pathgroup__(const struct gen_pathgroup *ggp, struct strbuf *line,
 		       const char *format)
 {
 	int initial_len = get_strbuf_len(line);
@@ -1214,7 +1208,7 @@ int _snprint_pathgroup(const struct gen_pathgroup *ggp, struct strbuf *line,
 	int rc;
 
 	for (f = strchr(format, '%'); f; f = strchr(++format, '%')) {
-		if ((rc = __append_strbuf_str(line, format, f - format)) < 0)
+		if ((rc = append_strbuf_str__(line, format, f - format)) < 0)
 			return rc;
 
 		format = f + 1;
@@ -1229,14 +1223,14 @@ int _snprint_pathgroup(const struct gen_pathgroup *ggp, struct strbuf *line,
 }
 
 #define snprint_pathgroup(line, fmt, pgp)				\
-	_snprint_pathgroup(dm_pathgroup_to_gen(pgp), line, fmt)
+	snprint_pathgroup__(dm_pathgroup_to_gen(pgp), line, fmt)
 
-void _print_multipath_topology(const struct gen_multipath *gmp, int verbosity)
+void print_multipath_topology__(const struct gen_multipath *gmp, int verbosity)
 {
 	STRBUF_ON_STACK(buff);
 	fieldwidth_t *p_width __attribute__((cleanup(cleanup_ucharp))) = NULL;
 	const struct gen_pathgroup *gpg;
-	const struct _vector *pgvec, *pathvec;
+	const struct vector_s *pgvec, *pathvec;
 	int j;
 
 	p_width = alloc_path_layout();
@@ -1247,13 +1241,13 @@ void _print_multipath_topology(const struct gen_multipath *gmp, int verbosity)
 			pathvec = gpg->ops->get_paths(gpg);
 			if (pathvec == NULL)
 				continue;
-			_get_path_layout(pathvec, LAYOUT_RESET_NOT, p_width);
+			get_path_layout__(pathvec, LAYOUT_RESET_NOT, p_width);
 			gpg->ops->rel_paths(gpg, pathvec);
 		}
 		gmp->ops->rel_pathgroups(gmp, pgvec);
 	}
 
-	_snprint_multipath_topology(gmp, &buff, verbosity, p_width);
+	snprint_multipath_topology__(gmp, &buff, verbosity, p_width);
 	printf("%s", get_strbuf_str(&buff));
 }
 
@@ -1272,12 +1266,12 @@ int snprint_multipath_style(const struct gen_multipath *gmp,
 			    need_wwid ? " (%w)" : "", " %d %s");
 }
 
-int _snprint_multipath_topology(const struct gen_multipath *gmp,
+int snprint_multipath_topology__(const struct gen_multipath *gmp,
 				struct strbuf *buff, int verbosity,
 				const fieldwidth_t *p_width)
 {
 	int j, i, rc;
-	const struct _vector *pgvec;
+	const struct vector_s *pgvec;
 	const struct gen_pathgroup *gpg;
 	STRBUF_ON_STACK(style);
 	size_t initial_len = get_strbuf_len(buff);
@@ -1290,7 +1284,7 @@ int _snprint_multipath_topology(const struct gen_multipath *gmp,
 		return -ENOMEM;
 
 	if (verbosity == 1)
-		return _snprint_multipath(gmp, buff, "%n", width);
+		return snprint_multipath__(gmp, buff, "%n", width);
 
 	if(isatty(1) &&
 	   (rc = print_strbuf(&style, "%c[%dm", 0x1B, 1)) < 0) /* bold on */
@@ -1301,8 +1295,8 @@ int _snprint_multipath_topology(const struct gen_multipath *gmp,
 	   (rc = print_strbuf(&style, "%c[%dm", 0x1B, 0)) < 0) /* bold off */
 		return rc;
 
-	if ((rc = _snprint_multipath(gmp, buff, get_strbuf_str(&style), width)) < 0
-	    || (rc = _snprint_multipath(gmp, buff, PRINT_MAP_PROPS, width)) < 0)
+	if ((rc = snprint_multipath__(gmp, buff, get_strbuf_str(&style), width)) < 0
+	    || (rc = snprint_multipath__(gmp, buff, PRINT_MAP_PROPS, width)) < 0)
 		return rc;
 
 	pgvec = gmp->ops->get_pathgroups(gmp);
@@ -1310,13 +1304,13 @@ int _snprint_multipath_topology(const struct gen_multipath *gmp,
 		goto out;
 
 	vector_foreach_slot (pgvec, gpg, j) {
-		const struct _vector *pathvec;
+		const struct vector_s *pathvec;
 		struct gen_path *gp;
 		bool last_group = j + 1 == VECTOR_SIZE(pgvec);
 
 		if ((rc = print_strbuf(buff, "%c-+- ",
 				       last_group ? '`' : '|')) < 0 ||
-		    (rc = _snprint_pathgroup(gpg, buff, PRINT_PG_INDENT)) < 0)
+		    (rc = snprint_pathgroup__(gpg, buff, PRINT_PG_INDENT)) < 0)
 			return rc;
 
 		pathvec = gpg->ops->get_paths(gpg);
@@ -1328,7 +1322,7 @@ int _snprint_multipath_topology(const struct gen_multipath *gmp,
 					       last_group ? ' ' : '|',
 					       i + 1 == VECTOR_SIZE(pathvec) ?
 					       '`': '|')) < 0 ||
-			    (rc = _snprint_path(gp, buff,
+			    (rc = snprint_path__(gp, buff,
 						PRINT_PATH_INDENT, p_width)) < 0)
 				return rc;
 		}
@@ -1488,7 +1482,7 @@ snprint_pcentry (const struct config *conf, struct strbuf *buff,
 
 static int
 snprint_pctable (const struct config *conf, struct strbuf *buff,
-		 const struct _vector *pctable)
+		 const struct vector_s *pctable)
 {
 	int i, rc;
 	struct pcentry *pce;
@@ -1532,7 +1526,7 @@ snprint_hwentry (const struct config *conf,
 }
 
 static int snprint_hwtable(const struct config *conf, struct strbuf *buff,
-			   const struct _vector *hwtable)
+			   const struct vector_s *hwtable)
 {
 	int i, rc;
 	struct hwentry * hwe;
@@ -1558,7 +1552,7 @@ static int snprint_hwtable(const struct config *conf, struct strbuf *buff,
 
 static int
 snprint_mpentry (const struct config *conf, struct strbuf *buff,
-		 const struct mpentry * mpe, const struct _vector *mpvec)
+		 const struct mpentry * mpe, const struct vector_s *mpvec)
 {
 	int i, rc;
 	struct keyword * kw;
@@ -1593,7 +1587,7 @@ snprint_mpentry (const struct config *conf, struct strbuf *buff,
 }
 
 static int snprint_mptable(const struct config *conf, struct strbuf *buff,
-			   const struct _vector *mpvec)
+			   const struct vector_s *mpvec)
 {
 	int i, rc;
 	struct mpentry * mpe;
@@ -1914,8 +1908,8 @@ static int snprint_blacklist_except(const struct config *conf,
 	return get_strbuf_len(buff) - initial_len;
 }
 
-int __snprint_config(const struct config *conf, struct strbuf *buff,
-		     const struct _vector *hwtable, const struct _vector *mpvec)
+int snprint_config__(const struct config *conf, struct strbuf *buff,
+		     const struct vector_s *hwtable, const struct vector_s *mpvec)
 {
 	int rc;
 
@@ -1936,11 +1930,11 @@ int __snprint_config(const struct config *conf, struct strbuf *buff,
 }
 
 char *snprint_config(const struct config *conf, int *len,
-		     const struct _vector *hwtable, const struct _vector *mpvec)
+		     const struct vector_s *hwtable, const struct vector_s *mpvec)
 {
 	STRBUF_ON_STACK(buff);
 	char *reply;
-	int rc = __snprint_config(conf, &buff, hwtable, mpvec);
+	int rc = snprint_config__(conf, &buff, hwtable, mpvec);
 
 	if (rc < 0)
 		return NULL;

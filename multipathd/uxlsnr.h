@@ -1,5 +1,5 @@
-#ifndef _UXLSNR_H
-#define _UXLSNR_H
+#ifndef UXLSNR_H_INCLUDED
+#define UXLSNR_H_INCLUDED
 
 #include <stdbool.h>
 

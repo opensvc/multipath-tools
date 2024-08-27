@@ -130,7 +130,7 @@ void make_config_file(int findmp)
 	char buf[64];
 
 	assert_true(findmp > FIND_MULTIPATHS_UNDEF &&
-		    findmp < __FIND_MULTIPATHS_LAST);
+		    findmp < FIND_MULTIPATHS_LAST__);
 
 	r = snprintf(buf, sizeof(buf), "defaults {\nfind_multipaths %s\n}\n",
 		     find_multipaths_optvals[findmp]);

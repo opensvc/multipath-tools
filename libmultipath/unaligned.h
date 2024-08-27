@@ -1,5 +1,5 @@
-#ifndef _UNALIGNED_H_
-#define _UNALIGNED_H_
+#ifndef UNALIGNED_H_INCLUDED
+#define UNALIGNED_H_INCLUDED
 
 #include <stdint.h>
 
@@ -51,4 +51,4 @@ static inline void put_unaligned_be64(uint64_t val, void *ptr)
 	put_unaligned_be32(val, p + 4);
 }
 
-#endif /* _UNALIGNED_H_ */
+#endif /* UNALIGNED_H_INCLUDED */

@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_24.0.0 {
+LIBMULTIPATH_26.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -66,6 +66,7 @@ global:
 	check_foreign;
 	cleanup_bindings;
 	cleanup_lock;
+	cleanup_multipath_and_paths;
 	coalesce_paths;
 	count_active_paths;
 	delete_all_foreign;
@@ -73,18 +74,16 @@ global:
 	dm_cancel_deferred_remove;
 	dm_enablegroup;
 	dm_fail_path;
-	_dm_flush_map;
+	dm_find_map_by_wwid;
+	dm_flush_map__;
 	dm_flush_map_nopaths;
 	dm_flush_maps;
 	dm_geteventnr;
-	dm_get_info;
 	dm_get_major_minor;
 	dm_get_maps;
 	dm_get_multipath;
-	dm_get_uuid;
 	dm_is_mpath;
 	dm_mapname;
-	dm_map_present;
 	dm_prereq;
 	dm_queue_if_no_path;
 	dm_reassign;
@@ -133,15 +132,16 @@ global:
 	libmp_get_version;
 	libmp_get_multipath_config;
 	libmp_dm_task_run;
+	libmp_mapinfo;
 	libmp_put_multipath_config;
 	libmp_udev_set_sync_support;
 	libmultipath_exit;
 	libmultipath_init;
 	load_config;
+	mpath_in_use;
 	need_io_err_check;
 	orphan_path;
 	parse_prkey_flags;
-	partmap_in_use;
 	pathcount;
 	path_discovery;
 	path_get_tpgs;
@@ -149,7 +149,7 @@ global:
 	path_offline;
 	print_all_paths;
 	print_foreign_topology;
-	_print_multipath_topology;
+	print_multipath_topology__;
 	reinstate_paths;
 	remember_wwid;
 	remove_feature;
@@ -173,18 +173,18 @@ global:
 	should_multipath;
 	skip_libmp_dm_init;
 	snprint_blacklist_report;
-	__snprint_config;
+	snprint_config__;
 	snprint_config;
 	snprint_devices;
 	snprint_foreign_multipaths;
 	snprint_foreign_paths;
 	snprint_foreign_topology;
-	_snprint_multipath;
+	snprint_multipath__;
 	snprint_multipath_header;
 	snprint_multipath_map_json;
-	_snprint_multipath_topology;
+	snprint_multipath_topology__;
 	snprint_multipath_topology_json;
-	_snprint_path;
+	snprint_path__;
 	snprint_path_header;
 	snprint_status;
 	snprint_wildcards;
@@ -205,6 +205,7 @@ global:
 	uninit_config;
 	update_mpp_paths;
 	update_multipath_strings;
+	update_multipath_table__;
 	update_multipath_table;
 	update_queue_mode_add_path;
 	update_queue_mode_del_path;

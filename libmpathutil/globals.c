@@ -2,10 +2,10 @@
 #include <libudev.h>
 #include "globals.h"
 
-struct config *get_multipath_config(void)
+__attribute__((weak)) struct config *get_multipath_config(void)
 {
 	return NULL;
 }
 
-void put_multipath_config(void *p __attribute__((unused)))
+__attribute__((weak)) void put_multipath_config(void *p __attribute__((unused)))
 {}

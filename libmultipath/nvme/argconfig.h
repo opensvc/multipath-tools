@@ -30,8 +30,8 @@
 //
 ////////////////////////////////////////////////////////////////////////
 
-#ifndef argconfig_H
-#define argconfig_H
+#ifndef NVME_ARGCONFIG_H_INCLUDED
+#define NVME_ARGCONFIG_H_INCLUDED
 
 #include <string.h>
 #include <getopt.h>

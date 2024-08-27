@@ -1,7 +1,9 @@
-#ifndef _WRAP64_H
-#define _WRAP64_H 1
+#ifndef WRAP64_H_INCLUDED
+#define WRAP64_H_INCLUDED
 #include <syscall.h>
 #include <linux/types.h>
+/* The following include is required for LIBAIO_REDIRECT */
+#include <libaio.h>
 #include "util.h"
 
 /*
@@ -47,7 +49,8 @@
  * fcntl() needs special treatment; fcntl64() has been introduced in 2.28.
  * https://savannah.gnu.org/forum/forum.php?forum_id=9205
  */
-#if defined(__GLIBC__) && __GLIBC_PREREQ(2, 37) && defined(__arm__) && __ARM_ARCH == 7
+#if defined(__GLIBC__) && __GLIBC_PREREQ(2, 34) && __BITS_PER_LONG == 32 \
+	 && defined(_TIME_BITS) && _TIME_BITS == 64
 #define WRAP_FCNTL_NAME __fcntl_time64
 #elif defined(__GLIBC__) && __GLIBC_PREREQ(2, 28)
 #define WRAP_FCNTL_NAME WRAP_NAME(fcntl)
@@ -60,7 +63,8 @@
 /*
  * glibc 2.37 uses __ioctl_time64 for ioctl
  */
-#if defined(__GLIBC__) && __GLIBC_PREREQ(2, 37) && defined(__arm__) && __ARM_ARCH == 7
+#if defined(__GLIBC__) && __GLIBC_PREREQ(2, 34) && __BITS_PER_LONG == 32 \
+	 && defined(_TIME_BITS) && _TIME_BITS == 64
 #define WRAP_IOCTL_NAME __ioctl_time64
 #else
 #define WRAP_IOCTL_NAME ioctl
@@ -68,7 +72,8 @@
 #define WRAP_IOCTL CONCAT2(__wrap_, WRAP_IOCTL_NAME)
 #define REAL_IOCTL CONCAT2(__real_, WRAP_IOCTL_NAME)
 
-#if defined(__NR_io_pgetevents) && __BITS_PER_LONG == 32 && defined(_TIME_BITS) && _TIME_BITS == 64
+#if defined(__GLIBC__) && defined(LIBAIO_REDIRECT) && __BITS_PER_LONG == 32 \
+	&& defined(_TIME_BITS) && _TIME_BITS == 64
 #define WRAP_IO_GETEVENTS_NAME io_getevents_time64
 #else
 #define WRAP_IO_GETEVENTS_NAME io_getevents

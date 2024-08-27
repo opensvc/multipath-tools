@@ -568,7 +568,7 @@ def_find_multipaths_handler(struct config *conf, vector strvec,
 	if (!buff)
 		return 1;
 
-	for (i = FIND_MULTIPATHS_OFF; i < __FIND_MULTIPATHS_LAST; i++) {
+	for (i = FIND_MULTIPATHS_OFF; i < FIND_MULTIPATHS_LAST__; i++) {
 		if (find_multipaths_optvals[i] != NULL &&
 		    !strcmp(buff, find_multipaths_optvals[i])) {
 			conf->find_multipaths = i;
@@ -576,7 +576,7 @@ def_find_multipaths_handler(struct config *conf, vector strvec,
 		}
 	}
 
-	if (i >= __FIND_MULTIPATHS_LAST) {
+	if (i >= FIND_MULTIPATHS_LAST__) {
 		if (strcmp(buff, "no") == 0 || strcmp(buff, "0") == 0)
 			conf->find_multipaths = FIND_MULTIPATHS_OFF;
 		else if (strcmp(buff, "yes") == 0 || strcmp(buff, "1") == 0)

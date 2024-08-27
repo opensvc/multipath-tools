@@ -31,10 +31,9 @@
 #include "foreign.h"
 #include "strbuf.h"
 #include "cli_handlers.h"
-#include "devmapper.h"
 
 static struct path *
-find_path_by_str(const struct _vector *pathvec, const char *str,
+find_path_by_str(const struct vector_s *pathvec, const char *str,
 		  const char *action_str)
 {
 	struct path *pp;
@@ -158,15 +157,15 @@ show_map_json (struct strbuf *reply, struct multipath * mpp,
 }
 
 static int
-show_config (struct strbuf *reply, const struct _vector *hwtable,
-	     const struct _vector *mpvec)
+show_config (struct strbuf *reply, const struct vector_s *hwtable,
+	     const struct vector_s *mpvec)
 {
 	struct config *conf;
 	int rc;
 
 	conf = get_multipath_config();
 	pthread_cleanup_push(put_multipath_config, conf);
-	rc = __snprint_config(conf, reply, hwtable, mpvec);
+	rc = snprint_config__(conf, reply, hwtable, mpvec);
 	pthread_cleanup_pop(1);
 	if (rc < 0)
 		return 1;
@@ -343,8 +342,15 @@ show_status (struct strbuf *reply, struct vectors *vecs)
 static int
 show_daemon (struct strbuf *reply)
 {
-	if (print_strbuf(reply, "pid %d %s\n",
-			 daemon_pid, daemon_status()) < 0)
+	const char *status;
+	bool pending_reconfig;
+
+	status = daemon_status(&pending_reconfig);
+	if (status == NULL)
+		return 1;
+	if (print_strbuf(reply, "pid %d %s%s\n",
+			 daemon_pid, status,
+			 pending_reconfig ? " (pending reconfigure)" : "") < 0)
 		return 1;
 
 	return 0;
@@ -540,7 +546,11 @@ add_partial_path(struct path *pp, struct vectors *vecs)
 	if (strlen(wwid) && strncmp(wwid, pp->wwid, WWID_SIZE) != 0) {
 		condlog(0, "%s: path wwid changed from '%s' to '%s'. removing",
 			pp->dev, wwid, pp->wwid);
-		ev_remove_path(pp, vecs, 1);
+		if (!(ev_remove_path(pp, vecs, 1) & REMOVE_PATH_SUCCESS) &&
+		    pp->mpp) {
+			pp->dmstate = PSTATE_FAILED;
+			dm_fail_path(pp->mpp->alias, pp->dev_t);
+		}
 		udev_device_unref(udd);
 		return -1;
 	}
@@ -697,58 +707,38 @@ cli_add_map (void * v, struct strbuf *reply, void * data)
 {
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, KEY_MAP);
-	int major = -1, minor = -1;
 	char dev_path[FILE_NAME_SIZE];
-	char *refwwid, *alias = NULL;
-	int rc, count = 0;
-	struct config *conf;
-	int invalid = 0;
+	char *refwwid __attribute__((cleanup(cleanup_charp))) = NULL;
+	char alias[WWID_SIZE];
+	int rc;
+	struct dm_info dmi;
 
 	param = convert_dev(param, 0);
 	condlog(2, "%s: add map (operator)", param);
 
-	conf = get_multipath_config();
-	pthread_cleanup_push(put_multipath_config, conf);
-	if (filter_wwid(conf->blist_wwid, conf->elist_wwid, param, NULL) > 0)
-		invalid = 1;
-	pthread_cleanup_pop(1);
-	if (invalid) {
+	if (get_refwwid(CMD_NONE, param, DEV_DEVMAP, vecs->pathvec, &refwwid) ==
+	    PATHINFO_SKIPPED) {
 		append_strbuf_str(reply, "blacklisted\n");
 		condlog(2, "%s: map blacklisted", param);
 		return 1;
+	} else if (!refwwid) {
+		condlog(2, "%s: unknown map.", param);
+		return -ENODEV;
 	}
-	do {
-		if (dm_get_major_minor(param, &major, &minor) < 0)
-			condlog(count ? 2 : 3,
-				"%s: not a device mapper table", param);
-		else {
-			sprintf(dev_path, "dm-%d", minor);
-			alias = dm_mapname(major, minor);
+	if (dm_find_map_by_wwid(refwwid, alias, &dmi) != DMP_OK) {
+		condlog(3, "%s: map not present. creating", param);
+		if (coalesce_paths(vecs, NULL, refwwid, FORCE_RELOAD_NONE,
+				   CMD_NONE) != CP_OK) {
+			condlog(2, "%s: coalesce_paths failed", param);
+			return 1;
 		}
-		/*if there is no mapname found, we first create the device*/
-		if (!alias && !count) {
-			condlog(3, "%s: mapname not found for %d:%d",
-				param, major, minor);
-			get_refwwid(CMD_NONE, param, DEV_DEVMAP,
-				    vecs->pathvec, &refwwid);
-			if (refwwid) {
-				if (coalesce_paths(vecs, NULL, refwwid,
-						   FORCE_RELOAD_NONE, CMD_NONE)
-				    != CP_OK)
-					condlog(2, "%s: coalesce_paths failed",
-									param);
-				free(refwwid);
-			}
-		} /*we attempt to create device only once*/
-		count++;
-	} while (!alias && (count < 2));
-
-	if (!alias) {
-		condlog(2, "%s: add map failed", param);
-		return 1;
+		if (dm_find_map_by_wwid(refwwid, alias, &dmi) != DMP_OK) {
+			condlog(2, "%s: failed getting map", param);
+			return 1;
+		}
 	}
+	sprintf(dev_path, "dm-%u", dmi.minor);
 	rc = ev_add_map(dev_path, alias, vecs);
-	free(alias);
 	return rc;
 }
 

@@ -1,3 +1,6 @@
+#ifndef MPATHPERSIST_MAIN_H_INCLUDED
+#define MPATHPERSIST_MAIN_H_INCLUDED
+
 static struct option long_options[] = {
 	{"verbose", 1, NULL, 'v'},
 	{"clear", 0, NULL, 'C'},
@@ -28,3 +31,4 @@ static struct option long_options[] = {
 };
 
 static void usage(void);
+#endif

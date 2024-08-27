@@ -42,9 +42,11 @@ etc_prefix	:= $(prefix)
 # Where to install systemd-related files. systemd is usually installed under /usr
 # Note: systemd installations with "split-usr=true" use separate "prefixdir" and
 # "rootprefixdir". Our systemd_prefix corresponds to "prefixdir".
-# In this case, override only unitdir and libudevdir below to use
-# systemd's "rootprefixdir" instead of $(systemd_prefix)
+# In this case, override only unitdir, libudevdir and sys_execprefix below
+# to use systemd's "rootprefixdir" instead of $(systemd_prefix)
 systemd_prefix  := /usr
+# Prefix for binaries that are owned by other packages (including systemd)
+sys_execprefix  := /usr
 
 # Make sure all prefix variables end in "/"
 append-slash = $(1)$(if $(filter %/,$(1)),,/)
@@ -53,6 +55,7 @@ override exec_prefix     := $(call append-slash,$(exec_prefix))
 override usr_prefix      := $(call append-slash,$(usr_prefix))
 override etc_prefix      := $(call append-slash,$(etc_prefix))
 override systemd_prefix  := $(call append-slash,$(systemd_prefix))
+override sys_execprefix  := $(call append-slash,$(sys_execprefix))
 
 unitdir		:= $(systemd_prefix)lib/systemd/system
 tmpfilesdir	:= $(systemd_prefix)lib/tmpfiles.d
@@ -74,6 +77,7 @@ runtimedir      := $(if $(shell test -L /var/run -o ! -d /var/run && echo 1),/ru
 devmapper_incdir := $(or $(shell $(PKG_CONFIG) --variable=includedir devmapper),/usr/include)
 libudev_incdir	:= $(or $(shell $(PKG_CONFIG) --variable=includedir libudev),/usr/include)
 kernel_incdir	:= /usr/include
+sysdir_bin      := $(sys_execprefix)bin
 
 ifeq ($(V),)
 Q		:= @
@@ -96,16 +100,23 @@ MODPROBE_UNIT := $(shell test "0$(SYSTEMD)" -lt 245 2>/dev/null || \
 			echo "modprobe@dm_multipath.service")
 
 OPTFLAGS	:= -O2 -g $(STACKPROT) --param=ssp-buffer-size=4
-WARNFLAGS	:= -Werror -Wall -Wextra -Wformat=2 $(WFORMATOVERFLOW) -Werror=implicit-int \
-		  -Werror=implicit-function-declaration -Werror=format-security \
-		  $(WNOCLOBBERED) -Werror=cast-qual $(ERROR_DISCARDED_QUALIFIERS) $(W_URCU_TYPE_LIMITS)
+
+# Set WARN_ONLY=1 to avoid compilation erroring out due to warnings. Useful during development.
+WARN_ONLY       :=
+ERROR           := $(if $(WARN_ONLY),,error=)
+WERROR          := $(if $(WARN_ONLY),,-Werror)
+WARNFLAGS	:= $(WERROR) -Wall -Wextra -Wformat=2 $(WFORMATOVERFLOW) -W$(ERROR)implicit-int \
+		  -W$(ERROR)implicit-function-declaration -W$(ERROR)format-security \
+		  $(WNOCLOBBERED) -W$(ERROR)cast-qual $(ERROR_DISCARDED_QUALIFIERS) $(W_URCU_TYPE_LIMITS)
+
 CPPFLAGS	:= $(FORTIFY_OPT) $(CPPFLAGS) $(D_URCU_VERSION) \
 		   -D_FILE_OFFSET_BITS=64 \
 		   -DBIN_DIR=\"$(bindir)\" -DMULTIPATH_DIR=\"$(TGTDIR)$(plugindir)\" \
 		   -DRUNTIME_DIR=\"$(runtimedir)\" -DCONFIG_DIR=\"$(TGTDIR)$(configdir)\" \
 		   -DDEFAULT_CONFIGFILE=\"$(TGTDIR)$(configfile)\" -DSTATE_DIR=\"$(TGTDIR)$(statedir)\" \
 		   -DEXTRAVERSION=\"$(EXTRAVERSION)\" -MMD -MP
-CFLAGS		:= -std=gnu99 $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe
+CFLAGS		:= -std=gnu99 $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe \
+		   -fexceptions
 BIN_CFLAGS	:= -fPIE -DPIE
 LIB_CFLAGS	:= -fPIC
 SHARED_FLAGS	:= -shared
@@ -149,4 +160,11 @@ NV_VERSION_SCRIPT = $(DEVLIB:%.so=%-nv.version)
 
 %:	%.in
 	@echo creating $@
-	$(Q)sed 's:@CONFIGFILE@:'$(TGTDIR)$(configfile)':g;s:@CONFIGDIR@:'$(TGTDIR)$(configdir)':g;s:@STATE_DIR@:'$(TGTDIR)$(statedir)':g;s:@RUNTIME_DIR@:'$(runtimedir)':g;s/@MODPROBE_UNIT@/'$(MODPROBE_UNIT)'/g;s:@BINDIR@:'$(bindir)':g' $< >$@
+	$(Q)sed -e 's:@CONFIGFILE@:'$(TGTDIR)$(configfile)':g' \
+		-e 's:@CONFIGDIR@:'$(TGTDIR)$(configdir)':g' \
+		-e 's:@STATE_DIR@:'$(TGTDIR)$(statedir)':g' \
+		-e 's:@BINDIR@:'$(TGTDIR)$(bindir)':g' \
+		-e 's:@SYSDIR_BIN@:'$(sysdir_bin)': g' \
+		-e 's:@RUNTIME_DIR@:'$(runtimedir)':g' \
+		-e 's/@MODPROBE_UNIT@/'$(MODPROBE_UNIT)'/g' \
+		$< >$@

@@ -1,5 +1,5 @@
-#ifndef MAC_H
-#define MAC_H
+#ifndef MAC_H_INCLUDED
+#define MAC_H_INCLUDED
 
 #include <stdint.h>
 

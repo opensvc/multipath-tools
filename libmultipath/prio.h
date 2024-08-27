@@ -1,5 +1,5 @@
-#ifndef _PRIO_H
-#define _PRIO_H
+#ifndef PRIO_H_INCLUDED
+#define PRIO_H_INCLUDED
 
 /*
  * knowing about path struct gives flexibility to prioritizers
@@ -67,4 +67,4 @@ int prio_set_args (struct prio *, const char *);
 /* The only function exported by prioritizer dynamic libraries (.so) */
 int getprio(struct path *, char *);
 
-#endif /* _PRIO_H */
+#endif /* PRIO_H_INCLUDED */

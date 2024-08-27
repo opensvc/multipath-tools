@@ -2,8 +2,8 @@
  * sysfs.h
  */
 
-#ifndef _LIBMULTIPATH_SYSFS_H
-#define _LIBMULTIPATH_SYSFS_H
+#ifndef SYSFS_H_INCLUDED
+#define SYSFS_H_INCLUDED
 #include <stdbool.h>
 #include "strbuf.h"
 

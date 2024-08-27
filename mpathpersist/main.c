@@ -505,7 +505,7 @@ static int handle_args(int argc, char * argv[], int nline)
 			goto out_fd;
 		}
 
-		ret = __mpath_persistent_reserve_in (fd, prin_sa, resp, noisy);
+		ret = mpath_persistent_reserve_in__(fd, prin_sa, resp, noisy);
 		if (ret != MPATH_PR_SUCCESS )
 		{
 			fprintf (stderr, "Persistent Reserve IN command failed\n");
@@ -575,8 +575,8 @@ static int handle_args(int argc, char * argv[], int nline)
 		}
 
 		/* PROUT commands other than 'register and move' */
-		ret = __mpath_persistent_reserve_out (fd, prout_sa, 0, prout_type,
-				paramp, noisy);
+		ret = mpath_persistent_reserve_out__(fd, prout_sa, 0, prout_type,
+						     paramp, noisy);
 		free_prout_param_descriptor(paramp);
 	}
 

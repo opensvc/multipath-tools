@@ -154,8 +154,6 @@ static int dm_get_events(void)
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_LIST)))
 		return -1;
 
-	dm_task_no_open_count(dmt);
-
 	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_LIST, dmt);
 		goto fail;
@@ -170,9 +168,13 @@ static int dm_get_events(void)
 	while (names->dev) {
 		uint32_t event_nr;
 
-		/* Don't delete device if dm_is_mpath() fails without
-		 * checking the device type */
-		if (dm_is_mpath(names->name) == 0)
+		/*
+		 * Don't delete device if dm_is_mpath() fails without
+		 * checking the device type.
+		 * IOW, only delete devices from the event list for which
+		 *  we positively know that they aren't multipath devices.
+		 */
+		if (dm_is_mpath(names->name) == DM_IS_MPATH_NO)
 			goto next;
 
 		event_nr = dm_event_nr(names);
@@ -200,7 +202,7 @@ fail:
 	return -1;
 }
 
-/* You must call __setup_multipath() after calling this function, to
+/* You must call setup_multipath() after calling this function, to
  * deal with any events that came in before the device was added */
 int watch_dmevents(char *name)
 {
@@ -208,9 +210,12 @@ int watch_dmevents(char *name)
 	struct dev_event *dev_evt, *old_dev_evt;
 	int i;
 
-	/* We know that this is a multipath device, so only fail if
-	 * device-mapper tells us that we're wrong */
-	if (dm_is_mpath(name) == 0) {
+	/*
+	 * We know that this is a multipath device, so only fail if
+	 * device-mapper tells us that we're wrong
+	 * IOW, don't fail for DM generic errors.
+	 */
+	if (dm_is_mpath(name) == DM_IS_MPATH_NO) {
 		condlog(0, "%s: not a multipath device. can't watch events",
 			name);
 		return -1;

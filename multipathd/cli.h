@@ -1,5 +1,5 @@
-#ifndef _CLI_H_
-#define _CLI_H_
+#ifndef CLI_H_INCLUDED
+#define CLI_H_INCLUDED
 
 #include <stdint.h>
 
@@ -137,12 +137,12 @@ struct handler {
 };
 
 int alloc_handlers (void);
-int __set_handler_callback (uint32_t fp, cli_handler *fn, bool locked);
-#define set_handler_callback(fp, fn) __set_handler_callback(fp, fn, true)
-#define set_unlocked_handler_callback(fp, fn) __set_handler_callback(fp, fn, false)
+int set_handler_callback__ (uint32_t fp, cli_handler *fn, bool locked);
+#define set_handler_callback(fp, fn) set_handler_callback__(fp, fn, true)
+#define set_unlocked_handler_callback(fp, fn) set_handler_callback__(fp, fn, false)
 
 int get_cmdvec (char *cmd, vector *v, bool allow_incomplete);
-struct handler *find_handler_for_cmdvec(const struct _vector *v);
+struct handler *find_handler_for_cmdvec(const struct vector_s *v);
 void genhelp_handler (const char *cmd, int error, struct strbuf *reply);
 
 int load_keys (void);
@@ -152,9 +152,9 @@ void free_keys (vector vec);
 void free_handlers (void);
 int cli_init (void);
 void cli_exit(void);
-uint32_t fingerprint(const struct _vector *vec);
+uint32_t fingerprint(const struct vector_s *vec);
 vector get_keys(void);
 vector get_handlers(void);
 struct key *find_key (const char * str);
 
-#endif /* _CLI_H_ */
+#endif /* CLI_H_INCLUDED */

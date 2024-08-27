@@ -358,6 +358,7 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 
 	sysfs_set_scsi_tmo(conf, mpp);
 	marginal_pathgroups = conf->marginal_pathgroups;
+	mpp->sync_tick = conf->max_checkint;
 	pthread_cleanup_pop(1);
 
 	if (!mpp->features || !mpp->hwhandler || !mpp->selector) {
@@ -629,7 +630,7 @@ select_reload_action(struct multipath *mpp, const char *reason)
 	condlog(3, "%s: set ACT_RELOAD (%s)", mpp->alias, reason);
 }
 
-void select_action (struct multipath *mpp, const struct _vector *curmp,
+void select_action (struct multipath *mpp, const struct vector_s *curmp,
 		    int force_reload)
 {
 	struct multipath * cmpp;
@@ -834,6 +835,7 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 {
 	int r = DOMAP_FAIL;
 	struct config *conf;
+	char wwid[WWID_SIZE];
 
 	/*
 	 * last chance to quit before touching the devmaps
@@ -843,20 +845,22 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		return DOMAP_DRY;
 	}
 
-	if (mpp->action == ACT_CREATE && dm_map_present(mpp->alias)) {
-		char wwid[WWID_SIZE];
+	if (mpp->action == ACT_CREATE) {
+		int rc = dm_get_wwid(mpp->alias, wwid, sizeof(wwid));
 
-		if (dm_get_uuid(mpp->alias, wwid, sizeof(wwid)) == 0) {
-			if (!strncmp(mpp->wwid, wwid, sizeof(wwid))) {
-				condlog(3, "%s: map already present",
-					mpp->alias);
-				mpp->action = ACT_RELOAD;
-			} else {
-				condlog(0, "%s: map \"%s\" already present with WWID %s, skipping",
-					mpp->wwid, mpp->alias, wwid);
-				condlog(0, "please check alias settings in config and bindings file");
-				mpp->action = ACT_REJECT;
-			}
+		if (rc == DMP_OK && !strncmp(mpp->wwid, wwid, sizeof(wwid))) {
+			condlog(3, "%s: map already present",
+				mpp->alias);
+			mpp->action = ACT_RELOAD;
+		} else if (rc == DMP_OK) {
+			condlog(1, "%s: map \"%s\" already present with WWID \"%s\", skipping\n"
+				   "please check alias settings in config and bindings file",
+				mpp->wwid, mpp->alias, wwid);
+			mpp->action = ACT_REJECT;
+		} else if (rc == DMP_NO_MATCH) {
+			condlog(1, "%s: alias \"%s\" already taken by a non-multipath map",
+				mpp->wwid, mpp->alias);
+			mpp->action = ACT_REJECT;
 		}
 	}
 
@@ -1320,7 +1324,7 @@ static int _get_refwwid(enum mpath_cmds cmd, const char *dev,
 		break;
 
 	case DEV_DEVMAP:
-		if (((dm_get_uuid(dev, tmpwwid, WWID_SIZE)) == 0)
+		if (((dm_get_wwid(dev, tmpwwid, WWID_SIZE)) == DMP_OK)
 		    && (strlen(tmpwwid)))
 			refwwid = tmpwwid;
 

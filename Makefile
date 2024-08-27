@@ -16,10 +16,13 @@ LIB_BUILDDIRS += \
 	libdmmp
 endif
 
-BUILDDIRS := $(LIB_BUILDDIRS) \
+PLUGIN_BUILDDIRS := \
 	libmultipath/prioritizers \
 	libmultipath/checkers \
 	libmultipath/foreign \
+
+BUILDDIRS := $(LIB_BUILDDIRS) \
+	$(PLUGIN_BUILDDIRS) \
 	multipath \
 	multipathd \
 	mpathpersist \
@@ -83,7 +86,7 @@ abi-test:	abi reference-abi $(wildcard abi/*.abi)
 # Requires bear (https://github.com/rizsotto/Bear)
 compile_commands.json: Makefile Makefile.inc $(BUILDDIRS:=/Makefile)
 	$(Q)$(MAKE) clean
-	$(Q)bear -- $(MAKE)
+	$(Q)bear -- $(MAKE) WARN_ONLY=1 test-progs || rm $@
 
 libmpathutil libdmmp: libmpathcmd
 libmultipath: libmpathutil
@@ -109,7 +112,7 @@ $(BUILDDIRS:=.uninstall):
 clean:
 	@touch config.mk
 	$(Q)$(MAKE) $(BUILDDIRS:=.clean) tests.clean || true
-	$(Q)$(RM) -r abi abi.tar.gz abi-test compile_commands.json config.mk
+	$(Q)$(RM) -r abi abi.tar.gz abi-test config.mk
 
 install: $(BUILDDIRS:=.install)
 uninstall: $(BUILDDIRS:=.uninstall)
@@ -122,6 +125,16 @@ test:	all
 
 valgrind-test:	all
 	@$(MAKE) -C tests valgrind
+
+TEST-ARTIFACTS := config.mk Makefile.inc \
+	$(LIB_BUILDDIRS:%=%/*.so*) $(PLUGIN_BUILDDIRS:%=%/*.so) \
+	tests/Makefile tests/*.so* tests/lib/* tests/*-test 
+
+test-progs.cpio: test-progs
+	@printf "%s\\n" $(TEST-ARTIFACTS) | cpio -o -H crc >$@
+
+test-progs.tar: test-progs
+	@tar cf $@ $(TEST-ARTIFACTS)
 
 .PHONY:	TAGS
 TAGS:

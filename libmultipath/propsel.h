@@ -1,3 +1,5 @@
+#ifndef PROPSEL_H_INCLUDED
+#define PROPSEL_H_INCLUDED
 int select_rr_weight (struct config *conf, struct multipath * mp);
 int select_pgfailback (struct config *conf, struct multipath * mp);
 int select_detect_pgpolicy (struct config *conf, struct multipath * mp);
@@ -42,3 +44,4 @@ void reconcile_features_with_options(const char *id, char **features,
 				     int *retain_hwhandler);
 int select_all_tg_pt (struct config *conf, struct multipath * mp);
 int select_vpd_vendor_id (struct path *pp);
+#endif

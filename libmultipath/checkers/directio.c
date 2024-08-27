@@ -49,11 +49,11 @@ enum {
 	MSG_DIRECTIO_BLOCKSIZE,
 };
 
-#define _IDX(x) (MSG_DIRECTIO_##x - CHECKER_FIRST_MSGID)
+#define IDX_(x) (MSG_DIRECTIO_##x - CHECKER_FIRST_MSGID)
 const char *libcheck_msgtable[] = {
-	[_IDX(UNKNOWN)] = " is not available",
-	[_IDX(PENDING)] = " is waiting on aio",
-	[_IDX(BLOCKSIZE)] = " cannot get blocksize, set default",
+	[IDX_(UNKNOWN)] = " is not available",
+	[IDX_(PENDING)] = " is waiting on aio",
+	[IDX_(BLOCKSIZE)] = " cannot get blocksize, set default",
 	NULL,
 };
 

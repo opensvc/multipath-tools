@@ -14,8 +14,8 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef _VALID_H
-#define _VALID_H
+#ifndef VALID_H_INCLUDED
+#define VALID_H_INCLUDED
 
 /*
  * PATH_IS_VALID_NO_CHECK is returned when multipath should claim
@@ -39,4 +39,4 @@ enum is_path_valid_result {
 int is_path_valid(const char *name, struct config *conf, struct path *pp,
 		  bool check_multipathd);
 
-#endif /* _VALID_D */
+#endif /* VALID_H_INCLUDED */

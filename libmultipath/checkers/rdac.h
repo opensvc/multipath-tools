@@ -1,8 +1,8 @@
-#ifndef _RDAC_H
-#define _RDAC_H
+#ifndef RDAC_H_INCLUDED
+#define RDAC_H_INCLUDED
 
 int rdac(struct checker *);
 int rdac_init(struct checker *);
 void rdac_free(struct checker *);
 
-#endif /* _RDAC_H */
+#endif /* RDAC_H_INCLUDED */

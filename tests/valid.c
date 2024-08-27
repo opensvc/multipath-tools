@@ -52,7 +52,7 @@ bool __wrap_sysfs_is_multipathed(struct path *pp, bool set_wwid)
 	return is_multipathed;
 }
 
-int __wrap___mpath_connect(int nonblocking)
+int __wrap_mpath_connect__(int nonblocking)
 {
 	bool connected = mock_type(bool);
 	assert_int_equal(nonblocking, 1);
@@ -106,14 +106,14 @@ const char *__wrap_udev_device_get_sysname(struct udev_device *udev_device)
 }
 
 /* called from pathinfo() */
-int __wrap_filter_devnode(struct config *conf, const struct _vector *elist,
+int __wrap_filter_devnode(struct config *conf, const struct vector_s *elist,
 			  const char *vendor, const char * product, const char *dev)
 {
 	return mock_type(int);
 }
 
 /* called from pathinfo() */
-int __wrap_filter_device(const struct _vector *blist, const struct _vector *elist,
+int __wrap_filter_device(const struct vector_s *blist, const struct vector_s *elist,
 	       const char *vendor, const char * product, const char *dev)
 {
 	return mock_type(int);
@@ -189,10 +189,11 @@ int __wrap_check_wwids_file(char *wwid, int write_wwid)
 		return -1;
 }
 
-int __wrap_dm_map_present_by_uuid(const char *uuid)
+int __wrap_dm_find_map_by_wwid(const char *wwid, char *name,
+			       struct dm_info *dmi)
 {
 	int ret = mock_type(int);
-	assert_string_equal(uuid, mock_ptr_type(char *));
+	assert_string_equal(wwid, mock_ptr_type(char *));
 	return ret;
 }
 
@@ -222,10 +223,10 @@ static void setup_passing(char *name, char *wwid, unsigned int check_multipathd,
 	if (stage == STAGE_IS_MULTIPATHED)
 		return;
 	if (check_multipathd == CHECK_MPATHD_RUNNING)
-		will_return(__wrap___mpath_connect, true);
+		will_return(__wrap_mpath_connect__, true);
 	else if (check_multipathd == CHECK_MPATHD_EAGAIN) {
-		will_return(__wrap___mpath_connect, false);
-		will_return(__wrap___mpath_connect, EAGAIN);
+		will_return(__wrap_mpath_connect__, false);
+		will_return(__wrap_mpath_connect__, EAGAIN);
 	}
 
 	/* nothing for CHECK_MPATHD_SKIP */
@@ -271,8 +272,8 @@ static void setup_passing(char *name, char *wwid, unsigned int check_multipathd,
 	will_return(__wrap_check_wwids_file, wwid);
 	if (stage == STAGE_CHECK_WWIDS)
 		return;
-	will_return(__wrap_dm_map_present_by_uuid, 0);
-	will_return(__wrap_dm_map_present_by_uuid, wwid);
+	will_return(__wrap_dm_find_map_by_wwid, 0);
+	will_return(__wrap_dm_find_map_by_wwid, wwid);
 }
 
 static void test_bad_arguments(void **state)
@@ -331,8 +332,8 @@ static void test_check_multipathd(void **state)
 	conf.find_multipaths = FIND_MULTIPATHS_STRICT;
 	/* test failed check to see if multipathd is active */
 	will_return(__wrap_sysfs_is_multipathed, false);
-	will_return(__wrap___mpath_connect, false);
-	will_return(__wrap___mpath_connect, ECONNREFUSED);
+	will_return(__wrap_mpath_connect__, false);
+	will_return(__wrap_mpath_connect__, ECONNREFUSED);
 
 	assert_int_equal(is_path_valid(name, &conf, &pp, true),
 			 PATH_IS_NOT_VALID);
@@ -516,8 +517,8 @@ static void test_check_uuid_present(void **state)
 	memset(&pp, 0, sizeof(pp));
 	conf.find_multipaths = FIND_MULTIPATHS_STRICT;
 	setup_passing(name, wwid, CHECK_MPATHD_RUNNING, STAGE_CHECK_WWIDS);
-	will_return(__wrap_dm_map_present_by_uuid, 1);
-	will_return(__wrap_dm_map_present_by_uuid, wwid);
+	will_return(__wrap_dm_find_map_by_wwid, 1);
+	will_return(__wrap_dm_find_map_by_wwid, wwid);
 	assert_int_equal(is_path_valid(name, &conf, &pp, true),
 			 PATH_IS_VALID);
 	assert_string_equal(pp.dev, name);

@@ -30,7 +30,7 @@
 vector
 vector_alloc(void)
 {
-	vector v = (vector) calloc(1, sizeof (struct _vector));
+	vector v = (vector) calloc(1, sizeof (struct vector_s));
 	return v;
 }
 
@@ -167,6 +167,12 @@ vector_free(vector v)
 	if (!vector_reset(v))
 		return;
 	free(v);
+}
+
+void cleanup_vector(vector *pv)
+{
+	if (*pv)
+		vector_free(*pv);
 }
 
 void

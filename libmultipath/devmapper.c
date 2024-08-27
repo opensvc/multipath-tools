@@ -14,16 +14,13 @@
 #include <errno.h>
 #include <syslog.h>
 #include <sys/sysmacros.h>
-#include <linux/dm-ioctl.h>
 
 #include "util.h"
-#include "checkers.h"
 #include "vector.h"
 #include "structs.h"
 #include "debug.h"
 #include "devmapper.h"
 #include "sysfs.h"
-#include "config.h"
 #include "wwids.h"
 #include "version.h"
 #include "time-util.h"
@@ -48,9 +45,9 @@ static int dm_conf_verbosity;
 
 #ifdef LIBDM_API_DEFERRED
 static int dm_cancel_remove_partmaps(const char * mapname);
-#define __DR_UNUSED__ /* empty */
+#define DR_UNUSED__ /* empty */
 #else
-#define __DR_UNUSED__ __attribute__((unused))
+#define DR_UNUSED__ __attribute__((unused))
 #endif
 
 static int dm_remove_partmaps (const char *mapname, int flags);
@@ -82,6 +79,20 @@ static void libmp_udev_wait(unsigned int c)
 }
 #endif
 
+const char *dmp_errstr(int rc)
+{
+	static const char *str[] = {
+		[DMP_ERR] = "generic error",
+		[DMP_OK] = "success",
+		[DMP_NOT_FOUND] = "not found",
+		[DMP_NO_MATCH] = "target type mismatch",
+		[DMP_LAST__] = "**invalid**",
+	};
+	if (rc < 0 || rc > DMP_LAST__)
+		rc = DMP_LAST__;
+	return str[rc];
+}
+
 int libmp_dm_task_run(struct dm_task *dmt)
 {
 	int r;
@@ -91,6 +102,12 @@ int libmp_dm_task_run(struct dm_task *dmt)
 	r = dm_task_run(dmt);
 	pthread_cleanup_pop(1);
 	return r;
+}
+
+static void cleanup_dm_task(struct dm_task **pdmt)
+{
+	if (*pdmt)
+		dm_task_destroy(*pdmt);
 }
 
 __attribute__((format(printf, 4, 5))) static void
@@ -205,8 +222,8 @@ static void init_dm_drv_version(void)
 
 static int dm_tgt_version (unsigned int *version, char *str)
 {
-	int r = 2;
-	struct dm_task *dmt;
+	bool found = false;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
 	struct dm_versions *target;
 	struct dm_versions *last_target;
 	unsigned int *v;
@@ -219,36 +236,31 @@ static int dm_tgt_version (unsigned int *version, char *str)
 	if (!(dmt = dm_task_create(DM_DEVICE_LIST_VERSIONS)))
 		return 1;
 
-	dm_task_no_open_count(dmt);
-
 	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(2, DM_DEVICE_LIST_VERSIONS, dmt);
 		condlog(0, "Cannot communicate with kernel DM");
-		goto out;
+		return 1;
 	}
 	target = dm_task_get_versions(dmt);
 
 	do {
 		last_target = target;
 		if (!strncmp(str, target->name, strlen(str))) {
-			r = 1;
+			found = true;
 			break;
 		}
 		target = (void *) target + target->next;
 	} while (last_target != target);
 
-	if (r == 2) {
+	if (!found) {
 		condlog(0, "DM %s kernel driver not loaded", str);
-		goto out;
+		return 1;
 	}
 	v = target->version;
 	version[0] = v[0];
 	version[1] = v[1];
 	version[2] = v[2];
-	r = 0;
-out:
-	dm_task_destroy(dmt);
-	return r;
+	return 0;
 }
 
 static void init_dm_mpath_version(void)
@@ -387,20 +399,19 @@ libmp_dm_task_create(int task)
 
 static int
 dm_simplecmd (int task, const char *name, int flags, uint16_t udev_flags) {
-	int r = 0;
+	int r;
 	int udev_wait_flag = (((flags & DMFL_NEED_SYNC) || udev_flags) &&
 			      (task == DM_DEVICE_RESUME ||
 			       task == DM_DEVICE_REMOVE));
 	uint32_t cookie = 0;
-	struct dm_task *dmt;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
 
 	if (!(dmt = libmp_dm_task_create (task)))
 		return 0;
 
 	if (!dm_task_set_name (dmt, name))
-		goto out;
+		return 0;
 
-	dm_task_no_open_count(dmt);
 	dm_task_skip_lockfs(dmt);	/* for DM_DEVICE_RESUME */
 #ifdef LIBDM_API_FLUSH
 	if (flags & DMFL_NO_FLUSH)
@@ -413,7 +424,7 @@ dm_simplecmd (int task, const char *name, int flags, uint16_t udev_flags) {
 	if (udev_wait_flag &&
 	    !dm_task_set_cookie(dmt, &cookie,
 				DM_UDEV_DISABLE_LIBRARY_FALLBACK | udev_flags))
-		goto out;
+		return 0;
 
 	r = libmp_dm_task_run (dmt);
 	if (!r)
@@ -421,8 +432,6 @@ dm_simplecmd (int task, const char *name, int flags, uint16_t udev_flags) {
 
 	if (udev_wait_flag)
 			libmp_udev_wait(cookie);
-out:
-	dm_task_destroy (dmt);
 	return r;
 }
 
@@ -445,8 +454,9 @@ static int
 dm_addmap (int task, const char *target, struct multipath *mpp,
 	   char * params, int ro, uint16_t udev_flags) {
 	int r = 0;
-	struct dm_task *dmt;
-	char *prefixed_uuid = NULL;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
+	char __attribute__((cleanup(cleanup_charp))) *prefixed_uuid = NULL;
+
 	uint32_t cookie = 0;
 
 	if (task == DM_DEVICE_CREATE && strlen(mpp->wwid) == 0) {
@@ -462,10 +472,10 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 		return 0;
 
 	if (!dm_task_set_name (dmt, mpp->alias))
-		goto addout;
+		return 0;
 
 	if (!dm_task_add_target (dmt, 0, mpp->size, target, params))
-		goto addout;
+		return 0;
 
 	if (ro)
 		dm_task_set_ro(dmt);
@@ -474,10 +484,10 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 		if (asprintf(&prefixed_uuid, UUID_PREFIX "%s", mpp->wwid) < 0) {
 			condlog(0, "cannot create prefixed uuid : %s",
 				strerror(errno));
-			goto addout;
+			return 0;
 		}
 		if (!dm_task_set_uuid(dmt, prefixed_uuid))
-			goto freeout;
+			return 0;
 		dm_task_skip_lockfs(dmt);
 #ifdef LIBDM_API_FLUSH
 		dm_task_no_flush(dmt);
@@ -486,35 +496,28 @@ dm_addmap (int task, const char *target, struct multipath *mpp,
 
 	if (mpp->attribute_flags & (1 << ATTR_MODE) &&
 	    !dm_task_set_mode(dmt, mpp->mode))
-		goto freeout;
+		return 0;
 	if (mpp->attribute_flags & (1 << ATTR_UID) &&
 	    !dm_task_set_uid(dmt, mpp->uid))
-		goto freeout;
+		return 0;
 	if (mpp->attribute_flags & (1 << ATTR_GID) &&
 	    !dm_task_set_gid(dmt, mpp->gid))
-		goto freeout;
+		return 0;
+
 	condlog(2, "%s: %s [0 %llu %s %s]", mpp->alias,
 		task == DM_DEVICE_RELOAD ? "reload" : "addmap", mpp->size,
 		target, params);
 
-	dm_task_no_open_count(dmt);
-
 	if (task == DM_DEVICE_CREATE &&
 	    !dm_task_set_cookie(dmt, &cookie, udev_flags))
-		goto freeout;
+		return 0;
 
 	r = libmp_dm_task_run (dmt);
 	if (!r)
 		dm_log_error(2, task, dmt);
 
 	if (task == DM_DEVICE_CREATE)
-			libmp_udev_wait(cookie);
-freeout:
-	if (prefixed_uuid)
-		free(prefixed_uuid);
-
-addout:
-	dm_task_destroy (dmt);
+		libmp_udev_wait(cookie);
 
 	if (r)
 		mpp->need_reload = false;
@@ -608,416 +611,303 @@ int dm_addmap_reload(struct multipath *mpp, char *params, int flush)
 	return 0;
 }
 
+static bool is_mpath_uuid(const char uuid[DM_UUID_LEN])
+{
+	return !strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN);
+}
+
 bool
 has_dm_info(const struct multipath *mpp)
 {
 	return (mpp && mpp->dmi.exists != 0);
 }
 
-int
-dm_get_info(const char *name, struct dm_info *info)
+static int libmp_set_map_identifier(int flags, mapid_t id, struct dm_task *dmt)
 {
-	int r = -1;
-	struct dm_task *dmt;
+	switch (flags & DM_MAP_BY_MASK__) {
+	case DM_MAP_BY_UUID:
+		if (!id.str || !(*id.str))
+			return 0;
+		return dm_task_set_uuid(dmt, id.str);
+	case DM_MAP_BY_NAME:
+		if (!id.str || !(*id.str))
+			return 0;
+		return dm_task_set_name(dmt, id.str);
+	case DM_MAP_BY_DEV:
+		if (!dm_task_set_major(dmt, id._u.major))
+			return 0;
+		return dm_task_set_minor(dmt, id._u.minor);
+	case DM_MAP_BY_DEVT:
+		if (!dm_task_set_major(dmt, major(id.devt)))
+			return 0;
+		return dm_task_set_minor(dmt, minor(id.devt));
+	default:
+		condlog(0, "%s: invalid by_id", __func__);
+		return 0;
+	}
+}
 
-	if (!name || !info)
-		return r;
+static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *map_id)
+{
+	/* avoid libmp_mapinfo__ in log messages */
+	static const char fname__[] = "libmp_mapinfo";
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
+	struct dm_info dmi;
+	int rc, ioctl_nr;
+	uint64_t start, length = 0;
+	char *target_type = NULL, *params = NULL;
+	const char *name = NULL, *uuid = NULL;
+	char __attribute__((cleanup(cleanup_charp))) *tmp_target = NULL;
+	char __attribute__((cleanup(cleanup_charp))) *tmp_status = NULL;
+	bool tgt_set = false;
 
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_INFO)))
-		return r;
+	/*
+	 * If both info.target and info.status are set, we need two
+	 * ioctls. Call this function recursively.
+	 * If successful, tmp_target will be non-NULL.
+	 */
+	if (info.target && info.status) {
+		rc = libmp_mapinfo__(flags, id,
+				     (mapinfo_t) { .target = &tmp_target },
+				     map_id);
+		if (rc != DMP_OK)
+			return rc;
+		tgt_set = true;
+	}
 
-	if (!dm_task_set_name(dmt, name))
-		goto out;
+	/*
+	 * The DM_DEVICE_TABLE and DM_DEVICE_STATUS ioctls both fetch the basic
+	 * information from DM_DEVICE_INFO, too.
+	 * Choose the most lightweight ioctl to fetch all requested info.
+	 */
+	if (info.target && !info.status)
+		ioctl_nr = DM_DEVICE_TABLE;
+	else if (info.status || info.size || flags & MAPINFO_TGT_TYPE__)
+		ioctl_nr = DM_DEVICE_STATUS;
+	else
+		ioctl_nr = DM_DEVICE_INFO;
 
-	dm_task_no_open_count(dmt);
+	if (!(dmt = libmp_dm_task_create(ioctl_nr)))
+		return DMP_ERR;
+
+	if (!libmp_set_map_identifier(flags, id, dmt)) {
+		condlog(2, "%s: failed to set map identifier to %s", fname__, map_id);
+		return DMP_ERR;
+	}
 
 	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_INFO, dmt);
-		goto out;
+		dm_log_error(3, ioctl_nr, dmt);
+		if (dm_task_get_errno(dmt) == ENXIO) {
+			condlog(2, "%s: map %s not found", fname__, map_id);
+			return DMP_NOT_FOUND;
+		} else
+			return DMP_ERR;
 	}
 
-	if (!dm_task_get_info(dmt, info))
-		goto out;
+	condlog(4, "%s: DM ioctl %d succeeded for %s",
+		fname__, ioctl_nr, map_id);
 
-	if (!info->exists)
-		goto out;
+	if (!dm_task_get_info(dmt, &dmi)) {
+		condlog(2, "%s: dm_task_get_info() failed for %s ", fname__, map_id);
+		return DMP_ERR;
+	} else if(!dmi.exists) {
+		condlog(2, "%s: map %s doesn't exist", fname__, map_id);
+		return DMP_NOT_FOUND;
+	}
 
-	r = 0;
-out:
-	dm_task_destroy(dmt);
-	return r;
+	if (info.target || info.status || info.size || flags & MAPINFO_TGT_TYPE__) {
+		if (dm_get_next_target(dmt, NULL, &start, &length,
+				       &target_type, &params) != NULL) {
+			condlog(2, "%s: map %s has multiple targets", fname__, map_id);
+			return DMP_NOT_FOUND;
+		}
+		if (!params) {
+			condlog(2, "%s: map %s has no targets", fname__, map_id);
+			return DMP_NOT_FOUND;
+		}
+		if (flags & MAPINFO_TGT_TYPE__) {
+			const char *tgt_type = flags & MAPINFO_MPATH_ONLY ? TGT_MPATH : TGT_PART;
+
+			if (strcmp(target_type, tgt_type)) {
+				condlog(3, "%s: target type mismatch: \"%s\" != \"%s\"",
+					fname__, tgt_type, target_type);
+				return DMP_NO_MATCH;
+			}
+		}
+	}
+
+	/*
+	 * Check possible error conditions.
+	 * If error is returned, don't touch any output parameters.
+	 */
+	if ((info.name && !(name = dm_task_get_name(dmt)))
+	    || ((info.uuid || flags & MAPINFO_CHECK_UUID)
+		&& !(uuid = dm_task_get_uuid(dmt)))
+	    || (info.status && !(tmp_status = strdup(params)))
+	    || (info.target && !tmp_target && !(tmp_target = strdup(params))))
+		return DMP_ERR;
+
+	if (flags & MAPINFO_CHECK_UUID && !is_mpath_uuid(uuid)) {
+		condlog(3, "%s: UUID mismatch: %s", fname__, uuid);
+		return DMP_NO_MATCH;
+	}
+
+	if (info.name) {
+		strlcpy(info.name, name, WWID_SIZE);
+		condlog(4, "%s: %s: name: \"%s\"", fname__, map_id, info.name);
+	}
+	if (info.uuid) {
+		strlcpy(info.uuid, uuid, DM_UUID_LEN);
+		condlog(4, "%s: %s: uuid: \"%s\"", fname__, map_id, info.uuid);
+	}
+
+	if (info.size) {
+		*info.size = length;
+		condlog(4, "%s: %s: size: %lld", fname__, map_id, *info.size);
+	}
+
+	if (info.dmi) {
+		memcpy(info.dmi, &dmi, sizeof(*info.dmi));
+		condlog(4, "%s: %s %d:%d, %d targets, %s table, %s, %s, %d opened, %u events",
+			fname__, map_id,
+			info.dmi->major, info.dmi->minor,
+			info.dmi->target_count,
+			info.dmi->live_table ? "live" :
+				info.dmi->inactive_table ? "inactive" : "no",
+			info.dmi->suspended ? "suspended" : "active",
+			info.dmi->read_only ? "ro" : "rw",
+			info.dmi->open_count,
+			info.dmi->event_nr);
+	}
+
+	if (info.target) {
+		*info.target = steal_ptr(tmp_target);
+		if (!tgt_set)
+			condlog(4, "%s: %s: target: \"%s\"", fname__, map_id, *info.target);
+	}
+
+	if (info.status) {
+		*info.status = steal_ptr(tmp_status);
+		condlog(4, "%s: %s: status: \"%s\"", fname__, map_id, *info.status);
+	}
+
+	return DMP_OK;
 }
 
-int dm_map_present(const char * str)
+/* Helper: format a string describing the map for log messages */
+static const char* libmp_map_identifier(int flags, mapid_t id, char buf[BLK_DEV_SIZE])
 {
-	struct dm_info info;
-
-	return (dm_get_info(str, &info) == 0);
+	switch (flags & DM_MAP_BY_MASK__) {
+	case DM_MAP_BY_NAME:
+	case DM_MAP_BY_UUID:
+		return id.str;
+	case DM_MAP_BY_DEV:
+		safe_snprintf(buf, BLK_DEV_SIZE, "%d:%d", id._u.major, id._u.minor);
+		return buf;
+	case DM_MAP_BY_DEVT:
+		safe_snprintf(buf, BLK_DEV_SIZE, "%d:%d", major(id.devt), minor(id.devt));
+		return buf;
+	default:
+		safe_snprintf(buf, BLK_DEV_SIZE, "*invalid*");
+		return buf;
+	}
 }
 
-int dm_get_map(const char *name, unsigned long long *size, char **outparams)
+int libmp_mapinfo(int flags, mapid_t id, mapinfo_t info)
 {
-	int r = DMP_ERR;
-	struct dm_task *dmt;
-	uint64_t start, length;
-	char *target_type = NULL;
-	char *params = NULL;
+	char idbuf[BLK_DEV_SIZE];
 
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
-		return r;
-
-	if (!dm_task_set_name(dmt, name))
-		goto out;
-
-	dm_task_no_open_count(dmt);
-
-	errno = 0;
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_TABLE, dmt);
-		if (dm_task_get_errno(dmt) == ENXIO)
-			r = DMP_NOT_FOUND;
-		goto out;
-	}
-
-	r = DMP_NOT_FOUND;
-	/* Fetch 1st target */
-	if (dm_get_next_target(dmt, NULL, &start, &length,
-			       &target_type, &params) != NULL || !params)
-		/* more than one target or not found target */
-		goto out;
-
-	if (size)
-		*size = length;
-
-	if (!outparams)
-		r = DMP_OK;
-	else {
-		*outparams = strdup(params);
-		r = *outparams ? DMP_OK : DMP_ERR;
-	}
-
-out:
-	dm_task_destroy(dmt);
-	return r;
+	return libmp_mapinfo__(flags, id, info,
+			       libmp_map_identifier(flags, id, idbuf));
 }
 
-static int
-dm_get_prefixed_uuid(const char *name, char *uuid, int uuid_len)
+/**
+ * dm_get_wwid(): return WWID for a multipath map
+ * @returns:
+ *    DMP_OK if successful
+ *    DMP_NOT_FOUND if the map doesn't exist
+ *    DMP_NO_MATCH if the map exists but is not a multipath map
+ *    DMP_ERR for other errors
+ * Caller may access uuid if and only if DMP_OK is returned.
+ */
+int dm_get_wwid(const char *name, char *uuid, int uuid_len)
 {
-	struct dm_task *dmt;
-	const char *uuidtmp;
-	struct dm_info info;
-	int r = 1;
+	char tmp[DM_UUID_LEN];
+	int rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			       (mapid_t) { .str = name },
+			       (mapinfo_t) { .uuid = tmp });
 
-	dmt = libmp_dm_task_create(DM_DEVICE_INFO);
-	if (!dmt)
-		return 1;
+	if (rc != DMP_OK)
+		return rc;
 
-	if (uuid_len > 0)
-		uuid[0] = '\0';
-
-	if (!dm_task_set_name (dmt, name))
-		goto uuidout;
-
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_INFO, dmt);
-		goto uuidout;
-	}
-
-	if (!dm_task_get_info(dmt, &info) ||
-	    !info.exists)
-		goto uuidout;
-
-	uuidtmp = dm_task_get_uuid(dmt);
-	if (uuidtmp)
-		strlcpy(uuid, uuidtmp, uuid_len);
-
-	r = 0;
-uuidout:
-	dm_task_destroy(dmt);
-	return r;
+	strlcpy(uuid, tmp + UUID_PREFIX_LEN, uuid_len);
+	return DMP_OK;
 }
 
-int dm_get_uuid(const char *name, char *uuid, int uuid_len)
+static bool is_mpath_part_uuid(const char part_uuid[DM_UUID_LEN],
+			       const char map_uuid[DM_UUID_LEN])
+{
+	char c;
+	int np, nc;
+
+	if (2 != sscanf(part_uuid, "part%d-%n" UUID_PREFIX "%c", &np, &nc, &c)
+	    || np <= 0)
+		return false;
+	return !strcmp(part_uuid + nc, map_uuid);
+}
+
+int dm_is_mpath(const char *name)
+{
+	int rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
+			       (mapid_t) { .str = name },
+			       (mapinfo_t) { .uuid = NULL });
+
+	switch (rc) {
+	case DMP_OK:
+		return DM_IS_MPATH_YES;
+	case DMP_NOT_FOUND:
+	case DMP_NO_MATCH:
+		return DM_IS_MPATH_NO;
+	case DMP_ERR:
+	default:
+		return DM_IS_MPATH_ERR;
+	}
+}
+
+/* if name is non-NULL, it must point to an array of WWID_SIZE bytes */
+int dm_find_map_by_wwid(const char *wwid, char *name, struct dm_info *dmi)
 {
 	char tmp[DM_UUID_LEN];
 
-	if (dm_get_prefixed_uuid(name, tmp, sizeof(tmp)))
-		return 1;
+	if (safe_sprintf(tmp, UUID_PREFIX "%s", wwid))
+		return DMP_ERR;
 
-	if (!strncmp(tmp, UUID_PREFIX, UUID_PREFIX_LEN))
-		strlcpy(uuid, tmp + UUID_PREFIX_LEN, uuid_len);
-	else
-		uuid[0] = '\0';
-
-	return 0;
+	return libmp_mapinfo(DM_MAP_BY_UUID,
+			     (mapid_t) { .str = tmp },
+			     (mapinfo_t) { .name = name, .dmi = dmi });
 }
 
-static int
-is_mpath_part(const char *part_name, const char *map_name)
+static int dm_dev_t (const char *mapname, char *dev_t, int len)
 {
-	char *p;
-	char part_uuid[DM_UUID_LEN], map_uuid[DM_UUID_LEN];
+	struct dm_info info;
 
-	if (dm_get_prefixed_uuid(part_name, part_uuid, sizeof(part_uuid)))
-		return 0;
+	if (dm_get_info(mapname, &info) != DMP_OK)
+		return 1;
 
-	if (dm_get_prefixed_uuid(map_name, map_uuid, sizeof(map_uuid)))
-		return 0;
-
-	if (strncmp(part_uuid, "part", 4) != 0)
-		return 0;
-
-	p = strstr(part_uuid, UUID_PREFIX);
-	if (p && !strcmp(p, map_uuid))
+	if (safe_snprintf(dev_t, len, "%i:%i", info.major, info.minor))
 		return 1;
 
 	return 0;
 }
 
-int dm_get_status(const char *name, char **outstatus)
-{
-	int r = DMP_ERR;
-	struct dm_task *dmt;
-	uint64_t start, length;
-	char *target_type = NULL;
-	char *status = NULL;
-
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_STATUS)))
-		return r;
-
-	if (!dm_task_set_name(dmt, name))
-		goto out;
-
-	dm_task_no_open_count(dmt);
-
-	errno = 0;
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_STATUS, dmt);
-		if (dm_task_get_errno(dmt) == ENXIO)
-			r = DMP_NOT_FOUND;
-		goto out;
-	}
-
-	r = DMP_NOT_FOUND;
-	/* Fetch 1st target */
-	if (dm_get_next_target(dmt, NULL, &start, &length,
-			       &target_type, &status) != NULL)
-		goto out;
-
-	if (!target_type || strcmp(target_type, TGT_MPATH) != 0)
-		goto out;
-
-	if (!status) {
-		condlog(2, "get null status.");
-		goto out;
-	}
-
-	if (!outstatus)
-		r = DMP_OK;
-	else {
-		*outstatus = strdup(status);
-		r = *outstatus ? DMP_OK : DMP_ERR;
-	}
-out:
-	if (r != DMP_OK)
-		condlog(0, "%s: error getting map status string", name);
-
-	dm_task_destroy(dmt);
-	return r;
-}
-
-/*
- * returns:
- *    1 : match
- *    0 : no match
- *   -1 : empty map, or more than 1 target
- */
-int dm_type(const char *name, char *type)
-{
-	int r = 0;
-	struct dm_task *dmt;
-	uint64_t start, length;
-	char *target_type = NULL;
-	char *params;
-
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
-		return 0;
-
-	if (!dm_task_set_name(dmt, name))
-		goto out;
-
-	dm_task_no_open_count(dmt);
-
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_TABLE, dmt);
-		goto out;
-	}
-
-	/* Fetch 1st target */
-	if (dm_get_next_target(dmt, NULL, &start, &length,
-			       &target_type, &params) != NULL)
-		/* multiple targets */
-		r = -1;
-	else if (!target_type)
-		r = -1;
-	else if (!strcmp(target_type, type))
-		r = 1;
-
-out:
-	dm_task_destroy(dmt);
-	return r;
-}
-
-/*
- * returns:
- * 1  : is multipath device
- * 0  : is not multipath device
- * -1 : error
- */
-int dm_is_mpath(const char *name)
-{
-	int r = -1;
-	struct dm_task *dmt;
-	struct dm_info info;
-	uint64_t start, length;
-	char *target_type = NULL;
-	char *params;
-	const char *uuid;
-
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
-		goto out;
-
-	if (!dm_task_set_name(dmt, name))
-		goto out_task;
-
-	dm_task_no_open_count(dmt);
-
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_TABLE, dmt);
-		goto out_task;
-	}
-
-	if (!dm_task_get_info(dmt, &info))
-		goto out_task;
-
-	r = 0;
-
-	if (!info.exists)
-		goto out_task;
-
-	uuid = dm_task_get_uuid(dmt);
-
-	if (!uuid || strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN) != 0)
-		goto out_task;
-
-	/* Fetch 1st target */
-	if (dm_get_next_target(dmt, NULL, &start, &length, &target_type,
-			       &params) != NULL)
-		/* multiple targets */
-		goto out_task;
-
-	if (!target_type || strcmp(target_type, TGT_MPATH) != 0)
-		goto out_task;
-
-	r = 1;
-out_task:
-	dm_task_destroy(dmt);
-out:
-	if (r < 0)
-		condlog(3, "%s: dm command failed in %s: %s", name, __FUNCTION__, strerror(errno));
-	return r;
-}
-
-/*
- * Return
- *   1 : map with uuid exists
- *   0 : map with uuid doesn't exist
- *  -1 : error
- */
-int
-dm_map_present_by_uuid(const char *uuid)
-{
-	struct dm_task *dmt;
-	struct dm_info info;
-	char prefixed_uuid[WWID_SIZE + UUID_PREFIX_LEN];
-	int r = -1;
-
-	if (!uuid || uuid[0] == '\0')
-		return 0;
-
-	if (safe_sprintf(prefixed_uuid, UUID_PREFIX "%s", uuid))
-		goto out;
-
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_INFO)))
-		goto out;
-
-	dm_task_no_open_count(dmt);
-
-	if (!dm_task_set_uuid(dmt, prefixed_uuid))
-		goto out_task;
-
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_INFO, dmt);
-		goto out_task;
-	}
-
-	if (!dm_task_get_info(dmt, &info))
-		goto out_task;
-
-	r = !!info.exists;
-
-out_task:
-	dm_task_destroy(dmt);
-out:
-	if (r < 0)
-		condlog(3, "%s: dm command failed in %s: %s", uuid,
-			__FUNCTION__, strerror(errno));
-	return r;
-}
-
-static int
-dm_dev_t (const char * mapname, char * dev_t, int len)
+int dm_get_opencount (const char *mapname)
 {
 	struct dm_info info;
 
-	if (dm_get_info(mapname, &info) != 0)
-		return 1;
+	if (dm_get_info(mapname, &info) != DMP_OK)
+		return -1;
 
-	if (snprintf(dev_t, len, "%i:%i", info.major, info.minor) > len)
-		return 1;
-
-	return 0;
-}
-
-int
-dm_get_opencount (const char * mapname)
-{
-	int r = -1;
-	struct dm_task *dmt;
-	struct dm_info info;
-
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_INFO)))
-		return 0;
-
-	if (!dm_task_set_name(dmt, mapname))
-		goto out;
-
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_INFO, dmt);
-		goto out;
-	}
-
-	if (!dm_task_get_info(dmt, &info))
-		goto out;
-
-	if (!info.exists)
-		goto out;
-
-	r = info.open_count;
-out:
-	dm_task_destroy(dmt);
-	return r;
+	return info.open_count;
 }
 
 int
@@ -1025,7 +915,7 @@ dm_get_major_minor(const char *name, int *major, int *minor)
 {
 	struct dm_info info;
 
-	if (dm_get_info(name, &info) != 0)
+	if (dm_get_info(name, &info) != DMP_OK)
 		return -1;
 
 	*major = info.major;
@@ -1040,35 +930,51 @@ has_partmap(const char *name __attribute__((unused)),
 	return 1;
 }
 
-int
-partmap_in_use(const char *name, void *data)
+/*
+ * This will be called from mpath_in_use, for each partition.
+ * If the partition itself in use, returns 1 immediately, causing
+ * do_foreach_partmaps() to stop iterating and return 1.
+ * Otherwise, increases the partition count.
+ */
+static int count_partitions(const char *name, void *data)
 {
-	int part_count, *ret_count = (int *)data;
+	int *ret_count = (int *)data;
 	int open_count = dm_get_opencount(name);
 
-	if (ret_count)
-		(*ret_count)++;
-	part_count = 0;
+	if (open_count)
+		return 1;
+	(*ret_count)++;
+	return 0;
+}
+
+int mpath_in_use(const char *name)
+{
+	int open_count = dm_get_opencount(name);
+
 	if (open_count) {
-		if (do_foreach_partmaps(name, partmap_in_use, &part_count))
-			return 1;
-		if (open_count != part_count) {
-			condlog(2, "%s: map in use", name);
+		int part_count = 0;
+
+		if (do_foreach_partmaps(name, count_partitions, &part_count)) {
+			condlog(4, "%s: %s has open partitions", __func__, name);
 			return 1;
 		}
+		condlog(4, "%s: %s: %d openers, %d partitions", __func__, name,
+			open_count, part_count);
+		return open_count > part_count;
 	}
 	return 0;
 }
 
-int _dm_flush_map (const char *mapname, int flags, int retries)
+int dm_flush_map__ (const char *mapname, int flags, int retries)
 {
 	int r;
 	int queue_if_no_path = 0;
 	int udev_flags = 0;
-	unsigned long long mapsize;
-	char *params = NULL;
+	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 
-	if (dm_is_mpath(mapname) != 1)
+	if (libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
+			  (mapid_t) { .str = mapname },
+			  (mapinfo_t) { .target = &params }) != DMP_OK)
 		return DM_FLUSH_OK; /* nothing to do */
 
 	/* if the device currently has no partitions, do not
@@ -1078,11 +984,10 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 
 	/* If you aren't doing a deferred remove, make sure that no
 	 * devices are in use */
-	if (!(flags & DMFL_DEFERRED) && partmap_in_use(mapname, NULL))
+	if (!(flags & DMFL_DEFERRED) && mpath_in_use(mapname))
 			return DM_FLUSH_BUSY;
 
 	if ((flags & DMFL_SUSPEND) &&
-	    dm_get_map(mapname, &mapsize, &params) == DMP_OK &&
 	    strstr(params, "queue_if_no_path")) {
 		if (!_dm_queue_if_no_path(mapname, 0))
 			queue_if_no_path = 1;
@@ -1090,8 +995,6 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 			/* Leave queue_if_no_path alone if unset failed */
 			queue_if_no_path = -1;
 	}
-	free(params);
-	params = NULL;
 
 	if ((r = dm_remove_partmaps(mapname, flags)))
 		return r;
@@ -1115,7 +1018,7 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 			}
 			condlog(4, "multipath map %s removed", mapname);
 			return DM_FLUSH_OK;
-		} else if (dm_is_mpath(mapname) != 1) {
+		} else if (dm_is_mpath(mapname) != DM_IS_MPATH_YES) {
 			condlog(4, "multipath map %s removed externally",
 				mapname);
 			return DM_FLUSH_OK; /* raced. someone else removed it */
@@ -1138,7 +1041,7 @@ int _dm_flush_map (const char *mapname, int flags, int retries)
 }
 
 int
-dm_flush_map_nopaths(const char *mapname, int deferred_remove __DR_UNUSED__)
+dm_flush_map_nopaths(const char *mapname, int deferred_remove DR_UNUSED__)
 {
 	int flags = DMFL_NEED_SYNC;
 
@@ -1147,32 +1050,30 @@ dm_flush_map_nopaths(const char *mapname, int deferred_remove __DR_UNUSED__)
 		   deferred_remove == DEFERRED_REMOVE_IN_PROGRESS) ?
 		  DMFL_DEFERRED : 0);
 #endif
-	return _dm_flush_map(mapname, flags, 0);
+	return dm_flush_map__(mapname, flags, 0);
 }
 
-int dm_flush_maps (int retries)
+int dm_flush_maps(int retries)
 {
 	int r = DM_FLUSH_FAIL;
-	struct dm_task *dmt;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
 	struct dm_names *names;
 	unsigned next = 0;
 
 	if (!(dmt = libmp_dm_task_create (DM_DEVICE_LIST)))
 		return r;
 
-	dm_task_no_open_count(dmt);
-
 	if (!libmp_dm_task_run (dmt)) {
 		dm_log_error(3, DM_DEVICE_LIST, dmt);
-		goto out;
+		return r;
 	}
 
 	if (!(names = dm_task_get_names (dmt)))
-		goto out;
+		return r;
 
 	r = DM_FLUSH_OK;
 	if (!names->dev)
-		goto out;
+		return r;
 
 	do {
 		int ret;
@@ -1184,16 +1085,13 @@ int dm_flush_maps (int retries)
 		names = (void *) names + next;
 	} while (next);
 
-out:
-	dm_task_destroy (dmt);
 	return r;
 }
 
 int
 dm_message(const char * mapname, char * message)
 {
-	int r = 1;
-	struct dm_task *dmt;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
 
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TARGET_MSG)))
 		return 1;
@@ -1207,20 +1105,15 @@ dm_message(const char * mapname, char * message)
 	if (!dm_task_set_message(dmt, message))
 		goto out;
 
-	dm_task_no_open_count(dmt);
-
 	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(2, DM_DEVICE_TARGET_MSG, dmt);
 		goto out;
 	}
 
-	r = 0;
+	return 0;
 out:
-	if (r)
-		condlog(0, "DM message failed [%s]", message);
-
-	dm_task_destroy(dmt);
-	return r;
+	condlog(0, "DM message failed [%s]", message);
+	return 1;
 }
 
 int
@@ -1301,39 +1194,43 @@ dm_disablegroup(const char * mapname, int index)
 	return dm_groupmsg("disable", mapname, index);
 }
 
-struct multipath *dm_get_multipath(const char *name)
+static int dm_get_multipath(const char *name, struct multipath **pmpp)
 {
-	struct multipath *mpp = NULL;
+	struct multipath __attribute__((cleanup(cleanup_multipath))) *mpp = NULL;
+	char uuid[DM_UUID_LEN];
+	int rc;
 
 	mpp = alloc_multipath();
 	if (!mpp)
-		return NULL;
+		return DMP_ERR;
 
 	mpp->alias = strdup(name);
 
 	if (!mpp->alias)
-		goto out;
+		return DMP_ERR;
 
-	if (dm_get_map(name, &mpp->size, NULL) != DMP_OK)
-		goto out;
+	if ((rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+			  (mapid_t) { .str = name },
+			  (mapinfo_t) {
+				  .size = &mpp->size,
+				  .uuid = uuid,
+				  .dmi = &mpp->dmi,
+			  })) != DMP_OK)
+		return rc;
 
-	if (dm_get_uuid(name, mpp->wwid, WWID_SIZE) != 0)
-		condlog(2, "%s: failed to get uuid for %s", __func__, name);
-	if (dm_get_info(name, &mpp->dmi) != 0)
-		condlog(2, "%s: failed to get info for %s", __func__, name);
+	if (!is_mpath_uuid(uuid))
+		return DMP_NO_MATCH;
 
-	return mpp;
-out:
-	free_multipath(mpp, KEEP_PATHS);
-	return NULL;
+	strlcpy(mpp->wwid, uuid + UUID_PREFIX_LEN, sizeof(mpp->wwid));
+	*pmpp = steal_ptr(mpp);
+
+	return DMP_OK;
 }
 
-int
-dm_get_maps (vector mp)
+int dm_get_maps(vector mp)
 {
-	struct multipath * mpp;
-	int r = 1;
-	struct dm_task *dmt;
+	struct multipath *mpp = NULL;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
 	struct dm_names *names;
 	unsigned next = 0;
 
@@ -1343,45 +1240,38 @@ dm_get_maps (vector mp)
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_LIST)))
 		return 1;
 
-	dm_task_no_open_count(dmt);
-
 	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_LIST, dmt);
-		goto out;
+		return 1;
 	}
 
 	if (!(names = dm_task_get_names(dmt)))
-		goto out;
+		return 1;
 
 	if (!names->dev) {
-		r = 0; /* this is perfectly valid */
-		goto out;
+		/* this is perfectly valid */
+		return 0;
 	}
 
 	do {
-		if (dm_is_mpath(names->name) != 1)
-			goto next;
-
-		mpp = dm_get_multipath(names->name);
-		if (!mpp)
-			goto out;
-
-		if (!vector_alloc_slot(mp)) {
-			free_multipath(mpp, KEEP_PATHS);
-			goto out;
+		switch (dm_get_multipath(names->name, &mpp)) {
+		case DMP_OK:
+			if (!vector_alloc_slot(mp)) {
+				free_multipath(mpp, KEEP_PATHS);
+				return 1;
+			}
+			vector_set_slot(mp, mpp);
+			break;
+		case DMP_NO_MATCH:
+			break;
+		default:
+			return 1;
 		}
-
-		vector_set_slot(mp, mpp);
-next:
 		next = names->next;
 		names = (void *) names + next;
 	} while (next);
 
-	r = 0;
-	goto out;
-out:
-	dm_task_destroy (dmt);
-	return r;
+	return 0;
 }
 
 int
@@ -1389,7 +1279,7 @@ dm_geteventnr (const char *name)
 {
 	struct dm_info info;
 
-	if (dm_get_info(name, &info) != 0)
+	if (dm_get_info(name, &info) != DMP_OK)
 		return -1;
 
 	return info.event_nr;
@@ -1400,120 +1290,93 @@ dm_is_suspended(const char *name)
 {
 	struct dm_info info;
 
-	if (dm_get_info(name, &info) != 0)
+	if (dm_get_info(name, &info) != DMP_OK)
 		return -1;
 
 	return info.suspended;
 }
 
-char *
-dm_mapname(int major, int minor)
+char *dm_mapname(int major, int minor)
 {
-	char * response = NULL;
-	const char *map;
-	struct dm_task *dmt;
-	int r;
+	char name[WWID_SIZE];
 
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_STATUS)))
+	if (libmp_mapinfo(DM_MAP_BY_DEV,
+			  (mapid_t) { ._u = { major, minor } },
+			  (mapinfo_t) { .name = name }) != DMP_OK)
 		return NULL;
-
-	if (!dm_task_set_major(dmt, major) ||
-	    !dm_task_set_minor(dmt, minor))
-		goto bad;
-
-	dm_task_no_open_count(dmt);
-	r = libmp_dm_task_run(dmt);
-	if (!r) {
-		dm_log_error(2, DM_DEVICE_STATUS, dmt);
-		goto bad;
-	}
-
-	map = dm_task_get_name(dmt);
-	if (map && strlen(map))
-		response = strdup((const char *)map);
-
-	dm_task_destroy(dmt);
-	return response;
-bad:
-	dm_task_destroy(dmt);
-	condlog(0, "%i:%i: error fetching map name", major, minor);
-	return NULL;
+	return strdup(name);
 }
 
 static int
-do_foreach_partmaps (const char * mapname,
+do_foreach_partmaps (const char *mapname,
 		     int (*partmap_func)(const char *, void *),
 		     void *data)
 {
-	struct dm_task *dmt;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
+	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
 	struct dm_names *names;
 	unsigned next = 0;
-	char *params = NULL;
-	unsigned long long size;
-	char dev_t[32];
-	int r = 1;
+	char dev_t[BLK_DEV_SIZE];
 	char *p;
+	char map_uuid[DM_UUID_LEN];
+	struct dm_info info;
+
+	if (libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
+			  (mapid_t) { .str = mapname },
+			  (mapinfo_t) { .uuid = map_uuid, .dmi = &info }) != DMP_OK)
+		return 1;
+
+	if (safe_sprintf(dev_t, "%i:%i", info.major, info.minor))
+		return 1;
 
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_LIST)))
 		return 1;
 
-	dm_task_no_open_count(dmt);
-
-	if (!libmp_dm_task_run(dmt)) {
-		dm_log_error(3, DM_DEVICE_LIST, dmt);
-		goto out;
-	}
+	if (!libmp_dm_task_run(dmt))
+		return 1;
 
 	if (!(names = dm_task_get_names(dmt)))
-		goto out;
+		return 1;
 
-	if (!names->dev) {
-		r = 0; /* this is perfectly valid */
-		goto out;
-	}
-
-	if (dm_dev_t(mapname, &dev_t[0], 32))
-		goto out;
+	if (!names->dev)
+		/* this is perfectly valid */
+		return 0;
 
 	do {
+		char part_uuid[DM_UUID_LEN];
+
 		if (
 		    /*
 		     * if there is only a single "linear" target
 		     */
-		    (dm_type(names->name, TGT_PART) == 1) &&
-
+		    libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_PART_ONLY,
+				  (mapid_t) { .str = names->name },
+				  (mapinfo_t) {
+					  .uuid = part_uuid,
+					  .target = &params,
+				  }) == DMP_OK &&
 		    /*
 		     * and the uuid of the target is a partition of the
 		     * uuid of the multipath device
 		     */
-		    is_mpath_part(names->name, mapname) &&
-
-		    /*
-		     * and we can fetch the map table from the kernel
-		     */
-		    dm_get_map(names->name, &size, &params) == DMP_OK &&
+		    is_mpath_part_uuid(part_uuid, map_uuid) &&
 
 		    /*
 		     * and the table maps over the multipath map
 		     */
 		    (p = strstr(params, dev_t)) &&
-		    !isdigit(*(p + strlen(dev_t)))
-		   ) {
-			if ((r = partmap_func(names->name, data)) != 0)
-				goto out;
-		}
+		    !isdigit(*(p + strlen(dev_t))) &&
+
+		    (partmap_func(names->name, data) != 0))
+			return 1;
 
 		free(params);
 		params = NULL;
 		next = names->next;
-		names = (void *) names + next;
+		names = (void*) names + next;
 	} while (next);
 
-	r = 0;
-out:
-	free(params);
-	dm_task_destroy (dmt);
-	return r;
+	return 0;
 }
 
 struct remove_data {
@@ -1525,12 +1388,9 @@ remove_partmap(const char *name, void *data)
 {
 	struct remove_data *rd = (struct remove_data *)data;
 
-	if (dm_get_opencount(name)) {
-		dm_remove_partmaps(name, rd->flags);
-		if ((rd->flags & DMFL_DEFERRED) && dm_get_opencount(name)) {
-			condlog(2, "%s: map in use", name);
-			return DM_FLUSH_BUSY;
-		}
+	if (!(rd->flags & DMFL_DEFERRED) && dm_get_opencount(name)) {
+		condlog(2, "%s: map in use", name);
+		return DM_FLUSH_BUSY;
 	}
 	condlog(4, "partition map %s removed", name);
 	dm_device_remove(name, rd->flags);
@@ -1562,7 +1422,7 @@ dm_get_deferred_remove (const char * mapname)
 {
 	struct dm_info info;
 
-	if (dm_get_info(mapname, &info) != 0)
+	if (dm_get_info(mapname, &info) != DMP_OK)
 		return -1;
 
 	return info.deferred_remove;
@@ -1651,7 +1511,7 @@ int
 dm_rename (const char * old, char * new, char *delim, int skip_kpartx)
 {
 	int r = 0;
-	struct dm_task *dmt;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
 	uint32_t cookie = 0;
 	uint16_t udev_flags = DM_UDEV_DISABLE_LIBRARY_FALLBACK | ((skip_kpartx == SKIP_KPARTX_ON)? MPATH_UDEV_NO_KPARTX_FLAG : 0);
 
@@ -1662,24 +1522,19 @@ dm_rename (const char * old, char * new, char *delim, int skip_kpartx)
 		return r;
 
 	if (!dm_task_set_name(dmt, old))
-		goto out;
+		return r;
 
 	if (!dm_task_set_newname(dmt, new))
-		goto out;
-
-	dm_task_no_open_count(dmt);
+		return r;
 
 	if (!dm_task_set_cookie(dmt, &cookie, udev_flags))
-		goto out;
+		return r;
+
 	r = libmp_dm_task_run(dmt);
 	if (!r)
 		dm_log_error(2, DM_DEVICE_RENAME, dmt);
 
 	libmp_udev_wait(cookie);
-
-out:
-	dm_task_destroy(dmt);
-
 	return r;
 }
 
@@ -1702,9 +1557,10 @@ void dm_reassign_deps(char *table, const char *dep, const char *newdep)
 
 int dm_reassign_table(const char *name, char *old, char *new)
 {
-	int r = 0, modified = 0;
+	int modified = 0;
 	uint64_t start, length;
-	struct dm_task *dmt, *reload_dmt;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *reload_dmt = NULL;
 	char *target, *params = NULL;
 	char *buff;
 	void *next = NULL;
@@ -1713,18 +1569,16 @@ int dm_reassign_table(const char *name, char *old, char *new)
 		return 0;
 
 	if (!dm_task_set_name(dmt, name))
-		goto out;
-
-	dm_task_no_open_count(dmt);
+		return 0;
 
 	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_TABLE, dmt);
-		goto out;
+		return 0;
 	}
 	if (!(reload_dmt = libmp_dm_task_create(DM_DEVICE_RELOAD)))
-		goto out;
+		return 0;
 	if (!dm_task_set_name(reload_dmt, name))
-		goto out_reload;
+		return 0;
 
 	do {
 		next = dm_get_next_target(dmt, next, &start, &length,
@@ -1737,13 +1591,13 @@ int dm_reassign_table(const char *name, char *old, char *new)
 			 */
 			condlog(1, "%s: invalid target found in map %s",
 				__func__, name);
-			goto out_reload;
+			return 0;
 		}
 		buff = strdup(params);
 		if (!buff) {
 			condlog(3, "%s: failed to replace target %s, "
 				"out of memory", name, target);
-			goto out_reload;
+			return 0;
 		}
 		if (strcmp(target, TGT_MPATH) && strstr(params, old)) {
 			condlog(3, "%s: replace target %s %s",
@@ -1758,23 +1612,15 @@ int dm_reassign_table(const char *name, char *old, char *new)
 	} while (next);
 
 	if (modified) {
-		dm_task_no_open_count(reload_dmt);
-
 		if (!libmp_dm_task_run(reload_dmt)) {
 			dm_log_error(3, DM_DEVICE_RELOAD, reload_dmt);
 			condlog(3, "%s: failed to reassign targets", name);
-			goto out_reload;
+			return 0;
 		}
 		dm_simplecmd_noflush(DM_DEVICE_RESUME, name,
 				     MPATH_UDEV_RELOAD_FLAG);
 	}
-	r = 1;
-
-out_reload:
-	dm_task_destroy(reload_dmt);
-out:
-	dm_task_destroy(dmt);
-	return r;
+	return 1;
 }
 
 
@@ -1786,10 +1632,9 @@ out:
 int dm_reassign(const char *mapname)
 {
 	struct dm_deps *deps;
-	struct dm_task *dmt;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
 	struct dm_info info;
 	char dev_t[32], dm_dep[32];
-	int r = 0;
 	unsigned int i;
 
 	if (dm_dev_t(mapname, &dev_t[0], 32)) {
@@ -1803,23 +1648,21 @@ int dm_reassign(const char *mapname)
 	}
 
 	if (!dm_task_set_name(dmt, mapname))
-		goto out;
-
-	dm_task_no_open_count(dmt);
+		return 0;
 
 	if (!libmp_dm_task_run(dmt)) {
 		dm_log_error(3, DM_DEVICE_DEPS, dmt);
-		goto out;
+		return 0;
 	}
 
 	if (!dm_task_get_info(dmt, &info))
-		goto out;
+		return 0;
 
 	if (!(deps = dm_task_get_deps(dmt)))
-		goto out;
+		return 0;
 
 	if (!info.exists)
-		goto out;
+		return 0;
 
 	for (i = 0; i < deps->count; i++) {
 		sprintf(dm_dep, "%d:%d",
@@ -1828,15 +1671,12 @@ int dm_reassign(const char *mapname)
 		sysfs_check_holders(dm_dep, dev_t);
 	}
 
-	r = 1;
-out:
-	dm_task_destroy (dmt);
-	return r;
+	return 1;
 }
 
 int dm_setgeometry(struct multipath *mpp)
 {
-	struct dm_task *dmt;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
 	struct path *pp;
 	char heads[4], sectors[4];
 	char cylinders[10], start[32];
@@ -1861,9 +1701,7 @@ int dm_setgeometry(struct multipath *mpp)
 		return 0;
 
 	if (!dm_task_set_name(dmt, mpp->alias))
-		goto out;
-
-	dm_task_no_open_count(dmt);
+		return 0;
 
 	/* What a sick interface ... */
 	snprintf(heads, 4, "%u", pp->geom.heads);
@@ -1872,14 +1710,12 @@ int dm_setgeometry(struct multipath *mpp)
 	snprintf(start, 32, "%lu", pp->geom.start);
 	if (!dm_task_set_geometry(dmt, cylinders, heads, sectors, start)) {
 		condlog(3, "%s: Failed to set geometry", mpp->alias);
-		goto out;
+		return 0;
 	}
 
 	r = libmp_dm_task_run(dmt);
 	if (!r)
 		dm_log_error(3, DM_DEVICE_SET_GEOMETRY, dmt);
-out:
-	dm_task_destroy(dmt);
 
 	return r;
 }

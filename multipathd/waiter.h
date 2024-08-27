@@ -1,5 +1,5 @@
-#ifndef _WAITER_H
-#define _WAITER_H
+#ifndef WAITER_H_INCLUDED
+#define WAITER_H_INCLUDED
 
 extern pthread_attr_t waiter_attr;
 
@@ -14,4 +14,4 @@ struct event_thread {
 void stop_waiter_thread (struct multipath *mpp);
 int start_waiter_thread (struct multipath *mpp, struct vectors *vecs);
 
-#endif /* _WAITER_H */
+#endif /* WAITER_H_INCLUDED */

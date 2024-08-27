@@ -1,5 +1,5 @@
-#ifndef _STRUCTS_H
-#define _STRUCTS_H
+#ifndef STRUCTS_H_INCLUDED
+#define STRUCTS_H_INCLUDED
 
 #include <sys/types.h>
 #include <inttypes.h>
@@ -99,7 +99,7 @@ enum find_multipaths_states {
 	FIND_MULTIPATHS_GREEDY,
 	FIND_MULTIPATHS_SMART,
 	FIND_MULTIPATHS_STRICT,
-	__FIND_MULTIPATHS_LAST,
+	FIND_MULTIPATHS_LAST__,
 };
 
 enum marginal_pathgroups_mode {
@@ -258,7 +258,7 @@ enum initialized_states {
 	 * change uevent is received.
 	 */
 	INIT_PARTIAL,
-	__INIT_LAST,
+	INIT_LAST__,
 };
 
 enum prkey_sources {
@@ -360,6 +360,7 @@ struct path {
 	unsigned long long size;
 	unsigned int checkint;
 	unsigned int tick;
+	unsigned int pending_ticks;
 	int bus;
 	int offline;
 	int state;
@@ -453,6 +454,8 @@ struct multipath {
 	int ghost_delay;
 	int ghost_delay_tick;
 	int queue_mode;
+	unsigned int sync_tick;
+	int synced_count;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;
@@ -544,6 +547,8 @@ void free_pathvec (vector vec, enum free_path_mode free_paths);
 void free_pathgroup (struct pathgroup * pgp, enum free_path_mode free_paths);
 void free_pgvec (vector pgvec, enum free_path_mode free_paths);
 void free_multipath (struct multipath *, enum free_path_mode free_paths);
+void cleanup_multipath(struct multipath **pmpp);
+void cleanup_multipath_and_paths(struct multipath **pmpp);
 void free_multipath_attributes (struct multipath *);
 void drop_multipath (vector mpvec, char * wwid, enum free_path_mode free_paths);
 void free_multipathvec (vector mpvec, enum free_path_mode free_paths);
@@ -559,14 +564,14 @@ int store_hostgroup(vector hostgroupvec, struct host_group *hgp);
 int store_path (vector pathvec, struct path * pp);
 int add_pathgroup(struct multipath*, struct pathgroup *);
 
-struct multipath * find_mp_by_alias (const struct _vector *mp, const char *alias);
-struct multipath * find_mp_by_wwid (const struct _vector *mp, const char *wwid);
-struct multipath * find_mp_by_str (const struct _vector *mp, const char *wwid);
-struct multipath * find_mp_by_minor (const struct _vector *mp,
+struct multipath * find_mp_by_alias (const struct vector_s *mp, const char *alias);
+struct multipath * find_mp_by_wwid (const struct vector_s *mp, const char *wwid);
+struct multipath * find_mp_by_str (const struct vector_s *mp, const char *wwid);
+struct multipath * find_mp_by_minor (const struct vector_s *mp,
 				     unsigned int minor);
 
-struct path * find_path_by_devt (const struct _vector *pathvec, const char *devt);
-struct path * find_path_by_dev (const struct _vector *pathvec, const char *dev);
+struct path * find_path_by_devt (const struct vector_s *pathvec, const char *devt);
+struct path * find_path_by_dev (const struct vector_s *pathvec, const char *dev);
 struct path * first_path (const struct multipath *mpp);
 
 struct path *mp_find_path_by_devt(const struct multipath *mpp, const char *devt);
@@ -579,4 +584,4 @@ int pathcmp (const struct pathgroup *, const struct pathgroup *);
 int add_feature (char **, const char *);
 int remove_feature (char **, const char *);
 
-#endif /* _STRUCTS_H */
+#endif /* STRUCTS_H_INCLUDED */

@@ -15,7 +15,7 @@
 
 static const char empty_str[] = "";
 
-char *__get_strbuf_buf(struct strbuf *buf)
+char *get_strbuf_buf__(struct strbuf *buf)
 {
 	return buf->buf;
 }
@@ -110,7 +110,7 @@ static int expand_strbuf(struct strbuf *buf, int addsz)
 	return 0;
 }
 
-int __append_strbuf_str(struct strbuf *buf, const char *str, int slen)
+int append_strbuf_str__(struct strbuf *buf, const char *str, int slen)
 {
 	int ret;
 
@@ -135,7 +135,7 @@ int append_strbuf_str(struct strbuf *buf, const char *str)
 	if (slen > INT_MAX)
 		return -ERANGE;
 
-	return __append_strbuf_str(buf, str, slen);
+	return append_strbuf_str__(buf, str, slen);
 }
 
 int fill_strbuf(struct strbuf *buf, char c, int slen)
@@ -196,17 +196,30 @@ int print_strbuf(struct strbuf *buf, const char *fmt, ...)
 {
 	va_list ap;
 	int ret;
-	char *tail;
+	size_t space = buf->size - buf->offs;
 
 	va_start(ap, fmt);
-	ret = vasprintf(&tail, fmt, ap);
+	ret = vsnprintf(buf->buf + buf->offs, space, fmt, ap);
 	va_end(ap);
 
 	if (ret < 0)
-		return -ENOMEM;
+		return ret;
+	else if ((size_t)ret < space) {
+		buf->offs += ret;
+		return ret;
+	}
 
-	ret = __append_strbuf_str(buf, tail, ret);
+	ret = expand_strbuf(buf, ret);
+	if (ret < 0)
+		return ret;
 
-	free(tail);
+	space = buf->size - buf->offs;
+	va_start(ap, fmt);
+	ret = vsnprintf(buf->buf + buf->offs, space, fmt, ap);
+	va_end(ap);
+
+	if (ret >= 0)
+		buf->offs += ret;
+
 	return ret;
 }

@@ -36,20 +36,14 @@ jobs:
       - name: checkout
         uses: actions/checkout@v1
       - name: build
-        run: make -j8 -Orecurse TESTDIR=/build/tests test-progs
+        run: make -j8 -Orecurse test-progs
       - name: create binary archive
-        run: >
-          tar cfv binaries.tar
-          Makefile* config.mk
-          libmpathcmd/*.so* libmultipath/*.so* libmpathutil/*.so*
-          libmultipath/checkers/*.so libmultipath/prioritizers/*.so
-          libmultipath/foreign/*.so
-          tests/lib tests/*-test tests/Makefile tests/*.so*
+        run: make test-progs.tar
       - name: upload binary archive
         uses: actions/upload-artifact@v1
         with:
           name: cross-${{ matrix.os }}-${{ matrix.arch }}
-          path: binaries.tar
+          path: test-progs.tar
 
   test:
     runs-on: ubuntu-22.04
@@ -71,15 +65,65 @@ jobs:
         with:
           name: cross-${{ matrix.os }}-${{ matrix.arch }}
       - name: unpack binary archive
-        run: tar xfv cross-${{ matrix.os }}-${{ matrix.arch }}/binaries.tar
+        run: tar xfv cross-${{ matrix.os }}-${{ matrix.arch }}/test-progs.tar
       - name: enable foreign arch
         uses: dbhi/qus/action@main
       - name: run tests
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-run-debian-${{ matrix.os }}
-          guest-dir: /build
+          guest-dir: /__w/multipath-tools/multipath-tools
           host-dir: ${{ github.workspace }}
           command: -C tests
-          params: "--platform linux/${{ env.CONTAINER_ARCH }}"
+          params: >
+            --workdir /__w/multipath-tools/multipath-tools
+            --platform linux/${{ env.CONTAINER_ARCH }}
           pull-params: "--platform linux/${{ env.CONTAINER_ARCH }}"
+
+  root-test:
+    runs-on: ubuntu-22.04
+    needs: cross-build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [bookworm, sid]
+        arch: [ppc64le, arm64, s390x]
+    steps:
+      - name: mpath
+        run: sudo modprobe dm_multipath
+      - name: brd
+        run: sudo modprobe brd rd_nr=1 rd_size=65536
+      - name: set container arch
+        run: echo CONTAINER_ARCH="${{ matrix.arch }}" >> $GITHUB_ENV
+        if: ${{ matrix.arch != 'armhf' }}
+      - name: set container arch
+        run: echo CONTAINER_ARCH="arm/v7" >> $GITHUB_ENV
+        if: ${{ matrix.arch == 'armhf' }}
+      - name: download binary archive
+        uses: actions/download-artifact@v1
+        with:
+          name: cross-${{ matrix.os }}-${{ matrix.arch }}
+      - name: unpack binary archive
+        run: tar xfv cross-${{ matrix.os }}-${{ matrix.arch }}/test-progs.tar
+      - name: enable foreign arch
+        uses: dbhi/qus/action@main
+      - name: run tests
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-run-debian-${{ matrix.os }}
+          guest-dir: /__w/multipath-tools/multipath-tools
+          host-dir: ${{ github.workspace }}
+          command: -C tests dmevents.out
+          params: >
+            --workdir /__w/multipath-tools/multipath-tools
+            --platform linux/${{ env.CONTAINER_ARCH }}
+            --privileged
+            -v /dev/ram0:/dev/ram0 -e DIO_TEST_DEV=/dev/ram0
+          pull-params: "--platform linux/${{ env.CONTAINER_ARCH }}"
+        id: root-test
+        continue-on-error: true
+      - name: show root test output
+        run: for o in tests/*.out; do echo "===== $o ====="; cat "$o"; done
+      - name: fail
+        run: /bin/false
+        if: ${{ steps.root-test.outcome == 'failure' }}

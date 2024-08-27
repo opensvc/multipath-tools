@@ -28,12 +28,12 @@
 #include "libdmmp/libdmmp.h"
 #include "libdmmp_private.h"
 
-#define _DMMP_SHOW_PGS_CMD "show groups raw format %w|%g|%p|%t|%s"
-#define _DMMP_SHOW_PG_INDEX_WWID	0
-#define _DMMP_SHOW_PG_INDEX_PG_ID	1
-#define _DMMP_SHOW_PG_INDEX_PRI		2
-#define _DMMP_SHOW_PG_INDEX_STATUS	3
-#define _DMMP_SHOW_PG_INDEX_SELECTOR	4
+#define DMMP_SHOW_PGS_CMD "show groups raw format %w|%g|%p|%t|%s"
+#define DMMP_SHOW_PG_INDEX_WWID	0
+#define DMMP_SHOW_PG_INDEX_PG_ID	1
+#define DMMP_SHOW_PG_INDEX_PRI		2
+#define DMMP_SHOW_PG_INDEX_STATUS	3
+#define DMMP_SHOW_PG_INDEX_SELECTOR	4
 
 struct dmmp_path_group {
 	uint32_t id;
@@ -45,7 +45,7 @@ struct dmmp_path_group {
 	struct dmmp_path **dmmp_ps;
 };
 
-static const struct _num_str_conv _DMMP_PATH_GROUP_STATUS_CONV[] = {
+static const struct _num_str_conv DMMP_PATH_GROUP_STATUS_CONV[] = {
 	{DMMP_PATH_GROUP_STATUS_UNKNOWN, "undef"},
 	{DMMP_PATH_GROUP_STATUS_ACTIVE, "active"},
 	{DMMP_PATH_GROUP_STATUS_DISABLED, "disabled"},
@@ -53,10 +53,10 @@ static const struct _num_str_conv _DMMP_PATH_GROUP_STATUS_CONV[] = {
 };
 
 _dmmp_str_func_gen(dmmp_path_group_status_str, uint32_t, pg_status,
-		   _DMMP_PATH_GROUP_STATUS_CONV);
+		   DMMP_PATH_GROUP_STATUS_CONV);
 _dmmp_str_conv_func_gen(_dmmp_path_group_status_str_conv, ctx, pg_status_str,
 			uint32_t, DMMP_PATH_GROUP_STATUS_UNKNOWN,
-			_DMMP_PATH_GROUP_STATUS_CONV);
+			DMMP_PATH_GROUP_STATUS_CONV);
 
 _dmmp_getter_func_gen(dmmp_path_group_id_get, struct dmmp_path_group, dmmp_pg,
 		      id, uint32_t);
@@ -67,10 +67,10 @@ _dmmp_getter_func_gen(dmmp_path_group_priority_get, struct dmmp_path_group,
 _dmmp_getter_func_gen(dmmp_path_group_selector_get, struct dmmp_path_group,
 		      dmmp_pg, selector, const char *);
 _dmmp_array_free_func_gen(_dmmp_path_group_array_free, struct dmmp_path_group,
-			  _dmmp_path_group_free);
+			  dmmp_path_group_free);
 
 
-struct dmmp_path_group *_dmmp_path_group_new(void)
+struct dmmp_path_group *dmmp_path_group_new(void)
 {
 	struct dmmp_path_group *dmmp_pg = NULL;
 
@@ -78,7 +78,7 @@ struct dmmp_path_group *_dmmp_path_group_new(void)
 		malloc(sizeof(struct dmmp_path_group));
 
 	if (dmmp_pg != NULL) {
-		dmmp_pg->id = _DMMP_PATH_GROUP_ID_UNKNOWN;
+		dmmp_pg->id = DMMP_PATH_GROUP_ID_UNKNOWN;
 		dmmp_pg->status = DMMP_PATH_GROUP_STATUS_UNKNOWN;
 		dmmp_pg->priority = 0;
 		dmmp_pg->selector = NULL;
@@ -87,7 +87,7 @@ struct dmmp_path_group *_dmmp_path_group_new(void)
 	}
 	return dmmp_pg;
 }
-int _dmmp_path_group_update(struct dmmp_context *ctx,
+int dmmp_path_group_update(struct dmmp_context *ctx,
 			    struct dmmp_path_group *dmmp_pg,
 			    json_object *j_obj_pg)
 {
@@ -127,10 +127,10 @@ int _dmmp_path_group_update(struct dmmp_context *ctx,
 
 	dmmp_pg->id = id;
 
-	if (dmmp_pg->id == _DMMP_PATH_GROUP_ID_UNKNOWN) {
+	if (dmmp_pg->id == DMMP_PATH_GROUP_ID_UNKNOWN) {
 		rc = DMMP_ERR_BUG;
 		_error(ctx, "BUG: Got unknown(%d) path group ID",
-		       _DMMP_PATH_GROUP_ID_UNKNOWN);
+		       DMMP_PATH_GROUP_ID_UNKNOWN);
 		goto out;
 	}
 
@@ -157,10 +157,10 @@ int _dmmp_path_group_update(struct dmmp_context *ctx,
 		dmmp_pg->dmmp_ps[i] = NULL;
 
 	for (i = 0; i < dmmp_pg->dmmp_p_count; ++i) {
-		dmmp_p = _dmmp_path_new();
+		dmmp_p = dmmp_path_new();
 		_dmmp_alloc_null_check(ctx, dmmp_p, rc, out);
 		dmmp_pg->dmmp_ps[i] = dmmp_p;
-		_good(_dmmp_path_update(ctx, dmmp_p,
+		_good(dmmp_path_update(ctx, dmmp_p,
 					array_list_get_idx(ar_ps, i)),
 		      rc, out);
 	}
@@ -173,11 +173,11 @@ int _dmmp_path_group_update(struct dmmp_context *ctx,
 
 out:
 	if (rc != DMMP_OK)
-		_dmmp_path_group_free(dmmp_pg);
+		dmmp_path_group_free(dmmp_pg);
 	return rc;
 }
 
-void _dmmp_path_group_free(struct dmmp_path_group *dmmp_pg)
+void dmmp_path_group_free(struct dmmp_path_group *dmmp_pg)
 {
 	uint32_t i = 0;
 
@@ -188,7 +188,7 @@ void _dmmp_path_group_free(struct dmmp_path_group *dmmp_pg)
 
 	if (dmmp_pg->dmmp_ps != NULL) {
 		for (i = 0; i < dmmp_pg->dmmp_p_count; ++i) {
-			_dmmp_path_free(dmmp_pg->dmmp_ps[i]);
+			dmmp_path_free(dmmp_pg->dmmp_ps[i]);
 		}
 		free(dmmp_pg->dmmp_ps);
 	}

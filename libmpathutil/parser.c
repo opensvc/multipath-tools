@@ -70,7 +70,7 @@ install_sublevel_end(void)
 }
 
 int
-_install_keyword(vector keywords, char *string,
+install_keyword__(vector keywords, char *string,
 		 handler_fn *handler,
 		 print_fn *print,
 		 int unique)
@@ -167,7 +167,7 @@ snprint_keyword(struct strbuf *buff, const char *fmt, struct keyword *kw,
 			goto out;
 		}
 		if (f != fmt &&
-		    (r = __append_strbuf_str(&sbuf, fmt, f - fmt)) < 0)
+		    (r = append_strbuf_str__(&sbuf, fmt, f - fmt)) < 0)
 			goto out;
 		fmt = f + 1;
 		switch(*fmt) {
@@ -191,7 +191,7 @@ snprint_keyword(struct strbuf *buff, const char *fmt, struct keyword *kw,
 	} while (*fmt++);
 out:
 	if (r >= 0)
-		r = __append_strbuf_str(buff, get_strbuf_str(&sbuf),
+		r = append_strbuf_str__(buff, get_strbuf_str(&sbuf),
 					get_strbuf_len(&sbuf));
 	return r;
 }
@@ -406,8 +406,7 @@ int
 is_sublevel_keyword(char *str)
 {
 	return (strcmp(str, "defaults") == 0 || strcmp(str, "blacklist") == 0 ||
-		strcmp(str, "blacklist_exceptions") == 0 ||
-		strcmp(str, "devices") == 0 || strcmp(str, "devices") == 0 ||
+		strcmp(str, "blacklist_exceptions") == 0 || strcmp(str, "devices") == 0 ||
 		strcmp(str, "device") == 0 || strcmp(str, "multipaths") == 0 ||
 		strcmp(str, "multipath") == 0);
 }

@@ -1,5 +1,5 @@
-#ifndef _INIT_UNWINDER_H
-#define _INIT_UNWINDER_H 1
+#ifndef INIT_UNWINDER_H_INCLUDED
+#define INIT_UNWINDER_H_INCLUDED
 
 /*
  * init_unwinder(): make sure unwinder symbols are loaded

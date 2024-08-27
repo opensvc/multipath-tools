@@ -481,38 +481,57 @@ done:
 }
 
 int
-update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
+update_multipath_table__ (struct multipath *mpp, vector pathvec, int flags,
+			  const char *params, const char *status)
 {
-	int r = DMP_ERR;
-	char *params = NULL;
-
-	if (!mpp)
-		return r;
-
-	r = dm_get_map(mpp->alias, &mpp->size, &params);
-	if (r != DMP_OK) {
-		condlog(2, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting table" : "map not present");
-		return r;
-	}
-
 	if (disassemble_map(pathvec, params, mpp)) {
 		condlog(2, "%s: cannot disassemble map", mpp->alias);
-		free(params);
 		return DMP_ERR;
 	}
 
-	free(params);
-	params = NULL;
-	if (dm_get_status(mpp->alias, &params) != DMP_OK)
-		condlog(2, "%s: %s", mpp->alias, (r == DMP_ERR)? "error getting status" : "map not present");
-	else if (disassemble_status(params, mpp))
+	if (disassemble_status(status, mpp))
 		condlog(2, "%s: cannot disassemble status", mpp->alias);
-	free(params);
 
 	/* FIXME: we should deal with the return value here */
 	update_pathvec_from_dm(pathvec, mpp, flags);
 
 	return DMP_OK;
+}
+
+int
+update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
+{
+	int r = DMP_ERR;
+	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
+	char __attribute__((cleanup(cleanup_charp))) *status = NULL;
+	unsigned long long size;
+	struct config *conf;
+
+	if (!mpp)
+		return r;
+
+	size = mpp->size;
+	conf = get_multipath_config();
+	mpp->sync_tick = conf->max_checkint;
+	put_multipath_config(conf);
+	mpp->synced_count++;
+
+	r = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+			  (mapid_t) { .str = mpp->alias },
+			  (mapinfo_t) {
+				  .target = &params,
+				  .status = &status,
+				  .size = &mpp->size,
+				  .dmi = &mpp->dmi,
+			  });
+
+	if (r != DMP_OK) {
+		condlog(2, "%s: %s", mpp->alias, dmp_errstr(r));
+		return r;
+	} else if (size != mpp->size)
+		condlog(0, "%s: size changed from %llu to %llu", mpp->alias, size, mpp->size);
+
+	return update_multipath_table__(mpp, pathvec, flags, params, status);
 }
 
 static struct path *find_devt_in_pathgroups(const struct multipath *mpp,
@@ -706,7 +725,8 @@ sync_map_state(struct multipath *mpp)
 
 	vector_foreach_slot (mpp->pg, pgp, i){
 		vector_foreach_slot (pgp->paths, pp, j){
-			if (pp->state == PATH_UNCHECKED ||
+			if (pp->initialized == INIT_REMOVED ||
+			    pp->state == PATH_UNCHECKED ||
 			    pp->state == PATH_WILD ||
 			    pp->state == PATH_DELAYED)
 				continue;
@@ -871,7 +891,7 @@ void update_queue_mode_add_path(struct multipath *mpp)
 	condlog(2, "%s: remaining active paths: %d", mpp->alias, active);
 }
 
-vector get_used_hwes(const struct _vector *pathvec)
+vector get_used_hwes(const struct vector_s *pathvec)
 {
 	int i, j;
 	struct path *pp;

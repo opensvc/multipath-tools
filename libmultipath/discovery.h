@@ -1,5 +1,5 @@
-#ifndef DISCOVERY_H
-#define DISCOVERY_H
+#ifndef DISCOVERY_H_INCLUDED
+#define DISCOVERY_H_INCLUDED
 
 #define SYSFS_PATH_SIZE 255
 #define INQUIRY_CMDLEN  6
@@ -62,26 +62,26 @@ bool is_vpd_page_supported(int fd, int pg);
  * discovery bitmask
  */
 enum discovery_mode {
-	__DI_SYSFS,
-	__DI_SERIAL,
-	__DI_CHECKER,
-	__DI_PRIO,
-	__DI_WWID,
-	__DI_BLACKLIST,
-	__DI_NOIO,
-	__DI_NOFALLBACK,
+	DI_SYSFS__,
+	DI_SERIAL__,
+	DI_CHECKER__,
+	DI_PRIO__,
+	DI_WWID__,
+	DI_BLACKLIST__,
+	DI_NOIO__,
+	DI_NOFALLBACK__,
 };
 
-#define DI_SYSFS	(1 << __DI_SYSFS)
-#define DI_SERIAL	(1 << __DI_SERIAL)
-#define DI_CHECKER	(1 << __DI_CHECKER)
-#define DI_PRIO		(1 << __DI_PRIO)
-#define DI_WWID		(1 << __DI_WWID)
-#define DI_BLACKLIST	(1 << __DI_BLACKLIST)
-#define DI_NOIO		(1 << __DI_NOIO) /* Avoid IO on the device */
-#define DI_NOFALLBACK	(1 << __DI_NOFALLBACK) /* do not allow wwid fallback */
+#define DI_SYSFS	(1 << DI_SYSFS__)
+#define DI_SERIAL	(1 << DI_SERIAL__)
+#define DI_CHECKER	(1 << DI_CHECKER__)
+#define DI_PRIO		(1 << DI_PRIO__)
+#define DI_WWID		(1 << DI_WWID__)
+#define DI_BLACKLIST	(1 << DI_BLACKLIST__)
+#define DI_NOIO		(1 << DI_NOIO__) /* Avoid IO on the device */
+#define DI_NOFALLBACK	(1 << DI_NOFALLBACK__) /* do not allow wwid fallback */
 
 #define DI_ALL		(DI_SYSFS  | DI_SERIAL | DI_CHECKER | DI_PRIO | \
 			 DI_WWID)
 
-#endif /* DISCOVERY_H */
+#endif /* DISCOVERY_H_INCLUDED */

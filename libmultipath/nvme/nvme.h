@@ -12,8 +12,8 @@
  * more details.
  */
 
-#ifndef _NVME_H
-#define _NVME_H
+#ifndef NVME_NVME_H_INCLUDED
+#define NVME_NVME_H_INCLUDED
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -237,4 +237,4 @@ static inline bool is_64bit_reg(__u32 offset)
 	return false;
 }
 
-#endif /* _NVME_H */
+#endif /* NVME_NVME_H_INCLUDED */

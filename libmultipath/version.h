@@ -17,12 +17,12 @@
  *
  * Copyright (c) 2006 Christophe Varoqui
  */
-#ifndef _VERSION_H
-#define _VERSION_H
+#ifndef VERSION_H_INCLUDED
+#define VERSION_H_INCLUDED
 
-#define VERSION_CODE 0x000909
+#define VERSION_CODE 0x000A00
 /* MMDDYY, in hex */
-#define DATE_CODE    0x050318
+#define DATE_CODE    0x080F18
 
 #define PROG    "multipath-tools"
 
@@ -35,4 +35,4 @@
 		MULTIPATH_VERSION(VERSION_CODE),                \
 		MULTIPATH_VERSION(DATE_CODE)
 
-#endif /* _VERSION_H */
+#endif /* VERSION_H_INCLUDED */

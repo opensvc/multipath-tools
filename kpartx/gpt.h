@@ -21,8 +21,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _GPT_H
-#define _GPT_H
+#ifndef GPT_H_INCLUDED
+#define GPT_H_INCLUDED
 
 
 #include <inttypes.h>

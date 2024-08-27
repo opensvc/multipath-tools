@@ -1,5 +1,5 @@
-#ifndef _PRKEY_H
-#define _PRKEY_H
+#ifndef PRKEY_H_INCLUDED
+#define PRKEY_H_INCLUDED
 
 #include "structs.h"
 #include <inttypes.h>
@@ -20,4 +20,4 @@ int set_prkey(struct config *conf, struct multipath *mpp,
 	      uint64_t prkey, uint8_t sa_flags);
 int get_prkey(struct multipath *mpp, uint64_t *prkey, uint8_t *sa_flags);
 
-#endif /* _PRKEY_H */
+#endif /* PRKEY_H_INCLUDED */

@@ -12,8 +12,8 @@
  *
  * This file is released under the GPL.
  */
-#ifndef __RTPG_H__
-#define __RTPG_H__
+#ifndef ALUA_RTPG_H_INCLUDED
+#define ALUA_RTPG_H_INCLUDED
 #include "alua_spc3.h"
 
 #define RTPG_SUCCESS				0
@@ -26,4 +26,4 @@ int get_target_port_group_support(const struct path *pp);
 int get_target_port_group(const struct path *pp);
 int get_asymmetric_access_state(const struct path *pp, unsigned int tpg);
 
-#endif /* __RTPG_H__ */
+#endif /* ALUA_RTPG_H_INCLUDED */

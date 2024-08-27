@@ -141,7 +141,7 @@ out:
 }
 
 static int
-match_reglist (const struct _vector *blist, const char *str)
+match_reglist (const struct vector_s *blist, const char *str)
 {
 	int i;
 	struct blentry * ble;
@@ -154,7 +154,7 @@ match_reglist (const struct _vector *blist, const char *str)
 }
 
 static int
-match_reglist_device (const struct _vector *blist, const char *vendor,
+match_reglist_device (const struct vector_s *blist, const char *vendor,
 		      const char * product)
 {
 	int i;
@@ -175,7 +175,7 @@ match_reglist_device (const struct _vector *blist, const char *vendor,
 }
 
 static int
-find_blacklist_device (const struct _vector *blist, const char *vendor,
+find_blacklist_device (const struct vector_s *blist, const char *vendor,
 		       const char *product)
 {
 	int i;
@@ -316,7 +316,7 @@ log_filter (const char *dev, const char *vendor, const char *product,
 }
 
 int
-filter_device (const struct _vector *blist, const struct _vector *elist,
+filter_device (const struct vector_s *blist, const struct vector_s *elist,
 	       const char *vendor, const char * product, const char *dev)
 {
 	int r = MATCH_NOTHING;
@@ -333,7 +333,7 @@ filter_device (const struct _vector *blist, const struct _vector *elist,
 }
 
 int
-filter_devnode (const struct _vector *blist, const struct _vector *elist,
+filter_devnode (const struct vector_s *blist, const struct vector_s *elist,
 		const char *dev)
 {
 	int r = MATCH_NOTHING;
@@ -350,7 +350,7 @@ filter_devnode (const struct _vector *blist, const struct _vector *elist,
 }
 
 int
-filter_wwid (const struct _vector *blist, const struct _vector *elist,
+filter_wwid (const struct vector_s *blist, const struct vector_s *elist,
 	     const char *wwid, const char *dev)
 {
 	int r = MATCH_NOTHING;
@@ -367,7 +367,7 @@ filter_wwid (const struct _vector *blist, const struct _vector *elist,
 }
 
 int
-filter_protocol(const struct _vector *blist, const struct _vector *elist,
+filter_protocol(const struct vector_s *blist, const struct vector_s *elist,
 		const struct path *pp)
 {
 	STRBUF_ON_STACK(buf);

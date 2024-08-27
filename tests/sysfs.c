@@ -90,7 +90,7 @@ static int teardown(void **state)
 
 static void expect_sagv_invalid(void)
 {
-	expect_condlog(1, "__sysfs_attr_get_value: invalid parameters");
+	expect_condlog(1, "sysfs_attr_get_value__: invalid parameters");
 }
 
 static void test_sagv_invalid(void **state)
@@ -132,12 +132,12 @@ static void test_sagv_invalid(void **state)
 static void test_sagv_bad_udev(void **state)
 {
 	will_return(__wrap_udev_device_get_syspath, NULL);
-	expect_condlog(3, "__sysfs_attr_get_value: invalid udevice");
+	expect_condlog(3, "sysfs_attr_get_value__: invalid udevice");
 	assert_int_equal(sysfs_attr_get_value((void *)state, (void *)state,
 					      (void *)state, 1), -EINVAL);
 
 	will_return(__wrap_udev_device_get_syspath, NULL);
-	expect_condlog(3, "__sysfs_attr_get_value: invalid udevice");
+	expect_condlog(3, "sysfs_attr_get_value__: invalid udevice");
 	assert_int_equal(sysfs_bin_attr_get_value((void *)state, (void *)state,
 						  (void *)state, 1), -EINVAL);
 }
@@ -151,11 +151,11 @@ static void test_sagv_bad_snprintf(void **state)
 	longstr[sizeof(longstr) - 1] = '\0';
 
 	will_return(__wrap_udev_device_get_syspath, "/foo");
-	expect_condlog(3, "__sysfs_attr_get_value: devpath overflow");
+	expect_condlog(3, "sysfs_attr_get_value__: devpath overflow");
 	assert_int_equal(sysfs_attr_get_value((void *)state, longstr,
 					      buf, sizeof(buf)), -EOVERFLOW);
 	will_return(__wrap_udev_device_get_syspath, "/foo");
-	expect_condlog(3, "__sysfs_attr_get_value: devpath overflow");
+	expect_condlog(3, "sysfs_attr_get_value__: devpath overflow");
 	assert_int_equal(sysfs_bin_attr_get_value((void *)state, longstr,
 						  (unsigned char *)buf, sizeof(buf)),
 			 -EOVERFLOW);
@@ -171,7 +171,7 @@ static void test_sagv_open_fail(void **state)
 	expect_value(WRAP_OPEN, flags, O_RDONLY);
 	errno = ENOENT;
 	wrap_will_return(WRAP_OPEN, -1);
-	expect_condlog(3, "__sysfs_attr_get_value: attribute '/foo/bar' cannot be opened");
+	expect_condlog(3, "sysfs_attr_get_value__: attribute '/foo/bar' cannot be opened");
 	assert_int_equal(sysfs_attr_get_value((void *)state, "bar",
 					      buf, sizeof(buf)), -ENOENT);
 }
@@ -190,7 +190,7 @@ static void test_sagv_read_fail(void **state)
 	errno = EISDIR;
 	will_return(__wrap_read, -1);
 	will_return(__wrap_read, NULL);
-	expect_condlog(3, "__sysfs_attr_get_value: read from /foo/bar failed:");
+	expect_condlog(3, "sysfs_attr_get_value__: read from /foo/bar failed:");
 	will_return(__wrap_close, 0);
 	assert_int_equal(sysfs_attr_get_value((void *)state, "bar",
 					      buf, sizeof(buf)), -EISDIR);
@@ -205,7 +205,7 @@ static void test_sagv_read_fail(void **state)
 	errno = EPERM;
 	will_return(__wrap_read, -1);
 	will_return(__wrap_read, NULL);
-	expect_condlog(3, "__sysfs_attr_get_value: read from /foo/baz failed:");
+	expect_condlog(3, "sysfs_attr_get_value__: read from /foo/baz failed:");
 	will_return(__wrap_close, 0);
 	assert_int_equal(sysfs_bin_attr_get_value((void *)state, "baz",
 						  (unsigned char *)buf, sizeof(buf)),
@@ -235,7 +235,7 @@ static void _test_sagv_read(void **state, unsigned int bufsz)
 	if (bufsz <= sizeof(input) - 1) {
 		n = bufsz;
 		trunc = 1;
-		expect_condlog(3, "__sysfs_attr_get_value: overflow reading from /foo/bar");
+		expect_condlog(3, "sysfs_attr_get_value__: overflow reading from /foo/bar");
 	} else {
 		n = sizeof(input) - 1;
 		trunc = 0;
@@ -311,7 +311,7 @@ static void _test_sagv_read_zeroes(void **state, unsigned int bufsz)
 
 	if (bufsz <= sizeof(input) - 1) {
 		n = bufsz;
-		expect_condlog(3, "__sysfs_attr_get_value: overflow reading from /foo/bar");
+		expect_condlog(3, "sysfs_attr_get_value__: overflow reading from /foo/bar");
 	} else
 		n = 0;
 

@@ -1,3 +1,6 @@
+#ifndef CONFIGURE_H_INCLUDED
+#define CONFIGURE_H_INCLUDED
+
 /*
  * configurator actions
  */
@@ -50,7 +53,7 @@ enum {
 struct vectors;
 
 int setup_map (struct multipath * mpp, char **params, struct vectors *vecs);
-void select_action (struct multipath *mpp, const struct _vector *curmp,
+void select_action (struct multipath *mpp, const struct vector_s *curmp,
 		    int force_reload);
 int domap (struct multipath * mpp, char * params, int is_daemon);
 int reinstate_paths (struct multipath *mpp);
@@ -63,3 +66,4 @@ void trigger_paths_udev_change(struct multipath *mpp, bool is_mpath);
 void trigger_partitions_udev_change(struct udev_device *dev, const char *action,
 				    int len);
 int check_daemon(void);
+#endif

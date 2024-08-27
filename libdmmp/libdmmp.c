@@ -35,19 +35,19 @@
 #include "libdmmp/libdmmp.h"
 #include "libdmmp_private.h"
 
-#define _DEFAULT_UXSOCK_TIMEOUT		60000
+#define DEFAULT_UXSOCK_TIMEOUT		60000
 /* ^ 60 seconds. On system with 10k sdX, dmmp_mpath_array_get()
  *   only take 3.5 seconds, so this default value should be OK for most users.
  */
 
-#define _DMMP_IPC_SHOW_JSON_CMD			"show maps json"
-#define _DMMP_JSON_MAJOR_KEY			"major_version"
-#define _DMMP_JSON_MAJOR_VERSION		0
-#define _DMMP_JSON_MAPS_KEY			"maps"
-#define _ERRNO_STR_BUFF_SIZE			256
-#define _IPC_MAX_CMD_LEN			512
-/* ^ Was _MAX_CMD_LEN in ./libmultipath/uxsock.h */
-#define _LAST_ERR_MSG_BUFF_SIZE			1024
+#define DMMP_IPC_SHOW_JSON_CMD			"show maps json"
+#define DMMP_JSON_MAJOR_KEY			"major_version"
+#define DMMP_JSON_MAJOR_VERSION		0
+#define DMMP_JSON_MAPS_KEY			"maps"
+#define ERRNO_STR_BUFF_SIZE			256
+#define IPC_MAX_CMD_LEN			512
+/* ^ Was MAX_CMD_LEN in ./libmultipath/uxsock.h */
+#define LAST_ERR_MSG_BUFF_SIZE			1024
 
 struct dmmp_context {
 	void (*log_func)(struct dmmp_context *ctx, int priority,
@@ -56,7 +56,7 @@ struct dmmp_context {
 	int log_priority;
 	void *userdata;
 	unsigned int tmo;
-	char last_err_msg[_LAST_ERR_MSG_BUFF_SIZE];
+	char last_err_msg[LAST_ERR_MSG_BUFF_SIZE];
 };
 
 /*
@@ -86,9 +86,9 @@ _dmmp_getter_func_gen(dmmp_last_error_msg, struct dmmp_context, ctx,
 		      last_err_msg, const char *);
 
 _dmmp_array_free_func_gen(dmmp_mpath_array_free, struct dmmp_mpath,
-			  _dmmp_mpath_free);
+			  dmmp_mpath_free);
 
-void _dmmp_log(struct dmmp_context *ctx, int priority, const char *file,
+void dmmp_log(struct dmmp_context *ctx, int priority, const char *file,
 	       int line, const char *func_name, const char *format, ...)
 {
 	va_list args;
@@ -99,7 +99,7 @@ void _dmmp_log(struct dmmp_context *ctx, int priority, const char *file,
 	va_start(args, format);
 	ctx->log_func(ctx, priority, file, line, func_name, format, args);
 	if (priority == DMMP_LOG_PRIORITY_ERROR)
-		vsnprintf(ctx->last_err_msg, _LAST_ERR_MSG_BUFF_SIZE,
+		vsnprintf(ctx->last_err_msg, LAST_ERR_MSG_BUFF_SIZE,
 			  format, args);
 	va_end(args);
 }
@@ -113,11 +113,11 @@ struct dmmp_context *dmmp_context_new(void)
 	if (ctx == NULL)
 		return NULL;
 
-	ctx->log_func = _dmmp_log_stderr;
+	ctx->log_func = dmmp_log_stderr;
 	ctx->log_priority = DMMP_LOG_PRIORITY_DEFAULT;
 	ctx->userdata = NULL;
-	ctx->tmo = _DEFAULT_UXSOCK_TIMEOUT;
-	memset(ctx->last_err_msg, 0, _LAST_ERR_MSG_BUFF_SIZE);
+	ctx->tmo = DEFAULT_UXSOCK_TIMEOUT;
+	memset(ctx->last_err_msg, 0, LAST_ERR_MSG_BUFF_SIZE);
 
 	return ctx;
 }
@@ -180,7 +180,7 @@ int dmmp_mpath_array_get(struct dmmp_context *ctx,
 
 	_good(_ipc_connect(ctx, &ipc_fd), rc, out);
 
-	_good(_process_cmd(ctx, ipc_fd, _DMMP_IPC_SHOW_JSON_CMD, &j_str),
+	_good(_process_cmd(ctx, ipc_fd, DMMP_IPC_SHOW_JSON_CMD, &j_str),
 	      rc, out);
 
 	_debug(ctx, "Got json output from multipathd: '%s'", j_str);
@@ -202,20 +202,20 @@ int dmmp_mpath_array_get(struct dmmp_context *ctx,
 	}
 
 	_json_obj_get_value(ctx, j_obj, cur_json_major_version,
-			    _DMMP_JSON_MAJOR_KEY, json_type_int,
+			    DMMP_JSON_MAJOR_KEY, json_type_int,
 			    json_object_get_int, rc, out);
 
-	if (cur_json_major_version != _DMMP_JSON_MAJOR_VERSION) {
+	if (cur_json_major_version != DMMP_JSON_MAJOR_VERSION) {
 		rc = DMMP_ERR_INCOMPATIBLE;
 		_error(ctx, "Incompatible multipathd JSON major version %d, "
 		       "should be %d", cur_json_major_version,
-		       _DMMP_JSON_MAJOR_VERSION);
+		       DMMP_JSON_MAJOR_VERSION);
 		goto out;
 	}
 	_debug(ctx, "multipathd JSON major version(%d) check pass",
-	       _DMMP_JSON_MAJOR_VERSION);
+	       DMMP_JSON_MAJOR_VERSION);
 
-	_json_obj_get_value(ctx, j_obj, ar_maps, _DMMP_JSON_MAPS_KEY,
+	_json_obj_get_value(ctx, j_obj, ar_maps, DMMP_JSON_MAPS_KEY,
 			    json_type_array, json_object_get_array, rc, out);
 
 	if (ar_maps == NULL) {
@@ -250,10 +250,10 @@ int dmmp_mpath_array_get(struct dmmp_context *ctx,
 			goto out;
 		}
 
-		dmmp_mp = _dmmp_mpath_new();
+		dmmp_mp = dmmp_mpath_new();
 		_dmmp_alloc_null_check(ctx, dmmp_mp, rc, out);
 		(*dmmp_mps)[i] = dmmp_mp;
-		_good(_dmmp_mpath_update(ctx, dmmp_mp, j_obj_map), rc, out);
+		_good(dmmp_mpath_update(ctx, dmmp_mp, j_obj_map), rc, out);
 	}
 
 out:
@@ -279,7 +279,7 @@ static int _process_cmd(struct dmmp_context *ctx, int fd, const char *cmd,
 {
 	int errno_save = 0;
 	int rc = DMMP_OK;
-	char errno_str_buff[_ERRNO_STR_BUFF_SIZE];
+	char errno_str_buff[ERRNO_STR_BUFF_SIZE];
 	struct timespec start_ts;
 	struct timespec cur_ts;
 	unsigned int ipc_tmo = 0;
@@ -300,7 +300,7 @@ static int _process_cmd(struct dmmp_context *ctx, int fd, const char *cmd,
 
 	ipc_tmo = ctx->tmo;
 	if (ctx->tmo == 0)
-		ipc_tmo = _DEFAULT_UXSOCK_TIMEOUT;
+		ipc_tmo = DEFAULT_UXSOCK_TIMEOUT;
 
 invoke:
 	_debug(ctx, "Invoking IPC command '%s' with IPC tmo %u milliseconds",
@@ -308,8 +308,8 @@ invoke:
 	flag_check_tmo = false;
 	if (mpath_process_cmd(fd, cmd, output, ipc_tmo) != 0) {
 		errno_save = errno;
-		memset(errno_str_buff, 0, _ERRNO_STR_BUFF_SIZE);
-		strerror_r(errno_save, errno_str_buff, _ERRNO_STR_BUFF_SIZE);
+		memset(errno_str_buff, 0, ERRNO_STR_BUFF_SIZE);
+		strerror_r(errno_save, errno_str_buff, ERRNO_STR_BUFF_SIZE);
 		if (errno_save == ETIMEDOUT) {
 			flag_check_tmo = true;
 		} else {
@@ -397,7 +397,7 @@ static int _ipc_connect(struct dmmp_context *ctx, int *fd)
 {
 	int rc = DMMP_OK;
 	int errno_save = 0;
-	char errno_str_buff[_ERRNO_STR_BUFF_SIZE];
+	char errno_str_buff[ERRNO_STR_BUFF_SIZE];
 
 	assert(ctx != NULL);
 	assert(fd != NULL);
@@ -407,8 +407,8 @@ static int _ipc_connect(struct dmmp_context *ctx, int *fd)
 	*fd = mpath_connect();
 	if (*fd == -1) {
 		errno_save = errno;
-		memset(errno_str_buff, 0, _ERRNO_STR_BUFF_SIZE);
-		strerror_r(errno_save, errno_str_buff, _ERRNO_STR_BUFF_SIZE);
+		memset(errno_str_buff, 0, ERRNO_STR_BUFF_SIZE);
+		strerror_r(errno_save, errno_str_buff, ERRNO_STR_BUFF_SIZE);
 		if (errno_save == ECONNREFUSED) {
 			rc = DMMP_ERR_NO_DAEMON;
 			_error(ctx, "Socket connection refuse. "
@@ -426,14 +426,14 @@ int dmmp_flush_mpath(struct dmmp_context *ctx, const char *mpath_name)
 {
 	int rc = DMMP_OK;
 	int ipc_fd = -1;
-	char cmd[_IPC_MAX_CMD_LEN];
+	char cmd[IPC_MAX_CMD_LEN];
 	char *output = NULL;
 
 	assert(ctx != NULL);
 	assert(mpath_name != NULL);
 
-	snprintf(cmd, _IPC_MAX_CMD_LEN, "del map %s", mpath_name);
-	if (strlen(cmd) == _IPC_MAX_CMD_LEN - 1) {
+	snprintf(cmd, IPC_MAX_CMD_LEN, "del map %s", mpath_name);
+	if (strlen(cmd) == IPC_MAX_CMD_LEN - 1) {
 		rc = DMMP_ERR_INVALID_ARGUMENT;
 		_error(ctx, "Invalid mpath name %s", mpath_name);
 		goto out;
@@ -461,9 +461,9 @@ int dmmp_reconfig(struct dmmp_context *ctx)
 	int rc = DMMP_OK;
 	int ipc_fd = -1;
 	char *output = NULL;
-	char cmd[_IPC_MAX_CMD_LEN];
+	char cmd[IPC_MAX_CMD_LEN];
 
-	snprintf(cmd, _IPC_MAX_CMD_LEN, "%s", "reconfigure");
+	snprintf(cmd, IPC_MAX_CMD_LEN, "%s", "reconfigure");
 
 	_good(_ipc_connect(ctx, &ipc_fd), rc, out);
 	_good(_process_cmd(ctx, ipc_fd, cmd, &output), rc, out);

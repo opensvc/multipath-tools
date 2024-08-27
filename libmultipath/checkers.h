@@ -1,5 +1,5 @@
-#ifndef _CHECKERS_H
-#define _CHECKERS_H
+#ifndef CHECKERS_H_INCLUDED
+#define CHECKERS_H_INCLUDED
 
 #include <pthread.h>
 #include "list.h"
@@ -194,9 +194,9 @@ void *libcheck_thread(struct checker_context *ctx);
  * message IDs.
  * Message IDs available to checkers start at CHECKER_FIRST_MSG.
  * The msgtable array is 0-based, i.e. msgtable[0] is the message
- * for msgid == __CHECKER_FIRST_MSG.
+ * for msgid == CHECKER_FIRST_MSG.
  * The table ends with a NULL element.
  */
 extern const char *libcheck_msgtable[];
 
-#endif /* _CHECKERS_H */
+#endif /* CHECKERS_H_INCLUDED */

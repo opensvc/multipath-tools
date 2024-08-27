@@ -120,7 +120,7 @@ static int check_holders(const char *syspath)
 	return sr.n;
 }
 
-static int check_all_holders(const struct _vector *parts)
+static int check_all_holders(const struct vector_s *parts)
 {
 	char syspath[PATH_MAX];
 	const char *sysname;
@@ -168,7 +168,7 @@ static void cleanup_cache(void *arg)
  * check if any of the partitions in the vector is referenced in the table.
  * Note that mnt_table_find_srcpath() also resolves mounts by symlinks.
  */
-static int check_mnt_table(const struct _vector *parts,
+static int check_mnt_table(const struct vector_s *parts,
 			   struct libmnt_table *tbl,
 			   const char *table_name)
 {
@@ -188,7 +188,7 @@ static int check_mnt_table(const struct _vector *parts,
 	return 0;
 }
 
-static int check_mountinfo(const struct _vector *parts)
+static int check_mountinfo(const struct vector_s *parts)
 {
 	static const char mountinfo[] = "/proc/self/mountinfo";
 	struct libmnt_table *tbl;
@@ -223,7 +223,7 @@ static int check_mountinfo(const struct _vector *parts)
 }
 
 #ifdef LIBMOUNT_SUPPORTS_SWAP
-static int check_swaps(const struct _vector *parts)
+static int check_swaps(const struct vector_s *parts)
 {
 	struct libmnt_table *tbl;
 	struct libmnt_cache *cache;
@@ -248,7 +248,7 @@ static int check_swaps(const struct _vector *parts)
 	return used;
 }
 #else
-static int check_swaps(const struct _vector *parts __attribute__((unused)))
+static int check_swaps(const struct vector_s *parts __attribute__((unused)))
 {
 	return 0;
 }
@@ -302,7 +302,7 @@ is_path_valid(const char *name, struct config *conf, struct path *pp,
 		return PATH_IS_ERROR;
 
 	if (conf->find_multipaths <= FIND_MULTIPATHS_UNDEF ||
-	    conf->find_multipaths >= __FIND_MULTIPATHS_LAST)
+	    conf->find_multipaths >= FIND_MULTIPATHS_LAST__)
 		return PATH_IS_ERROR;
 
 	if (safe_sprintf(pp->dev, "%s", name))
@@ -315,7 +315,7 @@ is_path_valid(const char *name, struct config *conf, struct path *pp,
 	}
 
 	if (check_multipathd) {
-		fd = __mpath_connect(1);
+		fd = mpath_connect__(1);
 		if (fd < 0) {
 			if (errno != EAGAIN) {
 				condlog(3, "multipathd not running");
@@ -360,7 +360,7 @@ is_path_valid(const char *name, struct config *conf, struct path *pp,
 	if (check_wwids_file(pp->wwid, 0) == 0)
 		return PATH_IS_VALID_NO_CHECK;
 
-	if (dm_map_present_by_uuid(pp->wwid) == 1)
+	if (dm_find_map_by_wwid(pp->wwid, NULL, NULL) == DMP_OK)
 		return PATH_IS_VALID;
 
 	/* all these act like FIND_MULTIPATHS_STRICT for finding if a

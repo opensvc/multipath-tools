@@ -1,5 +1,5 @@
-#ifndef _BLACKLIST_H
-#define _BLACKLIST_H
+#ifndef BLACKLIST_H_INCLUDED
+#define BLACKLIST_H_INCLUDED
 
 #include <libudev.h>
 #include <regex.h>
@@ -36,16 +36,16 @@ struct blentry_device {
 
 int setup_default_blist (struct config *);
 int alloc_ble_device (vector);
-int filter_devnode (const struct _vector *, const struct _vector *,
+int filter_devnode (const struct vector_s *, const struct vector_s *,
 		    const char *);
-int filter_wwid (const struct _vector *, const struct _vector *,
+int filter_wwid (const struct vector_s *, const struct vector_s *,
 		 const char *, const char *);
-int filter_device (const struct _vector *, const struct _vector *,
+int filter_device (const struct vector_s *, const struct vector_s *,
 		   const char *, const char *, const char *);
 int filter_path (const struct config *, const struct path *);
 int filter_property(const struct config *, struct udev_device *,
 		    int, const char*);
-int filter_protocol(const struct _vector *, const struct _vector *,
+int filter_protocol(const struct vector_s *, const struct vector_s *,
 		    const struct path *);
 int store_ble (vector, const char *, int);
 int set_ble_device (vector, const char *, const char *, int);
@@ -54,4 +54,4 @@ void free_blacklist_device (vector);
 void merge_blacklist(vector);
 void merge_blacklist_device(vector);
 
-#endif /* _BLACKLIST_H */
+#endif /* BLACKLIST_H_INCLUDED */

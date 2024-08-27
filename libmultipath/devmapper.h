@@ -1,5 +1,8 @@
-#ifndef _DEVMAPPER_H
-#define _DEVMAPPER_H
+#ifndef DEVMAPPER_H_INCLUDED
+#define DEVMAPPER_H_INCLUDED
+
+#include <sys/sysmacros.h>
+#include <linux/dm-ioctl.h>
 #include "autoconfig.h"
 #include "structs.h"
 
@@ -31,7 +34,95 @@ enum {
 	DMP_ERR,
 	DMP_OK,
 	DMP_NOT_FOUND,
+	DMP_NO_MATCH,
+	DMP_LAST__,
 };
+
+const char* dmp_errstr(int rc);
+
+/**
+ * input flags for libmp_mapinfo()
+ */
+enum {
+	/** DM_MAP_BY_NAME: identify map by device-mapper name from @name */
+	DM_MAP_BY_NAME      = 0,
+	/** DM_MAP_BY_UUID: identify map by device-mapper UUID from @uuid */
+	DM_MAP_BY_UUID,
+	/** DM_MAP_BY_DEV: identify map by major/minor number from @dmi */
+	DM_MAP_BY_DEV,
+	/** DM_MAP_BY_DEVT: identify map by a dev_t */
+	DM_MAP_BY_DEVT,
+	DM_MAP_BY_MASK__    = (1 << 8) - 1,
+	/* Fail if target type is not multipath */
+	MAPINFO_MPATH_ONLY  = (1 << 8),
+	/* Fail if target type is not "partition" (linear) */
+	MAPINFO_PART_ONLY   = (1 << 9),
+	MAPINFO_TGT_TYPE__  = (MAPINFO_MPATH_ONLY | MAPINFO_PART_ONLY),
+	/* Fail if the UUID doesn't match the multipath UUID format */
+	MAPINFO_CHECK_UUID  = (1 << 10),
+};
+
+typedef union libmp_map_identifier {
+	const char *str;
+	struct {
+		int major;
+		int minor;
+	} _u;
+	dev_t devt;
+} mapid_t;
+
+typedef struct libmp_map_info {
+	/** @name: name of the map.
+	 * If non-NULL, it must point to an array of WWID_SIZE bytes
+	 */
+	char *name;
+	/** @uuid: UUID of the map.
+	 * If non-NULL it must point to an array of DM_UUID_LEN bytes
+	 */
+	char *uuid;
+	/** @dmi: Basic info, must point to a valid dm_info buffer if non-NULL */
+	struct dm_info *dmi;
+	/** @target: target params, *@target will be allocated if @target is non-NULL*/
+	char **target;
+	/** @size: target size. */
+	unsigned long long *size;
+	/** @status: target status, *@status will be allocated if @status is non-NULL */
+	char **status;
+} mapinfo_t;
+
+/**
+ * libmp_mapinfo(): obtain information about a map from the kernel
+ * @param flags: see enum values above.
+ *     Exactly one of DM_MAP_BY_NAME, DM_MAP_BY_UUID, and DM_MAP_BY_DEV must be set.
+ * @param id: string or major/minor to identify the map to query
+ * @param info: output parameters, see above. Non-NULL elements will be filled in.
+ * @returns:
+ *     DMP_OK if successful.
+ *     DMP_NOT_FOUND if the map wasn't found, or has no or multiple targets.
+ *     DMP_NO_MATCH if the map didn't match @tgt_type (see above).
+ *     DMP_ERR if some other error occurred.
+ *
+ * This function obtains the requested information for the device-mapper map
+ * identified by the input parameters.
+ * Output parameters are only filled in if the return value is DMP_OK.
+ * For target / status / size information, the  map's table should contain
+ * only one target (usually multipath or linear).
+ */
+int libmp_mapinfo(int flags, mapid_t id, mapinfo_t info);
+
+static inline int dm_get_info(const char *mapname, struct dm_info *info)
+{
+	return libmp_mapinfo(DM_MAP_BY_NAME,
+			     (mapid_t) { .str = mapname },
+			     (mapinfo_t) { .dmi = info });
+}
+
+static inline int dm_map_present(const char *mapname)
+{
+	return libmp_mapinfo(DM_MAP_BY_NAME,
+			     (mapid_t) { .str = mapname },
+			     (mapinfo_t) { .name = NULL }) == DMP_OK;
+}
 
 int dm_prereq(unsigned int *v);
 void skip_libmp_dm_init(void);
@@ -42,11 +133,14 @@ int dm_simplecmd_flush (int task, const char *name, uint16_t udev_flags);
 int dm_simplecmd_noflush (int task, const char *name, uint16_t udev_flags);
 int dm_addmap_create (struct multipath *mpp, char *params);
 int dm_addmap_reload (struct multipath *mpp, char *params, int flush);
-int dm_map_present (const char *name);
-int dm_map_present_by_uuid(const char *uuid);
-int dm_get_map(const char *name, unsigned long long *size, char **outparams);
-int dm_get_status(const char *name, char **outstatus);
-int dm_type(const char *name, char *type);
+int dm_find_map_by_wwid(const char *wwid, char *name, struct dm_info *dmi);
+
+enum {
+	DM_IS_MPATH_NO,
+	DM_IS_MPATH_YES,
+	DM_IS_MPATH_ERR,
+};
+
 int dm_is_mpath(const char *name);
 
 enum {
@@ -57,7 +151,7 @@ enum {
 	DM_FLUSH_BUSY,
 };
 
-int partmap_in_use(const char *name, void *data);
+int mpath_in_use(const char *name);
 
 enum {
 	DMFL_NONE      = 0,
@@ -67,11 +161,11 @@ enum {
 	DMFL_NO_FLUSH  = 1 << 3,
 };
 
-int _dm_flush_map (const char *mapname, int flags, int retries);
-#define dm_flush_map(mapname) _dm_flush_map(mapname, DMFL_NEED_SYNC, 0)
-#define dm_flush_map_nosync(mapname) _dm_flush_map(mapname, DMFL_NONE, 0)
+int dm_flush_map__ (const char *mapname, int flags, int retries);
+#define dm_flush_map(mapname) dm_flush_map__(mapname, DMFL_NEED_SYNC, 0)
+#define dm_flush_map_nosync(mapname) dm_flush_map__(mapname, DMFL_NONE, 0)
 #define dm_suspend_and_flush_map(mapname, retries) \
-	_dm_flush_map(mapname, DMFL_NEED_SYNC|DMFL_SUSPEND, retries)
+	dm_flush_map__(mapname, DMFL_NEED_SYNC|DMFL_SUSPEND, retries)
 int dm_flush_map_nopaths(const char * mapname, int deferred_remove);
 int dm_cancel_deferred_remove(struct multipath *mpp);
 int dm_flush_maps (int retries);
@@ -86,14 +180,12 @@ int dm_geteventnr (const char *name);
 int dm_is_suspended(const char *name);
 int dm_get_major_minor (const char *name, int *major, int *minor);
 char * dm_mapname(int major, int minor);
-int dm_get_uuid(const char *name, char *uuid, int uuid_len);
+int dm_get_wwid(const char *name, char *uuid, int uuid_len);
 bool has_dm_info(const struct multipath *mpp);
-int dm_get_info (const char * mapname, struct dm_info *dmi);
 int dm_rename (const char * old, char * new, char * delim, int skip_kpartx);
 int dm_reassign(const char * mapname);
 int dm_reassign_table(const char *name, char *old, char *new);
 int dm_setgeometry(struct multipath *mpp);
-struct multipath *dm_get_multipath(const char *name);
 
 #define VERSION_GE(v, minv) ( \
 	(v[0] > minv[0]) || \
@@ -119,4 +211,4 @@ int libmp_dm_task_run(struct dm_task *dmt);
 	condlog(lvl, "%s: libdm task=%d error: %s", __func__, \
 		cmd, strerror(dm_task_get_errno(dmt)))	      \
 
-#endif /* _DEVMAPPER_H */
+#endif /* DEVMAPPER_H_INCLUDED */

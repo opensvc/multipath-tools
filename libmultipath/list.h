@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef _LIST_H
-#define _LIST_H
+#ifndef LIST_H_INCLUDED
+#define LIST_H_INCLUDED
 
 #include <stddef.h>
 
@@ -415,4 +415,4 @@ static inline struct list_head *list_pop(struct list_head *head)
 	     &pos->member != (to);                                      \
 	     pos = n, n = list_entry(n->member.prev, typeof(*n), member))
 
-#endif /* _LIST_H */
+#endif /* LIST_H_INCLUDED */

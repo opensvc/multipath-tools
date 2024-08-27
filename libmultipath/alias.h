@@ -1,5 +1,5 @@
-#ifndef _ALIAS_H
-#define _ALIAS_H
+#ifndef ALIAS_H_INCLUDED
+#define ALIAS_H_INCLUDED
 
 int valid_alias(const char *alias);
 int get_user_friendly_wwid(const char *alias, char *buff);
@@ -11,4 +11,4 @@ int check_alias_settings(const struct config *);
 void cleanup_bindings(void);
 struct inotify_event;
 void handle_bindings_file_inotify(const struct inotify_event *event);
-#endif /* _ALIAS_H */
+#endif /* ALIAS_H_INCLUDED */

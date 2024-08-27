@@ -1,5 +1,5 @@
-#ifndef __FPIN_H__
-#define __FPIN_H__
+#ifndef FPIN_H_INCLUDED
+#define FPIN_H_INCLUDED
 #include "autoconfig.h"
 
 #ifdef FPIN_EVENT_HANDLER

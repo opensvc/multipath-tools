@@ -17,8 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIB_MPATH_CMD_H
-#define LIB_MPATH_CMD_H
+#ifndef MPATH_CMD_H_INCLUDED
+#define MPATH_CMD_H_INCLUDED
 
 /*
  * This should be sufficient for json output for >10000 maps,
@@ -47,7 +47,7 @@ extern "C" {
  * RETURNS:
  *	A file descriptor on success. -1 on failure (with errno set).
  */
-int __mpath_connect(int nonblocking);
+int mpath_connect__(int nonblocking);
 
 /*
  * DESCRIPTION:
@@ -141,4 +141,4 @@ int mpath_recv_reply_data(int fd, char *reply, size_t len,
 #ifdef __cplusplus
 }
 #endif
-#endif /* LIB_MPATH_CMD_H */
+#endif /* MPATH_CMD_H_INCLUDED */

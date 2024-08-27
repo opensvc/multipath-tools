@@ -9,7 +9,7 @@ CFLAGS += $(BIN_CFLAGS) -Wno-unused-parameter $(W_MISSING_INITIALIZERS)
 LIBDEPS += -L. -L $(mpathutildir) -L$(mpathcmddir) -lmultipath -lmpathutil -lmpathcmd -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
-	 alias directio valid devt mpathvalid strbuf sysfs features cli
+	 alias directio valid devt mpathvalid strbuf sysfs features cli mapinfo
 HELPERS := test-lib.o test-log.o
 
 .PRECIOUS: $(TESTS:%=%-test)
@@ -21,12 +21,6 @@ valgrind:	$(TESTS:%=%.vgr)
 # test-specific compiler flags
 # XYZ-test_FLAGS: Additional compiler flags for this test
 
-ifneq ($(wildcard directio_test_dev),)
-DIO_TEST_DEV = $(shell sed -n -e 's/^[[:space:]]*DIO_TEST_DEV[[:space:]]*=[[:space:]]*\([^[:space:]\#]\+\).*/\1/p' < directio_test_dev)
-endif
-ifneq ($(DIO_TEST_DEV),)
-directio-test_FLAGS := -DDIO_TEST_DEV=\"$(DIO_TEST_DEV)\"
-endif
 mpathvalid-test_FLAGS := -I$(mpathvaliddir)
 features-test_FLAGS := -I$(multipathdir)/nvme
 
@@ -53,21 +47,20 @@ vpd-test_OBJDEPS :=  $(multipathdir)/discovery.o
 vpd-test_LIBDEPS := -ludev -lpthread -ldl
 alias-test_TESTDEPS := test-log.o
 alias-test_OBJDEPS := $(mpathutildir)/util.o
-alias-test_LIBDEPS := -lpthread -ldl
+alias-test_LIBDEPS := -ludev -lpthread -ldl
 valid-test_OBJDEPS := $(multipathdir)/valid.o $(multipathdir)/discovery.o
 valid-test_LIBDEPS := -lmount -ludev -lpthread -ldl
 devt-test_LIBDEPS := -ludev
 mpathvalid-test_LIBDEPS := -ludev -lpthread -ldl
 mpathvalid-test_OBJDEPS := $(mpathvaliddir)/mpath_valid.o
-ifneq ($(DIO_TEST_DEV),)
 directio-test_LIBDEPS := -laio
-endif
 strbuf-test_OBJDEPS := $(mpathutildir)/strbuf.o
 sysfs-test_TESTDEPS := test-log.o
 sysfs-test_OBJDEPS := $(multipathdir)/sysfs.o $(mpathutildir)/util.o
 sysfs-test_LIBDEPS := -ludev -lpthread -ldl
 features-test_LIBDEPS := -ludev -lpthread
 cli-test_OBJDEPS := $(daemondir)/cli.o
+mapinfo-test_LIBDEPS = -lpthread -ldevmapper
 
 %.o: %.c
 	@echo building $@ because of $?
@@ -98,7 +91,7 @@ clean: test_clean valgrind_clean dep_clean
 	$(Q)$(RM) $(TESTS:%=%-test) $(OBJS) *.o.wrap
 	$(Q)$(RM) -rf lib conf.d
 
-.SECONDARY: $(OBJS)
+.SECONDARY: $(OBJS) $(foreach T,$(TESTS),$($T-test_OBJDEPS)) $(HELPERS:%=%.wrap)
 
 include $(wildcard $(OBJS:.o=.d))
 

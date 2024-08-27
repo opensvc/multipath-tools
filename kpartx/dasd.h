@@ -22,8 +22,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _DASD_H
-#define _DASD_H
+#ifndef DASD_H_INCLUDED
+#define DASD_H_INCLUDED
 
 typedef struct ttr
 {
@@ -289,4 +289,4 @@ cchhb2blk (cchhb_t *ptr, struct hd_geometry *geo)
 		ptr->b;
 }
 
-#endif /* _DASD_H */
+#endif /* DASD_H_INCLUDED */

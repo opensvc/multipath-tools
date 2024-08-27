@@ -10,16 +10,20 @@
  *
  * See libmultipath.version for general policy about version numbers.
  */
+
 LIBMPATHCMD_1.0.0 {
 global:
-	__mpath_connect;
 	mpath_connect;
+	__mpath_connect;
 	mpath_disconnect;
 	mpath_process_cmd;
 	mpath_recv_reply;
 	mpath_recv_reply_len;
 	mpath_recv_reply_data;
 	mpath_send_cmd;
-local:
-	*;
 };
+
+LIBMPATHCMD_1.1.0 {
+global:
+	mpath_connect__;
+} LIBMPATHCMD_1.0.0;

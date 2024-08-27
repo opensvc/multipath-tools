@@ -17,8 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIB_MPATH_VALID_H
-#define LIB_MPATH_VALID_H
+#ifndef MPATH_VALID_H_INCLUDED
+#define MPATH_VALID_H_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {
@@ -152,4 +152,4 @@ int mpathvalid_is_path(const char *name, unsigned int mode, char **wwid,
 #ifdef __cplusplus
 }
 #endif
-#endif /* LIB_PATH_VALID_H */
+#endif /* MPATH_VALID_H_INCLUDED */

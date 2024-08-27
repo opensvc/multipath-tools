@@ -253,8 +253,9 @@ int __wrap_dm_geteventnr(const char *name)
 	return -1;
 }
 
-int __wrap_ioctl(int fd, unsigned long request, void *argp)
+int WRAP_IOCTL(int fd, unsigned long request, void *argp)
 {
+	condlog(1, "%s %ld", __func__, request);
 	assert_int_equal(fd, waiter->fd);
 	assert_int_equal(request, DM_DEV_ARM_POLL);
 	return mock_type(int);
@@ -264,15 +265,6 @@ struct dm_task *__wrap_libmp_dm_task_create(int task)
 {
 	assert_int_equal(task, DM_DEVICE_LIST);
 	return mock_type(struct dm_task *);
-}
-
-int __real_dm_task_no_open_count(struct dm_task *dmt);
-int __wrap_dm_task_no_open_count(struct dm_task *dmt)
-{
-	if (!setup_done)
-		return __real_dm_task_no_open_count(dmt);
-	assert_ptr_equal((struct test_data *)dmt, &data);
-	return mock_type(int);
 }
 
 int __real_dm_task_run(struct dm_task *dmt);
@@ -553,7 +545,6 @@ static void test_get_events_bad1(void **state)
 		skip();
 
 	will_return(__wrap_libmp_dm_task_create, &data);
-	will_return(__wrap_dm_task_no_open_count, 1);
 	will_return(__wrap_dm_task_run, 0);
 	assert_int_equal(dm_get_events(), -1);
 }
@@ -566,7 +557,6 @@ static void test_get_events_bad2(void **state)
 		skip();
 
 	will_return(__wrap_libmp_dm_task_create, &data);
-	will_return(__wrap_dm_task_no_open_count, 1);
 	will_return(__wrap_dm_task_run, 1);
 	will_return(__wrap_dm_task_get_names, 0);
 	assert_int_equal(dm_get_events(), -1);
@@ -581,7 +571,6 @@ static void test_get_events_good0(void **state)
 
 	assert_int_equal(add_dm_device_event("foo", 1, 5), 0);
 	will_return(__wrap_libmp_dm_task_create, &data);
-	will_return(__wrap_dm_task_no_open_count, 1);
 	will_return(__wrap_dm_task_run, 1);
 	will_return(__wrap_dm_task_get_names, 1);
 	assert_int_equal(dm_get_events(), 0);
@@ -616,7 +605,6 @@ static void test_get_events_good1(void **state)
 	assert_int_equal(add_dm_device_event("foo", 1, 6), 0);
 	assert_int_equal(remove_dm_device_event("xyzzy"), 0);
 	will_return(__wrap_libmp_dm_task_create, &data);
-	will_return(__wrap_dm_task_no_open_count, 1);
 	will_return(__wrap_dm_task_run, 1);
 	will_return(__wrap_dm_task_get_names, 1);
 	assert_int_equal(dm_get_events(), 0);
@@ -675,7 +663,7 @@ static void test_dmevent_loop_bad1(void **state)
 		skip();
 
 	will_return(__wrap_poll, 1);
-	will_return(__wrap_ioctl, -1);
+	wrap_will_return(WRAP_IOCTL, -1);
 	assert_int_equal(dmevent_loop(), 1);
 	dev_evt = find_dmevents("foo");
 	assert_ptr_not_equal(dev_evt, NULL);
@@ -697,7 +685,7 @@ static void test_dmevent_loop_bad2(void **state)
 		skip();
 
 	will_return(__wrap_poll, 1);
-	will_return(__wrap_ioctl, 0);
+	wrap_will_return(WRAP_IOCTL, 0);
 	will_return(__wrap_libmp_dm_task_create, NULL);
 	assert_int_equal(dmevent_loop(), 1);
 	dev_evt = find_dmevents("foo");
@@ -721,9 +709,8 @@ static void test_dmevent_loop_good0(void **state)
 	remove_all_dm_device_events();
 	unwatch_all_dmevents();
 	will_return(__wrap_poll, 1);
-	will_return(__wrap_ioctl, 0);
+	wrap_will_return(WRAP_IOCTL, 0);
 	will_return(__wrap_libmp_dm_task_create, &data);
-	will_return(__wrap_dm_task_no_open_count, 1);
 	will_return(__wrap_dm_task_run, 1);
 	will_return(__wrap_dm_task_get_names, 1);
 	assert_int_equal(dmevent_loop(), 1);
@@ -757,9 +744,8 @@ static void test_dmevent_loop_good1(void **state)
 	assert_int_equal(add_dm_device_event("foo", 1, 6), 0);
 	assert_int_equal(remove_dm_device_event("xyzzy"), 0);
 	will_return(__wrap_poll, 1);
-	will_return(__wrap_ioctl, 0);
+	wrap_will_return(WRAP_IOCTL, 0);
 	will_return(__wrap_libmp_dm_task_create, &data);
-	will_return(__wrap_dm_task_no_open_count, 1);
 	will_return(__wrap_dm_task_run, 1);
 	will_return(__wrap_dm_task_get_names, 1);
 	expect_string(__wrap_update_multipath, mapname, "foo");
@@ -805,9 +791,8 @@ static void test_dmevent_loop_good2(void **state)
 	assert_int_equal(watch_dmevents("baz"), 0);
 	assert_int_equal(add_dm_device_event("baz", 1, 14), 0);
 	will_return(__wrap_poll, 1);
-	will_return(__wrap_ioctl, 0);
+	wrap_will_return(WRAP_IOCTL, 0);
 	will_return(__wrap_libmp_dm_task_create, &data);
-	will_return(__wrap_dm_task_no_open_count, 1);
 	will_return(__wrap_dm_task_run, 1);
 	will_return(__wrap_dm_task_get_names, 1);
 	expect_string(__wrap_update_multipath, mapname, "bar");
@@ -849,9 +834,8 @@ static void test_dmevent_loop_good3(void **state)
 	assert_int_equal(remove_dm_device_event("foo"), 0);
 	unwatch_dmevents("bar");
 	will_return(__wrap_poll, 1);
-	will_return(__wrap_ioctl, 0);
+	wrap_will_return(WRAP_IOCTL, 0);
 	will_return(__wrap_libmp_dm_task_create, &data);
-	will_return(__wrap_dm_task_no_open_count, 1);
 	will_return(__wrap_dm_task_run, 1);
 	will_return(__wrap_dm_task_get_names, 1);
 	expect_string(__wrap_remove_map_by_alias, alias, "foo");
@@ -874,7 +858,7 @@ static void test_arm_poll(void **state)
 	struct test_data *datap = (struct test_data *)(*state);
 	if (datap == NULL)
 		skip();
-	will_return(__wrap_ioctl, 0);
+	wrap_will_return(WRAP_IOCTL, 0);
 	assert_int_equal(arm_dm_event_poll(waiter->fd), 0);
 }
 

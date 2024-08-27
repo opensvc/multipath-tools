@@ -1,10 +1,7 @@
-#ifndef _DICT_H
-#define _DICT_H
+#ifndef DICT_H_INCLUDED
+#define DICT_H_INCLUDED
 
-#ifndef _VECTOR_H
 #include "vector.h"
-#endif
-
 #include "byteorder.h"
 struct strbuf;
 
@@ -19,4 +16,4 @@ int print_dev_loss(struct strbuf *buff, unsigned long v);
 int print_off_int_undef(struct strbuf *buff, long v);
 int print_auto_resize(struct strbuf *buff, long v);
 int print_flush_on_last_del(struct strbuf *buff, long v);
-#endif /* _DICT_H */
+#endif /* DICT_H_INCLUDED */

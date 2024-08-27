@@ -12,8 +12,8 @@
  * more details.
  */
 
-#ifndef _LINUX_NVME_H
-#define _LINUX_NVME_H
+#ifndef LINUX_NVME_H_INCLUDED
+#define LINUX_NVME_H_INCLUDED
 
 #include <linux/types.h>
 #include <linux/uuid.h>
@@ -1525,4 +1525,4 @@ struct nvme_completion {
 #define NVME_MINOR(ver)		(((ver) >> 8) & 0xff)
 #define NVME_TERTIARY(ver)	((ver) & 0xff)
 
-#endif /* _LINUX_NVME_H */
+#endif /* LINUX_NVME_H_INCLUDED */

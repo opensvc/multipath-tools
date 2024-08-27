@@ -30,8 +30,8 @@
 #include "libdmmp/libdmmp.h"
 #include "libdmmp_private.h"
 
-#define _DMMP_LOG_STRERR_ALIGN_WIDTH	80
-/* ^ Only used in _dmmp_log_stderr() for pretty log output.
+#define DMMP_LOG_STRERR_ALIGN_WIDTH	80
+/* ^ Only used in dmmp_log_stderr() for pretty log output.
  *   When provided log message is less than 80 bytes, fill it with space, then
  *   print code file name, function name, line after the 80th bytes.
  */
@@ -62,7 +62,7 @@ static const struct _num_str_conv _DMMP_PRI_CONV[] = {
 };
 _dmmp_str_func_gen(dmmp_log_priority_str, int, priority, _DMMP_PRI_CONV);
 
-void _dmmp_log_stderr(struct dmmp_context *ctx, int priority,
+void dmmp_log_stderr(struct dmmp_context *ctx, int priority,
 		      const char *file, int line, const char *func_name,
 		      const char *format, va_list args)
 {
@@ -81,9 +81,9 @@ void _dmmp_log_stderr(struct dmmp_context *ctx, int priority,
 	 *   bypass clang static analyzer about unused ctx argument warning
 	 */
 
-	if (printed_bytes < _DMMP_LOG_STRERR_ALIGN_WIDTH) {
+	if (printed_bytes < DMMP_LOG_STRERR_ALIGN_WIDTH) {
 		fprintf(stderr, "%*s # %s:%s():%d\n",
-			_DMMP_LOG_STRERR_ALIGN_WIDTH - printed_bytes, "", file,
+			DMMP_LOG_STRERR_ALIGN_WIDTH - printed_bytes, "", file,
 			func_name, line);
 	} else {
 		fprintf(stderr, " # %s:%s():%d\n", file, func_name, line);

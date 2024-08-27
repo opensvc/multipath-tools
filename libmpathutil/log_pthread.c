@@ -60,7 +60,7 @@ static void flush_logqueue (void)
 	} while (empty == 0);
 }
 
-static void cleanup_log_thread(__attribute((unused)) void *arg)
+static void cleanup_log_thread(__attribute__((unused)) void *arg)
 {
 	logdbg(stderr, "log thread exiting");
 	pthread_mutex_lock(&logev_lock);

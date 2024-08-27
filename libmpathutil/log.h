@@ -1,5 +1,5 @@
-#ifndef LOG_H
-#define LOG_H
+#ifndef LOG_H_INCLUDED
+#define LOG_H_INCLUDED
 
 #define DEFAULT_AREA_SIZE 16384
 #define MAX_MSG_SIZE 256
@@ -40,4 +40,4 @@ int log_dequeue (void *);
 void log_syslog (void *);
 void dump_logmsg (void *);
 
-#endif /* LOG_H */
+#endif /* LOG_H_INCLUDED */

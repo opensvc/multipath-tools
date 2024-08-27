@@ -1,5 +1,6 @@
-#ifndef _DEFAULTS_H
-#define _DEFAULTS_H
+#ifndef DEFAULTS_H_INCLUDED
+#define DEFAULTS_H_INCLUDED
+
 #include <limits.h>
 #include <string.h>
 
@@ -78,4 +79,4 @@ static inline char *set_default(char *str)
 	return strdup(str);
 }
 extern const char *const default_partition_delim;
-#endif /* _DEFAULTS_H */
+#endif /* DEFAULTS_H_INCLUDED */
