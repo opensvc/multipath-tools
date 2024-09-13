@@ -52,14 +52,27 @@ jobs:
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
-          command: -j -Orecurse ${{ env.ARCHIVE_TGT }} test
+          command: -j -Orecurse test
       - name: build and test (jessie)
         # On jessie, we use libreadline 5 (no licensing issue)
         if: ${{ matrix.os == 'debian-jessie' }}
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
-          command: -j -Orecurse READLINE=libreadline ${{ env.ARCHIVE_TGT }} test
+          command: -j -Orecurse READLINE=libreadline test
+
+      - name: create ${{ env.ARCHIVE_TGT }}
+        if: ${{ matrix.os != 'debian-jessie' }}
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          command: ${{ env.ARCHIVE_TGT }}
+      - name: create ${{ env.ARCHIVE_TGT }} (jessie)
+        if: ${{ matrix.os == 'debian-jessie' }}
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          command: READLINE=libreadline ${{ env.ARCHIVE_TGT }}
 
       - name: upload binary archive
         uses: actions/upload-artifact@v4
