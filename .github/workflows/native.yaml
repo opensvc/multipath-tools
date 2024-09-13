@@ -68,8 +68,22 @@ jobs:
           path: ${{ env.ARCHIVE_TGT }}
           overwrite: true
 
-      - name: clean
-        run: make clean
+  clang:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - debian-jessie
+          - debian-buster
+          - debian-bullseye
+          - debian-bookworm
+          - fedora-40
+          - opensuse-leap
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+
       - name: clang
         if: ${{ matrix.os != 'debian-jessie' }}
         uses: mosteo-actions/docker-run@v1
