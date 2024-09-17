@@ -169,9 +169,14 @@ fpin_els_add_li_frame(struct fc_nl_event *fc_event)
 /*Sets the rport port_state to marginal*/
 static void fpin_set_rport_marginal(struct udev_device *rport_dev)
 {
+	char old_value[20]; /* match kernel show_fc_rport_port_state() size */
 	static const char marginal[] = "Marginal";
 	ssize_t ret;
 
+	ret = sysfs_attr_get_value(rport_dev, "port_state",
+				   old_value, sizeof(old_value));
+	if (ret == sizeof(marginal) - 1 && strcmp(old_value, marginal) == 0)
+		return;
 	ret = sysfs_attr_set_value(rport_dev, "port_state",
 				   marginal, sizeof(marginal) - 1);
 	if (ret != sizeof(marginal) - 1)
