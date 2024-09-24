@@ -801,7 +801,7 @@ static struct hwentry default_hw[] = {
 	 */
 	{
 		/*
-		 * ONTAP FAS/AFF Series
+		 * ONTAP FAS/AFF/ASA Series
 		 *
 		 * Maintainer: Martin George <marting@netapp.com>
 		 */
@@ -1074,7 +1074,7 @@ static struct hwentry default_hw[] = {
 	 * Pure Storage
 	 */
 	{
-		/* FlashArray */
+		/* FlashArray family */
 		.vendor        = "PURE",
 		.product       = "FlashArray",
 		.pgpolicy      = GROUP_BY_PRIO,
@@ -1094,15 +1094,15 @@ static struct hwentry default_hw[] = {
 	 * Huawei
 	 */
 	{
-		/* All, except OceanStor V3-V6 */
+		/* Older than OceanStor V3 */
 		.vendor        = "^(HUAWEI|HUASY|HS)",
-		.product       = "^(Dorado|HVS8|S[23568]|V1[568]|VIS6000)",
+		.product       = "^(Dorado[25]|HVS8|S[23568]|V1[568]|VIS6000)",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 15,
 	},
 	{
-		/* OceanStor V3-V6 */
+		/* OceanStor V3 or better */
 		.vendor        = "^(HUAWEI|AnyStor|Marstor|NETPOSA|SanM|SUGON|UDsafe)",
 		.product       = "XSG1",
 		.pgpolicy      = GROUP_BY_PRIO,
