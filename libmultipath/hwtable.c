@@ -120,7 +120,8 @@ static struct hwentry default_hw[] = {
 		.vpd_vendor_id = VPD_VP_HP3PAR,
 	},
 	{
-		/* Alletra 9000 NVMe */
+		// Alletra 9000 NVMe / Alletra Storage MP
+		// GreenLake Block Storage MP
 		.vendor        = "NVME",
 		.product       = "HPE Alletra",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
