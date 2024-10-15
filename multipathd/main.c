@@ -2162,7 +2162,7 @@ static bool update_prio(struct multipath *mpp, bool refresh_all)
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		vector_foreach_slot (pgp->paths, pp, j) {
-			if (pp->state == PATH_DOWN)
+			if (pp->state != PATH_UP && pp->state != PATH_GHOST)
 				continue;
 			/*
 			 * refresh_all will be set if the mpp has any path
@@ -2191,7 +2191,7 @@ static bool update_prio(struct multipath *mpp, bool refresh_all)
 	 */
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		vector_foreach_slot (pgp->paths, pp, j) {
-			if (pp->state == PATH_DOWN)
+			if (pp->state != PATH_UP && pp->state != PATH_GHOST)
 				continue;
 			if (pp->is_checked == CHECK_PATH_CHECKED)
 				continue;
