@@ -190,6 +190,7 @@ void libcheck_free(struct checker *);
 void *libcheck_thread(struct checker_context *ctx);
 void libcheck_reset(void);
 int libcheck_mp_init(struct checker *);
+int libcheck_pending(struct checker *c);
 
 
 /*

@@ -26,6 +26,7 @@ struct checker_class {
 	void (*free)(struct checker *);      /* to free the context */
 	void (*reset)(void);		     /* to reset the global variables */
 	void *(*thread)(void *);	     /* async thread entry point */
+	int (*pending)(struct checker *);    /* to recheck pending paths */
 	const char **msgtable;
 	short msgtable_size;
 };
@@ -180,7 +181,8 @@ static struct checker_class *add_checker_class(const char *name)
 	c->mp_init = (int (*)(struct checker *)) dlsym(c->handle, "libcheck_mp_init");
 	c->reset = (void (*)(void)) dlsym(c->handle, "libcheck_reset");
 	c->thread = (void *(*)(void*)) dlsym(c->handle, "libcheck_thread");
-	/* These 3 functions can be NULL. call dlerror() to clear out any
+	c->pending = (int (*)(struct checker *)) dlsym(c->handle, "libcheck_pending");
+	/* These 4 functions can be NULL. call dlerror() to clear out any
 	 * error string */
 	dlerror();
 

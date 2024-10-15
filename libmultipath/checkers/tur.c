@@ -323,6 +323,49 @@ static int tur_check_async_timeout(struct checker *c)
 	return (now.tv_sec > ct->time);
 }
 
+int check_pending(struct checker *c, struct timespec endtime)
+{
+	struct tur_checker_context *ct = c->context;
+	int r, tur_status = PATH_PENDING;
+
+	pthread_mutex_lock(&ct->lock);
+
+	for (r = 0;
+	     r == 0 && ct->state == PATH_PENDING &&
+	     ct->msgid == MSG_TUR_RUNNING;
+	     r = pthread_cond_timedwait(&ct->active, &ct->lock, &endtime));
+
+	if (!r) {
+		tur_status = ct->state;
+		c->msgid = ct->msgid;
+	}
+	pthread_mutex_unlock(&ct->lock);
+	if (tur_status == PATH_PENDING && c->msgid == MSG_TUR_RUNNING) {
+		condlog(4, "%d:%d : tur checker still running",
+			major(ct->devt), minor(ct->devt));
+	} else {
+		int running = uatomic_xchg(&ct->running, 0);
+		if (running)
+			pthread_cancel(ct->thread);
+		ct->thread = 0;
+	}
+
+	return tur_status;
+}
+
+int libcheck_pending(struct checker *c)
+{
+	struct timespec endtime;
+	struct tur_checker_context *ct = c->context;
+
+	/* The if path checker isn't running, just return the exiting value. */
+	if (!ct || !ct->thread)
+		return c->path_state;
+
+	get_monotonic_time(&endtime);
+	return check_pending(c, endtime);
+}
+
 int libcheck_check(struct checker * c)
 {
 	struct tur_checker_context *ct = c->context;
@@ -437,27 +480,7 @@ int libcheck_check(struct checker * c)
 			return tur_check(c->fd, c->timeout, &c->msgid);
 		}
 		tur_timeout(&tsp);
-		pthread_mutex_lock(&ct->lock);
-
-		for (r = 0;
-		     r == 0 && ct->state == PATH_PENDING &&
-			     ct->msgid == MSG_TUR_RUNNING;
-		     r = pthread_cond_timedwait(&ct->active, &ct->lock, &tsp));
-
-		if (!r) {
-			tur_status = ct->state;
-			c->msgid = ct->msgid;
-		}
-		pthread_mutex_unlock(&ct->lock);
-		if (tur_status == PATH_PENDING && c->msgid == MSG_TUR_RUNNING) {
-			condlog(4, "%d:%d : tur checker still running",
-				major(ct->devt), minor(ct->devt));
-		} else {
-			int running = uatomic_xchg(&ct->running, 0);
-			if (running)
-				pthread_cancel(ct->thread);
-			ct->thread = 0;
-		}
+		tur_status = check_pending(c, tsp);
 	}
 
 	return tur_status;

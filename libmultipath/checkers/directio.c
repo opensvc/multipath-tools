@@ -288,14 +288,36 @@ get_events(struct aio_group *aio_grp, struct timespec *timeout)
 	return got_events;
 }
 
+static void
+check_pending(struct directio_context *ct, struct timespec endtime)
+{
+	int r;
+	struct timespec currtime, timeout;
+
+	while(1) {
+		get_monotonic_time(&currtime);
+		timespecsub(&endtime, &currtime, &timeout);
+		if (timeout.tv_sec < 0)
+			timeout.tv_sec = timeout.tv_nsec = 0;
+
+		r = get_events(ct->aio_grp, &timeout);
+
+		if (ct->req->state != PATH_PENDING) {
+			ct->running = 0;
+			return;
+		} else if (r == 0 ||
+			   (timeout.tv_sec == 0 && timeout.tv_nsec == 0))
+			return;
+	}
+}
+
 static int
 check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 {
 	struct timespec	timeout = { .tv_nsec = 1000 };
 	struct stat	sb;
 	int		rc;
-	long		r;
-	struct timespec currtime, endtime;
+	struct timespec endtime;
 
 	if (fstat(fd, &sb) == 0) {
 		LOG(4, "called for %x", (unsigned) sb.st_rdev);
@@ -330,21 +352,11 @@ check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 	endtime.tv_sec += timeout.tv_sec;
 	endtime.tv_nsec += timeout.tv_nsec;
 	normalize_timespec(&endtime);
-	while(1) {
-		r = get_events(ct->aio_grp, &timeout);
 
-		if (ct->req->state != PATH_PENDING) {
-			ct->running = 0;
-			return ct->req->state;
-		} else if (r == 0 ||
-			   (timeout.tv_sec == 0 && timeout.tv_nsec == 0))
-			break;
+	check_pending(ct, endtime);
+	if (ct->req->state != PATH_PENDING)
+		return ct->req->state;
 
-		get_monotonic_time(&currtime);
-		timespecsub(&endtime, &currtime, &timeout);
-		if (timeout.tv_sec < 0)
-			timeout.tv_sec = timeout.tv_nsec = 0;
-	}
 	if (ct->running > timeout_secs || sync) {
 		struct io_event event;
 
@@ -360,17 +372,9 @@ check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 	return rc;
 }
 
-int libcheck_check (struct checker * c)
+static void set_msgid(struct checker *c, int state)
 {
-	int ret;
-	struct directio_context * ct = (struct directio_context *)c->context;
-
-	if (!ct)
-		return PATH_UNCHECKED;
-
-	ret = check_state(c->fd, ct, checker_is_sync(c), c->timeout);
-
-	switch (ret)
+	switch (state)
 	{
 	case PATH_UNCHECKED:
 		c->msgid = MSG_DIRECTIO_UNKNOWN;
@@ -387,5 +391,37 @@ int libcheck_check (struct checker * c)
 	default:
 		break;
 	}
+}
+
+int libcheck_pending(struct checker *c)
+{
+	struct timespec endtime;
+	struct directio_context *ct = (struct directio_context *)c->context;
+
+	/* The if path checker isn't running, just return the exiting value. */
+	if (!ct || !ct->running)
+		return c->path_state;
+
+	if (ct->req->state == PATH_PENDING) {
+		get_monotonic_time(&endtime);
+		check_pending(ct, endtime);
+	} else
+		ct->running = 0;
+	set_msgid(c, ct->req->state);
+
+	return ct->req->state;
+}
+
+int libcheck_check (struct checker * c)
+{
+	int ret;
+	struct directio_context * ct = (struct directio_context *)c->context;
+
+	if (!ct)
+		return PATH_UNCHECKED;
+
+	ret = check_state(c->fd, ct, checker_is_sync(c), c->timeout);
+	set_msgid(c, ret);
+
 	return ret;
 }
