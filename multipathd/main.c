@@ -2324,7 +2324,9 @@ check_path_state(struct path *pp)
 	if (newstate == PATH_UP) {
 		conf = get_multipath_config();
 		pthread_cleanup_push(put_multipath_config, conf);
-		newstate = get_state(pp, conf, 1, newstate);
+		newstate = PATH_UNCHECKED;
+		if (start_checker(pp, conf, 1, newstate) == 0)
+			newstate = get_state(pp);
 		pthread_cleanup_pop(1);
 	} else {
 		checker_clear_message(&pp->checker);

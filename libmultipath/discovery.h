@@ -34,7 +34,9 @@ int path_discovery (vector pathvec, int flag);
 int path_get_tpgs(struct path *pp); /* This function never returns TPGS_UNDEF */
 int do_tur (char *);
 int path_offline (struct path *);
-int get_state (struct path * pp, struct config * conf, int daemon, int state);
+int start_checker(struct path * pp, struct config * conf, int daemon,
+		  int state);
+int get_state(struct path * pp);
 int get_vpd_sgio (int fd, int pg, int vend_id, char * str, int maxlen);
 int pathinfo (struct path * pp, struct config * conf, int mask);
 int alloc_path_with_pathinfo (struct config *conf, struct udev_device *udevice,
