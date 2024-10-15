@@ -2396,7 +2396,7 @@ enum check_path_return {
 };
 
 static int
-do_check_path (struct vectors * vecs, struct path * pp)
+update_path_state (struct vectors * vecs, struct path * pp)
 {
 	int newstate;
 	int new_path_up = 0;
@@ -2414,12 +2414,6 @@ do_check_path (struct vectors * vecs, struct path * pp)
 	marginal_pathgroups = conf->marginal_pathgroups;
 	put_multipath_config(conf);
 
-	if (pp->checkint == CHECKINT_UNDEF) {
-		condlog(0, "%s: BUG: checkint is not set", pp->dev);
-		pp->checkint = checkint;
-	};
-
-	start_path_check(pp);
 	newstate = get_new_state(pp);
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED)
 		return CHECK_PATH_SKIPPED;
@@ -2639,7 +2633,7 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks,
 	    time_t start_secs)
 {
 	int r;
-	unsigned int adjust_int, max_checkint;
+	unsigned int adjust_int, checkint, max_checkint;
 	struct config *conf;
 	time_t next_idx, goal_idx;
 
@@ -2652,14 +2646,21 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks,
 		return CHECK_PATH_SKIPPED;
 
 	conf = get_multipath_config();
+	checkint = conf->checkint;
 	max_checkint = conf->max_checkint;
 	adjust_int = conf->adjust_int;
 	put_multipath_config(conf);
 
-	r = do_check_path(vecs, pp);
+	if (pp->checkint == CHECKINT_UNDEF) {
+		condlog(0, "%s: BUG: checkint is not set", pp->dev);
+		pp->checkint = checkint;
+	}
+
+	start_path_check(pp);
+	r = update_path_state(vecs, pp);
 
 	/*
-	 * do_check_path() removed or orphaned the path.
+	 * update_path_state() removed or orphaned the path.
 	 */
 	if (r == CHECK_PATH_REMOVED || !pp->mpp)
 		return r;
