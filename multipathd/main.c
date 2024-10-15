@@ -2390,6 +2390,7 @@ sync_mpp(struct vectors * vecs, struct multipath *mpp, unsigned int ticks)
 }
 
 enum check_path_return {
+	CHECK_PATH_STARTED,
 	CHECK_PATH_CHECKED,
 	CHECK_PATH_SKIPPED,
 	CHECK_PATH_REMOVED,
@@ -2629,14 +2630,8 @@ update_path_state (struct vectors * vecs, struct path * pp)
 }
 
 static int
-check_path (struct vectors * vecs, struct path * pp, unsigned int ticks,
-	    time_t start_secs)
+check_path (struct path * pp, unsigned int ticks)
 {
-	int r;
-	unsigned int adjust_int, checkint, max_checkint;
-	struct config *conf;
-	time_t next_idx, goal_idx;
-
 	if (pp->initialized == INIT_REMOVED)
 		return CHECK_PATH_SKIPPED;
 
@@ -2645,18 +2640,27 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks,
 	if (pp->tick)
 		return CHECK_PATH_SKIPPED;
 
-	conf = get_multipath_config();
-	checkint = conf->checkint;
-	max_checkint = conf->max_checkint;
-	adjust_int = conf->adjust_int;
-	put_multipath_config(conf);
-
 	if (pp->checkint == CHECKINT_UNDEF) {
+		struct config *conf;
+
 		condlog(0, "%s: BUG: checkint is not set", pp->dev);
-		pp->checkint = checkint;
+		conf = get_multipath_config();
+		pp->checkint = conf->checkint;
+		put_multipath_config(conf);
 	}
 
 	start_path_check(pp);
+	return CHECK_PATH_STARTED;
+}
+
+static int
+update_path(struct vectors * vecs, struct path * pp, time_t start_secs)
+{
+	int r;
+	unsigned int adjust_int, max_checkint;
+	struct config *conf;
+	time_t next_idx, goal_idx;
+
 	r = update_path_state(vecs, pp);
 
 	/*
@@ -2685,6 +2689,10 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks,
 	if (pp->tick == 1)
 		return r;
 
+	conf = get_multipath_config();
+	max_checkint = conf->max_checkint;
+	adjust_int = conf->adjust_int;
+	put_multipath_config(conf);
 	/*
 	 * every mpp has a goal_idx in the range of
 	 * 0 <= goal_idx < conf->max_checkint
@@ -2818,8 +2826,10 @@ check_paths(struct vectors *vecs, unsigned int ticks, int *num_paths_p)
 				if (!pp->mpp || pp->is_checked)
 					continue;
 				pp->is_checked = true;
-				rc = check_path(vecs, pp, ticks,
-						start_time.tv_sec);
+				rc = check_path(pp, ticks);
+				if (rc == CHECK_PATH_STARTED)
+					rc = update_path(vecs, pp,
+							 start_time.tv_sec);
 				if (rc == CHECK_PATH_CHECKED)
 					(*num_paths_p)++;
 				if (++paths_checked % 128 == 0)
