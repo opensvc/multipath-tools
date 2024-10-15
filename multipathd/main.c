@@ -2002,7 +2002,7 @@ do_followover_should_failback(struct path * pp)
 	struct path *pp1;
 	int i;
 
-	if (!pp->pgindex || pp->pgindex != pp->mpp->bestpg)
+	if (pp->pgindex != pp->mpp->bestpg)
 		return 0;
 
 	pgp = VECTOR_SLOT(pp->mpp->pg, pp->pgindex - 1);
@@ -2022,7 +2022,7 @@ followover_should_failback(struct multipath *mpp)
 	struct pathgroup * pgp;
 	int i, j;
 
-	if (mpp->pgfailback != -FAILBACK_FOLLOWOVER || !mpp->pg)
+	if (mpp->pgfailback != -FAILBACK_FOLLOWOVER || !mpp->pg || !mpp->bestpg)
 		return 0;
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
