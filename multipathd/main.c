@@ -2080,9 +2080,12 @@ deferred_failback_tick (struct vectors *vecs)
 
 			if (!mpp->failback_tick &&
 			    need_switch_pathgroup(mpp, &need_reload)) {
-				if (need_reload)
-					reload_and_sync_map(mpp, vecs);
-				else
+				if (need_reload) {
+					if (reload_and_sync_map(mpp, vecs) == 2) {
+						/* multipath device removed */
+						i--;
+					}
+				} else
 					switch_pathgroup(mpp);
 			}
 		}
