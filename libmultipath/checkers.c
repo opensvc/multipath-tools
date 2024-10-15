@@ -299,28 +299,28 @@ void checker_put (struct checker * dst)
 	free_checker_class(src);
 }
 
-int checker_check (struct checker * c, int path_state)
+int checker_get_state(struct checker *c)
 {
-	int r;
+	return c ? c->path_state : PATH_UNCHECKED;
+}
 
+void checker_check (struct checker * c, int path_state)
+{
 	if (!c)
-		return PATH_WILD;
+		return;
 
 	c->msgid = CHECKER_MSGID_NONE;
 	if (c->disable) {
 		c->msgid = CHECKER_MSGID_DISABLED;
-		return PATH_UNCHECKED;
-	}
-	if (!strncmp(c->cls->name, NONE, 4))
-		return path_state;
-
-	if (c->fd < 0) {
+		c->path_state = PATH_UNCHECKED;
+	} else if (!strncmp(c->cls->name, NONE, 4)) {
+		c->path_state = path_state;
+	} else if (c->fd < 0) {
 		c->msgid = CHECKER_MSGID_NO_FD;
-		return PATH_WILD;
+		c->path_state = PATH_WILD;
+	} else {
+		c->path_state = c->cls->check(c);
 	}
-	r = c->cls->check(c);
-
-	return r;
 }
 
 const char *checker_name(const struct checker *c)

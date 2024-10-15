@@ -123,6 +123,7 @@ struct checker {
 	int fd;
 	unsigned int timeout;
 	int disable;
+	int path_state;
 	short msgid;		             /* checker-internal extra status */
 	void * context;                      /* store for persistent data */
 	void ** mpcontext;                   /* store for persistent data shared
@@ -169,7 +170,8 @@ struct checker_context {
 };
 int start_checker_thread (pthread_t *thread, const pthread_attr_t *attr,
 			  struct checker_context *ctx);
-int checker_check (struct checker *, int);
+int checker_get_state(struct checker *c);
+void checker_check (struct checker *, int);
 int checker_is_sync(const struct checker *);
 const char *checker_name (const struct checker *);
 void reset_checker_classes(void);
