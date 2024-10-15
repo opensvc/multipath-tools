@@ -1076,18 +1076,16 @@ detect_alua(struct path * pp)
 		return;
 	}
 
-	if (pp->fd == -1 || pp->offline)
+	if (pp->fd == -1 || pp->sysfs_state == PATH_DOWN)
 		return;
 
 	ret = get_target_port_group(pp);
 	if (ret < 0 || get_asymmetric_access_state(pp, ret) < 0) {
-		int state;
-
 		if (ret == -RTPG_INQUIRY_FAILED)
 			return;
 
-		state = path_offline(pp);
-		if (state != PATH_UP)
+		path_sysfs_state(pp);
+		if (pp->sysfs_state != PATH_UP)
 			return;
 
 		pp->tpgs = TPGS_NONE;
@@ -1800,7 +1798,7 @@ common_sysfs_pathinfo (struct path * pp)
 }
 
 int
-path_offline (struct path * pp)
+path_sysfs_state(struct path * pp)
 {
 	struct udev_device * parent;
 	char buff[SCSI_STATE_SIZE];
@@ -1814,7 +1812,8 @@ path_offline (struct path * pp)
 		subsys_type = "nvme";
 	}
 	else {
-		return PATH_UP;
+		pp->sysfs_state = PATH_UP;
+		goto out;
 	}
 
 	parent = pp->udev;
@@ -1827,16 +1826,18 @@ path_offline (struct path * pp)
 
 	if (!parent) {
 		condlog(1, "%s: failed to get sysfs information", pp->dev);
-		return PATH_REMOVED;
+		pp->sysfs_state = PATH_REMOVED;
+		goto out;
 	}
 
 	memset(buff, 0x0, SCSI_STATE_SIZE);
 	err = sysfs_attr_get_value(parent, "state", buff, sizeof(buff));
 	if (!sysfs_attr_value_ok(err, sizeof(buff))) {
 		if (err == -ENXIO)
-			return PATH_REMOVED;
+			pp->sysfs_state = PATH_REMOVED;
 		else
-			return PATH_DOWN;
+			pp->sysfs_state = PATH_DOWN;
+		goto out;
 	}
 
 
@@ -1844,31 +1845,34 @@ path_offline (struct path * pp)
 
 	if (pp->bus == SYSFS_BUS_SCSI) {
 		if (!strncmp(buff, "offline", 7)) {
-			pp->offline = 1;
-			return PATH_DOWN;
+			pp->sysfs_state = PATH_DOWN;
+			goto out;
+		} else if (!strncmp(buff, "blocked", 7) ||
+			   !strncmp(buff, "quiesce", 7)) {
+			pp->sysfs_state = PATH_PENDING;
+			goto out;
+		} else if (!strncmp(buff, "running", 7)) {
+			pp->sysfs_state = PATH_UP;
+			goto out;
 		}
-		pp->offline = 0;
-		if (!strncmp(buff, "blocked", 7) ||
-		    !strncmp(buff, "quiesce", 7))
-			return PATH_PENDING;
-		else if (!strncmp(buff, "running", 7))
-			return PATH_UP;
 
 	}
 	else if (pp->bus == SYSFS_BUS_NVME) {
 		if (!strncmp(buff, "dead", 4)) {
-			pp->offline = 1;
-			return PATH_DOWN;
+			pp->sysfs_state = PATH_DOWN;
+			goto out;
+		} else if (!strncmp(buff, "new", 3) ||
+			   !strncmp(buff, "deleting", 8)) {
+			pp->sysfs_state = PATH_PENDING;
+			goto out;
+		} else if (!strncmp(buff, "live", 4)) {
+			pp->sysfs_state = PATH_UP;
+			goto out;
 		}
-		pp->offline = 0;
-		if (!strncmp(buff, "new", 3) ||
-		    !strncmp(buff, "deleting", 8))
-			return PATH_PENDING;
-		else if (!strncmp(buff, "live", 4))
-			return PATH_UP;
 	}
-
-	return PATH_DOWN;
+	pp->sysfs_state = PATH_DOWN;
+out:
+	return pp->sysfs_state;
 }
 
 static int
@@ -2043,8 +2047,7 @@ get_prio (struct path * pp)
 	old_prio = pp->priority;
 	pp->priority = prio_getprio(p, pp);
 	if (pp->priority < 0) {
-		/* this changes pp->offline, but why not */
-		int state = path_offline(pp);
+		int state = path_sysfs_state(pp);
 
 		if (state == PATH_DOWN || state == PATH_PENDING) {
 			pp->priority = old_prio;
@@ -2415,7 +2418,7 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			return PATHINFO_SKIPPED;
 	}
 
-	path_state = path_offline(pp);
+	path_state = path_sysfs_state(pp);
 	if (path_state == PATH_REMOVED)
 		goto blank;
 	else if (mask & DI_NOIO) {

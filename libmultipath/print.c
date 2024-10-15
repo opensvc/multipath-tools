@@ -514,7 +514,7 @@ snprint_offline (struct strbuf *buff, const struct path * pp)
 {
 	if (!pp || !pp->mpp)
 		return append_strbuf_str(buff, "unknown");
-	else if (pp->offline)
+	else if (pp->sysfs_state == PATH_DOWN)
 		return append_strbuf_str(buff, "offline");
 	else
 		return append_strbuf_str(buff, "running");
