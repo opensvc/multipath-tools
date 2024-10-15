@@ -251,6 +251,8 @@ void checker_disable (struct checker * c)
 	if (!c)
 		return;
 	c->disable = 1;
+	c->msgid = CHECKER_MSGID_DISABLED;
+	c->path_state = PATH_UNCHECKED;
 }
 
 int checker_init (struct checker * c, void ** mpctxt_addr)
