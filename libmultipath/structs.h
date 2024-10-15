@@ -318,6 +318,7 @@ enum check_path_states {
 	CHECK_PATH_UNCHECKED,
 	CHECK_PATH_STARTED,
 	CHECK_PATH_CHECKED,
+	CHECK_PATH_NEW_UP,
 	CHECK_PATH_SKIPPED,
 	CHECK_PATH_REMOVED,
 };
@@ -421,6 +422,13 @@ enum prflag_value {
 	PRFLAG_SET,
 };
 
+enum prio_update_type {
+	PRIO_UPDATE_NONE,
+	PRIO_UPDATE_NORMAL,
+	PRIO_UPDATE_NEW_PATH,
+	PRIO_UPDATE_MARGINAL,
+};
+
 struct multipath {
 	char wwid[WWID_SIZE];
 	char alias_old[WWID_SIZE];
@@ -464,6 +472,7 @@ struct multipath {
 	int queue_mode;
 	unsigned int sync_tick;
 	int synced_count;
+	enum prio_update_type prio_update;
 	uid_t uid;
 	gid_t gid;
 	mode_t mode;
