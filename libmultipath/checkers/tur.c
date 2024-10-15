@@ -59,6 +59,7 @@ struct tur_checker_context {
 	struct checker_context ctx;
 	unsigned int nr_timeouts;
 	struct timespec endtime;
+	bool checked_state;
 };
 
 int libcheck_init (struct checker * c)
@@ -351,7 +352,15 @@ int check_pending(struct checker *c)
 		ct->thread = 0;
 	}
 
+	ct->checked_state = true;
 	return tur_status;
+}
+
+bool libcheck_need_wait(struct checker *c)
+{
+	struct tur_checker_context *ct = c->context;
+	return (ct && ct->thread && uatomic_read(&ct->running) != 0 &&
+		!ct->checked_state);
 }
 
 int libcheck_pending(struct checker *c)
@@ -381,6 +390,7 @@ int libcheck_check(struct checker * c)
 	 * Async mode
 	 */
 	if (ct->thread) {
+		ct->checked_state = true;
 		if (tur_check_async_timeout(c)) {
 			int running = uatomic_xchg(&ct->running, 0);
 			if (running) {
@@ -463,6 +473,7 @@ int libcheck_check(struct checker * c)
 		pthread_mutex_unlock(&ct->lock);
 		ct->fd = c->fd;
 		ct->timeout = c->timeout;
+		ct->checked_state = false;
 		uatomic_add(&ct->holders, 1);
 		uatomic_set(&ct->running, 1);
 		tur_set_async_timeout(c);

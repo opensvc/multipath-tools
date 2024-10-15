@@ -2,6 +2,7 @@
 #define CHECKERS_H_INCLUDED
 
 #include <pthread.h>
+#include <stdbool.h>
 #include "list.h"
 #include "defaults.h"
 
@@ -171,6 +172,7 @@ struct checker_context {
 int start_checker_thread (pthread_t *thread, const pthread_attr_t *attr,
 			  struct checker_context *ctx);
 int checker_get_state(struct checker *c);
+bool checker_need_wait(struct checker *c);
 void checker_check (struct checker *, int);
 int checker_is_sync(const struct checker *);
 const char *checker_name (const struct checker *);
@@ -191,7 +193,7 @@ void *libcheck_thread(struct checker_context *ctx);
 void libcheck_reset(void);
 int libcheck_mp_init(struct checker *);
 int libcheck_pending(struct checker *c);
-
+bool libcheck_need_wait(struct checker *c);
 
 /*
  * msgid => message map.
