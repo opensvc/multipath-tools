@@ -60,10 +60,11 @@ const char *libcheck_msgtable[] = {
 #define LOG(prio, fmt, args...) condlog(prio, "directio: " fmt, ##args)
 
 struct directio_context {
-	int		running;
+	unsigned int	running;
 	int		reset_flags;
 	struct aio_group *aio_grp;
 	struct async_req *req;
+	struct timespec endtime;
 };
 
 static struct aio_group *
@@ -314,19 +315,16 @@ check_pending(struct directio_context *ct, struct timespec endtime)
 static int
 check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 {
-	struct timespec	timeout = { .tv_nsec = 1000 };
 	struct stat	sb;
 	int		rc;
+	struct io_event event;
 	struct timespec endtime;
 
 	if (fstat(fd, &sb) == 0) {
 		LOG(4, "called for %x", (unsigned) sb.st_rdev);
 	}
-	if (sync > 0) {
+	if (sync > 0)
 		LOG(4, "called in synchronous mode");
-		timeout.tv_sec  = timeout_secs;
-		timeout.tv_nsec = 0;
-	}
 
 	if (ct->running) {
 		if (ct->req->state != PATH_PENDING) {
@@ -345,31 +343,26 @@ check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 			LOG(3, "io_submit error %i", -rc);
 			return PATH_UNCHECKED;
 		}
+		get_monotonic_time(&ct->endtime);
+		ct->endtime.tv_nsec += 1000 * 1000;
+		normalize_timespec(&ct->endtime);
 	}
 	ct->running++;
+	if (!sync)
+		return PATH_PENDING;
 
 	get_monotonic_time(&endtime);
-	endtime.tv_sec += timeout.tv_sec;
-	endtime.tv_nsec += timeout.tv_nsec;
+	endtime.tv_sec += timeout_secs;
 	normalize_timespec(&endtime);
 
 	check_pending(ct, endtime);
 	if (ct->req->state != PATH_PENDING)
 		return ct->req->state;
 
-	if (ct->running > timeout_secs || sync) {
-		struct io_event event;
+	LOG(3, "abort check on timeout");
 
-		LOG(3, "abort check on timeout");
-
-		io_cancel(ct->aio_grp->ioctx, &ct->req->io, &event);
-		rc = PATH_DOWN;
-	} else {
-		LOG(4, "async io pending");
-		rc = PATH_PENDING;
-	}
-
-	return rc;
+	io_cancel(ct->aio_grp->ioctx, &ct->req->io, &event);
+	return PATH_DOWN;
 }
 
 static void set_msgid(struct checker *c, int state)
@@ -395,21 +388,31 @@ static void set_msgid(struct checker *c, int state)
 
 int libcheck_pending(struct checker *c)
 {
-	struct timespec endtime;
+	int rc;
+	struct io_event event;
 	struct directio_context *ct = (struct directio_context *)c->context;
 
 	/* The if path checker isn't running, just return the exiting value. */
 	if (!ct || !ct->running)
 		return c->path_state;
 
-	if (ct->req->state == PATH_PENDING) {
-		get_monotonic_time(&endtime);
-		check_pending(ct, endtime);
-	} else
+	if (ct->req->state == PATH_PENDING)
+		check_pending(ct, ct->endtime);
+	else
 		ct->running = 0;
-	set_msgid(c, ct->req->state);
+	rc = ct->req->state;
+	if (rc == PATH_PENDING) {
+		if (ct->running > c->timeout) {
+			LOG(3, "abort check on timeout");
+			io_cancel(ct->aio_grp->ioctx, &ct->req->io, &event);
+			rc = PATH_DOWN;
+		}
+		else
+			LOG(4, "async io pending");
+	}
+	set_msgid(c, rc);
 
-	return ct->req->state;
+	return rc;
 }
 
 int libcheck_check (struct checker * c)

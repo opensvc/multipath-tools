@@ -303,7 +303,12 @@ void checker_put (struct checker * dst)
 
 int checker_get_state(struct checker *c)
 {
-	return c ? c->path_state : PATH_UNCHECKED;
+	if (!c || !c->cls)
+		return PATH_UNCHECKED;
+	if (c->path_state != PATH_PENDING || !c->cls->pending)
+		return c->path_state;
+	c->path_state = c->cls->pending(c);
+	return c->path_state;
 }
 
 void checker_check (struct checker * c, int path_state)
