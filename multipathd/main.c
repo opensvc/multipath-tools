@@ -2715,13 +2715,10 @@ update_path(struct vectors * vecs, struct path * pp, time_t start_secs)
 }
 
 static int
-handle_uninitialized_path(struct vectors * vecs, struct path * pp,
-			  unsigned int ticks)
+check_uninitialized_path(struct path * pp, unsigned int ticks)
 {
-	int newstate;
 	int retrigger_tries;
 	struct config *conf;
-	int ret;
 
 	if (pp->initialized != INIT_NEW && pp->initialized != INIT_FAILED &&
 	    pp->initialized != INIT_MISSING_UDEV)
@@ -2735,6 +2732,7 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 	conf = get_multipath_config();
 	retrigger_tries = conf->retrigger_tries;
 	pp->tick = conf->max_checkint;
+	pp->checkint = conf->checkint;
 	put_multipath_config(conf);
 
 	if (pp->initialized == INIT_MISSING_UDEV) {
@@ -2769,6 +2767,15 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 	}
 
 	start_path_check(pp);
+	return CHECK_PATH_STARTED;
+}
+
+static int
+update_uninitialized_path(struct vectors * vecs, struct path * pp)
+{
+	int newstate, ret;
+	struct config *conf;
+
 	newstate = get_new_state(pp);
 
 	if (!strlen(pp->wwid) &&
@@ -2859,7 +2866,9 @@ next_mpp:
 			continue;
 		pp->is_checked = true;
 
-		rc = handle_uninitialized_path(vecs, pp, ticks);
+		rc = check_uninitialized_path(pp, ticks);
+		if (rc == CHECK_PATH_STARTED)
+			rc = update_uninitialized_path(vecs, pp);
 		if (rc == CHECK_PATH_REMOVED)
 			i--;
 		else if (rc == CHECK_PATH_CHECKED)
