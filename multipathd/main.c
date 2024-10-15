@@ -2850,6 +2850,7 @@ update_uninitialized_path(struct vectors * vecs, struct path * pp)
 enum checker_state {
 	CHECKER_STARTING,
 	CHECKER_CHECKING_PATHS,
+	CHECKER_WAITING_FOR_PATHS,
 	CHECKER_UPDATING_PATHS,
 	CHECKER_FINISHED,
 };
@@ -2861,6 +2862,7 @@ check_paths(struct vectors *vecs, unsigned int ticks)
 	struct timespec diff_time, start_time, end_time;
 	struct path *pp;
 	int i;
+	bool need_wait = false;
 
 	get_monotonic_time(&start_time);
 
@@ -2871,6 +2873,9 @@ check_paths(struct vectors *vecs, unsigned int ticks)
 			pp->is_checked = check_path(pp, ticks);
 		else
 			pp->is_checked = check_uninitialized_path(pp, ticks);
+		if (pp->is_checked == CHECK_PATH_STARTED &&
+		    checker_need_wait(&pp->checker))
+			need_wait = true;
 		if (++paths_checked % 128 == 0 &&
 		    (lock_has_waiters(&vecs->lock) || waiting_clients())) {
 			get_monotonic_time(&end_time);
@@ -2879,7 +2884,7 @@ check_paths(struct vectors *vecs, unsigned int ticks)
 				return CHECKER_CHECKING_PATHS;
 		}
 	}
-	return CHECKER_UPDATING_PATHS;
+	return need_wait ? CHECKER_WAITING_FOR_PATHS : CHECKER_UPDATING_PATHS;
 }
 
 static enum checker_state
@@ -3001,6 +3006,11 @@ checkerloop (void *ap)
 			if (checker_state != CHECKER_FINISHED) {
 				/* Yield to waiters */
 				struct timespec wait = { .tv_nsec = 10000, };
+				if (checker_state == CHECKER_WAITING_FOR_PATHS) {
+					/* wait 5ms */
+					wait.tv_nsec = 5 * 1000 * 1000;
+					checker_state = CHECKER_UPDATING_PATHS;
+				}
 				nanosleep(&wait, NULL);
 			}
 		}

@@ -2467,8 +2467,15 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 	if (mask & DI_CHECKER) {
 		if (path_state == PATH_UP) {
 			int newstate = PATH_UNCHECKED;
-			if (start_checker(pp, conf, 0, path_state) == 0)
+			if (start_checker(pp, conf, 0, path_state) == 0) {
+				if (checker_need_wait(&pp->checker)) {
+					struct timespec wait = {
+						.tv_nsec = 1000 * 1000,
+					};
+					nanosleep(&wait, NULL);
+				}
 				newstate = get_state(pp);
+			}
 			if (newstate != PATH_PENDING ||
 			    pp->state == PATH_UNCHECKED ||
 			    pp->state == PATH_WILD)
