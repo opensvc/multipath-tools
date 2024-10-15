@@ -314,6 +314,14 @@ enum recheck_wwid_states {
 	RECHECK_WWID_ON = YNU_YES,
 };
 
+enum check_path_states {
+	CHECK_PATH_UNCHECKED,
+	CHECK_PATH_STARTED,
+	CHECK_PATH_CHECKED,
+	CHECK_PATH_SKIPPED,
+	CHECK_PATH_REMOVED,
+};
+
 struct vpd_vendor_page {
 	int pg;
 	const char *name;
@@ -395,7 +403,7 @@ struct path {
 	int fast_io_fail;
 	unsigned int dev_loss;
 	int eh_deadline;
-	bool is_checked;
+	enum check_path_states is_checked;
 	bool can_use_env_uid;
 	unsigned int checker_timeout;
 	/* configlet pointers */
