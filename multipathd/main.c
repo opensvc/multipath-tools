@@ -96,7 +96,7 @@ void * mpath_pr_event_handler_fn (void * );
 do {								\
 	if (pp->mpp && checker_selected(&pp->checker) &&	\
 	    lvl <= libmp_verbosity) {					\
-		if (pp->offline)				\
+		if (pp->sysfs_state == PATH_DOWN)		\
 			condlog(lvl, "%s: %s - path offline",	\
 				pp->mpp->alias, pp->dev);	\
 		else  {						\
@@ -2320,7 +2320,7 @@ check_path_state(struct path *pp)
 	int newstate;
 	struct config *conf;
 
-	newstate = path_offline(pp);
+	newstate = path_sysfs_state(pp);
 	if (newstate == PATH_UP) {
 		conf = get_multipath_config();
 		pthread_cleanup_push(put_multipath_config, conf);
