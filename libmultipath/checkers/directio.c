@@ -64,7 +64,6 @@ struct directio_context {
 	int		reset_flags;
 	struct aio_group *aio_grp;
 	struct async_req *req;
-	struct timespec endtime;
 	bool checked_state;
 };
 
@@ -291,18 +290,17 @@ get_events(struct aio_group *aio_grp, struct timespec *timeout)
 }
 
 static void
-check_pending(struct directio_context *ct, struct timespec endtime)
+check_pending(struct directio_context *ct, struct timespec timeout)
 {
 	int r;
-	struct timespec currtime, timeout;
+	struct timespec endtime, currtime;
 
 	ct->checked_state = true;
+	get_monotonic_time(&endtime);
+	endtime.tv_sec += timeout.tv_sec;
+	endtime.tv_nsec += timeout.tv_nsec;
+	normalize_timespec(&endtime);
 	while(1) {
-		get_monotonic_time(&currtime);
-		timespecsub(&endtime, &currtime, &timeout);
-		if (timeout.tv_sec < 0)
-			timeout.tv_sec = timeout.tv_nsec = 0;
-
 		r = get_events(ct->aio_grp, &timeout);
 
 		if (ct->req->state != PATH_PENDING) {
@@ -311,6 +309,10 @@ check_pending(struct directio_context *ct, struct timespec endtime)
 		} else if (r == 0 ||
 			   (timeout.tv_sec == 0 && timeout.tv_nsec == 0))
 			return;
+		get_monotonic_time(&currtime);
+		timespecsub(&endtime, &currtime, &timeout);
+		if (timeout.tv_sec < 0)
+			timeout.tv_sec = timeout.tv_nsec = 0;
 	}
 }
 
@@ -320,7 +322,7 @@ check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 	struct stat	sb;
 	int		rc;
 	struct io_event event;
-	struct timespec endtime;
+	struct timespec timeout = { .tv_sec = timeout_secs };
 
 	if (fstat(fd, &sb) == 0) {
 		LOG(4, "called for %x", (unsigned) sb.st_rdev);
@@ -346,20 +348,13 @@ check_state(int fd, struct directio_context *ct, int sync, int timeout_secs)
 			LOG(3, "io_submit error %i", -rc);
 			return PATH_UNCHECKED;
 		}
-		get_monotonic_time(&ct->endtime);
-		ct->endtime.tv_nsec += 1000 * 1000;
-		normalize_timespec(&ct->endtime);
 		ct->checked_state = false;
 	}
 	ct->running++;
 	if (!sync)
 		return PATH_PENDING;
 
-	get_monotonic_time(&endtime);
-	endtime.tv_sec += timeout_secs;
-	normalize_timespec(&endtime);
-
-	check_pending(ct, endtime);
+	check_pending(ct, timeout);
 	if (ct->req->state != PATH_PENDING)
 		return ct->req->state;
 
@@ -402,13 +397,16 @@ int libcheck_pending(struct checker *c)
 	int rc;
 	struct io_event event;
 	struct directio_context *ct = (struct directio_context *)c->context;
+	struct timespec no_wait = { .tv_sec = 0 };
 
 	/* The if path checker isn't running, just return the exiting value. */
-	if (!ct || !ct->running)
-		return c->path_state;
+	if (!ct || !ct->running) {
+		rc = c->path_state;
+		goto out;
+	}
 
 	if (ct->req->state == PATH_PENDING)
-		check_pending(ct, ct->endtime);
+		check_pending(ct, no_wait);
 	else
 		ct->running = 0;
 	rc = ct->req->state;
@@ -421,8 +419,9 @@ int libcheck_pending(struct checker *c)
 		else
 			LOG(4, "async io pending");
 	}
-	set_msgid(c, rc);
 
+out:
+	set_msgid(c, rc);
 	return rc;
 }
 

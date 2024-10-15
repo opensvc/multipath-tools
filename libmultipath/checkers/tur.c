@@ -58,7 +58,6 @@ struct tur_checker_context {
 	int msgid;
 	struct checker_context ctx;
 	unsigned int nr_timeouts;
-	struct timespec endtime;
 	bool checked_state;
 };
 
@@ -299,14 +298,6 @@ void *libcheck_thread(struct checker_context *ctx)
 	return ((void *)0);
 }
 
-
-static void tur_timeout(struct timespec *tsp)
-{
-	get_monotonic_time(tsp);
-	tsp->tv_nsec += 1000 * 1000; /* 1 millisecond */
-	normalize_timespec(tsp);
-}
-
 static void tur_set_async_timeout(struct checker *c)
 {
 	struct tur_checker_context *ct = c->context;
@@ -328,16 +319,12 @@ static int tur_check_async_timeout(struct checker *c)
 int check_pending(struct checker *c)
 {
 	struct tur_checker_context *ct = c->context;
-	int r, tur_status = PATH_PENDING;
+	int tur_status = PATH_PENDING;
 
 	pthread_mutex_lock(&ct->lock);
 
-	for (r = 0;
-	     r == 0 && ct->state == PATH_PENDING &&
-	     ct->msgid == MSG_TUR_RUNNING;
-	     r = pthread_cond_timedwait(&ct->active, &ct->lock, &ct->endtime));
-
-	if (!r) {
+	if (ct->state != PATH_PENDING || ct->msgid != MSG_TUR_RUNNING)
+	{
 		tur_status = ct->state;
 		c->msgid = ct->msgid;
 	}
@@ -488,7 +475,6 @@ int libcheck_check(struct checker * c)
 				" sync mode", major(ct->devt), minor(ct->devt));
 			return tur_check(c->fd, c->timeout, &c->msgid);
 		}
-		tur_timeout(&ct->endtime);
 	}
 
 	return tur_status;
