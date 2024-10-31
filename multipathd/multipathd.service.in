@@ -12,12 +12,15 @@ Conflicts=initrd-cleanup.service
 ConditionKernelCommandLine=!nompath
 ConditionKernelCommandLine=!multipath=off
 ConditionVirtualization=!container
+StartLimitIntervalSec=30
+StartLimitBurst=3
 
 [Service]
 Type=notify
 NotifyAccess=main
 ExecStart=@BINDIR@/multipathd -d -s
 ExecReload=@BINDIR@/multipathd reconfigure
+Restart=on-failure
 TasksMax=infinity
 LimitRTPRIO=10
 CPUWeight=1000
