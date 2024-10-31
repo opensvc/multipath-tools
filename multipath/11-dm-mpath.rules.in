@@ -74,25 +74,25 @@ LABEL="check_mpath_unchanged"
 
 # A previous coldplug event occurred while the device was suspended.
 # Activation might have been partially skipped. Activate the device now,
-# i.e. disable the MPATH_UNCHANGED logic and set DM_ACTIVATION=1.
+# i.e. disable the MPATH_UNCHANGED logic.
 ENV{DM_COLDPLUG_SUSPENDED}=="1", ENV{.DM_SUSPENDED}!="1", \
-	ENV{DM_ACTIVATION}="1", ENV{MPATH_UNCHANGED}="0", \
+	ENV{MPATH_UNCHANGED}="0", \
 	PROGRAM="@SYSDIR_BIN@/logger -t 11-dm-mpath.rules -p daemon.notice \"Forcing activation of previously suspended device\"", \
 	GOTO="check_mpath_ready"
 
 # DM_SUBSYSTEM_UDEV_FLAG0 is the "RELOAD" flag for multipath subsystem.
-# Drop the DM_ACTIVATION flag here as mpath reloads tables if any of its
+# Set the MPATH_UNCHANGED flag here as mpath reloads tables if any of its
 # paths are lost/recovered. For any stack above the mpath device, this is not
 # something that should be reacted upon since it would be useless extra work.
 # It's exactly mpath's job to provide *seamless* device access to any of the
 # paths that are available underneath.
 ENV{DM_SUBSYSTEM_UDEV_FLAG0}=="1", \
-	ENV{DM_ACTIVATION}="0", ENV{MPATH_UNCHANGED}="1"
+	ENV{MPATH_UNCHANGED}="1"
 
-# For path failed or reinstated events, unset DM_ACTIVATION.
+# For path failed or reinstated events, set MPATH_UNCHANGED.
 # This is similar to the DM_SUBSYSTEM_UDEV_FLAG0 case above.
 ENV{DM_ACTION}=="PATH_FAILED|PATH_REINSTATED", \
-	ENV{DM_ACTIVATION}="0", ENV{MPATH_UNCHANGED}="1"
+	ENV{MPATH_UNCHANGED}="1"
 
 LABEL="check_mpath_ready"
 
@@ -112,11 +112,10 @@ GOTO="scan_import"
 
 LABEL="mpath_is_ready"
 
-# If the device comes back online, set DM_ACTIVATION so that
+# If the device comes back online, clear MPATH_UNCHANGED so that
 # upper layers will do a rescan. Don't do this if .MPATH_DEVICE_READY_OLD
 # is just empty (see comment above the DM_COOKIE test above).
-ENV{.MPATH_DEVICE_READY_OLD}=="0", \
-	ENV{DM_ACTIVATION}="1", ENV{MPATH_UNCHANGED}="0"
+ENV{.MPATH_DEVICE_READY_OLD}=="0", ENV{MPATH_UNCHANGED}="0"
 
 # The code to check multipath state ends here. We need to set
 # properties and symlinks regardless whether the map is usable or
@@ -145,6 +144,10 @@ IMPORT{db}="ID_PART_ENTRY_SCHEME"
 IMPORT{db}="ID_PART_GPT_AUTO_ROOT"
 
 LABEL="import_end"
+
+# If MPATH_UNCHANGED is set, adapt DM_ACTIVATION.
+ENV{MPATH_UNCHANGED}=="0", ENV{DM_ACTIVATION}="1"
+ENV{MPATH_UNCHANGED}=="1", ENV{DM_ACTIVATION}="0"
 
 # Reset previous DM_COLDPLUG_SUSPENDED if activation happens now
 ENV{.DM_SUSPENDED}!="1", ENV{DM_ACTIVATION}=="1", ENV{DM_COLDPLUG_SUSPENDED}=""
