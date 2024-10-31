@@ -24,12 +24,13 @@ ENV{DM_UDEV_RULES_VSN}=="1|2", ENV{.DM_SUSPENDED}!="1", ENV{DISK_RO}!="1", \
 	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="", GOTO="scan_import"
 LABEL="mpath_coldplug_end"
 
+IMPORT{db}="DM_COLDPLUG_SUSPENDED"
+
 # If this uevent didn't come from dm, don't try to update the
 # device state
 # Note that .MPATH_DEVICE_READY_OLD=="" here. Thus we won't activate the
 # device below at mpath_is_ready, which is correct.
 ENV{DM_COOKIE}!="?*", ENV{DM_ACTION}!="PATH_*", \
-	IMPORT{db}="DM_COLDPLUG_SUSPENDED", \
 	GOTO="check_mpath_ready"
 
 ENV{.MPATH_DEVICE_READY_OLD}="$env{MPATH_DEVICE_READY}"
@@ -67,7 +68,6 @@ LABEL="check_mpath_unchanged"
 # A previous coldplug event occurred while the device was suspended.
 # Activation might have been partially skipped. Activate the device now,
 # i.e. disable the MPATH_UNCHANGED logic and set DM_ACTIVATION=1.
-IMPORT{db}="DM_COLDPLUG_SUSPENDED"
 ENV{DM_COLDPLUG_SUSPENDED}=="1", ENV{.DM_SUSPENDED}!="1", \
 	ENV{DM_ACTIVATION}="1", ENV{MPATH_UNCHANGED}="0", \
 	PROGRAM="@SYSDIR_BIN@/logger -t 11-dm-mpath.rules -p daemon.notice \"Forcing activation of previously suspended device\"", \
