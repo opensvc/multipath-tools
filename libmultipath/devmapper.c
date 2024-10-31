@@ -1211,7 +1211,8 @@ static int dm_get_multipath(const char *name, struct multipath **pmpp)
 	if (!mpp->alias)
 		return DMP_ERR;
 
-	if ((rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+	if ((rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID |
+				MAPINFO_MPATH_ONLY,
 			  (mapid_t) { .str = name },
 			  (mapinfo_t) {
 				  .size = &mpp->size,
@@ -1219,9 +1220,6 @@ static int dm_get_multipath(const char *name, struct multipath **pmpp)
 				  .dmi = &mpp->dmi,
 			  })) != DMP_OK)
 		return rc;
-
-	if (!is_mpath_uuid(uuid))
-		return DMP_NO_MATCH;
 
 	strlcpy(mpp->wwid, uuid + UUID_PREFIX_LEN, sizeof(mpp->wwid));
 	*pmpp = steal_ptr(mpp);
