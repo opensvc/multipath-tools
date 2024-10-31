@@ -43,6 +43,15 @@ static const struct dm_info __attribute__((unused)) MPATH_DMI_01 = {
 	.minor = 123,
 };
 
+static const struct dm_info __attribute__((unused)) MPATH_DMI_02 = {
+	.exists = 1,
+	.live_table = 0,
+	.open_count = 1,
+	.target_count = 1,
+	.major = 254,
+	.minor = 123,
+};
+
 static const char MPATH_NAME_01[] = "mpathx";
 static const char MPATH_UUID_01[] = "mpath-3600a098038302d414b2b4d4453474f62";
 static const char MPATH_TARGET_01[] =
@@ -928,6 +937,8 @@ static void test_mapinfo_bad_target_type_03(void **state)
 	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 1, 0);
 	WRAP_DM_TASK_GET_INFO(1);
 	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_name, MPATH_NAME_01);
+	will_return(__wrap_dm_task_get_uuid, MPATH_UUID_01);
 	mock_dm_get_next_target(12345, TGT_PART, MPATH_STATUS_01, NULL);
 	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
 			   (mapid_t) { .str = "foo", },
@@ -1090,7 +1101,6 @@ static void test_mapinfo_bad_get_name_01(void **state)
 	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 1, 0);
 	WRAP_DM_TASK_GET_INFO(1);
 	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
-	mock_dm_get_next_target(12345, TGT_MPATH, MPATH_STATUS_01, NULL);
 	will_return(__wrap_dm_task_get_name, NULL);
 	rc = libmp_mapinfo(DM_MAP_BY_NAME,
 			   (mapid_t) { .str = "foo", },
@@ -1112,7 +1122,6 @@ static void test_mapinfo_bad_get_uuid_01(void **state)
 	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 1, 0);
 	WRAP_DM_TASK_GET_INFO(1);
 	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
-	mock_dm_get_next_target(12345, TGT_MPATH, MPATH_STATUS_01, NULL);
 	will_return(__wrap_dm_task_get_name, MPATH_NAME_01);
 	will_return(__wrap_dm_task_get_uuid, NULL);
 	rc = libmp_mapinfo(DM_MAP_BY_NAME,
@@ -1162,7 +1171,6 @@ static void test_mapinfo_bad_get_name_02(void **state)
 	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 1, 0);
 	WRAP_DM_TASK_GET_INFO(1);
 	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
-	mock_dm_get_next_target(12345, TGT_MPATH, MPATH_STATUS_01, NULL);
 	will_return(__wrap_dm_task_get_name, NULL);
 
 	rc = libmp_mapinfo(DM_MAP_BY_NAME,
@@ -1195,7 +1203,6 @@ static void test_mapinfo_bad_get_uuid_02(void **state)
 	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 1, 0);
 	WRAP_DM_TASK_GET_INFO(1);
 	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
-	mock_dm_get_next_target(12345, TGT_MPATH, MPATH_STATUS_01, NULL);
 	will_return(__wrap_dm_task_get_name, MPATH_NAME_01);
 	will_return(__wrap_dm_task_get_uuid, NULL);
 

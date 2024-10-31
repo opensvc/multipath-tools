@@ -715,6 +715,16 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 		return DMP_NOT_FOUND;
 	}
 
+	if ((info.name && !(name = dm_task_get_name(dmt)))
+	    || ((info.uuid || flags & MAPINFO_CHECK_UUID)
+		&& !(uuid = dm_task_get_uuid(dmt))))
+		return DMP_ERR;
+
+	if (flags & MAPINFO_CHECK_UUID && !is_mpath_uuid(uuid)) {
+		condlog(3, "%s: UUID mismatch: %s", fname__, uuid);
+		return DMP_NO_MATCH;
+	}
+
 	if (info.target || info.status || info.size || flags & MAPINFO_TGT_TYPE__) {
 		if (dm_get_next_target(dmt, NULL, &start, &length,
 				       &target_type, &params) != NULL) {
@@ -740,17 +750,9 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 	 * Check possible error conditions.
 	 * If error is returned, don't touch any output parameters.
 	 */
-	if ((info.name && !(name = dm_task_get_name(dmt)))
-	    || ((info.uuid || flags & MAPINFO_CHECK_UUID)
-		&& !(uuid = dm_task_get_uuid(dmt)))
-	    || (info.status && !(tmp_status = strdup(params)))
+	if ((info.status && !(tmp_status = strdup(params)))
 	    || (info.target && !tmp_target && !(tmp_target = strdup(params))))
 		return DMP_ERR;
-
-	if (flags & MAPINFO_CHECK_UUID && !is_mpath_uuid(uuid)) {
-		condlog(3, "%s: UUID mismatch: %s", fname__, uuid);
-		return DMP_NO_MATCH;
-	}
 
 	if (info.name) {
 		strlcpy(info.name, name, WWID_SIZE);
