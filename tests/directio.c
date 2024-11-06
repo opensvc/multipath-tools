@@ -34,6 +34,7 @@ struct io_event mock_events[AIO_GROUP_SIZE]; /* same as the checker max */
 int ev_off = 0;
 struct timespec zero_timeout = { .tv_sec = 0 };
 struct timespec full_timeout = { .tv_sec = -1 };
+const struct timespec one_sec = { .tv_sec = 1 };
 const char *test_dev = NULL;
 unsigned int test_delay = 10000;
 
@@ -223,7 +224,7 @@ void do_check_state(struct checker *c, int sync, int chk_state)
 {
 	struct directio_context * ct = (struct directio_context *)c->context;
 
-	if (!ct->running)
+	if (!is_running(ct))
 		will_return(__wrap_io_submit, 1);
 	assert_int_equal(check_state(test_fd, ct, sync, c->timeout), chk_state);
 	if (sync) {
@@ -277,7 +278,7 @@ static void do_libcheck_init(struct checker *c, int blocksize, int timeout,
 static int is_checker_running(struct checker *c)
 {
 	struct directio_context * ct = (struct directio_context *)c->context;
-	return ct->running;
+	return is_running(ct);
 }
 
 static struct aio_group *get_aio_grp(struct checker *c)
@@ -475,16 +476,22 @@ static void test_check_state_async_timeout(void **state)
 	return_io_getevents_none();
 	do_libcheck_pending(&c, PATH_PENDING);
 	assert_int_equal(libcheck_need_wait(&c), false);
+
+	nanosleep(&one_sec, NULL);
 	do_check_state(&c, 0, PATH_PENDING);
 	assert_int_equal(libcheck_need_wait(&c), false);
 	return_io_getevents_none();
 	do_libcheck_pending(&c, PATH_PENDING);
 	assert_int_equal(libcheck_need_wait(&c), false);
+
+	nanosleep(&one_sec, NULL);
 	do_check_state(&c, 0, PATH_PENDING);
 	assert_int_equal(libcheck_need_wait(&c), false);
 	return_io_getevents_none();
 	do_libcheck_pending(&c, PATH_PENDING);
 	assert_int_equal(libcheck_need_wait(&c), false);
+
+	nanosleep(&one_sec, NULL);
 	do_check_state(&c, 0, PATH_PENDING);
 	assert_int_equal(libcheck_need_wait(&c), false);
 	return_io_getevents_none();
@@ -624,12 +631,16 @@ static void test_async_timeout_cancel_failed(void **state)
 	return_io_getevents_none();
 	do_libcheck_pending(&c[1], PATH_PENDING);
 	assert_int_equal(libcheck_need_wait(&c[1]), false);
+
+	nanosleep(&one_sec, NULL);
 	do_check_state(&c[0], 0, PATH_PENDING);
 	do_check_state(&c[1], 0, PATH_PENDING);
 	return_io_getevents_none();
 	do_libcheck_pending(&c[0], PATH_PENDING);
 	return_io_getevents_none();
 	do_libcheck_pending(&c[1], PATH_PENDING);
+
+	nanosleep(&one_sec, NULL);
 	do_check_state(&c[0], 0, PATH_PENDING);
 	do_check_state(&c[1], 0, PATH_PENDING);
 	return_io_getevents_none();
@@ -641,10 +652,14 @@ static void test_async_timeout_cancel_failed(void **state)
 		do_libcheck_pending(&c[1], PATH_UP);
 		assert_int_equal(libcheck_need_wait(&c[1]), false);
 	}
+
+	nanosleep(&one_sec, NULL);
 	do_check_state(&c[0], 0, PATH_PENDING);
 	return_io_getevents_none();
 	do_libcheck_pending(&c[0], PATH_DOWN);
 	assert_true(is_checker_running(&c[0]));
+
+	nanosleep(&one_sec, NULL);
 	do_check_state(&c[1], 0, PATH_PENDING);
 	do_check_state(&c[0], 0, PATH_PENDING);
 	return_io_getevents_nr(NULL, 2, reqs, res);
