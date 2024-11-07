@@ -942,7 +942,7 @@ sysfs_set_scsi_tmo (struct config *conf, struct multipath *mpp)
 			continue;
 		}
 
-		if (pp->dev_loss == DEV_LOSS_TMO_UNSET)
+		if (pp->dev_loss == DEV_LOSS_TMO_UNSET && min_dev_loss != 0)
 			pp->dev_loss = min_dev_loss;
 		else if (pp->dev_loss < min_dev_loss) {
 			pp->dev_loss = min_dev_loss;
