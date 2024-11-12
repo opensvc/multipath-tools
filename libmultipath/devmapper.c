@@ -1349,7 +1349,7 @@ do_foreach_partmaps (const char *mapname,
 		    /*
 		     * if there is only a single "linear" target
 		     */
-		    libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_PART_ONLY,
+		    libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_PART_ONLY | MAPINFO_CHECK_UUID,
 				  (mapid_t) { .str = names->name },
 				  (mapinfo_t) {
 					  .uuid = part_uuid,
