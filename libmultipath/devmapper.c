@@ -719,7 +719,7 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 		if (dm_get_next_target(dmt, NULL, &start, &length,
 				       &target_type, &params) != NULL) {
 			condlog(2, "%s: map %s has multiple targets", fname__, map_id);
-			return DMP_NOT_FOUND;
+			return DMP_NO_MATCH;
 		}
 		if (!params) {
 			condlog(2, "%s: map %s has no targets", fname__, map_id);

@@ -870,7 +870,7 @@ static void test_mapinfo_bad_next_target_01(void **state)
 	rc = libmp_mapinfo(DM_MAP_BY_NAME,
 			   (mapid_t) { .str = "foo", },
 			   (mapinfo_t) { .size = &size });
-	assert_int_equal(rc, DMP_NOT_FOUND);
+	assert_int_equal(rc, DMP_NO_MATCH);
 }
 
 static void test_mapinfo_bad_next_target_02(void **state)
