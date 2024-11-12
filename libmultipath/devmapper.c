@@ -1392,7 +1392,7 @@ remove_partmap(const char *name, void *data)
 		condlog(2, "%s: map in use", name);
 		return DM_FLUSH_BUSY;
 	}
-	condlog(4, "partition map %s removed", name);
+	condlog(3, "partition map %s removed", name);
 	dm_device_remove(name, rd->flags);
 	return DM_FLUSH_OK;
 }
