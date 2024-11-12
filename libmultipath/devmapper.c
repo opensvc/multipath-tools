@@ -740,20 +740,22 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 	}
 
 	if (info.target || info.status || info.size || flags & MAPINFO_TGT_TYPE__) {
+		int lvl = MAPINFO_CHECK_UUID ? 2 : 4;
+
 		if (dm_get_next_target(dmt, NULL, &start, &length,
 				       &target_type, &params) != NULL) {
-			condlog(2, "%s: map %s has multiple targets", fname__, map_id);
+			condlog(lvl, "%s: map %s has multiple targets", fname__, map_id);
 			return DMP_NO_MATCH;
 		}
 		if (!params) {
-			condlog(2, "%s: map %s has no targets", fname__, map_id);
+			condlog(lvl, "%s: map %s has no targets", fname__, map_id);
 			return DMP_NOT_FOUND;
 		}
 		if (flags & MAPINFO_TGT_TYPE__) {
 			const char *tgt_type = flags & MAPINFO_MPATH_ONLY ? TGT_MPATH : TGT_PART;
 
 			if (strcmp(target_type, tgt_type)) {
-				condlog(3, "%s: target type mismatch: \"%s\" != \"%s\"",
+				condlog(lvl, "%s: target type mismatch: \"%s\" != \"%s\"",
 					fname__, tgt_type, target_type);
 				return DMP_NO_MATCH;
 			}
