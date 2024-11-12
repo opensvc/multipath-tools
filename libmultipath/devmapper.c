@@ -616,6 +616,18 @@ static bool is_mpath_uuid(const char uuid[DM_UUID_LEN])
 	return !strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN);
 }
 
+static bool is_mpath_part_uuid(const char part_uuid[DM_UUID_LEN],
+			       const char map_uuid[DM_UUID_LEN])
+{
+	char c;
+	int np, nc;
+
+	if (2 != sscanf(part_uuid, "part%d-%n" UUID_PREFIX "%c", &np, &nc, &c)
+	    || np <= 0)
+		return false;
+	return map_uuid == NULL || !strcmp(part_uuid + nc, map_uuid);
+}
+
 bool
 has_dm_info(const struct multipath *mpp)
 {
@@ -720,8 +732,10 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 		&& !(uuid = dm_task_get_uuid(dmt))))
 		return DMP_ERR;
 
-	if (flags & MAPINFO_CHECK_UUID && !is_mpath_uuid(uuid)) {
-		condlog(3, "%s: UUID mismatch: %s", fname__, uuid);
+	if (flags & MAPINFO_CHECK_UUID &&
+	    ((flags & MAPINFO_PART_ONLY && !is_mpath_part_uuid(uuid, NULL)) ||
+	     !is_mpath_uuid(uuid))) {
+		condlog(4, "%s: UUID mismatch: %s", fname__, uuid);
 		return DMP_NO_MATCH;
 	}
 
@@ -844,18 +858,6 @@ int dm_get_wwid(const char *name, char *uuid, int uuid_len)
 
 	strlcpy(uuid, tmp + UUID_PREFIX_LEN, uuid_len);
 	return DMP_OK;
-}
-
-static bool is_mpath_part_uuid(const char part_uuid[DM_UUID_LEN],
-			       const char map_uuid[DM_UUID_LEN])
-{
-	char c;
-	int np, nc;
-
-	if (2 != sscanf(part_uuid, "part%d-%n" UUID_PREFIX "%c", &np, &nc, &c)
-	    || np <= 0)
-		return false;
-	return !strcmp(part_uuid + nc, map_uuid);
 }
 
 int dm_is_mpath(const char *name)

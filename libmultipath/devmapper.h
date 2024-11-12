@@ -58,7 +58,13 @@ enum {
 	/* Fail if target type is not "partition" (linear) */
 	MAPINFO_PART_ONLY   = (1 << 9),
 	MAPINFO_TGT_TYPE__  = (MAPINFO_MPATH_ONLY | MAPINFO_PART_ONLY),
-	/* Fail if the UUID doesn't match the multipath UUID format */
+	/*
+	 * Fail if the UUID doesn't match the expected UUID format
+	 * If combined with MAPINFO_PART_ONLY, checks for partition UUID format
+	 * ("part<N>-mpath-xyz").
+	 * Otherwise (whether or not MAPINFO_MPATH_ONLY is set) checks for
+	 * multipath UUID format ("mpath-xyz").
+	 */
 	MAPINFO_CHECK_UUID  = (1 << 10),
 };
 
