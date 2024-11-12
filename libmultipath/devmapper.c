@@ -1262,10 +1262,8 @@ int dm_get_maps(vector mp)
 			}
 			vector_set_slot(mp, mpp);
 			break;
-		case DMP_NO_MATCH:
-			break;
 		default:
-			return 1;
+			break;
 		}
 		next = names->next;
 		names = (void *) names + next;
