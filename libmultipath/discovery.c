@@ -2018,15 +2018,20 @@ int
 get_state (struct path * pp)
 {
 	struct checker * c = &pp->checker;
-	int state;
+	int state, lvl;
 
 	state = checker_get_state(c);
-	condlog(3, "%s: %s state = %s", pp->dev,
+
+	lvl = state == pp->oldstate || state == PATH_PENDING ? 4 : 3;
+	condlog(lvl, "%s: %s state = %s", pp->dev,
 		checker_name(c), checker_state_name(state));
 	if (state != PATH_UP && state != PATH_GHOST &&
 	    strlen(checker_message(c)))
-		condlog(3, "%s: %s checker%s",
+		condlog(lvl, "%s: %s checker%s",
 			pp->dev, checker_name(c), checker_message(c));
+	if (state != PATH_PENDING)
+		pp->oldstate = state;
+
 	return state;
 }
 

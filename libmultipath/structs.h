@@ -375,6 +375,7 @@ struct path {
 	int state;
 	int dmstate;
 	int chkrstate;
+	int oldstate;
 	int failcount;
 	int priority;
 	int pgindex;
