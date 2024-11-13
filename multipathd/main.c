@@ -2068,7 +2068,7 @@ static void
 deferred_failback_tick (struct vectors *vecs)
 {
 	struct multipath * mpp;
-	unsigned int i;
+	int i;
 	bool need_reload;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
