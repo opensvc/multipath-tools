@@ -207,6 +207,7 @@ switchgroup
 sys
 sysfs
 sysinit
+systemd
 tcp
 terabytes
 SYSDIR
