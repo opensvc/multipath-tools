@@ -1,5 +1,14 @@
 # multipath-tools Release Notes
 
+## Stable branches and new versioning scheme
+
+Beginning with 0.11, the second digit in the multipath-tools version will be
+used for upstream "major" releases. The 3rd and last digit will denote stable
+releases in the future, containing only bug fixes on top of the last major
+release. These bug fixes will be tracked in stable branches.
+
+See [README.md](README.md) for additional information.
+
 ## multipath-tools 0.11.0, 2024/11
 
 ### User-visible changes
