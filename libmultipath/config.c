@@ -865,6 +865,9 @@ static void set_max_checkint_from_watchdog(struct config *conf)
 	unsigned long checkint;
 
 	if (envp && sscanf(envp, "%lu", &checkint) == 1) {
+		if (checkint == 0)
+			/* watchdog disabled */
+			return;
 		/* Value is in microseconds */
 		checkint /= 1000000;
 		if (checkint < 1 || checkint > UINT_MAX) {
