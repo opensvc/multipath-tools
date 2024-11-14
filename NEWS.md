@@ -1,5 +1,28 @@
 # multipath-tools Release Notes
 
+## multipath-tools 0.10.1, 2024/11
+
+This is the first bug fix release on the `stable-0.10.y` branch. It contains
+bug fixes from 0.11.0, and some CI-related fixes.
+
+### Bug fixes
+
+* Fixed the problem that multipathd wouldn't start on systems with certain types
+  of device mapper devices, in particular devices with multiple DM targets.
+  The problem was introduced in 0.10.0.
+  Fixes [#102](https://github.com/opensvc/multipath-tools/issues/102).
+* Fixed a corner case in the udev rules which could cause a device not to be
+  activated during boot if a cold plug uevent is processed for a previously
+  not configured multipath map while this map was suspended. This problem existed
+  since 0.9.8.
+* Fixed the problem that devices with `no_path_retry fail` and no setting
+  for `dev_loss_tmo` might get the `dev_loss_tmo` set to 0, causing the
+  device to be deleted immediately in the event of a transport disruption.
+  This bug was introduced in 0.9.6.
+* Fixed the problem that, if there were multiple maps with deferred failback
+  (`failback` value > 0 in `multipath.conf`), some maps might fail back later
+  than configured. The problem existed since 0.9.6.
+
 ## multipath-tools 0.10.0, 2024/08
 
 ### User-Visible Changes
