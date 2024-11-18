@@ -2153,6 +2153,61 @@ partial_retrigger_tick(vector pathvec)
 	}
 }
 
+#ifdef USE_SYSTEMD
+static int get_watchdog_interval(void)
+{
+	const char *envp;
+	long long checkint;
+	long pid;
+
+	envp = getenv("WATCHDOG_PID");
+	/* See sd_watchdog_enabled(3) */
+	if (envp && sscanf(envp, "%lu", &pid) == 1 && pid != daemon_pid)
+		return -1;
+
+	envp = getenv("WATCHDOG_USEC");
+	if (!envp || sscanf(envp, "%llu", &checkint) != 1 || checkint == 0)
+		return -1;
+
+	/*
+	 * Value is in microseconds, and the watchdog should be triggered
+	 * twice per interval.
+	 */
+	checkint /= 2000000;
+	if (checkint > INT_MAX / 2) {
+		condlog(1, "WatchdogSec=%lld is too high, assuming %d",
+			checkint * 2, INT_MAX);
+			checkint = INT_MAX / 2;
+	} else if (checkint < 1) {
+		condlog(1, "WatchdogSec=1 is too low, daemon will be killed by systemd!");
+		checkint = 1;
+	}
+
+	condlog(3, "enabling watchdog, interval %llds", checkint);
+	return checkint;
+}
+
+static void watchdog_tick(const struct timespec *time) {
+	static int watchdog_interval;
+	static struct timespec last_time;
+	struct timespec diff_time;
+
+	if (watchdog_interval == 0)
+		watchdog_interval = get_watchdog_interval();
+	if (watchdog_interval < 0)
+		return;
+
+	timespecsub(time, &last_time, &diff_time);
+	if (diff_time.tv_sec >= watchdog_interval) {
+		condlog(4, "%s: sending watchdog message", __func__);
+		sd_notify(0, "WATCHDOG=1");
+		last_time = *time;
+	}
+}
+#else
+static void watchdog_tick(const struct timespec *time __attribute__((unused))) {}
+#endif
+
 static bool update_prio(struct multipath *mpp, bool refresh_all)
 {
 	int oldpriority;
@@ -2931,9 +2986,6 @@ checkerloop (void *ap)
 	struct timespec last_time;
 	struct config *conf;
 	int foreign_tick = 0;
-#ifdef USE_SYSTEMD
-	bool use_watchdog;
-#endif
 
 	pthread_cleanup_push(rcu_unregister, NULL);
 	rcu_register_thread();
@@ -2943,13 +2995,6 @@ checkerloop (void *ap)
 	/* Tweak start time for initial path check */
 	get_monotonic_time(&last_time);
 	last_time.tv_sec -= 1;
-
-	/* use_watchdog is set from process environment and never changes */
-	conf = get_multipath_config();
-#ifdef USE_SYSTEMD
-	use_watchdog = conf->use_watchdog;
-#endif
-	put_multipath_config(conf);
 
 	while (1) {
 		struct timespec diff_time, start_time, end_time;
@@ -2967,10 +3012,7 @@ checkerloop (void *ap)
 			(long)diff_time.tv_sec, diff_time.tv_nsec / 1000);
 		last_time = start_time;
 		ticks = diff_time.tv_sec;
-#ifdef USE_SYSTEMD
-		if (use_watchdog)
-			sd_notify(0, "WATCHDOG=1");
-#endif
+		watchdog_tick(&start_time);
 		while (checker_state != CHECKER_FINISHED) {
 			struct multipath *mpp;
 			int i;
