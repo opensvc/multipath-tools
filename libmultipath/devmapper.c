@@ -734,7 +734,7 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 
 	if (flags & MAPINFO_CHECK_UUID &&
 	    ((flags & MAPINFO_PART_ONLY && !is_mpath_part_uuid(uuid, NULL)) ||
-	     !is_mpath_uuid(uuid))) {
+	     (!(flags & MAPINFO_PART_ONLY) && !is_mpath_uuid(uuid)))) {
 		condlog(4, "%s: UUID mismatch: %s", fname__, uuid);
 		return DMP_NO_MATCH;
 	}
