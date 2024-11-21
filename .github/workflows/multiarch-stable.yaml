@@ -47,7 +47,7 @@ jobs:
             arch: ppc64le
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: enable foreign arch
         uses: docker/setup-qemu-action@v2
         with:

@@ -41,7 +41,7 @@ jobs:
     container: ghcr.io/mwilck/multipath-cross-debian_cross-${{ matrix.os }}-${{ matrix.arch }}
     steps:
       - name: checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
       - name: build
         run: make -j$(nproc) -Orecurse test-progs.tar
       - name: upload binary archive

@@ -46,7 +46,7 @@ jobs:
     runs-on: ${{ matrix.variant.runner }}
     steps:
       - name: checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
       - name: set archive name
         # Leap containers have cpio but not tar
@@ -127,7 +127,7 @@ jobs:
     runs-on: ${{ matrix.variant.runner }}
     steps:
       - name: checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
       - name: set archive name
         # Leap containers have cpio but not tar
@@ -224,7 +224,7 @@ jobs:
         run: sudo modprobe brd rd_nr=1 rd_size=65536
 
       - name: checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
       - name: download binary archive
         uses: actions/download-artifact@v4
