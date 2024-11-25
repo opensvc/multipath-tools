@@ -531,7 +531,6 @@ static inline int san_path_check_enabled(const struct multipath *mpp)
 }
 
 struct pathgroup {
-	long id;
 	int status;
 	int priority;
 	int enabled_paths;

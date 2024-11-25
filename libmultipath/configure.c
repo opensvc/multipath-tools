@@ -416,16 +416,6 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 	return 0;
 }
 
-static void
-compute_pgid(struct pathgroup * pgp)
-{
-	struct path * pp;
-	int i;
-
-	vector_foreach_slot (pgp->paths, pp, i)
-		pgp->id ^= (long)pp;
-}
-
 static int pathcmp(const struct pathgroup *pgp, const struct pathgroup *cpgp)
 {
 	int i, j;
@@ -445,32 +435,71 @@ static int pathcmp(const struct pathgroup *pgp, const struct pathgroup *cpgp)
 	return pnum - found;
 }
 
-static int
-pgcmp (struct multipath * mpp, struct multipath * cmpp)
+static int pgcmp(struct multipath *mpp, struct multipath *cmpp)
 {
 	int i, j;
-	struct pathgroup * pgp;
-	struct pathgroup * cpgp;
-	int r = 0;
+	struct pathgroup *pgp, *cpgp;
+	BITFIELD(bf, bits_per_slot);
+	struct bitfield *bf__  __attribute__((cleanup(cleanup_bitfield))) = NULL;
 
-	if (!mpp)
-		return 0;
+	if (VECTOR_SIZE(mpp->pg) != VECTOR_SIZE(cmpp->pg))
+		return 1;
+
+	/* handle the unlikely case of more than 64 pgs */
+	if ((unsigned int)VECTOR_SIZE(cmpp->pg) > bits_per_slot) {
+		bf__ = alloc_bitfield(VECTOR_SIZE(cmpp->pg));
+		if (bf__ == NULL)
+			/* error - if in doubt, assume not equal */
+			return 1;
+		bf = bf__;
+	}
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
-		compute_pgid(pgp);
 
-		vector_foreach_slot (cmpp->pg, cpgp, j) {
-			if (pgp->id == cpgp->id &&
-			    !pathcmp(pgp, cpgp)) {
-				r = 0;
-				break;
+		if (VECTOR_SIZE(pgp->paths) == 0) {
+			bool found = false;
+
+			vector_foreach_slot (cmpp->pg, cpgp, j) {
+				if (!is_bit_set_in_bitfield(j, bf) &&
+				    VECTOR_SIZE(cpgp->paths) == 0) {
+					set_bit_in_bitfield(j, bf);
+					found = true;
+					break;
+				}
 			}
-			r++;
+			if (!found)
+				return 1;
+		} else {
+			bool found = false;
+			struct path *pp = VECTOR_SLOT(pgp->paths, 0);
+
+			/* search for a pg in cmpp that contains pp */
+			vector_foreach_slot (cmpp->pg, cpgp, j) {
+				if (!is_bit_set_in_bitfield(j, bf) &&
+				    VECTOR_SIZE(cpgp->paths) == VECTOR_SIZE(pgp->paths)) {
+					int k;
+					struct path *cpp;
+
+					vector_foreach_slot(cpgp->paths, cpp, k) {
+						if (cpp != pp)
+							continue;
+						/*
+						 * cpgp contains pp.
+						 * See if it's identical.
+						 */
+						set_bit_in_bitfield(j, bf);
+						if (pathcmp(pgp, cpgp))
+							return 1;
+						found = true;
+						break;
+					}
+				}
+			}
+			if (!found)
+				return 1;
 		}
-		if (r)
-			return r;
 	}
-	return r;
+	return 0;
 }
 
 void trigger_partitions_udev_change(struct udev_device *dev,
@@ -761,10 +790,6 @@ void select_action (struct multipath *mpp, const struct vector_s *curmp,
 	}
 	if (cmpp->minio != mpp->minio) {
 		select_reload_action(mpp, "minio change");
-		return;
-	}
-	if (!cmpp->pg || VECTOR_SIZE(cmpp->pg) != VECTOR_SIZE(mpp->pg)) {
-		select_reload_action(mpp, "path group number change");
 		return;
 	}
 	if (pgcmp(mpp, cmpp)) {
