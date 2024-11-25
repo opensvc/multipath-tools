@@ -426,6 +426,11 @@ compute_pgid(struct pathgroup * pgp)
 		pgp->id ^= (long)pp;
 }
 
+static void cleanup_bitfield(struct bitfield **p)
+{
+	free(*p);
+}
+
 static int
 pgcmp (struct multipath * mpp, struct multipath * cmpp)
 {
@@ -433,9 +438,17 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 	struct pathgroup * pgp;
 	struct pathgroup * cpgp;
 	int r = 0;
+	struct bitfield *bf __attribute__((cleanup(cleanup_bitfield))) = NULL;
 
 	if (!mpp)
 		return 0;
+
+	if (VECTOR_SIZE(mpp->pg) != VECTOR_SIZE(cmpp->pg))
+		return 1;
+
+	bf = alloc_bitfield(VECTOR_SIZE(cmpp->pg));
+	if (!bf)
+		return 1;
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		compute_pgid(pgp);
@@ -443,6 +456,7 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 		vector_foreach_slot (cmpp->pg, cpgp, j) {
 			if (pgp->id == cpgp->id &&
 			    !pathcmp(pgp, cpgp)) {
+				set_bit_in_bitfield(j, bf);
 				r = 0;
 				break;
 			}
@@ -450,6 +464,10 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 		}
 		if (r)
 			return r;
+	}
+	vector_foreach_slot (cmpp->pg, cpgp, j) {
+		if (!is_bit_set_in_bitfield(j, bf))
+			return 1;
 	}
 	return r;
 }
