@@ -108,6 +108,7 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 	struct config *conf;
 	bool mpp_has_wwid;
 	bool must_reload = false;
+	bool pg_deleted = false;
 
 	if (!mpp->pg)
 		return false;
@@ -125,6 +126,10 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 
 		vector_foreach_slot(pgp->paths, pp, j) {
 
+			/* A pathgroup has been deleted before. Invalidate pgindex */
+			if (pg_deleted)
+				pp->pgindex = 0;
+
 			if (pp->mpp && pp->mpp != mpp) {
 				condlog(0, "BUG: %s: found path %s which is already in %s",
 					mpp->alias, pp->dev, pp->mpp->alias);
@@ -139,6 +144,13 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 				must_reload = true;
 				dm_fail_path(mpp->alias, pp->dev_t);
 				vector_del_slot(pgp->paths, j--);
+				/*
+				 * pp->pgindex has been set in disassemble_map(),
+				 * which has probably been called just before for
+				 * mpp. So he pgindex relates to mpp and may be
+				 * wrong for pp->mpp. Invalidate it.
+				 */
+				pp->pgindex = 0;
 				continue;
 			}
 			pp->mpp = mpp;
@@ -237,6 +249,8 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 		vector_del_slot(mpp->pg, i--);
 		free_pathgroup(pgp, KEEP_PATHS);
 		must_reload = true;
+		/* Invalidate pgindex for all other pathgroups */
+		pg_deleted = true;
 	}
 	mpp->need_reload = mpp->need_reload || must_reload;
 	return must_reload;
@@ -354,6 +368,7 @@ void orphan_path(struct path *pp, const char *reason)
 {
 	condlog(3, "%s: orphan path, %s", pp->dev, reason);
 	pp->mpp = NULL;
+	pp->pgindex = 0;
 	uninitialize_path(pp);
 }
 
