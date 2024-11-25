@@ -426,6 +426,25 @@ compute_pgid(struct pathgroup * pgp)
 		pgp->id ^= (long)pp;
 }
 
+static int pathcmp(const struct pathgroup *pgp, const struct pathgroup *cpgp)
+{
+	int i, j;
+	struct path *pp, *cpp;
+	int pnum = 0, found = 0;
+
+	vector_foreach_slot(pgp->paths, pp, i) {
+		pnum++;
+		vector_foreach_slot(cpgp->paths, cpp, j) {
+			if ((long)pp == (long)cpp) {
+				found++;
+				break;
+			}
+		}
+	}
+
+	return pnum - found;
+}
+
 static int
 pgcmp (struct multipath * mpp, struct multipath * cmpp)
 {

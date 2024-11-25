@@ -598,7 +598,6 @@ struct path *mp_find_path_by_devt(const struct multipath *mpp, const char *devt)
 int pathcount (const struct multipath *, int);
 int count_active_paths(const struct multipath *);
 int count_active_pending_paths(const struct multipath *);
-int pathcmp (const struct pathgroup *, const struct pathgroup *);
 int add_feature (char **, const char *);
 int remove_feature (char **, const char *);
 
