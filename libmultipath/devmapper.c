@@ -718,7 +718,7 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 	if (info.target || info.status || info.size || flags & MAPINFO_TGT_TYPE__) {
 		if (dm_get_next_target(dmt, NULL, &start, &length,
 				       &target_type, &params) != NULL) {
-			condlog(2, "%s: map %s has multiple targets", fname__, map_id);
+			condlog(3, "%s: map %s has multiple targets", fname__, map_id);
 			return DMP_NOT_FOUND;
 		}
 		if (!params) {
