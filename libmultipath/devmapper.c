@@ -892,7 +892,7 @@ int dm_find_map_by_wwid(const char *wwid, char *name, struct dm_info *dmi)
 	if (safe_sprintf(tmp, UUID_PREFIX "%s", wwid))
 		return DMP_ERR;
 
-	return libmp_mapinfo(DM_MAP_BY_UUID,
+	return libmp_mapinfo(DM_MAP_BY_UUID | MAPINFO_MPATH_ONLY,
 			     (mapid_t) { .str = tmp },
 			     (mapinfo_t) { .name = name, .dmi = dmi });
 }
