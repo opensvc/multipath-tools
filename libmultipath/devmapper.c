@@ -982,10 +982,15 @@ int dm_flush_map__ (const char *mapname, int flags, int retries)
 	int udev_flags = 0;
 	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 
-	if (libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
+	r = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
 			  (mapid_t) { .str = mapname },
-			  (mapinfo_t) { .target = &params }) != DMP_OK)
+			  (mapinfo_t) { .target = &params });
+	if (r != DMP_OK && r != DMP_EMPTY)
 		return DM_FLUSH_OK; /* nothing to do */
+
+	/* device mapper will not let you resume an empty device */
+	if (r == DMP_EMPTY)
+		flags &= ~DMFL_SUSPEND;
 
 	/* if the device currently has no partitions, do not
 	   run kpartx on it if you fail to delete it */
