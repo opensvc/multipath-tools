@@ -86,6 +86,7 @@ const char *dmp_errstr(int rc)
 		[DMP_OK] = "success",
 		[DMP_NOT_FOUND] = "not found",
 		[DMP_NO_MATCH] = "target type mismatch",
+		[DMP_EMPTY] = "no target",
 		[DMP_LAST__] = "**invalid**",
 	};
 	if (rc < 0 || rc > DMP_LAST__)
@@ -747,9 +748,9 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 			condlog(lvl, "%s: map %s has multiple targets", fname__, map_id);
 			return DMP_NO_MATCH;
 		}
-		if (!params) {
+		if (!params || !target_type) {
 			condlog(lvl, "%s: map %s has no targets", fname__, map_id);
-			return DMP_NOT_FOUND;
+			return DMP_EMPTY;
 		}
 		if (flags & MAPINFO_TGT_TYPE__) {
 			const char *tgt_type = flags & MAPINFO_MPATH_ONLY ? TGT_MPATH : TGT_PART;
@@ -873,6 +874,7 @@ int dm_is_mpath(const char *name)
 		return DM_IS_MPATH_YES;
 	case DMP_NOT_FOUND:
 	case DMP_NO_MATCH:
+	case DMP_EMPTY:
 		return DM_IS_MPATH_NO;
 	case DMP_ERR:
 	default:

@@ -35,6 +35,7 @@ enum {
 	DMP_OK,
 	DMP_NOT_FOUND,
 	DMP_NO_MATCH,
+	DMP_EMPTY,
 	DMP_LAST__,
 };
 
@@ -105,7 +106,11 @@ typedef struct libmp_map_info {
  * @returns:
  *     DMP_OK if successful.
  *     DMP_NOT_FOUND if the map wasn't found, or has no or multiple targets.
- *     DMP_NO_MATCH if the map didn't match @tgt_type (see above).
+ *     DMP_NO_MATCH if the map didn't match @tgt_type (see above) or didn't
+ *                  have a multipath uuid prefix.
+ *     DMP_EMPTY if the map has no table. Note. The check for matching uuid
+ *               prefix will happen first, but the check for matching
+ *               tgt_type will happen afterwards.
  *     DMP_ERR if some other error occurred.
  *
  * This function obtains the requested information for the device-mapper map
