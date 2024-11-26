@@ -581,8 +581,6 @@ trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
 		vector_foreach_slot(pgp->paths, pp, j)
 			trigger_path_udev_change(pp, is_mpath);
 	}
-
-	mpp->needs_paths_uevent = 0;
 }
 
 static int sysfs_set_max_sectors_kb(struct multipath *mpp)
@@ -973,10 +971,10 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		 * succeeded
 		 */
 		mpp->force_udev_reload = 0;
-		if (mpp->action == ACT_CREATE &&
-		    (remember_wwid(mpp->wwid) == 1 ||
-		     mpp->needs_paths_uevent))
+		if (mpp->action == ACT_CREATE) {
+			remember_wwid(mpp->wwid);
 			trigger_paths_udev_change(mpp, true);
+		}
 		if (!is_daemon) {
 			/* multipath client mode */
 			dm_switchgroup(mpp->alias, mpp->bestpg);
@@ -1001,8 +999,7 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		}
 		dm_setgeometry(mpp);
 		return DOMAP_OK;
-	} else if (r == DOMAP_FAIL && mpp->action == ACT_CREATE &&
-		   mpp->needs_paths_uevent)
+	} else if (r == DOMAP_FAIL && mpp->action == ACT_CREATE)
 		trigger_paths_udev_change(mpp, false);
 
 	return DOMAP_FAIL;
