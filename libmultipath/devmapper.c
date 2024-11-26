@@ -944,16 +944,23 @@ has_partmap(const char *name __attribute__((unused)),
  * This will be called from mpath_in_use, for each partition.
  * If the partition itself in use, returns 1 immediately, causing
  * do_foreach_partmaps() to stop iterating and return 1.
- * Otherwise, increases the partition count.
+ * Otherwise, increases the partition count if the partition has a
+ * table (live or inactive). Devices with no table don't count
+ * towards the multipath device open count.
  */
 static int count_partitions(const char *name, void *data)
 {
+	struct dm_info info;
 	int *ret_count = (int *)data;
-	int open_count = dm_get_opencount(name);
 
-	if (open_count)
+	if (dm_get_info(name, &info) != DMP_OK)
 		return 1;
-	(*ret_count)++;
+
+	if (info.open_count)
+		return 1;
+
+	if (info.live_table || info.inactive_table)
+		(*ret_count)++;
 	return 0;
 }
 
@@ -1335,8 +1342,8 @@ is_valid_partmap(const char *name, const char *map_dev_t,
 			  (mapid_t) { .str = name },
 			  (mapinfo_t) { .uuid = part_uuid, .target = &params});
 
-	/* There must be a single linear target */
-	if (r != DMP_OK)
+	/* There must be a single linear target or an empty map. */
+	if (r != DMP_OK && r != DMP_EMPTY)
 		return false;
 
 	/*
@@ -1346,7 +1353,10 @@ is_valid_partmap(const char *name, const char *map_dev_t,
 	if (!is_mpath_part_uuid(part_uuid, map_uuid))
 		return false;
 
-	/* and the table must map over the multipath map */
+	if (r == DMP_EMPTY)
+		return true;
+
+	/* and if the table isn't empty it must map over the multipath map */
 	return ((p = strstr(params, map_dev_t)) &&
 		!isdigit(*(p + strlen(map_dev_t))));
 }
