@@ -1421,8 +1421,6 @@ dm_remove_partmaps (const char * mapname, int flags)
 static int
 cancel_remove_partmap (const char *name, void *unused __attribute__((unused)))
 {
-	if (dm_get_opencount(name))
-		dm_cancel_remove_partmaps(name);
 	if (dm_message(name, "@cancel_deferred_remove") != 0)
 		condlog(0, "%s: can't cancel deferred remove: %s", name,
 			strerror(errno));
@@ -1482,6 +1480,34 @@ struct rename_data {
 };
 
 static int
+dm_rename__(const char *old, char *new, int skip_kpartx)
+{
+	int r = 0;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
+	uint32_t cookie = 0;
+	uint16_t udev_flags = DM_UDEV_DISABLE_LIBRARY_FALLBACK | ((skip_kpartx == SKIP_KPARTX_ON)? MPATH_UDEV_NO_KPARTX_FLAG : 0);
+
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_RENAME)))
+		return r;
+
+	if (!dm_task_set_name(dmt, old))
+		return r;
+
+	if (!dm_task_set_newname(dmt, new))
+		return r;
+
+	if (!dm_task_set_cookie(dmt, &cookie, udev_flags))
+		return r;
+
+	r = libmp_dm_task_run(dmt);
+	if (!r)
+		dm_log_error(2, DM_DEVICE_RENAME, dmt);
+
+	libmp_udev_wait(cookie);
+	return r;
+}
+
+static int
 rename_partmap (const char *name, void *data)
 {
 	char *buff = NULL;
@@ -1492,7 +1518,7 @@ rename_partmap (const char *name, void *data)
 		return 0;
 	for (offset = strlen(rd->old); name[offset] && !(isdigit(name[offset])); offset++); /* do nothing */
 	if (asprintf(&buff, "%s%s%s", rd->new, rd->delim, name + offset) >= 0) {
-		dm_rename(name, buff, rd->delim, SKIP_KPARTX_OFF);
+		dm_rename__(name, buff, SKIP_KPARTX_OFF);
 		free(buff);
 		condlog(4, "partition map %s renamed", name);
 	} else
@@ -1522,32 +1548,9 @@ dm_rename_partmaps (const char * old, char * new, char *delim)
 int
 dm_rename (const char * old, char * new, char *delim, int skip_kpartx)
 {
-	int r = 0;
-	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
-	uint32_t cookie = 0;
-	uint16_t udev_flags = DM_UDEV_DISABLE_LIBRARY_FALLBACK | ((skip_kpartx == SKIP_KPARTX_ON)? MPATH_UDEV_NO_KPARTX_FLAG : 0);
-
 	if (dm_rename_partmaps(old, new, delim))
-		return r;
-
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_RENAME)))
-		return r;
-
-	if (!dm_task_set_name(dmt, old))
-		return r;
-
-	if (!dm_task_set_newname(dmt, new))
-		return r;
-
-	if (!dm_task_set_cookie(dmt, &cookie, udev_flags))
-		return r;
-
-	r = libmp_dm_task_run(dmt);
-	if (!r)
-		dm_log_error(2, DM_DEVICE_RENAME, dmt);
-
-	libmp_udev_wait(cookie);
-	return r;
+		return 0;
+	return dm_rename__(old, new, skip_kpartx);
 }
 
 void dm_reassign_deps(char *table, const char *dep, const char *newdep)
