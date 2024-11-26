@@ -727,7 +727,7 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 		condlog(2, "%s: dm_task_get_info() failed for %s ", fname__, map_id);
 		return DMP_ERR;
 	} else if(!dmi.exists) {
-		condlog(2, "%s: map %s doesn't exist", fname__, map_id);
+		condlog(3, "%s: map %s doesn't exist", fname__, map_id);
 		return DMP_NOT_FOUND;
 	}
 
