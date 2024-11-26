@@ -467,7 +467,6 @@ struct multipath {
 	int max_sectors_kb;
 	int force_readonly;
 	int force_udev_reload;
-	int needs_paths_uevent;
 	int ghost_delay;
 	int ghost_delay_tick;
 	int queue_mode;
