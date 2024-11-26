@@ -65,6 +65,15 @@ handled).
 * Fixed the problem that, if there were multiple maps with deferred failback
   (`failback` value > 0 in `multipath.conf`), some maps might fail back later
   than configured. The problem existed since 0.9.6.
+* Fixed handling of empty maps, i.e. multipath maps that have a multipath UUID
+  but don't contain a device-mapper table. Such maps can occur in very rare
+  cases if some device-mapper operation has failed, or if a tool has been
+  killed in the process of map creation. multipathd will now detect such
+  cases, and either remove these maps or reload them as appropriate.
+* During map creation, fixed the case where a map with different name, but
+  matching UUID and matching type was already present. multipathd
+  previously failed to set up such maps. Now it will reload them with the
+  correct content.
 
 ### Other
 
@@ -75,6 +84,11 @@ handled).
   [README.md](README.md).
 * The text of the licenses has been updated to the latest versions from the
   Free Software Foundation.
+
+### Internal
+
+* `libmp_mapinfo()` now fills in the `name`, `uuid`, and `dmi` fields
+  if requested by the caller, even if it encounters an error or an empty map.
 
 ## multipath-tools 0.10.0, 2024/08
 

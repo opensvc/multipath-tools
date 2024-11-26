@@ -49,6 +49,7 @@ DIO
 directio
 disablequeueing
 dmevent
+dmi
 dmmp
 dmraid
 dmsetup
