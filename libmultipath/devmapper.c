@@ -736,6 +736,29 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 		&& !(uuid = dm_task_get_uuid(dmt))))
 		return DMP_ERR;
 
+	if (info.name) {
+		strlcpy(info.name, name, WWID_SIZE);
+		condlog(4, "%s: %s: name: \"%s\"", fname__, map_id, info.name);
+	}
+	if (info.uuid) {
+		strlcpy(info.uuid, uuid, DM_UUID_LEN);
+		condlog(4, "%s: %s: uuid: \"%s\"", fname__, map_id, info.uuid);
+	}
+
+	if (info.dmi) {
+		memcpy(info.dmi, &dmi, sizeof(*info.dmi));
+		condlog(4, "%s: %s %d:%d, %d targets, %s table, %s, %s, %d opened, %u events",
+			fname__, map_id,
+			info.dmi->major, info.dmi->minor,
+			info.dmi->target_count,
+			info.dmi->live_table ? "live" :
+				info.dmi->inactive_table ? "inactive" : "no",
+			info.dmi->suspended ? "suspended" : "active",
+			info.dmi->read_only ? "ro" : "rw",
+			info.dmi->open_count,
+			info.dmi->event_nr);
+	}
+
 	if (flags & MAPINFO_CHECK_UUID &&
 	    ((flags & MAPINFO_PART_ONLY && !is_mpath_part_uuid(uuid, NULL)) ||
 	     (!(flags & MAPINFO_PART_ONLY) && !is_mpath_uuid(uuid)))) {
@@ -768,38 +791,14 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 
 	/*
 	 * Check possible error conditions.
-	 * If error is returned, don't touch any output parameters.
 	 */
 	if ((info.status && !(tmp_status = strdup(params)))
 	    || (info.target && !tmp_target && !(tmp_target = strdup(params))))
 		return DMP_ERR;
 
-	if (info.name) {
-		strlcpy(info.name, name, WWID_SIZE);
-		condlog(4, "%s: %s: name: \"%s\"", fname__, map_id, info.name);
-	}
-	if (info.uuid) {
-		strlcpy(info.uuid, uuid, DM_UUID_LEN);
-		condlog(4, "%s: %s: uuid: \"%s\"", fname__, map_id, info.uuid);
-	}
-
 	if (info.size) {
 		*info.size = length;
 		condlog(4, "%s: %s: size: %lld", fname__, map_id, *info.size);
-	}
-
-	if (info.dmi) {
-		memcpy(info.dmi, &dmi, sizeof(*info.dmi));
-		condlog(4, "%s: %s %d:%d, %d targets, %s table, %s, %s, %d opened, %u events",
-			fname__, map_id,
-			info.dmi->major, info.dmi->minor,
-			info.dmi->target_count,
-			info.dmi->live_table ? "live" :
-				info.dmi->inactive_table ? "inactive" : "no",
-			info.dmi->suspended ? "suspended" : "active",
-			info.dmi->read_only ? "ro" : "rw",
-			info.dmi->open_count,
-			info.dmi->event_nr);
 	}
 
 	if (info.target) {

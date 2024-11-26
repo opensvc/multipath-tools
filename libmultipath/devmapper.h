@@ -115,7 +115,10 @@ typedef struct libmp_map_info {
  *
  * This function obtains the requested information for the device-mapper map
  * identified by the input parameters.
- * Output parameters are only filled in if the return value is DMP_OK.
+ * If non-NULL, the name, uuid, and dmi output paramters may be filled in for
+ * any return value besides DMP_NOT_FOUND and will always be filled in for
+ * return values other than DMP_NOT_FOUND and DMP_ERR.
+ * The other parameters are only filled in if the return value is DMP_OK.
  * For target / status / size information, the  map's table should contain
  * only one target (usually multipath or linear).
  */

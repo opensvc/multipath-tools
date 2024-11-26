@@ -451,15 +451,21 @@ static void test_mapinfo_bad_check_uuid_00(void **state)
 static void test_mapinfo_bad_check_uuid_01(void **state)
 {
 	int rc;
+	struct dm_info dmi = { .suspended = 0 };
+	char name[WWID_SIZE] = { 0 };
+	char uuid[DM_UUID_LEN] = { 0 };
 
 	mock_mapinfo_name_1(DM_DEVICE_INFO, 1, "foo", 1, 1, 0);
 	WRAP_DM_TASK_GET_INFO(1);
 	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	will_return(__wrap_dm_task_get_name, MPATH_NAME_01);
 	will_return(__wrap_dm_task_get_uuid, BAD_UUID_01);
 	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID,
 			   (mapid_t) { .str = "foo", },
-			   (mapinfo_t) { .name = NULL });
+			   (mapinfo_t) { .dmi = &dmi, .name = name, .uuid = uuid });
 	assert_int_equal(rc, DMP_NO_MATCH);
+	assert_true(!strcmp(name, MPATH_NAME_01));
+	assert_true(!strcmp(uuid, BAD_UUID_01));
 }
 
 static void test_mapinfo_bad_check_uuid_02(void **state)
@@ -887,17 +893,26 @@ static void test_mapinfo_bad_next_target_01(void **state)
 static void test_mapinfo_bad_next_target_02(void **state)
 {
 	int rc;
-	unsigned long long size;
+	struct dm_info dmi = { .suspended = 0 };
+	char name[WWID_SIZE] = { 0 };
+	char uuid[DM_UUID_LEN] = { 0 };
+	unsigned long long size = 0;
 
 	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 1, 0);
 	WRAP_DM_TASK_GET_INFO(1);
 	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_02);
+	will_return(__wrap_dm_task_get_name, MPATH_NAME_01);
+	will_return(__wrap_dm_task_get_uuid, MPATH_UUID_01);
 	/* no targets */
 	mock_dm_get_next_target(0, NULL, NULL, NULL);
 	rc = libmp_mapinfo(DM_MAP_BY_NAME,
 			   (mapid_t) { .str = "foo", },
-			   (mapinfo_t) { .size = &size });
+			   (mapinfo_t) { .dmi = &dmi, .name = name, .uuid = uuid, .size = &size });
 	assert_int_equal(rc, DMP_EMPTY);
+	assert_int_equal(size, 0);
+	assert_memory_equal(&dmi, &MPATH_DMI_02, sizeof(dmi));
+	assert_true(!strcmp(name, MPATH_NAME_01));
+	assert_true(!strcmp(uuid, MPATH_UUID_01));
 }
 
 /* libmp_mapinfo needs to do a DM_DEVICE_STATUS ioctl */
@@ -946,10 +961,10 @@ static void test_mapinfo_bad_target_type_03(void **state)
 			   (mapid_t) { .str = "foo", },
 			   (mapinfo_t) { .dmi = &dmi, .name = name, .uuid = uuid });
 	assert_int_equal(rc, DMP_NO_MATCH);
-	/* make sure memory content is not changed */
-	assert_memory_equal(&dmi, &((struct dm_info) { .exists = 0 }), sizeof(dmi));
-	assert_memory_equal(&name, &((char[WWID_SIZE]) { 0 }), WWID_SIZE);
-	assert_memory_equal(&uuid, &((char[DM_UUID_LEN]) { 0 }), DM_UUID_LEN);
+	/* make sure that the ouput was filled in */
+	assert_memory_equal(&dmi, &MPATH_DMI_01, sizeof(dmi));
+	assert_true(!strcmp(name, MPATH_NAME_01));
+	assert_true(!strcmp(uuid, MPATH_UUID_01));
 }
 
 static void test_mapinfo_bad_target_type_04(void **state)
@@ -1065,23 +1080,32 @@ static void test_mapinfo_no_table_01(void **state)
 			   (mapid_t) { .str = "foo", },
 			   (mapinfo_t) { .dmi = &dmi });
 	assert_int_equal(rc, DMP_EMPTY);
+	assert_memory_equal(&dmi, &MPATH_DMI_02, sizeof(dmi));
 }
 
 static void test_mapinfo_no_table_02(void **state)
 {
 	int rc;
 	struct dm_info dmi = { .suspended = 0 };
+	char name[WWID_SIZE] = { 0 };
+	char uuid[DM_UUID_LEN] = { 0 };
+	unsigned long long size = 0;
 
 	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 1, 0);
 	WRAP_DM_TASK_GET_INFO(1);
 	/* DMI with no live table, MAPINFO_CHECK_UUID set */
 	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_02);
+	will_return(__wrap_dm_task_get_name, MPATH_NAME_01);
 	mock_dm_get_next_target(0, NULL, NULL, NULL);
 	will_return(__wrap_dm_task_get_uuid, MPATH_UUID_01);
 	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID | MAPINFO_MPATH_ONLY,
 			   (mapid_t) { .str = "foo", },
-			   (mapinfo_t) { .dmi = &dmi });
+			   (mapinfo_t) { .dmi = &dmi, .name = name, .uuid = uuid, .size = &size });
 	assert_int_equal(rc, DMP_EMPTY);
+	assert_int_equal(size, 0);
+	assert_memory_equal(&dmi, &MPATH_DMI_02, sizeof(dmi));
+	assert_true(!strcmp(name, MPATH_NAME_01));
+	assert_true(!strcmp(uuid, MPATH_UUID_01));
 }
 
 static void test_mapinfo_good_status_01(void **state)
@@ -1121,8 +1145,6 @@ static void test_mapinfo_bad_strdup_01(void **state)
 			   (mapinfo_t) { .status = &status, .uuid = uuid, .name = name });
 	assert_int_equal(rc, DMP_ERR);
 	assert_null(status);
-	assert_memory_equal(&name, &((char[WWID_SIZE]) { 0 }), WWID_SIZE);
-	assert_memory_equal(&uuid, &((char[DM_UUID_LEN]) { 0 }), DM_UUID_LEN);
 
 }
 
@@ -1284,9 +1306,6 @@ static void test_mapinfo_bad_strdup_02(void **state)
 	assert_int_equal(rc, DMP_ERR);
 	assert_null(status);
 	assert_null(target);
-	assert_memory_equal(&dmi, &((struct dm_info) { .suspended = 0 }), sizeof(dmi));
-	assert_memory_equal(&name, &((char[WWID_SIZE]) { 0 }), WWID_SIZE);
-	assert_memory_equal(&uuid, &((char[DM_UUID_LEN]) { 0 }), DM_UUID_LEN);
 }
 
 static void test_mapinfo_bad_strdup_03(void **state)
