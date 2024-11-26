@@ -961,6 +961,11 @@ int mpath_in_use(const char *name)
 {
 	int open_count = dm_get_opencount(name);
 
+	if (open_count < 0) {
+		condlog(0, "%s: %s: failed to get open count, assuming in use",
+			__func__, name);
+		return 1;
+	}
 	if (open_count) {
 		int part_count = 0;
 
