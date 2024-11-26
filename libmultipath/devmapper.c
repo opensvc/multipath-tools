@@ -1318,17 +1318,43 @@ char *dm_mapname(int major, int minor)
 	return strdup(name);
 }
 
+static bool
+is_valid_partmap(const char *name, const char *map_dev_t,
+		 const char *map_uuid) {
+	int r;
+	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
+	char *p;
+	char part_uuid[DM_UUID_LEN];
+
+	r = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_PART_ONLY | MAPINFO_CHECK_UUID,
+			  (mapid_t) { .str = name },
+			  (mapinfo_t) { .uuid = part_uuid, .target = &params});
+
+	/* There must be a single linear target */
+	if (r != DMP_OK)
+		return false;
+
+	/*
+	 * and the uuid of the target must be a partition of the uuid of the
+	 * multipath device
+	 */
+	if (!is_mpath_part_uuid(part_uuid, map_uuid))
+		return false;
+
+	/* and the table must map over the multipath map */
+	return ((p = strstr(params, map_dev_t)) &&
+		!isdigit(*(p + strlen(map_dev_t))));
+}
+
 static int
 do_foreach_partmaps (const char *mapname,
 		     int (*partmap_func)(const char *, void *),
 		     void *data)
 {
 	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
-	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
 	struct dm_names *names;
 	unsigned next = 0;
 	char dev_t[BLK_DEV_SIZE];
-	char *p;
 	char map_uuid[DM_UUID_LEN];
 	struct dm_info info;
 
@@ -1354,35 +1380,10 @@ do_foreach_partmaps (const char *mapname,
 		return 0;
 
 	do {
-		char part_uuid[DM_UUID_LEN];
-
-		if (
-		    /*
-		     * if there is only a single "linear" target
-		     */
-		    libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_PART_ONLY | MAPINFO_CHECK_UUID,
-				  (mapid_t) { .str = names->name },
-				  (mapinfo_t) {
-					  .uuid = part_uuid,
-					  .target = &params,
-				  }) == DMP_OK &&
-		    /*
-		     * and the uuid of the target is a partition of the
-		     * uuid of the multipath device
-		     */
-		    is_mpath_part_uuid(part_uuid, map_uuid) &&
-
-		    /*
-		     * and the table maps over the multipath map
-		     */
-		    (p = strstr(params, dev_t)) &&
-		    !isdigit(*(p + strlen(dev_t))) &&
-
+		if (is_valid_partmap(names->name, dev_t, map_uuid) &&
 		    (partmap_func(names->name, data) != 0))
 			return 1;
 
-		free(params);
-		params = NULL;
 		next = names->next;
 		names = (void*) names + next;
 	} while (next);
