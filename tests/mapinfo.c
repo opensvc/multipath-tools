@@ -47,10 +47,12 @@ static const struct dm_info __attribute__((unused)) MPATH_DMI_02 = {
 	.exists = 1,
 	.live_table = 0,
 	.open_count = 1,
-	.target_count = 1,
+	.target_count = 0,
 	.major = 254,
 	.minor = 123,
 };
+
+#define TGT_ANY "any"
 
 static const char MPATH_NAME_01[] = "mpathx";
 static const char MPATH_UUID_01[] = "mpath-3600a098038302d414b2b4d4453474f62";
@@ -858,7 +860,7 @@ static void test_mapinfo_good_size(void **state)
 	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 1, 0);
 	WRAP_DM_TASK_GET_INFO(1);
 	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
-	mock_dm_get_next_target(12345, NULL, MPATH_TARGET_01, NULL);
+	mock_dm_get_next_target(12345, TGT_ANY, MPATH_TARGET_01, NULL);
 	rc = libmp_mapinfo(DM_MAP_BY_NAME,
 			   (mapid_t) { .str = "foo", },
 			   (mapinfo_t) { .size = &size });
@@ -889,13 +891,13 @@ static void test_mapinfo_bad_next_target_02(void **state)
 
 	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 1, 0);
 	WRAP_DM_TASK_GET_INFO(1);
-	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_02);
 	/* no targets */
-	mock_dm_get_next_target(12345, NULL, NULL, NULL);
+	mock_dm_get_next_target(0, NULL, NULL, NULL);
 	rc = libmp_mapinfo(DM_MAP_BY_NAME,
 			   (mapid_t) { .str = "foo", },
 			   (mapinfo_t) { .size = &size });
-	assert_int_equal(rc, DMP_NOT_FOUND);
+	assert_int_equal(rc, DMP_EMPTY);
 }
 
 /* libmp_mapinfo needs to do a DM_DEVICE_STATUS ioctl */
@@ -1049,6 +1051,39 @@ static void test_mapinfo_good_target_type_04(void **state)
 	assert_true(!strcmp(uuid, MPATH_UUID_01));
 }
 
+static void test_mapinfo_no_table_01(void **state)
+{
+	int rc;
+	struct dm_info dmi = { .suspended = 0 };
+
+	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	/* DMI with no live table, MAPINFO_CHECK_UUID not set */
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_02);
+	mock_dm_get_next_target(0, NULL, NULL, NULL);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .dmi = &dmi });
+	assert_int_equal(rc, DMP_EMPTY);
+}
+
+static void test_mapinfo_no_table_02(void **state)
+{
+	int rc;
+	struct dm_info dmi = { .suspended = 0 };
+
+	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 1, 0);
+	WRAP_DM_TASK_GET_INFO(1);
+	/* DMI with no live table, MAPINFO_CHECK_UUID set */
+	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_02);
+	mock_dm_get_next_target(0, NULL, NULL, NULL);
+	will_return(__wrap_dm_task_get_uuid, MPATH_UUID_01);
+	rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID | MAPINFO_MPATH_ONLY,
+			   (mapid_t) { .str = "foo", },
+			   (mapinfo_t) { .dmi = &dmi });
+	assert_int_equal(rc, DMP_EMPTY);
+}
+
 static void test_mapinfo_good_status_01(void **state)
 {
 	int rc;
@@ -1142,7 +1177,7 @@ static void test_mapinfo_bad_task_run_11(void **state)
 	mock_mapinfo_name_1(DM_DEVICE_TABLE, 1, "foo", 1, 1, 0);
 	WRAP_DM_TASK_GET_INFO(1);
 	WRAP_DM_TASK_GET_INFO(&MPATH_DMI_01);
-	mock_dm_get_next_target(12345, NULL, MPATH_TARGET_01, NULL);
+	mock_dm_get_next_target(12345, TGT_ANY, MPATH_TARGET_01, NULL);
 	will_return(__wrap_strdup, 1);
 	/* error in 2nd dm_task_run */
 	mock_mapinfo_name_1(DM_DEVICE_STATUS, 1, "foo", 1, 0, EINVAL);
@@ -1384,6 +1419,8 @@ static int test_mapinfo(void)
 		cmocka_unit_test(test_mapinfo_good_target_type_02),
 		cmocka_unit_test(test_mapinfo_good_target_type_03),
 		cmocka_unit_test(test_mapinfo_good_target_type_04),
+		cmocka_unit_test(test_mapinfo_no_table_01),
+		cmocka_unit_test(test_mapinfo_no_table_02),
 		cmocka_unit_test(test_mapinfo_good_status_01),
 		cmocka_unit_test(test_mapinfo_bad_get_name_01),
 		cmocka_unit_test(test_mapinfo_bad_get_uuid_01),
