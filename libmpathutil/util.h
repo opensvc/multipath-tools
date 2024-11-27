@@ -91,15 +91,15 @@ struct bitfield {
 	bitfield_t bits[];
 };
 
-#define STATIC_BITFIELD(name, length)					\
-	static struct {							\
+#define BITFIELD(name, length)					\
+	struct {							\
 		unsigned int len;					\
 		bitfield_t bits[((length) - 1) / bits_per_slot + 1];	\
-	} __static__ ## name = {					\
+	} __storage_for__ ## name = {					\
 		.len = (length),					\
 		.bits = { 0, },						\
 	}; \
-	struct bitfield *name = (struct bitfield *)& __static__ ## name
+	struct bitfield *name = (struct bitfield *)& __storage_for__ ## name
 
 struct bitfield *alloc_bitfield(unsigned int maxbit);
 

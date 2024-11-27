@@ -875,7 +875,7 @@ sysfs_set_nexus_loss_tmo(struct path *pp)
 static void
 scsi_tmo_error_msg(struct path *pp)
 {
-	STATIC_BITFIELD(bf, LAST_BUS_PROTOCOL_ID + 1);
+	static BITFIELD(bf, LAST_BUS_PROTOCOL_ID + 1);
 	STRBUF_ON_STACK(proto_buf);
 	unsigned int proto_id = bus_protocol_id(pp);
 
