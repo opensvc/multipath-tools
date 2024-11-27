@@ -794,8 +794,10 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 				vector_del_slot(ompv, i);
 				i--;
 			}
-			else
+			else {
 				condlog(2, "%s devmap removed", ompp->alias);
+				trigger_paths_udev_change(ompp, false);
+			}
 		} else if (reassign_maps) {
 			condlog(3, "%s: Reassign existing device-mapper"
 				" devices", ompp->alias);
