@@ -51,6 +51,7 @@ global:
 	append_strbuf_str__;
 	append_strbuf_quoted;
 	basenamecpy;
+	cleanup_bitfield;
 	cleanup_charp;
 	cleanup_fclose;
 	cleanup_fd_ptr;

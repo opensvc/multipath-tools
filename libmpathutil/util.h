@@ -146,5 +146,5 @@ static inline void clear_bit_in_bitfield(unsigned int bit, struct bitfield *bf)
 void cleanup_charp(char **p);
 void cleanup_ucharp(unsigned char **p);
 void cleanup_udev_device(struct udev_device **udd);
-
+void cleanup_bitfield(struct bitfield **p);
 #endif /* UTIL_H_INCLUDED */
