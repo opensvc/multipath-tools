@@ -795,7 +795,7 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 				i--;
 			}
 			else {
-				condlog(2, "%s devmap removed", ompp->alias);
+				condlog(2, "%s: multipath map removed", ompp->alias);
 				trigger_paths_udev_change(ompp, false);
 			}
 		} else if (reassign_maps) {
