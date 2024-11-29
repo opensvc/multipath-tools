@@ -1079,6 +1079,15 @@ static struct hwentry default_hw[] = {
 		.checker_name  = DIRECTIO,
 		.detect_checker = DETECT_CHECKER_OFF,
 	},
+	{
+		/* Generic SCSI Target Subsystem for Linux (SCST) */
+		.vendor        = "^SCST_",
+		.product       = ".*",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 12,
+		.prio_name     = PRIO_ALUA,
+	},
 	/*
 	 * DataCore
 	 */
