@@ -3040,7 +3040,10 @@ checkerloop (void *ap)
 							     start_time.tv_sec);
 			if (checker_state == CHECKER_FINISHED) {
 				vector_foreach_slot(vecs->mpvec, mpp, i) {
-					if (update_mpp_prio(vecs, mpp) == 2) {
+					if (update_mpp_prio(vecs, mpp) == 2 ||
+					    (mpp->need_reload &&
+					     mpp->synced_count > 0 &&
+					     reload_and_sync_map(mpp, vecs) == 2)) {
 						/* multipath device deleted */
 						i--;
 					}
