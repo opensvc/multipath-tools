@@ -503,20 +503,12 @@ remove_maps_and_stop_waiters(struct vectors *vecs)
 
 int refresh_multipath(struct vectors *vecs, struct multipath *mpp)
 {
-	if (dm_get_info(mpp->alias, &mpp->dmi) != DMP_OK) {
-		/* Error accessing table */
-		condlog(2, "%s: cannot access table", mpp->alias);
-		goto out;
-	}
-
 	if (update_multipath_strings(mpp, vecs->pathvec) != DMP_OK) {
-		condlog(0, "%s: failed to setup multipath", mpp->alias);
-		goto out;
+		condlog(0, "%s: failed to read map from kernel", mpp->alias);
+		remove_map_and_stop_waiter(mpp, vecs);
+		return 1;
 	}
 	return 0;
-out:
-	remove_map_and_stop_waiter(mpp, vecs);
-	return 1;
 }
 
 int setup_multipath(struct vectors *vecs, struct multipath *mpp)
