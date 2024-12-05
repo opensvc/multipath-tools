@@ -818,6 +818,7 @@ cli_reload(void *v, struct strbuf *reply, void *data)
 		return 1;
 	}
 
+	mpp->force_udev_reload = 1;
 	return reload_and_sync_map(mpp, vecs);
 }
 
