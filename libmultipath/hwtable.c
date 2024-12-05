@@ -188,9 +188,9 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 	},
 	{
-		/* MSA 1040, 1050, 1060, 2040, 2050 and 2060 families */
+		/* MSA 1040, 1050, 1060, 2040, 2050, 2060 and 2070 families */
 		.vendor        = "(HP|HPE)",
-		.product       = "MSA [12]0[456]0 (SAN|SAS|FC|iSCSI)",
+		.product       = "MSA [12]0[4567]0 (SAN|SAS|FC|iSCSI)",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 18,
