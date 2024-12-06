@@ -2967,6 +2967,29 @@ update_paths(struct vectors *vecs, int *num_paths_p, time_t start_secs)
 	return CHECKER_FINISHED;
 }
 
+static void checker_finished(struct vectors *vecs, unsigned int ticks)
+{
+	struct multipath *mpp;
+	int i;
+
+	vector_foreach_slot(vecs->mpvec, mpp, i) {
+		bool inconsistent;
+
+		sync_mpp(vecs, mpp, ticks);
+		inconsistent = mpp->need_reload;
+		if (update_mpp_prio(mpp) || inconsistent)
+			if (reload_and_sync_map(mpp, vecs) == 2) {
+				/* multipath device deleted */
+				i--;
+				continue;
+			}
+		/* need_reload was cleared in dm_addmap and then set again */
+		if (inconsistent && mpp->need_reload)
+			condlog(1, "BUG: %s; map remained in inconsistent state after reload",
+				mpp->alias);
+	}
+}
+
 static void *
 checkerloop (void *ap)
 {
@@ -3034,24 +3057,8 @@ checkerloop (void *ap)
 			if (checker_state == CHECKER_UPDATING_PATHS)
 				checker_state = update_paths(vecs, &num_paths,
 							     start_time.tv_sec);
-			if (checker_state == CHECKER_FINISHED) {
-				vector_foreach_slot(vecs->mpvec, mpp, i) {
-					bool inconsistent;
-
-					sync_mpp(vecs, mpp, ticks);
-					inconsistent = mpp->need_reload;
-					if ((update_mpp_prio(mpp) || inconsistent) &&
-					    reload_and_sync_map(mpp, vecs) == 2) {
-						/* multipath device deleted */
-						i--;
-						continue;
-					}
-					/* need_reload was cleared in dm_addmap and then set again */
-					if (inconsistent && mpp->need_reload)
-						condlog(1, "BUG: %s; map remained in inconsistent state after reload",
-							mpp->alias);
-				}
-			}
+			if (checker_state == CHECKER_FINISHED)
+				checker_finished(vecs, ticks);
 			lock_cleanup_pop(vecs->lock);
 		}
 
