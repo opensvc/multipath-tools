@@ -2076,32 +2076,22 @@ ghost_delay_tick(struct vectors *vecs)
 	}
 }
 
-static void
-deferred_failback_tick (struct vectors *vecs)
+static bool deferred_failback_tick(struct multipath *mpp)
 {
-	struct multipath * mpp;
-	int i;
 	bool need_reload;
 
-	vector_foreach_slot (vecs->mpvec, mpp, i) {
-		/*
-		 * deferred failback getting sooner
-		 */
-		if (mpp->pgfailback > 0 && mpp->failback_tick > 0) {
-			mpp->failback_tick--;
+	if (mpp->pgfailback <= 0 || mpp->failback_tick <= 0)
+		return false;
 
-			if (!mpp->failback_tick &&
-			    need_switch_pathgroup(mpp, &need_reload)) {
-				if (need_reload) {
-					if (reload_and_sync_map(mpp, vecs) == 2) {
-						/* multipath device removed */
-						i--;
-					}
-				} else
-					switch_pathgroup(mpp);
-			}
-		}
+	mpp->failback_tick--;
+	if (!mpp->failback_tick &&
+	    need_switch_pathgroup(mpp, &need_reload)) {
+		if (need_reload)
+			return true;
+		else
+			switch_pathgroup(mpp);
 	}
+	return false;
 }
 
 static void
@@ -2973,11 +2963,13 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 	int i;
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		bool inconsistent;
+		bool inconsistent, prio_reload, failback_reload;
 
 		sync_mpp(vecs, mpp, ticks);
 		inconsistent = mpp->need_reload;
-		if (update_mpp_prio(mpp) || inconsistent)
+		prio_reload = update_mpp_prio(mpp);
+		failback_reload = deferred_failback_tick(mpp);
+		if (prio_reload || failback_reload || inconsistent)
 			if (reload_and_sync_map(mpp, vecs) == 2) {
 				/* multipath device deleted */
 				i--;
@@ -2988,7 +2980,6 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 			condlog(1, "BUG: %s; map remained in inconsistent state after reload",
 				mpp->alias);
 	}
-	deferred_failback_tick(vecs);
 	retry_count_tick(vecs->mpvec);
 	missing_uev_wait_tick(vecs);
 	ghost_delay_tick(vecs);
