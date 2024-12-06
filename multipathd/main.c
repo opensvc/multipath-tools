@@ -2689,25 +2689,25 @@ update_path_state (struct vectors * vecs, struct path * pp)
 	return chkr_new_path_up ? CHECK_PATH_NEW_UP : CHECK_PATH_CHECKED;
 }
 
-static int
-update_mpp_prio(struct vectors *vecs, struct multipath *mpp)
+/* Return value: true if the map needs to be reloaded */
+static bool update_mpp_prio(struct multipath *mpp)
 {
 	bool need_reload, changed;
 	enum prio_update_type prio_update = mpp->prio_update;
 	mpp->prio_update = PRIO_UPDATE_NONE;
 
 	if (mpp->wait_for_udev || prio_update == PRIO_UPDATE_NONE)
-		return 0;
+		return false;
 	condlog(4, "prio refresh");
 
 	changed = update_prio(mpp, prio_update != PRIO_UPDATE_NORMAL);
 	if (prio_update == PRIO_UPDATE_MARGINAL)
-		return reload_and_sync_map(mpp, vecs);
+		return true;
 	if (changed && mpp->pgpolicyfn == (pgpolicyfn *)group_by_prio &&
 	    mpp->pgfailback == -FAILBACK_IMMEDIATE) {
 		condlog(2, "%s: path priorities changed. reloading",
 			mpp->alias);
-		return reload_and_sync_map(mpp, vecs);
+		return true;
 	}
 	if (need_switch_pathgroup(mpp, &need_reload)) {
 		if (mpp->pgfailback > 0 &&
@@ -2718,12 +2718,12 @@ update_mpp_prio(struct vectors *vecs, struct multipath *mpp)
 			 (prio_update == PRIO_UPDATE_NEW_PATH &&
 			  followover_should_failback(mpp))) {
 			if (need_reload)
-				return reload_and_sync_map(mpp, vecs);
+				return true;
 			else
 				switch_pathgroup(mpp);
 		}
 	}
-	return 0;
+	return false;
 }
 
 static int
@@ -3040,13 +3040,11 @@ checkerloop (void *ap)
 							     start_time.tv_sec);
 			if (checker_state == CHECKER_FINISHED) {
 				vector_foreach_slot(vecs->mpvec, mpp, i) {
-					if (update_mpp_prio(vecs, mpp) == 2 ||
-					    (mpp->need_reload &&
-					     mpp->synced_count > 0 &&
-					     reload_and_sync_map(mpp, vecs) == 2)) {
+					if ((update_mpp_prio(mpp) ||
+					     (mpp->need_reload && mpp->synced_count > 0)) &&
+					    reload_and_sync_map(mpp, vecs) == 2)
 						/* multipath device deleted */
 						i--;
-					}
 				}
 			}
 			lock_cleanup_pop(vecs->lock);
