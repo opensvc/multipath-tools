@@ -3007,6 +3007,16 @@ checkerloop (void *ap)
 			struct multipath *mpp;
 			int i;
 
+			if (checker_state != CHECKER_STARTING) {
+				struct timespec wait = { .tv_nsec = 10000, };
+				if (checker_state == CHECKER_WAITING_FOR_PATHS) {
+					/* wait 5ms */
+					wait.tv_nsec = 5 * 1000 * 1000;
+					checker_state = CHECKER_UPDATING_PATHS;
+				}
+				nanosleep(&wait, NULL);
+			}
+
 			pthread_cleanup_push(cleanup_lock, &vecs->lock);
 			lock(&vecs->lock);
 			pthread_testcancel();
@@ -3043,16 +3053,6 @@ checkerloop (void *ap)
 				}
 			}
 			lock_cleanup_pop(vecs->lock);
-			if (checker_state != CHECKER_FINISHED) {
-				/* Yield to waiters */
-				struct timespec wait = { .tv_nsec = 10000, };
-				if (checker_state == CHECKER_WAITING_FOR_PATHS) {
-					/* wait 5ms */
-					wait.tv_nsec = 5 * 1000 * 1000;
-					checker_state = CHECKER_UPDATING_PATHS;
-				}
-				nanosleep(&wait, NULL);
-			}
 		}
 
 		pthread_cleanup_push(cleanup_lock, &vecs->lock);
