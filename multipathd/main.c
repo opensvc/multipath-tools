@@ -2095,21 +2095,17 @@ static bool deferred_failback_tick(struct multipath *mpp)
 }
 
 static void
-retry_count_tick(vector mpvec)
+retry_count_tick(struct multipath *mpp)
 {
-	struct multipath *mpp;
-	unsigned int i;
+	if (mpp->retry_tick <= 0)
+		return;
 
-	vector_foreach_slot (mpvec, mpp, i) {
-		if (mpp->retry_tick > 0) {
-			mpp->stat_total_queueing_time++;
-			condlog(4, "%s: Retrying.. No active path", mpp->alias);
-			if(--mpp->retry_tick == 0) {
-				mpp->stat_map_failures++;
-				dm_queue_if_no_path(mpp, 0);
-				condlog(2, "%s: Disable queueing", mpp->alias);
-			}
-		}
+	mpp->stat_total_queueing_time++;
+	condlog(4, "%s: Retrying.. No active path", mpp->alias);
+	if(--mpp->retry_tick == 0) {
+		mpp->stat_map_failures++;
+		dm_queue_if_no_path(mpp, 0);
+		condlog(2, "%s: Disable queueing", mpp->alias);
 	}
 }
 
@@ -2979,8 +2975,8 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 		if (inconsistent && mpp->need_reload)
 			condlog(1, "BUG: %s; map remained in inconsistent state after reload",
 				mpp->alias);
+		retry_count_tick(mpp);
 	}
-	retry_count_tick(vecs->mpvec);
 	missing_uev_wait_tick(vecs);
 	ghost_delay_tick(vecs);
 	partial_retrigger_tick(vecs->pathvec);
