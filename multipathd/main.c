@@ -2988,6 +2988,11 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 			condlog(1, "BUG: %s; map remained in inconsistent state after reload",
 				mpp->alias);
 	}
+	deferred_failback_tick(vecs);
+	retry_count_tick(vecs->mpvec);
+	missing_uev_wait_tick(vecs);
+	ghost_delay_tick(vecs);
+	partial_retrigger_tick(vecs->pathvec);
 }
 
 static void *
@@ -3061,16 +3066,6 @@ checkerloop (void *ap)
 				checker_finished(vecs, ticks);
 			lock_cleanup_pop(vecs->lock);
 		}
-
-		pthread_cleanup_push(cleanup_lock, &vecs->lock);
-		lock(&vecs->lock);
-		pthread_testcancel();
-		deferred_failback_tick(vecs);
-		retry_count_tick(vecs->mpvec);
-		missing_uev_wait_tick(vecs);
-		ghost_delay_tick(vecs);
-		partial_retrigger_tick(vecs->pathvec);
-		lock_cleanup_pop(vecs->lock);
 
 		if (count)
 			count--;
