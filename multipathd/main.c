@@ -2044,26 +2044,17 @@ missing_uev_wait_tick(struct multipath *mpp, bool *timed_out)
 	return false;
 }
 
-static void
-ghost_delay_tick(struct vectors *vecs)
+static bool
+ghost_delay_tick(struct  multipath * mpp)
 {
-	struct multipath * mpp;
-	int i;
-
-	vector_foreach_slot (vecs->mpvec, mpp, i) {
-		if (mpp->ghost_delay_tick <= 0)
-			continue;
-		if (--mpp->ghost_delay_tick <= 0) {
-			condlog(0, "%s: timed out waiting for active path",
-				mpp->alias);
-			mpp->force_udev_reload = 1;
-			if (update_map(mpp, vecs, 0) != 0) {
-				/* update_map removed map */
-				i--;
-				continue;
-			}
-		}
+	if (mpp->ghost_delay_tick <= 0)
+		return false;
+	if (--mpp->ghost_delay_tick <= 0) {
+		condlog(0, "%s: timed out waiting for active path", mpp->alias);
+		mpp->force_udev_reload = 1;
+		return true;
 	}
+	return false;
 }
 
 static bool deferred_failback_tick(struct multipath *mpp)
@@ -2951,14 +2942,15 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
 		bool inconsistent, prio_reload, failback_reload;
-		bool uev_wait_reload;
+		bool uev_wait_reload, ghost_reload;
 
 		sync_mpp(vecs, mpp, ticks);
 		inconsistent = mpp->need_reload;
 		prio_reload = update_mpp_prio(mpp);
 		failback_reload = deferred_failback_tick(mpp);
 		uev_wait_reload = missing_uev_wait_tick(mpp, &uev_timed_out);
-		if (uev_wait_reload) {
+		ghost_reload = ghost_delay_tick(mpp);
+		if (uev_wait_reload || ghost_reload) {
 			if (update_map(mpp, vecs, 0)) {
 				/* multipath device deleted */
 				i--;
@@ -2978,7 +2970,6 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 	}
 	if (uev_timed_out && !need_to_delay_reconfig(vecs))
 		unblock_reconfigure();
-	ghost_delay_tick(vecs);
 	partial_retrigger_tick(vecs->pathvec);
 }
 
