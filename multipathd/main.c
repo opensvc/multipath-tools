@@ -1967,24 +1967,6 @@ enable_group(struct path * pp)
 	}
 }
 
-static void
-mpvec_garbage_collector (struct vectors * vecs)
-{
-	struct multipath * mpp;
-	int i;
-
-	if (!vecs->mpvec)
-		return;
-
-	vector_foreach_slot (vecs->mpvec, mpp, i) {
-		if (mpp && mpp->alias && !dm_map_present(mpp->alias)) {
-			condlog(2, "%s: remove dead map", mpp->alias);
-			remove_map_and_stop_waiter(mpp, vecs);
-			i--;
-		}
-	}
-}
-
 /* This is called after a path has started working again. It the multipath
  * device for this path uses the followover failback type, and this is the
  * best pathgroup, and this is the first path in the pathgroup to come back
@@ -2983,7 +2965,6 @@ checkerloop (void *ap)
 {
 	struct vectors *vecs;
 	struct path *pp;
-	int count = 0;
 	struct timespec last_time;
 	struct config *conf;
 	int foreign_tick = 0;
@@ -3047,18 +3028,6 @@ checkerloop (void *ap)
 							     start_time.tv_sec);
 			if (checker_state == CHECKER_FINISHED)
 				checker_finished(vecs, ticks);
-			lock_cleanup_pop(vecs->lock);
-		}
-
-		if (count)
-			count--;
-		else {
-			pthread_cleanup_push(cleanup_lock, &vecs->lock);
-			lock(&vecs->lock);
-			pthread_testcancel();
-			condlog(4, "map garbage collection");
-			mpvec_garbage_collector(vecs);
-			count = MAPGCINT;
 			lock_cleanup_pop(vecs->lock);
 		}
 
