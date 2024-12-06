@@ -2029,29 +2029,19 @@ followover_should_failback(struct multipath *mpp)
 	return 0;
 }
 
-static void
-missing_uev_wait_tick(struct vectors *vecs)
+/* Returns true if update_map() needs to be called */
+static bool
+missing_uev_wait_tick(struct multipath *mpp, bool *timed_out)
 {
-	struct multipath * mpp;
-	int i;
-	int timed_out = 0;
+	if (mpp->wait_for_udev && --mpp->uev_wait_tick <= 0) {
+		int wait = mpp->wait_for_udev;
 
-	vector_foreach_slot (vecs->mpvec, mpp, i) {
-		if (mpp->wait_for_udev && --mpp->uev_wait_tick <= 0) {
-			timed_out = 1;
-			condlog(0, "%s: timeout waiting on creation uevent. enabling reloads", mpp->alias);
-			if (mpp->wait_for_udev > 1 &&
-			    update_map(mpp, vecs, 0)) {
-				/* update_map removed map */
-				i--;
-				continue;
-			}
-			mpp->wait_for_udev = 0;
-		}
+		mpp->wait_for_udev = 0;
+		*timed_out = true;
+		condlog(0, "%s: timeout waiting on creation uevent. enabling reloads", mpp->alias);
+		return wait > 1;
 	}
-
-	if (timed_out && !need_to_delay_reconfig(vecs))
-		unblock_reconfigure();
+	return false;
 }
 
 static void
@@ -2956,16 +2946,25 @@ update_paths(struct vectors *vecs, int *num_paths_p, time_t start_secs)
 static void checker_finished(struct vectors *vecs, unsigned int ticks)
 {
 	struct multipath *mpp;
+	bool uev_timed_out = false;
 	int i;
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
 		bool inconsistent, prio_reload, failback_reload;
+		bool uev_wait_reload;
 
 		sync_mpp(vecs, mpp, ticks);
 		inconsistent = mpp->need_reload;
 		prio_reload = update_mpp_prio(mpp);
 		failback_reload = deferred_failback_tick(mpp);
-		if (prio_reload || failback_reload || inconsistent)
+		uev_wait_reload = missing_uev_wait_tick(mpp, &uev_timed_out);
+		if (uev_wait_reload) {
+			if (update_map(mpp, vecs, 0)) {
+				/* multipath device deleted */
+				i--;
+				continue;
+			}
+		} else if (prio_reload || failback_reload || inconsistent)
 			if (reload_and_sync_map(mpp, vecs) == 2) {
 				/* multipath device deleted */
 				i--;
@@ -2977,7 +2976,8 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 				mpp->alias);
 		retry_count_tick(mpp);
 	}
-	missing_uev_wait_tick(vecs);
+	if (uev_timed_out && !need_to_delay_reconfig(vecs))
+		unblock_reconfigure();
 	ghost_delay_tick(vecs);
 	partial_retrigger_tick(vecs->pathvec);
 }
