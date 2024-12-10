@@ -530,7 +530,6 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 	conf = get_multipath_config();
 	mpp->sync_tick = conf->max_checkint;
 	put_multipath_config(conf);
-	mpp->synced_count++;
 
 	r = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
 			  (mapid_t) { .str = mpp->alias },

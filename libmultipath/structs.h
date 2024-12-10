@@ -471,7 +471,7 @@ struct multipath {
 	int ghost_delay_tick;
 	int queue_mode;
 	unsigned int sync_tick;
-	int synced_count;
+	int checker_count;
 	enum prio_update_type prio_update;
 	uid_t uid;
 	gid_t gid;

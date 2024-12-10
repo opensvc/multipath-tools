@@ -2470,7 +2470,7 @@ sync_mpp(struct vectors * vecs, struct multipath *mpp, unsigned int ticks)
 	if (mpp->sync_tick)
 		mpp->sync_tick -= (mpp->sync_tick > ticks) ? ticks :
 				  mpp->sync_tick;
-	if (mpp->sync_tick)
+	if (mpp->sync_tick && !mpp->checker_count)
 		return;
 
 	do_sync_mpp(vecs, mpp);
@@ -2512,12 +2512,6 @@ update_path_state (struct vectors * vecs, struct path * pp)
 		condlog(0, "%s: path wwid change detected. Removing", pp->dev);
 		return handle_path_wwid_change(pp, vecs)? CHECK_PATH_REMOVED :
 							  CHECK_PATH_SKIPPED;
-	}
-	if (pp->mpp->synced_count == 0) {
-		do_sync_mpp(vecs, pp->mpp);
-		/* if update_multipath_strings orphaned the path, quit early */
-		if (!pp->mpp)
-			return CHECK_PATH_SKIPPED;
 	}
 	if ((newstate != PATH_UP && newstate != PATH_GHOST &&
 	     newstate != PATH_PENDING) && (pp->state == PATH_DELAYED)) {
@@ -2918,9 +2912,11 @@ check_paths(struct vectors *vecs, unsigned int ticks)
 	vector_foreach_slot(vecs->pathvec, pp, i) {
 		if (pp->is_checked != CHECK_PATH_UNCHECKED)
 			continue;
-		if (pp->mpp)
+		if (pp->mpp) {
 			pp->is_checked = check_path(pp, ticks);
-		else
+			if (pp->is_checked == CHECK_PATH_STARTED)
+				pp->mpp->checker_count++;
+		} else
 			pp->is_checked = check_uninitialized_path(pp, ticks);
 		if (pp->is_checked == CHECK_PATH_STARTED &&
 		    checker_need_wait(&pp->checker))
@@ -3014,12 +3010,10 @@ checkerloop (void *ap)
 			pthread_cleanup_push(cleanup_lock, &vecs->lock);
 			lock(&vecs->lock);
 			pthread_testcancel();
-			vector_foreach_slot(vecs->mpvec, mpp, i)
-				mpp->synced_count = 0;
 			if (checker_state == CHECKER_STARTING) {
 				vector_foreach_slot(vecs->mpvec, mpp, i) {
-					sync_mpp(vecs, mpp, ticks);
 					mpp->prio_update = PRIO_UPDATE_NONE;
+					mpp->checker_count = 0;
 				}
 				vector_foreach_slot(vecs->pathvec, pp, i)
 					pp->is_checked = CHECK_PATH_UNCHECKED;
@@ -3032,11 +3026,13 @@ checkerloop (void *ap)
 							     start_time.tv_sec);
 			if (checker_state == CHECKER_FINISHED) {
 				vector_foreach_slot(vecs->mpvec, mpp, i) {
-					if ((update_mpp_prio(mpp) ||
-					     (mpp->need_reload && mpp->synced_count > 0)) &&
-					    reload_and_sync_map(mpp, vecs) == 2)
+					sync_mpp(vecs, mpp, ticks);
+					if ((update_mpp_prio(mpp) || mpp->need_reload) &&
+					    reload_and_sync_map(mpp, vecs) == 2) {
 						/* multipath device deleted */
 						i--;
+						continue;
+					}
 				}
 			}
 			lock_cleanup_pop(vecs->lock);
