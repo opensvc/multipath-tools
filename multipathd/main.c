@@ -2413,7 +2413,7 @@ get_new_state(struct path *pp)
 	return newstate;
 }
 
-static void
+static int
 do_sync_mpp(struct vectors * vecs, struct multipath *mpp)
 {
 	int i, ret;
@@ -2426,21 +2426,22 @@ do_sync_mpp(struct vectors * vecs, struct multipath *mpp)
 			"couldn't synchronize with kernel state");
 		vector_foreach_slot (mpp->paths, pp, i)
 			pp->dmstate = PSTATE_UNDEF;
-		return;
+		return ret;
 	}
 	set_no_path_retry(mpp);
+	return ret;
 }
 
-static void
+static int
 sync_mpp(struct vectors * vecs, struct multipath *mpp, unsigned int ticks)
 {
 	if (mpp->sync_tick)
 		mpp->sync_tick -= (mpp->sync_tick > ticks) ? ticks :
 				  mpp->sync_tick;
 	if (mpp->sync_tick && !mpp->checker_count)
-		return;
+		return DMP_OK;
 
-	do_sync_mpp(vecs, mpp);
+	return do_sync_mpp(vecs, mpp);
 }
 
 static int
@@ -2944,7 +2945,11 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 		bool inconsistent, prio_reload, failback_reload;
 		bool uev_wait_reload, ghost_reload;
 
-		sync_mpp(vecs, mpp, ticks);
+		if (sync_mpp(vecs, mpp, ticks) == DMP_NOT_FOUND) {
+			remove_map_and_stop_waiter(mpp, vecs);
+			i--;
+			continue;
+		}
 		inconsistent = mpp->need_reload;
 		prio_reload = update_mpp_prio(mpp);
 		failback_reload = deferred_failback_tick(mpp);
