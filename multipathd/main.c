@@ -2950,13 +2950,13 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 		failback_reload = deferred_failback_tick(mpp);
 		uev_wait_reload = missing_uev_wait_tick(mpp, &uev_timed_out);
 		ghost_reload = ghost_delay_tick(mpp);
-		if (uev_wait_reload || ghost_reload) {
+		if (uev_wait_reload) {
 			if (update_map(mpp, vecs, 0)) {
 				/* multipath device deleted */
 				i--;
 				continue;
 			}
-		} else if (prio_reload || failback_reload || inconsistent)
+		} else if (prio_reload || failback_reload || ghost_reload || inconsistent)
 			if (reload_and_sync_map(mpp, vecs) == 2) {
 				/* multipath device deleted */
 				i--;
