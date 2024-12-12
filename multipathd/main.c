@@ -3083,12 +3083,30 @@ static void enable_pathgroups(struct multipath *mpp)
 	}
 }
 
+static void free_orphan_paths(vector pathvec)
+{
+	struct path *pp;
+	int i;
+
+	vector_foreach_slot (pathvec, pp, i) {
+		if (!pp->mpp && (pp->initialized == INIT_REMOVED ||
+				 pp->initialized == INIT_PARTIAL)) {
+			condlog(2, "%s: freeing orphan %s in %s state",
+				__func__, pp->dev,
+				pp->initialized == INIT_REMOVED ? "removed" : "partial");
+			vector_del_slot(pathvec, i--);
+			free_path(pp);
+		}
+	}
+}
+
 static void checker_finished(struct vectors *vecs, unsigned int ticks)
 {
 	struct multipath *mpp;
 	bool uev_timed_out = false;
 	int i;
 
+	free_orphan_paths(vecs->pathvec);
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
 		bool inconsistent, prio_reload, failback_reload;
 		bool uev_wait_reload, ghost_reload;
