@@ -158,6 +158,7 @@ global:
 	remove_map;
 	remove_map_by_alias;
 	remove_map_callback;
+	remove_map_from_mpvec;
 	remove_maps;
 	remove_wwid;
 	replace_wwids;
