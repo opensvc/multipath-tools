@@ -81,8 +81,7 @@ vector_insert_slot(vector v, int slot, void *value)
 	return v->slot[slot];
 }
 
-int
-find_slot(vector v, void * addr)
+int find_slot(vector v, const void *addr)
 {
 	int i;
 
