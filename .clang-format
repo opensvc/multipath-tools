@@ -1,0 +1,32 @@
+# -*- yaml -*-
+---
+BasedOnStyle: LLVM
+IndentWidth: 8
+ContinuationIndentWidth: 8
+UseTab: Always
+TabWidth: 8
+BreakBeforeBraces: Linux
+BreakStringLiterals: false
+AllowShortFunctionsOnASingleLine: Empty
+AlignAfterOpenBracket: Align
+PointerAlignment: Right
+ColumnLimit: 79
+PenaltyBreakAssignment: 50
+PenaltyBreakBeforeFirstCallParameter: 200
+#PenaltyBreakBeforeMemberAccess: 250
+PenaltyBreakComment: 50
+PenaltyBreakOpenParenthesis: 200
+PenaltyBreakString: 300
+PenaltyExcessCharacter: 5
+PenaltyIndentedWhitespace: 2
+PenaltyReturnTypeOnItsOwnLine: 50
+SortIncludes: Never
+AlignConsecutiveMacros: AcrossEmptyLinesAndComments
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+SkipMacroDefinitionBody: true
+ForEachMacros:
+  - vector_foreach_slot
+  - vector_foreach_slot_backwards
+  - vector_foreach_slot_after
+---
