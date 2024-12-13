@@ -1,0 +1,43 @@
+name: Check coding style
+
+on:
+  push:
+    branches:
+      - master
+      - queue
+      - tip
+      - 'stable-*'
+    paths:
+      - '.clang-format'
+      - '.github/workflows/codingstyle.yaml'
+      - '**.h'
+      - '**.c'
+  pull_request:
+    branches:
+      - master
+      - queue
+      - 'stable-*'
+    paths:
+      - '.clang-format'
+      - '.github/workflows/codingstyle.yaml'
+      - '**.h'
+      - '**.c'
+
+permissions:
+  contents: read
+
+jobs:
+  stylecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: >-
+          echo "BASEREF=${{ github.event.pull_request.base.sha }}" >>$GITHUB_ENV
+        if: ${{ github.event_name == 'pull_request' }}
+      - run: >-
+          echo "BASEREF=${{ github.event.before }}" >>$GITHUB_ENV
+        if: ${{ github.event_name == 'push' }}
+      - run: git fetch --depth=1 origin ${{ env.BASEREF }}
+      - uses: yshui/git-clang-format-lint@master
+        with:
+          base: ${{ env.BASEREF }}
