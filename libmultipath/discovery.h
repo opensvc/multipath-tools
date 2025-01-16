@@ -59,6 +59,8 @@ bool has_uid_fallback(struct path *pp);
 int get_uid(struct path * pp, int path_state, struct udev_device *udev,
 	    int allow_fallback);
 bool is_vpd_page_supported(int fd, int pg);
+void cleanup_udev_enumerate_ptr(void *arg);
+void cleanup_udev_device_ptr(void *arg);
 
 /*
  * discovery bitmask

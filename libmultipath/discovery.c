@@ -146,7 +146,7 @@ path_discover (vector pathvec, struct config * conf,
 		return pathinfo(pp, conf, flag);
 }
 
-static void cleanup_udev_enumerate_ptr(void *arg)
+void cleanup_udev_enumerate_ptr(void *arg)
 {
 	struct udev_enumerate *ue;
 
@@ -157,7 +157,7 @@ static void cleanup_udev_enumerate_ptr(void *arg)
 		(void)udev_enumerate_unref(ue);
 }
 
-static void cleanup_udev_device_ptr(void *arg)
+void cleanup_udev_device_ptr(void *arg)
 {
 	struct udev_device *ud;
 

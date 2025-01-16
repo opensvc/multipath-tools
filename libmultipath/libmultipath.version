@@ -244,3 +244,9 @@ global:
 local:
 	*;
 };
+
+LIBMULTIPATH_28.1.0 {
+global:
+	cleanup_udev_enumerate_ptr;
+	cleanup_udev_device_ptr;
+} LIBMULTIPATH_28.0.0;
