@@ -2917,6 +2917,36 @@ update_paths(struct vectors *vecs, int *num_paths_p, time_t start_secs)
 	return CHECKER_FINISHED;
 }
 
+static void enable_pathgroups(struct multipath *mpp)
+{
+	struct pathgroup *pgp;
+	int i;
+
+	vector_foreach_slot(mpp->pg, pgp, i) {
+		struct path *pp;
+		int j;
+
+		if (pgp->status != PGSTATE_DISABLED)
+			continue;
+
+		vector_foreach_slot(pgp->paths, pp, j) {
+			if (!(pp->state == PATH_UP &&
+			      (pp->is_checked == CHECK_PATH_CHECKED ||
+			       pp->is_checked == CHECK_PATH_NEW_UP)))
+				continue;
+
+			if (dm_enablegroup(mpp->alias, i + 1) == 0) {
+				condlog(2, "%s: enabled pathgroup #%i",
+					mpp->alias, i + 1);
+				pgp->status = PGSTATE_ENABLED;
+			} else
+				condlog(2, "%s: failed to enable pathgroup #%i",
+					mpp->alias, i + 1);
+			break;
+		}
+	}
+}
+
 static void checker_finished(struct vectors *vecs, unsigned int ticks)
 {
 	struct multipath *mpp;
@@ -2943,12 +2973,16 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 				i--;
 				continue;
 			}
-		} else if (prio_reload || failback_reload || ghost_reload || inconsistent)
+		} else if (prio_reload || failback_reload || ghost_reload || inconsistent) {
 			if (reload_and_sync_map(mpp, vecs) == 2) {
 				/* multipath device deleted */
 				i--;
 				continue;
 			}
+		} else
+			/* not necessary after map reloads */
+			enable_pathgroups(mpp);
+
 		/* need_reload was cleared in dm_addmap and then set again */
 		if (inconsistent && mpp->need_reload)
 			condlog(1, "BUG: %s; map remained in inconsistent state after reload",
