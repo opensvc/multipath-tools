@@ -22,6 +22,14 @@ bug fixes from 0.11.0, and some CI-related fixes.
 * Fixed the problem that, if there were multiple maps with deferred failback
   (`failback` value > 0 in `multipath.conf`), some maps might fail back later
   than configured. The problem existed since 0.9.6.
+* Removed a warning message that multipathd would print if systemd's
+  `WATCHDOG_USEC` environment variable had the value "0", which means that the
+  watchdog is simply disabled. This (minor) problem existed since 0.4.9.
+* Fixed a memory leak in the nvme foreign library. The bug existed since
+  0.7.8.
+* Fixed a problem in the marginal path detection algorithm that could cause
+  the io error check for a recently failed path to be delayed. This bug
+  existed since 0.7.4.
 
 ## multipath-tools 0.10.0, 2024/08
 

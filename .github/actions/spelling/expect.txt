@@ -184,7 +184,6 @@ sas
 sbp
 scsi
 sda
-sdc
 setmarginal
 setprkey
 setprstatus
@@ -205,11 +204,11 @@ suse
 svg
 switchgroup
 sys
+SYSDIR
 sysfs
 sysinit
 tcp
 terabytes
-SYSDIR
 TESTDEPS
 testname
 tgill
@@ -231,6 +230,7 @@ unsetprkey
 unsetprstatus
 unspec
 usb
+USEC
 userdata
 userspace
 usr
