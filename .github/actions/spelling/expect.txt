@@ -184,6 +184,7 @@ rtprio
 sas
 sbp
 scsi
+SCST
 sda
 sdc
 setmarginal
@@ -246,6 +247,7 @@ VNX
 vpd
 VSN
 wakka
+watchdogsec
 weightedpath
 wholedisk
 Wilck

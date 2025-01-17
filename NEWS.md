@@ -74,6 +74,13 @@ handled).
   matching UUID and matching type was already present. multipathd
   previously failed to set up such maps. Now it will reload them with the
   correct content.
+* Fixed the logic for enabling the systemd watchdog (`WatchdogSec=` in the
+  systemd unit file for multipathd).
+* Fixed a memory leak in the nvme foreign library. The bug existed since
+  0.7.8.
+* Fixed a problem in the marginal path detection algorithm that could cause
+  the io error check for a recently failed path to be delayed. This bug
+  existed since 0.7.4.
 
 ### Other
 
@@ -82,6 +89,7 @@ handled).
   kernel 4.3 and later, which automatically selects hardware handlers when
   SCSI devices are added. See the notes about `SCSI_DH_MODULES_PRELOAD` in
   [README.md](README.md).
+* Added a hardware table entry for the SCSI Target Subsystem for Linux (SCST).
 * The text of the licenses has been updated to the latest versions from the
   Free Software Foundation.
 
