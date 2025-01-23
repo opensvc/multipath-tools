@@ -1704,7 +1704,10 @@ int dm_reassign(const char *mapname)
 int dm_setgeometry(struct multipath *mpp)
 {
 	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
+	struct pathgroup *pgp;
 	struct path *pp;
+	int i, j;
+	bool found = false;
 	char heads[4], sectors[4];
 	char cylinders[10], start[32];
 	int r = 0;
@@ -1712,15 +1715,18 @@ int dm_setgeometry(struct multipath *mpp)
 	if (!mpp)
 		return 1;
 
-	pp = first_path(mpp);
-	if (!pp) {
-		condlog(3, "%s: no path for geometry", mpp->alias);
-		return 1;
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp, j) {
+			if (pp->geom.cylinders != 0 &&
+			    pp->geom.heads != 0 &&
+			    pp->geom.sectors != 0) {
+				found = true;
+				break;
+			}
+		}
 	}
-	if (pp->geom.cylinders == 0 ||
-	    pp->geom.heads == 0 ||
-	    pp->geom.sectors == 0) {
-		condlog(3, "%s: invalid geometry on %s", mpp->alias, pp->dev);
+	if (!found) {
+		condlog(3, "%s: no path with valid geometry", mpp->alias);
 		return 1;
 	}
 

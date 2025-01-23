@@ -1908,12 +1908,9 @@ sysfs_pathinfo(struct path *pp, const struct vector_s *hwtable)
 }
 
 static void
-scsi_ioctl_pathinfo (struct path * pp, int mask)
+scsi_ioctl_pathinfo (struct path * pp)
 {
 	int vpd_id;
-
-	if (!(mask & DI_IOCTL))
-		return;
 
 	select_vpd_vendor_id(pp);
 	vpd_id = pp->vpd_vendor_id;
@@ -2433,14 +2430,17 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 		goto blank;
 	}
 
-	if (mask & DI_IOCTL)
-		get_geometry(pp);
-
-	if (path_state == PATH_UP && pp->bus == SYSFS_BUS_SCSI)
-		scsi_ioctl_pathinfo(pp, mask);
-
-	if (pp->bus == SYSFS_BUS_CCISS && mask & DI_IOCTL)
-		cciss_ioctl_pathinfo(pp);
+	if (mask & DI_IOCTL || pp->ioctl_info == IOCTL_INFO_SKIPPED) {
+		if (path_state == PATH_UP) {
+			get_geometry(pp);
+			if (pp->bus == SYSFS_BUS_SCSI)
+				scsi_ioctl_pathinfo(pp);
+			else if (pp->bus == SYSFS_BUS_CCISS)
+				cciss_ioctl_pathinfo(pp);
+			pp->ioctl_info = IOCTL_INFO_COMPLETED;
+		} else if (pp->ioctl_info == IOCTL_INFO_NOT_REQUESTED)
+			pp->ioctl_info = IOCTL_INFO_SKIPPED;
+	}
 
 	if (mask & DI_CHECKER) {
 		if (path_state == PATH_UP) {

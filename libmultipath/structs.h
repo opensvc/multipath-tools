@@ -353,6 +353,12 @@ struct hd_geometry {
 
 #define GROUP_ID_UNDEF -1
 
+enum ioctl_info_states {
+	IOCTL_INFO_NOT_REQUESTED = 0,
+	IOCTL_INFO_SKIPPED,
+	IOCTL_INFO_COMPLETED,
+};
+
 struct path {
 	char dev[FILE_NAME_SIZE];
 	char dev_t[BLK_DEV_SIZE];
@@ -412,6 +418,7 @@ struct path {
 	vector hwe;
 	struct gen_path generic_path;
 	int tpg_id;
+	enum ioctl_info_states ioctl_info;
 };
 
 typedef int (pgpolicyfn) (struct multipath *, vector);
