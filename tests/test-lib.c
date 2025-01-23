@@ -282,7 +282,6 @@ struct mocked_path *mocked_path_from_path(struct mocked_path *mp,
 static const char hbtl[] = "4:0:3:1";
 static void mock_sysfs_pathinfo(const struct mocked_path *mp)
 {
-	will_return(__wrap_udev_device_get_subsystem, "scsi");
 	will_return(__wrap_udev_device_get_sysname, hbtl);
 	will_return(__wrap_udev_device_get_sysname, hbtl);
 	will_return(__wrap_udev_device_get_sysattr_value, mp->vendor);

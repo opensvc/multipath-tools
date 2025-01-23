@@ -1527,23 +1527,16 @@ scsi_sysfs_pathinfo (struct path *pp, const struct vector_s *hwtable)
 	const char *attr_path = NULL;
 	static const char unknown[] = "UNKNOWN";
 
-	parent = pp->udev;
-	while (parent) {
-		const char *subsys = udev_device_get_subsystem(parent);
-		if (subsys && !strncmp(subsys, "scsi", 4)) {
-			attr_path = udev_device_get_sysname(parent);
-			if (!attr_path)
-				break;
-			if (sscanf(attr_path, "%i:%i:%i:%" SCNu64,
-				   &pp->sg_id.host_no,
-				   &pp->sg_id.channel,
-				   &pp->sg_id.scsi_id,
-				   &pp->sg_id.lun) == 4)
-				break;
-		}
-		parent = udev_device_get_parent(parent);
-	}
-	if (!attr_path || pp->sg_id.host_no == -1)
+	parent = udev_device_get_parent_with_subsystem_devtype(pp->udev, "scsi",
+							       "scsi_device");
+	if (!parent)
+		return PATHINFO_FAILED;
+	attr_path = udev_device_get_sysname(parent);
+	if (!attr_path)
+		return PATHINFO_FAILED;
+	if (sscanf(attr_path, "%i:%i:%i:%" SCNu64,
+		   &pp->sg_id.host_no,
+		   &pp->sg_id.channel, &pp->sg_id.scsi_id, &pp->sg_id.lun) != 4)
 		return PATHINFO_FAILED;
 
 	if (sysfs_get_vendor(parent, pp->vendor_id, SCSI_VENDOR_SIZE) <= 0) {
