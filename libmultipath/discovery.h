@@ -67,7 +67,7 @@ void cleanup_udev_device_ptr(void *arg);
  */
 enum discovery_mode {
 	DI_SYSFS__,
-	DI_SERIAL__,
+	DI_IOCTL__,
 	DI_CHECKER__,
 	DI_PRIO__,
 	DI_WWID__,
@@ -77,7 +77,7 @@ enum discovery_mode {
 };
 
 #define DI_SYSFS	(1 << DI_SYSFS__)
-#define DI_SERIAL	(1 << DI_SERIAL__)
+#define DI_IOCTL	(1 << DI_IOCTL__)
 #define DI_CHECKER	(1 << DI_CHECKER__)
 #define DI_PRIO		(1 << DI_PRIO__)
 #define DI_WWID		(1 << DI_WWID__)
@@ -85,7 +85,6 @@ enum discovery_mode {
 #define DI_NOIO		(1 << DI_NOIO__) /* Avoid IO on the device */
 #define DI_NOFALLBACK	(1 << DI_NOFALLBACK__) /* do not allow wwid fallback */
 
-#define DI_ALL		(DI_SYSFS  | DI_SERIAL | DI_CHECKER | DI_PRIO | \
-			 DI_WWID)
+#define DI_ALL		(DI_SYSFS  | DI_IOCTL | DI_CHECKER | DI_PRIO | DI_WWID)
 
 #endif /* DISCOVERY_H_INCLUDED */

@@ -18,7 +18,7 @@
 #include "test-lib.h"
 #include "wrap64.h"
 
-const int default_mask = (DI_SYSFS|DI_BLACKLIST|DI_WWID|DI_CHECKER|DI_PRIO|DI_SERIAL);
+const int default_mask = (DI_SYSFS|DI_BLACKLIST|DI_WWID|DI_CHECKER|DI_PRIO|DI_IOCTL);
 const char default_devnode[] = "sdxTEST";
 const char default_wwid[] = "TEST-WWID";
 /* default_wwid should be a substring of default_wwid_1! */

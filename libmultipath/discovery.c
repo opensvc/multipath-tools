@@ -1912,7 +1912,7 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 {
 	int vpd_id;
 
-	if (!(mask & DI_SERIAL))
+	if (!(mask & DI_IOCTL))
 		return;
 
 	select_vpd_vendor_id(pp);
@@ -2433,13 +2433,13 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 		goto blank;
 	}
 
-	if (mask & DI_SERIAL)
+	if (mask & DI_IOCTL)
 		get_geometry(pp);
 
 	if (path_state == PATH_UP && pp->bus == SYSFS_BUS_SCSI)
 		scsi_ioctl_pathinfo(pp, mask);
 
-	if (pp->bus == SYSFS_BUS_CCISS && mask & DI_SERIAL)
+	if (pp->bus == SYSFS_BUS_CCISS && mask & DI_IOCTL)
 		cciss_ioctl_pathinfo(pp);
 
 	if (mask & DI_CHECKER) {
