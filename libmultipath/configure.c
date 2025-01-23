@@ -686,8 +686,6 @@ void select_action (struct multipath *mpp, const struct vector_s *curmp,
 	mpp->action = ACT_NOTHING;
 	cmpp = find_mp_by_wwid(curmp, mpp->wwid);
 	cmpp_by_name = find_mp_by_alias(curmp, mpp->alias);
-	if (mpp->need_reload || (cmpp && cmpp->need_reload))
-		force_reload = 1;
 
 	if (!cmpp) {
 		if (cmpp_by_name) {
