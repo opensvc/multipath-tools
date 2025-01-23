@@ -14,8 +14,37 @@ This package provides the following binaries to drive the Device Mapper multipat
 * kpartx - Create device maps from partition tables.
 
 
+Code Repository, Branches, and Maintenance
+==========================================
+
+The code is maintained on GitHub in the
+[opensvc/multipath-tools](https://github.com/opensvc/multipath-tools)
+project. The latest major release is always found in the `master` branch in
+this project.
+
+Staging area
+------------
+
+Between releases, the latest reviewed code can be obtained from
+[the queue branch](https://github.com/openSUSE/multipath-tools/tree/queue)
+in the openSUSE/multipath-tools repository on GitHub. From there,
+pull requests for new releases in the master repository are
+created roughly every 3 months.
+
+Stable branches
+---------------
+
+Beginning with 0.10, there will be stable branches `stable-0.x.y` on
+opensvc/multipath-tools. Small bug fixes with low regression risk from will be
+cherry-picked to these branches from the staging area. These branches are
+maintained by the multipath-tools maintainers on a best-effort basis. From
+time to time, minor releases will be made on these branches.
+
 Releases
 ========
+
+The project uses git tags like `0.10.0` for releases. It is not planned to use
+the GitHub release mechanism.
 
 To get a specific X.Y.Z release, use one of the following method:
 
@@ -236,15 +265,6 @@ When sending patches to the mailing list, please add a `Signed-off-by:`
 tag, and add Benjamin Marzinski <bmarzins@redhat.com> and 
 Martin Wilck <mwilck@suse.com> to the Cc list.
 
-Staging area
-------------
-
-Between releases, the latest reviewed code can be obtained from
-[the queue branch](https://github.com/openSUSE/multipath-tools/tree/queue)
-in the openSUSE/multipath-tools repository on GitHub. From there,
-pull requests for new releases in the master repository are
-created roughly every 3 months.
-
 Adding new storage devices
 --------------------------
 
@@ -255,9 +275,9 @@ file `libmultipath/hwtable.c`.
 Changelog
 =========
 
-* pre-0.4.5: https://web.archive.org/web/20070309224034/http://christophe.varoqui.free.fr/wiki/wakka.php?wiki=ChangeLog
+* Since multipath-tools 0.9.1, changs are tracked in [NEWS.md](NEWS.md).
 * post-0.4.5: https://github.com/opensvc/multipath-tools/commits/master
-
+* pre-0.4.5: https://web.archive.org/web/20070309224034/http://christophe.varoqui.free.fr/wiki/wakka.php?wiki=ChangeLog
 
 Maintainer
 ==========

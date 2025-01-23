@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_26.0.0 {
+LIBMULTIPATH_28.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -62,6 +62,7 @@ global:
 	checker_enable;
 	checker_message;
 	checker_name;
+	checker_need_wait;
 	checker_state_name;
 	check_foreign;
 	cleanup_bindings;
@@ -146,7 +147,7 @@ global:
 	path_discovery;
 	path_get_tpgs;
 	pathinfo;
-	path_offline;
+	path_sysfs_state;
 	print_all_paths;
 	print_foreign_topology;
 	print_multipath_topology__;
@@ -160,6 +161,7 @@ global:
 	remove_wwid;
 	replace_wwids;
 	reset_checker_classes;
+	start_checker;
 	select_all_tg_pt;
 	select_action;
 	select_find_multipaths_timeout;

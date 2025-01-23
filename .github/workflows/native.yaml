@@ -5,6 +5,7 @@ on:
       - master
       - queue
       - tip
+      - 'stable-*'
     paths:
       - '.github/workflows/native.yaml'
       - '**.h'
@@ -15,6 +16,7 @@ on:
     branches:
       - master
       - queue
+      - 'stable-*'
     paths:
       - '.github/workflows/native.yaml'
       - '**.h'
@@ -35,17 +37,9 @@ jobs:
           - debian-bookworm
           - fedora-40
           - opensuse-leap
-    container: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
     steps:
       - name: checkout
-        uses: actions/checkout@v1
-      - name: build and test
-        if: ${{ matrix.os != 'debian-jessie' }}
-        run: make -j -Orecurse test
-      - name: build and test (jessie)
-        # On jessie, we use libreadline 5 (no licensing issue)
-        if: ${{ matrix.os == 'debian-jessie' }}
-        run: make -j -Orecurse READLINE=libreadline test
+        uses: actions/checkout@v4
 
       - name: set archive name
         # Leap containers have cpio but not tar
@@ -54,26 +48,71 @@ jobs:
       - name: set archive name
         run: echo ARCHIVE_TGT=test-progs.tar >> $GITHUB_ENV
         if: ${{ matrix.os != 'opensuse-leap' }}
-      - name: create binary archive
-        run: make ${{ env.ARCHIVE_TGT }}
+
+      - name: build and test
+        if: ${{ matrix.os != 'debian-jessie' }}
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          command: -j -Orecurse test
+      - name: build and test (jessie)
+        # On jessie, we use libreadline 5 (no licensing issue)
+        if: ${{ matrix.os == 'debian-jessie' }}
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          command: -j -Orecurse READLINE=libreadline test
+
+      - name: create ${{ env.ARCHIVE_TGT }}
+        if: ${{ matrix.os != 'debian-jessie' }}
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          command: ${{ env.ARCHIVE_TGT }}
+      - name: create ${{ env.ARCHIVE_TGT }} (jessie)
+        if: ${{ matrix.os == 'debian-jessie' }}
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          command: READLINE=libreadline ${{ env.ARCHIVE_TGT }}
+
       - name: upload binary archive
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.os }}
           path: ${{ env.ARCHIVE_TGT }}
+          overwrite: true
 
-      - name: clean
-        run: make clean
+  clang:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - debian-jessie
+          - debian-buster
+          - debian-bullseye
+          - debian-bookworm
+          - fedora-40
+          - opensuse-leap
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
       - name: clang
         if: ${{ matrix.os != 'debian-jessie' }}
-        env:
-          CC: clang
-        run: make -j -Orecurse test
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          params: -e CC=clang
+          command: -j -Orecurse test
       - name: clang (jessie)
         if: ${{ matrix.os == 'debian-jessie' }}
-        env:
-          CC: clang
-        run: make READLINE=libreadline test
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          params: -e CC=clang
+          command: -j -Orecurse READLINE=libreadline test
 
   root-test:
     runs-on: ubuntu-22.04
@@ -95,17 +134,17 @@ jobs:
         run: sudo modprobe brd rd_nr=1 rd_size=65536
 
       - name: checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
       - name: download binary archive
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: native-${{ matrix.os }}
       - name: unpack binary archive
-        run: cpio -idv < native-${{ matrix.os }}/test-progs.cpio
+        run: cpio -idv < test-progs.cpio
         if: ${{ matrix.os == 'opensuse-leap' }}
       - name: unpack binary archive
-        run: tar xfmv native-${{ matrix.os }}/test-progs.tar
+        run: tar xfmv test-progs.tar
         if: ${{ matrix.os != 'opensuse-leap' }}
 
       - name: run root tests

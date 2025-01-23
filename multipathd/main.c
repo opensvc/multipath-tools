@@ -96,7 +96,7 @@ void * mpath_pr_event_handler_fn (void * );
 do {								\
 	if (pp->mpp && checker_selected(&pp->checker) &&	\
 	    lvl <= libmp_verbosity) {					\
-		if (pp->offline)				\
+		if (pp->sysfs_state == PATH_DOWN)		\
 			condlog(lvl, "%s: %s - path offline",	\
 				pp->mpp->alias, pp->dev);	\
 		else  {						\
@@ -1996,15 +1996,13 @@ mpvec_garbage_collector (struct vectors * vecs)
  * best pathgroup, and this is the first path in the pathgroup to come back
  * up, then switch to this pathgroup */
 static int
-followover_should_failback(struct path * pp)
+do_followover_should_failback(struct path * pp)
 {
 	struct pathgroup * pgp;
 	struct path *pp1;
 	int i;
 
-	if (pp->mpp->pgfailback != -FAILBACK_FOLLOWOVER ||
-	    !pp->mpp->pg || !pp->pgindex ||
-	    pp->pgindex != pp->mpp->bestpg)
+	if (pp->pgindex != pp->mpp->bestpg)
 		return 0;
 
 	pgp = VECTOR_SLOT(pp->mpp->pg, pp->pgindex - 1);
@@ -2015,6 +2013,26 @@ followover_should_failback(struct path * pp)
 			return 0;
 	}
 	return 1;
+}
+
+static int
+followover_should_failback(struct multipath *mpp)
+{
+	struct path *pp;
+	struct pathgroup * pgp;
+	int i, j;
+
+	if (mpp->pgfailback != -FAILBACK_FOLLOWOVER || !mpp->pg || !mpp->bestpg)
+		return 0;
+
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp, j) {
+			if (pp->is_checked == CHECK_PATH_NEW_UP &&
+			    do_followover_should_failback(pp))
+				return 1;
+		}
+	}
+	return 0;
 }
 
 static void
@@ -2068,7 +2086,7 @@ static void
 deferred_failback_tick (struct vectors *vecs)
 {
 	struct multipath * mpp;
-	unsigned int i;
+	int i;
 	bool need_reload;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i) {
@@ -2080,9 +2098,12 @@ deferred_failback_tick (struct vectors *vecs)
 
 			if (!mpp->failback_tick &&
 			    need_switch_pathgroup(mpp, &need_reload)) {
-				if (need_reload)
-					reload_and_sync_map(mpp, vecs);
-				else
+				if (need_reload) {
+					if (reload_and_sync_map(mpp, vecs) == 2) {
+						/* multipath device removed */
+						i--;
+					}
+				} else
 					switch_pathgroup(mpp);
 			}
 		}
@@ -2132,41 +2153,113 @@ partial_retrigger_tick(vector pathvec)
 	}
 }
 
-static int update_prio(struct path *pp, int force_refresh_all)
+#ifdef USE_SYSTEMD
+static int get_watchdog_interval(void)
+{
+	const char *envp;
+	long long checkint;
+	long pid;
+
+	envp = getenv("WATCHDOG_PID");
+	/* See sd_watchdog_enabled(3) */
+	if (envp && sscanf(envp, "%lu", &pid) == 1 && pid != daemon_pid)
+		return -1;
+
+	envp = getenv("WATCHDOG_USEC");
+	if (!envp || sscanf(envp, "%llu", &checkint) != 1 || checkint == 0)
+		return -1;
+
+	/*
+	 * Value is in microseconds, and the watchdog should be triggered
+	 * twice per interval.
+	 */
+	checkint /= 2000000;
+	if (checkint > INT_MAX / 2) {
+		condlog(1, "WatchdogSec=%lld is too high, assuming %d",
+			checkint * 2, INT_MAX);
+			checkint = INT_MAX / 2;
+	} else if (checkint < 1) {
+		condlog(1, "WatchdogSec=1 is too low, daemon will be killed by systemd!");
+		checkint = 1;
+	}
+
+	condlog(3, "enabling watchdog, interval %llds", checkint);
+	return checkint;
+}
+
+static void watchdog_tick(const struct timespec *time) {
+	static int watchdog_interval;
+	static struct timespec last_time;
+	struct timespec diff_time;
+
+	if (watchdog_interval == 0)
+		watchdog_interval = get_watchdog_interval();
+	if (watchdog_interval < 0)
+		return;
+
+	timespecsub(time, &last_time, &diff_time);
+	if (diff_time.tv_sec >= watchdog_interval) {
+		condlog(4, "%s: sending watchdog message", __func__);
+		sd_notify(0, "WATCHDOG=1");
+		last_time = *time;
+	}
+}
+#else
+static void watchdog_tick(const struct timespec *time __attribute__((unused))) {}
+#endif
+
+static bool update_prio(struct multipath *mpp, bool refresh_all)
 {
 	int oldpriority;
-	struct path *pp1;
+	struct path *pp;
 	struct pathgroup * pgp;
-	int i, j, changed = 0;
+	int i, j;
+	bool changed = false;
+	bool skipped_path = false;
 	struct config *conf;
 
-	oldpriority = pp->priority;
-	if (pp->state != PATH_DOWN) {
-		conf = get_multipath_config();
-		pthread_cleanup_push(put_multipath_config, conf);
-		pathinfo(pp, conf, DI_PRIO);
-		pthread_cleanup_pop(1);
-	}
-
-	if (pp->priority != oldpriority)
-		changed = 1;
-	else if (!force_refresh_all)
-		return 0;
-
-	vector_foreach_slot (pp->mpp->pg, pgp, i) {
-		vector_foreach_slot (pgp->paths, pp1, j) {
-			if (pp1 == pp || pp1->state == PATH_DOWN)
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp, j) {
+			if (pp->state != PATH_UP && pp->state != PATH_GHOST)
 				continue;
-			oldpriority = pp1->priority;
+			/*
+			 * refresh_all will be set if the mpp has any path
+			 * for whom pp->marginal switched values or for whom
+			 * pp->is_checked == CHECK_PATH_NEW_UP
+			 */
+			if (!refresh_all &&
+			    pp->is_checked != CHECK_PATH_CHECKED) {
+				skipped_path = true;
+				continue;
+			}
+			oldpriority = pp->priority;
 			conf = get_multipath_config();
 			pthread_cleanup_push(put_multipath_config, conf);
-			pathinfo(pp1, conf, DI_PRIO);
+			pathinfo(pp, conf, DI_PRIO);
 			pthread_cleanup_pop(1);
-			if (pp1->priority != oldpriority)
-				changed = 1;
+			if (pp->priority != oldpriority)
+				changed = true;
 		}
 	}
-	return changed;
+	if (!changed || !skipped_path)
+		return changed;
+	/*
+	 * If a path changed priorities, refresh the priorities of any
+	 * paths we skipped
+	 */
+	vector_foreach_slot (mpp->pg, pgp, i) {
+		vector_foreach_slot (pgp->paths, pp, j) {
+			if (pp->state != PATH_UP && pp->state != PATH_GHOST)
+				continue;
+			if (pp->is_checked == CHECK_PATH_CHECKED)
+				continue;
+			conf = get_multipath_config();
+			pthread_cleanup_push(put_multipath_config, conf);
+			pathinfo(pp, conf, DI_PRIO);
+			pthread_cleanup_pop(1);
+		}
+	}
+	return true;
 }
 
 static int reload_map(struct vectors *vecs, struct multipath *mpp,
@@ -2314,23 +2407,31 @@ should_skip_path(struct path *pp){
 	return 0;
 }
 
-static int
-check_path_state(struct path *pp)
+static void
+start_path_check(struct path *pp)
 {
-	int newstate;
 	struct config *conf;
 
-	newstate = path_offline(pp);
-	if (newstate == PATH_UP) {
+	if (path_sysfs_state(pp) ==  PATH_UP) {
 		conf = get_multipath_config();
 		pthread_cleanup_push(put_multipath_config, conf);
-		newstate = get_state(pp, conf, 1, newstate);
+		start_checker(pp, conf, 1, PATH_UNCHECKED);
 		pthread_cleanup_pop(1);
 	} else {
 		checker_clear_message(&pp->checker);
 		condlog(3, "%s: state %s, checker not called",
-			pp->dev, checker_state_name(newstate));
+			pp->dev, checker_state_name(pp->sysfs_state));
 	}
+}
+
+static int
+get_new_state(struct path *pp)
+{
+	int newstate = pp->sysfs_state;
+	struct config *conf;
+
+	if (newstate == PATH_UP)
+		newstate = get_state(pp);
 	/*
 	 * Wait for uevent for removed paths;
 	 * some LLDDs like zfcp keep paths unavailable
@@ -2381,24 +2482,16 @@ sync_mpp(struct vectors * vecs, struct multipath *mpp, unsigned int ticks)
 	do_sync_mpp(vecs, mpp);
 }
 
-enum check_path_return {
-	CHECK_PATH_CHECKED,
-	CHECK_PATH_SKIPPED,
-	CHECK_PATH_REMOVED,
-};
-
 static int
-do_check_path (struct vectors * vecs, struct path * pp)
+update_path_state (struct vectors * vecs, struct path * pp)
 {
 	int newstate;
-	int new_path_up = 0;
 	int chkr_new_path_up = 0;
 	int disable_reinstate = 0;
 	int oldchkrstate = pp->chkrstate;
 	unsigned int checkint, max_checkint;
 	struct config *conf;
-	int marginal_pathgroups, marginal_changed = 0;
-	bool need_reload;
+	int marginal_pathgroups;
 
 	conf = get_multipath_config();
 	checkint = conf->checkint;
@@ -2406,12 +2499,7 @@ do_check_path (struct vectors * vecs, struct path * pp)
 	marginal_pathgroups = conf->marginal_pathgroups;
 	put_multipath_config(conf);
 
-	if (pp->checkint == CHECKINT_UNDEF) {
-		condlog(0, "%s: BUG: checkint is not set", pp->dev);
-		pp->checkint = checkint;
-	};
-
-	newstate = check_path_state(pp);
+	newstate = get_new_state(pp);
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED)
 		return CHECK_PATH_SKIPPED;
 	/*
@@ -2465,7 +2553,7 @@ do_check_path (struct vectors * vecs, struct path * pp)
 			}
 			if (!pp->marginal) {
 				pp->marginal = 1;
-				marginal_changed = 1;
+				pp->mpp->prio_update = PRIO_UPDATE_MARGINAL;
 			}
 		} else {
 			if (pp->marginal || pp->state == PATH_DELAYED)
@@ -2473,7 +2561,7 @@ do_check_path (struct vectors * vecs, struct path * pp)
 					pp->dev);
 			if (marginal_pathgroups && pp->marginal) {
 				pp->marginal = 0;
-				marginal_changed = 1;
+				pp->mpp->prio_update = PRIO_UPDATE_MARGINAL;
 			}
 		}
 	}
@@ -2520,19 +2608,19 @@ do_check_path (struct vectors * vecs, struct path * pp)
 			return CHECK_PATH_CHECKED;
 		}
 
-		if (newstate == PATH_UP || newstate == PATH_GHOST) {
-			if (pp->mpp->prflag != PRFLAG_UNSET) {
-				int prflag = pp->mpp->prflag;
-				/*
-				 * Check Persistent Reservation.
-				 */
-				condlog(2, "%s: checking persistent "
-					"reservation registration", pp->dev);
-				mpath_pr_event_handle(pp);
-				if (pp->mpp->prflag == PRFLAG_SET &&
-				    prflag != PRFLAG_SET)
-					pr_register_active_paths(pp->mpp);
-			}
+		/* newstate == PATH_UP || newstate == PATH_GHOST */
+
+		if (pp->mpp->prflag != PRFLAG_UNSET) {
+			int prflag = pp->mpp->prflag;
+			/*
+			 * Check Persistent Reservation.
+			 */
+			condlog(2, "%s: checking persistent "
+				"reservation registration", pp->dev);
+			mpath_pr_event_handle(pp);
+			if (pp->mpp->prflag == PRFLAG_SET &&
+			    prflag != PRFLAG_SET)
+				pr_register_active_paths(pp->mpp);
 		}
 
 		/*
@@ -2540,7 +2628,8 @@ do_check_path (struct vectors * vecs, struct path * pp)
 		 */
 		if (!disable_reinstate)
 			reinstate_path(pp);
-		new_path_up = 1;
+		if (pp->mpp->prio_update != PRIO_UPDATE_MARGINAL)
+			pp->mpp->prio_update = PRIO_UPDATE_NEW_PATH;
 
 		if (oldchkrstate != PATH_UP && oldchkrstate != PATH_GHOST)
 			chkr_new_path_up = 1;
@@ -2591,49 +2680,53 @@ do_check_path (struct vectors * vecs, struct path * pp)
 				LOG_MSG(2, pp);
 		}
 	}
-
+	if (pp->mpp->prio_update == PRIO_UPDATE_NONE &&
+	    (newstate == PATH_UP || newstate == PATH_GHOST))
+		pp->mpp->prio_update = PRIO_UPDATE_NORMAL;
 	pp->state = newstate;
-
-	if (pp->mpp->wait_for_udev)
-		return CHECK_PATH_CHECKED;
-	/*
-	 * path prio refreshing
-	 */
-	condlog(4, "path prio refresh");
-
-	if (marginal_changed) {
-		update_prio(pp, 1);
-		reload_and_sync_map(pp->mpp, vecs);
-	} else if (update_prio(pp, new_path_up) &&
-		   pp->mpp->pgpolicyfn == (pgpolicyfn *)group_by_prio &&
-		   pp->mpp->pgfailback == -FAILBACK_IMMEDIATE) {
-		condlog(2, "%s: path priorities changed. reloading",
-			pp->mpp->alias);
-		reload_and_sync_map(pp->mpp, vecs);
-	} else if (need_switch_pathgroup(pp->mpp, &need_reload)) {
-		if (pp->mpp->pgfailback > 0 &&
-		    (new_path_up || pp->mpp->failback_tick <= 0))
-			pp->mpp->failback_tick = pp->mpp->pgfailback + 1;
-		else if (pp->mpp->pgfailback == -FAILBACK_IMMEDIATE ||
-			 (chkr_new_path_up && followover_should_failback(pp))) {
-			if (need_reload)
-				reload_and_sync_map(pp->mpp, vecs);
-			else
-				switch_pathgroup(pp->mpp);
-		}
-	}
-	return CHECK_PATH_CHECKED;
+	return chkr_new_path_up ? CHECK_PATH_NEW_UP : CHECK_PATH_CHECKED;
 }
 
 static int
-check_path (struct vectors * vecs, struct path * pp, unsigned int ticks,
-	    time_t start_secs)
+update_mpp_prio(struct vectors *vecs, struct multipath *mpp)
 {
-	int r;
-	unsigned int adjust_int, max_checkint;
-	struct config *conf;
-	time_t next_idx, goal_idx;
+	bool need_reload, changed;
+	enum prio_update_type prio_update = mpp->prio_update;
+	mpp->prio_update = PRIO_UPDATE_NONE;
 
+	if (mpp->wait_for_udev || prio_update == PRIO_UPDATE_NONE)
+		return 0;
+	condlog(4, "prio refresh");
+
+	changed = update_prio(mpp, prio_update != PRIO_UPDATE_NORMAL);
+	if (prio_update == PRIO_UPDATE_MARGINAL)
+		return reload_and_sync_map(mpp, vecs);
+	if (changed && mpp->pgpolicyfn == (pgpolicyfn *)group_by_prio &&
+	    mpp->pgfailback == -FAILBACK_IMMEDIATE) {
+		condlog(2, "%s: path priorities changed. reloading",
+			mpp->alias);
+		return reload_and_sync_map(mpp, vecs);
+	}
+	if (need_switch_pathgroup(mpp, &need_reload)) {
+		if (mpp->pgfailback > 0 &&
+		    (prio_update == PRIO_UPDATE_NEW_PATH ||
+		     mpp->failback_tick <= 0))
+			mpp->failback_tick = mpp->pgfailback + 1;
+		else if (mpp->pgfailback == -FAILBACK_IMMEDIATE ||
+			 (prio_update == PRIO_UPDATE_NEW_PATH &&
+			  followover_should_failback(mpp))) {
+			if (need_reload)
+				return reload_and_sync_map(mpp, vecs);
+			else
+				switch_pathgroup(mpp);
+		}
+	}
+	return 0;
+}
+
+static int
+check_path (struct path * pp, unsigned int ticks)
+{
 	if (pp->initialized == INIT_REMOVED)
 		return CHECK_PATH_SKIPPED;
 
@@ -2642,15 +2735,31 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks,
 	if (pp->tick)
 		return CHECK_PATH_SKIPPED;
 
-	conf = get_multipath_config();
-	max_checkint = conf->max_checkint;
-	adjust_int = conf->adjust_int;
-	put_multipath_config(conf);
+	if (pp->checkint == CHECKINT_UNDEF) {
+		struct config *conf;
 
-	r = do_check_path(vecs, pp);
+		condlog(0, "%s: BUG: checkint is not set", pp->dev);
+		conf = get_multipath_config();
+		pp->checkint = conf->checkint;
+		put_multipath_config(conf);
+	}
+
+	start_path_check(pp);
+	return CHECK_PATH_STARTED;
+}
+
+static int
+update_path(struct vectors * vecs, struct path * pp, time_t start_secs)
+{
+	int r;
+	unsigned int adjust_int, max_checkint;
+	struct config *conf;
+	time_t next_idx, goal_idx;
+
+	r = update_path_state(vecs, pp);
 
 	/*
-	 * do_check_path() removed or orphaned the path.
+	 * update_path_state() removed or orphaned the path.
 	 */
 	if (r == CHECK_PATH_REMOVED || !pp->mpp)
 		return r;
@@ -2675,6 +2784,10 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks,
 	if (pp->tick == 1)
 		return r;
 
+	conf = get_multipath_config();
+	max_checkint = conf->max_checkint;
+	adjust_int = conf->adjust_int;
+	put_multipath_config(conf);
 	/*
 	 * every mpp has a goal_idx in the range of
 	 * 0 <= goal_idx < conf->max_checkint
@@ -2697,13 +2810,10 @@ check_path (struct vectors * vecs, struct path * pp, unsigned int ticks,
 }
 
 static int
-handle_uninitialized_path(struct vectors * vecs, struct path * pp,
-			  unsigned int ticks)
+check_uninitialized_path(struct path * pp, unsigned int ticks)
 {
-	int newstate;
 	int retrigger_tries;
 	struct config *conf;
-	int ret;
 
 	if (pp->initialized != INIT_NEW && pp->initialized != INIT_FAILED &&
 	    pp->initialized != INIT_MISSING_UDEV)
@@ -2717,6 +2827,7 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 	conf = get_multipath_config();
 	retrigger_tries = conf->retrigger_tries;
 	pp->tick = conf->max_checkint;
+	pp->checkint = conf->checkint;
 	put_multipath_config(conf);
 
 	if (pp->initialized == INIT_MISSING_UDEV) {
@@ -2750,7 +2861,21 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 		}
 	}
 
-	newstate = check_path_state(pp);
+	start_path_check(pp);
+	return CHECK_PATH_STARTED;
+}
+
+static int
+update_uninitialized_path(struct vectors * vecs, struct path * pp)
+{
+	int newstate, ret;
+	struct config *conf;
+
+	if (pp->initialized != INIT_NEW && pp->initialized != INIT_FAILED &&
+	    pp->initialized != INIT_MISSING_UDEV)
+		return CHECK_PATH_SKIPPED;
+
+	newstate = get_new_state(pp);
 
 	if (!strlen(pp->wwid) &&
 	    (pp->initialized == INIT_FAILED || pp->initialized == INIT_NEW) &&
@@ -2779,76 +2904,74 @@ handle_uninitialized_path(struct vectors * vecs, struct path * pp,
 
 enum checker_state {
 	CHECKER_STARTING,
-	CHECKER_RUNNING,
+	CHECKER_CHECKING_PATHS,
+	CHECKER_WAITING_FOR_PATHS,
+	CHECKER_UPDATING_PATHS,
 	CHECKER_FINISHED,
 };
 
 static enum checker_state
-check_paths(struct vectors *vecs, unsigned int ticks, int *num_paths_p)
+check_paths(struct vectors *vecs, unsigned int ticks)
 {
 	unsigned int paths_checked = 0;
 	struct timespec diff_time, start_time, end_time;
-	struct multipath *mpp;
 	struct path *pp;
-	int i, rc;
+	int i;
+	bool need_wait = false;
 
 	get_monotonic_time(&start_time);
 
-	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		struct pathgroup *pgp;
-		struct path *pp;
-		int j, k;
-		bool check_for_waiters = false;
-		/* maps can be rechecked, so this is not always 0 */
-		int synced_count = mpp->synced_count;
-
-		vector_foreach_slot (mpp->pg, pgp, j) {
-			vector_foreach_slot (pgp->paths, pp, k) {
-				if (!pp->mpp || pp->is_checked)
-					continue;
-				pp->is_checked = true;
-				rc = check_path(vecs, pp, ticks,
-						start_time.tv_sec);
-				if (rc == CHECK_PATH_CHECKED)
-					(*num_paths_p)++;
-				if (++paths_checked % 128 == 0)
-					check_for_waiters = true;
-				/*
-				 * mpp has been removed or resynced. Path may
-				 * have been removed.
-				 */
-				if (VECTOR_SLOT(vecs->mpvec, i) != mpp ||
-				    synced_count != mpp->synced_count) {
-					i--;
-					goto next_mpp;
-				}
-			}
-		}
-next_mpp:
-		if (check_for_waiters &&
-		    (lock_has_waiters(&vecs->lock) || waiting_clients())) {
-			get_monotonic_time(&end_time);
-			timespecsub(&end_time, &start_time, &diff_time);
-			if (diff_time.tv_sec > 0)
-				return CHECKER_RUNNING;
-		}
-	}
 	vector_foreach_slot(vecs->pathvec, pp, i) {
-		if (pp->mpp || pp->is_checked)
+		if (pp->is_checked != CHECK_PATH_UNCHECKED)
 			continue;
-		pp->is_checked = true;
-
-		rc = handle_uninitialized_path(vecs, pp, ticks);
-		if (rc == CHECK_PATH_REMOVED)
-			i--;
-		else if (rc == CHECK_PATH_CHECKED)
-			(*num_paths_p)++;
+		if (pp->mpp)
+			pp->is_checked = check_path(pp, ticks);
+		else
+			pp->is_checked = check_uninitialized_path(pp, ticks);
+		if (pp->is_checked == CHECK_PATH_STARTED &&
+		    checker_need_wait(&pp->checker))
+			need_wait = true;
 		if (++paths_checked % 128 == 0 &&
 		    (lock_has_waiters(&vecs->lock) || waiting_clients())) {
 			get_monotonic_time(&end_time);
 			timespecsub(&end_time, &start_time, &diff_time);
 			if (diff_time.tv_sec > 0)
-				return CHECKER_RUNNING;
+				return CHECKER_CHECKING_PATHS;
+		}
+	}
+	return need_wait ? CHECKER_WAITING_FOR_PATHS : CHECKER_UPDATING_PATHS;
+}
+
+static enum checker_state
+update_paths(struct vectors *vecs, int *num_paths_p, time_t start_secs)
+{
+	unsigned int paths_checked = 0;
+	struct timespec diff_time, start_time, end_time;
+	struct path *pp;
+	int i, rc;
+
+	get_monotonic_time(&start_time);
+
+	vector_foreach_slot(vecs->pathvec, pp, i) {
+		if (pp->is_checked != CHECK_PATH_STARTED)
+			continue;
+		if (pp->mpp)
+			rc = update_path(vecs, pp, start_secs);
+		else
+			rc = update_uninitialized_path(vecs, pp);
+		if (rc == CHECK_PATH_REMOVED)
+			i--;
+		else {
+			pp->is_checked = rc;
+			if (rc == CHECK_PATH_CHECKED || rc == CHECK_PATH_NEW_UP)
+				(*num_paths_p)++;
+		}
+		if (++paths_checked % 128 == 0 &&
+		    (lock_has_waiters(&vecs->lock) || waiting_clients())) {
+			get_monotonic_time(&end_time);
+			timespecsub(&end_time, &start_time, &diff_time);
+			if (diff_time.tv_sec > 0)
+				return CHECKER_UPDATING_PATHS;
 		}
 	}
 	return CHECKER_FINISHED;
@@ -2863,9 +2986,6 @@ checkerloop (void *ap)
 	struct timespec last_time;
 	struct config *conf;
 	int foreign_tick = 0;
-#ifdef USE_SYSTEMD
-	bool use_watchdog;
-#endif
 
 	pthread_cleanup_push(rcu_unregister, NULL);
 	rcu_register_thread();
@@ -2875,13 +2995,6 @@ checkerloop (void *ap)
 	/* Tweak start time for initial path check */
 	get_monotonic_time(&last_time);
 	last_time.tv_sec -= 1;
-
-	/* use_watchdog is set from process environment and never changes */
-	conf = get_multipath_config();
-#ifdef USE_SYSTEMD
-	use_watchdog = conf->use_watchdog;
-#endif
-	put_multipath_config(conf);
 
 	while (1) {
 		struct timespec diff_time, start_time, end_time;
@@ -2899,10 +3012,7 @@ checkerloop (void *ap)
 			(long)diff_time.tv_sec, diff_time.tv_nsec / 1000);
 		last_time = start_time;
 		ticks = diff_time.tv_sec;
-#ifdef USE_SYSTEMD
-		if (use_watchdog)
-			sd_notify(0, "WATCHDOG=1");
-#endif
+		watchdog_tick(&start_time);
 		while (checker_state != CHECKER_FINISHED) {
 			struct multipath *mpp;
 			int i;
@@ -2913,17 +3023,36 @@ checkerloop (void *ap)
 			vector_foreach_slot(vecs->mpvec, mpp, i)
 				mpp->synced_count = 0;
 			if (checker_state == CHECKER_STARTING) {
-				vector_foreach_slot(vecs->mpvec, mpp, i)
+				vector_foreach_slot(vecs->mpvec, mpp, i) {
 					sync_mpp(vecs, mpp, ticks);
+					mpp->prio_update = PRIO_UPDATE_NONE;
+				}
 				vector_foreach_slot(vecs->pathvec, pp, i)
-					pp->is_checked = false;
-				checker_state = CHECKER_RUNNING;
+					pp->is_checked = CHECK_PATH_UNCHECKED;
+				checker_state = CHECKER_CHECKING_PATHS;
 			}
-			checker_state = check_paths(vecs, ticks, &num_paths);
+			if (checker_state == CHECKER_CHECKING_PATHS)
+				checker_state = check_paths(vecs, ticks);
+			if (checker_state == CHECKER_UPDATING_PATHS)
+				checker_state = update_paths(vecs, &num_paths,
+							     start_time.tv_sec);
+			if (checker_state == CHECKER_FINISHED) {
+				vector_foreach_slot(vecs->mpvec, mpp, i) {
+					if (update_mpp_prio(vecs, mpp) == 2) {
+						/* multipath device deleted */
+						i--;
+					}
+				}
+			}
 			lock_cleanup_pop(vecs->lock);
 			if (checker_state != CHECKER_FINISHED) {
 				/* Yield to waiters */
 				struct timespec wait = { .tv_nsec = 10000, };
+				if (checker_state == CHECKER_WAITING_FOR_PATHS) {
+					/* wait 5ms */
+					wait.tv_nsec = 5 * 1000 * 1000;
+					checker_state = CHECKER_UPDATING_PATHS;
+				}
 				nanosleep(&wait, NULL);
 			}
 		}

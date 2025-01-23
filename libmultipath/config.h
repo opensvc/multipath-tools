@@ -148,7 +148,6 @@ struct config {
 	unsigned int checkint;
 	unsigned int max_checkint;
 	unsigned int adjust_int;
-	bool use_watchdog;
 	int pgfailback;
 	int rr_weight;
 	int no_path_retry;

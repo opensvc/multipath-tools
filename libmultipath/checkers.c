@@ -26,6 +26,8 @@ struct checker_class {
 	void (*free)(struct checker *);      /* to free the context */
 	void (*reset)(void);		     /* to reset the global variables */
 	void *(*thread)(void *);	     /* async thread entry point */
+	int (*pending)(struct checker *);    /* to recheck pending paths */
+	bool (*need_wait)(struct checker *); /* checker needs waiting for */
 	const char **msgtable;
 	short msgtable_size;
 };
@@ -180,7 +182,9 @@ static struct checker_class *add_checker_class(const char *name)
 	c->mp_init = (int (*)(struct checker *)) dlsym(c->handle, "libcheck_mp_init");
 	c->reset = (void (*)(void)) dlsym(c->handle, "libcheck_reset");
 	c->thread = (void *(*)(void*)) dlsym(c->handle, "libcheck_thread");
-	/* These 3 functions can be NULL. call dlerror() to clear out any
+	c->pending = (int (*)(struct checker *)) dlsym(c->handle, "libcheck_pending");
+	c->need_wait = (bool (*)(struct checker *)) dlsym(c->handle, "libcheck_need_wait");
+	/* These 5 functions can be NULL. call dlerror() to clear out any
 	 * error string */
 	dlerror();
 
@@ -249,6 +253,8 @@ void checker_disable (struct checker * c)
 	if (!c)
 		return;
 	c->disable = 1;
+	c->msgid = CHECKER_MSGID_DISABLED;
+	c->path_state = PATH_UNCHECKED;
 }
 
 int checker_init (struct checker * c, void ** mpctxt_addr)
@@ -299,28 +305,41 @@ void checker_put (struct checker * dst)
 	free_checker_class(src);
 }
 
-int checker_check (struct checker * c, int path_state)
+int checker_get_state(struct checker *c)
 {
-	int r;
+	if (!c || !c->cls)
+		return PATH_UNCHECKED;
+	if (c->path_state != PATH_PENDING || !c->cls->pending)
+		return c->path_state;
+	c->path_state = c->cls->pending(c);
+	return c->path_state;
+}
 
+bool checker_need_wait(struct checker *c)
+{
+	if (!c || !c->cls || c->path_state != PATH_PENDING ||
+	    !c->cls->need_wait)
+		return false;
+	return c->cls->need_wait(c);
+}
+
+void checker_check (struct checker * c, int path_state)
+{
 	if (!c)
-		return PATH_WILD;
+		return;
 
 	c->msgid = CHECKER_MSGID_NONE;
 	if (c->disable) {
 		c->msgid = CHECKER_MSGID_DISABLED;
-		return PATH_UNCHECKED;
-	}
-	if (!strncmp(c->cls->name, NONE, 4))
-		return path_state;
-
-	if (c->fd < 0) {
+		c->path_state = PATH_UNCHECKED;
+	} else if (!strncmp(c->cls->name, NONE, 4)) {
+		c->path_state = path_state;
+	} else if (c->fd < 0) {
 		c->msgid = CHECKER_MSGID_NO_FD;
-		return PATH_WILD;
+		c->path_state = PATH_WILD;
+	} else {
+		c->path_state = c->cls->check(c);
 	}
-	r = c->cls->check(c);
-
-	return r;
 }
 
 const char *checker_name(const struct checker *c)

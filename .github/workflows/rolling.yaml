@@ -5,6 +5,7 @@ on:
       - master
       - queue
       - tip
+      - 'stable-*'
     paths:
       - '.github/workflows/rolling.yaml'
       - '**.h'
@@ -15,6 +16,7 @@ on:
     branches:
       - master
       - queue
+      - 'stable-*'
     paths:
       - '.github/workflows/rolling.yaml'
       - '**.h'
@@ -39,7 +41,7 @@ jobs:
     container: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
     steps:
       - name: checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
       - name: build and test
         run: make READLINE=libreadline -j -Orecurse test
       - name: clean

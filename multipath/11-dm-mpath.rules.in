@@ -24,15 +24,23 @@ ENV{DM_UDEV_RULES_VSN}=="1|2", ENV{.DM_SUSPENDED}!="1", ENV{DISK_RO}!="1", \
 	ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}="", GOTO="scan_import"
 LABEL="mpath_coldplug_end"
 
+IMPORT{db}="DM_COLDPLUG_SUSPENDED"
+
 # If this uevent didn't come from dm, don't try to update the
 # device state
 # Note that .MPATH_DEVICE_READY_OLD=="" here. Thus we won't activate the
 # device below at mpath_is_ready, which is correct.
 ENV{DM_COOKIE}!="?*", ENV{DM_ACTION}!="PATH_*", \
-	IMPORT{db}="DM_COLDPLUG_SUSPENDED", \
 	GOTO="check_mpath_ready"
 
 ENV{.MPATH_DEVICE_READY_OLD}="$env{MPATH_DEVICE_READY}"
+
+# If the device wasn't ready previously and is currently suspended,
+# we have to postpone the activation until the next event.
+# In this case, we have to set MPATH_DEVICE_READY=0; otherwise, the
+# MPATH_UNCHANGED logic will cause later rules to skipped in the next event.
+ENV{.MPATH_DEVICE_READY_OLD}!="1", ENV{.DM_SUSPENDED}=="1", \
+	ENV{MPATH_DEVICE_READY}="0", GOTO="check_mpath_unchanged"
 
 # multipath sets DM_SUBSYSTEM_UDEV_FLAG2 when it reloads a
 # table with no active devices. If this happens, mark the
@@ -66,26 +74,25 @@ LABEL="check_mpath_unchanged"
 
 # A previous coldplug event occurred while the device was suspended.
 # Activation might have been partially skipped. Activate the device now,
-# i.e. disable the MPATH_UNCHANGED logic and set DM_ACTIVATION=1.
-IMPORT{db}="DM_COLDPLUG_SUSPENDED"
+# i.e. disable the MPATH_UNCHANGED logic.
 ENV{DM_COLDPLUG_SUSPENDED}=="1", ENV{.DM_SUSPENDED}!="1", \
-	ENV{DM_ACTIVATION}="1", ENV{MPATH_UNCHANGED}="0", \
+	ENV{MPATH_UNCHANGED}="0", \
 	PROGRAM="@SYSDIR_BIN@/logger -t 11-dm-mpath.rules -p daemon.notice \"Forcing activation of previously suspended device\"", \
 	GOTO="check_mpath_ready"
 
 # DM_SUBSYSTEM_UDEV_FLAG0 is the "RELOAD" flag for multipath subsystem.
-# Drop the DM_ACTIVATION flag here as mpath reloads tables if any of its
+# Set the MPATH_UNCHANGED flag here as mpath reloads tables if any of its
 # paths are lost/recovered. For any stack above the mpath device, this is not
 # something that should be reacted upon since it would be useless extra work.
 # It's exactly mpath's job to provide *seamless* device access to any of the
 # paths that are available underneath.
 ENV{DM_SUBSYSTEM_UDEV_FLAG0}=="1", \
-	ENV{DM_ACTIVATION}="0", ENV{MPATH_UNCHANGED}="1"
+	ENV{MPATH_UNCHANGED}="1"
 
-# For path failed or reinstated events, unset DM_ACTIVATION.
+# For path failed or reinstated events, set MPATH_UNCHANGED.
 # This is similar to the DM_SUBSYSTEM_UDEV_FLAG0 case above.
 ENV{DM_ACTION}=="PATH_FAILED|PATH_REINSTATED", \
-	ENV{DM_ACTIVATION}="0", ENV{MPATH_UNCHANGED}="1"
+	ENV{MPATH_UNCHANGED}="1"
 
 LABEL="check_mpath_ready"
 
@@ -105,15 +112,10 @@ GOTO="scan_import"
 
 LABEL="mpath_is_ready"
 
-# If the device comes back online, set DM_ACTIVATION so that
-# upper layers do a rescan. If the device is currently suspended,
-# we have to postpone the activation until the next event.
-# In this case, we have to set MPATH_DEVICE_READY=0; otherwise, the
-# MPATH_UNCHANGED logic will cause later rules to skipped in the next event.
-ENV{.MPATH_DEVICE_READY_OLD}!="0", GOTO="scan_import"
-ENV{.DM_SUSPENDED}=="1", ENV{MPATH_DEVICE_READY}="0", GOTO="scan_import"
-
-ENV{DM_ACTIVATION}="1", ENV{MPATH_UNCHANGED}="0"
+# If the device comes back online, clear MPATH_UNCHANGED so that
+# upper layers will do a rescan. Don't do this if .MPATH_DEVICE_READY_OLD
+# is just empty (see comment above the DM_COOKIE test above).
+ENV{.MPATH_DEVICE_READY_OLD}=="0", ENV{MPATH_UNCHANGED}="0"
 
 # The code to check multipath state ends here. We need to set
 # properties and symlinks regardless whether the map is usable or
@@ -130,7 +132,7 @@ ENV{DM_UDEV_PRIMARY_SOURCE_FLAG}!="1", GOTO="import_end"
 ENV{DM_UDEV_RULES_VSN}!="1|2", GOTO="import_end"
 
 # Don't import the properties from db if we will run blkid later.
-ENV{.DM_NOSCAN}!="1", ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}!="1", GOTO="import_end"
+ENV{DM_UDEV_DISABLE_OTHER_RULES_FLAG}!="1", GOTO="import_end"
 
 IMPORT{db}="ID_FS_TYPE"
 IMPORT{db}="ID_FS_USAGE"
@@ -142,6 +144,12 @@ IMPORT{db}="ID_PART_ENTRY_SCHEME"
 IMPORT{db}="ID_PART_GPT_AUTO_ROOT"
 
 LABEL="import_end"
+
+# If MPATH_UNCHANGED is set, adapt DM_ACTIVATION and DM_NOSCAN.
+# .DM_NOSCAN controls whether blkid will be run in 13-dm-disk.rules;
+# we don't want to do that if MPATH_UNCHANGED is 1.
+ENV{MPATH_UNCHANGED}=="0", ENV{DM_ACTIVATION}="1"
+ENV{MPATH_UNCHANGED}=="1", ENV{DM_ACTIVATION}="0", ENV{.DM_NOSCAN}="1"
 
 # Reset previous DM_COLDPLUG_SUSPENDED if activation happens now
 ENV{.DM_SUSPENDED}!="1", ENV{DM_ACTIVATION}=="1", ENV{DM_COLDPLUG_SUSPENDED}=""

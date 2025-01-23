@@ -5,6 +5,7 @@ on:
       - master
       - queue
       - tip
+      - 'stable-*'
     paths:
       - '.github/workflows/foreign.yaml'
       - '**.h'
@@ -15,6 +16,7 @@ on:
     branches:
       - master
       - queue
+      - 'stable-*'
     paths:
       - '.github/workflows/foreign.yaml'
       - '**.h'
@@ -34,16 +36,15 @@ jobs:
     container: ghcr.io/mwilck/multipath-cross-debian_cross-${{ matrix.os }}-${{ matrix.arch }}
     steps:
       - name: checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
       - name: build
-        run: make -j8 -Orecurse test-progs
-      - name: create binary archive
-        run: make test-progs.tar
+        run: make -j -Orecurse test-progs.tar
       - name: upload binary archive
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: cross-${{ matrix.os }}-${{ matrix.arch }}
           path: test-progs.tar
+          overwrite: true
 
   test:
     runs-on: ubuntu-22.04
@@ -61,11 +62,11 @@ jobs:
         run: echo CONTAINER_ARCH="arm/v7" >> $GITHUB_ENV
         if: ${{ matrix.arch == 'armhf' }}
       - name: download binary archive
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: cross-${{ matrix.os }}-${{ matrix.arch }}
       - name: unpack binary archive
-        run: tar xfv cross-${{ matrix.os }}-${{ matrix.arch }}/test-progs.tar
+        run: tar xfv test-progs.tar
       - name: enable foreign arch
         uses: dbhi/qus/action@main
       - name: run tests
@@ -100,11 +101,11 @@ jobs:
         run: echo CONTAINER_ARCH="arm/v7" >> $GITHUB_ENV
         if: ${{ matrix.arch == 'armhf' }}
       - name: download binary archive
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: cross-${{ matrix.os }}-${{ matrix.arch }}
       - name: unpack binary archive
-        run: tar xfv cross-${{ matrix.os }}-${{ matrix.arch }}/test-progs.tar
+        run: tar xfv test-progs.tar
       - name: enable foreign arch
         uses: dbhi/qus/action@main
       - name: run tests

@@ -725,7 +725,13 @@ cli_add_map (void * v, struct strbuf *reply, void * data)
 		condlog(2, "%s: unknown map.", param);
 		return -ENODEV;
 	}
-	if (dm_find_map_by_wwid(refwwid, alias, &dmi) != DMP_OK) {
+	rc = dm_find_map_by_wwid(refwwid, alias, &dmi);
+	if (rc == DMP_NO_MATCH) {
+		condlog(2, "%s: wwid %s already in use by non-multipath device %s",
+			param, refwwid, alias);
+		return 1;
+	}
+	if (rc != DMP_OK) {
 		condlog(3, "%s: map not present. creating", param);
 		if (coalesce_paths(vecs, NULL, refwwid, FORCE_RELOAD_NONE,
 				   CMD_NONE) != CP_OK) {
@@ -1108,6 +1114,7 @@ cli_reinstate(void * v, struct strbuf *reply, void * data)
 		pp->mpp->alias, pp->dev_t);
 
 	checker_enable(&pp->checker);
+	pp->tick = 1;
 	return dm_reinstate_path(pp->mpp->alias, pp->dev_t);
 }
 

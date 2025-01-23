@@ -5,6 +5,7 @@ on:
       - master
       - queue
       - tip
+      - 'stable-*'
     paths:
       - '.github/workflows/multiarch.yaml'
       - '**.h'
@@ -15,6 +16,7 @@ on:
     branches:
       - master
       - queue
+      - 'stable-*'
     paths:
       - '.github/workflows/multiarch.yaml'
       - '**.h'
@@ -45,7 +47,7 @@ jobs:
             arch: arm/v7
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: enable foreign arch
         uses: dbhi/qus/action@main
       - name: compile and run unit tests

@@ -58,6 +58,7 @@ struct tur_checker_context {
 	int msgid;
 	struct checker_context ctx;
 	unsigned int nr_timeouts;
+	bool checked_state;
 };
 
 int libcheck_init (struct checker * c)
@@ -297,14 +298,6 @@ void *libcheck_thread(struct checker_context *ctx)
 	return ((void *)0);
 }
 
-
-static void tur_timeout(struct timespec *tsp)
-{
-	get_monotonic_time(tsp);
-	tsp->tv_nsec += 1000 * 1000; /* 1 millisecond */
-	normalize_timespec(tsp);
-}
-
 static void tur_set_async_timeout(struct checker *c)
 {
 	struct tur_checker_context *ct = c->context;
@@ -323,10 +316,54 @@ static int tur_check_async_timeout(struct checker *c)
 	return (now.tv_sec > ct->time);
 }
 
+int check_pending(struct checker *c)
+{
+	struct tur_checker_context *ct = c->context;
+	int tur_status = PATH_PENDING;
+
+	pthread_mutex_lock(&ct->lock);
+
+	if (ct->state != PATH_PENDING || ct->msgid != MSG_TUR_RUNNING)
+	{
+		tur_status = ct->state;
+		c->msgid = ct->msgid;
+	}
+	pthread_mutex_unlock(&ct->lock);
+	if (tur_status == PATH_PENDING && c->msgid == MSG_TUR_RUNNING) {
+		condlog(4, "%d:%d : tur checker still running",
+			major(ct->devt), minor(ct->devt));
+	} else {
+		int running = uatomic_xchg(&ct->running, 0);
+		if (running)
+			pthread_cancel(ct->thread);
+		ct->thread = 0;
+	}
+
+	ct->checked_state = true;
+	return tur_status;
+}
+
+bool libcheck_need_wait(struct checker *c)
+{
+	struct tur_checker_context *ct = c->context;
+	return (ct && ct->thread && uatomic_read(&ct->running) != 0 &&
+		!ct->checked_state);
+}
+
+int libcheck_pending(struct checker *c)
+{
+	struct tur_checker_context *ct = c->context;
+
+	/* The if path checker isn't running, just return the exiting value. */
+	if (!ct || !ct->thread)
+		return c->path_state;
+
+	return check_pending(c);
+}
+
 int libcheck_check(struct checker * c)
 {
 	struct tur_checker_context *ct = c->context;
-	struct timespec tsp;
 	pthread_attr_t attr;
 	int tur_status, r;
 
@@ -340,6 +377,7 @@ int libcheck_check(struct checker * c)
 	 * Async mode
 	 */
 	if (ct->thread) {
+		ct->checked_state = true;
 		if (tur_check_async_timeout(c)) {
 			int running = uatomic_xchg(&ct->running, 0);
 			if (running) {
@@ -422,6 +460,7 @@ int libcheck_check(struct checker * c)
 		pthread_mutex_unlock(&ct->lock);
 		ct->fd = c->fd;
 		ct->timeout = c->timeout;
+		ct->checked_state = false;
 		uatomic_add(&ct->holders, 1);
 		uatomic_set(&ct->running, 1);
 		tur_set_async_timeout(c);
@@ -435,28 +474,6 @@ int libcheck_check(struct checker * c)
 			condlog(3, "%d:%d : failed to start tur thread, using"
 				" sync mode", major(ct->devt), minor(ct->devt));
 			return tur_check(c->fd, c->timeout, &c->msgid);
-		}
-		tur_timeout(&tsp);
-		pthread_mutex_lock(&ct->lock);
-
-		for (r = 0;
-		     r == 0 && ct->state == PATH_PENDING &&
-			     ct->msgid == MSG_TUR_RUNNING;
-		     r = pthread_cond_timedwait(&ct->active, &ct->lock, &tsp));
-
-		if (!r) {
-			tur_status = ct->state;
-			c->msgid = ct->msgid;
-		}
-		pthread_mutex_unlock(&ct->lock);
-		if (tur_status == PATH_PENDING && c->msgid == MSG_TUR_RUNNING) {
-			condlog(4, "%d:%d : tur checker still running",
-				major(ct->devt), minor(ct->devt));
-		} else {
-			int running = uatomic_xchg(&ct->running, 0);
-			if (running)
-				pthread_cancel(ct->thread);
-			ct->thread = 0;
 		}
 	}
 

@@ -86,6 +86,7 @@ const char *dmp_errstr(int rc)
 		[DMP_OK] = "success",
 		[DMP_NOT_FOUND] = "not found",
 		[DMP_NO_MATCH] = "target type mismatch",
+		[DMP_EMPTY] = "no target",
 		[DMP_LAST__] = "**invalid**",
 	};
 	if (rc < 0 || rc > DMP_LAST__)
@@ -556,9 +557,12 @@ int dm_addmap_create (struct multipath *mpp, char * params)
 		 * Failing the second part leaves an empty map. Clean it up.
 		 */
 		err = errno;
-		if (dm_map_present(mpp->alias)) {
+		if (libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY |
+				  MAPINFO_CHECK_UUID,
+				(mapid_t) { .str = mpp->alias },
+				(mapinfo_t) { .uuid = NULL }) == DMP_EMPTY) {
 			condlog(3, "%s: failed to load map (a path might be in use)", mpp->alias);
-			dm_flush_map_nosync(mpp->alias);
+			dm_device_remove(mpp->alias, 0);
 		}
 		if (err != EROFS) {
 			condlog(3, "%s: failed to load map, error %d",
@@ -614,6 +618,18 @@ int dm_addmap_reload(struct multipath *mpp, char *params, int flush)
 static bool is_mpath_uuid(const char uuid[DM_UUID_LEN])
 {
 	return !strncmp(uuid, UUID_PREFIX, UUID_PREFIX_LEN);
+}
+
+static bool is_mpath_part_uuid(const char part_uuid[DM_UUID_LEN],
+			       const char map_uuid[DM_UUID_LEN])
+{
+	char c;
+	int np, nc;
+
+	if (2 != sscanf(part_uuid, "part%d-%n" UUID_PREFIX "%c", &np, &nc, &c)
+	    || np <= 0)
+		return false;
+	return map_uuid == NULL || !strcmp(part_uuid + nc, map_uuid);
 }
 
 bool
@@ -711,46 +727,14 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 		condlog(2, "%s: dm_task_get_info() failed for %s ", fname__, map_id);
 		return DMP_ERR;
 	} else if(!dmi.exists) {
-		condlog(2, "%s: map %s doesn't exist", fname__, map_id);
+		condlog(3, "%s: map %s doesn't exist", fname__, map_id);
 		return DMP_NOT_FOUND;
 	}
 
-	if (info.target || info.status || info.size || flags & MAPINFO_TGT_TYPE__) {
-		if (dm_get_next_target(dmt, NULL, &start, &length,
-				       &target_type, &params) != NULL) {
-			condlog(2, "%s: map %s has multiple targets", fname__, map_id);
-			return DMP_NOT_FOUND;
-		}
-		if (!params) {
-			condlog(2, "%s: map %s has no targets", fname__, map_id);
-			return DMP_NOT_FOUND;
-		}
-		if (flags & MAPINFO_TGT_TYPE__) {
-			const char *tgt_type = flags & MAPINFO_MPATH_ONLY ? TGT_MPATH : TGT_PART;
-
-			if (strcmp(target_type, tgt_type)) {
-				condlog(3, "%s: target type mismatch: \"%s\" != \"%s\"",
-					fname__, tgt_type, target_type);
-				return DMP_NO_MATCH;
-			}
-		}
-	}
-
-	/*
-	 * Check possible error conditions.
-	 * If error is returned, don't touch any output parameters.
-	 */
 	if ((info.name && !(name = dm_task_get_name(dmt)))
 	    || ((info.uuid || flags & MAPINFO_CHECK_UUID)
-		&& !(uuid = dm_task_get_uuid(dmt)))
-	    || (info.status && !(tmp_status = strdup(params)))
-	    || (info.target && !tmp_target && !(tmp_target = strdup(params))))
+		&& !(uuid = dm_task_get_uuid(dmt))))
 		return DMP_ERR;
-
-	if (flags & MAPINFO_CHECK_UUID && !is_mpath_uuid(uuid)) {
-		condlog(3, "%s: UUID mismatch: %s", fname__, uuid);
-		return DMP_NO_MATCH;
-	}
 
 	if (info.name) {
 		strlcpy(info.name, name, WWID_SIZE);
@@ -759,11 +743,6 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 	if (info.uuid) {
 		strlcpy(info.uuid, uuid, DM_UUID_LEN);
 		condlog(4, "%s: %s: uuid: \"%s\"", fname__, map_id, info.uuid);
-	}
-
-	if (info.size) {
-		*info.size = length;
-		condlog(4, "%s: %s: size: %lld", fname__, map_id, *info.size);
 	}
 
 	if (info.dmi) {
@@ -778,6 +757,48 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 			info.dmi->read_only ? "ro" : "rw",
 			info.dmi->open_count,
 			info.dmi->event_nr);
+	}
+
+	if (flags & MAPINFO_CHECK_UUID &&
+	    ((flags & MAPINFO_PART_ONLY && !is_mpath_part_uuid(uuid, NULL)) ||
+	     (!(flags & MAPINFO_PART_ONLY) && !is_mpath_uuid(uuid)))) {
+		condlog(4, "%s: UUID mismatch: %s", fname__, uuid);
+		return DMP_NO_MATCH;
+	}
+
+	if (info.target || info.status || info.size || flags & MAPINFO_TGT_TYPE__) {
+		int lvl = MAPINFO_CHECK_UUID ? 2 : 4;
+
+		if (dm_get_next_target(dmt, NULL, &start, &length,
+				       &target_type, &params) != NULL) {
+			condlog(lvl, "%s: map %s has multiple targets", fname__, map_id);
+			return DMP_NO_MATCH;
+		}
+		if (!params || !target_type) {
+			condlog(lvl, "%s: map %s has no targets", fname__, map_id);
+			return DMP_EMPTY;
+		}
+		if (flags & MAPINFO_TGT_TYPE__) {
+			const char *tgt_type = flags & MAPINFO_MPATH_ONLY ? TGT_MPATH : TGT_PART;
+
+			if (strcmp(target_type, tgt_type)) {
+				condlog(lvl, "%s: target type mismatch: \"%s\" != \"%s\"",
+					fname__, tgt_type, target_type);
+				return DMP_NO_MATCH;
+			}
+		}
+	}
+
+	/*
+	 * Check possible error conditions.
+	 */
+	if ((info.status && !(tmp_status = strdup(params)))
+	    || (info.target && !tmp_target && !(tmp_target = strdup(params))))
+		return DMP_ERR;
+
+	if (info.size) {
+		*info.size = length;
+		condlog(4, "%s: %s: size: %lld", fname__, map_id, *info.size);
 	}
 
 	if (info.target) {
@@ -844,18 +865,6 @@ int dm_get_wwid(const char *name, char *uuid, int uuid_len)
 	return DMP_OK;
 }
 
-static bool is_mpath_part_uuid(const char part_uuid[DM_UUID_LEN],
-			       const char map_uuid[DM_UUID_LEN])
-{
-	char c;
-	int np, nc;
-
-	if (2 != sscanf(part_uuid, "part%d-%n" UUID_PREFIX "%c", &np, &nc, &c)
-	    || np <= 0)
-		return false;
-	return !strcmp(part_uuid + nc, map_uuid);
-}
-
 int dm_is_mpath(const char *name)
 {
 	int rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
@@ -867,6 +876,7 @@ int dm_is_mpath(const char *name)
 		return DM_IS_MPATH_YES;
 	case DMP_NOT_FOUND:
 	case DMP_NO_MATCH:
+	case DMP_EMPTY:
 		return DM_IS_MPATH_NO;
 	case DMP_ERR:
 	default:
@@ -882,7 +892,7 @@ int dm_find_map_by_wwid(const char *wwid, char *name, struct dm_info *dmi)
 	if (safe_sprintf(tmp, UUID_PREFIX "%s", wwid))
 		return DMP_ERR;
 
-	return libmp_mapinfo(DM_MAP_BY_UUID,
+	return libmp_mapinfo(DM_MAP_BY_UUID | MAPINFO_MPATH_ONLY,
 			     (mapid_t) { .str = tmp },
 			     (mapinfo_t) { .name = name, .dmi = dmi });
 }
@@ -934,16 +944,23 @@ has_partmap(const char *name __attribute__((unused)),
  * This will be called from mpath_in_use, for each partition.
  * If the partition itself in use, returns 1 immediately, causing
  * do_foreach_partmaps() to stop iterating and return 1.
- * Otherwise, increases the partition count.
+ * Otherwise, increases the partition count if the partition has a
+ * table (live or inactive). Devices with no table don't count
+ * towards the multipath device open count.
  */
 static int count_partitions(const char *name, void *data)
 {
+	struct dm_info info;
 	int *ret_count = (int *)data;
-	int open_count = dm_get_opencount(name);
 
-	if (open_count)
+	if (dm_get_info(name, &info) != DMP_OK)
 		return 1;
-	(*ret_count)++;
+
+	if (info.open_count)
+		return 1;
+
+	if (info.live_table || info.inactive_table)
+		(*ret_count)++;
 	return 0;
 }
 
@@ -951,6 +968,11 @@ int mpath_in_use(const char *name)
 {
 	int open_count = dm_get_opencount(name);
 
+	if (open_count < 0) {
+		condlog(0, "%s: %s: failed to get open count, assuming in use",
+			__func__, name);
+		return 1;
+	}
 	if (open_count) {
 		int part_count = 0;
 
@@ -972,10 +994,15 @@ int dm_flush_map__ (const char *mapname, int flags, int retries)
 	int udev_flags = 0;
 	char *params __attribute__((cleanup(cleanup_charp))) = NULL;
 
-	if (libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
+	r = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY | MAPINFO_CHECK_UUID,
 			  (mapid_t) { .str = mapname },
-			  (mapinfo_t) { .target = &params }) != DMP_OK)
+			  (mapinfo_t) { .target = &params });
+	if (r != DMP_OK && r != DMP_EMPTY)
 		return DM_FLUSH_OK; /* nothing to do */
+
+	/* device mapper will not let you resume an empty device */
+	if (r == DMP_EMPTY)
+		flags &= ~DMFL_SUSPEND;
 
 	/* if the device currently has no partitions, do not
 	   run kpartx on it if you fail to delete it */
@@ -1209,7 +1236,8 @@ static int dm_get_multipath(const char *name, struct multipath **pmpp)
 	if (!mpp->alias)
 		return DMP_ERR;
 
-	if ((rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
+	if ((rc = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_CHECK_UUID |
+				MAPINFO_MPATH_ONLY,
 			  (mapid_t) { .str = name },
 			  (mapinfo_t) {
 				  .size = &mpp->size,
@@ -1217,9 +1245,6 @@ static int dm_get_multipath(const char *name, struct multipath **pmpp)
 				  .dmi = &mpp->dmi,
 			  })) != DMP_OK)
 		return rc;
-
-	if (!is_mpath_uuid(uuid))
-		return DMP_NO_MATCH;
 
 	strlcpy(mpp->wwid, uuid + UUID_PREFIX_LEN, sizeof(mpp->wwid));
 	*pmpp = steal_ptr(mpp);
@@ -1262,10 +1287,8 @@ int dm_get_maps(vector mp)
 			}
 			vector_set_slot(mp, mpp);
 			break;
-		case DMP_NO_MATCH:
-			break;
 		default:
-			return 1;
+			break;
 		}
 		next = names->next;
 		names = (void *) names + next;
@@ -1307,17 +1330,46 @@ char *dm_mapname(int major, int minor)
 	return strdup(name);
 }
 
+static bool
+is_valid_partmap(const char *name, const char *map_dev_t,
+		 const char *map_uuid) {
+	int r;
+	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
+	char *p;
+	char part_uuid[DM_UUID_LEN];
+
+	r = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_PART_ONLY | MAPINFO_CHECK_UUID,
+			  (mapid_t) { .str = name },
+			  (mapinfo_t) { .uuid = part_uuid, .target = &params});
+
+	/* There must be a single linear target or an empty map. */
+	if (r != DMP_OK && r != DMP_EMPTY)
+		return false;
+
+	/*
+	 * and the uuid of the target must be a partition of the uuid of the
+	 * multipath device
+	 */
+	if (!is_mpath_part_uuid(part_uuid, map_uuid))
+		return false;
+
+	if (r == DMP_EMPTY)
+		return true;
+
+	/* and if the table isn't empty it must map over the multipath map */
+	return ((p = strstr(params, map_dev_t)) &&
+		!isdigit(*(p + strlen(map_dev_t))));
+}
+
 static int
 do_foreach_partmaps (const char *mapname,
 		     int (*partmap_func)(const char *, void *),
 		     void *data)
 {
 	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
-	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
 	struct dm_names *names;
 	unsigned next = 0;
 	char dev_t[BLK_DEV_SIZE];
-	char *p;
 	char map_uuid[DM_UUID_LEN];
 	struct dm_info info;
 
@@ -1343,35 +1395,10 @@ do_foreach_partmaps (const char *mapname,
 		return 0;
 
 	do {
-		char part_uuid[DM_UUID_LEN];
-
-		if (
-		    /*
-		     * if there is only a single "linear" target
-		     */
-		    libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_PART_ONLY,
-				  (mapid_t) { .str = names->name },
-				  (mapinfo_t) {
-					  .uuid = part_uuid,
-					  .target = &params,
-				  }) == DMP_OK &&
-		    /*
-		     * and the uuid of the target is a partition of the
-		     * uuid of the multipath device
-		     */
-		    is_mpath_part_uuid(part_uuid, map_uuid) &&
-
-		    /*
-		     * and the table maps over the multipath map
-		     */
-		    (p = strstr(params, dev_t)) &&
-		    !isdigit(*(p + strlen(dev_t))) &&
-
+		if (is_valid_partmap(names->name, dev_t, map_uuid) &&
 		    (partmap_func(names->name, data) != 0))
 			return 1;
 
-		free(params);
-		params = NULL;
 		next = names->next;
 		names = (void*) names + next;
 	} while (next);
@@ -1392,7 +1419,7 @@ remove_partmap(const char *name, void *data)
 		condlog(2, "%s: map in use", name);
 		return DM_FLUSH_BUSY;
 	}
-	condlog(4, "partition map %s removed", name);
+	condlog(3, "partition map %s removed", name);
 	dm_device_remove(name, rd->flags);
 	return DM_FLUSH_OK;
 }
@@ -1409,8 +1436,6 @@ dm_remove_partmaps (const char * mapname, int flags)
 static int
 cancel_remove_partmap (const char *name, void *unused __attribute__((unused)))
 {
-	if (dm_get_opencount(name))
-		dm_cancel_remove_partmaps(name);
 	if (dm_message(name, "@cancel_deferred_remove") != 0)
 		condlog(0, "%s: can't cancel deferred remove: %s", name,
 			strerror(errno));
@@ -1470,6 +1495,34 @@ struct rename_data {
 };
 
 static int
+dm_rename__(const char *old, char *new, int skip_kpartx)
+{
+	int r = 0;
+	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
+	uint32_t cookie = 0;
+	uint16_t udev_flags = DM_UDEV_DISABLE_LIBRARY_FALLBACK | ((skip_kpartx == SKIP_KPARTX_ON)? MPATH_UDEV_NO_KPARTX_FLAG : 0);
+
+	if (!(dmt = libmp_dm_task_create(DM_DEVICE_RENAME)))
+		return r;
+
+	if (!dm_task_set_name(dmt, old))
+		return r;
+
+	if (!dm_task_set_newname(dmt, new))
+		return r;
+
+	if (!dm_task_set_cookie(dmt, &cookie, udev_flags))
+		return r;
+
+	r = libmp_dm_task_run(dmt);
+	if (!r)
+		dm_log_error(2, DM_DEVICE_RENAME, dmt);
+
+	libmp_udev_wait(cookie);
+	return r;
+}
+
+static int
 rename_partmap (const char *name, void *data)
 {
 	char *buff = NULL;
@@ -1480,7 +1533,7 @@ rename_partmap (const char *name, void *data)
 		return 0;
 	for (offset = strlen(rd->old); name[offset] && !(isdigit(name[offset])); offset++); /* do nothing */
 	if (asprintf(&buff, "%s%s%s", rd->new, rd->delim, name + offset) >= 0) {
-		dm_rename(name, buff, rd->delim, SKIP_KPARTX_OFF);
+		dm_rename__(name, buff, SKIP_KPARTX_OFF);
 		free(buff);
 		condlog(4, "partition map %s renamed", name);
 	} else
@@ -1510,32 +1563,9 @@ dm_rename_partmaps (const char * old, char * new, char *delim)
 int
 dm_rename (const char * old, char * new, char *delim, int skip_kpartx)
 {
-	int r = 0;
-	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
-	uint32_t cookie = 0;
-	uint16_t udev_flags = DM_UDEV_DISABLE_LIBRARY_FALLBACK | ((skip_kpartx == SKIP_KPARTX_ON)? MPATH_UDEV_NO_KPARTX_FLAG : 0);
-
 	if (dm_rename_partmaps(old, new, delim))
-		return r;
-
-	if (!(dmt = libmp_dm_task_create(DM_DEVICE_RENAME)))
-		return r;
-
-	if (!dm_task_set_name(dmt, old))
-		return r;
-
-	if (!dm_task_set_newname(dmt, new))
-		return r;
-
-	if (!dm_task_set_cookie(dmt, &cookie, udev_flags))
-		return r;
-
-	r = libmp_dm_task_run(dmt);
-	if (!r)
-		dm_log_error(2, DM_DEVICE_RENAME, dmt);
-
-	libmp_udev_wait(cookie);
-	return r;
+		return 0;
+	return dm_rename__(old, new, skip_kpartx);
 }
 
 void dm_reassign_deps(char *table, const char *dep, const char *newdep)

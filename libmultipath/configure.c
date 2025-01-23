@@ -835,7 +835,6 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 {
 	int r = DOMAP_FAIL;
 	struct config *conf;
-	char wwid[WWID_SIZE];
 
 	/*
 	 * last chance to quit before touching the devmaps
@@ -846,6 +845,7 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 	}
 
 	if (mpp->action == ACT_CREATE) {
+		char wwid[WWID_SIZE];
 		int rc = dm_get_wwid(mpp->alias, wwid, sizeof(wwid));
 
 		if (rc == DMP_OK && !strncmp(mpp->wwid, wwid, sizeof(wwid))) {
@@ -863,7 +863,26 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 			mpp->action = ACT_REJECT;
 		}
 	}
+	if (mpp->action == ACT_CREATE) {
+		char alias[WWID_SIZE];
+		int rc = dm_find_map_by_wwid(mpp->wwid, alias, NULL);
 
+		if (rc == DMP_NO_MATCH) {
+			condlog(1, "%s: wwid \"%s\" already in use by non-multipath map \"%s\"",
+				mpp->alias, mpp->wwid, alias);
+			mpp->action = ACT_REJECT;
+		} else if (rc == DMP_OK || rc == DMP_EMPTY) {
+			/*
+			 * we already handled the case were rc == DMO_OK and
+			 * the alias == mpp->alias above. So the alias must be
+			 * different here.
+			 */
+			condlog(3, "%s: map already present with a different name \"%s\". reloading",
+				mpp->alias, alias);
+			strlcpy(mpp->alias_old, alias, WWID_SIZE);
+			mpp->action = ACT_RELOAD_RENAME;
+		}
+	}
 	if (mpp->action == ACT_RENAME || mpp->action == ACT_SWITCHPG_RENAME ||
 	    mpp->action == ACT_RELOAD_RENAME ||
 	    mpp->action == ACT_RESIZE_RENAME) {

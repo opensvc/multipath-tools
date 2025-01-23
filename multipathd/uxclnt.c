@@ -52,8 +52,10 @@ int uxclnt(char * inbuf, unsigned int timeout)
 	if (!inbuf)
 		return 1;
 	fd = mpath_connect();
-	if (fd == -1)
+	if (fd == -1) {
+		fprintf(stderr, "ERROR: failed to connect to multipathd\n");
 		return 1;
+	}
 
 	ret = process_req(fd, inbuf, timeout);
 

@@ -34,6 +34,7 @@ struct io_event mock_events[AIO_GROUP_SIZE]; /* same as the checker max */
 int ev_off = 0;
 struct timespec zero_timeout = { .tv_sec = 0 };
 struct timespec full_timeout = { .tv_sec = -1 };
+const struct timespec one_sec = { .tv_sec = 1 };
 const char *test_dev = NULL;
 unsigned int test_delay = 10000;
 
@@ -219,13 +220,22 @@ static void return_io_getevents_nr(struct timespec *ts, int nr,
 	ev_off += i;
 }
 
-void do_check_state(struct checker *c, int sync, int timeout, int chk_state)
+void do_check_state(struct checker *c, int sync, int chk_state)
 {
 	struct directio_context * ct = (struct directio_context *)c->context;
 
-	if (!ct->running)
+	if (!is_running(ct))
 		will_return(__wrap_io_submit, 1);
-	assert_int_equal(check_state(test_fd, ct, sync, timeout), chk_state);
+	assert_int_equal(check_state(test_fd, ct, sync, c->timeout), chk_state);
+	if (sync) {
+		assert_int_equal(ev_off, 0);
+		memset(mock_events, 0, sizeof(mock_events));
+	}
+}
+
+void do_libcheck_pending(struct checker *c, int chk_state)
+{
+	assert_int_equal(libcheck_pending(c), chk_state);
 	assert_int_equal(ev_off, 0);
 	memset(mock_events, 0, sizeof(mock_events));
 }
@@ -245,12 +255,13 @@ void do_libcheck_reset(int nr_aio_grps)
 	assert_int_equal(ioctx_count, 0);
 }
 
-static void do_libcheck_init(struct checker *c, int blocksize,
+static void do_libcheck_init(struct checker *c, int blocksize, int timeout,
 			     struct async_req **req)
 {
 	struct directio_context * ct;
 
 	c->fd = test_fd;
+	c->timeout = timeout;
 	wrap_will_return(WRAP_IOCTL, blocksize);
 	assert_int_equal(libcheck_init(c), 0);
 	ct = (struct directio_context *)c->context;
@@ -267,7 +278,7 @@ static void do_libcheck_init(struct checker *c, int blocksize,
 static int is_checker_running(struct checker *c)
 {
 	struct directio_context * ct = (struct directio_context *)c->context;
-	return ct->running;
+	return is_running(ct);
 }
 
 static struct aio_group *get_aio_grp(struct checker *c)
@@ -303,23 +314,28 @@ static void test_init_reset_init(void **state)
 	struct checker c = {.cls = NULL};
 	struct aio_group *aio_grp, *tmp_grp;
 
+	assert_int_equal(libcheck_need_wait(&c), false);
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
-	do_libcheck_init(&c, 4096, NULL);
+	do_libcheck_init(&c, 4096, 0, NULL);
+	assert_int_equal(libcheck_need_wait(&c), false);
 	aio_grp = get_aio_grp(&c);
 	check_aio_grp(aio_grp, 1, 0);
 	list_for_each_entry(tmp_grp, &aio_grp_list, node)
 		assert_ptr_equal(aio_grp, tmp_grp);
 	libcheck_free(&c);
+	assert_int_equal(libcheck_need_wait(&c), false);
 	check_aio_grp(aio_grp, 0, 0);
 	do_libcheck_reset(1);
 	will_return(__wrap_io_setup, 0);
-	do_libcheck_init(&c, 4096, NULL);
+	do_libcheck_init(&c, 4096, 0, NULL);
+	assert_int_equal(libcheck_need_wait(&c), false);
 	aio_grp = get_aio_grp(&c);
 	check_aio_grp(aio_grp, 1, 0);
 	list_for_each_entry(tmp_grp, &aio_grp_list, node)
 		assert_ptr_equal(aio_grp, tmp_grp);
 	libcheck_free(&c);
+	assert_int_equal(libcheck_need_wait(&c), false);
 	check_aio_grp(aio_grp, 0, 0);
 	do_libcheck_reset(1);
 }
@@ -340,11 +356,11 @@ static void test_init_free(void **state)
 		struct directio_context * ct;
 
 		if (i % 3 == 0)
-			do_libcheck_init(&c[i], 512, NULL);
+			do_libcheck_init(&c[i], 512, 0, NULL);
 		else if (i % 3 == 1)
-			do_libcheck_init(&c[i], 1024, NULL);
+			do_libcheck_init(&c[i], 1024, 0, NULL);
 		else
-			do_libcheck_init(&c[i], 4096, NULL);
+			do_libcheck_init(&c[i], 4096, 0, NULL);
 		ct = (struct directio_context *)c[i].context;
 		assert_non_null(ct->aio_grp);
 		if ((i & 1023) == 0)
@@ -385,7 +401,7 @@ static void test_multi_init_free(void **state)
 	for (count = 0, i = 0; i < 4096; count++) {
 		/* usually init, but occasionally free checkers */
 		if (count == 0 || (count % 5 != 0 && count % 7 != 0)) {
-			do_libcheck_init(&c[i], 4096, NULL);
+			do_libcheck_init(&c[i], 4096, 0, NULL);
 			i++;
 		} else {
 			i--;
@@ -404,7 +420,7 @@ static void test_multi_init_free(void **state)
 			i--;
 			libcheck_free(&c[i]);
 		} else {
-			do_libcheck_init(&c[i], 4096, NULL);
+			do_libcheck_init(&c[i], 4096, 0, NULL);
 			i++;
 		}
 	}
@@ -420,9 +436,10 @@ static void test_check_state_simple(void **state)
 
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
-	do_libcheck_init(&c, 4096, &req);
+	do_libcheck_init(&c, 4096, 30, &req);
 	return_io_getevents_nr(NULL, 1, &req, &res);
-	do_check_state(&c, 1, 30, PATH_UP);
+	do_check_state(&c, 1, PATH_UP);
+	assert_int_equal(libcheck_need_wait(&c), false);
 	libcheck_free(&c);
 	do_libcheck_reset(1);
 }
@@ -435,10 +452,10 @@ static void test_check_state_timeout(void **state)
 
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
-	do_libcheck_init(&c, 4096, NULL);
+	do_libcheck_init(&c, 4096, 30, NULL);
 	aio_grp = get_aio_grp(&c);
 	return_io_getevents_none();
-	do_check_state(&c, 1, 30, PATH_DOWN);
+	do_check_state(&c, 1, PATH_DOWN);
 	check_aio_grp(aio_grp, 1, 0);
 	libcheck_free(&c);
 	do_libcheck_reset(1);
@@ -452,16 +469,34 @@ static void test_check_state_async_timeout(void **state)
 
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
-	do_libcheck_init(&c, 4096, NULL);
+	do_libcheck_init(&c, 4096, 3, NULL);
 	aio_grp = get_aio_grp(&c);
+	do_check_state(&c, 0, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c), true);
 	return_io_getevents_none();
-	do_check_state(&c, 0, 3, PATH_PENDING);
+	do_libcheck_pending(&c, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c), false);
+
+	nanosleep(&one_sec, NULL);
+	do_check_state(&c, 0, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c), false);
 	return_io_getevents_none();
-	do_check_state(&c, 0, 3, PATH_PENDING);
+	do_libcheck_pending(&c, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c), false);
+
+	nanosleep(&one_sec, NULL);
+	do_check_state(&c, 0, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c), false);
 	return_io_getevents_none();
-	do_check_state(&c, 0, 3, PATH_PENDING);
+	do_libcheck_pending(&c, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c), false);
+
+	nanosleep(&one_sec, NULL);
+	do_check_state(&c, 0, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c), false);
 	return_io_getevents_none();
-	do_check_state(&c, 0, 3, PATH_DOWN);
+	do_libcheck_pending(&c, PATH_DOWN);
+	assert_int_equal(libcheck_need_wait(&c), false);
 	check_aio_grp(aio_grp, 1, 0);
 	libcheck_free(&c);
 	do_libcheck_reset(1);
@@ -477,14 +512,21 @@ static void test_free_with_pending(void **state)
 
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
-        do_libcheck_init(&c[0], 4096, &req);
-	do_libcheck_init(&c[1], 4096, NULL);
+        do_libcheck_init(&c[0], 4096, 30, &req);
+	do_libcheck_init(&c[1], 4096, 30, NULL);
         aio_grp = get_aio_grp(c);
+        do_check_state(&c[0], 0, PATH_PENDING);
+	do_check_state(&c[1], 0, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c[0]), true);
+	assert_int_equal(libcheck_need_wait(&c[1]), true);
         return_io_getevents_none();
-        do_check_state(&c[0], 0, 30, PATH_PENDING);
+	do_libcheck_pending(&c[0], PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c[0]), false);
+	assert_int_equal(libcheck_need_wait(&c[1]), true);
 	return_io_getevents_nr(NULL, 1, &req, &res);
-	return_io_getevents_none();
-	do_check_state(&c[1], 0, 30, PATH_PENDING);
+	do_libcheck_pending(&c[1], PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c[0]), false);
+	assert_int_equal(libcheck_need_wait(&c[1]), false);
 	assert_true(is_checker_running(&c[0]));
 	assert_true(is_checker_running(&c[1]));
 	check_aio_grp(aio_grp, 2, 0);
@@ -505,9 +547,12 @@ static void test_orphaned_aio_group(void **state)
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
 	for (i = 0; i < AIO_GROUP_SIZE; i++) {
-		do_libcheck_init(&c[i], 4096, NULL);
+		do_libcheck_init(&c[i], 4096, 30, NULL);
+		do_check_state(&c[i], 0, PATH_PENDING);
+		assert_int_equal(libcheck_need_wait(&c[i]), true);
 		return_io_getevents_none();
-		do_check_state(&c[i], 0, 30, PATH_PENDING);
+		do_libcheck_pending(&c[i], PATH_PENDING);
+		assert_int_equal(libcheck_need_wait(&c[i]), false);
 	}
 	aio_grp = get_aio_grp(c);
 	check_aio_grp(aio_grp, AIO_GROUP_SIZE, 0);
@@ -539,19 +584,23 @@ static void test_timeout_cancel_failed(void **state)
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
 	for (i = 0; i < 2; i++)
-		do_libcheck_init(&c[i], 4096, &reqs[i]);
+		do_libcheck_init(&c[i], 4096, 30, &reqs[i]);
 	aio_grp = get_aio_grp(c);
 	return_io_getevents_none();
-	do_check_state(&c[0], 1, 30, PATH_DOWN);
+	do_check_state(&c[0], 1, PATH_DOWN);
+	assert_int_equal(libcheck_need_wait(&c[0]), false);
 	assert_true(is_checker_running(&c[0]));
 	check_aio_grp(aio_grp, 2, 0);
 	return_io_getevents_none();
-	do_check_state(&c[0], 1, 30, PATH_DOWN);
+	do_check_state(&c[0], 1, PATH_DOWN);
+	assert_int_equal(libcheck_need_wait(&c[0]), false);
 	assert_true(is_checker_running(&c[0]));
 	return_io_getevents_nr(NULL, 1, &reqs[0], &res[0]);
 	return_io_getevents_nr(NULL, 1, &reqs[1], &res[1]);
-	do_check_state(&c[1], 1, 30, PATH_UP);
-	do_check_state(&c[0], 1, 30, PATH_UP);
+	do_check_state(&c[1], 1, PATH_UP);
+	assert_int_equal(libcheck_need_wait(&c[1]), false);
+	do_check_state(&c[0], 1, PATH_UP);
+	assert_int_equal(libcheck_need_wait(&c[0]), false);
 	for (i = 0; i < 2; i++) {
 		assert_false(is_checker_running(&c[i]));
 		libcheck_free(&c[i]);
@@ -571,28 +620,51 @@ static void test_async_timeout_cancel_failed(void **state)
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
 	for (i = 0; i < 2; i++)
-		do_libcheck_init(&c[i], 4096, &reqs[i]);
+		do_libcheck_init(&c[i], 4096, 2, &reqs[i]);
+	do_check_state(&c[0], 0, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c[0]), true);
+	do_check_state(&c[1], 0, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c[1]), true);
 	return_io_getevents_none();
-	do_check_state(&c[0], 0, 2, PATH_PENDING);
+	do_libcheck_pending(&c[0], PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c[0]), false);
 	return_io_getevents_none();
-	do_check_state(&c[1], 0, 2, PATH_PENDING);
+	do_libcheck_pending(&c[1], PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c[1]), false);
+
+	nanosleep(&one_sec, NULL);
+	do_check_state(&c[0], 0, PATH_PENDING);
+	do_check_state(&c[1], 0, PATH_PENDING);
 	return_io_getevents_none();
-	do_check_state(&c[0], 0, 2, PATH_PENDING);
+	do_libcheck_pending(&c[0], PATH_PENDING);
 	return_io_getevents_none();
-	do_check_state(&c[1], 0, 2, PATH_PENDING);
+	do_libcheck_pending(&c[1], PATH_PENDING);
+
+	nanosleep(&one_sec, NULL);
+	do_check_state(&c[0], 0, PATH_PENDING);
+	do_check_state(&c[1], 0, PATH_PENDING);
 	return_io_getevents_none();
-	do_check_state(&c[0], 0, 2, PATH_DOWN);
+	do_libcheck_pending(&c[0], PATH_DOWN);
+	assert_int_equal(libcheck_need_wait(&c[0]), false);
 	if (!test_dev) {
 		/* can't pick which even gets returned on real devices */
 		return_io_getevents_nr(NULL, 1, &reqs[1], &res[1]);
-		do_check_state(&c[1], 0, 2, PATH_UP);
+		do_libcheck_pending(&c[1], PATH_UP);
+		assert_int_equal(libcheck_need_wait(&c[1]), false);
 	}
+
+	nanosleep(&one_sec, NULL);
+	do_check_state(&c[0], 0, PATH_PENDING);
 	return_io_getevents_none();
-	do_check_state(&c[0], 0, 2, PATH_DOWN);
+	do_libcheck_pending(&c[0], PATH_DOWN);
 	assert_true(is_checker_running(&c[0]));
+
+	nanosleep(&one_sec, NULL);
+	do_check_state(&c[1], 0, PATH_PENDING);
+	do_check_state(&c[0], 0, PATH_PENDING);
 	return_io_getevents_nr(NULL, 2, reqs, res);
-	do_check_state(&c[1], 0, 2, PATH_UP);
-	do_check_state(&c[0], 0, 2, PATH_UP);
+	do_libcheck_pending(&c[1], PATH_UP);
+	do_libcheck_pending(&c[0], PATH_UP);
 	for (i = 0; i < 2; i++) {
 		assert_false(is_checker_running(&c[i]));
 		libcheck_free(&c[i]);
@@ -612,15 +684,22 @@ static void test_orphan_checker_cleanup(void **state)
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
 	for (i = 0; i < 2; i++)
-		do_libcheck_init(&c[i], 4096, &reqs[i]);
+		do_libcheck_init(&c[i], 4096, 30, &reqs[i]);
 	aio_grp = get_aio_grp(c);
+	do_check_state(&c[0], 0, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c[0]), true);
 	return_io_getevents_none();
-	do_check_state(&c[0], 0, 30, PATH_PENDING);
+	do_libcheck_pending(&c[0], PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c[0]), false);
 	check_aio_grp(aio_grp, 2, 0);
 	libcheck_free(&c[0]);
+	assert_int_equal(libcheck_need_wait(&c[0]), false);
 	check_aio_grp(aio_grp, 2, 1);
+	do_check_state(&c[1], 0, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c[1]), true);
 	return_io_getevents_nr(NULL, 2, reqs, res);
-	do_check_state(&c[1], 0, 2, PATH_UP);
+	do_libcheck_pending(&c[1], PATH_UP);
+	assert_int_equal(libcheck_need_wait(&c[1]), false);
 	check_aio_grp(aio_grp, 1, 0);
 	libcheck_free(&c[1]);
 	check_aio_grp(aio_grp, 0, 0);
@@ -636,10 +715,13 @@ static void test_orphan_reset_cleanup(void **state)
 
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
-	do_libcheck_init(&c, 4096, NULL);
+	do_libcheck_init(&c, 4096, 30, NULL);
 	orphan_aio_grp = get_aio_grp(&c);
+	do_check_state(&c, 0, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c), true);
 	return_io_getevents_none();
-	do_check_state(&c, 0, 30, PATH_PENDING);
+	do_libcheck_pending(&c, PATH_PENDING);
+	assert_int_equal(libcheck_need_wait(&c), false);
 	check_aio_grp(orphan_aio_grp, 1, 0);
 	libcheck_free(&c);
 	check_aio_grp(orphan_aio_grp, 1, 1);
@@ -671,10 +753,11 @@ static void test_check_state_blksize(void **state)
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
 	for (i = 0; i < 3; i++)
-		do_libcheck_init(&c[i], blksize[i], &reqs[i]);
+		do_libcheck_init(&c[i], blksize[i], 30, &reqs[i]);
 	for (i = 0; i < 3; i++) {
 		return_io_getevents_nr(NULL, 1, &reqs[i], &res[i]);
-		do_check_state(&c[i], 1, 30, chk_state[i]);
+		do_check_state(&c[i], 1, chk_state[i]);
+		assert_int_equal(libcheck_need_wait(&c[i]), false);
 	}
 	for (i = 0; i < 3; i++) {
 		assert_false(is_checker_running(&c[i]));
@@ -695,19 +778,25 @@ static void test_check_state_async(void **state)
 	assert_true(list_empty(&aio_grp_list));
 	will_return(__wrap_io_setup, 0);
 	for (i = 0; i < 257; i++)
-		do_libcheck_init(&c[i], 4096, &reqs[i]);
+		do_libcheck_init(&c[i], 4096, 30, &reqs[i]);
 	for (i = 0; i < 256; i++) {
+		do_check_state(&c[i], 0, PATH_PENDING);
+		assert_int_equal(libcheck_need_wait(&c[i]), true);
 		return_io_getevents_none();
-		do_check_state(&c[i], 0, 30, PATH_PENDING);
+		do_libcheck_pending(&c[i], PATH_PENDING);
+		assert_int_equal(libcheck_need_wait(&c[i]), false);
 		assert_true(is_checker_running(&c[i]));
 	}
-	return_io_getevents_nr(&full_timeout, 256, reqs, res);
-	return_io_getevents_nr(NULL, 1, &reqs[256], &res[256]);
-	do_check_state(&c[256], 0, 30, PATH_UP);
+	do_check_state(&c[256], 0, PATH_PENDING);
+		assert_int_equal(libcheck_need_wait(&c[256]), true);
+	return_io_getevents_nr(&full_timeout, 257, reqs, res);
+	do_libcheck_pending(&c[256], PATH_UP);
+		assert_int_equal(libcheck_need_wait(&c[256]), false);
 	assert_false(is_checker_running(&c[256]));
 	libcheck_free(&c[256]);
 	for (i = 0; i < 256; i++) {
-		do_check_state(&c[i], 0, 30, PATH_UP);
+		do_check_state(&c[i], 0, PATH_UP);
+		assert_int_equal(libcheck_need_wait(&c[i]), false);
 		assert_false(is_checker_running(&c[i]));
 		libcheck_free(&c[i]);
 	}

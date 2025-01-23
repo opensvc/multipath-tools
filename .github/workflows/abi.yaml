@@ -24,11 +24,11 @@ jobs:
         if: ${{ env.ABI_BRANCH == '' }}
         run: echo "ABI_BRANCH=master" >> $GITHUB_ENV
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: get reference ABI
         id: reference
         continue-on-error: true
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v6
         with:
           workflow: abi.yaml
           branch: ${{ env.ABI_BRANCH }}
@@ -45,10 +45,11 @@ jobs:
       - name: create ABI
         run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) abi.tar.gz
       - name: save ABI
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: abi
           path: abi
+          overwrite: true
       - name: compare ABI against reference
         id: compare
         continue-on-error: true
@@ -56,10 +57,11 @@ jobs:
         run: make abi-test
       - name: save differences
         if: ${{ steps.compare.outcome == 'failure' }}
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: abi-test
           path: abi-test
+          overwrite: true
 
       - name: fail
         # MUST use >- here, otherwise the condition always evaluates to true

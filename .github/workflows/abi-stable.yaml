@@ -1,0 +1,89 @@
+name: check-abi for stable branch
+on:
+  push:
+    branches:
+      - 'stable-*'
+    paths:
+      - '.github/workflows/abi-stable.yaml'
+      - '**.h'
+      - '**.c'
+      - '**.version'
+  pull_request:
+    branches:
+      - 'stable-*'
+  workflow_dispatch:
+
+jobs:
+  reference-abi:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: get parent tag
+        run: >
+          echo ${{ github.ref }} |
+          sed -E 's,refs/heads/stable-([0-9]\.[0-9]*)\.y,PARENT_TAG=\1.0,' >> $GITHUB_ENV
+      - name: assert parent tag
+        run: /bin/false
+        if: ${{ env.PARENT_TAG == '' }}
+      - name: update
+        run: sudo apt-get update
+      - name: dependencies
+        run: >
+          sudo apt-get install --yes gcc
+          gcc make pkg-config abigail-tools
+          libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
+          libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
+      - name: checkout ${{ env.PARENT_TAG }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PARENT_TAG }}
+      - name: build ABI for ${{ env.PARENT_TAG }}
+        run: make -j$(grep -c ^processor /proc/cpuinfo) -Orecurse abi
+      - name: save ABI
+        uses: actions/upload-artifact@v4
+        with:
+          name: multipath-abi-${{ env.PARENT_TAG }}
+          path: abi
+
+  check-abi:
+    runs-on: ubuntu-20.04
+    needs: reference-abi
+    steps:
+      - name: get parent tag
+        run: >
+          echo ${{ github.ref }} |
+          sed -E 's,refs/heads/stable-([0-9]\.[0-9]*)\.y,PARENT_TAG=\1.0,' >> $GITHUB_ENV
+      - name: assert parent tag
+        run: /bin/false
+        if: ${{ env.PARENT_TAG == '' }}
+      - name: checkout ${{ env.PARENT_TAG }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PARENT_TAG }}
+      - name: download ABI for ${{ env.PARENT_TAG }}
+        id: download_abi
+        uses: actions/download-artifact@v4
+        with:
+          name: multipath-abi-${{ env.PARENT_TAG }}
+          path: reference-abi
+      - name: update
+        run: sudo apt-get update
+        if: steps.download_abi.outcome != 'success'
+      - name: dependencies
+        run: >
+          sudo apt-get install --yes gcc
+          gcc make pkg-config abigail-tools
+          libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
+          libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
+      - name: check ABI of ${{ github.ref }} against ${{ env.PARENT_TAG }}
+        id: check_abi
+        run: make -j$(grep -c ^processor /proc/cpuinfo) -Orecurse abi-test
+        continue-on-error: true
+      - name: save differences
+        if: ${{ steps.check_abi.outcome != 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: abi-test
+          path: abi-test
+      - name: fail
+        run: /bin/false
+        if: steps.check_abi.outcome != 'success'

@@ -504,6 +504,8 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 	int r = DMP_ERR;
 	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
 	char __attribute__((cleanup(cleanup_charp))) *status = NULL;
+	/* only set the actual mpp->dmi if libmp_mapinfo returns DMP_OK */
+	struct dm_info dmi;
 	unsigned long long size;
 	struct config *conf;
 
@@ -522,7 +524,7 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 				  .target = &params,
 				  .status = &status,
 				  .size = &mpp->size,
-				  .dmi = &mpp->dmi,
+				  .dmi = &dmi,
 			  });
 
 	if (r != DMP_OK) {
@@ -531,6 +533,7 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 	} else if (size != mpp->size)
 		condlog(0, "%s: size changed from %llu to %llu", mpp->alias, size, mpp->size);
 
+	mpp->dmi = dmi;
 	return update_multipath_table__(mpp, pathvec, flags, params, status);
 }
 

@@ -49,6 +49,7 @@ DIO
 directio
 disablequeueing
 dmevent
+dmi
 dmmp
 dmraid
 dmsetup
@@ -183,6 +184,7 @@ rtprio
 sas
 sbp
 scsi
+SCST
 sda
 sdc
 setmarginal
@@ -207,6 +209,7 @@ switchgroup
 sys
 sysfs
 sysinit
+systemd
 tcp
 terabytes
 SYSDIR
@@ -237,12 +240,14 @@ usr
 uuid
 valgrind
 varoqui
+versioning
 Vess
 vgr
 VNX
 vpd
 VSN
 wakka
+watchdogsec
 weightedpath
 wholedisk
 Wilck

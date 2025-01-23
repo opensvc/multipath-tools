@@ -35,6 +35,7 @@ enum {
 	DMP_OK,
 	DMP_NOT_FOUND,
 	DMP_NO_MATCH,
+	DMP_EMPTY,
 	DMP_LAST__,
 };
 
@@ -58,7 +59,13 @@ enum {
 	/* Fail if target type is not "partition" (linear) */
 	MAPINFO_PART_ONLY   = (1 << 9),
 	MAPINFO_TGT_TYPE__  = (MAPINFO_MPATH_ONLY | MAPINFO_PART_ONLY),
-	/* Fail if the UUID doesn't match the multipath UUID format */
+	/*
+	 * Fail if the UUID doesn't match the expected UUID format
+	 * If combined with MAPINFO_PART_ONLY, checks for partition UUID format
+	 * ("part<N>-mpath-xyz").
+	 * Otherwise (whether or not MAPINFO_MPATH_ONLY is set) checks for
+	 * multipath UUID format ("mpath-xyz").
+	 */
 	MAPINFO_CHECK_UUID  = (1 << 10),
 };
 
@@ -99,12 +106,19 @@ typedef struct libmp_map_info {
  * @returns:
  *     DMP_OK if successful.
  *     DMP_NOT_FOUND if the map wasn't found, or has no or multiple targets.
- *     DMP_NO_MATCH if the map didn't match @tgt_type (see above).
+ *     DMP_NO_MATCH if the map didn't match @tgt_type (see above) or didn't
+ *                  have a multipath uuid prefix.
+ *     DMP_EMPTY if the map has no table. Note. The check for matching uuid
+ *               prefix will happen first, but the check for matching
+ *               tgt_type will happen afterwards.
  *     DMP_ERR if some other error occurred.
  *
  * This function obtains the requested information for the device-mapper map
  * identified by the input parameters.
- * Output parameters are only filled in if the return value is DMP_OK.
+ * If non-NULL, the name, uuid, and dmi output paramters may be filled in for
+ * any return value besides DMP_NOT_FOUND and will always be filled in for
+ * return values other than DMP_NOT_FOUND and DMP_ERR.
+ * The other parameters are only filled in if the return value is DMP_OK.
  * For target / status / size information, the  map's table should contain
  * only one target (usually multipath or linear).
  */
@@ -163,7 +177,6 @@ enum {
 
 int dm_flush_map__ (const char *mapname, int flags, int retries);
 #define dm_flush_map(mapname) dm_flush_map__(mapname, DMFL_NEED_SYNC, 0)
-#define dm_flush_map_nosync(mapname) dm_flush_map__(mapname, DMFL_NONE, 0)
 #define dm_suspend_and_flush_map(mapname, retries) \
 	dm_flush_map__(mapname, DMFL_NEED_SYNC|DMFL_SUSPEND, retries)
 int dm_flush_map_nopaths(const char * mapname, int deferred_remove);

@@ -1,5 +1,103 @@
 # multipath-tools Release Notes
 
+## Stable branches and new versioning scheme
+
+Beginning with 0.11, the second digit in the multipath-tools version will be
+used for upstream "major" releases. The 3rd and last digit will denote stable
+releases in the future, containing only bug fixes on top of the last major
+release. These bug fixes will be tracked in stable branches.
+
+See [README.md](README.md) for additional information.
+
+## multipath-tools 0.11.0, 2024/11
+
+### User-visible changes
+
+* Modified the systemd unit `multipathd.service` such that multipathd will now
+  restart after a failure or crash.
+  Fixes [#100](https://github.com/opensvc/multipath-tools/issues/100).
+* Logging changes for verbosity level 3:
+  - silenced logging of path status if the status is unchanged
+  - silenced some unhelpful messages from scanning of existing maps
+  - added a message when partition mappings are removed.
+
+### Other major changes
+
+#### Rework of the path checking algorithm
+
+This is a continuation of the checker-related work that went into 0.10.0. For
+asynchronous checker algorithms (i.e. tur and directio), the start of the
+check and the retrieval of the results are done at separate points in time,
+which reduces the time for waiting for the checker results of individual paths
+and thus strongly improves the performance of the checker algorithm, in
+particular on systems with a large a amount of paths.
+
+The algorithm has the following additional properties:
+
+1. multipath devices get synchronized with the kernel occasionally, even if
+they have not paths
+2. If multiple paths from a multipath device are checked in the same
+loop, the multipath device will only get synchronized with the kernel once.
+3. All the paths of a multipath device will converge to being checked at
+the same time (at least as much as their differing checker intervals  will
+allow).
+4. The times for checking the paths of each multipath device will spread
+out as much as possible so multipathd doesn't do all of it's checking in
+a burst.
+5. path checking is done by multipath device (for initialized paths,
+the uninitialized paths are handled after all the adopted paths are
+handled).
+
+### Bug fixes
+
+* Fixed the problem that multipathd wouldn't start on systems with certain types
+  of device mapper devices, in particular devices with multiple DM targets.
+  The problem was introduced in 0.10.0.
+  Fixes [#102](https://github.com/opensvc/multipath-tools/issues/102).
+* Fixed a corner case in the udev rules which could cause a device not to be
+  activated during boot if a cold plug uevent is processed for a previously
+  not configured multipath map while this map was suspended. This problem existed
+  since 0.9.8.
+* Fixed the problem that devices with `no_path_retry fail` and no setting
+  for `dev_loss_tmo` might get the `dev_loss_tmo` set to 0, causing the
+  device to be deleted immediately in the event of a transport disruption.
+  This bug was introduced in 0.9.6.
+* Fixed the problem that, if there were multiple maps with deferred failback
+  (`failback` value > 0 in `multipath.conf`), some maps might fail back later
+  than configured. The problem existed since 0.9.6.
+* Fixed handling of empty maps, i.e. multipath maps that have a multipath UUID
+  but don't contain a device-mapper table. Such maps can occur in very rare
+  cases if some device-mapper operation has failed, or if a tool has been
+  killed in the process of map creation. multipathd will now detect such
+  cases, and either remove these maps or reload them as appropriate.
+* During map creation, fixed the case where a map with different name, but
+  matching UUID and matching type was already present. multipathd
+  previously failed to set up such maps. Now it will reload them with the
+  correct content.
+* Fixed the logic for enabling the systemd watchdog (`WatchdogSec=` in the
+  systemd unit file for multipathd).
+* Fixed a memory leak in the nvme foreign library. The bug existed since
+  0.7.8.
+* Fixed a problem in the marginal path detection algorithm that could cause
+  the io error check for a recently failed path to be delayed. This bug
+  existed since 0.7.4.
+
+### Other
+
+* Default settings for `hardware_handler` have been removed from the
+  internal hardware table. These settings have been obsoleted by the Linux
+  kernel 4.3 and later, which automatically selects hardware handlers when
+  SCSI devices are added. See the notes about `SCSI_DH_MODULES_PRELOAD` in
+  [README.md](README.md).
+* Added a hardware table entry for the SCSI Target Subsystem for Linux (SCST).
+* The text of the licenses has been updated to the latest versions from the
+  Free Software Foundation.
+
+### Internal
+
+* `libmp_mapinfo()` now fills in the `name`, `uuid`, and `dmi` fields
+  if requested by the caller, even if it encounters an error or an empty map.
+
 ## multipath-tools 0.10.0, 2024/08
 
 ### User-Visible Changes

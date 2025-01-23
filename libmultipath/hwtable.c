@@ -115,7 +115,6 @@ static struct hwentry default_hw[] = {
 		.product       = "VV",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.hwhandler     = "1 alua",
 		.prio_name     = PRIO_ALUA,
 		.no_path_retry = 18,
 		.fast_io_fail  = 10,
@@ -123,7 +122,8 @@ static struct hwentry default_hw[] = {
 		.vpd_vendor_id = VPD_VP_HP3PAR,
 	},
 	{
-		/* Alletra 9000 NVMe */
+		// Alletra 9000 NVMe / Alletra Storage MP
+		// GreenLake Block Storage MP
 		.vendor        = "NVME",
 		.product       = "HPE Alletra",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
@@ -133,7 +133,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "DEC",
 		.product       = "HSG80",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
-		.hwhandler     = "1 hp_sw",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = HP_SW,
 		.prio_name     = PRIO_HP_SW,
@@ -149,7 +148,6 @@ static struct hwentry default_hw[] = {
 		/* MSA 1000/1500 and EVA 3000/5000, with old firmware */
 		.vendor        = "(COMPAQ|HP)",
 		.product       = "(MSA|HSV)1[01]0",
-		.hwhandler     = "1 hp_sw",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.no_path_retry = 12,
 		.checker_name  = HP_SW,
@@ -190,9 +188,9 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 	},
 	{
-		/* MSA 1040, 1050, 1060, 2040, 2050 and 2060 families */
+		/* MSA 1040, 1050, 1060, 2040, 2050, 2060 and 2070 families */
 		.vendor        = "(HP|HPE)",
-		.product       = "MSA [12]0[456]0 (SAN|SAS|FC|iSCSI)",
+		.product       = "MSA [12]0[4567]0 (SAN|SAS|FC|iSCSI)",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 18,
@@ -202,7 +200,6 @@ static struct hwentry default_hw[] = {
 		/* SAN Virtualization Services Platform */
 		.vendor        = "HP",
 		.product       = "(HSVX700|HSVX740)",
-		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 12,
@@ -237,7 +234,6 @@ static struct hwentry default_hw[] = {
 		/* Nimble Storage / HPE Alletra 5000/6000 */
 		.vendor        = "Nimble",
 		.product       = "Server",
-		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
@@ -258,7 +254,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -271,7 +266,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -325,7 +319,6 @@ static struct hwentry default_hw[] = {
 		/* Tegile IntelliFlash */
 		.vendor        = "TEGILE",
 		.product       = "(ZEBI-(FC|ISCSI)|INTELLIFLASH)",
-		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
@@ -352,7 +345,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "^DGC",
 		.product       = "^(RAID|DISK|VRAID)",
 		.bl_product    = "LUNZ",
-		.hwhandler     = "1 emc",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = (300 / DEFAULT_CHECKINT),
@@ -390,7 +382,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -401,7 +392,6 @@ static struct hwentry default_hw[] = {
 		.product       = "PowerStore",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.prio_name     = PRIO_ALUA,
-		.hwhandler     = "1 alua",
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 3,
 		.fast_io_fail  = 15,
@@ -418,7 +408,6 @@ static struct hwentry default_hw[] = {
 		.product       = "^ME",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.prio_name     = PRIO_ALUA,
-		.hwhandler     = "1 alua",
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 	},
 	/*
@@ -473,7 +462,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -523,7 +511,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -536,7 +523,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -549,7 +535,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -562,7 +547,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -575,7 +559,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -588,7 +571,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -601,7 +583,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -614,7 +595,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -627,7 +607,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -640,7 +619,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -653,7 +631,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -723,7 +700,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "IBM",
 		.product       = "^IPR",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
-		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
@@ -788,7 +764,6 @@ static struct hwentry default_hw[] = {
 		/* AIX NVDISK */
 		.vendor        = "AIX",
 		.product       = "NVDISK",
-		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = (300 / DEFAULT_CHECKINT),
@@ -809,7 +784,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -819,7 +793,7 @@ static struct hwentry default_hw[] = {
 	 */
 	{
 		/*
-		 * ONTAP FAS/AFF Series
+		 * ONTAP FAS/AFF/ASA Series
 		 *
 		 * Maintainer: Martin George <marting@netapp.com>
 		 */
@@ -846,7 +820,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -875,7 +848,6 @@ static struct hwentry default_hw[] = {
 		/* M-Series */
 		.vendor        = "NEC",
 		.product       = "DISK ARRAY",
-		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
@@ -913,7 +885,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -926,7 +897,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -939,7 +909,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -958,7 +927,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -971,7 +939,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -984,7 +951,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -997,7 +963,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -1010,7 +975,6 @@ static struct hwentry default_hw[] = {
 		.pgpolicy      = GROUP_BY_PRIO,
 		.checker_name  = RDAC,
 		.features      = "2 pg_init_retries 50",
-		.hwhandler     = "1 rdac",
 		.prio_name     = PRIO_RDAC,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
@@ -1053,7 +1017,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "(Intel|INTEL)",
 		.product       = "Multi-Flex",
 		.bl_product    = "VTrak V-LUN",
-		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
@@ -1066,13 +1029,21 @@ static struct hwentry default_hw[] = {
 		/* Linux-IO (LIO) Target */
 		.vendor        = "(LIO-ORG|SUSE)",
 		.product       = ".*",
-		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 12,
 		.prio_name     = PRIO_ALUA,
 		.checker_name  = DIRECTIO,
 		.detect_checker = DETECT_CHECKER_OFF,
+	},
+	{
+		/* Generic SCSI Target Subsystem for Linux (SCST) */
+		.vendor        = "^SCST_",
+		.product       = ".*",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 12,
+		.prio_name     = PRIO_ALUA,
 	},
 	/*
 	 * DataCore
@@ -1099,12 +1070,11 @@ static struct hwentry default_hw[] = {
 	 * Pure Storage
 	 */
 	{
-		/* FlashArray */
+		/* FlashArray family */
 		.vendor        = "PURE",
 		.product       = "FlashArray",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
-		.hwhandler     = "1 alua",
 		.prio_name     = PRIO_ALUA,
 		.detect_prio   = DETECT_PRIO_OFF,
 		.fast_io_fail  = 10,
@@ -1120,15 +1090,15 @@ static struct hwentry default_hw[] = {
 	 * Huawei
 	 */
 	{
-		/* All, except OceanStor V3-V6 */
+		/* Older than OceanStor V3 */
 		.vendor        = "^(HUAWEI|HUASY|HS)",
-		.product       = "^(Dorado|HVS8|S[23568]|V1[568]|VIS6000)",
+		.product       = "^(Dorado[25]|HVS8|S[23568]|V1[568]|VIS6000)",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 15,
 	},
 	{
-		/* OceanStor V3-V6 */
+		/* OceanStor V3 or better */
 		.vendor        = "^(HUAWEI|AnyStor|Marstor|NETPOSA|SanM|SUGON|UDsafe)",
 		.product       = "XSG1",
 		.pgpolicy      = GROUP_BY_PRIO,
@@ -1205,7 +1175,6 @@ static struct hwentry default_hw[] = {
 		/* NST / UNITY */
 		.vendor        = "Nexsan",
 		.product       = "(NestOS|NST5000)",
-		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
@@ -1223,7 +1192,6 @@ static struct hwentry default_hw[] = {
 		/* 3000 / 6000 Series (ALUA mode) */
 		.vendor        = "VIOLIN",
 		.product       = "SAN ARRAY ALUA",
-		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
@@ -1274,7 +1242,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "Promise",
 		.product       = "VTrak",
 		.bl_product    = "VTrak V-LUN",
-		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
@@ -1285,7 +1252,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "Promise",
 		.product       = "Vess",
 		.bl_product    = "Vess V-LUN",
-		.hwhandler     = "1 alua",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,

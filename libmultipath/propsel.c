@@ -700,6 +700,7 @@ out:
 	condlog(3, "%s: path_checker = %s %s", pp->dev,
 		checker_name(c), origin);
 	c->timeout = pp->checker_timeout;
+	c->path_state = PATH_UNCHECKED;
 	return 0;
 }
 
