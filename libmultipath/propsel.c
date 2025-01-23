@@ -255,14 +255,18 @@ verify_alua_prio(struct multipath *mp)
 {
 	int i;
 	struct path *pp;
+	bool assume_alua = false;
 
 	vector_foreach_slot(mp->paths, pp, i) {
 		const char *name = prio_name(&pp->prio);
+		if (!prio_selected(&pp->prio))
+			continue;
 		if (strncmp(name, PRIO_ALUA, PRIO_NAME_LEN) &&
 		    strncmp(name, PRIO_SYSFS, PRIO_NAME_LEN))
 			 return false;
+		assume_alua = true;
 	}
-	return true;
+	return assume_alua;
 }
 
 int select_detect_pgpolicy(struct config *conf, struct multipath *mp)
