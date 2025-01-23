@@ -349,7 +349,7 @@ int adopt_paths(vector pathvec, struct multipath *mpp,
 				 */
 				if (!current_mpp ||
 				    !mp_find_path_by_devt(current_mpp, pp->dev_t))
-					mpp->need_reload = set_path_max_sectors_kb(pp, mpp->max_sectors_kb) || mpp->need_reload;
+					set_path_max_sectors_kb(pp, mpp->max_sectors_kb);
 			}
 
 			pp->mpp = mpp;
