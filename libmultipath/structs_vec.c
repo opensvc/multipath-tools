@@ -92,14 +92,12 @@ static bool guess_mpp_wwid(struct multipath *mpp)
  * multipath maps but haven't been discovered. Check whether they
  * need to be added to pathvec or discarded.
  *
- * Returns: true if immediate map reload is desirable
- *
  * Side effects:
  * - may delete non-existing paths and empty pathgroups from mpp
  * - may set pp->wwid and / or mpp->wwid
  * - calls pathinfo() on existing paths is pathinfo_flags is not 0
  */
-static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
+static void update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 	int pathinfo_flags)
 {
 	int i, j;
@@ -111,7 +109,7 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 	bool pg_deleted = false;
 
 	if (!mpp->pg)
-		return false;
+		return;
 
 	/*
 	 * This will initialize mpp->wwid with an educated guess,
@@ -253,7 +251,6 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 		pg_deleted = true;
 	}
 	mpp->need_reload = mpp->need_reload || must_reload;
-	return must_reload;
 }
 
 static bool set_path_max_sectors_kb(const struct path *pp, int max_sectors_kb)
@@ -506,7 +503,6 @@ update_multipath_table__ (struct multipath *mpp, vector pathvec, int flags,
 	if (disassemble_status(status, mpp))
 		condlog(2, "%s: cannot disassemble status", mpp->alias);
 
-	/* FIXME: we should deal with the return value here */
 	update_pathvec_from_dm(pathvec, mpp, flags);
 
 	return DMP_OK;
