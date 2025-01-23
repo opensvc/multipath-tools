@@ -1755,7 +1755,7 @@ map_discovery (struct vectors * vecs)
 		return 1;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i)
-		if (update_multipath_table(mpp, vecs->pathvec, 0) != DMP_OK) {
+		if (update_multipath_table(mpp, vecs->pathvec, DI_DISCOVERY) != DMP_OK) {
 			remove_map(mpp, vecs->pathvec, vecs->mpvec);
 			i--;
 		}
