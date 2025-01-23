@@ -2317,6 +2317,7 @@ get_uid (struct path * pp, int path_state, struct udev_device *udev,
 int pathinfo(struct path *pp, struct config *conf, int mask)
 {
 	int path_state;
+	bool need_serial_recheck = false;
 
 	if (!pp || !conf)
 		return PATHINFO_FAILED;
@@ -2356,6 +2357,10 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			   conf->elist_devnode,
 			   pp->dev) > 0)
 		return PATHINFO_SKIPPED;
+
+	if (pp->mpp && pp->mpp->pgpolicyfn == (pgpolicyfn *)group_by_serial &&
+	    pp->serial[0] == '\0')
+		need_serial_recheck = true;
 
 	condlog(4, "%s: mask = 0x%x", pp->dev, mask);
 
@@ -2415,6 +2420,8 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			    pp->state == PATH_UNCHECKED ||
 			    pp->state == PATH_WILD)
 				pp->chkrstate = pp->state = path_state;
+		if (need_serial_recheck && pp->serial[0] != '\0')
+			pp->mpp->need_reload = true;
 		return PATHINFO_OK;
 	}
 
@@ -2524,6 +2531,8 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 
 	if ((mask & DI_ALL) == DI_ALL)
 		pp->initialized = INIT_OK;
+	if (need_serial_recheck && pp->serial[0] != '\0')
+		pp->mpp->need_reload = true;
 	return PATHINFO_OK;
 
 blank:
