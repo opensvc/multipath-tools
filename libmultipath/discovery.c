@@ -34,6 +34,7 @@
 #include "configure.h"
 #include "print.h"
 #include "strbuf.h"
+#include "pgpolicies.h"
 
 #define VPD_BUFLEN 4096
 
@@ -1097,8 +1098,13 @@ detect_alua(struct path * pp)
 
 int path_get_tpgs(struct path *pp)
 {
-	if (pp->tpgs == TPGS_UNDEF)
+	if (pp->tpgs == TPGS_UNDEF) {
 		detect_alua(pp);
+		if (pp->tpgs != TPGS_UNDEF && pp->tpg_id != GROUP_ID_UNDEF &&
+		    pp->mpp &&
+		    pp->mpp->pgpolicyfn == (pgpolicyfn *)group_by_tpg)
+			pp->mpp->need_reload = true;
+	}
 	return pp->tpgs;
 }
 
