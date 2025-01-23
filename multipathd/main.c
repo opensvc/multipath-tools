@@ -331,7 +331,7 @@ static bool unblock_reconfigure(void)
  */
 void remove_map_callback(struct multipath *mpp)
 {
-	if (mpp->wait_for_udev > 0)
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE)
 		unblock_reconfigure();
 }
 
@@ -869,7 +869,7 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 	mpp = find_mp_by_alias(vecs->mpvec, alias);
 
 	if (mpp) {
-		if (mpp->wait_for_udev > 1) {
+		if (mpp->wait_for_udev == UDEV_WAIT_RELOAD) {
 			condlog(2, "%s: performing delayed actions",
 				mpp->alias);
 			if (update_map(mpp, vecs, 0))
@@ -880,8 +880,8 @@ ev_add_map (char * dev, const char * alias, struct vectors * vecs)
 		reassign_maps = conf->reassign_maps;
 		put_multipath_config(conf);
 		dm_get_info(mpp->alias, &mpp->dmi);
-		if (mpp->wait_for_udev) {
-			mpp->wait_for_udev = 0;
+		if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
+			mpp->wait_for_udev = UDEV_WAIT_DONE;
 			if (!need_to_delay_reconfig(vecs) &&
 			    unblock_reconfigure())
 				return 0;
@@ -1239,7 +1239,7 @@ ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 	}
 	if (mpp)
 		trigger_path_udev_change(pp, true);
-	if (mpp && mpp->wait_for_udev &&
+	if (mpp && mpp->wait_for_udev != UDEV_WAIT_DONE &&
 	    (pathcount(mpp, PATH_UP) > 0 ||
 	     (pathcount(mpp, PATH_GHOST) > 0 &&
 	      path_get_tpgs(pp) != TPGS_IMPLICIT &&
@@ -1247,7 +1247,7 @@ ev_add_path (struct path * pp, struct vectors * vecs, int need_do_map)
 		/* if wait_for_udev is set and valid paths exist */
 		condlog(3, "%s: delaying path addition until %s is fully initialized",
 			pp->dev, mpp->alias);
-		mpp->wait_for_udev = 2;
+		mpp->wait_for_udev = UDEV_WAIT_RELOAD;
 		orphan_path(pp, "waiting for create to complete");
 		return 0;
 	}
@@ -1430,8 +1430,8 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 		    flush_map_nopaths(mpp, vecs))
 			goto out;
 
-		if (mpp->wait_for_udev) {
-			mpp->wait_for_udev = 2;
+		if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
+			mpp->wait_for_udev = UDEV_WAIT_RELOAD;
 			retval = REMOVE_PATH_DELAY;
 			goto out;
 		}
@@ -1643,8 +1643,8 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 		if (needs_ro_update(mpp, ro)) {
 			condlog(2, "%s: update path write_protect to '%d' (uevent)", uev->kernel, ro);
 
-			if (mpp->wait_for_udev)
-				mpp->wait_for_udev = 2;
+			if (mpp->wait_for_udev != UDEV_WAIT_DONE)
+				mpp->wait_for_udev = UDEV_WAIT_RELOAD;
 			else {
 				if (ro == 1)
 					pp->mpp->force_readonly = 1;
@@ -1658,7 +1658,7 @@ uev_update_path (struct uevent *uev, struct vectors * vecs)
 			}
 		}
 		if (auto_resize != AUTO_RESIZE_NEVER && mpp &&
-		    !mpp->wait_for_udev) {
+		    mpp->wait_for_udev == UDEV_WAIT_DONE) {
 			struct pathgroup *pgp;
 			struct path *pp2;
 			unsigned int i, j;
@@ -2015,13 +2015,13 @@ followover_should_failback(struct multipath *mpp)
 static bool
 missing_uev_wait_tick(struct multipath *mpp, bool *timed_out)
 {
-	if (mpp->wait_for_udev && --mpp->uev_wait_tick <= 0) {
-		int wait = mpp->wait_for_udev;
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE && --mpp->uev_wait_tick <= 0) {
+		enum udev_wait_states wait = mpp->wait_for_udev;
 
-		mpp->wait_for_udev = 0;
+		mpp->wait_for_udev = UDEV_WAIT_DONE;
 		*timed_out = true;
 		condlog(0, "%s: timeout waiting on creation uevent. enabling reloads", mpp->alias);
-		return wait > 1;
+		return wait == UDEV_WAIT_RELOAD;
 	}
 	return false;
 }
@@ -2632,7 +2632,8 @@ static bool update_mpp_prio(struct multipath *mpp)
 	enum prio_update_type prio_update = mpp->prio_update;
 	mpp->prio_update = PRIO_UPDATE_NONE;
 
-	if (mpp->wait_for_udev || prio_update == PRIO_UPDATE_NONE)
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE ||
+	    prio_update == PRIO_UPDATE_NONE)
 		return false;
 	condlog(4, "prio refresh");
 
@@ -3242,7 +3243,7 @@ need_to_delay_reconfig(struct vectors * vecs)
 		return 0;
 
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
-		if (mpp->wait_for_udev)
+		if (mpp->wait_for_udev != UDEV_WAIT_DONE)
 			return 1;
 	}
 	return 0;

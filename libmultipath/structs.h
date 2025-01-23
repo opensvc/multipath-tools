@@ -430,6 +430,12 @@ enum prio_update_type {
 	PRIO_UPDATE_MARGINAL,
 };
 
+enum udev_wait_states {
+	UDEV_WAIT_DONE = 0,
+	UDEV_WAIT_STARTED,
+	UDEV_WAIT_RELOAD,
+};
+
 struct multipath {
 	char wwid[WWID_SIZE];
 	char alias_old[WWID_SIZE];
@@ -441,7 +447,7 @@ struct multipath {
 	int bestpg;
 	int queuedio;
 	int action;
-	int wait_for_udev;
+	enum udev_wait_states wait_for_udev;
 	int uev_wait_tick;
 	int pgfailback;
 	int failback_tick;

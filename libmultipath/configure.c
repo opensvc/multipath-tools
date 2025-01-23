@@ -1018,7 +1018,7 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 				mpp->action = ACT_NOTHING;
 			else {
 				conf = get_multipath_config();
-				mpp->wait_for_udev = 1;
+				mpp->wait_for_udev = UDEV_WAIT_STARTED;
 				mpp->uev_wait_tick = conf->uev_wait_timeout;
 				put_multipath_config(conf);
 			}

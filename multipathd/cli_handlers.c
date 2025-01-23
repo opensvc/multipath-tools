@@ -812,7 +812,7 @@ cli_reload(void *v, struct strbuf *reply, void *data)
 	if (!mpp)
 		return -ENODEV;
 
-	if (mpp->wait_for_udev) {
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, failing reload",
 			mpp->alias);
 		return 1;
@@ -841,7 +841,7 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 	if (!mpp)
 		return -ENODEV;
 
-	if (mpp->wait_for_udev) {
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, failing resize",
 			mpp->alias);
 		return 1;
@@ -1046,7 +1046,7 @@ cli_suspend(void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return 1;
 
-	if (mpp->wait_for_udev) {
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, failing suspend",
 			mpp->alias);
 		return 1;
@@ -1078,7 +1078,7 @@ cli_resume(void * v, struct strbuf *reply, void * data)
 		return 1;
 
 	udev_flags = (mpp->skip_kpartx)? MPATH_UDEV_NO_KPARTX_FLAG : 0;
-	if (mpp->wait_for_udev) {
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, failing resume",
 			mpp->alias);
 		return 1;
@@ -1131,7 +1131,7 @@ cli_reassign (void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return 1;
 
-	if (mpp->wait_for_udev) {
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, failing reassign",
 			mpp->alias);
 		return 1;
@@ -1406,7 +1406,7 @@ static int cli_set_marginal(void * v, struct strbuf *reply, void * data)
 
 	condlog(2, "%s: set marginal path %s (operator)",
 		pp->mpp->alias, pp->dev_t);
-	if (pp->mpp->wait_for_udev) {
+	if (pp->mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, failing set marginal",
 			pp->mpp->alias);
 		return 1;
@@ -1433,7 +1433,7 @@ static int cli_unset_marginal(void * v, struct strbuf *reply, void * data)
 
 	condlog(2, "%s: unset marginal path %s (operator)",
 		pp->mpp->alias, pp->dev_t);
-	if (pp->mpp->wait_for_udev) {
+	if (pp->mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, "
 			"failing unset marginal", pp->mpp->alias);
 		return 1;
@@ -1461,7 +1461,7 @@ static int cli_unset_all_marginal(void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return -ENODEV;
 
-	if (mpp->wait_for_udev) {
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, "
 			"failing unset all marginal", mpp->alias);
 		return 1;
