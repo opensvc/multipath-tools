@@ -2975,7 +2975,10 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 				continue;
 			}
 		} else if (prio_reload || failback_reload || ghost_reload || inconsistent) {
-			if (reload_and_sync_map(mpp, vecs) == 2) {
+			if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
+				mpp->need_reload = false;
+				mpp->wait_for_udev = UDEV_WAIT_RELOAD;
+			} else if (reload_and_sync_map(mpp, vecs) == 2) {
 				/* multipath device deleted */
 				i--;
 				continue;
