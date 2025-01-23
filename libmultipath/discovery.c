@@ -1581,6 +1581,9 @@ scsi_sysfs_pathinfo (struct path *pp, const struct vector_s *hwtable)
 	condlog(3, "%s: tgt_node_name = %s",
 		pp->dev, pp->tgt_node_name);
 
+	if (get_vpd_sysfs(parent, 0x80, pp->serial, SERIAL_SIZE) > 0)
+		condlog(3, "%s: serial = %s (sysfs)", pp->dev, pp->serial);
+
 	return PATHINFO_OK;
 }
 
@@ -1907,8 +1910,6 @@ sysfs_pathinfo(struct path *pp, const struct vector_s *hwtable)
 static void
 scsi_ioctl_pathinfo (struct path * pp, int mask)
 {
-	struct udev_device *parent;
-	const char *attr_path = NULL;
 	int vpd_id;
 
 	if (!(mask & DI_SERIAL))
@@ -1933,34 +1934,13 @@ scsi_ioctl_pathinfo (struct path * pp, int mask)
 		}
 	}
 
-	parent = pp->udev;
-	while (parent) {
-		const char *subsys = udev_device_get_subsystem(parent);
-		if (subsys && !strncmp(subsys, "scsi", 4)) {
-			attr_path = udev_device_get_sysname(parent);
-			if (!attr_path)
-				break;
-			if (sscanf(attr_path, "%i:%i:%i:%" SCNu64,
-				   &pp->sg_id.host_no,
-				   &pp->sg_id.channel,
-				   &pp->sg_id.scsi_id,
-				   &pp->sg_id.lun) == 4)
-				break;
-		}
-		parent = udev_device_get_parent(parent);
-	}
-	if (!attr_path || pp->sg_id.host_no == -1)
-		return;
-
-	if (get_vpd_sysfs(parent, 0x80, pp->serial, SERIAL_SIZE) <= 0) {
-		if (get_serial(pp->serial, SERIAL_SIZE, pp->fd)) {
+	if (pp->serial[0] == '\0') {
+		if (get_serial(pp->serial, SERIAL_SIZE, pp->fd))
 			condlog(3, "%s: fail to get serial", pp->dev);
-			return;
-		}
+		else
+			condlog(3, "%s: serial = %s (ioctl)", pp->dev,
+				pp->serial);
 	}
-
-	condlog(3, "%s: serial = %s", pp->dev, pp->serial);
-	return;
 }
 
 static void

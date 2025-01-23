@@ -339,12 +339,6 @@ void mock_pathinfo(int mask, const struct mocked_path *mp)
 	if (mp->flags & NEED_FD)
 		will_return(__wrap_udev_device_get_devnode, _mocked_filename);
 
-	/* scsi_ioctl_pathinfo() */
-	if (mask & DI_SERIAL) {
-		will_return(__wrap_udev_device_get_subsystem, "scsi");
-		will_return(__wrap_udev_device_get_sysname, hbtl);
-	}
-
 	if (mask & DI_WWID) {
 		/* get_udev_uid() */
 		will_return(__wrap_udev_device_get_property_value,
