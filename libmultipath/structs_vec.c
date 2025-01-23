@@ -109,6 +109,9 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 	bool mpp_has_wwid;
 	bool must_reload = false;
 	bool pg_deleted = false;
+	bool map_discovery = !!(pathinfo_flags & DI_DISCOVERY);
+
+	pathinfo_flags &= ~DI_DISCOVERY;
 
 	if (!mpp->pg)
 		return false;
@@ -195,7 +198,8 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 					rc = pathinfo(pp, conf,
 						      DI_SYSFS|DI_WWID|DI_BLACKLIST|DI_NOFALLBACK|pathinfo_flags);
 					pthread_cleanup_pop(1);
-					if (rc != PATHINFO_OK) {
+					if (rc == PATHINFO_FAILED ||
+					    (rc == PATHINFO_SKIPPED && !map_discovery)) {
 						condlog(1, "%s: error %d in pathinfo, discarding path",
 							pp->dev, rc);
 						vector_del_slot(pgp->paths, j--);
