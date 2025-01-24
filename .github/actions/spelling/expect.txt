@@ -11,6 +11,7 @@ ata
 autoconfig
 autodetected
 autoresize
+backported
 barbie
 BINDIR
 blkid
@@ -122,6 +123,7 @@ Lun
 lvm
 lvmteam
 Marzinski
+misdetection
 mpath
 mpathb
 mpathpersist
