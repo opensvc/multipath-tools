@@ -9,6 +9,59 @@ release. These bug fixes will be tracked in stable branches.
 
 See [README.md](README.md) for additional information.
 
+## multipath-tools 0.12.0, work in progress
+
+### User-visible changes
+
+* multipathd now sets the `port_state` of Fibre Channel remote ports to
+  "marginal" for NVMe devices, too. Note that unlike SCSI, this will not
+  directly affect the kernel NVMe driver's behavior. Marginal state will
+  affect path grouping on multipathd's part, though.
+  This change is only effective if dm-multipath is used for NVMe devices
+  (i.e. the kernel parameter `nvme_core.multipath=N` is in use).
+* Improved the communication with **udev** and **systemd** by triggering
+  uevents when path devices are added to or removed from multipath maps.
+
+
+### Other major changes
+
+* Continued cleanup of the path checker loop. The various cases in which
+  maps need to be reloaded are now handled more cleanly in the new
+  function `checker_finished()`. Map deletions don't happen any more
+  inside the checker loop, simplifying the code flow. `checker_finished()`
+  now also takes care of all actions that multipath was doing in scheduled
+  intervals ("ticks").
+
+### Bug fixes
+
+* Fix multipathd crash because of invalid path group index value, for example
+  if an invalid path device was removed from a map.
+  Fixes [#105](https://github.com/opensvc/multipath-tools/issues/105).
+  This issue existed since 0.4.5.
+* Make sure maps are reloaded in the path checker loop after detecting an
+  inconsistent or wrong kernel state (e.g. missing or falsely mapped path
+  device). Wrongly mapped paths will be unmapped and released to the system.
+  Fixes another issue reported in
+  [#105](https://github.com/opensvc/multipath-tools/issues/105).
+* Fix the problem that, if a path device is added while offline, path grouping
+  may be wrong if `path_grouping_policy` is set to `group_by_serial` or
+  `group_by_tpg`, even if the path comes online later.
+  Fixes [#108](https://github.com/opensvc/multipath-tools/issues/108).
+  This problem has existed since 0.4.5
+* Fix the problem that `group_by_tpg` might be disabled if one or more
+  paths were offline during initial configuration.
+  This problem exists since 0.9.6.
+* Fix possible misdetection of changed pathgroups in a map.
+  This (minor) problem was introduced in 0.5.0.
+* Fix the problem that if a map was scheduled to be reloaded already,
+  `max_sectors_kb` might not be set on a path device that
+  was being added to a multipath map. This problem was introduced in 0.9.9.
+
+### Other changes
+
+* Cleanup and improvement of the path discovery code that uses ioctls to
+  detect device properties.
+
 ## multipath-tools 0.11.0, 2024/11
 
 ### User-visible changes
