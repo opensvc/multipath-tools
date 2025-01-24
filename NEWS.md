@@ -9,6 +9,27 @@ release. These bug fixes will be tracked in stable branches.
 
 See [README.md](README.md) for additional information.
 
+## multipath-tools 0.11.1, 2025/02
+
+This release contains backported bug fixes from the master branch up to 0.12.
+
+### Bug fixes
+
+* Fix multipathd crash because of invalid path group index value, for example
+  if an invalid path device was removed from a map.
+  Fixes [#105](https://github.com/opensvc/multipath-tools/issues/105).
+* Make sure maps are reloaded in the path checker loop after detecting an
+  inconsistent or wrong kernel state (e.g. missing or falsely mapped path
+  device). Wrongly mapped paths will be unmapped and released to the system.
+  Fixes another issue reported in
+  [#105](https://github.com/opensvc/multipath-tools/issues/105).
+* Fix the problem that `group_by_tpg` might be disabled if one or more
+  paths were offline during initial configuration.
+* Fix possible misdetection of changed pathgroups in a map.
+* Fix the problem that if a map was scheduled to be reloaded already,
+  `max_sectors_kb` might not be set on a path device that
+  was being added to a multipath map. This problem was introduced in 0.9.9.
+
 ## multipath-tools 0.11.0, 2024/11
 
 ### User-visible changes
