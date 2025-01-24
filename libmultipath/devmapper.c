@@ -536,7 +536,7 @@ static uint16_t build_udev_flags(const struct multipath *mpp, int reload)
 		 MPATH_UDEV_RELOAD_FLAG : 0);
 }
 
-int dm_addmap_create (struct multipath *mpp, char * params)
+int dm_addmap_create (struct multipath *mpp, char *params)
 {
 	int ro;
 	uint16_t udev_flags = build_udev_flags(mpp, 0);
@@ -546,9 +546,7 @@ int dm_addmap_create (struct multipath *mpp, char * params)
 
 		if (dm_addmap(DM_DEVICE_CREATE, TGT_MPATH, mpp, params, ro,
 			      udev_flags)) {
-			if (unmark_failed_wwid(mpp->wwid) ==
-			    WWID_FAILED_CHANGED)
-				mpp->needs_paths_uevent = 1;
+			unmark_failed_wwid(mpp->wwid);
 			return 1;
 		}
 		/*
@@ -566,8 +564,7 @@ int dm_addmap_create (struct multipath *mpp, char * params)
 			break;
 		}
 	}
-	if (mark_failed_wwid(mpp->wwid) == WWID_FAILED_CHANGED)
-		mpp->needs_paths_uevent = 1;
+	mark_failed_wwid(mpp->wwid);
 	return 0;
 }
 
@@ -718,7 +715,7 @@ static int libmp_mapinfo__(int flags, mapid_t id, mapinfo_t info, const char *ma
 	if (info.target || info.status || info.size || flags & MAPINFO_TGT_TYPE__) {
 		if (dm_get_next_target(dmt, NULL, &start, &length,
 				       &target_type, &params) != NULL) {
-			condlog(2, "%s: map %s has multiple targets", fname__, map_id);
+			condlog(3, "%s: map %s has multiple targets", fname__, map_id);
 			return DMP_NOT_FOUND;
 		}
 		if (!params) {
@@ -1262,10 +1259,8 @@ int dm_get_maps(vector mp)
 			}
 			vector_set_slot(mp, mpp);
 			break;
-		case DMP_NO_MATCH:
-			break;
 		default:
-			return 1;
+			break;
 		}
 		next = names->next;
 		names = (void *) names + next;

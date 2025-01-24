@@ -259,8 +259,11 @@ msort_r (void *b, size_t n, size_t s, __compar_d_fn_t cmp, void *arg)
  * If this is safe for them, it should be for us, too.
  */
 #pragma GCC diagnostic push
-#if __GNUC__ >= 8
+#if __GNUC__ >= 8 || __clang_major__ >= 19
 #pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
+#if __clang_major__ >= 19
+#pragma GCC diagnostic ignored "-Wcast-function-type-mismatch"
 #endif
 void
 msort (void *b, size_t n, size_t s, __compar_fn_t cmp)

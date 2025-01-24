@@ -367,7 +367,8 @@ int need_io_err_check(struct path *pp)
 		return 1;
 	get_monotonic_time(&curr_time);
 	if ((curr_time.tv_sec - pp->io_err_dis_reinstate_time) >
-	    pp->mpp->marginal_path_err_recheck_gap_time) {
+	    pp->mpp->marginal_path_err_recheck_gap_time ||
+            pp->io_err_dis_reinstate_time == 0) {
 		io_err_stat_log(4, "%s: reschedule checking after %d seconds",
 				pp->dev,
 				pp->mpp->marginal_path_err_recheck_gap_time);

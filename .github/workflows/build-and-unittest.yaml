@@ -5,10 +5,12 @@ on:
       - master
       - queue
       - tip
+      - 'stable-*'
   pull_request:
     branches:
       - master
       - queue
+      - 'stable-*'
 jobs:
   jammy:
     runs-on: ubuntu-22.04

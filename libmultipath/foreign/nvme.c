@@ -675,7 +675,8 @@ static void _find_controllers(struct context *ctx, struct nvme_map *map)
 	pthread_cleanup_push_cast(free_scandir_result, &sr);
 	for (i = 0; i < r; i++) {
 		char *fn = di[i]->d_name;
-		struct udev_device *ctrl, *udev;
+		struct udev_device *ctrl;
+		struct udev_device *udev __attribute__((cleanup(cleanup_udev_device))) = NULL;
 
 		if (safe_snprintf(pathbuf + n, sizeof(pathbuf) - n, "/%s", fn))
 			continue;
@@ -719,11 +720,11 @@ static void _find_controllers(struct context *ctx, struct nvme_map *map)
 			continue;
 
 		path->gen.ops = &nvme_path_ops;
-		path->udev = udev;
+		path->udev = steal_ptr(udev);
 		path->seen = true;
 		path->map = map;
 		path->ctl = udev_device_get_parent_with_subsystem_devtype
-			(udev, "nvme", NULL);
+			(path->udev, "nvme", NULL);
 		if (path->ctl == NULL) {
 			condlog(1, "%s: %s: failed to get controller for %s",
 				__func__, THIS, fn);
@@ -744,7 +745,7 @@ static void _find_controllers(struct context *ctx, struct nvme_map *map)
 		}
 		vector_set_slot(&map->pgvec, &path->pg);
 		condlog(3, "%s: %s: new path %s added to %s",
-			__func__, THIS, udev_device_get_sysname(udev),
+			__func__, THIS, udev_device_get_sysname(path->udev),
 			udev_device_get_sysname(map->udev));
 	}
 	pthread_cleanup_pop(1);
