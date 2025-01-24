@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_28.0.0 {
+LIBMULTIPATH_29.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -68,6 +68,8 @@ global:
 	cleanup_bindings;
 	cleanup_lock;
 	cleanup_multipath_and_paths;
+	cleanup_udev_device_ptr;
+	cleanup_udev_enumerate_ptr;
 	coalesce_paths;
 	count_active_paths;
 	delete_all_foreign;
@@ -244,9 +246,3 @@ global:
 local:
 	*;
 };
-
-LIBMULTIPATH_28.1.0 {
-global:
-	cleanup_udev_enumerate_ptr;
-	cleanup_udev_device_ptr;
-} LIBMULTIPATH_28.0.0;
