@@ -127,6 +127,8 @@ fail:
 int group_paths(struct multipath *mp, int marginal_pathgroups)
 {
 	vector normal, marginal;
+	struct path *pp;
+	int i;
 
 	if (!mp->pg)
 		mp->pg = vector_alloc();
@@ -137,6 +139,10 @@ int group_paths(struct multipath *mp, int marginal_pathgroups)
 		goto out;
 	if (!mp->pgpolicyfn)
 		goto fail;
+
+	/* Reset pgindex, we're going to invalidate it */
+	vector_foreach_slot(mp->paths, pp, i)
+		pp->pgindex = 0;
 
 	if (!marginal_pathgroups ||
 	    split_marginal_paths(mp->paths, &normal, &marginal) != 0) {

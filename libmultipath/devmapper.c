@@ -537,7 +537,7 @@ static uint16_t build_udev_flags(const struct multipath *mpp, int reload)
 		 MPATH_UDEV_RELOAD_FLAG : 0);
 }
 
-int dm_addmap_create (struct multipath *mpp, char * params)
+int dm_addmap_create (struct multipath *mpp, char *params)
 {
 	int ro;
 	uint16_t udev_flags = build_udev_flags(mpp, 0);
@@ -547,9 +547,7 @@ int dm_addmap_create (struct multipath *mpp, char * params)
 
 		if (dm_addmap(DM_DEVICE_CREATE, TGT_MPATH, mpp, params, ro,
 			      udev_flags)) {
-			if (unmark_failed_wwid(mpp->wwid) ==
-			    WWID_FAILED_CHANGED)
-				mpp->needs_paths_uevent = 1;
+			unmark_failed_wwid(mpp->wwid);
 			return 1;
 		}
 		/*
@@ -570,8 +568,7 @@ int dm_addmap_create (struct multipath *mpp, char * params)
 			break;
 		}
 	}
-	if (mark_failed_wwid(mpp->wwid) == WWID_FAILED_CHANGED)
-		mpp->needs_paths_uevent = 1;
+	mark_failed_wwid(mpp->wwid);
 	return 0;
 }
 

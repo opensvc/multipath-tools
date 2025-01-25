@@ -426,6 +426,11 @@ compute_pgid(struct pathgroup * pgp)
 		pgp->id ^= (long)pp;
 }
 
+static void cleanup_bitfield(struct bitfield **p)
+{
+	free(*p);
+}
+
 static int
 pgcmp (struct multipath * mpp, struct multipath * cmpp)
 {
@@ -433,9 +438,17 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 	struct pathgroup * pgp;
 	struct pathgroup * cpgp;
 	int r = 0;
+	struct bitfield *bf __attribute__((cleanup(cleanup_bitfield))) = NULL;
 
 	if (!mpp)
 		return 0;
+
+	if (VECTOR_SIZE(mpp->pg) != VECTOR_SIZE(cmpp->pg))
+		return 1;
+
+	bf = alloc_bitfield(VECTOR_SIZE(cmpp->pg));
+	if (!bf)
+		return 1;
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		compute_pgid(pgp);
@@ -443,6 +456,7 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 		vector_foreach_slot (cmpp->pg, cpgp, j) {
 			if (pgp->id == cpgp->id &&
 			    !pathcmp(pgp, cpgp)) {
+				set_bit_in_bitfield(j, bf);
 				r = 0;
 				break;
 			}
@@ -450,6 +464,10 @@ pgcmp (struct multipath * mpp, struct multipath * cmpp)
 		}
 		if (r)
 			return r;
+	}
+	vector_foreach_slot (cmpp->pg, cpgp, j) {
+		if (!is_bit_set_in_bitfield(j, bf))
+			return 1;
 	}
 	return r;
 }
@@ -563,8 +581,6 @@ trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
 		vector_foreach_slot(pgp->paths, pp, j)
 			trigger_path_udev_change(pp, is_mpath);
 	}
-
-	mpp->needs_paths_uevent = 0;
 }
 
 static int sysfs_set_max_sectors_kb(struct multipath *mpp)
@@ -955,10 +971,10 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		 * succeeded
 		 */
 		mpp->force_udev_reload = 0;
-		if (mpp->action == ACT_CREATE &&
-		    (remember_wwid(mpp->wwid) == 1 ||
-		     mpp->needs_paths_uevent))
+		if (mpp->action == ACT_CREATE) {
+			remember_wwid(mpp->wwid);
 			trigger_paths_udev_change(mpp, true);
+		}
 		if (!is_daemon) {
 			/* multipath client mode */
 			dm_switchgroup(mpp->alias, mpp->bestpg);
@@ -983,8 +999,7 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		}
 		dm_setgeometry(mpp);
 		return DOMAP_OK;
-	} else if (r == DOMAP_FAIL && mpp->action == ACT_CREATE &&
-		   mpp->needs_paths_uevent)
+	} else if (r == DOMAP_FAIL && mpp->action == ACT_CREATE)
 		trigger_paths_udev_change(mpp, false);
 
 	return DOMAP_FAIL;

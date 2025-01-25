@@ -129,7 +129,7 @@ static void free_pre(void *arg)
 static int _init_foreign(const char *enable)
 {
 	char pathbuf[PATH_MAX];
-	struct dirent **di;
+	struct dirent **di = NULL;
 	struct scandir_result sr;
 	int r, i;
 	regex_t *enable_re = NULL;

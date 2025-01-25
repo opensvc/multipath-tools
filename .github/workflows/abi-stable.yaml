@@ -15,12 +15,16 @@ on:
 
 jobs:
   reference-abi:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: get parent tag
         run: >
           echo ${{ github.ref }} |
           sed -E 's,refs/heads/stable-([0-9]\.[0-9]*)\.y,PARENT_TAG=\1.0,' >> $GITHUB_ENV
+        if: ${{ github.event_name == 'push' }}
+      - name: get parent tag
+        run: echo PARENT_TAG=${{ github.base_ref }} >> $GITHUB_ENV
+        if: ${{ github.event_name == 'pull_request' }}
       - name: assert parent tag
         run: /bin/false
         if: ${{ env.PARENT_TAG == '' }}
@@ -45,20 +49,24 @@ jobs:
           path: abi
 
   check-abi:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: reference-abi
     steps:
       - name: get parent tag
         run: >
           echo ${{ github.ref }} |
           sed -E 's,refs/heads/stable-([0-9]\.[0-9]*)\.y,PARENT_TAG=\1.0,' >> $GITHUB_ENV
+        if: ${{ github.event_name == 'push' }}
+      - name: get parent tag
+        run: echo PARENT_TAG=${{ github.base_ref }} >> $GITHUB_ENV
+        if: ${{ github.event_name == 'pull_request' }}
       - name: assert parent tag
         run: /bin/false
         if: ${{ env.PARENT_TAG == '' }}
-      - name: checkout ${{ env.PARENT_TAG }}
+      - name: checkout ${{ github.base_ref }}
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.PARENT_TAG }}
+          ref: ${{ github.base_ref }}
       - name: download ABI for ${{ env.PARENT_TAG }}
         id: download_abi
         uses: actions/download-artifact@v4
