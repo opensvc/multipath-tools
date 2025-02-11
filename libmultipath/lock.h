@@ -2,6 +2,7 @@
 #define LOCK_H_INCLUDED
 
 #include <pthread.h>
+#include <urcu.h>
 #include <urcu/uatomic.h>
 #include <stdbool.h>
 

@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <urcu.h>
 #include <urcu/uatomic.h>
 
 #include "checkers.h"
