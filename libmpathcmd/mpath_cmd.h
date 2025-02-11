@@ -30,7 +30,6 @@
 extern "C" {
 #endif
 
-#define DEFAULT_SOCKET		"/org/kernel/linux/storage/multipathd"
 #define DEFAULT_REPLY_TIMEOUT	4000
 
 
