@@ -80,6 +80,7 @@ kernel_incdir	:= /usr/include
 sysdir_bin      := $(sys_execprefix)bin
 
 abstract_socket := @/org/kernel/linux/storage/multipathd
+pathname_socket := /run/multipathd.socket
 
 ifeq ($(V),)
 Q		:= @
@@ -172,5 +173,6 @@ NV_VERSION_SCRIPT = $(DEVLIB:%.so=%-nv.version)
 		-e 's:@SYSDIR_BIN@:'$(sysdir_bin)': g' \
 		-e 's:@RUNTIME_DIR@:'$(runtimedir)':g' \
 		-e 's/@MODPROBE_UNIT@/'$(MODPROBE_UNIT)'/g' \
-		-e 's,@MPATH_SOCKET@,'$(abstract_socket)',g' \
+		-e 's,@ABSTRACT_SOCKET@,'$(abstract_socket)',g' \
+		-e 's,@PATHNAME_SOCKET@,'$(pathname_socket)',g' \
 		$< >$@
