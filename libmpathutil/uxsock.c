@@ -46,22 +46,7 @@ int ux_socket_listen(const char *name)
 {
 	int fd;
 	size_t len;
-#ifdef USE_SYSTEMD
-	int num;
-#endif
 	struct sockaddr_un addr;
-
-#ifdef USE_SYSTEMD
-	num = sd_listen_fds(0);
-	if (num > 1) {
-		condlog(3, "sd_listen_fds returned %d fds", num);
-		return -1;
-	} else if (num == 1) {
-		fd = SD_LISTEN_FDS_START + 0;
-		condlog(3, "using fd %d from sd_listen_fds", fd);
-		return fd;
-	}
-#endif
 
 	/* This is after the PID check, so unlinking should be fine */
 	if (name[0] != '@' && unlink(name) == -1 && errno != ENOENT)
