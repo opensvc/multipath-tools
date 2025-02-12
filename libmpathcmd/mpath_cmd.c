@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -104,6 +105,7 @@ int mpath_connect__(int nonblocking)
 	int flags = 0;
 	const char *const names[2] = {PATHNAME_SOCKET, ABSTRACT_SOCKET};
 	int name_idx = 0;
+	const char *env_name = getenv("MULTIPATH_SOCKET_NAME"), *name;
 
 retry:
 	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
@@ -116,12 +118,13 @@ retry:
 			(void)fcntl(fd, F_SETFL, flags|O_NONBLOCK);
 	}
 
-	len = mpath_fill_sockaddr__(&addr, names[name_idx]);
+	name = env_name ? env_name : names[name_idx];
+	len = mpath_fill_sockaddr__(&addr, name);
 	if (connect(fd, (struct sockaddr *)&addr, len) == -1) {
 		int err = errno;
 
 		close(fd);
-		if (++name_idx == 1)
+		if (name != env_name && ++name_idx == 1)
 			goto retry;
 		else {
 			errno = err;
