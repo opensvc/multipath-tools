@@ -614,7 +614,7 @@ static void handle_client(struct client *c, struct vectors *vecs, short revents)
 /*
  * entry point
  */
-void *uxsock_listen(long ux_sock, void *trigger_data)
+void *uxsock_listen(int n_socks, long *ux_sock, void *trigger_data)
 {
 	sigset_t mask;
 	int max_pfds = MIN_POLLS + POLLFDS_BASE;
@@ -623,6 +623,11 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 	struct watch_descriptors wds = { .conf_wd = -1, .dir_wd = -1, .mp_wd = -1, };
 	struct vectors *vecs = trigger_data;
 
+	if (n_socks != 1) {
+		condlog(0, "uxsock: no socket fds");
+		exit_daemon();
+		return NULL;
+	}
 	condlog(3, "uxsock: startup listener");
 	polls = calloc(1, max_pfds * sizeof(*polls));
 	if (!polls) {
@@ -673,7 +678,7 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 			}
 		}
 		if (num_clients < MAX_CLIENTS) {
-			polls[POLLFD_UX].fd = ux_sock;
+			polls[POLLFD_UX].fd = ux_sock[0];
 			polls[POLLFD_UX].events = POLLIN;
 		} else {
 			/*
@@ -767,7 +772,7 @@ void *uxsock_listen(long ux_sock, void *trigger_data)
 
 		/* see if we got a new client */
 		if (polls[POLLFD_UX].revents & POLLIN) {
-			new_client(ux_sock);
+			new_client(ux_sock[0]);
 		}
 
 		/* handle inotify events on config files */

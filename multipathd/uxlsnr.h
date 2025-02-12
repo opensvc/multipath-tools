@@ -5,7 +5,6 @@
 
 bool waiting_clients(void);
 void uxsock_cleanup(void *arg);
-void *uxsock_listen(long ux_sock,
-		    void * trigger_data);
+void *uxsock_listen(int n_socks, long *ux_sock, void *trigger_data);
 
 #endif
