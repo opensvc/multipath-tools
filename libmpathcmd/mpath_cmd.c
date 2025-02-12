@@ -113,7 +113,7 @@ int mpath_connect__(int nonblocking)
 			(void)fcntl(fd, F_SETFL, flags|O_NONBLOCK);
 	}
 
-	len = mpath_fill_sockaddr__(&addr, DEFAULT_SOCKET);
+	len = mpath_fill_sockaddr__(&addr, ABSTRACT_SOCKET);
 	if (connect(fd, (struct sockaddr *)&addr, len) == -1) {
 		int err = errno;
 
