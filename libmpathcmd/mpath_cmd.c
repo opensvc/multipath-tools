@@ -102,7 +102,10 @@ int mpath_connect__(int nonblocking)
 	size_t len;
 	struct sockaddr_un addr;
 	int flags = 0;
+	const char *const names[2] = {PATHNAME_SOCKET, ABSTRACT_SOCKET};
+	int name_idx = 0;
 
+retry:
 	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
 	if (fd == -1)
 		return -1;
@@ -113,13 +116,17 @@ int mpath_connect__(int nonblocking)
 			(void)fcntl(fd, F_SETFL, flags|O_NONBLOCK);
 	}
 
-	len = mpath_fill_sockaddr__(&addr, ABSTRACT_SOCKET);
+	len = mpath_fill_sockaddr__(&addr, names[name_idx]);
 	if (connect(fd, (struct sockaddr *)&addr, len) == -1) {
 		int err = errno;
 
 		close(fd);
-		errno = err;
-		return -1;
+		if (++name_idx == 1)
+			goto retry;
+		else {
+			errno = err;
+			return -1;
+		}
 	}
 
 	if (nonblocking && flags != -1)
