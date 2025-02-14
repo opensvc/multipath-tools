@@ -6,12 +6,15 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/un.h>
 #include <poll.h>
 #include <signal.h>
@@ -32,6 +35,8 @@
  */
 static int _recv_packet(int fd, char **buf, unsigned int timeout,
 			ssize_t limit);
+
+#include "../libmpathcmd/mpath_fill_sockaddr.c"
 
 /*
  * create a unix domain socket and start listening on it
@@ -63,15 +68,7 @@ int ux_socket_listen(const char *name)
 		return -1;
 	}
 
-	memset(&addr, 0, sizeof(addr));
-	addr.sun_family = AF_LOCAL;
-	addr.sun_path[0] = '\0';
-	len = strlen(name) + 1;
-	if (len >= sizeof(addr.sun_path))
-		len = sizeof(addr.sun_path) - 1;
-	memcpy(&addr.sun_path[1], name, len);
-
-	len += sizeof(sa_family_t);
+	len = mpath_fill_sockaddr__(&addr, name);
 	if (bind(fd, (struct sockaddr *)&addr, len) == -1) {
 		condlog(3, "Couldn't bind to ux_socket, error %d", errno);
 		close(fd);

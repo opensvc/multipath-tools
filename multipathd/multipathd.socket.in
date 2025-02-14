@@ -7,7 +7,7 @@ ConditionVirtualization=!container
 Before=sockets.target
 
 [Socket]
-ListenStream=@/org/kernel/linux/storage/multipathd
+ListenStream=@MPATH_SOCKET@
 
 [Install]
 # Socket activation for multipathd is disabled by default.

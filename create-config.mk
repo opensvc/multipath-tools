@@ -191,6 +191,7 @@ $(TOPDIR)/config.mk:	$(multipathdir)/autoconfig.h
 	@echo "ERROR_DISCARDED_QUALIFIERS := $(call TEST_CC_OPTION,-Werror=discarded-qualifiers,)" >>$@
 	@echo "WNOCLOBBERED := $(call TEST_CC_OPTION,-Wno-clobbered -Wno-error=clobbered,)" >>$@
 	@echo "WFORMATOVERFLOW := $(call TEST_CC_OPTION,-Wformat-overflow=2,)" >>$@
+	@echo "WSTRINGOP_TRUNCATION := $(call TEST_CC_OPTION,-Wstringop-truncation)" >>$@
 	@echo "W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)" >>$@
 	@echo "W_URCU_TYPE_LIMITS := $(call TEST_URCU_TYPE_LIMITS)" >>$@
 	@echo "ENABLE_LIBDMMP := $(ENABLE_LIBDMMP)" >>$@
