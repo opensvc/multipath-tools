@@ -62,6 +62,11 @@ int ux_socket_listen(const char *name)
 		return fd;
 	}
 #endif
+
+	/* This is after the PID check, so unlinking should be fine */
+	if (name[0] != '@' && unlink(name) == -1 && errno != ENOENT)
+		condlog(1, "Failed to unlink %s", name);
+
 	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
 	if (fd == -1) {
 		condlog(3, "Couldn't create ux_socket, error %d", errno);
@@ -74,6 +79,14 @@ int ux_socket_listen(const char *name)
 		close(fd);
 		return -1;
 	}
+
+	/*
+	 * Socket needs to have rw permissions for everone.
+	 * SO_PEERCRED makes sure that only root can modify things.
+	 */
+	if (name[0] != '@' &&
+	    chmod(name, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) == -1)
+		condlog(3, "failed to set permissions on %s: %s", name, strerror(errno));
 
 	if (listen(fd, 10) == -1) {
 		condlog(3, "Couldn't listen to ux_socket, error %d", errno);
