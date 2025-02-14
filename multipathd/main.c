@@ -1895,11 +1895,16 @@ uxlsnrloop (void * ap)
 {
 	long ux_sock[2] = {-1, -1};
 	int num;
+	const char *env_name = getenv("MULTIPATH_SOCKET_NAME");
 
 	pthread_cleanup_push(rcu_unregister, NULL);
 	rcu_register_thread();
 
 	num = get_systemd_sockets(ux_sock);
+	if (num < 1 && env_name != NULL) {
+		ux_sock[0] = ux_socket_listen(env_name);
+		num = 1;
+	}
 	if (num < 1) {
 		ux_sock[0] = ux_socket_listen(ABSTRACT_SOCKET);
 		ux_sock[1] = ux_socket_listen(PATHNAME_SOCKET);
