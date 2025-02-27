@@ -41,7 +41,7 @@ ifeq ($(FPIN_SUPPORT),1)
 OBJS += fpin_handlers.o
 endif
 
-all : $(EXEC) $(CLI) $(MANPAGES) $(EXEC).service $(EXEC).socket
+all : $(EXEC) $(CLI) $(MANPAGES) $(EXEC).service $(EXEC).socket $(EXEC)-queueing.service
 
 $(EXEC): $(OBJS) $(multipathdir)/libmultipath.so $(mpathcmddir)/libmpathcmd.so
 	@echo building $@ because of $?
@@ -64,6 +64,7 @@ install:
 ifdef SYSTEMD
 	$(Q)$(INSTALL_PROGRAM) -d $(DESTDIR)$(unitdir)
 	$(Q)$(INSTALL_PROGRAM) -m 644 $(EXEC).service $(DESTDIR)$(unitdir)
+	$(Q)$(INSTALL_PROGRAM) -m 644 $(EXEC)-queueing.service $(DESTDIR)$(unitdir)
 	$(Q)$(INSTALL_PROGRAM) -m 644 $(EXEC).socket $(DESTDIR)$(unitdir)
 endif
 	$(Q)$(INSTALL_PROGRAM) -d $(DESTDIR)$(mandir)/man8
@@ -74,11 +75,12 @@ uninstall:
 	$(Q)$(RM) $(DESTDIR)$(bindir)/$(EXEC) $(DESTDIR)$(bindir)/$(CLI)
 	$(Q)$(RM) $(DESTDIR)$(mandir)/man8/$(EXEC).8
 	$(Q)$(RM) $(DESTDIR)$(mandir)/man8/$(CLI).8
+	$(Q)$(RM) $(DESTDIR)$(unitdir)/$(EXEC)-queueing.service
 	$(Q)$(RM) $(DESTDIR)$(unitdir)/$(EXEC).service
 	$(Q)$(RM) $(DESTDIR)$(unitdir)/$(EXEC).socket
 
 clean: dep_clean
-	$(Q)$(RM) core *.o $(EXEC) $(CLI) $(MANPAGES) $(EXEC).service $(EXEC).socket
+	$(Q)$(RM) core *.o $(EXEC) $(CLI) $(MANPAGES) $(EXEC).service $(EXEC)-queueing.service $(EXEC).socket
 
 include $(wildcard $(OBJS:.o=.d) $(CLI_OBJS:.o=.d))
 

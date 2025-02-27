@@ -142,6 +142,7 @@ NOSCAN
 Nosync
 nvme
 OBJDEPS
+oneshot
 ontap
 OOM
 opensvc
