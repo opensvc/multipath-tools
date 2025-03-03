@@ -730,7 +730,7 @@ void set_no_path_retry(struct multipath *mpp)
 }
 
 void
-sync_map_state(struct multipath *mpp)
+sync_map_state(struct multipath *mpp, bool reinstate_only)
 {
 	struct pathgroup *pgp;
 	struct path *pp;
@@ -752,7 +752,8 @@ sync_map_state(struct multipath *mpp)
 			     pp->dmstate == PSTATE_UNDEF) &&
 			    (pp->state == PATH_UP || pp->state == PATH_GHOST))
 				dm_reinstate_path(mpp->alias, pp->dev_t);
-			else if ((pp->dmstate == PSTATE_ACTIVE ||
+			else if (!reinstate_only &&
+				 (pp->dmstate == PSTATE_ACTIVE ||
 				  pp->dmstate == PSTATE_UNDEF) &&
 				 (pp->state == PATH_DOWN ||
 				  pp->state == PATH_SHAKY)) {

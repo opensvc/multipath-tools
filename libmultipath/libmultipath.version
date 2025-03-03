@@ -153,7 +153,6 @@ global:
 	print_all_paths;
 	print_foreign_topology;
 	print_multipath_topology__;
-	reinstate_paths;
 	remember_wwid;
 	remove_feature;
 	remove_map;

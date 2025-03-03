@@ -210,7 +210,7 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 			print_multipath_topology(mpp, libmp_verbosity);
 
 		if (cmd == CMD_CREATE)
-			reinstate_paths(mpp);
+			sync_map_state(mpp, true);
 	}
 
 	if (cmd == CMD_LIST_SHORT || cmd == CMD_LIST_LONG)

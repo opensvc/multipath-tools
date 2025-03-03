@@ -688,7 +688,7 @@ fail:
 	if (setup_multipath(vecs, mpp))
 		return 1;
 
-	sync_map_state(mpp);
+	sync_map_state(mpp, false);
 
 	if (mpp->prflag != PRFLAG_SET)
 		update_map_pr(mpp);
@@ -806,7 +806,7 @@ sync_maps_state(vector mpvec)
 	struct multipath *mpp;
 
 	vector_foreach_slot (mpvec, mpp, i)
-		sync_map_state(mpp);
+		sync_map_state(mpp, false);
 }
 
 int
@@ -1344,7 +1344,7 @@ rescan:
 	if (setup_multipath(vecs, mpp))
 		goto fail; /* if setup_multipath fails, it removes the map */
 
-	sync_map_state(mpp);
+	sync_map_state(mpp, false);
 
 	if (retries >= 0) {
 		if (start_waiter)
@@ -1464,7 +1464,7 @@ ev_remove_path (struct path *pp, struct vectors * vecs, int need_do_map)
 		strlcpy(devt, pp->dev_t, sizeof(devt));
 		if (setup_multipath(vecs, mpp))
 			return REMOVE_PATH_MAP_ERROR;
-		sync_map_state(mpp);
+		sync_map_state(mpp, false);
 
 		if (retval == REMOVE_PATH_SUCCESS)
 			condlog(2, "%s: path removed from map %s",
@@ -1558,7 +1558,7 @@ int resize_map(struct multipath *mpp, unsigned long long size,
 out:
 	if (setup_multipath(vecs, mpp) != 0)
 		return 2;
-	sync_map_state(mpp);
+	sync_map_state(mpp, false);
 
 	return ret;
 }
@@ -2274,7 +2274,7 @@ int reload_and_sync_map(struct multipath *mpp, struct vectors *vecs)
 		ret = 1;
 	if (setup_multipath(vecs, mpp) != 0)
 		return 2;
-	sync_map_state(mpp);
+	sync_map_state(mpp, false);
 
 	return ret;
 }
