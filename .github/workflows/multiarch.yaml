@@ -49,7 +49,9 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: enable foreign arch
-        uses: dbhi/qus/action@main
+        uses: docker/setup-qemu-action@v2
+        with:
+          image: tonistiigi/binfmt:latest
       - name: compile and run unit tests
         uses: mosteo-actions/docker-run@v1
         with:
