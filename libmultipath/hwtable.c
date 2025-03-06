@@ -97,8 +97,6 @@ static struct hwentry default_hw[] = {
 	},
 	/*
 	 * Apple
-	 *
-	 * Maintainer: Shyam Sundar <g.shyamsundar@yahoo.co.in>
 	 */
 	{
 		/* Xserve RAID */
@@ -827,8 +825,6 @@ static struct hwentry default_hw[] = {
 	{
 		/*
 		 * SolidFir family
-		 *
-		 * Maintainer: PJ Waskiewicz <pj.waskiewicz@netapp.com>
 		 */
 		.vendor        = "SolidFir",
 		.product       = "SSD SAN",
@@ -857,8 +853,6 @@ static struct hwentry default_hw[] = {
 	 */
 		/*
 		 * Pillar Data / Oracle FS
-		 *
-		 * Maintainer: Srinivasan Ramani <srinivas.ramani@oracle.com>
 		 */
 	{
 		/* Axiom */
@@ -1123,8 +1117,6 @@ static struct hwentry default_hw[] = {
 	},
 	/*
 	 * Infinidat
-	 *
-	 * Maintainer: Arnon Yaari <arnony@infinidat.com>
 	 */
 	{
 		/* InfiniBox */
