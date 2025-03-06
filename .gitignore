@@ -25,6 +25,7 @@ multipathd/multipathd.8
 multipathd/multipathc
 multipathd/multipathd.service
 multipathd/multipathd.socket
+multipathd/multipathd-queueing.service
 mpathpersist/mpathpersist
 mpathpersist/mpathpersist.8
 abi.tar.gz
