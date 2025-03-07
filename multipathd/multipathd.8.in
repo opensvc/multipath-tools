@@ -81,6 +81,11 @@ multipathd executes the given command (see \fBCOMMANDS\fR below). If the
 command contains whitespace or shell special characters, it needs to be quoted
 like in \fImultipathd -k'show topology'\fR. No whitespace is allowed between
 the \fB-k\fR and the command string.
+
+Commands can also be issued without using \fB-k\fR. In this case, the command
+string should not be quoted. Command arguments that contain whitespace or
+special characters still need to be quoted, like in \fImultipathd show paths
+format "%n %w"\fR
 .
 .TP
 .B \-k
@@ -100,6 +105,32 @@ Since kernel 4.14 a new device-mapper event polling interface is used for updati
 multipath devices on dmevents. Use this flag to force it to use the old event
 waiting method, based on creating a separate thread for each device.
 .
+.
+.\" ----------------------------------------------------------------------------
+.SH COMMUNICATING WITH MULTIPATHD
+.\" ----------------------------------------------------------------------------
+
+In addition to the multipathd CLI, the \fBlibmpathcmd\fR library can be used to
+send commands (see \fBCOMMANDS\fR below) to the multipathd daemon from other
+programs. By default, multipathd listens on both the \fI@ABSTRACT_SOCKET@\fR
+abstract namespace socket and the \fI@PATHNAME_SOCKET@\fR socket file.
+libmpathcmd will use either of these sockets to connect to multipathd. The
+socket file can be useful to communicate with multipathd from different
+namespaces since it can be bind mounted in them, unlike the abstract namespace
+socket. Multipathd will accept \fBlist|show\fR commands from any user. All
+other commands must be issued by root.
+
+It is possible to change the sockets that multipathd listens on. If
+\fImultipathd.socket\fR is running, multipathd will use the sockets it listens
+on.  A maximum of two sockets can be defined by \fImultipathd.socket\fR, and by
+default it listens on \fI@ABSTRACT_SOCKET@\fR and \fI@PATHNAME_SOCKET@\fR. If
+\fImultipathd.socket\fR is not running, a single socket can be configured for
+listening on by setting the \fIMULTIPATH_SOCKET_NAME\fR environment variable
+when starting multipathd. This environment variable must also be set to make
+multipathd CLI commands (or any other program using libmpathcmd) connect to the
+multipathd daemon using a non-default socket, regardless of whether that socket
+was set for the daemon using \fImultipathd.socket\fR or the
+\fIMULTIPATH_SOCKET_NAME\fR environment variable.
 .
 .
 .\" ----------------------------------------------------------------------------
