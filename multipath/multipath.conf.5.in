@@ -1214,7 +1214,7 @@ Both multipathd and multipath treat every non-blacklisted device as multipath
 device path.
 .TP
 .I smart
-This differs from \fIfind_multipaths yes\fR only in
+This differs from \fIfind_multipaths on\fR only in
 the way it treats new devices for which only one path has been
 detected yet. When such a device is first encountered in udev rules, it is
 treated as a multipath device. multipathd waits whether additional paths with
