@@ -739,9 +739,7 @@ int select_recheck_wwid(struct config *conf, struct path * pp)
 	pp_set_conf(recheck_wwid);
 	pp_set_default(recheck_wwid, DEFAULT_RECHECK_WWID);
 out:
-	if (pp->recheck_wwid == RECHECK_WWID_ON &&
-	    (pp->bus != SYSFS_BUS_SCSI ||
-	     !has_uid_fallback(pp))) {
+	if (pp->recheck_wwid == RECHECK_WWID_ON && !can_recheck_wwid(pp)) {
 		pp->recheck_wwid = RECHECK_WWID_OFF;
 		origin = "(setting: unsupported by device type/config)";
 	}
