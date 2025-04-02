@@ -679,7 +679,7 @@ retry:
 	}
 
 fail:
-	if (new_map && (retries < 0 || wait_for_events(mpp, vecs))) {
+	if (new_map && wait_for_events(mpp, vecs)) {
 		condlog(0, "%s: failed to create new map", mpp->alias);
 		remove_map(mpp, vecs->pathvec, vecs->mpvec);
 		return 1;
