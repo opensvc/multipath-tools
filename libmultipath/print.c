@@ -658,8 +658,11 @@ snprint_path_serial (struct strbuf *buff, const struct path * pp)
 static int
 snprint_path_mpp (struct strbuf *buff, const struct path * pp)
 {
-	if (!pp->mpp)
+	if (!pp->mpp) {
+		if (pp->add_when_online)
+			return append_strbuf_str(buff, "[offline]");
 		return append_strbuf_str(buff, "[orphan]");
+	}
 	if (!pp->mpp->alias)
 		return append_strbuf_str(buff, "[unknown]");
 	return snprint_str(buff, pp->mpp->alias);

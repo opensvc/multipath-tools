@@ -595,8 +595,9 @@ The device serial number.
 The device marginal state, either \fImarginal\fR or \fInormal\fR.
 .TP
 .B %m
-The multipath device that this device is a path of, or \fI[orphan]\fR if
-it is not part of any multipath device.
+The multipath device that this device is a path of, or \fI[offline]\fR
+if this device could not be added to a device because it is offline or
+\fI[orphan]\fR if it is not part of any multipath device.
 .TP
 .B %N
 The host World Wide Node Name (WWNN) of the device, if any.

@@ -389,6 +389,9 @@ static void orphan_paths(vector pathvec, struct multipath *mpp, const char *reas
 				free_path(pp);
 			} else
 				orphan_path(pp, reason);
+		} else if (pp->add_when_online &&
+			   strncmp(mpp->wwid, pp->wwid, WWID_SIZE) == 0) {
+			pp->add_when_online = false;
 		}
 	}
 }
@@ -595,6 +598,8 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 		found = 0;
 		vector_foreach_slot(mpp->pg, pgp, j) {
 			if (find_slot(pgp->paths, (void *)pp) != -1) {
+				if (pp->add_when_online)
+					pp->add_when_online = false;
 				found = 1;
 				break;
 			}
