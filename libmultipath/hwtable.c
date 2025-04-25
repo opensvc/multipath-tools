@@ -1357,6 +1357,36 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	/*
+	 * Quantum
+	 */
+	{
+		/* StorNext family */
+		.vendor        = "Quantum",
+		.product       = "(StorNext QX|QXS)",
+		.bl_product    = "cvfsctl",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 18,
+	},
+	{
+		/* F-Series */
+		.vendor        = "QUANTUM",
+		.product       = "^(F|P|H)[24]",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 30,
+	},
+	{
+		/* F1000 */
+		.vendor        = "QUANTUM",
+		.product       = "^F1",
+		.pgpolicy      = GROUP_BY_SERIAL,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 30,
+	},
+	/*
 	 * EOL
 	 */
 	{
