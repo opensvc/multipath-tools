@@ -820,6 +820,10 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 			 * remove all current maps not allowed by the
 			 * current configuration
 			 */
+			ompp->retry_tick = 0;
+			ompp->no_path_retry = NO_PATH_RETRY_FAIL;
+			ompp->disable_queueing = 1;
+			dm_queue_if_no_path(ompp, 0);
 			if (dm_flush_map(ompp->alias) != DM_FLUSH_OK) {
 				condlog(0, "%s: unable to flush devmap",
 					ompp->alias);
