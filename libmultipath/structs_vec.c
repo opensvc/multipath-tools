@@ -205,10 +205,15 @@ static void update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 						must_reload = true;
 						continue;
 					}
-					condlog(2, "%s: adding new path %s",
-						mpp->alias, pp->dev);
-					pp->initialized = INIT_PARTIAL;
-					pp->partial_retrigger_delay = 180;
+					if (rc == PATHINFO_SKIPPED) {
+						condlog(1, "%s: blacklisted path in %s", pp->dev, mpp->alias);
+						set_path_removed(pp);
+						must_reload = true;
+					} else {
+						condlog(2, "%s: adding new path %s", mpp->alias, pp->dev);
+						pp->initialized = INIT_PARTIAL;
+						pp->partial_retrigger_delay = 180;
+					}
 					store_path(pathvec, pp);
 					pp->tick = 1;
 				}

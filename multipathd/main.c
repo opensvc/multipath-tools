@@ -804,6 +804,18 @@ coalesce_maps(struct vectors *vecs, vector nmpv)
 	vector_foreach_slot (ompv, ompp, i) {
 		condlog(3, "%s: coalesce map", ompp->alias);
 		if (!find_mp_by_wwid(nmpv, ompp->wwid)) {
+			struct pathgroup *pgp;
+			struct path *pp;
+			int j, k;
+
+			/*
+			 * set pp->mpp for all the old map's paths,
+			 * so that they can be properly removed
+			 */
+			vector_foreach_slot (ompp->pg, pgp, j)
+				vector_foreach_slot (pgp->paths, pp, k)
+					if (!pp->mpp)
+						pp->mpp = ompp;
 			/*
 			 * remove all current maps not allowed by the
 			 * current configuration
