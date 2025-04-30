@@ -18,7 +18,7 @@ env:
 
 jobs:
   save-and-test-ABI:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: set ABI branch
         if: ${{ env.ABI_BRANCH == '' }}
