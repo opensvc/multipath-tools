@@ -1330,7 +1330,8 @@ static struct hwentry default_hw[] = {
 		/* NeoSapphire */
 		.vendor        = "AStor",
 		.product       = "NeoSapphire",
-		.pgpolicy      = MULTIBUS,
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
 	},
 	/*
