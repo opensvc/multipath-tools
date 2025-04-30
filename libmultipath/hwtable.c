@@ -1349,7 +1349,6 @@ static struct hwentry default_hw[] = {
 		.vendor        = "QUANTUM",
 		.product       = "^F1",
 		.pgpolicy      = GROUP_BY_SERIAL,
-		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.no_path_retry = 30,
 	},
 	/*
