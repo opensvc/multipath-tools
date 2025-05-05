@@ -25,7 +25,7 @@ MAJOR=$1
 MINOR=$2
 UUID=$3
 
-if [ -z "$MAJOR" -o -z "$MINOR" ]; then
+if [ -z "$MAJOR" ] || [ -z "$MINOR" ]; then
     echo "usage: $0 major minor UUID"
     exit 1;
 fi
@@ -53,13 +53,13 @@ fi
 # Set the name of the table. We're only interested in dmraid,
 # multipath, and kpartx tables; everything else is ignored.
 if [ "$dmtbl" = "part" ] ; then
-    dmname=$($DMSETUP info  -c --noheadings -o name -u $dmuuid)
+    dmname=$($DMSETUP info  -c --noheadings -o name -u "$dmuuid")
     echo "DM_MPATH=$dmname"
     # We need the dependencies of the parent table to figure out
     # the type if the parent is a multipath table
     case "$dmuuid" in
 	mpath-*)
-	    dmdeps=$($DMSETUP deps -u $dmuuid)
+	    dmdeps=$($DMSETUP deps -u "$dmuuid")
 	    dmserial=${dmuuid#mpath-}
 	    ;;
     esac
@@ -67,7 +67,7 @@ elif [ "$dmtbl" = "mpath" ] ; then
     dmname="$dmuuid"
     dmserial="$dmuuid"
     # We need the dependencies of the table to figure out the type
-    dmdeps=$($DMSETUP deps -u $UUID)
+    dmdeps=$($DMSETUP deps -u "$UUID")
 fi
 
 [ -n "$dmpart" ] && echo "DM_PART=$dmpart"
