@@ -569,7 +569,7 @@ int nvme_feature(int fd, __u8 opcode, __u32 nsid, __u32 cdw10, __u32 cdw11,
 int nvme_set_feature(int fd, __u32 nsid, __u8 fid, __u32 value, __u32 cdw12,
 		     bool save, __u32 data_len, void *data, __u32 *result)
 {
-	__u32 cdw10 = fid | (save ? 1 << 31 : 0);
+	__u32 cdw10 = fid | (save ? 1U << 31 : 0);
 
 	return nvme_feature(fd, nvme_admin_set_features, nsid, cdw10, value,
 			    cdw12, data_len, data, result);
