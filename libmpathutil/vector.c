@@ -139,19 +139,6 @@ vector_del_slot(vector v, int slot)
 	}
 }
 
-void
-vector_repack(vector v)
-{
-	int i;
-
-	if (!v || !v->allocated)
-		return;
-
-	for (i = 0; i < VECTOR_SIZE(v); i++)
-		if (i > 0 && v->slot[i] == NULL)
-			vector_del_slot(v, i--);
-}
-
 vector
 vector_reset(vector v)
 {
