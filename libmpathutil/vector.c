@@ -45,7 +45,7 @@ vector_alloc_slot(vector v)
 	if (!v)
 		return false;
 
-	new_allocated = v->allocated + VECTOR_DEFAULT_SIZE;
+	new_allocated = v->allocated + 1;
 	new_slot = realloc(v->slot, sizeof (void *) * new_allocated);
 	if (!new_slot)
 		return false;
@@ -116,7 +116,7 @@ vector_del_slot(vector v, int slot)
 	for (i = slot + 1; i < VECTOR_SIZE(v); i++)
 		v->slot[i - 1] = v->slot[i];
 
-	v->allocated -= VECTOR_DEFAULT_SIZE;
+	v->allocated--;
 
 	if (v->allocated <= 0) {
 		free(v->slot);
