@@ -2599,6 +2599,7 @@ do_check_path (struct vectors * vecs, struct path * pp)
 			else
 				LOG_MSG(2, pp);
 		}
+		pp->checkint = checkint;
 	}
 
 	pp->state = newstate;
