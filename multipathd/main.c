@@ -2711,6 +2711,7 @@ update_path_state (struct vectors * vecs, struct path * pp)
 			else
 				LOG_MSG(2, pp);
 		}
+		pp->checkint = checkint;
 	}
 	if (pp->mpp->prio_update == PRIO_UPDATE_NONE &&
 	    (newstate == PATH_UP || newstate == PATH_GHOST))
