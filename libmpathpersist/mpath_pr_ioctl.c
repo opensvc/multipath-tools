@@ -52,7 +52,7 @@ int prout_do_scsi_ioctl(char * dev, int rq_servact, int rq_scope,
 	fd = open(devname, O_RDONLY);
 	if(fd < 0){
 		condlog (1, "%s: unable to open device.", dev);
-		return MPATH_PR_FILE_ERROR;
+		return MPATH_PR_RETRYABLE_ERROR;
 	}
 
 	unsigned char cdb[MPATH_PROUT_CMDLEN] =
@@ -123,14 +123,17 @@ retry :
 		goto retry;
 	}
 
-	if (((status == MPATH_PR_SENSE_NOT_READY )&& (Sensedata.ASC == 0x04)&&
-				(Sensedata.ASCQ == 0x07))&& (retry > 0))
-	{
-		usleep(1000);
-		--retry;
-		condlog(3, "%s: retrying for sense 02/04/07."
-			" Remaining retries = %d", dev, retry);
-		goto retry;
+	if (status == MPATH_PR_SENSE_NOT_READY) {
+		if (Sensedata.ASC == 0x04 && Sensedata.ASCQ == 0x07 && retry > 0) {
+			usleep(1000);
+			--retry;
+			condlog(3,
+				"%s: retrying for sense 02/04/07."
+				" Remaining retries = %d",
+				dev, retry);
+			goto retry;
+		} else
+			status = MPATH_PR_RETRYABLE_ERROR;
 	}
 
 	close(fd);
@@ -342,7 +345,7 @@ int prin_do_scsi_ioctl(char * dev, int rq_servact, struct prin_resp * resp, int 
 	fd = open(devname, O_RDONLY);
 	if(fd < 0){
 		condlog(0, "%s: Unable to open device ", dev);
-		return MPATH_PR_FILE_ERROR;
+		return MPATH_PR_RETRYABLE_ERROR;
 	}
 
 	if (mpath_mx_alloc_len)
@@ -488,7 +491,7 @@ int mpath_translate_response (char * dev, struct sg_io_hdr io_hdr,
 	case DID_OK :
 		break;
 	default :
-		return MPATH_PR_OTHER;
+		return MPATH_PR_RETRYABLE_ERROR;
 	}
 	switch(io_hdr.driver_status)
 	{

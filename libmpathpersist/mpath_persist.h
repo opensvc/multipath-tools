@@ -62,6 +62,9 @@ extern "C" {
 #define MPATH_PR_THREAD_ERROR		14  /* pthreads error (e.g. unable to create new thread) */
 #define MPATH_PR_OTHER			15  /*other error/warning has occurred(transport
 					      or driver error) */
+#define MPATH_PR_RETRYABLE_ERROR	16  /* error that might be succeed
+					       down another path. Internal
+					       only. */
 
 /* PR MASK */
 #define MPATH_F_APTPL_MASK		0x01	/* APTPL MASK*/
