@@ -162,7 +162,7 @@ FORTIFY_OPT := $(shell \
 # including urcu.h must be compiled with at least the C11 standard. See:
 # https://github.com/urcu/userspace-rcu/commit/89280d020bf064d1055c360fb9974f128051043f
 C_STD := $(shell \
-	if printf '$(__HASH__)include <urcu.h>\nint main(void) { return 0; }\n' | $(CC) -o /dev/null -c -xc --std=gnu99 - 2>/dev/null; \
+	if printf '$(__HASH__)include <urcu.h>\nint main(void) { return 0; }\n' | $(CC) -o /dev/null -c -xc -std=gnu99 - 2>/dev/null; \
 	then \
 		echo "gnu99"; \
 	else \
