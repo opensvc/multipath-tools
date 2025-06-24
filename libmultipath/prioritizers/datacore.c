@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * (C) 2010 Christophe Varoqui
  * (C) 2009 Dembach Goo Informatik GmbH & Co KG
@@ -8,9 +9,6 @@
  *
  * This program was inspired by work from
  * Matthias Rudolph <matthias.rudolph@hds.com>
- *
- * This work is made available on the basis of the
- * GPLv2 for details see <http://www.gnu.org/licenses/>.
  *
  * Manon Goo 2009
  *

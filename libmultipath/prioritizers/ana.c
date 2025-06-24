@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * (C) Copyright HUAWEI Technology Corp. 2017   All Rights Reserved.
  *
@@ -9,8 +10,6 @@
  *
  * Author(s): Cheng Jike <chengjike.cheng@huawei.com>
  *            Li Jie <lijie34@huawei.com>
- *
- * This file is released under the GPL version 2, or any later version.
  */
 #include <stdio.h>
 #include <sys/ioctl.h>
