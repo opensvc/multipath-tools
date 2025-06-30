@@ -1,6 +1,6 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
 /*
  * Copyright (c) 2025 SUSE LLC
- * SPDX-license-identifier: LGPL-2.1-or-newer
  */
 
 static size_t mpath_fill_sockaddr__(struct sockaddr_un *addr, const char *name)
