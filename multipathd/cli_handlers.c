@@ -1115,6 +1115,18 @@ cli_reinstate(void * v, struct strbuf *reply, void * data)
 		pp->mpp->alias, pp->dev_t);
 
 	checker_enable(&pp->checker);
+
+	/*
+	 * A path previously failed by the operator will be in PATH_DOWN state
+	 * (set by update_multipath()).
+	 * After the path has been reinstated in the kernel, and before
+	 * the checker updates the path state, we may need to reload
+	 * the map (e.g. for failback, while handling a dm event).
+	 * If the path is still in PATH_DOWN state at that time, sync_map_state()
+	 * will call dm_fail_path() again.
+	 * Avoid that by setting the state to PATH_UNCHECKED.
+	 */
+	pp->state = PATH_UNCHECKED;
 	pp->tick = 1;
 	return dm_reinstate_path(pp->mpp->alias, pp->dev_t);
 }
