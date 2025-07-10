@@ -89,8 +89,7 @@
 #define CMDSIZE 160
 #define MSG_SIZE 32
 
-int mpath_pr_event_handle(struct path *pp);
-void * mpath_pr_event_handler_fn (void * );
+static void mpath_pr_event_handle(struct path *pp);
 
 #define LOG_MSG(lvl, pp)					\
 do {								\
@@ -4229,17 +4228,24 @@ main (int argc, char *argv[])
 		return (child(NULL));
 }
 
-void *  mpath_pr_event_handler_fn (void * pathp )
+static void mpath_pr_event_handle(struct path *pp)
 {
 	struct multipath * mpp;
 	unsigned int i;
 	int ret, isFound;
-	struct path * pp = (struct path *)pathp;
 	struct prout_param_descriptor *param;
 	struct prin_resp *resp;
 
-	rcu_register_thread();
 	mpp = pp->mpp;
+	if (pp->bus != SYSFS_BUS_SCSI) {
+		mpp->prflag = PRFLAG_UNSET;
+		return;
+	}
+
+	if (!get_be64(mpp->reservation_key)) {
+		mpp->prflag = PRFLAG_UNSET;
+		return;
+	}
 
 	resp = mpath_alloc_prin_response(MPATH_PRIN_RKEY_SA);
 	if (!resp){
@@ -4306,38 +4312,4 @@ void *  mpath_pr_event_handler_fn (void * pathp )
 out:
 	if (resp)
 		free(resp);
-	rcu_unregister_thread();
-	return NULL;
-}
-
-int mpath_pr_event_handle(struct path *pp)
-{
-	pthread_t thread;
-	int rc;
-	pthread_attr_t attr;
-	struct multipath * mpp;
-
-	if (pp->bus != SYSFS_BUS_SCSI)
-		goto no_pr;
-
-	mpp = pp->mpp;
-
-	if (!get_be64(mpp->reservation_key))
-		goto no_pr;
-
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-	rc = pthread_create(&thread, NULL , mpath_pr_event_handler_fn, pp);
-	if (rc) {
-		condlog(0, "%s: ERROR; return code from pthread_create() is %d", pp->dev, rc);
-		return -1;
-	}
-	pthread_attr_destroy(&attr);
-	rc = pthread_join(thread, NULL);
-	return 0;
-
-no_pr:
-	pp->mpp->prflag = PRFLAG_UNSET;
-	return 0;
 }
