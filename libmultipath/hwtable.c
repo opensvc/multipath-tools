@@ -700,7 +700,7 @@ static struct hwentry default_hw[] = {
 		/* PAV DASD ECKD */
 		.vendor        = "IBM",
 		.product       = "S/390 DASD ECKD",
-		.bl_product    = "S/390",
+		.bl_product    = "S/390 DASD ECKD",
 		.uid_attribute = "ID_UID",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
@@ -710,7 +710,7 @@ static struct hwentry default_hw[] = {
 		/* PAV DASD FBA */
 		.vendor        = "IBM",
 		.product       = "S/390 DASD FBA",
-		.bl_product    = "S/390",
+		.bl_product    = "S/390 DASD FBA",
 		.uid_attribute = "ID_UID",
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 		.pgpolicy      = MULTIBUS,
