@@ -1,5 +1,9 @@
 # multipath-tools Release Notes
 
+## multipath-tools 0.10.3, 2025/03
+
+This release fixes some compilation issues, and adds a hwtable entry.
+
 ## multipath-tools 0.10.2, 2025/02
 
 This release contains backported bug fixes from the stable-0.11.y branch.
