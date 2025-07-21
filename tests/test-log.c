@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <cmocka.h>
 #include "log.h"
