@@ -482,7 +482,7 @@ static struct hwentry default_hw[] = {
 	 * Maintainer: Matthias Rudolph <Matthias.Rudolph@hitachivantara.com>
 	 */
 	{
-		/* USP-V, HUS VM, VSP, VSP G1X00 and VSP GX00 families / HPE XP */
+		/* USP-V, HUS VM, and VSP Series / HPE XP */
 		.vendor        = "(HITACHI|HP|HPE)",
 		.product       = "^OPEN-",
 		.pgpolicy      = GROUP_BY_PRIO,
@@ -1361,7 +1361,7 @@ static struct hwentry default_hw[] = {
 	 * Quantum
 	 */
 	{
-		/* StorNext family */
+		/* StorNext QX/QXS Series */
 		.vendor        = "Quantum",
 		.product       = "(StorNext QX|QXS)",
 		.bl_product    = "cvfsctl",
@@ -1371,7 +1371,7 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 18,
 	},
 	{
-		/* F-Series */
+		/* F/H Series */
 		.vendor        = "QUANTUM",
 		.product       = "^(F|P|H)[24]",
 		.pgpolicy      = GROUP_BY_PRIO,
