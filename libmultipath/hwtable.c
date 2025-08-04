@@ -492,6 +492,17 @@ static struct hwentry default_hw[] = {
 		.product       = "^DF600F",
 		.pgpolicy      = MULTIBUS,
 	},
+	{
+		/* VSP One SDS Block */
+		.vendor        = "HITACHI",
+		.product       = "Hi-SDS",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 6,
+		.prio_name     = PRIO_ALUA,
+		.checker_name  = DIRECTIO,
+		.detect_checker = DETECT_CHECKER_OFF,
+	},
 	/*
 	 * IBM
 	 */
