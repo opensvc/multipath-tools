@@ -1334,6 +1334,15 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.no_path_retry = 30,
 	},
+	{
+		// Lyve Rackmount Receiver
+		.vendor        = "SEAGATE",
+		.product       = "STJX",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 30,
+	},
 	/*
 	 * AccelStor
 	 */
