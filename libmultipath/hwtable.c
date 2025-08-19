@@ -88,7 +88,7 @@ static struct hwentry default_hw[] = {
 	 */
 	{
 		/* Generic NVMe */
-		.vendor        = "NVM[eE]",
+		.vendor        = "^NVME",
 		.product       = ".*",
 		.uid_attribute = DEFAULT_NVME_UID_ATTRIBUTE,
 		.checker_name  = NONE,
@@ -396,7 +396,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* PowerStore NVMe */
-		.vendor        = ".*",
+		.vendor        = "NVME",
 		.product       = "dellemc-powerstore",
 		.no_path_retry = 3,
 	},
@@ -727,7 +727,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* FlashSystem(RamSan) NVMe */
-		.vendor        = "NVMe",
+		.vendor        = "NVME",
 		.product       = "FlashSystem",
 		.no_path_retry = NO_PATH_RETRY_FAIL,
 	},
@@ -1101,7 +1101,7 @@ static struct hwentry default_hw[] = {
 	},
 	{
 		/* OceanStor NVMe */
-		.vendor        = "NVM[eE]",
+		.vendor        = "NVME",
 		.product       = "Huawei-XSG1",
 		.checker_name  = DIRECTIO,
 		.no_path_retry = 12,
