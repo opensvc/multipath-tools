@@ -499,8 +499,7 @@ void foreign_multipath_layout(fieldwidth_t *width)
 	pthread_cleanup_pop(1);
 }
 
-static int snprint_foreign_topology__(struct strbuf *buf, int verbosity,
-				      const fieldwidth_t *width)
+static int snprint_foreign_topology__(struct strbuf *buf, int verbosity, const fieldwidth_t *p_width)
 {
 	struct foreign *fgn;
 	int i;
@@ -517,8 +516,7 @@ static int snprint_foreign_topology__(struct strbuf *buf, int verbosity,
 		vec = fgn->get_multipaths(fgn->context);
 		if (vec != NULL) {
 			vector_foreach_slot(vec, gm, j) {
-				if (snprint_multipath_topology__(
-					    gm, buf, verbosity, width) < 0)
+				if (snprint_multipath_topology__(gm, buf, verbosity, p_width) < 0)
 					break;
 			}
 		}
@@ -529,8 +527,7 @@ static int snprint_foreign_topology__(struct strbuf *buf, int verbosity,
 	return get_strbuf_len(buf) - initial_len;
 }
 
-int snprint_foreign_topology(struct strbuf *buf, int verbosity,
-			     const fieldwidth_t *width)
+int snprint_foreign_topology(struct strbuf *buf, int verbosity, const fieldwidth_t *p_width)
 {
 	int rc;
 
@@ -540,7 +537,7 @@ int snprint_foreign_topology(struct strbuf *buf, int verbosity,
 		return 0;
 	}
 	pthread_cleanup_push(unlock_foreigns, NULL);
-	rc = snprint_foreign_topology__(buf, verbosity, width);
+	rc = snprint_foreign_topology__(buf, verbosity, p_width);
 	pthread_cleanup_pop(1);
 	return rc;
 }
@@ -550,9 +547,9 @@ void print_foreign_topology(int verbosity)
 	STRBUF_ON_STACK(buf);
 	struct foreign *fgn;
 	int i;
-	fieldwidth_t *width __attribute__((cleanup(cleanup_ucharp))) = NULL;
+	fieldwidth_t *p_width __attribute__((cleanup(cleanup_ucharp))) = NULL;
 
-	if ((width = alloc_path_layout()) == NULL)
+	if ((p_width = alloc_path_layout()) == NULL)
 		return;
 	rdlock_foreigns();
 	if (foreigns == NULL) {
@@ -566,11 +563,11 @@ void print_foreign_topology(int verbosity)
 		fgn->lock(fgn->context);
 		pthread_cleanup_push(fgn->unlock, fgn->context);
 		vec = fgn->get_paths(fgn->context);
-		get_multipath_layout__(vec, LAYOUT_RESET_NOT, width);
+		get_path_layout__(vec, LAYOUT_RESET_NOT, p_width);
 		fgn->release_paths(fgn->context, vec);
 		pthread_cleanup_pop(1);
 	}
-	snprint_foreign_topology__(&buf, verbosity, width);
+	snprint_foreign_topology__(&buf, verbosity, p_width);
 	pthread_cleanup_pop(1);
 	printf("%s", get_strbuf_str(&buf));
 }
