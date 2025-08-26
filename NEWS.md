@@ -9,19 +9,39 @@ release. These bug fixes will be tracked in stable branches.
 
 See [README.md](README.md) for additional information.
 
-## multipath-tools 0.12.0, work in progress
+## multipath-tools 0.12.0, 2025/08
 
 ### User-visible changes
 
+* Besides the abstract unix socket (default:
+  `@/org/kernel/linux/storage/multipathd`), multipathd now also listens
+  on a unix pathname socket (default: `/run/multipathd.socket`). This makes it
+  possible to communicate with multipathd from a container in which the
+  named socket is bind-mounted. See **multipathd.8** for details.
+  Both sockets can also be received from systemd if socket activation is used
+  (not recommended for multipathd).
+  Fixes [#111](https://github.com/opensvc/multipath-tools/issues/111).
+  Commits f421a43 ff.
 * multipathd now sets the `port_state` of Fibre Channel remote ports to
   "marginal" for NVMe devices, too. Note that unlike SCSI, this will not
   directly affect the kernel NVMe driver's behavior. Marginal state will
   affect path grouping on multipathd's part, though.
   This change is only effective if dm-multipath is used for NVMe devices
   (i.e. the kernel parameter `nvme_core.multipath=N` is in use).
+  Commit 30fc3e9.
 * Improved the communication with **udev** and **systemd** by triggering
-  uevents when path devices are added to or removed from multipath maps.
-
+  uevents when path devices are added to or removed from multipath maps,
+  or when `multipathd reconfigure` is executed after changing blacklist
+  directives in `multipath.conf`.
+  Fixes [#103](https://github.com/opensvc/multipath-tools/issues/103). 
+  Commits 98b3a7b, ad3ea47, d9c6133, 272808c f.
+* Maps that were added outside of multipathd (e.g. using the **multipath**
+  command) and that couldn't be reloaded by multipathd used to be ignored
+  by multipathd. multipathd will now monitor them. If some paths were
+  offline while the map was created, multipathd will now add them to the
+  map when they go online again. Commit 9038d25 ff.
+* multipathd retries persistent reservation commands that have failed on one
+  path on another one. Commit d1106c8.
 
 ### Other major changes
 
@@ -30,37 +50,74 @@ See [README.md](README.md) for additional information.
   function `checker_finished()`. Map deletions don't happen any more
   inside the checker loop, simplifying the code flow. `checker_finished()`
   now also takes care of all actions that multipath was doing in scheduled
-  intervals ("ticks").
+  intervals ("ticks"). Commit 0ff1191 ff.
 
 ### Bug fixes
 
 * Fix multipathd crash because of invalid path group index value, for example
   if an invalid path device was removed from a map.
   Fixes [#105](https://github.com/opensvc/multipath-tools/issues/105).
-  This issue existed since 0.4.5.
+  This issue existed since 0.4.5. Commit cd912cf.
 * Make sure maps are reloaded in the path checker loop after detecting an
   inconsistent or wrong kernel state (e.g. missing or falsely mapped path
   device). Wrongly mapped paths will be unmapped and released to the system.
   Fixes another issue reported in
   [#105](https://github.com/opensvc/multipath-tools/issues/105).
+  Commit 340e74d.
 * Fix the problem that, if a path device is added while offline, path grouping
   may be wrong if `path_grouping_policy` is set to `group_by_serial` or
   `group_by_tpg`, even if the path comes online later.
   Fixes [#108](https://github.com/opensvc/multipath-tools/issues/108).
-  This problem has existed since 0.4.5
+  This problem has existed since 0.4.5. Commits c20fb70, 70c1724.
+* Fix compilation issue with musl libc on ppc64le and s390x. Fixes #112.
+  Commit 439044b
 * Fix the problem that `group_by_tpg` might be disabled if one or more
   paths were offline during initial configuration.
-  This problem exists since 0.9.6.
-* Fix possible misdetection of changed pathgroups in a map.
-  This (minor) problem was introduced in 0.5.0.
+  This problem exists since 0.9.6. Commit b47a577.
 * Fix the problem that if a map was scheduled to be reloaded already,
   `max_sectors_kb` might not be set on a path device that
   was being added to a multipath map. This problem was introduced in 0.9.9.
+  Commit f5c0c4b.
+* Fix possible misdetection of changed pathgroups in a map.
+  This (minor) problem was introduced in 0.5.0. Commit d4b35f6.
+* Avoid a possible system hang during shutdown with queueing multipath maps,
+  which was introduced in 0.8.8. Commit ee062a0.
+* Failed paths should be checked every `polling_interval`. In certain cases,
+  this wouldn't happen, because the check interval wasn't reset by multipathd.
+  Commit 21c21bf.
+* It could happen that multipathd would accidentally release a SCSI persistent
+  reservation held by another node. Fix it. Commit 8d5f4a5.
+* After manually failing some paths and then reinstating them, sometimes
+  the reinstated paths were immediately failed again by multipathd.
+  Commit f1c5200.
+* Fix crash in foreign (nvme native multipath) code, present since 0.8.8.
+  Commit 9b1d721.
+* Fix file descriptor leak in kpartx. This problem existed since 0.4.5.
+  Commit 1757dbb.
+* Fix memory leak in error code path in libmpathpersist which existed
+  since 0.4.9. Commit b7fd205.
+* Fix possible out-of-bounds memory access in vector code that existed
+  since 0.4.9. Commit 2480d57.
+* Fix a possible NULL dereference in the iet prioritizer, existing since
+  0.4.9. Commit 01996d5.
+* Fix misspelled gcc option "-std". Commit f9fb65f.
+
 
 ### Other changes
 
 * Cleanup and improvement of the path discovery code that uses ioctls to
-  detect device properties.
+  detect device properties. Commits 6b91bfb ff.
+* Fix CI with cmocka 1.1.8 and newer. Fixes #117. Commit 6686b8f.
+* Updates to the built-in hardware table:
+  - Add Quantum devices
+  - Enable ALUA for AStor/NeoSapphire
+  - Update NFINIDAT/InfiniBox config
+  - Fix product blacklist of S/390 devices
+  - Add Seagate Lyve
+  - Add HITACHI VSP One SDS Block
+* Man page updates.
+* Updates to GitHub workflows.
+* Replace FSF licenses with SPDX-License-Identifier.
 
 ## multipath-tools 0.11.0, 2024/11
 

@@ -91,6 +91,7 @@ ifdef
 ifndef
 igroup
 img
+Infini
 inotify
 inttypes
 ioctls
@@ -122,6 +123,7 @@ lpthread
 Lun
 lvm
 lvmteam
+Lyve
 Marzinski
 misdetection
 mpath
@@ -141,6 +143,7 @@ nompath
 NOSCAN
 Nosync
 nvme
+NFINIDAT
 OBJDEPS
 oneshot
 ontap
@@ -154,6 +157,7 @@ petabytes
 pgpolicy
 plugindir
 PNR
+ppc
 preferredip
 preferredsds
 prefixdir
@@ -190,6 +194,7 @@ scsi
 SCST
 sda
 sdc
+Seagate
 setmarginal
 setprkey
 setprstatus
