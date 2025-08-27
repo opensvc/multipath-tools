@@ -1,29 +1,96 @@
 # multipath-tools Release Notes
 
+## multipath-tools 0.10.4, 2025/08
+
+This release contains backported bug fixes from the master branch up to 0.12.
+
+### User-visible changes
+
+* Improved the communication with **udev** and **systemd** by triggering
+  uevents when path devices are added to or removed from multipath maps,
+  or when `multipathd reconfigure` is executed after changing blacklist
+  directives in `multipath.conf`.
+  Fixes [#103](https://github.com/opensvc/multipath-tools/issues/103).
+  Commits 1eb0719, 6de0c88, effca3b
+
+### Known bugs
+
+* If an existing multipath map is blacklisted in `multipath.conf` and
+  multipathd is reconfigured while the map device is open (e.g. mounted),
+  multipathd will be unable to flush the map and keep the paths open
+  for 3 minutes. This is fixed in 0.12.0 with commit 272808c, which can't
+  be backported to the `stable-0.10.y` branch.
+
+### Bug fixes
+
+* Fix compilation issue with musl libc on ppc64le and s390x.
+  Fixes [#112](https://github.com/opensvc/multipath-tools/issues/112).
+  Commit 4186f2e.
+* Avoid a possible system hang during shutdown with queueing multipath maps,
+  which was introduced in 0.8.8. Commit ebb40e2.
+* Failed paths should be checked every `polling_interval`. In certain cases,
+  this wouldn't happen, because the check interval wasn't reset by multipathd.
+  Commit 93fb7b7.
+* It could happen that multipathd would accidentally release a SCSI persistent
+  reservation held by another node. Fix it. Commit 64aebdf.
+* After manually failing some paths and then reinstating them, sometimes
+  the reinstated paths were immediately failed again by multipathd.
+  Commit 11dc757.
+* Fix crash in foreign (nvme native multipath) code, present since 0.8.8.
+  Commit 61c89d7.
+* Fix file descriptor leak in kpartx. This problem existed since 0.4.5.
+  Commit ee2cf0a.
+* Fix memory leak in error code path in libmpathpersist which existed
+  since 0.4.9. Commit 2793c10.
+* Fix possible out-of-bounds memory access in vector code that existed
+  since 0.4.9. Commit e0b4167.
+* Fix a possible NULL dereference in the iet prioritizer, existing since
+  0.4.9. Commit 245cc47.
+* Fix misspelled gcc option "-std". Commit b0a8c44.
+
+### Other changes
+
+* Fix CI with cmocka 1.1.8 and newer. 
+  Fixes [#117](https://github.com/opensvc/multipath-tools/pull/117).
+  Commit 7a85e70.
+* Updates to the built-in hardware table:
+  - Add Quantum devices
+  - Enable ALUA for AStor/NeoSapphire
+  - Update NFINIDAT/InfiniBox config
+  - Fix product blacklist of S/390 devices
+  - Add Seagate Lyve
+  - Add HITACHI VSP One SDS Block
+  - Add SCST (SCSI Target Subsystem for Linux)
+* Updates to GitHub workflows.
+
 ## multipath-tools 0.10.3, 2025/03
 
 This release fixes some compilation issues, and adds a hwtable entry.
 
+### Other changes
+
+* Updates to the built-in hardware table:
+  - add HPE MSA Gen7 (2070/2072)
+
 ## multipath-tools 0.10.2, 2025/02
 
-This release contains backported bug fixes from the stable-0.11.y branch.
+This release contains backported bug fixes from the master branch up to 0.12.
 
 ### Bug fixes
 
 * Fix multipathd crash because of invalid path group index value, for example
   if an invalid path device was removed from a map.
   Fixes [#105](https://github.com/opensvc/multipath-tools/issues/105).
-* Make sure maps are reloaded in the path checker loop after detecting an
-  inconsistent or wrong kernel state (e.g. missing or falsely mapped path
-  device). Wrongly mapped paths will be unmapped and released to the system.
-  Fixes another issue reported in
-  [#105](https://github.com/opensvc/multipath-tools/issues/105).
-* Fix the problem that `group_by_tpg` might be disabled if one or more
-  paths were offline during initial configuration.
+  This issue existed since 0.4.5. Commit 714c20b.
 * Fix possible misdetection of changed pathgroups in a map.
+  This (minor) problem was introduced in 0.5.0. Commit e7fe3a0.
 * Fix the problem that if a map was scheduled to be reloaded already,
   `max_sectors_kb` might not be set on a path device that
   was being added to a multipath map. This problem was introduced in 0.9.9.
+  Commit 178c4e0.
+* Fix the problem that `group_by_tpg` might be disabled if one or more
+  paths were offline during initial configuration.
+  This problem exists since 0.9.6. Commit c048883.
 
 ## multipath-tools 0.10.1, 2025/01
 
