@@ -536,7 +536,7 @@ struct udev_device *get_ctrl_blkdev(const struct context *ctx,
 	pthread_cleanup_push(_udev_enumerate_unref, enm);
 	if (udev_enumerate_add_match_parent(enm, ctrl) < 0)
 		goto out;
-	if (udev_enumerate_add_match_subsystem(enm, "block"))
+	if (udev_enumerate_add_match_subsystem(enm, "block") < 0)
 		goto out;
 
 	if (udev_enumerate_scan_devices(enm) < 0) {
