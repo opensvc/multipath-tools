@@ -1993,7 +1993,8 @@ int snprint_devices(struct config *conf, struct strbuf *buff,
 	enm = udev_enumerate_new(udev);
 	if (!enm)
 		return 1;
-	udev_enumerate_add_match_subsystem(enm, "block");
+	if ((r = udev_enumerate_add_match_subsystem(enm, "block")) < 0)
+		goto out;
 
 	if ((r = append_strbuf_str(buff, "available block devices:\n")) < 0)
 		goto out;
