@@ -220,6 +220,97 @@ static void *mpath_prout_pthread_fn(void *p)
 	pthread_exit(NULL);
 }
 
+static int
+mpath_prout_common(struct multipath *mpp, int rq_servact, int rq_scope,
+		   unsigned int rq_type, struct prout_param_descriptor *paramp,
+		   int noisy, struct path **pptr)
+{
+	int i, j, ret;
+	struct pathgroup *pgp = NULL;
+	struct path *pp = NULL;
+	bool found = false;
+
+	vector_foreach_slot (mpp->pg, pgp, j) {
+		vector_foreach_slot (pgp->paths, pp, i) {
+			if (!((pp->state == PATH_UP) || (pp->state == PATH_GHOST))) {
+				condlog(1, "%s: %s path not up. Skip",
+					mpp->wwid, pp->dev);
+				continue;
+			}
+
+			condlog(3, "%s: sending pr out command to %s",
+				mpp->wwid, pp->dev);
+			found = true;
+			ret = prout_do_scsi_ioctl(pp->dev, rq_servact, rq_scope,
+						  rq_type, paramp, noisy);
+			if (ret == MPATH_PR_SUCCESS && pptr)
+				*pptr = pp;
+			if (ret != MPATH_PR_RETRYABLE_ERROR)
+				return ret;
+		}
+	}
+	if (found)
+		return MPATH_PR_OTHER;
+	condlog(0, "%s: no path available", mpp->wwid);
+	return MPATH_PR_DMMP_ERROR;
+}
+
+/*
+ * If you are changing the key registered to a device, and that device is
+ * holding the reservation on a path that couldn't get its key updated,
+ * either because it is down or no longer part of the multipath device,
+ * you need to preempt the reservation to a usable path with the new key
+ */
+void preempt_missing_path(struct multipath *mpp, uint8_t *key, uint8_t *sa_key,
+			  int noisy)
+{
+	uint8_t zero[8] = {0};
+	struct prin_resp resp = {{{.prgeneration = 0}}};
+	int rq_scope;
+	unsigned int rq_type;
+	struct prout_param_descriptor paramp = {.sa_flags = 0};
+	int status;
+
+	/*
+	 * If you previously didn't have a key registered or you didn't
+	 * switch to a different key, there's no need to preempt. Also, you
+	 * can't preempt if you no longer have a registered key
+	 */
+	if (memcmp(key, zero, 8) == 0 || memcmp(sa_key, zero, 8) == 0 ||
+	    memcmp(key, sa_key, 8) == 0)
+		return;
+
+	status = mpath_prin_activepath(mpp, MPATH_PRIN_RRES_SA, &resp, noisy);
+	if (status != MPATH_PR_SUCCESS) {
+		condlog(0, "%s: register: pr in read reservation command failed.",
+			mpp->wwid);
+		return;
+	}
+	/* If there is no reservation, there's nothing to preempt */
+	if (!resp.prin_descriptor.prin_readresv.additional_length)
+		return;
+	/*
+	 * If there reservation is not held by the old key, you don't
+	 * want to preempt it
+	 */
+	if (memcmp(key, resp.prin_descriptor.prin_readresv.key, 8) != 0)
+		return;
+	/* Assume this key is being held by an inaccessable path on this
+	 * node. libmpathpersist has never worked if multiple nodes share
+	 * the same reservation key for a device
+	 */
+	rq_type = resp.prin_descriptor.prin_readresv.scope_type & MPATH_PR_TYPE_MASK;
+	rq_scope = (resp.prin_descriptor.prin_readresv.scope_type &
+		    MPATH_PR_SCOPE_MASK) >>
+		   4;
+	memcpy(paramp.key, sa_key, 8);
+	memcpy(paramp.sa_key, key, 8);
+	status = mpath_prout_common(mpp, MPATH_PROUT_PREE_SA, rq_scope,
+				    rq_type, &paramp, noisy, NULL);
+	if (status != MPATH_PR_SUCCESS)
+		condlog(0, "%s: register: pr preempt command failed.", mpp->wwid);
+}
+
 static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 			   unsigned int rq_type,
 			   struct prout_param_descriptor * paramp, int noisy)
@@ -360,41 +451,9 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	}
 
 	pthread_attr_destroy(&attr);
+	if (status == MPATH_PR_SUCCESS)
+		preempt_missing_path(mpp, paramp->key, paramp->sa_key, noisy);
 	return (status == MPATH_PR_RETRYABLE_ERROR) ? MPATH_PR_OTHER : status;
-}
-
-static int
-mpath_prout_common(struct multipath *mpp, int rq_servact, int rq_scope,
-		   unsigned int rq_type, struct prout_param_descriptor *paramp,
-		   int noisy, struct path **pptr)
-{
-	int i,j, ret;
-	struct pathgroup *pgp = NULL;
-	struct path *pp = NULL;
-	bool found = false;
-
-	vector_foreach_slot (mpp->pg, pgp, j){
-		vector_foreach_slot (pgp->paths, pp, i){
-			if (!((pp->state == PATH_UP) || (pp->state == PATH_GHOST))){
-				condlog (1, "%s: %s path not up. Skip",
-					 mpp->wwid, pp->dev);
-				continue;
-			}
-
-			condlog (3, "%s: sending pr out command to %s", mpp->wwid, pp->dev);
-			found = true;
-			ret = prout_do_scsi_ioctl(pp->dev, rq_servact, rq_scope,
-						  rq_type, paramp, noisy);
-			if (ret == MPATH_PR_SUCCESS && pptr)
-				*pptr = pp;
-			if (ret != MPATH_PR_RETRYABLE_ERROR)
-				return ret;
-		}
-	}
-	if (found)
-		return MPATH_PR_OTHER;
-	condlog (0, "%s: no path available", mpp->wwid);
-	return MPATH_PR_DMMP_ERROR;
 }
 
 static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
