@@ -524,6 +524,8 @@ struct multipath {
 	int prflag;
 	int prhold;
 	int all_tg_pt;
+	bool ever_registered_pr;
+
 	struct gen_multipath generic_mp;
 	bool fpin_must_reload;
 };
