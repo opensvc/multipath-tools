@@ -73,7 +73,7 @@ static int mpath_prin_activepath (struct multipath *mpp, int rq_servact,
 			switch(ret)
 			{
 				case MPATH_PR_SUCCESS:
-				case MPATH_PR_SENSE_INVALID_OP:
+				case MPATH_PR_ILLEGAL_REQ:
 					return ret;
 				default:
 					continue;
@@ -727,6 +727,10 @@ int update_map_pr(struct multipath *mpp, struct path *pp)
 	int ret = MPATH_PR_OTHER, isFound;
 	bool was_set = (mpp->prflag == PRFLAG_SET);
 
+	/* If pr is explicitly unset, it must be manually set */
+	if (mpp->prflag == PRFLAG_UNSET)
+		return MPATH_PR_SKIP;
+
 	if (!get_be64(mpp->reservation_key))
 	{
 		/* Nothing to do. Assuming pr mgmt feature is disabled*/
@@ -747,7 +751,6 @@ int update_map_pr(struct multipath *mpp, struct path *pp)
 		condlog(2, "%s: No available paths to check pr status", mpp->alias);
 		goto out;
 	}
-	mpp->prflag = PRFLAG_UNSET;
 	if (pp)
 		ret = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RKEY_SA, resp, noisy);
 	else
@@ -755,9 +758,12 @@ int update_map_pr(struct multipath *mpp, struct path *pp)
 
 	if (ret != MPATH_PR_SUCCESS )
 	{
+		if (ret == MPATH_PR_ILLEGAL_REQ)
+			mpp->prflag = PRFLAG_UNSET;
 		condlog(0,"%s : pr in read keys service action failed Error=%d", mpp->alias, ret);
 		goto out;
 	}
+	mpp->prflag = PRFLAG_UNSET;
 
 	if (resp->prin_descriptor.prin_readkeys.additional_length == 0 )
 	{
