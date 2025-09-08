@@ -363,9 +363,10 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	return (status == MPATH_PR_RETRYABLE_ERROR) ? MPATH_PR_OTHER : status;
 }
 
-static int mpath_prout_common(struct multipath *mpp,int rq_servact, int rq_scope,
-			      unsigned int rq_type,
-			      struct prout_param_descriptor* paramp, int noisy)
+static int
+mpath_prout_common(struct multipath *mpp, int rq_servact, int rq_scope,
+		   unsigned int rq_type, struct prout_param_descriptor *paramp,
+		   int noisy, struct path **pptr)
 {
 	int i,j, ret;
 	struct pathgroup *pgp = NULL;
@@ -384,6 +385,8 @@ static int mpath_prout_common(struct multipath *mpp,int rq_servact, int rq_scope
 			found = true;
 			ret = prout_do_scsi_ioctl(pp->dev, rq_servact, rq_scope,
 						  rq_type, paramp, noisy);
+			if (ret == MPATH_PR_SUCCESS && pptr)
+				*pptr = pp;
 			if (ret != MPATH_PR_RETRYABLE_ERROR)
 				return ret;
 		}
@@ -404,14 +407,12 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	struct path *pp = NULL;
 	int active_pathcount = 0;
 	pthread_attr_t attr;
-	int rc, found = 0;
+	int rc;
 	int count = 0;
 	int status = MPATH_PR_SUCCESS;
-	struct prin_resp resp;
-	struct prout_param_descriptor *pamp = NULL;
-	struct prin_resp *pr_buff;
-	int length;
-	struct transportid *pptr = NULL;
+	struct prin_resp resp = {{{.prgeneration = 0}}};
+	uint16_t udev_flags = (mpp->skip_kpartx) ? MPATH_UDEV_NO_KPARTX_FLAG : 0;
+	bool did_resume = false;
 
 	if (!mpp)
 		return MPATH_PR_DMMP_ERROR;
@@ -501,104 +502,78 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	}
 
 	condlog (2, "%s: Path holding reservation is not available.", mpp->wwid);
+	/*
+	 * Cannot free the reservation because the path that is holding it
+	 * is not usable. Workaround this by:
+	 * 1. Suspending the device
+	 * 2. Preempting the reservation to move it to a usable path
+	 *    (this removes the registered keys on all paths except the
+	 *    preempting one. Since the device is suspended, no IO can
+	 *    go to these unregistered paths and fail).
+	 * 3. Releasing the reservation on the path that now holds it.
+	 * 4. Resuming the device (since it no longer matters that most of
+	 *    that paths no longer have a registered key)
+	 * 5. Reregistering keys on all the paths
+	 */
 
-	pr_buff =  mpath_alloc_prin_response(MPATH_PRIN_RFSTAT_SA);
-	if (!pr_buff){
-		condlog (0, "%s: failed to  alloc pr in response buffer.", mpp->wwid);
+	if (!dm_simplecmd_noflush(DM_DEVICE_SUSPEND, mpp->alias, 0)) {
+		condlog(0, "%s: release: failed to suspend dm device.", mpp->wwid);
 		return MPATH_PR_OTHER;
 	}
 
-	status = mpath_prin_activepath (mpp, MPATH_PRIN_RFSTAT_SA, pr_buff, noisy);
-
-	if (status != MPATH_PR_SUCCESS){
-		condlog (0,  "%s: pr in read full status command failed.",  mpp->wwid);
-		goto out;
+	memset(paramp, 0, sizeof(*paramp));
+	memcpy(paramp->key, &mpp->reservation_key, 8);
+	memcpy(paramp->sa_key, &mpp->reservation_key, 8);
+	status = mpath_prout_common(mpp, MPATH_PROUT_PREE_SA, rq_scope,
+				    rq_type, paramp, noisy, &pp);
+	if (status != MPATH_PR_SUCCESS) {
+		condlog(0, "%s: release: pr preempt command failed.", mpp->wwid);
+		goto fail_resume;
 	}
 
-	num = pr_buff->prin_descriptor.prin_readfd.number_of_descriptor;
-	if (0 == num){
-		goto out;
-	}
-	length = sizeof (struct prout_param_descriptor) + (sizeof (struct transportid *));
-
-	pamp = (struct prout_param_descriptor *)malloc (length);
-	if (!pamp){
-		condlog (0, "%s: failed to alloc pr out parameter.", mpp->wwid);
-		goto out;
+	memset(paramp, 0, sizeof(*paramp));
+	memcpy(paramp->key, &mpp->reservation_key, 8);
+	status = prout_do_scsi_ioctl(pp->dev, MPATH_PROUT_REL_SA, rq_scope,
+				     rq_type, paramp, noisy);
+	if (status != MPATH_PR_SUCCESS) {
+		condlog(0, "%s: release on alternate path failed.", mpp->wwid);
+		goto out_reregister;
 	}
 
-	memset(pamp, 0, length);
-
-	pamp->trnptid_list[0] = (struct transportid *) malloc (sizeof (struct transportid));
-	if (!pamp->trnptid_list[0]){
-		condlog (0, "%s: failed to alloc pr out transportid.", mpp->wwid);
-		goto out1;
+	if (!dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias, udev_flags)) {
+		condlog(0, "%s release: failed to resume dm device.", mpp->wwid);
+		/*
+		 * leave status set to MPATH_PR_SUCCESS, we will have another
+		 * chance to resume the device.
+		 */
+		goto out_reregister;
 	}
-	pptr = pamp->trnptid_list[0];
+	did_resume = true;
 
-	if (get_be64(mpp->reservation_key)){
-		memcpy (pamp->key, &mpp->reservation_key, 8);
-		condlog (3, "%s: reservation key set.", mpp->wwid);
+out_reregister:
+	memset(paramp, 0, sizeof(*paramp));
+	memcpy(paramp->sa_key, &mpp->reservation_key, 8);
+	rc = mpath_prout_reg(mpp, MPATH_PROUT_REG_IGN_SA, rq_scope, rq_type,
+			     paramp, noisy);
+	if (rc != MPATH_PR_SUCCESS)
+		condlog(0, "%s: release: failed to reregister paths.", mpp->wwid);
+
+	/*
+	 * If we failed releasing the reservation or resuming earlier
+	 * try resuming now. Otherwise, return with the reregistering status
+	 * This means we will report failure, even though the resevation
+	 * has been released, since the keys were not reregistered.
+	 */
+	if (did_resume)
+		return rc;
+	else if (status == MPATH_PR_SUCCESS)
+		status = rc;
+fail_resume:
+	if (!dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias, udev_flags)) {
+		condlog(0, "%s: release: failed to resume dm device.", mpp->wwid);
+		if (status == MPATH_PR_SUCCESS)
+			status = MPATH_PR_OTHER;
 	}
-
-	status = mpath_prout_common (mpp, MPATH_PROUT_CLEAR_SA,
-				     rq_scope, rq_type, pamp, noisy);
-
-	if (status) {
-		condlog(0, "%s: failed to send CLEAR_SA", mpp->wwid);
-		goto out2;
-	}
-
-	pamp->num_transportid = 1;
-
-	for (i = 0; i < num; i++){
-		if (get_be64(mpp->reservation_key) &&
-			memcmp(pr_buff->prin_descriptor.prin_readfd.descriptors[i]->key,
-			       &mpp->reservation_key, 8)){
-			/*register with transport id*/
-			memset(pamp, 0, length);
-			pamp->trnptid_list[0] = pptr;
-			memset (pamp->trnptid_list[0], 0, sizeof (struct transportid));
-			memcpy (pamp->sa_key,
-					pr_buff->prin_descriptor.prin_readfd.descriptors[i]->key, 8);
-			pamp->sa_flags = MPATH_F_SPEC_I_PT_MASK;
-			pamp->num_transportid = 1;
-
-			memcpy (pamp->trnptid_list[0],
-					&pr_buff->prin_descriptor.prin_readfd.descriptors[i]->trnptid,
-					sizeof (struct transportid));
-			status = mpath_prout_common (mpp, MPATH_PROUT_REG_SA, 0, rq_type,
-					pamp, noisy);
-
-			pamp->sa_flags = 0;
-			memcpy (pamp->key, pr_buff->prin_descriptor.prin_readfd.descriptors[i]->key, 8);
-			memset (pamp->sa_key, 0, 8);
-			pamp->num_transportid = 0;
-			status = mpath_prout_common (mpp, MPATH_PROUT_REG_SA, 0, rq_type,
-					pamp, noisy);
-		}
-		else
-		{
-			if (get_be64(mpp->reservation_key))
-				found = 1;
-		}
-
-
-	}
-
-	if (found){
-		memset (pamp, 0, length);
-		memcpy (pamp->sa_key, &mpp->reservation_key, 8);
-		memset (pamp->key, 0, 8);
-		status = mpath_prout_reg(mpp, MPATH_PROUT_REG_SA, rq_scope, rq_type, pamp, noisy);
-	}
-
-out2:
-	free(pptr);
-out1:
-	free (pamp);
-out:
-	free (pr_buff);
 	return (status == MPATH_PR_RETRYABLE_ERROR) ? MPATH_PR_OTHER : status;
 }
 
@@ -619,6 +594,12 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
 	select_reservation_key(conf, mpp);
 	select_all_tg_pt(conf, mpp);
+	/*
+	 * If a device preempts itself, it will need to suspend and resume.
+	 * Set mpp->skip_kpartx to make sure we set the flags to skip kpartx
+	 * if necessary, when doing this.
+	 */
+	select_skip_kpartx(conf, mpp);
 	put_multipath_config(conf);
 
 	memcpy(&prkey, paramp->sa_key, 8);
@@ -660,7 +641,8 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 	case MPATH_PROUT_PREE_SA :
 	case MPATH_PROUT_PREE_AB_SA :
 	case MPATH_PROUT_CLEAR_SA:
-		ret = mpath_prout_common(mpp, rq_servact, rq_scope, rq_type, paramp, noisy);
+		ret = mpath_prout_common(mpp, rq_servact, rq_scope, rq_type,
+					 paramp, noisy, NULL);
 		break;
 	case MPATH_PROUT_REL_SA:
 		ret = mpath_prout_rel(mpp, rq_servact, rq_scope, rq_type, paramp, noisy);
