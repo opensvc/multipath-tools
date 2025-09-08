@@ -711,9 +711,9 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 {
 	struct multipath *mpp;
 	int ret;
-	uint64_t prkey;
+	uint64_t zerokey = 0;
 	struct config *conf;
-	bool preempting_reservation = false;
+	bool unregistering, preempting_reservation = false;
 
 	ret = mpath_get_map(curmp, pathvec, fd, &mpp);
 	if (ret != MPATH_PR_SUCCESS)
@@ -734,11 +734,12 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 	if (rq_servact == MPATH_PROUT_REG_IGN_SA)
 		set_ignored_key(mpp, paramp->key);
 
-	memcpy(&prkey, paramp->sa_key, 8);
-	if (mpp->prkey_source == PRKEY_SOURCE_FILE && prkey &&
+	unregistering = (memcmp(&zerokey, paramp->sa_key, 8) == 0);
+	if (mpp->prkey_source == PRKEY_SOURCE_FILE && !unregistering &&
 	    (rq_servact == MPATH_PROUT_REG_IGN_SA ||
 	     (rq_servact == MPATH_PROUT_REG_SA &&
 	      (!get_be64(mpp->reservation_key) ||
+	       memcmp(paramp->key, &zerokey, 8) == 0 ||
 	       memcmp(paramp->key, &mpp->reservation_key, 8) == 0)))) {
 		memcpy(&mpp->reservation_key, paramp->sa_key, 8);
 		if (update_prkey_flags(mpp->alias, get_be64(mpp->reservation_key),
@@ -749,18 +750,38 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 		}
 	}
 
-	if (!get_be64(mpp->reservation_key) &&
-	    (prkey || rq_servact != MPATH_PROUT_REG_IGN_SA)) {
-		condlog(0, "%s: no configured reservation key", mpp->alias);
-		return MPATH_PR_SYNTAX_ERROR;
-	}
-
-	if (memcmp(paramp->key, &mpp->reservation_key, 8) &&
-	    memcmp(paramp->sa_key, &mpp->reservation_key, 8) &&
-	    (prkey || rq_servact != MPATH_PROUT_REG_IGN_SA)) {
-		condlog(0, "%s: configured reservation key doesn't match: 0x%" PRIx64,
-			mpp->alias, get_be64(mpp->reservation_key));
-		return MPATH_PR_SYNTAX_ERROR;
+	/*
+	 * If you are registering a non-zero key, mpp->reservation_key
+	 * must be set and must equal paramp->sa_key.
+	 * If you're not registering a key, mpp->reservation_key must be
+	 * set, and must equal paramp->key
+	 * If you updated the reservation key above, then you cannot fail
+	 * these checks, since mpp->reservation_key has already been set
+	 * to match paramp->sa_key, and if you are registering a non-zero
+	 * key, then it must be set to a non-zero value.
+	 */
+	if ((rq_servact == MPATH_PROUT_REG_IGN_SA ||
+	     rq_servact == MPATH_PROUT_REG_SA)) {
+		if (!unregistering && !get_be64(mpp->reservation_key)) {
+			condlog(0, "%s: no configured reservation key", mpp->alias);
+			return MPATH_PR_SYNTAX_ERROR;
+		}
+		if (!unregistering &&
+		    memcmp(paramp->sa_key, &mpp->reservation_key, 8)) {
+			condlog(0, "%s: configured reservation key doesn't match: 0x%" PRIx64,
+				mpp->alias, get_be64(mpp->reservation_key));
+			return MPATH_PR_SYNTAX_ERROR;
+		}
+	} else {
+		if (!get_be64(mpp->reservation_key)) {
+			condlog(0, "%s: no configured reservation key", mpp->alias);
+			return MPATH_PR_SYNTAX_ERROR;
+		}
+		if (memcmp(paramp->key, &mpp->reservation_key, 8)) {
+			condlog(0, "%s: configured reservation key doesn't match: 0x%" PRIx64,
+				mpp->alias, get_be64(mpp->reservation_key));
+			return MPATH_PR_SYNTAX_ERROR;
+		}
 	}
 
 	switch(rq_servact)
@@ -792,7 +813,7 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 	switch (rq_servact) {
 	case MPATH_PROUT_REG_SA:
 	case MPATH_PROUT_REG_IGN_SA:
-		if (prkey == 0) {
+		if (unregistering) {
 			update_prflag(mpp->alias, 0);
 			update_prkey(mpp->alias, 0);
 		} else
