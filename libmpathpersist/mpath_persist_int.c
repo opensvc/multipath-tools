@@ -413,6 +413,7 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	struct prin_resp resp = {{{.prgeneration = 0}}};
 	uint16_t udev_flags = (mpp->skip_kpartx) ? MPATH_UDEV_NO_KPARTX_FLAG : 0;
 	bool did_resume = false;
+	bool all_threads_failed;
 
 	if (!mpp)
 		return MPATH_PR_DMMP_ERROR;
@@ -474,14 +475,21 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		}
 	}
 
+	all_threads_failed = true;
 	for (i = 0; i < count; i++){
 		/*  check thread status here and return the status */
 
-		if (thread[i].param.status == MPATH_PR_RESERV_CONFLICT)
+		if (thread[i].param.status == MPATH_PR_SUCCESS)
+			all_threads_failed = false;
+		else if (thread[i].param.status == MPATH_PR_RESERV_CONFLICT)
 			status = MPATH_PR_RESERV_CONFLICT;
-		else if (status == MPATH_PR_SUCCESS
-				&& thread[i].param.status != MPATH_PR_RESERV_CONFLICT)
+		else if (status == MPATH_PR_SUCCESS)
 			status = thread[i].param.status;
+	}
+	if (all_threads_failed) {
+		condlog(0, "%s: all threads failed to release reservation.",
+			mpp->wwid);
+		return status;
 	}
 
 	status = mpath_prin_activepath (mpp, MPATH_PRIN_RRES_SA, &resp, noisy);
