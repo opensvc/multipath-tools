@@ -346,13 +346,13 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	int i, j, k;
 	struct pathgroup *pgp = NULL;
 	struct path *pp = NULL;
-	int rollback = 0;
+	bool can_retry = false;
+	bool need_retry = false;
 	int active_pathcount=0;
 	int rc;
 	int count=0;
 	int status = MPATH_PR_SUCCESS;
 	int all_tg_pt;
-	uint64_t sa_key = 0;
 
 	if (!mpp)
 		return MPATH_PR_DMMP_ERROR;
@@ -441,43 +441,62 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 				condlog (0, "%s: Thread[%d] failed to join thread %d", mpp->wwid, i, rc);
 			}
 		}
-		if (!rollback && (thread[i].param.status == MPATH_PR_RESERV_CONFLICT)){
-			rollback = 1;
-			sa_key = get_unaligned_be64(&paramp->sa_key[0]);
-			status = MPATH_PR_RESERV_CONFLICT ;
-		}
-		if (!rollback && (status == MPATH_PR_SUCCESS)){
+		/*
+		 * We only retry if there is at least one registration that
+		 * returned a reservation conflict (which we need to retry)
+		 * and at least one registration the return success, so we
+		 * know that the command worked on some of the paths. If
+		 * the registation fails on all paths, then it wasn't a
+		 * valid request, so there's no need to retry.
+		 */
+		if (thread[i].param.status == MPATH_PR_RESERV_CONFLICT)
+			need_retry = true;
+		else if (thread[i].param.status == MPATH_PR_SUCCESS)
+			can_retry = true;
+		else if (status == MPATH_PR_SUCCESS)
 			status = thread[i].param.status;
-		}
 	}
-	if (rollback && ((rq_servact == MPATH_PROUT_REG_SA) && sa_key != 0 )){
-		condlog (3, "%s: ERROR: initiating pr out rollback", mpp->wwid);
-		memcpy(&paramp->key, &paramp->sa_key, 8);
-		memset(&paramp->sa_key, 0, 8);
-		for( i=0 ; i < count ; i++){
-			if(thread[i].param.status == MPATH_PR_SUCCESS) {
-				rc = pthread_create(&thread[i].id, &attr, mpath_prout_pthread_fn,
-						(void *)(&thread[i].param));
-				if (rc){
-					condlog (0, "%s: failed to create thread for rollback. %d",  mpp->wwid, rc);
-					thread[i].param.status = MPATH_PR_THREAD_ERROR;
-				}
-			} else
+	if (need_retry && can_retry && rq_servact == MPATH_PROUT_REG_SA &&
+	    status == MPATH_PR_SUCCESS) {
+		condlog(3, "%s: ERROR: initiating pr out retry", mpp->wwid);
+		for (i = 0; i < count; i++) {
+			if (thread[i].param.status != MPATH_PR_RESERV_CONFLICT) {
 				thread[i].param.status = MPATH_PR_SKIP;
+				continue;
+			}
+			/*
+			 * retry using MPATH_PROUT_REG_IGN_SA to avoid
+			 * conflicts. We already know that some paths
+			 * succeeded using MPATH_PROUT_REG_SA.
+			 */
+			thread[i].param.rq_servact = MPATH_PROUT_REG_IGN_SA;
+			rc = pthread_create(&thread[i].id, &attr,
+					    mpath_prout_pthread_fn,
+					    (void *)(&thread[i].param));
+			if (rc) {
+				condlog(0, "%s: failed to create thread for retry. %d",
+					mpp->wwid, rc);
+				thread[i].param.status = MPATH_PR_THREAD_ERROR;
+			}
 		}
-		for(i=0; i < count ; i++){
+		for (i = 0; i < count; i++) {
 			if (thread[i].param.status != MPATH_PR_SKIP &&
 			    thread[i].param.status != MPATH_PR_THREAD_ERROR) {
 				rc = pthread_join(thread[i].id, NULL);
-				if (rc){
-					condlog (3, "%s: failed to join thread while rolling back %d",
-						 mpp->wwid, i);
+				if (rc) {
+					condlog(3, "%s: failed to join thread while retrying %d",
+						mpp->wwid, i);
 				}
+				if (status == MPATH_PR_SUCCESS)
+					status = thread[i].param.status;
 			}
 		}
+		need_retry = false;
 	}
 
 	pthread_attr_destroy(&attr);
+	if (need_retry)
+		status = MPATH_PR_RESERV_CONFLICT;
 	if (status == MPATH_PR_SUCCESS)
 		preempt_missing_path(mpp, paramp->key, paramp->sa_key, noisy);
 	return (status == MPATH_PR_RETRYABLE_ERROR) ? MPATH_PR_OTHER : status;
