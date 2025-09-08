@@ -522,6 +522,7 @@ struct multipath {
 	struct be64 reservation_key;
 	uint8_t sa_flags;
 	int prflag;
+	int prhold;
 	int all_tg_pt;
 	struct gen_multipath generic_mp;
 	bool fpin_must_reload;

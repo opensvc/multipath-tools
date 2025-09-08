@@ -75,13 +75,13 @@ static int do_update_pr(char *alias, char *cmd, char *key)
 	return ret;
 }
 
-int get_prflag(char *mapname)
+static int do_get_pr(char *mapname, const char *cmd)
 {
 	char str[256];
 	char *reply;
 	int prflag;
 
-	snprintf(str, sizeof(str), "getprstatus map %s", mapname);
+	snprintf(str, sizeof(str), "%s map %s", cmd, mapname);
 	reply = do_pr(mapname, str);
 	if (!reply)
 		prflag = PR_UNKNOWN;
@@ -96,9 +96,24 @@ int get_prflag(char *mapname)
 	return prflag;
 }
 
+int get_prflag(char *mapname)
+{
+	return do_get_pr(mapname, "getprstatus");
+}
+
+int get_prhold(char *mapname)
+{
+	return do_get_pr(mapname, "getprhold");
+}
+
 int update_prflag(char *mapname, int set) {
 	return do_update_pr(mapname, (set)? "setprstatus" : "unsetprstatus",
 			    NULL);
+}
+
+int update_prhold(char *mapname, bool set)
+{
+	return do_update_pr(mapname, (set) ? "setprhold" : "unsetprhold", NULL);
 }
 
 int update_prkey_flags(char *mapname, uint64_t prkey, uint8_t sa_flags) {

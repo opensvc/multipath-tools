@@ -4222,6 +4222,33 @@ main (int argc, char *argv[])
 		return (child(NULL));
 }
 
+static void check_prhold(struct multipath *mpp, struct path *pp)
+{
+	struct prin_resp resp = {{{.prgeneration = 0}}};
+	int status;
+
+	if (mpp->prflag == PR_UNSET) {
+		mpp->prhold = PR_UNSET;
+		return;
+	}
+	if (mpp->prflag != PR_SET || mpp->prhold != PR_UNKNOWN)
+		return;
+
+	status = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RRES_SA, &resp, 0);
+	if (status != MPATH_PR_SUCCESS) {
+		condlog(0, "%s: pr in read reservation command failed: %d",
+			mpp->wwid, status);
+		return;
+	}
+	mpp->prhold = PR_UNSET;
+	if (!resp.prin_descriptor.prin_readresv.additional_length)
+		return;
+
+	if (memcmp(&mpp->reservation_key,
+		   resp.prin_descriptor.prin_readresv.key, 8) == 0)
+		mpp->prhold = PR_SET;
+}
+
 static void mpath_pr_event_handle(struct path *pp)
 {
 	struct multipath *mpp = pp->mpp;
@@ -4233,8 +4260,13 @@ static void mpath_pr_event_handle(struct path *pp)
 		return;
 	}
 
-	if (update_map_pr(mpp, pp) != MPATH_PR_SUCCESS)
+	if (update_map_pr(mpp, pp) != MPATH_PR_SUCCESS) {
+		if (mpp->prflag == PR_UNSET)
+			mpp->prhold = PR_UNSET;
 		return;
+	}
+
+	check_prhold(mpp, pp);
 
 	if (mpp->prflag != PR_SET)
 		return;
