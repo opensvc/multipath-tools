@@ -738,15 +738,19 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 		return MPATH_PR_OTHER;
 	}
 
-	if ((ret == MPATH_PR_SUCCESS) && ((rq_servact == MPATH_PROUT_REG_SA) ||
-				(rq_servact ==  MPATH_PROUT_REG_IGN_SA)))
-	{
+	if (ret != MPATH_PR_SUCCESS)
+		return ret;
+
+	switch (rq_servact) {
+	case MPATH_PROUT_REG_SA:
+	case MPATH_PROUT_REG_IGN_SA:
 		if (prkey == 0) {
 			update_prflag(mpp->alias, 0);
 			update_prkey(mpp->alias, 0);
 		} else
 			update_prflag(mpp->alias, 1);
-	} else if ((ret == MPATH_PR_SUCCESS) && (rq_servact == MPATH_PROUT_CLEAR_SA)) {
+		break;
+	case MPATH_PROUT_CLEAR_SA:
 		update_prflag(mpp->alias, 0);
 		update_prkey(mpp->alias, 0);
 	}
