@@ -6,7 +6,6 @@
  * but aren't part of the public libmpathpersist API.
  */
 
-void * mpath_alloc_prin_response(int prin_sa);
 int do_mpath_persistent_reserve_in(vector curmp, vector pathvec,
 				   int fd, int rq_servact,
 				   struct prin_resp *resp, int noisy);

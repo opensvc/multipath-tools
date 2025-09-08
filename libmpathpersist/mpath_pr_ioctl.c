@@ -14,19 +14,15 @@
 #include "mpath_pr_ioctl.h"
 #include "mpath_persist.h"
 #include "unaligned.h"
-
 #include "debug.h"
 #include "structs.h" /* FILE_NAME_SIZE */
+#include "mpath_persist_int.h"
 
 #define TIMEOUT 2000
 #define MAXRETRY 5
 
-int prin_do_scsi_ioctl(char * dev, int rq_servact, struct prin_resp *resp, int noisy);
-int mpath_translate_response (char * dev, struct sg_io_hdr io_hdr,
-			      SenseData_t *Sensedata);
-void dumpHex(const char* str, int len, int no_ascii);
-int prout_do_scsi_ioctl( char * dev, int rq_servact, int rq_scope,
-		unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy);
+int mpath_translate_response(char *dev, struct sg_io_hdr io_hdr,
+			     SenseData_t *Sensedata);
 uint32_t  format_transportids(struct prout_param_descriptor *paramp);
 void convert_be32_to_cpu(uint32_t *num);
 void convert_be16_to_cpu(uint16_t *num);
