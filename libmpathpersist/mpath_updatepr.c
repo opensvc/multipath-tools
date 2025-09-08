@@ -84,13 +84,13 @@ int get_prflag(char *mapname)
 	snprintf(str, sizeof(str), "getprstatus map %s", mapname);
 	reply = do_pr(mapname, str);
 	if (!reply)
-		prflag = PRFLAG_UNKNOWN;
+		prflag = PR_UNKNOWN;
 	else if (strncmp(reply, "unset", 5) == 0)
-		prflag = PRFLAG_UNSET;
+		prflag = PR_UNSET;
 	else if (strncmp(reply, "set", 3) == 0)
-		prflag = PRFLAG_SET;
+		prflag = PR_SET;
 	else
-		prflag = PRFLAG_UNKNOWN;
+		prflag = PR_UNKNOWN;
 
 	free(reply);
 	return prflag;

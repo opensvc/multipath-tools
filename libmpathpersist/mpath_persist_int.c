@@ -653,10 +653,10 @@ static void set_ignored_key(struct multipath *mpp, uint8_t *key)
 	memset(key, 0, 8);
 	if (!get_be64(mpp->reservation_key))
 		return;
-	if (get_prflag(mpp->alias) == PRFLAG_UNSET)
+	if (get_prflag(mpp->alias) == PR_UNSET)
 		return;
 	update_map_pr(mpp, NULL);
-	if (mpp->prflag != PRFLAG_SET)
+	if (mpp->prflag != PR_SET)
 		return;
 	memcpy(key, &mpp->reservation_key, 8);
 }
@@ -759,16 +759,16 @@ int update_map_pr(struct multipath *mpp, struct path *pp)
 	struct prin_resp *resp;
 	unsigned int i;
 	int ret = MPATH_PR_OTHER, isFound;
-	bool was_set = (mpp->prflag == PRFLAG_SET);
+	bool was_set = (mpp->prflag == PR_SET);
 
 	/* If pr is explicitly unset, it must be manually set */
-	if (mpp->prflag == PRFLAG_UNSET)
+	if (mpp->prflag == PR_UNSET)
 		return MPATH_PR_SKIP;
 
 	if (!get_be64(mpp->reservation_key))
 	{
 		/* Nothing to do. Assuming pr mgmt feature is disabled*/
-		mpp->prflag = PRFLAG_UNSET;
+		mpp->prflag = PR_UNSET;
 		condlog(was_set ? 2 : 4,
 			"%s: reservation_key not set in multipath.conf",
 			mpp->alias);
@@ -793,11 +793,11 @@ int update_map_pr(struct multipath *mpp, struct path *pp)
 	if (ret != MPATH_PR_SUCCESS )
 	{
 		if (ret == MPATH_PR_ILLEGAL_REQ)
-			mpp->prflag = PRFLAG_UNSET;
+			mpp->prflag = PR_UNSET;
 		condlog(0,"%s : pr in read keys service action failed Error=%d", mpp->alias, ret);
 		goto out;
 	}
-	mpp->prflag = PRFLAG_UNSET;
+	mpp->prflag = PR_UNSET;
 
 	if (resp->prin_descriptor.prin_readkeys.additional_length == 0 )
 	{
@@ -832,7 +832,7 @@ int update_map_pr(struct multipath *mpp, struct path *pp)
 
 	if (isFound)
 	{
-		mpp->prflag = PRFLAG_SET;
+		mpp->prflag = PR_SET;
 		condlog(was_set ? 3 : 2, "%s: key found. prflag set.", mpp->alias);
 	} else
 		condlog(was_set ? 1 : 3, "%s: key not found. prflag unset.",
