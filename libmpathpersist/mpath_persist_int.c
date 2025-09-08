@@ -757,8 +757,6 @@ int update_map_pr(struct multipath *mpp)
 		goto out;
 	}
 
-	ret = MPATH_PR_SUCCESS;
-
 	if (resp->prin_descriptor.prin_readkeys.additional_length == 0 )
 	{
 		condlog(was_set ? 1 : 3,
