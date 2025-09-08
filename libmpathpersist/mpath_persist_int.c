@@ -842,15 +842,8 @@ int update_map_pr(struct multipath *mpp, struct path *pp)
 		condlog(0,"%s : failed to alloc resp in update_map_pr", mpp->alias);
 		return MPATH_PR_OTHER;
 	}
-	if (!pp && count_active_paths(mpp) == 0) {
-		condlog(2, "%s: No available paths to check pr status", mpp->alias);
-		goto out;
-	}
-	if (pp)
-		ret = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RKEY_SA, resp, noisy);
-	else
-		ret = mpath_prin_activepath(mpp, MPATH_PRIN_RKEY_SA, resp, noisy);
 
+	ret = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RKEY_SA, resp, noisy);
 	if (ret != MPATH_PR_SUCCESS )
 	{
 		if (ret == MPATH_PR_ILLEGAL_REQ)
