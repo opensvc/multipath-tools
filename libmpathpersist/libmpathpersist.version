@@ -40,5 +40,4 @@ __LIBMPATHPERSIST_INT_2.0.0 {
 	mpath_alloc_prin_response;
 	prin_do_scsi_ioctl;
 	prout_do_scsi_ioctl;
-	update_map_pr;
 };

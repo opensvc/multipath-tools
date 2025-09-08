@@ -4249,6 +4249,86 @@ static void check_prhold(struct multipath *mpp, struct path *pp)
 		mpp->prhold = PR_SET;
 }
 
+static int update_map_pr(struct multipath *mpp, struct path *pp)
+{
+	int noisy = 0;
+	struct prin_resp *resp;
+	unsigned int i;
+	int ret = MPATH_PR_OTHER, isFound;
+	bool was_set = (mpp->prflag == PR_SET);
+
+	/* If pr is explicitly unset, it must be manually set */
+	if (mpp->prflag == PR_UNSET)
+		return MPATH_PR_SKIP;
+
+	if (!get_be64(mpp->reservation_key)) {
+		/* Nothing to do. Assuming pr mgmt feature is disabled*/
+		mpp->prflag = PR_UNSET;
+		condlog(was_set ? 2 : 4,
+			"%s: reservation_key not set in multipath.conf",
+			mpp->alias);
+		return MPATH_PR_SKIP;
+	}
+
+	resp = mpath_alloc_prin_response(MPATH_PRIN_RKEY_SA);
+	if (!resp) {
+		condlog(0, "%s : failed to alloc resp in update_map_pr",
+			mpp->alias);
+		return MPATH_PR_OTHER;
+	}
+
+	ret = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RKEY_SA, resp, noisy);
+	if (ret != MPATH_PR_SUCCESS) {
+		if (ret == MPATH_PR_ILLEGAL_REQ)
+			mpp->prflag = PR_UNSET;
+		condlog(0, "%s : pr in read keys service action failed Error=%d",
+			mpp->alias, ret);
+		goto out;
+	}
+	mpp->prflag = PR_UNSET;
+
+	if (resp->prin_descriptor.prin_readkeys.additional_length == 0) {
+		condlog(was_set ? 1 : 3,
+			"%s: No key found. Device may not be registered. ",
+			mpp->alias);
+		goto out;
+	}
+
+	condlog(3, "%s: Multipath reservation_key: 0x%" PRIx64 " ", mpp->alias,
+		get_be64(mpp->reservation_key));
+
+	isFound = 0;
+	for (i = 0;
+	     i < resp->prin_descriptor.prin_readkeys.additional_length / 8; i++) {
+		if (libmp_verbosity >= 3) {
+			condlog(3, "%s: PR IN READKEYS[%d] reservation key:",
+				mpp->alias, i);
+			dumpHex((char *)&resp->prin_descriptor.prin_readkeys
+					.key_list[i * 8],
+				8, 1);
+		}
+
+		if (!memcmp(&mpp->reservation_key,
+			    &resp->prin_descriptor.prin_readkeys.key_list[i * 8],
+			    8)) {
+			condlog(3, "%s: reservation key found in pr in readkeys response",
+				mpp->alias);
+			isFound = 1;
+		}
+	}
+
+	if (isFound) {
+		mpp->prflag = PR_SET;
+		condlog(was_set ? 3 : 2, "%s: key found. prflag set.", mpp->alias);
+	} else
+		condlog(was_set ? 1 : 3, "%s: key not found. prflag unset.",
+			mpp->alias);
+
+out:
+	free(resp);
+	return ret;
+}
+
 static void mpath_pr_event_handle(struct path *pp)
 {
 	struct multipath *mpp = pp->mpp;
