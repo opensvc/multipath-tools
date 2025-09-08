@@ -206,6 +206,7 @@ mpath_prout_common(struct multipath *mpp, int rq_servact, int rq_scope,
 	struct pathgroup *pgp = NULL;
 	struct path *pp = NULL;
 	bool found = false;
+	bool conflict = false;
 
 	vector_foreach_slot (mpp->pg, pgp, j) {
 		vector_foreach_slot (pgp->paths, pp, i) {
@@ -222,12 +223,23 @@ mpath_prout_common(struct multipath *mpp, int rq_servact, int rq_scope,
 						  rq_type, paramp, noisy);
 			if (ret == MPATH_PR_SUCCESS && pptr)
 				*pptr = pp;
+			/*
+			 * If this path is considered down by the kernel,
+			 * it may have just come back up, and multipathd
+			 * may not have had time to update the key. Allow
+			 * reservation conflicts.
+			 */
+			if (ret == MPATH_PR_RESERV_CONFLICT &&
+			    pp->dmstate == PSTATE_FAILED) {
+				conflict = true;
+				continue;
+			}
 			if (ret != MPATH_PR_RETRYABLE_ERROR)
 				return ret;
 		}
 	}
 	if (found)
-		return MPATH_PR_OTHER;
+		return conflict ? MPATH_PR_RESERV_CONFLICT : MPATH_PR_OTHER;
 	condlog(0, "%s: no path available", mpp->wwid);
 	return MPATH_PR_DMMP_ERROR;
 }

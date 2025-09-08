@@ -103,7 +103,7 @@ retry :
 	{
 		condlog(0, "%s: ioctl failed %d", dev, ret);
 		close(fd);
-		return ret;
+		return MPATH_PR_OTHER;
 	}
 
 	condlog(4, "%s: Duration=%u (ms)", dev, io_hdr.duration);
