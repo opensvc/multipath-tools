@@ -49,17 +49,6 @@ struct threadinfo {
 	struct prout_param param;
 };
 
-static int mpath_send_prin_activepath (char * dev, int rq_servact,
-				struct prin_resp * resp, int noisy)
-{
-
-	int rc;
-
-	rc = prin_do_scsi_ioctl(dev, rq_servact, resp,  noisy);
-
-	return (rc);
-}
-
 static int mpath_prin_activepath (struct multipath *mpp, int rq_servact,
 	struct prin_resp * resp, int noisy)
 {
@@ -80,8 +69,7 @@ static int mpath_prin_activepath (struct multipath *mpp, int rq_servact,
 
 			condlog(3, "%s: sending pr in command to %s ",
 				mpp->wwid, pp->dev);
-			ret = mpath_send_prin_activepath(pp->dev, rq_servact,
-							 resp, noisy);
+			ret = prin_do_scsi_ioctl(pp->dev, rq_servact, resp, noisy);
 			switch(ret)
 			{
 				case MPATH_PR_SUCCESS:
