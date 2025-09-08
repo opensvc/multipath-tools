@@ -34,7 +34,7 @@ global:
 	mpath_persistent_reserve_out__;
 } LIBMPATHPERSIST_2.1.0;
 
-__LIBMPATHPERSIST_INT_1.1.0 {
+__LIBMPATHPERSIST_INT_2.0.0 {
 	/* Internal use by multipath-tools */
 	dumpHex;
 	mpath_alloc_prin_response;

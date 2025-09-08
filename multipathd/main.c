@@ -727,7 +727,7 @@ fail:
 	sync_map_state(mpp, false);
 
 	if (mpp->prflag != PRFLAG_SET)
-		update_map_pr(mpp);
+		update_map_pr(mpp, NULL);
 	if (mpp->prflag == PRFLAG_SET)
 		pr_register_active_paths(mpp);
 
@@ -1403,7 +1403,7 @@ rescan:
 
 	if (retries >= 0) {
 		if (start_waiter)
-			update_map_pr(mpp);
+			update_map_pr(mpp, NULL);
 		if (mpp->prflag == PRFLAG_SET && prflag != PRFLAG_SET)
 				pr_register_active_paths(mpp);
 		condlog(2, "%s [%s]: path added to devmap %s",
@@ -3312,7 +3312,7 @@ configure (struct vectors * vecs, enum force_reload_types reload_type)
 	vector_foreach_slot(mpvec, mpp, i){
 		if (remember_wwid(mpp->wwid) == 1)
 			trigger_paths_udev_change(mpp, true);
-		update_map_pr(mpp);
+		update_map_pr(mpp, NULL);
 		if (mpp->prflag == PRFLAG_SET)
 			pr_register_active_paths(mpp);
 	}
@@ -4230,70 +4230,24 @@ main (int argc, char *argv[])
 
 static void mpath_pr_event_handle(struct path *pp)
 {
-	struct multipath * mpp;
-	unsigned int i;
-	int ret, isFound;
+	struct multipath *mpp = pp->mpp;
+	int ret;
 	struct prout_param_descriptor *param;
-	struct prin_resp *resp;
 
-	mpp = pp->mpp;
 	if (pp->bus != SYSFS_BUS_SCSI) {
 		mpp->prflag = PRFLAG_UNSET;
 		return;
 	}
 
-	if (!get_be64(mpp->reservation_key)) {
-		mpp->prflag = PRFLAG_UNSET;
+	if (update_map_pr(mpp, pp) != MPATH_PR_SUCCESS)
 		return;
-	}
 
-	resp = mpath_alloc_prin_response(MPATH_PRIN_RKEY_SA);
-	if (!resp){
-		condlog(0,"%s Alloc failed for prin response", pp->dev);
-		goto out;
-	}
-
-	mpp->prflag = PRFLAG_UNSET;
-	ret = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RKEY_SA, resp, 0);
-	if (ret != MPATH_PR_SUCCESS )
-	{
-		condlog(0,"%s : pr in read keys service action failed. Error=%d", pp->dev, ret);
-		goto out;
-	}
-
-	condlog(3, " event pr=%d addlen=%d",resp->prin_descriptor.prin_readkeys.prgeneration,
-			resp->prin_descriptor.prin_readkeys.additional_length );
-
-	if (resp->prin_descriptor.prin_readkeys.additional_length == 0 )
-	{
-		condlog(1, "%s: No key found. Device may not be registered.", pp->dev);
-		goto out;
-	}
-	condlog(2, "Multipath  reservation_key: 0x%" PRIx64 " ",
-		get_be64(mpp->reservation_key));
-
-	isFound =0;
-	for (i = 0; i < resp->prin_descriptor.prin_readkeys.additional_length/8; i++ )
-	{
-		condlog(2, "PR IN READKEYS[%d]  reservation key:",i);
-		dumpHex((char *)&resp->prin_descriptor.prin_readkeys.key_list[i*8], 8 , -1);
-		if (!memcmp(&mpp->reservation_key, &resp->prin_descriptor.prin_readkeys.key_list[i*8], 8))
-		{
-			condlog(2, "%s: pr key found in prin readkeys response", mpp->alias);
-			isFound =1;
-			break;
-		}
-	}
-	if (!isFound)
-	{
-		condlog(0, "%s: Either device not registered or ", pp->dev);
-		condlog(0, "host is not authorised for registration. Skip path");
-		goto out;
-	}
+	if (mpp->prflag != PRFLAG_SET)
+		return;
 
 	param = (struct prout_param_descriptor *)calloc(1, sizeof(struct prout_param_descriptor));
 	if (!param)
-		goto out;
+		return;
 
 	param->sa_flags = mpp->sa_flags;
 	memcpy(param->sa_key, &mpp->reservation_key, 8);
@@ -4306,10 +4260,6 @@ static void mpath_pr_event_handle(struct path *pp)
 	{
 		condlog(0,"%s: Reservation registration failed. Error: %d", pp->dev, ret);
 	}
-	mpp->prflag = PRFLAG_SET;
 
 	free(param);
-out:
-	if (resp)
-		free(resp);
 }

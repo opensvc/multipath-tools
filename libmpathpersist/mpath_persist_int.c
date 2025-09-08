@@ -719,7 +719,7 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 	return ret;
 }
 
-int update_map_pr(struct multipath *mpp)
+int update_map_pr(struct multipath *mpp, struct path *pp)
 {
 	int noisy=0;
 	struct prin_resp *resp;
@@ -734,7 +734,7 @@ int update_map_pr(struct multipath *mpp)
 		condlog(was_set ? 2 : 4,
 			"%s: reservation_key not set in multipath.conf",
 			mpp->alias);
-		return MPATH_PR_SUCCESS;
+		return MPATH_PR_SKIP;
 	}
 
 	resp = mpath_alloc_prin_response(MPATH_PRIN_RKEY_SA);
@@ -743,13 +743,15 @@ int update_map_pr(struct multipath *mpp)
 		condlog(0,"%s : failed to alloc resp in update_map_pr", mpp->alias);
 		return MPATH_PR_OTHER;
 	}
-	if (count_active_paths(mpp) == 0)
-	{
+	if (!pp && count_active_paths(mpp) == 0) {
 		condlog(2, "%s: No available paths to check pr status", mpp->alias);
 		goto out;
 	}
 	mpp->prflag = PRFLAG_UNSET;
-	ret = mpath_prin_activepath(mpp, MPATH_PRIN_RKEY_SA, resp, noisy);
+	if (pp)
+		ret = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RKEY_SA, resp, noisy);
+	else
+		ret = mpath_prin_activepath(mpp, MPATH_PRIN_RKEY_SA, resp, noisy);
 
 	if (ret != MPATH_PR_SUCCESS )
 	{
@@ -791,8 +793,10 @@ int update_map_pr(struct multipath *mpp)
 	if (isFound)
 	{
 		mpp->prflag = PRFLAG_SET;
-		condlog(was_set ? 3 : 2, "%s: prflag flag set.", mpp->alias);
-	}
+		condlog(was_set ? 3 : 2, "%s: key found. prflag set.", mpp->alias);
+	} else
+		condlog(was_set ? 1 : 3, "%s: key not found. prflag unset.",
+			mpp->alias);
 
 out:
 	free(resp);
