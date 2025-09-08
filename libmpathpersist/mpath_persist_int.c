@@ -363,40 +363,6 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	return (status == MPATH_PR_RETRYABLE_ERROR) ? MPATH_PR_OTHER : status;
 }
 
-static int send_prout_activepath(char *dev, int rq_servact, int rq_scope,
-				 unsigned int rq_type,
-				 struct prout_param_descriptor * paramp, int noisy)
-{
-	struct prout_param param;
-	param.rq_servact = rq_servact;
-	param.rq_scope  = rq_scope;
-	param.rq_type   = rq_type;
-	param.paramp    = paramp;
-	param.noisy = noisy;
-	param.status = -1;
-
-	pthread_t thread;
-	pthread_attr_t attr;
-	int rc;
-
-	memset(&thread, 0, sizeof(thread));
-	strlcpy(param.dev, dev, FILE_NAME_SIZE);
-	/* Initialize and set thread joinable attribute */
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-	rc = pthread_create(&thread, &attr, mpath_prout_pthread_fn, (void *)(&param));
-	if (rc){
-		condlog (3, "%s: failed to create thread %d", dev, rc);
-		return MPATH_PR_THREAD_ERROR;
-	}
-	/* Free attribute and wait for the other threads */
-	pthread_attr_destroy(&attr);
-	rc = pthread_join(thread, NULL);
-
-	return (param.status);
-}
-
 static int mpath_prout_common(struct multipath *mpp,int rq_servact, int rq_scope,
 			      unsigned int rq_type,
 			      struct prout_param_descriptor* paramp, int noisy)
@@ -416,9 +382,8 @@ static int mpath_prout_common(struct multipath *mpp,int rq_servact, int rq_scope
 
 			condlog (3, "%s: sending pr out command to %s", mpp->wwid, pp->dev);
 			found = true;
-			ret = send_prout_activepath(pp->dev, rq_servact,
-						    rq_scope, rq_type,
-						    paramp, noisy);
+			ret = prout_do_scsi_ioctl(pp->dev, rq_servact, rq_scope,
+						  rq_type, paramp, noisy);
 			if (ret != MPATH_PR_RETRYABLE_ERROR)
 				return ret;
 		}
