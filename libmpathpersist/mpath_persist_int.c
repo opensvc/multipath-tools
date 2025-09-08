@@ -327,6 +327,48 @@ void preempt_missing_path(struct multipath *mpp, uint8_t *key, uint8_t *sa_key,
 		condlog(0, "%s: register: pr preempt command failed.", mpp->wwid);
 }
 
+/*
+ * If libmpathpersist fails at updating the key on a path with a retryable
+ * error, it has probably failed. But there is a chance that the path is
+ * still usable. To make sure a path isn't active without a key, when it
+ * should have one, or with a key, when it shouldn't have one, check if
+ * the path is still usable. If it is, we must fail the registration.
+ */
+static int
+check_failed_paths(struct multipath *mpp, struct threadinfo *thread, int count)
+{
+	int i, j, k;
+	int ret;
+	struct pathgroup *pgp;
+	struct path *pp;
+	struct config *conf;
+
+	for (i = 0; i < count; i++) {
+		if (thread[i].param.status != MPATH_PR_RETRYABLE_ERROR)
+			continue;
+		vector_foreach_slot (mpp->pg, pgp, j) {
+			vector_foreach_slot (pgp->paths, pp, k) {
+				if (strncmp(pp->dev, thread[i].param.dev,
+					    FILE_NAME_SIZE) == 0)
+					goto match;
+			}
+		}
+		/* no match. This shouldn't ever happen. */
+		condlog(0, "%s: Error: can't find path %s", mpp->wwid,
+			thread[i].param.dev);
+		continue;
+	match:
+		conf = get_multipath_config();
+		ret = pathinfo(pp, conf, DI_CHECKER);
+		put_multipath_config(conf);
+		/* If pathinfo fails, or if the path is active, return error */
+		if (ret != PATHINFO_OK || pp->state == PATH_UP ||
+		    pp->state == PATH_GHOST)
+			return MPATH_PR_OTHER;
+	}
+	return MPATH_PR_SUCCESS;
+}
+
 static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 			   unsigned int rq_type,
 			   struct prout_param_descriptor * paramp, int noisy)
@@ -335,8 +377,9 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	int i, j, k;
 	struct pathgroup *pgp = NULL;
 	struct path *pp = NULL;
-	bool can_retry = false;
+	bool had_success = false;
 	bool need_retry = false;
+	bool retryable_error = false;
 	int active_pathcount=0;
 	int rc;
 	int count=0;
@@ -440,16 +483,21 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 		 */
 		if (thread[i].param.status == MPATH_PR_RESERV_CONFLICT)
 			need_retry = true;
+		else if (thread[i].param.status == MPATH_PR_RETRYABLE_ERROR)
+			retryable_error = true;
 		else if (thread[i].param.status == MPATH_PR_SUCCESS)
-			can_retry = true;
+			had_success = true;
 		else if (status == MPATH_PR_SUCCESS)
 			status = thread[i].param.status;
 	}
-	if (need_retry && can_retry && rq_servact == MPATH_PROUT_REG_SA &&
+	if (need_retry && had_success && rq_servact == MPATH_PROUT_REG_SA &&
 	    status == MPATH_PR_SUCCESS) {
 		condlog(3, "%s: ERROR: initiating pr out retry", mpp->wwid);
+		retryable_error = false;
 		for (i = 0; i < count; i++) {
-			if (thread[i].param.status != MPATH_PR_RESERV_CONFLICT) {
+			/* retry retryable errors and conflicts */
+			if (thread[i].param.status != MPATH_PR_RESERV_CONFLICT &&
+			    thread[i].param.status != MPATH_PR_RETRYABLE_ERROR) {
 				thread[i].param.status = MPATH_PR_SKIP;
 				continue;
 			}
@@ -476,7 +524,10 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 					condlog(3, "%s: failed to join thread while retrying %d",
 						mpp->wwid, i);
 				}
-				if (status == MPATH_PR_SUCCESS)
+				if (thread[i].param.status ==
+				    MPATH_PR_RETRYABLE_ERROR)
+					retryable_error = true;
+				else if (status == MPATH_PR_SUCCESS)
 					status = thread[i].param.status;
 			}
 		}
@@ -485,10 +536,17 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 
 	pthread_attr_destroy(&attr);
 	if (need_retry)
-		status = MPATH_PR_RESERV_CONFLICT;
+		return MPATH_PR_RESERV_CONFLICT;
+	if (status != MPATH_PR_SUCCESS)
+		return status;
+	/* If you had retryable errors on all paths, fail the registration */
+	if (!had_success)
+		return MPATH_PR_OTHER;
+	if (retryable_error)
+		status = check_failed_paths(mpp, thread, count);
 	if (status == MPATH_PR_SUCCESS)
 		preempt_missing_path(mpp, paramp->key, paramp->sa_key, noisy);
-	return (status == MPATH_PR_RETRYABLE_ERROR) ? MPATH_PR_OTHER : status;
+	return status;
 }
 
 static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
