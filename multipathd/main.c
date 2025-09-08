@@ -4227,10 +4227,6 @@ static void check_prhold(struct multipath *mpp, struct path *pp)
 	struct prin_resp resp = {{{.prgeneration = 0}}};
 	int status;
 
-	if (mpp->prflag == PR_UNSET) {
-		mpp->prhold = PR_UNSET;
-		return;
-	}
 	if (mpp->prflag != PR_SET || mpp->prhold != PR_UNKNOWN)
 		return;
 
@@ -4249,6 +4245,18 @@ static void check_prhold(struct multipath *mpp, struct path *pp)
 		mpp->prhold = PR_SET;
 }
 
+void set_pr(struct multipath *mpp)
+{
+	mpp->prflag = PR_SET;
+}
+
+void unset_pr(struct multipath *mpp)
+{
+	mpp->prflag = PR_UNSET;
+	mpp->prhold = PR_UNSET;
+	mpp->sa_flags = 0;
+}
+
 static int update_map_pr(struct multipath *mpp, struct path *pp)
 {
 	struct prin_resp resp;
@@ -4262,7 +4270,7 @@ static int update_map_pr(struct multipath *mpp, struct path *pp)
 
 	if (!get_be64(mpp->reservation_key)) {
 		/* Nothing to do. Assuming pr mgmt feature is disabled*/
-		mpp->prflag = PR_UNSET;
+		unset_pr(mpp);
 		condlog(was_set ? 2 : 4,
 			"%s: reservation_key not set in multipath.conf",
 			mpp->alias);
@@ -4274,12 +4282,11 @@ static int update_map_pr(struct multipath *mpp, struct path *pp)
 	ret = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RKEY_SA, &resp, 0);
 	if (ret != MPATH_PR_SUCCESS) {
 		if (ret == MPATH_PR_ILLEGAL_REQ)
-			mpp->prflag = PR_UNSET;
+			unset_pr(mpp);
 		condlog(0, "%s : pr in read keys service action failed Error=%d",
 			mpp->alias, ret);
 		return ret;
 	}
-	mpp->prflag = PR_UNSET;
 
 	condlog(4, "%s: Multipath reservation_key: 0x%" PRIx64 " ", mpp->alias,
 		get_be64(mpp->reservation_key));
@@ -4300,11 +4307,13 @@ static int update_map_pr(struct multipath *mpp, struct path *pp)
 	}
 
 	if (isFound) {
-		mpp->prflag = PR_SET;
+		set_pr(mpp);
 		condlog(was_set ? 3 : 2, "%s: key found. prflag set.", mpp->alias);
-	} else
+	} else {
+		unset_pr(mpp);
 		condlog(was_set ? 1 : 3, "%s: key not found. prflag unset.",
 			mpp->alias);
+	}
 
 	return MPATH_PR_SUCCESS;
 }
@@ -4316,15 +4325,12 @@ static void mpath_pr_event_handle(struct path *pp)
 	struct prout_param_descriptor param;
 
 	if (pp->bus != SYSFS_BUS_SCSI) {
-		mpp->prflag = PR_UNSET;
+		unset_pr(mpp);
 		return;
 	}
 
-	if (update_map_pr(mpp, pp) != MPATH_PR_SUCCESS) {
-		if (mpp->prflag == PR_UNSET)
-			mpp->prhold = PR_UNSET;
+	if (update_map_pr(mpp, pp) != MPATH_PR_SUCCESS)
 		return;
-	}
 
 	check_prhold(mpp, pp);
 
