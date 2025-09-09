@@ -18,7 +18,7 @@
 #include "test-lib.h"
 #include "wrap64.h"
 
-const int default_mask = (DI_SYSFS|DI_BLACKLIST|DI_WWID|DI_CHECKER|DI_PRIO|DI_SERIAL);
+const int default_mask = (DI_SYSFS|DI_BLACKLIST|DI_WWID|DI_CHECKER|DI_PRIO|DI_IOCTL);
 const char default_devnode[] = "sdxTEST";
 const char default_wwid[] = "TEST-WWID";
 /* default_wwid should be a substring of default_wwid_1! */
@@ -282,7 +282,6 @@ struct mocked_path *mocked_path_from_path(struct mocked_path *mp,
 static const char hbtl[] = "4:0:3:1";
 static void mock_sysfs_pathinfo(const struct mocked_path *mp)
 {
-	will_return(__wrap_udev_device_get_subsystem, "scsi");
 	will_return(__wrap_udev_device_get_sysname, hbtl);
 	will_return(__wrap_udev_device_get_sysname, hbtl);
 	will_return(__wrap_udev_device_get_sysattr_value, mp->vendor);
@@ -339,12 +338,6 @@ void mock_pathinfo(int mask, const struct mocked_path *mp)
 	/* fake open() in pathinfo() */
 	if (mp->flags & NEED_FD)
 		will_return(__wrap_udev_device_get_devnode, _mocked_filename);
-
-	/* scsi_ioctl_pathinfo() */
-	if (mask & DI_SERIAL) {
-		will_return(__wrap_udev_device_get_subsystem, "scsi");
-		will_return(__wrap_udev_device_get_sysname, hbtl);
-	}
 
 	if (mask & DI_WWID) {
 		/* get_udev_uid() */

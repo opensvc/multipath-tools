@@ -55,35 +55,38 @@ ssize_t sysfs_get_inquiry(struct udev_device *udev,
 			  unsigned char *buff, size_t len);
 int sysfs_get_asymmetric_access_state(struct path *pp,
 				      char *buff, int buflen);
-bool has_uid_fallback(struct path *pp);
+bool can_recheck_wwid(const struct path *pp);
 int get_uid(struct path * pp, int path_state, struct udev_device *udev,
 	    int allow_fallback);
 bool is_vpd_page_supported(int fd, int pg);
+void cleanup_udev_enumerate_ptr(void *arg);
+void cleanup_udev_device_ptr(void *arg);
 
 /*
  * discovery bitmask
  */
 enum discovery_mode {
 	DI_SYSFS__,
-	DI_SERIAL__,
+	DI_IOCTL__,
 	DI_CHECKER__,
 	DI_PRIO__,
 	DI_WWID__,
 	DI_BLACKLIST__,
 	DI_NOIO__,
 	DI_NOFALLBACK__,
+	DI_DISCOVERY__,
 };
 
 #define DI_SYSFS	(1 << DI_SYSFS__)
-#define DI_SERIAL	(1 << DI_SERIAL__)
+#define DI_IOCTL	(1 << DI_IOCTL__)
 #define DI_CHECKER	(1 << DI_CHECKER__)
 #define DI_PRIO		(1 << DI_PRIO__)
 #define DI_WWID		(1 << DI_WWID__)
 #define DI_BLACKLIST	(1 << DI_BLACKLIST__)
 #define DI_NOIO		(1 << DI_NOIO__) /* Avoid IO on the device */
 #define DI_NOFALLBACK	(1 << DI_NOFALLBACK__) /* do not allow wwid fallback */
+#define DI_DISCOVERY	(1 << DI_DISCOVERY__) /* set only during map discovery */
 
-#define DI_ALL		(DI_SYSFS  | DI_SERIAL | DI_CHECKER | DI_PRIO | \
-			 DI_WWID)
+#define DI_ALL		(DI_SYSFS  | DI_IOCTL | DI_CHECKER | DI_PRIO | DI_WWID)
 
 #endif /* DISCOVERY_H_INCLUDED */

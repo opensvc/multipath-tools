@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Soft:        Keepalived is a failover program for the LVS project
  *              <www.linuxvirtualserver.org>. It monitor & manipulate
@@ -8,16 +9,6 @@
  * Version:     $Id: vector.h,v 1.0.3 2003/05/11 02:28:03 acassen Exp $
  *
  * Author:      Alexandre Cassen, <acassen@linux-vs.org>
- *
- *              This program is distributed in the hope that it will be useful,
- *              but WITHOUT ANY WARRANTY; without even the implied warranty of
- *              MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *              See the GNU General Public License for more details.
- *
- *              This program is free software; you can redistribute it and/or
- *              modify it under the terms of the GNU General Public License
- *              as published by the Free Software Foundation; either version
- *              2 of the License, or (at your option) any later version.
  */
 
 #ifndef VECTOR_H_INCLUDED
@@ -32,8 +23,7 @@ struct vector_s {
 };
 typedef struct vector_s *vector;
 
-#define VECTOR_DEFAULT_SIZE 1
-#define VECTOR_SIZE(V)   ((V) ? ((V)->allocated) / VECTOR_DEFAULT_SIZE : 0)
+#define VECTOR_SIZE(V)   ((V) ? (V)->allocated : 0)
 #define VECTOR_SLOT(V,E) (((V) && (E) < VECTOR_SIZE(V) && (E) >= 0) ? (V)->slot[(E)] : NULL)
 #define VECTOR_LAST_SLOT(V)   (((V) && VECTOR_SIZE(V) > 0) ? (V)->slot[(VECTOR_SIZE(V) - 1)] : NULL)
 
@@ -86,7 +76,6 @@ extern void vector_del_slot(vector v, int slot);
 extern void *vector_insert_slot(vector v, int slot, void *value);
 int find_slot(vector v, void * addr);
 int vector_find_or_add_slot(vector v, void *value);
-extern void vector_repack(vector v);
 extern void vector_dump(vector v);
 extern void dump_strvec(vector strvec);
 extern int vector_move_up(vector v, int src, int dest);

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * (C) Copyright HUAWEI Technology Corp. 2017, All Rights Reserved.
  *
@@ -16,8 +17,6 @@
  *
  * Author(s): Yang Feng <philip.yang@huawei.com>
  * Revised:   Guan Junxiong <guanjunxiong@huawei.com>
- *
- * This file is released under the GPL version 2, or any later version.
  */
 
 #define _GNU_SOURCE

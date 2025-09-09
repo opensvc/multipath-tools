@@ -79,6 +79,9 @@ libudev_incdir	:= $(or $(shell $(PKG_CONFIG) --variable=includedir libudev),/usr
 kernel_incdir	:= /usr/include
 sysdir_bin      := $(sys_execprefix)bin
 
+abstract_socket := @/org/kernel/linux/storage/multipathd
+pathname_socket := /run/multipathd.socket
+
 ifeq ($(V),)
 Q		:= @
 # make's "Entering directory" messages are confusing in parallel mode
@@ -114,8 +117,11 @@ CPPFLAGS	:= $(FORTIFY_OPT) $(CPPFLAGS) $(D_URCU_VERSION) \
 		   -DBIN_DIR=\"$(bindir)\" -DMULTIPATH_DIR=\"$(TGTDIR)$(plugindir)\" \
 		   -DRUNTIME_DIR=\"$(runtimedir)\" -DCONFIG_DIR=\"$(TGTDIR)$(configdir)\" \
 		   -DDEFAULT_CONFIGFILE=\"$(TGTDIR)$(configfile)\" -DSTATE_DIR=\"$(TGTDIR)$(statedir)\" \
-		   -DEXTRAVERSION=\"$(EXTRAVERSION)\" -MMD -MP
-CFLAGS		:= -std=gnu99 $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe \
+		   -DEXTRAVERSION=\"$(EXTRAVERSION)\" \
+		   -DABSTRACT_SOCKET=\"$(abstract_socket)\" -DPATHNAME_SOCKET=\"$(pathname_socket)\" \
+		   -DWSTRINGOP_TRUNCATION=$(if $(WSTRINGOP_TRUNCATION),1,0) \
+		   -MMD -MP
+CFLAGS		:= -std=$(C_STD) $(CFLAGS) $(OPTFLAGS) $(WARNFLAGS) -pipe \
 		   -fexceptions
 BIN_CFLAGS	:= -fPIE -DPIE
 LIB_CFLAGS	:= -fPIC
@@ -167,4 +173,6 @@ NV_VERSION_SCRIPT = $(DEVLIB:%.so=%-nv.version)
 		-e 's:@SYSDIR_BIN@:'$(sysdir_bin)': g' \
 		-e 's:@RUNTIME_DIR@:'$(runtimedir)':g' \
 		-e 's/@MODPROBE_UNIT@/'$(MODPROBE_UNIT)'/g' \
+		-e 's,@ABSTRACT_SOCKET@,'$(abstract_socket)',g' \
+		-e 's,@PATHNAME_SOCKET@,'$(pathname_socket)',g' \
 		$< >$@

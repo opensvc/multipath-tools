@@ -31,8 +31,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [bookworm, sid]
+        os: [bullseye, bookworm, trixie, sid]
         arch: [ppc64le, arm64, s390x]
+        exclude:
+          - os: bullseye
+            arch: ppc64le
+          - os: bullseye
+            arch: s390x
     container: ghcr.io/mwilck/multipath-cross-debian_cross-${{ matrix.os }}-${{ matrix.arch }}
     steps:
       - name: checkout
@@ -52,8 +57,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [bookworm, sid]
+        os: [bullseye, bookworm, trixie, sid]
         arch: [ppc64le, arm64, s390x]
+        exclude:
+          - os: bullseye
+            arch: ppc64le
+          - os: bullseye
+            arch: s390x
     steps:
       - name: set container arch
         run: echo CONTAINER_ARCH="${{ matrix.arch }}" >> $GITHUB_ENV
@@ -68,7 +78,9 @@ jobs:
       - name: unpack binary archive
         run: tar xfv test-progs.tar
       - name: enable foreign arch
-        uses: dbhi/qus/action@main
+        uses: docker/setup-qemu-action@v2
+        with:
+          image: tonistiigi/binfmt:latest
       - name: run tests
         uses: mosteo-actions/docker-run@v1
         with:
@@ -87,8 +99,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [bookworm, sid]
+        os: [bullseye, bookworm, trixie, sid]
         arch: [ppc64le, arm64, s390x]
+        exclude:
+          - os: bullseye
+            arch: ppc64le
+          - os: bullseye
+            arch: s390x
     steps:
       - name: mpath
         run: sudo modprobe dm_multipath
@@ -107,7 +124,9 @@ jobs:
       - name: unpack binary archive
         run: tar xfv test-progs.tar
       - name: enable foreign arch
-        uses: dbhi/qus/action@main
+        uses: docker/setup-qemu-action@v2
+        with:
+          image: tonistiigi/binfmt:latest
       - name: run tests
         uses: mosteo-actions/docker-run@v1
         with:

@@ -197,22 +197,23 @@ kernel multipath target:
 .RS
 .TP 12
 .I "round-robin 0"
-Loop through every path in the path group, sending the same amount of I/O to
-each. Some aspects of behavior can be controlled with the attributes:
-\fIrr_min_io\fR, \fIrr_min_io_rq\fR and \fIrr_weight\fR.
+Choose the path for the next bunch of I/O by looping through every path in the
+path group, sending \fBthe same number of I/O requests\fR to each path. Some
+aspects of behavior can be controlled with the attributes: \fIrr_min_io\fR,
+\fIrr_min_io_rq\fR and \fIrr_weight\fR.
 .TP
 .I "queue-length 0"
-(Since 2.6.31 kernel) Choose the path for the next bunch of I/O based on the amount
-of outstanding I/O to the path.
+(Since 2.6.31 kernel) Choose the path for the next bunch of I/O based on \fBthe lowest
+number of outstanding in-flight I/O requests\fR to the path.
 .TP
 .I "service-time 0"
-(Since 2.6.31 kernel) Choose the path for the next bunch of I/O based on the amount
-of outstanding I/O to the path and its relative throughput.
+(Since 2.6.31 kernel) Choose the path for the next bunch of I/O based on \fBthe
+lowest total size (in bytes) of outstanding in-flight I/O requests\fR to the path.
 .TP
 .I "historical-service-time 0"
-(Since 5.8 kernel) Choose the path for the next bunch of I/O based on the
-estimation of future service time based on the history of previous I/O submitted
-to each path.
+(Since 5.8 kernel) Choose the path for the next bunch of I/O with \fBa dynamic
+algorithm based on the historical service time and the number of outstanding
+in-flight I/O requests\fR to the path.
 .TP
 The default is: \fBservice-time 0\fR
 .RE
@@ -1214,7 +1215,7 @@ Both multipathd and multipath treat every non-blacklisted device as multipath
 device path.
 .TP
 .I smart
-This differs from \fIfind_multipaths yes\fR only in
+This differs from \fIfind_multipaths on\fR only in
 the way it treats new devices for which only one path has been
 detected yet. When such a device is first encountered in udev rules, it is
 treated as a multipath device. multipathd waits whether additional paths with

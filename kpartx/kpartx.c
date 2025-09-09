@@ -404,13 +404,6 @@ main(int argc, char **argv){
 		set_delimiter(mapname, delim);
 	}
 
-	fd = open(device, O_RDONLY | O_DIRECT);
-
-	if (fd == -1) {
-		perror(device);
-		exit(1);
-	}
-
 	/* add/remove partitions to the kernel devmapper tables */
 	int r = 0;
 
@@ -427,6 +420,13 @@ main(int argc, char **argv){
 				fprintf(stderr, "loop deleted : %s\n", loopdev);
 		}
 		goto end;
+	}
+
+	fd = open(device, O_RDONLY | O_DIRECT);
+
+	if (fd == -1) {
+		perror(device);
+		exit(1);
 	}
 
 	for (i = 0; i < ptct; i++) {

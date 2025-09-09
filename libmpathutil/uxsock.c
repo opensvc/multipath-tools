@@ -6,12 +6,15 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/un.h>
 #include <poll.h>
 #include <signal.h>
@@ -33,6 +36,8 @@
 static int _recv_packet(int fd, char **buf, unsigned int timeout,
 			ssize_t limit);
 
+#include "../libmpathcmd/mpath_fill_sockaddr.c"
+
 /*
  * create a unix domain socket and start listening on it
  * return a file descriptor open on the socket
@@ -41,42 +46,32 @@ int ux_socket_listen(const char *name)
 {
 	int fd;
 	size_t len;
-#ifdef USE_SYSTEMD
-	int num;
-#endif
 	struct sockaddr_un addr;
 
-#ifdef USE_SYSTEMD
-	num = sd_listen_fds(0);
-	if (num > 1) {
-		condlog(3, "sd_listen_fds returned %d fds", num);
-		return -1;
-	} else if (num == 1) {
-		fd = SD_LISTEN_FDS_START + 0;
-		condlog(3, "using fd %d from sd_listen_fds", fd);
-		return fd;
-	}
-#endif
+	/* This is after the PID check, so unlinking should be fine */
+	if (name[0] != '@' && unlink(name) == -1 && errno != ENOENT)
+		condlog(1, "Failed to unlink %s", name);
+
 	fd = socket(AF_LOCAL, SOCK_STREAM, 0);
 	if (fd == -1) {
 		condlog(3, "Couldn't create ux_socket, error %d", errno);
 		return -1;
 	}
 
-	memset(&addr, 0, sizeof(addr));
-	addr.sun_family = AF_LOCAL;
-	addr.sun_path[0] = '\0';
-	len = strlen(name) + 1;
-	if (len >= sizeof(addr.sun_path))
-		len = sizeof(addr.sun_path) - 1;
-	memcpy(&addr.sun_path[1], name, len);
-
-	len += sizeof(sa_family_t);
+	len = mpath_fill_sockaddr__(&addr, name);
 	if (bind(fd, (struct sockaddr *)&addr, len) == -1) {
 		condlog(3, "Couldn't bind to ux_socket, error %d", errno);
 		close(fd);
 		return -1;
 	}
+
+	/*
+	 * Socket needs to have rw permissions for everone.
+	 * SO_PEERCRED makes sure that only root can modify things.
+	 */
+	if (name[0] != '@' &&
+	    chmod(name, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) == -1)
+		condlog(3, "failed to set permissions on %s: %s", name, strerror(errno));
 
 	if (listen(fd, 10) == -1) {
 		condlog(3, "Couldn't listen to ux_socket, error %d", errno);

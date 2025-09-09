@@ -307,7 +307,6 @@ int disassemble_map(const struct vector_s *pathvec,
 
 			free(word);
 
-			pgp->id ^= (long)pp;
 			pp->pgindex = i + 1;
 
 			for (k = 0; k < num_paths_args; k++)

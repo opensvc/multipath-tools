@@ -337,6 +337,11 @@ void cleanup_fclose(void *p)
 		fclose(p);
 }
 
+void cleanup_bitfield(struct bitfield **p)
+{
+	free(*p);
+}
+
 struct bitfield *alloc_bitfield(unsigned int maxbit)
 {
 	unsigned int n;

@@ -255,14 +255,18 @@ verify_alua_prio(struct multipath *mp)
 {
 	int i;
 	struct path *pp;
+	bool assume_alua = false;
 
 	vector_foreach_slot(mp->paths, pp, i) {
 		const char *name = prio_name(&pp->prio);
+		if (!prio_selected(&pp->prio))
+			continue;
 		if (strncmp(name, PRIO_ALUA, PRIO_NAME_LEN) &&
 		    strncmp(name, PRIO_SYSFS, PRIO_NAME_LEN))
 			 return false;
+		assume_alua = true;
 	}
-	return true;
+	return assume_alua;
 }
 
 int select_detect_pgpolicy(struct config *conf, struct multipath *mp)
@@ -642,13 +646,12 @@ out:
 }
 
 /*
- * Current RDAC (NetApp E/EF Series) firmware relies
- * on periodic REPORT TARGET PORT GROUPS for
- * internal load balancing.
+ * Current RDAC (NetApp E/EF Series) firmware relies on periodic
+ * REPORT TARGET PORT GROUPS for internal load balancing.
  * Using the sysfs priority checker defeats this purpose.
  *
- * Moreover, NetApp would also prefer the RDAC checker over ALUA.
- * (https://listman.redhat.com/archives/dm-devel/2017-September/msg00326.html)
+ * Moreover, NetApp would also prefer the RDAC checker over ALUA:
+ * (https://lore.kernel.org/dm-devel/D4D7BCD8-EB06-4B76-920D-4D5101851498@netapp.com/)
  */
 static int
 check_rdac(struct path * pp)
@@ -735,9 +738,7 @@ int select_recheck_wwid(struct config *conf, struct path * pp)
 	pp_set_conf(recheck_wwid);
 	pp_set_default(recheck_wwid, DEFAULT_RECHECK_WWID);
 out:
-	if (pp->recheck_wwid == RECHECK_WWID_ON &&
-	    (pp->bus != SYSFS_BUS_SCSI ||
-	     !has_uid_fallback(pp))) {
+	if (pp->recheck_wwid == RECHECK_WWID_ON && !can_recheck_wwid(pp)) {
 		pp->recheck_wwid = RECHECK_WWID_OFF;
 		origin = "(setting: unsupported by device type/config)";
 	}

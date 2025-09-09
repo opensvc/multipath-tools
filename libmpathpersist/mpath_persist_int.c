@@ -92,7 +92,7 @@ static int mpath_prin_activepath (struct multipath *mpp, int rq_servact,
 			}
 		}
 	}
-	return ret;
+	return (ret == MPATH_PR_RETRYABLE_ERROR) ? MPATH_PR_OTHER : ret;
 }
 
 void *mpath_alloc_prin_response(int prin_sa)
@@ -372,7 +372,7 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	}
 
 	pthread_attr_destroy(&attr);
-	return (status);
+	return (status == MPATH_PR_RETRYABLE_ERROR) ? MPATH_PR_OTHER : status;
 }
 
 static int send_prout_activepath(char *dev, int rq_servact, int rq_scope,
@@ -416,6 +416,7 @@ static int mpath_prout_common(struct multipath *mpp,int rq_servact, int rq_scope
 	int i,j, ret;
 	struct pathgroup *pgp = NULL;
 	struct path *pp = NULL;
+	bool found = false;
 
 	vector_foreach_slot (mpp->pg, pgp, j){
 		vector_foreach_slot (pgp->paths, pp, i){
@@ -426,12 +427,16 @@ static int mpath_prout_common(struct multipath *mpp,int rq_servact, int rq_scope
 			}
 
 			condlog (3, "%s: sending pr out command to %s", mpp->wwid, pp->dev);
+			found = true;
 			ret = send_prout_activepath(pp->dev, rq_servact,
 						    rq_scope, rq_type,
 						    paramp, noisy);
-			return ret ;
+			if (ret != MPATH_PR_RETRYABLE_ERROR)
+				return ret;
 		}
 	}
+	if (found)
+		return MPATH_PR_OTHER;
 	condlog (0, "%s: no path available", mpp->wwid);
 	return MPATH_PR_DMMP_ERROR;
 }
@@ -450,10 +455,10 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	int count = 0;
 	int status = MPATH_PR_SUCCESS;
 	struct prin_resp resp;
-	struct prout_param_descriptor *pamp;
+	struct prout_param_descriptor *pamp = NULL;
 	struct prin_resp *pr_buff;
 	int length;
-	struct transportid *pptr;
+	struct transportid *pptr = NULL;
 
 	if (!mpp)
 		return MPATH_PR_DMMP_ERROR;
@@ -536,6 +541,12 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		condlog (2, "%s: Path holding reservation is released.", mpp->wwid);
 		return MPATH_PR_SUCCESS;
 	}
+	if (!get_be64(mpp->reservation_key) ||
+	    memcmp(&mpp->reservation_key, resp.prin_descriptor.prin_readresv.key, 8)) {
+		condlog(2, "%s: Releasing key not holding reservation.", mpp->wwid);
+		return MPATH_PR_SUCCESS;
+	}
+
 	condlog (2, "%s: Path holding reservation is not available.", mpp->wwid);
 
 	pr_buff =  mpath_alloc_prin_response(MPATH_PRIN_RFSTAT_SA);
@@ -560,7 +571,7 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	pamp = (struct prout_param_descriptor *)malloc (length);
 	if (!pamp){
 		condlog (0, "%s: failed to alloc pr out parameter.", mpp->wwid);
-		goto out1;
+		goto out;
 	}
 
 	memset(pamp, 0, length);
@@ -570,6 +581,7 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		condlog (0, "%s: failed to alloc pr out transportid.", mpp->wwid);
 		goto out1;
 	}
+	pptr = pamp->trnptid_list[0];
 
 	if (get_be64(mpp->reservation_key)){
 		memcpy (pamp->key, &mpp->reservation_key, 8);
@@ -581,11 +593,10 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 
 	if (status) {
 		condlog(0, "%s: failed to send CLEAR_SA", mpp->wwid);
-		goto out1;
+		goto out2;
 	}
 
 	pamp->num_transportid = 1;
-	pptr=pamp->trnptid_list[0];
 
 	for (i = 0; i < num; i++){
 		if (get_be64(mpp->reservation_key) &&
@@ -629,13 +640,13 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		status = mpath_prout_reg(mpp, MPATH_PROUT_REG_SA, rq_scope, rq_type, pamp, noisy);
 	}
 
-
+out2:
 	free(pptr);
 out1:
 	free (pamp);
 out:
 	free (pr_buff);
-	return (status);
+	return (status == MPATH_PR_RETRYABLE_ERROR) ? MPATH_PR_OTHER : status;
 }
 
 int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,

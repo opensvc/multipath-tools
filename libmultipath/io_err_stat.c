@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * (C) Copyright HUAWEI Technology Corp. 2017, All Rights Reserved.
  *
@@ -7,8 +8,6 @@
  * IO error stream statistic process for path failure event from kernel
  *
  * Author(s): Guan Junxiong 2017 <guanjunxiong@huawei.com>
- *
- * This file is released under the GPL version 2, or any later version.
  */
 
 #include <unistd.h>

@@ -31,11 +31,18 @@ jobs:
       fail-fast: false
       matrix:
         os:
+          - debian-trixie
           - debian-bookworm
           - debian-buster
           - ubuntu-trusty
         arch: [386, arm/v7]
         include:
+          - os: debian-trixie
+            arch: aarch64
+          - os: debian-trixie
+            arch: s390x
+          - os: debian-trixie
+            arch: ppc64le
           - os: debian-bookworm
             arch: aarch64
           - os: debian-bookworm
@@ -46,7 +53,9 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: enable foreign arch
-        uses: dbhi/qus/action@main
+        uses: docker/setup-qemu-action@v2
+        with:
+          image: tonistiigi/binfmt:latest
       - name: compile and run unit tests
         uses: mosteo-actions/docker-run@v1
         with:

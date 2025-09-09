@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Soft:        multipath device mapper target autoconfig
  *
@@ -5,24 +6,14 @@
  *
  * Author:      Christophe Varoqui
  *
- *              This program is distributed in the hope that it will be useful,
- *              but WITHOUT ANY WARRANTY; without even the implied warranty of
- *              MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *              See the GNU General Public License for more details.
- *
- *              This program is free software; you can redistribute it and/or
- *              modify it under the terms of the GNU General Public License
- *              as published by the Free Software Foundation; either version
- *              2 of the License, or (at your option) any later version.
- *
  * Copyright (c) 2006 Christophe Varoqui
  */
 #ifndef VERSION_H_INCLUDED
 #define VERSION_H_INCLUDED
 
-#define VERSION_CODE 0x000B00
+#define VERSION_CODE 0x000C00
 /* MMDDYY, in hex */
-#define DATE_CODE    0x110119
+#define DATE_CODE    0x081A19
 
 #define PROG    "multipath-tools"
 

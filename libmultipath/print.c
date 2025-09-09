@@ -658,8 +658,11 @@ snprint_path_serial (struct strbuf *buff, const struct path * pp)
 static int
 snprint_path_mpp (struct strbuf *buff, const struct path * pp)
 {
-	if (!pp->mpp)
+	if (!pp->mpp) {
+		if (pp->add_when_online)
+			return append_strbuf_str(buff, "[offline]");
 		return append_strbuf_str(buff, "[orphan]");
+	}
 	if (!pp->mpp->alias)
 		return append_strbuf_str(buff, "[unknown]");
 	return snprint_str(buff, pp->mpp->alias);
@@ -1989,8 +1992,9 @@ int snprint_devices(struct config *conf, struct strbuf *buff,
 
 	enm = udev_enumerate_new(udev);
 	if (!enm)
-		return 1;
-	udev_enumerate_add_match_subsystem(enm, "block");
+		return errno ? -errno : -1;
+	if ((r = udev_enumerate_add_match_subsystem(enm, "block")) < 0)
+		goto out;
 
 	if ((r = append_strbuf_str(buff, "available block devices:\n")) < 0)
 		goto out;

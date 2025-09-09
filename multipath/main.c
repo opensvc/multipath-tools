@@ -1,19 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Soft:        multipath device mapper target autoconfig
  *
  * Version:     $Id: main.h,v 0.0.1 2003/09/18 15:13:38 cvaroqui Exp $
  *
  * Author:      Christophe Varoqui
- *
- *              This program is distributed in the hope that it will be useful,
- *              but WITHOUT ANY WARRANTY; without even the implied warranty of
- *              MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *              See the GNU General Public License for more details.
- *
- *              This program is free software; you can redistribute it and/or
- *              modify it under the terms of the GNU General Public License
- *              as published by the Free Software Foundation; either version
- *              2 of the License, or (at your option) any later version.
  *
  * Copyright (c) 2003, 2004, 2005 Christophe Varoqui
  * Copyright (c) 2005 Benjamin Marzinski, Redhat
@@ -210,7 +201,7 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 			print_multipath_topology(mpp, libmp_verbosity);
 
 		if (cmd == CMD_CREATE)
-			reinstate_paths(mpp);
+			sync_map_state(mpp, true);
 	}
 
 	if (cmd == CMD_LIST_SHORT || cmd == CMD_LIST_LONG)
@@ -533,7 +524,7 @@ configure (struct config *conf, enum mpath_cmds cmd,
 
 	if (cmd == CMD_LIST_LONG)
 		/* extended path info '-ll' */
-		di_flag |= DI_SYSFS | DI_CHECKER | DI_SERIAL;
+		di_flag |= DI_SYSFS | DI_CHECKER | DI_IOCTL;
 	else if (cmd == CMD_LIST_SHORT)
 		/* minimum path info '-l' */
 		di_flag |= DI_SYSFS;

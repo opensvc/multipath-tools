@@ -1,7 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copied from the Linux kernel source tree, version 2.6.0-test1.
- *
- * Licensed under the GPL v2 as per the whole kernel source tree.
  *
  */
 

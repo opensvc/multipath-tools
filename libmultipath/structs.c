@@ -239,8 +239,18 @@ free_pgvec (vector pgvec, enum free_path_mode free_paths)
 	if (!pgvec)
 		return;
 
-	vector_foreach_slot(pgvec, pgp, i)
+	vector_foreach_slot(pgvec, pgp, i) {
+
+		/* paths are going to be re-grouped, reset pgindex */
+		if (free_paths != FREE_PATHS) {
+			struct path *pp;
+			int j;
+
+			vector_foreach_slot(pgp->paths, pp, j)
+				pp->pgindex = 0;
+		}
 		free_pathgroup(pgp, free_paths);
+	}
 
 	vector_free(pgvec);
 }
@@ -615,25 +625,6 @@ int count_active_pending_paths(const struct multipath *mpp)
 	int states[] = {PATH_UP, PATH_GHOST, PATH_PENDING};
 
 	return do_pathcount(mpp, states, 3);
-}
-
-int pathcmp(const struct pathgroup *pgp, const struct pathgroup *cpgp)
-{
-	int i, j;
-	struct path *pp, *cpp;
-	int pnum = 0, found = 0;
-
-	vector_foreach_slot(pgp->paths, pp, i) {
-		pnum++;
-		vector_foreach_slot(cpgp->paths, cpp, j) {
-			if ((long)pp == (long)cpp) {
-				found++;
-				break;
-			}
-		}
-	}
-
-	return pnum - found;
 }
 
 struct path *

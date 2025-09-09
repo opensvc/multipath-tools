@@ -416,42 +416,90 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 	return 0;
 }
 
-static void
-compute_pgid(struct pathgroup * pgp)
-{
-	struct path * pp;
-	int i;
-
-	vector_foreach_slot (pgp->paths, pp, i)
-		pgp->id ^= (long)pp;
-}
-
-static int
-pgcmp (struct multipath * mpp, struct multipath * cmpp)
+static int pathcmp(const struct pathgroup *pgp, const struct pathgroup *cpgp)
 {
 	int i, j;
-	struct pathgroup * pgp;
-	struct pathgroup * cpgp;
-	int r = 0;
+	struct path *pp, *cpp;
+	int pnum = 0, found = 0;
 
-	if (!mpp)
-		return 0;
-
-	vector_foreach_slot (mpp->pg, pgp, i) {
-		compute_pgid(pgp);
-
-		vector_foreach_slot (cmpp->pg, cpgp, j) {
-			if (pgp->id == cpgp->id &&
-			    !pathcmp(pgp, cpgp)) {
-				r = 0;
+	vector_foreach_slot(pgp->paths, pp, i) {
+		pnum++;
+		vector_foreach_slot(cpgp->paths, cpp, j) {
+			if ((long)pp == (long)cpp) {
+				found++;
 				break;
 			}
-			r++;
 		}
-		if (r)
-			return r;
 	}
-	return r;
+
+	return pnum - found;
+}
+
+static int pgcmp(struct multipath *mpp, struct multipath *cmpp)
+{
+	int i, j;
+	struct pathgroup *pgp, *cpgp;
+	BITFIELD(bf, bits_per_slot);
+	struct bitfield *bf__  __attribute__((cleanup(cleanup_bitfield))) = NULL;
+
+	if (VECTOR_SIZE(mpp->pg) != VECTOR_SIZE(cmpp->pg))
+		return 1;
+
+	/* handle the unlikely case of more than 64 pgs */
+	if ((unsigned int)VECTOR_SIZE(cmpp->pg) > bits_per_slot) {
+		bf__ = alloc_bitfield(VECTOR_SIZE(cmpp->pg));
+		if (bf__ == NULL)
+			/* error - if in doubt, assume not equal */
+			return 1;
+		bf = bf__;
+	}
+
+	vector_foreach_slot (mpp->pg, pgp, i) {
+
+		if (VECTOR_SIZE(pgp->paths) == 0) {
+			bool found = false;
+
+			vector_foreach_slot (cmpp->pg, cpgp, j) {
+				if (!is_bit_set_in_bitfield(j, bf) &&
+				    VECTOR_SIZE(cpgp->paths) == 0) {
+					set_bit_in_bitfield(j, bf);
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				return 1;
+		} else {
+			bool found = false;
+			struct path *pp = VECTOR_SLOT(pgp->paths, 0);
+
+			/* search for a pg in cmpp that contains pp */
+			vector_foreach_slot (cmpp->pg, cpgp, j) {
+				if (!is_bit_set_in_bitfield(j, bf) &&
+				    VECTOR_SIZE(cpgp->paths) == VECTOR_SIZE(pgp->paths)) {
+					int k;
+					struct path *cpp;
+
+					vector_foreach_slot(cpgp->paths, cpp, k) {
+						if (cpp != pp)
+							continue;
+						/*
+						 * cpgp contains pp.
+						 * See if it's identical.
+						 */
+						set_bit_in_bitfield(j, bf);
+						if (pathcmp(pgp, cpgp))
+							return 1;
+						found = true;
+						break;
+					}
+				}
+			}
+			if (!found)
+				return 1;
+		}
+	}
+	return 0;
 }
 
 void trigger_partitions_udev_change(struct udev_device *dev,
@@ -563,8 +611,6 @@ trigger_paths_udev_change(struct multipath *mpp, bool is_mpath)
 		vector_foreach_slot(pgp->paths, pp, j)
 			trigger_path_udev_change(pp, is_mpath);
 	}
-
-	mpp->needs_paths_uevent = 0;
 }
 
 static int sysfs_set_max_sectors_kb(struct multipath *mpp)
@@ -640,8 +686,6 @@ void select_action (struct multipath *mpp, const struct vector_s *curmp,
 	mpp->action = ACT_NOTHING;
 	cmpp = find_mp_by_wwid(curmp, mpp->wwid);
 	cmpp_by_name = find_mp_by_alias(curmp, mpp->alias);
-	if (mpp->need_reload || (cmpp && cmpp->need_reload))
-		force_reload = 1;
 
 	if (!cmpp) {
 		if (cmpp_by_name) {
@@ -744,10 +788,6 @@ void select_action (struct multipath *mpp, const struct vector_s *curmp,
 		select_reload_action(mpp, "minio change");
 		return;
 	}
-	if (!cmpp->pg || VECTOR_SIZE(cmpp->pg) != VECTOR_SIZE(mpp->pg)) {
-		select_reload_action(mpp, "path group number change");
-		return;
-	}
 	if (pgcmp(mpp, cmpp)) {
 		select_reload_action(mpp, "path group topology change");
 		return;
@@ -762,35 +802,6 @@ void select_action (struct multipath *mpp, const struct vector_s *curmp,
 	if (mpp->action == ACT_NOTHING)
 		condlog(3, "%s: set ACT_NOTHING (map unchanged)", mpp->alias);
 	return;
-}
-
-int reinstate_paths(struct multipath *mpp)
-{
-	int i, j;
-	struct pathgroup * pgp;
-	struct path * pp;
-
-	if (!mpp->pg)
-		return 0;
-
-	vector_foreach_slot (mpp->pg, pgp, i) {
-		if (!pgp->paths)
-			continue;
-
-		vector_foreach_slot (pgp->paths, pp, j) {
-			if (pp->state != PATH_UP &&
-			    (pgp->status == PGSTATE_DISABLED ||
-			     pgp->status == PGSTATE_ACTIVE))
-				continue;
-
-			if (pp->dmstate == PSTATE_FAILED) {
-				if (dm_reinstate_path(mpp->alias, pp->dev_t))
-					condlog(0, "%s: error reinstating",
-						pp->dev);
-			}
-		}
-	}
-	return 0;
 }
 
 static int
@@ -903,12 +914,6 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 	case ACT_SWITCHPG:
 	case ACT_SWITCHPG_RENAME:
 		dm_switchgroup(mpp->alias, mpp->bestpg);
-		/*
-		 * we may have avoided reinstating paths because there where in
-		 * active or disabled PG. Now that the topology has changed,
-		 * retry.
-		 */
-		reinstate_paths(mpp);
 		return DOMAP_EXIST;
 
 	case ACT_CREATE:
@@ -955,10 +960,10 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 		 * succeeded
 		 */
 		mpp->force_udev_reload = 0;
-		if (mpp->action == ACT_CREATE &&
-		    (remember_wwid(mpp->wwid) == 1 ||
-		     mpp->needs_paths_uevent))
+		if (mpp->action == ACT_CREATE) {
+			remember_wwid(mpp->wwid);
 			trigger_paths_udev_change(mpp, true);
+		}
 		if (!is_daemon) {
 			/* multipath client mode */
 			dm_switchgroup(mpp->alias, mpp->bestpg);
@@ -976,15 +981,14 @@ int domap(struct multipath *mpp, char *params, int is_daemon)
 				mpp->action = ACT_NOTHING;
 			else {
 				conf = get_multipath_config();
-				mpp->wait_for_udev = 1;
+				mpp->wait_for_udev = UDEV_WAIT_STARTED;
 				mpp->uev_wait_tick = conf->uev_wait_timeout;
 				put_multipath_config(conf);
 			}
 		}
 		dm_setgeometry(mpp);
 		return DOMAP_OK;
-	} else if (r == DOMAP_FAIL && mpp->action == ACT_CREATE &&
-		   mpp->needs_paths_uevent)
+	} else if (r == DOMAP_FAIL && mpp->action == ACT_CREATE)
 		trigger_paths_udev_change(mpp, false);
 
 	return DOMAP_FAIL;

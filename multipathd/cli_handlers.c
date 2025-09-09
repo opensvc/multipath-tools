@@ -812,12 +812,13 @@ cli_reload(void *v, struct strbuf *reply, void *data)
 	if (!mpp)
 		return -ENODEV;
 
-	if (mpp->wait_for_udev) {
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, failing reload",
 			mpp->alias);
 		return 1;
 	}
 
+	mpp->force_udev_reload = 1;
 	return reload_and_sync_map(mpp, vecs);
 }
 
@@ -840,7 +841,7 @@ cli_resize(void *v, struct strbuf *reply, void *data)
 	if (!mpp)
 		return -ENODEV;
 
-	if (mpp->wait_for_udev) {
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, failing resize",
 			mpp->alias);
 		return 1;
@@ -1045,7 +1046,7 @@ cli_suspend(void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return 1;
 
-	if (mpp->wait_for_udev) {
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, failing suspend",
 			mpp->alias);
 		return 1;
@@ -1077,7 +1078,7 @@ cli_resume(void * v, struct strbuf *reply, void * data)
 		return 1;
 
 	udev_flags = (mpp->skip_kpartx)? MPATH_UDEV_NO_KPARTX_FLAG : 0;
-	if (mpp->wait_for_udev) {
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, failing resume",
 			mpp->alias);
 		return 1;
@@ -1114,6 +1115,18 @@ cli_reinstate(void * v, struct strbuf *reply, void * data)
 		pp->mpp->alias, pp->dev_t);
 
 	checker_enable(&pp->checker);
+
+	/*
+	 * A path previously failed by the operator will be in PATH_DOWN state
+	 * (set by update_multipath()).
+	 * After the path has been reinstated in the kernel, and before
+	 * the checker updates the path state, we may need to reload
+	 * the map (e.g. for failback, while handling a dm event).
+	 * If the path is still in PATH_DOWN state at that time, sync_map_state()
+	 * will call dm_fail_path() again.
+	 * Avoid that by setting the state to PATH_UNCHECKED.
+	 */
+	pp->state = PATH_UNCHECKED;
 	pp->tick = 1;
 	return dm_reinstate_path(pp->mpp->alias, pp->dev_t);
 }
@@ -1130,7 +1143,7 @@ cli_reassign (void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return 1;
 
-	if (mpp->wait_for_udev) {
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, failing reassign",
 			mpp->alias);
 		return 1;
@@ -1405,7 +1418,7 @@ static int cli_set_marginal(void * v, struct strbuf *reply, void * data)
 
 	condlog(2, "%s: set marginal path %s (operator)",
 		pp->mpp->alias, pp->dev_t);
-	if (pp->mpp->wait_for_udev) {
+	if (pp->mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, failing set marginal",
 			pp->mpp->alias);
 		return 1;
@@ -1432,7 +1445,7 @@ static int cli_unset_marginal(void * v, struct strbuf *reply, void * data)
 
 	condlog(2, "%s: unset marginal path %s (operator)",
 		pp->mpp->alias, pp->dev_t);
-	if (pp->mpp->wait_for_udev) {
+	if (pp->mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, "
 			"failing unset marginal", pp->mpp->alias);
 		return 1;
@@ -1460,7 +1473,7 @@ static int cli_unset_all_marginal(void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return -ENODEV;
 
-	if (mpp->wait_for_udev) {
+	if (mpp->wait_for_udev != UDEV_WAIT_DONE) {
 		condlog(2, "%s: device not fully created, "
 			"failing unset all marginal", mpp->alias);
 		return 1;

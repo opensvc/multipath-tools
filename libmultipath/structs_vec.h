@@ -27,7 +27,7 @@ void remove_map (struct multipath *mpp, vector pathvec, vector mpvec);
 void remove_map_by_alias(const char *alias, struct vectors * vecs);
 void remove_maps (struct vectors * vecs);
 
-void sync_map_state (struct multipath *);
+void sync_map_state (struct multipath *mpp, bool reinstate_only);
 struct multipath * add_map_with_path (struct vectors * vecs,
 				      struct path * pp, int add_vec,
 				      const struct multipath *current_mpp);

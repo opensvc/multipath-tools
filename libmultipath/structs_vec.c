@@ -92,14 +92,12 @@ static bool guess_mpp_wwid(struct multipath *mpp)
  * multipath maps but haven't been discovered. Check whether they
  * need to be added to pathvec or discarded.
  *
- * Returns: true if immediate map reload is desirable
- *
  * Side effects:
  * - may delete non-existing paths and empty pathgroups from mpp
  * - may set pp->wwid and / or mpp->wwid
  * - calls pathinfo() on existing paths is pathinfo_flags is not 0
  */
-static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
+static void update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 	int pathinfo_flags)
 {
 	int i, j;
@@ -108,9 +106,13 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 	struct config *conf;
 	bool mpp_has_wwid;
 	bool must_reload = false;
+	bool pg_deleted = false;
+	bool map_discovery = !!(pathinfo_flags & DI_DISCOVERY);
+
+	pathinfo_flags &= ~DI_DISCOVERY;
 
 	if (!mpp->pg)
-		return false;
+		return;
 
 	/*
 	 * This will initialize mpp->wwid with an educated guess,
@@ -124,6 +126,10 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 			goto delete_pg;
 
 		vector_foreach_slot(pgp->paths, pp, j) {
+
+			/* A pathgroup has been deleted before. Invalidate pgindex */
+			if (pg_deleted)
+				pp->pgindex = 0;
 
 			if (pp->mpp && pp->mpp != mpp) {
 				condlog(0, "BUG: %s: found path %s which is already in %s",
@@ -139,6 +145,13 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 				must_reload = true;
 				dm_fail_path(mpp->alias, pp->dev_t);
 				vector_del_slot(pgp->paths, j--);
+				/*
+				 * pp->pgindex has been set in disassemble_map(),
+				 * which has probably been called just before for
+				 * mpp. So he pgindex relates to mpp and may be
+				 * wrong for pp->mpp. Invalidate it.
+				 */
+				pp->pgindex = 0;
 				continue;
 			}
 			pp->mpp = mpp;
@@ -183,7 +196,8 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 					rc = pathinfo(pp, conf,
 						      DI_SYSFS|DI_WWID|DI_BLACKLIST|DI_NOFALLBACK|pathinfo_flags);
 					pthread_cleanup_pop(1);
-					if (rc != PATHINFO_OK) {
+					if (rc == PATHINFO_FAILED ||
+					    (rc == PATHINFO_SKIPPED && !map_discovery)) {
 						condlog(1, "%s: error %d in pathinfo, discarding path",
 							pp->dev, rc);
 						vector_del_slot(pgp->paths, j--);
@@ -191,10 +205,15 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 						must_reload = true;
 						continue;
 					}
-					condlog(2, "%s: adding new path %s",
-						mpp->alias, pp->dev);
-					pp->initialized = INIT_PARTIAL;
-					pp->partial_retrigger_delay = 180;
+					if (rc == PATHINFO_SKIPPED) {
+						condlog(1, "%s: blacklisted path in %s", pp->dev, mpp->alias);
+						set_path_removed(pp);
+						must_reload = true;
+					} else {
+						condlog(2, "%s: adding new path %s", mpp->alias, pp->dev);
+						pp->initialized = INIT_PARTIAL;
+						pp->partial_retrigger_delay = 180;
+					}
 					store_path(pathvec, pp);
 					pp->tick = 1;
 				}
@@ -237,9 +256,10 @@ static bool update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 		vector_del_slot(mpp->pg, i--);
 		free_pathgroup(pgp, KEEP_PATHS);
 		must_reload = true;
+		/* Invalidate pgindex for all other pathgroups */
+		pg_deleted = true;
 	}
 	mpp->need_reload = mpp->need_reload || must_reload;
-	return must_reload;
 }
 
 static bool set_path_max_sectors_kb(const struct path *pp, int max_sectors_kb)
@@ -335,8 +355,7 @@ int adopt_paths(vector pathvec, struct multipath *mpp,
 				 */
 				if (!current_mpp ||
 				    !mp_find_path_by_devt(current_mpp, pp->dev_t))
-					mpp->need_reload = mpp->need_reload ||
-						set_path_max_sectors_kb(pp, mpp->max_sectors_kb);
+					set_path_max_sectors_kb(pp, mpp->max_sectors_kb);
 			}
 
 			pp->mpp = mpp;
@@ -354,6 +373,7 @@ void orphan_path(struct path *pp, const char *reason)
 {
 	condlog(3, "%s: orphan path, %s", pp->dev, reason);
 	pp->mpp = NULL;
+	pp->pgindex = 0;
 	uninitialize_path(pp);
 }
 
@@ -374,6 +394,9 @@ static void orphan_paths(vector pathvec, struct multipath *mpp, const char *reas
 				free_path(pp);
 			} else
 				orphan_path(pp, reason);
+		} else if (pp->add_when_online &&
+			   strncmp(mpp->wwid, pp->wwid, WWID_SIZE) == 0) {
+			pp->add_when_online = false;
 		}
 	}
 }
@@ -492,7 +515,6 @@ update_multipath_table__ (struct multipath *mpp, vector pathvec, int flags,
 	if (disassemble_status(status, mpp))
 		condlog(2, "%s: cannot disassemble status", mpp->alias);
 
-	/* FIXME: we should deal with the return value here */
 	update_pathvec_from_dm(pathvec, mpp, flags);
 
 	return DMP_OK;
@@ -516,7 +538,6 @@ update_multipath_table (struct multipath *mpp, vector pathvec, int flags)
 	conf = get_multipath_config();
 	mpp->sync_tick = conf->max_checkint;
 	put_multipath_config(conf);
-	mpp->synced_count++;
 
 	r = libmp_mapinfo(DM_MAP_BY_NAME | MAPINFO_MPATH_ONLY,
 			  (mapid_t) { .str = mpp->alias },
@@ -582,6 +603,8 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 		found = 0;
 		vector_foreach_slot(mpp->pg, pgp, j) {
 			if (find_slot(pgp->paths, (void *)pp) != -1) {
+				if (pp->add_when_online)
+					pp->add_when_online = false;
 				found = 1;
 				break;
 			}
@@ -717,7 +740,7 @@ void set_no_path_retry(struct multipath *mpp)
 }
 
 void
-sync_map_state(struct multipath *mpp)
+sync_map_state(struct multipath *mpp, bool reinstate_only)
 {
 	struct pathgroup *pgp;
 	struct path *pp;
@@ -739,7 +762,8 @@ sync_map_state(struct multipath *mpp)
 			     pp->dmstate == PSTATE_UNDEF) &&
 			    (pp->state == PATH_UP || pp->state == PATH_GHOST))
 				dm_reinstate_path(mpp->alias, pp->dev_t);
-			else if ((pp->dmstate == PSTATE_ACTIVE ||
+			else if (!reinstate_only &&
+				 (pp->dmstate == PSTATE_ACTIVE ||
 				  pp->dmstate == PSTATE_UNDEF) &&
 				 (pp->state == PATH_DOWN ||
 				  pp->state == PATH_SHAKY)) {

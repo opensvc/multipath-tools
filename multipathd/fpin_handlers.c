@@ -15,6 +15,7 @@
 #include "debug.h"
 #include "util.h"
 #include "sysfs.h"
+#include "discovery.h"
 
 #include "fpin.h"
 #include "devmapper.h"
@@ -253,7 +254,7 @@ static int  extract_nvme_addresses_chk_path_pwwn(const char *address,
  * with the els wwpn ,attached_wwpn and sets the path state to
  * Marginal
  */
-static void fpin_check_set_nvme_path_marginal(uint16_t host_num, struct path *pp,
+static bool fpin_check_set_nvme_path_marginal(uint16_t host_num, struct path *pp,
 		uint64_t els_wwpn, uint64_t attached_wwpn)
 {
 	struct udev_device *ctl = NULL;
@@ -263,21 +264,84 @@ static void fpin_check_set_nvme_path_marginal(uint16_t host_num, struct path *pp
 	ctl = udev_device_get_parent_with_subsystem_devtype(pp->udev, "nvme", NULL);
 	if (ctl == NULL) {
 		condlog(2, "%s: No parent device for ", pp->dev);
-		return;
+		return false;
 	}
 	address = udev_device_get_sysattr_value(ctl, "address");
 	if (!address) {
 		condlog(2, "%s: unable to get the address ", pp->dev);
-		return;
+		return false;
 	}
 	condlog(4, "\n address %s: dev :%s\n", address, pp->dev);
 	ret = extract_nvme_addresses_chk_path_pwwn(address, els_wwpn, attached_wwpn);
 	if (ret <= 0)
-		return;
+		return false;
 	ret = fpin_add_marginal_dev_info(host_num, pp->dev);
 	if (ret < 0)
-		return;
+		return false;
 	fpin_path_setmarginal(pp);
+	return true;
+}
+
+static void fpin_nvme_set_rport_marginal(uint16_t host_num, uint64_t els_wwpn)
+{
+	struct udev_enumerate *udev_enum = NULL;
+	struct udev_list_entry *entry;
+
+	pthread_cleanup_push(cleanup_udev_enumerate_ptr, &udev_enum);
+	udev_enum = udev_enumerate_new(udev);
+	if (!udev_enum) {
+		condlog(0, "fpin: rport udev_enumerate_new() failed: %m");
+		goto out;
+	}
+	if (udev_enumerate_add_match_subsystem(udev_enum, "fc_remote_ports") < 0 ||
+	    udev_enumerate_add_match_is_initialized(udev_enum) < 0 ||
+	    udev_enumerate_scan_devices(udev_enum) < 0) {
+		condlog(0, "fpin: error setting up rport enumeration: %m");
+		goto out;
+	}
+	udev_list_entry_foreach(entry,
+				udev_enumerate_get_list_entry(udev_enum)) {
+		const char *devpath;
+		const char *rport_id, *value;
+		struct udev_device *rport_dev = NULL;
+		uint16_t rport_hostnum;
+		uint64_t rport_wwpn;
+		unsigned int unused;
+		bool found = false;
+
+		pthread_cleanup_push(cleanup_udev_device_ptr, &rport_dev);
+		devpath = udev_list_entry_get_name(entry);
+		if (!devpath)
+			goto next;
+		rport_id = libmp_basename(devpath);
+		if (sscanf(rport_id, "rport-%hu:%u-%u", &rport_hostnum, &unused,
+			   &unused) != 3 || rport_hostnum != host_num)
+			goto next;
+
+		rport_dev = udev_device_new_from_syspath(udev, devpath);
+		if (!rport_dev) {
+			condlog(0, "%s: error getting rport dev: %m", rport_id);
+			goto next;
+		}
+		value = udev_device_get_sysattr_value(rport_dev, "port_name");
+		if (!value) {
+			condlog(0, "%s: error getting port_name: %m", rport_id);
+			goto next;
+		}
+
+		rport_wwpn = strtol(value, NULL, 16);
+		/* If the rport wwpn matches, set the port state to marginal */
+		if (rport_wwpn == els_wwpn) {
+			found = true;
+			fpin_set_rport_marginal(rport_dev);
+		}
+next:
+		pthread_cleanup_pop(1);
+		if (found)
+			break;
+	}
+out:
+	pthread_cleanup_pop(1);
 }
 
 /*
@@ -338,6 +402,7 @@ static int  fpin_chk_wwn_setpath_marginal(uint16_t host_num,  struct vectors *ve
 	struct multipath *mpp;
 	int i, k;
 	int ret = 0;
+	bool found_nvme = false;
 
 	pthread_cleanup_push(cleanup_lock, &vecs->lock);
 	lock(&vecs->lock);
@@ -348,7 +413,7 @@ static int  fpin_chk_wwn_setpath_marginal(uint16_t host_num,  struct vectors *ve
 			continue;
 		/*checks if the bus type is nvme  and the protocol is FC-NVMe*/
 		if ((pp->bus == SYSFS_BUS_NVME) && (pp->sg_id.proto_id == NVME_PROTOCOL_FC)) {
-			fpin_check_set_nvme_path_marginal(host_num, pp, els_wwpn, attached_wwpn);
+			found_nvme = fpin_check_set_nvme_path_marginal(host_num, pp, els_wwpn, attached_wwpn) || found_nvme;
 		} else if ((pp->bus == SYSFS_BUS_SCSI) &&
 			(pp->sg_id.proto_id == SCSI_PROTOCOL_FCP) &&
 			(host_num ==  pp->sg_id.host_no)) {
@@ -356,6 +421,8 @@ static int  fpin_chk_wwn_setpath_marginal(uint16_t host_num,  struct vectors *ve
 			fpin_check_set_scsi_path_marginal(host_num, pp, els_wwpn);
 		}
 	}
+	if (found_nvme)
+		fpin_nvme_set_rport_marginal(host_num, els_wwpn);
 	/* walk backwards because reload_and_sync_map() can remove mpp */
 	vector_foreach_slot_backwards(vecs->mpvec, mpp, i) {
 		if (mpp->fpin_must_reload) {

@@ -1,19 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Part:        Vector structure manipulation.
  *
  * Version:     $Id: vector.c,v 1.0.3 2003/05/11 02:28:03 acassen Exp $
  *
  * Author:      Alexandre Cassen, <acassen@linux-vs.org>
- *
- *              This program is distributed in the hope that it will be useful,
- *              but WITHOUT ANY WARRANTY; without even the implied warranty of
- *              MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *              See the GNU General Public License for more details.
- *
- *              This program is free software; you can redistribute it and/or
- *              modify it under the terms of the GNU General Public License
- *              as published by the Free Software Foundation; either version
- *              2 of the License, or (at your option) any later version.
  *
  * Copyright (c) 2002, 2003, 2004 Alexandre Cassen
  * Copyright (c) 2005 Christophe Varoqui
@@ -45,7 +36,7 @@ vector_alloc_slot(vector v)
 	if (!v)
 		return false;
 
-	new_allocated = v->allocated + VECTOR_DEFAULT_SIZE;
+	new_allocated = v->allocated + 1;
 	new_slot = realloc(v->slot, sizeof (void *) * new_allocated);
 	if (!new_slot)
 		return false;
@@ -114,9 +105,9 @@ vector_del_slot(vector v, int slot)
 		return;
 
 	for (i = slot + 1; i < VECTOR_SIZE(v); i++)
-		v->slot[i-1] = v->slot[i];
+		v->slot[i - 1] = v->slot[i];
 
-	v->allocated -= VECTOR_DEFAULT_SIZE;
+	v->allocated--;
 
 	if (v->allocated <= 0) {
 		free(v->slot);
@@ -126,24 +117,17 @@ vector_del_slot(vector v, int slot)
 		void *new_slot;
 
 		new_slot = realloc(v->slot, sizeof (void *) * v->allocated);
-		if (!new_slot)
-			v->allocated += VECTOR_DEFAULT_SIZE;
-		else
+		/*
+		 * If realloc() fails, v->allocated will be smaller than the
+		 * actual allocated size vector size.
+		 * This is intentional; we want VECTOR_SIZE() to return
+		 * the number of used elements. Otherwise, vector_for_each_slot()
+		 * et al. wouldn't work as intended; there might be duplicate
+		 * or stale elements at the end of the vector.
+		 */
+		if (new_slot)
 			v->slot = new_slot;
 	}
-}
-
-void
-vector_repack(vector v)
-{
-	int i;
-
-	if (!v || !v->allocated)
-		return;
-
-	for (i = 0; i < VECTOR_SIZE(v); i++)
-		if (i > 0 && v->slot[i] == NULL)
-			vector_del_slot(v, i--);
 }
 
 vector
