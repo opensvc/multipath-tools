@@ -228,9 +228,20 @@ mpath_prout_common(struct multipath *mpp, int rq_servact, int rq_scope,
 			 * it may have just come back up, and multipathd
 			 * may not have had time to update the key. Allow
 			 * reservation conflicts.
+			 *
+			 * If you issue a RESERVE to a regular scsi device
+			 * that already holds the reservation, it succeeds
+			 * (and does nothing). A multipath device that
+			 * holds the reservation should not return a
+			 * reservation conflict on a RESERVE command, just
+			 * because it issued the RESERVE to a path that
+			 * isn't holding the reservation. It should instead
+			 * keep trying to see if it succeeds on another
+			 * path.
 			 */
 			if (ret == MPATH_PR_RESERV_CONFLICT &&
-			    pp->dmstate == PSTATE_FAILED) {
+			    (pp->dmstate == PSTATE_FAILED ||
+			     rq_servact == MPATH_PROUT_RES_SA)) {
 				conflict = true;
 				continue;
 			}
