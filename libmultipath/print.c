@@ -1989,7 +1989,7 @@ int snprint_devices(struct config *conf, struct strbuf *buff,
 
 	enm = udev_enumerate_new(udev);
 	if (!enm)
-		return 1;
+		return errno ? -errno : -1;
 	if ((r = udev_enumerate_add_match_subsystem(enm, "block")) < 0)
 		goto out;
 
