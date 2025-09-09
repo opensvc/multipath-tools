@@ -560,6 +560,65 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	return status;
 }
 
+/*
+ * Called to make a multipath device preempt its own reservation (and
+ * optionally release the reservation). Doing this causes the reservation
+ * keys to be removed from all the device paths except that path used to issue
+ * the preempt, so they need to be restored. To avoid the chance that IO
+ * goes to these paths when they don't have a registered key, the device
+ * is suspended before issuing the preemption, and the keys are reregistered
+ * before resuming it.
+ */
+static int preempt_self(struct multipath *mpp, int rq_servact, int rq_scope,
+			unsigned int rq_type, int noisy, bool do_release)
+{
+	int status, rel_status = MPATH_PR_SUCCESS;
+	struct path *pp = NULL;
+	struct prout_param_descriptor paramp = {.sa_flags = 0};
+	uint16_t udev_flags = (mpp->skip_kpartx) ? MPATH_UDEV_NO_KPARTX_FLAG : 0;
+
+	if (!dm_simplecmd_noflush(DM_DEVICE_SUSPEND, mpp->alias, 0)) {
+		condlog(0, "%s: self preempt failed to suspend device.", mpp->wwid);
+		return MPATH_PR_OTHER;
+	}
+
+	memcpy(paramp.key, &mpp->reservation_key, 8);
+	memcpy(paramp.sa_key, &mpp->reservation_key, 8);
+	status = mpath_prout_common(mpp, rq_servact, rq_scope, rq_type,
+				    &paramp, noisy, &pp);
+	if (status != MPATH_PR_SUCCESS) {
+		condlog(0, "%s: self preempt command failed.", mpp->wwid);
+		goto fail_resume;
+	}
+
+	if (do_release) {
+		memset(&paramp, 0, sizeof(paramp));
+		memcpy(paramp.key, &mpp->reservation_key, 8);
+		rel_status = prout_do_scsi_ioctl(pp->dev, MPATH_PROUT_REL_SA,
+						 rq_scope, rq_type, &paramp, noisy);
+		if (rel_status != MPATH_PR_SUCCESS)
+			condlog(0, "%s: release on alternate path failed.",
+				mpp->wwid);
+	}
+
+	memset(&paramp, 0, sizeof(paramp));
+	memcpy(paramp.sa_key, &mpp->reservation_key, 8);
+	status = mpath_prout_reg(mpp, MPATH_PROUT_REG_IGN_SA, rq_scope,
+				 rq_type, &paramp, noisy);
+	if (status != MPATH_PR_SUCCESS)
+		condlog(0, "%s: self preempt failed to reregister paths.",
+			mpp->wwid);
+
+fail_resume:
+	if (!dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias, udev_flags)) {
+		condlog(0, "%s: self preempt failed to resume device.", mpp->wwid);
+		if (status == MPATH_PR_SUCCESS)
+			status = MPATH_PR_OTHER;
+	}
+	/* return the first error we encountered */
+	return (rel_status != MPATH_PR_SUCCESS) ? rel_status : status;
+}
+
 static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 			   unsigned int rq_type,
 			   struct prout_param_descriptor * paramp, int noisy)
@@ -574,8 +633,6 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	int count = 0;
 	int status = MPATH_PR_SUCCESS;
 	struct prin_resp resp = {{{.prgeneration = 0}}};
-	uint16_t udev_flags = (mpp->skip_kpartx) ? MPATH_UDEV_NO_KPARTX_FLAG : 0;
-	bool did_resume = false;
 	bool all_threads_failed;
 	unsigned int scope_type;
 
@@ -690,70 +747,10 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	 *    preempting one. Since the device is suspended, no IO can
 	 *    go to these unregistered paths and fail).
 	 * 3. Releasing the reservation on the path that now holds it.
-	 * 4. Resuming the device (since it no longer matters that most of
-	 *    that paths no longer have a registered key)
-	 * 5. Reregistering keys on all the paths
+	 * 4. Reregistering keys on all the paths
+	 * 5. Resuming the device
 	 */
-
-	if (!dm_simplecmd_noflush(DM_DEVICE_SUSPEND, mpp->alias, 0)) {
-		condlog(0, "%s: release: failed to suspend dm device.", mpp->wwid);
-		return MPATH_PR_OTHER;
-	}
-
-	memset(paramp, 0, sizeof(*paramp));
-	memcpy(paramp->key, &mpp->reservation_key, 8);
-	memcpy(paramp->sa_key, &mpp->reservation_key, 8);
-	status = mpath_prout_common(mpp, MPATH_PROUT_PREE_SA, rq_scope,
-				    rq_type, paramp, noisy, &pp);
-	if (status != MPATH_PR_SUCCESS) {
-		condlog(0, "%s: release: pr preempt command failed.", mpp->wwid);
-		goto fail_resume;
-	}
-
-	memset(paramp, 0, sizeof(*paramp));
-	memcpy(paramp->key, &mpp->reservation_key, 8);
-	status = prout_do_scsi_ioctl(pp->dev, MPATH_PROUT_REL_SA, rq_scope,
-				     rq_type, paramp, noisy);
-	if (status != MPATH_PR_SUCCESS) {
-		condlog(0, "%s: release on alternate path failed.", mpp->wwid);
-		goto out_reregister;
-	}
-
-	if (!dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias, udev_flags)) {
-		condlog(0, "%s release: failed to resume dm device.", mpp->wwid);
-		/*
-		 * leave status set to MPATH_PR_SUCCESS, we will have another
-		 * chance to resume the device.
-		 */
-		goto out_reregister;
-	}
-	did_resume = true;
-
-out_reregister:
-	memset(paramp, 0, sizeof(*paramp));
-	memcpy(paramp->sa_key, &mpp->reservation_key, 8);
-	rc = mpath_prout_reg(mpp, MPATH_PROUT_REG_IGN_SA, rq_scope, rq_type,
-			     paramp, noisy);
-	if (rc != MPATH_PR_SUCCESS)
-		condlog(0, "%s: release: failed to reregister paths.", mpp->wwid);
-
-	/*
-	 * If we failed releasing the reservation or resuming earlier
-	 * try resuming now. Otherwise, return with the reregistering status
-	 * This means we will report failure, even though the resevation
-	 * has been released, since the keys were not reregistered.
-	 */
-	if (did_resume)
-		return rc;
-	else if (status == MPATH_PR_SUCCESS)
-		status = rc;
-fail_resume:
-	if (!dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias, udev_flags)) {
-		condlog(0, "%s: release: failed to resume dm device.", mpp->wwid);
-		if (status == MPATH_PR_SUCCESS)
-			status = MPATH_PR_OTHER;
-	}
-	return (status == MPATH_PR_RETRYABLE_ERROR) ? MPATH_PR_OTHER : status;
+	return preempt_self(mpp, MPATH_PROUT_PREE_SA, rq_scope, rq_type, noisy, true);
 }
 
 static int reservation_key_matches(struct multipath *mpp, uint8_t *key, int noisy)
@@ -894,6 +891,12 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 	case MPATH_PROUT_PREE_AB_SA:
 		if (reservation_key_matches(mpp, paramp->sa_key, noisy) == YNU_YES)
 			preempting_reservation = true;
+		/* if we are preempting ourself */
+		if (memcmp(paramp->sa_key, paramp->key, 8) == 0) {
+			ret = preempt_self(mpp, rq_servact, rq_scope, rq_type,
+					   noisy, false);
+			break;
+		}
 		/* fallthrough */
 	case MPATH_PROUT_RES_SA:
 	case MPATH_PROUT_CLEAR_SA:
