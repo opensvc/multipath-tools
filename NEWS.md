@@ -101,7 +101,10 @@ See [README.md](README.md) for additional information.
 * Fix a possible NULL dereference in the iet prioritizer, existing since
   0.4.9. Commit 01996d5.
 * Fix misspelled gcc option "-std". Commit f9fb65f.
-
+* Fix error code path for "multipathd show devices".
+  Problem existed since 0.8.5. Commits 4f0f43f, 5c59d5d.
+* Fix an error check in the nvme foreign library, problem introduced in 0.7.8.
+  Commit 66408f1.
 
 ### Other changes
 
