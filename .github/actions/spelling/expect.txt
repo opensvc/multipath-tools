@@ -92,6 +92,7 @@ ifdef
 ifndef
 igroup
 img
+Infini
 inotify
 inttypes
 ioctls
@@ -123,6 +124,7 @@ lpthread
 Lun
 lvm
 lvmteam
+Lyve
 Marzinski
 misdetection
 mpath
@@ -142,7 +144,9 @@ nompath
 NOSCAN
 Nosync
 nvme
+NFINIDAT
 OBJDEPS
+oneshot
 ontap
 OOM
 opensvc
@@ -154,6 +158,7 @@ petabytes
 pgpolicy
 plugindir
 PNR
+ppc
 preferredip
 preferredsds
 prefixdir
@@ -176,6 +181,7 @@ reconfig
 redhat
 restorequeueing
 retrigger
+RETRYABLE
 rhabarber
 rootprefix
 rootprefixdir
@@ -189,6 +195,7 @@ scsi
 SCST
 sda
 sdc
+Seagate
 setmarginal
 setprkey
 setprstatus

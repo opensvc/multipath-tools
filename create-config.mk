@@ -157,6 +157,18 @@ FORTIFY_OPT := $(shell \
 		echo "-D_FORTIFY_SOURCE=2"; \
 	fi)
 
+# Check is you can compile with the urcu.h header, using the C99 standard.
+# If urcu/config-<arch>.h defines CONFIG_RCU_USE_ATOMIC_BUILTINS, then anything
+# including urcu.h must be compiled with at least the C11 standard. See:
+# https://github.com/urcu/userspace-rcu/commit/89280d020bf064d1055c360fb9974f128051043f
+C_STD := $(shell \
+	if printf '$(__HASH__)include <urcu.h>\nint main(void) { return 0; }\n' | $(CC) -o /dev/null -c -xc -std=gnu99 - 2>/dev/null; \
+	then \
+		echo "gnu99"; \
+	else \
+		echo "gnu11"; \
+	fi)
+
 STACKPROT :=
 
 all:	$(TOPDIR)/config.mk
@@ -182,3 +194,4 @@ $(TOPDIR)/config.mk:	$(multipathdir)/autoconfig.h
 	@echo "W_MISSING_INITIALIZERS := $(call TEST_MISSING_INITIALIZERS)" >>$@
 	@echo "W_URCU_TYPE_LIMITS := $(call TEST_URCU_TYPE_LIMITS)" >>$@
 	@echo "ENABLE_LIBDMMP := $(ENABLE_LIBDMMP)" >>$@
+	@echo "C_STD := $(C_STD)" >>$@

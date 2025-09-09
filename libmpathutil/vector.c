@@ -114,7 +114,7 @@ vector_del_slot(vector v, int slot)
 		return;
 
 	for (i = slot + 1; i < VECTOR_SIZE(v); i++)
-		v->slot[i-1] = v->slot[i];
+		v->slot[i - 1] = v->slot[i];
 
 	v->allocated -= VECTOR_DEFAULT_SIZE;
 
@@ -126,9 +126,15 @@ vector_del_slot(vector v, int slot)
 		void *new_slot;
 
 		new_slot = realloc(v->slot, sizeof (void *) * v->allocated);
-		if (!new_slot)
-			v->allocated += VECTOR_DEFAULT_SIZE;
-		else
+		/*
+		 * If realloc() fails, v->allocated will be smaller than the
+		 * actual allocated size vector size.
+		 * This is intentional; we want VECTOR_SIZE() to return
+		 * the number of used elements. Otherwise, vector_for_each_slot()
+		 * et al. wouldn't work as intended; there might be duplicate
+		 * or stale elements at the end of the vector.
+		 */
+		if (new_slot)
 			v->slot = new_slot;
 	}
 }

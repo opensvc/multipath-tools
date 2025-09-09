@@ -1,6 +1,7 @@
 #include <setjmp.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <cmocka.h>

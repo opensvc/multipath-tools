@@ -31,8 +31,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [bookworm, sid]
+        os: [bullseye, bookworm, trixie, sid]
         arch: [ppc64le, arm64, s390x]
+        exclude:
+          - os: bullseye
+            arch: ppc64le
+          - os: bullseye
+            arch: s390x
     container: ghcr.io/mwilck/multipath-cross-debian_cross-${{ matrix.os }}-${{ matrix.arch }}
     steps:
       - name: checkout
@@ -52,8 +57,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [bookworm, sid]
+        os: [bullseye, bookworm, trixie, sid]
         arch: [ppc64le, arm64, s390x]
+        exclude:
+          - os: bullseye
+            arch: ppc64le
+          - os: bullseye
+            arch: s390x
     steps:
       - name: set container arch
         run: echo CONTAINER_ARCH="${{ matrix.arch }}" >> $GITHUB_ENV
@@ -87,8 +97,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [bookworm, sid]
+        os: [bullseye, bookworm, trixie, sid]
         arch: [ppc64le, arm64, s390x]
+        exclude:
+          - os: bullseye
+            arch: ppc64le
+          - os: bullseye
+            arch: s390x
     steps:
       - name: mpath
         run: sudo modprobe dm_multipath
