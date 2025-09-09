@@ -566,6 +566,7 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	uint16_t udev_flags = (mpp->skip_kpartx) ? MPATH_UDEV_NO_KPARTX_FLAG : 0;
 	bool did_resume = false;
 	bool all_threads_failed;
+	unsigned int scope_type;
 
 	if (!mpp)
 		return MPATH_PR_DMMP_ERROR;
@@ -659,6 +660,13 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	    memcmp(&mpp->reservation_key, resp.prin_descriptor.prin_readresv.key, 8)) {
 		condlog(2, "%s: Releasing key not holding reservation.", mpp->wwid);
 		return MPATH_PR_SUCCESS;
+	}
+
+	scope_type = resp.prin_descriptor.prin_readresv.scope_type;
+	if ((scope_type & MPATH_PR_TYPE_MASK) != rq_type) {
+		condlog(2, "%s: --prout_type %u doesn't match reservation %u",
+			mpp->wwid, rq_type, scope_type & MPATH_PR_TYPE_MASK);
+		return MPATH_PR_RESERV_CONFLICT;
 	}
 
 	condlog (2, "%s: Path holding reservation is not available.", mpp->wwid);
