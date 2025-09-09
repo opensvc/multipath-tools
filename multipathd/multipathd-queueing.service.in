@@ -1,0 +1,9 @@
+[Unit]
+Description=Enable queuing for multipath maps
+After=local-fs.target remote-fs.target multipathd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecStop=@BINDIR@/multipathd disablequeueing maps

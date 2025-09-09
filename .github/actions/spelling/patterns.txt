@@ -7,6 +7,9 @@
 # uuid:
 \b[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}\b
 
+#commit
+\b[0-9a-f]{7}\b
+
 # WWNN/WWPN (NAA identifiers)
 \b(?:0x)?10[0-9a-f]{14}\b
 \b(?:0x|3)?[25][0-9a-f]{15}\b

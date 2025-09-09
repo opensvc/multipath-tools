@@ -101,6 +101,8 @@ int iet_prio(const char *dev, char * args)
 	char buffer[BUFFERSIZE];
 	char fullpath[BUFFERSIZE] = "/dev/disk/by-path/";
 	dir_p = opendir(fullpath);
+	if (!dir_p)
+		goto out;
 
 	// loop to find device in /dev/disk/by-path
 	while( NULL != (dir_entry_p = readdir(dir_p))) {
@@ -135,6 +137,7 @@ int iet_prio(const char *dev, char * args)
 	}
 	// nothing found, low prio
 	closedir(dir_p);
+out:
 	return 10;
 }
 
