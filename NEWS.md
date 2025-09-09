@@ -59,6 +59,10 @@ This release contains backported bug fixes from the master branch up to 0.12.
 * Fix a possible NULL dereference in the iet prioritizer, existing since
   0.4.9. Commit 245cc47.
 * Fix misspelled gcc option "-std". Commit c000f56.
+* Fix error code path for "multipathd show devices".
+  Problem existed since 0.8.5. Commits e1e6f3a, 95d2fd4.
+* Fix an error check in the nvme foreign library, problem introduced in 0.7.8.
+  Commit ffdbeb6.
 
 ### Other changes
 
