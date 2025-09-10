@@ -1394,6 +1394,18 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
 	/*
+	 * QSAN
+	 */
+	{
+		// XF / XCubeFAS / XCubeSAN / XN / XCubeNXT Series
+		.vendor        = "^Qsan",
+		.product       = ".*",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 30,
+		.prio_args     = "exclusive_pref_bit",
+	},
+	/*
 	 * EOL
 	 */
 	{
