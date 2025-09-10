@@ -4249,6 +4249,7 @@ void set_pr(struct multipath *mpp)
 {
 	mpp->ever_registered_pr = true;
 	mpp->prflag = PR_SET;
+	memset(&mpp->old_pr_key, 0, 8);
 }
 
 void unset_pr(struct multipath *mpp)
@@ -4256,6 +4257,7 @@ void unset_pr(struct multipath *mpp)
 	mpp->prflag = PR_UNSET;
 	mpp->prhold = PR_UNSET;
 	mpp->sa_flags = 0;
+	memset(&mpp->old_pr_key, 0, 8);
 }
 
 /*
@@ -4308,7 +4310,15 @@ static int update_map_pr(struct multipath *mpp, struct path *pp)
 			dumpHex((char *)keyp, 8, 1);
 		}
 
-		if (!memcmp(&mpp->reservation_key, keyp, 8))
+		/*
+		 * If you are in the middle of updating a key (old_pr_key
+		 * is set) check for either the new key or the old key,
+		 * since you might be checking before any paths have
+		 * updated their keys.
+		 */
+		if (!memcmp(&mpp->reservation_key, keyp, 8) ||
+		    (get_be64(mpp->old_pr_key) &&
+		     !memcmp(&mpp->old_pr_key, keyp, 8)))
 			isFound = 1;
 	}
 

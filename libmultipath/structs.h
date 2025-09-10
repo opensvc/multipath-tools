@@ -520,6 +520,7 @@ struct multipath {
 	/* persistent management data*/
 	int prkey_source;
 	struct be64 reservation_key;
+	struct be64 old_pr_key;
 	uint8_t sa_flags;
 	int prflag;
 	int prhold;

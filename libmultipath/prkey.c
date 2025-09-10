@@ -222,10 +222,22 @@ int set_prkey(struct config *conf, struct multipath *mpp, uint64_t prkey,
 	}
 	else
 		ret = do_prkey(fd, mpp->wwid, NULL, PRKEY_WRITE);
-	if (ret == 0)
+	if (ret == 0) {
+		/*
+		 * If you are reverting back to the old key, because you
+		 * did not successfully set a new key, don't remember the
+		 * key you never successfully set.
+		 */
+		if (get_be64(mpp->old_pr_key) == prkey)
+			memset(&mpp->old_pr_key, 0, 8);
+		else
+			memcpy(&mpp->old_pr_key, &mpp->reservation_key, 8);
 		select_reservation_key(conf, mpp);
-	if (get_be64(mpp->reservation_key) != prkey)
+	}
+	if (get_be64(mpp->reservation_key) != prkey) {
+		memset(&mpp->old_pr_key, 0, 8);
 		ret = 1;
+	}
 out_file:
 	close(fd);
 out:
