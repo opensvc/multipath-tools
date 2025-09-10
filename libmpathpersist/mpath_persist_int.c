@@ -569,8 +569,9 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
  * is suspended before issuing the preemption, and the keys are reregistered
  * before resuming it.
  */
-static int preempt_self(struct multipath *mpp, int rq_servact, int rq_scope,
-			unsigned int rq_type, int noisy, bool do_release)
+static int do_preempt_self(struct multipath *mpp, struct be64 sa_key,
+			   int rq_servact, int rq_scope, unsigned int rq_type,
+			   int noisy, bool do_release)
 {
 	int status, rel_status = MPATH_PR_SUCCESS;
 	struct path *pp = NULL;
@@ -583,7 +584,7 @@ static int preempt_self(struct multipath *mpp, int rq_servact, int rq_scope,
 	}
 
 	memcpy(paramp.key, &mpp->reservation_key, 8);
-	memcpy(paramp.sa_key, &mpp->reservation_key, 8);
+	memcpy(paramp.sa_key, &sa_key, 8);
 	status = mpath_prout_common(mpp, rq_servact, rq_scope, rq_type,
 				    &paramp, noisy, &pp);
 	if (status != MPATH_PR_SUCCESS) {
@@ -617,6 +618,21 @@ fail_resume:
 	}
 	/* return the first error we encountered */
 	return (rel_status != MPATH_PR_SUCCESS) ? rel_status : status;
+}
+
+static int preempt_self(struct multipath *mpp, int rq_servact, int rq_scope,
+			unsigned int rq_type, int noisy, bool do_release)
+{
+	return do_preempt_self(mpp, mpp->reservation_key, rq_servact, rq_scope,
+			       rq_type, noisy, do_release);
+}
+
+static int preempt_all(struct multipath *mpp, int rq_servact, int rq_scope,
+		       unsigned int rq_type, int noisy)
+{
+	struct be64 zerokey = {0};
+	return do_preempt_self(mpp, zerokey, rq_servact, rq_scope, rq_type,
+			       noisy, false);
 }
 
 static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
@@ -889,8 +905,15 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 		break;
 	case MPATH_PROUT_PREE_SA:
 	case MPATH_PROUT_PREE_AB_SA:
-		if (reservation_key_matches(mpp, paramp->sa_key, noisy) == YNU_YES)
+		if (reservation_key_matches(mpp, paramp->sa_key, noisy) == YNU_YES) {
 			preempting_reservation = true;
+			if (memcmp(paramp->sa_key, &zerokey, 8) == 0) {
+				/* all registrants case */
+				ret = preempt_all(mpp, rq_servact, rq_scope,
+						  rq_type, noisy);
+				break;
+			}
+		}
 		/* if we are preempting ourself */
 		if (memcmp(paramp->sa_key, paramp->key, 8) == 0) {
 			ret = preempt_self(mpp, rq_servact, rq_scope, rq_type,
