@@ -408,6 +408,13 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 	},
+	{
+		// EqualLogic PS Series
+		.vendor        = "EQLOGIC",
+		.product       = "100E-00",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 30,
+	},
 	/*
 	 * Fujitsu
 	 */
