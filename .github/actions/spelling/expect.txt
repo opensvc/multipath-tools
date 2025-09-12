@@ -55,6 +55,7 @@ dmraid
 dmsetup
 dracut
 EAGAIN
+ECKD
 emc
 Engenio
 EVPD
