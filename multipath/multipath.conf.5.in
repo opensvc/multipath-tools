@@ -6,7 +6,7 @@
 .\" Update the date below if you make any significant change.
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATH.CONF 5 2024-08-15 Linux
+.TH MULTIPATH.CONF 5 2025-09-12 Linux
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -1652,9 +1652,19 @@ The \fIdevice\fR subsection recognizes the following attributes:
 .TP 17
 .B vendor
 (Mandatory) Regular expression to match the vendor name.
+.RS
+.TP
+For DASD devices, it is the fixed label: \fBIBM\fR
+.TP
+For NVMe devices, it is the fixed label: \fBNVME\fR
+.RE
 .TP
 .B product
 (Mandatory) Regular expression to match the product name.
+.RS
+.TP
+For DASD devices, it is the fixed label: \fBS/390 DASD ECKD\fR
+.RE
 .TP
 .B revision
 Regular expression to match the product revision. If not specified, any
@@ -2029,7 +2039,7 @@ the foreign library name in square brackets, as in this example:
 .P
 .EX
 # multipath -ll
-uuid.fedcba98-3579-4567-8765-123456789abc [nvme]:nvme4n9 NVMe,Some NVMe controller,FFFFFFFF
+uuid.fedcba98-3579-4567-8765-123456789abc [nvme]:nvme4n9 NVME,Some NVMe controller,FFFFFFFF
 size=167772160 features='n/a' hwhandler='ANA' wp=rw
 |-+- policy='n/a' prio=50 status=optimized
 | `- 4:38:1    nvme4c38n1 0:0     n/a   optimized    live
