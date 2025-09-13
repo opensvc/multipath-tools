@@ -1417,6 +1417,15 @@ static struct hwentry default_hw[] = {
 		.prio_args     = "exclusive_pref_bit",
 	},
 	/*
+	 * VAST Data
+	 */
+	{
+		// Block Subsystem NVMe
+		.vendor        = "NVME",
+		.product       = "VASTData",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+	},
+	/*
 	 * EOL
 	 */
 	{
