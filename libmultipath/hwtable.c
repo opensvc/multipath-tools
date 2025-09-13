@@ -510,6 +510,12 @@ static struct hwentry default_hw[] = {
 		.checker_name  = DIRECTIO,
 		.detect_checker = DETECT_CHECKER_OFF,
 	},
+	{
+		// VSP NVMe
+		.vendor        = "NVME",
+		.product       = "HITACHI SVOS-RF-System",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+	},
 	/*
 	 * IBM
 	 */
