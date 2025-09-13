@@ -1121,7 +1121,6 @@ static struct hwentry default_hw[] = {
 		/* OceanStor NVMe */
 		.vendor        = "NVME",
 		.product       = "Huawei-XSG1",
-		.checker_name  = DIRECTIO,
 		.no_path_retry = 12,
 	},
 	/*
