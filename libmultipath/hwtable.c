@@ -1154,6 +1154,12 @@ static struct hwentry default_hw[] = {
 		.dev_loss      = MAX_DEV_LOSS_TMO,
 		.detect_prio   = DETECT_PRIO_OFF,
 	},
+	{
+		// InfiniBox NVMe
+		.vendor        = "NVME",
+		.product       = "InfiniBox",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+	},
 	/*
 	 * Kaminario
 	 */
