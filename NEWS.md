@@ -9,6 +9,52 @@ release. These bug fixes will be tracked in stable branches.
 
 See [README.md](README.md) for additional information.
 
+## multipath-tools 0.13.0, 2025/10
+
+### Major rework of the SCSI Persistent Reservation code
+
+The mpathpersist code had many areas where it did a poor job of
+mimicking the behavior of setting up persistent reservations on an
+individual device, especially if some paths to the multipath device
+were missing or unusable.
+
+Issues improved in this release:
+
+* Persistent reservation operations in cases where the reservation
+  is held held by an unavailable path. For example, when such a key
+  is unregistered, libmpathpersist now preempts the old key
+  after verifying that the multipath device is holding the reservation.
+* Releasing a reservation held by an unavailable path. This has always
+  had code to handle it, but it relied on optional Persistent
+  Reservation features. The new code preempts the key and then restores
+  the removed registered keys while the device is suspended.
+* Handling removal of keys from paths that were down when the multipath
+  device was unregistered.
+* Changing how conflicts on key registration are handled. Instead of
+  the old rollback method (which was broken anyway),
+  libmpathpersist now retries with REGISTER AND IGNORE as long as the
+  REGISTER command completed successfully down some of the paths.
+* Changing when the reservation key is set to fix corner cases on
+  failure and registration while paths are coming up.
+* Retrying to fix corner cases when a path is coming up while doing a
+  reserve, preempt or clear.
+* Allowing registrations to succeed when there are retryable errors,
+  if the paths are actually down.
+* Fixing the reservation key validation in some commands.
+* Handling a race condition that may occur while changing the reservation key
+  of a multipath map.
+* Handling preemption of registrations of type "all registrants".
+
+In the course of making these changes, a number of corner cases were fixed,
+too. Please consult the commit messages for details.
+
+### Other changes
+
+* Updates to the built-in hardware table:
+  - add some NVMe storage array (VASTData, Infinidat, HITACHI VSP)
+  - add QSAN
+  - add EqualLogic PS
+
 ## multipath-tools 0.12.0, 2025/08
 
 ### User-visible changes
