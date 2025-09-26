@@ -564,18 +564,23 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	return status;
 }
 
+enum preempt_work {
+	PREE_WORK_NONE,
+	PREE_WORK_REL,
+	PREE_WORK_REL_UNREG,
+};
 /*
  * Called to make a multipath device preempt its own reservation (and
- * optionally release the reservation). Doing this causes the reservation
- * keys to be removed from all the device paths except that path used to issue
- * the preempt, so they need to be restored. To avoid the chance that IO
- * goes to these paths when they don't have a registered key, the device
- * is suspended before issuing the preemption, and the keys are reregistered
- * before resuming it.
+ * optional extra work). Doing this causes the reservation keys to be removed
+ * from all the device paths except that path used to issue the preempt, so
+ * they may need to be restored. To avoid the chance that IO goes to these
+ * paths when they don't have a registered key and a reservation exists, the
+ * device is suspended before issuing the preemption, and the keys are
+ * reregistered (or the reservation is released) before resuming it.
  */
 static int do_preempt_self(struct multipath *mpp, struct be64 sa_key,
 			   int rq_servact, int rq_scope, unsigned int rq_type,
-			   int noisy, bool do_release)
+			   int noisy, enum preempt_work work)
 {
 	int status, rel_status = MPATH_PR_SUCCESS;
 	struct path *pp = NULL;
@@ -596,7 +601,7 @@ static int do_preempt_self(struct multipath *mpp, struct be64 sa_key,
 		goto fail_resume;
 	}
 
-	if (do_release) {
+	if (work != PREE_WORK_NONE) {
 		memset(&paramp, 0, sizeof(paramp));
 		memcpy(paramp.key, &mpp->reservation_key, 8);
 		rel_status = prout_do_scsi_ioctl(pp->dev, MPATH_PROUT_REL_SA,
@@ -604,15 +609,25 @@ static int do_preempt_self(struct multipath *mpp, struct be64 sa_key,
 		if (rel_status != MPATH_PR_SUCCESS)
 			condlog(0, "%s: release on alternate path failed.",
 				mpp->wwid);
+		else if (work == PREE_WORK_REL_UNREG) {
+			/* unregister the last path */
+			rel_status = prout_do_scsi_ioctl(pp->dev, MPATH_PROUT_REG_IGN_SA,
+							 rq_scope, rq_type,
+							 &paramp, noisy);
+			if (rel_status != MPATH_PR_SUCCESS)
+				condlog(0, "%s: final self preempt unregister failed,",
+					mpp->wwid);
+		}
 	}
-
-	memset(&paramp, 0, sizeof(paramp));
-	memcpy(paramp.sa_key, &mpp->reservation_key, 8);
-	status = mpath_prout_reg(mpp, MPATH_PROUT_REG_IGN_SA, rq_scope,
-				 rq_type, &paramp, noisy);
-	if (status != MPATH_PR_SUCCESS)
-		condlog(0, "%s: self preempt failed to reregister paths.",
-			mpp->wwid);
+	if (work != PREE_WORK_REL_UNREG) {
+		memset(&paramp, 0, sizeof(paramp));
+		memcpy(paramp.sa_key, &mpp->reservation_key, 8);
+		status = mpath_prout_reg(mpp, MPATH_PROUT_REG_IGN_SA, rq_scope,
+					 rq_type, &paramp, noisy);
+		if (status != MPATH_PR_SUCCESS)
+			condlog(0, "%s: self preempt failed to reregister paths.",
+				mpp->wwid);
+	}
 
 fail_resume:
 	if (!dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias, udev_flags)) {
@@ -625,10 +640,10 @@ fail_resume:
 }
 
 static int preempt_self(struct multipath *mpp, int rq_servact, int rq_scope,
-			unsigned int rq_type, int noisy, bool do_release)
+			unsigned int rq_type, int noisy, enum preempt_work work)
 {
 	return do_preempt_self(mpp, mpp->reservation_key, rq_servact, rq_scope,
-			       rq_type, noisy, do_release);
+			       rq_type, noisy, work);
 }
 
 static int preempt_all(struct multipath *mpp, int rq_servact, int rq_scope,
@@ -636,7 +651,7 @@ static int preempt_all(struct multipath *mpp, int rq_servact, int rq_scope,
 {
 	struct be64 zerokey = {0};
 	return do_preempt_self(mpp, zerokey, rq_servact, rq_scope, rq_type,
-			       noisy, false);
+			       noisy, PREE_WORK_NONE);
 }
 
 static int
@@ -661,18 +676,20 @@ reservation_key_matches(struct multipath *mpp, uint8_t *key, unsigned int *type)
 	return YNU_NO;
 }
 
-static bool check_holding_reservation(struct multipath *mpp, unsigned int *type)
+static bool check_holding_reservation(struct multipath *mpp, uint8_t *curr_key,
+				      unsigned int *type)
 {
-	if (get_be64(mpp->reservation_key) && get_prhold(mpp->alias) == PR_SET &&
-	    reservation_key_matches(mpp, (uint8_t *)&mpp->reservation_key, type) ==
-		    YNU_YES)
+	uint64_t zerokey = 0;
+	if (memcmp(curr_key, &zerokey, 8) != 0 && get_prhold(mpp->alias) == PR_SET &&
+	    reservation_key_matches(mpp, curr_key, type) == YNU_YES)
 		return true;
 	return false;
 }
 
-static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
-			   unsigned int rq_type,
-			   struct prout_param_descriptor * paramp, int noisy)
+static int
+mpath_prout_rel(struct multipath *mpp, int rq_servact, int rq_scope,
+		unsigned int rq_type, struct prout_param_descriptor *paramp,
+		int noisy, bool unregister)
 {
 	int i, j;
 	struct pathgroup *pgp = NULL;
@@ -762,7 +779,8 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		return status;
 	}
 
-	if (!check_holding_reservation(mpp, &res_type)) {
+	if (!check_holding_reservation(mpp, (uint8_t *)&mpp->reservation_key,
+				       &res_type)) {
 		condlog(2, "%s: Releasing key not holding reservation.", mpp->wwid);
 		return MPATH_PR_SUCCESS;
 	}
@@ -785,7 +803,11 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	 * 4. Reregistering keys on all the paths
 	 * 5. Resuming the device
 	 */
-	return preempt_self(mpp, MPATH_PROUT_PREE_SA, rq_scope, rq_type, noisy, true);
+	status = preempt_self(mpp, MPATH_PROUT_PREE_SA, rq_scope, rq_type, noisy,
+			      unregister ? PREE_WORK_REL_UNREG : PREE_WORK_REL);
+	if (status == MPATH_PR_SUCCESS && unregister)
+		return MPATH_PR_SUCCESS_UNREGISTER;
+	return status;
 }
 
 /*
@@ -827,7 +849,7 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 	select_reservation_key(conf, mpp);
 	put_multipath_config(conf);
 
-	memcpy(&oldkey, &mpp->reservation_key, 8);
+	oldkey = mpp->reservation_key;
 	unregistering = (memcmp(&zerokey, paramp->sa_key, 8) == 0);
 	if (mpp->prkey_source == PRKEY_SOURCE_FILE &&
 	    (rq_servact == MPATH_PROUT_REG_IGN_SA ||
@@ -904,7 +926,28 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 	{
 	case MPATH_PROUT_REG_SA:
 	case MPATH_PROUT_REG_IGN_SA:
-		ret= mpath_prout_reg(mpp, rq_servact, rq_scope, rq_type, paramp, noisy);
+		if (unregistering &&
+		    check_holding_reservation(mpp, (uint8_t *)&oldkey, &rq_type)) {
+			struct be64 newkey = mpp->reservation_key;
+			/* temporarily restore reservation key */
+			mpp->reservation_key = oldkey;
+			ret = mpath_prout_rel(mpp, MPATH_PROUT_REL_SA, rq_scope,
+					      rq_type, paramp, noisy, true);
+			mpp->reservation_key = newkey;
+			if (ret == MPATH_PR_SUCCESS)
+				/*
+				 * Since unregistering it true, paramp->sa_key
+				 * must be zero here. So this command will
+				 * unregister the key.
+				 */
+				ret = mpath_prout_reg(mpp, rq_servact, rq_scope,
+						      rq_type, paramp, noisy);
+			else if (ret == MPATH_PR_SUCCESS_UNREGISTER)
+				/* We already unregistered the key */
+				ret = MPATH_PR_SUCCESS;
+		} else
+			ret = mpath_prout_reg(mpp, rq_servact, rq_scope,
+					      rq_type, paramp, noisy);
 		break;
 	case MPATH_PROUT_PREE_SA:
 	case MPATH_PROUT_PREE_AB_SA:
@@ -920,7 +963,7 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 		/* if we are preempting ourself */
 		if (memcmp(paramp->sa_key, paramp->key, 8) == 0) {
 			ret = preempt_self(mpp, rq_servact, rq_scope, rq_type,
-					   noisy, false);
+					   noisy, PREE_WORK_NONE);
 			break;
 		}
 		/* fallthrough */
@@ -929,15 +972,17 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 		unsigned int res_type;
 		ret = mpath_prout_common(mpp, rq_servact, rq_scope, rq_type,
 					 paramp, noisy, NULL, &failed_paths);
-		if (rq_servact == MPATH_PROUT_RES_SA && ret != MPATH_PR_SUCCESS &&
-		    failed_paths && check_holding_reservation(mpp, &res_type) &&
+		if (rq_servact == MPATH_PROUT_RES_SA &&
+		    ret != MPATH_PR_SUCCESS && failed_paths &&
+		    check_holding_reservation(mpp, paramp->key, &res_type) &&
 		    res_type == rq_type)
 			/* The reserve failed, but multipathd says we hold it */
 			ret = MPATH_PR_SUCCESS;
 		break;
 	}
 	case MPATH_PROUT_REL_SA:
-		ret = mpath_prout_rel(mpp, rq_servact, rq_scope, rq_type, paramp, noisy);
+		ret = mpath_prout_rel(mpp, rq_servact, rq_scope, rq_type,
+				      paramp, noisy, false);
 		break;
 	default:
 		return MPATH_PR_OTHER;
