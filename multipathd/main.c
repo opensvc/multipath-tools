@@ -89,7 +89,8 @@
 #define CMDSIZE 160
 #define MSG_SIZE 32
 
-static void mpath_pr_event_handle(struct path *pp);
+static unsigned int
+mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_needed);
 
 #define LOG_MSG(lvl, pp)					\
 do {								\
@@ -631,7 +632,7 @@ flush_map_nopaths(struct multipath *mpp, struct vectors *vecs) {
 static void
 pr_register_active_paths(struct multipath *mpp)
 {
-	unsigned int i, j;
+	unsigned int i, j, nr_keys = 0;
 	struct path *pp;
 	struct pathgroup *pgp;
 
@@ -640,7 +641,7 @@ pr_register_active_paths(struct multipath *mpp)
 			if (mpp->prflag == PR_UNSET)
 				return;
 			if ((pp->state == PATH_UP) || (pp->state == PATH_GHOST))
-				mpath_pr_event_handle(pp);
+				nr_keys = mpath_pr_event_handle(pp, nr_keys);
 		}
 	}
 }
@@ -1318,7 +1319,7 @@ rescan:
 		verify_paths(mpp);
 		mpp->action = ACT_RELOAD;
 		prflag = mpp->prflag;
-		mpath_pr_event_handle(pp);
+		mpath_pr_event_handle(pp, 0);
 	} else {
 		if (!should_multipath(pp, vecs->pathvec, vecs->mpvec)) {
 			orphan_path(pp, "only one path");
@@ -2645,7 +2646,7 @@ update_path_state (struct vectors * vecs, struct path * pp)
 			 */
 			condlog(2, "%s: checking persistent "
 				"reservation registration", pp->dev);
-			mpath_pr_event_handle(pp);
+			mpath_pr_event_handle(pp, 0);
 			if (pp->mpp->prflag == PR_SET && prflag != PR_SET)
 				pr_register_active_paths(pp->mpp);
 		}
@@ -4264,12 +4265,16 @@ void unset_pr(struct multipath *mpp)
  * Returns MPATH_PR_SUCCESS unless if fails to read the PR keys. If
  * MPATH_PR_SUCCESS is returned, mpp->prflag will be either PR_SET or
  * PR_UNSET.
+ *
+ * The number of found keys must be at least as large as *nr_keys,
+ * and if MPATH_PR_SUCCESS is returned and mpp->prflag is PR_SET after
+ * the call, *nr_keys will be set to the number of found keys.
  */
-static int update_map_pr(struct multipath *mpp, struct path *pp)
+static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *nr_keys)
 {
 	struct prin_resp resp;
-	unsigned int i;
-	int ret, isFound;
+	unsigned int i, nr_found = 0;
+	int ret;
 	bool was_set = (mpp->prflag == PR_SET);
 
 	/* If pr is explicitly unset, it must be manually set */
@@ -4299,7 +4304,6 @@ static int update_map_pr(struct multipath *mpp, struct path *pp)
 	condlog(4, "%s: Multipath reservation_key: 0x%" PRIx64 " ", mpp->alias,
 		get_be64(mpp->reservation_key));
 
-	isFound = 0;
 	for (i = 0;
 	     i < resp.prin_descriptor.prin_readkeys.additional_length / 8; i++) {
 		uint8_t *keyp = &resp.prin_descriptor.prin_readkeys.key_list[i * 8];
@@ -4319,41 +4323,57 @@ static int update_map_pr(struct multipath *mpp, struct path *pp)
 		if (!memcmp(&mpp->reservation_key, keyp, 8) ||
 		    (get_be64(mpp->old_pr_key) &&
 		     !memcmp(&mpp->old_pr_key, keyp, 8)))
-			isFound = 1;
+			nr_found++;
 	}
 
-	if (isFound) {
+	if (nr_found >= *nr_keys) {
 		set_pr(mpp);
-		condlog(was_set ? 3 : 2, "%s: key found. prflag set.", mpp->alias);
+		condlog(was_set ? 3 : 2, "%s: %u keys found. prflag set.",
+			mpp->alias, nr_found);
+		*nr_keys = nr_found;
 	} else {
 		unset_pr(mpp);
-		condlog(was_set ? 1 : 3, "%s: key not found. prflag unset.",
-			mpp->alias);
+		condlog(was_set ? 1 : 3,
+			"%s: %u keys found. needed %u. prflag unset.",
+			mpp->alias, nr_found, *nr_keys);
 	}
 
 	return MPATH_PR_SUCCESS;
 }
 
-static void mpath_pr_event_handle(struct path *pp)
+/*
+ * This function is called with the number of registered keys that should be
+ * seen for this device to know that the key has not been preempted while the
+ * path was getting registered. If 0 is passed in, update_mpath_pr is called
+ * before registering the key to figure out the number, assuming that at
+ * least one key must exist.
+ *
+ * The function returns the number of keys that are registered or 0 if
+ * it's unknown.
+ */
+static unsigned int mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_needed)
 {
 	struct multipath *mpp = pp->mpp;
 	int ret;
-	struct prout_param_descriptor param;
+	struct prout_param_descriptor param = {.sa_flags = 0};
 	bool clear_reg = false;
 
 	if (pp->bus != SYSFS_BUS_SCSI) {
 		unset_pr(mpp);
-		return;
+		return 0;
 	}
 
-	if (update_map_pr(mpp, pp) != MPATH_PR_SUCCESS)
-		return;
+	if (nr_keys_needed == 0) {
+		nr_keys_needed = 1;
+		if (update_map_pr(mpp, pp, &nr_keys_needed) != MPATH_PR_SUCCESS)
+			return 0;
+	}
 
 	check_prhold(mpp, pp);
 
 	if (mpp->prflag != PR_SET) {
 		if (!mpp->ever_registered_pr)
-			return;
+			return 0;
 		/*
 		 * This path may have been unusable and either the
 		 * registration was cleared or the registered
@@ -4366,21 +4386,28 @@ static void mpath_pr_event_handle(struct path *pp)
 		clear_reg = true;
 	}
 
-	memset(&param, 0, sizeof(param));
-
 	if (!clear_reg) {
 		param.sa_flags = mpp->sa_flags;
 		memcpy(param.sa_key, &mpp->reservation_key, 8);
 		param.num_transportid = 0;
 	}
-
+retry:
 	condlog(3, "%s registration for device %s:%s",
 		clear_reg ? "Clearing" : "Setting", pp->dev, pp->mpp->wwid);
 
 	ret = prout_do_scsi_ioctl(pp->dev, MPATH_PROUT_REG_IGN_SA, 0, 0, &param, 0);
-	if (ret != MPATH_PR_SUCCESS )
-	{
+	if (ret != MPATH_PR_SUCCESS) {
 		condlog(0, "%s: %s reservation registration failed. Error: %d",
 			clear_reg ? "Clearing" : "Setting", pp->dev, ret);
+	} else if (!clear_reg) {
+		if (update_map_pr(mpp, pp, &nr_keys_needed) != MPATH_PR_SUCCESS)
+			return 0;
+		if (mpp->prflag != PR_SET) {
+			memset(&param, 0, sizeof(param));
+			clear_reg = true;
+			goto retry;
+		}
+		return nr_keys_needed;
 	}
+	return 0;
 }
