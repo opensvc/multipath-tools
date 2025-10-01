@@ -1293,6 +1293,7 @@ cli_setprstatus(void * v, struct strbuf *reply, void * data)
 		set_pr(mpp);
 		condlog(2, "%s: prflag set", param);
 	}
+	memset(&mpp->old_pr_key, 0, 8);
 
 	return 0;
 }
