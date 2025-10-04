@@ -1372,6 +1372,21 @@ static struct hwentry default_hw[] = {
 		.no_path_retry = 30,
 	},
 	/*
+	 * Acronis
+	 */
+	{
+		// Cyber Infrastructure
+		.vendor        = "VSTORAGE",
+		.product       = "VSTOR-DISK",
+		.prio_name     = PRIO_ALUA,
+		.pgpolicy      = GROUP_BY_NODE_NAME,
+		.detect_prio   = DETECT_PRIO_OFF,
+		.features      = "2 pg_init_retries 50",
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.flush_on_last_del = FLUSH_ALWAYS,
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+	},
+	/*
 	 * EOL
 	 */
 	{
