@@ -211,7 +211,7 @@ mpath_prout_common(struct multipath *mpp, int rq_servact, int rq_scope,
 	vector_foreach_slot (mpp->pg, pgp, j) {
 		vector_foreach_slot (pgp->paths, pp, i) {
 			if (!((pp->state == PATH_UP) || (pp->state == PATH_GHOST))) {
-				condlog(1, "%s: %s path not up. Skip",
+				condlog(3, "%s: %s path not up. Skip",
 					mpp->wwid, pp->dev);
 				if (failed_paths)
 					*failed_paths = true;
@@ -244,6 +244,8 @@ mpath_prout_common(struct multipath *mpp, int rq_servact, int rq_scope,
 			if (ret == MPATH_PR_RESERV_CONFLICT &&
 			    (pp->dmstate == PSTATE_FAILED ||
 			     rq_servact == MPATH_PROUT_RES_SA)) {
+				condlog(4, "%s: ignoring path %s with conflict",
+					mpp->wwid, pp->dev);
 				conflict = true;
 				continue;
 			}
@@ -330,6 +332,7 @@ void preempt_missing_path(struct multipath *mpp, uint8_t *key, uint8_t *sa_key,
 	 * node. libmpathpersist has never worked if multiple nodes share
 	 * the same reservation key for a device
 	 */
+	condlog(3, "%s: preempting missing path while changing key", mpp->wwid);
 	rq_type = resp.prin_descriptor.prin_readresv.scope_type & MPATH_PR_TYPE_MASK;
 	rq_scope = (resp.prin_descriptor.prin_readresv.scope_type &
 		    MPATH_PR_SCOPE_MASK) >>
@@ -446,7 +449,8 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	vector_foreach_slot (mpp->pg, pgp, j){
 		vector_foreach_slot (pgp->paths, pp, i){
 			if (!((pp->state == PATH_UP) || (pp->state == PATH_GHOST))){
-				condlog (1, "%s: %s path not up. Skip.", mpp->wwid, pp->dev);
+				condlog(3, "%s: %s path not up. Skip.",
+					mpp->wwid, pp->dev);
 				continue;
 			}
 			if (all_tg_pt && pp->sg_id.host_no != -1) {
@@ -736,7 +740,8 @@ mpath_prout_rel(struct multipath *mpp, int rq_servact, int rq_scope,
 	vector_foreach_slot (mpp->pg, pgp, j){
 		vector_foreach_slot (pgp->paths, pp, i){
 			if (!((pp->state == PATH_UP) || (pp->state == PATH_GHOST))){
-				condlog (1, "%s: %s path not up.", mpp->wwid, pp->dev);
+				condlog(3, "%s: %s path not up.", mpp->wwid,
+					pp->dev);
 				continue;
 			}
 
@@ -779,18 +784,15 @@ mpath_prout_rel(struct multipath *mpp, int rq_servact, int rq_scope,
 		return status;
 	}
 
-	if (!check_holding_reservation(mpp, (uint8_t *)&mpp->reservation_key,
-				       &res_type)) {
-		condlog(2, "%s: Releasing key not holding reservation.", mpp->wwid);
+	if (!check_holding_reservation(mpp, (uint8_t *)&mpp->reservation_key, &res_type))
 		return MPATH_PR_SUCCESS;
-	}
 	if (res_type != rq_type) {
 		condlog(2, "%s: --prout_type %u doesn't match reservation %u",
 			mpp->wwid, rq_type, res_type);
 		return MPATH_PR_RESERV_CONFLICT;
 	}
 
-	condlog (2, "%s: Path holding reservation is not available.", mpp->wwid);
+	condlog(3, "%s: Path holding reservation is not available.", mpp->wwid);
 	/*
 	 * Cannot free the reservation because the path that is holding it
 	 * is not usable. Workaround this by:

@@ -38,14 +38,14 @@ static char *do_pr(char *alias, char *str)
 		return NULL;
 	}
 
-	condlog (2, "%s: pr message=%s", alias, str);
+	condlog(4, "%s: pr message=%s", alias, str);
 	if (send_packet(fd, str) != 0) {
 		condlog(2, "%s: message=%s send error=%d", alias, str, errno);
 		mpath_disconnect(fd);
 		return NULL;
 	}
 	if (recv_packet(fd, &reply, timeout) < 0)
-		condlog(2, "%s: message=%s recv error=%d", alias, str, errno);
+		condlog(0, "%s: message=%s recv error=%d", alias, str, errno);
 
 	mpath_disconnect(fd);
 	return reply;
@@ -64,11 +64,11 @@ static int do_update_pr(char *alias, char *cmd, char *key)
 
 	reply = do_pr(alias, str);
 	if (reply) {
-		condlog (2, "%s: message=%s reply=%s", alias, str, reply);
-		if (reply && strncmp(reply,"ok", 2) == 0)
+		if (strncmp(reply, "ok", 2) == 0)
 			ret = 0;
 		else
 			ret = -1;
+		condlog(ret ? 0 : 4, "%s: message=%s reply=%s", alias, str, reply);
 	}
 
 	free(reply);
