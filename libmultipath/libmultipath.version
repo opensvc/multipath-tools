@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_29.0.0 {
+LIBMULTIPATH_30.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -54,6 +54,7 @@ global:
 	alloc_path;
 	alloc_path_layout;
 	alloc_path_with_pathinfo;
+	can_recheck_wwid;
 	change_foreign;
 	check_alias_settings;
 	check_daemon;
@@ -169,6 +170,7 @@ global:
 	select_no_path_retry;
 	select_path_group;
 	select_reservation_key;
+	select_skip_kpartx;
 	set_no_path_retry;
 	set_path_removed;
 	set_prkey;
@@ -246,7 +248,3 @@ local:
 	*;
 };
 
-LIBMULTIPATH_29.1.0 {
-global:
-	can_recheck_wwid;
-} LIBMULTIPATH_29.0.0;

@@ -52,4 +52,6 @@ bool check_path_wwid_change(struct path *pp);
 int finish_path_init(struct path *pp, struct vectors * vecs);
 int resize_map(struct multipath *mpp, unsigned long long size,
 	       struct vectors *vecs);
+void set_pr(struct multipath *mpp);
+void unset_pr(struct multipath *mpp);
 #endif /* MAIN_H_INCLUDED */

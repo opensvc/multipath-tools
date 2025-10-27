@@ -424,11 +424,10 @@ struct path {
 
 typedef int (pgpolicyfn) (struct multipath *, vector);
 
-
-enum prflag_value {
-	PRFLAG_UNKNOWN,
-	PRFLAG_UNSET,
-	PRFLAG_SET,
+enum pr_value {
+	PR_UNKNOWN,
+	PR_UNSET,
+	PR_SET,
 };
 
 enum prio_update_type {
@@ -521,9 +520,13 @@ struct multipath {
 	/* persistent management data*/
 	int prkey_source;
 	struct be64 reservation_key;
+	struct be64 old_pr_key;
 	uint8_t sa_flags;
 	int prflag;
+	int prhold;
 	int all_tg_pt;
+	bool ever_registered_pr;
+
 	struct gen_multipath generic_mp;
 	bool fpin_must_reload;
 };

@@ -19,14 +19,12 @@
 #include "config.h"
 #include "uxsock.h"
 #include "mpathpr.h"
+#include "structs.h"
 
-
-static int do_update_pr(char *alias, char *cmd, char *key)
+static char *do_pr(char *alias, char *str)
 {
 	int fd;
-	char str[256];
 	char *reply;
-	int ret = 0;
 	int timeout;
 	struct config *conf;
 
@@ -37,39 +35,85 @@ static int do_update_pr(char *alias, char *cmd, char *key)
 	fd = mpath_connect();
 	if (fd == -1) {
 		condlog (0, "ux socket connect error");
-		return -1;
+		return NULL;
 	}
 
-	if (key)
-		snprintf(str,sizeof(str),"%s map %s key %s", cmd, alias, key);
-	else
-		snprintf(str,sizeof(str),"%s map %s", cmd, alias);
-	condlog (2, "%s: pr message=%s", alias, str);
+	condlog(4, "%s: pr message=%s", alias, str);
 	if (send_packet(fd, str) != 0) {
 		condlog(2, "%s: message=%s send error=%d", alias, str, errno);
 		mpath_disconnect(fd);
-		return -1;
+		return NULL;
 	}
-	ret = recv_packet(fd, &reply, timeout);
-	if (ret < 0) {
-		condlog(2, "%s: message=%s recv error=%d", alias, str, errno);
-		ret = -1;
-	} else {
-		condlog (2, "%s: message=%s reply=%s", alias, str, reply);
-		if (reply && strncmp(reply,"ok", 2) == 0)
+	if (recv_packet(fd, &reply, timeout) < 0)
+		condlog(0, "%s: message=%s recv error=%d", alias, str, errno);
+
+	mpath_disconnect(fd);
+	return reply;
+}
+
+static int do_update_pr(char *alias, char *cmd, char *key)
+{
+	char str[256];
+	char *reply = NULL;
+	int ret = -1;
+
+	if (key)
+		snprintf(str, sizeof(str), "%s map %s key %s", cmd, alias, key);
+	else
+		snprintf(str, sizeof(str), "%s map %s", cmd, alias);
+
+	reply = do_pr(alias, str);
+	if (reply) {
+		if (strncmp(reply, "ok", 2) == 0)
 			ret = 0;
 		else
 			ret = -1;
+		condlog(ret ? 0 : 4, "%s: message=%s reply=%s", alias, str, reply);
 	}
 
 	free(reply);
-	mpath_disconnect(fd);
 	return ret;
+}
+
+static int do_get_pr(char *mapname, const char *cmd)
+{
+	char str[256];
+	char *reply;
+	int prflag;
+
+	snprintf(str, sizeof(str), "%s map %s", cmd, mapname);
+	reply = do_pr(mapname, str);
+	if (!reply)
+		prflag = PR_UNKNOWN;
+	else if (strncmp(reply, "unset", 5) == 0)
+		prflag = PR_UNSET;
+	else if (strncmp(reply, "set", 3) == 0)
+		prflag = PR_SET;
+	else
+		prflag = PR_UNKNOWN;
+
+	free(reply);
+	return prflag;
+}
+
+int get_prflag(char *mapname)
+{
+	return do_get_pr(mapname, "getprstatus");
+}
+
+int get_prhold(char *mapname)
+{
+	return do_get_pr(mapname, "getprhold");
 }
 
 int update_prflag(char *mapname, int set) {
 	return do_update_pr(mapname, (set)? "setprstatus" : "unsetprstatus",
 			    NULL);
+}
+
+int update_prhold(char *mapname, bool set)
+{
+	return do_update_pr(mapname, (set) ? "setprhold" : "unsetprhold", NULL);
 }
 
 int update_prkey_flags(char *mapname, uint64_t prkey, uint8_t sa_flags) {

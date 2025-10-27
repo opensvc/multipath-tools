@@ -38,8 +38,6 @@ void mpath_print_buf_readcap(struct prin_resp *pr_buff);
 void mpath_print_buf_readfullstat(struct prin_resp *pr_buff);
 void mpath_print_buf_readresv(struct prin_resp *pr_buff);
 void mpath_print_buf_readkeys(struct prin_resp *pr_buff);
-void dumpHex(const char* str, int len, int no_ascii);
-void * mpath_alloc_prin_response(int prin_sa);
 void mpath_print_transport_id(struct prin_fulldescr *fdesc);
 int construct_transportid(const char * inp, struct transportid transid[], int num_transportids);
 

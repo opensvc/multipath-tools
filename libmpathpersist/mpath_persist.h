@@ -65,6 +65,9 @@ extern "C" {
 #define MPATH_PR_RETRYABLE_ERROR	16  /* error that might be succeed
 					       down another path. Internal
 					       only. */
+#define MPATH_PR_SUCCESS_UNREGISTER	17  /* Success, and additionally, all
+					       paths were unregistered.
+					       Internal only. */
 
 /* PR MASK */
 #define MPATH_F_APTPL_MASK		0x01	/* APTPL MASK*/

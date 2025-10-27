@@ -49,17 +49,6 @@ struct threadinfo {
 	struct prout_param param;
 };
 
-static int mpath_send_prin_activepath (char * dev, int rq_servact,
-				struct prin_resp * resp, int noisy)
-{
-
-	int rc;
-
-	rc = prin_do_scsi_ioctl(dev, rq_servact, resp,  noisy);
-
-	return (rc);
-}
-
 static int mpath_prin_activepath (struct multipath *mpp, int rq_servact,
 	struct prin_resp * resp, int noisy)
 {
@@ -71,7 +60,7 @@ static int mpath_prin_activepath (struct multipath *mpp, int rq_servact,
 		vector_foreach_slot (pgp->paths, pp, i){
 			if (!((pp->state == PATH_UP) ||
 			      (pp->state == PATH_GHOST))){
-				condlog(2, "%s: %s not available. Skip.",
+				condlog(3, "%s: %s not available. Skip.",
 					mpp->wwid, pp->dev);
 				condlog(3, "%s: status = %d.",
 					mpp->wwid, pp->state);
@@ -80,12 +69,11 @@ static int mpath_prin_activepath (struct multipath *mpp, int rq_servact,
 
 			condlog(3, "%s: sending pr in command to %s ",
 				mpp->wwid, pp->dev);
-			ret = mpath_send_prin_activepath(pp->dev, rq_servact,
-							 resp, noisy);
+			ret = prin_do_scsi_ioctl(pp->dev, rq_servact, resp, noisy);
 			switch(ret)
 			{
 				case MPATH_PR_SUCCESS:
-				case MPATH_PR_SENSE_INVALID_OP:
+				case MPATH_PR_ILLEGAL_REQ:
 					return ret;
 				default:
 					continue;
@@ -122,39 +110,18 @@ void *mpath_alloc_prin_response(int prin_sa)
 	return ptr;
 }
 
-static int get_mpvec(vector curmp, vector pathvec, char *refwwid)
+static int get_path_info(struct multipath *mpp, vector pathvec)
 {
-	int i;
-	struct multipath *mpp;
-
-	vector_foreach_slot (curmp, mpp, i){
-		/*
-		 * discard out of scope maps
-		 */
-		if (!mpp->alias) {
-			condlog(0, "%s: map with empty alias!", __func__);
-			continue;
-		}
-
-		if (mpp->pg != NULL)
-			/* Already seen this one */
-			continue;
-
-		if (refwwid && strncmp (mpp->alias, refwwid, WWID_SIZE - 1))
-			continue;
-
-		if (update_multipath_table(mpp, pathvec, DI_CHECKER) != DMP_OK ||
-		    update_mpp_paths(mpp, pathvec)) {
-			condlog(1, "error parsing map %s", mpp->wwid);
-			remove_map(mpp, pathvec, curmp);
-			i--;
-		} else
-			extract_hwe_from_path(mpp);
+	if (update_multipath_table(mpp, pathvec, DI_CHECKER) != DMP_OK ||
+	    update_mpp_paths(mpp, pathvec)) {
+		condlog(0, "error parsing map %s", mpp->wwid);
+		return MPATH_PR_DMMP_ERROR;
 	}
+	extract_hwe_from_path(mpp);
 	return MPATH_PR_SUCCESS ;
 }
 
-static int mpath_get_map(vector curmp, vector pathvec, int fd, struct multipath **pmpp)
+static int mpath_get_map(vector curmp, int fd, struct multipath **pmpp)
 {
 	int rc;
 	struct stat info;
@@ -186,12 +153,6 @@ static int mpath_get_map(vector curmp, vector pathvec, int fd, struct multipath 
 
 	condlog(4, "alias = %s", alias);
 
-	/* get info of all paths from the dm device     */
-	if (get_mpvec(curmp, pathvec, alias)) {
-		condlog(0, "%s: failed to get device info.", alias);
-		return MPATH_PR_DMMP_ERROR;
-	}
-
 	mpp = find_mp_by_alias(curmp, alias);
 
 	if (!mpp) {
@@ -212,7 +173,11 @@ int do_mpath_persistent_reserve_in(vector curmp, vector pathvec,
 	struct multipath *mpp;
 	int ret;
 
-	ret = mpath_get_map(curmp, pathvec, fd, &mpp);
+	ret = mpath_get_map(curmp, fd, &mpp);
+	if (ret != MPATH_PR_SUCCESS)
+		return ret;
+
+	ret = get_path_info(mpp, pathvec);
 	if (ret != MPATH_PR_SUCCESS)
 		return ret;
 
@@ -232,6 +197,196 @@ static void *mpath_prout_pthread_fn(void *p)
 	pthread_exit(NULL);
 }
 
+static int
+mpath_prout_common(struct multipath *mpp, int rq_servact, int rq_scope,
+		   unsigned int rq_type, struct prout_param_descriptor *paramp,
+		   int noisy, struct path **pptr, bool *failed_paths)
+{
+	int i, j, ret;
+	struct pathgroup *pgp = NULL;
+	struct path *pp = NULL;
+	bool found = false;
+	bool conflict = false;
+
+	vector_foreach_slot (mpp->pg, pgp, j) {
+		vector_foreach_slot (pgp->paths, pp, i) {
+			if (!((pp->state == PATH_UP) || (pp->state == PATH_GHOST))) {
+				condlog(3, "%s: %s path not up. Skip",
+					mpp->wwid, pp->dev);
+				if (failed_paths)
+					*failed_paths = true;
+				continue;
+			}
+
+			condlog(3, "%s: sending pr out command to %s",
+				mpp->wwid, pp->dev);
+			found = true;
+			ret = prout_do_scsi_ioctl(pp->dev, rq_servact, rq_scope,
+						  rq_type, paramp, noisy);
+			if (ret == MPATH_PR_SUCCESS && pptr)
+				*pptr = pp;
+			/*
+			 * If this path is considered down by the kernel,
+			 * it may have just come back up, and multipathd
+			 * may not have had time to update the key. Allow
+			 * reservation conflicts.
+			 *
+			 * If you issue a RESERVE to a regular scsi device
+			 * that already holds the reservation, it succeeds
+			 * (and does nothing). A multipath device that
+			 * holds the reservation should not return a
+			 * reservation conflict on a RESERVE command, just
+			 * because it issued the RESERVE to a path that
+			 * isn't holding the reservation. It should instead
+			 * keep trying to see if it succeeds on another
+			 * path.
+			 */
+			if (ret == MPATH_PR_RESERV_CONFLICT &&
+			    (pp->dmstate == PSTATE_FAILED ||
+			     rq_servact == MPATH_PROUT_RES_SA)) {
+				condlog(4, "%s: ignoring path %s with conflict",
+					mpp->wwid, pp->dev);
+				conflict = true;
+				continue;
+			}
+			if (ret != MPATH_PR_RETRYABLE_ERROR)
+				return ret;
+			if (failed_paths)
+				*failed_paths = true;
+		}
+	}
+	if (found)
+		return conflict ? MPATH_PR_RESERV_CONFLICT : MPATH_PR_OTHER;
+	condlog(0, "%s: no path available", mpp->wwid);
+	return MPATH_PR_DMMP_ERROR;
+}
+
+/*
+ * If you are changing the key registered to a device, and that device is
+ * holding the reservation on a path that couldn't get its key updated,
+ * either because it is down or no longer part of the multipath device,
+ * you need to preempt the reservation to a usable path with the new key
+ *
+ * Also, it's possible that the reservation was preempted, and the device
+ * is being re-registered. If it appears that is the case, clear
+ * mpp->prhold in multipathd.
+ */
+void preempt_missing_path(struct multipath *mpp, uint8_t *key, uint8_t *sa_key,
+			  int noisy)
+{
+	uint8_t zero[8] = {0};
+	struct prin_resp resp = {{{.prgeneration = 0}}};
+	int rq_scope;
+	unsigned int rq_type;
+	struct prout_param_descriptor paramp = {.sa_flags = 0};
+	int status;
+
+	/*
+	 * If you previously didn't have a key registered, you can't
+	 * be holding the reservation. Also, you can't preempt if you
+	 * no longer have a registered key
+	 */
+	if (memcmp(key, zero, 8) == 0 || memcmp(sa_key, zero, 8) == 0) {
+		update_prhold(mpp->alias, false);
+		return;
+	}
+	/*
+	 * If you didn't switch to a different key, there is no need to
+	 * preempt.
+	 */
+	if (memcmp(key, sa_key, 8) == 0)
+		return;
+
+	status = mpath_prin_activepath(mpp, MPATH_PRIN_RRES_SA, &resp, noisy);
+	if (status != MPATH_PR_SUCCESS) {
+		condlog(0, "%s: register: pr in read reservation command failed.",
+			mpp->wwid);
+		return;
+	}
+	/* If there is no reservation, there's nothing to preempt */
+	if (!resp.prin_descriptor.prin_readresv.additional_length) {
+		update_prhold(mpp->alias, false);
+		return;
+	}
+	/*
+	 * If there reservation is not held by the old key, you don't
+	 * want to preempt it
+	 */
+	if (memcmp(key, resp.prin_descriptor.prin_readresv.key, 8) != 0) {
+		/*
+		 * If reservation key doesn't match either the old or
+		 * the new key, then clear prhold.
+		 */
+		if (memcmp(sa_key, resp.prin_descriptor.prin_readresv.key, 8) != 0)
+			update_prhold(mpp->alias, false);
+		return;
+	}
+
+	/*
+	 * If multipathd doesn't think it is holding the reservation, don't
+	 * preempt it
+	 */
+	if (get_prhold(mpp->alias) != PR_SET)
+		return;
+	/* Assume this key is being held by an inaccessable path on this
+	 * node. libmpathpersist has never worked if multiple nodes share
+	 * the same reservation key for a device
+	 */
+	condlog(3, "%s: preempting missing path while changing key", mpp->wwid);
+	rq_type = resp.prin_descriptor.prin_readresv.scope_type & MPATH_PR_TYPE_MASK;
+	rq_scope = (resp.prin_descriptor.prin_readresv.scope_type &
+		    MPATH_PR_SCOPE_MASK) >>
+		   4;
+	memcpy(paramp.key, sa_key, 8);
+	memcpy(paramp.sa_key, key, 8);
+	status = mpath_prout_common(mpp, MPATH_PROUT_PREE_SA, rq_scope,
+				    rq_type, &paramp, noisy, NULL, NULL);
+	if (status != MPATH_PR_SUCCESS)
+		condlog(0, "%s: register: pr preempt command failed.", mpp->wwid);
+}
+
+/*
+ * If libmpathpersist fails at updating the key on a path with a retryable
+ * error, it has probably failed. But there is a chance that the path is
+ * still usable. To make sure a path isn't active without a key, when it
+ * should have one, or with a key, when it shouldn't have one, check if
+ * the path is still usable. If it is, we must fail the registration.
+ */
+static int
+check_failed_paths(struct multipath *mpp, struct threadinfo *thread, int count)
+{
+	int i, j, k;
+	int ret;
+	struct pathgroup *pgp;
+	struct path *pp;
+	struct config *conf;
+
+	for (i = 0; i < count; i++) {
+		if (thread[i].param.status != MPATH_PR_RETRYABLE_ERROR)
+			continue;
+		vector_foreach_slot (mpp->pg, pgp, j) {
+			vector_foreach_slot (pgp->paths, pp, k) {
+				if (strncmp(pp->dev, thread[i].param.dev,
+					    FILE_NAME_SIZE) == 0)
+					goto match;
+			}
+		}
+		/* no match. This shouldn't ever happen. */
+		condlog(0, "%s: Error: can't find path %s", mpp->wwid,
+			thread[i].param.dev);
+		continue;
+	match:
+		conf = get_multipath_config();
+		ret = pathinfo(pp, conf, DI_CHECKER);
+		put_multipath_config(conf);
+		/* If pathinfo fails, or if the path is active, return error */
+		if (ret != PATHINFO_OK || pp->state == PATH_UP ||
+		    pp->state == PATH_GHOST)
+			return MPATH_PR_OTHER;
+	}
+	return MPATH_PR_SUCCESS;
+}
+
 static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 			   unsigned int rq_type,
 			   struct prout_param_descriptor * paramp, int noisy)
@@ -240,13 +395,14 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	int i, j, k;
 	struct pathgroup *pgp = NULL;
 	struct path *pp = NULL;
-	int rollback = 0;
+	bool had_success = false;
+	bool need_retry = false;
+	bool retryable_error = false;
 	int active_pathcount=0;
 	int rc;
 	int count=0;
 	int status = MPATH_PR_SUCCESS;
 	int all_tg_pt;
-	uint64_t sa_key = 0;
 
 	if (!mpp)
 		return MPATH_PR_DMMP_ERROR;
@@ -293,7 +449,8 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 	vector_foreach_slot (mpp->pg, pgp, j){
 		vector_foreach_slot (pgp->paths, pp, i){
 			if (!((pp->state == PATH_UP) || (pp->state == PATH_GHOST))){
-				condlog (1, "%s: %s path not up. Skip.", mpp->wwid, pp->dev);
+				condlog(3, "%s: %s path not up. Skip.",
+					mpp->wwid, pp->dev);
 				continue;
 			}
 			if (all_tg_pt && pp->sg_id.host_no != -1) {
@@ -335,130 +492,219 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 				condlog (0, "%s: Thread[%d] failed to join thread %d", mpp->wwid, i, rc);
 			}
 		}
-		if (!rollback && (thread[i].param.status == MPATH_PR_RESERV_CONFLICT)){
-			rollback = 1;
-			sa_key = get_unaligned_be64(&paramp->sa_key[0]);
-			status = MPATH_PR_RESERV_CONFLICT ;
-		}
-		if (!rollback && (status == MPATH_PR_SUCCESS)){
+		/*
+		 * We only retry if there is at least one registration that
+		 * returned a reservation conflict (which we need to retry)
+		 * and at least one registration the return success, so we
+		 * know that the command worked on some of the paths. If
+		 * the registation fails on all paths, then it wasn't a
+		 * valid request, so there's no need to retry.
+		 */
+		if (thread[i].param.status == MPATH_PR_RESERV_CONFLICT)
+			need_retry = true;
+		else if (thread[i].param.status == MPATH_PR_RETRYABLE_ERROR)
+			retryable_error = true;
+		else if (thread[i].param.status == MPATH_PR_SUCCESS)
+			had_success = true;
+		else if (status == MPATH_PR_SUCCESS)
 			status = thread[i].param.status;
-		}
 	}
-	if (rollback && ((rq_servact == MPATH_PROUT_REG_SA) && sa_key != 0 )){
-		condlog (3, "%s: ERROR: initiating pr out rollback", mpp->wwid);
-		memcpy(&paramp->key, &paramp->sa_key, 8);
-		memset(&paramp->sa_key, 0, 8);
-		for( i=0 ; i < count ; i++){
-			if(thread[i].param.status == MPATH_PR_SUCCESS) {
-				rc = pthread_create(&thread[i].id, &attr, mpath_prout_pthread_fn,
-						(void *)(&thread[i].param));
-				if (rc){
-					condlog (0, "%s: failed to create thread for rollback. %d",  mpp->wwid, rc);
-					thread[i].param.status = MPATH_PR_THREAD_ERROR;
-				}
-			} else
+	if (need_retry && had_success && rq_servact == MPATH_PROUT_REG_SA &&
+	    status == MPATH_PR_SUCCESS) {
+		condlog(3, "%s: ERROR: initiating pr out retry", mpp->wwid);
+		retryable_error = false;
+		for (i = 0; i < count; i++) {
+			/* retry retryable errors and conflicts */
+			if (thread[i].param.status != MPATH_PR_RESERV_CONFLICT &&
+			    thread[i].param.status != MPATH_PR_RETRYABLE_ERROR) {
 				thread[i].param.status = MPATH_PR_SKIP;
+				continue;
+			}
+			/*
+			 * retry using MPATH_PROUT_REG_IGN_SA to avoid
+			 * conflicts. We already know that some paths
+			 * succeeded using MPATH_PROUT_REG_SA.
+			 */
+			thread[i].param.rq_servact = MPATH_PROUT_REG_IGN_SA;
+			rc = pthread_create(&thread[i].id, &attr,
+					    mpath_prout_pthread_fn,
+					    (void *)(&thread[i].param));
+			if (rc) {
+				condlog(0, "%s: failed to create thread for retry. %d",
+					mpp->wwid, rc);
+				thread[i].param.status = MPATH_PR_THREAD_ERROR;
+			}
 		}
-		for(i=0; i < count ; i++){
+		for (i = 0; i < count; i++) {
 			if (thread[i].param.status != MPATH_PR_SKIP &&
 			    thread[i].param.status != MPATH_PR_THREAD_ERROR) {
 				rc = pthread_join(thread[i].id, NULL);
-				if (rc){
-					condlog (3, "%s: failed to join thread while rolling back %d",
-						 mpp->wwid, i);
+				if (rc) {
+					condlog(3, "%s: failed to join thread while retrying %d",
+						mpp->wwid, i);
 				}
+				if (thread[i].param.status ==
+				    MPATH_PR_RETRYABLE_ERROR)
+					retryable_error = true;
+				else if (status == MPATH_PR_SUCCESS)
+					status = thread[i].param.status;
 			}
 		}
+		need_retry = false;
 	}
 
 	pthread_attr_destroy(&attr);
-	return (status == MPATH_PR_RETRYABLE_ERROR) ? MPATH_PR_OTHER : status;
-}
-
-static int send_prout_activepath(char *dev, int rq_servact, int rq_scope,
-				 unsigned int rq_type,
-				 struct prout_param_descriptor * paramp, int noisy)
-{
-	struct prout_param param;
-	param.rq_servact = rq_servact;
-	param.rq_scope  = rq_scope;
-	param.rq_type   = rq_type;
-	param.paramp    = paramp;
-	param.noisy = noisy;
-	param.status = -1;
-
-	pthread_t thread;
-	pthread_attr_t attr;
-	int rc;
-
-	memset(&thread, 0, sizeof(thread));
-	strlcpy(param.dev, dev, FILE_NAME_SIZE);
-	/* Initialize and set thread joinable attribute */
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-	rc = pthread_create(&thread, &attr, mpath_prout_pthread_fn, (void *)(&param));
-	if (rc){
-		condlog (3, "%s: failed to create thread %d", dev, rc);
-		return MPATH_PR_THREAD_ERROR;
-	}
-	/* Free attribute and wait for the other threads */
-	pthread_attr_destroy(&attr);
-	rc = pthread_join(thread, NULL);
-
-	return (param.status);
-}
-
-static int mpath_prout_common(struct multipath *mpp,int rq_servact, int rq_scope,
-			      unsigned int rq_type,
-			      struct prout_param_descriptor* paramp, int noisy)
-{
-	int i,j, ret;
-	struct pathgroup *pgp = NULL;
-	struct path *pp = NULL;
-	bool found = false;
-
-	vector_foreach_slot (mpp->pg, pgp, j){
-		vector_foreach_slot (pgp->paths, pp, i){
-			if (!((pp->state == PATH_UP) || (pp->state == PATH_GHOST))){
-				condlog (1, "%s: %s path not up. Skip",
-					 mpp->wwid, pp->dev);
-				continue;
-			}
-
-			condlog (3, "%s: sending pr out command to %s", mpp->wwid, pp->dev);
-			found = true;
-			ret = send_prout_activepath(pp->dev, rq_servact,
-						    rq_scope, rq_type,
-						    paramp, noisy);
-			if (ret != MPATH_PR_RETRYABLE_ERROR)
-				return ret;
-		}
-	}
-	if (found)
+	if (need_retry)
+		return MPATH_PR_RESERV_CONFLICT;
+	if (status != MPATH_PR_SUCCESS)
+		return status;
+	/* If you had retryable errors on all paths, fail the registration */
+	if (!had_success)
 		return MPATH_PR_OTHER;
-	condlog (0, "%s: no path available", mpp->wwid);
-	return MPATH_PR_DMMP_ERROR;
+	if (retryable_error)
+		status = check_failed_paths(mpp, thread, count);
+	if (status == MPATH_PR_SUCCESS)
+		preempt_missing_path(mpp, paramp->key, paramp->sa_key, noisy);
+	return status;
 }
 
-static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
-			   unsigned int rq_type,
-			   struct prout_param_descriptor * paramp, int noisy)
+enum preempt_work {
+	PREE_WORK_NONE,
+	PREE_WORK_REL,
+	PREE_WORK_REL_UNREG,
+};
+/*
+ * Called to make a multipath device preempt its own reservation (and
+ * optional extra work). Doing this causes the reservation keys to be removed
+ * from all the device paths except that path used to issue the preempt, so
+ * they may need to be restored. To avoid the chance that IO goes to these
+ * paths when they don't have a registered key and a reservation exists, the
+ * device is suspended before issuing the preemption, and the keys are
+ * reregistered (or the reservation is released) before resuming it.
+ */
+static int do_preempt_self(struct multipath *mpp, struct be64 sa_key,
+			   int rq_servact, int rq_scope, unsigned int rq_type,
+			   int noisy, enum preempt_work work)
+{
+	int status, rel_status = MPATH_PR_SUCCESS;
+	struct path *pp = NULL;
+	struct prout_param_descriptor paramp = {.sa_flags = 0};
+	uint16_t udev_flags = (mpp->skip_kpartx) ? MPATH_UDEV_NO_KPARTX_FLAG : 0;
+
+	if (!dm_simplecmd_noflush(DM_DEVICE_SUSPEND, mpp->alias, 0)) {
+		condlog(0, "%s: self preempt failed to suspend device.", mpp->wwid);
+		return MPATH_PR_OTHER;
+	}
+
+	memcpy(paramp.key, &mpp->reservation_key, 8);
+	memcpy(paramp.sa_key, &sa_key, 8);
+	status = mpath_prout_common(mpp, rq_servact, rq_scope, rq_type,
+				    &paramp, noisy, &pp, NULL);
+	if (status != MPATH_PR_SUCCESS) {
+		condlog(0, "%s: self preempt command failed.", mpp->wwid);
+		goto fail_resume;
+	}
+
+	if (work != PREE_WORK_NONE) {
+		memset(&paramp, 0, sizeof(paramp));
+		memcpy(paramp.key, &mpp->reservation_key, 8);
+		rel_status = prout_do_scsi_ioctl(pp->dev, MPATH_PROUT_REL_SA,
+						 rq_scope, rq_type, &paramp, noisy);
+		if (rel_status != MPATH_PR_SUCCESS)
+			condlog(0, "%s: release on alternate path failed.",
+				mpp->wwid);
+		else if (work == PREE_WORK_REL_UNREG) {
+			/* unregister the last path */
+			rel_status = prout_do_scsi_ioctl(pp->dev, MPATH_PROUT_REG_IGN_SA,
+							 rq_scope, rq_type,
+							 &paramp, noisy);
+			if (rel_status != MPATH_PR_SUCCESS)
+				condlog(0, "%s: final self preempt unregister failed,",
+					mpp->wwid);
+		}
+	}
+	if (work != PREE_WORK_REL_UNREG) {
+		memset(&paramp, 0, sizeof(paramp));
+		memcpy(paramp.sa_key, &mpp->reservation_key, 8);
+		status = mpath_prout_reg(mpp, MPATH_PROUT_REG_IGN_SA, rq_scope,
+					 rq_type, &paramp, noisy);
+		if (status != MPATH_PR_SUCCESS)
+			condlog(0, "%s: self preempt failed to reregister paths.",
+				mpp->wwid);
+	}
+
+fail_resume:
+	if (!dm_simplecmd_noflush(DM_DEVICE_RESUME, mpp->alias, udev_flags)) {
+		condlog(0, "%s: self preempt failed to resume device.", mpp->wwid);
+		if (status == MPATH_PR_SUCCESS)
+			status = MPATH_PR_OTHER;
+	}
+	/* return the first error we encountered */
+	return (rel_status != MPATH_PR_SUCCESS) ? rel_status : status;
+}
+
+static int preempt_self(struct multipath *mpp, int rq_servact, int rq_scope,
+			unsigned int rq_type, int noisy, enum preempt_work work)
+{
+	return do_preempt_self(mpp, mpp->reservation_key, rq_servact, rq_scope,
+			       rq_type, noisy, work);
+}
+
+static int preempt_all(struct multipath *mpp, int rq_servact, int rq_scope,
+		       unsigned int rq_type, int noisy)
+{
+	struct be64 zerokey = {0};
+	return do_preempt_self(mpp, zerokey, rq_servact, rq_scope, rq_type,
+			       noisy, PREE_WORK_NONE);
+}
+
+static int
+reservation_key_matches(struct multipath *mpp, uint8_t *key, unsigned int *type)
+{
+	struct prin_resp resp = {{{.prgeneration = 0}}};
+	int status;
+
+	status = mpath_prin_activepath(mpp, MPATH_PRIN_RRES_SA, &resp, 0);
+	if (status != MPATH_PR_SUCCESS) {
+		condlog(0, "%s: pr in read reservation command failed.", mpp->wwid);
+		return YNU_UNDEF;
+	}
+	if (!resp.prin_descriptor.prin_readresv.additional_length)
+		return YNU_NO;
+	if (memcmp(key, resp.prin_descriptor.prin_readresv.key, 8) == 0) {
+		if (type)
+			*type = resp.prin_descriptor.prin_readresv.scope_type &
+				MPATH_PR_TYPE_MASK;
+		return YNU_YES;
+	}
+	return YNU_NO;
+}
+
+static bool check_holding_reservation(struct multipath *mpp, uint8_t *curr_key,
+				      unsigned int *type)
+{
+	uint64_t zerokey = 0;
+	if (memcmp(curr_key, &zerokey, 8) != 0 && get_prhold(mpp->alias) == PR_SET &&
+	    reservation_key_matches(mpp, curr_key, type) == YNU_YES)
+		return true;
+	return false;
+}
+
+static int
+mpath_prout_rel(struct multipath *mpp, int rq_servact, int rq_scope,
+		unsigned int rq_type, struct prout_param_descriptor *paramp,
+		int noisy, bool unregister)
 {
 	int i, j;
-	int num = 0;
 	struct pathgroup *pgp = NULL;
 	struct path *pp = NULL;
 	int active_pathcount = 0;
 	pthread_attr_t attr;
-	int rc, found = 0;
+	int rc;
 	int count = 0;
 	int status = MPATH_PR_SUCCESS;
-	struct prin_resp resp;
-	struct prout_param_descriptor *pamp = NULL;
-	struct prin_resp *pr_buff;
-	int length;
-	struct transportid *pptr = NULL;
+	bool all_threads_failed;
+	unsigned int res_type;
 
 	if (!mpp)
 		return MPATH_PR_DMMP_ERROR;
@@ -494,7 +740,8 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 	vector_foreach_slot (mpp->pg, pgp, j){
 		vector_foreach_slot (pgp->paths, pp, i){
 			if (!((pp->state == PATH_UP) || (pp->state == PATH_GHOST))){
-				condlog (1, "%s: %s path not up.", mpp->wwid, pp->dev);
+				condlog(3, "%s: %s path not up.", mpp->wwid,
+					pp->dev);
 				continue;
 			}
 
@@ -520,133 +767,66 @@ static int mpath_prout_rel(struct multipath *mpp,int rq_servact, int rq_scope,
 		}
 	}
 
+	all_threads_failed = true;
 	for (i = 0; i < count; i++){
 		/*  check thread status here and return the status */
 
-		if (thread[i].param.status == MPATH_PR_RESERV_CONFLICT)
+		if (thread[i].param.status == MPATH_PR_SUCCESS)
+			all_threads_failed = false;
+		else if (thread[i].param.status == MPATH_PR_RESERV_CONFLICT)
 			status = MPATH_PR_RESERV_CONFLICT;
-		else if (status == MPATH_PR_SUCCESS
-				&& thread[i].param.status != MPATH_PR_RESERV_CONFLICT)
+		else if (status == MPATH_PR_SUCCESS)
 			status = thread[i].param.status;
 	}
-
-	status = mpath_prin_activepath (mpp, MPATH_PRIN_RRES_SA, &resp, noisy);
-	if (status != MPATH_PR_SUCCESS){
-		condlog (0, "%s: pr in read reservation command failed.", mpp->wwid);
-		return MPATH_PR_OTHER;
+	if (all_threads_failed) {
+		condlog(0, "%s: all threads failed to release reservation.",
+			mpp->wwid);
+		return status;
 	}
 
-	num = resp.prin_descriptor.prin_readresv.additional_length / 8;
-	if (num == 0){
-		condlog (2, "%s: Path holding reservation is released.", mpp->wwid);
+	if (!check_holding_reservation(mpp, (uint8_t *)&mpp->reservation_key, &res_type))
 		return MPATH_PR_SUCCESS;
-	}
-	if (!get_be64(mpp->reservation_key) ||
-	    memcmp(&mpp->reservation_key, resp.prin_descriptor.prin_readresv.key, 8)) {
-		condlog(2, "%s: Releasing key not holding reservation.", mpp->wwid);
-		return MPATH_PR_SUCCESS;
-	}
-
-	condlog (2, "%s: Path holding reservation is not available.", mpp->wwid);
-
-	pr_buff =  mpath_alloc_prin_response(MPATH_PRIN_RFSTAT_SA);
-	if (!pr_buff){
-		condlog (0, "%s: failed to  alloc pr in response buffer.", mpp->wwid);
-		return MPATH_PR_OTHER;
+	if (res_type != rq_type) {
+		condlog(2, "%s: --prout_type %u doesn't match reservation %u",
+			mpp->wwid, rq_type, res_type);
+		return MPATH_PR_RESERV_CONFLICT;
 	}
 
-	status = mpath_prin_activepath (mpp, MPATH_PRIN_RFSTAT_SA, pr_buff, noisy);
+	condlog(3, "%s: Path holding reservation is not available.", mpp->wwid);
+	/*
+	 * Cannot free the reservation because the path that is holding it
+	 * is not usable. Workaround this by:
+	 * 1. Suspending the device
+	 * 2. Preempting the reservation to move it to a usable path
+	 *    (this removes the registered keys on all paths except the
+	 *    preempting one. Since the device is suspended, no IO can
+	 *    go to these unregistered paths and fail).
+	 * 3. Releasing the reservation on the path that now holds it.
+	 * 4. Reregistering keys on all the paths
+	 * 5. Resuming the device
+	 */
+	status = preempt_self(mpp, MPATH_PROUT_PREE_SA, rq_scope, rq_type, noisy,
+			      unregister ? PREE_WORK_REL_UNREG : PREE_WORK_REL);
+	if (status == MPATH_PR_SUCCESS && unregister)
+		return MPATH_PR_SUCCESS_UNREGISTER;
+	return status;
+}
 
-	if (status != MPATH_PR_SUCCESS){
-		condlog (0,  "%s: pr in read full status command failed.",  mpp->wwid);
-		goto out;
-	}
-
-	num = pr_buff->prin_descriptor.prin_readfd.number_of_descriptor;
-	if (0 == num){
-		goto out;
-	}
-	length = sizeof (struct prout_param_descriptor) + (sizeof (struct transportid *));
-
-	pamp = (struct prout_param_descriptor *)malloc (length);
-	if (!pamp){
-		condlog (0, "%s: failed to alloc pr out parameter.", mpp->wwid);
-		goto out;
-	}
-
-	memset(pamp, 0, length);
-
-	pamp->trnptid_list[0] = (struct transportid *) malloc (sizeof (struct transportid));
-	if (!pamp->trnptid_list[0]){
-		condlog (0, "%s: failed to alloc pr out transportid.", mpp->wwid);
-		goto out1;
-	}
-	pptr = pamp->trnptid_list[0];
-
-	if (get_be64(mpp->reservation_key)){
-		memcpy (pamp->key, &mpp->reservation_key, 8);
-		condlog (3, "%s: reservation key set.", mpp->wwid);
-	}
-
-	status = mpath_prout_common (mpp, MPATH_PROUT_CLEAR_SA,
-				     rq_scope, rq_type, pamp, noisy);
-
-	if (status) {
-		condlog(0, "%s: failed to send CLEAR_SA", mpp->wwid);
-		goto out2;
-	}
-
-	pamp->num_transportid = 1;
-
-	for (i = 0; i < num; i++){
-		if (get_be64(mpp->reservation_key) &&
-			memcmp(pr_buff->prin_descriptor.prin_readfd.descriptors[i]->key,
-			       &mpp->reservation_key, 8)){
-			/*register with transport id*/
-			memset(pamp, 0, length);
-			pamp->trnptid_list[0] = pptr;
-			memset (pamp->trnptid_list[0], 0, sizeof (struct transportid));
-			memcpy (pamp->sa_key,
-					pr_buff->prin_descriptor.prin_readfd.descriptors[i]->key, 8);
-			pamp->sa_flags = MPATH_F_SPEC_I_PT_MASK;
-			pamp->num_transportid = 1;
-
-			memcpy (pamp->trnptid_list[0],
-					&pr_buff->prin_descriptor.prin_readfd.descriptors[i]->trnptid,
-					sizeof (struct transportid));
-			status = mpath_prout_common (mpp, MPATH_PROUT_REG_SA, 0, rq_type,
-					pamp, noisy);
-
-			pamp->sa_flags = 0;
-			memcpy (pamp->key, pr_buff->prin_descriptor.prin_readfd.descriptors[i]->key, 8);
-			memset (pamp->sa_key, 0, 8);
-			pamp->num_transportid = 0;
-			status = mpath_prout_common (mpp, MPATH_PROUT_REG_SA, 0, rq_type,
-					pamp, noisy);
-		}
-		else
-		{
-			if (get_be64(mpp->reservation_key))
-				found = 1;
-		}
-
-
-	}
-
-	if (found){
-		memset (pamp, 0, length);
-		memcpy (pamp->sa_key, &mpp->reservation_key, 8);
-		memset (pamp->key, 0, 8);
-		status = mpath_prout_reg(mpp, MPATH_PROUT_REG_SA, rq_scope, rq_type, pamp, noisy);
-	}
-
-out2:
-	free(pptr);
-out1:
-	free (pamp);
-out:
-	free (pr_buff);
-	return (status == MPATH_PR_RETRYABLE_ERROR) ? MPATH_PR_OTHER : status;
+/*
+ * for MPATH_PROUT_REG_IGN_SA, we use the ignored paramp->key to store the
+ * currently registered key for use in preempt_missing_path(), but only if
+ * the key is holding the reservation.
+ */
+static void set_ignored_key(struct multipath *mpp, uint8_t *curr_key, uint8_t *key)
+{
+	memset(key, 0, 8);
+	if (memcmp(curr_key, key, 8) == 0)
+		return;
+	if (get_prhold(mpp->alias) == PR_UNSET)
+		return;
+	if (reservation_key_matches(mpp, curr_key, NULL) == YNU_NO)
+		return;
+	memcpy(key, curr_key, 8);
 }
 
 int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
@@ -655,25 +835,31 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 {
 	struct multipath *mpp;
 	int ret;
-	uint64_t prkey;
+	uint64_t zerokey = 0;
+	struct be64 oldkey = {0};
 	struct config *conf;
+	bool unregistering, preempting_reservation = false;
+	bool updated_prkey = false;
+	bool failed_paths = false;
 
-	ret = mpath_get_map(curmp, pathvec, fd, &mpp);
+	ret = mpath_get_map(curmp, fd, &mpp);
 	if (ret != MPATH_PR_SUCCESS)
 		return ret;
 
 	conf = get_multipath_config();
 	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
 	select_reservation_key(conf, mpp);
-	select_all_tg_pt(conf, mpp);
 	put_multipath_config(conf);
 
-	memcpy(&prkey, paramp->sa_key, 8);
-	if (mpp->prkey_source == PRKEY_SOURCE_FILE && prkey &&
+	oldkey = mpp->reservation_key;
+	unregistering = (memcmp(&zerokey, paramp->sa_key, 8) == 0);
+	if (mpp->prkey_source == PRKEY_SOURCE_FILE &&
 	    (rq_servact == MPATH_PROUT_REG_IGN_SA ||
 	     (rq_servact == MPATH_PROUT_REG_SA &&
 	      (!get_be64(mpp->reservation_key) ||
+	       memcmp(paramp->key, &zerokey, 8) == 0 ||
 	       memcmp(paramp->key, &mpp->reservation_key, 8) == 0)))) {
+		updated_prkey = true;
 		memcpy(&mpp->reservation_key, paramp->sa_key, 8);
 		if (update_prkey_flags(mpp->alias, get_be64(mpp->reservation_key),
 				       paramp->sa_flags)) {
@@ -683,122 +869,155 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 		}
 	}
 
-	if (!get_be64(mpp->reservation_key) &&
-	    (prkey || rq_servact != MPATH_PROUT_REG_IGN_SA)) {
-		condlog(0, "%s: no configured reservation key", mpp->alias);
-		return MPATH_PR_SYNTAX_ERROR;
+	/*
+	 * If you are registering a non-zero key, mpp->reservation_key
+	 * must be set and must equal paramp->sa_key.
+	 * If you're not registering a key, mpp->reservation_key must be
+	 * set, and must equal paramp->key
+	 * If you updated the reservation key above, then you cannot fail
+	 * these checks, since mpp->reservation_key has already been set
+	 * to match paramp->sa_key, and if you are registering a non-zero
+	 * key, then it must be set to a non-zero value.
+	 */
+	if ((rq_servact == MPATH_PROUT_REG_IGN_SA ||
+	     rq_servact == MPATH_PROUT_REG_SA)) {
+		if (!unregistering && !get_be64(mpp->reservation_key)) {
+			condlog(0, "%s: no configured reservation key", mpp->alias);
+			return MPATH_PR_SYNTAX_ERROR;
+		}
+		if (!unregistering &&
+		    memcmp(paramp->sa_key, &mpp->reservation_key, 8)) {
+			condlog(0, "%s: configured reservation key doesn't match: 0x%" PRIx64,
+				mpp->alias, get_be64(mpp->reservation_key));
+			return MPATH_PR_SYNTAX_ERROR;
+		}
+	} else {
+		if (!get_be64(mpp->reservation_key)) {
+			condlog(0, "%s: no configured reservation key", mpp->alias);
+			return MPATH_PR_SYNTAX_ERROR;
+		}
+		if (memcmp(paramp->key, &mpp->reservation_key, 8)) {
+			condlog(0, "%s: configured reservation key doesn't match: 0x%" PRIx64,
+				mpp->alias, get_be64(mpp->reservation_key));
+			return MPATH_PR_SYNTAX_ERROR;
+		}
 	}
 
-	if (memcmp(paramp->key, &mpp->reservation_key, 8) &&
-	    memcmp(paramp->sa_key, &mpp->reservation_key, 8) &&
-	    (prkey || rq_servact != MPATH_PROUT_REG_IGN_SA)) {
-		condlog(0, "%s: configured reservation key doesn't match: 0x%" PRIx64,
-			mpp->alias, get_be64(mpp->reservation_key));
-		return MPATH_PR_SYNTAX_ERROR;
+	ret = get_path_info(mpp, pathvec);
+	if (ret != MPATH_PR_SUCCESS) {
+		if (updated_prkey)
+			update_prkey_flags(mpp->alias, get_be64(oldkey),
+					   mpp->sa_flags);
+		return ret;
 	}
+
+	conf = get_multipath_config();
+	select_all_tg_pt(conf, mpp);
+	/*
+	 * If a device preempts itself, it will need to suspend and resume.
+	 * Set mpp->skip_kpartx to make sure we set the flags to skip kpartx
+	 * if necessary, when doing this.
+	 */
+	select_skip_kpartx(conf, mpp);
+	put_multipath_config(conf);
+
+	if (rq_servact == MPATH_PROUT_REG_IGN_SA)
+		set_ignored_key(mpp, (uint8_t *)&oldkey, paramp->key);
 
 	switch(rq_servact)
 	{
 	case MPATH_PROUT_REG_SA:
 	case MPATH_PROUT_REG_IGN_SA:
-		ret= mpath_prout_reg(mpp, rq_servact, rq_scope, rq_type, paramp, noisy);
+		if (unregistering &&
+		    check_holding_reservation(mpp, (uint8_t *)&oldkey, &rq_type)) {
+			struct be64 newkey = mpp->reservation_key;
+			/* temporarily restore reservation key */
+			mpp->reservation_key = oldkey;
+			ret = mpath_prout_rel(mpp, MPATH_PROUT_REL_SA, rq_scope,
+					      rq_type, paramp, noisy, true);
+			mpp->reservation_key = newkey;
+			if (ret == MPATH_PR_SUCCESS)
+				/*
+				 * Since unregistering it true, paramp->sa_key
+				 * must be zero here. So this command will
+				 * unregister the key.
+				 */
+				ret = mpath_prout_reg(mpp, rq_servact, rq_scope,
+						      rq_type, paramp, noisy);
+			else if (ret == MPATH_PR_SUCCESS_UNREGISTER)
+				/* We already unregistered the key */
+				ret = MPATH_PR_SUCCESS;
+		} else
+			ret = mpath_prout_reg(mpp, rq_servact, rq_scope,
+					      rq_type, paramp, noisy);
 		break;
-	case MPATH_PROUT_RES_SA :
-	case MPATH_PROUT_PREE_SA :
-	case MPATH_PROUT_PREE_AB_SA :
-	case MPATH_PROUT_CLEAR_SA:
-		ret = mpath_prout_common(mpp, rq_servact, rq_scope, rq_type, paramp, noisy);
+	case MPATH_PROUT_PREE_SA:
+	case MPATH_PROUT_PREE_AB_SA:
+		if (reservation_key_matches(mpp, paramp->sa_key, NULL) == YNU_YES) {
+			preempting_reservation = true;
+			if (memcmp(paramp->sa_key, &zerokey, 8) == 0) {
+				/* all registrants case */
+				ret = preempt_all(mpp, rq_servact, rq_scope,
+						  rq_type, noisy);
+				break;
+			}
+		}
+		/* if we are preempting ourself */
+		if (memcmp(paramp->sa_key, paramp->key, 8) == 0) {
+			ret = preempt_self(mpp, rq_servact, rq_scope, rq_type,
+					   noisy, PREE_WORK_NONE);
+			break;
+		}
+		/* fallthrough */
+	case MPATH_PROUT_RES_SA:
+	case MPATH_PROUT_CLEAR_SA: {
+		unsigned int res_type;
+		ret = mpath_prout_common(mpp, rq_servact, rq_scope, rq_type,
+					 paramp, noisy, NULL, &failed_paths);
+		if (rq_servact == MPATH_PROUT_RES_SA &&
+		    ret != MPATH_PR_SUCCESS && failed_paths &&
+		    check_holding_reservation(mpp, paramp->key, &res_type) &&
+		    res_type == rq_type)
+			/* The reserve failed, but multipathd says we hold it */
+			ret = MPATH_PR_SUCCESS;
 		break;
+	}
 	case MPATH_PROUT_REL_SA:
-		ret = mpath_prout_rel(mpp, rq_servact, rq_scope, rq_type, paramp, noisy);
+		ret = mpath_prout_rel(mpp, rq_servact, rq_scope, rq_type,
+				      paramp, noisy, false);
 		break;
 	default:
 		return MPATH_PR_OTHER;
 	}
 
-	if ((ret == MPATH_PR_SUCCESS) && ((rq_servact == MPATH_PROUT_REG_SA) ||
-				(rq_servact ==  MPATH_PROUT_REG_IGN_SA)))
-	{
-		if (prkey == 0) {
+	if (ret != MPATH_PR_SUCCESS) {
+		if (updated_prkey)
+			update_prkey_flags(mpp->alias, get_be64(oldkey),
+					   mpp->sa_flags);
+		return ret;
+	}
+
+	switch (rq_servact) {
+	case MPATH_PROUT_REG_SA:
+	case MPATH_PROUT_REG_IGN_SA:
+		if (unregistering)
 			update_prflag(mpp->alias, 0);
-			update_prkey(mpp->alias, 0);
-		} else
+		else
 			update_prflag(mpp->alias, 1);
-	} else if ((ret == MPATH_PR_SUCCESS) && (rq_servact == MPATH_PROUT_CLEAR_SA)) {
+		break;
+	case MPATH_PROUT_CLEAR_SA:
 		update_prflag(mpp->alias, 0);
-		update_prkey(mpp->alias, 0);
+		if (mpp->prkey_source == PRKEY_SOURCE_FILE)
+			update_prkey(mpp->alias, 0);
+		break;
+	case MPATH_PROUT_RES_SA:
+	case MPATH_PROUT_REL_SA:
+		update_prhold(mpp->alias, (rq_servact == MPATH_PROUT_RES_SA));
+		break;
+	case MPATH_PROUT_PREE_SA:
+	case MPATH_PROUT_PREE_AB_SA:
+		if (preempting_reservation)
+			update_prhold(mpp->alias, true);
 	}
-	return ret;
-}
-
-int update_map_pr(struct multipath *mpp)
-{
-	int noisy=0;
-	struct prin_resp *resp;
-	unsigned int i;
-	int ret = MPATH_PR_OTHER, isFound;
-
-	if (!get_be64(mpp->reservation_key))
-	{
-		/* Nothing to do. Assuming pr mgmt feature is disabled*/
-		mpp->prflag = PRFLAG_UNSET;
-		condlog(4, "%s: reservation_key not set in multipath.conf",
-			mpp->alias);
-		return MPATH_PR_SUCCESS;
-	}
-
-	resp = mpath_alloc_prin_response(MPATH_PRIN_RKEY_SA);
-	if (!resp)
-	{
-		condlog(0,"%s : failed to alloc resp in update_map_pr", mpp->alias);
-		return MPATH_PR_OTHER;
-	}
-	if (count_active_paths(mpp) == 0)
-	{
-		condlog(0,"%s: No available paths to check pr status",
-			mpp->alias);
-		goto out;
-	}
-	mpp->prflag = PRFLAG_UNSET;
-	ret = mpath_prin_activepath(mpp, MPATH_PRIN_RKEY_SA, resp, noisy);
-
-	if (ret != MPATH_PR_SUCCESS )
-	{
-		condlog(0,"%s : pr in read keys service action failed Error=%d", mpp->alias, ret);
-		goto out;
-	}
-
-	ret = MPATH_PR_SUCCESS;
-
-	if (resp->prin_descriptor.prin_readkeys.additional_length == 0 )
-	{
-		condlog(3,"%s: No key found. Device may not be registered. ", mpp->alias);
-		goto out;
-	}
-
-	condlog(2, "%s: Multipath  reservation_key: 0x%" PRIx64 " ", mpp->alias,
-		get_be64(mpp->reservation_key));
-
-	isFound =0;
-	for (i = 0; i < resp->prin_descriptor.prin_readkeys.additional_length/8; i++ )
-	{
-		condlog(2, "%s: PR IN READKEYS[%d]  reservation key:", mpp->alias, i);
-		dumpHex((char *)&resp->prin_descriptor.prin_readkeys.key_list[i*8], 8 , 1);
-
-		if (!memcmp(&mpp->reservation_key, &resp->prin_descriptor.prin_readkeys.key_list[i*8], 8))
-		{
-			condlog(2, "%s: reservation key found in pr in readkeys response", mpp->alias);
-			isFound =1;
-		}
-	}
-
-	if (isFound)
-	{
-		mpp->prflag = PRFLAG_SET;
-		condlog(2, "%s: prflag flag set.", mpp->alias );
-	}
-
-out:
-	free(resp);
 	return ret;
 }

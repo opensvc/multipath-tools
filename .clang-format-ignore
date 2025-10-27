@@ -1,0 +1,3 @@
+Makefile*
+libmultipath/hwtable.c
+multipathd/cli.h

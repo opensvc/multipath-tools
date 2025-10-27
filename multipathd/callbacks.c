@@ -69,4 +69,7 @@ void init_handler_callbacks(void)
 	set_handler_callback(VRB_UNSETMARGINAL | Q1_PATH, HANDLER(cli_unset_marginal));
 	set_handler_callback(VRB_UNSETMARGINAL | Q1_MAP,
 			     HANDLER(cli_unset_all_marginal));
+	set_handler_callback(VRB_GETPRHOLD | Q1_MAP, HANDLER(cli_getprhold));
+	set_handler_callback(VRB_SETPRHOLD | Q1_MAP, HANDLER(cli_setprhold));
+	set_handler_callback(VRB_UNSETPRHOLD | Q1_MAP, HANDLER(cli_unsetprhold));
 }

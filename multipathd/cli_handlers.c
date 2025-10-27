@@ -1250,14 +1250,15 @@ cli_shutdown (void * v, struct strbuf *reply, void * data)
 	return 0;
 }
 
+static const char *const pr_str[] = {
+	[PR_UNKNOWN] = "unknown\n",
+	[PR_UNSET] = "unset\n",
+	[PR_SET] = "set\n",
+};
+
 static int
 cli_getprstatus (void * v, struct strbuf *reply, void * data)
 {
-	static const char * const prflag_str[] = {
-		[PRFLAG_UNKNOWN] = "unknown\n",
-		[PRFLAG_UNSET] = "unset\n",
-		[PRFLAG_SET] = "set\n",
-	};
 	struct multipath * mpp;
 	struct vectors * vecs = (struct vectors *)data;
 	char * param = get_keyparam(v, KEY_MAP);
@@ -1268,7 +1269,7 @@ cli_getprstatus (void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return -ENODEV;
 
-	append_strbuf_str(reply, prflag_str[mpp->prflag]);
+	append_strbuf_str(reply, pr_str[mpp->prflag]);
 
 	condlog(3, "%s: reply = %s", param, get_strbuf_str(reply));
 
@@ -1288,11 +1289,11 @@ cli_setprstatus(void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return -ENODEV;
 
-	if (mpp->prflag != PRFLAG_SET) {
-		mpp->prflag = PRFLAG_SET;
+	if (mpp->prflag != PR_SET) {
+		set_pr(mpp);
 		condlog(2, "%s: prflag set", param);
 	}
-
+	memset(&mpp->old_pr_key, 0, 8);
 
 	return 0;
 }
@@ -1310,9 +1311,11 @@ cli_unsetprstatus(void * v, struct strbuf *reply, void * data)
 	if (!mpp)
 		return -ENODEV;
 
-	if (mpp->prflag != PRFLAG_UNSET) {
-		mpp->prflag = PRFLAG_UNSET;
+	if (mpp->prflag != PR_UNSET) {
 		condlog(2, "%s: prflag unset", param);
+		if (mpp->prhold != PR_UNSET)
+			condlog(2, "%s: prhold unset (by clearing prflag)", param);
+		unset_pr(mpp);
 	}
 
 	return 0;
@@ -1399,6 +1402,48 @@ cli_setprkey(void * v, struct strbuf *reply, void * data)
 	pthread_cleanup_pop(1);
 
 	return ret;
+}
+
+static int do_prhold(struct vectors *vecs, char *param, int prhold)
+{
+	struct multipath *mpp = find_mp_by_str(vecs->mpvec, param);
+
+	if (!mpp)
+		return -ENODEV;
+
+	if (mpp->prhold != prhold) {
+		mpp->prhold = prhold;
+		condlog(2, "%s: prhold %s", param, pr_str[prhold]);
+	}
+
+	return 0;
+}
+
+static int cli_setprhold(void *v, struct strbuf *reply, void *data)
+{
+	return do_prhold((struct vectors *)data, get_keyparam(v, KEY_MAP), PR_SET);
+}
+
+static int cli_unsetprhold(void *v, struct strbuf *reply, void *data)
+{
+	return do_prhold((struct vectors *)data, get_keyparam(v, KEY_MAP), PR_UNSET);
+}
+
+static int cli_getprhold(void *v, struct strbuf *reply, void *data)
+{
+	struct multipath *mpp;
+	struct vectors *vecs = (struct vectors *)data;
+	char *param = get_keyparam(v, KEY_MAP);
+
+	param = convert_dev(param, 0);
+
+	mpp = find_mp_by_str(vecs->mpvec, param);
+	if (!mpp)
+		return -ENODEV;
+
+	append_strbuf_str(reply, pr_str[mpp->prhold]);
+	condlog(3, "%s: reply = %s", param, get_strbuf_str(reply));
+	return 0;
 }
 
 static int cli_set_marginal(void * v, struct strbuf *reply, void * data)

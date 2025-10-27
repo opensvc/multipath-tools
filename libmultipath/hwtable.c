@@ -408,6 +408,13 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 	},
+	{
+		// EqualLogic PS Series
+		.vendor        = "EQLOGIC",
+		.product       = "100E-00",
+		.pgpolicy      = MULTIBUS,
+		.no_path_retry = 30,
+	},
 	/*
 	 * Fujitsu
 	 */
@@ -502,6 +509,12 @@ static struct hwentry default_hw[] = {
 		.prio_name     = PRIO_ALUA,
 		.checker_name  = DIRECTIO,
 		.detect_checker = DETECT_CHECKER_OFF,
+	},
+	{
+		// VSP NVMe
+		.vendor        = "NVME",
+		.product       = "HITACHI SVOS-RF-System",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
 	/*
 	 * IBM
@@ -1114,7 +1127,6 @@ static struct hwentry default_hw[] = {
 		/* OceanStor NVMe */
 		.vendor        = "NVME",
 		.product       = "Huawei-XSG1",
-		.checker_name  = DIRECTIO,
 		.no_path_retry = 12,
 	},
 	/*
@@ -1141,6 +1153,12 @@ static struct hwentry default_hw[] = {
 		.fast_io_fail  = 15,
 		.dev_loss      = MAX_DEV_LOSS_TMO,
 		.detect_prio   = DETECT_PRIO_OFF,
+	},
+	{
+		// InfiniBox NVMe
+		.vendor        = "NVME",
+		.product       = "InfiniBox",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
 	/*
 	 * Kaminario
@@ -1370,6 +1388,42 @@ static struct hwentry default_hw[] = {
 		.product       = "^F1",
 		.pgpolicy      = GROUP_BY_SERIAL,
 		.no_path_retry = 30,
+	},
+	/*
+	 * Acronis
+	 */
+	{
+		// Cyber Infrastructure
+		.vendor        = "VSTORAGE",
+		.product       = "VSTOR-DISK",
+		.prio_name     = PRIO_ALUA,
+		.pgpolicy      = GROUP_BY_NODE_NAME,
+		.detect_prio   = DETECT_PRIO_OFF,
+		.features      = "2 pg_init_retries 50",
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.flush_on_last_del = FLUSH_ALWAYS,
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
+	},
+	/*
+	 * QSAN
+	 */
+	{
+		// XF / XCubeFAS / XCubeSAN / XN / XCubeNXT Series
+		.vendor        = "^Qsan",
+		.product       = ".*",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.no_path_retry = 30,
+		.prio_args     = "exclusive_pref_bit",
+	},
+	/*
+	 * VAST Data
+	 */
+	{
+		// Block Subsystem NVMe
+		.vendor        = "NVME",
+		.product       = "VASTData",
+		.no_path_retry = NO_PATH_RETRY_QUEUE,
 	},
 	/*
 	 * EOL

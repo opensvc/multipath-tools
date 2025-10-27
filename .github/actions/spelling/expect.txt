@@ -55,8 +55,10 @@ dmraid
 dmsetup
 dracut
 EAGAIN
+ECKD
 emc
 Engenio
+Equal
 EVPD
 failback
 failover
@@ -92,6 +94,7 @@ ifndef
 igroup
 img
 Infini
+Infinidat
 inotify
 inttypes
 ioctls
@@ -142,6 +145,7 @@ NOLOG
 nompath
 NOSCAN
 Nosync
+NVMe
 nvme
 NFINIDAT
 OBJDEPS
@@ -167,6 +171,7 @@ prioritizer
 prkeys
 PROUT
 pthreads
+QSAN
 rdac
 rdma
 readcap
@@ -180,7 +185,7 @@ reconfig
 redhat
 restorequeueing
 retrigger
-RETRYABLE
+retryable
 rhabarber
 rootprefix
 rootprefixdir
@@ -193,7 +198,6 @@ sbp
 scsi
 SCST
 sda
-sdc
 Seagate
 setmarginal
 setprkey
@@ -217,7 +221,6 @@ switchgroup
 sys
 sysfs
 sysinit
-systemd
 tcp
 terabytes
 SYSDIR
@@ -237,6 +240,7 @@ udevd
 uevent
 uid
 unitdir
+unregistering
 unsetmarginal
 unsetprkey
 unsetprstatus
@@ -255,7 +259,6 @@ VNX
 vpd
 VSN
 wakka
-watchdogsec
 weightedpath
 wholedisk
 Wilck

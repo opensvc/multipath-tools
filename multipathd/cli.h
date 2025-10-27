@@ -38,6 +38,9 @@ enum {
 	VRB_UNSETMARGINAL	= 23,
 	VRB_SHUTDOWN		= 24,
 	VRB_QUIT		= 25,
+	VRB_GETPRHOLD		= 26,
+	VRB_SETPRHOLD		= 27,
+	VRB_UNSETPRHOLD		= 28,
 
 	/* Qualifiers, values must be different from verbs */
 	KEY_PATH		= 65,
