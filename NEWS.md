@@ -9,6 +9,15 @@ release. These bug fixes will be tracked in stable branches.
 
 See [README.md](README.md) for additional information.
 
+## multipath-tools 0.12.1, 2025/10
+
+### Other changes
+
+* Updates to the built-in hardware table:
+  - add some NVMe storage array (VASTData, Infinidat, HITACHI VSP)
+  - add QSAN
+  - add EqualLogic PS
+
 ## multipath-tools 0.12.0, 2025/08
 
 ### User-visible changes

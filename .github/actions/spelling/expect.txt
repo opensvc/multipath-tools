@@ -55,6 +55,7 @@ dmraid
 dmsetup
 dracut
 EAGAIN
+ECKD
 emc
 Engenio
 EVPD
@@ -92,6 +93,7 @@ ifndef
 igroup
 img
 Infini
+Infinidat
 inotify
 inttypes
 ioctls
@@ -167,6 +169,7 @@ prioritizer
 prkeys
 PROUT
 pthreads
+QSAN
 rdac
 rdma
 readcap
