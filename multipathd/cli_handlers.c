@@ -1291,7 +1291,11 @@ cli_setprstatus(void * v, struct strbuf *reply, void * data)
 
 	if (mpp->prflag != PR_SET) {
 		set_pr(mpp);
-		condlog(2, "%s: prflag set", param);
+		pr_register_active_paths(mpp, true);
+		if (mpp->prflag == PR_SET)
+			condlog(2, "%s: prflag set", param);
+		else
+			condlog(0, "%s: Failed to set prflag", param);
 	}
 	memset(&mpp->old_pr_key, 0, 8);
 
