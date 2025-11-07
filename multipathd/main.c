@@ -90,7 +90,8 @@
 #define MSG_SIZE 32
 
 static unsigned int
-mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_needed);
+mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_needed,
+		      unsigned int nr_keys_wanted);
 
 #define LOG_MSG(lvl, pp)					\
 do {								\
@@ -629,19 +630,28 @@ flush_map_nopaths(struct multipath *mpp, struct vectors *vecs) {
 	return true;
 }
 
-static void
-pr_register_active_paths(struct multipath *mpp)
+void pr_register_active_paths(struct multipath *mpp, bool check_nr_active)
 {
 	unsigned int i, j, nr_keys = 0;
+	unsigned int nr_active = 0;
 	struct path *pp;
 	struct pathgroup *pgp;
+
+	if (check_nr_active) {
+		nr_active = count_active_paths(mpp);
+		if (!nr_active)
+			return;
+	}
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		vector_foreach_slot (pgp->paths, pp, j) {
 			if (mpp->prflag == PR_UNSET)
 				return;
-			if ((pp->state == PATH_UP) || (pp->state == PATH_GHOST))
-				nr_keys = mpath_pr_event_handle(pp, nr_keys);
+			if (pp->state == PATH_UP || pp->state == PATH_GHOST) {
+				nr_keys = mpath_pr_event_handle(pp, nr_keys, nr_active);
+				if (check_nr_active && nr_keys == nr_active)
+					return;
+			}
 		}
 	}
 }
@@ -729,7 +739,7 @@ fail:
 
 	sync_map_state(mpp, false);
 
-	pr_register_active_paths(mpp);
+	pr_register_active_paths(mpp, false);
 
 	if (VECTOR_SIZE(offline_paths) != 0)
 		handle_orphaned_offline_paths(offline_paths);
@@ -1319,7 +1329,7 @@ rescan:
 		verify_paths(mpp);
 		mpp->action = ACT_RELOAD;
 		prflag = mpp->prflag;
-		mpath_pr_event_handle(pp, 0);
+		mpath_pr_event_handle(pp, 0, 0);
 	} else {
 		if (!should_multipath(pp, vecs->pathvec, vecs->mpvec)) {
 			orphan_path(pp, "only one path");
@@ -1403,7 +1413,7 @@ rescan:
 
 	if (retries >= 0) {
 		if ((mpp->prflag == PR_SET && prflag != PR_SET) || start_waiter)
-			pr_register_active_paths(mpp);
+			pr_register_active_paths(mpp, false);
 		condlog(2, "%s [%s]: path added to devmap %s",
 			pp->dev, pp->dev_t, mpp->alias);
 		return 0;
@@ -2646,9 +2656,9 @@ update_path_state (struct vectors * vecs, struct path * pp)
 			 */
 			condlog(2, "%s: checking persistent "
 				"reservation registration", pp->dev);
-			mpath_pr_event_handle(pp, 0);
+			mpath_pr_event_handle(pp, 0, 0);
 			if (pp->mpp->prflag == PR_SET && prflag != PR_SET)
-				pr_register_active_paths(pp->mpp);
+				pr_register_active_paths(pp->mpp, false);
 		}
 
 		/*
@@ -3309,7 +3319,7 @@ configure (struct vectors * vecs, enum force_reload_types reload_type)
 	vector_foreach_slot(mpvec, mpp, i){
 		if (remember_wwid(mpp->wwid) == 1)
 			trigger_paths_udev_change(mpp, true);
-		pr_register_active_paths(mpp);
+		pr_register_active_paths(mpp, false);
 	}
 
 	/*
@@ -4267,7 +4277,8 @@ void unset_pr(struct multipath *mpp)
  *
  * The number of found keys must be at least as large as *nr_keys,
  * and if MPATH_PR_SUCCESS is returned and mpp->prflag is PR_SET after
- * the call, *nr_keys will be set to the number of found keys.
+ * the call, *nr_keys will be set to the number of found keys. Otherwise
+ * it will be set to 0.
  */
 static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *nr_keys)
 {
@@ -4277,8 +4288,10 @@ static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *n
 	bool was_set = (mpp->prflag == PR_SET);
 
 	/* If pr is explicitly unset, it must be manually set */
-	if (mpp->prflag == PR_UNSET)
+	if (mpp->prflag == PR_UNSET) {
+		*nr_keys = 0;
 		return MPATH_PR_SUCCESS;
+	}
 
 	if (!get_be64(mpp->reservation_key)) {
 		/* Nothing to do. Assuming pr mgmt feature is disabled*/
@@ -4286,6 +4299,7 @@ static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *n
 		condlog(was_set ? 2 : 4,
 			"%s: reservation_key not set in multipath.conf",
 			mpp->alias);
+		*nr_keys = 0;
 		return MPATH_PR_SUCCESS;
 	}
 
@@ -4297,6 +4311,7 @@ static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *n
 			unset_pr(mpp);
 		condlog(0, "%s : pr in read keys service action failed Error=%d",
 			mpp->alias, ret);
+		*nr_keys = 0;
 		return ret;
 	}
 
@@ -4335,22 +4350,32 @@ static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *n
 		condlog(was_set ? 1 : 3,
 			"%s: %u keys found. needed %u. prflag unset.",
 			mpp->alias, nr_found, *nr_keys);
+		*nr_keys = 0;
 	}
 
 	return MPATH_PR_SUCCESS;
 }
 
 /*
- * This function is called with the number of registered keys that should be
+ * This function is called with two numbers
+ *
+ * nr_keys_needed: the number of registered keys that should be
  * seen for this device to know that the key has not been preempted while the
  * path was getting registered. If 0 is passed in, update_mpath_pr is called
  * before registering the key to figure out the number, assuming that at
  * least one key must exist.
  *
+ * nr_keys_wanted: Only used if nr_keys_needed is 0, so we don't know how
+ * many keys we currently have. If nr_keys_wanted in non-zero and the
+ * number of keys found by the initial call to update_map_pr() matches it,
+ * exit early, since we have all the keys we are expecting.
+ *
  * The function returns the number of keys that are registered or 0 if
  * it's unknown.
  */
-static unsigned int mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_needed)
+static unsigned int
+mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_needed,
+		      unsigned int nr_keys_wanted)
 {
 	struct multipath *mpp = pp->mpp;
 	int ret;
@@ -4366,6 +4391,8 @@ static unsigned int mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_
 		nr_keys_needed = 1;
 		if (update_map_pr(mpp, pp, &nr_keys_needed) != MPATH_PR_SUCCESS)
 			return 0;
+		if (nr_keys_wanted && nr_keys_wanted == nr_keys_needed)
+			return nr_keys_needed;
 	}
 
 	check_prhold(mpp, pp);
