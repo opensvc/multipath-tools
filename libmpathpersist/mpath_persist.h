@@ -113,7 +113,9 @@ struct prin_capdescr
 {
 	uint16_t length;
 	uint8_t  flags[2];
-	uint16_t pr_type_mask;
+	uint16_t pr_type_mask; /* The two bytes of the type mask are treated
+				  as a single big-endian number. So the valid
+				  type bits are 0xea01 */
 	uint16_t _reserved;
 };
 
