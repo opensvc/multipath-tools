@@ -36,7 +36,7 @@ jobs:
           - debian-bullseye
           - debian-bookworm
           - debian-trixie
-          - fedora-42
+          - fedora-43
           - opensuse-leap
     steps:
       - name: checkout
@@ -95,7 +95,7 @@ jobs:
           - debian-bullseye
           - debian-bookworm
           - debian-trixie
-          - fedora-42
+          - fedora-43
           - opensuse-leap
     steps:
       - name: checkout
@@ -128,7 +128,7 @@ jobs:
           - debian-bullseye
           - debian-bookworm
           - debian-trixie
-          - fedora-42
+          - fedora-43
           - opensuse-leap
     steps:
       - name: mpath
