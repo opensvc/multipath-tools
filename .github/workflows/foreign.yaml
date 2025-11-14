@@ -27,7 +27,7 @@ on:
 jobs:
 
   cross-build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -52,7 +52,7 @@ jobs:
           overwrite: true
 
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: cross-build
     strategy:
       fail-fast: false
@@ -94,7 +94,7 @@ jobs:
           pull-params: "--platform linux/${{ env.CONTAINER_ARCH }}"
 
   root-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: cross-build
     strategy:
       fail-fast: false
