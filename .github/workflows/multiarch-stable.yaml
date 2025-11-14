@@ -38,13 +38,9 @@ jobs:
         arch: [386, arm/v7]
         include:
           - os: debian-trixie
-            arch: aarch64
-          - os: debian-trixie
             arch: s390x
           - os: debian-trixie
             arch: ppc64le
-          - os: debian-bookworm
-            arch: aarch64
           - os: debian-bookworm
             arch: s390x
           - os: debian-bookworm
