@@ -37,7 +37,8 @@ jobs:
           - debian-bookworm
           - debian-trixie
           - fedora-43
-          - opensuse-leap
+          - opensuse-leap-15.6
+          - opensuse-leap-16.0
     steps:
       - name: checkout
         uses: actions/checkout@v1
@@ -45,10 +46,10 @@ jobs:
       - name: set archive name
         # Leap containers have cpio but not tar
         run: echo ARCHIVE_TGT=test-progs.cpio >> $GITHUB_ENV
-        if: ${{ matrix.os == 'opensuse-leap' }}
+        if: ${{ startswith(matrix.os, 'opensuse-leap-15') }}
       - name: set archive name
         run: echo ARCHIVE_TGT=test-progs.tar >> $GITHUB_ENV
-        if: ${{ matrix.os != 'opensuse-leap' }}
+        if: ${{ !startswith(matrix.os, 'opensuse-leap-15') }}
 
       - name: build and test
         if: ${{ matrix.os != 'debian-jessie' }}
@@ -96,7 +97,8 @@ jobs:
           - debian-bookworm
           - debian-trixie
           - fedora-43
-          - opensuse-leap
+          - opensuse-leap-15.6
+          - opensuse-leap-16.0
     steps:
       - name: checkout
         uses: actions/checkout@v1
@@ -129,7 +131,8 @@ jobs:
           - debian-bookworm
           - debian-trixie
           - fedora-43
-          - opensuse-leap
+          - opensuse-leap-15.6
+          - opensuse-leap-16.0
     steps:
       - name: mpath
         run: sudo modprobe dm_multipath
@@ -145,10 +148,10 @@ jobs:
           name: native-${{ matrix.os }}
       - name: unpack binary archive
         run: cpio -idv < test-progs.cpio
-        if: ${{ matrix.os == 'opensuse-leap' }}
+        if: ${{ startswith(matrix.os, 'opensuse-leap-15') }}
       - name: unpack binary archive
         run: tar xfmv test-progs.tar
-        if: ${{ matrix.os != 'opensuse-leap' }}
+        if: ${{ !startswith(matrix.os, 'opensuse-leap-15') }}
 
       - name: run root tests
         uses: mosteo-actions/docker-run@v1
