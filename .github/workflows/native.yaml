@@ -26,7 +26,6 @@ on:
 
 jobs:
   stable:
-    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -39,6 +38,12 @@ jobs:
           - fedora-43
           - opensuse-leap-15.6
           - opensuse-leap-16.0
+        variant:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.variant.runner }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -81,17 +86,15 @@ jobs:
       - name: upload binary archive
         uses: actions/upload-artifact@v4
         with:
-          name: native-${{ matrix.os }}
+          name: native-${{ matrix.os }}-${{ matrix.variant.arch }}
           path: ${{ env.ARCHIVE_TGT }}
           overwrite: true
 
   clang:
-    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         os:
-          - debian-jessie
           - debian-buster
           - debian-bullseye
           - debian-bookworm
@@ -99,6 +102,17 @@ jobs:
           - fedora-43
           - opensuse-leap-15.6
           - opensuse-leap-16.0
+        variant:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+        include:
+          - os: debian-jessie
+            variant:
+              arch: x86_64
+              runner: ubuntu-24.04
+    runs-on: ${{ matrix.variant.runner }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -119,7 +133,6 @@ jobs:
           command: -j -Orecurse READLINE=libreadline test
 
   root-test:
-    runs-on: ubuntu-24.04
     needs: stable
     strategy:
       fail-fast: false
@@ -133,6 +146,12 @@ jobs:
           - fedora-43
           - opensuse-leap-15.6
           - opensuse-leap-16.0
+        variant:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.variant.runner }}
     steps:
       - name: mpath
         run: sudo modprobe dm_multipath
@@ -145,7 +164,7 @@ jobs:
       - name: download binary archive
         uses: actions/download-artifact@v4
         with:
-          name: native-${{ matrix.os }}
+          name: native-${{ matrix.os }}-${{ matrix.variant.arch }}
       - name: unpack binary archive
         run: cpio -idv < test-progs.cpio
         if: ${{ startswith(matrix.os, 'opensuse-leap-15') }}
