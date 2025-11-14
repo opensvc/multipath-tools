@@ -29,15 +29,24 @@ on:
 
 jobs:
   rolling:
-    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         os:
           - debian-sid
-          - alpine
           - opensuse-tumbleweed
           - fedora-rawhide
+        variant:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+        include:
+          - os: alpine
+            variant:
+              arch: x86_64
+              runner: ubuntu-24.04
+    runs-on: ${{ matrix.variant.runner }}
     container: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
     steps:
       - name: checkout
