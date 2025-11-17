@@ -44,7 +44,7 @@ jobs:
           libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
           libmount-dev
       - name: create ABI
-        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) abi.tar.gz
+        run: make -Orecurse -j$(nproc) abi.tar.gz
       - name: save ABI
         uses: actions/upload-artifact@v4
         with:
