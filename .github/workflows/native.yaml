@@ -57,18 +57,23 @@ jobs:
         if: ${{ !startswith(matrix.os, 'opensuse-leap-15') }}
 
       - name: build and test
+        id: test
         if: ${{ matrix.os != 'debian-jessie' }}
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
           command: -j -Orecurse test
+        continue-on-error: true
+
       - name: build and test (jessie)
+        id: test_jessie
         # On jessie, we use libreadline 5 (no licensing issue)
         if: ${{ matrix.os == 'debian-jessie' }}
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
           command: -j -Orecurse READLINE=libreadline test
+        continue-on-error: true
 
       - name: create ${{ env.ARCHIVE_TGT }}
         if: ${{ matrix.os != 'debian-jessie' }}
@@ -90,6 +95,13 @@ jobs:
           path: ${{ env.ARCHIVE_TGT }}
           overwrite: true
 
+      - name: fail
+        run: /bin/false
+        if: >-
+          ${{ ( matrix.os == 'debian-jessie' &&
+                steps.test_jessie.outcome != 'success' ) ||
+              ( matrix.os != 'debian-jessie' &&
+                steps.test.outcome != 'success' ) }}
   clang:
     strategy:
       fail-fast: false
@@ -117,20 +129,75 @@ jobs:
       - name: checkout
         uses: actions/checkout@v1
 
+      - name: set archive name
+        # Leap containers have cpio but not tar
+        run: echo ARCHIVE_TGT=test-progs.cpio >> $GITHUB_ENV
+        if: ${{ startswith(matrix.os, 'opensuse-leap-15') }}
+      - name: set archive name
+        run: echo ARCHIVE_TGT=test-progs.tar >> $GITHUB_ENV
+        if: ${{ !startswith(matrix.os, 'opensuse-leap-15') }}
+
       - name: clang
+        id: test
         if: ${{ matrix.os != 'debian-jessie' }}
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
           params: -e CC=clang
           command: -j -Orecurse test
+        continue-on-error: true
       - name: clang (jessie)
+        id: test_jessie
         if: ${{ matrix.os == 'debian-jessie' }}
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
           params: -e CC=clang
           command: -j -Orecurse READLINE=libreadline test
+        continue-on-error: true
+
+      - name: create ${{ env.ARCHIVE_TGT }}
+        if: ${{ matrix.os != 'debian-jessie' }}
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          command: ${{ env.ARCHIVE_TGT }}
+        if: >-
+          ${{ ( matrix.os == 'debian-jessie' &&
+                steps.test_jessie.outcome != 'success' ) ||
+              ( matrix.os != 'debian-jessie' &&
+                steps.test.outcome != 'success' ) }}
+      - name: create ${{ env.ARCHIVE_TGT }} (jessie)
+        if: ${{ matrix.os == 'debian-jessie' }}
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          command: READLINE=libreadline ${{ env.ARCHIVE_TGT }}
+        if: >-
+          ${{ ( matrix.os == 'debian-jessie' &&
+                steps.test_jessie.outcome != 'success' ) ||
+              ( matrix.os != 'debian-jessie' &&
+                steps.test.outcome != 'success' ) }}
+
+      - name: upload binary archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-${{ matrix.os }}-${{ matrix.variant.arch }}
+          path: ${{ env.ARCHIVE_TGT }}
+          overwrite: true
+        if: >-
+          ${{ ( matrix.os == 'debian-jessie' &&
+                steps.test_jessie.outcome != 'success' ) ||
+              ( matrix.os != 'debian-jessie' &&
+                steps.test.outcome != 'success' ) }}
+
+      - name: fail
+        run: /bin/false
+        if: >-
+          ${{ ( matrix.os == 'debian-jessie' &&
+                steps.test_jessie.outcome != 'success' ) ||
+              ( matrix.os != 'debian-jessie' &&
+                steps.test.outcome != 'success' ) }}
 
   root-test:
     needs: stable
