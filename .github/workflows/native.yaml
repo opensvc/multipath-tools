@@ -157,7 +157,6 @@ jobs:
         continue-on-error: true
 
       - name: create ${{ env.ARCHIVE_TGT }}
-        if: ${{ matrix.os != 'debian-jessie' }}
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
@@ -168,7 +167,6 @@ jobs:
               ( matrix.os != 'debian-jessie' &&
                 steps.test.outcome != 'success' ) }}
       - name: create ${{ env.ARCHIVE_TGT }} (jessie)
-        if: ${{ matrix.os == 'debian-jessie' }}
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
