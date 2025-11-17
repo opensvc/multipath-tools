@@ -41,21 +41,38 @@ jobs:
             runner: ubuntu-24.04
           - arch: aarch64
             runner: ubuntu-24.04-arm
+        compiler:
+          - gcc
+          - clang
         include:
           - os: alpine
             variant:
               arch: x86_64
               runner: ubuntu-24.04
+            compiler: gcc
+          - os: alpine
+            variant:
+              arch: x86_64
+              runner: ubuntu-24.04
+            compiler: clang
     runs-on: ${{ matrix.variant.runner }}
     container: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
       - name: build and test
-        run: make READLINE=libreadline -j -Orecurse test
-      - name: clean
-        run: make -j -Orecurse clean
-      - name: clang
-        env:
-          CC: clang
-        run: make READLINE=libedit -j -Orecurse test
+        id: test
+        run: make CC=${{ matrix.compiler }} READLINE=libreadline -j -Orecurse test
+        continue-on-error: true
+      - name: create binary archive
+        run: make test-progs.tar
+        if: steps.test.outcome != 'success'
+      - name: upload binary archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.os }}-${{ matrix.variant.arch }}-${{ matrix.compiler }}
+          path: test-progs.tar
+        if: steps.test.outcome != 'success'
+      - name: fail
+        run: /bin/false
+        if: steps.test.outcome != 'success'
