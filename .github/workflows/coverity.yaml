@@ -16,6 +16,7 @@ jobs:
           gcc make pkg-config
           libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
           libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
+          libmount-dev
       - name: download coverity
         run: >
           curl -o cov-analysis-linux64.tar.gz
