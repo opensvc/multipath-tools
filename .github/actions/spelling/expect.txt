@@ -147,7 +147,6 @@ NOLOG
 nompath
 NOSCAN
 Nosync
-NVMe
 nvme
 NFINIDAT
 OBJDEPS
