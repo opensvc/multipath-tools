@@ -582,8 +582,7 @@ void free_pgvec (vector pgvec, enum free_path_mode free_paths);
 void free_multipath (struct multipath *, enum free_path_mode free_paths);
 void cleanup_multipath(struct multipath **pmpp);
 void cleanup_multipath_and_paths(struct multipath **pmpp);
-void free_multipath_attributes (struct multipath *);
-void drop_multipath (vector mpvec, char * wwid, enum free_path_mode free_paths);
+void free_multipath_attributes(struct multipath *);
 void free_multipathvec (vector mpvec, enum free_path_mode free_paths);
 
 struct adapter_group * alloc_adaptergroup(void);
