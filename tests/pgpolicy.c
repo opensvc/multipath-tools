@@ -131,7 +131,7 @@ static int setup_null(void **state)
 
 static int teardownX(struct multipath *mp)
 {
-	free_pgvec(mp->pg, KEEP_PATHS);
+	free_pgvec(mp->pg);
 	mp->pg = NULL;
 	return 0;
 }

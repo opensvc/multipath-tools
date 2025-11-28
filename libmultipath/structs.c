@@ -234,8 +234,7 @@ void free_pathgroup(struct pathgroup *pgp)
 	free(pgp);
 }
 
-void free_pgvec(vector pgvec,
-		enum free_path_mode free_paths __attribute__((unused)))
+void free_pgvec(vector pgvec)
 {
 	int i;
 	struct pathgroup * pgp;
@@ -326,7 +325,7 @@ free_multipath (struct multipath * mpp, enum free_path_mode free_paths)
 	}
 
 	free_pathvec(mpp->paths, free_paths);
-	free_pgvec(mpp->pg, free_paths);
+	free_pgvec(mpp->pg);
 	if (mpp->hwe) {
 		vector_free(mpp->hwe);
 		mpp->hwe = NULL;
