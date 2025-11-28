@@ -225,18 +225,17 @@ alloc_pathgroup (void)
 	return pgp;
 }
 
-void
-free_pathgroup (struct pathgroup * pgp, enum free_path_mode free_paths)
+void free_pathgroup(struct pathgroup *pgp)
 {
 	if (!pgp)
 		return;
 
-	free_pathvec(pgp->paths, free_paths);
+	free_pathvec(pgp->paths, KEEP_PATHS);
 	free(pgp);
 }
 
-void
-free_pgvec (vector pgvec, enum free_path_mode free_paths)
+void free_pgvec(vector pgvec,
+		enum free_path_mode free_paths __attribute__((unused)))
 {
 	int i;
 	struct pathgroup * pgp;
@@ -245,7 +244,7 @@ free_pgvec (vector pgvec, enum free_path_mode free_paths)
 		return;
 
 	vector_foreach_slot (pgvec, pgp, i)
-		free_pathgroup(pgp, free_paths);
+		free_pathgroup(pgp);
 
 	vector_free(pgvec);
 }

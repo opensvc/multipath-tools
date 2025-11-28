@@ -261,7 +261,7 @@ int disassemble_map(const struct vector_s *pathvec,
 			goto out;
 
 		if (add_pathgroup(mpp, pgp)) {
-			free_pathgroup(pgp, KEEP_PATHS);
+			free_pathgroup(pgp);
 			goto out;
 		}
 

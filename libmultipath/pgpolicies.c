@@ -252,7 +252,7 @@ int group_by_match(struct multipath * mp, vector paths,
 	free(bitmap);
 	return 0;
 out2:
-	free_pathgroup(pgp, KEEP_PATHS);
+	free_pathgroup(pgp);
 out1:
 	free(bitmap);
 out:
@@ -314,7 +314,7 @@ int one_path_per_group(struct multipath *mp, vector paths)
 	}
 	return 0;
 out1:
-	free_pathgroup(pgp, KEEP_PATHS);
+	free_pathgroup(pgp);
 out:
 	free_pgvec(mp->pg, KEEP_PATHS);
 	mp->pg = NULL;
@@ -343,7 +343,7 @@ int one_group(struct multipath *mp, vector paths)	/* aka multibus */
 	}
 	return 0;
 out1:
-	free_pathgroup(pgp, KEEP_PATHS);
+	free_pathgroup(pgp);
 out:
 	free_pgvec(mp->pg, KEEP_PATHS);
 	mp->pg = NULL;

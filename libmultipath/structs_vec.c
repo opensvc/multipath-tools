@@ -254,7 +254,7 @@ static void update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 	delete_pg:
 		condlog(2, "%s: removing empty pathgroup %d", mpp->alias, i);
 		vector_del_slot(mpp->pg, i--);
-		free_pathgroup(pgp, KEEP_PATHS);
+		free_pathgroup(pgp);
 		must_reload = true;
 		/* Invalidate pgindex for all other pathgroups */
 		pg_deleted = true;

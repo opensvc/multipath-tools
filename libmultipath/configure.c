@@ -375,7 +375,7 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 	 */
 	if (mpp->pg) {
 		vector_foreach_slot (mpp->pg, pgp, i)
-			free_pathgroup(pgp, KEEP_PATHS);
+			free_pathgroup(pgp);
 
 		vector_free(mpp->pg);
 		mpp->pg = NULL;
