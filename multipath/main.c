@@ -436,7 +436,7 @@ static bool released_to_systemd(void)
 static struct vectors vecs;
 static void cleanup_vecs(void)
 {
-	free_multipathvec(vecs.mpvec, KEEP_PATHS);
+	free_multipathvec(vecs.mpvec);
 	free_pathvec(vecs.pathvec, FREE_PATHS);
 }
 
@@ -580,9 +580,9 @@ out:
 	if (refwwid)
 		free(refwwid);
 
-	free_multipathvec(curmp, KEEP_PATHS);
+	free_multipathvec(curmp);
 	vecs.mpvec = NULL;
-	free_multipathvec(newmp, KEEP_PATHS);
+	free_multipathvec(newmp);
 	free_pathvec(pathvec, FREE_PATHS);
 	vecs.pathvec = NULL;
 
