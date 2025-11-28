@@ -383,19 +383,10 @@ static void orphan_paths(vector pathvec, struct multipath *mpp, const char *reas
 	struct path * pp;
 
 	vector_foreach_slot (pathvec, pp, i) {
-		if (pp->mpp == mpp) {
-			if (pp->initialized == INIT_REMOVED ||
-			    pp->initialized == INIT_PARTIAL) {
-				condlog(3, "%s: freeing path in %s state",
-					pp->dev,
-					pp->initialized == INIT_REMOVED ?
-					"removed" : "partial");
-				vector_del_slot(pathvec, i--);
-				free_path(pp);
-			} else
-				orphan_path(pp, reason);
-		} else if (pp->add_when_online &&
-			   strncmp(mpp->wwid, pp->wwid, WWID_SIZE) == 0) {
+		if (pp->mpp == mpp)
+			orphan_path(pp, reason);
+		else if (pp->add_when_online &&
+			 strncmp(mpp->wwid, pp->wwid, WWID_SIZE) == 0) {
 			pp->add_when_online = false;
 		}
 	}
