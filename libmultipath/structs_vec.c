@@ -428,11 +428,13 @@ void remove_map(struct multipath *mpp, vector pathvec)
 	mpp->paths = mpp->pg = NULL;
 
 	/*
-	 * clear references to this map
+	 * clear references to this map.
+	 * This needs to be called before free_multipath(),
+	 * because of the add_when_online logic.
 	 */
 	orphan_paths(pathvec, mpp, "map removed internally");
 
-	free_multipath(mpp, KEEP_PATHS);
+	free_multipath(mpp);
 }
 
 void

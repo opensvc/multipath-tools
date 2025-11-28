@@ -1069,7 +1069,7 @@ main (int argc, char *argv[])
 			printf("successfully reset wwids\n");
 		vector_foreach_slot_backwards(curmp, mpp, i) {
 			vector_del_slot(curmp, i);
-			free_multipath(mpp, KEEP_PATHS);
+			free_multipath(mpp);
 		}
 		vector_free(curmp);
 		goto out;

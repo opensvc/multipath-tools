@@ -1279,7 +1279,7 @@ int dm_get_maps(vector mp)
 		switch (dm_get_multipath(names->name, &mpp)) {
 		case DMP_OK:
 			if (!vector_alloc_slot(mp)) {
-				free_multipath(mpp, KEEP_PATHS);
+				free_multipath(mpp);
 				return 1;
 			}
 			vector_set_slot(mp, mpp);
