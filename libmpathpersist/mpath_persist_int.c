@@ -536,19 +536,19 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 			}
 		}
 		for (i = 0; i < count; i++) {
-			if (thread[i].param.status != MPATH_PR_SKIP &&
-			    thread[i].param.status != MPATH_PR_THREAD_ERROR) {
+			if (thread[i].param.status == MPATH_PR_SKIP)
+				continue;
+			if (thread[i].param.status != MPATH_PR_THREAD_ERROR) {
 				rc = pthread_join(thread[i].id, NULL);
 				if (rc) {
 					condlog(3, "%s: failed to join thread while retrying %d",
 						mpp->wwid, i);
 				}
-				if (thread[i].param.status ==
-				    MPATH_PR_RETRYABLE_ERROR)
-					retryable_error = true;
-				else if (status == MPATH_PR_SUCCESS)
-					status = thread[i].param.status;
 			}
+			if (thread[i].param.status == MPATH_PR_RETRYABLE_ERROR)
+				retryable_error = true;
+			else if (status == MPATH_PR_SUCCESS)
+				status = thread[i].param.status;
 		}
 		need_retry = false;
 	}
