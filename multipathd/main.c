@@ -4281,7 +4281,9 @@ void unset_pr(struct multipath *mpp)
  * The number of found keys must be at least as large as *nr_keys,
  * and if MPATH_PR_SUCCESS is returned and mpp->prflag is PR_SET after
  * the call, *nr_keys will be set to the number of found keys. Otherwise
- * it will be set to 0.
+ * if mpp->prflag is PR_UNSET it will be set to 0. If MPATH_PR_SUCCESS
+ * is not returned and mpp->prflag is not PR_UNSET, nr_keys will not be
+ * changed.
  */
 static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *nr_keys)
 {
@@ -4310,11 +4312,12 @@ static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *n
 
 	ret = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RKEY_SA, &resp, 0);
 	if (ret != MPATH_PR_SUCCESS) {
-		if (ret == MPATH_PR_ILLEGAL_REQ)
+		if (ret == MPATH_PR_ILLEGAL_REQ) {
 			unset_pr(mpp);
+			*nr_keys = 0;
+		}
 		condlog(0, "%s : pr in read keys service action failed Error=%d",
 			mpp->alias, ret);
-		*nr_keys = 0;
 		return ret;
 	}
 
@@ -4430,7 +4433,7 @@ retry:
 			clear_reg ? "Clearing" : "Setting", pp->dev, ret);
 	} else if (!clear_reg) {
 		if (update_map_pr(mpp, pp, &nr_keys_needed) != MPATH_PR_SUCCESS)
-			return 0;
+			return nr_keys_needed;
 		if (mpp->prflag != PR_SET) {
 			memset(&param, 0, sizeof(param));
 			clear_reg = true;
