@@ -3528,18 +3528,21 @@ static struct call_rcu_data *mp_rcu_data;
 
 static void cleanup_rcu(void)
 {
-	pthread_t rcu_thread;
-
 	/* Wait for any pending RCU calls */
 	rcu_barrier();
 	if (mp_rcu_data != NULL) {
+#if (URCU_VERSION < 0x000E00)
+		pthread_t rcu_thread;
 		rcu_thread = get_call_rcu_thread(mp_rcu_data);
+#endif
 		/* detach this thread from the RCU thread */
 		set_thread_call_rcu_data(NULL);
 		synchronize_rcu();
 		/* tell RCU thread to exit */
 		call_rcu_data_free(mp_rcu_data);
+#if (URCU_VERSION < 0x000E00)
 		pthread_join(rcu_thread, NULL);
+#endif
 	}
 	rcu_unregister_thread();
 }
