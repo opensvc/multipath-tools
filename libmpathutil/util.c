@@ -38,7 +38,7 @@ strchop(char *str)
  */
 const char *libmp_basename(const char *filename)
 {
-	char *p = strrchr(filename, '/');
+	const char *p = strrchr(filename, '/');
 	return p ? p + 1 : filename;
 }
 
