@@ -50,7 +50,7 @@ static int parse_prkey(const char *ptr, uint64_t *prkey)
 	return 0;
 }
 
-int parse_prkey_flags(const char *ptr, uint64_t *prkey, uint8_t *flags)
+int parse_prkey_flags(char *ptr, uint64_t *prkey, uint8_t *flags)
 {
 	char *flagstr;
 
