@@ -227,6 +227,11 @@ xmalloc (size_t size) {
 	return t;
 }
 
+static void cleanup_charp(char **p)
+{
+	free(*p);
+}
+
 int
 main(int argc, char **argv){
 	int i, j, m, n, op, off, arg, c, d, ro=0;
@@ -237,10 +242,10 @@ main(int argc, char **argv){
 	char *type, *diskdevice, *device, *progname;
 	int verbose = 0;
 	char partname[PARTNAME_SIZE], params[PARTNAME_SIZE + 16];
-	char * loopdev = NULL;
-	char * delim = NULL;
-	char *uuid = NULL;
-	char *mapname = NULL;
+	char *loopdev __attribute__((cleanup(cleanup_charp))) = NULL;
+	char *delim __attribute__((cleanup(cleanup_charp))) = NULL;
+	char *uuid __attribute__((cleanup(cleanup_charp))) = NULL;
+	char *mapname __attribute__((cleanup(cleanup_charp))) = NULL;
 	int hotplug = 0;
 	int loopcreated = 0;
 	struct stat buf;
@@ -292,7 +297,9 @@ main(int argc, char **argv){
 			verbose = 1;
 			break;
 		case 'p':
-			delim = optarg;
+			delim = strdup(optarg);
+			if (!delim)
+				exit(1);
 			break;
 		case 'l':
 			what = LIST;
@@ -674,7 +681,6 @@ main(int argc, char **argv){
 		if (verbose)
 			fprintf(stderr, "loop deleted : %s\n", device);
 	}
-
 end:
 	dm_lib_exit();
 
