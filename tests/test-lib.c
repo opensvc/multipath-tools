@@ -292,12 +292,13 @@ static void mock_sysfs_pathinfo(const struct mocked_path *mp)
 
 	/* sysfs_get_tgt_nodename */
 	will_return(__wrap_udev_device_get_sysattr_value, NULL);
+	will_return(__wrap_udev_device_get_subsystem, NULL);
 	will_return(__wrap_udev_device_get_parent, NULL);
 	will_return(__wrap_udev_device_get_parent, NULL);
 	will_return(__wrap_udev_device_get_sysname, "nofibre");
 	will_return(__wrap_udev_device_get_sysname, "noiscsi");
-	will_return(__wrap_udev_device_get_parent, NULL);
 	will_return(__wrap_udev_device_get_sysname, "ata25");
+	will_return(__wrap_udev_device_get_parent, NULL);
 }
 
 /*
@@ -328,7 +329,7 @@ void mock_pathinfo(int mask, const struct mocked_path *mp)
 	    (mask & DI_BLACKLIST && mask & DI_SYSFS))
 		return;
 
-	/* path_offline */
+	/* path_sysfs_state */
 	will_return(__wrap_udev_device_get_subsystem, "scsi");
 	will_return(__wrap_sysfs_attr_get_value, "running");
 

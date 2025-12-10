@@ -325,19 +325,23 @@ static int
 sysfs_get_tgt_nodename(struct path *pp, char *node)
 {
 	const char *tgtname, *value;
-	struct udev_device *parent, *tgtdev;
+	struct udev_device *parent, *tgtdev, *device, *target;
 	int host, channel, tgtid = -1;
 
 	if (!pp->udev)
 		return 1;
-	parent = udev_device_get_parent_with_subsystem_devtype(pp->udev,
-							 "scsi", "scsi_device");
-	if (!parent)
+	device = udev_device_get_parent_with_subsystem_devtype(pp->udev, "scsi",
+							       "scsi_device");
+	if (!device)
 		return 1;
+	target = udev_device_get_parent_with_subsystem_devtype(device, "scsi",
+							       "scsi_target");
 	/* Check for SAS */
-	value = udev_device_get_sysattr_value(parent, "sas_address");
+	if (!target)
+		return 1;
+	value = udev_device_get_sysattr_value(device, "sas_address");
 	if (value) {
-		tgtdev = udev_device_get_parent(parent);
+		tgtdev = udev_device_get_parent(target);
 		while (tgtdev) {
 			char c;
 
@@ -362,7 +366,7 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 	}
 
 	/* Check for USB */
-	tgtdev = udev_device_get_parent(parent);
+	tgtdev = target;
 	while (tgtdev) {
 		value = udev_device_get_subsystem(tgtdev);
 		if (value && !strcmp(value, "usb")) {
@@ -375,11 +379,8 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 		}
 		tgtdev = udev_device_get_parent(tgtdev);
 	}
-	parent = udev_device_get_parent_with_subsystem_devtype(pp->udev, "scsi", "scsi_target");
-	if (!parent)
-		return 1;
 	/* Check for FibreChannel */
-	tgtdev = udev_device_get_parent(parent);
+	tgtdev = udev_device_get_parent(target);
 	value = udev_device_get_sysname(tgtdev);
 	if (value && sscanf(value, "rport-%d:%d-%d",
 		   &host, &channel, &tgtid) == 3) {
@@ -399,13 +400,15 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 				strlcpy(node, value, NODE_NAME_SIZE);
 				udev_device_unref(tgtdev);
 				return 0;
-			} else
+			} else {
 				udev_device_unref(tgtdev);
+				return 1;
+			}
 		}
 	}
 
 	/* Check for iSCSI */
-	parent = pp->udev;
+	parent = target;
 	tgtname = NULL;
 	while (parent) {
 		tgtname = udev_device_get_sysname(parent);
@@ -428,13 +431,14 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 				strlcpy(node, value, NODE_NAME_SIZE);
 				udev_device_unref(tgtdev);
 				return 0;
-			}
-			else
+			} else {
 				udev_device_unref(tgtdev);
+				return 1;
+			}
 		}
 	}
 	/* Check for libata */
-	parent = pp->udev;
+	parent = target;
 	tgtname = NULL;
 	while (parent) {
 		tgtname = udev_device_get_sysname(parent);
