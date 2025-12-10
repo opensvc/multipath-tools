@@ -34,5 +34,7 @@ int init_unwinder(void)
 
 	pthread_mutex_unlock(&dummy_mtx);
 
-	return pthread_cancel(dummy);
+	rc = pthread_cancel(dummy);
+	pthread_join(dummy, NULL);
+	return rc;
 }
