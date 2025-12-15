@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include "globals.h"
 
 __attribute__((weak)) struct config *get_multipath_config(void)

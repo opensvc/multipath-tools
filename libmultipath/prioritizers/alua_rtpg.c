@@ -18,7 +18,7 @@
 #include <limits.h>
 #include <sys/ioctl.h>
 #include <inttypes.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <errno.h>
 
 #include <scsi/sg.h>

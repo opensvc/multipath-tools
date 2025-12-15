@@ -9,7 +9,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <cmocka.h>
 #include "structs.h"
 #include "config.h"

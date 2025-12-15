@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <libdevmapper.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include "mpath_cmd.h"
 
 #include "checkers.h"

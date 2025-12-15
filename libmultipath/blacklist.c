@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 
 #include "checkers.h"
 #include "vector.h"

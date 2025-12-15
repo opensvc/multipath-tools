@@ -2,7 +2,7 @@
 #include <setjmp.h>
 #include <stdarg.h>
 #include <cmocka.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <sys/sysmacros.h>
 #include <linux/hdreg.h>
 #include <scsi/sg.h>

@@ -4,7 +4,7 @@
  */
 #include <stddef.h>
 #include <errno.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <dirent.h>
 #include <libmount/libmount.h>
 

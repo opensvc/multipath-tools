@@ -8,13 +8,15 @@
 #include <unistd.h>
 #include <limits.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/sysmacros.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
 #include <libgen.h>
-#include <libudev.h>
 
+#include "mt-udev-wrap.h"
 #include "checkers.h"
 #include "vector.h"
 #include "util.h"

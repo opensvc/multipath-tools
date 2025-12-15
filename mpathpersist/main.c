@@ -8,7 +8,7 @@
 #include "config.h"
 #include "structs.h"
 #include <getopt.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include "mpath_persist.h"
 #include "mpath_persist_int.h"
 #include "main.h"

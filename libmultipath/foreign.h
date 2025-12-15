@@ -6,7 +6,7 @@
 #define FOREIGN_H_INCLUDED
 
 #include <stdbool.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #define LIBMP_FOREIGN_API ((1 << 8) | 2)
 
 struct strbuf;

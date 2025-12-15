@@ -14,7 +14,7 @@ HEADERS := libdmmp/libdmmp.h
 
 OBJS := libdmmp.o libdmmp_mp.o libdmmp_pg.o libdmmp_path.o libdmmp_misc.o
 
-CPPFLAGS += -I$(libdmmpdir) -I$(mpathcmddir) $(shell $(PKG_CONFIG) --cflags json-c)
+CPPFLAGS += -I$(libdmmpdir) -I$(mpathutildir) -I$(mpathcmddir) $(shell $(PKG_CONFIG) --cflags json-c)
 CFLAGS += $(LIB_CFLAGS) -fvisibility=hidden
 
 LIBDEPS += $(shell $(PKG_CONFIG) --libs json-c) -L$(mpathcmddir) -lmpathcmd -lpthread

@@ -8,7 +8,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <cmocka.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>

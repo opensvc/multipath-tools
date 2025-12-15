@@ -1,7 +1,7 @@
 #ifndef BLACKLIST_H_INCLUDED
 #define BLACKLIST_H_INCLUDED
 
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <regex.h>
 
 #define MATCH_NOTHING        0

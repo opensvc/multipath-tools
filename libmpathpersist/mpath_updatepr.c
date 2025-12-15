@@ -10,7 +10,7 @@
 #include <sys/un.h>
 #include <poll.h>
 #include <errno.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <mpath_persist.h>
 #include "debug.h"
 #include "mpath_cmd.h"

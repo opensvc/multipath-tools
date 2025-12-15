@@ -13,7 +13,7 @@
 #include <dirent.h>
 #include <fnmatch.h>
 #include <dlfcn.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <regex.h>
 #include "vector.h"
 #include "debug.h"

@@ -12,7 +12,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <errno.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 /* MPATH_F_APTPL_MASK is publicly defined in mpath_persist.h */
 #include <../libmpathpersist/mpath_persist.h>
 

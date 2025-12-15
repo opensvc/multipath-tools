@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 
 #include "checkers.h"
 #include "vector.h"

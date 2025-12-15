@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <libdevmapper.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <ctype.h>
 
 #include "checkers.h"

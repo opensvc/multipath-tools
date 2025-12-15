@@ -9,7 +9,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <cmocka.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <sys/sysmacros.h>
 #include <fcntl.h>
 #include <sys/stat.h>

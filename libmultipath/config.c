@@ -5,7 +5,7 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <dirent.h>
 #include <limits.h>
 #include <errno.h>

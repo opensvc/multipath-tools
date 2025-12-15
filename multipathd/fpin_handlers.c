@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <scsi/scsi_netlink_fc.h>
 #include <scsi/fc/fc_els.h>
 

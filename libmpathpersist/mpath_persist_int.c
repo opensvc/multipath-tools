@@ -2,7 +2,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <unistd.h>
 #include <pthread.h>
 #include <stdio.h>

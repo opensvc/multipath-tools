@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 
 #include "util.h"
 #include "checkers.h"

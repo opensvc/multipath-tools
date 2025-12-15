@@ -23,7 +23,7 @@
 #include "util.h"
 #include <errno.h>
 #include <inttypes.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include "autoconfig.h"
 #include "mpath_cmd.h"
 #include "dict.h"

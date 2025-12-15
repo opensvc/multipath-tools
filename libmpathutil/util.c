@@ -12,7 +12,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 
 #include "util.h"
 #include "debug.h"

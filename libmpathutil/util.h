@@ -10,7 +10,6 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <libudev.h>
 
 #ifndef __GLIBC_PREREQ
 #define __GLIBC_PREREQ(x, y) 0
@@ -18,6 +17,7 @@
 
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
+struct udev_device;
 size_t strchop(char *);
 
 const char *libmp_basename(const char *filename);

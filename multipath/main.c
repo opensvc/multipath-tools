@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <syslog.h>
 #include <fcntl.h>
 

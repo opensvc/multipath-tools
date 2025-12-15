@@ -26,7 +26,7 @@
 #include "propsel.h"
 #include "strbuf.h"
 #include <inttypes.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <ctype.h>
 
 pgpolicyfn *pgpolicies[] = {

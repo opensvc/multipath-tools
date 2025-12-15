@@ -19,7 +19,7 @@
 #include "print.h"
 #include "sysfs.h"
 #include <errno.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <mpath_persist.h>
 #include "util.h"
 #include "prkey.h"

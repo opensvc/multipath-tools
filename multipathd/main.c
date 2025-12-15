@@ -15,7 +15,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <linux/oom.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <urcu.h>
 #include "fpin.h"
 #ifdef USE_SYSTEMD

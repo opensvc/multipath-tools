@@ -11,7 +11,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <errno.h>
 #include <libdevmapper.h>
 #include <unistd.h>
