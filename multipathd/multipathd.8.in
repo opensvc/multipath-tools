@@ -348,6 +348,12 @@ Restores configured queue_without_daemon mode.
 Enable persistent reservation management on $map.
 .
 .TP
+.B setprstatus map|multipath $map pathlist $pathlist
+Enable persistent reservation management on $map, and notify multipathd of
+the paths that have been registered, so it doesn't attempt to re-register
+them.
+.
+.TP
 .B unsetprstatus map|multipath $map
 Disable persistent reservation management on $map.
 .
