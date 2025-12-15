@@ -156,6 +156,7 @@ OPTFLAGS
 paramp
 partx
 pathgroup
+pathlist
 petabytes
 pgpolicy
 plugindir
