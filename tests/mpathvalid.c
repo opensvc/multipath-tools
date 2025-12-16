@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "mt-udev-wrap.h"
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include "structs.h"
 #include "config.h"
 #include "mpath_valid.h"
@@ -66,11 +66,11 @@ int __wrap_is_path_valid(const char *name, struct config *conf, struct path *pp,
 	assert_ptr_not_equal(pp, NULL);
 	assert_true(check_multipathd);
 
-	assert_int_equal(findmp, conf->find_multipaths);	
+	assert_int_equal(findmp, conf->find_multipaths);
 	if (r == MPATH_IS_ERROR || r == MPATH_IS_NOT_VALID)
 		return r;
-	
-	strlcpy(pp->wwid, mock_ptr_type(char *), WWID_SIZE);
+
+	strlcpy(pp->wwid, mock_ptr_type(const char *), WWID_SIZE);
 	return r;
 }
 
@@ -223,7 +223,7 @@ static void check_mpathvalid_init(int findmp, int prio, int log_style)
 	check_config(true);
 	assert_int_equal(logsink, log_style);
 	assert_int_equal(libmp_verbosity, prio);
-	assert_int_equal(findmp_to_mode(findmp), mpathvalid_get_mode());
+	assert_uint_equal(findmp_to_mode(findmp), mpathvalid_get_mode());
 }
 
 static void check_mpathvalid_exit(void)
@@ -262,9 +262,9 @@ static void test_mpathvalid_exit(void **state)
 static void test_mpathvalid_get_mode_bad(void **state)
 {
 #if 1
-	assert_int_equal(mpathvalid_get_mode(), MPATH_MODE_ERROR);
+	assert_uint_equal(mpathvalid_get_mode(), MPATH_MODE_ERROR);
 #else
-	assert_int_equal(mpathvalid_get_mode(), 1);
+	assert_uint_equal(mpathvalid_get_mode(), 1);
 #endif
 }
 
@@ -298,7 +298,7 @@ static void check_mpathvalid_reload_config(int findmp)
 	will_return(__wrap_init_config, findmp);
 	assert_int_equal(mpathvalid_reload_config(), 0);
 	check_config(true);
-	assert_int_equal(findmp_to_mode(findmp), mpathvalid_get_mode());
+	assert_uint_equal(findmp_to_mode(findmp), mpathvalid_get_mode());
 }
 
 static void test_mpathvalid_reload_config_good(void **state)

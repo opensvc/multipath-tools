@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include "util.h"
 #include "devmapper.h"
 #include "globals.c"
@@ -87,10 +87,10 @@ void __wrap_dm_task_destroy(struct dm_task *t)
 {
 }
 
-struct dm_task *__wrap_dm_task_create(int task)
+const struct dm_task *__wrap_dm_task_create(int task)
 {
-	check_expected(task);
-	return mock_ptr_type(void *);
+	check_expected_int(task);
+	return mock_ptr_type(const struct dm_task *);
 }
 
 int __wrap_dm_task_run(struct dm_task *t)
@@ -114,25 +114,25 @@ int __wrap_dm_task_get_errno(struct dm_task *t)
 
 int __wrap_dm_task_set_name(struct dm_task *t, const char *name)
 {
-	check_expected(name);
+	check_expected_ptr(name);
 	return mock_type(int);
 }
 
 int __wrap_dm_task_set_uuid(struct dm_task *t, const char *uuid)
 {
-	check_expected(uuid);
+	check_expected_ptr(uuid);
 	return mock_type(int);
 }
 
 int __wrap_dm_task_set_major(struct dm_task *t, int val)
 {
-	check_expected(val);
+	check_expected_int(val);
 	return mock_type(int);
 }
 
 int __wrap_dm_task_set_minor(struct dm_task *t, int val)
 {
-	check_expected(val);
+	check_expected_int(val);
 	return mock_type(int);
 }
 
@@ -151,22 +151,23 @@ int __wrap_dm_task_get_info(struct dm_task *t, struct dm_info *dmi)
 
 	assert_non_null(dmi);
 	if (rc) {
-		struct dm_info *info = mock_ptr_type(struct dm_info *);
+		const struct dm_info *info = mock_ptr_type(const struct dm_info *);
 
 		memcpy(dmi, info, sizeof(*dmi));
 	}
 	return rc;
 }
 
-void * __wrap_dm_get_next_target(struct dm_task *dmt, void *next,
-				uint64_t *start, uint64_t *length,
-				char **target_type, char **params)
+const void *
+__wrap_dm_get_next_target(struct dm_task *dmt, void *next, uint64_t *start,
+			  uint64_t *length, const char **target_type,
+			  const char **params)
 {
 	*start = 0;
 	*length = mock_type(uint64_t);
-	*target_type = mock_ptr_type(char *);
-	*params = mock_ptr_type(char *);
-	return mock_ptr_type(void *);
+	*target_type = mock_ptr_type(const char *);
+	*params = mock_ptr_type(const char *);
+	return mock_ptr_type(const void *);
 }
 
 static void mock_dm_get_next_target(uint64_t len, const char *target_type,
@@ -191,11 +192,11 @@ const char *__wrap_dm_task_get_uuid(struct dm_task *t)
 static void mock_mapinfo_name_1(int ioctl_nr, int create_rc, const char *name,
 				int name_rc, int run_rc, int err)
 {
-	expect_value(__wrap_dm_task_create, task, ioctl_nr);
+	expect_int_value(__wrap_dm_task_create, task, ioctl_nr);
 	will_return(__wrap_dm_task_create, create_rc);
 	if (create_rc == 0)
 		return;
-	expect_value(__wrap_dm_task_set_name, name, name);
+	expect_string(__wrap_dm_task_set_name, name, name);
 	will_return(__wrap_dm_task_set_name, name_rc);
 	if (name_rc == 0)
 		return;
@@ -223,7 +224,7 @@ static void test_mapinfo_bad_mapid(void **state)
 	int rc;
 
 	/* can't use mock_mapinfo_name() here because of invalid id type */
-	expect_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
+	expect_int_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
 	will_return(__wrap_dm_task_create, 1);
 	rc = libmp_mapinfo(DM_MAP_BY_NAME + 100,
 			   (mapid_t) { .str = "foo", },
@@ -646,9 +647,9 @@ static void test_mapinfo_bad_set_uuid(void **state)
 {
 	int rc;
 
-	expect_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
+	expect_int_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
 	will_return(__wrap_dm_task_create, 1);
-	expect_value(__wrap_dm_task_set_uuid, uuid, "foo");
+	expect_string(__wrap_dm_task_set_uuid, uuid, "foo");
 	will_return(__wrap_dm_task_set_uuid, 0);
 	rc = libmp_mapinfo(DM_MAP_BY_UUID,
 			   (mapid_t) { .str = "foo", },
@@ -660,9 +661,9 @@ static void test_mapinfo_bad_set_dev_01(void **state)
 {
 	int rc;
 
-	expect_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
+	expect_int_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
 	will_return(__wrap_dm_task_create, 1);
-	expect_value(__wrap_dm_task_set_major, val, 254);
+	expect_int_value(__wrap_dm_task_set_major, val, 254);
 	will_return(__wrap_dm_task_set_major, 0);
 	rc = libmp_mapinfo(DM_MAP_BY_DEV,
 			   (mapid_t) { ._u = { 254, 123 } },
@@ -674,11 +675,11 @@ static void test_mapinfo_bad_set_dev_02(void **state)
 {
 	int rc;
 
-	expect_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
+	expect_int_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
 	will_return(__wrap_dm_task_create, 1);
-	expect_value(__wrap_dm_task_set_major, val, 254);
+	expect_int_value(__wrap_dm_task_set_major, val, 254);
 	will_return(__wrap_dm_task_set_major, 1);
-	expect_value(__wrap_dm_task_set_minor, val, 123);
+	expect_int_value(__wrap_dm_task_set_minor, val, 123);
 	will_return(__wrap_dm_task_set_minor, 0);
 	rc = libmp_mapinfo(DM_MAP_BY_DEV,
 			   (mapid_t) { ._u = { 254, 123 } },
@@ -691,9 +692,9 @@ static void test_mapinfo_bad_set_dev_03(void **state)
 	int rc;
 	dev_t devt = makedev(254, 123);
 
-	expect_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
+	expect_int_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
 	will_return(__wrap_dm_task_create, 1);
-	expect_value(__wrap_dm_task_set_major, val, 254);
+	expect_int_value(__wrap_dm_task_set_major, val, 254);
 	will_return(__wrap_dm_task_set_major, 0);
 	rc = libmp_mapinfo(DM_MAP_BY_DEVT,
 			   (mapid_t) { .devt = devt },
@@ -706,11 +707,11 @@ static void test_mapinfo_bad_set_dev_04(void **state)
 	int rc;
 	dev_t devt = makedev(254, 123);
 
-	expect_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
+	expect_int_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
 	will_return(__wrap_dm_task_create, 1);
-	expect_value(__wrap_dm_task_set_major, val, 254);
+	expect_int_value(__wrap_dm_task_set_major, val, 254);
 	will_return(__wrap_dm_task_set_major, 1);
-	expect_value(__wrap_dm_task_set_minor, val, 123);
+	expect_int_value(__wrap_dm_task_set_minor, val, 123);
 	will_return(__wrap_dm_task_set_minor, 0);
 	rc = libmp_mapinfo(DM_MAP_BY_DEVT,
 			   (mapid_t) { .devt = devt },
@@ -738,9 +739,9 @@ static void test_mapinfo_good_by_uuid_info(void **state)
 	int rc;
 	struct dm_info dmi;
 
-	expect_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
+	expect_int_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
 	will_return(__wrap_dm_task_create, 1);
-	expect_value(__wrap_dm_task_set_uuid, uuid, "foo");
+	expect_string(__wrap_dm_task_set_uuid, uuid, "foo");
 	will_return(__wrap_dm_task_set_uuid, 1);
 	will_return(__wrap_dm_task_run, 1);
 	WRAP_DM_TASK_GET_INFO(1);
@@ -757,11 +758,11 @@ static void test_mapinfo_good_by_dev_info(void **state)
 	int rc;
 	struct dm_info dmi;
 
-	expect_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
+	expect_int_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
 	will_return(__wrap_dm_task_create, 1);
-	expect_value(__wrap_dm_task_set_major, val, 254);
+	expect_int_value(__wrap_dm_task_set_major, val, 254);
 	will_return(__wrap_dm_task_set_major, 1);
-	expect_value(__wrap_dm_task_set_minor, val, 123);
+	expect_int_value(__wrap_dm_task_set_minor, val, 123);
 	will_return(__wrap_dm_task_set_minor, 1);
 	will_return(__wrap_dm_task_run, 1);
 	WRAP_DM_TASK_GET_INFO(1);
@@ -779,11 +780,11 @@ static void test_mapinfo_good_by_devt_info(void **state)
 	int rc;
 	struct dm_info dmi;
 
-	expect_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
+	expect_int_value(__wrap_dm_task_create, task, DM_DEVICE_INFO);
 	will_return(__wrap_dm_task_create, 1);
-	expect_value(__wrap_dm_task_set_major, val, 254);
+	expect_int_value(__wrap_dm_task_set_major, val, 254);
 	will_return(__wrap_dm_task_set_major, 1);
-	expect_value(__wrap_dm_task_set_minor, val, 123);
+	expect_int_value(__wrap_dm_task_set_minor, val, 123);
 	will_return(__wrap_dm_task_set_minor, 1);
 	will_return(__wrap_dm_task_run, 1);
 	WRAP_DM_TASK_GET_INFO(1);
@@ -871,7 +872,7 @@ static void test_mapinfo_good_size(void **state)
 			   (mapid_t) { .str = "foo", },
 			   (mapinfo_t) { .size = &size });
 	assert_int_equal(rc, DMP_OK);
-	assert_int_equal(size, 12345);
+	assert_uint_equal(size, 12345);
 }
 
 static void test_mapinfo_bad_next_target_01(void **state)
@@ -909,7 +910,7 @@ static void test_mapinfo_bad_next_target_02(void **state)
 			   (mapid_t) { .str = "foo", },
 			   (mapinfo_t) { .dmi = &dmi, .name = name, .uuid = uuid, .size = &size });
 	assert_int_equal(rc, DMP_EMPTY);
-	assert_int_equal(size, 0);
+	assert_uint_equal(size, 0);
 	assert_memory_equal(&dmi, &MPATH_DMI_02, sizeof(dmi));
 	assert_true(!strcmp(name, MPATH_NAME_01));
 	assert_true(!strcmp(uuid, MPATH_UUID_01));
@@ -1102,7 +1103,7 @@ static void test_mapinfo_no_table_02(void **state)
 			   (mapid_t) { .str = "foo", },
 			   (mapinfo_t) { .dmi = &dmi, .name = name, .uuid = uuid, .size = &size });
 	assert_int_equal(rc, DMP_EMPTY);
-	assert_int_equal(size, 0);
+	assert_uint_equal(size, 0);
 	assert_memory_equal(&dmi, &MPATH_DMI_02, sizeof(dmi));
 	assert_true(!strcmp(name, MPATH_NAME_01));
 	assert_true(!strcmp(uuid, MPATH_UUID_01));
@@ -1369,7 +1370,7 @@ static void test_mapinfo_good_all_01(void **state)
 	assert_int_equal(rc, DMP_OK);
 	assert_non_null(status);
 	assert_non_null(target);
-	assert_int_equal(size, 12345);
+	assert_uint_equal(size, 12345);
 	assert_memory_equal(&dmi, &MPATH_DMI_01, sizeof(dmi));
 	assert_true(!strcmp(target, MPATH_TARGET_01));
 	assert_true(!strcmp(status, MPATH_STATUS_01));

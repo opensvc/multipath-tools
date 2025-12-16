@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include "unaligned.h"
 
 #define SIZE 16
@@ -40,13 +40,13 @@ static int teardown(void **state)
 	uint8_t *p = *state + SIZE;				\
 	uint64_t u;						\
 								\
-	assert_in_range(len, 1, SIZE);				\
-	assert_in_range(offset + len, 1, SIZE);			\
+	assert_int_in_range(len, 1, SIZE);				\
+	assert_int_in_range(offset + len, 1, SIZE);			\
 	memset(c, 0, 2 * SIZE);					\
 	memcpy(c + offset, memory, len);			\
 								\
 	u = get_unaligned_be##bits(c + offset);			\
-	assert_int_equal(u, intval##bits);			\
+	assert_uint_equal(u, intval##bits);			\
 	put_unaligned_be##bits(u, p + offset);			\
 	assert_memory_equal(c + offset, p  + offset, len);	\
 }

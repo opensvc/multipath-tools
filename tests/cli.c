@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 
 #include <errno.h>
 
@@ -49,7 +49,7 @@ static void client_test_##NAME(void **state)			\
 	assert_int_equal(get_cmdvec(cmd, &v, false), R);	\
 	if (R == 0) {						\
 		assert_ptr_not_equal(v, NULL);			\
-		assert_int_equal(fingerprint(v), FPR);		\
+		assert_uint_equal(fingerprint(v), FPR);		\
 		if (GOOD)					\
 			assert_ptr_not_equal(find_handler_for_cmdvec(v), NULL); \
 		else						\
@@ -73,7 +73,7 @@ static void client_param_##NAME(void **state)			\
 								\
 	assert_int_equal(get_cmdvec(cmd, &v, false), 0);	\
 	assert_ptr_not_equal(v, NULL);				\
-	assert_int_equal(fingerprint(v), FPR);			\
+	assert_uint_equal(fingerprint(v), FPR);			\
 	assert_ptr_not_equal(find_handler_for_cmdvec(v), NULL);	\
 	assert_string_equal(((struct key *)VECTOR_SLOT(v, 1))->param, PAR); \
 	free_keys(v);						\
@@ -95,7 +95,7 @@ static void client_2param_##NAME(void **state)			\
 								\
 	assert_int_equal(get_cmdvec(cmd, &v, false), 0);	\
 	assert_ptr_not_equal(v, NULL);				\
-	assert_int_equal(fingerprint(v), FPR);			\
+	assert_uint_equal(fingerprint(v), FPR);			\
 	assert_ptr_not_equal(find_handler_for_cmdvec(v), NULL);	\
 	assert_string_equal(((struct key *)VECTOR_SLOT(v, 1))->param, PAR1); \
 	assert_string_equal(((struct key *)VECTOR_SLOT(v, N))->param, PARN); \

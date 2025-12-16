@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include "mt-udev-wrap.h"
 #include <sys/sysmacros.h>
 #include <fcntl.h>
@@ -173,7 +173,7 @@ static void test_devt2devname_real(void **state)
 	enm = udev_enumerate_new(udev);
 	assert_non_null(enm);
 	r = udev_enumerate_add_match_subsystem(enm, "block");
-	assert_in_range(r, 0, INT_MAX);
+	assert_int_in_range(r, 0, INT_MAX);
 	r = udev_enumerate_scan_devices(enm);
 	first = udev_enumerate_get_list_entry(enm);
 	udev_list_entry_foreach(item, first) {

@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -244,7 +244,7 @@ int WRAP_IOCTL(int fd, unsigned long request, void *argp)
 {
 	condlog(1, "%s %ld", __func__, request);
 	assert_int_equal(fd, waiter->fd);
-	assert_int_equal(request, DM_DEV_ARM_POLL);
+	assert_uint_equal(request, DM_DEV_ARM_POLL);
 	return mock_type(int);
 }
 
@@ -295,7 +295,7 @@ void __wrap_dm_task_destroy(struct dm_task *dmt)
 
 int __wrap_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 {
-	assert_int_equal(nfds, 1);
+	assert_uint_equal(nfds, 1);
 	assert_int_equal(timeout, -1);
 	assert_int_equal(fds->fd, waiter->fd);
 	assert_int_equal(fds->events, POLLIN);
@@ -304,7 +304,7 @@ int __wrap_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 
 void __wrap_remove_map_by_alias(const char *alias, struct vectors * vecs)
 {
-	check_expected(alias);
+	check_expected_ptr(alias);
 	assert_ptr_equal(vecs, waiter->vecs);
 }
 
@@ -315,7 +315,7 @@ int __wrap_update_multipath(struct vectors *vecs, char *mapname)
 {
 	int fail;
 
-	check_expected(mapname);
+	check_expected_ptr(mapname);
 	assert_ptr_equal(vecs, waiter->vecs);
 	fail = mock_type(int);
 	if (fail) {
@@ -435,7 +435,7 @@ static void test_watch_dmevents_good0(void **state)
 	/* verify foo is being watched */
 	dev_evt = find_dmevents("foo");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 5);
+	assert_uint_equal(dev_evt->evt_nr, 5);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	assert_int_equal(VECTOR_SIZE(waiter->events), 1);
 	unwatch_dmevents("foo");
@@ -459,14 +459,14 @@ static void test_watch_dmevents_good1(void **state)
 	assert_int_equal(watch_dmevents("foo"), 0);
 	dev_evt = find_dmevents("foo");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 5);
+	assert_uint_equal(dev_evt->evt_nr, 5);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	assert_int_equal(add_dm_device_event("foo", 1, 6), 0);
 	will_return(__wrap_dm_geteventnr, 0);
 	assert_int_equal(watch_dmevents("foo"), 0);
 	dev_evt = find_dmevents("foo");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 6);
+	assert_uint_equal(dev_evt->evt_nr, 6);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	assert_int_equal(VECTOR_SIZE(waiter->events), 1);
 	unwatch_dmevents("foo");
@@ -490,18 +490,18 @@ static void test_watch_dmevents_good2(void **state)
 	assert_int_equal(watch_dmevents("foo"), 0);
 	dev_evt = find_dmevents("foo");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 5);
+	assert_uint_equal(dev_evt->evt_nr, 5);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	assert_ptr_equal(find_dmevents("bar"), NULL);
 	will_return(__wrap_dm_geteventnr, 0);
 	assert_int_equal(watch_dmevents("bar"), 0);
 	dev_evt = find_dmevents("foo");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 5);
+	assert_uint_equal(dev_evt->evt_nr, 5);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	dev_evt = find_dmevents("bar");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 7);
+	assert_uint_equal(dev_evt->evt_nr, 7);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	assert_int_equal(VECTOR_SIZE(waiter->events), 2);
 	unwatch_all_dmevents();
@@ -597,15 +597,15 @@ static void test_get_events_good1(void **state)
 	assert_int_equal(dm_get_events(), 0);
 	dev_evt = find_dmevents("foo");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 6);
+	assert_uint_equal(dev_evt->evt_nr, 6);
 	assert_int_equal(dev_evt->action, EVENT_UPDATE);
 	dev_evt = find_dmevents("bar");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 7);
+	assert_uint_equal(dev_evt->evt_nr, 7);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	dev_evt = find_dmevents("xyzzy");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 8);
+	assert_uint_equal(dev_evt->evt_nr, 8);
 	assert_int_equal(dev_evt->action, EVENT_REMOVE);
 	assert_ptr_equal(find_dmevents("baz"), NULL);
 	assert_ptr_equal(find_dmevents("qux"), NULL);
@@ -632,12 +632,12 @@ static void test_dmevent_loop_bad0(void **state)
 	assert_int_equal(dmevent_loop(), 1);
 	dev_evt = find_dmevents("foo");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 5);
+	assert_uint_equal(dev_evt->evt_nr, 5);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	dev = find_dm_device("foo");
 	assert_ptr_not_equal(dev, NULL);
-	assert_int_equal(dev->evt_nr, 6);
-	assert_int_equal(dev->update_nr, 5);
+	assert_uint_equal(dev->evt_nr, 6);
+	assert_uint_equal(dev->update_nr, 5);
 }
 
 /* arm_dm_event_poll's ioctl fails. Nothing happens */
@@ -654,12 +654,12 @@ static void test_dmevent_loop_bad1(void **state)
 	assert_int_equal(dmevent_loop(), 1);
 	dev_evt = find_dmevents("foo");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 5);
+	assert_uint_equal(dev_evt->evt_nr, 5);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	dev = find_dm_device("foo");
 	assert_ptr_not_equal(dev, NULL);
-	assert_int_equal(dev->evt_nr, 6);
-	assert_int_equal(dev->update_nr, 5);
+	assert_uint_equal(dev->evt_nr, 6);
+	assert_uint_equal(dev->update_nr, 5);
 }
 
 /* dm_get_events fails. Nothing happens */
@@ -677,12 +677,12 @@ static void test_dmevent_loop_bad2(void **state)
 	assert_int_equal(dmevent_loop(), 1);
 	dev_evt = find_dmevents("foo");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 5);
+	assert_uint_equal(dev_evt->evt_nr, 5);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	dev = find_dm_device("foo");
 	assert_ptr_not_equal(dev, NULL);
-	assert_int_equal(dev->evt_nr, 6);
-	assert_int_equal(dev->update_nr, 5);
+	assert_uint_equal(dev->evt_nr, 6);
+	assert_uint_equal(dev->update_nr, 5);
 }
 
 /* verify dmevent_loop runs successfully when no devices are being
@@ -743,20 +743,20 @@ static void test_dmevent_loop_good1(void **state)
 	assert_int_equal(VECTOR_SIZE(data.dm_devices), 3);
 	dev_evt = find_dmevents("foo");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 6);
+	assert_uint_equal(dev_evt->evt_nr, 6);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	dev = find_dm_device("foo");
 	assert_ptr_not_equal(dev, NULL);
-	assert_int_equal(dev->evt_nr, 6);
-	assert_int_equal(dev->update_nr, 6);
+	assert_uint_equal(dev->evt_nr, 6);
+	assert_uint_equal(dev->update_nr, 6);
 	dev_evt = find_dmevents("bar");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 7);
+	assert_uint_equal(dev_evt->evt_nr, 7);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	dev = find_dm_device("bar");
 	assert_ptr_not_equal(dev, NULL);
-	assert_int_equal(dev->evt_nr, 7);
-	assert_int_equal(dev->update_nr, 7);
+	assert_uint_equal(dev->evt_nr, 7);
+	assert_uint_equal(dev->update_nr, 7);
 	assert_ptr_equal(find_dmevents("xyzzy"), NULL);
 	assert_ptr_equal(find_dm_device("xyzzy"), NULL);
 }
@@ -791,20 +791,20 @@ static void test_dmevent_loop_good2(void **state)
 	assert_int_equal(VECTOR_SIZE(data.dm_devices), 2);
 	dev_evt = find_dmevents("foo");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 6);
+	assert_uint_equal(dev_evt->evt_nr, 6);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	dev = find_dm_device("foo");
 	assert_ptr_not_equal(dev, NULL);
-	assert_int_equal(dev->evt_nr, 6);
-	assert_int_equal(dev->update_nr, 6);
+	assert_uint_equal(dev->evt_nr, 6);
+	assert_uint_equal(dev->update_nr, 6);
 	dev_evt = find_dmevents("bar");
 	assert_ptr_not_equal(dev_evt, NULL);
-	assert_int_equal(dev_evt->evt_nr, 9);
+	assert_uint_equal(dev_evt->evt_nr, 9);
 	assert_int_equal(dev_evt->action, EVENT_NOTHING);
 	dev = find_dm_device("bar");
 	assert_ptr_not_equal(dev, NULL);
-	assert_int_equal(dev->evt_nr, 9);
-	assert_int_equal(dev->update_nr, 9);
+	assert_uint_equal(dev->evt_nr, 9);
+	assert_uint_equal(dev->update_nr, 9);
 	assert_ptr_equal(find_dmevents("baz"), NULL);
 	assert_ptr_equal(find_dm_device("baz"), NULL);
 }
@@ -831,8 +831,8 @@ static void test_dmevent_loop_good3(void **state)
 	assert_int_equal(VECTOR_SIZE(data.dm_devices), 1);
 	dev = find_dm_device("bar");
 	assert_ptr_not_equal(dev, NULL);
-	assert_int_equal(dev->evt_nr, 9);
-	assert_int_equal(dev->update_nr, 9);
+	assert_uint_equal(dev->evt_nr, 9);
+	assert_uint_equal(dev->update_nr, 9);
 	assert_ptr_equal(find_dmevents("foo"), NULL);
 	assert_ptr_equal(find_dmevents("bar"), NULL);
 	assert_ptr_equal(find_dm_device("foo"), NULL);

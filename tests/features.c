@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <setjmp.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 
 #include "../libmultipath/propsel.c"
 #include "globals.c"

@@ -13,7 +13,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include <scsi/sg.h>
 #include "unaligned.h"
 #include "debug.h"
@@ -63,12 +63,12 @@ int WRAP_IOCTL(int fd, unsigned long request, void *param)
 {
 	int len;
 	struct sg_io_hdr *io_hdr;
-	unsigned char *val;
+	const unsigned char *val;
 
 	len = mock();
 	io_hdr = (struct sg_io_hdr *)param;
-	assert_in_range(len, 0, io_hdr->dxfer_len);
-	val = mock_ptr_type(unsigned char *);
+	assert_int_in_range(len, 0, io_hdr->dxfer_len);
+	val = mock_ptr_type(const unsigned char *);
 	io_hdr->status = 0;
 	memcpy(io_hdr->dxferp, val, len);
 	return 0;
@@ -260,7 +260,7 @@ static int create_scsi_string_desc(unsigned char *desc,
 	desc[1] = 8;
 	desc[2] = 0;
 
-	assert_in_range(type, STR_EUI, STR_IQN);
+	assert_int_in_range(type, STR_EUI, STR_IQN);
 	assert_true(maxlen % 4 == 0);
 	len = snprintf((char *)(desc + 4), maxlen, "%s%s",
 		       str_prefix[type], id);
@@ -354,7 +354,7 @@ static void assert_correct_wwid(const char *test,
 	}
 	/* check matching length, and length of WWID string */
 	assert_int_equal(expected, returned);
-	assert_int_equal(returned, strlen(wwid));
+	assert_uint_equal(returned, strlen(wwid));
 	/* check expected string value up to expected length */
 	for (i = 0; i < returned - ofs; i++)
 		assert_int_equal(wwid[ofs + i],

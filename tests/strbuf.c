@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include <errno.h>
 #include "strbuf.h"
 #include "debug.h"
@@ -24,7 +24,11 @@ void *__wrap_realloc(void *ptr, size_t size)
 	if (!mock_realloc)
 		return __real_realloc(ptr, size);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 	p = mock_ptr_type(void *);
+#pragma GCC diagnostic pop
+
 	condlog(4, "%s: %p, %zu -> %p", __func__, ptr, size, p);
 	return p;
 }
@@ -35,44 +39,44 @@ static void test_strbuf_00(void **state)
 	char *p;
 
 	assert_ptr_equal(buf.buf, NULL);
-	assert_int_equal(buf.size, 0);
-	assert_int_equal(buf.offs, 0);
-	assert_int_equal(get_strbuf_len(&buf), 0);
+	assert_uint_equal(buf.size, 0);
+	assert_uint_equal(buf.offs, 0);
+	assert_uint_equal(get_strbuf_len(&buf), 0);
 	assert_string_equal(get_strbuf_str(&buf), "");
 	p = steal_strbuf_str(&buf);
 	assert_ptr_equal(p, NULL);
 
 	assert_ptr_equal(buf.buf, NULL);
-	assert_int_equal(buf.size, 0);
-	assert_int_equal(buf.offs, 0);
-	assert_int_equal(get_strbuf_len(&buf), 0);
+	assert_uint_equal(buf.size, 0);
+	assert_uint_equal(buf.offs, 0);
+	assert_uint_equal(get_strbuf_len(&buf), 0);
 	assert_string_equal(get_strbuf_str(&buf), "");
 
 	assert_int_equal(append_strbuf_str(&buf, "moin"), 4);
-	assert_int_equal(get_strbuf_len(&buf), 4);
-	assert_in_range(buf.size, 5, SIZE_MAX);
+	assert_uint_equal(get_strbuf_len(&buf), 4);
+	assert_uint_in_range(buf.size, 5, SIZE_MAX);
 	assert_string_equal(get_strbuf_str(&buf), "moin");
 	p = steal_strbuf_str(&buf);
 	assert_string_equal(p, "moin");
 	free(p);
 
 	assert_ptr_equal(buf.buf, NULL);
-	assert_int_equal(buf.size, 0);
-	assert_int_equal(buf.offs, 0);
-	assert_int_equal(get_strbuf_len(&buf), 0);
+	assert_uint_equal(buf.size, 0);
+	assert_uint_equal(buf.offs, 0);
+	assert_uint_equal(get_strbuf_len(&buf), 0);
 	assert_string_equal(get_strbuf_str(&buf), "");
 
 	assert_int_equal(append_strbuf_str(&buf, NULL), -EINVAL);
-	assert_int_equal(buf.size, 0);
-	assert_int_equal(buf.offs, 0);
-	assert_int_equal(get_strbuf_len(&buf), 0);
+	assert_uint_equal(buf.size, 0);
+	assert_uint_equal(buf.offs, 0);
+	assert_uint_equal(get_strbuf_len(&buf), 0);
 	assert_string_equal(get_strbuf_str(&buf), "");
 
 	assert_int_equal(append_strbuf_str(&buf, ""), 0);
 	/* appending a 0-length string allocates memory */
-	assert_in_range(buf.size, 1, SIZE_MAX);
-	assert_int_equal(buf.offs, 0);
-	assert_int_equal(get_strbuf_len(&buf), 0);
+	assert_uint_in_range(buf.size, 1, SIZE_MAX);
+	assert_uint_equal(buf.offs, 0);
+	assert_uint_equal(get_strbuf_len(&buf), 0);
 	assert_string_equal(get_strbuf_str(&buf), "");
 	p = steal_strbuf_str(&buf);
 	assert_string_equal(p, "");
@@ -80,9 +84,9 @@ static void test_strbuf_00(void **state)
 
 	assert_int_equal(append_strbuf_str__(&buf, "x", 0), 0);
 	/* appending a 0-length string allocates memory */
-	assert_in_range(buf.size, 1, SIZE_MAX);
-	assert_int_equal(buf.offs, 0);
-	assert_int_equal(get_strbuf_len(&buf), 0);
+	assert_uint_in_range(buf.size, 1, SIZE_MAX);
+	assert_uint_equal(buf.offs, 0);
+	assert_uint_equal(get_strbuf_len(&buf), 0);
 	assert_string_equal(get_strbuf_str(&buf), "");
 }
 
@@ -95,17 +99,17 @@ static void test_strbuf_alloc_err(void **state)
 	mock_realloc = true;
 	will_return(__wrap_realloc, NULL);
 	assert_int_equal(append_strbuf_str(&buf, "moin"), -ENOMEM);
-	assert_int_equal(buf.size, 0);
-	assert_int_equal(buf.offs, 0);
-	assert_int_equal(get_strbuf_len(&buf), 0);
+	assert_uint_equal(buf.size, 0);
+	assert_uint_equal(buf.offs, 0);
+	assert_uint_equal(get_strbuf_len(&buf), 0);
 	assert_string_equal(get_strbuf_str(&buf), "");
 
 	mock_realloc = false;
 	assert_int_equal(append_strbuf_str(&buf, "moin"), 4);
 	sz = buf.size;
-	assert_in_range(sz, 5, SIZE_MAX);
-	assert_int_equal(buf.offs, 4);
-	assert_int_equal(get_strbuf_len(&buf), 4);
+	assert_uint_in_range(sz, 5, SIZE_MAX);
+	assert_uint_equal(buf.offs, 4);
+	assert_uint_equal(get_strbuf_len(&buf), 4);
 	assert_string_equal(get_strbuf_str(&buf), "moin");
 
 	mock_realloc = true;
@@ -114,22 +118,22 @@ static void test_strbuf_alloc_err(void **state)
 	while ((rc = append_strbuf_str(&buf, " hello")) >= 0) {
 		condlog(3, "%s", get_strbuf_str(&buf));
 		assert_int_equal(rc, 6);
-		assert_int_equal(get_strbuf_len(&buf), ofs + 6);
+		assert_uint_equal(get_strbuf_len(&buf), ofs + 6);
 		assert_memory_equal(get_strbuf_str(&buf), "moin", 4);
 		assert_string_equal(get_strbuf_str(&buf) + ofs, " hello");
 		ofs = get_strbuf_len(&buf);
 	}
 	assert_int_equal(rc, -ENOMEM);
-	assert_int_equal(buf.size, sz);
-	assert_int_equal(get_strbuf_len(&buf), ofs);
+	assert_uint_equal(buf.size, sz);
+	assert_uint_equal(get_strbuf_len(&buf), ofs);
 	assert_memory_equal(get_strbuf_str(&buf), "moin", 4);
 	assert_string_equal(get_strbuf_str(&buf) + ofs - 6, " hello");
 
 	reset_strbuf(&buf);
 	assert_ptr_equal(buf.buf, NULL);
-	assert_int_equal(buf.size, 0);
-	assert_int_equal(buf.offs, 0);
-	assert_int_equal(get_strbuf_len(&buf), 0);
+	assert_uint_equal(buf.size, 0);
+	assert_uint_equal(buf.offs, 0);
+	assert_uint_equal(get_strbuf_len(&buf), 0);
 	assert_string_equal(get_strbuf_str(&buf), "");
 
 	mock_realloc = false;
@@ -158,7 +162,8 @@ static void test_strbuf_big(void **state)
 		if (i % 1000 == 0)
 			condlog(4, "%d", i);
 		assert_int_equal(append_strbuf_str(&buf, big), sizeof(big) - 1);
-		assert_int_equal(get_strbuf_len(&buf), (sizeof(big) - 1) * (i + 1));
+		assert_uint_equal(get_strbuf_len(&buf),
+				  (sizeof(big) - 1) * (i + 1));
 		assert_memory_equal(get_strbuf_str(&buf), big, sizeof(big) - 1);
 		assert_string_equal(get_strbuf_str(&buf) + get_strbuf_len(&buf)
 				    - (sizeof(big) - 1), big);
@@ -166,12 +171,12 @@ static void test_strbuf_big(void **state)
 	bbig = steal_strbuf_str(&buf);
 
 	assert_ptr_equal(buf.buf, NULL);
-	assert_int_equal(buf.size, 0);
-	assert_int_equal(buf.offs, 0);
-	assert_int_equal(get_strbuf_len(&buf), 0);
+	assert_uint_equal(buf.size, 0);
+	assert_uint_equal(buf.offs, 0);
+	assert_uint_equal(get_strbuf_len(&buf), 0);
 	assert_string_equal(get_strbuf_str(&buf), "");
 
-	assert_int_equal(strlen(bbig), i * (sizeof(big) - 1));
+	assert_uint_equal(strlen(bbig), i * (sizeof(big) - 1));
 	assert_memory_equal(bbig, big, sizeof(big) - 1);
 	free(bbig);
 }
@@ -190,23 +195,23 @@ static void test_strbuf_nul(void **state)
 	greet[5] = '\0';
 	reset_strbuf(&buf);
 	assert_int_equal(append_strbuf_str(&buf, greet), 5);
-	assert_int_equal(get_strbuf_len(&buf), 5);
+	assert_uint_equal(get_strbuf_len(&buf), 5);
 	assert_string_equal(get_strbuf_str(&buf), "hello");
 	assert_int_equal(append_strbuf_str(&buf, greet), 5);
-	assert_int_equal(get_strbuf_len(&buf), 10);
+	assert_uint_equal(get_strbuf_len(&buf), 10);
 	assert_string_equal(get_strbuf_str(&buf), "hellohello");
 
 	/* append_strbuf_str__() appends full memory, including NUL bytes */
 	reset_strbuf(&buf);
 	assert_int_equal(append_strbuf_str__(&buf, greet, sizeof(greet) - 1),
 			 sizeof(greet) - 1);
-	assert_int_equal(get_strbuf_len(&buf), sizeof(greet) - 1);
+	assert_uint_equal(get_strbuf_len(&buf), sizeof(greet) - 1);
 	assert_string_equal(get_strbuf_str(&buf), "hello");
 	assert_string_equal(get_strbuf_str(&buf) + get_strbuf_len(&buf) - 5, " sir!");
 	assert_int_equal(append_strbuf_str__(&buf, greet, sizeof(greet) - 1),
 			 sizeof(greet) - 1);
 	assert_string_equal(get_strbuf_str(&buf), "hello");
-	assert_int_equal(get_strbuf_len(&buf), 2 * (sizeof(greet) - 1));
+	assert_uint_equal(get_strbuf_len(&buf), 2 * (sizeof(greet) - 1));
 	assert_string_equal(get_strbuf_str(&buf) + get_strbuf_len(&buf) - 5, " sir!");
 }
 
@@ -318,7 +323,7 @@ static void test_print_strbuf_3(void **state)
 
 	s = get_strbuf_str(&buf);
 	condlog(3, "%s", s);
-	assert_int_equal(strlen(s), repeat * (sizeof(sentence) - 1));
+	assert_uint_equal(strlen(s), repeat * (sizeof(sentence) - 1));
 	for (i = 0; i < repeat; i++)
 		assert_int_equal(strncmp(s + i * (sizeof(sentence) - 1),
 					 sentence, sizeof(sentence) - 1), 0);
@@ -340,7 +345,7 @@ static void test_print_strbuf_4(void **state)
 
 	s = get_strbuf_str(&buf);
 	condlog(3, "%s", s);
-	assert_int_equal(strlen(s), repeat * (sizeof(sentence) - 1));
+	assert_uint_equal(strlen(s), repeat * (sizeof(sentence) - 1));
 	for (i = 0; i < repeat; i++)
 		assert_int_equal(strncmp(s + i * (sizeof(sentence) - 1),
 					 sentence, sizeof(sentence) - 1), 0);
@@ -356,24 +361,24 @@ static void test_truncate_strbuf(void **state)
 	assert_int_equal(truncate_strbuf(&buf, 0), -EFAULT);
 
 	assert_int_equal(append_strbuf_str(&buf, str), sizeof(str) - 1);
-	assert_int_equal(get_strbuf_len(&buf), sizeof(str) - 1);
+	assert_uint_equal(get_strbuf_len(&buf), sizeof(str) - 1);
 	assert_string_equal(get_strbuf_str(&buf), str);
 
 	assert_int_equal(truncate_strbuf(&buf, sizeof(str)), -ERANGE);
-	assert_int_equal(get_strbuf_len(&buf), sizeof(str) - 1);
+	assert_uint_equal(get_strbuf_len(&buf), sizeof(str) - 1);
 	assert_string_equal(get_strbuf_str(&buf), str);
 
 	assert_int_equal(truncate_strbuf(&buf, sizeof(str) - 1), 0);
-	assert_int_equal(get_strbuf_len(&buf), sizeof(str) - 1);
+	assert_uint_equal(get_strbuf_len(&buf), sizeof(str) - 1);
 	assert_string_equal(get_strbuf_str(&buf), str);
 
 	assert_int_equal(truncate_strbuf(&buf, sizeof(str) - 2), 0);
-	assert_int_equal(get_strbuf_len(&buf), sizeof(str) - 2);
+	assert_uint_equal(get_strbuf_len(&buf), sizeof(str) - 2);
 	assert_string_not_equal(get_strbuf_str(&buf), str);
 	assert_memory_equal(get_strbuf_str(&buf), str, sizeof(str) - 2);
 
 	assert_int_equal(truncate_strbuf(&buf, 5), 0);
-	assert_int_equal(get_strbuf_len(&buf), 5);
+	assert_uint_equal(get_strbuf_len(&buf), 5);
 	assert_string_not_equal(get_strbuf_str(&buf), str);
 	assert_string_equal(get_strbuf_str(&buf), "hello");
 
@@ -385,7 +390,7 @@ static void test_truncate_strbuf(void **state)
 		assert_int_equal(append_strbuf_str(&buf, str), sizeof(str) - 1);
 
 	sz1  = buf.size;
-	assert_in_range(get_strbuf_len(&buf), sz + 1, SIZE_MAX);
+	assert_uint_in_range(get_strbuf_len(&buf), sz + 1, SIZE_MAX);
 	assert_string_equal(get_strbuf_str(&buf) +
 			    get_strbuf_len(&buf) - (sizeof(str) - 1), str);
 	assert_int_equal(truncate_strbuf(&buf, get_strbuf_len(&buf) + 1),
@@ -393,20 +398,20 @@ static void test_truncate_strbuf(void **state)
 	assert_int_equal(truncate_strbuf(&buf, get_strbuf_len(&buf)), 0);
 	assert_int_equal(truncate_strbuf(&buf, get_strbuf_len(&buf)
 					 - (sizeof(str) - 1)), 0);
-	assert_in_range(get_strbuf_len(&buf), 1, sz);
+	assert_uint_in_range(get_strbuf_len(&buf), 1, sz);
 	assert_string_equal(get_strbuf_str(&buf) +
 			    get_strbuf_len(&buf) - (sizeof(str) - 1), str);
-	assert_int_equal(buf.size, sz1);
+	assert_uint_equal(buf.size, sz1);
 
 	assert_int_equal(truncate_strbuf(&buf, 5), 0);
-	assert_int_equal(get_strbuf_len(&buf), 5);
+	assert_uint_equal(get_strbuf_len(&buf), 5);
 	assert_string_equal(get_strbuf_str(&buf), "hello");
-	assert_int_equal(buf.size, sz1);
+	assert_uint_equal(buf.size, sz1);
 
 	assert_int_equal(truncate_strbuf(&buf, 0), 0);
-	assert_int_equal(get_strbuf_len(&buf), 0);
+	assert_uint_equal(get_strbuf_len(&buf), 0);
 	assert_string_equal(get_strbuf_str(&buf), "");
-	assert_int_equal(buf.size, sz1);
+	assert_uint_equal(buf.size, sz1);
 }
 
 static void test_fill_strbuf(void **state)
@@ -418,31 +423,31 @@ static void test_fill_strbuf(void **state)
 	assert_int_equal(fill_strbuf(&buf, '+', -5), -EINVAL);
 
 	assert_int_equal(fill_strbuf(&buf, '+', 0), 0);
-	assert_int_equal(get_strbuf_len(&buf), 0);
+	assert_uint_equal(get_strbuf_len(&buf), 0);
 	assert_string_equal(get_strbuf_str(&buf), "");
 
 	assert_int_equal(fill_strbuf(&buf, '+', 1), 1);
-	assert_int_equal(get_strbuf_len(&buf), 1);
+	assert_uint_equal(get_strbuf_len(&buf), 1);
 	assert_string_equal(get_strbuf_str(&buf), "+");
 
 	assert_int_equal(fill_strbuf(&buf, '-', 3), 3);
-	assert_int_equal(get_strbuf_len(&buf), 4);
+	assert_uint_equal(get_strbuf_len(&buf), 4);
 	assert_string_equal(get_strbuf_str(&buf), "+---");
 
 	assert_int_equal(fill_strbuf(&buf, '\0', 3), 3);
-	assert_int_equal(get_strbuf_len(&buf), 7);
+	assert_uint_equal(get_strbuf_len(&buf), 7);
 	assert_string_equal(get_strbuf_str(&buf), "+---");
 
 	truncate_strbuf(&buf, 4);
 	assert_int_equal(fill_strbuf(&buf, '+', 4), 4);
-	assert_int_equal(get_strbuf_len(&buf), 8);
+	assert_uint_equal(get_strbuf_len(&buf), 8);
 	assert_string_equal(get_strbuf_str(&buf), "+---++++");
 
 	reset_strbuf(&buf);
 	assert_int_equal(fill_strbuf(&buf, 'x', 30000), 30000);
-	assert_int_equal(get_strbuf_len(&buf), 30000);
+	assert_uint_equal(get_strbuf_len(&buf), 30000);
 	p = steal_strbuf_str(&buf);
-	assert_int_equal(strlen(p), 30000);
+	assert_uint_equal(strlen(p), 30000);
 	for (i = 0; i < 30000; i++)
 		assert_int_equal(p[i], 'x');
 	free(p);

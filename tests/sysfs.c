@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include "mt-udev-wrap.h"
 #include <fcntl.h>
 #include <errno.h>
@@ -22,9 +22,9 @@
 
 #define TEST_FD 123
 
-char *__wrap_udev_device_get_syspath(struct udev_device *ud)
+const char *__wrap_udev_device_get_syspath(struct udev_device *ud)
 {
-	char *val  = mock_ptr_type(char *);
+	const char *val = mock_ptr_type(const char *);
 
 	return val;
 }
@@ -33,8 +33,8 @@ int WRAP_OPEN(const char *pathname, int flags)
 {
 	int ret;
 
-	check_expected(pathname);
-	check_expected(flags);
+	check_expected_ptr(pathname);
+	check_expected_int(flags);
 	ret = mock_type(int);
 	return ret;
 }
@@ -42,12 +42,12 @@ int WRAP_OPEN(const char *pathname, int flags)
 ssize_t __wrap_read(int fd, void *buf, size_t count)
 {
 	ssize_t ret;
-	char *val;
+	const char *val;
 
-	check_expected(fd);
-	check_expected(count);
+	check_expected_int(fd);
+	check_expected_uint(count);
 	ret = mock_type(int);
-	val = mock_ptr_type(char *);
+	val = mock_ptr_type(const char *);
 	if (ret >= (ssize_t)count)
 		ret = count;
 	if (ret >= 0 && val) {
@@ -61,8 +61,8 @@ ssize_t __wrap_write(int fd, void *buf, size_t count)
 {
 	ssize_t ret;
 
-	check_expected(fd);
-	check_expected(count);
+	check_expected_int(fd);
+	check_expected_uint(count);
 	ret = mock_type(int);
 	if (ret >= (ssize_t)count)
 		ret = count;
@@ -168,7 +168,7 @@ static void test_sagv_open_fail(void **state)
 	will_return(__wrap_udev_device_get_syspath, "/foo");
 	expect_condlog(4, "open '/foo/bar'");
 	expect_string(WRAP_OPEN, pathname, "/foo/bar");
-	expect_value(WRAP_OPEN, flags, O_RDONLY);
+	expect_int_value(WRAP_OPEN, flags, O_RDONLY);
 	errno = ENOENT;
 	wrap_will_return(WRAP_OPEN, -1);
 	expect_condlog(3, "sysfs_attr_get_value__: attribute '/foo/bar' cannot be opened");
@@ -183,10 +183,10 @@ static void test_sagv_read_fail(void **state)
 	will_return(__wrap_udev_device_get_syspath, "/foo");
 	expect_condlog(4, "open '/foo/bar'");
 	expect_string(WRAP_OPEN, pathname, "/foo/bar");
-	expect_value(WRAP_OPEN, flags, O_RDONLY);
+	expect_int_value(WRAP_OPEN, flags, O_RDONLY);
 	wrap_will_return(WRAP_OPEN, TEST_FD);
-	expect_value(__wrap_read, fd, TEST_FD);
-	expect_value(__wrap_read, count, sizeof(buf));
+	expect_int_value(__wrap_read, fd, TEST_FD);
+	expect_uint_value(__wrap_read, count, sizeof(buf));
 	errno = EISDIR;
 	will_return(__wrap_read, -1);
 	will_return(__wrap_read, NULL);
@@ -198,10 +198,10 @@ static void test_sagv_read_fail(void **state)
 	will_return(__wrap_udev_device_get_syspath, "/foo");
 	expect_condlog(4, "open '/foo/baz'");
 	expect_string(WRAP_OPEN, pathname, "/foo/baz");
-	expect_value(WRAP_OPEN, flags, O_RDONLY);
+	expect_int_value(WRAP_OPEN, flags, O_RDONLY);
 	wrap_will_return(WRAP_OPEN, TEST_FD);
-	expect_value(__wrap_read, fd, TEST_FD);
-	expect_value(__wrap_read, count, sizeof(buf));
+	expect_int_value(__wrap_read, fd, TEST_FD);
+	expect_uint_value(__wrap_read, count, sizeof(buf));
 	errno = EPERM;
 	will_return(__wrap_read, -1);
 	will_return(__wrap_read, NULL);
@@ -219,15 +219,15 @@ static void _test_sagv_read(void **state, unsigned int bufsz)
 	char input[] = "01234567";
 	unsigned int n, trunc;
 
-	assert_in_range(bufsz, 1, sizeof(buf));
+	assert_uint_in_range(bufsz, 1, sizeof(buf));
 	memset(buf, '.', sizeof(buf));
 	will_return(__wrap_udev_device_get_syspath, "/foo");
 	expect_condlog(4, "open '/foo/bar'");
 	expect_string(WRAP_OPEN, pathname, "/foo/bar");
-	expect_value(WRAP_OPEN, flags, O_RDONLY);
+	expect_int_value(WRAP_OPEN, flags, O_RDONLY);
 	wrap_will_return(WRAP_OPEN, TEST_FD);
-	expect_value(__wrap_read, fd, TEST_FD);
-	expect_value(__wrap_read, count, bufsz);
+	expect_int_value(__wrap_read, fd, TEST_FD);
+	expect_uint_value(__wrap_read, count, bufsz);
 	will_return(__wrap_read, sizeof(input) - 1);
 	will_return(__wrap_read, input);
 
@@ -251,10 +251,10 @@ static void _test_sagv_read(void **state, unsigned int bufsz)
 	will_return(__wrap_udev_device_get_syspath, "/foo");
 	expect_condlog(4, "open '/foo/baz'");
 	expect_string(WRAP_OPEN, pathname, "/foo/baz");
-	expect_value(WRAP_OPEN, flags, O_RDONLY);
+	expect_int_value(WRAP_OPEN, flags, O_RDONLY);
 	wrap_will_return(WRAP_OPEN, TEST_FD);
-	expect_value(__wrap_read, fd, TEST_FD);
-	expect_value(__wrap_read, count, bufsz);
+	expect_int_value(__wrap_read, fd, TEST_FD);
+	expect_uint_value(__wrap_read, count, bufsz);
 	will_return(__wrap_read, sizeof(input) - 1);
 	will_return(__wrap_read, input);
 	will_return(__wrap_close, 0);
@@ -297,15 +297,15 @@ static void _test_sagv_read_zeroes(void **state, unsigned int bufsz)
 	char input[] = { '\0','\0','\0','\0','\0','\0','\0','\0' };
 	unsigned int n;
 
-	assert_in_range(bufsz, 1, sizeof(buf));
+	assert_uint_in_range(bufsz, 1, sizeof(buf));
 	memset(buf, '.', sizeof(buf));
 	will_return(__wrap_udev_device_get_syspath, "/foo");
 	expect_condlog(4, "open '/foo/bar'");
 	expect_string(WRAP_OPEN, pathname, "/foo/bar");
-	expect_value(WRAP_OPEN, flags, O_RDONLY);
+	expect_int_value(WRAP_OPEN, flags, O_RDONLY);
 	wrap_will_return(WRAP_OPEN, TEST_FD);
-	expect_value(__wrap_read, fd, TEST_FD);
-	expect_value(__wrap_read, count, bufsz);
+	expect_int_value(__wrap_read, fd, TEST_FD);
+	expect_uint_value(__wrap_read, count, bufsz);
 	will_return(__wrap_read, sizeof(input) - 1);
 	will_return(__wrap_read, input);
 
@@ -387,7 +387,7 @@ static void test_sasv_open_fail(void **state)
 	will_return(__wrap_udev_device_get_syspath, "/foo");
 	expect_condlog(4, "open '/foo/bar'");
 	expect_string(WRAP_OPEN, pathname, "/foo/bar");
-	expect_value(WRAP_OPEN, flags, O_WRONLY);
+	expect_int_value(WRAP_OPEN, flags, O_WRONLY);
 	errno = EPERM;
 	wrap_will_return(WRAP_OPEN, -1);
 	expect_condlog(3, "sysfs_attr_set_value: attribute '/foo/bar' cannot be opened");
@@ -402,10 +402,10 @@ static void test_sasv_write_fail(void **state)
 	will_return(__wrap_udev_device_get_syspath, "/foo");
 	expect_condlog(4, "open '/foo/bar'");
 	expect_string(WRAP_OPEN, pathname, "/foo/bar");
-	expect_value(WRAP_OPEN, flags, O_WRONLY);
+	expect_int_value(WRAP_OPEN, flags, O_WRONLY);
 	wrap_will_return(WRAP_OPEN, TEST_FD);
-	expect_value(__wrap_write, fd, TEST_FD);
-	expect_value(__wrap_write, count, sizeof(buf));
+	expect_int_value(__wrap_write, fd, TEST_FD);
+	expect_uint_value(__wrap_write, count, sizeof(buf));
 	errno = EISDIR;
 	will_return(__wrap_write, -1);
 	expect_condlog(3, "sysfs_attr_set_value: write to /foo/bar failed:");
@@ -419,14 +419,14 @@ static void _test_sasv_write(void **state, unsigned int n_written)
 {
 	char buf[8];
 
-	assert_in_range(n_written, 0, sizeof(buf));
+	assert_uint_in_range(n_written, 0, sizeof(buf));
 	will_return(__wrap_udev_device_get_syspath, "/foo");
 	expect_condlog(4, "open '/foo/bar'");
 	expect_string(WRAP_OPEN, pathname, "/foo/bar");
-	expect_value(WRAP_OPEN, flags, O_WRONLY);
+	expect_int_value(WRAP_OPEN, flags, O_WRONLY);
 	wrap_will_return(WRAP_OPEN, TEST_FD);
-	expect_value(__wrap_write, fd, TEST_FD);
-	expect_value(__wrap_write, count, sizeof(buf));
+	expect_int_value(__wrap_write, fd, TEST_FD);
+	expect_uint_value(__wrap_write, count, sizeof(buf));
 	will_return(__wrap_write, n_written);
 
 	if (n_written < sizeof(buf))
