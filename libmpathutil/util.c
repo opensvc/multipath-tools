@@ -337,15 +337,15 @@ void cleanup_fclose(void *p)
 		fclose(p);
 }
 
-void cleanup_bitfield(struct bitfield **p)
+void cleanup_bitfield(union bitfield **p)
 {
 	free(*p);
 }
 
-struct bitfield *alloc_bitfield(unsigned int maxbit)
+union bitfield *alloc_bitfield(unsigned int maxbit)
 {
 	unsigned int n;
-	struct bitfield *bf;
+	union bitfield *bf;
 
 	if (maxbit == 0) {
 		errno = EINVAL;
@@ -353,7 +353,7 @@ struct bitfield *alloc_bitfield(unsigned int maxbit)
 	}
 
 	n = (maxbit - 1) / bits_per_slot + 1;
-	bf = calloc(1, sizeof(struct bitfield) + n * sizeof(bitfield_t));
+	bf = calloc(1, sizeof(union bitfield) + (n - 1) * sizeof(bitfield_t));
 	if (bf)
 		bf->len = maxbit;
 	return bf;

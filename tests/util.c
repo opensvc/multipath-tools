@@ -198,7 +198,7 @@ static uint64_t maybe_swap(uint64_t v)
 
 static void test_bitmask_1(void **state)
 {
-	struct bitfield *bf;
+	union bitfield *bf;
 	uint64_t *arr;
 	int i, j, k, m, b;
 
@@ -240,7 +240,7 @@ static void test_bitmask_1(void **state)
 
 static void test_bitmask_2(void **state)
 {
-	struct bitfield *bf;
+	union bitfield *bf;
 	uint64_t *arr;
 	int i, j, k, m, b;
 
@@ -307,7 +307,7 @@ static void test_bitmask_2(void **state)
  */
 static void test_bitmask_len_0(void **state)
 {
-	struct bitfield *bf;
+	union bitfield *bf;
 
 	bf = alloc_bitfield(0);
 	assert_null(bf);
@@ -329,7 +329,7 @@ static unsigned int maybe_swap_idx(unsigned int i)
 
 static void _test_bitmask_small(unsigned int n)
 {
-	struct bitfield *bf;
+	union bitfield *bf;
 	uint32_t *arr;
 	unsigned int size = maybe_swap_idx((n - 1) / 32) + 1, i;
 
@@ -378,7 +378,7 @@ static void _test_bitmask_small(unsigned int n)
 
 static void _test_bitmask_small_2(unsigned int n)
 {
-	struct bitfield *bf;
+	union bitfield *bf;
 	uint32_t *arr;
 	unsigned int size = maybe_swap_idx((n - 1) / 32) + 1, i;
 

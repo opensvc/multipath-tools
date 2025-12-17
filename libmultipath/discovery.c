@@ -880,10 +880,12 @@ sysfs_set_nexus_loss_tmo(struct path *pp)
 static void
 scsi_tmo_error_msg(struct path *pp)
 {
-	static BITFIELD(bf, LAST_BUS_PROTOCOL_ID + 1);
+	static BITFIELD(bf);
 	STRBUF_ON_STACK(proto_buf);
 	unsigned int proto_id = bus_protocol_id(pp);
 
+	/* make sure the bitfield is large enough */
+	BUILD_BUG_ON((LAST_BUS_PROTOCOL_ID + 1) > bits_per_slot);
 	snprint_path_protocol(&proto_buf, pp);
 	condlog(2, "%s: setting scsi timeouts is unsupported for protocol %s",
 		pp->dev, get_strbuf_str(&proto_buf));

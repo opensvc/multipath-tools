@@ -439,8 +439,8 @@ static int pgcmp(struct multipath *mpp, struct multipath *cmpp)
 {
 	int i, j;
 	struct pathgroup *pgp, *cpgp;
-	BITFIELD(bf, bits_per_slot);
-	struct bitfield *bf__  __attribute__((cleanup(cleanup_bitfield))) = NULL;
+	BITFIELD(bf);
+	union bitfield *bf__ __attribute__((cleanup(cleanup_bitfield))) = NULL;
 
 	if (VECTOR_SIZE(mpp->pg) != VECTOR_SIZE(cmpp->pg))
 		return 1;
@@ -1049,7 +1049,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 	vector newmp;
 	struct config *conf = NULL;
 	int allow_queueing;
-	struct bitfield *size_mismatch_seen;
+	union bitfield *size_mismatch_seen;
 	struct multipath * cmpp;
 
 	/* ignore refwwid if it's empty */
