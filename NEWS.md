@@ -9,6 +9,27 @@ release. These bug fixes will be tracked in stable branches.
 
 See [README.md](README.md) for additional information.
 
+## multipath-tools 0.13.1, TBD
+
+### Bug fixes
+
+* Make sure multipathd registers keys all paths of a multipath map after
+  mpathpersist registered a key for a map. multipathd could fail to do so in
+  some cases, e.g. if paths become unavailable or available while the
+  registration was taking place. Fixes 0.13.0. Commits f7d6cd1, 4f3036b.
+* Improve error handling when retrying REGISTER AND IGNORE persistent
+  reservations commands. Fixes 0.13.0. Commit c971036.
+* Fix `mpathpersist --report-capabilities` output. Fixes 0.5.0. Commit
+  c8ed5e6.
+* Fix command descriptions in the multipathd man page. Fixes 0.9.2. Commit
+  f3ba2e7.
+
+### Other changes
+
+* Hardware table: add Seagate Exos and Nytro series
+* Avoid joining threads twice with liburcu 0.14.0 and newer.
+* CI updates (GitHub workflows).
+
 ## multipath-tools 0.13.0, 2025/10
 
 ### Major rework of the SCSI Persistent Reservation code

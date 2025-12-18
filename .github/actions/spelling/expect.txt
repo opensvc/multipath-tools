@@ -60,6 +60,7 @@ emc
 Engenio
 Equal
 EVPD
+Exos
 failback
 failover
 fds
@@ -147,6 +148,7 @@ NOSCAN
 Nosync
 nvme
 NFINIDAT
+Nytro
 OBJDEPS
 oneshot
 ontap
@@ -213,17 +215,18 @@ standalone
 statedir
 stdarg
 stdint
+storwize
 STRERR
 strerror
 suse
 svg
 switchgroup
 sys
+SYSDIR
 sysfs
 sysinit
 tcp
 terabytes
-SYSDIR
 TESTDEPS
 testname
 tgill
