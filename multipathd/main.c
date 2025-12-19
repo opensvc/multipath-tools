@@ -771,8 +771,8 @@ fail:
 
 static int add_map_without_path (struct vectors *vecs, const char *alias)
 {
-	struct multipath __attribute__((cleanup(cleanup_multipath_and_paths)))
-		*mpp = alloc_multipath();
+	struct multipath __attribute__((cleanup(cleanup_multipath))) *mpp =
+		alloc_multipath();
 	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
 	char __attribute__((cleanup(cleanup_charp))) *status = NULL;
 	struct config *conf;
@@ -802,11 +802,11 @@ static int add_map_without_path (struct vectors *vecs, const char *alias)
 	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
 	put_multipath_config(conf);
 
-	if ((rc = update_multipath_table__(mpp, vecs->pathvec, 0, params, status)) != DMP_OK)
+	if (update_multipath_table__(mpp, vecs->pathvec, 0, params, status) != DMP_OK ||
+	    !vector_alloc_slot(vecs->mpvec))
 		return DMP_ERR;
 
-	if (!vector_alloc_slot(vecs->mpvec))
-		return DMP_ERR;
+	/* Make sure mpp is not cleaned up on return */
 	vector_set_slot(vecs->mpvec, steal_ptr(mpp));
 
 	/*
