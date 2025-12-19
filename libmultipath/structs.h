@@ -582,7 +582,6 @@ void free_pathgroup(struct pathgroup *pgp);
 void free_pgvec(vector pgvec);
 void free_multipath(struct multipath *mpp);
 void cleanup_multipath(struct multipath **pmpp);
-void cleanup_multipath_and_paths(struct multipath **pmpp);
 void free_multipath_attributes(struct multipath *);
 void free_multipathvec(vector mpvec);
 

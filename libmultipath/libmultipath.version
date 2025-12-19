@@ -69,7 +69,6 @@ global:
 	cleanup_bindings;
 	cleanup_lock;
 	cleanup_multipath;
-	cleanup_multipath_and_paths;
 	cleanup_pathvec_and_free_paths;
 	cleanup_udev_device_ptr;
 	cleanup_udev_enumerate_ptr;

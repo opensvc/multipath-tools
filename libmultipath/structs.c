@@ -336,12 +336,6 @@ void cleanup_multipath(struct multipath **pmpp)
 		free_multipath(*pmpp);
 }
 
-void cleanup_multipath_and_paths(struct multipath **pmpp)
-{
-	if (*pmpp)
-		free_multipath(*pmpp);
-}
-
 void free_multipathvec(vector mpvec)
 {
 	int i;
