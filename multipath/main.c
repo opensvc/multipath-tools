@@ -214,12 +214,17 @@ static int check_usable_paths(struct config *conf,
 			      const char *devpath, enum devtypes dev_type)
 {
 	struct udev_device __attribute__((cleanup(cleanup_udev_device))) *ud = NULL;
-	struct multipath __attribute__((cleanup(cleanup_multipath_and_paths))) *mpp = NULL;
 	struct pathgroup *pg;
 	struct path *pp;
 	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
 	char __attribute__((cleanup(cleanup_charp))) *status = NULL;
-	vector __attribute((cleanup(cleanup_vector))) pathvec = NULL;
+	vector __attribute((cleanup(cleanup_pathvec_and_free_paths))) pathvec = NULL;
+	/*
+	 * The sequence of variable definitions matters here, cleanup handlers
+	 * are executed in reverse order of definition, and we access pp->mpp
+	 * in free_multipath().
+	 */
+	struct multipath __attribute__((cleanup(cleanup_multipath))) *mpp = NULL;
 	char uuid[DM_UUID_LEN];
 	dev_t devt;
 	int r = 1, i, j;
