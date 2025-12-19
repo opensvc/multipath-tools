@@ -199,6 +199,11 @@ free_pathvec (vector vec, enum free_path_mode free_paths)
 	vector_free(vec);
 }
 
+void cleanup_pathvec_and_free_paths(vector *vec)
+{
+	free_pathvec(*vec, FREE_PATHS);
+}
+
 struct pathgroup *
 alloc_pathgroup (void)
 {
