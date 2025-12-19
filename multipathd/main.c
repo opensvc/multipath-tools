@@ -503,6 +503,7 @@ remove_maps_and_stop_waiters(struct vectors *vecs)
 	remove_maps(vecs);
 }
 
+/* This function may free paths. See check_removed_paths(). */
 int refresh_multipath(struct vectors *vecs, struct multipath *mpp)
 {
 	if (update_multipath_strings(mpp, vecs->pathvec) != DMP_OK) {
@@ -513,6 +514,7 @@ int refresh_multipath(struct vectors *vecs, struct multipath *mpp)
 	return 0;
 }
 
+/* This function may free paths. See check_removed_paths(). */
 int setup_multipath(struct vectors *vecs, struct multipath *mpp)
 {
 	if (refresh_multipath(vecs, mpp) != 0)
@@ -2517,8 +2519,8 @@ get_new_state(struct path *pp)
 	return newstate;
 }
 
-static int
-do_sync_mpp(struct vectors * vecs, struct multipath *mpp)
+/* This function may free paths. See check_removed_paths(). */
+static int do_sync_mpp(struct vectors *vecs, struct multipath *mpp)
 {
 	int i, ret;
 	struct path *pp;
@@ -2536,8 +2538,8 @@ do_sync_mpp(struct vectors * vecs, struct multipath *mpp)
 	return ret;
 }
 
-static int
-sync_mpp(struct vectors * vecs, struct multipath *mpp, unsigned int ticks)
+/* This function may free paths. See check_removed_paths(). */
+static int sync_mpp(struct vectors *vecs, struct multipath *mpp, unsigned int ticks)
 {
 	if (mpp->sync_tick)
 		mpp->sync_tick -= (mpp->sync_tick > ticks) ? ticks :

@@ -561,6 +561,34 @@ static struct path *find_devt_in_pathgroups(const struct multipath *mpp,
 	return NULL;
 }
 
+/*
+ * check_removed_paths()
+ *
+ * This function removes paths from the pathvec and frees them if they have
+ * been marked for removal (INIT_REMOVED, INIT_PARTIAL).
+ * This is important because some callers (e.g. uev_add_path->ev_remove_path())
+ * rely on the paths being actually gone when the call stack returns.
+ * Be sure not to call it while these paths are still referenced elsewhere
+ * (e.g. from coalesce_paths(), where curmp may still reference them).
+ *
+ * Most important call stacks in multipath-tools 0.13.0:
+ *
+ * checker_finished()
+ *   sync_mpp()
+ *     do_sync_mpp()
+ *       update_multipath_strings()
+ *         sync_paths()
+ *           check_removed_paths()
+ *
+ * [multiple callers including update_map(), ev_remove_path(), ...]
+ *   setup_multipath()
+ *     refresh_multipath()
+ *       update_multipath_strings()
+ *         sync_paths()
+ *           check_removed_paths()
+ *
+ * refresh_multipath() is also called from a couple of CLI handlers.
+ */
 static void check_removed_paths(const struct multipath *mpp, vector pathvec)
 {
 	struct path *pp;
@@ -581,6 +609,7 @@ static void check_removed_paths(const struct multipath *mpp, vector pathvec)
 	}
 }
 
+/* This function may free paths. See check_removed_paths(). */
 void sync_paths(struct multipath *mpp, vector pathvec)
 {
 	struct path *pp;
@@ -609,8 +638,8 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 		pp->mpp = mpp;
 }
 
-int
-update_multipath_strings(struct multipath *mpp, vector pathvec)
+/* This function may free paths. See check_removed_paths(). */
+int update_multipath_strings(struct multipath *mpp, vector pathvec)
 {
 	struct pathgroup *pgp;
 	int i, r = DMP_ERR;
