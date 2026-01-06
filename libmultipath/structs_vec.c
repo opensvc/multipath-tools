@@ -181,6 +181,7 @@ static void update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 					condlog(2, "%s: discarding non-existing path %s",
 						mpp->alias, pp->dev_t);
 					vector_del_slot(pgp->paths, j--);
+					pp->mpp = NULL;
 					free_path(pp);
 					must_reload = true;
 					continue;
@@ -201,6 +202,7 @@ static void update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 						condlog(1, "%s: error %d in pathinfo, discarding path",
 							pp->dev, rc);
 						vector_del_slot(pgp->paths, j--);
+						pp->mpp = NULL;
 						free_path(pp);
 						must_reload = true;
 						continue;
@@ -605,6 +607,7 @@ static void check_removed_paths(const struct multipath *mpp, vector pathvec)
 				pp->initialized == INIT_REMOVED ?
 				"removed" : "partial");
 			vector_del_slot(pathvec, i--);
+			pp->mpp = NULL;
 			free_path(pp);
 		}
 	}
