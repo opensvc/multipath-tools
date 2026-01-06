@@ -369,11 +369,16 @@ err:
 	return 1;
 }
 
-void orphan_path(struct path *pp, const char *reason)
+static void orphan_path__(struct path *pp, const char *reason)
 {
 	condlog(3, "%s: orphan path, %s", pp->dev, reason);
-	pp->mpp = NULL;
 	uninitialize_path(pp);
+}
+
+void orphan_path(struct path *pp, const char *reason)
+{
+	pp->mpp = NULL;
+	orphan_path__(pp, reason);
 }
 
 static void orphan_paths(vector pathvec, struct multipath *mpp, const char *reason)
@@ -393,16 +398,13 @@ static void orphan_paths(vector pathvec, struct multipath *mpp, const char *reas
 
 void set_path_removed(struct path *pp)
 {
-	struct multipath *mpp = pp->mpp;
-
-	orphan_path(pp, "removed");
 	/*
 	 * Keep link to mpp. It will be removed when the path
 	 * is successfully removed from the map.
 	 */
-	if (!mpp)
+	if (!pp->mpp)
 		condlog(0, "%s: internal error: mpp == NULL", pp->dev);
-	pp->mpp = mpp;
+	orphan_path__(pp, "removed");
 	pp->initialized = INIT_REMOVED;
 }
 
