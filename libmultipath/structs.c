@@ -170,6 +170,9 @@ free_path (struct path * pp)
 	if (!pp)
 		return;
 
+	if (pp->mpp)
+		condlog(0, "%s: INTERNAL ERROR: path %s references a map",
+			__func__, pp->dev_t);
 	uninitialize_path(pp);
 
 	if (pp->udev) {
