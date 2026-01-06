@@ -423,10 +423,6 @@ void remove_map(struct multipath *mpp, vector pathvec)
 {
 	remove_map_callback(mpp);
 
-	free_pathvec(mpp->paths, KEEP_PATHS);
-	free_pgvec(mpp->pg);
-	mpp->paths = mpp->pg = NULL;
-
 	/*
 	 * clear references to this map.
 	 * This needs to be called before free_multipath(),

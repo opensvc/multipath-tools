@@ -321,6 +321,7 @@ void free_multipath(struct multipath *mpp)
 			pp->mpp = NULL;
 	free_pathvec(mpp->paths, KEEP_PATHS);
 	free_pgvec(mpp->pg);
+	mpp->paths = mpp->pg = NULL;
 	if (mpp->hwe) {
 		vector_free(mpp->hwe);
 		mpp->hwe = NULL;
