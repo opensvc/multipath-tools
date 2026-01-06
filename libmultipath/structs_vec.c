@@ -373,7 +373,6 @@ void orphan_path(struct path *pp, const char *reason)
 {
 	condlog(3, "%s: orphan path, %s", pp->dev, reason);
 	pp->mpp = NULL;
-	pp->pgindex = 0;
 	uninitialize_path(pp);
 }
 

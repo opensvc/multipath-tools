@@ -150,6 +150,7 @@ uninitialize_path(struct path *pp)
 	pp->uid_attribute = NULL;
 	pp->checker_timeout = 0;
 	pp->pending_ticks = 0;
+	pp->pgindex = 0;
 
 	if (checker_selected(&pp->checker))
 		checker_put(&pp->checker);
