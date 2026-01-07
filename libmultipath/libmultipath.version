@@ -84,7 +84,6 @@ global:
 	dm_geteventnr;
 	dm_get_major_minor;
 	dm_get_maps;
-	dm_get_multipath;
 	dm_is_mpath;
 	dm_mapname;
 	dm_prereq;
