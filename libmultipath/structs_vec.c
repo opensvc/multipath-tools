@@ -639,7 +639,11 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 	check_removed_paths(mpp, pathvec);
 	update_mpp_paths(mpp, pathvec);
 	vector_foreach_slot (mpp->paths, pp, i)
-		pp->mpp = mpp;
+		if (pp->mpp != mpp) {
+			condlog(2, "%s: %s: mpp of %s was %p, fixing to %p",
+				__func__, mpp->alias, pp->dev_t, pp->mpp, mpp);
+			pp->mpp = mpp;
+		};
 }
 
 /* This function may free paths. See check_removed_paths(). */
