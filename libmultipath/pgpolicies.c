@@ -158,8 +158,6 @@ int group_paths(struct multipath *mp, int marginal_pathgroups)
 	}
 	sort_pathgroups(mp);
 out:
-	vector_free(mp->paths);
-	mp->paths = NULL;
 	return 0;
 fail_marginal:
 	vector_free(normal);
