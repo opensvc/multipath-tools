@@ -168,13 +168,19 @@ out:
 	return retval;
 }
 
+static const char *avoid_null(const char *s)
+{
+	return s ? s : "(unset)";
+}
+
 static void _log_match(const char *fn, const struct hwentry *h,
 		       const char *vendor, const char *product,
 		       const char *revision)
 {
 	condlog(4, "%s: found match /%s:%s:%s/ for '%s:%s:%s'", fn,
-		h->vendor, h->product, h->revision,
-		vendor, product, revision);
+		avoid_null(h->vendor), avoid_null(h->product),
+		avoid_null(h->revision), avoid_null(vendor),
+		avoid_null(product), avoid_null(revision));
 }
 #define log_match(h, v, p, r) _log_match(__func__, (h), (v), (p), (r))
 
@@ -203,7 +209,8 @@ find_hwe (const struct vector_s *hwtable,
 		log_match(tmp, vendor, product, revision);
 	}
 	condlog(n > 1 ? 3 : 4, "%s: found %d hwtable matches for %s:%s:%s",
-		__func__, n, vendor, product, revision);
+		__func__, n, avoid_null(vendor), avoid_null(product),
+		avoid_null(revision));
 	return n;
 }
 
