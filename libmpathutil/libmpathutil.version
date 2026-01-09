@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMPATHUTIL_4.0 {
+LIBMPATHUTIL_5.0 {
 global:
 	alloc_bitfield;
 	alloc_strvec;
