@@ -9,7 +9,7 @@ release. These bug fixes will be tracked in stable branches.
 
 See [README.md](README.md) for additional information.
 
-## multipath-tools 0.13.1, TBD
+## multipath-tools 0.14.0, TBD
 
 ### Bug fixes
 
@@ -21,12 +21,26 @@ See [README.md](README.md) for additional information.
   reservations commands. Fixes 0.13.0. Commit c971036.
 * Fix `mpathpersist --report-capabilities` output. Fixes 0.5.0. Commit
   c8ed5e6.
-* Fix command descriptions in the multipathd man page. Fixes 0.9.2. Commit
-  f3ba2e7.
+* Fix command descriptions in the multipathd man page. Fixes 0.9.2.
+  Commit f3ba2e7.
+* Fix ISO C23 compatibility issue causing errors with new compilers.
+  Commit 9f611e2.
+* Fix strict aliasing issue with gcc 15 and newer. Fixes 0.12.0.
+  Commit 8acf183.
+* Fix CI for cmocka 2.0. Commits 2c52668, f427f8f. Fixes #129.
+* Fix memory leak in kpartx. Commit 8c39e60.
+* Fix memory leak caused by not joining the "init unwinder" thread.
+  Commit 29f262b.
+* Fix use-after-free error in free_pgvec(). Commit 7a07023. Fixes #128.
+  Bug introduced in 0.12.0.
 
 ### Other changes
 
-* Hardware table: add Seagate Exos and Nytro series
+* Add wrapper code for libudev to avoid potential issues with calling libudev
+  from a multi-threaded program. Commits 69f6590, 6cc012f.
+* Clean up the code for freeing struct path and struct multipath objects.
+* Fix an undefined symbol error with the LLVM lld linker. Fixes #132.
+* Hardware table: add Seagate Exos and Nytro series.
 * Avoid joining threads twice with liburcu 0.14.0 and newer.
 * CI updates (GitHub workflows).
 
