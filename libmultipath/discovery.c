@@ -888,6 +888,9 @@ scsi_tmo_error_msg(struct path *pp)
 
 	/* make sure the bitfield is large enough */
 	BUILD_BUG_ON((LAST_BUS_PROTOCOL_ID + 1) > bits_per_slot);
+
+	if (is_bit_set_in_bitfield(proto_id, bf))
+		return;
 	snprint_path_protocol(&proto_buf, pp);
 	condlog(2, "%s: setting scsi timeouts is unsupported for protocol %s",
 		pp->dev, get_strbuf_str(&proto_buf));
