@@ -879,6 +879,8 @@ scsi_tmo_error_msg(struct path *pp)
 	STRBUF_ON_STACK(proto_buf);
 	unsigned int proto_id = bus_protocol_id(pp);
 
+	if (is_bit_set_in_bitfield(proto_id, bf))
+		return;
 	snprint_path_protocol(&proto_buf, pp);
 	condlog(2, "%s: setting scsi timeouts is unsupported for protocol %s",
 		pp->dev, get_strbuf_str(&proto_buf));
