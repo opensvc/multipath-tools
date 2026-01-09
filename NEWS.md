@@ -9,7 +9,30 @@ release. These bug fixes will be tracked in stable branches.
 
 See [README.md](README.md) for additional information.
 
-## multipath-tools 0.14.0, TBD
+## multipath-tools 0.14.0, 2026/01
+
+### User-visible changes
+
+#### Automatic removal of disconnected SCSI devices
+
+This release adds support for automatically purging SCSI devices that become
+disconnected at the storage target (e.g. because a LUN became unmapped by an
+administrator). It's a long-standing problem that such path devices become
+"stale" on the Linux side. When they are re-mapped on the storage side,
+possibly with different parameters, the kernel may not correctly detect
+the changes. By removing such stale devices, the kernel will be forced to
+re-probe them, which fixes this problem.
+
+The feature is controlled by a new configuration option `purge_disconnected`
+that can be set in `multipath.conf` per multipath device, hardware entry, or
+globally. The feature is switched off by default.
+
+When `purge_disconnected` is enabled, SCSI devices for which the storage array
+reports a "LUN NOT SUPPORTED" status are removed from the system, preventing
+stale device entries from accumulating.
+
+As this is a new feature, users are advised to test it in their environment
+before enabling it in production.
 
 ### Bug fixes
 
@@ -17,32 +40,48 @@ See [README.md](README.md) for additional information.
   mpathpersist registered a key for a map. multipathd could fail to do so in
   some cases, e.g. if paths become unavailable or available while the
   registration was taking place. Fixes 0.13.0. Commits f7d6cd1, 4f3036b.
-* Improve error handling when retrying REGISTER AND IGNORE persistent
-  reservations commands. Fixes 0.13.0. Commit c971036.
 * Fix `mpathpersist --report-capabilities` output. Fixes 0.5.0. Commit
   c8ed5e6.
+* Improve error handling when retrying REGISTER AND IGNORE persistent
+  reservations commands. Fixes 0.13.0. Commit c971036.
 * Fix command descriptions in the multipathd man page. Fixes 0.9.2.
   Commit f3ba2e7.
+* Fix an undefined symbol error with the LLVM lld linker. Commit a298603.
+  Fixes [#132](https://github.com/opensvc/multipath-tools/issues/132), 0.10.0.
 * Fix ISO C23 compatibility issue causing errors with new compilers.
   Commit 9f611e2.
-* Fix strict aliasing issue with gcc 15 and newer. Fixes 0.12.0.
-  Commit 8acf183.
-* Fix CI for cmocka 2.0. Commits 2c52668, f427f8f. Fixes #129.
-* Fix memory leak in kpartx. Commit 8c39e60.
+* Fix use-after-free error in free_pgvec(). Commit 7a07023.
+  Fixes [#128](https://github.com/opensvc/multipath-tools/issues/128), 0.12.0.
 * Fix memory leak caused by not joining the "init unwinder" thread.
-  Commit 29f262b.
-* Fix use-after-free error in free_pgvec(). Commit 7a07023. Fixes #128.
-  Bug introduced in 0.12.0.
+  Fixes 0.8.6. Commit 29f262b.
+* Fix memory leaks in kpartx. Commits 8c39e60, 02e0933. Fixes any version.
+* Fix a particular strict aliasing bug in the bitfield code.
+  Fixes 0.8.9. Commit f1299f2. This fix isn't strictly necessary any
+  more after adding `-fno-strict-aliasing` (see below), but it doesn't hurt to
+  have it.
+* Print the warning "setting scsi timeouts is unsupported for protocol" only
+  once per protocol. Commit 958c826. Fixes 0.9.0.
+* Make sure multipath-tools is compiled with the compiler flag
+  `-fno-strict-aliasing`. This turns out to be necessary because our code
+  uses techniques like `container_of()` which don't work well with
+  strict aliasing rules. Commit 1ef540a.
+  Fixes [#130](https://github.com/opensvc/multipath-tools/issues/130).
 
 ### Other changes
 
 * Add wrapper code for libudev to avoid potential issues with calling libudev
   from a multi-threaded program. Commits 69f6590, 6cc012f.
 * Clean up the code for freeing struct path and struct multipath objects.
-* Fix an undefined symbol error with the LLVM lld linker. Fixes #132.
+  Specifically, avoid freeing path objects from code that frees multipath
+  maps, and vice versa. Treat path orphaning and freeing separately.
 * Hardware table: add Seagate Exos and Nytro series.
 * Avoid joining threads twice with liburcu 0.14.0 and newer.
 * CI updates (GitHub workflows).
+* Fix CI for cmocka 2.0. Commits 2c52668, f427f8f.
+  Fixes [#129](https://github.com/opensvc/multipath-tools/issues/129)
+* Remove the "hotplug" mode of kpartx, which has been obsolete since udev
+  replaced legacy hotplug.
+* Add the ASAN=1 and OPT= make variables (see README.md).
 
 ## multipath-tools 0.13.0, 2025/10
 
