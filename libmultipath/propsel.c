@@ -1371,6 +1371,22 @@ out:
 	return 0;
 }
 
+int select_purge_disconnected(struct config *conf, struct multipath *mp)
+{
+	const char *origin;
+
+	mp_set_mpe(purge_disconnected);
+	mp_set_ovr(purge_disconnected);
+	mp_set_hwe(purge_disconnected);
+	mp_set_conf(purge_disconnected);
+	mp_set_default(purge_disconnected, DEFAULT_PURGE_DISCONNECTED);
+out:
+	condlog(3, "%s: purge_disconnected = %s %s", mp->alias,
+		(mp->purge_disconnected == PURGE_DISCONNECTED_ON) ? "yes" : "no",
+		origin);
+	return 0;
+}
+
 int select_max_sectors_kb(struct config *conf, struct multipath * mp)
 {
 	const char *origin;

@@ -186,6 +186,17 @@ enum auto_resize_state {
 	AUTO_RESIZE_GROW_SHRINK,
 };
 
+/*
+ * purge_disconnected configuration option (per multipath device)
+ * Controls whether paths that become disconnected at the storage target
+ * should be automatically removed from the system via sysfs.
+ */
+enum purge_disconnected_states {
+	PURGE_DISCONNECTED_UNDEF = YNU_UNDEF,
+	PURGE_DISCONNECTED_OFF = YNU_NO, /* Don't purge */
+	PURGE_DISCONNECTED_ON = YNU_YES, /* Purge disconnected paths */
+};
+
 #define PROTOCOL_UNSET -1
 
 enum scsi_protocol {
@@ -483,6 +494,7 @@ struct multipath {
 	int ghost_delay;
 	int ghost_delay_tick;
 	int queue_mode;
+	int purge_disconnected;
 	unsigned int sync_tick;
 	int checker_count;
 	enum prio_update_type prio_update;
