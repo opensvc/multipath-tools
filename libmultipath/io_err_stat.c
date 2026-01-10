@@ -397,6 +397,7 @@ static void account_async_io_state(struct io_err_stat_path *pp, int rc)
 	switch (rc) {
 	case PATH_DOWN:
 	case PATH_TIMEOUT:
+	case PATH_DISCONNECTED:
 		pp->io_err_nr++;
 		break;
 	case PATH_UNCHECKED:

@@ -83,6 +83,7 @@
 #include "dmevents.h"
 #include "io_err_stat.h"
 #include "foreign.h"
+#include "purge.h"
 #include "../third-party/valgrind/drd.h"
 #include "init_unwinder.h"
 
@@ -138,11 +139,11 @@ static enum force_reload_types reconfigure_pending = FORCE_RELOAD_NONE;
 pid_t daemon_pid;
 static pthread_mutex_t config_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t config_cond;
-static pthread_t check_thr, uevent_thr, uxlsnr_thr, uevq_thr, dmevent_thr,
-	fpin_thr, fpin_consumer_thr;
-static bool check_thr_started, uevent_thr_started, uxlsnr_thr_started,
-	uevq_thr_started, dmevent_thr_started, fpin_thr_started,
-	fpin_consumer_thr_started;
+static pthread_t check_thr, purge_thr, uevent_thr, uxlsnr_thr, uevq_thr,
+	dmevent_thr, fpin_thr, fpin_consumer_thr;
+static bool check_thr_started, purge_thr_started, uevent_thr_started,
+	uxlsnr_thr_started, uevq_thr_started, dmevent_thr_started,
+	fpin_thr_started, fpin_consumer_thr_started;
 static int pid_fd = -1;
 
 static inline enum daemon_status get_running_state(bool *pending_reconfig)
@@ -2507,6 +2508,27 @@ get_new_state(struct path *pp)
 	if (newstate == PATH_REMOVED)
 		newstate = PATH_DOWN;
 
+	/*
+	 * PATH_DISCONNECTED is an ephemeral state used to signal that a path
+	 * has been disconnected at the storage target (LUN unmapped). We use
+	 * it to set pp->disconnected for purge tracking, then immediately
+	 * convert it to PATH_DOWN for normal path failure handling.
+	 *
+	 * This ensures PATH_DISCONNECTED never gets stored in pp->state or
+	 * pp->chkrstate - it exists only as a transient signal from the
+	 * checker to trigger special handling before becoming PATH_DOWN.
+	 */
+	if (newstate == PATH_DISCONNECTED) {
+		if (pp->mpp->purge_disconnected == PURGE_DISCONNECTED_ON &&
+		    pp->disconnected == NOT_DISCONNECTED) {
+			condlog(2, "%s: mark (%s) path for purge", pp->dev,
+				checker_state_name(newstate));
+			pp->disconnected = DISCONNECTED_READY_FOR_PURGE;
+		}
+		/* Always convert to PATH_DOWN for normal processing */
+		newstate = PATH_DOWN;
+	}
+
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
 		condlog(2, "%s: unusable path (%s) - checker failed",
 			pp->dev, checker_state_name(newstate));
@@ -2578,6 +2600,7 @@ update_path_state (struct vectors * vecs, struct path * pp)
 		pp->tick = 1;
 		return CHECK_PATH_SKIPPED;
 	}
+
 	if (pp->recheck_wwid == RECHECK_WWID_ON &&
 	    (newstate == PATH_UP || newstate == PATH_GHOST) &&
 	    ((pp->state != PATH_UP && pp->state != PATH_GHOST) ||
@@ -3102,7 +3125,8 @@ static void free_orphan_paths(vector pathvec)
 	}
 }
 
-static void checker_finished(struct vectors *vecs, unsigned int ticks)
+static void checker_finished(struct vectors *vecs, unsigned int ticks,
+			     struct list_head *purge_list)
 {
 	struct multipath *mpp;
 	bool uev_timed_out = false;
@@ -3151,6 +3175,12 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 	if (uev_timed_out && !need_to_delay_reconfig(vecs))
 		unblock_reconfigure();
 	partial_retrigger_tick(vecs->pathvec);
+
+	/*
+	 * Build purge list for disconnected paths.
+	 * The caller will queue it after releasing vecs->lock.
+	 */
+	build_purge_list(vecs, purge_list);
 }
 
 static void *
@@ -3176,6 +3206,13 @@ checkerloop (void *ap)
 		int num_paths = 0, strict_timing;
 		unsigned int ticks = 0;
 		enum checker_state checker_state = CHECKER_STARTING;
+		LIST_HEAD(purge_list);
+
+		/*
+		 * Cleanup handler to free purge_list if thread is cancelled.
+		 * This prevents memory leaks during shutdown.
+		 */
+		pthread_cleanup_push(cleanup_purge_list, &purge_list);
 
 		if (set_config_state(DAEMON_RUNNING) != DAEMON_RUNNING)
 			/* daemon shutdown */
@@ -3220,8 +3257,22 @@ checkerloop (void *ap)
 				checker_state = update_paths(vecs, &num_paths,
 							     start_time.tv_sec);
 			if (checker_state == CHECKER_FINISHED)
-				checker_finished(vecs, ticks);
+				checker_finished(vecs, ticks, &purge_list);
 			lock_cleanup_pop(vecs->lock);
+		}
+
+		/*
+		 * Queue purge work for disconnected paths.
+		 * This is done after releasing vecs->lock to avoid holding
+		 * the lock while signaling the purge thread.
+		 */
+		if (!list_empty(&purge_list)) {
+			pthread_cleanup_push(cleanup_mutex, &purge_mutex);
+			pthread_mutex_lock(&purge_mutex);
+			pthread_testcancel();
+			list_splice_tail_init(&purge_list, &purge_queue);
+			pthread_cond_signal(&purge_cond);
+			pthread_cleanup_pop(1);
 		}
 
 		get_monotonic_time(&end_time);
@@ -3275,6 +3326,12 @@ checkerloop (void *ap)
 				break;
 			}
 		}
+
+		/*
+		 * Pop cleanup handler. Execute it (arg=1) to free purge_list
+		 * at the end of each iteration.
+		 */
+		pthread_cleanup_pop(1);
 	}
 	pthread_cleanup_pop(1);
 	return NULL;
@@ -3720,6 +3777,8 @@ static void cleanup_threads(void)
 
 	if (check_thr_started)
 		pthread_cancel(check_thr);
+	if (purge_thr_started)
+		pthread_cancel(purge_thr);
 	if (uevent_thr_started)
 		pthread_cancel(uevent_thr);
 	if (uxlsnr_thr_started)
@@ -3736,6 +3795,8 @@ static void cleanup_threads(void)
 
 	if (check_thr_started)
 		pthread_join(check_thr, NULL);
+	if (purge_thr_started)
+		pthread_join(purge_thr, NULL);
 	if (uevent_thr_started)
 		pthread_join(uevent_thr, NULL);
 	if (uxlsnr_thr_started)
@@ -3991,6 +4052,11 @@ child (__attribute__((unused)) void *param)
 		goto failed;
 	} else
 		check_thr_started = true;
+	if ((rc = pthread_create(&purge_thr, &misc_attr, purgeloop, vecs))) {
+		condlog(0, "failed to create purge loop thread: %d", rc);
+		goto failed;
+	} else
+		purge_thr_started = true;
 	if ((rc = pthread_create(&uevq_thr, &misc_attr, uevqloop, vecs))) {
 		condlog(0, "failed to create uevent dispatcher: %d", rc);
 		goto failed;

@@ -66,6 +66,15 @@
  *   delay_watch_checks checks, when it comes back up again, it will not
  *   be marked as up until it has been up for delay_wait_checks checks.
  *   During this time, it is marked as "delayed"
+ *
+ * PATH_DISCONNECTED is a special ephemeral state used to signal that a path
+ * has been disconnected at the storage target (e.g., LUN unmapped). When a
+ * checker returns PATH_DISCONNECTED:
+ *   1. The path's pp->disconnected field is set to track purge state
+ *   2. The state is immediately converted to PATH_DOWN for normal processing
+ *   3. If purge_disconnected is enabled, the path will be removed via sysfs
+ * This state should never be stored in pp->state or pp->chkrstate; it exists
+ * only as a transient return value from checkers to trigger special handling.
  */
 enum path_check_state {
 	PATH_WILD = 0,
@@ -78,6 +87,7 @@ enum path_check_state {
 	PATH_TIMEOUT,
 	PATH_REMOVED,
 	PATH_DELAYED,
+	PATH_DISCONNECTED, /* Ephemeral: mapped to PATH_DOWN */
 	PATH_MAX_STATE
 };
 
@@ -113,9 +123,10 @@ enum {
 	CHECKER_MSGID_DOWN,
 	CHECKER_MSGID_GHOST,
 	CHECKER_MSGID_UNSUPPORTED,
+	CHECKER_MSGID_DISCONNECTED,
 	CHECKER_GENERIC_MSGTABLE_SIZE,
-	CHECKER_FIRST_MSGID = 100,	/* lowest msgid for checkers */
-	CHECKER_MSGTABLE_SIZE = 100,	/* max msg table size for checkers */
+	CHECKER_FIRST_MSGID = 100,   /* lowest msgid for checkers */
+	CHECKER_MSGTABLE_SIZE = 100, /* max msg table size for checkers */
 };
 
 struct checker_class;

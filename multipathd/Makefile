@@ -36,7 +36,7 @@ endif
 
 CLI_OBJS := multipathc.o cli.o
 OBJS := main.o pidfile.o uxlsnr.o uxclnt.o cli.o cli_handlers.o waiter.o \
-       dmevents.o init_unwinder.o
+       dmevents.o init_unwinder.o purge.o
 ifeq ($(FPIN_SUPPORT),1)
 OBJS += fpin_handlers.o
 endif

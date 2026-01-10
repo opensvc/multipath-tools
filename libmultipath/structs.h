@@ -197,6 +197,18 @@ enum purge_disconnected_states {
 	PURGE_DISCONNECTED_ON = YNU_YES, /* Purge disconnected paths */
 };
 
+/*
+ * Path disconnection state (per path)
+ * Tracks whether a path has been marked for purge and whether it's already queued.
+ */
+enum path_disconnected_state {
+	NOT_DISCONNECTED,	       /* Path is not disconnected */
+	DISCONNECTED_READY_FOR_PURGE,  /* Path is disconnected and ready to be
+					  queued for purge */
+	DISCONNECTED_QUEUED_FOR_PURGE, /* Path is disconnected and already
+					  queued for purge */
+};
+
 #define PROTOCOL_UNSET -1
 
 enum scsi_protocol {
@@ -393,6 +405,8 @@ struct path {
 	int dmstate;
 	int chkrstate;
 	int oldstate;
+	enum path_disconnected_state disconnected; /* Marked for purge due to
+						      disconnection */
 	int failcount;
 	int priority;
 	int pgindex;

@@ -2493,8 +2493,25 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			    pp->state == PATH_UNCHECKED ||
 			    pp->state == PATH_WILD)
 				pp->chkrstate = pp->state = newstate;
+			/*
+			 * PATH_TIMEOUT and PATH_DISCONNECTED are ephemeral
+			 * states that should never be stored in pp->state.
+			 * Convert them to PATH_DOWN immediately.
+			 */
 			if (pp->state == PATH_TIMEOUT)
 				pp->state = PATH_DOWN;
+			if (pp->state == PATH_DISCONNECTED) {
+				int purge_enabled = pp->mpp &&
+						    pp->mpp->purge_disconnected ==
+							    PURGE_DISCONNECTED_ON;
+				if (purge_enabled &&
+				    pp->disconnected == NOT_DISCONNECTED) {
+					condlog(2, "%s: mark path for purge",
+						pp->dev);
+					pp->disconnected = DISCONNECTED_READY_FOR_PURGE;
+				}
+				pp->state = PATH_DOWN;
+			}
 			if (pp->state == PATH_UP && !pp->size) {
 				condlog(3, "%s: device size is 0, "
 					"path unusable", pp->dev);
