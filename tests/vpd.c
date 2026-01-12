@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
+// SPDX-License-Identifier: GPL-2.0-or-later
 /* Copyright (c) 2019 Martin Wilck, SUSE Linux GmbH, Nuremberg */
 
 #define _GNU_SOURCE

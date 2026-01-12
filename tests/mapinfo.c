@@ -1,6 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (c) 2024 Martin Wilck, SUSE
- * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
