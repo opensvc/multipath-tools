@@ -145,56 +145,6 @@ find_devname_offset (char * device)
 	return (int)(q - device);
 }
 
-static char *
-get_hotplug_device(void)
-{
-	unsigned int major, minor, off, len;
-	char *mapname;
-	char *devname = NULL;
-	char *device = NULL;
-	char *var = NULL;
-	struct stat buf;
-
-	var = getenv("ACTION");
-
-	if (!var || strcmp(var, "add"))
-		return NULL;
-
-	/* Get dm mapname for hotpluged device. */
-	if (!(devname = getenv("DEVNAME")))
-		return NULL;
-
-	if (stat(devname, &buf))
-		return NULL;
-
-	major = major(buf.st_rdev);
-	minor = minor(buf.st_rdev);
-
-	if (!(mapname = dm_mapname(major, minor))) /* Not dm device. */
-		return NULL;
-
-	off = find_devname_offset(devname);
-	len = strlen(mapname);
-
-	/* Dirname + mapname + \0 */
-	if (!(device = (char *)malloc(sizeof(char) * (off + len + 1)))) {
-		free(mapname);
-		return NULL;
-	}
-
-	/* Create new device name. */
-	snprintf(device, off + 1, "%s", devname);
-	snprintf(device + off, len + 1, "%s", mapname);
-
-	if (strlen(device) != (off + len)) {
-		free(device);
-		free(mapname);
-		return NULL;
-	}
-	free(mapname);
-	return device;
-}
-
 static int
 check_uuid(char *uuid, char *part_uuid, char **err_msg) {
 	char *map_uuid = strchr(part_uuid, '-');
@@ -239,7 +189,7 @@ main(int argc, char **argv){
 	struct slice all;
 	struct pt *ptp;
 	enum action what = LIST;
-	char *type, *diskdevice, *device, *progname;
+	char *type, *diskdevice, *device;
 	int verbose = 0;
 	char partname[PARTNAME_SIZE], params[PARTNAME_SIZE + 16];
 	char *loopdev __attribute__((cleanup(cleanup_charp))) = NULL;
@@ -247,7 +197,6 @@ main(int argc, char **argv){
 	char *uuid __attribute__((cleanup(cleanup_charp))) = NULL;
 	char *_mapname __attribute__((cleanup(cleanup_charp))) = NULL;
 	char *mapname;
-	int hotplug = 0;
 	int loopcreated = 0;
 	struct stat buf;
 
@@ -258,24 +207,7 @@ main(int argc, char **argv){
 	memset(&all, 0, sizeof(all));
 	memset(&partname, 0, sizeof(partname));
 
-	/* Check whether hotplug mode. */
-	progname = strrchr(argv[0], '/');
-
-	if (!progname)
-		progname = argv[0];
-	else
-		progname++;
-
-	if (!strcmp(progname, "kpartx.dev")) { /* Hotplug mode */
-		hotplug = 1;
-
-		/* Setup for original kpartx variables */
-		if (!(device = get_hotplug_device()))
-			exit(1);
-
-		diskdevice = device;
-		what = ADD;
-	} else if (argc < 2) {
+	if (argc < 2) {
 		usage();
 		exit(1);
 	}
@@ -337,12 +269,10 @@ main(int argc, char **argv){
 		exit(1);
 	}
 
-	if (hotplug) {
-		/* already got [disk]device */
-	} else if (optind == argc-2) {
+	if (optind == argc - 2) {
 		device = argv[optind];
 		diskdevice = argv[optind+1];
-	} else if (optind == argc-1) {
+	} else if (optind == argc - 1) {
 		diskdevice = device = argv[optind];
 	} else {
 		usage();
