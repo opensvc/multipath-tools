@@ -245,7 +245,8 @@ main(int argc, char **argv){
 	char *loopdev __attribute__((cleanup(cleanup_charp))) = NULL;
 	char *delim __attribute__((cleanup(cleanup_charp))) = NULL;
 	char *uuid __attribute__((cleanup(cleanup_charp))) = NULL;
-	char *mapname __attribute__((cleanup(cleanup_charp))) = NULL;
+	char *_mapname __attribute__((cleanup(cleanup_charp))) = NULL;
+	char *mapname;
 	int hotplug = 0;
 	int loopcreated = 0;
 	struct stat buf;
@@ -388,10 +389,14 @@ main(int argc, char **argv){
 	off = find_devname_offset(device);
 
 	if (!loopdev) {
-		mapname = dm_mapname(major(buf.st_rdev), minor(buf.st_rdev));
-		if (mapname)
-			uuid = dm_mapuuid(mapname);
+		_mapname = dm_mapname(major(buf.st_rdev), minor(buf.st_rdev));
+		if (_mapname)
+			uuid = dm_mapuuid(_mapname);
 	}
+
+	mapname = _mapname;
+	if (!mapname)
+		mapname = device + off;
 
 	/*
 	 * We are called for a non-DM device.
@@ -401,9 +406,6 @@ main(int argc, char **argv){
 	 */
 	if (!uuid && !(what == DELETE && force_devmap))
 		uuid = nondm_create_uuid(buf.st_rdev);
-
-	if (!mapname)
-		mapname = device + off;
 
 	if (delim == NULL) {
 		delim = xmalloc(DELIM_SIZE);
