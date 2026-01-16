@@ -107,6 +107,9 @@ See "Passing standard compiler flags" below for an exception.
 The following variables can be passed to the `make` command line:
 
  * `V=1`: enable verbose build.
+ * `ASAN=1`: Enable
+   [AddressSanitizer](https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer)
+   during build for debugging memory allocation. This is off by default.
  * `plugindir="/some/path"`: directory where libmultipath plugins (path
    checkers, prioritizers, and foreign multipath support) will be looked up.
    This used to be the run-time option `multipath_dir` in earlier versions.
