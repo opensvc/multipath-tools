@@ -6,6 +6,7 @@ alloc
 alltgpt
 alua
 aptpl
+ASAN
 ascq
 ata
 autoconfig
@@ -77,6 +78,7 @@ getrlimit
 getuid
 github
 gitlab
+google
 GPT
 hbtl
 hds
@@ -192,6 +194,8 @@ rpmbuild
 rport
 rtpi
 rtprio
+sanitizer
+sanitizers
 sas
 sbp
 scsi
