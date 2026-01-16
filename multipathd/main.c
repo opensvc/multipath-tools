@@ -3821,7 +3821,7 @@ child (__attribute__((unused)) void *param)
 	int rc;
 	struct config *conf;
 	char *envp;
-	enum daemon_status state;
+	enum daemon_status state = DAEMON_INIT;
 	int exit_code = 1;
 	int fpin_marginal_paths = 0;
 
