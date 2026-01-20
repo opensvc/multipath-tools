@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include <stdio.h>
 
 #include "globals.c"
@@ -131,7 +131,9 @@ static int setup_null(void **state)
 
 static int teardownX(struct multipath *mp)
 {
-	free_pgvec(mp->pg, KEEP_PATHS);
+	vector_free(mp->paths);
+	mp->paths = NULL;
+	free_pgvec(mp->pg);
 	mp->pg = NULL;
 	return 0;
 }
@@ -165,10 +167,9 @@ static void
 verify_pathgroups(struct multipath *mp, struct path *pp, int **groups,
 		  int *group_size, int *marginal, int size)
 {
-	int i, j;
+	int i, j, sum = 0;
 	struct pathgroup *pgp;
 
-	assert_null(mp->paths);
 	assert_non_null(mp->pg);
 	assert_int_equal(VECTOR_SIZE(mp->pg), size);
 	for (i = 0; i < size; i++) {
@@ -176,6 +177,7 @@ verify_pathgroups(struct multipath *mp, struct path *pp, int **groups,
 		assert_non_null(pgp);
 		assert_non_null(pgp->paths);
 		assert_int_equal(VECTOR_SIZE(pgp->paths), group_size[i]);
+		sum += group_size[i];
 		if (marginal)
 			assert_int_equal(pgp->marginal, marginal[i]);
 		else
@@ -192,6 +194,7 @@ verify_pathgroups(struct multipath *mp, struct path *pp, int **groups,
 			assert_ptr_equal(pgp_path, pp_path);
 		}
 	}
+	assert_int_equal(sum, VECTOR_SIZE(mp->paths));
 }
 
 static void test_one_group8(void **state)

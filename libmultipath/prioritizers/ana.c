@@ -16,7 +16,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <stdbool.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 
 #include "debug.h"
 #include "nvme-lib.h"

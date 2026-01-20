@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <libdevmapper.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include "mpath_cmd.h"
 
 #include "checkers.h"
@@ -355,6 +355,7 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 	select_max_sectors_kb(conf, mpp);
 	select_ghost_delay(conf, mpp);
 	select_flush_on_last_del(conf, mpp);
+	select_purge_disconnected(conf, mpp);
 
 	sysfs_set_scsi_tmo(conf, mpp);
 	marginal_pathgroups = conf->marginal_pathgroups;
@@ -375,7 +376,7 @@ int setup_map(struct multipath *mpp, char **params, struct vectors *vecs)
 	 */
 	if (mpp->pg) {
 		vector_foreach_slot (mpp->pg, pgp, i)
-			free_pathgroup(pgp, KEEP_PATHS);
+			free_pathgroup(pgp);
 
 		vector_free(mpp->pg);
 		mpp->pg = NULL;
@@ -439,8 +440,8 @@ static int pgcmp(struct multipath *mpp, struct multipath *cmpp)
 {
 	int i, j;
 	struct pathgroup *pgp, *cpgp;
-	BITFIELD(bf, bits_per_slot);
-	struct bitfield *bf__  __attribute__((cleanup(cleanup_bitfield))) = NULL;
+	BITFIELD(bf);
+	union bitfield *bf__ __attribute__((cleanup(cleanup_bitfield))) = NULL;
 
 	if (VECTOR_SIZE(mpp->pg) != VECTOR_SIZE(cmpp->pg))
 		return 1;
@@ -1049,7 +1050,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 	vector newmp;
 	struct config *conf = NULL;
 	int allow_queueing;
-	struct bitfield *size_mismatch_seen;
+	union bitfield *size_mismatch_seen;
 	struct multipath * cmpp;
 
 	/* ignore refwwid if it's empty */
@@ -1140,7 +1141,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 
 		if (!mpp->paths) {
 			condlog(0, "%s: skip coalesce (no paths)", mpp->alias);
-			remove_map(mpp, vecs->pathvec, NULL);
+			remove_map(mpp, vecs->pathvec);
 			continue;
 		}
 
@@ -1172,7 +1173,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 		if (cmd == CMD_DRY_RUN && mpp->action == ACT_UNDEF)
 			mpp->action = ACT_DRY_RUN;
 		if (setup_map(mpp, &params, vecs)) {
-			remove_map(mpp, vecs->pathvec, NULL);
+			remove_map(mpp, vecs->pathvec);
 			continue;
 		}
 
@@ -1192,7 +1193,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 				condlog(2, "%s: %s map",
 					mpp->alias, (mpp->action == ACT_CREATE)?
 					"ignoring" : "removing");
-				remove_map(mpp, vecs->pathvec, NULL);
+				remove_map(mpp, vecs->pathvec);
 				continue;
 			} else /* if (r == DOMAP_RETRY && !is_daemon) */ {
 				ret = CP_RETRY;
@@ -1201,7 +1202,7 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 		}
 		if (r == DOMAP_DRY) {
 			if (!vector_alloc_slot(newmp)) {
-				remove_map(mpp, vecs->pathvec, NULL);
+				remove_map(mpp, vecs->pathvec);
 				goto out;
 			}
 			vector_set_slot(newmp, mpp);
@@ -1224,20 +1225,20 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 
 		if (mpp->action != ACT_REJECT) {
 			if (!vector_alloc_slot(newmp)) {
-				remove_map(mpp, vecs->pathvec, NULL);
+				remove_map(mpp, vecs->pathvec);
 				goto out;
 			}
 			vector_set_slot(newmp, mpp);
 		}
 		else
-			remove_map(mpp, vecs->pathvec, NULL);
+			remove_map(mpp, vecs->pathvec);
 	}
 	ret = CP_OK;
 out:
 	free(size_mismatch_seen);
 	if (!mpvec) {
 		vector_foreach_slot (newmp, mpp, i)
-			remove_map(mpp, vecs->pathvec, NULL);
+			remove_map(mpp, vecs->pathvec);
 		vector_free(newmp);
 	}
 	return ret;

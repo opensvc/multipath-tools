@@ -15,7 +15,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <linux/oom.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <urcu.h>
 #include "fpin.h"
 #ifdef USE_SYSTEMD
@@ -83,6 +83,7 @@
 #include "dmevents.h"
 #include "io_err_stat.h"
 #include "foreign.h"
+#include "purge.h"
 #include "../third-party/valgrind/drd.h"
 #include "init_unwinder.h"
 
@@ -90,7 +91,8 @@
 #define MSG_SIZE 32
 
 static unsigned int
-mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_needed);
+mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_needed,
+		      unsigned int nr_keys_wanted);
 
 #define LOG_MSG(lvl, pp)					\
 do {								\
@@ -137,11 +139,11 @@ static enum force_reload_types reconfigure_pending = FORCE_RELOAD_NONE;
 pid_t daemon_pid;
 static pthread_mutex_t config_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t config_cond;
-static pthread_t check_thr, uevent_thr, uxlsnr_thr, uevq_thr, dmevent_thr,
-	fpin_thr, fpin_consumer_thr;
-static bool check_thr_started, uevent_thr_started, uxlsnr_thr_started,
-	uevq_thr_started, dmevent_thr_started, fpin_thr_started,
-	fpin_consumer_thr_started;
+static pthread_t check_thr, purge_thr, uevent_thr, uxlsnr_thr, uevq_thr,
+	dmevent_thr, fpin_thr, fpin_consumer_thr;
+static bool check_thr_started, purge_thr_started, uevent_thr_started,
+	uxlsnr_thr_started, uevq_thr_started, dmevent_thr_started,
+	fpin_thr_started, fpin_consumer_thr_started;
 static int pid_fd = -1;
 
 static inline enum daemon_status get_running_state(bool *pending_reconfig)
@@ -479,7 +481,8 @@ remove_map_and_stop_waiter(struct multipath *mpp, struct vectors *vecs)
 	condlog(3, "%s: removing map from internal tables", mpp->alias);
 	if (!poll_dmevents)
 		stop_waiter_thread(mpp);
-	remove_map(mpp, vecs->pathvec, vecs->mpvec);
+	remove_map_from_mpvec(mpp, vecs->mpvec);
+	remove_map(mpp, vecs->pathvec);
 }
 
 static void
@@ -501,6 +504,7 @@ remove_maps_and_stop_waiters(struct vectors *vecs)
 	remove_maps(vecs);
 }
 
+/* This function may free paths. See check_removed_paths(). */
 int refresh_multipath(struct vectors *vecs, struct multipath *mpp)
 {
 	if (update_multipath_strings(mpp, vecs->pathvec) != DMP_OK) {
@@ -511,6 +515,7 @@ int refresh_multipath(struct vectors *vecs, struct multipath *mpp)
 	return 0;
 }
 
+/* This function may free paths. See check_removed_paths(). */
 int setup_multipath(struct vectors *vecs, struct multipath *mpp)
 {
 	if (refresh_multipath(vecs, mpp) != 0)
@@ -629,19 +634,47 @@ flush_map_nopaths(struct multipath *mpp, struct vectors *vecs) {
 	return true;
 }
 
-static void
-pr_register_active_paths(struct multipath *mpp)
+/*
+ * If reg_paths in non-NULL, it is a vector of paths that libmpathpersist
+ * registered. If the number of registered keys is smaller than the number
+ * of registered paths, then likely a preempt that occurred while
+ * libmpathpersist was registering the key. As long as there are still some
+ * registered keys, treat the preempt as happening first, and make sure to
+ * register keys on all the paths. If the number of registered keys is at
+ * least as large as the number of registered paths, then no preempt happened,
+ * and multipathd does not need to re-register the paths that libmpathpersist
+ * handled
+ */
+void pr_register_active_paths(struct multipath *mpp, const struct vector_s *reg_paths)
 {
-	unsigned int i, j, nr_keys = 0;
+	unsigned int i, j, k, nr_keys = 0;
+	unsigned int wanted_nr = VECTOR_SIZE(reg_paths);
 	struct path *pp;
 	struct pathgroup *pgp;
+	char *pathname;
 
 	vector_foreach_slot (mpp->pg, pgp, i) {
 		vector_foreach_slot (pgp->paths, pp, j) {
 			if (mpp->prflag == PR_UNSET)
 				return;
-			if ((pp->state == PATH_UP) || (pp->state == PATH_GHOST))
-				nr_keys = mpath_pr_event_handle(pp, nr_keys);
+			if (pp->state != PATH_UP && pp->state != PATH_GHOST)
+				continue;
+			if (wanted_nr && nr_keys) {
+				vector_foreach_slot (reg_paths, pathname, k) {
+					if (strcmp(pp->dev_t, pathname) == 0) {
+						goto skip;
+					}
+				}
+			}
+			nr_keys = mpath_pr_event_handle(pp, nr_keys, wanted_nr);
+			if (nr_keys && nr_keys < wanted_nr) {
+				/*
+				 * Incorrect number of registered keys. Need
+				 * to register all devices
+				 */
+				wanted_nr = 0;
+			}
+		skip:; /* a statement must follow a label on pre C23 clang */
 		}
 	}
 }
@@ -672,8 +705,7 @@ handle_orphaned_offline_paths(vector offline_paths)
 			pp->add_when_online = true;
 }
 
-static void
-cleanup_reset_vec(struct vector_s **v)
+void cleanup_reset_vec(struct vector_s **v)
 {
 	vector_reset(*v);
 }
@@ -717,7 +749,8 @@ retry:
 fail:
 	if (new_map && wait_for_events(mpp, vecs)) {
 		condlog(0, "%s: failed to create new map", mpp->alias);
-		remove_map(mpp, vecs->pathvec, vecs->mpvec);
+		remove_map_from_mpvec(mpp, vecs->mpvec);
+		remove_map(mpp, vecs->pathvec);
 		return 1;
 	}
 
@@ -729,7 +762,7 @@ fail:
 
 	sync_map_state(mpp, false);
 
-	pr_register_active_paths(mpp);
+	pr_register_active_paths(mpp, NULL);
 
 	if (VECTOR_SIZE(offline_paths) != 0)
 		handle_orphaned_offline_paths(offline_paths);
@@ -741,8 +774,8 @@ fail:
 
 static int add_map_without_path (struct vectors *vecs, const char *alias)
 {
-	struct multipath __attribute__((cleanup(cleanup_multipath_and_paths)))
-		*mpp = alloc_multipath();
+	struct multipath __attribute__((cleanup(cleanup_multipath))) *mpp =
+		alloc_multipath();
 	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
 	char __attribute__((cleanup(cleanup_charp))) *status = NULL;
 	struct config *conf;
@@ -772,11 +805,11 @@ static int add_map_without_path (struct vectors *vecs, const char *alias)
 	mpp->mpe = find_mpe(conf->mptable, mpp->wwid);
 	put_multipath_config(conf);
 
-	if ((rc = update_multipath_table__(mpp, vecs->pathvec, 0, params, status)) != DMP_OK)
+	if (update_multipath_table__(mpp, vecs->pathvec, 0, params, status) != DMP_OK ||
+	    !vector_alloc_slot(vecs->mpvec))
 		return DMP_ERR;
 
-	if (!vector_alloc_slot(vecs->mpvec))
-		return DMP_ERR;
+	/* Make sure mpp is not cleaned up on return */
 	vector_set_slot(vecs->mpvec, steal_ptr(mpp));
 
 	/*
@@ -1319,7 +1352,7 @@ rescan:
 		verify_paths(mpp);
 		mpp->action = ACT_RELOAD;
 		prflag = mpp->prflag;
-		mpath_pr_event_handle(pp, 0);
+		mpath_pr_event_handle(pp, 0, 0);
 	} else {
 		if (!should_multipath(pp, vecs->pathvec, vecs->mpvec)) {
 			orphan_path(pp, "only one path");
@@ -1403,7 +1436,7 @@ rescan:
 
 	if (retries >= 0) {
 		if ((mpp->prflag == PR_SET && prflag != PR_SET) || start_waiter)
-			pr_register_active_paths(mpp);
+			pr_register_active_paths(mpp, NULL);
 		condlog(2, "%s [%s]: path added to devmap %s",
 			pp->dev, pp->dev_t, mpp->alias);
 		return 0;
@@ -1411,7 +1444,8 @@ rescan:
 		goto fail;
 
 fail_map:
-	remove_map(mpp, vecs->pathvec, vecs->mpvec);
+	remove_map_from_mpvec(mpp, vecs->mpvec);
+	remove_map(mpp, vecs->pathvec);
 fail:
 	orphan_path(pp, "failed to add path");
 	return 1;
@@ -1809,8 +1843,8 @@ map_discovery (struct vectors * vecs)
 
 	vector_foreach_slot (vecs->mpvec, mpp, i)
 		if (update_multipath_table(mpp, vecs->pathvec, DI_DISCOVERY) != DMP_OK) {
-			remove_map(mpp, vecs->pathvec, vecs->mpvec);
-			i--;
+			vector_del_slot(vecs->mpvec, i--);
+			remove_map(mpp, vecs->pathvec);
 		}
 
 	return 0;
@@ -2474,6 +2508,27 @@ get_new_state(struct path *pp)
 	if (newstate == PATH_REMOVED)
 		newstate = PATH_DOWN;
 
+	/*
+	 * PATH_DISCONNECTED is an ephemeral state used to signal that a path
+	 * has been disconnected at the storage target (LUN unmapped). We use
+	 * it to set pp->disconnected for purge tracking, then immediately
+	 * convert it to PATH_DOWN for normal path failure handling.
+	 *
+	 * This ensures PATH_DISCONNECTED never gets stored in pp->state or
+	 * pp->chkrstate - it exists only as a transient signal from the
+	 * checker to trigger special handling before becoming PATH_DOWN.
+	 */
+	if (newstate == PATH_DISCONNECTED) {
+		if (pp->mpp->purge_disconnected == PURGE_DISCONNECTED_ON &&
+		    pp->disconnected == NOT_DISCONNECTED) {
+			condlog(2, "%s: mark (%s) path for purge", pp->dev,
+				checker_state_name(newstate));
+			pp->disconnected = DISCONNECTED_READY_FOR_PURGE;
+		}
+		/* Always convert to PATH_DOWN for normal processing */
+		newstate = PATH_DOWN;
+	}
+
 	if (newstate == PATH_WILD || newstate == PATH_UNCHECKED) {
 		condlog(2, "%s: unusable path (%s) - checker failed",
 			pp->dev, checker_state_name(newstate));
@@ -2486,8 +2541,8 @@ get_new_state(struct path *pp)
 	return newstate;
 }
 
-static int
-do_sync_mpp(struct vectors * vecs, struct multipath *mpp)
+/* This function may free paths. See check_removed_paths(). */
+static int do_sync_mpp(struct vectors *vecs, struct multipath *mpp)
 {
 	int i, ret;
 	struct path *pp;
@@ -2505,8 +2560,8 @@ do_sync_mpp(struct vectors * vecs, struct multipath *mpp)
 	return ret;
 }
 
-static int
-sync_mpp(struct vectors * vecs, struct multipath *mpp, unsigned int ticks)
+/* This function may free paths. See check_removed_paths(). */
+static int sync_mpp(struct vectors *vecs, struct multipath *mpp, unsigned int ticks)
 {
 	if (mpp->sync_tick)
 		mpp->sync_tick -= (mpp->sync_tick > ticks) ? ticks :
@@ -2545,6 +2600,7 @@ update_path_state (struct vectors * vecs, struct path * pp)
 		pp->tick = 1;
 		return CHECK_PATH_SKIPPED;
 	}
+
 	if (pp->recheck_wwid == RECHECK_WWID_ON &&
 	    (newstate == PATH_UP || newstate == PATH_GHOST) &&
 	    ((pp->state != PATH_UP && pp->state != PATH_GHOST) ||
@@ -2646,9 +2702,9 @@ update_path_state (struct vectors * vecs, struct path * pp)
 			 */
 			condlog(2, "%s: checking persistent "
 				"reservation registration", pp->dev);
-			mpath_pr_event_handle(pp, 0);
+			mpath_pr_event_handle(pp, 0, 0);
 			if (pp->mpp->prflag == PR_SET && prflag != PR_SET)
-				pr_register_active_paths(pp->mpp);
+				pr_register_active_paths(pp->mpp, NULL);
 		}
 
 		/*
@@ -3052,12 +3108,31 @@ static void enable_pathgroups(struct multipath *mpp)
 	}
 }
 
-static void checker_finished(struct vectors *vecs, unsigned int ticks)
+static void free_orphan_paths(vector pathvec)
+{
+	struct path *pp;
+	int i;
+
+	vector_foreach_slot (pathvec, pp, i) {
+		if (!pp->mpp && (pp->initialized == INIT_REMOVED ||
+				 pp->initialized == INIT_PARTIAL)) {
+			condlog(2, "%s: freeing orphan %s in %s state",
+				__func__, pp->dev,
+				pp->initialized == INIT_REMOVED ? "removed" : "partial");
+			vector_del_slot(pathvec, i--);
+			free_path(pp);
+		}
+	}
+}
+
+static void checker_finished(struct vectors *vecs, unsigned int ticks,
+			     struct list_head *purge_list)
 {
 	struct multipath *mpp;
 	bool uev_timed_out = false;
 	int i;
 
+	free_orphan_paths(vecs->pathvec);
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
 		bool inconsistent, prio_reload, failback_reload;
 		bool uev_wait_reload, ghost_reload;
@@ -3100,6 +3175,12 @@ static void checker_finished(struct vectors *vecs, unsigned int ticks)
 	if (uev_timed_out && !need_to_delay_reconfig(vecs))
 		unblock_reconfigure();
 	partial_retrigger_tick(vecs->pathvec);
+
+	/*
+	 * Build purge list for disconnected paths.
+	 * The caller will queue it after releasing vecs->lock.
+	 */
+	build_purge_list(vecs, purge_list);
 }
 
 static void *
@@ -3125,6 +3206,13 @@ checkerloop (void *ap)
 		int num_paths = 0, strict_timing;
 		unsigned int ticks = 0;
 		enum checker_state checker_state = CHECKER_STARTING;
+		LIST_HEAD(purge_list);
+
+		/*
+		 * Cleanup handler to free purge_list if thread is cancelled.
+		 * This prevents memory leaks during shutdown.
+		 */
+		pthread_cleanup_push(cleanup_purge_list, &purge_list);
 
 		if (set_config_state(DAEMON_RUNNING) != DAEMON_RUNNING)
 			/* daemon shutdown */
@@ -3169,8 +3257,22 @@ checkerloop (void *ap)
 				checker_state = update_paths(vecs, &num_paths,
 							     start_time.tv_sec);
 			if (checker_state == CHECKER_FINISHED)
-				checker_finished(vecs, ticks);
+				checker_finished(vecs, ticks, &purge_list);
 			lock_cleanup_pop(vecs->lock);
+		}
+
+		/*
+		 * Queue purge work for disconnected paths.
+		 * This is done after releasing vecs->lock to avoid holding
+		 * the lock while signaling the purge thread.
+		 */
+		if (!list_empty(&purge_list)) {
+			pthread_cleanup_push(cleanup_mutex, &purge_mutex);
+			pthread_mutex_lock(&purge_mutex);
+			pthread_testcancel();
+			list_splice_tail_init(&purge_list, &purge_queue);
+			pthread_cond_signal(&purge_cond);
+			pthread_cleanup_pop(1);
 		}
 
 		get_monotonic_time(&end_time);
@@ -3224,6 +3326,12 @@ checkerloop (void *ap)
 				break;
 			}
 		}
+
+		/*
+		 * Pop cleanup handler. Execute it (arg=1) to free purge_list
+		 * at the end of each iteration.
+		 */
+		pthread_cleanup_pop(1);
 	}
 	pthread_cleanup_pop(1);
 	return NULL;
@@ -3309,7 +3417,7 @@ configure (struct vectors * vecs, enum force_reload_types reload_type)
 	vector_foreach_slot(mpvec, mpp, i){
 		if (remember_wwid(mpp->wwid) == 1)
 			trigger_paths_udev_change(mpp, true);
-		pr_register_active_paths(mpp);
+		pr_register_active_paths(mpp, NULL);
 	}
 
 	/*
@@ -3324,8 +3432,8 @@ configure (struct vectors * vecs, enum force_reload_types reload_type)
 	 */
 	vector_foreach_slot(vecs->mpvec, mpp, i) {
 		if (wait_for_events(mpp, vecs)) {
-			remove_map(mpp, vecs->pathvec, vecs->mpvec);
-			i--;
+			vector_del_slot(vecs->mpvec, i--);
+			remove_map(mpp, vecs->pathvec);
 			continue;
 		}
 		if (setup_multipath(vecs, mpp))
@@ -3669,6 +3777,8 @@ static void cleanup_threads(void)
 
 	if (check_thr_started)
 		pthread_cancel(check_thr);
+	if (purge_thr_started)
+		pthread_cancel(purge_thr);
 	if (uevent_thr_started)
 		pthread_cancel(uevent_thr);
 	if (uxlsnr_thr_started)
@@ -3685,6 +3795,8 @@ static void cleanup_threads(void)
 
 	if (check_thr_started)
 		pthread_join(check_thr, NULL);
+	if (purge_thr_started)
+		pthread_join(purge_thr, NULL);
 	if (uevent_thr_started)
 		pthread_join(uevent_thr, NULL);
 	if (uxlsnr_thr_started)
@@ -3739,18 +3851,21 @@ static struct call_rcu_data *mp_rcu_data;
 
 static void cleanup_rcu(void)
 {
-	pthread_t rcu_thread;
-
 	/* Wait for any pending RCU calls */
 	rcu_barrier();
 	if (mp_rcu_data != NULL) {
+#if (URCU_VERSION < 0x000E00)
+		pthread_t rcu_thread;
 		rcu_thread = get_call_rcu_thread(mp_rcu_data);
+#endif
 		/* detach this thread from the RCU thread */
 		set_thread_call_rcu_data(NULL);
 		synchronize_rcu();
 		/* tell RCU thread to exit */
 		call_rcu_data_free(mp_rcu_data);
+#if (URCU_VERSION < 0x000E00)
 		pthread_join(rcu_thread, NULL);
+#endif
 	}
 	rcu_unregister_thread();
 }
@@ -3790,7 +3905,7 @@ child (__attribute__((unused)) void *param)
 	int rc;
 	struct config *conf;
 	char *envp;
-	enum daemon_status state;
+	enum daemon_status state = DAEMON_INIT;
 	int exit_code = 1;
 	int fpin_marginal_paths = 0;
 
@@ -3937,6 +4052,11 @@ child (__attribute__((unused)) void *param)
 		goto failed;
 	} else
 		check_thr_started = true;
+	if ((rc = pthread_create(&purge_thr, &misc_attr, purgeloop, vecs))) {
+		condlog(0, "failed to create purge loop thread: %d", rc);
+		goto failed;
+	} else
+		purge_thr_started = true;
 	if ((rc = pthread_create(&uevq_thr, &misc_attr, uevqloop, vecs))) {
 		condlog(0, "failed to create uevent dispatcher: %d", rc);
 		goto failed;
@@ -4267,7 +4387,10 @@ void unset_pr(struct multipath *mpp)
  *
  * The number of found keys must be at least as large as *nr_keys,
  * and if MPATH_PR_SUCCESS is returned and mpp->prflag is PR_SET after
- * the call, *nr_keys will be set to the number of found keys.
+ * the call, *nr_keys will be set to the number of found keys. Otherwise
+ * if mpp->prflag is PR_UNSET it will be set to 0. If MPATH_PR_SUCCESS
+ * is not returned and mpp->prflag is not PR_UNSET, nr_keys will not be
+ * changed.
  */
 static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *nr_keys)
 {
@@ -4277,8 +4400,10 @@ static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *n
 	bool was_set = (mpp->prflag == PR_SET);
 
 	/* If pr is explicitly unset, it must be manually set */
-	if (mpp->prflag == PR_UNSET)
+	if (mpp->prflag == PR_UNSET) {
+		*nr_keys = 0;
 		return MPATH_PR_SUCCESS;
+	}
 
 	if (!get_be64(mpp->reservation_key)) {
 		/* Nothing to do. Assuming pr mgmt feature is disabled*/
@@ -4286,6 +4411,7 @@ static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *n
 		condlog(was_set ? 2 : 4,
 			"%s: reservation_key not set in multipath.conf",
 			mpp->alias);
+		*nr_keys = 0;
 		return MPATH_PR_SUCCESS;
 	}
 
@@ -4293,8 +4419,10 @@ static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *n
 
 	ret = prin_do_scsi_ioctl(pp->dev, MPATH_PRIN_RKEY_SA, &resp, 0);
 	if (ret != MPATH_PR_SUCCESS) {
-		if (ret == MPATH_PR_ILLEGAL_REQ)
+		if (ret == MPATH_PR_ILLEGAL_REQ) {
 			unset_pr(mpp);
+			*nr_keys = 0;
+		}
 		condlog(0, "%s : pr in read keys service action failed Error=%d",
 			mpp->alias, ret);
 		return ret;
@@ -4335,22 +4463,32 @@ static int update_map_pr(struct multipath *mpp, struct path *pp, unsigned int *n
 		condlog(was_set ? 1 : 3,
 			"%s: %u keys found. needed %u. prflag unset.",
 			mpp->alias, nr_found, *nr_keys);
+		*nr_keys = 0;
 	}
 
 	return MPATH_PR_SUCCESS;
 }
 
 /*
- * This function is called with the number of registered keys that should be
+ * This function is called with two numbers
+ *
+ * nr_keys_needed: the number of registered keys that should be
  * seen for this device to know that the key has not been preempted while the
  * path was getting registered. If 0 is passed in, update_mpath_pr is called
  * before registering the key to figure out the number, assuming that at
  * least one key must exist.
  *
+ * nr_keys_wanted: Only used if nr_keys_needed is 0, so we don't know how
+ * many keys we currently have. If nr_keys_wanted in non-zero and the
+ * number of keys found by the initial call to update_map_pr() is at least
+ * as large as it, exit early, since we have all the keys we are expecting.
+ *
  * The function returns the number of keys that are registered or 0 if
  * it's unknown.
  */
-static unsigned int mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_needed)
+static unsigned int
+mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_needed,
+		      unsigned int nr_keys_wanted)
 {
 	struct multipath *mpp = pp->mpp;
 	int ret;
@@ -4366,6 +4504,8 @@ static unsigned int mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_
 		nr_keys_needed = 1;
 		if (update_map_pr(mpp, pp, &nr_keys_needed) != MPATH_PR_SUCCESS)
 			return 0;
+		if (nr_keys_wanted && nr_keys_wanted <= nr_keys_needed)
+			return nr_keys_needed;
 	}
 
 	check_prhold(mpp, pp);
@@ -4400,7 +4540,7 @@ retry:
 			clear_reg ? "Clearing" : "Setting", pp->dev, ret);
 	} else if (!clear_reg) {
 		if (update_map_pr(mpp, pp, &nr_keys_needed) != MPATH_PR_SUCCESS)
-			return 0;
+			return nr_keys_needed;
 		if (mpp->prflag != PR_SET) {
 			memset(&param, 0, sizeof(param));
 			clear_reg = true;

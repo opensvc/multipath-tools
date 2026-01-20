@@ -2,7 +2,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <unistd.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -536,19 +536,19 @@ static int mpath_prout_reg(struct multipath *mpp,int rq_servact, int rq_scope,
 			}
 		}
 		for (i = 0; i < count; i++) {
-			if (thread[i].param.status != MPATH_PR_SKIP &&
-			    thread[i].param.status != MPATH_PR_THREAD_ERROR) {
+			if (thread[i].param.status == MPATH_PR_SKIP)
+				continue;
+			if (thread[i].param.status != MPATH_PR_THREAD_ERROR) {
 				rc = pthread_join(thread[i].id, NULL);
 				if (rc) {
 					condlog(3, "%s: failed to join thread while retrying %d",
 						mpp->wwid, i);
 				}
-				if (thread[i].param.status ==
-				    MPATH_PR_RETRYABLE_ERROR)
-					retryable_error = true;
-				else if (status == MPATH_PR_SUCCESS)
-					status = thread[i].param.status;
 			}
+			if (thread[i].param.status == MPATH_PR_RETRYABLE_ERROR)
+				retryable_error = true;
+			else if (status == MPATH_PR_SUCCESS)
+				status = thread[i].param.status;
 		}
 		need_retry = false;
 	}
@@ -1001,12 +1001,12 @@ int do_mpath_persistent_reserve_out(vector curmp, vector pathvec, int fd,
 	case MPATH_PROUT_REG_SA:
 	case MPATH_PROUT_REG_IGN_SA:
 		if (unregistering)
-			update_prflag(mpp->alias, 0);
+			update_prflag(mpp, 0);
 		else
-			update_prflag(mpp->alias, 1);
+			update_prflag(mpp, 1);
 		break;
 	case MPATH_PROUT_CLEAR_SA:
-		update_prflag(mpp->alias, 0);
+		update_prflag(mpp, 0);
 		if (mpp->prkey_source == PRKEY_SOURCE_FILE)
 			update_prkey(mpp->alias, 0);
 		break;

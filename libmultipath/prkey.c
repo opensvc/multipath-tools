@@ -12,7 +12,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <errno.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 /* MPATH_F_APTPL_MASK is publicly defined in mpath_persist.h */
 #include <../libmpathpersist/mpath_persist.h>
 
@@ -50,7 +50,7 @@ static int parse_prkey(const char *ptr, uint64_t *prkey)
 	return 0;
 }
 
-int parse_prkey_flags(const char *ptr, uint64_t *prkey, uint8_t *flags)
+int parse_prkey_flags(char *ptr, uint64_t *prkey, uint8_t *flags)
 {
 	char *flagstr;
 

@@ -6,7 +6,7 @@
 #include "nvme-lib.h"
 #include <sys/types.h>
 #include <sys/sysmacros.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

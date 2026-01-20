@@ -10,12 +10,14 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <libudev.h>
 
 #ifndef __GLIBC_PREREQ
 #define __GLIBC_PREREQ(x, y) 0
 #endif
 
+#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
+
+struct udev_device;
 size_t strchop(char *);
 
 const char *libmp_basename(const char *filename);
@@ -86,29 +88,40 @@ typedef unsigned int bitfield_t;
 #endif
 #define bits_per_slot (sizeof(bitfield_t) * CHAR_BIT)
 
-struct bitfield {
-	unsigned int len;
-	bitfield_t bits[];
+union bitfield {
+	struct {
+		unsigned int len;
+		bitfield_t bits[];
+	};
+	/* for initialization in the BITFIELD macro */
+	struct {
+		unsigned int __len;
+		bitfield_t __bits[1];
+	};
 };
 
-#define BITFIELD(name, length)					\
-	struct {							\
-		unsigned int len;					\
-		bitfield_t bits[((length) - 1) / bits_per_slot + 1];	\
-	} __storage_for__ ## name = {					\
-		.len = (length),					\
-		.bits = { 0, },						\
+/*
+ * BITFIELD: define a static bitfield of length bits_per_slot
+ * (aka 64 on 64-bit architectures).
+ * gcc 4.9.2 (Debian Jessie) raises an error if the initializer for
+ * .__len comes first. Thus put .__bits first.
+ * Use e.g. BUILD_BUG_ON() to make sure the bitfield size is sufficient
+ * to hold the number of bits required.
+ */
+#define BITFIELD(name)							\
+	union bitfield __storage_for__ ## name = {			\
+		.__bits = { 0 },					\
+		.__len = (bits_per_slot),				\
 	}; \
-	struct bitfield *name = (struct bitfield *)& __storage_for__ ## name
+	union bitfield *name = & __storage_for__ ## name
 
-struct bitfield *alloc_bitfield(unsigned int maxbit);
+union bitfield *alloc_bitfield(unsigned int maxbit);
 
 void log_bitfield_overflow__(const char *f, unsigned int bit, unsigned int len);
 #define log_bitfield_overflow(bit, len) \
 	log_bitfield_overflow__(__func__, bit, len)
 
-static inline bool is_bit_set_in_bitfield(unsigned int bit,
-				       const struct bitfield *bf)
+static inline bool is_bit_set_in_bitfield(unsigned int bit, const union bitfield *bf)
 {
 	if (bit >= bf->len) {
 		log_bitfield_overflow(bit, bf->len);
@@ -118,7 +131,7 @@ static inline bool is_bit_set_in_bitfield(unsigned int bit,
 		  (1ULL << (bit % bits_per_slot)));
 }
 
-static inline void set_bit_in_bitfield(unsigned int bit, struct bitfield *bf)
+static inline void set_bit_in_bitfield(unsigned int bit, union bitfield *bf)
 {
 	if (bit >= bf->len) {
 		log_bitfield_overflow(bit, bf->len);
@@ -127,7 +140,7 @@ static inline void set_bit_in_bitfield(unsigned int bit, struct bitfield *bf)
 	bf->bits[bit / bits_per_slot] |= (1ULL << (bit % bits_per_slot));
 }
 
-static inline void clear_bit_in_bitfield(unsigned int bit, struct bitfield *bf)
+static inline void clear_bit_in_bitfield(unsigned int bit, union bitfield *bf)
 {
 	if (bit >= bf->len) {
 		log_bitfield_overflow(bit, bf->len);
@@ -146,5 +159,5 @@ static inline void clear_bit_in_bitfield(unsigned int bit, struct bitfield *bf)
 void cleanup_charp(char **p);
 void cleanup_ucharp(unsigned char **p);
 void cleanup_udev_device(struct udev_device **udd);
-void cleanup_bitfield(struct bitfield **p);
+void cleanup_bitfield(union bitfield **p);
 #endif /* UTIL_H_INCLUDED */

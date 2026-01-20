@@ -23,7 +23,8 @@ int update_mpp_paths(struct multipath * mpp, vector pathvec);
 int update_multipath_strings (struct multipath *mpp, vector pathvec);
 void extract_hwe_from_path(struct multipath * mpp);
 
-void remove_map (struct multipath *mpp, vector pathvec, vector mpvec);
+void remove_map_from_mpvec(const struct multipath *mpp, vector mpvec);
+void remove_map(struct multipath *mpp, vector pathvec);
 void remove_map_by_alias(const char *alias, struct vectors * vecs);
 void remove_maps (struct vectors * vecs);
 

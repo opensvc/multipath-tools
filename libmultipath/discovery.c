@@ -8,13 +8,15 @@
 #include <unistd.h>
 #include <limits.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/sysmacros.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
 #include <libgen.h>
-#include <libudev.h>
 
+#include "mt-udev-wrap.h"
 #include "checkers.h"
 #include "vector.h"
 #include "util.h"
@@ -325,19 +327,23 @@ static int
 sysfs_get_tgt_nodename(struct path *pp, char *node)
 {
 	const char *tgtname, *value;
-	struct udev_device *parent, *tgtdev;
+	struct udev_device *parent, *tgtdev, *device, *target;
 	int host, channel, tgtid = -1;
 
 	if (!pp->udev)
 		return 1;
-	parent = udev_device_get_parent_with_subsystem_devtype(pp->udev,
-							 "scsi", "scsi_device");
-	if (!parent)
+	device = udev_device_get_parent_with_subsystem_devtype(pp->udev, "scsi",
+							       "scsi_device");
+	if (!device)
 		return 1;
+	target = udev_device_get_parent_with_subsystem_devtype(device, "scsi",
+							       "scsi_target");
 	/* Check for SAS */
-	value = udev_device_get_sysattr_value(parent, "sas_address");
+	if (!target)
+		return 1;
+	value = udev_device_get_sysattr_value(device, "sas_address");
 	if (value) {
-		tgtdev = udev_device_get_parent(parent);
+		tgtdev = udev_device_get_parent(target);
 		while (tgtdev) {
 			char c;
 
@@ -362,7 +368,7 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 	}
 
 	/* Check for USB */
-	tgtdev = udev_device_get_parent(parent);
+	tgtdev = target;
 	while (tgtdev) {
 		value = udev_device_get_subsystem(tgtdev);
 		if (value && !strcmp(value, "usb")) {
@@ -375,11 +381,8 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 		}
 		tgtdev = udev_device_get_parent(tgtdev);
 	}
-	parent = udev_device_get_parent_with_subsystem_devtype(pp->udev, "scsi", "scsi_target");
-	if (!parent)
-		return 1;
 	/* Check for FibreChannel */
-	tgtdev = udev_device_get_parent(parent);
+	tgtdev = udev_device_get_parent(target);
 	value = udev_device_get_sysname(tgtdev);
 	if (value && sscanf(value, "rport-%d:%d-%d",
 		   &host, &channel, &tgtid) == 3) {
@@ -399,13 +402,15 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 				strlcpy(node, value, NODE_NAME_SIZE);
 				udev_device_unref(tgtdev);
 				return 0;
-			} else
+			} else {
 				udev_device_unref(tgtdev);
+				return 1;
+			}
 		}
 	}
 
 	/* Check for iSCSI */
-	parent = pp->udev;
+	parent = target;
 	tgtname = NULL;
 	while (parent) {
 		tgtname = udev_device_get_sysname(parent);
@@ -428,13 +433,14 @@ sysfs_get_tgt_nodename(struct path *pp, char *node)
 				strlcpy(node, value, NODE_NAME_SIZE);
 				udev_device_unref(tgtdev);
 				return 0;
-			}
-			else
+			} else {
 				udev_device_unref(tgtdev);
+				return 1;
+			}
 		}
 	}
 	/* Check for libata */
-	parent = pp->udev;
+	parent = target;
 	tgtname = NULL;
 	while (parent) {
 		tgtname = udev_device_get_sysname(parent);
@@ -876,10 +882,15 @@ sysfs_set_nexus_loss_tmo(struct path *pp)
 static void
 scsi_tmo_error_msg(struct path *pp)
 {
-	static BITFIELD(bf, LAST_BUS_PROTOCOL_ID + 1);
+	static BITFIELD(bf);
 	STRBUF_ON_STACK(proto_buf);
 	unsigned int proto_id = bus_protocol_id(pp);
 
+	/* make sure the bitfield is large enough */
+	BUILD_BUG_ON((LAST_BUS_PROTOCOL_ID + 1) > bits_per_slot);
+
+	if (is_bit_set_in_bitfield(proto_id, bf))
+		return;
 	snprint_path_protocol(&proto_buf, pp);
 	condlog(2, "%s: setting scsi timeouts is unsupported for protocol %s",
 		pp->dev, get_strbuf_str(&proto_buf));
@@ -2482,8 +2493,25 @@ int pathinfo(struct path *pp, struct config *conf, int mask)
 			    pp->state == PATH_UNCHECKED ||
 			    pp->state == PATH_WILD)
 				pp->chkrstate = pp->state = newstate;
+			/*
+			 * PATH_TIMEOUT and PATH_DISCONNECTED are ephemeral
+			 * states that should never be stored in pp->state.
+			 * Convert them to PATH_DOWN immediately.
+			 */
 			if (pp->state == PATH_TIMEOUT)
 				pp->state = PATH_DOWN;
+			if (pp->state == PATH_DISCONNECTED) {
+				int purge_enabled = pp->mpp &&
+						    pp->mpp->purge_disconnected ==
+							    PURGE_DISCONNECTED_ON;
+				if (purge_enabled &&
+				    pp->disconnected == NOT_DISCONNECTED) {
+					condlog(2, "%s: mark path for purge",
+						pp->dev);
+					pp->disconnected = DISCONNECTED_READY_FOR_PURGE;
+				}
+				pp->state = PATH_DOWN;
+			}
 			if (pp->state == PATH_UP && !pp->size) {
 				condlog(3, "%s: device size is 0, "
 					"path unusable", pp->dev);

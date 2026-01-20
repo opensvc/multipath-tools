@@ -43,6 +43,7 @@ static const char *checker_state_names[PATH_MAX_STATE] = {
 	[PATH_TIMEOUT] = "timeout",
 	[PATH_REMOVED] = "removed",
 	[PATH_DELAYED] = "delayed",
+	[PATH_DISCONNECTED] = "disconnected",
 };
 
 static LIST_HEAD(checkers);
@@ -363,6 +364,7 @@ static const char *generic_msg[CHECKER_GENERIC_MSGTABLE_SIZE] = {
 	[CHECKER_MSGID_DOWN] = " reports path is down",
 	[CHECKER_MSGID_GHOST] = " reports path is ghost",
 	[CHECKER_MSGID_UNSUPPORTED] = " doesn't support this device",
+	[CHECKER_MSGID_DISCONNECTED] = " no access to this device",
 };
 
 const char *checker_message(const struct checker *c)

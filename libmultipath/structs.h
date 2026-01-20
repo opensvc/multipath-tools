@@ -186,6 +186,29 @@ enum auto_resize_state {
 	AUTO_RESIZE_GROW_SHRINK,
 };
 
+/*
+ * purge_disconnected configuration option (per multipath device)
+ * Controls whether paths that become disconnected at the storage target
+ * should be automatically removed from the system via sysfs.
+ */
+enum purge_disconnected_states {
+	PURGE_DISCONNECTED_UNDEF = YNU_UNDEF,
+	PURGE_DISCONNECTED_OFF = YNU_NO, /* Don't purge */
+	PURGE_DISCONNECTED_ON = YNU_YES, /* Purge disconnected paths */
+};
+
+/*
+ * Path disconnection state (per path)
+ * Tracks whether a path has been marked for purge and whether it's already queued.
+ */
+enum path_disconnected_state {
+	NOT_DISCONNECTED,	       /* Path is not disconnected */
+	DISCONNECTED_READY_FOR_PURGE,  /* Path is disconnected and ready to be
+					  queued for purge */
+	DISCONNECTED_QUEUED_FOR_PURGE, /* Path is disconnected and already
+					  queued for purge */
+};
+
 #define PROTOCOL_UNSET -1
 
 enum scsi_protocol {
@@ -382,6 +405,8 @@ struct path {
 	int dmstate;
 	int chkrstate;
 	int oldstate;
+	enum path_disconnected_state disconnected; /* Marked for purge due to
+						      disconnection */
 	int failcount;
 	int priority;
 	int pgindex;
@@ -483,6 +508,7 @@ struct multipath {
 	int ghost_delay;
 	int ghost_delay_tick;
 	int queue_mode;
+	int purge_disconnected;
 	unsigned int sync_tick;
 	int checker_count;
 	enum prio_update_type prio_update;
@@ -577,14 +603,13 @@ void *set_mpp_hwe(struct multipath *mpp, const struct path *pp);
 void uninitialize_path(struct path *pp);
 void free_path (struct path *);
 void free_pathvec (vector vec, enum free_path_mode free_paths);
-void free_pathgroup (struct pathgroup * pgp, enum free_path_mode free_paths);
-void free_pgvec (vector pgvec, enum free_path_mode free_paths);
-void free_multipath (struct multipath *, enum free_path_mode free_paths);
+void cleanup_pathvec_and_free_paths(vector *vec);
+void free_pathgroup(struct pathgroup *pgp);
+void free_pgvec(vector pgvec);
+void free_multipath(struct multipath *mpp);
 void cleanup_multipath(struct multipath **pmpp);
-void cleanup_multipath_and_paths(struct multipath **pmpp);
-void free_multipath_attributes (struct multipath *);
-void drop_multipath (vector mpvec, char * wwid, enum free_path_mode free_paths);
-void free_multipathvec (vector mpvec, enum free_path_mode free_paths);
+void free_multipath_attributes(struct multipath *);
+void free_multipathvec(vector mpvec);
 
 struct adapter_group * alloc_adaptergroup(void);
 struct host_group * alloc_hostgroup(void);

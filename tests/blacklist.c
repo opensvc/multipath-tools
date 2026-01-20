@@ -5,7 +5,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include "globals.c"
 #include "blacklist.h"
 #include "test-log.h"

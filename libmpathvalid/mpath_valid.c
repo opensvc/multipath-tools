@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <libdevmapper.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <errno.h>
 
 #include "devmapper.h"

@@ -1,6 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Copyright (c) 2020 SUSE LLC
- * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * libmultipath ABI
  *
@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMULTIPATH_30.0.0 {
+LIBMULTIPATH_32.0.0 {
 global:
 	/* symbols referenced by multipath and multipathd */
 	add_foreign;
@@ -68,7 +68,8 @@ global:
 	check_foreign;
 	cleanup_bindings;
 	cleanup_lock;
-	cleanup_multipath_and_paths;
+	cleanup_multipath;
+	cleanup_pathvec_and_free_paths;
 	cleanup_udev_device_ptr;
 	cleanup_udev_enumerate_ptr;
 	coalesce_paths;
@@ -85,7 +86,6 @@ global:
 	dm_geteventnr;
 	dm_get_major_minor;
 	dm_get_maps;
-	dm_get_multipath;
 	dm_is_mpath;
 	dm_mapname;
 	dm_prereq;
@@ -159,6 +159,7 @@ global:
 	remove_map;
 	remove_map_by_alias;
 	remove_map_callback;
+	remove_map_from_mpvec;
 	remove_maps;
 	remove_wwid;
 	replace_wwids;
@@ -241,8 +242,6 @@ global:
 	sysfs_attr_set_value;
 	sysfs_attr_get_value;
 	sysfs_get_asymmetric_access_state;
-
-	/* foreign */
 
 local:
 	*;

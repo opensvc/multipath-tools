@@ -28,7 +28,7 @@
 #include <pthread.h>
 #include <sys/mman.h>
 #include <sys/time.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 
 #include "autoconfig.h"
 #include "debug.h"

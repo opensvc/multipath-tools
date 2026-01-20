@@ -1,6 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Copyright (c) 2020 SUSE LLC
- * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * libmultipath ABI (libmpathutil part)
  *
@@ -43,7 +43,7 @@ LIBMPATHCOMMON_1.0.0 {
 	put_multipath_config;
 };
 
-LIBMPATHUTIL_4.0 {
+LIBMPATHUTIL_5.0 {
 global:
 	alloc_bitfield;
 	alloc_strvec;
@@ -93,6 +93,68 @@ global:
 	log_thread_stop;
 	logsink;
 	msort;
+
+	mt_udev_ref;
+	mt_udev_unref;
+	mt_udev_new;
+
+	mt_udev_list_entry_get_next;
+	mt_udev_list_entry_get_by_name;
+	mt_udev_list_entry_get_name;
+	mt_udev_list_entry_get_value;
+
+	mt_udev_device_ref;
+	mt_udev_device_unref;
+
+	mt_udev_device_new_from_syspath;
+	mt_udev_device_new_from_devnum;
+	mt_udev_device_new_from_subsystem_sysname;
+	mt_udev_device_new_from_device_id;
+	mt_udev_device_new_from_environment;
+
+	mt_udev_device_get_udev;
+	mt_udev_device_get_parent;
+	mt_udev_device_get_parent_with_subsystem_devtype;
+	mt_udev_device_get_devpath;
+	mt_udev_device_get_subsystem;
+	mt_udev_device_get_devtype;
+	mt_udev_device_get_syspath;
+	mt_udev_device_get_sysname;
+	mt_udev_device_get_devnum;
+	mt_udev_device_get_is_initialized;
+	mt_udev_device_get_property_value;
+	mt_udev_device_get_seqnum;
+	mt_udev_device_set_sysattr_value;
+	mt_udev_device_get_sysattr_value;
+	mt_udev_device_get_driver;
+	mt_udev_device_get_devnode;
+
+	mt_udev_device_get_properties_list_entry;
+
+	mt_udev_monitor_new_from_netlink;
+	mt_udev_monitor_enable_receiving;
+	mt_udev_monitor_get_fd;
+	mt_udev_monitor_receive_device;
+	mt_udev_monitor_filter_add_match_subsystem_devtype;
+	mt_udev_monitor_ref;
+	mt_udev_monitor_unref;
+	mt_udev_monitor_set_receive_buffer_size;
+
+	mt_udev_enumerate_new;
+	mt_udev_enumerate_ref;
+	mt_udev_enumerate_unref;
+	mt_udev_enumerate_add_match_subsystem;
+	mt_udev_enumerate_scan_devices;
+	mt_udev_enumerate_get_list_entry;
+	mt_udev_enumerate_add_nomatch_subsystem;
+	mt_udev_enumerate_add_match_sysattr;
+	mt_udev_enumerate_add_nomatch_sysattr;
+	mt_udev_enumerate_add_match_property;
+	mt_udev_enumerate_add_match_tag;
+	mt_udev_enumerate_add_match_parent;
+	mt_udev_enumerate_add_match_is_initialized;
+	mt_udev_enumerate_add_syspath;
+
 	normalize_timespec;
 	parse_devt;
 	print_strbuf;

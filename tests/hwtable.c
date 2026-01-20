@@ -7,8 +7,8 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#include <cmocka.h>
-#include <libudev.h>
+#include "cmocka-compat.h"
+#include "mt-udev-wrap.h"
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -505,7 +505,7 @@ static void replicate_config(const struct hwt_state *hwt, bool local)
 	DUMP_CFG_STR(cfg2);
 #endif
 
-	assert_int_equal(strlen(cfg2), strlen(cfg1));
+	assert_uint_equal(strlen(cfg2), strlen(cfg1));
 	assert_string_equal(cfg2, cfg1);
 	free(cfg1);
 	free(cfg2);

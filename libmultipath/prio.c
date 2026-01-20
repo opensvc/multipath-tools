@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <dlfcn.h>
 #include <sys/stat.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 
 #include "debug.h"
 #include "util.h"

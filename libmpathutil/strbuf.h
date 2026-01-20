@@ -1,6 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (c) 2021 SUSE LLC
- * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef STRBUF_H_INCLUDED
 #define STRBUF_H_INCLUDED

@@ -11,7 +11,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include <sys/sysmacros.h>
 
 #include "globals.c"
@@ -35,7 +35,7 @@ bool __wrap_sysfs_is_multipathed(struct path *pp, bool set_wwid)
 	assert_non_null(pp);
 	assert_int_not_equal(strlen(pp->dev), 0);
 	if (is_multipathed && set_wwid)
-		strlcpy(pp->wwid, mock_ptr_type(char *), WWID_SIZE);
+		strlcpy(pp->wwid, mock_ptr_type(const char *), WWID_SIZE);
 	return is_multipathed;
 }
 
@@ -59,7 +59,7 @@ int __wrap_mpath_disconnect(int fd)
 struct udev_device *__wrap_udev_device_new_from_subsystem_sysname(struct udev *udev, const char *subsystem, const char *sysname)
 {
 	bool passed = mock_type(bool);
-	assert_string_equal(sysname, mock_ptr_type(char *));
+	assert_string_equal(sysname, mock_ptr_type(const char *));
 	if (passed)
 		return &test_udev;
 	return NULL;
@@ -68,16 +68,16 @@ struct udev_device *__wrap_udev_device_new_from_subsystem_sysname(struct udev *u
 /* For devtype check */
 const char *__wrap_udev_device_get_property_value(struct udev_device *udev_device, const char *property)
 {
-	check_expected(property);
-	return mock_ptr_type(char *);
+	check_expected_ptr(property);
+	return mock_ptr_type(const char *);
 }
 
 /* For the "hidden" check in pathinfo() */
 const char *__wrap_udev_device_get_sysattr_value(struct udev_device *udev_device,
 					 const char *sysattr)
 {
-	check_expected(sysattr);
-	return mock_ptr_type(char *);
+	check_expected_ptr(sysattr);
+	return mock_ptr_type(const char *);
 }
 
 /* For pathinfo() -> is_claimed_by_foreign() */
@@ -89,7 +89,7 @@ int __wrap_add_foreign(struct udev_device *udev_device)
 /* For is_device_used() */
 const char *__wrap_udev_device_get_sysname(struct udev_device *udev_device)
 {
-	return mock_ptr_type(char *);
+	return mock_ptr_type(const char *);
 }
 
 /* called from pathinfo() */
@@ -121,7 +121,7 @@ int __wrap_sysfs_get_size(struct path *pp, unsigned long long * size)
 /* called in pathinfo() before filter_property() */
 int __wrap_select_getuid(struct config *conf, struct path *pp)
 {
-	pp->uid_attribute = mock_ptr_type(char *);
+	pp->uid_attribute = mock_ptr_type(const char *);
 	return 0;
 }
 
@@ -131,7 +131,7 @@ int __wrap_pathinfo(struct path *pp, struct config *conf, int mask)
 {
 	int ret = mock_type(int);
 
-	assert_string_equal(pp->dev, mock_ptr_type(char *));
+	assert_string_equal(pp->dev, mock_ptr_type(const char *));
 	assert_int_equal(mask, DI_SYSFS | DI_WWID | DI_BLACKLIST);
 	if (ret == PATHINFO_REAL) {
 		/* for test_filter_property() */
@@ -139,7 +139,7 @@ int __wrap_pathinfo(struct path *pp, struct config *conf, int mask)
 		return ret;
 	} else if (ret == PATHINFO_OK) {
 		pp->uid_attribute = "ID_TEST";
-		strlcpy(pp->wwid, mock_ptr_type(char *), WWID_SIZE);
+		strlcpy(pp->wwid, mock_ptr_type(const char *), WWID_SIZE);
 	} else
 		memset(pp->wwid, 0, WWID_SIZE);
 	return ret;
@@ -156,20 +156,20 @@ int __wrap_filter_property(struct config *conf, struct udev_device *udev,
 int __wrap_is_failed_wwid(const char *wwid)
 {
 	int ret = mock_type(int);
-	assert_string_equal(wwid, mock_ptr_type(char *));
+	assert_string_equal(wwid, mock_ptr_type(const char *));
 	return ret;
 }
 
 const char *__wrap_udev_device_get_syspath(struct udev_device *udevice)
 {
-	return mock_ptr_type(char *);
+	return mock_ptr_type(const char *);
 }
 
 int __wrap_check_wwids_file(char *wwid, int write_wwid)
 {
 	bool passed = mock_type(bool);
 	assert_int_equal(write_wwid, 0);
-	assert_string_equal(wwid, mock_ptr_type(char *));
+	assert_string_equal(wwid, mock_ptr_type(const char *));
 	if (passed)
 		return 0;
 	else
@@ -180,7 +180,7 @@ int __wrap_dm_find_map_by_wwid(const char *wwid, char *name,
 			       struct dm_info *dmi)
 {
 	int ret = mock_type(int);
-	assert_string_equal(wwid, mock_ptr_type(char *));
+	assert_string_equal(wwid, mock_ptr_type(const char *));
 	return ret;
 }
 

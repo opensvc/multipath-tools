@@ -12,7 +12,7 @@ LIBDEPS += -lpthread -ldl -ludev -L$(mpathcmddir) -lmpathcmd $(SYSTEMD_LIBDEPS) 
 # they need to be recompiled for unit tests
 
 # other object files
-OBJS := parser.o vector.o util.o debug.o time-util.o \
+OBJS := mt-libudev.o parser.o vector.o util.o debug.o time-util.o \
 	uxsock.o log_pthread.o log.o strbuf.o globals.o msort.o
 
 all:	$(DEVLIB)

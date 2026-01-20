@@ -15,12 +15,18 @@ on:
 
 jobs:
   reference-abi:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - name: get parent tag
+      - name: get parent tag (push)
         run: >
           echo ${{ github.ref }} |
           sed -E 's,refs/heads/stable-([0-9]\.[0-9]*)\.y,PARENT_TAG=\1.0,' >> $GITHUB_ENV
+        if: ${{ github.event_name == 'push' }}
+      - name: get parent tag (PR)
+        run: >
+          echo ${{ github.base_ref }} |
+          sed -E 's,stable-([0-9]\.[0-9]*)\.y,PARENT_TAG=\1.0,' >> $GITHUB_ENV
+        if: ${{ github.event_name == 'pull_request' }}
       - name: assert parent tag
         run: /bin/false
         if: ${{ env.PARENT_TAG == '' }}
@@ -32,12 +38,13 @@ jobs:
           gcc make pkg-config abigail-tools
           libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
           libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
+          libmount-dev
       - name: checkout ${{ env.PARENT_TAG }}
         uses: actions/checkout@v4
         with:
           ref: ${{ env.PARENT_TAG }}
       - name: build ABI for ${{ env.PARENT_TAG }}
-        run: make -j$(grep -c ^processor /proc/cpuinfo) -Orecurse abi
+        run: make -j$(nproc) -Orecurse abi
       - name: save ABI
         uses: actions/upload-artifact@v4
         with:
@@ -45,20 +52,26 @@ jobs:
           path: abi
 
   check-abi:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: reference-abi
     steps:
-      - name: get parent tag
+      - name: get parent tag (push)
         run: >
           echo ${{ github.ref }} |
           sed -E 's,refs/heads/stable-([0-9]\.[0-9]*)\.y,PARENT_TAG=\1.0,' >> $GITHUB_ENV
+        if: ${{ github.event_name == 'push' }}
+      - name: get parent tag (PR)
+        run: >
+          echo ${{ github.base_ref }} |
+          sed -E 's,stable-([0-9]\.[0-9]*)\.y,PARENT_TAG=\1.0,' >> $GITHUB_ENV
+        if: ${{ github.event_name == 'pull_request' }}
       - name: assert parent tag
         run: /bin/false
         if: ${{ env.PARENT_TAG == '' }}
-      - name: checkout ${{ env.PARENT_TAG }}
+      - name: checkout ${{ github.ref }}
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.PARENT_TAG }}
+          ref: ${{ github.ref }}
       - name: download ABI for ${{ env.PARENT_TAG }}
         id: download_abi
         uses: actions/download-artifact@v4
@@ -74,9 +87,10 @@ jobs:
           gcc make pkg-config abigail-tools
           libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
           libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
+          libmount-dev
       - name: check ABI of ${{ github.ref }} against ${{ env.PARENT_TAG }}
         id: check_abi
-        run: make -j$(grep -c ^processor /proc/cpuinfo) -Orecurse abi-test
+        run: make -j$(nproc) -Orecurse abi-test
         continue-on-error: true
       - name: save differences
         if: ${{ steps.check_abi.outcome != 'success' }}

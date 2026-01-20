@@ -198,6 +198,16 @@ retry:
 				*msgid = MSG_TUR_TRANSITIONING;
 				return PATH_PENDING;
 			}
+		} else if (key == 0x5) {
+			/* Illegal request */
+			if (asc == 0x25 && ascq == 0x00) {
+				/*
+				 * LUN NOT SUPPORTED: unmapped at target.
+				 * Signals pp->disconnected, becomes PATH_DOWN.
+				 */
+				*msgid = CHECKER_MSGID_DISCONNECTED;
+				return PATH_DISCONNECTED;
+			}
 		}
 		*msgid = CHECKER_MSGID_DOWN;
 		return PATH_DOWN;

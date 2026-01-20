@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 
 #include "util.h"
 #include "checkers.h"
@@ -181,6 +181,7 @@ static void update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 					condlog(2, "%s: discarding non-existing path %s",
 						mpp->alias, pp->dev_t);
 					vector_del_slot(pgp->paths, j--);
+					pp->mpp = NULL;
 					free_path(pp);
 					must_reload = true;
 					continue;
@@ -201,6 +202,7 @@ static void update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 						condlog(1, "%s: error %d in pathinfo, discarding path",
 							pp->dev, rc);
 						vector_del_slot(pgp->paths, j--);
+						pp->mpp = NULL;
 						free_path(pp);
 						must_reload = true;
 						continue;
@@ -254,7 +256,7 @@ static void update_pathvec_from_dm(vector pathvec, struct multipath *mpp,
 	delete_pg:
 		condlog(2, "%s: removing empty pathgroup %d", mpp->alias, i);
 		vector_del_slot(mpp->pg, i--);
-		free_pathgroup(pgp, KEEP_PATHS);
+		free_pathgroup(pgp);
 		must_reload = true;
 		/* Invalidate pgindex for all other pathgroups */
 		pg_deleted = true;
@@ -369,12 +371,16 @@ err:
 	return 1;
 }
 
-void orphan_path(struct path *pp, const char *reason)
+static void orphan_path__(struct path *pp, const char *reason)
 {
 	condlog(3, "%s: orphan path, %s", pp->dev, reason);
-	pp->mpp = NULL;
-	pp->pgindex = 0;
 	uninitialize_path(pp);
+}
+
+void orphan_path(struct path *pp, const char *reason)
+{
+	pp->mpp = NULL;
+	orphan_path__(pp, reason);
 }
 
 static void orphan_paths(vector pathvec, struct multipath *mpp, const char *reason)
@@ -383,19 +389,10 @@ static void orphan_paths(vector pathvec, struct multipath *mpp, const char *reas
 	struct path * pp;
 
 	vector_foreach_slot (pathvec, pp, i) {
-		if (pp->mpp == mpp) {
-			if (pp->initialized == INIT_REMOVED ||
-			    pp->initialized == INIT_PARTIAL) {
-				condlog(3, "%s: freeing path in %s state",
-					pp->dev,
-					pp->initialized == INIT_REMOVED ?
-					"removed" : "partial");
-				vector_del_slot(pathvec, i--);
-				free_path(pp);
-			} else
-				orphan_path(pp, reason);
-		} else if (pp->add_when_online &&
-			   strncmp(mpp->wwid, pp->wwid, WWID_SIZE) == 0) {
+		if (pp->mpp == mpp)
+			orphan_path(pp, reason);
+		else if (pp->add_when_online &&
+			 strncmp(mpp->wwid, pp->wwid, WWID_SIZE) == 0) {
 			pp->add_when_online = false;
 		}
 	}
@@ -403,16 +400,13 @@ static void orphan_paths(vector pathvec, struct multipath *mpp, const char *reas
 
 void set_path_removed(struct path *pp)
 {
-	struct multipath *mpp = pp->mpp;
-
-	orphan_path(pp, "removed");
 	/*
 	 * Keep link to mpp. It will be removed when the path
 	 * is successfully removed from the map.
 	 */
-	if (!mpp)
+	if (!pp->mpp)
 		condlog(0, "%s: internal error: mpp == NULL", pp->dev);
-	pp->mpp = mpp;
+	orphan_path__(pp, "removed");
 	pp->initialized = INIT_REMOVED;
 }
 
@@ -420,30 +414,26 @@ void remove_map_callback(struct multipath *mpp __attribute__((unused)))
 {
 }
 
-void
-remove_map(struct multipath *mpp, vector pathvec, vector mpvec)
+void remove_map_from_mpvec(const struct multipath *mpp, vector mpvec)
 {
-	int i;
+	int i = find_slot(mpvec, mpp);
 
+	if (i != -1)
+		vector_del_slot(mpvec, i);
+}
+
+void remove_map(struct multipath *mpp, vector pathvec)
+{
 	remove_map_callback(mpp);
 
-	free_pathvec(mpp->paths, KEEP_PATHS);
-	free_pgvec(mpp->pg, KEEP_PATHS);
-	mpp->paths = mpp->pg = NULL;
-
 	/*
-	 * clear references to this map
+	 * clear references to this map.
+	 * This needs to be called before free_multipath(),
+	 * because of the add_when_online logic.
 	 */
 	orphan_paths(pathvec, mpp, "map removed internally");
 
-	if (mpvec &&
-	    (i = find_slot(mpvec, (void *)mpp)) != -1)
-		vector_del_slot(mpvec, i);
-
-	/*
-	 * final free
-	 */
-	free_multipath(mpp, KEEP_PATHS);
+	free_multipath(mpp);
 }
 
 void
@@ -452,7 +442,8 @@ remove_map_by_alias(const char *alias, struct vectors * vecs)
 	struct multipath * mpp = find_mp_by_alias(vecs->mpvec, alias);
 	if (mpp) {
 		condlog(2, "%s: removing map by alias", alias);
-		remove_map(mpp, vecs->pathvec, vecs->mpvec);
+		remove_map_from_mpvec(mpp, vecs->mpvec);
+		remove_map(mpp, vecs->pathvec);
 	}
 }
 
@@ -466,7 +457,7 @@ remove_maps(struct vectors * vecs)
 		return;
 
 	vector_foreach_slot (vecs->mpvec, mpp, i)
-		remove_map(mpp, vecs->pathvec, NULL);
+		remove_map(mpp, vecs->pathvec);
 
 	vector_free(vecs->mpvec);
 	vecs->mpvec = NULL;
@@ -573,6 +564,34 @@ static struct path *find_devt_in_pathgroups(const struct multipath *mpp,
 	return NULL;
 }
 
+/*
+ * check_removed_paths()
+ *
+ * This function removes paths from the pathvec and frees them if they have
+ * been marked for removal (INIT_REMOVED, INIT_PARTIAL).
+ * This is important because some callers (e.g. uev_add_path->ev_remove_path())
+ * rely on the paths being actually gone when the call stack returns.
+ * Be sure not to call it while these paths are still referenced elsewhere
+ * (e.g. from coalesce_paths(), where curmp may still reference them).
+ *
+ * Most important call stacks in multipath-tools 0.13.0:
+ *
+ * checker_finished()
+ *   sync_mpp()
+ *     do_sync_mpp()
+ *       update_multipath_strings()
+ *         sync_paths()
+ *           check_removed_paths()
+ *
+ * [multiple callers including update_map(), ev_remove_path(), ...]
+ *   setup_multipath()
+ *     refresh_multipath()
+ *       update_multipath_strings()
+ *         sync_paths()
+ *           check_removed_paths()
+ *
+ * refresh_multipath() is also called from a couple of CLI handlers.
+ */
 static void check_removed_paths(const struct multipath *mpp, vector pathvec)
 {
 	struct path *pp;
@@ -588,11 +607,13 @@ static void check_removed_paths(const struct multipath *mpp, vector pathvec)
 				pp->initialized == INIT_REMOVED ?
 				"removed" : "partial");
 			vector_del_slot(pathvec, i--);
+			pp->mpp = NULL;
 			free_path(pp);
 		}
 	}
 }
 
+/* This function may free paths. See check_removed_paths(). */
 void sync_paths(struct multipath *mpp, vector pathvec)
 {
 	struct path *pp;
@@ -618,11 +639,15 @@ void sync_paths(struct multipath *mpp, vector pathvec)
 	check_removed_paths(mpp, pathvec);
 	update_mpp_paths(mpp, pathvec);
 	vector_foreach_slot (mpp->paths, pp, i)
-		pp->mpp = mpp;
+		if (pp->mpp != mpp) {
+			condlog(2, "%s: %s: mpp of %s was %p, fixing to %p",
+				__func__, mpp->alias, pp->dev_t, pp->mpp, mpp);
+			pp->mpp = mpp;
+		};
 }
 
-int
-update_multipath_strings(struct multipath *mpp, vector pathvec)
+/* This function may free paths. See check_removed_paths(). */
+int update_multipath_strings(struct multipath *mpp, vector pathvec)
 {
 	struct pathgroup *pgp;
 	int i, r = DMP_ERR;
@@ -634,7 +659,7 @@ update_multipath_strings(struct multipath *mpp, vector pathvec)
 	condlog(4, "%s: %s", mpp->alias, __FUNCTION__);
 
 	free_multipath_attributes(mpp);
-	free_pgvec(mpp->pg, KEEP_PATHS);
+	free_pgvec(mpp->pg);
 	mpp->pg = NULL;
 
 	r = update_multipath_table(mpp, pathvec, 0);
@@ -832,7 +857,8 @@ struct multipath *add_map_with_path(struct vectors *vecs, struct path *pp,
 	return mpp;
 
 out:
-	remove_map(mpp, vecs->pathvec, vecs->mpvec);
+	remove_map_from_mpvec(mpp, vecs->mpvec);
+	remove_map(mpp, vecs->pathvec);
 	return NULL;
 }
 

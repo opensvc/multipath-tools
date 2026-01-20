@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <libdevmapper.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <ctype.h>
 
 #include "checkers.h"
@@ -150,6 +150,7 @@ uninitialize_path(struct path *pp)
 	pp->uid_attribute = NULL;
 	pp->checker_timeout = 0;
 	pp->pending_ticks = 0;
+	pp->pgindex = 0;
 
 	if (checker_selected(&pp->checker))
 		checker_put(&pp->checker);
@@ -169,6 +170,9 @@ free_path (struct path * pp)
 	if (!pp)
 		return;
 
+	if (pp->mpp)
+		condlog(0, "%s: INTERNAL ERROR: path %s references a map",
+			__func__, pp->dev_t);
 	uninitialize_path(pp);
 
 	if (pp->udev) {
@@ -199,6 +203,11 @@ free_pathvec (vector vec, enum free_path_mode free_paths)
 	vector_free(vec);
 }
 
+void cleanup_pathvec_and_free_paths(vector *vec)
+{
+	free_pathvec(*vec, FREE_PATHS);
+}
+
 struct pathgroup *
 alloc_pathgroup (void)
 {
@@ -220,18 +229,16 @@ alloc_pathgroup (void)
 	return pgp;
 }
 
-void
-free_pathgroup (struct pathgroup * pgp, enum free_path_mode free_paths)
+void free_pathgroup(struct pathgroup *pgp)
 {
 	if (!pgp)
 		return;
 
-	free_pathvec(pgp->paths, free_paths);
+	free_pathvec(pgp->paths, KEEP_PATHS);
 	free(pgp);
 }
 
-void
-free_pgvec (vector pgvec, enum free_path_mode free_paths)
+void free_pgvec(vector pgvec)
 {
 	int i;
 	struct pathgroup * pgp;
@@ -239,18 +246,8 @@ free_pgvec (vector pgvec, enum free_path_mode free_paths)
 	if (!pgvec)
 		return;
 
-	vector_foreach_slot(pgvec, pgp, i) {
-
-		/* paths are going to be re-grouped, reset pgindex */
-		if (free_paths != FREE_PATHS) {
-			struct path *pp;
-			int j;
-
-			vector_foreach_slot(pgp->paths, pp, j)
-				pp->pgindex = 0;
-		}
-		free_pathgroup(pgp, free_paths);
-	}
+	vector_foreach_slot (pgvec, pgp, i)
+		free_pathgroup(pgp);
 
 	vector_free(pgvec);
 }
@@ -303,9 +300,12 @@ void free_multipath_attributes(struct multipath *mpp)
 	}
 }
 
-void
-free_multipath (struct multipath * mpp, enum free_path_mode free_paths)
+void free_multipath(struct multipath *mpp)
 {
+	struct pathgroup *pg;
+	struct path *pp;
+	int i, j;
+
 	if (!mpp)
 		return;
 
@@ -315,24 +315,17 @@ free_multipath (struct multipath * mpp, enum free_path_mode free_paths)
 		free(mpp->alias);
 		mpp->alias = NULL;
 	}
-
-	if (!free_paths && mpp->pg) {
-		struct pathgroup *pgp;
-		struct path *pp;
-		int i, j;
-
-		/*
-		 * Make sure paths carry no reference to this mpp any more
-		 */
-		vector_foreach_slot(mpp->pg, pgp, i) {
-			vector_foreach_slot(pgp->paths, pp, j)
-				if (pp->mpp == mpp)
-					pp->mpp = NULL;
-		}
+	vector_foreach_slot (mpp->pg, pg, i) {
+		vector_foreach_slot (pg->paths, pp, j)
+			if (pp->mpp == mpp)
+				pp->mpp = NULL;
 	}
-
-	free_pathvec(mpp->paths, free_paths);
-	free_pgvec(mpp->pg, free_paths);
+	vector_foreach_slot (mpp->paths, pp, i)
+		if (pp->mpp == mpp)
+			pp->mpp = NULL;
+	free_pathvec(mpp->paths, KEEP_PATHS);
+	free_pgvec(mpp->pg);
+	mpp->paths = mpp->pg = NULL;
 	if (mpp->hwe) {
 		vector_free(mpp->hwe);
 		mpp->hwe = NULL;
@@ -344,35 +337,10 @@ free_multipath (struct multipath * mpp, enum free_path_mode free_paths)
 void cleanup_multipath(struct multipath **pmpp)
 {
 	if (*pmpp)
-		free_multipath(*pmpp, KEEP_PATHS);
+		free_multipath(*pmpp);
 }
 
-void cleanup_multipath_and_paths(struct multipath **pmpp)
-{
-	if (*pmpp)
-		free_multipath(*pmpp, FREE_PATHS);
-}
-
-void
-drop_multipath (vector mpvec, char * wwid, enum free_path_mode free_paths)
-{
-	int i;
-	struct multipath * mpp;
-
-	if (!mpvec)
-		return;
-
-	vector_foreach_slot (mpvec, mpp, i) {
-		if (!strncmp(mpp->wwid, wwid, WWID_SIZE)) {
-			free_multipath(mpp, free_paths);
-			vector_del_slot(mpvec, i);
-			return;
-		}
-	}
-}
-
-void
-free_multipathvec (vector mpvec, enum free_path_mode free_paths)
+void free_multipathvec(vector mpvec)
 {
 	int i;
 	struct multipath * mpp;
@@ -381,7 +349,7 @@ free_multipathvec (vector mpvec, enum free_path_mode free_paths)
 		return;
 
 	vector_foreach_slot (mpvec, mpp, i)
-		free_multipath(mpp, free_paths);
+		free_multipath(mpp);
 
 	vector_free(mpvec);
 }

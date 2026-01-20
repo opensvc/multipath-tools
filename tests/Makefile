@@ -5,7 +5,7 @@ TESTDIR := $(CURDIR)
 
 CPPFLAGS += -I$(multipathdir) -I$(mpathutildir) -I$(mpathcmddir) -I$(daemondir) \
 	-DTESTCONFDIR=\"$(TESTDIR)/conf.d\"
-CFLAGS += $(BIN_CFLAGS) -Wno-unused-parameter $(W_MISSING_INITIALIZERS)
+CFLAGS += $(BIN_CFLAGS) -Wno-unused-parameter -Wno-unused-function $(W_MISSING_INITIALIZERS)
 LIBDEPS += -L. -L $(mpathutildir) -L$(mpathcmddir) -lmultipath -lmpathutil -lmpathcmd -lcmocka
 
 TESTS := uevent parser util dmevents hwtable blacklist unaligned vpd pgpolicy \
@@ -39,26 +39,30 @@ dmevents-test_OBJDEPS = $(multipathdir)/devmapper.o
 dmevents-test_LIBDEPS = -lpthread -ldevmapper -lurcu
 hwtable-test_TESTDEPS := test-lib.o
 hwtable-test_OBJDEPS := $(multipathdir)/discovery.o $(multipathdir)/blacklist.o \
-	$(multipathdir)/structs_vec.o $(multipathdir)/structs.o $(multipathdir)/propsel.o
+	$(multipathdir)/structs_vec.o $(multipathdir)/structs.o $(multipathdir)/propsel.o \
+	$(mpathutildir)/mt-libudev.o
 hwtable-test_LIBDEPS := -ludev -lpthread -ldl
 blacklist-test_TESTDEPS := test-log.o
-blacklist-test_LIBDEPS := -ludev
-vpd-test_OBJDEPS :=  $(multipathdir)/discovery.o
+blacklist-test_OBJDEPS := $(mpathutildir)/mt-libudev.o
+blacklist-test_LIBDEPS := -ludev -lpthread -ldl
+vpd-test_OBJDEPS :=  $(multipathdir)/discovery.o $(mpathutildir)/mt-libudev.o
 vpd-test_LIBDEPS := -ludev -lpthread -ldl
 alias-test_TESTDEPS := test-log.o
-alias-test_OBJDEPS := $(mpathutildir)/util.o
+alias-test_OBJDEPS := $(mpathutildir)/util.o $(mpathutildir)/mt-libudev.o
 alias-test_LIBDEPS := -ludev -lpthread -ldl
-valid-test_OBJDEPS := $(multipathdir)/valid.o $(multipathdir)/discovery.o
+valid-test_OBJDEPS := $(multipathdir)/valid.o $(multipathdir)/discovery.o $(mpathutildir)/mt-libudev.o
 valid-test_LIBDEPS := -lmount -ludev -lpthread -ldl
-devt-test_LIBDEPS := -ludev
+devt-test_LIBDEPS := -ludev -lpthread -ldl
+devt-test_OBJDEPS := $(mpathutildir)/mt-libudev.o
 mpathvalid-test_LIBDEPS := -ludev -lpthread -ldl
-mpathvalid-test_OBJDEPS := $(mpathvaliddir)/mpath_valid.o
+mpathvalid-test_OBJDEPS := $(mpathvaliddir)/mpath_valid.o $(mpathutildir)/mt-libudev.o
 directio-test_LIBDEPS := -laio
 strbuf-test_OBJDEPS := $(mpathutildir)/strbuf.o
 sysfs-test_TESTDEPS := test-log.o
-sysfs-test_OBJDEPS := $(multipathdir)/sysfs.o $(mpathutildir)/util.o
+sysfs-test_OBJDEPS := $(multipathdir)/sysfs.o $(mpathutildir)/util.o $(mpathutildir)/mt-libudev.o
 sysfs-test_LIBDEPS := -ludev -lpthread -ldl
 features-test_LIBDEPS := -ludev -lpthread
+features-test_OBJDEPS := $(mpathutildir)/mt-libudev.o
 cli-test_OBJDEPS := $(daemondir)/cli.o
 mapinfo-test_LIBDEPS = -lpthread -ldevmapper
 

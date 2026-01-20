@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <setjmp.h>
 #include <stdio.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include "strbuf.h"
 #include "util.h"
 #include "alias.h"
@@ -59,9 +59,9 @@ ssize_t __wrap_write(int fd, const void *buf, size_t count)
 		start = (const char *)buf + sizeof(BINDINGS_FILE_HEADER) - 1;
 	else
 		start = buf;
-	binding = mock_ptr_type(char *);
+	binding = mock_ptr_type(const char *);
 	start = strstr(start, binding);
-	check_expected(count);
+	check_expected_uint(count);
 	assert_ptr_not_equal(start, NULL);
 	return set_errno__(mock_type(int));
 }
@@ -80,12 +80,12 @@ int __wrap_dm_get_wwid(const char *name, char *uuid, int uuid_len)
 {
 	int ret;
 
-	check_expected(name);
-	check_expected(uuid_len);
+	check_expected_ptr(name);
+	check_expected_int(uuid_len);
 	assert_non_null(uuid);
 	ret = mock_type(int);
 	if (ret == DMP_OK)
-		strcpy(uuid, mock_ptr_type(char *));
+		strcpy(uuid, mock_ptr_type(const char *));
 	return ret;
 }
 
@@ -389,7 +389,7 @@ static void sd_fd_many(void **state)
 
 	for (i = 1; i < 5000; i++) {
 		rc = format_devname__(buf, i, sizeof(buf), "MPATH");
-		assert_in_range(rc, 6, 8);
+		assert_int_in_range(rc, 6, 8);
 		rc = scan_devname(buf, "MPATH");
 		assert_int_equal(rc, i);
 	}
@@ -404,7 +404,7 @@ static void sd_fd_random(void **state)
 	for (i = 1; i < 1000; i++) {
 		n = random() & 0xffff;
 		rc = format_devname__(buf, n, sizeof(buf), "MPATH");
-		assert_in_range(rc, 6, 9);
+		assert_int_in_range(rc, 6, 9);
 		rc = scan_devname(buf, "MPATH");
 		assert_int_equal(rc, n);
 	}
@@ -437,14 +437,14 @@ static int test_scan_devname(void)
 static void mock_unused_alias(const char *alias)
 {
 	expect_string(__wrap_dm_get_wwid, name, alias);
-	expect_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);
+	expect_int_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);
 	will_return(__wrap_dm_get_wwid, DMP_NOT_FOUND);
 }
 
 static void mock_self_alias(const char *alias, const char *wwid)
 {
 	expect_string(__wrap_dm_get_wwid, name, alias);
-	expect_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);
+	expect_int_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);
 	will_return(__wrap_dm_get_wwid, DMP_OK);
 	will_return(__wrap_dm_get_wwid, wwid);
 }
@@ -470,14 +470,14 @@ static void mock_self_alias(const char *alias, const char *wwid)
 #define mock_failed_alias(alias, wwid)					\
 	do {								\
 		expect_string(__wrap_dm_get_wwid, name, alias);		\
-		expect_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);	\
+		expect_int_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);	\
 		will_return(__wrap_dm_get_wwid, DMP_NOT_FOUND);		\
 	} while (0)
 
 #define mock_used_alias(alias, wwid)					\
 	do {								\
 		expect_string(__wrap_dm_get_wwid, name, alias);		\
-		expect_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);	\
+		expect_int_value(__wrap_dm_get_wwid, uuid_len, WWID_SIZE);	\
 		will_return(__wrap_dm_get_wwid, DMP_OK);		\
 		will_return(__wrap_dm_get_wwid, "WWID_USED");		\
 		expect_condlog(3, USED_STR(alias, wwid));		\
@@ -504,7 +504,7 @@ static void mock_bindings_file__(const char *content, bool conflict_ok)
 			continue;
 
 		rc = add_binding(&global_bindings, alias, wwid);
-		assert_in_set(rc, values, conflict_ok ? 2 : 1);
+		assert_int_in_set(rc, values, (conflict_ok ? 2 : 1));
 	}
 }
 
@@ -1260,7 +1260,8 @@ static void al_a(void **state)
 	static const char ln[] = "MPATHa WWIDa\n";
 	char *alias;
 
-	expect_value(__wrap_write, count, strlen(BINDINGS_FILE_HEADER) + strlen(ln));
+	expect_uint_value(__wrap_write, count,
+			  strlen(BINDINGS_FILE_HEADER) + strlen(ln));
 	will_return(__wrap_write, ln);
 	will_return(__wrap_write, strlen(BINDINGS_FILE_HEADER) + strlen(ln));
 	will_return(__wrap_rename, 0);
@@ -1279,7 +1280,8 @@ static void al_zz(void **state)
 	static const char ln[] = "MPATHzz WWIDzz\n";
 	char *alias;
 
-	expect_value(__wrap_write, count, strlen(BINDINGS_FILE_HEADER) + strlen(ln));
+	expect_uint_value(__wrap_write, count,
+			  strlen(BINDINGS_FILE_HEADER) + strlen(ln));
 	will_return(__wrap_write, ln);
 	will_return(__wrap_write, strlen(BINDINGS_FILE_HEADER) + strlen(ln));
 	will_return(__wrap_rename, 0);
@@ -1318,10 +1320,11 @@ static void al_write_partial(void **state)
 	static const char ln[] = "MPATHa WWIDa\n";
 	char *alias;
 
-	expect_value(__wrap_write, count, strlen(BINDINGS_FILE_HEADER) + strlen(ln));
+	expect_uint_value(__wrap_write, count,
+			  strlen(BINDINGS_FILE_HEADER) + strlen(ln));
 	will_return(__wrap_write, ln);
 	will_return(__wrap_write, strlen(BINDINGS_FILE_HEADER) + strlen(ln) - 1);
-	expect_value(__wrap_write, count, 1);
+	expect_uint_value(__wrap_write, count, 1);
 	will_return(__wrap_write, ln + sizeof(ln) - 2);
 	will_return(__wrap_write, 1);
 	will_return(__wrap_rename, 0);
@@ -1340,10 +1343,11 @@ static void al_write_short(void **state)
 	static const char ln[] = "MPATHa WWIDa\n";
 	char *alias;
 
-	expect_value(__wrap_write, count, strlen(BINDINGS_FILE_HEADER) + strlen(ln));
+	expect_uint_value(__wrap_write, count,
+			  strlen(BINDINGS_FILE_HEADER) + strlen(ln));
 	will_return(__wrap_write, ln);
 	will_return(__wrap_write, strlen(BINDINGS_FILE_HEADER) + strlen(ln) - 1);
-	expect_value(__wrap_write, count, 1);
+	expect_uint_value(__wrap_write, count, 1);
 	will_return(__wrap_write, ln + sizeof(ln) - 2);
 	will_return(__wrap_write, 0);
 	expect_condlog(2, "write_bindings_file: short write");
@@ -1360,7 +1364,8 @@ static void al_write_err(void **state)
 	static const char ln[] = "MPATHa WWIDa\n";
 	char *alias;
 
-	expect_value(__wrap_write, count, strlen(BINDINGS_FILE_HEADER) + strlen(ln));
+	expect_uint_value(__wrap_write, count,
+			  strlen(BINDINGS_FILE_HEADER) + strlen(ln));
 	will_return(__wrap_write, ln);
 	will_return(__wrap_write, -EPERM);
 	expect_condlog(1, "failed to write new bindings file");
@@ -1376,7 +1381,8 @@ static void al_rename_err(void **state)
 	static const char ln[] = "MPATHa WWIDa\n";
 	char *alias;
 
-	expect_value(__wrap_write, count, strlen(BINDINGS_FILE_HEADER) + strlen(ln));
+	expect_uint_value(__wrap_write, count,
+			  strlen(BINDINGS_FILE_HEADER) + strlen(ln));
 	will_return(__wrap_write, ln);
 	will_return(__wrap_write, strlen(BINDINGS_FILE_HEADER) + strlen(ln));
 	will_return(__wrap_rename, -EROFS);
@@ -1408,7 +1414,7 @@ static int test_allocate_binding(void)
 	do {								\
 		static const char ln[] = BINDING_STR(alias, wwid);	\
 									\
-		expect_value(__wrap_write, count,			\
+		expect_uint_value(__wrap_write, count,			\
 			     strlen(BINDINGS_FILE_HEADER) + (len) + strlen(ln)); \
 		will_return(__wrap_write, ln);				\
 		will_return(__wrap_write,				\

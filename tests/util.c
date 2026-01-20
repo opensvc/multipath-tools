@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include <endian.h>
 #include <string.h>
 #include "util.h"
@@ -198,13 +198,13 @@ static uint64_t maybe_swap(uint64_t v)
 
 static void test_bitmask_1(void **state)
 {
-	struct bitfield *bf;
+	union bitfield *bf;
 	uint64_t *arr;
 	int i, j, k, m, b;
 
 	bf = alloc_bitfield(BITARR_SZ * 64);
 	assert_non_null(bf);
-	assert_int_equal(bf->len, BITARR_SZ * 64);
+	assert_uint_equal(bf->len, BITARR_SZ * 64);
 	arr = (uint64_t *)bf->bits;
 
 	for (j = 0; j < BITARR_SZ; j++) {
@@ -218,9 +218,10 @@ static void test_bitmask_1(void **state)
 				       b, j, k, arr[k]);
 #endif
 				if (k == j)
-					assert_int_equal(maybe_swap(arr[j]), 1ULL << i);
+					assert_uint_equal(maybe_swap(arr[j]),
+							  1ULL << i);
 				else
-					assert_int_equal(arr[k], 0ULL);
+					assert_uint_equal(arr[k], 0ULL);
 			}
 			for (m = 0; m < 64; m++)
 				if (i == m)
@@ -232,7 +233,7 @@ static void test_bitmask_1(void **state)
 			clear_bit_in_bitfield(b, bf);
 			assert_false(is_bit_set_in_bitfield(b, bf));
 			for (k = 0; k < BITARR_SZ; k++)
-				assert_int_equal(arr[k], 0ULL);
+				assert_uint_equal(arr[k], 0ULL);
 		}
 	}
 	free(bf);
@@ -240,13 +241,13 @@ static void test_bitmask_1(void **state)
 
 static void test_bitmask_2(void **state)
 {
-	struct bitfield *bf;
+	union bitfield *bf;
 	uint64_t *arr;
 	int i, j, k, m, b;
 
 	bf = alloc_bitfield(BITARR_SZ * 64);
 	assert_non_null(bf);
-	assert_int_equal(bf->len, BITARR_SZ * 64);
+	assert_uint_equal(bf->len, BITARR_SZ * 64);
 	arr = (uint64_t *)bf->bits;
 
 	for (j = 0; j < BITARR_SZ; j++) {
@@ -264,13 +265,12 @@ static void test_bitmask_2(void **state)
 			assert_true(is_bit_set_in_bitfield(b, bf));
 			for (k = 0; k < BITARR_SZ; k++) {
 				if (k < j || (k == j && i == 63))
-					assert_int_equal(arr[k], ~0ULL);
+					assert_uint_equal(arr[k], ~0ULL);
 				else if (k > j)
-					assert_int_equal(arr[k], 0ULL);
+					assert_uint_equal(arr[k], 0ULL);
 				else
-					assert_int_equal(
-						maybe_swap(arr[k]),
-						(1ULL << (i + 1)) - 1);
+					assert_uint_equal(maybe_swap(arr[k]),
+							  (1ULL << (i + 1)) - 1);
 			}
 		}
 	}
@@ -289,13 +289,12 @@ static void test_bitmask_2(void **state)
 			assert_false(is_bit_set_in_bitfield(b, bf));
 			for (k = 0; k < BITARR_SZ; k++) {
 				if (k < j || (k == j && i == 63))
-					assert_int_equal(arr[k], 0ULL);
+					assert_uint_equal(arr[k], 0ULL);
 				else if (k > j)
-					assert_int_equal(arr[k], ~0ULL);
+					assert_uint_equal(arr[k], ~0ULL);
 				else
-					assert_int_equal(
-						maybe_swap(arr[k]),
-						~((1ULL << (i + 1)) - 1));
+					assert_uint_equal(maybe_swap(arr[k]),
+							  ~((1ULL << (i + 1)) - 1));
 			}
 		}
 	}
@@ -307,7 +306,7 @@ static void test_bitmask_2(void **state)
  */
 static void test_bitmask_len_0(void **state)
 {
-	struct bitfield *bf;
+	union bitfield *bf;
 
 	bf = alloc_bitfield(0);
 	assert_null(bf);
@@ -329,28 +328,28 @@ static unsigned int maybe_swap_idx(unsigned int i)
 
 static void _test_bitmask_small(unsigned int n)
 {
-	struct bitfield *bf;
+	union bitfield *bf;
 	uint32_t *arr;
 	unsigned int size = maybe_swap_idx((n - 1) / 32) + 1, i;
 
 	assert_true(sizeof(bitfield_t) == 4 || sizeof(bitfield_t) == 8);
-	assert_in_range(n, 1, 64);
+	assert_uint_in_range(n, 1, 64);
 
 	bf = alloc_bitfield(n);
 	assert_non_null(bf);
-	assert_int_equal(bf->len, n);
+	assert_uint_equal(bf->len, n);
 	arr = (uint32_t *)bf->bits;
 
 	for (i = 0; i < size; i++)
-		assert_int_equal(arr[i], 0);
+		assert_uint_equal(arr[i], 0);
 
 	set_bit_in_bitfield(n + 1, bf);
 	for (i = 0; i < size; i++)
-		assert_int_equal(arr[i], 0);
+		assert_uint_equal(arr[i], 0);
 
 	set_bit_in_bitfield(n, bf);
 	for (i = 0; i < size; i++)
-		assert_int_equal(arr[i], 0);
+		assert_uint_equal(arr[i], 0);
 
 	set_bit_in_bitfield(n - 1, bf);
 	for (i = 0; i < size; i++) {
@@ -359,58 +358,58 @@ static void _test_bitmask_small(unsigned int n)
 		unsigned int i1 = maybe_swap_idx(i);
 
 		if (i == k)
-			assert_int_equal(arr[i1], 1UL << j);
+			assert_uint_equal(arr[i1], 1UL << j);
 		else
-			assert_int_equal(arr[i1], 0);
+			assert_uint_equal(arr[i1], 0);
 	}
 
 	clear_bit_in_bitfield(n - 1, bf);
 	for (i = 0; i < size; i++)
-		assert_int_equal(arr[i], 0);
+		assert_uint_equal(arr[i], 0);
 
 	set_bit_in_bitfield(0, bf);
-	assert_int_equal(arr[maybe_swap_idx(0)], 1);
+	assert_uint_equal(arr[maybe_swap_idx(0)], 1);
 	for (i = 1; i < size; i++)
-		assert_int_equal(arr[maybe_swap_idx(i)], 0);
+		assert_uint_equal(arr[maybe_swap_idx(i)], 0);
 
 	free(bf);
 }
 
 static void _test_bitmask_small_2(unsigned int n)
 {
-	struct bitfield *bf;
+	union bitfield *bf;
 	uint32_t *arr;
 	unsigned int size = maybe_swap_idx((n - 1) / 32) + 1, i;
 
-	assert_in_range(n, 65, 128);
+	assert_uint_in_range(n, 65, 128);
 
 	bf = alloc_bitfield(n);
 	assert_non_null(bf);
-	assert_int_equal(bf->len, n);
+	assert_uint_equal(bf->len, n);
 	arr = (uint32_t *)bf->bits;
 
 	for (i = 0; i < size; i++)
-		assert_int_equal(arr[i], 0);
+		assert_uint_equal(arr[i], 0);
 
 	set_bit_in_bitfield(n + 1, bf);
 	for (i = 0; i < size; i++)
-		assert_int_equal(arr[i], 0);
+		assert_uint_equal(arr[i], 0);
 
 	set_bit_in_bitfield(n, bf);
 	for (i = 0; i < size; i++)
-		assert_int_equal(arr[i], 0);
+		assert_uint_equal(arr[i], 0);
 
 	set_bit_in_bitfield(n - 1, bf);
-	assert_int_equal(arr[0], 0);
+	assert_uint_equal(arr[0], 0);
 	for (i = 0; i < size; i++) {
 		unsigned int k = (n - 1) / 32;
 		unsigned int j = (n - 1) - k * 32;
 		unsigned int i1 = maybe_swap_idx(i);
 
 		if (i == k)
-			assert_int_equal(arr[i1], 1UL << j);
+			assert_uint_equal(arr[i1], 1UL << j);
 		else
-			assert_int_equal(arr[i1], 0);
+			assert_uint_equal(arr[i1], 0);
 	}
 
 	set_bit_in_bitfield(0, bf);
@@ -420,13 +419,13 @@ static void _test_bitmask_small_2(unsigned int n)
 		unsigned int i1 = maybe_swap_idx(i);
 
 		if (i == k && k == 0)
-			assert_int_equal(arr[i1], (1UL << j) | 1);
+			assert_uint_equal(arr[i1], (1UL << j) | 1);
 		else if (i == k)
-			assert_int_equal(arr[i1], 1UL << j);
+			assert_uint_equal(arr[i1], 1UL << j);
 		else if (i == 0)
-			assert_int_equal(arr[i1], 1);
+			assert_uint_equal(arr[i1], 1);
 		else
-			assert_int_equal(arr[i1], 0);
+			assert_uint_equal(arr[i1], 0);
 	}
 
 	set_bit_in_bitfield(64, bf);
@@ -436,13 +435,13 @@ static void _test_bitmask_small_2(unsigned int n)
 		unsigned int i1 = maybe_swap_idx(i);
 
 		if (i == k && (k == 0 || k == 2))
-			assert_int_equal(arr[i1], (1UL << j) | 1);
+			assert_uint_equal(arr[i1], (1UL << j) | 1);
 		else if (i == k)
-			assert_int_equal(arr[i1], 1UL << j);
+			assert_uint_equal(arr[i1], 1UL << j);
 		else if (i == 2 || i == 0)
-			assert_int_equal(arr[i1], 1);
+			assert_uint_equal(arr[i1], 1);
 		else
-			assert_int_equal(arr[i1], 0);
+			assert_uint_equal(arr[i1], 0);
 	}
 
 	clear_bit_in_bitfield(0, bf);
@@ -452,13 +451,13 @@ static void _test_bitmask_small_2(unsigned int n)
 		unsigned int i1 = maybe_swap_idx(i);
 
 		if (i == k && k == 2)
-			assert_int_equal(arr[i1], (1UL << j) | 1);
+			assert_uint_equal(arr[i1], (1UL << j) | 1);
 		else if (i == k)
-			assert_int_equal(arr[i1], 1UL << j);
+			assert_uint_equal(arr[i1], 1UL << j);
 		else if (i == 2)
-			assert_int_equal(arr[i1], 1);
+			assert_uint_equal(arr[i1], 1);
 		else
-			assert_int_equal(arr[i1], 0);
+			assert_uint_equal(arr[i1], 0);
 	}
 
 	free(bf);
@@ -568,7 +567,7 @@ static void test_strlcpy_0(void **state)
 	int rc;
 
 	rc = strlcpy(tst, src_str, 0);
-	assert_int_equal(rc, strlen(src_str));
+	assert_uint_equal(rc, strlen(src_str));
 	assert_string_equal(tst, dst_str);
 }
 
@@ -579,7 +578,7 @@ static void test_strlcpy_1(void **state)
 	int rc;
 
 	rc = strlcpy(tst, src_str, 1);
-	assert_int_equal(rc, strlen(src_str));
+	assert_uint_equal(rc, strlen(src_str));
 	assert_int_equal(tst[0], '\0');
 	assert_string_equal(tst + 1, dst_str + 1);
 }
@@ -591,7 +590,7 @@ static void test_strlcpy_2(void **state)
 	int rc;
 
 	rc = strlcpy(tst, src_str, 2);
-	assert_int_equal(rc, strlen(src_str));
+	assert_uint_equal(rc, strlen(src_str));
 	assert_int_equal(tst[0], src_str[0]);
 	assert_int_equal(tst[1], '\0');
 	assert_string_equal(tst + 2, dst_str + 2);
@@ -605,7 +604,7 @@ static void test_strlcpy_3(void **state)
 
 	rc = strlcpy(tst, src_str, sizeof(tst));
 	assert_int_equal(rc, strlen(src_str));
-	assert_int_equal(sizeof(tst) - 1, strlen(tst));
+	assert_uint_equal(sizeof(tst) - 1, strlen(tst));
 	assert_true(strncmp(tst, src_str, sizeof(tst) - 1) == 0);
 }
 
@@ -709,7 +708,7 @@ static int test_strlcpy(void)
 static void prep_buf(char *buf, size_t size, const char *word)
 {
 	memset(buf, FILL, size);
-	assert_in_range(strlen(word), 0, size - 1);
+	assert_uint_in_range(strlen(word), 0, size - 1);
 	memcpy(buf, word, strlen(word) + 1);
 }
 
@@ -899,7 +898,7 @@ static void test_strchop_nochop(void **state)
 {
 	char hello[] = "hello";
 
-	assert_int_equal(strchop(hello), 5);
+	assert_uint_equal(strchop(hello), 5);
 	assert_string_equal(hello, "hello");
 }
 
@@ -907,7 +906,7 @@ static void test_strchop_newline(void **state)
 {
 	char hello[] = "hello\n";
 
-	assert_int_equal(strchop(hello), 5);
+	assert_uint_equal(strchop(hello), 5);
 	assert_string_equal(hello, "hello");
 }
 
@@ -915,7 +914,7 @@ static void test_strchop_space(void **state)
 {
 	char hello[] = " ello      ";
 
-	assert_int_equal(strchop(hello), 5);
+	assert_uint_equal(strchop(hello), 5);
 	assert_string_equal(hello, " ello");
 }
 
@@ -923,7 +922,7 @@ static void test_strchop_mix(void **state)
 {
 	char hello[] = " el\no \t  \n\n \t    \n";
 
-	assert_int_equal(strchop(hello), 5);
+	assert_uint_equal(strchop(hello), 5);
 	assert_string_equal(hello, " el\no");
 }
 
@@ -931,7 +930,7 @@ static void test_strchop_blank(void **state)
 {
 	char hello[] = "  \t  \n\n \t    \n";
 
-	assert_int_equal(strchop(hello), 0);
+	assert_uint_equal(strchop(hello), 0);
 	assert_string_equal(hello, "");
 }
 
@@ -939,7 +938,7 @@ static void test_strchop_empty(void **state)
 {
 	char hello[] = "";
 
-	assert_int_equal(strchop(hello), 0);
+	assert_uint_equal(strchop(hello), 0);
 	assert_string_equal(hello, "");
 }
 

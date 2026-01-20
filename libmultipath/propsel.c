@@ -26,7 +26,7 @@
 #include "propsel.h"
 #include "strbuf.h"
 #include <inttypes.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <ctype.h>
 
 pgpolicyfn *pgpolicies[] = {
@@ -1367,6 +1367,22 @@ int select_skip_kpartx (struct config *conf, struct multipath * mp)
 out:
 	condlog(3, "%s: skip_kpartx = %s %s", mp->alias,
 		(mp->skip_kpartx == SKIP_KPARTX_ON)? "yes" : "no",
+		origin);
+	return 0;
+}
+
+int select_purge_disconnected(struct config *conf, struct multipath *mp)
+{
+	const char *origin;
+
+	mp_set_mpe(purge_disconnected);
+	mp_set_ovr(purge_disconnected);
+	mp_set_hwe(purge_disconnected);
+	mp_set_conf(purge_disconnected);
+	mp_set_default(purge_disconnected, DEFAULT_PURGE_DISCONNECTED);
+out:
+	condlog(3, "%s: purge_disconnected = %s %s", mp->alias,
+		(mp->purge_disconnected == PURGE_DISCONNECTED_ON) ? "yes" : "no",
 		origin);
 	return 0;
 }

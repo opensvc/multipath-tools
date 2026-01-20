@@ -14,7 +14,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <dirent.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <fnmatch.h>
 #include <limits.h>
 

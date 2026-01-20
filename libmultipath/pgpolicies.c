@@ -158,8 +158,6 @@ int group_paths(struct multipath *mp, int marginal_pathgroups)
 	}
 	sort_pathgroups(mp);
 out:
-	vector_free(mp->paths);
-	mp->paths = NULL;
 	return 0;
 fail_marginal:
 	vector_free(normal);
@@ -201,7 +199,7 @@ int group_by_match(struct multipath * mp, vector paths,
 		   bool (*path_match_fn)(struct path *, struct path *))
 {
 	int i, j;
-	struct bitfield *bitmap;
+	union bitfield *bitmap;
 	struct path * pp;
 	struct pathgroup * pgp;
 	struct path * pp2;
@@ -252,11 +250,11 @@ int group_by_match(struct multipath * mp, vector paths,
 	free(bitmap);
 	return 0;
 out2:
-	free_pathgroup(pgp, KEEP_PATHS);
+	free_pathgroup(pgp);
 out1:
 	free(bitmap);
 out:
-	free_pgvec(mp->pg, KEEP_PATHS);
+	free_pgvec(mp->pg);
 	mp->pg = NULL;
 	return 1;
 }
@@ -314,9 +312,9 @@ int one_path_per_group(struct multipath *mp, vector paths)
 	}
 	return 0;
 out1:
-	free_pathgroup(pgp, KEEP_PATHS);
+	free_pathgroup(pgp);
 out:
-	free_pgvec(mp->pg, KEEP_PATHS);
+	free_pgvec(mp->pg);
 	mp->pg = NULL;
 	return 1;
 }
@@ -343,9 +341,9 @@ int one_group(struct multipath *mp, vector paths)	/* aka multibus */
 	}
 	return 0;
 out1:
-	free_pathgroup(pgp, KEEP_PATHS);
+	free_pathgroup(pgp);
 out:
-	free_pgvec(mp->pg, KEEP_PATHS);
+	free_pgvec(mp->pg);
 	mp->pg = NULL;
 	return 1;
 }

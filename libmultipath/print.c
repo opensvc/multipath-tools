@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 
 #include "checkers.h"
 #include "vector.h"
@@ -541,6 +541,8 @@ snprint_chk_state (struct strbuf *buff, const struct path * pp)
 		return append_strbuf_str(buff, "i/o timeout");
 	case PATH_DELAYED:
 		return append_strbuf_str(buff, "delayed");
+	case PATH_DISCONNECTED:
+		return append_strbuf_str(buff, "disconnected");
 	default:
 		return append_strbuf_str(buff, "undef");
 	}

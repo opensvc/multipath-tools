@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
-#include <cmocka.h>
+#include "cmocka-compat.h"
 #include "wrap64.h"
 #include "globals.c"
 #include "../libmultipath/checkers/directio.c"
@@ -38,7 +38,7 @@ int WRAP_IOCTL(int fd, ioctl_request_t request, void *argp)
 	int *blocksize = (int *)argp;
 
 	if (test_dev) {
-		mock_type(int);
+		(void)mock_type(int);
 		return REAL_IOCTL(fd, request, argp);
 	}
 
@@ -51,7 +51,12 @@ int WRAP_IOCTL(int fd, ioctl_request_t request, void *argp)
 	 * BLKSZGET must be cast to "int" and back to "unsigned long",
 	 * otherwise the assertion below will fail.
 	 */
+#ifdef __GLIBC__
+	assert_uint_equal(request, (ioctl_request_t)BLKBSZGET);
+#else
 	assert_int_equal(request, (ioctl_request_t)BLKBSZGET);
+#endif
+
 	assert_non_null(blocksize);
 	*blocksize = mock_type(int);
 	return 0;
@@ -138,9 +143,9 @@ int WRAP_IO_GETEVENTS(io_context_t ctx, long min_nr, long nr,
 			struct io_event *events, struct timespec *timeout)
 {
 	int nr_evs;
-	struct timespec *sleep_tmo;
+	const struct timespec *sleep_tmo;
 	int i;
-	struct io_event *evs;
+	const struct io_event *evs;
 
 	assert_non_null(timeout);
 	nr_evs = mock_type(int);
@@ -149,8 +154,8 @@ int WRAP_IO_GETEVENTS(io_context_t ctx, long min_nr, long nr,
 		return 0;
 	if (test_dev) {
 		int n = 0;
-		mock_ptr_type(struct timespec *);
-		mock_ptr_type(struct io_event *);
+		(void)mock_ptr_type(const struct timespec *);
+		(void)mock_ptr_type(const struct io_event *);
 
 		condlog(2, "min_nr = %ld nr_evs = %d", min_nr, nr_evs);
 		while (n < nr_evs) {
@@ -160,7 +165,7 @@ int WRAP_IO_GETEVENTS(io_context_t ctx, long min_nr, long nr,
 		}
 		assert_int_equal(nr_evs, n);
 	} else {
-		sleep_tmo = mock_ptr_type(struct timespec *);
+		sleep_tmo = mock_ptr_type(const struct timespec *);
 		if (sleep_tmo) {
 			if (sleep_tmo->tv_sec < 0)
 				nanosleep(timeout, NULL);
@@ -171,7 +176,7 @@ int WRAP_IO_GETEVENTS(io_context_t ctx, long min_nr, long nr,
 			errno = -nr_evs;
 			return -1;
 		}
-		evs = mock_ptr_type(struct io_event *);
+		evs = mock_ptr_type(const struct io_event *);
 		for (i = 0; i < nr_evs; i++)
 			events[i] = evs[i];
 	}
@@ -259,7 +264,7 @@ static void do_libcheck_init(struct checker *c, int blocksize, int timeout,
 		*req = ct->req;
 	if (!test_dev)
 		/* don't check fake blocksize on real devices */
-		assert_int_equal(ct->req->blksize, blocksize);
+		assert_uint_equal(ct->req->blksize, blocksize);
 }
 
 static int is_checker_running(struct checker *c)

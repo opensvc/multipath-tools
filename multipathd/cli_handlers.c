@@ -19,7 +19,7 @@
 #include "print.h"
 #include "sysfs.h"
 #include <errno.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <mpath_persist.h>
 #include "util.h"
 #include "prkey.h"
@@ -31,6 +31,7 @@
 #include "foreign.h"
 #include "strbuf.h"
 #include "cli_handlers.h"
+#include <ctype.h>
 
 static struct path *
 find_path_by_str(const struct vector_s *pathvec, const char *str,
@@ -1276,8 +1277,8 @@ cli_getprstatus (void * v, struct strbuf *reply, void * data)
 	return 0;
 }
 
-static int
-cli_setprstatus(void * v, struct strbuf *reply, void * data)
+static int do_setprstatus(void *v, struct strbuf *reply, void *data,
+			  const struct vector_s *registered_paths)
 {
 	struct multipath * mpp;
 	struct vectors * vecs = (struct vectors *)data;
@@ -1291,11 +1292,43 @@ cli_setprstatus(void * v, struct strbuf *reply, void * data)
 
 	if (mpp->prflag != PR_SET) {
 		set_pr(mpp);
-		condlog(2, "%s: prflag set", param);
+		pr_register_active_paths(mpp, registered_paths);
+		if (mpp->prflag == PR_SET)
+			condlog(2, "%s: prflag set", param);
+		else
+			condlog(0, "%s: Failed to set prflag", param);
 	}
 	memset(&mpp->old_pr_key, 0, 8);
 
 	return 0;
+}
+
+static int cli_setprstatus(void *v, struct strbuf *reply, void *data)
+{
+	return do_setprstatus(v, reply, data, NULL);
+}
+
+static int cli_setprstatus_list(void *v, struct strbuf *reply, void *data)
+{
+	int r;
+	struct vector_s registered_paths_vec = {.allocated = 0};
+	vector registered_paths
+		__attribute__((cleanup(cleanup_reset_vec))) = &registered_paths_vec;
+	char *ptr = get_keyparam(v, KEY_PATHLIST);
+
+	while (isspace(*ptr))
+		ptr++;
+	while (*ptr) {
+		if (!vector_alloc_slot(registered_paths))
+			return -ENOMEM;
+		vector_set_slot(registered_paths, ptr);
+		while (*ptr && !isspace(*ptr))
+			ptr++;
+		while (isspace(*ptr))
+			*ptr++ = '\0';
+	}
+	r = do_setprstatus(v, reply, data, registered_paths);
+	return r;
 }
 
 static int

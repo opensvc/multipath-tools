@@ -76,7 +76,7 @@ static vector pathvec;
 
 static void mpath_persistent_reserve_free_vecs__(vector curmp, vector pathvec)
 {
-	free_multipathvec(curmp, KEEP_PATHS);
+	free_multipathvec(curmp);
 	free_pathvec(pathvec, FREE_PATHS);
 }
 

@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <syslog.h>
 #include <fcntl.h>
 
@@ -181,15 +181,15 @@ get_dm_mpvec (enum mpath_cmds cmd, vector curmp, vector pathvec, char * refwwid)
 		if (refwwid && strlen(refwwid) &&
 		    strncmp(mpp->wwid, refwwid, WWID_SIZE)) {
 			condlog(3, "skip map %s: out of scope", mpp->alias);
-			remove_map(mpp, pathvec, curmp);
-			i--;
+			vector_del_slot(curmp, i--);
+			remove_map(mpp, pathvec);
 			continue;
 		}
 
 		if (update_multipath_table(mpp, pathvec, flags) != DMP_OK) {
 			condlog(1, "error parsing map %s", mpp->wwid);
-			remove_map(mpp, pathvec, curmp);
-			i--;
+			vector_del_slot(curmp, i--);
+			remove_map(mpp, pathvec);
 			continue;
 		}
 
@@ -214,12 +214,17 @@ static int check_usable_paths(struct config *conf,
 			      const char *devpath, enum devtypes dev_type)
 {
 	struct udev_device __attribute__((cleanup(cleanup_udev_device))) *ud = NULL;
-	struct multipath __attribute__((cleanup(cleanup_multipath_and_paths))) *mpp = NULL;
 	struct pathgroup *pg;
 	struct path *pp;
 	char __attribute__((cleanup(cleanup_charp))) *params = NULL;
 	char __attribute__((cleanup(cleanup_charp))) *status = NULL;
-	vector __attribute((cleanup(cleanup_vector))) pathvec = NULL;
+	vector __attribute((cleanup(cleanup_pathvec_and_free_paths))) pathvec = NULL;
+	/*
+	 * The sequence of variable definitions matters here, cleanup handlers
+	 * are executed in reverse order of definition, and we access pp->mpp
+	 * in free_multipath().
+	 */
+	struct multipath __attribute__((cleanup(cleanup_multipath))) *mpp = NULL;
 	char uuid[DM_UUID_LEN];
 	dev_t devt;
 	int r = 1, i, j;
@@ -436,7 +441,7 @@ static bool released_to_systemd(void)
 static struct vectors vecs;
 static void cleanup_vecs(void)
 {
-	free_multipathvec(vecs.mpvec, KEEP_PATHS);
+	free_multipathvec(vecs.mpvec);
 	free_pathvec(vecs.pathvec, FREE_PATHS);
 }
 
@@ -580,9 +585,9 @@ out:
 	if (refwwid)
 		free(refwwid);
 
-	free_multipathvec(curmp, KEEP_PATHS);
+	free_multipathvec(curmp);
 	vecs.mpvec = NULL;
-	free_multipathvec(newmp, KEEP_PATHS);
+	free_multipathvec(newmp);
 	free_pathvec(pathvec, FREE_PATHS);
 	vecs.pathvec = NULL;
 
@@ -1069,7 +1074,7 @@ main (int argc, char *argv[])
 			printf("successfully reset wwids\n");
 		vector_foreach_slot_backwards(curmp, mpp, i) {
 			vector_del_slot(curmp, i);
-			free_multipath(mpp, KEEP_PATHS);
+			free_multipath(mpp);
 		}
 		vector_free(curmp);
 		goto out;

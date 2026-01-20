@@ -10,7 +10,7 @@
 #include <sys/un.h>
 #include <poll.h>
 #include <errno.h>
-#include <libudev.h>
+#include "mt-udev-wrap.h"
 #include <mpath_persist.h>
 #include "debug.h"
 #include "mpath_cmd.h"
@@ -20,8 +20,9 @@
 #include "uxsock.h"
 #include "mpathpr.h"
 #include "structs.h"
+#include "strbuf.h"
 
-static char *do_pr(char *alias, char *str)
+static char *do_pr(char *alias, const char *str)
 {
 	int fd;
 	char *reply;
@@ -51,24 +52,26 @@ static char *do_pr(char *alias, char *str)
 	return reply;
 }
 
-static int do_update_pr(char *alias, char *cmd, char *key)
+static int do_update_pr(char *alias, char *cmd, const char *data)
 {
-	char str[256];
+	STRBUF_ON_STACK(buf);
 	char *reply = NULL;
 	int ret = -1;
 
-	if (key)
-		snprintf(str, sizeof(str), "%s map %s key %s", cmd, alias, key);
+	if (data)
+		print_strbuf(&buf, "%s map %s %s %s", cmd, alias,
+			     strcmp(cmd, "setprkey") ? "pathlist" : "key", data);
 	else
-		snprintf(str, sizeof(str), "%s map %s", cmd, alias);
+		print_strbuf(&buf, "%s map %s", cmd, alias);
 
-	reply = do_pr(alias, str);
+	reply = do_pr(alias, get_strbuf_str(&buf));
 	if (reply) {
 		if (strncmp(reply, "ok", 2) == 0)
 			ret = 0;
 		else
 			ret = -1;
-		condlog(ret ? 0 : 4, "%s: message=%s reply=%s", alias, str, reply);
+		condlog(ret ? 0 : 4, "%s: message=%s reply=%s", alias,
+			get_strbuf_str(&buf), reply);
 	}
 
 	free(reply);
@@ -106,9 +109,31 @@ int get_prhold(char *mapname)
 	return do_get_pr(mapname, "getprhold");
 }
 
-int update_prflag(char *mapname, int set) {
-	return do_update_pr(mapname, (set)? "setprstatus" : "unsetprstatus",
-			    NULL);
+int update_prflag(struct multipath *mpp, int set)
+{
+	STRBUF_ON_STACK(buf);
+	int i, j;
+	bool first = true;
+	struct pathgroup *pgp = NULL;
+	struct path *pp = NULL;
+
+	if (!set)
+		return do_update_pr(mpp->alias, "unsetprstatus", NULL);
+
+	append_strbuf_str(&buf, "\"");
+	vector_foreach_slot (mpp->pg, pgp, j) {
+		vector_foreach_slot (pgp->paths, pp, i) {
+			if (pp->state == PATH_UP || pp->state == PATH_GHOST) {
+				if (first) {
+					append_strbuf_str(&buf, pp->dev);
+					first = false;
+				} else
+					print_strbuf(&buf, " %s", pp->dev_t);
+			}
+		}
+	}
+	append_strbuf_str(&buf, "\"");
+	return do_update_pr(mpp->alias, "setprstatus", get_strbuf_str(&buf));
 }
 
 int update_prhold(char *mapname, bool set)

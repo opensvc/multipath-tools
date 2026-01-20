@@ -682,7 +682,7 @@ static struct hwentry default_hw[] = {
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 	},
 	{
-		// Storwize V5000/V7000 lines / SAN Volume Controller (SVC)
+		// Storwize V3x00/V5000/V7000 lines / SAN Volume Controller (SVC)
 		// Flex System V7000 / FlashSystem V840/V9000 and 5x00/7x00/9x00/Cx00
 		.vendor        = "IBM",
 		.product       = "^2145",
@@ -1321,6 +1321,15 @@ static struct hwentry default_hw[] = {
 		// Lyve Rackmount Receiver
 		.vendor        = "SEAGATE",
 		.product       = "STJX",
+		.pgpolicy      = GROUP_BY_PRIO,
+		.pgfailback    = -FAILBACK_IMMEDIATE,
+		.prio_name     = PRIO_ALUA,
+		.no_path_retry = 30,
+	},
+	{
+		// Exos / Nytro series
+		.vendor        = "SEAGATE",
+		.product       = "^[456]",
 		.pgpolicy      = GROUP_BY_PRIO,
 		.pgfailback    = -FAILBACK_IMMEDIATE,
 		.prio_name     = PRIO_ALUA,
