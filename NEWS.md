@@ -9,6 +9,44 @@ release. These bug fixes will be tracked in stable branches.
 
 See [README.md](README.md) for additional information.
 
+## multipath-tools 0.13.1, 2026/01
+
+### Bug fixes
+
+* Make sure multipathd registers keys all paths of a multipath map after
+  mpathpersist registered a key for a map. multipathd could fail to do so in
+  some cases, e.g. if paths become unavailable or available while the
+  registration was taking place. Fixes 0.13.0.
+* Fix `mpathpersist --report-capabilities` output. Fixes 0.5.0.
+* Improve error handling when retrying REGISTER AND IGNORE persistent
+  reservations commands. Fixes 0.13.0.
+* Fix command descriptions in the multipathd man page. Fixes 0.9.2.
+* Fix an undefined symbol error with the LLVM lld linker.
+  Fixes [#132](https://github.com/opensvc/multipath-tools/issues/132), 0.10.0.
+* Fix ISO C23 compatibility issue causing errors with new compilers.
+* Fix use-after-free error in free_pgvec().
+  Fixes [#128](https://github.com/opensvc/multipath-tools/issues/128), 0.12.0.
+* Fix memory leak caused by not joining the "init unwinder" thread.
+  Fixes 0.8.6.
+* Fix memory leaks in kpartx. Fixes any version.
+* Print the warning "setting scsi timeouts is unsupported for protocol" only
+  once per protocol. Fixes 0.9.0.
+* Make sure multipath-tools is compiled with the compiler flag
+  `-fno-strict-aliasing`. This turns out to be necessary because our code
+  uses techniques like `container_of()` which don't work well with
+  strict aliasing rules.
+  Fixes [#130](https://github.com/opensvc/multipath-tools/issues/130).
+
+### Other changes
+
+* Hardware table: add Seagate Exos and Nytro series.
+* Avoid joining threads twice with liburcu 0.14.0 and newer.
+* CI updates (GitHub workflows).
+* Fix CI for cmocka 2.0 by adding the `-Wno-error=deprecated-declarations`
+  compiler flag.
+  Fixes [#129](https://github.com/opensvc/multipath-tools/issues/129)
+* Add the ASAN=1 and OPT= make variables (see README.md).
+
 ## multipath-tools 0.13.0, 2025/10
 
 ### Major rework of the SCSI Persistent Reservation code
