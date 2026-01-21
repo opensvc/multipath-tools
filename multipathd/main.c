@@ -2395,6 +2395,25 @@ enum check_path_return {
 	CHECK_PATH_SKIPPED,
 	CHECK_PATH_REMOVED,
 };
+/*
+ * pp->wwid should never be empty when this function is called, but if it
+ * is, this function can set it.
+ */
+static bool new_path_wwid_changed(struct path *pp, int state)
+{
+	char wwid[WWID_SIZE];
+
+	strlcpy(wwid, pp->wwid, WWID_SIZE);
+	if (get_uid(pp, state, pp->udev, 1) != 0) {
+		strlcpy(pp->wwid, wwid, WWID_SIZE);
+		return false;
+	}
+	if (strlen(wwid) && strncmp(wwid, pp->wwid, WWID_SIZE) != 0) {
+		strlcpy(pp->wwid, wwid, WWID_SIZE);
+		return true;
+	}
+	return false;
+}
 
 static int
 do_check_path (struct vectors * vecs, struct path * pp)
@@ -2431,14 +2450,33 @@ do_check_path (struct vectors * vecs, struct path * pp)
 		pp->tick = 1;
 		return CHECK_PATH_SKIPPED;
 	}
-	if (pp->recheck_wwid == RECHECK_WWID_ON &&
-	    (newstate == PATH_UP || newstate == PATH_GHOST) &&
+
+	if ((newstate == PATH_UP || newstate == PATH_GHOST) &&
 	    ((pp->state != PATH_UP && pp->state != PATH_GHOST) ||
-	     pp->dmstate == PSTATE_FAILED) &&
-	    check_path_wwid_change(pp)) {
-		condlog(0, "%s: path wwid change detected. Removing", pp->dev);
-		return handle_path_wwid_change(pp, vecs)? CHECK_PATH_REMOVED :
-							  CHECK_PATH_SKIPPED;
+	     pp->dmstate == PSTATE_FAILED)) {
+		bool wwid_changed = false;
+
+		if (pp->initialized == INIT_NEW) {
+			/*
+			 * Path was added to map while offline, mark it as
+			 * initialized.
+			 * DI_SYSFS was checked when the path was added
+			 * DI_CHECKER just got checked
+			 * DI_WWID is about to be checked
+			 * DI_PRIO will get checked at the end of this checker
+			 * loop
+			 */
+			pp->initialized = INIT_OK;
+			wwid_changed = new_path_wwid_changed(pp, newstate);
+		} else if (pp->recheck_wwid == RECHECK_WWID_ON)
+			wwid_changed = check_path_wwid_change(pp);
+		if (wwid_changed) {
+			condlog(0, "%s: path wwid change detected. Removing",
+				pp->dev);
+			return handle_path_wwid_change(pp, vecs)
+				       ? CHECK_PATH_REMOVED
+				       : CHECK_PATH_SKIPPED;
+		}
 	}
 	if (pp->mpp->synced_count == 0) {
 		do_sync_mpp(vecs, pp->mpp);
