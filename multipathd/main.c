@@ -96,12 +96,11 @@ mpath_pr_event_handle(struct path *pp, unsigned int nr_keys_needed,
 
 #define LOG_MSG(lvl, pp)					\
 do {								\
-	if (pp->mpp && checker_selected(&pp->checker) &&	\
-	    lvl <= libmp_verbosity) {					\
-		if (pp->sysfs_state == PATH_DOWN)		\
+	if (pp->mpp && lvl <= libmp_verbosity) {		\
+		if (pp->sysfs_state != PATH_UP)			\
 			condlog(lvl, "%s: %s - path offline",	\
 				pp->mpp->alias, pp->dev);	\
-		else  {						\
+		else if (checker_selected(&pp->checker)) {	\
 			const char *__m =			\
 				checker_message(&pp->checker);	\
 								\
