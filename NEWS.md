@@ -30,6 +30,11 @@ See [README.md](README.md) for additional information.
   uses techniques like `container_of()` which don't work well with
   strict aliasing rules.
   Fixes [#130](https://github.com/opensvc/multipath-tools/issues/130).
+* Fix initialization of paths that were offline during path detection.
+* Fix printing the "path offline" log message for offline paths that don't
+  have a path checker configured.
+* kpartx: Fix freeing static buffer when operating on regular files.
+  Fixes [#139](https://github.com/opensvc/multipath-tools/issues/139).
 
 ### Other changes
 
