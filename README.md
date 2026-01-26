@@ -107,6 +107,15 @@ See "Passing standard compiler flags" below for an exception.
 The following variables can be passed to the `make` command line:
 
  * `V=1`: enable verbose build.
+ * `OPT=`: set optimization flags. You may want to set `OPT="-O0"` for
+   debugging, for example. The default is `-O2`. Note that it is also
+   possible to set `OPTFLAGS`, which takes precedence over `OPT`. `OPTFLAGS`
+   sets additional options by default, which are intended for distribution
+   build environments to override. For quick customization of the optimization
+   level, use `OPT`.
+ * `ASAN=1`: Enable
+   [AddressSanitizer](https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer)
+   during build for debugging memory allocation. This is off by default.
  * `plugindir="/some/path"`: directory where libmultipath plugins (path
    checkers, prioritizers, and foreign multipath support) will be looked up.
    This used to be the run-time option `multipath_dir` in earlier versions.
