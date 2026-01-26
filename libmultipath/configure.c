@@ -1113,7 +1113,17 @@ int coalesce_paths (struct vectors *vecs, vector mpvec, char *refwwid,
 			continue;
 		}
 
-		/* 4. path is out of scope */
+		/*
+		 * 4. The path wasn't found in path_discovery. It only exists
+		 *    in an old map.
+		 */
+		if (pp1->initialized == INIT_PARTIAL ||
+		    pp1->initialized == INIT_REMOVED) {
+			orphan_path(pp1, "path not found");
+			continue;
+		}
+
+		/* 5. path is out of scope */
 		if (refwwid && strncmp(pp1->wwid, refwwid, WWID_SIZE - 1))
 			continue;
 

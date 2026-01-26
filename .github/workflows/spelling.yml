@@ -86,6 +86,23 @@ on:
     - 'opened'
     - 'reopened'
     - 'synchronize'
+    paths:
+    - '.github/workflows/spelling.yml'
+    - 'README*'
+    - 'NEWS.md'
+    - '**.3'
+    - '**.5'
+    - '**.8'
+    - '**.8'
+    - '**.in'
+    - '**.service'
+    - '**.socket'
+    - '**.rules'
+    - '**/libdmmp.h'
+    - '**/mpath_valid.h'
+    - '**/mpath_cmd.h'
+    - '**/mpath_persist.h'
+    - '.github/actions/spelling/*'
 
 jobs:
   spelling:

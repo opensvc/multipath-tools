@@ -52,6 +52,7 @@ static pthread_cond_t *uev_condp = &uev_cond;
 static uev_trigger *my_uev_trigger;
 static void *my_trigger_data;
 static int servicing_uev;
+static int adding_uev; /* uatomic access only */
 
 struct uevent_filter_state {
 	struct list_head uevq;
@@ -70,13 +71,14 @@ static void reset_filter_state(struct uevent_filter_state *st)
 
 int is_uevent_busy(void)
 {
-	int empty, servicing;
+	int empty, servicing, adding;
 
 	pthread_mutex_lock(uevq_lockp);
 	empty = list_empty(&uevq);
 	servicing = servicing_uev;
+	adding = uatomic_read(&adding_uev);
 	pthread_mutex_unlock(uevq_lockp);
-	return (!empty || servicing);
+	return (!empty || servicing || adding);
 }
 
 struct uevent * alloc_uevent (void)
@@ -730,6 +732,7 @@ int uevent_listen(struct udev *udev)
 		int fdcount, events;
 		struct pollfd ev_poll = { .fd = fd, .events = POLLIN, };
 
+		uatomic_set(&adding_uev, 0);
 		fdcount = poll(&ev_poll, 1, -1);
 		if (fdcount < 0) {
 			if (errno == EINTR)
@@ -739,6 +742,8 @@ int uevent_listen(struct udev *udev)
 			err = -errno;
 			break;
 		}
+		uatomic_set(&adding_uev, 1);
+
 		events = uevent_receive_events(fd, &uevlisten_tmp, monitor);
 		if (events <= 0)
 			continue;

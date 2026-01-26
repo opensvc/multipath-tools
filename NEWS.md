@@ -9,6 +9,28 @@ release. These bug fixes will be tracked in stable branches.
 
 See [README.md](README.md) for additional information.
 
+## multipath-tools 0.14.1, 2026/01
+
+### Bug fixes
+
+* kpartx: Fix freeing static buffer when operating on regular files.
+  Fixes 0.14.0. Commit fab5d44.
+  Fixes [#139](https://github.com/opensvc/multipath-tools/issues/139).
+* Fix initialization of paths that were offline during path detection.
+  Commit 1942fb1.
+* Fix printing the "path offline" log message for offline paths that don't
+  have a path checker configured. Commit 1a364a1.
+
+### Other changes
+
+* If path devices that are members of multipath maps aren't detected during
+  multipathd startup or `reconfigure`, don't add them to newly created maps
+  in the first place. In previous versions, such paths would be added to the
+  maps, only to be removed later. Commit a04be55.
+* Improve the detection of "busy" state in the `show status` command, such
+  that reading udev events from udevd is also counted as busy.
+  Commit 7fdd93b.
+
 ## multipath-tools 0.14.0, 2026/01
 
 ### User-visible changes

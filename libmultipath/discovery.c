@@ -2585,6 +2585,8 @@ blank:
 	 * Recoverable error, for example faulty or offline path
 	 */
 	pp->chkrstate = pp->state = PATH_DOWN;
+	if (mask & DI_IOCTL && pp->ioctl_info == IOCTL_INFO_NOT_REQUESTED)
+		pp->ioctl_info = IOCTL_INFO_SKIPPED;
 	if (pp->initialized == INIT_NEW || pp->initialized == INIT_FAILED)
 		memset(pp->wwid, 0, WWID_SIZE);
 
