@@ -18,7 +18,7 @@ env:
 
 jobs:
   save-and-test-ABI:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: set ABI branch
         if: ${{ env.ABI_BRANCH == '' }}
@@ -42,8 +42,9 @@ jobs:
           gcc make pkg-config abigail-tools
           libdevmapper-dev libreadline-dev libaio-dev libsystemd-dev
           libudev-dev libjson-c-dev liburcu-dev libcmocka-dev libedit-dev
+          libmount-dev
       - name: create ABI
-        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) abi.tar.gz
+        run: make -Orecurse -j$(nproc) abi.tar.gz
       - name: save ABI
         uses: actions/upload-artifact@v4
         with:

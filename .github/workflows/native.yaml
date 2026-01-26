@@ -26,7 +26,6 @@ on:
 
 jobs:
   stable:
-    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -36,8 +35,15 @@ jobs:
           - debian-bullseye
           - debian-bookworm
           - debian-trixie
-          - fedora-42
-          - opensuse-leap
+          - fedora-43
+          - opensuse-leap-15.6
+          - opensuse-leap-16.0
+        variant:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.variant.runner }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -45,24 +51,29 @@ jobs:
       - name: set archive name
         # Leap containers have cpio but not tar
         run: echo ARCHIVE_TGT=test-progs.cpio >> $GITHUB_ENV
-        if: ${{ matrix.os == 'opensuse-leap' }}
+        if: ${{ startswith(matrix.os, 'opensuse-leap-15') }}
       - name: set archive name
         run: echo ARCHIVE_TGT=test-progs.tar >> $GITHUB_ENV
-        if: ${{ matrix.os != 'opensuse-leap' }}
+        if: ${{ !startswith(matrix.os, 'opensuse-leap-15') }}
 
       - name: build and test
+        id: test
         if: ${{ matrix.os != 'debian-jessie' }}
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
-          command: -j -Orecurse test
+          command: -j$(nproc) -Orecurse test
+        continue-on-error: true
+
       - name: build and test (jessie)
+        id: test_jessie
         # On jessie, we use libreadline 5 (no licensing issue)
         if: ${{ matrix.os == 'debian-jessie' }}
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
-          command: -j -Orecurse READLINE=libreadline test
+          command: -j$(nproc) -Orecurse READLINE=libreadline test
+        continue-on-error: true
 
       - name: create ${{ env.ARCHIVE_TGT }}
         if: ${{ matrix.os != 'debian-jessie' }}
@@ -80,44 +91,113 @@ jobs:
       - name: upload binary archive
         uses: actions/upload-artifact@v4
         with:
-          name: native-${{ matrix.os }}
+          name: native-${{ matrix.os }}-${{ matrix.variant.arch }}
           path: ${{ env.ARCHIVE_TGT }}
           overwrite: true
 
+      - name: fail
+        run: /bin/false
+        if: >-
+          ${{ ( matrix.os == 'debian-jessie' &&
+                steps.test_jessie.outcome != 'success' ) ||
+              ( matrix.os != 'debian-jessie' &&
+                steps.test.outcome != 'success' ) }}
   clang:
-    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         os:
-          - debian-jessie
           - debian-buster
           - debian-bullseye
           - debian-bookworm
           - debian-trixie
-          - fedora-42
-          - opensuse-leap
+          - fedora-43
+          - opensuse-leap-15.6
+          - opensuse-leap-16.0
+        variant:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+        include:
+          - os: debian-jessie
+            variant:
+              arch: x86_64
+              runner: ubuntu-24.04
+    runs-on: ${{ matrix.variant.runner }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
 
+      - name: set archive name
+        # Leap containers have cpio but not tar
+        run: echo ARCHIVE_TGT=test-progs.cpio >> $GITHUB_ENV
+        if: ${{ startswith(matrix.os, 'opensuse-leap-15') }}
+      - name: set archive name
+        run: echo ARCHIVE_TGT=test-progs.tar >> $GITHUB_ENV
+        if: ${{ !startswith(matrix.os, 'opensuse-leap-15') }}
+
       - name: clang
+        id: test
         if: ${{ matrix.os != 'debian-jessie' }}
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
           params: -e CC=clang
-          command: -j -Orecurse test
+          command: -j$(nproc) -Orecurse test
+        continue-on-error: true
       - name: clang (jessie)
+        id: test_jessie
         if: ${{ matrix.os == 'debian-jessie' }}
         uses: mosteo-actions/docker-run@v1
         with:
           image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
           params: -e CC=clang
-          command: -j -Orecurse READLINE=libreadline test
+          command: -j$(nproc) -Orecurse READLINE=libreadline test
+        continue-on-error: true
+
+      - name: create ${{ env.ARCHIVE_TGT }}
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          command: ${{ env.ARCHIVE_TGT }}
+        if: >-
+          ${{ ( matrix.os == 'debian-jessie' &&
+                steps.test_jessie.outcome != 'success' ) ||
+              ( matrix.os != 'debian-jessie' &&
+                steps.test.outcome != 'success' ) }}
+      - name: create ${{ env.ARCHIVE_TGT }} (jessie)
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ghcr.io/mwilck/multipath-build-${{ matrix.os }}
+          command: READLINE=libreadline ${{ env.ARCHIVE_TGT }}
+        if: >-
+          ${{ ( matrix.os == 'debian-jessie' &&
+                steps.test_jessie.outcome != 'success' ) ||
+              ( matrix.os != 'debian-jessie' &&
+                steps.test.outcome != 'success' ) }}
+
+      - name: upload binary archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-${{ matrix.os }}-${{ matrix.variant.arch }}
+          path: ${{ env.ARCHIVE_TGT }}
+          overwrite: true
+        if: >-
+          ${{ ( matrix.os == 'debian-jessie' &&
+                steps.test_jessie.outcome != 'success' ) ||
+              ( matrix.os != 'debian-jessie' &&
+                steps.test.outcome != 'success' ) }}
+
+      - name: fail
+        run: /bin/false
+        if: >-
+          ${{ ( matrix.os == 'debian-jessie' &&
+                steps.test_jessie.outcome != 'success' ) ||
+              ( matrix.os != 'debian-jessie' &&
+                steps.test.outcome != 'success' ) }}
 
   root-test:
-    runs-on: ubuntu-22.04
     needs: stable
     strategy:
       fail-fast: false
@@ -128,8 +208,15 @@ jobs:
           - debian-bullseye
           - debian-bookworm
           - debian-trixie
-          - fedora-42
-          - opensuse-leap
+          - fedora-43
+          - opensuse-leap-15.6
+          - opensuse-leap-16.0
+        variant:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.variant.runner }}
     steps:
       - name: mpath
         run: sudo modprobe dm_multipath
@@ -142,13 +229,13 @@ jobs:
       - name: download binary archive
         uses: actions/download-artifact@v4
         with:
-          name: native-${{ matrix.os }}
+          name: native-${{ matrix.os }}-${{ matrix.variant.arch }}
       - name: unpack binary archive
         run: cpio -idv < test-progs.cpio
-        if: ${{ matrix.os == 'opensuse-leap' }}
+        if: ${{ startswith(matrix.os, 'opensuse-leap-15') }}
       - name: unpack binary archive
         run: tar xfmv test-progs.tar
-        if: ${{ matrix.os != 'opensuse-leap' }}
+        if: ${{ !startswith(matrix.os, 'opensuse-leap-15') }}
 
       - name: run root tests
         uses: mosteo-actions/docker-run@v1

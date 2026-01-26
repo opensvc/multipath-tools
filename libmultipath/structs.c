@@ -239,18 +239,8 @@ free_pgvec (vector pgvec, enum free_path_mode free_paths)
 	if (!pgvec)
 		return;
 
-	vector_foreach_slot(pgvec, pgp, i) {
-
-		/* paths are going to be re-grouped, reset pgindex */
-		if (free_paths != FREE_PATHS) {
-			struct path *pp;
-			int j;
-
-			vector_foreach_slot(pgp->paths, pp, j)
-				pp->pgindex = 0;
-		}
+	vector_foreach_slot (pgvec, pgp, i)
 		free_pathgroup(pgp, free_paths);
-	}
 
 	vector_free(pgvec);
 }
