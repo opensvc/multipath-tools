@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2004, 2005 Christophe Varoqui
  */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -699,14 +700,13 @@ out:
 
 char *nondm_create_uuid(dev_t devt)
 {
-#define NONDM_UUID_BUFLEN (34 + sizeof(NONDM_UUID_PREFIX) + \
-			   sizeof(NONDM_UUID_SUFFIX))
-	static char uuid_buf[NONDM_UUID_BUFLEN];
-	snprintf(uuid_buf, sizeof(uuid_buf), "%s_%u:%u_%s",
-		 NONDM_UUID_PREFIX, major(devt), minor(devt),
-		 NONDM_UUID_SUFFIX);
-	uuid_buf[NONDM_UUID_BUFLEN-1] = '\0';
-	return uuid_buf;
+	char *uuid;
+
+	if (asprintf(&uuid, "%s_%u:%u_%s", NONDM_UUID_PREFIX, major(devt),
+		     minor(devt), NONDM_UUID_SUFFIX) >= 0)
+		return uuid;
+	else
+		return NULL;
 }
 
 int nondm_parse_uuid(const char *uuid, unsigned int *major, unsigned int *minor)
