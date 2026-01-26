@@ -62,6 +62,7 @@ enum {
 	KEY_LOCAL		= 81,
 	KEY_GROUP		= 82,
 	KEY_KEY			= 83,
+	KEY_PATHLIST		= 84,
 };
 
 /*
@@ -94,6 +95,7 @@ enum {
 	Q2_LOCAL		= KEY_LOCAL << 16,
 	Q2_GROUP		= KEY_GROUP << 16,
 	Q2_KEY			= KEY_KEY << 16,
+	Q2_PATHLIST		= KEY_PATHLIST << 16,
 
 	/* byte 3: qualifier 3 */
 	Q3_FMT			= KEY_FMT << 24,

@@ -262,8 +262,20 @@ static int create_scsi_string_desc(unsigned char *desc,
 
 	assert_in_range(type, STR_EUI, STR_IQN);
 	assert_true(maxlen % 4 == 0);
+#if defined(__GNUC__) && __GNUC__ >= 15
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation="
+	/*
+	 * This is called from test_vpd_str_XYZ() functions, where
+	 * we deliberately use the overlong input string test_id.
+	 * So format truncation is expected here.
+	 */
+#endif
 	len = snprintf((char *)(desc + 4), maxlen, "%s%s",
 		       str_prefix[type], id);
+#if defined(__GNUC__) && __GNUC__ >= 15
+#pragma GCC diagnostic pop
+#endif
 	if (len > maxlen)
 		len = maxlen;
 	/* zero-pad */
@@ -451,7 +463,6 @@ static void test_vpd_str_ ## typ ## _ ## len ## _ ## wlen(void **state) \
 	int n, ret;							\
 	int exp_len;							\
 	int type = typ & STR_MASK;					\
-									\
 	n = create_vpd83(vt->vpdbuf, sizeof(vt->vpdbuf), test_id,	\
 			 8, typ, len);					\
 	exp_len = len - strlen(str_prefix[type]);			\

@@ -59,6 +59,8 @@ void init_handler_callbacks(void)
 	set_unlocked_handler_callback(VRB_SHUTDOWN, HANDLER(cli_shutdown));
 	set_handler_callback(VRB_GETPRSTATUS | Q1_MAP, HANDLER(cli_getprstatus));
 	set_handler_callback(VRB_SETPRSTATUS | Q1_MAP, HANDLER(cli_setprstatus));
+	set_handler_callback(VRB_SETPRSTATUS | Q1_MAP | Q2_PATHLIST,
+			     HANDLER(cli_setprstatus_list));
 	set_handler_callback(VRB_UNSETPRSTATUS | Q1_MAP, HANDLER(cli_unsetprstatus));
 	set_handler_callback(VRB_FORCEQ | Q1_DAEMON, HANDLER(cli_force_no_daemon_q));
 	set_handler_callback(VRB_RESTOREQ | Q1_DAEMON, HANDLER(cli_restore_no_daemon_q));

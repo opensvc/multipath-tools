@@ -227,6 +227,7 @@ load_keys (void)
 	r += add_key(keys, "getprhold", VRB_GETPRHOLD, 0);
 	r += add_key(keys, "setprhold", VRB_SETPRHOLD, 0);
 	r += add_key(keys, "unsetprhold", VRB_UNSETPRHOLD, 0);
+	r += add_key(keys, "pathlist", KEY_PATHLIST, 1);
 
 	if (r) {
 		free_keys(keys);

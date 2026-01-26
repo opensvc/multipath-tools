@@ -344,48 +344,54 @@ will not be disabled when the daemon stops.
 Restores configured queue_without_daemon mode.
 .
 .TP
-.B map|multipath $map setprstatus
+.B setprstatus map|multipath $map
 Enable persistent reservation management on $map.
 .
 .TP
-.B map|multipath $map unsetprstatus
+.B setprstatus map|multipath $map pathlist $pathlist
+Enable persistent reservation management on $map, and notify multipathd of
+the paths that have been registered, so it doesn't attempt to re-register
+them.
+.
+.TP
+.B unsetprstatus map|multipath $map
 Disable persistent reservation management on $map.
 .
 .TP
-.B map|multipath $map getprstatus
+.B getprstatus map|multipath $map
 Get the current persistent reservation management status of $map.
 .
 .TP
-.B map|multipath $map getprkey
+.B getprkey map|multipath $map
 Get the current persistent reservation key associated with $map.
 .
 .TP
-.B map|multipath $map setprkey key $key
+.B setprkey map|multipath $map key $key
 Set the persistent reservation key associated with $map to $key in the
 \fIprkeys_file\fR. This key will only be used by multipathd if
 \fIreservation_key\fR is set to \fBfile\fR in \fI@CONFIGFILE@\fR.
 .
 .TP
-.B map|multipath $map unsetprkey
+.B unsetprkey map|multipath $map
 Remove the persistent reservation key associated with $map from the
 \fIprkeys_file\fR. This will only unset the key used by multipathd if
 \fIreservation_key\fR is set to \fBfile\fR in \fI@CONFIGFILE@\fR.
 .
 .TP
-.B path $path setmarginal
+.B setmarginal path $path
 move $path to a marginal pathgroup. The path will remain in the marginal
 path group until \fIunsetmarginal\fR is called. This command will only
 work if \fImarginal_pathgroups\fR is enabled and there is no Shaky paths
 detection method configured (see the multipath.conf man page for details).
 .
 .TP
-.B path $path unsetmarginal
+.B unsetmarginal path $path
 return marginal path $path to its normal pathgroup. This command will only
 work if \fImarginal_pathgroups\fR is enabled and there is no Shaky paths
 detection method configured (see the multipath.conf man page for details).
 .
 .TP
-.B map $map unsetmarginal
+.B unsetmarginal map $map
 return all marginal paths in $map to their normal pathgroups. This command
 will only work if \fImarginal_pathgroups\fR is enabled and there is no Shaky
 paths detection method configured (see the multipath.conf man page for details).
