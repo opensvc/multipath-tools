@@ -362,7 +362,7 @@ struct path {
 	unsigned int tick;
 	unsigned int pending_ticks;
 	int bus;
-	int offline;
+	int sysfs_state;
 	int state;
 	int dmstate;
 	int chkrstate;

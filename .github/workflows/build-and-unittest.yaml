@@ -13,14 +13,14 @@ on:
       - 'stable-*'
 jobs:
   jammy:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         rl: ['', 'libreadline', 'libedit']
         cc: [ gcc, clang ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: update
         run: sudo apt-get update
       - name: dependencies
@@ -46,16 +46,16 @@ jobs:
         if: ${{ matrix.cc == 'clang' }}
       - name: build
         run: >
-          make -Orecurse -j$(grep -c ^processor /proc/cpuinfo)
+          make -Orecurse -j$(nproc)
           READLINE=${{ matrix.rl }} OPTFLAGS="$OPT"
       - name: test
         run: >
-          make -Orecurse -j$(grep -c ^processor /proc/cpuinfo)
+          make -Orecurse -j$(nproc)
           OPTFLAGS="$OPT" test
       - name: valgrind-test
         id: valgrind
         run: >
-          make -Orecurse -j$(grep -c ^processor /proc/cpuinfo)
+          make -Orecurse -j$(nproc)
           OPTFLAGS="$OPT" valgrind-test
         continue-on-error: true
       - name: valgrind-results
@@ -75,7 +75,7 @@ jobs:
         rl: ['', 'libreadline', 'libedit']
         cc: [ gcc, clang ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: mpath
         run: sudo modprobe dm_multipath
       - name: brd
@@ -92,12 +92,12 @@ jobs:
       - name: set CC
         run: echo CC=${{ matrix.cc }} >> $GITHUB_ENV
       - name: build
-        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) READLINE=${{ matrix.rl }}
+        run: make -Orecurse -j$(nproc) READLINE=${{ matrix.rl }}
       - name: test
-        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) test
+        run: make -Orecurse -j$(nproc) test
       - name: valgrind-test
         id: valgrind
-        run: make -Orecurse -j$(grep -c ^processor /proc/cpuinfo) valgrind-test
+        run: make -Orecurse -j$(nproc) valgrind-test
         continue-on-error: true
       - name: valgrind-results
         run: cat tests/*.vgr

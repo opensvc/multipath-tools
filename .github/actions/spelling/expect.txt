@@ -6,6 +6,7 @@ alloc
 alltgpt
 alua
 aptpl
+ASAN
 ascq
 ata
 autoconfig
@@ -14,6 +15,7 @@ autoresize
 backported
 barbie
 BINDIR
+bitfield
 blkid
 bmarzins
 Bsymbolic
@@ -50,6 +52,7 @@ DIO
 directio
 disablequeueing
 dmevent
+dmi
 dmmp
 dmraid
 dmsetup
@@ -59,12 +62,14 @@ ECKD
 emc
 Engenio
 EVPD
+Exos
 failback
 failover
 fds
 fexceptions
 FFFFFFFF
 fge
+fno
 followover
 forcequeueing
 fpin
@@ -76,6 +81,7 @@ getrlimit
 getuid
 github
 gitlab
+google
 GPT
 hbtl
 hds
@@ -121,6 +127,7 @@ libudevdir
 liburcu
 linux
 LIO
+lld
 lpthread
 Lun
 lvm
@@ -140,12 +147,13 @@ multipathing
 multipaths
 multiqueue
 mwilck
+NFINIDAT
 NOLOG
 nompath
 NOSCAN
 Nosync
 nvme
-NFINIDAT
+Nytro
 OBJDEPS
 oneshot
 ontap
@@ -155,8 +163,10 @@ OPTFLAGS
 paramp
 partx
 pathgroup
+pathlist
 petabytes
 pgpolicy
+pgvec
 plugindir
 PNR
 ppc
@@ -191,12 +201,12 @@ rpmbuild
 rport
 rtpi
 rtprio
+sanitizers
 sas
 sbp
 scsi
 SCST
 sda
-sdc
 Seagate
 setmarginal
 setprkey
@@ -251,6 +261,7 @@ usr
 uuid
 valgrind
 varoqui
+versioning
 Vess
 vgr
 VNX
@@ -261,6 +272,7 @@ weightedpath
 wholedisk
 Wilck
 wildcards
+Wno
 workflows
 wrt
 wwid

@@ -10,6 +10,11 @@
 #commit
 \b[0-9a-f]{7}\b
 
+# Generic Hex numbers
+\b0x[0-9a-f]{4}\b
+\b0x[0-9a-f]{8}\b
+\b0x[0-9a-f]{16}\b
+
 # WWNN/WWPN (NAA identifiers)
 \b(?:0x)?10[0-9a-f]{14}\b
 \b(?:0x|3)?[25][0-9a-f]{15}\b

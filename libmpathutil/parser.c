@@ -153,7 +153,7 @@ snprint_keyword(struct strbuf *buff, const char *fmt, struct keyword *kw,
 		const void *data)
 {
 	int r = 0;
-	char *f;
+	const char *f;
 	struct config *conf;
 	STRBUF_ON_STACK(sbuf);
 

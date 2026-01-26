@@ -1,5 +1,42 @@
 # multipath-tools Release Notes
 
+## multipath-tools 0.10.6, 2026/01
+
+**Note:** This release includes a minor change of the libmultipath ABI.
+
+### Bug fixes
+
+* Fix `mpathpersist --report-capabilities` output. Fixes 0.5.0.
+* Fix command descriptions in the multipathd man page. Fixes 0.9.2.
+* Fix an undefined symbol error with the LLVM lld linker.
+  Fixes [#132](https://github.com/opensvc/multipath-tools/issues/132), 0.10.0.
+* Fix ISO C23 compatibility issue causing errors with new compilers.
+* Fix memory leak caused by not joining the "init unwinder" thread.
+  Fixes 0.8.6.
+* Fix memory leaks in kpartx. Fixes any version.
+* Print the warning "setting scsi timeouts is unsupported for protocol" only
+  once per protocol. Fixes 0.9.0.
+* Make sure multipath-tools is compiled with the compiler flag
+  `-fno-strict-aliasing`. This turns out to be necessary because our code
+  uses techniques like `container_of()` which don't work well with
+  strict aliasing rules.
+  Fixes [#130](https://github.com/opensvc/multipath-tools/issues/130).
+* Fix initialization of paths that were offline during path detection.
+* Fix printing the "path offline" log message for offline paths that don't
+  have a path checker configured.
+* kpartx: Fix freeing static buffer when operating on regular files.
+  Fixes [#139](https://github.com/opensvc/multipath-tools/issues/139).
+
+### Other changes
+
+* Hardware table: add Seagate Exos and Nytro series.
+* Avoid joining threads twice with liburcu 0.14.0 and newer.
+* CI updates (GitHub workflows).
+* Fix CI for cmocka 2.0 by adding the `-Wno-error=deprecated-declarations`
+  compiler flag.
+  Fixes [#129](https://github.com/opensvc/multipath-tools/issues/129)
+* Add the ASAN=1 and OPT= make variables (see README.md).
+
 ## multipath-tools 0.10.5, 2025/10
 
 ### Other changes
