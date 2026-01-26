@@ -404,8 +404,11 @@ main(int argc, char **argv){
 	 * This allows deletion of partitions created with older kpartx
 	 * versions which didn't use the fake UUID during creation.
 	 */
-	if (!uuid && !(what == DELETE && force_devmap))
+	if (!uuid && !(what == DELETE && force_devmap)) {
 		uuid = nondm_create_uuid(buf.st_rdev);
+		if (!uuid)
+			exit(1);
+	}
 
 	if (delim == NULL) {
 		delim = xmalloc(DELIM_SIZE);
