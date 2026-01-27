@@ -128,6 +128,7 @@ linux
 LIO
 lld
 lpthread
+lun
 Lun
 lvm
 lvmteam
@@ -135,6 +136,7 @@ Lyve
 Marzinski
 misdetection
 mpath
+mpatha
 mpathb
 mpathpersist
 mpathvalid
@@ -206,6 +208,7 @@ sbp
 scsi
 SCST
 sda
+sdb
 Seagate
 setmarginal
 setprkey
