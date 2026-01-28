@@ -93,7 +93,9 @@ step preparation
 
 [[ $UID -eq 0 ]]
 [[ $KPARTX ]] || {
-    if [[ -x $PWD/kpartx/kpartx ]]; then
+    if [[ -f "$PWD/kpartx" && -x "$PWD/kpartx" ]]; then
+	KPARTX=$PWD/kpartx
+    elif [[ -f "$PWD/kpartx/kpartx" && -x "$PWD/kpartx/kpartx" ]]; then
 	KPARTX=$PWD/kpartx/kpartx
     else
 	KPARTX=$(which kpartx)
