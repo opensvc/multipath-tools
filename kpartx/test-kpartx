@@ -115,7 +115,7 @@ step preparation
     elif [[ -f "$PWD/kpartx/kpartx" && -x "$PWD/kpartx/kpartx" ]]; then
 	KPARTX=$PWD/kpartx/kpartx
     else
-	KPARTX=$(which kpartx)
+	KPARTX=$(command -v kpartx)
     fi
 }
 [[ "$KPARTX" ]]
@@ -123,8 +123,8 @@ echo "== Using kpartx = $KPARTX ==" >&2
 
 # Try to use system kpartx for cleanup
 # Fall back to ours if not found
-CLEANUP_KPARTX=$(which kpartx)
-[[ "$CLEANUP_KPARTX" ]] || CLEANUP_KPARTX=$KPARTX
+# shellcheck disable=SC2034
+CLEANUP_KPARTX=$(command -v kpartx) || CLEANUP_KPARTX=$KPARTX
 
 FILE1=kpartx1
 FILE2=kpartx2
