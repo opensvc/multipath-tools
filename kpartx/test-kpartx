@@ -107,7 +107,6 @@ SECTSIZ=512
 OFFS=32                # offset of linear mapping into dev, sectors
 VG=kpvg  # volume group name
 LV=kplv  # logical vol name
-LVMCONF='devices { filter = [ "a|/dev/loop.*|", r".*" ] }'
 
 OK=
 
@@ -115,6 +114,21 @@ OK=
     WORKDIR=$(mktemp -d /tmp/kpartx-XXXXXX)
     push_cleanup 'rm -rf $WORKDIR'
 }
+
+USE_DEVICESFILE=
+if [[ "$((lvmconfig --typeconfig full 2>/dev/null || true) | \
+	    sed -n 's/.*use_devicesfile=//p')" = 1 ]]; then
+    LVMCONF=
+    # This test may modify the devices file. Be sure to restore it
+    if [[ -f /etc/lvm/devices/system.devices ]]; then
+	cp -a /etc/lvm/devices/system.devices "$WORKDIR"
+	push_cleanup 'cp -a $WORKDIR/system.devices /etc/lvm/devices'
+    else
+	push_cleanup 'rm -f /etc/lvm/devices/system.devices'
+    fi
+else
+    LVMCONF='devices { filter = [ "a|/dev/loop.*|", r".*" ] }'
+fi
 
 push_cleanup "cd $PWD"
 cd "$WORKDIR"
@@ -175,11 +189,11 @@ usleep $WAIT_US
 step "create vg on $LO3"
 # On the 3rd loop device, we create a VG and an LV
 # The LV should not be removed by kpartx.
-pvcreate --config "$LVMCONF" -f $LO3
-vgcreate --config "$LVMCONF" $VG $LO3
-push_cleanup 'vgremove --config "$LVMCONF" -f $VG'
-lvcreate --config "$LVMCONF" -L $((SIZE/2))B -n $LV $VG
-push_cleanup 'lvremove --config "$LVMCONF" -f $VG/$LV'
+pvcreate ${LVMCONF:+--config "$LVMCONF"} -f $LO3
+vgcreate ${LVMCONF:+--config "$LVMCONF"} $VG $LO3
+push_cleanup 'vgremove ${LVMCONF:+--config "$LVMCONF"} -f $VG'
+lvcreate ${LVMCONF:+--config "$LVMCONF"} -L $((SIZE/2))B -n $LV $VG
+push_cleanup 'lvremove ${LVMCONF:+--config "$LVMCONF"} -f $VG/$LV'
 usleep $WAIT_US
 
 current_state
