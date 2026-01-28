@@ -67,6 +67,8 @@ jobs:
         run: rm -f tests/dmevents.out tests/directio.out
       - name: root-test
         run: sudo make DIO_TEST_DEV=/dev/zram$ZRAM test
+      - name: kpartx-test
+        run: sudo make -C kpartx test
   noble:
     runs-on: ubuntu-24.04
     strategy:
@@ -108,3 +110,5 @@ jobs:
         run: rm -f tests/dmevents.out tests/directio.out
       - name: root-test
         run: sudo make DIO_TEST_DEV=/dev/ram0 test
+      - name: kpartx-test
+        run: sudo make -C kpartx test
