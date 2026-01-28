@@ -29,6 +29,8 @@
 : ${KPARTX:=}
 # Options to pass to kpartx always
 : ${KPARTX_OPTS:=-s}
+# Set non-empty to enable some debug messages
+: ${KPARTX_DEBUG:=}
 # Time to wait for device nodes to appear (microseconds)
 # Waiting is only needed if "s" is not in $KPARTX_OPTS
 : ${WAIT_US:=0}
@@ -70,6 +72,12 @@ mk_partitions() {
 
 wipe_ptable() {
     dd if=/dev/zero of=$1 bs=1b count=1 &>/dev/null
+}
+
+current_state() {
+    [[ "$KPARTX_DEBUG" ]] || return 0
+    echo "--------------------"
+    dmsetup ls
 }
 
 step preparation
@@ -174,6 +182,7 @@ lvcreate --config "$LVMCONF" -L $((SIZE/2))B -n $LV $VG
 push_cleanup 'lvremove --config "$LVMCONF" -f $VG/$LV'
 usleep $WAIT_US
 
+current_state
 [[ -b /dev/mapper/$VG-$LV ]]
 
 # dmsetup table /dev/mapper/$VG-$LV
@@ -185,36 +194,48 @@ mk_partitions $LO1
 mk_partitions $LO2
 mk_partitions $LO4
 
+step "run kpartx on regular file"
+
 # Test invocation of kpartx with regular file here
 LO2P1=/dev/mapper/$(basename $LO2)-foo1
 push_cleanup 'dmsetup remove -f $(basename $LO2P1)'
 $KPARTX $KPARTX_OPTS -a -p -foo $FILE2
+current_state
 [[ -b $LO2P1 ]]
 
 step "remove partitions with deleted ptable"
 wipe_ptable $LO2
 $KPARTX $KPARTX_OPTS -d $LO2
+current_state
 [[ ! -b $LO2P1 ]]
 
+step "re-add just removed partions"
 mk_partitions $LO2
 $KPARTX $KPARTX_OPTS -a -p -foo $FILE2
+current_state
 [[ -b $LO2P1 ]]
 
+step "run kpartx on loop device"
 LO1P1=/dev/mapper/$(basename $LO1)-eggs1
 push_cleanup 'dmsetup remove -f $(basename $LO1P1)'
 $KPARTX $KPARTX_OPTS -a -p -eggs $LO1
 
 usleep $WAIT_US
+current_state
 [[ -b $LO1P1 ]]
 [[ -b $LO2P1 ]]
 
 # dmsetup info $LO2P1
 
+step "rename $(basename $LO1P1) to $(basename $LO1)"
 # Set pathological name for partition on $LO1 (same as loop device itself)
 dmsetup rename $(basename $LO1P1) $(basename $LO1)
 LO1P1=/dev/mapper/$(basename $LO1)
 pop_cleanup
 push_cleanup 'dmsetup remove -f $(basename $LO1P1)'
+
+current_state
+[[ -b $LO1P1 ]]
 
 # dmsetup info $LO1P1
 
@@ -237,17 +258,20 @@ push_cleanup '$CLEANUP_KPARTX $KPARTX_OPTS -f -d /dev/mapper/$SPAN1'
 push_cleanup 'dmsetup remove -f $(basename $SPAN1P1)'
 
 usleep $WAIT_US
+current_state
 [[ -b $SPAN2P1 ]]
 [[ -b $SPAN1P1 ]]
 
 step "rename partitions on DM device to default"
 $KPARTX $KPARTX_OPTS -u /dev/mapper/$SPAN1
+current_state
 [[ ! -b ${SPAN1P1} ]]
 # This assumes that $SPAN1 ends in a non-digit
 [[ -b ${SPAN1P1//-spam/} ]]
 
 step "rename partitions on DM device back from default"
 $KPARTX $KPARTX_OPTS -u -p -spam /dev/mapper/$SPAN1
+current_state
 [[ -b ${SPAN1P1} ]]
 [[ ! -b ${SPANP1//-foo/} ]]
 
@@ -255,6 +279,7 @@ step "delete partitions on DM devices"
 $KPARTX $KPARTX_OPTS -d /dev/mapper/$SPAN1 >&2
 usleep $WAIT_US
 
+current_state
 [[ -b $SPAN2P1 ]]
 [[ -b $LO1P1 ]]
 [[ -b $LO2P1 ]]
@@ -263,29 +288,34 @@ usleep $WAIT_US
 $KPARTX $KPARTX_OPTS -d /dev/mapper/$SPAN2
 usleep $WAIT_US
 
+current_state
 [[ -b $LO1P1 ]]
 [[ -b $LO2P1 ]]
 [[ ! -b $SPAN2P1 ]]
 
 step "rename partitions on loop device"
 $KPARTX $KPARTX_OPTS -u -p -spam $LO2
+current_state
 [[ ! -b ${LO2P1} ]]
 [[ -b ${LO2P1//-foo/-spam} ]]
 
 step "rename partitions on loop device back"
 $KPARTX $KPARTX_OPTS -u -p -foo $LO2
+current_state
 [[ -b ${LO2P1} ]]
 [[ ! -b ${LO2P1//-foo/-spam} ]]
 
 step "rename partitions on loop device to default"
 $KPARTX $KPARTX_OPTS -u $LO2
 #read a
+current_state
 [[ ! -b ${LO2P1} ]]
 # $LO1 ends in a digit
 [[ -b ${LO2P1//-foo/p} ]]
 
 step "rename partitions on loop device back from default"
 $KPARTX $KPARTX_OPTS -u -p -foo $LO2
+current_state
 [[ -b ${LO2P1} ]]
 [[ ! -b ${LO2P1//-foo/p} ]]
 
@@ -302,11 +332,15 @@ $KPARTX $KPARTX_OPTS -d $LO1
 usleep $WAIT_US
 
 # ls -l /dev/mapper
+current_state
 [[ ! -b $LO1P1 ]]
+# 'dmsetup remove -f $(basename $SPAN1P1)'
 pop_cleanup
 [[ ! -b $LO2P1 ]]
+# '$CLEANUP_KPARTX $KPARTX_OPTS -f -d /dev/mapper/$SPAN1'
 pop_cleanup
 # spans should not have been removed
+current_state
 [[ -b /dev/mapper/$SPAN1 ]]
 [[ -b /dev/mapper/$SPAN2 ]]
 [[ -b /dev/mapper/$USER1 ]]
