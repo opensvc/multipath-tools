@@ -36,7 +36,10 @@
 : ${WAIT_US:=0}
 
 # IMPORTANT: The ERR trap is essential for this program to work correctly!
-trap 'LINE=$LINENO; trap - ERR; echo "== error in $BASH_COMMAND on line $LINE ==" >&2; exit 1' ERR
+trap 'LINE=$LINENO
+trap - ERR
+eval echo "$0: == error in \\\"\$BASH_COMMAND\\\" \(\\\"$BASH_COMMAND\\\"\) on line $LINE ==" >&2
+exit 1' ERR
 trap 'cleanup' 0
 
 CLEANUP=:
@@ -48,11 +51,17 @@ cleanup() {
     else
 	echo == step $STEP failed == >&2
     fi
+    if [[ "$KPARTX_DEBUG" ]]; then
+	eval "echo \"== BEGIN CLEANUP ==
+$CLEANUP
+== END CLEANUP ==\""
+    fi
     eval "$CLEANUP" &>/dev/null
 }
 
 push_cleanup() {
-    CLEANUP="$@;$CLEANUP"
+    CLEANUP="$@
+$CLEANUP"
 }
 
 pop_cleanup() {
