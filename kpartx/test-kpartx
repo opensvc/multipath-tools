@@ -181,9 +181,9 @@ mk_partitions $LO4
 
 # Test invocation of kpartx with regular file here
 LO2P1=/dev/mapper/$(basename $LO2)-foo1
+push_cleanup 'dmsetup remove -f $(basename $LO2P1)'
 $KPARTX $KPARTX_OPTS -a -p -foo $FILE2
 [[ -b $LO2P1 ]]
-push_cleanup 'dmsetup remove -f $(basename $LO2P1)'
 
 step "remove partitions with deleted ptable"
 wipe_ptable $LO2
@@ -195,8 +195,8 @@ $KPARTX $KPARTX_OPTS -a -p -foo $FILE2
 [[ -b $LO2P1 ]]
 
 LO1P1=/dev/mapper/$(basename $LO1)-eggs1
-$KPARTX $KPARTX_OPTS -a -p -eggs $LO1
 push_cleanup 'dmsetup remove -f $(basename $LO1P1)'
+$KPARTX $KPARTX_OPTS -a -p -eggs $LO1
 
 usleep $WAIT_US
 [[ -b $LO1P1 ]]
