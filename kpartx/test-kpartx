@@ -105,8 +105,9 @@ FILE4=kpartx4
 SIZE=$((1024*1024*1024))  # use bytes as units here
 SECTSIZ=512
 OFFS=32                # offset of linear mapping into dev, sectors
-VG=kpvg  # volume group name
-LV=kplv  # logical vol name
+VG=__kpvg__  # volume group name
+LV=__kplv__  # logical vol name
+
 
 OK=
 
@@ -166,10 +167,11 @@ TABLE="\
 0 $((SIZE/SECTSIZ-OFFS)) linear $DEV1 $OFFS
 $((SIZE/SECTSIZ-OFFS)) $((SIZE/SECTSIZ-OFFS)) linear $DEV2 $OFFS"
 
-SPAN1=kpt
 SPAN2=$(basename $LO2)
 dmsetup create $SPAN1 <<<"$TABLE"
 push_cleanup 'dmsetup remove -f $SPAN1'
+# This must end in a normal letter
+SPAN1=__kpt__
 
 dmsetup create $SPAN2 <<<"$TABLE"
 push_cleanup 'dmsetup remove -f $SPAN2'
