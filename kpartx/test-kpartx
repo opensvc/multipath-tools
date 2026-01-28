@@ -106,6 +106,10 @@ partname() {
     fi
 }
 
+wait_a_moment() {
+    sleep "$(printf %d.%06d "$((WAIT_USEC / 1000000))" "$((WAIT_USEC % 1000000))")"
+}
+
 step preparation
 
 [[ "$UID" -eq 0 ]]
@@ -183,7 +187,7 @@ push_cleanup 'losetup -d "$LO4"'
 DEV1=$(stat -c "%t:%T" "$LO1")
 DEV2=$(stat -c "%t:%T" "$LO2")
 
-usleep "$WAIT_US"
+wait_a_moment
 
 step "create DM devices (spans)"
 # Create two linear mappings spanning two loopdevs.
@@ -212,7 +216,7 @@ dmsetup create "$USER1" <<EOF
 0 $((SIZE/SECTSIZ-OFFS)) linear $DEV1 $OFFS
 EOF
 
-usleep "$WAIT_US"
+wait_a_moment
 [[ -b "/dev/mapper/$SPAN1" ]]
 [[ -b "/dev/mapper/$SPAN2" ]]
 [[ -b "/dev/mapper/$USER1" ]]
@@ -228,7 +232,7 @@ push_cleanup 'vgremove ${LVMCONF:+--config "$LVMCONF"} -f "$VG"'
 # shellcheck disable=SC2090
 lvcreate ${LVMCONF:+--config "$LVMCONF"} -L "$((SIZE/2))B" -n "$LV" "$VG"
 push_cleanup 'lvremove ${LVMCONF:+--config "$LVMCONF"} -f "$VG/$LV"'
-usleep "$WAIT_US"
+wait_a_moment
 
 current_state
 [[ -b "/dev/mapper/$VG-$LV" ]]
@@ -272,7 +276,7 @@ push_cleanup 'dmsetup remove -f $(basename "$LO1P1")'
 # shellcheck disable=2086
 $KPARTX $KPARTX_OPTS -a -p -eggs "$LO1"
 
-usleep "$WAIT_US"
+wait_a_moment
 current_state
 [[ -b "$LO1P1" ]]
 [[ -b "$LO2P1" ]]
@@ -311,7 +315,7 @@ SPAN1P1=/dev/mapper/${SPAN1}-spam1
 push_cleanup '$CLEANUP_KPARTX $KPARTX_OPTS -f -d "/dev/mapper/$SPAN1"'
 push_cleanup 'dmsetup remove -f "$(basename "$SPAN1P1")"'
 
-usleep "$WAIT_US"
+wait_a_moment
 current_state
 [[ -b "$SPAN2P1" ]]
 [[ -b "$SPAN1P1" ]]
@@ -334,7 +338,7 @@ current_state
 step "delete partitions on DM devices"
 # shellcheck disable=2086
 $KPARTX $KPARTX_OPTS -d "/dev/mapper/$SPAN1" >&2
-usleep "$WAIT_US"
+wait_a_moment
 
 current_state
 [[ -b "$SPAN2P1" ]]
@@ -344,7 +348,7 @@ current_state
 
 # shellcheck disable=2086
 $KPARTX $KPARTX_OPTS -d "/dev/mapper/$SPAN2"
-usleep "$WAIT_US"
+wait_a_moment
 
 current_state
 [[ -b "$LO1P1" ]]
@@ -394,7 +398,7 @@ $KPARTX $KPARTX_OPTS -d "$LO3"
 $KPARTX $KPARTX_OPTS -d "$FILE2"
 # shellcheck disable=2086
 $KPARTX $KPARTX_OPTS -d "$LO1"
-usleep "$WAIT_US"
+wait_a_moment
 
 # ls -l /dev/mapper
 current_state
