@@ -83,6 +83,12 @@ step preparation
     fi
 }
 [[ $KPARTX ]]
+echo "== Using kpartx = $KPARTX ==" >&2
+
+# Try to use system kpartx for cleanup
+# Fall back to ours if not found
+CLEANUP_KPARTX=$(which kpartx)
+[[ "$CLEANUP_KPARTX" ]] || CLEANUP_KPARTX=$KPARTX
 
 FILE1=kpartx1
 FILE2=kpartx2
@@ -221,13 +227,13 @@ SPAN2P1=/dev/mapper/${SPAN2}-bar1
 # udev rules may have created partition mappings without UUIDs
 # which aren't removed by default (if system standard kpartx doesn't
 # set the UUID). Remove them using -f
-push_cleanup '$KPARTX $KPARTX_OPTS -f -d /dev/mapper/$SPAN2'
+push_cleanup '$CLEANUP_KPARTX $KPARTX_OPTS -f -d /dev/mapper/$SPAN2'
 push_cleanup 'dmsetup remove -f $(basename $SPAN2P1)'
 
 $KPARTX $KPARTX_OPTS -a -p -spam /dev/mapper/$SPAN1
 SPAN1P1=/dev/mapper/${SPAN1}-spam1
 # see above
-push_cleanup '$KPARTX $KPARTX_OPTS -f -d /dev/mapper/$SPAN1'
+push_cleanup '$CLEANUP_KPARTX $KPARTX_OPTS -f -d /dev/mapper/$SPAN1'
 push_cleanup 'dmsetup remove -f $(basename $SPAN1P1)'
 
 usleep $WAIT_US
