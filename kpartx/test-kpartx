@@ -78,8 +78,14 @@ step() {
 }
 
 mk_partitions() {
-    parted -s "$1" mklabel msdos
-    parted -s -- "$1" mkpart prim ext2 1MiB -1s
+    # prefer sfdisk, as parted will try to create
+    # partition mappings by itself
+    if command -v sfdisk &>/dev/null; then
+	printf ",+,\n" | sfdisk -f "$1" &>/dev/null
+    else
+	parted -s "$1" mklabel msdos
+	parted -s -- "$1" mkpart prim ext2 1MiB -1s
+    fi
 }
 
 wipe_ptable() {
