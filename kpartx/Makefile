@@ -43,6 +43,7 @@ uninstall:
 kpartx.out:	$(EXEC)
 	./test-kpartx >$@ 2>&1 || { cat $@; rm -f $@; exit 1; }
 
+test:   export KPARTX_DEBUG := 1
 test:	kpartx.out
 
 clean: dep_clean
