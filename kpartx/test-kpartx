@@ -42,7 +42,7 @@
 trap 'LINE=$LINENO
 trap - ERR
 eval echo "$0: == error in \\\"\$BASH_COMMAND\\\" \(\\\"$BASH_COMMAND\\\"\) on line $LINE ==" >&2
-exit 1' ERR
+exit 1' ERR INT TERM
 trap 'cleanup' 0
 
 CLEANUP=:
