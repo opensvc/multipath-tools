@@ -2518,7 +2518,8 @@ get_new_state(struct path *pp)
 	 * checker to trigger special handling before becoming PATH_DOWN.
 	 */
 	if (newstate == PATH_DISCONNECTED) {
-		if (pp->mpp->purge_disconnected == PURGE_DISCONNECTED_ON &&
+		if (pp->mpp &&
+		    pp->mpp->purge_disconnected == PURGE_DISCONNECTED_ON &&
 		    pp->disconnected == NOT_DISCONNECTED) {
 			condlog(2, "%s: mark (%s) path for purge", pp->dev,
 				checker_state_name(newstate));

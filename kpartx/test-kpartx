@@ -1,5 +1,8 @@
 #! /bin/bash
 
+# Run shellcheck with "-e SC2016", this is causing too many annotations
+# (for each push_cleanup invocation).
+
 # This is a unit test program for kpartx, in particular for deleting partitions.
 #
 # The rationale is the following:
@@ -24,33 +27,44 @@
 # Set WORKDIR in environment to existing dir to for persistence
 # WARNING:  existing files will be truncated.
 # If empty, test will be done in temporary dir
-: ${WORKDIR:=}
+: "${WORKDIR:=}"
 # Set this environment variable to test an alternative kpartx executable
-: ${KPARTX:=}
+: "${KPARTX:=}"
 # Options to pass to kpartx always
-: ${KPARTX_OPTS:=-s}
+: "${KPARTX_OPTS:=-s}"
+# Set non-empty to enable some debug messages
+: "${KPARTX_DEBUG:=}"
 # Time to wait for device nodes to appear (microseconds)
 # Waiting is only needed if "s" is not in $KPARTX_OPTS
-: ${WAIT_US:=0}
+: "${WAIT_US:=0}"
 
 # IMPORTANT: The ERR trap is essential for this program to work correctly!
-trap 'LINE=$LINENO; trap - ERR; echo "== error in $BASH_COMMAND on line $LINE ==" >&2; exit 1' ERR
+trap 'LINE=$LINENO
+trap - ERR
+eval echo "$0: == error in \\\"\$BASH_COMMAND\\\" \(\\\"$BASH_COMMAND\\\"\) on line $LINE ==" >&2
+exit 1' ERR INT TERM
 trap 'cleanup' 0
 
 CLEANUP=:
 cleanup() {
     trap - ERR
     trap - 0
-    if [[ $OK ]]; then
-	echo == all tests completed successfully == >&2
+    if [[ "$OK" ]]; then
+	echo "== all tests completed successfully ==" >&2
     else
-	echo == step $STEP failed == >&2
+	echo "== step $STEP failed ==" >&2
+    fi
+    if [[ "$KPARTX_DEBUG" ]]; then
+	eval "echo \"== BEGIN CLEANUP ==
+$CLEANUP
+== END CLEANUP ==\""
     fi
     eval "$CLEANUP" &>/dev/null
 }
 
 push_cleanup() {
-    CLEANUP="$@;$CLEANUP"
+    CLEANUP="$*
+$CLEANUP"
 }
 
 pop_cleanup() {
@@ -59,30 +73,68 @@ pop_cleanup() {
 }
 
 step() {
-    STEP="$@"
-    echo == Test step: $STEP == >&2
+    STEP=$*
+    echo "== Test step: $STEP ==" >&2
 }
 
 mk_partitions() {
-    parted -s $1 mklabel msdos
-    parted -s -- $1 mkpart prim ext2 1MiB -1s
+    # prefer sfdisk, as parted will try to create
+    # partition mappings by itself
+    if command -v sfdisk &>/dev/null; then
+	printf ",+,\n" | sfdisk -f "$1" &>/dev/null
+    else
+	parted -s "$1" mklabel msdos
+	parted -s -- "$1" mkpart prim ext2 1MiB -1s
+    fi
 }
 
 wipe_ptable() {
-    dd if=/dev/zero of=$1 bs=1b count=1
+    dd if=/dev/zero of="$1" bs=1b count=1 &>/dev/null
+}
+
+current_state() {
+    [[ "$KPARTX_DEBUG" ]] || return 0
+    echo "--------------------"
+    dmsetup ls
+}
+
+
+# Default name of partition device
+partname() {
+    local base
+    base=${1##*/}
+
+    # Is the last character a digit?
+    if [[ "${base:$((${#base}-1))}" =~ [0-9] ]]; then
+	printf "/dev/mapper/%sp%s" "$base" "$2"
+    else
+	printf "/dev/mapper/%s%s" "$base" "$2"
+    fi
+}
+
+wait_a_moment() {
+    sleep "$(printf %d.%06d "$((WAIT_USEC / 1000000))" "$((WAIT_USEC % 1000000))")"
 }
 
 step preparation
 
-[[ $UID -eq 0 ]]
-[[ $KPARTX ]] || {
-    if [[ -x $PWD/kpartx/kpartx ]]; then
+[[ "$UID" -eq 0 ]]
+[[ "$KPARTX" ]] || {
+    if [[ -f "$PWD/kpartx" && -x "$PWD/kpartx" ]]; then
+	KPARTX=$PWD/kpartx
+    elif [[ -f "$PWD/kpartx/kpartx" && -x "$PWD/kpartx/kpartx" ]]; then
 	KPARTX=$PWD/kpartx/kpartx
     else
-	KPARTX=$(which kpartx)
+	KPARTX=$(command -v kpartx)
     fi
 }
-[[ $KPARTX ]]
+[[ "$KPARTX" ]]
+echo "== Using kpartx = $KPARTX ==" >&2
+
+# Try to use system kpartx for cleanup
+# Fall back to ours if not found
+# shellcheck disable=SC2034
+CLEANUP_KPARTX=$(command -v kpartx) || CLEANUP_KPARTX=$KPARTX
 
 FILE1=kpartx1
 FILE2=kpartx2
@@ -91,43 +143,63 @@ FILE4=kpartx4
 SIZE=$((1024*1024*1024))  # use bytes as units here
 SECTSIZ=512
 OFFS=32                # offset of linear mapping into dev, sectors
-VG=kpvg  # volume group name
-LV=kplv  # logical vol name
-LVMCONF='devices { filter = [ "a|/dev/loop.*|", r".*" ] }'
-
+VG=__kpvg__  # volume group name
+LV=__kplv__  # logical vol name
 OK=
 
-[[ $WORKDIR ]] || {
+[[ "$WORKDIR" ]] || {
     WORKDIR=$(mktemp -d /tmp/kpartx-XXXXXX)
-    push_cleanup 'rm -rf $WORKDIR'
+    # shellcheck disable=SC2016
+    push_cleanup 'rm -rf "$WORKDIR"'
 }
 
+if [[ "$( (lvmconfig --typeconfig full 2>/dev/null || true) | \
+	    sed -n 's/.*use_devicesfile=//p' )" = 1 ]]; then
+    LVMCONF=
+    # This test may modify the devices file. Be sure to restore it
+    if [[ -f /etc/lvm/devices/system.devices ]]; then
+	cp -a /etc/lvm/devices/system.devices "$WORKDIR"
+	push_cleanup 'cp -a $WORKDIR/system.devices /etc/lvm/devices'
+    else
+	push_cleanup 'rm -f /etc/lvm/devices/system.devices'
+    fi
+else
+    # This isn't shell code, it's actually a single lvm command argument.
+    # shellcheck disable=SC2089
+    LVMCONF='devices { filter = [ "a|/dev/loop.*|", r".*" ] }'
+fi
+
 push_cleanup "cd $PWD"
+# If cd fails, the script will terminate
+# shellcheck disable=SC2164
 cd "$WORKDIR"
 
 step "create loop devices"
-truncate -s $SIZE $FILE1
-truncate -s $SIZE $FILE2
-truncate -s $SIZE $FILE3
-truncate -s $SIZE $FILE4
+truncate -s "$SIZE" "$FILE1"
+truncate -s "$SIZE" "$FILE2"
+truncate -s "$SIZE" "$FILE3"
+truncate -s "$SIZE" "$FILE4"
 
-LO1=$(losetup -f $FILE1 --show)
-push_cleanup 'losetup -d $LO1'
-LO2=$(losetup -f $FILE2 --show)
-push_cleanup 'losetup -d $LO2'
-LO3=$(losetup -f $FILE3 --show)
-push_cleanup 'losetup -d $LO3'
-LO4=$(losetup -f $FILE4 --show)
-push_cleanup 'losetup -d $LO4'
+LO1=$(losetup -f "$FILE1" --show)
+push_cleanup 'losetup -d "$LO1"'
+LO2=$(losetup -f "$FILE2" --show)
+push_cleanup 'losetup -d "$LO2"'
+LO3=$(losetup -f "$FILE3" --show)
+push_cleanup 'losetup -d "$LO3"'
+LO4=$(losetup -f "$FILE4" --show)
+push_cleanup 'losetup -d "$LO4"'
 
-[[ $LO1 && $LO2 && $LO3 && $LO4 && -b $LO1 && -b $LO2 && -b $LO3 && -b $LO4 ]]
-DEV1=$(stat -c "%t:%T" $LO1)
-DEV2=$(stat -c "%t:%T" $LO2)
-DEV3=$(stat -c "%t:%T" $LO3)
+[[ "$LO1" && "$LO2" && "$LO3" && "$LO4" && -b "$LO1" && -b "$LO2" && -b "$LO3" && -b "$LO4" ]]
+DEV1=$(stat -c "%t:%T" "$LO1")
+DEV2=$(stat -c "%t:%T" "$LO2")
 
-usleep $WAIT_US
+wait_a_moment
 
-step "create DM devices (spans)"
+SPAN1=__kpt__
+SPAN2=$(basename "$LO2")
+# This is a non-kpartx pseudo "partition" mapping
+USER1=user1
+step "create DM devices => $SPAN1, $SPAN2, $USER1"
 # Create two linear mappings spanning two loopdevs.
 # One of them gets a pathological name colliding with
 # the loop device name.
@@ -138,198 +210,254 @@ TABLE="\
 0 $((SIZE/SECTSIZ-OFFS)) linear $DEV1 $OFFS
 $((SIZE/SECTSIZ-OFFS)) $((SIZE/SECTSIZ-OFFS)) linear $DEV2 $OFFS"
 
-SPAN1=kpt
-SPAN2=$(basename $LO2)
-dmsetup create $SPAN1 <<<"$TABLE"
-push_cleanup 'dmsetup remove -f $SPAN1'
+dmsetup create "$SPAN1" <<<"$TABLE"
+push_cleanup 'dmsetup remove -f "$SPAN1"'
 
-dmsetup create $SPAN2 <<<"$TABLE"
-push_cleanup 'dmsetup remove -f $SPAN2'
+dmsetup create "$SPAN2" <<<"$TABLE"
+push_cleanup 'dmsetup remove -f "$SPAN2"'
 
-# This is a non-kpartx pseudo "partition" mapping
-USER1=user1
-push_cleanup 'dmsetup remove -f $USER1'
-dmsetup create $USER1 <<EOF
+push_cleanup 'dmsetup remove -f "$USER1"'
+dmsetup create "$USER1" <<EOF
 0 $((SIZE/SECTSIZ-OFFS)) linear $DEV1 $OFFS
 EOF
 
-usleep $WAIT_US
-[[ -b /dev/mapper/$SPAN1 ]]
-[[ -b /dev/mapper/$SPAN2 ]]
-[[ -b /dev/mapper/$USER1 ]]
+wait_a_moment
+[[ -b "/dev/mapper/$SPAN1" ]]
+[[ -b "/dev/mapper/$SPAN2" ]]
+[[ -b "/dev/mapper/$USER1" ]]
 
-step "create vg on $LO3"
+step "create vg and lv on $LO3 => $VG-$LV, $USER1"
 # On the 3rd loop device, we create a VG and an LV
 # The LV should not be removed by kpartx.
-pvcreate --config "$LVMCONF" -f $LO3
-vgcreate --config "$LVMCONF" $VG $LO3
-push_cleanup 'vgremove --config "$LVMCONF" -f $VG'
-lvcreate --config "$LVMCONF" -L $((SIZE/2))B -n $LV $VG
-push_cleanup 'lvremove --config "$LVMCONF" -f $VG/$LV'
-usleep $WAIT_US
+# shellcheck disable=SC2090
+pvcreate ${LVMCONF:+--config "$LVMCONF"} -f "$LO3"
+# shellcheck disable=SC2090
+vgcreate ${LVMCONF:+--config "$LVMCONF"} "$VG" "$LO3"
+push_cleanup 'vgremove ${LVMCONF:+--config "$LVMCONF"} -f "$VG"'
+# shellcheck disable=SC2090
+lvcreate ${LVMCONF:+--config "$LVMCONF"} -L "$((SIZE/2))B" -n "$LV" "$VG"
+push_cleanup 'lvremove ${LVMCONF:+--config "$LVMCONF"} -f "$VG/$LV"'
+wait_a_moment
 
-[[ -b /dev/mapper/$VG-$LV ]]
+current_state
+[[ -b "/dev/mapper/$VG-$LV" ]]
 
 # dmsetup table /dev/mapper/$VG-$LV
 # dmsetup info /dev/mapper/$VG-$LV
 
-step "create partitions on loop devices"
+step "create partitions on loop devices => $LO1 $LO2 $LO4"
 
-mk_partitions $LO1
-mk_partitions $LO2
-mk_partitions $LO4
+mk_partitions "$LO1"
+mk_partitions "$LO2"
+mk_partitions "$LO4"
+
 
 # Test invocation of kpartx with regular file here
-LO2P1=/dev/mapper/$(basename $LO2)-foo1
-$KPARTX $KPARTX_OPTS -a -p -foo $FILE2
-[[ -b $LO2P1 ]]
-push_cleanup 'dmsetup remove -f $(basename $LO2P1)'
+LO2P1=/dev/mapper/$(basename "$LO2")-foo1
+push_cleanup 'dmsetup remove -f "$(basename $LO2P1)"'
+step "run kpartx on regular file $FILE2 => $LO2P1"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -a -p -foo "$FILE2"
+current_state
+[[ -b "$LO2P1" ]]
 
-step "remove partitions with deleted ptable"
-wipe_ptable $LO2
-$KPARTX $KPARTX_OPTS -d $LO2
-[[ ! -b $LO2P1 ]]
+step "deleting partition table on $LO2 => -$LO2P1"
+wipe_ptable "$LO2"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -d "$LO2"
+current_state
+[[ ! -b "$LO2P1" ]]
 
-mk_partitions $LO2
-$KPARTX $KPARTX_OPTS -a -p -foo $FILE2
-[[ -b $LO2P1 ]]
+step "re-add just removed partions on $LO2 => $LO2P1"
+mk_partitions "$LO2"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -a -p -foo "$FILE2"
+current_state
+[[ -b "$LO2P1" ]]
 
-LO1P1=/dev/mapper/$(basename $LO1)-eggs1
-$KPARTX $KPARTX_OPTS -a -p -eggs $LO1
-push_cleanup 'dmsetup remove -f $(basename $LO1P1)'
+LO1P1=/dev/mapper/$(basename "$LO1")-eggs1
+step "run kpartx on loop device $LO1 => $LO1P1"
+push_cleanup 'dmsetup remove -f $(basename "$LO1P1")'
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -a -p -eggs "$LO1"
 
-usleep $WAIT_US
-[[ -b $LO1P1 ]]
-[[ -b $LO2P1 ]]
+wait_a_moment
+current_state
+[[ -b "$LO1P1" ]]
+[[ -b "$LO2P1" ]]
 
 # dmsetup info $LO2P1
 
+step "rename $(basename "$LO1P1") -> $(basename "$LO1")"
 # Set pathological name for partition on $LO1 (same as loop device itself)
-dmsetup rename $(basename $LO1P1) $(basename $LO1)
-LO1P1=/dev/mapper/$(basename $LO1)
+dmsetup rename "$(basename "$LO1P1")" "$(basename "$LO1")"
+LO1P1=/dev/mapper/$(basename "$LO1")
 pop_cleanup
-push_cleanup 'dmsetup remove -f $(basename $LO1P1)'
+push_cleanup 'dmsetup remove -f "$(basename "$LO1P1")"'
 
-# dmsetup info $LO1P1
+current_state
+[[ -b "$LO1P1" ]]
 
-step "create partitions on DM devices"
-mk_partitions /dev/mapper/$SPAN2
-
-$KPARTX $KPARTX_OPTS -a -p -bar /dev/mapper/$SPAN2
+mk_partitions "/dev/mapper/$SPAN2"
 SPAN2P1=/dev/mapper/${SPAN2}-bar1
+step "create partitions on DM device $SPAN2 => $SPAN2P1"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -a -p -bar "/dev/mapper/$SPAN2"
+wait_a_moment
+current_state
+[[ -b "$SPAN2P1" ]]
 
 # udev rules may have created partition mappings without UUIDs
 # which aren't removed by default (if system standard kpartx doesn't
 # set the UUID). Remove them using -f
-push_cleanup '$KPARTX $KPARTX_OPTS -f -d /dev/mapper/$SPAN2'
-push_cleanup 'dmsetup remove -f $(basename $SPAN2P1)'
+push_cleanup '$CLEANUP_KPARTX $KPARTX_OPTS -f -d "/dev/mapper/$SPAN2"'
+push_cleanup 'dmsetup remove -f "$(basename "$SPAN2P1")"'
 
-$KPARTX $KPARTX_OPTS -a -p -spam /dev/mapper/$SPAN1
+step "create partitions on DM device $SPAN1 => $SPAN1P1"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -a -p -spam "/dev/mapper/$SPAN1"
 SPAN1P1=/dev/mapper/${SPAN1}-spam1
 # see above
-push_cleanup '$KPARTX $KPARTX_OPTS -f -d /dev/mapper/$SPAN1'
-push_cleanup 'dmsetup remove -f $(basename $SPAN1P1)'
+push_cleanup '$CLEANUP_KPARTX $KPARTX_OPTS -f -d "/dev/mapper/$SPAN1"'
+push_cleanup 'dmsetup remove -f "$(basename "$SPAN1P1")"'
 
-usleep $WAIT_US
-[[ -b $SPAN2P1 ]]
-[[ -b $SPAN1P1 ]]
+wait_a_moment
+current_state
+[[ -b "$SPAN2P1" ]]
+[[ -b "$SPAN1P1" ]]
 
-step "rename partitions on DM device to default"
-$KPARTX $KPARTX_OPTS -u /dev/mapper/$SPAN1
-[[ ! -b ${SPAN1P1} ]]
+step "rename partitions on $SPAN1 with default delimiter => $SPAN1P1 -> $(partname "$SPAN1" 1)"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -u "/dev/mapper/$SPAN1"
+current_state
+[[ ! -b "$SPAN1P1" ]]
 # This assumes that $SPAN1 ends in a non-digit
-[[ -b ${SPAN1P1//-spam/} ]]
+[[ -b "$(partname "$SPAN1" 1)" ]]
 
-step "rename partitions on DM device back from default"
-$KPARTX $KPARTX_OPTS -u -p -spam /dev/mapper/$SPAN1
-[[ -b ${SPAN1P1} ]]
-[[ ! -b ${SPANP1//-foo/} ]]
+step "rename partitions on DM device with delimiter -spam => $(partname "$SPAN1" 1) -> $SPAN1P1"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -u -p -spam "/dev/mapper/$SPAN1"
+current_state
+[[ -b "$SPAN1P1" ]]
+[[ ! -b "$(partname "$SPAN1" 1)" ]]
 
-step "delete partitions on DM devices"
-$KPARTX $KPARTX_OPTS -d /dev/mapper/$SPAN1 >&2
-usleep $WAIT_US
+step "delete partitions on DM device $SPAN1 => -$SPAN1P1"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -d "/dev/mapper/$SPAN1" >&2
+wait_a_moment
 
-[[ -b $SPAN2P1 ]]
-[[ -b $LO1P1 ]]
-[[ -b $LO2P1 ]]
-[[ ! -b $SPAN1P1 ]]
+current_state
+[[ -b "$SPAN2P1" ]]
+[[ -b "$LO1P1" ]]
+[[ -b "$LO2P1" ]]
+[[ ! -b "$SPAN1P1" ]]
 
-$KPARTX $KPARTX_OPTS -d /dev/mapper/$SPAN2
-usleep $WAIT_US
+step "delete partitions on DM device $SPAN2 => -$SPAN2P1"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -d "/dev/mapper/$SPAN2"
+wait_a_moment
+current_state
+[[ -b "$LO1P1" ]]
+[[ -b "$LO2P1" ]]
+[[ ! -b "$SPAN2P1" ]]
 
-[[ -b $LO1P1 ]]
-[[ -b $LO2P1 ]]
-[[ ! -b $SPAN2P1 ]]
+step "rename on $LO2 with delimiter -spam => $LO2P1  -> ${LO2P1//-foo/-spam}"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -u -p -spam "$LO2"
+wait_a_moment
+current_state
+[[ ! -b "$LO2P1" ]]
+[[ -b "${LO2P1//-foo/-spam}" ]]
 
-step "rename partitions on loop device"
-$KPARTX $KPARTX_OPTS -u -p -spam $LO2
-[[ ! -b ${LO2P1} ]]
-[[ -b ${LO2P1//-foo/-spam} ]]
+step "rename partitions on $LO2 with delimiter -foo => ${LO2P1//-foo/-spam} -> $LO2P1"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -u -p -foo "$LO2"
+wait_a_moment
+current_state
+[[ -b "$LO2P1" ]]
+[[ ! -b "${LO2P1//-foo/-spam}" ]]
 
-step "rename partitions on loop device back"
-$KPARTX $KPARTX_OPTS -u -p -foo $LO2
-[[ -b ${LO2P1} ]]
-[[ ! -b ${LO2P1//-foo/-spam} ]]
+step "rename partitions on $LO2 with default delimiter => $LO2P1 -> $(partname "$LO2" 1)"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -u "$LO2"
+wait_a_moment
+current_state
+[[ ! -b "$LO2P1" ]]
+[[ -b "$(partname "$LO2" 1)" ]]
 
-step "rename partitions on loop device to default"
-$KPARTX $KPARTX_OPTS -u $LO2
-#read a
-[[ ! -b ${LO2P1} ]]
-# $LO1 ends in a digit
-[[ -b ${LO2P1//-foo/p} ]]
+step "rename partitions on $LO2 with delimiter -foo => $(partname "$LO2" 1) -> $LO2P1"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -u -p -foo "$LO2"
+current_state
+[[ -b "$LO2P1" ]]
+[[ ! -b "$(partname "$LO2" 1)" ]]
 
-step "rename partitions on loop device back from default"
-$KPARTX $KPARTX_OPTS -u -p -foo $LO2
-[[ -b ${LO2P1} ]]
-[[ ! -b ${LO2P1//-foo/p} ]]
+step "rename partitions on $LO2 with delimiter spam => $LO2P1 -> ${LO2P1//-foo/spam} "
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -u -p spam "$LO2"
+wait_a_moment
+current_state
+[[ ! -b "$LO2P1" ]]
+[[ -b "${LO2P1//-foo/spam}" ]]
 
-step "rename partitions on loop devices"
-$KPARTX $KPARTX_OPTS -u -p spam $LO2
+step "delete partitions on loop device $LO3"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -d "$LO3"
+wait_a_moment
+current_state
 
-step "delete partitions on loop devices"
-
-$KPARTX $KPARTX_OPTS -d $LO3
-
+step "delete partitions on file $FILE2 / $LO2"
 # This will also delete the loop device
-$KPARTX $KPARTX_OPTS -d $FILE2
-$KPARTX $KPARTX_OPTS -d $LO1
-usleep $WAIT_US
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -d "$FILE2"
+wait_a_moment
+current_state
 
-# ls -l /dev/mapper
-[[ ! -b $LO1P1 ]]
-pop_cleanup
-[[ ! -b $LO2P1 ]]
-pop_cleanup
+step "delete partitions on file $LO1"
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -d "$LO1"
+wait_a_moment
+current_state
+[[ ! -b "$LO1P1" ]]
+
+pop_cleanup # 'dmsetup remove -f $(basename "$SPAN1P1")'
+[[ ! -b "$LO2P1" ]]
+pop_cleanup # '$CLEANUP_KPARTX $KPARTX_OPTS -f -d /dev/mapper/$SPAN1'
+
 # spans should not have been removed
-[[ -b /dev/mapper/$SPAN1 ]]
-[[ -b /dev/mapper/$SPAN2 ]]
-[[ -b /dev/mapper/$USER1 ]]
+current_state
+[[ -b "/dev/mapper/$SPAN1" ]]
+[[ -b "/dev/mapper/$SPAN2" ]]
+[[ -b "/dev/mapper/$USER1" ]]
 # LVs neither
-[[ -b /dev/mapper/$VG-$LV ]]
+[[ -b "/dev/mapper/$VG-$LV" ]]
 
 step "delete partitions on $LO3 with -f"
 
-$KPARTX $KPARTX_OPTS -f -d $LO3
+# shellcheck disable=2086
+$KPARTX $KPARTX_OPTS -f -d "$LO3"
 # -d -f should delete the LV, too
-[[ ! -b /dev/mapper/$VG-$LV ]]
-[[ -b /dev/mapper/$SPAN1 ]]
-[[ -b /dev/mapper/$SPAN2 ]]
+[[ ! -b "/dev/mapper/$VG-$LV" ]]
+[[ -b "/dev/mapper/$SPAN1" ]]
+[[ -b "/dev/mapper/$SPAN2" ]]
 
 step "test kpartx creation/deletion on an image file with no existing loopdev"
-losetup -d $LO4
+losetup -d "$LO4"
 
-OUTPUT=$($KPARTX $KPARTX_OPTS -v -a $FILE4 2>&1)
-read loop dm < \
+# shellcheck disable=2086
+OUTPUT=$($KPARTX $KPARTX_OPTS -v -a "$FILE4" 2>&1)
+read -r loop dm < \
      <(sed -n  's/^add map \(loop[0-9]*\)p1 ([0-9]*:\([0-9]*\)).*$/\1 dm-\2/p' \
-	   <<<$OUTPUT)
-[[ $dm && $loop ]]
-push_cleanup "dmsetup remove -f /dev/$dm"
-push_cleanup "losetup -d /dev/$loop"
+	   <<<"$OUTPUT")
+[[ "$dm" && "$loop" ]]
+push_cleanup 'dmsetup remove -f "/dev/$dm"'
+push_cleanup 'losetup -d "/dev/$loop"'
 
-[[ -b /dev/mapper/${loop}p1 ]]
-$KPARTX -d $KPARTX_OPTS $FILE4
-[[ ! -b /dev/mapper/${loop}p1 ]]
+[[ -b "/dev/mapper/${loop}p1" ]]
+# shellcheck disable=2086
+$KPARTX -d $KPARTX_OPTS "$FILE4"
+[[ ! -b "/dev/mapper/${loop}p1" ]]
 # /dev/$loop is _not_ automatically deleted
-[[ -b /dev/${loop} ]]
+[[ -b "/dev/${loop}" ]]
 
 OK=yes

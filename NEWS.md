@@ -9,6 +9,18 @@ release. These bug fixes will be tracked in stable branches.
 
 See [README.md](README.md) for additional information.
 
+## multipath-tools 0.14.2, 2026/01
+
+### Bug fixes
+
+* Fix a possible NULL pointer dereference in the path purging code.
+  Fixes 0.14.0. Commit 86ff48b.
+
+### CI
+
+* Updated the `test_kpartx` test script, and added it to the
+  `basic-build-and-ci` workflow.
+
 ## multipath-tools 0.14.1, 2026/01
 
 ### Bug fixes
