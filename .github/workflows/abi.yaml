@@ -2,6 +2,7 @@ name: check-abi
 on:
   push:
     branches:
+      - master
       - queue
       - abi
     paths:

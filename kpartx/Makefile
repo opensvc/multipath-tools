@@ -40,8 +40,14 @@ uninstall:
 	$(Q)$(RM) $(DESTDIR)$(libudevdir)/rules.d/67-kpartx-compat.rules
 	$(Q)$(RM) $(DESTDIR)$(libudevdir)/rules.d/68-del-part-nodes.rules
 
+kpartx.out:	$(EXEC)
+	./test-kpartx >$@ 2>&1 || { cat $@; rm -f $@; exit 1; }
+
+test:   export KPARTX_DEBUG := 1
+test:	kpartx.out
+
 clean: dep_clean
-	$(Q)$(RM) core *.o $(EXEC) kpartx.rules
+	$(Q)$(RM) core *.o $(EXEC) kpartx.rules kpartx.out
 
 include $(wildcard $(OBJS:.o=.d))
 
