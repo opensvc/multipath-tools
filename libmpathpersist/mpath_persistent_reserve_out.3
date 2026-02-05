@@ -6,7 +6,7 @@
 .\" Update the date below if you make any significant change.
 .\" ----------------------------------------------------------------------------
 .
-.TH MPATH_PERSISTENT_RESERVE_OUT 3 2024-02-09 Linux
+.TH MPATH_PERSISTENT_RESERVE_OUT 3 2026-02-02 Linux
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -22,7 +22,7 @@ mpath_persistent_reserve_out \- send PROUT command to DM device
 .
 .B #include <mpath_persist.h>
 .P
-.BI "int mpath_persistent_reserve_out" "(int fd, int rq_servact, struct prin_resp *resp, int noisy, int verbose)"
+.BI "int mpath_persistent_reserve_out" "(int fd, int rq_servact, int rq_scope, unsigned int rq_type, struct prout_param_descriptor *paramp, int noisy, int verbose)"
 .P
 .
 .

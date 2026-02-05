@@ -9,6 +9,10 @@ release. These bug fixes will be tracked in stable branches.
 
 See [README.md](README.md) for additional information.
 
+## multipath-tools 0.14.3, 2026/02
+
+* Fix boot failures with multipath introduced in 0.14.1. Commit 01cc89c.
+
 ## multipath-tools 0.14.2, 2026/01
 
 ### Bug fixes
