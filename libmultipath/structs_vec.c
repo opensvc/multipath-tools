@@ -315,8 +315,7 @@ int adopt_paths(vector pathvec, struct multipath *mpp,
 					pp->dev, mpp->alias);
 				continue;
 			}
-			if (pp->initialized == INIT_REMOVED ||
-			    pp->initialized == INIT_PARTIAL)
+			if (pp->initialized == INIT_REMOVED)
 				continue;
 			if (mpp->queue_mode == QUEUE_MODE_RQ &&
 			    pp->bus == SYSFS_BUS_NVME &&
