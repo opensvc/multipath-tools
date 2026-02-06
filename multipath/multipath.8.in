@@ -6,7 +6,7 @@
 .\" Update the date below if you make any significant change.
 .\" ----------------------------------------------------------------------------
 .
-.TH MULTIPATH 8 2023-09-08 Linux
+.TH MULTIPATH 8 2025-12-31 Linux
 .
 .
 .\" ----------------------------------------------------------------------------
@@ -273,6 +273,111 @@ switches of the \fImultipath\fR command have no effect.
 .BI \-R " retries"
 Number of times to retry flushing multipath devices that are in use. The default
 is \fI0\fR.
+.
+.\" ----------------------------------------------------------------------------
+.SH "OUTPUT FORMAT"
+.\" ----------------------------------------------------------------------------
+.
+The \fB-l\fR and \fB-ll\fR options display the multipath topology. The output may contain
+placeholder values when path information is unavailable:
+.
+.TP
+.B ##,##
+Displayed for vendor and product fields when a multipath device has no paths with valid
+SCSI inquiry data. This typically occurs when all underlying path devices have been
+removed from the system, but the multipath map could not be flushed (e.g., because it
+was still in use). To resolve this situation, ensure no processes are using the device
+and run \fImultipathd reconfigure\fR or \fImultipath -f <device>\fR to remove the stale map.
+.
+.TP
+.B ##
+Displayed for individual vendor, product, or revision fields of a path when that
+specific SCSI inquiry data is unavailable.
+.
+.PP
+Path checker states:
+.
+.TP 12
+.B up
+Path is operational and can handle I/O.
+.TP
+.B down
+Path is not operational.
+.TP
+.B ghost
+Path is in standby mode (ALUA transitioning state).
+.TP
+.B shaky
+Path is unreliable (intermittent failures).
+.TP
+.B pending
+Path check is in progress.
+.TP
+.B timeout
+Path check timed out.
+.TP
+.B removed
+Path device has been removed from the system.
+.TP
+.B delayed
+Path is delayed before being marked as up.
+.
+.PP
+Device mapper path states:
+.
+.TP 12
+.B active
+Path is active in the device mapper table.
+.TP
+.B failed
+Path has been marked as failed by the device mapper.
+.TP
+.B undef
+Path state is undefined (path not found in device mapper).
+.
+.\" ----------------------------------------------------------------------------
+.SH "EXAMPLES"
+.\" ----------------------------------------------------------------------------
+.
+.SS Normal multipath topology output
+.PP
+.RS
+.nf
+mpatha (36001405e27f5cc80000900000490000) dm-0 LIO-ORG,lun0
+size=1.0G features='0' hwhandler='1 alua' wp=rw
+|-+- policy='service-time 0' prio=50 status=active
+| `- 1:0:0:0 sda 8:0  active ready running
+`-+- policy='service-time 0' prio=10 status=enabled
+  `- 2:0:0:0 sdb 8:16 active ready running
+.fi
+.RE
+.PP
+This shows a healthy multipath device with two active paths.
+.
+.SS Output with removed paths
+.PP
+.RS
+.nf
+mpathb (36001405e27f5cc80000900000fa0000) dm-1 ##,##
+size=500G features='0' hwhandler='0' wp=rw
+`-+- policy='service-time 0' prio=0 status=enabled
+  |- #:#:#:# - #:# failed undef
+  `- #:#:#:# - #:# failed undef
+.fi
+.RE
+.PP
+This indicates all path devices have been removed from the system, but the
+multipath map could not be flushed because it was still in use.
+The \fB##,##\fR placeholder appears instead of vendor and product information.
+.PP
+To resolve this, ensure no processes are using the device, then flush the map:
+.RS
+\fBmultipath -f mpathb\fR
+.RE
+or trigger a full reconfiguration:
+.RS
+\fBmultipathd reconfigure\fR
+.RE
 .
 .\" ----------------------------------------------------------------------------
 .SH "SEE ALSO"
