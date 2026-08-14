@@ -307,6 +307,8 @@ int disassemble_map(const struct vector_s *pathvec,
 			for (k = 0; k < num_paths_args; k++)
 				if (k == 0) {
 					p += get_word(p, &word);
+					if (!word)
+						goto out;
 					def_minio = atoi(word);
 					free(word);
 
