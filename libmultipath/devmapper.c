@@ -1042,17 +1042,40 @@ int dm_flush_map__ (const char *mapname, int flags, int retries)
 			}
 			condlog(4, "multipath map %s removed", mapname);
 			return DM_FLUSH_OK;
-		} else if (dm_is_mpath(mapname) != DM_IS_MPATH_YES) {
-			condlog(4, "multipath map %s removed externally",
-				mapname);
-			return DM_FLUSH_OK; /* raced. someone else removed it */
 		} else {
-			condlog(2, "failed to remove multipath map %s",
-				mapname);
-			if ((flags & DMFL_SUSPEND) && queue_if_no_path != -1) {
-				dm_simplecmd_noflush(DM_DEVICE_RESUME,
-						     mapname, udev_flags);
+			int is_mpath = dm_is_mpath(mapname);
+
+			if (is_mpath == DM_IS_MPATH_NO) {
+				condlog(4, "multipath map %s removed externally",
+					mapname);
+				return DM_FLUSH_OK; /* raced. someone else removed it */
 			}
+			/*
+			 * A query error (DM_IS_MPATH_ERR) must not be treated
+			 * as "removed externally": under an ioctl storm the
+			 * status query can transiently fail, and returning
+			 * DM_FLUSH_OK here would leave the map suspended.
+			 */
+			if (is_mpath == DM_IS_MPATH_ERR)
+				condlog(1, "%s: unable to verify map state after failed remove",
+					mapname);
+			else
+				condlog(2, "failed to remove multipath map %s",
+					mapname);
+			/*
+			 * Resume the map suspended above. If it has an inactive
+			 * table, the resume makes dm try to swap to it; if that
+			 * swap fails dm leaves the map suspended with the
+			 * invalid table dropped, and a second resume reactivates
+			 * it with the old table (as dm_addmap_reload() does).
+			 * Retry the resume once, and log if it is still not
+			 * resumed so a leaked suspend is visible.
+			 */
+			if ((flags & DMFL_SUSPEND) && queue_if_no_path != -1 &&
+			    !dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname, udev_flags) &&
+			    !dm_simplecmd_noflush(DM_DEVICE_RESUME, mapname, udev_flags))
+				condlog(1, "%s: failed to resume map after failed remove",
+					mapname);
 		}
 		if (retries)
 			sleep(1);
