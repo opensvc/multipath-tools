@@ -715,6 +715,18 @@ int remove_feature(char **features_p, const char *old_feat)
 		old_feat++;
 	}
 
+	/*
+	 * A negative count means that the declared count is inconsistent
+	 * with the features present. The new string is allocated assuming
+	 * that the decimal representation of the count doesn't get longer;
+	 * a negative count would overflow it.
+	 */
+	if (count < 0) {
+		condlog(0, "invalid feature count in feature string \"%s\"",
+			*features_p);
+		return 1;
+	}
+
 	/* Quick exit if all features have been removed */
 	if (count == 0) {
 		new = malloc(2);
