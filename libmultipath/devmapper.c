@@ -1566,6 +1566,28 @@ dm_rename (const char * old, char * new, char *delim, int skip_kpartx)
 }
 
 /*
+ * Find "dev_t" in the string starting at "from", as a standalone
+ * token delimited by whitespace or the string bounds (e.g. "8:0"
+ * doesn't match inside "18:0" or "8:03"). "from" must point at
+ * either the start of a token or whitespace.
+ */
+static const char *find_devt_in_string(const char *from, const char *dev_t)
+{
+	const char *p = from;
+	size_t len = strlen(dev_t);
+
+	while ((p = strstr(p, dev_t)) != NULL) {
+		if ((p == from || isspace((unsigned char)p[-1])) &&
+		    (p[len] == '\0' || isspace((unsigned char)p[len])))
+			return p;
+		/* no valid match can start inside the rejected match,
+		 * as its characters can't be whitespace */
+		p += len;
+	}
+	return NULL;
+}
+
+/*
  * Return a newly allocated copy of "table" with all occurrences of
  * "dep" replaced by "newdep", or NULL if "dep" isn't contained in
  * "table" or if memory allocation failed. The caller must free() the
@@ -1582,7 +1604,7 @@ static char *dm_reassign_deps(const char *table, const char *dep,
 	char *newtable, *q;
 
 	/* count the occurrences, to allocate the exact amount of memory */
-	while ((m = strstr(p, dep)) != NULL) {
+	while ((m = find_devt_in_string(p, dep)) != NULL) {
 		count++;
 		p = m + deplen;
 	}
@@ -1596,7 +1618,7 @@ static char *dm_reassign_deps(const char *table, const char *dep,
 
 	q = newtable;
 	p = table;
-	while ((m = strstr(p, dep)) != NULL) {
+	while ((m = find_devt_in_string(p, dep)) != NULL) {
 		memcpy(q, p, m - p);
 		q += m - p;
 		memcpy(q, newdep, newlen);
@@ -1646,7 +1668,8 @@ int dm_reassign_table(const char *name, char *old, char *new)
 				__func__, name);
 			return 0;
 		}
-		if (strcmp(target, TGT_MPATH) && strstr(params, old)) {
+		if (strcmp(target, TGT_MPATH) &&
+		    find_devt_in_string(params, old)) {
 			condlog(3, "%s: replace target %s %s",
 				name, target, params);
 			newparams = dm_reassign_deps(params, old, new);
