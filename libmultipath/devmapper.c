@@ -1565,21 +1565,69 @@ dm_rename (const char * old, char * new, char *delim, int skip_kpartx)
 	return dm_rename__(old, new, skip_kpartx);
 }
 
-void dm_reassign_deps(char *table, const char *dep, const char *newdep)
+/*
+ * Find "dev_t" in the string starting at "from", as a standalone
+ * token delimited by whitespace or the string bounds (e.g. "8:0"
+ * doesn't match inside "18:0" or "8:03"). "from" must point at a
+ * token boundary, i.e. either at the start of the string or at
+ * whitespace.
+ */
+static const char *find_devt_in_string(const char *from, const char *dev_t)
 {
-	char *n, *newtable;
-	const char *p;
+	const char *p = from;
+	size_t len = strlen(dev_t);
 
-	newtable = strdup(table);
+	while ((p = strstr(p, dev_t)) != NULL) {
+		if ((p == from || isspace((unsigned char)p[-1])) &&
+		    (p[len] == '\0' || isspace((unsigned char)p[len])))
+			return p;
+		/* no valid match can start inside the rejected match,
+		 * as its characters can't be whitespace */
+		p += len;
+	}
+	return NULL;
+}
+
+/*
+ * Return a newly allocated copy of "table" with all occurrences of
+ * "dep" replaced by "newdep", or NULL if "dep" isn't contained in
+ * "table" or if memory allocation failed. The caller must free() the
+ * returned string.
+ */
+static char *dm_reassign_deps(const char *table, const char *dep,
+			      const char *newdep)
+{
+	size_t deplen = strlen(dep);
+	size_t newlen = strlen(newdep);
+	size_t count = 0;
+	const char *p = table;
+	const char *m;
+	char *newtable, *q;
+
+	/* count the occurrences, to allocate the exact amount of memory */
+	while ((m = find_devt_in_string(p, dep)) != NULL) {
+		count++;
+		p = m + deplen;
+	}
+	if (!count)
+		return NULL;
+
+	newtable = malloc(strlen(table) - count * deplen +
+			  count * newlen + 1);
 	if (!newtable)
-		return;
-	p = strstr(newtable, dep);
-	n = table + (p - newtable);
-	strcpy(n, newdep);
-	n += strlen(newdep);
-	p += strlen(dep);
-	strcat(n, p);
-	free(newtable);
+		return NULL;
+
+	q = newtable;
+	p = table;
+	while ((m = find_devt_in_string(p, dep)) != NULL) {
+		memcpy(q, p, m - p);
+		q += m - p;
+		memcpy(q, newdep, newlen);
+		q += newlen;
+		p = m + deplen;
+	}
+	strcpy(q, p);
+	return newtable;
 }
 
 int dm_reassign_table(const char *name, char *old, char *new)
@@ -1589,7 +1637,6 @@ int dm_reassign_table(const char *name, char *old, char *new)
 	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *dmt = NULL;
 	struct dm_task __attribute__((cleanup(cleanup_dm_task))) *reload_dmt = NULL;
 	char *target, *params = NULL;
-	char *buff;
 	void *next = NULL;
 
 	if (!(dmt = libmp_dm_task_create(DM_DEVICE_TABLE)))
@@ -1608,6 +1655,8 @@ int dm_reassign_table(const char *name, char *old, char *new)
 		return 0;
 
 	do {
+		char *newparams = NULL;
+
 		next = dm_get_next_target(dmt, next, &start, &length,
 					  &target, &params);
 		if (!target || !params) {
@@ -1620,22 +1669,23 @@ int dm_reassign_table(const char *name, char *old, char *new)
 				__func__, name);
 			return 0;
 		}
-		buff = strdup(params);
-		if (!buff) {
-			condlog(3, "%s: failed to replace target %s, "
-				"out of memory", name, target);
-			return 0;
-		}
-		if (strcmp(target, TGT_MPATH) && strstr(params, old)) {
+		if (strcmp(target, TGT_MPATH) &&
+		    find_devt_in_string(params, old)) {
 			condlog(3, "%s: replace target %s %s",
-				name, target, buff);
-			dm_reassign_deps(buff, old, new);
-			condlog(3, "%s: with target %s %s",
-				name, target, buff);
+				name, target, params);
+			newparams = dm_reassign_deps(params, old, new);
+			if (!newparams) {
+				condlog(3, "%s: failed to replace target %s: "
+					"%m", name, target);
+				return 0;
+			}
 			modified++;
+			condlog(3, "%s: with target %s %s",
+				name, target, newparams);
 		}
-		dm_task_add_target(reload_dmt, start, length, target, buff);
-		free(buff);
+		dm_task_add_target(reload_dmt, start, length, target,
+				   newparams ? newparams : params);
+		free(newparams);
 	} while (next);
 
 	if (modified) {
