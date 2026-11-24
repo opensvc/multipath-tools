@@ -219,6 +219,27 @@ static void test_rf_bad_features2(void **state)
 	rf_helper("2no space test", "test", NULL, 1);
 }
 
+/*
+ * If the declared feature count is smaller than the number of features
+ * actually removed, the count would go negative, and the code would
+ * overflow the buffer for the new features string.
+ */
+static void test_rf_underflow1(void **state)
+{
+	rf_helper("0 x", "x", NULL, 1);
+}
+
+static void test_rf_underflow2(void **state)
+{
+	rf_helper("1 queue_mode bio", "queue_mode bio", NULL, 1);
+}
+
+static void test_rf_underflow3(void **state)
+{
+	rf_helper("1 a b c d e f g h i j k l", "a b c d e f g h i j k l",
+		  NULL, 1);
+}
+
 static void test_rf_missing_removal1(void **state)
 {
 	rf_helper("0", "test", NULL, 0);
@@ -292,6 +313,9 @@ static int test_remove_features(void)
 		cmocka_unit_test(test_rf_invalid_removal4),
 		cmocka_unit_test(test_rf_bad_features1),
 		cmocka_unit_test(test_rf_bad_features2),
+		cmocka_unit_test(test_rf_underflow1),
+		cmocka_unit_test(test_rf_underflow2),
+		cmocka_unit_test(test_rf_underflow3),
 		cmocka_unit_test(test_rf_missing_removal1),
 		cmocka_unit_test(test_rf_missing_removal2),
 		cmocka_unit_test(test_rf_missing_removal3),
