@@ -138,6 +138,9 @@ static enum force_reload_types reconfigure_pending = FORCE_RELOAD_NONE;
 pid_t daemon_pid;
 static pthread_mutex_t config_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t config_cond;
+static pthread_mutex_t checker_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t checker_wake_cond;
+static bool checker_wake;
 static pthread_t check_thr, purge_thr, uevent_thr, uxlsnr_thr, uevq_thr,
 	dmevent_thr, fpin_thr, fpin_consumer_thr;
 static bool check_thr_started, purge_thr_started, uevent_thr_started,
@@ -938,6 +941,8 @@ uev_add_map (struct uevent * uev, struct vectors * vecs)
 	rc = ev_add_map(uev->kernel, alias, vecs);
 	lock_cleanup_pop(vecs->lock);
 	free(alias);
+	if (!rc)
+		wake_checkerloop();
 	return rc;
 }
 
@@ -1267,6 +1272,8 @@ out:
 	lock_cleanup_pop(vecs->lock);
 	if (partial_init)
 		return uev_update_path(uev, vecs);
+	if (!ret)
+		wake_checkerloop();
 	return ret;
 }
 
@@ -2035,6 +2042,23 @@ void
 exit_daemon (void)
 {
 	post_config_state(DAEMON_SHUTDOWN);
+	wake_checkerloop();
+}
+
+/*
+ * Wake checkerloop out of the idle wait below.
+ *
+ * Call this after pathvec/mpvec may have gained entries (configure, uevent
+ * add path/map, CLI add, or shutdown). Harmless if the checker is not
+ * waiting: the flag is cleared the next time idle wait runs.
+ */
+void
+wake_checkerloop(void)
+{
+	pthread_mutex_lock(&checker_wake_mutex);
+	checker_wake = true;
+	pthread_cond_signal(&checker_wake_cond);
+	pthread_mutex_unlock(&checker_wake_mutex);
 }
 
 static void
@@ -3244,7 +3268,7 @@ checkerloop (void *ap)
 
 	while (1) {
 		struct timespec diff_time, start_time, end_time;
-		int num_paths = 0, strict_timing;
+		int num_paths = 0, strict_timing, idle;
 		unsigned int ticks = 0;
 		enum checker_state checker_state = CHECKER_STARTING;
 		LIST_HEAD(purge_list);
@@ -3335,36 +3359,83 @@ checkerloop (void *ap)
 					(long)diff_time.tv_sec);
 		}
 
-		if (foreign_tick == 0) {
-			conf = get_multipath_config();
-			foreign_tick = conf->max_checkint;
-			put_multipath_config(conf);
-		}
-		if (--foreign_tick == 0)
-			check_foreign();
-
 		post_config_state(DAEMON_IDLE);
 		conf = get_multipath_config();
 		strict_timing = conf->strict_timing;
+		foreign_tick = foreign_tick ? foreign_tick :
+			conf->max_checkint;
 		put_multipath_config(conf);
-		if (!strict_timing)
-			sleep(1);
-		else {
-			diff_time.tv_sec = 0;
-			diff_time.tv_nsec =
-			     1000UL * 1000 * 1000 - diff_time.tv_nsec;
-			normalize_timespec(&diff_time);
 
-			condlog(3, "waiting for %ld.%06lu secs",
-				(long)diff_time.tv_sec,
-				diff_time.tv_nsec / 1000);
-			if (nanosleep(&diff_time, NULL) != 0) {
-				condlog(3, "nanosleep failed with error %d",
-					errno);
-				conf = get_multipath_config();
-				conf->strict_timing = 0;
-				put_multipath_config(conf);
-				break;
+		/*
+		 * Idle vs active wait (issue #40):
+		 *
+		 * - No paths and no maps: there is nothing for the checker to
+		 *   poll. Block on checker_wake_cond until wake_checkerloop()
+		 *   runs (new path/map via uevent, configure, or CLI). Use a
+		 *   timed wait of max_polling_interval so check_foreign() still
+		 *   runs, and as a safety net if a wake is missed. Active
+		 *   systems (Boot-from-SAN included) never take this branch
+		 *   once pathvec/mpvec are non-empty.
+		 *
+		 * - Paths or maps present: keep the existing 1s tick (or
+		 *   strict_timing nanosleep). Path check cadence remains
+		 *   polling_interval / max_polling_interval; unchanged.
+		 */
+		pthread_cleanup_push(cleanup_lock, &vecs->lock);
+		lock(&vecs->lock);
+		pthread_testcancel();
+		idle = VECTOR_SIZE(vecs->pathvec) == 0 &&
+			VECTOR_SIZE(vecs->mpvec) == 0;
+		lock_cleanup_pop(vecs->lock);
+
+		if (idle) {
+			struct timespec tmo;
+			bool woken = false;
+			unsigned int wait_secs = foreign_tick ? foreign_tick : 1;
+
+			condlog(4, "idle: waiting for paths or maps");
+			pthread_cleanup_push(cleanup_mutex,
+					     &checker_wake_mutex);
+			pthread_mutex_lock(&checker_wake_mutex);
+			get_monotonic_time(&tmo);
+			tmo.tv_sec += wait_secs;
+			while (!checker_wake) {
+				if (pthread_cond_timedwait(&checker_wake_cond,
+							   &checker_wake_mutex,
+							   &tmo) == ETIMEDOUT)
+					break;
+			}
+			woken = checker_wake;
+			checker_wake = false;
+			pthread_cleanup_pop(1);
+
+			/* Timeout: periodic foreign check; event: resume loop */
+			if (!woken)
+				check_foreign();
+			foreign_tick = 0;
+		} else {
+			if (--foreign_tick == 0)
+				check_foreign();
+			if (!strict_timing)
+				sleep(1);
+			else {
+				diff_time.tv_sec = 0;
+				diff_time.tv_nsec =
+				     1000UL * 1000 * 1000 - diff_time.tv_nsec;
+				normalize_timespec(&diff_time);
+
+				condlog(3, "waiting for %ld.%06lu secs",
+					(long)diff_time.tv_sec,
+					diff_time.tv_nsec / 1000);
+				if (nanosleep(&diff_time, NULL) != 0) {
+					condlog(3,
+						"nanosleep failed with error %d",
+						errno);
+					conf = get_multipath_config();
+					conf->strict_timing = 0;
+					put_multipath_config(conf);
+					break;
+				}
 			}
 		}
 
@@ -3480,6 +3551,7 @@ configure (struct vectors * vecs, enum force_reload_types reload_type)
 		if (setup_multipath(vecs, mpp))
 			i--;
 	}
+	wake_checkerloop();
 	return 0;
 
 fail:
@@ -4266,6 +4338,7 @@ main (int argc, char *argv[])
 	umask(umask(077) | 022);
 
 	pthread_cond_init_mono(&config_cond);
+	pthread_cond_init_mono(&checker_wake_cond);
 
 	if (atexit(dm_lib_exit))
 		condlog(3, "failed to register exit handler for libdm");

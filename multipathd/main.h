@@ -31,6 +31,7 @@ extern pid_t daemon_pid;
 extern int uxsock_timeout;
 
 void exit_daemon(void);
+void wake_checkerloop(void);
 const char *daemon_status(bool *pending_reconfig);
 enum daemon_status wait_for_state_change_if(enum daemon_status oldstate,
 					    unsigned long ms);
