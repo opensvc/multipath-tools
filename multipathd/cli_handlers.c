@@ -673,6 +673,7 @@ cli_add_path (void *v, struct strbuf *reply, void *data)
 			return 1;
 		}
 	}
+	wake_checkerloop();
 	return ev_add_path(pp, vecs, 1);
 blacklisted:
 	append_strbuf_str(reply, "blacklisted\n");
@@ -746,6 +747,8 @@ cli_add_map (void * v, struct strbuf *reply, void * data)
 	}
 	sprintf(dev_path, "dm-%u", dmi.minor);
 	rc = ev_add_map(dev_path, alias, vecs);
+	if (!rc)
+		wake_checkerloop();
 	return rc;
 }
 
